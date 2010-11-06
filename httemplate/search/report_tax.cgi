@@ -10,35 +10,45 @@
               )
           )
 %>
+<TD ALIGN="right">
+Download full results<BR>
+as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel spreadsheet</A>
+</TD>
 
 <% include('/elements/table-grid.html') %>
 
   <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=9>Sales</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Rate</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax owed</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3>Rate</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3>Tax owed</TH>
 % unless ( $cgi->param('show_taxclasses') ) { 
-      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax invoiced</TH>
-      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
-      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax credited</TH>
-      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
-      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax collected</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3>Tax invoiced</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3>Tax credited</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3>Tax collected</TH>
 % } 
   </TR>
 
   <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Total</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Non-taxable<BR><FONT SIZE=-1>(tax-exempt customer)</FONT></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Non-taxable<BR><FONT SIZE=-1>(tax-exempt package)</FONT></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Non-taxable<BR><FONT SIZE=-1>(monthly exemption)</FONT></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Taxable</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Total</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=1>Non-taxable</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=1>Non-taxable</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=1>Non-taxable</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Taxable</TH>
+  </TR>
+
+  <TR>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>(tax-exempt customer)</FONT></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>(tax-exempt package)</FONT></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>(monthly exemption)</FONT></TH>
   </TR>
 
 % my $bgcolor1 = '#eeeeee';
