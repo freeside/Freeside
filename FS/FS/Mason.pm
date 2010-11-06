@@ -71,6 +71,7 @@ if ( -e $addl_handler_use_file ) {
   use URI::Escape;
   use HTML::Entities;
   use HTML::TreeBuilder;
+  use HTML::TableExtract qw(tree);
   use HTML::FormatText;
   use HTML::Defang;
   use JSON;
@@ -88,6 +89,7 @@ if ( -e $addl_handler_use_file ) {
   }
   use Text::CSV_XS;
   use Spreadsheet::WriteExcel;
+  use Spreadsheet::WriteExcel::Utility;
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
   use Net::Ping;
