@@ -1,11 +1,6 @@
 <% $data %>
 <%init>
 
-use Spreadsheet::WriteExcel;
-use Spreadsheet::WriteExcel::Utility 'xl_range_formula';
-use List::Util 'max';
-use HTML::TableExtract 'tree';
-
 my $data = '';
 my $XLS = new IO::Scalar \$data;
 my $workbook = Spreadsheet::WriteExcel->new($XLS)
