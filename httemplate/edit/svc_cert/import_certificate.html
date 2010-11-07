@@ -1,0 +1,22 @@
+<% include('/elements/header-popup.html', 'Import issued certificate' ) %>
+
+<% include('/elements/error.html') %>
+
+<FORM NAME="ImportKeyForm" ACTION="<% $p %>process/svc_cert.cgi" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
+
+<TEXTAREA NAME="certificate" COLS=64 ROWS=15 STYLE="font-family:monospace"></TEXTAREA>
+
+<BR><BR>
+<INPUT TYPE="submit" VALUE="Import">
+
+</FORM>
+</BODY>
+</HTML>
+<%init>
+
+$cgi->param('svcnum') =~ /^(\d*)$/ or die 'illegal svcnum';
+my $svcnum = $1;
+
+</%init>

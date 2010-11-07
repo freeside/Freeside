@@ -34,8 +34,8 @@ my @fields = (
     'value'=> sub {
       my $svc_cert = shift;
       if ( $svc_cert->csr ) { #display the subject etc?
-        '<FONT STYLE="font-family:monospace"><PRE>'. $svc_cert->csr.
-        '</PRE></FONT>';
+        '<PRE><FONT STYLE="font-family:monospace">'. "\n". $svc_cert->csr.
+        '</FONT></PRE>';
       } elsif ( $svc_cert->common_name ) {
         my $svcnum = $svc_cert->svcnum;
         qq(<A HREF="${p}misc/svc_cert-generate.html?action=generate_csr;svcnum=$svcnum">Generate</A>);
@@ -50,15 +50,60 @@ my @fields = (
       if ( $svc_cert->certificate ) {
 
         my %hash = $svc_cert->check_certificate;
-        my $out = '<TABLE>'; #XXX better formatting
-        foreach my $key ( keys %hash ) {
-          $out .= "<TR><TD>$key</TD><TD>$hash{$key}</TD></TR>";
-        }
-        $out .= '</TABLE>';
 
-        $out .= '<FONT STYLE="font-family:monospace"><PRE>'.
+        tie my %w, 'Tie::IxHash',
+          'subject' => 'Issued to',
+          'issuer'  => 'Issued by',
+        ;
+
+        my $out = '<TABLE><TR><TD>';
+
+        foreach my $w ( keys %w ) {
+
+          $out .= include('/elements/table-grid.html'). #'<TABLE>'.
+                  '<TR><TH COLSPAN=2 BGCOLOR="#cccccc" ALIGN="center">'.
+                  $w{$w}. '</TH></TR>';
+
+          my $col = $svc_cert->subj_col;
+
+          my $subj = $hash{$w};
+          foreach my $key (keys %$col) { #( keys %$subj ) {
+            $out .= "<TR><TD>". $labels{$col->{$key}}.  "</TD>".
+                        "<TD>". $subj->{$key}. "</TD></TR>";
+          }
+
+          $out .= '</TABLE></TD><TD>';
+        }
+        $out .= '</TD></TR></TABLE>';
+
+        $out .= '<TABLE>'.
+                '<TR><TH ALIGN="right">Serial number</TH>'.
+                    "<TD>$hash{serial}</TD></TR>".
+                '<TR><TH ALIGN="right">Valid</TH>'.
+                    "<TD>$hash{notBefore} - $hash{notAfter}</TD></TR>".
+                '</TABLE>';
+
+        if ( $hash{'selfsigned'} ) {
+          my $svcnum = $svc_cert->svcnum;
+          $out .= qq(<BR> <A HREF="${p}misc/svc_cert-generate.html?action=generate_selfsigned;svcnum=$svcnum">Re-generate self-signed</A>).
+                  ' &nbsp; '.
+                  include('/elements/popup_link.html', {
+                    'action'      => $p."edit/svc_cert/import_certificate.html".
+                                     "?svcnum=$svcnum",
+                    'label'       => 'Import issued certificate', #link
+                    'actionlabel' => 'Import issued certificate', #title
+                    #opt
+                    'width'       => '544',
+                    'height'      => '368',
+                    #'color'       => '#ff0000',
+                  }).
+                  '<BR>';
+        }
+
+        $out .= '<PRE><FONT STYLE="font-family:monospace">'.
                 $svc_cert->certificate.
-                '</PRE></FONT>';
+                '</FONT><PRE>';
+
         $out;
       } elsif ( $svc_cert->csr ) {
         my $svcnum = $svc_cert->svcnum;

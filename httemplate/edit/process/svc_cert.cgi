@@ -9,7 +9,7 @@
 %  } else {
 <% include('/elements/header-popup.html', $title ) %>
     <SCRIPT TYPE="text/javascript">
-      window.top.location = '<% popurl(3). "edit/svc_cert.cgi?$svcnum" %>';
+      window.top.location = '<% popurl(3). "$popup/svc_cert.cgi?$svcnum" %>';
     </SCRIPT>
     </BODY></HTML>
 %  }
@@ -40,10 +40,10 @@ if ( $svcnum ) {
   $new->$_( $old->$_ ) for grep $old->$_, qw( privatekey csr certificate cacert );
 }
 
-my $popup = 0;
+my $popup = '';
 my $title = '';
 if ( $cgi->param('privatekey') eq '_generate' ) { #generate
-  $popup = 1;
+  $popup = 'edit';
   $title = 'Key generated';
 
   $cgi->param('keysize') =~ /^(\d+)$/ or die 'illegal keysize';
@@ -51,12 +51,22 @@ if ( $cgi->param('privatekey') eq '_generate' ) { #generate
   $new->generate_privatekey($keysize);
 
 } elsif ( $cgi->param('privatekey') =~ /\S/ ) { #import
-  $popup = 1;
+  $popup = 'edit';
   $title = 'Key imported';
 
   $new->privatekey( $cgi->param('privatekey') );
 
-} #elsif ( $cgi->param('privatekey') eq '_clear' ) { #clear
+#} #elsif ( $cgi->param('privatekey') eq '_clear' ) { #clear
+
+} elsif ( $cgi->param('certificate') ) {
+
+  $popup = 'view';
+  $title = 'Certificate imported';
+
+  $new->certificate( $cgi->param('certificate') );
+  $new->$_( $old->$_ ) for grep $old->$_, qw( recnum common_name organization organization_unit city state country cert_contact );
+
+}
 
 my $error = '';
 if ($cgi->param('svcnum')) {

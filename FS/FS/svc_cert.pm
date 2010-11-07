@@ -2,6 +2,7 @@ package FS::svc_cert;
 
 use strict;
 use base qw( FS::svc_Common );
+use Tie::IxHash;
 #use FS::Record qw( qsearch qsearchs );
 use FS::cust_svc;
 
@@ -251,14 +252,18 @@ sub check_privatekey {
   return ($ok =~ /key ok/);
 }
 
-my %subj = (
+tie my %subj, 'Tie::IxHash',
   'CN' => 'common_name',
   'O'  => 'organization',
   'OU'  => 'organization_unit',
   'L' => 'city',
   'ST' => 'state',
   'C' => 'country',
-);
+;
+
+sub subj_col {
+  \%subj;
+}
 
 sub subj {
   my $self = shift;
@@ -343,10 +348,24 @@ sub check_certificate {
 
   my %hash = ();
   while (<OUT>) {
-    warn $_;
     /^\s*(\w+)=\s*(.*)\s*$/ or next;
     $hash{$1} = $2;
   }
+
+  for my $f (qw( subject issuer )) {
+
+    $hash{$f} = { map { if ( /^\s*(\w+)=\s*(.*)\s*$/ ) {
+                          ($1=>$2);
+                        } else {
+                          (''=>'');
+                        }
+                      }
+                      split('/', $hash{$f})
+                };
+
+  }
+
+  $hash{'selfsigned'} = 1 if $hash{'subject'}->{'O'} eq $hash{'issuer'}->{'O'};
 
   %hash;
 }
