@@ -73,6 +73,7 @@ sub table_info {
 			   'disable_default'   => 1, #disable switches
 			   'disable_fixed'     => 1, #
 			   'disable_inventory' => 1, #
+                           'disable_select'    => 1, #
 			 },
       'foreign_key'   => { 
                            'label'        => 'Description',

@@ -1,6 +1,6 @@
 <% include('elements/svc_Common.html',
              'table'    => $table,
-	     'edit_url' => $p."edit/svc_Common.html?svcdb=$table;svcnum=",
+	     'edit_url' => $edit_url, #$p."edit/svc_Common.html?svcdb=$table;svcnum=",
 	     %opt,
           )
 %>
@@ -11,6 +11,8 @@
 $cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparsable svcdb";
 my $table = $1;
 require "FS/$table.pm";
+
+my $edit_url = svc_url( 'm' => $m, 'action' => 'edit', 'svcdb' => $table, query => '' );
 
 my %opt;
 if ( UNIVERSAL::can("FS::$table", 'table_info') ) {

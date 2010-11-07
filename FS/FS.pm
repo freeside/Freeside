@@ -174,6 +174,10 @@ L<FS::cdr_type> - CDR type class
 
 L<FS::svc_external> - Externally tracked service class.
 
+L<FS::svc_pbx> - PBX service class
+
+L<FS::svc_cert> - Certificate service class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items

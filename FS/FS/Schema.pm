@@ -2972,10 +2972,19 @@ sub tables_hashref {
 
     'svc_cert' => {
       'columns' => [
-        'svcnum',            'int',     '',            '', '', '', 
-        'recnum',   'int',      '',  '', '', '', 
-        'something', 'text', '', '', '', '',
-        #XXX more fields
+        'svcnum',                'int',     '',      '', '', '', 
+        'recnum',                'int', 'NULL',      '', '', '',
+        'privatekey',           'text', 'NULL',      '', '', '',
+        'csr',                  'text', 'NULL',      '', '', '',
+        'certificate',          'text', 'NULL',      '', '', '',
+        'cacert',               'text', 'NULL',      '', '', '',
+        'common_name',       'varchar', 'NULL', $char_d, '', '',
+        'organization',      'varchar', 'NULL', $char_d, '', '',
+        'organization_unit', 'varchar', 'NULL', $char_d, '', '',
+        'city',              'varchar', 'NULL', $char_d, '', '',
+        'state',             'varchar', 'NULL', $char_d, '', '',
+        'country',              'char', 'NULL',       2, '', '',
+        'cert_contact',      'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [],

@@ -18,6 +18,10 @@
 
              # defaults to "edit/$table.cgi?", will have svcnum appended
              'edit_url' => 
+
+             #at the very bottom (well, as low as you can go from here)
+             'html_foot'  => '',
+
          )
 
 </%doc>
@@ -56,12 +60,14 @@ Unprovision this Service</A>
 
 % foreach my $f ( @$fields ) {
 %
-%   my($field, $type);
+%   my($field, $type, $value);
 %   if ( ref($f) ) {
 %     $field = $f->{'field'},
+%     $value = $f->{'value'} ? &{ $f->{'value'} }($svc_x) : $svc_x->$field;
 %     $type  = $f->{'type'} || 'text',
 %   } else {
 %     $field = $f;
+%     $value = $svc_x->$field;
 %     $type = 'text';
 %   }
 %
@@ -78,7 +84,7 @@ Unprovision this Service</A>
 
 %       #eventually more options for <SELECT>, etc. fields
 
-        <TD BGCOLOR="#ffffff"><% $svc_x->$field %><TD>
+        <TD BGCOLOR="#ffffff"><% $value %><TD>
 
       </TR>
 

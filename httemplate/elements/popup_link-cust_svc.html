@@ -4,16 +4,16 @@ Example:
 
   include('/elements/init_overlib.html')
 
-  include( '/elements/svc_popup_link.html', { #hashref or a list, either way
+  include('/elements/popup_link-cust_svc.html', { #hashref or a list, either way
 
     #required
     'action'         => 'content.html', # uri for content of popup which should
                                         # be suitable for appending '?svcnum='
     'label'          => 'click me',     # text of <A> tag
-    'cust_svc'       => $cust_svc       # a FS::cust_svc object
+    'cust_svc'       => $cust_svc       # a FS::cust_svc object or FS::svc_* object
    
     #strongly recommended (you want a title, right?)
-    'actionlabel     => 'You clicked',  # popup title
+    'actionlabel'    => 'You clicked',  # popup title
    
     #opt
     'width'          => '540',

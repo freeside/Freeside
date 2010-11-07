@@ -257,6 +257,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_tag;
   use FS::acct_snarf;
   use FS::part_pkg_discount;
+  use FS::svc_cert;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

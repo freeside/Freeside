@@ -1,0 +1,34 @@
+<% include('/elements/header-popup.html', 'Generate private key' ) %>
+
+<FORM NAME="GenerateKeyForm" ACTION="<% $p %>process/svc_cert.cgi" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
+
+<INPUT TYPE="hidden" NAME="privatekey" VALUE="_generate">
+
+Key size: <SELECT NAME="keysize">
+  <OPTION VALUE="512">512</OPTION>
+  <OPTION VALUE="1024">1024</OPTION>
+  <OPTION VALUE="2048" SELECTED>2048</OPTION>
+  <OPTION VALUE="4096">4096</OPTION>
+</SELECT>
+
+<BR><BR>
+<INPUT TYPE="submit" VALUE="Generate">
+
+</FORM>
+</BODY>
+</HTML>
+<%init>
+
+$cgi->param('svcnum') =~ /^(\d*)$/ or die 'illegal svcnum';
+my $svcnum = $1;
+$cgi->param('pkgnum') =~ /^(\d*)$/ or die 'illegal pkgnum';
+my $pkgnum = $1;
+$cgi->param('svcpart') =~ /^(\d*)$/ or die 'illegal svcpart';
+my $svcpart = $1;
+
+</%init>
+
