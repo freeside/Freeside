@@ -2024,6 +2024,7 @@ sub tables_hashref {
     'part_export' => {
       'columns' => [
         'exportnum', 'serial', '', '', '', '', 
+        'exportname', 'varchar', 'NULL', $char_d, '', '',
         'machine', 'varchar', '', $char_d, '', '', 
         'exporttype', 'varchar', '', $char_d, '', '', 
         'nodomain',     'char', 'NULL', 1, '', '', 

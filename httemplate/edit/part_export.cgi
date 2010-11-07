@@ -7,6 +7,12 @@
 
 <% ntable("#cccccc",2) %>
 <TR>
+  <TD ALIGN="right">Export name</TD>
+  <TD>
+    <INPUT TYPE="text" NAME="exportname" VALUE="<% $part_export->exportname %>">
+  </TD>
+</TR>
+<TR>
   <TD ALIGN="right">Export host</TD>
   <TD>
     <INPUT TYPE="text" NAME="machine" VALUE="<% $part_export->machine %>">
@@ -53,7 +59,7 @@ my $widget = new HTML::Widgets::SelectLayers(
   'options'        => \%layers,
   'form_name'      => 'dummy',
   'form_action'    => 'process/part_export.cgi',
-  'form_text'      => [qw( exportnum machine )],
+  'form_text'      => [qw( exportnum exportname machine )],
 #  'form_checkbox'  => [qw()],
   'html_between'    => "</TD></TR></TABLE>\n",
   'layer_callback'  => sub {

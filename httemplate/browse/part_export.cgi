@@ -35,7 +35,11 @@ function part_export_areyousure(href) {
 
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>"><% $part_export->exportnum %></A></TD>
 
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $part_export->exporttype %> to <% $part_export->machine %> (<A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>">edit</A>&nbsp;|&nbsp;<A HREF="javascript:part_export_areyousure('<% $p %>misc/delete-part_export.cgi?<% $part_export->exportnum %>')">delete</A>)</TD>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+% if( $part_export->exportname ) {
+  <B><% $part_export->exportname %>:</B><BR>
+% }
+<% $part_export->exporttype %> to <% $part_export->machine %> (<A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>">edit</A>&nbsp;|&nbsp;<A HREF="javascript:part_export_areyousure('<% $p %>misc/delete-part_export.cgi?<% $part_export->exportnum %>')">delete</A>)</TD>
 
       <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
         <% itable() %>

@@ -50,6 +50,8 @@ fields are currently supported:
 
 =item exportnum - primary key
 
+=item exportname - Descriptive name
+
 =item machine - Machine name 
 
 =item exporttype - Export type
@@ -159,6 +161,7 @@ sub check {
   my $self = shift;
   my $error = 
     $self->ut_numbern('exportnum')
+    || $self->ut_textn('exportname')
     || $self->ut_domain('machine')
     || $self->ut_alpha('exporttype')
   ;

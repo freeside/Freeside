@@ -114,8 +114,12 @@ that field.
 %              && qsearchs( 'export_svc', {
 %                                   exportnum => $part_export->exportnum,
 %                                   svcpart   => $clone || $part_svc->svcpart });
-%        $html .= '>'. $part_export->exportnum. ': '. $part_export->exporttype.
-%                 ' to '. $part_export->machine. '</TD>';
+%        $html .= '>'.$part_export->exportnum. ': ';
+%        $html .= $part_export->exportname . '<DIV ALIGN="right"><FONT SIZE=-1>'
+%          if ( $part_export->exportname );
+%        $html .= $part_export->exporttype. ' to '. $part_export->machine;
+%        $html .= '</FONT></DIV>' if ( $part_export->exportname );
+%        $html .= '</TD>';
 %        $count++;
 %        $html .= '</TR><TR>' unless $count % $columns;
 %      }
