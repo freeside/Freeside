@@ -17,9 +17,7 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(2). "svc_cert.cgi?". $cgi->query_string ) %>
 %} else {
-%#change link when we make a non-generic view
-%#<% $cgi->redirect(popurl(3). "view/svc_cert.cgi?$svcnum") %>
-<% $cgi->redirect(popurl(3). "view/svc_Common.html?svcdb=svc_cert;svcnum=$svcnum") %>
+<% $cgi->redirect(popurl(3). "view/svc_cert.cgi?$svcnum") %>
 % }
 <%init>
 
@@ -39,7 +37,7 @@ my $old = '';
 if ( $svcnum ) {
   $old = qsearchs('svc_cert', { 'svcnum' => $svcnum } ) #agent virt;
     or die 'unknown svcnum';
-  $new->$_( $old->$_ ) for grep $old->$_, qw( privatekey );
+  $new->$_( $old->$_ ) for grep $old->$_, qw( privatekey csr certificate cacert );
 }
 
 my $popup = 0;
@@ -58,7 +56,7 @@ if ( $cgi->param('privatekey') eq '_generate' ) { #generate
 
   $new->privatekey( $cgi->param('privatekey') );
 
-} #elsif ( $cgi->param('privatekey') eq '_clear' ) { #import
+} #elsif ( $cgi->param('privatekey') eq '_clear' ) { #clear
 
 my $error = '';
 if ($cgi->param('svcnum')) {

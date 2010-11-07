@@ -12,92 +12,112 @@
 <TR>
   <TD ALIGN="right">Private key</TD>
   <TD BGCOLOR="#ffffff">
-%   if ( $svc_cert->privatekey && $svc_cert->check_privatekey ) {
-      <FONT COLOR="#33ff33">Verification OK</FONT>
-%     # remove key & cert link?  just unprovision?
-  </TD>
-</TR>
 
-% my $cust_main = $svc_cert->cust_svc->cust_pkg->cust_main;
+% if ( $svc_cert->privatekey && $svc_cert->check_privatekey ) {
 
-<TR>
-  <TD ALIGN="right">Organization</TD>
-  <TD><INPUT TYPE="text" NAME="organization" SIZE=40 MAXLENGTH=80 VALUE="<% $svc_cert->organization || $cust_main->company |h %>"></TD>
-</TR>
+    <FONT COLOR="#33ff33">Verification OK</FONT>
+%   # remove key & cert link?  just unprovision?
 
-<TR>
-  <TD ALIGN="right">Organization Unit</TD>
-  <TD><INPUT TYPE="text" NAME="organization_unit" SIZE=40 MAXLENGTH=80 VALUE="<% $svc_cert->organization_unit |h %>"></TD>
-</TR>
+    </TD></TR>
 
-<TR>
-  <TD ALIGN="right">City</TD>
-  <TD><% include('/elements/city.html',
-                   'city'    => $svc_cert->city    || $cust_main->city,
-                   'state'   => $svc_cert->state   || $cust_main->state,
-                   'country' => $svc_cert->country || $cust_main->country,
-                )
-      %>
-  </TD>
-</TR>
+%   if (0) { #( $svc_cert->csr_submitted ) { #XXX add field?  date? }
 
-<TR>
-  <TD ALIGN="right">State</TD>
-  <TD><% include('/elements/select-state.html',
-                   'city'    => $svc_cert->city    || $cust_main->city,
-                   'state'   => $svc_cert->state   || $cust_main->state,
-                   'country' => $svc_cert->country || $cust_main->country,
-                )
-      %>
-  </TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right">City</TD>
-  <TD><% include('/elements/select-country.html',
-                   'city'    => $svc_cert->city    || $cust_main->city,
-                   'state'   => $svc_cert->state   || $cust_main->state,
-                   'country' => $svc_cert->country || $cust_main->country,
-                )
-      %>
-  </TD>
-</TR>
+%     # just show the fields once the csr has been submitted
 
 %   } else {
-%     my $re = '';
-%     if ( $svc_cert->privatekey ) {
-        <FONT COLOR="#ff0000">Verification error</FONT>
-%       $re = 'Clear and Re-';
-%     }
-      <% include('/elements/popup_link.html', {
-          'action'         => "svc_cert/generate_privatekey.html$link_query",
-          'label'          => $re.'Generate',
-          'actionlabel'    => 'Generate private key',
-          #opt
-          'width'          => '350',
-          'height'         => '150'
-          #'color'          => '#ff0000',
-          #'closetext'      => 'Go Away',      # the value '' removes the link
-      })%>
 
-      or
+%     my $cust_main = $svc_cert->cust_svc->cust_pkg->cust_main;
 
-      <% include('/elements/popup_link.html', {
-          'action'         => "svc_cert/import_privatekey.html$link_query",
-          'label'          => $re.'Import',
-          'actionlabel'    => 'Import private key',
-          #opt
-          'width'          => '544',
-          'height'         => '368',
-          #'color'          => '#ff0000',
-          #'closetext'      => 'Go Away',      # the value '' removes the link
-      })%>
-%     if ( $svc_cert->privatekey ) {
-<PRE><% $svc_cert->privatekey |h %></PRE>
-%     }
+      <TR>
+        <TD ALIGN="right">Common name</TD>
+        <TD><INPUT TYPE="text" NAME="common_name" SIZE=40 MAXLENGTH=80 VALUE="<% $svc_cert->common_name |h %>"></TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">Organization</TD>
+        <TD><INPUT TYPE="text" NAME="organization" SIZE=40 MAXLENGTH=80 VALUE="<% $svc_cert->organization || $cust_main->company |h %>"></TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">Organization Unit</TD>
+        <TD><INPUT TYPE="text" NAME="organization_unit" SIZE=40 MAXLENGTH=80 VALUE="<% $svc_cert->organization_unit |h %>"></TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">City</TD>
+        <TD><% include('/elements/city.html',
+                         'city'    => $svc_cert->city    || $cust_main->city,
+                         'state'   => $svc_cert->state   || $cust_main->state,
+                         'country' => $svc_cert->country || $cust_main->country,
+                      )
+            %>
+        </TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">State</TD>
+        <TD><% include('/elements/select-state.html',
+                         'city'    => $svc_cert->city    || $cust_main->city,
+                         'state'   => $svc_cert->state   || $cust_main->state,
+                         'country' => $svc_cert->country || $cust_main->country,
+                      )
+            %>
+        </TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">Country</TD>
+        <TD><% include('/elements/select-country.html',
+                         'city'    => $svc_cert->city    || $cust_main->city,
+                         'state'   => $svc_cert->state   || $cust_main->state,
+                         'country' => $svc_cert->country || $cust_main->country,
+                      )
+            %>
+        </TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">Contact email</TD>
+        <TD><INPUT TYPE="text" NAME="cert_contact" SIZE=40 MAXLENGTH=80 VALUE="<% $svc_cert->cert_contact || ($cust_main->invoicing_list_emailonly)[0] |h %>"></TD>
+      </TR>
+
+%   }
+
+% } else {
+%   my $re = '';
+%   if ( $svc_cert->privatekey ) {
+      <FONT COLOR="#ff0000">Verification error</FONT>
+%     $re = 'Clear and Re-';
+%   }
+    <% include('/elements/popup_link.html', {
+        'action'         => "svc_cert/generate_privatekey.html$link_query",
+        'label'          => $re.'Generate',
+        'actionlabel'    => 'Generate private key',
+        #opt
+        'width'          => '350',
+        'height'         => '150'
+        #'color'          => '#ff0000',
+        #'closetext'      => 'Go Away',      # the value '' removes the link
+    })%>
+
+    or
+
+    <% include('/elements/popup_link.html', {
+        'action'         => "svc_cert/import_privatekey.html$link_query",
+        'label'          => $re.'Import',
+        'actionlabel'    => 'Import private key',
+        #opt
+        'width'          => '544',
+        'height'         => '368',
+        #'color'          => '#ff0000',
+        #'closetext'      => 'Go Away',      # the value '' removes the link
+    })%>
+%   if ( $svc_cert->privatekey ) {
+      <PRE><% $svc_cert->privatekey |h %></PRE>
+%   }
   </TD>
 </TR>
-%   }
+% }
 
 </TABLE>
 <BR>

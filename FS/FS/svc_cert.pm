@@ -79,9 +79,9 @@ state
 
 country
 
-=item contact
+=item cert_contact
 
-contact
+contact email
 
 
 =back
@@ -124,7 +124,7 @@ sub table_info {
       'city'              => { label=>'City', %dis, },
       'state'             => { label=>'State', %dis, },
       'country'           => { label=>'Country', %dis, },
-      'cert_contact'      => { label=>'Contact', %dis, },
+      'cert_contact'      => { label=>'Contact email', %dis, },
       
       #'another_field' => { 
       #                     'label'     => 'Description',
@@ -213,7 +213,7 @@ sub check {
     || $self->ut_textn('city')
     || $self->ut_textn('state')
     || $self->ut_textn('country') #XXX char(2) or NULL
-    || $self->ut_textn('contact')
+    || $self->ut_textn('cert_contact')
   ;
   return $error if $error;
 
@@ -271,14 +271,23 @@ sub subj {
            );
 }
 
-sub generate_csr {
+sub _file {
   my $self = shift;
-  my $in = $self->privatekey;
+  my $field = shift;
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc; #XXX actual cache dir
   my $fh = new File::Temp(
-    TEMPLATE => 'certkey.'. '.XXXXXXXX',
+    TEMPLATE => 'cert.'. '.XXXXXXXX',
     DIR      => $dir,
   ) or die "can't open temp file: $!\n";
+  print $fh $self->$field;
+  close $fh;
+  $fh;
+}
+
+sub generate_csr {
+  my $self = shift;
+
+  my $fh = $self->_file('privatekey');
 
   run( [qw( openssl req -new -key ), $fh->filename, '-subj', $self->subj ],
        '>pipe'=>\*OUT, '2>'=>'/dev/null'
@@ -287,6 +296,59 @@ sub generate_csr {
   #XXX error checking
   my $csr = join('', <OUT>);
   $self->csr($csr);
+}
+
+#sub check_csr {
+#  my $self = shift;
+#}
+
+sub generate_selfsigned {
+  my $self = shift;
+
+  my $days = 730;
+
+  my $key = $self->_file('privatekey');
+  my $csr = $self->_file('csr');
+
+  run( [qw( openssl req -x509 -nodes ),
+              '-days' => $days,
+              '-key'  => $key->filename,
+              '-in'   => $csr->filename,
+       ],
+       '>pipe'=>\*OUT, '2>'=>'/dev/null'
+     ) 
+    or die "error running openssl: $!";
+  #XXX error checking
+  my $csr = join('', <OUT>);
+  $self->certificate($csr);
+}
+
+#openssl x509 -in cert -noout -subject -issuer -dates -serial
+#subject= /CN=cn.example.com/ST=AK/O=Tofuy/OU=Soybean dept./C=US/L=Tofutown
+#issuer= /CN=cn.example.com/ST=AK/O=Tofuy/OU=Soybean dept./C=US/L=Tofutown
+#notBefore=Nov  7 05:07:42 2010 GMT
+#notAfter=Nov  6 05:07:42 2012 GMT
+#serial=B1DBF1A799EF207B
+
+sub check_certificate {
+  my $self = shift;
+
+  my $in = $self->certificate;
+  run( [qw( openssl x509 -noout -subject -issuer -dates -serial )],
+       '<'=>\$in,
+       '>pipe'=>\*OUT, '2>'=>'/dev/null'
+     ) 
+    or die "error running openssl: $!";
+  #XXX error checking
+
+  my %hash = ();
+  while (<OUT>) {
+    warn $_;
+    /^\s*(\w+)=\s*(.*)\s*$/ or next;
+    $hash{$1} = $2;
+  }
+
+  %hash;
 }
 
 =back

@@ -1,0 +1,25 @@
+% if ($error) {
+% errorpage($error);
+%} else {
+<% $cgi->redirect($p."view/svc_cert.cgi?$svcnum") %>
+%}
+<%init>
+
+$cgi->param('svcnum') =~ /^(\d+)$/ or die 'illegal svcnum';
+my $svcnum = $1;
+
+my $svc_cert = qsearchs('svc_cert', { 'svcnum' => $svcnum } )
+  or die 'unknown svcnum';
+
+my $error = '';
+if ( $cgi->param('action') eq 'generate_csr' ) {
+  $svc_cert->generate_csr;
+  $error = $svc_cert->replace;
+} elsif ( $cgi->param('action') eq 'generate_selfsigned' ) {
+  $svc_cert->generate_selfsigned;
+  $error = $svc_cert->replace;
+} else {
+  die 'unknown action';
+}
+
+</%init>
