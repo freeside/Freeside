@@ -1,10 +1,13 @@
 package FS::phone_avail;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $DEBUG $me );
 use FS::Record qw( qsearch qsearchs );
 
 @ISA = qw(FS::Record);
+
+$me = '[FS::phone_avail]';
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -167,6 +170,23 @@ sub process_batch_import {
             };
 
   FS::Record::process_batch_import( $job, $opt, @_ );
+
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {
+  my ($class, %opts) = @_;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  my $sth = dbh->prepare(
+    'UPDATE phone_avail SET svcnum = NULL
+       WHERE svcnum IS NOT NULL
+         AND 0 = ( SELECT COUNT(*) FROM svc_phone
+                     WHERE phone_avail.svcnum = svc_phone.svcnum )'
+  ) or die dbh->errstr;
+
+  $sth->execute or die $sth->errstr;
 
 }
 

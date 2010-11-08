@@ -13,6 +13,7 @@ use FS::phone_device;
 use FS::svc_pbx;
 use FS::svc_domain;
 use FS::cust_location;
+use FS::phone_avail;
 
 $me = '[' . __PACKAGE__ . ']';
 $DEBUG = 0;
@@ -256,6 +257,16 @@ sub delete {
 
   foreach my $phone_device ( $self->phone_device ) {
     my $error = $phone_device->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my @phone_avail = qsearch('phone_avail', { 'svcnum' => $self->svcnum } );
+  foreach my $phone_avail ( @phone_avail ) {
+    $phone_avail->svcnum('');
+    my $error = $phone_avail->replace;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
