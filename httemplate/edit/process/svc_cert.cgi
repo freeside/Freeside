@@ -66,6 +66,14 @@ if ( $cgi->param('privatekey') eq '_generate' ) { #generate
   $new->certificate( $cgi->param('certificate') );
   $new->$_( $old->$_ ) for grep $old->$_, qw( recnum common_name organization organization_unit city state country cert_contact );
 
+} elsif ( $cgi->param('cacert') ) {
+
+  $popup = 'view';
+  $title = 'Certificate authority chain imported';
+
+  $new->cacert( $cgi->param('cacert') );
+  $new->$_( $old->$_ ) for grep $old->$_, qw( recnum common_name organization organization_unit city state country cert_contact );
+
 }
 
 my $error = '';

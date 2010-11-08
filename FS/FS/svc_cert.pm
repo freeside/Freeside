@@ -335,10 +335,13 @@ sub generate_selfsigned {
 #notAfter=Nov  6 05:07:42 2012 GMT
 #serial=B1DBF1A799EF207B
 
-sub check_certificate {
-  my $self = shift;
+sub check_certificate { shift->check_x509('certificate'); }
+sub check_cacert      { shift->check_x509('cacert');      }
 
-  my $in = $self->certificate;
+sub check_x509 {
+  my( $self, $field ) = ( shift, shift );
+
+  my $in = $self->$field;
   run( [qw( openssl x509 -noout -subject -issuer -dates -serial )],
        '<'=>\$in,
        '>pipe'=>\*OUT, '2>'=>'/dev/null'
