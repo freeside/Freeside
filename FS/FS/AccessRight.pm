@@ -355,6 +355,7 @@ sub default_superuser_rights {
     'Configuration download',
     'View customers of all agents',
     'View/link unlinked services',
+    'Edit usage',
   );
 
   no warnings 'uninitialized';
