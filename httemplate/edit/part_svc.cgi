@@ -101,12 +101,14 @@ that field.
 %
 %      my $columns = 3;
 %      my $count = 0;
+%      my $communigate = 0;
 %      my @part_export =
 %        map { qsearch( 'part_export', {exporttype => $_ } ) }
 %          keys %{FS::part_export::export_info($layer)};
 %      $html .= '<BR><BR>'. table(). 
 %               "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
 %      foreach my $part_export ( @part_export ) {
+%        $communigate++ if $part_export->exporttype =~ /^communigate/;
 %        $html .= '<TD><INPUT TYPE="checkbox"'.
 %                 ' NAME="exportnum'. $part_export->exportnum. '"  VALUE="1" ';
 %        $html .= 'CHECKED'
@@ -137,16 +139,17 @@ that field.
 %      my $bgcolor;
 %
 %      #yucky kludge
-%      my @fields = defined( dbdef->table($layer) )
-%                      ? grep {
-%                               $_ ne 'svcnum' &&
-%                               ( !FS::part_svc->svc_table_fields($layer)
-%                                     ->{$_}->{disable_part_svc_column}   ||
-%                                 $part_svc->part_svc_column($_)->columnflag
-%                               )
-%                             }
-%                             fields($layer)
-%                      : ();
+%      my @fields = ();
+%      if ( defined( dbdef->table($layer) ) ) {
+%        @fields = grep {
+%            $_ ne 'svcnum'
+%            && ( $communigate || !$communigate_fields{$layer}->{$_} )
+%            && ( !FS::part_svc->svc_table_fields($layer)
+%                   ->{$_}->{disable_part_svc_column}
+%                 || $part_svc->part_svc_column($_)->columnflag
+%               )
+%        } fields($layer);
+%      }
 %      push @fields, 'usergroup' if $layer eq 'svc_acct'; #kludge
 %      $part_svc->svcpart($clone) if $clone; #haha, undone below
 %
@@ -425,7 +428,21 @@ my $action = $part_svc->svcpart ? 'Edit' : 'Add';
 my $hashref = $part_svc->hashref;
 #   my $p_svcdb = $part_svc->svcdb || 'svc_acct';
 
-
+my %communigate_fields = (
+  'svc_acct'        => { map { $_=>1 }
+                           qw( file_quota file_maxnum file_maxsize
+                               password_selfchange password_recover
+                             ),
+                           grep /^cgp_/, fields('svc_acct')
+                       },
+  'svc_domain'      => { map { $_=>1 }
+                           qw( max_accounts trailer parent_svcnum ),
+                           grep /^(cgp|acct_def)_/, fields('svc_domain')
+                       },
+  #'svc_forward'     => { map { $_=>1 } qw( ) },
+  #'svc_mailinglist' => { map { $_=>1 } qw( ) },
+  #'svc_cert'        => { map { $_=>1 } qw( ) },
+);
 
 </%init>
 
