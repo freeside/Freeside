@@ -173,6 +173,8 @@ sub _export_insert_svc_domain {
     if $svc_domain->parent_svcnum;
   $settings{'TrailerText'} = $svc_domain->trailer
     if $svc_domain->trailer;
+  $settings{'CertificateType'} = $svc_domain->cgp_certificatetype
+    if $svc_domain->cgp_certificatetype;
 
   my @options = ( $create, $svc_domain->domain, \%settings );
 
@@ -426,6 +428,8 @@ sub _export_replace_svc_domain {
   $settings{'AdminDomainName'} =
     $new->parent_svcnum ? $new->parent_svc_x->domain : ''
       if $old->parent_svcnum != $new->parent_svcnum;
+  $settings{'CertificateType'} = $new->cgp_certificatetype
+    if $old->cgp_certificatetype ne $new->cgp_certificatetype;
 
   if ( keys %settings ) {
     my $error = $self->communigate_pro_queue( $new->svcnum,

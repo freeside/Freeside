@@ -56,6 +56,24 @@
 % }
 
 % if ( $communigate
+%      && $part_svc->part_svc_column('cgp_certificatetype')->columnflag ne 'F' )
+% {
+
+  <% include('/elements/tr-select.html',
+               'label'      => 'PKI services',
+               'field'      => 'cgp_certificatetype',
+               'options'    => $svc_domain->cgp_certificatetype_values,
+               'labels'     => {
+                                 '' => 'default (Test)',
+                               },
+               'curr_value' => $svc_domain->cgp_certificatetype,
+            )
+  %>
+% } else {
+    <INPUT TYPE="hidden" NAME="cgp_certificatetype" VALUE="<% $svc_domain->cgp_certificatetype() |h %>">
+% }
+
+% if ( $communigate
 %      && $part_svc->part_svc_column('trailer')->columnflag ne 'F' )
 % {
 

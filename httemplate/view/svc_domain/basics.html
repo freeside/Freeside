@@ -86,6 +86,13 @@ Service #<B><% $svcnum %></B>
   </TR>
 % }
 
+% if ( $svc_domain->cgp_certificatetype ) {
+  <TR>
+    <TD ALIGN="right">PKI services</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_certificatetype %></TD>
+  </TR>
+% }
+
 % if ( $svc_domain->trailer ) {
   <TR>
     <TD ALIGN="right">Mail trailer</TD>

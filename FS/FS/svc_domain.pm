@@ -133,6 +133,13 @@ sub table_info {
                              disable_inventory => 1,
                              disable_select    => 1,
                            },
+      'cgp_certificatetype' => { 
+                             label => 'Communigate PKI services',
+                             type  => 'select',
+                             select_list => __PACKAGE__->cgp_certificatetype_values,
+                             disable_inventory => 1,
+                             disable_select    => 1,
+                           },
 
       'acct_def_cgp_accessmodes' => { 
                              label => 'Acct. default Communigate enabled services',

@@ -1775,6 +1775,7 @@ sub tables_hashref {
         'trailer',         'text', 'NULL',       '', '', '',
         'cgp_aliases',  'varchar', 'NULL',      255, '', '',
         'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
+        'cgp_certificatetype','varchar','NULL', $char_d, '', '',
         #settings
         'acct_def_password_selfchange',   'char', 'NULL',       1,  '', '', 
         'acct_def_password_recover',      'char', 'NULL',       1, 'Y', '', 

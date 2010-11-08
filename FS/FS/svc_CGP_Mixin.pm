@@ -131,6 +131,24 @@ sub cgp_emptytrash_values {
   ];
 }
 
+=item cgp_certificatetype_values
+
+Returns an arrayref of possible CertificateType values.
+
+=cut
+
+#http://www.communigate.com/cgatepro/PKI.html
+
+sub cgp_certificatetype_values {
+
+  [ '', #<option value="-1">default(Test)
+    'Enabled',
+    'Disabled',
+    'Test',
+  ];
+
+}
+
 =back
 
 =head1 BUGS
