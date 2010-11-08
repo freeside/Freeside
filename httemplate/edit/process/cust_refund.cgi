@@ -31,10 +31,10 @@ my $link    = $cgi->param('popup') ? 'popup' : '';
 my $payby = $cgi->param('payby');
 
 my @rights = ();
-push @rights, 'Post refund'                if $payby /^(BILL|CASH)$/;
+push @rights, 'Post refund'                if $payby =~ /^(BILL|CASH)$/;
 push @rights, 'Post check refund'          if $payby eq 'BILL';
 push @rights, 'Post cash refund '          if $payby eq 'CASH';
-push @rights, 'Refund payment'             if $payby /^(CARD|CHEK)$/;
+push @rights, 'Refund payment'             if $payby =~ /^(CARD|CHEK)$/;
 push @rights, 'Refund credit card payment' if $payby eq 'CARD';
 push @rights, 'Refund Echeck payment'      if $payby eq 'CHEK';
 
