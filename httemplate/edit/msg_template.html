@@ -101,6 +101,25 @@ my %substitutions = (
     '$password'       => 'Password',
     '$domain'         => 'Domain name',
   ],
+  'svc_domain' => [
+    '$svcnum'         => 'Service#',
+    '$domain'         => 'Domain name',
+    '$registrar'      => 'Registrar name',
+    '$catchall'       => 'Catchall email',
+  ],
+  'svc_phone' => [
+    '$svcnum'         => 'Service#',
+    '$phonenum'       => 'Phone number',
+    '$countrycode'    => 'Country code',
+    '$domain'         => 'Domain name'
+  ],
+  'svc_broadband' => [
+    '$svcnum'         => 'Service#',
+    '$ip_addr'        => 'IP address',
+    '$mac_addr'       => 'MAC address',
+    '$speed_up'       => 'Upstream speed',
+    '$speed_down'     => 'Downstream speed',
+  ],
   'cust_pay'  => [
     '$paynum'         => 'Payment#',
     '$paid'           => 'Amount',
@@ -124,6 +143,9 @@ tie my %sections, 'Tie::IxHash', (
 'cust_bill' => 'Invoice fields',
 'cust_pay'  => 'Payment fields',
 'svc_acct'  => 'Login service fields',
+'svc_domain'=> 'Domain service fields',
+'svc_phone' => 'Phone service fields',
+'svc_broadband' => 'Broadband service fields',
 );
 
 my $widget = new HTML::Widgets::SelectLayers(

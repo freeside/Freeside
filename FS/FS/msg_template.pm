@@ -166,8 +166,9 @@ Customer object (required).
 =item object
 
 Additional context object (currently, can be a cust_main, cust_pkg, 
-cust_bill, svc_acct, cust_pay, or cust_pay_pending).  If the object 
-is a svc_acct, its cust_pkg will be fetched and used for substitution.
+cust_bill, cust_pay, cust_pay_pending, or svc_(acct, phone, broadband, 
+domain) ).  If the object is a svc_*, its cust_pkg will be fetched and 
+used for substitution.
 
 As a special case, this may be an arrayref of two objects.  Both 
 objects will be available for substitution, with their field names 
@@ -281,9 +282,10 @@ sub prepare {
   ###
 
   my @to = ($opt{'to'}) || $cust_main->invoicing_list_emailonly;
-  warn "prepared msg_template with no email destination (custnum ".
-    $cust_main->custnum.")\n"
-    if !@to;
+  #warn "prepared msg_template with no email destination (custnum ".
+  #  $cust_main->custnum.")\n"
+  #  if !@to;
+  #  warning is not appropriate now that we use these for tickets
 
   my $conf = new FS::Conf;
 
@@ -368,7 +370,7 @@ sub substitutions {
     ],
     # next_bill_date
     'cust_pkg'  => [qw( 
-      pkgnum pkg pkg_label pkg_label_long
+      pkgnum pkg_label pkg_label_long
       location_label
       status statuscolor
     
@@ -376,6 +378,7 @@ sub substitutions {
       adjourn susp expire 
       labels_short
       ),
+      [ pkg               => sub { shift->part_pkg->pkg } ],
       [ cancel            => sub { shift->getfield('cancel') } ], # grrr...
       [ start_ymd         => sub { $ymd->(shift->getfield('start_date')) } ],
       [ setup_ymd         => sub { $ymd->(shift->getfield('setup')) } ],
@@ -399,6 +402,37 @@ sub substitutions {
       domain
       ),
       [ password          => sub { shift->getfield('_password') } ],
+    ],
+    'svc_domain' => [qw(
+      svcnum
+      domain
+      ),
+      [ registrar         => sub {
+          my $registrar = qsearchs('registrar', 
+            { registrarnum => shift->registrarnum} );
+          $registrar ? $registrar->registrarname : ''
+        }
+      ],
+      [ catchall          => sub { 
+          my $svc_acct = qsearchs('svc_acct', { svcnum => shift->catchall });
+          $svc_acct ? $svc_acct->email : ''
+        }
+      ],
+    ],
+    'svc_phone' => [qw(
+      svcnum
+      phonenum
+      countrycode
+      domain
+      )
+    ],
+    'svc_broadband' => [qw(
+      svcnum
+      speed_up
+      speed_down
+      ip_addr
+      mac_addr
+      )
     ],
     # for payment receipts
     'cust_pay' => [qw(

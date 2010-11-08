@@ -122,19 +122,24 @@ tie my %options, 'Tie::IxHash', (
 );
 
 %info = (
-  'svc'      => [qw( svc_acct )], #others?
+  'svc'      => [qw( svc_acct svc_broadband svc_phone svc_domain )],
   'desc'     =>
-    'Create an RT ticket',
+  'Create an RT ticket',
   'options'  => \%options,
   'nodomain' => '',
-  'notes'    => <<'END'
-Create a ticket in RT.  The subject and body of the ticket 
-will be generated from a message template.
-END
+  'notes'    => ' 
+  Create a ticket in RT.  The subject and body of the ticket 
+  will be generated from a message template.'
 );
 
 sub _export_ticket {
   my( $self, $action, $svc ) = (shift, shift, shift);
+  my $conf = new FS::Conf;
+  die "rt_ticket export - no ticket system configured"
+    unless $conf->config('ticket_system');
+  
+  FS::TicketSystem->init();
+
   my $msgnum = $self->option($action.'_template');
   return if !$msgnum;
 
