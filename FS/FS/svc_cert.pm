@@ -303,9 +303,30 @@ sub generate_csr {
   $self->csr($csr);
 }
 
-#sub check_csr {
-#  my $self = shift;
-#}
+sub check_csr {
+  my $self = shift;
+
+  my $in = $self->csr;
+
+  run( [qw( openssl req -subject -noout ), ],
+       '<'=>\$in,
+       '>pipe'=>\*OUT, '2>'=>'/dev/null'
+     ) 
+    ;#or die "error running openssl: $!";
+
+   #subject=/CN=cn.example.com/ST=AK/O=Tofuy/OU=Soybean dept./C=US/L=Tofutown
+   my $line = <OUT>;
+   $line =~ /^subject=\/(.*)$/ or return ();
+   my $subj = $1;
+
+   map { if ( /^\s*(\w+)=\s*(.*)\s*$/ ) {
+           ($1=>$2);
+         } else {
+           ();
+         }
+       }
+       split('/', $subj);
+}
 
 sub generate_selfsigned {
   my $self = shift;
@@ -360,7 +381,7 @@ sub check_x509 {
     $hash{$f} = { map { if ( /^\s*(\w+)=\s*(.*)\s*$/ ) {
                           ($1=>$2);
                         } else {
-                          (''=>'');
+                          ();
                         }
                       }
                       split('/', $hash{$f})

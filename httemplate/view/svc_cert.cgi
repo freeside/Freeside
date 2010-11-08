@@ -33,9 +33,31 @@ my @fields = (
   { 'field'=>'csr',
     'value'=> sub {
       my $svc_cert = shift;
-      if ( $svc_cert->csr ) { #display the subject etc?
-        '<PRE><FONT STYLE="font-family:monospace">'. "\n". $svc_cert->csr.
-        '</FONT></PRE>';
+      if ( $svc_cert->csr ) {
+
+        my $out = '';
+
+        my %hash = $svc_cert->check_csr;
+
+        $out .= include('/elements/table-grid.html'). #'<TABLE>'.
+                '<TR><TH COLSPAN=2 BGCOLOR="#cccccc" ALIGN="center">'.
+                'Requested by</TH></TR>';
+
+        my $col = $svc_cert->subj_col;
+
+        foreach my $key (keys %hash) {
+          $out .= "<TR><TD>". $labels{$col->{$key}}.  "</TD>".
+                      "<TD>". $hash{$key}. "</TD></TR>";
+        }
+
+        $out .= '</TABLE>';
+
+        $out .= 
+          '<PRE><FONT STYLE="font-family:monospace">'. $svc_cert->csr.
+          '</FONT></PRE>';
+
+        $out;
+
       } elsif ( $svc_cert->common_name ) {
         my $svcnum = $svc_cert->svcnum;
         qq(<A HREF="${p}misc/svc_cert-generate.html?action=generate_csr;svcnum=$svcnum">Generate</A>);
