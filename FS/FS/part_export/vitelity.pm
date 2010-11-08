@@ -12,6 +12,8 @@ tie my %options, 'Tie::IxHash',
   'login'         => { label=>'Vitelity API login' },
   'pass'          => { label=>'Vitelity API password' },
   'dry_run'       => { label=>"Test mode - don't actually provision" },
+  'routesip'      => { label=>'routesip (optional sub-account)' },
+  'type'	  => { label=>'type (optional DID type to order)' },
 ;
 
 %info = (
@@ -22,6 +24,9 @@ tie my %options, 'Tie::IxHash',
 Requires installation of
 <a href="http://search.cpan.org/dist/Net-Vitelity">Net::Vitelity</a>
 from CPAN.
+<br><br>
+routesip - optional Vitelity sub-account to which newly ordered DIDs will be routed
+<br>type - optional DID type (perminute, unlimited, or your-pri)
 END
 );
 
@@ -31,28 +36,30 @@ sub get_dids {
   my $self = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
+# currently one of three cases: areacode+exchange, areacode, state
+# name == ratecenter
+
   my %search = ();
-  #  'orderby' => 'npa', #but it doesn't seem to work :/
 
   my $method = '';
 
-  if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers
+  if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers in format NPA-NXX-XXXX
 
     return [
-      map { join('-', $_->npx, $_->nxx, $_->station ) }
+      map { join('-', $_->npa, $_->nxx, $_->station ) }
           qsearch({
             'table'    => 'phone_avail',
             'hashref'  => { 'exportnum'   => $self->exportnum,
-                            'countrycode' => '1',
+                            'countrycode' => '1', # vitelity is US/CA only now
                             'state'       => $opt{'state'},
                             'npa'         => $opt{'areacode'},
                             'nxx'         => $opt{'exchange'},
                           },
-            'order_by' => 'ORDER BY name', #?
+            'order_by' => 'ORDER BY station',
           })
     ];
 
-  } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
+  } elsif ( $opt{'areacode'} ) { #return exchanges in format NPA-NXX- literal 'XXXX'
 
     return [
       map { $_->name. ' ('. $_->npa. '-'. $_->nxx. '-XXXX)' } 
@@ -60,11 +67,11 @@ sub get_dids {
             'select'   => 'DISTINCT ON ( name, npa, nxx ) *',
             'table'    => 'phone_avail',
             'hashref'  => { 'exportnum'   => $self->exportnum,
-                            'countrycode' => '1',
+                            'countrycode' => '1', # vitelity is US/CA only now
                             'state'       => $opt{'state'},
                             'npa'         => $opt{'areacode'},
                           },
-            'order_by' => 'ORDER BY name', #?
+            'order_by' => 'ORDER BY nxx',
           })
     ];
 
@@ -76,7 +83,7 @@ sub get_dids {
       'select'   => 'DISTINCT npa',
       'table'    => 'phone_avail',
       'hashref'  => { 'exportnum'   => $self->exportnum,
-                      'countrycode' => '1', #don't hardcode me when gp goes intl
+                      'countrycode' => '1', # vitelity is US/CA only now
                       'state'       => $opt{'state'},
                     },
       'order_by' => 'ORDER BY npa',
@@ -89,6 +96,7 @@ sub get_dids {
     my @ratecenters = $self->vitelity_command( 'listavailratecenters',
                                                  'state' => $opt{'state'}, 
                                              );
+    # XXX: Options: type=unlimited OR type=pri
 
     if ( $ratecenters[0] eq 'unavailable' ) {
       return [];
@@ -116,6 +124,7 @@ sub get_dids {
                                             'state'      => $opt{'state'},
                                             'ratecenter' => $ratecenter,
                                         );
+    # XXX: Options: type=unlimited OR type=pri
 
       if ( $dids[0] eq 'unavailable' ) {
         next;
@@ -130,7 +139,7 @@ sub get_dids {
 
         my $phone_avail = new FS::phone_avail {
           'exportnum'   => $self->exportnum,
-          'countrycode' => '1', #don't hardcode me when vitelity goes int'l
+          'countrycode' => '1', # vitelity is US/CA only now
           'state'       => $opt{'state'},
           'npa'         => $npa,
           'nxx'         => $nxx,
@@ -183,12 +192,13 @@ sub _export_insert {
 
   #we want to provision and catch errors now, not queue
 
-  my $result = $self->vitelity_command('getlocaldid',
-    'did'           => $svc_phone->phonenum,
-#XXX
-#Options: type=perminute OR type=unlimited OR type=your-pri OR
-#               routesip=route_to_this_subaccount
-  );
+  %vparams = ( 'did' => $svc_phone->phonenum );
+  $vparams{'routesip'} = $self->option('routesip') 
+    if defined $self->option('routesip');
+  $vparams{'type'} = $self->option('type') 
+    if defined $self->option('type');
+
+  my $result = $self->vitelity_command('getlocaldid',%vparams);
 
   if ( $result ne 'success' ) {
     return "Error running Vitelity getlocaldid: $result";
