@@ -1,0 +1,92 @@
+<% include('/elements/header.html', 'Phone number (DID) Availability Report' ) %>
+
+<FORM ACTION="phone_avail.html" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+
+    <% include( '/elements/tr-input-text.html',
+		    'id' => 'countrycode',
+		    'field' => 'countrycode',
+		    'label' => 'Country Code',
+		    'maxlength' => 3,
+		    'size' => 3,
+	      )
+    %>
+    
+    <% include( '/elements/tr-input-text.html',
+		    'id' => 'state',
+		    'field' => 'state',
+		    'label' => 'State',
+		    'maxlength' => 2,
+		    'size' => 2,
+	      )
+    %>
+    
+    <% include( '/elements/tr-input-text.html',
+		    'id' => 'npa',
+		    'field' => 'npa',
+		    'label' => 'NPA',
+		    'maxlength' => 3,
+		    'size' => 3,
+	      )
+    %>
+    
+    <% include( '/elements/tr-input-text.html',
+		    'id' => 'nxx',
+		    'field' => 'nxx',
+		    'label' => 'NXX',
+		    'maxlength' => 3,
+		    'size' => 3,
+	      )
+    %>
+    
+    <% include( '/elements/tr-input-text.html',
+		    'id' => 'ratecenter',
+		    'field' => 'ratecenter',
+		    'label' => 'Rate Center',
+		    'size' => 80,
+	      )
+    %>
+
+    
+    <% include( '/elements/tr-input-text.html',
+		    'id' => 'availbatch',
+		    'field' => 'availbatch',
+		    'label' => 'Batch Name',
+		    'size' => 80,
+	      )
+    %>
+
+    <TR>
+	<TD ALIGN="RIGHT">Status</TD>
+	<TD>
+	    <INPUT TYPE="RADIO" NAME="avail_status" value="BOTH" CHECKED>Available &amp; Unavailable
+	    Numbers
+	    <INPUT TYPE="RADIO" NAME="avail_status" value="AVAIL">Available Numbers Only
+	    <INPUT TYPE="RADIO" NAME="avail_status" value="UNAVAIL">Unavailable Numbers Only
+	</TD>
+    </TR>
+
+
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless ( $FS::CurrentUser::CurrentUser->access_right('List customers') &&
+           $FS::CurrentUser::CurrentUser->access_right('List packages')
+         );
+
+my $conf = new FS::Conf;
+
+</%init>
