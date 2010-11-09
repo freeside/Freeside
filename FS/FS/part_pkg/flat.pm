@@ -198,7 +198,7 @@ sub calc_recur {
   my $charge = $self->base_recur($cust_pkg);
   if ( $self->option('sync_bill_date',1) ) {
     my $next_bill = $cust_pkg->cust_main->next_bill_date;
-    if ( defined($next_bill) and $next_bill != $$sdate ) {
+    if ( defined($next_bill) ) {
       my $cutoff_day = (localtime($next_bill))[3];
       $charge = $self->calc_prorate(@_, $cutoff_day);
     }

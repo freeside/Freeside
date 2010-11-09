@@ -33,8 +33,8 @@ sub calc_recur {
 =item calc_prorate CUST_PKG
 
 Takes all the arguments of calc_recur, followed by a day of the month 
-to prorate to.  Calculates a prorated charge from the $sdate to that day, 
-and sets the $sdate and $param->{months} accordingly.
+to prorate to (which must be <= 28).  Calculates a prorated charge from 
+the $sdate to that day, and sets the $sdate and $param->{months} accordingly.
 
 Options:
 - recur_fee: The charge to use for a complete billing period.
@@ -60,6 +60,17 @@ sub calc_prorate {
     }
     my $mend;
     my $mstart;
+    # if cutoff day > 28, force it to the 1st of next month
+    if ( $cutoff_day > 28 ) {
+      $cutoff_day = 1;
+      # and if we are currently after the 28th, roll the current day 
+      # forward to that day
+      if ( $mday > 28 ) {
+        $mday = 1;
+        #set $mnow = $mend so the amount billed will be zero
+        $mnow = timelocal(0,0,0,1,$mon == 11 ? 0 : $mon + 1,$year+($mon==11));
+      }
+    }
     if ( $mday >= $cutoff_day ) {
       $mend = 
         timelocal(0,0,0,$cutoff_day,$mon == 11 ? 0 : $mon + 1,$year+($mon==11));
