@@ -2,7 +2,7 @@ package FS::phone_avail;
 
 use strict;
 use vars qw( @ISA $DEBUG $me );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
 
 @ISA = qw(FS::Record);
