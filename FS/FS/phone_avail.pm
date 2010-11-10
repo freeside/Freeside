@@ -3,6 +3,7 @@ package FS::phone_avail;
 use strict;
 use vars qw( @ISA $DEBUG $me );
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
@@ -149,6 +150,16 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item cust_svc
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  return '' unless $self->svcnum;
+  qsearchs('cust_svc', { 'svcnum' => $self->svcnum });
 }
 
 sub process_batch_import {
