@@ -119,7 +119,7 @@ my $count_query = "SELECT COUNT(*) FROM phone_avail $search"; #$addl_from?
 my $link_cust = sub {
   my $phone_avail = shift;
   if ( $phone_avail->svcnum ) {
-    my $cust_svc = $phone_avail->svc_phone->cust_svc;
+    my $cust_svc = $phone_avail->cust_svc;
     if ( $cust_svc->pkgnum ) {
       #my $cust_main = $cust_svc->cust_pkg->cust_main;
       return [ "${p}view/cust_main.cgi?", 'custnum' ];
