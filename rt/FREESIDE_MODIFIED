@@ -25,6 +25,7 @@ lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
 
  share/html/autohandler #Footer getting appended where unwelcome
+ share/html/index.html #option to redirect to ticket display on quick create
  share/html/Admin/CustomFields/Modify.html #CheckMandatoryFields
  share/html/Admin/Users/Modify.html
  share/html/Elements/CollectionList

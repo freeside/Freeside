@@ -49,5 +49,8 @@ Set($UsernameFormat, 'verbose'); #back to concise to hide email addresses
 Set($MessageBoxWidth, 80);
 Set($MessageBoxRichTextHeight, 368);
 
+#redirects to ticket display on quick create
+#Set($QuickCreateRedirect, 1);
+
 #Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
 1;

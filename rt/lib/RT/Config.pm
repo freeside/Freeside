@@ -313,6 +313,16 @@ our %META = (
             Hints => 'Use css rules to display text monospaced and with formatting preserved, but wrap as needed.  This does not work well with IE6 and you should use the previous option', #loc
         },
     },
+    QuickCreateDisplay => {
+        Section         => 'Ticket display',
+        Overridable     => 1,
+        SortOrder       => 6,
+        Widget          => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'On Quick Create, redirect to ticket display', #loc
+            #Hints => '', #loc
+        },
+    },
 
     # User overridable locale options
     DateTimeFormat => {

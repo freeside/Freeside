@@ -115,7 +115,11 @@ if ( $ARGS{'QuickCreate'} ) {
                         From => $session{'CurrentUser'}->EmailAddress,
                         Content => $ARGS{'Content'},
                         Subject => $ARGS{'Subject'});
-        push @results, $msg;
+        if ( $t && $t->Id && RT->Config->Get('QuickCreateDisplay', $session{'CurrentUser'}) ) {
+          RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Ticket/Display.html?id=". $t->Id);
+        } else {
+          push @results, $msg;
+        }
     }
     elsif ( !$ValidCFs ) {
         push @results, "can't quickly create ticket in queue " .
