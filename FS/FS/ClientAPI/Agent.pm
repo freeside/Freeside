@@ -10,6 +10,8 @@ use FS::Record qw(qsearchs); # qsearch dbdef dbh);
 use FS::ClientAPI_SessionCache;
 use FS::agent;
 use FS::cust_main::Search qw(smart_search);
+use FS::svc_domain;
+use FS::svc_acct;
 
 sub _cache {
   $cache ||= new FS::ClientAPI_SessionCache( {
@@ -145,6 +147,68 @@ sub agent_list_customers {
                  ],
   }
 
+}
+
+sub check_username {
+  my $p = shift;
+  my($session, $agentnum, $svc_acct) = _session_agentnum_svc_acct_check($p);
+  return { 'error' => $session } unless ref($session);
+
+  { 'error'     => '',
+    #'username'  => $username,
+    #'domain'    => $domain,
+    'available' => $svc_acct ? 0 : 1,
+  };
+
+}
+
+sub _session_agentnum_svc_acct {
+  my $p = shift;
+
+  my $session = _cache->get($p->{'session_id'})
+    or return "Can't resume session"; #better error message
+
+  my $username = $p->{'username'};
+
+  #XXX some way to default this per agent (by default product's service def?)
+  my $domain = $p->{'domain'};
+
+  my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } )
+    or return { 'error' => 'Unknown domain' };
+
+  my $svc_acct = qsearchs('svc_acct', { 'username' => $username,
+                                        'domsvc'   => $svc_domain->svcnum, } );
+
+  ( $session, $session->{'agentnum'}, $svc_acct );
+
+}
+
+sub _session_agentnum_cust_pkg {
+  my $p = shift;
+  my($session, $agentnum, $svc_acct) = _session_agentnum_svc_acct($p);
+  return $session unless ref($session);
+  return 'Account not found' unless $svc_acct;
+  my $cust_svc = $svc_acct->cust_svc;
+  return 'Unlinked account' unless $cust_svc->pkgnum;
+  my $cust_pkg = $cust_svc->cust_pkg;
+  return 'Not your account' unless $cust_pkg->cust_main->agentnum == $agentnum;
+  ($session, $agentnum, $cust_pkg);
+}
+
+sub suspend_username {
+  my $p = shift;
+  my($session, $agentnum, $cust_pkg) = _session_agentnum_cust_pkg($p);
+  return { 'error' => $session } unless ref($session);
+
+  return { 'error' => $cust_pkg->suspend };
+}
+
+sub unsuspend_username {
+  my $p = shift;
+  my($session, $agentnum, $cust_pkg) = _session_agentnum_cust_pkg($p);
+  return { 'error' => $session } unless ref($session);
+
+  return { 'error' => $cust_pkg->unsuspend };
 }
 
 1;
