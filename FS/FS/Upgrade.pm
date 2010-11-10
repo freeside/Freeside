@@ -179,6 +179,9 @@ sub upgrade_data {
     #migrate to templates
     'msg_template' => [],
 
+    #return unprovisioned numbers to availability
+    'phone_avail' => [],
+
   ;
 
   \%hash;
