@@ -5,7 +5,7 @@ use vars qw( @ISA $DEBUG $me );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
 
-@ISA = qw(FS::Record);
+@ISA = qw(FS::cust_main_Mixin FS::Record);
 
 $me = '[FS::phone_avail]';
 $DEBUG = 0;

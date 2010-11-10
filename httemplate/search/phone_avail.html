@@ -29,7 +29,7 @@
                       '+'. $pn->countrycode. ' '.
                         $pn->npa. ' '.  $pn->nxx. '-'. $pn->station;
                     },
-		'name',
+		sub { shift->get('name') },
 		'availbatch',
                 'exportnum', #XXX
                 #sub { },
