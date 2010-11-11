@@ -121,7 +121,8 @@ my $sql_query = {
                    'cust_main.custnum',
                    FS::UI::Web::cust_sql_fields(),
                  ),
-  'extra_sql' => "$extra_sql $orderby",
+  'extra_sql' => $extra_sql,
+  'order_by'  => $orderby,
   'addl_from' => $addl_from,
 };
 

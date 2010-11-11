@@ -30,6 +30,13 @@
                    sub { shift->cust_credit->reason },
                    \&FS::UI::Web::cust_fields,
                 ],
+                'sort_fields' => [
+                  'amount',
+                  'invnum',
+                  'cust_credit_amount', #?
+                  '', #'otaker' #this is usernum now
+                  '',
+                ],
                 'align' => 'rrrll'.FS::UI::Web::cust_aligns(),
                 'links' => [
                              '',

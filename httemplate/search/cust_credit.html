@@ -7,6 +7,7 @@
                  #'redirect'    => $link,
                  'header'      => \@header,
                  'fields'      => \@fields,
+                 'sort_fields' => \@sort_fields,
                  'align' => $align,
                  'links' => \@links,
                  'color' => \@color,
@@ -32,12 +33,13 @@ my $clink = sub {
     : '';
 };
 
-my (@header, @fields, $align, @links, @color, @style);
+my (@header, @fields, @sort_fields, $align, @links, @color, @style);
 $align = '';
 
 #amount
 push @header, 'Amount';
 push @fields, sub { $money_char .sprintf('%.2f', shift->amount) };
+push @sort_fields, 'amount';
 $align .= 'r';
 push @links, '';
 push @color, '';
@@ -47,6 +49,7 @@ push @style, '';
 if ($unapplied) {
   push @header, 'Unapplied';
   push @fields, sub { $money_char .sprintf('%.2f', shift->unapplied_amount) };
+  push @sort_fields, '';
   $align .= 'r';
   push @links, '';
   push @color, '';
@@ -63,6 +66,7 @@ push @fields, sub { time2str('%b %d %Y', shift->_date ) },
               'reason',
               \&FS::UI::Web::cust_fields,
               ;
+push @sort_fields, '_date', 'otaker', 'reason';
 $align .= 'rll'.FS::UI::Web::cust_aligns(),
 push @links,  '',
               '',

@@ -78,7 +78,8 @@ my $sql_query = {
   'table'      => 'cust_svc',
   'addl_from'  => $addl_from,
   'hashref'    => {},
-  'extra_sql'  => "$extra_sql $orderby",
+  'extra_sql'  => $extra_sql,
+  'order_by'   => $orderby,
 };
 
 #warn Dumper($sql_query)."\n";

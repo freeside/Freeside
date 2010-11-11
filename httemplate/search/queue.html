@@ -4,7 +4,7 @@
 		 'html_form'   => qq!<FORM NAME="jobForm" ACTION="$p/misc/queue.cgi" METHOD="POST">!,
                  'query'       => { 'table'     => 'queue',
                                     'hashref'   => $hashref,
-                                    'extra_sql' => 'ORDER BY jobnum',
+                                    'order_by' => 'ORDER BY jobnum',
                                   },
                  'count_query' => $count_query,
                  'header' => [ '#',

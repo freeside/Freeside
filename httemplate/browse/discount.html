@@ -7,14 +7,13 @@
                  'query'       => { 'table' => 'discount', },
                  'count_query' => 'SELECT COUNT(*) FROM discount',
                  'disableable' => 1,
-                 'disabled_statuspos' => 2,
-                 'header'      => [ '#', 'Name', 'Discount', ],
-                 'fields'      => [ 'discountnum',
-                                    'name',
+                 'disabled_statuspos' => 1,
+                 'header'      => [ 'Name', 'Discount', ],
+                 'fields'      => [ 'name',
                                     'description',
                                   ],
                  'links'       => [ $link,
-                                    $link,
+                                    '',
                                   ],
              )
 %>

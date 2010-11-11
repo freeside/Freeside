@@ -28,6 +28,11 @@
                    sub { shift->cust_refund->otaker },
                    \&FS::UI::Web::cust_fields,
                 ],
+                'sort_fields' => [
+                  'amount',
+                  '', #cust_credit_amount?  cust_credit_date? prolly split field
+                  '', #_date?  cust_refund_refund?  also split
+                ],
                 'align' => 'rrrl'.FS::UI::Web::cust_aligns(),
                 'links' => [
                              '',

@@ -74,6 +74,17 @@
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
                  ],
+                 'sort_fields' => [
+                   'setup', #broken in $unearned case i guess
+                   ( $unearned ? ('', '') : () ),
+                   ( $use_usage eq 'recurring' ? 'recur - usage' :
+                     $use_usage eq 'usage'     ? 'usage'
+                                               : 'recur'
+                   ),
+                   ( $undearned ? ('sdate', 'edate') : () ),
+                   'invnum',
+                   '_date',
+                 ],
                  'links'       => [
                    #'',
                    '',

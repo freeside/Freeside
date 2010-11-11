@@ -25,6 +25,16 @@
                    sub { shift->cust_pay_otaker },
                    \&FS::UI::Web::cust_fields,
                 ],
+                'sort_fields' => [
+                  'amount',
+                  'invnum',
+                  'cust_bill_charged',
+                  'cust_bill_date',
+                  '',
+                  'cust_pay_paid',
+                  'cust_pay_date',
+                  '', 
+                ],
                 'align' => 'rrrrlrrl'.FS::UI::Web::cust_aligns(),
                 'links' => [
                              '',

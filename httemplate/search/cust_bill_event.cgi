@@ -113,7 +113,8 @@ my $sql_query = {
                     FS::UI::Web::cust_sql_fields(),
                   ),
   'hashref'   => {}, 
-  'extra_sql' => "$where ORDER BY _date ASC",
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY _date ASC',
   'addl_from' => $join,
 };
 

@@ -46,7 +46,7 @@ my $query = { 'select'    => '*,
                              ',
               'table'     => 'svc_acct_pop',
               #'hashref'   => { 'disabled' => '' },
-              'extra_sql' => 'ORDER BY state, city, ac, exch, loc',
+              'order_by' => 'ORDER BY state, city, ac, exch, loc',
             };
 
 my $count_query = "SELECT COUNT(*) FROM svc_acct_pop"; # WHERE DISABLED IS NULL OR DISABLED = ''";

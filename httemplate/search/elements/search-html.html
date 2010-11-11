@@ -190,11 +190,26 @@
                 <TR>
 %                 my $h2 = 0;
 %                 my $colspan = 0;
+%                 my @fields = @{ $opt{'sort_fields'} || $opt{'fields'}};
+%                 my $order_by = $cgi->param('order_by');
 %                 foreach my $header ( @{ $opt{header} } ) { 
+%
+%                   my $field = shift @fields;
+%
 %                   $colspan-- if $colspan > 0;
 %                   next if $colspan;
 %
 %                   my $label = ref($header) ? $header->{label} : $header;
+%                   unless ( ref($field) || !$field ) {
+%                     if ( $order_by eq $field ) {
+%                       $cgi->param('order_by', "$field DESC");
+%                     } else {
+%                       $cgi->param('order_by', $field);
+%                     }
+%                     $label = qq(<A HREF="$self_url?). $cgi->query_string.
+%                              qq(">$label</A>);
+%                   }
+%
 %                   $colspan = ref($header) ? $header->{colspan} : 0;
 %                   my $rowspan = 1;
 %                   my $style = '';

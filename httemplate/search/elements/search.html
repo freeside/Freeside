@@ -132,7 +132,10 @@ Example:
                                   # qsearch hashref and header & fields need to
                                   # be defined)
 
-    # link & display properties for fields
+    # sort, link & display properties for fields
+
+    'sort_fields' => [], #optional list of field names or SQL expressions for
+                         # sorts
    
     #listref - each item is the empty string,
     #          or a listref of link and method name to append,
@@ -369,6 +372,13 @@ unless ( $type =~ /^(csv|\w*.xls)$/) {
 
 }
 
+#order by override
+my $order_by = '';
+#if ( $cgi->param('order_by') =~ /^([\w\, ]+)$/ ) {
+#  $order_by = $1;
+#}
+$order_by = $cgi->param('order_by') if $cgi->param('order_by');
+
 # run the query
 
 my $header = [ map { ref($_) ? $_->{'label'} : $_ } @{$opt{header}} ];
@@ -378,6 +388,20 @@ if ( ref($opt{query}) ) {
   my @query;
   if (ref($opt{query}) eq 'HASH') {
     @query = ( $opt{query} );
+
+    if ( $order_by ) {
+      if ( $opt{query}->{'order_by'} ) {
+        if ( $opt{query}->{'order_by'} =~ /^(\s*ORDER\s+BY\s+)?(\S.*)$/is ) {
+          $opt{query}->{'order_by'} = "ORDER BY $order_by, $2";
+        } else {
+          warn "unparsable query order_by: ". $opt{query}->{'order_by'};
+          die "unparsable query order_by: ". $opt{query}->{'order_by'};
+        }
+      } else {
+        $opt{query}->{'order_by'} = "ORDER BY $order_by";
+      }
+    }
+
   } elsif (ref($opt{query}) eq 'ARRAY') {
     @query = @{ $opt{query} };
   } else {

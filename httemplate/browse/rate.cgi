@@ -9,7 +9,7 @@
               'name'        => 'rate plans',
               'query'       => { 'table'     => 'rate',
                                  'hashref'   => {},
-                                 'extra_sql' => 'ORDER BY ratenum',
+                                 'order_by' => 'ORDER BY ratenum',
                                },
               'count_query' => $count_query,
               'header'      => [ '#',       'Rate plan', 'Rates'    ],

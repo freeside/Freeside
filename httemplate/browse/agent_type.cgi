@@ -5,7 +5,7 @@
                  'name'        => 'agent types',
                  'query'       => { 'table'     => 'agent_type',
                                     'hashref'   => {},
-                                    'extra_sql' => 'ORDER BY typenum', # 'ORDER BY atype',
+                                    'order_by' => 'ORDER BY typenum', # 'ORDER BY atype',
                                   },
                  'count_query' => $count_query,
                  'header'      => [ '#',

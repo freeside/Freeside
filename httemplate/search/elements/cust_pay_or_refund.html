@@ -48,6 +48,7 @@ Examples:
                 'redirect_empty' => $opt{'redirect_empty'},
                 'header'         => \@header,
                 'fields'         => \@fields,
+                'sort_fields'    => \@sort_fields,
                 'align'          => $align,
                 'links'          => \@links,
                 'color'          => \@color,
@@ -135,6 +136,7 @@ if ( $cgi->param('tax_names') ) {
 
 my @header = ();
 my @fields = ();
+my @sort_fields = ();
 my $align = '';
 my @links = ();
 if ( $opt{'pre_header'} ) {
@@ -142,6 +144,7 @@ if ( $opt{'pre_header'} ) {
   $align .= 'c' x scalar(@{ $opt{'pre_header'} });
   push @links, map '', @{ $opt{'pre_header'} };
   push @fields, @{ $opt{'pre_fields'} };
+  push @sort_fields, @{ $opt{'pre_fields'} };
 }
 
 push @header, "\u$name_singular",
@@ -152,18 +155,21 @@ push @links, '', '';
 push @fields, 'payby_payinfo_pretty',
               sub { sprintf('$%.2f', shift->$amount_field() ) },
 ;
+push @sort_fields, '', $amount_field;
 
 if ( $unapplied ) {
   push @header, 'Unapplied';
   $align .= 'r';
   push @links, '';
   push @fields, sub { sprintf('$%.2f', shift->unapplied_amount) };
+  push @sort_fields, '';
 }
 
 push @header, 'Date';
 $align .= 'r';
 push @links, '';
 push @fields, sub { time2str('%b %d %Y', shift->_date ) };
+push @sort_fields, '_date';
 
 unless ( $opt{'disable_by'} ) {
   push @header, 'By';
@@ -414,7 +420,8 @@ if ( $cgi->param('magic') ) {
     'table'     => $table,
     'select'    => join(', ', @select),
     'hashref'   => {},
-    'extra_sql' => "$search $group_by ORDER BY $orderby",
+    'extra_sql' => "$search $group_by",
+    'order_by'  => "ORDER BY $orderby",
     'addl_from' => $addl_from,
   };
 

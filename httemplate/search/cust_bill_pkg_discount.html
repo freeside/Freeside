@@ -26,6 +26,14 @@
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
                  ],
+                 'sort_fields' => [
+                   '',
+                   'amount',
+                   'months',
+                   'pkg',
+                   'invnum',
+                   '_date',
+                 ],
                  'links'       => [
                    #'',
                    '', #link to customer discount???
