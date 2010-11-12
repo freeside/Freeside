@@ -2287,6 +2287,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-agent_login',
+    'section'     => 'self-service',
+    'description' => 'Allow agent login via self-service.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'card_refund-days',
     'section'     => 'billing',
     'description' => 'After a payment, the number of days a refund link will be available for that payment.  Defaults to 120.',

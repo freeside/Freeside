@@ -54,6 +54,25 @@ Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
     </TD>
   </TR>
 
+% if ( $conf->exists('selfservice-agent_login') ) {
+
+    <TR>
+      <TH ALIGN="right">Username</TH>
+      <TD><INPUT TYPE="text" NAME="username" SIZE=16 VALUE="<% $agent->username %>"></TD>
+    </TR>
+
+    <TR>
+      <TH ALIGN="right">Password</TH>
+      <TD><INPUT TYPE="password" NAME="_password" SIZE=16 VALUE="<% $agent->_password %>"></TD>
+    </TR>
+
+% } else {
+
+    <INPUT TYPE="hidden" NAME="username" VALUE="<% $agent->username |h %>">
+    <INPUT TYPE="hidden" NAME="_password" VALUE="<% $agent->_password |h %>">
+
+% }
+
   <TR>
     <TD ALIGN="right">Disable</TD>
     <TD><INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $agent->disabled eq 'Y' ? ' CHECKED' : '' %>></TD>

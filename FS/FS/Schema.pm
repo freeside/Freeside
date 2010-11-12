@@ -352,8 +352,8 @@ sub tables_hashref {
         'invoice_template', 'varchar', 'NULL', $char_d, '', '',
         'agent_custnum',        'int', 'NULL',      '', '', '',
         'disabled',            'char', 'NULL',       1, '', '', 
-        'username',         'varchar', 'NULL', $char_d, '', '', #deprecated
-        '_password',        'varchar', 'NULL', $char_d, '', '', #deprecated
+        'username',         'varchar', 'NULL', $char_d, '', '',
+        '_password',        'varchar', 'NULL', $char_d, '', '',
         'freq',              'int', 'NULL', '', '', '', #deprecated (never used)
         'prog',                     @perl_type, '', '', #deprecated (never used)
       ],
