@@ -150,6 +150,8 @@ if ( $pay_batch ) {
                     qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
                     qq!<OPTION VALUE="paymentech">Chase Paymentech XML</OPTION>!.
                     qq!<OPTION VALUE="RBC">Royal Bank of Canada PDS</OPTION>!.
+                    qq!<OPTION VALUE="td_eft1464">TD Commercial Banking EFT 1464 byte</OPTION>!.
+
                     qq!</SELECT>!;
     }
     $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum"><INPUT TYPE="submit" VALUE="Download"></FORM><BR><BR></TR>!;
@@ -191,6 +193,7 @@ if ( $pay_batch ) {
                     qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
                     qq!<OPTION VALUE="paymentech">Chase Paymentech XML</OPTION>!.
                     qq!<OPTION VALUE="RBC">Royal Bank of Canada PDS</OPTION>!.
+                    qq!<OPTION VALUE="td_eft1464">TD Commercial Banking EFT 1464 byte</OPTION>!.
                     qq!</SELECT><BR></TR>!;
     }
     $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;

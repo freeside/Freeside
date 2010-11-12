@@ -2898,6 +2898,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'batchconfig-td_eft1464',
+    'section'     => 'billing',
+    'description' => 'Configuration for TD Bank EFT1464 batching, five lines: 1. Originator ID, 2. Datacenter Code, 3. Short name, 4. Long name, 5. Returned payment branch number, 6. Returned payment account, 7. Transaction code.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'payment_history-years',
     'section'     => 'UI',
     'description' => 'Number of years of payment history to show by default.  Currently defaults to 2.',

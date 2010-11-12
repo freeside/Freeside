@@ -202,9 +202,10 @@ sub import_results {
 
   my $conf = new FS::Conf;
 
-  my $filetype            = $info->{'filetype'};      # CSV or fixed
+  my $filetype            = $info->{'filetype'};      # CSV, fixed, variable
   my @fields              = @{ $info->{'fields'}};
   my $formatre            = $info->{'formatre'};      # for fixed
+  my $parse               = $info->{'parse'};         # for variable
   my @all_values;
   my $begin_condition     = $info->{'begin_condition'};
   my $end_condition       = $info->{'end_condition'};
@@ -213,6 +214,7 @@ sub import_results {
   my $hook                = $info->{'hook'};
   my $approved_condition  = $info->{'approved'};
   my $declined_condition  = $info->{'declined'};
+  my $close_condition     = $info->{'close_condition'};
 
   my $csv = new Text::CSV_XS;
 
@@ -286,7 +288,17 @@ sub import_results {
         };
         push @values, $line;
         push @all_values, \@values;
-      }else{
+      }
+      elsif ($filetype eq 'variable') {
+        my @values = ( eval { $parse->($self, $line) } );
+        if( $@ ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $@;
+        };
+        push @values, $line;
+        push @all_values, \@values;
+      }
+      else {
         $dbh->rollback if $oldAutoCommit;
         return "Unknown file type $filetype";
       }
@@ -420,7 +432,20 @@ sub import_results {
     }
 
   }
-  
+
+  if ( defined($close_condition) ) {
+    # Allow the module to decide whether to close the batch.
+    # This is used for TD EFT, which requires two imports before 
+    # closing.
+    # $close_condition can also die() to abort the whole import.
+    my $close = eval { $close_condition->($self) };
+    if ( $@ ) {
+      $dbh->rollback;
+      die $@;
+    }
+    $self->set_status('I') if !$close;
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
