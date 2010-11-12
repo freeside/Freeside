@@ -81,7 +81,7 @@
                      $use_usage eq 'usage'     ? 'usage'
                                                : 'recur'
                    ),
-                   ( $undearned ? ('sdate', 'edate') : () ),
+                   ( $unearned ? ('sdate', 'edate') : () ),
                    'invnum',
                    '_date',
                  ],
