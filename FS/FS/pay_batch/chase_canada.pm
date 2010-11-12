@@ -73,7 +73,7 @@ $name = 'csv-chase_canada-E-xactBatch';
       '00',
       $cust_pay_batch->payinfo,
       $cust_pay_batch->amount,
-      expdate($cust_pay_batch->exp),
+      $cust_pay_batch->expmmyy,
       '',
       ''
     );
@@ -84,21 +84,6 @@ $name = 'csv-chase_canada-E-xactBatch';
 sub sdate {
   my (@date) = localtime(shift);
   sprintf('%02d/%02d/%02d', $date[5] % 100, $date[4] + 1, $date[3]);
-}
-
-sub expdate {
-  my $exp = shift;
-  $exp =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-  my ($mon, $y) = ($2, $1);
-  if($conf->exists('batch-increment_expiration')) {
-    my ($curmon, $curyear) = (localtime(time))[4,5];
-    $curmon++;
-    $curyear -=  100;
-    $y++ while $y < $curyear || ($y == $curyear && $mon < $curmon);
-  }
-  $mon = "0$mon" if $mon =~ /^\d$/;
-  $y = "0$y" if $y =~ /^\d$/;
-  return "$mon$y";
 }
 
 1;

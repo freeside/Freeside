@@ -107,7 +107,7 @@ my %paytype = (
         terminalID   => $terminalID,
         ($_->payby eq 'CARD') ? (
           ccAccountNum => $_->payinfo,
-          ccExp        => time2str('%m%y', str2time($_->exp))
+          ccExp        => $_->expmmyy,
         ) : (
           ecpCheckRT      => ($_->payinfo =~ /@(\d+)/),
           ecpCheckDDA     => ($_->payinfo =~ /(\d+)@/),

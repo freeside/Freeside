@@ -77,7 +77,7 @@ $name = 'csv-td_canada_trust-merchant_pc_batch';
       '',
       '', 
       $cust_pay_batch->payinfo,
-      expdate($cust_pay_batch->exp),
+      $cust_pay_batch->expmmyy,
       $cust_pay_batch->amount,
       $cust_pay_batch->paybatchnum
       );
@@ -85,20 +85,6 @@ $name = 'csv-td_canada_trust-merchant_pc_batch';
 # no footer
 );
 
-sub expdate {
-  my $exp = shift;
-  $exp =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-  my ($mon, $y) = ($2, $1);
-  if($conf->exists('batch-increment_expiration')) {
-    my ($curmon, $curyear) = (localtime(time))[4,5];
-    $curmon++;
-    $curyear -=  100;
-    $y++ while $y < $curyear || ($y == $curyear && $mon < $curmon);
-  }
-  $mon = "0$mon" if $mon =~ /^\d$/;
-  $y = "0$y" if $y =~ /^\d$/;
-  return "$mon$y";
-}
 
 1;
 

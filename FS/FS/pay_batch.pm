@@ -7,6 +7,7 @@ use Text::CSV_XS;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_pay;
 use FS::Conf;
+use Date::Parse qw(str2time);
 use Business::CreditCard qw(cardtype);
 
 @ISA = qw(FS::Record);
@@ -481,7 +482,20 @@ sub export_batch {
 
   my @cust_pay_batch = sort { $a->paybatchnum <=> $b->paybatchnum }
                       qsearch('cust_pay_batch', { batchnum => $self->batchnum } );
-
+  
+  # handle batch-increment_expiration option
+  if ( $self->payby eq 'CARD' ) {
+    my ($cmon, $cyear) = (localtime(time))[4,5];
+    foreach (@cust_pay_batch) {
+      my $etime = str2time($_->exp) or next;
+      my ($day, $mon, $year) = (localtime($etime))[3,4,5];
+      if( $conf->exists('batch-increment_expiration') ) {
+        $year++ while( $year < $cyear or ($year == $cyear and $mon <= $cmon) );
+        $_->exp( sprintf('%4u-%02u-%02u', $year + 1900, $mon+1, $day) );
+      }
+      $_->setfield('expmmyy', sprintf('%02u%02u', $mon+1, $year % 100));
+    }
+  }
   my $h = $info->{'header'};
   if(ref($h) eq 'CODE') {
     $batch .= &$h($self, \@cust_pay_batch) . "\n";
