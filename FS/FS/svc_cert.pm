@@ -345,8 +345,8 @@ sub generate_selfsigned {
      ) 
     or die "error running openssl: $!";
   #XXX error checking
-  my $csr = join('', <OUT>);
-  $self->certificate($csr);
+  my $certificate = join('', <OUT>);
+  $self->certificate($certificate);
 }
 
 #openssl x509 -in cert -noout -subject -issuer -dates -serial
