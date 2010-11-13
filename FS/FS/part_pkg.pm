@@ -144,7 +144,9 @@ Currently available options are: I<pkg_svc>, I<primary_svc>, I<cust_pkg>,
 I<custnum_ref> and I<options>.
 
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
-values, appropriate FS::pkg_svc records will be inserted.
+values, appropriate FS::pkg_svc records will be inserted.  I<hidden_svc> can 
+be set to a hashref of svcparts and flag values ('Y' or '') to set the 
+'hidden' field in these records.
 
 If I<primary_svc> is set to the svcpart of the primary service, the appropriate
 FS::pkg_svc record will be updated.
@@ -230,6 +232,7 @@ sub insert {
 
     warn "  inserting pkg_svc records" if $DEBUG;
     my $pkg_svc = $options{'pkg_svc'} || {};
+    my $hidden_svc = $options{'hidden_svc'} || {};
     foreach my $part_svc ( qsearch('part_svc', {} ) ) {
       my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
       my $primary_svc =
@@ -242,6 +245,7 @@ sub insert {
         'svcpart'     => $part_svc->svcpart,
         'quantity'    => $quantity, 
         'primary_svc' => $primary_svc,
+        'hidden'      => $hidden_svc->{$part_svc->svcpart},
       } );
       my $error = $pkg_svc->insert;
       if ( $error ) {
@@ -293,10 +297,13 @@ sub delete {
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-Currently available options are: I<pkg_svc>, I<primary_svc> and I<options>
+Currently available options are: I<pkg_svc>, I<hidden_svc>, I<primary_svc> 
+and I<options>
 
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
-values, the appropriate FS::pkg_svc records will be replaced.
+values, the appropriate FS::pkg_svc records will be replaced.  I<hidden_svc>
+can be set to a hashref of svcparts and flag values ('Y' or '') to set the 
+'hidden' field in these records.
 
 If I<primary_svc> is set to the svcpart of the primary service, the appropriate
 FS::pkg_svc record will be updated.
@@ -379,8 +386,10 @@ sub replace {
 
   warn "  replacing pkg_svc records" if $DEBUG;
   my $pkg_svc = $options->{'pkg_svc'} || {};
+  my $hidden_svc = $options->{'hidden_svc'} || {};
   foreach my $part_svc ( qsearch('part_svc', {} ) ) {
     my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
+    my $hidden = $hidden_svc->{$part_svc->svcpart} || '';
     my $primary_svc =
       ( defined($options->{'primary_svc'}) && $options->{'primary_svc'}
         && $options->{'primary_svc'} == $part_svc->svcpart
@@ -388,17 +397,24 @@ sub replace {
         ? 'Y'
         : '';
 
-
     my $old_pkg_svc = qsearchs('pkg_svc', {
-      'pkgpart' => $old->pkgpart,
-      'svcpart' => $part_svc->svcpart,
-    } );
-    my $old_quantity = $old_pkg_svc ? $old_pkg_svc->quantity : 0;
-    my $old_primary_svc =
-      ( $old_pkg_svc && $old_pkg_svc->dbdef_table->column('primary_svc') )
-        ? $old_pkg_svc->primary_svc
-        : '';
-    next unless $old_quantity != $quantity || $old_primary_svc ne $primary_svc;
+        'pkgpart' => $old->pkgpart,
+        'svcpart' => $part_svc->svcpart,
+      }
+    );
+    my $old_quantity = 0;
+    my $old_primary_svc = '';
+    my $old_hidden = '';
+    if ( $old_pkg_svc ) {
+      $old_quantity = $old_pkg_svc->quantity;
+      $old_primary_svc = $old_pkg_svc->primary_svc 
+        if $old_pkg_svc->dbdef_table->column('primary_svc'); # is this needed?
+      $old_hidden = $old_pkg_svc->hidden;
+    }
+ 
+    next unless $old_quantity != $quantity || 
+                $old_primary_svc ne $primary_svc ||
+                $old_hidden ne $hidden;
   
     my $new_pkg_svc = new FS::pkg_svc( {
       'pkgsvcnum'   => ( $old_pkg_svc ? $old_pkg_svc->pkgsvcnum : '' ),
@@ -406,6 +422,7 @@ sub replace {
       'svcpart'     => $part_svc->svcpart,
       'quantity'    => $quantity, 
       'primary_svc' => $primary_svc,
+      'hidden'      => $hidden,
     } );
     my $error = $old_pkg_svc
                   ? $new_pkg_svc->replace($old_pkg_svc)

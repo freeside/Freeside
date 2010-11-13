@@ -117,11 +117,11 @@ my $args_callback = sub {
   #pkg_svc
   ###
 
-  my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) }
-                map { $_->svcpart }
-                qsearch('part_svc', {} );
+  my @svcparts = map { $_->svcpart } qsearch('part_svc', {});
+  my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) } @svcparts;
+  my %hidden_svc = map { $_ => scalar($cgi->param("hidden$_")) } @svcparts;
 
-  push @args, 'pkg_svc' => \%pkg_svc;
+  push @args, 'pkg_svc' => \%pkg_svc, 'hidden_svc' => \%hidden_svc;
 
   ###
   # cust_pkg and custnum_ref (inserts only)

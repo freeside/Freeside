@@ -1638,23 +1638,32 @@ sub overlimit {
   grep { $_->overlimit } $self->cust_svc(@_);
 }
 
-=item h_cust_svc END_TIMESTAMP [ START_TIMESTAMP ] 
+=item h_cust_svc END_TIMESTAMP [ START_TIMESTAMP ] [ MODE ]
 
 Returns historical services for this package created before END TIMESTAMP and
 (optionally) not cancelled before START_TIMESTAMP, as FS::h_cust_svc objects
-(see L<FS::h_cust_svc>).
+(see L<FS::h_cust_svc>).  If MODE is 'I' (for 'invoice'), services with the 
+I<pkg_svc.hidden> flag will be omitted.
 
 =cut
 
 sub h_cust_svc {
   my $self = shift;
+  my ($end, $start, $mode) = @_;
+  my %search = (
+    'table'   => 'h_cust_svc',
+    'hashref' => { 'pkgnum' => $self->pkgnum }
+  );
+  @search{'select', 'extra_sql', 'cache_obj', 'addl_from'} = 
+    FS::h_cust_svc->sql_h_search($end, $start);
+  if ( $mode eq 'I' ) {
+    $search{'addl_from'} .= ' JOIN cust_pkg USING (pkgnum)
+    JOIN pkg_svc USING (pkgpart, svcpart)';
+    $search{'extra_sql'} = ' AND pkg_svc.hidden IS NULL '.$search{'extra_sql'};
+  }
 
   $self->_sort_cust_svc(
-    [ qsearch( 'h_cust_svc',
-               { 'pkgnum' => $self->pkgnum, },
-               FS::h_cust_svc->sql_h_search(@_),
-             )
-    ]
+    [ qsearch(\%search) ]
   );
 }
 
@@ -1973,11 +1982,12 @@ sub labels {
   map { [ $_->label ] } $self->cust_svc;
 }
 
-=item h_labels END_TIMESTAMP [ START_TIMESTAMP ] 
+=item h_labels END_TIMESTAMP [ START_TIMESTAMP ] [ MODE ]
 
 Like the labels method, but returns historical information on services that
 were active as of END_TIMESTAMP and (optionally) not cancelled before
-START_TIMESTAMP.
+START_TIMESTAMP.  If MODE is 'I' (for 'invoice'), services with the 
+I<pkg_svc.hidden> flag will be omitted.
 
 Returns a list of lists, calling the label method for all (historical) services
 (see L<FS::h_cust_svc>) of this billing item.

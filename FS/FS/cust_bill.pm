@@ -4102,7 +4102,7 @@ sub _items_cust_bill_pkg {
           {
 
             push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short($self->_date)
+                         $cust_pkg->h_labels_short($self->_date, undef, 'I')
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
 
             if ( $multilocation ) {
@@ -4164,7 +4164,7 @@ sub _items_cust_bill_pkg {
           {
 
             push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short(@dates)
+                         $cust_pkg->h_labels_short(@dates, 'I')
                                                    #$cust_bill_pkg->edate,
                                                    #$cust_bill_pkg->sdate)
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services

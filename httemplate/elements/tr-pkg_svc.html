@@ -12,6 +12,7 @@
 %                                   'svcpart'     => $svcpart,
 %                                   'quantity'    => 0,
 %                                   'primary_svc' => '',
+%                                   'hidden'      => '',
 %                                } );
 %  if ( $cgi->param('error') ) {
 %    my $primary_svc = ( $pkg_svc->primary_svc =~ /^Y/i );
@@ -43,6 +44,10 @@
     <TD>
       <A HREF="part_svc.cgi?<% $part_svc->svcpart %>"><% $part_svc->svc %></A>      <% $part_svc->disabled =~ /^Y/i ? ' (DISABLED' : '' %>
     </TD>
+
+    <TD>
+      <INPUT TYPE="checkbox" NAME="hidden<% $svcpart %>" VALUE="Y"<% $pkg_svc->hidden =~ /^Y/i ? ' CHECKED' : ''%>>
+    </TD>
   </TR>
 % foreach ( 1 .. $columns-1 ) {
 %       if ( $count == int( $_ * scalar(@part_svc) / $columns ) ) { 
@@ -68,7 +73,9 @@ my $cgi = $opt{'cgi'};
 my $thead =  "\n\n". ntable('#cccccc', 2).
              '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
              '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-2>Primary</FONT></TH>'.
-             '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
+             '<TH BGCOLOR="#dcdcdc">Service</TH>'.
+             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Hide</FONT></TH>'.
+             '</TR>';
 
 my $part_pkg = $opt{'object'};
 my $pkgpart = $part_pkg->pkgpart;

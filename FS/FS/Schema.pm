@@ -1601,6 +1601,7 @@ sub tables_hashref {
         'svcpart',    'int',    '',   '', '', '', 
         'quantity',   'int',    '',   '', '', '', 
         'primary_svc','char', 'NULL',  1, '', '', 
+        'hidden',     'char', 'NULL',  1, '', '',
       ],
       'primary_key' => 'pkgsvcnum',
       'unique' => [ ['pkgpart', 'svcpart'] ],

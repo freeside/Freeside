@@ -50,6 +50,8 @@ definition includes
 
 =item primary_svc - primary flag, empty or 'Y'
 
+=item hidden - 'Y' to hide this service on invoices, null otherwise.
+
 =back
 
 =head1 METHODS
@@ -109,6 +111,7 @@ sub check {
     || $self->ut_number('pkgpart')
     || $self->ut_number('svcpart')
     || $self->ut_number('quantity')
+    || $self->ut_enum('hidden', [ '', 'Y' ] )
   ;
   return $error if $error;
 
