@@ -4156,6 +4156,7 @@ sub _items_cust_bill_pkg {
           my @dates = ( $self->_date );
           my $prev = $cust_bill_pkg->previous_cust_bill_pkg;
           push @dates, $prev->sdate if $prev;
+          push @dates, undef if !$prev;
 
           unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->itemdesc

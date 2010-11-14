@@ -1650,21 +1650,19 @@ I<pkg_svc.hidden> flag will be omitted.
 sub h_cust_svc {
   my $self = shift;
   my ($end, $start, $mode) = @_;
-  my %search = (
-    'table'   => 'h_cust_svc',
-    'hashref' => { 'pkgnum' => $self->pkgnum }
+  my @cust_svc = $self->_sort_cust_svc(
+    [ qsearch( 'h_cust_svc',
+      { 'pkgnum' => $self->pkgnum, },  
+      FS::h_cust_svc->sql_h_search(@_),  
+    ) ]
   );
-  @search{'select', 'extra_sql', 'cache_obj', 'addl_from'} = 
-    FS::h_cust_svc->sql_h_search($end, $start);
   if ( $mode eq 'I' ) {
-    $search{'addl_from'} .= ' JOIN cust_pkg USING (pkgnum)
-    JOIN pkg_svc USING (pkgpart, svcpart)';
-    $search{'extra_sql'} = ' AND pkg_svc.hidden IS NULL '.$search{'extra_sql'};
+    my %hidden_svcpart = map { $_->svcpart => $_->hidden } $self->part_svc;
+    return grep { !$hidden_svcpart{$_->svcpart} } @cust_svc;
   }
-
-  $self->_sort_cust_svc(
-    [ qsearch(\%search) ]
-  );
+  else {
+    return @cust_svc;
+  }
 }
 
 sub _sort_cust_svc {
@@ -1767,6 +1765,7 @@ sub part_svc {
       max( 0, $pkg_svc->quantity - $num_cust_svc );
     $part_svc->{'Hash'}{'cust_pkg_svc'} =
       $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
+    $part_svc->{'Hash'}{'hidden'} = $pkg_svc->hidden;
     $part_svc;
   } $self->part_pkg->pkg_svc;
 
