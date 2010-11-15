@@ -66,15 +66,11 @@
 <tr><td class="label"><&|/l&>Queue</&>:</td>
 %#<td class="value"><& Elements/ShowQueue, QueueObj => $QueueObj &>
 %#<input type="hidden" class="hidden" name="Queue" value="<% $QueueObj->Name %>" />
-% $cgi->delete('Queue');
-% my $self_url = $cgi->self_url(-newstyle_urls => 1);
-% $self_url = ($self_url =~ /\?/) ? "$self_url;" : "$self_url?";
-% $cgi->param('Queue', $QueueObj->Id);
 <td class="value"><& /Elements/SelectQueue, 
   Name => 'Queue', 
   Default => $QueueObj->Name,
   ShowNullOption => 0,
-  OnChange => "window.location.href='${self_url}Queue=' + this.value"  &>
+  OnChange => "document.getElementsByName('id')[0].value = ''; form.submit()" &>
 </td>
 <td class="label"><&|/l&>Status</&>:
 </td>
