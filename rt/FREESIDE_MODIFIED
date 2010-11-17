@@ -11,6 +11,11 @@ config.layout.in
 lib/RT/CustomField.pm #CheckMandatoryFields
 lib/RT/CustomField_Overlay.pm #customfield date patch
 lib/RT/Interface/Web.pm #customfield date patch
+lib/RT/Action.pm
+lib/RT/Condition.pm
+lib/RT/Scrip_Overlay.pm
+lib/RT/Action/CreateTickets.pm
+lib/RT/Condition/CustomFieldChange.pm
 lib/RT/Interface/Web_Vendor.pm
  lib/RT/Interface/Web/Handler.pm #freeside comp_root for dashboard emails
  lib/RT/Record.pm #and customfield date patch
@@ -27,6 +32,10 @@ lib/RT/URI/freeside/XMLRPC.pm
  share/html/autohandler #Footer getting appended where unwelcome
  share/html/index.html #option to redirect to ticket display on quick create
  share/html/Admin/CustomFields/Modify.html #CheckMandatoryFields
+ share/html/Admin/Elements/EditScrip
+ share/html/Admin/Elements/EditScripOptions
+ share/html/Admin/Elements/SelectScripAction
+ share/html/Admin/Elements/SelectScripCondition
  share/html/Admin/Users/Modify.html
  share/html/Elements/CollectionList
 share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)

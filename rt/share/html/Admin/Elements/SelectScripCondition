@@ -45,7 +45,10 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<select name="<%$Name%>">
+<select name="<%$Name%>"
+onchange="var idobj = document.getElementsByName('id')[0]; 
+if (idobj.value=='new') idobj.value = '';
+form.submit()">
 <option value="" 
 <% ! defined $Default && qq[ selected="selected"] %>
 >-</option>

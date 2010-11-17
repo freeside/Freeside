@@ -64,13 +64,31 @@
 <& /Admin/Elements/SelectScripCondition,
     Name => "Scrip-$id-ScripCondition",
     Default => $ARGS{"Scrip-$id-ScripCondition"} || $scrip->ConditionObj->Id,
+    ScripObj => $scrip,
+    Queue => $Queue,
 &></td></tr>
+
+<& /Admin/Elements/EditScripOptions,
+    Name => "Condition",
+    Default => $ARGS{"Scrip-$id-ConditionRules"} || $scrip->ConditionRules,
+    Queue => $Queue,
+    ScripX => $ARGS{"Scrip-$id-ScripCondition"} || $scrip->ConditionObj->Id,
+&>
 
 <tr><td align="right"><&|/l&>Action</&>:</td><td>
 <& /Admin/Elements/SelectScripAction,
     Name => "Scrip-$id-ScripAction",
     Default => $ARGS{"Scrip-$id-ScripAction"} || $scrip->ActionObj->Id,
+    ScripObj => $scrip,
+    Queue => $Queue,
 &></td></tr>
+
+<& /Admin/Elements/EditScripOptions,
+    Name => "Action",
+    Default => $ARGS{"Scrip-$id-ActionRules"} || $scrip->ActionRules,
+    Queue => $Queue,
+    ScripX => $ARGS{"Scrip-$id-ScripAction"} || $scrip->ActionObj->Id,
+&>
 
 <tr><td align="right"><&|/l&>Template</&>:</td><td>
 <& /Admin/Elements/SelectTemplate,
@@ -165,6 +183,18 @@ $Queue => undef
 <%INIT>
 return ($id) unless $id;
 
+my @rules = ('ConditionRules', 'ActionRules');
+if ( exists($ARGS{"Scrip-$id-ScripCondition"}) ) {
+  foreach my $rules (@rules) {
+    my $prefix = join('-', 'Scrip', $id, $rules);
+    $ARGS{$prefix} = join("\n", map {
+      $_ =~ /^$rules-(.*)$/ ? 
+            ($1, $ARGS{$_}) : ()
+    } keys(%ARGS)
+    );
+  }
+}
+
 my $scrip = RT::Scrip->new( $session{'CurrentUser'} );
 if ( $id eq 'new' ) {
     return $scrip->Create(
@@ -177,6 +207,8 @@ if ( $id eq 'new' ) {
         CustomCommitCode       => $ARGS{"Scrip-new-CustomCommitCode"},
         CustomIsApplicableCode => $ARGS{"Scrip-new-CustomIsApplicableCode"},
         Stage                  => $ARGS{"Scrip-new-Stage"},
+        ConditionRules         => $ARGS{"Scrip-new-ConditionRules"},
+        ActionRules            => $ARGS{"Scrip-new-ActionRules"},
     );
 }
 else {
@@ -185,7 +217,8 @@ else {
         unless $scrip->id;
 
     my @attribs = qw(Queue ScripAction ScripCondition Template Stage
-        Description CustomPrepareCode CustomCommitCode CustomIsApplicableCode);
+        Description CustomPrepareCode CustomCommitCode CustomIsApplicableCode
+        ConditionRules ActionRules);
     my @results = UpdateRecordObject(
         AttributesRef   => \@attribs,
         AttributePrefix => 'Scrip-'.$scrip->Id,

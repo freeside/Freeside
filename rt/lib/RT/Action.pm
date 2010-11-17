@@ -204,6 +204,17 @@ sub IsApplicable  {
 }
 # }}}
 
+sub Options {
+  my $self = shift;
+  return();
+}
+
+sub Rules {
+  my $self = shift;
+  return () if !$self->ScripObj or !$self->ScripObj->ActionRules;
+  return(split "\n", $self->ScripObj->ActionRules);
+}
+
 # {{{ sub DESTROY
 sub DESTROY {
     my $self = shift;

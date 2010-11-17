@@ -1,0 +1,44 @@
+% return if !@options;
+<tr><td></td><td><table>
+% my $prefix = $Name.'Rules-';
+% foreach my $o (@options) {
+  <tr><td align="right"><% $o->{'label'} %>:</td>
+  <td>
+%   if ( $o->{'type'} eq 'text' ) {
+  <input type="text" name="<% $prefix.$o->{'name'} %>" value="<% $rules{$o->{'name'}} %>">
+%   }
+%   elsif ( $o->{'type'} eq 'select' and ref $o->{'options'} ) {
+  <select name="<% $prefix.$o->{'name'} %>">
+%     my @choices = @{ $o->{'options'} };
+%     while (@choices) {
+%       my $v = shift @choices;
+%       my $l = shift @choices;
+  <option value="<% $v %>"<% ($rules{$o->{'name'}} eq $v) ? ' SELECTED' : ''%>>
+  <% $l %></option>
+%     }
+  </select>
+%   } # else $o->{'type'}
+</td></tr>
+% } #foreach $o
+</table></td></tr>
+
+<%INIT>
+my (@options, %rules);
+if ( $ScripX ) {
+  my $ScripXObj = "RT::Scrip$Name"->new($session{'CurrentUser'});
+  $ScripXObj->Load($ScripX);
+  my $QueueObj = RT::Queue->new($session{'CurrentUser'});
+  $QueueObj->Load($Queue);
+  my $method = "Load$Name";
+  my $XObj = $ScripXObj->$method();
+  @options = $XObj->Options('QueueObj' => $QueueObj);
+  %rules = split("\n", $Default);
+}
+</%INIT>
+
+<%ARGS>
+$Name => undef
+$Default => undef
+$Queue => 0
+$ScripX => undef
+</%ARGS>

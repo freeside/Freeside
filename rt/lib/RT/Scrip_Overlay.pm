@@ -103,6 +103,8 @@ sub Create {
         CustomPrepareCode      => undef,
         CustomCommitCode       => undef,
         CustomIsApplicableCode => undef,
+        ConditionRules         => undef,
+        ActionRules            => undef,
         @_
     );
 
@@ -162,6 +164,8 @@ sub Create {
         CustomPrepareCode      => $args{'CustomPrepareCode'},
         CustomCommitCode       => $args{'CustomCommitCode'},
         CustomIsApplicableCode => $args{'CustomIsApplicableCode'},
+        ConditionRules         => $args{'ConditionRules'},
+        ActionRules            => $args{'ActionRules'},
     );
     if ( $id ) {
         return ( $id, $self->loc('Scrip Created') );
