@@ -749,7 +749,8 @@ sub insert {
     my $msgnum = $conf->config('welcome_msgnum', $agentnum);
     if ( $msgnum ) {
       my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
-      $error = $msg_template->send('cust_main' => $cust_main);
+      $error = $msg_template->send('cust_main' => $cust_main,
+                                   'object'    => $self);
     }
     else { #!$msgnum
       my ($to,$welcome_template,$welcome_from,$welcome_subject,$welcome_subject_template,$welcome_mimetype)
