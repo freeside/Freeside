@@ -115,7 +115,7 @@ if ( $ARGS{'QuickCreate'} ) {
                         From => $session{'CurrentUser'}->EmailAddress,
                         Content => $ARGS{'Content'},
                         Subject => $ARGS{'Subject'});
-        if ( $t && $t->Id && RT->Config->Get('QuickCreateDisplay', $session{'CurrentUser'}) ) {
+        if ( $t && $t->Id && RT->Config->Get('DisplayAfterQuickCreate', $session{'CurrentUser'}) ) {
           RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Ticket/Display.html?id=". $t->Id);
         } else {
           push @results, $msg;

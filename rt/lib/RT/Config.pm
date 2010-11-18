@@ -313,7 +313,7 @@ our %META = (
             Hints => 'Use css rules to display text monospaced and with formatting preserved, but wrap as needed.  This does not work well with IE6 and you should use the previous option', #loc
         },
     },
-    QuickCreateDisplay => {
+    DisplayAfterQuickCreate => {
         Section         => 'Ticket display',
         Overridable     => 1,
         SortOrder       => 6,
