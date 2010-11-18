@@ -1,0 +1,8 @@
+<%init>
+my $i = 1;
+$i++ until ($i == scalar(@$Fields) or $Fields->[$i-1] =~ /^Resolved/);
+splice @$Fields, $i, 0, 'TimeToResolve';
+</%init>
+<%ARGS>
+$Fields => []
+</%ARGS>

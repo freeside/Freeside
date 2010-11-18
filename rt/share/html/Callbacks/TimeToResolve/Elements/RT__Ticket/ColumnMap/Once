@@ -1,0 +1,13 @@
+<%init>
+$COLUMN_MAP->{'TimeToResolve'} = {
+  title     => 'Time to Resolve',
+  attribute => 'Resolved',
+  value     => sub { 
+    my $r = $_[0]->ResolvedObj or return '';
+    return $r->DiffAsString($_[0]->CreatedObj);
+  }
+};
+</%init>
+<%ARGS>
+$COLUMN_MAP => {}
+</%ARGS>
