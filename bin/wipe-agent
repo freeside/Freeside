@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $opt_a $opt_d );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_main;
+
+die "i cancel and delete all customers of an agent - use the -d switch first and be careful - remove this line to enable";
+
+getopts('a:d');
+
+my $user = shift or die "usage: wipe-agent -a agentnum [ -d ] username\n";
+adminsuidsetup $user;
+
+die "no agentnum specified" unless $opt_a;
+
+foreach my $cust_main (
+
+  qsearch('cust_main', { 'agentnum' => $opt_a } )
+
+) {
+
+  warn "deleting ". $cust_main->name. "\n";
+
+  unless ( $opt_d ) { #dry run
+
+    my @cerrors = $cust_main->cancel( quiet=>1, nobill=>1 );
+    if ( @cerrors ) {
+      die join(' / ', @cerrors);
+    }
+
+    my $error = $cust_main->delete( 'delete_financials' => 1);
+    die $error if $error;
+
+  }
+
+}
