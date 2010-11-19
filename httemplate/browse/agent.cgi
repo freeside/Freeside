@@ -65,10 +65,11 @@ full offerings (via their type).<BR><BR>
           <A HREF="<%$p%>edit/agent.cgi?<% $agent->agentnum %>"><% $agent->agentnum %></A>
         </TD>
 
-%       if ( dbdef->table('agent')->column('disabled')
-%            && !$cgi->param('showdisabled')           ) { 
-          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-            <% $agent->disabled ? 'DISABLED' : '' %>
+%       if ( ! $cgi->param('showdisabled') ) { 
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="center">
+            <% $agent->disabled ? '<FONT COLOR="#FF0000"><B>DISABLED</B></FONT>'
+                                : '<FONT COLOR="#00CC00"><B>Active</B></FONT>'
+            %>
           </TD>
 %       } 
 
