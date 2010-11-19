@@ -22,7 +22,7 @@ foreach my $cust_main (
 
 ) {
 
-  warn "deleting ". $cust_main->name. "\n";
+  warn "deleting ". $cust_main->custnum.': '. $cust_main->name. "\n";
 
   unless ( $opt_d ) { #dry run
 
