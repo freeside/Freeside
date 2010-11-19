@@ -23,7 +23,7 @@ sub condition {
 
   my $age = $self->option_age_from('age', $opt{'time'} );
 
-  $cust_bill->_date <= $age;
+  ( $cust_bill->_date - 60 ) <= $age;
 
 }
 
@@ -32,7 +32,7 @@ sub condition_sql {
 
   my $age  = $class->condition_sql_option_age_from('age', $opt{'time'} );
 
-  "cust_bill._date <= $age";
+  "( cust_bill._date - 60 ) <= $age";
 }
 
 sub order_sql {
