@@ -1,0 +1,17 @@
+% return if ($RT::URI::freeside::IntegrationType ne 'Internal');
+<select name="<%$Name%>">
+% if ($ShowNullOption) {
+  <option value="">-</option>
+% }
+% for my $agent (qsearch('agent', {'disabled' => ''})) {
+  <option value="<%$agent->agentnum%>" <% 
+  $agent->agentnum == $Default||'' ? 'selected' : ''%>
+  ><%$agent->agent%></option>
+% }
+</select>
+<%init></%init>
+<%args>
+$ShowNullOption => 1
+$Name => undef
+$Default => 0
+</%args>

@@ -146,6 +146,9 @@ our %FIELD_METADATA = (
     WatcherGroup     => [ 'MEMBERSHIPFIELD', ], #loc_left_pair
     HasAttribute     => [ 'HASATTRIBUTE', 1 ],
     HasNoAttribute     => [ 'HASATTRIBUTE', 0 ],
+    Agentnum         => [ 'FREESIDEFIELD', ],
+    Classnum         => [ 'FREESIDEFIELD', ],
+    Tagnum           => [ 'FREESIDEFIELD', 'cust_tag' ],
 );
 
 # Mapping of Field Type to Function
@@ -163,6 +166,7 @@ our %dispatch = (
     CUSTOMFIELD     => \&_CustomFieldLimit,
     DATECUSTOMFIELD => \&_DateCustomFieldLimit,
     HASATTRIBUTE    => \&_HasAttributeLimit,
+    FREESIDEFIELD   => \&_FreesideFieldLimit,
 );
 our %can_bundle = ();# WATCHERFIELD => "yes", );
 
@@ -1697,7 +1701,6 @@ sub _HasAttributeLimit {
     );
 }
 
-
 # End Helper Functions
 
 # End of SQL Stuff -------------------------------------------------
@@ -1832,60 +1835,26 @@ sub OrderByCols {
            push @res, { %$row, FIELD => "Priority", ORDER => $order } ;
 
        } elsif ( $field eq 'Customer' ) { #Freeside
-
-           my $linkalias = $self->Join(
-               TYPE   => 'LEFT',
-               ALIAS1 => 'main',
-               FIELD1 => 'id',
-               TABLE2 => 'Links',
-               FIELD2 => 'LocalBase'
-           );
-
-           $self->SUPER::Limit(
-               LEFTJOIN => $linkalias,
-               FIELD    => 'Type',
-               OPERATOR => '=',
-               VALUE    => 'MemberOf',
-           );
-           $self->SUPER::Limit(
-               LEFTJOIN => $linkalias,
-               FIELD    => 'Target',
-               OPERATOR => 'STARTSWITH',
-               VALUE    => 'freeside://freeside/cust_main/',
-           );
-
-           #if there was a Links.RemoteTarget int, this bs wouldn't be necessary
-           my $custnum_sql = "CAST(SUBSTR($linkalias.Target,31) AS ";
-           if ( RT->Config->Get('DatabaseType') eq 'mysql' ) {
-             $custnum_sql .= 'SIGNED INTEGER)';
-           }
-           else {
-             $custnum_sql .= 'INTEGER)';
-           }
-
            if ( $subkey eq 'Number' ) {
-
+               my ($linkalias, $custnum_sql) = $self->JoinToCustLinks;
                push @res, { %$row,
                             ALIAS => '',
                             FIELD => $custnum_sql,
-                          };
-
-           } elsif ( $subkey eq 'Name' ) {
-
-              my $custalias = $self->Join(
-                  TYPE       => 'LEFT',
-                  EXPRESSION => $custnum_sql,
-                  TABLE2     => 'cust_main',
-                  FIELD2     => 'custnum',
-                  
-              );
-
-              my $field = "COALESCE( $custalias.company,
-                                     $custalias.last || ', ' || $custalias.first
-                                   )";
-
-              push @res, { %$row, ALIAS => '', FIELD => $field };
-
+                        };
+           }
+           else {
+               my $custalias = $self->JoinToCustomer;
+               my $field;
+               if ( $subkey eq 'Name' ) {
+                   $field = "COALESCE( $custalias.company,
+                   $custalias.last || ', ' || $custalias.first
+                   )";
+               }
+               else {
+                   # no other cases exist yet, but for obviousness:
+                   $field = $subkey;
+               }
+               push @res, { %$row, ALIAS => '', FIELD => $field };
            }
 
        } #Freeside
@@ -1896,6 +1865,100 @@ sub OrderByCols {
     }
     return $self->SUPER::OrderByCols(@res);
 }
+
+#Freeside
+
+sub JoinToCustLinks {
+    # Set up join to links (id = localbase),
+    # limit link type to 'MemberOf',
+    # and target value to any Freeside custnum URI.
+    # Return the linkalias for further join/limit action,
+    # and an sql expression to retrieve the custnum.
+    my $self = shift;
+    my $linkalias = $self->Join(
+        TYPE   => 'LEFT',
+        ALIAS1 => 'main',
+        FIELD1 => 'id',
+        TABLE2 => 'Links',
+        FIELD2 => 'LocalBase',
+    );
+
+    $self->SUPER::Limit(
+        LEFTJOIN => $linkalias,
+        FIELD    => 'Type',
+        OPERATOR => '=',
+        VALUE    => 'MemberOf',
+    );
+    $self->SUPER::Limit(
+        LEFTJOIN => $linkalias,
+        FIELD    => 'Target',
+        OPERATOR => 'STARTSWITH',
+        VALUE    => 'freeside://freeside/cust_main/',
+    );
+    my $custnum_sql = "CAST(SUBSTR($linkalias.Target,31) AS ";
+    if ( RT->Config->Get('DatabaseType') eq 'mysql' ) {
+        $custnum_sql .= 'SIGNED INTEGER)';
+    }
+    else {
+        $custnum_sql .= 'INTEGER)';
+    }
+    return ($linkalias, $custnum_sql);
+}
+
+sub JoinToCustomer {
+    my $self = shift;
+    my ($linkalias, $custnum_sql) = $self->JoinToCustLinks;
+
+    my $custalias = $self->Join(
+        TYPE       => 'LEFT',
+        EXPRESSION => $custnum_sql,
+        TABLE2     => 'cust_main',
+        FIELD2     => 'custnum',
+    );
+    return $custalias;
+}
+
+sub _FreesideFieldLimit {
+    my ( $self, $field, $op, $value, %rest ) = @_;
+    my $alias = $self->JoinToCustomer;
+    my $is_negative = 0;
+    if ( $op eq '!=' || $op =~ /\bNOT\b/i ) {
+        # if the op is negative, do the join as though
+        # the op were positive, then accept only records
+        # where the right-side join key is null.
+        $is_negative = 1;
+        $op = '=' if $op eq '!=';
+        $op =~ s/\bNOT\b//;
+    }
+    my $meta = $FIELD_METADATA{$field};
+    if ( $meta->[1] ) {
+        $alias = $self->Join(
+            TYPE        => 'LEFT',
+            ALIAS1      => $alias,
+            FIELD1      => 'custnum',
+            TABLE2      => $meta->[1],
+            FIELD2      => 'custnum',
+        );
+    }
+
+    $self->SUPER::Limit(
+        LEFTJOIN        => $alias,
+        FIELD           => lc($field),
+        OPERATOR        => $op,
+        VALUE           => $value,
+        ENTRYAGGREGATOR => 'AND',
+    );
+    $self->_SQLLimit(
+        %rest,
+        ALIAS           => $alias,
+        FIELD           => lc($field),
+        OPERATOR        => $is_negative ? 'IS' : 'IS NOT',
+        VALUE           => 'NULL',
+        QUOTEVALUE      => 0,
+    );
+}
+
+#Freeside
 
 # }}}
 

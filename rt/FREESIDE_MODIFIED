@@ -21,7 +21,7 @@ lib/RT/Interface/Web_Vendor.pm
  lib/RT/Record.pm #and customfield date patch
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
 lib/RT/Transaction_Overlay.pm
-lib/RT/Tickets_Overlay.pm #customfield date patch
+lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields
  lib/RT/Ticket_Overlay.pm
  lib/RT/Users_Overlay.pm
  lib/RT/Groups_Overlay.pm
@@ -48,6 +48,9 @@ share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)
 share/html/Elements/ShowLink_Checklist
  share/html/Elements/ShowUserVerbose
  share/html/Elements/Footer
+ share/html/Elements/SelectCustomerAgent #SearchCustomerFields
+ share/html/Elements/SelectCustomerClass #SearchCustomerFields
+ share/html/Elements/SelectCustomerTag #SearchCustomerFields
  html/Ticket/Create.html #XXX TODO
  share/html/Search/Build.html
  share/html/Search/Elements/BuildFormatString
@@ -85,3 +88,6 @@ share/html/Callbacks/RTx-Checklist/*
 share/html/Callbacks/CheckMandatoryFields/*
 
 share/html/Callbacks/TimeToResolve/*
+
+share/html/Callbacks/SearchCustomerFields/*
+
