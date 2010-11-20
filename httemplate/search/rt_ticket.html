@@ -1,18 +1,16 @@
 <% include('elements/search.html',
-             'title'         => 'Time worked',
-             'name_singular' => 'transaction',
+             'title'         => 'Time worked summary',
+             'name_singular' => 'ticket',
              'query'         => $query,
              'count_query'   => $count_query,
              'count_addl'    => [ $format_seconds_sub, $format_seconds_sub, ],
              'header'        => [ 'Ticket #',
                                   'Ticket',
-                                  'Date',
                                   'Time',
                                   'Applied',
                                 ],
              'fields'        => [ 'ticketid',
                                   sub { encode_entities(shift->get('subject')) },
-                                  'created',
                                   sub { my $seconds = shift->get('transaction_time');
                                         &{ $format_seconds_sub }( $seconds );
                                       },
@@ -23,7 +21,6 @@
              'links'         => [
                                   $link,
                                   $link,
-                                  '',
                                   '',
                                   '',
                                 ],
@@ -41,6 +38,8 @@ $seconds)%3600)/60)."m";
 </%once>
 <%init>
 
+#all sorts of false laziness w/rt_transaction.html
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
 
@@ -53,12 +52,13 @@ my $transactiontime = "
   END
 ";
 
-my $join = 'JOIN Tickets ON Transactions.ObjectId = Tickets.Id '.
-           'JOIN Users   ON Transactions.Creator = Users.Id '; #.
+my $join = 'JOIN Users   ON Transactions.Creator = Users.Id '; #.
 #           'LEFT JOIN acct_rt_transaction '.
 #                 '  ON Transactions.Id = acct_rt_transaction.transaction_id';
-my $where = "
+
+my $twhere = "
   WHERE objecttype='RT::Ticket'
+    AND Transactions.ObjectId = Tickets.Id 
     AND (    ( Transactions.Type = 'Set'
                AND Transactions.Field = 'TimeWorked'
                AND Transactions.NewValue != Transactions.OldValue )
@@ -76,50 +76,50 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 # TIMESTAMP is Pg-specific... ?
 if ( $beginning > 0 ) {
   $beginning = "TIMESTAMP '". time2str('%Y-%m-%d %X', $beginning). "'";
-  $where .= " AND Transactions.Created >= $beginning ";
+  $twhere .= " AND Transactions.Created >= $beginning ";
 }
 if ( $ending < 4294967295 ) {
   $ending =    "TIMESTAMP '". time2str('%Y-%m-%d %X', $ending).    "'";
-  $where .= " AND Transactions.Created <= $ending    ";
+  $twhere .= " AND Transactions.Created <= $ending    ";
 }
 
 if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
-  $where .= " AND Users.name = '$1' ";
-}
-
-if ( $cgi->param('ticketid') =~ /^\s*(\d+)\s*$/ ) {
-  $where .= " AND Tickets.Id = $1";
+  $twhere .= " AND Users.name = '$1' ";
 }
 
 if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
-  $where .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
+  $twhere .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
   $support = "AND svcnum = $1";
 }
 
-my $support_time = "( SELECT SUM(support) from acct_rt_transaction where transaction_id = Transactions.id $support )";
+my $transactions = "FROM Transactions $join $twhere";
+
+my $where = "WHERE EXISTS ( SELECT 1 $transactions )";
+
+my $transaction_time = "( SELECT SUM($transactiontime) $transactions )";
+my $support_time = "( SELECT SUM(support) FROM acct_rt_transaction LEFT JOIN Transactions ON ( transaction_id = Id ) $twhere $support )";
 
 my $query = {
   'select'    => join(', ',
-                   'Transactions.*',
                    'Tickets.Id AS ticketid',
                    'Tickets.Subject',
-                   'Users.name AS otaker',
-                   "$transactiontime AS transaction_time",
-                   "$support_time    AS support",
+                   "$transaction_time AS transaction_time",
+                   "$support_time     AS support",
                  ),
-  'table'     => 'transactions', #Pg-ism
-  #'table'     => 'Transactions',
-  'addl_from' => $join,
+  'table'     => 'tickets', #Pg-ism
+  #'table'     => 'Tickets',
+  'addl_from' => '', #$join,
   'extra_sql' => $where,
   'order by'  => 'ORDER BY Created',
 };
 
 my $count_query =
   #"SELECT COUNT(*), SUM($transactiontime), SUM(acct_rt_transaction.support) FROM Transactions $join $where";
+  #"SELECT COUNT(*), ( SUM($transactiontime) $transactions ) FROM Tickets"; # $join $where";
   "SELECT COUNT(*),
-          SUM($transactiontime),
-          SUM($support_time)
-     FROM Transactions $join $where";
+          SUM( $transaction_time ),
+          SUM( $support_time )
+     FROM Tickets $where"; # $join $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->get('ticketid'); } ];
 

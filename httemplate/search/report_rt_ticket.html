@@ -1,18 +1,12 @@
-<% include('/elements/header.html', 'Time worked report criteria' ) %>
+<% include('/elements/header.html', 'Time worked summary report criteria' ) %>
 
-<FORM ACTION="rt_transaction.html" METHOD="GET">
+<FORM ACTION="rt_ticket.html" METHOD="GET">
 
 <TABLE>
 
   <% include ( '/elements/tr-input-beginning_ending.html' ) %>
 
   <% include ( '/elements/tr-select-otaker.html' ) %>
-
-  <% include ( '/elements/tr-input-text.html',
-                 'label' => 'Ticket #',
-                 'field' => 'ticketid',
-             )
-  %>
 
   <TR>
     <TD>Account</TD>
