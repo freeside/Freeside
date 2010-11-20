@@ -51,7 +51,6 @@ sub get_dids {
             'table'    => 'phone_avail',
             'hashref'  => { 'exportnum'   => $self->exportnum,
                             'countrycode' => '1', # vitelity is US/CA only now
-                            'state'       => $opt{'state'},
                             'npa'         => $opt{'areacode'},
                             'nxx'         => $opt{'exchange'},
                           },
@@ -61,14 +60,16 @@ sub get_dids {
 
   } elsif ( $opt{'areacode'} ) { #return exchanges in format NPA-NXX- literal 'XXXX'
 
+    # you can't call $->name .... that returns "(unlinked)"
+    # and in any case this is still major abuse of encapsulation, it just happens to work for the other fields
     return [
-      map { $_->name. ' ('. $_->npa. '-'. $_->nxx. '-XXXX)' } 
+	   map { $_->{'Hash'}->{name}.' ('. $_->npa. '-'. $_->nxx. '-XXXX)' } 
           qsearch({
-            'select'   => 'DISTINCT ON ( name, npa, nxx ) *',
+	# i know this doesn't do the same thing as before, but now the sort works
+            'select'   => 'DISTINCT npa,nxx,name',
             'table'    => 'phone_avail',
             'hashref'  => { 'exportnum'   => $self->exportnum,
                             'countrycode' => '1', # vitelity is US/CA only now
-                            'state'       => $opt{'state'},
                             'npa'         => $opt{'areacode'},
                           },
             'order_by' => 'ORDER BY nxx',
@@ -133,7 +134,7 @@ sub get_dids {
       }
 
       foreach my $did ( @dids ) {
-        $did =~ /^(\d{3})(\d{3})(\d{4})$/ or die "unparsable did $did\n";
+	$did =~ /^(\d{3})(\d{3})(\d{4}),/ or die "unparsable did $did\n";
         my($npa, $nxx, $station) = ($1, $2, $3);
         $npa{$npa}++;
 
