@@ -72,6 +72,17 @@
           @{ $object->option_fields_listref };
 
     },
+    'precheck_callback' => sub {
+      my $cgi = shift;
+      my $action = $cgi->param('action') or return;
+      my %actionfields = map { $_ =~ /^$action\.(.*)/; $1 => $cgi->param($_) }
+                         grep { /^$action\./ } $cgi->param;
+      if ( exists($actionfields{'reasonnum'}) and 
+           length($actionfields{'reasonnum'}) == 0 ) {
+        return 'Reason required';
+      }
+      return '';
+    },
 
     'agent_virt'       => 1,
     'agent_null_right' => 'Edit global billing events',
