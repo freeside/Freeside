@@ -1,9 +1,13 @@
-package FS::part_event::Action::cancel;
+package FS::part_event::Action::pkg_cancel;
 
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description { 'Cancel all of this customer\'s packages'; }
+sub description { 'Cancel this package'; }
+
+sub eventtable_hashref {
+  { 'cust_pkg' => 1 };
+}
 
 sub option_fields {
   ( 
@@ -17,11 +21,9 @@ sub option_fields {
 sub default_weight { 20; }
 
 sub do_action {
-  my( $self, $cust_object ) = @_;
+  my( $self, $cust_pkg, $cust_event ) = @_;
 
-  my $cust_main = $self->cust_main($cust_object);
-
-  my $error = $cust_main->cancel( 'reason' => $self->option('reasonnum') );
+  my $error = $cust_pkg->cancel( 'reason' => $self->option('reasonnum') );
   die $error if $error;
   
   '';
