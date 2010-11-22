@@ -258,6 +258,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::acct_snarf;
   use FS::part_pkg_discount;
   use FS::svc_cert;
+  use FS::svc_dsl;
+  use FS::qual;
+  use FS::qual_option;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

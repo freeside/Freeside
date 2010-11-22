@@ -906,6 +906,9 @@ sub tables_hashref {
         'zip',         'varchar', 'NULL',      10, '', '', 
         'country',        'char',     '',       2, '', '', 
         'geocode',     'varchar', 'NULL',      20, '', '',
+        'location_type',     'varchar', 'NULL',      20, '', '',
+        'location_number',     'varchar', 'NULL',      20, '', '',
+        'location_kind',     'char', 'NULL',      1, '', '',
       ],
       'primary_key' => 'locationnum',
       'unique'      => [],
@@ -1674,6 +1677,32 @@ sub tables_hashref {
       'unique' => [],
       'index' => [ [ 'npa', 'nxx' ], [ 'popnum' ] ],
     },
+    
+    'qual' => {
+      'columns' => [
+        'qualnum',  'serial',     '',     '', '', '', 
+        'contactnum',    'int',     '',     '', '', '',
+	'svctn',     'int', 'NULL',       '', '', '',
+        'svcdb',      'varchar', '', $char_d, '', '', 
+        'vendor_qual_id',      'varchar', 'NULL', $char_d, '', '', 
+        'status',      'char', '', 1, '', '', 
+      ],
+      'primary_key' => 'qualnum',
+      'unique' => [],
+      'index' => [ [ 'contactnum' ] ],
+    },
+    
+    'qual_option' => {
+      'columns' => [
+        'optionnum', 'serial', '', '', '', '', 
+        'qualnum',  'int',     '',     '', '', '', 
+        'optionname', 'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'optionnum',
+      'unique' => [],
+      'index' => [],
+    },
 
     'svc_acct' => {
       'columns' => [
@@ -1803,6 +1832,39 @@ sub tables_hashref {
       'unique' => [ ],
       'index' => [ ['domain'] ],
     },
+    
+    'svc_dsl' => {
+      'columns' => [
+        'svcnum',           'int',    '',        '', '', '',
+	'pushed',     'int', 'NULL',       '', '', '',
+	'desired_dd',     'int', '',       '', '', '',
+	'dd',     'int', 'NULL',       '', '', '',
+        'vendor_order_id',              'varchar', 'NULL', $char_d,  '', '',
+        'vendor_qual_id',              'varchar', 'NULL', $char_d,  '', '',
+        'vendor_order_type',   'char', '',       1,  '', '', 
+        'vendor_order_status',   'char', 'NULL',       1,  '', '', 
+        'first',              'varchar', '', $char_d,  '', '',
+        'last',              'varchar', '', $char_d,  '', '',
+        'company',              'varchar', 'NULL', $char_d,  '', '',
+	'svctn',     'int', 'NULL',       '', '', '',
+        'loop_type',   'char', 'NULL',       1,  '', '', 
+        'lvp',              'varchar', 'NULL', $char_d,  '', '',
+        'cktnum',              'varchar', 'NULL', $char_d,  '', '',
+        'rate_band',              'varchar', 'NULL', $char_d,  '', '',
+        'isp_chg',   'char', 'NULL',       1,  '', '', 
+        'isp_prev',              'varchar', 'NULL', $char_d,  '', '',
+        'username',              'varchar', 'NULL', $char_d,  '', '',
+        'password',              'varchar', 'NULL', $char_d,  '', '',
+        'staticips',             'text', 'NULL', '',  '', '',
+        'monitored',   	'char', '',       1,  '', '', 
+	'last_pull',     'int', 'NULL',       '', '', '',
+	'notes',     'text', 'NULL',       '', '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [ ],
+      'index' => [ ['svctn'] ],
+    },
+
 
     'domain_record' => {
       'columns' => [

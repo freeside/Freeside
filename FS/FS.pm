@@ -148,6 +148,8 @@ L<FS::svc_www> - Web virtual host class.
 
 L<FS::svc_broadband> - DSL, wireless and other broadband class.
 
+L<FS::svc_dsl> - DSL
+
 L<FS::addr_block> - Address block class
 
 L<FS::router> - Router class
@@ -209,6 +211,10 @@ L<FS::part_pkg_report_option> - Package reporting classification class
 
 L<FS::pkg_svc> - Class linking package definitions (see L<FS::part_pkg>) with
 service definitions (see L<FS::part_svc>)
+
+L<FS::qual> - Service qualification class
+
+L<FS::qual_option> - Qualification option class
 
 L<FS::reg_code> - One-time registration codes
 

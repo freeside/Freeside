@@ -540,3 +540,9 @@ FS/part_pkg_discount.pm
 t/part_pkg_discount.t
 FS/svc_cert.pm
 t/svc_cert.t
+FS/svc_dsl.pm
+t/svc_dsl.t
+FS/qual.pm
+t/qual.t
+FS/qual_option.pm
+t/qual_option.t
