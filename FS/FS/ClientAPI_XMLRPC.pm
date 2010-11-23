@@ -91,6 +91,7 @@ sub ss2clientapi {
   'renew_info'                => 'MyAccount/renew_info',
   'order_renew'               => 'MyAccount/order_renew',
   'cancel_pkg'                => 'MyAccount/cancel_pkg',    #add to ss cgi!
+  'suspend_pkg'               => 'MyAccount/suspend_pkg',   #add to ss cgi!
   'charge'                    => 'MyAccount/charge',        #?
   'part_svc_info'             => 'MyAccount/part_svc_info',
   'provision_acct'            => 'MyAccount/provision_acct',

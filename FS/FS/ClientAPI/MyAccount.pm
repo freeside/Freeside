@@ -266,6 +266,9 @@ sub access_info {
     @{ $info->{cust_paybys} }
   ];
 
+  $info->{'self_suspend_reason'} = 
+      $conf->config('selfservice-self_suspend_reason', $cust_main->agentnum);
+
   return { %$info,
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
@@ -1453,6 +1456,32 @@ sub order_renew {
 
 }
 
+sub suspend_pkg {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $conf = new FS::Conf;
+  my $reasonnum = 
+    $conf->config('selfservice-self_suspend_reason', $cust_main->agentnum)
+      or return { 'error' => 'Permission denied' };
+
+  my $pkgnum = $p->{'pkgnum'};
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
+                                        'pkgnum'  => $pkgnum,   } )
+    or return { 'error' => "unknown pkgnum $pkgnum" };
+
+  my $error = $cust_pkg->suspend(reason => $reasonnum);
+  return { 'error' => $error };
+
+}
+
 sub cancel_pkg {
   my $p = shift;
   my $session = _cache->get($p->{'session_id'})
@@ -1469,7 +1498,7 @@ sub cancel_pkg {
                                         'pkgnum'  => $pkgnum,   } )
     or return { 'error' => "unknown pkgnum $pkgnum" };
 
-  my $error = $cust_pkg->cancel( 'quiet'=>1 );
+  my $error = $cust_pkg->cancel('quiet' => 1);
   return { 'error' => $error };
 
 }

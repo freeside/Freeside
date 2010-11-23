@@ -2294,6 +2294,32 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-self_suspend_reason',
+    'section'     => 'self-service',
+    'description' => 'Suspend reason when customers suspend their own packages. Set to nothing to disallow self-suspension.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::reason;
+                           my $type = qsearchs('reason_type', 
+                             { class => 'S' }) 
+                              or return ();
+			   map { $_->reasonnum => $_->reason }
+                               FS::Record::qsearch('reason', 
+                                 { reason_type => $type->typenum } 
+                               );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::reason;
+			   my $reason = FS::Record::qsearchs(
+			     'reason', { 'reasonnum' => shift }
+			   );
+                           $reason ? $reason->reason : '';
+			 },
+
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'card_refund-days',
     'section'     => 'billing',
     'description' => 'After a payment, the number of days a refund link will be available for that payment.  Defaults to 120.',

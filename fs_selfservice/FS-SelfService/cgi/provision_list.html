@@ -9,18 +9,30 @@ function areyousure(href, message) {
 
 <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#ffffff">
 
-<%= foreach my $pkg (
-      grep {    scalar(@{$_->{part_svc}})
-             || scalar(@{$_->{cust_svc}})
-           } @cust_pkg
-    ) {
+<%=
 
+foreach my $pkg (
+    grep {    scalar(@{$_->{part_svc}})
+           || scalar(@{$_->{cust_svc}})
+         } @cust_pkg
+    ) {
+  my $susp = $pkg->{'susp'} || '';
+  warn $pkg->{'pkg'}. ' '.$susp."\n";
+  my @pkg_actions = ( [ 'customer_change_pkg' => 'change' ] );
+  push @pkg_actions, [ 'process_suspend_pkg' => 'suspend' ] 
+    if $self_suspend_reason and !$susp;
+
+  my $bgcolor = $susp ? '"#ff9900"' : '"#8888ff"';
   $OUT .= #'<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#ffffff">'.
-          '<TR><TH BGCOLOR="#6666ff" COLSPAN=2>'.
-          $pkg->{'pkg'}. '</TH><TH BGCOLOR="#6666ff" >' .
-          qq!(<A style="font-size: smaller;color: #000000" HREF="! .
-          qq!${url}customer_change_pkg;pkgnum=$pkg->{'pkgnum'};pkg=$pkg->{'pkg'}">! .
-          'change</A>)</TH></TR>';
+          '<TR><TH BGCOLOR='.$bgcolor.' COLSPAN=2>'.
+          $pkg->{'pkg'}. ($susp && ' (suspended)').
+          '</TH><TH ALIGN="left" BGCOLOR='.$bgcolor.'>';
+  foreach my $action (@pkg_actions) {
+    $OUT .= '(<A style="font-size: smaller;color: #000000" HREF="' .
+            $url . $action->[0] . ';pkgnum=' . $pkg->{'pkgnum'} . ';pkg=' .
+            $pkg->{'pkg'} . '">' . $action->[1] . '</A>) ';
+  }
+  $OUT .= '</TH></TR>';
 
   my $col1 = "ffffff";
   my $col2 = "dddddd";
