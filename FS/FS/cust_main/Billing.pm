@@ -857,7 +857,7 @@ sub _make_lines {
   my $unitrecur = 0;
   my $sdate;
   if (     ! $cust_pkg->start_date
-       and ( ! $cust_pkg->susp || $part_pkg->option('suspend_bill') )
+       and ( ! $cust_pkg->susp || $part_pkg->option('suspend_bill', 1) )
        and
             ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= $time )
          || ( $part_pkg->plan eq 'voip_cdr'
