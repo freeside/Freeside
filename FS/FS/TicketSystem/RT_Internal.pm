@@ -7,7 +7,6 @@ use MIME::Entity;
 use FS::UID qw(dbh);
 use FS::CGI qw(popurl);
 use FS::TicketSystem::RT_Libs;
-use RT::CurrentUser;
 
 @ISA = qw( FS::TicketSystem::RT_Libs );
 
@@ -222,6 +221,9 @@ sub _web_external_auth {
   my( $self, $session ) = @_;
 
   my $user = $FS::CurrentUser::CurrentUser->username;
+
+  eval 'use RT::CurrentUser;';
+  die $@ if $@;
 
   $session ||= {};
   $session->{'CurrentUser'} = RT::CurrentUser->new();
