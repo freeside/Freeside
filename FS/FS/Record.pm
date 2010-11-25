@@ -1581,6 +1581,7 @@ sub process_batch_import {
     format_headers             => $opt->{format_headers},
     format_sep_chars           => $opt->{format_sep_chars},
     format_fixedlength_formats => $opt->{format_fixedlength_formats},
+    format_xml_formats         => $opt->{format_xml_formats},
     format_row_callbacks       => $opt->{format_row_callbacks},
     #per-import
     job                        => $job,
@@ -1640,7 +1641,7 @@ FS::queue object, will be updated with progress
 
 =item type
 
-csv, xls or fixedlength
+csv, xls, fixedlength, xml
 
 =item empty_ok
 
@@ -1660,7 +1661,8 @@ sub batch_import {
   my $file    = $param->{file};
   my $params  = $param->{params} || {};
 
-  my( $type, $header, $sep_char, $fixedlength_format, $row_callback, @fields );
+  my( $type, $header, $sep_char, $fixedlength_format, 
+      $xml_format, $row_callback, @fields );
   my $postinsert_callback = '';
   if ( $param->{'format'} ) {
 
@@ -1684,6 +1686,11 @@ sub batch_import {
     $fixedlength_format =
       $param->{'format_fixedlength_formats'}
         ? $param->{'format_fixedlength_formats'}{ $param->{'format'} }
+        : '';
+
+    $xml_format =
+      $param->{'format_xml_formats'}
+        ? $param->{'format_xml_formats'}{ $param->{'format'} }
         : '';
 
     $row_callback =
@@ -1741,8 +1748,9 @@ sub batch_import {
       eval "use Parse::FixedLength;";
       die $@ if $@;
       $parser = new Parse::FixedLength $fixedlength_format;
- 
-    } else {
+
+    }
+    else {
       die "Unknown file type $type\n";
     }
 
@@ -1768,7 +1776,22 @@ sub batch_import {
     $count++;
 
     $row = $header || 0;
-
+  } elsif ( $type eq 'xml' ) {
+    # FS::pay_batch
+    eval "use XML::Simple;";
+    die $@ if $@;
+    my $xmlrow = $xml_format->{'xmlrow'};
+    $parser = $xml_format->{'xmlkeys'};
+    die 'no xmlkeys specified' unless ref $parser eq 'ARRAY';
+    my $data = XML::Simple::XMLin(
+      $file,
+      'SuppressEmpty' => '', #sets empty values to ''
+      'KeepRoot'      => 1,
+    );
+    my $rows = $data;
+    $rows = $rows->{$_} foreach @$xmlrow;
+    $rows = [ $rows ] if ref($rows) ne 'ARRAY';
+    $count = @buffer = @$rows;
   } else {
     die "Unknown file type $type\n";
   }
@@ -1842,6 +1865,11 @@ sub batch_import {
       #my $z = 'A';
       #warn $z++. ": $_\n" for @columns;
 
+    } elsif ( $type eq 'xml' ) {
+      # $parser = [ 'Column0Key', 'Column1Key' ... ]
+      last unless scalar(@buffer);
+      my $row = shift @buffer;
+      @columns = @{ $row }{ @$parser };
     } else {
       die "Unknown file type $type\n";
     }

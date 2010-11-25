@@ -788,6 +788,10 @@ sub _cdr_date_parse {
   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/ ) {
     # WIP: 20100329121420
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
+  } elsif ( $date =~ /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/) {
+    # Telos
+    ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
+    $options{gmt} = 1;
   } else {
      die "unparsable date: $date"; #maybe we shouldn't die...
   }
@@ -852,6 +856,11 @@ my %import_options = (
 
   'format_fixedlength_formats' =>
     { map { $_ => $cdr_info{$_}->{'fixedlength_format'}; }
+          keys %cdr_info
+    },
+
+  'format_xml_formats' =>
+    { map { $_ => $cdr_info{$_}->{'xml_format'}; }
           keys %cdr_info
     },
 
