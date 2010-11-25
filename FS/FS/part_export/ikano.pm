@@ -37,7 +37,7 @@ sub dsl_pull {
 }
 
 sub status_line {
-    my($svc_dsl,$date_format,$separator) = (shift,shift,shift);
+    my($self,$svc_dsl,$date_format,$separator) = (shift,shift,shift,shift);
     my %orderTypes = ( 'N' => 'New', 'X' => 'Cancel', 'C' => 'Change' );
     my %orderStatus = ( 'N' => 'New', 'P' => 'Pending', 'X' => 'Cancelled',
 			'C' => 'Completed', 'E' => 'Error' );

@@ -35,14 +35,14 @@ my $svc_cb = sub {
     # default behaviour implemented above
     return if ( scalar(@exports) == 0 );
 
+    my $export = @exports[0];
     $opt->{'disable_unprovision'} = 1;
-    my $exporttype = @exports[0]->exporttype;	
 
     # XXX: AJAX auto-pull
 	
     @fields = qw( svctn first last company username password );
 
-    if($exporttype eq 'ikano') {
+    if($export->exporttype eq 'ikano') {
 	push @fields, 'isp_chg';
 	push @fields, 'isp_prev';
 	push @fields, 'staticips';
@@ -50,12 +50,8 @@ my $svc_cb = sub {
     else {
 	# XXX
     }
-    
-    # hack against "can't use string ... as a subroutine ref while 'strict refs' in use"
-    my $statusSub = \&{'FS::part_export::'.$exporttype.'::status_line'};
-    my $statusLine = &$statusSub($svc_x,$date_format,"<BR>");
-    
-    $footer = "<B>$statusLine</B>";
+   
+    $footer = "<B>".$export->status_line($svc_x,$date_format,"<BR>")."</B>";
 
     # XXX: notes
 };
