@@ -37,25 +37,19 @@ sub dsl_pull {
 }
 
 sub status_line {
-    my($self,$svc_dsl,$date_format,$separator) = (shift,shift,shift,shift);
+    my($self,$svc_dsl) = (shift,shift,shift,shift);
     my %orderTypes = ( 'N' => 'New', 'X' => 'Cancel', 'C' => 'Change' );
     my %orderStatus = ( 'N' => 'New', 'P' => 'Pending', 'X' => 'Cancelled',
 			'C' => 'Completed', 'E' => 'Error' );
-    my $status = "Ikano ".$orderTypes{$svc_dsl->vendor_order_type}." order #"
+    return "Ikano ".$orderTypes{$svc_dsl->vendor_order_type}." order #"
 	. $svc_dsl->vendor_order_id . " (Status: " 
-	. $orderStatus{$svc_dsl->vendor_order_status} . ") $separator ";
-    my $monitored = $svc_dsl->monitored eq 'Y' ? 'Yes' : 'No';
-    my $pushed = $svc_dsl->pushed ? 
-		time2str("$date_format %k:%M",$svc_dsl->pushed) : "never";
-    my $last_pull = $svc_dsl->last_pull ? 
-		time2str("$date_format %k:%M",$svc_dsl->last_pull) : "never";
-    my $ddd = $svc_dsl->desired_dd ? time2str($date_format,$svc_dsl->desired_dd)
-				   : "";
-    my $dd = $svc_dsl->dd ? time2str($date_format,$svc_dsl->dd) : "";
-    $status .= "$separator Pushed: $pushed   Monitored: $monitored  Last Pull: ";
-    $status .= "$lastpull $separator $separator Desired Due Date: $ddd  ";
-    $status .= "Due Date: $dd";
-    return $status;	
+	. $orderStatus{$svc_dsl->vendor_order_status} . ")";
+}
+
+sub loop_type_long {
+    my($svc_dsl) = shift;
+    return "Standalone" if $svc_dsl->loop_type eq '0';
+    return "Line-share";
 }
 
 sub ikano_command {

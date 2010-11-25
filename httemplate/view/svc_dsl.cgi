@@ -7,8 +7,8 @@
           )
 %>
 <%init>
-my $conf = new FS::Conf;
-my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+# XXX: AJAX auto-pull
 
 my $fields = FS::svc_dsl->table_info->{'fields'};
 my %labels = map { $_ =>  ( ref($fields->{$_})
@@ -38,21 +38,25 @@ my $svc_cb = sub {
     my $export = @exports[0];
     $opt->{'disable_unprovision'} = 1;
 
-    # XXX: AJAX auto-pull
-	
-    @fields = qw( svctn first last company username password );
+    @fields = ( 'svctn',
+	    { field => 'loop_type', 
+	      value => 'FS::part_export::'.$export->exporttype.'::loop_type_long'
+	    },
+	    { field => 'desired_dd', type => 'date', },
+	    { field => 'dd', type => 'date', },
+	    { field => 'pushed', type => 'datetime', },
+	    { field => 'monitored', type => 'checkbox', },
+	    { field => 'last_pull', type => 'datetime', },
+	    'first',
+	    'last',
+	    'company'  );
 
     if($export->exporttype eq 'ikano') {
-	push @fields, 'isp_chg';
-	push @fields, 'isp_prev';
-	push @fields, 'staticips';
+	push @fields, qw ( username password isp_chg isp_prev staticips );
     }
-    else {
-	# XXX
-    }
+    # else add any other export-specific stuff here
    
-    $footer = "<B>".$export->status_line($svc_x,$date_format,"<BR>")."</B>";
-
-    # XXX: notes
+    $footer = "<B>".$export->status_line($svc_x)."</B>";
+    $footer .= "<BR><BR><BR>Order Notes:<BR>".$export->notes_html;
 };
 </%init>

@@ -65,10 +65,10 @@ Unprovision this Service</A>
 %
 %   my($field, $type, $value, $hack_strict_refs);
 %   if ( ref($f) ) {
-%     $field = $f->{'field'},
+%     $field = $f->{'field'};
 %     $hack_strict_refs = \&{ $f->{'value'} } if $f->{'value'};
 %     $value = $f->{'value'} ? &$hack_strict_refs($svc_x) : $svc_x->$field;
-%     $type  = $f->{'type'} || 'text',
+%     $type  = $f->{'type'} || 'text';
 %   } else {
 %     $field = $f;
 %     $value = $svc_x->$field;
@@ -86,6 +86,9 @@ Unprovision this Service</A>
           %>
         </TD>
 
+%	$value = time2str($date_format,$value) if ( $type eq 'date' && $value );
+%	$value = time2str("$date_format %H:%M",$value) if ( $type eq 'datetime' && $value );
+%	$value = $value eq 'Y' ? 'Yes' : 'No' if ( $type eq 'checkbox' );
 %       #eventually more options for <SELECT>, etc. fields
 
         <TD BGCOLOR="#ffffff"><% $value %><TD>
@@ -124,6 +127,9 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
 
 my(%opt) = @_;
+
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $table = $opt{'table'};
 

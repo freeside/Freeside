@@ -3,6 +3,7 @@
 	    'fields'	=> \@fields,
 	    'svc_new_callback' => $new_cb,
 	    'svc_edit_callback' => $edit_cb,
+	    'html_foot' => $html_foot,
 	  )
 %>
 <%init>
@@ -16,7 +17,21 @@ my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 my $ti_fields = FS::svc_dsl->table_info->{'fields'};
 
 my @fields = ();
-my @uneditable = qw( pushed vendor_qual_id isp_chg isp_prev staticips last_pull notes );
+
+my $html_foot = sub {
+    return "
+<SCRIPT TYPE=\"text/javascript\">
+  function ikano_loop_type_changed() {
+	var loop_type = document.getElementById('loop_type').value;
+	var svctn = document.getElementById('svctn');
+	if(loop_type == '0') {
+	    svctn.value = '';
+	    svctn.disabled = true;	
+	}
+	else svctn.disabled = false;
+  }
+</SCRIPT>";
+};
 
 my $edit_cb = sub {
     my( $cgi,$svc_x, $part_svc,$cust_pkg, $fields1,$opt) = @_;
@@ -37,12 +52,10 @@ my $edit_cb = sub {
 		} unless ( $hf eq 'password' || $hf eq 'monitored' );
 	    }
 	}
-	else {
-	    # XXX
-	}
+	# else add any other export-specific stuff here
     }
     else {
-	# XXX
+	# XXX allow editing everything
     }
 };
 
@@ -77,8 +90,6 @@ my $new_cb = sub {
 	    },
 	);
 
-	my $loop_type = { field => 'loop_type' };
-
 	my $export = @exports[0];		
 	if($export->exporttype eq 'ikano') {
 	    $cgi->param('vendor_qual_id') =~ /^(\d+)$/ 
@@ -87,39 +98,35 @@ my $new_cb = sub {
 
 	    die "no start date set on customer package" if !$cust_pkg->start_date;
 
-	    $loop_type = { field => 'loop_type',
-		    type => 'select',
-		    options => [ '', '0' ],
-		    labels => { '' => 'Line-share', '0', => 'Standalone' },
-		   # onchange => "document.getElementById('svctn').value = ''",
-		};
-	    push @fields, { field => 'isp_chg', type => 'checkbox', };
-	    push @fields, 'isp_prev';
-	    push @fields, { field => 'vendor_qual_id',
-			    type => 'fixed',
-			    value => $vendor_qual_id, 
-			  };
+	    my @addl_fields = ( 
+		{ field => 'loop_type',
+		  type => 'select',
+		  options => [ '', '0' ],
+		  labels => { '' => 'Line-share', '0', => 'Standalone' },
+		  onchange => 'ikano_loop_type_changed',
+		},
+		'password', 
+		{ field => 'isp_chg', type => 'checkbox', },
+		'isp_prev',
+		{ field => 'vendor_qual_id', 
+		  type => 'fixed', 
+		  value => $vendor_qual_id,  },
+		{ field => 'vendor_order_type', 
+		  type => 'hidden', 
+		  value => 'N' },
+		{ field => 'desired_dd',
+		  type => 'fixed',
+		  formatted_value => 
+		    time2str($date_format,$cust_pkg->start_date),
+		  value => $cust_pkg->start_date, 
+		},
+	    );
+	    push @fields, @addl_fields;
 	}
-	else {
-	    push @fields, 'username';
-	}
-	
-	push @fields, 'password';
-
-	push @fields, $loop_type;
-	    
-	push @fields, { field => 'vendor_order_type',
-			type => 'hidden',
-			value => 'N' };
-	push @fields, { field => 'desired_dd',
-			type => 'fixed',
-			formatted_value => 
-			    time2str($date_format,$cust_pkg->start_date),
-			value => $cust_pkg->start_date, 
-		      };
+	# else add any other export-specific stuff here
     }
     else {
-	# XXX
+	# XXX display everything when no exports attached
     }
 };
 </%init>
