@@ -459,6 +459,17 @@ sub part_export_did {
   grep $_->can('get_dids'), $self->part_export;
 }
 
+=item part_export_dsl_pull
+
+Returns a list of any exports (see L<FS::part_export>) for this service that
+are capable of pulling/pushing DSL orders.
+
+=cut
+
+sub part_export_dsl_pull {
+    my $self = shift;
+    grep $_->can('dsl_pull'), $self->part_export;
+}
 
 =item cust_svc [ PKGPART ] 
 

@@ -155,7 +155,70 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
+sub table_info {
+    my %dis1 = ( disable_default=>1, disable_fixed=>1, disable_inventory=>1, disable_select=>1 );
+    my %dis2 = ( disable_inventory=>1, disable_select=>1 );
+
+    {
+	'name' => 'DSL',
+	'sorts' => [ 'svctn' ],
+	'display_weight' => 55,
+	'cancel_weight' => 75,
+	'fields' => {
+	    'pushed' => { 	label => 'Pushed', 
+				type => 'disabled' },
+	    'desired_dd' => { 	label => 'Desired Due Date', %dis2, },
+	    'dd' => { 		label => 'Due Date', %dis2, },
+	    'vendor_order_id' => { label => 'Vendor Order Id', %dis2, },
+	    'vendor_qual_id' => { label => 'Vendor Qualification Id', 
+				type => 'disabled' },
+	    'vendor_order_type' => { label => 'Vendor Order Type',
+				    disable_inventory => 1,
+				},
+	    'vendor_order_status' => { label => 'Vendor Order Status',
+				    disable_inventory => 1,
+				    },
+	    'first' => { 	label => 'First Name', %dis2, },
+	    'last' => {  	label => 'Last Name', %dis2, },
+	    'company' => {	label => 'Company Name', %dis2, },
+	    'svctn' => {	label => 'Service Telephone Number', },
+	    'loop_type' => {	label => 'Loop Type',
+				    disable_inventory => 1,
+			},
+	    'lvp' => {		label => 'Local Voice Provider',
+				    disable_inventory => 1,
+			},
+	    'cktnum' => {	label => 'Circuit #',	},
+	    'rate_band' => {	label => 'Rate Band',
+				    disable_inventory => 1,
+			},
+	    'isp_chg' => {	label => 'ISP Changing?', 
+				type => 'checkbox', %dis2 },
+	    'isp_prev' => {	label => 'Current or Previous ISP',
+				    disable_inventory => 1,
+			},
+	    'username' => {	label => 'PPPoE Username',
+				type => 'text',
+			},
+	    'password' => {	label => 'PPPoE Password', %dis2 },
+	    'staticips' => { 	label => 'Static IPs', %dis1 },
+	    'monitored' => {	label => 'Monitored', 
+				type => 'checkbox', %dis2 },
+	    'last_pull' => { 	label => 'Last Pull', type => 'disabled' },
+	    'notes' => { 	label => 'Order Notes', %dis1 },
+	},
+    };
+}
+
 sub table { 'svc_dsl'; }
+
+sub label {
+   my $self = shift;
+   return $self->svctn if $self->svctn;
+   return $self->username if $self->username;
+   return $self->vendor_order_id if $self->vendor_order_id;
+   return $self->svcnum;
+}
 
 =item insert
 

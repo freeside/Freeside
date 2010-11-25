@@ -311,6 +311,11 @@ Example:
 %     foreach grep exists($f->{$_}),
 %       qw( hashref agent_virt agent_null agent_null_right );
 %
+%   # fixed
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}),
+%       qw( formatted_value );
+%
 %   #htmlarea
 %   $include_common{$_} = $f->{$_}
 %     foreach grep exists($f->{$_}), qw( width height );

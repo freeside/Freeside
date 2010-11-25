@@ -52,18 +52,22 @@ function areyousure(href) {
 Service #<B><% $svcnum %></B>
 % my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
 | <A HREF="<%$url%><%$svcnum%>">Edit this <% $label %></A>
+
+% unless ( $opt{'disable_unprovision'} ) {
 | <A HREF="javascript:areyousure('<%$p.'misc/unprovision.cgi?'.$svcnum%>')">
 Unprovision this Service</A>
 <BR>
+% }
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
 
 % foreach my $f ( @$fields ) {
 %
-%   my($field, $type, $value);
+%   my($field, $type, $value, $hack_strict_refs);
 %   if ( ref($f) ) {
 %     $field = $f->{'field'},
-%     $value = $f->{'value'} ? &{ $f->{'value'} }($svc_x) : $svc_x->$field;
+%     $hack_strict_refs = \&{ $f->{'value'} } if $f->{'value'};
+%     $value = $f->{'value'} ? &$hack_strict_refs($svc_x) : $svc_x->$field;
 %     $type  = $f->{'type'} || 'text',
 %   } else {
 %     $field = $f;
@@ -172,4 +176,6 @@ if ($pkgnum) {
   $custnum = '';
 }
 
+&{ $opt{'svc_callback'} }( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, \%opt ) 
+    if $opt{'svc_callback'};
 </%init>

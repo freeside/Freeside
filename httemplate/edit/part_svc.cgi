@@ -16,6 +16,7 @@ Service definitions are the templates for items you offer to your customers.
 <UL><LI>svc_acct - Accounts - anything with a username (Mailboxes, PPP accounts, shell accounts, RADIUS entries for broadband, etc.)
     <LI>svc_domain - Domains
     <LI>svc_cert - Certificates
+    <LI>svc_dsl - DSL
     <LI>svc_forward - Mail forwarding
     <LI>svc_mailinglist - Mailing list
     <LI>svc_www - Virtual domain website

@@ -29,6 +29,13 @@
                    die "No part_svc entry!" unless $part_svc;
 
                    label_fixup($part_svc, $opt);
+		   
+		   if ( my $cb = $opt{'svc_edit_callback'} ) {
+                     my $cust_pkg = $pkgnum
+                                      ? qsearchs('cust_pkg', {pkgnum=>$pkgnum})
+                                      : ''; #?
+                      &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
+                    }
                  },
 
                  'new_hashref_callback' => sub {
