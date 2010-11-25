@@ -78,8 +78,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
-  'bulk_processrow'           => 'Bulk/processrow',
-  'check_username'            => 'Bulk/check_username',
+  #izoom
+  #'bulk_processrow'           => 'Bulk/processrow',
+  #conflicts w/Agent one# 'check_username'            => 'Bulk/check_username',
   #sg
   'ping'                      => 'SGNG/ping',
   'decompify_pkgs'            => 'SGNG/decompify_pkgs',
