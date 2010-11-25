@@ -151,7 +151,7 @@ sub agent_list_customers {
 
 sub check_username {
   my $p = shift;
-  my($session, $agentnum, $svc_acct) = _session_agentnum_svc_acct_check($p);
+  my($session, $agentnum, $svc_acct) = _session_agentnum_svc_acct($p);
   return { 'error' => $session } unless ref($session);
 
   { 'error'     => '',
