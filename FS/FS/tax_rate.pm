@@ -443,20 +443,30 @@ sub taxline {
 
   my $taxable_units = 0;
   unless ($self->recurtax =~ /^Y$/i) {
-    if (( $self->unittype || 0 ) == 0) {
+
+    if (( $self->unittype || 0 ) == 0) { #access line
       my %seen = ();
       foreach (@cust_bill_pkg) {
         $taxable_units += $_->units
-          unless $seen{$_->pkgnum};
-        $seen{$_->pkgnum}++;
+          unless $seen{$_->pkgnum}++;
       }
-    }elsif ($self->unittype == 1) {
+
+    } elsif ($self->unittype == 1) { #minute
       return $self->_fatal_or_null( 'fee with minute unit type' );
-    }elsif ($self->unittype == 2) {
-      $taxable_units = 1;
-    }else {
+
+    } elsif ($self->unittype == 2) { #account
+      #$taxable_units = 1;
+      #number of distinct locations
+      my %seen = ();
+      foreach (@cust_bill_pkg) {
+        $taxable_units++
+          unless $seen{$_->cust_pkg->locationnum}++;
+      }
+
+    } else {
       return $self->_fatal_or_null( 'unknown unit type in tax'. $self->taxnum );
     }
+
   }
 
   #
