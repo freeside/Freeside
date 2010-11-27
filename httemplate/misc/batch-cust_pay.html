@@ -107,7 +107,7 @@ my @footer  = ( '$', '_TOTAL', '' );
 my @footer_align = ( 'c', 'r', 'r' );
 my $custnum_update_callback = '';
 
-if ( FS::Record->scalar_sql('SELECT count(*) FROM part_pkg_discount') ) {
+if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM part_pkg_discount') ) {
   push @header, '';
   push @fields, 'discount_term';
   push @types, 'immutable';
@@ -127,5 +127,7 @@ push @sizes, '0';
 push @colors, '#ff0000';
 push @footer, '';
 push @footer_align, '';
+
+$m->comp('/elements/handle_uri_query');
 
 </%init>

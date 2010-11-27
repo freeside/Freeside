@@ -54,9 +54,10 @@
 %
 %    my $erow=0;
 %    $cgi->param('error'. $erow++, shift @errors) while @errors;
-%
 %    
-<% $cgi->redirect($p.'batch-cust_pay.html?'. $cgi->query_string)
+%    my $query = $m->scomp('/elements/create_uri_query');
+%
+<% $cgi->redirect($p."batch-cust_pay.html?$query")
 
   %>
 % } else {

@@ -1,0 +1,8 @@
+<%init>
+if ( $cgi->param('redirect') ) {
+  my $session = $cgi->param('redirect');
+  my $pref = $FS::CurrentUser::CurrentUser->option("redirect$session");
+  die "unknown redirect session $session\n" unless length($pref);
+  $cgi = new CGI($pref);
+}
+</%init>

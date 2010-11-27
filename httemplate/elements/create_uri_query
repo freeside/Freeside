@@ -1,0 +1,25 @@
+<% $query %>\
+<%init>
+
+my $query = $cgi->query_string;
+
+if ( length($query) > 1920 ) { #stupid IE 2083 URL limit
+
+  my $session = int(rand(4294967296)); #XXX
+  my $pref = new FS::access_user_pref({
+    'usernum'    => $FS::CurrentUser::CurrentUser->usernum,
+    'prefname'   => "redirect$session",
+    'prefvalue'  => $query,
+    'expiration' => time + 3600, #1h?  1m?
+  });
+  my $pref_error = $pref->insert;
+  if ( $pref_error ) {
+    die "FATAL: couldn't even set redirect cookie: $pref_error".
+        " attempting to set redirect$session to $query\n";
+  }
+
+  $query = "redirect=$session";
+
+}
+
+</%init>
