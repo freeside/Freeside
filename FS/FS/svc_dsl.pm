@@ -293,10 +293,6 @@ sub check {
 
 =back
 
-=head1 BUGS
-
-This doesn't do anything yet.
-
 =head1 SEE ALSO
 
 L<FS::svc_Common>, edit/part_svc.cgi from an installed web interface,

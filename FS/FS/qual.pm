@@ -1,7 +1,7 @@
 package FS::qual;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::option_Common );
 use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
@@ -117,10 +117,6 @@ sub check {
 }
 
 =back
-
-=head1 BUGS
-
-This doesn't do anything yet.
 
 =head1 SEE ALSO
 
