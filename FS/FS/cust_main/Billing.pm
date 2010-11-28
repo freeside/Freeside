@@ -2080,6 +2080,26 @@ sub apply_payments {
 
 =back
 
+=head1 FLOW
+
+  bill_and_collect
+
+    cancel_expired_pkgs
+    suspend_adjourned_pkgs
+
+    bill
+      (do_cust_event pre-bill)
+      _make_lines
+        _handle_taxes
+          (vendor-only) _gather_taxes
+      _omit_zero_value_bundles
+      calculate_taxes
+
+    apply_payments_and_credits
+    collect
+      do_cust_event
+        due_cust_event
+
 =head1 BUGS
 
 =head1 SEE ALSO
