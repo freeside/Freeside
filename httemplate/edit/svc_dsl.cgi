@@ -23,12 +23,12 @@ my $html_foot = sub {
 <SCRIPT TYPE=\"text/javascript\">
   function ikano_loop_type_changed() {
 	var loop_type = document.getElementById('loop_type').value;
-	var svctn = document.getElementById('svctn');
+	var phonenum = document.getElementById('phonenum');
 	if(loop_type == '0') {
-	    svctn.value = '';
-	    svctn.disabled = true;	
+	    phonenum.value = '';
+	    phonenum.disabled = true;	
 	}
-	else svctn.disabled = false;
+	else phonenum.disabled = false;
   }
 </SCRIPT>";
 };
@@ -85,7 +85,7 @@ my $new_cb = sub {
 	      value => $cust_main->ship_company ? $cust_main->ship_company
 						: $cust_main->company,
 	    },
-	    { field => 'svctn',
+	    { field => 'phonenum',
 	      value => $defsvctn,
 	    },
 	);
@@ -114,7 +114,7 @@ my $new_cb = sub {
 		{ field => 'vendor_order_type', 
 		  type => 'hidden', 
 		  value => 'N' },
-		{ field => 'desired_dd',
+		{ field => 'desired_due_date',
 		  type => 'fixed',
 		  formatted_value => 
 		    time2str($date_format,$cust_pkg->start_date),

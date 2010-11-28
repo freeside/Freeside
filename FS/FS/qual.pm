@@ -32,12 +32,20 @@ FS::Record.  The following fields are currently supported:
 
 =item qualnum - primary key
 
-=item contactnum - Contact (Prospect/Customer) - see L<FS::contact>
+=item prospectnum
 
-=item svctn - Service Telephone Number
+=item custnum 
 
-=item svcdb - table used for this service.  See L<FS::svc_dsl> and
-L<FS::svc_broadband>, among others.
+=item locationnum
+
+Either one of these cases must be true:
+-locationnum is non-null and prospectnum is null and custnum is null
+-locationnum is null and (prospectnum is non-null or custnum is non-null, but not both non-null)
+
+=item phonenum - Service Telephone Number
+
+=item exportnum - export instance providing service-qualification capabilities,
+see L<FS::part_export>
 
 =item vendor_qual_id - qualification id from vendor/telco
 
@@ -105,13 +113,25 @@ sub check {
 
   my $error = 
     $self->ut_numbern('qualnum')
-    || $self->ut_number('contactnum')
-    || $self->ut_numbern('svctn')
-    || $self->ut_alpha('svcdb')
+    || $self->ut_foreign_keyn('custnum', 'cust_main', 'qualnum')
+    || $self->ut_foreign_keyn('prospectnum', 'prospect_main', 'prospectnum')
+    || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
+    || $self->ut_numbern('phonenum')
+    || $self->ut_foreign_key('exportnum', 'part_export', 'exportnum')
     || $self->ut_textn('vendor_qual_id')
     || $self->ut_alpha('status')
   ;
   return $error if $error;
+
+#Either one of these cases must be true:
+#1. locationnum is non-null and prospectnum is null and custnum is null
+#2. locationnum is null and (prospectnum is non-null or custnum is non-null, but not both non-null)
+  return "Invalid prospect/customer/location combination" unless (
+    ( $self->locationnum && !$self->prospectcnum && !$self->custnum  ) #1
+ ||
+    ( !$self->locationnum && ( $self->prospectnum || $self->custnum ) 
+	&& !( $self->custnum && $self->prospectnum )  ) #2
+  );
 
   $self->SUPER::check;
 }

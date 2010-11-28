@@ -1681,15 +1681,18 @@ sub tables_hashref {
     'qual' => {
       'columns' => [
         'qualnum',  'serial',     '',     '', '', '', 
-        'contactnum',    'int',     '',     '', '', '',
-	'svctn',     'varchar', 'NULL',       24, '', '',
-        'svcdb',      'varchar', '', $char_d, '', '', 
+        'custnum',    'int',     'NULL',     '', '', '',
+        'prospectnum',    'int',     'NULL',     '', '', '',
+        'locationnum',    'int',     'NULL',     '', '', '',
+	'phonenum',     'varchar', 'NULL',       24, '', '',
+        'exportnum',      'int', '', '', '', '', 
         'vendor_qual_id',      'varchar', 'NULL', $char_d, '', '', 
         'status',      'char', '', 1, '', '', 
       ],
       'primary_key' => 'qualnum',
       'unique' => [],
-      'index' => [ [ 'contactnum' ] ],
+      'index' => [ [ 'locationnum' ], ['custnum'], ['prospectnum'],
+		    ['phonenum'], ['vendor_qual_id'] ],
     },
     
     'qual_option' => {
@@ -1837,8 +1840,8 @@ sub tables_hashref {
       'columns' => [
         'svcnum',           'int',    '',        '', '', '',
 	'pushed',     'int', 'NULL',       '', '', '',
-	'desired_dd',     'int', 'NULL',       '', '', '',
-	'dd',     'int', 'NULL',       '', '', '',
+	'desired_due_date',     'int', 'NULL',       '', '', '',
+	'due_date',     'int', 'NULL',       '', '', '',
         'vendor_order_id',              'varchar', 'NULL', $char_d,  '', '',
         'vendor_qual_id',              'varchar', 'NULL', $char_d,  '', '',
         'vendor_order_type',   'char', 'NULL',       1,  '', '', 
@@ -1846,10 +1849,10 @@ sub tables_hashref {
         'first',              'varchar', 'NULL', $char_d,  '', '',
         'last',              'varchar', 'NULL', $char_d,  '', '',
         'company',              'varchar', 'NULL', $char_d,  '', '',
-	'svctn',     'varchar', 'NULL',       24, '', '',
+	'phonenum',     'varchar', 'NULL',       24, '', '',
         'loop_type',   'char', 'NULL',       1,  '', '', 
-        'lvp',              'varchar', 'NULL', $char_d,  '', '',
-        'cktnum',              'varchar', 'NULL', $char_d,  '', '',
+        'local_voice_provider', 'varchar', 'NULL', $char_d,  '', '',
+        'circuitnum',              'varchar', 'NULL', $char_d,  '', '',
         'rate_band',              'varchar', 'NULL', $char_d,  '', '',
         'isp_chg',   'char', 'NULL',       1,  '', '', 
         'isp_prev',              'varchar', 'NULL', $char_d,  '', '',
@@ -1862,7 +1865,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'svcnum',
       'unique' => [ ],
-      'index' => [ ['svctn'] ],
+      'index' => [ ['phonenum'], ['vendor_order_id'] ],
     },
 
 

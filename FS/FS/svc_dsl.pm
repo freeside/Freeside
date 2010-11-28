@@ -46,25 +46,15 @@ FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
-=item svcnum
+=item svcnum - Primary key (assigned automatcially for new DSL))
 
-Primary key (assigned automatcially for new DSL))
+=item pushed - Time DSL order pushed to vendor/telco, if applicable
 
-=item pushed
+=item desired_due_date - Desired Due Date
 
-Time the DSL order was pushed to a vendor, if exporting orders to a vendor/telco
+=item due_date - Due Date
 
-=item desired_dd
-
-Desired Due Date
-
-=item dd
-
-Due Date (e.g. once order is in Assigned status or similar by the telco)
-
-=item vendor_order_id
-
-Vendor/telco DSL order #
+=item vendor_order_id - Vendor/telco DSL order #
 
 =item vendor_order_type
 
@@ -75,37 +65,21 @@ Vendor/telco DSL order type (e.g. (M)ove, (A)dd, (C)hange, (D)elete, or similar)
 Vendor/telco DSL order status (e.g. (N)ew, (A)ssigned, (R)ejected, (M)revised,
 (C)ompleted, (X)cancelled, or similar)
 
-=item first
+=item first - End-user first name
 
-End-user first name
+=item last - End-user last name
 
-=item last
+=item company - End-user company name
 
-End-user last name
+=item phonenum - DSL Telephone Number
 
-=item company
+=item loop_type - Loop-type - vendor/telco-specific
 
-End-user company name
+=item local_voice_provider - Local Voice Provider's name
 
-=item svctn
+=item circuitnum - Circuit #
 
-DSL Telephone Number
-
-=item loop_type
-
-Loop-type - vendor/telco-specific
-
-=item lvp
-
-Local Voice Provider's name
-
-=item cktnum
-
-Circuit #
-
-=item rate_band
-
-Rate Band
+=item rate_band - Rate Band
 
 =item isp_chg
 
@@ -117,21 +91,13 @@ Rate Band
 
 Ikano-specific fields, do not use otherwise
 
-=item username
+=item username - if outsourced PPPoE/RADIUS, username
 
-If outsourced PPPoE/RADIUS, username
+=item password - if outsourced PPPoE/RADIUS, password
 
-=item password
+=item monitored - Order is monitored (auto-pull/sync), either Y or blank
 
-If outsourced PPPoE/RADIUS, password
-
-=item monitored
-
-Order is monitored (auto-pull/sync), either Y or blank
-
-=item last_pull
-
-Time of last data pull from vendor/telco
+=item last_pull - time of last data pull from vendor/telco
 
 =item notes
 
@@ -161,14 +127,14 @@ sub table_info {
 
     {
 	'name' => 'DSL',
-	'sorts' => [ 'svctn' ],
+	'sorts' => [ 'phonenum' ],
 	'display_weight' => 55,
 	'cancel_weight' => 75,
 	'fields' => {
 	    'pushed' => { 	label => 'Pushed', 
 				type => 'disabled' },
-	    'desired_dd' => { 	label => 'Desired Due Date', %dis2, },
-	    'dd' => { 		label => 'Due Date', %dis2, },
+	    'desired_due_date' => { 	label => 'Desired Due Date', %dis2, },
+	    'due_date' => { 		label => 'Due Date', %dis2, },
 	    'vendor_order_id' => { label => 'Vendor Order Id', %dis2, },
 	    'vendor_qual_id' => { label => 'Vendor Qualification Id', 
 				type => 'disabled' },
@@ -181,14 +147,14 @@ sub table_info {
 	    'first' => { 	label => 'First Name', %dis2, },
 	    'last' => {  	label => 'Last Name', %dis2, },
 	    'company' => {	label => 'Company Name', %dis2, },
-	    'svctn' => {	label => 'Service Telephone Number', },
+	    'phonenum' => {	label => 'Service Telephone Number', },
 	    'loop_type' => {	label => 'Loop Type',
 				    disable_inventory => 1,
 			},
-	    'lvp' => {		label => 'Local Voice Provider',
+	    'local_voice_provider' => {		label => 'Local Voice Provider',
 				    disable_inventory => 1,
 			},
-	    'cktnum' => {	label => 'Circuit #',	},
+	    'circuitnum' => {	label => 'Circuit #',	},
 	    'rate_band' => {	label => 'Rate Band',
 				    disable_inventory => 1,
 			},
@@ -214,7 +180,7 @@ sub table { 'svc_dsl'; }
 
 sub label {
    my $self = shift;
-   return $self->svctn if $self->svctn;
+   return $self->phonenum if $self->phonenum;
    return $self->username if $self->username;
    return $self->vendor_order_id if $self->vendor_order_id;
    return $self->svcnum;
@@ -263,8 +229,8 @@ sub check {
   my $error = 
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('pushed')
-    || $self->ut_number('desired_dd')
-    || $self->ut_numbern('dd')
+    || $self->ut_number('desired_due_date')
+    || $self->ut_numbern('due_date')
     || $self->ut_textn('vendor_order_id')
     || $self->ut_textn('vendor_qual_id')
     || $self->ut_alpha('vendor_order_type')
@@ -272,10 +238,10 @@ sub check {
     || $self->ut_text('first')
     || $self->ut_text('last')
     || $self->ut_textn('company')
-    || $self->ut_numbern('svctn')
+    || $self->ut_numbern('phonenum')
     || $self->ut_alphasn('loop_type')
-    || $self->ut_textn('lvp')
-    || $self->ut_textn('cktnum')
+    || $self->ut_textn('local_voice_provider')
+    || $self->ut_textn('circuitnum')
     || $self->ut_textn('rate_band')
     || $self->ut_alphan('isp_chg')
     || $self->ut_textn('isp_prev')

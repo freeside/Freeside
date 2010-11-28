@@ -33,12 +33,12 @@ Requires installation of
 END
 );
     
-%orderType = ( 'N' => 'New', 'X' => 'Cancel', 'C' => 'Change' );
-%orderStatus = ('N' => 'New',
-		'P' => 'Pending',
-		'X' => 'Cancelled',
-		'C' => 'Completed',
-		'E' => 'Error' );
+%orderType = ( 'N' => 'NEW', 'X' => 'CANCEL', 'C' => 'CHANGE' );
+%orderStatus = ('N' => 'NEW',
+		'P' => 'PENDING',
+		'X' => 'CANCELLED',
+		'C' => 'COMPLETED',
+		'E' => 'ERROR' );
 %loopType = ( '' => 'Line-share', '0' => 'Standalone' );
 
 sub rebless { shift; }
@@ -87,10 +87,10 @@ sub ikano_command {
 sub valid_order {
   my( $self, $svc_dsl, $action ) = (shift, shift, shift);
   
-  warn "$me valid_order action=$action svc_dsl: ". Dumper($svc_dsl) if $DEBUG;
+  warn "$me valid_order action=$action svc_dsl:\n". Dumper($svc_dsl) if $DEBUG;
 
   # common to all order types/status/loop_type
-  my $error = !($svc_dsl->desired_dd 
+  my $error = !($svc_dsl->desired_due_date
 	    &&  defined $orderType{$svc_dsl->vendor_order_type}
 	    &&  $svc_dsl->first
 	    &&	$svc_dsl->last
@@ -114,8 +114,8 @@ sub valid_order {
 	$error = !($action eq 'insert'
 	    && 	length($svc_dsl->vendor_order_id) < 1
 	    && 	length($svc_dsl->vendor_order_status) < 1
-	    && ( ($svc_dsl->svctn eq '' && $svc_dsl->loop_type eq '0') # dry
-	      || ($svc_dsl->svctn ne '' && $svc_dsl->loop_type eq '') # line-share
+	    && ( ($svc_dsl->phonenum eq '' && $svc_dsl->loop_type eq '0') # dry
+	      || ($svc_dsl->phonenum ne '' && $svc_dsl->loop_type eq '') # line-share
 	       )
 	    );	
 	return 'Invalid order data' if $error;
@@ -130,17 +130,27 @@ sub valid_order {
 }
 
 sub qual2termsid {
-    my ($self,$vendor_qual_id) = (shift,shift);
+    my ($self,$vendor_qual_id,$ProductCustomId) = (shift,shift,shift);
     my $qual = qsearchs( 'qual', { 'vendor_qual_id' => $vendor_qual_id });
     return '' unless $qual;
     my %qual_options = $qual->options;
-    foreach my $optionname ( keys %qual_options ) {
-	if ( $optionname =~ /^ikano_network_(\d+)_productgroup_(\d+)_termsid$/ ) {
-	    return $qual_options{$optionname};
+    while (($optionname, $optionvalue) = each %qual_options) {
+	if ( $optionname =~ /^ikano_Network_(\d+)_ProductGroup_(\d+)_Product_(\d+)_ProductCustomId$/ 
+	    && $optionvalue eq $ProductCustomId ) {
+	    my $network = $1;
+	    my $productgroup = $2;
+	    return $qual->option("ikano_Network_".$network."_ProductGroup_".$productgroup."_TermsId");
 	}
-	# XXX finish this properly - the above is wrong
     }
     '';
+}
+
+sub orderstatus_long2short {
+    my ($self,$order_status) = (shift,shift);
+    while (($k, $v) = each %orderStatus) {
+	return $k if $v eq $order_status;
+    }
+    return '';
 }
 
 sub _export_insert {
@@ -153,13 +163,14 @@ sub _export_insert {
   my $contactTN = $svc_dsl->cust_svc->cust_pkg->cust_main->daytime;
   $contactTN =~ s/[^0-9]//g;
 
+  my $ProductCustomId = $svc_dsl->cust_svc->cust_pkg->part_pkg->option('externalid',1);
+
   my $args = {
 	orderType => 'NEW',
-	ProductCustomId => 
-	    $svc_dsl->cust_svc->cust_pkg->part_pkg->option('externalid',1),
-	TermsId => $self->qual2termsid($svc_dsl->vendor_qual_id),
+	ProductCustomId => $ProductCustomId,
+	TermsId => $self->qual2termsid($svc_dsl->vendor_qual_id,$ProductCustomId),
 	DSLPhoneNumber => $svc_dsl->loop_type eq '0' ? 'STANDALONE'
-						    : $svc_dsl->svctn,
+						    : $svc_dsl->phonenum,
 	Password => $svc_dsl->password,
 	PrequalId => $svc_dsl->vendor_qual_id,
 	CompanyName => $svc_dsl->company,
@@ -170,7 +181,7 @@ sub _export_insert {
 	ContactPhoneNumber => $contactTN,
 	ContactEmail => 'x@x.xx',
 	ContactFax => '',
-	DateToOrder => time2str("%Y-%m-%d",$svc_dsl->desired_dd),
+	DateToOrder => time2str("%Y-%m-%d",$svc_dsl->desired_due_date),
 	RequestClientIP => '127.0.0.1',
 	IspChange => $isp_chg,
 	IspPrevious => $isp_chg eq 'YES' ? $svc_dsl->isp_prev : '',
@@ -181,11 +192,7 @@ sub _export_insert {
   return $result unless ref($result); # scalar (string) is an error
 
   # now we're getting an OrderResponse which should have one Order in it
-  warn Dumper($result) if $DEBUG;
-  my ($pushed,$vendor_order_id,$vendor_order_status,$last_pull);
-  $pushed = time;
-  $last_pull = time;
-  $last_pull++;
+  warn "$me _export_insert OrderResponse hash:\n".Dumper($result) if $DEBUG;
   
   return 'Invalid order response' unless defined $result->{'Order'};
   $result = $result->{'Order'};
@@ -193,16 +200,16 @@ sub _export_insert {
   return 'No order id or status returned' 
     unless defined $result->{'Status'} && defined $result->{'OrderId'};
 
-  $vendor_order_id = $result->{'OrderId'};
-  $vendor_order_status = $result->{'Status'};
-      
-# XXX we need to set all of these values (everything in the last my statement
-# above) in the svc without:
-# a. re-triggering exports
-# b. committing the svc into the db now (because other things in the caller
-#  and further up the stack may decide that the svc shouldn't be inserted)
-
-  return '';
+  $svc_dsl->pushed(time);
+  $svc_dsl->last_pull((time)+1); 
+  $svc_dsl->vendor_order_id($result->{'OrderId'});
+  $svc_dsl->vendor_order_status($self->orderstatus_long2short($result->{'Status'}));
+  $svc_dsl->username($result->{'Username'});
+  local $FS::svc_Common::noexport_hack = 1;
+  local $FS::UID::AutoCommit = 0;
+  $result = $svc_dsl->replace; 
+  return 'Error setting DSL fields' if $result;
+  '';
 }
 
 sub _export_replace {

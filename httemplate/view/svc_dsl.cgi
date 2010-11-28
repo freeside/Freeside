@@ -38,12 +38,12 @@ my $svc_cb = sub {
     my $export = @exports[0];
     $opt->{'disable_unprovision'} = 1;
 
-    @fields = ( 'svctn',
+    @fields = ( 'phonenum',
 	    { field => 'loop_type', 
 	      value => 'FS::part_export::'.$export->exporttype.'::loop_type_long'
 	    },
-	    { field => 'desired_dd', type => 'date', },
-	    { field => 'dd', type => 'date', },
+	    { field => 'desired_due_date', type => 'date', },
+	    { field => 'due_date', type => 'date', },
 	    { field => 'pushed', type => 'datetime', },
 	    { field => 'monitored', type => 'checkbox', },
 	    { field => 'last_pull', type => 'datetime', },
