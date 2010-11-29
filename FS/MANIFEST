@@ -546,3 +546,5 @@ FS/qual.pm
 t/qual.t
 FS/qual_option.pm
 t/qual_option.t
+FS/dsl_note.pm
+t/dsl_note.t

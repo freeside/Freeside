@@ -99,10 +99,6 @@ Ikano-specific fields, do not use otherwise
 
 =item last_pull - time of last data pull from vendor/telco
 
-=item notes
-
-DSL order notes placed by staff or vendor/telco on the vendor/telco order
-
 
 =back
 
@@ -171,7 +167,6 @@ sub table_info {
 	    'monitored' => {	label => 'Monitored', 
 				type => 'checkbox', %dis2 },
 	    'last_pull' => { 	label => 'Last Pull', type => 'disabled' },
-	    'notes' => { 	label => 'Order Notes', %dis1 },
 	},
     };
 }
@@ -184,6 +179,16 @@ sub label {
    return $self->username if $self->username;
    return $self->vendor_order_id if $self->vendor_order_id;
    return $self->svcnum;
+}
+
+=item notes
+
+Returns the set of FS::dsl_notes associated with this service
+
+=cut 
+sub notes {
+  my $self = shift;
+  qsearch( 'dsl_note', { 'svcnum' => $self->svcnum } );
 }
 
 =item insert
@@ -250,7 +255,6 @@ sub check {
     || $self->ut_textn('staticips')
     || $self->ut_enum('monitored',    [ '', 'Y' ])
     || $self->ut_numbern('last_pull')
-    || $self->ut_textn('notes')
   ;
   return $error if $error;
 

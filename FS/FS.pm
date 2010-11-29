@@ -150,6 +150,8 @@ L<FS::svc_broadband> - DSL, wireless and other broadband class.
 
 L<FS::svc_dsl> - DSL
 
+L<FS::dsl_note> - DSL order notes
+
 L<FS::addr_block> - Address block class
 
 L<FS::router> - Router class

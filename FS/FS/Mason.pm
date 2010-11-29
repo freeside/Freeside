@@ -261,6 +261,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::svc_dsl;
   use FS::qual;
   use FS::qual_option;
+  use FS::dsl_note;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

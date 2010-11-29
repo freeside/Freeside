@@ -3,6 +3,7 @@ package FS::part_export::ikano;
 use vars qw(@ISA %info %orderType %orderStatus %loopType $DEBUG $me);
 use Tie::IxHash;
 use Date::Format qw( time2str );
+use Date::Parse qw( str2time );
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
 use FS::svc_dsl;
@@ -44,10 +45,157 @@ END
 sub rebless { shift; }
 
 sub dsl_pull {
+# we distinguish between invalid new data (return error) versus data that
+# has legitimately changed (may eventually execute hooks; now just update)
+
+    my($self, $svc_dsl) = (shift, shift);
+    my $result = $self->valid_order($svc_dsl,'pull');
+    return $result unless $result eq '';
+  
+    $result = $self->ikano_command('ORDERSTATUS', 
+	{ OrderId => $svc_dsl->vendor_order_id } ); 
+    return $result unless ref($result); # scalar (string) is an error
+
+    # now we're getting an OrderResponse which should have one Order in it
+    warn "$me pull OrderResponse hash:\n".Dumper($result) if $DEBUG;
+  
+    return 'Invalid order response' unless defined $result->{'Order'};
+    $result = $result->{'Order'};
+
+    return 'No order id or status returned' 
+	unless defined $result->{'Status'} && defined $result->{'OrderId'};
+
+    # update this always (except in the above cases), even if error later
+    $svc_dsl->last_pull((time));
+    local $FS::svc_Common::noexport_hack = 1;
+    local $FS::UID::AutoCommit = 1;
+    my $error = $svc_dsl->replace; 
+    return 'Error updating last pull time' if $error;
+
+    # let's compare what we have to what we got back...
+ 
+    # current assumptions of what won't change (from their side):
+    # vendor_order_id, vendor_qual_id, vendor_order_type, pushed, monitored,
+    # last_pull, address (from qual), contact info, ProductCustomId
+
+    my $wechanged = 0;
+
+    # 1. status 
+    my $new_order_status = $self->orderstatus_long2short($result->{'Status'});
+    return 'Invalid new status' if $new_order_status eq '';
+    if($svc_dsl->vendor_order_status ne $new_order_status) {
+	if($new_order_status eq 'X' || $new_order_status eq 'C') {
+	    $svc_dsl->monitored('');
+	}
+	$svc_dsl->vendor_order_status($new_order_status);
+	$wechanged = 1;
+    }
+
+    # 2. fields we don't care much about
+    my %justUpdate = ( 'first' => 'FirstName',
+		    'last' => 'LastName',
+		    'company' => 'CompanyName',
+		    'username' => 'Username',
+		    'password' => 'Password' );
+
+    while (($fsf, $ikanof) = each %justUpdate) {
+       if ( $result->{$ikanof} ne $svc_dsl->$fsf ) {
+	    $svc_dsl->$fsf($result->{$ikanof});
+	    $wechanged = 1;
+	}
+    }
+
+    # let's look inside the <Product> response element
+    my @product = $result->{'Product'}; 
+    return 'Invalid number of products on order' if scalar(@product) != 1;
+    my $product = $result->{'Product'}[0];
+
+    # 3. phonenum 
+    if($svc_dsl->loop_type eq '') { # line-share
+	# TN may change only if sub changes it and 
+	# New or Change order in Completed status
+	my $tn = $product->{'PhoneNumber'};
+	if($tn ne $svc_dsl->phonenum) {
+	    if( ($svc_dsl->vendor_order_type eq 'N' 
+		|| $svc_dsl->vendor_order_type eq 'C')
+	       && $svc_dsl->vendor_order_status eq 'C' ) {
+		$svc_dsl->phonenum($tn);
+		$wechanged = 1;
+	    }
+	    else { return 'TN has changed in an invalid state'; }
+	}
+    }
+    elsif($svc_dsl->loop_type eq '0') { # dry loop
+	return 'Invalid PhoneNumber value for a dry loop' 
+	    if $product->{'PhoneNumber'} ne 'STANDALONE';
+	my $tn = $product->{'VirtualPhoneNumber'};
+	if($tn ne $svc_dsl->phonenum) {
+	    if( ($svc_dsl->vendor_order_type eq 'N' 
+		|| $svc_dsl->vendor_order_type eq 'C')
+	      && $svc_dsl->vendor_order_status ne 'C'
+	      && $svc_dsl->vendor_order_status ne 'X') {
+		$svc_dsl->phonenum($tn);
+		$wechanged = 1;
+	    }
+	}
+    }
+    
+    # 4. desired_due_date - may change if manually changed
+    if($svc_dsl->vendor_order_type eq 'N' 
+	    || $svc_dsl->vendor_order_type eq 'C'){
+	my $f = str2time($product->{'DateToOrder'});
+	return 'Invalid DateToOrder' unless $f;
+	if ( $svc_dsl->desired_due_date != $f ) {
+	    $svc_dsl->desired_due_date($f);
+	    $wechanged = 1;
+	}
+	# XXX: optionally sync back to start_date or whatever... 
+    }
+    elsif($svc_dsl->vendor_order_type eq 'X'){
+	my $f = str2time($product->{'DateToDisconnect'});
+	return 'Invalid DateToDisconnect' unless $f;
+	if ( $svc_dsl->desired_due_date != $f ) {
+	    $svc_dsl->desired_due_date($f);
+	    $wechanged = 1;
+	}
+	# XXX: optionally sync back to expire or whatever... 
+    }
+
+    # 4. due_date
+    if($svc_dsl->vendor_order_type eq 'N' 
+ 	  || $svc_dsl->vendor_order_type eq 'C') {
+	my $f = str2time($product->{'ActivationDate'});
+	if($svc_dsl->vendor_order_status ne 'N') {
+	    return 'Invalid ActivationDate' unless $f;
+	    if( $svc_dsl->due_date != $f ) {
+		$svc_dsl->due_date($f);
+		$wechanged = 1;
+	    }
+	}
+    }
+    # Ikano API does not implement the proper disconnect date,
+    # so we can't do anything about it
+
+    # 6. staticips - for now just comma-separate them
+    my @statics = $result->{'StaticIps'};
+# XXX
+
+    # 7. notes - put them into the common format:
+    # "by" = 0 for Ikano; 1 for ISP
+    # "priority" = 1 for high priority; 0 otherwise
+    my @notes = $result->{'OrderNotes'}; 
+# XXX
+
+    if($wechanged) { # you can't check ->modified, the replace above screws it
+	# noexport_hack and AutoCommit are set correctly above
+	$result = $svc_dsl->replace; 
+	return 'Error updating DSL data' if $result;
+    }
+
     '';
 }
 
-sub dsl_qual {
+sub qual {
     '';
 }
 
@@ -109,6 +257,11 @@ sub valid_order {
   # weird ifs & long lines for readability and ease of understanding - don't change
   if($svc_dsl->vendor_order_type eq 'N') {
     if($svc_dsl->pushed) {
+	$error = !($action eq 'pull'
+	    && 	length($svc_dsl->vendor_order_id) > 0
+	    && 	length($svc_dsl->vendor_order_status) > 0
+		);
+	return 'Invalid order data' if $error;
     }
     else { # unpushed New order - cannot do anything other than push it
 	$error = !($action eq 'insert'
@@ -147,10 +300,9 @@ sub qual2termsid {
 
 sub orderstatus_long2short {
     my ($self,$order_status) = (shift,shift);
-    while (($k, $v) = each %orderStatus) {
-	return $k if $v eq $order_status;
-    }
-    return '';
+    my %rorderStatus = reverse %orderStatus;
+    return $rorderStatus{$order_status} if exists $rorderStatus{$order_status};
+    '';
 }
 
 sub _export_insert {

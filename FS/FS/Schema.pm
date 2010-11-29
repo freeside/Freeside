@@ -1861,13 +1861,25 @@ sub tables_hashref {
         'staticips',             'text', 'NULL', '',  '', '',
         'monitored',   	'char', 'NULL',       1,  '', '', 
 	'last_pull',     'int', 'NULL',       '', '', '',
-	'notes',     'text', 'NULL',       '', '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [ ],
       'index' => [ ['phonenum'], ['vendor_order_id'] ],
     },
-
+    
+    'dsl_note' => {
+      'columns' => [
+        'notenum',           'serial',    '',        '', '', '',
+	'svcnum',     'int', '',       '', '', '',
+        'by',              'varchar', 'NULL', $char_d,  '', '',
+        'priority',   'char', 'NULL',       1,  '', '', 
+	'date',     'int', 'NULL',       '', '', '',
+	'note',     'text', '',       '', '', '',
+      ],
+      'primary_key' => 'notenum',
+      'unique' => [ ],
+      'index' => [ ['svcnum'] ],
+    },
 
     'domain_record' => {
       'columns' => [
