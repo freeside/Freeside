@@ -4,6 +4,8 @@ use strict;
 use vars qw( @ISA $conf $DEBUG $me );
 use FS::Record qw( qsearch qsearchs );
 use FS::svc_Common;
+use FS::dsl_note;
+use FS::qual;
 
 @ISA = qw( FS::svc_Common );
 $DEBUG = 0;
@@ -238,7 +240,7 @@ sub check {
     || $self->ut_numbern('due_date')
     || $self->ut_textn('vendor_order_id')
     || $self->ut_textn('vendor_qual_id')
-    || $self->ut_alpha('vendor_order_type')
+    || $self->ut_alphan('vendor_order_type')
     || $self->ut_alphan('vendor_order_status')
     || $self->ut_text('first')
     || $self->ut_text('last')

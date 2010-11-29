@@ -51,12 +51,16 @@ my $svc_cb = sub {
 	    'last',
 	    'company'  );
 
+    my $status = '';
     if($export->exporttype eq 'ikano') {
 	push @fields, qw ( username password isp_chg isp_prev staticips );
+	$status = "Ikano " . $svc_x->vendor_order_type . " order #"
+		. $svc_x->vendor_order_id . " &nbsp; Status: " 
+		. $svc_x->vendor_order_status;
     }
     # else add any other export-specific stuff here
    
-    $footer = "<B>".$export->status_line($svc_x)."</B>";
+    $footer = "<B>$status</B>";
     $footer .= "<BR><BR><BR><B>Order Notes:</B><BR>".$export->notes_html($svc_x);
 };
 </%init>

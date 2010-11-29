@@ -1,0 +1,71 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::svc_dsl;
+use FS::part_export;
+use Data::Dumper;
+
+&untaint_argv;	#what it sounds like  (eww)
+use vars qw(%opt);
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my @monitored = qsearch('svc_dsl', { 'monitored' => 'Y' } );
+foreach my $svc_dsl ( @monitored ) {
+    my @exports = $svc_dsl->part_svc->part_export_dsl_pull;
+    my $svcnum = $svc_dsl->svcnum;
+    warn "either zero or more than one DSL-pulling export attached to svcnum "
+	. "$svcnum, skipping" if ( scalar(@exports) != 1 );
+    my $export = $exports[0];
+    my $error = $export->dsl_pull($svc_dsl); # this will commit to db by default
+    warn "Error pulling DSL svcnum $svcnum: $error" unless $error eq '';
+}
+
+###
+# subroutines
+###
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-pull-dsl \n";
+}
+
+###
+# documentation
+###
+
+=head1 NAME
+
+freeside-pull-dsl - Pull DSL order data from telcos/vendors for all monitored DSL orders to update
+
+=head1 SYNOPSIS
+
+  freeside-pull-dsl user
+
+=head1 DESCRIPTION
+
+user - name of an internal Freeside user
+
+This is still a work in progress - in future may add limiting by exportnum or svcpart or other such stuff.
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::cust_main>, config.html from the base documentation
+
+=cut
+
