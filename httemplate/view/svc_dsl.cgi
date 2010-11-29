@@ -57,6 +57,6 @@ my $svc_cb = sub {
     # else add any other export-specific stuff here
    
     $footer = "<B>".$export->status_line($svc_x)."</B>";
-    $footer .= "<BR><BR><BR>Order Notes:<BR>".$export->notes_html($svc_x);
+    $footer .= "<BR><BR><BR><B>Order Notes:</B><BR>".$export->notes_html($svc_x);
 };
 </%init>

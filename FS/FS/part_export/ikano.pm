@@ -4,9 +4,10 @@ use vars qw(@ISA %info %orderType %orderStatus %loopType $DEBUG $me);
 use Tie::IxHash;
 use Date::Format qw( time2str );
 use Date::Parse qw( str2time );
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs dbh);
 use FS::part_export;
 use FS::svc_dsl;
+use FS::dsl_note;
 use Data::Dumper;
 
 @ISA = qw(FS::part_export);
@@ -47,6 +48,12 @@ sub rebless { shift; }
 sub dsl_pull {
 # we distinguish between invalid new data (return error) versus data that
 # has legitimately changed (may eventually execute hooks; now just update)
+# if we do add hooks later, we should work on a copy of svc_dsl and pass
+# the old and new svc_dsl to the hooks so they know what changed
+#
+# current assumptions of what won't change (from their side):
+# vendor_order_id, vendor_qual_id, vendor_order_type, pushed, monitored,
+# last_pull, address (from qual), contact info, ProductCustomId
 
     my($self, $svc_dsl) = (shift, shift);
     my $result = $self->valid_order($svc_dsl,'pull');
@@ -64,31 +71,25 @@ sub dsl_pull {
 
     return 'No order id or status returned' 
 	unless defined $result->{'Status'} && defined $result->{'OrderId'};
+	
+    local $SIG{HUP} = 'IGNORE';
+    local $SIG{INT} = 'IGNORE';
+    local $SIG{QUIT} = 'IGNORE';
+    local $SIG{TERM} = 'IGNORE';
+    local $SIG{TSTP} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
 
-    # update this always (except in the above cases), even if error later
-    $svc_dsl->last_pull((time));
-    local $FS::svc_Common::noexport_hack = 1;
-    local $FS::UID::AutoCommit = 1;
-    my $error = $svc_dsl->replace; 
-    return 'Error updating last pull time' if $error;
-
-    # let's compare what we have to what we got back...
- 
-    # current assumptions of what won't change (from their side):
-    # vendor_order_id, vendor_qual_id, vendor_order_type, pushed, monitored,
-    # last_pull, address (from qual), contact info, ProductCustomId
-
-    my $wechanged = 0;
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
 
     # 1. status 
     my $new_order_status = $self->orderstatus_long2short($result->{'Status'});
     return 'Invalid new status' if $new_order_status eq '';
     if($svc_dsl->vendor_order_status ne $new_order_status) {
-	if($new_order_status eq 'X' || $new_order_status eq 'C') {
-	    $svc_dsl->monitored('');
-	}
+	$svc_dsl->monitored('') 
+	    if ($new_order_status eq 'X' || $new_order_status eq 'C');
 	$svc_dsl->vendor_order_status($new_order_status);
-	$wechanged = 1;
     }
 
     # 2. fields we don't care much about
@@ -99,10 +100,8 @@ sub dsl_pull {
 		    'password' => 'Password' );
 
     while (($fsf, $ikanof) = each %justUpdate) {
-       if ( $result->{$ikanof} ne $svc_dsl->$fsf ) {
-	    $svc_dsl->$fsf($result->{$ikanof});
-	    $wechanged = 1;
-	}
+       $svc_dsl->$fsf($result->{$ikanof}) 
+	    if $result->{$ikanof} ne $svc_dsl->$fsf;
     }
 
     # let's look inside the <Product> response element
@@ -112,20 +111,19 @@ sub dsl_pull {
 
     # 3. phonenum 
     if($svc_dsl->loop_type eq '') { # line-share
-	# TN may change only if sub changes it and 
-	# New or Change order in Completed status
+# TN may change only if sub changes it and New or Change order in Completed status
 	my $tn = $product->{'PhoneNumber'};
 	if($tn ne $svc_dsl->phonenum) {
 	    if( ($svc_dsl->vendor_order_type eq 'N' 
 		|| $svc_dsl->vendor_order_type eq 'C')
 	       && $svc_dsl->vendor_order_status eq 'C' ) {
 		$svc_dsl->phonenum($tn);
-		$wechanged = 1;
 	    }
 	    else { return 'TN has changed in an invalid state'; }
 	}
     }
     elsif($svc_dsl->loop_type eq '0') { # dry loop
+# TN may change only if it's assigned while a New or Change order is in progress
 	return 'Invalid PhoneNumber value for a dry loop' 
 	    if $product->{'PhoneNumber'} ne 'STANDALONE';
 	my $tn = $product->{'VirtualPhoneNumber'};
@@ -135,8 +133,8 @@ sub dsl_pull {
 	      && $svc_dsl->vendor_order_status ne 'C'
 	      && $svc_dsl->vendor_order_status ne 'X') {
 		$svc_dsl->phonenum($tn);
-		$wechanged = 1;
 	    }
+	    else { return 'TN has changed in an invalid state'; }
 	}
     }
     
@@ -145,32 +143,23 @@ sub dsl_pull {
 	    || $svc_dsl->vendor_order_type eq 'C'){
 	my $f = str2time($product->{'DateToOrder'});
 	return 'Invalid DateToOrder' unless $f;
-	if ( $svc_dsl->desired_due_date != $f ) {
-	    $svc_dsl->desired_due_date($f);
-	    $wechanged = 1;
-	}
+	$svc_dsl->desired_due_date($f) if $svc_dsl->desired_due_date != $f;
 	# XXX: optionally sync back to start_date or whatever... 
     }
     elsif($svc_dsl->vendor_order_type eq 'X'){
 	my $f = str2time($product->{'DateToDisconnect'});
 	return 'Invalid DateToDisconnect' unless $f;
-	if ( $svc_dsl->desired_due_date != $f ) {
-	    $svc_dsl->desired_due_date($f);
-	    $wechanged = 1;
-	}
+	$svc_dsl->desired_due_date($f) if $svc_dsl->desired_due_date != $f;
 	# XXX: optionally sync back to expire or whatever... 
     }
 
-    # 4. due_date
+    # 5. due_date
     if($svc_dsl->vendor_order_type eq 'N' 
  	  || $svc_dsl->vendor_order_type eq 'C') {
 	my $f = str2time($product->{'ActivationDate'});
 	if($svc_dsl->vendor_order_status ne 'N') {
 	    return 'Invalid ActivationDate' unless $f;
-	    if( $svc_dsl->due_date != $f ) {
-		$svc_dsl->due_date($f);
-		$wechanged = 1;
-	    }
+	    $svc_dsl->due_date($f) if $svc_dsl->due_date != $f;
 	}
     }
     # Ikano API does not implement the proper disconnect date,
@@ -180,27 +169,90 @@ sub dsl_pull {
     my @statics = $result->{'StaticIps'};
 # XXX
 
-    # 7. notes - put them into the common format:
-    # "by" = 0 for Ikano; 1 for ISP
-    # "priority" = 1 for high priority; 0 otherwise
-    my @notes = $result->{'OrderNotes'}; 
-# XXX
-
-    if($wechanged) { # you can't check ->modified, the replace above screws it
-	# noexport_hack and AutoCommit are set correctly above
-	$result = $svc_dsl->replace; 
-	return 'Error updating DSL data' if $result;
+    # 7. notes - put them into the common format and compare
+    my $tnotes = $result->{'OrderNotes'}; 
+    my @tnotes = @$tnotes;
+    my @inotes = (); # all Ikano OrderNotes as FS::dsl_note objects
+    my $notesChanged = 0; 
+    foreach $tnote ( @tnotes ) {
+	my $inote = $self->ikano2fsnote($tnote,$svc_dsl->svcnum);
+	return 'Cannot parse note' unless ref($inote);
+	push @inotes, $inote;
+    }
+    my @onotes = $svc_dsl->notes;
+    # assume notes we already have don't change & no notes added from our side
+    # so using the horrible code below just find what we're missing and add it
+    my $error;
+    foreach $inote ( @inotes ) {
+	my $found = 0;
+	foreach $onote ( @onotes ) {
+	    if($onote->date == $inote->date && $onote->note eq $inote->note) {
+		$found = 1;
+		last;
+	    }
+	}
+	$error = $inote->insert unless ( $found );
+	if ( $error ) {
+	  $dbh->rollback if $oldAutoCommit;
+	  return "Cannot add note: $error";
+	}
+    }
+    
+    $svc_dsl->last_pull((time));
+    local $FS::svc_Common::noexport_hack = 1;
+    $error = $svc_dsl->replace; 
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Cannot update DSL data: $error";
     }
 
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
     '';
+}
+
+sub ikano2fsnote {
+    my($self,$n,$svcnum) = (shift,shift,shift);
+    my @ikanoRequired = qw( HighPriority StaffId Date Text CompanyStaffId );
+    return '' unless defined $n->{'HighPriority'}
+		&& defined $n->{'StaffId'}
+		&& defined $n->{'CompanyStaffId'}
+		&& defined $n->{'Date'}
+		&& defined $n->{'Text'}
+		;
+    my $by = 'Unknown';
+    $by = "Ikano" if $n->{'CompanyStaffId'} == -1 && $n->{'StaffId'} != -1;
+    $by = "Us" if $n->{'StaffId'} == -1 && $n->{'CompanyStaffId'} != -1;
+
+    $fsnote = new FS::dsl_note( {
+	'svcnum' => $svcnum,
+	'by' => $by,
+	'priority' => $n->{'HighPriority'} eq 'false' ? 'N' : 'H',
+	'date' => int(str2time($n->{'Date'})),
+	'note' => $n->{'Text'},
+     } );
 }
 
 sub qual {
     '';
 }
 
-sub notes_html {
-    '';
+sub notes_html { 
+    my($self,$svc_dsl) = (shift,shift);
+    my $conf = new FS::Conf;
+    my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+    my @notes = $svc_dsl->notes;
+    my $html = '<TABLE border="1" cellspacing="2" cellpadding="2" id="dsl_notes">
+	<TR><TH>Date</TH><TH>By</TH><TH>Priority</TH><TH>Note</TH></TR>';
+    foreach $note ( @notes ) {
+	$html .= "<TR>
+	    <TD>".time2str("$date_format %H:%M",$note->date)."</TD>
+	    <TD>".$note->by."</TD>
+	    <TD>". ($note->priority eq 'N' ? 'Normal' : 'High') ."</TD>
+	    <TD>".$note->note."</TD></TR>";
+    }
+    $html .= '</TABLE>';
+    $html;
 }
 
 sub loop_type_long { # sub, not a method
