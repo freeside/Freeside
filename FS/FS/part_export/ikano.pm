@@ -1,5 +1,7 @@
 package FS::part_export::ikano;
 
+use strict;
+use warnings;
 use vars qw(@ISA %info %loopType $me);
 use Tie::IxHash;
 use Date::Format qw( time2str );
@@ -93,6 +95,7 @@ sub dsl_pull {
 		    'username' => 'Username',
 		    'password' => 'Password' );
 
+    my($fsf, $ikanof);
     while (($fsf, $ikanof) = each %justUpdate) {
        $svc_dsl->$fsf($result->{$ikanof}) 
 	    if $result->{$ikanof} ne $svc_dsl->$fsf;
@@ -167,7 +170,7 @@ sub dsl_pull {
     my @ostatics = split(',',$ostatics);
     # more horrible search/sync code below...
     my $staticsChanged = 0;
-    foreach $istatic ( @istatics ) { # they have, we don't
+    foreach my $istatic ( @istatics ) { # they have, we don't
 	unless ( grep($_ eq $istatic, @ostatics) ) {
 	    push @ostatics, $istatic;
 	    $staticsChanged = 1;
@@ -187,7 +190,7 @@ sub dsl_pull {
     my @tnotes = defined $tnotes ? @$tnotes : ();
     my @inotes = (); # all Ikano OrderNotes as FS::dsl_note objects
     my $notesChanged = 0; 
-    foreach $tnote ( @tnotes ) {
+    foreach my $tnote ( @tnotes ) {
 	my $inote = $self->ikano2fsnote($tnote,$svc_dsl->svcnum);
 	return 'Cannot parse note' unless ref($inote);
 	push @inotes, $inote;
@@ -196,9 +199,9 @@ sub dsl_pull {
     # assume notes we already have don't change & no notes added from our side
     # so using the horrible code below just find what we're missing and add it
     my $error;
-    foreach $inote ( @inotes ) {
+    foreach my $inote ( @inotes ) {
 	my $found = 0;
-	foreach $onote ( @onotes ) {
+	foreach my $onote ( @onotes ) {
 	    if($onote->date == $inote->date && $onote->note eq $inote->note) {
 		$found = 1;
 		last;
@@ -237,7 +240,7 @@ sub ikano2fsnote {
     $by = "Ikano" if $n->{'CompanyStaffId'} == -1 && $n->{'StaffId'} != -1;
     $by = "Us" if $n->{'StaffId'} == -1 && $n->{'CompanyStaffId'} != -1;
 
-    $fsnote = new FS::dsl_note( {
+    new FS::dsl_note( {
 	'svcnum' => $svcnum,
 	'by' => $by,
 	'priority' => $n->{'HighPriority'} eq 'false' ? 'N' : 'H',
@@ -257,7 +260,7 @@ sub notes_html {
     my @notes = $svc_dsl->notes;
     my $html = '<TABLE border="1" cellspacing="2" cellpadding="2" id="dsl_notes">
 	<TR><TH>Date</TH><TH>By</TH><TH>Priority</TH><TH>Note</TH></TR>';
-    foreach $note ( @notes ) {
+    foreach my $note ( @notes ) {
 	$html .= "<TR>
 	    <TD>".time2str("$date_format %H:%M",$note->date)."</TD>
 	    <TD>".$note->by."</TD>
@@ -303,7 +306,7 @@ sub valid_order {
 
   # common to all order types/status/loop_type
   my $error = !($svc_dsl->desired_due_date
-	    &&  grep($_ eq $svc_dsl->vendor_order_type, @Net::Ikano::orderType)
+	    &&  grep($_ eq $svc_dsl->vendor_order_type, Net::Ikano->orderTypes)
 	    &&  $svc_dsl->first
 	    &&	$svc_dsl->last
 	    &&	defined $svc_dsl->loop_type
@@ -355,6 +358,7 @@ sub qual2termsid {
     my $qual = qsearchs( 'qual', { 'vendor_qual_id' => $vendor_qual_id });
     return '' unless $qual;
     my %qual_options = $qual->options;
+    my( $optionname, $optionvalue );
     while (($optionname, $optionvalue) = each %qual_options) {
 	if ( $optionname =~ /^ikano_Network_(\d+)_ProductGroup_(\d+)_Product_(\d+)_ProductCustomId$/ 
 	    && $optionvalue eq $ProductCustomId ) {
@@ -423,9 +427,8 @@ sub _export_insert {
   $svc_dsl->vendor_order_status($result->{'Status'});
   $svc_dsl->username($result->{'Username'});
   local $FS::svc_Common::noexport_hack = 1;
-  local $FS::UID::AutoCommit = 0;
   $result = $svc_dsl->replace; 
-  return 'Error setting DSL fields' if $result;
+  return "Error setting DSL fields: $result" if $result;
   '';
 }
 
