@@ -182,6 +182,9 @@ sub upgrade_data {
     #return unprovisioned numbers to availability
     'phone_avail' => [],
 
+    #insert scripcondition
+    'TicketSystem' => [],
+
   ;
 
   \%hash;
