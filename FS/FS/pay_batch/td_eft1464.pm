@@ -49,84 +49,8 @@ my $i;
 $name = 'td_eft1464';
 # TD Bank EFT 1464 Byte format
 
-%import_info = (
-  'filetype'    => 'variable',
-  'parse'       => \&parse,
-  'fields' => [ qw(
-    status
-    paid
-    paybatchnum
-    ) ],
-  'hook' => sub {
-      my $hash = shift;
-      $hash->{'_date'} = time;
-      $hash->{'paid'} = sprintf('%.2f', $hash->{'paid'});
-  },
-  'approved'    => sub { 
-      my $hash = shift;
-      $hash->{'status'} eq 'A'
-  },
-  'declined'    => sub {
-      my $hash = shift;
-      $hash->{'status'} eq 'D';
-  },
-  'begin_condition' => sub {
-      my $hash = shift;
-      $hash->{'status'} eq 'A' or $hash->{'status'} eq 'D';
-  },
-  'end_condition' => sub {
-      my $hash = shift;
-      $hash->{'status'} eq 'END'
-  },
-  'close_condition' => sub {
-      my $batch = shift;
-      my @cust_pay_batch = qsearch('cust_pay_batch', 
-        { batchnum => $batch->batchnum }
-      );
-      return ( (grep {! length($_->status) } @cust_pay_batch) == 0 );
-  },
-);
-
-sub parse {
-  my ($batch, $line) = @_;
-  $batch->setfield('import_state','') if !$batch->import_state;
-  return 'END' if $batch->import_state eq 'END';
-  if( $batch->import_state eq '212' ) {
-    # APX212 fields:
-    # trace number, trans type, amount, due date, routing number, 
-    # account number, xref number, return routing number and account
-    # The only ones we take are amount and xref number.
-    if( $line =~ /CREDITS\s+DEBITS/ ) {
-      $batch->setfield('import_state', 'END');
-      return 'END';
-    }
-    $line =~ /^\d{22} D\d{3} (.{14})    \d{5}  \d{4}-\d{5}  .{12}    (.{19}).*$/
-      or die "can't parse: $line";
-    # strip leading zeroes/spaces from paybatchnum at this point
-    return ('A', $1, sprintf('%u',$2));
-  }
-  elsif( $batch->import_state eq '234' ) {
-    # APX234 fields:
-    # payor name, xref number, due date, routing number, account number,
-    # amount, reason for return
-    if( $line =~ /TOTAL NUMBER -/ ) {
-      $batch->setfield('import_state', 'END');
-      return 'END';
-    }
-    $line =~ /^.{22} (.{19})   \d\d\/\d\d\/\d\d  \d{9}  .{12} (.{14}).*$/
-      or die "can't parse: $line";
-    return ('D', $2, sprintf('%u',$1));
-  }
-  else {
-    if ( $line =~ /ITEM TRACE NUMBER/ ) {
-      $batch->setfield('import_state','212');
-    }
-    elsif ( $line =~ /REASON FOR RETURN/ ) {
-      $batch->setfield('import_state','234');
-    } # else leave it undefined
-    return 'HEADER';
-  }
-}
+%import_info = ( filetype => 'NONE' ); 
+# just to suppress warning; importing this format is a fatal error
 
 %export_info = (
   init => sub {
