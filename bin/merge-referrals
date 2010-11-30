@@ -2,7 +2,7 @@
 
 use strict;
 use FS::UID qw(adminsuidsetup);
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearch);
 use FS::cust_main;
 
 my $user = shift or die "usage: merge-customers username custnum\n";
