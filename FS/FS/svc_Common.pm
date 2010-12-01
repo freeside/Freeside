@@ -330,6 +330,8 @@ sub preinsert_hook_first { ''; }
 sub _check_duplcate { ''; }
 sub preinsert_hook { ''; }
 sub table_dupcheck_fields { (); }
+sub predelete_hook { ''; }
+sub predelete_hook_first { ''; }
 
 =item delete [ , OPTION => VALUE ... ]
 
@@ -356,9 +358,11 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error =    $self->SUPER::delete
+  my $error = 	$self->predelete_hook_first 
+	      || $self->SUPER::delete
               || $self->export('delete', @$export_args)
 	      || $self->return_inventory
+	      || $self->predelete_hook
 	      || $self->cust_svc->delete
   ;
   if ( $error ) {

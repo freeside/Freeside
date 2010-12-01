@@ -49,10 +49,18 @@ sub dsl_pull {
 # current assumptions of what won't change (from their side):
 # vendor_order_id, vendor_qual_id, vendor_order_type, pushed, monitored,
 # last_pull, address (from qual), contact info, ProductCustomId
-    my($self, $svc_dsl) = (shift, shift);
+    my($self, $svc_dsl, $threshold) = (shift, shift, shift);
     $self->loadmod;
     my $result = $self->valid_order($svc_dsl,'pull');
     return $result unless $result eq '';
+
+    my $now = time;
+    if($now - $svc_dsl->last_pull < $threshold) {
+	warn "$me skipping pull since threshold not reached (svcnum="
+	    . $svc_dsl->svcnum . ",now=$now,threshold=$threshold,last_pull="
+	    . $svc_dsl->last_pull .")" if $self->option('debug');
+	return '';
+    }
   
     $result = $self->ikano_command('ORDERSTATUS', 
 	{ OrderId => $svc_dsl->vendor_order_id } ); 
@@ -242,14 +250,68 @@ sub ikano2fsnote {
 
     new FS::dsl_note( {
 	'svcnum' => $svcnum,
-	'by' => $by,
+	'user' => $by,
 	'priority' => $n->{'HighPriority'} eq 'false' ? 'N' : 'H',
-	'date' => int(str2time($n->{'Date'})),
+	'_date' => int(str2time($n->{'Date'})),
 	'note' => $n->{'Text'},
      } );
 }
 
 sub qual {
+    my($self,$qual) = (shift,shift);
+# address always required for Ikano qual, TN optional (assume dry if not given)
+
+    my %location_hash = $qual->location; 
+    return 'No address provided' unless %location_hash;
+    my $svctn = $qual->phonenum;
+
+    my $result = $self->ikano_command('PREQUAL',
+      { AddressLine1 => $location_hash{address1},
+	AddressUnitType => $location_hash{location_type},
+	AddressUnitValue => $location_hash{location_number},
+	AddressCity => $location_hash{city},
+	AddressState => $location_hash{state},
+	ZipCode => $location_hash{zip},
+	Country => $location_hash{country},
+	LocationType => $location_hash{location_kind},
+	PhoneNumber => length($svctn) > 1 ? $svctn : "STANDALONE",
+	RequestClientIP => '127.0.0.1',
+	CheckNetworks => $self->option('check_networks'),
+      } ); 
+    return 'Invalid prequal response' unless defined $result->{'PrequalId'};
+
+    my $qoptions = {};
+    # lame data structure traversal...
+    # don't spend much time here, just get TermsId and ProductCustomId
+    my $networks = $result->{'Network'};
+    my @networks = defined $networks ? @$networks : ();
+    my $netcount = 0;
+    foreach my $network ( @networks ) { 
+	my $productgroups = $network->{'ProductGroup'};
+	my @productgroups = defined $productgroups ? @$productgroups : ();
+	my $pgcount = 0;
+	foreach my $productgroup ( @productgroups ) {
+	    my $prefix = "ikano_Network_$netcount"."_ProductGroup_$pgcount"."_";
+	    $qoptions->{$prefix."TermsId"} = $productgroup->{'TermsId'};
+	    my $products = $network->{'Product'};
+	    my @products = defined $products ? @$products : ();
+	    my $prodcount = 0;
+	    foreach my $product ( @products ) {
+		$qoptions->{$prefix."Product_$prodcount"."_ProductCustomId"} = $product->{'ProductCustomId'};
+		$prodcount++;
+	    }
+	    $pgcount++;
+	}
+	$netcount++;
+    }
+
+    {	'vendor_qual_id' => $result->{'PrequalId'},
+	'status' => scalar(@networks) ? 'Q' : 'D',
+	'options' => $qoptions,
+    };
+}
+
+sub qual_html {
     '';
 }
 
@@ -469,8 +531,14 @@ sub _export_delete {
 	my $result = $self->ikano_command('CANCEL', 
 	    { OrderId => $svc_dsl->vendor_order_id, } );
 	return $result unless ref($result); # scalar (string) is an error
+	return 'Unable to cancel order' unless $result->{'Order'};
+	$result = $result->{'Order'};
+	return 'Invalid cancellation response' 
+	    unless $result->{'Status'} eq 'CANCELLED' 
+		&& $result->{'OrderId'} eq $svc_dsl->vendor_order_id;
 
-	return $self->dsl_pull($svc_dsl);
+	# we're supposed to do a pull, but it will break everything, so don't
+	# this is very wrong...
     }
     else {
 	return "Cannot cancel a NEW order unless it's in NEW or PENDING status";

@@ -38,10 +38,6 @@ FS::Record.  The following fields are currently supported:
 
 =item locationnum
 
-Either one of these cases must be true:
--locationnum is non-null and prospectnum is null and custnum is null
--locationnum is null and (prospectnum is non-null or custnum is non-null, but not both non-null)
-
 =item phonenum - Service Telephone Number
 
 =item exportnum - export instance providing service-qualification capabilities,
@@ -117,23 +113,38 @@ sub check {
     || $self->ut_foreign_keyn('prospectnum', 'prospect_main', 'prospectnum')
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('phonenum')
-    || $self->ut_foreign_key('exportnum', 'part_export', 'exportnum')
+    || $self->ut_foreign_keyn('exportnum', 'part_export', 'exportnum')
     || $self->ut_textn('vendor_qual_id')
     || $self->ut_alpha('status')
   ;
   return $error if $error;
 
-#Either one of these cases must be true:
-#1. locationnum is non-null and prospectnum is null and custnum is null
-#2. locationnum is null and (prospectnum is non-null or custnum is non-null, but not both non-null)
-  return "Invalid prospect/customer/location combination" unless (
-    ( $self->locationnum && !$self->prospectcnum && !$self->custnum  ) #1
- ||
-    ( !$self->locationnum && ( $self->prospectnum || $self->custnum ) 
-	&& !( $self->custnum && $self->prospectnum )  ) #2
+  return "Invalid prospect/customer/location combination" if (
+   ( $self->locationnum && $self->prospectnum && $self->custnum ) ||
+   ( !$self->locationnum && !$self->prospectnum && !$self->custnum )
   );
 
   $self->SUPER::check;
+}
+
+sub location {
+    my $self = shift;
+    if ( $self->locationnum ) {
+	my $l = qsearchs( 'cust_location', 
+		    { 'locationnum' => $self->locationnum });
+	return $l->location_hash if $l;
+    }
+    if ( $self->custnum ) {
+	my $c = qsearchs( 'cust_main', { 'custnum' => $self->custnum });
+	return $c->location_hash if $c;
+    }
+  # prospectnum does not imply any particular address! must specify locationnum
+
+    '';
+}
+
+sub status_long {
+    
 }
 
 =back

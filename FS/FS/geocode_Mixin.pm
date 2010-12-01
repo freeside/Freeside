@@ -51,7 +51,8 @@ sub location_hash {
   map { my $method = ($_ eq 'geocode') ? $_ : $prefix.$_;
         $_ => $self->get($method);
       }
-      qw( address1 address2 city county state zip country geocode );
+      qw( address1 address2 city county state zip country geocode 
+	location_type location_number location_kind );
 }
 
 =item location_label [ OPTION => VALUE ... ]

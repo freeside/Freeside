@@ -263,6 +263,27 @@ sub check {
   $self->SUPER::check;
 }
 
+sub predelete_hook_first {
+    my $self = shift;
+    my @exports = $self->part_svc->part_export_dsl_pull;
+    return 'More than one DSL-pulling export attached' if scalar(@exports) > 1;
+    if ( scalar(@exports) == 1 ) {
+	my $export = $exports[0];
+	return $export->dsl_pull($self);
+    }
+    '';
+}
+
+sub predelete_hook {
+    my $self = shift;
+    my @notes = $self->notes;
+    foreach my $note ( @notes ) {
+	my $error = $note->delete;
+	return $error if $error;
+    }
+    '';
+}
+
 =back
 
 =head1 SEE ALSO

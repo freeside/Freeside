@@ -34,11 +34,11 @@ FS::Record.  The following fields are currently supported:
 
 =item svcnum - the DSL for this note, see L<FS::svc_dsl>
 
-=item by - export-specific, e.g. note's author or ISP vs. telco/vendor
+=item user - export-specific, e.g. note's author or ISP vs. telco/vendor
 
 =item priority - export-specific, e.g. high priority or not; not used by most
 
-=item date - note date
+=item _date - note date
 
 =item note - the note
 
@@ -105,9 +105,9 @@ sub check {
   my $error = 
     $self->ut_numbern('notenum')
     || $self->ut_foreign_key('svcnum', 'svc_dsl', 'svcnum')
-    || $self->ut_textn('by')
+    || $self->ut_textn('user')
     || $self->ut_alphasn('priority')
-    || $self->ut_numbern('date')
+    || $self->ut_numbern('_date')
     || $self->ut_text('note')
   ;
   return $error if $error;
