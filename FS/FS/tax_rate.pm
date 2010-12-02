@@ -18,6 +18,7 @@ use DBIx::DBSchema;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
+use FS::Conf;
 use FS::tax_class;
 use FS::cust_bill_pkg;
 use FS::cust_tax_location;
@@ -455,12 +456,17 @@ sub taxline {
       return $self->_fatal_or_null( 'fee with minute unit type' );
 
     } elsif ($self->unittype == 2) { #account
-      #$taxable_units = 1;
-      #number of distinct locations
-      my %seen = ();
-      foreach (@cust_bill_pkg) {
-        $taxable_units++
-          unless $seen{$_->cust_pkg->locationnum}++;
+
+      my $conf = new FS::Conf;
+      if ( $conf->exists('tax-pkg_address') ) {
+        #number of distinct locations
+        my %seen = ();
+        foreach (@cust_bill_pkg) {
+          $taxable_units++
+            unless $seen{$_->cust_pkg->locationnum}++;
+        }
+      } else {
+        $taxable_units = 1;
       }
 
     } else {
