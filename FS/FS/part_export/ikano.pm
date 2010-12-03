@@ -250,7 +250,7 @@ sub ikano2fsnote {
 
     new FS::dsl_note( {
 	'svcnum' => $svcnum,
-	'user' => $by,
+	'author' => $by,
 	'priority' => $n->{'HighPriority'} eq 'false' ? 'N' : 'H',
 	'_date' => int(str2time($n->{'Date'})),
 	'note' => $n->{'Text'},

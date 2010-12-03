@@ -1,3 +1,9 @@
+The data below is wrong/incomplete, see:
+PG8.3 - http://www.postgresql.org/docs/8.3/static/sql-keywords-appendix.html
+MySQL5.6 - http://dev.mysql.com/doc/refman/5.6/en/reserved-words.html
+-------------------------------------------------------------------------------
+
+
 From http://epoch.cs.berkeley.edu:8000/sequoia/dba/montage/FAQ/SQL.html
   by Jean Anderson (jta@postgres.berkeley.edu)
 

@@ -1871,7 +1871,7 @@ sub tables_hashref {
       'columns' => [
         'notenum',           'serial',    '',        '', '', '',
 	'svcnum',     'int', '',       '', '', '',
-        'user',     'varchar', 'NULL', $char_d,  '', '',
+        'author',     'varchar', 'NULL', $char_d,  '', '',
         'priority',   'char', 'NULL',       1,  '', '', 
 	'_date',     'int', 'NULL',       '', '', '',
 	'note',     'text', '',       '', '', '',
