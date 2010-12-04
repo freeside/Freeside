@@ -30,6 +30,8 @@ die 'unknown pkgnum' unless $cust_pkg;
 my %change = map { $_ => scalar($cgi->param($_)) }
                  qw( locationnum pkgpart );
 
+$change{'keep_dates'} = 1;
+
 if ( $cgi->param('locationnum') == -1 ) {
   my $cust_location = new FS::cust_location {
     'custnum' => $cust_pkg->custnum,
