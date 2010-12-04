@@ -224,10 +224,10 @@ if ( $locationnum && $locationnum != -1 ) {
 }
 
 my $location_sort = sub {
-     $a->country  cmp $b->country
-  or $a->city     cmp $b->city
-  or $a->address1 cmp $b->address1
-  or $a->address2 cmp $b->address2
+        $a->country   cmp $b->country
+  or lc($a->city)     cmp lc($b->city)
+  or lc($a->address1) cmp lc($b->address1)
+  or lc($a->address2) cmp lc($b->address2)
 };
 
 my $disabled = ( $locationnum == -1 || ($editable && $locationnum) )
