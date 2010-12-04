@@ -150,7 +150,7 @@ Example:
 %     my @locations = $cust_main ? $cust_main->cust_location : ();
 %     push @locations, $cust_location
 %       if !$cust_main && $cust_location && $cust_location->locationnum>0;
-%     foreach my $loc ( @locations ) {
+%     foreach my $loc ( sort $location_sort @locations ) {
         <OPTION VALUE="<% $loc->locationnum %>"
                 <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
         ><% $loc->line |h %>
@@ -222,6 +222,13 @@ if ( $locationnum && $locationnum != -1 ) {
     $cust_location->$_( $cust_main->get($prefix.$_) ) foreach @location_fields;
   }
 }
+
+my $location_sort = sub {
+     $a->country  cmp $b->country
+  or $a->city     cmp $b->city
+  or $a->address1 cmp $b->address1
+  or $a->address2 cmp $b->address2
+};
 
 my $disabled = ( $locationnum == -1 || ($editable && $locationnum) )
                  ? ''
