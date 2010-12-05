@@ -91,3 +91,6 @@ share/html/Callbacks/TimeToResolve/*
 
 share/html/Callbacks/SearchCustomerFields/*
 
+share/html/Callbacks/RTx-Statistics/*
+share/html/RTx/Statistics/*
+
