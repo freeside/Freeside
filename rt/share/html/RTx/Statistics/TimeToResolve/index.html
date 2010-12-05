@@ -5,19 +5,9 @@
 <p>This page displays the same information as the Time to Resolve chart, but in a scattergraph format and only for the previous 7 calendar
 days. It only displays data for tickets which have been resolved. Each division on the Days axis is one day and the granularity of this chart
 is 30 minutes.</p>
+
 <form method="POST">
 
-<table>
-  <tr>
-  <td>Show Queue:</td>
-  <td COLSPAN=3><& /Elements/SelectQueue, Name=>"queue", Default=>$queue ,ShowNullOption=>0, 
-            CheckQueueRight=>'SeeQueue' &></td>
-  </tr>
-</table>
-<INPUT TYPE="submit" VALUE="Update Page"</INPUT>
-</form>
-
-<BR>
 % my $url = 'Elements/Chart?x_labels=';
 % my $i;
 % $url .= join ",", (map {(int($_/2) == $_/2 && (++$i)%2) ? $_/2 : ""} grep {$counts[$_]} 0..($#counts-1)), "longer";
@@ -25,14 +15,19 @@ is 30 minutes.</p>
 % $url .= "marker_size=1&";
 % $url .= "data1=".(join ",", map { $_ || () } @counts)."&";
 % chop $url;
-<IMG SRC="<% $url %>">
+<& /RTx/Statistics/Elements/GraphBox, GraphURL => $url &>
 
-<BR>
+<& /RTx/Statistics/Elements/ControlsAsTable/ControlBox, 
+        Title => "Change Queue",
+        ShowSingleQueue => 1, Queue=>$Queue,
+&>
+
+</form>
 
 %Statistics::DebugInit($m);
 
 <%ARGS>
-$queue => undef
+$Queue => undef
 </%ARGS>
 
 <%INIT>
@@ -51,16 +46,16 @@ for my $key (keys %ARGS) {
 }
 
 my $QueueObj = new RT::Queue($session{'CurrentUser'});
-if (!defined $queue) {
-  $QueueObj->Load($Statistics::TimeToResolveGraphQueue);
-  $queue = $QueueObj->Id();
-} else {
-  $QueueObj->Load($queue);
-}
+#if (!defined $queue) {
+#  $QueueObj->Load($Statistics::TimeToResolveGraphQueue);
+#  $queue = $QueueObj->Id();
+#} else {
+  $QueueObj->Load($Queue);
+#}
 
 
 my $tix = new RT::Tickets($session{'CurrentUser'});
-$tix->LimitQueue (VALUE => $queue) if $queue;
+$tix->LimitQueue (VALUE => $Queue) if $Queue;
 $tix->LimitStatus(VALUE => "resolved");
 $tix->UnLimit;
 if ($tix->Count) {
