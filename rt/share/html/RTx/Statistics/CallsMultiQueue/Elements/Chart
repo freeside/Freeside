@@ -23,7 +23,7 @@ $m->abort();
 use GD::Graph::lines;
 
 my @data;
-my $graph = GD::Graph::lines->new($Statistics::GraphWidth,$Statistics::GraphHeight);
+my $graph = GD::Graph::lines->new($Statistics::GraphWidth||500,$Statistics::GraphHeight||400);
 $graph->set(export_format => "png",
             x_label       => 'Day of Week',
             y_label       => 'Tickets per day');

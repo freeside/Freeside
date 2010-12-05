@@ -12,7 +12,7 @@ print "<p>";
 use GD::Graph::bars;
 
 my @data;
-my $graph = GD::Graph::bars->new($Statistics::GraphWidth,$Statistics::GraphHeight);
+my $graph = GD::Graph::bars->new($Statistics::GraphWidth||500,$Statistics::GraphHeight||400);
 $graph->set(export_format => "png",
             x_label       => 'Queue name',
             y_label       => 'Total per queue by status');

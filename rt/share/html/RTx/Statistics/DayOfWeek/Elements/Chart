@@ -9,7 +9,7 @@
 use GD::Graph::bars;
 
 my @data;
-my $graph = GD::Graph::bars->new($Statistics::GraphWidth,$Statistics::GraphHeight);
+my $graph = GD::Graph::bars->new($Statistics::GraphWidth||500,$Statistics::GraphHeight||400);
 $graph->set(export_format => "png",
              x_label      => 'Day of Week',
              y_label      => 'Ticket actions per Day by type');
