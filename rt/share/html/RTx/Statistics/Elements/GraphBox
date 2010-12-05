@@ -1,4 +1,4 @@
-<TABLE><TR><TD>
+<TABLE><TR><TD VALIGN="top">
 
 <&/Widgets/TitleBoxStart, 
 	title      => 'Download Chart as Image',

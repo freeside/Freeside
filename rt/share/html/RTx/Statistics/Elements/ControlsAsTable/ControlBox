@@ -1,0 +1,89 @@
+<TD VALIGN="top">
+
+<&/Widgets/TitleBoxStart, title => $Title, &>
+
+        <table border="0" cellpadding="1" cellspacing="0">
+% if (defined $ShowStatus) {
+          <tr>
+            <td class="collection-as-table" style="text-align:left;">Show Status:</td>
+            <td COLSPAN=3 class="collection-as-table" style="text-align:left;">
+	      <& /Elements/SelectStatus, Name=>"status", Default => $Status, DefaultValue => undef &>
+	    </td>
+          </tr>
+% }
+% if (defined $ShowSingleQueue) {
+          <tr>
+            <td class="collection-as-table" style="text-align:left;">Show Queue:</td>
+            <td COLSPAN=3 class="collection-as-table" style="text-align:left;">
+	      <& /Elements/SelectQueue, Name=>"Queue", Default=>$Queue ,ShowNullOption=>0, 
+	             CheckQueueRight=>'SeeQueue' &>
+	    </td>
+          </tr>
+% }
+% if (defined $ShowDates) {
+          <tr>
+	    <& /RTx/Statistics/Elements/DateSelectRow, Label => "Start Date:", 
+              refMonth => $sMonth, nameMonth => "sMonth", 
+	      refDay => $sDay, nameDay => "sDay",
+	      refYear => $sYear, nameYear => "sYear" &>
+          </tr>
+          <tr>
+  	    <& /RTx/Statistics/Elements/DateSelectRow, Label => "End Date:", 
+              refMonth => $eMonth, nameMonth => "eMonth", 
+  	      refDay => $eDay, nameDay => "eDay",
+	      refYear => $eYear, nameYear => "eYear" &>
+          </tr>
+          <tr>
+  	    <td class="collection-as-table" style="text-align:left;">Show Weekends:</td>
+  	    <td class="collection-as-table" style="text-align:left;">
+  	      <select name=weekends>
+  	        <option value=0 <% (!$weekends) && 'selected' %> >No</option>
+  	        <option value=1 <% $weekends && 'selected' %> >Yes</option>
+  	      </select>
+  	    </td>
+  	  </tr>
+% }
+% if (defined $ShowMultiQueues) {
+          <tr>
+% if (defined $ShowDates) {
+%# If we're showing the dates, we put these side by side.
+            <td COLSPAN=2 class="collection-as-table" style="text-align:left;">Select All Queues: <input type=checkbox name="AddAllCheck"></td>
+	    <td COLSPAN=3 class="collection-as-table" >
+	      <& /RTx/Statistics/Elements/SelectMultiQueue, Name=>"queues", Selected=>$queues_ref, 
+                 ShowNullOption=>0, CheckQueueRight=>'SeeQueue', Size => 10, NamedValues => 1 &>
+            </td>
+% } else {
+            <td COLSPAN=3 class="collection-as-table" style="text-align:left;">
+	      <& /RTx/Statistics/Elements/SelectMultiQueue, Name=>"queues", Selected=>$queues_ref, 
+                 ShowNullOption=>0, CheckQueueRight=>'SeeQueue', Size => 10, NamedValues => 1 &>
+            </td>
+          </tr>
+          <tr>
+            <td class="collection-as-table" style="text-align:left;">Select All Queues: <input type=checkbox name="AddAllCheck"></td>
+% }
+          </tr>
+% }
+	  <& /RTx/Statistics/Elements/ControlsAsTable/UpdatePage &>
+        </table>
+
+<&/Widgets/TitleBoxEnd&>
+
+</TD></TR></TABLE>
+<%args>
+$Title => undef
+$ShowMultiQueues => undef
+$queues_ref => undef
+$ShowDates => undef
+$sMonth => undef
+$sDay => undef
+$sYear => undef
+$eMonth => undef
+$eDay => undef
+$eYear => undef
+$weekends => undef
+$ShowSingleQueue => undef
+$Queue => undef
+$ShowStatus => undef
+$Status => undef
+</%args>
+
