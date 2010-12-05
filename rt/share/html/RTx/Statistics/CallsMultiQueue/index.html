@@ -1,0 +1,330 @@
+<& /Elements/Header, Title => loc('Tickets per day in Multiple queues') &>
+<& /RTx/Statistics/Elements/Tabs, Title => loc('Tickets per day in Multiple Queues by status') &>
+
+<h3>Description</h3>
+<p>This chart shows details of tickets per day by their status. You can select multiple queues to display at the same time, but only one status. You can chose any of the defined status values. 
+There is also the option to display all available queues at the same time.
+The default display shows tickets resolved in your default queue (General unless altered locally).
+The line chart below shows the same information in a graphical form.
+
+<br />
+
+<form method="POST" action="index.html">
+
+%# Build Legend
+% my @legend;
+% for (sort keys %queues_to_show) {
+%   push @legend, $_;
+% }
+
+%my $title = "Tickets with Status $status in " . join(', ', @queues) . ", per day from " .
+%	  Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[0]) . " through " .
+%	  Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[$#dates-1]);
+
+<& /Elements/TitleBoxStart, title => $title, title_href => "/RTx/Statistics/OpenStalled/index.html?$QueryString"&>
+<TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH="100%">
+% if ($ShowHeader) {
+<& /RTx/Statistics/Elements/CollectionAsTable/Header, 
+    Format => \@RowFormat, 
+    FormatString => $RowFormat,
+    AllowSorting => $AllowSorting, 
+    Order => $Order, 
+    Query => undef,
+    Rows => $Rows,
+    Page => $Page,
+    OrderBy => $OrderBy , 
+    BaseURL => $BaseURL,
+    maxitems => $maxitems &> 
+% }
+% my $line = 0;
+% LINE: for my $d (0..$#dates) {
+%   if ($d == $#dates ){
+%     next LINE;
+%   }
+%   $line++;
+%   my $x = 1;
+%   $values{Statistics_Date} = Statistics::FormatDate($dateformat, $dates[$d]);
+%   my $row_total=0;
+%   foreach my $q (sort keys %queues_to_show) {
+%     my $tix = new RT::Tickets($session{'CurrentUser'});
+%     if ($status eq "resolved") {
+%       $tix->LimitStatus(VALUE => $status);
+%       $tix->LimitResolved(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+%       if ($dates[$d+1]) {
+%         $tix->LimitResolved(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+%       }
+%     } 
+%     elsif ($status eq "new") {
+%       $tix->LimitCreated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+%       if ($dates[$d+1]) {
+%         $tix->LimitCreated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+%       }
+%     } 
+%     elsif ($status eq "deleted") {
+%       $tix->LimitStatus(VALUE => $status);
+%       $tix->LimitLastUpdated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+%       if ($dates[$d+1]) {
+%         $tix->LimitLastUpdated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+%       }
+%     }
+%     elsif ($status eq "stalled") {
+%       $tix->LimitStatus(VALUE => $status);
+%       $tix->LimitLastUpdated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+%       if ($dates[$d+1]) {
+%         $tix->LimitLastUpdated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+%       }
+%     }
+%     elsif ($status eq "open") {
+%       $tix->LimitStatus(VALUE => $status);
+%       $tix->LimitLastUpdated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+%       if ($dates[$d+1]) {
+%         $tix->LimitLastUpdated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+%       }
+%     }
+%     elsif ($status eq "rejected") {
+%       $tix->LimitStatus(VALUE => $status);
+%       $tix->LimitLastUpdated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+%       if ($dates[$d+1]) {
+%         $tix->LimitLastUpdated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+%       }
+%     }
+%     $tix->LimitQueue (VALUE => $q);
+%     $values{$q} = $tix->Count;
+%     $row_total += $tix->Count;
+%     $data[$x++][$d] = $tix->Count;
+%   }
+%   $values{Statistics_Totals} = $row_total;
+<&  /RTx/Statistics/Elements/CollectionAsTable/Row, Format => \@RowFormat, i => $line, record => $record, maxitems => $maxitems &>
+% }
+</table>
+<& /Elements/TitleBoxEnd&>
+
+<hr>
+
+<BR />
+<BR />
+
+<!--    <td>Show:</td>
+    <td COLSPAN=2><SELECT NAME="status">
+% for (qw(resolved new deleted stalled rejected open)) {
+    <OPTION VALUE="<% $_ %>" <% $_ eq $status && "SELECTED" %>>
+    <% loc($_) %></OPTION>
+% }
+--!>
+
+<%perl>
+# Create the graph URL
+my $url = 'Elements/Chart?x_labels=';
+#$url .= join ",", @{ shift @data } . "&";
+for (0..$max) {
+     $url .=  $m->interp->apply_escapes($data[0][$_],'u') . ",";
+}
+chop $url;
+$url .= "&";
+shift @data;
+$url .=  'set_legend='.(join ",", @legend)."&";
+for (0..$#data) {
+  $url .= "data".(1+$_)."=". (join ",", @{$data[$_]})."&";
+}
+chop $url;
+</%perl>
+
+<& /RTx/Statistics/Elements/GraphBox, GraphURL => $url &>
+
+<& /RTx/Statistics/Elements/ControlsAsTable/ControlBox, 
+         Title => "Change Status, Queues or Dates", 
+         ShowDates => 1, sMonth => \$sMonth, sDay => \$sDay, sYear => \$sYear,
+                         eMonth => \$eMonth, eDay => \$eDay, eYear => \$eYear,
+                         weekends => $weekends,
+         ShowMultiQueues => 1, queues_ref => \@queues,
+	 ShowStatus => 1, Status => $status
+ &>
+
+</form>
+
+<a href="<%$RT::WebPath%>/RTx/Statistics/CallsMultiQueue/index.html?<% $QueryString %>"><&|/l&>Bookmarkable link</&></a>
+%# | <a href="<%$RT::WebPath%>/RTx/Statistics/CallsMultiQueue/Results.tsv?<%$QueryString%>"><&|/l&>spreadsheet</&></a>
+<BR>
+<BR>
+
+<%ARGS>
+$status => $Statistics::MultiQueueStatus
+$max => $Statistics::MultiQueueMaxRows
+@queues => @Statistics::MultiQueueQueueList
+$weekends => $Statistics::PerDayWeekends;
+$sMonth=>undef
+$sDay=>undef
+$sYear=>undef
+$eMonth=>undef
+$eDay=>undef
+$eYear=>undef
+$days=>undef
+$dateformat => $Statistics::MultiQueueDateFormat
+$currentMonth=>undef
+
+$AllowSorting => undef
+$Order => undef
+$OrderBy => undef
+$ShowNavigation => 1
+$ShowHeader => 1
+$Rows => 50
+$Page => 1
+$BaseURL => undef
+$AddAllCheck => undef
+</%ARGS>
+
+<%INIT>
+
+use RTx::Statistics;
+use Time::Local;
+my $n = 0;
+my @data = ([]);
+my @dates;
+my @msgs;
+my $selected;
+my $diff;
+my %queues_to_show;
+my $secsPerDay=86400;
+my $sEpoch;
+my $eEpoch;
+my $QueryString;
+my $maxitems;
+my $RowFormat;
+my $BoldRowFormat;
+my %record;
+my %values;
+my $record = \%record;
+
+$record{values} = \%values;
+
+Statistics::DebugClear();
+Statistics::DebugLog("CallsQueueDay/index.html ARGS:\n");
+for my $key (keys %ARGS) {
+  Statistics::DebugLog("ARG{ $key }=" . $ARGS{$key} . "\n");
+}
+
+
+  # Handle the Add All Checkbox
+  if($AddAllCheck eq "on") {
+    $AddAllCheck = undef;
+    undef (@queues);
+    my $q=new RT::Queues($session{'CurrentUser'});
+    $q->UnLimit;
+    while (my $queue=$q->Next) {
+      next if !$queue->CurrentUserHasRight('SeeQueue');
+      push @queues, $queue->Name;
+    }
+  }
+
+  # If the user has the right to see the queue, put it into the map
+  for my $q (@queues) {
+      my $Queueobj = new RT::Queue($session{'CurrentUser'});
+      $Queueobj->Load($q);
+      next if !$Queueobj->CurrentUserHasRight('SeeQueue');
+      $queues_to_show{$q} = 1;
+  }
+
+  $maxitems = (scalar @queues) + 2;
+
+  # Build the format strings
+  $RowFormat = "'__Statistics_Date__'";
+  $BoldRowFormat = "'<B>__Statistics_Date__</B>'";
+  for my $q (@queues) {
+      $RowFormat .= ",'__Statistics_Dynamic__/KEY:$q/TITLE:$q/STYLE:text-align:right;'";
+      $BoldRowFormat .= ",'<B>__Statistics_Dynamic__</B>/KEY:$q/TITLE:$q/STYLE:text-align:right;'";
+  }
+  $RowFormat .= ",'<B>__Statistics_Totals__</B>/STYLE:text-align:right;'";
+  $BoldRowFormat .= ",'<B>__Statistics_Totals__</B>/STYLE:text-align:right;'";
+  # Parse the formats into structures.
+  my (@RowFormat) = $m->comp('/RTx/Statistics/Elements/CollectionAsTable/ParseFormat', Format => $RowFormat);
+  my (@BoldRowFormat) = $m->comp('/RTx/Statistics/Elements/CollectionAsTable/ParseFormat', Format => $BoldRowFormat);
+
+if ($sDay > $Statistics::monthsMaxDay{$sMonth}) {
+  $sDay = $Statistics::monthsMaxDay{$sMonth};
+}
+
+if ($eDay > $Statistics::monthsMaxDay{$eMonth}) {
+  $eDay = $Statistics::monthsMaxDay{$eMonth};
+}
+
+if ($sYear){
+	$sEpoch = timelocal(0, 0, 0, $sDay, $sMonth, $sYear-1900);
+}
+if ($eYear){
+Statistics::DebugLog("eMonth = " . $eMonth . "\n");
+	$eEpoch = timelocal(0, 0, 0, $eDay, $eMonth, $eYear-1900);
+} else {
+        # This case happens when the page is first loaded
+	my @local = localtime(time);
+	($eDay, $eMonth, $eYear) = ($local[3], $local[4], $local[5]);
+	$eYear += 1900; 
+	$eEpoch = timelocal(0, 0, 0, $local[3], $local[4], $local[5], $local[6], $local[7], $local[8]);
+Statistics::DebugLog("Setting eEpoch=$eEpoch from current time.\n");
+}
+
+if (($eEpoch < $sEpoch) || ($sEpoch == 0)) {
+    # We have an end, but not a start, or, overlapping.
+    
+    # if $currentMonth is set, just set the day to 1
+    if($currentMonth) {
+      # set start vars from end, but with day set to 1
+      (undef, undef, undef, $sDay, $sMonth, $sYear) = localtime($eEpoch);
+      $sDay=1;
+      $sEpoch = timelocal(0, 0, 0, $sDay, $sMonth, $sYear);
+    } else {
+      # If the user has specified how many days back to go, use that,
+      # If not, set start to configured default period before end
+      if(defined $days) {
+        $sEpoch = $eEpoch - ($days * $Statistics::secsPerDay);
+      } else {
+        $sEpoch = $eEpoch - ($Statistics::PerDayPeriod * $Statistics::secsPerDay);
+      }
+      (undef, undef, undef, $sDay, $sMonth, $sYear) = localtime($sEpoch);
+    }
+    $sYear += 1900;
+}
+
+# Compute days to chart.
+# The +1 is because we need to generate one more date. If the user
+# selected a 10 day range, we need to generate 11 days.
+$diff = int(($eEpoch - $sEpoch + $Statistics::secsPerDay - 1) / $Statistics::secsPerDay)+1;
+Statistics::DebugLog("Setting diff=$diff\n");
+
+Statistics::DebugLog("sEpoch=$sEpoch, components=" . join(',', localtime($sEpoch)) . "\n");
+Statistics::DebugLog("eEpoch=$eEpoch, components=" . join(',', localtime($eEpoch)) . "\n");
+
+# Build the new query string
+$QueryString = "queues=" . join("&queues=", @queues);
+$QueryString .= "&sDay=$sDay&sMonth=$sMonth&sYear=$sYear&eDay=$eDay&eMonth=$eMonth&eYear=$eYear&weekends=$weekends";
+
+
+
+
+# Set up the end date to be midnight(morning) of the date after the one the user wanted.
+my $endRange = $eEpoch + $Statistics::secsPerDay;
+$n = 0;
+until ($#dates == $diff) {
+    my $date = new RT::Date($session{CurrentUser});
+    $date->Set(Value=>$endRange - $n, Format => 'unix');
+    # Note: we used to adjust the time to local midnight, but
+    # none of the other date entry fields in RT seem to adjust, so we've stopped.
+    #Statistics::DebugLog("Before adjust to midnight date " . Statistics::FormatDate("%c", $date) . "\n");
+    $n+= $Statistics::secsPerDay;
+    # If we aren't showing weekends and this is one, decrement the number
+    # of days to show and skip to the next date.
+    if(!$weekends and Statistics::RTDateIsWeekend($date)) {$diff--; next;}
+    unshift @dates, $date;
+Statistics::DebugLog("pushing date " . Statistics::FormatDate("%c", $date) . "\n");
+    unshift @{ $data[0] }, Statistics::FormatDate($Statistics::PerDayLabelDateFormat, $date);
+}
+
+# We put an extra day into the lists to cover up till midnight of the next day,
+# But we don't want that to appear in the labels, so pop it off.
+pop( @{ $data[0] } );
+
+my $queue = new RT::Queues($session{CurrentUser});
+$queue->UnLimit;
+
+my $QueueObj = new RT::Queue($session{'CurrentUser'});
+$QueueObj->Load($queue);
+</%INIT>

@@ -1,0 +1,191 @@
+%# BEGIN BPS TAGGED BLOCK {{{
+%# 
+%# COPYRIGHT:
+%#  
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%#                                          <jesse@bestpractical.com>
+%# 
+%# (Except where explicitly superseded by other copyright notices)
+%# 
+%# 
+%# LICENSE:
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# 
+%# 
+%# CONTRIBUTION SUBMISSION POLICY:
+%# 
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%# 
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%# 
+%# END BPS TAGGED BLOCK }}}
+<%ARGS>
+$Queue => undef
+$weekends => $Statistics::PerDayWeekends;
+$sMonth=>undef
+$sDay=>undef
+$sYear=>undef
+$eMonth=>undef
+$eDay=>undef
+$eYear=>undef
+$days=>undef
+$currentMonth=>undef
+</%ARGS>
+
+<%INIT>
+use RTx::Statistics;
+use Time::Local;
+my @dates;
+my $n = 0;
+my %Totals;
+my $now = new RT::Date($session{CurrentUser});
+my $sEpoch;
+my $eEpoch;
+
+if (!defined $Queue) {
+  $Queue = $Statistics::PerDayQueue;
+}
+
+if ($sDay > $Statistics::monthsMaxDay{$sMonth}) {
+  $sDay = $Statistics::monthsMaxDay{$sMonth};
+}
+
+if ($eDay > $Statistics::monthsMaxDay{$eMonth}) {
+  $eDay = $Statistics::monthsMaxDay{$eMonth};
+}
+
+if ($sYear){
+	$sEpoch = timelocal(0, 0, 0, $sDay, $sMonth, $sYear-1900);
+}
+if ($eYear){
+Statistics::DebugLog("eMonth = " . $eMonth . "\n");
+	$eEpoch = timelocal(0, 0, 0, $eDay, $eMonth, $eYear-1900);
+} else {
+        # This case happens when the page is first loaded
+	my @local = localtime(time);
+	($eDay, $eMonth, $eYear) = ($local[3], $local[4], $local[5]);
+	$eYear += 1900; 
+	$eEpoch = timelocal(0, 0, 0, $local[3], $local[4], $local[5], $local[6], $local[7], $local[8]);
+Statistics::DebugLog("Setting eEpoch=$eEpoch from current time.\n");
+}
+
+if (($eEpoch < $sEpoch) || ($sEpoch == 0)) {
+    # We have an end, but not a start, or, overlapping.
+    
+    # if $currentMonth is set, just set the day to 1
+    if($currentMonth) {
+      # set start vars from end, but with day set to 1
+      (undef, undef, undef, $sDay, $sMonth, $sYear) = localtime($eEpoch);
+      $sDay=1;
+      $sEpoch = timelocal(0, 0, 0, $sDay, $sMonth, $sYear);
+    } else {
+      # If the user has specified how many days back to go, use that,
+      # If not, set start to configured default period before end
+      if(defined $days) {
+        $sEpoch = $eEpoch - ($days * $Statistics::secsPerDay);
+      } else {
+        $sEpoch = $eEpoch - ($Statistics::PerDayPeriod * $Statistics::secsPerDay);
+      }
+      (undef, undef, undef, $sDay, $sMonth, $sYear) = localtime($sEpoch);
+    }
+    $sYear += 1900;
+}
+
+# set content type
+$r->content_type('application/vnd.ms-excel');
+
+# Put out some data about the generation of this file
+$m->out("Tickets per day for Queue:\t" . $Queue . "\tGenerated at:\t" . Statistics::FormatDate("%x %X", $now). "\n\n");
+
+
+# Compute days to chart.
+# The +1 is because we need to generate one more date. If the user
+# selected a 10 day range, we need to generate 11 days.
+my $diff = int(($eEpoch - $sEpoch + $Statistics::secsPerDay - 1) / $Statistics::secsPerDay)+1;
+
+# Build array of dates
+my $endRange = $eEpoch + $Statistics::secsPerDay;
+my $QueueObj = new RT::Queue($session{'CurrentUser'});
+$QueueObj->Load($Queue);
+until ($#dates == $diff) {
+    my $date = new RT::Date($session{CurrentUser});
+    $date->Set(Value=>$endRange - $n, Format => 'unix');
+    # Note: we used to adjust the time to local midnight, but
+    # none of the other date entry fields in RT seem to adjust, so we've stopped.
+    #Statistics::DebugLog("Before adjust to midnight date " . Statistics::FormatDate("%c", $date) . "\n");
+    $n+= $Statistics::secsPerDay;
+    # If we aren't showing weekends and this is one, decrement the number
+    # of days to show and skip to the next date.
+    if(!$weekends and Statistics::RTDateIsWeekend($date)) {$diff--; next;}
+    unshift @dates, $date;
+}
+
+# Output header row
+$m->out("Date\tcreate\tresolved\tdeleted\n");
+
+
+LINE: for my $d (0..$#dates) {
+  if ($d == $#dates){
+    next LINE;
+  }
+  my $x = 1;
+  # Output the date for this row
+  $m->out(Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[$d]));
+  
+  # output the 3 columns for this row
+  for my $status (qw(created resolved deleted)) {
+    my $tix = new RT::Tickets($session{'CurrentUser'});
+    if ($status eq "created") {
+      $tix->LimitCreated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+      if ($dates[$d+1]) {
+        $tix->LimitCreated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+      }
+    } elsif ($status eq "resolved") {
+      $tix->LimitStatus(VALUE => $status);
+      $tix->LimitResolved(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+      if ($dates[$d+1]) {
+         $tix->LimitResolved(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+      }
+    } elsif ($status eq "deleted") {
+      $tix->LimitStatus(VALUE => $status);
+      $tix->LimitLastUpdated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+      if ($dates[$d+1]) {
+        $tix->LimitLastUpdated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+      }
+    }
+    $tix->LimitQueue (VALUE => $Queue);
+    $m->out( "\t" . $tix->Count ); 
+    $Totals{$status} += $tix->Count;
+  }
+  $m->out("\n");
+}
+
+# Output the totals
+$m->out("Totals\t$Totals{created}\t$Totals{resolved}\t$Totals{deleted}\n");
+
+$m->abort();
+</%INIT>

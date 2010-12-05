@@ -1,0 +1,269 @@
+<& /Elements/Header, Title => 'Time to Resolution' &>
+<& /RTx/Statistics/Elements/Tabs, Title => loc("Time To Resolve tickets by Queue for : " .$QueueObj->Name()) &>
+<h3>Description</h3>
+<p>This page shows details of resolution of tickets in the selected queue. It displays tickets created on each day in your selected date
+range. Of those tickets created on that day, how many have been resolved and the total time it has taken for all tickets created on that
+day to be resolved.</p>
+<p>At the bottom of the chart is shows total time taken to resolve all tickets
+in the selected date range and the average time per ticket to
+resolve.</p>
+
+<form method="POST" action="index.html">
+
+%my $title = "Time to resolve in " . $QueueObj->Name() . " per day from " . 
+%	  Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[0]) . " through " .
+%	  Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[$#dates-1]);
+<&|/Elements/TitleBox, 
+	title => $title,
+	title_href => "/RTx/Statistics/Resolution/index.html?$QueryString" &>
+<TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH=100%>
+% if ($ShowHeader) {
+<& /RTx/Statistics/Elements/CollectionAsTable/Header, 
+    Format => \@Format, 
+    FormatString => $Format,
+    AllowSorting => $AllowSorting, 
+    Order => $Order, 
+    Query => undef,
+    Rows => $Rows,
+    Page => $Page,
+    OrderBy => $OrderBy , 
+    BaseURL => $BaseURL,
+    maxitems => $maxitems &> 
+% }
+% my $line = 1;
+% LINE: for my $d (0..$#dates ) {
+% 	if ($d == $#dates ){
+%		next LINE;
+% 	}
+%    my $x = 1;
+%    $values{Statistics_Date} = Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[$d]);
+%    my $tix = new RT::Tickets($session{'CurrentUser'});
+%    $tix->LimitCreated(VALUE => $dates[$d]->ISO, OPERATOR => ">=");
+%    if ($dates[$d+1]) {
+%        $tix->LimitCreated(VALUE => $dates[$d+1]->ISO, OPERATOR => "<=");
+%    } 	
+%    if ($Queue) {
+%        $tix->LimitQueue (VALUE => $Queue);
+%    }
+%    $values{Statistics_Created_Count} = $tix->Count;
+%    $tix->LimitStatus(VALUE => "resolved");
+%    $values{Statistics_Resolved_Count} = $tix->Count;
+%    if ($tix->Count) {
+%       my @tix = @{$tix->ItemsArrayRef};
+%       my $total;
+%       $total += ($_->ResolvedObj->Unix - $_->CreatedObj->Unix) for @tix;
+%		$size+= ($#tix +1);
+%		$grandtotal += $total;  						   
+%       $values{Duration} = Statistics::DurationAsString($total);
+%    	$data[$x++][$d] =  int ($total );
+%    } else {
+%       $values{Duration} = "N/A";
+%    }
+<&   /RTx/Statistics/Elements/CollectionAsTable/Row, Format => \@Format, i => $line, record => $record, maxitems => $maxitems &>
+%    $line++;
+%}
+%    $size =1 if $size==0;
+%    $values{text} = "Average time to resolve = " . Statistics::DurationAsString($grandtotal /  $size);
+<&   /RTx/Statistics/Elements/CollectionAsTable/Row, Format => \@OneCellFormat, i => $line, record => $record, maxitems => $maxitems &>
+%    $line++;
+%    $values{text} = "Total time to resolve = " . Statistics::DurationAsString( $grandtotal );
+<&   /RTx/Statistics/Elements/CollectionAsTable/Row, Format => \@OneCellFormat, i => $line, record => $record, maxitems => $maxitems &>
+%    $line++;
+</table>
+</&>
+
+<hr>
+
+<BR />
+<BR />
+
+<%perl>
+# Create the graph URL
+
+# change the total time to resolve to a floating point number of days
+foreach my $dat(@{$data[1]} ){
+  $dat = ($dat / $Statistics::secsPerDay);
+  $dat = sprintf("%0.4f", $dat); 
+}
+
+my $url = 'Elements/Chart?x_labels=';
+for (0..$diff-1) {
+  $url .= $data[0][$_] . ",";
+}
+chop $url;
+shift @data;
+$url .= "&data1=";
+for(0..$diff-1) {
+  $data[0][$_] = 0 if !$data[0][$_];
+  $url .= $data[0][$_] . ",";
+}
+</%perl>
+
+<& /RTx/Statistics/Elements/GraphBox, GraphURL => $url &>
+
+<& /RTx/Statistics/Elements/ControlsAsTable/ControlBox, 
+         Title => "Change Queue or Dates", 
+         ShowDates => 1, sMonth => \$sMonth, sDay => \$sDay, sYear => \$sYear,
+                         eMonth => \$eMonth, eDay => \$eDay, eYear => \$eYear,
+                         weekends => $weekends,
+         ShowSingleQueue => 1, Queue => $Queue
+ &>
+
+</form>
+
+<%ARGS>
+$max => $Statistics::TimeToResolveMaxRows
+$Queue => undef
+$weekends =>$Statistics::TimeToResolveWeekends
+$sMonth=>undef
+$sDay=>undef
+$sYear=>undef
+$eMonth=>undef
+$eDay=>undef
+$eYear=>undef
+$days=>undef
+$currentMonth=>undef
+
+$AllowSorting => undef
+$Order => undef
+$OrderBy => undef
+$ShowNavigation => 1
+$ShowHeader => 1
+$Rows => 50
+$Page => 1
+$BaseURL => undef
+</%ARGS>
+
+<%INIT>
+use RTx::Statistics;
+use Time::Local;
+my $n = 0;
+my @data = ([]);
+my @dates;
+my @msgs;
+my $size;
+my $selected;
+my $grandtotal = 0; 
+my $diff;
+my $sEpoch=0;
+my $eEpoch=0;
+my $QueryString;
+
+my $maxitems = 4;
+my %record;
+my %values;
+my $record = \%record;
+
+$record{values} = \%values;
+
+
+# If debugging, set things up and display all the args
+Statistics::DebugClear();
+Statistics::DebugLog("CallsQueueDay/index.html ARGS:\n");
+for my $key (keys %ARGS) {
+  Statistics::DebugLog("ARG{ $key }=" . $ARGS{$key} . "\n");
+}
+
+my $Format = qq{ Statistics_Date, 
+                 '__Statistics_Created_Count__/STYLE:text-align:right;', 
+                 '__Statistics_Resolved_Count__/STYLE:text-align:right;', 
+		 '__Statistics_Dynamic__/KEY:Duration/TITLE:Time To Resolve/STYLE:text-align:right;' };
+my $BoldFormat = qq{ '<B>__Statistics_Date__</B>', 
+                     '<B>__Statistics_Created_Count__</B>/STYLE:text-align:right;',
+                     '<B>__Statistics_Resolved_Count__</B>/STYLE:text-align:right;',
+   		     '<B>__Statistics_Dynamic__</B>/KEY:Duration/TITLE:Time To Resolve/STYLE:text-align:right;' };
+
+# TODO need way to make this cell do colspan
+my $OneCellFormat = qq{ '<B>__Statistics_Dynamic__</B>/KEY:text/STYLE:text-align:left;','','','' };
+
+my (@Format) = $m->comp('/RTx/Statistics/Elements/CollectionAsTable/ParseFormat', Format => $Format);
+my (@BoldFormat) = $m->comp('/RTx/Statistics/Elements/CollectionAsTable/ParseFormat', Format => $BoldFormat);
+my (@OneCellFormat) = $m->comp('/RTx/Statistics/Elements/CollectionAsTable/ParseFormat', Format => $OneCellFormat);
+
+Statistics::DebugLog("CallsQueueDay/index.html Format array=" . join(',', @Format) . "\n");
+
+if ($sDay > $Statistics::monthsMaxDay{$sMonth}) {
+  $sDay = $Statistics::monthsMaxDay{$sMonth};
+}
+
+if ($eDay > $Statistics::monthsMaxDay{$eMonth}) {
+  $eDay = $Statistics::monthsMaxDay{$eMonth};
+}
+
+if ($sYear){
+	$sEpoch = timelocal(0, 0, 0, $sDay, $sMonth, $sYear-1900);
+}
+if ($eYear){
+Statistics::DebugLog("eMonth = " . $eMonth . "\n");
+	$eEpoch = timelocal(0, 0, 0, $eDay, $eMonth, $eYear-1900);
+} else {
+        # This case happens when the page is first loaded
+	my @local = localtime(time);
+	($eDay, $eMonth, $eYear) = ($local[3], $local[4], $local[5]);
+	$eYear += 1900; 
+	$eEpoch = timelocal(0, 0, 0, $local[3], $local[4], $local[5], $local[6], $local[7], $local[8]);
+Statistics::DebugLog("Setting eEpoch=$eEpoch from current time.\n");
+}
+
+if (($eEpoch < $sEpoch) || ($sEpoch == 0)) {
+    # We have an end, but not a start, or, overlapping.
+    
+    # if $currentMonth is set, just set the day to 1
+    if($currentMonth) {
+      # set start vars from end, but with day set to 1
+      (undef, undef, undef, $sDay, $sMonth, $sYear) = localtime($eEpoch);
+      $sDay=1;
+      $sEpoch = timelocal(0, 0, 0, $sDay, $sMonth, $sYear);
+    } else {
+      # If the user has specified how many days back to go, use that,
+      # If not, set start to configured default period before end
+      if(defined $days) {
+        $sEpoch = $eEpoch - ($days * $Statistics::secsPerDay);
+      } else {
+        $sEpoch = $eEpoch - ($Statistics::PerDayPeriod * $Statistics::secsPerDay);
+      }
+      (undef, undef, undef, $sDay, $sMonth, $sYear) = localtime($sEpoch);
+    }
+    $sYear += 1900;
+}
+
+# Compute days to chart.
+# The +1 is because we need to generate one more date. If the user
+# selected a 10 day range, we need to generate 11 days.
+$diff = int(($eEpoch - $sEpoch + $Statistics::secsPerDay - 1) / $Statistics::secsPerDay)+1;
+Statistics::DebugLog("Setting diff=$diff\n");
+
+Statistics::DebugLog("sEpoch=$sEpoch, components=" . join(',', localtime($sEpoch)) . "\n");
+Statistics::DebugLog("eEpoch=$eEpoch, components=" . join(',', localtime($eEpoch)) . "\n");
+
+my $QueueObj = new RT::Queue($session{'CurrentUser'});
+if (!defined $Queue) {
+  $QueueObj->Load($Statistics::TimeToResolveQueue);
+  $Queue = $QueueObj->Id();
+}
+
+# Set up the string for the current query for bookmarkable link
+$QueryString = "sDay=$sDay&sMonth=$sMonth&sYear=$sYear&eDay=$eDay&eMonth=$eMonth&eYear=$eYear&weekends=$weekends&Queue=$Queue";
+
+# Set up the end date to be midnight(morning) of the date after the one the user wanted.
+my $endRange = $eEpoch + $Statistics::secsPerDay;
+$QueueObj->Load($Queue);
+# NOTE: list loop starts at the end of the date range, unshifting dates onto 
+# the arrays, so that they end up in start to finish order.
+$eEpoch += $Statistics::secsPerDay;
+$n = 0;
+until ($#dates == $diff ) {	
+    my $date = new RT::Date($session{CurrentUser});
+    $date->Set(Value=>$endRange - $n, Format => 'unix');
+    # Note: we used to adjust the time to local midnight, but
+    # none of the other date entry fields in RT seem to adjust, so we've stopped.
+    #Statistics::DebugLog("Before adjust to midnight date " . Statistics::FormatDate("%c", $date) . "\n");
+    $n+= $Statistics::secsPerDay;
+    # If we aren't showing weekends and this is one, decrement the number
+    # of days to show and skip to the next date.
+    if(!$weekends and Statistics::RTDateIsWeekend($date)) {$diff--; next;}
+    unshift @dates, $date;
+Statistics::DebugLog("pushing date " . Statistics::FormatDate("%c", $date) . "\n");
+    unshift @{ $data[0] }, Statistics::FormatDate($Statistics::PerDayLabelDateFormat, $date);
+}
+</%INIT>

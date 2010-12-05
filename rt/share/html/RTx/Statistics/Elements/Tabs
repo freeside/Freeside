@@ -1,0 +1,72 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Elements/Tabs, 
+    tabs => $tabs, 
+    current_toptab => 'RTx/Statistics/index.html', 
+    current_tab => $current_tab, 
+    Title => $Title &>
+
+<%INIT>
+  my $tabs = { A => { title => loc('Tickets per Day'),
+			  path => 'RTx/Statistics/CallsQueueDay/index.html',
+			},
+	       B => { title => loc('Tickets by status'),
+			   path => 'RTx/Statistics/OpenStalled/index.html',
+			 },
+	       C => { title => loc('Multiple Queues'),
+			   path => 'RTx/Statistics/CallsMultiQueue/index.html',
+			 },
+	       D => { title => loc('Ticket Trends by Day'),
+			   path => 'RTx/Statistics/DayOfWeek/index.html',
+			 },
+	       E => { 'title' => loc('Time to Resolve'),
+			   path => 'RTx/Statistics/Resolution/index.html',
+			 },
+	       F => { 'title' => loc('Resolve Time Graph'),
+			   path => 'RTx/Statistics/TimeToResolve/index.html',
+			 },
+	       Z => { 'title' => loc('FAQ'),
+			   path => 'RTx/Statistics/FAQ/index.html',
+			 },
+	     };
+
+  # Now let callbacks add their extra tabs
+  $m->comp('/Elements/Callback', tabs => $tabs, %ARGS);
+
+  foreach my $tab (sort keys %{$tabs}) {
+    if ($tabs->{$tab}->{'path'} eq $current_tab) {
+      $tabs->{$tab}->{"subtabs"} = $subtabs;
+      $tabs->{$tab}->{"current_subtab"} = $current_subtab;
+    }
+  }
+
+</%INIT>
+
+
+<%ARGS>
+$subtabs => undef
+$current_tab => undef
+$current_subtab => undef
+$Title => undef
+</%ARGS>

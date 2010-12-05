@@ -1,0 +1,23 @@
+<%perl>
+print $graph->plot(\@data)->$format();
+$m->abort();
+</%perl>
+<%INIT>
+use GD::Graph::points;
+
+my @data;
+my $graph = GD::Graph::points->new(400,300);
+$graph->set(export_format => "png",
+            marker_size   => $ARGS{marker_size},
+            x_label       => 'Average time to resolve (Days)',
+            y_label       => 'Number of tickets resolved' );
+#$r->content_type("image/$format");
+my $format = $graph->export_format; 
+push @data, [split /,/ , $ARGS{x_labels}];
+for (1..((scalar keys %ARGS)-2)) {
+  push @data, [split /,/  , $ARGS{"data".$_}];
+}
+
+</%INIT>
+<%ARGS>
+</%ARGS>
