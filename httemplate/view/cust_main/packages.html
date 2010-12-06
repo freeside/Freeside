@@ -1,4 +1,9 @@
 % my $s = 0;
+
+% # XXX: add qual access right
+  <% $s++ ? ' | ' : '' %>
+  <% include('qual_link.html', $cust_main) %>
+
 % if ( $curuser->access_right('Order customer package') ) { 
   <% $s++ ? ' | ' : '' %>
   <% include('order_pkg_link.html', $cust_main) %>

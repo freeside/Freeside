@@ -31,21 +31,60 @@ Example:
     >
   </TD>
 </TR>
-
 <TR>
-  <TD ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" <% $address2_label_style %>>*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" <% $address2_label_style %>><B>Unit&nbsp;#</B></FONT></TD>
-  <TD COLSPAN=7>
-    <INPUT TYPE     = "text"
-           NAME     = "<%$pre%>address2"
-           ID       = "<%$pre%>address2"
-           VALUE    = "<% $object->get($pre.'address2') |h %>"
-           SIZE     = 54
-           onChange = "<% $onchange %>"
-           <% $disabled %>
-           <% $style %>
-    >
-  </TD>
+      <TD ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" <% $address2_label_style %>>*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" <% $address2_label_style %>><B>Unit&nbsp;#</B></FONT></TD>
+      <TD COLSPAN=7>
+	<INPUT TYPE     = "text"
+	       NAME     = "<%$pre%>address2"
+	       ID       = "<%$pre%>address2"
+	       VALUE    = "<% $object->get($pre.'address2') |h %>"
+	       SIZE     = 54
+	       onChange = "<% $onchange %>"
+	       <% $disabled %>
+	       <% $style %>
+	>
+      </TD>
 </TR>
+
+
+% if ( $opt{'alt_format'} ) { 
+<TR>
+    <<%$th%> ALIGN="right">Location Type</<%$th%>>
+    <TD><INPUT 	TYPE="text" 
+		NAME="location_type" 
+		ID="location_type"
+		VALUE="<% $object->get('location_type') |h %>"
+		SIZE="10"
+	       <% $disabled %>
+	       <% $style %>
+	>
+    </TD>
+    <TD></TD>
+    <<%$th%> ALIGN="right">Number</<%$th%>>
+    <TD><INPUT	TYPE="text" 
+		NAME="location_number"
+		ID="location_number"
+		VALUE="<% $object->get('location_number') |h %>"
+		SIZE="5"
+	       <% $disabled %>
+	       <% $style %>
+	>
+    </TD>
+    <<%$th%> ALIGN="right">Kind</<%$th%>>
+    <TD>
+    <% include('/elements/select.html',
+             'cgi'       => $cgi,
+	     'field'	=> 'location_kind',
+	     'disabled' => $disabled,
+	     'style' => $style, 
+	     'options'  => \@location_kind_options,
+	     'labels'   => $location_kind_labels,
+	     'curr_value' => $cgi->param('location_kind'),
+	  )
+    %>
+    </TD>
+</TR>
+% } 
 
 <TR>
   <<%$th%> ALIGN="right"><%$r%>City</<%$th%>>
@@ -154,5 +193,8 @@ my %select_hash = (
 );
 
 my $th = $opt{'no_bold'} ? 'TD' : 'TH';
+
+my @location_kind_options = ( '', 'R', 'B' );
+my $location_kind_labels = { '' => '', 'R' => 'Residential', 'B' => 'Business' };
 
 </%init>

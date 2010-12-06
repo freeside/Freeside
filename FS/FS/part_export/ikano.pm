@@ -278,6 +278,7 @@ sub qual {
 	RequestClientIP => '127.0.0.1',
 	CheckNetworks => $self->option('check_networks'),
       } ); 
+    return $result unless ref($result); # error case
     return 'Invalid prequal response' unless defined $result->{'PrequalId'};
 
     my $qoptions = {};
@@ -293,7 +294,7 @@ sub qual {
 	foreach my $productgroup ( @productgroups ) {
 	    my $prefix = "ikano_Network_$netcount"."_ProductGroup_$pgcount"."_";
 	    $qoptions->{$prefix."TermsId"} = $productgroup->{'TermsId'};
-	    my $products = $network->{'Product'};
+	    my $products = $productgroup->{'Product'};
 	    my @products = defined $products ? @$products : ();
 	    my $prodcount = 0;
 	    foreach my $product ( @products ) {
@@ -312,7 +313,29 @@ sub qual {
 }
 
 sub qual_html {
-    '';
+    my($self,$qual) = (shift,shift);
+    
+    my %qual_options = $qual->options;
+    my @externalids = ();
+    my( $optionname, $optionvalue );
+    while (($optionname, $optionvalue) = each %qual_options) {
+	push @externalids, $optionvalue 
+	    if ( $optionname =~ /^ikano_Network_(\d+)_ProductGroup_(\d+)_Product_(\d+)_ProductCustomId$/
+		&& $optionvalue ne '' );
+    }
+
+    my $list = "<B>Qualifying Packages:</B><UL>";
+    my @part_pkgs = qsearch( 'part_pkg', { 'disabled' => '' } );
+    foreach my $part_pkg ( @part_pkgs ) {
+	my $externalid = $part_pkg->option('externalid',1);
+	if ( $externalid ) {
+	    $list .= "<LI>".$part_pkg->pkgpart.": ".$part_pkg->pkg." - "
+		.$part_pkg->comment."</LI>" 
+	      if grep( $_ eq $externalid, @externalids );
+	}
+    }
+    $list .= "</UL>";
+    $list;
 }
 
 sub notes_html { 

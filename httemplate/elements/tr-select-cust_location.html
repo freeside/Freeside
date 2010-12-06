@@ -25,17 +25,25 @@ Example:
 
   function locationnum_changed(what) {
     var locationnum = what.options[what.selectedIndex].value;
+    if ( locationnum == -2 ) {
+%         for (@location_fields, 'city_select') { 
+            what.form.<%$_%>.disabled = true;
+	    var ftype = what.form.<%$_%>.tagName;
+	    if( ftype == 'SELECT') changeSelect(what.form.<%$_%>, '');
+	    else what.form.<%$_%>.value = '';
+            what.form.<%$_%>.style.backgroundColor = '#dddddd';
+%         } 
+	return;
+    }
+    
     if ( locationnum == -1 ) {
 
 %     for (@location_fields, 'city_select') { 
         what.form.<%$_%>.disabled = false;
         what.form.<%$_%>.style.backgroundColor = '#ffffff';
+	var ftype = what.form.<%$_%>.tagName;
+	if( ftype == 'INPUT' ) what.form.<%$_%>.value = '';
 %     } 
-
-      what.form.address1.value = '';
-      what.form.address2.value = '';
-      what.form.city.value = '';
-      what.form.zip.value = '';
 
       changeSelect(what.form.country, <% $countrydefault |js_string %>);
 
@@ -147,6 +155,9 @@ Example:
   <TD COLSPAN=7>
     <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
       <OPTION VALUE=""><% $opt{'empty_label'} || '(default service address)' |h %>
+% if ( $opt{'is_optional'} ) {
+    <OPTION VALUE="-2" <% $locationnum == -2 ? 'SELECTED' : ''%>><% $opt{'optional_label'} || '(not required)' |h %>
+% }
 %     my @locations = $cust_main ? $cust_main->cust_location : ();
 %     push @locations, $cust_location
 %       if !$cust_main && $cust_location && $cust_location->locationnum>0;
@@ -170,14 +181,10 @@ Example:
              'disabled'     => $disabled,
              'no_asterisks' => 1,
              'no_bold'      => $opt{'no_bold'},
+	     'alt_format'   => $opt{'alt_format'},
           )
 %>
 
-<%once>
-
-my @location_fields = qw( address1 address2 city county state zip country );
-
-</%once>
 <%init>
 
 my $conf = new FS::Conf;
@@ -206,8 +213,13 @@ if ( length($opt{'curr_value'}) ) {
 my $editable = $cust_main ? 0 : 1; #could use explicit control
 my $addnew = $cust_main ? 1 : ( $locationnum>0 ? 0 : 1 );
 
+my @location_fields = qw( address1 address2 city county state zip country );
+if ( $opt{'alt_format'} ) {
+    push @location_fields, qw( location_type location_number location_kind );
+}
+
 my $cust_location;
-if ( $locationnum && $locationnum != -1 ) {
+if ( $locationnum && $locationnum > 0 ) {
   $cust_location = qsearchs('cust_location', { 'locationnum' => $locationnum } )
     or die "unknown locationnum";
 } else {
@@ -230,7 +242,7 @@ my $location_sort = sub {
   or lc($a->address2) cmp lc($b->address2)
 };
 
-my $disabled = ( $locationnum == -1 || ($editable && $locationnum) )
+my $disabled = ( $locationnum < 0 || ($editable && $locationnum) )
                  ? ''
                  : 'DISABLED';
 

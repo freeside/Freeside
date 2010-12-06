@@ -1,0 +1,81 @@
+<% include('/elements/header-popup.html', 'Service Qualification' ) %>
+
+<% include('/elements/error.html') %>
+
+<FORM NAME="QualForm" ACTION="<% $p %>edit/process/qual.cgi" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
+
+<% ntable("#cccccc", 2) %>
+
+<% include('/elements/tr-td-label.html',
+             'cgi'       => $cgi,
+	     'label'	=> 'Qualify using',
+	     'cell_style' => 'font-weight: bold',
+	     'id' => 'exportnum',
+	  )
+%>
+<TD>
+<% include('/elements/select.html',
+             'cgi'       => $cgi,
+	     'field'	=> 'exportnum',
+	     'options'  => \@export_options,
+	     'labels'   => $export_labels,
+	     'curr_value' => $cgi->param('exportnum'),
+	  )
+%>
+</TD>
+</TR>
+
+<% include('/elements/tr-input-text.html',
+             'cgi'       => $cgi,
+	     'label'	=> 'Service Telephone Number',
+	     'field'	=> 'phonenum',
+	     'size'	=> '12',
+	     'value'	=> $cgi->param('phonenum'),
+          )
+%>
+
+<% include('/elements/tr-select-cust_location.html',
+             'cgi'       => $cgi,
+             'cust_main' => $cust_main,
+	     'alt_format' => 1, # XXX: use a config option
+	     'is_optional' => 1,
+	     'no_bold' => 1,
+          )
+%>
+</TABLE>
+
+<BR>
+<INPUT type="submit" VALUE="Qualify" onClick = "this.disabled=true;">
+
+</FORM>
+</BODY>
+</HTML>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Order customer package'); # XXX: fix this
+
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die "no custnum";
+my $custnum = $1;
+my $cust_main = qsearchs({
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+});
+
+my @exports = grep { $_->can('qual') } qsearch( 'part_export', {} );
+my @export_options = ( 0 );
+my $export_labels = { '0' => '(manual)' };
+foreach my $export ( @exports ) {
+    push @export_options, $export->exportnum;
+    $export_labels->{$export->exportnum} = $export->exportname;
+}
+
+</%init>

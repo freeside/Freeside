@@ -143,8 +143,31 @@ sub location {
     '';
 }
 
+sub cust_or_prospect {
+    my $self = shift;
+    if ( $self->locationnum ) {
+	my $l = qsearchs( 'cust_location', 
+		    { 'locationnum' => $self->locationnum });
+	return qsearchs('cust_main',{ 'custnum' => $l->custnum })
+	    if $l->custnum;
+	return qsearchs('prospect_main',{ 'prospectnum' => $l->prospectnum })
+	    if $l->prospectnum;
+    }
+    return qsearchs('cust_main', { 'custnum' => $self->custnum }) 
+	if $self->custnum;
+    return qsearchs('prospect_main', { 'prospectnum' => $self->prospectnum })
+	if $self->prospectnum;
+}
+
 sub status_long {
-    
+    my $self = shift;
+    my $s = {
+	'Q' => 'Qualified',
+	'D' => 'Does not Qualify',
+	'N' => 'New',
+    };
+    return $s->{$self->status} if defined $s->{$self->status};
+    return 'Unknown';
 }
 
 =back
