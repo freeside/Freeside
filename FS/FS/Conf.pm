@@ -568,16 +568,20 @@ logo.eps
 
 my %msg_template_options = (
   'type'        => 'select-sub',
-  'options_sub' => sub { require FS::Record;
-                         require FS::agent;
-                         require FS::msg_template;
-                         map { $_->msgnum, $_->msgname } 
-                            qsearch('msg_template', { disabled => '' });
-                       },
-  'option_sub'  => sub { require FS::msg_template;
+  'options_sub' => sub { 
+    my @templates = qsearch({
+        'table' => 'msg_template', 
+        'hashref' => { 'disabled' => '' },
+        'extra_sql' => ' AND '. 
+          $FS::CurrentUser::CurrentUser->agentnums_sql(null => 1),
+        });
+    map { $_->msgnum, $_->msgname } @templates;
+  },
+  'option_sub'  => sub { 
                          my $msg_template = FS::msg_template->by_key(shift);
                          $msg_template ? $msg_template->msgname : ''
                        },
+  'per_agent' => 1,
 );
 
 
@@ -1246,6 +1250,7 @@ and customer address. Include units.',
     'section'     => 'notification',
     'description' => 'Send payment receipts.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
@@ -1271,6 +1276,7 @@ and customer address. Include units.',
                        'cust_pay'          => 'When payment is made.',
                        'cust_bill_pay_pkg' => 'When payment is applied.',
                      ],
+    'per_agent'   => 1,
   },
 
   {
@@ -1874,6 +1880,7 @@ and customer address. Include units.',
     'section'     => 'notification',
     'description' => 'Enable emailing of credit card and electronic check decline notices.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
@@ -1881,6 +1888,7 @@ and customer address. Include units.',
     'section'     => 'notification',
     'description' => 'List of error messages that should not trigger email decline notices, one per line.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -1909,6 +1917,7 @@ and customer address. Include units.',
     'section'     => 'notification',
     'description' => 'Enable emailing of cancellation notices.  Make sure to select the template in the cancel_msgnum option.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
@@ -2930,6 +2939,13 @@ and customer address. Include units.',
     'type'        => 'textarea',
   },
 
+#  {
+#    'key'         => 'batch-manual_approval',
+#    'section'     => 'billing',
+#    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is dangerous, but may be needed if your processor does not provide a list of approved payments.',
+#    'type'        => 'checkbox',
+#  },
+#
   {
     'key'         => 'payment_history-years',
     'section'     => 'UI',

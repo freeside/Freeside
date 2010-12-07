@@ -707,7 +707,9 @@ sub cancel {
   return '' if $date; #no errors
 
   my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $self->cust_main->invoicing_list;
-  if ( !$options{'quiet'} && $conf->exists('emailcancel') && @invoicing_list ) {
+  if ( !$options{'quiet'} && 
+        $conf->exists('emailcancel', $self->cust_main->agentnum) && 
+        @invoicing_list ) {
     my $msgnum = $conf->config('cancel_msgnum', $self->cust_main->agentnum);
     my $error = '';
     if ( $msgnum ) {

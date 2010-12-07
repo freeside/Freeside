@@ -902,10 +902,10 @@ sub _realtime_bop_result {
     }
 
     if ( !$options{'quiet'} && !$realtime_bop_decline_quiet
-         && $conf->exists('emaildecline')
+         && $conf->exists('emaildecline', $self->agentnum)
          && grep { $_ ne 'POST' } $self->invoicing_list
          && ! grep { $transaction->error_message =~ /$_/ }
-                   $conf->config('emaildecline-exclude')
+                   $conf->config('emaildecline-exclude', $self->agentnum)
     ) {
 
       # Send a decline alert to the customer.

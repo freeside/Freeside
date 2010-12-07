@@ -297,7 +297,8 @@ sub insert {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   #payment receipt
-  my $trigger = $conf->config('payment_receipt-trigger') || 'cust_pay';
+  my $trigger = $conf->config('payment_receipt-trigger', 
+                              $self->cust_main->agentnum) || 'cust_pay';
   if ( $trigger eq 'cust_pay' ) {
     my $error = $self->send_receipt(
       'manual'    => $options{'manual'},
@@ -533,7 +534,7 @@ sub send_receipt {
 
   my $conf = new FS::Conf;
 
-  return '' unless $conf->exists('payment_receipt');
+  return '' unless $conf->exists('payment_receipt', $cust_main->agentnum);
 
   my @invoicing_list = $cust_main->invoicing_list_emailonly;
   return '' unless @invoicing_list;
@@ -547,13 +548,9 @@ sub send_receipt {
        || ! $cust_bill
      )
   {
-
-    if ( $conf->exists('payment_receipt_msgnum')
-         && $conf->config('payment_receipt_msgnum')
-       )
-    {
-      my $msg_template = 
-          FS::msg_template->by_key($conf->config('payment_receipt_msgnum'));
+    my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
+    if ( $msgnum ) {
+      my $msg_template = FS::msg_template->by_key($msgnum);
       $error = $msg_template->send('cust_main'=> $cust_main, 'object'=> $self);
 
     } elsif ( $conf->exists('payment_receipt_email') ) {
