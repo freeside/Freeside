@@ -1,0 +1,42 @@
+<%doc>
+
+Example:
+
+  include('/elements/init_overlib.html')
+
+  include( '/elements/popup_link-cust_main.html', { #hashref or a list, either way
+
+    #required
+    'action'         => 'content.html', # uri for content of popup which should
+                                        #   be suitable for appending keywords
+    'label'          => 'click me',     # text of <A> tag
+    'cust_main'      => $cust_main      # a FS::cust_main object
+   
+    #strongly recommended (you want a title, right?)
+    'actionlabel     => 'You clicked',  # popup title
+   
+    #opt
+    'width'          => '540',
+    'color'          => '#ff0000',
+    'closetext'      => 'Go Away',      # the value '' removes the link
+  )
+
+</%doc>
+% if ( $params->{'prospect_main'} ) {
+<% include('/elements/popup_link.html', $params ) %>\
+% }
+<%init>
+
+my $params = { 'closetext' => 'Close' };
+
+if (ref($_[0]) eq 'HASH') {
+  $params = { %$params, %{ $_[0] } };
+} else {
+  $params = { %$params, @_ };
+}
+ 
+$params->{'action'} .=
+  ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
+  'prospectnum='. $params->{'prospect_main'}->prospectnum;
+
+</%init>

@@ -73,6 +73,10 @@ my $extra_sql = '';
 if ( $cgi->param('custnum') && $cgi->param('custnum') =~ /^(\d+)$/ ) {
     $extra_sql = " where custnum = $1 or locationnum in "
 	    . " (select locationnum from cust_location where custnum = $1)";
+} elsif ( $cgi->param('prospectnum') 
+	&& $cgi->param('prospectnum') =~ /^(\d+)$/ ) {
+    $extra_sql = " where prospectnum = $1 or locationnum in "
+	    . " (select locationnum from cust_location where prospectnum = $1)";
 }
 
 </%init>

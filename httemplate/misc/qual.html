@@ -4,7 +4,7 @@
 
 <FORM NAME="QualForm" ACTION="<% $p %>edit/process/qual.cgi" METHOD="POST">
 
-<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
+<INPUT TYPE="hidden" NAME="<%$cust_or_prospect%>num" VALUE="<% $custnum_or_prospectnum %>">
 
 <% ntable("#cccccc", 2) %>
 
@@ -38,7 +38,7 @@
 
 <% include('/elements/tr-select-cust_location.html',
              'cgi'       => $cgi,
-             'cust_main' => $cust_main,
+	     $table => $cust_main_or_prospect_main,
 	     'alt_format' => $conf->exists('qual-alt-address-format') ? 1 : 0,
 	     'is_optional' => 1,
 	     'no_bold' => 1,
@@ -62,13 +62,20 @@ die "access denied"
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-$cgi->param('custnum') =~ /^(\d+)$/ or die "no custnum";
+$cgi->param('custnum') =~ /^(\d+)$/;
 my $custnum = $1;
-my $cust_main = qsearchs({
-  'table'     => 'cust_main',
-  'hashref'   => { 'custnum' => $custnum },
+$cgi->param('prospectnum') =~ /^(\d+)$/;
+my $prospectnum = $1;
+my $cust_or_prospect = $custnum ? "cust" : "prospect";
+my $table = $cust_or_prospect . "_main";
+my $custnum_or_prospectnum = $custnum ? $custnum : $prospectnum;
+my $cust_main_or_prospect_main = qsearchs({
+  'table'     => $table,
+  'hashref'   => { $cust_or_prospect."num" => $custnum_or_prospectnum },
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
+die "neither prospect nor customer specified or found" 
+    unless $cust_main_or_prospect_main;
 
 my @exports = grep { $_->can('qual') } qsearch( 'part_export', {} );
 my @export_options = ( 0 );

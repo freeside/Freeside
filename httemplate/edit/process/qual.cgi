@@ -18,15 +18,21 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('Qualify service');
 
-$cgi->param('custnum') =~ /^(\d+)$/
-  or die 'illegal custnum '. $cgi->param('custnum');
+# copied from misc/qual.html :(
+$cgi->param('custnum') =~ /^(\d+)$/;
 my $custnum = $1;
-my $cust_main = qsearchs({
-  'table'     => 'cust_main',
-  'hashref'   => { 'custnum' => $custnum },
+$cgi->param('prospectnum') =~ /^(\d+)$/;
+my $prospectnum = $1;
+my $cust_or_prospect = $custnum ? "cust" : "prospect";
+my $table = $cust_or_prospect . "_main";
+my $custnum_or_prospectnum = $custnum ? $custnum : $prospectnum;
+my $cust_main_or_prospect_main = qsearchs({
+  'table'     => $table,
+  'hashref'   => { $cust_or_prospect."num" => $custnum_or_prospectnum },
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
-die 'unknown custnum' unless $cust_main;
+die "neither prospect nor customer specified or found" 
+    unless $cust_main_or_prospect_main;
 
 $cgi->param('exportnum') =~ /^(\d+)$/ or die 'illegal exportnum';
 my $exportnum = $1;
@@ -45,7 +51,8 @@ my $error = '';
 my $cust_location;
 if ( $locationnum == -1 ) { # adding a new one
   my %location_hash = map { $_ => scalar($cgi->param($_)) }
-	qw( custnum address1 address2 city county state zip country geocode );
+	qw( address1 address2 city county state zip country geocode );
+  $location_hash{$cust_or_prospect."num"} = $custnum_or_prospectnum;
   $location_hash{location_type} = $cgi->param('location_type') 
     if $cgi->param('location_type');
   $location_hash{location_number} = $cgi->param('location_number') 
@@ -57,10 +64,14 @@ if ( $locationnum == -1 ) { # adding a new one
   die "Unable to insert cust_location: $error" if $error;
 }
 elsif ( $locationnum eq '' ) { # default service location
-  $cust_location = new FS::cust_location ( {
-	$cust_main->location_hash,
-	custnum => $custnum,
-  } );
+    if ( $custnum ) { 
+	  $cust_location = new FS::cust_location ( {
+		$cust_main_or_prospect_main->location_hash,
+		custnum => $custnum,
+	  } );
+    } elsif ( $prospectnum ) {
+	die "a location must be specified explicitly for prospects";
+    }
 }
 elsif ( $locationnum != -2 ) { # -2 = address not required for qual
   $cust_location = qsearchs('cust_location', { 'locationnum' => $locationnum })
@@ -81,7 +92,7 @@ if ( $locationnum != -2 && $cust_location->locationnum > 0 ) {
     $qual = new FS::qual( { locationnum => $cust_location->locationnum } );
 }
 else { # a cust_main default service address *OR* address not required
-    $qual = new FS::qual( { custnum => $custnum } );
+    $qual = new FS::qual( { $cust_or_prospect."num" => $custnum_or_prospectnum } );
 }
 $qual->phonenum($phonenum) if $phonenum ne '';
 $qual->status('N');

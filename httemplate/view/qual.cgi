@@ -4,9 +4,14 @@
 
   <% include( '/elements/small_custview.html', $cust_or_prospect->custnum, '', 1,
      "${p}view/cust_main.cgi") %>
-  <BR>
 
+% } elsif ( $cust_or_prospect->get('prospectnum') ) {
+%  	my $prospectnum = $cust_or_prospect->get('prospectnum');
+% 	my $link = "${p}view/prospect_main.html?$prospectnum";
+	<A HREF="<%$link%>">Prospect #<%$prospectnum%></A>
 % }
+
+<BR><BR>
 
 <B>Qualification #<% $qual->qualnum %></B>
 <% ntable("#cccccc", 2) %>

@@ -56,6 +56,22 @@
 
 <BR>
 
+% if ( $curuser->access_right('Qualify service') ) { 
+<% include( '/elements/popup_link-prospect_main.html',
+              'action'      => $p. 'misc/qual.html',
+              'label'       => 'New&nbsp;Qualification',
+              'actionlabel' => 'New Qualification',
+              'color'       => '#333399',
+              'prospect_main'   => $prospect_main,
+              'closetext'   => 'Close',
+              'width'       => 763,
+              'height'      => 436,
+          )
+%>
+  | <A HREF="<%$p%>search/qual.cgi?prospectnum=<% $prospect_main->prospectnum %>">View Qualifications</A>
+    <BR><BR>
+% }
+
 <% ntable("#cccccc") %>
 
 <TR>
