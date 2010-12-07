@@ -1,6 +1,6 @@
 <% include("/elements/header.html","View Qualification") %>
 
-% if ( $cust_or_prospect->custnum ) {
+% if ( $cust_or_prospect->get('custnum') ) {
 
   <% include( '/elements/small_custview.html', $cust_or_prospect->custnum, '', 1,
      "${p}view/cust_main.cgi") %>
@@ -28,7 +28,8 @@
 
 <%init>
 
-# XXX: add access right for quals?
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Qualify service');
 
 my $qualnum;
 if ( $cgi->param('qualnum') ) {
@@ -48,18 +49,12 @@ if ( %location_hash ) {
     $cust_location = new FS::cust_location(\%location_hash);
     $location_line = $cust_location->location_label;
 }
-# XXX: geocode_Mixin location_label doesn't currently have the new cust_location fields - add them
 
 my $location_kind;
-$location_kind = "Residential" if $cust_location->location_kind eq 'R';
-$location_kind = "Business" if $cust_location->location_kind eq 'B';
+$location_kind = "Residential" if $cust_location->get('location_kind') eq 'R';
+$location_kind = "Business" if $cust_location->get('location_kind') eq 'B';
 
 my $cust_or_prospect = $qual->cust_or_prospect;
-
-my $export;
-if ( $qual->exportnum ) {
-    $export = qsearchs('part_export', { exportnum => $qual->exportnum } )
-		or die 'invalid exportnum';
-}
+my $export = $qual->export;
 
 </%init>

@@ -16,7 +16,7 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Order customer package'); # XXX: fix me
+  unless $curuser->access_right('Qualify service');
 
 $cgi->param('custnum') =~ /^(\d+)$/
   or die 'illegal custnum '. $cgi->param('custnum');

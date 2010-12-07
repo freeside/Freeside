@@ -36,7 +36,6 @@ my $svc_cb = sub {
     return if ( scalar(@exports) == 0 );
 
     my $export = @exports[0];
-    $opt->{'disable_unprovision'} = 1;
 
     @fields = ( 'phonenum',
 	    { field => 'loop_type', 

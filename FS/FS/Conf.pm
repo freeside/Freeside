@@ -4067,6 +4067,13 @@ and customer address. Include units.',
     'description' => 'Default the "Continue recurring billing while suspended" flag to on for new package definitions.',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'qual-alt-address-format',
+    'section'     => 'UI',
+    'description' => 'Enable the alternate address format (location type, number, and kind) on qualifications',
+    'type'        => 'checkbox',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

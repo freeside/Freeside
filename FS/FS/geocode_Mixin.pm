@@ -88,7 +88,7 @@ sub location_label {
   my $prefix = $self->has_ship_address ? 'ship_' : '';
 
   my $notfirst = 0;
-  foreach (qw ( address1 address2 ) ) {
+  foreach (qw ( address1 address2 location_type location_number ) ) {
     my $method = "$prefix$_";
     $line .= ($notfirst ? $separator : ''). &$escape($self->$method)
       if $self->$method;

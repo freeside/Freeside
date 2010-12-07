@@ -127,6 +127,15 @@ sub check {
   $self->SUPER::check;
 }
 
+sub export {
+    my $self = shift;
+    if ( $self->exportnum ) {
+	return qsearchs('part_export', { exportnum => $self->exportnum } )
+		or die 'invalid exportnum';
+    }
+    '';
+}
+
 sub location {
     my $self = shift;
     if ( $self->locationnum ) {

@@ -53,11 +53,9 @@ Service #<B><% $svcnum %></B>
 % my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
 | <A HREF="<%$url%><%$svcnum%>">Edit this <% $label %></A>
 
-% unless ( $opt{'disable_unprovision'} ) {
 | <A HREF="javascript:areyousure('<%$p.'misc/unprovision.cgi?'.$svcnum%>')">
 Unprovision this Service</A>
 <BR>
-% }
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
 

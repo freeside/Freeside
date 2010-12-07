@@ -143,6 +143,7 @@ tie my %rights, 'Tie::IxHash',
     'Add on-the-fly suspend reason', #NEW
     'Edit customer package invoice details', #NEW
     'Edit customer package comments', #NEW
+    'Qualify service', #NEW
   ],
   
   ###

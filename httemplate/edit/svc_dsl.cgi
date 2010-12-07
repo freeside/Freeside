@@ -92,11 +92,8 @@ my $new_cb = sub {
 
 	my $export = @exports[0];		
 	if($export->exporttype eq 'ikano') {
-	    $cgi->param('vendor_qual_id') =~ /^(\d+)$/ 
-		or die 'unparsable vendor_qual_id';
-	    my $vendor_qual_id = $1;
-
-	    die "no start date set on customer package" if !$cust_pkg->start_date;
+	    my $ddd = $cust_pkg->start_date;
+	    $ddd = time unless $ddd;
 
 	    my @addl_fields = ( 
 		{ field => 'loop_type',
@@ -108,17 +105,15 @@ my $new_cb = sub {
 		'password', 
 		{ field => 'isp_chg', type => 'checkbox', },
 		'isp_prev',
-		{ field => 'vendor_qual_id', 
-		  type => 'fixed', 
-		  value => $vendor_qual_id,  },
+		'vendor_qual_id',
 		{ field => 'vendor_order_type', 
 		  type => 'hidden', 
 		  value => 'NEW' },
 		{ field => 'desired_due_date',
 		  type => 'fixed',
 		  formatted_value => 
-		    time2str($date_format,$cust_pkg->start_date),
-		  value => $cust_pkg->start_date, 
+		    time2str($date_format,$ddd),
+		  value => $ddd, 
 		},
 	    );
 	    push @fields, @addl_fields;

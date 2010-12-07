@@ -1,8 +1,9 @@
 % my $s = 0;
 
-% # XXX: add qual access right
+% if ( $curuser->access_right('Qualify service') ) { 
   <% $s++ ? ' | ' : '' %>
   <% include('qual_link.html', $cust_main) %>
+% }
 
 % if ( $curuser->access_right('Order customer package') ) { 
   <% $s++ ? ' | ' : '' %>
@@ -60,7 +61,11 @@ Current packages
 
     </TD>
     <TD ALIGN="right">
-      <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>">Package reports</A><BR>
+      <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>">Package reports</A>
+% if ( $curuser->access_right('Qualify service') ) { 
+    | <A HREF="<%$p%>search/qual.cgi?custnum=<% $cust_main->custnum %>">View Qualifications</A>
+% }
+      <BR>
       Service reports:
         <A HREF="<%$p%>search/report_svc_acct.html?custnum=<% $cust_main->custnum %>">accounts</A><BR>
       Usage reports:

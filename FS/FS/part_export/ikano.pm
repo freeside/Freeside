@@ -324,6 +324,8 @@ sub qual_html {
 		&& $optionvalue ne '' );
     }
 
+    # XXX: eventually perhaps this should return both the packages a link to
+    # order each package and go to the svc prov with the prequal id filled in
     my $list = "<B>Qualifying Packages:</B><UL>";
     my @part_pkgs = qsearch( 'part_pkg', { 'disabled' => '' } );
     foreach my $part_pkg ( @part_pkgs ) {

@@ -39,7 +39,7 @@
 <% include('/elements/tr-select-cust_location.html',
              'cgi'       => $cgi,
              'cust_main' => $cust_main,
-	     'alt_format' => 1, # XXX: use a config option
+	     'alt_format' => $conf->exists('qual-alt-address-format') ? 1 : 0,
 	     'is_optional' => 1,
 	     'no_bold' => 1,
           )
@@ -57,7 +57,7 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Order customer package'); # XXX: fix this
+  unless $curuser->access_right('Qualify service'); 
 
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
