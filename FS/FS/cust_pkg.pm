@@ -3329,9 +3329,21 @@ sub bulk_change {
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
   $class->_upgrade_otaker(%opts);
-  my $sql =('UPDATE cust_pkg SET contract_end = NULL WHERE contract_end = -1');
-  my $sth = dbh->prepare($sql);
-  $sth->execute or die $sth->errstr;
+  my @statements = (
+    # RT#10139, bug resulting in contract_end being set when it shouldn't
+  'UPDATE cust_pkg SET contract_end = NULL WHERE contract_end = -1',
+    # RT#10830, bad calculation of prorate date near end of year
+    # the date range for bill is December 2009, and we move it forward
+    # one year if it's before the previous bill date (which it should 
+    # never be)
+  'UPDATE cust_pkg SET bill = bill + (365*24*60*60) WHERE bill < last_bill
+  AND bill > 1259654400 AND bill < 1262332800 AND (SELECT plan FROM part_pkg 
+  WHERE part_pkg.pkgpart = cust_pkg.pkgpart) = \'prorate\'',
+  );
+  foreach my $sql (@statements) {
+    my $sth = dbh->prepare($sql);
+    $sth->execute or die $sth->errstr;
+  }
 }
 
 =back
