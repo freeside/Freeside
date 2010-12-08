@@ -262,6 +262,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::qual;
   use FS::qual_option;
   use FS::dsl_note;
+  use FS::part_pkg_vendor;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

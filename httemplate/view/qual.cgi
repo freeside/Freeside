@@ -60,6 +60,6 @@ $location_kind = "Residential" if $cust_location->get('location_kind') eq 'R';
 $location_kind = "Business" if $cust_location->get('location_kind') eq 'B';
 
 my $cust_or_prospect = $qual->cust_or_prospect;
-my $export = $qual->export;
+my $export = $qual->part_export;
 
 </%init>

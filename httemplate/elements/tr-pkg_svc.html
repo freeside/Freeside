@@ -31,6 +31,11 @@
 %  } elsif ( $pkg_svc->quantity ) {
 %    $quan = $pkg_svc->quantity;
 %  }
+%
+%  my @exports = $pkg_svc->part_svc->part_export;
+%  foreach my $export ( @exports ) {
+%  	push @possible_exports, $export if $export->can('external_pkg_map');
+%  }
 
   <TR>
     <TD>
@@ -61,6 +66,32 @@
 % } 
 
 </TR></TABLE></TD></TR></TABLE>
+
+% if ( scalar(@possible_exports) > 0 || scalar(@mapped_exports) > 0 ) {
+   <TABLE><TR>
+	<TH BGCOLOR="#dcdcdc">Export</TH>
+	<TH BGCOLOR="#dcdcdc">Vendor Package Id <FONT SIZE="-2">(blank to delete)</FONT></TH>
+	</TR>
+%   foreach my $export ( @mapped_exports ) {
+	<TR>
+	    <TD><% $export->exportname %></TD>
+	    <TD><INPUT TYPE="text" NAME="export<% $export->exportnum %>"
+		    SIZE="30" VALUE="<% $vendor_pkg_ids{$export->exportnum} %>">
+	    </TD>
+	</TR>
+%   } 
+%   foreach my $export ( @possible_exports ) {
+%	unless ( defined $vendor_pkg_ids{$export->exportnum} ) {
+	    <TR>
+		<TD><% $export->exportname %></TD>
+		<TD>
+		    <INPUT TYPE="text" NAME="export<% $export->exportnum %>" SIZE="30">
+		</TD>
+	    </TR>
+% 	}
+%   }
+  </TABLE>
+% }
 
   </TD>
 </TR>
@@ -96,5 +127,13 @@ my %pkg_svc = map { $_->svcpart => $_ } $part_pkg->pkg_svc('disable_linked'=>1);
 my @fixups = ();
 my $count = 0;
 my $columns = 3;
+
+my @possible_exports = ();
+my @mapped_exports = ();
+my @part_pkg_vendor = $part_pkg->part_pkg_vendor;
+foreach my $part_pkg_vendor ( @part_pkg_vendor ) {
+    push @mapped_exports, $part_pkg_vendor->part_export;
+}
+my %vendor_pkg_ids = $part_pkg->vendor_pkg_ids;
 
 </%init>

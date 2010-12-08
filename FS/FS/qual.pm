@@ -127,7 +127,7 @@ sub check {
   $self->SUPER::check;
 }
 
-sub export {
+sub part_export {
     my $self = shift;
     if ( $self->exportnum ) {
 	return qsearchs('part_export', { exportnum => $self->exportnum } )

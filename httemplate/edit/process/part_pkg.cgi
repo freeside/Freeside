@@ -131,6 +131,16 @@ my $args_callback = sub {
                 'custnum_ref' => \$custnum;
   }
 
+  my %part_pkg_vendor;
+  foreach my $param ( $cgi->param ) {
+    if ( $param =~ /^export(\d+)$/ && length($cgi->param($param)) > 0 ) {
+	$part_pkg_vendor{$1} = $cgi->param($param);
+    }
+  }
+  if ( keys %part_pkg_vendor > 0 ) {
+    push @args, 'part_pkg_vendor' => \%part_pkg_vendor;
+  }
+
   #warn "args: ".join('/', @args). "\n";
 
   @args;

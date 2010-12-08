@@ -40,6 +40,8 @@ END
 
 sub rebless { shift; }
 
+sub external_pkg_map { 1; }
+
 sub dsl_pull {
 # we distinguish between invalid new data (return error) versus data that
 # has legitimately changed (may eventually execute hooks; now just update)

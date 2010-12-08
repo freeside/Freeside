@@ -211,6 +211,8 @@ L<FS::part_pkg_option> - Package definition option class
 
 L<FS::part_pkg_report_option> - Package reporting classification class
 
+L<FS::part_pkg_vendor> - Package external mapping class
+
 L<FS::pkg_svc> - Class linking package definitions (see L<FS::part_pkg>) with
 service definitions (see L<FS::part_svc>)
 

@@ -43,7 +43,7 @@
 				      },
 				      sub {
 					  my $self = shift;
-					  my $export = $self->export;
+					  my $export = $self->part_export;
 					  my $result = '(manual)';
 					  $result = $export->exportname if $export;
 					  $result;

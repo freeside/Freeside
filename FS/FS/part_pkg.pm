@@ -275,6 +275,23 @@ sub insert {
     }
   }
 
+  if ( $options{'part_pkg_vendor'} ) {
+      my($exportnum,$vendor_pkg_id);
+      my %options_part_pkg_vendor = $options{'part_pkg_vendor'};
+      while(($exportnum,$vendor_pkg_id) = each %options_part_pkg_vendor){
+	    my $ppv = new FS::part_pkg_vendor( {
+		    'pkgpart' => $self->pkgpart,
+		    'exportnum' => $exportnum,
+		    'vendor_pkg_id' => $vendor_pkg_id, 
+		} );
+	    my $error = $ppv->insert;
+	    if ( $error ) {
+	      $dbh->rollback if $oldAutoCommit;
+	      return "Error inserting part_pkg_vendor record: $error";
+	    }
+      }
+  }
+
   warn "  commiting transaction" if $DEBUG;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -431,6 +448,51 @@ sub replace {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+  }
+  
+  my @part_pkg_vendor = $old->part_pkg_vendor;
+  my @current_exportnum = ();
+  if ( $options->{'part_pkg_vendor'} ) {
+      my($exportnum,$vendor_pkg_id);
+      while ( ($exportnum,$vendor_pkg_id) 
+				= each %{$options->{'part_pkg_vendor'}} ) {
+	  my $replaced = 0;
+	  foreach my $part_pkg_vendor ( @part_pkg_vendor ) {
+	    if($exportnum == $part_pkg_vendor->exportnum
+		&& $vendor_pkg_id ne $part_pkg_vendor->vendor_pkg_id) {
+		$part_pkg_vendor->vendor_pkg_id($vendor_pkg_id);
+		my $error = $part_pkg_vendor->replace;
+		if ( $error ) {
+		  $dbh->rollback if $oldAutoCommit;
+		  return "Error replacing part_pkg_vendor record: $error";
+		}
+		$replaced = 1;
+		last;
+	    }
+	  }
+	  unless ( $replaced ) {
+	    my $ppv = new FS::part_pkg_vendor( {
+		    'pkgpart' => $new->pkgpart,
+		    'exportnum' => $exportnum,
+		    'vendor_pkg_id' => $vendor_pkg_id, 
+		} );
+	    my $error = $ppv->insert;
+	    if ( $error ) {
+	      $dbh->rollback if $oldAutoCommit;
+	      return "Error inserting part_pkg_vendor record: $error";
+	    }
+	  }
+	  push @current_exportnum, $exportnum;
+      }
+  }
+  foreach my $part_pkg_vendor ( @part_pkg_vendor ) {
+      unless ( grep($_ eq $part_pkg_vendor->exportnum, @current_exportnum) ) {
+	my $error = $part_pkg_vendor->delete;
+	if ( $error ) {
+	  $dbh->rollback if $oldAutoCommit;
+	  return "Error deleting part_pkg_vendor record: $error";
+	}
+      }
   }
 
   warn "  commiting transaction" if $DEBUG;
@@ -883,6 +945,29 @@ sub plandata {
     $plandata .= join('', map { "$_=$options{$_}\n" } keys %options );
     $plandata;
   }
+}
+
+=item part_pkg_vendor
+
+Returns all vendor/external package ids as FS::part_pkg_vendor objects (see
+L<FS::part_pkg_vendor>).
+
+=cut
+
+sub part_pkg_vendor {
+  my $self = shift;
+  qsearch('part_pkg_vendor', { 'pkgpart' => $self->pkgpart } );
+}
+
+=item vendor_pkg_ids
+
+Returns a list of vendor/external package ids by exportnum
+
+=cut
+
+sub vendor_pkg_ids {
+  my $self = shift;
+  map { $_->exportnum => $_->vendor_pkg_id } $self->part_pkg_vendor;
 }
 
 =item part_pkg_option

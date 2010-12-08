@@ -2323,6 +2323,18 @@ sub tables_hashref {
       'index'       => [ [ 'pkgpart' ], [ 'optionname' ] ],
     },
 
+    'part_pkg_vendor' => {
+      'columns' => [
+        'num', 'serial', '', '', '', '', 
+        'pkgpart', 'int', '', '', '', '', 
+        'exportnum', 'int', '', '', '', '', 
+        'vendor_pkg_id', 'varchar', '', $char_d, '', '', 
+      ],
+      'primary_key' => 'num',
+      'unique' => [ [ 'pkgpart', 'exportnum' ] ],
+      'index'       => [ [ 'pkgpart' ] ],
+    },
+    
     'part_pkg_report_option' => {
       'columns' => [
         'num',      'serial',   '',      '', '', '', 
