@@ -81,7 +81,7 @@ sub calc_prorate {
       $mend = 
         timelocal(0,0,0,$cutoff_day,$mon,$year);
       $mstart = 
-        timelocal(0,0,0,$cutoff_day,$mon == 0 ? 11 : $mon - 1,$year-($mon==11));
+        timelocal(0,0,0,$cutoff_day,$mon == 0 ? 11 : $mon - 1,$year-($mon==0));
     }
    
     # next bill date will be figured as $$sdate + one period
