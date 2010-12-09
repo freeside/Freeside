@@ -375,6 +375,40 @@ sub delete {
   '';
 }
 
+=item expire DATE
+
+Currently this will only run expire exports if any are attached
+
+=cut
+
+sub expire {
+  my($self,$date) = (shift,shift);
+
+  return 'Expire date must be specified' unless $date;
+    
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $export_args = [$date];
+  my $error = $self->export('expire', @$export_args);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+}
+
 =item replace [ OLD_RECORD ] [ HASHREF | OPTION => VALUE ]
 
 Replaces OLD_RECORD with this one.  If there is an error, returns the error,

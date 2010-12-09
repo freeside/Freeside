@@ -40,7 +40,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-pull-dsl \n";
+  die "Usage:\n  freeside-pull-dsl user \n";
 }
 
 ###

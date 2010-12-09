@@ -21,6 +21,7 @@ use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
 use FS::part_pkg_link;
 use FS::part_pkg_discount;
+use FS::part_pkg_vendor;
 
 @ISA = qw( FS::m2m_Common FS::option_Common );
 $DEBUG = 0;
@@ -456,7 +457,7 @@ sub replace {
       my($exportnum,$vendor_pkg_id);
       while ( ($exportnum,$vendor_pkg_id) 
 				= each %{$options->{'part_pkg_vendor'}} ) {
-	  my $replaced = 0;
+	  my $noinsert = 0;
 	  foreach my $part_pkg_vendor ( @part_pkg_vendor ) {
 	    if($exportnum == $part_pkg_vendor->exportnum
 		&& $vendor_pkg_id ne $part_pkg_vendor->vendor_pkg_id) {
@@ -466,11 +467,16 @@ sub replace {
 		  $dbh->rollback if $oldAutoCommit;
 		  return "Error replacing part_pkg_vendor record: $error";
 		}
-		$replaced = 1;
+		$noinsert = 1;
+		last;
+	    }
+	    elsif($exportnum == $part_pkg_vendor->exportnum
+		&& $vendor_pkg_id eq $part_pkg_vendor->vendor_pkg_id) {
+		$noinsert = 1;
 		last;
 	    }
 	  }
-	  unless ( $replaced ) {
+	  unless ( $noinsert ) {
 	    my $ppv = new FS::part_pkg_vendor( {
 		    'pkgpart' => $new->pkgpart,
 		    'exportnum' => $exportnum,

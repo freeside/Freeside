@@ -661,7 +661,25 @@ sub cancel {
   }
 
   my %svc;
-  unless ( $date ) {
+  if ( $date ) {
+	# copied from below
+	foreach my $cust_svc (
+	  #schwartz
+	  map  { $_->[0] }
+	  sort { $a->[1] <=> $b->[1] }
+	  map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
+	  qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
+	) {
+
+	  my $error = $cust_svc->cancel( ('date' => $date) );
+
+	  if ( $error ) {
+	    $dbh->rollback if $oldAutoCommit;
+	    return "Error expiring cust_svc: $error";
+	  }
+	}
+
+  } else {
     foreach my $cust_svc (
       #schwartz
       map  { $_->[0] }

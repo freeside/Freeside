@@ -109,7 +109,7 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub cancel {
-  my $self = shift;
+  my($self,%opt) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -133,19 +133,26 @@ sub cancel {
 
   my $svc = $self->svc_x;
   if ($svc) {
-
-    my $error = $svc->cancel;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error canceling service: $error";
+    if ( %opt && $opt{'date'} ) {
+	my $error = $svc->expire($opt{'date'});
+	if ( $error ) {
+	  $dbh->rollback if $oldAutoCommit;
+	  return "Error expiring service: $error";
+	}
+    } else {
+	my $error = $svc->cancel;
+	if ( $error ) {
+	  $dbh->rollback if $oldAutoCommit;
+	  return "Error canceling service: $error";
+	}
+	$error = $svc->delete; #this deletes this cust_svc record as well
+	if ( $error ) {
+	  $dbh->rollback if $oldAutoCommit;
+	  return "Error deleting service: $error";
+	}
     }
-    $error = $svc->delete; #this deletes this cust_svc record as well
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error deleting service: $error";
-    }
 
-  } else {
+  } elsif ( !%opt ) {
 
     #huh?
     warn "WARNING: no svc_ record found for svcnum ". $self->svcnum.

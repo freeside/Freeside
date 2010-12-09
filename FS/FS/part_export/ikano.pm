@@ -52,7 +52,6 @@ sub dsl_pull {
 # vendor_order_id, vendor_qual_id, vendor_order_type, pushed, monitored,
 # last_pull, address (from qual), contact info, ProductCustomId
     my($self, $svc_dsl, $threshold) = (shift, shift, shift);
-    $self->loadmod;
     my $result = $self->valid_order($svc_dsl,'pull');
     return $result unless $result eq '';
 
@@ -332,7 +331,9 @@ sub qual_html {
     my $list = "<B>Qualifying Packages:</B><UL>";
     my @part_pkgs = qsearch( 'part_pkg', { 'disabled' => '' } );
     foreach my $part_pkg ( @part_pkgs ) {
-	my $externalid = $part_pkg->option('externalid',1);
+	my %vendor_pkg_ids = $part_pkg->vendor_pkg_ids;
+	my $externalid = $vendor_pkg_ids{$self->exportnum} 
+	    if defined $vendor_pkg_ids{$self->exportnum};
 	if ( $externalid ) {
 	    $list .= "<LI>".$part_pkg->pkgpart.": ".$part_pkg->pkg." - "
 		.$part_pkg->comment."</LI>" 
@@ -403,9 +404,10 @@ sub valid_order {
 	    &&  $svc_dsl->vendor_qual_id
 	    );
   return 'Missing or invalid order data' if $error;
-  
+ 
+  my %vendor_pkg_ids = $svc_dsl->cust_svc->cust_pkg->part_pkg->vendor_pkg_ids;
   return 'Package does not have an external id configured'
-    if $svc_dsl->cust_svc->cust_pkg->part_pkg->options('externalid',1) eq '';
+    unless defined $vendor_pkg_ids{$self->exportnum};
 
   return 'No valid qualification for this order' 
     unless qsearch( 'qual', { 'vendor_qual_id' => $svc_dsl->vendor_qual_id });
@@ -415,7 +417,7 @@ sub valid_order {
   if($svc_dsl->vendor_order_type eq 'NEW') {
     if($svc_dsl->pushed) {
 	$error = !( ($action eq 'pull' || $action eq 'statuschg' 
-			|| $action eq 'delete')
+			|| $action eq 'delete' || $action eq 'expire')
 	    && 	length($svc_dsl->vendor_order_id) > 0
 	    && 	length($svc_dsl->vendor_order_status) > 0
 		);
@@ -463,8 +465,6 @@ sub qual2termsid {
 sub _export_insert {
   my( $self, $svc_dsl ) = (shift, shift);
 
-  $self->loadmod;
-
   my $result = $self->valid_order($svc_dsl,'insert');
   return $result unless $result eq '';
 
@@ -472,7 +472,8 @@ sub _export_insert {
   my $contactTN = $svc_dsl->cust_svc->cust_pkg->cust_main->daytime;
   $contactTN =~ s/[^0-9]//g;
 
-  my $ProductCustomId = $svc_dsl->cust_svc->cust_pkg->part_pkg->option('externalid',1);
+  my %vendor_pkg_ids = $svc_dsl->cust_svc->cust_pkg->part_pkg->vendor_pkg_ids;
+  my $ProductCustomId = $vendor_pkg_ids{$self->exportnum};
 
   my $args = {
 	orderType => 'NEW',
@@ -551,7 +552,7 @@ sub _export_delete {
   return $result unless $result eq '';
 
   # for now allow an immediate cancel only on New orders in New/Pending status
-  #XXX: add support for Chance and Cancel orders in New/Pending status later
+  #XXX: add support for Change and Cancel orders in New/Pending status later
 
   if($svc_dsl->vendor_order_type eq 'NEW') {
     if($svc_dsl->vendor_order_status eq 'NEW' 
@@ -572,11 +573,92 @@ sub _export_delete {
 	return "Cannot cancel a NEW order unless it's in NEW or PENDING status";
     }
   }
+  elsif($svc_dsl->vendor_order_type eq 'CANCEL') {
+     return 'Cannot cancel a CANCEL order unless expire was set'
+	unless $svc_dsl->cust_svc->cust_pkg->expire > 0;
+  }
   else {
     return 'Canceling orders other than NEW orders is not currently implemented';
   }
 
   '';
+}
+
+sub export_expire {
+  my($self, $svc_dsl, $date) = (shift, shift, shift);
+  
+  my $result = $self->valid_order($svc_dsl,'expire');
+  return $result unless $result eq '';
+  
+  # for now allow a proper cancel only on New orders in Completed status
+  #XXX: add support for some other cases in future
+  
+  if($svc_dsl->vendor_order_type eq 'NEW' 
+	&& $svc_dsl->vendor_order_status eq 'COMPLETED') {
+    
+	  my $contactTN = $svc_dsl->cust_svc->cust_pkg->cust_main->daytime;
+	  $contactTN =~ s/[^0-9]//g;
+
+	  my %vendor_pkg_ids = $svc_dsl->cust_svc->cust_pkg->part_pkg->vendor_pkg_ids;
+	  my $ProductCustomId = $vendor_pkg_ids{$self->exportnum};
+
+	  # we are now a cancel order
+	  $svc_dsl->desired_due_date($date);
+	  $svc_dsl->vendor_order_type('CANCEL');
+
+	  my $args = {
+		orderType => 'CANCEL',
+		ProductCustomId => $ProductCustomId,
+		TermsId => $self->qual2termsid($svc_dsl->vendor_qual_id,$ProductCustomId),
+		DSLPhoneNumber => $svc_dsl->loop_type eq '0' ? 'STANDALONE'
+							    : $svc_dsl->phonenum,
+		Password => $svc_dsl->password,
+		PrequalId => $svc_dsl->vendor_qual_id,
+		CompanyName => $svc_dsl->company,
+		FirstName => $svc_dsl->first,
+		LastName => $svc_dsl->last,
+		MiddleName => '',
+		ContactMethod => 'PHONE',
+		ContactPhoneNumber => $contactTN,
+		ContactEmail => 'x@x.xx',
+		ContactFax => '',
+		DateToOrder => time2str("%Y-%m-%d",$date),
+		RequestClientIP => '127.0.0.1',
+		IspChange => 'NO',
+		IspPrevious => '',
+		CurrentProvider => '',
+	  };
+
+	  $args->{'VirtualPhoneNumber'} = $svc_dsl->phonenum 
+	    if $svc_dsl->loop_type eq '0';
+
+	  $result = $self->ikano_command('ORDER',$args); 
+	  return $result unless ref($result); # scalar (string) is an error
+
+	  # now we're getting an OrderResponse which should have one Order in it
+	  warn "$me _export_insert OrderResponse hash:\n".Dumper($result)
+		if $self->option('debug');
+	  
+	  return 'Invalid order response' unless defined $result->{'Order'};
+	  $result = $result->{'Order'};
+
+	  return 'No/invalid order id or status returned' 
+	    unless defined $result->{'Status'} && defined $result->{'OrderId'}
+		&& grep($_ eq $result->{'Status'}, @Net::Ikano::orderStatus);
+
+	  $svc_dsl->pushed(time);
+	  $svc_dsl->last_pull((time)+1); 
+	  $svc_dsl->vendor_order_id($result->{'OrderId'});
+	  $svc_dsl->vendor_order_status($result->{'Status'});
+	  local $FS::svc_Common::noexport_hack = 1;
+	  $result = $svc_dsl->replace; 
+	  return "Error setting DSL fields: $result" if $result;
+  }
+  else {
+    return "Cancelling anything other than NEW orders in COMPLETED status is "
+	. "not currently implemented";
+  }
+ '';
 }
 
 sub statuschg {
