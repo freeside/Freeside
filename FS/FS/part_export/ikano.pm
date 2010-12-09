@@ -650,6 +650,7 @@ sub export_expire {
 	  $svc_dsl->last_pull((time)+1); 
 	  $svc_dsl->vendor_order_id($result->{'OrderId'});
 	  $svc_dsl->vendor_order_status($result->{'Status'});
+	  $svc_dsl->monitored('Y');
 	  local $FS::svc_Common::noexport_hack = 1;
 	  $result = $svc_dsl->replace; 
 	  return "Error setting DSL fields: $result" if $result;
