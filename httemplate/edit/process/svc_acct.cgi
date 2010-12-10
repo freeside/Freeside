@@ -44,11 +44,14 @@ unless ( $cgi->param('cgp_accessmodes') ) {
 }
 
 my %hash = $svcnum ? $old->hash : ();
-map {
+for ( fields('svc_acct'), qw( pkgnum svcpart usergroup ) ) {
     $hash{$_} = scalar($cgi->param($_));
-  #} qw(svcnum pkgnum svcpart username _password popnum uid gid finger dir
-  #  shell quota slipip)
-  } (fields('svc_acct'), qw ( pkgnum svcpart usergroup ));
+}
+if ( $svcnum ) {
+  for ( grep $old->$_, qw( cf_privatekey ) ) {
+    $hash{$_} = $old->$_;
+  }
+}
 my $new = new FS::svc_acct ( \%hash );
 
 my $error = '';

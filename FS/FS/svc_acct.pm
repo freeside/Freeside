@@ -1207,16 +1207,19 @@ sub check {
               || $self->ut_enum('_password_encoding', ['',qw(plain crypt ldap)])
               || $self->ut_enum('password_selfchange', [ '', 'Y' ])
               || $self->ut_enum('password_recover',    [ '', 'Y' ])
+              #cardfortress
+              || $self->ut_anything('cf_privatekey')
+              #communigate
               || $self->ut_textn('cgp_accessmodes')
               || $self->ut_alphan('cgp_type')
               || $self->ut_textn('cgp_aliases' ) #well
-              #settings
+              # settings
               || $self->ut_alphasn('cgp_rulesallowed')
               || $self->ut_enum('cgp_rpopallowed', [ '', 'Y' ])
               || $self->ut_enum('cgp_mailtoall', [ '', 'Y' ])
               || $self->ut_enum('cgp_addmailtrailer', [ '', 'Y' ])
               || $self->ut_snumbern('cgp_archiveafter')
-              #preferences
+              # preferences
               || $self->ut_alphasn('cgp_deletemode')
               || $self->ut_enum('cgp_emptytrash', $self->cgp_emptytrash_values)
               || $self->ut_alphan('cgp_language')
@@ -1224,7 +1227,6 @@ sub check {
               || $self->ut_textn('cgp_skinname')
               || $self->ut_textn('cgp_prontoskinname')
               || $self->ut_alphan('cgp_sendmdnmode')
-              #XXX RPOP settings
   ;
   return $error if $error;
 

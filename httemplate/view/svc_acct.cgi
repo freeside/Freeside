@@ -56,6 +56,12 @@ Service #<B><% $svcnum %></B>
 </FORM>
 <BR>
 
+<% include( 'svc_acct/cardfortress.html',
+              'svc_acct' => $svc_acct,
+              %gopt,
+          )
+%>
+
 <% include( 'svc_acct/hosting.html',
               %gopt,
           )

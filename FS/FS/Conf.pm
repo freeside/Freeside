@@ -4103,6 +4103,13 @@ and customer address. Include units.',
 		     ],
   },
 
+  {
+    'key'         => 'svc_acct-cf_privatekey-message',
+    'section'     => '',
+    'description' => 'For internal use: HTML displayed when cf_privatekey field is set.',
+    'type'        => 'textarea',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

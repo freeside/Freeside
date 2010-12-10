@@ -1,0 +1,27 @@
+% if ( $svc_acct->cf_privatekey ) {
+
+<div class="fscontainer">
+<div class="fsbox">
+<div class="fsbox-title">
+  <span class="left">Card Fortress</span>
+</div>
+
+  <PRE><FONT STYLE="font-family:monospace"><% $svc_acct->cf_privatekey %></FONT></PRE>
+
+  <% $conf->config('svc_acct-cf_privatekey-message') %>
+
+%#XXX and then there should be a remove link to get rid of it
+
+% }
+
+</div>
+</div>
+<%init>
+
+my %opt = @_;
+
+my $svc_acct = $opt{'svc_acct'};
+
+my $conf = new FS::Conf;
+
+</%init>
