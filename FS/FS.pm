@@ -302,6 +302,8 @@ L<FS::cust_main_exemption> - Customer tax exemption class
 
 L<FS::cust_main_note> - Customer note class
 
+L<FS::cust_note_class> - Customer note classification class
+
 L<FS::banned_pay> - Banned payment information class
 
 L<FS::cust_bill> - Invoice class

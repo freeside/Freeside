@@ -1,0 +1,34 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Customer note classes',
+                 'html_init'   => $html_init,
+                 'name'        => 'customer note classes',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 2,
+                 'query'       => { 'table'     => 'cust_note_class',
+                                    'hashref'   => {},
+                                    'order_by' => 'ORDER BY classnum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => $header,
+                 'fields'      => $fields,
+                 'links'       => $links,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  'Customer note classes define groups of notes for reporting.<BR><BR>'.
+  qq!<A HREF="${p}edit/cust_note_class.html"><I>Add a customer note class</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM cust_note_class';
+
+my $link = [ $p.'edit/cust_note_class.html?', 'classnum' ];
+
+my $header = [ '#', 'Class' ];
+my $fields = [ 'classnum', 'classname' ];
+my $links  = [ $link, $link ];
+
+</%init>

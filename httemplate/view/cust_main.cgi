@@ -146,7 +146,7 @@ Comments
 <BR><BR>
 % }
 <A NAME="notes">
-% my $notecount = scalar($cust_main->notes());
+% my $notecount = scalar($cust_main->notes(0));
 % if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
 
 %   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {

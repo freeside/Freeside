@@ -550,3 +550,5 @@ FS/dsl_note.pm
 t/dsl_note.t
 FS/part_pkg_vendor.pm
 t/part_pkg_vendor.t
+FS/cust_note_class.pm
+t/cust_note_class.t

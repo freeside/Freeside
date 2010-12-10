@@ -26,7 +26,11 @@ die "access denied"
 my %opt = @_;
 
 my $table = $opt{'table'};
-( my $category_table = $table ) =~ s/class/category/ or die;
 
-my @category = qsearch($category_table, { 'disabled' => '' });
+my @category;
+unless ( $opt{'nocat'} ) {
+    ( my $category_table = $table ) =~ s/class/category/ or die;
+    @category = qsearch($category_table, { 'disabled' => '' });
+}
+
 </%init>

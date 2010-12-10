@@ -2209,12 +2209,13 @@ Returns all notes (see L<FS::cust_main_note>) for this customer.
 =cut
 
 sub notes {
-  my $self = shift;
-  #order by?
+  my($self,$orderby_classnum) = (shift,shift);
+  my $orderby = "_DATE DESC";
+  $orderby = "CLASSNUM ASC, $orderby" if $orderby_classnum;
   qsearch( 'cust_main_note',
            { 'custnum' => $self->custnum },
 	   '',
-	   'ORDER BY _DATE DESC'
+	   "ORDER BY $orderby",
 	 );
 }
 

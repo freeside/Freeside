@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::otaker_Mixin FS::Record );
 use Carp;
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_note_class;
 
 =head1 NAME
 
@@ -37,6 +38,8 @@ currently supported:
 primary key
 
 =item custnum
+
+=item classnum
 
 =item _date
 
@@ -106,6 +109,7 @@ sub check {
   my $error = 
     $self->ut_numbern('notenum')
     || $self->ut_number('custnum')
+    || $self->ut_foreign_keyn('classnum', 'cust_note_class', 'classnum')
     || $self->ut_numbern('_date')
     || $self->ut_textn('otaker')
     || $self->ut_anything('comments')
@@ -114,6 +118,36 @@ sub check {
 
   $self->SUPER::check;
 }
+
+=item cust_note_class
+
+Returns the customer note class, as an FS::cust_note_class object, or the empty
+string if there is no note class.
+
+=cut
+
+sub cust_note_class {
+  my $self = shift;
+  if ( $self->classnum ) {
+    qsearchs('cust_note_class', { 'classnum' => $self->classnum } );
+  } else {
+    return '';
+  } 
+}
+
+=item classname 
+
+Returns the customer note class name, or the empty string if there is no 
+customer note class.
+
+=cut
+
+sub classname {
+  my $self = shift;
+  my $cust_note_class = $self->cust_note_class;
+  $cust_note_class ? $cust_note_class->classname : '';
+}
+
 
 #false laziness w/otaker_Mixin & cust_attachment
 sub otaker {

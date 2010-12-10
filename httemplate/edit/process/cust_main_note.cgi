@@ -18,6 +18,9 @@ $cgi->param('notenum') =~ /^(\d*)$/
   or die "Illegal notenum: ". $cgi->param('notenum');
 my $notenum = $1;
 
+$cgi->param('classnum') =~ /^(\d*)$/;
+my $classnum = $1;
+
 my $comment = $cgi->param('comment_html') || 
               join("<br />\n", 
                 split "(?:\r|\n)+", $cgi->param('comment_plain')
@@ -26,6 +29,7 @@ my $comment = $cgi->param('comment_html') ||
 my $new = new FS::cust_main_note ( {
   notenum  => $notenum,
   custnum  => $custnum,
+  classnum => $classnum ? $classnum : undef,
   _date    => time,
   usernum  => $FS::CurrentUser::CurrentUser->usernum,
   comments => $comment,

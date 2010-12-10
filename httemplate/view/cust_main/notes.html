@@ -1,24 +1,43 @@
 % if ( scalar(@notes) ) {
 
+<SCRIPT TYPE="text/javascript">
+
+    function display_notes_classnum(classnum){
+	document.getElementById('notes_'+classnum).style.display = 'block';
+	document.getElementById('notes_tablink_'+classnum).style.fontWeight = 'bold';
+
+	var divs = document.getElementsByTagName("div");
+	var i;
+	for(i=0; i < divs.length; i++){
+	    var d = divs[i];
+	    if(d.id.length > 6 && d.id.substring(0,6) == 'notes_') {
+		if(divs[i].id != 'notes_'+classnum) {
+		    divs[i].style.display = 'none';
+		}
+	    }
+	}
+	
+	var as = document.getElementsByTagName("a");
+	for(i=0; i < as.length; i++){
+	    var a = as[i];
+	    if(a.id.length > 14 && a.id.substring(0,14) == 'notes_tablink_') {
+		if(as[i].id != 'notes_tablink_'+classnum) {
+		    as[i].style.fontWeight = 'normal';
+		}
+	    }
+	}
+    }
+
+</SCRIPT>
+
   <% include('/elements/init_overlib.html') %>
-
-  <% include("/elements/table-grid.html") %>
-
-  <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
-%   if ( $conf->exists('cust_main_note-display_times') ) {
-      <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
-%   }
-    <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Note</TH>
-%   if ($curuser->access_right('Edit customer note') ) {
-    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;</TH>
-%   }
-  </TR>
 
 % my $bgcolor1 = '#eeeeee';
 % my $bgcolor2 = '#ffffff';
 % my $bgcolor = '';
+% my $last_classnum = -1;
+% my $skipheader = 0;
+% my %classes = ();
 %
 % foreach my $note (@notes) {
 %
@@ -46,12 +65,50 @@
 %   if ($curuser->access_right('Edit customer note') ) {
 %     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(edit)</A>!;
 %   }
+%
+% if ( $last_classnum != $note->classnum && !$skipheader ) {
+% my $tmp_classnum = $note->classnum ? $note->classnum : 0;
+% $classes{$tmp_classnum} = $note->classname ne '' ? $note->classname 
+%						     : 'Other';
+% if ( $last_classnum != -1 ) {
+    </TABLE>
+  </DIV>
+% }
+% my $display = ($tmp_classnum == 0 || !$conf->exists('note-classes') 
+%				    || $conf->config('note-classes') < 2) 
+%							    ? 'block' : 'none';
+	<DIV 	id="notes_<% $tmp_classnum %>"
+		style="display:<% $display %>"
+	>
+	<% include("/elements/table-grid.html") %>
+	<TR>
+	    <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
+%   if ( $conf->exists('cust_main_note-display_times') ) {
+	    <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
+%   }
+	    <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
+%   if ($conf->exists('note-classes') && $conf->config('note-classes') == 1) {
+	    <TH CLASS="grid" BGCOLOR="#cccccc">Class</TH>
+%   }
+	    <TH CLASS="grid" BGCOLOR="#cccccc">Note</TH>
+%   if ($curuser->access_right('Edit customer note') ) {
+	    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;</TH>
+%   }
+	</TR>
+% $skipheader = (!$conf->exists('note-classes') || $conf->config('note-classes') < 2);
+% $last_classnum = $note->classnum;
+% }
 
     <TR>
       <% note_datestr($note,$conf,$bgcolor) %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
         &nbsp;<% $note->usernum ? $note->access_user->name : $note->otaker %>
       </TD>
+% if ($conf->exists('note-classes') && $conf->config('note-classes') == 1) {
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+	<% $note->classname %>   
+      </TD>
+% }
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
         <% $note->comments | defang %>
       </TD>
@@ -63,6 +120,19 @@
 % } #end display notes
 
 </TABLE>
+</DIV>
+
+% if ( $conf->exists('note-classes') && $conf->config('note-classes') == 2 ) {
+% 	my($classnum,$classname);
+Show notes of class: &nbsp; 
+% 	foreach my $classnum ( sort { $b <=> $a } (keys %classes) ) {
+	    <A	id="notes_tablink_<% $classnum %>"
+		HREF="javascript:display_notes_classnum(<% $classnum %>)"
+		style="font-weight: <% $classnum == 0 ? 'bold' : 'normal' %>"
+	    ><% $classes{$classnum} %></A>
+% 	}
+    <BR>
+% }
 
 % }
 <%init>
@@ -77,9 +147,9 @@ my(%opt) = @_;
 my $custnum = $opt{'custnum'};
 
 my $cust_main = qsearchs('cust_main', {'custnum' => $custnum} );
-die "Custimer not found!" unless $cust_main;
+die "Customer not found!" unless $cust_main;
 
-my (@notes) = $cust_main->notes();
+my (@notes) = $cust_main->notes($conf->exists('note-classes') && $conf->config('note-classes') == 2);
 
 #subroutines
 

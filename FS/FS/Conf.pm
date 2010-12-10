@@ -4090,6 +4090,18 @@ and customer address. Include units.',
     'description' => 'Enable the alternate address format (location type, number, and kind) on qualifications',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'note-classes',
+    'section'     => 'UI',
+    'description' => 'Use customer note classes',
+    'type'        => 'select',
+    'select_hash' => [
+                       0 => 'Disabled',
+		       1 => 'Enabled',
+		       2 => 'Enabled, with tabs',
+		     ],
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
