@@ -909,6 +909,7 @@ sub tables_hashref {
         'location_type',     'varchar', 'NULL',      20, '', '',
         'location_number',     'varchar', 'NULL',      20, '', '',
         'location_kind',     'char', 'NULL',      1, '', '',
+        'disabled',      'char', 'NULL',   1, '', '', 
       ],
       'primary_key' => 'locationnum',
       'unique'      => [],

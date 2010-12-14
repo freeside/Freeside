@@ -1,0 +1,95 @@
+% if ( @$packages ) { 
+%   my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+
+<TR>
+% #my $width = $show_location ? 'WIDTH="25%"' : 'WIDTH="33%"';
+  <TH CLASS="grid" BGCOLOR="#cccccc">Package</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
+%   if ( $show_location ) {
+  <TH CLASS="grid" BGCOLOR="#cccccc">Location</TH>
+% }
+  <TH CLASS="grid" BGCOLOR="#cccccc">Services</TH>
+</TR>
+
+% #$FS::cust_pkg::DEBUG = 2;
+%   foreach my $cust_pkg (@$packages) {
+%
+%     if ( $bgcolor eq $bgcolor1 ) {
+%       $bgcolor = $bgcolor2;
+%     } else {
+%       $bgcolor = $bgcolor1;
+%     }
+%
+%     my %iopt = (
+%       'bgcolor'  => $bgcolor,
+%       'cust_pkg' => $cust_pkg,
+%       'part_pkg' => $cust_pkg->part_pkg,
+%       %conf_opt,
+%     );
+%
+
+  <!--pkgnum: <% $cust_pkg->pkgnum %>-->
+  <TR>
+    <% include('package.html',  %iopt) %>
+    <% include('status.html',   %iopt) %>
+%     if ( $show_location ) {
+    <% include('location.html', %iopt) %>
+%     }
+    <% include('services.html', %iopt) %>
+  </TR>
+
+%   } #foreach $cust_pkg
+%# </TABLE>
+% } #if @$packages
+% else {
+<BR>
+% }
+
+<%init>
+
+my %opt = @_;
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $packages = $opt{'packages'};
+my $show_location = $opt{'show_location'};
+
+# Sort order is hardcoded for now, can change this if needed.
+@$packages = sort { 
+  ( $a->getfield('cancel') <=> $b->getfield('cancel') )  or
+  ( $a->getfield('setup')  <=> $b->getfield('setup')  )  or
+  ( $a->getfield('pkgnum') <=> $b->getfield('pkgnum') )
+} @$packages;
+
+my $countrydefault = scalar($conf->config('countrydefault')) || 'US';  
+
+my %conf_opt = (
+  #for services.html and status.html
+  'cust_pkg-display_times'    => $conf->exists('cust_pkg-display_times')
+                                 || $curuser->option('cust_pkg-display_times')),
+  #for status.html
+  'cust_pkg-show_autosuspend' => $conf->exists('cust_pkg-show_autosuspend'),
+  #for status.html pkg-balances
+  'pkg-balances'              => $conf->exists('pkg-balances'),
+  'money_char'                => ( $conf->config('money_char') || '$' ),
+
+  #for location.html
+  'countrydefault'            => $countrydefault,
+  'statedefault'              => ( scalar($conf->config('statedefault'))
+                                  || ($countrydefault eq 'US' ? 'CA' : '') ),
+  #for services.html
+  'svc_external-skip_manual'  => $conf->exists('svc_external-skip_manual'),
+  'legacy_link'               => $conf->exists('legacy_link'),
+  'svc_broadband-manage_link' => scalar($conf->config('svc_broadband-manage_link')),
+  'maestro-status_test'       => $conf->exists('maestro-status_test'),
+  'cust_pkg-large_pkg_size'   => $conf->config('cust_pkg-large_pkg_size'),
+
+  # for packages.html Change location link
+  'show_location'             => $show_location,
+);
+
+
+</%init>

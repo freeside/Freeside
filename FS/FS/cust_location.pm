@@ -3,6 +3,7 @@ package FS::cust_location;
 use strict;
 use base qw( FS::geocode_Mixin FS::Record );
 use Locale::Country;
+use FS::UID qw( dbh );
 use FS::Record qw( qsearch ); #qsearchs );
 use FS::prospect_main;
 use FS::cust_main;
@@ -73,6 +74,10 @@ Country (see L<FS::cust_main_county>)
 =item geocode
 
 Geocode
+
+=item disabled
+
+Disabled flag; set to 'Y' to disable the location.
 
 =back
 
@@ -191,6 +196,70 @@ Returns a list of key/value pairs, with the following keys: address1, address2,
 city, county, state, zip, country, geocode.
 
 =cut
+
+=item move_to HASHREF
+
+Takes a hashref with one or more cust_location fields.  Creates a duplicate 
+of the existing location with all fields set to the values in the hashref.  
+Moves all packages that use the existing location to the new one, then sets 
+the "disabled" flag on the old location.  Returns nothing on success, an 
+error message on error.
+
+=cut
+
+sub move_to {
+  my $old = shift;
+  my $hashref = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  my $error = '';
+
+  my $new = FS::cust_location->new({
+      $old->location_hash,
+      'custnum'     => $old->custnum,
+      'prospectnum' => $old->prospectnum,
+      %$hashref
+    });
+  $error = $new->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Error creating location: $error";
+  }
+
+  my @pkgs = qsearch('cust_pkg', { 
+      'locationnum' => $old->locationnum,
+      'cancel' => '' 
+    });
+  foreach my $cust_pkg (@pkgs) {
+    $error = $cust_pkg->change(
+      'locationnum' => $new->locationnum,
+      'keep_dates'  => 1
+    );
+    if ( $error and not ref($error) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error moving pkgnum ".$cust_pkg->pkgnum.": $error";
+    }
+  }
+
+  $old->disabled('Y');
+  $error = $old->replace;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Error disabling old location: $error";
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  return;
+}
 
 =back
 

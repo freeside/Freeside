@@ -1,0 +1,87 @@
+<STYLE>
+span.loclabel {
+  padding-left: 4px; 
+  padding-right: 4px; 
+  background-color: #cccccc;
+  border: 1px solid black
+}
+</STYLE>
+% foreach my $locationnum (@sorted) {
+%   my $packages = $packages_in{$locationnum};
+%   my $loc = $locations{$locationnum};
+%   next if $loc->disabled and scalar(@$packages) == 0;
+<% include('/elements/table-grid.html') %>
+<TR><TH COLSPAN=3 ALIGN="left" VALIGN="bottom" 
+STYLE="padding-bottom: 0px; 
+  padding-left: 0px; 
+  border-bottom-style: solid;
+  border-bottom-color: black;
+  border-bottom-width: 1px;">
+<SPAN CLASS="loclabel">
+%   if (! $locationnum) {
+Default service location: 
+%   }
+%   elsif ( $loc->disabled ) {
+<FONT COLOR="#808080"><I>
+%   }
+<% $loc->location_label %></SPAN>
+<SPAN STYLE="float:right;">
+% if ( $locationnum and !$loc->disabled ) {
+<% edit_location_link($locationnum) %>
+% }
+% if ( !$loc->disabled and !$active{$locationnum} ) {
+&nbsp;<% disable_location_link($locationnum) %>
+% }
+</SPAN></TH></TR>
+%   if (@$packages) {
+<% include('packages/section.html', 'packages' => $packages ) %>
+%   }
+</TABLE><BR>
+% } #foreach $locationnum
+<%init>
+my %opt = @_;
+my $cust_main = $opt{'cust_main'};
+my $all_packages = $opt{'packages'};
+
+my %locations = map { $_->locationnum => $_ } qsearch({
+    'table'     => 'cust_location',
+    'hashref'   => { 'custnum' => $cust_main->custnum },
+    'order_by'  => 'ORDER BY country, state, city, address1, locationnum',
+  });
+my @sections = keys %locations;
+$locations{''} = $cust_main;
+my %packages_in = map { $_ => [] } @sections;
+
+my %active = (); # groups with non-canceled packages
+foreach my $cust_pkg ( @$all_packages ) {
+  my $key = $cust_pkg->locationnum;
+  push @{ $packages_in{$key} }, $cust_pkg;
+  $active{$key} = 1 if !$cust_pkg->getfield('cancel');
+}
+
+my @sorted = (
+  '',
+  grep ( { $active{$_} } @sections),
+  grep ( { !$active{$_} } @sections),
+);
+
+sub edit_location_link {
+  my $locationnum = shift;
+  include( '/elements/popup_link.html',
+    'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
+    'label'       => '(Edit location)',
+    'actionlabel' => 'Edit',
+  );
+}
+
+sub disable_location_link {
+  my $locationnum = shift;
+  include( '/elements/popup_link.html',
+    'action'      => $p. "misc/disable-cust_location.cgi?locationnum=$locationnum",
+    'label'       => '(Disable location)',
+    'actionlabel' => 'Disable',
+  );
+}
+
+
+</%init>

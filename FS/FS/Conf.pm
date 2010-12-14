@@ -2689,6 +2689,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_pkg-group_by_location',
+    'section'     => 'UI',
+    'description' => "Group packages by location.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_pkg-show_fcc_voice_grade_equivalent',
     'section'     => 'UI',
     'description' => "Show a field on package definitions for assigning a DSO equivalency number suitable for use on FCC form 477.",

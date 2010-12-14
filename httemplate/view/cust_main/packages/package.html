@@ -168,8 +168,16 @@
 %       }
 
       </TR>
+%     if ( $curuser->access_right('Change customer package') and 
+%           !$cust_pkg->get('cancel') and
+%           !$opt{'show_location'}) {
+      <TR>
+        <TD><FONT SIZE="-1">
+          (&nbsp;<% pkg_change_location_link($cust_pkg) %>&nbsp;)
+        </FONT></TD>
+      </TR>
+%     }
 %   }
-
   </TABLE>
 
 </TD>
@@ -183,6 +191,10 @@ my $cust_pkg = $opt{'cust_pkg'};
 my $part_pkg = $opt{'part_pkg'};
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $countrydefault = $opt{'countrydefault'} || 'US';
+my $statedefault   = $opt{'statedefault'}
+                     || ($countrydefault eq 'US' ? 'CA' : '');
 
 #subroutines
 
@@ -199,6 +211,19 @@ sub pkg_change_link {
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p. "misc/change_pkg.cgi?locationnum=$locationnum",
     'label'       => 'Change&nbsp;package',
+    'actionlabel' => 'Change',
+    'cust_pkg'    => $cust_pkg,
+  );
+}
+
+sub pkg_change_location_link {
+  my $cust_pkg = shift;
+  my $pkgpart = $cust_pkg->pkgpart;
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p. "misc/change_pkg.cgi?locationnum=-1;pkgpart=$pkgpart;".
+                     "address1=;address2=;city=;county=;state=$statedefault;".
+                     "zip=;country=$countrydefault",
+    'label'       => 'Change&nbsp;location',
     'actionlabel' => 'Change',
     'cust_pkg'    => $cust_pkg,
   );

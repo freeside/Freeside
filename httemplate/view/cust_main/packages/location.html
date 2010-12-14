@@ -21,12 +21,16 @@
 % {
   <FONT SIZE=-1>
     (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
+%   if ( $cust_pkg->locationnum ) {
+&nbsp;(&nbsp;<%edit_location_link($cust_pkg->locationnum)%>&nbsp;)
+%   }
   </FONT>
 % } 
 
 </TD>
 <%init>
 
+my $conf = new FS::Conf;
 my %opt = @_;
 
 my $bgcolor        = $opt{'bgcolor'};
@@ -47,6 +51,15 @@ sub pkg_change_location_link {
     'label'       => 'Change&nbsp;location',
     'actionlabel' => 'Change',
     'cust_pkg'    => $cust_pkg,
+  );
+}
+
+sub edit_location_link {
+  my $locationnum = shift;
+  include( '/elements/popup_link.html',
+    'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
+    'label'       => 'Edit&nbsp;location',
+    'actionlabel' => 'Edit',
   );
 }
 
