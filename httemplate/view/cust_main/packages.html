@@ -156,8 +156,8 @@ my $show_location = $conf->exists('cust_pkg-always_show_location')
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
 my %conf_opt = (
   #for services.html and status.html
-  'cust_pkg-display_times'    => $conf->exists('cust_pkg-display_times'),
-
+  'cust_pkg-display_times'    => ($conf->exists('cust_pkg-display_times')
+                                 || $curuser->option('cust_pkg-display_times')), 
   #for status.html
   'cust_pkg-show_autosuspend' => $conf->exists('cust_pkg-show_autosuspend'),
   #for status.html pkg-balances

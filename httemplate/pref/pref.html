@@ -83,6 +83,10 @@ Development
 <% ntable("#cccccc",2) %>
 
   <TR>
+    <TH>Show customer package timestamps: </TH>
+    <TD><INPUT TYPE="checkbox" NAME="cust_pkg-display_times" VALUE="1" <% $curuser->option('cust_pkg-display_times') ? 'CHECKED' : '' %>></TD>
+  </TR>
+  <TR>
     <TH>Show internal package numbers: </TH>
     <TD><INPUT TYPE="checkbox" NAME="show_pkgnum" VALUE="1" <% $curuser->option('show_pkgnum') ? 'CHECKED' : '' %>></TD>
   </TR>

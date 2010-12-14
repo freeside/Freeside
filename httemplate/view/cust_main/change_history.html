@@ -94,6 +94,11 @@
            map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
                                 ? 'N/A'
                                 : $item->get($_);
+                  $value = time2str($cust_pkg_date_format, $value)
+                   if $item->table eq 'h_cust_pkg'
+                   && $cust_pkg_date_fields{$_}
+                   && $value;
+
                   $value = substr($value, 0, 77).'...' if length($value) > 80;
                   $value = encode_entities($value);
                   "<I>$_</I>:<B>$value</B>";
@@ -231,7 +236,7 @@ my %h_table_labelsub = (
 #svc_*
 # svc_acct
 #  radius_usergroup
-#  acct_snarf?  is this even used?
+#  acct_snarf?  is this even used? it is now, for communigate RPOP
 # svc_domain
 #  domain_record
 #  registrar
@@ -265,6 +270,16 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access deined"
   unless $curuser->access_right('View customer history');
+
+my $cust_pkg_date_format = '%b %o, %Y';
+$cust_pkg_date_format .= '%l:%M:%S%P'
+  if $conf->exists('cust_pkg-display_times')
+  || $curuser->option('cust_pkg-display_times');
+
+my %cust_pkg_date_fields = map { $_=>1 } qw(
+  start_date setup bill last_bill susp adjourn cancel expire contract_end
+  change_date
+);
 
 # find out the beginning of this customer history, if possible
 my $h_insert = qsearchs({
