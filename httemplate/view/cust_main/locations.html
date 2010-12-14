@@ -29,7 +29,7 @@ Default service location:
 % if ( $locationnum and !$loc->disabled ) {
 <% edit_location_link($locationnum) %>
 % }
-% if ( !$loc->disabled and !$active{$locationnum} ) {
+% if ( $locationnum and !$loc->disabled and !$active{$locationnum} ) {
 &nbsp;<% disable_location_link($locationnum) %>
 % }
 </SPAN></TH></TR>
@@ -50,7 +50,7 @@ my %locations = map { $_->locationnum => $_ } qsearch({
   });
 my @sections = keys %locations;
 $locations{''} = $cust_main;
-my %packages_in = map { $_ => [] } @sections;
+my %packages_in = map { $_ => [] } ('', @sections);
 
 my %active = (); # groups with non-canceled packages
 foreach my $cust_pkg ( @$all_packages ) {
