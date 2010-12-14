@@ -1,0 +1,27 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header', 'All Invoices') %>
+
+<%=
+  if ( @invoices ) {
+    $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
+            '<TR><TH BGCOLOR="#ff6666" COLSPAN=4>All Invoices</TH></TR>';
+    my $col1 = "ffffff";
+    my $col2 = "dddddd";
+    my $col = $col1;
+
+    foreach my $invoice ( @invoices ) {
+      my $td = qq!<TD BGCOLOR="#$col">!;
+      my $a=qq!<A HREF="${url}view_invoice;invnum=!. $invoice->{'invnum'}. '">';
+      $OUT .=
+        "<TR>$td${a}Invoice #". $invoice->{'invnum'}. "</A></TD>$td</TD>".
+        "$td$a". $invoice->{'date'}. "</A></TD>$td</TD>".
+        '</TR>';
+      $col = $col eq $col1 ? $col2 : $col1;
+    }
+    $OUT .= '</TABLE><BR>';
+  } else {
+    $OUT .= 'You have no invoices.<BR><BR>';
+  }
+%>
+
+<%= include('footer') %>

@@ -1,0 +1,38 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header', 'Create a ticket') %>
+
+<%=
+if ( $ticket_id ) {
+    $OUT .= "<B>Created ticket #$ticket_id</B>";
+} else {
+    $OUT .= qq! 
+    <div style='font-weight: bold; color: red; margin-bottom: 6px;'> $error </div>
+    Please fill in both the subject and message
+    <br><br>
+    <FORM ACTION="$selfurl" METHOD=POST>
+    <input type="hidden" name="session" value="$session_id">
+    <input type="hidden" name="action" value="tktcreate">
+    <table>
+	<tr>
+	    <td>Your e-mail address</td>
+	    <td>$requestor</td>
+	</tr>
+	<tr>
+	    <td>Subject</td>
+	    <td><input type="text" name="subject" size="53"></td>
+	</tr>
+	<tr>
+	    <td valign="top">Message</td>
+	    <td><textarea name="message" rows="10" cols="60"></textarea></td>
+	</tr>
+	<tr>
+	    <td></td>
+	    <td><input type="submit" value="Create"></td>
+	</tr>
+    </table>
+    </form> 
+    !;
+}
+%>
+
+<%= include('footer') %>

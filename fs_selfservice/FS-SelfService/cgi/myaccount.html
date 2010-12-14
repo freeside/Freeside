@@ -10,6 +10,10 @@ Hello <%= $name %>!<BR><BR>
     '';
 %>
 
+<%=
+  $OUT .= qq! <B><A HREF="${url}invoices">View All Invoices</A></B> &nbsp; &nbsp; !;
+%>
+
 <%= if ( $balance > 0 ) {
   if (scalar(grep $_, @hide_payment_fields)) {
     $OUT .= qq! <B><A HREF="${url}make_thirdparty_payment&payby_method=CC">Make a payment</A></B><BR><BR>!;

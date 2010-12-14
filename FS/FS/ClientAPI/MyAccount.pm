@@ -879,6 +879,7 @@ sub list_invoices {
   return  { 'error'       => '',
             'invoices'    =>  [ map { { 'invnum' => $_->invnum,
                                         '_date'  => $_->_date,
+					'date'   => time2str("%b %o, %Y", $_->_date),
                                       }
                                     } @cust_bill
                               ]
