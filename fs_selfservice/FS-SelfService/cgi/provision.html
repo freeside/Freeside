@@ -1,6 +1,11 @@
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header', 'Setup my services') %>
+<%= $url = "$selfurl?session=$session_id;action="; 
+    $heading1 = "Setup my services";
+    $heading1 = "Package list" if $wholesale_view;
+    $provision_list = "provision_list";
+    $provision_list = "ws_list" if $wholesale_view;
+    ''; %>
+<%= include('header', $heading1) %>
 
-<%= include('provision_list') %>
+<%= include($provision_list) %>
 
 <%= include('footer') %>

@@ -1,0 +1,72 @@
+<%=
+
+sub ws_pkglink {
+    my($cat,$count,$link) = (shift,shift,shift);
+    return "0 $cat <BR>" unless $count->{$cat};
+    return qq! <A HREF="${link};filter=$cat">$count->{$cat}</A> $cat <BR> !;
+}
+
+sub ws_pkgstatus {
+    my $pkg = shift;
+    $status = "unbilled";
+    $status = "active" if ( $pkg->{setup} && !$pkg->{cancel}
+	    && !$pkg->{susp} );
+    $status = "suspended" if ( $pkg->{susp} && !$pkg->{cancel} );
+    $status = "cancelled" if $pkg->{cancel};
+    $status;
+}
+
+sub pdate {
+    my($field,$date_format) = (shift,shift);
+    return "<TD>".Date::Format::time2str($date_format,$field)."</TD>" 
+	if $field > 0;
+    '<TD></TD>';
+}
+
+if ( $pkgpart ) {
+    $OUT .= qq! <TABLE BORDER="1"><TR><TH>Package</TH><TH>Status</TH> !;
+    $OUT .= "<TH>Setup</TH><TH>Last Bill</TH><TH>Next Bill</TH><TH>Adjourn</TH>";
+    $OUT .= "<TH>Suspend</TH><TH>Expire</TH><TH>Contract End</TH>";
+    $OUT .= "<TH>Cancel</TH></TR>";
+    foreach my $pkg ( @cust_pkg ) {
+	my $part_pkg = $pkg->{part_pkg}[0];
+	$status = ws_pkgstatus($pkg);
+	if($pkg->{pkgpart} == $pkgpart && ($filter eq $status || !$filter) ) {
+	    $OUT .= "<TR><TD>$part_pkg->{pkg}</TD><TD>$status</TD>"; 
+	    $OUT .= pdate($pkg->{setup},$date_format);
+	    $OUT .= pdate($pkg->{last_bill},$date_format);
+	    $OUT .= pdate($pkg->{bill},$date_format);
+	    $OUT .= pdate($pkg->{adjourn},$date_format);
+	    $OUT .= pdate($pkg->{susp},$date_format);
+	    $OUT .= pdate($pkg->{expire},$date_format);
+	    $OUT .= pdate($pkg->{contract_end},$date_format);
+	    $OUT .= pdate($pkg->{cancel},$date_format);
+	    $OUT .= "</TR>";
+	}
+    }
+    $OUT .= "</TABLE>";
+}
+else {
+    my %pkgparts;
+    foreach my $pkg ( @cust_pkg ) {
+	my $status = ws_pkgstatus($pkg);
+	$pkgparts{$pkg->{pkgpart}}{$status}++;
+	my $part_pkg = $pkg->{part_pkg}[0];
+	$pkgparts{$pkg->{pkgpart}}{pkg} = $part_pkg->{pkg};
+    }
+
+    $OUT .= qq! <TABLE BORDER="1"><TR><TH>Package</TH><TH>Status</TH></TR> !;
+    my($pkgpart,$counts);
+    while(($pkgpart,$count) = each %pkgparts){
+       my $link = "${url}provision;pkgpart=$pkgpart";
+       $OUT .= qq! <TR><TD><A HREF="$link">$count->{pkg}</A></TD><TD> !;
+       $OUT .= ws_pkglink("unbilled",$count,$link);
+       $OUT .= ws_pkglink("active",$count,$link);
+       $OUT .= ws_pkglink("suspended",$count,$link);
+       $OUT .= ws_pkglink("cancelled",$count,$link);
+       $OUT .= "</TD></TR>";
+    }
+    $OUT .= "</TABLE>";
+}
+
+%>

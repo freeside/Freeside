@@ -2270,6 +2270,21 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice_server-login_svcpart',
+    'section'     => 'self-service',
+    'description' => 'If specified, only allow the specified svcparts to login to self-service.',
+    'type'        => 'select-part_svc',
+    'multiple'    => 1,
+  },
+  
+  {
+    'key'         => 'selfservice_server-view-wholesale',
+    'section'     => 'self-service',
+    'description' => 'If enabled, use a wholesale package view in the self-service.',
+    'type'        => 'checkbox',
+  },
+  
+  {
     'key'         => 'selfservice-agent_signup',
     'section'     => 'self-service',
     'description' => 'Allow agent signup via self-service.',

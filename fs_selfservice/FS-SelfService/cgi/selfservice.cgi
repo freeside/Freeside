@@ -615,6 +615,8 @@ sub logout {
 sub provision {
   my $result = list_pkgs( 'session_id' => $session_id );
   die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
+  $result->{'pkgpart'} = $cgi->param('pkgpart') if $cgi->param('pkgpart');
+  $result->{'filter'} = $cgi->param('filter') if $cgi->param('filter');
   $result;
 }
 

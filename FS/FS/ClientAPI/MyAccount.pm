@@ -171,6 +171,13 @@ sub login {
                            );
     return { error => 'User not found.' } unless $svc_acct;
 
+    if($conf->exists('selfservice_server-login_svcpart')) {
+	my @svcpart = $conf->config('selfservice_server-login_svcpart');
+	my $svcpart = $svc_acct->cust_svc->svcpart;
+	return { error => 'Invalid user.' } 
+	    unless grep($_ eq $svcpart, @svcpart);
+    }
+
     return { error => 'Incorrect password.' }
       unless $svc_acct->check_password($p->{'password'});
 
@@ -915,9 +922,42 @@ sub list_pkgs {
   my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
-  #return { 'cust_pkg' => [ map { $_->hashref } $cust_main->ncancelled_pkgs ] };
-
   my $conf = new FS::Conf;
+  
+# the duplication below is necessary:
+# 1. to maintain the current buggy behaviour wrt the cust_pkg and part_pkg
+# hashes overwriting each other (setup and no_auto fields). Fixing that is a
+# non-backwards-compatible change breaking the software of anyone using the API
+# instead of the stock selfservice
+# 2. to return cancelled packages as well - for wholesale and non-wholesale
+  if( $conf->exists('selfservice_server-view-wholesale') ) {
+    return { 'svcnum'   => $session->{'svcnum'},
+	    'custnum'  => $custnum,
+	    'cust_pkg' => [ map {
+                          { $_->hash,
+                            part_pkg => [ map $_->hashref, $_->part_pkg ],
+                            part_svc =>
+                              [ map $_->hashref, $_->available_part_svc ],
+                            cust_svc => 
+                              [ map { my $ref = { $_->hash,
+                                                  label => [ $_->label ],
+                                                };
+                                      $ref->{_password} = $_->svc_x->_password
+                                        if $context eq 'agent'
+                                        && $conf->exists('agent-showpasswords')
+                                        && $_->part_svc->svcdb eq 'svc_acct';
+                                      $ref;
+                                    } $_->cust_svc
+                              ],
+                          };
+                        } $cust_main->cust_pkg
+                  ],
+    'small_custview' =>
+      small_custview( $cust_main, $conf->config('countrydefault') ),
+    'wholesale_view' => 1,
+    'date_format' => $conf->config('date_format') || '%m/%d/%Y',
+      };
+  }
 
   { 'svcnum'   => $session->{'svcnum'},
     'custnum'  => $custnum,
