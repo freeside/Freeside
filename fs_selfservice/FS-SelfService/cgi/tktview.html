@@ -1,0 +1,31 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header', "View ticket #$ticket_id") %>
+
+<%=
+if($error) {
+    $OUT .= qq! <div style="font-weight: bold; color: red; font-size: 110%">Error: $error</div> !;
+}
+elsif(@transactions) {
+    $OUT .= qq! <TABLE border="1">!;
+    foreach my $txn ( @transactions ) {
+	next if $txn->{content} eq 'This transaction appears to have no content';
+	$OUT .= "<TR><TD><B>$txn->{created} &nbsp; $txn->{description}</B>";
+	$OUT .= "<PRE>$txn->{content}</PRE></TD></TR>";
+    }
+    $OUT .= "</TABLE>";
+}
+else {
+    $OUT .= "No transactions on this ticket";
+}
+%>
+<BR><BR><BR>
+<FORM ACTION="<%=$selfurl%>" METHOD=POST>
+    <input type="hidden" name="session" value="<%=$session_id%>">
+    <input type="hidden" name="ticket_id" value="<%=$ticket_id%>">
+    <input type="hidden" name="action" value="tktview">
+    Add reply to ticket:
+    <BR><textarea name="reply" cols="60" rows="10"></textarea>
+    <BR><input type="submit" value="Reply">
+</form> 
+
+<%= include('footer') %>

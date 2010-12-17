@@ -94,8 +94,9 @@ Hello <%= $name %>!<BR><BR>
 
     foreach my $ticket ( @tickets ) {
       my $td = qq!<TD BGCOLOR="#$col">!;
+      my $link = qq!<A HREF="${url}tktview;ticket_id=$ticket->{id}">!;
       $OUT .=
-        "<TR>$td". $ticket->{'id'}. "</TD>".
+        "<TR>$td $link". $ticket->{'id'}. "</A></TD>".
         $td. $ticket->{'subject'}. "</TD>".
         $td. ($ticket->{'content'} || $ticket->{'priority'}). "</TD>".
         $td. $ticket->{'queue'}. "</TD>".

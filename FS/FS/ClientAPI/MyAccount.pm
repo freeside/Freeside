@@ -1789,6 +1789,59 @@ sub create_ticket {
 
 }
 
+sub get_ticket {
+  my $p = shift;
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  warn "$me get_ticket: initializing ticket system\n" if $DEBUG;
+  FS::TicketSystem->init();
+
+  if(length($p->{'reply'})) {
+      my @err_or_res = FS::TicketSystem->correspond_ticket(
+	'', #create RT session based on FS CurrentUser (fs_selfservice)
+	'ticket_id' => $p->{'ticket_id'},
+	'content' => $p->{'reply'},
+      );
+    
+    return { 'error' => 'unable to reply to ticket' } 
+	unless ( $err_or_res[0] != 0 && defined $err_or_res[2] );
+  }
+
+  warn "$me get_ticket: getting ticket\n" if $DEBUG;
+  my $err_or_ticket = FS::TicketSystem->get_ticket(
+    '', #create RT session based on FS CurrentUser (fs_selfservice)
+    'ticket_id' => $p->{'ticket_id'},
+  );
+
+  if ( ref($err_or_ticket) ) {
+
+# since we're bypassing the RT security/permissions model by always using
+# fs_selfservice as the RT user (as opposed to a requestor, which we
+# can't do since we want all tickets linked to a cust), we check below whether
+# the requested ticket was actually linked to this customer
+    my @custs = @{$err_or_ticket->{'custs'}};
+    my @txns = @{$err_or_ticket->{'txns'}};
+
+    return { 'error' => 'no customer' } unless ( $custnum && scalar(@custs) );
+
+    return { 'error' => 'invalid ticket requested' } 
+	unless grep($_ eq $custnum, @custs);
+
+    warn "$me get_ticket: sucessful: \n"
+      if $DEBUG;
+    return { 'error'     => '',
+             'transactions' => \@txns,
+	     'ticket_id' => $p->{'ticket_id'},
+           };
+  } else {
+    warn "$me create_ticket: unsucessful: $err_or_ticket\n"
+      if $DEBUG;
+    return { 'error' => $err_or_ticket };
+  }
+}
+
+
 #--
 
 sub _custoragent_session_custnum {

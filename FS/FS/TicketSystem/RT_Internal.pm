@@ -215,6 +215,91 @@ sub create_ticket {
   $Ticket;
 }
 
+=item get_ticket SESSION_HASHREF, OPTION => VALUE ...
+
+Class method. Retrieves a ticket. If there is an error, returns the scalar
+error. Otherwise, currently returns a slightly tricky data structure containing
+a list of the linked customers and each transaction's content, description, and
+create time.
+
+Accepts the following options:
+
+=over 4
+
+=item ticket_id 
+
+The ticket id
+
+=back
+
+=cut
+
+sub get_ticket {
+  my($self, $session, %param) = @_;
+
+  $session = $self->session($session);
+
+  my $Ticket = RT::Ticket->new($session->{'CurrentUser'});
+  my $ticketid = $Ticket->Load( $param{'ticket_id'} );
+  return 'Could not load ticket' unless $ticketid;
+
+  my @custs = ();
+  foreach my $link ( @{ $Ticket->Customers->ItemsArrayRef } ) {
+    my $cust = $link->Target;
+    push @custs, $1 if $cust =~ /\/(\d+)$/;
+  }
+
+  my @txns = ();
+  my $transactions = $Ticket->Transactions;
+  while ( my $transaction = $transactions->Next ) {
+    my $t = { created => $transaction->Created,
+	content => $transaction->Content,
+	description => $transaction->Description,
+    };
+    push @txns, $t;
+  }
+
+  { txns => [ @txns ],
+    custs => [ @custs ],
+  };
+}
+
+
+=item correspond_ticket SESSION_HASHREF, OPTION => VALUE ...
+
+Class method. Correspond on a ticket. If there is an error, returns the scalar
+error. Otherwise, returns the transaction id, error message, and
+RT::Transaction object.
+
+Accepts the following options:
+
+=over 4
+
+=item ticket_id 
+
+The ticket id
+
+=item content
+
+Correspondence content
+
+=back
+
+=cut
+
+sub correspond_ticket {
+  my($self, $session, %param) = @_;
+
+  $session = $self->session($session);
+
+  my $Ticket = RT::Ticket->new($session->{'CurrentUser'});
+  my $ticketid = $Ticket->Load( $param{'ticket_id'} );
+  return 'Could not load ticket' unless $ticketid;
+  return 'No content' unless $param{'content'};
+
+  $Ticket->Correspond( Content => $param{'content'} );
+}
+
 #shameless false laziness w/RT::Interface::Web::AttemptExternalAuth
 # to get logged into RT from afar
 sub _web_external_auth {
