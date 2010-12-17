@@ -67,6 +67,37 @@ else {
        $OUT .= "</TD></TR>";
     }
     $OUT .= "</TABLE>";
+
+    if ( @login_svcpart ) {
+	$OUT .= "<BR><BR><BR><B>Self-service accounts</B><BR>";
+	foreach my $pkg ( @cust_pkg ) {
+	    @cust_svc = @{$pkg->{cust_svc}};
+	    @part_svc = @{$pkg->{part_svc}};
+
+	    foreach my $cust_svc ( @cust_svc ) {
+		$svcpart = $cust_svc->{'svcpart'};
+		next unless grep($_ eq $svcpart, @login_svcpart);
+		@label = @{$cust_svc->{'label'}};
+		$OUT .= $label[1] . " &nbsp; ";
+		unless ( $cust_svc->{'svcnum'} == $svcnum ) {
+		    $OUT .= qq!<A HREF="javascript:areyousure('${url}delete_svc;svcnum=$cust_svc->{svcnum}', 'This will permanently delete the $label[1] $label[0].  Are you sure?')">!.
+		  'Delete</A>';
+		}
+		$OUT .= "<BR>";
+	    }
+
+	    foreach my $part_svc ( @part_svc ) {
+		$svcpart = $part_svc->{'svcpart'};
+		next unless grep($_ eq $svcpart, @login_svcpart);
+		$link = "${url}provision_svc;pkgnum=$pkg->{'pkgnum'};".
+		    "svcpart=$part_svc->{'svcpart'}";
+		$OUT .= qq!<A HREF="$link">!. 'Setup '. $part_svc->{'svc'}. 
+		    '</A> ('. $part_svc->{'num_avail'}. ' available)' 
+		    if $part_svc->{'svcdb'} eq 'svc_acct';
+	    }
+
+	} # foreach cust_pkg
+    } # login_svcpart
 }
 
 %>

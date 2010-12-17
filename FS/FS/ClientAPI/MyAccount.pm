@@ -955,6 +955,7 @@ sub list_pkgs {
     'small_custview' =>
       small_custview( $cust_main, $conf->config('countrydefault') ),
     'wholesale_view' => 1,
+    'login_svcpart' => [ $conf->config('selfservice_server-login_svcpart') ],
     'date_format' => $conf->config('date_format') || '%m/%d/%Y',
       };
   }

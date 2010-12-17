@@ -4,6 +4,14 @@
     $provision_list = "provision_list";
     $provision_list = "ws_list" if $wholesale_view;
     ''; %>
+
+<SCRIPT>
+function areyousure(href, message) {
+    if (confirm(message) == true)
+        window.location.href = href;
+}
+</SCRIPT>
+
 <%= include('header', $heading1) %>
 
 <%= include($provision_list) %>
