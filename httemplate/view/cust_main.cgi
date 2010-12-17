@@ -93,14 +93,28 @@ function areyousure(href, message) {
 
 <BR><BR>
 
+% my $br = 0;
 % if (    $curuser->access_right('Billing event reports') 
 %      || $curuser->access_right('View customer billing events')
 %    ) {
-
+% $br=1;
   <A HREF="<% $p %>search/cust_event.html?custnum=<% $custnum %>">View billing events for this customer</A>
-  <BR><BR>
-
 % }
+
+% if ( $conf->config('cust_main-external_links') ) {
+    <% $br++ ? ' | ' : '' %>
+%   my @links = split(/\n/, $conf->config('menu-prepend_links'));
+%   foreach my $link (@links) {
+%     $link =~ /^\s*(\S+)\s+(.*?)(\s*\(([^\)]*)\))?$/ or next;
+%     my($url, $label, $alt) = ($1, $2, $4);
+      <A HREF="<% $url.$custnum %>" ALT="<% $alt |h %>"><% $label |h %></A>
+%   }
+% }
+
+% if ( $br ) {
+  <BR><BR>
+% }
+</%doc>
 
 %my $signupurl = $conf->config('signupurl');
 %if ( $signupurl ) {

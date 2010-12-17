@@ -563,9 +563,19 @@ $help_menu{"About RT v$RT::VERSION"} = [ 'http://www.bestpractical.com/rt', 'Req
   if $conf->config('ticket_system') eq 'RT_Internal';
 
 
-tie my %menu, 'Tie::IxHash',
-  'Billing Main'   => [ $fsurl, 'Billing start page', ],
-;
+tie my %menu, 'Tie::IxHash';
+
+if ( $conf->config('menu-prepend_links')) {
+  my @links = split(/\n/, $conf->config('menu-prepend_links'));
+  foreach my $link (@links) {
+    $link =~ /^\s*(\S+)\s+(.*?)(\s*\(([^\)]*)\))?$/ or next;
+    my($url, $label, $alt) = ($1, $2, $4);
+    $menu{$label} = [ $url, $alt ];
+  }
+}
+
+$menu{'Billing Main'} = [ $fsurl, 'Billing start page', ];
+
 if ( $conf->config('ticket_system') ) {
   $menu{'Ticketing Main'} =
     [ 

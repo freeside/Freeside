@@ -4132,6 +4132,20 @@ and customer address. Include units.',
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'menu-prepend_links',
+    'section'     => 'UI',
+    'description' => 'Links to prepend to the main menu, one per line, with format "URL Link Label (optional ALT popup)".',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'cust_main-external_links',
+    'section'     => 'UI',
+    'description' => 'External links available in customer view, one per line, with format "URL Link Label (optional ALT popup)".  The URL will have custnum appended.',
+    'type'        => 'textarea',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
