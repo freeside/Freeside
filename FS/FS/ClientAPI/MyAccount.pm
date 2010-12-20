@@ -32,6 +32,9 @@ use FS::payby;
 use FS::acct_rt_transaction;
 use HTML::Entities;
 use FS::TicketSystem;
+use Text::CSV_XS;
+use IO::Scalar;
+use Spreadsheet::WriteExcel;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
@@ -1790,6 +1793,85 @@ sub create_ticket {
 
 }
 
+sub did_report {
+  my $p = shift;
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+ 
+  return { error => 'requested format not implemented' } 
+    unless ($p->{'format'} eq 'csv' || $p->{'format'} eq 'xls');
+
+  my $conf = new FS::Conf;
+  my $age_threshold = 0;
+  $age_threshold = time() - $conf->config('selfservice-recent-did-age')
+    if ($p->{'recentonly'} && $conf->exists('selfservice-recent-did-age'));
+
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
+    or return { 'error' => "unknown custnum $custnum" };
+
+# does it make more sense to just run one sql query for this instead of all the
+# insanity below? would increase performance greately for large data sets?
+  my @svc_phone = ();
+  foreach my $cust_pkg ( $cust_main->ncancelled_pkgs ) {
+	my @part_svc = $cust_pkg->part_svc;
+	foreach my $part_svc ( @part_svc ) {
+	    if($part_svc->svcdb eq 'svc_phone'){
+		my @cust_pkg_svc = @{$part_svc->cust_pkg_svc};
+		foreach my $cust_pkg_svc ( @cust_pkg_svc ) {
+		    push @svc_phone, $cust_pkg_svc->svc_x
+			if $cust_pkg_svc->date_inserted >= $age_threshold;
+		}
+	    }
+	}
+  }
+
+  my $csv;
+  my $xls;
+  my($xls_r,$xls_c) = (0,0);
+  my $xls_workbook;
+  my $content = '';
+  my @fields = qw( countrycode phonenum pin sip_password phone_name );
+  if($p->{'format'} eq 'csv') {
+    $csv = new Text::CSV_XS { 'always_quote' => 1,
+				 'eol'		=> "\n",
+				};
+    return { 'error' => 'Unable to create CSV' } unless $csv->combine(@fields);
+    $content .= $csv->string;
+  }
+  elsif($p->{'format'} eq 'xls') {
+    my $XLS1 = new IO::Scalar \$content;
+    $xls_workbook = Spreadsheet::WriteExcel->new($XLS1) 
+	or return { 'error' => "Error opening .xls file: $!" };
+    $xls = $xls_workbook->add_worksheet('DIDs');
+    foreach ( @fields ) {
+	$xls->write(0,$xls_c++,$_);
+    }
+    $xls_r++;
+  }
+
+  foreach my $svc_phone ( @svc_phone ) {
+    my @cols = map { $svc_phone->$_ } @fields;
+    if($p->{'format'} eq 'csv') {
+	return { 'error' => 'Unable to create CSV' } 
+	    unless $csv->combine(@cols);
+	$content .= $csv->string;
+    }
+    elsif($p->{'format'} eq 'xls') {
+	$xls_c = 0;
+	foreach ( @cols ) {
+	    $xls->write($xls_r,$xls_c++,$_);
+	}
+	$xls_r++;
+    }
+  }
+
+  $xls_workbook->close() if $p->{'format'} eq 'xls';
+  
+  { content => $content, format => $p->{'format'}, };
+}
+
 sub get_ticket {
   my $p = shift;
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
@@ -1799,6 +1881,8 @@ sub get_ticket {
   FS::TicketSystem->init();
 
   if(length($p->{'reply'})) {
+# currently this allows anyone to correspond on any ticket as fs_selfservice
+# probably bad...
       my @err_or_res = FS::TicketSystem->correspond_ticket(
 	'', #create RT session based on FS CurrentUser (fs_selfservice)
 	'ticket_id' => $p->{'ticket_id'},

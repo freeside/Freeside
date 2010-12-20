@@ -16,7 +16,7 @@ use FS::SelfService qw(
   part_svc_info provision_acct provision_external
   unprovision_svc change_pkg suspend_pkg domainselector
   list_svcs list_svc_usage list_cdr_usage list_support_usage
-  myaccount_passwd list_invoices create_ticket get_ticket
+  myaccount_passwd list_invoices create_ticket get_ticket did_report
   mason_comp
 );
 
@@ -73,7 +73,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|tktcreate|tktview|invoices|view_invoice|make_payment|make_ach_payment|make_term_payment|make_thirdparty_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_cdr_details|view_support_details|change_password|process_change_password|customer_suspend_pkg|process_suspend_pkg)$/
+    /^(myaccount|tktcreate|tktview|didreport|invoices|view_invoice|make_payment|make_ach_payment|make_term_payment|make_thirdparty_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_cdr_details|view_support_details|change_password|process_change_password|customer_suspend_pkg|process_suspend_pkg)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -83,9 +83,9 @@ $FS::SelfService::DEBUG = $DEBUG;
 my $result = eval "&$action();";
 die $@ if $@;
 
-if ( $result->{error} eq "Can't resume session"
-  || $result->{error} eq "Expired session" ) { #ick
-
+#fixed "Use of uninitialized value in string eq"; very annoying when developing
+if ( $result->{error} && ($result->{error} eq "Can't resume session"
+			    || $result->{error} eq "Expired session") ) {
   my $login_info = login_info();
   do_template('login', $login_info);
   exit;
@@ -619,6 +619,15 @@ sub logout {
   FS::SelfService::logout( 'session_id' => $session_id );
 }
 
+sub didreport {
+  my $result = did_report( 'session_id' => $session_id, 
+		'format' => $cgi->param('type'),
+		'recentonly' => $cgi->param('recentonly'),
+	    );
+  die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
+  $result;
+}
+
 sub provision {
   my $result = list_pkgs( 'session_id' => $session_id );
   die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
@@ -778,10 +787,31 @@ sub do_template {
     or die $Text::Template::ERROR;
 
   #warn "filling in $template with $fill_in\n";
-  print $cgi->header( '-expires' => 'now' ),
-        $template->fill_in( PACKAGE => 'FS::SelfService::_selfservicecgi',
+
+    if($result && ref($result) && $result->{'format'} && $result->{'content'}
+	&& $result->{'format'} eq 'csv') {
+	print $cgi->header('-expires' => 'now',
+			'-Content-Type' => 'text/csv',
+			'-Content-Disposition' => "attachment;filename=output.csv",
+			),
+	    $result->{'content'};
+    }
+    elsif($result && ref($result) && $result->{'format'} && $result->{'content'}
+	&& $result->{'format'} eq 'xls') {
+	print $cgi->header('-expires' => 'now',
+			'-Content-Type' => 'application/vnd.ms-excel',
+			'-Content-Disposition' => "attachment;filename=output.xls",
+			'-Content-Length' => length($result->{'content'}),
+			),
+	    $result->{'content'};
+    }
+    else {
+	print $cgi->header( '-expires' => 'now' ),
+	    $template->fill_in( PACKAGE => 'FS::SelfService::_selfservicecgi',
                             HASH    => $fill_in
                           );
+    }
+
 }
 
 #*FS::SelfService::_selfservicecgi::include = \&Text::Template::fill_in_file;

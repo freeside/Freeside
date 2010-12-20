@@ -55,6 +55,8 @@ else {
 	$pkgparts{$pkg->{pkgpart}}{pkg} = $part_pkg->{pkg};
     }
 
+    $OUT .= "<TABLE><TR><TD>";
+
     $OUT .= qq! <TABLE BORDER="1"><TR><TH>Package</TH><TH>Status</TH></TR> !;
     my($pkgpart,$counts);
     while(($pkgpart,$count) = each %pkgparts){
@@ -68,8 +70,10 @@ else {
     }
     $OUT .= "</TABLE>";
 
+    $OUT .= qq!</TD><TD VALIGN="TOP" STYLE="padding-left: 11px;">!;
+
     if ( @login_svcpart ) {
-	$OUT .= "<BR><BR><BR><B>Self-service accounts</B><BR>";
+	$OUT .= "<B>Self-service accounts</B><BR>";
 	foreach my $pkg ( @cust_pkg ) {
 	    @cust_svc = @{$pkg->{cust_svc}};
 	    @part_svc = @{$pkg->{part_svc}};
@@ -98,6 +102,25 @@ else {
 
 	} # foreach cust_pkg
     } # login_svcpart
-}
 
+    my $hasPhone = 0;
+    foreach my $pkg ( @cust_pkg ) {
+	@cust_svc = @{$pkg->{cust_svc}};
+	foreach my $cust_svc ( @cust_svc ) {
+	    @label = @{$cust_svc->{'label'}};
+	    $hasPhone = 1 if $label[2] eq 'svc_phone';
+	}
+    }
+    if ( $hasPhone ) {
+	$link = "${url}didreport;type=";
+	$OUT .= "<BR><BR><BR>Download currently allocated DIDs:<BR>";
+	$OUT .= qq! &nbsp; <A HREF="${link}csv">CSV</A> | 
+	    <A HREF="${link}xls">Excel</A>!;
+	$OUT .= "<BR><BR>Download recently allocated DIDs:<BR>";
+	$OUT .= qq! &nbsp; <A HREF="${link}csv;recentonly=1">CSV</A> | 
+	    <A HREF="${link}xls;recentonly=1">Excel</A>!;
+    }
+    
+    $OUT .= "</TD></TR></TABLE>";
+}
 %>

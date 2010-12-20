@@ -2278,6 +2278,13 @@ and customer address. Include units.',
   },
   
   {
+    'key'         => 'selfservice-recent-did-age',
+    'section'     => 'self-service',
+    'description' => 'If specified, defines "recent", in number of seconds, for "Download recently allocated DIDs" in self-service.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'selfservice_server-view-wholesale',
     'section'     => 'self-service',
     'description' => 'If enabled, use a wholesale package view in the self-service.',
