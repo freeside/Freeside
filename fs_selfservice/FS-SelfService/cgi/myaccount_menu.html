@@ -28,7 +28,7 @@ if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eve
   #XXXFIXME still a bit sloppy for multi-gateway of differing namespace
   my $i = 0;
   while($i < scalar(@cust_paybys)) { last if $cust_paybys[$i] =~ /^CARD/; $i++ }
-  if ( $cust_paybys[$i] =~ /^CARD/ ) {
+  if ( $cust_paybys[$i] && $cust_paybys[$i] =~ /^CARD/ ) {
     push @menu, { title  => 'Recharge my account with a credit card',
                   url    => $hide_payment_fields[$i]
                               ? 'make_thirdparty_payment&payby_method=CC'
@@ -39,7 +39,7 @@ if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eve
 
   $i = 0;
   while($i < scalar(@cust_paybys)) { last if $cust_paybys[$i] =~ /^CHEK/; $i++ }
-  if ( $cust_paybys[$i] =~ /^CHEK/ ) {
+  if ( $cust_paybys[$i] && $cust_paybys[$i] =~ /^CHEK/ ) {
     push @menu, { title  => 'Recharge my account with a check',
                   url    => $hide_payment_fields[$i]
                               ? 'make_thirdparty_payment&payby_method=ECHECK'

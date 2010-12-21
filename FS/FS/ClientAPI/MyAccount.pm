@@ -1548,6 +1548,20 @@ sub cancel_pkg {
 
 }
 
+sub provision_phone {
+ my $p = shift;
+ my @bulkdid = @{$p->{'bulkdid'}};
+ unless (scalar(@bulkdid)) {
+    return _provision( 'FS::svc_phone',
+		  [qw(phonenum countrycode)],
+		  [qw(phonenum countrycode)],
+		  $p,
+		  @_
+		);
+ }
+#XXX: finish bulk orders
+}
+
 sub provision_acct {
   my $p = shift;
   warn "provision_acct called\n"

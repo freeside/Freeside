@@ -58,6 +58,25 @@
       //run the callback
       if ( callback != null ) 
         callback();
+
+	var phonenum_sel = what.form.<% $opt{'prefix'} %>phonenum;
+	var bulkdid = document.getElementById('bulkdid');
+	if ( bulkdid != null ) {
+	    var numCheckboxes = Math.min(phonenum_sel.options.length-1,<% $opt{'bulknum'} %>);
+	    var i;
+	    for(i = 0; i < numCheckboxes; i++){
+		document.getElementById('bulkdid_'+i).style.display = 'block';
+		var tn = phonenum_sel.options[i+1].value;
+		document.getElementById('checkbox_bulkdid_'+i).value = tn;
+		document.getElementById('label_bulkdid_'+i).innerHTML = tn;
+	    }
+	    for(i = numCheckboxes; i < <% $opt{'bulknum'} %>; i++){
+		document.getElementById('bulkdid_'+i).style.display = 'none';
+		document.getElementById('checkbox_bulkdid_'+i).value = '';
+		document.getElementById('label_bulkdid_'+i).innerHTML = '';
+	    }
+	}
+
     }
 
     // go get the new phonenums

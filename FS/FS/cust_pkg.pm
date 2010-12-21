@@ -1746,6 +1746,13 @@ sub available_part_svc {
           my $part_svc = $_->part_svc;
           $part_svc->{'Hash'}{'num_avail'} = #evil encapsulation-breaking
             $_->quantity - $self->num_cust_svc($_->svcpart);
+
+	  # more evil encapsulation breakage
+	  if($part_svc->{'Hash'}{'num_avail'} > 0) {
+	    my @exports = $part_svc->part_export_did;
+	    $part_svc->{'Hash'}{'can_get_dids'} = scalar(@exports);
+	  }
+
           $part_svc;
         }
       $self->part_pkg->pkg_svc;

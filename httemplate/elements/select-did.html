@@ -44,6 +44,7 @@ Example:
           <% include('/elements/select-phonenum.html',
                        'svcpart' => $svcpart,
                        'empty'   => 'Select phone number',
+		       'bulknum' => $bulknum,
                     )
           %>
         </TD>
@@ -57,6 +58,19 @@ Example:
       </TR>
 
     </TABLE>
+% 	if ( $bulknum ) {
+	    <div id="bulkdid" style="padding-top: 11px">
+%		my $i;
+%		for($i=0; $i < $bulknum; $i++) {
+		    <div id="bulkdid_<%$i%>" style="display: none">
+			<input type="checkbox" id="checkbox_bulkdid_<%$i%>"
+			    name="bulkdid" value="">
+			<label for="checkbox_bulkdid_<%$i%>" 
+			    id="label_bulkdid_<%$i%>"></label>
+		    </div>
+%		}
+	    </div>
+%	}
 
 % } else {
 
@@ -85,6 +99,8 @@ if ( scalar(@exports) > 1 ) {
 }
 
 my $use_selector = scalar(@exports) ? 1 : 0;
+
+my $bulknum = $opt{'bulknum'} || 0;
 
 #my $field = $opt{'field'} || 'phonenum';
 

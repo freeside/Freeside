@@ -19,19 +19,20 @@ sub ws_pkgstatus {
 sub pdate {
     my($field,$date_format) = (shift,shift);
     return "<TD>".Date::Format::time2str($date_format,$field)."</TD>" 
-	if $field > 0;
+	if $field && $field > 0;
     '<TD></TD>';
 }
 
 if ( $pkgpart ) {
-    $OUT .= qq! <TABLE BORDER="1"><TR><TH>Package</TH><TH>Status</TH> !;
+    $OUT .= qq! <TABLE BORDER="1" style="empty-cells: show"><TR><TH>Package</TH><TH>Status</TH> !;
     $OUT .= "<TH>Setup</TH><TH>Last Bill</TH><TH>Next Bill</TH><TH>Adjourn</TH>";
     $OUT .= "<TH>Suspend</TH><TH>Expire</TH><TH>Contract End</TH>";
-    $OUT .= "<TH>Cancel</TH></TR>";
+    $OUT .= "<TH>Cancel</TH><TH>Services</TH></TR>";
     foreach my $pkg ( @cust_pkg ) {
 	my $part_pkg = $pkg->{part_pkg}[0];
 	$status = ws_pkgstatus($pkg);
-	if($pkg->{pkgpart} == $pkgpart && ($filter eq $status || !$filter) ) {
+	if($pkg->{pkgpart} == $pkgpart && 
+		( ($filter && $filter eq $status) || !$filter) ) {
 	    $OUT .= "<TR><TD>$part_pkg->{pkg}</TD><TD>$status</TD>"; 
 	    $OUT .= pdate($pkg->{setup},$date_format);
 	    $OUT .= pdate($pkg->{last_bill},$date_format);
@@ -41,7 +42,24 @@ if ( $pkgpart ) {
 	    $OUT .= pdate($pkg->{expire},$date_format);
 	    $OUT .= pdate($pkg->{contract_end},$date_format);
 	    $OUT .= pdate($pkg->{cancel},$date_format);
-	    $OUT .= "</TR>";
+
+	    $OUT .= "<TD style='font-size: 85%'>";
+	    my @cust_svc = @{$pkg->{cust_svc}};
+	    foreach my $cust_svc ( @cust_svc ) {
+		my @label = @{$cust_svc->{'label'}};
+		$OUT .= qq!$label[0]: $label[1] <BR><BR>!;
+	    }
+	    my @part_svc = @{$pkg->{part_svc}};
+	    foreach my $part_svc ( @part_svc ) {
+		my $link = qq!<A HREF="${url}provision_svc;!
+		    . qq!pkgnum=$pkg->{'pkgnum'};svcpart=$part_svc->{'svcpart'}!
+		    . qq!;numavail=$part_svc->{'num_avail'}">Setup !
+		    . qq!$part_svc->{'svc'}</A> ($part_svc->{'num_avail'}!
+		    . qq! available)<BR><BR>!;
+		$OUT .= $link if $part_svc->{'can_get_dids'};
+	    }
+
+	    $OUT .= "</TD></TR>";
 	}
     }
     $OUT .= "</TABLE>";

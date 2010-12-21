@@ -1,0 +1,17 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header', 'Setup phone number') %>
+
+<FORM name="OneTrueForm" action="<%= $url %>" METHOD="POST">
+<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
+<INPUT TYPE="hidden" NAME="action" VALUE="process_svc_phone">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $svcpart %>">
+<%= didselector('field' => 'phonenum', 
+		'svcpart' => $svcpart,
+		'bulknum' => $numavail,
+		);
+%>
+<BR><BR><INPUT TYPE="submit" VALUE="Setup">
+</FORM>
+
+<%= include('footer') %>
