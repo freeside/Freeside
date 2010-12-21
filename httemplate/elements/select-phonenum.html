@@ -66,6 +66,7 @@
 	    var i;
 	    for(i = 0; i < numCheckboxes; i++){
 		document.getElementById('bulkdid_'+i).style.display = 'block';
+		document.getElementById('checkbox_bulkdid_'+i).checked = false;
 		var tn = phonenum_sel.options[i+1].value;
 		document.getElementById('checkbox_bulkdid_'+i).value = tn;
 		document.getElementById('label_bulkdid_'+i).innerHTML = tn;
@@ -73,6 +74,7 @@
 	    for(i = numCheckboxes; i < <% $opt{'bulknum'} %>; i++){
 		document.getElementById('bulkdid_'+i).style.display = 'none';
 		document.getElementById('checkbox_bulkdid_'+i).value = '';
+		document.getElementById('checkbox_bulkdid_'+i).checked = false;
 		document.getElementById('label_bulkdid_'+i).innerHTML = '';
 	    }
 	}

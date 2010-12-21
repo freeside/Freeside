@@ -16,7 +16,7 @@ use FS::SelfService qw(
   part_svc_info provision_acct provision_external provision_phone
   unprovision_svc change_pkg suspend_pkg domainselector
   list_svcs list_svc_usage list_cdr_usage list_support_usage
-  myaccount_passwd list_invoices create_ticket get_ticket
+  myaccount_passwd list_invoices create_ticket get_ticket did_report
   mason_comp
 );
 
@@ -128,8 +128,8 @@ die $@ if $@;
 
 warn Dumper($result) if $DEBUG;
 
-if ( $result->{error} eq "Can't resume session"
-  || $result->{error} eq "Expired session" ) { #ick
+if ( $result->{error} && ( $result->{error} eq "Can't resume session"
+  || $result->{error} eq "Expired session") ) { #ick
 
   my $login_info = login_info();
   do_template('login', $login_info);
@@ -679,6 +679,15 @@ sub logout {
   FS::SelfService::logout( 'session_id' => $session_id );
 }
 
+sub didreport {
+  my $result = did_report( 'session_id' => $session_id, 
+	    'format' => $cgi->param('type'),
+	    'recentonly' => $cgi->param('recentonly'),
+	);
+  die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
+  $result;
+}
+
 sub provision {
   my $result = list_pkgs( 'session_id' => $session_id );
   die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
@@ -715,7 +724,7 @@ sub process_svc_phone {
 	'countrycode' => '1',
 	 map { $_ => $cgi->param($_) } qw( pkgnum svcpart phonenum )
     );
-    
+
     if ( exists $result->{'error'} && $result->{'error'} ) { 
 	$action = 'provision_svc_phone';
 	return {
@@ -865,14 +874,32 @@ sub do_template {
                                    )
     or die $Text::Template::ERROR;
 
-  #warn "filling in $template with $fill_in\n";
-  my $data = $template->fill_in( 
-    PACKAGE => 'FS::SelfService::_selfservicecgi',
-    HASH    => $fill_in,
-  ) || "Error processing template $source"; # at least print _something_
-  print $cgi->header( '-expires' => 'now' );
-  print $data;
-}
+    if($result && ref($result) && $result->{'format'} && $result->{'content'}
+	&& $result->{'format'} eq 'csv') {
+    	print $cgi->header('-expires' => 'now',
+    		'-Content-Type' => 'text/csv',
+    		'-Content-Disposition' => "attachment;filename=output.csv",
+    		),
+    	    $result->{'content'};
+    }
+    elsif($result && ref($result) && $result->{'format'} && $result->{'content'}
+    	 && $result->{'format'} eq 'xls') {
+	print $cgi->header('-expires' => 'now',
+		    '-Content-Type' => 'application/vnd.ms-excel',
+		    '-Content-Disposition' => "attachment;filename=output.xls",
+		    '-Content-Length' => length($result->{'content'}),
+		    ),
+		    $result->{'content'};
+    }
+    else {
+	my $data = $template->fill_in( 
+	    PACKAGE => 'FS::SelfService::_selfservicecgi',
+	    HASH    => $fill_in,
+	  ) || "Error processing template $source"; # at least print _something_
+	  print $cgi->header( '-expires' => 'now' );
+	  print $data;
+    }
+ }
 
 #*FS::SelfService::_selfservicecgi::include = \&Text::Template::fill_in_file;
 

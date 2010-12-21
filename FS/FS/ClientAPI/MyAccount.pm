@@ -1577,7 +1577,25 @@ sub provision_phone {
 		  @_
 		);
  }
-#XXX: finish bulk orders
+
+# bulk case
+  my $error;
+  foreach my $did ( @bulkdid ) {
+    $did =~ s/[^0-9]//g;
+    $error = _provision( 'FS::svc_phone',
+	      [qw(phonenum countrycode)],
+	      [qw(phonenum countrycode)],
+	      {
+		'pkgnum' => $p->{'pkgnum'},
+		'svcpart' => $p->{'svcpart'},
+		'phonenum' => $did,
+		'countrycode' => $p->{'countrycode'},
+		'session_id' => $p->{'session_id'},
+	      }
+	    );
+    return $error if ($error->{'error'} && length($error->{'error'}) > 1);
+  }
+  { 'bulkdid' => [ @bulkdid ], 'svc' => $error->{'svc'} }
 }
 
 sub provision_acct {
