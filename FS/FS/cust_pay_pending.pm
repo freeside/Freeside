@@ -120,9 +120,9 @@ Transaction recorded in database
 
 Additional status information.
 
-=cut
+=item gatewaynum
 
-#=item cust_balance - 
+L<FS::payment_gateway> id.
 
 =item paynum - 
 
@@ -292,10 +292,10 @@ sub insert_cust_pay {
 
 }
 
-=item decline
+=item decline [ STATUSTEXT ]
 
-Sets the status of this pending pament to "done" (with statustext
-"declined (manual)").
+Sets the status of this pending payment to "done" (with statustext
+"declined (manual)" unless otherwise specified).
 
 Currently only used when resolving pending payments manually.
 
@@ -303,11 +303,12 @@ Currently only used when resolving pending payments manually.
 
 sub decline {
   my $self = shift;
+  my $statustext = shift || "declined (manual)";
 
   #could send decline email too?  doesn't seem useful in manual resolution
 
   $self->status('done');
-  $self->statustext("declined (manual)");
+  $self->statustext($statustext);
   $self->replace;
 }
 

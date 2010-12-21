@@ -321,23 +321,34 @@ sub signup_info {
     warn "$me has agent $agent\n" if $DEBUG > 1;
     if ( $agent ) { #else complain loudly?
       $signup_info->{'hide_payment_fields'} = [];
-      foreach my $payby (@{$signup_info->{payby}}) {
-        warn "$me checking $payby payment fields\n" if $DEBUG > 1;
-        my $hide = 0;
-        if ( FS::payby->realtime($payby) ) {
-          my $payment_gateway =
-            $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
-                                     'nofatal' => 1,
-                                   );
-          if ( $payment_gateway
-                 && $payment_gateway->gateway_namespace
-                      eq 'Business::OnlineThirdPartyPayment'
-             ) {
-            warn "$me hiding $payby payment fields\n" if $DEBUG > 1;
-            $hide = 1;
+      my $gatewaynum = $conf->config('selfservice-payment_gateway');
+      if ( $gatewaynum ) {
+        my $pg = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
+        die "configured gatewaynum $gatewaynum not found!" if !$pg;
+        my $hide = $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
+        $signup_info->{'hide_payment_fields'} = [
+          map { $hide } @{$signup_info->{'payby'}}
+        ];
+      }
+      else {
+        foreach my $payby (@{$signup_info->{payby}}) {
+          warn "$me checking $payby payment fields\n" if $DEBUG > 1;
+          my $hide = 0;
+          if ( FS::payby->realtime($payby) ) {
+            my $payment_gateway =
+              $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
+                                       'nofatal' => 1,
+                                     );
+            if ( $payment_gateway
+                   && $payment_gateway->gateway_namespace
+                        eq 'Business::OnlineThirdPartyPayment'
+               ) {
+              warn "$me hiding $payby payment fields\n" if $DEBUG > 1;
+              $hide = 1;
+            }
           }
-        }
-        push @{$signup_info->{'hide_payment_fields'}}, $hide;
+          push @{$signup_info->{'hide_payment_fields'}}, $hide;
+        } # foreach $payby
       }
     }
     warn "$me done setting agent-specific payment flag\n" if $DEBUG > 1;
@@ -698,6 +709,7 @@ sub new_customer {
     $bill_error = $cust_main->realtime_collect(
        method        => FS::payby->payby2bop( $packet->{payby} ),
        depend_jobnum => $placeholder->jobnum,
+       selfservice   => 1,
     );
     #warn "$me error collecting from new customer: $bill_error"
     #  if $bill_error;
@@ -787,29 +799,36 @@ sub capture_payment {
 
   my $conf = new FS::Conf;
 
-  my $url = $packet->{url};
-  my $payment_gateway =
-    qsearchs('payment_gateway', { 'gateway_callback_url' => popurl(0, $url) } );
+  my $payment_gateway;
+  if ( my $gwnum = $conf->config('selfservice-payment_gateway') ) {
+    $payment_gateway = qsearchs('payment_gateway', { 'gatewaynum' => $gwnum })
+      or die "configured gatewaynum $gwnum not found!";
+  }
+  else {
+    my $url = $packet->{url};
 
-  unless ($payment_gateway) {
+    $payment_gateway = qsearchs('payment_gateway', 
+        { 'gateway_callback_url' => popurl(0, $url) } 
+      );
+    if (!$payment_gateway) { 
 
-    my ( $processor, $login, $password, $action, @bop_options ) =
-      $conf->config('business-onlinepayment');
-    $action ||= 'normal authorization';
-    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
-    die "No real-time processor is enabled - ".
-        "did you set the business-onlinepayment configuration value?\n"
-      unless $processor;
+      my ( $processor, $login, $password, $action, @bop_options ) =
+        $conf->config('business-onlinepayment');
+      $action ||= 'normal authorization';
+      pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+      die "No real-time processor is enabled - ".
+          "did you set the business-onlinepayment configuration value?\n"
+        unless $processor;
 
-    $payment_gateway = new FS::payment_gateway( {
-      gateway_namespace => $conf->config('business-onlinepayment-namespace'),
-      gateway_module    => $processor,
-      gateway_username  => $login,
-      gateway_password  => $password,
-      gateway_action    => $action,
-      options   => [ ( @bop_options ) ],
-    });
-
+      $payment_gateway = new FS::payment_gateway( {
+        gateway_namespace => $conf->config('business-onlinepayment-namespace'),
+        gateway_module    => $processor,
+        gateway_username  => $login,
+        gateway_password  => $password,
+        gateway_action    => $action,
+        options   => [ ( @bop_options ) ],
+      });
+    }
   }
  
   die "No real-time third party processor is enabled - ".
@@ -847,7 +866,10 @@ sub capture_payment {
 
   my $cust_main = $cust_pay_pending->cust_main;
   my $bill_error =
-    $cust_main->realtime_botpp_capture( $cust_pay_pending, %{$packet->{data}} );
+    $cust_main->realtime_botpp_capture( $cust_pay_pending, 
+      %{$packet->{data}},
+      apply => 1,
+  );
 
   return { 'error'      => ( $bill_error->{bill_error} ? '_decline' : '' ),
            %$bill_error,

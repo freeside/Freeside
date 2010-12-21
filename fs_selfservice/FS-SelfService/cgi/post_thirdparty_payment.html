@@ -1,0 +1,42 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header', 'Pay now') %>
+
+<SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="overlibmws_iframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="overlibmws_draggable.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="overlibmws_crossframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
+}else{
+  $OUT .= <<EOF;
+    You are about to contact our payment processor to pay $amount.<BR><BR>
+    Your transaction reference number is $reference <BR><BR>
+    <FORM METHOD="POST" ACTION="$popup_url">
+EOF
+    
+#<FORM NAME="collect_popper" method="post" action="javascript:void(0)" onSubmit="popcollect()">
+  my %itemhash = @collectitems;
+#  my $query = join(';', 
+#    map { uri_escape($_) . '=' . uri_escape($itemhash{$_}) }
+#    keys(%itemhash)
+#  );
+  foreach my $input (keys(%itemhash)) {
+    $OUT .= qq!<INPUT NAME="$input" TYPE="hidden" VALUE="$itemhash{$input}">\n!;
+  }
+  $OUT .= qq!<INPUT NAME="submit" TYPE="submit" VALUE="Pay now"></FORM>!
+}
+%>
+
+<%=
+#<SCRIPT TYPE="text/javascript">
+#  function popcollect() {
+#    overlib( OLiframeContent('<%= $popup_url %>', 336, 550, 'Secure Payment Area', 0, 'auto' ), CAPTION, 'Pay now', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close' );
+#    overlib( OLpostAJAX('<%= $popup_url %>', 
+#    return false;
+#  }
+#</SCRIPT>
+%>
+
+<%= include('footer') %>

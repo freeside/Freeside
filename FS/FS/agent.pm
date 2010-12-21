@@ -276,7 +276,7 @@ sub payment_gateway {
     $payment_gateway = $override->payment_gateway;
 
     $payment_gateway->gateway_namespace('Business::OnlinePayment')
-      unless $payment_gateway->gateway_name;
+      unless $payment_gateway->gateway_namespace;
 
   } else { #use the standard settings from the config
 

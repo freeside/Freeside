@@ -48,6 +48,7 @@ my %modules =  (
   'CyberSource'           => 'Business::OnlinePayment',
   'eSec'                  => 'Business::OnlinePayment',
   'eSelectPlus'           => 'Business::OnlinePayment',
+  'eWayShared'            => 'Business::OnlineThirdPartyPayment',
   'ElavonVirtualMerchant' => 'Business::OnlinePayment',
   'Exact'                 => 'Business::OnlinePayment',
   'iAuthorizer'           => 'Business::OnlinePayment',
@@ -92,7 +93,7 @@ my %modules =  (
 my @actions = (
                 'Normal Authorization',
                 'Authorization Only',
-                'Authorization Only, Post Authorization',
+                'Authorization Only,Post Authorization',
               );
 
 my $fields = [
@@ -117,7 +118,11 @@ my $fields = [
                  type     => 'select',
                  options  => \@actions,
                },
-               'gateway_callback_url',
+               {
+                 field    => 'gateway_callback_url',
+                 type     => 'text',
+                 size     => 40,
+               },
                {
                  field               => 'gateway_options',
                  type                => 'textarea',

@@ -178,6 +178,14 @@ sub _bop_recurring_billing {
 sub _payment_gateway {
   my ($self, $options) = @_;
 
+  if ( $options->{'selfservice'} ) {
+    my $gatewaynum = FS::Conf->new->config('selfservice-payment_gateway');
+    if ( $gatewaynum ) {
+      return $options->{payment_gateway} ||= 
+          qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
+    }
+  }
+
   $options->{payment_gateway} = $self->agent->payment_gateway( %$options )
     unless exists($options->{payment_gateway});
 
@@ -467,6 +475,24 @@ sub realtime_bop {
     'custnum' => $self->custnum,
     'status'  => { op=>'!=', value=>'done' } 
   });
+  # This is a problem.  A self-service third party payment that fails somehow 
+  # can't be retried, EVER, until someone manually clears it.  Totally 
+  # arbitrary fix: if the existing payment is more than two minutes old, 
+  # kill it.  This doesn't limit how long it can take the pending payment 
+  # to complete, only how long it will obstruct new payments.
+  my @still_pending;
+  foreach (@pending) {
+    if ( time - $_->_date > 120 ) {
+      my $error = $_->delete;
+      warn "error deleting stale pending payment ".$_->paypendingnum.": $error"
+        if $error; # not fatal, it will fail anyway
+    }
+    else {
+      push @still_pending, $_;
+    }
+  }
+  @pending = @still_pending;
+
   return "A payment is already being processed for this customer (".
          join(', ', map 'paypendingnum '. $_->paypendingnum, @pending ).
          "); $options{method} transaction aborted."
@@ -511,6 +537,7 @@ sub realtime_bop {
     'customer_id'    => $self->custnum,
     %$bop_content,
     'reference'      => $cust_pay_pending->paypendingnum, #for now
+    'callback_url'   => $payment_gateway->gateway_callback_url,
     'email'          => $email,
     %content, #after
   );
@@ -1016,9 +1043,10 @@ sub realtime_botpp_capture {
 
   my $method = FS::payby->payby2bop($cust_pay_pending->payby);
 
-  my $payment_gateway = $cust_pay_pending->gatewaynum
-    ? qsearchs( 'payment_gateway',
-                { gatewaynum => $cust_pay_pending->gatewaynum }
+  my $payment_gateway;
+  my $gatewaynum = $cust_pay_pending->getfield('gatewaynum');
+  $payment_gateway = $gatewaynum ? qsearchs( 'payment_gateway',
+                { gatewaynum => $gatewaynum }
               )
     : $self->agent->payment_gateway( 'method' => $method,
                                      # 'invnum'  => $cust_pay_pending->invnum,
@@ -1080,7 +1108,14 @@ sub realtime_botpp_capture {
   my $error =
     $self->_realtime_bop_result( $cust_pay_pending, $transaction, %options );
 
-  {
+  if ( $options{'apply'} ) {
+    my $apply_error = $self->apply_payments_and_credits;
+    if ( $apply_error ) {
+      warn "WARNING: error applying payment: $apply_error\n";
+    }
+  }
+
+  return {
     bill_error => $error,
     session_id => $cust_pay_pending->session_id,
   }

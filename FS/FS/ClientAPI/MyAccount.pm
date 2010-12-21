@@ -237,6 +237,28 @@ sub logout {
   }
 }
 
+sub payment_gateway {
+  # internal use only
+  # takes a cust_main and a cust_payby entry, returns the payment_gateway
+  my $conf = new FS::Conf;
+  my $cust_main = shift;
+  my $cust_payby = shift;
+  my $gatewaynum = $conf->config('selfservice-payment_gateway');
+  if ( $gatewaynum ) {
+    my $pg = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
+    die "configured gatewaynum $gatewaynum not found!" if !$pg;
+    return $pg;
+  }
+  else {
+    return '' if ! FS::payby->realtime($cust_payby);
+    my $pg = $cust_main->agent->payment_gateway(
+      'method'  => FS::payby->payby2bop($cust_payby),
+      'nofatal' => 1
+    );
+    return $pg;
+  }
+}
+
 sub access_info {
   my $p = shift;
 
@@ -262,18 +284,11 @@ sub access_info {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  $info->{hide_payment_fields} =
-  [
-    map { my $pg = '';
-          if ( FS::payby->realtime($_) ) {
-            $pg = $cust_main->agent->payment_gateway(
-              'method'  => FS::payby->payby2bop($_),
-              'nofatal' => 1,
-            );
-          }
-          $pg && $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
-        }
-    @{ $info->{cust_paybys} }
+  $info->{'hide_payment_fields'} = [ 
+    map { 
+      my $pg = payment_gateway($cust_main, $_);
+      $pg && $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
+    } @{ $info->{cust_paybys} }
   ];
 
   $info->{'self_suspend_reason'} = 
@@ -532,18 +547,11 @@ sub payment_info {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  $return{hide_payment_fields} =
-  [
-    map { my $pg = '';
-          if ( FS::payby->realtime($_) ) {
-            $pg = $cust_main->agent->payment_gateway(
-              'method'  => FS::payby->payby2bop($_),
-              'nofatal' => 1,
-            );
-          }
-          $pg && $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
-        }
-    @{ $return{cust_paybys} }
+  $return{'hide_payment_fields'} = [
+    map { 
+      my $pg = payment_gateway($cust_main, $_);
+      $pg && $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
+    } @{ $return{cust_paybys} }
   ];
 
   $return{balance} = $cust_main->balance; #XXX pkg-balances?
@@ -692,6 +700,7 @@ sub process_payment {
     'paycvv'   => $paycvv,
     'pkgnum'   => $session->{'pkgnum'},
     'discount_term' => $discount_term,
+    'selfservice' => 1,
     map { $_ => $p->{$_} } @{ $payby2fields{$payby} }
   );
   return { 'error' => $error } if $error;
@@ -746,17 +755,26 @@ sub realtime_collect {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
+  my $amount;
+  if ( $p->{'amount'} ) {
+    $amount = $p->{'amount'};
+  }
+  elsif ( $session->{'pkgnum'} ) {
+    $amount = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
+  }
+  else {
+    $amount = $cust_main->balance;
+  }
+
   my $error = $cust_main->realtime_collect(
     'method'     => $p->{'method'},
+    'amount'     => $amount,
     'pkgnum'     => $session->{'pkgnum'},
     'session_id' => $p->{'session_id'},
     'apply'      => 1,
+    'selfservice'=> 1,
   );
   return { 'error' => $error } unless ref( $error );
-
-  my $amount = $session->{'pkgnum'}
-                 ? $cust_main->balance_pkgnum( $session->{'pkgnum'} )
-                 : $cust_main->balance;
 
   return { 'error' => '', amount => $amount, %$error };
 }
@@ -1410,7 +1428,7 @@ sub _do_bop_realtime {
 
     my $bill_error =    $cust_main->bill
                      || $cust_main->apply_payments_and_credits
-                     || $cust_main->realtime_collect;
+                     || $cust_main->realtime_collect('selfservice' => 1);
 
     if (    $cust_main->balance > $old_balance
          && $cust_main->balance > 0

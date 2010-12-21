@@ -1,35 +1,36 @@
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header', 'Pay now') %>
+<%= $url = "$selfurl?session=$session_id;action="; 
+  $cgi = new CGI;
+  ''; %>
+<%= include('header', 'Make a payment') %>
 
-<SCRIPT TYPE="text/javascript">
-  function popcollect() {
-    overlib( OLiframeContent('<%= $popup_url %>', 336, 550, 'Secure Payment Area', 0, 'auto' ), CAPTION, 'Pay now', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close' );
-    return false;
-  }
-</SCRIPT>
+<FORM NAME="OneTrueForm" METHOD="POST" ACTION="<%=$selfurl%>" 
+onSubmit="document.OneTrueForm.process.disabled=true">
+<INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
+<INPUT TYPE="hidden" NAME="action" VALUE="post_thirdparty_payment">
+<INPUT TYPE="hidden" NAME="payby_method" VALUE="<%= 
+$cgi->param('payby_method') =~ /(CC|ECHECK)/;
+$1 %>">
+<TABLE BGCOLOR="#cccccc">
+<TR>
+  <TH ALIGN="right">Balance&nbsp;due</TH>
+  <TD COLSPAN=7>
+    <SPAN STYLE="background-color: #ffffff;">$<%=sprintf("%.2f", $balance)%>
+  </TD>
+</TR>
+<TR>
+  <TH ALIGN="right">Payment&nbsp;amount</TH>
+  <TD COLSPAN=7>
+    $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f", $balance)%>">
+  </TD>
+</TR>
+<TR><TH></TH>
+<TD><INPUT TYPE="submit" NAME="process" VALUE="Process payment">
+</FORM>
+
 <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="overlibmws_iframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="overlibmws_draggable.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="overlibmws_crossframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
-
-<%= if ( $error ) {
-  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
-}else{
-  $OUT .= <<EOF;
-    You are about to contact our payment processor to pay $amount.<BR><BR>
-    Your transaction reference number is $reference <BR><BR>
-    <FORM NAME="collect_popper" method="post" action="javascript:void(0)" onSubmit="popcollect()">
-EOF
-
-  my %itemhash = @collectitems;
-  foreach my $input (keys %itemhash) {
-    $OUT .= qq!<INPUT NAME="$input" TYPE="hidden" VALUE="$itemhash{$input}">!;
-  }
-
-  $OUT .= qq!<INPUT NAME="submit" type="submit" value="Pay now">!;
-  $OUT .= qq!</FORM>!;
-}
-%>
 
 <%= include('footer') %>

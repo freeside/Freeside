@@ -584,6 +584,26 @@ my %msg_template_options = (
   'per_agent' => 1,
 );
 
+my $_gateway_name = sub {
+  my $g = shift;
+  return '' if !$g;
+  ($g->gateway_username . '@' . $g->gateway_module);
+};
+
+my %payment_gateway_options = (
+  'type'        => 'select-sub',
+  'options_sub' => sub {
+    my @gateways = qsearch({
+        'table' => 'payment_gateway',
+        'hashref' => { 'disabled' => '' },
+      });
+    map { $_->gatewaynum, $_gateway_name->($_) } @gateways;
+  },
+  'option_sub'  => sub {
+    my $gateway = FS::payment_gateway->by_key(shift);
+    $_gateway_name->($gateway);
+  },
+);
 
 #Billing (81 items)
 #Invoicing (50 items)
@@ -1723,6 +1743,13 @@ and customer address. Include units.',
     'description' => 'Acceptable payment types for the signup server',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB PREPAY BILL COMP) ],
+  },
+
+  {
+    'key'         => 'selfservice-payment_gateway',
+    'section'     => 'self-service',
+    'description' => 'Force the use of this payment gateway for self-service.',
+    %payment_gateway_options,
   },
 
   {
@@ -2971,7 +2998,7 @@ and customer address. Include units.',
 #  {
 #    'key'         => 'batch-manual_approval',
 #    'section'     => 'billing',
-#    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is dangerous, but may be needed if your processor does not provide a list of approved payments.',
+#    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is very dangerous.',
 #    'type'        => 'checkbox',
 #  },
 #
