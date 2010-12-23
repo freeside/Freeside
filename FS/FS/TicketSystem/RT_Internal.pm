@@ -255,6 +255,7 @@ sub get_ticket {
     my $t = { created => $transaction->Created,
 	content => $transaction->Content,
 	description => $transaction->Description,
+	type => $transaction->Type,
     };
     push @txns, $t;
   }

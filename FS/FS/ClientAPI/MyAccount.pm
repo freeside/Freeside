@@ -1957,16 +1957,24 @@ sub get_ticket {
 # the requested ticket was actually linked to this customer
     my @custs = @{$err_or_ticket->{'custs'}};
     my @txns = @{$err_or_ticket->{'txns'}};
+    my @filtered_txns;
 
     return { 'error' => 'no customer' } unless ( $custnum && scalar(@custs) );
 
     return { 'error' => 'invalid ticket requested' } 
 	unless grep($_ eq $custnum, @custs);
 
+    foreach my $txn ( @txns ) {
+	push @filtered_txns, $txn 
+	    if ($txn->{'type'} eq 'EmailRecord' 
+		|| $txn->{'type'} eq 'Correspond'
+		|| $txn->{'type'} eq 'Create');
+    }
+
     warn "$me get_ticket: sucessful: \n"
       if $DEBUG;
     return { 'error'     => '',
-             'transactions' => \@txns,
+             'transactions' => \@filtered_txns,
 	     'ticket_id' => $p->{'ticket_id'},
            };
   } else {
