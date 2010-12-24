@@ -9,17 +9,8 @@ use DBI;
 %info = (
   'name' => 'Base charge plus additional fees for external services from a configurable SQL query',
   'shortname' => 'External SQL query',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee' => { 'name' => 'Setup fee for this package',
-                     'default' => 0,
-                   },
-    'recur_fee' => { 'name' => 'Base recurring fee for this package',
-                     'default' => 0,
-                   },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
     'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating or '.
                                    'subscription',
                          'default' => '1',
@@ -48,7 +39,7 @@ use DBI;
                  'default' => '',
                },
   },
-  'fieldorder' => [qw( setup_fee recur_fee unused_credit recur_method cutoff_day
+  'fieldorder' => [qw( recur_method cutoff_day
                       add_full_period datasrc db_username db_password query 
                   )],
   'weight' => '58',

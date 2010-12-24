@@ -11,17 +11,8 @@ use FS::part_pkg::flat;
 %info = (
   'name' => 'Base charge plus a per-domain metered rate from a configurable SQL query',
   'shortname' => 'Bulk (per-domain from SQL query)',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee' => { 'name' => 'Setup fee for this package',
-                     'default' => 0,
-                   },
-    'recur_fee' => { 'name' => 'Base recurring fee for this package',
-                     'default' => 0,
-                   },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
     'recur_included' => { 'name' => 'Units included',
                           'default' => 0,
                         },
@@ -41,7 +32,7 @@ use FS::part_pkg::flat;
                  'default' => '',
                },
   },
-  'fieldorder' => [qw( setup_fee recur_fee unused_credit recur_included recur_unit_charge datasrc db_username db_password query )],
+  'fieldorder' => [qw( recur_included recur_unit_charge datasrc db_username db_password query )],
  # 'setup' => 'what.setup_fee.value',
  # 'recur' => '\'my $dbh = DBI->connect(\"\' + what.datasrc.value + \'\", \"\' + what.db_username.value + \'\") or die $DBI::errstr; \'',
  #'recur' => '\'my $dbh = DBI->connect(\"\' + what.datasrc.value + \'\", \"\' + what.db_username.value + \'\", \"\' + what.db_password.value + \'\" ) or die $DBI::errstr; my $sth = $dbh->prepare(\"\' + what.query.value + \'\") or die $dbh->errstr; my $units = 0; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq \"svc_domain\" } $cust_pkg->cust_svc ) { my $domain = $cust_svc->svc_x->domain; $sth->execute($domain) or die $sth->errstr; $units += $sth->fetchrow_arrayref->[0]; } $units -= \' + what.recur_included.value + \'; $units = 0 if $units < 0; \' + what.recur_fee.value + \' + $units * \' + what.recur_unit_charge.value + \';\'',

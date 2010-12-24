@@ -14,11 +14,14 @@ our %info = (
   'name'      =>  'Bill from Time Worked on tickets in RT',
   'shortname' =>  'Project Billing (RT)',
   'weight'    => 55,
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields'    =>  {
     'base_rate' =>  {   'name'    =>  'Rate (per minute)',
                         'default' => 0,
                     },
-  }
+    'recur_fee' => {'disabled' => 1},
+  },
+  'fieldorder' => [ 'base_rate' ],
 );
 
 sub calc_setup {

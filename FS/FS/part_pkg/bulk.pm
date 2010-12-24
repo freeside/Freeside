@@ -12,22 +12,13 @@ $me = '[FS::part_pkg::bulk]';
 
 %info = (
   'name' => 'Bulk billing based on number of active services',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee' => { 'name'    => 'Setup fee for the entire bulk package',
-                     'default' => 0,
-                   },
-    'recur_fee' => { 'name'    => 'Recurring fee for the entire bulk package',
-                     'default' => 0,
-                   },
     'svc_setup_fee' => { 'name'    => 'Setup fee for each new service',
                          'default' => 0,
                        },
     'svc_recur_fee' => { 'name'    => 'Recurring fee for each service',
                          'default' => 0,
-                       },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
                        },
     'summarize_svcs'=> { 'name' => 'Show a count of services on the invoice, '.
                                    'instead of a detailed list',
@@ -38,8 +29,8 @@ $me = '[FS::part_pkg::bulk]';
                          'type' => 'checkbox',
                        },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'svc_setup_fee', 'svc_recur_fee',
-                    'unused_credit', 'summarize_svcs', 'no_prorate' ],
+  'fieldorder' => [ 'svc_setup_fee', 'svc_recur_fee',
+                    'summarize_svcs', 'no_prorate' ],
   'weight' => 50,
 );
 

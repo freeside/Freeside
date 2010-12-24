@@ -12,23 +12,13 @@ use FS::part_pkg;
             # XXX it multiplies recurring fee by cust_pkg option "units", how to
             # express that
   'shortname' => 'Bulk (manual from "units" option)',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee'     => { 'name' => 'Setup fee for this package',
-                         'default' => 0,
-                       },
-    'recur_fee'     => { 'name' => 'Recurring Base fee for this package',
-                         'default' => 0,
-                       },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
-    'externalid' => { 'name'   => 'Optional External ID',
+    'externalid' => { 'name'    => 'Optional External ID',
                       'default' => '',
                     },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 
-                    'externalid' ],
+  'fieldorder' => [ qw( externalid ) ],
   'weight' => 52,
 );
 
@@ -59,13 +49,10 @@ sub base_recur {
 }
 
 sub calc_remain {
-  my ($self, $cust_pkg) = @_;
-  my $time = time;  #should be able to pass this in for credit calculation
+  my ($self, $cust_pkg, %options) = @_;
+  my $time = $options{'time'} || time;
   my $next_bill = $cust_pkg->getfield('bill') || 0;
-  my $last_bill = $cust_pkg->last_bill || 0;
-  return 0 if    ! $self->base_recur($cust_pkg)
-              || ! $self->option('unused_credit', 1)
-              || ! $last_bill
+  return 0 if  ! $self->base_recur($cust_pkg)
               || ! $next_bill
               || $next_bill < $time;
 

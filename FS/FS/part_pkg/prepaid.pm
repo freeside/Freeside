@@ -21,28 +21,25 @@ tie my %overlimit_action, 'Tie::IxHash',
   'name' => 'Prepaid, flat rate',
   #'name' => 'Prepaid (no automatic recurring)', #maybe use it here too
   'shortname' => 'Prepaid, no automatic cycle',
+  'inherit_fields' => [ 'usage_Mixin', 'global_Mixin' ],
   'fields' => {
-    'setup_fee'   =>  { 'name' => 'One-time setup fee for this package',
-                        'default' => 0,
-                      },
-    'recur_fee'   =>  { 'name' => 'Initial and recharge fee for this package',
-                        'default' => 0,
-                      },
     'recur_action' => { 'name' => 'Action to take upon reaching end of prepaid preiod',
                         'type' => 'select',
 			'select_options' => \%recur_action,
 	              },
-    %FS::part_pkg::flat::usage_fields,
     'overlimit_action' => { 'name' => 'Action to take upon reaching a usage limit.',
                             'type' => 'select',
                             'select_options' => \%overlimit_action,
 	              },
     #XXX if you set overlimit_action to 'cancel', should also have the ability
     # to select a reason
+    
+    # do we need to disable these?
+    map { $_ => { 'disabled' => 1 } } (
+      qw(recharge_amount recharge_seconds recharge_upbytes recharge_downbytes
+      recharge_totalbytes usage_rollover recharge_reset) ),
   },
-  'fieldorder' => [ qw( setup_fee recur_fee recur_action ),
-                    @FS::part_pkg::flat::usage_fieldorder, 'overlimit_action',
-                  ],
+  'fieldorder' => [ qw( recur_action overlimit_action ) ],
   'weight' => 25,
 );
 

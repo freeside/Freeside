@@ -2,8 +2,7 @@ package FS::part_pkg::flat;
 
 use strict;
 use vars qw( @ISA %info
-             %usage_fields %usage_recharge_fields
-             @usage_fieldorder @usage_recharge_fieldorder
+             %usage_recharge_fields @usage_recharge_fieldorder
            );
 use Tie::IxHash;
 use List::Util qw(min); # max);
@@ -26,97 +25,16 @@ tie my %contract_years, 'Tie::IxHash', (
   map { $_*12 => $_ } (1..5),
 );
 
-%usage_fields = (
-
-    'seconds'       => { 'name' => 'Time limit for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                       },
-    'upbytes'       => { 'name' => 'Upload limit for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                         'format' => \&FS::UI::bytecount::display_bytecount,
-                         'parse' => \&FS::UI::bytecount::parse_bytecount,
-                       },
-    'downbytes'     => { 'name' => 'Download limit for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                         'format' => \&FS::UI::bytecount::display_bytecount,
-                         'parse' => \&FS::UI::bytecount::parse_bytecount,
-                       },
-    'totalbytes'    => { 'name' => 'Transfer limit for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                         'format' => \&FS::UI::bytecount::display_bytecount,
-                         'parse' => \&FS::UI::bytecount::parse_bytecount,
-                       },
-);
-
-%usage_recharge_fields = (
-
-    'recharge_amount'       => { 'name' => 'Cost of recharge for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*(\.\d{2})?$/ },
-                       },
-    'recharge_seconds'      => { 'name' => 'Recharge time for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                       },
-    'recharge_upbytes'      => { 'name' => 'Recharge upload for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                         'format' => \&FS::UI::bytecount::display_bytecount,
-                         'parse' => \&FS::UI::bytecount::parse_bytecount,
-                       },
-    'recharge_downbytes'    => { 'name' => 'Recharge download for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                         'format' => \&FS::UI::bytecount::display_bytecount,
-                         'parse' => \&FS::UI::bytecount::parse_bytecount,
-                       },
-    'recharge_totalbytes'   => { 'name' => 'Recharge transfer for this package',
-                         'default' => '',
-                         'check' => sub { shift =~ /^\d*$/ },
-                         'format' => \&FS::UI::bytecount::display_bytecount,
-                         'parse' => \&FS::UI::bytecount::parse_bytecount,
-                       },
-    'usage_rollover' => { 'name' => 'Allow usage from previous period to roll '.
-                                    ' over into current period',
-                          'type' => 'checkbox',
-                        },
-    'recharge_reset' => { 'name' => 'Reset usage to these values on manual '.
-                                    'package recharge',
-                          'type' => 'checkbox',
-                        },
-);
-
-@usage_fieldorder = qw( seconds upbytes downbytes totalbytes );
-@usage_recharge_fieldorder = qw(
-  recharge_amount recharge_seconds recharge_upbytes
-  recharge_downbytes recharge_totalbytes
-  usage_rollover recharge_reset
-);
-
 %info = (
   'name' => 'Flat rate (anniversary billing)',
   'shortname' => 'Anniversary',
+  'inherit_fields' => [ 'usage_Mixin', 'global_Mixin' ],
   'fields' => {
-    'setup_fee'     => { 'name' => 'Setup fee for this package',
-                         'default' => 0,
-                       },
-    'recur_fee'     => { 'name' => 'Recurring fee for this package',
-                         'default' => 0,
-                       },
-
     #false laziness w/voip_cdr.pm
     'recur_temporality' => { 'name' => 'Charge recurring fee for period',
                              'type' => 'select',
                              'select_options' => \%temporalities,
                            },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
 
     #used in cust_pkg.pm so could add to any price plan
     'expire_months' => { 'name' => 'Auto-add an expiration date this number of months out',
@@ -145,22 +63,16 @@ tie my %contract_years, 'Tie::IxHash', (
                           'type' => 'checkbox',
                         },
 
-    %usage_fields,
-    %usage_recharge_fields,
-
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
                     },
   },
-  'fieldorder' => [ qw( setup_fee recur_fee
-                        recur_temporality unused_credit
+  'fieldorder' => [ qw( recur_temporality 
                         expire_months adjourn_months
                         contract_end_months
                         start_1st sync_bill_date
                         suspend_bill unsuspend_adjust_bill
-                      ),
-                    @usage_fieldorder, @usage_recharge_fieldorder,
-                    qw( externalid ),
+                        externalid ),
                   ],
   'weight' => 10,
 );
@@ -239,12 +151,7 @@ sub calc_remain {
 
   my $next_bill = $cust_pkg->getfield('bill') || 0;
 
-  #my $last_bill = $cust_pkg->last_bill || 0;
-  my $last_bill = $cust_pkg->get('last_bill') || 0; #->last_bill falls back to setup
-
   return 0 if    ! $self->base_recur($cust_pkg)
-              || ! $self->option('unused_credit', 1)
-              || ! $last_bill
               || ! $next_bill
               || $next_bill < $time;
 

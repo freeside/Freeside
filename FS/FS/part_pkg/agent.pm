@@ -19,16 +19,8 @@ $me = '[FS::part_pkg::agent]';
 %info = (
   'name'      => 'Wholesale bulk billing, for master customers of an agent.',
   'shortname' => 'Wholesale bulk billing for agent.',
-
+  'inherit_fields' => [qw( prorate global_Mixin)],
   'fields' => {
-    'setup_fee'     => { 'name' => 'Setup fee for this package',
-                         'default' => 0,
-                       },
-    'recur_fee'     => { 'name' => 'Base recurring fee for this package',
-                         'default' => 0,
-                       },
-
-
     #'recur_method'  => { 'name' => 'Recurring fee method',
     #                     #'type' => 'radio',
     #                     #'options' => \%recur_method,
@@ -49,8 +41,7 @@ $me = '[FS::part_pkg::agent]';
 
   },
 
-  #'fieldorder' => [qw( setup_fee recur_fee recur_method cutoff_day ) ],
-  'fieldorder' => [qw( setup_fee recur_fee cutoff_day add_full_period no_pkg_prorate ) ],
+  'fieldorder' => [qw( cutoff_day add_full_period no_pkg_prorate ) ],
 
   'weight' => 51,
 

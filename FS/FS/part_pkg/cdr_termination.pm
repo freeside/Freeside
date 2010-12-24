@@ -16,15 +16,8 @@ tie my %temporalities, 'Tie::IxHash',
 %info = (
   'name' => 'VoIP rating of CDR records for termination partners.',
   'shortname' => 'VoIP/telco CDR termination',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-
-    'setup_fee'     => { 'name' => 'Setup fee for this package',
-                         'default' => 0,
-                       },
-    'recur_fee'     => { 'name' => 'Base recurring fee for this package',
-                         'default' => 0,
-                       },
-
     #'cdr_column'    => { 'name' => 'Column from CDR records',
     #                     'type' => 'select',
     #                     'select_enum' => [qw(
@@ -48,11 +41,6 @@ tie my %temporalities, 'Tie::IxHash',
                              'type' => 'select',
                              'select_options' => \%temporalities,
                            },
-
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
 
     'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating or '.
                                    'subscription',
@@ -92,8 +80,7 @@ tie my %temporalities, 'Tie::IxHash',
   },
                        #cdr_column
   'fieldorder' => [qw(
-                       setup_fee recur_fee
-                       recur_temporality unused_credit recur_method cutoff_day
+                       recur_temporality recur_method cutoff_day
                        add_full_period
                        output_format usage_section summarize_usage usage_mandate
                      )

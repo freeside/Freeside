@@ -10,17 +10,8 @@ use FS::part_pkg::flat;
 %info = (
   'name' => 'Flat rate with recurring commission per (any) active package',
   'shortname' => 'Commission per (any) active package',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee'     => { 'name' => 'Setup fee for this package',
-                         'default' => 0,
-                       },
-    'recur_fee'     => { 'name' => 'Recurring fee for this package',
-                         'default' => 0,
-                       },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
     'comission_amount' => { 'name' => 'Commission amount per month (per active package)',
                             'default' => 0,
                           },
@@ -35,7 +26,7 @@ use FS::part_pkg::flat;
                             'select_label' => 'type',
                           },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 'comission_depth', 'comission_amount', 'reason_type' ],
+  'fieldorder' => [ 'comission_depth', 'comission_amount', 'reason_type' ],
   #'setup' => 'what.setup_fee.value',
   #'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
   'weight' => 62,

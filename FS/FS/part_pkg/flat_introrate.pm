@@ -2,7 +2,6 @@ package FS::part_pkg::flat_introrate;
 
 use strict;
 use vars qw(@ISA %info $DEBUG $me);
-#use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg::flat;
 
 use Date::Manip qw(DateCalc UnixDate ParseDate);
@@ -11,22 +10,23 @@ use Date::Manip qw(DateCalc UnixDate ParseDate);
 $me = '[' . __PACKAGE__ . ']';
 $DEBUG = 0;
 
-(%info) = (%FS::part_pkg::flat::info);
-$info{name} = 'Introductory price for X months, then flat rate,'.
-              'relative to setup date (anniversary billing)';
-$info{shortname} = 'Anniversary, with intro price';
-$info{fields} = { %{$info{fields}} };
-$info{fields}{intro_fee} =
-         { 'name' => 'Introductory recurring fee for this package',
+%info = (
+  'name' => 'Introductory price for X months, then flat rate,'.
+            'relative to setup date (anniversary billing)',
+  'shortname' => 'Anniversary, with intro price',
+  'inherit_fields' => [ 'flat', 'usage_Mixin', 'global_Mixin' ],
+  'fields' => {
+    'intro_fee' => { 'name' => 'Introductory recurring fee for this package',
                      'default' => 0,
-         };
-$info{fields}{intro_duration} =
+                   },
+    'intro_duration' =>
          { 'name' => 'Duration of the introductory period, in number of months',
            'default' => 0,
-         };
-$info{fieldorder} = [ @{ $info{fieldorder} } ];
-splice @{$info{fieldorder}}, 1, 0, qw( intro_duration intro_fee );
-$info{weight} = 14;
+         },
+  },
+  'fieldorder' => [ qw(intro_duration intro_fee) ],
+  'weight' => 14,
+);
 
 sub base_recur {
   my($self, $cust_pkg, $time ) = @_;

@@ -24,25 +24,13 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 %info = (
   'name' => 'VoIP flat rate pricing of CDRs for inbound calls',
   'shortname' => 'VoIP/telco CDR rating (inbound)',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee'     => { 'name' => 'Setup fee for this package',
-                         'default' => 0,
-                       },
-    'recur_fee'     => { 'name' => 'Base recurring fee for this package',
-                         'default' => 0,
-                       },
-
     #false laziness w/flat.pm
     'recur_temporality' => { 'name' => 'Charge recurring fee for period',
                              'type' => 'select',
                              'select_options' => \%temporalities,
                            },
-
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
-
     'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating or '.
                                    'subscription',
                          'default' => '1',
@@ -155,7 +143,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
   },
   'fieldorder' => [qw(
-                       setup_fee recur_fee recur_temporality unused_credit
+                       recur_temporality
                        recur_method cutoff_day add_full_period
                        min_charge sec_granularity
                        default_prefix

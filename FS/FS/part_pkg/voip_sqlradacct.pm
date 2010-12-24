@@ -16,17 +16,8 @@ $DEBUG = 1;
   'disabled' => 1, #they're sucked into our CDR table now instead
   'name' => 'VoIP rating by plan of CDR records in an SQL RADIUS radacct table',
   'shortname' => 'VoIP/telco CDR rating (external RADIUS)',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee'     => { 'name' => 'Setup fee for this package',
-                         'default' => 0,
-                       },
-    'recur_fee'     => { 'name' => 'Base recurring fee for this package',
-                         'default' => 0,
-                       },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
     'ratenum'   => { 'name' => 'Rate plan',
                      'type' => 'select',
                      'select_table' => 'rate',
@@ -34,7 +25,7 @@ $DEBUG = 1;
                      'select_label' => 'ratename',
                    },
   },
-  'fieldorder' => [qw( setup_fee recur_fee unused_credit ratenum ignore_unrateable )],
+  'fieldorder' => [qw( ratenum ignore_unrateable )],
   'weight' => 40,
 );
 

@@ -10,17 +10,8 @@ use FS::part_pkg::flat;
 %info = (
   'name' => 'Base charge plus charge per-hour from the session monitor',
   'shortname' => 'Session monitor (per-hour)',
+  'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
-    'setup_fee' => { 'name' => 'Setup fee for this package',
-                     'default' => 0,
-                   },
-    'recur_fee' => { 'name' => 'Base recurring fee for this package',
-                     'default' => 0,
-                   },
-    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
-                                   ' of service at cancellation',
-                         'type' => 'checkbox',
-                       },
     'recur_included_hours' => { 'name' => 'Hours included',
                                 'default' => 0,
                               },
@@ -28,7 +19,7 @@ use FS::part_pkg::flat;
                                'default' => 0,
                              },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 'recur_included_hours', 'recur_hourly_charge' ],
+  'fieldorder' => [ 'recur_included_hours', 'recur_hourly_charge' ],
   #'setup' => 'what.setup_fee.value',
   #'recur' => '\'my $hours = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_fee.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
   'weight' => 80,

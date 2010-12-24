@@ -11,13 +11,8 @@ use FS::part_pkg::flat;
 %info = (
   'name' => 'First partial month full charge, then flat-rate (selectable billing day)',
   'shortname' => 'Subscription (Nth of month, full charge for first)',
+  'inherit_fields' => [ 'usage_Mixin', 'global_Mixin' ],
   'fields' => {
-    'setup_fee' => { 'name' => 'Setup fee for this package',
-                     'default' => 0,
-                   },
-    'recur_fee' => { 'name' => 'Recurring fee for this package',
-                     'default' => 0,
-			   },
     'cutoff_day' => { 'name' => 'Billing day',
                       'default' => 1,
                     },
@@ -81,7 +76,7 @@ use FS::part_pkg::flat;
                       'default' => '',
                     },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'cutoff_day', 'seconds',
+  'fieldorder' => [ 'cutoff_day', 'seconds',
                     'upbytes', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',

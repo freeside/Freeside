@@ -1545,18 +1545,47 @@ foreach my $INC ( @INC ) {
       next;
     }
     warn "got plan info from FS::part_pkg::$mod: $info\n" if $DEBUG;
-    if ( exists($info->{'disabled'}) && $info->{'disabled'} ) {
-      warn "skipping disabled plan FS::part_pkg::$mod" if $DEBUG;
-      next;
-    }
+    #if ( exists($info->{'disabled'}) && $info->{'disabled'} ) {
+    #  warn "skipping disabled plan FS::part_pkg::$mod" if $DEBUG;
+    #  next;
+    #}
     $info{$mod} = $info;
+    $info->{'weight'} ||= 0; # quiet warnings
   }
 }
 
+# copy one level deep to allow replacement of fields and fieldorder
 tie %plans, 'Tie::IxHash',
-  map  { $_ => $info{$_} }
+  map  { my %infohash = %{ $info{$_} }; 
+          $_ => \%infohash }
   sort { $info{$a}->{'weight'} <=> $info{$b}->{'weight'} }
   keys %info;
+
+# inheritance of plan options
+foreach my $name (keys(%info)) {
+  if (exists($info{$name}->{'disabled'}) and $info{$name}->{'disabled'}) {
+    warn "skipping disabled plan FS::part_pkg::$name" if $DEBUG;
+    delete $plans{$name};
+    next;
+  }
+  my $parents = $info{$name}->{'inherit_fields'} || [];
+  my (%fields, %field_exists, @fieldorder);
+  foreach my $parent ($name, @$parents) {
+    %fields = ( # avoid replacing existing fields
+      %{ $info{$parent}->{'fields'} || {} },
+      %fields
+    );
+    foreach (@{ $info{$parent}->{'fieldorder'} || [] }) {
+      # avoid duplicates
+      next if $field_exists{$_};
+      $field_exists{$_} = 1;
+      # allow inheritors to remove inherited fields from the fieldorder
+      push @fieldorder, $_ if !exists($fields{$_}->{'disabled'});
+    }
+  }
+  $plans{$name}->{'fields'} = \%fields;
+  $plans{$name}->{'fieldorder'} = \@fieldorder;
+}
 
 sub plan_info {
   \%plans;
