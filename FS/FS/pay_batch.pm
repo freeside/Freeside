@@ -356,20 +356,21 @@ sub import_results {
 
     &{$hook}(\%hash, $cust_pay_batch->hashref);
 
+    my $error = '';
     if ( &{$approved_condition}(\%hash) ) {
 
-      $new_cust_pay_batch->status('Approved');
+      $error = $new_cust_pay_batch->approve($hash{'paybatch'} || $self->batchnum);
+      $total += $hash{'paid'};
 
     } elsif ( &{$declined_condition}(\%hash) ) {
 
-      $new_cust_pay_batch->status('Declined');
+      $error = $new_cust_pay_batch->decline;
 
     }
 
-    my $error = $new_cust_pay_batch->replace($cust_pay_batch);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "error updating status of paybatchnum $hash{'paybatchnum'}: $error\n";
+      return $error;
     }
 
     # purge CVV when the batch is processed
@@ -379,64 +380,13 @@ sub import_results {
           $conf->config('cvv-save') ) {
         $new_cust_pay_batch->cust_main->remove_cvv;
       }
-    }
-
-    if ( $new_cust_pay_batch->status =~ /Approved/i ) {
-
-      my $cust_pay = new FS::cust_pay ( {
-        'custnum'  => $custnum,
-	'payby'    => $payby,
-        'paybatch' => $hash{'paybatch'} || $self->batchnum,
-        'payinfo'  => ( $hash{'payinfo'} || $cust_pay_batch->payinfo ),
-        map { $_ => $hash{$_} } (qw( paid _date )),
-      } );
-      $error = $cust_pay->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error adding payment paybatchnum $hash{'paybatchnum'}: $error\n";
-      }
-      $total += $hash{'paid'};
-  
-      $cust_pay->cust_main->apply_payments;
-
-    } elsif ( $new_cust_pay_batch->status =~ /Declined/i ) {
-
-      #false laziness w/cust_main::collect
-
-      my $due_cust_event = $new_cust_pay_batch->cust_main->due_cust_event(
-        #'check_freq' => '1d', #?
-        'eventtable' => 'cust_pay_batch',
-        'objects'    => [ $new_cust_pay_batch ],
-      );
-      unless( ref($due_cust_event) ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $due_cust_event;
-      }
-
-      foreach my $cust_event ( @$due_cust_event ) {
-        
-        #XXX lock event
-    
-        #re-eval event conditions (a previous event could have changed things)
-        next unless $cust_event->test_conditions;
-
-	if ( my $error = $cust_event->do_event() ) {
-	  # gah, even with transactions.
-	  #$dbh->commit if $oldAutoCommit; #well.
-	  $dbh->rollback if $oldAutoCommit;
-          return $error;
-	}
-
-      }
 
     }
 
-  }
+  } # foreach (@all_values)
 
   if ( defined($close_condition) ) {
     # Allow the module to decide whether to close the batch.
-    # This is used for TD EFT, which requires two imports before 
-    # closing.
     # $close_condition can also die() to abort the whole import.
     my $close = eval { $close_condition->($self) };
     if ( $@ ) {
@@ -575,6 +525,52 @@ sub export_batch {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   return $batch;
+}
+
+sub manual_approve {
+  my $self = shift;
+  my $date = time;
+  my %opt = @_;
+  my $paybatch = $opt{'paybatch'} || $self->batchnum;
+  my $conf = FS::Conf->new;
+  return 'manual batch approval disabled' 
+    if ( ! $conf->exists('batch-manual_approval') );
+  return 'batch already resolved' if $self->status eq 'R';
+  return 'batch not yet submitted' if $self->status eq 'O';
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $payments = 0;
+  foreach my $cust_pay_batch ( 
+    qsearch('cust_pay_batch', { batchnum => $self->batchnum,
+        status   => '' })
+  ) {
+    my $new_cust_pay_batch = new FS::cust_pay_batch { 
+      $cust_pay_batch->hash,
+      'paid'  => $cust_pay_batch->amount,
+      '_date' => $date,
+    };
+    my $error = $new_cust_pay_batch->approve($paybatch);
+    if ( $error ) {
+      $dbh->rollback;
+      return 'paybatchnum '.$cust_pay_batch->paybatchnum.": $error";
+    }
+    $payments++;
+  }
+  return 'no unresolved payments in batch' if $payments == 0;
+  $self->set_status('R');
+  
+  $dbh->commit;
+  return;
 }
 
 =back

@@ -260,6 +260,82 @@ sub retriable {
   '';
 }
 
+=item approve PAYBATCH
+
+Approve this payment.  This will replace the existing record with the 
+same paybatchnum, set its status to 'Approved', and generate a payment 
+record (L<FS::cust_pay>).  This should only be called from the batch 
+import process.
+
+=cut
+
+sub approve {
+  # to break up the Big Wall of Code that is import_results
+  my $new = shift;
+  my $paybatch = shift;
+  my $paybatchnum = $new->paybatchnum;
+  my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
+    or return "paybatchnum $paybatchnum not found";
+  return "paybatchnum $paybatchnum already resolved ('".$old->status."')" 
+    if $old->status;
+  $new->status('Approved');
+  my $error = $new->replace($old);
+  if ( $error ) {
+    return "error updating status of paybatchnum $paybatchnum: $error\n";
+  }
+  my $cust_pay = new FS::cust_pay ( {
+      'custnum'   => $new->custnum,
+      'payby'     => $new->payby,
+      'paybatch'  => $paybatch,
+      'payinfo'   => $new->payinfo || $old->payinfo,
+      'paid'      => $new->paid,
+      '_date'     => $new->_date,
+    } );
+  $error = $cust_pay->insert;
+  if ( $error ) {
+    return "error inserting payment for paybatchnum $paybatchnum: $error\n";
+  }
+  $cust_pay->cust_main->apply_payments;
+  return;
+}
+
+=item decline
+
+Decline this payment.  This will replace the existing record with the 
+same paybatchnum, set its status to 'Declined', and run collection events
+as appropriate.  This should only be called from the batch import process.
+ 
+
+=cut
+sub decline {
+  my $new = shift;
+  my $paybatchnum = $new->paybatchnum;
+  my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
+    or return "paybatchnum $paybatchnum not found";
+  return "paybatchnum $paybatchnum already resolved ('".$old->status."')" 
+    if $old->status;
+  $new->status('Declined');
+  my $error = $new->replace($old);
+  if ( $error ) {
+    return "error updating status of paybatchnum $paybatchnum: $error\n";
+  }
+  my $due_cust_event = $new->cust_main->due_cust_event(
+    'eventtable'  => 'cust_pay_batch',
+    'objects'     => [ $new ],
+  );
+  if ( !ref($due_cust_event) ) {
+    return $due_cust_event;
+  }
+  # XXX breaks transaction integrity
+  foreach my $cust_event (@$due_cust_event) {
+    next unless $cust_event->test_conditions;
+    if ( my $error = $cust_event->do_event() ) {
+      return $error;
+    }
+  }
+  return;
+}
+
 =back
 
 =head1 BUGS

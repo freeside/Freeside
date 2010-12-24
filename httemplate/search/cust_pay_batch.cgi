@@ -193,13 +193,19 @@ if ( $pay_batch ) {
                     qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
                     qq!<OPTION VALUE="paymentech">Chase Paymentech XML</OPTION>!.
                     qq!<OPTION VALUE="RBC">Royal Bank of Canada PDS</OPTION>!.
-                    qq!<OPTION VALUE="td_eft1464">TD Commercial Banking EFT 1464 byte</OPTION>!.
+                    qq!<OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>!.
+                    qq!<OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>!.
                     qq!</SELECT><BR></TR>!;
     }
     $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;
     $html_init .= '<TR> <INPUT TYPE="submit" VALUE="Upload"></FORM><BR> </TR>';
+    if ( $conf->exists('batch-manual_approval') and $pay_batch->status eq 'I') {
+      $html_init .= qq!<TR><INPUT TYPE="button" VALUE="Manually approve" onclick="
+if ( confirm('Approve all remaining payments in this batch?') )
+  window.location.href='${p}misc/process/pay_batch-approve.cgi?batchnum=$batchnum';"></TR>!
+    }
   }
-  $html_init .= '</TABLE>'
+  $html_init .= '</TABLE>';
 }
 
 if ($pay_batch) {

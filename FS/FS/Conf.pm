@@ -2995,13 +2995,13 @@ and customer address. Include units.',
     'type'        => 'textarea',
   },
 
-#  {
-#    'key'         => 'batch-manual_approval',
-#    'section'     => 'billing',
-#    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is very dangerous.',
-#    'type'        => 'checkbox',
-#  },
-#
+  {
+    'key'         => 'batch-manual_approval',
+    'section'     => 'billing',
+    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised, but is needed for payment processors that provide a report of rejected rather than approved payments.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'payment_history-years',
     'section'     => 'UI',

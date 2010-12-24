@@ -76,13 +76,13 @@ $name = 'td_eft1464';
     my @cust_pay_batch = @{(shift)};
     my $time = $pay_batch->download || time;
     my $now = sprintf("%03u%03u", 
-      (localtime(time))[5],#year since 1900
+      (localtime(time))[5] % 100,#year since 1900
       (localtime(time))[7]+1);#day of year
 
     # Request settlement the next day
     my $duedate = time+86400;
     $opt{'due'} = sprintf("%03u%03u",
-      (localtime($duedate))[5],
+      (localtime($duedate))[5] % 100,
       (localtime($duedate))[7]+1);
 
     $opt{'fcn'} = 
@@ -94,7 +94,8 @@ $name = 'td_eft1464';
       $opt{'fcn'},
       $now,
       $opt{'datacenter'},
-      ' ' x 1429 #filler
+      ' ' x 1429, #filler
+      "\r"
     );
   },
   row => sub {
@@ -116,7 +117,7 @@ $name = 'td_eft1464';
       sprintf('%09u', $aba),
       sprintf('%-12s', $account),
       ' ' x 22,
-      ' ' x 3,
+      '0' x 3,
       $opt{'shortname'},
       sprintf('%-30s', 
         join(' ',
@@ -127,11 +128,12 @@ $name = 'td_eft1464';
       sprintf('%-19s', $cust_pay_batch->paybatchnum), # originator reference num
       $opt{'retbranch'},
       $opt{'retacct'}, 
+      ' ' x 15,
       ' ' x 22,
       ' ' x 2,
       '0' x 11,
     );
-    return $control . $payment . (' ' x 720);
+    return sprintf('%-1464s',$control . $payment) . "\r";
   },
   footer => sub {
     my ($pay_batch, $batchcount, $batchtotal) = @_;
@@ -145,6 +147,7 @@ $name = 'td_eft1464';
       '0' x 14, # total of credit txns
       '0' x 8, # total of credit txns
       ' ' x 1396,
+      "\r"
     )
   },
 );

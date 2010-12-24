@@ -1,6 +1,4 @@
-<% $pay_batch->export_batch($format) %>
-
-<%init>
+<% $pay_batch->export_batch($format) %><%init>
 
 #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
 http_header('Content-Type' => 'text/plain' ); # not necessarily correct...
