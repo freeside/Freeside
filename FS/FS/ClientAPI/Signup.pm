@@ -556,9 +556,17 @@ sub new_customer {
     return { 'error' => "Unknown reseller" }
       unless $agent;
 
-    my $gw = $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
-                                      'nofatal' => 1,
+    my $gw;
+    my $gatewaynum = $conf->config('selfservice-payment_gateway');
+    if ( $gatewaynum ) {
+      $gw = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
+      die "configured gatewaynum $gatewaynum not found!" if !$gw;
+    }
+    else {
+      $gw = $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
+                                     'nofatal' => 1,
                                     );
+    }
 
     $cust_main->payby('BILL')   # MCRD better?
       if $gw && $gw->gateway_namespace eq 'Business::OnlineThirdPartyPayment';

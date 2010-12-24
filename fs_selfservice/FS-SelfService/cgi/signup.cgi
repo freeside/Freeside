@@ -246,8 +246,8 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
       print_decline();
     } elsif ( $error eq '_collect' ) {
       map { $cgi->param($_, $rv->{$_}) }
-        qw( popup_url reference collectitems amount );
-      print_collect();
+        qw( popup_url reference amount );
+      print_collect($rv);
     } elsif ( $error ) {
       #fudge the snarf info
       no strict 'refs';
@@ -302,9 +302,11 @@ sub print_collect {
 
   $error = "Error: $error" if $error;
 
+  my $rv = shift || {};
   my $r = {
     $cgi->Vars,
     %{$init_data},
+    %$rv,
     'error' => $error,
   };
 
@@ -314,6 +316,7 @@ sub print_collect {
   $r->{self_url} = $cgi->self_url;
 
   print $cgi->header( '-expires' => 'now' ),
+
         $collect_template->fill_in( PACKAGE => 'FS::SelfService::_signupcgi',
                                     HASH    => $r
                                   );
@@ -442,23 +445,25 @@ sub collect_default { #html to use if there is a collect phase
   <<'END';
 <HTML><HEAD><TITLE>Pay now</TITLE></HEAD>
 <BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Pay now</FONT><BR><BR>
-<SCRIPT TYPE="text/javascript">
-  function popcollect() {
-    overlib( OLiframeContent('<%= $popup_url %>', 336, 550, 'Secure Payment Area', 0, 'auto' ), CAPTION, 'Pay now', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close' );
-    return false;
-  }
-</SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="overlibmws_iframe.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="overlibmws_draggable.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="overlibmws_crossframe.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+<%=
+#<SCRIPT TYPE="text/javascript">
+#  function popcollect() {
+#    overlib( OLiframeContent('<%= $popup_url %>', 336, 550, 'Secure Payment Area', 0, 'auto' ), CAPTION, 'Pay now', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close' );
+#    return false;
+#  }
+#</SCRIPT>
+#<SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+#<SCRIPT TYPE="text/javascript" SRC="overlibmws_iframe.js"></SCRIPT>
+#<SCRIPT TYPE="text/javascript" SRC="overlibmws_draggable.js"></SCRIPT>
+#<SCRIPT TYPE="text/javascript" SRC="overlibmws_crossframe.js"></SCRIPT>
+#<SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+%>
 You are about to contact our payment processor to pay <%= $amount %> for
 <%= $pkg %>.<BR><BR>
 Your transaction reference number is <%= $reference %><BR><BR>
-<FORM NAME="collect_popper" method="post" action="javascript:void(0)" onSubmit="popcollect()">
+<FORM NAME="collect_popper" method="post" action="<%= $popup_url %>">
 <%=
-  my %itemhash = @collectitems;
+  my %itemhash = @collectitems ;
   foreach my $input (keys %itemhash) {
     $OUT .= qq!<INPUT NAME="$input" TYPE="hidden" VALUE="$itemhash{$input}">!;
   }
