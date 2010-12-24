@@ -1459,6 +1459,25 @@ sub _upgrade_data { # class method
     die $error if $error;
   }
 
+  my @part_pkg_option = qsearch('part_pkg_option',
+    { 'optionname'  => 'unused_credit',
+      'optionvalue' => 1,
+    });
+  foreach my $old_opt (@part_pkg_option) {
+    my $pkgpart = $old_opt->pkgpart;
+    my $error = $old_opt->delete;
+    die $error if $error;
+
+    foreach (qw(unused_credit_cancel unused_credit_change)) {
+      my $new_opt = new FS::part_pkg_option {
+        'pkgpart'     => $pkgpart,
+        'optionname'  => $_,
+        'optionvalue' => 1,
+      };
+      $error = $new_opt->insert;
+      die $error if $error;
+    }
+  }
 }
 
 =item curuser_pkgs_sql
