@@ -356,6 +356,19 @@ Example:
 %         %include_common,
 %         %opt,
 %     );
+%
+%     if ( $include eq 'tr-input-date-field' ) {
+%	# it's either hacking it here, or changing a lot more stuff
+%	@include = (
+%		"/elements/$include.html", {
+%			'name' => $field,
+%			'value' => $opt{curr_value},
+%			'label' => $label,
+%			'noinit' => $f->{noinit},
+%		}
+%	);
+%     }
+%
 %     @include;
 %   };
 %

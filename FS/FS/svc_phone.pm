@@ -97,6 +97,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 # the new method can be inherited from FS::Record, if a table method is defined
 #
 sub table_info {
+ my %dis2 = ( disable_inventory=>1, disable_select=>1 );
   {
     'name' => 'Phone number',
     'sorts' => 'phonenum',
@@ -134,6 +135,26 @@ sub table_info {
                            disable_inventory => 1,
                            disable_select    => 1,
                          },
+	'lnp_status' => {   	label => 'LNP Status',
+				type => 'select-lnp_status.html',
+				%dis2,
+			},
+	'portable' => 	{	label => 'Portable?', %dis2, },
+	'lrn' 	=>	{	label => 'LRN', 
+				disable_inventory => 1, 
+			},
+	'lnp_desired_due_date' =>
+			{ label => 'LNP Desired Due Date', %dis2 },
+	'lnp_due_date' =>
+			{ label => 'LNP Due Date', %dis2 },
+	'lnp_other_provider' =>
+			{ 	label => 'LNP Other Provider', 
+				disable_inventory => 1, 
+			},
+	'lnp_other_provider_account' =>
+			{	label => 'LNP Other Provider Account #', 
+				%dis2 
+			},
     },
   };
 }
@@ -392,6 +413,13 @@ sub check {
     || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
     || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
+    || $self->ut_numbern('lrn')
+    || $self->ut_numbern('lnp_desired_due_date')
+    || $self->ut_numbern('lnp_due_date')
+    || $self->ut_textn('lnp_other_provider')
+    || $self->ut_textn('lnp_other_provider_account')
+    || $self->ut_enumn('lnp_status', ['','portingin','portingout','portedin','native'])
+    || $self->ut_enumn('portable', ['','Y'])
   ;
   return $error if $error;
 

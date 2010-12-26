@@ -1,0 +1,14 @@
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'LNP Status' %></TD>
+    <TD>
+      <% include('/elements/select-lnp_status.html',
+                   'curr_value' => $opt{'curr_value'},
+                )
+      %>
+    </TD>
+  </TR>
+<%init>
+
+my %opt = @_;
+
+</%init>

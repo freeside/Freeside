@@ -710,6 +710,7 @@ sub provision_svc {
   $action .= "_$1";
 
   $result->{'numavail'} = $cgi->param('numavail');
+  $result->{'lnp'} = $cgi->param('lnp');
 
   $result;
 }
@@ -717,13 +718,25 @@ sub provision_svc {
 sub process_svc_phone {
     my @bulkdid = $cgi->param('bulkdid');
     my $phonenum = $cgi->param('phonenum');
+    my $lnp = $cgi->param('lnp');
 
-    my $result = provision_phone (
-	'session_id' => $session_id,
-	'bulkdid' => [ @bulkdid ],
-	'countrycode' => '1',
-	 map { $_ => $cgi->param($_) } qw( pkgnum svcpart phonenum )
-    );
+    my $result;
+    if($lnp) {
+	$result = provision_phone (
+	    'session_id' => $session_id,
+	    'countrycode' => '1',
+	     map { $_ => $cgi->param($_) } qw( pkgnum svcpart phonenum 
+		lnp_desired_due_date lnp_other_provider 
+		lnp_other_provider_account )
+	);
+    } else {
+	$result = provision_phone (
+	    'session_id' => $session_id,
+	    'bulkdid' => [ @bulkdid ],
+	    'countrycode' => '1',
+	     map { $_ => $cgi->param($_) } qw( pkgnum svcpart phonenum )
+	);
+    }
 
     if ( exists $result->{'error'} && $result->{'error'} ) { 
 	$action = 'provision_svc_phone';

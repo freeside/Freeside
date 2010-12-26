@@ -1,6 +1,15 @@
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header', 'Setup phone number') %>
+<%= $url = "$selfurl?session=$session_id;action="; 
+ $heading2 = $lnp ? "Port-In Number" : "Setup phone number";
+ '';
+%>
+<%= include('header', $heading2) %>
 <%=
+
+sub lnp_textfield {
+    my ($name,$label) = (shift,shift);
+   qq!<tr><td>$label</td><td><input type="text" name="$name"></td></tr>!;
+}
+
 if($error) {
     $OUT .= qq!<div style="color:red; font-size: 115%">$error</div>!;
 }
@@ -12,10 +21,21 @@ if($error) {
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $svcpart %>">
 <INPUT TYPE="hidden" NAME="numavail" VALUE="<%= $numavail %>">
-<%= didselector('field' => 'phonenum', 
+<%=
+if($lnp) {
+    $OUT .= "<table>"
+	    . qq!<input type="hidden" name="lnp" value="1">!
+	    . lnp_textfield(phonenum,"Phone Number")
+	    . lnp_textfield("lnp_desired_due_date","Requested Port-In Date")
+	    . lnp_textfield("lnp_other_provider","Current Provider")
+	    . lnp_textfield("lnp_other_provider_account","Current Provider's Account #")
+	    . "</table>";
+} else {
+    didselector('field' => 'phonenum', 
 		'svcpart' => $svcpart,
 		'bulknum' => $numavail,
 		);
+}
 %>
 <BR><BR><INPUT TYPE="submit" VALUE="Setup">
 </FORM>

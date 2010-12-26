@@ -2589,6 +2589,20 @@ sub ut_enum {
   return "Illegal (enum) field $field: ". $self->getfield($field);
 }
 
+=item ut_enumn COLUMN CHOICES_ARRAYREF
+
+Like ut_enum, except the null value is also allowed.
+
+=cut
+
+sub ut_enumn {
+  my( $self, $field, $choices ) = @_;
+  $self->getfield($field)
+    ? $self->ut_enum($field, $choices)
+    : '';
+}
+
+
 =item ut_foreign_key COLUMN FOREIGN_TABLE FOREIGN_COLUMN
 
 Check/untaint a foreign column key.  Call a regular ut_ method (like ut_number)

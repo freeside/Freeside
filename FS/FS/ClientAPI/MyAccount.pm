@@ -18,6 +18,7 @@ use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbh);
 use FS::Msgcat qw(gettext);
 use FS::Misc qw(card_types);
+use FS::Misc::DateTime qw(parse_datetime);
 use FS::ClientAPI_SessionCache;
 use FS::svc_acct;
 use FS::svc_domain;
@@ -978,6 +979,7 @@ sub list_pkgs {
     'wholesale_view' => 1,
     'login_svcpart' => [ $conf->config('selfservice_server-login_svcpart') ],
     'date_format' => $conf->config('date_format') || '%m/%d/%Y',
+    'lnp' => $conf->exists('svc_phone-lnp'),
       };
   }
 
@@ -1568,7 +1570,23 @@ sub cancel_pkg {
 
 sub provision_phone {
  my $p = shift;
- my @bulkdid = @{$p->{'bulkdid'}};
+ my @bulkdid;
+ @bulkdid = @{$p->{'bulkdid'}} if $p->{'bulkdid'};
+
+# single DID LNP
+ unless($p->{'lnp'}) {
+    $p->{'lnp_desired_due_date'} = parse_datetime($p->{'lnp_desired_due_date'});
+    $p->{'lnp_status'} = "portingin";
+    return _provision( 'FS::svc_phone',
+		  [qw(lnp_desired_due_date lnp_other_provider 
+		    lnp_other_provider_account phonenum countrycode lnp_status)],
+		  [qw(phonenum countrycode)],
+		  $p,
+		  @_
+		);
+ }
+
+# single DID order
  unless (scalar(@bulkdid)) {
     return _provision( 'FS::svc_phone',
 		  [qw(phonenum countrycode)],
@@ -1578,7 +1596,7 @@ sub provision_phone {
 		);
  }
 
-# bulk case
+# bulk DID order case
   my $error;
   foreach my $did ( @bulkdid ) {
     $did =~ s/[^0-9]//g;

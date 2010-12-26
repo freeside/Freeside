@@ -1,17 +1,6 @@
 <% include( 'elements/svc_Common.html',
                'table'    => 'svc_phone',
                'fields'   => \@fields,
-               'labels'   => {
-                               'svcnum'       => 'Service',
-                               'countrycode'  => 'Country code',
-                               'phonenum'     => 'Phone number',
-                               'domsvc'       => 'Domain',
-                               'sip_password' => 'SIP password',
-                               'pin'          => 'Voicemail PIN',
-                               'phone_name'   => 'Name',
-                               'pbxsvc'       => 'PBX',
-                               'locationnum'  => 'E911 location',
-                             },
                'svc_new_callback' => sub {
                  my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt ) = @_;
                  $svc_x->locationnum($cust_pkg->locationnum) if $cust_pkg;
@@ -73,5 +62,29 @@ push @fields, { field => 'pbxsvc',
               { field => 'custnum', type=> 'hidden' }, #for new cust_locations
 ;
 
+if ( $conf->exists('svc_phone-lnp') ) {
+    push @fields,
+            { value   => 'Number Portability',
+	      type    => 'tablebreak-tr-title',
+				colspan => 7,
+            },
+	    {	field => 'lnp_status',
+		type => 'select-lnp_status',
+	    },
+	    {	field => 'portable',
+		type => 'checkbox',
+	    },
+            'lrn',
+	    {	field => 'lnp_desired_due_date',
+		type => 'input-date-field',
+	    },
+	    {	field => 'lnp_due_date',
+		type => 'input-date-field',
+		noinit => 1,
+	    },
+            'lnp_other_provider',
+            'lnp_other_provider_account',
+;
+}
 
 </%init>

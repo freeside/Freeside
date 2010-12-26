@@ -1,15 +1,7 @@
 <% include('elements/svc_Common.html',
               'table'     => 'svc_phone',
               'fields'    => \@fields,
-              'labels'    => {
-                               'countrycode'  => 'Country code',
-                               'phonenum'     => 'Phone number',
-                               'domain'       => 'Domain',
-                               'pbx_title'    => 'PBX',
-                               'sip_password' => 'SIP password',
-                               'pin'          => 'PIN',
-                               'phone_name'   => 'Name',
-                             },
+	      'labels'    => \%labels,
               'html_foot' => $html_foot,
           )
 %>
@@ -18,9 +10,26 @@
 my $conf = new FS::Conf;
 my $countrydefault = $conf->config('countrydefault') || 'US';
 
+my $fields = FS::svc_phone->table_info->{'fields'};
+my %labels = map { $_ =>  ( ref($fields->{$_})
+                             ? $fields->{$_}{'label'}
+                             : $fields->{$_}
+                         );
+                 } keys %$fields;
+
 my @fields = qw( countrycode phonenum );
 push @fields, 'domain' if $conf->exists('svc_phone-domain');
 push @fields, qw( pbx_title sip_password pin phone_name );
+
+if ( $conf->exists('svc_phone-lnp') ) {
+push @fields, 'lnp_status',
+	    { field => 'portable', type => 'checkbox', },
+	    'lrn',
+	    { field => 'lnp_desired_due_date', type => 'date', },
+	    { field => 'lnp_due_date', type => 'date', },
+	    'lnp_other_provider',
+	    'lnp_other_provider_account';
+}
 
 my $html_foot = sub {
   my $svc_phone = shift;

@@ -334,6 +334,15 @@ that field.
 %                             'multiple'     => ($flag eq 'S'),
 %                          );
 %
+%        } elsif ( $def->{type} eq 'select-lnp_status.html' ) {
+%
+%          $html .= include('/elements/select-lnp_status.html',
+%                             'curr_value'   => $value,
+%                             'element_name' => "${layer}__${field}",
+%                             'element_etc'  => $disabled,
+%                             'multiple'     => ($flag eq 'S'),
+%                          );
+%
 %        } elsif ( $def->{type} eq 'radius_usergroup_selector' ) {
 %
 %          #XXX disable the RADIUS usergroup selector?  ugh it sure does need

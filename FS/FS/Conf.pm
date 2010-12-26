@@ -3789,6 +3789,13 @@ and customer address. Include units.',
     'description' => 'Maximum length of the phone service "Name" field (svc_phone.phone_name).  Sometimes useful to limit this (to 15?) when exporting as Caller ID data.',
     'type'        => 'text',
   },
+  
+  {
+    'key'         => 'svc_phone-lnp',
+    'section'     => '',
+    'description' => 'Enables Number Portability features for svc_phone',
+    'type'        => 'checkbox',
+  },
 
   {
     'key'         => 'default_phone_countrycode',

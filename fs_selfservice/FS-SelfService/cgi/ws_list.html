@@ -57,6 +57,12 @@ if ( $pkgpart ) {
 		    . qq!$part_svc->{'svc'}</A> ($part_svc->{'num_avail'}!
 		    . qq! available)<BR><BR>!;
 		$OUT .= $link if $part_svc->{'can_get_dids'};
+
+		if($part_svc->{'svcdb'} eq 'svc_phone' && $lnp) {
+		    $OUT .= qq!<A HREF="${url}provision_svc;lnp=1;!
+		    . qq!pkgnum=$pkg->{'pkgnum'};svcpart=$part_svc->{'svcpart'}!
+		    . qq!">Port-In $part_svc->{'svc'}</A>!;
+		}
 	    }
 
 	    $OUT .= "</TD></TR>";

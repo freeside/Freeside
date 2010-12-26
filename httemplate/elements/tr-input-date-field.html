@@ -1,8 +1,9 @@
-
+% unless ( $noinit ) {
 <LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
+% }
 
 <TR>
   <TD ALIGN="right"><% $label %></TD>
@@ -23,7 +24,7 @@
 
 <%init>
 
-my($name, $value, $label, $format, $usedatetime);
+my($name, $value, $label, $format, $usedatetime, $noinit);
 if ( ref($_[0]) ) {
   my $opt = shift;
   $name        = $opt->{'name'};
@@ -31,6 +32,7 @@ if ( ref($_[0]) ) {
   $label       = $opt->{'label'};
   $format      = $opt->{'format'};
   $usedatetime = $opt->{'usedatetime'};
+  $noinit      = $opt->{'noinit'};
 } else {
   ($name, $value, $label, $format, $usedatetime) = @_;
 }

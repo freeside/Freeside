@@ -1,6 +1,7 @@
 <% include( 'elements/svc_Common.html',
                'table'    => 'svc_phone',
                'args_callback' => $args_callback,
+	       'value_callback' => $value_callback,
            )
 %>
 <%init>
@@ -24,6 +25,9 @@ my $args_callback = sub {
 
 };
 
-
+my $value_callback = sub {
+     my ($field, $value) = @_;
+     ($field =~ /_date$/) ? parse_datetime($value) : $value;
+};
 
 </%init>

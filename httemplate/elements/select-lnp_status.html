@@ -1,0 +1,22 @@
+<SELECT NAME = "<% $opt{'element_name'} || $opt{'field'} || 'lnp_status' %>"
+        <% $opt{'element_etc'} %>
+>
+% unless ( $opt{'disable_empty'} ) {
+    <OPTION VALUE=""><% $opt{'empty_label'} || '' %></OPTION>
+% }
+% foreach my $selopt ( keys %seloptions ) {
+%  my $selected = ($selopt eq $opt{'curr_value'}) ? 'SELECTED' : '';
+    <OPTION VALUE="<%$selopt%>" <% $selected %>><% $seloptions{$selopt} %></OPTION>
+% }
+</SELECT>
+<%init>
+
+my %opt = @_;
+
+my %seloptions = ( 
+		'native' => 'Native',
+		'portedin' => 'Ported In',
+		'portingin' => 'Porting In',
+		'portingout' => 'Porting Out',
+	    );
+</%init>
