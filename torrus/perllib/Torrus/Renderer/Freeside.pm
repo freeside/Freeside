@@ -35,7 +35,7 @@ sub freesideHeader {
 
 sub freesideFooter {
   my $self = shift;
-  $self->FreesideComponent('/elements/footer.html');
+  $self->freesideComponent('/elements/footer.html');
 }
 
 our $FSURL;
