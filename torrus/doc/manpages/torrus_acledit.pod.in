@@ -1,0 +1,212 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_acledit.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+acledit - Manage Torrus access control lists (ACLs).
+
+=head1 SYNOPSIS
+
+B<torrus acledit> [I<options...>]
+
+=head1 DESCRIPTION
+
+This command manages the Torrus access control lists. Each user is
+identified by user ID, and has a set of attributes. Currently
+supported attributes are C<cn> (common name) and C<userPasswordMD5>
+(MD5 digest of the user's password).
+
+Each user belongs to one or several groups. Each group has its own
+set of privileges. A privilege is identified by privilege name and
+object name. Currently only one privilege name is supported:
+C<DisplayTree>, and the object name is the name of the tree that
+this group is allowed to browse.
+
+User authorization in the web interface is controlled by the
+C<$Torrus::CGI::authorizeUsers> variable in F<torrus-siteconfig.pl>.
+
+=head1 GROUP MANAGEMENT OPTIONS
+
+=over 4
+
+=item B<--addgroup>=I<GROUP>
+
+Creates a new group with the given name.
+
+=item B<--delgroup>=I<GROUP>
+
+Deletes the group with the given name.
+
+=item B<--modgroup>=I<GROUP>
+
+Modifies the given group.
+
+=item B<--permit>=I<PRIVILEGE>
+
+Grants privilege to group(s). Currently supported privileges are:
+C<DisplayTree> for displaying a datasource tree, and C<DisplayAdmInfo>
+for displaying the administrative information (all significant
+parameters for a given datasource leaf).
+
+=item B<--deny>=I<PRIVILEGE>
+
+Revokes group(s) privilege.
+
+=item B<--for>=I<OBJECT>
+
+Object for which privileges are granted or revoked. Currently it must be
+the name of the tree for which the C<DisplayTree> and  C<DisplayAdmInfo>
+privilegs are granted or revoked. The asterisk (*) instead of the object
+name assigns the privilege for all objects.
+
+=back
+
+
+=head1 USER MANAGEMENT OPTIONS
+
+=over 4
+
+=item B<--adduser>=I<UID>
+
+Creates a new user with the given user ID.
+
+=item B<--addhost>=I<HOST>
+
+Creates a new user for host-based authentication. I<HOST> should be an
+IPv4 or IPv6 address of the HTTP client. The new username is the address
+with all non-alphanumeric characters replaced with underscores.
+Host password is changed by <--hostpassword> option.
+
+=item B<--deluser>=I<UID>
+
+Deletes user with the given user ID.
+
+=item B<--moduser>=I<UID>
+
+Modifies the user attributes for the given user ID.
+
+=item B<--addtogroup>=I<GROUP>
+
+Adds user to the given group.
+
+=item B<--delfromgroup>=I<GROUP>
+
+Deletes user from the given group.
+
+=item B<--password>=I<PASSWORD>
+
+Sets user's password.
+
+=item B<--hostpassword>=I<PASSWORD>
+
+Sets the password for host-based authentication. The HTTP client should
+add C<hostauth> parameter with the password as a value.
+
+=item B<--cn>=I<NAME>
+
+Sets user's common name.
+
+=item B<--showuser>=I<UID>
+
+Displays information for a given user.
+
+=back
+
+
+=head1 GENERAL OPTIONS
+
+=over 4
+
+=item B<--export>=I<FILE>
+
+Exports ACL configuration to a given file.
+
+=item B<--template>=I<FILE>
+
+Uses the given template file when exporting. Default value is F<aclexport.xml>.
+
+=item B<--import>=I<FILE>
+
+Imports ACL configuration from the given file.
+
+=item B<--clear>
+
+Deletes all user and privileges configuration.
+
+=item B<--list>
+
+Lists all users and groups they belong to.
+
+=item B<--debug>
+
+Sets the log level to debug.
+
+=item B<--verbose>
+
+Sets the log level to info.
+
+=item B<--help>
+
+Displays a help message.
+
+=back
+
+
+=head1 EXAMPLES
+
+  torrus acledit --addgroup=staff --permit=DisplayTree \
+    --for=main --for=thecustomer
+  torrus acledit --adduser=jsmith --password=mysecretpassword \
+    --cn="John Smith" --addtogroup=staff
+  torrus acledit --addgroup=admin --permit=DisplayTree --for='*'
+
+This example creates a group I<staff> and gives all its members the permission
+to browse the datasource trees I<main> and I<thecustomer>. The next command
+creates a user I<jsmith> and addts it to this group. The user name will
+be displayed as I<John Smith>, and it will be let in with the given
+password. The third command creates a group I<admin> which is allowed
+o browse all existing trees.
+
+=head1 FILES
+
+=over 4
+
+=item F<@siteconfdir@/torrus-siteconfig.pl>
+
+Torrus site configuration script.
+
+=item F<@tmpldir@/aclexport.xml>
+
+Default template for the exports of ACL configuration.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

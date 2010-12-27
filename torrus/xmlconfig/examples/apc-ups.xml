@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+   Copyright (C) 2003  Aaron S. Bush <abush at microelectronics dot com>
+
+   File: apc-ups.xml
+   Description: APC UPS battery monitor example for Torrus.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+-->
+
+<!--
+   This is the example of using the definitions from
+   "vendor/apc.ups.xml" configuration file.
+   Currently the tree structure has to be built by hand, the same way as
+   the example below. In the future, there will be device discovery
+   support for this vendor.
+-->
+
+<configuration>
+
+<datasources>
+
+  <subtree name="SNMP">
+
+    <subtree name="UPS">
+
+      <param name="snmp-community" value="public" />
+      <param name="domain-name" value="example.com" />
+      <param name="data-dir" value="/var/snmpcollector" />
+
+
+      <subtree name="ups1">
+        <param name="legend">
+          Location: Chen's take-away, Duebendorf;
+          Contact:  Chen;
+          Power consumer: Microwave oven
+        </param>
+        <param name="snmp-host" value="ups1" />
+
+        <param name="snmp-version" value="1" />
+
+        <apply-template name="apcups-health" />
+
+      </subtree>
+      <!-- ups1 -->
+
+    </subtree>
+  </subtree>
+</datasources>
+
+</configuration>

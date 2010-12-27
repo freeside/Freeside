@@ -1,0 +1,98 @@
+#!@PERL@ -w
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: snmpfailures.in,v 1.1 2010-12-27 00:04:03 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+use JSON;
+    
+use Torrus::SiteConfig;
+use Torrus::DB;
+use Torrus::Log;
+use Torrus::SNMP_Failures;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+
+my $tree;
+my $print_details;
+
+my $help_needed;
+
+
+my $ok = GetOptions('tree=s'      => \$tree,
+                    'details'     => \$print_details,
+                    'help'        => \$help_needed);
+
+if( not $ok or not $tree or
+    $help_needed or scalar(@ARGV) > 0 )
+{
+    print STDERR "Usage: $0 --tree=NAME [options...]\n",
+    "Options:\n",
+    "  --tree=NAME      tree name\n",
+    "  --details        print failure details\n",
+    "  --help           this help message\n";
+    exit 1;
+}
+
+
+if( not Torrus::SiteConfig::treeExists( $tree ) )
+{
+    Error('Tree ' . $tree . ' does not exist');
+    exit 1;
+}
+
+
+my $out = {};
+
+&Torrus::DB::setSafeSignalHandlers();
+
+my $nInstances = Torrus::SiteConfig::collectorInstances( $tree );
+for( my $instance = 0; $instance < $nInstances; $instance++ )
+{
+    my $db_failures = new Torrus::SNMP_Failures( -Tree => $tree,
+                                                 -Instance => $instance );
+    
+    if( not defined( $db_failures ) )
+    {
+        exit(1);
+    }
+    
+    
+    $db_failures->read( $out, -details => $print_details );
+    undef $db_failures;
+}
+
+
+my $json = new JSON;
+$json->canonical();
+$json->pretty();
+print $json->encode($out);
+
+
+exit(0);
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

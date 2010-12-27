@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (C) 2003 Shawn Ferry
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+Author: Shawn Ferry
+Vendor: RFC1213-MIB
+
+$Id: rfc1213.xml,v 1.1 2010-12-27 00:04:27 ivan Exp $
+@(#) 10/18/03 rfc1213.xml 1.8 (10/18/03 19:24:09) sferry
+
+-->
+<!--
+Generic definitions and templates for:
+
+        The templates defined in this file should work with any
+        snmp implementation supporting:
+
+                RFC1213-MIB
+
+(ssinyagin) Please note that RFC1213 is obsoleted or superceded by:
+RFC3418 (SNMPv2-MIB)
+RFC2863 (IF-MIB)
+RFC2011 (IP-MIB)
+
+-->
+<configuration>
+  <definitions>
+    <!-- RFC1213-MIB -->
+    <def name="rfc1213_sysUpTime" value="1.3.6.1.2.1.1.3.0"/>
+    <!-- RFC1213-MIB interfaces Table -->
+    <def name="rfc1213_ifDescr" value="1.3.6.1.2.1.2.2.1.2"/>
+    <def name="rfc1213_ifPhysAddress" value="1.3.6.1.2.1.2.2.1.6"/>
+    <def name="rfc1213_ifInOctets" value="1.3.6.1.2.1.2.2.1.10"/>
+    <def name="rfc1213_ifInUcastPkts" value="1.3.6.1.2.1.2.2.1.11"/>
+    <def name="rfc1213_ifInErrors" value="1.3.6.1.2.1.2.2.1.14"/>
+    <def name="rfc1213_ifOutOctets" value="1.3.6.1.2.1.2.2.1.16"/>
+    <def name="rfc1213_ifOutUcastPkts" value="1.3.6.1.2.1.2.2.1.17"/>
+    <def name="rfc1213_ifOutErrors" value="1.3.6.1.2.1.2.2.1.20"/>
+    <def name="rfc1213_IFIDX" value="M($rfc1213_ifDescr, %interface-name%)"/>
+    <!-- ICMP -->
+    <def name="rfc1213_icmpInMsgs" value="1.3.6.1.2.1.5.1.0"/>
+    <def name="rfc1213_icmpOutMsgs" value="1.3.6.1.2.1.5.14.0"/>
+    <!-- SNMP -->
+    <def name="rfc1213_snmpInPkts" value="1.3.6.1.2.1.11.1.0"/>
+    <def name="rfc1213_snmpOutPkts" value="1.3.6.1.2.1.11.2.0"/>
+    <def name="rfc1213_snmpOutTraps" value="1.3.6.1.2.1.11.29.0"/>
+  </definitions>
+  <datasources>
+    <!--
+    rfc1213 wrap up template
+    -->
+    <template name="rfc1213">
+      <apply-template name="rfc1213-icmp"/>
+      <apply-template name="rfc1213-snmp"/>
+    </template>
+    <!-- rfc1313-interface must be applied at the per-interface level  -->
+    <!--
+    rfc1213_interface Template
+    -->
+    <template name="rfc1213-interface">
+      <param name="data-file" value="%system-id%_rfc1213-%interface-name%.rrd"/>
+      <leaf name="InOutBytes">
+        <param name="comment" value="Input and Output bits per second graphs"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="in,out"/>
+        <!-- IN -->
+        <param name="ds-expr-in" value="{ifInOctets}"/>
+        <param name="graph-legend-in" value="Bytes per second in"/>
+        <param name="line-style-in" value="AREA"/>
+        <param name="line-color-in" value="##in"/>
+        <param name="line-order-in" value="1"/>
+        <!-- OUT -->
+        <param name="ds-expr-out" value="{ifOutOctets}"/>
+        <param name="graph-legend-out" value="Bytes per second out"/>
+        <param name="line-style-out" value="LINE2"/>
+        <param name="line-color-out" value="##out"/>
+        <param name="line-order-out" value="2"/>
+      </leaf>
+      <leaf name="ifOutErrors">
+        <param name="snmp-object" value="$rfc1213_ifOutErrors.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifOutErrors"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Output error counter for the interface"/>
+        <param name="graph-legend" value="Errors out"/>
+      </leaf>
+      <leaf name="ifInErrors">
+        <param name="snmp-object" value="$rfc1213_ifInErrors.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifInErrors"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Input error counter for the interface"/>
+        <param name="graph-legend" value="Errors in"/>
+      </leaf>
+      <leaf name="ifInOctets">
+        <param name="hidden" value="yes"/>
+        <param name="snmp-object" value="$rfc1213_ifInOctets.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifInOctets"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+          1-minute average of input Bytes per second
+        </param>
+        <param name="graph-legend" value="Bytes in"/>
+      </leaf>
+      <leaf name="ifOutOctets">
+        <param name="hidden" value="yes"/>
+        <param name="snmp-object" value="$rfc1213_ifOutOctets.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifOutOctets"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+          1-minute average of output Bytes per second
+        </param>
+        <param name="graph-legend" value="Bytes out"/>
+      </leaf>
+    </template>
+    <!-- ICMP Template -->
+    <template name="rfc1213-icmp">
+      <subtree name="ICMP">
+        <param name="data-file" value="%system-id%_rfc1213-ICMP.rrd"/>
+        <leaf name="InOutICMP">
+          <param name="comment" value="Input and Output ICMP Messages"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="in,out"/>
+          <!-- IN -->
+          <param name="ds-expr-in" value="{icmpInMsgs}"/>
+          <param name="graph-legend-in" value="Bytes per second in"/>
+          <param name="line-style-in" value="AREA"/>
+          <param name="line-color-in" value="##in"/>
+          <param name="line-order-in" value="1"/>
+          <!-- OUT -->
+          <param name="ds-expr-out" value="{icmpOutMsgs}"/>
+          <param name="graph-legend-out" value="Bytes per second out"/>
+          <param name="line-style-out" value="LINE2"/>
+          <param name="line-color-out" value="##out"/>
+          <param name="line-order-out" value="2"/>
+        </leaf>
+        <leaf name="icmpInMsgs">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$rfc1213_icmpInMsgs"/>
+          <param name="rrd-ds" value="rfc1213_icmpIMsgs"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment">
+            1-minute average of Incomming ICMP messages
+          </param>
+          <param name="graph-legend" value="ICMP In"/>
+        </leaf>
+        <leaf name="icmpOutMsgs">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$rfc1213_icmpOutMsgs"/>
+          <param name="rrd-ds" value="rfc1213_icmpOMsgs"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment">
+            "1-minute average of Outgoing ICMP messages"
+          </param>
+          <param name="graph-legend" value="ICMP Out"/>
+        </leaf>
+      </subtree>
+    </template>
+    <!-- SNMP Template -->
+    <template name="rfc1213-snmp">
+      <subtree name="SNMP">
+        <param name="data-file" value="%system-id%_rfc1213-SNMP.rrd"/>
+        <leaf name="InOutSNMP">
+          <param name="comment" value="Input and Output SNMP Packets"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="in,out"/>
+          <!-- IN -->
+          <param name="ds-expr-in" value="{snmpInPkts}"/>
+          <param name="graph-legend-in" value="Packets per second in"/>
+          <param name="line-style-in" value="AREA"/>
+          <param name="line-color-in" value="##in"/>
+          <param name="line-order-in" value="1"/>
+          <!-- OUT -->
+          <param name="ds-expr-out" value="{snmpOutPkts}"/>
+          <param name="graph-legend-out" value="Packets per second out"/>
+          <param name="line-style-out" value="LINE2"/>
+          <param name="line-color-out" value="##out"/>
+          <param name="line-order-out" value="2"/>
+        </leaf>
+        <leaf name="snmpOutTraps">
+          <param name="snmp-object" value="$rfc1213_snmpOutTraps"/>
+          <param name="rrd-ds" value="rfc1213_snmpOTraps"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment" value="SNMP Traps Sent"/>
+          <param name="graph-legend" value="SNMP Traps "/>
+        </leaf>
+        <leaf name="snmpInPkts">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$rfc1213_snmpInPkts"/>
+          <param name="rrd-ds" value="rfc1213_snmpIPkts"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment">
+            1-minute average of Incomming SNMP Packets
+           </param>
+          <param name="graph-legend" value="SNMP In"/>
+        </leaf>
+        <leaf name="snmpOutPkts">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$rfc1213_snmpOutPkts"/>
+          <param name="rrd-ds" value="rfc1213_snmpOPkts"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment">
+            1-minute average of Outgoing SNMP Packets
+          </param>
+          <param name="graph-legend" value="SNMP Out"/>
+        </leaf>
+      </subtree>
+    </template>
+  </datasources>
+</configuration>

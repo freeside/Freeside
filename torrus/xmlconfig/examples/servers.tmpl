@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<!--
+  Example of using tpage for Torrus config generation.
+  This is an example only. See User Guide for more details.
+  Author: Christian Schnidrig
+-->
+
+[% PROCESS $data %]
+
+<configuration>
+<datasources>
+
+  <subtree name="SNMP">
+    <subtree name="Servers">
+      [% FOREACH server = servers %]
+      <!-- ************************************************************* -->
+      <!-- [% server.name %] -->
+      <subtree name="[% server.type %]">
+        <subtree name="[% server.name %]">
+
+          <alias>/ByName/[% server.name %]/</alias>
+
+          <param name="snmp-community"  value="[% server.community %]" />
+          <param name="comment"         value="[% server.description %]" />
+          <param name="snmp-host"       value="[% server.name %]" />
+          <param name="legend">
+            Description: [% server.description %]
+            Location:    [% server.location %]
+          </param>
+
+          <apply-template name="physicalRam" />
+          <leaf name="PhysicalRAM">
+            <param name="lower-limit"     value="0" />
+            <param name="upper-limit"     value="[% server.ram %]" />
+          </leaf>
+
+          <param name="numCpu"            value="[% server.numCpu %]" />
+          [% IF server.type == 'Linux'%]
+          <apply-template name="cpu-Linux" />
+          [% ELSE %]
+          <apply-template name="cpu-Solaris" />
+          [% END %]
+          <apply-template name="load" />
+          <apply-template name="virtualMemory" />
+
+          <apply-template name="swap" />
+
+          <apply-template name="sysIO" />
+          [% SET precedence = 200 %]
+          [% FOREACH disk = server.disks %]
+              <leaf name="Disk_[% disk.nickName %]">
+                <param name="comment"       value="Disk [% disk.name %]" />
+                <param name="data-file">
+                  %system-id%_[%disk.nickName%].rrd
+                </param>
+                <param name="storage-name"    value="[% disk.name %]" />
+                [% SET precedence = precedence + 10 %]
+                <param name="precedence"    value="[% precedence %]" />
+                <apply-template name="disk" />
+              </leaf>
+          [% END %]
+          [% FOREACH nic = server.nics %]
+              <subtree name="[% nic.nickName %]">
+                <param name="interface-name"  value="[% nic.name %]" />
+                <param name="interface-nick"  value="[% nic.nickName %]" />
+                <param name="speed"   value="[% nic.speed %]" />
+                <param name="comment" value="Network Traffic [% nic.name %]"/>
+                <apply-template name="interface-counters" />
+                [% SET precedence = precedence + 10 %]
+                <param name="precedence"    value="[% precedence %]" />
+              </subtree>
+            [% END %]
+            <apply-template name="hrSystemUptime" />
+          </subtree>
+        </subtree>
+      [% END %]
+    </subtree>
+  </subtree>
+
+</datasources>
+</configuration>
+

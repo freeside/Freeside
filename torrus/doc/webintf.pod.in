@@ -1,0 +1,280 @@
+#  webintf.pod - Torrus web interface reference
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: webintf.pod.in,v 1.1 2010-12-27 00:04:33 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 Torrus Web Interface Reference
+
+B<Warning:> This documentation is relevant to Torrus version 1.0.9.
+It is incompatible with previous versions.
+
+=head2 Directory structure
+
+By default, the directory F<@webplaindir@/> is the place
+for static HTML, CSS stylesheets and images.
+
+The default CSS stylesheet files are installed in this directory.
+This directory must be configured with I<SetHandler default-handler>
+directive.
+
+=head2 CSS Stylesheets
+
+Additional user-defined stylesheet files may be added in
+F<webplain> directory.
+The default HTML templates that come with the Torrus distribution use the
+global configuration variable C<$Torrus::Renderer::stylesheet>, which is set
+in F<torrus-config.pl> and may be overwritten in F<torrus-siteconfig.pl>.
+
+=head2 Cache files
+
+All generated HTML and graphical images are cached twice: first on the server,
+and then in your browser. Thus, if you change somehow the HTML
+appearance of your Torrus installation, you need to clean both caches:
+
+   torrus clearcache
+
+This will clear the cache on the server. Then you may use your browser's
+"reload" button, or clear the whole browser cache.
+
+
+=head2 Site configuration options
+
+The following variables may need to be set in your
+F<@siteconfdir@/torrus-siteconfig.pl> file:
+
+=over 4
+
+=item * C<$Torrus::Renderer::companyName>
+
+The text that you specify here will appear in the top left corner
+of all HTML pages.
+
+=item * C<$Torrus::Renderer::companyURL>
+
+The company name text will be clickable with the URL specified in
+this variable.
+
+=item * C<$Torrus::Renderer::rendererURL>
+
+Default: C<'/torrus'>. A URL that points to Torrus renderer.
+
+=item * C<$Torrus::Renderer::plainURL>
+
+Default: C<'/torrus/plain'>. A URL that points to Torrus plain files directory.
+Normally CSS stylesheet files are resided there..
+
+=item * C<$Torrus::CGI::authorizeUsers>
+
+Default: C<1>. When true, the web interface users are required to log in.
+
+=back
+
+
+=head2 mod_perl 1.0 handler: Torrus::ApacheHandler 
+
+For more documentation, see E<lt>http://perl.apache.org/E<gt>.
+
+The whole output generation is performed by the C<Torrus::ApacheHandler> class.
+However, you still need access to the F<plain> directory where your CSS
+resides. Typical Apache configuration would look like follows. Make sure
+your configuration does not contain tab characters:
+
+  PerlRequire "@cfgdefdir@/webmux.pl"
+  <Location /torrus>
+    SetHandler perl-script
+    PerlHandler Torrus::ApacheHandler
+  </Location>
+
+The base URL would be in this case:
+
+  http://yourhost/torrus/
+
+
+=head2 mod_perl 2.0 handler: Torrus::Apache2Handler
+
+I<Note:> Apache 2.0 support in Torrus is currently in its early
+development stage.
+
+I<Note:> As of now, C<libapreq2> library is not released yet, and only the
+development version is available. You have to download and install it
+manually.
+
+mod_perl version B<1.99_15> or later is supported. To the moment,
+C<libapreq2> version C<2.04_03-dev> is tested.
+
+Make sure you use C<webmux2.pl> and C<Torrus::Apache2Handler> in your
+configuration.
+
+C<SetHandler modperl> directive should give better performance
+than C<SetHandler perl-script>. Both Perl handlers work the same way
+with Torrus.
+
+Typical Apache 2.0 configuration follows:
+
+  PerlRequire "@cfgdefdir@/webmux2.pl"
+  <Location /torrus>
+    SetHandler perl-script
+    PerlResponseHandler Torrus::Apache2Handler
+  </Location>
+
+The base URL would be in this case:
+
+  http://yourhost/torrus/
+
+
+=head2 lighttpd with FastCGI handler
+
+As of version 1.0.9, Torrus supports FastCGI server module. It is also often
+used together with B<lighttpd> HTTP server.
+
+Install FastCGI on your server, and also F<FCGI> module from CPAN.
+
+Add user "lighttpd" to group "torrus".
+
+The following configuration creates a virtual host, so that any URL which
+starts with "tor" would result in Torrus display:
+
+  # Uncomment mod_redirect and mod_fastcgi. Other modules might be needed too.
+  server.modules              = (
+                                  "mod_redirect",
+                                  "mod_fastcgi",
+                                )
+  # virtual server configuration
+  $HTTP["host"] =~ "^tor" {
+    url.redirect = ( "^/$" => "/torrus" )
+    fastcgi.server = (
+            "/torrus" => (
+                "Torrus" => (
+                    "socket"       => "/tmp/Torrus_FCGI.socket",
+                    "check-local"  => "disable",
+                    "bin-path"     => "@pkgbindir@/torrus.fcgi",
+                    "max-procs"    => 2,
+                )
+            )
+        )
+  }
+
+
+=head2 Apache 2.0.x with FastCGI handler
+
+As of version 1.0.9, Torrus supports the FastCGI server module.
+It is also often used together with B<Apache 2.x> HTTP server.
+
+The following is an example of a virtual host with four FastCGI child processes
+
+
+    <VirtualHost *:80>
+     DocumentRoot "/var/www/vhosts/test01.torrus.net"
+     ServerName test01.torrus.net
+     AddHandler fastcgi-script fcgi
+     FastCgiServer   @pkgbindir@/torrus.fcgi \
+        -processes 4
+     ScriptAlias /torrus "@pkgbindir@/torrus.fcgi"
+    <Location /torrus>
+        Order           Allow,Deny
+        Allow           from all
+    </Location>
+    </VirtualHost>
+
+
+
+=head2 Known CGI parameters
+
+The following CGI parameters are recognized by mod_perl handler:
+
+=over 4
+
+=item token
+
+Optional. Each configuration tree element is referenced by a I<token>, a short
+unique identifier. If not given, the root of the tree (C</>) is displayed.
+
+=item path
+
+Optional. Alternatively to token reference, the full path of the tree element
+may be referenced.
+
+=item nodeid
+
+Optional. A subtree which has a unique I<nodeid> can be referred
+with this parameter.
+
+=item view
+
+Optional. Specifies the C<view> name for displaying the tree element.
+If not specified, the defaul view is used.
+
+=item v
+
+Optional. Synonym for C<view> parameter.
+
+
+=item hostauth
+
+Mandatory for host-based authentication. The value is treated as a password
+and the user name is the client's IP address with non-alphanumerics
+replaced with underscores.
+
+
+=item TZ
+
+Optional. If given, specifies the timezone that you want the graphs to be
+displayed for. This must be the URL-encoded zone name which is understood by
+your server system. You may use zdump(8) for testing.
+
+=item NOW
+
+Optional. If given, presents the output for the given moment, instead of the
+current time. Must be of the form understood by C<rrdtool> (see
+RRDTool manuals).
+
+=item Gstart, Gend, Gwidth, Gheight
+
+Optional vaiables that override the ones defined in the view.
+
+=item DEBUG
+
+Optional. If true, turns on the debug level of logging. The debug messages
+are sent to HTTP server's error log.
+
+=item SHOWHIDDEN
+
+Optional. If true, makes the grapher display those subtree and leaves
+which have C<hidden> parameter set to C<yes>.
+
+=item NOHW
+
+Optional. If true, disables the displaying of Holt-Winters
+boundaries and failures.
+
+=item LOGOUT
+
+Optional. When user authorization is enabled, causes the current user
+session to log out.
+
+=back
+
+All other parameters whose name starts with capital letter, are passed
+to the HTML template as-is, and may be used for your custom purposes.
+
+
+=head1 Author
+
+Copyright (c) 2002-2005 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2009 Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+   Marc Haber <mh+rrfw-devel@zugschlus.de>
+
+   NetBotz modular sensors
+
+  $Id: netbotz.xml,v 1.1 2010-12-27 00:04:06 ivan Exp $
+-->
+
+
+<configuration>
+  <definitions>
+   <def name="netbotz_tempSensorValue"
+        value="1.3.6.1.4.1.5528.100.4.1.1.1.2"/>
+   <def name="netbotz_humiSensorValue"
+        value="1.3.6.1.4.1.5528.100.4.1.2.1.2"/>
+   <def name="netbotz_dewPointSensorValue"
+        value="1.3.6.1.4.1.5528.100.4.1.3.1.2"/>
+   <def name="netbotz_audioSensorValue"
+        value="1.3.6.1.4.1.5528.100.4.1.4.1.2"/>
+   <def name="netbotz_airFlowSensorValue"
+        value="1.3.6.1.4.1.5528.100.4.1.5.1.2"/>
+   <def name="netbotz_doorSwitchSensorValue"
+        value="1.3.6.1.4.1.5528.100.4.2.2.1.2"/>
+  </definitions>
+
+  <datasources>
+
+    <template name="netbotz-sensor">
+      <param name="collector-timeoffset-hashstring"
+               value="%system-id%:%netbotz-sensor-index%" />
+      <param name="data-file"
+               value="%system-id%_sensor_%netbotz-sensor-index%.rrd"/>
+      <param name="rrd-ds"            value="value"/>
+      <param name="rrd-cf"            value="AVERAGE"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="nodeid"
+               value="sensor//%nodeid-device%//%netbotz-sensor-index%"/>
+    </template>
+     
+    <template name="netbotz-temp-sensor">
+      <apply-template name="netbotz-sensor"/>
+      <param name="snmp-object"
+               value="$netbotz_tempSensorValue.%netbotz-sensor-index%"/>
+      <param name="collector-scale"   value="10,/" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="50" />
+      <param name="upper-limit" value="35" />
+      <param name="vertical-label" value="Degrees Celsius" />
+      <param name="comment" value="Temperature sensor" />
+    </template>
+
+
+    <template name="netbotz-humi-sensor">
+      <apply-template name="netbotz-sensor"/>
+      <param name="snmp-object"
+               value="$netbotz_humiSensorValue.%netbotz-sensor-index%"/>
+      <param name="collector-scale"   value="10,/" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="100" />
+      <param name="upper-limit" value="90" />
+      <param name="vertical-label" value="Percent" />
+      <param name="comment" value="Humidity sensor" />
+    </template>
+
+    <template name="netbotz-dew-sensor">
+      <apply-template name="netbotz-sensor"/>
+      <param name="snmp-object"
+               value="$netbotz_dewPointSensorValue.%netbotz-sensor-index%"/>
+      <param name="collector-scale"   value="10,/" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="30" />
+      <param name="vertical-label" value="Degrees Celsius" />
+      <param name="comment" value="Dew point sensor" />
+    </template>
+
+    <template name="netbotz-audio-sensor">
+      <apply-template name="netbotz-sensor"/>
+      <param name="snmp-object"
+               value="$netbotz_audioSensorValue.%netbotz-sensor-index%"/>
+      <param name="collector-scale"   value="10,/" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="100" />
+      <param name="comment" value="Audio level sensor" />
+    </template>
+
+    <template name="netbotz-air-sensor">
+      <apply-template name="netbotz-sensor"/>
+      <param name="snmp-object"
+               value="$netbotz_airFlowSensorValue.%netbotz-sensor-index%"/>
+      <param name="collector-scale"   value="10,/" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="vertical-label" value="m/min" />
+      <param name="comment" value="Air flow sensor" />
+    </template>
+
+    <template name="netbotz-door-sensor">
+      <apply-template name="netbotz-sensor"/>
+      <param name="snmp-object"
+               value="$netbotz_doorSwitchSensorValue.%netbotz-sensor-index%"/>
+      <param name="graph-lower-limit" value="0" />
+      <param name="vertical-label" value="0=open 1=closed" />
+      <param name="comment" value="Door switch sensor" />
+    </template>
+        
+  </datasources>
+</configuration>

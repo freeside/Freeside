@@ -1,0 +1,96 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_monitor.pod.in,v 1.1 2010-12-27 00:04:38 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+monitor - Torrus Monitor.
+
+=head1 SYNOPSIS
+
+B<torrus monitor> --tree=I<TREENAME> [I<options...>]
+
+=head1 DESCRIPTION
+
+This command starts the Monitor process for the tree I<TREENAME>. By
+default it forks into a daemon, sets the log output file to
+F<@logdir@/monitor.TREENAME.log>, performs one monitoring cycle, and
+sleeps until the next cycle is scheduled. In daemon mode the log file
+can be reopened by sending it a SIGHUP signal.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--nodaemon>
+
+Prevents the process from becoming a daemon and sets the log to STDERR.
+
+=item B<--runonce>
+
+Instructs the script to run once and exit. Implies B<--nodaemon>.
+
+=item B<--delay=N>
+
+Makes the daemon sleep for N minutes before starting the first cycle.
+This would happen on the daemon startup and also after each configuration
+recompilation.
+For example, when monitor and collector start simultaneously, the collector
+needs some time to retrieve the data being monitored.
+
+=item B<--debug>
+
+Sets the log level to debug.
+
+=item B<--verbose>
+
+Sets the debug level to info.
+
+=item B<--help>
+
+Displays a help message.
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item F<@siteconfdir@/torrus-siteconfig.pl>
+
+Torrus site configuration script.
+
+=item F<@logdir@/monitor.TREENAME.log>
+
+Monitor's log for the tree I<TREENAME>.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

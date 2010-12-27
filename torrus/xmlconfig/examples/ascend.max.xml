@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003 Roman Hochuli, Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: ascend.max.xml,v 1.1 2010-12-27 00:04:28 ivan Exp $
+  Roman Hochuli <roman@hochu.li>
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+  Ascend MAC Call statistics.
+  Tested with Ascent MAX 4000 with Software-Release feik.m40 7.0.26
+-->
+
+<configuration>
+<datasources>
+  <subtree name="SNMP">
+    <subtree name="Dialup">
+
+      <param name="snmp-version" value="1" />
+      <param name="snmp-community" value="xxxx" />
+      <param name="domain-name" value="" />
+      <param name="data-dir" value="/var/snmpcollector" />
+
+      <subtree name="myhost.mydomain.com">
+        <param name="legend">
+          Location: Hardstrasse 235;
+          Contact: GPS Technik AG, Zuercherstrasse 139, CH-8952 Schlieren
+        </param>
+        <param name="snmp-host" value="myhost.mydomain.com" />
+
+        <subtree name="Call_Statistics">
+           <apply-template name="ascend-totalcalls" />
+
+           <leaf name="E1_2_CurrentCalls">
+             <param name="ascend-ifidx" value="2" />
+             <apply-template name="ascend-e1stats" />
+           </leaf>
+        </subtree>
+
+      </subtree>
+
+    </subtree>
+  </subtree>
+</datasources>
+</configuration>

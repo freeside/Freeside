@@ -1,0 +1,686 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2004 Scott Brooks
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  Scott Brooks <sbrooks@binary-solutions.net>
+  Stanislav Sinyagin <ssinyagin@yahoo.com>: reorganised the structure
+  
+  Note:
+  For better discovery speed, use the  discovery parameter as follows:
+    <param name="only-devtypes" value="ATMEL"/>
+-->
+
+<configuration>
+
+  <definitions>
+    <def name="networkSettings"
+         value="1.3.6.1.4.1.410.1.2.8.1.0" />
+    <def name="associatedSTAsNum"
+         value="1.3.6.1.4.1.410.1.2.5.1.0" />
+    <def name="operChannelID"
+         value="1.3.6.1.4.1.410.1.2.1.1.0" />
+    <def name="operRTSThreshold"
+         value="1.3.6.1.4.1.410.1.2.1.4.0" />
+    <def name="operFragmentationThreshold"
+         value="1.3.6.1.4.1.410.1.2.1.5.0" />
+    <def name="wirelessStatistics"
+         value="1.3.6.1.4.1.410.1.2.3.1.0" />
+    <def name="ethernetRxStatistics"
+         value="1.3.6.1.4.1.410.1.1.7.1.0" />
+    <def name="ethernetTxStatistics"
+         value="1.3.6.1.4.1.410.1.1.7.2.0" />
+
+  </definitions>
+  <datasources>
+    
+    <template name="atmel-wireless-transform">
+      <param name="transform-value">
+      my @stats=unpack('VVVVVVVVVVVVVVVVVVVVVV',pack('H*',substr(DOLLAR_,2)));
+      return DOLLARstats[%atmel-stats-member%];
+      </param>
+    </template>
+    
+    <template name="atmel-eth-rx-transform">
+      <param name="transform-value">
+      my @stats=unpack('VVVVVVVVVVVVVVVV',pack('H*',substr(DOLLAR_,2)));
+      return DOLLARstats[%atmel-stats-member%];
+      </param>
+    </template>
+       
+    <template name="atmel-eth-tx-transform">
+      <param name="transform-value">
+      my @stats=unpack('VVVVVVVVVVVV',pack('H*',substr(DOLLAR_,2)));
+      return DOLLARstats[%atmel-stats-member%];
+      </param>
+    </template>
+    
+    <template name="atmel-network-transform">
+      <param name="transform-value">
+      my @stats=unpack('vH12vCCA2CA5A32C',pack('H*',substr(DOLLAR_,2)));
+      return DOLLARstats[%atmel-stats-member%];
+      </param>
+    </template>
+
+    <!-- for future implementation of devices overview -->
+    <template name="atmel-devlist-subtree">
+      <param name="comment" value="Link stats and Network Stats"/>
+      
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="lstat"/>
+      <param name="overview-subleave-name-lstat" value="linkStats" />
+      <param name="overview-shortcut-text-lstat"
+             value="All Link Stats" />
+      <param name="overview-shortcut-title-lstat"
+             value="Show all devices Link Quality on one page" />
+      <param name="overview-page-title-lstat"
+             value="Link Stats" />
+    </template>
+
+    
+    <template name="atmel-client-stats">
+      <leaf name="Wireless_Quality">
+        <param name="comment">
+        Wireless link quality and Received Signal Strength Indicator
+        </param>
+        <param name="ds-type" value="rrd-multigraph" />
+        <param name="ds-names" value="rssi,lq" />
+
+        <param name="ds-expr-rssi"
+                    value="{RSSI},40,GE,40,{RSSI},IF,40,/,100,*" />
+        <param name="graph-legend-rssi" value="RSSI" />
+        <param name="line-style-rssi" value="LINE2" />
+        <param name="line-color-rssi" value="#00FF00" />
+        <param name="line-order-rssi" value="1" />
+
+        <param name="ds-expr-lq"
+           value="40,{LinkQuality},40,GE,40,{LinkQuality},IF,-,40,/,100,*" />
+        <param name="graph-legend-lq" value="Link Quality" />
+        <param name="line-style-lq" value="LINE2" />
+        <param name="line-color-lq" value="#0000FF" />
+        <param name="line-order-lq" value="2" />
+      </leaf>
+      
+      <leaf name="RSSI">
+        <param name="comment" 
+               value="Recieve Signal Strength Indicator" />
+        <param name="snmp-object" value="$networkSettings" />
+        <param name="rrd-ds" value="rssi" />
+        <param name="rrd-create-dstype" value="GAUGE" />
+        <param name="graph-legend" value="RSSI" />
+        <param name="atmel-stats-member" value="3" />
+        <apply-template name="atmel-network-transform" />
+        <param name="hidden" value="yes" />
+      </leaf>
+      
+      <leaf name="LinkQuality">
+        <param name="comment"  value="Wireless Link Quality" />
+        <param name="snmp-object" value="$networkSettings" />
+        <param name="rrd-ds" value="lq" />
+        <param name="rrd-create-dstype" value="GAUGE" />
+        <param name="graph-legend" value="Link Quality" />
+        <param name="atmel-stats-member" value="6" />
+        <apply-template name="atmel-network-transform" />
+        <param name="hidden" value="yes" />
+      </leaf>
+    </template>
+
+    <template name="atmel-accesspoint-stats">
+      <leaf name="Associated_Stations">
+        <param name="comment"  value="Number of associated stations" />
+        <param name="snmp-object" value="$associatedSTAsNum" />
+        <param name="rrd-ds" value="assoc" />
+        <param name="rrd-create-dstype" value="GAUGE" />
+        <param name="graph-legend" value="Client stations" />
+      </leaf>
+    </template>
+
+    <template name="atmel-device-subtree">
+      <param name="data-file" value="%snmp-host%_connection.rrd" />
+
+      <!-- #############  WIRELESS  ################ -->
+      <subtree name="Wireless_Stats">
+        <param name="comment"  value="Wireless interface statistics" />
+
+        <!-- #####  TRANSMIT STATS ##### -->        
+        <leaf name="txStats">
+          <param name="comment" value="TX Stats" />
+          <param name="ds-type" value="rrd-multigraph" />
+          <param name="ds-names">
+            uniTxPackets,broadcastTxPackets,multicastTxPackets,
+            txBeacon,txACK,txRTS,txCTS
+          </param>
+          <param name="ds-expr-uniTxPackets" value="{uniTxPackets}" />
+          <param name="graph-legend-uniTxPackets" value="Unicast TX" />
+          <param name="line-color-uniTxPackets" value="##one" />
+          <param name="line-order-uniTxPackets" value="1" />
+          <param name="line-style-uniTxPackets" value="LINE2" />
+
+          <param name="ds-expr-broadcastTxPackets"
+                                  value="{broadcastTxPackets}" />
+          <param name="graph-legend-broadcastTxPackets" value="Broadcast TX" />
+          <param name="line-color-broadcastTxPackets" value="##two" />
+          <param name="line-order-broadcastTxPackets" value="2" />
+          <param name="line-style-broadcastTxPackets" value="LINE2" />
+
+          <param name="ds-expr-multicastTxPackets"
+                                value="{multicastTxPackets}" />
+          <param name="graph-legend-multicastTxPackets" value="Multicast TX" />
+          <param name="line-color-multicastTxPackets" value="##three" />
+          <param name="line-order-multicastTxPackets" value="3" />
+          <param name="line-style-multicastTxPackets" value="LINE2" />
+
+          <param name="ds-expr-txBeacon" value="{txBeacon}" />
+          <param name="graph-legend-txBeacon" value="TX Beacons" />
+          <param name="line-color-txBeacon" value="##four" />
+          <param name="line-order-txBeacon" value="4" />
+          <param name="line-style-txBeacon" value="LINE2" />
+
+          <param name="ds-expr-txACK" value="{txACK}" />
+          <param name="graph-legend-txACK" value="TX Acks" />
+          <param name="line-color-txACK" value="##five" />
+          <param name="line-order-txACK" value="5" />
+          <param name="line-style-txACK" value="LINE2" />
+
+          <param name="ds-expr-txRTS" value="{txRTS}" />
+          <param name="graph-legend-txRTS" value="TX RTS" />
+          <param name="line-color-txRTS" value="##six" />
+          <param name="line-order-txRTS" value="6" />
+          <param name="line-style-txRTS" value="LINE2" />
+
+          <param name="ds-expr-txCTS" value="{txCTS}" />
+          <param name="graph-legend-txCTS" value="TX CTS" />
+          <param name="line-color-txCTS" value="##seven" />
+          <param name="line-order-txCTS" value="7" />
+          <param name="line-style-txCTS" value="LINE2" />
+        </leaf>
+
+        <leaf name="uniTxPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="uniTxPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Unicast TX Packets" />
+          <param name="atmel-stats-member" value="0" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+      
+        <leaf name="broadcastTxPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="broadTxPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Broadcast TX Packets" />
+          <param name="atmel-stats-member" value="1" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+      
+        <leaf name="multicastTxPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="multiTxPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Multicast TX Packets" />
+          <param name="atmel-stats-member" value="2" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+      
+        <leaf name="txBeacon">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="txBeacon" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Transmitted Beacons" />
+          <param name="atmel-stats-member" value="3" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+      
+        <leaf name="txACK">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="txACK" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Transmitted ACKs" />
+          <param name="atmel-stats-member" value="4" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+      
+        <leaf name="txRTS">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="txRTS" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Transmitted RTS" />
+          <param name="atmel-stats-member" value="5" />
+          <apply-template name="atmel-wireless-transform" />     
+          <param name="hidden" value="yes" />
+        </leaf>
+      
+        <leaf name="txCTS">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="txCTS" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Transmitted CTS" />
+          <param name="atmel-stats-member" value="6" />
+          <apply-template name="atmel-wireless-transform" />        
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <!-- #####  RECEIVE STATS ##### -->        
+        <leaf name="rxStats">
+          <param name="comment" value="RX Stats" />
+          <param name="ds-type" value="rrd-multigraph" />
+          <param name="ds-names">
+          uniRxPackets,broadcastRxPackets,multicastRxPackets,rxBeacon,
+          rxACK,rxRTS,rxCTS
+          </param>
+
+          <param name="ds-expr-uniRxPackets" value="{uniRxPackets}" />
+          <param name="graph-legend-uniRxPackets" value="Unicast RX" />
+          <param name="line-color-uniRxPackets" value="##one" />
+          <param name="line-order-uniRxPackets" value="1" />
+          <param name="line-style-uniRxPackets" value="LINE2" />
+
+          <param name="ds-expr-broadcastRxPackets"
+                                     value="{broadcastRxPackets}" />
+          <param name="graph-legend-broadcastRxPackets" value="Broadcast RX" />
+          <param name="line-color-broadcastRxPackets" value="##two" />
+          <param name="line-order-broadcastRxPackets" value="2" />
+          <param name="line-style-broadcastRxPackets" value="LINE2" />
+
+          <param name="ds-expr-multicastRxPackets"
+                                     value="{multicastRxPackets}" />
+          <param name="graph-legend-multicastRxPackets" value="Multicast RX" />
+          <param name="line-color-multicastRxPackets" value="##three" />
+          <param name="line-order-multicastRxPackets" value="3" />
+          <param name="line-style-multicastRxPackets" value="LINE2" />
+
+          <param name="ds-expr-rxBeacon" value="{rxBeacon}" />
+          <param name="graph-legend-rxBeacon" value="RX Beacons" />
+          <param name="line-color-rxBeacon" value="##four" />
+          <param name="line-order-rxBeacon" value="4" />
+          <param name="line-style-rxBeacon" value="LINE2" />
+
+          <param name="ds-expr-rxACK" value="{rxACK}" />
+          <param name="graph-legend-rxACK" value="RX Acks" />
+          <param name="line-color-rxACK" value="##five" />
+          <param name="line-order-rxACK" value="5" />
+          <param name="line-style-rxACK" value="LINE2" />
+
+          <param name="ds-expr-rxRTS" value="{rxRTS}" />
+          <param name="graph-legend-rxRTS" value="RX RTS" />
+          <param name="line-color-rxRTS" value="##six" />
+          <param name="line-order-rxRTS" value="6" />
+          <param name="line-style-rxRTS" value="LINE2" />
+
+          <param name="ds-expr-rxCTS" value="{rxCTS}" />
+          <param name="graph-legend-rxCTS" value="RX CTS" />
+          <param name="line-color-rxCTS" value="##seven" />
+          <param name="line-order-rxCTS" value="7" />
+          <param name="line-style-rxCTS" value="LINE2" />
+        </leaf>
+        
+        <leaf name="uniRxPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="uniRxPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Unicast RX Packets" />
+          <param name="atmel-stats-member" value="7" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="broadcastRxPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="broadRxPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Broadcast RX Packets" />
+          <param name="atmel-stats-member" value="8" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="multicastRxPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="multiRxPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Multicast RX Packets" />
+          <param name="atmel-stats-member" value="9" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="rxBeacon">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="rxBeacon" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Received Beacons" />
+          <param name="atmel-stats-member" value="10" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="rxACK">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="rxACK" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Received ACKs" />
+          <param name="atmel-stats-member" value="11" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="rxRTS">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="rxRTS" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Received RTS" />
+          <param name="atmel-stats-member" value="12" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="rxCTS">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="rxCTS" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Received CTS" />
+          <param name="atmel-stats-member" value="13" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+
+        <!-- #####  RECEIVE STATS ##### -->              
+        <leaf name="errorStats">
+          <param name="comment" value="Error Stats" />
+          <param name="ds-type" value="rrd-multigraph" />
+          <param name="ds-names">
+          ackFailure,ctsFailure,retryPackets,receivedDups,failedPackets,
+          agedPackets,fcsError,invalidPLCP
+          </param>
+
+          <param name="ds-expr-ackFailure" value="{ackFailure}" />
+          <param name="graph-legend-ackFailure" value="Failed ACK" />
+          <param name="line-color-ackFailure" value="##one" />
+          <param name="line-order-ackFailure" value="1" />
+          <param name="line-style-ackFailure" value="LINE2" />
+
+          <param name="ds-expr-ctsFailure" value="{ctsFailure}" />
+          <param name="graph-legend-ctsFailure" value="Failed CTS" />
+          <param name="line-color-ctsFailure" value="##two" />
+          <param name="line-order-ctsFailure" value="2" />
+          <param name="line-style-ctsFailure" value="LINE2" />
+
+          <param name="ds-expr-retryPackets" value="{retryPackets}" />
+          <param name="graph-legend-retryPackets" value="Retry Packets" />
+          <param name="line-color-retryPackets" value="##three" />
+          <param name="line-order-retryPackets" value="3" />
+          <param name="line-style-retryPackets" value="LINE2" />
+
+          <param name="ds-expr-receivedDups" value="{receivedDups}" />
+          <param name="graph-legend-receivedDups" value="Received Dups" />
+          <param name="line-color-receivedDups" value="##four" />
+          <param name="line-order-receivedDups" value="four" />
+          <param name="line-style-receivedDups" value="LINE2" />
+
+          <param name="ds-expr-failedPackets" value="{failedPackets}" />
+          <param name="graph-legend-failedPackets" value="Failed Packets" />
+          <param name="line-color-failedPackets" value="##five" />
+          <param name="line-order-failedPackets" value="5" />
+          <param name="line-style-failedPackets" value="LINE2" />
+
+          <param name="ds-expr-agedPackets" value="{agedPackets}" />
+          <param name="graph-legend-agedPackets" value="Aged Packets" />
+          <param name="line-color-agedPackets" value="##six" />
+          <param name="line-order-agedPackets" value="6" />
+          <param name="line-style-agedPackets" value="LINE2" />
+
+          <param name="ds-expr-fcsError" value="{fcsError}" />
+          <param name="graph-legend-fcsError" value="FCS Error" />
+          <param name="line-color-fcsError" value="##seven" />
+          <param name="line-order-fcsError" value="7" />
+          <param name="line-style-fcsError" value="LINE2" />
+
+          <param name="ds-expr-invalidPLCP" value="{invalidPLCP}" />
+          <param name="graph-legend-invalidPLCP" value="Invalid PLCP" />
+          <param name="line-color-invalidPLCP" value="##eight" />
+          <param name="line-order-invalidPLCP" value="8" />
+          <param name="line-style-invalidPLCP" value="LINE2" />
+        </leaf>
+        
+        <leaf name="ackFailure">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="ackFailure" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Failed ACKs" />
+          <param name="atmel-stats-member" value="14" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="ctsFailure">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="ctsFailure" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Failed CTS" />
+          <param name="atmel-stats-member" value="15" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="retryPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="retryPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Retry Packets" />
+          <param name="atmel-stats-member" value="16" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="receivedDups">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="receivedDups" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Received Duplicates" />
+          <param name="atmel-stats-member" value="17" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="failedPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="failedPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Failed Packets" />
+          <param name="atmel-stats-member" value="18" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="agedPackets">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="agedPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Aged Packets" />
+          <param name="atmel-stats-member" value="19" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="fcsError">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="fcsError" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="FCS Error" />
+          <param name="atmel-stats-member" value="20" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="invalidPLCP">
+          <param name="snmp-object" value="$wirelessStatistics" />
+          <param name="rrd-ds" value="invalidPLCP" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="Invalid PLCP" />
+          <param name="atmel-stats-member" value="21" />
+          <apply-template name="atmel-wireless-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+      </subtree>
+      
+      <!-- #############  ETHERNET  ################ -->
+      <subtree name="Ethernet_Stats">
+        <param name="comment"  value="Ethernet interface statistics" />
+    
+        <leaf name="RX_Stats">
+          <param name="comment" value="Ethernet TX Stats" />
+          <param name="ds-type" value="rrd-multigraph" />
+          <param name="ds-names" value="eRxBytes,eRxPackets,eRxCRC" />
+
+          <param name="ds-expr-eRxBytes" value="{eRxBytes}" />
+          <param name="graph-legend-eRxBytes" value="RX Bytes" />
+          <param name="line-color-eRxBytes" value="##one" />
+          <param name="line-order-eRxBytes" value="1" />
+          <param name="line-style-eRxBytes" value="LINE2" />
+
+          <param name="ds-expr-eRxPackets" value="{eRxPackets}" />
+          <param name="graph-legend-eRxPackets" value="RX Packets" />
+          <param name="line-color-eRxPackets" value="##two" />
+          <param name="line-order-eRxPackets" value="2" />
+          <param name="line-style-eRxPackets" value="LINE2" />
+
+          <param name="ds-expr-eRxCRC" value="{eRxCRC}" />
+          <param name="graph-legend-eRxCRC" value="RX CRC" />
+          <param name="line-color-eRxCRC" value="##three" />
+          <param name="line-order-eRxCRC" value="3" />
+          <param name="line-style-eRxCRC" value="LINE2" />
+        </leaf>
+        
+        <leaf name="eRxBytes">
+          <param name="snmp-object" value="$ethernetRxStatistics" />
+          <param name="rrd-ds" value="eRxTotalBytes" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="RX Bytes" />
+          <param name="atmel-stats-member" value="0" />
+          <apply-template name="atmel-eth-rx-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="eRxPackets">
+          <param name="snmp-object" value="$ethernetRxStatistics" />
+          <param name="rrd-ds" value="eRxTotalPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="RX Packets" />
+          <param name="atmel-stats-member" value="1" />
+          <apply-template name="atmel-eth-rx-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="eRxCRC">
+          <param name="snmp-object" value="$ethernetRxStatistics" />
+          <param name="rrd-ds" value="eRxCRC" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="RX CRC" />
+          <param name="atmel-stats-member" value="2" />
+          <apply-template name="atmel-eth-rx-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="TX_Stats">
+          <param name="comment" value="Ethernet TX Stats" />
+          <param name="ds-type" value="rrd-multigraph" />
+          <param name="ds-names" value="eTxBytes,eTxPackets,eTxCRC" />
+
+          <param name="ds-expr-eTxBytes" value="{eTxBytes}" />
+          <param name="graph-legend-eTxBytes" value="TX Bytes" />
+          <param name="line-color-eTxBytes" value="##one" />
+          <param name="line-order-eTxBytes" value="1" />
+          <param name="line-style-eTxBytes" value="LINE2" />
+
+          <param name="ds-expr-eTxPackets" value="{eTxPackets}" />
+          <param name="graph-legend-eTxPackets" value="TX Packets" />
+          <param name="line-color-eTxPackets" value="##two" />
+          <param name="line-order-eTxPackets" value="2" />
+          <param name="line-style-eTxPackets" value="LINE2" />
+
+          <param name="ds-expr-eTxCRC" value="{eTxCRC}" />
+          <param name="graph-legend-eTxCRC" value="TX CRC" />
+          <param name="line-color-eTxCRC" value="##three" />
+          <param name="line-order-eTxCRC" value="3" />
+          <param name="line-style-eTxCRC" value="LINE2" />
+        </leaf>
+        
+        <leaf name="eTxBytes">
+          <param name="snmp-object" value="$ethernetTxStatistics" />
+          <param name="rrd-ds" value="eTxTotalBytes" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="TX Bytes" />
+          <param name="atmel-stats-member" value="0" />
+          <apply-template name="atmel-eth-tx-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="eTxPackets">
+          <param name="snmp-object" value="$ethernetTxStatistics" />
+          <param name="rrd-ds" value="eTxTotalPackets" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="TX Packets" />
+          <param name="atmel-stats-member" value="1" />
+          <apply-template name="atmel-eth-tx-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+        
+        <leaf name="eTxCRC">
+          <param name="snmp-object" value="$ethernetTxStatistics" />
+          <param name="rrd-ds" value="eTxCRC" />
+          <param name="rrd-create-dstype" value="COUNTER" />
+          <param name="graph-legend" value="TX CRC" />
+          <param name="atmel-stats-member" value="2" />
+          <apply-template name="atmel-eth-tx-transform" />
+          <param name="hidden" value="yes" />
+        </leaf>
+      </subtree>
+
+      <!-- #############  CONFIGURATION  ################ -->      
+      <subtree name="Wireless_Configuration">
+
+        <leaf name="channelId">
+          <param name="comment" value="Channel ID" />
+          <param name="snmp-object" value="$operChannelID" />
+          <param name="rrd-ds" value="chid" />
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="graph-legend" value="Ch ID" />
+        </leaf>
+        
+        <leaf name="RTSThreshold">
+          <param name="comment" value="Request to Send Threshold" />
+          <param name="snmp-object" value="$operRTSThreshold" />
+          <param name="rrd-ds" value="rts" />
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="graph-legend" value="RTS" />
+        </leaf>
+        
+        <leaf name="fragThreshold">
+          <param name="comment" value="Fragmentation Threshold" />
+          <param name="snmp-object" value="$operFragmentationThreshold" />
+          <param name="rrd-ds" value="frag" />
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="graph-legend" value="Frag" />
+        </leaf>
+      </subtree>  
+    </template>
+  </datasources>
+</configuration>

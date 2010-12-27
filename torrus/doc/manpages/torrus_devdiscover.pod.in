@@ -1,0 +1,114 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_devdiscover.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+devdiscover - Performs SNMP discovery and generates Torrus XML
+configuration file.
+
+=head1 SYNOPSIS
+
+B<torrus devdiscover> [--in=I<XMLFILE>] [I<options...>] [I<XMLFILES>]
+
+=head1 DESCRIPTION
+
+B<devdiscover> performs SNMP discovery using the I<XMLFILE>
+for the discovery instructions. It generates a corresponding
+Torrus XML configuration file. See B<Torrus SNMP Discovery User Guide> for
+details.
+
+The generic input file, or device discovery XML (DDX), may be generated 
+by the B<genddx> utility, and then edited and maintained manually.
+Multiple input files may be specified by several instances of I<--in>
+option, or simply as arguments.
+
+Input file name is searched in the current directory, and then in
+F<@sitedir@/discovery/>.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--mkdir>
+
+Creates C<data-dir> directories.
+
+=item B<--limit>=I<REGEXP>
+
+Limits the discovery to the output files matching the regular expression
+I<REGEXP>.
+
+=item B<--forcebundle>
+
+With this option enabled, C<devdiscover> will write the bundle
+file even if some of the bundle members were not created because of errors.
+
+=item B<--fallback>=I<INTEGER>
+
+Requires B<--forcebundle>. In case if an SNMP device is not available,
+the bundle file will include an older version of the XML output file,
+provided that it exists and it is not older than the specified number of days.
+
+=item B<--threads>=I<INTEGER>
+
+If the threads are enabled in the local Perl, this option determins
+how many parallel discovery threads are to be executed.
+The discovery jobs are distributed per output files, thus it makes
+sence to use threads only when there are many output files defined in
+a single DDX file.
+
+
+=item B<--verbose>
+
+Prints extra information.
+
+=item B<--debug>
+
+Prints debugging information.
+
+=item B<--snmpdebug>
+
+Prints SNMP protocol details
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item F<@siteconfdir@/devdiscover-siteconfig.pl>
+
+B<devdiscover> site configuration file.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>, L<torrus_genddx>(@mansec_usercmd@)
+
+=head1 NOTES
+
+See I<Torrus SNMP Discovery User Guide> for more details at Torrus home
+page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

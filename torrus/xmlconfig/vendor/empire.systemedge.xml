@@ -1,0 +1,1959 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (C) 2003 Shawn Ferry
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+Author: Shawn Ferry
+Vendor: EMPIRE
+Tested Versions: Sysedge 4.1p3
+
+$Id: empire.systemedge.xml,v 1.1 2010-12-27 00:04:09 ivan Exp $
+-->
+<!--
+Generic definitions and templates for:
+Empire (Concord) SystemEDGE MIB
+http://www.empire.com/products/systemedge/index.htm
+http://www.concord.com/solutions/products/sysedge.shtml
+-->
+<configuration>
+  <include filename="generic/monitors.xml"/>
+  <definitions>
+    <!--
+
+        STILL NEED SETUP
+
+        -->
+    <!-- flag -->
+    <def name="empire_sysedgeMode" value="1.3.6.1.4.1.546.1.1.1.17.0"/>
+    <!--
+
+
+        STILL NEED SETUP
+
+
+       -->
+    <!-- Memory -->
+    <def name="empire_memory" value="1.3.6.1.4.1.546.1.1.1.3.0"/>
+    <def name="empire_totalSwap" value="1.3.6.1.4.1.546.1.1.1.9.12.0"/>
+    <def name="empire_swapInUse" value="1.3.6.1.4.1.546.1.1.7.8.13.0"/>
+    <def name="empire_virtualMem" value="1.3.6.1.4.1.546.1.1.1.9.7.0"/>
+    <def name="empire_memInUse" value="1.3.6.1.4.1.546.1.1.7.8.9.0"/>
+    <def name="empire_activeMem" value="1.3.6.1.4.1.546.1.1.7.8.10.0"/>
+    <def name="empire_swapCapacity" value="1.3.6.1.4.1.546.1.1.7.8.30.0"/>
+    <def name="empire_memCapacity" value="1.3.6.1.4.1.546.1.1.7.8.31.0"/>
+    <def name="empire_memInUseCapacity" value="1.3.6.1.4.1.546.1.1.7.8.32.0"/>
+    <!-- Low level counters -->
+    <!-- process counters -->
+    <def name="empire_numSwitches" value="1.3.6.1.4.1.546.1.1.7.8.14.0"/>
+    <def name="empire_numTraps" value="1.3.6.1.4.1.546.1.1.7.8.15.0"/>
+    <def name="empire_numSyscalls" value="1.3.6.1.4.1.546.1.1.7.8.16.0"/>
+    <def name="empire_numInterrupts" value="1.3.6.1.4.1.546.1.1.7.8.17.0"/>
+    <!-- swap counters -->
+    <def name="empire_numPageSwapIns" value="1.3.6.1.4.1.546.1.1.7.8.18.0"/>
+    <def name="empire_numPageSwapOuts" value="1.3.6.1.4.1.546.1.1.7.8.19.0"/>
+    <def name="empire_numSwapIns" value="1.3.6.1.4.1.546.1.1.7.8.20.0"/>
+    <def name="empire_numSwapOuts" value="1.3.6.1.4.1.546.1.1.7.8.21.0"/>
+    <def name="empire_numPageIns" value="1.3.6.1.4.1.546.1.1.7.8.22.0"/>
+    <def name="empire_numPageOuts" value="1.3.6.1.4.1.546.1.1.7.8.23.0"/>
+    <def name="empire_numPageReclaims" value="1.3.6.1.4.1.546.1.1.7.8.24.0"/>
+    <def name="empire_numPageFaults" value="1.3.6.1.4.1.546.1.1.7.8.25.0"/>
+    <!-- Counters -->
+    <def name="empire_numProcs" value="1.3.6.1.4.1.546.1.1.7.8.11.0"/>
+    <def name="empire_numOpenFiles" value="1.3.6.1.4.1.546.1.1.7.8.12.0"/>
+    <!-- Process Status -->
+    <def name="empire_runQLen" value="1.3.6.1.4.1.546.1.1.7.8.4.0"/>
+    <def name="empire_pageWaitNum" value="1.3.6.1.4.1.546.1.1.7.8.5.0"/>
+    <def name="empire_diskWaitNum" value="1.3.6.1.4.1.546.1.1.7.8.6.0"/>
+    <def name="empire_swapActive" value="1.3.6.1.4.1.546.1.1.7.8.7.0"/>
+    <def name="empire_sleepActive" value="1.3.6.1.4.1.546.1.1.7.8.8.0"/>
+    <!-- Individual CPU Stats -->
+    <def name="empire_cpuTable" value="1.3.6.1.4.1.546.13.1.1"/>
+    <def name="empire_cpuIndex" value="1.3.6.1.4.1.546.13.1.1.1"/>
+    <def name="empire_cpuDescr" value="1.3.6.1.4.1.546.13.1.1.2"/>
+    <def name="empire_cpuIdle" value="1.3.6.1.4.1.546.13.1.1.3"/>
+    <def name="empire_cpuUser" value="1.3.6.1.4.1.546.13.1.1.4"/>
+    <def name="empire_cpuSys" value="1.3.6.1.4.1.546.13.1.1.5"/>
+    <def name="empire_cpuWait" value="1.3.6.1.4.1.546.13.1.1.6"/>
+    <def name="empire_cpuLastUpdate" value="1.3.6.1.4.1.546.13.1.1.7"/>
+    <def name="empire_cpuIdlePercent" value="1.3.6.1.4.1.546.13.1.1.8"/>
+    <def name="empire_cpuUserPercent" value="1.3.6.1.4.1.546.13.1.1.9"/>
+    <def name="empire_cpuSysPercent" value="1.3.6.1.4.1.546.13.1.1.10"/>
+    <def name="empire_cpuWaitPercent" value="1.3.6.1.4.1.546.13.1.1.11"/>
+    <def name="empire_cpu_IDX" value="M($empire_cpuIndex,%INDEX%)"/>
+    <!-- Load Average -->
+    <def name="empire_loadAverage1Min" value="1.3.6.1.4.1.546.1.1.7.8.26.0"/>
+    <def name="empire_loadAverage5Min" value="1.3.6.1.4.1.546.1.1.7.8.27.0"/>
+    <def name="empire_loadAverage15Min" value="1.3.6.1.4.1.546.1.1.7.8.28.0"/>
+    <!-- Overall CPU stats -->
+    <def name="empire_cpuTotalIdle" value="1.3.6.1.4.1.546.13.2.0"/>
+    <def name="empire_cpuTotalUser" value="1.3.6.1.4.1.546.13.3.0"/>
+    <def name="empire_cpuTotalSys" value="1.3.6.1.4.1.546.13.4.0"/>
+    <def name="empire_cpuTotalWait" value="1.3.6.1.4.1.546.13.5.0"/>
+    <def name="empire_cpuTotalIdlePercent" value="1.3.6.1.4.1.546.13.7.0"/>
+    <def name="empire_cpuTotalUserPercent" value="1.3.6.1.4.1.546.13.8.0"/>
+    <def name="empire_cpuTotalSysPercent" value="1.3.6.1.4.1.546.13.9.0"/>
+    <def name="empire_cpuTotalWaitPercent" value="1.3.6.1.4.1.546.13.10.0"/>
+    <!-- Storage Table-->
+    <def name="empire_devIndex" value="1.3.6.1.4.1.546.1.1.1.7.1.1"/>
+    <def name="empire_devDevice" value="1.3.6.1.4.1.546.1.1.1.7.1.2"/>
+    <def name="empire_devMntPt" value="1.3.6.1.4.1.546.1.1.1.7.1.3"/>
+    <def name="empire_devBsize" value="1.3.6.1.4.1.546.1.1.1.7.1.4"/>
+    <def name="empire_devTblks" value="1.3.6.1.4.1.546.1.1.1.7.1.5"/>
+    <def name="empire_devFblks" value="1.3.6.1.4.1.546.1.1.1.7.1.6"/>
+    <def name="empire_devTfiles" value="1.3.6.1.4.1.546.1.1.1.7.1.7"/>
+    <def name="empire_devFfiles" value="1.3.6.1.4.1.546.1.1.1.7.1.8"/>
+    <def name="empire_devCapacity" value="1.3.6.1.4.1.546.1.1.1.7.1.14"/>
+    <def name="empire_devInodeCapacity" value="1.3.6.1.4.1.546.1.1.1.7.1.15"/>
+    <def name="empire_dev_IDX" value="M($empire_devMntPt,%storage-description%)"/>
+    <!-- "Disk" Stats Table -->
+    <def name="empire_diskStatsIndex" value="1.3.6.1.4.1.546.12.1.1.1"/>
+    <def name="empire_diskStatsQueueLength" value="1.3.6.1.4.1.546.12.1.1.2"/>
+    <def name="empire_diskStatsServiceTime" value="1.3.6.1.4.1.546.12.1.1.3"/>
+    <def name="empire_diskStatsUtilization" value="1.3.6.1.4.1.546.12.1.1.4"/>
+    <def name="empire_diskStatsKBTransfered" value="1.3.6.1.4.1.546.12.1.1.5"/>
+    <def name="empire_diskStatsTransfers" value="1.3.6.1.4.1.546.12.1.1.6"/>
+    <def name="empire_diskStatsReads" value="1.3.6.1.4.1.546.12.1.1.7"/>
+    <def name="empire_diskStatsWrites" value="1.3.6.1.4.1.546.12.1.1.8"/>
+    <def name="empire_diskStatsHostIndex" value="1.3.6.1.4.1.546.12.1.1.9"/>
+    <def name="empire_disk_stats_IDX" value="M($empire_diskStatsHostIndex,%HRINDEX%)"/>
+  </definitions>
+  <datasources>
+
+    <template name="sysedge_opmode">
+      <leaf name="SysedgeOpMode">
+        <param name="vertical-label" value="Mode"/>
+        <param name="comment">
+            Sysedge Operation Mode 1=Full 2=Not Licensed
+        </param>
+        <param name="data-file" value="%system-id%_sysedge_opmode.rrd"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_sysedgeMode"/>
+        <param name="rrd-ds" value="sysedge_opmode"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="line-color" value="##one"/>
+        <param name="line-style" value="LINE2"/>
+        <param name="graph-legend" value="SysedgeOpMode"/>
+        <param name="rrd-cf" value="LAST"/>
+        <param name="rrd-create-rra" value="RRA:LAST:0:1:10080"/>
+        <param name="monitor" value="fail_eq"/>
+        <param name="monitor-vars" value="fail=2"/>
+      </leaf>
+    </template>
+    <!--
+
+        Empire Memory
+
+        -->
+    <template name="empire-memory">
+      <subtree name="Memory">
+        <param name="comment" value="System Memory Stats and Usage"/>
+        <leaf name="MemoryUsage">
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="comment" value="Memory: Total, Used and Active"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="total,inuse,active"/>
+          <!-- Active -->
+          <param name="ds-expr-total" value="{Memory}"/>
+          <param name="graph-legend-total" value="Memory"/>
+          <param name="line-style-total" value="AREA"/>
+          <param name="line-color-total" value="##two"/>
+          <param name="line-order-total" value="1"/>
+          <!-- InUse -->
+          <param name="ds-expr-inuse" value="{MemInUse}"/>
+          <param name="graph-legend-inuse" value="MemInUse"/>
+          <param name="line-style-inuse" value="AREA"/>
+          <param name="line-color-inuse" value="##three"/>
+          <param name="line-order-inuse" value="2"/>
+          <!-- Active -->
+          <param name="ds-expr-active" value="{ActiveMem}"/>
+          <param name="graph-legend-active" value="ActiveMem"/>
+          <param name="line-style-active" value="AREA"/>
+          <param name="line-color-active" value="##four"/>
+          <param name="line-order-active" value="3"/>
+        </leaf>
+        <leaf name="MemoryActive">
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="comment" value="Memory, Used vs Active"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="active,inuse"/>
+          <!-- Active -->
+          <param name="ds-expr-active" value="{ActiveMem}"/>
+          <param name="graph-legend-active" value="ActiveMem"/>
+          <param name="line-style-active" value="AREA"/>
+          <param name="line-color-active" value="##four"/>
+          <param name="line-order-active" value="2"/>
+          <!-- InUse -->
+          <param name="ds-expr-inuse" value="{MemInUse}"/>
+          <param name="graph-legend-inuse" value="MemInUse"/>
+          <param name="line-style-inuse" value="AREA"/>
+          <param name="line-color-inuse" value="##three"/>
+          <param name="line-order-inuse" value="1"/>
+        </leaf>
+        <leaf name="SwapUsage">
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="comment" value="Swap, Total vs Used"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="total,used"/>
+          <!-- Total -->
+          <param name="ds-expr-total" value="{TotalSwap}"/>
+          <param name="graph-legend-total" value="TotalSwap"/>
+          <param name="line-style-total" value="AREA"/>
+          <param name="line-color-total" value="##two"/>
+          <param name="line-order-total" value="1"/>
+          <!-- InUse -->
+          <param name="ds-expr-used" value="{SwapInUse}"/>
+          <param name="graph-legend-used" value="SwapInUse"/>
+          <param name="line-style-used" value="AREA"/>
+          <param name="line-color-used" value="##three"/>
+          <param name="line-order-used" value="2"/>
+        </leaf>
+        <leaf name="TotalSwap">
+          <param name="data-file" value="%system-id%_empire-totalswap.rrd"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="hidden" value="yes"/>
+          <param name="comment" value="Total Swap Space"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="collector-scale" value="1024,*"/>
+          <param name="snmp-object" value="$empire_totalSwap"/>
+          <param name="rrd-ds" value="totalSwap"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="TotalSwap"/>
+        </leaf>
+        <leaf name="SwapInUse">
+          <param name="data-file" value="%system-id%_empire-swapinuse.rrd"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="hidden" value="yes"/>
+          <param name="comment" value="Used Swap Space"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="collector-scale" value="1024,*"/>
+          <param name="snmp-object" value="$empire_swapInUse"/>
+          <param name="rrd-ds" value="swapInUse"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="SwapInUse"/>
+        </leaf>
+        <leaf name="Memory">
+          <param name="data-file" value="%system-id%_empire-memory.rrd"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="hidden" value="yes"/>
+          <param name="comment" value="Real Memory"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="collector-scale" value="1024,*"/>
+          <param name="snmp-object" value="$empire_memory"/>
+          <param name="rrd-ds" value="memory"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="Memory"/>
+        </leaf>
+        <leaf name="MemInUse">
+          <param name="data-file" value="%system-id%_empire-meminuse.rrd"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="hidden" value="yes"/>
+          <param name="comment" value="Real Memory In Use"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="collector-scale" value="1024,*"/>
+          <param name="snmp-object" value="$empire_memInUse"/>
+          <param name="rrd-ds" value="memInUse"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="line-style" value="AREA"/>
+          <param name="graph-legend" value="MemInUse"/>
+        </leaf>
+        <leaf name="ActiveMem">
+          <param name="data-file" value="%system-id%_empire-activemem.rrd"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="hidden" value="yes"/>
+          <param name="comment" value="Active Real Memory"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="collector-scale" value="1024,*"/>
+          <param name="snmp-object" value="$empire_activeMem"/>
+          <param name="rrd-ds" value="activeMem"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="line-style" value="AREA"/>
+          <param name="graph-legend" value="ActiveMem"/>
+        </leaf>
+        <leaf name="SwapCapacity">
+          <param name="data-file" value="%system-id%_empire-swapcap.rrd"/>
+          <param name="vertical-label" value="Percent Used"/>
+          <param name="comment" value="Percentage of Swap Used"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_swapCapacity"/>
+          <param name="rrd-ds" value="swapCapacity"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="line-style" value="AREA"/>
+          <param name="graph-legend" value="SwapCapacity"/>
+        </leaf>
+        <leaf name="MemInUseCapacity">
+          <param name="data-file" value="%system-id%_empire-meminusecap.rrd"/>
+          <param name="vertical-label" value="Percent Used"/>
+          <param name="comment" value="Percentage of Memory Used"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_memCapacity"/>
+          <param name="rrd-ds" value="memCapacity"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="line-style" value="AREA"/>
+          <param name="graph-legend" value="MemCapacity"/>
+          <param name="monitor" value="fail_gt"/>
+          <param name="monitor-vars" value="fail=97"/>
+        </leaf>
+      </subtree>
+    </template>
+    <!--
+            Empire Swap Counters
+                empire-swap-counters-numpagefaults
+                empire-swap-counters-numpagereclaims
+                empire-swap-counters-numswapouts
+                empire-swap-counters-numswapouts-multi
+                empire-swap-counters-numswapins
+                empire-swap-counters-numswapins-multi
+                empire-swap-counters-numpageswapouts
+                empire-swap-counters-numpageswapouts-multi
+                empire-swap-counters-numpageswapins
+                empire-swap-counters-numpageswapins-multi
+
+
+
+
+            -->
+    <!-- Windows does not support swap counters -->
+    <template name="empire-swap-counters-nt">
+      <apply-template name="empire-swap-counters-common"/>
+      <subtree name="Memory">
+        <leaf name="SwapCounters">
+          <param name="ds-names" value="pagein,pageout"/>
+          <apply-template name="empire-swap-counters-numpageins-multi"/>
+          <apply-template name="empire-swap-counters-numpageouts-multi"/>
+        </leaf>
+        <apply-template name="empire-swap-counters-numpageins"/>
+        <apply-template name="empire-swap-counters-numpageouts"/>
+        <apply-template name="empire-swap-counters-numpagefaults"/>
+      </subtree>
+    </template>
+    <template name="empire-swap-counters-nt40Intel">
+      <apply-template name="empire-swap-counters-nt"/>
+    </template>
+    <template name="empire-swap-counters-nt50Intel">
+      <apply-template name="empire-swap-counters-nt"/>
+    </template>
+    <template name="empire-swap-counters-unix">
+      <apply-template name="empire-swap-counters-common"/>
+      <subtree name="Memory">
+        <leaf name="SwapCounters">
+          <param name="ds-names" value="pagein,pageout,swapin,swapout"/>
+          <apply-template name="empire-swap-counters-numpageswapins-multi"/>
+          <apply-template name="empire-swap-counters-numpageswapouts-multi"/>
+          <apply-template name="empire-swap-counters-numswapins-multi"/>
+          <apply-template name="empire-swap-counters-numswapouts-multi"/>
+        </leaf>
+        <apply-template name="empire-swap-counters-numpageswapins"/>
+        <apply-template name="empire-swap-counters-numpageswapouts"/>
+        <apply-template name="empire-swap-counters-numswapins"/>
+        <apply-template name="empire-swap-counters-numswapouts"/>
+        <apply-template name="empire-swap-counters-numpagefaults"/>
+        <apply-template name="empire-swap-counters-numpagereclaims"/>
+      </subtree>
+    </template>
+    <template name="empire-swap-counters-solarisSparc">
+      <apply-template name="empire-swap-counters-unix"/>
+    </template>
+    <template name="empire-swap-counters-aix5RS6000">
+      <apply-template name="empire-swap-counters-common"/>
+      <subtree name="Memory">
+        <leaf name="SwapCounters">
+          <param name="ds-names" value="pagein,pageout"/>
+          <apply-template name="empire-swap-counters-numpageswapins-multi"/>
+          <apply-template name="empire-swap-counters-numpageswapouts-multi"/>
+        </leaf>
+        <apply-template name="empire-swap-counters-numpageswapins"/>
+        <apply-template name="empire-swap-counters-numpageswapouts"/>
+        <apply-template name="empire-swap-counters-numpagefaults"/>
+        <apply-template name="empire-swap-counters-numpagereclaims"/>
+      </subtree>
+    </template>
+    <template name="empire-swap-counters-linuxIntel">
+      <apply-template name="empire-swap-counters-common"/>
+      <subtree name="Memory">
+        <leaf name="SwapCounters">
+          <param name="ds-names" value="pagein,pageout"/>
+          <apply-template name="empire-swap-counters-numpageswapins-multi"/>
+          <apply-template name="empire-swap-counters-numpageswapouts-multi"/>
+        </leaf>
+        <apply-template name="empire-swap-counters-numpageswapins"/>
+        <apply-template name="empire-swap-counters-numpageswapouts"/>
+      </subtree>
+    </template>
+    <template name="empire-swap-counters-common">
+      <subtree name="Memory">
+        <leaf name="SwapCounters">
+          <param name="vertical-label" value="Count"/>
+          <param name="comment" value="System Swap Stats"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ignore-limits" value="yes"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-swap-counters-numswapins-multi">
+      <!-- in -->
+      <param name="ds-expr-swapin" value="{NumSwapIns},-1,*"/>
+      <param name="graph-legend-swapin" value="SwapIns"/>
+      <param name="line-style-swapin" value="AREA"/>
+      <param name="line-color-swapin" value="##green"/>
+      <param name="line-order-swapin" value="1"/>
+    </template>
+    <template name="empire-swap-counters-numpageswapins-multi">
+      <!-- pageswapin -->
+      <param name="ds-expr-pagein" value="{NumPageSwapIns},-1,*"/>
+      <param name="graph-legend-pagein" value="ProcessSwapIns"/>
+      <param name="line-style-pagein" value="LINE2"/>
+      <param name="line-color-pagein" value="##green75"/>
+      <param name="line-order-pagein" value="3"/>
+    </template>
+    <template name="empire-swap-counters-numpageins-multi">
+      <!-- pagein -->
+      <param name="ds-expr-pagein" value="{NumPageIns},-1,*"/>
+      <param name="graph-legend-pagein" value="PageIns"/>
+      <param name="line-style-pagein" value="LINE2"/>
+      <param name="line-color-pagein" value="##green75"/>
+      <param name="line-order-pagein" value="3"/>
+    </template>
+    <template name="empire-swap-counters-numswapouts-multi">
+      <!-- out -->
+      <param name="ds-expr-swapout" value="{NumSwapOuts}"/>
+      <param name="graph-legend-swapout" value="SwapOuts"/>
+      <param name="line-style-swapout" value="AREA"/>
+      <param name="line-color-swapout" value="##blue"/>
+      <param name="line-order-swapout" value="2"/>
+    </template>
+    <template name="empire-swap-counters-numpageswapouts-multi">
+      <!-- pageout -->
+      <param name="ds-expr-pageout" value="{NumPageSwapOuts}"/>
+      <param name="graph-legend-pageout" value="ProcessSwapOuts"/>
+      <param name="line-style-pageout" value="LINE2"/>
+      <param name="line-color-pageout" value="##blue75"/>
+      <param name="line-order-pageout" value="4"/>
+    </template>
+    <template name="empire-swap-counters-numpageouts-multi">
+      <!-- pageout -->
+      <param name="ds-expr-pageout" value="{NumPageOuts}"/>
+      <param name="graph-legend-pageout" value="PageOuts"/>
+      <param name="line-style-pageout" value="LINE2"/>
+      <param name="line-color-pageout" value="##blue75"/>
+      <param name="line-order-pageout" value="4"/>
+    </template>
+    <template name="empire-swap-counters-numpageins">
+      <leaf name="NumPageIns">
+        <param name="data-file" value="%system-id%_empire-numpageins.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Page Ins"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numPageIns"/>
+        <param name="rrd-ds" value="numPageIns"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="PageIns"/>
+      </leaf>
+    </template>
+    <template name="empire-swap-counters-numpageouts">
+      <leaf name="NumPageOuts">
+        <param name="data-file" value="%system-id%_empire-numpageouts.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Page Outs"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numPageOuts"/>
+        <param name="rrd-ds" value="numPageOuts"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="PageOuts"/>
+      </leaf>
+    </template>
+    <template name="empire-swap-counters-numpageswapins">
+      <leaf name="NumPageSwapIns">
+        <param name="data-file" value="%system-id%_empire-numpageswapins.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Page Swap Ins"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numPageSwapIns"/>
+        <param name="rrd-ds" value="numPageSwapIns"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="PageSwapIns"/>
+      </leaf>
+    </template>
+    <template name="empire-swap-counters-numpageswapouts">
+      <leaf name="NumPageSwapOuts">
+        <param name="data-file" value="%system-id%_empire-numpageswapouts.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Page Swap Outs"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numPageSwapOuts"/>
+        <param name="rrd-ds" value="numPageSwapOuts"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="PageSwapOuts"/>
+      </leaf>
+    </template>
+    <template name="empire-swap-counters-numswapins">
+      <leaf name="NumSwapIns">
+        <param name="data-file" value="%system-id%_empire-numswapins.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Process Swap Ins"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numSwapIns"/>
+        <param name="rrd-ds" value="numSwapIns"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="SwapIns"/>
+      </leaf>
+    </template>
+    <template name="empire-swap-counters-numswapouts">
+      <leaf name="NumSwapOuts">
+        <param name="data-file" value="%system-id%_empire-numswapouts.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Process Swap Outs"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numSwapOuts"/>
+        <param name="rrd-ds" value="numSwapOuts"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="SwapOuts"/>
+      </leaf>
+    </template>
+    <template name="empire-swap-counters-numpagereclaims">
+      <leaf name="NumPageReclaims">
+        <param name="data-file" value="%system-id%_empire-numpagereclaims.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="comment">
+          Number of Pages Reclaimed from the free list
+        </param>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numPageReclaims"/>
+        <param name="rrd-ds" value="numPageReclaims"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="PageReclaims"/>
+      </leaf>
+    </template>
+    <template name="empire-swap-counters-numpagefaults">
+      <leaf name="NumPageFaults">
+        <param name="data-file" value="%system-id%_empire-numpagefaults.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="comment">
+          Number of attemps to access a page not in memory
+        </param>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numPageFaults"/>
+        <param name="rrd-ds" value="numPageFaults"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="PageFaults"/>
+      </leaf>
+    </template>
+    <!--
+
+        Empire Counters
+        Templates:
+            empire-counters-numtraps
+            empire-counters-numtraps-multi
+            empire-counters-numswitches
+            empire-counters-numswitches-multi
+            empire-counters-numsyscalls
+            empire-counters-numsyscalls-multi
+            empire-counters-numinterrupts
+            empire-counters-numinterrupts-multi
+            (in common)empire-counters-numprocs
+            (in common)empire-counters-numopenfiles
+
+
+        -->
+    <!-- windows does not support traps -->
+    <template name="empire-counters-nt">
+      <apply-template name="empire-counters-common"/>
+      <subtree name="Counters">
+        <leaf name="ProcessCounters">
+          <param name="comment" value="Switches, Syscalls, Interrupts"/>
+          <param name="ds-names" value="switches,syscalls,interrupts"/>
+          <apply-template name="empire-counters-numswitches-multi"/>
+          <apply-template name="empire-counters-numsyscalls-multi"/>
+          <apply-template name="empire-counters-numinterrupts-multi"/>
+        </leaf>
+        <apply-template name="empire-counters-numswitches"/>
+        <apply-template name="empire-counters-numsyscalls"/>
+        <apply-template name="empire-counters-numinterrupts"/>
+      </subtree>
+    </template>
+    <template name="empire-counters-nt40Intel">
+      <apply-template name="empire-counters-nt"/>
+    </template>
+    <template name="empire-counters-nt50Intel">
+      <apply-template name="empire-counters-nt"/>
+    </template>
+    <template name="empire-counters-unix">
+      <apply-template name="empire-counters-common"/>
+      <subtree name="Counters">
+        <leaf name="ProcessCounters">
+          <param name="comment" value="Switches, Syscalls, Interrupts"/>
+          <param name="ds-names" value="switches,syscalls,interrupts"/>
+          <apply-template name="empire-counters-numswitches-multi"/>
+          <apply-template name="empire-counters-numsyscalls-multi"/>
+          <apply-template name="empire-counters-numinterrupts-multi"/>
+        </leaf>
+        <apply-template name="empire-counters-numswitches"/>
+        <apply-template name="empire-counters-numsyscalls"/>
+        <apply-template name="empire-counters-numinterrupts"/>
+      </subtree>
+    </template>
+    <template name="empire-counters-solarisSparc">
+      <apply-template name="empire-counters-common"/>
+      <subtree name="Counters">
+        <leaf name="ProcessCounters">
+          <param name="comment">
+            Switches, Syscalls, Interrupts and Traps
+          </param>
+          <param name="ds-names" value="switches,syscalls,interrupts,traps"/>
+          <apply-template name="empire-counters-numswitches-multi"/>
+          <apply-template name="empire-counters-numsyscalls-multi"/>
+          <apply-template name="empire-counters-numinterrupts-multi"/>
+          <apply-template name="empire-counters-numtraps-multi"/>
+        </leaf>
+        <apply-template name="empire-counters-numswitches"/>
+        <apply-template name="empire-counters-numsyscalls"/>
+        <apply-template name="empire-counters-numinterrupts"/>
+        <apply-template name="empire-counters-numtraps"/>
+      </subtree>
+    </template>
+    <template name="empire-counters-aix5RS6000">
+      <apply-template name="empire-counters-unix"/>
+      <subtree name="Counters">
+        <leaf name="ProcessCounters">
+          <param name="comment">
+            Switches, Syscalls, Interrupts and Traps
+          </param>
+          <param name="ds-names" value="switches,syscalls,interrupts,traps"/>
+          <apply-template name="empire-counters-numtraps-multi"/>
+        </leaf>
+        <apply-template name="empire-counters-numtraps"/>
+      </subtree>
+    </template>
+
+    <template name="empire-counters-linuxIntel">
+      <apply-template name="empire-counters-common"/>
+      <subtree name="Counters">
+        <leaf name="ProcessCounters">
+          <param name="comment" value="Switches,Interrupts"/>
+          <param name="ds-names" value="switches,interrupts"/>
+          <apply-template name="empire-counters-numswitches-multi"/>
+          <apply-template name="empire-counters-numinterrupts-multi"/>
+        </leaf>
+        <apply-template name="empire-counters-numswitches"/>
+        <apply-template name="empire-counters-numinterrupts"/>
+      </subtree>
+    </template>
+    <!--  Counter Sub Templates -->
+    <template name="empire-counters-common">
+      <subtree name="Counters">
+        <param name="comment" value="System Counters"/>
+        <leaf name="ProcessCounters">
+          <param name="vertical-label" value="Count"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+        </leaf>
+        <apply-template name="empire-counters-numprocs"/>
+        <apply-template name="empire-counters-numopenfiles"/>
+      </subtree>
+    </template>
+    <template name="empire-counters-numswitches-multi">
+      <!-- Switches -->
+      <param name="ds-expr-switches" value="{NumSwitches}"/>
+      <param name="graph-legend-switches" value="Switches"/>
+      <param name="line-style-switches" value="LINE2"/>
+      <param name="line-color-switches" value="##one"/>
+      <param name="line-order-switches" value="1"/>
+    </template>
+    <template name="empire-counters-numsyscalls-multi">
+      <!-- Syscalls -->
+      <param name="ds-expr-syscalls" value="{NumSyscalls}"/>
+      <param name="graph-legend-syscalls" value="Syscalls"/>
+      <param name="line-style-syscalls" value="LINE2"/>
+      <param name="line-color-syscalls" value="##three"/>
+      <param name="line-order-syscalls" value="3"/>
+    </template>
+    <template name="empire-counters-numinterrupts-multi">
+      <!-- Interrupts -->
+      <param name="ds-expr-interrupts" value="{NumInterrupts}"/>
+      <param name="graph-legend-interrupts" value="Interrupts"/>
+      <param name="line-style-interrupts" value="LINE2"/>
+      <param name="line-color-interrupts" value="##four"/>
+      <param name="line-order-interrupts" value="4"/>
+    </template>
+    <template name="empire-counters-numtraps-multi">
+      <!-- Traps -->
+      <param name="ds-expr-traps" value="{NumTraps}"/>
+      <param name="graph-legend-traps" value="Traps"/>
+      <param name="line-style-traps" value="LINE2"/>
+      <param name="line-color-traps" value="##two"/>
+      <param name="line-order-traps" value="2"/>
+    </template>
+    <template name="empire-counters-numtraps">
+      <leaf name="NumTraps">
+        <param name="data-file" value="%system-id%_empire-numtraps.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Traps"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numTraps"/>
+        <param name="rrd-ds" value="numTraps"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="Traps"/>
+      </leaf>
+    </template>
+    <template name="empire-counters-numswitches">
+      <leaf name="NumSwitches">
+        <param name="data-file" value="%system-id%_empire-numswitches.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Context Switches"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numSwitches"/>
+        <param name="rrd-ds" value="numSwitches"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="Context Switches"/>
+      </leaf>
+    </template>
+    <template name="empire-counters-numsyscalls">
+      <leaf name="NumSyscalls">
+        <param name="data-file" value="%system-id%_empire-numsyscalls.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of System Calls"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numSyscalls"/>
+        <param name="rrd-ds" value="numSyscalls"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="SystemCalls"/>
+      </leaf>
+    </template>
+    <template name="empire-counters-numinterrupts">
+      <leaf name="NumInterrupts">
+        <param name="data-file" value="%system-id%_empire-numinterrupts.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="yes"/>
+        <param name="comment" value="Number of Interrupts"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numInterrupts"/>
+        <param name="rrd-ds" value="numSyscalls"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="NumInterrupts"/>
+      </leaf>
+    </template>
+    <template name="empire-counters-numprocs">
+      <leaf name="NumProcs">
+        <param name="data-file" value="%system-id%_empire-numprocs.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="comment" value="Number of Processes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numProcs"/>
+        <param name="rrd-ds" value="numProcs"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="Processes"/>
+      </leaf>
+    </template>
+    <template name="empire-counters-numopenfiles">
+      <leaf name="NumOpenFiles">
+        <param name="data-file" value="%system-id%_empire-numopenfiles.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="comment" value="Number of Open Files"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_numOpenFiles"/>
+        <param name="rrd-ds" value="numOpenFiles"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="line-color" value="##one"/>
+        <param name="graph-legend" value="Open Files"/>
+      </leaf>
+    </template>
+    <!--
+
+        Empire Process Stats
+
+        -->
+    <template name="empire-runq">
+      <subtree name="ProcessStats">
+        <param name="comment" value="System Level Process Stats"/>
+        <leaf name="RunQLength">
+          <param name="vertical-label" value="Count"/>
+          <param name="data-file" value="%system-id%_empire-runq.rrd"/>
+          <param name="comment" value="Jobs waiting in Run Queue"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_runQLen"/>
+          <param name="rrd-ds" value="runQlen"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="Jobs in Queue"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-pagewait">
+      <subtree name="ProcessStats">
+        <leaf name="PageWaitNum">
+          <param name="vertical-label" value="Count"/>
+          <param name="data-file" value="%system-id%_empire-pagewait.rrd"/>
+          <param name="comment" value="Jobs Waiting on Page I/O"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_pageWaitNum"/>
+          <param name="rrd-ds" value="pageWaitNum"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="Page Wait"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-diskwait">
+      <subtree name="ProcessStats">
+        <leaf name="DiskWaitNum">
+          <param name="vertical-label" value="Count"/>
+          <param name="data-file" value="%system-id%_empire-diskwait.rrd"/>
+          <param name="comment" value="Jobs Waiting on Disk I/O"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_diskWaitNum"/>
+          <param name="rrd-ds" value="diskWaitNum"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="Disk Wait"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-swapactive">
+      <subtree name="ProcessStats">
+        <leaf name="SwapActive">
+          <param name="vertical-label" value="Count"/>
+          <param name="data-file" value="%system-id%_empire-swapactive.rrd"/>
+          <param name="comment" value="Active Swapped out Jobs"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_swapActive"/>
+          <param name="rrd-ds" value="swapActive"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="Swapped Jobs"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-sleepactive">
+      <subtree name="ProcessStats">
+        <leaf name="SleepActive">
+          <param name="vertical-label" value="Count"/>
+          <param name="data-file" value="%system-id%_empire-sleepactive.rrd"/>
+          <param name="comment" value="Active Sleeping Jobs"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_sleepActive"/>
+          <param name="rrd-ds" value="sleepActive"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="graph-legend" value="Sleeping Jobs"/>
+        </leaf>
+      </subtree>
+    </template>
+    <!--
+
+        Empire Load Average
+
+        -->
+    <template name="empire-load">
+      <subtree name="LoadAverage">
+        <param name="comment" value="System Load Averages"/>
+        <leaf name="LoadAverage">
+          <param name="vertical-label" value="Load Average"/>
+          <param name="comment" value="1, 5, and 15 Minute Load Average"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="one,five,fifteen"/>
+          <!-- SYS -->
+          <param name="ds-expr-one" value="{loadAverage1Min},100,/"/>
+          <param name="graph-legend-one" value="1 Minute"/>
+          <param name="line-style-one" value="LINE2"/>
+          <param name="line-color-one" value="##one"/>
+          <param name="line-order-one" value="1"/>
+          <!-- USER -->
+          <param name="ds-expr-five" value="{loadAverage5Min},100,/"/>
+          <param name="graph-legend-five" value="5 Minutes"/>
+          <param name="line-style-five" value="LINE2"/>
+          <param name="line-color-five" value="##two"/>
+          <param name="line-order-five" value="2"/>
+          <!-- WAIT -->
+          <param name="ds-expr-fifteen" value="{loadAverage15Min},100,/"/>
+          <param name="graph-legend-fifteen" value="15 Minute"/>
+          <param name="line-style-fifteen" value="LINE2"/>
+          <param name="line-color-fifteen" value="##three"/>
+          <param name="line-order-fifteen" value="3"/>
+        </leaf>
+        <!-- Component  -->
+        <leaf name="loadAverage1Min">
+          <param name="vertical-label" value="Load Average"/>
+          <param name="data-file" value="%system-id%_empire-load1m.rrd"/>
+          <param name="hidden" value="yes"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_loadAverage1Min"/>
+          <param name="rrd-ds" value="loadAverage1Min"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##one"/>
+          <param name="comment" value="One Minute Load Average"/>
+          <param name="graph-legend" value="1 Min"/>
+        </leaf>
+        <leaf name="loadAverage5Min">
+          <param name="vertical-label" value="Load Average"/>
+          <param name="data-file" value="%system-id%_empire-load5m.rrd"/>
+          <param name="hidden" value="yes"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_loadAverage5Min"/>
+          <param name="rrd-ds" value="loadAverage5Min"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##two"/>
+          <param name="comment" value="Five Minute Load Average"/>
+          <param name="graph-legend" value="5 Min"/>
+        </leaf>
+        <leaf name="loadAverage15Min">
+          <param name="vertical-label" value="Load Average"/>
+          <param name="data-file" value="%system-id%_empire-load15m.rrd"/>
+          <param name="hidden" value="yes"/>
+          <param name="leaf-type" value="rrd-def"/>
+          <param name="snmp-object" value="$empire_loadAverage15Min"/>
+          <param name="rrd-ds" value="loadAverage15Min"/>
+          <param name="rrd-cf" value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="line-color" value="##three"/>
+          <param name="comment" value="Fifteen Minute Load Average"/>
+          <param name="graph-legend" value="15 Min"/>
+        </leaf>
+      </subtree>
+    </template>
+    <!--
+
+
+        Empire Total CPU Percent
+            empire-total-cpu-sysp
+            empire-total-cpu-sysp-multi
+            empire-total-cpu-userp
+            empire-total-cpu-userp-multi
+            empire-total-cpu-idlep
+            empire-total-cpu-idlep-multi
+            empire-total-cpu-waitp
+            empire-total-cpu-waitp-multi
+        -->
+    <template name="empire-total-cpu-unix">
+      <apply-template name="empire-total-cpu-common"/>
+      <subtree name="TotalCpu">
+        <leaf name="CpuTotalPercentUsage">
+          <param name="comment">
+            Cpu Idle, Sys, User and Wait Percentage
+          </param>
+          <param name="ds-names" value="sys,user,wait,idle"/>
+          <apply-template name="empire-total-cpu-sysp-multi"/>
+          <apply-template name="empire-total-cpu-userp-multi"/>
+          <apply-template name="empire-total-cpu-idlep-multi"/>
+          <apply-template name="empire-total-cpu-waitp-multi"/>
+        </leaf>
+        <apply-template name="empire-total-cpu-sysp"/>
+        <apply-template name="empire-total-cpu-userp"/>
+        <apply-template name="empire-total-cpu-idlep"/>
+        <apply-template name="empire-total-cpu-waitp"/>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-solarisSparc">
+      <apply-template name="empire-total-cpu-unix"/>
+    </template>
+    <template name="empire-total-cpu-aix5RS6000">
+      <apply-template name="empire-total-cpu-unix"/>
+    </template>
+    <template name="empire-total-cpu-linuxIntel">
+      <apply-template name="empire-total-cpu-common"/>
+      <subtree name="TotalCpu">
+        <leaf name="CpuTotalPercentUsage">
+          <param name="comment" value="Cpu Idle, Sys and User Percentage"/>
+          <param name="ds-names" value="sys,user,idle"/>
+          <apply-template name="empire-total-cpu-sysp-multi"/>
+          <apply-template name="empire-total-cpu-userp-multi"/>
+          <apply-template name="empire-total-cpu-idlep-multi"/>
+        </leaf>
+        <apply-template name="empire-total-cpu-sysp"/>
+        <apply-template name="empire-total-cpu-userp"/>
+        <apply-template name="empire-total-cpu-idlep"/>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-nt">
+      <apply-template name="empire-total-cpu-common"/>
+      <subtree name="TotalCpu">
+        <leaf name="CpuTotalPercentUsage">
+          <param name="comment" value="Cpu Idle, Sys and User Percentage"/>
+          <param name="ds-names" value="sys,user,idle"/>
+          <apply-template name="empire-total-cpu-sysp-multi"/>
+          <apply-template name="empire-total-cpu-userp-multi"/>
+          <apply-template name="empire-total-cpu-idlep-multi"/>
+        </leaf>
+        <apply-template name="empire-total-cpu-sysp"/>
+        <apply-template name="empire-total-cpu-userp"/>
+        <apply-template name="empire-total-cpu-idlep"/>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-nt40Intel">
+      <apply-template name="empire-total-cpu-nt"/>
+    </template>
+    <template name="empire-total-cpu-nt50Intel">
+      <apply-template name="empire-total-cpu-nt"/>
+    </template>
+    <template name="empire-total-cpu-common">
+      <subtree name="TotalCpu">
+        <param name="comment" value="Combined Stats for All CPUs"/>
+        <leaf name="CpuTotalPercentUsage">
+          <param name="vertical-label" value="Percent"/>
+          <param name="graph-upper-limit" value="100"/>
+          <param name="graph-rigid-boundaries" value="yes"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-waitp-multi">
+      <!-- WAIT -->
+      <param name="ds-expr-wait" value="{cpuTotalWaitPercent}"/>
+      <param name="graph-legend-wait" value="Percent Wait"/>
+      <param name="line-style-wait" value="STACK"/>
+      <param name="line-color-wait" value="##three"/>
+      <param name="line-order-wait" value="3"/>
+    </template>
+    <template name="empire-total-cpu-waitp">
+      <leaf name="cpuTotalWaitPercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-waitp.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalWaitPercent"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="TotalWaitPercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment">
+          Percentage of CPU Held by Waiting Processes (CPU /USED/ Waiting)
+        </param>
+        <param name="graph-legend" value="Percent Wait"/>
+      </leaf>
+    </template>
+    <template name="empire-total-cpu-sysp-multi">
+      <!-- SYS -->
+      <param name="ds-expr-sys" value="{cpuTotalSysPercent}"/>
+      <param name="graph-legend-sys" value="Percent sys"/>
+      <param name="line-style-sys" value="AREA"/>
+      <param name="line-color-sys" value="##one"/>
+      <param name="line-order-sys" value="1"/>
+    </template>
+    <template name="empire-total-cpu-userp-multi">
+      <!-- USER -->
+      <param name="ds-expr-user" value="{cpuTotalUserPercent}"/>
+      <param name="graph-legend-user" value="Percent user"/>
+      <param name="line-style-user" value="STACK"/>
+      <param name="line-color-user" value="##two"/>
+      <param name="line-order-user" value="2"/>
+    </template>
+    <template name="empire-total-cpu-idlep-multi">
+      <!-- IDLE -->
+      <param name="ds-expr-idle" value="{cpuTotalIdlePercent}"/>
+      <param name="graph-legend-idle" value="Percent Idle"/>
+      <param name="line-style-idle" value="STACK"/>
+      <param name="line-color-idle" value="##gray"/>
+      <param name="line-order-idle" value="4"/>
+    </template>
+    <template name="empire-total-cpu-sysp">
+      <leaf name="cpuTotalSysPercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-sysp.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalSysPercent"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="TotalSysPercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment">
+          Percentage of CPU used by System Operation
+        </param>
+        <param name="graph-legend" value="Percent Sys"/>
+      </leaf>
+    </template>
+    <template name="empire-total-cpu-userp">
+      <leaf name="cpuTotalUserPercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-userp.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalUserPercent"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="TotalUserPercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment">
+          Percentage of CPU used by User Processes
+        </param>
+        <param name="graph-legend" value="Percent User"/>
+      </leaf>
+    </template>
+    <template name="empire-total-cpu-idlep">
+      <leaf name="cpuTotalIdlePercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-idlep.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalIdlePercent"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="TotalIdlePercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment" value="Percentage of CPU unused"/>
+        <param name="graph-legend" value="Percent Idle"/>
+      </leaf>
+    </template>
+    <!--
+
+
+        Empire Total CPU Raw
+            empire-total-cpu-sys
+            empire-total-cpu-sys-multi
+            empire-total-cpu-user
+            empire-total-cpu-user-multi
+            empire-total-cpu-idle
+            empire-total-cpu-idle-multi
+            empire-total-cpu-wait
+            empire-total-cpu-wait-multi
+
+
+        -->
+    <template name="empire-total-cpu-raw-unix">
+      <apply-template name="empire-total-cpu-raw-common"/>
+      <subtree name="TotalRawCpu">
+        <leaf name="RawCpuTime">
+          <param name="comment" value="Cpu Idle, Sys, User and Wait usage"/>
+          <param name="ds-names" value="sys,user,wait,idle"/>
+          <apply-template name="empire-total-cpu-sys-multi"/>
+          <apply-template name="empire-total-cpu-user-multi"/>
+          <apply-template name="empire-total-cpu-wait-multi"/>
+          <apply-template name="empire-total-cpu-idle-multi"/>
+        </leaf>
+        <apply-template name="empire-total-cpu-sys"/>
+        <apply-template name="empire-total-cpu-user"/>
+        <apply-template name="empire-total-cpu-wait"/>
+        <apply-template name="empire-total-cpu-idle"/>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-raw-solarisSparc">
+      <apply-template name="empire-total-cpu-raw-unix"/>
+    </template>
+    <template name="empire-total-cpu-raw-aix5RS6000">
+      <apply-template name="empire-total-cpu-raw-unix"/>
+    </template>
+    <template name="empire-total-cpu-raw-linuxIntel">
+      <apply-template name="empire-total-cpu-raw-common"/>
+      <subtree name="TotalRawCpu">
+        <leaf name="RawCpuTime">
+          <param name="comment" value="Cpu Idle, Sys and User Usage"/>
+          <param name="ds-names" value="sys,user,idle"/>
+          <apply-template name="empire-total-cpu-sys-multi"/>
+          <apply-template name="empire-total-cpu-user-multi"/>
+          <apply-template name="empire-total-cpu-idle-multi"/>
+        </leaf>
+        <apply-template name="empire-total-cpu-sys"/>
+        <apply-template name="empire-total-cpu-user"/>
+        <apply-template name="empire-total-cpu-idle"/>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-raw-nt">
+      <apply-template name="empire-total-cpu-raw-common"/>
+      <subtree name="TotalRawCpu">
+        <leaf name="RawCpuTime">
+          <param name="comment" value="Cpu Idle, Sys and User Usage"/>
+          <param name="ds-names" value="sys,user,idle"/>
+          <apply-template name="empire-total-cpu-sys-multi"/>
+          <apply-template name="empire-total-cpu-user-multi"/>
+          <apply-template name="empire-total-cpu-idle-multi"/>
+        </leaf>
+        <apply-template name="empire-total-cpu-sys"/>
+        <apply-template name="empire-total-cpu-user"/>
+        <apply-template name="empire-total-cpu-idle"/>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-raw-nt40Intel">
+      <apply-template name="empire-total-cpu-raw-nt"/>
+    </template>
+    <template name="empire-total-cpu-raw-nt50Intel">
+      <apply-template name="empire-total-cpu-raw-nt"/>
+    </template>
+    <template name="empire-total-cpu-raw-common">
+      <subtree name="TotalRawCpu">
+        <param name="comment" value="Total System CPU Stats in Ticks"/>
+        <param name="hidden" value="yes"/>
+        <leaf name="RawCpuTime">
+          <param name="vertical-label" value="Ticks"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-total-cpu-sys-multi">
+      <!-- SYS -->
+      <param name="ds-expr-sys" value="{cpuTotalSys}"/>
+      <param name="graph-legend-sys" value="sys"/>
+      <param name="line-style-sys" value="AREA"/>
+      <param name="line-color-sys" value="##one"/>
+      <param name="line-order-sys" value="1"/>
+    </template>
+    <template name="empire-total-cpu-user-multi">
+      <!-- USER -->
+      <param name="ds-expr-user" value="{cpuTotalUser}"/>
+      <param name="graph-legend-user" value="user"/>
+      <param name="line-style-user" value="STACK"/>
+      <param name="line-color-user" value="##two"/>
+      <param name="line-order-user" value="2"/>
+      <param name="line-order-wait" value="3"/>
+    </template>
+    <template name="empire-total-cpu-idle-multi">
+      <!-- IDLE -->
+      <param name="ds-expr-idle" value="{cpuTotalIdle}"/>
+      <param name="graph-legend-idle" value="Idle"/>
+      <param name="line-style-idle" value="STACK"/>
+      <param name="line-color-idle" value="##gray"/>
+      <param name="line-order-idle" value="4"/>
+    </template>
+    <template name="empire-total-cpu-wait-multi">
+      <!-- WAIT -->
+      <param name="ds-expr-wait" value="{cpuTotalWait}"/>
+      <param name="graph-legend-wait" value="Wait"/>
+      <param name="line-style-wait" value="STACK"/>
+      <param name="line-color-wait" value="##three"/>
+    </template>
+    <template name="empire-total-cpu-sys">
+      <leaf name="cpuTotalSys">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-raw-sys.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalSys"/>
+        <param name="rrd-ds" value="TotalSys"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="CPU used by System Operation"/>
+        <param name="graph-legend" value="Sys"/>
+      </leaf>
+    </template>
+    <template name="empire-total-cpu-user">
+      <leaf name="cpuTotalUser">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-raw-user.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalUser"/>
+        <param name="rrd-ds" value="TotalUser"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="CPU used by User Processes"/>
+        <param name="graph-legend" value="User"/>
+      </leaf>
+    </template>
+    <template name="empire-total-cpu-idle">
+      <leaf name="cpuTotalIdle">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-raw-idle.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalIdle"/>
+        <param name="rrd-ds" value="TotalIdle"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="CPU unused"/>
+        <param name="graph-legend" value="Idle"/>
+      </leaf>
+    </template>
+    <template name="empire-total-cpu-wait">
+      <leaf name="cpuTotalWait">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_empire-tcpu-raw-wait.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuTotalWait"/>
+        <param name="rrd-ds" value="TotalWait"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+          CPU Held by Waiting Processes (CPU /USED/ Waiting)
+        </param>
+        <param name="graph-legend" value="Wait"/>
+      </leaf>
+    </template>
+    <!--
+
+        Empire Per CPU Percent
+            empire-cpu-syspct
+            empire-cpu-syspct-multi
+            empire-cpu-userpct
+            empire-cpu-userpct-multi
+            empire-cpu-idlepct
+            empire-cpu-idlepct-multi
+            empire-cpu-waitpct
+            empire-cpu-waitpct-multi
+
+        -->
+    <template name="empire-cpu-subtree">
+      <param name="comment" value="Per-CPU Usage"/>
+      <param name="precedence" value="-400"/>
+      
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="cpu"/>
+      <param name="overview-subleave-name-cpu" value="CpuPercentUsage"/>
+      <param name="overview-shortcut-text-cpu"
+          value="All CPUs"/>
+      <param name="overview-shortcut-title-cpu"
+          value="Show Percent CPU usage for each cpu"/>
+      <param name="overview-page-title-cpu" value="CPU Percent Usage Graphs"/>
+    </template>
+    <template name="empire-cpu-nt">
+      <apply-template name="empire-cpu-common"/>
+      <leaf name="CpuPercentUsage">
+        <param name="comment" value="Cpu Idle, Sys and User Percentage"/>
+        <param name="ds-names" value="sys,user,idle"/>
+        <apply-template name="empire-cpu-syspct-multi"/>
+        <apply-template name="empire-cpu-idlepct-multi"/>
+        <apply-template name="empire-cpu-userpct-multi"/>
+      </leaf>
+      <apply-template name="empire-cpu-syspct"/>
+      <apply-template name="empire-cpu-idlepct"/>
+      <apply-template name="empire-cpu-userpct"/>
+    </template>
+    <template name="empire-cpu-nt40Intel">
+      <apply-template name="empire-cpu-nt"/>
+    </template>
+    <template name="empire-cpu-nt50Intel">
+      <apply-template name="empire-cpu-nt"/>
+    </template>
+    <template name="empire-cpu-unix">
+      <apply-template name="empire-cpu-common"/>
+      <leaf name="CpuPercentUsage">
+        <param name="comment">
+          Cpu Idle, Sys, User and Wait Percentage
+        </param>
+        <param name="ds-names" value="sys,user,idle,wait"/>
+        <apply-template name="empire-cpu-syspct-multi"/>
+        <apply-template name="empire-cpu-idlepct-multi"/>
+        <apply-template name="empire-cpu-userpct-multi"/>
+        <apply-template name="empire-cpu-waitpct-multi"/>
+      </leaf>
+      <apply-template name="empire-cpu-syspct"/>
+      <apply-template name="empire-cpu-idlepct"/>
+      <apply-template name="empire-cpu-userpct"/>
+      <apply-template name="empire-cpu-waitpct"/>
+    </template>
+    <template name="empire-cpu-solarisSparc">
+      <apply-template name="empire-cpu-unix"/>
+    </template>
+    <template name="empire-cpu-aix5RS6000">
+      <apply-template name="empire-cpu-unix"/>
+    </template>
+    <template name="empire-cpu-linuxIntel">
+      <apply-template name="empire-cpu-common"/>
+      <leaf name="CpuPercentUsage">
+        <param name="comment" value="Cpu Idle, Sys and User Percentage"/>
+        <param name="ds-names" value="sys,user,idle"/>
+        <apply-template name="empire-cpu-syspct-multi"/>
+        <apply-template name="empire-cpu-idlepct-multi"/>
+        <apply-template name="empire-cpu-userpct-multi"/>
+      </leaf>
+      <apply-template name="empire-cpu-syspct"/>
+      <apply-template name="empire-cpu-idlepct"/>
+      <apply-template name="empire-cpu-userpct"/>
+    </template>
+    <template name="empire-cpu-common">
+      <leaf name="CpuPercentUsage">
+        <param name="vertical-label" value="Percent"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+      </leaf>
+    </template>
+    <template name="empire-cpu-syspct-multi">
+      <!-- SYS -->
+      <param name="ds-expr-sys" value="{cpuSysPercent}"/>
+      <param name="graph-legend-sys" value="Percent sys"/>
+      <param name="line-style-sys" value="AREA"/>
+      <param name="line-color-sys" value="##one"/>
+      <param name="line-order-sys" value="1"/>
+    </template>
+    <template name="empire-cpu-userpct-multi">
+      <!-- USER -->
+      <param name="ds-expr-user" value="{cpuUserPercent}"/>
+      <param name="graph-legend-user" value="Percent user"/>
+      <param name="line-style-user" value="STACK"/>
+      <param name="line-color-user" value="##two"/>
+      <param name="line-order-user" value="2"/>
+    </template>
+    <template name="empire-cpu-idlepct-multi">
+      <!-- IDLE -->
+      <param name="ds-expr-idle" value="{cpuIdlePercent}"/>
+      <param name="graph-legend-idle" value="Percent Idle"/>
+      <param name="line-style-idle" value="STACK"/>
+      <param name="line-color-idle" value="##gray"/>
+      <param name="line-order-idle" value="4"/>
+    </template>
+    <template name="empire-cpu-waitpct-multi">
+      <!-- WAIT -->
+      <param name="ds-expr-wait" value="{cpuWaitPercent}"/>
+      <param name="graph-legend-wait" value="Percent Wait"/>
+      <param name="line-style-wait" value="STACK"/>
+      <param name="line-color-wait" value="##three"/>
+      <param name="line-order-wait" value="3"/>
+    </template>
+    <template name="empire-cpu-syspct">
+      <leaf name="cpuSysPercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-syspct.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuSysPercent.$empire_cpu_IDX"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="SysPercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment">
+          Percentage of CPU used by System Operation
+        </param>
+        <param name="graph-legend" value="Percent Sys"/>
+      </leaf>
+    </template>
+    <template name="empire-cpu-userpct">
+      <leaf name="cpuUserPercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-userpct.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuUserPercent.$empire_cpu_IDX"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="UserPercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment">
+          Percentage of CPU used by User Processes
+        </param>
+        <param name="graph-legend" value="Percent User"/>
+      </leaf>
+    </template>
+    <template name="empire-cpu-idlepct">
+      <leaf name="cpuIdlePercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-idlepct.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuIdlePercent.$empire_cpu_IDX"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="IdlePercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment" value="Percentage of CPU unused"/>
+        <param name="graph-legend" value="Percent Idle"/>
+      </leaf>
+    </template>
+    <template name="empire-cpu-waitpct">
+      <leaf name="cpuWaitPercent">
+        <param name="vertical-label" value="Percent"/>
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-waitpct.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuWaitPercent.$empire_cpu_IDX"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="graph-rigid-boundaries" value="yes"/>
+        <param name="rrd-ds" value="WaitPercent"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment">
+          Percentage of CPU Held by Waiting Processes (CPU /USED/ Waiting)
+        </param>
+        <param name="graph-legend" value="Percent Wait"/>
+      </leaf>
+    </template>
+    <!--
+
+        Empire CPU Raw
+            empire-cpu-sys
+            empire-cpu-sys-multi
+            empire-cpu-user
+            empire-cpu-user-multi
+            empire-cpu-idle
+            empire-cpu-idle-multi
+            empire-cpu-wait
+            empire-cpu-wait-multi
+
+        -->
+    <template name="empire-cpu-raw-unix">
+      <apply-template name="empire-cpu-raw-common"/>
+      <subtree name="RawCpu">
+        <leaf name="RawCpuTime">
+          <param name="comment" value="Cpu Idle, Sys, User and Wait Time"/>
+          <param name="ds-names" value="sys,user,wait,idle"/>
+          <apply-template name="empire-cpu-sys-multi"/>
+          <apply-template name="empire-cpu-user-multi"/>
+          <apply-template name="empire-cpu-wait-multi"/>
+          <apply-template name="empire-cpu-idle-multi"/>
+        </leaf>
+        <apply-template name="empire-cpu-sys"/>
+        <apply-template name="empire-cpu-user"/>
+        <apply-template name="empire-cpu-wait"/>
+        <apply-template name="empire-cpu-idle"/>
+      </subtree>
+    </template>
+    <template name="empire-cpu-raw-solarisSparc">
+      <apply-template name="empire-cpu-raw-unix"/>
+    </template>
+    <template name="empire-cpu-raw-aix5RS6000">
+      <apply-template name="empire-cpu-raw-unix"/>
+    </template>
+    <template name="empire-cpu-raw-linuxIntel">
+      <apply-template name="empire-cpu-raw-common"/>
+      <subtree name="RawCpu">
+        <leaf name="RawCpuTime">
+          <param name="comment" value="Cpu Idle, Sys, and User Time"/>
+          <param name="ds-names" value="sys,user,idle"/>
+          <apply-template name="empire-cpu-sys-multi"/>
+          <apply-template name="empire-cpu-user-multi"/>
+          <apply-template name="empire-cpu-idle-multi"/>
+        </leaf>
+        <apply-template name="empire-cpu-sys"/>
+        <apply-template name="empire-cpu-user"/>
+        <apply-template name="empire-cpu-idle"/>
+      </subtree>
+    </template>
+    <template name="empire-cpu-raw-nt">
+      <apply-template name="empire-cpu-raw-common"/>
+      <subtree name="RawCpu">
+        <leaf name="RawCpuTime">
+          <param name="comment" value="Cpu Idle, Sys and User"/>
+          <param name="ds-names" value="sys,user,idle"/>
+          <apply-template name="empire-cpu-sys-multi"/>
+          <apply-template name="empire-cpu-user-multi"/>
+          <apply-template name="empire-cpu-idle-multi"/>
+        </leaf>
+        <apply-template name="empire-cpu-sys"/>
+        <apply-template name="empire-cpu-user"/>
+        <apply-template name="empire-cpu-idle"/>
+      </subtree>
+    </template>
+    <template name="empire-cpu-raw-nt40Intel">
+      <apply-template name="empire-cpu-raw-nt"/>
+    </template>
+    <template name="empire-cpu-raw-nt50Intel">
+      <apply-template name="empire-cpu-raw-nt"/>
+    </template>
+    <template name="empire-cpu-raw-common">
+      <subtree name="RawCpu">
+        <param name="comment" value="Per-Cpu Stats in Ticks"/>
+        <param name="hidden" value="yes"/>
+        <leaf name="RawCpuTime">
+          <param name="vertical-label" value="Ticks"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+        </leaf>
+      </subtree>
+    </template>
+    <template name="empire-cpu-sys-multi">
+      <!-- SYS -->
+      <param name="ds-expr-sys" value="{cpuSys}"/>
+      <param name="graph-legend-sys" value="sys"/>
+      <param name="line-style-sys" value="AREA"/>
+      <param name="line-color-sys" value="##one"/>
+      <param name="line-order-sys" value="1"/>
+    </template>
+    <template name="empire-cpu-user-multi">
+      <!-- USER -->
+      <param name="ds-expr-user" value="{cpuUser}"/>
+      <param name="graph-legend-user" value="user"/>
+      <param name="line-style-user" value="STACK"/>
+      <param name="line-color-user" value="##two"/>
+      <param name="line-order-user" value="2"/>
+    </template>
+    <template name="empire-cpu-idle-multi">
+      <!-- IDLE -->
+      <param name="ds-expr-idle" value="{cpuIdle}"/>
+      <param name="graph-legend-idle" value="Idle"/>
+      <param name="line-style-idle" value="STACK"/>
+      <param name="line-color-idle" value="##gray"/>
+      <param name="line-order-idle" value="4"/>
+    </template>
+    <template name="empire-cpu-wait-multi">
+      <!-- WAIT -->
+      <param name="ds-expr-wait" value="{cpuWait}"/>
+      <param name="graph-legend-wait" value="Wait"/>
+      <param name="line-style-wait" value="STACK"/>
+      <param name="line-color-wait" value="##three"/>
+      <param name="line-order-wait" value="3"/>
+    </template>
+    <template name="empire-cpu-sys">
+      <leaf name="cpuSys">
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-raw-sys.rrd"/>
+        <param name="vertical-label" value="Ticks"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuSys.$empire_cpu_IDX"/>
+        <param name="rrd-ds" value="Sys"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="CPU used by System Operation"/>
+        <param name="graph-legend" value="Sys"/>
+      </leaf>
+    </template>
+    <template name="empire-cpu-user">
+      <leaf name="cpuUser">
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-raw-user.rrd"/>
+        <param name="vertical-label" value="Ticks"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuUser.$empire_cpu_IDX"/>
+        <param name="rrd-ds" value="User"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="CPU used by User Processes"/>
+        <param name="graph-legend" value="User"/>
+      </leaf>
+    </template>
+    <template name="empire-cpu-idle">
+      <leaf name="cpuIdle">
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-raw-idle.rrd"/>
+        <param name="vertical-label" value="Ticks"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuIdle.$empire_cpu_IDX"/>
+        <param name="rrd-ds" value="Idle"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="CPU unused"/>
+        <param name="graph-legend" value="Idle"/>
+      </leaf>
+    </template>
+    <template name="empire-cpu-wait">
+      <leaf name="cpuWait">
+        <param name="data-file" value="%system-id%_empire-cpu%cpu%-raw-wait.rrd"/>
+        <param name="vertical-label" value="Ticks"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_cpuWait.$empire_cpu_IDX"/>
+        <param name="rrd-ds" value="Wait"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"> CPU Held by Waiting Processes (CPU /USED/
+          Waiting) </param>
+        <param name="graph-legend" value="Wait"/>
+      </leaf>
+    </template>
+    <!--
+
+
+        Empire Device Template (Disks)
+
+
+        -->
+    <template name="empire-device-subtree">
+      <param name="comment" value="Per-Mount Usage"/>
+      <param name="precedence" value="-400"/>
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="disk"/>
+      <param name="overview-subleave-name-disk" value="DiskSpace"/>
+      <param name="overview-shortcut-text-disk"
+          value="All Disk Space"/>
+      <param name="overview-shortcut-title-disk"
+          value="Show Disk Space usage for Each Mount"/>
+      <param name="overview-page-title-disk" value="Disk Space Usage Graphs"/>
+    </template>
+    <template name="empire-device">
+      <leaf name="DiskSpace">
+        <param name="vertical-label" value="Bytes"/>
+        <param name="rrd-scaling-base" value="1024"/>
+        <param name="comment" value="Total vs. Used Disk Space"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="used,total"/>
+        <param name="ds-expr-total"> {devTblks} </param>
+        <param name="graph-legend-total" value="Disk Space Total"/>
+        <param name="line-style-total" value="AREA"/>
+        <param name="line-color-total" value="##two"/>
+        <param name="line-order-total" value="1"/>
+        <!-- USED -->
+        <param name="ds-expr-used"> {devTblks},{devFblks},- </param>
+        <param name="graph-legend-used" value="Disk Space Used"/>
+        <param name="line-style-used" value="AREA"/>
+        <param name="line-color-used" value="##three"/>
+        <param name="line-order-used" value="2"/>
+      </leaf>
+      <leaf name="devFblks">
+        <param name="data-file" value="%system-id%_empire-%storage-nick%-fblocks.rrd"/>
+        <param name="vertical-label" value="Bytes"/>
+        <param name="rrd-scaling-base" value="1024"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_devFblks.$empire_dev_IDX"/>
+        <param name="rrd-ds" value="empire_devFblks"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment" value="Disk Space Free (Bytes)"/>
+        <param name="graph-legend" value="Disk Space Free"/>
+      </leaf>
+      <leaf name="devTblks">
+        <param name="data-file" value="%system-id%_empire-%storage-nick%-tblocks.rrd"/>
+        <param name="vertical-label" value="Bytes"/>
+        <param name="rrd-scaling-base" value="1024"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_devTblks.$empire_dev_IDX"/>
+        <param name="rrd-ds" value="empire_devTblks"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment" value="Total Disk Space (Bytes)"/>
+        <param name="graph-legend" value="Total Disk Space"/>
+      </leaf>
+    </template>
+    <!--
+
+        Empire Disk Stats Template
+            empire-disk-stats-queuelength
+            empire-disk-stats-servicetime
+            empire-disk-stats-utilization
+            empire-disk-stats-bytestransfered
+            empire-disk-stats-transferes
+            empire-disk-stats-reads
+            empire-disk-stats-writes
+
+        -->
+    <template name="empire-disk-stats-subtree">
+      <param name="comment" value="Per-Disk Utilization"/>
+      <param name="precedence" value="-400"/>
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="util"/>
+      <param name="overview-subleave-name-util" value="Utilization"/>
+      <param name="overview-shortcut-text-util"
+              value="All disks"/>
+      <param name="overview-shortcut-title-util"
+              value="Show Stats for all Disks"/>
+      <param name="overview-page-title-util" value="Device for all Disks"/>
+    </template>
+
+    <template name="empire-disk-stats-unix">
+        <apply-template name="empire-disk-stats-queuelength"/>
+        <apply-template name="empire-disk-stats-servicetime"/>
+        <apply-template name="empire-disk-stats-utilization"/>
+        <apply-template name="empire-disk-stats-bytestransfered"/>
+        <apply-template name="empire-disk-stats-transferes"/>
+        <apply-template name="empire-disk-stats-reads"/>
+        <apply-template name="empire-disk-stats-writes"/>
+    </template>
+
+    <template name="empire-disk-stats-solarisSparc">
+        <apply-template name="empire-disk-stats-queuelength"/>
+        <apply-template name="empire-disk-stats-servicetime"/>
+        <apply-template name="empire-disk-stats-utilization"/>
+        <apply-template name="empire-disk-stats-bytestransfered"/>
+        <apply-template name="empire-disk-stats-transferes"/>
+        <apply-template name="empire-disk-stats-reads"/>
+        <apply-template name="empire-disk-stats-writes"/>
+    </template>
+
+    <template name="empire-disk-stats-aix5RS6000">
+        <apply-template name="empire-disk-stats-servicetime"/>
+        <apply-template name="empire-disk-stats-utilization"/>
+        <apply-template name="empire-disk-stats-bytestransfered"/>
+        <apply-template name="empire-disk-stats-transferes"/>
+        <apply-template name="empire-disk-stats-reads"/>
+        <apply-template name="empire-disk-stats-writes"/>
+    </template>
+
+    <template name="empire-disk-stats-linuxIntel">
+        <apply-template name="empire-disk-stats-bytestransfered"/>
+        <apply-template name="empire-disk-stats-transferes"/>
+        <apply-template name="empire-disk-stats-reads"/>
+        <apply-template name="empire-disk-stats-writes"/>
+    </template>
+
+    <template name="empire-disk-stats-nt">
+        <apply-template name="empire-disk-stats-queuelength"/>
+        <apply-template name="empire-disk-stats-servicetime"/>
+        <apply-template name="empire-disk-stats-utilization"/>
+        <apply-template name="empire-disk-stats-bytestransfered"/>
+        <apply-template name="empire-disk-stats-transferes"/>
+        <apply-template name="empire-disk-stats-reads"/>
+        <apply-template name="empire-disk-stats-writes"/>
+    </template>
+
+    <template name="empire-disk-stats-nt40Intel">
+      <apply-template name="empire-disk-stats-nt"/>
+    </template>
+
+    <template name="empire-disk-stats-nt50Intel">
+      <apply-template name="empire-disk-stats-nt"/>
+    </template>
+
+    <template name="empire-disk-stats-queuelength">
+      <leaf name="QueueLength">
+        <param name="data-file" value="%system-id%_empire-%disk-stats-nick%-qlen.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="no"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_diskStatsQueueLength.$empire_disk_stats_IDX"/>
+        <param name="rrd-ds" value="QueueLength"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment" value="Ave. Events Waiting in Service Queue"/>
+        <param name="graph-legend" value="Device Queue Length"/>
+      </leaf>
+    </template>
+    <template name="empire-disk-stats-servicetime">
+      <leaf name="ServiceTime">
+        <param name="data-file" value="%system-id%_empire-%disk-stats-nick%-svct.rrd"/>
+        <param name="vertical-label" value="Time"/>
+        <param name="hidden" value="no"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_diskStatsServiceTime.$empire_disk_stats_IDX"/>
+        <param name="rrd-ds" value="ServiceTime"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment" value="Ave. Time to Service a Request (ms)"/>
+        <param name="graph-legend" value="Device Service Time"/>
+      </leaf>
+    </template>
+    <template name="empire-disk-stats-utilization">
+      <leaf name="Utilization">
+        <param name="data-file" value="%system-id%_empire-%disk-stats-nick%-util.rrd"/>
+        <param name="vertical-label" value="Percent"/>
+        <param name="hidden" value="no"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_diskStatsUtilization.$empire_disk_stats_IDX"/>
+        <param name="rrd-ds" value="Utilization"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment" value="Percent of time disk was busy"/>
+        <param name="graph-legend" value="Device Utilization"/>
+      </leaf>
+    </template>
+    <template name="empire-disk-stats-bytestransfered">
+      <leaf name="BytesTransfered">
+        <param name="data-file" value="%system-id%_empire-%disk-stats-nick%-bytest.rrd"/>
+        <param name="vertical-label" value="Bytes"/>
+        <param name="hidden" value="no"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="collector-scale" value="1024,*"/>
+        <param name="rrd-scaling-base" value="1024"/>
+        <param name="snmp-object" value="$empire_diskStatsKBTransfered.$empire_disk_stats_IDX"/>
+        <param name="rrd-ds" value="KBTransfered"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Bytes Transfered"/>
+        <param name="graph-legend" value="Bytes Transfered"/>
+      </leaf>
+    </template>
+    <template name="empire-disk-stats-transferes">
+      <leaf name="Transfers">
+        <param name="data-file" value="%system-id%_empire-%disk-stats-nick%-xfers.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="no"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_diskStatsTransfers.$empire_disk_stats_IDX"/>
+        <param name="rrd-ds" value="Transfers"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Transfers"/>
+        <param name="graph-legend" value="Transfers"/>
+      </leaf>
+    </template>
+    <template name="empire-disk-stats-reads">
+      <leaf name="Reads">
+        <param name="data-file" value="%system-id%_empire-%disk-stats-nick%-reads.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="no"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_diskStatsReads.$empire_disk_stats_IDX"/>
+        <param name="rrd-ds" value="Reads"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Reads"/>
+        <param name="graph-legend" value="Reads"/>
+      </leaf>
+    </template>
+    <template name="empire-disk-stats-writes">
+      <leaf name="Writes">
+        <param name="data-file" value="%system-id%_empire-%disk-stats-nick%-writes.rrd"/>
+        <param name="vertical-label" value="Count"/>
+        <param name="hidden" value="no"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$empire_diskStatsWrites.$empire_disk_stats_IDX"/>
+        <param name="rrd-ds" value="Writes"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Writes"/>
+        <param name="graph-legend" value="Writes"/>
+      </leaf>
+    </template>
+  </datasources>
+</configuration>

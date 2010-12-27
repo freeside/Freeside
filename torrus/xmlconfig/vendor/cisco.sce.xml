@@ -1,0 +1,668 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2007 Jon Nistor
+   Copyright (C) 2007 Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cisco.sce.xml,v 1.1 2010-12-27 00:04:07 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+-->
+<!-- Cisco Service Control Engine specific definitions -->
+
+<configuration>
+
+<definitions>
+  <!-- PCUBE-SE-MIB::diskGrp -->
+  <def name="diskNumUsedBytes" value="1.3.6.1.4.1.5655.4.1.5.1.0" />
+  <def name="diskNumFreeBytes" value="1.3.6.1.4.1.5655.4.1.5.2.0" />
+
+  <!-- PCUBE-SE-MIB::rdrFormatterGrp -->
+  <def name="rdrFormatterNumReportsDiscarded"
+                                         value="1.3.6.1.4.1.5655.4.1.6.4.0" />
+  <def name="rdrFormatterReportRate"     value="1.3.6.1.4.1.5655.4.1.6.6.0" />
+  <def name="rdrFormatterReportRatePeak" value="1.3.6.1.4.1.5655.4.1.6.7.0" />
+  <def name="rdrFormatterCategoryNumReportsSent"
+                                  value="1.3.6.1.4.1.5655.4.1.6.11.1.3" />
+  <def name="rdrFormatterCategoryNumReportsDiscarded"
+                                  value="1.3.6.1.4.1.5655.4.1.6.11.1.4" />
+  <def name="rdrFormatterCategoryReportRate"
+                                  value="1.3.6.1.4.1.5655.4.1.6.11.1.5" />
+  <def name="rdrFormatterCategoryReportRatePeak"
+                                  value="1.3.6.1.4.1.5655.4.1.6.11.1.6" />
+  <def name="rdrFormatterCategoryNumReportsQueued" 
+                                  value="1.3.6.1.4.1.5655.4.1.6.11.1.8" />
+
+  <!-- PCUBE-SE-MIB::subscribersInfoEntry -->
+  <def name="subNumIntroduced"    value="1.3.6.1.4.1.5655.4.1.8.1.1.1.1" />
+  <def name="subNumFree"          value="1.3.6.1.4.1.5655.4.1.8.1.1.2.1" />
+  <def name="subNumIpAddrMappings"
+                                  value="1.3.6.1.4.1.5655.4.1.8.1.1.3.1" />
+  <def name="subNumIpAddrMappingsFree"
+                                  value="1.3.6.1.4.1.5655.4.1.8.1.1.4.1" />
+  <def name="subNumIpRangeMappings"
+                                  value="1.3.6.1.4.1.5655.4.1.8.1.1.5.1" />
+  <def name="subNumIpRangeMappingsFree"
+                                  value="1.3.6.1.4.1.5655.4.1.8.1.1.6.1" />
+  <def name="subNumVlanMappings"  value="1.3.6.1.4.1.5655.4.1.8.1.1.7.1" />
+  <def name="subNumVlanMappingsFree"
+                                  value="1.3.6.1.4.1.5655.4.1.8.1.1.8.1" />
+  <def name="subNumActive"        value="1.3.6.1.4.1.5655.4.1.8.1.1.9.1" />
+  <def name="subNumActivePeak"    value="1.3.6.1.4.1.5655.4.1.8.1.1.10.1" />
+  <def name="subNumUpdates"       value="1.3.6.1.4.1.5655.4.1.8.1.1.12.1" />
+  <def name="subNumTpIpRanges"    value="1.3.6.1.4.1.5655.4.1.8.1.1.14.1" />
+  <def name="subNumTpIpRangesFree"
+                                  value="1.3.6.1.4.1.5655.4.1.8.1.1.15.1" />
+  <def name="subNumAnonymous"     value="1.3.6.1.4.1.5655.4.1.8.1.1.16.1" />
+  <def name="subNumWithSessions"  value="1.3.6.1.4.1.5655.4.1.8.1.1.17.1" />
+
+
+  <!-- PCUBE-SE-MIB::tpInfoEntry -->
+  <def name="tpNumActiveFlows"     value="1.3.6.1.4.1.5655.4.1.9.1.1.5.1" />
+  <def name="tpNumTcpActiveFlows"  value="1.3.6.1.4.1.5655.4.1.9.1.1.8.1" />
+  <def name="tpNumUdpActiveFlows"  value="1.3.6.1.4.1.5655.4.1.9.1.1.11.1" />
+  <def name="tpTotalNumDiscardedPacketsDueToBwLimit"
+                                   value="1.3.6.1.4.1.5655.4.1.9.1.1.19.1" />
+  <def name="tpTotalNumWredDiscardedPackets"
+                                   value="1.3.6.1.4.1.5655.4.1.9.1.1.20.1" />
+  <def name="tpHandledPacketsRate" value="1.3.6.1.4.1.5655.4.1.9.1.1.29.1" />
+  <def name="tpHandledFlowsRate"   value="1.3.6.1.4.1.5655.4.1.9.1.1.32.1" />
+  <def name="tpCpuUtilization"     value="1.3.6.1.4.1.5655.4.1.9.1.1.35.1" />
+  <def name="tpFlowsCapacityUtilization"
+                                   value="1.3.6.1.4.1.5655.4.1.9.1.1.38.1" />
+
+  <!-- PCUBE-SE-MIB::txQueuesTable -->
+  <def name="txQueuesUtilization"
+                                   value="1.3.6.1.4.1.5655.4.1.11.1.1.6.1" />
+  
+  <!-- CISCO-SCAS-BB-MIB::linkServiceUsageTable -->
+  <def name="linkServiceUsageUpVolume"
+                                 value="1.3.6.1.4.1.5655.4.2.2.1.1.1.1" />
+  <def name="linkServiceUsageDownVolume"
+                                 value="1.3.6.1.4.1.5655.4.2.2.1.1.2.1" />
+  <def name="linkServiceUsageConcurrentSessions"
+                                 value="1.3.6.1.4.1.5655.4.2.2.1.1.5.1" />
+  
+                                   
+</definitions>
+
+
+<datasources>
+  <template name="cisco-sce-disk">
+    <param name="scedisk-datafile"  value="%system-id%_SCE_disk.rrd"/>
+    <subtree name="SCE_Disk">
+      <param name="comment">
+        Disk usage information
+      </param>
+      <param name="data-file"         value="%scedisk-datafile%"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="vertical-label"    value="Bytes"/>
+
+      <leaf name="Usage">
+        <param name="precedence"         value="1000"/>
+        <param name="comment"            value="Total vs Used disk space"/>
+        <param name="graph-title"        value="Disk Usage"/>
+        <param name="ds-type"            value="rrd-multigraph"/>
+        <param name="ds-names"           value="total,used"/>
+        <param name="graph-lower-limit"  value="0"/>
+        <!-- total -->
+        <param name="ds-expr-total"      value="{Used},{Free},+"/>
+        <param name="graph-legend-total" value="Total"/>
+        <param name="line-style-total"   value="##totalresource"/>
+        <param name="line-color-total"   value="##totalresource"/>
+        <param name="line-order-total"   value="1"/>
+        <!-- used -->
+        <param name="ds-expr-used"       value="{Used}"/>
+        <param name="graph-legend-used"  value="Used"/>
+        <param name="line-style-used"    value="##resourceusage"/>
+        <param name="line-color-used"    value="##resourceusage"/>
+        <param name="line-order-used"    value="2"/>
+      </leaf>
+      
+      <leaf name="Used">
+        <param name="comment"         value="The number of used bytes"/>
+        <param name="graph-legend"    value="Space used"/>
+        <param name="rrd-ds"          value="usedBytes"/>
+        <param name="snmp-object"     value="$diskNumUsedBytes"/>
+      </leaf>
+      
+      <leaf name="Free">
+        <param name="comment"         value="The number of free bytes"/>
+        <param name="graph-legend"    value="Space available"/>
+        <param name="rrd-ds"          value="freeBytes"/>
+        <param name="snmp-object"     value="$diskNumFreeBytes"/>
+      </leaf>
+    </subtree>
+  </template>
+    
+  <template name="cisco-sce-rdr">
+    <param name="scerdr-datafile"  value="%system-id%_SCE_RDR.rrd"/>
+    <subtree name="SCE_RDR">
+      <param name="comment">
+        Raw Data Record information
+      </param>
+      <param name="data-file"         value="%scerdr-datafile%"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="vertical-label"    value="RDRs/s"/>
+      <leaf name="Report_Rate_vs_Peak">
+        <param name="comment"
+                       value="The rate of RDR exports vs the peak recorded"/>
+        <param name="precedence"          value="1000"/>
+        <param name="ds-type"             value="rrd-multigraph"/>
+        <param name="ds-names"            value="rate,peak"/>
+        <!-- Reports per second Peak -->
+        <param name="ds-expr-peak"        value="{Report_RatePeak}"/>
+        <param name="graph-legend-peak"   value="Reports per second Peak"/>
+        <param name="line-style-peak"     value="##totalresource"/>
+        <param name="line-color-peak"     value="##totalresource"/>
+        <param name="line-order-peak"     value="1"/>
+        <!-- Reports per second -->
+        <param name="ds-expr-rate"        value="{Report_Rate}"/>
+        <param name="graph-legend-rate"   value="Reports per second"/>
+        <param name="line-style-rate"     value="##resourceusage"/>
+        <param name="line-color-rate"     value="##resourceusage"/>
+        <param name="line-order-rate"     value="2"/>
+      </leaf>
+
+      <leaf name="Report_Rate">
+        <param name="comment"  value="The rate of reports sent per second"/>
+        <param name="graph-legend"    value="Reports per second"/>
+        <param name="rrd-ds"          value="reportRate"/>
+        <param name="snmp-object"     value="$rdrFormatterReportRate"/>
+      </leaf>
+      
+      <leaf name="Report_RatePeak">
+        <param name="comment"         value="The max rate of reports sent"/>
+        <param name="graph-legend"    value="Reports per second peak"/>
+        <param name="rrd-ds"          value="reportRatePeak"/>
+        <param name="snmp-object"     value="$rdrFormatterReportRatePeak"/>
+      </leaf>
+      
+      <leaf name="Reports_Discarded">
+        <param name="comment"     value="Total number of reports discarded"/>
+        <param name="graph-legend"    value="Num of reports"/>
+        <param name="rrd-ds"          value="reportsDiscarded"/>
+        <param name="snmp-object"  value="$rdrFormatterNumReportsDiscarded"/>
+      </leaf>
+      
+    </subtree>
+  </template>
+
+  <template name="cisco-sce-rdr-category-subtree">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="rate,discards"/>
+    <!-- Rate --> 
+    <param name="overview-subleave-name-rate" value="Report_Rate"/>
+    <param name="overview-shortcut-text-rate"
+           value="All Report Rates"/>
+    <param name="overview-shortcut-title-rate"
+           value="Show RDR Report Rate for all categories on one page"/>
+    <param name="overview-page-title-rate"
+           value="Category RDR Report Rates"/>
+    <!-- Discards -->
+    <param name="overview-subleave-name-discards" value="Reports_Discarded"/>
+    <param name="overview-shortcut-text-discards"
+           value="All Report Discards"/>
+    <param name="overview-shortcut-title-discards"
+           value="Show discarded RDR rate on one page"/>
+    <param name="overview-page-title-discards"
+           value="RDR Reports discarded"/>
+  </template>
+
+  <template name="cisco-sce-rdr-category">
+    <param name="comment"            value="%sce-rdr-comment%"/>
+    <param name="data-file"
+        value="%system-id%_SCE_RDR_category_%sce-rdr-index%.rrd"/>
+    <param name="rrd-create-dstype"  value="GAUGE"/>
+    <param name="vertical-label"     value="RDRs/s"/>
+    <param name="graph-lower-limit"  value="0" />
+    <param name="graph-title"        value="%system-id%:%sce-rdr-comment%"/>
+
+      <leaf name="Report_Rate_vs_Peak">
+        <param name="comment"
+                       value="The rate of RDR exports vs the peak recorded"/>
+        <param name="precedence"          value="1000"/>
+        <param name="ds-type"             value="rrd-multigraph"/>
+        <param name="ds-names"            value="rate,peak"/>
+        <!-- Reports per second Peak -->
+        <param name="ds-expr-peak"        value="{Report_RatePeak}"/>
+        <param name="graph-legend-peak"   value="Reports per second Peak"/>
+        <param name="line-style-peak"     value="##totalresource"/>
+        <param name="line-color-peak"     value="##totalresource"/>
+        <param name="line-order-peak"     value="1"/>
+        <!-- Reports per second -->
+        <param name="ds-expr-rate"        value="{Report_Rate}"/>
+        <param name="graph-legend-rate"   value="Reports per second"/>
+        <param name="line-style-rate"     value="##resourceusage"/>
+        <param name="line-color-rate"     value="##resourceusage"/>
+        <param name="line-order-rate"     value="2"/>
+      </leaf>
+
+      <leaf name="Report_Rate">
+        <param name="comment"  value="The rate of reports sent per second"/>
+        <param name="graph-legend"    value="Reports per second"/>
+        <param name="rrd-ds"          value="reportRate"/>
+        <param name="snmp-object"
+              value="$rdrFormatterCategoryReportRate.%sce-rdr-index%"/>
+      </leaf>
+
+      <leaf name="Report_RatePeak">
+        <param name="comment"         value="The max rate of reports sent"/>
+        <param name="graph-legend"    value="Reports per second peak"/>
+        <param name="rrd-ds"          value="reportRatePeak"/>
+        <param name="snmp-object"
+              value="$rdrFormatterCategoryReportRatePeak.%sce-rdr-index%"/>
+      </leaf>
+      
+      <leaf name="Reports_Discarded">
+        <param name="comment"     value="Total number of reports discarded"/>
+        <param name="graph-legend"    value="Num of reports"/>
+        <param name="rrd-ds"          value="reportsDiscarded"/>
+        <param name="snmp-object"
+           value="$rdrFormatterCategoryNumReportsDiscarded.%sce-rdr-index%"/>
+      </leaf>
+      
+  </template>
+
+
+  <template name="cisco-sce-subscribers">
+    <subtree name="SCE_Subscribers">
+      <param name="comment">
+        Subscriber usage information
+      </param>
+      <param name="data-file"         value="%system-id%_SCE_subscribers.rrd"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="vertical-label"    value="Subscribers"/>
+
+      <leaf name="Introduced">
+        <param name="comment"
+                          value="Number of subscribers introduced to the SCE"/>
+        <param name="graph-legend"    value="used"/>
+        <param name="rrd-ds"          value="NumIntroduced"/>
+        <param name="snmp-object"     value="$subNumIntroduced"/>
+      </leaf>
+      
+      <leaf name="Free">
+        <param name="comment"         value="Number of subscribers available"/>
+        <param name="graph-legend"    value="available"/>
+        <param name="rrd-ds"          value="NumFree"/>
+        <param name="snmp-object"     value="$subNumFree"/>
+      </leaf>
+      
+      <leaf name="IP_Addr_Mappings">
+        <param name="comment"    value="Number of IP to subscriber mappings"/>
+        <param name="graph-legend"    value="used"/>
+        <param name="rrd-ds"          value="NumIpAddrMap"/>
+        <param name="snmp-object"     value="$subNumIpAddrMappings"/>
+      </leaf>
+      
+      <leaf name="IP_Addr_Mappings_Free">
+        <param name="comment"
+                     value="Number of IP to subscriber mappings available"/>
+        <param name="graph-legend"    value="available"/>
+        <param name="rrd-ds"          value="NumIpAddrMapFree"/>
+        <param name="snmp-object"     value="$subNumIpAddrMappingsFree"/>
+      </leaf>
+      
+      <leaf name="IP_Range_Mappings">
+        <param name="comment"  value="Number of IP-range to subs mappings"/>
+        <param name="graph-legend"    value="used"/>
+        <param name="rrd-ds"          value="NumIpRangeMap"/>
+        <param name="snmp-object"     value="$subNumIpRangeMappings"/>
+      </leaf>
+      
+      <leaf name="IP_Range_Mappings_Free">
+        <param name="comment"
+                      value="Number of IP-range to subs mappings available"/>
+        <param name="graph-legend"    value="available"/>
+        <param name="rrd-ds"          value="NumIpRangeMapFree"/>
+        <param name="snmp-object"     value="$subNumIpRangeMappingsFree"/>
+      </leaf>
+      
+      <leaf name="Vlan_Mappings">
+        <param name="comment"
+                     value="Number of used 'VLAN to subscribers' mappings"/>
+        <param name="graph-legend"    value="vlans"/>
+        <param name="rrd-ds"          value="NumVlanMap"/>
+        <param name="snmp-object"     value="$subNumVlanMappings"/>
+      </leaf>
+      
+      <leaf name="Vlan_Mappings_Free">
+        <param name="comment"
+                     value="Number of free 'VLAN to subscriber' mappings"/>
+        <param name="graph-legend"    value="vlans"/>
+        <param name="rrd-ds"          value="NumVlanMapFree"/>
+        <param name="snmp-object"     value="$subNumVlanMappingsFree"/>
+      </leaf>
+      
+      <leaf name="Subs_Active">
+        <param name="comment"         value="Number of active subscribers"/>
+        <param name="graph-legend"    value="subs"/>
+        <param name="rrd-ds"          value="NumActive"/>
+        <param name="snmp-object"     value="$subNumActive"/>
+      </leaf>
+      
+      <leaf name="Subs_Active_Peak">
+        <param name="comment"
+                      value="Number of peak active subscribers"/>
+        <param name="graph-legend"    value="subs"/>
+        <param name="rrd-ds"          value="NumActivePeak"/>
+        <param name="snmp-object"     value="$subNumActivePeak"/>
+      </leaf>
+            
+      <leaf name="TP_IP_Ranges">
+        <param name="comment"
+                     value="Number of 'Traffic Processor IP ranges' used"/>
+        <param name="graph-legend"    value="subs"/>
+        <param name="rrd-ds"          value="NumTpIpRange"/>
+        <param name="snmp-object"     value="$subNumTpIpRanges"/>
+      </leaf>
+      
+      <leaf name="TP_IP_Ranges_Free">
+        <param name="comment"
+                       value="Number of free 'Traffic Processor IP ranges'"/>
+        <param name="graph-legend"    value="subs"/>
+        <param name="rrd-ds"          value="NumTpIpRangeFree"/>
+        <param name="snmp-object"     value="$subNumTpIpRangesFree"/>
+      </leaf>
+      
+      <leaf name="Anonymous">
+        <param name="comment"         value="Number of anonymous subscribers"/>
+        <param name="graph-legend"    value="anonymous subs"/>
+        <param name="rrd-ds"          value="NumAnonymous"/>
+        <param name="snmp-object"     value="$subNumAnonymous"/>
+      </leaf>
+      
+      <leaf name="With_Sessions">
+        <param name="comment"
+                       value="Number of subscribers with open sessions"/>
+        <param name="graph-legend"    value="subs"/>
+        <param name="rrd-ds"          value="NumWithSessions"/>
+        <param name="snmp-object"     value="$subNumWithSessions"/>
+      </leaf>
+      
+    </subtree>
+  </template>
+
+  <template name="cisco-sce-tp-subtree">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="util,discards"/>
+    <!-- Utilization -->
+    <param name="overview-subleave-name-util" value="CPU_Utilization"/>
+    <param name="overview-shortcut-text-util"
+           value="All CPU Utilization"/>
+    <param name="overview-shortcut-title-util"
+           value="Show CPU utilization for all TPs on one page"/>
+    <param name="overview-page-title-util"
+           value="Traffic Processors Utilization"/>
+    <!-- Discards -->
+    <param name="overview-subleave-name-discards" value="Packets_Discarded"/>
+    <param name="overview-shortcut-text-discards"
+           value="All Discards"/>
+    <param name="overview-shortcut-title-discards"
+           value="Show discarded packet graphs on one page"/>
+    <param name="overview-page-title-discards"
+           value="Packets discarded"/>
+  </template>
+
+  
+  <template name="cisco-sce-tp">
+    <param name="data-file"         value="%system-id%_SCE_tp.rrd"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="Packets">
+      <param name="comment"
+                   value="Packet rate processed by TP"/>
+      <param name="graph-legend"    value="Processed"/>
+      <param name="vertical-label"  value="pps"/>
+      <param name="rrd-ds"          value="Packets_%sce-tp-index%"/>
+      <param name="snmp-object"
+                value="$tpHandledPacketsRate.%sce-tp-index%"/>
+    </leaf>
+
+    <leaf name="Packets_Discarded">
+      <param name="comment"
+                   value="Discarded packets due to BW limit"/>
+      <param name="graph-legend"    value="Discarded"/>
+      <param name="vertical-label"  value="pps"/>
+      <param name="rrd-ds"          value="PacketsDisc_%sce-tp-index%"/>
+      <param name="snmp-object"
+            value="$tpTotalNumDiscardedPacketsDueToBwLimit.%sce-tp-index%"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+
+    <leaf name="Packets_WRED_Discarded">
+      <param name="comment"
+                   value="Discarded packets due to queue overflow"/>
+      <param name="graph-legend"    value="WRED Discarded"/>
+      <param name="vertical-label"  value="pps"/>
+      <param name="rrd-ds"          value="PacketsWred_%sce-tp-index%"/>
+      <param name="snmp-object"
+            value="$tpTotalNumWredDiscardedPackets.%sce-tp-index%"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+        
+    <leaf name="Flows_Rate">
+      <param name="comment"
+                   value="Flows rate processed by TP"/>
+      <param name="graph-legend"    value="Processed"/>
+      <param name="vertical-label"  value="flows/s"/>
+      <param name="rrd-ds"          value="FlowsRate_%sce-tp-index%"/>
+      <param name="snmp-object"
+                value="$tpHandledFlowsRate.%sce-tp-index%"/>
+    </leaf>
+        
+    <leaf name="Flows_Active">
+      <param name="comment"
+                   value="Number of active flows"/>
+      <param name="graph-legend"    value="Active"/>
+      <param name="vertical-label"  value="flows"/>
+      <param name="rrd-ds"          value="FlowsActive_%sce-tp-index%"/>
+      <param name="snmp-object"
+                value="$tpNumActiveFlows.%sce-tp-index%"/>
+    </leaf>
+
+    <leaf name="Flows_Active_TCP">
+      <param name="comment"
+                   value="Number of active TCP flows"/>
+      <param name="graph-legend"    value="TCP"/>
+      <param name="vertical-label"  value="flows"/>
+      <param name="rrd-ds"          value="FlowsTCP_%sce-tp-index%"/>
+      <param name="snmp-object"
+                value="$tpNumTcpActiveFlows.%sce-tp-index%"/>
+    </leaf>
+
+    <leaf name="Flows_Active_UDP">
+      <param name="comment"
+                   value="Number of active UDP flows"/>
+      <param name="graph-legend"    value="UDP"/>
+      <param name="vertical-label"  value="flows"/>
+      <param name="rrd-ds"          value="FlowsUDP_%sce-tp-index%"/>
+      <param name="snmp-object"
+                value="$tpNumUdpActiveFlows.%sce-tp-index%"/>
+    </leaf>
+
+    <leaf name="CPU_Utilization">
+      <param name="comment"
+                   value="Utilization of TP"/>
+      <param name="graph-legend"    value="Util"/>
+      <param name="vertical-label"  value="percent"/>
+      <param name="rrd-ds"          value="Util_%sce-tp-index%"/>
+      <param name="snmp-object"
+                value="$tpCpuUtilization.%sce-tp-index%"/>
+      <param name="line-style"         value="##resourceusage" />
+      <param name="line-color"         value="##resourceusage" />
+      <param name="graph-lower-limit"  value="0" />
+      <param name="graph-upper-limit"  value="100" />
+    </leaf>
+
+    <leaf name="Flows_Utilization">
+      <param name="comment"
+                   value="Flows capacity utilization"/>
+      <param name="graph-legend"    value="Flows Util"/>
+      <param name="vertical-label"  value="percent"/>
+      <param name="rrd-ds"          value="FlowsUtil_%sce-tp-index%"/>
+      <param name="snmp-object"
+                value="$tpFlowsCapacityUtilization.%sce-tp-index%"/>
+      <param name="line-style"         value="##resourceusage" />
+      <param name="line-color"         value="##resourceusage" />
+      <param name="graph-lower-limit"  value="0" />
+      <param name="graph-upper-limit"  value="100" />
+    </leaf>
+                        
+  </template>
+
+    
+  <template name="cisco-sce-queues-subtree">
+    <param name="data-file"      value="%system-id%_SCE_queues.rrd"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+    <param name="vertical-label"    value="Percent"/>
+    <param name="graph-legend"      value="Queue utilization"/>
+    <param name="graph-title"       value="Queue Utilization"/>
+    <param name="rrd-ds"        value="%sce-port-index%_%sce-queue-index%"/>
+    <param name="snmp-object"
+        value="$txQueuesUtilization.%sce-port-index%.%sce-queue-index%"/>
+    <param name="graph-lower-limit" value="0" />
+  </template>
+
+
+  <template name="cisco-sce-gc-subtree">  
+    <param name="data-file"
+        value="%system-id%_SCE_gc_%sce-link-index%_%sce-gc-index%.rrd"/>
+    <param name="graph-lower-limit" value="0" />
+    <param name="graph-title"        value="%sce-service-name%"/>
+    
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="up,down,sessions"/>
+    <!-- Up Volume -->
+    <param name="overview-subleave-name-up"    value="Up_bps"/>
+    <param name="overview-direct-link-up"      value="yes"/>
+    <param name="overview-direct-link-view-up" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-up"
+           value="Upstream Usage"/>
+    <param name="overview-shortcut-title-up"
+           value="Show upstream bandwidth usage for all services"/>
+    <param name="overview-page-title-up"
+           value="Upstream Usage"/>
+    <!-- Down Volume -->
+    <param name="overview-subleave-name-down"  value="Down_bps"/>
+    <param name="overview-direct-link-down"      value="yes"/>
+    <param name="overview-direct-link-view-down" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-down"
+           value="Downstream Usage"/>
+    <param name="overview-shortcut-title-down"
+           value="Show downstream bandwidth usage for all services"/>
+    <param name="overview-page-title-down"
+           value="Downstream Usage"/>
+    <!-- Sessions -->
+    <param name="overview-subleave-name-sessions" value="Concurrent_Sessions"/>
+    <param name="overview-direct-link-sessions"      value="yes"/>
+    <param name="overview-direct-link-view-sessions"
+                                            value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-sessions"
+           value="Sessions"/>
+    <param name="overview-shortcut-title-sessions"
+           value="Show numbers of concurrent sessions for all services"/>
+    <param name="overview-page-title-sessions"
+           value="Concurrent Sessions"/>
+           
+  </template>
+  
+  <template name="cisco-sce-gcounter">
+    <leaf name="Volume">
+      <param name="comment"
+                     value="InOut volume in kilobytes/s"/>
+      <param name="precedence"          value="1000"/>
+      <param name="ds-type"             value="rrd-multigraph"/>
+      <param name="ds-names"            value="down,up"/>
+      <!-- Volume Download -->
+      <param name="ds-expr-down"        value="{DownVolume},8192,*"/>
+      <param name="graph-legend-down"   value="Bits per second in"/>
+      <param name="line-style-down"     value="##BpsIn"/>
+      <param name="line-color-down"     value="##BpsIn"/>
+      <param name="line-order-down"     value="1"/>
+      <!-- Volume Upload -->
+      <param name="ds-expr-up"          value="{UpVolume},8192,*"/>
+      <param name="graph-legend-up"     value="Bits per second out"/>
+      <param name="line-style-up"       value="##BpsOut"/>
+      <param name="line-color-up"       value="##BpsOut"/>
+      <param name="line-order-up"       value="2"/>
+    </leaf>
+  
+    <leaf name="UpVolume">
+      <param name="comment"
+              value="Upstream volume in kilobytes/s"/>
+      <param name="hidden"          value="yes"/>
+      <param name="rrd-ds"          value="UpVolume"/>
+      <param name="rrd-create-max"  value="200000"/>
+      <param name="snmp-object"
+        value="$linkServiceUsageUpVolume.%sce-link-index%.%sce-gc-index%"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="precedence" value="90"/>
+    </leaf>
+
+    <leaf name="DownVolume">
+      <param name="comment"
+              value="Downstream volume in kilobytes/s"/>
+      <param name="hidden"          value="yes"/>
+      <param name="rrd-ds"          value="DownVolume"/>
+      <param name="rrd-create-max"  value="200000"/>
+      <param name="snmp-object"
+        value="$linkServiceUsageDownVolume.%sce-link-index%.%sce-gc-index%"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="precedence" value="85"/>
+    </leaf>
+    
+    <leaf name="Up_bps">
+      <param name="comment"
+              value="Upstream bandwidth usage per service"/>
+      <param name="graph-legend"    value="Upstream BW"/>
+      <param name="vertical-label"  value="bps"/>
+      <param name="ds-type"         value="rrd-file" />
+      <param name="leaf-type"       value="rrd-cdef" />
+      <param name="rpn-expr"        value="{UpVolume},8192,*" />    
+      <param name="precedence"      value="70"/>
+    </leaf>
+    
+    <leaf name="Down_bps">
+      <param name="comment"
+              value="Downstream bandwidth usage per service"/>
+      <param name="graph-legend"    value="Downstream BW"/>
+      <param name="vertical-label"  value="bps"/>
+      <param name="ds-type"         value="rrd-file" />
+      <param name="leaf-type"       value="rrd-cdef" />
+      <param name="rpn-expr"        value="{DownVolume},8192,*" />    
+      <param name="precedence"      value="65"/>
+    </leaf>
+
+    <leaf name="Concurrent_Sessions">
+      <param name="comment"
+              value="Number of concurrent sessions per service"/>
+      <param name="graph-legend"    value="Sessions"/>
+      <param name="vertical-label"  value=""/>
+      <param name="rrd-ds"          value="Sessions"/>
+      <param name="snmp-object"
+  value="$linkServiceUsageConcurrentSessions.%sce-link-index%.%sce-gc-index%"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="precedence"      value="50"/>
+    </leaf>
+        
+  </template>
+
+</datasources>
+
+</configuration>
+

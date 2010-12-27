@@ -1,0 +1,183 @@
+#!@PERL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: action_snmptrap.in,v 1.1 2010-12-27 00:04:01 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+# SNMP v2c trap
+# See Torrus-MIB.txt for reference
+
+use strict;
+use Net::SNMP qw(:ALL);
+use Getopt::Long;
+
+require '@snmptrap_siteconfig_pl@';
+
+if( not $ENV{'TORRUS_TOKEN'} )
+{
+    print STDERR ("Torrus environment variables missing. This program ",
+                  "must be run from Torrus Monitor\n");
+    exit 1;
+}
+
+my @hosts;
+my $severity;
+
+my $ok = GetOptions( 'host=s'     => \@hosts,
+                     'community=s' => \$Torrus::Snmptrap::community,
+                     'port=i'      => \$Torrus::Snmptrap::port,
+                     'severity=i'  => \$severity );
+
+if( not $ok )
+{
+    print STDERR ("Error parsing options\n");
+    exit 1;
+}
+
+if( scalar(@hosts) > 0 )
+{
+    @Torrus::Snmptrap::hosts = @hosts;
+}
+
+my $oid_prefix = '.1.3.6.1.4.1.14697.1.1.1';
+
+my %event_type = ( 'set'    => 1,
+                   'repeat' => 2,
+                   'clear'  => 3,
+                   'forget' => 4
+                   );
+
+my @varbindlist = ( $oid_prefix . '.1',
+                    INTEGER32, 1,
+
+                    $oid_prefix . '.2',
+                    OCTET_STRING, $ENV{'TORRUS_TOKEN'},
+
+                    $oid_prefix . '.3',
+                    OCTET_STRING, $ENV{'TORRUS_MONITOR'},
+
+                    $oid_prefix . '.4',
+                    INTEGER, $event_type{$ENV{'TORRUS_EVENT'}},
+
+                    $oid_prefix . '.5',
+                    OCTET_STRING, $ENV{'TORRUS_NODEPATH'},
+
+                    $oid_prefix . '.6',
+                    OCTET_STRING, snmp_dateandtime( $ENV{'TORRUS_TSTAMP'} ),
+
+                    $oid_prefix . '.7',
+                    OCTET_STRING, $ENV{'TORRUS_TREE'},
+                    
+                    $oid_prefix . '.9',
+                    OCTET_STRING, $ENV{'TORRUS_MCOMMENT'}
+                    );
+
+if( defined( $severity ) )
+{
+    push( @varbindlist,
+          $oid_prefix . '.8',
+          INTEGER32, $severity );
+}
+          
+
+foreach my $host ( @Torrus::Snmptrap::hosts )
+{
+    my( $session, $error ) =
+        Net::SNMP->session( -hostname  => $host,
+                            -community => $Torrus::Snmptrap::community,
+                            -port      => $Torrus::Snmptrap::port,
+                            -version   => 2
+                            );
+
+    if( not defined($session) )
+    {
+        printf STDERR ("Error opening SNMP trap session: %s.\n", $error);
+        exit 1;
+    }
+
+
+    my $result =
+        $session->snmpv2_trap( -varbindlist  => \@varbindlist );
+
+    if( not $result )
+    {
+        printf STDERR ("Error sending SNMP trap: %s.\n", $session->error());
+    }
+
+    $session->close();
+}
+
+# Converts UNIX time to DateAndTime from SNMPv2-TC
+# Currently timezone is not handled.
+
+# DateAndTime ::= TEXTUAL-CONVENTION
+#     DISPLAY-HINT "2d-1d-1d,1d:1d:1d.1d,1a1d:1d"
+#     STATUS       current
+#     DESCRIPTION
+#             "A date-time specification.
+#
+#             field  octets  contents                  range
+#             -----  ------  --------                  -----
+#               1      1-2   year*                     0..65536
+#               2       3    month                     1..12
+#               3       4    day                       1..31
+#               4       5    hour                      0..23
+#               5       6    minutes                   0..59
+#               6       7    seconds                   0..60
+#                            (use 60 for leap-second)
+#               7       8    deci-seconds              0..9
+#               8       9    direction from UTC        '+' / '-'
+#               9      10    hours from UTC*           0..13
+#              10      11    minutes from UTC          0..59
+#
+#             * Notes:
+#             - the value of year is in network-byte order
+#             - daylight saving time in New Zealand is +13
+#
+#             For example, Tuesday May 26, 1992 at 1:30:15 PM EDT would be
+#             displayed as:
+#
+#                              1992-5-26,13:30:15.0,-4:0
+#
+#             Note that if only local time is known, then timezone
+#             information (fields 8-10) is not present."
+#     SYNTAX       OCTET STRING (SIZE (8 | 11))
+
+sub snmp_dateandtime
+{
+    my $thetime = shift;
+
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+        localtime( $thetime );
+
+    my $result = pack('nC6',
+                      $year + 1900,
+                      $mon + 1,
+                      $mday,
+                      $hour,
+                      $min,
+                      $sec,
+                      0);
+    return $result;
+}
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

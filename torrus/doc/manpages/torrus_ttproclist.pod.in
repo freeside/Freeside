@@ -1,0 +1,144 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_ttproclist.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+ttproclist - Process a template with a nodelist 
+
+=head1 SYNOPSIS
+
+B<torrus ttproclist> --tmpl=I<TFILE> --out=I<OFILE>
+--nodes=I<NFILE> [I<options...>]
+
+=head1 DESCRIPTION
+
+This command takes a Template-Toolkit template and a list of nodes
+(usually SNMP devices) as input. The output file is a result of
+template substitution, according to the specified options.
+Command-line options B<--tmpl>, B<--out> and B<--nodes> are mandatory.
+
+This utility can be used to generate the discovery instructions XML out of
+a predefined template and a dynamically generated list of devices.
+Alternatively, it can produce Torrus XML configuration for a given list
+of objects, etc.
+
+The following variables are predefined when the template is processed:
+
+=over 4
+
+=item * C<nodes>
+
+Hash array of nodes. Hash keys are the node names. Values are symbolic
+names. If symbolic names are not defined, values are the same as keys.
+
+=item * C<param>
+
+Hash array of command-line parameters given in B<--param> option.
+
+=item * C<nodesfile>, C<creator>
+
+Informative variables. They can be used to produce the creation
+note in the resulting files. C<nodesfile> returns the file name of nodes,
+and C<creator> returns a detailed information how the file was generated,
+with timestamp and command line options.
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--tmpl>=I<TFILE>
+
+The file name of the input template. Relative names are looked in
+the current directory and in F<@tmpluserdir@>. The file name may also be
+an absolute path.
+
+=item B<--out>=I<OFILE>
+
+Output file name. If no absolute path given, the file is written in the current
+directory.
+
+=item B<--nodes>=I<NFILE>
+
+The name of the nodes list. Nodes should be separated by space or tab
+character or newline. Additional information, referred to as symbolic name,
+can be supplied after a colon, of the form NODENAME:SYMBOLICNAME.
+
+=item B<--param>=I<NAME:VALUE,NAME:VALUE...>
+
+List of optional parameters that may be used in the template.
+
+=back
+
+=head1 EXAMPLES
+
+The following example gerenates C<devdiscover> input file from a template.
+The template is as follows:
+
+ <?xml version="1.0" encoding="UTF8"?>
+ <snmp-discovery>
+ >>> usual DDX parameters here, like SNMP community and data-dir
+  <param name="snmp-community" value="private"/>
+  <param...
+ >>> This loop generates per-host entries
+  [% FOREACH n = nodes.keys.sort %]
+  <host>
+    <param name="snmp-host" value="[% n %]"/>
+    <param name="symbolic-name" value="[% nodes.$n %]"/>
+    <param name="output-file" value="nodes/[% n %].xml"/>
+  </host>
+  [% END %]
+ >>> Generate the bundle file, so that you need only one
+ >>> entry in torrus-site-config.pl
+  <param name="output-bundle" value="[% param.BUNDLE %].xml"/>
+ </snmp-discovery>
+
+The following command would generate F<MY.ddx> from template file F<MY.ddtmpl>
+as described above. The file F<MY.nodes> is a list of SNMP devices, one per
+line. Then C<devdiscover> is launched with F<MY.ddx> as input. Note also the
+short form of the command line wrapper.
+
+ torrus ttproclist --tmpl=MY.ddtmpl \
+   --nodes=MY.nodes \
+   --out=/usr/local/etc/torrus/discovery/MY.ddx \
+   --param=BUNDLE:MYNODES
+
+ torrus dd --in=MY.ddx --verbose
+
+In addition, you may put some common parameters in Template BLOCK
+statement in a separate file, and INCLUDE it in your templates. See the
+Template-Toolkit documentation for more detail.
+
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 SEE ALSO
+
+Template-Toolkit documentation: http://template-toolkit.org/
+
+L<torrus(@mansec_usercmd@)>, L<torrus_devdiscover(@mansec_usercmd@)>
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

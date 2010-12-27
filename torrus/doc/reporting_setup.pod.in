@@ -1,0 +1,365 @@
+#  webintf.pod - Torrus web interface reference
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: reporting_setup.pod.in,v 1.1 2010-12-27 00:04:34 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+
+=head1 Torrus Reporting Setup Guide
+
+In version 1.0.4, Torrus introduces a new and important functionality.
+Now it is able to produce reports that may be used in billing or
+resource planning. The reports are meant to be text output, telling
+the bandwidth usage or volume: no graphs so far.
+
+By default, the reporting functionality is not enabled, and the steps
+required are described below.
+
+
+=head2 Terminology
+
+The basic term in Torrus reporting is the B<Service ID>.
+It denotes a single datasource that is represented by a single number.
+For example, if you want to count input and output interface traffic,
+this would make two different service IDs. Do not assign service IDs
+to each and every interface in your network, as it would degrade
+the performance of your Torrus installation significantly.
+This functionality is designed for use with important datasources,
+such as your customers' connection links or and ISP's upstream channels.
+
+Each service ID must be B<unique> across the whole Torrus installation,
+and across the database that stores them (it is possible to use
+several Torrus installations with the same database).
+
+B<Devdiscover>, the SNMP discovery engine, allows now to assign
+service IDs to network interfaces of your SNMP-enabled devices.
+However, this does not prevent you from assigning them to other Torrus
+datasources, as it's done by simple configuration parameters.
+
+B<Report>, when generated, is presented by a set of numeric values
+in the SQL database. Torrus provides also tools for rendering these
+values into HTML B<output>. In the future, other output formats
+will be implemented. You can also build your own infrastructure that
+reads the values from the reports database.
+
+The produced reports may, and are primarily developed for using in
+B<billing> process. As it is stated in the GNU General Public License
+text, this program is provided "as is" and B<without warranty of any kind>.
+It is up to the users of Torrus software to rely or not to rely on
+the generated numeric data, and the Torrus software developers disclaim
+any responsibility for the data accuracy and usability.
+
+
+B<New in version 1.0.7:> You can assign the list of trees where the reports
+should be generated and shown. B<Warning:> after changing the destination tree,
+the compiler may complain about I<duplicate service IDs>. Then you need to
+stop all the torrus processes, including Apache, and then remove the file
+F<serviceid_params.db> from Torrus database directory, then recompile the
+trees and start the processes.
+
+
+=head2 Install Perl modules
+
+Install the following Perl modules from CPAN:
+
+  DBI
+  DBD::mysql or other RDBMS driver
+  DBIx::Abstract
+  DBIx::Sequence
+
+On many platforms, DBI is already pre-installed. You need to make sure
+that appropriate DBD driver is installed for your database engine.
+The setup was tested with MySQL, SQL syntax is compatible with Postgres,
+and in theory it should run also with Oracle and probably Sybase or DB2.
+No idea about MSSQL - if you're brave enough, let me know if it works :)
+
+
+=head2 Enable the External Storage and specify the SQL connection
+
+In F<torrus-siteconfig.pl>, add the following lines. The first one
+tells the collector to use the module for storing the collector results in
+SQL database. Next lines define the database connection. By default,
+it refers to the MySQL database named C<torrus> on C<localhost>,
+with username and password set to C<imiF1oih>.
+
+
+  push(@Torrus::Collector::loadModules, 'Torrus::Collector::ExternalStorage');
+  $Torrus::SQL::connections{'Default'}{'dsn'} =
+      'DBI:mysql:database=torrus;host=dbhost.example.com';
+  $Torrus::SQL::connections{'Default'}{'username'} = 'torrus';
+  $Torrus::SQL::connections{'Default'}{'password'} = 'imiF1oih';
+
+In addition to the default connection, you can specify different connections
+for different data structures: for example, keep 5-minutes samples on
+a bulky storage server, and store the reports on a high-availability cluster.
+See the comments in F<torrus-config.pl> for more details.
+
+
+=head2 Create SQL tables
+
+With your RDBMS client, create the following tables. We assume here that
+the same database is used for all tables. The SQL syntax is verified with
+MySQL 4.x and Postgres 8.x. It is brought as much as possible to
+the standard and platform-independent SQL syntax. Please let me know
+if it causes problems with your RDBMS.
+
+
+ /* Collector export table. It usually grows at several megabytes
+    per month, and is updated every 5 minutes */
+ CREATE TABLE srvexport
+ (
+  srv_date DATE NOT NULL,            /* date and time of the data sample */
+  srv_time TIME NOT NULL,  
+  serviceid VARCHAR(64) NOT NULL,    /* unique service ID per counter */
+  value DOUBLE PRECISION NOT NULL,   /* collected rate or gauge value */
+  intvl INTEGER NOT NULL             /* collection interval -
+                                        for counter volume calculation */
+  );
+ CREATE INDEX srvexp_date ON srvexport (srv_date);
+ CREATE INDEX srvexp_srvid ON srvexport (serviceid);
+ 
+
+ /* Tables for (currently monthly only) report contents.
+    These are updated usually once per month, and read at the moment of
+    rendering the report output (HTML now, PDF or XML or Excel or whatever
+    in the future) */
+
+ /* DBIx::Sequence backend, theplatform-independent inplementation
+    of sequences */
+ CREATE TABLE dbix_sequence_state
+ (
+  dataset varchar(50) NOT NULL, 
+  state_id INTEGER NOT NULL, 
+  CONSTRAINT pk_dbix_sequence PRIMARY KEY (dataset, state_id)
+  );
+
+ CREATE TABLE dbix_sequence_release
+ (
+  dataset varchar(50) NOT NULL,    
+  released_id INTEGER NOT NULL, 
+  CONSTRAINT pk_dbi_release PRIMARY KEY (dataset, released_id)
+ );
+
+
+ /* Each report is characterized by name, date and time.
+    Monthly reports are automatically assigned 00:00 of the 1st day
+    in the month. The report contains fields for every service ID
+    defined across all datasource trees. */
+ CREATE TABLE reports
+ (
+  id INTEGER PRIMARY KEY,
+  rep_date DATE NOT NULL,             /* Start date of the report */
+  rep_time TIME NOT NULL,             /* Start time of the report */
+  reportname VARCHAR(64) NOT NULL,    /* Report name, such as MonthlyUsage */
+  iscomplete INTEGER NOT NULL,        /* 0 when the report is in progress, */
+                                      /* 1 when it is ready */
+  UNIQUE(rep_date, rep_time, reportname)
+  );
+ CREATE INDEX rep_date_idx ON reports (rep_date);
+
+
+ /* Each report contains fields. For each service ID,
+    the report may contain several fields for various statistics.
+    Each field contains information about the units of the value it
+    contains */
+ CREATE TABLE reportfields
+ (
+  id INTEGER PRIMARY KEY,
+  rep_id INTEGER,
+  name VARCHAR(64) NOT NULL,       /* name of the field, such as AVG or MAX */
+  serviceid VARCHAR(64) NOT NULL,           /* service ID */
+  value DOUBLE PRECISION NOT NULL,          /* Numeric value */
+  units VARCHAR(64) NOT NULL DEFAULT '',    /* Units, such as bytes or Mbps */
+  UNIQUE (rep_id, name, serviceid)
+  );
+
+
+=head2 Devdiscover parameters
+
+Currently devdiscover allows you to assign service IDs to network interfaces'
+input and output traffic counters. Other types of datasources may be
+implemented in the future.
+
+=over 4
+
+=item * C<RFC2863_IF_MIB::external-serviceid>
+
+This discovery parameter specifies which service IDs are assigned to which
+interface names. The interface names whould be specified in the form of
+their subtree names in Torrus configuration. The example below is
+typical for a Cisco IOS router. The value of the parameter consists of
+comma-separated strings. The values in each string are separated by colons,
+and they correspond to the service ID, interface name, counter type,
+and optional destination tree names separated by the pipe symbol (|).
+The interface name can be prefixed by hostname and slash (/),
+the same way as in C<RFC2863_IF_MIB::tokenset-members>. 
+All strings are case-sensitive. Three counter types are supported: C<In>,
+C<Out>, and C<Both>. When set to C<Both>, the service ID is appended with
+C<_IN> or C<_OUT> postfix accordingly, for input and output byte counters.
+
+ <!-- global parameter that will match specific routers -->
+ <param name="RFC2863_IF_MIB::external-serviceid">
+  CUSTOMERONE:nyc01br01/GigabitEthernet9_2_1:Both,
+  CUSTOMERTWO:wdc01br02/GigabitEthernet6_3_1:Both,
+ </param>
+
+ <host>
+   <param name="snmp-host" value="lsn01br01"/>
+   <!-- host-specfic parameter  -->
+   <param name="RFC2863_IF_MIB::external-serviceid">
+     UPSTREAM1_IN:FastEthernet0_0_0:In:upstreams,
+     UPSTREAM1_OUT:FastEthernet0_0_0:Out:upstreams,
+     UPSTREAM2:GigabitEthernet0_1_1:Both:upstreams,
+     CUST1:GigabitEthernet0_2_2:Both:customers|cust1,
+   </param>
+ </host>
+
+=item * C<CiscoIOS_MacAccounting::external-serviceid>
+
+The same format as for the parameter listed above, but instead of
+interface names, you can specify the MAC accounting peer, in one
+of the following formats: AS number (I<AS12345>), IP address, or peer's MAC
+address (I<0x0003319c4200>).
+
+=back
+
+
+
+=head2 Torrus XML configuration parameters
+
+You can skip this section if Devdiscover provides all desired functionality.
+It explains parameters additional to those described in I<Torrus XML
+Configuration Guide>.
+
+The collector's ExternalStorage module is designed for storing the data to
+a generic external storage, and the default external storage is the SQL
+database.
+
+=over 4
+
+=item * C<storage-type>
+
+Mandatory parameter for datasource type C<collector>. Comma-separated list
+of storage types. The collected value is duplicated on every storage listed.
+Supported values are: C<rrd>, C<ext>. For C<ext> (external storage),
+see the I<Reporting Setup Guide>.
+
+=item * C<ext-dstype>
+
+Mandatory datasource type to be used in external storage. Accepted
+values are: C<GAUGE>, C<COUNTER32>, C<COUNTER64>.
+
+=item * C<ext-service-id>
+
+Mandatory service ID for the external storage.
+
+=item * C<ext-service-units>
+
+Optional units for the collected value. The only supported value is
+C<bytes>.
+
+=item * C<ext-service-trees>
+
+(B<New in version 1.0.7>) Optional list of comma-separated tree names.
+If specified, the report generator will produce report in corresponding trees.
+By default it's the tree which runs the collector process.
+
+=back
+
+
+
+=head2 Enable displaying of the reports in the web interface
+
+First, enable the reports displaying in <torrus-siteconfig.pl>:
+
+ $Torrus::Renderer::displayReports = 1;
+
+Second, configure the ACL for your users that are allowed to see the reports
+in the web interface:
+
+ torrus acl --modgroup=admin --permit=DisplayReports --for=mytree
+
+In this example, members of the group C<admin> will be prompted
+with the C<[Reports]> shortcut in the web interface's bottom of the page
+for a given tree. For easier setup, the tree name may be replaced with
+asterisk (*) to allow this option for all trees.
+
+
+=head2 Generate reports
+
+Report generation is usually a CPU-intensive task. A monthly report calculation
+for one service ID may take several dozens of seconds of CPU time.
+This uit's recommended to use the C<nice> command to lower the process
+priority.
+
+The C<torrus genreport> (or simply C<torrus report>) command-line utility
+is designed for two different tasks: calculation of a single report
+for the period chosen, and generation of output HTML for all reports
+available.
+
+The example below generates the monthly usage report for September 2005:
+
+ nice torrus report --report=MonthlyUsage --date=2005-09-01 --debug
+
+The next example generates HTML output for all reports that are found
+in the database:
+
+ nice torrus report --genhtml --tree=customers
+
+It makes sence to set up a monthly cron job and generate the reports on
+the first day of every month, with the command like follows:
+
+ nice torrus report --report=MonthlyUsage \
+   --date=`perl -e 'use Date::Format;    
+         print time2str("%Y-%m-%d", time()-1728000)'`
+
+The HTML output is optimized for printing, and is quite easy
+to navigate. The overview page provides the list of years. Clicking to the
+year leads you into the list of monthly reports available.
+Each monthly report consists of a table for each report name.
+For C<MonthlyUsage>, the data is organized in five columns:
+the service ID, average monthly rate, 95th percentile of the rates,
+maximum rate throughout the month, unavailable samples (how many 5-minutes
+intervals are missed in the collected data), and monthly volume (which
+is roughly less than the actual volume by the percentage of missed samples).
+Also clicking a service ID leads to its monthly report throughout the year.
+
+
+=head2 Getting the sum or maximum value from several service IDs
+
+A new utility has been sponsored by nexellent ag (www.nexellent.ch), a
+managed hosting solution provider near Zurich.
+
+The utility C<srvderive> can be used to generate a
+new service ID which would contain sum or maximum of values of other
+service IDs. You would usually run this utlity monthly, just before generating
+the monthly reports:
+
+  torrus srvderive --verbose --start=20080801 --month \
+    --out=JSMITH_SUM_OUT --func=SUM JSMITH01_OUT JSMITH02_OUT
+
+  torrus srvderive --verbose --start=20080801 --month \
+    --out=JSMITH_SUM_IN --func=SUM JSMITH01_IN JSMITH02_IN
+
+
+
+
+
+
+Copyright (c) 2005-2008 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

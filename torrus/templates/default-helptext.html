@@ -1,0 +1,39 @@
+[%#  #### We don't need the standard header and footer ####### %]
+[% PROCESS 'html-incblocks.txt' %]
+[% thepath=path(token) %]
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<HTML>
+<!-- Torrus Copyright (c) 2004 Stanislav Sinyagin -->
+<HEAD>
+<TITLE>Help: [%thepath%]</TITLE>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<STYLE type="text/css" media="all">
+  @import url( [% plainURL _ style('stylesheet') %] );
+  [% cssoverlay = style('cssoverlay'); IF cssoverlay; %]
+  @import url( [% cssoverlay %] );
+  [% END %]
+</STYLE>
+</HEAD>
+<BODY>
+<DIV CLASS="HelpContent">
+
+<DIV CLASS="HelpHeader">
+Torrus Help
+</DIV>
+
+<DIV CLASS="HelpPathHeader">
+[% thepath %]
+</DIV>
+
+[% helptext=nodeParam(token, 'help-text', 1); %]
+<DIV CLASS="HelpMessage">
+[% markup( helptext ) %]
+</DIV>
+
+<DIV CLASS="HelpFooter">
+<A HREF="javascript:window.close()">Close window</A>
+</DIV>
+</DIV>
+</BODY>
+</HTML>

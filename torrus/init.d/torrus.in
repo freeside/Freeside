@@ -1,0 +1,211 @@
+#!@SHELL@
+#
+# init.d script for Torrus
+# Install it as /etc/init.d/torrus (most UNIXes),
+# or as /usr/local/etc/rc.d/torrus.sh (FreeBSD), or probably somewhere else.
+#
+# $Id: torrus.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+### chkconfig info
+# chkconfig: 2345 90 10
+# description: Starts/Stops Torrus collectors and monitors
+###
+#
+### BEGIN INIT INFO
+# Provides: collector monitor
+# Required-Start: $network
+# Required-Stop: $network
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Short-Description: Torrus collectors and monitors
+# Description: Start/stop Torrus collectors and monitors
+### END INIT INFO
+
+prefix=@prefix@
+sysconfdir=@sysconfdir@
+pkghome=@pkghome@
+cmddir=@pkgbindir@
+piddir=@piddir@
+sitedir=@sitedir@
+torrus_config_pl=@cfgdefdir@/torrus-config.pl
+
+. @cfgdefdir@/initscript.conf
+if test -f @siteconfdir@/initscript.siteconf; then
+  . @siteconfdir@/initscript.siteconf
+fi
+
+if test "$TORRUS_CHANGE_UID" = yes -a \
+        "${LOGNAME:-root}" = root -a \
+        "@SU@" != "no"; then
+  user=@torrus_user@
+  su="@SU@ ${user} -c"
+else
+  su="@SHELL@ -c"
+fi
+
+
+# Second argument can be the daemon name
+if test x"$2" = x; then
+  daemons="collector monitor"
+  monitor_cmdopts="$TORRUS_MONITOR_DELAY"
+  all_daemons=yes
+else
+  daemons=$2
+    # Third and fourth arguments may be the tree name and instance
+  if test x"$3" != x -a x"$4" != x; then
+    eval trees_${daemons}=$3
+    eval col_inst_${3}=$4
+    read_treenames=no
+  fi
+fi
+
+if test x"$TORRUS_COLLECTOR_CMDOPTS" != x; then
+  collector_cmdopts="$TORRUS_COLLECTOR_CMDOPTS"
+fi
+
+if test x${read_treenames} != xno; then
+
+  # Get the names of the trees for each daemon
+  for d in ${daemons}; do
+    eval trees_${d}=\"`@PERL@ -e 'require "'$torrus_config_pl'";
+    while((my $key, $val) = each %Torrus::Global::treeConfig) {
+      print "$key " if $val->{run}{'${d}'};
+    };'`\"
+  done
+
+  # Get the collector instance numbers for each tree
+  eval trees=\"\$\{trees_collector\}\"  
+  for t in ${trees}; do
+    eval col_inst_${t}=\"`@PERL@ -e 'require "'$torrus_config_pl'";
+    print join(" ",
+    (0 .. $Torrus::Global::treeConfig{'${t}'}{run}{collector}-1))'`\"
+  done
+fi
+
+start_daemons () {
+  for d in ${daemons}; do
+    eval trees=\"\$\{trees_${d}\}\"
+    eval daemon_cmdopts=\"\$\{${d}_cmdopts\}\"
+        
+    for t in ${trees}; do
+      if test ${d} = collector; then
+        eval instances=\"\$\{col_inst_${t}\}\"
+        for i in ${instances}; do
+          echo "starting Torrus collector instance ${i} for tree ${t}"
+          ${su} "${cmddir}/${d} --tree=${t} --instance=${i} \
+               ${daemon_cmdopts} ${TORRUS_CMDOPTS}"
+        done
+      else
+        echo "starting Torrus ${d} for tree ${t} ${daemon_cmdopts}"
+        ${su} "${cmddir}/${d} --tree=${t} ${daemon_cmdopts} ${TORRUS_CMDOPTS}"
+      fi
+    done
+  done
+
+  # RHEL based systems (RHEL, CentOS, Fedora) ignore the KXXtorrus script
+  # unless the corresponding lock is present
+  if test -d /var/lock/subsys; then
+    touch /var/lock/subsys/torrus
+  fi
+}
+
+stop_daemons () {
+  tokill=""
+  for d in ${daemons}; do
+  
+    eval trees=\"\$\{trees_${d}\}\"
+    for t in ${trees}; do
+    
+      if test ${d} = collector; then
+        eval instances=\"\$\{col_inst_${t}\}\"
+        
+        for i in ${instances}; do
+          pidfile="${piddir}/${d}.${t}_${i}.pid"
+          if test -r ${pidfile}; then
+            tokill=${tokill}' t='${t}'_'${i}';d='${d}
+            echo "stopping Torrus collector instance ${i} for tree ${t}"
+            pid=`cat ${pidfile}`
+            @KILL@ ${pid} || \
+              echo "Error: Cannot kill collector instance ${i} for tree ${t}"
+          fi
+        done
+        
+      else
+            
+        pidfile="${piddir}/${d}.${t}.pid"
+        if test -r ${pidfile}; then
+          tokill=${tokill}' t='${t}';d='${d}
+          echo "stopping Torrus ${d} for tree ${t}"
+          pid=`cat ${pidfile}`
+          @KILL@ ${pid} || echo "Error: Cannot kill ${d} for tree ${t}"
+        fi
+        
+      fi
+    done
+  done
+
+  killed=`echo $tokill | wc -w`
+  notdead=1
+  kc=$TORRUS_KILL_COUNT
+  while test $killed -gt 0 -a $kc -gt 0; do
+    echo "Sleeping for $TORRUS_KILL_SLEEP seconds to allow processes to exit"
+    @SLEEP@ $TORRUS_KILL_SLEEP
+    echo "Checking for kill resistant processes [$kc/$TORRUS_KILL_COUNT]"
+    kc=`expr $kc - 1`
+    for tuple in $tokill; do
+      eval $tuple
+      pidfile="${piddir}/${d}.${t}.pid"
+      if test -r ${pidfile}; then
+        echo "  Sending kill signal to Torrus ${d} for tree ${t}"
+        pid=`cat ${pidfile}`
+        @KILL@ ${pid} || echo "Error: Cannot kill ${d} for tree ${t}"
+      else
+        echo "${d} for ${t} has stopped"
+        killed=`expr $killed - 1`
+      fi
+    done
+  done
+
+  if test \( $killed -gt 0 \); then
+    echo "  Killing Remaining Processes"
+   for tuple in $tokill; do
+     eval $tuple
+     pidfile="${piddir}/${d}.${t}.pid"
+     if test -r ${pidfile}; then
+       echo "  Sending final kill -9 to Torrus ${d} for tree ${t}"
+       pid=`cat ${pidfile}`
+       @KILL@ -9 ${pid} || echo "Error: Cannot kill ${d} for tree ${t}"
+       @RM@ -f $pidfile
+     else
+       echo "${d} for ${t} has stopped"
+     fi
+   done
+  fi
+
+  # RHEL specifics
+  if test x"$all_daemons" = xyes -a -d /var/lock/subsys; then
+    rm -f /var/lock/subsys/torrus
+  fi
+}
+
+case "$1" in
+  'start')    start_daemons
+  ;;
+
+  'stop')     stop_daemons
+  ;;
+  'restart')  stop_daemons; start_daemons
+  ;;
+
+  *)  echo "Usage: $0 [start|stop|restart] [collector|monitor] [tree]"
+  ;;
+  esac
+
+# Local Variables:
+# mode: shell-script
+# sh-shell: sh
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:

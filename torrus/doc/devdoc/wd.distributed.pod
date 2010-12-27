@@ -1,0 +1,198 @@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: wd.distributed.pod,v 1.1 2010-12-27 00:04:36 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 RRFW Working Draft: Distributed collector architecture
+
+Status: pending implementation.
+Date: May 26, 2004. Last revised: June 14, 2004
+
+=head2 Introduction
+
+In large installations, one server has often not enough capacity
+to collect the data from all the data sources. In other cases,
+because of the network bandwidth or security restrictions it is
+preferrable to collect (SNMP) data locally on the site, and transfer
+the updates to the central location less frequently.
+
+=head2 Terminology
+
+We call I<Hub> servers those which run the user web interfaces and
+optionally threshold monitors. These are normally placed in the central
+location or NOC datacenter.
+
+I<Spoke> servers are those running SNMP or other data collectors.
+They periodically transfer the data to Hub servers. One Spoke
+server may send copies of data to several Hub servers, and one
+Hub server may receive data from many Spoke servers.
+
+In general, the property of being a Hub or a Spoke is local to a pair
+of servers and their datasource trees, and it only describes the functions
+of data collection and transfer. In complex installations, the same
+instance of RRFW may function as a Hub for some remote Spokes, and as a
+Spoke for some other Hubs simultaneousely.
+
+We call I<Association> a set of attributes that describe a single connection
+between Hub and Spoke servers. These attributes are:
+
+=over 4
+
+=item * Association ID
+
+Unique symbolic name across the whole range of interconnected servers.
+
+=item * Hub server ID, Spoke server ID
+
+Names of the servers, usually hostnames.
+
+=item * Transport type
+
+One of SSH, RSH, HTTP, etc.
+
+=item * Transport mode
+
+PUSH or PULL
+
+=item * Transport parameters
+
+Parameters needed for this transport connection, like login name, password,
+URL, etc.
+
+=item * Compression type and level
+
+Optional, gzip or bzip2 or something else, with compression levels from 1 to 9.
+
+=item * Tree name on Hub server
+
+Target datasource tree that will receive data from Spokes
+
+=item * Subtree path on Hub server
+
+The data updates from this association will be placed in a subtree
+under the specified path.
+
+=item * Tree name on Spoke server
+
+The tree where a collector runs and stores data into this association.
+
+=item * Path translation rules
+
+Datasource paths from Spoke server may be changed to look different
+in the tree of Hub server.
+
+=back
+
+
+=head2 Transport
+
+The modular architecture design should allow different types of data
+transfer. The default transport is Secure Shell version 2 (SSH). Other
+possible transports may be RSH, HTTP/HTTPS, rsync.
+
+Two transport modes should be implemented: PUSH and PULL.
+In PUSH mode, Spoke servers initiate the data transfer and push the data to
+Hub servers. In PULL mode, Hub servers initiate the data
+transfer and ask Spokes for data updates. It should be possible
+to mix the transport modes for different Associations on the same
+server, but within each Association the mode should be strictly
+determined. The choice of transport mode should be based on local security
+policies, and server and network performance.
+
+Optionally the compression method and level can be configured. Although
+SSH protocol supports its own compression, more aggressive compression
+methods may be used for the sake of better bandwidth usage.
+
+Transport agents should notify the operator in cases of delivery failures.
+
+=head2 Operation
+
+For Spoke servers, distributed data transfer will be implemented as
+additional storage type. For Hub servers, this will be a new collector
+type.
+
+Each data transfer is a concatenation of I<messages>. Messages
+may be of one of two types: I<CONFIG> and I<DATA>. Spoke server generates
+the messages and stores them for the transfer. Messages are delivered
+to Hub servers with a certain delay, but they are guaranteed to
+arrive in sequential order. For each pair of servers, messages are
+consecutively numbered. These numbers are used for failure detection.
+
+A Spoke server keeps track of its configuration, and after each
+configuration change, it sends a CONFIG message. This message contains
+information about mapping between Spoke server tokens and datasource paths,
+and a limited set of parameters for displaying and monitoring the data.
+
+After each collector cycle, Spoke server sends DATA messages.
+These messages contain the following information: timestamp of the
+update, token, and value. The format of the message should be designed
+to consume minimum bandwidth.
+
+Hub server picks up the messages delivered by the transport agents.
+Upon receiving a CONFIG message, it sets a preconfigured delay, in order
+to collect as many as possible CONFIG messages. Then the data transfer agent
+generates a new XML configuration based on the messages, and starts
+the compilation of configuration. The DATA messages are queued for the
+collector to pick up and and store the values. It must be ensured that
+all DATA messages queued for the old configuration are processed before
+the compilation starts.
+
+In case of fatal failure and loss of data, Hub server ignores all DATA
+messages until it gets a new CONFIG message. A periodic configuration update
+schedule should be defined. If no configuration changes occur within a
+certain period of time, Spoke server periodically sends the CONFIG messages
+with the same timestamp.
+
+
+=head2 Message format
+
+Message is a text in email-like format: it starts with a header, followed by
+an empty line and the body. Single dot (.) in a line specifies the end of
+the message. Blocks within a CONFIG message are separated with semicolon (;),
+each block representing a single datasource leaf.
+
+Example:
+
+ MsgID:100001
+ Type:CONFIG
+ Timestamp:1085528682
+
+ level2-token:T0005
+ level2-path:/Routers/RTR1/Interface_Counters/Ethernet0/InOctets
+ vertical-label:bps
+ ....
+ ;
+ level2-token:T0006
+ level2-path:/Routers/RTR1/Interface_Counters/Ethernet0/OutOctets
+ vertical-label:bps
+ .
+ MsgID:100002
+ Type:DATA
+ Timestamp:1085528690
+
+ T0005:12345678
+ T0006:987654321
+ .
+
+
+
+
+=head1 Author
+
+Copyright (c) 2004 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

@@ -1,0 +1,93 @@
+#  Copyright (C) 2007  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_genreport.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+genreport - Generate the Usage Report
+
+=head1 SYNOPSIS
+
+B<torrus genreport> --report=I<ReportName> --date=I<YYYY-MM-DD> [I<options...>]
+B<torrus genreport> --genhtml [I<options...>]
+
+
+=head1 DESCRIPTION
+
+When the Torrus Reporting engine is set up, this command is used
+to generate the reports from the collected data.
+See I<Torrus Reporting Setup Guide> for more information.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--report>=I<ReportName>
+
+The name of the report that is to be generated. Currently supported:
+C<MonthlyUsage>.
+
+=item B<--date>=I<YYYY-MM-DD>
+
+Specifies the start date of the reported period. For the monthly report,
+this should be any day within the calendar month.
+
+=item B<--time>=I<hh:mm>
+
+Specifies the start time of the reported period. This option
+is ignored for the monthly reports.
+
+=item B<--genhtml>
+
+Instructs the report engine to build the HTML output from the generated
+reports.
+
+=item B<--tree=TREE>
+
+When used with C<--genhtml>, generates the HTML reports only for
+the specified tree.
+
+=item B<--all2tree=TREE>
+
+When used with C<--genhtml>, generates the HTML reports only for
+all available service IDs in the specified tree.
+
+=item B<--verbose>
+
+Prints extra informatgion.
+
+=item B<--debug>
+
+Prints debugging information.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>
+

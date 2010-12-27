@@ -1,0 +1,842 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003 Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: f5.bigip.xml,v 1.1 2010-12-27 00:04:25 ivan Exp $
+  Shawn Ferry <sferry at sevenspace dot com> <lalartu at obscure dot org>
+
+  Tested With: BIG-IP Version 4.5PTF-03 Build2
+
+-->
+
+<!-- Cisco Firewall specific definitions -->
+
+<configuration>
+
+<definitions>
+
+  <!-- LOAD-BAL-SYSTEM-MIB -->
+  <!-- 4.x -->
+  <!--      F5                             1.3.6.1.4.1.3375 -->
+  <!--      f5systems                      1.3.6.1.4.1.3375.1 -->
+  <!--      loadbal                        1.3.6.1.4.1.3375.1.1 -->
+  <!--      globals                        1.3.6.1.4.1.3375.1.1.1 -->
+  <def name="globalStatCurrentConn" value="1.3.6.1.4.1.3375.1.1.1.2.10.0"/>
+  <def name="globalStatMaxConn" value="1.3.6.1.4.1.3375.1.1.1.2.11.0"/>
+  <def name="globalStatTotalConn" value="1.3.6.1.4.1.3375.1.1.1.2.12.0"/>
+
+  <def name="globalStatMemoryPoolTotal" value="1.3.6.1.4.1.3375.1.1.1.2.14.0"/>
+  <def name="globalStatMemoryPoolUsed" value="1.3.6.1.4.1.3375.1.1.1.2.15.0"/>
+  <def name="globalStatVirtualServerDupSynSSL"
+    value="1.3.6.1.4.1.3375.1.1.1.2.22.0"/> <!-- new -->
+
+  <def name="globalStatMaxConnPortDeny" value="1.3.6.1.4.1.3375.1.1.1.2.26.0"/>
+  <def name="globalStatSSLTimeouts" value="1.3.6.1.4.1.3375.1.1.1.2.35.0"/>
+  <!-- new -->
+  <def name="globalStatMemoryErrors" value="1.3.6.1.4.1.3375.1.1.1.2.42.0"/>
+  <def name="globalStatMemoryInUse" value="1.3.6.1.4.1.3375.1.1.1.2.44.0"/>
+  <def name="globalStatMemoryCurrentSize"
+       value="1.3.6.1.4.1.3375.1.1.1.2.46.0"/>
+
+  <!-- Virtual Servers                      1.3.6.1.4.1.3375.1.1.3 -->
+  <def name="virtualServerConnLimit" value="1.3.6.1.4.1.3375.1.1.3.2.1.4"/>
+  <def name="virtualServerOctetsIn" value="1.3.6.1.4.1.3375.1.1.3.2.1.13"/>
+  <def name="virtualServerOctetsOut" value="1.3.6.1.4.1.3375.1.1.3.2.1.14"/>
+  <def name="virtualServerPacketsIn" value="1.3.6.1.4.1.3375.1.1.3.2.1.15"/>
+  <def name="virtualServerPacketsOut" value="1.3.6.1.4.1.3375.1.1.3.2.1.16"/>
+  <def name="virtualServerCurrentConn" value="1.3.6.1.4.1.3375.1.1.3.2.1.17"/>
+  <def name="virtualServerMaxConn" value="1.3.6.1.4.1.3375.1.1.3.2.1.18"/>
+  <def name="virtualServerTotalConn" value="1.3.6.1.4.1.3375.1.1.3.2.1.19"/>
+
+
+  <!-- Pool                     1.3.6.1.4.1.3375.1.1.7 -->
+  <def name="poolBitsin" value="1.3.6.1.4.1.3375.1.1.7.2.1.5"/>
+  <def name="poolBitsout" value="1.3.6.1.4.1.3375.1.1.7.2.1.6"/>
+  <def name="poolPktsin" value="1.3.6.1.4.1.3375.1.1.7.2.1.9"/>
+  <def name="poolPktsout" value="1.3.6.1.4.1.3375.1.1.7.2.1.10"/>
+  <def name="poolCurrentConn" value="1.3.6.1.4.1.3375.1.1.7.2.1.14"/>
+  <def name="poolTotalConn" value="1.3.6.1.4.1.3375.1.1.7.2.1.15"/>
+
+  <!-- Pool Member                    1.3.6.1.4.1.3375.1.1.8 -->
+  <def name="poolMemberBitsin" value="1.3.6.1.4.1.3375.1.1.8.2.1.9"/>
+  <def name="poolMemberBitsout" value="1.3.6.1.4.1.3375.1.1.8.2.1.10"/>
+  <def name="poolMemberPktsin" value="1.3.6.1.4.1.3375.1.1.8.2.1.13"/>
+  <def name="poolMemberPktsout" value="1.3.6.1.4.1.3375.1.1.8.2.1.14"/>
+  <def name="poolMemberConnLimit" value="1.3.6.1.4.1.3375.1.1.8.2.1.17"/>
+  <def name="poolMemberCurrentConn" value="1.3.6.1.4.1.3375.1.1.8.2.1.19"/>
+  <def name="poolMemberTotalConn" value="1.3.6.1.4.1.3375.1.1.8.2.1.20"/>
+
+  <!-- SSL Proxy                           1.3.6.1.4.1.3375.1.1.9 -->
+  <!-- SSL sslProxyTable                   1.3.6.1.4.1.3375.1.1.9.2 -->
+  <!-- SSL sslProxyEntry                   1.3.6.1.4.1.3375.1.1.9.2.1 -->
+  <def name="sslProxyOrigIpAddress" value="1.3.6.1.4.1.3375.1.1.9.2.1.1"/>
+  <def name="sslProxyOrigPort" value="1.3.6.1.4.1.3375.1.1.9.2.1.2"/>
+  <def name="sslProxyDestIpAddress" value="1.3.6.1.4.1.3375.1.1.9.2.1.3"/>
+  <def name="sslProxyDestPort" value="1.3.6.1.4.1.3375.1.1.9.2.1.4"/>
+  <def name="sslProxyBitsin" value="1.3.6.1.4.1.3375.1.1.9.2.1.17"/>
+  <def name="sslProxyBitsout" value="1.3.6.1.4.1.3375.1.1.9.2.1.18"/>
+  <def name="sslProxyPktsin" value="1.3.6.1.4.1.3375.1.1.9.2.1.19"/>
+  <def name="sslProxyPktsout" value="1.3.6.1.4.1.3375.1.1.9.2.1.20"/>
+  <def name="sslProxyConnLimit" value="1.3.6.1.4.1.3375.1.1.9.2.1.23"/>
+  <def name="sslProxyMaxConn" value="1.3.6.1.4.1.3375.1.1.9.2.1.24"/>
+  <def name="sslProxyCurrentConn" value="1.3.6.1.4.1.3375.1.1.9.2.1.25"/>
+  <def name="sslProxyTotalConn" value="1.3.6.1.4.1.3375.1.1.9.2.1.26"/>
+  <def name="sslProxyClientInvalidVersions"
+                value="1.3.6.1.4.1.3375.1.1.9.2.1.32"/>
+  <def name="sslProxyServerInvalidVersions"
+                value="1.3.6.1.4.1.3375.1.1.9.2.1.33"/>
+
+
+  <!-- 3.x -->
+  <def name="contot"       value="1.3.6.1.4.1.3375.1.1.51.0"/>
+  <def name="conmax"       value="1.3.6.1.4.1.3375.1.1.53.0"/>
+  <def name="memoryUsed"       value="1.3.6.1.4.1.3375.1.1.77.0"/>
+  <def name="memoryTotal"       value="1.3.6.1.4.1.3375.1.1.78.0"/>
+
+</definitions>
+
+<datasources>
+
+  <template name="BigIp_4.x">
+    <leaf name="MaxConnections">
+      <param name="hidden" value="yes"/>
+      <param name="comment">
+          Max Connections per second
+      </param>
+      <param name="vertical-label" value="connections/s"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_cons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatMaxConn"/>
+      <param name="rrd-ds" value="MaxConn"/>
+      <param name="graph-legend" value="MaxConns"/>
+    </leaf>
+    <leaf name="ConnectionRate">
+      <param name="comment">
+        Connections per second
+      </param>
+      <param name="vertical-label" value="connections/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_cons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatTotalConn"/>
+      <param name="rrd-ds" value="ConnRate"/>
+      <param name="graph-legend" value="Connections per second"/>
+    </leaf>
+    <leaf name="ActiveConnections">
+      <param name="comment">
+        Active Connections
+      </param>
+      <param name="vertical-label" value="connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_cons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatCurrentConn"/>
+      <param name="rrd-ds" value="ActvConn"/>
+      <param name="graph-legend" value="Active Connections"/>
+    </leaf>
+    <leaf name="MemoryPoolTotal">
+      <param name="comment">
+        Total memory pool available on system.
+      </param>
+      <param name="rrd-scaling-base" value="1024"/>
+      <param name="vertical-label" value="Memory Total"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_mem.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatMemoryPoolTotal"/>
+      <param name="rrd-ds" value="MemPoolTotal"/>
+      <param name="graph-legend" value="MemPoolTotal"/>
+    </leaf>
+    <leaf name="MemoryPoolUsed">
+      <param name="comment">
+        Total memory pool currently in use by system.
+      </param>
+      <param name="rrd-scaling-base" value="1024"/>
+      <param name="vertical-label" value="Memory Used"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_mem.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatMemoryPoolUsed"/>
+      <param name="rrd-ds" value="MemPoolUsed"/>
+      <param name="graph-legend" value="MemPoolUsed"/>
+    </leaf>
+    <leaf name="MaxConnPortDeny">
+      <param name="comment">
+        Total number of connections denied because maximum connections
+        count exceeded.
+      </param>
+      <param name="vertical-label" value="denies/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_cons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatMaxConnPortDeny"/>
+      <param name="rrd-ds" value="MaxConnDeny"/>
+      <param name="graph-legend" value="Denies"/>
+    </leaf>
+    <leaf name="MemoryErrors">
+      <param name="comment">
+        Memory allocation errors per second
+      </param>
+      <param name="vertical-label" value="Memory Errors/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_mem.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatMemoryErrors"/>
+      <param name="rrd-ds" value="MemErrors"/>
+      <param name="graph-legend" value="MemErrors"/>
+    </leaf>
+    <leaf name="MemoryInUse">
+      <param name="hidden" value="yes"/>
+      <param name="comment">
+        Current amount of memory in use.
+      </param>
+      <param name="rrd-scaling-base" value="1024"/>
+      <param name="vertical-label" value="Memory Used"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_mem.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatMemoryInUse"/>
+      <param name="rrd-ds" value="MemInUse"/>
+      <param name="graph-legend" value="MemInUse"/>
+    </leaf>
+    <leaf name="MemorySize">
+      <param name="hidden" value="yes"/>
+      <param name="comment">
+        Current memory size.
+      </param>
+      <param name="rrd-scaling-base" value="1024"/>
+      <param name="vertical-label" value="Memory Size"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_mem.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatMemoryCurrentSize"/>
+      <param name="rrd-ds" value="MemSize"/>
+      <param name="graph-legend" value="MemSize"/>
+    </leaf>
+  </template>
+
+  <template name="BigIp_4.x_pool-actvconn-overview">
+      <param name="comment" value="Per Poo; Active Connections"/>
+      <param name="precedence" value="-400"/>
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="active"/>
+      <param name="overview-subleave-name-active" value="ActiveConnections"/>
+      <param name="overview-shortcut-text-active"
+             value="All Active Connections"/>
+      <param name="overview-shortcut-title-active"
+             value="Show Active Connections Per Pool"/>
+      <param name="overview-page-title-active"
+             value="Active Connections Per Pool"/>
+  </template>
+
+  <template name="BigIp_4.x_pool">
+    <param name="comment" value="%descr%"/>
+    <leaf name="ConnectionRate">
+      <param name="comment">
+        Connections per second to %descr%
+      </param>
+      <param name="vertical-label" value="connections/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_pool_%nick%.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$poolTotalConn.%INDEX%"/>
+      <param name="rrd-ds" value="ConnRate"/>
+      <param name="graph-legend" value="Connections per second"/>
+    </leaf>
+    <leaf name="ActiveConnections">
+      <param name="comment">
+        Active Connections to %descr%
+      </param>
+      <param name="vertical-label" value="connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_pool_%nick%.rrd"/>
+      <param name="precedence" value="-300"/>
+      <param name="snmp-object" value="$poolCurrentConn.%INDEX%"/>
+      <param name="rrd-ds" value="ActvConn"/>
+      <param name="graph-legend" value="Active Connections"/>
+    </leaf>
+    <leaf name="inoutBps">
+      <param name="comment" value="input and output bits/s %descr%" />
+      <param name="vertical-label"   value="bps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="-400" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{Bitsin},8,*" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{Bitsout},8,*" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+    <leaf name="Bitsin">
+      <param name="comment">
+        Bits IN for %descr%
+      </param>
+      <param name="vertical-label" value="Bps"/>
+      <param name="graph-legend" value="Bits IN"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_pool_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolBitsin.%INDEX%"/>
+      <param name="rrd-ds" value="Bitsin"/>
+    </leaf>
+    <leaf name="Bitsout">
+      <param name="comment">
+        Bits OUT for %descr%
+      </param>
+      <param name="vertical-label" value="Bps"/>
+      <param name="graph-legend" value="Bits OUT"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_pool_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolBitsout.%INDEX%"/>
+      <param name="rrd-ds" value="Bitsout"/>
+    </leaf>
+    <leaf name="inoutPackets">
+      <param name="comment" value="input and output Packets/s for %descr%" />
+      <param name="vertical-label"   value="pps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="-400" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{Packetsin}" />
+      <param name="graph-legend-in"  value="Packets per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{Packetsout}" />
+      <param name="graph-legend-out" value="Packets per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+    <leaf name="Packetsin">
+      <param name="comment">
+        Packets IN for %descr%
+      </param>
+      <param name="vertical-label" value="pps"/>
+      <param name="graph-legend" value="Packets IN"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_pool_%nick%.rrd"/>
+      <param name="precedence" value="-1100"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolPktsin.%INDEX%"/>
+      <param name="rrd-ds" value="Packetsin"/>
+    </leaf>
+    <leaf name="Packetsout">
+      <param name="comment">
+        Packets OUT for %descr%
+      </param>
+      <param name="vertical-label" value="pps"/>
+      <param name="graph-legend" value="Packets OUT"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_pool_%nick%.rrd"/>
+      <param name="precedence" value="-1100"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolPktsout.%INDEX%"/>
+      <param name="rrd-ds" value="Packetsout"/>
+    </leaf>
+  </template>
+
+  <template name="BigIp_4.x_virtualServer-actvconn-overview">
+      <param name="comment"
+             value="Per Virtual Server(VIP) Active Connections"/>
+      <param name="precedence" value="-400"/>
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="active"/>
+      <param name="overview-subleave-name-active" value="ActiveConnections"/>
+      <param name="overview-shortcut-text-active"
+             value="All Active Connections"/>
+      <param name="overview-shortcut-title-active"
+             value="Show Active Connections Per Virtual Server(VIP)"/>
+      <param name="overview-page-title-active"
+             value="Active Connections Per Virtual Server(VIP)"/>
+  </template>
+  <template name="BigIp_4.x_virtualServer-connrate-overview">
+      <param name="comment" value="Per Virtual Server(VIP) Connections/s"/>
+      <param name="precedence" value="-400"/>
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="rate"/>
+      <param name="overview-subleave-name-rate" value="ConnectionRate"/>
+      <param name="overview-shortcut-text-rate"
+             value="All Connection Rates"/>
+      <param name="overview-shortcut-title-rate"
+             value="Show Connections/s Per Virtual Server(VIP)"/>
+      <param name="overview-page-title-rate"
+             value="Connections/s Per Virtual Server(VIP)"/>
+  </template>
+
+  <template name="BigIp_4.x_virtualServer">
+    <param name="comment" value="%descr%"/>
+    <leaf name="ConnectionLimit">
+      <param name="comment">
+          Max Allowed Connections to %descr%
+      </param>
+      <param name="vertical-label" value="connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_VSstat_%nick%.rrd"/>
+      <param name="precedence" value="-300"/>
+      <param name="snmp-object" value="$virtualServerConnLimit.%INDEX%"/>
+      <param name="rrd-ds" value="ConnLimit"/>
+      <param name="graph-legend" value="Connection Limit"/>
+    </leaf>
+    <leaf name="ConnectionRate">
+      <param name="comment">
+        Connections per second to %descr%
+      </param>
+      <param name="vertical-label" value="connections/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_VSstat_%nick%.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$virtualServerTotalConn.%INDEX%"/>
+      <param name="rrd-ds" value="ConnRate"/>
+      <param name="graph-legend" value="Connections per second"/>
+    </leaf>
+    <leaf name="ActiveConnections">
+      <param name="comment">
+        Active Connections to %descr%
+      </param>
+      <param name="vertical-label" value="connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_VSstat_%nick%.rrd"/>
+      <param name="precedence" value="-300"/>
+      <param name="snmp-object" value="$virtualServerCurrentConn.%INDEX%"/>
+      <param name="rrd-ds" value="ActvConn"/>
+      <param name="graph-legend" value="Active Connections"/>
+    </leaf>
+    <leaf name="InOutBps">
+      <param name="comment" value="Input and Output bits/s %descr%" />
+      <param name="vertical-label"   value="bps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="-400" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{OctetsIn},8,*" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{OctetsOut},8,*" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+    <leaf name="OctetsIn">
+      <param name="comment">
+        Octets IN for %descr%
+      </param>
+      <param name="vertical-label" value="Bps"/>
+      <param name="graph-legend" value="Bytes IN"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_VSstat_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$virtualServerOctetsIn.%INDEX%"/>
+      <param name="rrd-ds" value="OctetsIn"/>
+    </leaf>
+    <leaf name="OctetsOut">
+      <param name="comment">
+        Octets OUT for %descr%
+      </param>
+      <param name="vertical-label" value="Bps"/>
+      <param name="graph-legend" value="Bytes OUT"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_VSstat_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$virtualServerOctetsOut.%INDEX%"/>
+      <param name="rrd-ds" value="OctetsOut"/>
+    </leaf>
+    <leaf name="InOutPackets">
+      <param name="comment" value="Input and Output Packets/s for %descr%" />
+      <param name="vertical-label"   value="pps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="-400" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{PacketsIn}" />
+      <param name="graph-legend-in"  value="Packets per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{PacketsOut}" />
+      <param name="graph-legend-out" value="Packets per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+    <leaf name="PacketsIn">
+      <param name="comment">
+        Packets IN for %descr%
+      </param>
+      <param name="vertical-label" value="pps"/>
+      <param name="graph-legend" value="Packets IN"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_VSstat_%nick%.rrd"/>
+      <param name="precedence" value="-1100"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$virtualServerPacketsIn.%INDEX%"/>
+      <param name="rrd-ds" value="PacketsIn"/>
+    </leaf>
+    <leaf name="PacketsOut">
+      <param name="comment">
+        Packets OUT for %descr%
+      </param>
+      <param name="vertical-label" value="pps"/>
+      <param name="graph-legend" value="Packets OUT"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_VSstat_%nick%t.rrd"/>
+      <param name="precedence" value="-1100"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$virtualServerPacketsOut.%INDEX%"/>
+      <param name="rrd-ds" value="PacketsOut"/>
+    </leaf>
+  </template>
+
+
+  <template name="BigIp_4.x_poolMember-actvconn-overview">
+      <param name="comment" value="Per Pool Member Active Connections"/>
+      <param name="precedence" value="-400"/>
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="active"/>
+      <param name="overview-subleave-name-active" value="ActiveConnections"/>
+      <param name="overview-shortcut-text-active"
+             value="All Active Connections"/>
+      <param name="overview-shortcut-title-active"
+             value="Show Active Connections Per Pool Member"/>
+      <param name="overview-page-title-active"
+             value="Active Connections Per Pool Member"/>
+  </template>
+
+  <template name="BigIp_4.x_poolMember">
+    <param name="comment" value="%descr%"/>
+    <leaf name="ConnectionLimit">
+      <param name="comment">
+          Max Allowed Connections to %descr%
+      </param>
+      <param name="vertical-label" value="connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_poolmember_%nick%.rrd"/>
+      <param name="precedence" value="-300"/>
+      <param name="snmp-object" value="$poolMemberConnLimit.%INDEX%"/>
+      <param name="rrd-ds" value="ConnLimit"/>
+      <param name="graph-legend" value="Connection Limit"/>
+    </leaf>
+    <leaf name="ConnectionRate">
+      <param name="comment">
+        Connections per second to %descr%
+      </param>
+      <param name="vertical-label" value="connections/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_poolmember_%nick%.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$poolMemberTotalConn.%INDEX%"/>
+      <param name="rrd-ds" value="ConnRate"/>
+      <param name="graph-legend" value="Connections per second"/>
+    </leaf>
+    <leaf name="ActiveConnections">
+      <param name="comment">
+        Active Connections to %descr%
+      </param>
+      <param name="vertical-label" value="connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_poolmember_%nick%.rrd"/>
+      <param name="precedence" value="-300"/>
+      <param name="snmp-object" value="$poolMemberCurrentConn.%INDEX%"/>
+      <param name="rrd-ds" value="ActvConn"/>
+      <param name="graph-legend" value="Active Connections"/>
+    </leaf>
+    <leaf name="inoutBps">
+      <param name="comment" value="input and output bits/s %descr%" />
+      <param name="vertical-label"   value="bps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="-400" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{Bitsin},8,*" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{Bitsout},8,*" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+    <leaf name="Bitsin">
+      <param name="comment">
+        Bits IN for %descr%
+      </param>
+      <param name="vertical-label" value="Bps"/>
+      <param name="graph-legend" value="Bits IN"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_poolmember_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolMemberBitsin.%INDEX%"/>
+      <param name="rrd-ds" value="Bitsin"/>
+    </leaf>
+    <leaf name="Bitsout">
+      <param name="comment">
+        Bits OUT for %descr%
+      </param>
+      <param name="vertical-label" value="Bps"/>
+      <param name="graph-legend" value="Bits OUT"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_poolmember_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolMemberBitsout.%INDEX%"/>
+      <param name="rrd-ds" value="Bitsout"/>
+    </leaf>
+    <leaf name="inoutPackets">
+      <param name="comment" value="input and output Packets/s for %descr%" />
+      <param name="vertical-label"   value="pps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="-400" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{Packetsin}" />
+      <param name="graph-legend-in"  value="Packets per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{Packetsout}" />
+      <param name="graph-legend-out" value="Packets per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+    <leaf name="Packetsin">
+      <param name="comment">
+        Packets IN for %descr%
+      </param>
+      <param name="vertical-label" value="pps"/>
+      <param name="graph-legend" value="Packets IN"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_poolmember_%nick%.rrd"/>
+      <param name="precedence" value="-1100"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolMemberPktsin.%INDEX%"/>
+      <param name="rrd-ds" value="Packetsin"/>
+    </leaf>
+    <leaf name="Packetsout">
+      <param name="comment">
+        Packets OUT for %descr%
+      </param>
+      <param name="vertical-label" value="pps"/>
+      <param name="graph-legend" value="Packets OUT"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_poolmember_%nick%.rrd"/>
+      <param name="precedence" value="-1100"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="snmp-object" value="$poolMemberPktsout.%INDEX%"/>
+      <param name="rrd-ds" value="Packetsout"/>
+    </leaf>
+  </template>
+
+  <template name="BigIp_4.x_sslProxy_Global">
+    <leaf name="DupSynSSL">
+      <param name="comment" value="Duplicate SYNs for SSL Traffic"/>
+      <param name="vertical-label" value="SYN/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_globalssl.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatVirtualServerDupSynSSL"/>
+      <param name="rrd-ds" value="DupSynSSL"/>
+      <param name="graph-legend" value="DupSynSSL"/>
+    </leaf>
+    <leaf name="SSLTimeouts">
+      <param name="comment" value="SSL Timeouts/s"/>
+      <param name="vertical-label" value="Timeouts/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_globalssl.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$globalStatSSLTimeouts"/>
+      <param name="rrd-ds" value="SSLTimeouts"/>
+      <param name="graph-legend" value="SSL Timeouts/s"/>
+    </leaf>
+  </template>
+
+  <template name="BigIp_4.x_sslProxy-currconn-overview">
+      <param name="comment" value="Per SSL Proxy Current Connections"/>
+      <param name="precedence" value="-400"/>
+      <param name="has-overview-shortcuts" value="yes"/>
+      <param name="overview-shortcuts" value="ssl"/>
+      <param name="overview-subleave-name-ssl" value="CurrentConn"/>
+      <param name="overview-shortcut-text-ssl"
+             value="All Current Connections"/>
+      <param name="overview-shortcut-title-ssl"
+             value="Show Current Connections Per SSL Proxy"/>
+      <param name="overview-page-title-ssl"
+             value="Current Connections Per SSL Proxy"/>
+  </template>
+
+  <template name="BigIp_4.x_sslProxy">
+    <param name="comment" value="%descr% Connection Limit: %connLimit%"/>
+    <leaf name="BitsIn">
+      <param name="comment" value="SSL Proxy %descr% Bits In"/>
+      <param name="vertical-label" value="BitsIn/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="snmp-object" value="$sslProxyBitsin.%INDEX%"/>
+      <param name="rrd-ds" value="Bitsin"/>
+      <param name="graph-legend" value="Bits In/s"/>
+    </leaf>
+    <leaf name="BitsOut">
+      <param name="comment" value="SSL Proxy %descr% Bits Out"/>
+      <param name="vertical-label" value="BitsOut/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-1000"/>
+      <param name="snmp-object" value="$sslProxyBitsout.%INDEX%"/>
+      <param name="rrd-ds" value="Bitsout"/>
+      <param name="graph-legend" value="Bits Out"/>
+    </leaf>
+    <leaf name="PktsIn">
+      <param name="comment" value="SSL Proxy %descr% Packets In"/>
+      <param name="vertical-label" value="PacketsIn/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-100"/>
+      <param name="snmp-object" value="$sslProxyPktsin.%INDEX%"/>
+      <param name="rrd-ds" value="Pktsin"/>
+      <param name="graph-legend" value="Packets In"/>
+    </leaf>
+    <leaf name="PktsOut">
+      <param name="comment" value="SSL Proxy %descr% Packets Out"/>
+      <param name="vertical-label" value="PacketsOut/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-100"/>
+      <param name="snmp-object" value="$sslProxyPktsout.%INDEX%"/>
+      <param name="rrd-ds" value="Pktsout"/>
+      <param name="graph-legend" value="Packets Out"/>
+    </leaf>
+    <leaf name="MaxConn">
+      <param name="comment" value="SSL Proxy %descr% Max Connections"/>
+      <param name="vertical-label" value="MaxConnections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-500"/>
+      <param name="snmp-object" value="$sslProxyMaxConn.%INDEX%"/>
+      <param name="rrd-ds" value="MaxConn"/>
+      <param name="graph-legend" value="Max Connections"/>
+    </leaf>
+    <leaf name="CurrentConn">
+      <param name="comment" value="SSL Proxy %descr% Current Connections"/>
+      <param name="vertical-label" value="CurrentConnections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-600"/>
+      <param name="snmp-object" value="$sslProxyCurrentConn.%INDEX%"/>
+      <param name="rrd-ds" value="CurrentConn"/>
+      <param name="graph-legend" value="Current Connections"/>
+    </leaf>
+    <leaf name="TotalConn">
+      <param name="comment" value="SSL Proxy %descr% Connections/s"/>
+      <param name="vertical-label" value="Connections/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-700"/>
+      <param name="snmp-object" value="$sslProxyTotalConn.%INDEX%"/>
+      <param name="rrd-ds" value="TotalConn"/>
+      <param name="graph-legend" value="Connections/s"/>
+    </leaf>
+    <leaf name="ClientInvalidVersions">
+      <param name="comment" value="SSL Proxy %descr% Client Invalid Versions/s"/>
+      <param name="vertical-label" value="InvalidVersions/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-700"/>
+      <param name="snmp-object" value="$sslProxyClientInvalidVersions.%INDEX%"/>
+      <param name="rrd-ds" value="ClientInvalidVer"/>
+      <param name="graph-legend" value="InvalidVersions/s"/>
+    </leaf>
+    <leaf name="ServerInvalidVersions">
+      <param name="comment" value="SSL Proxy %descr% Server Invalid Versions/s"/>
+      <param name="vertical-label" value="InvalidVersions/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_sslproxy_%nick%.rrd"/>
+      <param name="precedence" value="-700"/>
+      <param name="snmp-object" value="$sslProxyServerInvalidVersions.%INDEX%"/>
+      <param name="rrd-ds" value="ServerInvalidVer"/>
+      <param name="graph-legend" value="InvalidVersions/s"/>
+    </leaf>
+  </template>
+
+
+  <template name="BigIp_3.x">
+    <leaf name="MaxConnections">
+      <param name="hidden" value="yes"/>
+      <param name="comment">
+          Max Connections per second
+      </param>
+      <param name="vertical-label" value="connections/s"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_3.x_cons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$conmax"/>
+      <param name="rrd-ds" value="MaxConn"/>
+      <param name="graph-legend" value="MaxConns"/>
+    </leaf>
+    <leaf name="ConnectionRate">
+      <param name="comment">
+        Connections per second
+      </param>
+      <param name="vertical-label" value="connections/s"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_3.x_cons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$contot"/>
+      <param name="rrd-ds" value="ConnRate"/>
+      <param name="graph-legend" value="Connections per second"/>
+    </leaf>
+  </template>
+
+</datasources>
+
+</configuration>

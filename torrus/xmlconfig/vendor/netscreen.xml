@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: netscreen.xml,v 1.1 2010-12-27 00:04:21 ivan Exp $
+
+  NetScreen Firewall
+
+-->
+
+<configuration>
+<definitions>
+  <def name="nsResCpuAvg"       value="1.3.6.1.4.1.3224.16.1.1.0"/>
+  <def name="nsResCpuLast1Min"  value="1.3.6.1.4.1.3224.16.1.2.0"/>
+  <def name="nsResCpuLast5Min"  value="1.3.6.1.4.1.3224.16.1.3.0"/>
+  <def name="nsResCpuLast15Min" value="1.3.6.1.4.1.3224.16.1.4.0"/>
+
+  <def name="nsResMemAllocate"  value="1.3.6.1.4.1.3224.16.2.1.0"/>
+  <def name="nsResMemLeft"      value="1.3.6.1.4.1.3224.16.2.2.0"/>
+  <def name="nsResMemFrag"      value="1.3.6.1.4.1.3224.16.2.3.0"/>
+
+  <!-- Active Sessions Does not appear to be supported -->
+  <def name="nsResSessActive"      value="1.3.6.1.4.1.3224.16.3.1.0"/>
+
+  <def name="nsResSessAllocate"    value="1.3.6.1.4.1.3224.16.3.2.0"/>
+  <def name="nsResSessMaxium"      value="1.3.6.1.4.1.3224.16.3.3.0"/>
+  <def name="nsResSessFailed"      value="1.3.6.1.4.1.3224.16.3.4.0"/>
+</definitions>
+
+<datasources>
+
+  <template name="netscreen-cpu-stats">
+    <subtree name="NetScreen_CPU">
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_netscreen_CPU.rrd"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="graph-upper-limit" value="100"/>
+      <param name="vertical-label"  value="Percent"/>
+      <leaf name="CpuAvg">
+        <param name="comment"      value="Average CPU Utilization"/>
+        <param name="rrd-ds"       value="CpuAvg"/>
+        <param name="snmp-object"  value="$nsResCpuAvg"/>
+        <param name="graph-legend" value="Average CPU"/>
+      </leaf>
+      <leaf name="Cpu1Min">
+        <param name="comment"      value="One Minute CPU Utilization"/>
+        <param name="rrd-ds"       value="Cpu1Min"/>
+        <param name="snmp-object"  value="$nsResCpuLast1Min"/>
+        <param name="graph-legend" value="1-minute CPU"/>
+      </leaf>
+      <leaf name="Cpu5Min">
+        <param name="comment"      value="Five Minute CPU Utilization"/>
+        <param name="rrd-ds"       value="Cpu5Min"/>
+        <param name="snmp-object"  value="$nsResCpuLast5Min"/>
+        <param name="graph-legend" value="5-minute CPU"/>
+      </leaf>
+      <leaf name="Cpu15Min">
+        <param name="comment"      value="Fifteen Minute CPU Utilization"/>
+        <param name="rrd-ds"       value="Cpu15Min"/>
+        <param name="snmp-object"  value="$nsResCpuLast15Min"/>
+        <param name="graph-legend" value="15-minute CPU"/>
+      </leaf>
+    </subtree>
+  </template>
+
+  <template name="netscreen-memory-stats">
+    <subtree name="NetScreen_Memory">
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_netscreen_memory.rrd"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="vertical-label"  value="Bytes"/>
+      <leaf name="Allocated_Memory">
+        <param name="comment"      value="Memory Used"/>
+        <param name="rrd-ds"       value="Allocated"/>
+        <param name="snmp-object"  value="$nsResMemAllocate"/>
+        <param name="graph-legend" value="Memory Used"/>
+      </leaf>
+      <leaf name="Free_Memory">
+        <param name="comment"      value="Memory Free"/>
+        <param name="rrd-ds"       value="Free"/>
+        <param name="snmp-object"  value="$nsResMemAllocate"/>
+        <param name="graph-legend" value="Memory Free"/>
+      </leaf>
+      <leaf name="Fragmented_Memory">
+        <param name="comment"      value="Memory Fragments"/>
+        <param name="rrd-ds"       value="Fragments"/>
+        <param name="snmp-object"  value="$nsResMemFrag"/>
+        <param name="graph-legend" value="Memory Fragments"/>
+      </leaf>
+    </subtree>
+  </template>
+
+  <template name="netscreen-sessions-stats">
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_netscreen_sessions.rrd"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="vertical-label" value="sessions"/>
+      <leaf name="Allocated_Sessions">
+        <param name="comment"      value="Allocated Sessions"/>
+        <param name="rrd-ds"       value="allocate_sessions"/>
+        <param name="snmp-object"  value="$nsResSessAllocate"/>
+        <param name="graph-legend" value="Sessions Allocated"/>
+      </leaf>
+      <leaf name="Failed_Sessions">
+        <param name="comment"      value="Failed Sessions"/>
+        <param name="rrd-ds"       value="failed_sessions"/>
+        <param name="snmp-object"  value="$nsResSessFailed"/>
+        <param name="graph-legend" value="Sessions Failed"/>
+      </leaf>
+  </template>
+
+</datasources>
+
+</configuration>

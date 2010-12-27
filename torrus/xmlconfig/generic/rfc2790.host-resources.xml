@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2003 Shawn Ferry, Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+   Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+  Authors: Shawn Ferry, Stanislav Sinyagin
+  Vendor: HOST-RESOURCES-MIB
+
+  $Id: rfc2790.host-resources.xml,v 1.1 2010-12-27 00:04:31 ivan Exp $
+  @(#) 10/18/03 rfc2790.host-resources.xml 1.10 (10/18/03 19:24:09) sferry
+-->
+<!--
+
+    NOTE:    Graphing of storage data is not working as expected.
+
+-->
+<!--
+    Generic MIB definitions and templates for:
+
+        The templates defined in this file should work with any
+        snmp implementation supporting:
+
+        HOST-RESOURCES-MIB (RFC 2790)
+    -->
+<configuration>
+  <definitions>
+    <!-- HOST-RESOURCES-MIB -->
+    <def name="hrSystemUptime"           value="1.3.6.1.2.1.25.1.1.0"/>
+    <def name="hrSystemNumUsers"         value="1.3.6.1.2.1.25.1.5.0"/>
+    <def name="hrSystemProcesses"        value="1.3.6.1.2.1.25.1.6.0"/>
+    <def name="hrSystemMaxProcesses"     value="1.3.6.1.2.1.25.1.7.0"/>
+    <def name="hrMemorySize"             value="1.3.6.1.2.1.25.2.2.0"/>
+    <!--  HOST-RESOURCES-MIB hrStorageTable -->
+    <def name="hrStorageDescr"           value="1.3.6.1.2.1.25.2.3.1.3"/>
+    <!-- The size in bytes of each allocated unit -->
+    <def name="hrStorageAllocationUnits" value="1.3.6.1.2.1.25.2.3.1.4"/>
+    <!-- Size in Allocation units -->
+    <def name="hrStorageSize"            value="1.3.6.1.2.1.25.2.3.1.5"/>
+    <!-- Size in Allocation units -->
+    <def name="hrStorageUsed"            value="1.3.6.1.2.1.25.2.3.1.6"/>
+    <def name="hrStorageAllocationFailures" value="1.3.6.1.2.1.25.2.3.1.7"/>
+    <def name="hrStorage_IDX"
+         value="M($hrStorageDescr,%storage-description%)"/>
+  </definitions>
+
+  <datasources>
+
+    <template name="hr-system-performance-subtree">
+      <param name="comment"    value="System, CPU and memory statistics" />
+      <param name="devdiscover-nodetype"
+                               value="RFC2790_HOST_RESOURCES::sysPerf" />
+      <param name="rrd-hwpredict" value="disabled" />
+    </template>
+    
+    <template name="hr-system-uptime">
+      <leaf name="hrSystemUptime">
+        <param name="data-file"       value="%system-id%_hrSysUptime.rrd"/>
+        <param name="leaf-type"         value="rrd-def"/>
+        <param name="hidden"            value="yes"/>
+        <param name="snmp-object"       value="$hrSystemUptime"/>
+        <param name="rrd-ds"            value="hrSystemUptime"/>
+        <param name="rrd-cf"            value="LAST"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment"
+            value="System Uptime in Ticks (1/100th Second)"/>
+        <param name="graph-legend"      value="Uptime in Ticks"/>
+        <param name="vertical-label"    value="Ticks"/>
+        <param name="rrd-create-rra"    value="RRA:LAST:0:1:10080"/>
+      </leaf>
+      <leaf name="Uptime">
+        <param name="vertical-label" value="Days"/>
+        <param name="comment" value="Uptime"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="Days"/>
+        <!-- Days -->
+        <param name="ds-expr-Days"> 
+          {hrSystemUptime},8640000,/
+        </param>
+        <param name="graph-legend-Days" value="Days"/>
+        <param name="line-style-Days" value="AREA"/>
+        <param name="line-color-Days" value="##green"/>
+        <param name="line-order-Days" value="3"/>
+      </leaf>
+    </template>
+
+    <template name="hr-system-num-users">
+        <leaf name="Users">
+        <param name="data-file"   value="%system-id%_hrSystem.rrd"/>
+        <param name="leaf-type"         value="rrd-def"/>
+        <param name="snmp-object"       value="$hrSystemNumUsers"/>
+        <param name="rrd-ds"            value="hrSystemNumUsers"/>
+        <param name="rrd-cf"            value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment"      value="Number of Users on the System"/>
+        <param name="vertical-label"    value="Count"/>
+        <param name="graph-legend"      value="Users"/>
+        <param name="graph-lower-limit" value="0" />
+      </leaf>
+    </template>
+
+    <template name="hr-system-processes">
+      <leaf name="Processes">
+        <param name="data-file"   value="%system-id%_hrSystem.rrd"/>
+        <param name="leaf-type"         value="rrd-def"/>
+        <param name="snmp-object"       value="$hrSystemProcesses"/>
+        <param name="rrd-ds"            value="hrSystemProcesses"/>
+        <param name="rrd-cf"            value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment"           value="Number of Processes"/>
+        <param name="graph-legend"      value="Processes"/>
+        <param name="vertical-label"    value="Count"/>
+        <param name="graph-lower-limit" value="0" />
+      </leaf>
+    </template>
+
+    <template name="hr-storage-subtree">
+      <param name="comment"    value="Storage Devices Usage" />
+      <param name="devdiscover-nodetype"
+                               value="RFC2790_HOST_RESOURCES::storageUsed" />
+      <param name="collector-timeoffset-hashstring"
+                               value="%system-id%:%storage-nick%" />
+      <param name="rrd-hwpredict" value="disabled" />
+    </template>
+        
+    <template name="hr-storage-usage">
+      <param name="data-file" value="%system-id%_%storage-nick%_usage.rrd"/>
+      <param name="comment"           value="Storage space used"/>
+      <param name="leaf-type"         value="rrd-def"/>
+      <param name="snmp-object"       value="$hrStorageUsed.$hrStorage_IDX"/>
+      <param name="rrd-scaling-base"  value="1024"/>
+      <param name="rrd-ds"            value="hrStorageUsed"/>
+      <param name="rrd-cf"            value="AVERAGE"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="graph-legend"      value="Space Used"/>
+      <param name="vertical-label"    value="Bytes"/>
+      <param name="graph-lower-limit" value="0" />
+    </template>
+
+  </datasources>
+</configuration>

@@ -1,0 +1,124 @@
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_nodeid.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+nodeid - Torrus utility
+
+=head1 SYNOPSIS
+
+B<torrus nodeid> --tree=I<TREENAME> --cmd=CMD I<options...>
+
+=head1 DESCRIPTION
+
+This command provides a way to integrate Torrus with external OSS systems.
+It operates with I<nodeid>, a unique identifier for Torrus datasource
+subtrees and leaves.
+
+The command prints the data on the standard output in JSON data format. 
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--tree=TREE>
+
+[Mandatory] Defines the datasouerce tree.
+
+
+=item B<--cmd=CMD>
+
+[Mandatory] Defines the action command. The following commands are supported:
+
+=over 8
+
+=item * info
+
+Prints information about the nodeid. Requires B<--nodeid>.
+
+=item * search
+
+Performs a prefix or substring search on node IDs and prints the results.
+Requires B<--prefix> or B<--substring>.
+
+=item * render
+
+Renders a specified datasource node and prints the resulting MIME type and the
+file name. Requires B<--nodeid> and B<--view>. Optional B<--out> defines
+a file name to copy the output to.
+
+=back
+
+
+=item B<--nodeid=NODEID>
+
+Specifies the Node ID string for the commands I<info> and I<render>.
+
+
+=item B<--details>
+
+Toggles verbose output for the commands I<info> and I<search>.
+
+
+=item B<--prefix=STR>
+
+Specifies the prefix search string for the command I<search>.
+
+
+=item B<--substring=STR>
+
+Specifies the search substring for the command I<search>.
+
+
+=item B<--view=VIEW>
+
+Specifies the view name for the command I<render>. The following views are
+defined by standard Torrus XML files and render a PNG graph:
+C<short>, C<last24h-small>, C<last24h>, C<lastweek>,
+C<lastmonth>, C<lastyear>. The following views are printing the datasource
+value in a text format: C<rrd-print-daily>, C<rrd-print-last>.
+
+
+=item B<--out=FILE>
+
+If defined, instructs the utility to copy the rendered data into a
+specified file. Otherwise the file is created in the standard renderer's cache
+directory.
+
+
+=item B<--help>
+
+Displays a help message.
+
+=back
+
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

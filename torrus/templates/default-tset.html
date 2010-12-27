@@ -1,0 +1,56 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE setdate %]
+[% comment = xmlnorm(param(token, 'comment')) %]
+[% INCLUDE htmlstart title=comment contentClass="SingleColumnContent" %]
+
+<H1>[% comment %]</H1>
+
+[% INCLUDE treename %]
+
+[% INCLUDE variables %]
+
+[% SET pos = 1; SET global.hwpredict = 0 %]
+[% FOREACH node = sortTokens(tsetMembers(token)) %]
+  [% IF pos == 1 %]
+<DIV CLASS="ShortLeft">
+  [% ELSE %]
+<DIV CLASS="ShortRight">
+  [% END %]
+  [% nodename=nodeParam(node,'descriptive-nickname');
+     IF nodename=='';
+       nodename=path(node);
+     END;
+     INCLUDE shortgraph
+        token=node
+        nodename=nodename
+        comment=nodeParam(parent(node),'comment',1)
+   %]
+</DIV>
+  [% IF pos == 1 %]
+    [% SET pos = 2 %]
+  [% ELSE %]
+    [% SET pos = 1 %]
+  [% END %]
+[% END %]
+
+<DIV CLASS="BottomShortcuts">
+[%
+  IF global.hwpredict;
+    IF variables.NOHW;
+      INCLUDE shortcut url=url(token, view, 'NOHW', '')
+                       text="Enable Holt-Winters"
+                       title="Switch Holt-Winters prediction boundaries";
+    ELSE;
+      INCLUDE shortcut url=url(token, view, 'NOHW', 1)
+                       text="Disable Holt-Winters"
+                       title="Switch Holt-Winters prediction boundaries";
+    END;
+  END
+%]
+
+[% INCLUDE shortcut url=url('SS') text="Back to tokensets list"
+                    title="List of non-empty tokensets"%]
+</DIV>
+
+[% INCLUDE tsetbottomline %]
+[% INCLUDE htmlend %]

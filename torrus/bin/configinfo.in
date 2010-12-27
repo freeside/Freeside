@@ -1,0 +1,166 @@
+#!@PERL@ -w
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: configinfo.in,v 1.1 2010-12-27 00:04:03 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use BerkeleyDB;
+
+use Torrus::ConfigTree;
+use Torrus::TimeStamp;
+use Torrus::SiteConfig;
+use Torrus::Log;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+&Torrus::DB::setSafeSignalHandlers();
+
+Torrus::TimeStamp::init();
+
+my @tree_names = Torrus::SiteConfig::listTreeNames();
+
+
+printf("Torrus version %s\n", '@VERSION@');
+printf("%s\n", DB_VERSION_STRING);
+printf("BerkeleyDB.pm version %s\n", $BerkeleyDB::VERSION);
+printf("\n");
+
+printf("Datasource trees: %d\n", scalar( @tree_names ) );
+printf("Tree names: %s\n", join(', ', @tree_names) );
+printf("\n");
+
+foreach my $tree ( @tree_names )
+{
+    &Torrus::DB::checkInterrupted();
+    
+    printf("Tree: %s\n", $tree );
+
+    my $config_tree = new Torrus::ConfigTree( -TreeName => $tree );
+    if( not defined($config_tree) )
+    {
+        print("Configuration is not ready\n");
+    }
+    else
+    {
+        my $stats = {};
+        foreach my $name ( 'leaves', 'collectorLeaves', 'monitorLeaves',
+                           'holtwintersLeaves', 'subtrees',
+                           'maxSubtreePath', 'maxSubtreeSize', 'views',
+                           'monitors', 'actions', 'compiled' )
+        {
+            $stats->{$name} = 0;
+        }
+
+        collectStats( $config_tree, $stats );
+        collectOtherStats( $config_tree, $stats );
+
+        printf("Leaves: %d\n",                $stats->{'leaves'} );
+        printf("Collector leaves: %d\n",      $stats->{'collectorLeaves'} );
+        printf("Monitor leaves: %d\n",        $stats->{'monitorLeaves'} );
+        printf("Holt-Winters leaves: %d\n",   $stats->{'holtwintersLeaves'} );
+        printf("Subtrees: %d\n",              $stats->{'subtrees'} );
+        printf("Largest subtree: %s\n",       $stats->{'maxSubtreePath'} );
+        printf("Largest subtree size: %d\n",  $stats->{'maxSubtreeSize'} );
+        printf("Views: %d\n",                 $stats->{'views'} );
+        printf("Monitors: %d\n",              $stats->{'monitors'} );
+        printf("Actions: %d\n",               $stats->{'actions'} );
+        printf("Last compiled: %s\n",
+               scalar(localtime($stats->{'compiled'})));
+        printf("\n");
+    }
+}
+
+
+sub collectStats
+{
+    my $config_tree = shift;
+    my $stats = shift;
+    my $token = shift;
+
+    &Torrus::DB::checkInterrupted();
+
+    if( not defined( $token ) )
+    {
+        $token = $config_tree->token('/');
+    }
+
+    my @children = $config_tree->getChildren( $token );
+
+    my $nChildren = scalar( @children );
+    if( not defined( $stats->{'maxSubtreeSize'} ) or
+        $stats->{'maxSubtreeSize'} < $nChildren )
+    {
+        $stats->{'maxSubtreeSize'} = $nChildren;
+        $stats->{'maxSubtreePath'} = $config_tree->path( $token );
+    }
+
+    foreach my $ctoken ( @children )
+    {
+        if( $config_tree->isSubtree( $ctoken ) )
+        {
+            $stats->{'subtrees'}++;
+            collectStats( $config_tree, $stats, $ctoken );
+        }
+        elsif( $config_tree->isLeaf( $ctoken ) )
+        {
+            $stats->{'leaves'}++;
+            if( $config_tree->getNodeParam( $ctoken, 'ds-type' )
+                eq 'collector' )
+            {
+                $stats->{'collectorLeaves'}++;
+            }
+            if( defined( $config_tree->getNodeParam( $ctoken, 'monitor' ) ) )
+            {
+                $stats->{'monitorLeaves'}++;
+            }
+            my $val = $config_tree->getNodeParam( $ctoken, 'rrd-hwpredict' );
+            if( defined( $val ) and $val eq 'enabled' )
+            {
+                $stats->{'holtwintersLeaves'}++;
+            }            
+        }
+    }
+}
+
+
+sub collectOtherStats
+{
+    my $config_tree = shift;
+    my $stats = shift;
+
+    my $n = scalar( $config_tree->getViewNames() );
+    $stats->{'views'} = $n if defined( $n );
+
+    $n = scalar( $config_tree->getMonitorNames() );
+    $stats->{'monitors'} = $n if defined( $n );
+
+    $n = scalar( $config_tree->getActionNames() );
+    $stats->{'actions'} = $n if defined( $n );
+
+    $n = $config_tree->getTimestamp();
+    $stats->{'compiled'} = $n if defined( $n );
+}
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

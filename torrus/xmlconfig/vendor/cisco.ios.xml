@@ -1,0 +1,941 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cisco.ios.xml,v 1.1 2010-12-27 00:04:13 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!-- Cisco IOS specific definitions -->
+
+<configuration>
+
+<definitions>
+
+  <!-- v1/OLD-CISCO-INTERFACES-MIB:lifTable -->
+  <def name="locIfInBitsSec"    value="1.3.6.1.4.1.9.2.2.1.1.6" />
+  <def name="locIfOutBitsSec"   value="1.3.6.1.4.1.9.2.2.1.1.8" />
+  <def name="locIfLoad"         value="1.3.6.1.4.1.9.2.2.1.1.24" />
+
+  <!-- CISCO-RTTMON-MIB -->
+  <def name="rttMonLatestRttOperCompletionTime"
+                          value="1.3.6.1.4.1.9.9.42.1.2.10.1.1" />
+
+  <!-- OLD-CISCO-MEMORY-MIB -->
+  <def name="bufferElFree"      value="1.3.6.1.4.1.9.2.1.9.0"/>
+  <def name="bufferElMax"       value="1.3.6.1.4.1.9.2.1.10.0"/>
+  <def name="bufferElHit"       value="1.3.6.1.4.1.9.2.1.11.0"/>
+  <def name="bufferElMiss"      value="1.3.6.1.4.1.9.2.1.12.0"/>
+  <def name="bufferElCreate"    value="1.3.6.1.4.1.9.2.1.13.0"/>
+  <def name="bufferSmSize"      value="1.3.6.1.4.1.9.2.1.14.0"/>
+  <def name="bufferSmTotal"     value="1.3.6.1.4.1.9.2.1.15.0"/>
+  <def name="bufferSmFree"      value="1.3.6.1.4.1.9.2.1.16.0"/>
+  <def name="bufferSmMax"       value="1.3.6.1.4.1.9.2.1.17.0"/>
+  <def name="bufferSmHit"       value="1.3.6.1.4.1.9.2.1.18.0"/>
+  <def name="bufferSmMiss"      value="1.3.6.1.4.1.9.2.1.19.0"/>
+  <def name="bufferSmTrim"      value="1.3.6.1.4.1.9.2.1.20.0"/>
+  <def name="bufferSmCreate"    value="1.3.6.1.4.1.9.2.1.21.0"/>
+  <def name="bufferMdSize"      value="1.3.6.1.4.1.9.2.1.22.0"/>
+  <def name="bufferMdTotal"     value="1.3.6.1.4.1.9.2.1.23.0"/>
+  <def name="bufferMdFree"      value="1.3.6.1.4.1.9.2.1.24.0"/>
+  <def name="bufferMdMax"       value="1.3.6.1.4.1.9.2.1.25.0"/>
+  <def name="bufferMdHit"       value="1.3.6.1.4.1.9.2.1.26.0"/>
+  <def name="bufferMdMiss"      value="1.3.6.1.4.1.9.2.1.27.0"/>
+  <def name="bufferMdTrim"      value="1.3.6.1.4.1.9.2.1.28.0"/>
+  <def name="bufferMdCreate"    value="1.3.6.1.4.1.9.2.1.29.0"/>
+  <def name="bufferBgSize"      value="1.3.6.1.4.1.9.2.1.30.0"/>
+  <def name="bufferBgTotal"     value="1.3.6.1.4.1.9.2.1.31.0"/>
+  <def name="bufferBgFree"      value="1.3.6.1.4.1.9.2.1.32.0"/>
+  <def name="bufferBgMax"       value="1.3.6.1.4.1.9.2.1.33.0"/>
+  <def name="bufferBgHit"       value="1.3.6.1.4.1.9.2.1.34.0"/>
+  <def name="bufferBgMiss"      value="1.3.6.1.4.1.9.2.1.35.0"/>
+  <def name="bufferBgTrim"      value="1.3.6.1.4.1.9.2.1.36.0"/>
+  <def name="bufferBgCreate"    value="1.3.6.1.4.1.9.2.1.37.0"/>
+  <def name="bufferLgSize"      value="1.3.6.1.4.1.9.2.1.38.0"/>
+  <def name="bufferLgTotal"     value="1.3.6.1.4.1.9.2.1.39.0"/>
+  <def name="bufferLgFree"      value="1.3.6.1.4.1.9.2.1.40.0"/>
+  <def name="bufferLgMax"       value="1.3.6.1.4.1.9.2.1.41.0"/>
+  <def name="bufferLgHit"       value="1.3.6.1.4.1.9.2.1.42.0"/>
+  <def name="bufferLgMiss"      value="1.3.6.1.4.1.9.2.1.43.0"/>
+  <def name="bufferLgTrim"      value="1.3.6.1.4.1.9.2.1.44.0"/>
+  <def name="bufferLgCreate"    value="1.3.6.1.4.1.9.2.1.45.0"/>
+  <def name="bufferFail"        value="1.3.6.1.4.1.9.2.1.46.0"/>
+  <def name="bufferNoMem"       value="1.3.6.1.4.1.9.2.1.47.0"/>
+  <def name="bufferHgSize"      value="1.3.6.1.4.1.9.2.1.62.0"/>
+  <def name="bufferHgTotal"     value="1.3.6.1.4.1.9.2.1.63.0"/>
+  <def name="bufferHgFree"      value="1.3.6.1.4.1.9.2.1.64.0"/>
+  <def name="bufferHgMax"       value="1.3.6.1.4.1.9.2.1.65.0"/>
+  <def name="bufferHgHit"       value="1.3.6.1.4.1.9.2.1.66.0"/>
+  <def name="bufferHgMiss"      value="1.3.6.1.4.1.9.2.1.67.0"/>
+  <def name="bufferHgTrim"      value="1.3.6.1.4.1.9.2.1.68.0"/>
+  <def name="bufferHgCreate"    value="1.3.6.1.4.1.9.2.1.69.0"/>
+
+  <!-- CISCO-IPSEC-FLOW-MONITOR-MIB -->
+  <def name="cipSecGlobalActiveTunnels"
+                                      value="1.3.6.1.4.1.9.9.171.1.3.1.1.0"/>
+  <def name="cipSecGlobalHcInOctets"  value="1.3.6.1.4.1.9.9.171.1.3.1.4.0"/>
+  <def name="cipSecGlobalInPkts"      value="1.3.6.1.4.1.9.9.171.1.3.1.9.0"/>
+  <def name="cipSecGlobalInDrops"     value="1.3.6.1.4.1.9.9.171.1.3.1.10.0"/>
+  <def name="cipSecGlobalHcOutOctets" value="1.3.6.1.4.1.9.9.171.1.3.1.17.0"/>
+  <def name="cipSecGlobalOutPkts"     value="1.3.6.1.4.1.9.9.171.1.3.1.22.0"/>
+  <def name="cipSecGlobalOutDrops"    value="1.3.6.1.4.1.9.9.171.1.3.1.23.0"/>
+
+  <!-- CISCO-BGP4-MIB -->
+  <def name="cbgpPeerAcceptedPrefixes"
+          value="1.3.6.1.4.1.9.9.187.1.2.4.1.1"/>
+          
+  <!-- CISCO-CAR-MIB -->
+  <def name="ccarStatCurBurst"
+          value="1.3.6.1.4.1.9.9.113.1.2.1.1.5"/>
+  <def name="ccarStatHCSwitchedPkts"
+          value="1.3.6.1.4.1.9.9.113.1.2.1.1.10"/>
+  <def name="ccarStatHCSwitchedBytes"
+          value="1.3.6.1.4.1.9.9.113.1.2.1.1.11"/>
+  <def name="ccarStatHCFilteredPkts"
+          value="1.3.6.1.4.1.9.9.113.1.2.1.1.12"/>
+  <def name="ccarStatHCFilteredBytes"
+          value="1.3.6.1.4.1.9.9.113.1.2.1.1.13"/>
+
+  <!-- CISCO-VPDN-MGMT-MIB -->
+  <def name="cvpdnSystemTunnelTotal"
+          value="1.3.6.1.4.1.9.10.24.1.1.4.1.2"/>
+  <def name="cvpdnSystemSessionTotal"
+          value="1.3.6.1.4.1.9.10.24.1.1.4.1.3"/>
+  <def name="cvpdnSystemDeniedUsersTotal"
+          value="1.3.6.1.4.1.9.10.24.1.1.4.1.4"/>
+
+</definitions>
+
+<datasources>
+
+  <template name="cisco-interface-counters">
+
+    <leaf name="InOut_bps">
+      <param name="comment" value="Input and Output bits per second graphs" />
+      <param name="precedence"       value="1000" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{locIfInBitsSec}" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="AREA" />
+      <param name="line-color-in"    value="#00FF00" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{locIfOutBitsSec}" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="LINE2" />
+      <param name="line-color-out"   value="#0000FF" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+
+    <leaf name="ifInErrors">
+      <param name="snmp-object"       value="$ifInErrors.$IFIDX_DESCR" />
+      <param name="rrd-ds"            value="ifInErrors" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="rrd-hwpredict"     value="disabled" />
+      <param name="comment"
+             value="Input error counter for the interface" />
+      <param name="graph-legend"      value="Errors in" />
+    </leaf>
+
+    <leaf name="ifOutErrors">
+      <param name="snmp-object"       value="$ifOutErrors.$IFIDX_DESCR" />
+      <param name="rrd-ds"            value="ifOutErrors" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="rrd-hwpredict"     value="disabled" />
+      <param name="comment"
+             value="Output error counter for the interface" />
+      <param name="graph-legend"      value="Errors out" />
+    </leaf>
+
+    <leaf name="locIfInBitsSec">
+      <param name="snmp-object"       value="$locIfInBitsSec.$IFIDX_DESCR" />
+      <param name="rrd-ds" value="locIfInBitsSec" />
+      <param name="rrd-create-dstype" value="GAUGE" />
+      <param name="comment"
+             value="5-minute average of input bits per second"/>
+      <param name="graph-legend"      value="Bits in" />
+    </leaf>
+
+    <leaf name="locIfOutBitsSec">
+      <param name="snmp-object"       value="$locIfOutBitsSec.$IFIDX_DESCR" />
+      <param name="rrd-ds"            value="locIfOutBitsSec" />
+      <param name="rrd-create-dstype" value="GAUGE" />
+      <param name="comment"
+             value="5-minute average of output bits per second"/>
+      <param name="graph-legend"      value="Bits out" />
+    </leaf>
+
+    <leaf name="locIfLoad">
+      <param name="snmp-object"       value="$locIfLoad.$IFIDX_DESCR" />
+      <param name="rrd-ds"            value="locIfLoad" />
+      <param name="rrd-create-dstype" value="GAUGE" />
+      <param name="comment"
+             value="The loading factor of the interface" />
+      <param name="graph-legend"      value="Interface load" />
+    </leaf>
+
+  </template>
+
+  <!-- Read-only view to those leaves updated by
+       cisco-interface-counters  template -->
+
+  <template name="read-cisco-interface-counters">
+
+    <!-- You must specify data-file and data-dir parameters -->
+
+    <leaf name="InOut_bps">
+      <param name="comment" value="Input and Output bits per second graphs" />
+      <param name="precedence"       value="1000" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{InBps}" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="AREA" />
+      <param name="line-color-in"    value="#00FF00" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{OutBps}" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="LINE2" />
+      <param name="line-color-out"   value="#0000FF" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+
+    <leaf name="InErrors">
+      <param name="ds-type"           value="rrd-file" />
+      <param name="leaf-type"         value="rrd-def" />
+      <param name="rrd-cf"            value="AVERAGE" />
+      <param name="rrd-ds"            value="ifInErrors" />
+      <param name="rrd-hwpredict"     value="disabled" />
+      <param name="comment"
+             value="Input error counter for the interface" />
+      <param name="graph-legend"      value="Errors in" />
+    </leaf>
+
+    <leaf name="OutErrors">
+      <param name="ds-type"           value="rrd-file" />
+      <param name="leaf-type"         value="rrd-def" />
+      <param name="rrd-cf"            value="AVERAGE" />
+      <param name="rrd-ds"            value="ifOutErrors" />
+      <param name="rrd-hwpredict"     value="disabled" />
+      <param name="comment"
+             value="Output error counter for the interface" />
+      <param name="graph-legend"      value="Errors out" />
+    </leaf>
+
+    <leaf name="InBps">
+      <param name="ds-type"           value="rrd-file" />
+      <param name="leaf-type"         value="rrd-def" />
+      <param name="rrd-cf"            value="AVERAGE" />
+      <param name="rrd-ds"            value="locIfInBitsSec" />
+      <param name="comment"
+             value="5-minute average of input bits per second"/>
+      <param name="graph-legend"      value="Bits in" />
+    </leaf>
+
+    <leaf name="OutBps">
+      <param name="ds-type"           value="rrd-file" />
+      <param name="leaf-type"         value="rrd-def" />
+      <param name="rrd-cf"            value="AVERAGE" />
+      <param name="rrd-ds"            value="locIfOutBitsSec" />
+      <param name="comment"
+             value="5-minute average of output bits per second"/>
+      <param name="graph-legend"      value="Bits out" />
+    </leaf>
+
+  </template>
+
+  <!-- Common definitions for SAA/RTTMON subtree -->
+  <template name="cisco-saa-subtree">
+    <param name="comment"      value="Cisco Service Assurance Agent"/>
+    <param name="precedence"   value="-400" />
+    
+    <param name="has-overview-shortcuts"    value="yes"/>
+    <param name="overview-shortcuts"        value="rt"/>
+    <param name="overview-subleave-name-rt"    value="LatestCompletionTime"/>
+    <param name="overview-shortcut-text-rt"
+           value="All responce times"/>
+    <param name="overview-shortcut-title-rt"
+           value="Show all responce time graphs in one page"/>
+    <param name="overview-page-title-rt"
+           value="Responce Time Graphs"/>
+           
+    <param name="rrd-hwpredict"     value="disabled" />
+  </template>
+
+  <!-- RTT Echo statitsics -->
+  <template name="cisco-rtt-echo-subtree">
+    <leaf name="LatestCompletionTime">
+      <param name="snmp-object"
+             value="$rttMonLatestRttOperCompletionTime.%rtt-index%" />
+      <param name="rrd-ds"            value="complTime" />
+      <param name="rrd-create-dstype" value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_rtt_%rtt-index%.rrd" />
+      <param name="graph-legend"      value="rtr %rtt-index%" />
+      <param name="vertical-label"    value="milliseconds" />
+      <param name="graph-lower-limit" value="0"/>
+    </leaf>
+  </template>
+
+  <!-- OLD-CISCO-MEMORY-MIB templates -->
+
+  <template name="old-cisco-memory-buffers">
+    <subtree name="Buffer_Usage">
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="rrd-hwpredict"     value="disabled" />
+      <param name="data-file"         value="%system-id%_cisco-buffers.rrd" />
+      <param name="comment"           value="Buffer usage statistics" />
+      <param name="precedence"        value="-100" />
+      <leaf name="Buffer_Stats">
+        <param name="precedence"        value="1000" />
+        <param name="comment" value="Hits, Misses and Failures"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="afail,mfail,hit,miss"/>
+        <!-- afail -->
+        <param name="ds-expr-afail" value="{Allocation_Failures}"/>
+        <param name="graph-legend-afail" value="Allocation Failures"/>
+        <param name="line-style-afail" value="LINE2"/>
+        <param name="line-color-afail" value="##red"/>
+        <param name="line-order-afail" value="4"/>
+        <!-- mfail -->
+        <param name="ds-expr-mfail" value="{No_Memory_Failures}"/>
+        <param name="graph-legend-mfail" value="No Memory Failures"/>
+        <param name="line-style-mfail" value="LINE2"/>
+        <param name="line-color-mfail" value="##red25"/>
+        <param name="line-order-mfail" value="3"/>
+        <!-- miss -->
+        <param name="ds-expr-miss" value="{Misses}"/>
+        <param name="graph-legend-miss" value="Misses"/>
+        <param name="line-style-miss" value="LINE2"/>
+        <param name="line-color-miss" value="##red75"/>
+        <param name="line-order-miss" value="2"/>
+        <!-- hit -->
+        <param name="ds-expr-hit" value="{Hits}"/>
+        <param name="graph-legend-hit" value="Hits"/>
+        <param name="line-style-hit" value="LINE2"/>
+        <param name="line-color-hit" value="##blue"/>
+        <param name="line-order-hit" value="1"/>
+      </leaf>
+      <leaf name="Allocation_Failures">
+        <param name="snmp-object"     value="$bufferFail"/>
+        <param name="rrd-ds"          value="bufferFail" />
+        <param name="comment" value="Number of Buffer Allocation Failures"/>
+        <param name="graph-legend"    value="Allocation Failures" />
+        <param name="precedence"        value="-100" />
+        <param name="vertical-label"    value="fps"/>
+      </leaf>
+      <leaf name="No_Memory_Failures">
+        <param name="snmp-object"     value="$bufferNoMem"/>
+        <param name="rrd-ds"          value="bufferNoMem" />
+        <param name="comment">
+          Number of Buffer Create Failures due to No Memory
+        </param>
+        <param name="graph-legend"    value="No Mem Failures" />
+        <param name="precedence"        value="-100" />
+        <param name="vertical-label"    value="fps"/>
+      </leaf>
+      <leaf name="Free">
+        <param name="precedence"        value="-200" />
+        <param name="rrd-create-dstype" value="GAUGE" />
+        <param name="snmp-object"     value="$bufferElFree"/>
+        <param name="rrd-ds"          value="bufferElFree" />
+        <param name="comment" value="Number of Free Buffers"/>
+        <param name="graph-legend"    value="Free Buffers" />
+        <param name="vertical-label"    value="Total Free Buffers"/>
+      </leaf>
+      <leaf name="Max">
+        <param name="precedence"        value="-200" />
+        <param name="rrd-create-dstype" value="GAUGE" />
+        <param name="snmp-object"     value="$bufferElMax"/>
+        <param name="rrd-ds"          value="bufferElMax" />
+        <param name="comment" value="Max Buffers"/>
+        <param name="graph-legend"    value="Max Buffers" />
+        <param name="vertical-label"    value="Total Max Buffers"/>
+      </leaf>
+      <leaf name="Hits">
+        <param name="precedence"        value="-200" />
+        <param name="snmp-object"     value="$bufferElHit"/>
+        <param name="rrd-ds"          value="bufferElHit" />
+        <param name="comment" value="Buffer Hits"/>
+        <param name="graph-legend"    value="Buffer Hits" />
+        <param name="vertical-label"    value="Total hps"/>
+      </leaf>
+      <leaf name="Misses">
+      <param name="precedence"        value="-200" />
+        <param name="snmp-object"     value="$bufferElMiss"/>
+        <param name="rrd-ds"          value="bufferElMiss" />
+        <param name="comment" value="Buffer Misses"/>
+        <param name="graph-legend"    value="Buffer Misses" />
+        <param name="vertical-label"    value="Total mps"/>
+      </leaf>
+      <leaf name="Creates">
+      <param name="precedence"        value="-200" />
+        <param name="snmp-object"     value="$bufferElCreate"/>
+        <param name="rrd-ds"          value="bufferElCreate" />
+        <param name="comment" value="Buffer Creates"/>
+        <param name="graph-legend"    value="Buffer Creates" />
+        <param name="vertical-label"    value="Total cps"/>
+      </leaf>
+      <subtree name="Small_Buffers">
+        <param name="precedence"        value="-300" />
+        <leaf name="Free">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferSmFree"/>
+          <param name="rrd-ds"          value="bufferSmFree" />
+          <param name="comment" value="Number of Free Small Buffers"/>
+          <param name="graph-legend"    value="Free Small Buffers" />
+          <param name="vertical-label"    value="Free Buffers"/>
+        </leaf>
+        <leaf name="Max">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferSmMax"/>
+          <param name="rrd-ds"          value="bufferSmMax" />
+          <param name="comment" value="Max Small Buffers"/>
+          <param name="graph-legend"    value="Max Small Buffers" />
+          <param name="vertical-label"    value="Max Buffers"/>
+        </leaf>
+        <leaf name="Hits">
+          <param name="snmp-object"     value="$bufferSmHit"/>
+          <param name="rrd-ds"          value="bufferSmHit" />
+          <param name="comment" value="Small Buffer Hits"/>
+          <param name="graph-legend"    value="Small Buffer Hits" />
+          <param name="vertical-label"    value="hps"/>
+        </leaf>
+        <leaf name="Misses">
+          <param name="snmp-object"     value="$bufferSmMiss"/>
+          <param name="rrd-ds"          value="bufferSmMiss" />
+          <param name="comment" value="Small Buffer Misses"/>
+          <param name="graph-legend"    value="Small Buffer Misses" />
+          <param name="vertical-label"    value="mps"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="snmp-object"     value="$bufferSmCreate"/>
+          <param name="rrd-ds"          value="bufferSmCreate" />
+          <param name="comment" value="Small Buffer Creates"/>
+          <param name="graph-legend"    value="Small Buffer Creates" />
+          <param name="vertical-label"    value="cps"/>
+        </leaf>
+        <leaf name="Trims">
+          <param name="snmp-object"     value="$bufferSmTrim"/>
+          <param name="rrd-ds"          value="bufferSmTrim" />
+          <param name="comment" value="Small Buffer Trims"/>
+          <param name="graph-legend"    value="Small Buffer Trims" />
+          <param name="vertical-label"    value="tps"/>
+        </leaf>
+      </subtree>
+      <subtree name="Medium_Buffers">
+        <param name="precedence"        value="-400" />
+        <leaf name="Free">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferMdFree"/>
+          <param name="rrd-ds"          value="bufferMdFree" />
+          <param name="comment" value="Number of Free Medium Buffers"/>
+          <param name="graph-legend"    value="Free Medium Buffers" />
+          <param name="vertical-label"    value="Count"/>
+        </leaf>
+        <leaf name="Max">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferMdMax"/>
+          <param name="rrd-ds"          value="bufferMdMax" />
+          <param name="comment" value="Max Medium Buffers"/>
+          <param name="graph-legend"    value="Max Medium Buffers" />
+        </leaf>
+        <leaf name="Hits">
+          <param name="snmp-object"     value="$bufferMdHit"/>
+          <param name="rrd-ds"          value="bufferMdHit" />
+          <param name="comment" value="Medium Buffer Hits"/>
+          <param name="graph-legend"    value="Medium Buffer Hits" />
+          <param name="vertical-label"    value="hps"/>
+        </leaf>
+        <leaf name="Misses">
+          <param name="snmp-object"     value="$bufferMdMiss"/>
+          <param name="rrd-ds"          value="bufferMdMiss" />
+          <param name="comment" value="Medium Buffer Misses"/>
+          <param name="graph-legend"    value="Medium Buffer Misses" />
+          <param name="vertical-label"    value="mps"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="snmp-object"     value="$bufferMdCreate"/>
+          <param name="rrd-ds"          value="bufferMdCreate" />
+          <param name="comment" value="Medium Buffer Creates"/>
+          <param name="graph-legend"    value="Medium Buffer Creates" />
+          <param name="vertical-label"    value="cps"/>
+        </leaf>
+        <leaf name="Trims">
+          <param name="snmp-object"     value="$bufferMdTrim"/>
+          <param name="rrd-ds"          value="bufferMdTrim" />
+          <param name="comment" value="Medium Buffer Trims"/>
+          <param name="graph-legend"    value="Medium Buffer Trims" />
+          <param name="vertical-label"    value="tps"/>
+        </leaf>
+      </subtree>
+      <subtree name="Big_Buffers">
+        <param name="precedence"        value="-500" />
+        <leaf name="Free">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferBgFree"/>
+          <param name="rrd-ds"          value="bufferBgFree" />
+          <param name="comment" value="Number of Free Big Buffers"/>
+          <param name="graph-legend"    value="Free Big Buffers" />
+          <param name="vertical-label"    value="Count"/>
+        </leaf>
+        <leaf name="Max">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferBgMax"/>
+          <param name="rrd-ds"          value="bufferBgMax" />
+          <param name="comment" value="Max Big Buffers"/>
+          <param name="graph-legend"    value="Max Big Buffers" />
+          <param name="vertical-label"    value="Count"/>
+        </leaf>
+        <leaf name="Hits">
+          <param name="snmp-object"     value="$bufferBgHit"/>
+          <param name="rrd-ds"          value="bufferBgHit" />
+          <param name="comment" value="Big Buffer Hits"/>
+          <param name="graph-legend"    value="Big Buffer Hits" />
+          <param name="vertical-label"    value="hps"/>
+        </leaf>
+        <leaf name="Misses">
+          <param name="snmp-object"     value="$bufferBgMiss"/>
+          <param name="rrd-ds"          value="bufferBgMiss" />
+          <param name="comment" value="Big Buffer Misses"/>
+          <param name="graph-legend"    value="Big Buffer Misses" />
+          <param name="vertical-label"    value="mps"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="snmp-object"     value="$bufferBgCreate"/>
+          <param name="rrd-ds"          value="bufferBgCreate" />
+          <param name="comment" value="Big Buffer Creates"/>
+          <param name="graph-legend"    value="Big Buffer Creates" />
+          <param name="vertical-label"    value="cps"/>
+        </leaf>
+        <leaf name="Trims">
+          <param name="snmp-object"     value="$bufferBgTrim"/>
+          <param name="rrd-ds"          value="bufferBgTrim" />
+          <param name="comment" value="Big Buffer Trims"/>
+          <param name="graph-legend"    value="Big Buffer Trims" />
+          <param name="vertical-label"    value="tps"/>
+        </leaf>
+      </subtree>
+      <subtree name="Large_Buffers">
+        <param name="precedence"        value="-600" />
+        <leaf name="Free">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferLgFree"/>
+          <param name="rrd-ds"          value="bufferLgFree" />
+          <param name="comment" value="Number of Free Large Buffers"/>
+          <param name="graph-legend"    value="Free Large Buffers" />
+          <param name="vertical-label"    value="Count"/>
+        </leaf>
+        <leaf name="Max">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferLgMax"/>
+          <param name="rrd-ds"          value="bufferLgMax" />
+          <param name="comment" value="Max Large Buffers"/>
+          <param name="graph-legend"    value="Max Large Buffers" />
+          <param name="vertical-label"    value="Count"/>
+        </leaf>
+        <leaf name="Hits">
+          <param name="snmp-object"     value="$bufferLgHit"/>
+          <param name="rrd-ds"          value="bufferLgHit" />
+          <param name="comment" value="Large Buffer Hits"/>
+          <param name="graph-legend"    value="Large Buffer Hits" />
+          <param name="vertical-label"    value="hps"/>
+        </leaf>
+        <leaf name="Misses">
+          <param name="snmp-object"     value="$bufferLgMiss"/>
+          <param name="rrd-ds"          value="bufferLgMiss" />
+          <param name="comment" value="Large Buffer Misses"/>
+          <param name="graph-legend"    value="Large Buffer Misses" />
+          <param name="vertical-label"    value="mps"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="snmp-object"     value="$bufferLgCreate"/>
+          <param name="rrd-ds"          value="bufferLgCreate" />
+          <param name="comment" value="Large Buffer Creates"/>
+          <param name="graph-legend"    value="Large Buffer Creates" />
+          <param name="vertical-label"    value="cps"/>
+        </leaf>
+        <leaf name="Trims">
+          <param name="snmp-object"     value="$bufferLgTrim"/>
+          <param name="rrd-ds"          value="bufferLgTrim" />
+          <param name="comment" value="Large Buffer Trims"/>
+          <param name="graph-legend"    value="Large Buffer Trims" />
+          <param name="vertical-label"    value="tps"/>
+        </leaf>
+      </subtree>
+      <subtree name="Huge_Buffers">
+        <param name="precedence"        value="-700" />
+        <leaf name="Free">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferHgFree"/>
+          <param name="rrd-ds"          value="bufferHgFree" />
+          <param name="comment" value="Number of Free Huge Buffers"/>
+          <param name="graph-legend"    value="Free Huge Buffers" />
+          <param name="vertical-label"    value="Count"/>
+        </leaf>
+        <leaf name="Max">
+          <param name="rrd-create-dstype" value="GAUGE" />
+          <param name="snmp-object"     value="$bufferHgMax"/>
+          <param name="rrd-ds"          value="bufferHgMax" />
+          <param name="comment" value="Max Huge Buffers"/>
+          <param name="graph-legend"    value="Max Huge Buffers" />
+          <param name="vertical-label"    value="Count"/>
+        </leaf>
+        <leaf name="Hits">
+          <param name="snmp-object"     value="$bufferHgHit"/>
+          <param name="rrd-ds"          value="bufferHgHit" />
+          <param name="comment" value="Huge Buffer Hits"/>
+          <param name="graph-legend"    value="Huge Buffer Hits" />
+          <param name="vertical-label"    value="hps"/>
+        </leaf>
+        <leaf name="Misses">
+          <param name="snmp-object"     value="$bufferHgMiss"/>
+          <param name="rrd-ds"          value="bufferHgMiss" />
+          <param name="comment" value="Huge Buffer Misses"/>
+          <param name="graph-legend"    value="Huge Buffer Misses" />
+          <param name="vertical-label"    value="mps"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="snmp-object"     value="$bufferHgCreate"/>
+          <param name="rrd-ds"          value="bufferHgCreate" />
+          <param name="comment" value="Huge Buffer Creates"/>
+          <param name="graph-legend"    value="Huge Buffer Creates" />
+          <param name="vertical-label"    value="cps"/>
+        </leaf>
+        <leaf name="Trims">
+          <param name="snmp-object"     value="$bufferHgTrim"/>
+          <param name="rrd-ds"          value="bufferHgTrim" />
+          <param name="comment" value="Huge Buffer Trims"/>
+          <param name="graph-legend"    value="Huge Buffer Trims" />
+          <param name="vertical-label"    value="tps"/>
+        </leaf>
+      </subtree>
+    </subtree>
+  </template>
+
+  
+  <template name="cisco-ipsec-flow-globals">
+    <subtree name="IPSec_Statistics">
+      <param name="node-display-name" value="IPSec Statistics" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="rrd-hwpredict"     value="disabled" />
+      <param name="data-file"  value="%system-id%_cisco-ipsec-globals.rrd" />
+      <param name="comment"    value="IPSec traffic statistics" />
+      <param name="precedence"        value="-200" />
+      
+      <leaf name="Active_Tunnels">
+        <param name="snmp-object"     value="$cipSecGlobalActiveTunnels"/>
+        <param name="rrd-create-dstype" value="GAUGE" />
+        <param name="rrd-ds"            value="ActiveTunnels" />
+        <param name="comment"   value="Currently active IPSec tunnels" />
+        <param name="graph-legend"   value="Active tunnels" />
+        <param name="vertical-label" value="" />
+        <param name="graph-lower-limit" value="0"/>
+        <param name="precedence"        value="1000" />
+      </leaf>
+
+      <leaf name="InOut_bps">
+        <param name="comment"
+               value="Input and Output encrypted bits per second" />
+        <param name="vertical-label"   value="bps" />
+        <param name="graph-lower-limit" value="0" />
+        <param name="precedence"       value="900" />
+        <param name="ds-type"          value="rrd-multigraph" />
+        <param name="ds-names"         value="in,out" />
+
+        <param name="ds-expr-in"       value="{Bytes_In},8,*" />
+        <param name="graph-legend-in"  value="Bits per second in" />
+        <param name="line-style-in"    value="##BpsIn" />
+        <param name="line-color-in"    value="##BpsIn" />
+        <param name="line-order-in"    value="1" />
+
+        <param name="ds-expr-out"      value="{Bytes_Out},8,*" />
+        <param name="graph-legend-out" value="Bits per second out" />
+        <param name="line-style-out"   value="##BpsOut" />
+        <param name="line-color-out"   value="##BpsOut" />
+        <param name="line-order-out"   value="2" />
+      </leaf>
+      
+      <leaf name="Bytes_In">
+        <param name="snmp-object"     value="$cipSecGlobalHcInOctets"/>
+        <param name="snmp-object-type"  value="COUNTER64" />
+        <param name="rrd-ds"            value="InOctets" />
+        <param name="comment"   value="Input bytecount of encrypted packets" />
+        <param name="graph-legend"   value="Bytes in" />
+        <param name="vertical-label" value="Bps" />
+        <param name="graph-lower-limit" value="0"/>
+        <param name="precedence"        value="990" />
+      </leaf>
+      
+      <leaf name="Bytes_Out">
+        <param name="snmp-object"     value="$cipSecGlobalHcOutOctets"/>
+        <param name="snmp-object-type"  value="COUNTER64" />
+        <param name="rrd-ds"          value="OutOctets" />
+        <param name="comment" value="Output bytecount of encrypted packets" />
+        <param name="graph-legend"   value="Bytes out" />
+        <param name="vertical-label" value="Bps" />
+        <param name="graph-lower-limit" value="0"/>
+        <param name="precedence"        value="980" />
+      </leaf>
+      
+      <leaf name="Packets_In">
+        <param name="snmp-object"     value="$cipSecGlobalInPkts"/>
+        <param name="rrd-ds"          value="InPkts" />
+        <param name="comment"   value="Input counter of encrypted packets" />
+        <param name="graph-legend"   value="Packets in" />
+        <param name="vertical-label" value="pps" />
+        <param name="graph-lower-limit" value="0"/>
+        <param name="precedence"        value="890" />
+      </leaf>
+
+      <leaf name="Packets_Out">
+        <param name="snmp-object"     value="$cipSecGlobalOutPkts"/>
+        <param name="rrd-ds"          value="OutPkts" />
+        <param name="comment"   value="Output counter of encrypted packets" />
+        <param name="graph-legend"   value="Packets out" />
+        <param name="vertical-label" value="pps" />
+        <param name="graph-lower-limit" value="0"/>
+        <param name="precedence"        value="880" />
+      </leaf>
+
+      <leaf name="Dropped_In">
+        <param name="snmp-object"     value="$cipSecGlobalInDrops"/>
+        <param name="rrd-ds"          value="InDrops" />
+        <param name="comment"   value="Input count of dropped packets" />
+        <param name="graph-legend"   value="Dropped in" />
+        <param name="vertical-label" value="pps" />
+        <param name="graph-lower-limit" value="0"/>
+        <param name="precedence"        value="790" />
+      </leaf>
+      
+      <leaf name="Dropped_Out">
+        <param name="snmp-object"     value="$cipSecGlobalOutDrops"/>
+        <param name="rrd-ds"          value="OutDrops" />
+        <param name="comment"   value="Output count of dropped packets" />
+        <param name="graph-legend"   value="Dropped out" />
+        <param name="vertical-label" value="pps" />
+        <param name="graph-lower-limit" value="0"/>
+        <param name="precedence"        value="780" />
+      </leaf>
+    </subtree>
+  </template>
+
+  <template name="cisco-bgp">
+    <param name="data-file">
+      %system-id%_%peer-index%_cbgp.rrd
+    </param>
+
+    <param name="rrd-create-dstype" value="GAUGE" />
+    <param name="graph-title" value="%descriptive-nickname%" />
+    <param name="graph-lower-limit" value="0" />
+    <param name="vertical-label" value="prefixes" />
+    <param name="graph-legend"    value="Accepted" />      
+    <param name="snmp-object"
+          value="$cbgpPeerAcceptedPrefixes.%peer-index%"/>
+    <param name="rrd-ds"          value="Accepted" />
+  </template>
+
+
+  <template name="cisco-car-subtree">
+    <param name="data-file">
+      %system-id%_%interface-nick%_%car-direction%_%car-index%_ccar.rrd
+    </param>
+
+    <param name="descriptive-nickname" value="%system-id%:%interface-name%"/>
+    <param name="collector-timeoffset-hashstring"
+                                      value="%system-id%:%interface-nick%"/>
+    <param name="graph-title" value="%descriptive-nickname%" />
+    <param name="graph-lower-limit" value="0" />    
+  </template>
+  
+  <template name="cisco-car">
+    <leaf name="Current_Burst">
+      <param name="comment"     value="Current received burst size" />
+      <param name="graph-legend"    value="Burst" />      
+      <param name="snmp-object"
+          value="$ccarStatCurBurst.%ifindex-map%.%car-direction%.%car-index%"/>
+      <param name="rrd-ds"          value="Burst" />
+      <param name="rrd-create-dstype" value="GAUGE" />
+      <param name="vertical-label" value="bytes" />
+    </leaf>
+    
+    <leaf name="Switched_Packets">
+      <param name="comment"
+         value="Packets per second permitted by the rate limit" />
+      <param name="graph-legend"    value="Switched Packets" />      
+      <param name="snmp-object">
+         $ccarStatHCSwitchedPkts.%ifindex-map%.%car-direction%.%car-index%
+      </param>
+      <param name="rrd-ds"          value="SwPkts" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="snmp-object-type"  value="COUNTER64" />
+      <param name="vertical-label" value="pps" />
+    </leaf>
+
+    <leaf name="Switched_Bytes">
+      <param name="comment"
+         value="Bytes per second permitted by the rate limit" />
+      <param name="graph-legend"    value="Switched Bytes" />      
+      <param name="snmp-object">
+         $ccarStatHCSwitchedBytes.%ifindex-map%.%car-direction%.%car-index%
+      </param>
+      <param name="rrd-ds"          value="SwBytes" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="snmp-object-type"  value="COUNTER64" />
+      <param name="vertical-label" value="bytes/s" />
+      <param name="hidden" value="yes" />
+    </leaf>
+
+    <leaf name="Filtered_Packets">
+      <param name="comment"
+         value="Packets per second filtered by the rate limit" />
+      <param name="graph-legend"    value="Filtered Packets" />      
+      <param name="snmp-object">
+         $ccarStatHCFilteredPkts.%ifindex-map%.%car-direction%.%car-index%
+      </param>
+      <param name="rrd-ds"          value="FltrPkts" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="snmp-object-type"  value="COUNTER64" />
+      <param name="vertical-label" value="pps" />
+    </leaf>
+
+    <leaf name="Filtered_Bytes">
+      <param name="comment"
+         value="Bytes per second filtered by the rate limit" />
+      <param name="graph-legend"    value="Filtered Bytes" />      
+      <param name="snmp-object">
+         $ccarStatHCFilteredBytes.%ifindex-map%.%car-direction%.%car-index%
+      </param>
+      <param name="rrd-ds"          value="FltrBytes" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="snmp-object-type"  value="COUNTER64" />
+      <param name="vertical-label" value="bytes/s" />
+      <param name="hidden" value="yes" />
+    </leaf>
+
+    <leaf name="Switched_Bps">
+      <param name="comment"
+         value="Bit per second permitted by the rate limit" />
+      <param name="vertical-label" value="bps" />
+      
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="bytes" />
+
+      <param name="ds-expr-bytes"    value="{Switched_Bytes},8,*" />
+      <param name="graph-legend-bytes"  value="Switched" />
+      <param name="line-style-bytes"    value="##SingleGraph" />
+      <param name="line-color-bytes"    value="##SingleGraph" />
+      <param name="line-order-bytes"    value="1" />      
+    </leaf>
+    
+    <leaf name="Filtered_Bps">
+      <param name="comment"
+         value="Bit per second filtered by the rate limit" />
+      <param name="vertical-label" value="bps" />
+      
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="bytes" />
+
+      <param name="ds-expr-bytes"    value="{Filtered_Bytes},8,*" />
+      <param name="graph-legend-bytes"  value="Filtered" />
+      <param name="line-style-bytes"    value="##SingleGraph" />
+      <param name="line-color-bytes"    value="##SingleGraph" />
+      <param name="line-order-bytes"    value="1" />      
+    </leaf>            
+  </template>
+
+
+  <template name="cisco-vpdn-subtree">
+    <param name="has-overview-shortcuts"    value="yes"/>
+    <param name="overview-shortcuts"        value="tunnel,session,deny"/>
+    <!-- Total Tunnels -->
+    <param name="overview-subleave-name-tunnel"  value="Tunnel_Total"/>
+    <param name="overview-shortcut-text-tunnel"
+           value="All VPDN tunnels"/>
+    <param name="overview-shortcut-title-tunnel"
+           value="Show all VPDN tunnels graphs in one page"/>
+    <param name="overview-page-title-tunnel"
+           value="VPDN Total Number"/>
+    <!-- Total Sessions -->
+    <param name="overview-subleave-name-session"  value="Session_Total"/>
+    <param name="overview-shortcut-text-session"
+           value="All VPDN sessions"/>
+    <param name="overview-shortcut-title-session"
+           value="Show all VPDN session graphs in one page"/>
+    <param name="overview-page-title-session"
+           value="VPDN Total Sessions"/>
+    <!-- Denied Users -->
+    <param name="overview-subleave-name-deny"  value="Denied_Users"/>
+    <param name="overview-shortcut-text-deny"
+           value="All denied users"/>
+    <param name="overview-shortcut-title-deny"
+           value="Show all denied user graphs in one page"/>
+    <param name="overview-page-title-deny"
+           value="VPDN denied users"/>
+  </template>
+
+  <template name="cisco-vpdn-leaf">
+    <param name="data-file"      value="%system-id%_cisco-vpdn_%tunFile%.rrd" />
+    <param name="precedence"     value="-200" />
+    <param name="rrd-hwpredict"  value="disabled" />
+    <param name="rrd-create-dstype" value="GAUGE" />
+
+    <leaf name="Tunnel_Total">
+      <param name="snmp-object"
+         value="$cvpdnSystemTunnelTotal.%tunIndex%" />
+      <param name="rrd-ds"            value="cvpdnSysTunTotal" />
+      <param name="comment"   
+             value="Total number of active VPDN tunnels" />
+      <param name="graph-legend"      value="Number of VPDN tunnels" />
+      <param name="vertical-label"    value="tunnels" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="precedence"        value="999" />
+    </leaf>
+
+    <leaf name="Session_Total">
+      <param name="snmp-object"
+         value="$cvpdnSystemSessionTotal.%tunIndex%" />
+      <param name="rrd-ds"            value="cvpdnSysSessTotal" />
+      <param name="comment"   
+             value="Total number of active sessions in active VPDN tunnels" />
+      <param name="graph-legend"      value="Number of sessions" />
+      <param name="vertical-label"    value="sessions" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="precedence"        value="998" />
+    </leaf>
+
+    <leaf name="Denied_Users">
+      <param name="snmp-object"
+         value="$cvpdnSystemDeniedUsersTotal.%tunIndex%" />
+      <param name="rrd-ds"            value="cvpdnSysDenyUsers" />
+      <param name="comment"   
+             value="Total number of denied users to all VPDN tunnels "/>
+      <param name="graph-legend"      value="Number of denied users" />
+      <param name="vertical-label"    value="attempts" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="precedence"        value="997" />
+    </leaf>
+  </template>
+    
+</datasources>
+
+</configuration>

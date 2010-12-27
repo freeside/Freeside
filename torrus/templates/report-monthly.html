@@ -1,0 +1,132 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE htmlstart
+     title="Torrus Reports: " _ year
+     contentClass="SingleColumnContent"
+     noTopMenu=1 %]
+
+<H1>Torrus report: [% monthName(month) %]
+<A HREF="[% yearlyUrl(year) %]">[% year %]</A></H1>
+
+[% INCLUDE treename %]
+
+[% FOREACH reportname = data.keys.sort;
+     fieldshash = data.$reportname;
+     IF reportname == 'MonthlyUsage' %]
+
+<TABLE CLASS="ReportTable">
+<CAPTION CLASS="ReportTable">Monthly usage</CAPTION>
+<TR CLASS="ReportHeadRow">
+<TD CLASS="ReportHeadCell">Service ID</TD>
+<TD CLASS="ReportHeadCell">Average</TD>
+<TD CLASS="ReportHeadCell">95th<BR/>Percentile</TD>
+<TD CLASS="ReportHeadCell">Maximum</TD>
+<TD CLASS="ReportHeadCell">Unavailable<BR/>samples</TD>
+<TD CLASS="ReportHeadCell">Volume</TD>
+</TR>
+[%     rowCount = 0;
+       FOREACH serviceid = fieldshash.keys.sort;
+         rowCount = rowCount + 1;
+         IF rowCount % 2 %]
+<TR CLASS="ReportEvenRow">
+[%       ELSE %]
+<TR CLASS="ReportRow">
+[%       END %]       
+<TD CLASS="ReportFirstCell">
+<A HREF="[% srvIdUrl(serviceid) %]">[% serviceid %]</A>
+</TD>
+[%       FOREACH varname = ['AVG', '95TH_PERCENTILE', 'MAX',
+                            'UNAVAIL', 'VOLUME'] %]
+<TD CLASS="ReportCell">
+[% formatValue( fieldshash.$serviceid.$varname ) %]
+</TD>
+[%       END %]
+</TR>
+[%     END %]
+</TABLE>
+
+[% ELSE %]
+
+<TABLE CLASS="ReportTable">
+<CAPTION CLASS="ReportTable">[% reportname %]</CAPTION>
+<TR CLASS="ReportHeadRow">
+<TD CLASS="ReportHeadCell">Service ID</TD>
+<TD CLASS="ReportHeadCell">Field</TD>
+<TD CLASS="ReportHeadCell">Value</TD>
+</TR>
+[%     rowCount = 0;
+       FOREACH serviceid = fieldshash.keys.sort;
+         FOREACH varname = fieldshash.$serviceid.keys.sort;
+           rowCount = rowCount + 1;
+           IF rowCount % 2 %]
+<TR CLASS="ReportEvenRow">
+[%         ELSE %]
+<TR CLASS="ReportRow">
+[%         END %]       
+<TD CLASS="ReportFirstCell">
+<A HREF="[% srvIdUrl(serviceid) %]">[% serviceid %]</A>
+</TD>
+<TD CLASS="ReportCell">
+[% varname %]
+</TD>
+<TD CLASS="ReportCell">
+[% formatValue( fieldshash.$serviceid.$varname ) %]
+</TD>
+</TR>
+[%       END;
+       END %]
+</TABLE>
+
+[%   END;
+   END %]
+
+<DIV CLASS="ReportLegend">
+
+<DIV CLASS="ReportLegendLine">
+<SPAN CLASS="ReportLegendTerm">
+Average:
+</SPAN>
+<SPAN CLASS="ReportLegendDef">
+the monthly average of 5-minute samples.
+</SPAN>
+</DIV>
+
+<DIV CLASS="ReportLegendLine">
+<SPAN CLASS="ReportLegendTerm">
+95th percentile:
+</SPAN>
+<SPAN CLASS="ReportLegendDef">
+95% of the time, the usage is at or below this amount.
+</SPAN>
+</DIV>
+
+<DIV CLASS="ReportLegendLine">
+<SPAN CLASS="ReportLegendTerm">
+Maximum:
+</SPAN>
+<SPAN CLASS="ReportLegendDef">
+the maximum value among 5-minute samples.
+</SPAN>
+</DIV>
+
+<DIV CLASS="ReportLegendLine">
+<SPAN CLASS="ReportLegendTerm">
+Unavailable samples:
+</SPAN>
+<SPAN CLASS="ReportLegendDef">
+how many 5-minute samples were missed from the measurements.
+</SPAN>
+</DIV>
+
+<DIV CLASS="ReportLegendLine">
+<SPAN CLASS="ReportLegendTerm">
+Volume:
+</SPAN>
+<SPAN CLASS="ReportLegendDef">
+for traffic usage, this is the absolut volume of data in avaiable 5-minute
+samples.
+</SPAN>
+</DIV>
+
+</DIV>
+
+[% INCLUDE htmlend %]

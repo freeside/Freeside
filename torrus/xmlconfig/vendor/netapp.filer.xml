@@ -1,0 +1,2206 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: netapp.filer.xml,v 1.1 2010-12-27 00:04:19 ivan Exp $
+
+  NetApp Filer
+
+-->
+
+<configuration>
+<definitions>
+  <!-- sysStat                                   1.3.6.1.4.1.789.1.2 -->
+  <!--   CPU                                     1.3.6.1.4.1.789.1.2.1 -->
+  <def name="netapp_cpuUpTime"            value="1.3.6.1.4.1.789.1.2.1.1.0"/>
+  <def name="netapp_cpuBusyTime"          value="1.3.6.1.4.1.789.1.2.1.2.0"/>
+  <def name="netapp_cpuBusyTimePerCent"   value="1.3.6.1.4.1.789.1.2.1.3.0"/>
+  <def name="netapp_cpuIdleTime"          value="1.3.6.1.4.1.789.1.2.1.4.0"/>
+  <def name="netapp_cpuIdleTimePerCent"   value="1.3.6.1.4.1.789.1.2.1.5.0"/>
+  <def name="netapp_cpuSwitchInvocations" value="1.3.6.1.4.1.789.1.2.1.7.0"/>
+  <def name="netapp_cpuContextSwitches"   value="1.3.6.1.4.1.789.1.2.1.8.0"/>
+  <def name="netapp_cpuInterrupts"        value="1.3.6.1.4.1.789.1.2.1.9.0"/>
+  <def name="netapp_cpuNonCPInterrupts"   value="1.3.6.1.4.1.789.1.2.1.10.0"/>
+  <def name="netapp_cpuCPInterruptPercent"
+                                          value="1.3.6.1.4.1.789.1.2.1.11.0"/>
+  <def name="netapp_cpuNonCPInterruptPercent"
+                                          value="1.3.6.1.4.1.789.1.2.1.12.0"/>
+  <def name="netapp_cpuTotalDomainSwitches"
+                                          value="1.3.6.1.4.1.789.1.2.1.13.0"/>
+                                          
+  <!--   misc                                    1.3.6.1.4.1.789.1.2.2 -->
+  <!-- High values are being ignored, as they should not be needed to
+    calculate rate, unless the device can wrap a 32bit counter in one period
+    -->
+  <def name="netapp_miscLowNfsOps"        value="1.3.6.1.4.1.789.1.2.2.6.0"/>
+  <def name="netapp_miscLowCifsOps"       value="1.3.6.1.4.1.789.1.2.2.8.0"/>
+  <def name="netapp_miscLowHttpOps"       value="1.3.6.1.4.1.789.1.2.2.10.0"/>
+  <def name="netapp_miscLowNetRcvdBytes"  value="1.3.6.1.4.1.789.1.2.2.12.0"/>
+  <def name="netapp_miscLowNetSentBytes"  value="1.3.6.1.4.1.789.1.2.2.14.0"/>
+  <def name="netapp_miscLowDiskReadBytes" value="1.3.6.1.4.1.789.1.2.2.16.0"/>
+  <def name="netapp_miscLowDiskWriteBytes" value="1.3.6.1.4.1.789.1.2.2.18.0"/>
+  <def name="netapp_miscLowTapeReadBytes" value="1.3.6.1.4.1.789.1.2.2.20.0"/>
+  <def name="netapp_miscLowTapeWriteBytes" value="1.3.6.1.4.1.789.1.2.2.22.0"/>
+  <def name="netapp_miscCacheAge"         value="1.3.6.1.4.1.789.1.2.2.23.0"/>
+  
+  <!--   cp (consistency point)            1.3.6.1.4.1.789.1.2.6 -->
+  <!-- Not Implementing/Applying This, this will not make good rates -->
+  <!-- This needs a Delta function that does not calculate rate i.e. It would
+    be reasonable to see when these happen, but I would not expect to see them
+    frequently ehough for validity as a rate -->
+  <def name="netapp_cpTime"              value="1.3.6.1.4.1.789.1.2.6.1.0"/>
+  <def name="netapp_cpFromTimerOps"      value="1.3.6.1.4.1.789.1.2.6.2.0"/>
+  <def name="netapp_cpFromSnapshotOps"   value="1.3.6.1.4.1.789.1.2.6.3.0"/>
+  <def name="netapp_cpFromHighWaterOps"  value="1.3.6.1.4.1.789.1.2.6.4.0"/>
+  <def name="netapp_cpFromLowWaterOps"   value="1.3.6.1.4.1.789.1.2.6.5.0"/>
+  <def name="netapp_cpFromLogFullOps"    value="1.3.6.1.4.1.789.1.2.6.6.0"/>
+  <def name="netapp_cpFromCpOps"         value="1.3.6.1.4.1.789.1.2.6.7.0"/>
+  <def name="netapp_cpTotalOps"          value="1.3.6.1.4.1.789.1.2.6.8.0"/>
+  <def name="netapp_cpFromFlushOps"      value="1.3.6.1.4.1.789.1.2.6.9.0"/>
+  <def name="netapp_cpFromSyncOps"       value="1.3.6.1.4.1.789.1.2.6.10.0"/>
+  
+  <!-- NFS                                 1.3.6.1.4.1.789.1.3 -->
+  <!--   Total NFS                         1.3.6.1.4.1.789.1.3.2 -->
+  <!--     Total RPC Stats                 1.3.6.1.4.1.789.1.3.2.1 -->
+  <def name="netapp_trpcCalls"      value="1.3.6.1.4.1.789.1.3.2.1.1.0"/>
+  <def name="netapp_trpcBadCalls"   value="1.3.6.1.4.1.789.1.3.2.1.2.0"/>
+  <def name="netapp_trpcNullRecvs"  value="1.3.6.1.4.1.789.1.3.2.1.3.0"/>
+  <def name="netapp_trpcBadLens"    value="1.3.6.1.4.1.789.1.3.2.1.4.0"/>
+  <def name="netapp_trpcServXDRCalls"   value="1.3.6.1.4.1.789.1.3.2.1.5.0"/>
+  
+  <!--     Total NFS Stats                 1.3.6.1.4.1.789.1.3.2.2  -->
+  <def name="netapp_tnfsCalls"      value="1.3.6.1.4.1.789.1.3.2.2.1.0"/>
+  <def name="netapp_tnfsServBadCalls" value="1.3.6.1.4.1.789.1.3.2.2.2.0"/>
+  
+  <!--     Total NFS v2                    1.3.6.1.4.1.789.1.3.2.2.3 -->
+  <!--       Total NFS v2 tv2Calls         1.3.6.1.4.1.789.1.3.2.2.3.1 -->
+  <def name="netapp_tv2cNulls"    value="1.3.6.1.4.1.789.1.3.2.2.3.1.1.0"/>
+  <def name="netapp_tv2cGetattrs" value="1.3.6.1.4.1.789.1.3.2.2.3.1.2.0"/>
+  <def name="netapp_tv2cSetattrs" value="1.3.6.1.4.1.789.1.3.2.2.3.1.3.0"/>
+  <def name="netapp_tv2cRoots"    value="1.3.6.1.4.1.789.1.3.2.2.3.1.4.0"/>
+  <def name="netapp_tv2cLookups"  value="1.3.6.1.4.1.789.1.3.2.2.3.1.5.0"/>
+  <def name="netapp_tv2cReadlinks"  value="1.3.6.1.4.1.789.1.3.2.2.3.1.6.0"/>
+  <def name="netapp_tv2cReads"    value="1.3.6.1.4.1.789.1.3.2.2.3.1.7.0"/>
+  <def name="netapp_tv2cWrcaches" value="1.3.6.1.4.1.789.1.3.2.2.3.1.8.0"/>
+  <def name="netapp_tv2cWrites"   value="1.3.6.1.4.1.789.1.3.2.2.3.1.9.0"/>
+  <def name="netapp_tv2cCreates"  value="1.3.6.1.4.1.789.1.3.2.2.3.1.10.0"/>
+  <def name="netapp_tv2cRemoves"  value="1.3.6.1.4.1.789.1.3.2.2.3.1.11.0"/>
+  <def name="netapp_tv2cRenames"  value="1.3.6.1.4.1.789.1.3.2.2.3.1.12.0"/>
+  <def name="netapp_tv2cLinks"    value="1.3.6.1.4.1.789.1.3.2.2.3.1.13.0"/>
+  <def name="netapp_tv2cSymlinks" value="1.3.6.1.4.1.789.1.3.2.2.3.1.14.0"/>
+  <def name="netapp_tv2cMkdirs"   value="1.3.6.1.4.1.789.1.3.2.2.3.1.15.0"/>
+  <def name="netapp_tv2cRmdirs"   value="1.3.6.1.4.1.789.1.3.2.2.3.1.16.0"/>
+  <def name="netapp_tv2cReaddirs" value="1.3.6.1.4.1.789.1.3.2.2.3.1.17.0"/>
+  <def name="netapp_tv2cStatfss"  value="1.3.6.1.4.1.789.1.3.2.2.3.1.18.0"/>
+  
+  <!-- Total NFS v2 tv2Percent           1.3.6.1.4.1.789.1.3.2.2.3.2 -->
+  <def name="netapp_tv2pNulls"    value="1.3.6.1.4.1.789.1.3.2.2.3.2.1.0"/>
+  <def name="netapp_tv2pGetattrs" value="1.3.6.1.4.1.789.1.3.2.2.3.2.2.0"/>
+  <def name="netapp_tv2pSetattrs" value="1.3.6.1.4.1.789.1.3.2.2.3.2.3.0"/>
+  <def name="netapp_tv2pRoots"    value="1.3.6.1.4.1.789.1.3.2.2.3.2.4.0"/>
+  <def name="netapp_tv2pLookups"  value="1.3.6.1.4.1.789.1.3.2.2.3.2.5.0"/>
+  <def name="netapp_tv2pReadlinks"  value="1.3.6.1.4.1.789.1.3.2.2.3.2.6.0"/>
+  <def name="netapp_tv2pReads"    value="1.3.6.1.4.1.789.1.3.2.2.3.2.7.0"/>
+  <def name="netapp_tv2pWrcaches" value="1.3.6.1.4.1.789.1.3.2.2.3.2.8.0"/>
+  <def name="netapp_tv2pWrites"   value="1.3.6.1.4.1.789.1.3.2.2.3.2.9.0"/>
+  <def name="netapp_tv2pCreates"  value="1.3.6.1.4.1.789.1.3.2.2.3.2.10.0"/>
+  <def name="netapp_tv2pRemoves"  value="1.3.6.1.4.1.789.1.3.2.2.3.2.11.0"/>
+  <def name="netapp_tv2pRenames"  value="1.3.6.1.4.1.789.1.3.2.2.3.2.12.0"/>
+  <def name="netapp_tv2pLinks"    value="1.3.6.1.4.1.789.1.3.2.2.3.2.13.0"/>
+  <def name="netapp_tv2pSymlinks" value="1.3.6.1.4.1.789.1.3.2.2.3.2.14.0"/>
+  <def name="netapp_tv2pMkdirs"   value="1.3.6.1.4.1.789.1.3.2.2.3.2.15.0"/>
+  <def name="netapp_tv2pRmdirs"   value="1.3.6.1.4.1.789.1.3.2.2.3.2.16.0"/>
+  <def name="netapp_tv2pReaddirs" value="1.3.6.1.4.1.789.1.3.2.2.3.2.17.0"/>
+  <def name="netapp_tv2pStatfss"  value="1.3.6.1.4.1.789.1.3.2.2.3.2.18.0"/>
+
+  <!-- Total NFS v2 Cached Calls         1.3.6.1.4.1.789.1.3.2.2.3.3 -->
+  <def name="netapp_tv2ccNulls"   value="1.3.6.1.4.1.789.1.3.2.2.3.3.1.0"/>
+  <def name="netapp_tv2ccGetattrs"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.2.0"/>
+  <def name="netapp_tv2ccSetattrs"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.3.0"/>
+  <def name="netapp_tv2ccRoots"   value="1.3.6.1.4.1.789.1.3.2.2.3.3.4.0"/>
+  <def name="netapp_tv2ccLookups" value="1.3.6.1.4.1.789.1.3.2.2.3.3.5.0"/>
+  <def name="netapp_tv2ccReadlinks" value="1.3.6.1.4.1.789.1.3.2.2.3.3.6.0"/>
+  <def name="netapp_tv2ccReads"   value="1.3.6.1.4.1.789.1.3.2.2.3.3.7.0"/>
+  <def name="netapp_tv2ccWrcaches"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.8.0"/>
+  <def name="netapp_tv2ccWrites"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.9.0"/>
+  <def name="netapp_tv2ccCreates" value="1.3.6.1.4.1.789.1.3.2.2.3.3.10.0"/>
+  <def name="netapp_tv2ccRemoves" value="1.3.6.1.4.1.789.1.3.2.2.3.3.11.0"/>
+  <def name="netapp_tv2ccRenames" value="1.3.6.1.4.1.789.1.3.2.2.3.3.12.0"/>
+  <def name="netapp_tv2ccLinks"   value="1.3.6.1.4.1.789.1.3.2.2.3.3.13.0"/>
+  <def name="netapp_tv2ccSymlinks"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.14.0"/>
+  <def name="netapp_tv2ccMkdirs"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.15.0"/>
+  <def name="netapp_tv2ccRmdirs"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.16.0"/>
+  <def name="netapp_tv2ccReaddirs"  value="1.3.6.1.4.1.789.1.3.2.2.3.3.17.0"/>
+  <def name="netapp_tv2ccStatfss" value="1.3.6.1.4.1.789.1.3.2.2.3.3.18.0"/>
+
+  <!-- Total NFS v2 Cached Pct           1.3.6.1.4.1.789.1.3.2.2.3.4 -->
+  <def name="netapp_tv2cpNulls"   value="1.3.6.1.4.1.789.1.3.2.2.3.4.1.0"/>
+  <def name="netapp_tv2cpGetattrs"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.2.0"/>
+  <def name="netapp_tv2cpSetattrs"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.3.0"/>
+  <def name="netapp_tv2cpRoots"   value="1.3.6.1.4.1.789.1.3.2.2.3.4.4.0"/>
+  <def name="netapp_tv2cpLookups" value="1.3.6.1.4.1.789.1.3.2.2.3.4.5.0"/>
+  <def name="netapp_tv2cpReadlinks" value="1.3.6.1.4.1.789.1.3.2.2.3.4.6.0"/>
+  <def name="netapp_tv2cpReads"   value="1.3.6.1.4.1.789.1.3.2.2.3.4.7.0"/>
+  <def name="netapp_tv2cpWrcaches"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.8.0"/>
+  <def name="netapp_tv2cpWrites"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.9.0"/>
+  <def name="netapp_tv2cpCreates" value="1.3.6.1.4.1.789.1.3.2.2.3.4.10.0"/>
+  <def name="netapp_tv2cpRemoves" value="1.3.6.1.4.1.789.1.3.2.2.3.4.11.0"/>
+  <def name="netapp_tv2cpRenames" value="1.3.6.1.4.1.789.1.3.2.2.3.4.12.0"/>
+  <def name="netapp_tv2cpLinks"   value="1.3.6.1.4.1.789.1.3.2.2.3.4.13.0"/>
+  <def name="netapp_tv2cpSymlinks"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.14.0"/>
+  <def name="netapp_tv2cpMkdirs"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.15.0"/>
+  <def name="netapp_tv2cpRmdirs"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.16.0"/>
+  <def name="netapp_tv2cpReaddirs"  value="1.3.6.1.4.1.789.1.3.2.2.3.4.17.0"/>
+  <def name="netapp_tv2cpStatfss" value="1.3.6.1.4.1.789.1.3.2.2.3.4.18.0"/>
+
+  <!-- Total NFS v3                      1.3.6.1.4.1.789.1.3.2.2.4 -->
+  <!-- Total NFS v3 tv3Calls             1.3.6.1.4.1.789.1.3.2.2.4.1 -->
+  <def name="netapp_tv3cNulls"    value="1.3.6.1.4.1.789.1.3.2.2.4.1.1.0"/>
+  <def name="netapp_tv3cGetattrs" value="1.3.6.1.4.1.789.1.3.2.2.4.1.2.0"/>
+  <def name="netapp_tv3cSetattrs" value="1.3.6.1.4.1.789.1.3.2.2.4.1.3.0"/>
+  <def name="netapp_tv3cLookups"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.4.0"/>
+  <def name="netapp_tv3cAccesss"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.5.0"/>
+  <def name="netapp_tv3cReadlinks"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.6.0"/>
+  <def name="netapp_tv3cReads"    value="1.3.6.1.4.1.789.1.3.2.2.4.1.7.0"/>
+  <def name="netapp_tv3cWrites"   value="1.3.6.1.4.1.789.1.3.2.2.4.1.8.0"/>
+  <def name="netapp_tv3cCreates"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.9.0"/>
+  <def name="netapp_tv3cMkdirs"   value="1.3.6.1.4.1.789.1.3.2.2.4.1.10.0"/>
+  <def name="netapp_tv3cSymlinks" value="1.3.6.1.4.1.789.1.3.2.2.4.1.11.0"/>
+  <def name="netapp_tv3cMknods"   value="1.3.6.1.4.1.789.1.3.2.2.4.1.12.0"/>
+  <def name="netapp_tv3cRemoves"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.13.0"/>
+  <def name="netapp_tv3cRmdirs"   value="1.3.6.1.4.1.789.1.3.2.2.4.1.14.0"/>
+  <def name="netapp_tv3cRenames"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.15.0"/>
+  <def name="netapp_tv3cLinks"    value="1.3.6.1.4.1.789.1.3.2.2.4.1.16.0"/>
+  <def name="netapp_tv3cReaddirs" value="1.3.6.1.4.1.789.1.3.2.2.4.1.17.0"/>
+  <def name="netapp_tv3cReaddirPluss"
+                                  value="1.3.6.1.4.1.789.1.3.2.2.4.1.18.0"/>
+  <def name="netapp_tv3cFsstats"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.19.0"/>
+  <def name="netapp_tv3cFsinfos"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.20.0"/>
+  <def name="netapp_tv3cPathconfs"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.21.0"/>
+  <def name="netapp_tv3cCommits"  value="1.3.6.1.4.1.789.1.3.2.2.4.1.22.0"/>
+
+  <!-- Total NFS v3 tv3Percent           1.3.6.1.4.1.789.1.3.2.2.4.2 -->
+  <def name="netapp_tv3pNulls"    value="1.3.6.1.4.1.789.1.3.2.2.4.2.1.0"/>
+  <def name="netapp_tv3pGetattrs" value="1.3.6.1.4.1.789.1.3.2.2.4.2.2.0"/>
+  <def name="netapp_tv3pSetattrs" value="1.3.6.1.4.1.789.1.3.2.2.4.2.3.0"/>
+  <def name="netapp_tv3pLookups"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.4.0"/>
+  <def name="netapp_tv3pAccesss"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.5.0"/>
+  <def name="netapp_tv3pReadlinks"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.6.0"/>
+  <def name="netapp_tv3pReads"    value="1.3.6.1.4.1.789.1.3.2.2.4.2.7.0"/>
+  <def name="netapp_tv3pWrites"   value="1.3.6.1.4.1.789.1.3.2.2.4.2.8.0"/>
+  <def name="netapp_tv3pCreates"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.9.0"/>
+  <def name="netapp_tv3pMkdirs"   value="1.3.6.1.4.1.789.1.3.2.2.4.2.10.0"/>
+  <def name="netapp_tv3pSymlinks" value="1.3.6.1.4.1.789.1.3.2.2.4.2.11.0"/>
+  <def name="netapp_tv3pMknods"   value="1.3.6.1.4.1.789.1.3.2.2.4.2.12.0"/>
+  <def name="netapp_tv3pRemoves"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.13.0"/>
+  <def name="netapp_tv3pRmdirs"   value="1.3.6.1.4.1.789.1.3.2.2.4.2.14.0"/>
+  <def name="netapp_tv3pRenames"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.15.0"/>
+  <def name="netapp_tv3pLinks"    value="1.3.6.1.4.1.789.1.3.2.2.4.2.16.0"/>
+  <def name="netapp_tv3pReaddirs" value="1.3.6.1.4.1.789.1.3.2.2.4.2.17.0"/>
+  <def name="netapp_tv3pReaddirPluss"
+                                  value="1.3.6.1.4.1.789.1.3.2.2.4.2.18.0"/>
+  <def name="netapp_tv3pFsstats"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.19.0"/>
+  <def name="netapp_tv3pFsinfos"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.20.0"/>
+  <def name="netapp_tv3pPathconfs"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.21.0"/>
+  <def name="netapp_tv3pCommits"  value="1.3.6.1.4.1.789.1.3.2.2.4.2.22.0"/>
+
+  <!-- Total NFS v3 tv3CachedCalls       1.3.6.1.4.1.789.1.3.2.2.4.3 -->
+  <def name="netapp_tv3ccNulls"   value="1.3.6.1.4.1.789.1.3.2.2.4.3.1.0"/>
+  <def name="netapp_tv3ccGetattrs"   value="1.3.6.1.4.1.789.1.3.2.2.4.3.2.0"/>
+  <def name="netapp_tv3ccSetattrs"   value="1.3.6.1.4.1.789.1.3.2.2.4.3.3.0"/>
+  <def name="netapp_tv3ccLookups" value="1.3.6.1.4.1.789.1.3.2.2.4.3.4.0"/>
+  <def name="netapp_tv3ccAccesss" value="1.3.6.1.4.1.789.1.3.2.2.4.3.5.0"/>
+  <def name="netapp_tv3ccReadlinks"  value="1.3.6.1.4.1.789.1.3.2.2.4.3.6.0"/>
+  <def name="netapp_tv3ccReads"   value="1.3.6.1.4.1.789.1.3.2.2.4.3.7.0"/>
+  <def name="netapp_tv3ccWrites"  value="1.3.6.1.4.1.789.1.3.2.2.4.3.8.0"/>
+  <def name="netapp_tv3ccCreates" value="1.3.6.1.4.1.789.1.3.2.2.4.3.9.0"/>
+  <def name="netapp_tv3ccMkdirs"  value="1.3.6.1.4.1.789.1.3.2.2.4.3.10.0"/>
+  <def name="netapp_tv3ccSymlinks" value="1.3.6.1.4.1.789.1.3.2.2.4.3.11.0"/>
+  <def name="netapp_tv3ccMknods"  value="1.3.6.1.4.1.789.1.3.2.2.4.3.12.0"/>
+  <def name="netapp_tv3ccRemoves" value="1.3.6.1.4.1.789.1.3.2.2.4.3.13.0"/>
+  <def name="netapp_tv3ccRmdirs"  value="1.3.6.1.4.1.789.1.3.2.2.4.3.14.0"/>
+  <def name="netapp_tv3ccRenames" value="1.3.6.1.4.1.789.1.3.2.2.4.3.15.0"/>
+  <def name="netapp_tv3ccLinks"   value="1.3.6.1.4.1.789.1.3.2.2.4.3.16.0"/>
+  <def name="netapp_tv3ccReaddirs" value="1.3.6.1.4.1.789.1.3.2.2.4.3.17.0"/>
+  <def name="netapp_tv3ccReaddirPluss"
+                                  value="1.3.6.1.4.1.789.1.3.2.2.4.3.18.0"/>
+  <def name="netapp_tv3ccFsstats" value="1.3.6.1.4.1.789.1.3.2.2.4.3.19.0"/>
+  <def name="netapp_tv3ccFsinfos" value="1.3.6.1.4.1.789.1.3.2.2.4.3.20.0"/>
+  <def name="netapp_tv3ccPathconfs" value="1.3.6.1.4.1.789.1.3.2.2.4.3.21.0"/>
+  <def name="netapp_tv3ccCommits" value="1.3.6.1.4.1.789.1.3.2.2.4.3.22.0"/>
+
+  <!-- Total NFS v3 tv3CachedPercent     1.3.6.1.4.1.789.1.3.2.2.4.4 -->
+  <def name="netapp_tv3cpNulls"   value="1.3.6.1.4.1.789.1.3.2.2.4.4.1.0"/>
+  <def name="netapp_tv3cpGetattrs" value="1.3.6.1.4.1.789.1.3.2.2.4.4.2.0"/>
+  <def name="netapp_tv3cpSetattrs" value="1.3.6.1.4.1.789.1.3.2.2.4.4.3.0"/>
+  <def name="netapp_tv3cpLookups" value="1.3.6.1.4.1.789.1.3.2.2.4.4.4.0"/>
+  <def name="netapp_tv3cpAccesss" value="1.3.6.1.4.1.789.1.3.2.2.4.4.5.0"/>
+  <def name="netapp_tv3cpReadlinks"  value="1.3.6.1.4.1.789.1.3.2.2.4.4.6.0"/>
+  <def name="netapp_tv3cpReads"   value="1.3.6.1.4.1.789.1.3.2.2.4.4.7.0"/>
+  <def name="netapp_tv3cpWrites"  value="1.3.6.1.4.1.789.1.3.2.2.4.4.8.0"/>
+  <def name="netapp_tv3cpCreates" value="1.3.6.1.4.1.789.1.3.2.2.4.4.9.0"/>
+  <def name="netapp_tv3cpMkdirs"  value="1.3.6.1.4.1.789.1.3.2.2.4.4.10.0"/>
+  <def name="netapp_tv3cpSymlinks" value="1.3.6.1.4.1.789.1.3.2.2.4.4.11.0"/>
+  <def name="netapp_tv3cpMknods"  value="1.3.6.1.4.1.789.1.3.2.2.4.4.12.0"/>
+  <def name="netapp_tv3cpRemoves" value="1.3.6.1.4.1.789.1.3.2.2.4.4.13.0"/>
+  <def name="netapp_tv3cpRmdirs"  value="1.3.6.1.4.1.789.1.3.2.2.4.4.14.0"/>
+  <def name="netapp_tv3cpRenames" value="1.3.6.1.4.1.789.1.3.2.2.4.4.15.0"/>
+  <def name="netapp_tv3cpLinks"   value="1.3.6.1.4.1.789.1.3.2.2.4.4.16.0"/>
+  <def name="netapp_tv3cpReaddirs" value="1.3.6.1.4.1.789.1.3.2.2.4.4.17.0"/>
+  <def name="netapp_tv3cpReaddirPluss"
+                                  value="1.3.6.1.4.1.789.1.3.2.2.4.4.18.0"/>
+  <def name="netapp_tv3cpFsstats" value="1.3.6.1.4.1.789.1.3.2.2.4.4.19.0"/>
+  <def name="netapp_tv3cpFsinfos" value="1.3.6.1.4.1.789.1.3.2.2.4.4.20.0"/>
+  <def name="netapp_tv3cpPathconfs" value="1.3.6.1.4.1.789.1.3.2.2.4.4.21.0"/>
+  <def name="netapp_tv3cpCommits" value="1.3.6.1.4.1.789.1.3.2.2.4.4.22.0"/>
+  
+  <!-- Total NFS reply Cache             1.3.6.1.4.1.789.1.3.2.2.5 -->
+  <def name="netapp_trcInProgressHits" value="1.3.6.1.4.1.789.1.3.2.2.5.1.0"/>
+  <def name="netapp_trcMisses"    value="1.3.6.1.4.1.789.1.3.2.2.5.3.0"/>
+  <def name="netapp_trcNonIdemDoneHits" value="1.3.6.1.4.1.789.1.3.2.2.5.4.0"/>
+  <def name="netapp_trcNonIdemNotDoneHits"
+                                  value="1.3.6.1.4.1.789.1.3.2.2.5.5.0"/>
+                                  
+  <!-- TCP reply cache stats are not returned from OnTap 6.3.1 -->
+  <!-- UDP reply cache stats are not returned from OnTap 6.3.1 -->
+  <!-- Total NFS rw Stats                1.3.6.1.4.1.789.1.3.2.2.6 -->
+  <!-- Total NFS v2 Read Stats           1.3.6.1.4.1.789.1.3.2.2.6.1 -->
+  <!-- Total NFS v2 Write Stats          1.3.6.1.4.1.789.1.3.2.2.6.2 -->
+  <!-- Total NFS v3 Read Stats           1.3.6.1.4.1.789.1.3.2.2.6.3 -->
+  <def name="netapp_tv3Read512Calls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.1.0"/>
+  <def name="netapp_tv3Read1KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.2.0"/>
+  <def name="netapp_tv3Read2KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.3.0"/>
+  <def name="netapp_tv3Read4KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.4.0"/>
+  <def name="netapp_tv3Read8KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.5.0"/>
+  <def name="netapp_tv3Read16KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.6.0"/>
+  <def name="netapp_tv3Read32KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.7.0"/>
+  <def name="netapp_tv3Read64KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.8.0"/>
+  <def name="netapp_tv3Read128KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.3.9.0"/>
+  <!-- Total NFS v3 Write Stats          1.3.6.1.4.1.789.1.3.2.2.6.4 -->
+  <def name="netapp_tv3Write512Calls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.1.0"/>
+  <def name="netapp_tv3Write1KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.2.0"/>
+  <def name="netapp_tv3Write2KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.3.0"/>
+  <def name="netapp_tv3Write4KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.4.0"/>
+  <def name="netapp_tv3Write8KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.5.0"/>
+  <def name="netapp_tv3Write16KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.6.0"/>
+  <def name="netapp_tv3Write32KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.7.0"/>
+  <def name="netapp_tv3Write64KCalls" value="1.3.6.1.4.1.789.1.3.2.2.6.4.8.0"/>
+  <def name="netapp_tv3Write128KCalls"
+                                     value="1.3.6.1.4.1.789.1.3.2.2.6.4.9.0"/>
+
+</definitions>
+
+<datasources>
+
+
+  <template name="netapp-cpu">
+    <subtree name="Netapp_CPU">
+      <param name="comment" value="NetApp CPU Stats"/>
+      <leaf name="CpuUpTime">
+        <param name="hidden" value="yes"/>
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"      value="CPU Time"/>
+        <param name="rrd-ds"       value="cpuUpTime"/>
+        <param name="snmp-object"  value="$netapp_cpuUpTime"/>
+        <param name="graph-legend" value="CPU Time"/>
+      </leaf>
+      <leaf name="CpuBusyTime">
+        <param name="hidden" value="yes"/>
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"      value="CPU Busy Time"/>
+        <param name="rrd-ds"       value="cpuBusyTime"/>
+        <param name="snmp-object"  value="$netapp_cpuBusyTime"/>
+        <param name="graph-legend" value="CPU Busy Time"/>
+      </leaf>
+      <leaf name="CpuBusyTimePerCent">
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment"      value="CPU Busy Time Percent"/>
+        <param name="rrd-ds"       value="cpuBusyTimePerCent"/>
+        <param name="snmp-object"  value="$netapp_cpuBusyTimePerCent"/>
+        <param name="graph-legend" value="CPU Busy Time Percent"/>
+        <param name="vertical-label"  value="Percent"/>
+      </leaf>
+      <leaf name="CpuIdleTime">
+        <param name="hidden" value="yes"/>
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"      value="CPU Idle Time since boot"/>
+        <param name="rrd-ds"       value="cpuIdleTime"/>
+        <param name="snmp-object"  value="$netapp_cpuIdleTime"/>
+        <param name="graph-legend" value="CPU Idle Time"/>
+      </leaf>
+      <leaf name="CpuIdleTimePerCent">
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment"      value="CPU Idle Time Percent since boot"/>
+        <param name="rrd-ds"       value="cpuIdleTimePerCent"/>
+        <param name="snmp-object"  value="$netapp_cpuIdleTimePerCent"/>
+        <param name="graph-legend" value="CPU Idle Time Percent"/>
+        <param name="vertical-label"  value="Percent"/>
+      </leaf>
+      <leaf name="CpuSwitchInvocations">
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"     value="The number of sk_switch invocations"/>
+        <param name="rrd-ds"       value="SwitchInvocations"/>
+        <param name="snmp-object"  value="$netapp_cpuSwitchInvocations"/>
+        <param name="graph-legend" value="sk_switch invocations"/>
+        <param name="vertical-label"  value="Switches"/>
+      </leaf>
+      <leaf name="CpuInterrupts">
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"      value="CPU Interrupts"/>
+        <param name="rrd-ds"       value="cpuInterrupts"/>
+        <param name="snmp-object"  value="$netapp_cpuInterrupts"/>
+        <param name="graph-legend" value="CPU Interrupts"/>
+        <param name="vertical-label"  value="Interrupts"/>
+      </leaf>
+      <leaf name="CpuNonCPInterrupts">
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"      value="CPU NonCPInterrupts"/>
+        <param name="rrd-ds"       value="cpuNonCPInterrupts"/>
+        <param name="snmp-object"  value="$netapp_cpuNonCPInterrupts"/>
+        <param name="graph-legend" value="CPU NonCPInterrupts"/>
+        <param name="vertical-label"  value="Interrupts"/>
+      </leaf>
+      <leaf name="CpuCPInterruptPercent">
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="comment"      value="CPU CPInterruptPercent"/>
+        <param name="rrd-ds"       value="cpuCPIntPercent"/>
+        <param name="snmp-object"  value="$netapp_cpuCPInterruptPercent"/>
+        <param name="graph-legend" value="CPU CP Interrupts Percent"/>
+        <param name="vertical-label"  value="Percent"/>
+      </leaf>
+      <leaf name="CpuNonCPInterruptPercent">
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Ticks"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="comment"      value="CPU Non-CP Interrupts Percent"/>
+        <param name="rrd-ds"       value="cpuNonCPIntPercent"/>
+        <param name="snmp-object"  value="$netapp_cpuNonCPInterruptPercent"/>
+        <param name="graph-legend" value="NonCP Interrupts Percent"/>
+        <param name="vertical-label"  value="Percent"/>
+      </leaf>
+      <leaf name="CpuTotalDomainSwitches">
+        <param name="data-file" value="%system-id%_CPU.rrd"/>
+        <param name="vertical-label"  value="Switches"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment"      value="CPU Domain Switches"/>
+        <param name="rrd-ds"       value="TotDomainSwitches"/>
+        <param name="snmp-object"  value="$netapp_cpuTotalDomainSwitches"/>
+        <param name="graph-legend" value="Domain Switches"/>
+        <param name="vertical-label"  value="Switches"/>
+      </leaf>
+    </subtree>
+  </template>
+  <template name="netapp-misc">
+    <subtree name="NetApp_General">
+      <param name="NetApp General Stats"/>
+      <leaf name="NfsOps">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Operations/s"/>
+        <param name="comment"      value="NFS Operations"/>
+        <param name="rrd-ds"       value="miscLowNfsOps"/>
+        <param name="snmp-object"  value="$netapp_miscLowNfsOps"/>
+        <param name="graph-legend" value="NFS Operations/s"/>
+      </leaf>
+      <leaf name="CifsOps">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Operations/s"/>
+        <param name="comment"      value="CIFS Operations"/>
+        <param name="rrd-ds"       value="miscLowCifsOps"/>
+        <param name="snmp-object"  value="$netapp_miscLowCifsOps"/>
+        <param name="graph-legend" value="CIFS Operations/s"/>
+      </leaf>
+      <leaf name="HttpOps">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Operations/s"/>
+        <param name="comment"      value="HTTP Operations"/>
+        <param name="rrd-ds"       value="miscLowHttpOps"/>
+        <param name="snmp-object"  value="$netapp_miscLowHttpOps"/>
+        <param name="graph-legend" value="HTTP Operations/s"/>
+      </leaf>
+      <leaf name="NetRcvdBytes">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Operations/s"/>
+        <param name="comment"      value="Network Received Bytes/s"/>
+        <param name="rrd-ds"       value="miscLowNetRcvdBytes"/>
+        <param name="snmp-object"  value="$netapp_miscLowNetRcvdBytes"/>
+        <param name="graph-legend" value="Network Received Bytes/s"/>
+      </leaf>
+      <leaf name="NetSentBytes">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Operations/s"/>
+        <param name="comment"      value="Network Sent Bytes/s"/>
+        <param name="rrd-ds"       value="miscLowNetSentBytes"/>
+        <param name="snmp-object"  value="$netapp_miscLowNetSentBytes"/>
+        <param name="graph-legend" value="Network Sent Bytes/s"/>
+      </leaf>
+      <leaf name="DiskReadBytes">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Reads/s"/>
+        <param name="comment"      value="Disk Read Bytes/s"/>
+        <param name="rrd-ds"       value="LowDiskReadBytes"/>
+        <param name="snmp-object"  value="$netapp_miscLowDiskReadBytes"/>
+        <param name="graph-legend" value="Disk Received Bytes/s"/>
+      </leaf>
+      <leaf name="DiskWriteBytes">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Writes/s"/>
+        <param name="comment"      value="Disk Write Bytes/s"/>
+        <param name="rrd-ds"       value="LowDiskWriteBytes"/>
+        <param name="snmp-object"  value="$netapp_miscLowDiskWriteBytes"/>
+        <param name="graph-legend" value="Disk Write Bytes/s"/>
+      </leaf>
+      <leaf name="TapeReadBytes">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Operations/s"/>
+        <param name="comment"      value="Tape Received Bytes/s"/>
+        <param name="rrd-ds"       value="LowTapeReadBytes"/>
+        <param name="snmp-object"  value="$netapp_miscLowTapeReadBytes"/>
+        <param name="graph-legend" value="Tape Received Bytes/s"/>
+      </leaf>
+      <leaf name="TapeWriteBytes">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Operations/s"/>
+        <param name="comment"      value="Tape Write Bytes/s"/>
+        <param name="rrd-ds"       value="LowTapeWriteBytes"/>
+        <param name="snmp-object"  value="$netapp_miscLowTapeWriteBytes"/>
+        <param name="graph-legend" value="Tape Write Bytes/s"/>
+      </leaf>
+      <leaf name="CacheAge">
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="data-file" value="%system-id%_misc.rrd"/>
+        <param name="vertical-label"  value="Minutes"/>
+        <param name="comment"      value="Cache Age in Minutes"/>
+        <param name="rrd-ds"       value="miscCacheAge"/>
+        <param name="snmp-object"  value="$netapp_miscCacheAge"/>
+        <param name="graph-legend" value="Cache Age"/>
+      </leaf>
+    </subtree>
+  </template>
+  <template name="netapp-cp">
+    <subtree name="ConsistencyPoints">
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_cp.rrd"/>
+      <param name="vertical-label"  value="Operations/s"/>
+        <leaf name="cpTime">
+            <param name="vertical-label"  value="Ticks"/>
+            <param name="comment"      value="Time Spent Processing CPs"/>
+            <param name="rrd-ds"       value="cpTime"/>
+            <param name="snmp-object"  value="$netapp_cpTime"/>
+            <param name="graph-legend" value="CP Time"/>
+        </leaf>
+        <leaf name="cpFromTimerOps">
+            <param name="comment"      value="CP Operations from Timer"/>
+            <param name="rrd-ds"       value="cpFromTimerOps"/>
+            <param name="snmp-object"  value="$netapp_cpFromTimerOps"/>
+            <param name="graph-legend" value="CPs From Timer "/>
+        </leaf>
+    </subtree>
+  </template>
+  <template name="netapp-nfsv2">
+    <subtree name="nfsv2_Calls">
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_nfsv2.rrd"/>
+      <param name="vertical-label"  value="Calls"/>
+      <leaf name="Null">
+        <param name="comment"      value="Do Nothing Requests"/>
+        <param name="rrd-ds"       value="tv2cNull"/>
+        <param name="snmp-object"  value="$netapp_tv2cNulls"/>
+        <param name="graph-legend" value="Null Requests/s"/>
+      </leaf>
+      <leaf name="Getattrs">
+        <param name="comment"      value="Get File Attributes"/>
+        <param name="rrd-ds"       value="tv2cGetattrs"/>
+        <param name="snmp-object"  value="$netapp_tv2cGetattrs"/>
+        <param name="graph-legend" value="Getattrs Requests/s"/>
+      </leaf>
+      <leaf name="Setattrs">
+        <param name="comment"      value="Set File Attributes"/>
+        <param name="rrd-ds"       value="tv2cSetattrs"/>
+        <param name="snmp-object"  value="$netapp_tv2cSetattrs"/>
+        <param name="graph-legend" value="Setattrs Requests/s"/>
+      </leaf>
+      <leaf name="Roots">
+        <param name="comment"      value="Get Filesystem Root"/>
+        <param name="rrd-ds"       value="tv2cRoots"/>
+        <param name="snmp-object"  value="$netapp_tv2cRoots"/>
+        <param name="graph-legend" value="Root Requests/s"/>
+      </leaf>
+      <leaf name="Lookups">
+        <param name="comment"      value="Look Up File Name"/>
+        <param name="rrd-ds"       value="tv2cLookups"/>
+        <param name="snmp-object"  value="$netapp_tv2cLookups"/>
+        <param name="graph-legend" value="Lookup Requests/s"/>
+      </leaf>
+      <leaf name="Readlinks">
+        <param name="comment"      value="Read From Symbolic Link"/>
+        <param name="rrd-ds"       value="tv2cReadlinks"/>
+        <param name="snmp-object"  value="$netapp_tv2cReadlinks"/>
+        <param name="graph-legend" value="Readlinks Requests/s"/>
+      </leaf>
+      <leaf name="Reads">
+        <param name="comment"      value="Reads"/>
+        <param name="rrd-ds"       value="tv2cReads"/>
+        <param name="snmp-object"  value="$netapp_tv2cReads"/>
+        <param name="graph-legend" value="Read Requests/s"/>
+      </leaf>
+      <leaf name="Wrcaches">
+        <param name="comment"      value="Write to Cache"/>
+        <param name="rrd-ds"       value="tv2cWrcaches"/>
+        <param name="snmp-object"  value="$netapp_tv2cWrcaches"/>
+        <param name="graph-legend" value="Write Cache Requests/s"/>
+      </leaf>
+      <leaf name="Writes">
+        <param name="comment"      value="Write to File"/>
+        <param name="rrd-ds"       value="tv2cWrites"/>
+        <param name="snmp-object"  value="$netapp_tv2cWrites"/>
+        <param name="graph-legend" value="Write Requests/s"/>
+      </leaf>
+      <leaf name="Creates">
+        <param name="comment"      value="Create File"/>
+        <param name="rrd-ds"       value="tv2cCreates"/>
+        <param name="snmp-object"  value="$netapp_tv2cCreates"/>
+        <param name="graph-legend" value="Create Requests/s"/>
+      </leaf>
+      <leaf name="Remove">
+        <param name="comment"      value="Remove File"/>
+        <param name="rrd-ds"       value="tv2cRemoves"/>
+        <param name="snmp-object"  value="$netapp_tv2cRemoves"/>
+        <param name="graph-legend" value="Remove Requests/s"/>
+      </leaf>
+      <leaf name="Rename">
+        <param name="comment"      value="Rename File"/>
+        <param name="rrd-ds"       value="tv2cRenames"/>
+        <param name="snmp-object"  value="$netapp_tv2cRenames"/>
+        <param name="graph-legend" value="Rename Requests/s"/>
+      </leaf>
+      <leaf name="Link">
+        <param name="comment"      value="Create Link to File"/>
+        <param name="rrd-ds"       value="tv2cLinks"/>
+        <param name="snmp-object"  value="$netapp_tv2cLinks"/>
+        <param name="graph-legend" value="Link Requests/s"/>
+      </leaf>
+      <leaf name="SymLink">
+        <param name="comment"      value="Create SymLink to File"/>
+        <param name="rrd-ds"       value="tv2cSymlinks"/>
+        <param name="snmp-object"  value="$netapp_tv2cSymlinks"/>
+        <param name="graph-legend" value="SymLink Requests/s"/>
+      </leaf>
+      <leaf name="Mkdir">
+        <param name="comment"      value="Create Directory"/>
+        <param name="rrd-ds"       value="tv2cMkdirs"/>
+        <param name="snmp-object"  value="$netapp_tv2cMkdirs"/>
+        <param name="graph-legend" value="Mkdir Requests/s"/>
+      </leaf>
+      <leaf name="Rmdir">
+        <param name="comment"      value="Remove Directory"/>
+        <param name="rrd-ds"       value="tv2cRmdirs"/>
+        <param name="snmp-object"  value="$netapp_tv2cRmdirs"/>
+        <param name="graph-legend" value="Rmdir Requests/s"/>
+      </leaf>
+      <leaf name="Readdir">
+        <param name="comment"      value="Read From Directory"/>
+        <param name="rrd-ds"       value="tv2cReaddirs"/>
+        <param name="snmp-object"  value="$netapp_tv2cReaddirs"/>
+        <param name="graph-legend" value="Readdir Requests/s"/>
+      </leaf>
+      <leaf name="Statfs">
+        <param name="comment"      value="Get FS Attributes"/>
+        <param name="rrd-ds"       value="tv2cStatfss"/>
+        <param name="snmp-object"  value="$netapp_tv2cStatfss"/>
+        <param name="graph-legend" value="Statfs Requests/s"/>
+      </leaf>
+    </subtree>
+    <subtree name="nfsv2_Percent">
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_nfsv2.rrd"/>
+      <param name="vertical-label"  value="Percent Calls"/>
+      <leaf name="Null">
+        <param name="comment"      value="Percent Do Nothing Requests"/>
+        <param name="rrd-ds"       value="tv2pNull"/>
+        <param name="snmp-object"  value="$netapp_tv2pNulls"/>
+        <param name="graph-legend" value="Percent Null Requests"/>
+      </leaf>
+      <leaf name="Getattrs">
+        <param name="comment"      value="Percent Get File Attributes"/>
+        <param name="rrd-ds"       value="tv2pGetattrs"/>
+        <param name="snmp-object"  value="$netapp_tv2pGetattrs"/>
+        <param name="graph-legend" value="Percent Getattrs Requests"/>
+      </leaf>
+      <leaf name="Setattrs">
+        <param name="comment"      value="Percent Set File Attributes"/>
+        <param name="rrd-ds"       value="tv2pSetattrs"/>
+        <param name="snmp-object"  value="$netapp_tv2pSetattrs"/>
+        <param name="graph-legend" value="Percent Setattrs Requests"/>
+      </leaf>
+      <leaf name="Roots">
+        <param name="comment"      value="Percent Get Filesystem Root"/>
+        <param name="rrd-ds"       value="tv2pRoots"/>
+        <param name="snmp-object"  value="$netapp_tv2pRoots"/>
+        <param name="graph-legend" value="Percent Root Requests"/>
+      </leaf>
+      <leaf name="Lookups">
+        <param name="comment"      value="Percent Look Up File Name"/>
+        <param name="rrd-ds"       value="tv2pLookups"/>
+        <param name="snmp-object"  value="$netapp_tv2pLookups"/>
+        <param name="graph-legend" value="Percent Lookup Requests"/>
+      </leaf>
+      <leaf name="Readlinks">
+        <param name="comment"      value="Percent Read From Symbolic Link"/>
+        <param name="rrd-ds"       value="tv2pReadlinks"/>
+        <param name="snmp-object"  value="$netapp_tv2pReadlinks"/>
+        <param name="graph-legend" value="Percent Readlinks Requests"/>
+      </leaf>
+      <leaf name="Reads">
+        <param name="comment"      value="Percent Reads"/>
+        <param name="rrd-ds"       value="tv2pReads"/>
+        <param name="snmp-object"  value="$netapp_tv2pReads"/>
+        <param name="graph-legend" value="Percent Read Requests"/>
+      </leaf>
+      <leaf name="Wrcaches">
+        <param name="comment"      value="Percent Write to Cache"/>
+        <param name="rrd-ds"       value="tv2pWrcaches"/>
+        <param name="snmp-object"  value="$netapp_tv2pWrcaches"/>
+        <param name="graph-legend" value="Percent Write Cache Requests"/>
+      </leaf>
+      <leaf name="Writes">
+        <param name="comment"      value="Percent Write to File"/>
+        <param name="rrd-ds"       value="tv2pWrites"/>
+        <param name="snmp-object"  value="$netapp_tv2pWrites"/>
+        <param name="graph-legend" value="Percent Write Requests"/>
+      </leaf>
+      <leaf name="Creates">
+        <param name="comment"      value="Percent Create File"/>
+        <param name="rrd-ds"       value="tv2pCreates"/>
+        <param name="snmp-object"  value="$netapp_tv2pCreates"/>
+        <param name="graph-legend" value="Percent Create Requests"/>
+      </leaf>
+      <leaf name="Remove">
+        <param name="comment"      value="Percent Remove File"/>
+        <param name="rrd-ds"       value="tv2pRemoves"/>
+        <param name="snmp-object"  value="$netapp_tv2pRemoves"/>
+        <param name="graph-legend" value="Percent Remove Requests"/>
+      </leaf>
+      <leaf name="Rename">
+        <param name="comment"      value="Percent Rename File"/>
+        <param name="rrd-ds"       value="tv2pRenames"/>
+        <param name="snmp-object"  value="$netapp_tv2pRenames"/>
+        <param name="graph-legend" value="Percent Rename Requests"/>
+      </leaf>
+      <leaf name="Link">
+        <param name="comment"      value="Percent Create Link to File"/>
+        <param name="rrd-ds"       value="tv2pLinks"/>
+        <param name="snmp-object"  value="$netapp_tv2pLinks"/>
+        <param name="graph-legend" value="Percent Link Requests"/>
+      </leaf>
+      <leaf name="SymLink">
+        <param name="comment"      value="Percent Create SymLink to File"/>
+        <param name="rrd-ds"       value="tv2pSymlinks"/>
+        <param name="snmp-object"  value="$netapp_tv2pSymlinks"/>
+        <param name="graph-legend" value="Percent SymLink Requests"/>
+      </leaf>
+      <leaf name="Mkdir">
+        <param name="comment"      value="Percent Create Directory"/>
+        <param name="rrd-ds"       value="tv2pMkdirs"/>
+        <param name="snmp-object"  value="$netapp_tv2pMkdirs"/>
+        <param name="graph-legend" value="Percent Mkdir Requests"/>
+      </leaf>
+      <leaf name="Rmdir">
+        <param name="comment"      value="Percent Remove Directory"/>
+        <param name="rrd-ds"       value="tv2pRmdirs"/>
+        <param name="snmp-object"  value="$netapp_tv2pRmdirs"/>
+        <param name="graph-legend" value="Percent Rmdir Requests"/>
+      </leaf>
+      <leaf name="Readdir">
+        <param name="comment"      value="Percent Read From Directory"/>
+        <param name="rrd-ds"       value="tv2pReaddirs"/>
+        <param name="snmp-object"  value="$netapp_tv2pReaddirs"/>
+        <param name="graph-legend" value="Percent Readdir Requests"/>
+      </leaf>
+      <leaf name="Statfs">
+        <param name="comment"      value="Percent Get FS Attributes"/>
+        <param name="rrd-ds"       value="tv2pStatfss"/>
+        <param name="snmp-object"  value="$netapp_tv2pStatfss"/>
+        <param name="graph-legend" value="Percent Statfs Requests"/>
+      </leaf>
+    </subtree>
+    <subtree name="nfsv2_CacheCalls">
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="data-file" value="%system-id%_nfsv2.rrd"/>
+      <param name="vertical-label"  value="Cached Calls"/>
+      <leaf name="Null">
+        <param name="comment"      value="Do Nothing Requests"/>
+        <param name="rrd-ds"       value="tv2ccNull"/>
+        <param name="snmp-object"  value="$netapp_tv2ccNulls"/>
+        <param name="graph-legend" value="Cached Null Requests/s"/>
+      </leaf>
+      <leaf name="Getattrs">
+        <param name="comment"      value="Get File Attributes"/>
+        <param name="rrd-ds"       value="tv2ccGetattrs"/>
+        <param name="snmp-object"  value="$netapp_tv2ccGetattrs"/>
+        <param name="graph-legend" value="Cached Getattrs Requests/s"/>
+      </leaf>
+      <leaf name="Setattrs">
+        <param name="comment"      value="Set File Attributes"/>
+        <param name="rrd-ds"       value="tv2ccSetattrs"/>
+        <param name="snmp-object"  value="$netapp_tv2ccSetattrs"/>
+        <param name="graph-legend" value="Cached Setattrs Requests/s"/>
+      </leaf>
+      <leaf name="Roots">
+        <param name="comment"      value="Get Filesystem Root"/>
+        <param name="rrd-ds"       value="tv2ccRoots"/>
+        <param name="snmp-object"  value="$netapp_tv2ccRoots"/>
+        <param name="graph-legend" value="Cached Root Requests/s"/>
+      </leaf>
+      <leaf name="Lookups">
+        <param name="comment"      value="Look Up File Name"/>
+        <param name="rrd-ds"       value="tv2ccLookups"/>
+        <param name="snmp-object"  value="$netapp_tv2ccLookups"/>
+        <param name="graph-legend" value="Cached Lookup Requests/s"/>
+      </leaf>
+      <leaf name="Readlinks">
+        <param name="comment"      value="Read From Symbolic Link"/>
+        <param name="rrd-ds"       value="tv2ccReadlinks"/>
+        <param name="snmp-object"  value="$netapp_tv2ccReadlinks"/>
+        <param name="graph-legend" value="Cached Readlinks Requests/s"/>
+      </leaf>
+      <leaf name="Reads">
+        <param name="comment"      value="Reads"/>
+        <param name="rrd-ds"       value="tv2ccReads"/>
+        <param name="snmp-object"  value="$netapp_tv2ccReads"/>
+        <param name="graph-legend" value="Cached Read Requests/s"/>
+      </leaf>
+      <leaf name="Wrcaches">
+        <param name="comment"      value="Write to Cache"/>
+        <param name="rrd-ds"       value="tv2ccWrcaches"/>
+        <param name="snmp-object"  value="$netapp_tv2ccWrcaches"/>
+        <param name="graph-legend" value="Cached Write Cache Requests/s"/>
+      </leaf>
+      <leaf name="Writes">
+        <param name="comment"      value="Write to File"/>
+        <param name="rrd-ds"       value="tv2ccWrites"/>
+        <param name="snmp-object"  value="$netapp_tv2ccWrites"/>
+        <param name="graph-legend" value="Cached Write Requests/s"/>
+      </leaf>
+      <leaf name="Creates">
+        <param name="comment"      value="Create File"/>
+        <param name="rrd-ds"       value="tv2ccCreates"/>
+        <param name="snmp-object"  value="$netapp_tv2ccCreates"/>
+        <param name="graph-legend" value="Cached Create Requests/s"/>
+      </leaf>
+      <leaf name="Remove">
+        <param name="comment"      value="Remove File"/>
+        <param name="rrd-ds"       value="tv2ccRemoves"/>
+        <param name="snmp-object"  value="$netapp_tv2ccRemoves"/>
+        <param name="graph-legend" value="Cached Remove Requests/s"/>
+      </leaf>
+      <leaf name="Rename">
+        <param name="comment"      value="Rename File"/>
+        <param name="rrd-ds"       value="tv2ccRenames"/>
+        <param name="snmp-object"  value="$netapp_tv2ccRenames"/>
+        <param name="graph-legend" value="Cached Rename Requests/s"/>
+      </leaf>
+      <leaf name="Link">
+        <param name="comment"      value="Create Link to File"/>
+        <param name="rrd-ds"       value="tv2ccLinks"/>
+        <param name="snmp-object"  value="$netapp_tv2ccLinks"/>
+        <param name="graph-legend" value="Cached Link Requests/s"/>
+      </leaf>
+      <leaf name="SymLink">
+        <param name="comment"      value="Create SymLink to File"/>
+        <param name="rrd-ds"       value="tv2ccSymlinks"/>
+        <param name="snmp-object"  value="$netapp_tv2ccSymlinks"/>
+        <param name="graph-legend" value="Cached SymLink Requests/s"/>
+      </leaf>
+      <leaf name="Mkdir">
+        <param name="comment"      value="Create Directory"/>
+        <param name="rrd-ds"       value="tv2ccMkdirs"/>
+        <param name="snmp-object"  value="$netapp_tv2ccMkdirs"/>
+        <param name="graph-legend" value="Cached Mkdir Requests/s"/>
+      </leaf>
+      <leaf name="Rmdir">
+        <param name="comment"      value="Remove Directory"/>
+        <param name="rrd-ds"       value="tv2ccRmdirs"/>
+        <param name="snmp-object"  value="$netapp_tv2ccRmdirs"/>
+        <param name="graph-legend" value="Cached Rmdir Requests/s"/>
+      </leaf>
+      <leaf name="Readdir">
+        <param name="comment"      value="Read From Directory"/>
+        <param name="rrd-ds"       value="tv2ccReaddirs"/>
+        <param name="snmp-object"  value="$netapp_tv2ccReaddirs"/>
+        <param name="graph-legend" value="Cached Readdir Requests/s"/>
+      </leaf>
+      <leaf name="Statfs">
+        <param name="comment"      value="Get FS Attributes"/>
+        <param name="rrd-ds"       value="tv2ccStatfss"/>
+        <param name="snmp-object"  value="$netapp_tv2ccStatfss"/>
+        <param name="graph-legend" value="Cached Statfs Requests/s"/>
+      </leaf>
+    </subtree>
+  </template>
+  <template name="netapp-nfsv3">
+      <subtree name="NFSv3_Calls_vs_Cache">
+        <param name="comment" value="NFS v3 Calls vs Cached Calls"/>
+        <param name="vertical-label" value="Requests/s"/>
+        <leaf name="Null">
+          <param name="comment" value="Do Nothing (Null) Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Null}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Null}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Getattrs">
+          <param name="comment" value="Get Attribute Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Getattrs}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Getattrs}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Setattrs">
+          <param name="comment" value="Set Attribute Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Setattrs}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Setattrs}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Lookups">
+          <param name="comment" value="Lookup File Name Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Lookups}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Lookups}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Access">
+          <param name="comment" value="Check Access Permission Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Access}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Access}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Readlinks">
+          <param name="comment" value="Read From Symbolic Link Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Readlinks}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                   value="{../nfsv3_CachedCalls/Readlinks}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Reads">
+          <param name="comment" value="Read From File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Reads}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Reads}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Writes">
+          <param name="comment" value="Write To File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Writes}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Writes}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="comment" value="Create File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Creates}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Creates}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Mkdir">
+          <param name="comment" value="Make Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Mkdir}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Mkdir}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="SymLink">
+          <param name="comment" value="Create SymLink Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/SymLink}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/SymLink}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Mknod">
+          <param name="comment" value="Create Device Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Mknod}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Mknod}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Remove">
+          <param name="comment" value="Remove File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Remove}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Remove}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Rmdir">
+          <param name="comment" value="Remove Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Rmdir}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Rmdir}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Rename">
+          <param name="comment" value="Rename File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Rename}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Rename}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Link">
+          <param name="comment" value="Create Link Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Link}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Link}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Readdir">
+          <param name="comment" value="Read From Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Readdir}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Readdir}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="ReaddirPlus">
+          <param name="comment" value="Extended Read From Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/ReaddirPlus}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                 value="{../nfsv3_CachedCalls/ReaddirPlus}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Fsstat">
+          <param name="comment" value="Dynamic File System Info Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Fsstat}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Fsstat}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Fsinfos">
+          <param name="comment" value="Static File System Info Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Fsinfos}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Fsinfos}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Pathconf">
+          <param name="comment" value="POSIX Info Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Pathconf}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Pathconf}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Commit">
+          <param name="comment" value="Commit Cached Server Data Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Calls/Commit}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedCalls/Commit}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+      </subtree>
+      <subtree name="NFSv3_Percent_Calls_vs_Cache">
+        <param name="comment" value="NFS v3 Percent Calls vs Cached Calls"/>
+        <param name="vertical-label" value="Requests/s"/>
+        <leaf name="Null">
+          <param name="comment" value="Do Nothing (Null) Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Null}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Null}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Getattrs">
+          <param name="comment" value="Get Attribute Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Getattrs}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                   value="{../nfsv3_CachedPercent/Getattrs}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Setattrs">
+          <param name="comment" value="Set Attribute Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Setattrs}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                  value="{../nfsv3_CachedPercent/Setattrs}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Lookups">
+          <param name="comment" value="Lookup File Name Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Lookups}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                    value="{../nfsv3_CachedPercent/Lookups}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Access">
+          <param name="comment" value="Check Access Permission Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Access}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Access}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Readlinks">
+          <param name="comment" value="Read From Symbolic Link Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Readlinks}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                  value="{../nfsv3_CachedPercent/Readlinks}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Reads">
+          <param name="comment" value="Read From File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Reads}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Reads}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Writes">
+          <param name="comment" value="Write To File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Writes}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Writes}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="comment" value="Create File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Creates}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                     value="{../nfsv3_CachedPercent/Creates}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Mkdir">
+          <param name="comment" value="Make Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Mkdir}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Mkdir}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="SymLink">
+          <param name="comment" value="Create SymLink Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/SymLink}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                   value="{../nfsv3_CachedPercent/SymLink}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Mknod">
+          <param name="comment" value="Create Device Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Mknod}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Mknod}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Remove">
+          <param name="comment" value="Remove File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Remove}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Remove}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Rmdir">
+          <param name="comment" value="Remove Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Rmdir}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Rmdir}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Rename">
+          <param name="comment" value="Rename File Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Rename}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Rename}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Link">
+          <param name="comment" value="Create Link Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Link}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Link}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Readdir">
+          <param name="comment" value="Read From Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Readdir}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                     value="{../nfsv3_CachedPercent/Readdir}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="ReaddirPlus">
+          <param name="comment" value="Extended Read From Directory Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/ReaddirPlus}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                 value="{../nfsv3_CachedPercent/ReaddirPlus}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Fsstat">
+          <param name="comment" value="Dynamic File System Info Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Fsstat}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Fsstat}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Fsinfos">
+          <param name="comment" value="Static File System Info Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Fsinfos}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                    value="{../nfsv3_CachedPercent/Fsinfos}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Pathconf">
+          <param name="comment" value="POSIX Info Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Pathconf}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache"
+                                    value="{../nfsv3_CachedPercent/Pathconf}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+        <leaf name="Commit">
+          <param name="comment" value="Commit Cached Server Data Requests"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="calls,cache"/>
+          <!-- Calls -->
+          <param name="ds-expr-calls" value="{../nfsv3_Percent/Commit}"/>
+          <param name="graph-legend-calls" value="Requests"/>
+          <param name="line-style-calls" value="AREA"/>
+          <param name="line-color-calls" value="##two"/>
+          <param name="line-order-calls" value="1"/>
+          <!-- Cache -->
+          <param name="ds-expr-cache" value="{../nfsv3_CachedPercent/Commit}"/>
+          <param name="graph-legend-cache" value="Cached Results"/>
+          <param name="line-style-cache" value="LINE1"/>
+          <param name="line-color-cache" value="##three"/>
+          <param name="line-order-cache" value="2"/>
+        </leaf>
+      </subtree>
+      <subtree name="nfsv3_Calls">
+        <param name="hidden" value="yes"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_nfsv3.rrd"/>
+        <param name="vertical-label"  value="Calls"/>
+        <leaf name="Null">
+          <param name="comment"      value="Do Nothing Requests"/>
+          <param name="rrd-ds"       value="tv3cNull"/>
+          <param name="snmp-object"  value="$netapp_tv3cNulls"/>
+          <param name="graph-legend" value="Null Requests/s"/>
+        </leaf>
+        <leaf name="Getattrs">
+          <param name="comment"      value="Get File Attributes"/>
+          <param name="rrd-ds"       value="tv3cGetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3cGetattrs"/>
+          <param name="graph-legend" value="Getattrs Requests/s"/>
+        </leaf>
+        <leaf name="Setattrs">
+          <param name="comment"      value="Set File Attributes"/>
+          <param name="rrd-ds"       value="tv3cSetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3cSetattrs"/>
+          <param name="graph-legend" value="Setattrs Requests/s"/>
+        </leaf>
+        <leaf name="Lookups">
+          <param name="comment"      value="Look Up File Name"/>
+          <param name="rrd-ds"       value="tv3cLookups"/>
+          <param name="snmp-object"  value="$netapp_tv3cLookups"/>
+          <param name="graph-legend" value="Lookup Requests/s"/>
+        </leaf>
+        <leaf name="Access">
+          <param name="comment"      value="Check Access Permission"/>
+          <param name="rrd-ds"       value="tv3cAccesss"/>
+          <param name="snmp-object"  value="$netapp_tv3cAccesss"/>
+          <param name="graph-legend" value="Permission Requests/s"/>
+        </leaf>
+        <leaf name="Readlinks">
+          <param name="comment"      value="Read From Symbolic Link"/>
+          <param name="rrd-ds"       value="tv3cReadlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3cReadlinks"/>
+          <param name="graph-legend" value="Readlinks Requests/s"/>
+        </leaf>
+        <leaf name="Reads">
+          <param name="comment"      value="Reads"/>
+          <param name="rrd-ds"       value="tv3cReads"/>
+          <param name="snmp-object"  value="$netapp_tv3cReads"/>
+          <param name="graph-legend" value="Read Requests/s"/>
+        </leaf>
+        <leaf name="Writes">
+          <param name="comment"      value="Write to File"/>
+          <param name="rrd-ds"       value="tv3cWrites"/>
+          <param name="snmp-object"  value="$netapp_tv3cWrites"/>
+          <param name="graph-legend" value="Write Requests/s"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="comment"      value="Create File"/>
+          <param name="rrd-ds"       value="tv3cCreates"/>
+          <param name="snmp-object"  value="$netapp_tv3cCreates"/>
+          <param name="graph-legend" value="Create Requests/s"/>
+        </leaf>
+        <leaf name="Mkdir">
+          <param name="comment"      value="Create Directory"/>
+          <param name="rrd-ds"       value="tv3cMkdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3cMkdirs"/>
+          <param name="graph-legend" value="Mkdir Requests/s"/>
+        </leaf>
+        <leaf name="SymLink">
+          <param name="comment"      value="Create SymLink to File"/>
+          <param name="rrd-ds"       value="tv3cSymlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3cSymlinks"/>
+          <param name="graph-legend" value="SymLink Requests/s"/>
+        </leaf>
+        <leaf name="Mknod">
+          <param name="comment"      value="Create a Device"/>
+          <param name="rrd-ds"       value="tv3cMknods"/>
+          <param name="snmp-object"  value="$netapp_tv3cMknods"/>
+          <param name="graph-legend" value="Mknod Requests/s"/>
+        </leaf>
+        <leaf name="Remove">
+          <param name="comment"      value="Remove File"/>
+          <param name="rrd-ds"       value="tv3cRemoves"/>
+          <param name="snmp-object"  value="$netapp_tv3cRemoves"/>
+          <param name="graph-legend" value="Remove Requests/s"/>
+        </leaf>
+        <leaf name="Rmdir">
+          <param name="comment"      value="Remove Directory"/>
+          <param name="rrd-ds"       value="tv3cRmdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3cRmdirs"/>
+          <param name="graph-legend" value="Rmdir Requests/s"/>
+        </leaf>
+        <leaf name="Rename">
+          <param name="comment"      value="Rename File"/>
+          <param name="rrd-ds"       value="tv3cRenames"/>
+          <param name="snmp-object"  value="$netapp_tv3cRenames"/>
+          <param name="graph-legend" value="Rename Requests/s"/>
+        </leaf>
+        <leaf name="Link">
+          <param name="comment"      value="Create Link to File"/>
+          <param name="rrd-ds"       value="tv3cLinks"/>
+          <param name="snmp-object"  value="$netapp_tv3cLinks"/>
+          <param name="graph-legend" value="Link Requests/s"/>
+        </leaf>
+        <leaf name="Readdir">
+          <param name="comment"      value="Read From Directory"/>
+          <param name="rrd-ds"       value="tv3cReaddirs"/>
+          <param name="snmp-object"  value="$netapp_tv3cReaddirs"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="ReaddirPlus">
+          <param name="comment"      value="Extended Read From Directory"/>
+          <param name="rrd-ds"       value="tv3cReaddirPluss"/>
+          <param name="snmp-object"  value="$netapp_tv3cReaddirPluss"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="Fsstat">
+          <param name="comment"      value="Dynamic File System Information"/>
+          <param name="rrd-ds"       value="tv3cFsstats"/>
+          <param name="snmp-object"  value="$netapp_tv3cFsstats"/>
+          <param name="graph-legend" value="FS Dynamic info Requests/s"/>
+        </leaf>
+        <leaf name="Fsinfos">
+          <param name="comment"      value="Static File System Information"/>
+          <param name="rrd-ds"       value="tv3cFsinfos"/>
+          <param name="snmp-object"  value="$netapp_tv3cFsinfos"/>
+          <param name="graph-legend" value="FS Static info Requests/s"/>
+        </leaf>
+        <leaf name="Pathconf">
+          <param name="comment"      value="POSIX Info Requests"/>
+          <param name="rrd-ds"       value="tv3cPathconfs"/>
+          <param name="snmp-object"  value="$netapp_tv3cPathconfs"/>
+          <param name="graph-legend" value="POSIX info Requests/s"/>
+        </leaf>
+        <leaf name="Commit">
+          <param name="comment"  value="Commit Cached Server Data Requests"/>
+          <param name="rrd-ds"       value="tv3cCommits"/>
+          <param name="snmp-object"  value="$netapp_tv3cCommits"/>
+          <param name="graph-legend" value="Commit Requests/s"/>
+        </leaf>
+      </subtree>
+      <subtree name="nfsv3_Percent">
+        <param name="hidden" value="yes"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_nfsv3.rrd"/>
+        <param name="vertical-label"  value="Calls"/>
+        <leaf name="Null">
+          <param name="comment"      value="Do Nothing Requests"/>
+          <param name="rrd-ds"       value="tv3pNull"/>
+          <param name="snmp-object"  value="$netapp_tv3pNulls"/>
+          <param name="graph-legend" value="Null Requests/s"/>
+        </leaf>
+        <leaf name="Getattrs">
+          <param name="comment"      value="Get File Attributes"/>
+          <param name="rrd-ds"       value="tv3pGetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3pGetattrs"/>
+          <param name="graph-legend" value="Getattrs Requests/s"/>
+        </leaf>
+        <leaf name="Setattrs">
+          <param name="comment"      value="Set File Attributes"/>
+          <param name="rrd-ds"       value="tv3pSetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3pSetattrs"/>
+          <param name="graph-legend" value="Setattrs Requests/s"/>
+        </leaf>
+        <leaf name="Lookups">
+          <param name="comment"      value="Look Up File Name"/>
+          <param name="rrd-ds"       value="tv3pLookups"/>
+          <param name="snmp-object"  value="$netapp_tv3pLookups"/>
+          <param name="graph-legend" value="Lookup Requests/s"/>
+        </leaf>
+        <leaf name="Access">
+          <param name="comment"      value="Check Access Permission"/>
+          <param name="rrd-ds"       value="tv3pAccesss"/>
+          <param name="snmp-object"  value="$netapp_tv3pAccesss"/>
+          <param name="graph-legend" value="Permission Requests/s"/>
+        </leaf>
+        <leaf name="Readlinks">
+          <param name="comment"      value="Read From Symbolic Link"/>
+          <param name="rrd-ds"       value="tv3pReadlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3pReadlinks"/>
+          <param name="graph-legend" value="Readlinks Requests/s"/>
+        </leaf>
+        <leaf name="Reads">
+          <param name="comment"      value="Reads"/>
+          <param name="rrd-ds"       value="tv3pReads"/>
+          <param name="snmp-object"  value="$netapp_tv3pReads"/>
+          <param name="graph-legend" value="Read Requests/s"/>
+        </leaf>
+        <leaf name="Writes">
+          <param name="comment"      value="Write to File"/>
+          <param name="rrd-ds"       value="tv3pWrites"/>
+          <param name="snmp-object"  value="$netapp_tv3pWrites"/>
+          <param name="graph-legend" value="Write Requests/s"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="comment"      value="Create File"/>
+          <param name="rrd-ds"       value="tv3pCreates"/>
+          <param name="snmp-object"  value="$netapp_tv3pCreates"/>
+          <param name="graph-legend" value="Create Requests/s"/>
+        </leaf>
+        <leaf name="Mkdir">
+          <param name="comment"      value="Create Directory"/>
+          <param name="rrd-ds"       value="tv3pMkdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3pMkdirs"/>
+          <param name="graph-legend" value="Mkdir Requests/s"/>
+        </leaf>
+        <leaf name="SymLink">
+          <param name="comment"      value="Create SymLink to File"/>
+          <param name="rrd-ds"       value="tv3pSymlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3pSymlinks"/>
+          <param name="graph-legend" value="SymLink Requests/s"/>
+        </leaf>
+        <leaf name="Mknod">
+          <param name="comment"      value="Create a Device"/>
+          <param name="rrd-ds"       value="tv3pMknods"/>
+          <param name="snmp-object"  value="$netapp_tv3pMknods"/>
+          <param name="graph-legend" value="Mknod Requests/s"/>
+        </leaf>
+        <leaf name="Remove">
+          <param name="comment"      value="Remove File"/>
+          <param name="rrd-ds"       value="tv3pRemoves"/>
+          <param name="snmp-object"  value="$netapp_tv3pRemoves"/>
+          <param name="graph-legend" value="Remove Requests/s"/>
+        </leaf>
+        <leaf name="Rmdir">
+          <param name="comment"      value="Remove Directory"/>
+          <param name="rrd-ds"       value="tv3pRmdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3pRmdirs"/>
+          <param name="graph-legend" value="Rmdir Requests/s"/>
+        </leaf>
+        <leaf name="Rename">
+          <param name="comment"      value="Rename File"/>
+          <param name="rrd-ds"       value="tv3pRenames"/>
+          <param name="snmp-object"  value="$netapp_tv3pRenames"/>
+          <param name="graph-legend" value="Rename Requests/s"/>
+        </leaf>
+        <leaf name="Link">
+          <param name="comment"      value="Create Link to File"/>
+          <param name="rrd-ds"       value="tv3pLinks"/>
+          <param name="snmp-object"  value="$netapp_tv3pLinks"/>
+          <param name="graph-legend" value="Link Requests/s"/>
+        </leaf>
+        <leaf name="Readdir">
+          <param name="comment"      value="Read From Directory"/>
+          <param name="rrd-ds"       value="tv3pReaddirs"/>
+          <param name="snmp-object"  value="$netapp_tv3pReaddirs"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="ReaddirPlus">
+          <param name="comment"      value="Extended Read From Directory"/>
+          <param name="rrd-ds"       value="tv3pReaddirPluss"/>
+          <param name="snmp-object"  value="$netapp_tv3pReaddirPluss"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="Fsstat">
+          <param name="comment"      value="Dynamic File System Information"/>
+          <param name="rrd-ds"       value="tv3pFsstats"/>
+          <param name="snmp-object"  value="$netapp_tv3pFsstats"/>
+          <param name="graph-legend" value="FS Dynamic info Requests/s"/>
+        </leaf>
+        <leaf name="Fsinfos">
+          <param name="comment"      value="Static File System Information"/>
+          <param name="rrd-ds"       value="tv3pFsinfos"/>
+          <param name="snmp-object"  value="$netapp_tv3pFsinfos"/>
+          <param name="graph-legend" value="FS Static info Requests/s"/>
+        </leaf>
+        <leaf name="Pathconf">
+          <param name="comment"      value="POSIX Info Requests"/>
+          <param name="rrd-ds"       value="tv3pPathconfs"/>
+          <param name="snmp-object"  value="$netapp_tv3pPathconfs"/>
+          <param name="graph-legend" value="POSIX info Requests/s"/>
+        </leaf>
+        <leaf name="Commit">
+          <param name="comment"  value="Commit Cached Server Data Requests"/>
+          <param name="rrd-ds"       value="tv3pCommits"/>
+          <param name="snmp-object"  value="$netapp_tv3pCommits"/>
+          <param name="graph-legend" value="Commit Requests/s"/>
+        </leaf>
+      </subtree>
+      <subtree name="nfsv3_CachedCalls">
+        <param name="hidden" value="yes"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_nfsv3.rrd"/>
+        <param name="vertical-label"  value="Calls"/>
+        <leaf name="Null">
+          <param name="comment"      value="Do Nothing Requests"/>
+          <param name="rrd-ds"       value="tv3ccNull"/>
+          <param name="snmp-object"  value="$netapp_tv3ccNulls"/>
+          <param name="graph-legend" value="Null Requests/s"/>
+        </leaf>
+        <leaf name="Getattrs">
+          <param name="comment"      value="Get File Attributes"/>
+          <param name="rrd-ds"       value="tv3ccGetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3ccGetattrs"/>
+          <param name="graph-legend" value="Getattrs Requests/s"/>
+        </leaf>
+        <leaf name="Setattrs">
+          <param name="comment"      value="Set File Attributes"/>
+          <param name="rrd-ds"       value="tv3ccSetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3ccSetattrs"/>
+          <param name="graph-legend" value="Setattrs Requests/s"/>
+        </leaf>
+        <leaf name="Lookups">
+          <param name="comment"      value="Look Up File Name"/>
+          <param name="rrd-ds"       value="tv3ccLookups"/>
+          <param name="snmp-object"  value="$netapp_tv3ccLookups"/>
+          <param name="graph-legend" value="Lookup Requests/s"/>
+        </leaf>
+        <leaf name="Access">
+          <param name="comment"      value="Check Access Permission"/>
+          <param name="rrd-ds"       value="tv3ccAccesss"/>
+          <param name="snmp-object"  value="$netapp_tv3ccAccesss"/>
+          <param name="graph-legend" value="Permission Requests/s"/>
+        </leaf>
+        <leaf name="Readlinks">
+          <param name="comment"      value="Read From Symbolic Link"/>
+          <param name="rrd-ds"       value="tv3ccReadlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3ccReadlinks"/>
+          <param name="graph-legend" value="Readlinks Requests/s"/>
+        </leaf>
+        <leaf name="Reads">
+          <param name="comment"      value="Reads"/>
+          <param name="rrd-ds"       value="tv3ccReads"/>
+          <param name="snmp-object"  value="$netapp_tv3ccReads"/>
+          <param name="graph-legend" value="Read Requests/s"/>
+        </leaf>
+        <leaf name="Writes">
+          <param name="comment"      value="Write to File"/>
+          <param name="rrd-ds"       value="tv3ccWrites"/>
+          <param name="snmp-object"  value="$netapp_tv3ccWrites"/>
+          <param name="graph-legend" value="Write Requests/s"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="comment"      value="Create File"/>
+          <param name="rrd-ds"       value="tv3ccCreates"/>
+          <param name="snmp-object"  value="$netapp_tv3ccCreates"/>
+          <param name="graph-legend" value="Create Requests/s"/>
+        </leaf>
+        <leaf name="Mkdir">
+          <param name="comment"      value="Create Directory"/>
+          <param name="rrd-ds"       value="tv3ccMkdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3ccMkdirs"/>
+          <param name="graph-legend" value="Mkdir Requests/s"/>
+        </leaf>
+        <leaf name="SymLink">
+          <param name="comment"      value="Create SymLink to File"/>
+          <param name="rrd-ds"       value="tv3ccSymlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3ccSymlinks"/>
+          <param name="graph-legend" value="SymLink Requests/s"/>
+        </leaf>
+        <leaf name="Mknod">
+          <param name="comment"      value="Create a Device"/>
+          <param name="rrd-ds"       value="tv3ccMknods"/>
+          <param name="snmp-object"  value="$netapp_tv3ccMknods"/>
+          <param name="graph-legend" value="Mknod Requests/s"/>
+        </leaf>
+        <leaf name="Remove">
+          <param name="comment"      value="Remove File"/>
+          <param name="rrd-ds"       value="tv3ccRemoves"/>
+          <param name="snmp-object"  value="$netapp_tv3ccRemoves"/>
+          <param name="graph-legend" value="Remove Requests/s"/>
+        </leaf>
+        <leaf name="Rmdir">
+          <param name="comment"      value="Remove Directory"/>
+          <param name="rrd-ds"       value="tv3ccRmdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3ccRmdirs"/>
+          <param name="graph-legend" value="Rmdir Requests/s"/>
+        </leaf>
+        <leaf name="Rename">
+          <param name="comment"      value="Rename File"/>
+          <param name="rrd-ds"       value="tv3ccRenames"/>
+          <param name="snmp-object"  value="$netapp_tv3ccRenames"/>
+          <param name="graph-legend" value="Rename Requests/s"/>
+        </leaf>
+        <leaf name="Link">
+          <param name="comment"      value="Create Link to File"/>
+          <param name="rrd-ds"       value="tv3ccLinks"/>
+          <param name="snmp-object"  value="$netapp_tv3ccLinks"/>
+          <param name="graph-legend" value="Link Requests/s"/>
+        </leaf>
+        <leaf name="Readdir">
+          <param name="comment"      value="Read From Directory"/>
+          <param name="rrd-ds"       value="tv3ccReaddirs"/>
+          <param name="snmp-object"  value="$netapp_tv3ccReaddirs"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="ReaddirPlus">
+          <param name="comment"      value="Extended Read From Directory"/>
+          <param name="rrd-ds"       value="tv3ccReaddirPluss"/>
+          <param name="snmp-object"  value="$netapp_tv3ccReaddirPluss"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="Fsstat">
+          <param name="comment"      value="Dynamic File System Information"/>
+          <param name="rrd-ds"       value="tv3ccFsstats"/>
+          <param name="snmp-object"  value="$netapp_tv3ccFsstats"/>
+          <param name="graph-legend" value="FS Dynamic info Requests/s"/>
+        </leaf>
+        <leaf name="Fsinfos">
+          <param name="comment"      value="Static File System Information"/>
+          <param name="rrd-ds"       value="tv3ccFsinfos"/>
+          <param name="snmp-object"  value="$netapp_tv3ccFsinfos"/>
+          <param name="graph-legend" value="FS Static info Requests/s"/>
+        </leaf>
+        <leaf name="Pathconf">
+          <param name="comment"      value="POSIX Info Requests"/>
+          <param name="rrd-ds"       value="tv3ccPathconfs"/>
+          <param name="snmp-object"  value="$netapp_tv3ccPathconfs"/>
+          <param name="graph-legend" value="POSIX info Requests/s"/>
+        </leaf>
+        <leaf name="Commit">
+          <param name="comment"  value="Commit Cached Server Data Requests"/>
+          <param name="rrd-ds"       value="tv3ccCommits"/>
+          <param name="snmp-object"  value="$netapp_tv3ccCommits"/>
+          <param name="graph-legend" value="Commit Requests/s"/>
+        </leaf>
+      </subtree>
+      <subtree name="nfsv3_CachedPercent">
+        <param name="hidden" value="yes"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="data-file" value="%system-id%_nfsv3.rrd"/>
+        <param name="vertical-label"  value="Calls"/>
+        <leaf name="Null">
+          <param name="comment"      value="Do Nothing Requests"/>
+          <param name="rrd-ds"       value="tv3cpNull"/>
+          <param name="snmp-object"  value="$netapp_tv3cpNulls"/>
+          <param name="graph-legend" value="Null Requests/s"/>
+        </leaf>
+        <leaf name="Getattrs">
+          <param name="comment"      value="Get File Attributes"/>
+          <param name="rrd-ds"       value="tv3cpGetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3cpGetattrs"/>
+          <param name="graph-legend" value="Getattrs Requests/s"/>
+        </leaf>
+        <leaf name="Setattrs">
+          <param name="comment"      value="Set File Attributes"/>
+          <param name="rrd-ds"       value="tv3cpSetattrs"/>
+          <param name="snmp-object"  value="$netapp_tv3cpSetattrs"/>
+          <param name="graph-legend" value="Setattrs Requests/s"/>
+        </leaf>
+        <leaf name="Lookups">
+          <param name="comment"      value="Look Up File Name"/>
+          <param name="rrd-ds"       value="tv3cpLookups"/>
+          <param name="snmp-object"  value="$netapp_tv3cpLookups"/>
+          <param name="graph-legend" value="Lookup Requests/s"/>
+        </leaf>
+        <leaf name="Access">
+          <param name="comment"      value="Check Access Permission"/>
+          <param name="rrd-ds"       value="tv3cpAccesss"/>
+          <param name="snmp-object"  value="$netapp_tv3cpAccesss"/>
+          <param name="graph-legend" value="Permission Requests/s"/>
+        </leaf>
+        <leaf name="Readlinks">
+          <param name="comment"      value="Read From Symbolic Link"/>
+          <param name="rrd-ds"       value="tv3cpReadlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3cpReadlinks"/>
+          <param name="graph-legend" value="Readlinks Requests/s"/>
+        </leaf>
+        <leaf name="Reads">
+          <param name="comment"      value="Reads"/>
+          <param name="rrd-ds"       value="tv3cpReads"/>
+          <param name="snmp-object"  value="$netapp_tv3cpReads"/>
+          <param name="graph-legend" value="Read Requests/s"/>
+        </leaf>
+        <leaf name="Writes">
+          <param name="comment"      value="Write to File"/>
+          <param name="rrd-ds"       value="tv3cpWrites"/>
+          <param name="snmp-object"  value="$netapp_tv3cpWrites"/>
+          <param name="graph-legend" value="Write Requests/s"/>
+        </leaf>
+        <leaf name="Creates">
+          <param name="comment"      value="Create File"/>
+          <param name="rrd-ds"       value="tv3cpCreates"/>
+          <param name="snmp-object"  value="$netapp_tv3cpCreates"/>
+          <param name="graph-legend" value="Create Requests/s"/>
+        </leaf>
+        <leaf name="Mkdir">
+          <param name="comment"      value="Create Directory"/>
+          <param name="rrd-ds"       value="tv3cpMkdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3cpMkdirs"/>
+          <param name="graph-legend" value="Mkdir Requests/s"/>
+        </leaf>
+        <leaf name="SymLink">
+          <param name="comment"      value="Create SymLink to File"/>
+          <param name="rrd-ds"       value="tv3cpSymlinks"/>
+          <param name="snmp-object"  value="$netapp_tv3cpSymlinks"/>
+          <param name="graph-legend" value="SymLink Requests/s"/>
+        </leaf>
+        <leaf name="Mknod">
+          <param name="comment"      value="Create a Device"/>
+          <param name="rrd-ds"       value="tv3cpMknods"/>
+          <param name="snmp-object"  value="$netapp_tv3cpMknods"/>
+          <param name="graph-legend" value="Mknod Requests/s"/>
+        </leaf>
+        <leaf name="Remove">
+          <param name="comment"      value="Remove File"/>
+          <param name="rrd-ds"       value="tv3cpRemoves"/>
+          <param name="snmp-object"  value="$netapp_tv3cpRemoves"/>
+          <param name="graph-legend" value="Remove Requests/s"/>
+        </leaf>
+        <leaf name="Rmdir">
+          <param name="comment"      value="Remove Directory"/>
+          <param name="rrd-ds"       value="tv3cpRmdirs"/>
+          <param name="snmp-object"  value="$netapp_tv3cpRmdirs"/>
+          <param name="graph-legend" value="Rmdir Requests/s"/>
+        </leaf>
+        <leaf name="Rename">
+          <param name="comment"      value="Rename File"/>
+          <param name="rrd-ds"       value="tv3cpRenames"/>
+          <param name="snmp-object"  value="$netapp_tv3cpRenames"/>
+          <param name="graph-legend" value="Rename Requests/s"/>
+        </leaf>
+        <leaf name="Link">
+          <param name="comment"      value="Create Link to File"/>
+          <param name="rrd-ds"       value="tv3cpLinks"/>
+          <param name="snmp-object"  value="$netapp_tv3cpLinks"/>
+          <param name="graph-legend" value="Link Requests/s"/>
+        </leaf>
+        <leaf name="Readdir">
+          <param name="comment"      value="Read From Directory"/>
+          <param name="rrd-ds"       value="tv3cpReaddirs"/>
+          <param name="snmp-object"  value="$netapp_tv3cpReaddirs"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="ReaddirPlus">
+          <param name="comment"      value="Extended Read From Directory"/>
+          <param name="rrd-ds"       value="tv3cpReaddirPluss"/>
+          <param name="snmp-object"  value="$netapp_tv3cpReaddirPluss"/>
+          <param name="graph-legend" value="Readdir Requests/s"/>
+        </leaf>
+        <leaf name="Fsstat">
+          <param name="comment"      value="Dynamic File System Information"/>
+          <param name="rrd-ds"       value="tv3cpFsstats"/>
+          <param name="snmp-object"  value="$netapp_tv3cpFsstats"/>
+          <param name="graph-legend" value="FS Dynamic info Requests/s"/>
+        </leaf>
+        <leaf name="Fsinfos">
+          <param name="comment"      value="Static File System Information"/>
+          <param name="rrd-ds"       value="tv3cpFsinfos"/>
+          <param name="snmp-object"  value="$netapp_tv3cpFsinfos"/>
+          <param name="graph-legend" value="FS Static info Requests/s"/>
+        </leaf>
+        <leaf name="Pathconf">
+          <param name="comment"      value="POSIX Info Requests"/>
+          <param name="rrd-ds"       value="tv3cpPathconfs"/>
+          <param name="snmp-object"  value="$netapp_tv3cpPathconfs"/>
+          <param name="graph-legend" value="POSIX info Requests/s"/>
+        </leaf>
+        <leaf name="Commit">
+          <param name="comment"  value="Commit Cached Server Data Requests"/>
+          <param name="rrd-ds"       value="tv3cpCommits"/>
+          <param name="snmp-object"  value="$netapp_tv3cpCommits"/>
+          <param name="graph-legend" value="Commit Requests/s"/>
+        </leaf>
+      </subtree>
+  </template>
+
+</datasources>
+
+</configuration>

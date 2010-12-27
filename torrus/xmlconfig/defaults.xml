@@ -1,0 +1,309 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002-2007  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: defaults.xml,v 1.1 2010-12-27 00:04:05 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!--
+  These are the default settings for the datasources and  tokensets,
+  and default view definitions.
+
+  WARNING: This file is overwritten by "make install"
+  
+  It is recommended to place all site customizations in site-global.xml,
+  as it would not be overwritten by the installer.
+-->
+
+<configuration>
+
+<param-properties>
+  <!-- Parameters where space is removed from values -->
+  <prop param="action"             prop="remspace" value="1"/>
+  <prop param="display-rpn-expr"   prop="remspace" value="1"/>
+  <prop param="ds-names"           prop="remspace" value="1"/>
+  <prop param="hrules"             prop="remspace" value="1"/>
+  <prop param="launch-when"        prop="remspace" value="1"/>
+  <prop param="monitor"            prop="remspace" value="1"/>
+  <prop param="nodeid"             prop="remspace" value="1"/>
+  <prop param="print-cf"           prop="remspace" value="1"/>
+  <prop param="rpn-expr"           prop="remspace" value="1"/>
+  <prop param="rrgraph-views"      prop="remspace" value="1"/>
+  <prop param="setenv-dataexpr"    prop="remspace" value="1"/>
+  <prop param="setenv-params"      prop="remspace" value="1"/>
+  <prop param="storage-type"       prop="remspace" value="1"/>
+  <prop param="tokenset-member"    prop="remspace" value="1"/>
+  <prop param="value-map"          prop="remspace" value="1"/>
+
+  <!-- Parameters which need to be expanded accorrding
+       to $defs and %paramrefs% -->
+
+  <prop param="collector-scale"       prop="expand" value="1"/>
+  <prop param="collector-timeoffset-hashstring"
+                                      prop="expand" value="1"/>
+  <prop param="collector-instance-hashstring"
+                                      prop="expand" value="1"/>
+  <prop param="comment"               prop="expand" value="1"/>
+  <prop param="data-dir"              prop="expand" value="1"/>
+  <prop param="data-file"             prop="expand" value="1"/>
+  <prop param="descriptive-nickname"  prop="expand" value="1"/>
+  <prop param="graph-legend"          prop="expand" value="1"/>
+  <prop param="graph-title"           prop="expand" value="1"/>
+  <prop param="lower-limit"           prop="expand" value="1"/>
+  <prop param="monitor-vars"          prop="expand" value="1"/>
+  <prop param="nodeid"                prop="expand" value="1"/>
+  <prop param="normal-level"          prop="expand" value="1"/>
+  <prop param="rpn-expr"              prop="expand" value="1"/>
+  <prop param="rrd-create-max"        prop="expand" value="1"/>
+  <prop param="rrd-create-min"        prop="expand" value="1"/>
+  <prop param="rrd-ds"                prop="expand" value="1"/>
+  <prop param="transform-value"       prop="expand" value="1"/>
+  <prop param="upper-limit"           prop="expand" value="1"/>
+
+  <!-- Parameters which are included in search DB -->
+  <prop param="comment"               prop="search" value="1"/>
+  <prop param="legend"                prop="search" value="1"/>
+
+  
+</param-properties>
+
+<datasources>
+
+  <!-- Default views must be defined -->
+  <param name="default-subtree-view" value="default-dir-html" />
+  <param name="default-leaf-view" value="default-rrd-html" />
+  <param name="rrgraph-views">
+    short,last24h,lastweek,lastmonth,lastyear
+  </param>
+
+  <!-- Minimum set of parameters if we use
+       collector-dispersed-timeoffset=yes -->
+  <param name="collector-timeoffset-hashstring" value="%system-id%" />
+  <param name="collector-timeoffset-min" value="0" />
+  <param name="collector-timeoffset-max" value="300" />
+  <param name="collector-timeoffset-step" value="60" />
+
+  <param name="collector-instance-hashstring" value="%system-id%" />
+
+</datasources>
+
+<token-sets>
+
+  <param name="default-tset-view" value="default-tset-html" />
+  <param name="default-tsetlist-view" value="tset-list-html" />
+
+</token-sets>
+
+<views>
+
+  <!-- Defaults being used by other graphs -->
+  <view name="default-rrgraph">
+    <param name="view-type"     value="rrgraph" />
+    <param name="expires"       value="300" />
+    <param name="start"         value="-24h" />
+    <param name="end"           value="now" />
+    <param name="width"         value="500" />
+    <param name="height"        value="250" />
+    <param name="line-style"    value="##SingleGraph" />
+    <param name="line-color"    value="##SingleGraph" />
+    <param name="hw-bndr-style" value="##HWBoundary" />
+    <param name="hw-bndr-color" value="##HWBoundary" />
+    <param name="hw-fail-color" value="##HWFailure" />
+
+    <param name="hrules"            value="min,norm,max"/>
+    <param name="hrule-color-min"   value="##HruleMin"/>
+    <param name="hrule-value-min"   value="lower-limit"/>
+    <param name="hrule-color-norm"  value="##HruleNormal"/>
+    <param name="hrule-value-norm"  value="normal-level"/>
+    <param name="hrule-color-max"   value="##HruleMax"/>
+    <param name="hrule-value-max"   value="upper-limit"/>
+
+    <param name="decorations"       value="busday,evening,night"/>
+
+    # Business day: 8:00 to 17:00
+    <param name="dec-order-busday"     value="-10"/>
+    <param name="dec-expr-busday">
+      LTIME,86400,%,DUP,28800,GE,EXC,61200,LE,*,INF,UNKN,IF
+    </param>
+    <param name="dec-style-busday"     value="##BusinessDay"/>
+    <param name="dec-color-busday"     value="##BusinessDay"/>
+
+    # Evening: 17:00 to 22:00
+    <param name="dec-order-evening"    value="-20"/>
+    <param name="dec-expr-evening">
+      LTIME,86400,%,DUP,61200,GE,EXC,79200,LE,*,INF,UNKN,IF
+    </param>
+    <param name="dec-style-evening"    value="##Evening"/>
+    <param name="dec-color-evening"    value="##Evening"/>
+
+    # Night: 22:00 to 6:00
+    <param name="dec-order-night"    value="-30"/>
+    <param name="dec-expr-night">
+      LTIME,86400,%,DUP,79200,GE,EXC,21600,LE,+,INF,UNKN,IF
+    </param>
+    <param name="dec-style-night"    value="##Night"/>
+    <param name="dec-color-night"    value="##Night"/>
+
+    # GPRINT stuff
+    <param name="gprint-values"         value="current,average,max,min"/>
+    <param name="gprint-header"
+           value="Current    Average    Maximum    Minimum"/>
+
+    <param name="gprint-format-current" value="LAST:%8.2lf%s"/>
+    <param name="gprint-format-average" value="AVERAGE:%8.2lf%s"/>
+    <param name="gprint-format-max"     value="MAX:%8.2lf%s"/>
+    <param name="gprint-format-min"     value="MIN:%8.2lf%s"/>
+    
+    <!-- Last day graph, inherits parameters from the above -->
+    <view name="last24h">
+      <param name="start"         value="-24hours" />
+      <param name="description"   value="Last 24 hours graph" />
+    </view>
+
+    <!-- Last week graph -->
+    <view name="lastweek">
+      <param name="start"         value="-7days" />
+      <param name="description"   value="Last week graph" />
+    </view>
+
+    <!-- Last month graph -->
+    <view name="lastmonth">
+      <param name="start"         value="-1month" />
+      <param name="rrd-hwpredict" value="disabled" />
+      <param name="decorations"   value=""/>
+      <param name="description"   value="Last month graph" />
+    </view>
+
+    <!-- Last year graph -->
+    <view name="lastyear">
+      <param name="start"         value="-1year" />
+      <param name="rrd-hwpredict" value="disabled" />
+      <param name="decorations"   value=""/>
+      <param name="description"   value="Last year graph" />
+    </view>
+
+    <!-- Short overview for multigraph listings -->
+    <view name="short">
+      <param name="width"         value="350" />
+      <param name="height"        value="100" />
+      <param name="start"         value="-6h" />
+      <param name="gprint-values" value="current"/>
+      <param name="gprint-header" value=""/>
+      <param name="gprint-format-current" value="LAST:Current\: %7.2lf%s"/>
+      <param name="description"   value="Last 6 hours graph" />
+      
+      <view name="last24h-small">
+        <param name="start"         value="-24hours" />
+        <param name="description"   value="Last 24 hours graph" />
+      </view>
+    </view>
+  </view>
+
+  <!-- This is the HTML page with RRD graphs on it.
+       Use the specified HTML file as a template with special tags in it -->
+  <view name="default-rrd-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="300" />
+    <param name="html-template" value="default-rrd.html" />
+    <view name="longterm-rrd-html">
+      <param name="longterm" value="1" />
+    </view>
+  </view>
+
+
+  <!-- This is the HTML page for tree browsing -->
+  <view name="default-dir-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="3600" />
+    <param name="html-template" value="default-dir.html" />
+  </view>
+
+  <!-- This shows the leaves of the subtree -->
+  <view name="expanded-dir-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="300" />
+    <param name="html-template" value="expanded-dir.html" />
+  </view>
+
+  <!-- This shows overview subleaves (previousely InOutBps) -->
+  <view name="overview-subleaves-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="300" />
+    <param name="html-template" value="overview-subleaves.html" />
+  </view>
+
+  <!-- This all subtrees and leaves recureively -->
+  <view name="recursive-dir-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="3600" />
+    <param name="html-template" value="default-recursivedir.html" />
+  </view>
+  
+  <view name="rrd-print-daily">
+    <param name="view-type"     value="rrprint" />
+    <param name="expires"       value="300" />
+    <param name="start"         value="-24h" />
+    <param name="end"           value="now" />
+    <param name="print-cf"      value="MIN,AVERAGE,MAX" />
+  </view>
+
+  <view name="rrd-print-last">
+    <param name="view-type"     value="rrprint" />
+    <param name="expires"       value="300" />
+    <param name="start"         value="-1h" />
+    <param name="end"           value="now" />
+    <param name="print-cf"      value="LAST" />
+  </view>
+
+  <!-- This is the HTML page for tokenset browsing -->
+  <view name="default-tset-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="60" />
+    <param name="html-template" value="default-tset.html" />
+  </view>
+
+  <view name="tset-list-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="60" />
+    <param name="html-template" value="tset-list.html" />
+  </view>
+
+  <!-- This is the HTML page for displaying the help message -->
+  <view name="helptext-html">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="3600" />
+    <param name="html-template" value="default-helptext.html" />
+  </view>
+  
+  <view name="adminfo">
+    <param name="view-type"     value="adminfo" />
+    <param name="expires"       value="3600" />
+    <param name="html-template" value="adminfo.html" />
+  </view>
+
+  <view name="search">
+    <param name="view-type"     value="html" />
+    <param name="expires"       value="3600" />
+    <param name="html-template" value="search.html" />
+  </view>
+
+    
+</views>
+
+</configuration>

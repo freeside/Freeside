@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2008 Jon Nistor
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: rfc1628.ups.xml,v 1.1 2010-12-27 00:04:30 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+-->
+
+<configuration>
+
+<definitions>
+  <!-- UPS-MIB -->
+
+  <!-- Battery group -->
+  <def name="upsBatteryStatus"             value="1.3.6.1.2.1.33.1.2.1.0"/>
+  <def name="upsSecondsOnBattery"          value="1.3.6.1.2.1.33.1.2.2.0"/>
+  <def name="upsEstimatedMinutesRemaining" value="1.3.6.1.2.1.33.1.2.3.0"/>
+  <def name="upsEstimatedChargeRemaining"  value="1.3.6.1.2.1.33.1.2.4.0"/>
+  <def name="upsBatteryVoltage"            value="1.3.6.1.2.1.33.1.2.5.0"/>
+  <def name="upsBatteryCurrent"            value="1.3.6.1.2.1.33.1.2.6.0"/>
+
+  <!-- Input group -->
+  <def name="upsInputLineBads"             value="1.3.6.1.2.1.33.1.3.1.0"/>
+  <def name="upsInputFrequency"            value="1.3.6.1.2.1.33.1.3.3.1.2"/>
+  <def name="upsInputVoltage"              value="1.3.6.1.2.1.33.1.3.3.1.3"/>
+  <def name="upsInputCurrent"              value="1.3.6.1.2.1.33.1.3.3.1.4"/>
+  <def name="upsInputTruePower"            value="1.3.6.1.2.1.33.1.3.3.1.5"/>
+
+  <!-- Output group -->
+  <def name="upsOutputFrequency"           value="1.3.6.1.2.1.33.1.4.2.0"/>
+  <def name="upsOutputVoltage"             value="1.3.6.1.2.1.33.1.4.4.1.2"/>
+  <def name="upsOutputCurrent"             value="1.3.6.1.2.1.33.1.4.4.1.3"/>
+  <def name="upsOutputPower"               value="1.3.6.1.2.1.33.1.4.4.1.4"/>
+  <def name="upsOutputPercentLoad"         value="1.3.6.1.2.1.33.1.4.4.1.5"/>
+
+  <!-- Bypass group -->
+  <def name="upsBypassFrequency"           value="1.3.6.1.2.1.33.1.5.1.0"/>
+  <def name="upsBypassVoltage"             value="1.3.6.1.2.1.33.1.5.3.1.2"/>
+
+</definitions>
+
+<datasources>
+
+  <template name="battery-subtree">
+    <param name="data-file"         value="%system-id%_ups_battery.rrd"/>
+    <param name="comment"           value="Battery Information"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="Status">
+      <!-- values: 1 unknown, 2 normal, 3 low, 4 depleted -->
+      <param name="comment"      value="Capacity remaining in batteries"/>
+      <param name="graph-legend" value="status"/>
+      <param name="graph-title"
+              value="Status: 1 unknown, 2 normal, 3 low, 4 depleted"/>
+      <param name="precedence"   value="990"/>
+      <param name="rrd-ds"       value="BatteryStatus"/>
+      <param name="snmp-object"  value="$upsBatteryStatus"/>
+    </leaf>
+ 
+    <leaf name="Seconds_On_Batttery">
+      <param name="comment"        value="Seconds unit is on battery"/>
+      <param name="graph-legend"   value="Seconds on battery"/>
+      <param name="precedence"     value="980"/>
+      <param name="rrd-ds"         value="SecondsOnBattery"/>
+      <param name="snmp-object"    value="$upsSecondsOnBattery"/>
+      <param name="vertical-label" value="seconds"/>
+    </leaf>
+
+    <leaf name="Minutes_Remaining">
+      <param name="comment"        value="Minutes remaining before depletion"/>
+      <param name="graph-legend"   value="Minutes left before depletion"/>
+      <param name="graph-lower-limit" value="0" />
+      <param name="precedence"     value="970"/>
+      <param name="rrd-ds"         value="EstMinRemaining"/>
+      <param name="snmp-object"    value="$upsEstimatedMinutesRemaining"/>
+      <param name="vertical-label" value="minutes"/>
+    </leaf>
+
+    <leaf name="Charge_Remaining">
+      <param name="comment"        value="Battery charge remaining"/>
+      <param name="graph-legend"   value="Battery charge remaining"/>
+      <param name="graph-lower-limit" value="0" />
+      <param name="precedence"     value="960"/>
+      <param name="rrd-ds"         value="EstChgRemaining"/>
+      <param name="snmp-object"    value="$upsEstimatedChargeRemaining"/>
+      <param name="upper-limit"    value="100" />
+      <param name="vertical-label" value="percent"/>
+    </leaf>
+
+    <leaf name="Battery_Voltage">
+      <param name="hidden"         value="yes"/>
+      <param name="comment"        value="Magnitude of battery voltage"/>
+      <param name="graph-legend"   value="Battery Voltage"/>
+      <param name="precedence"     value="951"/>
+      <param name="rrd-ds"         value="BatteryVoltage"/>
+      <param name="snmp-object"    value="$upsBatteryVoltage"/>
+      <param name="vertical-label" value="0.1 Volt DC"/>
+    </leaf>
+
+    <leaf name="Voltage">
+      <param name="comment"        value="Magnitude of battery voltage"/>
+      <param name="graph-legend"   value="Battery Voltage"/>
+      <param name="precedence"     value="950"/>
+      <param name="ds-type"        value="rrd-file"/>
+      <param name="leaf-type"      value="rrd-cdef"/>
+      <param name="rpn-expr"       value="{Battery_Voltage},0.1,*"/>
+      <param name="vertical-label" value="Volt DC"/>
+    </leaf>
+      
+    <leaf name="Battery_Current">
+      <param name="hidden"         value="yes"/>
+      <param name="comment"        value="Present battery current"/>
+      <param name="graph-legend"   value="Battery current"/>
+      <param name="precedence"     value="940"/>
+      <param name="rrd-ds"         value="BatteryCurrent"/>
+      <param name="snmp-object"    value="$upsBatteryCurrent"/>
+      <param name="vertical-label" value="0.1 Amp DC"/>
+    </leaf>
+
+    <leaf name="Current">
+      <param name="comment"        value="Present battery current"/>
+      <param name="graph-legend"   value="Battery current"/>
+      <param name="precedence"     value="930"/>
+      <param name="ds-type"        value="rrd-file"/>
+      <param name="leaf-type"      value="rrd-cdef"/>
+      <param name="rpn-expr"       value="{Battery_Current},0.1,*"/>
+      <param name="vertical-label" value="Amp DC"/>
+    </leaf>
+  </template>
+
+  <template name="ups-input-subtree">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="freq,volt,curr,true"/>
+    <!-- Frequency -->
+    <param name="overview-subleave-name-freq" value="Frequency"/>
+    <param name="overview-shortcut-text-freq"
+           value="All Frequency"/>
+    <param name="overview-shortcut-title-freq"
+           value="Show input frequency for all phases on one page"/>
+    <param name="overview-page-title-freq"
+           value="Input Frequency"/>
+    <!-- Voltage -->
+    <param name="overview-subleave-name-volt" value="Voltage"/>
+    <param name="overview-shortcut-text-volt"
+           value="All Voltage"/>
+    <param name="overview-shortcut-title-volt"
+           value="Show input voltage for all phases on one page"/>
+    <param name="overview-page-title-volt"
+           value="Input Voltage"/>
+    <!-- Current -->
+    <param name="overview-subleave-name-curr" value="Current"/>
+    <param name="overview-shortcut-text-curr"
+           value="All Current"/>
+    <param name="overview-shortcut-title-curr"
+           value="Show input current for all phases on one page"/>
+    <param name="overview-page-title-curr"
+           value="Input Current"/>
+    <!-- TruePower -->
+    <param name="overview-subleave-name-true" value="True_Power"/>
+    <param name="overview-shortcut-text-true"
+           value="All True Power"/>
+    <param name="overview-shortcut-title-true"
+           value="Show input true power for all phases on one page"/>
+    <param name="overview-page-title-true"
+           value="Input True Power"/>
+  </template>
+
+  <template name="ups-input-leaf">
+    <param name="data-file"      value="%system-id%_input_%ups-input-idx%.rrd"/>
+    <param name="comment"           value="Phase %ups-input-idx% input"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="Input_Frequency">
+      <param name="hidden"         value="yes"/>
+      <param name="comment"        value="Present input frequency"/>
+      <param name="graph-legend"   value="Input frequency"/>
+      <param name="precedence"     value="991"/>
+      <param name="rrd-ds"         value="inputFrequency"/>
+      <param name="snmp-object"    value="$upsInputFrequency.%ups-input-idx%"/>
+      <param name="vertical-label" value="0.1 Hertz"/>
+    </leaf>
+
+    <leaf name="Frequency">
+      <param name="comment"        value="Present input frequency"/>
+      <param name="graph-legend"   value="Input frequency"/>
+      <param name="precedence"     value="990"/>
+      <param name="ds-type"        value="rrd-file"/>
+      <param name="leaf-type"      value="rrd-cdef"/>
+      <param name="rpn-expr"       value="{Input_Frequency},0.1,*"/>
+      <param name="vertical-label" value="Hertz"/>
+    </leaf>
+
+    <leaf name="Voltage">
+      <param name="comment"        value="Magnitude of present input voltage"/>
+      <param name="graph-legend"   value="Input voltage"/>
+      <param name="precedence"     value="980"/>
+      <param name="rrd-ds"         value="inputVoltage"/>
+      <param name="snmp-object"    value="$upsInputVoltage.%ups-input-idx%"/>
+      <param name="vertical-label" value="RMS Volts"/>
+    </leaf>
+
+    <leaf name="Input_Current">
+      <param name="hidden"         value="yes"/>
+      <param name="comment"        value="Magnitude of present input current"/>
+      <param name="graph-legend"   value="Input current"/>
+      <param name="precedence"     value="971"/>
+      <param name="rrd-ds"         value="inputCurrent"/>
+      <param name="snmp-object"    value="$upsInputCurrent.%ups-input-idx%"/>
+      <param name="vertical-label" value="0.1 RMS Amp"/>
+    </leaf>
+
+    <leaf name="Current">
+      <param name="comment"        value="Magnitude of present input current"/>
+      <param name="graph-legend"   value="Input current"/>
+      <param name="precedence"     value="970"/>
+      <param name="ds-type"        value="rrd-file"/>
+      <param name="leaf-type"      value="rrd-cdef"/>
+      <param name="rpn-expr"       value="{Input_Current},0.1,*"/>
+      <param name="vertical-label" value="RMS Amp"/>
+    </leaf>
+
+    <leaf name="True_Power">
+      <param name="comment"      value="Magnitude of present input true power"/>
+      <param name="graph-legend"   value="Input true power"/>
+      <param name="precedence"     value="960"/>
+      <param name="rrd-ds"         value="inputTruePower"/>
+      <param name="snmp-object"    value="$upsInputTruePower.%ups-input-idx%"/>
+      <param name="vertical-label" value="Watts"/>
+    </leaf>
+  </template>
+
+
+  <template name="ups-output-subtree">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="volt,curr,pwr,load"/>
+    <!-- Voltage -->
+    <param name="overview-subleave-name-volt" value="Voltage"/>
+    <param name="overview-shortcut-text-volt"
+           value="All Voltage"/>
+    <param name="overview-shortcut-title-volt"
+           value="Show output voltage for all phases on one page"/>
+    <param name="overview-page-title-volt"
+           value="Output Voltage"/>
+    <!-- Current -->
+    <param name="overview-subleave-name-curr" value="Current"/>
+    <param name="overview-shortcut-text-curr"
+           value="All Current"/>
+    <param name="overview-shortcut-title-curr"
+           value="Show output current for all phases on one page"/>
+    <param name="overview-page-title-curr"
+           value="Output Current"/>
+    <!-- Power -->
+    <param name="overview-subleave-name-pwr" value="Power"/>
+    <param name="overview-shortcut-text-pwr"
+           value="All True Power"/>
+    <param name="overview-shortcut-title-pwr"
+           value="Show output true power for all phases on one page"/>
+    <param name="overview-page-title-pwr"
+           value="Output True Power"/>
+    <!-- Load -->
+    <param name="overview-subleave-name-load" value="Load"/>
+    <param name="overview-shortcut-text-load"
+           value="All Percentage Load"/>
+    <param name="overview-shortcut-title-load"
+           value="Show output load for all phases on one page"/>
+    <param name="overview-page-title-load"
+           value="Output Load"/>
+  </template>
+
+  <template name="ups-output-leaf">
+    <param name="data-file"    value="%system-id%_output_%ups-output-idx%.rrd"/>
+    <param name="comment"           value="Phase %ups-output-idx% output"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="Voltage">
+      <param name="comment"       value="Present output voltage"/>
+      <param name="graph-legend"  value="Output Voltage"/>
+      <param name="precedence"    value="990"/>
+      <param name="rrd-ds"        value="outputVoltage"/>
+      <param name="snmp-object"   value="$upsOutputVoltage.%ups-output-idx%"/>
+      <param name="vertical-label" value="RMS Volts"/>
+    </leaf>
+
+    <leaf name="Output_Current">
+      <param name="hidden"        value="yes"/>
+      <param name="comment"       value="Present output current"/>
+      <param name="graph-legend"  value="Output Current"/>
+      <param name="precedence"    value="981"/>
+      <param name="rrd-ds"        value="outputCurrent"/>
+      <param name="snmp-object"   value="$upsOutputCurrent.%ups-output-idx%"/>
+      <param name="vertical-label" value="0.1 RMS Amp"/>
+    </leaf>
+
+    <leaf name="Current">
+      <param name="comment"        value="Present output voltage"/>
+      <param name="graph-legend"   value="Output Current"/>
+      <param name="precedence"     value="980"/>
+      <param name="ds-type"        value="rrd-file"/>
+      <param name="leaf-type"      value="rrd-cdef"/>
+      <param name="rpn-expr"       value="{Output_Current},0.1,*"/>
+      <param name="vertical-label" value="RMS Amp"/>
+    </leaf>
+
+    <leaf name="Power">
+      <param name="comment"        value="Present output true power"/>
+      <param name="graph-legend"   value="Output True Power"/>
+      <param name="precedence"     value="970"/>
+      <param name="rrd-ds"         value="outputTruePower"/>
+      <param name="snmp-object"    value="$upsOutputPower.%ups-output-idx%"/>
+      <param name="vertical-label" value="Watts"/>
+    </leaf>
+
+    <leaf name="Load">
+      <param name="comment"        value="Present capacity used"/>
+      <param name="graph-legend"   value="Capacity load"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="graph-upper-limit" value="100"/>
+      <param name="precedence"     value="960"/>
+      <param name="rrd-ds"         value="outputLoad"/>
+      <param name="snmp-object" value="$upsOutputPercentLoad.%ups-output-idx%"/>
+      <param name="upper-limit"    value="100"/>
+      <param name="vertical-label" value="Percent"/>
+    </leaf>
+  </template>
+
+  <template name="ups-bypass-subtree">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="volt"/>
+    <!-- Voltage -->
+    <param name="overview-subleave-name-volt" value="Voltage"/>
+    <param name="overview-shortcut-text-volt"
+           value="All Voltage"/>
+    <param name="overview-shortcut-title-volt"
+           value="Show bypass voltage for all phases on one page"/>
+    <param name="overview-page-title-volt"
+           value="Bypass Voltage"/>
+  </template>
+
+  <template name="ups-bypass-leaf">
+    <param name="data-file"    value="%system-id%_bypass%ups-bypass-idx%.rrd"/>
+    <param name="comment"           value="Phase %ups-bypass-idx% bypass"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="Voltage">
+      <param name="comment"       value="Present bypass voltage"/>
+      <param name="graph-legend"  value="Output Voltage"/>
+      <param name="precedence"    value="990"/>
+      <param name="rrd-ds"        value="bypassVoltage"/>
+      <param name="snmp-object"   value="$upsBypassVoltage.%ups-bypass-idx%"/>
+      <param name="vertical-label" value="RMS Volts"/>
+    </leaf>
+  </template>
+
+</datasources>
+</configuration>

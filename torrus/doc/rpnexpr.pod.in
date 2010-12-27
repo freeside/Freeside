@@ -1,0 +1,106 @@
+#  rpnexpr.pod - Torrus RPN expressions guide
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: rpnexpr.pod.in,v 1.1 2010-12-27 00:04:31 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 RPN expressions in Torrus
+
+In Torrus framework, RPN expressions are the superset of those
+in RRDtool version 1.0. See the C<rrdtool graph> manual at
+E<lt>http://oss.oetiker.ch/rrdtool/doc/rrdgraph_rpn.en.htmlE<gt>.
+
+=head2 New functions added
+
+=over 4
+
+=item * NE
+
+Pops two arguments from stack, and pushes 0 if the arguments are equal,
+and 1 otherwise.
+
+=item * AND, OR
+
+These functions pop two arguments from stack, and push back the result of
+logical operation. Unlike C operators,
+
+=item * NOT
+
+Pops one value from stack and pushes 0 if the argument is nonzero,
+otherwise 1.
+
+=item * ABS
+
+Pops one value from stack and pushes the absolute value of it.
+
+=item * NOW
+
+Pushes the current time, in seconds since Epoch.
+
+=item * MOD
+
+Equivalent of C<%>, the modulo operator. In Torrus parameter value,
+percent sign is reserved for parameter substitution.
+
+=item * NUM
+
+Returns zero if the argument is undefined, and the argument's numeric value
+otherwise
+
+=item * INF, NEGINF
+
+Returns the positive or negative infinity.
+
+=back
+
+=head2 Data access
+
+In certain context, the values of the datasources can be evaluated
+into RPN expression.
+
+The general format for data access is following:
+
+  {FUNC@PATH(-OFFSET)}
+
+C<FUNC@> specifies a special function to be performed on the
+data being accessed.
+
+For monitor expressions, C<T@> returns the timestamp of the data source.
+
+For C<rrd-cdef> leaf types and for C<rrd-multigraph> datasource types,
+the following functions affect the graph shape: C<AVERAGE@>, C<MIN@>,
+C<MAX@>, and C<LAST@>. They cause the corresponding Consolidation Function
+being used when creating a graph.
+
+C<PATH> specifies the relative name for the data source.
+If omitted, the current leaf value is taken. If starts with C</>,
+the path is considered as absolute.
+Path starting with letter denotes the child of the parent subtree.
+Double dot (C<../>) in the beginning of the path is interpreted as
+current parent's parent subtree.
+
+C<(OFFSET)> determines the time reference, as described in C<rrdtool fetch>
+manual. In addition, the word C<LAST> refers to the latest data timestamp
+available.
+
+C<(OFFSET)> is currently supported in Monitor expressions only.
+
+=head1 Author
+
+Copyright (c) 2002-2004 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

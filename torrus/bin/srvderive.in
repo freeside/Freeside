@@ -1,0 +1,371 @@
+#!@PERL@
+#  Copyright (C) 2008  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: srvderive.in,v 1.1 2010-12-27 00:04:02 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+# Combine SUM or MAX from several service IDs and create a new one
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use POSIX qw(floor);
+use Getopt::Long;
+use Date::Parse;
+use Date::Format;
+use Math::BigFloat;
+
+use Torrus::Log;
+use Torrus::ServiceID;
+use Torrus::SQL::SrvExport;
+
+my $startdate;
+my $enddate;
+my $onemonth;
+
+my $function;
+my @input;
+my $output;
+
+my $step = 300;
+
+my $debug;
+my $verbose;
+my $help_needed;
+
+my %known_functions = ('MAX' => \&function_max, 'SUM' => \&function_sum);
+
+
+my $ok = GetOptions(
+                    'start=s'      => \$startdate,
+                    'end=s'        => \$enddate,
+                    'month'        => \$onemonth,
+                    'func=s'       => \$function,
+                    'in=s'         => \@input,
+                    'out=s'        => \$output,
+                    'step=i'       => \$step,
+                    'verbose'      => \$verbose,
+                    'debug'        => \$debug,
+                    'help'         => \$help_needed,
+                    );
+
+if( $help_needed or not $ok or (not $startdate) or
+    (defined($enddate) + defined($onemonth) != 1) or
+    not $function or
+    (scalar(@input) < 2 and scalar( @ARGV ) < 2) or
+    not $output )
+{
+    print STDERR "Usage: $0 TIMESPAN OUTPUT FUNCTION SOURCES...\n\n",
+    "TIMESPAN:\n",
+    "  --start=YYYY-MM-DD   [mandatory] Start date\n",
+    "  --month              [optional] Calendar month timespan\n",
+    "  --end=YYYY-MM-DD     [optional] Next day after the timespan end\n",
+    "  Either --month or --end option must be defined\n\n",
+    "OUTPUT:\n",    
+    "  --out=SERVICEID      [mandatory] Output Service ID\n\n",
+    "FUNCTION:\n",
+    "  --func=MAX|SUM       [mandatory] Aggregation function\n\n",
+    "SOURCES:\n",
+    "  Either --in=SERVICEID, or Service ID names as command line ",
+    "arguments.\n",
+    "  Minimum 2 sources required\n\n",
+    "Options:\n",
+    " --step=N              [300] service data interval\n",
+    " --verbose             print extra information\n",
+    " --debug               print debugging information\n",   
+    " --help                print usage information\n",   
+    "\n";
+    
+    exit 1;
+}
+
+push(@input, @ARGV);
+
+if( not defined($known_functions{$function}) )
+{
+    printf STDERR ("Unknown function: %s. Must be onne of: %s\n",
+                   $function, join(', ', sort keys %known_functions));
+    exit 1;
+}
+
+
+
+if( $debug )
+{
+    Torrus::Log::setLevel('debug');
+}
+elsif( $verbose )
+{
+    Torrus::Log::setLevel('verbose');
+}
+
+
+my $starttime = str2time( $startdate );
+if( not defined($starttime) )
+{
+    Error('Cannot parse start date: ' . $startdate);
+    exit 1;
+}
+
+# Canonize the date
+$startdate = time2str('%Y-%m-%d', $starttime);
+
+my $endtime;
+
+if( defined($enddate) )
+{
+    $endtime = str2time( $startdate ); 
+    if( not defined($endtime) )
+    {
+        Error('Cannot parse end date: ' . $enddate);
+        exit 1;
+    }
+
+    if( $endtime < $starttime )
+    {
+        Error('End date is earlier than start date');
+        exit 1;
+    }        
+}
+else
+{
+    # Calculate +1 calendar month
+
+    my ($ss,$mm,$hh,$day,$month,$year,$zone) =
+        strptime( $startdate );
+    $year += 1900;
+    $month++;
+    $day++;
+  
+    my $endyear = $year;
+    my $endmonth = $month + 1;
+    
+    if( $endmonth > 12 )
+    {
+        $endmonth = 1;
+        $endyear++;
+    }
+
+    $endtime = str2time( sprintf('%.4d-%.2d-%.2d',
+                                 $endyear, $endmonth, $day) );
+    if( not defined($endtime) )
+    {
+        # oops, it was past the end of the month
+        $day++;
+        $endmonth++;
+        if( $endmonth > 12 )
+        {
+            $endmonth = 1;
+            $endyear++;
+        }
+        
+        $endtime = str2time( sprintf('%.4d-%.2d-%.2d',
+                                     $endyear, $endmonth, $day) );
+        
+        if( not defined($endtime) )
+        {
+            Error('Cannot determine the end date');
+            exit 1;
+        }
+    }
+}
+
+# Canonize the date
+$enddate = time2str('%Y-%m-%d', $endtime);
+
+
+Verbose('Start time: ', scalar(localtime($starttime)));
+Verbose('End time: ', scalar(localtime($endtime)));
+
+my $srvExp = Torrus::SQL::SrvExport->new();
+if( not defined( $srvExp ) )
+{
+    Error('Cannot connect to the SQL database');
+    exit 1;
+}
+
+my $srvIDs = $srvExp->getServiceIDs();
+
+foreach my $serviceid ( @input )
+{
+    if( not grep {$serviceid eq $_} @{$srvIDs} )
+    {
+        Error('Input service ID not found in the database: ' . $serviceid);
+        exit 1;
+    }
+}
+
+&Torrus::DB::setSafeSignalHandlers();
+
+# Check if the output ServiceID exists in the local database
+# The database contains only IDs generated from datasource trees.
+
+my $srvIDParams = new Torrus::ServiceID();
+if( $srvIDParams->idExists( $output ) )
+{
+    Error('Output service ID was previously created from Torrus ' .
+          'datasource tree. Cannot override it: ' . $output);
+    exit 1;
+}
+&Torrus::DB::cleanupEnvironment();
+&Torrus::DB::setUnsafeSignalHandlers();
+
+
+my %in_data;
+
+foreach my $serviceid ( @input )
+{
+    $in_data{$serviceid} =
+        $srvExp->getIntervalData( $startdate, $enddate, $serviceid );
+
+    Verbose(sprintf('Loaded %d rows of data for %s',
+                    scalar( @{$in_data{$serviceid}} ),
+                    $serviceid));
+}
+
+my $n_points = floor( ($endtime - $starttime) / $step );
+
+my %aligned_data;
+
+foreach my $serviceid ( @input )
+{
+    my @aligned = ();
+    $#aligned = $n_points;
+
+    # Fill in the aligned array. For each interval by modulo(step),
+    # we take the sum of values that get into that interval
+    
+    foreach my $row ( @{$in_data{$serviceid}} )
+    {
+        my $rowtime = str2time( $row->{'srv_date'} . 'T' .
+                                $row->{'srv_time'} );
+        
+        my $pos = floor( ($rowtime - $starttime) / $step );
+        my $value = Math::BigFloat->new( $row->{'value'} );
+        if( $value->is_nan() )
+        {
+            $value->bzero();
+        }
+            
+        if( not defined($aligned[$pos]))
+        {
+            $aligned[$pos] = $value;
+        }
+        else
+        {
+            $aligned[$pos]->badd($value);
+        }
+    }
+
+    $aligned_data{$serviceid} = \@aligned;
+}
+    
+Verbose(sprintf('Aligned data into %d intervals', $n_points));
+
+# Store the derived data
+my $dbh = Torrus::SQL::SrvExport->dbh();
+if( not defined( $dbh ) )
+{
+    Error('Lost SQL connection');
+    exit 1;
+}
+
+my $sth = $dbh->prepare( Torrus::SQL::SrvExport->sqlInsertStatement() );
+if( not defined( $sth ) )
+{
+    Error('Error preparing the SQL statement: ' . $dbh->errstr);
+}
+
+
+
+for( my $pos = 0; $pos < $n_points; $pos++ )
+{
+    my @args;
+    foreach my $serviceid ( @input )
+    {
+        my $val = $aligned_data{$serviceid}->[$pos];
+        if( defined( $val ) )
+        {
+            push( @args, $val );
+        }
+    }
+
+    if( scalar( @args ) > 0 )
+    {
+        my $value = &{$known_functions{$function}}(@args);
+
+        my $timestamp = $starttime + $pos * $step;
+        my $datestr = time2str('%Y-%m-%d', $timestamp);
+        my $timestr = time2str('%H:%M:%S', $timestamp);
+        
+        if( isDebug() )
+        {
+            Debug('Updating SQL database: ' .
+                  join(', ', $datestr, $timestr,
+                       $output, $value, $step ));
+        }
+    
+        if( not $sth->execute( $datestr, $timestr,
+                               $output, $value, $step ) )
+        {
+            Error('Error executing SQL: ' . $dbh->errstr);
+            exit 1;
+        }
+    }
+}
+
+Verbose('Database update finished');
+
+exit($ok ? 0:1);
+
+
+sub function_max
+{
+    my $value = Math::BigFloat->new();
+    $value->binf('-');
+
+    foreach my $a ( @_ )
+    {
+        if( $value->bcmp($a) < 0 )
+        {
+            $value = Math::BigFloat->new($a);
+        }
+    }
+
+    return $value;
+}
+
+
+sub function_sum
+{
+    my $value = Math::BigFloat->new(0);
+
+    foreach my $a ( @_ )
+    {
+        $value->badd($a);
+    }
+
+    return $value;
+}
+    
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

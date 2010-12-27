@@ -1,0 +1,38 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE htmlstart
+     title='Administrative information: ' _ path(token)
+     contentClass="SingleColumnContent"
+     noTopMenu=1 %]
+
+<H1>Administrative information</H1>
+[% INCLUDE treename %]
+<P>Path: [% path(token) %]</P>
+
+[%
+FOREACH category = adminfo.keys.sort;
+%]
+<H2>[% category %]</H2>
+<DIV CLASS="Listing">
+[%
+  counter = 0;
+  evenRow = 0;
+
+  FOREACH pname = adminfo.$category.keys.sort;
+    counter = counter + 1;
+    IF counter % 2 == 0;
+      evenRow = 1;
+    ELSE;
+      evenRow = 0;
+    END;
+%]
+  <DIV CLASS="[% evenRow ? 'ListRowEven' : 'ListRow' %]">
+    <SPAN CLASS="NodeName">[% pname %]</SPAN>
+    <SPAN CLASS="NodeDescr">[% adminfo.$category.$pname %]</SPAN>
+    </SPAN>
+  </DIV>
+[% END %]
+</DIV>
+[%
+END %]
+
+[% INCLUDE htmlend %]

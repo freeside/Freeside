@@ -1,0 +1,68 @@
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_flushmonitors.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+flushmonitors - Flush monitor alarms and tokenset members
+
+=head1 SYNOPSIS
+
+B<torrus flushmonitors> --tree=I<TREENAME> [I<options...>]
+
+=head1 DESCRIPTION
+
+This command flushes the state of all monitor alarms for a given tree,
+and also the tokenset members which were originated by the monitor alarms.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--all>
+
+Instructs to flush all trees.
+
+=item B<--debug>
+
+Sets the log level to debug.
+
+=item B<--verbose>
+
+Sets the debug level to info.
+
+=item B<--help>
+
+Displays a help message.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

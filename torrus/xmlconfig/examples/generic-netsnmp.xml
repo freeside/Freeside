@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2003  Shawn Ferry
+
+   File: generic-netsnmp.xml
+   Description: System monitor example for Torrus.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  Shawn Ferry <sferry at sevenspace dot com> <lalartu at obscure dot org>
+
+  $Id: generic-netsnmp.xml,v 1.1 2010-12-27 00:04:28 ivan Exp $
+  @(#) 10/18/03 generic-netsnmp.xml 1.2 (10/18/03 18:33:14) sferry
+-->
+<!--
+   This is the example of using templates from vendor and generic definition
+   files:
+   generic/rfc1213.xml, generic/rfc2790.host-resources.xml,
+   vendor/ucd-snmp.xml
+
+   This file can be used as an example for any host using ucd-snmp
+
+   You are encouraged to look at one of the tree-<name> configurations.
+
+-->
+<configuration>
+  <datasources>
+    <!--
+      Apply the one-minute-period template, which sets the collector period
+      to one minute and uses the appropriate RRA values for the period
+    -->
+    <!-- The top subtree for for the Generic Tree-->
+    <subtree name="Generic">
+      <apply-template name="snmp-defaults"/>
+      <!--
+          Set the snmp community port and version
+          All of these settings override any previously
+          set values and are in effect for everything
+          inside this subtree
+        -->
+      <param name="snmp-community" value="public"/>
+      <param name="snmp-port" value="191"/>
+      <param name="snmp-version" value="1"/>
+      <param name="domain-name" value=""/>
+
+      <!-- Set the data-dir for rrd files created because of this subtree
+          I use a directory per tree and a directory per host. The directories
+          must be manually created -->
+      <param name="data-dir">
+          /usr/local/torrus-data/generic/snmp/%system-id%
+      </param>
+
+      <!-- This subtree wraps up the applied configuration for "SolarisHost"
+           It is also appropriate for most net/ucd snmp hosts -->
+      <subtree name="SolarisHost">
+        <apply-template name="one-minute-period"/>
+
+        <!-- Text to display while showing this tree -->
+        <param name="legend">
+            Location: System Localtion ; Contact: System Contact
+        </param>
+
+        <!-- The IP address of the host that is being queried -->
+        <param name="snmp-host" value="127.0.0.1"/>
+        <!--
+            Apply the template named ucd-snmp
+            ucd-snmp attempts to capture and graph system memory
+                blockio and system/processor information(similar to vmstat)
+                it is actually a wrap up of  the following templates
+                ucd-memory, ucd-blockio, ucd-context_interrupts
+          -->
+        <apply-template name="ucd-snmp"/>
+
+        <!-- Apply the template named rfc2790.host-resources
+                rfc2790.host-resources, wraps up the template
+                hrsystem, which attempts to graph the number of users
+                and processes on a system.
+          -->
+        <apply-template name="rfc2790.host-resources"/>
+
+        <!-- The Storage Subtree, it is not required that a tree exist
+             at this level -->
+        <subtree name="Storage">
+
+          <!-- the root filesystem -->
+          <subtree name="root">
+
+            <!-- the string that is returned for hrStorageDescr -->
+            <param name="storage-description" value="/"/>
+
+            <!-- The Name of the file system without any special characters
+                 Used to create the datafile -->
+            <param name="filesystem" value="root"/>
+
+            <!-- Apply the template hrstorage -->
+            <apply-template name="hrstorage"/>
+          </subtree>
+
+          <subtree name="tmp">
+            <param name="storage-description" value="/tmp"/>
+            <param name="filesystem" value="tmp"/>
+            <apply-template name="hrstorage"/>
+          </subtree>
+
+          <subtree name="var">
+            <param name="storage-description" value="/var"/>
+            <param name="filesystem" value="var"/>
+            <apply-template name="hrstorage"/>
+          </subtree>
+
+          <subtree name="opt">
+            <param name="storage-description" value="/opt"/>
+            <param name="filesystem" value="opt"/>
+            <apply-template name="hrstorage"/>
+          </subtree>
+
+        </subtree>
+
+        <!-- Interfaces -->
+        <!-- The NetworkInterfaces Subtree, it is not required that a
+             tree exist at this level -->
+        <subtree name="NetworkInterfaces">
+
+          <!-- The network interface hme0 -->
+          <subtree name="hme0">
+            <!-- The name of the interface as returned by rfc1213_ifDescr -->
+            <param name="interface-name" value="hme0"/>
+
+            <!-- Apply the template rfc1213-interface -->
+            <apply-template name="rfc1213-interface"/>
+          </subtree>
+
+          <subtree name="qfe0">
+            <param name="interface-name" value="qfe0"/>
+            <apply-template name="rfc1213-interface"/>
+          </subtree>
+
+          <subtree name="qfe1">
+            <param name="interface-name" value="qfe1"/>
+            <apply-template name="rfc1213-interface"/>
+          </subtree>
+        </subtree>
+      </subtree>
+    </subtree>
+  </datasources>
+</configuration>

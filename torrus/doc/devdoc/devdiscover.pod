@@ -1,0 +1,296 @@
+#  devdiscover.pod - Guide to devdiscover
+#  Copyright (C) 2003 Shawn Ferry, Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: devdiscover.pod,v 1.1 2010-12-27 00:04:36 ivan Exp $
+# Shawn Ferry <sferry at sevenspace dot com> <lalartu at obscure dot org>
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+
+=head1 Torrus SNMP Device Discovery Developer's Guide
+
+=head2 C<devdiscover> overview
+
+C<devdiscover> is an extensible, module based, SNMP device discovery
+utility. It is intended to automatically generate Torrus configuration
+files, based on SNMP discovery results and templates.
+
+See I<Torrus Command Reference> for command usage and functionality overview.
+
+In general, C<devdiscover> consists of the following files and functional
+parts:
+
+=over 4
+
+=item * C<bin/devdiscover.in>
+
+This file is installed as C<bin/devdiscover> in Torrus installation directory,
+with certain variables substituted. The program provides all the commandline
+functionality and options processing. Once the CLI options are processed and
+verified, the control is passed to the C<Torrus::DevDiscover> object.
+
+=item * C<Torrus::DevDiscover>
+
+This Perl module is responsible for the SNMP discovery process organization:
+
+=over 8
+
+=item *
+
+it registers the discovery modules;
+
+=item *
+
+establishes an SNMP session to the target host;
+
+=item *
+
+initiates a new C<Torrus::DevDiscover::DevDetails> object for the target host;
+
+=item *
+
+stores the connection-specific parameters to the device object;
+
+=item *
+
+for each registered discovery module, executes C<checkdevtype()> in
+I<sequential> order;
+
+=item *
+
+for those discovery modules which paid interest in this target host,
+executes C<discover()> in I<sequential> order;
+
+=item *
+
+upon request from C<bin/devdiscover>, builds the configuration
+XML tree, by calling C<buildConfig()> in I<sequential> order for each
+relevant discovery module for each target host.
+
+=back
+
+=item * C<Torrus::DevDiscover::DevDetails>
+
+This Perl module is defined in F<perllib/Torrus/DevDiscover.pm>, and provides
+the functionality to store the results of SNMP device discovery.
+
+=item * C<Torrus::ConfigBuilder>
+
+This module is an encapsulation wrapper for XML configuration builder.
+It provides methods for every element of Torrus configuration.
+
+=item * Discovery Modules
+
+These provide all the functionality for SNMP discovery. Normally
+one module covers one MIB, or sometimes several vendor-specific MIBs,
+and it is responsible for finding out the device details necessary
+for Torrus configuration building. Usually a discovery module refers to one or
+several I<template definition files>. A module may depend on
+other modules' discovery results. This is controlled by its
+C<sequence number>. Vendor-independent discovery modules are normally named
+as C<Torrus::DevDiscover::RFCXXXX_SOME_HUMAN_NAME>, and vendor-specific
+ones are named as C<Torrus::DevDiscover::Vendor[Product[Subsystem]]>.
+
+=item * Template definition files
+
+These are XML documents residing in F<xmlconfig/vendor> and
+F<xmlconfig/generic> directories. Each file is a piece of Torrus configuration,
+and contains definitions and templates for particular MIB or vendor.
+Generic template definition files are for vendor-independent MIBs,
+and normally they are named as F<rfcXXXX.some-human-name.xml>.
+Vendor-specific files are named as F<vendor.product[.subsystem].xml>.
+
+=back
+
+
+=head2 Discovery Module Internals
+
+Discovery modules are Perl packages with few required components.
+Before creating your own modules, please read and follow
+I<Torrus Programming Style Guide>.
+
+Upon initialization, C<Torrus::DevDiscover> loads the modules listed in
+C<@Torrus::DevDiscover::loadModules> array. This array is pre-populated
+by standard module names in F<devdiscover-config.pl>.
+You can add new module names by pushing them onto this array in your
+local F<devdiscover-siteconfig.pl>.
+
+=head3 Module Registration
+
+Each discovery module should register itself in DevDiscover registry.
+Normally there's only one registry entry per discovery module, though
+it's not a limitation. The registry entry is identified by a registry
+name, which normally repeats the module name.
+
+Example:
+
+    $Torrus::DevDiscover::registry{'RFC2790_HOST_RESOURCES'} = {
+        'sequence'     => 100,
+        'checkdevtype' => \&checkdevtype,
+        'discover'     => \&discover,
+        'buildConfig'  => \&buildConfig
+        };
+
+Each registry entry must contain 4 fields:
+
+=over 4
+
+=item * C<sequence>
+
+The sequence number determines the order in which every discovery module's
+procedure is executed. Sequence numbers of dependant modules must
+be higher than those of their dependencies.
+
+Generic MIB discovery modules should have the sequence number 100. If
+a particular generic module depends on other generic modules, its sequence
+number may be 110.
+
+Vendor-specific modules should have the sequence number 500.
+Vendor-specific modules that depend on other vendor-specific modules,
+should have sequence number 510.
+
+Dependencies deeper than one level may exist, but it's recommended
+to avoid them. For most cases this should be enough.
+
+Exception is made for C<RFC2863_IF_MIB> module, which has the sequence
+number 50. That is because it provides the basic interface discovery,
+and many other modules depend on its results.
+
+Another exception is vendor-specific modules where the SNMP session parameters
+must be set earliest possible. One of such parameters is C<snmp-max-msg-size>.
+Some vendor SNMP agents would not be walked properly without this setting.
+In these occasions, the sequence number is below 50. The recommended value
+is 30.
+
+=item * C<checkdevtype>
+
+Must be a subroutine reference. This subroutine is called with two object
+references as arguments: C<Torrus::DevDiscover> and
+C<Torrus::DevDiscover::DevDetails>.
+The purpose of this subroutine is to determine if the target host is
+of required type, or if it supports the required MIB.
+The subroutine should return true if and only if the target host
+supports the MIB variables this module is supposed to discover. 
+
+In general, C<checkdevtype> subroutine is small, and checks one or several
+OIDs presence on the host, or their values, e.g. the value of I<sysObjectID>
+variable. It should perform as less as possible SNMP requests, in order to
+speed up the pre-discovery process.
+
+=item * C<discover>
+
+Must be a subroutine reference. This subroutine is called with the same
+two arguments as C<checkdevtype()>. It is called for those modules only,
+whose C<checkdevtype()> has returned true. The subroutine should return true
+if no errors occured during the discovery.
+
+The purpose of C<discover()> is to perform the actual SNMP discovery,
+and prepare the parameter values for future XML configuration.
+
+=item * C<buildConfig>
+
+Must be a subroutine reference. This subroutine is called with three object
+references as arguments: C<Torrus::DevDiscover::DevDetails>,
+C<Torrus::ConfigBuilder>, and an XML element object, which should be used only
+to pass data to ConfigBuilder methods.
+
+This subroutine is designed to construct the resulting XML configuration
+subtree as a child of a given XML element. Upper level subtrees
+are handled by CLI options processing code.
+
+=back
+
+
+=head3 OID Definitions
+
+OID definitions are designed to provide symbolic names to OIDs
+in numerical notation. Normally the symbolic names repeat the names from
+corresponding MIBs.
+
+The definitions must be defined in an C<oiddef> hash defined in the
+package namespace. Then they are automatically imported by DevDiscover
+initialization procerure.
+
+Example:
+
+    our %oiddef =
+        (
+         'hrSystemUptime'               => '1.3.6.1.2.1.25.1.1.0',
+         'hrSystemNumUsers'             => '1.3.6.1.2.1.25.1.5.0',
+         'hrSystemProcesses'            => '1.3.6.1.2.1.25.1.6.0',
+         'hrSystemMaxProcesses'         => '1.3.6.1.2.1.25.1.7.0',
+         'hrMemorySize'                 => '1.3.6.1.2.1.25.2.2.0',
+         'hrStorageTable'               => '1.3.6.1.2.1.25.2.3.1',
+         'hrStorageIndex'               => '1.3.6.1.2.1.25.2.3.1.1',
+         'hrStorageType'                => '1.3.6.1.2.1.25.2.3.1.2',
+         'hrStorageDescr'               => '1.3.6.1.2.1.25.2.3.1.3',
+         'hrStorageAllocationUnits'     => '1.3.6.1.2.1.25.2.3.1.4',
+         'hrStorageSize'                => '1.3.6.1.2.1.25.2.3.1.5',
+         'hrStorageUsed'                => '1.3.6.1.2.1.25.2.3.1.6',
+         'hrStorageAllocationFailures'  => '1.3.6.1.2.1.25.2.3.1.7'
+         );
+
+
+=head3 Template References
+
+Normally a discovery module would refer to configuration templates
+defined in template definition files. In order to provide an extra level of
+flexibility, these templates should be defined in
+F<devdiscover-config.pl> or in F<devdiscover-siteconfig.pl>.
+
+It is recommended that the template references in the discovery modules
+follow the naming standard: C<module::template-name>.
+
+ConfigBuilder's C<addTemplateApplication()> method looks up every
+template name in the global hash C<%Torrus::ConfigBuilder::templateRegistry>
+and figures out the source XML file and the actual template name.
+
+Example:
+
+    $Torrus::ConfigBuilder::templateRegistry{
+        'RFC2790_HOST_RESOURCES::hr-system-uptime'} = {
+            'name'   => 'mytest-hr-system-uptime',
+            'source' => 'mytest.templates.xml'
+            };
+
+
+=head3 Interface filtering
+
+Usually not all interfaces from ifTable need to be monitored.
+For example, Loopback and Null0 interfaces on Cisco routers.
+
+C<Torrus::DevDiscover::RFC2863_IF_MIB> provides the functionality to
+automatically filter out the interfaces, based on filter definitions.
+Filter definitions are registered by calling the subroutine
+C<Torrus::DevDiscover::RFC2863_IF_MIB::addInterfaceFilter
+($devdetails, $interfaceFilter)>. The second argument is a reference
+to a hash of the following structure:
+
+Keys are symbolic names that mean nothing and need only to be unique.
+Values are hash references with the following entries: C<ifType>
+specifies the IANA interface type, and optional C<ifDescr> specifies
+a regular expression to match against interface description.
+
+The filters are usually registered within C<checkdevtype> subroutine
+of the vendor module, after the device type is identified. See
+F<CiscoIOS.pm> and F<CiscoCatOS.pm> as examples.
+
+
+=head2 Authors
+
+Shawn Ferry: initial draft.
+
+Stanislav Sinyagin: revision and detailed content.

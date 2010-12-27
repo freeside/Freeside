@@ -1,0 +1,264 @@
+/*
+   Torrus Renderer stylesheet.
+   Designed by Stanislav Sinyagin
+
+   $Id: torrus-printer.css,v 1.1 2010-12-27 00:04:04 ivan Exp $
+   */
+BODY {
+  background-color : white;
+  color : black;
+  font-family : verdana, arial, helvetica, sans-serif;
+  font-size : 10pt;
+  margin : 0;
+  padding-bottom : 0;
+  padding-left : 0;
+  padding-right : 0;
+  padding-top : 0;
+  voice-family : inherit, male;
+}
+
+H1, H2, H3 {
+  background-color : transparent;
+  color : black;
+}
+
+
+H1 {
+  font-size : 18pt;
+  font-weight : 900;
+  line-height : 20pt;
+}
+
+H2 {
+  font-size : 16pt;
+  font-weight : 700;
+  line-height : 18pt;
+}
+
+H3 {
+  font-size : 14pt;
+  line-height : 16pt;
+}
+
+P {
+  background-color : transparent;
+  color : black;
+  line-height : 18pt;
+  text-decoration : none;
+  padding-bottom : 0;
+  padding-left : 0;
+  padding-right : 0;
+  padding-top : 0;
+}
+
+A, A:link, A:visited {
+  background-color : transparent;
+  color : black;
+  text-decoration : none;
+}
+
+*.Header {
+  background-color : transparent;
+  border-bottom : 0.5pt solid black;
+  border-left : 0 solid black;
+  border-right : 0 solid black;
+  border-top : 0.5pt solid black;
+  color : black;
+  font-size : 9pt;
+  font-weight : 700;
+  margin : 5pt 0 10pt;
+  padding-bottom : 0;
+  padding-left : 10pt;
+  padding-right : 0;
+  padding-top : 10pt;
+}
+
+DIV.LoginInfo {
+  position : absolute;
+  right : 0;
+  top : 8px;
+  font-size : 9px;
+  text-align : right;
+}
+
+DIV.LoginInfo SPAN.UserName {
+  display : block;
+}
+
+DIV.LoginInfo SPAN.Logout {
+  display : none;
+}
+
+DIV.CurrentTime {
+  float: right;
+  font-size : 9px;
+  text-align: right;
+}
+
+*.Content, *.SingleColumnContent  {
+  margin-bottom : 0;
+  margin-left : 5pt;
+  margin-right : 5pt;
+  margin-top : 0;
+  padding-bottom : 10pt;
+  padding-left : 10pt;
+  padding-right : 10pt;
+  padding-top : 10pt;
+}
+
+DIV.CurrentPath {
+  background-color : transparent;
+}
+
+*.PathURLs {
+  font-size : 9px;
+}
+
+DIV.CurrentTree {
+  background-color : transparent;
+}
+
+DIV.Legend {
+  background-color : transparent;
+  color : black;
+  font-size : 8pt;
+  margin-bottom : 10pt;
+  margin-top : 10pt;
+}
+
+DIV.LegendRow {
+  clear : both;
+  height : 9pt;
+  width : 100%;
+  margin-bottom : 3pt;
+}
+
+*.LegendRow *.LegendName {
+  font-weight : bold;
+  padding-right : 5pt;
+  text-align : left;
+}
+
+*.LegendRow *.LegendValue {
+  text-align : left;
+}
+
+P.Variables SPAN.VariableName {
+  font-weight : bold;
+}
+
+DIV.Monitors {
+  clear : both;
+  float : none;
+  font-size : 8pt;
+  margin-bottom : 10pt;
+  position : relative;
+  width : 90%;
+}
+
+SPAN.MonitorName {
+  padding-left: 20pt;
+  padding-right: 20pt;
+}
+
+
+DIV.Listing {
+  margin-bottom : 10pt;
+  margin-left : 20pt;
+  margin-right : 20pt;
+}
+
+*.ListRow, *.ListRowEven  {
+  border-bottom : 0.5pt solid gray;
+  clear : both;
+  font-size : 8pt;
+  line-height : 12pt;
+  padding-top : 3pt;
+  width : 100%;
+}
+
+*.Listing *.NodeName {
+  display : block;
+  font-weight : bold;
+  padding-right : 5pt;
+  padding-left : 5pt;
+  text-align : left;
+}
+
+*.Listing *.NodeDescr {
+  display : block;
+  padding-left : 30pt;
+  padding-right : 5pt;
+  text-align : left;
+}
+
+DIV.Graph, DIV.ShortGraph  {
+  border-bottom : 0.5pt solid gray;
+  margin-bottom : 10pt;
+  margin-left : 20pt;
+  margin-right : 20pt;
+  margin-top : 15pt;
+  page-break-inside : avoid;
+}
+
+
+DIV.ShortGraph *.NodeName {
+  font-weight : bold;
+  width : 100%;
+}
+
+DIV.ShortGraph *.NodeDescr {
+  margin-bottom : 5pt;
+  width : 100%;
+}
+
+*.GraphImage {
+  text-align: center;
+}
+
+*.GraphImage IMG {
+  border-width : 0;
+  border-color : transparent;
+  float : none;
+}
+
+
+/* In tokenset display, short graphs are placed in two
+   columns on the screen, but one column on printer */
+
+DIV.ShortLeft, DIV.ShortRight {
+  width : 100%;
+}
+
+
+
+*.BottomShortcuts {
+  display : none;
+}
+
+
+*.TopMenu, *.BottomMenu {
+  display : none;
+}
+
+
+*.Footer {
+  background-color : transparent;
+  border-bottom : 0 solid black;
+  border-left : 0 solid black;
+  border-right : 0 solid black;
+  border-top : 0.75pt solid black;
+  color : black;
+  font-size : 6pt;
+  margin : 0 0 10pt;
+  padding-bottom : 0;
+  padding-left : 0;
+  padding-right : 0;
+  padding-top : 0;
+  text-align : right;
+  width : 100%;
+}
+
+*.SiteInfo, *.TreeInfo {
+  padding-left : 5em;
+}

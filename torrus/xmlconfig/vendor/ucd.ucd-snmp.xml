@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (C) 2003 Shawn Ferry
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+Author: Shawn Ferry
+Vendor: UCD-SNMP-MIB
+Tested Versions: 0.1.1,0.1.2d
+
+
+$Id $
+@(#) 10/18/03 ucd-snmp.xml 1.8 (10/18/03 19:24:09) sferry
+
+-->
+<!--
+Generic definitions and templates for:
+    UCD-SNMP-MIB
+-->
+<configuration>
+  <definitions>
+    <!-- Memory -->
+    <def name="ucd_memTotalSwap"         value="1.3.6.1.4.1.2021.4.3.0"/>
+    <def name="ucd_memAvailSwap"         value="1.3.6.1.4.1.2021.4.4.0"/>
+    <def name="ucd_memTotalReal"         value="1.3.6.1.4.1.2021.4.5.0"/>
+    <def name="ucd_memAvailReal"         value="1.3.6.1.4.1.2021.4.6.0"/>
+    <def name="ucd_memTotalFree"         value="1.3.6.1.4.1.2021.4.11.0"/>
+
+    <!-- System Stat -->
+    <def name="ucd_ssSwapIn"             value="1.3.6.1.4.1.2021.11.3.0"/>
+    <def name="ucd_ssSwapOut"            value="1.3.6.1.4.1.2021.11.4.0"/>
+
+    <!-- CPU -->
+    <def name="ucd_ssCpuRawUser"         value="1.3.6.1.4.1.2021.11.50.0"/>
+    <def name="ucd_ssCpuRawNice"         value="1.3.6.1.4.1.2021.11.51.0"/>
+    <def name="ucd_ssCpuRawSystem"       value="1.3.6.1.4.1.2021.11.52.0"/>
+    <def name="ucd_ssCpuRawIdle"         value="1.3.6.1.4.1.2021.11.53.0"/>
+    <def name="ucd_ssCpuRawWait"         value="1.3.6.1.4.1.2021.11.54.0"/>
+    <def name="ucd_ssCpuRawKernel"       value="1.3.6.1.4.1.2021.11.55.0"/>
+    <def name="ucd_ssCpuRawInterrupts"   value="1.3.6.1.4.1.2021.11.56.0"/>
+    <def name="ucd_ssCpuRawSoftIRQ"      value="1.3.6.1.4.1.2021.11.61.0"/>
+
+    <!-- Block IO -->
+    <def name="ucd_ssIORawSent"          value="1.3.6.1.4.1.2021.11.57.0"/>
+    <def name="ucd_ssIORawReceived"      value="1.3.6.1.4.1.2021.11.58.0"/>
+    <def name="ucd_ssRawInterrupts"      value="1.3.6.1.4.1.2021.11.59.0"/>
+    <def name="ucd_ssRawContexts"        value="1.3.6.1.4.1.2021.11.60.0"/>
+
+    <!-- Load Average -->
+    <def name="ucd_laLoad"               value="1.3.6.1.4.1.2021.10.1.3"/>
+
+  </definitions>
+
+  <datasources>
+
+      <!-- REAL MEMORY -->
+
+      <template name="ucdsnmp-memory-real">
+        <leaf name="Memory_Real">
+          <param name="comment" value="Real Memory"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="ds-names" value="total,avail"/>
+          <!-- TOTAL -->
+          <param name="ds-expr-total" value="{ucd_memTotalReal},1024,*"/>
+          <param name="graph-legend-total" value="Total Real"/>
+          <param name="line-style-total" value="##totalresource"/>
+          <param name="line-color-total" value="##totalresource"/>
+          <param name="line-order-total" value="1"/>
+          <!-- AVAIL -->
+          <param name="ds-expr-avail" value="{ucd_memAvailReal},1024,*"/>
+          <param name="graph-legend-avail" value="Available Real"/>
+          <param name="line-style-avail" value="##resourceusage"/>
+          <param name="line-color-avail" value="##resourceusage"/>
+          <param name="line-order-avail" value="2"/>
+        </leaf>
+
+        <leaf name="ucd_memTotalReal">
+          <param name="data-file" value="%system-id%_ucd-memreal.rrd"/>
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_memTotalReal"/>
+          <param name="rrd-ds" value="ucd_memTotalReal"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="comment" value="Total Real Space"/>
+          <param name="graph-legend" value="Total Real Space"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="vertical-label" value="Kilobytes"/>
+        </leaf>
+
+        <leaf name="ucd_memAvailReal">
+          <param name="data-file" value="%system-id%_ucd-memreal.rrd"/>
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_memAvailReal"/>
+          <param name="rrd-ds" value="ucd_memAvailReal"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="comment" value="Available Real Space"/>
+          <param name="graph-legend" value="Available Real Space"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="vertical-label" value="Kilobytes"/>
+        </leaf>
+      </template>
+
+      <!-- SWAP MEMORY -->
+
+      <template name="ucdsnmp-memory-swap">
+        <leaf name="Memory_Swap">
+          <param name="comment" value="Swap Space"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="rrd-scaling-base" value="1024"/>
+          <param name="ds-names" value="total,avail"/>
+          <!-- TOTAL -->
+          <param name="ds-expr-total" value="{ucd_memTotalSwap},1024,*"/>
+          <param name="graph-legend-total" value="Total Swap"/>
+          <param name="line-style-total" value="##totalresource"/>
+          <param name="line-color-total" value="##totalresource"/>
+          <param name="line-order-total" value="1"/>
+          <!-- AVAIL -->
+          <param name="ds-expr-avail" value="{ucd_memAvailSwap},1024,*"/>
+          <param name="graph-legend-avail" value="Available Swap"/>
+          <param name="line-style-avail" value="##resourceusage"/>
+          <param name="line-color-avail" value="##resourceusage"/>
+          <param name="line-order-avail" value="2"/>
+        </leaf>
+
+        <leaf name="ucd_memAvailSwap">
+          <param name="data-file" value="%system-id%_ucd-memswap.rrd"/>
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_memAvailSwap"/>
+          <param name="rrd-ds" value="ucd_memAvailSwap"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="comment" value="Available Swap Space"/>
+          <param name="graph-legend" value="Available Swap Space"/>
+          <param name="rrd-scaling-base" value="1024"/>
+        </leaf>
+
+        <leaf name="ucd_memTotalSwap">
+          <param name="data-file" value="%system-id%_ucd-memswap.rrd"/>
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_memTotalSwap"/>
+          <param name="rrd-ds" value="ucd_memTotalSwap"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="comment" value="Total Swap Space"/>
+          <param name="graph-legend" value="Total Swap Space"/>
+          <param name="rrd-scaling-base" value="1024"/>
+        </leaf>
+      </template>
+
+
+    <!-- UCD Block IO Template  -->
+
+    <template name="ucdsnmp-blockio">
+        <leaf name="BlockIO">
+          <param name="comment" value="Block Device Requests and Responses"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="requested,received"/>
+
+          <param name="ds-expr-received" value="{IORawReceived}"/>
+          <param name="graph-legend-received" value="Requests Received"/>
+          <param name="line-style-received" value="##in"/>
+          <param name="line-color-received" value="##in"/>
+          <param name="line-order-received" value="1"/>
+
+          <param name="ds-expr-requested" value="{IORawSent}"/>
+          <param name="graph-legend-requested" value="Requests Sent"/>
+          <param name="line-style-requested" value="##out"/>
+          <param name="line-color-requested" value="##out"/>
+          <param name="line-order-requested" value="2"/>
+        </leaf>
+
+        <leaf name="IORawReceived">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_ssIORawReceived"/>
+          <param name="data-file" value="%system-id%_ucd-blockio.rrd"/>
+          <param name="rrd-ds" value="ucd_ssIORawReceived"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment" value="Requests Received From a Block Device"/>
+          <param name="graph-legend" value="Requests Received"/>
+        </leaf>
+
+        <leaf name="IORawSent">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_ssIORawSent"/>
+          <param name="data-file" value="%system-id%_ucd-blockio.rrd"/>
+          <param name="rrd-ds" value="ucd_ssIORawSent"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment" value="Requests Sent to a Block Device"/>
+          <param name="graph-legend" value="Requests Sent"/>
+        </leaf>
+    </template>
+
+    <!--
+         UCD context and interrupts Template
+      -->
+    <template name="ucdsnmp-raw-interrupts">
+
+        <leaf name="Interrupts">
+          <param name="comment" value="Context Switches and Interrupts"/>
+          <param name="ds-type" value="rrd-multigraph"/>
+          <param name="ds-names" value="context,interrupts"/>
+          <!-- Interrupts -->
+          <param name="ds-expr-interrupts" value="{RawInterrupts}"/>
+          <param name="graph-legend-interrupts" value="Interrupts"/>
+          <param name="line-style-interrupts" value="LINE2"/>
+          <param name="line-color-interrupts" value="##one"/>
+          <param name="line-order-interrupts" value="1"/>
+          <!-- Contexts -->
+          <param name="ds-expr-context" value="{RawContexts}"/>
+          <param name="graph-legend-context" value="Context Switches"/>
+          <param name="line-style-context" value="LINE2"/>
+          <param name="line-color-context" value="##two"/>
+          <param name="line-order-context" value="2"/>
+        </leaf>
+
+        <leaf name="RawInterrupts">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_ssRawInterrupts"/>
+          <param name="data-file"
+                   value="%system-id%_ucd-context_interrupts.rrd"/>
+          <param name="rrd-ds" value="ucd_ssRawInterrupts"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment" value="Interrupts"/>
+          <param name="graph-legend" value="Interrupts"/>
+        </leaf>
+        <leaf name="RawContexts">
+          <param name="hidden" value="yes"/>
+          <param name="snmp-object" value="$ucd_ssRawContexts"/>
+          <param name="data-file"
+                   value="%system-id%_ucd-context_interrupts.rrd"/>
+          <param name="rrd-ds" value="ucd_ssRawContexts"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="comment" value="Context Switches"/>
+          <param name="graph-legend" value="Context Switches"/>
+        </leaf>
+    </template>
+
+    <!--  Cpu Templates  -->
+
+    <template name="ucdsnmp-cpu-user-multi">
+      <param name="ds-expr-user" value="{CpuRawUser}"/>
+      <param name="graph-legend-user" value="User"/>
+      <param name="line-style-user" value="STACK"/>
+      <param name="line-color-user" value="##one"/>
+      <param name="line-order-user" value="2"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-user">
+      <leaf name="CpuRawUser">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawUser"/>
+        <param name="rrd-ds" value="User"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Used by User Processes
+        </param>
+        <param name="graph-legend" value="User"/>
+      </leaf>
+    </template>
+
+    <template name="ucdsnmp-cpu-system-multi">
+      <!-- System -->
+      <param name="ds-expr-sys" value="{CpuRawSystem}"/>
+      <param name="graph-legend-sys" value="System"/>
+      <param name="line-style-sys" value="AREA"/>
+      <param name="line-color-sys" value="##two"/>
+      <param name="line-order-sys" value="1"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-system">
+      <leaf name="CpuRawSystem">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawSystem"/>
+        <param name="rrd-ds" value="System"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Used by System Processes
+        </param>
+        <param name="graph-legend" value="System"/>
+      </leaf>
+    </template>
+
+    <template name="ucdsnmp-cpu-wait-multi">
+      <param name="ds-expr-wait" value="{CpuRawWait}"/>
+      <param name="graph-legend-wait" value="Wait"/>
+      <param name="line-style-wait" value="STACK"/>
+      <param name="line-color-wait" value="##three"/>
+      <param name="line-order-wait" value="3"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-wait">
+      <leaf name="CpuRawWait">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawWait"/>
+        <param name="rrd-ds" value="Wait"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Used Processes
+        </param>
+        <param name="graph-legend" value="Wait"/>
+      </leaf>
+    </template>
+
+    <template name="ucdsnmp-cpu-kernel-multi">
+      <param name="ds-expr-kernel" value="{CpuRawKernel}"/>
+      <param name="graph-legend-kernel" value="Kernel"/>
+      <param name="line-style-kernel" value="STACK"/>
+      <param name="line-color-kernel" value="##four"/>
+      <param name="line-order-kernel" value="4"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-kernel">
+      <leaf name="CpuRawKernel">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawKernel"/>
+        <param name="rrd-ds" value="Kernel"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Used by Kernel
+        </param>
+        <param name="graph-legend" value="Kernel"/>
+      </leaf>
+    </template>
+
+    <template name="ucdsnmp-cpu-idle-multi">
+      <param name="ds-expr-idle" value="{CpuRawIdle}"/>
+      <param name="graph-legend-idle" value="Idle"/>
+      <param name="line-style-idle" value="STACK"/>
+      <param name="line-color-idle" value="##gray"/>
+      <param name="line-order-idle" value="100"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-idle">
+      <leaf name="CpuRawIdle">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawIdle"/>
+        <param name="rrd-ds" value="Idle"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Idle
+        </param>
+        <param name="graph-legend" value="Idle"/>
+      </leaf>
+    </template>
+
+    <template name="ucdsnmp-cpu-nice-multi">
+      <param name="ds-expr-nice" value="{CpuRawNice}"/>
+      <param name="graph-legend-nice" value="Nice"/>
+      <param name="line-style-nice" value="STACK"/>
+      <param name="line-color-nice" value="##five"/>
+      <param name="line-order-nice" value="5"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-nice">
+      <leaf name="CpuRawNice">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawNice"/>
+        <param name="rrd-ds" value="Nice"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Used by Nice Processes
+        </param>
+        <param name="graph-legend" value="Nice"/>
+      </leaf>
+    </template>
+
+    <template name="ucdsnmp-cpu-interrupts-multi">
+      <param name="ds-expr-int" value="{CpuRawInterrupts}"/>
+      <param name="graph-legend-int" value="Interrupts"/>
+      <param name="line-style-int" value="STACK"/>
+      <param name="line-color-int" value="##six"/>
+      <param name="line-order-int" value="6"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-interrupts">
+      <leaf name="CpuRawInterrupts">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawInterrupts"/>
+        <param name="rrd-ds" value="Interrupts"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Used for Interrupt Processing
+        </param>
+        <param name="graph-legend" value="Interrupts"/>
+      </leaf>
+    </template>
+
+    <template name="ucdsnmp-cpu-softirq-multi">
+      <param name="ds-expr-softirq" value="{CpuRawSoftIRQ}"/>
+      <param name="graph-legend-softirq" value="SoftIRQ"/>
+      <param name="line-style-softirq" value="STACK"/>
+      <param name="line-color-softirq" value="##seven"/>
+      <param name="line-order-softirq" value="7"/>
+    </template>
+
+    <template name="ucdsnmp-cpu-softirq">
+      <leaf name="CpuRawSoftIRQ">
+        <param name="vertical-label" value="Ticks"/>
+        <param name="data-file" value="%system-id%_ucd_ssCpu.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_ssCpuRawSoftIRQ"/>
+        <param name="rrd-ds" value="SoftIRQ"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+            Time Used for Software Interrupt Processing
+        </param>
+        <param name="graph-legend" value="SoftIRQs"/>
+      </leaf>
+    </template>
+
+
+    <!-- LOAD AVERAGE -->
+    <template name="ucdsnmp-load-average">
+      <leaf name="Load_Average">
+        <param name="vertical-label" value="Load Average"/>
+        <param name="comment" value="1, 5, and 15 Minute Load Average"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="one,five,fifteen"/>
+
+        <param name="ds-expr-one" value="{loadAverage1Min},100,/"/>
+        <param name="graph-legend-one" value="1 Minute"/>
+        <param name="line-style-one" value="LINE2"/>
+        <param name="line-color-one" value="##one"/>
+        <param name="line-order-one" value="1"/>
+
+        <param name="ds-expr-five" value="{loadAverage5Min},100,/"/>
+        <param name="graph-legend-five" value="5 Minutes"/>
+        <param name="line-style-five" value="LINE2"/>
+        <param name="line-color-five" value="##two"/>
+        <param name="line-order-five" value="2"/>
+
+        <param name="ds-expr-fifteen" value="{loadAverage15Min},100,/"/>
+        <param name="graph-legend-fifteen" value="15 Minutes"/>
+        <param name="line-style-fifteen" value="LINE2"/>
+        <param name="line-color-fifteen" value="##three"/>
+        <param name="line-order-fifteen" value="3"/>
+      </leaf>
+
+      <leaf name="loadAverage1Min">
+        <param name="vertical-label" value="Load Average"/>
+        <param name="data-file" value="%system-id%_ucd-loadave.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_laLoad.1"/>
+        <param name="rrd-ds" value="loadAverage1Min"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="line-color" value="##one"/>
+        <param name="comment" value="One Minute Load Average"/>
+        <param name="graph-legend" value="1 Min"/>
+      </leaf>
+      <leaf name="loadAverage5Min">
+        <param name="vertical-label" value="Load Average"/>
+        <param name="data-file" value="%system-id%_ucd-loadave.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_laLoad.2"/>
+        <param name="rrd-ds" value="loadAverage5Min"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="line-color" value="##two"/>
+        <param name="comment" value="Five Minute Load Average"/>
+        <param name="graph-legend" value="5 Min"/>
+      </leaf>
+      <leaf name="loadAverage15Min">
+        <param name="vertical-label" value="Load Average"/>
+        <param name="data-file" value="%system-id%_ucd-loadave.rrd"/>
+        <param name="hidden" value="yes"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="snmp-object" value="$ucd_laLoad.3"/>
+        <param name="rrd-ds" value="loadAverage15Min"/>
+        <param name="rrd-cf" value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="line-color" value="##three"/>
+        <param name="comment" value="Fifteen Minute Load Average"/>
+        <param name="graph-legend" value="15 Min"/>
+      </leaf>
+    </template>
+  </datasources>
+</configuration>

@@ -1,0 +1,100 @@
+#  Copyright (C) 2006  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_action_notify.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+action_notify - Generic notification handler for Torrus monitor
+
+=head1 SYNOPSIS
+
+ <action name="notify">
+   <param name="action-type" value="exec" />
+   <param name="command">
+     $TORRUS_BIN/action_notify
+   </param>
+   <param name="launch-when" value="set" />
+ </action>
+
+=head1 DESCRIPTION
+
+This program is designed for usage from a monitor action only. It takes
+the arguments from environment variables, as described in action-type
+C<exec> in B<Torrus XML Configuration Guide>. 
+
+The handler reads its configuration from <notify-siteconfig.pl>, a small
+Perl file which defines the notification paths for various conditions.
+
+Example:
+
+  %Torrus::Notify::programs =
+    (
+     'mailto' => '$TORRUS_BIN/action_printemail | /usr/bin/mail $ARG1',
+     'page' => '/usr/bin/echo $TORRUS_NODEPATH:$TORRUS_MONITOR ' .
+     '>> /tmp/monitor.$ARG1.log'
+     );
+
+  %Torrus::Notify::policies =
+    (
+     'CUST_A' => {
+         'match' => sub { $ENV{'TORRUS_P_notify_policy'} eq 'A' },
+         'severity' => {
+             '3' => [ 'mailto:aaa@domain.com',
+                      'mailto:bbb@domain.com' ],
+             '5' => [ 'page:1234', 'mailto:boss@domain.com' ] } } );
+     
+
+In this example, we define two message handlers: e-mail sender and
+a dummy replacement for a pager program. Then we define the notification
+policies. For the customer I<A>, we define the policy so that
+the parameter C<notify-policy> should match the name C<A>. The parameter
+is defined in the datasource tree and marks only those leaves
+that belong to this customer.
+Then, depending on the monitor severity, different notification
+paths are defined. For severity values higher or equal 3, aaa@domain.com and
+bbb@domain.com will receive the email notifications, and for severity
+higher than or equal 5 all recipients will receive the notification.
+
+The C<match> argument is a Perl subroutine, and can depend on various
+parameters, such as time of day or day of the week, the tree name, and so on.
+
+
+=head1 FILES
+
+=over 4
+
+=item F<@siteconfdir@/notify-siteconfig.pl>
+
+Notification policies configuration
+
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

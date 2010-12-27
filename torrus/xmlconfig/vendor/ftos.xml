@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2009 Jon Nistor
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: ftos.xml,v 1.1 2010-12-27 00:04:18 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+-->
+<!-- Tested on Force10 E300 -->
+
+<configuration>
+
+<definitions>
+
+  <!-- F10-CHASSIS-MIB::chSysCardTable -->
+  <def name="chSysCardUpperTemp" value="1.3.6.1.4.1.6027.3.1.1.2.3.1.8"/>
+
+  <!-- F10-CHASSIS-MIB::chRpmUtilTable -->
+  <def name="chRpmCpuUtil5Sec"   value="1.3.6.1.4.1.6027.3.1.1.3.7.1.3"/>
+  <def name="chRpmCpuUtil1Min"   value="1.3.6.1.4.1.6027.3.1.1.3.7.1.4"/>
+  <def name="chRpmCpuUtil5Min"   value="1.3.6.1.4.1.6027.3.1.1.3.7.1.5"/>
+
+  <def name="chRpmMemUsageUtil"  value="1.3.6.1.4.1.6027.3.1.1.3.7.1.6"/>
+
+  <def name="chSysPowerSupplyOperStatus"
+                                 value="1.3.6.1.4.1.6027.3.1.1.2.1.1.2"/>
+
+</definitions>
+
+
+<datasources>
+  <template name="ftos-cpu-subtree">
+    <param name="data-file"         value="%system-id%_cpu_%cpu-index%.rrd"/>
+    <param name="comment"           value="Overall CPU busy percentage"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+    <param name="rrd-hwpredict"     value="disabled"/>
+    <param name="graph-title"       value="%system-id%: CPU %cpu-index%"/>
+    <param name="graph-lower-limit" value="0"/>
+    <param name="graph-upper-limit" value="100"/>
+    <param name="upper-limit"       value="80"/>
+    <param name="vertical-label"    value="Percent"/>
+
+    <param name="has-overview-shortcuts"     value="yes"/>
+    <param name="overview-shortcuts"         value="5sec,1min,5min"/>
+    <!-- CPU usage / 5 Sec -->
+    <param name="overview-subleave-name-5sec"  value="Util_5_Sec"/>
+    <param name="overview-shortcut-text-5sec"  value="All CPUs usage 5 secs"/>
+    <param name="overview-shortcut-title-5sec"
+           value="Show all CPUs utilization for last 5 seconds in one page"/>
+    <param name="overview-page-title-5sec" value="CPU Usage Graphs"/>
+    <!-- CPU usage / 1 Min -->
+    <param name="overview-subleave-name-1min"  value="Util_1_Min"/>
+    <param name="overview-shortcut-text-1min"  value="All CPUs usage 1 min"/>
+    <param name="overview-shortcut-title-1min"
+           value="Show all CPUs utilization for last 1 minute in one page"/>
+    <param name="overview-page-title-1min" value="CPU Usage Graphs"/>
+    <!-- CPU usage / 5 Min -->
+    <param name="overview-subleave-name-5min"  value="Util_5_Min"/>
+    <param name="overview-shortcut-text-5min"  value="All CPUs usage 5 min"/>
+    <param name="overview-shortcut-title-5min"
+           value="Show all CPUs utilization for last 5 minute in one page"/>
+    <param name="overview-page-title-5min" value="CPU Usage Graphs"/>
+  </template>
+
+
+  <template name="ftos-cpu">
+    <leaf name="Util_5_Sec">
+        <param name="precedence"    value="999"/>
+        <param name="rrd-ds"        value="chRpmCpuUtil5Sec"/>
+        <param name="snmp-object"   value="$chRpmCpuUtil5Sec.%cpu-index%"/>
+        <param name="comment"       value="CPU utilization for last 5 seconds"/>
+        <param name="graph-legend"  value="CPU util"/>
+    </leaf>
+    <leaf name="Util_1_Min">
+        <param name="precedence"    value="998"/>
+        <param name="rrd-ds"        value="chRpmCpuUtil1Min"/>
+        <param name="snmp-object"   value="$chRpmCpuUtil1Min.%cpu-index%"/>
+        <param name="comment"       value="CPU utilization for last 1 minute"/>
+        <param name="graph-legend"  value="CPU util"/>
+    </leaf>
+    <leaf name="Util_5_Min">
+        <param name="precedence"    value="997"/>
+        <param name="rrd-ds"        value="chRpmCpuUtil5Min"/>
+        <param name="snmp-object"   value="$chRpmCpuUtil5Min.%cpu-index%"/>
+        <param name="comment"       value="CPU utilization for last 5 minutes"/>
+        <param name="graph-legend"  value="CPU util"/>
+    </leaf>
+  </template>
+
+
+  <template name="ftos-power-supply-leaf">
+    <param name="comment"           value="Power supply #%power-index%"/>
+    <param name="graph-legend"      value="Power supply #%power-index%"/>
+    <param name="graph-title"       value="%system-id%: Power %power-index%"/>
+    <param name="rrd-ds"            value="power_%power-index%"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+    <param name="rrd-hwpredict"     value="disabled" />
+    <param name="snmp-object"
+          value="$chSysPowerSupplyOperStatus.%power-index%"/>
+    <param name="vertical-label"     value="1 = Normal, 2 = Down"/>
+  </template>
+
+
+  <template name="ftos-temperature-subtree">
+    <param name="comment"             value="Temperature Sensors"/>
+    <param name="precedence"          value="-500"/>
+    <param name="rrd-create-dstype"   value="GAUGE"/>
+    <param name="rrd-hwpredict"       value="disabled" />
+  </template>
+
+  <!-- template to be applied inside the sensor leaf.
+       Two parameters must be defined: sensor-index and sensor-description -->
+  <template name="ftos-temperature-sensor">
+    <param name="comment"      value="%sensor-description%"/>
+    <param name="rrd-ds"       value="sensor_%sensor-index%"/>
+    <param name="snmp-object"
+           value="$chSysCardUpperTemp.%sensor-index%"/>
+    <param name="graph-legend"      value="%sensor-description%"/>
+    <param name="graph-lower-limit" value="15"/>
+    <param name="graph-upper-limit" value="70"/>
+    <param name="vertical-label"    value="degrees Celsius"/>
+  </template>
+
+  <!-- Temperature measured in degrees Fahrenheit -->
+  <template name="ftos-temperature-sensor-fahrenheit">
+    <param name="comment"      value="%sensor-description%"/>
+    <param name="rrd-ds"       value="sensor_%sensor-index%"/>
+    <param name="snmp-object"
+           value="$chSysCardUpperTemp.%sensor-index%"/>
+    <param name="collector-scale"   value="1.8,*,32,+" />
+    <param name="graph-legend"      value="%sensor-description%"/>
+    <param name="graph-lower-limit" value="59"/>
+    <param name="graph-upper-limit" value="158"/>
+    <param name="vertical-label"    value="degrees Fahrenheit"/>
+  </template>
+
+
+
+</datasources>
+
+</configuration>

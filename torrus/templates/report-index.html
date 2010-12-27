@@ -1,0 +1,29 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE htmlstart
+     title="Torrus Reports"
+     contentClass="SingleColumnContent"
+     noTopMenu=1 %]
+
+<H1>Torrus reports</H1>
+
+[% INCLUDE treename %]
+
+<TABLE CLASS="ReportTable">
+<CAPTION CLASS="ReportTable"></CAPTION>
+<TR CLASS="ReportHeadrow">
+<TD CLASS="ReportHeadCell">Year</TD>
+</TR>
+[% rowCount = 0;
+   FOREACH yr = data.keys.sort;
+     rowCount = rowCount + 1;
+     IF rowCount % 2  %]
+<TR CLASS="ReportEvenRow">
+[%   ELSE %]
+<TR CLASS="ReportRow">
+[%   END %]          
+<TD CLASS="ReportFirstCell"><A HREF="[% yearlyUrl(yr) %]">[% yr %]</A></TD>
+</TR>
+[% END %]
+</TABLE>
+
+[% INCLUDE htmlend %]

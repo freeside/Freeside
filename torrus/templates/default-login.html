@@ -1,0 +1,59 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE htmlstart
+     title="Torrus Login: " _ companyName
+     contentClass="SingleColumnContent"
+     noTopMenu=1 %]
+
+[% IF authFailed %]
+<P>Incorrect username or password.</P>
+[% END %]
+
+<P>Please authenticate yourself</P>
+
+<FORM CLASS="LoginForm" METHOD="POST" ACTION="[%url%]">
+  [% IF urlPassParams.token.defined AND urlPassParams.token.length > 0 %]
+    <INPUT TYPE="HIDDEN" NAME="token" VALUE="[%urlPassParams.token%]"/>
+  [% ELSE;
+      IF urlPassParams.path.defined AND urlPassParams.path.length > 0 %]
+       <INPUT TYPE="HIDDEN" NAME="path" VALUE="[%urlPassParams.path%]"/>
+  [% ELSE;
+        IF urlPassParams.nodeid.defined AND urlPassParams.nodeid.length > 0 %]
+       <INPUT TYPE="HIDDEN" NAME="nodeid" VALUE="[%urlPassParams.nodeid%]"/>
+  [%    END;
+     END;
+     END %]
+  [% IF urlPassParams.view.defined AND urlPassParams.view.length > 0 %]
+    <INPUT TYPE="HIDDEN" NAME="view" VALUE="[% urlPassParams.view %]"/>
+  [% END %]
+  <DIV CLASS="LoginRow">
+    <SPAN CLASS="LoginTitle">Username:</SPAN>
+    <SPAN CLASS="LoginInput">
+      <INPUT CLASS="Username" TYPE="TEXT" NAME="uid"/>
+    </SPAN>
+  </DIV>
+  <DIV CLASS="LoginRow">
+    <SPAN CLASS="LoginTitle">Password:</SPAN>
+    <SPAN CLASS="LoginInput">
+      <INPUT CLASS="Password" TYPE="PASSWORD" NAME="password"/>
+    </SPAN>
+  </DIV>
+  <DIV CLASS="LoginRow">
+    <SPAN CLASS="LoginTitle">
+    &nbsp;
+    </SPAN>
+    <SPAN CLASS="LoginInput">
+    <INPUT CLASS="Remember" TYPE="CHECKBOX" NAME="remember"/>
+    remember me
+    </SPAN>
+  </DIV>
+  <DIV CLASS="LoginRow">
+      <INPUT CLASS="Submit" TYPE="SUBMIT" VALUE="Login"/>
+  </DIV>
+</FORM>
+[% IF lostPasswordURL %]
+  <DIV CLASS="LoginRow">
+    <A HREF="[% lostPasswordURL %]">Lost password?</A>
+  </DIV>
+[% END %]
+
+[% INCLUDE htmlend %]

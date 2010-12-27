@@ -1,0 +1,96 @@
+#!@PERL@
+#  Copyright (C) 2006  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: action_notify.in,v 1.1 2010-12-27 00:04:01 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+# We need this for $Torrus::Global::templateDirs
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Date::Format;
+
+use Torrus::Log;
+
+require '@notify_siteconfig_pl@';
+
+if( not $ENV{'TORRUS_TREE'} )
+{
+    print STDERR ("Torrus environment variables missing. This program ",
+                  "must be run from Torrus Monitor\n");
+    exit 1;
+}
+
+our $now = time();
+our $nowHour = time2str('%H', $now);
+our $nowWeekday = time2str('%w', $now);
+
+my $severity = $ENV{'TORRUS_SEVERITY'};
+my $ok = 1;
+
+foreach my $policy ( keys %Torrus::Notify::policies )
+{
+    if( &{$Torrus::Notify::policies{$policy}{'match'}} )
+    {
+        Debug('Notification policy matched: ' . $policy);
+
+        my @targets = ();
+        my $levels = $Torrus::Notify::policies{$policy}{'severity'};
+        
+        foreach my $level ( sort {$a <=>$b} keys %{$levels} )
+        {
+            if( $severity >= $level )
+            {
+                push( @targets, @{$levels->{$level}} );
+            }
+        }
+
+        if( isDebug() )
+        {
+            Debug('Selected notification targets: ' . join(' ', @targets));
+        }
+
+        foreach my $target ( @targets )
+        {
+            my($protocol, $arg) = split(':', $target);
+            if( defined( $Torrus::Notify::programs{$protocol} ) )
+            {
+                $ENV{'ARG1'} = $arg;
+                my $status = system( $Torrus::Notify::programs{$protocol} );
+                delete $ENV{'ARG1'};
+
+                if( $status != 0 )
+                {
+                    Error('The command "' .
+                          $Torrus::Notify::programs{$protocol} .
+                          '" returned error code ' . $status);
+                    $ok = 0;
+                }
+            }
+        }
+    }
+}
+   
+exit( $ok ? 0:1 );                          
+        
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

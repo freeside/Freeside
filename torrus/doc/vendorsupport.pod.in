@@ -1,0 +1,222 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: vendorsupport.pod.in,v 1.1 2010-12-27 00:04:31 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 Torrus Vendor Support List
+
+=head2 Introduction
+
+This document provides a listing of vendor devices and generic MIBs
+that are suppported by Torrus'es SNMP discovery utilities and/or templates
+and other supporting files.
+
+All SNMP MIBs described below are supported through C<devdiscover>,
+the SNMP discovery utility. Where possible, the system contact, location,
+and interface descriptions are copied to the generated Torrus configuration.
+
+
+=head2 Generic SNMP MIBs
+
+=over 4
+
+=item * RFC1628 (UPS-MIB)
+
+Generic statistics covered by most UPS manufactures, including input, output,
+and bypass group information.
+
+=item * RFC1697 (RDBMS-MIB)
+
+Provides the database engine performance statistics. Tested with Oracle only.
+
+=item * RFC2662 (ADSL-LINE-MIB)
+
+ADSL DSLAM statitics and line status. Tested with Paradyne DSLAM.
+
+=item * RFC2670 (DOCS-IF-MIB)
+
+DOCSIS cable status and statistics. Tested with Cisco uBR.
+
+=item * RFC2737 (ENTITY-MIB)
+
+Used to retrieve information about chassis and temperature sensors in Cisco
+devices.
+
+=item * RFC2790 (HOST-RESOURCES-MIB)
+
+Server CPU, memory, and disk statistics. Tested with net-snmp and MS Windows.
+
+=item * RFC2863 (IF-MIB)
+
+Generic network interface statistics from C<ifTable> and C<ifXTable>.
+Most servers and network devices support this MIB. Featuring custom
+vendor-dependent indexing and interface type/name filtering.
+Tested with many different vendors.
+
+=back
+
+=head2 Vendor-specific SNMP monitoring
+
+=over 
+
+=item * Alteon content switches
+
+Application switching and performance statistics.
+
+=item * Allied Telesyn PBC18 Media converter
+
+Reports the line status for the manageable modular media converter.
+
+=item * Arbor Networks
+
+Provide statistics for Arbor eSeries devices. (e30, e100)
+
+=item * Ascend MAX
+
+Provides statistics for analog and ISDN interfaces, and the total number
+of lines used.
+
+=item * Atmel wireless access points and bridges
+
+Privides link quality and traffic statistics for wireless devices.
+The discovery process would run very slow unless you specify the
+following parameter in the discovery instructions XML:
+
+ <param name="only-devtypes" value="ATMEL"/>
+
+=item * AxxessIT Ethernet over SDH switches (aka Cisco ONS 15300)
+
+The module arranges the Ethernet interface statistics with
+such information as slot/port mapping and interface descriptions.
+
+=item * BetterNetworks EthernetBox
+
+The discovery module detects active sensors in an EthernetBox sensor module.
+
+=item * Brocade (Foundry)
+
+A variety of Foundry switches and routers is supported for memory,
+CPU, and temperature statistics.
+
+=item * CASA Systems CMTS
+
+Modem quantities per upstream, downstream, MAC domain.
+
+=item * Cisco CatOS
+
+Memory, CPU, and temperature information. Per-interface statistics may be
+limited to the ports with description only.
+
+=item * Cisco IOS
+
+Provides per-interface traffic statistics; CPU, memory, and
+temperature information; I/O buffer statistics; IPSec traffic information;
+SAA agents statistics; cbQoS monitoring (implemented in a separate plugin);
+DOCSIS uBR-specific variables (modem quantities and channel utilization);
+CISCO-ENHANCED-MEMPOOL-MIB (linecards and VIP modules memory, see notes below);
+MAC accounting statistics (associated with BGP AS numbers when applicable); LRE
+and VDSL line statistics; BGP prefix counts (http://tinyurl.com/y3ganv);
+CAR statistics; VPDN Statistics.
+
+
+B<Note:> On Cisco 7500, IOS version 12.0(26)S2 or 12.0(26)S3,
+CISCO-ENHANCED-MEMPOOL-MIB polling causes memory leak and leads to the router
+crash (Bug ID CSCef53395). The problem is fixed in IOS versions
+12.0(26)S5, 12.0(27)S3, 12.0(28)S2, and 12.0(30)S.
+
+
+=item * Cisco PIX Firewall
+
+Firewall performance statistics.
+
+=item * Cisco SCE
+
+Service Control Engine performance statistics.
+
+=item * Compaq Insite Manager
+
+Temperature and memory health information statistics for Compaq servers.
+
+=item * Empire (Concord) SystemEDGE
+
+Provides lots of statistics and information that a SystemEDGE agent
+may provide about the server health and performance.
+
+=item * F5 BigIp Load Balancer
+
+In-detail traffic statistics.
+
+=item * Force10 Networks
+
+CPU, Temperature and Power supply statistics.
+
+=item * Jacarta iMeter
+
+Humidity, Temperature, Electric current meters.
+
+=item * Juniper JunOS
+
+Class of service, firewall, operating environment, reverse path forwarding,
+and interface statistics.
+
+=item * Liebert HVAC systems
+
+Temperature, humidity and system state sensors
+
+=item * Microsoft Windows 2000/XP
+
+Sets up proper interface indexing and provides FTP and HTTP server statistics.
+
+=item * Motorola BSR CMTS (ex-Riverdelta)
+
+Displays modem quantities.
+
+=item * NetApp.com storage products
+
+Storage arrays performance and health information.
+
+=item * NetScreen Firewall
+
+Firewall performance statistics.
+
+=item * Oracle 
+
+Database engine statistics.
+
+=item * Paradyne GranDSLAM
+
+xDSL statistics and line status.
+
+=item * Symmetricom NTP appliance
+
+NTP clock statistics
+
+=item * UCD SNMP and Net-SNMP
+
+Memory, CPU, and disk usage information.
+
+=item * Xylan ethernet switches
+
+Port indexing for OmniSwitch and OmniStack ethernet switches.
+
+=back
+
+=head1 Author
+
+Copyright (c) 2004-2005 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

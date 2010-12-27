@@ -1,0 +1,172 @@
+/*
+   Torrus Renderer stylesheet.
+   Designed by Stanislav Sinyagin
+
+   $Id: torrus-report.css,v 1.1 2010-12-27 00:04:04 ivan Exp $
+   */
+BODY {
+  background-color : white;
+  color : black;
+  font-family : verdana, arial, helvetica, sans-serif;
+  font-size : 10pt;
+  margin : 0;
+  padding-bottom : 0;
+  padding-left : 0;
+  padding-right : 0;
+  padding-top : 0;
+  voice-family : inherit, male;
+}
+
+H1, H2, H3 {
+  background-color : transparent;
+  color : black;
+}
+
+
+H1 {
+  font-size : 18pt;
+  font-weight : 900;
+  line-height : 20pt;
+}
+
+H2 {
+  font-size : 16pt;
+  font-weight : 700;
+  line-height : 18pt;
+}
+
+H3 {
+  font-size : 14pt;
+  line-height : 16pt;
+}
+
+A, A:link, A:visited {
+  background-color : transparent;
+  color : black;
+  text-decoration : none;
+}
+
+A:hover {
+  background-color : #eee;
+  color : inherit;
+}
+
+*.Header {
+  background-color : transparent;
+  border-bottom : 0.5pt solid black;
+  border-left : 0 solid black;
+  border-right : 0 solid black;
+  border-top : 0.5pt solid black;
+  color : black;
+  font-size : 9pt;
+  font-weight : 700;
+  margin : 5pt 0 10pt;
+  padding-bottom : 0;
+  padding-left : 10pt;
+  padding-right : 0;
+  padding-top : 10pt;
+}
+
+
+DIV.CurrentTime {
+  float: right;
+  font-size : 9px;
+  text-align: right;
+}
+
+*.Content, *.SingleColumnContent  {
+  margin-bottom : 0;
+  margin-left : 5pt;
+  margin-right : 5pt;
+  margin-top : 0;
+  padding-bottom : 10pt;
+  padding-left : 10pt;
+  padding-right : 10pt;
+  padding-top : 10pt;
+}
+
+
+DIV.CurrentTree {
+  background-color : transparent;
+  margin-bottom : 4pt;
+}
+
+
+TABLE.ReportTable {
+  font-size : 9pt;
+  border-collapse : collapse;
+}
+
+CAPTION.ReportTable {
+  font-size : 14pt;
+  font-weight : 700;
+  caption-side: top;
+  padding-bottom : 7pt;
+  padding-top : 10pt;
+}
+
+TR.ReportHeadRow {
+  background-color : #999;
+}
+
+
+TR.ReportEvenRow {
+  background-color : #ccc;
+}
+
+TD {
+  border : solid 1px #aaa;
+  padding-bottom : 1pt;
+  padding-top : 3pt;
+  padding-left : 2pt;
+  padding-right : 2pt;
+  width : 10%;
+}
+
+TD.ReportHeadCell {
+  font-weight : 700;
+  text-align : center;
+}
+
+TD.ReportCell {
+  text-align : right;
+  padding-left : 7pt;
+}
+
+TD.ReportFirstCell {
+  text-align : left;
+  font-weight : 600;
+}
+
+
+DIV.ReportLegend {
+  margin-top: 60pt;
+  margin-left: 10pt;
+  font-size : 7pt;  
+}
+
+SPAN.ReportLegendTerm {
+  font-weight : 700;
+  padding-right : 2pt;
+}
+
+*.Footer {
+  background-color : transparent;
+  border-bottom : 0 solid black;
+  border-left : 0 solid black;
+  border-right : 0 solid black;
+  border-top : 0.75pt solid black;
+  color : black;
+  font-size : 6pt;
+  margin : 0 0 10pt;
+  padding-bottom : 0;
+  padding-left : 0;
+  padding-right : 0;
+  padding-top : 0;
+  text-align : right;
+  width : 100%;
+}
+
+*.SiteInfo, *.TreeInfo {
+  padding-left : 5em;
+}

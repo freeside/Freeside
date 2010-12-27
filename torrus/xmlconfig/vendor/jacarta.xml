@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2010 Roman Hochuli
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+   Jacarta iMeter-Products
+
+  $Id: jacarta.xml,v 1.1 2010-12-27 00:04:23 ivan Exp $
+-->
+
+
+<configuration>
+  <definitions>
+    <def name="jacarta_sensorEntry"
+         value="1.3.6.1.4.1.19011.2.3.1.1"/>
+     <def name="jacarta_sensorValue"
+          value="1.3.6.1.4.1.19011.2.3.1.1.4"/>
+  </definitions>
+
+  <datasources>
+
+    <template name="imeter-sensor">
+      <param name="collector-timeoffset-hashstring"
+               value="%system-id%:%imeter-sensor-index%" />
+      <param name="data-file"
+               value="%system-id%_sensor_%imeter-sensor-index%.rrd"/>
+      <param name="rrd-ds"            value="value"/>
+      <param name="rrd-cf"            value="AVERAGE"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="nodeid"
+               value="sensor//%nodeid-device%//%imeter-sensor-index%"/>
+    </template>
+     
+    <template name="imeter-humi-sensor">
+      <apply-template name="imeter-sensor"/>
+      <param name="snmp-object"
+               value="$jacarta_sensorValue.%imeter-sensor-index%"/>
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="100" />
+      <param name="upper-limit" value="90" />
+      <param name="vertical-label" value="Percent" />
+      <param name="comment" value="Humidity sensor" />
+    </template>
+
+    <template name="imeter-temp-sensor">
+      <apply-template name="imeter-sensor"/>
+      <param name="snmp-object"
+               value="$jacarta_sensorValue.%imeter-sensor-index%"/>
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="50" />
+      <param name="upper-limit" value="35" />
+      <param name="vertical-label" value="Degrees Celsius" />
+      <param name="comment" value="Temperature sensor" />
+    </template>
+
+    <template name="imeter-amps-sensor">
+      <apply-template name="imeter-sensor"/>
+      <param name="snmp-object"
+               value="$jacarta_sensorValue.%imeter-sensor-index%"/>
+      <param name="collector-scale"   value="10,/" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="38" />
+      <param name="upper-limit" value="32" />
+      <param name="vertical-label" value="Ampere" />
+      <param name="comment" value="Electrical current meter" />
+    </template>
+
+
+  </datasources>
+</configuration>

@@ -1,0 +1,136 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_genddx.pod.in,v 1.1 2010-12-27 00:04:38 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+genddx - Generates SNMP discovery instructions file for 
+B<devdiscover>
+
+=head1 SYNOPSIS
+
+B<torrus genddx> --host=I<HOSTNAME> | --hostfile=I<HOSTFILENAME> \
+[I<options...>]
+
+=head1 DESCRIPTION
+
+B<genddx> generates the SNMP discovery instructions file, which may
+be later used as input for the B<devdiscover> utility to produce the 
+corresponding Torrus XML configuration file. The hostname(s) of router(s) to
+be included in SNMP discovery must be specified either using the 
+B<--host> (for a single router) or B<--hostfile> option.  In the latter
+case the file I<HOSTFILENAME> must contain a space-separated list of router 
+hostnames. Hostnames may have the form C<host:devname> where C<devname> is
+a symbolic device name.
+
+This utility is designed to be used only once, in order to generate
+the discovery XML canvas, for futher manual editing. It generates only
+basic set of parameters, and there are much more of those that you may
+use to customize the discovery process.
+
+See L<torrus_ttproclist(@mansec_usercmd@)> for a more flexible and
+complex DDX generator.
+
+More information is available in B<Torrus SNMP Discovery User Guide>.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--out>=I<OUTFILENAME>
+
+Sets the output file to I<OUTFILENAME>. Default is F<routers.ddx>. Without
+absolute path, the file will be placed in F<@sitedir@/discovery>.
+
+=item B<--discout>=I<FILENAME>
+
+Sets the discovery output file to I<FILENAME>. This will be the filename of
+the Torrus XML configuration file once the output file of the B<genddx>
+is processed by the B<devdiscover> utility. Default value is
+F<routers.xml>. Without absolute path, the file would be resided in
+F<@sitexmldir@>.
+
+=item B<--domain>=I<DOMAIN>
+
+Sets the DNS domain name to I<DOMAIN>.
+
+=item B<--version>=I<SNMPVERSION>
+
+Sets discovery SNMP version to SNMPVERSION. Default value is C<2c>.
+
+=item B<--community>=I<COMMUNITY>
+
+Sets discovery SNMP read community value to string I<COMMUNITY>. Default 
+is C<public>.
+
+=item B<--port>=I<PORT>
+
+Sets SNMP port to I<PORT>. Default is 161.
+
+=item B<--retries>=I<NUMRETRIES>
+
+Sets number of retries to I<NUMRETRIES>. Default value is 2.
+
+=item B<--timeout>=I<TIMEOUT>
+
+Sets SNMP timeout to I<TIMEOUT> seconds. Default value is 10.
+
+=item B<--subtree>=I<SUBTREE>
+
+Sets the subtree name to I<SUBTREE>. Default is C</Routers>.
+
+=item B<--datadir>=I<DATADIR>
+
+Sets the path of the directory where SNMP data is collected to I<DATADIR>.
+Default value is F<@defrrddir@>.
+
+=item B<--holtwinters>
+
+Enables Holt-Winters analysis.
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item F<@sitedir@/discovery/routers.ddx>
+
+Default output file of genddx.
+
+=item F<@sitexmldir@/routers.xml>
+
+Default Torrus XML configuration file which will be written once the 
+genddx output file is processed with devdiscover utility. 
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>, L<torrus_devdiscover(@mansec_usercmd@)>,
+L<torrus_ttproclist(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cisco-mac-accounting-example.xml,v 1.1 2010-12-27 00:04:28 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!--
+  This file gives an example how to monitor the MAC accounting
+  on Cisco routers. It may be useful for per-BGP peer statistics
+  on an Ethernet media.
+
+  This file relies on the definitions and templates from
+  "vendor/cisco.ios.mac-accounting.xml".
+ -->
+
+<configuration>
+<datasources>
+
+
+  <subtree name="SNMP">
+
+    <param name="snmp-community" value="blahblah" />
+    <param name="domain-name" value="xyz.net" />
+    <param name="data-dir" value="/var/snmpcollector" />
+
+    <subtree name="MAC_Accounting">
+      <param name="comment" value="MAC accounting test router" />
+      <param name="collector-period" value="180" />
+      <param name="collector-timeoffset" value="13" />
+
+
+      <subtree name="test1">
+        <param name="snmp-host" value="rtrZHT001" />
+        <param name="interface-name" value="FastEthernet6/1" />
+        <param name="interface-nick" value="Fe6_1" />
+        <param name="mac" value="0.3.49.144.200.28" />
+        <param name="mac-nick" value="testOne" />
+        <param name="comment" value="MAC accounting Test: 0.3.49.144.200.28" />
+        <apply-template name="cisco-mac-accounting" />
+      </subtree>
+
+      <subtree name="test2">
+        <param name="snmp-host" value="rtrZHT001" />
+        <param name="interface-name" value="FastEthernet6/1" />
+        <param name="interface-nick" value="Fe6_1" />
+        <param name="mac" value="0.2.74.137.72.112" />
+        <param name="mac-nick" value="testTwo" />
+        <param name="comment" value="MAC accounting Test: 0.2.74.137.72.112" />
+        <apply-template name="cisco-mac-accounting" />
+      </subtree>
+
+      <subtree name="test3">
+        <param name="snmp-host" value="rtrZHT001" />
+        <param name="interface-name" value="FastEthernet6/6" />
+        <param name="interface-nick" value="Fe6_1" />
+        <param name="mac" value="0.9.182.41.169.3" />
+        <param name="mac-nick" value="testThree" />
+        <param name="comment" value="MAC accounting Test: 0.9.182.41.169.3" />
+        <apply-template name="cisco-mac-accounting" />
+      </subtree>
+
+    </subtree>
+
+  </subtree>
+</datasources>
+
+</configuration>

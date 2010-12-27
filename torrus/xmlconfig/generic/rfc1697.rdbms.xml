@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2003 Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+   Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+  Authors: Shawn Ferry
+
+  $Id: rfc1697.rdbms.xml,v 1.1 2010-12-27 00:04:29 ivan Exp $
+-->
+<configuration>
+  <definitions>
+    <!-- rdbmsDbTable -->
+    <def name="rdbmsDbName" value="1.3.6.1.2.1.39.1.1.1.4"/>
+
+    <!-- rdbmsDbInfoTable -->
+    <def name="rdbmsDbInfoSizeAllocated" value="1.3.6.1.2.1.39.1.2.1.4"/>
+    <def name="rdbmsDbInfoSizeUsed" value="1.3.6.1.2.1.39.1.2.1.5"/>
+
+    <!-- rdbmsDbSrvInfoTable -->
+    <def name="rdbmsSrvInfoFinishedTransactions"
+                                     value="1.3.6.1.2.1.39.1.6.1.2"/>
+    <def name="rdbmsSrvInfoDiskReads" value="1.3.6.1.2.1.39.1.6.1.3"/>
+    <def name="rdbmsSrvInfoLogicalReads" value="1.3.6.1.2.1.39.1.6.1.4"/>
+    <def name="rdbmsSrvInfoDiskWrites" value="1.3.6.1.2.1.39.1.6.1.5"/>
+    <def name="rdbmsSrvInfoLogicalWrites" value="1.3.6.1.2.1.39.1.6.1.6"/>
+    <def name="rdbmsSrvInfoPageReads" value="1.3.6.1.2.1.39.1.6.1.7"/>
+    <def name="rdbmsSrvInfoPageWrites" value="1.3.6.1.2.1.39.1.6.1.8"/>
+    <def name="rdbmsSrvInfoRequestsHandled" value="1.3.6.1.2.1.39.1.6.1.10"/>
+
+    <!-- Network Services applTable -->
+    <def name="applInboundAssociations" value="1.3.6.1.2.1.27.1.1.8"/>
+
+    <def name="DB_IDX"
+         value="M($rdbmsDbName,%dbName%)"/>
+  </definitions>
+
+  <datasources>
+
+    <template name="rdbms-dbtable">
+      <subtree name="DB_Stats">
+        <param name="precedence" value="1000"/>
+        <param name="data-file"
+                 value="%system-id%_%vendor%_%dbName%_RDBMS.rrd"/>
+        <param name="rrd-hwpredict" value="disabled" />
+        <leaf name="DB_Allocated">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="collector-scale" value="%dbSizeUnits%,*"/>
+          <param name="snmp-object" value="$rdbmsDbInfoSizeAllocated.$DB_IDX"/>
+          <param name="rrd-ds"      value="dbAllocated"/>
+          <param name="comment" value="Space Allocated to this Database"/>
+          <param name="graph-legend"   value="Allocated Space"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="descriptive-nickname"
+            value="%system-id%:%snmp-host% %dbName% Allocated Space"/>
+        </leaf>
+        <leaf name="DB_Used">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="collector-scale" value="%dbSizeUnits%,*"/>
+          <param name="snmp-object" value="$rdbmsDbInfoSizeAllocated.$DB_IDX"/>
+          <param name="rrd-ds"      value="dbUsed"/>
+          <param name="comment" value="Space Allocated to this Database"/>
+          <param name="graph-legend"   value="Used Space"/>
+          <param name="vertical-label" value="Bytes"/>
+          <param name="descriptive-nickname"
+            value="%system-id%:%snmp-host% %dbName% Used Space"/>
+        </leaf>
+        <leaf name="DB_Finished_Transactions">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object"
+              value="$rdbmsSrvInfoFinishedTransactions.$DB_IDX"/>
+          <param name="rrd-ds"      value="FinishedTrans"/>
+          <param name="comment" value="Finished Transactions (COMMIT/ABORT)"/>
+          <param name="graph-legend"   value="Transactions/s"/>
+          <param name="vertical-label" value="Transactions"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Finished Transactions"/>
+        </leaf>
+        <leaf name="DB_Disk_Reads">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+            <param name="rrd-cf"      value="AVERAGE"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object" value="$rdbmsSrvInfoDiskReads.$DB_IDX"/>
+          <param name="rrd-ds"      value="DiskReads"/>
+          <param name="comment" value="Disk Reads/s"/>
+          <param name="graph-legend"   value="Disk Reads"/>
+          <param name="vertical-label" value="Disk Reads/s"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Disk Reads/s"/>
+        </leaf>
+        <leaf name="DB_Logical_Reads">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object" value="$rdbmsSrvInfoLogicalReads.$DB_IDX"/>
+          <param name="rrd-ds"      value="LogicalReads"/>
+          <param name="comment" value="Logical Reads/s"/>
+          <param name="graph-legend"   value="Logical Reads"/>
+          <param name="vertical-label" value="Logical Reads/s"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Logical Reads/s"/>
+        </leaf>
+        <leaf name="DB_Disk_Writes">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object" value="$rdbmsSrvInfoDiskWrites.$DB_IDX"/>
+          <param name="rrd-ds"      value="DiskWrites"/>
+          <param name="comment" value="Disk Writes/s"/>
+          <param name="graph-legend"   value="Writes"/>
+          <param name="vertical-label" value="Writes/s"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Disk Writes/s"/>
+        </leaf>
+        <leaf name="DB_Logical_Writes">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object"
+                   value="$rdbmsSrvInfoLogicalWrites.$DB_IDX"/>
+          <param name="rrd-ds"      value="LogicalWrites"/>
+          <param name="comment" value="Logical Writes/s"/>
+          <param name="graph-legend"   value="Logical Writes"/>
+          <param name="vertical-label" value="Logical Writes/s"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Logical Writes/s"/>
+        </leaf>
+        <leaf name="DB_Page_Writes">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object" value="$rdbmsSrvInfoPageWrites.$DB_IDX"/>
+          <param name="rrd-ds"      value="PageWrites"/>
+          <param name="comment" value="Page Writes/s"/>
+          <param name="graph-legend"   value="Page Writes"/>
+          <param name="vertical-label" value="Page Writes/s"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Page Writes/s"/>
+        </leaf>
+        <leaf name="DB_Page_Reads">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object" value="$rdbmsSrvInfoPageReads.$DB_IDX"/>
+          <param name="rrd-ds"      value="PageReads"/>
+          <param name="comment" value="Page Reads/s"/>
+          <param name="graph-legend"   value="Page Reads"/>
+          <param name="vertical-label" value="Page Reads/s"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Page Reads/s"/>
+        </leaf>
+        <leaf name="DB_Request_Rate">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="COUNTER"/>
+          <param name="snmp-object"
+              value="$rdbmsSrvInfoRequestsHandled.$DB_IDX"/>
+          <param name="rrd-ds"      value="RequestsHandled"/>
+          <param name="comment" value="Requests Handled/s"/>
+          <param name="graph-legend"   value="Requests Handled"/>
+          <param name="vertical-label" value="Requests Handled/s"/>
+          <param name="descriptive-nickname"
+              value="%system-id%:%snmp-host% %dbName% Requests Handled/s"/>
+        </leaf>
+        <leaf name="DB_Inbound_Associations">
+          <param name="leaf-type"   value="rrd-def"/>
+          <param name="hidden"      value="no"/>
+          <param name="rrd-cf"      value="AVERAGE"/>
+          <param name="rrd-create-dstype" value="GAUGE"/>
+          <param name="snmp-object" value="$applInboundAssociations.$DB_IDX"/>
+          <param name="rrd-ds"      value="InboundAssociations"/>
+          <param name="comment" value="Inbound Associations"/>
+          <param name="graph-legend"   value="Inbound Associations"/>
+          <param name="vertical-label" value="Inbound Associations"/>
+          <param name="descriptive-nickname"
+            value="%system-id%:%snmp-host% %dbName% Inbound Associations"/>
+        </leaf>
+      </subtree>
+    </template>
+  </datasources>
+</configuration>

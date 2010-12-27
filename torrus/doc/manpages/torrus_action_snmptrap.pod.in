@@ -1,0 +1,97 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_action_snmptrap.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+action_snmptrap, action_snmpv1trap - Scripts for sending 
+SNMP traps (version 2c and 1 respectively) from monitor action. 
+C<action_snmpv1trap> is obsolete as the preferred SNMP version is 2c.
+
+=head1 SYNOPSIS
+
+ <action name="snmptrap">
+   <param name="action-type" value="exec" />
+   <param name="command" value="$TORRUS_BIN/action_snmptrap" />
+   <param name="launch-when" value="set, clear" />
+ </action>
+
+=head1 DESCRIPTION
+
+This program is designed for usage from a monitor action only. It takes
+the arguments from environment variables, as described in action-type
+C<exec> in B<Torrus XML Configuration Guide>. In addition, some values
+may be supplied via command-line arguments (see section OPTIONS below).
+
+Site-specific variables must be specified in the file
+F<snmptrap-siteconfig.pl>. Default values are installed by the first run
+of C<make install>. Subsequent 
+runs of C<make install> do not override this file.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--host>=I<HOSTNAME>
+
+Sets the hostname of the destination host.
+
+=item B<--community>=I<COMMUNITY>
+
+Sets the community string to use when sending the trap.
+
+=item B<--port>=I<PORT>
+
+Sets the destination UDP port.
+
+=item B<--enterprise>=I<OID>
+
+Sets the C<enterprise> field of the SNMPv1 trap to a given OID (see
+RFC 1157 for more details). This option is only available for
+C<action_snmpv1trap> and will be ignored for C<action_snmptrap>.
+
+=item B<--severity>=I<SEVERITY>
+
+Sets the optional severity SNMP variable to some integer value.
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item F<@siteconfdir@/snmptrap-siteconfig.pl>
+
+Torrus site configuration script for SNMP traps.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

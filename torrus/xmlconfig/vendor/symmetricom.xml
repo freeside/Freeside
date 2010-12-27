@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2007 Jon Nistor
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: symmetricom.xml,v 1.1 2010-12-27 00:04:25 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+-->
+<!-- Symmetricom specific definitions -->
+
+<configuration>
+
+<definitions>
+  <!-- SYMM-SMI -->
+  <def name="ntpSysPrecision"    value="1.3.6.1.4.1.9070.1.2.3.1.5.1.1.3.0"/>
+  <def name="ntpSysPoll"         value="1.3.6.1.4.1.9070.1.2.3.1.5.1.1.8.0"/>
+  <def name="ntpSysPktsReceived" value="1.3.6.1.4.1.9070.1.2.3.1.5.1.1.17.0"/>
+
+</definitions>
+
+
+<datasources>
+  <template name="ntp-stats">
+    <param name="ntpcommon-datafile"  value="%system-id%_NTP_stats.rrd"/>
+    <subtree name="NTP_Stats">
+      <param name="comment">
+        NTP Statistics
+      </param>
+      <param name="data-file"         value="%ntpcommon-datafile%"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+
+      <leaf name="Precision">
+        <param name="comment"
+              value="Clock precision in secs to the nearest power of two"/>
+        <param name="graph-legend"    value="Clock precision"/>
+        <param name="vertical-label"  value="log2(sec)"/>
+        <param name="precedence"      value="999"/>
+        <param name="rrd-ds"          value="ntpSysPrecision"/>
+        <param name="rrd-create-min"  value="U"/>
+        <param name="snmp-object"     value="$ntpSysPrecision"/>
+      </leaf>
+      
+      <leaf name="Poll">
+        <param name="comment"
+              value="Min interval between transmitted messages"/>
+        <param name="graph-legend"    value="Polling Interval"/>
+        <param name="vertical-label"  value="Seconds"/>
+        <param name="precedence"      value="998"/>
+        <param name="rrd-ds"          value="ntpSysPoll"/>
+        <param name="snmp-object"     value="$ntpSysPoll"/>
+      </leaf>
+
+      <leaf name="Packts_Received">
+        <param name="comment"
+              value="Number of NTP packets received by SyncServer"/>
+        <param name="graph-legend"    value="Num of NTP Packets Received"/>
+        <param name="vertical-label"  value="Total"/>
+        <param name="precedence"      value="997"/>
+        <param name="rrd-ds"          value="ntpSysPktsReceived"/>
+        <param name="snmp-object"     value="$ntpSysPktsReceived"/>
+      </leaf>
+    </subtree>
+  </template>
+
+</datasources>
+
+</configuration>
+

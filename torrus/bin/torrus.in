@@ -1,0 +1,76 @@
+#!@SHELL@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus.in,v 1.1 2010-12-27 00:04:00 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+
+# CLI wrapper for Torrus utilities
+
+cmd=$1
+
+commands="acl=acledit acledit=acledit \
+          bs=buildsearchdb buildsearchdb=buildsearchdb \
+          cleanup=cleanup \
+          clc=clearcache clearcache=clearcache \
+          collector=collector \
+          compile=compilexml compilexml=compilexml \
+          configinfo=configinfo ci=configinfo \
+          snapshot=configsnapshot configsnapshot=configsnapshot \
+          dd=devdiscover discover=devdiscover devdiscover=devdiscover \
+          fm=flushmonitors flushmonitors=flushmonitors \
+          genddx=genddx \
+          genlist=genlist \
+          genreport=genreport report=genreport \
+          install_plugin=install_plugin \
+          monitor=monitor \
+          nodeid=nodeid ni=nodeid \
+          rrddir=rrddir2xml rrddir2xml=rrddir2xml \
+          schedulerinfo=schedulerinfo si=schedulerinfo \
+          snmpfailures=snmpfailures failures=snmpfailures \
+          srvderive=srvderive derive=srvderive \
+          ttproclist=ttproclist"
+
+for f in `ls -1 @plugwrapperdir@`; do
+  . @plugwrapperdir@/${f}
+done
+
+for pair in ${commands}; do
+  eval execcmd_${pair}
+done
+
+eval expanded_cmd='${execcmd_'${cmd}'}'
+
+
+if test ${expanded_cmd:-no} = no; then
+  echo "Usage: $0 cmd [options...]" 1>&2
+  echo "   cmd is one of:" 1>&2
+  for pair in ${commands}; do
+    eval `echo ${pair} | sed -e 's/=.*//' -e 's/^/a=/'`
+    echo "     "${a}
+  done
+else
+    shift
+    @pkgbindir@/${expanded_cmd} "$@"
+fi
+
+
+# Local Variables:
+# mode: shell-script
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

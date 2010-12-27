@@ -1,0 +1,274 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#  Copyright (C) 2004  Christian Schnidrig
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: scalability.pod.in,v 1.1 2010-12-27 00:04:32 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 Torrus Scalability Guide
+
+=head2 Introduction
+
+Installing Torrus in big enterprise or carrier networks requires special
+planning and design measures, in order to ensure its reliable and efficient
+function.
+
+
+=head2 Hardware Platform Recommendations
+
+Hardware planning for large Torrus installations is of big importance.
+It is vital to understand the potential bottlenecks and performance limits
+before purchasing the hardware.
+
+First of all, you need to estimate the number of devices that you are
+going to monitor, with some room for future growth. It is a good practice
+first to model the situation on a test server, and then project the
+results to a bigger number of network devices. The utilities that
+would help you in assessing the requirements are C<torrus configinfo> and
+C<torrus schedulerinfo>.
+
+The resources for planning are the server CPU, RAM, and disks.
+While CPU and RAM are of great importance, it is the disk subsystem that
+often becomes the bottleneck.
+
+=head3 CPU
+
+For large installations, CPU power is one of the critical resources.
+
+One of CPU-intensive processes is XML configuration compiler. A configuration
+for few hundred of nodes may take few dozens of minutes to compile. In some
+complicated configuration, it may require few hours to recompile the whole
+datasource tree. Here CPU power means literally your time while testing the
+configuration changes or troubleshooting a problem.
+
+The SNMP collector is quite moderate in CPU usage, still when the number of
+SNMP variables reaches dozens of thousands, the CPU power becomes
+an important resource to pay attention to. In addition, the collector
+process initialization time can be quite CPU-intensive. This happens every
+time the collector process starts, or when the configuration has been
+recompiled.
+
+The empiric estimation made by Christian Schnidrig is that one SNMP counter
+collection every 5 minutes occupies approximately 1.0e-5 of the
+Intel Xeon 2.8GHz time, including the OS overhead. For example,
+the Torrus collectors running on 60'000 counters would make the server
+busy at the average of 60%.
+
+
+=head3 Memory
+
+The collector would need RAM space to store all the counters information,
+and of course it's undesirable to swap. In addition, the more RAM you have
+available for disk cache, the faster your collector may update the data files.
+
+Each update of an RRD file consists of a number of operations: open a file,
+read the header, seek to the needed offset, and then write. With enough disk
+cache, it is possible that the read operations are made solely from RAM,
+and that significantly speeds up the collector running cycle.
+
+According to Christian Schnidrig's empiric estimations, 30 KB RAM per counter
+should be enough to hold all the neccessary data, including the disk cache.
+For example, for 60'000 counters this gives 1'757 MB, thus 2 GB of server RAM
+should be enough.
+
+In addition, Apache with mod_perl occupies 20-30 MB RAM per process, so
+few hundred extra megabytes of RAM would be good to have.
+
+
+=head3 Disk storage
+
+It is not recommended to use IDE disks. They are not designed for
+continuous and intensive use. As experienced by Christian Schnidrig,
+IDE disks don't live long under such load.
+
+It is recommended to reduce the number of RRD files by grouping
+the datasources. This reduces dramatically the number of read and write
+operations during the update process.
+
+As noted by Rodrigo Cunha, reducing the size of read-ahead in the filesystem
+may lead to significant optimisation of disk cache usage. RRD update process
+reads only a short header in the beginnin of RRD file, and the rest of
+readahead data is never reused. On Linux, the following command would
+set the readahead size to 4 KB, which equals to i386 page size:
+
+ /sbin/hdparm -a 4 /dev/sda
+
+For servers with dozens of thousands RRD files, it is recommended to use
+hashed data directories. Then the data directories will form a structure of
+256 directories, with hash function based on hostnames. See I<Torrus SNMP
+Discovery User Guide> for more details.
+
+Spreading the data files over several physical disks is also a good plus.
+
+
+
+=head2 Operating System Tuning
+
+Depending on the number of trees and processes that run on a single server,
+you might require to increase the maximum number of filehandles that
+may be opened at the same time, system-wide and per process.
+See the manuals for your operating system  for more details.
+
+
+=head2 Torrus Configuration Recommendatations
+
+=head3 BerkeleyDB configuration tuniung
+
+When using lots of collectors and/or lots of HTTP processes, it is
+important to increase the size of BerkeleyDB lock region.
+The command
+
+  db_stat -h @dbhome@ -c
+
+would show you the current number of locks and lockers, and their maximum
+quantities during the database history.
+The maximum numbers of lock objects and lockers can be tuned by creating the
+file F<DB_CONFIG> in the database home directory, F<@dbhome@>.
+The following settings would work fine with about 20 collector processes
+and 5 HTTP daemon processes:
+
+   set_lk_max_lockers	6000
+   set_lk_max_locks	3000
+
+It is also recommended to increase the cache size from default 256KB to some
+bigger amount. Especially if the database has to hold large Torrus trees
+(hundreds or thousands monitored devices). The following line in
+F<DB_CONFIG> sets the cache size to 16MB:
+
+   set_cachesize        0 16777216 1
+
+After updating F<DB_CONFIG>, stop all Torrus processes,
+including HTTP server, then run
+
+  db_recover -h @dbhome@
+
+Then start the processes again. Futher info is available at:
+
+=over 4
+
+=item * General access method configuration (BDB Reference)
+
+http://tinyurl.com/ybymk7t
+
+=item * DB_CONFIG configuration file (BDB Reference)
+
+http://tinyurl.com/y9qjodv
+
+=item * Configuring locking: sizing the system (BDB Reference)
+
+http://tinyurl.com/ya6dtww
+
+=item * C API reference
+
+http://tinyurl.com/yczgnab
+
+=back
+
+
+=head3 XML compilation time
+
+For large datasource trees, XML compilation may take dozens of minutes,
+if not hours. Other processes are not suspended during the compilation, and
+they use the previous configuration version.
+
+For debugging and testing, it is recommended to create a new tree,
+separate from large production trees. That would save you a lot of time and
+would allow you to see the result of changes quickly.
+
+
+
+=head3 Collector schedule tuning
+
+The Torrus collector has a very flexible scheduling mechanism. Each data source
+has its own pair of scheduler parameters. These parameters are I<period>
+and I<timeoffset>. Period is usually set to default 300 seconds.
+The time is divided into even intervals. For the default 5-minutes period,
+each hour's intervals would start at 00, 05, 10, 15, etc. minutes.
+The timeoffset determines the moment within each interval when the data source
+should be collected. The default value for timeoffset is 10 seconds. This
+means that the collector process would try to collect the values at
+00:00:10, 00:05:10, ..., 23:55:10 every day.
+
+Data sources with the same period and timeoffset values are grouped together. 
+The SNMP collector works asynchronously, and it tries to send as many SNMP
+packets at the same time as possible. Due to the asynchronous architecture,
+the collector is able to perform thousands of queries at the same time
+with very small delay. Within the same collector process, a large number of
+datasources configured with the same schedule is usually not a problem.
+
+If you configured  several datasource trees all with the same period and
+timeoffset values, each collector process would start flooding the SNMP
+packets to the network at the same time. This may lead to packet loss and
+collector timeouts. In addition, all collector processes would try to update
+the RRD files concurrently, and this would cause overall performance
+degradation. Therefore, it is better to assign different timeoffset values
+to different trees. This may be achieved by manually specifying the
+C<collector-timeoffset> parameter in discovery configuration files.
+
+In large installations, the collector schedules need thorough planning and
+tuning to insure maximum performance and minimize load on the network devices'
+CPUs. The C<torrus schedulerinfo> utility is designed to help you in
+this planning.
+It shows two types of reports: configuration report gives you the idea
+of how many datasources are queried at which moments in time. The runtime
+report gives you realtime statistics of collector schedules, including
+average and maximum running cycle, and statistics on missed or delayed cycles.
+
+There is a feature that eases the load in large installations. With
+dispersed timeoffsets enabled, the timeoffset for each datasource is
+evenly assigned to one of allowed values, based on the name of the host,
+and name of the interface. By default, these values are: 0, 30, 60, ..., 270.
+With thousands of datasources, this feature smoothens the CPU and disk load
+on Torrus server, and avoids CPU usage peaks on network devices with big number
+of SNMP variables per device. It is recommended to analyse the current
+scheduler statistics before using this feature. If you run several large
+datasource trees, don't forget to plan and analyse the schedules for the whole
+system, not just for one tree.
+
+
+=head2 Distributed setup
+
+=head3 NFS-based setup
+
+The following setup allows you to distribute the load among several
+physical servers.
+
+Several Torrus (backend) servers which run collectors
+and store RRD files in the local storage, shared by NFS.
+The frontend server runs the Web interface, and probably some monitor
+processes, accessing the data files by NFS.
+
+It is possible to organize the directory structure so that each data file
+would be seen at the same path on every server. Then you can keep identical
+Torrus configurations on all servers, and launch the collector process only on
+one of them. XML configuration files may be shared via NFS too.
+
+Be aware that BerkeleyDB database home directory cannot be NFS-mounted.
+See the following link for more details:
+http://www.sleepycat.com/docs/ref/env/remote.html
+
+Backend servers may run near the limits of their system capacities.
+70-80% CPU usage should not be a problem. For the frontend machine,
+it is preferred that at least 50% of average CPU time is idle.
+
+
+=head1 Authors
+
+Copyright (c) 2004-2005 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>
+
+Copyright (c) 2004 Christian Schnidrig E<lt>christian.schnidrig@bluewin.chE<gt>

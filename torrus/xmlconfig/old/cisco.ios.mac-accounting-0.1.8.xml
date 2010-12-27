@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cisco.ios.mac-accounting-0.1.8.xml,v 1.1 2010-12-27 00:04:27 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!--
+  This file defines the template for MAC accounting
+  on Cisco routers. It may be useful for per-BGP peer statistics
+  on an Ethernet media.
+
+  See also "examples/cisco-mac-accounting.xml" for a working example.
+ -->
+
+<configuration>
+
+<definitions>
+
+  <!-- CISCO-IP-STAT-MIB:cipMacTable -->
+  <def name="cipMacSwitchedBytes"   value="1.3.6.1.4.1.9.9.84.1.2.1.1.4" />
+
+</definitions>
+
+
+<datasources>
+
+  <!-- Template for MAC accounting -->
+  <template name="cisco-mac-accounting">
+
+    <param name="snmp-object">
+      $cipMacSwitchedBytes.%ifindex-map%.%direction%.%mac%
+    </param>
+
+    <param name="data-file">
+      %system-id%_%interface-nick%_%mac-nick%.rrd"
+    </param>
+
+    <param name="rrd-ds" value="%mac-nick%_%direction%" />
+
+    <param name="rrd-create-dstype" value="COUNTER" />
+
+    <leaf name="InOctets">
+      <param name="comment"          value="Input bytes per second" />
+      <param name="direction"        value="1" />
+      <param name="hidden"           value="yes" />
+      <param name="graph-legend"     value="Bytes in" />
+    </leaf>
+
+    <leaf name="OutOctets">
+      <param name="comment"          value="Output bytes per second" />
+      <param name="direction"        value="2" />
+      <param name="hidden"           value="yes" />
+      <param name="graph-legend"     value="Bytes out" />
+    </leaf>
+
+    <leaf name="InBps">
+      <param name="comment"          value="Input bits per second" />
+      <param name="ds-type"          value="rrd-file" />
+      <param name="leaf-type"        value="rrd-cdef" />
+      <param name="rpn-expr"         value="{InOctets},8,*" />
+      <param name="graph-legend"     value="Bits in" />
+    </leaf>
+
+    <leaf name="OutBps">
+      <param name="comment"          value="Output bits per second" />
+      <param name="ds-type"          value="rrd-file" />
+      <param name="leaf-type"        value="rrd-cdef" />
+      <param name="rpn-expr"         value="{OutOctets},8,*" />
+      <param name="graph-legend"     value="Bits out" />
+    </leaf>
+
+    <leaf name="InOut_bps">
+      <param name="comment" value="Input and Output bits per second graphs" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="1000" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{InOctets},8,*" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="AREA" />
+      <param name="line-color-in"    value="#00FF00" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{OutOctets},8,*" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="LINE2" />
+      <param name="line-color-out"   value="#0000FF" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+
+  </template>
+
+</datasources>
+
+</configuration>

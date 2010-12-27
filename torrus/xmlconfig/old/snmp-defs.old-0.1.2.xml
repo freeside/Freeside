@@ -1,0 +1,285 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: snmp-defs.old-0.1.2.xml,v 1.1 2010-12-27 00:04:28 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!-- These are the basic definitions for the SNMP collector
+
+  WARNING: This file is overwritten by "make install"
+-->
+
+<configuration>
+
+<definitions>
+  <!-- IF-MIB:ifTable  -->
+  <def name="ifDescr"           value="1.3.6.1.2.1.2.2.1.2" />
+  <def name="ifPhysAddress"     value="1.3.6.1.2.1.2.2.1.6" />
+  <def name="ifInOctets"        value="1.3.6.1.2.1.2.2.1.10" />
+  <def name="ifInUcastPkts"     value="1.3.6.1.2.1.2.2.1.11" />
+  <def name="ifInErrors"        value="1.3.6.1.2.1.2.2.1.14" />
+  <def name="ifOutOctets"       value="1.3.6.1.2.1.2.2.1.16" />
+  <def name="ifOutUcastPkts"    value="1.3.6.1.2.1.2.2.1.17" />
+  <def name="ifOutErrors"       value="1.3.6.1.2.1.2.2.1.20" />
+
+  <!-- IF-MIB:ifXTable -->
+  <def name="ifName"            value="1.3.6.1.2.1.31.1.1.1.1" />
+  <def name="ifHCInOctets"      value="1.3.6.1.2.1.31.1.1.1.6" />
+  <def name="ifHCInUcastPkts"   value="1.3.6.1.2.1.31.1.1.1.7" />
+  <def name="ifHCOutOctets"     value="1.3.6.1.2.1.31.1.1.1.10" />
+  <def name="ifHCOutUcastPkts"  value="1.3.6.1.2.1.31.1.1.1.11" />
+
+  <!-- RFC1213-MIB:ipAddrTable -->
+  <def name="ipAdEntIfIndex"   value="1.3.6.1.2.1.4.20.1.2" />
+
+  <!-- Interface indices -->
+  <def name="IFIDX_DESCR"   value="M($ifDescr, %interface-name%)" />
+  <def name="IFIDX_MAC"     value="M($ifPhysAddress, %interface-mac%)" />
+  <def name="IFIDX_IP"      value="V(ipAdEntIfIndex.%interface-ipaddr%)" />
+
+  <!-- Default Interface index lookup -->
+  <def name="IFIDX"         value="M(%ifindex-table%, %interface-name%)" />
+
+</definitions>
+
+<datasources>
+
+  <template name="interface-counters">
+
+    <leaf name="InOutBps">
+      <param name="comment" value="Input and Output bits per second graphs" />
+      <param name="vertical-label"   value="bps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="1000" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{ifInOctets},8,*" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{ifOutOctets},8,*" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+
+    <leaf name="ifInOctets">
+      <param name="snmp-object"       value="$ifInOctets.$IFIDX" />
+      <param name="rrd-ds"            value="ifInOctets" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment"  value="Input byte counter for the interface" />
+      <param name="graph-legend"      value="Bytes in" />
+      <param name="vertical-label"    value="Bps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+    <leaf name="ifInUcastPkts">
+      <param name="snmp-object"       value="$ifInUcastPkts.$IFIDX" />
+      <param name="rrd-ds"            value="ifInUcastPkts" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment" value="Input packet counter for the interface" />
+      <param name="graph-legend"      value="Packets in" />
+      <param name="vertical-label"    value="pps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+    <leaf name="ifOutOctets">
+      <param name="snmp-object"       value="$ifOutOctets.$IFIDX" />
+      <param name="rrd-ds"            value="ifOutOctets" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment" value="Output byte counter for the interface" />
+      <param name="graph-legend"      value="Bytes out" />
+      <param name="vertical-label"    value="Bps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+    <leaf name="ifOutUcastPkts">
+      <param name="snmp-object"       value="$ifOutUcastPkts.$IFIDX" />
+      <param name="rrd-ds"            value="ifOutUcastPkts" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment" value="Output packet counter for the interface" />
+      <param name="graph-legend"      value="Packets out" />
+      <param name="vertical-label"    value="pps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+  </template>
+
+  <template name="hc-interface-counters">
+
+    <leaf name="InOutBps">
+      <param name="comment" value="Input and Output bits per second graphs" />
+      <param name="vertical-label"   value="bps" />
+      <param name="graph-lower-limit" value="0" />
+      <param name="rrd-hwpredict"    value="disabled" />
+      <param name="precedence"       value="1000" />
+      <param name="ds-type"          value="rrd-multigraph" />
+      <param name="ds-names"         value="in,out" />
+
+      <param name="ds-expr-in"       value="{ifHCInOctets},8,*" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="##BpsIn" />
+      <param name="line-color-in"    value="##BpsIn" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{ifHCOutOctets},8,*" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="##BpsOut" />
+      <param name="line-color-out"   value="##BpsOut" />
+      <param name="line-order-out"   value="2" />
+    </leaf>
+
+    <leaf name="ifHCInOctets">
+      <param name="snmp-object"       value="$ifHCInOctets.$IFIDX" />
+      <param name="rrd-ds"            value="ifHCInOctets" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment"  value="Input byte counter for the interface" />
+      <param name="graph-legend"      value="Bytes in" />
+      <param name="vertical-label"    value="Bps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+    <leaf name="ifHCInUcastPkts">
+      <param name="snmp-object"       value="$ifHCInUcastPkts.$IFIDX" />
+      <param name="rrd-ds"            value="ifHCInUcastPkts" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment" value="Input packet counter for the interface" />
+      <param name="graph-legend"      value="Packets in" />
+      <param name="vertical-label"    value="pps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+    <leaf name="ifHCOutOctets">
+      <param name="snmp-object"       value="$ifHCOutOctets.$IFIDX" />
+      <param name="rrd-ds"            value="ifHCOutOctets" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment" value="Output byte counter for the interface" />
+      <param name="graph-legend"      value="Bytes out" />
+      <param name="vertical-label"    value="Bps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+    <leaf name="ifHCOutUcastPkts">
+      <param name="snmp-object"       value="$ifHCOutUcastPkts.$IFIDX" />
+      <param name="rrd-ds"            value="ifHCOutUcastPkts" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="comment" value="Output packet counter for the interface" />
+      <param name="graph-legend"      value="Packets out" />
+      <param name="vertical-label"    value="pps" />
+      <param name="graph-lower-limit" value="0" />
+    </leaf>
+
+  </template>
+
+  <subtree name="SNMP">
+    <param name="ds-type" value="collector" />
+    <param name="collector-type" value="snmp" />
+
+    <!-- Two mandatory parameters define the collector schedule.
+         The collector runs at moments defined by formula:
+           time + period - (time mod period) + timeoffset -->
+    <param name="collector-period" value="300" />
+    <param name="collector-timeoffset" value="10" />
+
+    <param name="storage-type" value="rrd" />
+
+    <param name="comment" value="Data collected via SNMP" />
+
+    <!-- SNMP Parameters -->
+
+    <!-- Optional SNMP version. Default is 2c.
+         Valid values are: 1, 2c.
+         Version 3 will be supported in the future.  -->
+    <param name="snmp-version" value="2c" />
+
+    <!-- Optional port. Deefault is 161 -->
+    <param name="snmp-port" value="161" />
+
+    <!-- Mandatory community name -->
+    <param name="snmp-community" value="public" />
+
+    <!-- Mandatory session timeout and no. of retries -->
+    <param name="snmp-timeout" value="10" />
+    <param name="snmp-retries" value="2" />
+
+    <!-- Optional domain name. Appended to a hostname which
+         has no dots in it -->
+    <param name="domain-name" value="must.redefine.domain.net" />
+
+    <!-- Where the interface index is looked up -->
+    <param name="ifindex-table" value="$ifDescr" />
+
+    <!-- RRD Parameters -->
+
+    <!-- Directory path where RRD files will be stored -->
+    <param name="data-dir" value="/var/snmpcollector" />
+
+    <!-- Round-robin arrays to be created, separated by space.
+     In this example, we keep 5-minute details for 2 weeks,
+     30-minute average and maximum details for 6 weeks,
+     and 1-day aggregated stats for 2 years -->
+    <param name="rrd-create-rra">
+      RRA:AVERAGE:0.5:1:4032
+      RRA:AVERAGE:0.5:6:2016     RRA:MAX:0.5:6:2016
+      RRA:AVERAGE:0.5:288:732    RRA:MAX:0.5:288:732
+    </param>
+
+    <!-- if no updates are received for 30 minutes, consider the datasource
+         unknown, i.e. dead -->
+    <param name="rrd-create-heartbeat" value="500"/>
+
+    <param name="rrd-create-min" value="0"/>
+    <param name="rrd-create-max" value="U"/>
+
+    <param name="rrd-hwpredict" value="disabled" />
+
+    <!-- Optional Holt-Winters algorithm parameters
+      Default values are:
+        alpha=0.1, beta=0.0035, gamma=0.1,
+        window_length=9, failure_threshold=6 -->
+    <param name="rrd-create-hw-alpha" value="0.1" />
+    <param name="rrd-create-hw-beta" value="0.0035" />
+    <param name="rrd-create-hw-gamma" value="0.1" />
+    <param name="rrd-create-hw-winlen" value="9" />
+    <param name="rrd-create-hw-failth" value="6" />
+
+    <!-- Optional Holt-Winters season length.
+         Default is one-day (288 5-minute intervals) -->
+    <param name="rrd-create-hw-season" value="288" />
+
+    <!-- Mandatory length of the Holt-Winters archives.
+         Recommended same length as main 5-minutes RRA -->
+    <param name="rrd-create-hw-rralen" value="4032" />
+
+    <param name="data-file" value="%system-id%_%interface-nick%.rrd" />
+    <param name="leaf-type" value="rrd-def" />
+    <param name="rrd-cf"    value="AVERAGE" />
+
+    <!-- In other files, define the subtree of /SNMP for your routers -->
+
+  </subtree>
+</datasources>
+
+</configuration>

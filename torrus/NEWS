@@ -1,0 +1,320 @@
+24-OCT-2010: Torrus release 1.0.9
+
+It is recommended to re-run discovery and compilation immediately after
+upgrading from 1.0.8.
+
+In this release:
+
+-- WebUI handling is re-designed. FastCGI is supported with Apache
+   and Lighttpd. User authorization option has changed its name:
+   "$Torrus::CGI::authorizeUsers". Login page has now "remember me" checkbox.
+   Apache configuration statements for mod_perl have slightly changed.
+   Removed dependency: libapreq2 is no longer needed.
+
+-- New Perl module required by installer: JSON
+
+-- New discovery modules: Force10, NetBotz, Arista, ALU_Timetra, Foundry,
+   CasaCMTS, Jacarta.
+
+-- Support for semi-transparent lines and areas in multigraphs.
+
+-- Support for arbitrary names for subtrees and leaves (node-display-name
+   parameter). Now original interface names are displayed, without underscores.
+
+-- Monitor alarms are now preserved between config re-compilations. Also
+   dynamic tokenset members are preserved. A new utility:
+   "torrus flushmonitors" flushes old alarms.
+
+-- New parameter: nodeid. It is designed for easier integration of Torrus with
+   other OSS systems. See the "NodeID usage guidelines" document for more
+   details.
+
+-- Current SNMP failures are recorded in a database and displayed by
+   "torrus snmpfailures" utility. The output is in JSON format, so it's easy
+   to integrate into other alerting systems.
+
+-- RHEL compatibility: the old Init script did not stop the daemons properly
+   upon a system reboot.
+
+-- Compatibility with the newest version of Net::SNMP module.
+
+-- Host-based authentication: remote systems, such as customer self-care
+   portals, can retrieve graphs from Torrus WebUI.
+
+-- Performance optimizations: XML compiler runs 10-15% faster.
+
+-- Custom CSS styles must no longer reside in Torrus installation directory.
+
+
+
+
+26-APR-2010: Torrus release 1.0.8bf01
+
+Bugfix release. No new features or functionality.
+
+05-APR-2009: Torrus release 1.0.8
+
+Note: a complete re-compile of the XML is required after upgrading.
+
+In this release:
+
+-- BerkeleyDB stability has significantly improved due to new signal handlers.
+
+-- View parameters can be overridden with URL variables "Gstart",
+   "Gend" and so on.
+
+-- Collector initialization time is improved by shifting some work
+   to the XML compiler.
+
+-- New command-line utility: srvderive. It combines several serviceIDs into
+   a single report by calculating their sum or maximum value
+   (sponsored by nexellent ag, www.nexellent.ch)
+
+-- A number of bugfixes and minor imprvements.
+
+-- Added SNMP discovery support for Arbor E series and Liebert HVAC
+
+
+05-AUG-2008: Torrus release 1.0.7
+
+In this release:
+
+-- Added and improved vendor support for Symmetricom, Juniper JunOS,
+   Cisco SCE, 
+
+-- New discovery parameters, selectors and selector actions.
+
+-- Default value for "collector-timeoffset-step" increased from 30 to 60
+   seconds. 30 seconds is too short for many installations.
+
+-- Support for PostgreSQL in reports generator.
+
+-- Support for IPv6 in SNMP discovery and collector.
+
+-- New collector plugin: "tp-rawexport" for plaintext export of collector data.
+
+-- Cisco QoS monitoring plugin "tp-cisco-cbqos" upgraded to version 1.6.
+   It fixes an old bug in RRD file naming, thus all the QoS-related RRD files
+   would have to be renamed or started from scratch.
+
+-- Other minor enhancements and bugfixes (see ChangeLog for details).
+
+
+03-AUG-2007: Torrus release 1.0.6
+
+In this release:
+
+-- All the trees need to be recompiled after Torrus upgrade.
+
+-- Search capability. The nodes can be searched within a tree or globally.
+   The search database needs to be updated with "torrus buildsearchdb"
+   utility.
+
+-- GUI improvements. Recursive view is restricted and is not offered
+   averywhere. Bugfix for Mozilla browser compatibility: now the graph
+   images are clickable.
+
+-- devdiscover accepts multiple DDX files. Combined with multithreading,
+   this improves the discovery performance even further.
+
+-- SNMP collector periodically refreshes the table mappings. This helps
+   for modular routers with online insertion and removal: the collector
+   does not need to be restarted after the physical configuration changes.
+   Also the OIDs that return noSuchObject are excluded from polling
+   immediately.
+
+-- New MIBs support: Cisco SCE per-service traffic statistics; Cisco CAR
+   statistics; Cisco Ethernet MAC accounting statistics now available on
+   subinterfaces; JunOS per-CoS stats; support for Alteon hardware.
+
+-- <filepattern> XML statement is no longer supported. Use the rrddir2xml
+   utility instead.
+
+-- The CDEF collector from Chrstian Schnidrig is integrated in the main
+   distribution. Devdiscover supports traffic summaries for multiple
+   interfaces.
+
+-- The report generator can generate HTML in any tree. Earlier it was
+   generating the reports only for the trees where data was collected.
+   This improvement allows to split the collecting and viewing trees.
+
+-- The installer allows multithreading for Perl version 5.8.8 or higher only.
+   Earlier versions are known for memory leaks in multithreaded operation.
+
+-- Multiple collector instances per tree. This improves the CPU utilization
+   for multi-CPU servers. See the torrus_collector manpage.
+
+
+
+25-JAN-2007: Torrus release 1.0.5
+
+This is a major release with many new features.
+
+In this release:
+
+-- Bugfixes in SNMPv3 support
+
+-- Perl multithreading. If threads are supported by local Perl,
+   Devdiscover can perform parallel discoveries per output file.
+   Also the Collector runs a background thread for RRD updates.
+
+-- Improvement in SNMP collector initialization. Now the collector expands
+   the interface names and other maps asynchronously, which dramatically
+   reduces the initialization time for large installations.
+   Cisco QoS plugin needs an upgrade to version 1.4 or higher.
+
+-- New vendor support in SNMP discovery engine:
+   Motorola BSR CMTS (ex-Riverdelta), Cisco SCE, BGP prefix statistics for
+   Cisco IOS routers, Cisco IOS XR support.
+
+-- DOCSIS upstream statistics have changed the format, therefore
+   the old stats will be lost after upgrade. The stats now include the
+   US Frequency graphs.
+
+-- Interface statistics now contain "All Errors" tab with all error graphs
+   in one page.
+
+-- Interface traffic graphs may contain bandwidth utilization percentage
+   information (see RFC2863_IF_MIB::bandwidth-usage in SNMP Discovery
+   Guide).
+
+-- Cisco MAC accounting can also be used for billing reports.
+
+
+20-JUL-2006: Torrus release 1.0.4
+
+This is a major release with many new features.
+
+In this release:
+
+-- SNMP Version 3 support in Devdiscover and SNMP collector.
+
+-- Usage reports for billing. Including 95% percentile reports.
+   More details at http://torrus.org/reporting_setup.pod.html
+
+-- Various improvements in SNMP discovery engine and new equipment
+   vendor support
+
+-- Improved monitor notifications. New parameter: "severity"
+   and new action "action_notify".
+
+-- New torrus-siteconfig.pl variables to improve WebUI customization
+
+
+
+02-AUG-2005: Torrus release 1.0.3
+
+This is a minor bugfix release. Unreachable device handling is improved, and
+also there's a possibility to specify extra Perl library path in ./configure
+
+
+27-JUL-2005: Torrus release 1.0.2
+
+The new release requires one additional Perl module to be
+installed: Date::Parse. You can install it from CPAN by using the command:
+  perl -MCPAN -e 'install Date::Parse'
+
+In this release:
+
+-- Unreachable SNMP devices handling has significantly improved.
+   The default unreachable timeout is set to 6 hours.
+
+-- Support for the new mod_perl 2.0 layout.
+
+-- New OID in TORRUS-MIB: torrusMonitorDesc, for easier processing of
+   SNMP traps.
+
+-- ./configure checks if the user "torrus" exists in the system
+
+-- New SNMP discovery parameters:
+   RFC2863_IF_MIB::only-interfaces
+   disable-snmpcollector
+
+-- On the graph page, it is now possible to choose the date for displaying
+   old statistics.
+
+-- The Cisco CPUs are now managed by devdiscover's selectors.
+   This allows you to add monitors to specific CPU graphs, and also add them
+   to a tokenset.
+
+
+21-JUN-2005: Torrus release 1.0.1
+
+In this release:
+
+-- SNMP errors are now handled better. See the User guide for more details.
+
+-- New command line option for monitor: --delay. The init script
+   launches the monitor with 20 minutes delay, to allow the collector
+   update RRD files before monitoring them.
+
+-- New devdiscover option: --fallback. It is useful in large production
+   environments when it's important to have a device in the web interface
+   even if it's turned off
+
+-- Cisco DOCSIS templates now include Total, Active, and Registered
+   modem quantities. RRD file structure has changed, so the graphs will
+   start anew.
+
+-- The meaning of $Torrus::Renderer::stylingProfileOverlay
+   has changed: now it refers to a file name.
+
+
+10-JUN-2005: Torrus release 1.0.0
+
+In this release, compared to RRFW release 0.1.8:
+
+-- New directory structure, with local configuration completely separated
+   from the distribution files
+
+-- Comand-line wrapper "torrus" for executing all commands, with short aliases
+   ("dd" for "devdiscover" etc.)
+
+-- Plugins may be easily added to existing installation
+
+-- Relative file names in DDX files searched in the right directories
+
+-- Discovery object selectors: the new way to customize the discovery results
+
+-- New discovery modules:
+   AxxessIT.pm: Cisco ONS 15300 SDH switches
+   CiscoIOS_Docsis.pm: Cisco IOS DOCSIS specifics: upstream utilization and
+     modem quantities
+   BetterNetworks.pm: BetterNetworks EthernetBox sensors (temperature, humidity
+     and so on)
+   CiscoIOS_MacAccounting.pm: Automated discovery for Cisco MAC accounting.
+     If applicable, MAC peers are associated with BGP peers.
+
+-- Discovery modules improvements:
+     IF-MIB indexing hints for unknown devices
+     Docsis downstream utilization
+     Selector actions for IF-MIB, Docsis, and temperature sensor objects
+     Line cards and modules memory stats for modular Ciscso routers     
+
+-- Improved performance of monitor daemon
+
+-- extended example of DOCSIS monitors and 3-level alarms in
+   xmlconfig/examples/docsis-monitors.xml
+
+-- Renderer module improved for multi-CPU servers
+
+-- Web interface improvements:
+     Recursive directory view,
+     Monitor names and comments diaplayed,
+     Sizes of tokensets displayed
+     Multiple overviews possible for a subtree
+
+-- SO_RCVBUF is set explicitly in SNMP collector to sustain bursts of traffic
+
+-- RRD files automatically moved in case of conflicts
+
+-- ttproclist: the new utility for automating the DDX files generation
+
+-- action_snmptrap now sends an optional severity parameter
+
+-- New option for devdiscover: --forcebundle to write the bundle file
+   even if errors occur
+
+-- The init script is configurable by a separate configuration file.
+   It also launches the monitors with 20 minutes delay if monitors
+   are launched together with collectors

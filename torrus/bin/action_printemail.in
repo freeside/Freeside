@@ -1,0 +1,83 @@
+#!@PERL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: action_printemail.in,v 1.1 2010-12-27 00:04:03 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+# We need this for $Torrus::Global::templateDirs
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Template;
+use Getopt::Long;
+
+require '@email_siteconfig_pl@';
+
+if( not $ENV{'TORRUS_TREE'} )
+{
+    print STDERR ("Torrus environment variables missing. This program ",
+                  "must be run from Torrus Monitor\n");
+    exit 1;
+}
+
+
+my $ok = GetOptions( 'url=s' => \$Torrus::Email::url,
+                     'template=s' => \$Torrus::Email::template );
+
+if( not $ok )
+{
+    print STDERR ("Error parsing options\n");
+    exit 1;
+}
+
+my $tt = new Template(INCLUDE_PATH => $Torrus::Global::templateDirs);
+
+my $vars =
+{
+    'tree'       => $ENV{'TORRUS_TREE'},
+    'token'      => $ENV{'TORRUS_TOKEN'},
+    'path'       => $ENV{'TORRUS_NODEPATH'},
+    'nickname'   => $ENV{'TORRUS_NICKNAME'},
+    'url'        => $Torrus::Email::url . '/' .
+        $ENV{'TORRUS_TREE'} . '?token='.$ENV{'TORRUS_TOKEN'},
+    'ncomment'   => $ENV{'TORRUS_NCOMMENT'},
+    'npcomment'  => $ENV{'TORRUS_NPCOMMENT'},
+    'event'      => $ENV{'TORRUS_EVENT'},
+    'monitor'    => $ENV{'TORRUS_MONITOR'},
+    'mcomment'   => $ENV{'TORRUS_MCOMMENT'},
+    'severity'   => $ENV{'TORRUS_SEVERITY'},
+    'timestamp'  => scalar(localtime($ENV{'TORRUS_TSTAMP'})),
+    'value'      => $ENV{'TORRUS_VALUE'},
+    'dispvalue'  => $ENV{'TORRUS_DISPLAY_VALUE'},
+    'env'        => sub  { return $ENV{$_[0]} }
+};
+
+my $result = $tt->process($Torrus::Email::template, $vars);
+
+if( not $result )
+{
+    print STDERR "Error while processing template: ".$tt->error()."\n";
+}
+
+exit( $result ? 0:1 );
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

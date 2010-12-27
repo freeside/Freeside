@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: compaq.cim.xml,v 1.1 2010-12-27 00:04:25 ivan Exp $
+
+  Compaq Insight Manager
+  MIB files available at
+  http://h18023.www1.hp.com/support/files/server/us/download/19885.html
+-->
+
+<configuration>
+<definitions>
+  <def name="cpqHeTemperatureTable"       value="1.3.6.1.4.1.232.6.2.6.8"/>
+  <def name="cpqHeTemperatureChassis"     value="1.3.6.1.4.1.232.6.2.6.8.1.1"/>
+  <def name="cpqHeTemperatureIndex"       value="1.3.6.1.4.1.232.6.2.6.8.1.2"/>
+  <def name="cpqHeTemperatureLocale"      value="1.3.6.1.4.1.232.6.2.6.8.1.3"/>
+  <def name="cpqHeTemperatureCelsius"     value="1.3.6.1.4.1.232.6.2.6.8.1.4"/>
+  <def name="cpqHeTemperatureHwLocation"  value="1.3.6.1.4.1.232.6.2.6.8.1.8"/>
+  <def name="cpqHeCorrMemTotalErrs"       value="1.3.6.1.4.1.232.6.2.3.3.0"/>
+</definitions>
+
+<datasources>
+  <template name="cpq-cim-temperature-sensor">
+    <param name="data-file"
+           value="%system-id%_cimsensor_%cpq-cim-sensor-nick%.rrd"/>
+    <param name="rrd-ds"            value="sensor"/>
+    <param name="snmp-object"
+           value="$cpqHeTemperatureCelsius.%cpq-cim-sensor-index%"/>
+    <param name="graph-legend"      value="DegC"/>
+    <param name="graph-lower-limit" value="15"/>
+    <param name="graph-upper-limit" value="70"/>
+    <param name="vertical-label"    value="degrees Celsius"/>
+    <param name="rrd-hwpredict"   value="disabled" />
+  </template>
+
+  <template name="cpq-cim-corr-mem-errs">
+    <leaf name="Memory_Correctable_Errors">
+      <param name="data-file"         value="%system-id%_cim_memerr.rrd"/>
+      <param name="comment"           value="Correctable Memory Errors"/>
+      <param name="rrd-ds"            value="correctable_errors"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="rrd-hwpredict"   value="disabled" />
+      <param name="snmp-object"       value="$cpqHeCorrMemTotalErrs"/>
+      <param name="graph-legend"      value="Correctable Errors"/>
+      <param name="vertical-label"    value="Correctable Errors"/>
+      <param name="precedence"        value="-200"/>
+    </leaf>
+  </template>
+</datasources>
+
+</configuration>

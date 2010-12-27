@@ -1,0 +1,205 @@
+#!@PERL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: collector.in,v 1.1 2010-12-27 00:04:03 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Proc::Daemon;
+use Getopt::Long;
+
+use Torrus::Log;
+use Torrus::ConfigTree;
+use Torrus::Collector;
+use Torrus::SiteConfig;
+
+$| = 1;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+my $tree;
+my $instance;
+my $nodaemon;
+my $runonce;
+my $runalways;
+my $debug;
+my $verbose;
+my $help_needed;
+
+# Derive the process name from the command line
+my $process_name = $0;
+$process_name =~ s/^.*\/([^\/]+)$/$1/;
+$process_name .= ' ' . join(' ', @ARGV);
+                            
+my $ok = GetOptions ('tree=s'     => \$tree,
+                     'instance=i' => \$instance,
+                     'nodaemon'   => \$nodaemon,
+                     'runonce'    => \$runonce,
+                     'runalways'  => \$runalways,
+                     'debug'      => \$debug,
+                     'verbose'    => \$verbose,
+                     'help'       => \$help_needed);
+
+if( not $ok or not $tree or $help_needed or scalar(@ARGV) > 0 )
+{
+    print STDERR "Usage: $0 --tree=NAME [options...]\n",
+    "Options:\n",
+    "  --tree=NAME     tree name\n",
+    "  --instance=N    instance number for multiple collectors per tree\n",
+    "  --nodaemon      do not fork daemon and log to STDERR\n",
+    "  --runonce       run one time and exit. Implies --nodaemon\n",
+    "  --runalways     continue running if no collectors defined\n",
+    "  --debug         set the log level to debug\n",
+    "  --verbose       set the log level to info\n",
+    "  --help          this help message\n";
+    exit 1;
+}
+
+if( not Torrus::SiteConfig::mayRunCollector( $tree ) )
+{
+    Error('Tree ' . $tree . ' is not configured to run collector');
+    exit 1;
+}
+
+my $nInstances = Torrus::SiteConfig::collectorInstances( $tree );
+
+if( $nInstances > 1 and not defined( $instance ) )
+{
+    Error('--instance option is missing');
+    exit 1;
+}
+
+if( not defined( $instance ) )
+{
+    $instance = 0;
+}
+
+if( $instance >= $nInstances )
+{
+    Error('Invalid instance number. Allowed from 0 to ' . ($nInstances-1));
+    exit 1;
+}
+
+if( $debug )
+{
+    Torrus::Log::setLevel('debug');
+}
+elsif( $verbose )
+{
+    Torrus::Log::setLevel('verbose');
+}
+
+my $logfile =
+    $Torrus::Global::logDir . '/collector.' . $tree . '_' . $instance . '.log';
+my $pidfile;
+
+my $rotateLogs = sub
+{
+    Info('Caught SIGHUP. Reopening log file');
+    close( STDERR );
+    open( STDERR, ">>$logfile" );
+    $| = 1;
+};
+
+if( not $nodaemon and not $runonce )
+{
+    my $pidfilename = 
+        $Torrus::Global::pidDir . '/collector.' .
+        $tree . '_' . $instance . '.pid';
+    
+    if( -r $pidfilename )
+    {
+        Error("Another collector daemon is running, pid=",
+              `cat $pidfilename`);
+        exit 1;
+    }
+
+    &Proc::Daemon::Init();
+    umask 0017; # Proc::Daemon::Init sets the mask to all-writable
+    
+    $SIG{'HUP'} = $rotateLogs;
+
+    # At this point, we cannot tell anyone if "open" fails
+    open(STDERR, ">>$logfile");
+
+    $pidfile = $pidfilename;
+    
+    if( open( PID, ">$pidfile" ) )
+    {
+        printf PID ( "%d", $$ );
+        close PID;
+    }
+    else
+    {
+        Error("Cannot open $pidfile for writing: $!");
+    }
+}
+
+
+Torrus::Collector::initThreads();
+
+&Torrus::DB::setSafeSignalHandlers();
+
+
+Info(sprintf("Torrus version %s", '@VERSION@'));
+Info(sprintf("%s started for tree %s, instance #%d", $0, $tree, $instance));
+Debug(sprintf("Process ID %d", $$));
+
+my %options =
+    (
+     '-ProcessName' => $process_name,
+     '-Tree'        => $tree,
+     '-Instance'    => $instance
+     );
+
+if( $runonce )
+{
+    $options{'-RunOnce'} = 1;
+}
+if( $runalways )
+{
+    $options{'-RunAlways'} = 1;
+}
+
+
+my $scheduler = new Torrus::CollectorScheduler( %options );
+$scheduler->run();
+
+if( not $options{'-RunOnce'} )
+{
+    Error("Collector process exited: nothing to collect");
+    unlink $pidfile;
+}
+
+exit;
+
+
+END
+{
+    if( defined($pidfile) and -r $pidfile )
+    {
+        unlink $pidfile;
+    }
+}
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

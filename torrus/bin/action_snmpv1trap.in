@@ -1,0 +1,134 @@
+#!@PERL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: action_snmpv1trap.in,v 1.1 2010-12-27 00:04:02 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+# Obsoleted and not used SNMP v1 trap script.
+# Version 2c is preferred one.
+
+
+use strict;
+use Net::SNMP qw(:ALL);
+use Getopt::Long;
+
+require '@snmptrap_siteconfig_pl@';
+
+# SNMP Enterprise. Needed for SNMP v1 trap.
+# See http://www.iana.org/assignments/enterprise-numbers for reference
+$Torrus::Snmptrap::enterprise = '1.3.6.1.4.1.14697.1.1.1';
+
+
+if( not $ENV{'TORRUS_TOKEN'} )
+{
+    print STDERR ("Torrus environment variables missing. This program ",
+                  "must be run from Torrus Monitor\n");
+    exit 1;
+}
+
+my @hosts;
+my $severity;
+
+my $ok = GetOptions( 'host=s'     => \@hosts,
+                     'community=s' => \$Torrus::Snmptrap::community,
+                     'port=i'      => \$Torrus::Snmptrap::port,
+                     'enterprise'  => \$Torrus::Snmptrap::enterprise,
+                     'severity=i'  => \$severity );
+
+if( not $ok )
+{
+    print STDERR ("Error parsing options\n");
+    exit 1;
+}
+
+if( scalar(@hosts) > 0 )
+{
+    @Torrus::Snmptrap::hosts = @hosts;
+}
+
+my %specifictrap = ( 'set'    => 1,
+                     'repeat' => 2,
+                     'clear'  => 3,
+                     'forget' => 4
+                     );
+
+my @varbindlist = ( $Torrus::Snmptrap::enterprise . '.2',
+                    OCTET_STRING, $ENV{'TORRUS_TOKEN'},
+
+                    $Torrus::Snmptrap::enterprise . '.5',
+                    OCTET_STRING, $ENV{'TORRUS_NODEPATH'},
+
+                    $Torrus::Snmptrap::enterprise . '.3',
+                    OCTET_STRING, $ENV{'TORRUS_MONITOR'},
+
+                    $Torrus::Snmptrap::enterprise . '.4',
+                    OCTET_STRING, $ENV{'TORRUS_EVENT'},
+
+                    $Torrus::Snmptrap::enterprise . '.6',
+                    OCTET_STRING, scalar(localtime($ENV{'TORRUS_TSTAMP'})),
+
+                    $Torrus::Snmptrap::enterprise . '.7',
+                    OCTET_STRING, $ENV{'TORRUS_TREE'},
+                    
+                    $Torrus::Snmptrap::enterprise . '.9',
+                    OCTET_STRING, $ENV{'TORRUS_MCOMMENT'}
+                    );
+
+if( defined( $severity ) )
+{
+    push( @varbindlist,
+          $Torrus::Snmptrap::enterprise . '.8',
+          INTEGER32, $severity );
+}
+
+foreach my $host ( @Torrus::Snmptrap::hosts )
+{
+    my( $session, $error ) =
+        Net::SNMP->session( -hostname  => $host,
+                            -community => $Torrus::Snmptrap::community,
+                            -port      => $Torrus::Snmptrap::port
+                            );
+
+    if( not defined($session) )
+    {
+        printf STDERR ("Error opening SNMP trap session: %s.\n", $error);
+        exit 1;
+    }
+
+
+    my $result =
+        $session->trap( -enterprise   => $Torrus::Snmptrap::enterprise,
+                        -generictrap  => ENTERPRISE_SPECIFIC,
+                        -specifictrap => $specifictrap{$ENV{'TORRUS_EVENT'}},
+                        -timestamp    => $ENV{'TORRUS_UPTIME'} * 100,
+                        -varbindlist  => \@varbindlist
+                        );
+
+    if( not $result )
+    {
+        printf STDERR ("Error sending SNMP trap: %s.\n", $session->error());
+    }
+
+    $session->close();
+}
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

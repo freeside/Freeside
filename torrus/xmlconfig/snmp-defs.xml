@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: snmp-defs.xml,v 1.1 2010-12-27 00:04:06 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!-- These are the basic definitions for the SNMP collector
+
+  WARNING: This file is overwritten by "make install"
+-->
+
+<configuration>
+
+<param-properties>
+  <!-- Parameters which need to be expanded accorrding
+       to $defs and %paramrefs% -->
+
+  <prop param="ifindex-table"       prop="expand" value="1"/>
+  <prop param="snmp-host"           prop="expand" value="1"/>
+  <prop param="snmp-object"         prop="expand" value="1"/>
+
+  <!-- Parameters which are included in search DB -->
+  <prop param="snmp-host"               prop="search" value="1"/>
+  
+</param-properties>
+
+
+<datasources>
+
+  <template name="snmp-defaults">
+    <param name="ds-type" value="collector" />
+    <param name="collector-type" value="snmp" />
+
+    <!-- Two mandatory parameters define the collector schedule.
+         The collector runs at moments defined by formula:
+           time + period - (time mod period) + timeoffset -->
+    <param name="collector-period" value="300" />
+    <param name="collector-timeoffset" value="10" />
+
+    <param name="storage-type" value="rrd" />
+
+    <!-- Unique host identifier, normally same as hostname -->
+    <param name="system-id" value="%snmp-host%" />
+
+    <!-- Host-specific part of nodeid -->
+    <param name="nodeid-device" value="%system-id%" />
+
+    <!-- Host-level nodeid -->
+    <param name="nodeid" value="device//%nodeid-device%" />
+    
+    <!-- SNMP Parameters -->
+
+    <!--
+      The following parameters must be defined elsewhere:
+
+      snmp-host
+
+      snmp-version
+         Valid values are: 1, 2c.
+         Version 3 will be supported in the future.
+
+      snmp-port: UDP port to use (usually 161)
+
+      snmp-community
+
+      domain-name: will be appended to hostname if it contains no dots
+
+      data-dir
+      data-file
+    -->
+    
+    <!-- Mandatory transport protocol -->
+    <param name="snmp-ipversion" value="4" />
+    <param name="snmp-transport" value="udp" />
+    
+    <!-- Mandatory session timeout and no. of retries -->
+    <param name="snmp-timeout" value="10" />
+    <param name="snmp-retries" value="2" />
+
+    <!-- Number of SNMP OIDs per one UDP packet -->
+    <param name="snmp-oids-per-pdu" value="40" />
+
+    <!-- RRD Parameters -->
+
+    <!-- Round-robin arrays to be created, separated by space.
+     By default we keep 5-minute details for 2 weeks,
+     30-minute average and maximum details for 6 weeks,
+     and 1-day aggregated stats for 2 years.
+     In 30-minute average one missing sample is allowed.
+     In daily average one hour of missing samples are allowed.
+      -->
+    <param name="rrd-create-rra">
+      RRA:AVERAGE:0:1:4032
+      RRA:AVERAGE:0.17:6:2016      RRA:MAX:0.17:6:2016
+      RRA:AVERAGE:0.042:288:732    RRA:MAX:0.042:288:732
+    </param>
+
+    <!-- if no updates are received for 8 minutes, consider the datasource
+         unknown, i.e. dead -->
+    <param name="rrd-create-heartbeat" value="500"/>
+
+    <param name="rrd-create-min" value="0"/>
+    <param name="rrd-create-max" value="U"/>
+
+    <param name="leaf-type" value="rrd-def" />
+    <param name="rrd-cf"    value="AVERAGE" />
+
+    <!-- Default schedule for the monitor -->
+    <param name="monitor-period"     value="300" />
+    <param name="monitor-timeoffset" value="75" />
+    
+    <param name="searchable" value="yes" />
+  </template>
+
+  <!-- Optional Holt-Winters algorithm parameters
+       Default values are:
+        alpha=0.1, beta=0.0035, gamma=0.1,
+        window_length=9, failure_threshold=6 -->
+
+  <template name="holt-winters-defaults">
+    <param name="rrd-hwpredict" value="enabled" />
+
+    <param name="rrd-create-hw-alpha" value="0.1" />
+    <param name="rrd-create-hw-beta" value="0.0035" />
+    <param name="rrd-create-hw-gamma" value="0.1" />
+    <param name="rrd-create-hw-winlen" value="9" />
+    <param name="rrd-create-hw-failth" value="6" />
+
+    <!-- Optional Holt-Winters season length.
+         Default is one-day (288 5-minute intervals) -->
+    <param name="rrd-create-hw-season" value="288" />
+
+    <!-- Mandatory length of the Holt-Winters archives.
+         Recommended same length as main 5-minutes RRA -->
+    <param name="rrd-create-hw-rralen" value="4032" />
+  </template>
+
+  <!-- Template for read-only access to RRD files -->
+  
+  <template name="viewonly-defaults">
+    <param name="ds-type" value="rrd-file" />
+    <param name="leaf-type" value="rrd-def" />
+    <param name="rrd-cf"    value="AVERAGE" />
+    <param name="system-id" value="%snmp-host%" />
+  </template>
+
+  
+</datasources>
+
+</configuration>

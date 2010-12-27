@@ -1,0 +1,47 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE setdate %]
+[% ovs=variables.OVS; clearVar('OVS'); global.bookmarkVars=['OVS',ovs];
+   thepath=path(token) %]
+[% INCLUDE htmlstart title=thepath printpath=1 %]
+
+<H1>[% p = 'overview-page-title-' _ ovs; nodeParam(token, p, 1) %]</H1>
+
+[% INCLUDE variables %]
+
+[% INCLUDE legend %]
+
+[%
+  FOREACH child = sortTokens(children(token));
+    childpath = path(child);
+    p = 'overview-subleave-name-' _ ovs;
+    FOREACH childname = nodeParam(token, p,1).split('\s*,\s*');
+      ovwpath = childpath _ childname;
+      IF nodeExists(ovwpath);
+        ovwtoken = pathToken(ovwpath);
+
+        urltoken = ovwtoken;
+        p = 'overview-direct-link-' _ ovs;
+        IF nodeParam(token, p, 1) == 'yes';
+          urltoken = child;
+          p = 'overview-direct-link-view-' _ ovs;
+          urlview = nodeParam(token, p, 1);
+        END;
+
+        INCLUDE shortgraph
+          token=ovwtoken
+          urltoken=urltoken
+          urlview=urlview
+          nodename=nodeName(child)
+          comment=nodeParam(child,'comment',1);
+      END;
+    END;
+  END
+%]
+
+<DIV CLASS="BottomShortcuts">
+[% INCLUDE shortcut url=url(token) text="Default view"
+                    title="Restore default subtree view" %]
+</DIV>
+
+[% INCLUDE bottomline %]
+[% INCLUDE htmlend %]

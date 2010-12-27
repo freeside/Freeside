@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: multigraph.xml,v 1.1 2010-12-27 00:04:29 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!--
+  This example shows how multiple datasources may be displayed in
+  one graph. See also the template definitions for "BpsInOut"
+  in "snmp-defs.xml", "vendor/cisco.ios.xml".
+ -->
+
+<configuration>
+
+<datasources>
+
+  <subtree name="SampleMulti">
+    <leaf name="sample1">
+      <param name="ds-type" value="rrd-multigraph" />
+      <param name="ds-names" value="in,out" />
+      <param name="foobarpath"
+             value="/SNMP/Routers/213.230.38.4/FastEthernet0_0" />
+
+      <!-- parameter name tail is formed by the DS name -->
+
+      <param name="ds-expr-in"       value="{%foobarpath%/locIfInBitsSec}" />
+      <param name="graph-legend-in"  value="Bits per second in" />
+      <param name="line-style-in"    value="AREA" />
+      <param name="line-color-in"    value="#00FF00" />
+      <param name="line-order-in"    value="1" />
+
+      <param name="ds-expr-out"      value="{%foobarpath%/locIfOutBitsSec}" />
+      <param name="graph-legend-out" value="Bits per second out" />
+      <param name="line-style-out"   value="LINE2" />
+      <param name="line-color-out"   value="#0000FF" />
+      <param name="line-order-out"   value="2" />
+
+    </leaf>
+  </subtree>
+
+</datasources>
+
+</configuration>

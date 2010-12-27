@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Configure script for FHC compliant setup (http://www.pathname.com/fhs/)
+# $Id: configure_fhs,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+if test ! -x ./configure; then
+  echo "$0: cannot find ./configure" 2>&1
+  echo "Usage: ./setup_tools/configure_fhs [configure options]..." 2>&1
+  exit 1
+fi
+
+./configure \
+ --prefix=/opt \
+ --mandir=/opt/share/man \
+ pkghome=/opt/torrus \
+ sitedir=/etc/opt/torrus \
+ "$@"
+  

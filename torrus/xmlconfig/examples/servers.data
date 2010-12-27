@@ -1,0 +1,69 @@
+[%#
+  Example of using tpage for Torrus config generation.
+  This is an example only. See User Guide for more details.
+  Author: Christian Schnidrig
+  Generate the XML configuration with
+  tpage --define data=servers.data servers.tmpl >servers.xml
+%]
+[%
+  servers = [
+    {
+      name => 'torrus'
+      type => 'Linux',
+      location => 'Binz'
+      description => 'Torrus (Front-end)'
+      community => 'blabla',
+      ram => 3000000000
+      numCpu => 2,
+      disks => [
+          {name => '/', nickName => 'Root'}
+          {name => '/var/snmpcollector/0', nickName => 'Collector_0'}
+          {name => '/var/snmpcollector/1', nickName => 'Collector_1'}
+          {name => '/var/snmpcollector/2', nickName => 'Collector_2'}
+          {name => '/var/snmpcollector/3', nickName => 'Collector_3'}
+          {name => '/var/snmpcollector/4', nickName => 'Collector_4'}
+        ],
+      nics => [
+          {name => 'eth0', nickName => 'nic', speed => 100000000}
+          {name => 'eth1', nickName => 'local', speed => 1000000000}
+        ]
+    }
+    {
+      name => 'torrus2'
+      type => 'Linux',
+      location => 'Binz'
+      description => 'Torrus (Collector)'
+      community => 'blabla',
+      ram => 3000000000
+      numCpu => 2,
+      disks => [
+          {name => '/', nickName => 'Root'}
+          {name => '/var/snmpcollector/5', nickName => 'Collector_5'}
+          {name => '/var/snmpcollector/6', nickName => 'Collector_6'}
+          {name => '/var/snmpcollector/7', nickName => 'Collector_7'}
+          {name => '/var/snmpcollector/8', nickName => 'Collector_8'}
+          {name => '/var/snmpcollector/9', nickName => 'Collector_9'}
+        ],
+      nics => [
+          {name => 'eth0', nickName => 'nic', speed => 100000000}
+          {name => 'eth1', nickName => 'local', speed => 1000000000}
+        ]
+    }
+    {
+      name => 'someSolarisMachine',
+      type => 'Solaris',
+      location => 'Binz',
+      description => 'Tacacs Server',
+      community => 'blabla',
+      ram => 224000000,
+      numCpu => 1,
+      disks => [
+          {name => '/', nickName => 'Root'}
+          {name => '/log', nickName => 'Log'}
+        ],
+      nics => [
+          {name => 'le0', nickName => 'nic', speed => 100000000}
+        ]
+    }
+  ]
+%]

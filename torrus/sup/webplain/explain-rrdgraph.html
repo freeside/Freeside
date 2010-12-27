@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<HTML>
+<!-- Torrus Copyright (c) 2003-2004 Stanislav Sinyagin -->
+<HEAD>
+<TITLE>RRD Graph Description</TITLE>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<STYLE type="text/css" media="all">
+  @import url( torrus.css );  
+</STYLE>
+</HEAD>
+<BODY>
+
+
+<DIV CLASS="HelpContent">
+
+<H1>RRD Graph Description</H1>
+
+<P>
+The graphs in Torrus are drawn by
+<a href="http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/">RRDtool</a>,
+a powerful instrument for data aggregation and graphing. 
+</P>
+
+<P>
+The horizontal axis displays the time at which the data has been collected.
+The rightmost point corresponds to the most recent moment. 
+</P>
+
+<P>
+The date and time of the graph can be easily changed by using the
+<em>Set date</em> checkbox at the bottom of the page. When the checkbox is
+checked, the date/time string in the text field is interpreted after clicking
+the submit button. It is then reflected in the <em>Report date</em>
+informational line at the page displaying the graphs. The date format is
+quite flexible. It understands such input as "<TT>July 13 5:00</TT>",
+or "<TT>01/13/2003 5:00</TT>", etc.
+</P>
+
+
+<P>
+The vertical axis scales automatically to fit the data values. The meaning of
+the values depends on the nature of the datasource, and is usually described
+in the graph legend, comments, and the help text.
+</P>
+
+
+<P>
+Usually the legend of the vertical axis specifies the meaning of the values:
+<ul>
+<li>Bps: bytes per second counter</li>
+<li>bps: bits per second counter</li>
+<li>pps: pakets per second counter</li>
+</ul>
+Other legends correspond mostly to gauges, such as temperature, load
+percentage, or disk space.
+</P>
+
+<P>
+The graphing engine automatically chooses the best units for scaling
+the values. The scaling magnitude is displayed alongside the numerical value,
+with the following meaning:
+<ul>
+<li>a: 10e-18 Atto</li>
+<li>f: 10e-15 Femto</li>
+<li>p: 10e-12 Pico</li>
+<li>n: 10e-9  Nano</li>
+<li>u: 10e-6  Micro</li>
+<li>m: 10e-3  Milli</li>
+<li>k: 10e+3   Kilo</li>
+<li>M: 10e+6   Mega</li>
+<li>G: 10e+9   Giga</li>
+<li>T: 10e+12  Tera</li>
+<li>P: 10e+15  Peta</li>
+<li>E: 10e+18  Exa</li>
+</ul>
+Memory usage is scaled with the base of 1024.
+</P>
+
+</DIV>
+<DIV CLASS="Footer">
+Powered by <A HREF="http://torrus.sourceforge.net">Torrus</A>
+</DIV>
+</BODY>
+</HTML>

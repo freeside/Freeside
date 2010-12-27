@@ -1,0 +1,336 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cisco.generic.xml,v 1.1 2010-12-27 00:04:21 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!-- Common Cisco definitions -->
+
+<configuration>
+
+<definitions>
+
+  <!-- CISCO-PROCESS-MIB:cpmCPUTotalTable -->
+  <def name="cpmCPUTotalPhysicalIndex" value="1.3.6.1.4.1.9.9.109.1.1.1.1.2" />
+  <def name="cpmCPUTotal1min"          value="1.3.6.1.4.1.9.9.109.1.1.1.1.4" />
+  <def name="cpmCPUTotal5min"          value="1.3.6.1.4.1.9.9.109.1.1.1.1.5" />
+  <def name="cpmCPUTotal1minRev"       value="1.3.6.1.4.1.9.9.109.1.1.1.1.7" />
+  <def name="cpmCPUTotal5minRev"       value="1.3.6.1.4.1.9.9.109.1.1.1.1.8" />
+
+  <def name="CISCO_CPU_IDX"
+       value="M($cpmCPUTotalPhysicalIndex, %entity-phy-index%)" />
+
+  <!-- OLD-CISCO-CPU-MIB -->
+  <def name="avgBusy1" value="1.3.6.1.4.1.9.2.1.57.0" />
+  <def name="avgBusy5" value="1.3.6.1.4.1.9.2.1.58.0" />
+
+  <!-- CISCO-ENHANCED-MEMPOOL-MIB:cempMemPoolTable -->
+  <def name="cempMemPoolUsed"        value="1.3.6.1.4.1.9.9.221.1.1.1.1.7" />
+  <def name="cempMemPoolFree"        value="1.3.6.1.4.1.9.9.221.1.1.1.1.8" />
+  <def name="cempMemPoolLargestFree" value="1.3.6.1.4.1.9.9.221.1.1.1.1.9" />
+  
+  <!-- CISCO-MEMORY-POOL-MIB:ciscoMemoryPoolTable -->
+  <def name="ciscoMemoryPoolUsed"        value="1.3.6.1.4.1.9.9.48.1.1.1.5" />
+  <def name="ciscoMemoryPoolFree"        value="1.3.6.1.4.1.9.9.48.1.1.1.6" />
+  <def name="ciscoMemoryPoolLargestFree" value="1.3.6.1.4.1.9.9.48.1.1.1.7" />
+
+  <!-- CISCO-ENVMON-MIB:ciscoEnvMonTemperatureStatusTable -->
+  <def name="ciscoEnvMonTemperatureStatusIndex"
+                          value="1.3.6.1.4.1.9.9.13.1.3.1.1" />
+  <def name="ciscoEnvMonTemperatureStatusDescr"
+                          value="1.3.6.1.4.1.9.9.13.1.3.1.2" />
+  <def name="ciscoEnvMonTemperatureStatusValue"
+                          value="1.3.6.1.4.1.9.9.13.1.3.1.3" />
+  <def name="ciscoEnvMonTemperatureStatusState"
+                          value="1.3.6.1.4.1.9.9.13.1.3.1.6" />
+  <def name="ciscoEnvMonSupplyState"
+                          value="1.3.6.1.4.1.9.9.13.1.5.1.3" />
+</definitions>
+
+<datasources>
+
+  <template name="cisco-memusage-subtree">
+    <param name="vertical-label" value="Bytes"/>
+    <param name="rrd-create-dstype" value="GAUGE" />
+    <param name="rrd-hwpredict" value="disabled" />
+    <param name="graph-lower-limit" value="0" />
+
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="memuse"/>
+    <param name="overview-subleave-name-memuse" value="Usage"/>
+    <param name="overview-shortcut-text-memuse"
+           value="All pools usage"/>
+    <param name="overview-shortcut-title-memuse"
+           value="Show all memory pools usage in one page"/>
+    <param name="overview-page-title-memuse"
+           value="Memory Usage Graphs"/>
+          
+    <param name="descriptive-nickname"
+           value="%system-id%:%mempool-name% Memory"/>
+  </template>
+
+  <template name="cisco-enh-mempool">
+    <param name="data-file"
+             value="%system-id%_memusage_%mempool-phyindex%.rrd"/>
+    <leaf name="Usage">
+      <param name="precedence" value="1000"/>
+      <param name="comment" value="Total vs. Used Memory"/>
+      <param name="title"   value="%mempool-name% Memory Usage"/>
+      <param name="ds-type" value="rrd-multigraph"/>
+      <param name="ds-names" value="total,used"/>
+      <!-- total -->
+      <param name="ds-expr-total" value="{Free},{Used},+"/>
+      <param name="graph-legend-total" value="Total"/>
+      <param name="line-style-total" value="##totalresource"/>
+      <param name="line-color-total" value="##totalresource"/>
+      <param name="line-order-total" value="1"/>
+      <!-- used -->
+      <param name="ds-expr-used" value="{Used}"/>
+      <param name="graph-legend-used" value="Used"/>
+      <param name="line-style-used" value="##resourceusage"/>
+      <param name="line-color-used" value="##resourceusage"/>
+      <param name="line-order-used" value="2"/>
+    </leaf>
+    <leaf name="Free">
+      <param name="snmp-object"  value="$cempMemPoolFree.%mempool-index%"/>
+      <param name="rrd-ds"       value="Pool%mempool-poolindex%Free"/>
+      <param name="graph-legend" value="%mempool-name% memory free" />
+      <param name="comment"      value="Bytes Free in %mempool-name% pool"/>
+    </leaf>
+    <leaf name="Used">
+      <param name="snmp-object"  value="$cempMemPoolUsed.%mempool-index%"/>
+      <param name="rrd-ds"       value="Pool%mempool-poolindex%Used"/>
+      <param name="graph-legend" value="%mempool-name% memory free" />
+      <param name="comment"      value="Bytes Used in %mempool-name%"/>
+    </leaf>
+    <leaf name="LargestFree">
+      <param name="snmp-object"
+             value="$cempMemPoolLargestFree.%mempool-index%"/>
+      <param name="rrd-ds"       value="Pool%mempool-poolindex%LargestFree"/>
+      <param name="graph-legend" value="%mempool-name% largest free block" />
+      <param name="comment" value="Largest free block in %mempool-name% pool"/>
+    </leaf>
+  </template>
+
+  <template name="cisco-mempool">
+    <param name="data-file"    value="%system-id%_memusage.rrd"/>
+    <leaf name="Usage">
+      <param name="precedence" value="1000"/>
+      <param name="comment" value="Total vs. Used Memory"/>
+      <param name="title"   value="%mempool-name% Memory Usage"/>
+      <param name="ds-type" value="rrd-multigraph"/>
+      <param name="ds-names" value="total,used"/>
+      <!-- total -->
+      <param name="ds-expr-total" value="{Free},{Used},+"/>
+      <param name="graph-legend-total" value="Total"/>
+      <param name="line-style-total" value="##totalresource"/>
+      <param name="line-color-total" value="##totalresource"/>
+      <param name="line-order-total" value="1"/>
+      <!-- used -->
+      <param name="ds-expr-used" value="{Used}"/>
+      <param name="graph-legend-used" value="Used"/>
+      <param name="line-style-used" value="##resourceusage"/>
+      <param name="line-color-used" value="##resourceusage"/>
+      <param name="line-order-used" value="2"/>
+    </leaf>
+    <leaf name="Free">
+      <param name="snmp-object"  value="$ciscoMemoryPoolFree.%mempool-type%"/>
+      <param name="rrd-ds"       value="Pool%mempool-type%Free"/>
+      <param name="graph-legend" value="%mempool-name% memory free" />
+      <param name="comment"      value="Bytes Free in %mempool-name% pool"/>
+    </leaf>
+    <leaf name="Used">
+      <param name="snmp-object"  value="$ciscoMemoryPoolUsed.%mempool-type%"/>
+      <param name="rrd-ds"       value="Pool%mempool-type%Used"/>
+      <param name="graph-legend" value="%mempool-name% memory free" />
+      <param name="comment"      value="Bytes Used in %mempool-name%"/>
+    </leaf>
+    <leaf name="LargestFree">
+      <param name="snmp-object"
+             value="$ciscoMemoryPoolLargestFree.%mempool-type%"/>
+      <param name="rrd-ds"       value="Pool%mempool-type%LargestFree"/>
+      <param name="graph-legend" value="%mempool-name% largest free block" />
+      <param name="comment" value="Largest free block in %mempool-name% pool"/>
+    </leaf>
+  </template>
+
+  <template name="cisco-cpu-usage-subtree">
+    <param name="cisco-cpu-indexmap" value="$CISCO_CPU_IDX" />
+    <param name="data-file"  value="%system-id%_cpu_%cisco-cpu-ref%.rrd" />
+    <param name="rrd-create-dstype"  value="GAUGE" />
+    <param name="rrd-hwpredict"      value="disabled" />
+    <param name="graph-lower-limit"  value="0" />
+    <param name="graph-upper-limit"  value="100" />
+    <param name="upper-limit"        value="80" />
+    <param name="vertical-label"     value="Percent"/>
+
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="cpu5"/>
+    <param name="overview-subleave-name-cpu5" value="CPU_Total_5min"/>
+    <param name="overview-shortcut-text-cpu5"
+           value="All CPUs usage"/>
+    <param name="overview-shortcut-title-cpu5"
+           value="Show all CPUs 5 minute average usage in one page"/>
+    <param name="overview-page-title-cpu5"
+           value="CPU Usage Graphs"/>
+           
+    <param name="descriptive-nickname"
+           value="%system-id%:CPU #%cisco-cpu-ref%"/>
+  </template>
+
+  <template name="cisco-cpu">
+    <leaf name="CPU_Total_1min">
+      <param name="precedence"         value="-200" />
+      <param name="snmp-object"
+             value="$cpmCPUTotal1min.%cisco-cpu-indexmap%"/>
+      <param name="rrd-ds"             value="Total1min" />
+      <param name="comment">
+          The overall CPU busy percentage in the last 1 minute period
+      </param>
+      <param name="graph-legend"       value="CPU usage" />
+    </leaf>
+    <leaf name="CPU_Total_5min">
+      <param name="precedence"         value="-200" />
+      <param name="snmp-object"
+             value="$cpmCPUTotal5min.%cisco-cpu-indexmap%"/>
+      <param name="rrd-ds"             value="Total5min" />
+      <param name="comment">
+          The overall CPU busy percentage in the last 5 minute period
+      </param>
+      <param name="graph-legend"       value="CPU usage" />
+    </leaf>
+  </template>
+
+  <template name="cisco-cpu-revised">
+    <leaf name="CPU_Total_1min">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_cpu_%cisco-cpu-ref%.rrd" />
+      <param name="precedence"         value="-200" />
+      <param name="snmp-object"
+             value="$cpmCPUTotal1minRev.%cisco-cpu-indexmap%"/>
+      <param name="rrd-ds"             value="Total1min" />
+      <param name="comment">
+          The overall CPU busy percentage in the last 1 minute period
+      </param>
+      <param name="graph-legend"       value="CPU usage" />
+      <param name="graph-lower-limit"  value="0" />
+      <param name="graph-upper-limit"  value="100" />
+      <param name="upper-limit"        value="80" />
+      <param name="vertical-label"     value="Percent"/>
+    </leaf>
+    <leaf name="CPU_Total_5min">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_cpu_%cisco-cpu-ref%.rrd" />
+      <param name="precedence"         value="-200" />
+      <param name="snmp-object"
+             value="$cpmCPUTotal5minRev.%cisco-cpu-indexmap%"/>
+      <param name="rrd-ds"             value="Total5min" />
+      <param name="comment">
+          The overall CPU busy percentage in the last 5 minute period
+      </param>
+      <param name="graph-legend"       value="CPU usage" />
+      <param name="graph-lower-limit"  value="0" />
+      <param name="upper-limit"        value="80" />
+      <param name="vertical-label"     value="Percent"/>
+    </leaf>
+  </template>
+
+  <template name="old-cisco-cpu">
+    <leaf name="CPU_Total_1min">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"      value="%system-id%_cpu.rrd" />
+      <param name="precedence"         value="-200" />
+      <param name="snmp-object"        value="$avgBusy1"/>
+      <param name="rrd-ds"             value="Total1min" />
+      <param name="comment">
+          The overall CPU busy percentage in the last 1 minute period
+      </param>
+      <param name="graph-legend"       value="CPU usage" />
+      <param name="graph-lower-limit"  value="0" />
+      <param name="graph-upper-limit"  value="100" />
+      <param name="upper-limit"        value="80" />
+      <param name="vertical-label"     value="Percent"/>
+    </leaf>
+    <leaf name="CPU_Total_5min">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"      value="%system-id%_cpu.rrd" />
+      <param name="precedence"         value="-200" />
+      <param name="snmp-object"        value="$avgBusy5"/>
+      <param name="rrd-ds"             value="Total5min" />
+      <param name="comment">
+          The overall CPU busy percentage in the last 5 minute period
+      </param>
+      <param name="graph-legend"       value="CPU usage" />
+      <param name="graph-lower-limit"  value="0" />
+      <param name="upper-limit"        value="80" />
+      <param name="vertical-label"     value="Percent"/>
+    </leaf>
+  </template>
+
+  <template name="cisco-temperature-subtree">
+    <param name="comment"             value="Cisco Temperature Sensors"/>
+    <param name="precedence"          value="-500"/>
+    <param name="rrd-create-dstype"   value="GAUGE"/>
+    <param name="rrd-hwpredict"       value="disabled" />
+  </template>
+  
+  <!-- template to be applied inside the sensor leaf.
+       Two parameters must be defined: sensor-index and sensor-description -->
+  <template name="cisco-temperature-sensor">
+    <param name="comment"      value="%sensor-description%"/>
+    <param name="rrd-ds"       value="sensor_%sensor-index%"/>
+    <param name="snmp-object"
+           value="$ciscoEnvMonTemperatureStatusValue.%sensor-index%"/>
+    <param name="graph-legend"      value="%sensor-description%"/>
+    <param name="graph-lower-limit" value="15"/>
+    <param name="graph-upper-limit" value="70"/>
+    <param name="vertical-label"  value="degrees Celsius"/>
+  </template>
+
+  <!-- Temperature measured in degrees Fahrenheit -->
+  <template name="cisco-temperature-sensor-fahrenheit">
+    <param name="comment"      value="%sensor-description%"/>
+    <param name="rrd-ds"       value="sensor_%sensor-index%"/>
+    <param name="snmp-object"
+           value="$ciscoEnvMonTemperatureStatusValue.%sensor-index%"/>
+    <param name="collector-scale" value="1.8,*,32,+" />
+    <param name="graph-legend"      value="%sensor-description%"/>
+    <param name="graph-lower-limit" value="59"/>
+    <param name="graph-upper-limit" value="158"/>
+    <param name="vertical-label"  value="degrees Fahrenheit"/>
+  </template>
+
+  <template name="cisco-power-supply">
+    <param name="comment"            value="Power supply #%power-index%"/>
+    <param name="rrd-ds"             value="power_%power-index%"/>
+    <param name="rrd-create-dstype"  value="GAUGE"/>
+    <param name="snmp-object"
+           value="$ciscoEnvMonSupplyState.%power-index%"/>
+    <param name="graph-legend"       value="Power supply #%power-index%"/>
+    <param name="vertical-label"     value="1 = Normal"/>
+    <param name="rrd-hwpredict"      value="disabled" />
+  </template>
+  
+  
+</datasources>
+
+</configuration>

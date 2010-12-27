@@ -1,0 +1,143 @@
+#!@PERL@ -w
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: flushmonitors.in,v 1.1 2010-12-27 00:04:01 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use Getopt::Long;
+use strict;
+
+use Torrus::SiteConfig;
+use Torrus::ConfigTree;
+use Torrus::Log;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+our @trees;
+our $all_trees;
+
+our $debug;
+our $verbose;
+our $help_needed;
+
+my $ok = GetOptions ('tree=s'   => \@trees,
+                     'all'      => \$all_trees,
+                     'debug'    => \$debug,
+                     'verbose'  => \$verbose,
+                     'help'     => \$help_needed);
+
+if( not $ok or not (scalar(@trees) or $all_trees) or
+    $help_needed or scalar(@ARGV) > 0 )
+{
+    print STDERR "Usage: $0 --tree=NAME [options...]\n",
+    "The utility flushes all monitor alarms and dynamic tokenset members\n",
+    "Options:\n",
+    "  --tree=NAME     tree name(s) to flush\n",
+    "  --all           flush all trees\n",
+    "  --debug         set the log level to debug\n",
+    "  --verbose       set the log level to info\n",
+    "  --help          this help message\n";
+    exit 1;
+}
+
+if( $all_trees )
+{
+    @trees = Torrus::SiteConfig::listTreeNames();
+}
+
+if( $debug )
+{
+    Torrus::Log::setLevel('debug');
+}
+elsif( $verbose )
+{
+    Torrus::Log::setLevel('verbose');
+}
+
+
+&Torrus::DB::setSafeSignalHandlers();
+
+Verbose(sprintf('Torrus version %s', '@VERSION@'));
+
+foreach my $tree ( @trees )
+{
+    if( not Torrus::SiteConfig::treeExists( $tree ) )
+    {
+        Error("Tree named \"" . $tree . "\" does not exist");
+        exit(1);
+    }
+
+    &Torrus::DB::checkInterrupted();
+    
+    Verbose("Flushing alarms and tokensets for the tree: $tree");
+
+    my $config_tree = new Torrus::ConfigTree( -TreeName => $tree,
+                                              -Wait => 1 );
+    if( not defined( $config_tree ) )
+    {
+        next;
+    }
+
+    my $db = new Torrus::DB('monitor_alarms',
+                            -Subdir => $tree,
+                            -WriteAccess => 1);
+
+
+    my $cursor = $db->cursor(-Write => 1);
+    while( my ($key, $timers) = $db->next($cursor) )
+    {
+        Debug('Deleting alarm: ' . $key);        
+        $db->c_del( $cursor );            
+        
+    }
+    undef $cursor;   
+    undef $db;
+    
+    &Torrus::DB::checkInterrupted();
+
+    my @members;
+    foreach my $ts ( $config_tree->getTsets() )
+    {
+        Debug('Processing tokenset: ' . $ts);
+        
+        foreach my $member ( $config_tree->tsetMembers( $ts ) )
+        {
+            my $origin = $config_tree->tsetMembers( $ts, $member );
+            
+            if( not defined( $origin ) or $origin ne 'static' )
+            {
+                my $path = $config_tree->path($member);
+                $config_tree->tsetDelMember($ts, $member);
+                Verbose('deleted ' . $path . ' from tokenset: ' . $ts);
+            }
+        }
+    }
+
+    undef $config_tree;
+    &Torrus::DB::cleanupEnvironment();
+}
+
+exit;
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

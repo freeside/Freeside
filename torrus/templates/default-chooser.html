@@ -1,0 +1,37 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE htmlstart
+     title="Torrus Top: " _ companyName
+     contentClass="SingleColumnContent"
+     noTopMenu=1 %]
+
+<P>Choose the datasource tree</P>
+
+<DIV CLASS="Listing">
+[%   counter = 0;
+     evenRow = 0;
+
+     FOREACH tree = treeNames();
+
+     IF not userAuth or mayDisplayTree(tree);
+         counter = counter + 1;
+
+         IF counter % 2 == 0;
+           evenRow = 1;
+         ELSE;
+           evenRow = 0;
+         END;
+%]
+
+  <DIV CLASS="[% evenRow ? 'ListRowEven' : 'ListRow' %]">
+    <SPAN CLASS="NodeName"><A HREF="[%url(tree)%]">[% tree %]</A></SPAN>
+    <SPAN CLASS="NodeDescr">[% xmlnorm(treeDescr(tree)) %]</SPAN>
+  </DIV>
+  [% END %]
+[% END %]
+</DIV>
+
+</DIV><!-- Content -->[% global.contentFinished = 1 %]
+<DIV CLASS="BottomMenu">
+[% INCLUDE globalsearchdialog %]
+</DIV>
+[% INCLUDE htmlend %]

@@ -1,0 +1,117 @@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: wd.monitor-escalation.pod,v 1.1 2010-12-27 00:04:36 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 RRFW Working Draft: Monitor escalation levels
+
+Status: pending implementation.
+Date: Nov 5 2003. Last revised: Nov 10 2003
+
+=head2 Introduction
+
+The initial idea comes from Francois Mikus in Cricket development team.
+His proposal was to raise the alarm only after several true consecutive
+monitor conditions.
+
+The idea has developed into the concept of escalation levels.
+
+
+=head2 Monitor events
+
+Current implementation supports four types of monitor events: C<set>,
+C<repeat>, C<clear>, and C<forget>. New event type will be C<escalate(X)>.
+C<X> designates a symbolic name for a certain escalation level. Each level
+is associated with the escalation time interval.
+
+Given C<Te> as the escalation interval, C<Ta> as the monitor condition age,
+and C<P> as period, the escalation event will occur simultaneously with
+one of C<repeat> events, when the following condition is true:
+
+  Te >= Ta
+
+New event types C<clear(X)> and C<forget(X)> will occur at the same
+time as C<clear> and C<forget> respectively,
+for each escalated level.
+
+
+=head2 Monitor parameters
+
+New parameter will be introduced: C<escalation>. Value will
+be a comma-separated list of C<name=interval> parts, where C<name>
+designates the escalation level, and C<interval> specifies the escalation
+interval in seconds.
+
+Example:
+
+  <monitor name="rate-limits">
+    <param name="escalation value="Medium=1800, High=7200, Critical=14400" />
+    ...
+  </monitor>
+
+Another example would be Cisco TAC style priorities: P3, P2, P1.
+
+
+=head2 Action parameters
+
+C<launch-when> parameter will be valid not for C<exec> actions only, but also
+for C<tset> actions. New valid values will be C<escalate(X)>, C<clear(X)>,
+and C<forget(X)>.
+
+XML configuration validator will not verify if escalation levels in
+action definition match those in datasource configuration.
+
+New optional action parameter: C<allowed-time>. Contains an RPN expression
+which must be true at the time when the action is allowed to execute.
+Two new RPN functions may be used here: C<TOD> and C<DOW>.
+
+C<TOD> returns the current time of day as integer: C<HH*100+MM>. For example,
+830 means 8:30 AM, and 1945 means 7:45 PM.
+
+C<DOW> returns the current day of the week as integer between and including
+0 and 6, with 0 corresponding to Sunday, 1 to Monday, and 6 to Saturday.
+
+In this example, the action is allowed between 8 AM and 6 PM from Monday
+to Friday:
+
+  <param name="allowed-time">
+    TOD,800,GE, TOD,1800,LE, AND,
+    DOW,1,GE, AND,
+    DOW,5,LE, AND
+  </param>
+
+
+=head2 Implementation
+
+B<monitor_alarms.db> database format will change: The values will consist
+of five colon-separated fields. The first four fields will be as earilier,
+and the fifth one will be a comma-separated list of escalation level names
+that have already fired.
+
+The implementation of this feature is preferred after the planned redesign of
+the monitor daemon. The new monitor design would support individual
+schedule for each datasource leaf, analogous to collector schedules.
+
+In turn, the monitor daemon  redesign is better to do after
+the collector daemon redesign. Then it would allow to keep similar design
+and architecture where possible.
+
+=head1 Author
+
+Copyright (c) 2003 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

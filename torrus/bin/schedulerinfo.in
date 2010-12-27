@@ -1,0 +1,454 @@
+#!@PERL@ -w
+#  Copyright (C) 2003  Stanislav Sinyagin
+#  Copyright (C) 2003  Christian Schnidrig
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: schedulerinfo.in,v 1.1 2010-12-27 00:04:00 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+
+use Torrus::ConfigTree;
+use Torrus::SiteConfig;
+use Torrus::SchedulerInfo;
+use Torrus::Log;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+my $tree;
+my $report_config;
+my $report_runtime;
+my $clear_treestats;
+
+my $help_needed;
+
+
+my $ok = GetOptions('tree=s'   => \$tree,
+                    'config'   => \$report_config,
+                    'runtime'  => \$report_runtime,
+                    'clear'    => \$clear_treestats,
+                    'help'     => \$help_needed);
+
+if( not $ok or
+    not $tree or
+    not ( $report_config or $report_runtime or $clear_treestats  ) or
+    $help_needed or scalar(@ARGV) > 0 )
+{
+    print STDERR "Usage: $0 --tree=NAME [options...]\n",
+    "Options:\n",
+    "  --tree=NAME     tree name\n",
+    "  --config        report scheduler configuration\n",
+    "  --runtime       report scheduler runtime statistics\n",
+    "  --clear         clear scheduler statistics for specific tree\n",
+    "  --help          this help message\n";
+    exit 1;
+}
+
+
+if( not Torrus::SiteConfig::treeExists( $tree ) )
+{
+    Error('Tree ' . $tree . ' does not exist');
+    exit 1;
+}
+
+
+&Torrus::DB::setSafeSignalHandlers();
+
+if( $clear_treestats )
+{
+    my $stats = new Torrus::SchedulerInfo( -Tree => $tree, -WriteAccess => 1 );
+    $stats->clearAll();
+    print STDERR "Statistics cleared for tree $tree\n";
+    exit 0;
+}
+
+thickLine();
+printf("Torrus version %s\n", '@VERSION@');
+printf("Datasources tree: %s\n", $tree);
+printf("Date: %s\n\n", scalar( localtime( time() ) ) );
+
+if( $report_config )
+{
+    my $config_tree = new Torrus::ConfigTree( -TreeName => $tree );
+    if( not defined($config_tree) )
+    {
+        Error("Configuration is not ready");
+        exit 1;
+    }
+
+    my $stats = { 'collectorLeaves' => {}, 'monitorLeaves' => 0 };
+    
+    collectStats( $config_tree, $stats );
+
+    thickLine();
+    printf("Scheduler configuration report\n\n");
+
+    foreach my $instance ( sort {$a<=>$b} keys %{$stats->{'collectorLeaves'}} )
+    {
+        printf("Collector leaves for instance #%d: %d\n",
+               $instance, 
+               $stats->{'collectorLeaves'}{$instance});
+    }
+    
+    printf("Total monitor leaves: %d\n\n", $stats->{'monitorLeaves'});
+
+    printf("Scheduled leaves by type:\n");
+
+    foreach my $type ( sort keys %{$stats->{'leavesPerType'}} )
+    {
+        printf("  %10s  %-10d\n", $type,
+               $stats->{'leavesPerType'}{$type});
+    }
+    printf("\n");
+
+    foreach my $instance ( sort {$a<=>$b} keys %{$stats->{'collectorLeaves'}} )
+    {
+        if( $stats->{'collectorLeaves'}{$instance} > 0 )
+        {
+            &Torrus::DB::checkInterrupted();
+            
+            printf("Collector execution timeline for instance #%d:\n",
+                   $instance);
+            reportTimeline( $stats->{'collectorSchedule'}{$instance} );
+        }
+    }
+
+    if( $stats->{'monitorLeaves'} > 0 )
+    {
+        printf("Monitor execution timeline:\n");
+        reportTimeline( $stats->{'monitorSchedule'} );
+    }
+}
+
+if( $report_runtime )
+{
+    my @reportFormats =
+        (
+         { 'label'   => 'Running Time',
+           'varname' => 'RunningTime' },
+         
+         { 'label'   => 'Late Start',
+           'varname' => 'LateStart' },
+         
+         { 'label'   => 'Too Long',
+           'varname' => 'TooLong' },
+
+         { 'label'   => 'RRD Queue',
+           'varname' => 'RRDQueue' },
+
+         { 'label'   => 'Raw Queue',
+           'varname' => 'RawQueue' }
+
+         );
+
+    my @counterFormats =
+        (
+         { 'label'   => 'running cycles passed',
+           'varname' => 'NTimesRunningTime' },
+         
+         { 'label'   => 'late starts',
+           'varname' => 'NTimesLateStart' },
+
+         { 'label'   => 'too long runs',
+           'varname' => 'NTimesTooLong' },
+
+         { 'label'   => 'overrun periods',
+           'varname' => 'CountOverrunPeriods' },
+
+         { 'label'   => 'missed periods',
+           'varname' => 'CountMissedPeriods' }
+         );
+    
+    my $sInfo = new Torrus::SchedulerInfo( '-Tree' => $tree );
+    exit(1) if not defined( $sInfo );
+
+    my $stats = $sInfo->readStats();
+
+    thickLine();
+    printf("Scheduler runtime report\n\n");
+
+    my $periodicTasks = {};
+    foreach my $taskId ( keys %{$stats} )
+    {
+        my ($type, $taskName, $instance, $period, $offset) =
+            split( ':', $taskId );
+        if( $type eq 'P' )
+        {
+            $periodicTasks->{$taskName}{$instance}{$period}{$offset} = $taskId;
+        }
+    }
+    
+    foreach my $taskName ( sort keys %{$periodicTasks} )
+    {
+        foreach my $instance ( sort {$a<=>$b}
+                               keys %{$periodicTasks->{$taskName}} )
+        {
+            foreach my $period
+                ( sort {$a<=>$b}
+                  keys %{$periodicTasks->{$taskName}{$instance}} )
+            {
+                foreach my $offset
+                    ( sort {$a<=>$b}
+                      keys %{$periodicTasks->{$taskName}{$instance}{$period}} )
+                {
+                    &Torrus::DB::checkInterrupted();
+                    
+                    my $taskId =
+                        $periodicTasks->{$taskName}{$instance}{
+                            $period}{$offset};
+                    my $ref = $stats->{$taskId};
+                
+                    printf("Task: %s, Instance: %d, " .
+                           "Period: %d seconds, Offset: %d seconds\n",
+                           $taskName, $instance, $period, $offset);
+                
+                    foreach my $format ( @counterFormats )
+                    {
+                        if( defined( $ref->{$format->{'varname'}} ) )
+                        {
+                            printf("%5d %s\n",
+                                   $ref->{$format->{'varname'}},
+                                   $format->{'label'} );
+                        }
+                    }
+
+                    thinLine();
+                    printf("%-15s%-10s%-10s%-10s%-10s\n",
+                           '', 'Min', 'Max', 'Average', 'Exp Average');
+
+                    foreach my $format ( @reportFormats )
+                    {
+                        my $varname =  $format->{'varname'};
+                        if( defined( $ref->{'Min' . $varname} ) )
+                        {
+                            printf("%-15s%-10d%-10d%-10.1f%-10.1f\n",
+                                   $format->{'label'},
+                                   $ref->{'Min' . $varname},
+                                   $ref->{'Max' . $varname},
+                                   $ref->{'Avg' . $varname},
+                                   $ref->{'ExpAvg' . $varname});
+                        }
+                    }
+
+                    thinLine();
+                    printf("\n");
+                }
+            }
+        }
+    }
+}
+
+thickLine();
+exit 0;
+
+
+sub collectStats
+{
+    my $config_tree = shift;
+    my $stats = shift;
+    my $token = shift;
+
+    if( not defined( $token ) )
+    {
+        $token = $config_tree->token('/');
+    }
+
+    my @children = $config_tree->getChildren( $token );
+
+    foreach my $ctoken ( @children )
+    {
+        &Torrus::DB::checkInterrupted();
+        
+        if( $config_tree->isSubtree( $ctoken ) )
+        {
+            collectStats( $config_tree, $stats, $ctoken );
+        }
+        elsif( $config_tree->isLeaf( $ctoken ) )
+        {
+            if( $config_tree->getNodeParam( $ctoken, 'ds-type' )
+                eq 'collector' )
+            {
+                my $instance =
+                    $config_tree->getNodeParam
+                    ( $ctoken, 'collector-instance' );
+                
+                $stats->{'collectorLeaves'}{$instance}++;
+                
+                my $type = 'c:' .
+                    $config_tree->getNodeParam( $ctoken, 'collector-type' );
+
+                my $period =
+                    $config_tree->getNodeParam( $ctoken, 'collector-period' );
+                $period = int( $period ); # make sure we're talking integers
+
+                my $offset = $config_tree->
+                    getNodeParam( $ctoken, 'collector-timeoffset' );
+                
+                $stats->{'leavesPerType'}{$type}++;
+                $stats->{'collectorSchedule'}{$instance}{$period}{
+                    $offset}{$type}++;
+            }
+            
+            if( defined( $config_tree->getNodeParam( $ctoken, 'monitor' ) ) )
+            {
+                $stats->{'monitorLeaves'}++;
+                my $type = 'monitor';
+
+                my $period =
+                    $config_tree->getNodeParam( $ctoken, 'monitor-period' );
+                $period = int( $period ); # make sure we're talking integers
+
+                my $offset = $config_tree->
+                    getNodeParam( $ctoken, 'monitor-timeoffset' );
+                $offset = int($offset) % $period;
+
+                $stats->{'leavesPerType'}{$type}++;
+                $stats->{'monitorSchedule'}{$period}{$offset}{$type}++;
+            }
+        }
+    }
+}
+
+
+# caluclate and print the schedule
+sub reportTimeline
+{
+    my $schedule = shift;
+    
+    # calculate the common period length (least common multiple)
+    my $lcm = 0;
+    foreach my $period ( keys %{$schedule} )
+    {
+        my $a = $period;
+        my $b = $lcm;
+        my $c;
+        if( $b == 0 )
+        {
+            $lcm = $a;
+        }
+        else
+        {
+            if( $a < $b )
+            {
+                my $tmp = $b;
+                $b = $a;
+                $a = $tmp;
+            }
+            while( $b != 0 )
+            {
+                $c = $a % $b;
+                $a = $b;
+                $b = $c;
+            }
+            $lcm = $lcm * $period / $a;
+        }
+    }
+
+    printf("Least common period: %d seconds\n", $lcm);
+
+    # populate the common period
+    my %cp;
+    my $chunks = 0;
+    foreach my $period ( keys %{$schedule} )
+    {
+        foreach my $offset ( keys %{$schedule->{$period}} )
+        {
+            $chunks++;
+            foreach my $type ( keys %{$schedule->{$period}{$offset}} )
+            {
+                for( my $i = 0; $i < ($lcm / $period); $i++ )
+                {
+                    $cp{$i * $period + $offset}{'col'}{$type} +=
+                        $schedule->{$period}{$offset}{$type};
+                }
+            }
+        }
+    }
+    printf("Number of chunks: %d \n\n", $chunks );
+
+    # calculate interval lengths
+
+    my $previous;
+    my $first;
+    foreach my $time ( sort { $a <=> $b } keys %cp )
+    {
+        if( not defined($first) )
+        {
+            $first = $time;
+        }
+        else
+        {
+            $cp{$previous}{'endtime'} = $time;
+        }
+        $previous = $time;
+    }
+    $cp{$previous}{'endtime'} = $lcm + $first;
+
+    # print results
+
+    thinLine();
+    printf("%-10s%-10s%-20s%-10s\n",
+           'Offset', 'Interval', 'Type', 'Data');
+    printf("%-10s%-10s%-20s%-10s\n",
+           '(sec)', '(sec)', '', 'sources');
+    thinLine();
+
+    foreach my $time ( sort { $a <=> $b } keys %cp )
+    {
+        foreach my $type ( keys %{$cp{$time}{'col'}} )
+        {
+            printf("%-10d%-10d%-20s%-10d\n",
+                   $time,
+                   $cp{$time}{'endtime'} - $time,
+                   $type,
+                   $cp{$time}{'col'}{$type} );
+        }
+    }
+    thinLine();
+    printf("\n");
+}
+
+
+sub thickLine
+{
+    foreach my $i ( 1..75 )
+    {
+        print '=';
+    }
+    print "\n";
+}
+
+sub thinLine
+{
+    foreach my $i ( 1..70 )
+    {
+        print '-';
+    }
+    print "\n";
+}
+
+
+
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

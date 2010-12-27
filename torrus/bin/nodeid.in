@@ -1,0 +1,252 @@
+#!@PERL@ -w
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: nodeid.in,v 1.1 2010-12-27 00:04:03 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+use JSON;
+use File::Copy;
+    
+use Torrus::ConfigTree;
+use Torrus::SiteConfig;
+use Torrus::Renderer;
+use Torrus::Log;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+
+my %commands =
+    ('info'   => \&do_info,
+     'search' => \&do_search,
+     'render' => \&do_render);
+
+
+
+my $tree;
+my $cmd;
+
+my $nodeid;
+my $print_details;
+my $search_prefix;
+my $search_substring;
+my $render_view;
+my $render_out;
+
+
+my $help_needed;
+
+
+my $ok = GetOptions('tree=s'      => \$tree,
+                    'cmd=s'       => \$cmd,
+                    'nodeid=s'    => \$nodeid,
+                    'details'     => \$print_details,
+                    'prefix=s'    => \$search_prefix,
+                    'substring=s' => \$search_substring,
+                    'view=s'      => \$render_view,
+                    'out=s'       => \$render_out,
+                    'help'        => \$help_needed);
+
+if( not $ok or
+    not $tree or not $cmd or not $commands{$cmd} or
+    ( ($cmd eq 'info' or $cmd eq 'render') and not $nodeid ) or
+    ( $cmd eq 'search' and not ($search_prefix or $search_substring) ) or
+    $help_needed or scalar(@ARGV) > 0 )
+{
+    print STDERR "Usage: $0 --tree=NAME --cmd=CMD [options...]\n",
+    "Options:\n",
+    "  --tree=NAME      tree name\n",
+    "  --cmd=CMD        Command (info|search|render)\n",
+    "  --nodeid=NODEID  nodeid (mandatory for info and render)\n",
+    "  --details        print nodeid details (valid with info and search)\n",
+    "  --prefix=STR     search prefix\n",
+    "  --substring=STR  search substring\n",
+    "  --view=VIEW      render view (optional)\n",
+    "  --out=FILE       render output\n",
+    "  --help           this help message\n";
+    exit 1;
+}
+
+
+if( not Torrus::SiteConfig::treeExists( $tree ) )
+{
+    Error('Tree ' . $tree . ' does not exist');
+    exit 1;
+}
+
+
+&Torrus::DB::setSafeSignalHandlers();
+
+{
+    my $config_tree = new Torrus::ConfigTree( -TreeName => $tree );
+    if( not defined($config_tree) )
+    {
+        Error("Configuration is not ready");
+        exit 1;
+    }
+        
+    if( $cmd eq 'info' or $cmd eq 'render' )
+    {
+        my $token = $config_tree->getNodeByNodeid($nodeid);
+        if( not defined( $token ) )
+        {
+            Error('nodeid not found: ' . $nodeid);
+            exit(1);
+        }
+
+        if( $cmd eq 'info' )
+        {
+            print_nodeid($config_tree, [$token], $print_details);
+        }
+        else
+        {
+            render_node($config_tree, $token, $render_view, $render_out);
+        }
+    }
+    elsif( $cmd eq 'search' )
+    {
+        my $results;
+        if( defined($search_prefix) )
+        {
+            $results = $config_tree->searchNodeidPrefix($search_prefix);
+        }
+        else
+        {
+            $results = $config_tree->searchNodeidSubstring($search_substring);
+        }
+
+        if( defined( $results ) and scalar(@{$results}) > 0 )
+        {
+            my $tokens = [];
+            # results are pairs [nodeid,token]
+            foreach my $res ( @{$results} )
+            {
+                push(@{$tokens}, $res->[1]);
+            }
+            print_nodeid($config_tree, $tokens, $print_details);
+        }
+        else
+        {
+            print STDERR "Nothing found\n";
+            exit(1);
+        }
+    }
+    else
+    {
+        printf STDERR ("Unknown command: %s\n", $cmd);
+        exit(1);
+    }
+}
+
+exit(0);
+
+
+sub print_nodeid
+{
+    my $config_tree = shift;
+    my $tokens = shift;
+    my $details = shift;
+
+    my $json = new JSON;
+    $json->pretty();
+    $json->canonical();
+
+    my @all;
+
+    foreach my $token ( @{$tokens} )
+    {
+        my $info = {
+            'nodeid' => $config_tree->getNodeParam($token, 'nodeid', 1),
+        };
+
+        if( $details )
+        {
+            $info->{'path'} = $config_tree->path($token);
+            $info->{'is_leaf'} = $config_tree->isLeaf($token) ? 1:0;
+            $info->{'tree'} = $config_tree->treeName();
+            if( $info->{'is_leaf'} )
+            {
+                my $dsType = $config_tree->getNodeParam( $token, 'ds-type' );
+                $info->{'param:ds-type'} = $dsType;
+                if( $dsType eq 'collector' )
+                {
+                    foreach my $param
+                        ('collector-type', 'collector-period',
+                         'storage-type', 'data-file', 'data-dir', 'rrd-ds',
+                         'ext-service-id',
+                         'snmp-host', 'domain-name', 'snmp-object')
+                    {
+                        my $val = $config_tree->getNodeParam($token, $param);
+
+                        if( defined( $val ) )
+                        {
+                            $info->{'param:' . $param} = $val;
+                        }
+                    }
+                }
+            }
+        }
+
+        push(@all, $info);
+    }
+
+    print $json->encode(\@all);
+}
+            
+
+
+sub render_node
+{
+    my $config_tree = shift;
+    my $token = shift;
+    my $view = shift;
+    my $out = shift;
+
+    my $r = new Torrus::Renderer;
+
+    my($fname, $mimetype) = $r->render($config_tree, $token, $view);
+
+    if( defined($out) )
+    {
+        if( not copy( $fname, $out ) )
+        {
+            printf STDERR ("Failed to write to %s: %s\n", $out, $!);
+            exit(1);
+        }
+
+        $fname = $out;
+    }
+        
+    my $json = new JSON;
+    $json->pretty();
+
+    print $json->encode({'Content-type' => $mimetype,
+                         'Filename' => $fname});
+}
+        
+
+
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

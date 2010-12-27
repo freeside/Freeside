@@ -1,0 +1,144 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_configsnapshot.pod.in,v 1.1 2010-12-27 00:04:37 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+configsnapshot - Generates a configuration snapshot for a Torrus tree.
+
+=head1 SYNOPSIS
+
+B<torrus configsnapshot> --tree=I<TREENAME> [I<options...>]
+
+=head1 DESCRIPTION
+
+This command generates a configuration snapshot from current
+datasources for tree I<TREENAME>. The output is an XML file, ready for
+compilation, representing all datasources, monitors and tokensets of a
+given tree. The snapshot does not include view definitions. Templates
+and file patterns are expanded inside the file. It does not require
+any other XML configuration files, except for F<defaults.xml> and your
+custom view definitions.
+
+B<Warning:> C<configsnapshot> from RRFW release 0.1.5 will not work
+correctly with databases from previous releases. Use RRFW release
+C<0.1.4bf2> instead.  C<configsnapshot> utility from RRFW release 0.1.4bf2
+does not preserve aliases.
+
+This utility is useful in Torrus upgrade process. In case when RRD files
+structure is changing in Torrus default templates, and user(s) demand to
+preserve the historical data, the following steps could be done:
+
+=over 4
+
+=item *
+
+Stop the collector and monitor processes.
+
+=item *
+
+Install newest Torrus software and do not run C<compilexml> immediately.
+
+=item *
+
+Create snapshots of the trees that you want to preserve for historical reasons:
+
+  torrus configsnapshot --tree=myrouters \
+    --out=@sitexmldir@/myrouters-snapshot.xml
+
+=item *
+
+If needed, move the existing RRD files into different directory. Then
+change the C<data-dir> parameters in the snapshot XML accordingly.
+
+=item *
+
+Create a new tree with only the snapshot file in it. Compile the tree.
+
+=item *
+
+At this stage, it is up to the user to decide wether to continue running the
+collector and monitor daemons for this new tree. The old data may be preserved
+for historical reference, and collector may be run with the newest tree
+structure and definitions.
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--tree>=I<TREE>
+
+Mandatory parameter specifying the tree name.
+
+=item B<--out>=I<FILE>
+
+Sets the output file to I<FILE>. Default is F<snapshot.xml>.
+
+=item B<--param>=I<PARAM>  B<--value>=I<VALUE>
+
+Sets the filter on datasource leaves that have to be included in the snapshot.
+I<PARAM> specifies the name of the datasource parameter, and I<VALUE>
+sets the matching value. By default the numeric comparison is performed.
+
+=item B<--op>=I<OPERATOR>
+
+Sets the fiter comparison operator. Accepted values: B<=> (numeric),
+B<eq> (text string comparison), and B<re> (regular expression match). Default
+is numeric comparison.
+
+
+=item B<--verbose>
+
+Displays some extra information.
+
+=item B<--help>
+
+Displays a help message.
+
+=back 
+
+=head1 FILES
+
+=over 4
+
+=item F<@distxmldir@/defaults.xml>
+
+XML configuration file with default settings for the datasources and
+tokensets, as well as default view definitions.
+
+=item F<snapshot.xml>
+
+Default B<configsnapshot> output file.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>, L<torrus_compilexml(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

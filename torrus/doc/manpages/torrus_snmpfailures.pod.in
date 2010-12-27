@@ -1,0 +1,155 @@
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_snmpfailures.pod.in,v 1.1 2010-12-27 00:04:37 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+snmpfailures - Displays SNMP collector failures.
+
+=head1 SYNOPSIS
+
+B<torrus snmpfailures> --tree=I<TREENAME> [I<options...>]
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--details>
+
+In addition to failure counters, list the failed SNMP hosts and the time
+stamps of failure events.
+
+
+=item B<--help>
+
+Displays a help message.
+
+=back
+
+=head1 DESCRIPTION
+
+This utility prints the SNMP collector failure information in JSON format.
+Without B<--details> option, it prints only the failure counters.
+
+Upon collector startup or after the tree re-compilation, the failure
+counters are reset to zero.
+
+The output is very convenient for further automatic processing in any
+scripting language.
+
+The top level of the output is a JSON object with the following name/value
+pairs:
+
+=over 4
+
+=item B<total_unreachable>: NUMBER
+
+Displays the number SNMP hosts that are currently unreachable.
+The number adds up across multiple collector instances for a given tree.
+If a host becomes reachable again, the number is decreased.
+
+=item B<total_deleted>: NUMBER
+
+Displays the number SNMP hosts that are completely removed from SNMP
+collection for the life cycle of the collector process. This happens when
+a host is unreachable for too long time and the collector gives up
+to reach it again.
+The number adds up across multiple collector instances for a given tree.
+
+=item B<total_mib_errors>: NUMBER
+
+Displays the number of MIB errors (I<noSuchObject>, I<noSuchInstance>,
+and I<endOfMibView>) during the collector life cycle.
+The number adds up across multiple collector instances for a given tree.
+
+=item B<detail_unreachable>: OBJECT, B<detail_deleted>: OBJECT
+
+If the option B<--details> is specified, these objects contain the host names
+and timestamps of the failures.
+The keys are contactenations of SNMP host, UDP port, and SNMP
+community separated by "|".
+The values are objects representing the UNIX timestamp and a human-readable
+time string.
+
+=item B<detail_mib_errors>: OBJECT
+
+If the option B<--details> is specified, this object displays the MIB error
+details: for each SNMP host, it lists the datasource leaves which had these
+errors and the event timestamps.
+
+=back
+
+=head1 EXAMPLES
+
+The following example illustrates an SNMP host unreachable:
+
+ torrus failures --tree=main --details
+ {
+    "detail_deleted" : {},
+    "detail_mib_errors" : {},
+    "detail_unreachable" : {
+       "217.101.101.101|161|public" : {
+          "time" : "Fri Jul 23 14:15:10 2010",
+          "timestamp" : 1279887310
+       }
+    },
+    "total_deleted" : 0,
+    "total_mib_errors" : 0,
+    "total_unreachable" : 1
+ }
+
+
+The following example illustrates a MIB error:
+
+ torrus failures --tree=main --details
+ {
+    "detail_deleted" : {},
+    "detail_mib_errors" : {
+       "217.101.102.102|161|public" : {
+          "count" : 1,
+          "nodes" : {
+             "/Routers/CMTS3/Temperature_Sensors/sensor_01" : {
+                "time" : "Fri Jul 23 15:26:14 2010",
+                "timestamp" : 1279891574
+             }
+          }
+       }
+    },
+    "detail_unreachable" : {},
+    "total_deleted" : 0,
+    "total_mib_errors" : 1,
+    "total_unreachable" : 0
+ }
+
+
+
+
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>,
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

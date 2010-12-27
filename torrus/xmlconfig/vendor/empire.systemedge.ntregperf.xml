@@ -1,0 +1,1204 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: empire.systemedge.ntregperf.xml,v 1.1 2010-12-27 00:04:07 ivan Exp $
+
+  Compaq Insight Manager
+
+-->
+
+<configuration>
+<definitions>
+  <!-- Index is INDEX.0 for 1-128 -->
+  <def name="empireNtregperf" value="1.3.6.1.4.1.546.5.7"/>
+</definitions>
+
+<datasources>
+
+
+  <template name="EmpireSystemedge::NTREGPERF_1.0">
+    <param name="snmp-object"       value="$empireNtregperf.1.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="1"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_2.0">
+    <param name="snmp-object"       value="$empireNtregperf.2.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="2"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_3.0">
+    <param name="snmp-object"       value="$empireNtregperf.3.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="3"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_4.0">
+    <param name="snmp-object"       value="$empireNtregperf.4.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="4"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_5.0">
+    <param name="snmp-object"       value="$empireNtregperf.5.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="5"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_6.0">
+    <param name="snmp-object"       value="$empireNtregperf.6.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="6"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_7.0">
+    <param name="snmp-object"       value="$empireNtregperf.7.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="7"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_8.0">
+    <param name="snmp-object"       value="$empireNtregperf.8.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="8"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_9.0">
+    <param name="snmp-object"       value="$empireNtregperf.9.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="9"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_10.0">
+    <param name="snmp-object"       value="$empireNtregperf.10.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="10"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::TCPConnectionsActive"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_11.0">
+    <param name="snmp-object"       value="$empireNtregperf.11.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="11"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::TCPConnectionsEstablished"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_12.0">
+    <param name="snmp-object"       value="$empireNtregperf.12.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="12"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::TCPConnectionsPassive"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_13.0">
+    <param name="snmp-object"       value="$empireNtregperf.13.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="13"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::TCPConnectionsReset"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_14.0">
+    <param name="snmp-object"       value="$empireNtregperf.14.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="14"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::TCPConnectionFailures"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_15.0">
+    <param name="snmp-object"       value="$empireNtregperf.15.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="15"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::ProcessorInterruptsSec"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_16.0">
+    <param name="snmp-object"       value="$empireNtregperf.16.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="16"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_17.0">
+    <param name="snmp-object"       value="$empireNtregperf.17.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="17"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_18.0">
+    <param name="snmp-object"       value="$empireNtregperf.18.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="18"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_19.0">
+    <param name="snmp-object"       value="$empireNtregperf.19.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="19"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_20.0">
+    <param name="snmp-object"       value="$empireNtregperf.20.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="20"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_21.0">
+    <param name="snmp-object"       value="$empireNtregperf.21.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="21"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_22.0">
+    <param name="snmp-object"       value="$empireNtregperf.22.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="22"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_23.0">
+    <param name="snmp-object"       value="$empireNtregperf.23.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="23"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_24.0">
+    <param name="snmp-object"       value="$empireNtregperf.24.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="24"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_25.0">
+    <param name="snmp-object"       value="$empireNtregperf.25.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="25"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_26.0">
+    <param name="snmp-object"       value="$empireNtregperf.26.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="26"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_27.0">
+    <param name="snmp-object"       value="$empireNtregperf.27.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="27"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_28.0">
+    <param name="snmp-object"       value="$empireNtregperf.28.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="28"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_29.0">
+    <param name="snmp-object"       value="$empireNtregperf.29.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="29"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_30.0">
+    <param name="snmp-object"       value="$empireNtregperf.30.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="30"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::DNSTotalQueryReceived"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_31.0">
+    <param name="snmp-object"       value="$empireNtregperf.31.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="31"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::DNSTotalResponseSent"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_32.0">
+    <param name="snmp-object"       value="$empireNtregperf.32.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="32"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_33.0">
+    <param name="snmp-object"       value="$empireNtregperf.33.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="33"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_34.0">
+    <param name="snmp-object"       value="$empireNtregperf.34.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="34"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_35.0">
+    <param name="snmp-object"       value="$empireNtregperf.35.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="35"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_36.0">
+    <param name="snmp-object"       value="$empireNtregperf.36.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="36"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_37.0">
+    <param name="snmp-object"       value="$empireNtregperf.37.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="37"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_38.0">
+    <param name="snmp-object"       value="$empireNtregperf.38.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="38"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_39.0">
+    <param name="snmp-object"       value="$empireNtregperf.39.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="39"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_40.0">
+    <param name="snmp-object"       value="$empireNtregperf.40.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="40"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_41.0">
+    <param name="snmp-object"       value="$empireNtregperf.41.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="41"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_42.0">
+    <param name="snmp-object"       value="$empireNtregperf.42.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="42"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_43.0">
+    <param name="snmp-object"       value="$empireNtregperf.43.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="43"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_44.0">
+    <param name="snmp-object"       value="$empireNtregperf.44.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="44"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_45.0">
+    <param name="snmp-object"       value="$empireNtregperf.45.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="45"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_46.0">
+    <param name="snmp-object"       value="$empireNtregperf.46.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="46"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_47.0">
+    <param name="snmp-object"       value="$empireNtregperf.47.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="47"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_48.0">
+    <param name="snmp-object"       value="$empireNtregperf.48.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="48"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_49.0">
+    <param name="snmp-object"       value="$empireNtregperf.49.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="49"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_50.0">
+    <param name="snmp-object"       value="$empireNtregperf.50.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="50"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_51.0">
+    <param name="snmp-object"       value="$empireNtregperf.51.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="51"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_52.0">
+    <param name="snmp-object"       value="$empireNtregperf.52.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="52"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_53.0">
+    <param name="snmp-object"       value="$empireNtregperf.53.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="53"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_54.0">
+    <param name="snmp-object"       value="$empireNtregperf.54.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="54"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_55.0">
+    <param name="snmp-object"       value="$empireNtregperf.55.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="55"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_56.0">
+    <param name="snmp-object"       value="$empireNtregperf.56.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="56"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_57.0">
+    <param name="snmp-object"       value="$empireNtregperf.57.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="57"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_58.0">
+    <param name="snmp-object"       value="$empireNtregperf.58.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="58"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_59.0">
+    <param name="snmp-object"       value="$empireNtregperf.59.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="59"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_60.0">
+    <param name="snmp-object"       value="$empireNtregperf.60.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="60"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_61.0">
+    <param name="snmp-object"       value="$empireNtregperf.61.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="61"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_62.0">
+    <param name="snmp-object"       value="$empireNtregperf.62.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="62"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_63.0">
+    <param name="snmp-object"       value="$empireNtregperf.63.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="63"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_64.0">
+    <param name="snmp-object"       value="$empireNtregperf.64.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="64"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_65.0">
+    <param name="snmp-object"       value="$empireNtregperf.65.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="65"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_66.0">
+    <param name="snmp-object"       value="$empireNtregperf.66.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="66"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_67.0">
+    <param name="snmp-object"       value="$empireNtregperf.67.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="67"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_68.0">
+    <param name="snmp-object"       value="$empireNtregperf.68.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="68"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_69.0">
+    <param name="snmp-object"       value="$empireNtregperf.69.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="69"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_70.0">
+    <param name="snmp-object"       value="$empireNtregperf.70.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="70"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISActiveUserCount"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_71.0">
+    <param name="snmp-object"       value="$empireNtregperf.71.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="71"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISVirusFilesScanned"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_72.0">
+    <param name="snmp-object"       value="$empireNtregperf.72.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="72"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISVirusFilesQuarantined"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_73.0">
+    <param name="snmp-object"       value="$empireNtregperf.73.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="73"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISVirusFilesCleaned"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_74.0">
+    <param name="snmp-object"       value="$empireNtregperf.74.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="74"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxMessagesSubmitted"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_75.0">
+    <param name="snmp-object"       value="$empireNtregperf.75.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="75"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxMessagesDelivered"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_76.0">
+    <param name="snmp-object"       value="$empireNtregperf.76.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="76"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxReceiveQueue"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_77.0">
+    <param name="snmp-object"       value="$empireNtregperf.77.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="77"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxSendQueueSize"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_78.0">
+    <param name="snmp-object"       value="$empireNtregperf.78.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="78"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_79.0">
+    <param name="snmp-object"       value="$empireNtregperf.79.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="79"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_80.0">
+    <param name="snmp-object"       value="$empireNtregperf.80.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="80"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_81.0">
+    <param name="snmp-object"       value="$empireNtregperf.81.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="81"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_82.0">
+    <param name="snmp-object"       value="$empireNtregperf.82.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="82"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_83.0">
+    <param name="snmp-object"       value="$empireNtregperf.83.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="83"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_84.0">
+    <param name="snmp-object"       value="$empireNtregperf.84.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="84"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_85.0">
+    <param name="snmp-object"       value="$empireNtregperf.85.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="85"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::MSExchangeISVMTotal16MBFree"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_86.0">
+    <param name="snmp-object"       value="$empireNtregperf.86.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="86"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_87.0">
+    <param name="snmp-object"       value="$empireNtregperf.87.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="87"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_88.0">
+    <param name="snmp-object"       value="$empireNtregperf.88.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="88"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_89.0">
+    <param name="snmp-object"       value="$empireNtregperf.89.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="89"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_90.0">
+    <param name="snmp-object"       value="$empireNtregperf.90.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="90"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::SMTPDSTotalMessagesSent"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_91.0">
+    <param name="snmp-object"       value="$empireNtregperf.91.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="91"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::SMTPDSCurrentActiveConnections"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_92.0">
+    <param name="snmp-object"       value="$empireNtregperf.92.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="92"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::SMTPRSTotalMessagesReceived"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_93.0">
+    <param name="snmp-object"       value="$empireNtregperf.93.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="93"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::SMTPRSActiveConnections"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_94.0">
+    <param name="snmp-object"       value="$empireNtregperf.94.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="94"/>
+    <apply-template
+        name="EmpireSystemedge::NTREGPERF::SMTPSSUncheckedmessagescount"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_95.0">
+    <param name="snmp-object"       value="$empireNtregperf.95.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="95"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_96.0">
+    <param name="snmp-object"       value="$empireNtregperf.96.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="96"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_97.0">
+    <param name="snmp-object"       value="$empireNtregperf.97.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="97"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_98.0">
+    <param name="snmp-object"       value="$empireNtregperf.98.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="98"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_99.0">
+    <param name="snmp-object"       value="$empireNtregperf.99.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="99"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_100.0">
+    <param name="snmp-object"       value="$empireNtregperf.100.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="100"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_101.0">
+    <param name="snmp-object"       value="$empireNtregperf.101.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="101"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_102.0">
+    <param name="snmp-object"       value="$empireNtregperf.102.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="102"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_103.0">
+    <param name="snmp-object"       value="$empireNtregperf.103.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="103"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_104.0">
+    <param name="snmp-object"       value="$empireNtregperf.104.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="104"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_105.0">
+    <param name="snmp-object"       value="$empireNtregperf.105.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="105"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_106.0">
+    <param name="snmp-object"       value="$empireNtregperf.106.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="106"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_107.0">
+    <param name="snmp-object"       value="$empireNtregperf.107.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="107"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_108.0">
+    <param name="snmp-object"       value="$empireNtregperf.108.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="108"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_109.0">
+    <param name="snmp-object"       value="$empireNtregperf.109.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="109"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_110.0">
+    <param name="snmp-object"       value="$empireNtregperf.110.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="110"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_111.0">
+    <param name="snmp-object"       value="$empireNtregperf.111.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="111"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_112.0">
+    <param name="snmp-object"       value="$empireNtregperf.112.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="112"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_113.0">
+    <param name="snmp-object"       value="$empireNtregperf.113.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="113"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_114.0">
+    <param name="snmp-object"       value="$empireNtregperf.114.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="114"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_115.0">
+    <param name="snmp-object"       value="$empireNtregperf.115.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="115"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_116.0">
+    <param name="snmp-object"       value="$empireNtregperf.116.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="116"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_117.0">
+    <param name="snmp-object"       value="$empireNtregperf.117.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="117"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_118.0">
+    <param name="snmp-object"       value="$empireNtregperf.118.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="118"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_119.0">
+    <param name="snmp-object"       value="$empireNtregperf.119.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="119"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_120.0">
+    <param name="snmp-object"       value="$empireNtregperf.120.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="120"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_121.0">
+    <param name="snmp-object"       value="$empireNtregperf.121.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="121"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_122.0">
+    <param name="snmp-object"       value="$empireNtregperf.122.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="122"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_123.0">
+    <param name="snmp-object"       value="$empireNtregperf.123.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="123"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_124.0">
+    <param name="snmp-object"       value="$empireNtregperf.124.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="124"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_125.0">
+    <param name="snmp-object"       value="$empireNtregperf.125.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="125"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_126.0">
+    <param name="snmp-object"       value="$empireNtregperf.126.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="126"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_127.0">
+    <param name="snmp-object"       value="$empireNtregperf.127.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="127"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF_128.0">
+    <param name="snmp-object"       value="$empireNtregperf.128.0"/>
+    <param name="rrd-ds"            value="ntregperf"/>
+    <param name="INDEX"             value="128"/>
+    <apply-template name="EmpireSystemedge::NTREGPERF::"/>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::">
+  </template>
+
+<!-- Value Measurements -->
+
+  <template name="EmpireSystemedge::NTREGPERF::TCPConnectionsActive">
+    <leaf name="TCPConnectionsActive">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_TCPConnectionsActive.rrd"/>
+      <param name="comment"           value="TCP Connections Active"/>
+      <param name="graph-legend"      value="TCP Connections Active"/>
+      <param name="vertical-label"    value="Active"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::TCPConnectionsEstablished">
+    <leaf name="TCPConnectionsEstablished">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_TCPConnectionsEstablished.rrd"/>
+      <param name="comment"           value="TCP Connections Established"/>
+      <param name="graph-legend"      value="TCP Connections Established"/>
+      <param name="vertical-label"    value="Established"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::TCPConnectionsPassive">
+    <leaf name="TCPConnectionsPassive">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_TCPConnectionsPassive.rrd"/>
+      <param name="comment"           value="TCP Connections Passive"/>
+      <param name="graph-legend"      value="TCP Connections Passive"/>
+      <param name="vertical-label"    value="Passive"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::TCPConnectionsReset">
+    <leaf name="TCPConnectionsReset">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_TCPConnectionsReset.rrd"/>
+      <param name="comment"           value="TCP Connections Reset"/>
+      <param name="graph-legend"      value="TCP Connections Reset"/>
+      <param name="vertical-label"    value="Reset"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::TCPConnectionFailures">
+    <leaf name="TCPConnectionFailures">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_TCPConnectionFailures.rrd"/>
+      <param name="comment"           value="TCP Connection Failures"/>
+      <param name="graph-legend"      value="TCP Connection Failures"/>
+      <param name="vertical-label"    value="Failures"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::ProcessorInterruptsSec">
+    <leaf name="ProcessorInterruptsSec">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_ProcessorInterruptssec.rrd"/>
+      <param name="comment"           value="Processor Interrupts/sec"/>
+      <param name="graph-legend"      value="Processor Interrupts/sec"/>
+      <param name="vertical-label"    value="Interrupts/sec"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::DNSTotalQueryReceived">
+    <leaf name="DNSTotalQueryReceived">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_DNSTotalQueryReceived.rrd"/>
+      <param name="comment"           value="DNS Total Query Received"/>
+      <param name="graph-legend"      value="DNS Total Query Received"/>
+      <param name="vertical-label"    value="Received"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::DNSTotalResponseSent">
+    <leaf name="DNSTotalResponseSent">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_DNSTotalResponseSent.rrd"/>
+      <param name="comment"           value="DNS Total Response Sent"/>
+      <param name="graph-legend"      value="DNS Total Response Sent"/>
+      <param name="vertical-label"    value="Sent"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::MSExchangeISActiveUserCount">
+    <leaf name="MSExchangeISActiveUserCount">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISActiveUserCount.rrd"/>
+      <param name="comment"           value="MSExchangeIS Active User Count"/>
+      <param name="graph-legend"      value="MSExchangeIS Active User Count"/>
+      <param name="vertical-label"    value="Count"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::MSExchangeISVirusFilesScanned">
+    <leaf name="MSExchangeISVirusFilesScanned">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISVirusFilesScanned.rrd"/>
+      <param name="comment"           value="MSExchangeIS Virus Files Scanned"/>
+      <param name="graph-legend"      value="MSExchangeIS Virus Files Scanned"/>
+      <param name="vertical-label"    value="Scanned"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::MSExchangeISVirusFilesQuarantined">
+    <leaf name="MSExchangeISVirusFilesQuarantined">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISVirusFilesQuarantined.rrd"/>
+      <param name="comment"           value="MSExchangeIS Virus Files Quarantined"/>
+      <param name="graph-legend"      value="MSExchangeIS Virus Files Quarantined"/>
+      <param name="vertical-label"    value="Quarantined"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::MSExchangeISVirusFilesCleaned">
+    <leaf name="MSExchangeISVirusFilesCleaned">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISVirusFilesCleaned.rrd"/>
+      <param name="comment"           value="MSExchangeIS Virus Files Cleaned"/>
+      <param name="graph-legend"      value="MSExchangeIS Virus Files Cleaned"/>
+      <param name="vertical-label"    value="Cleaned"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template
+  name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxMessagesSubmitted">
+    <leaf name="MSExchangeISMailboxMessagesSubmitted">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISMailboxMessagesSubmitted.rrd"/>
+      <param name="comment"
+        value="MSExchangeIS Mailbox MessagesSubmitted"/>
+      <param name="graph-legend"
+        value="MSExchangeIS Mailbox Messages Submitted"/>
+      <param name="vertical-label"    value="Messages"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template
+  name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxMessagesDelivered">
+    <leaf name="MSExchangeISMailboxMessagesDelivered">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISMailboxMessagesDelivered.rrd"/>
+      <param name="comment"
+        value="MSExchangeIS Mailbox Messages Delivered"/>
+      <param name="graph-legend"
+        value="MSExchangeIS Mailbox Messages Delivered"/>
+      <param name="vertical-label"    value="Messages"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxReceiveQueue">
+    <leaf name="MSExchangeISMailboxReceiveQueue">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISMailboxReceiveQueue.rrd"/>
+      <param name="comment"
+        value="MSExchangeIS Mailbox Receive Queue Size"/>
+      <param name="graph-legend"
+        value="MSExchangeIS Mailbox Receive Queue Size"/>
+      <param name="vertical-label"    value="Queue"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::MSExchangeISMailboxSendQueueSize">
+    <leaf name="MSExchangeISMailboxSendQueueSize">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISMailboxSendQueueSize.rrd"/>
+      <param name="comment"           value="MSExchangeIS Mailbox Send Queue Size"/>
+      <param name="graph-legend"      value="MSExchangeIS Mailbox Send Queue Size"/>
+      <param name="vertical-label"    value="Size"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::MSExchangeISVMTotal16MBFree">
+    <leaf name="MSExchangeISVMTotal16MBFree">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_MSExchangeISVMTotal16MBFree.rrd"/>
+      <param name="comment"           value="MSExchangeIS VM Total 16MB Free"/>
+      <param name="graph-legend"      value="MSExchangeIS VM Total 16MB Free"/>
+      <param name="vertical-label"    value="Free"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="monitor"           value="fail_le"/>
+      <param name="monitor-vars"      value="fail=3"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::SMTPDSTotalMessagesSent">
+    <leaf name="SMTPDSTotalMessagesSent">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_SMTPDSTotalMessagesSent.rrd"/>
+      <param name="comment"           value="SMTPDS Total Messages Sent"/>
+      <param name="graph-legend"      value="SMTPDS Total Messages Sent"/>
+      <param name="vertical-label"    value="Sent"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::SMTPDSCurrentActiveConnections">
+    <leaf name="SMTPDSCurrentActiveConnections">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_SMTPDSCurrentActiveConnections.rrd"/>
+      <param name="comment"           value="SMTPDS Current Active Connections"/>
+      <param name="graph-legend"      value="SMTPDS Current Active Connections"/>
+      <param name="vertical-label"    value="Connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::SMTPRSTotalMessagesReceived">
+    <leaf name="SMTPRSTotalMessagesReceived">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_SMTPRSTotalMessagesReceived.rrd"/>
+      <param name="comment"           value="SMTPRS Total Messages Received"/>
+      <param name="graph-legend"      value="SMTPRS Total Messages Received"/>
+      <param name="vertical-label"    value="Received"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::SMTPRSActiveConnections">
+    <leaf name="SMTPRSActiveConnections">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_SMTPRSActiveConnections.rrd"/>
+      <param name="comment"           value="SMTPRS Active Connections"/>
+      <param name="graph-legend"      value="SMTPRS Active Connections"/>
+      <param name="vertical-label"    value="Connections"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+    </leaf>
+  </template>
+
+  <template name="EmpireSystemedge::NTREGPERF::SMTPSSUncheckedmessagescount">
+    <leaf name="SMTPSSUncheckedmessagescount">
+      <param name="data-file"
+        value="%snmp-host%_ntregperf_SMTPSSUncheckedmessagescount.rrd"/>
+      <param name="comment"           value="SMTPSS Unchecked messages count"/>
+      <param name="graph-legend"      value="SMTPSS Unchecked messages count"/>
+      <param name="vertical-label"    value="count"/>
+      <param name="rrd-create-dstype" value="COUNTER"/>
+    </leaf>
+  </template>
+
+</datasources>
+
+</configuration>

@@ -1,0 +1,98 @@
+#!@SHELL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: substvars.sh.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+
+PACKAGE=@PACKAGE@
+prefix=@prefix@
+datarootdir=@datarootdir@
+pkghome=@pkghome@
+exec_prefix=@exec_prefix@
+perllibdir=@perllibdir@
+pluginsdir=@pluginsdir@
+sysconfdir=@sysconfdir@
+varprefix=@varprefix@
+sitedir=@sitedir@
+supdir=@supdir@
+styldir=@supdir@/styling
+
+devdiscover_config_pl=@cfgdefdir@/devdiscover-config.pl
+torrus_config_pl=@cfgdefdir@/torrus-config.pl
+
+torrus_siteconfig_pl=@siteconfdir@/torrus-siteconfig.pl
+snmptrap_siteconfig_pl=@siteconfdir@/snmptrap-siteconfig.pl
+email_siteconfig_pl=@siteconfdir@/email-siteconfig.pl
+devdiscover_siteconfig_pl=@siteconfdir@/devdiscover-siteconfig.pl
+notify_siteconfig_pl=@siteconfdir@/notify-siteconfig.pl
+
+@SED@ \
+    -e "s,\@FIND\@,@FIND@,g" \
+    -e "s,\@PERL\@,@PERL@,g" \
+    -e "s,\@RM\@,@RM@,g" \
+    -e "s,\@SHELL\@,@SHELL@,g" \
+    -e "s,\@VERSION\@,@VERSION@,g" \
+    -e "s,\@bindir\@,@bindir@,g" \
+    -e "s,\@cachedir\@,@cachedir@,g" \
+    -e "s,\@cfgdefdir\@,@cfgdefdir@,g" \
+    -e "s,\@dbhome\@,@dbhome@,g" \
+    -e "s,\@defrrddir\@,@defrrddir@,g" \
+    -e "s,\@devdiscover_config_pl\@,$devdiscover_config_pl,g" \
+    -e "s,\@devdiscover_siteconfig_pl\@,$devdiscover_siteconfig_pl,g" \
+    -e "s,\@distxmldir\@,@distxmldir@,g" \
+    -e "s,\@pkgdocdir\@,@pkgdocdir@,g" \
+    -e "s,\@email_siteconfig_pl\@,$email_siteconfig_pl,g" \
+    -e "s,\@exmpdir\@,@exmpdir@,g" \
+    -e "s,\@logdir\@,@logdir@,g" \
+    -e "s,\@mandir\@,@mandir@,g" \
+    -e "s,\@mansec_misc\@,@mansec_misc@,g" \
+    -e "s,\@mansec_usercmd\@,@mansec_usercmd@,g" \
+    -e "s,\@notify_siteconfig_pl\@,$notify_siteconfig_pl,g" \
+    -e "s,\@perlithreads\@,@perlithreads@,g" \
+    -e "s,\@perllibdir\@,@perllibdir@,g" \
+    -e "s,\@perllibdirs\@,@perllibdirs@,g" \
+    -e "s,\@piddir\@,@piddir@,g" \
+    -e "s,\@pkgbindir\@,@pkgbindir@,g" \
+    -e "s,\@pkghome\@,@pkghome@,g" \
+    -e "s,\@plugdevdisccfgdir\@,@plugdevdisccfgdir@,g" \
+    -e "s,\@pluginsdir\@,@pluginsdir@,g" \
+    -e "s,\@plugtorruscfgdir\@,@plugtorruscfgdir@,g" \
+    -e "s,\@plugwrapperdir\@,@plugwrapperdir@,g" \
+    -e "s,\@reportsdir\@,@reportsdir@,g" \
+    -e "s,\@scriptsdir\@,@scriptsdir@,g" \
+    -e "s,\@seslockdir\@,@seslockdir@,g" \
+    -e "s,\@sesstordir\@,@sesstordir@,g" \
+    -e "s,\@siteconfdir\@,@siteconfdir@,g" \
+    -e "s,\@sitedir\@,@sitedir@,g" \
+    -e "s,\@sitexmldir\@,@sitexmldir@,g" \
+    -e "s,\@snmptrap_siteconfig_pl\@,$snmptrap_siteconfig_pl,g" \
+    -e "s,\@styldir\@,$styldir,g" \
+    -e "s,\@supdir\@,@supdir@,g" \
+    -e "s,\@tmpldir\@,@tmpldir@,g" \
+    -e "s,\@tmpluserdir\@,@tmpluserdir@,g" \
+    -e "s,\@torrus_config_pl\@,$torrus_config_pl,g" \
+    -e "s,\@torrus_siteconfig_pl\@,$torrus_siteconfig_pl,g" \
+    -e "s,\@torrus_user\@,@torrus_user@,g" \
+    -e "s,\@webplaindir\@,@webplaindir@,g" \
+    $1
+
+# Local Variables:
+# mode: shell-script
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

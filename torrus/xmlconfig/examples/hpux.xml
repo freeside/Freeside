@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+   Copyright (C) 2003  Aaron S. Bush <abush at microelectronics dot com>
+
+   File: hpux.xml
+   Description: HP-UX system monitor example for Torrus.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+-->
+
+<!--
+   This is the example of using the definitions from
+   "vendor/hp.hpux.xml" configuration file.
+   Currently the tree structure has to be built by hand, the same way as
+   the example below. In the future, there will be device discovery
+   support for this vendor.
+-->
+
+<configuration>
+
+<datasources>
+
+  <subtree name="SNMP">
+
+    <subtree name="HP">
+
+      <param name="snmp-community" value="public" />
+      <param name="domain-name" value="example.com" />
+      <param name="data-dir" value="/var/snmpcollector" />
+
+      <subtree name="hp01">
+        <param name="legend">
+          Location: Rack 01;
+          Contact: John Doe
+        </param>
+        <param name="snmp-host" value="hp01" />
+
+        <subtree name="stand">
+          <param name="filesystem-name"   value="/stand" />
+          <param name="filesystem"        value="stand" />
+          <apply-template name="hpux-filesystem" />
+        </subtree>
+
+        <subtree name="root">
+          <param name="filesystem-name"   value="/" />
+          <param name="filesystem"        value="root" />
+          <apply-template name="hpux-filesystem" />
+        </subtree>
+
+        <subtree name="var">
+          <param name="filesystem-name"   value="/var" />
+          <param name="filesystem"        value="var" />
+          <apply-template name="hpux-filesystem" />
+        </subtree>
+
+        <subtree name="usr">
+          <param name="filesystem-name"   value="/usr" />
+          <param name="filesystem"        value="usr" />
+          <apply-template name="hpux-filesystem" />
+        </subtree>
+
+        <subtree name="tmp">
+          <param name="filesystem-name"   value="/tmp" />
+          <param name="filesystem"        value="tmp" />
+          <apply-template name="hpux-filesystem" />
+        </subtree>
+
+        <subtree name="home">
+          <param name="filesystem-name"   value="/home" />
+          <param name="filesystem"        value="home" />
+          <apply-template name="hpux-filesystem" />
+        </subtree>
+
+        <subtree name="opt">
+          <param name="filesystem-name"   value="/opt" />
+          <param name="filesystem"        value="opt" />
+          <apply-template name="hpux-filesystem" />
+        </subtree>
+
+        <apply-template name="hpux-cpu" />
+
+      </subtree>
+      <!-- hp01 -->
+
+    </subtree>
+  </subtree>
+
+</datasources>
+
+</configuration>

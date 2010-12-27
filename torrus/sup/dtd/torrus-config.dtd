@@ -1,0 +1,96 @@
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+ 
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+ 
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+ 
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: torrus-config.dtd,v 1.1 2010-12-27 00:04:04 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+  Torrus Configuration XML DTD
+  
+-->
+
+<!ELEMENT action ( param+ ) >
+<!ATTLIST action name NMTOKEN #REQUIRED >
+
+<!ELEMENT alias ( #PCDATA ) >
+
+<!ELEMENT apply-template EMPTY >
+<!ATTLIST apply-template name NMTOKEN #REQUIRED >
+
+<!ELEMENT configuration ( creator-info | definitions | datasources |
+                          include | monitors | param-properties |
+                          token-sets | views )* >
+
+<!ELEMENT creator-info ( #PCDATA ) >
+
+<!ELEMENT datasources ( template | alias | apply-template |
+                        leaf | param | subtree |
+                        setvar | iftrue | iffalse )* >
+                        
+<!ELEMENT def EMPTY >
+<!ATTLIST def name ID #REQUIRED >
+<!ATTLIST def value CDATA #REQUIRED >
+
+<!ELEMENT definitions ( def )* >
+
+<!ELEMENT detailed ( alias | apply-template |
+                    leaf | param | subtree |
+                    setvar | iftrue | iffalse )* >
+<!ATTLIST detailed match NMTOKEN #REQUIRED >
+
+<!ELEMENT include EMPTY >
+<!ATTLIST include filename ID #REQUIRED >
+
+<!ELEMENT leaf ( alias | apply-template | param |
+                 setvar | iftrue | iffalse )* >
+<!ATTLIST leaf name NMTOKEN #REQUIRED >
+
+<!ELEMENT monitor ( param+ ) >
+<!ATTLIST monitor name NMTOKEN #REQUIRED >
+
+<!ELEMENT monitors ( action | monitor )* >
+
+<!ELEMENT param ( #PCDATA ) >
+<!ATTLIST param name NMTOKEN #REQUIRED >
+<!ATTLIST param value CDATA #IMPLIED >
+
+<!ELEMENT param-properties ( prop )* >
+
+<!ELEMENT prop >
+<!ATTLIST prop param NMTOKEN #REQUIRED >
+<!ATTLIST prop prop NMTOKEN #REQUIRED >
+<!ATTLIST prop value CDATA #REQUIRED >
+
+<!ELEMENT subtree ( alias | apply-template |
+                    leaf | param | subtree | setvar | iftrue | iffalse )* >
+<!ATTLIST subtree name NMTOKEN #REQUIRED >
+
+<!ELEMENT template ( alias | apply-template |
+                     leaf | param | subtree | setvar | iftrue | iffalse )* >
+<!ATTLIST template name NMTOKEN #REQUIRED >
+
+<!ELEMENT token-set ( param* ) >
+<!ATTLIST token-set name NMTOKEN #REQUIRED >
+
+<!ELEMENT token-sets ( param | token-set )* >
+
+<!ELEMENT view ( param | view )* >
+<!ATTLIST view name ID #REQUIRED >
+
+<!ELEMENT views ( view* ) >
+
+
+

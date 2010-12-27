@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003 Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cisco.firewall.xml,v 1.1 2010-12-27 00:04:17 ivan Exp $
+  Shawn Ferry <sferry at sevenspace dot com> <lalartu at obscure dot org>
+
+-->
+
+<!-- Cisco Firewall specific definitions -->
+
+<configuration>
+
+<definitions>
+
+  <!-- v1/OLD-CISCO-INTERFACES-MIB:lifTable -->
+  <def name="cfwBasicEventsTableLastRow"
+       value="1.3.6.1.4.1.9.9.147.1.1.4" />
+  <def name="cfwConnectionStatValue"
+       value="1.3.6.1.4.1.9.9.147.1.2.2.2.1.5" />
+
+</definitions>
+
+<datasources>
+
+  <template name="cisco-firewall-subtree">
+    <param name="rrd-hwpredict" value="disabled" />
+  </template>
+  
+  <template name="cisco-firewall-connections">
+    <leaf name="MaxConnections">
+      <param name="comment">
+        The highest number of connections in use at any one time since
+        system startup
+      </param>
+      <param name="vertical-label" value="Connection Count"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_maxcons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$cfwConnectionStatValue.40.7"/>
+      <param name="rrd-ds" value="MaxCons"/>
+      <param name="graph-legend" value="Max Connections"/>
+    </leaf>
+    <leaf name="CurrConnections">
+      <param name="comment">
+        The number of connections currently in use.
+      </param>
+      <param name="vertical-label" value="Connection Count"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="data-file" value="%system-id%_currcons.rrd"/>
+      <param name="precedence" value="-200"/>
+      <param name="snmp-object" value="$cfwConnectionStatValue.40.6"/>
+      <param name="rrd-ds" value="CurrCons"/>
+      <param name="graph-legend" value="Current Connections"/>
+    </leaf>
+  </template>
+
+  <template name="cisco-firewall-events-delta">
+    <leaf name="EventCount">
+    <param name="comment">
+        Number of entries in the event table. (Proxy for load) (experimental)
+    </param>
+    <param name="precedence"   value="-400" />
+    <param name="snmp-object" value="$cfwBasicEventsTableLastRow" />
+      <param name="rrd-ds"            value="LastRow" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="data-file"
+             value="%system-id%_fw_lastrow.rrd" />
+      <param name="graph-legend"      value="Row Count" />
+      <param name="vertical-label"    value="Count" />
+      <param name="graph-lower-limit" value="0"/>
+    </leaf>
+  </template>
+
+</datasources>
+
+</configuration>

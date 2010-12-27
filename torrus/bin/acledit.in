@@ -1,0 +1,432 @@
+#!@PERL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: acledit.in,v 1.1 2010-12-27 00:04:01 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+
+use Torrus::Log;
+use Torrus::ACL::Edit;
+use Torrus::SiteConfig;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+our %knownPrivileges =
+    ( 'DisplayTree' => 'tree',
+      'DisplayAdmInfo' => 'tree',
+      'DisplayReports' => 'tree',
+      'GlobalSearch' => 'global' );
+
+our @addgroups;
+our @delgroups;
+our @modgroups;
+
+our @permitprivs;
+our @denyprivs;
+our @forobjects;
+
+our $adduser;
+our $addhost;
+our $deluser;
+our $moduser;
+our @addtogroups;
+our @delfromgroups;
+our $password;
+our $host_password;
+our $commonname;
+our $exportfile;
+our $exporttemplate = "aclexport.xml";
+our $importfile;
+our $clearconf;
+
+our @showgroups;
+our @showusers;
+our $listall;
+
+our $force;
+our $debug;
+our $verbose;
+our $help_needed;
+
+my $ok = GetOptions ('addgroup=s'     => \@addgroups,
+                     'delgroup=s'     => \@delgroups,
+                     'modgroup=s'     => \@modgroups,
+                     'permit=s'       => \@permitprivs,
+                     'deny=s'         => \@denyprivs,
+                     'for=s'          => \@forobjects,
+                     'adduser=s'      => \$adduser,
+                     'addhost=s'      => \$addhost,
+                     'deluser=s'      => \$deluser,
+                     'moduser=s'      => \$moduser,
+                     'addtogroup=s'   => \@addtogroups,
+                     'delfromgroup=s' => \@delfromgroups,
+                     'password=s'     => \$password,
+                     'hostpassword=s' => \$host_password,
+                     'cn=s'           => \$commonname,
+                     'export=s'       => \$exportfile,
+                     'template=s'     => \$exporttemplate,
+                     'import=s'       => \$importfile,
+                     'clear'          => \$clearconf,
+                     'showgroup=s'    => \@showgroups,
+                     'showuser=s'     => \@showusers,
+                     'list'           => \$listall,
+                     'force'          => \$force,
+                     'debug'    => \$debug,
+                     'verbose'  => \$verbose,
+                     'help'     => \$help_needed);
+
+if( not $ok or $help_needed or scalar(@ARGV) > 0 or
+    ( @addgroups ? 1:0 ) + ( @delgroups ? 1:0 ) + ( @modgroups ? 1:0 ) > 1 or
+    ( ( @permitprivs or @denyprivs ) and not @forobjects ) or
+    ( $adduser ? 1:0 ) + ( $deluser ? 1:0 ) + ( $moduser ? 1:0 ) > 1 or
+    ( ( @addtogroups or @delfromgroups or
+        length($password) > 0 or
+        length($host_password) > 0 or
+        length($commonname) > 0 ) and
+      ( length($adduser) + length($addhost) + length($moduser) == 0 ) ) )
+{
+    print STDERR "Usage: $0 [options...]\n",
+    "Group Options:\n",
+    "  --addgroup=GROUP        add group\n",
+    "  --delgroup=GROUP        delete group\n",
+    "  --modgroup=GROUP        modify group\n",
+    "  --permit=PRIVILEGE      add privilege to group(s)\n",
+    "  --deny=PRIVILEGE        revoke privilege from group(s)\n",
+    "  --for=TREE              subject of privilege or '*'\n",
+    "  --force                 change privilege for non-existent object\n",
+    "  --showgroup=GROUP       display group details\n",
+    "User Options:\n",
+    "  --adduser=UID           add new user\n",
+    "  --deluser=UID           delete user\n",
+    "  --moduser=UID           modify user\n",
+    "  --addtogroup=GROUP      add user to group(s)\n",
+    "  --delfromgroup=GROUP    delete user from group(s)\n",
+    "  --password=PASSWORD     set the user password\n",
+    "  --hostpassword=PASSWORD set the host password (UID must be a host)\n",
+    "  --cn=\"John Smith\"       set the user common name\n",
+    "  --showuser=USER         display user details\n",
+    "General Options:\n",
+    "  --export=FILE           export ACL config to a file\n",
+    "  --template=NAME         [aclexport.xml] export template \n",
+    "  --import=FILE           import ACL config from a file\n",
+    "  --clear                 delete ALL user and privileges configuration\n",
+    "  --list                  list all users and groups they belong to\n",
+    "  --debug                 set the log level to debug\n",
+    "  --verbose               set the log level to verbose\n",
+    "  --help                  this help message\n\n",
+    "Privileges:\n",
+    "  DisplayTree             see the datasources for a tree\n",
+    "  DisplayAdmInfo          see the administrative info for a tree\n",
+    "  DisplayReports          see the administrative info for a tree\n",
+    "  GlobalSearch            search globally for '*'\n";
+    exit 1;
+}
+
+if( $debug )
+{
+    Torrus::Log::setLevel('debug');
+}
+elsif( $verbose )
+{
+    Torrus::Log::setLevel('verbose');
+}
+
+# We set the signal handlers, but we actually don't react on
+# signals, because the acledit is a fast utility
+&Torrus::DB::setSafeSignalHandlers();
+
+Verbose(sprintf("Torrus version %s", '@VERSION@'));
+
+my $aclEdit = new Torrus::ACL::Edit;
+
+if( $ok and $exportfile )
+{
+    $ok = $aclEdit->exportACL( $exportfile, $exporttemplate ) ? $ok:0;
+}
+
+if( $ok and $clearconf )
+{
+    $ok = $aclEdit->clearConfig() ? $ok:0;
+}
+
+if( @delgroups )
+{
+    $ok = $aclEdit->deleteGroups( @delgroups ) ? $ok:0;
+}
+
+if( @addgroups )
+{
+    $ok = $aclEdit->addGroups( @addgroups ) ? $ok:0;
+}
+
+if( @addgroups or @modgroups )
+{
+    my $groups = [ @addgroups, @modgroups ];
+    if( @permitprivs )
+    {
+        $ok = setupPrivileges( $aclEdit, \@permitprivs,
+                               $groups, \@forobjects, 1 ) ? $ok:0;
+    }
+    if( @denyprivs )
+    {
+        $ok = setupPrivileges( $aclEdit, \@denyprivs,
+                               $groups, \@forobjects, 0 ) ? $ok:0;
+    }
+}
+
+
+my $attrValues = {};
+my $uid;
+
+if( $commonname )
+{
+    $attrValues->{'cn'} = $commonname;
+}
+
+if( $adduser )
+{
+    $uid = $adduser;
+    $ok = $aclEdit->addUser( $uid, $attrValues ) ? $ok:0;
+}
+elsif( $addhost )
+{
+    $uid = $addhost;
+    $uid =~ s/\W/_/g;
+    $ok = $aclEdit->addUser( $uid, $attrValues ) ? $ok:0;
+}
+
+elsif( $moduser )
+{
+    $uid = $moduser;
+    if( scalar( keys %{$attrValues} ) )
+    {
+        $ok = $aclEdit->setUserAttributes( $uid, $attrValues ) ? $ok:0;
+    }
+}
+elsif( $deluser )
+{
+    $ok = $aclEdit->deleteUser( $deluser ) ? $ok:0;
+}
+
+if( $uid )
+{
+    if( $password )
+    {
+        $ok = $aclEdit->setPassword( $uid, $password ) ? $ok:0;
+    }
+    elsif( $host_password )
+    {
+        $ok = $aclEdit->setPassword( $uid,
+                                     $uid . '//' . $host_password ) ? $ok:0;
+    }
+}
+
+if( $uid and scalar( @addtogroups ) )
+{
+    $ok = $aclEdit->addUserToGroups( $uid, @addtogroups ) ? $ok:0;
+}
+
+if( $uid and scalar( @delfromgroups ) )
+{
+    $ok = $aclEdit->delUserFromGroups( $uid, @delfromgroups ) ? $ok:0;
+}
+
+if( $ok and $importfile )
+{
+    $ok = $aclEdit->importACL( $importfile ) ? $ok:0;
+}
+
+if( $listall )
+{
+    @showusers = $aclEdit->listUsers();
+    @showgroups = $aclEdit->listGroups();
+}
+
+my %showGroupsHash;
+
+if( @showgroups )
+{
+    foreach my $group ( @showgroups )
+    {
+        if( $aclEdit->groupExists( $group ) )
+        {
+            $showGroupsHash{$group} = 1;
+        }
+        else
+        {
+            Error('No such group: ' . $group); $ok = 0;
+        }
+    }
+}
+
+if( @showusers )
+{
+    foreach my $uid ( sort @showusers )
+    {
+        if( $aclEdit->userExists( $uid ) )
+        {
+            printf("User: %s (%s)\n",
+                   $uid, $aclEdit->userAttribute( $uid, 'cn' ) );
+            foreach my $group ( sort $aclEdit->memberOf( $uid ) )
+            {
+                printf("Member of: %s\n", $group);
+                $showGroupsHash{$group} = 1;
+            }
+
+            if( $verbose or $debug )
+            {
+                printf("Modified: %s\n",
+                       $aclEdit->userAttribute( $uid, 'modified' ) );
+            }
+            printf ("\n");
+        }
+        else
+        {
+            Error('No such user: ' . $uid); $ok = 0;
+        }
+    }
+}
+
+if( %showGroupsHash )
+{
+    foreach my $group ( sort keys %showGroupsHash )
+    {
+        printf("Group: %s\n", $group);
+
+        my $privs = $aclEdit->listPrivileges( $group );
+        foreach my $object ( sort keys %{$privs} )
+        {
+            foreach my $priv ( sort keys %{$privs->{$object}} )
+            {
+                printf("Has privilege \"%s\" for %s \"%s\"\n", $priv,
+                       $knownPrivileges{$priv}, $object);
+            }
+        }
+
+        foreach my $uid ( sort @{$aclEdit->listGroupMembers( $group )} )
+        {
+            printf("Member: %s\n", $uid);
+        }
+
+        if( $verbose or $debug )
+        {
+            printf("Modified: %s\n",
+                   $aclEdit->groupAttribute( $group, 'modified' ) );
+        }
+
+        printf ("\n");
+    }
+}
+
+if( not $ok )
+{
+    Warn('acledit exited with errors');
+}
+exit( $ok ? 0:1 );
+
+sub setupPrivileges
+{
+    my $aclEdtit = shift;
+    my $privs = shift;
+    my $groups = shift;
+    my $objects = shift;
+    my $permit = shift;
+
+    my $ok = 1;
+    foreach my $priv ( @{$privs} )
+    {
+        if( defined( $knownPrivileges{$priv} ) )
+        {
+            if( $knownPrivileges{$priv} eq 'tree' )
+            {
+                foreach my $obj ( @{$objects} )
+                {
+                    if( $obj eq '*' or
+                        Torrus::SiteConfig::treeExists( $obj ) or $force )
+                    {
+                        foreach my $group ( @{$groups} )
+                        {
+                            if( $permit )
+                            {
+                                $ok = $aclEdit->
+                                    setPrivilege( $group, $obj,
+                                                  $priv ) ? $ok:0;
+                            }
+                            else
+                            {
+                                $ok = $aclEdit->
+                                    clearPrivilege( $group, $obj,
+                                                    $priv ) ? $ok:0;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Error('No such tree: ' . $obj); $ok = 0;
+                    }
+                }
+            }
+            elsif( $knownPrivileges{$priv} eq 'global' )
+            {
+                foreach my $obj ( @{$objects} )
+                {
+                    if( $obj ne '*' )
+                    {
+                        Error("Privilege GlobalSearch should be for '*'");
+                        $ok = 0;
+                    }                    
+                }
+
+                if( $ok )
+                {
+                    foreach my $group ( @{$groups} )
+                    {
+                        if( $permit )
+                        {
+                            $ok = $aclEdit->
+                                setPrivilege( $group, '*', $priv ) ? $ok:0;
+                        }
+                        else
+                        {
+                            $ok = $aclEdit->
+                                clearPrivilege( $group, '*', $priv ) ? $ok:0;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            Error('Unknown privilege name: ' . $priv); $ok = 0;
+        }
+    }
+    return $ok;
+}
+
+
+
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

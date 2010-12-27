@@ -1,0 +1,27 @@
+Subject: Monitor event: [%event%], [% nickname %]
+
+This is automatic Torrus event notification.
+
+Event timestamp:     [% timestamp %]
+
+Tree name:           [% tree %]
+Node path:           [% path %]
+Node description:    [% npcomment %]
+Monitor name:        [% monitor %]
+Monitor description: [% mcomment %]
+
+Event type:          [% event %]
+
+You can browse the node up-to-date graphs at this URL:
+  [% url %]
+
+
+
+Event types description:
+  set       Alarm condition is met first time
+  repeat    Alarm condition repeats
+  clear     Alarm condition is no longer met
+  forget    Information about this alarm has expired
+
+Torrus home page and documentation:
+  http://torrus.sourceforge.net

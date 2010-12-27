@@ -1,0 +1,101 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_action_printemail.pod.in,v 1.1 2010-12-27 00:04:38 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+action_printemail - A script for sending email from monitor action.
+
+=head1 SYNOPSIS
+
+ <action name="report-email">
+   <param name="action-type" value="exec" />
+   <param name="command">
+     $TORRUS_BIN/action_printemail | mail alarms@example.com
+   </param>
+   <param name="launch-when" value="set, clear" />
+ </action>
+
+=head1 DESCRIPTION
+
+This program is designed for usage from a monitor action only. It takes
+the arguments from environment variables, as described in action-type
+C<exec> in B<Torrus XML Configuration Guide>. In addition, some values
+may be supplied via command-line arguments (see section OPTIONS below).
+
+Site-specific variables must be specified in the file F<email-siteconfig.pl>. 
+Default values are installed by the first run of C<make install>. Subsequent 
+runs of C<make install> do not override this file.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--url>=I<GRAPHER-URL>
+
+Sets the URL of the grapher CGI script.
+
+=item B<--template>=I<TEMPLATE-FILE>
+
+Uses given file as a template. The template file must reside in @tmpldir@ 
+directory. It must be a Template-toolkit file, with the following variables 
+defined:
+
+ tree       Tree name
+ token      Leaf token
+ path       Leaf path
+ url        URL for browsing this leaf
+ ncomment   This leaf comment
+ npcomment  Leaf's parent comment
+ event      Event type
+ monitor    Monitor name
+ mcomment   Monitor comment
+ timestamp  Time and date of the event
+ env(VAR)   Environment variable VAR
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item F<@siteconfdir@/email-siteconfig.pl>
+
+Torrus site email configuration script.
+
+=item F<@tmpldir@>
+
+=item F<@tmpluserdir@>
+
+Torrus template directories.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

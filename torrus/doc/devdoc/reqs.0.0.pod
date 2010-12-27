@@ -1,0 +1,166 @@
+#  requirements.pod: The pre-planning document
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: reqs.0.0.pod,v 1.1 2010-12-27 00:04:36 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 RRD Framework Requirements Version 0.0
+
+Date: Jul 10 2002
+
+This article defines some principles that a supposedly future
+RRD framework should have. The framework should consist of 3
+independent subsystems:
+
+=over 4
+
+=item Data Collection
+
+=item Data Monitoring
+
+=item Data Displaying
+
+=back
+
+=head2 Flexible Hierarchical Configuration
+
+Inspired by Cricket hierarchical configuration, we state here that
+the configuration should be hierarchical. Child nodes should
+inherit the properties from parents.
+
+The format of the configuration files has not to be neccessary
+as in Cricket. I'm not sure if it's worth keeping them in a directory
+structure representing the hierarchy tree, but it's definitive
+that multiple files should be supported.
+
+A good step ahead would be the configuration in XML format.
+It is also possible to have a converter from some other formats
+(plain text, or an SQL database) into XML which will be consumed by the
+framework.
+
+I leave the Data collection uncovered, since all of the existing
+RRD frontends do this part already.
+
+=head1 Data Monitoring Principles
+
+At the moment, the only known solution for RRD data monitoring is
+Cricket. Its threshold monitoring has certain limitation and drawbacks.
+Nevertheless, it may be used as the basis for the ideas in the further
+development.
+
+The major idea is to build data monitoring as a part of a bigger RRD
+framework, still being the independent part of the whole. The data can come
+from many differet sources, from RRDs produced by any of the existing
+and future frontends.
+
+=head2 File Naming Flexibility
+
+In most existing RRD frontends, each RRD datafile should be described
+individually. This is not very convenient, especially for the cases
+when you have several (dozens) files containing one type of data.
+(e.g., input traffic per source autonomous system).
+Also the files of same type can be created and deleted by their sourcing
+frontend, and it would be more convenient not having to change
+the monitoring configuration.
+
+Thus, we need a wildcards language which would allow to specify
+multiple files and derive the datasource names from thir names.
+
+=head2 Datasource Naming
+
+Each data being monitored (for RRDs, its definition specifies the
+E<lt>filename, DS, RRAE<gt> triple) has to have a universal name.
+The name can be fully or partly qualified, depending on the
+configuration tree. Examples of such data reference follow:
+
+  /Netflow/Exporters/63.2.3.224/if3/bps /* Interface #3 on router 63.2.3.224 */
+  /Netflow/Subnets/Dialin/bps   /* Dial-in address pool */
+  /* different grouping for the rack temperature in Server Room 1 */
+  /Envmon/RackTemp/SR1
+  /SR1/Envmon/RackTemp
+
+Name aliasing should allow short or symbolic names for data sources:
+
+  /* Alias for /Netflow/Exporters/63.2.3.224/if3 */
+  /Netflow/Upstream/FranceTelecom1
+
+=head2 Monitoring Rules
+
+Data threshold monitoring should be described in a hierarchical
+manner.
+
+It would be interesting to have monitoring rules separate from
+the data hierarchy. On the other hand, 1) some data sources might need
+special and unique monitoring rules; 2) in some cases, several
+data sources need to be combined in order to build a threshold rule.
+I'm not yet sure how this must be achieved.
+
+=head2 Event Processing
+
+Once the threshold violation occurs, the monitoring system
+should produce the alarm event.
+
+Cricket has a good set of ways to report the alarm, and they can be taken
+as the basis.
+
+Also what Cricket is really missing, is displaying those data sources
+being alarmed. The Monitoring system should produce the instructions
+to the Displaying system in order to display the summary of those
+data sources which produce alarms within certain time.
+
+
+=head1 Data Displaying Principles
+
+View profiles should be configured in a hierarchical manner.
+
+Again as with data monitoring, some Views should be configured independently
+of the data hierarchy, but also some data should be able to define
+specific view profiles.
+
+There should be view profiles of different types:
+
+=over 4
+
+=item *
+
+HTML Framework. Defines the HTML elements that should be displayed around
+the graphs. It also should define the child graphs. Also it should define
+the controls which would cause the option changes in the child graphs
+(e.g., enabling "Show Holt-Winters Boundaries" would produce the
+corresponding graph).
+
+=item *
+
+Individual Graph. Defines the way the graph should look. It should
+also be capable of displaying an arbitrary number of data sources.
+It should have tunable options, like color, size, or time period.
+
+=back
+
+The Displaying system should allow the following ways of viewing:
+1) hierarchical browsing, like Cricket; 2) alarm summary display;
+3) individual graph display, without HTML surrounding.
+
+The graph images should be cashed and reused whenever possible.
+In alarm summary browsing, these images can be generated at the moment
+of the event.
+
+=head1 Author
+
+Copyright (c) 2002 Stanislav Sinyagin ssinyagin@yahoo.com

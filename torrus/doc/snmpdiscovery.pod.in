@@ -1,0 +1,1115 @@
+#  Copyright (C) 2002-2009  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: snmpdiscovery.pod.in,v 1.1 2010-12-27 00:04:35 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 Torrus SNMP Discovery User Guide
+
+=head2 Introduction
+
+In many (but not only) cases Torrus is used for SNMP monitoring.
+It provides powerful tools which automate the process of devices' MIB
+discovery.
+
+The discovery tools consist of two programs: C<torrus devdiscover> performs
+the SNMP discovery, based on the discovery instructions XML file.
+The result of its work is a new Torrus datasource configuration file.
+Another utility, C<torrus genddx>, is a program that generates the
+basic discovery instructions file based on a set of commandline options.
+
+The device discovery XML, or as we call them DDX files, are usually
+resided in F<@siteconfdir@/discovery/> directory. This is the default
+path to search for them when the absolute path is not given.
+
+=head2 C<torrus genddx>: Discovery instructions generator
+
+  Usage: torrus genddx options...
+  Options:
+     --host=hostname         router hostname
+     --hostfile=filename     space-separated router hostnames file
+     --out=outfile           output file.         [routers.ddx]
+     --discout=filename      discovery output file [routers.xml]
+     --domain=domain         optional DNS domain name
+     --version=v             SNMP version         [2c]
+     --community=string      SNMP read community  [public]
+     --port=number           SNMP port            [161]
+     --retries=number        SNMP retries         [2]
+     --timeout=number        SNMP timeout         [10]
+     --subtree=string        Subtree name         [/Routers]
+     --datadir=path          data-dir parameter [@defrrddir@]
+     --holtwinters           Enable Holt-Winters analysis
+
+This utility generates C<devdiscover> instructions XML file (DDX) based on
+commandline options and a plain list of SNMP agents' hostnames.
+Hostnames are specified with one or many C<--host=hostname> options,
+or a plain text file with space-separated hostnames.
+
+Each host may have a symbolic name. This symbolic name is used as
+the host-level subtree name. The symbolic name follows the hostname with
+a semicolon.
+
+By default, the devices are placed into C</Routers/> subtree hierarchy.
+You may change the subtree name with the I<--subtree> option.
+Single slash as subtree name would cause host-level subtrees placed at the top
+of the datasources tree.
+
+By default, C<genddx> specifies the discovery output file as <routers.xml>,
+and it would be placed in site XML configuration directory.
+You most probably will change this by using the C<--discout> option.
+
+Examples:
+
+  torrus genddx --out=ch-langenthal.ddx \
+    --discout=ch-langenthal.xml \
+    --host=192.168.34.35:Langenthal_PE1 \
+    --host=192.168.34.36:Langenthal_PE2 \
+    --host=192.168.34.37:Langenthal_CE_Stadtverwaltung \
+    --community=blahBlah \
+    --subtree=/MPLS/CH/Bern/Langenthal
+
+  torrus devdiscover --in=ch-langenthal.ddx
+
+B<Note:> C<genddx> is designed as a one-time utility. You may run it to create
+a typical discovery file with basic set of options. Then the discovery
+configuration XML would be the primary source of information, and it should
+be maintained by manual editing, or by some other automated means.
+Alternatively you may use C<ttproclist> utility and generate highly customized
+discovery instruction files based on static templates and lists of SNMP nodes.
+See L<torrus_ttproclist(@mansec_usercmd@)> manpage for more details and
+examples.
+
+
+
+=head2 C<torrus devdiscover>: SNMP discovery tool
+
+  Usage: torrus devdiscover --in=filename.ddx options... [ddx files]
+  Options:
+   --in=filename.ddx       discovery instructions XML file(s)
+   --mkdir                 create data-dir directories
+   --limit=regexp          limit the discovery by output files
+   --forcebundle           always write the bundle file
+   --fallback=integer      maximum age of XML file to fall back to
+   --threads=integer       number of parallel discovery threads
+   --verbose               print extra information
+   --debug                 print debugging information
+   --snmpdebug             print SNMP protocol details
+
+This utility performs the SNMP discovery of devices listed in the input
+DDX file. The output XML file is the Torrus datasources configuration.
+Output file name is taken from C<output-file> parameter in the DDX.
+If the output file is not an absolute path, the file is placed
+in the site XML configuration directory (F<@sitexmldir@>).
+
+C<devdiscover> is accompanied by a number of MIB- or vendor-specific
+modules, each responsible for finding specific SNMP variables in
+the SNMP device, and for generating a piece of Torrus configuration XML
+file responsible for that specific MIB. The list of supported generic MIBs and
+vendors is constantly growing. It is quite easy to create new discovery
+modules, and the internals are documented in
+I<Torrus SNMP Device Discovery Developer's Guide>.
+
+The output file automatically includes all required prerequisite
+generic and vendor template definition files.
+
+Behaviour of C<devdiscover> is controlled by variables in
+F<@siteconfdir@/devdiscover-siteconfig.pl> file. Default values for
+those variables reside in F<@cfgdefdir@/devdiscover-config.pl>.
+
+For large installations, it is recommended to place RRD files into
+a hashed directory structure. You can enable this feature by setting
+
+  $Torrus::DevDiscover::hashDataDirEnabled = 1;
+
+in your F<devdiscover-siteconfig.pl> file.
+Then launching C<devdiscover> with C<--mkdir> option would automatically
+create the subdirectories inside C<data-dir>.
+
+The XML files produced by C<devdiscover> may be automatically changed
+with some local site-specific scripts. See XUpdate usage example in
+I<Torrus User Guide>.
+
+
+=head2 DDX, the discovery instructions file
+
+The input file for C<devdiscover> is an XML file. Its DTD is available
+in Torrus distribution in F<snmp-discovery.dtd>.
+
+A typical place to store the discovery XML is F<@siteconfdir@/discovery/>.
+
+Example:
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <snmp-discovery>
+      <file-info>
+        <format-version>
+    1.0
+        </format-version>
+      </file-info>
+      <creator-info>
+    Torrus version 0.1.4d
+    This file was generated by command:
+    /usr/local/torrus-0.1/bin/genddx \
+     --discout=share/torrus/xmlconfig/myrouters.xml \
+     --community=blahblah  --host=10.0.0.1  --host=10.0.1.1
+    On Tue Dec  2 17:43:30 2003
+      </creator-info>
+      <param name="data-dir" value="@defrrddir@"/>
+      <param name="domain-name" value=""/>
+      <param name="host-subtree" value="/Routers"/>
+      <param name="output-file" value="myrouters.xml"/>
+      <param name="rrd-hwpredict" value="no"/>
+      <param name="snmp-community" value="blahblah"/>
+      <param name="snmp-port" value="161"/>
+      <param name="snmp-retries" value="2"/>
+      <param name="snmp-timeout" value="10"/>
+      <param name="snmp-version" value="2c"/>
+      <host>
+        <param name="snmp-host" value="10.0.0.1"/>
+        <param name="symbolic-name" value="10.0.0.1"/>
+      </host>
+      <host>
+        <param name="snmp-host" value="10.0.1.1"/>
+        <param name="symbolic-name" value="10.0.1.1"/>
+      </host>
+    </snmp-discovery>
+
+=head3 XML elements
+
+=over 4
+
+=item * C<snmp-discovery>
+
+Mandatory. The top-level element.
+
+=item * C<file-info>
+
+Mandatory. It must contain the element C<format-version>.
+
+=item * C<format-version>
+
+Mandatory. It must contain a format version currently
+supported by devdiscover. Currently supported version is C<1.0>.
+
+=item * C<creator-info>
+
+Optional. May contain the information about the file creator: a human author
+name, or a program.
+
+=item * C<param>
+
+Some parameters are mandatory. This element defines a global or host-specific
+parameter. Mandatory attribute C<name> identifies the parameter,
+and the value is taken eother from C<value> attribute, or from the
+textual content of the element.
+
+C<param> element should be the child element of C<snmp-discovery> for global
+parameters or C<host> for host-level parameters. Host-level parameters
+override the values of global parameters.
+
+These parameters are for C<devdiscover> only. They are not Torrus configuration
+parameters, although some of them are directly copied into the generated
+configuration file.
+
+=item * C<host>
+
+Mandatory. Defines a host to run SNMP discovery.
+
+=back
+
+
+=head3 Common parameters
+
+=over 4
+
+=item * C<collector-period>, C<collector-timeoffset>,
+C<collector-dispersed-timeoffset>, C<collector-timeoffset-min>,
+C<collector-timeoffset-max>, C<collector-timeoffset-step>,
+C<monitor-period>, C<monitor-timeoffset>
+
+Optional. When defined, these parameters override those from C<snmp-defaults>
+template in F<snmp-defs.xml>.
+
+=item * C<output-file>
+
+Mandatory. Specifies the output filename for generated Torrus configuration.
+If it's a relative path, the file is placed in F<@sitexmldir@> directory.
+
+=item * C<output-bundle>
+
+Optional. Specifies a comma-separated list of XML file names for bundle
+output. Each bundle file will contain E<lt>includeE<gt> statement for each
+corresponding C<output-file>.
+
+=item * C<snmp-ipversion>, C<snmp-transport>, C<snmp-port>,
+        C<snmp-community>,  C<snmp-version>, C<snmp-timeout>,
+        C<snmp-retries>, C<snmp-host>, C<snmp-username>, C<snmp-authkey>,
+        C<snmp-authpassword>, C<snmp-authprotocol>, C<snmp-privkey>,
+        C<snmp-privpassword>, C<snmp-privprotocol>
+
+Mandatory SNMP session parameters. Authentication parameters depend on the
+SNMP version used. See the I<XML Configuration Guide> for details.
+These parameters define the SNMP agent properties and are
+copied one-to-one to the output configuration.
+
+=item * C<domain-name>
+
+Optional. Defines a DNS domain name to be appended to C<snmp-host>.
+
+=item * C<snmp-localaddr> and C<snmp-localport>
+
+Optional parameters specifying the local socket binding address and port.
+
+=item * C<data-dir>
+
+Mandatory. Defines the directory path where RRD files for this host
+are stored. In case if hashed directories are enabled, C<data-dir> specifies
+the base path under which the hashed subdirectories are created.
+
+=item * C<symbolic-name>
+
+Optional. Determines the host-specific subtree name. If not specified,
+the subtree is named by C<system-id>, or by C<snmp-host> if system ID is
+not defined.
+
+=item * C<system-id>
+
+Optional. If defined, it overrides the default value of system ID, which
+is equal to the value of C<snmp-host>.
+
+=item * C<nodeid-device>
+
+Optional. Defines the host-specific reference for I<nodeid>. Default value
+is equal to C<system-id>.
+
+=item * C<snmp-oids-per-pdu>
+
+Optional. When defined, these parameters overwrites the value from the
+template and vendor-specific discovery modules.
+
+=item * C<snmp-check-sysuptime>
+
+Optional. Default: C<yes>. Devdiscover sets this parameter to C<no> when it
+finds SNMPv2-MIB::sysUpTime variable unavailable in the device.
+
+=item * C<snmp-max-msg-size>
+
+Optional. If defined, it sets the SNMP maximum message size different from
+default. The default value is 1470 (defined in Net::SNMP).
+
+=item * C<host-subtree>
+
+Optional. Defines the datasourse tree path under which the host-specific
+subtree is created.
+
+=item * C<rrd-hwpredict>
+
+Optional. Valid values: C<yes>, C<no>. Determines if Holt-Winters forecasting
+should be enabled for the given host.
+
+=item * C<disable-devtypes>
+
+Optional. Comma-separated list of discovery device types that need to be
+excluded from discovery process. For example, ATMEL appliances conflict with
+Empire SystemEdge MIBs, and you need to disable C<EmpireSystemedge> module
+in order to run the discovery on those appliances.
+
+=item * C<only-devtypes>
+
+Optional comma-separated list of device types. If defined, only the specified
+types will be used for device probing.
+
+=item * C<host-aliases>
+
+Optional comma-separated list of alias paths for a given host. Aliases
+must be unique for each host.
+
+=item * C<custom-host-templates>
+
+Optional comma-separated list of template names that will be applied
+to the resulting XML configuration at the host level.
+
+=item * C<include-files>
+
+Optional comma-separated list of XML files that will be listed in C<include>
+statements in the resulting XML output.
+
+
+=item * C<host-copy-params>
+
+Optional comma-separated list of parameter names that should be copied
+from the discovery configuration file to the generated Torrus configuration
+at the host level.
+
+=item * C<selectors>
+
+Optional comma-separated list of object selectors. They are explained in more
+detail below.
+
+=item * C<disable-snmpcollector>
+
+When set to C<yes>, this parameter disables SNMP collection for this
+host. It is useful for creating custom views, in conjunction with
+C<RFC2863_IF_MIB::only-interfaces> parameter.
+
+=item * C<define-tokensets>
+
+Semicolon-separated (;) list of pairs of tokenset names and descriptions.
+Each tokenset name is followed by colon (:) and the description text:
+
+  <param name="define-tokensets">
+    important-graphs: Important Graphs;
+    unimportant-graphs: Unimportant Graphs
+  </param>
+
+=item * C<suppress-legend>
+
+if set to C<yes>, the legend is not shown. It usually has uptime,
+software version, and contact information for the SNMP device.
+
+=item * C<comment>
+
+Sets the comment string for the host.
+
+=item * C<show-recursive>
+
+Default: C<yes>. When set to C<no>, the link to the recursive view at the
+host level is omitted.
+
+=item * C<template-registry-overlays>
+
+If defined, this should be a comma-separated list of template registry
+entries that override the default template references. The overlaying
+templates should be referred in
+C<%Torrus::DevDiscover::templateOverlays>.
+For example, we want to redefine the interface counter template. Then
+in the DDX file, we set
+
+  <param name="template-registry-overlays" value="my_ifcounters"/>
+
+Then in F<devdiscover-siteconfig.pl> we set 
+
+  %Torrus::DevDiscover::templateOverlays = {
+      'my_ifcounters' => {
+          'RFC2863_IF_MIB::iftable-octets' => {
+             'name'   => 'my-iftable-octets',
+             'source' => 'mycustom-rfc2863.if-mib.xml'
+             },
+         'RFC2863_IF_MIB::ifxtable-hcoctets' => {
+             'name'   => 'my-ifxtable-hcoctets',
+             'source' => 'mycustom-rfc2863.if-mib.xml'
+             },
+         }};
+
+
+=back
+
+
+=head3 Parameters for C<RFC2863_IF_MIB>
+
+This discovery module is responsible for agent's interfaces table and
+interface counters. Recognized optional parameters are:
+
+=over 4
+
+=item * C<RFC2863_IF_MIB::suppress-hc-counters>
+
+Some agents do not implement 64-bit counters correctly. When this parameter
+is set to C<yes>, 64-bit interface counters are not used for the host.
+For Cisco IOS devices, the C<CiscoIOS> discovery module tries to detect
+such situation automatically.
+
+=item * C<RFC2863_IF_MIB::subtree-name>
+
+Defines the child subtree name within host-level subtree where interface
+counters are located. Default: C<Interface_Counters>.
+
+=item * C<RFC2863_IF_MIB::subtree-comment>
+
+Defines the comment string for interface counters subtree.
+Default: I<Interface traffic and error counters>.
+
+=item * C<RFC2863_IF_MIB::list-admindown-interfaces>
+
+If set to C<yes>, interfaces with ifAdminStatus set to other than up(1)
+are included in the discovery results.
+By default, such interfaces are not listed.
+
+=item * C<RFC2863_IF_MIB::list-notpresent-interfaces>
+
+If set to C<yes>, the interfaces with ifOperStatus status set to notPresent(6)
+are included in the discovery results. By default, such interfaces are
+not listed.
+
+=item * C<RFC2863_IF_MIB::exclude-down-interfaces>
+
+If set to C<yes>, the interfaces with ifOperStatus equal to down(2)
+are excluded from the discovery results.
+
+=item * C<RFC2863_IF_MIB::exclude-interfaces>
+
+Comma-separated list of interface names which should be excluded from
+configuration. Spaces are allowed between the names and commas.
+The names should be the ones that are used for interface subtrees.
+
+=item * C<RFC2863_IF_MIB::only-interfaces>
+
+If defined, this parameter specifies the list of interfaces that will be
+included in the discovery results. The names should match the interface
+subtree names. Caution: if specified incorrectly, this parameter may
+disable discovery for all interfaces on a device.
+
+=item * C<RFC2863_IF_MIB::tokenset-members>
+
+This parameter defines which interfaces' C<InOut_bps> leaves to add to
+which tokensets. The value is a semicolon-separated (;) list of
+entries of form I<tset:interface,interface>, where I<tset> is a name of the
+tokenset, and the I<interface> is the subtree name of the corresponding
+interface. The token sets must be defined elsewhere in Torrus configuration.
+Example:
+
+  <host>
+    <param name="snmp-host" value="192.168.49.131"/>
+    <param name="RFC2863_IF_MIB::tokenset-members">
+     clusters: 10_1, 10_2;
+     uplinks: 1_1, 1_2
+    </param>
+  </host>
+
+Alternatively, this parameter can be defined at the global level,
+and then each interface should be pretended by the SNMP host name (the same as
+in C<snmp-host> parameter) and slash sign (/):
+
+    <param name="RFC2863_IF_MIB::tokenset-members">
+     clusters: RTR01/Ethernet0_0, RTR01/FastEthernet2_1;
+    </param>
+
+
+=item * C<RFC2863_IF_MIB::copy-params>
+
+Optional comma-separated list of parameter names that would be copied
+to the output Torrus configuration at interface level.
+For each parameter I<param>, the value for a particular interface I<intf>
+will be taken from parameter C<RFC2863_IF_MIB::I<param>::I<intf>> in
+the discovery configuration file. Example:
+
+  <host>
+    <param name="snmp-host" value="192.168.49.131"/>
+    <param name="RFC2863_IF_MIB::copy-params" value="intf-error-threshold"/>
+    <param name="RFC2863_IF_MIB::intf-error-threshold::10_1" value="300"/>
+    <param name="RFC2863_IF_MIB::intf-error-threshold::2_1" value="900"/>
+  </host>
+
+=item * C<RFC2863_IF_MIB::ifindex-map-hint>
+
+Optional. For a device that doesn't have a corresponding vendor-specific
+discovery module, this parameter would advice C<devdiscover> how to build
+C<ifTable> index mapping. By default, the interfaces are mapped by
+C<ifDescr> variables. For many vendors, this would not give reliable
+mapping. Valid values are: C<ifName>, C<ifPhysAddress>, and C<ifIndex>.
+The first two suggest the mapping by corresponding SNMP variables, and
+the third one should be used for devices with fixed C<ifIndex> layout: in
+this case, the C<ifIndex> values are recorded as they are at the moment of
+discovery. This option is ignored if the device is supported by a vendor
+specific discovery module.
+
+=item * C<RFC2863_IF_MIB::subtree-name-hint>
+
+Optional. By default, per-interface subtrees are named after the values of
+C<ifDescr> SNMP variables. If this option is set to C<ifName>, this
+SNMP variable would be used for subtree naming. This option is ignored if
+the device is supported by a vendor specific discovery module.
+
+=item * C<RFC2863_IF_MIB::nodeid-hint>
+
+Optional. By default, per-interface I<nodeid> is derived from
+C<RFC2863_IF_MIB::ifindex-map-hint>. This parameter can change the
+reference table for nodeid. Valid values are:
+C<ifDescr>, C<ifName>, C<ifAlias>, C<ifIndex>.
+
+
+=item * C<RFC2863_IF_MIB::noout>
+
+If set to C<yes>, all the interface statistics are skipped from
+the XML configuration output. Still the interface table is examined and
+the results may be used by other discovery modules.
+
+=item * C<RFC2863_IF_MIB::bandwidth-usage>
+
+If set to C<yes>, the bandwidth usage percentage will be shown for those
+interfaces where two parameters are defined (in megabits per second):
+C<bandwidth-limit-in> and C<bandwidth-limit-out>. These interface
+parameters may be set by C<RFC2863_IF_MIB::bandwidth-limits> discovery
+parameter, or by selectors with the action C<Parameters>, or by
+setting C<RFC2863_IF_MIB::copy-params>.
+
+=item * C<RFC2863_IF_MIB::bandwidth-limits>
+
+Defines the values (in megabits per second) for C<bandwidth-limit-in> and
+C<bandwidth-limit-out> interface parameters. Semicolon-separated list
+of (I<Inteface name>:I<Input limit>:I<Output limit>) values, for example:
+
+  <host>
+    <param name="snmp-host" value="10.1.1.5"/>
+    <param name="symbolic-name" value="bsr2k.example.net"/>
+    <param name="output-file" value="bsr2k.example.net.xml"/>
+    <param name="RFC2863_IF_MIB::bandwidth-usage" value="yes" />
+    <param name="RFC2863_IF_MIB::bandwidth-limits">
+      ethernet0_0:10:10; ethernet0_1:20:20;
+    </param>
+  </host>
+
+
+=item * C<RFC2863_IF_MIB::traffic-summaries>,
+C<RFC2863_IF_MIB::traffic-XXX-path>, C<RFC2863_IF_MIB::traffic-XXX-comment>,
+C<RFC2863_IF_MIB::traffic-XXX-interfaces>
+
+Defines traffic summary graphs. A summary graph presents a sum of
+traffic from several interfaces. The interfaces can belong to different
+hosts, but then these hosts should have the same C<output-file> parameter
+value. C<RFC2863_IF_MIB::traffic-summaries> defines a list of summary names,
+C<RFC2863_IF_MIB::traffic-XXX-path> specifies the full path in the
+datasource tree to display the graph, optional
+C<RFC2863_IF_MIB::traffic-XXX-comment> defines a descriptive comment
+for the graph, and C<RFC2863_IF_MIB::traffic-XXX-interfaces> lists the
+interfaces that comprise this sum. The interfaces can be defined at the host
+level in the form C<name, name, ...> or at the global level in the form
+C<host/intf, host/intf, ...>. Example:
+
+  <param name="RFC2863_IF_MIB::traffic-summaries" value="sum1" />
+  <param name="RFC2863_IF_MIB::traffic-sum1-path" value="/Summary/Sum1" />
+  <param name="RFC2863_IF_MIB::traffic-sum1-comment" value="Test summary" />
+
+  <host>
+    <param name="snmp-host" value="router1.network.net"/>
+    <param name="RFC2863_IF_MIB::traffic-sum1-interfaces" 
+             value="GigabitEthernet0_2" />
+    <param name="output-file" value="TEST/core.xml"/>
+  </host>
+
+  <host>
+    <param name="snmp-host" value="router2.network.net"/>
+    <param name="RFC2863_IF_MIB::traffic-sum1-interfaces" 
+             value="GigabitEthernet1_0" />
+    <param name="output-file" value="TEST/core.xml"/>
+  </host>
+
+
+=back
+
+=head3 Other generic MIB parameters
+
+=over 4
+
+=item * C<RFC2790_HOST_RESOURCES::sysperf-subtree-name>
+
+Defines the child subtree name within host-level subtree where system CPU
+and memory statistics are located. Default: C<System_Performance>.
+
+=item * C<RFC2670_DOCS_IF::upstreams-only>
+
+If set to C<yes>, only the DOCSIS upstream statistics are enabled, and
+downstream and MAC layer stats are skipped.
+
+=back
+
+=head3 Vendor parameters
+
+=over 4
+
+=item * C<Arbor_E::disable-bundle-offer>,
+    C<Arbor_E::disable-bundle-offer-deny>,
+    C<Arbor_E::disable-bundle-offer-pktsize>,
+    C<Arbor_E::disable-bundle-offer-rate>,
+    C<Arbor_E::disable-bundle-offer-subcount>, C<Arbor_E::disable-flowdev>,
+    C<Arbor_E::enable-bundle-name-rrd>,
+    C<Arbor_E::disable-e30-buffers>, C<Arbor_E::disable-e30-bundle>,
+    C<Arbor_E::disable-e30-cpu>,
+    C<Arbor_E::disable-e30-fwdTable>,
+    C<Arbor_E::disable-e30-fwdTable-login>,
+    C<Arbor_E::disable-e30-hdd>, C<Arbor_E::enable-e30-hdd-errors>,
+    C<Arbor_E::disable-e30-hdd-logs>, C<Arbor_E::disable-e30-l2tp>,
+    C<Arbor_E::disable-e30-mem>, C<Arbor_E::enable-e30-mempool>,
+    C<Arbor_E::disable-e30-bundle>, C<Arbor_E::disable-e30-bundle-deny>, 
+    C<Arbor_E::disable-e30-bundle-rate>, C<Arbor_E::disable-e30-slowpath>
+
+When set to C<yes>, the corresponding statistics are included or excluded from
+the graphs.
+
+=item * C<Arbor_E::enable-e30-bundle-name-rrd>
+
+When set to C<yes>, the data will be written to filenames based on the name
+bundle instead of by the ID of the bundle.
+
+=item * C<Apple_AE::disable-clients-stats>
+
+When set to C<yes>, wireless client machines are not tracked.
+
+=item * C<CiscoGeneric::disable-cpu-stats>
+
+When set to C<yes>, Cisco CPU usage statistics are excluded from discovery.
+
+=item * C<CiscoGeneric::disable-memory-pools>
+
+When set to C<yes>, Cisco memory pool usage statistics are excluded from
+discovery. For Cisco series 7500, see the note in the
+I<Torrus Vendor Support List>.
+
+=item * C<CiscoGeneric::disable-sensors>
+
+When set to C<yes>, Cisco temperature sensors are excluded from discovery.
+
+=item * C<CiscoGeneric::use-fahrenheit>
+
+When set to C<yes>, Cisco temperature sensors are recorded and displayed
+in degrees Fahrenheit.
+
+=item * C<CiscoGeneric::file-per-sensor>
+
+When set to C<yes>, Cisco temperature sensor values are stored in
+a separate RRD file per sensor ID. This is useful for modular big routers
+like Cisco GSR.
+
+=item * C<CiscoGeneric::disable-psupplies>
+
+if set to C<yes>, Cisco power supply statistics are not collected.
+
+=item * C<CiscoGeneric::power-monitor>
+
+Name of the power supply monitor for Cisco devices.
+
+=item * C<CiscoIOS::enable-membuf-stats>
+
+When set to C<yes>, Cisco memory buffer statistics are included to the 
+discovery. Many IOS releases report faulty information, thus these
+stats are disabled by default.
+
+=item * C<CiscoIOS::disable-ipsec-stats>
+
+When set to C<yes>, IPSec statistics are excluded from discovery.
+
+=item * C<CiscoIOS::disable-bgp-stats>
+
+If set to C<yes>, BGP statistics are not included.
+
+=item * C<CiscoIOS::enable-vlan-interfaces>
+
+When set to C<yes>, the interfaces VlanXXX are added to statistics.
+By default they are not included, because some hardware platforms give
+irrelevant counter statistics.
+
+=item * C<CiscoIOS::enable-unrouted-vlan-interfaces>
+
+When set to C<yes>, the interfaces "unrouted Vlan XXX" are added to statistics.
+By default they are not included, because some hardware platforms provide
+no statistics for such interfaces.
+
+
+=item * C<CiscoCatOS::suppress-noname-ports>
+
+When set to C<yes>, only those Catalyst ports are included in configuration
+which have a port name (set up by C<set port name> command).
+
+=item * C<CiscoIOS_MacAccounting::bgponly>
+
+When set to C<yes>, Cisco MAC accounting statistics will be enabled for
+those MACs which correspond to BGP peers only.
+
+=item * C<bgp-as-description-NNNN>
+
+Specifies a description for an autonomous system number. Currently it's used
+with Cisco MAC accounting and Cisco BGP statistics only.
+
+=item * C<peer-ipaddr-description-AAA_AAA_AAA_AAA>
+
+Specifies a description for a peer by its IP address. Dots in IP address should
+be replaced with underscores. Currently it's used with Cisco
+MAC accounting and Cisco BGP statistics only.
+
+=item * C<CiscoIOS_MacAccounting::tokenset-members>
+
+Works the same way as C<RFC2863_IF_MIB::tokenset-members> and assigns MAC
+accounting peers to tokensets.
+
+=item * C<CiscoIOS::disable-car-stats>
+
+When set to C<yes>, the Committed Access Rate statistics are disabled
+from discovery.
+
+=item * C<CiscoIOS::disable-vpdn-stats>
+
+When set to C<yes>, the VPDN (Virtual Private Dial-up Network) statistics
+are disabled from discovery.
+
+=item * C<CiscoIOS::short-device-comment>
+
+If set to C<yes>, the Hw Serial and Revision strings are not shown in
+device comment.
+
+=item * C<CiscoSCE::disable-disk>, C<CiscoSCE::disable-gc>,
+    C<CiscoSCE::disable-qos>, C<CiscoSCE::disable-rdr>,
+    C<CiscoSCE::disable-subs>, C<CiscoSCE::disable-tp>
+
+If set to C<yes>, the corresponding statistics are excluded from Cisco SCE
+graphs.
+
+=item * C<FTOS::disable-cpu>, C<FTOS::disable-power>,
+    C<FTOS::disable-temperature>
+
+When set to C<yes>, disables the corresponding statistics category.
+
+=item * C<FTOS::use-fahrenheit>, C<FTOS::file-per-sensor>
+
+When set to C<yes>, enables the user of fahrenheit temperature, or writes
+multiple rrd files.
+
+=item * C<JunOS::disable-cos>, C<JunOS::disable-cos-red>,
+    C<JunOS::disable-cos-tail>, C<JunOS::disable-firewall>,
+    C<JunOS::disable-operating>, C<JunOS::disable-rpf>
+
+When set to C<yes>, disables the corresponding statistics category for JunOS
+devices.
+
+=item * C<Liebert::disable-temperature>, C<Liebert::disable-humidity>,
+    C<Liebert::disable-state>, C<Liebert::disable-stats>
+
+When set to C<yes>, disable the corresponding statistics category for Liebert
+devices.
+
+=item * C<Liebert::use-fahrenheit>
+
+When set to C<yes>, the temperature readings will be in fahrenheit.
+
+
+=item * C<NetBotz::temp-max>, C<NetBotz::humi-max>, C<NetBotz::dew-max>
+
+Set a numeric value for the maximum temperature, humidity, or dew point
+on NetBotz sensor graphs. The maximum is displayed with a dark red line.
+
+=item * C<Paradyne::slot-name>
+
+Mandatory for Paradyne DSLAM devices. It should uniquely identify
+the slot within the device. Any sequence of word characters is allowed.
+
+=back
+
+See also: I<Torrus Vendor Support List> for the list of supported MIBs and
+vendors.
+
+=head2 Object selectors
+
+Selectors are a common mechanism for applying customizations to
+some discovery objects. For example, you may want to apply a monitor
+to byte counters of interfaces that have a special word in the description.
+Or apply Holt-Winters prediction to a certain subset of interfaces.
+
+Selectors are defined in a DDX file as regular parameters.
+The parameter C<selectors> defines a list of selector names.
+Each selector is identifed by its name and type. The type of selector
+defines which objects will be searched: IF-MIB interfaces, or Cisco
+temperature sensors, or something else. The parameters are described
+below.
+
+=over 4
+
+=item * C<selectors>
+
+Comma-separated list of selector names. Further below we use C<S> as
+selector name, C<A> as attribute name, and C<T> as action name.
+
+=item * C<S-selector-type>
+
+Type of objects to be selected. Supported values are: C<RFC2863_IF_MIB>,
+C<CiscoCPU>, C<CiscoSensor>.
+
+=item * C<S-selector-expr>
+
+An RPN (reverse Polish notation) expression that defines the
+object attributes to be checked and relation between them. Attribute names
+should be specified in curly braces ({}). The rest of the syntax is described
+in I<RPN expressions in Torrus> guide. The attribute names are specific to the
+selector type and are described below.
+
+=item * C<S-A>
+
+For a given selector name C<S> and attribute name C<A>,
+this parameter defines the attribute value that should be compared
+to the object's properties. In most cases it defines a regular
+expression that should match the value of a corresponding object's
+property.
+
+=item * C<S-selector-actions>
+
+For a given selector name C<S>, this parameter defines a comma-separated
+list of actions to be applied for objects where C<S-selector-expr> returns
+true. The action names are specific to the selector type and are
+described below.
+
+=item * C<S-T-arg>
+
+For a given selector C<S> and action C<T>, this parameter defines
+an argument that should be passed to the action. Each action
+defines its own meaning of the argument.
+
+=back
+
+
+
+=head3 RFC2863_IF_MIB selector
+
+This type of selector selects the network interfaces on a SNMP device.
+The following attribute names are supported:
+
+=over 4
+
+=item * C<ifSubtreeName>, C<ifSubtreeName1>, ...
+
+Interface-level subtree name as you see it in the discovery results.
+You can compose a complex expression of subtree matches, by
+createing attributes with different numbers at the end.
+
+=item * C<ifComment>
+
+Comment string that is defined in C<comment> parameter. It is
+usually derived from an interface description.
+
+=item * C<ifType>
+
+Numeric IANA interface type, as returned by C<ifType> SNMP variable.
+
+=back
+
+C<ifType> is compared numerically.
+C<ifSubtreeName> and C<ifComment> are regular expressions.
+C<ifSubtreeName> accepts multiple expressions separated by space,
+and the selector matches if any of these expressions matches the subtree name.
+
+
+
+The following actions are supported:
+
+=over 4
+
+=item * C<InBytesMonitor>, C<OutBytesMonitor>
+
+The argument defines the monitor name to be applied to the input
+or output bytes counter.
+
+=item * C<InDiscardsMonitor>, C<OutDiscardsMonitor>,
+C<InErrorsMonitor>, C<OutErrorsMonitor>
+
+The argument defines the monitor name to be applied to discard and error 
+counters that are discovered for a given interface.
+
+=item * C<NotifyPolicy>
+
+The argument defines the value for C<notify-policy> parameter. See the manual
+for F<action_notify> for more details.
+
+=item * C<HoltWinters>
+
+No argument needed. This action enables Holt-Winters prediction
+for given interface's counters.
+
+=item * C<NoPacketCounters>, C<NoDiscardCounters>, C<NoErrorCounters>
+
+No argument needed. The action disables the packet, discard or error counters
+for a given interface to be collected.
+
+=item * C<TokensetMember>
+
+The argument is a comma-separated list of tokenset names where C<InOutBbs>
+graphs would be added. This action complements
+C<RFC2863_IF_MIB::tokenset-members>.
+
+=item * C<Parameters>
+
+The argument defines additional configuration parameters to be
+placed at the interface level. The value should be one
+or several C<param=value> pairs separated by semicolon (;).
+Parameters defined in C<RFC2863_IF_MIB::copy-params> may override
+the ones defined in this action.
+
+=item * C<InBytesParameters>, C<OutBytesParameters>
+
+Analagous to C<Parameters>, but the parameters are applied to InBytes and
+OutBytes leaves of the selected interface.
+
+=item * C<DocsisUpSNRMonitor>
+
+For a DOCSIS CMTS, this action assigns a new  monitor to the upstream
+Signal/Noise ratio gauge, instead of the default monitor.
+
+=item * C<DocsisUpSNRTokenset>
+
+For a DOCSIS CMTS, this action adds the Signal/Noise ratio graph to a
+specified tokenset.
+
+=item * C<DocsisUpFECCorMonitor>
+
+For a DOCSIS CMTS, this action assigns a monitor to the C<Correctable>
+counter of the upstream FEC statistics.
+
+=item * C<DocsisUpFECUncorMonitor>
+
+For a DOCSIS CMTS, this action assigns a monitor to the C<Uncorrectable>
+counter of the upstream FEC statistics.
+
+=item * C<DocsisDownUtilMonitor>
+
+For a DOCSIS CMTS, this action assigns a monitor to the downstream
+C<UsedBytes> counter.
+
+=item * C<DocsisMacModemsMonitor>
+
+For Cisco uBR, this action assigns a monitor to the C<Modems_Registered> gauge
+in the MAC layer stats.
+
+=item * C<DocsisUpUtilMonitor>, C<DocsisUpSlotsMonitor>
+
+For Cisco uBR, this action assigns a monitor to upstream utilization and
+free contention timeslots gauges correspondingly.
+
+=back
+
+
+=head3 CiscoCPU selector
+
+A selector of this type selects CPU statistics Cisco router or
+switch.
+
+The attributes supported are: C<CPUName> and C<CPUDescr>, and their
+values are regular expressions that should match the CPU name or description,
+as discovered by C<devdiscover>.
+
+The action supported is C<TokensetMember>, and its argument specifies
+the tokenset where to place the CPU statistics graph.
+
+
+=head3 CiscoSensor selector
+
+A selector of this type selects temperature sensors on a Cisco router or
+switch.
+
+The only attribute supported is C<SensorDescr>, and its value is a regular
+expression that should match the sensor description, as discovered
+by C<devdiscover>.
+
+Actions supported: C<Monitor>, C<TokensetMember>.
+
+
+=head3 ALU_SAP selector
+
+This selector type is designed for SAP entries in Alcatel-Lucent ESS and SR
+routers.
+
+Attributes supported: C<sapDescr> (regexp), C<custDescr> (regexp),
+C<sapName> (exact match), C<sapPort> (exact match).
+
+Actions supported: C<RemoveSAP> (excludes a selected SAP from the datasources).
+
+
+
+=head3 Examples
+
+The following example applies a monitor called C<temp60degrees> to all
+inlet sensors on a Cisco device:
+
+  <host>
+    <param name="snmp-host" value="router1"/>
+    <param name="output-file" value="router1.xml"/>
+    <param name="selectors" value="inlet"/>
+    <param name="inlet-selector-type" value="CiscoSensor"/>
+    <param name="inlet-selector-expr"  value="{SensorDescr}"/>
+    <param name="inlet-SensorDescr" value="Inlet"/>
+    <param name="inlet-selector-actions"  value="Monitor"/>
+    <param name="inlet-Monitor-arg" value="temp60degrees"/>
+  </host>
+
+The following example enables Holt-Winters prediction and specifies some
+parameters to all FastEthernet interfaces which have the string "SRV-ID"
+in their descriptions:
+
+  <host>
+    <param name="snmp-host" value="router2"/>
+
+    <param name="selectors"  value="FastEthHW"/>
+    <param name="FastEthHW-selector-type"     value="RFC2863_IF_MIB"/>
+
+    <param name="FastEthHW-selector-expr"    
+           value="{ifSubtreeName},{ifComment},AND"/>
+    <param name="FastEthHW-ifSubtreeName"     value="^FastEthernet"/>
+    <param name="FastEthHW-ifComment"         value="SRV-ID"/>
+
+    <param name="FastEthHW-selector-actions"
+           value="HoltWinters,Parameters"/>
+
+    <param name="FastEthHW-Parameters-arg"
+       value="rrd-create-hw-alpha=0.2; rrd-create-hw-beta=0.01"/>
+  </host>
+
+The following example sets up the monitors defined in
+F<examples/docsis-monitors.xml>:
+
+    <param name="selectors" value="docs"/>
+    <param name="docs-selector-type" value="RFC2863_IF_MIB"/>
+    <param name="docs-selector-expr"  value="{ifSubtreeName}"/>
+    <param name="docs-ifSubtreeName"  value="^Cable"/>
+    <param name="docs-selector-actions"> 
+          DocsisUpSNRMonitor,
+          DocsisUpFECCorMonitor,
+          DocsisUpFECUncorMonitor,
+          DocsisDownUtilMonitor,
+          DocsisMacModemsMonitor,
+          DocsisUpUtilMonitor,
+          DocsisUpSlotsMonitor,
+          InErrorsMonitor,
+          OutErrorsMonitor
+    </param>
+    <param name="docs-DocsisUpSNRMonitor-arg" 
+           value="docsis-snr-1,docsis-snr-2,docsis-snr-3"/>
+
+    <param name="docs-DocsisUpFECCorMonitor-arg" 
+           value="docsis-feccor-1,docsis-feccor-2"/>
+
+    <param name="docs-DocsisUpFECUncorMonitor-arg" 
+           value="docsis-fecuncor-1,docsis-fecuncor-2,docsis-fecuncor-3"/>
+
+    <param name="docs-DocsisDownUtilMonitor-arg" 
+           value="docsis-downutl-1,docsis-downutl-2,docsis-downutl-3"/>
+
+    <param name="docs-DocsisMacModemsMonitor-arg" 
+           value="docsis-modems-1,docsis-modems-2"/>
+
+    <param name="docs-DocsisUpUtilMonitor-arg" 
+           value="docsis-uputil-1,docsis-uputil-2,docsis-uputil-3"/>
+    
+    <param name="docs-DocsisUpSlotsMonitor-arg" 
+           value="docsis-upslots-1,docsis-upslots-2,docsis-upslots-3"/>
+    
+    <param name="docs-InErrorsMonitor-arg" 
+           value="docs-inerrors-1,docs-inerrors-2"/>
+
+    <param name="docs-OutErrorsMonitor-arg" 
+           value="docs-outerrors-1,docs-outerrors-2"/>
+
+
+
+=head1 Author
+
+Copyright (c) 2002-2005 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

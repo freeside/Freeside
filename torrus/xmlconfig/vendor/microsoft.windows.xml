@@ -1,0 +1,470 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2004  Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: microsoft.windows.xml,v 1.1 2010-12-27 00:04:24 ivan Exp $
+
+  Microsoft IIS (FTP and HTTP) statistics
+  http://www.microsoft.com/technet/prodtechnol/winntas/reskit/net/sur_mib.asp
+
+-->
+
+<configuration>
+<definitions>
+    <!-- IIS FTP service -->
+    <def name="msFtptotalBytesSentLowWord"
+                                value="1.3.6.1.4.1.311.1.7.2.1.2.0"/>
+    <def name="msFtptotalBytesReceivedLowWord"
+                                value="1.3.6.1.4.1.311.1.7.2.1.4.0"/>
+    <def name="msFtptotalFilesSent"
+                                value="1.3.6.1.4.1.311.1.7.2.1.5.0"/>
+    <def name="msFtptotalFilesReceived"
+                                value="1.3.6.1.4.1.311.1.7.2.1.6.0"/>
+    <def name="msFtpcurrentAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.2.1.7.0"/>
+    <def name="msFtpcurrentNonAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.2.1.8.0"/>
+    <def name="msFtptotalAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.2.1.9.0"/>
+    <def name="msFtptotalNonAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.2.1.10.0"/>
+    <def name="msFtpcurrentConnections"
+                                value="1.3.6.1.4.1.311.1.7.2.1.13.0"/>
+    <def name="msFtpconnectionAttempts"
+                                value="1.3.6.1.4.1.311.1.7.2.1.15.0"/>
+    <def name="msFtplogonAttempts"
+                                value="1.3.6.1.4.1.311.1.7.2.1.16.0"/>
+
+    <!-- IIS HTTP service -->
+    <def name="msHttptotalBytesSentLowWord"
+                                value="1.3.6.1.4.1.311.1.7.3.1.2.0"/>
+    <def name="msHttptotalBytesReceivedLowWord"
+                                value="1.3.6.1.4.1.311.1.7.3.1.4.0"/>
+    <def name="msHttptotalFilesSent"
+                                value="1.3.6.1.4.1.311.1.7.3.1.5.0"/>
+    <def name="msHttptotalFilesReceived"
+                                value="1.3.6.1.4.1.311.1.7.3.1.6.0"/>
+    <def name="msHttpcurrentAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.3.1.7.0"/>
+    <def name="msHttpcurrentNonAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.3.1.8.0"/>
+    <def name="msHttptotalAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.3.1.9.0"/>
+    <def name="msHttptotalNonAnonymousUsers"
+                                value="1.3.6.1.4.1.311.1.7.3.1.10.0"/>
+    <def name="msHttpcurrentConnections"
+                                value="1.3.6.1.4.1.311.1.7.3.1.13.0"/>
+    <def name="msHttpconnectionAttempts"
+                                value="1.3.6.1.4.1.311.1.7.3.1.15.0"/>
+    <def name="msHttplogonAttempts"
+                                value="1.3.6.1.4.1.311.1.7.3.1.16.0"/>
+    <def name="msHttptotalOptions"      value="1.3.6.1.4.1.311.1.7.3.1.17.0"/>
+    <def name="msHttptotalGets"         value="1.3.6.1.4.1.311.1.7.3.1.18.0"/>
+    <def name="msHttptotalPosts"        value="1.3.6.1.4.1.311.1.7.3.1.19.0"/>
+    <def name="msHttptotalHeads"        value="1.3.6.1.4.1.311.1.7.3.1.20.0"/>
+    <def name="msHttptotalPuts"         value="1.3.6.1.4.1.311.1.7.3.1.21.0"/>
+    <def name="msHttptotalDeletes"      value="1.3.6.1.4.1.311.1.7.3.1.22.0"/>
+    <def name="msHttptotalTraces"       value="1.3.6.1.4.1.311.1.7.3.1.23.0"/>
+    <def name="msHttptotalMove"         value="1.3.6.1.4.1.311.1.7.3.1.24.0"/>
+    <def name="msHttptotalCopy"         value="1.3.6.1.4.1.311.1.7.3.1.25.0"/>
+    <def name="msHttptotalMkcol"        value="1.3.6.1.4.1.311.1.7.3.1.26.0"/>
+    <def name="msHttptotalPropfind"     value="1.3.6.1.4.1.311.1.7.3.1.27.0"/>
+    <def name="msHttptotalProppatch"    value="1.3.6.1.4.1.311.1.7.3.1.28.0"/>
+    <def name="msHttptotalSearch"       value="1.3.6.1.4.1.311.1.7.3.1.29.0"/>
+    <def name="msHttptotalLock"         value="1.3.6.1.4.1.311.1.7.3.1.30.0"/>
+    <def name="msHttptotalUnlock"       value="1.3.6.1.4.1.311.1.7.3.1.31.0"/>
+    <def name="msHttptotalOthers"       value="1.3.6.1.4.1.311.1.7.3.1.32.0"/>
+    <def name="msHttpcurrentCGIRequests"
+                                        value="1.3.6.1.4.1.311.1.7.3.1.33.0"/>
+    <def name="msHttpcurrentBGIRequests"
+                                        value="1.3.6.1.4.1.311.1.7.3.1.34.0"/>
+    <def name="msHttptotalCGIRequests"  value="1.3.6.1.4.1.311.1.7.3.1.35.0"/>
+    <def name="msHttptotalBGIRequests"  value="1.3.6.1.4.1.311.1.7.3.1.36.0"/>
+    <def name="msHttpcurrentBlockedRequests"
+                                        value="1.3.6.1.4.1.311.1.7.3.1.39.0"/>
+    <def name="msHttptotalBlockedRequests"
+                                        value="1.3.6.1.4.1.311.1.7.3.1.40.0"/>
+    <def name="msHttptotalAllowedRequests"
+                                        value="1.3.6.1.4.1.311.1.7.3.1.41.0"/>
+    <def name="msHttptotalRejectedRequests"
+                                        value="1.3.6.1.4.1.311.1.7.3.1.42.0"/>
+    <def name="msHttptotalNotFoundErrors"
+                                        value="1.3.6.1.4.1.311.1.7.3.1.43.0"/>
+    <def name="msHttptotalLockedErrors" value="1.3.6.1.4.1.311.1.7.3.1.44.0"/>
+    <def name="msHttpmeasuredBandwidth" value="1.3.6.1.4.1.311.1.7.3.1.45.0"/>
+
+</definitions>
+
+<datasources>
+    <template name="microsoft-iis-ftp-stats">
+      <subtree name="FTP">
+
+        <param name="data-file" value="%system-id%_msftp.rrd"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="descriptive-nickname" value="%system-id% MSFTP"/>
+        <param name="graph-title" value="%descriptive-nickname%" />
+
+        <leaf name="Bytes_Sent">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="bytes_sent_low"/>
+            <param name="snmp-object" value="$msFtptotalBytesSentLowWord"/>
+            <param name="vertical-label" value="Bps"/>
+            <param name="graph-legend" value="Bytes Sent"/>
+            <param name="comment" value="Bytes Sent"/>
+        </leaf>
+        <leaf name="Bytes_Received">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="bytes_received_low"/>
+            <param name="snmp-object" value="$msFtptotalBytesReceivedLowWord"/>
+            <param name="vertical-label" value="Bps"/>
+            <param name="graph-legend" value="Bytes Received"/>
+            <param name="comment" value="Bytes Received"/>
+        </leaf>
+        <leaf name="Current_Anon_Users">
+            <!-- mib says counter -->
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <param name="rrd-ds" value="curr_anon_users"/>
+            <param name="snmp-object" value="$msFtpcurrentAnonymousUsers"/>
+            <param name="vertical-label" value="Users"/>
+            <param name="graph-legend" value="Anon Users"/>
+            <param name="comment" value="Current Anon Users"/>
+        </leaf>
+        <leaf name="Current_Known_Users">
+            <!-- mib says counter -->
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <param name="rrd-ds" value="curr_known_users"/>
+            <param name="snmp-object" value="$msFtpcurrentNonAnonymousUsers"/>
+            <param name="vertical-label" value="Users"/>
+            <param name="graph-legend" value="Known Users"/>
+            <param name="comment" value="Current Known Users"/>
+        </leaf>
+        <leaf name="Anon_Users">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="total_anon_users"/>
+            <param name="snmp-object" value="$msFtptotalAnonymousUsers"/>
+            <param name="vertical-label" value="Users/s"/>
+            <param name="graph-legend" value="Anon Users"/>
+            <param name="comment" value="Anon Users/s"/>
+        </leaf>
+        <leaf name="Known_Users">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="total_known_users"/>
+            <param name="snmp-object" value="$msFtptotalNonAnonymousUsers"/>
+            <param name="vertical-label" value="Users/s"/>
+            <param name="graph-legend" value="Known Users"/>
+            <param name="comment" value="Known Users/s"/>
+        </leaf>
+        <leaf name="Current_Connections">
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <param name="rrd-ds" value="current_connections"/>
+            <param name="snmp-object" value="$msFtpcurrentConnections"/>
+            <param name="vertical-label" value="Connections"/>
+            <param name="graph-legend" value="Connections"/>
+            <param name="comment" value="Current Connections"/>
+        </leaf>
+        <leaf name="Attempted_Connection">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="connection_attempts"/>
+            <param name="snmp-object" value="$msFtpconnectionAttempts"/>
+            <param name="vertical-label" value="Connections/s"/>
+            <param name="graph-legend" value="Connection Attempts"/>
+            <param name="comment" value="Connection Rate"/>
+        </leaf>
+        <leaf name="Attempted_Logons">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="logon_attempts"/>
+            <param name="snmp-object" value="$msFtplogonAttempts"/>
+            <param name="vertical-label" value="Connections/s"/>
+            <param name="graph-legend" value="Logon Attempts"/>
+            <param name="comment" value="Logon Rate"/>
+        </leaf>
+      </subtree>
+    </template>
+
+    <template name="microsoft-iis-http-requests">
+      <param name="rrd-create-dstype" value="COUNTER"/>
+      <param name="rrd-ds" value="req_%iis-req-type%"/>
+      <param name="vertical-label" value="req/s"/>
+      <param name="graph-legend" value="%iis-req-type% Requests"/>
+      <param name="comment" value="%iis-req-type% Requests Rate"/>
+    </template>
+
+    <template name="microsoft-iis-http-stats">
+      <subtree name="HTTP">
+
+        <param name="data-file" value="%system-id%_msftp.rrd"/>
+        <param name="leaf-type" value="rrd-def"/>
+        <param name="descriptive-nickname" value="%system-id% MSHTTP"/>
+        <param name="graph-title" value="%descriptive-nickname%" />
+
+        <leaf name="Bytes_Sent">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="bytes_sent_low"/>
+            <param name="snmp-object" value="$msHttptotalBytesSentLowWord"/>
+            <param name="vertical-label" value="Bps"/>
+            <param name="graph-legend" value="Bytes Sent"/>
+            <param name="comment" value="Bytes Sent"/>
+        </leaf>
+        <leaf name="Bytes_Received">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="bytes_received_low"/>
+            <param name="snmp-object"
+                   value="$msHttptotalBytesReceivedLowWord"/>
+            <param name="vertical-label" value="Bps"/>
+            <param name="graph-legend" value="Bytes Received"/>
+            <param name="comment" value="Bytes Received"/>
+        </leaf>
+        <leaf name="Files_Sent">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="files_sent"/>
+            <param name="snmp-object" value="$msHttptotalFilesSent"/>
+            <param name="vertical-label" value="Files/s"/>
+            <param name="graph-legend" value="Files Sent"/>
+            <param name="comment" value="Files Sent"/>
+        </leaf>
+        <leaf name="Files_Received">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="files_received"/>
+            <param name="snmp-object" value="$msHttptotalFilesReceived"/>
+            <param name="vertical-label" value="Files/s"/>
+            <param name="graph-legend" value="Files Received"/>
+            <param name="comment" value="Files Received"/>
+        </leaf>
+        <leaf name="Current_Anon_Users">
+            <!-- mib says counter -->
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <param name="rrd-ds" value="curr_anon_users"/>
+            <param name="snmp-object" value="$msHttpcurrentAnonymousUsers"/>
+            <param name="vertical-label" value="Users"/>
+            <param name="graph-legend" value="Anon Users"/>
+            <param name="comment" value="Current Anon Users"/>
+        </leaf>
+        <leaf name="Current_Known_Users">
+            <!-- mib says counter -->
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <param name="rrd-ds" value="curr_known_users"/>
+            <param name="snmp-object" value="$msHttpcurrentNonAnonymousUsers"/>
+            <param name="vertical-label" value="Users"/>
+            <param name="graph-legend" value="Known Users"/>
+            <param name="comment" value="Current Known Users"/>
+        </leaf>
+        <leaf name="Anon_Users">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="total_anon_users"/>
+            <param name="snmp-object" value="$msHttptotalAnonymousUsers"/>
+            <param name="vertical-label" value="Users/s"/>
+            <param name="graph-legend" value="Anon Users"/>
+            <param name="comment" value="Anon Users/s"/>
+        </leaf>
+        <leaf name="Known_Users">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="total_known_users"/>
+            <param name="snmp-object" value="$msHttptotalNonAnonymousUsers"/>
+            <param name="vertical-label" value="Users/s"/>
+            <param name="graph-legend" value="Known Users"/>
+            <param name="comment" value="Known Users/s"/>
+        </leaf>
+        <leaf name="Current_Connections">
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <param name="rrd-ds" value="current_connections"/>
+            <param name="snmp-object" value="$msHttpcurrentConnections"/>
+            <param name="vertical-label" value="Connections"/>
+            <param name="graph-legend" value="Connections"/>
+            <param name="comment" value="Current Connections"/>
+        </leaf>
+        <leaf name="Attempted_Connection">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="connection_attempts"/>
+            <param name="snmp-object" value="$msHttpconnectionAttempts"/>
+            <param name="vertical-label" value="Connections/s"/>
+            <param name="graph-legend" value="Connection Attempts"/>
+            <param name="comment" value="Connection Rate"/>
+        </leaf>
+        <leaf name="Attempted_Logons">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="logon_attempts"/>
+            <param name="snmp-object" value="$msHttplogonAttempts"/>
+            <param name="vertical-label" value="Connections/s"/>
+            <param name="graph-legend" value="Logon Attempts"/>
+            <param name="comment" value="Logon Rate"/>
+        </leaf>
+        <leaf name="Request_OPTION">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="OPTION"/>
+            <param name="snmp-object" value="$msHttptotalOptions"/>
+        </leaf>
+        <leaf name="Request_GET">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="GET"/>
+            <param name="snmp-object" value="$msHttptotalGets"/>
+        </leaf>
+        <leaf name="Request_POST">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="POST"/>
+            <param name="snmp-object" value="$msHttptotalPosts"/>
+        </leaf>
+        <leaf name="Request_HEAD">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="HEAD"/>
+            <param name="snmp-object" value="$msHttptotalHeads"/>
+        </leaf>
+        <leaf name="Request_PUT">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="PUT"/>
+            <param name="snmp-object" value="$msHttptotalPuts"/>
+        </leaf>
+        <leaf name="Request_DELETE">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="DELETE"/>
+            <param name="snmp-object" value="$msHttptotalDeletes"/>
+        </leaf>
+        <leaf name="Request_TRACE">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="TRACE"/>
+            <param name="snmp-object" value="$msHttptotalTraces"/>
+        </leaf>
+        <leaf name="Request_MOVE">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="MOVE"/>
+            <param name="snmp-object" value="$msHttptotalMove"/>
+        </leaf>
+        <leaf name="Request_COPY">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="COPY"/>
+            <param name="snmp-object" value="$msHttptotalCopy"/>
+        </leaf>
+        <leaf name="Request_MKCOL">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="MKCOL"/>
+            <param name="snmp-object" value="$msHttptotalMkcol"/>
+        </leaf>
+        <leaf name="Request_PROPFIND">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="PROPFIND"/>
+            <param name="snmp-object" value="$msHttptotalPropfind"/>
+        </leaf>
+        <leaf name="Request_PROPPATCH">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="PROPPATCH"/>
+            <param name="snmp-object" value="$msHttptotalProppatch"/>
+        </leaf>
+        <leaf name="Request_SEARCH">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="SEARCH"/>
+            <param name="snmp-object" value="$msHttptotalSearch"/>
+        </leaf>
+        <leaf name="Request_LOCK">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="LOCK"/>
+            <param name="snmp-object" value="$msHttptotalLock"/>
+        </leaf>
+        <leaf name="Request_UNLOCK">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="UNLOCK"/>
+            <param name="snmp-object" value="$msHttptotalUnlock"/>
+        </leaf>
+        <leaf name="Request_OTHER">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="OTHER"/>
+            <param name="snmp-object" value="$msHttptotalOthers"/>
+        </leaf>
+        <leaf name="Current_CGI">
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <!-- mib say counter -->
+            <param name="rrd-ds" value="current_cgi"/>
+            <param name="snmp-object" value="$msHttpcurrentCGIRequests"/>
+            <param name="vertical-label" value="Requests"/>
+            <param name="graph-legend" value="CGI Requests"/>
+            <param name="comment" value="Current CGI Requests"/>
+        </leaf>
+        <leaf name="Current_BGI">
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <!-- mib say counter -->
+            <param name="rrd-ds" value="current_bgi"/>
+            <param name="snmp-object" value="$msHttpcurrentBGIRequests"/>
+            <param name="vertical-label" value="Requests"/>
+            <param name="graph-legend" value="BGI Requests"/>
+            <param name="comment" value="Current BGI Requests"/>
+        </leaf>
+        <leaf name="Request_CGI">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="CGI"/>
+            <param name="snmp-object" value="$msHttptotalCGIRequests"/>
+        </leaf>
+        <leaf name="Request_BGI">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="BGI"/>
+            <param name="snmp-object" value="$msHttptotalBGIRequests"/>
+        </leaf>
+        <leaf name="Throttle_Current">
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <!-- mib say counter -->
+            <param name="rrd-ds" value="throttle_blocked"/>
+            <param name="snmp-object" value="$msHttpcurrentBlockedRequests"/>
+            <param name="vertical-label" value="Connections"/>
+            <param name="graph-legend" value="Blocked Connections"/>
+            <param name="comment" value="Blocked Requests due to Throttling"/>
+        </leaf>
+        <leaf name="Throttle_Rate">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="throttle_rate"/>
+            <param name="snmp-object" value="$msHttptotalBlockedRequests"/>
+            <param name="vertical-label" value="Connections/s"/>
+            <param name="graph-legend" value="Blocked Connections"/>
+            <param name="comment" value="Throttle Rate"/>
+        </leaf>
+        <leaf name="Throttle_Allowed">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="throttle_allowed"/>
+            <param name="snmp-object" value="$msHttptotalAllowedRequests"/>
+            <param name="vertical-label" value="Connections/s"/>
+            <param name="graph-legend" value="Allowed Connections"/>
+            <param name="comment" value="Allowed Rate"/>
+        </leaf>
+        <leaf name="Throttle_Rejected">
+            <param name="rrd-create-dstype" value="COUNTER"/>
+            <param name="rrd-ds" value="throttle_rejected"/>
+            <param name="snmp-object" value="$msHttptotalRejectedRequests"/>
+            <param name="vertical-label" value="Connections/s"/>
+            <param name="graph-legend" value="Rejected Connections"/>
+            <param name="comment" value="Rejected Rate"/>
+        </leaf>
+        <leaf name="Requests_NotFound">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="NotFound"/>
+            <param name="snmp-object" value="$msHttptotalNotFoundErrors"/>
+        </leaf>
+        <leaf name="Requests_Locked">
+            <apply-template name="microsoft-iis-http-requests"/>
+            <param name="iis-req-type" value="LockedResource"/>
+            <param name="snmp-object" value="$msHttptotalLockedErrors"/>
+        </leaf>
+        <leaf name="IO_Bandwidth">
+            <param name="rrd-create-dstype" value="GAUGE"/>
+            <!-- mib says counter -->
+            <param name="rrd-ds" value="measuredbandwidth"/>
+            <param name="snmp-object" value="$msHttpmeasuredBandwidth"/>
+            <param name="vertical-label" value="bps"/>
+            <param name="graph-legend" value="IO Bandwidth"/>
+            <param name="comment" value="Measured One Minute Bandwidth"/>
+        </leaf>
+      </subtree>
+    </template>
+
+</datasources>
+
+</configuration>

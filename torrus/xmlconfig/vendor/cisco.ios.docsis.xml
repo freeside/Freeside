@@ -1,0 +1,255 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Roman Hochuli, Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cisco.ios.docsis.xml,v 1.1 2010-12-27 00:04:27 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+ DOCSIS interface, Cisco specific
+ MIB used:
+ CISCO-DOCS-EXT-MIB:cdxCmtsMacExtTable
+ CISCO-DOCS-EXT-MIB:cdxIfUpstreamChannelExtTable
+  
+-->
+
+<configuration>
+
+<definitions>
+  <!--  CISCO-DOCS-EXT-MIB::cdxCmtsMacExtTable -->
+  <def name="cdxCmtsCmTotal"      value="1.3.6.1.4.1.9.9.116.1.3.3.1.4"/>
+  <def name="cdxCmtsCmActive"     value="1.3.6.1.4.1.9.9.116.1.3.3.1.5"/>
+  <def name="cdxCmtsCmRegistered" value="1.3.6.1.4.1.9.9.116.1.3.3.1.6"/>
+  
+  <!--  CISCO-DOCS-EXT-MIB:cdxIfUpstreamChannelExtTable -->
+  <def name="cdxIfUpChannelCmTotal"   value="1.3.6.1.4.1.9.9.116.1.4.1.1.3"/>
+  <def name="cdxIfUpChannelCmActive"  value="1.3.6.1.4.1.9.9.116.1.4.1.1.4"/>
+  <def name="cdxIfUpChannelCmRegistered"
+                                      value="1.3.6.1.4.1.9.9.116.1.4.1.1.5"/>
+  <def name="cdxIfUpChannelAvgUtil"   value="1.3.6.1.4.1.9.9.116.1.4.1.1.7"/>
+  <def name="cdxIfUpChannelAvgContSlots"
+                                      value="1.3.6.1.4.1.9.9.116.1.4.1.1.8"/>
+  <def name="cdxIfUpChannelMaxUGSLastFiveMins"
+                                      value="1.3.6.1.4.1.9.9.116.1.4.1.1.14"/>
+</definitions>
+
+<datasources>
+
+  <template name="cisco-docsis-mac-subtree">
+    <param name="precedence"           value="-500" />
+    <param name="comment"        value="DOCSIS MAC layer utilization" />
+    <param name="data-file">
+       %system-id%_%interface-nick%_cdx_mac.rrd
+    </param>
+    <param name="collector-timeoffset-hashstring"
+                                       value="%system-id%:%interface-nick%" />
+    <param name="descriptive-nickname" value="%system-id%:%interface-name%"/>
+    <param name="graph-title"          value="%descriptive-nickname%" />
+
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="modems"/>
+    <param name="overview-subleave-name-modems" value="Modems"/>
+    <param name="overview-direct-link-modems"      value="yes"/>
+    <param name="overview-direct-link-view-modems" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-modems"
+           value="All modems"/>
+    <param name="overview-shortcut-title-modems"
+           value="Show modem quantities in one page"/>
+    <param name="overview-page-title-modems"
+           value="Modem quantities"/>
+           
+    <param name="rrd-hwpredict"     value="disabled" />
+    
+    <!-- nodeid-docsif is overwritten by devdiscover at the
+         interface level. This definition is here for backward compatibility
+         with older discovery results or for systems which do not use
+         devdiscover -->
+    <param name="nodeid-docsif"
+      value="docs//%nodeid-device%//%interface-nick%//"/>
+  </template>
+
+  <template name="cisco-docsis-modem-quantity">
+    <leaf name="Modems">
+      <param name="ds-type"           value="rrd-multigraph" />
+      <param name="ds-names"          value="total,active,registered" />
+      <param name="nodeid"            value="%nodeid-docsif%//modems"/>
+
+      <param name="graph-lower-limit" value="0" />
+      <param name="precedence"        value="950" />
+      <param name="comment"
+              value="Active and Total modems on the interface" />
+      <param name="vertical-label"    value="Modems" />
+
+      <param name="ds-expr-total">{Modems_Total}</param>
+      <param name="graph-legend-total"  value="Total" />
+      <param name="line-style-total"      value="##totalresource" />
+      <param name="line-color-total"      value="##totalresource" />
+      <param name="line-order-total"      value="1" />
+
+      <param name="ds-expr-active">{Modems_Active}</param>
+      <param name="graph-legend-active"  value="Active" />
+      <param name="line-style-active"    value="##resourcepartusage" />
+      <param name="line-color-active"    value="##resourcepartusage" />
+      <param name="line-order-active"    value="2" />
+      
+      <param name="ds-expr-registered">{Modems_Registered}</param>
+      <param name="graph-legend-registered"  value="Registered" />
+      <param name="line-style-registered"    value="##resourceusage" />
+      <param name="line-color-registered"    value="##resourceusage" />
+      <param name="line-order-registered"    value="3" />
+    </leaf>
+
+    <leaf name="Modems_Total">
+      <param name="snmp-object"
+                value="%cisco-docsis-cmtotal%.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Total" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="Total number of modems on the interface since boot"/>
+      <param name="graph-legend" value="Total modems" />
+      <param name="precedence"   value="900" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="vertical-label"      value="Modems" />
+      <param name="graph-lower-limit"   value="0" />
+    </leaf>
+    
+    <leaf name="Modems_Active">
+      <param name="snmp-object"
+                value="%cisco-docsis-cmactive%.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Active" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="Number of active modems on the interface"/>
+      <param name="graph-legend" value="Active modems" />
+      <param name="precedence"   value="800" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="vertical-label"      value="Modems" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="monitor-action-target"  value="Modems"/>
+    </leaf>
+    
+    <leaf name="Modems_Registered">
+      <param name="snmp-object"
+                value="%cisco-docsis-cmregistered%.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Registered" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="Number of registered modems on the interface"/>
+      <param name="graph-legend" value="Registered modems" />
+      <param name="precedence"   value="700" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="vertical-label"      value="Modems" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="monitor-action-target"  value="Modems"/>
+    </leaf>
+
+  </template>
+
+  
+  <template name="cisco-docsis-mac-util">
+    <apply-template name="cisco-docsis-modem-quantity"/>
+    <param name="cisco-docsis-cmtotal" value="$cdxCmtsCmTotal"/>
+    <param name="cisco-docsis-cmactive" value="$cdxCmtsCmActive"/>
+    <param name="cisco-docsis-cmregistered" value="$cdxCmtsCmRegistered"/>
+  </template>
+
+  
+  <template name="cisco-docsis-upstream-util">
+    <apply-template name="cisco-docsis-modem-quantity"/>
+    <param name="cisco-docsis-cmtotal" value="$cdxIfUpChannelCmTotal"/>
+    <param name="cisco-docsis-cmactive" value="$cdxIfUpChannelCmActive"/>
+    <param name="cisco-docsis-cmregistered"
+                                     value="$cdxIfUpChannelCmRegistered"/>
+
+    <leaf name="Util_Summary">
+      <param name="ds-type"           value="rrd-multigraph" />
+      <param name="ds-names"          value="util,cont" />
+      <param name="nodeid"            value="%nodeid-docsif%//util"/>
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="100" />
+
+      <param name="precedence"        value="950" />
+      <param name="comment"
+        value="Upstream channel utilization and free contention mini-slots" />
+      <param name="vertical-label"    value="Percent" />
+
+      <param name="ds-expr-util"       value="{Util}"/>
+      <param name="graph-legend-util"  value="Utilization" />
+      <param name="line-style-util"    value="##resourceusage" />
+      <param name="line-color-util"    value="##resourceusage" />
+      <param name="line-order-util"    value="1" />
+
+      <param name="ds-expr-cont"       value="{ContSlots}"/>
+      <param name="graph-legend-cont"  value="Free contention slots" />
+      <param name="line-style-cont"    value="##SingleGraph" />
+      <param name="line-color-cont"    value="##green" />
+      <param name="line-order-cont"    value="2" />
+    </leaf>
+        
+    <leaf name="Util">
+      <param name="snmp-object"
+                value="$cdxIfUpChannelAvgUtil.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Util" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="The average percentage of upstream channel utilization"/>
+      <param name="graph-legend" value="Channel Utilization" />
+      <param name="precedence"   value="700" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="vertical-label"      value="Percent" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="graph-upper-limit"   value="100" />
+      <param name="upper-limit"         value="90" />
+      <param name="monitor-action-target"  value="Util_Summary"/>
+    </leaf>
+
+    <leaf name="ContSlots">
+      <param name="snmp-object"
+                value="$cdxIfUpChannelAvgContSlots.%ifindex-map%"/>
+      <param name="rrd-ds"       value="ContSlots" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="The average percentage of contention mini-slots"/>
+      <param name="graph-legend" value="Cintention mini-slots" />
+      <param name="precedence"   value="600" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="vertical-label"      value="Percent" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="graph-upper-limit"   value="100" />
+      <param name="lower-limit"         value="10" />
+      <param name="monitor-action-target"  value="Util_Summary"/>
+    </leaf>
+    
+    <iftrue var="CiscoIOS_Docsis::ugs-supported">    
+      <leaf name="Active_UGS">
+        <param name="snmp-object"
+                  value="$cdxIfUpChannelMaxUGSLastFiveMins.%ifindex-map%"/>
+        <param name="rrd-ds"       value="ActiveUGS" />
+        <param name="comment"
+            value="the number of active Unsolicited Grant Services"/>
+        <param name="graph-legend" value="Active UGS" />
+        <param name="precedence"   value="600" />
+        <param name="rrd-create-dstype"   value="GAUGE" />
+        <param name="vertical-label"      value="UGS" />
+        <param name="graph-lower-limit"   value="0" />
+      </leaf>
+    </iftrue>
+  </template>
+  
+</datasources>
+
+
+</configuration>

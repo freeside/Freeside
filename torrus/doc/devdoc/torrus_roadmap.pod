@@ -1,0 +1,249 @@
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_roadmap.pod,v 1.1 2010-12-27 00:04:36 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+
+=head1 RRFW to Torrus transition roadmap
+
+=head2 Introduction
+
+The name "RRFW" appeared to be quite difficult to remember and to pronounce.
+There has been a call for a new name, and recently a good suggestion came
+from Francois Mikus:
+
+    --- Francois Mikus <fmikus[at]acktomic.com> wrote:
+    > Here is my humble flash, which I think may be appropriate. Which I will 
+    > explain why below...
+    > 
+    > The name I would suggest is;
+    > 
+    > Torrus
+    > 
+    > Has a mythical sounding name without the actual history. Has a resonance 
+    > with Torrent, where rrfw deals with a torrent of information. A google 
+    > search comes up with near nothing, and nothing commercial. Has a 
+    > resonance with Taurus, which is mythical, astrological and has an 
+    > underlying strength connotation.
+    > 
+    > Anyway, this is the best I could think of. And it provides an opening to 
+    > have a semi-mythical/comic style yet serious mascot.
+    > 
+    > You have a LOT of documentation. web pages, code, etc.. But marketing is 
+    > the way to win hearts and minds, create a following and get rabid 
+    > developpers on-board!
+
+Thus the project will be renamed to Torrus, and few other structural changes
+will accompany the transition.
+
+=head2 Releases roadmap
+
+Version 0.1.8 will be the last of RRFW, unless some urgencies arise.
+
+The first Torrus release will be 1.0.0.
+
+
+
+=head2 Multiple XML cofiguration directories
+
+During XML compilation, the datasource configuration files will be searched in
+multiple directories. The list of directories and the search sequence
+will be configurable. This will allow not to mix the distribution XML files
+and the ones created locally.
+
+=head2 Separated directories for templates and configuration
+
+Perl configuration files and HTML templates will also be separated into
+different directories, so that user-editable files don't mix with the
+ones from distribution.
+
+=head2 Commandline launcher
+
+A small shell script will be installed as C</usr/local/bin/torrus>,
+and it will pass all arguments to appropriate torrus executables. For example,
+
+  torrus compile --tree=main
+
+will execute C<compilexml> torrus utility with the argument C<--tree=main>.
+
+
+
+=head2 New directory hierarchy
+
+Filesystem Hierarchy Standard E<lt>http://www.pathname.com/fhs/E<gt>
+proposes to put the software add-on packages into C</opt> directory
+and user services data, such as database contents or RRD files, in
+C</srv> directory.
+
+However, FreeBSD and some other systems are not FHS-compliant, and require
+to install all additional software into C</usr/local> hierarchy.
+
+We propose that Torrus distribution will support three different directory
+layouts, and the system administrator will decide the most suitable one:
+
+=over 4
+
+=item 1
+
+Default layout based in C</usr/local>;
+
+=item 2
+
+FHS compliant layout, set by running C<./configure_fhs> instead
+of C<./configure>;
+
+=item 3
+
+Custom layout, tunable with standard options and variables in C<./configure>.
+
+=back
+
+
+=head3 Default layout
+
+Although many systems like FreeBSD discourage creation of new
+package-specific subdirectories in /usr/local, we find it quite a common
+practice, and quite convenient for keeping the files together.
+
+  /usr/local/torrus/    Home directory for Torrus distribution files
+        |
+        +- conf_defaults/  torrus-config.pl and others
+        |
+        +- bin/         Command-line executables
+        |
+        +- doc/         POD and TXT documentation files
+        |
+        +- examples/    Miscelaneous example files
+        |
+        +- perllib/     Perl libraries
+        |
+        +- plugins/     Plugins configuration
+        |
+        +- scripts/     Scripts
+        |
+        +- sup/         Supplementary files, DTDs, MIBs, color schemas,
+        |               Web plain files
+        |
+        +- templates/   Renderer output templates
+        |
+        +- xmlconfig/   Distrubution XML files
+
+  /usr/local/etc/torrus/   Site configurable files
+        |
+        +- conf/        Place for torrus-siteconfig.pl and other siteconfigs
+        |
+        +- discovery/   Devdiscover input files
+        |
+        +- templates/   User-defined Renderer output templates
+        |
+        +- xmlconfig/   User XML configuration files
+
+  /usr/local/man/       Place for man pages. All articles will have the
+                        prefix C<torrus_>
+
+  /var/log/torrus/      Daemon logfiles
+
+  /var/run/torrus/      Daemon PID files
+
+  /var/torrus/cache/    Renderer cache
+
+  /var/torrus/db/       Configuration databases
+
+  /var/torrus/session_data/  Web interface session files
+
+  /srv/torrus/collector_rrd/  Default directory for collector
+                              generated RRD files
+
+
+=head3 FHS compliant layout
+
+  /opt/torrus/          Home directory for Torrus distribution files
+        |
+        +- conf_defaults/  torrus-config.pl and others
+        |
+        +- bin/         Command-line executables
+        |
+        +- doc/         POD and TXT documentation files
+        |
+        +- examples/    Miscelaneous example files
+        |
+        +- perllib/     Perl libraries
+        |
+        +- plugins/     Plugins configuration
+        |
+        +- scripts/     Scripts
+        |
+        +- sup/         Supplementary files, DTDs, MIBs, color schemas
+        |
+        +- templates/   Renderer output templates
+        |
+        +- xmlconfig/   Distrubution XML files
+
+  /etc/opt/torrus/   Site configurable files
+        |
+        +- conf/        Place for torrus-siteconfig.pl and other siteconfigs
+        |
+        +- discovery/   Devdiscover input files
+        |
+        +- xmlconfig/   User XML configuration files
+
+  /opt/torrus/share/man/  Place for man pages. All articles will have the
+                          prefix C<torrus_>
+
+  /var/log/torrus/      Daemon logfiles
+
+  /var/run/torrus/      Daemon PID files
+
+  /var/torrus/cache/    Renderer cache
+
+  /var/torrus/session_data/  Web interface session files
+
+  /srv/torrus/db/       Configuration databases
+
+  /srv/torrus/collector_rrd/  Default directory for collector
+                              generated RRD files
+
+
+=head2 New plugins design
+
+Unlike RRFW, the plugins in Torrus will be installed independently.
+This will allow to easily add new plugins to an existing installation.
+
+The Torrus installer stores all important variable settings in a special
+file, F<conf_defaults/instvars>. Then the plugin installer is able
+to access the settings without accessing the Torrus distribution
+directory.
+
+There is a helper utility, C<install_plugin>, which applies all
+I<configure> variables to the plugin configuration utility.
+It follows then the standard installation way:
+
+ ./configure && make && make install
+
+Thus the OS-dependent package installators may follow the standard
+configuration procedure, while those who manually install the software,
+will use the helper.
+
+There are two special directories: F</usr/local/torrus/plugins/torrus-config>
+and F</usr/local/torrus/plugins/devdiscover-config>. Plugins are
+allowed to add Perl files there. They will be automatically I<require>'d by
+F<torrus-config.pl> and F<devdiscover-config.pl>.
+
+
+
+=head2 Authors
+
+Copyright (c) 2004 Stanislav Sinyagin

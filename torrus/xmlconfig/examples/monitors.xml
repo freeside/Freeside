@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: monitors.xml,v 1.1 2010-12-27 00:04:29 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!--
+  These examples show how monitors can be built in Torrus and used together
+  with your data.
+ -->
+
+<configuration>
+
+<token-sets>
+
+  <token-set name="jumps">
+    <param name="comment" value="Traffic rate jumps" />
+  </token-set>
+
+  <token-set name="hw-failures">
+    <param name="comment" value="Holt-Winters prediction failures" />
+  </token-set>
+
+  <token-set name="devel">
+    <param name="comment"
+           value="Torrus development and testing" />
+  </token-set>
+
+</token-sets>
+
+<monitors>
+
+  <!-- First define the actions -->
+
+  <!-- This action will put the graphs of alarmed datasources in
+       a single alarm report page -->
+  <action name="graph-hw-failures">
+    <param name="action-type" value="tset" />
+    <param name="tset-name" value="hw-failures" />
+  </action>
+
+  <action name="graph-jumps">
+    <param name="action-type" value="tset" />
+    <param name="tset-name" value="jumps" />
+  </action>
+
+  <action name="graph-devel">
+    <param name="action-type" value="tset" />
+    <param name="tset-name" value="devel" />
+  </action>
+
+  <action name="report-file">
+    <param name="action-type" value="exec" />
+    <param name="command">
+      echo `date '+%d-%b-%Y %H:%M:%S'` \
+      $TORRUS_MONITOR $TORRUS_EVENT $TORRUS_NODEPATH \
+      &gt;&gt; /tmp/torrus-events
+    </param>
+    <param name="launch-when" value="set, repeat, clear, forget" />
+  </action>
+
+  <action name="snmptrap">
+    <param name="action-type" value="exec" />
+    <param name="command" value="$TORRUS_HOME/bin/action_snmptrap" />
+    <param name="launch-when" value="set, clear" />
+  </action>
+
+  <action name="report-email">
+    <param name="action-type" value="exec" />
+    <param name="command">
+      $TORRUS_HOME/bin/action_printemail | mail ssinyagin@yahoo.com
+    </param>
+    <param name="launch-when" value="set, clear" />
+  </action>
+
+  <monitor name="hw-failures">
+    <param name="monitor-type" value="failures" />
+    <param name="action"
+           value="graph-hw-failures, report-file" />
+    <param name="expires" value="21600" />
+    <param name="comment"
+           value="Holt-Winters prediction failures" />
+  </monitor>
+
+  <monitor name="strict-maximum">
+    <param name="monitor-type" value="expression" />
+    <param name="rpn-expr">
+      #max,GT
+    </param>
+    <param name="action" value="report-email" />
+    <param name="expires" value="3600" />
+    <param name="comment"
+           value="Value is more than specified maximum" />
+  </monitor>
+
+  <monitor name="strict-minimum">
+    <param name="monitor-type" value="expression" />
+    <param name="rpn-expr">
+      #min,LT
+    </param>
+    <param name="action" value="report-email" />
+    <param name="expires" value="3600" />
+    <param name="comment"
+           value="Value is less than specified minimum" />
+  </monitor>
+
+  <monitor name="high-jumps">
+    <param name="monitor-type" value="expression" />
+    <param name="rpn-expr">
+      {(LAST-300)},10,*,GT,
+      {(LAST)},{(LAST-300)},10,/,LT,
+      OR,
+      {T@(LAST)},3600,+,NOW,GE,
+      AND
+    </param>
+    <param name="action" value="graph-jumps, report-file" />
+    <param name="expires" value="3600" />
+    <param name="comment"
+           value="Value jumped more than 10-fold in 5 minutes" />
+  </monitor>
+
+  <monitor name="mon-devel">
+    <param name="monitor-type" value="expression" />
+    <param name="rpn-expr">
+      {(LAST-600)},-,ABS,10485760,GT,
+      {T@(LAST)},3600,+,NOW,GE,
+      AND
+    </param>
+    <param name="action">
+      graph-devel, report-file, snmptrap
+    </param>
+    <param name="expires" value="900" />
+    <param name="comment"
+           value="Traffic jumps more than 10mbps in 10 minutes" />
+  </monitor>
+
+</monitors>
+
+</configuration>

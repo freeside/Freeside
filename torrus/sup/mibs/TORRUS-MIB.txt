@@ -1,0 +1,183 @@
+TORRUS-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-IDENTITY, NOTIFICATION-TYPE,
+    Integer32
+        FROM SNMPv2-SMI
+    DateAndTime
+        FROM SNMPv2-TC
+    rrdtool
+        FROM RRDTOOL-SMI;
+
+torrus MODULE-IDENTITY
+    LAST-UPDATED "200506210000Z"
+    ORGANIZATION "Round Robin Database Framework project"
+    CONTACT-INFO
+        "Round Robin Database Framework project
+                
+         Project description and documentation:
+         http://torrus.org
+         
+         Administrative contact for MIB module:
+
+         Stanislav Sinyagin
+         Tel. +41 79 407 02 24
+         E-mail: ssinyagin@yahoo.com"
+    DESCRIPTION
+        "The MIB module for SNMP variables specific to Torrus project"
+        ::= { rrdtool 1 }
+
+EventType ::= TEXTUAL-CONVENTION
+    STATUS current
+    DESCRIPTION
+        "Defines the event type:
+        set      -- The monitor condition is first time met
+        repeat   -- The monitor condition is met again on the consequtive
+                    monitorin cycle
+        clear    -- The monitor condition is not met the first time after
+                    event type set or repeat
+        forget   -- The monitor condition was not met during the expiration
+                    period since the last event type clear"
+    SYNTAX INTEGER {
+             set(1),
+             repeat(2),
+             clear(3),
+             forget(4)
+             }
+                   
+TreeName ::= TEXTUAL-CONVENTION
+    STATUS current
+    DESCRIPTION
+        "Torrus system operates with several datasource trees
+        identified by names"
+    SYNTAX OCTET STRING (SIZE (1..512))
+    
+Token ::= TEXTUAL-CONVENTION
+    STATUS current
+    DESCRIPTION
+        "Token is a short ID for the leaf or subtree of the Torrus
+        datasources hierarchy"
+    SYNTAX OCTET STRING (SIZE (5..10))
+
+Path ::= TEXTUAL-CONVENTION
+    STATUS current
+    DESCRIPTION
+        "Path is the full name of the Torrus datasource, containing its
+        parent nodes separated by slashes"
+    SYNTAX OCTET STRING (SIZE (1..512))
+
+MonitorEventsEntry ::= SEQUENCE {
+    torrusEventIndex     Integer32,
+    torrusToken          Token,
+    torrusMonitorName    OCTET STRING,
+    torrusEventType      EventType,
+    torrusPath           Path,
+    torrusTimestamp      DateAndTime,
+    torrusSeverity       Integer32,
+    torrusMonitorDesc    OCTET STRING
+}
+    
+torrusMonitorEventsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF MonitorEventsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of current monitor events"    
+    ::= { torrus 1 }
+
+torrusMonitorEventsEntry OBJECT-TYPE
+    SYNTAX      MonitorEventsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Each monitor event is characterized by the datasource token and
+         monitor name"
+    INDEX { torrusEventIndex }
+    ::= { torrusMonitorEventsTable 1 }
+
+torrusEventIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..65535)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The value of this object uniquely identifies this
+        event entry."
+    ::= { torrusMonitorEventsEntry 1 }
+                        
+torrusToken OBJECT-TYPE
+    SYNTAX      Token
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Token is a short ID for the leaf or subtree of the Torrus
+         datasources hierarchy"
+    ::= { torrusMonitorEventsEntry 2 }
+
+torrusMonitorName OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Each monitor instance is identified by unique name"
+    ::= { torrusMonitorEventsEntry 3 }
+
+torrusEventType OBJECT-TYPE
+    SYNTAX      EventType
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The type of the event: set(1), repeat(2), clear(3), forget(4)"
+    ::= { torrusMonitorEventsEntry 4 }
+    
+torrusPath OBJECT-TYPE
+    SYNTAX      Path
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The full name of the Torrus datasource, containing its
+        parent nodes separated by slashes"
+    ::= { torrusMonitorEventsEntry 5 }
+
+torrusTimestamp OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Timestamp of the event, in SNMPv2 format, e.g.
+         1992-5-26,13:30:15.0,-4:0"
+    ::= { torrusMonitorEventsEntry 6 }
+        
+torrusTreeName OBJECT-TYPE
+    SYNTAX      TreeName
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Name of the datasource tree"
+    ::= { torrusMonitorEventsEntry 7 }
+
+torrusSeverity OBJECT-TYPE
+    SYNTAX      Integer32 (1..65535)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Optional severity level"
+    ::= { torrusMonitorEventsEntry 8 }
+
+torrusMonitorDesc OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Human readable monitor comment"
+    ::= { torrusMonitorEventsEntry 9 }
+    
+torrusAlarm NOTIFICATION-TYPE
+    OBJECTS  { torrusToken, torrusMonitorName, torrusEventType,
+               torrusPath, torrusTimestamp }
+    STATUS   current
+    DESCRIPTION
+        "The SNMP trap that is generated when an Torrus monitor
+        condition is changed for the leaf being monitored"
+    ::= { torrus 2 }
+        
+END

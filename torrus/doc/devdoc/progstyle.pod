@@ -1,0 +1,138 @@
+#  rpnexpr.pod - Torrus RPN expressions guide
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: progstyle.pod,v 1.1 2010-12-27 00:04:37 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 Torrus Programming Style Guide
+
+=head2 Perl indentation style
+
+The code indentation style is a kind of BSD/Allman style:
+
+    while( not $success and time() < $waitingTimeout )
+    {
+        $self->clearReader();
+
+        Info('Sleeping ' . $Torrus::Global::ConfigReadyRetryPeriod .
+              ' seconds');
+        sleep $Torrus::Global::ConfigReadyRetryPeriod;
+
+        $self->setReader();
+
+        if( $self->isReady() )
+        {
+            $success = 1;
+            Info('Now configuration is ready');
+        }
+        else
+        {
+            Info('Configuration is still not ready');
+        }
+    }
+
+
+Indentation is 4 characters. Opening and closing braces are aligned.
+There's no space between the keyword (C<while>, C<if>, etc.) and the opening
+parenthesis.
+
+Tab characters are prohibited.
+
+Page width is strictly 80 characters. All longer lines must be wrapped.
+
+When possible, leave space between parentheses and the inside content.
+This is not necessary for debug or print statements.
+
+There's always space around the equal sign (C<=>).
+
+The object method calls always have parentheses, even if no arguments are
+reqiured.
+
+Use keywords for logical operations instead of C operators: C<and>, C<or>,
+C<not>.
+
+Use single quotes in hash references: C<$a-E<gt>{'abc'}>.
+
+=head2 Common file properties
+
+With the exception of special-purpose files, each source file
+must ontain the GNU copying statement, CVS C<Id> tag, and author's name and
+e-mail address.
+
+C, Perl, and Bourne shell files must contain Gnu Emacs variables
+at the end of the file:
+
+ # Local Variables:
+ # mode: perl
+ # indent-tabs-mode: nil
+ # perl-indent-level: 4
+ # End:
+
+Each file must always end with the linebreak. Otherwise it might conflict
+with CVS. All files must have Unix linebreak format.
+
+=head2 GNU Emacs settings
+
+Standard C<perl-mode.el> does the thing:
+
+ ;; Set up Perl mode
+ (autoload 'perl-mode "perl-mode")
+ (setq auto-mode-alist
+     (append (list (cons "\\.pl$" 'perl-mode)
+                   (cons "\\.pm$" 'perl-mode)
+                   (cons "\\.pl\\.cgi$" 'perl-mode))
+             auto-mode-alist))
+
+ (custom-set-variables
+   ;; custom-set-variables was added by Custom -- don't edit or cut/paste it!
+   ;; Your init file should contain only one such instance.
+  '(indent-tabs-mode nil)
+  '(tab-width 8)
+  )
+
+=head2 X-Emacs settings
+
+In X-Emacs, the default handler for Perl files is C<cperl-mode.el>.
+The following custom variables must be set in order to comply to our styling
+standards:
+
+ (custom-set-variables
+   ;; custom-set-variables was added by Custom -- don't edit or cut/paste it!
+   ;; Your init file should contain only one such instance.
+  '(cperl-brace-offset -4)
+  '(cperl-continued-statement-offset 4)
+  '(cperl-indent-level 4)
+  '(indent-tabs-mode nil)
+  '(tab-width 8)
+  )
+
+=head2 Normalizing multiple files
+
+In Torrus CVS repository, in the root of module C<src>, there is a small
+utility that fixes some styling issues for all the sources in
+current directory and subdirectories:
+
+  perl normalize-all-sources.pl
+
+It replaces tabs with spaces, deletes space at the end of line,
+and removes empty lines at the start and the end of file.
+
+=head1 Author
+
+Copyright (c) 2003-2005 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

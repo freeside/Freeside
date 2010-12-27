@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2005  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+   $Id: cisco.vdsl-line.xml,v 1.1 2010-12-27 00:04:07 ivan Exp $
+-->
+
+
+<!--
+   Cisco VDSL line statistics
+   Tested with: Catalyst 2950 LRE
+-->
+
+
+<configuration>
+
+<definitions>
+  <!-- CISCO-IETF-VDSL-LINE-MIB -->
+  <def name="cvdslCurrSnrMgn"         value="1.3.6.1.4.1.9.10.87.1.1.2.1.5" />
+  <def name="cvdslCurrAtn"            value="1.3.6.1.4.1.9.10.87.1.1.2.1.6" />
+</definitions>
+
+<datasources>
+
+  <template name="cvdsl-subtree">
+    <param name="precedence"     value="-600" />
+    <param name="comment"        value="VDSL line statistics" />
+
+    <param name="data-file"
+               value="%system-id%_%interface-nick%_cvdsl.rrd" />
+
+    <param name="collector-timeoffset-hashstring"
+                                       value="%system-id%:%interface-nick%" />
+    <param name="descriptive-nickname" value="%system-id%:%interface-name%"/>
+    <param name="graph-title"          value="%descriptive-nickname%" />
+
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="snr,atn"/>
+    
+    <param name="overview-subleave-name-snr" value="SNR_Margin"/>
+    <param name="overview-direct-link-snr"      value="yes"/>
+    <param name="overview-direct-link-view-snr" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-snr"
+           value="All SNR"/>
+    <param name="overview-shortcut-title-snr"
+           value="Show SNR Margin graphs for all VDSL lines in one page"/>
+    <param name="overview-page-title-snr"
+           value="SNR Margin Graphs"/>
+
+    <param name="overview-subleave-name-atn" value="Attenuation"/>
+    <param name="overview-direct-link-atn"      value="yes"/>
+    <param name="overview-direct-link-view-atn" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-atn"
+           value="All Attenuation"/>
+    <param name="overview-shortcut-title-atn"
+           value="Show attenuation graphs for all VDSL lines in one page"/>
+    <param name="overview-page-title-atn"
+           value="Attenuation Graphs"/>
+                      
+    <param name="rrd-hwpredict"     value="disabled" />
+  </template>
+
+
+  <template name="cvdsl-interface">
+  
+    <!-- ********   SNR Margin ************ -->
+    <leaf name="Vtuc_SnrMgn">
+      <param name="comment"            value="VTUC SNR Margin" />
+      <param name="snmp-object"  value="$cvdslCurrSnrMgn.%ifindex-map%.1" />
+      <param name="collector-scale"    value="DUP,100,GT,10,1,IF,/" />
+      <param name="rrd-ds"             value="VtucSnrMgn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Vtur_SnrMgn">
+      <param name="comment"            value="VTUR SNR Margin" />
+      <param name="snmp-object"  value="$cvdslCurrSnrMgn.%ifindex-map%.2" />
+      <param name="collector-scale"    value="DUP,100,GT,10,1,IF,/" />
+      <param name="rrd-ds"             value="VturSnrMgn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="SNR_Margin">
+      <param name="comment"            value="VTUC and VTUR SNR Margin" />
+      <param name="precedence"         value="100" />
+      <param name="ds-type"            value="rrd-multigraph" />
+      <param name="ds-names"           value="vtuc,vtur" />
+
+      <param name="ds-expr-vtuc"       value="{Vtuc_SnrMgn}" />
+      <param name="graph-legend-vtuc"  value="VTUC SNR Margin" />
+      <param name="line-style-vtuc"    value="##nearend" />
+      <param name="line-color-vtuc"    value="##nearend" />
+      <param name="line-order-vtuc"    value="1" />
+
+      <param name="ds-expr-vtur"       value="{Vtur_SnrMgn}" />
+      <param name="graph-legend-vtur"  value="VTUR SNR Margin" />
+      <param name="line-style-vtur"    value="##farend" />
+      <param name="line-color-vtur"    value="##farend" />
+      <param name="line-order-vtur"    value="2" />
+
+      <param name="vertical-label"      value="dB" />
+      <param name="graph-lower-limit"   value="0" />
+    </leaf>
+
+    <!-- ********   Attenuation ************ -->
+    <leaf name="Vtuc_Atn">
+      <param name="comment"            value="VTUC Attenuation" />
+      <param name="snmp-object"  value="$cvdslCurrAtn.%ifindex-map%.1" />
+      <param name="collector-scale"    value="10,/" />
+      <param name="rrd-ds"             value="VtucAtn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Vtur_Atn">
+      <param name="comment"            value="VTUR Attenuation" />
+      <param name="snmp-object"  value="$cvdslCurrAtn.%ifindex-map%.2" />
+      <param name="collector-scale"    value="10,/" />
+      <param name="rrd-ds"             value="VturAtn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Attenuation">
+      <param name="comment"            value="VTUC and VTUR Attenuation" />
+      <param name="precedence"         value="200" />
+      <param name="ds-type"            value="rrd-multigraph" />
+      <param name="ds-names"           value="vtuc,vtur" />
+
+      <param name="ds-expr-vtuc"       value="{Vtuc_Atn}" />
+      <param name="graph-legend-vtuc"  value="VTUC Attn" />
+      <param name="line-style-vtuc"    value="##nearend" />
+      <param name="line-color-vtuc"    value="##nearend" />
+      <param name="line-order-vtuc"    value="1" />
+
+      <param name="ds-expr-vtur"       value="{Vtur_Atn}" />
+      <param name="graph-legend-vtur"  value="VTUR Attn" />
+      <param name="line-style-vtur"    value="##farend" />
+      <param name="line-color-vtur"    value="##farend" />
+      <param name="line-order-vtur"    value="2" />
+
+      <param name="vertical-label"      value="dB" />
+      <param name="graph-lower-limit"   value="0" />
+    </leaf>
+
+    
+
+  </template>
+
+</datasources>
+
+</configuration>

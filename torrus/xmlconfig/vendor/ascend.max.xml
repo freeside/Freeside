@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003 Roman Hochuli, Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: ascend.max.xml,v 1.1 2010-12-27 00:04:06 ivan Exp $
+  Roman Hochuli <roman@hochu.li>
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+  Ascend MAC Call statistics.
+  Tested with Ascent MAX 4000 with Software-Release feik.m40 7.0.26
+-->
+
+<configuration>
+
+  <definitions>
+    <!-- ASCEND-ADVANCED-AGENT-MIB -->
+    <def name="ascend_wanLineActiveChannels"
+         value="1.3.6.1.4.1.529.4.21.1.7"  />
+    <!-- ASCEND-CALL-MIB -->
+    <def name="ascend_callCurrentDigitalIncoming"
+         value="1.3.6.1.4.1.529.11.7.0"  />
+    <def name="ascend_callCurrentAnalogIncoming"
+         value="1.3.6.1.4.1.529.11.5.0"  />
+  </definitions>
+
+  <datasources>
+
+    <template name="ascend-totalcalls">
+      <param name="comment"     value="Ascend Callstatistics" />
+      <param name="data-file"   value="%system-id%_callstats.rrd" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="rrd-hwpredict"       value="disabled" />
+
+      <leaf name="Total_Calls">
+        <param name="comment"
+               value="Current total number of calls" />
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="analog,digital"/>
+
+        <param name="ds-expr-analog"      value="{Total_Analog_Calls}"/>
+        <param name="graph-legend-analog" value="analog calls"/>
+        <param name="line-style-analog"   value="AREA"/>
+        <param name="line-color-analog"   value="##one"/>
+        <param name="line-order-analog"   value="1"/>
+
+        <param name="ds-expr-digital"      value="{Total_Digital_Calls}"/>
+        <param name="graph-legend-digital" value="digital calls"/>
+        <param name="line-style-digital"   value="STACK"/>
+        <param name="line-color-digital"   value="##two"/>
+        <param name="line-order-digital"   value="2"/>
+
+        <param name="vertical-label" value="Lines"/>
+        <param name="precedence"  value="1000" />
+        <param name="graph-lower-limit" value="0" />
+      </leaf>
+
+      <leaf name="Total_Analog_Calls">
+        <param name="hidden" value="yes"/>
+        <param name="comment"
+               value="Current current total number of analog calls" />
+        <param name="snmp-object" value="$ascend_callCurrentAnalogIncoming" />
+        <param name="rrd-ds"      value="CCAnalog" />
+        <param name="precedence"  value="200" />
+        <param name="graph-lower-limit" value="0" />
+      </leaf>
+
+      <leaf name="Total_Digital_Calls">
+        <param name="hidden" value="yes"/>
+        <param name="comment"
+               value="Current total number of ISDN calls" />
+        <param name="snmp-object" value="$ascend_callCurrentDigitalIncoming" />
+        <param name="rrd-ds"      value="CCISDN" />
+        <param name="precedence"  value="300" />
+        <param name="graph-lower-limit" value="0" />
+      </leaf>
+
+    </template>
+
+    <template name="ascend-line-stats">
+      <param name="comment" value="Current active calls in the trunk line"/>
+      <param name="snmp-object"
+             value="$ascend_wanLineActiveChannels.%ascend-ifidx%"/>
+      <param name="data-file"
+             value="%system-id%_linestats_%ascend-ifidx%.rrd" />
+      <param name="rrd-ds"              value="ActiveChannels" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="graph-legend"        value="Channels busy" />
+      <param name="vertical-label" value="Lines"/>
+  </template>
+
+  </datasources>
+</configuration>

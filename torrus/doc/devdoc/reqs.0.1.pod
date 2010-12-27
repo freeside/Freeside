@@ -1,0 +1,210 @@
+#  requirements.pod: The pre-planning document
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: reqs.0.1.pod,v 1.1 2010-12-27 00:04:36 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 RRFW Requirements Version 0.1
+
+Date: Jun 29 2003; Last revised: Aug 05 2003
+
+In this article, I describe the important changes that are planned
+for RRFW version 0.1.X.
+
+=head1 Independent datasource trees
+
+As noted by many users, RRFW lacks the scalability when the number of
+network devices is more than 100. The XML compiler takes minutes to
+process the configuration, and the Collector process initialization time
+is too long.
+
+Christian Schnidrig E<lt>christian.schnidrig@gmx.chE<gt> has proposed
+a solution to split the database into several subsystems, each
+being compiled separately, and with separate collector process.
+In his concept, there is a "global" datasource tree, and
+"subsystem" trees, each making a subset of global datasource nodes.
+
+I propose to have a number of independent datasource trees, without
+any superset. This would ease the administrator's work, and add more
+security.
+
+=head2 Changes in rrfw-siteconfig.pl
+
+Instead of C<@RRFW::Global::xmlFiles>, the following hash will contain
+the information about the trees:
+
+  %RRFW::Global::treeConfig = (
+    'tree_A' => {
+      'description' => 'The First Tree',
+      'xmlfiles' => ['a1.xml', 'a2.xml', 'a3.xml'],
+      'run' => { 'collector' => 1, 'monitor' => 1 } },
+    'tree_B' => {
+      'description' => 'The Second Tree',
+      'xmlfiles' => ['b1.xml', 'b2.xml'],
+      'run' => {} }
+   );
+
+In this hash, the keys give the tree names, I<xmlfiles> points to an array
+of source XML files, I<run> points to the names of the daemons that
+would be automatically launched for the tree.
+
+Two additional arrays: C<@RRFW::Global::xmlAlwaysIncludeFirst> and
+C<@RRFW::Global::xmlAlwaysIncludeLast> will give a list of source XML
+files that are included in every tree, in the beginning or in the end of
+the XML files list.
+
+=head2 ConfigTree object internals
+
+There will be no such thing as globalInstance. All methods and procedures
+that need to reference the current ConfigTree object will have it as
+argument.
+
+C<RRFW::ConfigTree::new()> will have a mandatory argument "TreeName".
+
+=head2 Database structure
+
+All datasource trees will share one BerkeleyDB environment. The
+BDB environment home directory will stay the same, defined by I<dbhome>
+config variable.
+
+For each tree, the database files will be placed in a separate subdirectory
+of a subdirectory of I<dbhome>.
+
+
+=head2 User interface
+
+All relevant command-line executables will support the following
+options:
+
+=over 4
+
+=item * --tree <tree_name>
+
+Specifies the datasource tree for processing;
+
+=item * --all
+
+If applicable, performs the operation on all available trees.
+
+=back
+
+When in verbose mode (B<--verbose>), the command-line programs must
+print the tree names they operate with.
+
+The web interface will take the PATH_INFO string as the tree name.
+For mod_perl handler, it will be also possible to prohibit
+PATH_INFO selection, and to configure the tree name in Apache
+configuration.
+
+When no PATH_INFO is given to the web interface handler,
+a special superlevel menu may be shown with the list of available trees.
+
+It will also be possible to specify tree-specific renderer attributes, like
+C<%RRFW::Renderer::styling>, C<$RRFW::Renderer::companyName>, etc.
+
+B<Plain CGI interface will not be supported> As Renderer gets more complex,
+CGI initialization time will increase. Also it will become harder to support
+two user interfaces with similar functionality.
+
+
+=head2 Daemons launch master
+
+There will be a master process that will launch collector and monitor
+daemons for each tree. It will be configurable from a separate file,
+specifying the daemons and execution parameters for each tree.
+
+The master process will watch the child processes and issue warnings in the
+events of child process termination.
+
+Stopping the master process will stop all child daemons gracefully.
+
+
+=head1 Separate database for non-datasource objects
+
+In RRFW version 0.0.X, all the parameters for datasources, views,
+monitors, and tokensets are stored in F<configuration.db> database.
+
+As proposed by Christian Schnidrig, storing all non-datasource
+objects information in a separate database would improve the scalability.
+
+In RRFW version 0.1.X, datasource parameters will be stored in
+F<ds_config.db>, and all other object's parameters in F<other_config.db>.
+
+The XML compiler will have a new option, B<--nods>, which disables
+processing of E<lt>datasourcesE<gt> elements in the input XML files.
+
+In addition to C<ConfigurationReady> flag, there will be a flag that indicates
+the readiness of datasource tree only.
+
+All these measures will allow faster administration and testing of
+non-datasource objects, and will prevent the collector from unneeded
+interruptions.
+
+
+=head1 User privileges
+
+User privileges will apply to the tree level: across one datasource tree
+a given user will have uniform privileges.
+
+Each user belongs to one or more groups. Privileges are assigned to
+groups only, not to individual users. Groups are one-level deep: they
+consist of users only. Probably in the future groups will consist
+of groups too.
+
+In the beginning, only one privilege will be implemented: I<DisplayTree>.
+The design should be flexible enough to add more privileges in the future.
+Examples: I<GenerateReport>, I<Debug>, I<ScheduleTask>, and so on.
+
+Privileges maintenance interface will include a command-line utility.
+In the future, a web interface is also possible. In this case, a new
+privilege will be added: I<EditPrivileges>.
+
+Privileges editor will include the following functions:
+
+=over 4
+
+=item * add/delete group
+
+=item * add/delete user
+
+=item * change user password
+
+=item * add/delete user membership in a group
+
+=item * edit privileges for groups and trees
+
+=item * list group members
+
+=item * list groups a user belongs to
+
+=item * list privileges for a given group or user
+
+=item * list privileges and groups (or users) for a given tree
+
+=item * export/import the privileges database to/from XML
+
+=back
+
+Privileges logics implementation must be separate from the database backend.
+At first, BerkeleyDB backend will be supported. In the future, LDAP
+backend is possible.
+
+=head1 Author
+
+Copyright (c) 2003 Stanislav Sinyagin ssinyagin@yahoo.com

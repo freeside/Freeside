@@ -1,0 +1,405 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2008 Jon Nistor
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: liebert.xml,v 1.1 2010-12-27 00:04:25 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+-->
+<!--
+     Liebert HVAC systems
+ -->
+
+<configuration>
+
+<definitions>
+  <!-- LIEBERT-GP-ENVIRONMENTAL-MIB -->
+  <!-- Temperature: Fahrenheit (not used due to celcius being converted) -->
+  <def name="TempSettingDegF"     value="1.3.6.1.4.1.476.1.42.3.4.1.2.1.0"/>
+  <def name="TempToleranceDegF"   value="1.3.6.1.4.1.476.1.42.3.4.1.2.2.0"/>
+  <def name="TempMeasurementDegF" value="1.3.6.1.4.1.476.1.42.3.4.1.2.3.1.3.0"/>
+  <def name="TempHighThreshDegF"  value="1.3.6.1.4.1.476.1.42.3.4.1.2.3.1.4.0"/>
+  <def name="TempLowThreshDegF"   value="1.3.6.1.4.1.476.1.42.3.4.1.2.3.1.5.0"/>
+  <!-- Temperature: Celcius (not used due to preferred indexing -->
+  <def name="TempSettingDegC"     value="1.3.6.1.4.1.476.1.42.3.4.1.3.1.0"/>
+  <def name="TempToleranceDegC"   value="1.3.6.1.4.1.476.1.42.3.4.1.3.2.0"/>
+  <def name="TempMeasurementDegC" value="1.3.6.1.4.1.476.1.42.3.4.1.3.3.1.3.0"/>
+  <def name="TempHighThreshDegC"  value="1.3.6.1.4.1.476.1.42.3.4.1.3.3.1.4.0"/>
+  <def name="TempLowThreshDegC"   value="1.3.6.1.4.1.476.1.42.3.4.1.3.3.1.5.0"/>
+
+  <!-- Temperature: Generic -->
+  <def name="TempBase"         value="1.3.6.1.4.1.476.1.42.3.4.1"/>
+  <def name="TempSetting"      value="$TempBase.%temp-idx%.1.0"/>
+  <def name="TempTolerance"    value="$TempBase.%temp-idx%.2.0"/>
+  <def name="TempMeasurement"  value="$TempBase.%temp-idx%.3.1.3.%sensor-idx%"/>
+  <def name="TempHighThresh"   value="$TempBase.%temp-idx%.3.1.4.%sensor-idx%"/>
+  <def name="TempLowThresh"    value="$TempBase.%temp-idx%.3.1.5.%sensor-idx%"/>
+
+  <!-- Humidity -->
+  <def name="HumiditySettingRel"     value="1.3.6.1.4.1.476.1.42.3.4.2.2.1.0"/>
+  <def name="HumidityToleranceRel"   value="1.3.6.1.4.1.476.1.42.3.4.2.2.2.0"/>
+  <def name="HumidityMeasurementRel"
+      value="1.3.6.1.4.1.476.1.42.3.4.2.2.3.1.3.%humid-idx%"/>
+  <def name="HumidityHighThresholdRel"
+      value="1.3.6.1.4.1.476.1.42.3.4.2.2.3.1.4.%humid-idx%"/>
+  <def name="HumidityLowThresholdRel"
+      value="1.3.6.1.4.1.476.1.42.3.4.2.2.3.1.5.%humid-idx%"/>
+
+  <!-- State -->
+  <def name="StateSystem"         value="1.3.6.1.4.1.476.1.42.3.4.3.1.0"/>
+  <def name="StateCooling"        value="1.3.6.1.4.1.476.1.42.3.4.3.2.0"/>
+  <def name="StateHeating"        value="1.3.6.1.4.1.476.1.42.3.4.3.3.0"/>
+  <def name="StateHumidifying"    value="1.3.6.1.4.1.476.1.42.3.4.3.4.0"/>
+  <def name="StateDehumidifying"  value="1.3.6.1.4.1.476.1.42.3.4.3.5.0"/>
+  <def name="StateEconoCycle"     value="1.3.6.1.4.1.476.1.42.3.4.3.6.0"/>
+  <def name="lgpEnvStateCoolingCapacity"
+                                  value="1.3.6.1.4.1.476.1.42.3.4.3.9.0"/>
+  <def name="lgpEnvStateHeatingCapacity" 
+                                  value="1.3.6.1.4.1.476.1.42.3.4.3.10.0"/>
+
+  <!-- Statistics -->
+  <def name="StatsComp1RunHr"     value="1.3.6.1.4.1.476.1.42.3.4.6.1.0"/>
+  <def name="StatsComp2RunHr"     value="1.3.6.1.4.1.476.1.42.3.4.6.2.0"/>
+  <def name="StatsFanRunHr"       value="1.3.6.1.4.1.476.1.42.3.4.6.3.0"/>
+  <def name="StatsHumRunHr"       value="1.3.6.1.4.1.476.1.42.3.4.6.4.0"/>
+  <def name="StatsReheat1RunHr"   value="1.3.6.1.4.1.476.1.42.3.4.6.7.0"/>
+  <def name="StatsReheat2RunHr"   value="1.3.6.1.4.1.476.1.42.3.4.6.8.0"/>
+  <def name="StatsReheat3RunHr"   value="1.3.6.1.4.1.476.1.42.3.4.6.9.0"/>
+
+</definitions>
+<datasources>
+
+  <template name="temperature-subtree">
+    <param name="comment"         value="Temperature in degrees %temp-scale%"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="Setting">
+      <param name="precedence"        value="999"/>
+      <param name="comment"           value="Current temperature setting"/>
+      <param name="graph-legend"      value="Setting"/>
+      <param name="graph-title"       value="Temperature setting"/>
+      <param name="graph-lower-limit" value="%temp-lower%"/>
+      <param name="graph-upper-limit" value="%temp-upper"/>
+      <param name="rrd-ds"            value="tempSetting"/>
+      <param name="snmp-object"       value="$TempSetting"/>
+    </leaf>
+    <leaf name="Tolerance">
+      <param name="precedence"      value="998"/>
+      <param name="comment"         value="Acceptable variance from setting"/>
+      <param name="graph-legend"    value="Tolerance"/>
+      <param name="graph-title"     value="Temperature tolerance"/>
+      <param name="collector-scale" value="0.1,*"/>
+      <param name="rrd-ds"          value="tempTolerance"/>
+      <param name="snmp-object"     value="$TempTolerance"/>
+    </leaf>
+  </template>
+
+  <template name="temperature-sensor">
+    <param name="data-file"    value="%system-id%_sensor_%tmp-idx%.rrd"/>
+
+    <leaf name="Overview">
+      <param name="precedence"        value="1000"/>
+      <param name="comment"           value="Overview of temperatures"/>
+      <param name="graph-title"       value="Ambient Temperature"/>
+      <param name="ds-type"           value="rrd-multigraph"/>
+      <param name="ds-names"          value="meas,high,low"/>
+      <param name="graph-lower-limit" value="0"/>
+      <!-- measurements -->
+      <param name="ds-expr-meas"      value="{Measurement}"/>
+      <param name="graph-legend-meas" value="Current temperature"/>
+      <param name="line-style-meas"   value="LINE2"/>
+      <param name="line-color-meas"   value="##one"/>
+      <param name="line-order-meas"   value="1"/>
+      <!-- high threshold -->
+      <param name="ds-expr-high"      value="{High_Threshold}"/>
+      <param name="graph-legend-high" value="High threshold marker"/>
+      <param name="line-style-high"   value="LINE2"/>
+      <param name="line-color-high"   value="##two"/>
+      <param name="line-order-high"   value="2"/>
+      <!-- low threshold -->
+      <param name="ds-expr-low"       value="{Low_Threshold}"/>
+      <param name="graph-legend-low"  value="Low threshold marker"/>
+      <param name="line-style-low"    value="LINE2"/>
+      <param name="line-color-low"    value="##three"/>
+      <param name="line-order-low"    value="3"/>
+    </leaf>
+
+    <leaf name="Measurement">
+      <param name="precedence"        value="999"/>
+      <param name="comment"           value="Current ambient temperature"/>
+      <param name="graph-legend"      value="Sensor: %temp-idx%"/>
+      <param name="graph-lower-limit" value="15"/>
+      <param name="graph-upper-limit" value="70"/>
+      <param name="vertical-label"    value="degrees Celsius"/>
+      <param name="rrd-ds"            value="sensor_%temp-idx%"/>
+      <param name="snmp-object"       value="$TempMeasurement"/>
+    </leaf>
+
+    <leaf name="High_Threshold">
+      <param name="precedence"        value="998"/>
+      <param name="comment"           value="High threshold marker"/>
+      <param name="graph-legend"      value="Sensor: %temp-idx%"/>
+      <param name="vertical-label"    value="degrees Celcius"/>
+      <param name="rrd-ds"            value="TempHighThresh"/>
+      <param name="snmp-object"       value="$TempHighThresh"/>
+    </leaf>
+
+    <leaf name="Low_Threshold">
+      <param name="precedence"        value="997"/>
+      <param name="comment"           value="Low threshold marker"/>
+      <param name="graph-legend"      value="Sensor: %temp-idx%"/>
+      <param name="vertical-label"    value="degrees Celcius"/>
+      <param name="rrd-ds"            value="TempLowThresh"/>
+      <param name="snmp-object"       value="$TempLowThresh"/>
+    </leaf>
+  </template>
+
+  <!-- Temperature measured in degrees Fahrenheit -->
+  <template name="temperature-sensor-fahrenheit">
+    <param name="data-file" 
+          value="%system-id%_sensor_%tmp-idx%_fahrenheit.rrd"/>
+
+    <leaf name="Overview">
+      <param name="precedence"        value="1000"/>
+      <param name="comment"           value="Overview of temperatures"/>
+      <param name="graph-title"       value="Ambient Temperature"/>
+      <param name="ds-type"           value="rrd-multigraph"/>
+      <param name="ds-names"          value="meas,high,low"/>
+      <param name="graph-lower-limit" value="0"/>
+      <!-- measurements -->
+      <param name="ds-expr-meas"      value="{Measurement}"/>
+      <param name="graph-legend-meas" value="Current temperature"/>
+      <param name="line-style-meas"   value="LINE2"/>
+      <param name="line-color-meas"   value="##one"/>
+      <param name="line-order-meas"   value="1"/>
+      <!-- high threshold -->
+      <param name="ds-expr-high"      value="{High_Threshold}"/>
+      <param name="graph-legend-high" value="High threshold marker"/>
+      <param name="line-style-high"   value="LINE2"/>
+      <param name="line-color-high"   value="##two"/>
+      <param name="line-order-high"   value="2"/>
+      <!-- low threshold -->
+      <param name="ds-expr-low"       value="{Low_Threshold}"/>
+      <param name="graph-legend-low"  value="Low threshold marker"/>
+      <param name="line-style-low"    value="LINE2"/>
+      <param name="line-color-low"    value="##three"/>
+      <param name="line-order-low"    value="3"/>
+    </leaf>
+
+    <leaf name="Measurement">
+      <param name="precedence"        value="999"/>
+      <param name="comment"           value="Current ambient temperature"/>
+      <param name="graph-legend"      value="Sensor: %temp-idx%"/>
+      <param name="graph-lower-limit" value="15"/>
+      <param name="graph-upper-limit" value="70"/>
+      <param name="vertical-label"    value="degrees Celsius"/>
+      <param name="collector-scale"   value="1.8,*,32,+" />
+      <param name="rrd-ds"            value="sensor_%temp-idx%"/>
+      <param name="snmp-object"       value="$TempMeasurement"/>
+    </leaf>
+
+    <leaf name="High_Threshold">
+      <param name="precedence"        value="998"/>
+      <param name="comment"           value="High threshold marker"/>
+      <param name="graph-legend"      value="Sensor: %temp-idx%"/>
+      <param name="vertical-label"    value="degrees Fahrenheit"/>
+      <param name="collector-scale"   value="1.8,*,32,+" />
+      <param name="rrd-ds"            value="TempHighThresh"/>
+      <param name="snmp-object"       value="$TempHighThresh"/>
+    </leaf>
+
+    <leaf name="Low_Threshold">
+      <param name="precedence"        value="997"/>
+      <param name="comment"           value="Low threshold marker"/>
+      <param name="graph-legend"      value="Sensor: %temp-idx%"/>
+      <param name="vertical-label"    value="degrees Fahrenheit"/>
+      <param name="collector-scale"   value="1.8,*,32,+" />
+      <param name="rrd-ds"            value="TempLowThresh"/>
+      <param name="snmp-object"       value="$TempLowThresh"/>
+    </leaf>
+  </template>
+
+  <!-- HUMIDITY -->
+  <template name="humidity-subtree">
+    <param name="comment"           value="Environmental Humidity Group"/>
+    <param name="data-file"         value="%system-id%_humidity.rrd"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="Setting">
+      <param name="precedence"      value="999"/>
+      <param name="comment"         value="Current Realitive Humidity setting"/>
+      <param name="graph-legend"    value="Setting"/>
+      <param name="graph-title"     value="Humidity setting"/>
+      <param name="vertical-label"  value="percent"/>
+      <param name="rrd-ds"          value="humidSetting"/>
+      <param name="snmp-object"     value="$HumiditySettingRel"/>
+    </leaf>
+    <leaf name="Tolerance">
+      <param name="precedence"      value="998"/>
+      <param name="comment"         value="Acceptable variance from setting"/>
+      <param name="graph-legend"    value="Tolerance"/>
+      <param name="graph-title"     value="Temperature tolerance"/>
+      <param name="vertical-label"  value="percent"/>
+      <param name="rrd-ds"          value="humidTolerance"/>
+      <param name="snmp-object"     value="$HumidityToleranceRel"/>
+    </leaf>
+  </template>
+
+
+  <template name="humidity-sensor">
+    <param name="data-file"    value="%system-id%_sensor_%humid-idx%.rrd"/>
+
+    <leaf name="Overview">
+      <param name="precedence"        value="1000"/>
+      <param name="comment"           value="Overview of humidity"/>
+      <param name="graph-title"       value="Humidity"/>
+      <param name="vertical-label"    value="percent"/>
+      <param name="ds-type"           value="rrd-multigraph"/>
+      <param name="ds-names"          value="meas,high,low"/>
+      <param name="graph-lower-limit" value="0"/>
+      <!-- measurements -->
+      <param name="ds-expr-meas"      value="{Measurement}"/>
+      <param name="graph-legend-meas" value="Measured Humidity"/>
+      <param name="line-style-meas"   value="LINE2"/>
+      <param name="line-color-meas"   value="##one"/>
+      <param name="line-order-meas"   value="1"/>
+      <!-- high threshold -->
+      <param name="ds-expr-high"      value="{High_Threshold}"/>
+      <param name="graph-legend-high" value="High threshold marker"/>
+      <param name="line-style-high"   value="LINE2"/>
+      <param name="line-color-high"   value="##two"/>
+      <param name="line-order-high"   value="2"/>
+      <!-- low threshold -->
+      <param name="ds-expr-low"       value="{Low_Threshold}"/>
+      <param name="graph-legend-low"  value="Low threshold marker"/>
+      <param name="line-style-low"    value="LINE2"/>
+      <param name="line-color-low"    value="##three"/>
+      <param name="line-order-low"    value="3"/>
+    </leaf>
+
+    <leaf name="Measurement">
+      <param name="precedence"        value="999"/>
+      <param name="comment"           value="Current Realitive Humidity"/>
+      <param name="graph-legend"      value="Sensor: %humid-idx%"/>
+      <param name="vertical-label"    value="percent"/>
+      <param name="rrd-ds"            value="sensor_%humid-idx%"/>
+      <param name="snmp-object"       value="$HumidityMeasurementRel"/>
+    </leaf>
+
+    <leaf name="High_Threshold">
+      <param name="precedence"        value="998"/>
+      <param name="comment"           value="High threshold marker"/>
+      <param name="graph-legend"      value="Sensor: %humid-idx%"/>
+      <param name="vertical-label"    value="percent"/>
+      <param name="rrd-ds"            value="HumidHighThresh"/>
+      <param name="snmp-object"       value="$HumidityHighThresholdRel"/>
+    </leaf>
+
+    <leaf name="Low_Threshold">
+      <param name="precedence"        value="997"/>
+      <param name="comment"           value="Low threshold marker"/>
+      <param name="graph-legend"      value="Sensor: %humid-idx%"/>
+      <param name="vertical-label"    value="percent"/>
+      <param name="rrd-ds"            value="HumidLowThresh"/>
+      <param name="snmp-object"       value="$HumidityLowThresholdRel"/>
+    </leaf>
+  </template>
+
+
+  <template name="state-subtree">
+    <param name="comment"         value="Environmental State Group"/>
+    <param name="data-file"       value="%system-id%_state.rrd"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+
+    <leaf name="System">
+      <param name="precedence"   value="999"/>
+      <param name="comment"      value="State of the system"/>
+      <param name="graph-legend" value="state: on(1) off(2) standby(3)"/>
+      <param name="graph-title"  value="System State"/>
+      <param name="rrd-ds"       value="StateSystem"/>
+      <param name="snmp-object"  value="$StateSystem"/>
+    </leaf>
+    <leaf name="Cooling">
+      <param name="precedence"   value="998"/>
+      <param name="comment"      value="State of the cooling subsystem"/>
+      <param name="graph-legend" value="state: on(1) off(2)"/>
+      <param name="graph-title"  value="Cooling State"/>
+      <param name="rrd-ds"       value="StateCooling"/>
+      <param name="snmp-object"  value="$StateCooling"/>
+    </leaf>
+    <leaf name="Heating">
+      <param name="precedence"   value="997"/>
+      <param name="comment"      value="State of the heating subsystem"/>
+      <param name="graph-legend" value="state: on(1) off(2)"/>
+      <param name="graph-title"  value="Heating State"/>
+      <param name="rrd-ds"       value="StateHeating"/>
+      <param name="snmp-object"  value="$StateHeating"/>
+    </leaf>
+    <leaf name="Humidifying">
+      <param name="precedence"   value="996"/>
+      <param name="comment"      value="State of the humidifier subsystem"/>
+      <param name="graph-legend" value="state: on(1) off(2)"/>
+      <param name="graph-title"  value="Humidifier State"/>
+      <param name="rrd-ds"       value="StateHumidifying"/>
+      <param name="snmp-object"  value="$StateHumidifying"/>
+    </leaf>
+    <leaf name="Dehumidifying">
+      <param name="precedence"   value="995"/>
+      <param name="comment"      value="State of the dehumidifier subsystem"/>
+      <param name="graph-legend" value="state: on(1) off(2)"/>
+      <param name="graph-title"  value="Dehumidifier State"/>
+      <param name="rrd-ds"       value="StateDehumidifying"/>
+      <param name="snmp-object"  value="$StateDehumidifying"/>
+    </leaf>
+    <leaf name="Econo_Cycle">
+      <param name="precedence"   value="994"/>
+      <param name="comment"      value="State of the Econ-o-cycle subsystem"/>
+      <param name="graph-legend" value="state: on(1) off(2)"/>
+      <param name="graph-title"  value="Econ-o-cycle State"/>
+      <param name="rrd-ds"       value="StateEconoCycle"/>
+      <param name="snmp-object"  value="$StateEconoCycle"/>
+    </leaf>
+  </template>
+
+
+  <template name="state-capacity">
+    <leaf name="Cooling">
+      <param name="data-file"    value="%system-id%_state_capacity.rrd"/>
+      <param name="precedence"   value="993"/>
+      <param name="comment"      value="cooling capacity presently in use"/>
+      <param name="graph-legend" value="percent"/>
+      <param name="graph-title"  value="Cooling Capacity"/>
+      <param name="rrd-ds"       value="cooling"/>
+      <param name="snmp-object"  value="$lgpEnvStateCoolingCapacity"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+    </leaf>
+    <leaf name="Heating">
+      <param name="data-file"    value="%system-id%_state_capacity.rrd"/>
+      <param name="precedence"   value="992"/>
+      <param name="comment"      value="heating capacity presently in use"/>
+      <param name="graph-legend" value="percent"/>
+      <param name="graph-title"  value="Heating Capacity"/>
+      <param name="rrd-ds"       value="heating"/>
+      <param name="snmp-object"  value="$lgpEnvStateHeatingCapacity"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+    </leaf>
+  </template>
+
+</datasources>
+
+</configuration>
+

@@ -1,0 +1,210 @@
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: nodeid_usage.pod.in,v 1.1 2010-12-27 00:04:35 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 Torrus/OSS integration: NodeID usage guidelines
+
+=head2 Introduction
+
+Most parts of Torrus software mentioned in this document were developed under
+sponsoring by the following companies:
+
+=over 4
+
+=item * nexellent ag, Switzerland (www.nexellent.ch)
+
+NodeID concept and base implementation, host-based authentication.
+
+=item * M-net Telekommunikations GmbH, Germany (www.m-net.de)
+
+M-net plugin.
+
+=item * Fibre Noire Internet Inc, Canada (www.fibrenoire.ca)
+
+Extensions in M-Net plugin for NodeID manipulation.
+
+=back
+
+
+
+This document explains the new concept of NodeID and ways of utilizing
+it for better integration of Torrus into an OSS environment.
+
+
+=head2 NodeID concept
+
+Torrus 1.0.9 introduces a new parameter for datasource tree elements:
+C<nodeid>. This parameter is not inherited from parent subtrees to child
+subtrees or leaves. Also the XML configuration compiler verifies uniqueness
+of its values across the whole tree.
+
+The purpose of C<nodeid> is to provide persistent identifiers to the tree
+elements. Unlike the token numbers, these identifiers are not changing between
+re-compilations of the tree. Also unlike the path string, C<nodeid> would
+stay the same if a network device changes its place in the tree topology.
+
+By default, C<nodeid> value is composed of SNMP host name and device
+component name, such as IF-MIB interface. It can also be easily adapted to
+contain external identifiers, such as Asset ID or Service ID from some
+external inventory database.
+
+Once C<nodeid> values are put into the XML configuration (usually
+SNMP discovery engine does it) and compiled into the configuration database,
+they can be used for accessing the Torrus graphs from external systems.
+
+The command-line utility C<torrus nodeid> helps searching through existing
+NodeID values, and also renders the graphs on request.
+
+Another quick way to find the NodeID value is to navigate to the desired
+graph page and check the I<Bookmark> shortcut at the bottom of the page.
+For the nodes where C<nodeid> is defined, the bookmark will use it instead of
+the path in the datasource tree.
+
+
+
+=head2 Host-based authentication
+
+Many Torrus deployments have user authentication enabled. This makes it
+complicated for other OSS systems to retrieve graphs from the Torrus rendering
+engine.
+
+Torrus 1.0.9 introduces host-based authentication: a special user
+is created for requestor's IP address. The requestor specifies its unique
+password in the URL as C<hostauth> parameter. Also the Torrus WebUI does not
+send the session cookie back to the requestor.
+
+This new feature makes it easy to display Torrus graphs inside user
+self-service portals without giving direct access to the Torrus server.
+
+For example, the following command adds the host 10.0.0.5 with password
+"654321" to the I<admin> group:
+
+  torrus acl --addhost=10.0.0.5 --hostpassword=654321 --addtogroup=admin
+
+Then the following command executed from 10.0.0.5 would retrieve an
+InOut_bps graph for the last 24 hours for a given interface on I<rtr01> router:
+
+  wget -O graph.png \
+    'http://torrus/main?nodeid=if//rtr01//GigabitEthernet0/1//inoutbit&view=last24h&hostauth=654321'
+
+
+=head2 M-net plugin
+
+Details of M-net plugin are explained in the plugin documentation.
+The plugin interprets description strings on device network interfaces: 
+it catches all key-value pairs of format I<key1=val1;key2=val2;...> and
+performs various actions on them.
+
+Now assume there's an external inventory system, and each network interface is
+assigned a unique Asset ID. Our natural wish would be to use these asset IDs
+in NodeID strings, instead of hostnames and interfaces. This way we are
+secured against hardware changes and upgrades (assuming that Asset ID stays
+unchanged).
+
+In order to take advantage of M-Net plugin, the Asset ID values should be
+configured in all interface descriptions, like follows:
+
+  interface GigabitEthernet0/1
+    description bw=200M; assetid=VPNLINK00055; ct=BC
+
+In the example above, the interface description tells that this is a 200Mbps
+link, connection type is Business Customer, and the unique link identifier is
+I<VPNLINK00055>.  The format allows inserting extra spaces for better
+readability.
+
+In the corresponding Device Discovery XML (DDX) file, the following
+parameters would be set:
+
+  <host>
+    <param name="snmp-host" value="rtr01.example.com"/>
+    <param name="M_net::manage" value="yes"/>
+    <param name="M_net::nodeid-prefix-key" value="assetid"/>
+  </host>
+
+As a result, after the SNMP discovery and XML compiler finish their work,
+we get a number of NodeID values associated with this customer connection:
+  
+      assetid//VPNLINK00055
+      assetid//VPNLINK00055//inbytes
+      assetid//VPNLINK00055//indrops
+      assetid//VPNLINK00055//inerr
+      assetid//VPNLINK00055//inoutbit
+      assetid//VPNLINK00055//inpackets
+      assetid//VPNLINK00055//outbytes
+      assetid//VPNLINK00055//outdrops
+      assetid//VPNLINK00055//outerr
+      assetid//VPNLINK00055//outpackets
+
+The first NodeID refers to the interface-level subtree in Torrus
+configuration, and all other values refer to the corresponding graphs
+for this interface.
+
+So, now the customer self-service portal would retrieve the input/output
+summary graph with the following URL (wget woulld be certainly replaced by a
+corresponding command in PHP or other Web programming language):
+
+  wget -O graph.png \
+    'http://torrus/main?nodeid=assetid//VPNLINK00055//inoutbit&view=last24h&hostauth=654321'
+
+Of course, a number of additional view definitions could be created, in order
+to create graphs of needed size and time span. Also, for example, a calendar
+month's graph could be generated by specifying the followiong
+parameters in the URL: C<NOW> or C<Gend> pointing to the beginning of
+next month, and optionally C<Gstart> indicating the start of the time period.
+
+
+=head2 Setting the host identifier
+
+Alternatively to the technique explained above, the local OSS environment
+could require some custom identifiers assigned to the network devices.
+For example, CA Spectrum software uses its internal Model Handles to refer to
+devices.
+
+The discovery parameter C<nodeid-device> sets the string that would be used
+in the host part of NodeID values:
+
+  <host>
+    <param name="snmp-host" value="rtr02.example.com"/>
+    <param name="nodeid-device" value="0xC0FFEE"/>
+  </host>
+  
+The resulting NodeID values would be based on "0xC0FFEE" string instead of
+"rtr02.example.com":
+
+  if//0xC0FFEE//GigabitEthernet0/1//inoutbit
+
+
+=head2 Future development
+
+The NodeID is a relatively new concept in Torrus, and there will be other
+ways of specifying and using it in the course of Torrus development.
+
+One of the directions for future enhancement is a look-up of NodeID values
+in some external database before or during SNMP discovery.
+
+The usage of NodeID is not limited to IF-MIB interfaces. Some Torrus
+templates already assign NodeID values to, for example, environment sensors
+and DOCSIS statistics.
+
+
+
+=head1 Author
+
+Copyright (c) 2010 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

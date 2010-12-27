@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2003 Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+   Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+$Id: collector-periods.xml,v 1.1 2010-12-27 00:04:30 ivan Exp $
+@(#) 10/18/03 collector-periods.xml 1.8 (10/16/03 23:44:25) sferry
+
+-->
+
+<!--
+  Template(s) to override the default periods and RRA definitions.
+-->
+
+<configuration>
+  <datasources>
+    <!--
+      Two mandatory parameters define the collector schedule.
+      The collector runs at moments defined by formula:
+        time + period - (time mod period) + timeoffset
+
+      Each period requires RRAs to be defined for that period
+      RRAs use the following syntax   RRA:CF:xff:steps:rows
+      as the calculation of setps and rows is period dependent
+    -->
+
+    <!-- ONE MINUTE PERIOD -->
+    <template name="one-minute-period">
+      <param name="collector-period"      value="60"/>
+      <param name="collector-timeoffset"  value="10"/>
+      <!--
+        Round-robin arrays to be created, separated by space.
+        RRA:CF:xff:steps:rows
+        We keep: (step = 60 )
+          1-minute avg details for 1 week,
+          30-minute ave/min/max details for 6 weeks,
+          1-day ave/min/max for 2 years
+      -->
+      <param name="rrd-create-rra">
+        RRA:AVERAGE:0:1:10080
+        RRA:LAST:0:1:1
+        RRA:AVERAGE:0.17:30:2688 RRA:MIN:0.17:30:2688 RRA:MAX:0.17:30:2688
+        RRA:AVERAGE:0.042:1440:732
+        RRA:MIN:0.042:1440:732   RRA:MAX:0.042:1440:732
+      </param>
+      <param name="rrd-create-heartbeat" value="300"/>
+
+      <!-- Optional Holt-Winters season length.
+           Default is one-day (1440 1-minute intervals) -->
+      <param name="rrd-create-hw-season" value="1440" />
+
+      <!-- Mandatory length of the Holt-Winters archives.
+           Same length as main 1-minutes RRA -->
+      <param name="rrd-create-hw-rralen" value="10080" />
+    </template>
+
+
+    
+    <!-- FIVE MINUTE PERIOD -->
+    <template name="five-minute-period">
+      <param name="collector-period"      value="300"/>
+      <param name="collector-timeoffset"  value="20"/>
+      <!-- Round-robin arrays to be created, separated by space.
+           RRA:CF:xff:steps:rows
+           We keep: (step = 300 )
+             5-minute avg for 2 weeks,
+             30-minute ave/min/max details for 6 weeks,
+             1-day ave/min/max for 2 years
+      -->
+      <param name="rrd-create-rra">
+        RRA:AVERAGE:0:1:4032
+        RRA:AVERAGE:0.17:6:2016   RRA:MAX:0.17:6:2016   RRA:MIN:0.17:6:2016
+        RRA:AVERAGE:0.042:288:732 RRA:MAX:0.042:288:732 RRA:MIN:0.042:288:732
+      </param>
+      <param name="rrd-create-heartbeat" value="900"/>
+    </template>
+
+  </datasources>
+</configuration>

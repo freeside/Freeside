@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<!-- Torrus Access Control Lists export -->
+
+<aclexport>
+  <file-info>
+    <format-version>1.1</format-version>
+  </file-info>
+
+  <groups>
+    [% FOREACH group = groups() %]
+    <group name="[% group %]">
+      [% privhash = privileges(group);
+         FOREACH object = privhash.keys.sort;
+           FOREACH priv = privhash.$object.keys.sort %]
+      <privilege object="[% object %]" name="[% priv %]"/>
+      [%   END;
+         END;
+         FOREACH attr = gattrlist(group); %]
+      <attribute name="[% attr %]" value="[% xmlnorm(gattr(group, attr)) %]"/>
+      [%   END; %]
+    </group>
+    [% END %]
+  </groups>
+
+  <users>
+    [% FOREACH uid = users() %]
+    <user uid="[% uid %]">
+      [% FOREACH group = memberof(uid) %]
+      <member-of group="[% group %]"/>
+      [% END;
+         FOREACH attr = uattrlist(uid);
+           IF attr != 'uid' %]
+      <attribute name="[% attr %]" value="[% xmlnorm(uattr(uid, attr)) %]"/>
+      [%   END;
+         END %]
+    </user>
+    [% END %]
+  </users>
+</aclexport>

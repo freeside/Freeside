@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Roman Hochuli, Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: rfc2670.docsis-if.old.0.1.5d-20040224.xml,v 1.1 2010-12-27 00:04:27 ivan Exp $
+  Roman Hochuli <roman@hochu.li>
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<configuration>
+
+  <definitions>
+    <!-- DOCS-IF-MIB:docsIfSigQSignalNoise -->
+    <def name="docsIfSigQSignalNoise" value="1.3.6.1.2.1.10.127.1.1.4.1.5" />
+  </definitions>
+
+  <datasources>
+
+    <template name="docsis-upstream-snr">
+      <param name="snmp-object"  value="$docsIfSigQSignalNoise.%ifindex-map%"/>
+
+      <param name="data-file">
+        %system-id%_%interface-nick%_docsIfSigQSignalNoise.rrd
+      </param>
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="rrd-ds"              value="SNR" />
+      <param name="collector-scale"     value="10,/" />
+
+      <param name="graph-legend"        value="Signal/Noise-Ratio" />
+      <param name="vertical-label"      value="dB" />
+
+      <param name="normal-level"        value="25" />
+      <param name="lower-limit"         value="18" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="graph-upper-limit"   value="35" />
+
+      <param name="collector-timeoffset-hashstring"
+             value="%system-id%:%interface-nick%" />
+
+      <param name="monitor"             value="docsis-snr-lower-20db" />
+      <param name="tokenset-member"     value="docsis-snr" />
+    </template>
+
+  </datasources>
+
+  <monitors>
+
+    <monitor name="docsis-snr-lower-20db">
+      <param name="monitor-type"  value="expression" />
+      <param name="rpn-expr"      value="20,LT" />
+      <param name="action"        value="docsis-snr-lower-20" />
+      <param name="expires"       value="3600" />
+      <param name="comment">
+        Signal/Noise-Ratio was lower than 20dB
+      </param>
+    </monitor>
+
+    <action name="docsis-snr-lower-20">
+      <param name="action-type"     value="tset" />
+      <param name="tset-name"       value="docsis-snr-lower-20" />
+    </action>
+
+  </monitors>
+
+  <token-sets>
+    <token-set name="docsis-snr">
+      <param name="comment" value="S/N Ratio for all interfaces" />
+    </token-set>
+
+    <token-set name="docsis-snr-lower-20">
+      <param name="comment" value="S/N Ratio less than 20dB" />
+    </token-set>
+  </token-sets>
+
+</configuration>

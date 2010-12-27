@@ -1,0 +1,200 @@
+#!@PERL@ -w
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: buildsearchdb.in,v 1.1 2010-12-27 00:04:01 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+
+use Torrus::ConfigTree;
+use Torrus::Search;
+use Torrus::SiteConfig;
+use Torrus::Log;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+my @trees;
+my $build_global;
+my $all_trees;
+
+my $verbose;
+my $help_needed;
+
+my $ok = GetOptions ('tree=s'   => \@trees,
+                     'all'      => \$all_trees,
+                     'global'   => \$build_global,
+                     'verbose'  => \$verbose,
+                     'help'     => \$help_needed);
+
+if( not $ok or not (scalar(@trees) or $all_trees or $build_global) or
+    $help_needed or scalar(@ARGV) > 0 )
+{
+    print STDERR "Usage: $0 --tree=NAME [options...]\n",
+    "Options:\n",
+    "  --tree=NAME     rebuild search DB for a tree\n",
+    "  --all           rebuild search DB for all trees\n",
+    "  --global        rebuild global search DB\n",
+    "  --verbose       print extra information\n",
+    "  --help          this help message\n";
+    exit 1;
+}
+
+if( $build_global )
+{
+    $all_trees = 1;
+}
+
+if( $all_trees )
+{
+    @trees = Torrus::SiteConfig::listTreeNames();
+}
+
+if( $verbose )
+{
+    Torrus::Log::setLevel('verbose');
+}
+
+&Torrus::DB::setSafeSignalHandlers();
+
+Verbose(sprintf('Torrus version %s', '@VERSION@'));
+
+my $search = new Torrus::Search( -WriteAccess => 1 );
+
+if( $build_global )
+{
+    $search->openGlobal();
+}
+
+foreach my $tree ( @trees )
+{
+    if( not Torrus::SiteConfig::treeExists( $tree ) )
+    {
+        Error("Tree named \"" . $tree . "\" does not exist");
+        exit(1);
+    }
+
+    &Torrus::DB::checkInterrupted();
+
+    my $config_tree = new Torrus::ConfigTree( -TreeName => $tree );
+    if( not defined($config_tree) )
+    {
+        print("Configuration is not ready\n");
+        exit(1);
+    }
+
+    Verbose("Processing the tree: $tree");
+
+    $search->openTree( $tree );
+    
+    walkSubtree( $config_tree, $search, $config_tree->token('/') );
+    
+    $search->closeTree( $tree );
+    $config_tree = undef;
+}
+
+exit(0);
+
+
+sub walkSubtree
+{
+    my $config_tree = shift;
+    my $search = shift;
+    my $ptoken = shift;
+
+    my $tree = $config_tree->treeName();
+    
+    foreach my $token ( $config_tree->getChildren( $ptoken ) )
+    {
+        &Torrus::DB::checkInterrupted();
+        
+        if( $config_tree->isSubtree( $token ) )
+        {
+            walkSubtree( $config_tree, $search, $token );
+        }
+
+        my $isSearchable =
+            $config_tree->getNodeParam( $token, 'searchable', 1 );
+        if( defined( $isSearchable ) and $isSearchable eq 'yes' )
+        {
+            my $path = $config_tree->path( $token );
+            
+            my $nodeName = $config_tree->nodeName( $path );
+            splitAndStore( $tree, $nodeName, $path );
+            
+            my $params = $config_tree->getParams( $token, 1 );
+            while( my( $param, $value ) = each %{$params} )
+            {
+                if( $config_tree->getParamProperty( $param, 'search' ) )
+                {
+                    splitAndStore( $tree, $value, $path, $param );
+                }
+            }
+        }
+    }
+}
+
+
+sub splitAndStore
+{
+    my $tree = shift;
+    my $value = shift;
+    my $path = shift;
+    my $param = shift;
+
+    if( length( $value ) > 0 )
+    {
+        # split the value into words
+        my @words = split( /\W+/ms, $value );
+        if( scalar( @words ) > 0 )
+        {
+            foreach my $word ( @words )
+            {
+                if( length( $word ) > 1 )
+                {
+                    $search->storeKeyword( $tree, $word, $path, $param );
+                            
+                    # Split the word by underscores and minus
+                    my @subwords = split( /_+/, $word );
+                    if( scalar( @subwords ) > 1 )
+                    {
+                        foreach my $subword ( @subwords )
+                        {
+                            if( length( $subword ) > 1 )
+                            {
+                                $search->storeKeyword( $tree,
+                                                       $subword,
+                                                       $path,
+                                                       $param );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+        
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

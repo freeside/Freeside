@@ -1,0 +1,52 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% thepath=path(token) %]
+[% INCLUDE htmlstart title=thepath printpath=1 %]
+
+<H1>[% xmlnorm(nodeParam(token,'comment')) %]</H1>
+
+[% INCLUDE legend %]
+
+[%#  ###########    Recursively print the children   ################ %]
+
+[% BLOCK recursiveChildren;
+     FOREACH child = sortTokens(children(token));
+       hidden = 0;
+       IF nodeParam(child,'hidden') == 'yes';
+         hidden = 1;
+       END;
+       IF isAlias(child);
+         thisIsAlias = 1;
+         urlTitle = 'Symbolic link to ' _ path(isAlias(child));
+       ELSE;
+         urlTitle = nodeParam(child,'comment',1);
+       END;
+       IF not hidden or variables.SHOWHIDDEN; %]
+<DIV CLASS="RecursiveListRow">
+  <SPAN CLASS="NodeName">
+    [% thisIsAlias ? '<EM CLASS="Alias">':'';
+       hidden ? '<EM CLASS="ShowHidden">':'' %]
+    <A HREF="[%url(child)%]"
+       TITLE="[%urlTitle%]">[% nodeName(child) %]</A>
+    [% hidden ? '</EM>':'';  thisIsAlias ? '</EM>':''; %]
+  </SPAN>
+  [% INCLUDE recursiveChildren token=child %]
+</DIV>
+    [% END;
+     END;
+  END %]
+
+
+<P>Directories you can jump to:</P>
+<DIV CLASS="Listing">
+[% INCLUDE recursiveChildren token=token %]
+</DIV>
+
+<DIV CLASS="BottomShortcuts">
+[% INCLUDE shortcut url=url(token) text="Default view"
+                     title="Restore default subtree view";
+   INCLUDE overviewShortcuts
+%]
+</DIV>
+
+[% INCLUDE bottomline %]
+[% INCLUDE htmlend %]

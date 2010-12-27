@@ -1,0 +1,129 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_collector.pod.in,v 1.1 2010-12-27 00:04:38 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+collector - Torrus data Collector.
+
+=head1 SYNOPSIS
+
+B<torrus collector> --tree=I<TREENAME> [I<options...>]
+
+=head1 DESCRIPTION
+
+This command starts the Collector process for the tree I<TREENAME>. By
+default it forks into a daemon, sets the log output file to
+F<@logdir@/collector.TREENAME.log>, performs one
+Collector cycle, and sleeps until the next cycle is scheduled. In
+daemon mode the log file can be reopened by sending it a SIGHUP
+signal.
+
+Collector cycle scheduling is controlled by two parameters defined
+for each individual configuration leaf: C<collector-period> and
+C<collector-timeoffset>. See the B<Torrus Configuration Guide> for more
+details.
+
+The number of OID (Object IDentifier) variable bindings sent by 
+Collector is controlled by the datasource parameter C<snmp-oids-per-pdu>.
+It is set to a default value of 40 in F<snmp-defs.xml>, and may be
+overwritten at the host level.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--instance>=I<N>
+
+Defines the collector instance. A single tree can allow more than one
+collector instance. The number of instances is defined in C<run> hash
+in the F<torrus-siteconfig.pl>'s C<%Torrus::Global::treeConfig>.
+If the number of instances is more than one, this option is mandatory.
+The collecting job is split between the instances, and normally all
+instances should be started by the startup scripts. The tree should
+be re-compiled after the number of instances is changed in the siteconfig.
+In the example below the tree I<tree_A> will be served by three
+collector instances:
+
+  %Torrus::Global::treeConfig = (
+    'tree_A' => {
+      'description' => 'The First Tree',
+      'xmlfiles' => [qw(a1.xml a2.xml a3.xml)],
+      'run' => { 'collector' => 3, 'monitor' => 1 } },
+   );
+
+=item B<--nodaemon>
+
+Prevents the process from becoming a daemon and sets the log to STDERR.
+
+=item B<--runonce>
+
+Instructs the collector to run once and exit. Implies B<--nodaemon>.
+
+=item B<--runalways>
+
+Instructs the collector process to continue running even if no collector
+datasources are defined in the tree. In this case, the process will check
+once per hour if the configuration has changed.
+
+=item B<--debug>
+
+Sets the log level to debug.
+
+=item B<--verbose>
+
+Sets the debug level to info.
+
+=item B<--help>
+
+Displays a help message.
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item F<@siteconfdir@/torrus-siteconfig.pl>
+
+Torrus site configuration script.
+
+=item F<@logdir@/collector.TREENAME.log>
+
+Collector's log for the tree I<TREENAME>.
+
+=item F<@distxmldir@/snmp-defs.xml>
+
+Basic variable definitions for the SNMP collector.
+
+=back
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

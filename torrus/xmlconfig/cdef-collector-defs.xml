@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2007 Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: cdef-collector-defs.xml,v 1.1 2010-12-27 00:04:06 ivan Exp $
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+-->
+
+<!-- These are the default parameters for CDef collector
+
+  WARNING: This file is overwritten by "make install"
+-->
+
+<configuration>
+
+
+<datasources>
+
+  <template name="cdef-collector-defaults">
+  
+    <param name="ds-type" value="collector" />
+    <param name="collector-type" value="cdef" />
+
+    <param name="cdef-collector-delay" value="0"/>
+    <param name="cdef-collector-tolerance" value="2"/>
+    
+    <!-- Two mandatory parameters define the collector schedule.
+         The collector runs at moments defined by formula:
+           time + period - (time mod period) + timeoffset -->
+    <param name="collector-period" value="300" />
+    <param name="collector-timeoffset" value="10" />
+
+    <param name="storage-type" value="rrd" />
+
+    <param name="system-id" value="cdef-collector" />
+    
+    <!-- RRD Parameters -->
+
+    <!-- Round-robin arrays to be created, separated by space.
+     We keep 5-minute details for 1 month,
+     30-minute average and maximum details for 6 months,
+     and 1-day aggregated stats for 2 years.
+     In 30-minute average one missing sample is allowed.
+     In daily average one hour of missing samples are allowed.
+      -->
+    <param name="rrd-create-rra">
+      RRA:AVERAGE:0:1:10080
+      RRA:AVERAGE:0.17:6:9120      RRA:MAX:0.17:6:9120
+      RRA:AVERAGE:0.042:288:732    RRA:MAX:0.042:288:732
+    </param>
+
+    <!-- if no updates are received for 8 minutes, consider the datasource
+         unknown, i.e. dead -->
+    <param name="rrd-create-heartbeat" value="500"/>
+
+    <param name="rrd-create-min" value="0"/>
+    <param name="rrd-create-max" value="U"/>
+
+    <param name="leaf-type" value="rrd-def" />
+    <param name="rrd-cf"    value="AVERAGE" />
+    <param name="rrd-create-dstype" value="GAUGE" />
+    
+    <!-- Default schedule for the monitor -->
+    <param name="monitor-period"     value="300" />
+    <param name="monitor-timeoffset" value="75" />
+    
+  </template>
+
+</datasources>
+
+</configuration>

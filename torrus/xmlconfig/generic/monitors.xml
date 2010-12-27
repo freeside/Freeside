@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003 Shawn Ferry
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+   Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+$Id $
+
+-->
+<configuration>
+  <monitors>
+
+    <!-- Actions -->
+    <action name="graph-hw-failures">
+      <param name="action-type" value="tset" />
+      <param name="tset-name" value="hw-failures" />
+    </action>
+
+    <action name="graph-Violations">
+      <param name="action-type" value="tset" />
+      <param name="tset-name" value="Violations" />
+    </action>
+
+    <!-- Monitors -->
+    <monitor name="hw-failures">
+      <param name="monitor-type" value="failures" />
+      <param name="action" value="graph-hw-failures" />
+      <param name="expires" value="3600" />
+    </monitor>
+
+    <monitor name="fail_eq">
+      <param name="monitor-type" value="expression"/>
+      <param name="rpn-expr" value="#fail,EQ"/>
+      <param name="action" value="graph-Violations"/>
+      <param name="expires" value="86400"/>
+    </monitor>
+
+    <monitor name="fail_lt">
+      <param name="monitor-type" value="expression"/>
+      <param name="rpn-expr" value="#fail,LT"/>
+      <param name="action" value="graph-Violations"/>
+      <param name="expires" value="86400"/>
+    </monitor>
+
+    <monitor name="fail_le">
+      <param name="monitor-type" value="expression"/>
+      <param name="rpn-expr" value="#fail,LE"/>
+      <param name="action" value="graph-Violations"/>
+      <param name="expires" value="86400"/>
+    </monitor>
+
+    <monitor name="fail_gt">
+      <param name="monitor-type" value="expression"/>
+      <param name="rpn-expr" value="#fail,GT"/>
+      <param name="action" value="graph-Violations"/>
+      <param name="expires" value="86400"/>
+    </monitor>
+
+    <monitor name="fail_ge">
+      <param name="monitor-type" value="expression"/>
+      <param name="rpn-expr" value="#fail,GE"/>
+      <param name="action" value="graph-Violations"/>
+      <param name="expires" value="86400"/>
+    </monitor>
+
+  </monitors>
+
+  <!-- Tokensets -->
+  <token-sets>
+    <param name="default-tset-view" value="default-tset-html" />
+    <param name="default-tsetlist-view" value="tset-list-html" />
+
+    <token-set name="hw-failures">
+      <param name="comment" value="HW Prediction Violations"/>
+    </token-set>
+
+    <token-set name="Violations">
+      <param name="comment" value="Monitor Violations"/>
+    </token-set>
+
+  </token-sets>
+
+</configuration>

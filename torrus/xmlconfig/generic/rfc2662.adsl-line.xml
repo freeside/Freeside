@@ -1,0 +1,247 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Gord Philpott <gphilpot@mnsi.net>
+   Copyright (C) 2003  Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+   $Id: rfc2662.adsl-line.xml,v 1.1 2010-12-27 00:04:29 ivan Exp $
+-->
+
+
+<!--
+   RFC 2662 (ADSL-LINE-MIB)
+   Definitions of Managed Objects for the ADSL Lines
+
+   Tested with:
+      Paradyne Hotwire ATM ADSL Line Card;
+      Model: 8365-B1-000; S/W Release: 02.03.54
+-->
+
+
+<configuration>
+
+<definitions>
+  <!-- ADSL-LINE-MIB -->
+  <def name="adslAtucCurrSnrMgn"         value="1.3.6.1.2.1.10.94.1.1.2.1.4" />
+  <def name="adslAtucCurrAtn"            value="1.3.6.1.2.1.10.94.1.1.2.1.5" />
+  <def name="adslAtucCurrAttainableRate" value="1.3.6.1.2.1.10.94.1.1.2.1.8" />
+  <def name="adslAtucChanCurrTxRate"     value="1.3.6.1.2.1.10.94.1.1.4.1.2" />
+
+  <def name="adslAturCurrSnrMgn"         value="1.3.6.1.2.1.10.94.1.1.3.1.4" />
+  <def name="adslAturCurrAtn"            value="1.3.6.1.2.1.10.94.1.1.3.1.5" />
+  <def name="adslAturCurrAttainableRate" value="1.3.6.1.2.1.10.94.1.1.3.1.8" />
+  <def name="adslAturChanCurrTxRate"     value="1.3.6.1.2.1.10.94.1.1.5.1.2" />
+</definitions>
+
+<datasources>
+
+  <template name="adsl-line-interface">
+  
+    <param name="rrd-hwpredict" value="disabled" />
+
+    <!-- ******* Start: ATUC and ATUR SNR Margin ******* -->
+    <leaf name="Atuc_SnrMgn">
+      <param name="comment"            value="ATUC SNR Margin" />
+      <param name="snmp-object"  value="$adslAtucCurrSnrMgn.%ifindex-map%" />
+      <param name="collector-scale"    value="10,/" />
+      <param name="rrd-ds"             value="AtucSnrMgn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Atur_SnrMgn">
+      <param name="comment"            value="ATUR SNR Margin" />
+      <param name="snmp-object"  value="$adslAturCurrSnrMgn.%ifindex-map%" />
+      <param name="collector-scale"    value="10,/" />
+      <param name="rrd-ds"             value="AturSnrMgn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="SNR_Margin">               <!-- Multiple line graph -->
+      <param name="comment"            value="ATUC and ATUR SNR Margin" />
+      <param name="precedence"         value="100" />
+      <param name="ds-type"            value="rrd-multigraph" />
+      <param name="ds-names"           value="atuc,atur" />
+
+      <param name="ds-expr-atuc"       value="{Atuc_SnrMgn}" />
+      <param name="graph-legend-atuc"  value="ATUC SNR Margin" />
+      <param name="line-style-atuc"    value="##nearend" />
+      <param name="line-color-atuc"    value="##nearend" />
+      <param name="line-order-atuc"    value="1" />
+
+      <param name="ds-expr-atur"       value="{Atur_SnrMgn}" />
+      <param name="graph-legend-atur"  value="ATUR SNR Margin" />
+      <param name="line-style-atur"    value="##farend" />
+      <param name="line-color-atur"    value="##farend" />
+      <param name="line-order-atur"    value="2" />
+
+      <param name="vertical-label"      value="dB" />
+      <param name="graph-lower-limit"   value="0" />
+    </leaf>
+    <!-- ******* End: ATUC and ATUR SNR Margin ******* -->
+
+    <!-- ******* Start: ATUC and ATUR Attenuation ******* -->
+    <leaf name="Atuc_Atn">
+      <param name="comment"            value="ATUC Attenuation" />
+      <param name="snmp-object"   value="$adslAtucCurrAtn.%ifindex-map%" />
+      <param name="collector-scale"    value="10,/" />
+      <param name="rrd-ds"             value="AtucAtn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Atur_Atn">
+      <param name="comment"            value="ATUR Attenuation" />
+      <param name="snmp-object"   value="$adslAturCurrAtn.%ifindex-map%" />
+      <param name="collector-scale"    value="10,/" />
+      <param name="rrd-ds"             value="AturAtn" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Attenuation">          <!-- Multiple line graph -->
+      <param name="comment"            value="ATUC and ATUR Attenuation" />
+      <param name="ds-type"            value="rrd-multigraph" />
+      <param name="ds-names"           value="atuc,atur" />
+
+      <param name="ds-expr-atuc"       value="{Atuc_Atn}" />
+      <param name="graph-legend-atuc"  value="ATUC SNR Margin" />
+      <param name="line-style-atuc"    value="##nearend" />
+      <param name="line-color-atuc"    value="##nearend" />
+      <param name="line-order-atuc"    value="1" />
+
+      <param name="ds-expr-atur"       value="{Atur_Atn}" />
+      <param name="graph-legend-atur"  value="ATUR SNR Margin" />
+      <param name="line-style-atur"    value="##farend" />
+      <param name="line-color-atur"    value="##farend" />
+      <param name="line-order-atur"    value="2" />
+
+      <param name="vertical-label"      value="dB" />
+      <param name="graph-lower-limit"   value="0" />
+    </leaf>
+    <!-- ******* End: ATUC and ATUR SNR Margin ******* -->
+
+
+    <!-- ******* Start: ATUC Attainable Rates ******* -->
+    <leaf name="Atuc_AttainableRate">
+      <param name="comment"            value="ATUC Attainable Rate" />
+      <param name="snmp-object"
+             value="$adslAtucCurrAttainableRate.%ifindex-map%" />
+      <param name="rrd-ds"             value="AtucAttainableRate" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="graph-legend"       value="ATUC Attainable Rate" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Atuc_CurrTxRate">
+      <param name="comment"            value="ATUC Current TX Rate" />
+      <param name="snmp-object"
+             value="$adslAtucChanCurrTxRate.%ifindex-map%" />
+      <param name="rrd-ds"             value="AtucCurrTxRate" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="graph-legend"       value="ATUC Curr TX Rate" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="ATUC_TX_Rates">          <!-- Multiple line graph -->
+      <param name="comment"            value="ATUC TX Rates" />
+      <param name="precedence"         value="90" />
+      <param name="ds-type"            value="rrd-multigraph" />
+      <param name="ds-names"           value="attain,curr" />
+
+      <param name="ds-expr-attain"       value="{Atuc_AttainableRate}" />
+      <param name="graph-legend-attain"  value="ATUC Attainable Rate" />
+      <param name="line-style-attain"    value="##maxvalue" />
+      <param name="line-color-attain"    value="##maxvalue" />
+      <param name="line-order-attain"    value="1" />
+
+      <param name="ds-expr-curr"       value="{Atuc_CurrTxRate}" />
+      <param name="graph-legend-curr"  value="ATUC Curr TX Rate" />
+      <param name="line-style-curr"    value="##currvalue" />
+      <param name="line-color-curr"    value="##currvalue" />
+      <param name="line-order-curr"    value="2" />
+
+      <param name="vertical-label"      value="bps" />
+      <param name="graph-lower-limit"   value="0" />
+    </leaf>
+    <!-- ******* End: ATUC TX Rates ******* -->
+
+    <!-- ******* Start: ATUR TX Rates ******* -->
+    <leaf name="Atur_AttainableRate">
+      <param name="comment"            value="ATUR Attainable Rate" />
+      <param name="snmp-object"
+             value="$adslAturCurrAttainableRate.%ifindex-map%" />
+      <param name="rrd-ds"             value="AturAttainableRate" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="graph-legend"       value="ATUR Attainable Rate" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="Atur_CurrTxRate">
+      <param name="comment"            value="ATUR Current TX Rate" />
+      <param name="snmp-object"
+             value="$adslAturChanCurrTxRate.%ifindex-map%" />
+      <param name="rrd-ds"             value="AturCurrTxRate" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="data-file"
+             value="%system-id%_%interface-nick%_adsl-stats.rrd" />
+      <param name="graph-legend"       value="ATUR Current TX Rate" />
+      <param name="hidden"             value="yes" />
+    </leaf>
+
+    <leaf name="ATUR_TX_Rates">          <!-- Multiple line graph -->
+      <param name="comment"            value="ATUR TX Rates" />
+      <param name="precedence"         value="70" />
+      <param name="ds-type"            value="rrd-multigraph" />
+      <param name="ds-names"           value="attain,curr" />
+
+      <param name="ds-expr-attain"       value="{Atur_AttainableRate}" />
+      <param name="graph-legend-attain"  value="ATUR Attainable Rate" />
+      <param name="line-style-attain"    value="##maxvalue" />
+      <param name="line-color-attain"    value="##maxvalue" />
+      <param name="line-order-attain"    value="1" />
+
+      <param name="ds-expr-curr"       value="{Atur_CurrTxRate}" />
+      <param name="graph-legend-curr"  value="ATUR Curr TX Rate" />
+      <param name="line-style-curr"    value="##currvalue" />
+      <param name="line-color-curr"    value="##currvalue" />
+      <param name="line-order-curr"    value="2" />
+
+      <param name="vertical-label"      value="bps" />
+      <param name="graph-lower-limit"   value="0" />
+    </leaf>
+    <!-- ******* End: ATUR TX Rates ******* -->
+
+  </template>
+
+</datasources>
+
+</configuration>

@@ -1,0 +1,43 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% global.SearchString = variables.SEARCH; clearVar('SEARCH') %]
+[% INCLUDE htmlstart
+     title='Global Search results: ' _ global.SearchString
+     contentClass="SingleColumnContent"
+     noTopMenu=1 %]
+
+<DIV CLASS="TopMenu">
+[% INCLUDE shortcut url=url() text="Top"
+                    title="Choose from the list of trees"%]
+</DIV>
+                    
+<H1>Global Search results: [% global.SearchString %]</H1>
+<DIV CLASS="Listing">
+[% results = searchResults( global.SearchString );
+   counter = 0;
+
+   FOREACH entry = results;
+
+    counter = counter + 1;
+    IF counter % 2 == 0;
+      evenRow = 1;
+    ELSE;
+      evenRow = 0;
+    END;
+
+%]
+  <DIV CLASS="[% evenRow ? 'ListRowEven' : 'ListRow' %]">
+    <SPAN CLASS="NodeName">[%entry.0%]:
+    <A HREF="[%persistentUrl(entry.0, entry.1)%]">
+    [% entry.1 %]</A>
+    </SPAN>
+  </DIV>
+[% END %]
+</DIV>
+
+
+</DIV><!-- Content -->[% global.contentFinished = 1 %]
+<DIV CLASS="BottomMenu">
+[% INCLUDE globalsearchdialog %]
+</DIV>
+
+[% INCLUDE htmlend %]

@@ -1,0 +1,134 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE setdate %]
+[% INCLUDE htmlstart title='Graphs for ' _ path(token) printpath=1 %]
+
+[% parentComment = nodeParam(parent(token),'comment') %]
+[% IF parentComment %]<H1>Graphs for [% xmlnorm(parentComment) %]</H1>[% END %]
+
+[% INCLUDE variables %]
+
+<P>[% xmlnorm(nodeParam(token,'comment')) %]</P>
+
+[% INCLUDE legend %]
+
+[% monitors = nodeParam(token,'monitor');
+   IF monitors != '';
+   moncount = monitors.split(',').size %]
+<DIV CLASS="Monitors">
+<DIV CLASS="MonitorsTitle">
+<STRONG>Monitor[% (moncount > 1) ? 's' : '' %]:</STRONG>
+[% (moncount > 1) ? moncount : '' %]
+[% FOREACH monitor = monitors.split(',');
+     mondesc = param(monitor, 'comment') %]
+     <DIV CLASS="MonitorLine">
+     <SPAN CLASS="MonitorName">[% monitor %]</SPAN>
+     [% IF mondesc; %]<SPAN CLASS="MonitorDesc">([% mondesc %])</SPAN>[% END %]
+     </DIV>
+[% END %]
+</DIV>
+</DIV>
+[% END %]
+
+[% IF nodeParam(token, 'ds-type') != 'rrd-multigraph' %]
+  [% dayValues = rrprint(token, 'rrd-print-daily') %]
+  [% lastValue = rrprint(token, 'rrd-print-last') %]
+
+  <P>Min: [% scale('%.1f', dayValues.0) %], &nbsp;
+  Avg: [% scale('%.1f', dayValues.1) %], &nbsp;
+  Max: <STRONG>[% scale('%.1f', dayValues.2) %]</STRONG>, &nbsp;
+  Last: [% scale('%.1f', lastValue) %]
+  </P>
+[% END %]
+
+[%
+  graphvars = [];
+  graphviews = nodeParam(token,'rrgraph-views').split(',');
+  dayView = graphviews.1;
+  weekView = graphviews.2;
+  monthView = graphviews.3;
+  yearView = graphviews.4;
+  IF   nodeParam(token, 'rrd-hwpredict') == 'enabled' and
+       ( param(view, 'rrd-hwpredict') == 'disabled' or variables.NOHW );
+    graphvars = ['NOHW', 1];
+  END;
+%]
+
+<DIV CLASS="Graph">
+<H2>Last day graph</H2>
+[% INCLUDE rrgraph view=dayView vars=graphvars %]
+</DIV>
+
+<DIV CLASS="Graph">
+<H2>Last week graph</H2>
+[% INCLUDE rrgraph view=weekView vars=graphvars %]
+</DIV>
+
+[% longterm = param(view, 'longterm') %]
+[% IF longterm %]
+
+<DIV CLASS="Graph">
+<H2>Last month graph</H2>
+[% INCLUDE rrgraph view=monthView %]
+</DIV>
+
+<DIV CLASS="Graph">
+<H2>Last year graph</H2>
+[% INCLUDE rrgraph view=yearView %]
+</DIV>
+
+[% END %]
+
+<DIV CLASS="BottomShortcuts">
+[%
+  IF longterm;
+    hwview='longterm-rrd-html';
+    termview='default-rrd-html';
+  ELSE;
+    hwview='default-rrd-html';
+    termview='longterm-rrd-html';
+  END;
+  hwvars = [];
+  termvars = [];
+  IF nodeParam(token, 'rrd-hwpredict') == 'enabled' and
+     param(view, 'rrd-hwpredict') != 'disabled';
+    IF not variables.NOHW;
+      hwaction = 'Disable';
+      hwvars = ['NOHW', 1];
+      termvars = ['NOHW', ''];
+    ELSE;
+      hwaction = 'Enable';
+      hwvars = ['NOHW', ''];
+      termvars = ['NOHW', 1];
+    END;
+    INCLUDE shortcut url=url(token, hwview, hwvars)
+                     text=hwaction _ " Holt-Winters"
+                     title="Switch Holt-Winters prediction boundaries";
+  ELSE;
+    IF longterm;
+      termview='default-rrd-html';
+    ELSE;
+      termview='longterm-rrd-html';
+    END;
+  END;
+
+  IF longterm;
+    termstr='Short';
+    sctitle="View last day and last week graphs";
+  ELSE;
+    termstr='Long';
+    sctitle="View last day, week, month, and year graphs";
+  END;
+
+  INCLUDE shortcut url=url(token, termview, termvars)
+                  text=termstr _ "term view"
+                  title=sctitle;
+                  
+  INCLUDE shortcut url=plainURL _ 'explain-rrdgraph.html'
+                  text='Explain graph'
+                  title='Describe graph elements and values'
+                  newwindow=1;
+%]
+</DIV>
+
+[% INCLUDE bottomline %]
+[% INCLUDE htmlend %]

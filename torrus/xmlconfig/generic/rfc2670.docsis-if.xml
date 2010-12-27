@@ -1,0 +1,347 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Roman Hochuli, Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: rfc2670.docsis-if.xml,v 1.1 2010-12-27 00:04:30 ivan Exp $
+  Roman Hochuli <roman@hochu.li>
+  Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+  SEE ALSO: xmlconfig/examples/docsis-monitors.xml
+  
+-->
+
+<configuration>
+
+<definitions>
+  <!-- DOCS-IF-MIB::docsIfSignalQualityTable -->
+  <def name="docsIfSigQUnerroreds"      value="1.3.6.1.2.1.10.127.1.1.4.1.2"/>
+  <def name="docsIfSigQCorrecteds"      value="1.3.6.1.2.1.10.127.1.1.4.1.3"/>
+  <def name="docsIfSigQUncorrectables"  value="1.3.6.1.2.1.10.127.1.1.4.1.4"/>
+  <def name="docsIfSigQSignalNoise"     value="1.3.6.1.2.1.10.127.1.1.4.1.5"/>
+
+  <!-- DOCS-IF-MIB::docsIfUpstreamChannelTable -->
+  <def name="docsIfUpChannelFrequency"  value="1.3.6.1.2.1.10.127.1.1.2.1.2"/>
+    
+  <!-- DOCS-IF-MIB::docsIfCmtsDownChannelCounterTable -->
+  <def name="docsIfCmtsDownChnlCtrExtTotalBytes"
+                                value="1.3.6.1.2.1.10.127.1.3.10.1.4"/>
+  <def name="docsIfCmtsDownChnlCtrExtUsedBytes"
+                                value="1.3.6.1.2.1.10.127.1.3.10.1.5"/>
+</definitions>
+
+<datasources>
+
+  <template name="docsis-subtree-common">
+    <!-- nodeid-docsif is overwritten by devdiscover at the
+         interface level. This definition is here for backward compatibility
+         with older discovery results or for systems which do not use
+         devdiscover -->
+    <param name="nodeid-docsif"
+      value="docs//%nodeid-device%//%interface-nick%//"/>
+  </template>
+
+  
+  <template name="docsis-upstream-subtree">
+    <apply-template name="docsis-subtree-common"/>
+    <param name="precedence"           value="-500" />
+    <param name="comment"        value="DOCSIS upstream channel statistics" />
+    <param name="data-file">
+       %system-id%_%interface-nick%_docsis_upstream.rrd
+    </param>
+    <param name="collector-timeoffset-hashstring"
+                                       value="%system-id%:%interface-nick%" />
+    <param name="descriptive-nickname" value="%system-id%:%interface-name%"/>
+    <param name="graph-title"          value="%descriptive-nickname%" />
+
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="snr,fec,freq"/>
+    
+    <param name="overview-subleave-name-snr" value="SNR"/>
+    <param name="overview-direct-link-snr"      value="yes"/>
+    <param name="overview-direct-link-view-snr" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-snr"
+           value="All SNR"/>
+    <param name="overview-shortcut-title-snr"
+           value="Show signal quality graphs for all upstreams in one page"/>
+    <param name="overview-page-title-snr"
+           value="SNR Graphs"/>
+
+    <param name="overview-subleave-name-fec" value="FEC_Summary"/>
+    <param name="overview-direct-link-fec"      value="yes"/>
+    <param name="overview-direct-link-view-fec" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-fec"
+           value="All FEC"/>
+    <param name="overview-shortcut-title-fec"
+           value="Show FEC statistics for all upstreams in one page"/>
+    <param name="overview-page-title-fec"
+           value="FEC Graphs"/>
+                      
+    <param name="overview-subleave-name-freq" value="Frequency"/>
+    <param name="overview-direct-link-freq"      value="yes"/>
+    <param name="overview-direct-link-view-freq" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-freq"
+           value="All Frequency"/>
+    <param name="overview-shortcut-title-freq"
+           value="Show all upstream frequenciesin one page"/>
+    <param name="overview-page-title-freq"
+           value="Upstream frequency Graphs"/>
+
+    <param name="rrd-hwpredict"     value="disabled" />
+  </template>
+  
+  <template name="docsis-signal-quality-codewords">
+    <param name="rrd-create-dstype"   value="COUNTER" />
+    <param name="vertical-label"      value="Codewords/s" />
+    <param name="graph-lower-limit"   value="0" />
+  </template>
+
+  <template name="docsis-upstream-stats">
+    <leaf name="SNR">
+      <param name="snmp-object"  value="$docsIfSigQSignalNoise.%ifindex-map%"/>
+
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="rrd-ds"              value="SNR" />
+      <param name="collector-scale"     value="10,/" />
+
+      <param name="comment"             value="Signal/Noise Ratio" />
+      <param name="graph-legend"        value="Signal/Noise Ratio" />
+      <param name="vertical-label"      value="dB" />
+
+      <param name="normal-level"        value="25" />
+      <param name="lower-limit"         value="18" />
+      <param name="graph-lower-limit"   value="10" />
+      <param name="graph-upper-limit"   value="30" />
+
+      <param name="precedence"          value="1000" />
+
+      <!-- This monitor may be redefined by
+           DocsisUpSNRMonitor selector action -->
+      <param name="monitor"             value="docsis-snr-lower-20db" />
+      
+      <param name="nodeid"            value="%nodeid-docsif%//snr"/>
+    </leaf>
+
+    
+    <leaf name="FEC_Summary">
+      <param name="ds-type"           value="rrd-multigraph" />
+      <param name="ds-names"          value="corr,uncorr" />
+      <param name="nodeid"            value="%nodeid-docsif%//fec"/>
+
+      <param name="graph-lower-limit"       value="0.01" />
+      <param name="graph-upper-limit"       value="100" />
+      <param name="graph-logarithmic"       value="yes" />
+      <param name="graph-rigid-boundaries"  value="yes" />
+      
+      <param name="precedence"        value="950" />
+      <param name="comment"
+              value="Reed-Solomon forward error correction (FEC) summary" />
+      <param name="vertical-label"    value="Percent" />
+
+      <param name="ds-expr-corr">
+      {Correctable},{Error-Free},{Correctable},{Uncorrectable},+,+,/,100,*
+      </param>
+      <param name="graph-legend-corr"  value="Correctable Codewords" />
+      <param name="line-style-corr"      value="##SingleGraph" />
+      <param name="line-color-corr"      value="##green" />
+      <param name="line-order-corr"      value="1" />
+
+      <param name="ds-expr-uncorr">
+      {Uncorrectable},{Error-Free},{Correctable},{Uncorrectable},+,+,/,100,*
+      </param>
+      <param name="graph-legend-uncorr"  value="Uncorrectable Codewords" />
+      <param name="line-style-uncorr"    value="##SingleGraph" />
+      <param name="line-color-uncorr"    value="##red" />
+      <param name="line-order-uncorr"    value="2" />
+    </leaf>
+
+    <leaf name="Error-Free">
+      <apply-template name="docsis-signal-quality-codewords"/>
+      <param name="snmp-object"  value="$docsIfSigQUnerroreds.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Unerroreds" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="FEC codewords received on this channel without error"/>
+      <param name="graph-legend" value="Error-free Codewords" />
+      <param name="precedence"   value="900" />
+      <param name="graph-lower-limit"       value="0.01" />
+      <param name="graph-upper-limit"       value="100" />
+      <param name="graph-logarithmic"       value="yes" />
+      <param name="graph-rigid-boundaries"  value="yes" />
+    </leaf>
+
+    <leaf name="Correctable">
+      <apply-template name="docsis-signal-quality-codewords"/>
+      <param name="snmp-object"  value="$docsIfSigQCorrecteds.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Correcteds" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="FEC codewords received on this channel correctable errors"/>
+      <param name="graph-legend" value="Correctable Codewords" />
+      <param name="precedence"   value="800" />
+      <param name="monitor-action-target"  value="FEC_Summary"/>
+      <param name="graph-lower-limit"       value="0.01" />
+      <param name="graph-upper-limit"       value="100" />
+      <param name="graph-logarithmic"       value="yes" />
+      <param name="graph-rigid-boundaries"  value="yes" />
+    </leaf>
+
+    <leaf name="Uncorrectable">
+      <apply-template name="docsis-signal-quality-codewords"/>
+      <param name="snmp-object"
+                        value="$docsIfSigQUncorrectables.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Uncorrectables" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment"
+          value="FEC codewords received on this channel uncorrectable errors"/>
+      <param name="graph-legend" value="Uncorrectable Codewords" />
+      <param name="precedence"   value="700" />
+      <param name="monitor-action-target"  value="FEC_Summary"/>
+      <param name="graph-lower-limit"       value="0.01" />
+      <param name="graph-upper-limit"       value="100" />
+      <param name="graph-logarithmic"       value="yes" />
+      <param name="graph-rigid-boundaries"  value="yes" />
+    </leaf>
+    
+    <leaf name="Frequency">
+      <param name="snmp-object"
+                        value="$docsIfUpChannelFrequency.%ifindex-map%"/>
+      <param name="rrd-ds"       value="Frequency" />
+      <param name="rrd-create-dstype"   value="GAUGE" />
+      <param name="vertical-label"      value="Hz" />
+      <param name="comment"
+          value="Upstream frequency"/>
+      <param name="graph-legend" value="Frequency" />
+      <param name="precedence"   value="600" />
+      <param name="nodeid"            value="%nodeid-docsif%//frequency"/>
+    </leaf>
+  </template>
+
+
+
+  <template name="docsis-downstream-subtree">
+    <apply-template name="docsis-subtree-common"/>
+    <param name="precedence"           value="-500" />
+    <param name="comment"        value="DOCSIS downstream statistics" />
+    <param name="data-file">
+       %system-id%_%interface-nick%_docsis_downstream.rrd
+    </param>
+    <param name="collector-timeoffset-hashstring"
+                                       value="%system-id%:%interface-nick%" />
+    <param name="descriptive-nickname" value="%system-id%:%interface-name%"/>
+    <param name="graph-title"          value="%descriptive-nickname%" />
+
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="util"/>
+    <param name="overview-subleave-name-util" value="Utilization"/>
+    <param name="overview-direct-link-util"      value="yes"/>
+    <param name="overview-direct-link-view-util" value="expanded-dir-html"/>
+    <param name="overview-shortcut-text-util"
+           value="All Utilization"/>
+    <param name="overview-shortcut-title-util"
+           value="Show utilization graphs for all downstreams in one page"/>
+    <param name="overview-page-title-util"
+           value="Downstream Utilization Graphs"/>
+    <param name="rrd-hwpredict"     value="disabled" />
+  </template>
+
+  
+  <template name="docsis-downstream-util">  
+    <leaf name="Utilization">
+      <param name="ds-type"           value="rrd-multigraph" />
+      <param name="ds-names"          value="util" />
+      <param name="nodeid"            value="%nodeid-docsif%//util"/>
+
+      <param name="graph-lower-limit"  value="0" />
+      <param name="graph-upper-limit"  value="100" />
+
+      <param name="precedence"        value="950" />
+      <param name="comment"
+              value="Downstream channel utilization" />
+      <param name="vertical-label"    value="Percent" />
+
+      <param name="ds-expr-util">
+        {UsedBytes},{TotalBytes},/,100,*
+      </param>
+      <param name="graph-legend-util"  value="Utilization" />
+      <param name="line-style-util"      value="##resourceusage" />
+      <param name="line-color-util"      value="##resourceusage" />
+      <param name="line-order-util"      value="1" />
+    </leaf>
+    
+    <leaf name="TotalBytes">
+      <param name="rrd-create-dstype"   value="COUNTER" />
+      <param name="snmp-object-type"    value="COUNTER64" />
+      <param name="vertical-label"      value="Bytes/s" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="snmp-object"
+               value="$docsIfCmtsDownChnlCtrExtTotalBytes.%ifindex-map%"/>
+      <param name="rrd-ds"       value="TotalBytes" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment">
+        The total number of bytes in the Payload portion
+      </param>
+      <param name="graph-legend" value="Total Bytes" />
+      <param name="precedence"   value="800" />
+    </leaf>
+    
+    <leaf name="UsedBytes">
+      <param name="rrd-create-dstype"   value="COUNTER" />
+      <param name="snmp-object-type"    value="COUNTER64" />
+      <param name="vertical-label"      value="Bytes/s" />
+      <param name="graph-lower-limit"   value="0" />
+      <param name="snmp-object"
+               value="$docsIfCmtsDownChnlCtrExtUsedBytes.%ifindex-map%"/>
+      <param name="rrd-ds"       value="UsedBytes" />
+      <param name="hidden"       value="yes"/>
+      <param name="comment">
+       The total number of DOCSIS data bytes transported by this downstream
+       channel
+      </param>
+      <param name="graph-legend" value="Used Bytes" />
+      <param name="precedence"   value="800" />
+      <param name="monitor-action-target"  value="Utilization"/>
+    </leaf>  
+  </template>  
+  
+</datasources>
+
+<monitors>
+
+    <monitor name="docsis-snr-lower-20db">
+      <param name="monitor-type"  value="expression" />
+      <param name="rpn-expr"      value="DUP,0,GT,EXC,20,LT,AND" />
+      <param name="action"        value="docsis-snr-lower-20" />
+      <param name="expires"       value="3600" />
+      <param name="comment">
+        Signal/Noise-Ratio was lower than 20dB
+      </param>
+    </monitor>
+
+    <action name="docsis-snr-lower-20">
+      <param name="action-type"     value="tset" />
+      <param name="tset-name"       value="docsis-snr-lower-20" />
+    </action>
+
+</monitors>
+
+<token-sets>
+    <token-set name="docsis-snr-lower-20">
+      <param name="comment" value="S/N Ratio less than 20dB" />
+    </token-set>
+</token-sets>
+
+</configuration>

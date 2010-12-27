@@ -1,0 +1,161 @@
+Round Robin Database Framework
+  
+To do now:
+
+-- index the parameters during compilation and add search function to UI
+-- Update User Guide
+-- Persistent maps in snmp collector
+-- Multithreading in collector
+-- Additive list parameters
+-- New security model (access control within a tree)
+-- New WebUI model
+-- take the CF for graphing from view definition
+-- implement new RPN functions: SORT, REV, TREND
+-- Display docsIfDownstreamChannelTable docsIfUpstreamChannelTable in
+   DOCSIS chanel legends
+-- validate %Torrus::SQL::connections
+-- periodically refresh SNMP collector mappings
+-- Modular structure in Monitor, with pluggable actions
+-- in Monitor::run_event_exec, distinguish between monitor target and
+   action target
+-- document selectors internals
+-- fix the bug in recursive $def expansion
+-- Move expandable parameters from ConfigTree.pm to XML config
+-- dispersed timeoffsets for monitor
+-- use Parallel::ForkManager in devdiscover
+-- Set the daemon's log level by signal
+-- Selector for Cisco CPU and memory buffer monitoring
+-- Option to expand directory view by default
+-- Traceroute plugin (Gustavo Torres)
+-- CDef Collector plugin (Christian Schnidrig)
+-- Optionally show Admin info when authentication disabled
+-- RRD Renderer to take CF from the view definition
+-- Do we need a separate directory for user-defined styling?
+-- Startup script that verifies database consistency at server boot
+-- Collector that reports the BerkeleyDB stats
+-- Sysedge ntregperf discovery optimization (Shawn)
+-- Check RRD DS name length limit (19 bytes) and variable name limit (29 bytes)
+-- Better handling of SNMP timeouts in devdiscover
+-- MS-SQL SNMP support? (Shawn)
+-- Discovery profiles (router, server, etc.) to limit the number of probes
+-- Per-tree styling profiles (CSS, color schemas, company name and URL)
+-- Describe IF-MIB discovery internals in doc/devdoc/devdiscover.pod
+-- New utility to verify the installation files consistency (see below)
+-- rrd-create-max for interface counters tunable in vendor modules
+-- Backup snapshot of dynamic data (monitor status etc.)
+-- Relative path in alias definition
+-- "Remember me" login screen option
+-- Graph colouring by monitor action
+-- Session history display
+-- Track changes of XML configurations (XML::Diff, cvs-alike?)
+-- Translate parameters in monitor comments
+-- Show maximum value in the graph image comments
+
+Design work to do:
+
+-- Design draft for custom indexing and quering
+-- Develop a Concept of 95th percentile monthly reports
+-- Reports generation (monthly, weekly etc.)
+-- Write working draft for "collector-copy" datasource type
+
+To do before Release 1.0.1:
+
+-- Implement monitor escalation (devdoc/wd.monitor-escalation.pod)
+-- BUG: template may add children to a leaf
+-- Add more documentation to the existing XML
+-- Document HTML templates
+-- Web interface for ACL editing
+-- Date selector in Web interface
+-- CSV data export (new Renderer type)
+-- Syslog logging
+
+To do someday:
+
+-- Finish and test "RFC2662_ADSL_LINE" and "Paradyne" devdiscover modules
+-- Backplane performance for Catalyst switches
+-- VoIP dial peer statistics
+-- Gradual highlighting for subtree listings
+-- Tools for RRD files manipulation (adding/deleting DSes etc.)
+-- Service uptime monitoring and reporting (devdoc/wd.uptime-mon.pod)
+-- Distributed collector (devdoc/wd.distributed.pod)
+-- Log files wraparound
+-- Packaging for major OSes: RedHat, Debian, FreeBSD, Solaris, MacOS X (?)
+-- rrdtool-1.1 font option (only after rrdtool 1.1.x is released)
+-- navigation links to represent the network topology
+-- Messaging (devdoc/wd.messaging.pod)
+-- Tighter integration with OpenNMS and probably other systems
+-- Several obscurity levels instead of hidden=yes/no
+
+
+(C) 2002-2004, Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+$Id: TODO,v 1.1 2010-12-27 00:03:35 ivan Exp $
+
+==========================================================================
+
+CC: rrfw-devel@lists.sourceforge.net, "Shawn Ferry" <sferry@sevenspace.com> 
+From: "Shawn Ferry" <sferry@sevenspace.com>
+Subject: Re: [rrfw-devel] health check 
+Date: Mon, 15 Dec 2003 10:08:35 -0500 
+To: "Stanislav Sinyagin" <ssinyagin@yahoo.com> 
+      
+On Dec 15, 2003, at 9:56 AM, Stanislav Sinyagin wrote:
+
+> 'Morning Shawn,
+>
+> --- Shawn Ferry <sferry@sevenspace.com> wrote:
+>>> It might be also that this installation uses old version of
+>>> RRFW::Collector::SNMP,
+>>> or some buggy version of Net::SNMP.
+>>
+>> Something like that...When I installed 1.5d I did not stop and
+>> restart the collector. It is much happier now.
+>>
+>> Can you check at each initialization that the versions of all
+>> the supporting files is up to date? or maybe stash the modify time
+>> of files that are loaded and check.
+>>
+>> Not an issue just a thought to try and prevent
+>> other people from having the same silly problem.
+>
+> good idea. But I can check the files on disk only, it's not possible
+> (not easy) to check if the running process is up to date.
+>
+> bin/configinfo already prints some versions information.
+>
+> Let's say, an utility called "bin/checkfiles", would do the following:
+>
+> -- for files that are simply copied by make install: verify md5 sum 
+> against that in distribution
+>
+> -- for files that are modified by make install: 
+> verify md5 sum against that calculated during make install
+>
+> -- optionally store and verify md5 sums of user files in 
+> share/rrfw/discovery and share/rrfw/xmlconfig, as well as 
+> *-siteconfig.pl
+>
+> Does someone know if there's already something alike in other software?
+
+Similar functionality exists in cfengine, but I don't think it is 
+applicable in this case.
+Also tripwire.
+
+I am not so worried about knowing if the loaded version is up to date 
+based on a
+stored version string.  Although that was my original thought.
+
+I was thinking that the functionality of the "checkfiles" utility could 
+just be as you
+suggest an md5 sum.  Also, that md5 sum could be stored at 
+initialization for the libraries
+used in any long running process. The next initialization after a 
+compile could verify
+that the on disk sums have not changed.  Possibly to reload, alert or 
+something.
+
+Shawn
+
+==========================================================================
+
+ 

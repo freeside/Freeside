@@ -1,0 +1,98 @@
+#  Copyright (C) 2004  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus.pod.in,v 1.1 2010-12-27 00:04:37 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+torrus - Commandline wrapper for Torrus utilities
+
+=head1 SYNOPSIS
+
+B<torrus> I<command> [I<options...>]
+
+=head1 DESCRIPTION
+
+All Torrus utilities use this common command-line wrapper, which simply
+passes all arguments to the appropriate utility.
+
+Accepted commands:
+
+=over 4
+
+=item B<acledit>
+
+=item B<cleanup>
+
+=item B<clearcache>
+
+=item B<collector>
+
+=item B<compilexml>
+
+=item B<configinfo>
+
+=item B<configsnapshot>
+
+=item B<devdiscover>
+
+=item B<genddx>
+
+=item B<genlist>
+
+=item B<install_plugin>
+
+=item B<monitor>
+
+=item B<rrddir2xml>
+
+=item B<schedulerinfo>
+
+=item B<srvderive>
+
+=back
+
+=head1 OPTIONS
+
+Refer to approproate manpages for options for each Torrus command.
+
+=head1 SEE ALSO
+
+L<torrus_acledit(@mansec_usercmd@)>,
+L<torrus_action_printemail(@mansec_misc@)>,
+L<torrus_action_snmptrap(@mansec_misc@)>,
+L<torrus_clearcache(@mansec_usercmd@)>,
+L<torrus_collector(@mansec_usercmd@)>,
+L<torrus_compilexml(@mansec_usercmd@)>,
+L<torrus_configinfo(@mansec_usercmd@)>,
+L<torrus_configsnapshot(@mansec_usercmd@)>,
+L<torrus_devdiscover(@mansec_usercmd@)>,
+L<torrus_genddx(@mansec_usercmd@)>,
+L<torrus_monitor(@mansec_usercmd@)>,
+L<torrus_rrddir2xml(@mansec_usercmd@)>,
+L<torrus_schedulerinfo(@mansec_usercmd@)>
+L<torrus_srvderive(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

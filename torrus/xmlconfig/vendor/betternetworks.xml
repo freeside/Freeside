@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2003 Marc Haber, Shawn Ferry, Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+   Marc Haber <mh+rrfw-devel@zugschlus.de>
+
+  Authors: Marc Haber, Shawn Ferry, Stanislav Sinyagin
+  Vendor: betternetworks.xml
+
+  $Id: betternetworks.xml,v 1.1 2010-12-27 00:04:06 ivan Exp $
+-->
+<!--
+    Generic MIB definitions and templates for:
+
+        The templates defined in this file should work with
+        the BetterNetworks ethernet box
+    -->
+<configuration>
+  <definitions>
+    <def name="BNEBsensorValueInt10" value="1.3.6.1.4.1.14848.2.1.2.1.5"/>
+  </definitions>
+
+  <datasources>
+
+    <template name="betternetworks-sensor">
+      <param name="collector-timeoffset-hashstring"
+               value="%system-id%:%bne-sensor-index%" />
+      <param name="data-file"
+               value="%system-id%_sensor_%bne-sensor-index%.rrd"/>
+      <param name="snmp-object"
+               value="$BNEBsensorValueInt10.%bne-sensor-index%"/>
+      <param name="collector-scale"   value="10,/" />
+      <param name="rrd-ds"            value="value"/>
+      <param name="rrd-cf"            value="AVERAGE"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="graph-lower-limit" value="0" />
+      <param name="graph-upper-limit" value="100" />
+      <param name="nodeid"
+               value="sensor//%nodeid-device%//%bne-sensor-index%"/>
+    </template>
+  </datasources>
+</configuration>

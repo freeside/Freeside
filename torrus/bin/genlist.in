@@ -1,0 +1,197 @@
+#!@PERL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: genlist.in,v 1.1 2010-12-27 00:04:01 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+
+use Torrus::Log;
+use Torrus::ConfigTree;
+use Torrus::SiteConfig;
+
+exit(1) if not Torrus::SiteConfig::verify();
+
+my $tree;
+my $initPath = '/';
+my $listWhat = 'rrdfiles';
+my $selectType = 'all';
+
+my $help_needed;
+
+my %listingsSupported =
+    (
+     'rrdfiles' => {
+         'collector'  => 1,
+         'readonly'   => 1,
+         'all'        => 1,
+     },
+     
+     'snmphosts' => {
+         'collector'  => 1,
+     },
+     );
+
+my $ok = GetOptions ('tree=s'   => \$tree,
+                     'path=s'   => \$initPath,
+                     'what=s'   => \$listWhat,
+                     'type=s'   => \$selectType,
+                     'help'     => \$help_needed);
+
+if( not $ok or not $tree or $help_needed or
+    not $listingsSupported{$listWhat}{$selectType} or scalar(@ARGV) > 0 )
+{
+    print STDERR "Usage: $0 --tree=NAME [options...]\n",
+    "Options:\n",
+    "  --tree=NAME     tree name\n",
+    "  --path=/PATH    [".$initPath."] subtree name\n",
+    "  --what=WHAT     [".$listWhat."] what to list\n",
+    "    Supported listings:\n",
+    "      rrdfiles      List RRD file paths\n",
+    "      snmphosts     List SNMP hosts\n",
+    "  --type=TYPE     [".$selectType."] selection type\n",
+    "    Supported types:\n",
+    "      collector     Collector leaves\n",
+    "      readonly      Read-only leaves\n",
+    "      all           All of above\n",
+    "  --help          this help message\n";
+    exit 1;
+}
+
+
+if( not Torrus::SiteConfig::treeExists( $tree ) )
+{
+    Error('Tree ' . $tree . ' does not exist');
+    exit 1;
+}
+
+&Torrus::DB::setSafeSignalHandlers();
+
+my $config_tree = new Torrus::ConfigTree( -TreeName => $tree, -Wait => 1 );
+if( not defined( $config_tree ) )
+{
+    exit 1;
+}
+
+my $initToken = $config_tree->token( $initPath );
+if( not defined( $initToken ) )
+{
+    Error('No such subtree: ' . $initPath);
+    exit 1;
+}
+
+my $listing = {};
+
+my $listParams = {};
+if( $selectType eq 'all' )
+{
+    foreach my $type ( keys %{$listingsSupported{$listWhat}} )
+    {
+        if( $type ne 'all' )
+        {
+            $listParams->{$type} = 1;
+        }
+    }
+}
+else
+{
+    $listParams->{$selectType} = 1;
+}
+
+pickup_data( $config_tree, $initToken, $listing, $listWhat, $listParams );
+
+foreach my $item ( sort keys %{$listing} )
+{
+    print $item, "\n";
+}
+
+exit 0;
+
+sub pickup_data
+{
+    my $config_tree = shift;
+    my $token = shift;
+    my $listing = shift;
+    my $listWhat = shift;
+    my $listParams = shift;
+
+    foreach my $ctoken ( $config_tree->getChildren( $token ) )
+    {
+        &Torrus::DB::checkInterrupted();
+        
+        if( $config_tree->isSubtree( $ctoken ) )
+        {
+            pickup_data( $config_tree, $ctoken,
+                         $listing, $listWhat, $listParams );
+        }
+        elsif( $config_tree->isLeaf( $ctoken ) )
+        {
+            if( $listWhat eq 'rrdfiles' and
+                (
+                 (
+                  $listParams->{'collector'} and
+                  $config_tree->getNodeParam( $ctoken, 'ds-type' ) eq
+                  'collector' and
+                  $config_tree->getNodeParam( $ctoken, 'storage-type' ) eq
+                  'rrd'
+                  ) or
+                 (
+                  $listParams->{'readonly'} and
+                  $config_tree->getNodeParam( $ctoken, 'ds-type' ) eq
+                  'rrd-file' and
+                  $config_tree->getNodeParam( $ctoken, 'leaf-type' ) eq
+                  'rrd-def'
+                  )
+                 )
+                )
+            {
+                my $datafile =
+                    $config_tree->getNodeParam( $ctoken, 'data-file' );
+                my $datadir =
+                    $config_tree->getNodeParam( $ctoken, 'data-dir' );
+                $listing->{$datadir . '/' . $datafile} = 1;
+            }
+            elsif( $listWhat eq 'snmphosts' and
+                   $listParams->{'collector'} and
+                   $config_tree->getNodeParam( $ctoken, 'ds-type' ) eq
+                   'collector' )
+            {
+                my $host =
+                    $config_tree->getNodeParam( $ctoken, 'snmp-host' );
+                my $oid =
+                    $config_tree->getNodeParam( $ctoken, 'snmp-object' );
+                
+                if( defined( $host ) and length( $host ) > 0 and
+                    defined( $oid ) and length( $oid ) > 0 )
+                {
+                    $listing->{$host} = 1;
+                }                
+            }
+        }
+    }
+}
+
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

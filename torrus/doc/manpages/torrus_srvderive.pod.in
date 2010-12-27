@@ -1,0 +1,136 @@
+#  Copyright (C) 2007  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: torrus_srvderive.pod.in,v 1.1 2010-12-27 00:04:39 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 NAME
+
+srvderive - Derive a new service ID from sum or maximum of other service values
+
+=head1 SYNOPSIS
+
+B<torrus srvderive> I<TIMESPAN> I<OUTPUT> I<FUNCTION> I<SOURCES>...
+
+=head1 DESCRIPTION
+
+When the Torrus Reporting engine is set up, this command is used
+to combine several services data into a new service ID. The output data
+is either the maximum or the sum of input services.
+
+See I<Torrus Reporting Setup Guide> for more information.
+
+=head1 TIMESPAN
+
+Either --month or --end option must be defined
+
+=over 4
+
+=item B<--start>=I<YYYY-MM-DD>
+
+Sets the start date of the calculation.
+
+=item B<--end>=I<YYYY-MM-DD>
+
+Sets the next day after the eond of the period.
+
+=item B<--month>
+
+Instead of setting the end data, it is convenient to use this option. It sets
+the end data in one calendar month after the start date.
+
+=back
+
+
+=head1 OUTPUT
+
+=over 4
+
+=item B<--out>=I<SERVICEID>
+
+Sets the output service ID. This should not be a service ID used in the
+Torrus datasource trees. B<Note:> if I<srvderive> command is run twice
+with the same arguments, the produced data is doubled for the output
+service ID.
+
+=back
+
+
+
+=head1 FUNCTION
+
+=over 4
+
+=item B<--func>=C<MAX>|C<SUM>
+
+Sets the function to be used when combining the input service data.
+Currently only C<MAX> and C<SUM> are supportted.
+
+=back
+
+
+=head1 SOURCES
+
+=over 4
+
+=item B<--in>=I<SERVICEID> ...
+
+Input service IDs are specified either by B<--in> option, or as command line
+arguments. At least 2 input service IDs should be specified.
+
+=back
+
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--step>
+
+Default: 300. Sets the data interval for derived service ID. It is recommended
+to leave this option at default value.
+
+=item B<--verbose>
+
+Prints extra informatgion.
+
+=item B<--debug>
+
+Prints debugging information.
+
+=item B<--help>
+
+Prints command usage information.
+
+=back
+
+
+
+=head1 SEE ALSO
+
+L<torrus(@mansec_usercmd@)>
+
+=head1 NOTES
+
+See more documentation at Torrus home page: http://torrus.org
+
+=head1 AUTHOR
+
+Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>
+

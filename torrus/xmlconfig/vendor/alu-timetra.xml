@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Copyright (C) 2010 Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+   Alcatel-Lucent ESS and SR routers
+
+  $Id: alu-timetra.xml,v 1.1 2010-12-27 00:04:21 ivan Exp $
+-->
+
+
+<configuration>
+  <definitions>
+   <!-- TIMETRA-SERV-MIB -->
+   <def name="sapBaseStatsIngressPchipDroppedPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.1"/>
+   <def name="sapBaseStatsIngressPchipDroppedOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.2"/>
+   <def name="sapBaseStatsIngressPchipOfferedHiPrioPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.3"/>
+   <def name="sapBaseStatsIngressPchipOfferedHiPrioOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.4"/>
+   <def name="sapBaseStatsIngressPchipOfferedLoPrioPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.5"/>
+   <def name="sapBaseStatsIngressPchipOfferedLoPrioOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.6"/>
+   <def name="sapBaseStatsIngressQchipDroppedHiPrioPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.7"/>
+   <def name="sapBaseStatsIngressQchipDroppedHiPrioOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.8"/>
+   <def name="sapBaseStatsIngressQchipDroppedLoPrioPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.9"/>
+   <def name="sapBaseStatsIngressQchipDroppedLoPrioOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.10"/>
+   <def name="sapBaseStatsIngressQchipForwardedInProfPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.11"/>
+   <def name="sapBaseStatsIngressQchipForwardedInProfOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.12"/>
+   <def name="sapBaseStatsIngressQchipForwardedOutProfPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.13"/>
+   <def name="sapBaseStatsIngressQchipForwardedOutProfOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.14"/>
+   <def name="sapBaseStatsEgressQchipDroppedInProfPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.15"/>
+   <def name="sapBaseStatsEgressQchipDroppedInProfOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.16"/>
+   <def name="sapBaseStatsEgressQchipDroppedOutProfPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.17"/>
+   <def name="sapBaseStatsEgressQchipDroppedOutProfOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.18"/>
+   <def name="sapBaseStatsEgressQchipForwardedInProfPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.19"/>
+   <def name="sapBaseStatsEgressQchipForwardedInProfOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.20"/>
+   <def name="sapBaseStatsEgressQchipForwardedOutProfPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.21"/>
+   <def name="sapBaseStatsEgressQchipForwardedOutProfOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.22"/>
+   <def name="sapBaseStatsIngressPchipOfferedUncoloredPackets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.24"/>
+   <def name="sapBaseStatsIngressPchipOfferedUncoloredOctets"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.25"/>
+   <def name="sapBaseStatsAuthenticationPktsDiscarded"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.26"/>
+   <def name="sapBaseStatsAuthenticationPktsSuccess"
+        value="1.3.6.1.4.1.6527.3.1.2.4.3.6.1.27"/>
+  </definitions>
+
+<datasources>
+
+  <template name="alu-timetra-customer">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="traffic,discards"/>
+    
+    <param name="overview-subleave-name-traffic" value="InOut_bps"/>
+    <param name="overview-shortcut-text-traffic"
+           value="Traffic"/>
+    <param name="overview-shortcut-title-traffic"
+           value="Show egress and ingress traffic for all SAPs on one page"/>
+    <param name="overview-page-title-traffic"
+           value="Egress/ingress traffic graphs"/>
+    <param name="overview-direct-link-traffic"      value="yes"/>
+    <param name="overview-direct-link-view-traffic"
+           value="expanded-dir-html"/>
+    
+    <param name="overview-subleave-name-discards">
+      IngressQchipDroppedHiPrioPackets,
+      IngressQchipDroppedLoPrioPackets,
+      EgressQchipDroppedInProfPackets,
+      EgressQchipDroppedOutProfPackets
+    </param>
+    <param name="overview-shortcut-text-discards"
+           value="Discards"/>
+    <param name="overview-shortcut-title-discards"
+           value="Show all packet discards for all SAPs on one page"/>
+    <param name="overview-page-title-discards"
+           value="Packet Discards"/>
+    <param name="overview-direct-link-discards"      value="yes"/>
+    <param name="overview-direct-link-view-discards"
+           value="expanded-dir-html"/>
+  </template>
+
+  
+    <template name="alu-timetra-sap">
+      <param name="collector-timeoffset-hashstring"
+        value="%system-id%:%timetra-sap-id%" />
+      <param name="data-file"
+        value="%system-id%_sap_%timetra-sap-id%_%timetra-stat-category%.rrd"/>
+
+      <param name="descriptive-nickname"
+             value="%system-id% %timetra-sap-name%"/>
+      <param name="graph-title" value="%descriptive-nickname%" />
+      
+      <param name="snmp-object-type"  value="COUNTER64" />
+      <param name="rrd-create-dstype" value="COUNTER" />
+      <param name="ext-dstype"        value="COUNTER64" />
+      <param name="rrd-create-max"    value="1e15"/>
+      <param name="ext-counter-max"   value="1e15"/>
+      <param name="graph-lower-limit" value="0" />
+
+      <param name="nodeid-sap">
+        sap//%nodeid-device%//%timetra-customer-id%//%timetra-sap-name%
+      </param>
+
+      <leaf name="InOut_bps">
+        <param name="comment"
+          value="Egress and Ingress bits per second graph"/>
+        <param name="vertical-label"   value="bps" />
+        <param name="graph-lower-limit" value="0" />
+        <param name="rrd-hwpredict"    value="disabled" />
+        <param name="precedence"       value="5000" />
+        <param name="nodeid"           value="%nodeid-sap%//inoutbit"/>
+
+        <param name="ds-type"          value="rrd-multigraph" />
+        <param name="ds-names"         value="ingrinp,ingrop,egrinp,egrop" />
+
+        <param name="ds-expr-ingrinp"
+          value="{IngressQchipForwardedInProfOctets},8,*" />
+        <param name="graph-legend-ingrinp"
+          value="Ingress bps in-profile" />
+        <param name="line-style-ingrinp"    value="AREA" />
+        <param name="line-color-ingrinp"    value="##green" />
+        <param name="line-order-ingrinp"    value="1" />
+
+        <param name="ds-expr-ingrop"
+          value="{IngressQchipForwardedOutProfOctets},8,*" />
+        <param name="graph-legend-ingrop"
+          value="Ingress bps out-of-profile" />
+        <param name="line-style-ingrop"   value="AREA" />
+        <param name="line-stack-ingrop"   value="yes" />
+        <param name="line-color-ingrop"   value="##green75" />
+        <param name="line-order-ingrop"   value="2" />
+
+        <param name="ds-expr-egrinp"
+          value="{EgressQchipForwardedInProfOctets},8,*" />
+        <param name="graph-legend-egrinp"
+          value="Egress bps in-profile" />
+        <param name="line-style-egrinp"    value="LINE2" />        
+        <param name="line-color-egrinp"    value="##blue" />
+        <param name="line-order-egrinp"    value="11" />
+
+        <param name="ds-expr-egrop"
+          value="{EgressQchipForwardedOutProfOctets},8,*" />
+        <param name="graph-legend-egrop"
+           value="Egress bps out-of-profile" />
+        <param name="line-style-egrop"   value="LINE1.5" />
+        <param name="line-color-egrop"   value="##blue75" />
+        <param name="line-stack-egrop"   value="yes" />
+        <param name="line-order-egrop"   value="12" />
+      </leaf>
+
+            
+
+      <leaf name="IngressQchipDroppedHiPrioPackets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsIngressQchipDroppedHiPrioPackets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="DropHPrPkt" />
+        <param name="comment"
+           value="The number of high priority packets dropped by the Qchip" />
+        <param name="graph-legend"      value="Ingress HPr packets dropped" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="1000" />
+      </leaf>
+      
+      <leaf name="IngressQchipDroppedHiPrioOctets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsIngressQchipDroppedHiPrioOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="DropHPrOct" />
+        <param name="comment">
+         The number of high priority octets dropped by the Qchip
+        </param>
+        <param name="graph-legend"      value="Ingress HPr bytes dropped" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="990" />
+      </leaf>
+
+
+      
+      <leaf name="IngressQchipDroppedLoPrioPackets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsIngressQchipDroppedLoPrioPackets.%timetra-sap-id%"
+        </param>
+        <param name="rrd-ds"            value="DropLPrPkt" />
+        <param name="comment">
+         The number of low priority packets dropped by the Qchip
+        </param>
+        <param name="graph-legend"      value="Ingress LPr packets dropped" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="980" />
+      </leaf>
+      
+      <leaf name="IngressQchipDroppedLoPrioOctets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+          $sapBaseStatsIngressQchipDroppedLoPrioOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="DropLPrOct" />
+        <param name="comment">
+         The number of low priority octets dropped by the Qchip
+        </param>
+        <param name="graph-legend"      value="Ingress LPr bytes dropped" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="970" />
+      </leaf>
+
+
+
+      <leaf name="IngressQchipForwardedInProfPackets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsIngressQchipForwardedInProfPackets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwInProfPkt" />
+        <param name="comment">
+         The number of in-profile packets forwarded by the ingress Qchip
+        </param>
+        <param name="graph-legend"    value="Ingress INP packets forwarded" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="960" />
+      </leaf>
+      
+      <leaf name="IngressQchipForwardedInProfOctets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsIngressQchipForwardedInProfOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwInProfOct" />
+        <param name="comment">
+         The number of in-profile octets forwarded by the ingress Qchip
+        </param>
+        <param name="graph-legend"      value="Ingress INP bytes forwarded" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="950" />
+      </leaf>
+
+
+      <leaf name="IngressQchipForwardedOutProfPackets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsIngressQchipForwardedInProfPackets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwOutProfPkt" />
+        <param name="comment">
+         The number of in-profile packets forwarded by the ingress Qchip
+        </param>
+        <param name="graph-legend"      value="Ingress OP packets forwarded" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="940" />
+      </leaf>
+      
+      <leaf name="IngressQchipForwardedOutProfOctets">
+        <param name="timetra-stat-category"  value="IngressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsIngressQchipForwardedOutProfOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwOutProfOct" />
+        <param name="comment">
+         The number of in-profile octets forwarded by the ingress Qchip
+        </param>
+        <param name="graph-legend"      value="Ingress OP bytes forwarded" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="930" />
+      </leaf>
+
+
+
+
+      <leaf name="EgressQchipDroppedInProfPackets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipDroppedInProfPackets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="DropInProfPkt" />
+        <param name="comment">
+         The number of in-profile packets discarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress INP packets dropped" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="700" />
+      </leaf>
+      
+      <leaf name="EgressQchipDroppedInProfOctets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipDroppedInProfOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="DropInProfOct" />
+        <param name="comment">
+         The number of in-profile octets discarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress INP bytes dropped" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="690" />
+      </leaf>
+
+
+      <leaf name="EgressQchipDroppedOutProfPackets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipDroppedOutProfPackets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="DropOutProfPkt" />
+        <param name="comment">
+         The number of out-of-profile packets discarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress OP packets dropped" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="680" />
+      </leaf>
+      
+      <leaf name="EgressQchipDroppedOutProfOctets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipDroppedOutProfOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="DropOutProfOct" />
+        <param name="comment">
+         The number of out-of-profile octets discarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress OP bytes dropped" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="670" />
+      </leaf>
+
+
+      <leaf name="EgressQchipForwardedInProfPackets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipForwardedInProfPackets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwInProfPkt" />
+        <param name="comment">
+         The number of in-profile packets forwarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress INP packets forwarded" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="660" />
+      </leaf>
+      
+      <leaf name="EgressQchipForwardedInProfOctets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipForwardedInProfOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwInProfOct" />
+        <param name="comment">
+         The number of in-profile octets forwarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress INP bytes forwarded" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="650" />
+      </leaf>
+
+
+      <leaf name="EgressQchipForwardedOutProfPackets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipForwardedInProfPackets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwOutProfPkt" />
+        <param name="comment">
+         The number of in-profile packets forwarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress OP packets forwarded" />
+        <param name="vertical-label"    value="pps" />
+        <param name="precedence"        value="640" />
+      </leaf>
+      
+      <leaf name="EgressQchipForwardedOutProfOctets">
+        <param name="timetra-stat-category"  value="EgressQchip" />        
+        <param name="snmp-object">
+         $sapBaseStatsEgressQchipForwardedOutProfOctets.%timetra-sap-id%
+        </param>
+        <param name="rrd-ds"            value="FwOutProfOct" />
+        <param name="comment">
+         The number of in-profile octets forwarded by the egress Qchip
+        </param>
+        <param name="graph-legend"      value="Egress OP bytes forwarded" />
+        <param name="vertical-label"    value="Bps" />
+        <param name="precedence"        value="630" />
+      </leaf>
+      
+
+    </template>
+        
+  </datasources>
+</configuration>

@@ -1,0 +1,238 @@
+#  webintf.pod - Torrus web interface reference
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: rrfw_torrus_migration.pod.in,v 1.1 2010-12-27 00:04:32 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+#
+#
+
+=head1 RRFW to Torrus migration guide
+
+
+
+=head2 Introduction
+
+Torrus is the new marketing name for RRFW (Round-robin Database Framework),
+a robust and flexible software package for data series processing.
+The last release of RRFW is 0.1.8. The upcoming release 1.0.0 of Torrus
+will introduce some significant changes and design improvements.
+
+The directory structure of Torrus is more standards-compliant, and more
+convenient for system adminisrators. The user files are strictly separated
+from the distribution files. The XML configurations and HTML templates
+are being searched in multiple directories, thus there will be no longer a
+mixture of site-specific files with the ones from distribution.
+
+In addition, Torrus introduces a commandline wrapper that is installed in
+a generic directory for user executables (by default, F</usr/local/bin>).
+This greatly simplifies the site administrator's tasks.
+
+The plugins infrastructure is completely redesigned.
+The plugin installation procedure is separated from the main software
+installation. In addition, plugin installers set up their initialization
+scripts in special directories, so that there's no need for plugin
+initialization in F<torrus-siteconfig.pl> and other files. 
+
+Further on, we assume that RRFW is installed in its default directory,
+F</usr/local/rrfw-0.1>, and Torrus is installed with default paths. These
+paths may differ in your installation.
+We refer to TORRUS_DISTR as the unpacked Torrus distribution path.
+
+
+
+=head2 Software installation
+
+Create a new user: C<torrus> and group: C<torrus>. The user ID that is
+used by Apache process must be a member of this group. Depending on the
+system, this user may be named as C<www>, C<httpd>, C<nobody> etc. Consult
+your Apache configuration for details.
+
+Install Torrus. If your system already runs RRFW release 0.1.8,
+all prerequisites should be already in place. Then you simply unpack
+the Torrus distribution, and from its directory execute
+
+  ./configure
+  make install
+
+If required, download and unpack the Torrus plugins. Then for each plugin,
+execute 
+
+  torrus install_plugin <UNPACKED_PLUGIN_DIR>
+
+
+
+=head2 The Perl configuration files
+
+Te distribution contains a short Shell script called
+C<TORRUS_DISTR/setup_tools/replace_rrfw.sh>. This script takes one file name
+as an argument, replaces all occurrences of I<RRFW> to I<Torrus> and I<rrfw>
+to I<torrus>, and finally replaces the specified file with the new one.
+
+Copy the site configuration files from RRFW to Torrus directory:
+
+  cd /usr/local/etc/torrus/
+  cp /usr/local/rrfw-0.1/share/rrfw/rrfw-siteconfig.pl \
+    conf/torrus-siteconfig.pl
+  TORRUS_DISTR/setup_tools/replace_rrfw.sh conf/torrus-siteconfig.pl
+
+If needed, follow the same procedure for F<devdiscover-siteconfig.pl>
+and other site configs.
+
+
+
+=head2 XML configuration files
+
+The format of XML fles has not changed, so you simply copy
+all locally defined files into F</usr/local/etc/torrus/xmlconfig>.
+
+The following Shell commands might be of help. They copy all XML files that
+do not occur in F</usr/local/torrus/xmlconfig>, the default path for
+distribution supplied files:
+
+  cd /usr/local/rrfw-0.1/share/rrfw/xmlconfig/
+
+  find . -name '*.xml' -exec test ! -f /usr/local/torrus/xmlconfig/'{}' ';' \
+    -print | cpio --create --file=/tmp/allxml.cpio
+
+  cd /usr/local/etc/torrus/xmlconfig/
+
+  cpio --extract --make-directories --preserve-modification-time \
+    --file=/tmp/allxml.cpio
+
+After copying XML files, compile them in Torrus:
+
+  torrus compilexml --all --verbose
+
+
+
+=head2 Monitor actions
+
+If you utilize the monitor daemon, you will most probably need
+to change the action statements.
+
+In the action of type C<exec>, the C<command> parameter should be edited.
+RRFW was usually referencing the email notification command as
+I<$RRFW_HOME/bin/action_printemail>. In Torrus, this command should be
+referred as I<$TORRUS_BIN/action_printemail>.
+
+
+
+=head2 SNMP discovery files
+
+  cd /usr/local/etc/torrus/
+  cp /usr/local/rrfw-0.1/share/rrfw/discovery/*.ddx discovery/
+
+The treatment of C<output-file> parameter has slightly changed.
+In RRFW, relative filename meant relative to the current working directory,
+and C<$XMLCONFIG> macro was used for referring the default XML files directory.
+In Torrus, C<$XMLCONFIG> is still supported, but it is advisory to get rid
+of it. Now the relative filenames refer to the user's XML directory,
+F</usr/local/torrus/xmlconfig>. Absolute filenames are used as they are.
+
+In addition, C<torrus devdiscover> acepts the relative input file names,
+and searches for them in F</usr/local/torrus/discovery>.
+
+
+
+=head2 Web interface ACLs
+
+  cd /usr/local/etc/torrus/
+  /usr/local/rrfw-0.1/bin/acledit --export=acl.xml
+  torrus acledit --import=acl.xml
+
+
+
+=head2 Site-specific text templates
+
+If you used some custom templates (HTML templates for the Web interface,
+or text templates for e-mail notifications), copy them to
+F</usr/local/etc/torrus/templates>. This directory should contain only
+your custom templates. Those delivered with the distribution packages are
+located in F</usr/local/torrus/templates>.
+
+
+
+=head2 Apache configuration
+
+Follow the Torrus Web interface guide and configure Apache accordingly.
+If needed, use the following Apache command to redirect the users which
+use the old URL:
+
+  Redirect /rrfw http://host.domain.com/torrus
+
+After changing the configuration, stop and start Apache.
+
+
+
+=head2 Stop RRFW collector and monitor processes
+
+Depending on your system configuration, the command would look like
+
+  /etc/init.d/rrfw stop
+
+Make sure that all old processes are stopped. Then remove the RRFW startup
+script from all rc.d directories.
+
+
+
+=head2 Change the RRD files ownership
+
+Depending on your system configuration, the paths for RRD files might be
+different.
+
+  chown torrus:torrus /var/snmpcollector/*
+
+
+
+=head2 Test and run processes
+
+For testing purposes, you might want to try launching the collector and
+monitor processes, as follows:
+
+  torrus collector --tree=mytree --runonce --debug
+
+Then copy the Torrus startup script to your system's init directory and setup
+new symbolic links, if required. The following example should work for
+Sun Solaris:
+
+  cp TORRUS_DISTR/init.d/torrus /etc/init.d
+  cd /etc/rc3.d
+  ln -s S90torrus ../init.d/torrus
+  cd /etc/rc0.d
+  ln -s K90torrus ../init.d/torrus
+
+Run the startup script and verify that RRD files get updated.
+
+
+
+=head2 Update the cron jobs
+
+RRFW's cron job F</usr/local/rrfw-0.1/bin/cleanup> should be replaced with
+the analogous job from Torrus: F</usr/local/torrus/bin/cleanup>
+
+
+
+=head2 Update documentation
+
+Update your site operational manuals to reflect the new software name,
+paths and URLs.
+
+
+
+=head1 Author
+
+Copyright (c) 2004 Stanislav Sinyagin E<lt>ssinyagin@yahoo.comE<gt>

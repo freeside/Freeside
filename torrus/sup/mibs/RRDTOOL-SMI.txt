@@ -1,0 +1,39 @@
+RRDTOOL-SMI DEFINITIONS ::= BEGIN
+
+IMPORTS
+	MODULE-IDENTITY,
+	OBJECT-IDENTITY,
+	enterprises
+		FROM SNMPv2-SMI;
+
+rrdtool MODULE-IDENTITY
+	LAST-UPDATED "200209150000Z"
+	ORGANIZATION "RRD Tool"
+	CONTACT-INFO
+		"    Tobi Oetiker
+
+                Postal: ETZ J97, ETH
+                        8092 Zurich
+                        Switzerland
+
+                Telephone: +41 1 632-5286
+                E-mail: oetiker@ee.ethz.ch
+
+                RRD Tool Information:
+                  http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/
+		"
+	DESCRIPTION
+		"The Structure of RRDTool fellow projects"
+	::= { enterprises 14697 }	-- assigned by IANA
+
+torrus    OBJECT-IDENTITY
+	STATUS	current
+	DESCRIPTION
+		"Round Robin Database Framework. 
+                http://torrus.sourceforge.net/
+                "
+	::= { rrdtool 1 }
+
+-- more to come if necessary.
+
+END

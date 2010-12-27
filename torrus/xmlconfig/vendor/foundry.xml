@@ -1,0 +1,268 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2008 Roman Hochuli
+   Copyright (C) 2010 Stanislav Sinyagin
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: foundry.xml,v 1.1 2010-12-27 00:04:17 ivan Exp $
+  Roman Hochuli <roman@hochu.li>
+
+-->
+<!-- Common Foundry definitions -->
+<configuration>
+  <definitions>
+    <!-- Froundry Enterprise MIB OID -->
+    <!-- Temperature of the chassis. Each Unit is 0.5 degrees Celsius -->
+    <def name="fdrySnChasActualTemperature"
+           value="1.3.6.1.4.1.1991.1.1.1.1.18.0"/>
+    <def name="fdrySnAgentTempValues"
+           value="1.3.6.1.4.1.1991.1.1.2.13.1.1.4"/>
+    <def name="fdrySnAgentTempValue"
+           value="1.3.6.1.4.1.1991.1.1.2.13.1.1.4"/>
+           
+    <!-- CPU utilization -->
+    <def name="fdrySnAgGblCpuUtil1SecAvg"
+           value="1.3.6.1.4.1.1991.1.1.2.1.50.0"/>
+    <def name="fdrySnAgGblCpuUtil5SecAvg"
+           value="1.3.6.1.4.1.1991.1.1.2.1.51.0"/>
+    <def name="fdrySnAgGblCpuUtil1MinAvg"
+           value="1.3.6.1.4.1.1991.1.1.2.1.52.0"/>
+    <def name="fdrySnAgentCpuUtilValue"
+           value="1.3.6.1.4.1.1991.1.1.2.11.1.1.4"/>
+    <def name="fdrySnAgentCpuUtil100thPercent"
+           value="1.3.6.1.4.1.1991.1.1.2.11.1.1.6"/>
+           
+    <!-- Dynamic memory utilizaion -->
+    <def name="fdry_snAgGlbDynMemUtil"
+           value="1.3.6.1.4.1.1991.1.1.2.1.53.0"/> <!-- Percentage -->
+    <def name="fdry_snAgGlbDynMemTotal"
+           value="1.3.6.1.4.1.1991.1.1.2.1.54.0"/> <!-- Bytes      -->
+    <def name="fdry_snAgGlbDynMemFree"
+           value="1.3.6.1.4.1.1991.1.1.2.1.55.0"/> <!-- Bytes      -->
+           
+    <def name="fdrySnAgentBrdMemoryTotal"
+           value="1.3.6.1.4.1.1991.1.1.2.2.1.1.24"/>
+    <def name="fdrySnAgentBrdMemoryAvailable"
+           value="1.3.6.1.4.1.1991.1.1.2.2.1.1.25"/>
+  </definitions>
+
+  
+  <datasources>
+    
+    <template name="fdry-chass-temperature">
+      <param name="comment" value="management module temperature"/>
+      <param name="graph-title" value="%system-id%"/>
+      <param name="data-file" value="%system-id%_chassis_tempstats.rrd"/>      
+      <param name="rrd-ds" value="chassis_actual"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="collector-scale" value="2,/"/>
+      <param name="snmp-object"  value="$fdrySnChasActualTemperature"/>
+      <param name="graph-legend" value="Chassis temperature"/>
+      <param name="vertical-label" value="Degrees Celsius"/>
+      <param name="graph-upper-limit" value="%fdry-chastemp-shutdown%"/>
+      <param name="upper-limit" value="%fdry-chastemp-warning%"/>
+    </template>
+    
+    <template name="fdry-board-overview">
+     <param name="has-overview-shortcuts" value="yes"/>
+     <param name="overview-shortcuts" value="all"/>
+
+     <param name="overview-subleave-name-all">
+        Memory_Statistics/Memory_Overview,
+        CPU_Statistics/CPU_Overview,
+        Temperature_Statistics/Temperature_Overview
+     </param>     
+     <param name="overview-shortcut-text-all"
+           value="Overview"/>
+     <param name="overview-shortcut-title-all"
+           value="All important graphs on one page"/>
+     <param name="overview-page-title-all"
+           value="Linecard overview"/>
+     <param name="overview-direct-link-all" value="yes"/>
+    </template>
+    
+    <template name="fdry-board-subtree">
+      <param name="comment" value="%fdry-board-descr%"/>
+      <param name="graph-title"
+          value="%system-id% Linecard %fdry-board-index%"/>
+      <param name="data-file"
+          value="%system-id%_linecard_%fdry-board-index%_%fdry-datafile%.rrd"/>
+    </template>
+    
+    <template name="fdry-board-memstats">
+      <param name="comment" value="Linecard-specific memory statistics"/>
+      <param name="fdry-datafile" value="memorystats"/>
+      <param name="graph-lower-limit" value="0"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="rrd-hwpredict" value="disabled"/>
+      
+      <leaf name="Memory_Overview">
+        <param name="comment" value="Board memory statistics combined"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="total,avail,free"/>
+        
+        <param name="ds-expr-free"
+           value="{Memory_Total},{Memory_Available},-"/>
+        <param name="graph-legend-free" value="Memory Used"/>
+        <param name="line-style-free" value="AREA"/>
+        <param name="line-color-free" value="##three"/>
+        <param name="line-order-free" value="2"/>
+        
+        <param name="ds-expr-avail" value="{Memory_Available}"/>
+        <param name="graph-legend-avail" value="Memory Available"/>
+        <param name="line-style-avail" value="AREA"/>
+        <param name="line-color-avail" value="##one"/>
+        <param name="line-order-avail" value="3"/>
+        <param name="line-stack-avail" value="yes"/>
+        
+        <param name="ds-expr-total" value="{Memory_Total}"/>
+        <param name="graph-legend-total" value="Memory Total"/>
+        <param name="line-style-total" value="LINE2"/>
+        <param name="line-color-total" value="##two"/>
+        <param name="line-order-total" value="5"/>
+        
+        <param name="vertical-label" value="Bytes"/>
+        <param name="precedence" value="1000"/>
+        <param name="graph-lower-limit" value="0"/>
+      </leaf>
+      
+      <leaf name="Memory_Total">
+        <param name="precedence" value="999"/>
+        <param name="rrd-ds" value="MemTotal"/>
+        <param name="snmp-object"
+           value="$fdrySnAgentBrdMemoryTotal.%fdry-board-index%"/>
+        <param name="comment" value="Number of total memory in bytes"/>
+        <param name="graph-legend" value="Total Memory"/>
+      </leaf>
+      
+      <leaf name="Memory_Available">
+        <param name="precedence" value="998"/>
+        <param name="rrd-ds" value="MemAvail"/>
+        <param name="snmp-object"
+           value="$fdrySnAgentBrdMemoryAvailable.%fdry-board-index%"/>
+        <param name="comment" value="Number of available memory in bytes"/>
+        <param name="graph-legend" value="Available Memory"/>
+      </leaf>
+    </template>
+
+
+    
+    <template name="fdry-board-cpustats">
+      <param name="comment" value="Linecard-specific cpu statistics"/>
+      <param name="fdry-datafile" value="cpustats"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="rrd-hwpredict" value="disabled"/>
+      
+      <leaf name="CPU_Overview">
+        <param name="comment" value="Board cpu statistics combined"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names" value="5sec,1min,5min"/>
+        
+        <param name="ds-expr-5sec" value="{CPU_Total_5sec}"/>
+        <param name="graph-legend-5sec" value="5 second cpu usage"/>
+        <param name="line-style-5sec" value="LINE1"/>
+        <param name="line-color-5sec" value="##one"/>
+        <param name="line-order-5sec" value="1"/>
+        
+        <param name="ds-expr-1min" value="{CPU_Total_1min}"/>
+        <param name="graph-legend-1min" value="1 minute cpu usage"/>
+        <param name="line-style-1min" value="LINE1"/>
+        <param name="line-color-1min" value="##two"/>
+        <param name="line-order-1min" value="2"/>
+        
+        <param name="ds-expr-5min" value="{CPU_Total_5min}"/>
+        <param name="graph-legend-5min" value="5 minute cpu usage"/>
+        <param name="line-style-5min" value="LINE1"/>
+        <param name="line-color-5min" value="##three"/>
+        <param name="line-order-5min" value="3"/>
+        
+        <param name="graph-lower-limit" value="0"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="upper-limit" value="80"/>
+        <param name="vertical-label" value="Percent"/>
+      </leaf>
+
+      <leaf name="CPU_Total_5sec">
+        <param name="precedence" value="-200"/>
+        <param name="snmp-object"
+          value="%fdry-cpu-base%.%fdry-board-index%.1.5"/>
+        <param name="rrd-ds" value="Total5sec"/>
+        <param name="collector-scale" value="0.01,*"/>
+        <param name="comment">
+          The overall CPU busy percentage in the last 5 second period average
+        </param>
+        <param name="graph-legend" value="5 second cpu usage"/>
+        <param name="graph-lower-limit" value="0"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="upper-limit" value="80"/>
+        <param name="vertical-label" value="Percent"/>
+      </leaf>
+      
+      <leaf name="CPU_Total_1min">
+        <param name="precedence" value="-201"/>
+        <param name="snmp-object"
+          value="%fdry-cpu-base%.%fdry-board-index%.1.60"/>
+        <param name="rrd-ds" value="Total1min"/>
+        <param name="collector-scale" value="0.01,*"/>
+        <param name="comment">
+          The overall CPU busy percentage in the last 1 minute period average
+        </param>
+        <param name="graph-legend" value="1 minute cpu usage"/>
+        <param name="graph-lower-limit" value="0"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="upper-limit" value="80"/>
+        <param name="vertical-label" value="Percent"/>
+      </leaf>
+      
+      <leaf name="CPU_Total_5min">
+        <param name="precedence" value="-202"/>
+        <param name="snmp-object"
+          value="%fdry-cpu-base%.%fdry-board-index%.1.300"/>
+        <param name="rrd-ds" value="Total5min"/>
+        <param name="collector-scale" value="0.01,*"/>
+        <param name="comment">
+         The overall CPU busy percentage in the last 5 minute period average
+        </param>
+        <param name="graph-legend" value="5 minutes cpu usage"/>
+        <param name="graph-lower-limit" value="0"/>
+        <param name="graph-upper-limit" value="100"/>
+        <param name="upper-limit" value="80"/>
+        <param name="vertical-label" value="Percent"/>
+      </leaf>
+    </template>
+
+
+    <template name="fdry-board-tempstats">
+      <param name="comment" value="Linecard-specific temperature sensors"/>
+      <param name="fdry-datafile" value="tempstats"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="rrd-hwpredict" value="disabled"/>
+    </template>
+      
+
+    <template name="fdry-board-temp-sensor-halfcelsius">
+      <param name="comment" value="%sensor-description%"/>
+      <param name="precedence" value="%sensor-precedence%"/>
+      <param name="rrd-ds" value="sensor_%sensor-index%"/>
+      <param name="collector-scale" value="2,/"/>
+      <param name="snmp-object"
+        value="$fdrySnAgentTempValue.%fdry-board-index%.%sensor-index%"/>
+      <param name="graph-legend" value="%sensor-short%"/>
+      <param name="vertical-label" value="Degrees Celsius"/>
+    </template>
+        
+  </datasources>
+</configuration>

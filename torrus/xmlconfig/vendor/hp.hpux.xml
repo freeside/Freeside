@@ -1,0 +1,278 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2003  Stanislav Sinyagin
+   Copyright (C) 2003  Aaron S. Bush  <abush at microelectronics dot com>
+
+   File: vendor/hp.hpux.xml
+   Description: HPUX System monitor definitions
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+-->
+
+<!--
+    Tested with HPUX 11.00
+-->
+
+<configuration>
+
+<definitions>
+  <!-- HP MIB -->
+  <def name="hpuxSystemUserCPU"
+                          value="1.3.6.1.4.1.11.2.3.1.1.13" />
+  <def name="hpuxSystemSysCPU"
+                          value="1.3.6.1.4.1.11.2.3.1.1.14" />
+  <def name="hpuxSystemIdleCPU"
+                          value="1.3.6.1.4.1.11.2.3.1.1.15" />
+  <def name="hpuxSystemNiceCPU"
+                          value="1.3.6.1.4.1.11.2.3.1.1.16" />
+
+  <!-- returns lvol path; i.e. "/dev/vg00/lvol1" -->
+  <def name="hpuxFileSystemName"
+                          value="1.3.6.1.4.1.11.2.3.1.2.2.1.3" />
+
+  <def name="hpuxFileSystemBlock"
+                          value="1.3.6.1.4.1.11.2.3.1.2.2.1.4" />
+  <def name="hpuxFileSystemBfree"
+                          value="1.3.6.1.4.1.11.2.3.1.2.2.1.5" />
+  <def name="hpuxFileSystemBavail"
+                          value="1.3.6.1.4.1.11.2.3.1.2.2.1.6" />
+  <def name="hpuxFileSystemFiles"
+                          value="1.3.6.1.4.1.11.2.3.1.2.2.1.8" />
+  <def name="hpuxFileSystemFfree"
+                          value="1.3.6.1.4.1.11.2.3.1.2.2.1.9" />
+
+  <!-- returns mount point name; i.e. "/stand" -->
+  <def name="hpuxFileSystemDir"
+                          value="1.3.6.1.4.1.11.2.3.1.2.2.1.10" />
+
+  <!-- FileSystem indices -->
+  <def name="FSIDX_DIR"   value="M($hpuxFileSystemDir, %filesystem-name%)" />
+  <def name="FSIDX_NAME"  value="M($hpuxFileSystemName, %filesystem-name%)" />
+
+</definitions>
+
+<datasources>
+
+  <template name="hpux-cpu">
+    <param name="data-file" value="%system-id%_CPU_Utilization.rrd" />
+
+    <leaf name="CPU_Utilization">
+        <param name="comment"
+               value="User, System, Idle, and Nice CPU Utilization" />
+        <param name="precedence"        value="1000" />
+        <param name="ds-type"           value="rrd-multigraph" />
+        <param name="ds-names"          value="user,system,idle,nice" />
+
+        <param name="ds-expr-user"      value="{User_CPU}" />
+        <param name="graph-legend-user" value="User" />
+        <param name="line-style-user"   value="AREA" />
+        <param name="line-order-user"   value="1" />
+        <param name="line-color-user"   value="#FF0000" />
+
+        <param name="ds-expr-system"    value="{System_CPU}" />
+        <param name="graph-legend-system"       value="System" />
+        <param name="line-style-system" value="STACK" />
+        <param name="line-order-system" value="2" />
+        <param name="line-color-system" value="#FFFF00" />
+
+        <param name="ds-expr-idle"      value="{Idle_CPU}" />
+        <param name="graph-legend-idle" value="Idle" />
+        <param name="line-style-idle"   value="STACK" />
+        <param name="line-order-idle"   value="3" />
+        <param name="line-color-idle"   value="#00FF00" />
+
+        <param name="ds-expr-nice"      value="{Nice_CPU}" />
+        <param name="graph-legend-nice" value="Nice" />
+        <param name="line-style-nice"   value="STACK" />
+        <param name="line-order-nice"   value="4" />
+        <param name="line-color-nice"   value="#99CCFF" />
+    </leaf> <!-- CPU_Utilization -->
+
+    <leaf name="User_CPU">
+      <param name="snmp-object"        value="$hpuxSystemUserCPU.0"/>
+      <param name="rrd-ds"             value="hpuxSystemUserCPU" />
+      <param name="rrd-create-dstype"  value="COUNTER" />
+      <param name="comment">
+          Average time in seconds spent by all processors in User mode.
+      </param>
+      <param name="graph-legend"       value="User CPU" />
+    </leaf>
+
+    <leaf name="System_CPU">
+      <param name="snmp-object"        value="$hpuxSystemSysCPU.0"/>
+      <param name="rrd-ds"             value="hpuxSystemSysCPU" />
+      <param name="rrd-create-dstype"  value="COUNTER" />
+      <param name="comment">
+          Average time in seconds spent by all processors in System mode.
+      </param>
+      <param name="graph-legend"       value="System CPU" />
+    </leaf>
+
+    <leaf name="Idle_CPU">
+      <param name="snmp-object"        value="$hpuxSystemIdleCPU.0"/>
+      <param name="rrd-ds"             value="hpuxSystemIdleCPU" />
+      <param name="rrd-create-dstype"  value="COUNTER" />
+      <param name="comment">
+          Average time in seconds spent by all processors in Idle mode.
+      </param>
+      <param name="graph-legend"       value="Idle CPU" />
+    </leaf>
+
+    <leaf name="Nice_CPU">
+      <param name="snmp-object"        value="$hpuxSystemNiceCPU.0"/>
+      <param name="rrd-ds"             value="hpuxSystemNiceCPU" />
+      <param name="rrd-create-dstype"  value="COUNTER" />
+      <param name="comment">
+          Average time in seconds spent by all processors in Nice mode.
+      </param>
+      <param name="graph-legend"       value="Nice CPU" />
+    </leaf>
+  </template> <!-- hpux-cpu -->
+
+
+  <template name="hpux-filesystem">
+    <param name="data-file" value="%system-id%_%filesystem%.rrd" />
+
+    <leaf name="FileSystem_Usage_Bytes">
+        <param name="comment"           value="File system usage" />
+        <param name="ds-type"           value="rrd-multigraph" />
+        <param name="ds-names"          value="btotal,bfree,bfreeu" />
+        <param name="precedence"        value="900" />
+
+        <param name="ds-expr-btotal"    value="{Blocks_Total},1024,*" />
+        <param name="graph-legend-btotal"       value="Blocks Total" />
+        <param name="line-style-btotal" value="AREA" />
+        <param name="line-order-btotal" value="1" />
+        <param name="line-color-btotal" value="#00FF00" />
+
+        <param name="ds-expr-bfree"     value="{Blocks_Free},1024,*" />
+        <param name="graph-legend-bfree"        value="Blocks Free" />
+        <param name="line-style-bfree"  value="AREA" />
+        <param name="line-order-bfree"  value="2" />
+        <param name="line-color-bfree"  value="#0000FF" />
+
+        <param name="ds-expr-bfreeu"    value="{Blocks_Avail},1024,*" />
+        <param name="graph-legend-bfreeu"
+               value="Blocks Avail. (non-superuser)" />
+        <param name="line-style-bfreeu" value="AREA" />
+        <param name="line-order-bfreeu" value="3" />
+        <param name="line-color-bfreeu" value="#FFFF00" />
+    </leaf>
+
+    <leaf name="Blocks_Total">
+      <param name="snmp-object"    value="$hpuxFileSystemBlock.$FSIDX_DIR"/>
+      <param name="rrd-ds"             value="hpuxFSBlocks" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="comment">
+          Total blocks in file system.
+      </param>
+      <param name="graph-legend"       value="Blocks Total" />
+    </leaf>
+
+    <leaf name="Bytes_Total">
+      <param name="ds-type"             value="rrd-file" />
+      <param name="leaf-type"           value="rrd-cdef" />
+      <param name="rpn-expr"            value="{Blocks_Total},1024,*" />
+      <param name="comment">
+          Total bytes in files system.
+      </param>
+      <param name="graph-legend"       value="Bytes Total" />
+    </leaf>
+
+    <leaf name="Blocks_Free">
+      <param name="snmp-object"    value="$hpuxFileSystemBfree.$FSIDX_DIR"/>
+      <param name="rrd-ds"             value="hpuxFSBfree" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="comment">
+          Free blocks in file system.
+      </param>
+      <param name="graph-legend"       value="Blocks Free" />
+    </leaf>
+
+    <leaf name="Bytes_Free">
+      <param name="ds-type"             value="rrd-file" />
+      <param name="leaf-type"           value="rrd-cdef" />
+      <param name="rpn-expr"            value="{Blocks_Free},1024,*" />
+      <param name="comment">
+          Free bytes in files system.
+      </param>
+      <param name="graph-legend"       value="Bytes Free" />
+    </leaf>
+
+    <leaf name="Blocks_Avail">
+      <param name="snmp-object"   value="$hpuxFileSystemBavail.$FSIDX_DIR"/>
+      <param name="rrd-ds"             value="hpuxFSBavail" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="comment">
+          Free blocks avail to non-superuser.
+      </param>
+      <param name="graph-legend"       value="Blocks Avail" />
+    </leaf>
+
+    <leaf name="Bytes_Avail">
+      <param name="ds-type"             value="rrd-file" />
+      <param name="leaf-type"           value="rrd-cdef" />
+      <param name="rpn-expr"            value="{Blocks_Avail},1024,*" />
+      <param name="comment">
+          Free bytes avail to non-superuser.
+      </param>
+      <param name="graph-legend"       value="Bytes Avail" />
+    </leaf>
+
+    <leaf name="FileSystem_Node">
+        <param name="comment"           value="File system inode usage" />
+        <param name="ds-type"           value="rrd-multigraph" />
+        <param name="ds-names"          value="itotal,ifree" />
+        <param name="precedence"        value="800" />
+
+        <param name="ds-expr-itotal"    value="{Nodes_Total}" />
+        <param name="graph-legend-itotal"       value="inode Total" />
+        <param name="graph-legend"
+               value="%itotal% {itotal} %Nodes_Total% {Nodes_Total}" />
+        <param name="line-style-itotal" value="AREA" />
+        <param name="line-order-itotal" value="1" />
+        <param name="line-color-itotal" value="#00FF00" />
+
+        <param name="ds-expr-ifree"     value="{Nodes_Free}" />
+        <param name="graph-legend-ifree"        value="inode Free" />
+        <param name="line-style-ifree"  value="AREA" />
+        <param name="line-order-ifree"  value="1" />
+        <param name="line-color-ifree"  value="#0000FF" />
+    </leaf>
+
+    <leaf name="Nodes_Total">
+      <param name="snmp-object"   value="$hpuxFileSystemFiles.$FSIDX_DIR"/>
+      <param name="rrd-ds"             value="hpuxFSFiles" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="comment">
+          Total file nodes in file system.
+      </param>
+      <param name="graph-legend"       value="Nodes Total" />
+    </leaf>
+
+    <leaf name="Nodes_Free">
+      <param name="snmp-object"   value="$hpuxFileSystemFfree.$FSIDX_DIR"/>
+      <param name="rrd-ds"             value="hpuxFSFfree" />
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="comment">
+          Free file nodes in file system.
+      </param>
+      <param name="graph-legend"       value="Nodes Free" />
+    </leaf>
+
+  </template>  <!-- hpux-filesystem -->
+
+</datasources>
+</configuration>

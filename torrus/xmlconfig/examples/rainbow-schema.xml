@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (C) 2003 Shawn Ferry
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+Shawn Ferry <sferry at sevenspace dot com > <lalartu at obscure dot org>
+
+$Id: rainbow-schema.xml,v 1.1 2010-12-27 00:04:28 ivan Exp $
+@(#) 10/18/03 schema.xml 1.3 (10/18/03 18:44:31) sferry
+
+-->
+<!--
+  (Not very much practical) example of using styling/rainbow-schema.pl
+-->
+
+<include filename="generic/rfc1213.xml"/>
+
+<configuration>
+  <datasources>
+    <!-- rfc1313-interface must be applied at the per-interface level  -->
+    <!--
+    rfc1213-interface-rainbow Template
+    -->
+    <template name="rfc1213-interface-rainbow">
+      <param name="data-file"
+             value="%system-id%_rfc1213-%interface-name%.rrd"/>
+      <leaf name="InOutBytes">
+        <param name="ignore-upper-limit" value="no"/>
+        <param name="graph-upper-limit" value="1000"/>
+        <param name="comment" value="Input and Output bits per second graphs"/>
+        <param name="ds-type" value="rrd-multigraph"/>
+        <param name="ds-names"
+            value="in,out,one,two,three,four,five,six,seven,eight,nine,ten"/>
+        <!-- IN -->
+        <param name="ds-expr-in" value="{ifInOctets}"/>
+        <param name="graph-legend-in" value="Bytes per second in"/>
+        <param name="line-style-in" value="AREA"/>
+        <param name="line-color-in" value="##BpsOut"/>
+        <param name="line-order-in" value="1"/>
+        <!-- OUT -->
+        <param name="ds-expr-out" value="{ifOutOctets}"/>
+        <param name="graph-legend-out" value="Bytes per second out"/>
+        <param name="line-style-out" value="LINE2"/>
+        <param name="line-color-out" value="##in"/>
+        <param name="line-order-out" value="2"/>
+
+
+        <!-- IN -->
+        <param name="ds-expr-one" value="{ifInOctets},1.5,*"/>
+        <param name="graph-legend-one" value="one"/>
+        <param name="line-style-one" value="AREA"/>
+        <param name="line-color-one" value="##one"/>
+        <param name="line-order-one" value="3"/>
+        <!-- OUT -->
+        <param name="ds-expr-two" value="{ifOutOctets},2,*"/>
+        <param name="graph-legend-two" value="two"/>
+        <param name="line-style-two" value="LINE2"/>
+        <param name="line-color-two" value="##two"/>
+        <param name="line-order-two" value="4"/>
+
+        <!-- IN -->
+        <param name="ds-expr-three" value="{ifInOctets},2.5,*"/>
+        <param name="graph-legend-three" value="three"/>
+        <param name="line-style-three" value="STACK"/>
+        <param name="line-color-three" value="##three"/>
+        <param name="line-order-three" value="5"/>
+        <!-- OUT -->
+        <param name="ds-expr-four" value="{ifOutOctets},2.5,*"/>
+        <param name="graph-legend-four" value="four"/>
+        <param name="line-style-four" value="LINE2"/>
+        <param name="line-color-four" value="##four"/>
+        <param name="line-order-four" value="6"/>
+
+        <!-- IN -->
+        <param name="ds-expr-five" value="{ifInOctets},3,*"/>
+        <param name="graph-legend-five" value="five"/>
+        <param name="line-style-five" value="STACK"/>
+        <param name="line-color-five" value="##five"/>
+        <param name="line-order-five" value="7"/>
+        <!-- OUT -->
+        <param name="ds-expr-six" value="{ifOutOctets},3,*"/>
+        <param name="graph-legend-six" value="six"/>
+        <param name="line-style-six" value="LINE2"/>
+        <param name="line-color-six" value="##six"/>
+        <param name="line-order-six" value="8"/>
+
+        <!-- IN -->
+        <param name="ds-expr-seven" value="{ifInOctets},3.5,*"/>
+        <param name="graph-legend-seven" value="seven"/>
+        <param name="line-style-seven" value="STACK"/>
+        <param name="line-color-seven" value="##seven"/>
+        <param name="line-order-seven" value="9"/>
+        <!-- OUT -->
+        <param name="ds-expr-eight" value="{ifOutOctets},3.5,*"/>
+        <param name="graph-legend-eight" value="eight"/>
+        <param name="line-style-eight" value="LINE2"/>
+        <param name="line-color-eight" value="##eight"/>
+        <param name="line-order-eight" value="10"/>
+
+
+        <!-- IN -->
+        <param name="ds-expr-nine" value="{ifInOctets},4,*"/>
+        <param name="graph-legend-nine" value="nine"/>
+        <param name="line-style-nine" value="STACK"/>
+        <param name="line-color-nine" value="##nine"/>
+        <param name="line-order-nine" value="11"/>
+        <!-- OUT -->
+        <param name="ds-expr-ten" value="{ifOutOctets},4,*"/>
+        <param name="graph-legend-ten" value="ten"/>
+        <param name="line-style-ten" value="LINE2"/>
+        <param name="line-color-ten" value="##ten"/>
+        <param name="line-order-ten" value="12"/>
+
+      </leaf>
+      <leaf name="ifOutErrors">
+        <param name="snmp-object" value="$rfc1213_ifOutErrors.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifOutErrors"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Output error counter for the interface"/>
+        <param name="graph-legend" value="Errors out"/>
+      </leaf>
+      <leaf name="ifInErrors">
+        <param name="snmp-object" value="$rfc1213_ifInErrors.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifInErrors"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment" value="Input error counter for the interface"/>
+        <param name="graph-legend" value="Errors in"/>
+      </leaf>
+      <leaf name="ifInOctets">
+        <param name="hidden" value="yes"/>
+        <param name="snmp-object" value="$rfc1213_ifInOctets.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifInOctets"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+          1-minute average of input Bytes per second
+        </param>
+        <param name="graph-legend" value="Bytes in"/>
+      </leaf>
+      <leaf name="ifOutOctets">
+        <param name="hidden" value="yes"/>
+        <param name="snmp-object" value="$rfc1213_ifOutOctets.$rfc1213_IFIDX"/>
+        <param name="rrd-ds" value="rfc1213_ifOutOctets"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="comment">
+          1-minute average of output Bytes per second
+        </param>
+        <param name="graph-legend" value="Bytes out"/>
+      </leaf>
+    </template>
+  </datasources>
+</configuration>

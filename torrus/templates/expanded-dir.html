@@ -1,0 +1,52 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% INCLUDE setdate %]
+[% thepath=path(token) %]
+[% INCLUDE htmlstart title=thepath printpath=1 %]
+
+<H1>[% xmlnorm(nodeParam(token,'comment')) %]</H1>
+
+[% INCLUDE variables %]
+
+[% INCLUDE legend %]
+
+<H2>Leaf nodes:</H2>
+[%
+  FOREACH child = sortTokens(children(token));
+    IF isLeaf(child);
+      INCLUDE shortgraph
+        token=child
+        nodename=nodeName(child)
+        comment=nodeParam(child,'comment',1);
+    ELSIF isAlias(child);
+      atoken=isAlias(child);
+      IF isLeaf(atoken);
+        INCLUDE shortgraph
+          token=atoken
+          nodename=nodeName(atoken)
+          comment=path(atoken);
+      END;
+    END;
+  END;
+%]
+
+<DIV CLASS="BottomShortcuts">
+[%
+  IF global.hwpredict;
+    IF variables.NOHW;
+      INCLUDE shortcut url=url(token, view, 'NOHW', '')
+                       text="Enable Holt-Winters"
+                       title="Switch Holt-Winters prediction boundaries";
+    ELSE;
+      INCLUDE shortcut url=url(token, view, 'NOHW', 1)
+                       text="Disable Holt-Winters"
+                       title="Switch Holt-Winters prediction boundaries";
+    END;
+  END
+%]
+
+[% INCLUDE shortcut url=url(token) text="Default view"
+                    title="Restore default subtree view" %]
+</DIV>
+
+[% INCLUDE bottomline %]
+[% INCLUDE htmlend %]

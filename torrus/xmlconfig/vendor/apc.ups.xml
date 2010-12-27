@@ -1,0 +1,135 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2002  Stanislav Sinyagin
+   Copyright (C) 2003  Aaron S. Bush  <abush at microelectronics dot com>
+
+   File: vendor/apc.ups.xml
+   Description: APC UPS battery monitor definitions and templates for Torrus.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+-->
+
+<!--
+    Tested with APC Matrix 5000 and 3000 units using internal or
+    external Web/SNMP mgmt. cards via SNMP v1.
+-->
+
+
+<configuration>
+
+<definitions>
+  <!-- APC UPS MIB -->
+  <def name="apcUpsAdvBatteryRunTimeRemaining"
+                          value="1.3.6.1.4.1.318.1.1.1.2.2.3" />
+  <def name="apcUpsAdvBatteryCapacity"
+                          value="1.3.6.1.4.1.318.1.1.1.2.2.1" />
+  <def name="apcUpsAdvBatteryTemperature"
+                          value="1.3.6.1.4.1.318.1.1.1.2.2.2" />
+  <def name="apcUpsAdvOutputLoad"
+                          value="1.3.6.1.4.1.318.1.1.1.4.2.3" />
+  <def name="apcUpsAdvOutputCurrent"
+                          value="1.3.6.1.4.1.318.1.1.1.4.2.4" />
+</definitions>
+
+<datasources>
+
+  <template name="apcups-health">
+    <param name="data-file"     value="%system-id%_health.rrd" />
+
+    <leaf name="Battery_Runtime_Ticks">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="precedence"         value="90" />
+      <param name="snmp-object"
+             value="$apcUpsAdvBatteryRunTimeRemaining.0"/>
+      <param name="rrd-ds"             value="BatRunTimeRemain" />
+      <param name="comment">
+          The UPS Battery Runtime (Ticks)
+      </param>
+      <param name="graph-legend"       value="Runtime (Ticks)" />
+    </leaf>
+
+    <leaf name="Battery_Runtime_Minutes">
+      <param name="ds-type"             value="rrd-file" />
+      <param name="leaf-type"           value="rrd-cdef" />
+      <param name="precedence"          value="100" />
+      <param name="rpn-expr"
+             value="{Battery_Runtime_Ticks},6000,/" />
+      <param name="comment">
+          The UPS Battery Runtime (Minutes)
+      </param>
+      <param name="graph-legend"       value="Runtime (Minutes)" />
+    </leaf>
+
+    <leaf name="Battery_Capacity">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="precedence"         value="85" />
+      <param name="snmp-object"        value="$apcUpsAdvBatteryCapacity.0"/>
+      <param name="rrd-ds"             value="BatteryCapacity" />
+      <param name="comment">
+          The remaining battery capacity expressed in percent of full capacity.
+      </param>
+      <param name="graph-legend"       value="Percent Capacity" />
+    </leaf>
+
+    <leaf name="Battery_Temperature_Celsius">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="precedence"         value="70" />
+      <param name="snmp-object"        value="$apcUpsAdvBatteryTemperature.0"/>
+      <param name="rrd-ds"             value="IntTemperature" />
+      <param name="comment">
+          The UPS Internal Temperature (Celsius)
+      </param>
+      <param name="graph-legend"       value="Temperature (Celsius)" />
+    </leaf>
+
+    <leaf name="Battery_Temperature_Fahrenheit">
+      <param name="ds-type"             value="rrd-file" />
+      <param name="leaf-type"           value="rrd-cdef" />
+      <param name="precedence"          value="80" />
+      <param name="rpn-expr"
+             value="32,{Battery_Temperature_Celsius},1.8,*,+" />
+      <param name="comment">
+          The UPS Internal Temperature (Fahrenheit)
+      </param>
+      <param name="graph-legend"       value="Temperature (Fahrenheit)" />
+    </leaf>
+
+    <leaf name="Battery_Output_Load">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="precedence"         value="60" />
+      <param name="snmp-object"        value="$apcUpsAdvOutputLoad.0"/>
+      <param name="rrd-ds"             value="OutputLoad" />
+      <param name="comment">
+          The current UPS load expressed in percent of rated capacity.
+      </param>
+      <param name="graph-legend"       value="Percent Load" />
+    </leaf>
+
+    <leaf name="Battery_Output_Current">
+      <param name="rrd-create-dstype"  value="GAUGE" />
+      <param name="precedence"         value="50" />
+      <param name="snmp-object"        value="$apcUpsAdvOutputCurrent.0"/>
+      <param name="rrd-ds"             value="OutputCurrent" />
+      <param name="comment">
+          The current in ampres drawn by the load on the UPS.
+      </param>
+      <param name="graph-legend"       value="Current Ampres" />
+    </leaf>
+  </template>
+  <!-- apcups-health -->
+
+</datasources>
+
+</configuration>

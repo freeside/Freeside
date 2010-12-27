@@ -1,0 +1,217 @@
+#  stylingprofile.pod - Guide to Styling Profiles
+#  Copyright (C) 2003 Shawn Ferry
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: stylingprofile.pod.in,v 1.1 2010-12-27 00:04:32 ivan Exp $
+# Shawn Ferry <sferry at sevenspace dot com> <lalartu at obscure dot org>
+#
+
+=head1 Torrus Styling Profile Guide
+
+=head2 Styling Profiles
+
+Styling profiles allow for symbolic names to be used in place of hard
+coded values for C<line-color> and C<line-style>.
+
+=head3 Schema Definitions
+
+The following styles are defined in the default schema.
+
+=over 3
+
+=item * Required Styles  (C<line-style>, C<line-color>)
+
+
+           SingleGraph            HWBoundary             HWFailure
+              HruleMin           HruleNormal              HruleMax
+                 BpsIn                BpsOut
+
+
+=item * Generic Symbolic styles (C<line-color> only)
+
+                    in                   out
+
+=item * Symbolic, Symbolic names, for default use in graphs that have up
+to ten items (C<line-color> only)
+
+                   one                   two                 three
+                  four                  five                   six
+                 seven                 eight                  nine
+                   ten
+
+=item * Symbolic names for combinatorial graphing (C<line-style>,
+C<line-color>)
+
+                  red1                  red2                  red3
+                  red4                green1                green2
+                green3                green4                 blue1
+                 blue2                 blue3                 blue4
+
+=item * Color definitions from the TT2 rgb example set (C<line-color> only)
+
+Defined in F<@supdir@/styling/colornames.pl>
+
+                 black                grey25                grey50
+                grey75                 white                   red
+                 red25                 red50                 red75
+                 green               green25               green50
+               green75                  blue                blue25
+                blue50                blue75                 blood
+               scarlet                  rose                orange
+                  leaf                   bud                  mint
+                marine                   sky                 mauve
+                 lilac
+
+=item * Color definitions for web html colors (C<line-color> only)
+
+Defined in F<@supdir@/styling/colornames.pl>
+
+             aliceblue          antiquewhite                  aqua
+            aquamarine                 azure                 beige
+                bisque        blanchedalmond            blueviolet
+                 brown             burlywood             cadetblue
+            chartreuse             chocolate                 coral
+        cornflowerblue              cornsilk               crimson
+                  cyan              darkblue              darkcyan
+         darkgoldenrod              darkgray             darkgreen
+             darkkhaki           darkmagenta        darkolivegreen
+            darkorange            darkorchid               darkred
+            darksalmon          darkseagreen         darkslateblue
+         darkslategray         darkturquoise            darkviolet
+              deeppink           deepskyblue               dimgray
+            dodgerblue             firebrick           floralwhite
+           forestgreen               fuchsia             gainsboro
+            ghostwhite                  gold             goldenrod
+                  gray           greenyellow              honeydew
+               hotpink             indianred                indigo
+                 ivory                 khaki              lavender
+         lavenderblush             lawngreen          lemonchiffon
+             lightblue            lightcoral             lightcyan
+  lightgoldenrodyellow            lightgreen             lightgrey
+             lightpink           lightsalmon         lightseagreen
+          lightskyblue        lightslategray        lightsteelblue
+           lightyellow                  lime             limegreen
+               magenta                maroon      mediumaquamarine
+            mediumblue          mediumorchid          mediumpurple
+        mediumseagreen       mediumslateblue     mediumspringgreen
+       mediumturquoise       mediumvioletred          midnightblue
+             mintcream             mistyrose              moccasin
+           navajowhite                  navy               oldlace
+                 olive             olivedrab             orangered
+                orchid         palegoldenrod             palegreen
+         paleturquoise         palevioletred            papayawhip
+             peachpuff                  peru                  pink
+                  plum            powderblue                purple
+             rosybrown             royalblue           saddlebrown
+                salmon            sandybrown              seagreen
+              seashell                sienna                silver
+               skyblue             slateblue             slategray
+                  snow           springgreen             steelblue
+                   tan                  teal               thistle
+                tomato             turquoise                violet
+                 wheat            whitesmoke                yellow
+
+=back
+
+=head3 Schema Overlay
+
+I<WARNING: Some styles are mandatory>
+
+Schema overlays allow the user to extend or override the styles defined in the
+default schema.  The schema overlays are formatted in the form of a hash of
+hashes.
+
+
+=over 4
+
+=item * Extending the schema:
+
+To add the styles, C<##onefish>, C<##twofish>, C<##redfish>, C<##bluefish>
+the following entries should be created in a descriptive file located
+in the C<styling> directory.
+
+C<fish-schema.pl>
+
+  $Torrus::Renderer::graphStyles{'onefish'}{'color'} = '##darkred';
+  $Torrus::Renderer::graphStyles{'onefish'}{'line'} = 'LINE1';
+
+  $Torrus::Renderer::graphStyles{'twofish'}{'color'} = '##red';
+  $Torrus::Renderer::graphStyles{'twofish'}{'line'} = 'LINE2';
+
+  $Torrus::Renderer::graphStyles{'redfish'}{'color'} = '##yellow';
+
+  $Torrus::Renderer::graphStyles{'bluefish'}{'color'} = '##deeppink';
+
+Other methods of adding to the hash of hashes are also acceptable.
+
+=item * Overriding Styles:
+
+To override specific styles in the existing schema, C<##in>, C<##out>,
+entries similar to the following should be created in a Perl file,
+preferably located in the local configuration directory.
+
+C<in_out-override-schema.pl>
+
+  $Torrus::Renderer::graphStyles{'in'}{'color'} = '##yellow';
+  $Torrus::Renderer::graphStyles{'out'}{'color'} = '##maroon';
+
+Other methods of adding to the hash of hashes are also acceptable.
+
+=item * Applying your Overlay
+
+=over 4
+
+=item 1.
+
+In the torrus-siteconfig.pl file, add the variable
+
+$Torrus::Renderer::stylingProfileOverlay = 
+    $Torrus::Global::cfgSiteDir . '/in_out-override-schema.pl';
+
+=item 2.
+
+Restart apache
+
+=back
+
+You may have to wait for the image cache to clear before the changes
+take effect.
+
+=back
+
+=head3 Schema Replacement
+
+To replace a schema, create a new schema using torrus-schema.pl as a guide.
+Remember some styles are mandatory.
+
+=over 4
+
+=item * Applying your Schema
+
+In the F<torrus-siteconfig.pl> file, add the variable
+
+  $Torrus::Renderer::stylingProfile = "Your-schema";
+
+=item 2. Restart apache
+
+=back
+
+You may have to wait for the image cache to clear before the changes
+take effect.
+
+=head1 Author
+
+Copyright (c) 2003 Shawn Ferry

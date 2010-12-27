@@ -1,0 +1,43 @@
+[% PROCESS 'html-incblocks.txt' %]
+[% global.SearchString = variables.SEARCH; clearVar('SEARCH') %]
+[% INCLUDE htmlstart
+     title='Search results: ' _ global.SearchString
+     contentClass="SingleColumnContent" %]
+
+<H1>Search results: [% global.SearchString %]</H1>
+[% INCLUDE treename %]
+<DIV CLASS="Listing">
+[% results = searchResults(global.SearchString);
+   counter = 0;
+
+   FOREACH entry = results;
+
+    counter = counter + 1;
+    IF counter % 2 == 0;
+      evenRow = 1;
+    ELSE;
+      evenRow = 0;
+    END;
+
+    etoken = pathToken(entry.0);
+%]
+  <DIV CLASS="[% evenRow ? 'ListRowEven' : 'ListRow' %]">
+    <SPAN CLASS="NodeName"><A HREF="[%persistentUrl(etoken)%]">
+    [% entry.0 %]</A></SPAN>
+    <SPAN CLASS="NodeDescr">
+    [% IF entry.1; entry.1 _ ': ' _ xmlnorm(nodeParam(etoken, entry.1));
+    END %]
+    </SPAN>
+  </DIV>
+[% END %]
+</DIV>
+
+
+</DIV><!-- Content -->[% global.contentFinished = 1 %]
+<DIV CLASS="BottomMenu">
+[% INCLUDE shortcut url=url(pathToken('/')) text="Datasources tree"
+                    title="Back to the datasources tree" %]
+[% INCLUDE searchdialog %]
+</DIV>
+
+[% INCLUDE htmlend %]

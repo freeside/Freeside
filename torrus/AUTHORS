@@ -1,0 +1,47 @@
+***************************************************
+Stanislav Sinyagin
+Senior System Engineer, CCIE #5478
+K-Open GmbH
+Switzerland
+Tel. +41 79 407 0224
+
+ssinyagin@yahoo.com
+http://www.k-open.com
+***************************************************
+
+CREDITS:
+
+  Chris Amley
+    Xylan switches SNMP discovery
+
+  Scott Brooks <sbrooks@binary-solutions.net>
+    Atmel wireless devices SNMP discovery
+
+  Aaron Bush <abush@microcenter.com> 
+    APC and HP vendor templates.
+
+  Shawn Ferry <sferry at sevenspace dot com> <lalartu at obscure dot org>
+    Many contributions in various parts.
+
+  Marc Haber <mh+torrus@zugschlus.de>
+    Lots of bug reports and architecture ideas.
+
+  Roman Hochuli <roman@hochu.li>
+    Bug reports and new feature ideas.
+    Vendor templates for Ascend and DOCSIS.
+
+  Ian Holsman http://holsman.net <ian@holsman.net>
+    Adapted the bluerobot.com HTML layout design for Torrus.
+
+  Gord Philpott <tech@gordphilpott.com>
+    Numerous bug reports.
+
+  Christian Schnidrig <christian.schnidrig@gmx.ch>
+    Architecture ideas, interface improvements, other contributions.
+
+  Jurij Smakov <jurij@wooyd.org>
+    Contributed in manpages creation. Maintainer of Debian port.
+
+  Jon Nistor <nistor@snickers.org>
+    Bug reports and contributions for JunOS, Cisco SCE and other
+    vendors discovery.

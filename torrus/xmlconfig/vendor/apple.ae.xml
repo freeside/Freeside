@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2007 Jon Nistor
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: apple.ae.xml,v 1.1 2010-12-27 00:04:17 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+-->
+<!-- Apple Airport Extreme -->
+
+<configuration>
+
+<definitions>
+  <!-- AIRPORT-BASESTATION-3-MIB::baseStation3 -->
+  <def name="wirelessNumber"      value="1.3.6.1.4.1.63.501.3.2.1.0"/>
+
+  <def name="wirelessStrength"    value="1.3.6.1.4.1.63.501.3.2.2.1.6"/>
+  <def name="wirelessNoise"       value="1.3.6.1.4.1.63.501.3.2.2.1.7"/>
+  <def name="wirelessRate"        value="1.3.6.1.4.1.63.501.3.2.2.1.8"/>
+  <def name="wirelessNumRX"       value="1.3.6.1.4.1.63.501.3.2.2.1.9"/>
+  <def name="wirelessNumTX"       value="1.3.6.1.4.1.63.501.3.2.2.1.10"/>
+  <def name="wirelessNumRXErrors" value="1.3.6.1.4.1.63.501.3.2.2.1.11"/>
+  <def name="wirelessNumTXErrors" value="1.3.6.1.4.1.63.501.3.2.2.1.12"/>
+
+  <def name="dhcpNumber"          value="1.3.6.1.4.1.63.501.3.3.1.0"/>
+</definitions>
+
+
+<datasources>
+  <template name="ae-global-stats">
+    <subtree name="Global_Stats">
+        <param name="comment"           value="Global statistics"/>
+        <param name="data-file"         value="%system-id%_global.rrd"/>
+        <param name="rrd-create-dstype" value="GAUGE"/>
+
+        <leaf name="DHCP_Clients">
+            <param name="comment"     value="Total number of DHCP clients"/>
+            <param name="graph-title" value="%system-id%:DHCP Clients"/>
+            <param name="rrd-ds"      value="dhcpNumber"/>
+            <param name="snmp-object" value="$dhcpNumber"/>
+        </leaf>
+        <leaf name="Wireless_Clients">
+            <param name="comment"     value="Total number of wireless clients"/>
+            <param name="graph-title" value="%system-id%:Wireless Clients"/>
+            <param name="rrd-ds"      value="wirelessNumber"/>
+            <param name="snmp-object" value="$wirelessNumber"/>
+        </leaf>
+    </subtree>
+  </template>
+
+
+  <template name="ae-wireless-clients-subtree">
+    <param name="comment" value="Wireless client information"/>
+ 
+    <param name="has-overview-shortcuts"     value="yes"/>
+    <param name="overview-shortcuts"         value="strength,rate,noise"/>
+    <!-- Wireless Strength -->
+    <param name="overview-subleave-name-strength"
+           value="Wireless_Strength"/>
+    <param name="overview-shortcut-text-strength"
+           value="All wireless strength"/>
+    <param name="overview-shortcut-title-strength"
+           value="Show all wireless client strengths"/>
+    <param name="overview-page-title-strength"
+           value="Wireless strength overview per client"/>
+    <!-- Wireless Rate -->
+    <param name="overview-subleave-name-rate"
+           value="Wireless_Rate"/>
+    <param name="overview-shortcut-text-rate"
+           value="All wireless rates"/>
+    <param name="overview-shortcut-title-rate"
+           value="Show all wireless client rates"/>
+    <param name="overview-page-title-rate"
+           value="Wireless rate overview per client"/>
+    <!-- Wireless Noise -->
+    <param name="overview-subleave-name-noise"
+           value="Wireless_Noise"/>
+    <param name="overview-shortcut-text-noise"
+           value="All wireless noise"/>
+    <param name="overview-shortcut-title-noise"
+           value="Show all wireless client noise"/>
+    <param name="overview-page-title-noise"
+           value="Wireless noise overview per client"/>
+  </template>
+
+
+  <template name="ae-wireless-clients-leaf">
+    <param name="comment"            value="%wireless-mac%"/>
+    <param name="data-file"
+           value="%system-id%_wireless_%wireless-macFix%.rrd"/>
+    <param name="graph-title"        value="%system-id%:%wireless-mac%"/>
+    <param name="graph-lower-limit"  value="0"/>
+    <param name="snmp-object-type"   value="COUNTER64" />
+
+    <leaf name="Wireless_Strength">
+        <param name="comment"
+               value="The signal strength reported by the wireless client"/>
+        <param name="graph-legend"       value="Signal"/>
+        <param name="precedence"         value="910"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-create-min"     value="U"/>
+        <param name="rrd-ds"             value="wirelessStrength"/>
+        <param name="snmp-object"
+               value="$wirelessStrength.%wireless-macOid%"/>
+    </leaf>
+    <leaf name="Wireless_Noise">
+        <param name="comment"
+               value="The noise reported by the wireless client"/>
+        <param name="graph-legend"       value="Noise"/>
+        <param name="precedence"         value="909"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-create-min"     value="U"/>
+        <param name="rrd-ds"             value="wirelessNoise"/>
+        <param name="snmp-object"
+               value="$wirelessNoise.%wireless-macOid%"/>
+    </leaf>
+    <leaf name="Wireless_Rate">
+        <param name="comment"
+               value="The rate reported by the wireless client"/>
+        <param name="graph-legend"       value="Rate"/>
+        <param name="precedence"         value="908"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="wirelessRate"/>
+        <param name="snmp-object"
+               value="$wirelessRate.%wireless-macOid%"/>
+    </leaf>
+    <leaf name="Received_Packets">
+        <param name="comment"           value="The number of packets received"/>
+        <param name="graph-legend"      value="Packets"/>
+        <param name="precedence"        value="907"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="rrd-ds"            value="wirelessNumRX"/>
+        <param name="snmp-object"
+               value="$wirelessNumRX.%wireless-macOid%"/>
+    </leaf>
+    <leaf name="Transmitted_Packets">
+        <param name="comment"     value="The number of packets transmitted"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="906"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="rrd-ds"            value="wirelessNumTX"/>
+        <param name="snmp-object"
+               value="$wirelessNumTX.%wireless-macOid%"/>
+    </leaf>
+    <leaf name="Received_Packets_Errors">
+        <param name="comment"    value="The number of error packets received"/>
+        <param name="graph-legend"      value="Packets"/>
+        <param name="precedence"        value="905"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="rrd-ds"            value="wirelessNumRXErrors"/>
+        <param name="snmp-object"
+               value="$wirelessNumRXErrors.%wireless-macOid%"/>
+    </leaf>
+    <leaf name="Transmitted_Packets_Errors">
+        <param name="comment"    value="The number of error packets transmit"/>
+        <param name="graph-legend"      value="Packets"/>
+        <param name="precedence"        value="904"/>
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="rrd-ds"            value="wirelessNumTXErrors"/>
+        <param name="snmp-object"
+               value="$wirelessNumTXErrors.%wireless-macOid%"/>
+    </leaf>
+  </template>
+
+</datasources>
+
+</configuration>

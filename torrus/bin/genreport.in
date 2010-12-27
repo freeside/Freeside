@@ -1,0 +1,181 @@
+#!@PERL@
+#  Copyright (C) 2002  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id: genreport.in,v 1.1 2010-12-27 00:04:01 ivan Exp $
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+# Collect the router information and create the XML file
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+
+use Torrus::Log;
+use Torrus::ReportOutput::HTML;
+use Torrus::SiteConfig;
+
+my $report;
+my $date;
+my $time = '00:00';
+my $genhtml;
+my @trees;
+my $all2tree;
+
+my $debug = 0;
+my $verbose = 0;
+
+my $ok = GetOptions(
+                    'report=s'    => \$report,
+                    'date=s'      => \$date,
+                    'time=s'      => \$time,
+                    'genhtml'     => \$genhtml,
+                    'tree=s'      => \@trees,
+                    'all2tree=s'  => \$all2tree,
+                    'verbose'     => \$verbose,
+                    'debug'       => \$debug
+                    );
+
+if( $report and not defined($Torrus::ReportGenerator::modules{$report}) )
+{
+    print STDERR "Unknown report name: ", $report, "\n\n";
+    $ok = 0;
+}
+                                            
+if( not $ok or (not $report and not $genhtml) or
+    ($report and not $date) or
+    ($genhtml and scalar(@trees) > 0 and $all2tree) or
+    scalar( @ARGV ) > 0 )
+{
+    print STDERR
+        "Usage: $0 --report=ReportName --date=YYYY-MM-DD | ",
+        "--genhtml options...\n";
+    print STDERR "Options:\n",
+    " --report=ReportName Report name.\n",
+    " --date=YYYY-MM-DD   Report start date. ",
+    "For monthly reports, 1st day in a month.\n",
+    " --time=hh:mm        Report start time. Ignored for monthly reports\n",
+    " --genhtml           Generate HTML output from the database\n",
+    " --tree=TREE         Generate HTML for a given tree only\n",
+    " --all2tree=TREE     Generate reports for all service IDs and place\n",
+    "                     into the given tree (excludes the option --tree)\n",
+    " --verbose           print extra information\n",
+    " --debug             print debugging information\n",   
+    "\n",
+    "Report names supported:\n";
+
+    foreach my $rep ( sort keys %Torrus::ReportGenerator::modules )
+    {
+        print STDERR "  ", $rep, "\n";
+    }
+    print STDERR "\n";    
+    
+    exit 1;
+}
+
+if( $debug )
+{
+    Torrus::Log::setLevel('debug');
+}
+elsif( $verbose )
+{
+    Torrus::Log::setLevel('verbose');
+}
+
+&Torrus::DB::setSafeSignalHandlers();
+
+if( $report )
+{
+    my $class = $Torrus::ReportGenerator::modules{$report};
+    eval( 'require ' . $class );
+    die( $@ ) if $@;
+    
+    my $generator = $class->new({
+        'Name' => $report,
+        'Date' => $date,
+        'Time' => $time});
+    
+    if( defined( $generator ) )
+    {
+        $generator->generate();
+    }
+    else
+    {
+        $ok = 0;
+    }
+}
+
+if( $genhtml )
+{
+    if( $all2tree )
+    {
+        push( @trees, $all2tree );
+    }
+    
+    if( scalar( @trees ) == 0 )
+    {
+        @trees = Torrus::SiteConfig::listTreeNames();
+    }
+    else
+    {
+        foreach my $tree ( @trees )
+        {
+            if( not Torrus::SiteConfig::treeExists( $tree ) )
+            {
+                Error('Tree ' . $tree . ' does not exist');
+                $ok = 0;
+            }
+        }
+    }
+
+    if( $ok )
+    {
+        foreach my $tree ( @trees )
+        {
+            &Torrus::DB::checkInterrupted();
+            
+            Verbose('Generating HTML report for tree ' . $tree);
+
+            my $options = {'Tree' => $tree};
+
+            if( length( $all2tree ) > 0 )
+            {
+                $options->{'All_Service_IDs'} = 1;
+            }
+            
+            my $out = new Torrus::ReportOutput::HTML( $options );
+            
+            if( $out->init() )
+            {
+                $ok = $out->generate() ? $ok:0;
+            }
+            else
+            {
+                $ok = 0;
+            }
+        }
+    }
+}
+
+exit($ok ? 0:1);
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:

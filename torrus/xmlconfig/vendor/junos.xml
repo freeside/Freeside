@@ -1,0 +1,775 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2007 Jon Nistor
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: junos.xml,v 1.1 2010-12-27 00:04:23 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+-->
+<!-- Tested on Juniper Operating system for M/T series routers -->
+
+<configuration>
+
+<definitions>
+  <!-- JUNIPER-MIB::chassis -->
+  <def name="jnxOperatingTemp"        value="1.3.6.1.4.1.2636.3.1.13.1.7"/>
+  <def name="jnxOperatingCPU"         value="1.3.6.1.4.1.2636.3.1.13.1.8"/>
+  <def name="jnxOperatingISR"         value="1.3.6.1.4.1.2636.3.1.13.1.9"/>
+  <def name="jnxOperatingBuffer"      value="1.3.6.1.4.1.2636.3.1.13.1.11"/>
+  <def name="jnxOperatingHeap"        value="1.3.6.1.4.1.2636.3.1.13.1.12"/>
+  <def name="jnxOperatingMemory"      value="1.3.6.1.4.1.2636.3.1.13.1.15"/>
+
+  <!-- JUNIPER-FIREWALL-MIB -->
+  <def name="jnxFWCounterPacketCount" value="1.3.6.1.4.1.2636.3.5.2.1.4"/>
+  <def name="jnxFWCounterByteCount"   value="1.3.6.1.4.1.2636.3.5.2.1.5"/>
+
+  <!-- JUNIPER-COS-MIB -->
+  <def name="jnxCosQstatQedPkts"      value="1.3.6.1.4.1.2636.3.15.4.1.3"/>
+  <def name="jnxCosQstatQedPktRate"   value="1.3.6.1.4.1.2636.3.15.4.1.4"/>
+  <def name="jnxCosQstatQedBytes"     value="1.3.6.1.4.1.2636.3.15.4.1.5"/>
+  <def name="jnxCosQstatQedByteRate"  value="1.3.6.1.4.1.2636.3.15.4.1.6"/>
+
+  <def name="jnxCosQstatTxedPkts"     value="1.3.6.1.4.1.2636.3.15.4.1.7"/>
+  <def name="jnxCosQstatTxedPktRate"  value="1.3.6.1.4.1.2636.3.15.4.1.8"/>
+  <def name="jnxCosQstatTxedBytes"    value="1.3.6.1.4.1.2636.3.15.4.1.9"/>
+  <def name="jnxCosQstatTxedByteRate" value="1.3.6.1.4.1.2636.3.15.4.1.10"/>
+
+  <def name="jnxCosQstatTailDropPkts"    value="1.3.6.1.4.1.2636.3.15.4.1.11"/>
+  <def name="jnxCosQstatTailDropPktRate" value="1.3.6.1.4.1.2636.3.15.4.1.12"/>
+
+  <def name="jnxCosQstatTotalRedDropPkts"
+             value="1.3.6.1.4.1.2636.3.15.4.1.13" />
+  <def name="jnxCosQstatTotalRedDropPktRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.14" />
+  <def name="jnxCosQstatLpNonTcpRedDropPkts"
+             value="1.3.6.1.4.1.2636.3.15.4.1.15" />
+  <def name="jnxCosQstatLpNonTcpRDropPktRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.16" />
+  <def name="jnxCosQstatLpTcpRedDropPkts"
+             value="1.3.6.1.4.1.2636.3.15.4.1.17" />
+  <def name="jnxCosQstatLpTcpRedDropPktRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.18" />
+  <def name="jnxCosQstatHpNonTcpRedDropPkts"
+             value="1.3.6.1.4.1.2636.3.15.4.1.19" />
+  <def name="jnxCosQstatHpNonTcpRDropPktRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.20" />
+  <def name="jnxCosQstatHpTcpRedDropPkts"
+             value="1.3.6.1.4.1.2636.3.15.4.1.21" />
+  <def name="jnxCosQstatHpTcpRedDropPktRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.22" />
+  <def name="jnxCosQstatTotalRedDropBytes"
+             value="1.3.6.1.4.1.2636.3.15.4.1.23" />
+  <def name="jnxCosQstatTotalRedDropByteRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.24" />
+  <def name="jnxCosQstatLpNonTcpRedDropBytes"
+             value="1.3.6.1.4.1.2636.3.15.4.1.25" />
+  <def name="jnxCosQstatLpNonTcpRDropByteRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.26" />
+  <def name="jnxCosQstatLpTcpRedDropBytes"
+             value="1.3.6.1.4.1.2636.3.15.4.1.27" />
+  <def name="jnxCosQstatLpTcpRedDropByteRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.28" />
+  <def name="jnxCosQstatHpNonTcpRedDropBytes"
+             value="1.3.6.1.4.1.2636.3.15.4.1.29" />
+  <def name="jnxCosQstatHpNonTcpRDropByteRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.30" />
+  <def name="jnxCosQstatHpTcpRedDropBytes"
+             value="1.3.6.1.4.1.2636.3.15.4.1.31" />
+  <def name="jnxCosQstatHpTcpRedDropByteRate"
+             value="1.3.6.1.4.1.2636.3.15.4.1.32" />
+
+  <!-- JUNIPER-RPF-MIB::jnxRpfStatsTable -->
+  <def name="jnxRpfStatsPackets" value="1.3.6.1.4.1.2636.3.17.1.1.1.3"/>
+  <def name="jnxRpfStatsBytes"   value="1.3.6.1.4.1.2636.3.17.1.1.1.4"/>
+</definitions>
+
+
+<datasources>
+  <template name="junos-cos-subtree">
+    <param name="comment"     value="Class of Service"/>
+  </template>
+
+
+  <template name="junos-cos-subtree-interface">
+    <param name="has-overview-shortcuts"     value="yes"/>
+    <param name="overview-shortcuts"
+           value="queuedPktRate,queuedByteRate,queuedBpsRate,
+                  xmitPktRate,xmitByteRate,xmitBpsRate"/>
+    <!-- Queued Packet Rate -->
+    <param name="overview-subleave-name-queuedPktRate"
+           value="Queued_Packet_Rate"/>
+    <param name="overview-shortcut-text-queuedPktRate"
+           value="All queued packet rates"/>
+    <param name="overview-shortcut-title-queuedPktRate"
+           value="Show all queued packet rates in one page"/>
+    <param name="overview-page-title-queuedPktRate"
+           value="Output queued packet rates per class"/>
+    <!-- Queued Byte Rate -->
+    <param name="overview-subleave-name-queuedByteRate"
+           value="Queued_Byte_Rate"/>
+    <param name="overview-shortcut-text-queuedByteRate"
+           value="All queued byte rates"/>
+    <param name="overview-shortcut-title-queuedByteRate"
+           value="Show all queued byte rates in one page"/>
+    <param name="overview-page-title-queuedByteRate"
+           value="Output queued byte rates per class"/>
+    <!-- Queued Byte Rate (in BPS) -->
+    <param name="overview-subleave-name-queuedBpsRate"
+           value="Queued_Bps_Rate"/>
+    <param name="overview-shortcut-text-queuedBpsRate"
+           value="All queued bit rates (in Bps)"/>
+    <param name="overview-shortcut-title-queuedBpsRate"
+           value="Show all queued bit rates in one page"/>
+    <param name="overview-page-title-queuedBpsRate"
+           value="Output queued byte rates per class"/>
+    <!-- Transmitted Packet Rate -->
+    <param name="overview-subleave-name-xmitPktRate"
+           value="Transmitted_Packet_Rate"/>
+    <param name="overview-shortcut-text-xmitPktRate"
+           value="All queue packet transmit rates"/>
+    <param name="overview-shortcut-title-xmitPktRate"
+           value="Show all queue packet transmit rates in one page"/>
+    <param name="overview-page-title-xmitPktRate"
+           value="Output queue packet transmitted rates per class"/>
+    <!-- Transmitted Byte Rate -->
+    <param name="overview-subleave-name-xmitByteRate"
+           value="Transmitted_Byte_Rate"/>
+    <param name="overview-shortcut-text-xmitByteRate"
+           value="All queue byte transmit rates"/>
+    <param name="overview-shortcut-title-xmitByteRate"
+           value="Show all queue byte transmit rates in one page"/>
+    <param name="overview-page-title-xmitByteRate"
+           value="Output queue byte transmitted rates per class"/>
+    <!-- Transmitted Byte Rate (in BPS) -->
+    <param name="overview-subleave-name-xmitBpsRate"
+           value="Transmitted_Bps_Rate"/>
+    <param name="overview-shortcut-text-xmitBpsRate"
+           value="All queue bit transmit rates (in Bps)"/>
+    <param name="overview-shortcut-title-xmitBpsRate"
+           value="Show all queue bit transmit rates in one page"/>
+    <param name="overview-page-title-xmitBpsRate"
+           value="Output queue bit transmitted rates per class"/>
+  </template>
+
+
+  <template name="junos-cos-leaf">
+    <param name="comment"            value="%cos-name%"/>
+    <param name="data-file"
+           value="%system-id%_cos_%ifName%_out_%cos-name%.rrd"/>
+    <param name="graph-title"        value="%system-id%:%ifName%:%cos-name%"/>
+    <param name="graph-lower-limit"  value="0"/>
+    <param name="snmp-object-type"   value="COUNTER64" />
+
+    <!-- Queued packet/byte stats -->
+    <leaf name="Queued_Packets">
+        <param name="comment"
+               value="Total number of packets queued"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="904"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="QedPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatQedPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Queued_Packet_Rate">
+        <param name="comment"
+               value="The rate at which packets were queued"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="903"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="QedPktRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatQedPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Queued_Bytes">
+        <param name="comment"
+               value="Number of bytes queued at the output"/>
+        <param name="graph-legend"       value="Bytes"/>
+        <param name="precedence"         value="902"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="QedBytes"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatQedBytes.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Queued_Byte_Rate">
+        <param name="comment"
+               value="The rate at which bytes were queued"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="901"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="QedByteRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatQedByteRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Queued_Bps_Rate">
+        <param name="comment"
+               value="The rate at which bytes were queued (shown in Bps)"/>
+        <param name="graph-legend"       value="Bits per second"/>
+        <param name="precedence"         value="800"/>
+        <param name="vertical-label"     value="bps"/>
+        <param name="ds-type"            value="rrd-file"/>
+        <param name="leaf-type"          value="rrd-cdef"/>
+        <param name="rpn-expr"           value="{Queued_Byte_Rate},8,*"/>
+    </leaf>
+
+    <!-- Transmitted packet/byte stats -->
+    <leaf name="Transitmitted_Packets">
+        <param name="comment"
+               value="Number of packets transmitted on the queue"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="804"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="TxedPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTxedPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Transmitted_Packet_Rate">
+        <param name="comment"
+               value="Output queue's packet transmit rate"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="803"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="TxedPktRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTxedPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Transmitted_Bytes">
+        <param name="comment"
+               value="Number of bytes transmitted on the queue"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="802"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="TxedBytes"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTxedBytes.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Transmitted_Byte_Rate">
+        <param name="comment"
+               value="The queue's current transmit rate in bytes per second"/>
+        <param name="graph-legend"       value="Bytes per second"/>
+        <param name="precedence"         value="801"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="TxedByteRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTxedByteRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Transmitted_Bps_Rate">
+        <param name="comment"
+               value="Queue's current transmit rate in bits per second"/>
+        <param name="graph-legend"       value="Bits per second"/>
+        <param name="precedence"         value="800"/>
+        <param name="vertical-label"     value="bps"/>
+        <param name="ds-type"            value="rrd-file"/>
+        <param name="leaf-type"          value="rrd-cdef"/>
+        <param name="rpn-expr"           value="{Transmitted_Byte_Rate},8,*"/>
+    </leaf>
+  </template>
+
+
+  <template name="junos-cos-tail">
+    <param name="comment"            value="%cos-name%"/>
+    <param name="data-file"
+           value="%system-id%_cos_tail_%ifName%_out_%cos-name%.rrd"/>
+    <param name="graph-title"        value="%system-id%:%ifName%:%cos-name%"/>
+    <param name="graph-lower-limit"  value="0"/>
+
+    <!-- Tail-dropped packet stats --> 
+    <leaf name="Tail_Dropped_Packets">
+        <param name="comment"
+               value="Number of packets tail dropped"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="702"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="TailDropPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTailDropPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Tail_Dropped_Packet_Rate">
+        <param name="comment"
+               value="Tail drop packet rate for the queue"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="701"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="TailDropPktRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTailDropPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+  </template>
+
+
+  <template name="junos-cos-red">
+    <param name="comment"            value="%cos-name%"/>
+    <param name="data-file"
+           value="%system-id%_cos_red_%ifName%_out_%cos-name%.rrd"/>
+    <param name="graph-title"        value="%system-id%:%ifName%:%cos-name%"/>
+    <param name="graph-lower-limit"  value="0"/>
+
+    <!-- RED-dropped packet stats -->
+    <leaf name="Dropped_Packets">
+        <param name="comment"
+               value="Total number of packets dropped due to RED"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="610"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="TotalRedDropPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTotalRedDropPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Dropped_Packet_Rate">
+        <param name="comment"
+               value="Most recent estimate of per-second RED-dropped pkts"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="609"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="TotalRedDropPktRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTotalRedDropPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+
+
+    <!-- RED: PLP Packet information -->
+    <leaf name="Low_priority_Non_TCP_Dropped_Packets">
+        <param name="comment"
+               value="Low Priority - PLP Non-TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="608"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="LpNonTcpRedDropPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpNonTcpRedDropPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Low_priority_Non_TCP_Dropped_Packet_Rate">
+        <param name="comment"
+               value="Low Priority - PLP rate of Non-TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="607"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="LpNonTcpRDropPktRat"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpNonTcpRDropPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Low_priority_TCP_Dropped_Packets">
+        <param name="comment"
+               value="Low Priority - PLP TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="606"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="LpTcpRedDropPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpTcpRedDropPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Low_priority_TCP_Dropped_Packet_Rate">
+        <param name="comment"
+               value="Low Priority - PLP rate of TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="605"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="LpTcpRedDropPktRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpTcpRedDropPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_Non_TCP_Dropped_Packets">
+        <param name="comment"
+               value="High Priority - PLP Non-TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="604"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="HpNonTcpRedDropPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpNonTcpRedDropPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_Non_TCP_Dropped_Packet_Rate">
+        <param name="comment"
+               value="High Priority - PLP rate of non-TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="603"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="HpNonTcpRDropPktRat"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpNonTcpRDropPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_TCP_Dropped_Packets">
+        <param name="comment"
+               value="High Priority - PLP TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="602"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="HpTcpRedDropPkts"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpTcpRedDropPkts.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_TCP_Dropped_Packet_Rate">
+        <param name="comment"
+               value="High Priority - PLP rate of TCP packets RED-dropped"/>
+        <param name="graph-legend"       value="Packets per second"/>
+        <param name="precedence"         value="601"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="HpTcpRedDropPktRate"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpTcpRedDropPktRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+
+
+    <!-- RED-dropped byte stats -->
+    <leaf name="Total_Dropped_Bytes">
+        <param name="comment"
+               value="Total number of bytes RED-dropped at the output"/>
+        <param name="graph-legend"       value="Packets"/>
+        <param name="precedence"         value="510"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="TotalRedDropBytes"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTotalRedDropBytes.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Total_Dropped_Byte_Rate">
+        <param name="comment"
+               value="Rate at which bytes were RED-dropped"/>
+        <param name="graph-legend"       value="Bytes per second"/>
+        <param name="precedence"         value="509"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="TotalRedDropByteRat"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatTotalRedDropByteRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Low_priority_Non_TCP_Dropped_Bytes">
+        <param name="comment"
+               value="Low Priority - PLP Non-TCP bytes RED-dropped"/>
+        <param name="graph-legend"       value="Bytes"/>
+        <param name="precedence"         value="508"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="LpNonTcpRedDropByte"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpNonTcpRedDropBytes.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Low_priority_Non_TCP_Dropped_Packet_Rate">
+        <param name="comment"
+               value="Low Priority - PLP rate of non-TCP bytes RED-dropped"/>
+        <param name="graph-legend"       value="Bytes per second"/>
+        <param name="precedence"         value="507"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="LpNonTcpRDropByteR"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpNonTcpRDropByteRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Low_priority_TCP_Dropped_Bytes">
+        <param name="comment"
+               value="Low Priority - PLP TCP byte RED-dropped"/>
+        <param name="graph-legend"       value="Bytes"/>
+        <param name="precedence"         value="506"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="LpTcpRedDropBytes"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpTcpRedDropBytes.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="Low_priority_TCP_Dropped_Byte_Rate">
+        <param name="comment"
+               value="Low Priority - PLP rate of TCP bytes RED-dropped"/>
+        <param name="graph-legend"       value="Bytes per second"/>
+        <param name="precedence"         value="505"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="LpTcpRedDropByteRat"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatLpTcpRedDropByteRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_Non_TCP_Dropped_Bytes">
+        <param name="comment"
+               value="High Priority - PLP Non-TCP bytes RED-dropped"/>
+        <param name="graph-legend"       value="Bytes"/>
+        <param name="precedence"         value="504"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="HpNonTcpRedDropByte"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpNonTcpRedDropBytes.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_Non_TCP_Dropped_Byte_Rate">
+        <param name="comment"
+               value="High Priority - PLP rate of non-TCP bytes RED-dropped"/>
+        <param name="graph-legend"       value="Bytes per second"/>
+        <param name="precedence"         value="503"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="HpNonTcpRDropByteR"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpNonTcpRDropByteRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_TCP_Dropped_Bytes">
+        <param name="comment"
+               value="High Priority - PLP TCP bytes RED-dropped"/>
+        <param name="graph-legend"       value="Bytes"/>
+        <param name="precedence"         value="502"/>
+        <param name="rrd-create-dstype"  value="COUNTER"/>
+        <param name="rrd-ds"             value="HpTcpRedDropBytes"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpTcpRedDropBytes.%ifIndex%.%cos-index%"/>
+    </leaf>
+    <leaf name="High_priority_TCP_Dropped_Byte_Rate">
+        <param name="comment"
+               value="High Priority - PLP rate of TCP bytes RED-dropped"/>
+        <param name="graph-legend"       value="Bytes per second"/>
+        <param name="precedence"         value="501"/>
+        <param name="rrd-create-dstype"  value="GAUGE"/>
+        <param name="rrd-ds"             value="HpTcpRedDropByteR"/>
+        <param name="snmp-object"
+               value="$jnxCosQstatHpTcpRedDropByteRate.%ifIndex%.%cos-index%"/>
+    </leaf>
+  </template>
+
+
+  <template name="junos-cpu-subtree">
+    <param name="data-file"         value="%system-id%_cpu_%cpu-index%.rrd"/>
+    <param name="comment"           value="Overall CPU busy percentage"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+    <param name="rrd-hwpredict"     value="disabled"/>
+    <param name="graph-lower-limit" value="0"/>
+    <param name="graph-upper-limit" value="100"/>
+    <param name="upper-limit"       value="80"/>
+    <param name="vertical-label"    value="Percent"/>
+
+    <param name="has-overview-shortcuts"     value="yes"/>
+    <param name="overview-shortcuts"         value="cpu"/>
+    <!-- CPU usage -->
+    <param name="overview-subleave-name-cpu" value="CPU_Total"/>
+    <param name="overview-shortcut-text-cpu" value="All CPUs usage"/>
+    <param name="overview-shortcut-title-cpu"
+           value="Show all CPUs minute average usage in one page"/>
+    <param name="overview-page-title-cpu"    value="CPU Usage Graphs"/>
+    <param name="descriptive-nickname"
+           value="%system-id%:CPU #%comment%"/>
+  </template>
+
+
+  <template name="junos-cpu">
+    <leaf name="CPU_Total">
+        <param name="rrd-ds"        value="cpuUsage"/>
+        <param name="snmp-object"   value="$jnxOperatingCPU.%cpu-index%"/>
+        <param name="comment"       value="The overall CPU busy percentage"/>
+        <param name="graph-legend"  value="CPU usage"/>
+    </leaf>
+  </template>
+
+
+  <template name="junos-firewall-subtree">
+    <param name="comment"           value="Firewall filter statistics"/>
+  </template>
+
+
+  <template name="junos-firewall-filter-subtree">
+    <param name="has-overview-shortcuts"         value="yes"/>
+    <param name="overview-shortcuts"             value="bps,packets"/>
+    <param name="graph-title"     value="%system-id%:%fw-filter%:%fw-counter%"/>
+    <!-- Bytes -->
+    <param name="overview-subleave-name-bps"     value="Bps"/>
+    <param name="overview-shortcut-text-bps"     value="All Bps rates"/>
+    <param name="overview-shortcut-title-bps"
+           value="Show bps rates on one page"/>
+    <param name="overview-page-title-bps"
+           value="Bps rates per firewall filter counter"/>
+    <!-- Packets -->
+    <param name="overview-subleave-name-packets" value="Packets"/>
+    <param name="overview-shortcut-text-packets" value="All packet rates"/>
+    <param name="overview-shortcut-title-packets"
+           value="Show packet rates on one page"/>
+    <param name="overview-page-title-packets"
+           value="Packet rates per firewall filter counter/policer"/>
+  </template>
+
+
+  <template name="junos-firewall-filter">
+    <param name="data-file"
+          value="%system-id%_fw_%fw-filter%_%fw-counter%.rrd"/>
+    <param name="rrd-create-dstype" value="COUNTER"/>
+    <param name="snmp-object-type"  value="COUNTER64"/>
+    <param name="rrd-hwpredict"     value="disabled"/>
+    <param name="graph-title"     value="%system-id%:%fw-filter%:%fw-counter%"/>
+  </template>
+
+
+  <template name="junos-firewall-filter-counter">
+   <leaf name="Bps">
+      <param name="comment"             value="Bits per second"/>
+      <param name="ds-type"             value="rrd-multigraph"/>
+      <param name="ds-names"            value="bytes"/>
+      <!-- Multigraph -->
+      <param name="ds-expr-bytes"       value="{Bytes},8,*"/>
+      <param name="graph-legend-bytes"  value="Bits per second"/>
+      <param name="line-style-bytes"    value="LINE2"/>
+      <param name="line-color-bytes"    value="##two"/>
+      <param name="line-order-bytes"    value="1"/>
+    </leaf>
+    <leaf name="Bytes">
+      <param name="comment"        value="Number of bytes being counted"/>
+      <param name="rrd-ds"         value="Bytes"/>
+      <param name="graph-legend"   value="Bytes"/>
+      <param name="vertical-label" value="Bytes/s"/>
+      <param name="snmp-object"    value="$jnxFWCounterByteCount.%fw-index%"/>
+    </leaf>
+  </template>
+
+
+  <template name="junos-firewall-filter-policer">
+    <leaf name="Packets">
+      <param name="comment"        value="Number of packets being counted"/>
+      <param name="rrd-ds"         value="Packets"/>
+      <param name="graph-legend"   value="Packets"/>
+      <param name="vertical-label" value="pps"/>
+      <param name="snmp-object"    value="$jnxFWCounterPacketCount.%fw-index%"/>
+    </leaf>
+  </template>
+
+
+  <template name="junos-memory-subtree">
+    <param name="data-file"         value="%system-id%_mem_%mem-indexFix%.rrd"/>
+    <param name="comment"           value="DRAM, buffer and heap information"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+    <param name="rrd-hwpredict"     value="disabled" />
+    <param name="graph-lower-limit" value="0" />
+
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts"     value="mem,buffer,heap"/>
+    <!-- DRAM size -->
+    <param name="overview-subleave-name-mem" value="Memory"/>
+    <param name="overview-shortcut-text-mem" value="All memory sizes"/>
+    <param name="overview-shortcut-title-mem"
+           value="Show all memory size in one page"/>
+    <param name="overview-page-title-mem"
+           value="Memory Size Graphs"/>     
+    <!-- Buffer pool utilization -->
+    <param name="overview-subleave-name-buffer" value="Buffer_utilization"/>
+    <param name="overview-shortcut-text-buffer" value="All buffer pool util"/>
+    <param name="overview-shortcut-title-buffer"
+           value="Show all buffer pool utilization in one page"/>
+    <param name="overview-page-title-buffer"
+           value="Buffer Pool Graphs"/>     
+    <!-- Heap utilization -->
+    <param name="overview-subleave-name-heap" value="Heap_utilization"/>
+    <param name="overview-shortcut-text-heap" value="All Heap Utilization"/>
+    <param name="overview-shortcut-title-heap"
+           value="Show all heap utilization in one page"/>
+    <param name="overview-page-title-heap"
+           value="Heap Utilization Graphs"/>     
+
+    <param name="descriptive-nickname"
+           value="%system-id%: Memory Size"/>
+  </template>
+
+
+  <template name="junos-memory">
+    <leaf name="Memory">
+      <param name="comment"        value="Memory size in bytes"/>
+      <param name="precedence"     value="1000"/>
+      <param name="snmp-object"    value="$jnxOperatingMemory.%mem-index%"/>
+      <param name="rrd-ds"         value="dram_%mem-indexFix%"/>
+      <param name="graph-legend"   value="Memory Size"/>
+      <param name="line-style"     value="##totalresource"/>
+      <param name="line-color"     value="##totalresource"/>
+      <param name="vertical-label" value="Bytes"/>
+    </leaf>
+    <leaf name="Buffer_utilization">
+      <param name="comment"           value="Buffer pool util in percentage"/>
+      <param name="snmp-object"       value="$jnxOperatingBuffer.%mem-index%"/>
+      <param name="rrd-ds"            value="buffer_%mem-indexFix%"/>
+      <param name="graph-legend"      value="Buffer Pool Utilization"/>
+      <param name="graph-upper-limit" value="100"/>
+      <param name="upper-limit"       value="80"/>
+      <param name="line-style"        value="##resourceusage" />
+      <param name="line-color"        value="##resourceusage" />
+      <param name="vertical-label"    value="Percent"/>
+    </leaf>
+    <leaf name="Heap_utilization">
+      <param name="comment"           value="Heap util in percentage"/>
+      <param name="snmp-object"       value="$jnxOperatingHeap.%mem-index%"/>
+      <param name="rrd-ds"            value="heap_%mem-indexFix%"/>
+      <param name="graph-legend"      value="Heap Utilization"/>
+      <param name="graph-upper-limit" value="100"/>
+      <param name="upper-limit"       value="80"/>
+      <param name="line-style"        value="##resourceusage" />
+      <param name="line-color"        value="##resourceusage" />
+      <param name="vertical-label"    value="Percent"/>
+    </leaf> 
+  </template>
+
+
+  <template name="junos-rpf-subtree">
+    <param name="comment"           value="Reverse Path Forwarding statistics"/>
+    <param name="has-overview-shortcuts"         value="yes"/>
+    <param name="overview-shortcuts"             value="bytes,packets"/>
+    <param name="graph-title"                    value="%system-id%:%ifName%"/>
+    <!-- Bytes -->
+    <param name="overview-subleave-name-bytes"     value="Bytes"/>
+    <param name="overview-shortcut-text-bytes"     value="Bytes received"/>
+    <param name="overview-shortcut-title-bytes"
+           value="Show bytes received on one page"/>
+    <param name="overview-page-title-bytes"
+           value="Bytes received on interface"/>
+    <!-- Packets -->
+    <param name="overview-subleave-name-packets" value="Packets"/>
+    <param name="overview-shortcut-text-packets" value="Packets received"/>
+    <param name="overview-shortcut-title-packets"
+           value="Show packets on one page"/>
+    <param name="overview-page-title-packets"
+           value="Packets received on one page"/>
+  </template>
+
+
+  <template name="junos-rpf">
+    <param name="comment"            value="%ifAddrType%: %ifName%"/>
+    <param name="data-file"
+           value="%system-id%_rpf_%ifAddrType%_%ifNameT%.rrd"/>
+    <param name="graph-title"        value="%system-id%:%ifName%:%ifAddrType%"/>
+    <param name="graph-lower-limit"  value="0"/>
+    <param name="rrd-create-dstype"  value="COUNTER"/>
+    <param name="snmp-object-type"   value="COUNTER64" />
+
+    <leaf name="Packets">
+        <param name="precedence"    value="999"/>
+        <param name="rrd-ds"        value="Pkts"/>
+        <param name="snmp-object"   value="$jnxRpfStatsPackets.%rpfIndex%"/>
+        <param name="comment"
+               value="Number of packets rejected due to RPF processing"/>
+        <param name="graph-legend"  value="RPF rejects"/>
+    </leaf>
+    <leaf name="Bytes">
+        <param name="precedence"    value="998"/>
+        <param name="rrd-ds"        value="Bytes"/>
+        <param name="snmp-object"   value="$jnxRpfStatsBytes.%rpfIndex%"/>
+        <param name="comment"
+               value="Number of bytes rejected due to RPF processing"/>
+        <param name="graph-legend"  value="RPF rejects"/>
+    </leaf>
+  </template>
+
+
+  <template name="junos-temperature-subtree">
+    <param name="data-file"   value="%system-id%_sensor_%sensor-indexFix%.rrd"/>
+    <param name="comment"           value="Temperature Sensors"/>
+    <param name="rrd-create-dstype" value="GAUGE"/>
+    <param name="rrd-hwpredict"     value="disabled"/>
+    <param name="graph-title"       value="%system-id%:%sensor-desc%"/>
+  </template>
+
+
+  <template name="junos-temperature-sensor">
+    <param name="rrd-ds"            value="sensor_%sensor-indexFix%"/>
+    <param name="snmp-object"       value="$jnxOperatingTemp.%sensor-index%"/>
+    <param name="graph-legend"      value="%sensor-desc%"/>
+    <param name="graph-lower-limit" value="15"/>
+    <param name="graph-upper-limit" value="70"/>
+    <param name="vertical-label"    value="degrees Celsius"/>
+  </template>
+
+</datasources>
+
+</configuration>

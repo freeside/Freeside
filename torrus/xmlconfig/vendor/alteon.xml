@@ -1,0 +1,695 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2006 Jon Nistor
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+  $Id: alteon.xml,v 1.1 2010-12-27 00:04:11 ivan Exp $
+  Jon Nistor <nistor at snickers dot org>
+
+  ALTEON leafs:
+        alteon-cpu
+        alteon-maint
+        alteon-maint-subtree
+        alteon-mem
+        alteon-packets
+        alteon-sensor
+        alteon-vserver
+        alteon-vserver-subtree
+  NOTE: Module tested against: ACEdirector(3) (snmpV1)
+-->
+
+<!-- Alteon specific definitions -->
+<configuration>
+
+<definitions>
+  <!-- ALTEON-PRIVATE-MIBS -->
+  <def name="hwSensor1Temp"            value="1.3.6.1.4.1.1872.2.1.1.6.0"/>
+  <def name="hwSensor2Temp"            value="1.3.6.1.4.1.1872.2.1.1.7.0"/>
+  <def name="hwSensor3Temp"            value="1.3.6.1.4.1.1872.2.1.1.8.0"/>
+  <def name="hwSensor4Temp"            value="1.3.6.1.4.1.1872.2.1.1.9.0"/>
+  <!-- Maintenance Statistics Table -->
+  <def name="slbStatPortMaintCurBindings"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.2"/>
+  <def name="slbStatPortMaintBindingFails"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.3"/>
+  <def name="slbStatPortMaintNonTcpFrames"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.4"/>
+  <def name="slbStatPortMaintTcpFragments"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.5"/>
+  <def name="slbStatPortMaintUdpDatagrams"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.6"/>
+  <def name="slbStatPortMaintIncorrectVIPs"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.7"/>
+  <def name="slbStatPortMaintIncorrectVports"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.8"/>
+  <def name="slbStatPortMaintRealServerNoAvails"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.1.1.9"/>
+  <def name="slbStatPortMaintFilteredDeniedFrames"
+                                      value="1.3.6.1.4.1.1872.2.1.8.2.1.1.10"/>
+
+  <!-- Virtual Server Table -->
+  <def name="slbStatVServerCurrSessions"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.7.1.2"/>
+  <def name="slbStatVServerTotalSessions"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.7.1.2"/>
+  <def name="slbStatVServerHighestSessions"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.7.1.4"/>
+  <def name="slbStatVServerHCOctetsLow32"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.7.1.6"/>
+  <def name="slbStatVServerHCOctetsHigh32"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.7.1.7"/>
+  <!-- not used yet -->
+  <def name="slbStatVServerHeaderHits" value="1.3.6.1.4.1.1872.2.1.8.2.7.1.8"/>
+  <def name="slbStatVServerHeaderMisses"
+                                       value="1.3.6.1.4.1.1872.2.1.8.2.7.1.9"/>
+  <def name="slbStatVServerHeaderTotalSessions"
+                                      value="1.3.6.1.4.1.1872.2.1.8.2.7.1.10"/>
+  <!-- // -->
+  <def name="memStatsAllocs"           value="1.3.6.1.4.1.1872.2.1.8.12.1.0"/>
+  <def name="memStatsFrees"            value="1.3.6.1.4.1.1872.2.1.8.12.2.0"/>
+  <def name="memStatsAllocFails"       value="1.3.6.1.4.1.1872.2.1.8.12.3.0"/>
+  <def name="memStatsBytesCurr"        value="1.3.6.1.4.1.1872.2.1.8.12.4.0"/>
+  <def name="memStatsBytesHiwat"       value="1.3.6.1.4.1.1872.2.1.8.12.5.0"/>
+  <def name="memStatsPoolBytes"        value="1.3.6.1.4.1.1872.2.1.8.12.6.0"/>
+  <def name="memStatsLargest"          value="1.3.6.1.4.1.1872.2.1.8.12.7.0"/>
+  <def name="pktStatsAllocs"           value="1.3.6.1.4.1.1872.2.1.8.13.1.0"/>
+  <def name="pktStatsFrees"            value="1.3.6.1.4.1.1872.2.1.8.13.2.0"/>
+  <def name="pktStatsAllocFails"       value="1.3.6.1.4.1.1872.2.1.8.13.3.0"/>
+  <def name="pktStatsMediums"          value="1.3.6.1.4.1.1872.2.1.8.13.4.0"/>
+  <def name="pktStatsJumbos"           value="1.3.6.1.4.1.1872.2.1.8.13.5.0"/>
+  <def name="pktStatsSmalls"           value="1.3.6.1.4.1.1872.2.1.8.13.6.0"/>
+  <def name="mpCpuAStatsUtil1Second"   value="1.3.6.1.4.1.1872.2.1.8.16.1.0"/>
+  <def name="mpCpuBStatsUtil1Second"   value="1.3.6.1.4.1.1872.2.1.8.16.2.0"/>
+  <def name="mpCpuAStatsUtil4Seconds"  value="1.3.6.1.4.1.1872.2.1.8.16.3.0"/>
+  <def name="mpCpuBStatsUtil4Seconds"  value="1.3.6.1.4.1.1872.2.1.8.16.4.0"/>
+  <def name="mpCpuAStatsUtil64Seconds" value="1.3.6.1.4.1.1872.2.1.8.16.5.0"/>
+  <def name="mpCpuBStatsUtil64Seconds" value="1.3.6.1.4.1.1872.2.1.8.16.6.0"/>
+
+</definitions>
+
+
+<datasources>
+  <!-- CPU Statistics -->
+  <template name="alteon-cpu">
+    <subtree name="CPU_Usage">
+      <param name="comment">
+        Alteon MP CPU statistics
+      </param>
+      <param name="data-file"         value="%system-id%_SLB_cpu.rrd"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="vertical-label"    value="Percentage"/>
+
+      <leaf name="CPU_A_1Sec">
+        <param name="precedence"      value="301"/>
+        <param name="comment"         value="Util of MP CPU A over 1 second"/>
+        <param name="graph-legend"    value="Utilization"/>
+        <param name="rrd-ds"          value="CpuAUtil1Sec"/>
+        <param name="snmp-object"     value="$mpCpuAStatsUtil1Second"/>
+      </leaf>
+
+      <leaf name="CPU_B_1Sec">
+        <param name="precedence"      value="300"/>
+        <param name="comment"         value="Util of MP CPU B over 1 second"/>
+        <param name="graph-legend"    value="Utilization"/>
+        <param name="rrd-ds"          value="CpuBUtil1Sec"/>
+        <param name="snmp-object"     value="$mpCpuBStatsUtil1Second"/>
+      </leaf>
+
+      <leaf name="CPU_A_4Secs">
+        <param name="precedence"      value="201"/>
+        <param name="comment"         value="Util of MP CPU A over 4 seconds"/>
+        <param name="graph-legend"    value="Utilization"/>
+        <param name="rrd-ds"          value="CpuAUtil4Sec"/>
+        <param name="snmp-object"     value="$mpCpuAStatsUtil4Seconds"/>
+      </leaf>
+
+      <leaf name="CPU_B_4Secs">
+        <param name="precedence"      value="200"/>
+        <param name="comment"         value="Util of MP CPU B over 4 seconds"/>
+        <param name="graph-legend"    value="Utilization"/>
+        <param name="rrd-ds"          value="CpuBUtil4Sec"/>
+        <param name="snmp-object"     value="$mpCpuBStatsUtil4Seconds"/>
+      </leaf>
+
+      <leaf name="CPU_A_64Secs">
+        <param name="precedence"      value="101"/>
+        <param name="comment"       value="Util of MP CPU A over 64 seconds"/>
+        <param name="graph-legend"    value="Utilization"/>
+        <param name="rrd-ds"          value="CpuAUtil64Sec"/>
+        <param name="snmp-object"     value="$mpCpuAStatsUtil64Seconds"/>
+      </leaf>
+
+      <leaf name="CPU_B_64Secs">
+        <param name="precedence"      value="100"/>
+        <param name="comment"       value="Util of MP CPU B over 64 seconds"/>
+        <param name="graph-legend"    value="Utilization"/>
+        <param name="rrd-ds"          value="CpuBUtil64Sec"/>
+        <param name="snmp-object"     value="$mpCpuBStatsUtil64Seconds"/>
+      </leaf>
+
+     <leaf name="Summary_1_Sec">
+        <param name="precedence"         value="999"/>
+        <param name="comment"            value="Util for 1 second"/>
+        <param name="title"              value="Percentage : 1 Second"/>
+        <param name="ds-type"            value="rrd-multigraph"/>
+        <param name="ds-names"           value="CPU_A,CPU_B"/>
+        <param name="graph-lower-limit"  value="0"/>
+        <!-- CPU A: 1 Second -->
+        <param name="ds-expr-CPU_A"      value="{CPU_A_1Sec}"/>
+        <param name="graph-legend-CPU_A" value="CPU A"/>
+        <param name="line-style-CPU_A"   value="LINE2"/>
+        <param name="line-color-CPU_A"   value="##one"/>
+        <param name="line-order-CPU_A"   value="1"/>
+        <!-- CPU B: 1 Second -->
+        <param name="ds-expr-CPU_B"      value="{CPU_B_1Sec}"/>
+        <param name="graph-legend-CPU_B" value="CPU B"/>
+        <param name="line-style-CPU_B"   value="LINE2"/>
+        <param name="line-color-CPU_B"   value="##two"/>
+        <param name="line-order-CPU_B"   value="2"/>
+     </leaf>
+
+     <leaf name="Summary_4_Secs">
+        <param name="precedence"         value="998"/>
+        <param name="comment"            value="Util for 4 seconds"/>
+        <param name="title"              value="Percentage : 4 Seconds"/>
+        <param name="ds-type"            value="rrd-multigraph"/>
+        <param name="ds-names"           value="CPU_A,CPU_B"/>
+        <param name="graph-lower-limit"  value="0"/>
+        <!-- CPU A: 4 Seconds -->
+        <param name="ds-expr-CPU_A"      value="{CPU_A_4Secs}"/>
+        <param name="graph-legend-CPU_A" value="CPU A"/>
+        <param name="line-style-CPU_A"   value="LINE2"/>
+        <param name="line-color-CPU_A"   value="##one"/>
+        <param name="line-order-CPU_A"   value="1"/>
+        <!-- CPU B: 4 Seconds -->
+        <param name="ds-expr-CPU_B"      value="{CPU_B_4Secs}"/>
+        <param name="graph-legend-CPU_B" value="CPU B"/>
+        <param name="line-style-CPU_B"   value="LINE2"/>
+        <param name="line-color-CPU_B"   value="##two"/>
+        <param name="line-order-CPU_B"   value="2"/>
+     </leaf>
+
+     <leaf name="Summary_64_Secs">
+        <param name="precedence"         value="997"/>
+        <param name="comment"            value="Util for 64 seconds"/>
+        <param name="title"              value="Percentage : 64 Seconds"/>
+        <param name="ds-type"            value="rrd-multigraph"/>
+        <param name="ds-names"           value="CPU_A,CPU_B"/>
+        <param name="graph-lower-limit"  value="0"/>
+        <!-- CPU A: 64 Seconds -->
+        <param name="ds-expr-CPU_A"      value="{CPU_A_64Secs}"/>
+        <param name="graph-legend-CPU_A" value="CPU A"/>
+        <param name="line-style-CPU_A"   value="LINE2"/>
+        <param name="line-color-CPU_A"   value="##one"/>
+        <param name="line-order-CPU_A"   value="1"/>
+        <!-- CPU B: 64 Seconds -->
+        <param name="ds-expr-CPU_B"      value="{CPU_B_64Secs}"/>
+        <param name="graph-legend-CPU_B" value="CPU B"/>
+        <param name="line-style-CPU_B"   value="LINE2"/>
+        <param name="line-color-CPU_B"   value="##two"/>
+        <param name="line-order-CPU_B"   value="2"/>
+     </leaf>
+    </subtree>
+  </template>
+
+  <!-- Memory Statistics -->
+  <template name="alteon-mem">
+    <subtree name="Memory_Usage">
+      <param name="comment">
+        Memory Statistics Group
+      </param>
+      <param name="data-file"         value="%system-id%_SLB_mem.rrd"/>
+
+      <leaf name="Memory_Alloc">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="999"/>
+        <param name="comment"
+              value="Total number of memory allocations"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="memStatsAllocs"/>
+        <param name="snmp-object"       value="$memStatsAllocs"/>
+      </leaf>
+
+      <leaf name="Memory_Free">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="998"/>
+        <param name="comment"
+              value="Total number of memory frees"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="memStatsFrees"/>
+        <param name="snmp-object"       value="$memStatsFrees"/>
+      </leaf>
+
+      <leaf name="Memory_Alloc_Fails">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="997"/>
+        <param name="comment"
+              value="Total number of memory allocations failed"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="memStatsAllocFails"/>
+        <param name="snmp-object"       value="$memStatsAllocFails"/>
+      </leaf>
+
+      <leaf name="Memory_Bytes_Curr">
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="precedence"        value="899"/>
+        <param name="comment"
+              value="Outstanding memory in bytes have been allocated"/>
+        <param name="vertical-label"    value="Bytes"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="memStatsBytesCurr"/>
+        <param name="snmp-object"       value="$memStatsBytesCurr"/>
+      </leaf>
+
+      <leaf name="Memory_Bytes_High_Water_Mark">
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="precedence"        value="898"/>
+        <param name="comment"
+              value="Bytes allocated witch high water mark"/>
+        <param name="vertical-label"    value="Bytes"/>
+        <param name="graph-legend"      value="Bytes"/>
+        <param name="rrd-ds"            value="memStatsBytesHiwat"/>
+        <param name="snmp-object"       value="$memStatsBytesHiwat"/>
+      </leaf>
+
+      <leaf name="Memory_Bytes_Total">
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="precedence"        value="897"/>
+        <param name="comment"
+              value="Total bytes in the memory pool"/>
+        <param name="vertical-label"    value="Bytes"/>
+        <param name="graph-legend"      value="Bytes"/>
+        <param name="rrd-ds"            value="memStatsPoolBytes"/>
+        <param name="snmp-object"       value="$memStatsPoolBytes"/>
+      </leaf>
+
+      <leaf name="Memory_Bytes_Largest_Alloc">
+        <param name="rrd-create-dstype" value="GAUGE"/>
+        <param name="precedence"        value="896"/>
+        <param name="comment"
+              value="Largest block has been allocated"/>
+        <param name="vertical-label"    value="Bytes"/>
+        <param name="graph-legend"      value="Bytes"/>
+        <param name="rrd-ds"            value="memStatsLargest"/>
+        <param name="snmp-object"       value="$memStatsLargest"/>
+      </leaf>
+    </subtree>
+  </template>
+
+  <!-- Packet Statistics -->
+  <template name="alteon-packets">
+    <subtree name="Packet_Stats">
+      <param name="comment">
+        Packet Statistics Group
+      </param>
+      <param name="data-file"         value="%system-id%_SLB_pkts.rrd"/>
+
+      <leaf name="Packets_Alloc">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="999"/>
+        <param name="comment"
+              value="Total packets which have been allocated"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="pktStatsAllocs"/>
+        <param name="snmp-object"       value="$pktStatsAllocs"/>
+      </leaf>
+
+      <leaf name="Packets_Freed">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="998"/>
+        <param name="comment"
+              value="Total packets which have been freed"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="pktStatsFrees"/>
+        <param name="snmp-object"       value="$pktStatsFrees"/>
+      </leaf>
+
+      <leaf name="Packets_Alloc_Fails">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="997"/>
+        <param name="comment"
+              value="Total packet allocations failed"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="pktStatsAllocFails"/>
+        <param name="snmp-object"       value="$pktStatsAllocFails"/>
+      </leaf>
+      <!-- Packet Size information -->
+      <leaf name="Packets_Size_Small">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="803"/>
+        <param name="comment"
+              value="Number of small size packets have been allocated"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="pktStatsSmalls"/>
+        <param name="snmp-object"       value="$pktStatsSmalls"/>
+      </leaf>
+
+      <leaf name="Packets_Size_Medium">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="802"/>
+        <param name="comment"
+              value="Number of medium size packets have been allocated"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="pktStatsMediums"/>
+        <param name="snmp-object"       value="$pktStatsMediums"/>
+      </leaf>
+
+      <leaf name="Packets_Size_Jumbo">
+        <param name="rrd-create-dstype" value="COUNTER"/>
+        <param name="precedence"        value="801"/>
+        <param name="comment"
+              value="Number of jumbo size packets have been allocated"/>
+        <param name="vertical-label"    value="Total"/>
+        <param name="graph-legend"      value="Number"/>
+        <param name="rrd-ds"            value="pktStatsJumbos"/>
+        <param name="snmp-object"       value="$pktStatsJumbos"/>
+      </leaf>
+    </subtree>
+  </template>
+
+  <!-- Temperature Sensors -->
+  <template name="alteon-sensor">
+    <subtree name="Temperature">
+      <param name="comment">
+        Alteon Temperature Sensors
+      </param>
+      <param name="data-file"         value="%system-id%_SLB_sensor.rrd"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="vertical-label"    value="degrees Celsius"/>
+
+      <leaf name="All_Temperatures">
+        <param name="precedence"         value="1000"/>
+        <param name="comment"            value="Display all 4 temperatures"/>
+        <param name="title"              value="Temperature"/>
+        <param name="ds-type"            value="rrd-multigraph"/>
+        <param name="ds-names"           value="CPU_A,CPU_B,Temp3,Temp4"/>
+        <param name="graph-lower-limit"  value="0"/>
+        <!-- Temperature Sensor 1 -->
+        <param name="ds-expr-CPU_A"      value="{CPU_A}"/>
+        <param name="graph-legend-CPU_A" value="Hw Sensor 1: rear left"/>
+        <param name="line-style-CPU_A"   value="LINE2"/>
+        <param name="line-color-CPU_A"   value="##one"/>
+        <param name="line-order-CPU_A"   value="1"/>
+        <!-- Temperature Sensor 2 -->
+        <param name="ds-expr-CPU_B"      value="{CPU_B}"/>
+        <param name="graph-legend-CPU_B" value="Hw Sensor 2: rear middle"/>
+        <param name="line-style-CPU_B"   value="LINE2"/>
+        <param name="line-color-CPU_B"   value="##two"/>
+        <param name="line-order-CPU_B"   value="2"/>
+        <!-- Temperature Sensor 3 -->
+        <param name="ds-expr-Temp3"      value="{Temp3}"/>
+        <param name="graph-legend-Temp3" value="Hw Sensor 3: front middle"/>
+        <param name="line-style-Temp3"   value="LINE2"/>
+        <param name="line-color-Temp3"   value="##three"/>
+        <param name="line-order-Temp3"   value="3"/>
+        <!-- Temperature Sensor 4 -->
+        <param name="ds-expr-Temp4"      value="{Temp4}"/>
+        <param name="graph-legend-Temp4" value="Hw Sensor 4: front right"/>
+        <param name="line-style-Temp4"   value="LINE2"/>
+        <param name="line-color-Temp4"   value="##four"/>
+        <param name="line-order-Temp4"   value="4"/>
+      </leaf>
+      
+      <leaf name="CPU_A">
+        <param name="comment"         value="Temp of Sensor 1: rear left"/>
+        <param name="graph-legend"    value="degrees Celcius"/>
+        <param name="rrd-ds"          value="hwSensor1Temp"/>
+        <param name="snmp-object"     value="$hwSensor1Temp"/>
+      </leaf>
+
+      <leaf name="CPU_B">
+        <param name="comment"         value="Temp of Sensor 2: rear middle"/>
+        <param name="graph-legend"    value="degrees Celcius"/>
+        <param name="rrd-ds"          value="hwSensor2Temp"/>
+        <param name="snmp-object"     value="$hwSensor2Temp"/>
+      </leaf>
+
+      <leaf name="Temp3">
+        <param name="comment"         value="Temp of Sensor 3: front middle"/>
+        <param name="graph-legend"    value="degrees Celcius"/>
+        <param name="rrd-ds"          value="hwSensor3Temp"/>
+        <param name="snmp-object"     value="$hwSensor3Temp"/>
+      </leaf>
+
+      <leaf name="Temp4">
+        <param name="comment"         value="Temp of Sensor 4: front right"/>
+        <param name="graph-legend"    value="degrees Celcius"/>
+        <param name="rrd-ds"          value="hwSensor4Temp"/>
+        <param name="snmp-object"     value="$hwSensor4Temp"/>
+      </leaf>
+    </subtree>
+  </template>
+
+  <!-- SLB Virtual Servers Statistics Table -->
+  <template name="alteon-vserver-subtree">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="currSess,totalSess"/>
+    <!-- Concurrent Sessions -->
+    <param name="overview-subleave-name-currSess" value="Current_Sessions"/>
+    <param name="overview-shortcut-text-currSess"
+           value="Concurrent Sessions"/>
+    <param name="overview-shortcut-title-currSess"
+           value="Show concurrent session summary for all VServers"/>
+    <param name="overview-page-title-currSess"
+           value="Concurrent VServer connection overview"/>
+    <!-- Total Sessions -->
+    <param name="overview-subleave-name-totalSess" value="Total_Sessions"/>
+    <param name="overview-shortcut-text-totalSess"
+           value="Total Sessions"/>
+    <param name="overview-shortcut-title-totalSess"
+           value="Show total session summary for all VServers"/>
+    <param name="overview-page-title-totalSess"
+           value="Total VServer connection overview"/>
+  </template>
+
+  <template name="alteon-vserver">
+    <param name="data-file"         value="%system-id%_SLB_vserver.rrd"/>
+    <param name="rrd-create-dstype" value="COUNTER"/>
+
+    <leaf name="Current_Sessions">
+      <param name="precedence"        value="999"/>
+      <param name="comment"           value="Number of concurrent sessions"/>
+      <param name="graph-legend"      value="Concurrent number"/>
+      <param name="vertical-label"    value="concurrent"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="rrd-ds"
+            value="CurrSessions_%alteon-vserver-index%"/>
+      <param name="snmp-object"
+            value="$slbStatVServerCurrSessions.%alteon-vserver-index%"/>
+    </leaf>
+
+    <leaf name="Total_Sessions">
+      <param name="precedence"     value="998"/>
+      <param name="comment"        value="Number of total sessions"/>
+      <param name="graph-legend"   value="total number"/>
+      <param name="vertical-label" value="total"/>
+      <param name="rrd-ds"
+            value="TotalSessions_%alteon-vserver-index%"/>
+      <param name="snmp-object"
+            value="$slbStatVServerTotalSessions.%alteon-vserver-index%"/>
+    </leaf>
+
+    <leaf name="Highest_Sessions">
+      <param name="precedence"     value="997"/>
+      <param name="comment"        value="Highest sessions handled"/>
+      <param name="graph-legend"   value="highest session count"/>
+      <param name="vertical-label" value="total"/>
+      <param name="rrd-ds"
+            value="HighestSessions_%alteon-vserver-index%"/>
+      <param name="snmp-object"
+            value="$slbStatVServerHighestSessions.%alteon-vserver-index%"/>
+    </leaf>
+
+    <leaf name="Octets_rcvd_xmit_Low32">
+      <param name="precedence"     value="996"/>
+      <param name="comment"        value="Lower 32bit value of rcvd/xmit"/>
+      <param name="graph-legend"   value="rcvd/xmit"/>
+      <param name="vertical-label" value="total"/>
+      <param name="rrd-ds"
+            value="HCOctetsLow32_%alteon-vserver-index%"/>
+      <param name="snmp-object"
+            value="$slbStatVServerHCOctetsLow32.%alteon-vserver-index%"/>
+    </leaf>
+
+    <leaf name="Octets_rcvd_xmit_High32">
+      <param name="precedence"     value="995"/>
+      <param name="comment"        value="Higher 32bit value of rcvd/xmit"/>
+      <param name="graph-legend"   value="rcvd/xmit"/>
+      <param name="vertical-label" value="total"/>
+      <param name="rrd-ds"
+            value="HCOctetsHigh32_%alteon-vserver-index%"/>
+      <param name="snmp-object"
+           value="$slbStatVServerHCOctetsHigh32.%alteon-vserver-index%"/>
+    </leaf>
+  </template>
+
+  <!-- SLB Port Maintenance Statistics Table -->
+  <template name="alteon-maint-subtree">
+    <param name="has-overview-shortcuts" value="yes"/>
+    <param name="overview-shortcuts" value="currBind,failSess,filterDeny"/>
+    <!-- Current Bindings -->
+    <param name="overview-subleave-name-currBind" value="Current_Bindings"/>
+    <param name="overview-shortcut-text-currBind"
+           value="Current Bindings"/>
+    <param name="overview-shortcut-title-currBind"
+           value="Show current number of bindings per port"/>
+    <param name="overview-page-title-currBind"
+           value="Current number of bindings overview"/>
+    <!-- Failed Bindings -->
+    <param name="overview-subleave-name-failSess" value="Failed_Bindings"/>
+    <param name="overview-shortcut-text-failSess"
+           value="Failed Bindings"/>
+    <param name="overview-shortcut-title-failSess"
+           value="Show total number of binding failures"/>
+    <param name="overview-page-title-failSess"
+           value="Total number of binding failures"/>
+    <!-- Filtered Denied Frames -->
+    <param name="overview-subleave-name-filterDeny"
+           value="Filtered_Denied_Frames"/>
+    <param name="overview-shortcut-text-filterDeny"
+           value="Frames denied"/>
+    <param name="overview-shortcut-title-filterDeny"
+           value="Show total number of frames denied by filters"/>
+    <param name="overview-page-title-filterDeny"
+           value="Total number of frames that are denied due to port filter"/>
+  </template>
+
+  <template name="alteon-maint">
+    <param name="data-file"         value="%system-id%_SLB_maint.rrd"/>
+    <param name="rrd-create-dstype" value="COUNTER"/>
+
+    <leaf name="Current_Bindings">
+      <param name="precedence"        value="999"/>
+      <param name="comment"           value="Current number of bindings"/>
+      <param name="graph-legend"      value="Current number"/>
+      <param name="vertical-label"    value="current"/>
+      <param name="rrd-create-dstype" value="GAUGE"/>
+      <param name="rrd-ds"
+            value="CurBindings_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintCurBindings.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="Failed_Bindings">
+      <param name="precedence"        value="998"/>
+      <param name="comment"         value="Total number of binding failures"/>
+      <param name="graph-legend"      value="Total number"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="BindingFails_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintBindingFails.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="Non_TCP_Frames">
+      <param name="precedence"        value="997"/>
+      <param name="comment"
+            value="Total number of non-TCP/IP frames dropped on the port"/>
+      <param name="graph-legend"      value="Drops"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="NonTcpFrames_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintNonTcpFrames.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="TCP_Fragments">
+      <param name="precedence"        value="996"/>
+      <param name="comment"
+            value="Total number of TCP fragments dropped on the port"/>
+      <param name="graph-legend"      value="Drops"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="TcpFragments_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintTcpFragments.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="UDP_Datagrams">
+      <param name="precedence"        value="995"/>
+      <param name="comment"
+            value="Total number of UDP datagrams dropped on the port"/>
+      <param name="graph-legend"      value="Drops"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="UdpDatagrams_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintUdpDatagrams.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="Incorrect_VIPs">
+      <param name="precedence"        value="994"/>
+      <param name="comment"
+            value="Total number of frames with incorrect VIPs dropped"/>
+      <param name="graph-legend"      value="Drops"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="IncorrectVIPs_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintIncorrectVIPs.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="Incorrect_Vports">
+      <param name="precedence"        value="993"/>
+      <param name="comment"
+           value="Total number of frames with incorrect Virtual Port dropped"/>
+      <param name="graph-legend"      value="Drops"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="IncorrectVports_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintIncorrectVports.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="Real_Servers_Not_Avail">
+      <param name="precedence"        value="992"/>
+      <param name="comment"
+            value="Total number of frames that are dropped on the port because
+                   no real server is avail"/>
+      <param name="graph-legend"      value="Drops"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="ServerNoAvails_%alteon-maint-index%"/>
+      <param name="snmp-object"
+            value="$slbStatPortMaintRealServerNoAvails.%alteon-maint-index%"/>
+    </leaf>
+
+    <leaf name="Filtered_Denied_Frames">
+      <param name="precedence"        value="991"/>
+      <param name="comment"
+            value="Total number of frames that are denied on the port
+                   by the filter"/>
+      <param name="graph-legend"      value="Drops"/>
+      <param name="vertical-label"    value="total"/>
+      <param name="rrd-ds"
+            value="FilDeniedFrames_%alteon-maint-index%"/>
+      <param name="snmp-object"
+          value="$slbStatPortMaintFilteredDeniedFrames.%alteon-maint-index%"/>
+    </leaf>
+  </template>
+
+</datasources>
+
+</configuration>
+
