@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: Frontpage.pm,v 1.1 2010-12-27 00:03:44 ivan Exp $
+# $Id: Frontpage.pm,v 1.2 2010-12-27 08:40:19 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::Frontpage;
@@ -208,7 +208,11 @@ sub renderTreeChooser
                                       hasPrivilege( $_[0], 'DisplayTree' ) }
         ,
         'mayGlobalSearch' => sub { return $self->mayGlobalSearch(); },        
-        'searchResults'   => sub { return $self->doGlobalSearch($_[0]); }
+        'searchResults'   => sub { return $self->doGlobalSearch($_[0]); },
+
+        #Freeside
+        'freesideHeader' => sub { return $self->freesideHeader(@_); },
+        'freesideFooter' => sub { return $self->freesideFooter(); },
     };
 
 

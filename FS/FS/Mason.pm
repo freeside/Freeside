@@ -458,7 +458,8 @@ sub mason_interps {
 
   #my $request_class = 'HTML::Mason::Request'.
                       #( $mode eq 'apache' ? '::ApacheHandler' : '' );
-  my $request_class = 'FS::Mason::Request';
+  my $request_class = $mode eq 'standalone' ? 'FS::Mason::StandaloneRequest'
+                                            : 'FS::Mason::Request';
 
   #not entirely sure it belongs here, but what the hey
   if ( %%%RT_ENABLED%%% && $mode ne 'standalone' ) {

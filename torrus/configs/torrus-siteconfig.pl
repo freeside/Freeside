@@ -7,7 +7,7 @@
     (
      'main' => {
          'description' => 'The main tree',
-         'info'        => 'some tree',
+         'info'        => 'main tree', #'some tree', #per-agent?
          'xmlfiles' => [qw(routers.xml)],
          'run' => { 'collector' => 1, 'monitor' => 0 } }
      );
@@ -17,5 +17,10 @@
 # $Torrus::Renderer::companyURL = 'http://torrus.sf.net';
 # $Torrus::Renderer::siteInfo = `hostname`;
 
+#Freeside
+$Torrus::CGI::authorizeUsers = 0;
+$Torrus::Renderer::rendererURL = '/freeside/torrus';
+$Torrus::Renderer::plainURL    = '/freeside/torrus/plain/';
+$Torrus::Renderer::Freeside::FSURL = '%%%FREESIDE_URL%%%';
 
 1;

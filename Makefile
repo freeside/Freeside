@@ -108,6 +108,8 @@ FREESIDE_URL = "http://localhost/freeside/"
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
 
+TORRUS_ENABLED = 0
+
 # for cvs-upgrade-deploy target, the username who checked out the CVS copy.
 CVS_USER = ivan
 
@@ -261,6 +263,7 @@ install-apache:
 	[ -d ${APACHE_CONF} ] && \
 	  ( install -o root -m 755 htetc/freeside-base${APACHE_VERSION}.conf ${APACHE_CONF} && \
 	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
+	    ( [ ${TORRUS_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-torrus.conf ${APACHE_CONF} || true ) && \
 	    perl -p -i -e "\
 	      s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
 	      s'%%%FREESIDE_CONF%%%'${FREESIDE_CONF}'g; \
@@ -373,6 +376,18 @@ install-rt:
 	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
 	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
 	" ${RT_PATH}/etc/RT_SiteConfig.pm; fi
+
+configure-torrus:
+	cd torrus; \
+	torrus_user=freeside var_user=freeside var_group=freeside ./configure
+
+install-torrus:
+	cd torrus; \
+	make; \
+	make install
+	perl -p -i -e "\
+	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
+	" /usr/local/etc/torrus/conf/torrus-siteconfig.pl
 
 clean:
 	rm -rf masondocs

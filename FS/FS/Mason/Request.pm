@@ -24,7 +24,7 @@ sub new {
 
     my %opt = @_;
     my $mode = $superclass =~ /Apache/i ? 'apache' : 'standalone';
-    freeside_setup($opt{'comp'}, $mode);
+    $class->freeside_setup($opt{'comp'}, $mode);
 
     $class->SUPER::new(@_);
 
@@ -34,8 +34,7 @@ sub new {
 # for Mason 1.39 vs. Perl 5.10.0
 
 sub freeside_setup {
-
-    my( $filename, $mode ) = @_;
+    my( $class, $filename, $mode ) = @_;
 
     if ( $filename =~ qr(/REST/\d+\.\d+/NoAuth/) ) {
 

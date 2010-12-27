@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: CGI.pm,v 1.1 2010-12-27 00:03:43 ivan Exp $
+# $Id: CGI.pm,v 1.2 2010-12-27 08:40:19 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 # Universal CGI handler for Apache mod_perl and FastCGI
@@ -37,9 +37,13 @@ use Torrus::ACL;
 ## Torrus::CGI->process($q)
 ## Expects a CGI object as input
 
+our $q;
+
 sub process
 {
-    my($class, $q) = @_;
+    #my($class, $q) = @_;
+    my $class = shift;
+    $q = shift;
 
     my $path_info = $q->url(-path => 1);
 

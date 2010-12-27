@@ -1,5 +1,5 @@
 [%#
-  $Id: html-incblocks.txt,v 1.1 2010-12-27 00:04:03 ivan Exp $
+  $Id: html-incblocks.txt,v 1.2 2010-12-27 08:40:19 ivan Exp $
   All BLOCK statements are defined here
 %]
 
@@ -11,11 +11,9 @@
 
 [% BLOCK htmlstart;
    IF ! contentClass; contentClass="Content"; END %]
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-        "http://www.w3.org/TR/html4/strict.dtd">
-<HTML>
-<!-- Torrus Copyright (c) 2003-2004 Stanislav Sinyagin -->
-<HEAD>
+
+[% freesideHeader(title, style('stylesheet')) %]
+
 <SCRIPT language="JavaScript"> 
 <!--
 function helpwindow() 
@@ -25,25 +23,8 @@ window.open('[%url(token) _ '&view=helptext-html'%]','helpwindow',
 } 
 //--> 
 </SCRIPT>
-<TITLE>[% title %]</TITLE>
-<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
-[% IF expires %]<META HTTP-EQUIV="Refresh" CONTENT="[% expires %]"/>[% END %]
-<STYLE type="text/css" media="all">
-  @import url( [% plainURL _ style('stylesheet') %] );
-  [% cssoverlay = style('cssoverlay'); IF cssoverlay; %]
-  @import url( [% cssoverlay %] );
-  [% END %]
-</STYLE>
-</HEAD>
-<BODY>
 
 <DIV CLASS="Header">
-
-<SPAN CLASS="CompanyInfo">
-<A TITLE="company info"
-HREF="[%companyURL%]">[% IF companyLogo %]<IMG SRC="[%companyLogo%]"
-ALT=[%companyName%] STYLE="border:0">[% ELSE; companyName; END %]</A>
-</SPAN>
 
 [% IF siteInfo %]
 <SPAN CLASS="SiteInfo">

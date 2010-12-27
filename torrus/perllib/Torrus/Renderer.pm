@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: Renderer.pm,v 1.1 2010-12-27 00:03:39 ivan Exp $
+# $Id: Renderer.pm,v 1.2 2010-12-27 08:40:19 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer;
@@ -36,7 +36,9 @@ use Torrus::Renderer::RRDtool;
 use base qw(Torrus::Renderer::HTML
             Torrus::Renderer::RRDtool
             Torrus::Renderer::Frontpage
-            Torrus::Renderer::AdmInfo);
+            Torrus::Renderer::AdmInfo
+            Torrus::Renderer::Freeside
+           );
 
 sub new
 {

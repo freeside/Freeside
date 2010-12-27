@@ -1,0 +1,11 @@
+i should move to the wiki once this is further along
+
+aptitude install rrdtool librrds-perl libxml-libxml-perl libberkeleydb-perl libtemplate-perl libproc-daemon-perl libnet-snmp-perl libapache-session-perl libjson-perl
+
+make configure-torrus
+make install-torrus
+
+#(and for the apache config)
+# in Makefile, set TORRUS_ENABLED = 1
+make install-apache
+
