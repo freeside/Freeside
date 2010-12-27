@@ -11,7 +11,7 @@ my $outbuf;
 my( $fs_interp, $rt_interp ) = mason_interps('standalone', 'outbuf'=>\$outbuf);
 
 sub freesideHeader {
-  my($self, $title, $stylesheet, $c) = (shift, shift);
+  my($self, $title, $stylesheet) = @_;
 
   #from html-incblocks.txt
   my $head =
