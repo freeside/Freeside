@@ -79,6 +79,33 @@ Voicemail PIN
 
 Optional svcnum from svc_pbx
 
+=item lnp_status
+
+LNP Status (can be null, native, portedin, portingin, portin-reject,
+portingout, portout-reject)
+
+=item portable
+
+=item lrn
+
+=item lnp_desired_due_date
+
+=item lnp_due_date
+
+=item lnp_other_provider
+
+If porting the number in or out, name of the losing or winning provider, 
+respectively.
+
+=item lnp_other_provider_account
+
+Account number of other provider. See lnp_other_provider.
+
+=item lnp_reject_reason
+
+See lnp_status. If lnp_status is portin-reject or portout-reject, this is an
+optional reject reason.
+
 =back
 
 =head1 METHODS
