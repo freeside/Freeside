@@ -259,6 +259,7 @@ tie my %rights, 'Tie::IxHash',
     'Billing event reports',
     'Receivables report',
     'Financial reports',
+    { rightname=> 'List inventory', global=>1 },
 
     #{ rightname => 'List customers of all agents', global=>1 },
   ],
