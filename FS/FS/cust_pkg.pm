@@ -3402,6 +3402,10 @@ sub _upgrade_data {  # class method
   'UPDATE cust_pkg SET bill = bill + (365*24*60*60) WHERE bill < last_bill
   AND bill > 1259654400 AND bill < 1262332800 AND (SELECT plan FROM part_pkg 
   WHERE part_pkg.pkgpart = cust_pkg.pkgpart) = \'prorate\'',
+    # RT6628, add order_date to cust_pkg
+    'update cust_pkg set order_date = (select history_date from h_cust_pkg 
+	where h_cust_pkg.pkgnum = cust_pkg.pkgnum and 
+	history_action = \'insert\') where order_date is null',
   );
   foreach my $sql (@statements) {
     my $sth = dbh->prepare($sql);
