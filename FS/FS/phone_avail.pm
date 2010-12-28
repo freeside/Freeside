@@ -162,6 +162,17 @@ sub cust_svc {
   qsearchs('cust_svc', { 'svcnum' => $self->svcnum });
 }
 
+=item part_export
+
+=cut
+
+sub part_export {
+  my $self = shift;
+  return '' unless $self->exportnum;
+  qsearchs('part_export', { 'exportnum' => $self->exportnum });
+}
+
+
 sub process_batch_import {
   my $job = shift;
 

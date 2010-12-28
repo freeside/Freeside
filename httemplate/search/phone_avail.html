@@ -31,23 +31,33 @@
                     },
 		sub { shift->get('name') },
 		'availbatch',
-                'exportnum', #XXX
-                #sub { },
-                'svcnum', #XXX
+		sub {
+		    my $pa = shift;
+		    return '' unless $pa->part_export;
+		    $pa->part_export->exportname;
+		},
+		sub {
+		    my $pa = shift;
+		    return '' unless $pa->cust_svc;
+		    my($label,$value) = $pa->cust_svc->label; 
+		    $label . ": " . $value;
+		},
                 \&FS::UI::Web::cust_fields,
+		'',
               ],
-              'align'         => 'rllllll'.FS::UI::Web::cust_aligns(),
+              'align'         => 'rllllllc'.FS::UI::Web::cust_aligns(),
               'links'         => [
                 '',
                 '',
 		'',
 		'',
                 '',
-                '', #XXX #$export_link
-                '', #XXX #$svc_link
+                '', #XXX #$export_link - to what exactly?
+                $svc_link,
                 ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                       FS::UI::Web::cust_header()
                 ),
+		'',
               ],
               'color' => [ 
                            '',
@@ -58,6 +68,7 @@
                            '',
                            '',
                            FS::UI::Web::cust_colors(),
+			   '',
                          ],
               'style' => [ 
                            '',
@@ -68,6 +79,7 @@
                            '',
                            '',
                            FS::UI::Web::cust_styles(),
+			   '',
                          ],
       )
 %>
@@ -127,6 +139,15 @@ my $link_cust = sub {
     }
   }
   '';
+};
+
+my $svc_link = sub {
+    my $phone_avail = shift;
+    my $cust_svc = $phone_avail->cust_svc;
+    if ( $cust_svc ) {
+	return [ "${p}view/svc_phone.cgi?", 'svcnum'];
+    }
+    '';
 };
 
 </%init>
