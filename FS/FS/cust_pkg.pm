@@ -125,6 +125,10 @@ Billing item definition (see L<FS::part_pkg>)
 
 Optional link to package location (see L<FS::location>)
 
+=item order_date
+
+date package was ordered (also remains same on changes)
+
 =item start_date
 
 date
@@ -270,6 +274,8 @@ sub insert {
       $self->$action( $self->part_pkg->add_freq($start, $months) );
     }
   }
+
+  $self->order_date(time);
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';

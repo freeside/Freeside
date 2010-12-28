@@ -3,6 +3,10 @@
 
 %#this should use cust_pkg->status and cust_pkg->statuscolor eventually
 
+% if ( $cust_pkg->order_date ) {
+    <% pkg_status_row($cust_pkg, 'Ordered', 'order_date', %opt ) %>
+% }
+
 % if ( $cust_pkg->get('cancel') ) { #status: cancelled
 %   my $cpr = $cust_pkg->last_cust_pkg_reason('cancel');
 

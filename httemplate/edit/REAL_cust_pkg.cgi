@@ -46,6 +46,7 @@
     <TD BGCOLOR="#ffffff"><% $cust_pkg->otaker %></TD>
   </TR>
 
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'order_date',     label=>'Order' &>
 % if ( $cust_pkg->setup && ! $cust_pkg->start_date ) {
   <& .row_display, cust_pkg=>$cust_pkg, column=>'start_date',   label=>'Start' &>
 % } else {
