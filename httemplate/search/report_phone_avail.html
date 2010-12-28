@@ -83,8 +83,7 @@
 <%init>
 
 die "access denied"
-  unless ( $FS::CurrentUser::CurrentUser->access_right('List customers') &&
-           $FS::CurrentUser::CurrentUser->access_right('List packages')
+  unless ( $FS::CurrentUser::CurrentUser->access_right('List inventory')
          );
 
 my $conf = new FS::Conf;
