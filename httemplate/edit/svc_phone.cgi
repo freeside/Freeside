@@ -71,6 +71,7 @@ if ( $conf->exists('svc_phone-lnp') ) {
 	    {	field => 'lnp_status',
 		type => 'select-lnp_status',
 	    },
+	    'lnp_reject_reason',
 	    {	field => 'portable',
 		type => 'checkbox',
 	    },

@@ -23,6 +23,7 @@ push @fields, qw( pbx_title sip_password pin phone_name );
 
 if ( $conf->exists('svc_phone-lnp') ) {
 push @fields, 'lnp_status',
+	    'lnp_reject_reason',
 	    { field => 'portable', type => 'checkbox', },
 	    'lrn',
 	    { field => 'lnp_desired_due_date', type => 'date', },

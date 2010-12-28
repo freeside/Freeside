@@ -2880,6 +2880,7 @@ sub tables_hashref {
 	'lnp_due_date',     'int', 'NULL',       '', '', '',
         'lnp_other_provider', 'varchar', 'NULL', $char_d,  '', '',
         'lnp_other_provider_account', 'varchar', 'NULL', $char_d,  '', '',
+        'lnp_reject_reason', 'varchar', 'NULL', $char_d,  '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [],

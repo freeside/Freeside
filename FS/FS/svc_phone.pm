@@ -140,6 +140,10 @@ sub table_info {
 				type => 'select-lnp_status.html',
 				%dis2,
 			},
+	'lnp_reject_reason' => { 
+				label => 'LNP Reject Reason',
+				%dis2,
+			},
 	'portable' => 	{	label => 'Portable?', %dis2, },
 	'lrn' 	=>	{	label => 'LRN', 
 				disable_inventory => 1, 
@@ -353,6 +357,17 @@ sub replace {
   }
   #what about on-the-fly edits?  if the ui supports it?
 
+  # LNP data validation
+ return 'Invalid LNP status' # if someone does really stupid stuff
+    if (  ($old->lnp_status eq 'portingout' && $new->lnp_status eq 'portingin')
+	|| ($old->lnp_status eq 'portout-reject' && $new->lnp_status eq 'portingin')
+	|| ($old->lnp_status eq 'portin-reject' && $new->lnp_status eq 'portingout')
+	|| ($old->lnp_status eq 'portingin' && $new->lnp_status eq 'native')
+	|| ($old->lnp_status eq 'portin-reject' && $new->lnp_status eq 'native')
+	|| ($old->lnp_status eq 'portingin' && $new->lnp_status eq 'portingout')
+	|| ($old->lnp_status eq 'portingout' && $new->lnp_status eq 'portin-reject')
+	);
+
   my $error = $new->SUPER::replace($old, %options);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -419,10 +434,25 @@ sub check {
     || $self->ut_numbern('lnp_due_date')
     || $self->ut_textn('lnp_other_provider')
     || $self->ut_textn('lnp_other_provider_account')
-    || $self->ut_enumn('lnp_status', ['','portingin','portingout','portedin','native'])
+    || $self->ut_enumn('lnp_status', ['','portingin','portingout','portedin',
+				'native', 'portin-reject', 'portout-reject'])
     || $self->ut_enumn('portable', ['','Y'])
+    || $self->ut_textn('lnp_reject_reason')
   ;
   return $error if $error;
+
+    # LNP data validation
+    return 'Cannot set LNP fields: no LNP in progress'
+	if ( ($self->lnp_desired_due_date || $self->lnp_due_date 
+	    || $self->lnp_other_provider || $self->lnp_other_provider_account
+	    || $self->lnp_reject_reason) 
+	    && (!$self->lnp_status || $self->lnp_status eq 'native') );
+    return 'Cannot set LNP reject reason: no LNP in progress or status is not reject'
+	if ($self->lnp_reject_reason && (!$self->lnp_status 
+			    || $self->lnp_status !~ /^port(in|out)-reject$/) );
+    return 'Cannot port-out a non-portable number' 
+	if (!$self->portable && $self->lnp_status eq 'portingout');
+
 
   return 'Name ('. $self->phone_name.
          ") is longer than $phone_name_max characters"
