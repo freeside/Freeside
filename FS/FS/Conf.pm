@@ -4186,6 +4186,13 @@ and customer address. Include units.',
     'description' => 'External links available in customer view, one per line, with format "URL Link Label (optional ALT popup)".  The URL will have custnum appended.',
     'type'        => 'textarea',
   },
+  
+  {
+    'key'         => 'svc_phone-did-summary',
+    'section'     => 'invoicing',
+    'description' => 'Enable DID activity summary for past 30 days on invoices, showing # DIDs activated/deactivated/ported-in/ported-out and total minutes usage',
+    'type'        => 'checkbox',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

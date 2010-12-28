@@ -2660,6 +2660,16 @@ sub print_generic {
                  $money_char. sprintf("%10.2f", $pr_total) ];
     push @buf, ['',''];
   }
+ 
+  if ( $conf->exists('svc_phone-did-summary') ) {
+      my ($didsummary,$minutes) = $self->_did_summary;
+      my $didsummary_desc = 'DID Activity Summary (Past 30 days)';
+      push @detail_items, 
+	{ 'description' => $didsummary_desc,
+	    'ext_description' => [ $didsummary, $minutes ],
+	}
+	if !$multisection;
+  }
 
   foreach my $section (@sections, @$late_sections) {
 
@@ -3793,6 +3803,72 @@ sub _items_extra_usage_sections {
 
   return(\@sections, \@lines);
 
+}
+
+sub _did_summary {
+    my $self = shift;
+    my $end = $self->_date;
+    my $start = $end - 2592000; # 30 days
+    my $cust_main = $self->cust_main;
+    my @pkgs = $cust_main->all_pkgs;
+    my($num_activated,$num_deactivated,$num_portedin,$num_portedout,$minutes)
+	= (0,0,0,0,0);
+    my @seen = ();
+    foreach my $pkg ( @pkgs ) {
+	my @h_cust_svc = $pkg->h_cust_svc($end);
+	foreach my $h_cust_svc ( @h_cust_svc ) {
+	    next if grep {$_ eq $h_cust_svc->svcnum} @seen;
+	    next unless $h_cust_svc->part_svc->svcdb eq 'svc_phone';
+
+	    my $inserted = $h_cust_svc->date_inserted;
+	    my $deleted = $h_cust_svc->date_deleted;
+	    my $phone_inserted = $h_cust_svc->h_svc_x($inserted);
+	    my $phone_deleted;
+	    $phone_deleted =  $h_cust_svc->h_svc_x($deleted) if $deleted;
+	    
+# DID either activated or ported in; cannot be both for same DID simultaneously
+	    if ($inserted >= $start && $inserted <= $end && $phone_inserted
+		&& (!$phone_inserted->lnp_status 
+		    || $phone_inserted->lnp_status eq ''
+		    || $phone_inserted->lnp_status eq 'native')) {
+		$num_activated++;
+	    }
+	    else { # this one not so clean, should probably move to (h_)svc_phone
+		 my $phone_portedin = qsearchs( 'h_svc_phone',
+		      { 'svcnum' => $h_cust_svc->svcnum, 
+			'lnp_status' => 'portedin' },  
+		      FS::h_svc_phone->sql_h_searchs($end),  
+		    );
+		 $num_portedin++ if $phone_portedin;
+	    }
+
+# DID either deactivated or ported out;	cannot be both for same DID simultaneously
+	    if($deleted >= $start && $deleted <= $end && $phone_deleted
+		&& (!$phone_deleted->lnp_status 
+		    || $phone_deleted->lnp_status ne 'portingout')) {
+		$num_deactivated++;
+	    } 
+	    elsif($deleted >= $start && $deleted <= $end && $phone_deleted 
+		&& $phone_deleted->lnp_status 
+		&& $phone_deleted->lnp_status eq 'portingout') {
+		$num_portedout++;
+	    }
+
+	    # increment usage minutes
+	    my @cdrs = $phone_inserted->get_cdrs('begin'=>$start,'end'=>$end);
+	    foreach my $cdr ( @cdrs ) {
+		$minutes += $cdr->billsec/60;
+	    }
+
+	    # don't look at this service again
+	    push @seen, $h_cust_svc->svcnum;
+	}
+    }
+
+    $minutes = sprintf("%d", $minutes);
+    ("Activated: $num_activated  Ported-In: $num_portedin  Deactivated: "
+	. "$num_deactivated  Ported-Out: $num_portedout ",
+	    "Total Minutes: $minutes");
 }
 
 sub _items_svc_phone_sections {
