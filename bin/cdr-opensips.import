@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $DEBUG );
+use Date::Parse 'str2time';
+use Date::Format 'time2str';
+use FS::UID qw(adminsuidsetup dbh);
+use FS::cdr;
+use DBI;
+use Getopt::Std;
+
+my %opt;
+getopts('H:U:P:D:T:', \%opt);
+my $user = shift or die &usage;
+
+my $dsn = 'dbi:mysql';
+$dsn .= ":database=$opt{D}" if $opt{D};
+$dsn .= ":host=$opt{H}" if $opt{H};
+
+my $mysql = DBI->connect($dsn, $opt{U}, $opt{P}) 
+  or die $DBI::errstr;
+
+adminsuidsetup $user;
+
+my $fsdbh = FS::UID::dbh;
+
+# check for existence of freesidestatus
+my $table = $opt{T} || 'cdrs';
+my $status = $mysql->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
+if( ! @$status ) {
+  print "Adding freesidestatus column...\n";
+  $mysql->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
+    or die $mysql->errstr;
+}
+else {
+  print "freesidestatus column present\n";
+}
+
+my @cols = ( qw( 
+  cdr_id call_start_time duration sip_call_id sip_from_tag
+  sip_to_tag created
+  ) );
+
+my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL";
+my $sth = $mysql->prepare($sql);
+$sth->execute;
+print "Importing ".$sth->rows." records...\n";
+
+my $cdr_batch = new FS::cdr_batch({ 
+    'cdrbatch' => 'mysql-import-'. time2str('%Y/%m/%d-%T',time),
+  });
+my $error = $cdr_batch->insert;
+die $error if $error;
+my $cdrbatchnum = $cdr_batch->cdrbatchnum;
+my $imports = 0;
+my $updates = 0;
+
+my $row;
+while ( $row = $sth->fetchrow_hashref ) {
+  my $cdr = FS::cdr->new({
+      calldate    => $row->{'call_start_time'},
+      src         => $row->{'sip_from_tag'},
+      dst         => $row->{'sip_to_tag'},
+      duration    => $row->{'duration'},
+      billsec     => $row->{'duration'},
+      uniqueid    => $row->{'cdr_id'},
+      cdrbatchnum => $cdrbatchnum,
+    });
+  $cdr->startdate(str2time($cdr->calldate));
+  $cdr->cdrbatchnum($cdrbatchnum);
+  my $error = $cdr->insert;
+  if($error) {
+    print "failed import: $error\n";
+  }
+  else {
+    $imports++;
+    if( $mysql->do("UPDATE $table SET freesidestatus = 'done' 
+        WHERE cdr_id = ?",
+        undef,
+        $row->{'cdr_id'}
+      ) ) {
+        $updates++;
+    }
+    else {
+      print "failed to set status: ".$mysql->errstr."\n";
+    }
+  }
+}
+print "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
+$mysql->disconnect;
+
+sub usage {
+  "Usage: \n  cdr-opensips.import\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
+}
+
