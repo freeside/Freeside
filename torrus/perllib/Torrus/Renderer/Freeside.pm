@@ -27,7 +27,7 @@ sub freesideHeader {
                                'title' => $title,
                                'head'  => $head,
                                #'etc'   => $etc,
-                               'nobr'  => 1,
+                               #'nobr'  => 1,
                                #'nocss' => 1,
                              }
                           );
