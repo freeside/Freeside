@@ -290,7 +290,7 @@ update-selfservice:
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
 	done
 
-install: install-perl-modules install-docs install-init install-apache install-rt install-texmf
+install: install-perl-modules install-docs install-init install-apache install-rt install-torrus install-texmf
 
 deploy: install
 	${HTTPD_RESTART}
@@ -382,12 +382,13 @@ configure-torrus:
 	torrus_user=freeside var_user=freeside var_group=freeside ./configure
 
 install-torrus:
-	cd torrus; \
-	make; \
-	make install
-	perl -p -i -e "\
-	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
-	" /usr/local/etc/torrus/conf/torrus-siteconfig.pl
+	if [ ${TORRUS_ENABLED} -eq 1 ]; then ( cd torrus; \
+	  make; \
+	  make install; \
+	  perl -p -i -e "\
+	    s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
+	  " /usr/local/etc/torrus/conf/torrus-siteconfig.pl \
+	);fi
 
 clean:
 	rm -rf masondocs
