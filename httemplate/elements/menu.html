@@ -557,10 +557,14 @@ eval "use RT;"
 tie my %help_menu, 'Tie::IxHash', 'Billing documentation' => [ $doc_link, 'Freeside documentation' ];
 $help_menu{'Ticketing documentation'} = [ 'http://wiki.bestpractical.com/', 'Request Tracker Wiki' ]
   if $conf->config('ticket_system') eq 'RT_Internal';
+$help_menu{'Networking monitoring documentation'} = [ 'http://torrus.org/userguide.pod.html', 'Torrus User Guide' ]
+  if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
 $help_menu{'separator'} = '';
 $help_menu{"About Freeside v$FS::VERSION"} = [ "javascript:about_freeside()", '' ];
 $help_menu{"About RT v$RT::VERSION"} = [ 'http://www.bestpractical.com/rt', 'Request Tracker Homepage' ]
   if $conf->config('ticket_system') eq 'RT_Internal';
+$help_menu{"About Torrus v1.0.9"} = [ 'http://www.torrus.org/', 'Torrus Homepage' ] #XXX manual version
+  if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
 
 
 tie my %menu, 'Tie::IxHash';
@@ -586,6 +590,12 @@ if ( $conf->config('ticket_system') ) {
       'Ticketing start page',
     ],
 }
+
+if ( $conf->config('network_monitoring_system') eq 'Torrus_Internal' ) {
+  $menu{'Network Main'} =
+    [ $fsurl.'torrus/main', 'Network monitoring start page' ],
+}
+
 $menu{'New prospect'} = [ $fsurl.'edit/prospect_main.html', 'Add a new prospect' ]
   if $curuser->access_right('New prospect');
 $menu{'New customer'} = [ $fsurl.'edit/cust_main.cgi', 'Add a new customer' ]

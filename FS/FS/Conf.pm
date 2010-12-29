@@ -465,7 +465,7 @@ sub _orbase_items {
                   'key'         => $_,
                   'base_key'    => $proto->key,
                   'section'     => $proto->section,
-                  'description' => 'Alternate ' . $proto->description . '  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Invoice_templates">billing documentation</a> for details.',
+                  'description' => 'Alternate ' . $proto->description . '  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Invoice_templates">billing documentation</a> for details.',
                   'type'        => $proto->type,
                 };
               } &$listmaker($base);
@@ -971,14 +971,14 @@ my %payment_gateway_options = (
   {
     'key'         => 'invoice_template',
     'section'     => 'invoicing',
-    'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
+    'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_html',
     'section'     => 'invoicing',
-    'description' => 'Optional HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
+    'description' => 'Optional HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
 
     'type'        => 'textarea',
   },
@@ -1017,7 +1017,7 @@ my %payment_gateway_options = (
   {
     'key'         => 'invoice_latex',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
+    'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
@@ -1474,7 +1474,7 @@ and customer address. Include units.',
   {
     'key'         => 'signupurl',
     'section'     => 'UI',
-    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
+    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
     'type'        => 'text',
   },
 
@@ -2441,10 +2441,19 @@ and customer address. Include units.',
   {
     'key'         => 'ticket_system',
     'section'     => '',
-    'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:RT_Installation">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
+    'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:RT_Installation">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
     'type'        => 'select',
     #'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
     'select_enum' => [ '', qw(RT_Internal RT_External) ],
+  },
+
+  {
+    'key'         => 'network_monitoring_system',
+    'section'     => '',
+    'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Torrus_Installation">integrated networking monitoring system installation instructions</a>).',
+    'type'        => 'select',
+    #'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
+    'select_enum' => [ '', qw(Torrus_Internal) ],
   },
 
   {
