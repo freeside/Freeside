@@ -1,5 +1,5 @@
 [%#
-  $Id: html-incblocks.txt,v 1.3 2010-12-27 18:11:56 ivan Exp $
+  $Id: html-incblocks.txt,v 1.4 2010-12-29 03:12:19 ivan Exp $
   All BLOCK statements are defined here
 %]
 
@@ -24,29 +24,6 @@ window.open('[%url(token) _ '&view=helptext-html'%]','helpwindow',
 //--> 
 </SCRIPT>
 
-<DIV CLASS="Header">
-
-[% IF siteInfo %]
-<SPAN CLASS="SiteInfo">
-[% siteInfo %]
-</SPAN>
-[% END %]
-
-[% IF treeName and treeInfo %]
-<SPAN CLASS="TreeInfo">
-[% treeInfo %]
-</SPAN>
-[% END %]
-
-[% IF userAuth and uid;
-     commonname = userAttr('cn');
-     IF commonname == ''; commonname = uid; END; %]
-<DIV CLASS="LoginInfo">
-<SPAN CLASS="UserName">[% commonname %]</SPAN>
-<SPAN CLASS="Logout"><A HREF="[% topURL _ '?LOGOUT=1' %]">Logout</A></SPAN>
-</DIV>
-[% END %]
-</DIV>
 <DIV CLASS="CurrentTime">[% timestamp %]</DIV>
 [% IF printpath %]
   <DIV CLASS="PathMenu">
@@ -158,10 +135,10 @@ window.open('[%url(token) _ '&view=helptext-html'%]','helpwindow',
                     title="Permanent link to this page"%]
 [% INCLUDE shortcut url=url('SS')           text="Tokensets"
                     title="List of non-empty tokensets"%]
-[% INCLUDE shortcut url=url(token,view,'MEDIA','printer','OVS',ovs)
-                    text="Printable view"
-                    title="Prepare this page for printing"
-                    newwindow=1%]
+[%# INCLUDE shortcut url=url(token,view,'MEDIA','printer','OVS',ovs)
+  #                  text="Printable view"
+  #                  title="Prepare this page for printing"
+  #                  newwindow=1%]
 [% IF mayDisplayReports();
      INCLUDE shortcut url=reportsUrl
                       text="Reports"

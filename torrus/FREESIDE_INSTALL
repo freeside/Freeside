@@ -2,10 +2,47 @@ i should move to the wiki once this is further along
 
 aptitude install rrdtool librrds-perl libxml-libxml-perl libberkeleydb-perl libtemplate-perl libproc-daemon-perl libnet-snmp-perl libapache-session-perl libjson-perl
 
-make configure-torrus
-make install-torrus
-
-#(and for the apache config)
 # in Makefile, set TORRUS_ENABLED = 1
-make install-apache
+make configure-torrus
+make deploy
 
+#a little more one-offy from here so far
+
+http://torrus.org/install.pod.html#configuring_torrus :
+which isn't enough to start from scratch
+http://torrus.org/userguide.pod.html is better
+torrus genddx and torrus devdisover
+
+cd /usr/local/etc/torrus/discovery
+vi routers.txt #space-delimted router ip addresses
+torrus genddx \
+  --hostfile=routers.txt \
+  --domain=example.com \
+  --community=community_string \
+  --out=routers.ddx \
+  --discout=routers.xml
+torrus devdiscover  --in=routers.ddx 
+
+mkdir /srv/torrus/collector_rrd
+chown freeside:freeside /srv/torrus/collector_rrd
+
+torrus compile --tree=main --verbose
+
+torrus bs --global --verbose
+
+#XXX database config (before collector start)
+
+#launch data collector
+#XXX add to init
+torrus collector --tree=main
+
+skip http://torrus.org/install.pod.html#apache_http_server_configuration
+and http://torrus.org/install.pod.html#access_control_lists
+
+but do go from http://torrus.org/install.pod.html#cron_job on
+
+
+#---
+
+this seems to be required on restarts during dev (upgrades?)
+rm /var/torrus/cache/* /var/torrus/db/render_cache.db
