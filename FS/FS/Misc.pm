@@ -323,9 +323,9 @@ sub generate_email {
 
   my $data;
   if ( ref($args{'text_body'}) eq 'ARRAY' ) {
-    $data = $args{'text_body'};
+    $data = join("\n", @{ $args{'text_body'} });
   } else {
-    $data = [ split(/\n/, $args{'text_body'}) ];
+    $data = $args{'text_body'};
   }
 
   $alternative->attach(

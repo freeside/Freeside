@@ -178,7 +178,7 @@ rt_ticket export when exporting "replace" events.
 =item to
 
 Destination address.  The default is to use the customer's 
-invoicing_list addresses.
+invoicing_list addresses.  Multiple addresses may be comma-separated.
 
 =back
 
@@ -281,11 +281,14 @@ sub prepare {
   # and email
   ###
 
-  my @to = ($opt{'to'}) || $cust_main->invoicing_list_emailonly;
-  #warn "prepared msg_template with no email destination (custnum ".
-  #  $cust_main->custnum.")\n"
-  #  if !@to;
-  #  warning is not appropriate now that we use these for tickets
+  my @to;
+  if ( exists($opt{'to'}) ) {
+    @to = split(/\s*,\s*/, $opt{'to'});
+  }
+  else {
+    @to = $cust_main->invoicing_list_emailonly;
+  }
+  # no warning when preparing with no destination
 
   my $conf = new FS::Conf;
 
