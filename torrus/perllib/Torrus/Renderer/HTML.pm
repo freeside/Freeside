@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.2 2010-12-27 08:40:19 ivan Exp $
+# $Id: HTML.pm,v 1.3 2010-12-29 02:09:06 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -115,7 +115,7 @@ sub render_html
         'searchResults' => sub { return $self->doSearch($config_tree, $_[0]); },
 
         #Freeside
-        'FreesideHeader' => sub { return $self->FreesideHeader(@_); },
+        'freesideHeader' => sub { return $self->freesideHeader(@_); },
         'freesideFooter' => sub { return $self->freesideFooter(); },
     };
     
