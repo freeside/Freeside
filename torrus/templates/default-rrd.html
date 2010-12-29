@@ -2,7 +2,7 @@
 [% INCLUDE setdate %]
 [% parentComment = nodeParam(parent(token),'comment') %]
 [% IF parentComment;
-     INCLUDE htmlstart title='Graphs for ' _ xmlnorm(parentComment);
+     INCLUDE htmlstart title='Graphs for ' _ xmlnorm(parentComment) printpath=1;
    ELSE;
      INCLUDE htmlstart title='Graphs for ' _ path(token) printpath=1;
    END;
