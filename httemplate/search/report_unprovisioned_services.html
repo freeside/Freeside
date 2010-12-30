@@ -1,0 +1,32 @@
+<% include('/elements/header.html', 'Unprovisioned Services Report' ) %>
+
+<FORM ACTION="unprovisioned_services.html" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+
+    <% include( '/elements/tr-select-part_svc.html',
+		    'id' => 'svcpart',
+		    'field' => 'svcpart',
+		    'label' => 'Services',
+		    'multiple' => 1,
+	      )
+    %>
+    
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List services');
+
+</%init>

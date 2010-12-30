@@ -130,6 +130,12 @@ if ( $curuser->access_right('Configuration') ) {
   $report_services{'Service definitions'} =  [ $fsurl.'browse/part_svc.cgi?orderby=active', 'Service definitions by number of active packages' ];
   $report_services{'separator'} =  '';
 }
+
+if ( $curuser->access_right('List services') ) {
+  $report_services{'Unprovisioned services'} =  [ $fsurl.'search/report_unprovisioned_services.html', 'Unprovisioned services' ];
+  $report_services{'separator2'} =  '';
+}
+
 foreach my $svcdb ( FS::part_svc->svc_tables() ) {
 
   my $name =        "FS::$svcdb"->table_info->{'name_plural'}

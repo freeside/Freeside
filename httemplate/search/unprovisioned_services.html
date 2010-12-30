@@ -1,0 +1,91 @@
+<% include( 'elements/search.html',
+              'title'         => 'Unprovisioned Service Search Results',
+              'name' => 'packages with unprovisioned services',
+              'query'         => {
+                                   'table'   => 'cust_pkg',
+                                   'hashref' => {},
+                                   'select'  => join(', ',
+				       'cust_pkg.*',
+				       'pkg_svc.*',
+
+				       # everything fails gloriously otherwise
+				       'cust_pkg.custnum as cust_main_custnum', 
+
+                                       FS::UI::Web::cust_sql_fields(),
+                                   ),
+                                   'extra_sql' => $search,
+                                   'addl_from' => $addl_from,
+                                 },
+              'count_query'   => $count_query,
+	      'header' 		=> [ 'Package',
+				     'Unprovisioned Services',
+				    FS::UI::Web::cust_header(),
+				   ],
+	      'fields' 	 => [ sub {
+				my $cust_pkg = shift;
+				$cust_pkg->pkg_label;
+			      },
+			      sub {
+				my $cust_pkg = shift;
+				my @available_part_svc = $cust_pkg->available_part_svc;
+				my $out = '';
+				foreach my $part_svc ( @available_part_svc ) {
+				    $out .= $part_svc->svc . ' (' 
+					    . $part_svc->num_avail . ')<BR>'
+					if grep{ $part_svc->svcpart eq $_ } @svcpart;
+				}
+				$out;
+			      },
+			      \&FS::UI::Web::cust_fields,
+			    ],
+              'align'    => 'll'.FS::UI::Web::cust_aligns(),
+	      'links'	 => [
+			      '',	
+			      '',
+			      ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
+				  FS::UI::Web::cust_header()
+			      ),
+			    ],
+              'color' =>    [ '',
+			      '',
+                              FS::UI::Web::cust_colors(),
+			    ],
+              'style' =>    [ '',
+			      '',
+                              FS::UI::Web::cust_styles(),
+			    ],
+      )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my $svcpart_limit = "";
+my @svcpart = $cgi->param('svcpart');
+foreach my $svcpart ( @svcpart ) {
+    die 'invalid svcpart' if $svcpart !~ /^\d+$/;
+}
+$svcpart_limit = " and pkg_svc.svcpart in (". join(',',@svcpart) . ")"
+    if scalar(@svcpart);
+
+my $search = " where cust_pkg.cancel is null and pkg_svc.quantity > 0 and "
+	    . " pkg_svc.quantity > (select count(1) from cust_svc where "
+	    . " cust_svc.pkgnum = cust_pkg.pkgnum and "
+	    . " cust_svc.svcpart = pkg_svc.svcpart) $svcpart_limit";
+
+my $addl_from = " join pkg_svc using (pkgpart) join cust_main using (custnum) ";
+
+# this was very painful to derive but it appears correct
+#select cust_pkg.custnum,cust_pkg.pkgpart,cust_pkg.pkgnum, pkg_svc.svcpart from cust_pkg join
+#pkg_svc using (pkgpart) where cancel is null and pkg_svc.quantity > 0 and pkg_svc.quantity >
+#(select count(1) from cust_svc where cust_svc.pkgnum = cust_pkg.pkgnum and cust_svc.svcpart =
+#pkg_svc.svcpart) order by pkgnum, svcpart;
+
+my $count_query = "select count(*) from cust_pkg $addl_from $search";
+
+my $link_cust = sub {
+  return [ "${p}view/cust_main.cgi?", 'custnum' ];
+};
+
+</%init>
