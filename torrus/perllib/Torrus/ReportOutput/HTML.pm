@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.1 2010-12-27 00:03:46 ivan Exp $
+# $Id: HTML.pm,v 1.2 2010-12-30 07:25:30 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::ReportOutput::HTML;
@@ -27,7 +27,7 @@ use Torrus::Log;
 use Torrus::ReportOutput;
 use Torrus::SiteConfig;
 
-use base 'Torrus::ReportOutput';
+use base qw( Torrus::ReportOutput::Freeside Torrus::ReportOutput );
 
 our @monthNames = qw
     (January February March April May June
@@ -225,6 +225,10 @@ sub render
             }},
         'timestamp'  => sub { return time2str($Torrus::Renderer::timeFormat,
                                               time()); },
+
+        #Freeside
+        'freesideHeader' => sub { return $self->freesideHeader(@_); },
+        'freesideFooter' => sub { return $self->freesideFooter(); },
     };
     
     my $result = $self->{'tt'}->process( $tmplfile, $ttvars, $outfile );
