@@ -184,11 +184,15 @@ sub dbdef_dist {
   #  ));
   #}
 
+  my $tables_hashref_torrus = tables_hashref_torrus();
+
   #create history tables (false laziness w/create-history-tables)
   foreach my $table (
-    grep { ! /^clientapi_session/ }
-    grep { ! /^h_/ }
-    $dbdef->tables
+    grep {    ! /^clientapi_session/
+           && ! /^h_/
+           && ! $tables_hashref_torrus->{$_}
+         }
+      $dbdef->tables
   ) {
     my $tableobj = $dbdef->table($table)
       or die "unknown table $table";
@@ -322,6 +326,101 @@ sub dbdef_dist {
   }
 
   $dbdef;
+
+}
+
+#torrus tables http://torrus.org/reporting_setup.pod.html#create_sql_tables
+sub tables_hashref_torrus {
+
+  return {
+
+    # Collector export table. It usually grows at several megabytes
+    # per month, and is updated every 5 minutes
+    'srvexport' => {
+      'columns' => [
+        'id',         'serial', '', '', '', '',
+        'srv_date',     'date', '', '', '', '',#date and time of the data sample
+        'srv_time',     'time', '', '', '', '',
+        'serviceid', 'varchar', '', 64, '', '',#unique service ID per counter
+        'value',     'double precision', '', '', '', '',#collected rate or gauge value
+        'intvl', 'int', '', '', '', '', # collection interval - for counter volume calculation
+      ],
+      'primary_key' => 'id',
+      'unique' => [],
+      'index'  => [ ['srv_date'], ['serviceid'], ],
+    },
+
+    #Tables for (currently monthly only) report contents.
+    #These are updated usually once per month, and read at the moment of
+    #rendering the report output (HTML now, PDF or XML or Excel or whatever
+    #in the future)
+
+    #DBIx::Sequence backend, theplatform-independent inplementation
+    #of sequences
+    'dbix_sequence_state' => {
+      'columns' => [
+        'id',       'serial', '', '', '', '',
+        'dataset', 'varchar', '', 50, '', '',
+        'state_id',    'int', '', '', '', '',
+      ],
+      'primary_key' => 'id',
+      #CONSTRAINT pk_dbix_sequence PRIMARY KEY (dataset, state_id)
+      'unique' => [ [ 'dataset', 'state_id' ], ],
+      'index'  => [],
+    },
+
+    'dbix_sequence_release' => {
+      'columns' => [
+        'id',       'serial', '', '', '', '',
+        'dataset', 'varchar', '', 50, '', '',
+        'released_id', 'int', '', '', '', '',
+      ],
+      'primary_key' => 'id',
+      #CONSTRAINT pk_dbi_release PRIMARY KEY (dataset, released_id)
+      'unique' => [ [ 'dataset', 'released_id', ] ],
+      'index'  => [],
+    },
+
+    #Each report is characterized by name, date and time.
+    #Monthly reports are automatically assigned 00:00 of the 1st day
+    #in the month. The report contains fields for every service ID
+    #defined across all datasource trees.
+    'reports' => {
+      'columns' => [
+        'id',          'serial', '', '', '', '',
+        'rep_date',      'date', '', '', '', '',#Start date of the report
+        'rep_time',      'time', '', '', '', '',#Start time of the report
+        'reportname', 'varchar', '', 64, '', '',#Report name, such as
+                                                # MonthlyUsage
+        'iscomplete',     'int', '', '', '', '',#0 when the report is in
+                                                # progress, 1 when it is ready
+      ],
+      'primary_key' => 'id',
+      'unique' => [ [ qw(rep_date rep_time reportname) ] ],
+      'index'  => [ [ 'rep_date' ] ],
+    },
+
+    #Each report contains fields. For each service ID,
+    #the report may contain several fields for various statistics.
+    #Each field contains information about the units of the value it
+    #contains
+    'reportfields' => {
+      'columns' => [
+        'id',              'serial',     '', '',    '', '',
+        'rep_id',             'int', 'NULL', '',    '', '',
+        'name',           'varchar',     '', 64,    '', '',#name of the field,
+                                                           # such as AVG or MAX
+        'serviceid',      'varchar',     '', 64,    '', '',#service ID
+        'value', 'double precision',     '', '',    '', '',#Numeric value
+        'units',          'varchar',     '', 64, \"''", '',#Units, such as bytes
+                                                           # or Mbps
+      ],
+      'primary_key', => 'id',
+      'unique' => [ [ qw(rep_id name serviceid) ] ],
+      'index'  => [],
+    },
+
+  };
 
 }
 
@@ -3142,6 +3241,8 @@ sub tables_hashref {
       'unique' => [],
       'index'  => [], #recnum
     },
+
+    %{ tables_hashref_torrus() },
 
 
     # name type nullability length default local
