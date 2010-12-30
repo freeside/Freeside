@@ -387,7 +387,8 @@ install-torrus:
 	  make install; \
 	  perl -p -i -e "\
 	    s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
-	  " /usr/local/etc/torrus/conf/torrus-siteconfig.pl \
+	  " /usr/local/etc/torrus/conf/torrus-siteconfig.pl; \
+	  torrus clearcache \
 	);fi
 
 clean:
