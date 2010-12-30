@@ -59,7 +59,14 @@ sub data {
 
   while ( $syear < $eyear || ( $syear == $eyear && $smonth < $emonth+1 ) ) {
 
-    push @{$data{label}}, "$smonth/$syear";
+    if ( $self->{'doublemonths'} ) {
+	my($firstLabel,$secondLabel) = @{$self->{'doublemonths'}};
+	push @{$data{label}}, "$smonth/$syear $firstLabel";
+	push @{$data{label}}, "$smonth/$syear $secondLabel";
+    }
+    else {
+	push @{$data{label}}, "$smonth/$syear";
+    }
 
     my $speriod = timelocal(0,0,0,1,$smonth-1,$syear);
     push @{$data{speriod}}, $speriod;
@@ -68,12 +75,25 @@ sub data {
     push @{$data{eperiod}}, $eperiod;
   
     my $col = 0;
-    my @row = ();
-    foreach my $item ( @{$self->{'items'}} ) {
-      my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
-      my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
-      #push @{$data{$item}}, $value;
-      push @{$data{data}->[$col++]}, $value;
+    my @items = @{$self->{'items'}};
+    my $i;
+    for ( $i = 0; $i < scalar(@items); $i++ ) {
+      if ( $self->{'doublemonths'} ) {
+	  my $item = $items[$i]; 
+	  my @param = $self->{'params'} ? @{ $self->{'params'}[$i] }: ();
+	  my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
+	  push @{$data{data}->[$col]}, $value;
+	  $item = $items[$i+1]; 
+	  @param = $self->{'params'} ? @{ $self->{'params'}[++$i] }: ();
+	  $value = $self->$item($speriod, $eperiod, $agentnum, @param);
+	  push @{$data{data}->[$col++]}, $value;
+      }
+      else {
+	  my $item = $items[$i];
+	  my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
+	  my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
+	  push @{$data{data}->[$col++]}, $value;
+      }
     }
 
   }
@@ -127,31 +147,32 @@ sub data {
 }
 
 sub invoiced { #invoiced
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
   $self->scalar_sql("
     SELECT SUM(charged)
       FROM cust_bill
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
+      . (%opt ? $self->for_custnum(%opt) : '')
   );
   
 }
 
 sub netsales { #net sales
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
-    $self->invoiced($speriod,$eperiod,$agentnum)
-  - $self->netcredits($speriod,$eperiod,$agentnum);
+    $self->invoiced($speriod,$eperiod,$agentnum,%opt)
+  - $self->netcredits($speriod,$eperiod,$agentnum,%opt);
 }
 
 #deferred revenue
 
 sub cashflow {
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
-    $self->payments($speriod, $eperiod, $agentnum)
-  - $self->refunds( $speriod, $eperiod, $agentnum);
+    $self->payments($speriod, $eperiod, $agentnum, %opt)
+  - $self->refunds( $speriod, $eperiod, $agentnum, %opt);
 }
 
 sub netcashflow {
@@ -162,12 +183,13 @@ sub netcashflow {
 }
 
 sub payments {
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   $self->scalar_sql("
     SELECT SUM(paid)
       FROM cust_pay
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
+      . (%opt ? $self->for_custnum(%opt) : '')
   );
 }
 
@@ -182,17 +204,18 @@ sub credits {
 }
 
 sub refunds {
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   $self->scalar_sql("
     SELECT SUM(refund)
       FROM cust_refund
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
+      . (%opt ? $self->for_custnum(%opt) : '')
   );
 }
 
 sub netcredits {
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   $self->scalar_sql("
     SELECT SUM(cust_credit_bill.amount)
       FROM cust_credit_bill
@@ -203,6 +226,7 @@ sub netcredits {
                                                 $agentnum,
                                                 'cust_bill._date'
                                               )
+      . (%opt ? $self->for_custnum(%opt) : '')
   );
 }
 
@@ -565,6 +589,12 @@ sub in_time_period_and_agent {
           $FS::CurrentUser::CurrentUser->agentnums_sql( 'table'=>'cust_main' );
 
   $sql;
+}
+
+sub for_custnum {
+    my ( $self, %opt ) = @_;
+    return '' unless $opt{'custnum'};
+    $opt{'custnum'} =~ /^\d+$/ ? " and custnum = $opt{custnum} " : '';
 }
 
 sub scalar_sql {

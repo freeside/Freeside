@@ -295,6 +295,7 @@ if($curuser->access_right('Financial reports')) {
   $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (internal taxclass system)' ];
   $report_financial{'Tax Liability'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (vendor data tax products system)' ]
     if $conf->exists('enable_taxproducts');
+  $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
 
 } elsif($curuser->access_right('Receivables report')) {
 

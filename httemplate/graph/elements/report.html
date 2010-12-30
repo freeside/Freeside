@@ -163,9 +163,11 @@ any delimiter and linked from the elements in @data.
 % } else {
 %
 <% include('/elements/header.html', $opt{'title'} ) %>
+% unless ( $opt{'graph_type'} eq 'none' ) {
 % $cgi->param('_type', 'png'); 
 
 <IMG SRC="<% $cgi->self_url %>" WIDTH="976" HEIGHT="384">
+% }
 <P ALIGN="right">
 
 % unless ( $opt{'disable_download'} ) { 

@@ -1,0 +1,33 @@
+<% include('/elements/header.html', 'Customer Accounting Summary Report' ) %>
+
+<FORM ACTION="customer_accounting_summary.html" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <% include( '/elements/tr-select-agent.html',
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => 'Agent ',
+                 'disable_empty' => 0,
+             )
+    %>
+
+    <% include('/elements/tr-select-from_to.html' ) %>
+    
+    <% include( '/elements/tr-select-cust_main-status.html',
+		'label' => 'Customer Status'
+    ) %>
+    
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

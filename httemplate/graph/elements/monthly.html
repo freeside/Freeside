@@ -101,6 +101,7 @@ my $report = new FS::Report::Table::Monthly (
 
   'agentnum'     => $opt{'agentnum'},
   'remove_empty' => $opt{'remove_empty'},
+  'doublemonths' => $opt{'doublemonths'},
 );
 my $data = $report->data;
 

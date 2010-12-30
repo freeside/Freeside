@@ -1,0 +1,59 @@
+<% include('/graph/elements/monthly.html',
+   #Dumper(
+                'title'        => $title,
+                'graph_type'   => 'none',
+                'items'        => \@items,
+                'params'       => \@params,
+                'labels'       => \@labels,
+                'graph_labels' => \@labels,
+                'remove_empty' => 1,
+                'bottom_total' => 1,
+                'agentnum'     => $agentnum,
+		'doublemonths' => \@doublemonths,
+		'nototal'	=> 1,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my @doublemonths = ( 'Billed', 'Paid' );
+
+my ($agentnum,$sel_agent);
+if ( $cgi->param('agentnum') eq 'all' ) {
+  $agentnum = 0;
+}
+elsif ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+  $sel_agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+  die "agentnum $agentnum not found!" unless $sel_agent;
+}
+my $title = $sel_agent ? $sel_agent->agent.' ' : '';
+$title .= 'Customer Accounting Summary Report';
+
+my @custs = ();
+@custs = qsearch('cust_main', {} ); 
+
+my @items  = ();
+my @params = ();
+my @labels = ();
+
+my $status = $cgi->param('status');
+die "invalid status" unless $status =~ /^\w+|$/;
+
+foreach my $cust_main ( @custs ) {
+  next unless ($status eq '' || $status eq $cust_main->status); 
+  next unless ($agentnum == 0 || $cust_main->agentnum eq $agentnum);
+
+  push @items, 'netsales', 'cashflow';
+
+  push @labels, $cust_main->name;
+
+  push @params, [ ('custnum' => $cust_main->custnum),
+		],
+		[ ('custnum' => $cust_main->custnum),
+		];
+}
+
+</%init>
