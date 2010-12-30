@@ -21,7 +21,7 @@
 $Torrus::CGI::authorizeUsers = 0;
 $Torrus::Renderer::rendererURL = '/freeside/torrus';
 $Torrus::Renderer::plainURL    = '/freeside/torrus/plain/';
-$Torrus::Renderer::Freeside::FSURL = '%%%FREESIDE_URL%%%';
+$Torrus::Freeside::FSURL = '%%%FREESIDE_URL%%%';
 $Torrus::Renderer::displayReports = 1;
 push (@Torrus::Collector::loadModules, 'Torrus::Collector::ExternalStorage');
 $Torrus::SQL::connections{'Default'}{'dsn'} =

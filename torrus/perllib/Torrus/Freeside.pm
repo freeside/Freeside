@@ -5,8 +5,6 @@ use warnings;
 
 #Freeside
 use FS::Mason qw( mason_interps );
-use FS::UID qw(cgisuidsetup);
-use FS::TicketSystem;
 
 my $outbuf;
 my( $fs_interp, $rt_interp ) = mason_interps('standalone', 'outbuf'=>\$outbuf);
@@ -49,8 +47,7 @@ sub freesideComponent {
   $FS::Mason::Request::FSURL .= '/' unless $FS::Mason::Request::FSURL =~ /\/$/;
 #  $FS::Mason::Request::QUERY_STRING = $packet->{'query_string'} || '';
 
-  cgisuidsetup($Torrus::CGI::q);
-  FS::TicketSystem->init();
+  $self->freesideSetup;
 
   $outbuf = '';
   #$fs_interp->exec($comp, @args); #only FS for now alas...
