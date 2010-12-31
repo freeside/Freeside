@@ -1838,6 +1838,13 @@ and customer address. Include units.',
                        'svc_pbx'   => 'PBX (svc_pbx)',
                      ],
   },
+  
+  {
+    'key'         => 'signup_server-prepaid-template-custnum',
+    'section'     => 'self-service',
+    'description' => 'When the signup server is used with prepaid cards and customer info is not required for signup, the contact/address info will be copied from this customer, if specified',
+    'type'        => 'text',
+  },
 
   {
     'key'         => 'selfservice_server-base_url',

@@ -187,7 +187,7 @@ sub signup_info {
       'agent_ship_address' => scalar($conf->exists('agent-ship_address')),
       'require_phone'      => scalar($conf->exists('cust_main-require_phone')),
       'logo'               => scalar($conf->config_binary('logo.png')),
-
+      'prepaid_template_custnum' => $conf->exists('signup_server-prepaid-template-custnum'),
     };
 
     $cache->set('signup_info_cache', $signup_info_cache);
@@ -506,31 +506,64 @@ sub new_customer {
 
   #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
   # common that are still here and library them.
-  my $cust_main = new FS::cust_main ( {
-    #'custnum'          => '',
-    'agentnum'      => $agentnum,
-    'refnum'        => $packet->{refnum}
-                       || $conf->config('signup_server-default_refnum'),
+  my $template_custnum = $conf->config('signup_server-prepaid-template-custnum');
+  my $cust_main;
+  if ( $template_custnum && $packet->{prepaid_shortform} ) {
+	my $template_cust = qsearchs('cust_main', { 'custnum' => $template_custnum } );
+	return { 'error' => 'Configuration error' } unless $template_cust;
+	$cust_main = new FS::cust_main ( {
+	'agentnum'      => $agentnum,
+	'refnum'        => $packet->{refnum}
+			   || $conf->config('signup_server-default_refnum'),
+	map { $_ => $template_cust->$_ } qw( 
+		last first company address1 address2 
+		city county state zip country
+		daytime night fax 
 
-    map { $_ => $packet->{$_} } qw(
+	        ship_last ship_first ship_company ship_address1 ship_address2
+	        ship_city ship_county ship_state ship_zip ship_country
+	        ship_daytime ship_night ship_fax
+		),
+	map { $_ => $packet->{$_} } qw(
 
-      last first ss company address1 address2
-      city county state zip country
-      daytime night fax stateid stateid_state
+	  ss stateid stateid_state
 
-      ship_last ship_first ship_ss ship_company ship_address1 ship_address2
-      ship_city ship_county ship_state ship_zip ship_country
-      ship_daytime ship_night ship_fax
+	  payby
+	  payinfo paycvv paydate payname paystate paytype
+	  paystart_month paystart_year payissue
+	  payip
 
-      payby
-      payinfo paycvv paydate payname paystate paytype
-      paystart_month paystart_year payissue
-      payip
+	  referral_custnum comments
+	)
+      } );
+  }
+  else {
+      $cust_main = new FS::cust_main ( {
+	#'custnum'          => '',
+	'agentnum'      => $agentnum,
+	'refnum'        => $packet->{refnum}
+			   || $conf->config('signup_server-default_refnum'),
 
-      referral_custnum comments
-    )
+	map { $_ => $packet->{$_} } qw(
 
-  } );
+	  last first ss company address1 address2
+	  city county state zip country
+	  daytime night fax stateid stateid_state
+
+	  ship_last ship_first ship_ss ship_company ship_address1 ship_address2
+	  ship_city ship_county ship_state ship_zip ship_country
+	  ship_daytime ship_night ship_fax
+
+	  payby
+	  payinfo paycvv paydate payname paystate paytype
+	  paystart_month paystart_year payissue
+	  payip
+
+	  referral_custnum comments
+	)
+
+      } );
+  }
 
   my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
   if ( $conf->exists('agent_ship_address') && $agent->agent_custnum ) {

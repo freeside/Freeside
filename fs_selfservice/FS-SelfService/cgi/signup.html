@@ -28,6 +28,7 @@
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
+<INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= $prepaid_shortform %>">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
@@ -52,30 +53,35 @@ Where did you hear about our service? <SELECT NAME="refnum">
   }
 %>
 </SELECT><BR><BR>
+
+<%= unless ( $prepaid_template_custnum && $prepaid_shortform  ) {
+
+my $bgcolor = $box_bgcolor || '#c0c0c0';
+$OUT .= qq!
 Contact Information
-<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TABLE BGCOLOR="$bgcolor" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="<%= $last %>">,
-                <INPUT TYPE="text" NAME="first" VALUE="<%= $first %>"></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="$last">,
+                <INPUT TYPE="text" NAME="first" VALUE="$first"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Company</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="<%= $company %>"></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="$company"></TD>
 </TR>
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>Address</TH>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="<%= $address1 %>"></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="$address1"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">&nbsp;</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="<%= $address2 %>"></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="$address2"></TD>
 </TR>
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
-  <TD><INPUT TYPE="text" NAME="city" VALUE="<%= $city %>"></TD>
-    <%=
-        ($county_html, $state_html, $country_html) =
+  <TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD> !;
+
+        my ($county_html, $state_html, $country_html) =
           regionselector( {
             selected_county  => $county,
             selected_state   => $state,
@@ -85,32 +91,30 @@ Contact Information
             locales          => \@cust_main_county,
           } );
  
-    %>
-  <TH ALIGN="right"><font color="#ff0000">*</font>
-    <%= ($county_html =~ /SELECT/) ? 'County/State' : 'State' %></TH>
+$county_out = ($county_html =~ /SELECT/) ? 'County/State' : 'State';
+$OUT .= qq!<TH ALIGN="right"><font color="#ff0000">*</font> $county_out </TH>
   <TD>
-    <%= "$county_html $state_html"; %>
+    $county_html $state_html
   </TD>
   <TH><font color="#ff0000">*</font>Zip</TH>
-  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="<%= $zip %>"></TD>
+  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="$zip"></TD>
 </TR>
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>Country</TH>
-  <TD><%= $country_html %></TD>
+  <TD>$country_html</TD>
 <TR>
   <TD ALIGN="right">Day Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="<%= $daytime %>" SIZE=18></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Night Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="<%= $night %>" SIZE=18></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Fax</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="<%= $fax %>" SIZE=12></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD>
 </TR>
-<%=
-  $OUT = '';
+!;
   if ( $stateid_enabled ) {
     my ($county_html, $state_html, $country_html) =
       regionselector( {
@@ -124,8 +128,16 @@ Contact Information
     $OUT .= qq!<TD ALIGN="right">!. $label{stateid_state} .'</TD>';
     $OUT .="<TD COLSPAN=3>$county_html $state_html</TD></TR>";
   }
-%>
+$OUT .= qq!
 </TABLE><font color="#ff0000">*</font> required fields<BR>
+!;
+
+}
+else {
+    @payby = ('PREPAY');
+}
+%>
+
 <BR>Billing information<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR><TD>
 

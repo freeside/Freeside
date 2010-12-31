@@ -232,7 +232,7 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
                 pkgpart refnum agentnum
                 username sec_phrase _password popnum
                 mac_addr
-                countrycode phonenum sip_password pin
+                countrycode phonenum sip_password pin prepaid_shortform
               ),
             grep { /^snarf_/ } $cgi->param
         ),
@@ -291,6 +291,8 @@ sub print_form {
   #$cgi->delete('ref');
   #$cgi->delete('init_popstate');
   $r->{self_url} = $cgi->self_url;
+
+  $r->{prepaid_shortform} = $cgi->param('prepaid_shortform');
 
   print $cgi->header( '-expires' => 'now' ),
         $signup_template->fill_in( PACKAGE => 'FS::SelfService::_signupcgi',
