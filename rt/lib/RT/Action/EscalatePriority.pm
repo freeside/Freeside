@@ -121,7 +121,12 @@ sub Prepare  {
 
     # we've got a due date. now there are other things we should do
     else { 
-	my $diff_in_seconds = $due->Diff(time());    
+        my $arg = $self->Argument || '';
+        my $now = time();
+        if ( $arg =~ /CurrentTime:\s*(\d+)/i ) {
+            $now = $1;
+        } 
+	my $diff_in_seconds = $due->Diff($now);    
 	my $diff_in_days = int( $diff_in_seconds / 86400);    
 	
 	#if we haven't hit the due date yet

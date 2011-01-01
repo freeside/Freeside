@@ -50,6 +50,10 @@ if ( $opt{u} ) {
 use FS::Cron::backup qw(backup_scp);
 backup_scp();
 
+#same
+use FS::Cron::rt_tasks qw(rt_escalate);
+rt_escalate(%opt);
+
 ###
 # subroutines
 ###

@@ -2552,6 +2552,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'ticket_system-escalation',
+    'section'     => '',
+    'description' => 'Enable priority escalation of tickets as part of daily batch processing.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'ticket_system-rt_external_datasrc',
     'section'     => '',
     'description' => 'With external RT integration, the DBI data source for the external RT installation, for example, <code>DBI:Pg:user=rt_user;password=rt_word;host=rt.example.com;dbname=rt</code>',
