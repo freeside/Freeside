@@ -301,6 +301,35 @@ sub correspond_ticket {
   $Ticket->Correspond( Content => $param{'content'} );
 }
 
+=item queues SESSION_HASHREF [, ACL ]
+
+Retrieve a list of queues.  Pass the name of an RT access control right, 
+such as 'CreateTicket', to return only queues on which the current user 
+has that right.  Otherwise this will return all queues with the 'SeeQueue' 
+right.
+
+=cut
+
+sub queues {
+  my( $self, $session, $acl ) = @_;
+  $session = $self->session($session);
+
+  my $showall = $acl ? 0 : 1;
+  my @result = ();
+  my $q = new RT::Queues($session->{'CurrentUser'});
+  $q->UnLimit;
+  while (my $queue = $q->Next) {
+    if ($showall || $queue->CurrentUserHasRight($acl)) {
+      push @result, {
+        Id          => $queue->Id,
+        Name        => $queue->Name,
+        Description => $queue->Description,
+      };
+    }
+  }
+  return map { $_->{Id} => $_->{Name} } @result;
+}
+
 #shameless false laziness w/RT::Interface::Web::AttemptExternalAuth
 # to get logged into RT from afar
 sub _web_external_auth {

@@ -1345,8 +1345,6 @@ sub ParseDateToISO {
 sub ProcessACLChanges {
     my $ARGSref = shift;
 
-    #XXX: why don't we get ARGSref like in other Process* subs?
-
     my @results;
 
     foreach my $arg ( keys %$ARGSref ) {

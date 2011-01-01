@@ -169,6 +169,7 @@ SYSTEM_BINARIES		=	rt-dump-database \
 				rt-email-dashboards \
 				rt-email-group-admin \
 				rt-server \
+				rt-session-viewer \
 				rt-test-dependencies \
 				rt-clean-sessions \
 				rt-shredder \

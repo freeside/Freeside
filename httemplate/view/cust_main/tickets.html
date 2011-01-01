@@ -11,7 +11,9 @@ function updateTicketLink() {
 </SCRIPT>
 <A id="CreateTicketLink" HREF="<% $new_link %>">Create new ticket</A>
  in queue
-% my %queues = FS::TicketSystem->queues();
+%# fetch list of queues in which the user can create tickets
+% my $session = FS::TicketSystem->session();
+% my %queues = FS::TicketSystem->queues($session, 'CreateTicket');
 % if( $conf->exists('ticket_system-force_default_queueid') ) {
 <B><% $queues{$new_param{'Queue'}} %></B>
 <INPUT TYPE="hidden" NAME="Queue" VALUE="<% $new_param{'Queue'} %>">
@@ -19,7 +21,6 @@ function updateTicketLink() {
 % else {
 <SELECT NAME="Queue" id="Queue" onchange="updateTicketLink()">
 % foreach my $queueid ( sort { $queues{$a} cmp $queues{$b} } keys %queues ) {
-%   #should consider whether the user has ACL to create ticket in each queue
     <OPTION VALUE="<% $queueid %>"
             <% $queueid == $new_param{'Queue'} ? 'SELECTED' : '' %>
     ><% $queues{$queueid} |h %>

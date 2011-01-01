@@ -3,7 +3,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1.1.12 $)dnl
+AC_REVISION($Revision: 1.2 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ([2.53])
@@ -398,6 +398,7 @@ AC_CONFIG_FILES([
                  etc/upgrade/3.8-ical-extension
                  etc/upgrade/split-out-cf-categories
                  sbin/rt-attributes-viewer
+                 sbin/rt-session-viewer
                  sbin/rt-dump-database
                  sbin/rt-setup-database
                  sbin/rt-test-dependencies

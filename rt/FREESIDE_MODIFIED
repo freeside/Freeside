@@ -29,6 +29,20 @@ lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
 
+# 3.9-fix-queue-caching bugfix branch
+# github.com/bestpractical/rt/commit/7e211c1199836d49f007d7f677105e5c73cc0348
+Makefile.in
+configure.ac
+lib/RT/Principal_Overlay.pm
+lib/RT/Queue_Overlay.pm
+lib/RT/System.pm
+lib/RT/Test.pm
+lib/RT/Interface/Web.pm
+sbin/rt-session-viewer.in
+share/html/Elements/SelectQueue
+
+share/html/Ticket/Create.html # queue select dropdown on Ticket/Create
+
  share/html/autohandler #Footer getting appended where unwelcome
  share/html/index.html #option to redirect to ticket display on quick create
  share/html/Admin/CustomFields/Modify.html #CheckMandatoryFields
@@ -51,7 +65,6 @@ share/html/Elements/ShowLink_Checklist
  share/html/Elements/SelectCustomerAgent #SearchCustomerFields
  share/html/Elements/SelectCustomerClass #SearchCustomerFields
  share/html/Elements/SelectCustomerTag #SearchCustomerFields
- html/Ticket/Create.html #XXX TODO
  share/html/Search/Build.html
  share/html/Search/Elements/BuildFormatString
  share/html/Search/Elements/PickCFs #customfield date patch
