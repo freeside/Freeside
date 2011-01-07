@@ -2973,6 +2973,7 @@ sub tables_hashref {
         'pbxsvc',           'int', 'NULL',      '', '', '',
         'domsvc',           'int', 'NULL',      '', '', '', 
         'locationnum',      'int', 'NULL', '', '', '',
+        'route',   'varchar', 'NULL', $char_d, '', '',
         'lnp_status',   'varchar', 'NULL', $char_d, '', '',
         'portable',   	'char', 'NULL',       1,  '', '', 
         'lrn',     'char',     'NULL',      10, '', '', 

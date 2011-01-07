@@ -79,6 +79,10 @@ Voicemail PIN
 
 Optional svcnum from svc_pbx
 
+=item route
+
+Route id/number
+
 =item lnp_status
 
 LNP Status (can be null, native, portedin, portingin, portin-reject,
@@ -163,6 +167,9 @@ sub table_info {
                            disable_inventory => 1,
                            disable_select    => 1,
                          },
+	'route' => {	label => 'Route',
+			%dis2, 
+		    },
 	'lnp_status' => {   	label => 'LNP Status',
 				type => 'select-lnp_status.html',
 				%dis2,
@@ -456,6 +463,7 @@ sub check {
     || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
     || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
+    || $self->ut_textn('route')
     || $self->ut_numbern('lrn')
     || $self->ut_numbern('lnp_desired_due_date')
     || $self->ut_numbern('lnp_due_date')

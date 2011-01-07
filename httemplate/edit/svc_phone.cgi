@@ -37,6 +37,7 @@ push @fields, { field => 'pbxsvc',
                 type  => 'text',
                 maxlength => $conf->config('svc_phone-phone_name-max_length'),
               },
+	      'route',
 
               { value   => 'E911 Information',
                 type    => 'tablebreak-tr-title',

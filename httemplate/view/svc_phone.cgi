@@ -19,7 +19,7 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
 
 my @fields = qw( countrycode phonenum );
 push @fields, 'domain' if $conf->exists('svc_phone-domain');
-push @fields, qw( pbx_title sip_password pin phone_name );
+push @fields, qw( pbx_title sip_password pin phone_name route );
 
 if ( $conf->exists('svc_phone-lnp') ) {
 push @fields, 'lnp_status',
