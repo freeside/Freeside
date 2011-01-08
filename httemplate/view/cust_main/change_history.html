@@ -272,7 +272,7 @@ die "access deined"
   unless $curuser->access_right('View customer history');
 
 my $cust_pkg_date_format = '%b %o, %Y';
-$cust_pkg_date_format .= '%l:%M:%S%P'
+$cust_pkg_date_format .= ' %l:%M:%S%P'
   if $conf->exists('cust_pkg-display_times')
   || $curuser->option('cust_pkg-display_times');
 
