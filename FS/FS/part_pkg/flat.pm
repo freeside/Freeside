@@ -107,7 +107,7 @@ sub calc_recur {
   return 0
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
-  my $charge = $self->base_recur($cust_pkg);
+  my $charge = $self->base_recur($cust_pkg, $sdate);
   if ( $self->option('sync_bill_date',1) ) {
     my $next_bill = $cust_pkg->cust_main->next_bill_date;
     if ( defined($next_bill) ) {
@@ -127,7 +127,7 @@ sub calc_recur {
 }
 
 sub base_recur {
-  my($self, $cust_pkg) = @_;
+  my($self, $cust_pkg, $sdate) = @_;
   $self->option('recur_fee', 1) || 0;
 }
 
@@ -151,7 +151,7 @@ sub calc_remain {
 
   my $next_bill = $cust_pkg->getfield('bill') || 0;
 
-  return 0 if    ! $self->base_recur($cust_pkg)
+  return 0 if    ! $self->base_recur($cust_pkg, \$time)
               || ! $next_bill
               || $next_bill < $time;
 

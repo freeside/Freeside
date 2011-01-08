@@ -98,7 +98,7 @@ sub calc_recur {
 
   $$sdate = timelocal(0,0,0,$cutoff_day,$mon,$year);
 
-  my $br = $self->base_recur($cust_pkg);
+  my $br = $self->base_recur($cust_pkg, $sdate);
 
   my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
 

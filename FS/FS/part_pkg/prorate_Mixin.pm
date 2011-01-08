@@ -49,7 +49,7 @@ sub calc_prorate {
   my $self  = shift;
   my ($cust_pkg, $sdate, $details, $param, $cutoff_day) = @_;
  
-  my $charge = $self->option('recur_fee',1) || 0;
+  my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
   if($cutoff_day) {
     # only works for freq >= 1 month; probably can't be fixed
     my $mnow = $$sdate;
