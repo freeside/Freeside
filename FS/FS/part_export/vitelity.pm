@@ -62,10 +62,8 @@ sub get_dids {
 
     # you can't call $->name .... that returns "(unlinked)"
     # and in any case this is still major abuse of encapsulation, it just happens to work for the other fields
-    return [
-	   map { $_->{'Hash'}->{name}.' ('. $_->npa. '-'. $_->nxx. '-XXXX)' } 
+    @rc = map { $_->{'Hash'}->{name}.' ('. $_->npa. '-'. $_->nxx. '-XXXX)' } 
           qsearch({
-	# i know this doesn't do the same thing as before, but now the sort works
             'select'   => 'DISTINCT npa,nxx,name',
             'table'    => 'phone_avail',
             'hashref'  => { 'exportnum'   => $self->exportnum,
@@ -73,8 +71,10 @@ sub get_dids {
                             'npa'         => $opt{'areacode'},
                           },
             'order_by' => 'ORDER BY nxx',
-          })
-    ];
+          });
+
+    @sorted_rc = sort @rc;
+    return [ @sorted_rc ];
 
   } elsif ( $opt{'state'} ) { #and not other things, then return areacode
 
