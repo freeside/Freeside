@@ -307,22 +307,11 @@ sub check {
   if ( $self->pkgnum ) {
     my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
     return "Unknown pkgnum" unless $cust_pkg;
-    my $pkg_svc = qsearchs( 'pkg_svc', {
-      'pkgpart' => $cust_pkg->pkgpart,
-      'svcpart' => $self->svcpart,
-    });
-    # or new FS::pkg_svc ( { 'pkgpart'  => $cust_pkg->pkgpart,
-    #                        'svcpart'  => $self->svcpart,
-    #                        'quantity' => 0                   } );
-    my $quantity = $pkg_svc ? $pkg_svc->quantity : 0;
+    ($part_svc) = grep { $_->svcpart == $self->svcpart } $cust_pkg->part_svc;
 
-    my @cust_svc = qsearch('cust_svc', {
-      'pkgnum'  => $self->pkgnum,
-      'svcpart' => $self->svcpart,
-    });
-    return "Already ". scalar(@cust_svc). " ". $part_svc->svc.
+    return "Already ". $part_svc->get('num_cust_svc'). " ". $part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if scalar(@cust_svc) >= $quantity && !$ignore_quantity;
+      if $part_svc->get('num_avail') == 0 and !$ignore_quantity;
   }
 
   $self->SUPER::check;
