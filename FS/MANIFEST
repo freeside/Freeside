@@ -552,3 +552,7 @@ FS/part_pkg_vendor.pm
 t/part_pkg_vendor.t
 FS/cust_note_class.pm
 t/cust_note_class.t
+FS/svc_port.pm
+t/svc_port.t
+FS/h_svc_port.pm
+t/h_svc_port.t

@@ -11,27 +11,9 @@
 Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
 Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>><BR>
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $hashref->{svcpart} %>">
+
 <BR>
-Service definitions are the templates for items you offer to your customers.
-<UL><LI>svc_acct - Accounts - anything with a username (Mailboxes, PPP accounts, shell accounts, RADIUS entries for broadband, etc.)
-    <LI>svc_domain - Domains
-    <LI>svc_cert - Certificates
-    <LI>svc_dsl - DSL
-    <LI>svc_forward - Mail forwarding
-    <LI>svc_mailinglist - Mailing list
-    <LI>svc_www - Virtual domain website
-    <LI>svc_broadband - Broadband/High-speed Internet service (always-on)
-    <LI>svc_phone - Customer phone numbers
-    <LI>svc_pbx - Customer PBXs
-    <LI>svc_external - Externally-tracked service
-<!--   <LI>svc_charge - One-time charges (Partially unimplemented)
-       <LI>svc_wo - Work orders (Partially unimplemented)
--->
-</UL>
-For the selected table, you can give fields default or fixed (unchangable)
-values, or select an inventory class to manually or automatically fill in
-that field.
-<BR><BR>
+
 
 % #YUCK.  false laziness w/part_svc.pm.  go away virtual fields, please
 % my %vfields;
@@ -100,6 +82,8 @@ that field.
 %      
 %      my $html = qq!<INPUT TYPE="hidden" NAME="svcdb" VALUE="$layer">!;
 %
+%      $html .= $svcdb_info;
+%
 %      my $columns = 3;
 %      my $count = 0;
 %      my $communigate = 0;
@@ -126,7 +110,7 @@ that field.
 %        $count++;
 %        $html .= '</TR><TR>' unless $count % $columns;
 %      }
-%      $html .= '</TR></TABLE><BR><BR>';
+%      $html .= '</TR></TABLE><BR><BR>'. $mod_info;
 %
 %      $html .= include('/elements/table-grid.html', 'cellpadding' => 4 ).
 %               '<TR>'.
@@ -453,6 +437,70 @@ my %communigate_fields = (
   #'svc_mailinglist' => { map { $_=>1 } qw( ) },
   #'svc_cert'        => { map { $_=>1 } qw( ) },
 );
+
+my $svcdb_info = '
+<TABLE>
+  <TR>
+    <TH ALIGN="left">Generic</TH>
+    <TH ALIGN="left">Access</TH>
+    <TH ALIGN="left">Telephony</TH>
+<!--    <TH>Hosting</TH>
+    <TH>Colocation</TH>
+-->
+  </TR>
+  <TR>
+    <TD VALIGN="top">
+      <UL STYLE="margin:0">
+        <LI><B>svc_acct</B>: Accounts - anything with a username (mailbox, shell, RADIUS, etc.)
+        <LI><B>svc_external</B>: Externally-tracked service
+      </UL>
+    </TD>
+    <TD VALIGN="top">
+      <UL STYLE="margin:0">
+        <LI><B>svc_dsl</B>: DSL
+        <LI><B>svc_broadband</B>: Wireless broadband
+      </UL>
+    </TD>
+    <TD VALIGN="top">
+      <UL STYLE="margin:0">
+        <LI><B>svc_phone</B>: Customer phone number
+        <LI><B>svc_pbx</B>: Customer PBX
+      </UL>
+    </TD>
+  </TR>
+</TABLE>
+<BR>
+<TABLE>
+  <TR>
+    <TH ALIGN="left">Hosting</TH>
+    <TH ALIGN="left">Colocation</TH>
+  </TR>
+    <TD VALIGN="top">
+      <UL STYLE="margin:0">
+        <LI><B>svc_domain</B>: Domain
+        <LI><B>svc_cert</B>: Certificate
+        <LI><B>svc_forward</B>: Mail forwarding
+        <LI><B>svc_mailinglist</B>: Mailing list
+        <LI><B>svc_www</B>: Virtual domain website
+      </UL>
+    </TD>
+    <TD VALIGN="top">
+      <UL STYLE="margin:0">
+        <LI><B>svc_port</B>: Customer router/switch port
+      </UL>
+    </TD>
+  </TR>
+<TABLE>
+<!--   <LI>svc_charge - One-time charges (Partially unimplemented)
+       <LI>svc_wo - Work orders (Partially unimplemented)
+-->
+';
+
+my $mod_info = '
+For the selected table, you can give fields default or fixed (unchangable)
+values, or select an inventory class to manually or automatically fill in
+that field.
+';
 
 </%init>
 

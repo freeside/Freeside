@@ -1,10 +1,12 @@
 i should move to the wiki once this is further along
 
-aptitude install rrdtool librrds-perl libxml-libxml-perl libberkeleydb-perl libtemplate-perl libproc-daemon-perl libnet-snmp-perl libapache-session-perl libjson-perl
+aptitude install rrdtool librrds-perl libxml-libxml-perl libberkeleydb-perl libtemplate-perl libproc-daemon-perl libnet-snmp-perl libapache-session-perl libjson-perl libdbix-abstract-perl libdbix-sequence-perl
 
 # in Makefile, set TORRUS_ENABLED = 1
 make configure-torrus
 make deploy
+
+set network_monitoring_system config setting to Torrus_Internal
 
 #a little more one-offy from here so far
 
@@ -44,5 +46,27 @@ but do go from http://torrus.org/install.pod.html#cron_job on
 
 #---
 
-this seems to be required on restarts during dev (upgrades?)
-rm /var/torrus/cache/* /var/torrus/db/render_cache.db
+http://torrus.org/reporting_setup.pod.html
+
+cd /usr/local/etc/torrus/discovery
+vi routers.ddx
+
+   <!-- host-specfic parameter  -->
+   <param name="RFC2863_IF_MIB::external-serviceid">
+     TESTING_1:TenGigabitEthernet2_1:Both:main,
+     TESTING_2:TenGigabitEthernet2_2:Both:main,
+   </param>
+
+torrus devdiscover  --in=routers.ddx 
+torrus compile --tree=main --verbose
+
+#kill collector, then restart
+torrus collector --tree=main
+
+#---
+
+add serviceids
+
+in freeside, setup svc_port service defs, packages with torrus billing types
+order the package, provision an svc_port with a valid serviceid
+

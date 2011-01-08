@@ -28,12 +28,12 @@ sub calc_usage {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;
 
-  my $serviceid = 'TESTING_1'; #XXX from svc_port (loop?)
-
   my $rep_id = 2; #XXX find the one matching the timeframe
   #SELECT id FROM WHERE reportname = 'MonthlyUsage' AND rep_date = ''
 
   #XXX abort if ! iscomplete?
+
+  my $serviceid = 'TESTING_1'; #XXX from svc_port (loop?)
 
   my $sql = "
     SELECT value FROM reportfields

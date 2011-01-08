@@ -1,0 +1,12 @@
+configs/torrus-siteconfig.pl #turn of torrus auth, set URLs
+perllib/Torrus/CGI.pm                # header/footer
+perllib/Torrus/Freeside.pm           # header/footer
+perllib/Torrus/Renderer.pm           # header/footer
+ perllib/Torrus/Renderer/Freeside.pm # header/footer
+perllib/Torrus/Renderer/Frontpage.pm # header/footer
+perllib/Torrus/Renderer/HTML.pm      # header/footer
+ perllib/Torrus/ReportOutput/Freeside.pm # header/footer
+perllib/Torrus/ReportOutput/HTML.pm      # header/footer
+templates/html-incblocks.txt         # header/footer
+tempaltes/default-rrd.html           # title beautification
+sup/webplain/torrus.css #skinning
