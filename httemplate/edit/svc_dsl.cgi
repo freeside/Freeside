@@ -55,7 +55,7 @@ my $edit_cb = sub {
 	# else add any other export-specific stuff here
     }
     else {
-	# XXX allow editing everything
+	push @fields, qw( first last company phonenum circuitnum rate_band vpi vci );
     }
 };
 
@@ -65,7 +65,6 @@ my $new_cb = sub {
     die "more than one DSL-pulling export attached to svcpart ".$part_svc->svcpart
 	if ( scalar(@exports) > 1 );
 
-    if ( scalar(@exports) == 1 ) {
 	my $cust_main = $cust_pkg->cust_main;
 	my $defsvctn = $cust_main->ship_daytime ? $cust_main->ship_daytime
 						: $cust_main->daytime;
@@ -90,6 +89,7 @@ my $new_cb = sub {
 	    },
 	);
 
+    if ( scalar(@exports) == 1 ) {
 	my $export = @exports[0];		
 	if($export->exporttype eq 'ikano') {
 	    my $ddd = $cust_pkg->start_date;
@@ -120,8 +120,8 @@ my $new_cb = sub {
 	}
 	# else add any other export-specific stuff here
     }
-    else {
-	# XXX display everything when no exports attached
+    else { # display non-export and non-Ikano fields
+	push @fields, qw( rate_band circuitnum vpi vci );
     }
 };
 </%init>

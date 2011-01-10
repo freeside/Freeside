@@ -81,6 +81,10 @@ Vendor/telco DSL order status (e.g. (N)ew, (A)ssigned, (R)ejected, (M)revised,
 
 =item circuitnum - Circuit #
 
+=item vpi
+
+=item vci
+
 =item rate_band - Rate Band
 
 =item isp_chg
@@ -156,6 +160,8 @@ sub table_info {
 	    'rate_band' => {	label => 'Rate Band',
 				    disable_inventory => 1,
 			},
+	    'vpi' => { label => 'VPI', disable_inventory => 1 },
+	    'vci' => { label => 'VCI', disable_inventory => 1 },
 	    'isp_chg' => {	label => 'ISP Changing?', 
 				type => 'checkbox', %dis2 },
 	    'isp_prev' => {	label => 'Current or Previous ISP',
@@ -236,7 +242,7 @@ sub check {
   my $error = 
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('pushed')
-    || $self->ut_number('desired_due_date')
+    || $self->ut_numbern('desired_due_date')
     || $self->ut_numbern('due_date')
     || $self->ut_textn('vendor_order_id')
     || $self->ut_textn('vendor_qual_id')
@@ -250,6 +256,8 @@ sub check {
     || $self->ut_textn('local_voice_provider')
     || $self->ut_textn('circuitnum')
     || $self->ut_textn('rate_band')
+    || $self->ut_numbern('vpi')
+    || $self->ut_numbern('vci')
     || $self->ut_alphan('isp_chg')
     || $self->ut_textn('isp_prev')
     || $self->ut_textn('username')

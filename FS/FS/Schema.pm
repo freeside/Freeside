@@ -1969,6 +1969,8 @@ sub tables_hashref {
         'local_voice_provider', 'varchar', 'NULL', $char_d,  '', '',
         'circuitnum',              'varchar', 'NULL', $char_d,  '', '',
         'rate_band',              'varchar', 'NULL', $char_d,  '', '',
+	'vpi',     'int', 'NULL',       '', '', '',
+	'vci',     'int', 'NULL',       '', '', '',
         'isp_chg',   'char', 'NULL',       1,  '', '', 
         'isp_prev',              'varchar', 'NULL', $char_d,  '', '',
         'username',              'varchar', 'NULL', $char_d,  '', '',
