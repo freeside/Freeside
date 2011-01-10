@@ -2974,6 +2974,8 @@ sub tables_hashref {
         'domsvc',           'int', 'NULL',      '', '', '', 
         'locationnum',      'int', 'NULL', '', '', '',
         'route',   'varchar', 'NULL', $char_d, '', '',
+        'forwarddst',     'varchar',     'NULL',      15, '', '', 
+        'email',           'varchar', 'NULL',  255, '', '', 
         'lnp_status',   'varchar', 'NULL', $char_d, '', '',
         'portable',   	'char', 'NULL',       1,  '', '', 
         'lrn',     'char',     'NULL',      10, '', '', 

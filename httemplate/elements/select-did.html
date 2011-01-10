@@ -58,6 +58,19 @@ Example:
       </TR>
 
     </TABLE>
+
+% 	if ( $tollfree ) {
+	    or toll-free 
+	    <% include('/elements/select-phonenum.html',
+                       'svcpart' => $svcpart,
+                       'empty'   => 'Select phone number',
+		       'tollfree' => 1,
+		       'prefix' => 'tollfree',
+		       'bulknum' => 0,
+                    )
+	    %>
+%	}
+
 % 	if ( $bulknum ) {
 	    <div id="bulkdid" style="padding-top: 11px">
 %		my $i;
@@ -99,6 +112,9 @@ if ( scalar(@exports) > 1 ) {
 }
 
 my $use_selector = scalar(@exports) ? 1 : 0;
+
+my $tollfree = 0;
+$tollfree = 1 if (scalar(@exports) && $exports[0]->exporttype eq 'vitelity');
 
 my $bulknum = $opt{'bulknum'} || 0;
 

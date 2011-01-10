@@ -14,6 +14,7 @@ tie my %options, 'Tie::IxHash',
   'dry_run'       => { label=>"Test mode - don't actually provision" },
   'routesip'      => { label=>'routesip (optional sub-account)' },
   'type'	  => { label=>'type (optional DID type to order)' },
+  'fax'      => { label=>'vfax service', type=>'checkbox' },
 ;
 
 %info = (
@@ -36,14 +37,56 @@ sub get_dids {
   my $self = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
-# currently one of three cases: areacode+exchange, areacode, state
-# name == ratecenter
+  if ( $opt{'tollfree'} ) {
+      # XXX: no caching for now
+      # XXX: limit option
 
-  my %search = ();
+    my $command = 'listtollfree';
+    $command = 'listdids' if $self->option('fax');
+    my @tollfree = $self->vitelity_command($command);
+    my @ret = ();
 
-  my $method = '';
+    if (scalar(@tollfree)) {
+	local $SIG{HUP} = 'IGNORE';
+	local $SIG{INT} = 'IGNORE';
+	local $SIG{QUIT} = 'IGNORE';
+	local $SIG{TERM} = 'IGNORE';
+	local $SIG{TSTP} = 'IGNORE';
+	local $SIG{PIPE} = 'IGNORE';
 
-  if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers in format NPA-NXX-XXXX
+	my $oldAutoCommit = $FS::UID::AutoCommit;
+	local $FS::UID::AutoCommit = 0;
+	my $dbh = dbh;
+
+	my $errmsg = 'WARNING: error populating phone availability cache: ';
+	
+	foreach my $did ( @tollfree ) {
+	    $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+	    my($npa, $nxx, $station) = ($1, $2, $3);
+	    push @ret, $did;
+
+	    my $phone_avail = new FS::phone_avail {
+	      'exportnum'   => $self->exportnum,
+	      'countrycode' => '1', # vitelity is US/CA only now
+	      'npa'         => $npa,
+	      'nxx'         => $nxx,
+	      'station'     => $station,
+	    };
+
+	    $error = $phone_avail->insert();
+	    if ( $error ) {
+	      $dbh->rollback if $oldAutoCommit;
+	      die $errmsg.$error;
+	    }
+        }
+	$dbh->commit or warn $errmsg.$dbh->errstr if $oldAutoCommit;
+
+    }
+
+    my @sorted_ret = sort @ret;
+    return \@sorted_ret;
+
+  } elsif ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers in format NPA-NXX-XXXX
 
     return [
       map { join('-', $_->npa, $_->nxx, $_->station ) }
@@ -94,12 +137,14 @@ sub get_dids {
 
     #otherwise, search for em
 
-    my @ratecenters = $self->vitelity_command( 'listavailratecenters',
+    my $command = 'listavailratecenters';
+    $command = 'listratecenters' if $self->option('fax');
+    my @ratecenters = $self->vitelity_command( $command,
                                                  'state' => $opt{'state'}, 
                                              );
     # XXX: Options: type=unlimited OR type=pri
 
-    if ( $ratecenters[0] eq 'unavailable' ) {
+    if ( $ratecenters[0] eq 'unavailable' || $ratecenters[0] eq 'none' ) {
       return [];
     } elsif ( $ratecenters[0] eq 'missingdata' ) {
       die "missingdata error running Vitelity API"; #die?
@@ -121,20 +166,22 @@ sub get_dids {
     my %npa = ();
     foreach my $ratecenter (@ratecenters) {
 
-      my @dids = $self->vitelity_command( 'listlocal',
+     my $command = 'listlocal';
+      $command = 'listdids' if $self->option('fax');
+      my @dids = $self->vitelity_command( $command,
                                             'state'      => $opt{'state'},
                                             'ratecenter' => $ratecenter,
                                         );
     # XXX: Options: type=unlimited OR type=pri
 
-      if ( $dids[0] eq 'unavailable' ) {
+      if ( $dids[0] eq 'unavailable'  || $dids[0] eq 'noneavailable' ) {
         next;
       } elsif ( $dids[0] eq 'missingdata' ) {
         die "missingdata error running Vitelity API"; #die?
       }
 
       foreach my $did ( @dids ) {
-	$did =~ /^(\d{3})(\d{3})(\d{4}),/ or die "unparsable did $did\n";
+	$did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
         my($npa, $nxx, $station) = ($1, $2, $3);
         $npa{$npa}++;
 
@@ -180,6 +227,7 @@ sub vitelity_command {
   my $vitelity = Net::Vitelity->new(
     'login' => $self->option('login'),
     'pass'  => $self->option('pass'),
+    'apitype' => $self->option('fax') ? 'fax' : 'api',
     #'debug'    => $debug,
   );
 
@@ -199,10 +247,23 @@ sub _export_insert {
   $vparams{'type'} = $self->option('type') 
     if defined $self->option('type');
 
-  my $result = $self->vitelity_command('getlocaldid',%vparams);
 
-  if ( $result ne 'success' ) {
-    return "Error running Vitelity getlocaldid: $result";
+  $command = 'getlocaldid';
+  $success = 'success';
+
+  # this is OK as Vitelity for now is US/CA only; it's not a hack
+  $command = 'gettollfree' if $vparams{'did'} =~ /^800|^88[8765]/;
+
+  if($self->option('fax')) {
+	# supposedly should work for toll-free fax too
+	$command = 'getdid';
+	$success = 'ok';
+  }
+  
+  my $result = $self->vitelity_command($command,%vparams);
+
+  if ( $result ne $success ) {
+    return "Error running Vitelity $command: $result";
   }
 
   '';
@@ -211,7 +272,28 @@ sub _export_insert {
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
 
-  #hmm, what's to change?
+  # Call Forwarding
+  if( $old->forwarddst ne $new->forwarddst ) {
+      my $result = $self->vitelity_command('callfw',
+	'did'           => $old->phonenum,
+	'forward'	=> $new->forwarddst ? $new->forwarddst : 'none',
+      );
+      if ( $result ne 'ok' ) {
+	return "Error running Vitelity callfw: $result";
+      }
+  }
+
+  # vfax forwarding emails
+  if( $old->email ne $new->email && $self->option('fax') ) {
+      my $result = $self->vitelity_command('changeemail',
+	'did'           => $old->phonenum,
+	'emails'	=> $new->email ? $new->email : '',
+      );
+      if ( $result ne 'ok' ) {
+	return "Error running Vitelity changeemail: $result";
+      }
+  }
+
   '';
 }
 
@@ -223,12 +305,14 @@ sub _export_delete {
   #probably okay to queue the deletion...?
   #but hell, let's do it inline anyway, who wants phone numbers hanging around
 
+  return 'Deleting vfax DIDs is unsupported by Vitelity API' if $self->option('fax');
+
   my $result = $self->vitelity_command('removedid',
     'did'           => $svc_phone->phonenum,
   );
 
   if ( $result ne 'success' ) {
-    return "Error running Vitelity getlocaldid: $result";
+    return "Error running Vitelity removedid: $result";
   }
 
   '';

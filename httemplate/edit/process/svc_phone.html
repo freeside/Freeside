@@ -9,6 +9,9 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
 
+my $tollfreephonenum = $cgi->param('tollfreephonenum');
+$cgi->param('phonenum',$tollfreephonenum) if $tollfreephonenum =~ /^\d+$/;
+
 my $args_callback = sub {
   my( $cgi, $object ) = @_;
 

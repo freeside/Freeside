@@ -38,6 +38,8 @@ push @fields, { field => 'pbxsvc',
                 maxlength => $conf->config('svc_phone-phone_name-max_length'),
               },
 	      'route',
+	      'forwarddst',
+	      'email',
 
               { value   => 'E911 Information',
                 type    => 'tablebreak-tr-title',

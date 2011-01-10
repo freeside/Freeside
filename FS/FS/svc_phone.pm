@@ -83,6 +83,14 @@ Optional svcnum from svc_pbx
 
 Route id/number
 
+=item forwarddst
+
+Forwarding destination
+
+=item email
+
+Email address for virtual fax (fax-to-email) services
+
 =item lnp_status
 
 LNP Status (can be null, native, portedin, portingin, portin-reject,
@@ -169,6 +177,12 @@ sub table_info {
                          },
 	'route' => {	label => 'Route',
 			%dis2, 
+		    },
+	'forwarddst' => {	label => 'Forward Destination', 
+				%dis2,
+			},
+	'email' => {		label => 'Email',
+				%dis2,
 		    },
 	'lnp_status' => {   	label => 'LNP Status',
 				type => 'select-lnp_status.html',
@@ -464,6 +478,8 @@ sub check {
     || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_textn('route')
+    || $self->ut_numbern('forwarddst')
+    || $self->ut_textn('email')
     || $self->ut_numbern('lrn')
     || $self->ut_numbern('lnp_desired_due_date')
     || $self->ut_numbern('lnp_due_date')

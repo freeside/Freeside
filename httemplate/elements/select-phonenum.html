@@ -86,13 +86,50 @@
 
   }
 
+% if ( $opt{'tollfree'} ) {
+    function <% $opt{'prefix'} %>update_phonenums(phonenums) {
+	// lame hack so I can copy the code from above
+	what = document.getElementById('<% $opt{prefix} %>phonenum');
+
+	// blank the current phonenum
+      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+
+%     if ($opt{empty}) {
+        opt(what.form.<% $opt{'prefix'} %>phonenum, '', '<% $opt{empty} %>');
+%     }
+
+      // add the new phonenums
+      var phonenumArray = eval('(' + phonenums + ')' );
+      for ( var s = 0; s < phonenumArray.length; s++ ) {
+          var phonenumLabel = phonenumArray[s];
+          if ( phonenumLabel == "" )
+              phonenumLabel = '(n/a)';
+          opt(what.form.<% $opt{'prefix'} %>phonenum, phonenumArray[s], phonenumLabel);
+      }
+
+      what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
+
+      if ( phonenumArray.length >= 1 ) {
+        what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
+        what.form.<% $opt{'prefix'} %>phonenum.style.display = '';
+      } 
+
+    }
+    <% $opt{'prefix'} %>get_phonenums( 'tollfree', <% $opt{'svcpart'} %>, <% $opt{'prefix'} %>update_phonenums );
+% }
+
 </SCRIPT>
 
+% unless ( $opt{'tollfree'} ) {
 <DIV ID="phonenumwait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding phone numbers</B></DIV>
 
 <DIV ID="phonenumerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different city/exchange</B></DIV>
+% }
 
-<SELECT NAME="<% $opt{'prefix'} %>phonenum" notonChange="<% $opt{'prefix'} %>phonenum_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+<SELECT ID="<% $opt{'prefix'} %>phonenum" NAME="<% $opt{'prefix'} %>phonenum" 
+    notonChange="<% $opt{'prefix'} %>phonenum_changed(this); <% $opt{'onchange'} %>"
+    <% $opt{'disabled'} %>>
   <OPTION VALUE="">Select phone number</OPTION>
 </SELECT>
 
