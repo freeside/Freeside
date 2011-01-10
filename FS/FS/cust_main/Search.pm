@@ -112,8 +112,17 @@ sub smart_search {
   # custnum search (also try agent_custid), with some tweaking options if your
   # legacy cust "numbers" have letters
   } 
-
-  if ( $search =~ /^\s*(\d+)\s*$/
+  
+  
+  if ( $search =~ /@/ ) {
+      push @cust_main,
+	  map $_->cust_main,
+	      qsearch( {
+			 'table'     => 'cust_main_invoice',
+			 'hashref'   => { 'dest' => $search },
+		       }
+		     );
+  } elsif ( $search =~ /^\s*(\d+)\s*$/
          || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
               && $search =~ /^\s*(\w\w?\d+)\s*$/
             )
