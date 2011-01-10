@@ -19,7 +19,7 @@ sub backup_scp {
     eval "use Net::SCP qw(scp);";
     die $@ if $@;
     if ( driver_name eq 'Pg' ) {
-      system("pg_dump $database >/var/tmp/$database.sql")
+      system("pg_dump -Fc $database >/var/tmp/$database.Pg")
     } else {
       die "database dumps not yet supported for ". driver_name;
     }
@@ -27,7 +27,7 @@ sub backup_scp {
       eval 'use GnuPG;';
       die $@ if $@;
       my $gpg = new GnuPG;
-      $gpg->encrypt( plaintext => "/var/tmp/$database.sql",
+      $gpg->encrypt( plaintext => "/var/tmp/$database.Pg",
                      output    => "/var/tmp/$database.gpg",
                      recipient => $conf->config('dump-pgpid'),
                    );
@@ -35,10 +35,10 @@ sub backup_scp {
       scp("/var/tmp/$database.gpg", "$dest.gpg");
       unlink "/var/tmp/$database.gpg" or die $!;
     } else {
-      chmod 0600, '/var/tmp/$database.sql';
-      scp("/var/tmp/$database.sql", "$dest.sql");
+      chmod 0600, '/var/tmp/$database.Pg';
+      scp("/var/tmp/$database.Pg", "$dest.Pg");
     }
-    unlink "/var/tmp/$database.sql" or die $!;
+    unlink "/var/tmp/$database.Pg" or die $!;
   }
 }
 
