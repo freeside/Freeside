@@ -15,6 +15,11 @@ tie my %options, 'Tie::IxHash',
   'routesip'      => { label=>'routesip (optional sub-account)' },
   'type'	  => { label=>'type (optional DID type to order)' },
   'fax'      => { label=>'vfax service', type=>'checkbox' },
+  'restrict_selection' => { type=>'select',
+			    label=>'Restrict DID Selection', 
+			    options=>[ '', 'tollfree', 'non-tollfree' ],
+			 }
+			    
 ;
 
 %info = (
@@ -247,15 +252,13 @@ sub _export_insert {
   $vparams{'type'} = $self->option('type') 
     if defined $self->option('type');
 
-
   $command = 'getlocaldid';
   $success = 'success';
 
   # this is OK as Vitelity for now is US/CA only; it's not a hack
-  $command = 'gettollfree' if $vparams{'did'} =~ /^800|^88[8765]/;
+  $command = 'gettollfree' if $vparams{'did'} =~ /^800|^888|^877|^866|^855/;
 
   if($self->option('fax')) {
-	# supposedly should work for toll-free fax too
 	$command = 'getdid';
 	$success = 'ok';
   }
