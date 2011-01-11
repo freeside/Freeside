@@ -43,55 +43,75 @@ sub get_dids {
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
   if ( $opt{'tollfree'} ) {
-      # XXX: no caching for now
-      # XXX: limit option
-
     my $command = 'listtollfree';
     $command = 'listdids' if $self->option('fax');
     my @tollfree = $self->vitelity_command($command);
     my @ret = ();
 
-    if (scalar(@tollfree)) {
-	local $SIG{HUP} = 'IGNORE';
-	local $SIG{INT} = 'IGNORE';
-	local $SIG{QUIT} = 'IGNORE';
-	local $SIG{TERM} = 'IGNORE';
-	local $SIG{TSTP} = 'IGNORE';
-	local $SIG{PIPE} = 'IGNORE';
+    return [] if ( $tollfree[0] eq 'noneavailable' || $tollfree[0] eq 'none');
 
-	my $oldAutoCommit = $FS::UID::AutoCommit;
-	local $FS::UID::AutoCommit = 0;
-	my $dbh = dbh;
-
-	my $errmsg = 'WARNING: error populating phone availability cache: ';
-	
-	foreach my $did ( @tollfree ) {
-	    $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
-	    my($npa, $nxx, $station) = ($1, $2, $3);
-	    push @ret, $did;
-
-	    my $phone_avail = new FS::phone_avail {
-	      'exportnum'   => $self->exportnum,
-	      'countrycode' => '1', # vitelity is US/CA only now
-	      'npa'         => $npa,
-	      'nxx'         => $nxx,
-	      'station'     => $station,
-	    };
-
-	    $error = $phone_avail->insert();
-	    if ( $error ) {
-	      $dbh->rollback if $oldAutoCommit;
-	      die $errmsg.$error;
-	    }
-        }
-	$dbh->commit or warn $errmsg.$dbh->errstr if $oldAutoCommit;
-
+    foreach my $did ( @tollfree ) {
+	$did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+	push @ret, $did;
     }
 
     my @sorted_ret = sort @ret;
     return \@sorted_ret;
 
-  } elsif ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers in format NPA-NXX-XXXX
+  } elsif ( $opt{'ratecenter'} && $opt{'state'} ) { 
+
+    my %flushopts = ( 'state' => $opt{'state'}, 
+		    'ratecenter' => $opt{'ratecenter'},
+		    'exportnum' => $self->exportnum
+		  );
+    FS::phone_avail::flush( \%flushopts );
+      
+    local $SIG{HUP} = 'IGNORE';
+    local $SIG{INT} = 'IGNORE';
+    local $SIG{QUIT} = 'IGNORE';
+    local $SIG{TERM} = 'IGNORE';
+    local $SIG{TSTP} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+
+    my $errmsg = 'WARNING: error populating phone availability cache: ';
+
+    my $command = 'listlocal';
+    $command = 'listdids' if $self->option('fax');
+    my @dids = $self->vitelity_command( $command,
+                                        'state'      => $opt{'state'},
+                                        'ratecenter' => $opt{'ratecenter'},
+                                      );
+    # XXX: Options: type=unlimited OR type=pri
+
+    next if ( $dids[0] eq 'unavailable'  || $dids[0] eq 'noneavailable' );
+    die "missingdata error running Vitelity API" if $dids[0] eq 'missingdata';
+
+    foreach my $did ( @dids ) {
+      $did =~ /^(\d{3})(\d{3})(\d{4})/ or die "unparsable did $did\n";
+      my($npa, $nxx, $station) = ($1, $2, $3);
+
+      my $phone_avail = new FS::phone_avail {
+          'exportnum'   => $self->exportnum,
+          'countrycode' => '1', # vitelity is US/CA only now
+          'state'       => $opt{'state'},
+          'npa'         => $npa,
+          'nxx'         => $nxx,
+          'station'     => $station,
+          'name'        => $opt{'ratecenter'},
+      };
+
+      my $error = $phone_avail->insert();
+      if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          die $errmsg.$error;
+      }
+
+    }
+    $dbh->commit or warn $errmsg.$dbh->errstr if $oldAutoCommit;
 
     return [
       map { join('-', $_->npa, $_->nxx, $_->station ) }
@@ -99,34 +119,29 @@ sub get_dids {
             'table'    => 'phone_avail',
             'hashref'  => { 'exportnum'   => $self->exportnum,
                             'countrycode' => '1', # vitelity is US/CA only now
-                            'npa'         => $opt{'areacode'},
-                            'nxx'         => $opt{'exchange'},
+                            'name'         => $opt{'ratecenter'},
+			    'state'	  => $opt{'state'},
                           },
-            'order_by' => 'ORDER BY station',
+            'order_by' => 'ORDER BY npa, nxx, station',
           })
     ];
 
-  } elsif ( $opt{'areacode'} ) { #return exchanges in format NPA-NXX- literal 'XXXX'
+  } elsif ( $opt{'areacode'} ) { 
 
-    # you can't call $->name .... that returns "(unlinked)"
-    # and in any case this is still major abuse of encapsulation, it just happens to work for the other fields
-    @rc = map { $_->{'Hash'}->{name}.' ('. $_->npa. '-'. $_->nxx. '-XXXX)' } 
+    my @rc = map { $_->{'Hash'}->{name}.", ".$_->state } 
           qsearch({
-            'select'   => 'DISTINCT npa,nxx,name',
+            'select'   => 'DISTINCT name, state',
             'table'    => 'phone_avail',
             'hashref'  => { 'exportnum'   => $self->exportnum,
                             'countrycode' => '1', # vitelity is US/CA only now
                             'npa'         => $opt{'areacode'},
                           },
-            'order_by' => 'ORDER BY nxx',
           });
 
-    @sorted_rc = sort @rc;
+    my @sorted_rc = sort @rc;
     return [ @sorted_rc ];
 
   } elsif ( $opt{'state'} ) { #and not other things, then return areacode
-
-    #XXX need to flush the cache at some point :/
 
     my @avail = qsearch({
       'select'   => 'DISTINCT npa',
@@ -200,7 +215,7 @@ sub get_dids {
           'name'        => $ratecenter,
         };
 
-        $error = $phone_avail->insert();
+        my $error = $phone_avail->insert();
         if ( $error ) {
           $dbh->rollback if $oldAutoCommit;
           die $errmsg.$error;
@@ -213,8 +228,6 @@ sub get_dids {
     $dbh->commit or warn $errmsg.$dbh->errstr if $oldAutoCommit;
 
     my @return = sort { $a <=> $b } keys %npa;
-    #@return = sort { (split(' ', $a))[0] <=> (split(' ', $b))[0] } @return;
-
     return \@return;
 
   } else {
@@ -246,14 +259,14 @@ sub _export_insert {
 
   #we want to provision and catch errors now, not queue
 
-  %vparams = ( 'did' => $svc_phone->phonenum );
+  my %vparams = ( 'did' => $svc_phone->phonenum );
   $vparams{'routesip'} = $self->option('routesip') 
     if defined $self->option('routesip');
   $vparams{'type'} = $self->option('type') 
     if defined $self->option('type');
 
-  $command = 'getlocaldid';
-  $success = 'success';
+  my $command = 'getlocaldid';
+  my $success = 'success';
 
   # this is OK as Vitelity for now is US/CA only; it's not a hack
   $command = 'gettollfree' if $vparams{'did'} =~ /^800|^888|^877|^866|^855/;

@@ -13,9 +13,8 @@ Example:
 </%doc>
 % if ( $use_selector ) {
 
-%   if ( $export->exporttype eq 'vitelity' && 
-%		( $export->option('restrict_selection') eq 'non-tollfree'
-%		    || !$export->option('restrict_selection')) ) {
+%   if ( $export->option('restrict_selection') eq 'non-tollfree'
+%		    || !$export->option('restrict_selection') ) {
     <TABLE>
 
       <TR>
@@ -63,9 +62,8 @@ Example:
     </TABLE>
 
 % } 
-%	if ( $export->exporttype eq 'vitelity' && 
-%		( $export->option('restrict_selection') eq 'tollfree'
-%		    || !$export->option('restrict_selection')) ) {
+%   if ( $export->option('restrict_selection') eq 'tollfree'
+%		    || !$export->option('restrict_selection') ) {
 	    <font size="-1">Toll-free</font>
 	    <% include('/elements/select-phonenum.html',
                        'svcpart' => $svcpart,

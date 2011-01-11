@@ -195,6 +195,21 @@ sub process_batch_import {
 
 }
 
+sub flush { # evil direct SQL
+    my $opt = shift;
+
+    if ( $opt->{'ratecenter'} =~ /^[\w\s]+$/
+	    && $opt->{'state'} =~ /^[A-Z][A-Z]$/ 
+	    && $opt->{'exportnum'} =~ /^\d+$/) {
+	my $sth = dbh->prepare('delete from phone_avail where exportnum = ? '.
+		    ' and state = ? and name = ?');
+	$sth->execute($opt->{'exportnum'},$opt->{'state'},$opt->{'ratecenter'})
+	    or die $sth->errstr;
+    }
+
+    '';
+}
+
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {
   my ($class, %opts) = @_;

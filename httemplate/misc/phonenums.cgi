@@ -13,10 +13,14 @@ if ( scalar(@exports) > 1 ) {
   die "no DID providing export attached to svcpart $svcpart";
 }
 my $export = $exports[0];
-
+    
 my %opts = ();
 if ( $exchangestring eq 'tollfree' ) {
     $opts{'tollfree'} = 1;
+}
+elsif ( $exchangestring =~ /^([\w\s]+), ([A-Z][A-Z])$/ ) {
+    $opts{'ratecenter'} = $1;
+    $opts{'state'} = $2;
 }
 else {
     $exchangestring =~ /\((\d{3})-(\d{3})-XXXX\)\s*$/i
