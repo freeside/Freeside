@@ -35,9 +35,9 @@ sub calc_recur {
 Takes all the arguments of calc_recur, followed by a day of the month 
 to prorate to (which must be <= 28).  Calculates a prorated charge from 
 the $sdate to that day, and sets the $sdate and $param->{months} accordingly.
+base_recur() will be called to determine the base price per billing cycle.
 
 Options:
-- recur_fee: The charge to use for a complete billing period.
 - add_full_period: Bill for the time up to the prorate day plus one full
 billing period after that.
 - prorate_round_day: Round the current time to the nearest full day, 
@@ -90,8 +90,8 @@ sub calc_prorate {
     my $permonth = $charge / $self->freq;
     my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
 
-    if ( $self->option('add_full_period',1) ) {
-      # charge a full period in addition to the partial month
+    # add a full period if currently billing for a partial period
+    if ( $self->option('add_full_period',1) and $months < $self->freq ) {
       $months += $self->freq;
       $$sdate = $self->add_freq($mstart);
     }
