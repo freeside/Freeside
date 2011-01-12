@@ -180,9 +180,11 @@
 % ...description...
 \newcommand{\FSdesc}[5]{
   \multicolumn{1}{c}{\rule{0pt}{2.5ex}\textbf{#1}} &
-  \multicolumn{4}{l}{\textbf{#2}} &
-  \multicolumn{1}{l}{\textbf{#3}} &
-  \multicolumn{1}{r}{\textbf{#4}} &
+  \multicolumn{[@-- $unitprices ? '4' : '6' --@]}{l}{\textbf{#2}} &
+[@-- $unitprices ? '  \multicolumn{1}{l}{\textbf{#3}} &'."\n".
+                   '  \multicolumn{1}{r}{\textbf{#4}} &'."\n"
+                 : ''
+--@]
   \multicolumn{1}{r}{\textbf{\dollar #5}}\\
 }
 % ...extended description...
