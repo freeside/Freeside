@@ -34,7 +34,6 @@ my $cust_pkg_discount = new FS::cust_pkg_discount {
   'discountnum' => scalar($cgi->param('discountnum')),
   'months_used' => 0,
   'end_date'    => '', #XXX
-  'otaker'      => $curuser->username,
   #for the create a new discount case
   '_type'       => scalar($cgi->param('discountnum__type')),
   'amount'      => scalar($cgi->param('discountnum_amount')),

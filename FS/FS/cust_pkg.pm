@@ -2506,7 +2506,6 @@ sub insert_discount {
     'discountnum' => $self->discountnum,
     'months_used' => 0,
     'end_date'    => '', #XXX
-    'otaker'      => $self->otaker,
     #for the create a new discount case
     '_type'       => $self->discountnum__type,
     'amount'      => $self->discountnum_amount,

@@ -165,9 +165,12 @@ sub check {
     || $self->ut_float('months_used') #actually decimal, but this will do
     || $self->ut_numbern('end_date')
     || $self->ut_alphan('otaker')
+    || $self->ut_numbern('usernum')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
+
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   $self->SUPER::check;
 }
