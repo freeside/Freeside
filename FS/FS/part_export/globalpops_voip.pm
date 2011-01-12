@@ -9,15 +9,15 @@ use FS::phone_avail;
 @ISA = qw(FS::part_export);
 
 tie my %options, 'Tie::IxHash',
-  'login'         => { label=>'GlobalPOPs Media Services API login' },
-  'password'      => { label=>'GlobalPOPs Media Services API password' },
-  'endpointgroup' => { label=>'GlobalPOPs endpoint group number' },
+  'login'         => { label=>'VoIP Innovations API login' },
+  'password'      => { label=>'VoIP Innovations API password' },
+  'endpointgroup' => { label=>'VoIP Innovations endpoint group number' },
   'dry_run'       => { label=>"Test mode - don't actually provision" },
 ;
 
 %info = (
   'svc'     => 'svc_phone',
-  'desc'    => 'Provision phone numbers to GlobalPOPs VoIP',
+  'desc'    => 'Provision phone numbers to VoIP Innovations (formerly GlobalPOPs VoIP)',
   'options' => \%options,
   'notes'   => <<'END'
 Requires installation of
@@ -69,7 +69,7 @@ sub get_dids {
   if ( $search->{'statuscode'} == 302200 ) {
     return [];
   } elsif ( $search->{'statuscode'} != 100 ) {
-    die "Error running globalpop getDIDs: ".
+    die "Error running VoIP Innovations getDIDs: ".
         $search->{'statuscode'}. ': '. $search->{'status'}; #die??
   }
 
@@ -94,7 +94,7 @@ sub get_dids {
     my $lata_dids = $self->gp_command('getDIDs', %getdids, 'lata'=>$lata);
     my $lata_search = $lata_dids->{'search'};
     unless ( $lata_search->{'statuscode'} == 100 ) {
-      die "Error running globalpop getDIDs: ". $lata_search->{'status'}; #die??
+      die "Error running VoIP Innovations getDIDs: ". $lata_search->{'status'}; #die??
     }
    
     my $l = $lata_search->{state}{lata}{'rate_center'};
@@ -141,16 +141,18 @@ sub get_dids {
 
             my $tn = $npa->{nxx}{tn} || $npa->{nxx}{$opt{'exchange'}}{tn};
 
-            my @tn = ref($tn) ? @$tn : ($tn);
+            my @tn = ref($tn) eq 'ARRAY' ? @$tn : ($tn);
             #push @return, @tn;
-            push @return, map {
-                                if ( /^\s*(\d{3})(\d{3})(\d{4})\s*$/ ) {
-                                  "$1-$2-$3";
-                                } else {
-                                  $_;
-                                }
-                              }
-                              @tn;
+            push @return,
+              map {
+                    if ( /^\s*(\d{3})(\d{3})(\d{4})\s*$/ ) {
+                      "$1-$2-$3";
+                    } else {
+                      $_;
+                    }
+                  }
+               map { ref($_) eq 'HASH' ? $_->{'content'} : $_ } #tier always 2?
+               @tn;
 
           } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
 
@@ -268,7 +270,7 @@ sub _export_insert {
   my $rdid = $r->{did};
 
   if ( $rdid->{'statuscode'} != 100 ) {
-    return "Error running globalpop reserveDID: ".
+    return "Error running VoIP Innovations reserveDID: ".
            $rdid->{'statuscode'}. ': '. $rdid->{'status'};
   }
 
@@ -282,7 +284,7 @@ sub _export_insert {
   my $adid = $a->{did};
 
   if ( $adid->{'statuscode'} != 100 ) {
-    return "Error running globalpop assignDID: ".
+    return "Error running VoIP Innovations assignDID: ".
            $adid->{'statuscode'}. ': '. $adid->{'status'};
   }
 
@@ -311,7 +313,7 @@ sub _export_delete {
   my $rdid = $r->{did};
 
   if ( $rdid->{'statuscode'} != 100 ) {
-    return "Error running globalpop releaseDID: ".
+    return "Error running VoIP Innovations releaseDID: ".
            $rdid->{'statuscode'}. ': '. $rdid->{'status'};
   }
 
