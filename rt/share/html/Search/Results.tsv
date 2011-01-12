@@ -95,7 +95,8 @@ my @attrs = qw(
     ResolvedObj->ISO LastUpdatedObj->ISO
 );
 
-$r->content_type('application/vnd.ms-excel');
+$r->content_type('text/csv');
+$r->header_out('Content-Disposition' => 'attachment;filename="Results.csv"');
 {
     my @header;
     foreach my $attr (@attrs) {

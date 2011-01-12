@@ -16,6 +16,8 @@ lib/RT/Condition.pm #create ticket on custom field change
 lib/RT/Scrip_Overlay.pm #create ticket on custom field change
 lib/RT/Action/CreateTickets.pm #create ticket on custom field change
 lib/RT/Action/EscalatePriority.pm #ticket escalation
+lib/RT/Action/EscalateQueue.pm #ticket escalation
+lib/RT/CustomFieldValues/Queues.pm #ticket escalation
 lib/RT/Condition/CustomFieldChange.pm #create ticket on custom field change
 lib/RT/Interface/Web_Vendor.pm
  lib/RT/Interface/Web/Handler.pm #freeside comp_root for dashboard emails
@@ -67,6 +69,7 @@ share/html/Elements/ShowLink_Checklist
  share/html/Elements/SelectCustomerClass #SearchCustomerFields
  share/html/Elements/SelectCustomerTag #SearchCustomerFields
  share/html/Search/Build.html
+share/html/Search/Results.tsv #content-type bug fix
  share/html/Search/Elements/BuildFormatString
  share/html/Search/Elements/PickCFs #customfield date patch
 share/html/Ticket/Checklist.html
