@@ -376,7 +376,7 @@ $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Ente
 $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_date;open=1;intransit=1', 'Process credit card and electronic check batches' ]
   if ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
      && $curuser->access_right('Process batches');
-$tools_menu{'Process invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ] 
+$tools_menu{'Download invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ] 
   if $conf->exists('invoice_print_pdf');
 $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
