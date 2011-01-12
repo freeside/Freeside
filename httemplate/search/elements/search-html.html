@@ -190,7 +190,7 @@
                 <TR>
 %                 my $h2 = 0;
 %                 my $colspan = 0;
-%                 my @fields = @{ $opt{'sort_fields'} || $opt{'fields'}};
+%                 my @fields = @{ $opt{'sort_fields'} || $opt{'fields'} || [] };
 %                 my $order_by = $cgi->param('order_by');
 %                 foreach my $header ( @{ $opt{header} } ) { 
 %
