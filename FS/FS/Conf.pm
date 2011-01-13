@@ -653,6 +653,13 @@ my %payment_gateway_options = (
     'description' => 'IP address to assign to new virtual hosts',
     'type'        => 'text',
   },
+  
+  {
+    'key'         => 'discount-show-always',
+    'section'     => 'billing',
+    'description' => 'Generate a line item on an invoice even when a package is discounted 100%',
+    'type'        => 'checkbox',
+  },
 
   {
     'key'         => 'encryption',

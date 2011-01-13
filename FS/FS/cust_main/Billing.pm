@@ -584,17 +584,23 @@ sub _omit_zero_value_bundles {
   my @cust_bill_pkg = ();
   my @cust_bill_pkg_bundle = ();
   my $sum = 0;
+  my $discount_show_always = 0;
 
   foreach my $cust_bill_pkg ( @_ ) {
+    $discount_show_always = ($cust_bill_pkg->get('discounts')
+				&& scalar(@{$cust_bill_pkg->get('discounts')})
+				&& $conf->exists('discount-show-always'));
     if (scalar(@cust_bill_pkg_bundle) && !$cust_bill_pkg->pkgpart_override) {
-      push @cust_bill_pkg, @cust_bill_pkg_bundle if $sum > 0;
+      push @cust_bill_pkg, @cust_bill_pkg_bundle 
+			if ($sum > 0 || ($sum == 0 && $discount_show_always));
       @cust_bill_pkg_bundle = ();
       $sum = 0;
     }
     $sum += $cust_bill_pkg->setup + $cust_bill_pkg->recur;
     push @cust_bill_pkg_bundle, $cust_bill_pkg;
   }
-  push @cust_bill_pkg, @cust_bill_pkg_bundle if $sum > 0;
+  push @cust_bill_pkg, @cust_bill_pkg_bundle
+			if ($sum > 0 || ($sum == 0 && $discount_show_always));
 
   (@cust_bill_pkg);
 
@@ -956,9 +962,13 @@ sub _make_lines {
       return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
     }
 
+    my $discount_show_always = ($recur == 0 && scalar(@discounts) 
+				&& $conf->exists('discount-show-always'));
+
     if ( $setup != 0 ||
          $recur != 0 ||
-         !$part_pkg->hidden && $options{has_hidden} ) #include some $0 lines
+         (!$part_pkg->hidden && $options{has_hidden}) || #include some $0 lines
+	 $discount_show_always ) 
     {
 
       warn "    charges (setup=$setup, recur=$recur); adding line items\n"
@@ -1004,9 +1014,11 @@ sub _make_lines {
       # handle taxes
       ###
 
-      my $error = 
-        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time}, $real_pkgpart, \%options);
-      return $error if $error;
+      unless ( $discount_show_always ) {
+	  my $error = 
+	    $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time}, $real_pkgpart, \%options);
+	  return $error if $error;
+      }
 
       push @$cust_bill_pkgs, $cust_bill_pkg;
 

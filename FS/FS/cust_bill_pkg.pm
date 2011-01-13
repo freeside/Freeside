@@ -874,6 +874,17 @@ sub cust_bill_pkg_detail {
 
 }
 
+=item cust_bill_pkg_discount 
+
+Returns the list of associated cust_bill_pkg_discount objects.
+
+=cut
+
+sub cust_bill_pkg_discount {
+    my $self = shift;
+    qsearch ( 'cust_bill_pkg_discount', { 'billpkgnum' => $self->billpkgnum } );
+}
+
 =back
 
 =head1 BUGS

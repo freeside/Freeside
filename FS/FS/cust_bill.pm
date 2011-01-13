@@ -4125,11 +4125,15 @@ sub _items_cust_bill_pkg {
   my $summary_page = $opt{summary_page} || '';
   my $multilocation = $opt{multilocation} || '';
   my $multisection = $opt{multisection} || '';
+  my $discount_show_always = 0;
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
   foreach my $cust_bill_pkg ( @$cust_bill_pkg )
   {
+
+    $discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
+				&& $conf->exists('discount-show-always'));
 
     foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
       if ( $_ && !$cust_bill_pkg->hidden ) {
@@ -4137,7 +4141,7 @@ sub _items_cust_bill_pkg {
         $_->{amount}      =~ s/^\-0\.00$/0.00/;
         $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
         push @b, { %$_ }
-          unless $_->{amount} == 0;
+          unless ( $_->{amount} == 0 && !$discount_show_always );
         $_ = undef;
       }
     }
@@ -4211,7 +4215,8 @@ sub _items_cust_bill_pkg {
 
         }
 
-        if ( ( $cust_bill_pkg->recur != 0  || $cust_bill_pkg->setup == 0 ) &&
+        if ( ( $cust_bill_pkg->recur != 0  || $cust_bill_pkg->setup == 0 || 
+		($discount_show_always && $cust_bill_pkg->recur == 0) ) &&
              ( !$type || $type eq 'R' || $type eq 'U' )
            )
         {
@@ -4336,7 +4341,7 @@ sub _items_cust_bill_pkg {
       $_->{amount}      =~ s/^\-0\.00$/0.00/;
       $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
       push @b, { %$_ }
-        unless $_->{amount} == 0;
+	    unless ( $_->{amount} == 0 && !$discount_show_always );
     }
   }
 
