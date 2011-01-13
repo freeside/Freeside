@@ -88,9 +88,8 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                      'select_label' => 'ratename',
                    },
 
-    'min_included' => { 'name' => 'Minutes included when using "single price per minute" rating method',
+    'min_included' => { 'name' => 'Minutes included when using the "single price per minute" rating method or when using the "prefix" rating method ("region group" billing)',
                     },
-
 
     'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
                     },
@@ -252,7 +251,8 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        recur_method cutoff_day
                        add_full_period
                        cdr_svc_method
-                       rating_method ratenum min_charge sec_granularity
+                       rating_method ratenum min_charge min_included
+		       sec_granularity
                        ignore_unrateable
                        default_prefix
                        disable_src
@@ -333,6 +333,8 @@ sub calc_usage {
   my $disable_tollfree  = $self->option('disable_tollfree');
   my $ignore_unrateable = $self->option('ignore_unrateable', 'Hush!');
   my $use_duration      = $self->option('use_duration');
+  my $region_group	= ($rating_method eq 'prefix' && $self->option('min_included') > 0);
+  my $region_group_included_min = $region_group ? $self->option('min_included') : 0;
 
   my $output_format     = $self->option('output_format', 'Hush!')
                           || ( $rating_method eq 'upstream_simple'
@@ -674,8 +676,11 @@ sub calc_usage {
 
             $seconds += $charge_sec;
 
+	    $region_group_included_min -= $minutes if $region_group;
+
             $included_min{$regionnum}{$ratetimenum} -= $minutes;
-            if ( $included_min{$regionnum}{$ratetimenum} <= 0 ) {
+            if ( $region_group_included_min <= 0
+			  && $included_min{$regionnum}{$ratetimenum} <= 0 ) {
               my $charge_min = 0 - $included_min{$regionnum}{$ratetimenum}; #XXX should preserve
                                                               #(display?) this
               $included_min{$regionnum}{$ratetimenum} = 0;
