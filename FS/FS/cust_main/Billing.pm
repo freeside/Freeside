@@ -547,7 +547,7 @@ sub bill {
     #create the new invoice
     my $cust_bill = new FS::cust_bill ( {
       'custnum'             => $self->custnum,
-      '_date'               => ( $invoice_time ),
+      '_date'               => $invoice_time,
       'charged'             => $charged,
       'billing_balance'     => $balance,
       'previous_balance'    => $previous_balance,
@@ -946,6 +946,7 @@ sub _make_lines {
         if $DEBUG >1;
   
       my $error = $cust_pkg->replace( $old_cust_pkg,
+                                      'depend_jobnum'=>$options{depend_jobnum},
                                       'options' => { $cust_pkg->options },
                                     )
         unless $options{no_commit};

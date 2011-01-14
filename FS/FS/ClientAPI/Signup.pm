@@ -738,7 +738,7 @@ sub new_customer {
 
     #warn "$me Billing customer...\n" if $Debug;
 
-    my $bill_error = $cust_main->bill;
+    my $bill_error = $cust_main->bill( 'depend_jobnum'=>$placeholder->jobnum );
     #warn "$me error billing new customer: $bill_error"
     #  if $bill_error;
 

@@ -493,7 +493,10 @@ sub replace {
   #trigger export of new RADIUS Expiration attribute when cust_pkg.bill changes
   foreach my $old_svc_acct ( @svc_acct ) {
     my $new_svc_acct = new FS::svc_acct { $old_svc_acct->hash };
-    my $s_error = $new_svc_acct->replace($old_svc_acct);
+    my $s_error =
+      $new_svc_acct->replace( $old_svc_acct,
+                              'depend_jobnum' => $options->{depend_jobnum},
+                            );
     if ( $s_error ) {
       $dbh->rollback if $oldAutoCommit;
       return $s_error;
