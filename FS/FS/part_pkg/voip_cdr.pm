@@ -387,6 +387,8 @@ sub calc_usage {
       );  # $last_bill, $$sdate )
     $options{'by_svcnum'} = 1 if $svc_field eq 'svcnum';
 
+    my @invoice_details_sort;
+
     foreach my $cdr (
       $svc_x->get_cdrs( %options )
     ) {
@@ -748,7 +750,7 @@ sub calc_usage {
           warn "  adding details on charge to invoice: [ ".
               join(', ', @{$call_details} ). " ]"
             if ( $DEBUG && ref($call_details) );
-          push @$details, $call_details; #\@call_details,
+          push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
         }
 
         # if the customer flag is on, call "downstream_csv" or something
@@ -766,6 +768,11 @@ sub calc_usage {
       }
 
     } # $cdr
+ 
+    my @sorted_invoice_details = sort { @{$a}[1] <=> @{$b}[1] } @invoice_details_sort;
+    foreach my $sorted_call_detail ( @sorted_invoice_details ) {
+        push @$details, @{$sorted_call_detail}[0];
+    }
 
   } # $cust_svc
 
