@@ -1272,7 +1272,7 @@ sub order_pkg {
       map { $_ => $p->{$_} } @{$fields{$svcdb}}
     } );
     
-    if ( $svcdb eq 'svc_acct' ) {
+    if ( $svcdb eq 'svc_acct' && exists($p->{"snarf_machine1"}) ) {
       my @acct_snarf;
       my $snarfnum = 1;
       while ( length($p->{"snarf_machine$snarfnum"}) ) {
@@ -1302,7 +1302,7 @@ sub order_pkg {
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => \@svc );
   #msgcat
-  $error = $cust_main->order_pkgs( \%hash, '', 'noexport' => 1 );
+  $error = $cust_main->order_pkgs( \%hash, 'noexport' => 1 );
   return { 'error' => $error } if $error;
 
   my $conf = new FS::Conf;

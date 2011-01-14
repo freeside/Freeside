@@ -142,7 +142,6 @@ sub order_pkg {
 
 }
 
-#deprecated #=item order_pkgs HASHREF [ , SECONDSREF ] [ , OPTION => VALUE ... ]
 =item order_pkgs HASHREF [ , OPTION => VALUE ... ]
 
 Like the insert method on an existing record, this method orders multiple
@@ -185,9 +184,7 @@ values of the prepaid card.`
 sub order_pkgs {
   my $self = shift;
   my $cust_pkgs = shift;
-  my $seconds_ref = ref($_[0]) ? shift : ''; #deprecated
   my %options = @_;
-  $seconds_ref ||= $options{'seconds_ref'};
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
@@ -213,10 +210,8 @@ sub order_pkgs {
     my $error = $self->order_pkg(
       'cust_pkg'     => $cust_pkg,
       'svcs'         => $cust_pkgs->{$cust_pkg},
-      'seconds_ref'  => $seconds_ref,
-      map { $_ => $options{$_} } qw( upbytes_ref downbytes_ref totalbytes_ref
-                                     depend_jobnum
-                                   )
+      map { $_ => $options{$_} }
+        qw( seconds_ref upbytes_ref downbytes_ref totalbytes_ref depend_jobnum )
     );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;

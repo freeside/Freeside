@@ -218,7 +218,7 @@ sub order_pkg {
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => \@svc );
   #msgcat
-  $error = $cust_main->order_pkgs( \%hash, '', 'noexport' => 1 );
+  $error = $cust_main->order_pkgs( \%hash, 'noexport' => 1 );
   return { 'error' => $error } if $error;
 
 # currently they're using this in the reseller scenario, so don't
