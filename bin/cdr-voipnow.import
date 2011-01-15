@@ -1,0 +1,119 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $DEBUG );
+use Date::Parse 'str2time';
+use Date::Format 'time2str';
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearchs);
+use FS::cdr;
+use DBI;
+use Getopt::Std;
+
+my %opt;
+getopts('H:U:P:D:T:vs:e:', \%opt);
+my $user = shift or die &usage;
+
+my $dsn = 'dbi:mysql';
+$dsn .= ":database=$opt{D}" if $opt{D};
+$dsn .= ":host=$opt{H}" if $opt{H};
+
+my $mysql = DBI->connect($dsn, $opt{U}, $opt{P}) 
+  or die $DBI::errstr;
+
+adminsuidsetup $user;
+$FS::UID::AutoCommit = 0;
+my $fsdbh = FS::UID::dbh;
+
+# don't use freesidestatus
+
+my $start_id;
+if ( $opt{s} ) {
+  $start_id = $opt{s};
+}
+else {
+  my $last_cdr = qsearchs({
+      'table'   => 'cdr',
+      'hashref' => {},
+      'extra_sql' => 'ORDER BY cdrid DESC LIMIT 1',
+    });
+  $start_id = $last_cdr ? $last_cdr->cdrid + 1: 1;
+}
+my $end_id = $opt{e};
+print "Selecting CDRs from $start_id to ".($end_id || 'end')."...\n";
+
+my $table = $opt{T} || 'call_history';
+# spelled "disposion" in the table
+my @cols = ( qw( 
+  id extension_number flow channel partyid start answer duration disposion) );
+my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE id >= $start_id";
+$sql .= " AND id <= $end_id" if $end_id;
+$sql .= " ORDER BY id";
+my $sth = $mysql->prepare($sql);
+$sth->execute;
+print "Importing ".$sth->rows." records...\n";
+
+my $cdr_batch = new FS::cdr_batch({ 
+    'cdrbatch' => 'mysql-import-'. time2str('%Y/%m/%d-%T',time),
+  });
+my $error = $cdr_batch->insert;
+die $error if $error;
+my $cdrbatchnum = $cdr_batch->cdrbatchnum;
+my $imported = 0;
+my $skipped = 0;
+
+my $row;
+my ($first, $last);
+while ( $row = $sth->fetchrow_hashref ) {
+  if ( $opt{s} # skip this check if the range doesn't overlap
+      and qsearchs('cdr', { cdrid => $row->{id} } ) ) {
+    $skipped++;
+    print $row->{id} ." (skipped)\n" if $opt{v};
+    next;
+  }
+  my $cdr = FS::cdr->new({
+      cdrid         => $row->{id},
+      channel       => $row->{channel},
+      duration      => $row->{duration},
+      billsec       => $row->{duration},
+      disposition   => $row->{disposion},
+      startdate     => str2time($row->{start}),
+      answerdate    => str2time($row->{answer}),
+      cdrbatchnum   => $cdrbatchnum,
+    }
+  );
+  print $row->{id},"\n" if $opt{v};
+  # Since we're finding these records by ID range instead of flagging them 
+  # individually, we can't leave gaps.  So rollback and die on any errors
+  # except for duplicate cdrid.
+  if ( $row->{flow} eq 'out' ) {
+    $cdr->src($row->{'extension_number'});
+    $cdr->dst($row->{'partyid'});
+  }
+  elsif ( $row->{flow} eq 'in' ) {
+    $cdr->dst($row->{'extension_number'});
+    $cdr->src($row->{'partyid'});
+  }
+  else {
+    $fsdbh->rollback;
+    die $row->{id} .": invalid flow value: '".$row->{flow}."'\n";
+  }
+  my $error = $cdr->insert;
+  if($error) {
+    $fsdbh->rollback;
+    die $row->{id} . ": failed import: $error\n";
+  }
+  $first ||= $row->{id};
+  $last = $row->{id};
+  $imported++;
+}
+$fsdbh->commit or die $fsdbh->errstr;
+print "Done.\n";
+print "Imported $imported CDRs ($first - $last).\n" if $imported;
+print "Skipped $skipped duplicates.\n" if $skipped;
+$mysql->disconnect;
+
+sub usage {
+  "Usage: \n  cdr-mysql.import\n\t[ -v ]\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
+}
+
