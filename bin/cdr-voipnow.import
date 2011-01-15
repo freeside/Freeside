@@ -83,9 +83,6 @@ while ( $row = $sth->fetchrow_hashref ) {
     }
   );
   print $row->{id},"\n" if $opt{v};
-  # Since we're finding these records by ID range instead of flagging them 
-  # individually, we can't leave gaps.  So rollback and die on any errors
-  # except for duplicate cdrid.
   if ( $row->{flow} eq 'out' ) {
     $cdr->src($row->{'extension_number'});
     $cdr->dst($row->{'partyid'});
@@ -114,6 +111,41 @@ print "Skipped $skipped duplicates.\n" if $skipped;
 $mysql->disconnect;
 
 sub usage {
-  "Usage: \n  cdr-mysql.import\n\t[ -v ]\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
+  "Usage: \n  cdr-voipnow.import\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\t[ -v ] [ -s start ] [ -e end ]\n\tfreesideuser\n";
 }
 
+=head1 NAME
+
+cdr-voipnow.import - Import call data records (CDRs) from a 4psa VoipNow system
+
+=head1 SYNOPSIS
+
+  cdr-voipnow.import [ -H host ] -D database -U user -P password 
+    [ -v ] [ -s start ] [ -e end ] freesideuser
+
+=head1 DESCRIPTION
+
+Connects to a MySQL database and downloads CDRs from the "call_history" table.
+The "id" field maps to "cdrid" in Freeside.  Other than that, the following
+fields are imported: channel, duration, billsec, startdate, answerdate,
+disposition, src, dst.  src and dst are inferred from the "extension_number"
+and "partyid" fields, with the value of the "flow" field (in or out) deciding
+which is the source number and which is the destination.
+
+Any import errors (except duplicates) will abort and roll back the 
+transaction.
+
+=head1 OPTIONS
+
+-H, -D, -U, -P: parameters to connect to the database: host, database name
+user, password.  Required, except -H, which defaults to localhost.
+
+-s: set the lowest CDR id to import.  By default, the script will find 
+the highest existing cdrid and import all CDRs with ids greater than that.
+-s overrides this and turns on duplicate checking.
+
+-e: set the highest CDR id to import.  By default, this is unlimited.
+
+-v: report all CDR ids as they are imported.
+
+=cut
