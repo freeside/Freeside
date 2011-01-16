@@ -92,6 +92,7 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <BR><BR>
 
 <b>Extended plus options</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password, options</i>
+<BR><BR>
 
 <b>Extended plus company</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password</i>
 
