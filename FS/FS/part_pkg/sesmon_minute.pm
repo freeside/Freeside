@@ -8,6 +8,7 @@ use FS::part_pkg::flat;
 @ISA = qw(FS::part_pkg::flat);
 
 %info = (
+  'disabled' => 1, #internal session db deprecated (or at least on hold)
   'name' => 'Base charge plus charge per-minute from the session monitor',
   'shortname' => 'Session monitor (per-minute)',
   'inherit_fields' => [ 'global_Mixin' ],

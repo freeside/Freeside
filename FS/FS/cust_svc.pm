@@ -475,18 +475,20 @@ where B<svcdb> is not "svc_acct".
 
 =cut
 
-#note: implementation here, POD in FS::svc_acct
-sub seconds_since {
-  my($self, $since) = @_;
-  my $dbh = dbh;
-  my $sth = $dbh->prepare(' SELECT SUM(logout-login) FROM session
-                              WHERE svcnum = ?
-                                AND login >= ?
-                                AND logout IS NOT NULL'
-  ) or die $dbh->errstr;
-  $sth->execute($self->svcnum, $since) or die $sth->errstr;
-  $sth->fetchrow_arrayref->[0];
-}
+#internal session db deprecated (or at least on hold)
+sub seconds_since { 'internal session db deprecated'; };
+##note: implementation here, POD in FS::svc_acct
+#sub seconds_since {
+#  my($self, $since) = @_;
+#  my $dbh = dbh;
+#  my $sth = $dbh->prepare(' SELECT SUM(logout-login) FROM session
+#                              WHERE svcnum = ?
+#                                AND login >= ?
+#                                AND logout IS NOT NULL'
+#  ) or die $dbh->errstr;
+#  $sth->execute($self->svcnum, $since) or die $sth->errstr;
+#  $sth->fetchrow_arrayref->[0];
+#}
 
 =item seconds_since_sqlradacct TIMESTAMP_START TIMESTAMP_END
 
