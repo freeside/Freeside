@@ -35,6 +35,7 @@ use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
 use FS::CurrentUser;
+use FS::TicketSystem;
 use FS::payby;
 use FS::cust_pkg;
 use FS::cust_svc;
@@ -64,7 +65,7 @@ use FS::type_pkgs;
 use FS::payment_gateway;
 use FS::agent_payment_gateway;
 use FS::banned_pay;
-use FS::TicketSystem;
+use FS::cust_main_note;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
