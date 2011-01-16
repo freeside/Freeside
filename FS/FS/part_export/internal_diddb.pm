@@ -30,7 +30,20 @@ sub get_dids {
                'svcnum'      => '',
              );
 
-  if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers
+  if ( $opt{'ratecenter'} && $opt{'state'} ) {
+    my $rc = $opt{ratecenter};
+    $rc =~ s/, [A-Z][A-Z]$//g;
+    $hash{name} = $rc;
+    $hash{state} = $opt{state};
+
+    return [ map { $_->npa. '-'. $_->nxx. '-'. $_->station }
+                 qsearch({ 'table'    => 'phone_avail',
+                           'hashref'  => \%hash,
+                           'order_by' => 'ORDER BY station',
+                        })
+           ];
+  }
+  elsif ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers
 
     $hash{npa} = $opt{areacode};
     $hash{nxx} = $opt{exchange};
@@ -42,11 +55,22 @@ sub get_dids {
                         })
            ];
 
-  } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
+  } elsif ( $opt{'areacode'} ) { 
 
     $hash{npa} = $opt{areacode};
 
-    return [ map { '('. $_->npa. '-'. $_->nxx. '-XXXX)' }
+    my @rc = qsearch({ 'select' => 'DISTINCT name, state',
+                       'table'    => 'phone_avail',
+                       'hashref'  => \%hash,
+		    });
+
+    if(scalar(@rc)) {
+	my $first_phone_avail = $rc[0];
+	return [ map { $_->get('name').", ".$_->state } @rc ]
+	    if $first_phone_avail->get('name');
+    }
+
+    return [ map { '('. $_->npa. '-'. $_->nxx. '-XXXX)' } 
                  qsearch({ 'select'   => 'DISTINCT npa, nxx',
                            'table'    => 'phone_avail',
                            'hashref'  => \%hash,

@@ -188,7 +188,7 @@ sub process_batch_import {
 
   my $opt = { 'table'   => 'phone_avail',
               'params'  => [ 'availbatch', 'exportnum', 'countrycode' ],
-              'formats' => { 'default' => [ 'state', $numsub ] },
+              'formats' => { 'default' => [ 'state', $numsub, 'name' ], },
             };
 
   FS::Record::process_batch_import( $job, $opt, @_ );
