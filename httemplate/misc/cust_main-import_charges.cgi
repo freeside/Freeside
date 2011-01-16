@@ -1,6 +1,6 @@
-<% include("/elements/header.html",'Batch Payment Charge') %>
+<% include("/elements/header.html",'Batch Charge Import') %>
 
-Import a CSV file containing customer payments.
+Import a CSV file containing customer charges.
 <BR><BR>
 
 <FORM ACTION="process/cust_main-import_charges.cgi" METHOD="post" ENCTYPE="multipart/form-data">
