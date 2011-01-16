@@ -371,14 +371,70 @@ sub insert {
 
 This method now works but you probably shouldn't use it.
 
-You don't want to delete billing items, because there would then be no record
-the customer ever purchased the item.  Instead, see the cancel method.
+You don't want to delete packages, because there would then be no record
+the customer ever purchased the package.  Instead, see the cancel method and
+hide cancelled packages.
 
 =cut
 
-#sub delete {
-#  return "Can't delete cust_pkg records!";
-#}
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_pkg_discount ($self->cust_pkg_discount) {
+    my $error = $cust_pkg_discount->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+  #cust_bill_pkg_discount?
+
+  foreach my $cust_pkg_detail ($self->cust_pkg_detail) {
+    my $error = $cust_pkg_detail->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $cust_pkg_reason (
+    qsearchs( {
+                'table' => 'cust_pkg_reason',
+                'hashref' => { 'pkgnum' => $self->pkgnum },
+              }
+            )
+  ) {
+    my $error = $cust_pkg_reason->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  #pkg_referral?
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
 
 =item replace [ OLD_RECORD ] [ HASHREF | OPTION => VALUE ... ]
 
