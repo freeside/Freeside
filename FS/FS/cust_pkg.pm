@@ -260,6 +260,9 @@ an optional queue name for ticket additions
 sub insert {
   my( $self, %options ) = @_;
 
+  my $error = $self->check_pkgpart;
+  return $error if $error;
+
   if ( $self->part_pkg->option('start_1st', 1) && !$self->start_date ) {
     my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
     $mon += 1 unless $mday == 1;
@@ -288,7 +291,7 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::insert($options{options} ? %{$options{options}} : ());
+  $error = $self->SUPER::insert($options{options} ? %{$options{options}} : ());
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -581,6 +584,7 @@ sub check {
     $self->ut_numbern('pkgnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_numbern('pkgpart')
+    || $self->check_pkgpart
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')
@@ -591,6 +595,28 @@ sub check {
     || $self->ut_numbern('expire')
     || $self->ut_enum('no_auto', [ '', 'Y' ])
   ;
+  return $error if $error;
+
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
+
+  if ( $self->dbdef_table->column('manual_flag') ) {
+    $self->manual_flag('') if $self->manual_flag eq ' ';
+    $self->manual_flag =~ /^([01]?)$/
+      or return "Illegal manual_flag ". $self->manual_flag;
+    $self->manual_flag($1);
+  }
+
+  $self->SUPER::check;
+}
+
+=item check_pkgpart
+
+=cut
+
+sub check_pkgpart {
+  my $self = shift;
+
+  my $error = $self->ut_numbern('pkgpart');
   return $error if $error;
 
   if ( $self->reg_code ) {
@@ -628,16 +654,8 @@ sub check {
 
   }
 
-  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
+  '';
 
-  if ( $self->dbdef_table->column('manual_flag') ) {
-    $self->manual_flag('') if $self->manual_flag eq ' ';
-    $self->manual_flag =~ /^([01]?)$/
-      or return "Illegal manual_flag ". $self->manual_flag;
-    $self->manual_flag($1);
-  }
-
-  $self->SUPER::check;
 }
 
 =item cancel [ OPTION => VALUE ... ]
