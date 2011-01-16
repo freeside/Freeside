@@ -38,6 +38,7 @@ push @fields, { field => 'pbxsvc',
                 maxlength => $conf->config('svc_phone-phone_name-max_length'),
               },
 	      'route',
+	      'gwlist',
 	      'forwarddst',
 	      'email',
 
