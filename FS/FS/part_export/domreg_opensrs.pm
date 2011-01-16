@@ -42,7 +42,7 @@ gateway when setting up this export.
 $me = '[' .  __PACKAGE__ . ']';
 $DEBUG = 0;
 
-my @tldlist = qw/com net org biz info name mobi at be ca cc ch cn de dk es eu fr it mx nl tv uk us/;
+my @tldlist = qw/com net org biz info name mobi at be ca cc ch cn de dk es eu fr it mx nl tv uk us asn.au com.au id.au net.au org.au/;
 
 tie %options, 'Tie::IxHash',
   'username'     => { label => 'Reseller user name at OpenSRS',
@@ -290,14 +290,17 @@ sub is_supported_domain {
   # Get the TLD of the new domain
   my @bits = split /\./, $svc_domain->domain;
 
-  return "Can't register subdomains: " . $svc_domain->domain if scalar(@bits) != 2;
+  return "Can't register subdomains: " . $svc_domain->domain 
+    if (scalar(@bits) != 2 && scalar(@bits) != 3);
 
   my $tld = pop @bits;
+  my $sld = pop @bits;
 
   # See if it's one this export supports
   my @tlds = split /\s+/, $self->option('tlds');
   @tlds =  map { s/\.//; $_ } @tlds;
-  return "Can't register top-level domain $tld, restricted to: " . $self->option('tlds') if ! grep { $_ eq $tld } @tlds;
+  return "Can't register top-level domain $tld, restricted to: " 
+	    . $self->option('tlds') if ! grep { $_ eq $tld || $_ eq "$sld$tld" } @tlds;
   return undef;
 }
 
