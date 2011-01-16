@@ -66,6 +66,7 @@ use FS::payment_gateway;
 use FS::agent_payment_gateway;
 use FS::banned_pay;
 use FS::cust_main_note;
+use FS::cust_attachment;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
