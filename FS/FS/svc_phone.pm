@@ -79,14 +79,6 @@ Voicemail PIN
 
 Optional svcnum from svc_pbx
 
-=item route
-
-Route id/number
-
-=item gwlist
-
-OpenSIPS dr_rules gwlist - OpenSIPS dynamic routing
-
 =item forwarddst
 
 Forwarding destination
@@ -179,10 +171,6 @@ sub table_info {
                            disable_inventory => 1,
                            disable_select    => 1,
                          },
-	'route' => {	label => 'Route',
-			%dis2, 
-		    },
-	'gwlist' => { label => 'OpenSIPS gwlist', %dis2 },
 	'forwarddst' => {	label => 'Forward Destination', 
 				%dis2,
 			},
@@ -482,8 +470,6 @@ sub check {
     || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
     || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
-    || $self->ut_textn('route')
-    || $self->ut_textn('gwlist')
     || $self->ut_numbern('forwarddst')
     || $self->ut_textn('email')
     || $self->ut_numbern('lrn')

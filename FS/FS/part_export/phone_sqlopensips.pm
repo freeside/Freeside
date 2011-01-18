@@ -16,6 +16,8 @@ tie %options, 'Tie::IxHash',
   'username' => { label=>'Database username' },
   'password' => { label=>'Database password' },
   'xmlrpc_url' => { label=>'XMLRPC URL' },
+  # XXX: in future, add non-agent-virtualized config, i.e. per-export setting of gwlist, routeid, description, etc.
+  # and/or setting description from the phone_name column
 ;
 
 %info = (
@@ -32,18 +34,16 @@ sub _export_insert {
 
   my $conf = new FS::Conf;
   my $agentnum = $svc_x->cust_svc->cust_pkg->cust_main->agentnum || 0;
-  my $gwlist = $conf->config('opensips_gwlist',$agentnum) 
-		|| $svc_x->phone_name;
-  my $description = $conf->config('opensips_description',$agentnum)
-		|| $svc_x->gwlist;
-  my $route = $conf->config('opensips_route',$agentnum) || $svc_x->route;
+  my $gwlist = $conf->config('opensips_gwlist',$agentnum) || '';
+  my $description = $conf->config('opensips_description',$agentnum) || '';
+  my $route = $conf->config('opensips_route',$agentnum) || '';
 
   my $dbh = $self->opensips_connect;
   my $sth = $dbh->prepare("insert into dr_rules ".
 	    "( groupid, prefix, timerec, routeid, gwlist, description ) ".
 	    " values ( ?, ?, ?, ?, ?, ? )") or die $dbh->errstr;
-  $sth->execute('0',$svc_x->phonenum,'',$route,$gwlist,
-		$description) or die $sth->errstr;
+  $sth->execute('0',$svc_x->phonenum,'',$route,$gwlist,$description)
+	    or die $sth->errstr;
   $dbh->disconnect;
   $self->dr_reload; # XXX: if this fails, do we delete what we just inserted?
 }
@@ -55,40 +55,7 @@ sub opensips_connect {
 }
 
 sub _export_replace {
-    # disabled the below for now as we went with a agent-virtualized config for the params
-return '';
-
-
-  my( $self, $new, $old ) = (shift, shift, shift);
-    my @update = ();
-    my @paramvalues = ();
-
-    if($old->route ne $new->route){
-	push @update, 'routeid = ?';
-	push @paramvalues, $new->route;
-    }
-
-    if($old->phone_name ne $new->phone_name) {
-	push @update, 'description = ?';
-	push @paramvalues, $new->phone_name;
-    }
-
-    if($old->gwlist ne $new->gwlist) {
-	push @update, 'gwlist = ?';
-	push @paramvalues, $new->gwlist;
-    }
-
-    if(scalar(@update)) {
-      my $update_str = join(' and ',@update);
-      my $dbh = $self->opensips_connect;
-      my $sth = $dbh->prepare("update dr_rules set $update_str " . 
-	    " where prefix = ? ") or die $dbh->errstr;
-      push @paramvalues, $old->phonenum;
-      $sth->execute(@paramvalues) or die $sth->errstr;
-      $dbh->disconnect;
-      return $self->dr_reload;
-    }
-  '';
+   '';
 }
 
 sub _export_suspend {

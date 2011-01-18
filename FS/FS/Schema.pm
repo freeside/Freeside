@@ -2975,8 +2975,6 @@ sub tables_hashref {
         'pbxsvc',           'int', 'NULL',      '', '', '',
         'domsvc',           'int', 'NULL',      '', '', '', 
         'locationnum',      'int', 'NULL', '', '', '',
-        'route',   'varchar', 'NULL', $char_d, '', '',
-        'gwlist',   'varchar', 'NULL', $char_d, '', '',
         'forwarddst',     'varchar',     'NULL',      15, '', '', 
         'email',           'varchar', 'NULL',  255, '', '', 
         'lnp_status',   'varchar', 'NULL', $char_d, '', '',
