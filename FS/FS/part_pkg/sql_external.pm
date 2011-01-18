@@ -1,7 +1,7 @@
 package FS::part_pkg::sql_external;
 
 use strict;
-use base qw( FS::part_pkg::recur_Common );
+use base qw( FS::part_pkg::recur_Common FS::part_pkg::discount_Mixin );
 use vars qw( %info );
 use DBI;
 #use FS::Record qw(qsearch qsearchs);
@@ -47,9 +47,8 @@ use DBI;
 
 sub calc_recur {
   my $self = shift;
-  my($cust_pkg) = @_; #, $sdate, $details, $param ) = @_;
-
-  my $price = $self->calc_recur_Common(@_);
+  my($cust_pkg, $sdate, $details, $param ) = @_;
+  my $price = 0;
 
   my $dbh = DBI->connect( map { $self->option($_) }
                               qw( datasrc db_username db_password )
@@ -67,10 +66,11 @@ sub calc_recur {
     $price += $sth->fetchrow_arrayref->[0];
   }
 
-  $price;
+  $param->{'override_charges'} = $price;
+  $self->calc_recur_Common($cust_pkg,$sdate,$details,$param);
 }
 
-sub can_discount { 0; }
+sub can_discount { 1; }
 
 sub is_free { 0; }
 

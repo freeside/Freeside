@@ -42,6 +42,7 @@ sub calc_discount {
   my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   my $br = $self->base_recur($cust_pkg);
+  $br += $param->{'override_charges'} if $param->{'override_charges'};
 
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked

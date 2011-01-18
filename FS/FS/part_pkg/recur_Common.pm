@@ -32,6 +32,7 @@ sub calc_recur_Common {
     my $recur_method = $self->option('recur_method', 1) || 'anniversary';
     
     $charges = $self->base_recur;
+    $charges += $param->{'override_charges'} if $param->{'override_charges'};
 
     if ( $recur_method eq 'prorate' ) {
       my $cutoff_day = $self->option('cutoff_day') || 1;
