@@ -21,7 +21,8 @@ Import a file containing phone numbers (DIDs).
 
   <% include( '/elements/tr-select-table.html',
                 'table'       => 'part_export',
-                'name_col'    => 'machine',
+                'name_col'    => 'label',
+                'order_by'    => 'ORDER BY exportname, machine',
                 'label'       => 'Export',
                 'empty_label' => 'Select export',
                 'hashref'     => { 'exporttype' => 'internal_diddb', },

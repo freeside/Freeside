@@ -177,6 +177,17 @@ sub check {
   $self->SUPER::check;
 }
 
+=item label
+
+Returns a label for this export, "exportname||exportype (machine)".  
+
+=cut
+
+sub label {
+  my $self = shift;
+  ($self->exportname || $self->exporttype ). ' ('. $self->machine. ')';
+}
+
 #=item part_svc
 #
 #Returns the service definition (see L<FS::part_svc>) for this export.
