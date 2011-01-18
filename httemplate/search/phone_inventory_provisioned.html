@@ -1,0 +1,87 @@
+<% include( 'elements/search.html',
+              'title'         => 'Phone Number (DID) Search Results',
+              'name_singular' => 'phone number',
+              'query'         => {
+                                   'table'   => 'phone_avail',
+                                   'hashref' => {},
+                                   'select'  => 'distinct npa||nxx as npanxx'
+                                 },
+              'count_query'   => 'SELECT COUNT(distinct npa||nxx) FROM phone_avail',
+              'header'        => [ 'NPANXX',
+				   'Available',
+				   'Provisioned',
+				   'Have Usage',
+                                 ],
+              'fields'        => [
+                'npanxx',
+		sub {
+		    my $npanxx = shift->npanxx;
+		    my @dids = qsearch('phone_avail',
+					{ 'svcnum' => '',
+					  'npa' => substr($npanxx,0,3),
+					  'nxx' => substr($npanxx,3,3),
+					}
+				      );
+		    return scalar(@dids);
+		},
+		sub {
+		    my $npanxx = shift->npanxx;
+		    my @dids = provisioned_dids($npanxx);
+		    return scalar(@dids);
+		},
+		sub {
+		    my $npanxx = shift->npanxx;
+		    my @dids = provisioned_dids($npanxx);
+		    my $count = 0;
+		    foreach my $did ( @dids ) {
+			next unless $did->cust_svc;
+			my $svc_phone = $did->cust_svc->svc_x;
+			next unless $svc_phone;
+			my @cdrs = $svc_phone->get_cdrs;
+			$count++ if scalar(@cdrs);
+		    }
+		    $count;
+		},
+              ],
+              'align'         => 'lccc',
+              'links'         => [
+                '',
+		'',
+		'',
+		'',
+              ],
+              'color' => [ 
+                           '',
+			   '',
+			   '',
+			   '',
+                         ],
+              'style' => [ 
+                           '',
+			   '',
+			   '',
+			   '',
+                         ],
+      )
+%>
+<%init>
+
+die "access denied"
+  unless ( $FS::CurrentUser::CurrentUser->access_right('List inventory')
+	 && $FS::CurrentUser::CurrentUser->access_right('List services')
+	 );
+
+# XXX: agent virtualize
+
+sub provisioned_dids {
+    my $npanxx = shift;
+    qsearch({ 'table' => 'phone_avail',
+	      'hashref' => { 
+		'npa' => substr($npanxx,0,3),
+		'nxx' => substr($npanxx,3,3),
+	      },
+	      'extra_sql' => ' and svcnum is not null ',
+	  });
+}
+
+</%init>
