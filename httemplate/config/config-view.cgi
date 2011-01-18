@@ -349,7 +349,7 @@ my @config_items = grep { $page_agent ? $_->per_agent : 1 }
 my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );
 my %deleteable = map { $_ => 1 } @deleteable;
 
-my @sections = qw(required billing invoicing notification UI self-service username password session shell BIND );
+my @sections = qw(required billing invoicing notification UI self-service username password session shell BIND opensips );
 push @sections, '', 'deprecated';
 
 my %section_items = ();

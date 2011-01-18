@@ -29,14 +29,23 @@ sub rebless { shift; }
 
 sub _export_insert {
   my($self, $svc_x) = (shift, shift);
+
+  my $conf = new FS::Conf;
+  my $agentnum = $svc_x->cust_svc->cust_pkg->cust_main->agentnum || 0;
+  my $gwlist = $conf->config('opensips_gwlist',$agentnum) 
+		|| $svc_x->phone_name;
+  my $description = $conf->config('opensips_description',$agentnum)
+		|| $svc_x->gwlist;
+  my $route = $conf->config('opensips_route',$agentnum) || $svc_x->route;
+
   my $dbh = $self->opensips_connect;
   my $sth = $dbh->prepare("insert into dr_rules ".
 	    "( groupid, prefix, timerec, routeid, gwlist, description ) ".
 	    " values ( ?, ?, ?, ?, ?, ? )") or die $dbh->errstr;
-  $sth->execute('0',$svc_x->phonenum,'',$svc_x->route,$svc_x->gwlist,
-		$svc_x->phone_name) or die $sth->errstr;
+  $sth->execute('0',$svc_x->phonenum,'',$route,$gwlist,
+		$description) or die $sth->errstr;
   $dbh->disconnect;
-  $self->dr_reload;
+  $self->dr_reload; # XXX: if this fails, do we delete what we just inserted?
 }
 
 sub opensips_connect {
@@ -46,6 +55,10 @@ sub opensips_connect {
 }
 
 sub _export_replace {
+    # disabled the below for now as we went with a agent-virtualized config for the params
+return '';
+
+
   my( $self, $new, $old ) = (shift, shift, shift);
     my @update = ();
     my @paramvalues = ();
@@ -95,7 +108,7 @@ sub _export_delete {
     or die $dbh->errstr;
   $sth->execute($svc_x->phonenum) or die $sth->errstr;
   $dbh->disconnect;
-  $self->dr_reload;
+  $self->dr_reload; # XXX: if this fails, do we re-insert what we just deleted?
 }
 
 sub dr_reload {

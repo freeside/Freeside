@@ -4223,6 +4223,33 @@ and customer address. Include units.',
     'description' => 'Enable DID activity summary for past 30 days on invoices, showing # DIDs activated/deactivated/ported-in/ported-out and total minutes usage',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'opensips_gwlist',
+    'section'     => 'opensips',
+    'description' => 'For svc_phone OpenSIPS dr_rules export, gwlist column value, per-agent',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'agentonly'   => 1,
+  },
+
+  {
+    'key'         => 'opensips_description',
+    'section'     => 'opensips',
+    'description' => 'For svc_phone OpenSIPS dr_rules export, description column value, per-agent',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'agentonly'   => 1,
+  },
+  
+  {
+    'key'         => 'opensips_route',
+    'section'     => 'opensips',
+    'description' => 'For svc_phone OpenSIPS dr_rules export, routeid column value, per-agent',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'agentonly'   => 1,
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
