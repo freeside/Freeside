@@ -53,6 +53,7 @@ $name = 'td_eft1464';
 # just to suppress warning; importing this format is a fatal error
 
 %export_info = (
+  delimiter => '',
   init => sub {
     $conf = shift;
     @opt{
@@ -95,7 +96,6 @@ $name = 'td_eft1464';
       $now,
       $opt{'datacenter'},
       ' ' x 1429, #filler
-      "\r"
     );
   },
   row => sub {
@@ -133,7 +133,7 @@ $name = 'td_eft1464';
       ' ' x 2,
       '0' x 11,
     );
-    return sprintf('%-1464s',$control . $payment) . "\r";
+    return sprintf('%-1464s',$control . $payment) ;
   },
   footer => sub {
     my ($pay_batch, $batchcount, $batchtotal) = @_;
@@ -147,7 +147,6 @@ $name = 'td_eft1464';
       '0' x 14, # total of credit txns
       '0' x 8, # total of credit txns
       ' ' x 1396,
-      "\r"
     )
   },
 );

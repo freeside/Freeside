@@ -471,12 +471,15 @@ sub export_batch {
       $_->setfield('expmmyy', sprintf('%02u%02u', $mon+1, $year % 100));
     }
   }
+
+  my $delim = exists($info->{'delimiter'}) ? $info->{'delimiter'} : "\n";
+
   my $h = $info->{'header'};
   if(ref($h) eq 'CODE') {
-    $batch .= &$h($self, \@cust_pay_batch) . "\n";
+    $batch .= &$h($self, \@cust_pay_batch) . $delim;
   }
   else {
-    $batch .= $h . "\n";
+    $batch .= $h . $delim;
   }
   foreach my $cust_pay_batch (@cust_pay_batch) {
 
@@ -503,16 +506,16 @@ sub export_batch {
 
     $batchcount++;
     $batchtotal += $cust_pay_batch->amount;
-    $batch .= &{$info->{'row'}}($cust_pay_batch, $self, $batchcount, $batchtotal) . "\n";
+    $batch .= &{$info->{'row'}}($cust_pay_batch, $self, $batchcount, $batchtotal) . $delim;
 
   }
 
   my $f = $info->{'footer'};
   if(ref($f) eq 'CODE') {
-    $batch .= &$f($self, $batchcount, $batchtotal) . "\n";
+    $batch .= &$f($self, $batchcount, $batchtotal) . $delim;
   }
   else {
-    $batch .= $f . "\n";
+    $batch .= $f . $delim;
   }
 
   if ($info->{'autopost'}) {
