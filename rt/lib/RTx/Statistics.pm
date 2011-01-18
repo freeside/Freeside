@@ -59,7 +59,8 @@ $TimeToResolveGraphQueue = "General";
 $secsPerDay = 86400;
 
 # List of years and months to populate drop down lists
-@years =('2010', '2009', '2008', '2007', '2006', '2005', '2004', '2003' ,'2003' ,'2002');
+my @lt = localtime;
+@years = reverse( 2002 .. ($lt[5]+1900) );
 @months=qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;	  
 %monthsMaxDay = (
 		 0 => 31,  # January
