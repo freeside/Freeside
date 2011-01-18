@@ -24,6 +24,19 @@
       color: <%= $hlink_color || '' %>;
       <%= $menu_nounderline ? 'text-decoration: none' : '' %>
     }
+
+    .svctable {
+	border: 1px solid black;		
+	padding: 0;
+	border-spacing: 0;
+	background-color:  <%= $box_bgcolor ||= '#c0c0c0' %>
+    }
+
+    .svctable td, .svctable th {
+	border-bottom: 1px solid black;
+	padding: 4px;
+    }
+
   </STYLE>
   <BODY BGCOLOR="<%= $body_bgcolor || '#eeeeee' %>">
     <script language="JavaScript"><!--

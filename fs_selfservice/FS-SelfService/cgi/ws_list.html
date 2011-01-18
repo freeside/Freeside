@@ -23,8 +23,9 @@ sub pdate {
     '<TD></TD>';
 }
 
+
 if ( $pkgpart ) {
-    $OUT .= qq! <TABLE BORDER="1" style="empty-cells: show"><TR><TH>Package</TH><TH>Status</TH> !;
+    $OUT .= qq! <TABLE style="empty-cells: show;" class="svctable"><TR><TH>Package</TH><TH>Status</TH> !;
     $OUT .= "<TH>Setup</TH><TH>Last Bill</TH><TH>Next Bill</TH><TH>Adjourn</TH>";
     $OUT .= "<TH>Suspend</TH><TH>Expire</TH><TH>Contract End</TH>";
     $OUT .= "<TH>Cancel</TH><TH>Services</TH></TR>";
@@ -81,7 +82,7 @@ else {
 
     $OUT .= "<TABLE><TR><TD>";
 
-    $OUT .= qq! <TABLE BORDER="1"><TR><TH>Package</TH><TH>Status</TH></TR> !;
+    $OUT .= qq! <TABLE class="svctable"><TR><TH>Package</TH><TH>Status</TH></TR> !;
     my($pkgpart,$counts);
     while(($pkgpart,$count) = each %pkgparts){
        my $link = "${url}provision;pkgpart=$pkgpart";
