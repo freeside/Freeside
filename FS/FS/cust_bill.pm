@@ -1,7 +1,8 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $conf $money_char $date_format $rdate_format );
+use vars qw( @ISA $DEBUG $me $conf
+             $money_char $date_format $rdate_format $date_format_long );
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
 use List::Util qw(min max);
@@ -45,9 +46,10 @@ $me = '[FS::cust_bill]';
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
-  $money_char   = $conf->config('money_char')  || '$';  
-  $date_format  = $conf->config('date_format') || '%x';  
-  $rdate_format = $conf->config('date_format') || '%m/%d/%Y';  
+  $money_char       = $conf->config('money_char')       || '$';  
+  $date_format      = $conf->config('date_format')      || '%x'; #/YY
+  $rdate_format     = $conf->config('date_format')      || '%m/%d/%Y';  #/YYYY
+  $date_format_long = $conf->config('date_format_long') || '%b %o, %Y';
 } );
 
 =head1 NAME
@@ -2298,10 +2300,12 @@ sub print_generic {
   my $escape_function_nonbsp = ($format eq 'html')
                                  ? \&_html_escape : $escape_function;
 
-  my %date_formats = ( 'latex'    => '%b %o, %Y',
-                       'html'     => '%b&nbsp;%o,&nbsp;%Y',
+  my %date_formats = ( 'latex'    => $date_format_long,
+                       'html'     => $date_format_long,
                        'template' => '%s',
                      );
+  $date_formats{'html'} =~ s/ /&nbsp;/g;
+
   my $date_format = $date_formats{$format};
 
   my %embolden_functions = ( 'latex'    => sub { return '\textbf{'. shift(). '}'
@@ -2378,7 +2382,7 @@ sub print_generic {
     #invoice info
     'invnum'          => $self->invnum,
     'date'            => time2str($date_format, $self->_date),
-    'today'           => time2str('%b %o, %Y', $today),
+    'today'           => time2str($date_format_long, $today),
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},
     'notice_name'     => ($params{'notice_name'} || 'Invoice'),#escape_function?
@@ -3092,7 +3096,6 @@ sub print_ps {
 
   my ($file, $lfile) = $self->print_latex(@_);
   my $ps = generate_ps($file);
-  unlink($file.'.tex');
   unlink($lfile);
 
   $ps;
@@ -3121,7 +3124,6 @@ sub print_pdf {
 
   my ($file, $lfile) = $self->print_latex(@_);
   my $pdf = generate_pdf($file);
-  unlink($file.'.tex');
   unlink($lfile);
 
   $pdf;
