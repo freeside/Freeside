@@ -54,6 +54,11 @@ tie my %contract_years, 'Tie::IxHash', (
                                     'with the customer\'s other packages',
                           'type' => 'checkbox',
                         },
+    'prorate_defer_bill' => { 
+                          'name' => 'When synchronizing, defer the bill until '.
+                                    'the customer\'s next bill date',
+                          'type' => 'checkbox',
+                        },
     'suspend_bill' => { 'name' => 'Continue recurring billing while suspended',
                         'type' => 'checkbox',
                       },
@@ -70,7 +75,7 @@ tie my %contract_years, 'Tie::IxHash', (
   'fieldorder' => [ qw( recur_temporality 
                         expire_months adjourn_months
                         contract_end_months
-                        start_1st sync_bill_date
+                        start_1st sync_bill_date prorate_defer_bill
                         suspend_bill unsuspend_adjust_bill
                         externalid ),
                   ],
@@ -80,6 +85,8 @@ tie my %contract_years, 'Tie::IxHash', (
 sub calc_setup {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 
+  return 0 if $self->prorate_setup($cust_pkg, $sdate);
+
   my $i = 0;
   my $count = $self->option( 'additional_count', 'quiet' ) || 0;
   while ($i < $count) {
@@ -88,7 +95,8 @@ sub calc_setup {
 
   my $quantity = $cust_pkg->quantity || 1;
 
-  sprintf("%.2f", $quantity * $self->unit_setup($cust_pkg, $sdate, $details) );
+  my $charge = $quantity * $self->unit_setup($cust_pkg, $sdate, $details);
+  sprintf('%.2f', $charge);
 }
 
 sub unit_setup {
@@ -108,12 +116,8 @@ sub calc_recur {
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
   my $charge = $self->base_recur($cust_pkg, $sdate);
-  if ( $self->option('sync_bill_date',1) ) {
-    my $next_bill = $cust_pkg->cust_main->next_bill_date;
-    if ( defined($next_bill) ) {
-      my $cutoff_day = (localtime($next_bill))[3];
-      $charge = $self->calc_prorate(@_, $cutoff_day);
-    }
+  if ( my $cutoff_day = $self->cutoff_day($cust_pkg) ) {
+    $charge = $self->calc_prorate(@_);
   }
   elsif ( $param->{freq_override} ) {
     # XXX not sure if this should be mutually exclusive with sync_bill_date.
@@ -124,6 +128,18 @@ sub calc_recur {
 
   my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
   return sprintf('%.2f', $charge - $discount);
+}
+
+sub cutoff_day {
+  my $self = shift;
+  my $cust_pkg = shift;
+  if ( $self->option('sync_bill_date',1) ) {
+    my $next_bill = $cust_pkg->cust_main->next_bill_date;
+    if ( defined($next_bill) ) {
+      return (localtime($next_bill))[3];
+    }
+  }
+  return 0;
 }
 
 sub base_recur {
@@ -167,7 +183,7 @@ sub calc_remain {
   my $freq_sec = $1 * $sec{$2||'m'};
   return 0 unless $freq_sec;
 
-  sprintf("%.2f", $self->base_recur($cust_pkg) * ( $next_bill - $time ) / $freq_sec );
+  sprintf("%.2f", $self->base_recur($cust_pkg, \$time) * ( $next_bill - $time ) / $freq_sec );
 
 }
 

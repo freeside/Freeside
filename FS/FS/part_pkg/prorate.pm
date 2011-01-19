@@ -28,16 +28,24 @@ use FS::part_pkg::flat;
                                     'the nearest full day',
                           'type' => 'checkbox',
                         },
+    'prorate_defer_bill'=> {
+                        'name' => 'Defer the first bill until the billing day',
+                        'type' => 'checkbox',
+                        },
   },
-  'fieldorder' => [ 'cutoff_day', 'add_full_period', 'prorate_round_day' ],
+  'fieldorder' => [ 'cutoff_day', 'prorate_defer_bill', 'add_full_period', 'prorate_round_day' ],
   'freq' => 'm',
   'weight' => 20,
 );
 
+sub cutoff_day {
+  my $self = shift;
+  $self->option('cutoff_day', 1) || 1;
+}
+
 sub calc_recur {
   my $self = shift;
-  my $cutoff_day = $self->option('cutoff_day') || 1;
-  return $self->calc_prorate(@_, $cutoff_day) - $self->calc_discount(@_);
+  return $self->calc_prorate(@_) - $self->calc_discount(@_);
 }
 
 1;

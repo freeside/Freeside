@@ -897,6 +897,7 @@ sub _make_lines {
                   'discounts'           => \@discounts,
                   'real_pkgpart'        => $real_pkgpart,
                   'freq_override'	=> $options{freq_override} || '',
+                  'setup_fee'           => 0,
                 );
 
     my $method = $options{cancel} ? 'calc_cancel' : 'calc_recur';
@@ -924,6 +925,14 @@ sub _make_lines {
 
       $cust_pkg->setfield('bill', $next_bill );
 
+    }
+
+    if ( $param{'setup_fee'} ) {
+      # Add an additional setup fee at the billing stage.
+      # Used for prorate_defer_bill.
+      $setup += $param{'setup_fee'};
+      $unitsetup += $param{'setup_fee'};
+      $lineitems++;
     }
 
   }
