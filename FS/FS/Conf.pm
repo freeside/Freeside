@@ -4266,7 +4266,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_bill-no_recipients-error',
     'section'     => 'invoicing',
-    'description' => 'For customers with no invoice recipients, throw a job queue error rather than the default behavior of emailing the invoice to the invoice_from address.'.
+    'description' => 'For customers with no invoice recipients, throw a job queue error rather than the default behavior of emailing the invoice to the invoice_from address.',
     'type'        => 'checkbox',
   },
 
