@@ -4263,6 +4263,13 @@ and customer address. Include units.',
     'agentonly'   => 1,
   },
 
+  {
+    'key'         => 'cust_bill-no_recipients-error',
+    'section'     => 'invoicing',
+    'description' => 'For customers with no invoice recipients, throw a job queue error rather than the default behavior of emailing the invoice to the invoice_from address.'.
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

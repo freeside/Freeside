@@ -1241,8 +1241,14 @@ sub email {
   my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } 
                             $self->cust_main->invoicing_list;
 
-  #better to notify this person than silence
-  @invoicing_list = ($invoice_from) unless @invoicing_list;
+  if ( ! @invoicing_list ) { #no recipients
+    if ( $conf->exists('cust_bill-no_recipients-error') ) {
+      die 'No recipients for customer #'. $self->custnum;
+    } else {
+      #default: better to notify this person than silence
+      @invoicing_list = ($invoice_from);
+    }
+  }
 
   my $subject = $self->email_subject($template);
 
