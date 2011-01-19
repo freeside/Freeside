@@ -1918,6 +1918,8 @@ sub tables_hashref {
 	'setup_date',      @date_type, '', '',
 	'renewal_interval', 'int', 'NULL',       '', '', '',
 	'expiration_date', @date_type, '', '',
+	'au_registrant_name',       'varchar', 'NULL',  $char_d, '', '',
+	'au_eligibility_type',      'varchar', 'NULL',  $char_d, '', '',
         #communigate pro fields (quota = MaxAccountSize)
         'max_accounts',     'int', 'NULL',       '', '', '',
         'trailer',         'text', 'NULL',       '', '', '',

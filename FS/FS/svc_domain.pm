@@ -89,6 +89,14 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item max_accounts
 
+=item au_eligibility_type
+
+AU-specific field for domain registrations
+
+=item au_registrant_name
+
+AU-specific field for domain registrations
+
 =back
 
 =head1 METHODS
@@ -118,6 +126,16 @@ sub table_info {
                          disable_inventory => 1,
                          disable_select    => 1,
                        },
+      'au_registrant_name' => { label => 'AU Registrant Name',
+			        disable_inventory => 1,
+				disable_select => 1,
+			      },
+      'au_eligibility_type' => { label => 'AU Eligibility Type',
+                             type  => 'select',
+                             select_list => __PACKAGE__->au_eligibility_type_values,
+                             disable_inventory => 1,
+                             disable_select    => 1,
+			      },
       'max_accounts' => { label => 'Maximum number of accounts',
                           'disable_inventory' => 1,
                         },
@@ -287,6 +305,41 @@ sub search_sql {
   $class->search_sql_field('domain', $string);
 }
 
+=item au_eligibility_type_values
+
+=cut
+
+sub au_eligibility_type_values {
+
+ [ '',
+   'Charity',
+   'Child Care Centre',
+   'Citizen/Resident',
+   'Club',
+   'Commercial Statutory Body',
+   'Company',
+   'Government School',
+   'Higher Education Institution',
+   'Incorporated Association',
+   'Industry Body',
+   'National Body',
+   'Non-Government School',
+   'Non-profit Organisation',
+   'Other',
+   'Partnership',
+   'Pending TM Owner',
+   'Political Party',
+   'Pre-school',
+   'Registered Business',
+   'Religious/Church Group',
+   'Research Organisation',
+   'Sole Trader',
+   'Trade Union',
+   'Trademark Owner',
+   'Training Organisation',
+  ];
+
+}
 
 =item label
 
@@ -523,6 +576,8 @@ sub check {
   #my $part_svc = $x;
 
   my $error = $self->ut_numbern('svcnum')
+              || $self->ut_textn('au_eligibility_type')
+              || $self->ut_textn('au_registrant_name')
               || $self->ut_numbern('catchall')
               || $self->ut_numbern('max_accounts')
               || $self->ut_anything('trailer') #well

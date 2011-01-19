@@ -35,6 +35,23 @@ Available top-level domains: <% $export->option('tlds') %>
 
 </TR>
 
+%    if($export->option('auoptions')) {
+%	# XXX: this whole thing should be done like svc_Common with label_fixup, etc. eventually
+	    <% include('/elements/tr-select.html',
+			'field' => 'au_eligibiilty_type',
+			'label' => 'AU Eligibility Type',
+			'value' => $svc_domain->au_eligibility_type,
+			'options' => $svc_domain->au_eligibility_type_values,
+	              )
+	    %>
+	    <% include('/elements/tr-input-text.html',
+			'field' => 'au_registrant_name',
+			'label' => 'AU Registrant Name',
+			'value' => $svc_domain->au_registrant_name,
+	              )
+	    %>
+%    }
+
 % }
   </TD>
 </TR>

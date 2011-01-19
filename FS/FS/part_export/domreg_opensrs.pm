@@ -73,6 +73,9 @@ tie %options, 'Tie::IxHash',
                       size => scalar(@tldlist),
                       options => [ @tldlist ],
 		      default => 'com net org' },
+  'auoptions'    => { label => 'Enable AU-specific registration fields', 
+		      type => 'checkbox'
+		    },
 ;
 
 %info = (
@@ -395,6 +398,11 @@ sub register {
   my $cust_main = $svc_domain->cust_svc->cust_pkg->cust_main;
 
   my $c = gen_contact_info($cust_main);
+
+  if ( $svc_domain->domain =~ /\.au$/ ) {
+	$c->{'registrant_name'} = $svc_domain->au_registrant_name;
+	$c->{'eligibility_type'} = $svc_domain->au_eligibility_type;
+  }
 
   $err = validate_contact_info($c);
   return $err if $err;
