@@ -3855,7 +3855,7 @@ sub statuscolor { shift->cust_statuscolor(@_); }
 
 sub cust_statuscolor {
   my $self = shift;
-  $self->statuscolors->{$self->cust_status};
+  __PACKAGE__->statuscolors->{$self->cust_status};
 }
 
 =item tickets
