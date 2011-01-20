@@ -141,11 +141,22 @@ sub location {
     if ( $self->locationnum ) {
 	my $l = qsearchs( 'cust_location', 
 		    { 'locationnum' => $self->locationnum });
-	return $l->location_hash if $l;
+	if ( $l ) {
+	    my %loc_hash = $l->location_hash;
+	    $loc_hash{locationnum} = $self->locationnum;
+	    return %loc_hash;
+	}
     }
     if ( $self->custnum ) {
 	my $c = qsearchs( 'cust_main', { 'custnum' => $self->custnum });
-	return $c->location_hash if $c;
+	
+	if($c) {
+	    # always override location_kind as it would never be known in the 
+	    # case of cust_main "default service address"
+	    my %loc_hash = $c->location_hash;
+	    $loc_hash{location_kind} = $c->company ? 'B' : 'R';
+	    return %loc_hash;
+	}
     }
   # prospectnum does not imply any particular address! must specify locationnum
 

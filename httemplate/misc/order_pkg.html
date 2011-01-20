@@ -28,6 +28,9 @@
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
+% if ( $svcpart ) {
+    <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
+% }
 
 <% ntable("#cccccc", 2) %>
 <% include('/elements/tr-select-cust-part_pkg.html',
@@ -138,5 +141,7 @@ if( ! $conf->exists('order_pkg-no_start_date') ) {
   $start_date = $cust_main->next_bill_date;
   $start_date = $start_date ? time2str($format, $start_date) : '';
 }
+
+my $svcpart = $cgi->param('svcpart');
 
 </%init>

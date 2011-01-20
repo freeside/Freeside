@@ -95,6 +95,16 @@ my $new_cb = sub {
 	    my $ddd = $cust_pkg->start_date;
 	    $ddd = time unless $ddd;
 
+	    my @quals = $export->quals_by_cust_and_pkg($cust_pkg->cust_main->custnum,$cust_pkg->pkgpart);
+	    my @prequalids;
+	    my %prequal_labels;
+	    foreach my $qual ( @quals ) {
+		my $prequalid = $qual->vendor_qual_id;
+		push @prequalids, $prequalid;
+		$prequal_labels{$prequalid} = "$prequalid - qualification #"
+							    .$qual->qualnum;
+	    }
+
 	    my @addl_fields = ( 
 		{ field => 'loop_type',
 		  type => 'select',
@@ -105,7 +115,12 @@ my $new_cb = sub {
 		'password', 
 		{ field => 'isp_chg', type => 'checkbox', },
 		'isp_prev',
-		'vendor_qual_id',
+		{ field => 'vendor_qual_id', 
+		  type => 'select',
+		  options => \@prequalids,
+		  labels => \%prequal_labels,
+		  onchange => 'ikano_vendor_qual_id_changed',
+		},
 		{ field => 'vendor_order_type', 
 		  type => 'hidden', 
 		  value => 'NEW' },

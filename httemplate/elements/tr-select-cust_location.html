@@ -154,11 +154,16 @@ Example:
   <<%$th%> ALIGN="right"><% $opt{'label'} || 'Service&nbsp;location' %></<%$th%>>
   <TD COLSPAN=7>
     <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
+% if ( !$prospect_main ) {
       <OPTION VALUE=""><% $opt{'empty_label'} || '(default service address)' |h %>
+% }
 % if ( $opt{'is_optional'} ) {
     <OPTION VALUE="-2" <% $locationnum == -2 ? 'SELECTED' : ''%>><% $opt{'optional_label'} || '(not required)' |h %>
 % }
 %     my @locations = $cust_main ? $cust_main->cust_location : ();
+%     @locations = qsearch('cust_location', 
+%			    { 'prospectnum' => $prospect_main->prospectnum } ) 
+%	    if $prospect_main;
 %     push @locations, $cust_location
 %       if !$cust_main && $cust_location && $cust_location->locationnum>0;
 %     foreach my $loc ( sort $location_sort @locations ) {

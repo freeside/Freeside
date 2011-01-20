@@ -6,12 +6,23 @@
 %  my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
 %               ? ''
 %               : ';show=packages';
+%  my $redir_url = popurl(3)
+%            ."view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag";
+% 
+% # for going right to a provision service after ordering a package
+% if ( $svcpart ) { 
+%    my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
+%    if ( $part_svc ) {
+%	$redir_url = popurl(3)."edit/".$part_svc->svcdb.".cgi?"
+%		    ."pkgnum=".$cust_pkg->pkgnum.";svcpart=$svcpart";
+%   }
+% }
 <% header('Package ordered') %>
   <SCRIPT TYPE="text/javascript">
     // XXX fancy ajax rebuild table at some point, but a page reload will do for now
 
     // XXX chop off trailing #target and replace... ?
-    window.top.location = '<% popurl(3). "view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag" %>';
+    window.top.location = '<% $redir_url %>';
 
   </SCRIPT>
 
@@ -49,6 +60,13 @@ $cgi->param('discountnum') =~ /^(\-?\d*)$/
   or die 'illegal discountnum '. $cgi->param('discountnum');
 my $discountnum = $1;
 
+# for going right to a provision service after ordering a package
+my $svcpart;
+if ( $cgi->param('svcpart') ) {
+    $cgi->param('svcpart') =~ /^(\-?\d*)$/
+       or die 'illegal svcpart '. $cgi->param('svcpart');
+    $svcpart = $1;
+}
 
 my $cust_pkg = new FS::cust_pkg {
   'custnum'              => $custnum,
@@ -83,6 +101,6 @@ if ( $locationnum == -1 ) {
   $opt{'cust_location'} = $cust_location;
 }
 
-my $error = $cust_main->order_pkg( %opt );
+my $error = $cust_main->order_pkg( \%opt );
 
 </%init>

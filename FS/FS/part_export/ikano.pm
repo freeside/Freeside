@@ -313,7 +313,7 @@ sub qual {
     };
 }
 
-sub qual_html {
+sub qual_result {
     my($self,$qual) = (shift,shift);
     
     my %qual_options = $qual->options;
@@ -325,23 +325,52 @@ sub qual_html {
 		&& $optionvalue ne '' );
     }
 
-    # XXX: eventually perhaps this should return both the packages a link to
-    # order each package and go to the svc prov with the prequal id filled in
-    # but only if cust, not prospect!
-    my $list = "<B>Qualifying Packages:</B><UL>";
+    my %pkglist = ();
+    my $result = { 'header' => 'Qualifying Packages',
+		   'pkglist' => \%pkglist,
+		 };
+
     my @part_pkgs = qsearch( 'part_pkg', { 'disabled' => '' } );
     foreach my $part_pkg ( @part_pkgs ) {
 	my %vendor_pkg_ids = $part_pkg->vendor_pkg_ids;
 	my $externalid = $vendor_pkg_ids{$self->exportnum} 
 	    if defined $vendor_pkg_ids{$self->exportnum};
-	if ( $externalid ) {
-	    $list .= "<LI>".$part_pkg->pkgpart.": ".$part_pkg->pkg." - "
-		.$part_pkg->comment."</LI>" 
-	      if grep( $_ eq $externalid, @externalids );
+	if ( $externalid && grep( $_ eq $externalid, @externalids )) {
+	    $pkglist{$part_pkg->pkgpart} = $part_pkg->pkg." - ".$part_pkg->comment;
 	}
     }
-    $list .= "</UL>";
-    $list;
+
+    $result;
+}
+
+sub quals_by_cust_and_pkg { 
+    my($self, $custnum, $pkgpart) = (shift,shift,shift);
+
+    die "invalid custnum or pkgpart"
+	unless ($custnum =~ /^\d+$/ && $pkgpart =~ /^\d+$/);
+
+    my $part_pkg = qsearchs('part_pkg', { 'pkgpart' => $pkgpart } );
+    die "no part_pkg found" unless $part_pkg;
+    my %vendor_pkg_ids = $part_pkg->vendor_pkg_ids;
+    my $external_id = $vendor_pkg_ids{$self->exportnum};
+    die "no vendor package id defined on this package" unless $external_id;
+    
+    my $extra_sql = "where custnum = $custnum or locationnum in (select "
+	. "locationnum from cust_location where custnum = $custnum)";
+    my @quals = qsearch( { 'table' => 'qual', 'extra_sql' => $extra_sql, } );
+
+    my @filtered_quals;
+    foreach my $qual ( @quals ) {
+	my %qual_options = $qual->options;
+	my( $optionname, $optionvalue );
+	while (($optionname, $optionvalue) = each %qual_options) {
+	   push @filtered_quals, $qual
+	      if ( $optionname =~ /^ikano_Network_(\d+)_ProductGroup_(\d+)_Product_(\d+)_ProductCustomId$/
+		    && $optionvalue eq $external_id );
+	}
+    }
+
+    @filtered_quals;
 }
 
 sub notes_html { 

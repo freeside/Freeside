@@ -39,4 +39,8 @@ $params->{'action'} .=
   ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
   'custnum='. $params->{'cust_main'}->custnum;
 
+$params->{'action'} .= ';pkgpart='.$params->{'pkgpart'} if $params->{'pkgpart'};
+$params->{'action'} .= ';locationnum='.$params->{'locationnum'} if $params->{'locationnum'};
+$params->{'action'} .= ';svcpart='.$params->{'svcpart'} if $params->{'svcpart'};
+
 </%init>

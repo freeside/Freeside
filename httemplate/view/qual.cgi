@@ -28,7 +28,41 @@
 <BR><BR>
 
 % if ( $export ) {
-<% $export->qual_html($qual) %>
+%  my $qual_result = $export->qual_result($qual);
+%  if ($qual_result->{'header'}) {
+	<B><% $qual_result->{'header'} %></B>
+%  }
+%  if ($qual_result->{'pkglist'}) { # one of the possible formats
+%   my $svcpart = '';
+%   my $pkglist = $qual_result->{'pkglist'};
+%   my $cust_or_prospect = $qual->cust_or_prospect;
+%   my $locationnum = '';
+%   my %location = $qual->location;
+%   if (%location && $location{'locationnum'}) { 
+%      $locationnum = $location{'locationnum'};
+%   }
+    <UL>
+%       foreach my $pkgpart ( keys %$pkglist ) { 
+%           my %opt = ( 'label' => $pkglist->{$pkgpart},
+%                          'pkgpart' => $pkgpart,
+%                          'locationnum' => $locationnum, );
+%           if ( $export->exporttype eq 'ikano' ) {
+% 		my $pkg_svc = qsearchs('pkg_svc', { 'pkgpart' => $pkgpart,
+%                                                 'primary_svc' => 'Y',
+%                                               } );
+%		$opt{'svcpart'} = $pkg_svc->svcpart if $pkg_svc;
+%           }
+	    <LI>
+%		if($cust_or_prospect && $cust_or_prospect->custnum) {
+		   <% include('/view/cust_main/order_pkg_link.html', $qual->cust_or_prospect, %opt) %>
+%		}
+%		else {
+		    <% $opt{label} %>
+%		}
+	    </LI>
+%       }
+    </UL>
+%  }
 % }
 
 <%init>

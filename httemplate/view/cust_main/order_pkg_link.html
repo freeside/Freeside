@@ -1,16 +1,22 @@
 <% include( '/elements/popup_link-cust_main.html',
               'action'      => $p. 'misc/order_pkg.html',
-              'label'       => 'Order&nbsp;new&nbsp;package',
+              'label'       => $opt{'label'} || 'Order&nbsp;new&nbsp;package',
               'actionlabel' => 'Order new package',
               'color'       => '#333399',
               'cust_main'   => $cust_main,
               'closetext'   => 'Close',
               'width'       => 763,
               'height'      => 538,
+	      %optional,
           )
 %>
 <%init>
 
-my($cust_main) = @_;
+my($cust_main, %opt) = @_;
+
+my %optional = ();
+$optional{'pkgpart'} = $opt{'pkgpart'} if $opt{'pkgpart'};
+$optional{'locationnum'} = $opt{'locationnum'} if $opt{'locationnum'};
+$optional{'svcpart'} = $opt{'svcpart'} if $opt{'svcpart'};
 
 </%init>
