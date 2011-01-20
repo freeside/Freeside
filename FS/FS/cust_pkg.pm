@@ -748,72 +748,57 @@ sub cancel {
     }
   }
 
-  my %svc;
-  if ( $date ) {
-# copied from below
-    foreach my $cust_svc (
-      #schwartz
-      map  { $_->[0] }
-      sort { $a->[1] <=> $b->[1] }
-      map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
-      qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
-    ) {
-      my $error = $cust_svc->cancel( ('date' => $date) );
-
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error expiring cust_svc: $error";
-      }
-    }
-  } else { #!date
-    foreach my $cust_svc (
-      #schwartz
-      map  { $_->[0] }
-      sort { $a->[1] <=> $b->[1] }
-      map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
-      qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
-    ) {
-      my $error = $cust_svc->cancel;
-
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error cancelling cust_svc: $error";
-      }
-    }
-  } #if $date
-
-  # Add a credit for remaining service
-  my $last_bill = $self->getfield('last_bill') || 0;
-  my $next_bill = $self->getfield('bill') || 0;
-  my $do_credit;
-  if ( exists($options{'unused_credit'}) ) {
-    $do_credit = $options{'unused_credit'};
-  }
-  else {
-    $do_credit = $self->part_pkg->option('unused_credit_cancel', 1);
-  }
-  if ( $do_credit
-        and $last_bill > 0 # the package has been billed
-        and $next_bill > 0 # the package has a next bill date
-        and $next_bill >= $cancel_time # which is in the future
+  my %svc_cancel_opt = ();
+  $svc_cancel_opt{'date'} = $date if $date;
+  foreach my $cust_svc (
+    #schwartz
+    map  { $_->[0] }
+    sort { $a->[1] <=> $b->[1] }
+    map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
+    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
-    my $remaining_value = $self->calc_remain('time' => $cancel_time);
-    if ( $remaining_value > 0 ) {
-      # && !$options{'no_credit'} ) {
-      # Undocumented, unused option.
-      # part_pkg configuration should decide this anyway.
-      my $error = $self->cust_main->credit(
-        $remaining_value,
-        'Credit for unused time on '. $self->part_pkg->pkg,
-        'reason_type' => $conf->config('cancel_credit_type'),
-      );
-      if ($error) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error crediting customer \$$remaining_value for unused time on".
-               $self->part_pkg->pkg. ": $error";
-      }
-    } #if $remaining_value
-  } #if $do_credit
+    my $error = $cust_svc->cancel( %svc_cancel_opt );
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return 'Error '. ($svc_cancel_opt{'date'} ? 'expiring' : 'canceling' ).
+             " cust_svc: $error";
+    }
+  }
+
+  unless ($date) {
+
+    # Add a credit for remaining service
+    my $last_bill = $self->getfield('last_bill') || 0;
+    my $next_bill = $self->getfield('bill') || 0;
+    my $do_credit;
+    if ( exists($options{'unused_credit'}) ) {
+      $do_credit = $options{'unused_credit'};
+    }
+    else {
+      $do_credit = $self->part_pkg->option('unused_credit_cancel', 1);
+    }
+    if ( $do_credit
+          and $last_bill > 0 # the package has been billed
+          and $next_bill > 0 # the package has a next bill date
+          and $next_bill >= $cancel_time # which is in the future
+    ) {
+      my $remaining_value = $self->calc_remain('time' => $cancel_time);
+      if ( $remaining_value > 0 ) {
+        my $error = $self->cust_main->credit(
+          $remaining_value,
+          'Credit for unused time on '. $self->part_pkg->pkg,
+          'reason_type' => $conf->config('cancel_credit_type'),
+        );
+        if ($error) {
+          $dbh->rollback if $oldAutoCommit;
+          return "Error crediting customer \$$remaining_value for unused time".
+                 " on ". $self->part_pkg->pkg. ": $error";
+        }
+      } #if $remaining_value
+    } #if $do_credit
+
+  } #unless $date
 
   my %hash = $self->hash;
   $date ? ($hash{'expire'} = $date) : ($hash{'cancel'} = $cancel_time);
