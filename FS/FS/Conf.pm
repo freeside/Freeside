@@ -4270,6 +4270,14 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cust_main-status_module',
+    'section'     => 'UI',
+    'description' => 'Which module to use for customer status display.  The "Classic" module (the default) considers accounts with cancelled recurring packages but un-cancelled one-time charges Inactive.  The "Recurring" module considers those customers Cancelled.', #other differences?
+    'type'        => 'select',
+    'select_enum' => [ 'Classic', 'Recurring' ],
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
