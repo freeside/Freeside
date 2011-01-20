@@ -45,7 +45,7 @@ sub calc_recur {
 
   my $last_bill = $cust_pkg->last_bill;
 
-  return sprintf("%.2f", $self->base_recur($cust_pkg) )
+  return sprintf("%.2f", $self->base_recur($cust_pkg, $sdate) )
     unless $$sdate > $last_bill;
 
   my $total_svc_charge = 0;
@@ -113,7 +113,7 @@ sub calc_recur {
     }
   }
 
-  sprintf('%.2f', $self->base_recur($cust_pkg) + $total_svc_charge );
+  sprintf('%.2f', $self->base_recur($cust_pkg, $sdate) + $total_svc_charge );
 }
 
 sub can_discount { 0; }

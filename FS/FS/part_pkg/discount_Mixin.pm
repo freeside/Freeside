@@ -41,7 +41,7 @@ discount and generates an invoice detail describing it.
 sub calc_discount {
   my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
-  my $br = $self->base_recur($cust_pkg);
+  my $br = $self->base_recur($cust_pkg, $sdate);
   $br += $param->{'override_charges'} if $param->{'override_charges'};
 
   my $tot_discount = 0;

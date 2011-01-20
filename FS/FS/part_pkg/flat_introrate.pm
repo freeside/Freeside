@@ -4,8 +4,6 @@ use strict;
 use vars qw(@ISA %info $DEBUG $me);
 use FS::part_pkg::flat;
 
-use Date::Manip qw(DateCalc UnixDate ParseDate);
-
 @ISA = qw(FS::part_pkg::flat);
 $me = '[' . __PACKAGE__ . ']';
 $DEBUG = 0;
@@ -31,28 +29,20 @@ $DEBUG = 0;
 sub base_recur {
   my($self, $cust_pkg, $time ) = @_;
 
+  warn "flat_introrate base_recur requires date!" if !$time;
   my $now = $time ? $$time : time;
 
   my ($duration) = ($self->option('intro_duration') =~ /^(\d+)$/);
   unless ($duration) {
     die "Invalid intro_duration: " . $self->option('intro_duration');
   }
+  my $intro_end = $self->add_freq($cust_pkg->setup, $duration);
 
-  my $setup = &ParseDate('epoch ' . $cust_pkg->getfield('setup'));
-  my $intro_end = &DateCalc($setup, "+${duration} month");
-  my $recur;
-
-  warn "$me: \$duration = ${duration}" if $DEBUG;
-  warn "$me: \$intro_end = ${intro_end}" if $DEBUG;
-  warn "$me: $now < " . &UnixDate($intro_end, '%s') if $DEBUG;
-
-  if ($now < &UnixDate($intro_end, '%s')) {
-    $recur = $self->option('intro_fee');
+  if ($now < $intro_end) {
+    return $self->option('intro_fee');
   } else {
-    $recur = $self->option('recur_fee');
+    return $self->option('recur_fee');
   }
-
-  $recur;
 
 }
 
