@@ -4273,7 +4273,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-status_module',
     'section'     => 'UI',
-    'description' => 'Which module to use for customer status display.  The "Classic" module (the default) considers accounts with cancelled recurring packages but un-cancelled one-time charges Inactive.  The "Recurring" module considers those customers Cancelled.', #other differences?
+    'description' => 'Which module to use for customer status display.  The "Classic" module (the default) considers accounts with cancelled recurring packages but un-cancelled one-time charges Inactive.  The "Recurring" module considers those customers Cancelled.  Similarly for customers with suspended recurring packages but one-time charges.', #other differences?
     'type'        => 'select',
     'select_enum' => [ 'Classic', 'Recurring' ],
   },

@@ -3,7 +3,7 @@ package FS::cust_main;
 require 5.006;
 use strict;
              #FS::cust_main:_Marketgear when they're ready to move to 2.1
-use base qw( FS::cust_main::Packages
+use base qw( FS::cust_main::Packages FS::cust_main::Status
              FS::cust_main::Billing FS::cust_main::Billing_Realtime
              FS::cust_main::Billing_Discount
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
@@ -3811,6 +3811,9 @@ Returns a status string for this customer, currently:
 
 =back
 
+Behavior of inactive vs. cancelled edge cases can be adjusted with the
+cust_main-status_module configuration option.
+
 =cut
 
 sub status { shift->cust_status(@_); }
@@ -3848,21 +3851,11 @@ Returns a hex triplet color string for this customer's status.
 
 =cut
 
-use vars qw(%statuscolor);
-tie %statuscolor, 'Tie::IxHash',
-  'prospect'  => '7e0079', #'000000', #black?  naw, purple
-  'active'    => '00CC00', #green
-  'ordered'   => '009999', #teal? cyan?
-  'suspended' => 'FF9900', #yellow
-  'cancelled' => 'FF0000', #red
-  'inactive'  => '0000CC', #blue
-;
-
 sub statuscolor { shift->cust_statuscolor(@_); }
 
 sub cust_statuscolor {
   my $self = shift;
-  $statuscolor{$self->cust_status};
+  $self->statuscolors->{$self->cust_status};
 }
 
 =item tickets
@@ -3958,8 +3951,8 @@ Class method that returns the list of possible status strings for customers
 =cut
 
 sub statuses {
-  #my $self = shift; #could be class...
-  keys %statuscolor;
+  my $self = shift;
+  keys %{ $self->statuscolors };
 }
 
 =item cust_status_sql
@@ -4003,13 +3996,14 @@ sub prospect_sql {
 =item ordered_sql
 
 Returns an SQL expression identifying ordered cust_main records (customers with
-recurring packages not yet setup).
+no active packages, but recurring packages not yet setup or one time charges
+not yet billed).
 
 =cut
 
 sub ordered_sql {
   FS::cust_main->none_active_sql.
-  " AND 0 < ( $select_count_pkgs AND ". FS::cust_pkg->ordered_sql. " ) ";
+  " AND 0 < ( $select_count_pkgs AND ". FS::cust_pkg->not_yet_billed_sql. " ) ";
 }
 
 =item active_sql
@@ -4068,22 +4062,7 @@ Returns an SQL expression identifying cancelled cust_main records.
 
 =cut
 
-sub cancelled_sql { cancel_sql(@_); }
-sub cancel_sql {
-
-  my $recurring_sql = FS::cust_pkg->recurring_sql;
-  my $cancelled_sql = FS::cust_pkg->cancelled_sql;
-
-  "
-        0 < ( $select_count_pkgs )
-    AND 0 < ( $select_count_pkgs AND $recurring_sql AND $cancelled_sql   )
-    AND 0 = ( $select_count_pkgs AND $recurring_sql
-                  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-            )
-  ";
-#    AND 0 = (  $select_count_pkgs AND ". FS::cust_pkg->inactive_sql. " )
-
-}
+sub cancel_sql { shift->cancelled_sql(@_); }
 
 =item uncancel_sql
 =item uncancelled_sql
