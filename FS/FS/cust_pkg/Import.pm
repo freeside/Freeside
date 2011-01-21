@@ -138,14 +138,14 @@ my %import_options = (
                                                  'domain'  => $domain, };
           unless ( $svc_domain->svcnum ) {
             my $error = $svc_domain->insert;
-            return $error if $error;
+            return "error auto-inserting domain: $error" if $error;
           }
           $svc->username($username);
           $svc->domsvc($svc_domain->svcnum);
         }
 
         my $error = $svc->insert;
-        return $error if $error;
+        return "error inserting service: $error" if $error;
       }
 
     }
