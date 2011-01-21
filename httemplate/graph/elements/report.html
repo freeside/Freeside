@@ -105,11 +105,11 @@ any delimiter and linked from the elements in @data.
 %     $worksheet->write( $r, $c++, shift( @row_labels ) );
 %     foreach ( @{ shift( @data ) } ) {
 %       $total += $_;
-%       $bottom_total[$c] += $_;
+%       $bottom_total[$c-1] += $_;
 %       $worksheet->write($r, $c++,  sprintf($sprintf, $_) );
 %     }
 %     unless ( $opt{'nototal'} ) { 
-%       $bottom_total[$c] += $total; 
+%       $bottom_total[$c-1] += $total; 
 %       $worksheet->write($r, $c++,  sprintf($sprintf, $total) );
 %     } 
 %   }
