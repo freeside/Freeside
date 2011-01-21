@@ -177,14 +177,14 @@ sub shellcommands_queue {
 }
 
 sub ssh_cmd { #subroutine, not method
-  use Net::SSH '0.08';
-  &Net::SSH::ssh_cmd( { @_ } );
+  use Net::OpenSSH;
+  my $opt = { @_ };
+  my $ssh = Net::OpenSSH->new($opt->{'user'}.'@'.$opt->{'host'});
+  die "Couldn't establish SSH connection: ". $ssh->error if $ssh->error;
+  my ($output, $errput) = $ssh->capture2($opt->{'command'});
+  die "Error running SSH command: ". $ssh->error if $ssh->error;
+  die $errput if $errput;
+  die $output if $output;
+  '';
 }
-
-#sub shellcommands_insert { #subroutine, not method
-#}
-#sub shellcommands_replace { #subroutine, not method
-#}
-#sub shellcommands_delete { #subroutine, not method
-#}
 
