@@ -12,6 +12,7 @@ use FS::cust_main;
 use FS::svc_acct;
 use FS::svc_external;
 use FS::svc_phone;
+use FS::svc_domain;
 
 $DEBUG = 0;
 
@@ -123,12 +124,27 @@ my %import_options = (
       my $ff = $formatfields->{$svc_x};
 
       if ( grep $param->{"$svc_x.$_"}, @$ff ) {
-        my $svc_x = "FS::$svc_x"->new( {
+        my $svc = "FS::$svc_x"->new( {
           'pkgnum'  => $record->pkgnum,
           'svcpart' => $record->part_pkg->svcpart($svc_x),
           map { $_ => $param->{"$svc_x.$_"} } @$ff
         } );
-        my $error = $svc_x->insert;
+
+        #this whole thing should be turned into a callback or config to turn on
+        if ( $svc_x eq 'svc_acct' && $svc->username =~ /\@/ ) {
+          my($username, $domain) = split(/\@/, $svc->username);
+          my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } )
+                         || new FS::svc_domain { 'svcpart' => 1,
+                                                 'domain'  => $domain, };
+          unless ( $svc_domain->svcnum ) {
+            my $error = $svc_domain->insert;
+            return $error if $error;
+          }
+          $svc->username($username);
+          $svc->domsvc($svc_domain->svcnum);
+        }
+
+        my $error = $svc->insert;
         return $error if $error;
       }
 
