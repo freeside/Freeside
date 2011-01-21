@@ -509,60 +509,66 @@ sub new_customer {
   my $template_custnum = $conf->config('signup_server-prepaid-template-custnum');
   my $cust_main;
   if ( $template_custnum && $packet->{prepaid_shortform} ) {
-	my $template_cust = qsearchs('cust_main', { 'custnum' => $template_custnum } );
-	return { 'error' => 'Configuration error' } unless $template_cust;
-	$cust_main = new FS::cust_main ( {
-	'agentnum'      => $agentnum,
-	'refnum'        => $packet->{refnum}
-			   || $conf->config('signup_server-default_refnum'),
-	map { $_ => $template_cust->$_ } qw( 
-		last first company address1 address2 
-		city county state zip country
-		daytime night fax 
 
-	        ship_last ship_first ship_company ship_address1 ship_address2
-	        ship_city ship_county ship_state ship_zip ship_country
-	        ship_daytime ship_night ship_fax
-		),
-	map { $_ => $packet->{$_} } qw(
+    my $template_cust = qsearchs('cust_main', { 'custnum' => $template_custnum } );
+    return { 'error' => 'Configuration error' } unless $template_cust;
+    $cust_main = new FS::cust_main ( {
+      'agentnum'      => $agentnum,
+      'refnum'        => $packet->{refnum}
+                         || $conf->config('signup_server-default_refnum'),
 
-	  ss stateid stateid_state
+      ( map { $_ => $template_cust->$_ } qw( 
+              last first company address1 address2 
+              city county state zip country
+              daytime night fax 
 
-	  payby
-	  payinfo paycvv paydate payname paystate paytype
-	  paystart_month paystart_year payissue
-	  payip
+              ship_last ship_first ship_company ship_address1 ship_address2
+              ship_city ship_county ship_state ship_zip ship_country
+              ship_daytime ship_night ship_fax
+            )
+      ),
 
-	  referral_custnum comments
-	)
-      } );
-  }
-  else {
-      $cust_main = new FS::cust_main ( {
-	#'custnum'          => '',
-	'agentnum'      => $agentnum,
-	'refnum'        => $packet->{refnum}
-			   || $conf->config('signup_server-default_refnum'),
+      ( map { $_ => $packet->{$_} } qw(
+              ss stateid stateid_state
 
-	map { $_ => $packet->{$_} } qw(
+              payby
+              payinfo paycvv paydate payname paystate paytype
+              paystart_month paystart_year payissue
+              payip
 
-	  last first ss company address1 address2
-	  city county state zip country
-	  daytime night fax stateid stateid_state
+              referral_custnum comments
+            )
+      ),
 
-	  ship_last ship_first ship_ss ship_company ship_address1 ship_address2
-	  ship_city ship_county ship_state ship_zip ship_country
-	  ship_daytime ship_night ship_fax
+    } );
 
-	  payby
-	  payinfo paycvv paydate payname paystate paytype
-	  paystart_month paystart_year payissue
-	  payip
+  } else {
 
-	  referral_custnum comments
-	)
+    $cust_main = new FS::cust_main ( {
+      #'custnum'          => '',
+      'agentnum'      => $agentnum,
+      'refnum'        => $packet->{refnum}
+                         || $conf->config('signup_server-default_refnum'),
 
-      } );
+      map { $_ => $packet->{$_} } qw(
+
+        last first ss company address1 address2
+        city county state zip country
+        daytime night fax stateid stateid_state
+
+        ship_last ship_first ship_ss ship_company ship_address1 ship_address2
+        ship_city ship_county ship_state ship_zip ship_country
+        ship_daytime ship_night ship_fax
+
+        payby
+        payinfo paycvv paydate payname paystate paytype
+        paystart_month paystart_year payissue
+        payip
+
+        referral_custnum comments
+      )
+
+    } );
   }
 
   my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
