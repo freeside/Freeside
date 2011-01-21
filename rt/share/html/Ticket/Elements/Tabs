@@ -332,6 +332,11 @@ if ($has_query) {
         title => loc('Graph'),
     };
 
+    $tabs->{"l"} = {
+        path  => "Prefs/SavedSearches.html",
+        title => 'Saved Searches',
+    };
+
 }
 
 foreach my $searchtab ( keys %{$searchtabs} ) {

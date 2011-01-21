@@ -22,6 +22,7 @@ lib/RT/Condition/CustomFieldChange.pm #create ticket on custom field change
 lib/RT/Interface/Web_Vendor.pm
  lib/RT/Interface/Web/Handler.pm #freeside comp_root for dashboard emails
  lib/RT/Record.pm #and customfield date patch
+lib/RT/SavedSearches_Local.pm #saved searches
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
 lib/RT/Transaction_Overlay.pm
 lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields
@@ -60,6 +61,8 @@ share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/PageLayout
  #html/Elements/QuickCreate
  share/html/Elements/RT__Ticket/ColumnMap
+share/html/Elements/RT__SavedSearch/ColumnMap #saved searches
+share/html/Elements/SavedSearches #saved searches
  share/html/Elements/ShowCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/SelectDate
 share/html/Elements/ShowLink_Checklist
@@ -68,6 +71,7 @@ share/html/Elements/ShowLink_Checklist
  share/html/Elements/SelectCustomerAgent #SearchCustomerFields
  share/html/Elements/SelectCustomerClass #SearchCustomerFields
  share/html/Elements/SelectCustomerTag #SearchCustomerFields
+share/html/Prefs/SavedSearches.html #saved searches
  share/html/Search/Build.html
 share/html/Search/Results.tsv #content-type bug fix
  share/html/Search/Elements/BuildFormatString
@@ -82,7 +86,7 @@ share/html/Ticket/Elements/ShowMembers_Checklist
  share/html/Ticket/Elements/BulkLinks
  share/html/Ticket/Elements/ShowSummary
  share/html/Ticket/Elements/ShowTransactionAttachments
- share/html/Ticket/Elements/Tabs
+ share/html/Ticket/Elements/Tabs #saved searches
 share/html/Ticket/ModifyCustomers.html
  html/NoAuth/css/3.5-default/main.css
  html/NoAuth/css/3.5-default/misc.css

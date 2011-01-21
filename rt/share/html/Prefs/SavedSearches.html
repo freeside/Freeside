@@ -1,0 +1,10 @@
+<& /Elements/Header, Title => $title, &>
+<& /Ticket/Elements/Tabs,
+    current_tab => "Prefs/SavedSearches.html",
+    Title => $title,
+&>
+<& /Elements/SavedSearches, %ARGS &>
+
+<%INIT>
+my $title = "Saved Searches";
+</%INIT>
