@@ -22,7 +22,8 @@ sub do_action {
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
 
-  $cust_bill->realtime_card;
+  my %opt = ('cc_surcharge_from_event' => 1);
+  $cust_bill->realtime_card(%opt);
 }
 
 1;

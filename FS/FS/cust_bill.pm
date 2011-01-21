@@ -1958,7 +1958,8 @@ sub realtime_lec {
 }
 
 sub realtime_bop {
-  my( $self, $method ) = @_;
+  my( $self, $method ) = (shift,shift);
+  my %opt = @_;
 
   my $cust_main = $self->cust_main;
   my $balance = $cust_main->balance;
@@ -1987,6 +1988,7 @@ sub realtime_bop {
 #this didn't do what we want, it just calls apply_payments_and_credits
 #    'apply'       => 1,
     'apply_to_invoice' => 1,
+    %opt,
  #what we want:
  #this changes application behavior: auto payments
                         #triggered against a specific invoice are now applied

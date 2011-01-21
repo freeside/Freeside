@@ -19,7 +19,7 @@ $realtime_bop_decline_quiet = 0;
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
 # 3 is even more information including possibly sensitive data
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::cust_main::Billing_Realtime]';
 
 install_callback FS::UID sub { 
@@ -186,6 +186,13 @@ sub _payment_gateway {
     }
   }
 
+  if ( $options->{'fake_gatewaynum'} ) {
+	$options->{payment_gateway} =
+	    qsearchs('payment_gateway',
+		      { 'gatewaynum' => $options->{'fake_gatewaynum'}, }
+		    );
+  }
+
   $options->{payment_gateway} = $self->agent->payment_gateway( %$options )
     unless exists($options->{payment_gateway});
 
@@ -308,13 +315,39 @@ sub realtime_bop {
     $options{method} = $method;
     $options{amount} = $amount;
   }
+
+
+  ### 
+  # optional credit card surcharge
+  ###
+
+  my $cc_surcharge = 0;
+  my $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage');
   
+  # always add cc surcharge if called from event 
+  if($options{'cc_surcharge_from_event'} && $cc_surcharge_pct > 0) {
+      $cc_surcharge = $options{'amount'} * $cc_surcharge_pct / 100;
+      $options{'amount'} += $cc_surcharge;
+      $options{'amount'} = sprintf("%.2f", $options{'amount'}); # round (again)?
+  }
+  elsif($cc_surcharge_pct > 0) { # we're called not from event (i.e. from a 
+                                 # payment screen), so consider the given 
+				 # amount as post-surcharge
+    $cc_surcharge = $options{'amount'} - ($options{'amount'} / ( 1 + $cc_surcharge_pct/100 ));
+  }
+  if ( $cc_surcharge > 0) {
+      $cc_surcharge = sprintf("%.2f",$cc_surcharge);
+      $options{'cc_surcharge'} = $cc_surcharge;
+  }
+ 
+
   if ( $DEBUG ) {
     warn "$me realtime_bop (new): $options{method} $options{amount}\n";
+    warn " cc_surcharge = $cc_surcharge\n";
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
-  return $self->fake_bop(%options) if $options{'fake'};
+  return $self->fake_bop(\%options) if $options{'fake'};
 
   $self->_bop_defaults(\%options);
 
@@ -709,6 +742,11 @@ sub fake_bop {
   } );
   $cust_pay->payunique( $options{payunique} ) if length($options{payunique});
 
+  if ( $DEBUG ) {
+      warn "fake_bop\n cust_pay: ". Dumper($cust_pay) . "\n options: ";
+      warn "  $_ => $options{$_}\n" foreach keys %options;
+  }
+
   my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
 
   if ( $error ) {
@@ -870,6 +908,60 @@ sub _realtime_bop_result {
           #but we still should return no error cause the payment otherwise went
           #through...
         }
+      }
+
+      # have a CC surcharge portion --> one-time charge
+      if ( $options{'cc_surcharge'} > 0 ) { 
+	  my $invnum;
+	  $invnum = $options{'invnum'} if $options{'invnum'};
+	  unless ( $invnum ) { # probably from a payment screen
+	     # do we have any open invoices? pick earliest
+	     # uses the fact that cust_main->cust_bill sorts by date ascending
+	     my @open = $self->open_cust_bill;
+	     $invnum = $open[0]->invnum if scalar(@open);
+	  }
+	    
+	  unless ( $invnum ) {  # still nothing? pick last closed invoice
+	     # again uses fact that cust_main->cust_bill sorts by date ascending
+	     my @closed = $self->cust_bill;
+	     $invnum = $closed[$#closed]->invnum if scalar(@closed);
+	  }
+
+	  unless ( $invnum ) {
+	    # XXX: unlikely case - pre-paying before any invoices generated
+	    # what it should do is create a new invoice and pick it
+		warn 'CC SURCHARGE AND NO INVOICES PICKED TO APPLY IT!';
+		return '';
+	  }
+
+	  my $cust_pkg;
+	  my $charge_error = $self->charge({
+				    'amount' 	=> $options{'cc_surcharge'},
+				    'pkg' 	=> 'Credit Card Surcharge',
+				    'setuptax'  => 'Y',
+				    'cust_pkg_ref' => \$cust_pkg,
+				});
+	  if($charge_error) {
+		warn 'Unable to add CC surcharge';
+		return '';
+	  }
+				    
+	  my $cust_bill_pkg = new FS::cust_bill_pkg({
+	    'invnum' => $invnum,
+	    'pkgnum' => $cust_pkg->pkgnum,
+	    'setup' => $options{'cc_surcharge'},
+	  });
+	  my $cbp_error = $cust_bill_pkg->insert;
+
+	  if ( $cbp_error) {
+		warn 'Cannot add CC surcharge line item to invoice #'.$invnum;
+		return '';
+	  } else {
+	        my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
+		warn 'invoice for cc surcharge: ' . Dumper($cust_bill) if $DEBUG;
+		$cust_bill->apply_payments_and_credits;
+	  }
+
       }
 
       return ''; #no error

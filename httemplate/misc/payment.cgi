@@ -332,6 +332,10 @@ if ( $balance > 0 ) {
   $amount = $balance;
   $amount += $fee
     if $fee && $fee_display eq 'subtract';
+
+  my $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage');
+  $amount += $amount * $cc_surcharge_pct/100 if $cc_surcharge_pct > 0;
+
   $amount = sprintf("%.2f", $amount);
 }
 

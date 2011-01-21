@@ -533,6 +533,8 @@ sub payment_info {
       'show_paystate' => $conf->exists('show_bankstate'),
 
       'save_unchecked' => $conf->exists('selfservice-save_unchecked'),
+
+      'credit_card_surcharge_percentage' => $conf->config('credit-card-surcharge-percentage'),
     };
 
   }

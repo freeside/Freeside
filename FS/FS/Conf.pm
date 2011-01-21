@@ -655,6 +655,13 @@ my %payment_gateway_options = (
   },
   
   {
+    'key'         => 'credit-card-surcharge-percentage',
+    'section'     => 'billing',
+    'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total. WARNING: this is usually prohibited by merchant account / other agreements and/or law, but is currently lawful in AU and UK.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'discount-show-always',
     'section'     => 'billing',
     'description' => 'Generate a line item on an invoice even when a package is discounted 100%',

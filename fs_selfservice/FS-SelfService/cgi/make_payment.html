@@ -17,7 +17,13 @@
   <TH ALIGN="right">Payment&nbsp;amount</TH>
   <TD COLSPAN=7>
     <TABLE><TR><TD BGCOLOR="#ffffff">
-      $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f",$balance)%>">
+<%=
+    $amt = $balance;
+    $amt += $amt * $credit_card_surcharge_percentage/100
+	if $credit_card_surcharge_percentage > 0;
+    '';
+%>
+      $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f",$amt)%>">
     </TD></TR></TABLE>
   </TD>
 </TR>
