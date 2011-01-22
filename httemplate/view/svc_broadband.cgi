@@ -83,6 +83,10 @@
           <TD ALIGN="right">Authentication Key</TD>
           <TD BGCOLOR="#ffffff"><%$auth_key%></TD>
         </TR>
+	<TR>
+          <TD ALIGN="right">Service Plan Id</TD>
+          <TD BGCOLOR="#ffffff"><%$plan_id%></TD>
+        </TR>
         <TR COLSPAN="2"><TD></TD></TR>
 %
 %foreach (sort { $a cmp $b } $svc_broadband->virtual_fields) {
@@ -203,6 +207,7 @@ my (
      $vlan_profile,
      $auth_key,
      $description,
+     $plan_id,
    ) = (
      $svc_broadband->getfield('speed_down'),
      $svc_broadband->getfield('speed_up'),
@@ -214,6 +219,7 @@ my (
      $svc_broadband->vlan_profile,
      $svc_broadband->auth_key,
      $svc_broadband->description,
+     $svc_broadband->plan_id,
    );
 
 </%init>

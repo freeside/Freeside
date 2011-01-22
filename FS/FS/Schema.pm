@@ -2353,6 +2353,7 @@ sub tables_hashref {
         'altitude', 'decimal', 'NULL', '', '', '', 
         'vlan_profile', 'varchar', 'NULL', $char_d, '', '', 
         'performance_profile', 'varchar', 'NULL', $char_d, '', '',
+        'plan_id', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique'      => [ [ 'mac_addr' ] ],

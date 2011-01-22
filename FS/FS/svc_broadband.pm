@@ -70,6 +70,8 @@ customer's router will have the same address for both its internal and external
 interfaces thus saving address space.  This has been found to work on most NAT
 routers available.
 
+=item plan_id
+
 =back
 
 =head1 METHODS
@@ -105,6 +107,14 @@ sub table_info {
                          'select_label' => 'cidr',
                          'disable_inventory' => 1,
                        },
+     'plan_id' => 'Service Plan Id',
+     'performance_profile' => 'Peformance Profile',
+     'authkey'      => 'Authentication key',
+     'mac_addr'     => 'MAC address',
+     'latitude'     => 'Latitude',
+     'longitude'    => 'Longitude',
+     'altitude'     => 'Altitude',
+     'vlan_profile' => 'VLAN profile',
     },
   };
 }
@@ -337,6 +347,7 @@ sub check {
     || $self->ut_coordn('longitude', -180, 180)
     || $self->ut_sfloatn('altitude')
     || $self->ut_textn('vlan_profile')
+    || $self->ut_textn('plan_id')
   ;
   return $error if $error;
 
