@@ -40,6 +40,7 @@ primary key
 
 devicename
 
+=item inventory_classnum
 
 =back
 
@@ -103,6 +104,7 @@ sub check {
   my $error = 
     $self->ut_numbern('devicepart')
     || $self->ut_text('devicename')
+    || $self->ut_foreign_keyn('inventory_classnum', 'inventory_class', 'classnum')
   ;
   return $error if $error;
 
@@ -119,6 +121,19 @@ sub part_export {
   my $self = shift;
   map { qsearchs( 'part_export', { 'exportnum' => $_->exportnum } ) }
     qsearch( 'export_device', { 'devicepart' => $self->devicepart } );
+}
+
+=item inventory_class
+
+Returns the inventory class (see L<FS::inventory_class>) for this device, 
+if any.
+
+=cut
+
+sub inventory_class {
+  my $self = shift;
+  return '' unless $self->inventory_classnum;
+  qsearchs('inventory_class', { 'classnum' => $self->inventory_classnum });
 }
 
 sub process_batch_import {

@@ -1,0 +1,19 @@
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/macinventory.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_macs' ],
+          )
+%>
+
+<% include( '/elements/input-text.html', %opt, 'type'=>'text' ) %>
+
+<SELECT ID="<% $opt{'prefix'} %>sel_mac_addr" NAME="<% $opt{'prefix'} %>mac_addr" 
+    notonChange="<% $opt{'prefix'} %>mac_addr_changed(this); <% $opt{'onchange'} %>"
+    <% $opt{'disabled'} %> STYLE="display: none">
+  <OPTION VALUE="">Select MAC address</OPTION>
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+</%init>

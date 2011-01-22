@@ -10,10 +10,13 @@
                                  'type'     => 'select-table',
                                  'table'    => 'part_device',
                                  'name_col' => 'devicename',
+				 'onchange' => 'devicepart_changed',
                                  'empty_label' =>'Select device type',
                                  #'hashref'        =>{ disabled => '' },
                                },
-                               'mac_addr',
+			       { field => 'mac_addr',
+			         type => 'select-mac',
+			       },
                                { 'field' => 'svcnum',
                                  'type'  => 'hidden',
                                },
@@ -24,9 +27,78 @@
                                      my( $cgi, $object ) = @_;
                                      $object->svcnum( $cgi->param('svcnum') );
                                    },
+		 'html_foot' => $html_foot,
            )
 %>
 <%init>
+
+my @deviceparts_with_inventory;
+my @part_device = qsearch('part_device', {} );
+foreach my $part_device ( @part_device ) {
+    push @deviceparts_with_inventory, $part_device->devicepart
+	if $part_device->inventory_classnum;
+}
+
+my $html_foot = sub {
+    my $js = "
+<SCRIPT TYPE=\"text/javascript\">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+    function devicepart_changed(what){
+	
+	var macsel = document.getElementById('sel_mac_addr');
+	var mac = document.getElementById('mac_addr');
+	
+	function update_macs(macs) {
+	    for ( var i = macsel.length; i >= 0; i-- )
+	      macsel.options[i] = null;
+	    
+	    var macArray = eval('(' + macs + ')' );
+	    if(macArray.length == 0) 
+		opt(macsel,'','No MAC addresses found in inventory for this device type');
+	    else
+		opt(macsel,'','Select MAC address');
+
+	    for ( var i = 0; i < macArray.length; i++ ) {
+		opt(macsel,macArray[i],macArray[i]);
+	    }
+
+	}
+
+	var devicepart = what.options[what.selectedIndex].value;
+
+	var deviceparts_with_inventory = new Array(\"";
+$js .= join("\",\"",@deviceparts_with_inventory);
+$js .= "\");
+
+	var hasInventory = false;
+	for ( i = 0; i < deviceparts_with_inventory.length; i++ ) {
+	    if ( deviceparts_with_inventory[i] == devicepart ) 
+		hasInventory = true;
+	}
+	
+
+	if(hasInventory) { // do the AJAX thing, disable text field
+	    macsel.style.display = 'inline';
+	    mac.style.display = 'none';
+	    mac.value = '';
+	    get_macs( devicepart, update_macs );
+	} else { // clear & display text field only, clear/hide select
+	    mac.style.display = 'inline';
+	    macsel.style.display = 'none';
+	    macsel.selectedIndex = 0;
+	}
+
+    }
+</SCRIPT>";
+
+  $js;
+};
 
 # :/  needs agent-virt so you can't futz with arbitrary devices
 

@@ -4,7 +4,9 @@
                  'labels' => { 
                                'devicepart' => 'Part number',
                                'devicename' => 'Device name',
+			       'inventory_classnum' => 'Inventory class',
                              },
+		 'fields' => \@fields,
                  'viewall_dir' => 'browse',
                  'html_bottom' => $html_bottom_sub,
            )
@@ -19,6 +21,24 @@ my $extra_sql =
                 keys %{FS::part_export::export_info('part_device')}
       );
 $extra_sql = $extra_sql ? " WHERE ( $extra_sql ) " : " WHERE 0 = 1 ";
+
+my @inventory_classnums;
+push @inventory_classnums, '';
+my %inventory_classnum_labels;
+$inventory_classnum_labels{''} = '';
+my @inventory_classes = qsearch('inventory_class', {} );
+foreach my $inventory_class ( @inventory_classes ) {
+    push @inventory_classnums, $inventory_class->classnum;
+    $inventory_classnum_labels{$inventory_class->classnum} = $inventory_class->classname;
+}
+			
+my @fields;
+push @fields, 'devicename',
+	      { field => 'inventory_classnum', 
+		type => 'select',
+		options => \@inventory_classnums,
+		labels => \%inventory_classnum_labels,
+	      };
 
 my $html_bottom_sub = sub {
   my $part_device = shift;
