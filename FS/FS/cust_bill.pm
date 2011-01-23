@@ -286,10 +286,39 @@ sub replace_check {
   #return "Can't change _date!" unless $old->_date eq $new->_date;
   return "Can't change _date" unless $old->_date == $new->_date;
   return "Can't change charged" unless $old->charged == $new->charged
-                                    || $old->charged == 0;
+                                    || $old->charged == 0
+				    || $new->{'Hash'}{'cc_surcharge_replace_hack'};
 
   '';
 }
+
+
+=item add_cc_surcharge
+
+Giant hack
+
+=cut
+
+sub add_cc_surcharge {
+    my ($self, $pkgnum, $amount) = (shift, shift, shift);
+
+    my $error;
+    my $cust_bill_pkg = new FS::cust_bill_pkg({
+				    'invnum' => $self->invnum,
+				    'pkgnum' => $pkgnum,
+				    'setup' => $amount,
+			});
+    $error = $cust_bill_pkg->insert;
+    return $error if $error;
+
+    $self->{'Hash'}{'cc_surcharge_replace_hack'} = 1;
+    $self->charged($self->charged+$amount);
+    $error = $self->replace;
+    return $error if $error;
+
+    $self->apply_payments_and_credits;
+}
+
 
 =item check
 

@@ -912,6 +912,8 @@ sub _realtime_bop_result {
 
       # have a CC surcharge portion --> one-time charge
       if ( $options{'cc_surcharge'} > 0 ) { 
+	    # XXX: this whole block needs to be in a transaction?
+
 	  my $invnum;
 	  $invnum = $options{'invnum'} if $options{'invnum'};
 	  unless ( $invnum ) { # probably from a payment screen
@@ -942,26 +944,28 @@ sub _realtime_bop_result {
 				    'cust_pkg_ref' => \$cust_pkg,
 				});
 	  if($charge_error) {
-		warn 'Unable to add CC surcharge';
+		warn 'Unable to add CC surcharge cust_pkg';
 		return '';
+	  }
+
+	  $cust_pkg->setup(time);
+	  my $cp_error = $cust_pkg->replace;
+	  if($cp_error) {
+	      warn 'Unable to set setup time on cust_pkg for cc surcharge';
+	    # but keep going...
 	  }
 				    
-	  my $cust_bill_pkg = new FS::cust_bill_pkg({
-	    'invnum' => $invnum,
-	    'pkgnum' => $cust_pkg->pkgnum,
-	    'setup' => $options{'cc_surcharge'},
-	  });
-	  my $cbp_error = $cust_bill_pkg->insert;
-
-	  if ( $cbp_error) {
-		warn 'Cannot add CC surcharge line item to invoice #'.$invnum;
-		return '';
-	  } else {
-	        my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
-		warn 'invoice for cc surcharge: ' . Dumper($cust_bill) if $DEBUG;
-		$cust_bill->apply_payments_and_credits;
+	  my $cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum });
+	  unless ( $cust_bill ) {
+	      warn "race condition + invoice deletion just happened";
+	      return '';
 	  }
 
+	  my $grand_error = 
+	    $cust_bill->add_cc_surcharge($cust_pkg->pkgnum,$options{'cc_surcharge'});
+
+	  warn "cannot add CC surcharge to invoice #$invnum: $grand_error"
+	    if $grand_error;
       }
 
       return ''; #no error
