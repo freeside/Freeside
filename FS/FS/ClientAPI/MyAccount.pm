@@ -640,6 +640,7 @@ sub process_payment {
   #false laziness w/process/payment.cgi
   my $payinfo;
   my $paycvv = '';
+  my $paynum = '';
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
   
     $p->{'payinfo1'} =~ /^([\dx]+)$/
@@ -701,6 +702,7 @@ sub process_payment {
     'payname'  => $payname,
     'paybatch' => $paybatch, #this doesn't actually do anything
     'paycvv'   => $paycvv,
+    'paynum_ref' => \$paynum,
     'pkgnum'   => $session->{'pkgnum'},
     'discount_term' => $discount_term,
     'selfservice' => 1,
@@ -743,7 +745,46 @@ sub process_payment {
     }
   }
 
-  return { 'error' => '' };
+  my $receipt_html = '';
+  if($paynum) { 
+      # currently supported for realtime CC only; send receipt data to SS
+      my $cust_pay = qsearchs('cust_pay', { 'paynum' => $paynum } );
+      if($cust_pay) {
+	$receipt_html = qq!
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=2>
+
+<TR>
+  <TD ALIGN="right">Payment#</TD>
+  <TD BGCOLOR="#FFFFFF"><B>! . $cust_pay->paynum . qq!</B></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Date</TD>
+
+  <TD BGCOLOR="#FFFFFF"><B>! . 
+	time2str("%a&nbsp;%b&nbsp;%o,&nbsp;%Y&nbsp;%r", $cust_pay->_date)
+							    . qq!</B></TD>
+</TR>
+
+
+<TR>
+  <TD ALIGN="right">Amount</TD>
+  <TD BGCOLOR="#FFFFFF"><B>! . $cust_pay->paid . qq!</B></TD>
+
+</TR>
+
+<TR>
+  <TD ALIGN="right">Payment method</TD>
+  <TD BGCOLOR="#FFFFFF"><B>! . $cust_pay->payby_name .' #'. $cust_pay->paymask
+								. qq!</B></TD>
+</TR>
+
+</TABLE>
+!;
+      }
+  }
+
+  return { 'error' => '', 'receipt_html' => $receipt_html, };
 
 }
 
