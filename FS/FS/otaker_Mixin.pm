@@ -4,6 +4,7 @@ use strict;
 use Carp qw( croak ); #confess );
 use FS::Record qw( qsearch qsearchs );
 use FS::access_user;
+use FS::UID qw( dbh );
 
 sub otaker {
   my $self = shift;
@@ -75,6 +76,11 @@ sub _upgrade_otaker {
       $record->set('otaker', '');
       my $error = $record->replace;
       die $error if $error;
+    }
+        
+    if ( $table eq 'cust_attachment' ) {
+	warn "  committing (cust_attachment) \n";
+	dbh->commit or die dbh->errstr;
     }
 
   }

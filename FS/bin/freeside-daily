@@ -54,6 +54,10 @@ backup_scp();
 use FS::Cron::rt_tasks qw(rt_escalate);
 rt_escalate(%opt);
 
+my $deldir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/";
+unlink <${deldir}.invoice*>;
+unlink <${deldir}.letter*>;
+
 ###
 # subroutines
 ###
