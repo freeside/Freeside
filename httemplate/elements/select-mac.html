@@ -6,7 +6,7 @@
 
 <% include( '/elements/input-text.html', %opt, 'type'=>'text' ) %>
 
-<SELECT ID="<% $opt{'prefix'} %>sel_mac_addr" NAME="<% $opt{'prefix'} %>mac_addr" 
+<SELECT ID="<% $opt{'prefix'} %>sel_mac_addr" NAME="<% $opt{'prefix'} %>sel_mac_addr" 
     notonChange="<% $opt{'prefix'} %>mac_addr_changed(this); <% $opt{'onchange'} %>"
     <% $opt{'disabled'} %> STYLE="display: none">
   <OPTION VALUE="">Select MAC address</OPTION>

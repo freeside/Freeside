@@ -10,6 +10,10 @@
 %>
 <%init>
 
+if($cgi->param('sel_mac_addr') && !$cgi->param('mac_addr')) {
+    $cgi->param('mac_addr',$cgi->param('sel_mac_addr'));
+}
+
 # :/  needs agent-virt so you can't futz with arbitrary devices
 
 die "access denied"
