@@ -5,6 +5,8 @@ use List::Util qw(max);
 
 our %info = ( 'disabled' => 1 ); #torrus_Common not a usable price plan directly
 
+our $DEBUG = 1;
+
 sub calc_recur {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;
@@ -28,13 +30,16 @@ sub calc_usage {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;
 
+
   my @sdate = localtime($$sdate);
   my $rep_date = ($sdate[5]+1900). '-'. ($sdate[4]+1). '-01';
+  warn "searching for MonthlyUsage report for $rep_date\n" if $DEBUG;
   my $rep_sql = "
     SELECT id FROM reports WHERE rep_date = ?
                              AND reportname = 'MonthlyUsage' and iscomplete = 1
   ";
   my $rep_id = $self->scalar_sql($rep_sql, $rep_date) or return 0;
+  warn "report id $rep_id found\n" if $DEBUG;
 
   #abort if ! iscomplete instead?
 
@@ -55,10 +60,12 @@ sub calc_usage {
 
     my $serviceid = $svc_port->serviceid;
 
+    warn "searching for $serviceid usage\n" if $DEBUG;
     my $in  = $self->scalar_sql($sql, $self->_torrus_name, $serviceid.'_IN');
     my $out = $self->scalar_sql($sql, $self->_torrus_name, $serviceid.'_OUT');
 
     my $max = max($in,$out);
+    warn "$serviceid usage is $max\n" if $DEBUG;
 
     my $inc = $self->option($self->_torrus_base);#aggregate instead of per-port?
     $max -= $inc;
