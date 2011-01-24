@@ -30,9 +30,12 @@ sub calc_usage {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;
 
-
   my @sdate = localtime($$sdate);
-  my $rep_date = ($sdate[5]+1900). '-'. ($sdate[4]+1). '-01';
+  #sdate is next bill date, but we want the report from last month
+  my($m, $y) = ($sdate[4], $sdate[5]);
+  if ( $m == 0 ) { $m=12; $y--; }
+  $m = "0$m" if length($m) == 1;
+  my $rep_date = "$y-$m-01";
   warn "searching for MonthlyUsage report for $rep_date\n" if $DEBUG;
   my $rep_sql = "
     SELECT id FROM reports WHERE rep_date = ?
