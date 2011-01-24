@@ -32,7 +32,7 @@ sub calc_usage {
 
   my @sdate = localtime($$sdate);
   #sdate is next bill date, but we want the report from last month
-  my($m, $y) = ($sdate[4], $sdate[5]);
+  my($m, $y) = ($sdate[4], $sdate[5]+1900);
   if ( $m == 0 ) { $m=12; $y--; }
   $m = "0$m" if length($m) == 1;
   my $rep_date = "$y-$m-01";
