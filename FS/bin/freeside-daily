@@ -57,6 +57,7 @@ rt_escalate(%opt);
 my $deldir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/";
 unlink <${deldir}.invoice*>;
 unlink <${deldir}.letter*>;
+unlink <${deldir}.CGItemp*>;
 
 ###
 # subroutines
