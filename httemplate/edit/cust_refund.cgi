@@ -98,7 +98,7 @@
 
   <TR>
     <TD ALIGN="right">Amount</TD>
-    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="refund" VALUE="<% $refund %>" SIZE=8 MAXLENGTH=8> by <B><% FS::payby->payname($payby) %></B></TD>
+    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="refund" VALUE="<% $refund %>" SIZE=8 MAXLENGTH=9> by <B><% FS::payby->payname($payby) %></B></TD>
   </TR>
 
 % if ( $payby eq 'BILL' ) { 

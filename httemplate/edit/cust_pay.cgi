@@ -43,7 +43,7 @@ Payment
 <TR>
   <TD ALIGN="right">Amount</TD>
   <TD BGCOLOR="#ffffff" ALIGN="right"><% $money_char %></TD>
-  <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=8> by <B><% FS::payby->payname($payby) %></B></TD>
+  <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> by <B><% FS::payby->payname($payby) %></B></TD>
 </TR>
 
   <% include('/elements/tr-select-discount_term.html',

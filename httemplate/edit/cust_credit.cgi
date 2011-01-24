@@ -19,7 +19,7 @@
 
   <TR>
     <TD ALIGN="right">Amount</TD>
-    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="amount" VALUE="<% $amount |h %>" SIZE=8 MAXLENGTH=8></TD>
+    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="amount" VALUE="<% $amount |h %>" SIZE=8 MAXLENGTH=9></TD>
   </TR>
 
 %
