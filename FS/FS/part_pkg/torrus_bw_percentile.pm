@@ -25,8 +25,9 @@ our %info = (
   'freq' => 'm',
 );
 
-sub _torrus_name { '95TH_PERCENTILE'; }
-sub _torrus_base { 'base_mbps'; }
-sub _torrus_rate { 'mbps_rate'; }
+sub _torrus_name  { '95TH_PERCENTILE'; }
+sub _torrus_base  { 'base_mbps'; }
+sub _torrus_rate  { 'mbps_rate'; }
+sub _torrus_label { 'mbps'; };
 
 1;

@@ -3,7 +3,7 @@ package FS::part_pkg::torrus_Common;
 use base qw( FS::part_pkg::prorate );
 use List::Util qw(max);
 
-our %info = ( 'disabled' => 1 ); #recur_Common not a usable price plan directly
+our %info = ( 'disabled' => 1 ); #torrus_Common not a usable price plan directly
 
 sub calc_recur {
   my $self = shift;
@@ -28,12 +28,18 @@ sub calc_usage {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;
 
-  my $rep_id = 2; #XXX find the one matching the timeframe
-  #SELECT id FROM WHERE reportname = 'MonthlyUsage' AND rep_date = ''
+  my @sdate = localtime($$sdate);
+  my $rep_date = ($sdate[5]+1900). '-'. ($sdate[4]+1). '-01';
+  my $rep_sql = "
+    SELECT id FROM reports WHERE rep_date = ?
+                             AND reportname = 'MonthlyUsage' and iscomplete = 1
+  ";
+  my $rep_id = $self->scalar_sql($rep_sql, $rep_date) or return 0;
 
-  #XXX abort if ! iscomplete?
+  #abort if ! iscomplete instead?
 
-  my $serviceid = 'TESTING_1'; #XXX from svc_port (loop?)
+  my $conf = new FS::Conf;
+  my $money_char = $conf->config('money_char') || '$';
 
   my $sql = "
     SELECT value FROM reportfields
@@ -41,20 +47,38 @@ sub calc_usage {
         AND name = ?
         AND servciceid = ?
   ";
-  
-  my $in  = $self->scalar_sql($sql, $self->_torrus_name, $serviceid.'_IN');
-  my $out = $self->scalar_sql($sql, $self->_torrus_name, $serviceid.'_OUT');
+ 
+  my $total = 0;
+  foreach my $svc_port (
+    grep $_->table('svc_port'), map $_->svc_x, $cust_pkg->cust_svc
+  ) {
 
-  my $max = max($in,$out);
+    my $serviceid = $svc_port->serviceid;
 
-  $max -= $self->option($self->_torrus_base);
-  return 0 if $max < 0;
+    my $in  = $self->scalar_sql($sql, $self->_torrus_name, $serviceid.'_IN');
+    my $out = $self->scalar_sql($sql, $self->_torrus_name, $serviceid.'_OUT');
 
-  #XXX add usage details
+    my $max = max($in,$out);
 
-  return sprintf('%.2f', $self->option($self->_torrus_rate) * $max );
+    my $inc = $self->option($self->_torrus_base);#aggregate instead of per-port?
+    $max -= $inc;
+    next if $max < 0;
+
+    my $amount = sprintf('%.2f', $self->option($self->_torrus_rate) * $max );
+    $total += $amount;
+
+    #add usage details to invoice
+    my $l = $self->_torrus_label;
+    my $d = "Last month's usage for $serviceid: $max$l";
+    $d .= " (". ($max+$inc). "$l - $inc$l included)" if $inc;
+    $d .= ": $money_char$amount";
+
+    push @$details, $d;
+
+  }
+
+  return sprintf('%.2f', $total );
 
 }
-
 
 1;
