@@ -1,0 +1,28 @@
+<SELECT NAME="<% $opt{'field'} || 'serviceid' %>">
+
+% unless ( $opt{'multiple'} || $opt{'disable_empty'} ) {
+  <OPTION VALUE="">Select serviceid</OPTION>
+% }
+
+% foreach my $serviceid ( keys %serviceid ) {
+    <OPTION VALUE="<%$serviceid%>"><% $serviceid %></OPTION>
+% } 
+
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+#is this going to get too slow or will the index make it okay?
+my $sth = dbh->prepare("SELECT DISTINCT(serviceid) FROM srvexport")
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my %serviceid = ();
+while ( my $row = $sth->fetchrow_arrayref ) {
+  my $serviceid = $row->[0];
+  $serviceid =~ s/_(IN|OUT)$//;
+  $serviceid{$serviceid}=1;
+}
+
+</%init>
