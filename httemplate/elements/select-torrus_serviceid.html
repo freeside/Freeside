@@ -5,7 +5,9 @@
 % }
 
 % foreach my $serviceid ( keys %serviceid ) {
-    <OPTION VALUE="<%$serviceid%>"><% $serviceid %></OPTION>
+    <OPTION VALUE="<%$serviceid%>"
+            <% $serviceid eq $value ? 'SELECTED' : '' %>
+    ><% $serviceid %></OPTION>
 % } 
 
 </SELECT>
@@ -13,6 +15,8 @@
 <%init>
 
 my %opt = @_;
+
+my $value = $opt{'curr_value'} || $opt{'value'};
 
 #is this going to get too slow or will the index make it okay?
 my $sth = dbh->prepare("SELECT DISTINCT(serviceid) FROM srvexport")
