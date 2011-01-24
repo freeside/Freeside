@@ -80,7 +80,7 @@ sub calc_usage {
 
     #add usage details to invoice
     my $l = $self->_torrus_label;
-    my $d = "Last month's usage for $serviceid: ". sprintf('%2f',$max). $l;
+    my $d = "Last month's usage for $serviceid: ". sprintf('%.2f',$max). $l;
     $d .= " (". ($max+$inc). "$l - $inc$l included)" if $inc;
     $d .= " @ $money_char$rate/$l: $money_char$amount";
 
