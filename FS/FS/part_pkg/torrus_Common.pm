@@ -74,14 +74,15 @@ sub calc_usage {
     $max -= $inc;
     next if $max < 0;
 
-    my $amount = sprintf('%.2f', $self->option($self->_torrus_rate) * $max );
+    my $rate = $self->option($self->_torrus_rate);
+    my $amount = sprintf('%.2f', $rate * $max );
     $total += $amount;
 
     #add usage details to invoice
     my $l = $self->_torrus_label;
-    my $d = "Last month's usage for $serviceid: $max$l";
+    my $d = "Last month's usage for $serviceid: ". sprintf('%2f',$max). $l;
     $d .= " (". ($max+$inc). "$l - $inc$l included)" if $inc;
-    $d .= ": $money_char$amount";
+    $d .= " @ $money_char$rate/$l: $money_char$amount";
 
     push @$details, $d;
 
