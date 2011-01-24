@@ -53,7 +53,7 @@ sub calc_usage {
     SELECT value FROM reportfields
       WHERE rep_id = $rep_id
         AND name = ?
-        AND servciceid = ?
+        AND serviceid = ?
   ";
  
   my $total = 0;
