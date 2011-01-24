@@ -25,8 +25,9 @@ our %info = (
   'freq' => 'm',
 );
 
-sub _torrus_name { 'VOLUME'; }
-sub _torrus_base { 'base_gb'; }
-sub _torrus_rate { 'gb_rate'; }
+sub _torrus_name  { 'VOLUME'; }
+sub _torrus_base  { 'base_gb'; }
+sub _torrus_rate  { 'gb_rate'; }
+sub _torrus_label { 'gb'; };
 
 1;
