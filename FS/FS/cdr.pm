@@ -678,6 +678,50 @@ sub invoice_header {
   $export_names{$format}->{'invoice_header'};
 }
 
+=item clear_status 
+
+Clears cdr and any associated cdr_termination statuses - used for 
+CDR reprocessing.
+
+=cut
+
+sub clear_status {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->freesidestatus('');
+  my $error = $self->replace;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  } 
+
+  my @cdr_termination = qsearch('cdr_termination', 
+				{ 'acctid' => $self->acctid } );
+  foreach my $cdr_termination ( @cdr_termination ) {
+      $cdr_termination->status('');
+      $error = $cdr_termination->replace;
+      if ( $error ) {
+	$dbh->rollback if $oldAutoCommit;
+	return $error;
+      } 
+  }
+  
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+}
+
 =item import_formats
 
 Returns an ordered list of key value pairs containing import format names

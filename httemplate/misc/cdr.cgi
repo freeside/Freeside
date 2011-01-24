@@ -33,10 +33,7 @@ if ( $action eq 'new' ) {
   ) {
     my $cdr = qsearchs('cdr', { 'acctid' => $acctid });
     if ( $action eq 'reprocess selected' && $cdr ) { #new
-      my %hash = $cdr->hash;
-      $hash{'freesidestatus'} = '';
-      my $new = new FS::cdr \%hash;
-      my $error = $new->replace($cdr);
+      my $error = $cdr->clear_status;
       die $error if $error;
     } elsif ( $action eq 'delete selected' && $cdr ) { #del
       my $error = $cdr->delete;
