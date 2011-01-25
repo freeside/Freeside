@@ -25,7 +25,7 @@ adminsuidsetup $user;
 my $fsdbh = FS::UID::dbh;
 
 # check for existence of freesidestatus
-my $table = $opt{T} || 'cdrs';
+my $table = $opt{T} || 'acc';
 my $status = $mysql->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
 if( ! @$status ) {
   print "Adding freesidestatus column...\n";
@@ -37,11 +37,11 @@ else {
 }
 
 my @cols = ( qw( 
-  cdr_id call_start_time duration sip_call_id sip_from_tag
-  sip_to_tag created
-  ) );
+  id caller_id callee_id method from_tag to_tag callid sip_code sip_reason 
+  time )
+);
 
-my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL";
+my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL AND sip_code = 200"; # only want successful calls
 my $sth = $mysql->prepare($sql);
 $sth->execute;
 print "Importing ".$sth->rows." records...\n";
@@ -55,38 +55,58 @@ my $cdrbatchnum = $cdr_batch->cdrbatchnum;
 my $imports = 0;
 my $updates = 0;
 
+my %cdrs;
 my $row;
 while ( $row = $sth->fetchrow_hashref ) {
-  my $cdr = FS::cdr->new({
-      calldate    => $row->{'call_start_time'},
-      src         => $row->{'sip_from_tag'},
-      dst         => $row->{'sip_to_tag'},
-      duration    => $row->{'duration'},
-      billsec     => $row->{'duration'},
-      uniqueid    => $row->{'cdr_id'},
+  my ($callid) = $row->{'callid'} =~ /(.*)@/;
+  my ($src) = $row->{'caller_id'} =~ /^sip(\d+)@/;
+  my ($dst) = $row->{'callee_id'} =~ /^sip(\d+)@/;
+
+  my $cdr = $cdrs{$callid};
+  if ( !$cdr ) {
+    $cdr = $cdrs{$callid} = FS::cdr->new ({
+      src         => $src,
+      dst         => $dst,
+      uniqueid    => $callid,
       cdrbatchnum => $cdrbatchnum,
     });
-  $cdr->startdate(str2time($cdr->calldate));
-  $cdr->cdrbatchnum($cdrbatchnum);
-  my $error = $cdr->insert;
-  if($error) {
-    print "failed import: $error\n";
   }
-  else {
-    $imports++;
-    if( $mysql->do("UPDATE $table SET freesidestatus = 'done' 
-        WHERE cdr_id = ?",
-        undef,
-        $row->{'cdr_id'}
-      ) ) {
-        $updates++;
+  my $date = str2time($row->{'time'});
+  if ( $row->{'method'} eq 'INVITE' ) {
+    $cdr->startdate($date);
+  }
+  elsif ( $row->{'method'} eq 'ACK' ) {
+    $cdr->answerdate($date);
+  }
+  elsif ( $row->{'method'} eq 'BYE' ) {
+    $cdr->enddate($date);
+  }
+  if ( $cdr->startdate and $cdr->answerdate and $cdr->enddate ) {
+    $cdr->duration($cdr->enddate - $cdr->startdate);
+    $cdr->billsec($cdr->enddate - $cdr->answerdate);
+    my $error = $cdr->insert;
+    if($error) {
+      print "failed import: $error\n";
     }
     else {
-      print "failed to set status: ".$mysql->errstr."\n";
+      $imports++;
+      if( $updates += $mysql->do("UPDATE $table SET freesidestatus = 'done' 
+          WHERE sip_code = 200 AND callid = ?",
+          undef,
+          $row->{'callid'}
+        ) ) { #nothing
+      }
+      else {
+        print "failed to set status: ".$mysql->errstr."\n";
+      }
+      delete $cdrs{$callid};
     }
   }
 }
-print "Done.\nImported $imports CDRs, marked $updates CDRs as done.\n";
+print "Done.\nImported $imports CDRs, marked $updates accounting events as done.\n";
+if ( keys(%cdrs) ) {
+  print "Skipped ".scalar(keys(%cdrs))." incomplete calls.\n";
+}
 $mysql->disconnect;
 
 sub usage {
