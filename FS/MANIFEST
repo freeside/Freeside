@@ -557,3 +557,5 @@ t/svc_port.t
 FS/h_svc_port.pm
 t/h_svc_port.t
 FS/cust_main/Status.pm
+FS/NetworkMonitoringSystem.pm
+FS/NetworkMonitoringSystem/Torrus_Internal.pm

@@ -135,6 +135,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::Report::FCC_477;
   use FS::Report::Table::Monthly;
   use FS::TicketSystem;
+  use FS::NetworkMonitoringSystem;
   use FS::Tron qw( tron_lint );
 
   use FS::agent;
