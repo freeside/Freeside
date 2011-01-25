@@ -59,14 +59,12 @@ my %cdrs;
 my $row;
 while ( $row = $sth->fetchrow_hashref ) {
   my ($callid) = $row->{'callid'} =~ /(.*)@/;
-  my ($src) = $row->{'caller_id'} =~ /^sip(\d+)@/;
-  my ($dst) = $row->{'callee_id'} =~ /^sip(\d+)@/;
+  my ($src) = $row->{'caller_id'} =~ /^sip:(\d+)@/;
+  my ($dst) = $row->{'callee_id'} =~ /^sip:(\d+)@/;
 
   my $cdr = $cdrs{$callid};
   if ( !$cdr ) {
     $cdr = $cdrs{$callid} = FS::cdr->new ({
-      src         => $src,
-      dst         => $dst,
       uniqueid    => $callid,
       cdrbatchnum => $cdrbatchnum,
     });
@@ -74,6 +72,8 @@ while ( $row = $sth->fetchrow_hashref ) {
   my $date = str2time($row->{'time'});
   if ( $row->{'method'} eq 'INVITE' ) {
     $cdr->startdate($date);
+    $cdr->src($src);
+    $cdr->dst($dst);
   }
   elsif ( $row->{'method'} eq 'ACK' ) {
     $cdr->answerdate($date);
