@@ -42,6 +42,7 @@ sub rt_escalate {
   foreach (qw(
     Search::ActiveTicketsInQueue 
     Action::EscalatePriority
+    Action::EscalateQueue
     )) {
     eval "use RT::$_";
     die $@ if $@;
@@ -51,7 +52,7 @@ sub rt_escalate {
   # Mechanics:
   # We're using EscalatePriority, so search in all queues that have a 
   # priority range defined. Select all active tickets in those queues and
-  # LinearEscalate them.
+  # EscalatePriority, then EscalateQueue them.
 
   # to make some actions work without complaining
   %void = map { $_ => "RT::$_"->new($CurrentUser) }
@@ -61,6 +62,8 @@ sub rt_escalate {
   # we might want to do, but escalation is the only one we do now.
   my $queues = RT::Queues->new($CurrentUser);
   $queues->UnLimit;
+  my @actions = ();
+  my @active_tickets = ();
   while (my $queue = $queues->Next) {
     if ( $queue->InitialPriority == $queue->FinalPriority ) {
       warn "Queue '".$queue->Name."' (skipped)\n" if $DEBUG;
@@ -76,8 +79,24 @@ sub rt_escalate {
     $search->Prepare;
     while (my $ticket = $tickets->Next) {
       warn 'Ticket #'.$ticket->Id()."\n" if $DEBUG;
-      # We don't need transaction stuff from rt-crontool here
-      action($ticket, 'EscalatePriority', "CurrentTime:$time");
+      my @a = (
+        action($ticket, 'EscalatePriority', "CurrentTime:$time"),
+        action($ticket, 'EscalateQueue')
+      );
+      next if !@a;
+      push @actions, @a;
+      push @active_tickets, $ticket; # avoid RT's overzealous garbage collector
+    }
+  }
+  foreach (grep {$_} @actions) {
+    my ($val, $msg) = $_->Commit;
+    if ( $DEBUG ) {
+      if ($val) {
+        warn "Action committed: ".ref($_)." #".$_->TicketObj->Id."\n";
+      }
+      else {
+        warn "Action returned $msg: #".$_->TicketObj->Id."\n";
+      }
     }
   }
   return;
@@ -98,11 +117,13 @@ sub action {
     ScripAction   => $void{'ScripAction'},
     CurrentUser   => $CurrentUser,
   );
-  return unless $action_obj->Prepare;
-  warn "Action prepared: $action\n" if $DEBUG;
-  $action_obj->Commit;
-  warn "Action committed: $action\n" if $DEBUG;
-  return;
+  if ( $action_obj->Prepare ) {
+    warn "Action prepared: $action\n" if $DEBUG;
+    return $action_obj;
+  }
+  else {
+    return;
+  }
 }
 
 1;

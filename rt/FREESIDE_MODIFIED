@@ -17,6 +17,7 @@ lib/RT/Scrip_Overlay.pm #create ticket on custom field change
 lib/RT/Action/CreateTickets.pm #create ticket on custom field change
 lib/RT/Action/EscalatePriority.pm #ticket escalation
 lib/RT/Action/EscalateQueue.pm #ticket escalation
+lib/RT/Action/SetPriority_Local.pm #ticket escalation
 lib/RT/CustomFieldValues/Queues.pm #ticket escalation
 lib/RT/Condition/CustomFieldChange.pm #create ticket on custom field change
 lib/RT/Interface/Web_Vendor.pm
