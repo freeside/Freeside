@@ -1372,11 +1372,6 @@ sub _CustomFieldLimit {
     ($queue, $field, $cf, $column) = $self->_CustomFieldDecipher( $field );
     $cfid = $cf ? $cf->id  : 0 ;
 
-    # Handle date custom fields specially
-    if ( $cf->Type eq 'Date' ) {
-      return $self->_DateCustomFieldLimit($_field, $op, $value, %rest);
-    }
-
 # If we're trying to find custom fields that don't match something, we
 # want tickets where the custom field has no value at all.  Note that
 # we explicitly don't include the "IS NULL" case, since we would
@@ -2809,11 +2804,6 @@ sub LimitCustomField {
             Queue => $args{QUEUE}
         );
         $args{CUSTOMFIELD} = $CF->Id;
-    }
-
-    # Handle special customfields types
-    if ($CF->Type eq 'Date') {
-        $args{FIELD} = 'DateCustomFieldValue';
     }
 
     #If we are looking to compare with a null value.
