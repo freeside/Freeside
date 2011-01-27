@@ -26,3 +26,5 @@ sub AUTOLOAD {
   $self .= "::$system";
   $self->$sub(@_);
 }
+
+1;
