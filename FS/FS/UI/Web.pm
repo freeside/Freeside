@@ -135,7 +135,8 @@ sub svc_link {
 
 sub svc_label_link {
   my($m, $part_svc, $cust_svc) = @_ or return '';
-  svc_X_link( ($cust_svc->label)[1], @_ );
+  my($svc, $label, $svcdb) = $cust_svc->label;
+  svc_X_link( $label, @_ );
 }
 
 sub svc_X_link {
