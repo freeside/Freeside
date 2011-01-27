@@ -461,9 +461,9 @@ sub realtime_bop {
     $content{bank_state} = exists($options{'paystate'})
                              ? $options{'paystate'}
                              : $self->getfield('paystate');
-    $content{account_type} = exists($options{'paytype'})
-                               ? uc($options{'paytype'}) || 'CHECKING'
-                               : uc($self->getfield('paytype')) || 'CHECKING';
+    $content{account_type}= (exists($options{'paytype'}) && $options{'paytype'})
+                               ? uc($options{'paytype'})
+                               : uc($self->getfield('paytype')) || 'PERSONAL CHECKING';
     $content{account_name} = $self->getfield('first'). ' '.
                              $self->getfield('last');
 
