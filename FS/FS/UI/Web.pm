@@ -3,6 +3,7 @@ package FS::UI::Web;
 use strict;
 use vars qw($DEBUG @ISA @EXPORT_OK $me);
 use Exporter;
+use Carp qw( confess );;
 use FS::Conf;
 use FS::Misc::DateTime qw( parse_datetime );
 use FS::Record qw(dbdef);
@@ -142,6 +143,9 @@ sub svc_X_link {
 
   return $x
    unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
+
+  confess "svc_X_link called without a service ($x, $m, $part_svc, $cust_svc)\n"
+    unless $cust_svc;
 
   my $ahref = svc_url(
     'ahref'    => 1,
