@@ -26,10 +26,11 @@ lib/RT/Interface/Web_Vendor.pm
 lib/RT/SavedSearches_Local.pm #saved searches
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
 lib/RT/Transaction_Overlay.pm
-lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields
+lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields #this-month condition
  lib/RT/Ticket_Overlay.pm
  lib/RT/Users_Overlay.pm
  lib/RT/Groups_Overlay.pm
+lib/RT/Date.pm #this-month condition
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm

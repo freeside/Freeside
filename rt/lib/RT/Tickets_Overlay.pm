@@ -539,11 +539,22 @@ sub _DateFieldLimit {
         # if we're specifying =, that means we want everything on a
         # particular single day.  in the database, we need to check for >
         # and < the edges of that day.
-
-        $date->SetToMidnight( Timezone => 'server' );
-        my $daystart = $date->ISO;
-        $date->AddDay;
-        my $dayend = $date->ISO;
+       
+        my ($daystart, $dayend);
+        if ( lc($value) eq 'this month' ) { 
+            # special case: > and < the edges of this month
+            $date->SetToNow;
+            $date->SetToStart('month');
+            $daystart = $date->ISO;
+            $date->AddMonth;
+            $dayend = $date->ISO;
+        }
+        else {
+            $date->SetToMidnight( Timezone => 'server' );
+            $daystart = $date->ISO;
+            $date->AddDay;
+            $dayend = $date->ISO;
+        }
 
         $sb->_OpenParen;
 
