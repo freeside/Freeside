@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.4 2011-01-25 03:15:03 ivan Exp $
+# $Id: HTML.pm,v 1.5 2011-01-28 02:49:15 levinse Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -119,6 +119,23 @@ sub render_html
         'freesideFooter' => sub { return $self->freesideFooter(); },
         'freesideComponent' => sub { return $self->freesideComponent(@_); },
         'uri_escape'        => sub { return uri_escape(@_); },
+	'matches'        => sub { return $_[0] =~ $_[1]; },
+	'popup_link'     => sub {  
+				   my $type = shift;
+
+				   if($type eq 'nms-add_iface.html') {
+				       my $host = shift;
+				       my $iface = shift;
+					return
+					    $self->freesideComponent('/elements/popup_link.html',
+						'action' => "/freeside/misc/".
+							$type."?host=$host;iface=$iface",
+						 'label' => 'Monitor for billing',
+						 'actionlabel' => 'Monitor interface',
+					    );
+				   }
+				   '';
+				},
 
     };
     

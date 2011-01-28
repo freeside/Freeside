@@ -1,0 +1,24 @@
+Adding interface <B><% $iface %></B> for <B><% $host %></B>
+<BR>
+
+<FORM NAME="nms-add_iface" ACTION="<% popurl(1) %>process/nms-add_iface.html" METHOD=POST>
+Torrus Service Id
+<% include('/elements/input-text.html',
+		    'field' => 'serviceid',
+	  )
+%>
+<BR>
+<INPUT TYPE="submit" NAME="submit" ID="submit_nms-add_iface" VALUE="Add Interface">
+</FORM>
+
+<%init>
+
+# XXX: access rights, disable/enable submit button, something's wrong with style
+
+my $host = $cgi->param('host'); 
+die 'invalid host' unless $host =~ /^[0-9.a-zA-Z\-]+$/;
+
+my $iface = $cgi->param('iface');
+die 'invalid iface' unless $iface =~ /^[0-9A-Za-z_]+$/;
+
+</%init>
