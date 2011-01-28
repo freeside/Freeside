@@ -4,9 +4,10 @@ perllib/Torrus/Freeside.pm           # header/footer
 perllib/Torrus/Renderer.pm           # header/footer
  perllib/Torrus/Renderer/Freeside.pm # header/footer
 perllib/Torrus/Renderer/Frontpage.pm # header/footer
-perllib/Torrus/Renderer/HTML.pm      # header/footer
+perllib/Torrus/Renderer/HTML.pm      # header/footer, add interface popups
  perllib/Torrus/ReportOutput/Freeside.pm # header/footer
 perllib/Torrus/ReportOutput/HTML.pm      # header/footer
 templates/html-incblocks.txt         # header/footer
 tempaltes/default-rrd.html           # title beautification
+tempaltes/default-dir.html           # add interface popups
 sup/webplain/torrus.css #skinning
