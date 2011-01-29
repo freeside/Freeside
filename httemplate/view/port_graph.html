@@ -1,0 +1,40 @@
+% if ($error) { warn $error; }
+% else {
+<% $png %>
+% }
+<%init>
+
+# NOTE: the weird warn/die stuff here is because this file is accessed as 
+# IMG SRC="port_graph.html" - easier than hacking an uglier solution
+
+unless ( $FS::CurrentUser::CurrentUser->access_right('View customer services') ) {
+    warn "access denied";
+    die;
+}
+
+my $svcnum = $cgi->param('svcnum');
+unless ( $svcnum =~ /^\d+$/ ) {
+    warn 'invalid svcnum';
+    die;
+}
+
+my $start = $cgi->param('start');
+my $end = $cgi->param('end');
+unless ( $start =~ /^\d+$/ && $end =~ /^\d+$/ ) {
+    warn 'invalid start and/or end times';
+    die;
+}
+
+my $svc_port = qsearchs('svc_port', { 'svcnum' => $svcnum });
+unless($svc_port) {
+    warn 'invalid svc_port';
+    die;
+}
+
+my $error = '';
+my $png = $svc_port->graph_png('start' => $start, 'end' => $end);
+$error = 'error from graph_png: '.$png if length($png) < 200;
+
+http_header('Content-Type' => 'image/png') unless($error);
+
+</%init>

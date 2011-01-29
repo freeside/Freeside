@@ -19,6 +19,6 @@ my $host = $cgi->param('host');
 die 'invalid host' unless $host =~ /^[0-9.a-zA-Z\-]+$/;
 
 my $iface = $cgi->param('iface');
-die 'invalid iface' unless $iface =~ /^[0-9A-Za-z_]+$/;
+die 'invalid iface' unless $iface =~ /^[0-9A-Za-z_\-.]+$/;
 
 </%init>

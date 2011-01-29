@@ -1,9 +1,22 @@
 package FS::svc_port;
 
 use strict;
+use vars qw($conf $system $DEBUG $me );
 use base qw( FS::svc_Common );
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
+use GD::Graph;
+use GD::Graph::mixed;
+use Date::Format qw(time2str);
+use Data::Dumper;
+
+$DEBUG = 0;
+$me = '[FS::svc_port]';
+
+FS::UID->install_callback( sub { 
+  $conf = new FS::Conf;
+  $system = $conf->config('network_monitoring_system');
+} );
 
 =head1 NAME
 
@@ -182,19 +195,189 @@ sub check {
   $self->SUPER::check;
 }
 
-=item
+=item graph_png
 
 Returns a PNG graph for this port.
 
-XXX Options
+The following options must be specified:
+
+=over 4
+
+=item start
+=item end
+
+=back
 
 =cut
 
+sub _format_bandwidth {
+    my $self = shift;
+    my $value = shift;
+    my $space = shift;
+    $space = ' ' if $space;
+
+    my $suffix = '';
+
+    warn "$me _format_bandwidth $value" if $DEBUG;
+
+    if ( $value >= 1000 && $value < 1000000 ) {
+	$value = ($value/1000);
+	$suffix = $space. "k";
+    }
+    elsif( $value >= 1000000 && $value < 1000000000 ) {
+	$value = ($value/1000/1000);
+	$suffix = $space . "M";
+    }
+    elsif( $value >= 1000000000 && $value < 1000000000000 ) {
+	$value = ($value/1000/1000/1000);
+	$suffix = $space . "G";
+    }
+    # and hopefully we don't have folks doing Tbps on a single port :)
+
+    $value = sprintf("%.2f$suffix",$value) if $value >= 0;
+
+    $value;
+}
+
 sub graph_png {
-  my $self = shift;
+  my($self, %opt) = @_;
   my $serviceid = $self->serviceid;
 
+  if($serviceid && $system eq 'Torrus_Internal') {
+      my $start = -1;
+      my $end = -1;
+	my $now = time;
 
+	$start = $opt{start} if $opt{start};
+	$end = $opt{end} if $opt{end};
+
+	return 'Invalid date range' if ($start < 0 || $start >= $end 
+	    || $end <= $start || $end < 0 || $end > $now || $start > $now
+	    || $end-$start > 86400*366 );
+
+	my $serviceid_sql = "('${serviceid}_IN','${serviceid}_OUT')";
+	my @records;
+	my $dbh = dbh;
+	if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+	    @records = qsearch({ 
+		'table' => 'srvexport',
+		'select' => "*, date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) as _date",
+		'extra_sql' => "where serviceid in $serviceid_sql and 
+		    date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) >= $start
+		    and date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) <= $end",
+		'order_by' => "order by date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) asc",
+	     });
+	 } elsif ( $dbh->{Driver}->{Name} eq 'mysql' ) {
+		@records = qsearch({ 
+		    'table' => 'srvexport',
+		    'select' => "*, unix_timestamp(srv_date||' '||srv_time) as _date",
+		    'extra_sql' => "where serviceid in $serviceid_sql and 
+			unix_timestamp(srv_date||' '||srv_time) >= $start
+			and unix_timestamp(srv_date||' '||srv_time) <= $end",
+		    'order_by' => "order by unix_timestamp(srv_date||' '||srv_time) asc",
+		 });
+	} else {
+	      return 'Unsupported DBMS';
+	}
+
+
+	# assume data in DB is correct,
+	# assume always _IN and _OUT pair, assume intvl = 300
+
+	my @times;
+	my @in;
+	my @out;
+	foreach my $rec ( @records ) {
+	    push @times, $rec->_date 
+		unless grep { $_ eq $rec->_date } @times;
+	    push @in, $rec->value if $rec->serviceid =~ /_IN$/;
+	    push @out, $rec->value if $rec->serviceid =~ /_OUT$/;
+	}
+
+	my $timediff = $times[-1] - $times[0]; # they're sorted ascending
+
+	my $y_min = 999999999999; # ~1Tbps
+	my $y_max = 0;
+	my $in_sum = 0;
+	my $out_sum = 0;
+	my $in_min = 999999999999;
+	my $in_max = 0;
+	my $out_min = 999999999999;
+	my $out_max = 0;
+	foreach my $in ( @in ) {
+	    $y_max = $in if $in > $y_max;
+	    $y_min = $in if $in < $y_min;
+	    $in_sum += $in;
+	    $in_max = $in if $in > $in_max;
+	    $in_min = $in if $in < $in_min;
+	}
+	foreach my $out ( @out ) {
+	    $y_max = $out if $out > $y_max;
+	    $y_min = $out if $out < $y_min;
+	    $out_sum += $out;
+	    $out_max = $out if $out > $out_max;
+	    $out_min = $out if $out < $out_min;
+	}
+	my $bwdiff = $y_max - $y_min;
+	$in_min = $self->_format_bandwidth($in_min);
+	$out_min = $self->_format_bandwidth($out_min);
+	$in_max = $self->_format_bandwidth($in_max);
+	$out_max = $self->_format_bandwidth($out_max);
+	my $in_curr = $self->_format_bandwidth($in[-1]);
+	my $out_curr = $self->_format_bandwidth($out[-1]);
+	my $numsamples = scalar(@records)/2;
+	my $in_avg = $self->_format_bandwidth($in_sum/$numsamples);
+	my $out_avg = $self->_format_bandwidth($out_sum/$numsamples);
+
+      warn "$me timediff=$timediff bwdiff=$bwdiff start=$start end=$end "
+	    . "in_min=$in_min out_min=$out_min in_max=$in_max "
+	    . "out_max=$out_max in_avg=$in_avg out_avg=$out_avg "
+	    . " # records = " . scalar(@records) . "\n\ntimes:\n" 
+	    . Dumper(@times) . "\n\nin:\n" . Dumper(@in) . "\n\nout:\n"
+	    . Dumper(@out) if $DEBUG;
+
+      my @data = ( \@times, \@in, \@out );
+
+      # hardcoded size, colour, etc.
+      my $graph = new GD::Graph::mixed(600,400); 
+      $graph->set(
+        types => ['area','lines'],
+	dclrs => ['green','blue'],
+	x_label => "(In Out)  Current: $in_curr $out_curr  Average: $in_avg $out_avg  Maximum: $in_max $out_max  Minimum: $in_min $out_min",
+	x_tick_number => 'auto',
+	x_number_format => sub {
+	    my $value = shift;
+	    if ( $timediff < 86401 ) { # one day
+		$value = time2str("%a %H:%M",$value) 
+	    } elsif ( $timediff < 86401*7 ) { # one week
+		$value = time2str("%d",$value) 
+	    } elsif ( $timediff < 86401*30 ) { # one month
+		$value = time2str("Week %U",$value) 
+	    } elsif ( $timediff < 86401*366 ) { # one year
+		$value = time2str("%b",$value)
+	    }
+	    $value;
+	},
+	y_number_format => sub {
+	    my $value = shift;
+	    $self->_format_bandwidth($value,1);
+	},
+	y_label => 'bps',
+	legend_placement => 'BR',
+	title => $self->serviceid,
+      ) or return "can't create graph: ".$graph->error;
+      
+      $graph->set_text_clr('black') 
+	or return "can't set text colour: ".$graph->error;
+      $graph->set_legend(('In','Out')) 
+	or return "can't set legend: ".$graph->error;
+
+      my $gd = $graph->plot(\@data);
+      return "graph error: ".$graph->error unless($gd);
+      return $gd->png;
+  }
+
+  '';
 }
 
 =back

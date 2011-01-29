@@ -27,6 +27,8 @@ sub add_router {
 
   $self->_torrus_newddx($ddx);
 
+}
+
 sub add_interface {
   my($self, $router_ip, $interface, $serviceid ) = @_;
 
