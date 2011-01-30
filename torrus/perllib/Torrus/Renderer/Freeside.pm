@@ -6,10 +6,16 @@ use base 'Torrus::Freeside';
 use FS::UID qw(cgisuidsetup);
 use FS::TicketSystem;
 
+our $cgi = '';
+
 sub freesideSetup {
   #my $self = shift;
 
-  cgisuidsetup($Torrus::CGI::q);
+  return if $cgi eq $Torrus::CGI::q;
+
+  $cgi = $Torrus::CGI::q;
+
+  cgisuidsetup($cgi);
   FS::TicketSystem->init();
 
 }
