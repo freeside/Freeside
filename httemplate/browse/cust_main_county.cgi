@@ -10,7 +10,7 @@
                            'table'    => 'cust_main_county',
                            'hashref'  => $hashref,
                            'order_by' =>
-                             'ORDER BY country, state, county, taxclass',
+                             'ORDER BY country, state, county, city, taxclass',
                          },
      'count_query'    => $count_query,
      'header'         => \@header,
@@ -449,14 +449,17 @@ my $align = 'llll';
 
 my %seen_country = ();
 my %seen_state = ();
+my %seen_county = ();
 
 my @fields = (
   sub { my $country = shift->country;
         return '' if $seen_country{$country}++;
         code2country($country). "&nbsp;($country)";
       },
+
   sub { my $label = $seen_state{$_[0]->country}->{$_[0]->state}++
                       ? '' : state_label($_[0]->state, $_[0]->country);
+
         my $countylinks = ( $_[0]->county && $label )
                              ? '&nbsp;'. add_link(
                                  desc => 'Add more counties',
@@ -472,6 +475,7 @@ my @fields = (
                                  cgi  => $cgi,
                                )
                              : '';
+
         my $addlink = 
           ( $_[0]->state
               ? ''
@@ -481,15 +485,39 @@ my @fields = (
                                        cgi  => $cgi,
                                      )
           );
+
         $label.$countylinks.$addlink;
       },
-  sub { $_[0]->county
-          ? $_[0]->county. '&nbsp;'.
-              remove_link(   col  => 'county',
-                             label=> 'remove&nbsp;county',
-                             row  => $_[0],
-                             cgi  => $cgi,
-                           )
+
+  sub { my $label =
+          $seen_county{$_[0]->country}->{$_[0]->state}->{$_[0]->county}++ 
+            ? '' : $_[0]->county;
+
+        my $citylinks = '';
+        if ( $label ) {
+          $citylinks = $_[0]->city
+                       ? '&nbsp;'. add_link(
+                           desc => 'Add more cities',
+                           col  => 'county',
+                           label=> 'add&nbsp;more&nbsp;cities',
+                           row  => $_[0],
+                           cgi  => $cgi,
+                         ).
+                         ' '. collapse_link(
+                           col  => 'county',
+                           label=> 'remove&nbsp;all&nbsp;cities',
+                           row  => $_[0],
+                           cgi  => $cgi,
+                         )
+                       : '&nbsp;'. remove_link( col  => 'county',
+                                                label=> 'remove&nbsp;county',
+                                                row  => $_[0],
+                                                cgi  => $cgi,
+                                              );
+        }
+
+        $_[0]->county
+          ? $label.$citylinks
           : '(all)&nbsp;'.
               expand_link(   desc  => 'Add Counties',
                              row   => $_[0],
@@ -497,13 +525,14 @@ my @fields = (
                              cgi  => $cgi,
                          );
       },
+
   sub { $_[0]->city
           ? $_[0]->city. '&nbsp;'.
-              collapse_link( col  => 'county',
-                             label=> 'remove&nbsp;cities',
-                             row  => $_[0],
-                             cgi  => $cgi,
-                           )
+              remove_link( col  => 'city',
+                           label=> 'remove&nbsp;city',
+                           row  => $_[0],
+                           cgi  => $cgi,
+                         )
           : '(all)&nbsp;'.
               expand_link(   desc  => 'Add Cities',
                              row   => $_[0],
