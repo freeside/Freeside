@@ -30,8 +30,10 @@ use Tie::IxHash;
 @ISA = qw(Exporter);
 
 #export dbdef for now... everything else expects to find it here
-@EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch
-                str2time_sql str2time_sql_closing regexp_sql not_regexp_sql );
+@EXPORT_OK = qw(
+  dbh fields hfields qsearch qsearchs dbdef jsearch
+  str2time_sql str2time_sql_closing regexp_sql not_regexp_sql concat_sql
+);
 
 $DEBUG = 0;
 $me = '[FS::Record]';
@@ -3096,6 +3098,29 @@ sub not_regexp_sql {
   return 'NOT REGEXP' if $driver =~ /^mysql/i;
 
   die "don't know how to use regular expressions in ". driver_name." databases";
+
+}
+
+=item concat_sql [ DRIVER_NAME ] ITEMS_ARRAYREF
+
+Returns the items concatendated based on database type, using "CONCAT()" for
+mysql and " || " for Pg and other databases.
+
+You can pass an optional driver name such as "Pg", "mysql" or
+$dbh->{Driver}->{Name} to return a function for that database instead of
+the current database.
+
+=cut
+
+sub concat_sql {
+  my $driver = ref($_[0]) ? driver_name : shift;
+  my $items = shift;
+
+  if ( $driver =~ /^mysql/i ) {
+    'CONCAT('. join(',', @$items). ')';
+  } else {
+    join('||', @$items);
+  }
 
 }
 

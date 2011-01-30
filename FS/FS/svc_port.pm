@@ -3,7 +3,8 @@ package FS::svc_port;
 use strict;
 use vars qw($conf $system $DEBUG $me );
 use base qw( FS::svc_Common );
-use FS::Record qw( qsearch qsearchs dbh str2time_sql str2time_sql_closing );
+use FS::Record qw( qsearch qsearchs dbh
+                   str2time_sql str2time_sql_closing concat_sql ); #dbh
 use FS::cust_svc;
 use GD::Graph;
 use GD::Graph::mixed;
@@ -255,49 +256,23 @@ sub graph_png {
             || $end <= $start || $end < 0 || $end > $now || $start > $now
             || $end-$start > 86400*366 );
 
-        local($FS::Record::nowarn_classload) = 1;
+        my $_date = str2time_sql. concat_sql([ 'srv_date', "' '", 'srv_time' ]).
+                    str2time_sql_closing;
 
         my $serviceid_sql = "('${serviceid}_IN','${serviceid}_OUT')";
 
-        my @records;
-        my $dbh = dbh;
-        if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
-            @records = qsearch({ 
-                'table' => 'srvexport',
-                'select' => "*, date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) as _date",
-                'extra_sql' => "where serviceid in $serviceid_sql and 
-                    date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) >= $start
-                    and date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) <= $end",
-                'order_by' => "order by date_part('epoch',to_timestamp(srv_date||' '||srv_time,'YYYY-MM-DD HH:MI:SS')) asc",
-             });
-         } elsif ( $dbh->{Driver}->{Name} eq 'mysql' ) {
-                @records = qsearch({ 
-                    'table' => 'srvexport',
-                    'select' => "*, unix_timestamp(srv_date||' '||srv_time) as _date",
-                    'extra_sql' => "where serviceid in $serviceid_sql and 
-                        unix_timestamp(srv_date||' '||srv_time) >= $start
-                        and unix_timestamp(srv_date||' '||srv_time) <= $end",
-                    'order_by' => "order by unix_timestamp(srv_date||' '||srv_time) asc",
-                 });
-        } else {
-              return 'Unsupported DBMS';
-        }
-
-        #my $_date = str2time_sql. "srv_date||' '||srv_time".
-        #            str2time_sql_closing;
-
-        #my @records = qsearch({
-        #  'table'     => 'srvexport',
-        #  'select'    => "*, $_date as _date",
-        #  'extra_sql' => "where serviceid in $serviceid_sql
-        #                    and $_date >= $start
-        #                    and $_date <= $end",
-        #  'order_by'  => "order by $_date asc",
-        #});
+        local($FS::Record::nowarn_classload) = 1;
+        my @records = qsearch({
+          'table'     => 'srvexport',
+          'select'    => "*, $_date as _date",
+          'extra_sql' => "where serviceid in $serviceid_sql
+                            and $_date >= $start
+                            and $_date <= $end",
+          'order_by'  => "order by $_date asc",
+        });
 
         warn "$me ". scalar(@records). " records returned for $serviceid\n"
           if $DEBUG;
-
 
         # assume data in DB is correct,
         # assume always _IN and _OUT pair, assume intvl = 300
