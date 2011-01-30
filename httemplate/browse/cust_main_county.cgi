@@ -52,12 +52,14 @@ my $cell_style_sub = sub {
   if ( $cs_oldrow ne $row ) {
     if ( $cs_oldrow ) {
       if ( $cs_oldrow->country ne $row->country ) {
-        $cell_style = 'border-top:1px solid #000000';
+        $cell_style = 'border-top:2px solid #000000';
       } elsif ( $cs_oldrow->state ne $row->state ) {
-        $cell_style = 'border-top:1px solid #cccccc'; #default?
+        #$cell_style = 'border-top:1px solid #cccccc'; #default?
+        $cell_style = 'border-top:1px solid #bbbbbb';
       } elsif ( $cs_oldrow->state eq $row->state ) {
         #$cell_style = 'border-top:dashed 1px dark gray';
-        $cell_style = 'border-top:1px dashed #cccccc';
+        #$cell_style = 'border-top:1px dashed #cccccc';
+        $cell_style = '';
       }
     }
     $cs_oldrow = $row;
@@ -105,13 +107,42 @@ sub expand_link {
   '</FONT>';
 }
 
+sub add_link {
+  my %param = @_;
+
+  #if ( $ex_oldrow eq $param{'row'} ) {
+  #  return '';
+  #} else {
+  #  $ex_oldrow = $param{'row'};
+  #}
+
+  my %below = ( 'county' => 'city',
+                'state'  => 'county',
+              );
+  my $what = $below{ $param{'col' } };
+
+  my $taxnum = $param{'row'}->taxnum;
+  my $url = "${p}edit/cust_main_county-add.cgi?taxnum=$taxnum;what=$what";
+
+  '<FONT SIZE="-1">'.
+    include( '/elements/popup_link.html',
+               'label'       => $param{'label'},
+               'action'      => $url,
+               'actionlabel' => $param{'desc'},
+               'height'      => 420,
+               #default# 'width'  => 540,
+               #default# 'color' => '#333399',
+           ).
+  '</FONT>';
+}
+
 sub collapse_link {
   my %param = @_;
 
   my $row = $param{'row'};
   my $col = $param{'col'};
   return ''
-    if $col eq 'county' and $row->city
+    if $col eq 'state' and $row->city
                             || qsearch({
                                  'table'   => 'cust_main_county',
                                  'hashref' => {
@@ -122,20 +153,39 @@ sub collapse_link {
                                  'order_by' => 'LIMIT 1',
                                });
 
-  my %above = ( 'city'   => 'county',
-                'county' => 'state',
+  my %below = ( 'county' => 'city',
+                'state'  => 'county',
               );
 
   #XXX can still show the link when you have some counties broken down into
   #cities and others not :/
 
   my $taxnum = $param{'row'}->taxnum;
-  my $url = "${p}edit/process/cust_main_county-collapse.cgi?$taxnum";
-  $url = "javascript:collapse_areyousure('$url', '$col', '$above{$col}')";
+  my $url = "${p}edit/process/cust_main_county-collapse.cgi?taxnum=$taxnum;".
+              'country='. uri_escape($cgi->param('country')). ';'.
+              'state='.   uri_escape($cgi->param('state')).   ';'.
+              'county='.  uri_escape($cgi->param('county'));
+  $url = "javascript:collapse_areyousure('$url', '$below{$col}', '$col')";
 
   qq(<FONT SIZE="-1"><A HREF="$url">$param{'label'}</A></FONT>);
 }
 
+sub remove_link {
+  my %param = @_;
+
+  my $row = $param{'row'};
+  my $col = $param{'col'};
+ 
+  my $taxnum = $param{'row'}->taxnum;
+  my $url = "${p}edit/process/cust_main_county-remove.cgi?taxnum=$taxnum;".
+              'country='. uri_escape($cgi->param('country')). ';'.
+              'state='.   uri_escape($cgi->param('state')).   ';'.
+              'county='.  uri_escape($cgi->param('county'));
+  $url = "javascript:remove_areyousure('$url', '$col')";
+
+  qq(<FONT SIZE="-1"><A HREF="$url">$param{'label'}</A></FONT>);
+
+}
 
 sub separate_taxclasses_link {
   my( $row ) = @_;
@@ -165,11 +215,11 @@ my $html_init = <<END;
      if (confirm('Are you sure you want to remove all ' + col + ' tax rates for this ' + above + '?') == true)
        window.location.href = href;
     }
+    function remove_areyousure(href,col) {
+     if (confirm('Are you sure you want to remove this ' + col + '?') == true)
+       window.location.href = href;
+    }
   </SCRIPT>
-
-  Click on <u>add states</u> to specify a country's tax rates by state or province.
-  <BR>Click on <u>add counties</u> to specify a state's tax rates by county, or <u>remove counties</u> to remove per-county tax rates.
-  <BR>Click on <u>add cities</u> to specify a county's tax rates by city, or <u>remove cities</u> to remove per-city tax rates.
 END
 
 $html_init .= "<BR>Click on <u>separate taxclasses</u> to specify taxes per taxclass."
@@ -397,41 +447,68 @@ my @links         = ( '', '', '', '', );
 my @link_onclicks = ( '', '', '', '', );
 my $align = 'llll';
 
+my %seen_country = ();
+my %seen_state = ();
+
 my @fields = (
   sub { my $country = shift->country;
-        code2country($country). " ($country)";
+        return '' if $seen_country{$country}++;
+        code2country($country). "&nbsp;($country)";
       },
-  sub { state_label($_[0]->state, $_[0]->country).
-        ( $_[0]->state
-            ? ''
-            : '&nbsp'. expand_link( desc  => 'Add States',
-                                    row   => $_[0],
-                                    label => 'add&nbsp;states',
-                                  )
-        )
+  sub { my $label = $seen_state{$_[0]->country}->{$_[0]->state}++
+                      ? '' : state_label($_[0]->state, $_[0]->country);
+        my $countylinks = ( $_[0]->county && $label )
+                             ? '&nbsp;'. add_link(
+                                 desc => 'Add more counties',
+                                 col  => 'state',
+                                 label=> 'add&nbsp;more&nbsp;counties',
+                                 row  => $_[0],
+                                 cgi  => $cgi,
+                               ).
+                               ' '. collapse_link(
+                                 col  => 'state',
+                                 label=> 'remove&nbsp;all&nbsp;counties',
+                                 row  => $_[0],
+                                 cgi  => $cgi,
+                               )
+                             : '';
+        my $addlink = 
+          ( $_[0]->state
+              ? ''
+              : '&nbsp;'. expand_link( desc  => 'Add States',
+                                       row   => $_[0],
+                                       label => 'add&nbsp;states',
+                                       cgi  => $cgi,
+                                     )
+          );
+        $label.$countylinks.$addlink;
       },
   sub { $_[0]->county
-          ? $_[0]->county. '&nbsp'.
-              collapse_link( col  => 'county',
-                             label=> 'remove&nbsp;counties',
+          ? $_[0]->county. '&nbsp;'.
+              remove_link(   col  => 'county',
+                             label=> 'remove&nbsp;county',
                              row  => $_[0],
+                             cgi  => $cgi,
                            )
-          : '(all)&nbsp'.
+          : '(all)&nbsp;'.
               expand_link(   desc  => 'Add Counties',
                              row   => $_[0],
                              label => 'add&nbsp;counties',
+                             cgi  => $cgi,
                          );
       },
   sub { $_[0]->city
-          ? $_[0]->city. '&nbsp'.
-              collapse_link( col  => 'city',
+          ? $_[0]->city. '&nbsp;'.
+              collapse_link( col  => 'county',
                              label=> 'remove&nbsp;cities',
                              row  => $_[0],
+                             cgi  => $cgi,
                            )
-          : '(all)&nbsp'.
+          : '(all)&nbsp;'.
               expand_link(   desc  => 'Add Cities',
                              row   => $_[0],
                              label => 'add&nbsp;cities',
+                             cgi  => $cgi,
                          );
       },
 );
@@ -446,7 +523,7 @@ my @color = (
 if ( $conf->exists('enable_taxclasses') ) {
   push @header, qq!Tax class (<A HREF="${p}edit/part_pkg_taxclass.html">add new</A>)!;
   push @header2, '(per-package classification)';
-  push @fields, sub { $_[0]->taxclass || '(all)&nbsp'.
+  push @fields, sub { $_[0]->taxclass || '(all)&nbsp;'.
                        separate_taxclasses_link($_[0], 'Separate Taxclasses').
                        'separate&nbsp;taxclasses</A></FONT>'
                     };
