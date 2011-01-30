@@ -141,17 +141,17 @@ sub collapse_link {
 
   my $row = $param{'row'};
   my $col = $param{'col'};
-  return ''
-    if $col eq 'state' and $row->city
-                            || qsearch({
-                                 'table'   => 'cust_main_county',
-                                 'hashref' => {
-                                   'country' => $row->country,
-                                   'state'   => $row->state,
-                                   'city'    => { op=>'!=', value=>'' },
-                                 },
-                                 'order_by' => 'LIMIT 1',
-                               });
+#  return ''
+#    if $col eq 'state' and $row->city
+#                            || qsearch({
+#                                 'table'   => 'cust_main_county',
+#                                 'hashref' => {
+#                                   'country' => $row->country,
+#                                   'state'   => $row->state,
+#                                   'city'    => { op=>'!=', value=>'' },
+#                                 },
+#                                 'order_by' => 'LIMIT 1',
+#                               });
 
   my %below = ( 'county' => 'city',
                 'state'  => 'county',
