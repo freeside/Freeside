@@ -46,7 +46,7 @@ my $exempt_sub = sub {
 };
 
 my $cs_oldrow;
-my $cell_style;
+my $cell_style = '';
 my $cell_style_sub = sub {
   my $row = shift;
   if ( $cs_oldrow ne $row ) {
@@ -54,11 +54,10 @@ my $cell_style_sub = sub {
       if ( $cs_oldrow->country ne $row->country ) {
         $cell_style = 'border-top:2px solid #000000';
       } elsif ( $cs_oldrow->state ne $row->state ) {
-        #$cell_style = 'border-top:1px solid #cccccc'; #default?
-        $cell_style = 'border-top:1px solid #bbbbbb';
-      } elsif ( $cs_oldrow->state eq $row->state ) {
-        #$cell_style = 'border-top:dashed 1px dark gray';
-        #$cell_style = 'border-top:1px dashed #cccccc';
+        $cell_style = 'border-top:1px solid #888888';
+      } elsif ( $cs_oldrow->county ne $row->county ) {
+        $cell_style = 'border-top:1px solid #cccccc';
+      } else { 
         $cell_style = '';
       }
     }
