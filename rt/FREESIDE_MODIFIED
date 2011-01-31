@@ -31,6 +31,7 @@ lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields #this-mo
  lib/RT/Users_Overlay.pm
  lib/RT/Groups_Overlay.pm
 lib/RT/Date.pm #this-month condition
+lib/RT/Queue_Local.pm #fix saved settings when renaming queues
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
