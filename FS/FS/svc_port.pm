@@ -341,7 +341,7 @@ sub graph_png {
       my @data = ( \@times, \@in, \@out );
 
       # hardcoded size, colour, etc.
-      my $graph = new GD::Graph::mixed(600,320);  #600,400
+      my $graph = new GD::Graph::mixed(600,360);  #600,400
       $graph->set(
         types => ['area','lines'],
         dclrs => ['green','blue'],
