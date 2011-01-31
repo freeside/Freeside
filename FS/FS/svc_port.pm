@@ -3,8 +3,9 @@ package FS::svc_port;
 use strict;
 use vars qw($conf $system $DEBUG $me );
 use base qw( FS::svc_Common );
-use FS::Record qw( qsearch qsearchs dbh
-                   str2time_sql str2time_sql_closing concat_sql ); #dbh
+use FS::UID qw( driver_name );
+use FS::Record qw( qsearch qsearchs
+                   str2time_sql str2time_sql_closing concat_sql );
 use FS::cust_svc;
 use GD::Graph;
 use GD::Graph::mixed;
@@ -256,8 +257,9 @@ sub graph_png {
             || $end <= $start || $end < 0 || $end > $now || $start > $now
             || $end-$start > 86400*366 );
 
-        my $_date = str2time_sql. concat_sql([ 'srv_date', "' '", 'srv_time' ]).
-                    str2time_sql_closing;
+        my $_date = concat_sql([ 'srv_date', "' '", 'srv_time' ]);
+        $_date = "CAST( $_date AS TIMESTAMP )" if driver_name =~ /^Pg/i;
+        $_date = str2time_sql. $_date.  str2time_sql_closing;
 
         my $serviceid_sql = "('${serviceid}_IN','${serviceid}_OUT')";
 
