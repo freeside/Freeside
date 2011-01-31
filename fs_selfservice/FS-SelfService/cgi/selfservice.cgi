@@ -8,6 +8,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
 use HTML::Entities;
 use Date::Format;
+use Date::Parse 'str2time';
 use Number::Format 1.50;
 use FS::SelfService qw(
   access_info login_info login customer_info edit_info invoice
@@ -17,7 +18,7 @@ use FS::SelfService qw(
   unprovision_svc change_pkg suspend_pkg domainselector
   list_svcs list_svc_usage list_cdr_usage list_support_usage
   myaccount_passwd list_invoices create_ticket get_ticket did_report
-  mason_comp
+  mason_comp port_graph
 );
 
 $template_dir = '.';
@@ -796,18 +797,31 @@ sub delete_svc {
 sub view_usage {
   list_svcs(
     'session_id'  => $session_id,
-    'svcdb'       => [ 'svc_acct', 'svc_phone' ],
+    'svcdb'       => [ 'svc_acct', 'svc_phone', 'svc_port', ],
     'ncancelled'  => 1,
   );
 }
 
 sub view_usage_details {
-  list_svc_usage(
-    'session_id'  => $session_id,
-    'svcnum'      => $cgi->param('svcnum'),
-    'beginning'   => $cgi->param('beginning') || '',
-    'ending'      => $cgi->param('ending') || '',
-  );
+   my $svcnum = $cgi->param('svcnum');
+
+    # for svc_port graphs
+    if($cgi->param($svcnum.'_start') && $cgi->param($svcnum.'_end')) {
+	return port_graph(
+	    'session_id'  => $session_id,
+	    'svcnum'      => $svcnum,
+	    'start'	  => str2time($cgi->param($svcnum.'_start')),
+	    'end'	=> str2time($cgi->param($svcnum.'_end')),
+	    );
+    }
+    else {
+      return list_svc_usage(
+	'session_id'  => $session_id,
+	'svcnum'      => $svcnum,
+	'beginning'   => $cgi->param('beginning') || '',
+	'ending'      => $cgi->param('ending') || '',
+      );
+    }
 }
 
 sub view_cdr_details {

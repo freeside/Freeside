@@ -1,6 +1,7 @@
 <%= $url = "$selfurl?session=$session_id;action=";
     @svc_acct  = grep { $_->{svcdb} eq 'svc_acct'  } @svcs;
     @svc_phone = grep { $_->{svcdb} eq 'svc_phone' } @svcs;
+    @svc_port = grep { $_->{svcdb} eq 'svc_port' } @svcs;
     '';
 %>
 <%= include('header', 'Account usage') %>
@@ -80,6 +81,62 @@
 %>
 
 <%= scalar(@svc_phone) ? '</TABLE><BR><BR>' : '' %>
+
+<%= if ( @svc_port ) {
+      $OUT.= '<FONT SIZE="4">Bandwidth Graphs</FONT><BR><BR>
+		<script type="text/javascript">
+		    function preset_range(start,end,prefix){
+			document.getElementById(prefix+\'_start\').value = start;
+			document.getElementById(prefix+\'_end\').value = end;
+		    }
+		  </script>
+              <TABLE BGCOLOR="#cccccc">
+                <TR>
+                  <TH ALIGN="left">Service</TH>
+		  <TH ALIGN="right">
+		  </TH>
+		</TR>';
+    } 
+    $OUT .= '';
+%>
+
+<%=
+
+sub preset_range {
+    my($start,$end,$label,$date_format,$prefix) = (shift,shift,shift,shift,shift);
+    $start = Date::Format::time2str($date_format,$start);
+    $end = Date::Format::time2str($date_format,$end);
+    return '<A HREF="javascript:void(0);" onclick="preset_range(\''
+	    .$start.'\',\''.$end.'\',\''.$prefix.'\')">'.$label.'</A>';
+}
+
+foreach my $svc_port ( @svc_port ) {
+  $svcnum = $svc_port->{'svcnum'}; 
+  $default_end = time;
+  $default_start = $default_end-86400;
+
+  $OUT .= '<TR><TD>'. $svc_port->{'label'}. ': '. $svc_port->{'value'}.'</TD>';
+  $OUT .= qq! <TD><FORM ACTION="$url" METHOD="GET">
+		<INPUT TYPE="hidden" name="svcnum" value="$svcnum">
+		<INPUT TYPE="hidden" name="action" value="view_usage_details">  
+		<INPUT TYPE="hidden" name="session" value="$session_id">  !;
+  $OUT .= preset_range($default_start,$default_end,'Last Day',$date_format,$svcnum)
+	.' | '.preset_range($default_end-86400*7,$default_end,'Last Week',$date_format,$svcnum)
+	.' | '.preset_range($default_end-86400*30,$default_end,'Last Month',$date_format,$svcnum)
+	.' | '.preset_range($default_end-86400*365,$default_end,'Last Year',$date_format,$svcnum);
+  
+  $OUT .= qq! <BR>
+	    Start Date <INPUT TYPE="TEXT" id="${svcnum}_start" name="${svcnum}_start" SIZE="10" MAXLENGTH="10">
+	    End Date <INPUT TYPE="TEXT" id="${svcnum}_end" name="${svcnum}_end" SIZE="10" MAXLENGTH="10">
+	    <BR>
+	    <INPUT TYPE="submit" value="Display"> !;
+
+  $OUT .= '</FORM></TD></TR>';
+}
+%>
+
+<%= scalar(@svc_port) ? '</TABLE><BR><BR>' : '' %>
+
 
 </TD></TR></TABLE>
 <%= include('footer') %>

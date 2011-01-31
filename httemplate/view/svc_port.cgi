@@ -39,7 +39,6 @@ if ( $cgi->param('start') && $cgi->param('end') ) {
 
 sub preset_range {
     my($start,$end,$label,$date_format) = (shift,shift,shift,shift);
-    warn "$start $end $date_format";
     $start = time2str($date_format,$start);
     $end = time2str($date_format,$end);
     return '<A HREF="javascript:void(0);" onclick="preset_range(\''

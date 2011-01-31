@@ -9,6 +9,7 @@ use FS::Record qw( qsearch qsearchs
 use FS::cust_svc;
 use GD::Graph;
 use GD::Graph::mixed;
+use GD;
 use Date::Format qw(time2str);
 use Data::Dumper;
 
@@ -344,7 +345,7 @@ sub graph_png {
       $graph->set(
         types => ['area','lines'],
         dclrs => ['green','blue'],
-        x_label => "(In Out)  Current: $in_curr $out_curr  Average: $in_avg $out_avg  Maximum: $in_max $out_max  Minimum: $in_min $out_min",
+        x_label => '   ',
         x_tick_number => 'auto',
         x_number_format => sub {
             my $value = shift;
@@ -365,6 +366,7 @@ sub graph_png {
         },
         y_label => 'bps',
         legend_placement => 'BR',
+	lg_cols => 1,
         title => $self->serviceid,
       ) or return "can't create graph: ".$graph->error;
       
@@ -372,9 +374,26 @@ sub graph_png {
         or return "can't set text colour: ".$graph->error;
       $graph->set_legend(('In','Out')) 
         or return "can't set legend: ".$graph->error;
+      $graph->set_title_font(['verdana', 'arial', gdGiantFont], 16)
+	or return "can't set title font: ".$graph->error;
+      $graph->set_legend_font(['verdana', 'arial', gdMediumBoldFont], 12)
+	or return "can't set legend font: ".$graph->error;
+      $graph->set_x_axis_font(['verdana', 'arial', gdMediumBoldFont], 12)
+	or return "can't set font: ".$graph->error;
+      $graph->set_y_axis_font(['verdana', 'arial', gdMediumBoldFont], 12)
+	or return "can't set font: ".$graph->error;
+      $graph->set_y_label_font(['verdana', 'arial', gdMediumBoldFont], 12)
+	or return "can't set font: ".$graph->error;
 
       my $gd = $graph->plot(\@data);
       return "graph error: ".$graph->error unless($gd);
+
+      my $black = $gd->colorAllocate(0,0,0);       
+      $gd->string(gdMediumBoldFont,50,285,
+	    "Current: $in_curr   Average: $in_avg   Maximum: $in_max   Minimum: $in_min",$black);
+      $gd->string(gdMediumBoldFont,50,305,
+	    "Current: $out_curr   Average: $out_avg   Maximum: $out_max   Minimum: $out_min",$black);
+
       return $gd->png;
   }
 

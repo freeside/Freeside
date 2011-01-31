@@ -1084,9 +1084,12 @@ sub list_svcs {
   #@svc_x = sort { $a->domain cmp $b->domain || $a->username cmp $b->username }
   #              @svc_x;
 
+    my $conf = new FS::Conf;
+
   { 
     'svcnum'   => $session->{'svcnum'},
     'custnum'  => $custnum,
+    'date_format' => $conf->config('date_format') || '%m/%d/%Y',
     'svcs'     => [
       map { 
             my $svc_x = $_->svc_x;
@@ -1122,7 +1125,7 @@ sub list_svcs {
                 # more...
               );
 
-            } elsif ( $svcdb eq 'svc_phone' ) {
+            } elsif ( $svcdb eq 'svc_phone' || $svcdb eq 'svc_port' ) {
               %hash = (
                 %hash,
               );
@@ -1134,6 +1137,20 @@ sub list_svcs {
     ],
   };
 
+}
+
+sub port_graph {
+  my $p = shift;
+  _usage_details( \&_port_graph, $p,
+                  'svcdb' => 'svc_port',
+                );
+}
+
+sub _port_graph {
+  my($svc_port, $begin, $end) = @_;
+  my @usage = ();
+  push @usage, 999;
+  (@usage);
 }
 
 sub _list_svc_usage {

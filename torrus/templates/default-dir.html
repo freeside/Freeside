@@ -45,7 +45,9 @@
       [% hidden ? '</EM>':'';
          thisIsAlias ? '</EM>':''; %]
       [% IF matches(thepath,'Interface_Counters/$') %]
+	<FONT SIZE="-1">
         [% popup_link('nms-add_iface.html',nodeName(parent(token)),uri_escape(nodeName(child))) %]
+	</FONT>
       [% END %]
     </SPAN>
        [% IF comment %]
