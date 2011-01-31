@@ -2990,7 +2990,7 @@ and customer address. Include units.',
     'description' => 'Fixed (unchangeable) format for electronic check batches.',
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone', 'RBC'
+                       'paymentech', 'ach-spiritone', 'RBC', 'td_eft1464'
                      ]
   },
 

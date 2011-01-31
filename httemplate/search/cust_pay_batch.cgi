@@ -179,7 +179,15 @@ if ( $pay_batch ) {
                          ).
                   '<BR></TR>'
                   ;
-    if ( $fixed ) {
+    if ( $fixed and $fixed eq 'td_eft1464' ) {
+      # special case, this one has two upload formats
+      $html_init .= qq!<TR>Format !.
+                    qq!<SELECT NAME="format">!.
+                    qq!<OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>!.
+                    qq!<OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>!.
+                    qq!</SELECT><BR></TR>!;
+    }
+    elsif ( $fixed ) {
       $html_init .= qq!<INPUT TYPE="hidden" NAME="format" VALUE="$fixed">!;
     } else {
       # should pull this from %import_info
