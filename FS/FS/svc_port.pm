@@ -273,6 +273,12 @@ sub graph_png {
           'order_by'  => "order by $_date asc",
         });
 
+        if ( ! scalar(@records) ) {
+          warn "$me no records returned for $serviceid\n";
+          return ''; #should actually return a blank png (or, even better, the
+                     # error message in the image)
+        }
+
         warn "$me ". scalar(@records). " records returned for $serviceid\n"
           if $DEBUG;
 
