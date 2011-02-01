@@ -1748,7 +1748,7 @@ custom field values from external sources at runtime.
 
 =cut
 
-Set(@CustomFieldValuesSources, ());
+Set(@CustomFieldValuesSources, ('RT::CustomFieldValues::Queues'));
 
 =item C<$CanonicalizeRedirectURLs>
 

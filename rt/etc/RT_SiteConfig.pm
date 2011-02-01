@@ -54,7 +54,4 @@ Set($MessageBoxRichTextHeight, 368);
 
 #Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
 
-#used in ticket escalation
-Set(@CustomFieldValuesSources, ('RT::CustomFieldValues::Queues'));
-
 1;
