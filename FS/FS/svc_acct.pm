@@ -9,7 +9,7 @@ use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $username_ampersand $username_letter $username_letterfirst
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase $username_percent $username_colon
-             $username_slash $username_equals
+             $username_slash $username_equals $username_pound
              $password_noampersand $password_noexclamation
              $warning_template $warning_from $warning_subject $warning_mimetype
              $warning_cc
@@ -77,6 +77,7 @@ FS::UID->install_callback( sub {
   $username_colon = $conf->exists('username-colon');
   $username_slash = $conf->exists('username-slash');
   $username_equals = $conf->exists('username-equals');
+  $username_pound = $conf->exists('username-pound');
   $password_noampersand = $conf->exists('password-noexclamation');
   $password_noexclamation = $conf->exists('password-noexclamation');
   $dirhash = $conf->config('dirhash') || 0;
@@ -1247,7 +1248,7 @@ sub check {
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
 
-  $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=]{$usernamemin,$ulen})$/i
+  $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=\#]{$usernamemin,$ulen})$/i
     or return gettext('illegal_username'). " ($usernamemin-$ulen): ". $recref->{username};
   $recref->{username} = $1;
 
@@ -1283,6 +1284,10 @@ sub check {
   unless ( $username_equals ) {
     $recref->{username} =~ /\=/ and return gettext('illegal_username');
   }
+  unless ( $username_pound ) {
+    $recref->{username} =~ /\#/ and return gettext('illegal_username');
+  }
+
 
   $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};
   $recref->{popnum} = $1;
@@ -1326,7 +1331,7 @@ sub check {
 
   unless ( $part_svc->part_svc_column('dir')->columnflag eq 'F' ) {
 
-    $recref->{dir} =~ /^([\/\w\-\.\&\:]*)$/
+    $recref->{dir} =~ /^([\/\w\-\.\&\:\#]*)$/
       or return "Illegal directory: ". $recref->{dir};
     $recref->{dir} = $1;
     return "Illegal directory"

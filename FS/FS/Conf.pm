@@ -4285,6 +4285,13 @@ and customer address. Include units.',
     'select_enum' => [ 'Classic', 'Recurring' ],
   },
 
+  { 
+    'key'         => 'username-pound',
+    'section'     => 'username',
+    'description' => 'Allow the pound character (#) in usernames.',
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
