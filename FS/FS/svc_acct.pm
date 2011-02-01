@@ -1326,7 +1326,7 @@ sub check {
 
   unless ( $part_svc->part_svc_column('dir')->columnflag eq 'F' ) {
 
-    $recref->{dir} =~ /^([\/\w\-\.\&]*)$/
+    $recref->{dir} =~ /^([\/\w\-\.\&\:]*)$/
       or return "Illegal directory: ". $recref->{dir};
     $recref->{dir} = $1;
     return "Illegal directory"
