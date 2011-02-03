@@ -254,6 +254,8 @@ sub graph_png {
         $start = $opt{start} if $opt{start};
         $end = $opt{end} if $opt{end};
 
+	$end = $now if $end > $now;
+
         return 'Invalid date range' if ($start < 0 || $start >= $end 
             || $end <= $start || $end < 0 || $end > $now || $start > $now
             || $end-$start > 86400*366 );
@@ -292,8 +294,8 @@ sub graph_png {
         foreach my $rec ( @records ) {
             push @times, $rec->_date 
                 unless grep { $_ eq $rec->_date } @times;
-            push @in, $rec->value if $rec->serviceid =~ /_IN$/;
-            push @out, $rec->value if $rec->serviceid =~ /_OUT$/;
+            push @in, $rec->value*8 if $rec->serviceid =~ /_IN$/;
+            push @out, $rec->value*8 if $rec->serviceid =~ /_OUT$/;
         }
 
         my $timediff = $times[-1] - $times[0]; # they're sorted ascending
@@ -340,8 +342,14 @@ sub graph_png {
 
       my @data = ( \@times, \@in, \@out );
 
+      
       # hardcoded size, colour, etc.
-      my $graph = new GD::Graph::mixed(600,360);  #600,400
+
+      # don't change width/height other than through here; breaks legend otherwise
+      my $width = 600;
+      my $height = 360;
+
+      my $graph = new GD::Graph::mixed($width,$height);  
       $graph->set(
         types => ['area','lines'],
         dclrs => ['green','blue'],
@@ -364,6 +372,7 @@ sub graph_png {
             my $value = shift;
             $self->_format_bandwidth($value,1);
         },
+	y_tick_number => 'auto',
         y_label => 'bps',
         legend_placement => 'BR',
 	lg_cols => 1,
@@ -389,9 +398,9 @@ sub graph_png {
       return "graph error: ".$graph->error unless($gd);
 
       my $black = $gd->colorAllocate(0,0,0);       
-      $gd->string(gdMediumBoldFont,50,285,
+      $gd->string(gdMediumBoldFont,50,$height-35,
 	    "Current: $in_curr   Average: $in_avg   Maximum: $in_max   Minimum: $in_min",$black);
-      $gd->string(gdMediumBoldFont,50,305,
+      $gd->string(gdMediumBoldFont,50,$height-15,
 	    "Current: $out_curr   Average: $out_avg   Maximum: $out_max   Minimum: $out_min",$black);
 
       return $gd->png;

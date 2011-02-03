@@ -30,12 +30,8 @@ if ( $cgi->param('svcnum') ) {
   $svcnum = $1;
 }
 
-my $start = '';
-my $end = '';
-if ( $cgi->param('start') && $cgi->param('end') ) {
-    $start = $cgi->param('start');
-    $end = $cgi->param('end');
-}
+my $start = $cgi->param('start');
+my $end = $cgi->param('end');
 
 sub preset_range {
     my($start,$end,$label,$date_format) = (shift,shift,shift,shift);
@@ -52,7 +48,7 @@ my $html_foot = sub {
 
     if($start && $end) {
 	$graph = "<BR><BR><IMG SRC=${p}/view/port_graph.html?svcnum=$svcnum;".
-		"start=".str2time($start).";end=".str2time($end).">";
+		"start=".str2time("$start 00:00:00").";end=".str2time("$end 23:59:59").">";
     }
 
     return '
