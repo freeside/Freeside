@@ -1149,7 +1149,8 @@ sub port_graph {
 sub _port_graph {
   my($svc_port, $begin, $end) = @_;
   my @usage = ();
-  push @usage, 999;
+  my $pngOrError = $svc_port->graph_png( start=>$begin, end=> $end );
+  push @usage, { 'png' => $pngOrError };
   (@usage);
 }
 

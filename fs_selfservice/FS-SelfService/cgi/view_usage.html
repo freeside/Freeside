@@ -118,7 +118,7 @@ foreach my $svc_port ( @svc_port ) {
   $OUT .= '<TR><TD>'. $svc_port->{'label'}. ': '. $svc_port->{'value'}.'</TD>';
   $OUT .= qq! <TD><FORM ACTION="$url" METHOD="GET">
 		<INPUT TYPE="hidden" name="svcnum" value="$svcnum">
-		<INPUT TYPE="hidden" name="action" value="view_usage_details">  
+		<INPUT TYPE="hidden" name="action" value="view_port_graph">  
 		<INPUT TYPE="hidden" name="session" value="$session_id">  !;
   $OUT .= preset_range($default_start,$default_end,'Last Day',$date_format,$svcnum)
 	.' | '.preset_range($default_end-86400*7,$default_end,'Last Week',$date_format,$svcnum)

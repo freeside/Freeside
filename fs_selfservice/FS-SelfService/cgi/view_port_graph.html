@@ -1,0 +1,15 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header', "Service usage details for $start - $end") %>
+
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
+}
+else {
+  $OUT .= qq! <IMG SRC="${url}real_port_graph;svcnum=$svcnum;start=$start;end=$end"> !;
+}
+$OUT .= '';
+%>
+ 
+<BR>
+
+<%= include('footer') %>

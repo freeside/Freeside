@@ -111,6 +111,8 @@ my @actions = ( qw(
   view_usage_details
   view_cdr_details
   view_support_details
+  view_port_graph
+  real_port_graph
   change_password
   process_change_password
   customer_suspend_pkg
@@ -802,26 +804,34 @@ sub view_usage {
   );
 }
 
-sub view_usage_details {
-   my $svcnum = $cgi->param('svcnum');
-
-    # for svc_port graphs
-    if($cgi->param($svcnum.'_start') && $cgi->param($svcnum.'_end')) {
-	return port_graph(
+sub real_port_graph {
+    my $svcnum = $cgi->param('svcnum');
+    my $res = port_graph(
 	    'session_id'  => $session_id,
 	    'svcnum'      => $svcnum,
-	    'start'	  => str2time($cgi->param($svcnum.'_start')),
-	    'end'	=> str2time($cgi->param($svcnum.'_end')),
+	    'beginning'	  => str2time($cgi->param('start')." 00:00:00"),
+	    'ending'	=> str2time($cgi->param('end')." 23:59:59"),
 	    );
+    my @usage = @{$res->{'usage'}};
+    my $png = $usage[0]->{'png'};
+    { 'content' => $png, 'format' => 'png' };
+}
+
+sub view_port_graph {
+    my $svcnum = $cgi->param('svcnum');
+    { 'svcnum' => $svcnum,
+      'start' => $cgi->param($svcnum.'_start'),
+      'end' => $cgi->param($svcnum.'_end'),
     }
-    else {
-      return list_svc_usage(
+}
+
+sub view_usage_details {
+      list_svc_usage(
 	'session_id'  => $session_id,
-	'svcnum'      => $svcnum,
+	'svcnum'      => $cgi->param('svcnum'),
 	'beginning'   => $cgi->param('beginning') || '',
 	'ending'      => $cgi->param('ending') || '',
       );
-    }
 }
 
 sub view_cdr_details {
@@ -892,15 +902,7 @@ sub do_template {
                       : {};
   $fill_in->{$_} = $access_info->{$_} foreach keys %$access_info;
 
-  my $source = "$template_dir/$name.html";
-  #warn "creating template for $source\n";
-  my $template = new Text::Template( TYPE       => 'FILE',
-                                     SOURCE     => $source,
-                                     DELIMITERS => [ '<%=', '%>' ],
-                                     UNTAINT    => 1,
-                                   )
-    or die $Text::Template::ERROR;
-
+  
     if($result && ref($result) && $result->{'format'} && $result->{'content'}
 	&& $result->{'format'} eq 'csv') {
     	print $cgi->header('-expires' => 'now',
@@ -918,7 +920,22 @@ sub do_template {
 		    ),
 		    $result->{'content'};
     }
+    elsif($result && ref($result) && $result->{'format'} && $result->{'content'}
+    	 && $result->{'format'} eq 'png') {
+	print $cgi->header('-expires' => 'now',
+		    '-Content-Type' => 'image/png',
+		    ),
+		    $result->{'content'};
+    }
     else {
+	my $source = "$template_dir/$name.html";
+        my $template = new Text::Template( TYPE       => 'FILE',
+					 SOURCE     => $source,
+					 DELIMITERS => [ '<%=', '%>' ],
+					 UNTAINT    => 1,
+				       )
+	or die $Text::Template::ERROR;
+
 	my $data = $template->fill_in( 
 	    PACKAGE => 'FS::SelfService::_selfservicecgi',
 	    HASH    => $fill_in,
