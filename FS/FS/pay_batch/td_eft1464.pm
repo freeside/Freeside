@@ -116,7 +116,7 @@ $name = 'td_eft1464';
       $opt{'due'}, #due date...? XXX
       sprintf('%09u', $aba),
       sprintf('%-12s', $account),
-      ' ' x 22,
+      '0' x 22,
       '0' x 3,
       $opt{'shortname'},
       sprintf('%-30s', 
