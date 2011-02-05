@@ -4336,10 +4336,10 @@ sub _items_cust_bill_pkg {
           my $description = ($is_summary && $type && $type eq 'U')
                             ? "Usage charges" : $desc;
 
-          unless ( $conf->exists('disable_line_item_date_ranges') ) {
-            $description .= " (" . time2str($date_format, $cust_bill_pkg->sdate).
-                            " - ". time2str($date_format, $cust_bill_pkg->edate). ")";
-          }
+          $description .= " (" . time2str($date_format, $cust_bill_pkg->sdate).
+                          " - ". time2str($date_format, $cust_bill_pkg->edate).
+                          ")"
+            unless $conf->exists('disable_line_item_date_ranges');
 
           my @d = ();
 
@@ -4356,6 +4356,9 @@ sub _items_cust_bill_pkg {
                 || $is_summary && $type && $type eq 'U' )
           {
 
+            warn "$me _items_cust_bill_pkg adding service details\n"
+              if $DEBUG > 1;
+
             push @d, map &{$escape_function}($_),
                          $cust_pkg->h_labels_short(@dates, 'I')
                                                    #$cust_bill_pkg->edate,
@@ -4371,8 +4374,14 @@ sub _items_cust_bill_pkg {
 
           }
 
+          warn "$me _items_cust_bill_pkg adding details\n"
+            if $DEBUG > 1;
+
           push @d, $cust_bill_pkg->details(%details_opt)
             unless ($is_summary || $type && $type eq 'R');
+
+          warn "$me _items_cust_bill_pkg calculating amount\n"
+            if $DEBUG > 1;
   
           my $amount = 0;
           if (!$type) {
@@ -4384,6 +4393,9 @@ sub _items_cust_bill_pkg {
           }
   
           if ( !$type || $type eq 'R' ) {
+
+            warn "$me _items_cust_bill_pkg adding recur\n"
+              if $DEBUG > 1;
 
             if ( $cust_bill_pkg->hidden ) {
               $r->{amount}      += $amount;
@@ -4402,6 +4414,9 @@ sub _items_cust_bill_pkg {
             }
 
           } else {  # $type eq 'U'
+
+            warn "$me _items_cust_bill_pkg adding usage\n"
+              if $DEBUG > 1;
 
             if ( $cust_bill_pkg->hidden ) {
               $u->{amount}      += $amount;
