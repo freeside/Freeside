@@ -4365,6 +4365,9 @@ sub _items_cust_bill_pkg {
                                                    #$cust_bill_pkg->sdate)
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
 
+            warn "$me _items_cust_bill_pkg done adding service details\n"
+              if $DEBUG > 1;
+
             if ( $multilocation ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, 50). '...'

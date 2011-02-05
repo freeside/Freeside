@@ -2199,6 +2199,8 @@ sub _labels_short {
           $detail =~ s/, $//;
           push @labels, $detail;
         }
+        warn "$me _labels_short   done consolidating services\n"
+          if $DEBUG;
       } else {
         warn "$me _labels_short   adding service data\n"
           if $DEBUG;
