@@ -1769,6 +1769,9 @@ I<pkg_svc.hidden> flag will be omitted.
 
 sub h_cust_svc {
   my $self = shift;
+  warn "$me _h_cust_svc called on $self\n"
+    if $DEBUG > 1;
+
   my ($end, $start, $mode) = @_;
   my @cust_svc = $self->_sort_cust_svc(
     [ qsearch( 'h_cust_svc',
@@ -1779,8 +1782,7 @@ sub h_cust_svc {
   if ( $mode eq 'I' ) {
     my %hidden_svcpart = map { $_->svcpart => $_->hidden } $self->part_svc;
     return grep { !$hidden_svcpart{$_->svcpart} } @cust_svc;
-  }
-  else {
+  } else {
     return @cust_svc;
   }
 }
@@ -2122,6 +2124,8 @@ Returns a list of lists, calling the label method for all (historical) services
 
 sub h_labels {
   my $self = shift;
+  warn "$me _h_labels called on $self\n"
+    if $DEBUG > 1;
   map { [ $_->label(@_) ] } $self->h_cust_svc(@_);
 }
 
@@ -2154,13 +2158,23 @@ sub h_labels_short {
 sub _labels_short {
   my( $self, $method ) = ( shift, shift );
 
+  warn "$me _labels_short called on $self with $method method\n"
+    if $DEBUG > 1;
+
   my $conf = new FS::Conf;
   my $max_same_services = $conf->config('cust_bill-max_same_services') || 5;
+
+  warn "$me _labels_short populating \%labels\n"
+    if $DEBUG > 1;
 
   my %labels;
   #tie %labels, 'Tie::IxHash';
   push @{ $labels{$_->[0]} }, $_->[1]
     foreach $self->$method(@_);
+
+  warn "$me _labels_short populating \@labels\n"
+    if $DEBUG > 1;
+
   my @labels;
   foreach my $label ( keys %labels ) {
     my %seen = ();
