@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.5 2011-01-28 02:49:15 levinse Exp $
+# $Id: HTML.pm,v 1.6 2011-02-05 06:32:36 levinse Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -134,6 +134,15 @@ sub render_html
 						 'actionlabel' => 'Monitor interface',
 					    );
 				   }
+				   elsif($type eq 'nms-add_router.html') {
+					return
+					    $self->freesideComponent('/elements/popup_link.html',
+						'action' => "/freeside/misc/$type",
+						 'label' => 'Add Router',
+						 'actionlabel' => 'Add Router',
+					    );
+				   }
+
 				   '';
 				},
 

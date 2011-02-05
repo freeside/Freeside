@@ -13,9 +13,6 @@ die 'invalid iface' unless $iface =~ /^[0-9A-Za-z_\-.\\\/ ]+$/;
 my $serviceid = $cgi->param('serviceid');
 die 'invalid serviceid' unless $serviceid =~ /^[0-9A-Za-z_\-.\\\/ ]+$/;
   
-my $conf = new FS::Conf;
-my $system = $conf->config('network_monitoring_system');
-
 my $nms = new FS::NetworkMonitoringSystem;
 $nms->add_interface($host,$iface,$serviceid);
 

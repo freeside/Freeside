@@ -7,6 +7,10 @@
 [% IF matches(thepath,'Interface_Counters/$') %]
    [% freesideComponent('/elements/init_overlib.html') %]
 [% END %]
+[% IF matches(thepath,'Routers/$') %]
+   [% freesideComponent('/elements/init_overlib.html') %]
+   [% popup_link('nms-add_router.html') %]
+[% END %]
 
 <P>Directories you can jump to:</P>
 <DIV CLASS="Listing">

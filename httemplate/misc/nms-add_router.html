@@ -1,0 +1,17 @@
+<% header('Add Router') %>
+
+<FORM NAME="nms-add_iface" ACTION="<% popurl(1) %>process/nms-add_router.html" METHOD=POST>
+Router Hostname/IP 
+<% include('/elements/input-text.html',
+		    'field' => 'host',
+	  )
+%>
+<BR>
+<INPUT TYPE="submit" NAME="submit" ID="submit_nms-add_router" VALUE="Add Router">
+</FORM>
+
+<%init>
+
+# XXX: access rights, disable/enable submit button, something's wrong with style
+
+</%init>

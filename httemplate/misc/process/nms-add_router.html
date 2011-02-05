@@ -1,0 +1,13 @@
+<% header('Router added') %>
+</BODY></HTML>
+<%init>
+
+# XXX: access rights
+
+my $host = $cgi->param('host'); 
+die 'invalid host' unless $host =~ /^[0-9.a-zA-Z\-]+$/;
+
+my $nms = new FS::NetworkMonitoringSystem;
+$nms->add_router($host);
+
+</%init>
