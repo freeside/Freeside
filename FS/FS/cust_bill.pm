@@ -2739,7 +2739,7 @@ sub print_generic {
 
   foreach my $section (@sections, @$late_sections) {
 
-    warn "$me adding $section section\n"
+    warn "$me adding section \n". Dumper($section)
       if $DEBUG > 1;
 
     # begin some normalization
@@ -2767,6 +2767,9 @@ sub print_generic {
                  );
     }
 
+    warn "$me   setting options\n"
+      if $DEBUG > 1;
+
     my $multilocation = scalar($cust_main->cust_location); #too expensive?
     my %options = ();
     $options{'section'} = $section if $multisection;
@@ -2780,7 +2783,14 @@ sub print_generic {
     $options{'multilocation'} = $multilocation;
     $options{'multisection'} = $multisection;
 
+    warn "$me   searching for line items\n"
+      if $DEBUG > 1;
+
     foreach my $line_item ( $self->_items_pkg(%options) ) {
+
+      warn "$me     adding line item $line_item\n"
+        if $DEBUG > 1;
+
       my $detail = {
         ext_description => [],
       };
@@ -4142,9 +4152,21 @@ sub _items_previous {
 sub _items_pkg {
   my $self = shift;
   my %options = @_;
+
+  warn "$me _items_pkg searching for all package line items\n"
+    if $DEBUG > 1;
+
   my @cust_bill_pkg = grep { $_->pkgnum } $self->cust_bill_pkg;
+
+  warn "$me _items_pkg filtering line items\n"
+    if $DEBUG > 1;
   my @items = $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+
   if ($options{section} && $options{section}->{condensed}) {
+
+    warn "$me _items_pkg condensing section\n"
+      if $DEBUG > 1;
+
     my %itemshash = ();
     local $Storable::canonical = 1;
     foreach ( @items ) {
@@ -4164,6 +4186,10 @@ sub _items_pkg {
                  }
              keys %itemshash;
   }
+
+  warn "$me _items_pkg returning ". scalar(@items). " items\n"
+    if $DEBUG > 1;
+
   @items;
 }
 
