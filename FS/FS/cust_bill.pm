@@ -4228,8 +4228,9 @@ sub _items_cust_bill_pkg {
   foreach my $cust_bill_pkg ( @$cust_bill_pkg )
   {
 
-    $discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
-				&& $conf->exists('discount-show-always'));
+    #eating cpu and memory?
+    #$discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
+    #    			&& $conf->exists('discount-show-always'));
 
     foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
       if ( $_ && !$cust_bill_pkg->hidden ) {
