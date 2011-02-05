@@ -1770,7 +1770,7 @@ I<pkg_svc.hidden> flag will be omitted.
 sub h_cust_svc {
   my $self = shift;
   warn "$me _h_cust_svc called on $self\n"
-    if $DEBUG > 1;
+    if $DEBUG;
 
   my ($end, $start, $mode) = @_;
   my @cust_svc = $self->_sort_cust_svc(
@@ -2125,7 +2125,7 @@ Returns a list of lists, calling the label method for all (historical) services
 sub h_labels {
   my $self = shift;
   warn "$me _h_labels called on $self\n"
-    if $DEBUG > 1;
+    if $DEBUG;
   map { [ $_->label(@_) ] } $self->h_cust_svc(@_);
 }
 
@@ -2159,13 +2159,13 @@ sub _labels_short {
   my( $self, $method ) = ( shift, shift );
 
   warn "$me _labels_short called on $self with $method method\n"
-    if $DEBUG > 1;
+    if $DEBUG;
 
   my $conf = new FS::Conf;
   my $max_same_services = $conf->config('cust_bill-max_same_services') || 5;
 
   warn "$me _labels_short populating \%labels\n"
-    if $DEBUG > 1;
+    if $DEBUG;
 
   my %labels;
   #tie %labels, 'Tie::IxHash';
@@ -2173,17 +2173,24 @@ sub _labels_short {
     foreach $self->$method(@_);
 
   warn "$me _labels_short populating \@labels\n"
-    if $DEBUG > 1;
+    if $DEBUG;
 
   my @labels;
   foreach my $label ( keys %labels ) {
     my %seen = ();
     my @values = grep { ! $seen{$_}++ } @{ $labels{$label} };
     my $num = scalar(@values);
+    warn "$me _labels_short $num items for $label\n"
+      if $DEBUG;
+
     if ( $num > $max_same_services ) {
+      warn "$me _labels_short   more than $max_same_services, so summarizing\n"
+        if $DEBUG;
       push @labels, "$label ($num)";
     } else {
       if ( $conf->exists('cust_bill-consolidate_services') ) {
+        warn "$me _labels_short   consolidating services\n"
+          if $DEBUG;
         # push @labels, "$label: ". join(', ', @values);
         while ( @values ) {
           my $detail = "$label: ";
@@ -2193,6 +2200,8 @@ sub _labels_short {
           push @labels, $detail;
         }
       } else {
+        warn "$me _labels_short   adding service data\n"
+          if $DEBUG;
         push @labels, map { "$label: $_" } @values;
       }
     }
