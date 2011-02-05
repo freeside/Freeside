@@ -2195,7 +2195,8 @@ sub _labels_short {
         while ( @values ) {
           my $detail = "$label: ";
           $detail .= shift(@values). ', '
-            while @values && length($detail.$values[0]) < 78;
+            while @values
+               && ( length($detail.$values[0]) < 78 || $detail eq "$label: " );
           $detail =~ s/, $//;
           push @labels, $detail;
         }
