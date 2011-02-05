@@ -4210,7 +4210,7 @@ sub _items_tax {
 
 sub _items_cust_bill_pkg {
   my $self = shift;
-  my $cust_bill_pkg = shift;
+  my $cust_bill_pkgs = shift;
   my %opt = @_;
 
   my $format = $opt{format} || '';
@@ -4225,8 +4225,11 @@ sub _items_cust_bill_pkg {
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
-  foreach my $cust_bill_pkg ( @$cust_bill_pkg )
+  foreach my $cust_bill_pkg ( @$cust_bill_pkgs )
   {
+
+    warn "$me _items_cust_bill_pkg considering cust_bill_pkg $cust_bill_pkg\n"
+      if $DEBUG > 1;
 
     $discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
         			&& $conf->exists('discount-show-always'));
@@ -4252,6 +4255,9 @@ sub _items_cust_bill_pkg {
                         )
     {
 
+      warn "$me _items_cust_bill_pkg considering display item $display\n"
+        if $DEBUG > 1;
+
       my $type = $display->type;
 
       my $desc = $cust_bill_pkg->desc;
@@ -4265,6 +4271,9 @@ sub _items_cust_bill_pkg {
 
       if ( $cust_bill_pkg->pkgnum > 0 ) {
 
+        warn "$me _items_cust_bill_pkg cust_bill_pkg is non-tax\n"
+          if $DEBUG > 1;
+ 
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
 
         if ( $cust_bill_pkg->setup != 0 && (!$type || $type eq 'S') ) {
@@ -4410,6 +4419,9 @@ sub _items_cust_bill_pkg {
 
       } else { #pkgnum tax or one-shot line item (??)
 
+        warn "$me _items_cust_bill_pkg cust_bill_pkg is tax\n"
+          if $DEBUG > 1;
+
         if ( $cust_bill_pkg->setup != 0 ) {
           push @b, {
             'description' => $desc,
@@ -4430,6 +4442,9 @@ sub _items_cust_bill_pkg {
     }
 
   }
+
+  warn "$me _items_cust_bill_pkg done considering cust_bill_pkgs\n"
+    if $DEBUG > 1;
 
   foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
     if ( $_  ) {
