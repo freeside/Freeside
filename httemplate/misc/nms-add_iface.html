@@ -2,6 +2,8 @@ Adding interface <B><% $iface %></B> for <B><% $host %></B>
 <BR>
 
 <FORM NAME="nms-add_iface" ACTION="<% popurl(1) %>process/nms-add_iface.html" METHOD=POST>
+<INPUT TYPE="HIDDEN" name="iface" value="<%$iface%>">
+<INPUT TYPE="HIDDEN" name="host" value="<%$host%>">
 Torrus Service Id
 <% include('/elements/input-text.html',
 		    'field' => 'serviceid',

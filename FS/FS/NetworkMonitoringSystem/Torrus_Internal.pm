@@ -5,6 +5,7 @@ use strict;
 use Fcntl qw(:flock);
 use IO::File;
 use File::Slurp qw(slurp);
+use Date::Format;
 
 #$DEBUG = 0;
 #$me = '[FS::NetworkMonitoringSystem::Torrus_Internal]';
@@ -12,6 +13,13 @@ use File::Slurp qw(slurp);
 our $lock;
 our $lockfile = '/usr/local/etc/torrus/discovery/FSLOCK';
 our $ddxfile  = '/usr/local/etc/torrus/discovery/routers.ddx';
+
+sub new {
+    my $class = shift;
+    my $self = {};
+    bless $self, $class;
+    return $self;
+}
 
 sub add_router {
   my($self, $ip) = @_;
@@ -48,11 +56,11 @@ sub add_interface {
     next unless $line =~ /^\s*<param\s+name="snmp-host"\s+value="$router_ip"\/?>/i;
 
     while ( my $hostline = shift(@ddx) ) {
-      $new .= "$hostline\n";
+      $new .= "$hostline\n" unless $hostline =~ /^\s+<\/host>\s*/i;
       if ( $hostline =~ /^\s*<param name="RFC2863_IF_MIB::external-serviceid"\/?>/i ) {
 
         while ( my $paramline = shift(@ddx) ) {
-          if ( $paramline =~ /^\s*</param>/ ) {
+          if ( $paramline =~ /^\s*<\/param>/ ) {
             $new .= "$newline\n$paramline";
             last; #paramline
           } else {
@@ -67,7 +75,7 @@ sub add_interface {
           $new .= 
             qq(   <param name="RFC2863_IF_MIB::external-serviceid">\n).
             qq(     $newline\n").
-            qq(   </param>\n).
+            qq(   </param>\n);
         }
         $new .= $hostline;
         last; #hostline
@@ -82,7 +90,7 @@ sub add_interface {
 }
 
 sub _torrus_lock {
-  $lock = new IO:::File ">>$lockfile" or die $!;
+  $lock = new IO::File ">>$lockfile" or die $!;
   flock($lock, LOCK_EX);
 }
 
@@ -104,7 +112,10 @@ sub _torrus_newddx {
     or die "can't write to $ddxfile.new: $!";
   print $new $ddx;
   close $new;
-  rename("$ddxfile", $ddxfile.`date +%Y%m%d%H%M%S`) or die $!;
+
+  # `date ...` created file names with weird chars in them
+  my $tmpname = $ddxfile . Date::Format::time2str('%Y%m%d%H%M%S',time);
+  rename("$ddxfile", $tmpname) or die $!;
   rename("$ddxfile.new", $ddxfile) or die $!;
 
   $self->_torrus_reload;
