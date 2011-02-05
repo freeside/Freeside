@@ -10,6 +10,7 @@ use FS::part_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pkg_display;
+use FS::cust_bill_pkg_discount;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 use FS::cust_tax_exempt_pkg;
