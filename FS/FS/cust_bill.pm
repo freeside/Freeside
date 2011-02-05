@@ -4278,6 +4278,9 @@ sub _items_cust_bill_pkg {
 
         if ( $cust_bill_pkg->setup != 0 && (!$type || $type eq 'S') ) {
 
+          warn "$me _items_cust_bill_pkg adding setup\n"
+            if $DEBUG > 1;
+
           my $description = $desc;
           $description .= ' Setup' if $cust_bill_pkg->recur != 0;
 
@@ -4325,6 +4328,9 @@ sub _items_cust_bill_pkg {
              ( !$type || $type eq 'R' || $type eq 'U' )
            )
         {
+
+          warn "$me _items_cust_bill_pkg adding recur/usage\n"
+            if $DEBUG > 1;
 
           my $is_summary = $display->summary;
           my $description = ($is_summary && $type && $type eq 'U')
