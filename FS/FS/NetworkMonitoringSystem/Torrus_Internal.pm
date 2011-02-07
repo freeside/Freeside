@@ -6,6 +6,9 @@ use Fcntl qw(:flock);
 use IO::File;
 use File::Slurp qw(slurp);
 use Date::Format;
+use XML::Simple;
+use FS::svc_port;
+use FS::Record qw(qsearch);
 
 #$DEBUG = 0;
 #$me = '[FS::NetworkMonitoringSystem::Torrus_Internal]';
@@ -19,6 +22,52 @@ sub new {
     my $self = {};
     bless $self, $class;
     return $self;
+}
+
+sub get_router_serviceids {
+    my $self = shift;
+    my $router = shift;
+
+    my $ddx_xml = slurp($ddxfile);
+    my $xs = new XML::Simple(RootName=> undef, SuppressEmpty => '', 
+				ForceArray => 1, );
+    my $ddx_hash = $xs->XMLin($ddx_xml);
+    if($ddx_hash->{host}){
+	my @hosts = @{$ddx_hash->{host}};
+	foreach my $host ( @hosts ) {
+	    my $param = $host->{param};
+	    if($param && $param->{'snmp-host'} 
+		      && $param->{'snmp-host'}->{'value'} eq $router
+		      && $param->{'RFC2863_IF_MIB::external-serviceid'}) {
+		my $serviceids = $param->{'RFC2863_IF_MIB::external-serviceid'}->{'content'};
+		my %hash = ();
+		if($serviceids) {
+		    my @serviceids = split(',',$serviceids);
+		    foreach my $serviceid ( @serviceids ) {
+			$serviceid =~ s/^\s+|\s+$//g;
+			my @s = split(':',$serviceid);
+			next unless scalar(@s) == 4;
+			$hash{$s[1]} = $s[0];
+		    }
+		}
+		return \%hash;
+	    }
+	}
+    }
+    '';
+}
+
+sub find_svc {
+    my $self = shift;
+    my $serviceid = shift;
+    return '' unless $serviceid =~ /^[0-9A-Za-z_\-.\\\/ ]+$/;
+  
+    my @svc_port = qsearch('svc_port', { 'serviceid' => $serviceid });
+    return '' unless scalar(@svc_port);
+
+    # for now it's like this, later on just change to qsearchs
+
+    return $svc_port[0];
 }
 
 sub add_router {

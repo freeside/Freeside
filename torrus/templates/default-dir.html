@@ -4,13 +4,26 @@
 
 [% INCLUDE legend %]
 
-[% IF matches(thepath,'Interface_Counters/$') %]
-   [% freesideComponent('/elements/init_overlib.html') %]
-[% END %]
-[% IF matches(thepath,'Routers/$') %]
-   [% freesideComponent('/elements/init_overlib.html') %]
-   [% popup_link('nms-add_router.html') %]
-[% END %]
+[% 
+ IF matches(thepath,'Interface_Counters/$');
+   freesideComponent('/elements/init_overlib.html');
+    nms = load_nms();
+    router = nodeName(parent(token));
+    serviceids = get_serviceids(nms,router);
+ END;
+ IF matches(thepath,'Interface_Counters/.*?/$');
+    nms = load_nms();
+    router = nodeName(parent(parent(token)));
+    serviceids = get_serviceids(nms,router);
+
+    # HACK! this doesn't do what you think it does...
+    popup_link('nms-add_iface.html',router,uri_escape(nodeName(token)),nms,serviceids);
+ END; 
+ IF matches(thepath,'Routers/$');
+   freesideComponent('/elements/init_overlib.html');
+   popup_link('nms-add_router.html');
+ END;
+%]
 
 <P>Directories you can jump to:</P>
 <DIV CLASS="Listing">
@@ -50,7 +63,7 @@
          thisIsAlias ? '</EM>':''; %]
       [% IF matches(thepath,'Interface_Counters/$') %]
 	<FONT SIZE="-1">
-        [% popup_link('nms-add_iface.html',nodeName(parent(token)),uri_escape(nodeName(child))) %]
+        [% popup_link('nms-add_iface.html',router,uri_escape(nodeName(child)),nms,serviceids) %]
 	</FONT>
       [% END %]
     </SPAN>

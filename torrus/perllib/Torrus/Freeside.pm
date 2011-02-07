@@ -5,6 +5,7 @@ use warnings;
 
 #Freeside
 use FS::Mason qw( mason_interps );
+use FS::NetworkMonitoringSystem;
 
 my $outbuf;
 my( $fs_interp, $rt_interp ) = mason_interps('standalone', 'outbuf'=>\$outbuf);
@@ -57,6 +58,12 @@ sub freesideComponent {
 
   return $outbuf;
 
+}
+
+sub load_nms {
+    my $self = shift;
+    my $nms = new FS::NetworkMonitoringSystem;
+    $nms;
 }
 
 1;
