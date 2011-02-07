@@ -20,16 +20,6 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                  } keys %$fields;
 my @fields = keys %$fields;
 
-my $svcnum;
-if ( $cgi->param('svcnum') ) {
-  $cgi->param('svcnum') =~ /^(\d+)$/ or die "unparsable svcnum";
-  $svcnum = $1;
-} else {
-  my($query) = $cgi->keywords;
-  $query =~ /^(\d+)$/ or die "no svcnum";
-  $svcnum = $1;
-}
-
 my $start = $cgi->param('start');
 my $end = $cgi->param('end');
 
@@ -42,9 +32,14 @@ sub preset_range {
 }
 
 my $html_foot = sub {
+    my $svc_port = shift;
+    my $svcnum = $svc_port->svcnum;
     my $default_end = time;
     my $default_start = $default_end-86400;
     my $graph = '';
+
+    my $nms = new FS::NetworkMonitoringSystem;
+    my $link = $nms->port_graphs_link($svc_port->serviceid);
 
     if($start && $end) {
 	$graph = "<BR><BR><IMG SRC=${p}/view/port_graph.html?svcnum=$svcnum;".
@@ -60,6 +55,7 @@ my $html_foot = sub {
     </script>
     <FORM ACTION=? METHOD="GET">
     <INPUT TYPE="HIDDEN" NAME="svcnum" VALUE="'.$svcnum.'">
+    <A HREF="'.$link.'">Torrus Graphs</A><BR><BR>
     <B>Bandwidth Graph</B><BR>
 &nbsp; '.preset_range($default_start,$default_end,'Last Day',$date_format)
     .' | '.preset_range($default_end-86400*7,$default_end,'Last Week',$date_format)

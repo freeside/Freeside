@@ -9,6 +9,7 @@ use Date::Format;
 use XML::Simple;
 use FS::svc_port;
 use FS::Record qw(qsearch);
+use Torrus::ConfigTree;
 
 #$DEBUG = 0;
 #$me = '[FS::NetworkMonitoringSystem::Torrus_Internal]';
@@ -24,20 +25,26 @@ sub new {
     return $self;
 }
 
-sub get_router_serviceids {
+sub ddx2hash {
     my $self = shift;
-    my $router = shift;
-
     my $ddx_xml = slurp($ddxfile);
     my $xs = new XML::Simple(RootName=> undef, SuppressEmpty => '', 
 				ForceArray => 1, );
-    my $ddx_hash = $xs->XMLin($ddx_xml);
+    return $xs->XMLin($ddx_xml);
+}
+
+sub get_router_serviceids {
+    my $self = shift;
+    my $router = shift;
+    my $find_serviceid = shift;
+    my $found_serviceid = 0;
+    my $ddx_hash = $self->ddx2hash;
     if($ddx_hash->{host}){
 	my @hosts = @{$ddx_hash->{host}};
 	foreach my $host ( @hosts ) {
 	    my $param = $host->{param};
 	    if($param && $param->{'snmp-host'} 
-		      && $param->{'snmp-host'}->{'value'} eq $router
+		      && (!$router || $param->{'snmp-host'}->{'value'} eq $router)
 		      && $param->{'RFC2863_IF_MIB::external-serviceid'}) {
 		my $serviceids = $param->{'RFC2863_IF_MIB::external-serviceid'}->{'content'};
 		my %hash = ();
@@ -47,14 +54,31 @@ sub get_router_serviceids {
 			$serviceid =~ s/^\s+|\s+$//g;
 			my @s = split(':',$serviceid);
 			next unless scalar(@s) == 4;
-			$hash{$s[1]} = $s[0];
+			$hash{$s[1]} = $s[0] if $router;
+			if ($find_serviceid && $find_serviceid eq $s[0]) {
+			    $hash{$param->{'snmp-host'}->{'value'}} = $s[1];
+			    $found_serviceid = 1;
+			}
 		    }
 		}
-		return \%hash;
+		return \%hash if ($router || $found_serviceid);
 	    }
 	}
     }
     '';
+}
+
+sub port_graphs_link {
+    # hardcoded for 'main' tree for now 
+    my $self = shift;
+    my $serviceid = shift;
+    my $hash = $self->get_router_serviceids(undef,$serviceid);
+    my @keys = keys %$hash; # yeah this is weird...
+    my $host = $keys[0];
+    my $iface = $hash->{$keys[0]};
+    my $config_tree = new Torrus::ConfigTree( -TreeName => 'main' );
+    my $token = $config_tree->token("/Routers/$host/Interface_Counters/$iface/InOut_bps");
+    return $Torrus::Freeside::FSURL."/torrus/main?token=$token";
 }
 
 sub find_svc {
