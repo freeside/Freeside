@@ -352,9 +352,12 @@ sub import_results {
     my $custnum = $cust_pay_batch->custnum,
     my $payby = $cust_pay_batch->payby,
 
-    my $new_cust_pay_batch = new FS::cust_pay_batch { $cust_pay_batch->hash };
-
     &{$hook}(\%hash, $cust_pay_batch->hashref);
+
+    my $new_cust_pay_batch = new FS::cust_pay_batch { 
+      $cust_pay_batch->hash, 
+      %hash 
+    };
 
     my $error = '';
     if ( &{$approved_condition}(\%hash) ) {
