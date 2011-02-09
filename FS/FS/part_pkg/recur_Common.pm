@@ -37,6 +37,7 @@ sub calc_recur_Common {
     if ( $recur_method eq 'prorate' ) {
       my $cutoff_day = $self->option('cutoff_day') || 1;
       $charges = $self->calc_prorate(@_, $cutoff_day);
+      $charges += $param->{'override_charges'} if $param->{'override_charges'};
     }
     elsif ( $recur_method eq 'anniversary' and 
             $self->option('sync_bill_date',1) ) {
@@ -44,6 +45,7 @@ sub calc_recur_Common {
       if ( defined($next_bill) ) {
         my $cutoff_day = (localtime($next_bill))[3];
         $charges = $self->calc_prorate(@_, $cutoff_day);
+        $charges += $param->{'override_charges'} if $param->{'override_charges'};
       }
     } 
     elsif ( $recur_method eq 'subscription' ) {
