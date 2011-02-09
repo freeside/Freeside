@@ -31,10 +31,14 @@ foreach ( @expansion ) {
   my(%hash)=$cust_main_county->hash;
   my($new)=new FS::cust_main_county \%hash;
   $new->setfield('taxnum','');
+  $new->setfield('taxclass', '');
   if ( $cgi->param('what') eq 'state' ) { #??
     $new->setfield('state',$_);
+    $new->setfield('county', '');
+    $new->setfield('city', '');
   } elsif ( $cgi->param('what') eq 'county' ) {
     $new->setfield('county',$_);
+    $new->setfield('city', '');
   } elsif ( $cgi->param('what') eq 'city' ) {
     #uppercase cities in the US to try and agree with USPS validation
     $new->setfield('city', $new->country eq 'US' ? uc($_) : $_ );
