@@ -22,7 +22,7 @@ if ( $cgi->param('taxclass') ) {
     or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   @expansion = map $_->[0], @{$sth->fetchall_arrayref};
-  die "no taxclasses - add one first" unless @expansion;#XXX better err handling
+  errorpage "No taxclasses - add one first" unless @expansion;
 } else {
   @expansion = split /[\n\r]{1,2}/, $cgi->param('expansion');
 
