@@ -94,6 +94,21 @@ sub find_svc {
     return $svc_port[0];
 }
 
+sub report {
+  my $self = shift;
+
+  my @lt = localtime(time);
+  my ($d,$m,$y) = ($ls[3], $ls[4]+1, $ls[5]+1900);
+  if ( $ls[3] == 1 ) {
+    $m--;
+    if ($m == 0) { $m=12; $y-- }
+    #i should have better error checking
+    system('torrus', 'report', '--report=MonthlyUsage', "--date=$y-$m-01");
+    system('torrus', 'report', '--genhtml', '--tree=main');
+  }
+
+}
+
 sub add_router {
   my($self, $ip) = @_;
 
