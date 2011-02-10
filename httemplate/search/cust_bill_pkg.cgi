@@ -463,7 +463,8 @@ if ( $cgi->param('pkg_tax') ) {
 
 } else {
 
-  $count_query = "SELECT COUNT(*), ";
+  #$count_query = "SELECT COUNT(*), ";
+  $count_query = "SELECT COUNT(DISTINCT billpkgnum), ";
 
   if ( $use_usage eq 'recurring' ) {
     $count_query .= "SUM(setup + recur - usage)";
@@ -472,7 +473,12 @@ if ( $cgi->param('pkg_tax') ) {
   } elsif ( $unearned ) {
     $count_query .= "SUM(cust_bill_pkg.recur)";
   } else {
-    $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
+    if ( scalar( grep( /locationtaxid/, $cgi->param ) ) ||
+              $cgi->param('iscredit') eq 'rate') {
+      $count_query .= "SUM( COALESCE(amount, cust_bill_pkg.setup + cust_bill_pkg.recur))";
+    } else {
+      $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
+    }
   }
 
   if ( $unearned ) {
