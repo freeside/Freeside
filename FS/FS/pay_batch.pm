@@ -354,14 +354,14 @@ sub import_results {
 
     &{$hook}(\%hash, $cust_pay_batch->hashref);
 
-    my $new_cust_pay_batch = new FS::cust_pay_batch { 
-      $cust_pay_batch->hash, 
-      %hash 
-    };
+    my $new_cust_pay_batch = new FS::cust_pay_batch { $cust_pay_batch->hash };
 
     my $error = '';
     if ( &{$approved_condition}(\%hash) ) {
 
+      foreach ('paid', '_date', 'payinfo') {
+        $new_cust_pay_batch->$_($hash{$_}) if $hash{$_};
+      }
       $error = $new_cust_pay_batch->approve($hash{'paybatch'} || $self->batchnum);
       $total += $hash{'paid'};
 
