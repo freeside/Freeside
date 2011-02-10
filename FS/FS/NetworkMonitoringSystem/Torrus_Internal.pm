@@ -97,7 +97,7 @@ sub find_svc {
 sub report {
   my $self = shift;
 
-  my @lt = localtime(time);
+  my @ls = localtime(time);
   my ($d,$m,$y) = ($ls[3], $ls[4]+1, $ls[5]+1900);
   if ( $ls[3] == 1 ) {
     $m--;

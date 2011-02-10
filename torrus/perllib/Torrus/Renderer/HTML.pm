@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.7 2011-02-07 05:20:41 levinse Exp $
+# $Id: HTML.pm,v 1.8 2011-02-10 01:08:44 levinse Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -120,6 +120,7 @@ sub render_html
         'freesideComponent' => sub { return $self->freesideComponent(@_); },
         'uri_escape'        => sub { return uri_escape(@_); },
 	'matches'        => sub { return $_[0] =~ $_[1]; },
+	'slash2underscore' => sub { $_[0] =~ s/\//_/g; return $_[0]; },
 	'load_nms'       => sub { return $self->load_nms; },
 	'get_serviceids'    => sub { my $nms = shift; 
 				  my $router = shift;

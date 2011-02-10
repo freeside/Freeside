@@ -17,7 +17,7 @@
     serviceids = get_serviceids(nms,router);
 
     # HACK! this doesn't do what you think it does...
-    popup_link('nms-add_iface.html',router,uri_escape(nodeName(token)),nms,serviceids);
+    popup_link('nms-add_iface.html',router,uri_escape(slash2underscore(nodeName(token))),nms,serviceids);
  END; 
  IF matches(thepath,'Routers/$');
    freesideComponent('/elements/init_overlib.html');
@@ -63,7 +63,7 @@
          thisIsAlias ? '</EM>':''; %]
       [% IF matches(thepath,'Interface_Counters/$') %]
 	<FONT SIZE="-1">
-        [% popup_link('nms-add_iface.html',router,uri_escape(nodeName(child)),nms,serviceids) %]
+        [% popup_link('nms-add_iface.html',router,uri_escape(slash2underscore(nodeName(child))),nms,serviceids) %]
 	</FONT>
       [% END %]
     </SPAN>
