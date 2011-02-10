@@ -1806,6 +1806,7 @@ agentnum, beginning, and ending
 
 =cut
 
+#shit, all sorts of false laxiness w/report_newtax.cgi
 sub generate_liability_report {
   my %args = @_;
 
@@ -1897,8 +1898,7 @@ sub generate_liability_report {
       my $taxwhere = "FROM cust_bill_pkg $addl_from $where AND payby != 'COMP' ".
         "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
 
-      my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
-                " $taxwhere AND cust_bill_pkg.pkgnum = 0";
+      my $sql = "SELECT SUM(amount) $taxwhere AND cust_bill_pkg.pkgnum = 0";
 
       my $x = &{$scalar_sql}($t, [ map { $_, $_ } @params ], $sql );
       $tax += $x;

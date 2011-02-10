@@ -123,8 +123,7 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
     my $taxwhere = "FROM cust_bill_pkg $addl_from $where AND payby != 'COMP' ".
       "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
 
-    my $sql = "SELECT SUM(COALESCE(amount, cust_bill_pkg.setup+cust_bill_pkg.recur)) ".
-              " $taxwhere AND cust_bill_pkg.pkgnum = 0";
+    my $sql = "SELECT SUM(amount) $taxwhere AND cust_bill_pkg.pkgnum = 0";
 
     my $x = scalar_sql($t, [ map { $_, $_ } @params ], $sql );
     $tax += $x;
