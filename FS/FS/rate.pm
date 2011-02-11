@@ -276,25 +276,34 @@ specificed destination, or the empty string if no rate can be found for
 the given destination.
 
 Destination can be specified as an FS::rate_detail object or regionnum
-(see L<FS::rate_detail>), or as a hashref with two keys: I<countrycode>
-and I<phonenum>.
+(see L<FS::rate_detail>), or as a hashref containing the following keys:
 
-An optional third key, I<weektime>, will return a timed rate (one with 
-a non-null I<ratetimenum>) if one exists for a call at that time.  If 
-no matching timed rate exists, the non-timed rate will be returned.
+=over 2
+
+=item I<countrycode> - required.
+
+=item I<phonenum> - required.
+
+=item I<weektime> - optional.  Specifies a time in seconds from the start 
+of the week, and will return a timed rate (one with a non-null I<ratetimenum>)
+if one exists at that time.  If not, returns a non-timed rate.
+
+=item I<cdrtypenum> - optional.  Specifies a value for the cdrtypenum 
+field, and will return a rate matching that, if one exists.  If not, returns 
+a rate with null cdrtypenum.
 
 =cut
 
 sub dest_detail {
   my $self = shift;
 
-  my $regionnum;
-  my $weektime;
+  my( $regionnum, $weektime, $cdrtypenum );
   if ( ref($_[0]) eq 'HASH' ) {
 
     my $countrycode = $_[0]->{'countrycode'};
     my $phonenum    = $_[0]->{'phonenum'};
     $weektime       = $_[0]->{'weektime'};
+    $cdrtypenum     = $_[0]->{'cdrtypenum'} || '';
 
     #find a rate prefix, first look at most specific, then fewer digits,
     # finally trying the country code only
@@ -315,36 +324,47 @@ sub dest_detail {
 
     $regionnum = $rate_prefix->regionnum;
 
-    #$rate_region = $rate_prefix->rate_region;
-
   } else {
     $regionnum = ref($_[0]) ? shift->regionnum : shift;
   }
-  
-  if(!defined($weektime)) {
-    return qsearchs( 'rate_detail', 
-                            { 'ratenum'        => $self->ratenum,
-                              'dest_regionnum' => $regionnum,
-                              'ratetimenum'    => '',
-                            } );
+
+  my %hash = (
+    'ratenum'         => $self->ratenum,
+    'dest_regionnum'  => $regionnum,
+  );
+
+  # find all rates matching ratenum, regionnum, cdrtypenum
+  my @details = qsearch( 'rate_detail', { 
+      %hash,
+      'cdrtypenum' => $cdrtypenum
+    });
+  # find all rates maching ratenum, regionnum and null cdrtypenum
+  if ( !@details and $cdrtypenum ) {
+    @details = qsearch( 'rate_detail', {
+        %hash,
+        'cdrtypenum' => ''
+      });
   }
-  else {
-    my @details = grep { my $rate_time = $_->rate_time;
-                            $rate_time && $rate_time->contains($weektime) }
-                       qsearch( 'rate_detail',
-                                    { 'ratenum'        => $self->ratenum,
-                                      'dest_regionnum' => $regionnum, } );
-    if(!@details) {
-      # this may change at some point
-      return $self->dest_detail($regionnum);
+  # find one of those matching weektime
+  if ( defined($weektime) ) {
+    my @exact = grep { 
+      my $rate_time = $_->rate_time;
+      $rate_time && $rate_time->contains($weektime)
+    } @details;
+    if ( @exact == 1 ) {
+      return $exact[0];
     }
-    elsif(@details == 1) {
-      return $details[0];
+    elsif ( @exact > 1 ) {
+      die "overlapping rate_detail times (region $regionnum, time $weektime)\n"
     }
-    else {
-      die "overlapping rate_detail times (region $regionnum, time $weektime)\n";
-    }
+    # else @exact == 0
   }
+  # if not found or there is no weektime, find one matching null weektime
+  foreach (@details) {
+    return $_ if $_->ratetimenum eq '';
+  }
+  # found nothing
+  return;
 }
 
 =item rate_detail

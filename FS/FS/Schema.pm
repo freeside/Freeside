@@ -2489,6 +2489,7 @@ sub tables_hashref {
         'sec_granularity', 'int',     '',     '', '', '', 
         'ratetimenum',     'int', 'NULL',     '', '', '',
         'classnum',        'int', 'NULL',     '', '', '', 
+        'cdrtypenum',      'int', 'NULL',     '', '', '',
       ],
       'primary_key' => 'ratedetailnum',
       'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],

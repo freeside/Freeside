@@ -26,8 +26,24 @@ Rate plan
 
 % if($rate->ratenum) {
 <BR><BR><FONT SIZE="+2">Rates in this plan</FONT>
+% if ( my $select_cdr_type = include('/elements/select-cdr_type.html',
+%  'curr_value'   => $cdrtypenum,
+%  'onchange'     => 'form.submit();',
+%  'name_col'     => 'cdrtypename',
+%  'value_col'    => 'cdrtypenum',
+%  'empty_label'  => '(default)',
+% ) ) {
+<FORM ACTION="<%$cgi->url%>" METHOD="GET">
+<INPUT TYPE="hidden" NAME="ratenum" VALUE="<% $rate->ratenum %>">
+<INPUT TYPE="hidden" NAME="countrycode" VALUE="<% $countrycode %>">
+<FONT SIZE="+1">Usage type: <% $select_cdr_type %></FONT>
+</FORM>
+% }
+
 <% include('/edit/elements/rate_detail.html',
-            'ratenum' => $rate->ratenum
+            'ratenum'     => $rate->ratenum,
+            'countrycode' => $countrycode,
+            'cdrtypenum'  => $cdrtypenum,
 ) %>
 % }
 
@@ -39,13 +55,21 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $rate;
-if ( $cgi->keywords ) {
-  my($query) = $cgi->keywords;
-  $query =~ /^(\d+)$/;
+if ( $cgi->param('ratenum') ) {
+  $cgi->param('ratenum') =~ /^(\d+)$/;
   $rate = qsearchs( 'rate', { 'ratenum' => $1 } );
 } else { #adding
   $rate = new FS::rate {};
 }
 my $action = $rate->ratenum ? 'Edit' : 'Add';
 
+my $countrycode = '';
+if ( $cgi->param('countrycode') =~ /^(\d+)$/ ) {
+  $countrycode = $1;
+}
+
+my $cdrtypenum = '';
+if ( $cgi->param('cdrtypenum') =~ /^(\d+)$/ ) {
+  $cdrtypenum = $1;
+}
 </%init>

@@ -51,7 +51,9 @@ Values will be passed through as "mytable_id1", etc.
   <TR>
 %   my $col = 0;
 %   for ( $col = 0; $col < scalar @fields; $col++ ) {
-%     my $id = $prefix . $fields[$col] . $row;
+%     my $id = $prefix . $fields[$col];
+%     # don't suffix rownum in the final, blank row
+%     $id .= $row if $row < (scalar @data) - 1; 
     <TD>
 %     my @o = @{ $select[$col] };
 %     if( @o ) {
@@ -117,7 +119,10 @@ $val eq $data[$row][$col] ? ' SELECTED' : ''%>><% shift @o %></OPTION>
     var row = <% $prefix %>table.insertRow(-1);
     var cells = <% $prefix %>_blank.cells;
     for (i=0; i<cells.length; i++) {
-      row.appendChild(cells[i].cloneNode(true));
+      var node = row.appendChild(cells[i].cloneNode(true));
+      var input = node.children[0];
+      input.id = input.id + row.sectionRowIndex;
+      input.name = input.name + row.sectionRowIndex;
     }
     <% $prefix %>rownum++;
   }

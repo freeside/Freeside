@@ -34,7 +34,7 @@ FS::Record.  The following fields are currently supported:
 
 =item cdrtypenum - primary key
 
-=item typename - CDR type name
+=item cdrtypename - CDR type name
 
 
 =back
@@ -98,7 +98,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('cdrtypenum')
-    || $self->ut_text('typename')
+    || $self->ut_text('cdrtypename')
   ;
   return $error if $error;
 

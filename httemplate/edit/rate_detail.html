@@ -18,6 +18,7 @@
                    { field=>'orig_regionnum',      type=>'hidden', },
                    { field=>'dest_regionnum',      type=>'hidden', },
                    { field=>'ratetimenum',         type=>'hidden', },
+                   { field=>'cdrtypenum',          type=>'hidden', },
                    { field=>'dest_regionname',     type=>'fixed',  },
                    { field=>'dest_prefixes_short', type=>'fixed',  },
                    { field=>'rate_time_name',      type=>'fixed',  },
@@ -49,6 +50,9 @@
         { ratenum        => $cgi->param('ratenum'),
           dest_regionnum => $cgi->param('dest_regionnum'),
           ratetimenum    => $cgi->param('ratetimenum'),
+          cdrtypenum     => $cgi->param('cdrtypenum'),
+          min_included   => 0,
+          conn_charge    => 0,
         }
       },
    )

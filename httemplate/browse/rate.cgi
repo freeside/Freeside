@@ -4,6 +4,8 @@
                                    $p.'browse/rate_region.html',
                                  'Time Periods' =>
                                    $p.'browse/rate_time.html',
+                                 'CDR Types' =>
+                                   $p.'edit/cdr_type.cgi',
                                ],
               'html_init'   => $html_init,
               'name'        => 'rate plans',
@@ -15,6 +17,7 @@
               'header'      => [ '#',       'Rate plan', 'Rates'    ],
               'fields'      => [ 'ratenum', 'ratename',  $rates_sub ],
               'links'       => [ $link,     $link,       ''         ],
+              'really_disable_download' => 1
           )
 %>
 <%once>
@@ -27,7 +30,7 @@ my $rates_sub = sub {
   my $rate = shift;
   my $ratenum = $rate->ratenum;
 
-  qq( <FORM METHOD="GET" ACTION="${p}browse/rate_detail.html">
+  qq( <FORM METHOD="GET" ACTION="${p}edit/rate.cgi">
         <INPUT TYPE="hidden" NAME="ratenum" VALUE="$ratenum">
         <SELECT NAME="countrycode" onChange="this.form.submit();">
           <OPTION SELECTED>Select Country Code
@@ -55,7 +58,7 @@ my $html_init =
 
 my $count_query = 'SELECT COUNT(*) FROM rate';
 
-my $link = [ $p.'edit/rate.cgi?', 'ratenum' ];
+my $link = [ $p.'edit/rate.cgi?ratenum=', 'ratenum' ];
 
 </%once>
 <%init>

@@ -333,7 +333,7 @@ sub calc_usage {
   my $disable_tollfree  = $self->option('disable_tollfree');
   my $ignore_unrateable = $self->option('ignore_unrateable', 'Hush!');
   my $use_duration      = $self->option('use_duration');
-  my $region_group	= ($rating_method eq 'prefix' && $self->option('min_included') > 0);
+  my $region_group	= ($rating_method eq 'prefix' && ($self->option('min_included') || 0) > 0);
   my $region_group_included_min = $region_group ? $self->option('min_included') : 0;
 
   my $output_format     = $self->option('output_format', 'Hush!')
@@ -502,6 +502,7 @@ sub calc_usage {
           $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
                                               'phonenum'    => $number,
                                               'weektime'    => $weektime,
+                                              'cdrtypenum'  => $cdr->cdrtypenum,
                                             });
 
           if ( $rate_detail ) {
@@ -568,10 +569,7 @@ sub calc_usage {
           if $seconds      # don't granular-ize 0 billsec calls (bills them)
           && $granularity  # 0 is per call
           && $seconds % $granularity;
-        my $minutes = $seconds / 60;
-        # XXX config?
-        #$charge = sprintf('%.2f', ( $self->option('min_charge') * $minutes )
-                                  #+ 0.00000001 ); #so 1.005 rounds to 1.01
+        my $minutes = $granularity ? ($seconds / 60) : 1;
         $charge = sprintf('%.4f', ( $self->option('min_charge') * $minutes )
                                   + 0.0000000001 ); #so 1.00005 rounds to 1.0001
 
@@ -692,7 +690,8 @@ sub calc_usage {
             # choose next rate_detail
             $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
                                                 'phonenum'    => $number,
-                                                'weektime'    => $etime })
+                                                'weektime'    => $etime,
+                                                'cdrtypenum'  => $cdr->cdrtypenum })
                     if($seconds_left);
             # we have now moved forward to $etime
             $weektime = $etime;

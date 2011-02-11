@@ -1,0 +1,11 @@
+% if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM cdr_type') ) {
+<% include( '/elements/select-table.html',
+              'table'       => 'cdr_type',
+              'name_col'    => 'cdrtypenum',
+              'empty_label' => '(none)',
+              @_
+          )
+%>
+% }
+<%init>
+</%init>

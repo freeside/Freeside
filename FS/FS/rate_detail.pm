@@ -57,6 +57,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item ratetimenum - rating time period (see L<FS::rate_time) if any
 
+=item cdrtypenum - CDR type (see L<FS::cdr_type>) if any for this rate
+
 =back
 
 =head1 METHODS
@@ -234,6 +236,20 @@ sub classname {
   $usage_class ? $usage_class->classname : '';
 }
 
+=item cdrtypename
+
+Returns the name of the CDR type (see L<FS::cdr_type) associated with this 
+rate, if there is one.  If not, returns the cdrtypenum itself.  This will 
+only return an empty string if cdrtypenum is NULL.
+
+=cut
+
+sub cdrtypename {
+  my $self = shift;
+  my $cdrtypenum = $self->cdrtypenum or return '';
+  my $cdr_type = qsearchs('cdr_type', { cdrtypenum => $cdrtypenum });
+  return $cdr_type ? $cdr_type->cdrtypename : $cdrtypenum;
+}
 
 =back
 
