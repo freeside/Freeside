@@ -22,6 +22,20 @@ use FS::part_pkg;
   'weight' => 52,
 );
 
+sub price_info {
+    my $self = shift;
+    my $conf = new FS::Conf;
+    my $money_char = $conf->config('money_char') || '$';
+    my $setup = $self->option('setup_fee') || 0;
+    my $recur = $self->option('recur_fee', 1) || 0;
+    my $str = '';
+    $str = $money_char . $setup . ' one-time' if $setup;
+    $str .= ', ' if ($setup && $recur);
+    $str .= $money_char . $recur . ' recurring per unit ' if $recur;
+    $str;
+}
+
+
 sub calc_setup {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 

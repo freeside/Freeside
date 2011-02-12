@@ -24,6 +24,14 @@ our %info = (
   'fieldorder' => [ 'base_rate' ],
 );
 
+sub price_info {
+    my $self = shift;
+    my $str = $self->SUPER::price_info;
+    my $rate = $self->option('base_rate');
+    $str .= " plus $rate/min" if $rate;
+    $str;
+}
+
 sub calc_setup {
   my($self, $cust_pkg ) = @_;
   $self->option('setup_fee');

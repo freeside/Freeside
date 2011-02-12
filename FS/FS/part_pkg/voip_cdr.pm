@@ -278,6 +278,13 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
   'weight' => 40,
 );
 
+sub price_info {
+    my $self = shift;
+    my $str = $self->SUPER::price_info;
+    $str .= " plus usage" if $str;
+    $str;
+}
+
 sub calc_setup {
   my($self, $cust_pkg ) = @_;
   $self->option('setup_fee');

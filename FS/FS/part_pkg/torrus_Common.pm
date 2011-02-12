@@ -7,6 +7,13 @@ our %info = ( 'disabled' => 1 ); #torrus_Common not a usable price plan directly
 
 our $DEBUG = 1;
 
+sub price_info {
+    my $self = shift;
+    my $str = $self->SUPER::price_info;
+    $str .= " plus usage" if $str;
+    $str;
+}
+
 sub calc_recur {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;

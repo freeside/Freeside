@@ -45,6 +45,13 @@ use DBI;
   'weight' => '58',
 );
 
+sub price_info {
+    my $self = shift;
+    my $str = $self->SUPER::price_info;
+    $str .= " plus per-service charges" if $str;
+    $str;
+}
+
 sub calc_recur {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;

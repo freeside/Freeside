@@ -40,6 +40,13 @@ use FS::part_pkg::flat;
   'weight' => '56',
 );
 
+sub price_info {
+    my $self = shift;
+    my $str = $self->SUPER::price_info;
+    $str .= " plus per-service charges" if $str;
+    $str;
+}
+
 sub calc_recur {
   my($self, $cust_pkg ) = @_;
 

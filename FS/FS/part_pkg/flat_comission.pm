@@ -32,6 +32,14 @@ use FS::part_pkg::flat;
   'weight' => 62,
 );
 
+sub price_info {
+    my $self = shift;
+    my $str = $self->SUPER::price_info;
+    my $com = $self->option('comission_amount');
+    $str .= ", $com commission" if $com;
+    $str;
+}
+
 sub calc_recur {
   my($self, $cust_pkg ) = @_;
 

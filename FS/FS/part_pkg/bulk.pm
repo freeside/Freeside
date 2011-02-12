@@ -4,6 +4,7 @@ use strict;
 use vars qw(@ISA $DEBUG $me %info);
 use Date::Format;
 use FS::part_pkg::flat;
+use FS::Conf;
 
 @ISA = qw(FS::part_pkg::flat);
 
@@ -33,6 +34,22 @@ $me = '[FS::part_pkg::bulk]';
                     'summarize_svcs', 'no_prorate' ],
   'weight' => 50,
 );
+
+sub price_info {
+    my $self = shift;
+    my $str = $self->SUPER::price_info;
+    my $svc_setup_fee = $self->option('svc_setup_fee');
+    my $svc_recur_fee = $self->option('svc_recur_fee');
+    my $conf = new FS::Conf;
+    my $money_char = $conf->config('money_char') || '$';
+    $str .= " , bulk" if $str;
+    $str .= ": $money_char" . $svc_setup_fee . " one-time per service" 
+	if $svc_setup_fee;
+    $str .= ", " if ($svc_setup_fee && $svc_recur_fee);
+    $str .= $money_char . $svc_recur_fee . " recurring per service"
+	if $svc_recur_fee;
+    $str;
+}
 
 #some false laziness-ish w/agent.pm...  not a lot
 sub calc_recur {
