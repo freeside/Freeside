@@ -605,6 +605,10 @@ sub pkg_comment {
   $pre. $self->pkg. ' - '. $self->custom_comment;
 }
 
+sub price_info { # safety, in case a part_pkg hasn't defined price_info
+    '';
+}
+
 sub custom_comment {
   my $self = shift;
   ( $self->custom ? '(CUSTOM) ' : '' ). $self->comment . ' ' . $self->price_info;
