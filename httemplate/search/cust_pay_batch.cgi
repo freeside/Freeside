@@ -207,7 +207,10 @@ if ( $pay_batch ) {
     }
     $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;
     $html_init .= '<TR> <INPUT TYPE="submit" VALUE="Upload"></FORM><BR> </TR>';
-    if ( $conf->exists('batch-manual_approval') and $pay_batch->status eq 'I') {
+    if ( $conf->exists('batch-manual_approval') 
+          and $conf->config('batch-fixed_format-CHEK') eq 'td_eft1464'
+          and $pay_batch->status eq 'I'
+          and $pay_batch->payby eq 'CHEK' ) {
       $html_init .= qq!<TR><INPUT TYPE="button" VALUE="Manually approve" onclick="
 if ( confirm('Approve all remaining payments in this batch?') )
   window.location.href='${p}misc/process/pay_batch-approve.cgi?batchnum=$batchnum';"></TR>!
