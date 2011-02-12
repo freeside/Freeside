@@ -1,0 +1,569 @@
+#!/usr/bin/perl -w
+
+#script to move customers from one installation to another
+# source is remote, destination is local
+
+use strict;
+use vars qw( $sdbh );
+use DBI;
+use FS::UID qw( adminsuidsetup dbh );
+use FS::Schema qw( dbdef );
+use FS::Record qw( qsearchs );
+use FS::agent;
+use FS::cust_main;
+use FS::part_pkg;
+use FS::part_svc;
+use FS::cust_bill_ApplicationCommon;
+use FS::svc_Common;
+use FS::cust_event;
+use FS::svc_domain;
+use FS::cust_pkg;
+
+my $DANGEROUS = 0;
+my $DRY = 1;
+
+# XXX: use SSL for real version
+my $source_datasrc = '';
+my $source_user = '';
+my $source_pw = '';
+
+#### MANUAL ####
+# 1. Destination agent must be created with correct agentnum
+# 2. Destination refnum must be created as per below
+# 3. System domain must be created appropriately
+#####
+
+my $dest_agentnum = 3;
+my $src_agentnum = 1;
+my $dest_refnum = 17;
+
+my %domsvc_map = (
+  2 => 10375,
+);
+
+# XXX
+my %eventparts = (
+ # 'CARD' => [ 1, ],
+ # 'CHEK' => [ 2, ],
+ # 'BILL' => [ 5, ],
+ # 'DCHK' => [ 12, ],
+ # 'DCRD' => [ 15, ],
+ # 'COMP' => [],
+);
+
+#--
+
+# target(local) setup
+
+my $user = shift
+  or die "Usage:\n  (edit variables at top of script and then)\n".
+         "  b-move-customers user\n";
+adminsuidsetup $user;
+
+$FS::cust_main::ignore_expired_card = 1;
+$FS::cust_main::ignore_expired_card = 1;
+$FS::part_pkg::skip_pkg_svc_hack = 1;
+$FS::part_pkg::skip_pkg_svc_hack = 1;
+$FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
+$FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
+$FS::svc_Common::noexport_hack = 1;
+$FS::svc_Common::noexport_hack = 1;
+$FS::svc_domain::whois_hack = 1;
+$FS::svc_domain::whois_hack = 1;
+$FS::cust_pkg::disable_agentcheck = 1;
+$FS::cust_pkg::disable_agentcheck = 1;
+
+my $void_paynum = 2147483646; #top of int range
+
+# -- 
+
+# source(remote) setup
+
+$sdbh = DBI->connect($source_datasrc, $source_user, $source_pw)
+  or die $DBI::errstr;
+
+$sdbh->{ChopBlanks} = 1;
+
+# --
+
+my %map = ();
+$map{'_DOMSVC'} = \%domsvc_map;
+
+import_table('pkg_category', 'nomap' => 1);
+import_table('pkg_class', 'nomap' => 1,
+    'preinsert_callback' => sub {
+        my($row, $object) = @_;
+        my $src_categorynum = $row->{'categorynum'};
+        my $dest_categorynum = $map{'pkg_category'}->{$src_categorynum};
+        if ( $dest_categorynum ) {
+          $object->categorynum($dest_categorynum);
+        }
+    }
+);
+
+import_table('reason_type', 'nomap' => 1);
+foreach my $src_typenum ( keys %{ $map{'reason_type'} } ) {
+  import_table('reason', 'reason_type' => $src_typenum,
+                         'search'      => 'reason_type',
+                         'map'         => 'reason_type',
+              );
+}
+
+my $customer_sth = $sdbh->prepare(
+  "SELECT * FROM cust_main WHERE agentnum = $src_agentnum ORDER BY custnum"
+) or die $sdbh->errstr;
+
+$customer_sth->execute or die $customer_sth->errstr;
+
+my %referrals = ();
+
+while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
+
+    my $src_custnum = $customerrow->{'custnum'};
+
+    if ( $customerrow->{'referral_custnum'} ) {
+	warn "   $src_custnum has referral_custnum ". $customerrow->{'referral_custnum'};
+	$referrals{$src_custnum} = $customerrow->{'referral_custnum'};
+    };
+
+    my $cust_main = new FS::cust_main {
+      %{ $customerrow },
+      'custnum'      => '',
+      'referral_custnum' => '',
+      'refnum'       => $dest_refnum,
+      'agentnum'     => $dest_agentnum,
+      'agent_custid' => $src_custnum,
+    };
+
+    my $error = $cust_main->insert;
+    if ( $error ) {
+      warn "*** WARNING: error importing customer src custnum $src_custnum: $error";
+      next;
+    }
+
+    warn "inserting dest customer ". $cust_main->custnum. " for $src_custnum\n";
+
+    $map{'cust_main'}->{$src_custnum} = $cust_main->custnum;
+
+    #now import the relations, easy and hard:
+    
+    import_table( 'cust_location', 'custnum' => $src_custnum );
+
+    import_table( 'cust_main_note', 'custnum' => $src_custnum );
+
+    import_table( 'cust_pay', 'custnum' => $src_custnum );
+
+    import_table( 'cust_credit', 'custnum' => $src_custnum, 
+	 'preinsert_callback' => sub {
+	    my($row, $object) = @_;
+	    my $src_reasonnum = $row->{'reasonnum'};
+	    my $dest_reasonnum = $map{'reason'}->{$src_reasonnum};
+	    if ( $dest_reasonnum ) {
+	      $object->reasonnum($dest_reasonnum);
+	    }
+	}
+    );
+
+    import_table( 'cust_refund', 'custnum' => $src_custnum,
+      'post_callback' => sub {
+        #my( $src_refundnum, $dst_refundnum ) = @_;
+        my $src_refundnum = shift;
+
+        # cust_pay_refund (map refundnum and paynum...)
+        import_table( 'cust_pay_refund',
+                      'refundnum' => $src_refundnum,
+                      'search'    => 'refundnum',
+                      'map'       => 'cust_refund',
+                      'map2'      => 'cust_pay',
+                      'map2key'   => 'paynum',
+                    );
+
+      },
+    );
+
+    # cust_pay_void
+    import_table( 'cust_pay_void', 'custnum' => $src_custnum,
+      'preinsert_callback' => sub {
+        my($row, $object) = @_;
+        $object->paynum( $void_paynum-- );
+      },
+    );
+
+# no data in old db for:
+# 	cust_attachment, cust_statement, cdr, cdr_*, cust_bill_event,
+#	cust_main_exemption, cust_pay_batch, cust_tax_*, cust_recon,
+#	inventory_item, part_bill_event, part_device, part_export, 
+#	part_pop_local, part_virtual_field, pay_batch, phone_*, 
+#	payment_gateway_*, prepay_credit, port, radius_usergroup, 
+#	rate_*, reg_code, reg_code_pkg, registrar, router, 
+#	svc_acct, svc_acct_pop, svc_broadband, svc_external,
+#	svc_forward, svc_phone, svc_www, tax_*, usage_class, virtual_field
+# appears to be unused in old db: inventory_class
+# ignore queue
+
+    #werid direct cust_main relations: 
+
+    warn "   inserting cust_pkg for src cust $src_custnum\n";
+    # cust_pkg (part_pkg, part_svc, etc.)
+    import_table( 'cust_pkg', 'custnum' => $src_custnum,
+      'preinsert_callback' => sub {
+        my($row, $object) = @_;
+        my $src_pkgpart = $row->{'pkgpart'} or die "wtf";
+        my $dest_pkgpart = $map{'part_pkg'}->{$src_pkgpart};
+        if ( $dest_pkgpart ) {
+          $object->pkgpart($dest_pkgpart);
+          return;
+        }
+
+        my $sth = $sdbh->prepare(
+          "SELECT * FROM part_pkg WHERE pkgpart = $src_pkgpart"
+        ) or die $sdbh->errstr;
+
+        $sth->execute or die $sth->errstr;
+
+        my $part_pkg_row = $sth->fetchrow_hashref
+          or die "cust_pkg.pkgpart missing in part_pkg?!";
+
+        my $hashref = {
+          %{ $part_pkg_row },
+          'pkgpart'  => '',
+        };
+        my $src_classnum = $part_pkg_row->{'classnum'};
+        $hashref->{'classnum'} = $map{'pkg_class'}->{ $src_classnum }
+          if $src_classnum;
+
+        my $part_pkg = new FS::part_pkg $hashref;
+
+        #$part_pkg->setuptax('') if $part_pkg->setuptax =~ /^\s+$/;
+        #$part_pkg->recurtax('') if $part_pkg->recurtax =~ /^\s+$/;
+
+        my $error = $part_pkg->insert( 'options' => {} );
+        die "*** FATAL: error importing part_pkg src pkgpart $src_pkgpart ".
+            ": $error"
+          if $error;
+
+        $map{ 'part_pkg' }->{ $part_pkg_row->{'pkgpart'} } = $part_pkg->pkgpart;
+        
+        # part_pkg_option
+        import_table( 'part_pkg_option',
+                      'pkgpart' => $src_pkgpart,
+                      'search' => 'pkgpart',
+                      'map'    => 'part_pkg',
+                    );
+        
+        my $osth = $sdbh->prepare(
+          "SELECT * FROM part_pkg_option WHERE pkgpart = $src_pkgpart"
+        ) or die $sdbh->errstr;
+
+        # pkg_svc, part_svc, part_svc_column
+        import_table( 'pkg_svc',
+          'pkgpart' => $src_pkgpart,
+          'search'  => 'pkgpart',
+          'map'     => 'part_pkg',
+          'preinsert_callback' => sub {
+
+            my($row, $object) = @_;
+            my $src_svcpart = $row->{'svcpart'} or die "wtf2";
+            my $dest_svcpart = $map{'part_svc'}->{$src_svcpart};
+            if ( $dest_svcpart ) {
+              $object->svcpart($dest_svcpart);
+              return;
+            }
+
+            my $sth = $sdbh->prepare(
+              "SELECT * FROM part_svc WHERE svcpart = $src_svcpart"
+            ) or die $sdbh->errstr;
+
+            $sth->execute or die $sth->errstr;
+
+            my $part_svc_row = $sth->fetchrow_hashref
+              or die "svcpart missing in part_svc?!";
+
+            my $hashref = {
+              %{ $part_svc_row },
+              'svcpart' => '',
+            };
+
+            my $part_svc = new FS::part_svc $hashref;
+            $part_svc->disabled('') if $part_svc->disabled =~ /^\s+$/;
+            my $error = $part_svc->insert;
+            die "*** FATAL: error importing part_svc src svcpart $src_svcpart ".
+                ": $error"
+              if $error;
+
+            $map{ 'part_svc' }->{ $part_svc_row->{'svcpart'} } = $part_svc->svcpart;
+
+            # part_svc_column
+            import_table( 'part_svc_column',
+                          'svcpart' => $src_svcpart,
+                          'search'  => 'svcpart',
+                          'map'     => 'part_svc',
+                          'preinsert_callback' => sub {
+                            my($row, $object) = @_;
+                            if ( $object->columnname eq 'domsvc' ) {
+                               $object->columnvalue( $map{'_DOMSVC'}->{ $object->columnvalue } );
+                            }
+                          },
+                        );
+        
+            #what we came here for in the first place
+            $object->svcpart( $part_svc->svcpart );
+
+          }
+        );
+
+        #what we came here for in the first place
+        $object->pkgpart( $part_pkg->pkgpart );
+
+      },
+
+      'post_callback' => sub {
+        #my( $src_pkgnum, $dst_pkgnum ) = @_;
+        my $src_pkgnum = shift;
+
+        #XXX grr... action makes this very hard... 
+        ## cust_pkg_reason (shit, and bring in/remap reasons)
+        #import_table( 'cust_pkg_reason',
+        #                'pkgnum'  => $src_pkgnum,
+        #                'search'  => 'pkgnum',
+        #                'map'     => 'cust_pkg',
+        #                'map2'    => 'reason',
+        #                'map2key' => 'reasonnum',
+        #            );
+
+        #cust_svc
+        import_table( 'cust_svc',
+                        'pkgnum'  => $src_pkgnum,
+                        'search'  => 'pkgnum',
+                        'map'     => 'cust_pkg',
+                        'map2'    => 'part_svc',
+                        'map2key' => 'svcpart',
+                        'post_callback' => sub {
+                          #my( $src_svcnum, $dst_svcnum ) = @_;
+                          my $src_svcnum = shift;
+
+                          #svc_domain
+                          import_table( 'svc_domain',
+                                          'svcnum' => $src_svcnum,
+                                          'search' => 'svcnum',
+                                          'map'    => 'cust_svc',
+                                          'noblank_primary' => 1,
+                                      );
+
+                        },
+                    );
+	
+	import_table('cust_pkg_detail', 
+                        'pkgnum'  => $src_pkgnum,
+                        'search'  => 'pkgnum',
+                        'map'     => 'cust_pkg',
+		     );
+
+      },
+
+    );
+    # end of cust_pkg (part_pkg, part_svc, etc.)
+
+    warn "   inserting cust_bill for src cust $src_custnum\n";
+    # cust_bill (invnum move)
+    import_table( 'cust_bill', 'custnum' => $src_custnum,
+      'preinsert_callback' => sub {
+        my($row, $object) = @_;
+        $object->agent_invid( $row->{'invnum'} );
+      },
+      'post_callback' => sub {
+        my( $src_invnum, $dst_invnum ) = @_;
+        #my $src_invnum = shift;
+
+        # cust_bill_pkg ( map invnum and pkgnum... )
+        import_table( 'cust_bill_pkg',
+                      'invnum' => $src_invnum,
+                      'search'  => 'invnum',
+                      'map'     => 'cust_bill',
+                      'map2'    => 'cust_pkg',
+                      'map2key' => 'pkgnum',
+                      'post_callback' => sub {
+                        my $src_billpkgnum = shift;
+
+                        import_table( 'cust_bill_pkg_detail',
+                                      'cust_bill_pkg.billpkgnum' => $src_billpkgnum,
+                                      'search'    => 'cust_bill_pkg.billpkgnum',
+                                      'map'       => 'cust_bill_pkg',
+                                      'addl_from' => 'left join cust_bill_pkg using ( invnum, pkgnum )',
+                                    );
+
+                      },
+                    );
+
+        # cust_credit_bill (map invnum and crednum... )
+        import_table( 'cust_credit_bill',
+                      'invnum' => $src_invnum,
+                      'search'  => 'invnum',
+                      'map'     => 'cust_bill',
+                      'map2'    => 'cust_credit',
+                      'map2key' => 'crednum',
+                      'post_callback' => sub {
+                        my $src_creditbillnum = shift;
+                        #map creditbillnum and billpkgnum
+                        import_table( 'cust_credit_bill_pkg',
+                                      'creditbillnum' => $src_creditbillnum,
+                                      'search'    => 'creditbillnum',
+                                      'map'       => 'cust_credit_bill',
+                                      'map2'      => 'cust_bill_pkg',
+                                      'map2key'   => 'billpkgnum',
+                                    );
+
+                      },
+                    );
+
+        # cust_bill_pay (map invnum and paynum...)
+        import_table( 'cust_bill_pay',
+                      'invnum' => $src_invnum,
+                      'search'  => 'invnum',
+                      'map'     => 'cust_bill',
+                      'map2'    => 'cust_pay',
+                      'map2key' => 'paynum',
+                      'post_callback' => sub {
+                        my $src_billpaynum = shift;
+                        #map billpaynum and billpkgnum
+                        import_table( 'cust_bill_pay_pkg',
+                                      'billpaynum' => $src_billpaynum,
+                                      'search'    => 'billpaynum',
+                                      'map'       => 'cust_bill_pay',
+                                      'map2'      => 'cust_bill_pkg',
+                                      'map2key'   => 'billpkgnum',
+                                    );
+                      },
+                    );
+
+        #need to do something about events. mark initial stuff as done
+        foreach my $eventpart ( @{ $eventparts{$cust_main->payby} } ) {
+
+          my $cust_event = new FS::cust_event {
+            'eventpart' => $eventpart,
+            'tablenum'  => $dst_invnum,
+            '_date'     => time, # XXX something?  probably not
+            'status'    => 'done',
+          };
+
+          my $error = $cust_event->insert;
+          die "*** FATAL: error inserting cust_event for eventpart $eventpart,".
+              " tablenum (invnum) $dst_invnum: $error"
+            if $error;
+
+        }
+
+      },
+    );
+
+    # ---
+
+       # (not used in old db: cust_bill_pay_batch, cust_pkg_option)
+
+    # ---
+
+    # (not in old db: cust_bill_pkg_display, cust_bill_pkg_tax_location,
+    #  cust_bill_pkg_tax_rate_location, cust_tax_adjustment, cust_svc_option, )
+    # (not used in old db: cust_tax_exempt_pkg)
+
+    #do this last, so no notices go out
+    import_table( 'cust_main_invoice', 'custnum' => $src_custnum );
+
+    #dbh->commit or die dbh->errstr;
+    warn "customer ". $cust_main->custnum. " inserted\n";
+    #exit;
+
+}
+
+foreach my $agent_custid ( keys %referrals ) {
+    my $referred_cust = qsearchs('cust_main', 
+				    { 'agentnum' => $dest_agentnum, 
+				      'agent_custid' => $agent_custid,
+				    }
+				);
+    $referred_cust->referral_custnum($map{'cust_main'}->{$referrals{$agent_custid}});
+    $referred_cust->replace;
+}
+
+
+warn "import successful!\n";
+if ( $DRY ) {
+  warn "rolling back (dry run)\n";
+  dbh->rollback or die dbh->errstr;
+  warn "rolled back\n"
+} else {
+  warn "commiting\n";
+  dbh->commit or die dbh->errstr;
+  warn "committed\n";
+}
+
+sub import_table {
+  my( $table, %opt ) = @_;
+
+  eval "use FS::$table;";
+  die $@ if $@;
+
+  my $map = $opt{'map'} || 'cust_main';
+  my $search = $opt{'search'} || 'custnum';
+
+  $opt{'insert_opts'} ||= [];
+
+  my $primary_key = dbdef->table($table)->primary_key;
+
+  my $addl_from = defined($opt{'addl_from'}) ? $opt{'addl_from'} : '';
+
+  my $sth = $sdbh->prepare(
+    "SELECT * FROM $table $addl_from ".
+    ( $opt{'nomap'} ? '' : " WHERE $search = ". $opt{$search} )
+  ) or die $sdbh->errstr;
+
+  $sth->execute or die "(searching $table): ". $sth->errstr;
+
+  while ( my $row = $sth->fetchrow_hashref ) {
+    #my $src_custnum = $customerrow->{'custnum'};
+
+    my $hashref = { %$row };
+    $hashref->{$primary_key} = ''
+      unless $opt{'noblank_primary'};
+    $hashref->{ $search } = $map{$map}->{ $row->{$search} }
+      unless $opt{'nomap'};
+
+    if ( $opt{'map2'} ) {
+      my $key2 = $opt{'map2key'};
+      $hashref->{$key2} = $map{ $opt{'map2'} }->{ $row->{$key2} }
+        unless $opt{map2key} eq 'pkgnum' && (    $row->{$key2} eq '0'
+                                              || $row->{$key2} eq '-1'
+                                            )
+            or ! defined($row->{$key2})
+            or $row->{$key2} eq '';
+      #warn "map $opt{map2}.$opt{map2key}: ". $row->{$key2}. " to ". $map{ $opt{'map2'} }->{ $row->{$key2} };
+    }
+
+    if ( $opt{'map3'} ) {
+      my $key3 = $opt{'map3key'};
+      $hashref->{$key3} = $map{ $opt{'map3'} }->{ $row->{$key3} };
+    }
+
+    my $object = eval "new FS::$table \$hashref;";
+    die $@ if $@;
+
+    &{ $opt{preinsert_callback} }( $row, $object )
+      if $opt{preinsert_callback};
+
+    my $error = $object->insert( @{ $opt{'insert_opts'} } );
+    if ( $error ) {
+      warn "*** WARNING: error importing $table src $primary_key ". $row->{$primary_key}. ": $error";
+      next;
+    }
+
+    $map{ $table }->{ $row->{$primary_key} } = $object->get($primary_key);
+
+    &{ $opt{post_callback} }( $row->{$primary_key}, $object->get($primary_key) )
+      if $opt{post_callback};
+
+  }
+
+}
+
+1;
+
