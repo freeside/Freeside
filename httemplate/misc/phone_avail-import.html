@@ -7,7 +7,7 @@ Import a file containing phone numbers (DIDs).
               'name'      => 'PhonenumImportForm',
               'action'    => 'process/phone_avail-import.html',
               'num_files' => 1,
-              'fields'    => [ 'format', 'availbatch', 'exportnum', 'countrycode' ],
+              'fields'    => [ 'format', 'availbatch', 'exportnum', 'countrycode', 'ordernum' ],
               'message'   => 'DID import successful',
               'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
           )
@@ -15,9 +15,21 @@ Import a file containing phone numbers (DIDs).
 
 <% &ntable("#cccccc", 2) %>
 
-  <INPUT TYPE="hidden" NAME="format" VALUE="default">
 
   <INPUT TYPE="hidden" NAME="availbatch" VALUE="<% $availbatch %>">
+
+% if ( $ordernum ) {
+    <TR>
+	<TD ALIGN="RIGHT">Bulk DID Order #</TD>
+	<TD><% $ordernum %>
+	    <INPUT TYPE="hidden" NAME="ordernum" VALUE="<% $ordernum %>">
+	</TD>
+    </TR>
+% } 
+  <TR>
+    <TD ALIGN="RIGHT">Import Format</TD>
+    <TD><% $format %><INPUT TYPE="hidden" NAME="format" VALUE="<% $format %>"></TD>
+  </TR>
 
   <% include( '/elements/tr-select-table.html',
                 'table'       => 'part_export',
@@ -65,15 +77,18 @@ Import a file containing phone numbers (DIDs).
 Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  The file should have a .CSV or .XLS extension.
 <BR><BR>
 
-<b>Default</b> format has the following field order: <i>state, number, name</i>
+<b>Default</b> format has the following field order: <i>state, number, name</i><br>
+<b>Bulk</b> format has the following field order: <i>state, number, rate center, rate_center_abbrev</i>
 <BR><BR>
-
 Field information:
 <ul>
   <li><i>state</i>: Two-letter state code, i.e. "CA"
   <li><i>number</i>: Phone number
   <li><i>name</i>: optional, rate center
+  <li><i>rate center</i>: rate center (required)
+  <li><i>rate_center_abbrev</i>: rate center abbreviation
 </ul>
+<BR><BR>
 
 <% include('/elements/footer.html') %>
 
@@ -83,6 +98,15 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
 my $conf = new FS::Conf;
+
+my $ordernum = $cgi->param('ordernum');
+$ordernum = '' unless $ordernum =~ /^\d+$/;
+
+die 'invalid ordernum' 
+    unless (!$ordernum || qsearchs('did_order', { 'ordernum' => $ordernum }));
+
+my $format = 'default';
+$format = 'bulk' if $ordernum;
 
 my $availbatch =
   time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);

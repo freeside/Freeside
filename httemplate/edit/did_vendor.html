@@ -1,0 +1,19 @@
+<% include( 'elements/edit.html',
+              'fields' => [
+                            'vendorname',
+                          ],
+              'labels' => { 
+                            'vendorname'   => 'Vendor name',
+                          },
+              'viewall_dir' => 'browse',
+	      'table' => 'did_vendor',
+	      'name' => 'Bulk DID Vendor',
+           )
+          
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

@@ -380,6 +380,8 @@ $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_d
      && $curuser->access_right('Process batches');
 $tools_menu{'Download invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ] 
   if $conf->exists('invoice_print_pdf');
+$tools_menu{'Bulk DID Orders'} =  [ $fsurl.'browse/did_order.html', 'View/manage bulk DID orders' ]
+  if $curuser->access_right('Import');
 $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
 $tools_menu{'Ticketing'} = [ \%tools_ticketing, 'Ticketing tools' ]
@@ -496,6 +498,7 @@ tie my %config_broadband, 'Tie::IxHash',
 
 tie my %config_phone, 'Tie::IxHash',
   'View/Edit phone device types' => [ $fsurl.'browse/part_device.html', 'Phone device types' ],
+  'View/Edit bulk DID vendors' => [ $fsurl.'browse/did_vendor.html', 'Bulk DID vendors' ],
 ;
 
 tie my %config_misc, 'Tie::IxHash';

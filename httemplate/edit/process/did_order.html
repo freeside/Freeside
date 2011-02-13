@@ -1,0 +1,21 @@
+<% include( 'elements/process.html',
+               'table'       => 'did_order',
+               'viewall_dir' => 'browse',
+	       'value_callback' => $value_callback,
+           )
+%>
+<%init>
+
+unless($cgi->param('submitted')) {
+    $cgi->param('submitted',time);
+}
+
+my $value_callback = sub {
+     my ($field, $value) = @_;
+     ($field =~ /ed$/ && $value !~ /^\d+$/) ? parse_datetime($value) : $value;
+};
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+</%init>

@@ -1,0 +1,32 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Bulk DID Vendors',
+                 'html_init'   => $html_init,
+                 'name'        => 'bulk DID vendors',
+                 'disableable' => 0,
+                 'query'       => { 'table'     => 'did_vendor',
+                                    'hashref'   => {},
+                                    'order_by' => 'ORDER BY vendornum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => $header,
+                 'fields'      => $fields,
+                 'links'       => $links,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  qq!<A HREF="${p}edit/did_vendor.html"><I>Add a bulk DID vendor</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM did_vendor';
+
+my $link = [ $p.'edit/did_vendor.html?', 'vendornum' ];
+
+my $header = [ '#', 'Vendor' ];
+my $fields = [ 'vendornum', 'vendorname' ];
+my $links  = [ $link, $link ];
+
+</%init>

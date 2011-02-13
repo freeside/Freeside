@@ -1,0 +1,46 @@
+<% include( 'elements/edit.html',
+              'fields' => [
+			    { field => 'vendornum',
+			      type => 'select-table',
+			      name_col => 'vendorname',
+			      table => 'did_vendor',
+			      disable_empty => 1,
+			    },
+			    'vendor_order_id',
+			    'msa',
+			    { field => 'latanum',
+			      type => 'select-table',
+			      name_col => 'description',
+			      table => 'lata',
+			      disable_empty => 1,
+			      label_showkey => 1,
+			    },
+			    'rate_center',
+			    { field => 'state',
+			      type => 'select-state',
+			      country => 'US',
+			    },
+			    'quantity',
+			    { field => 'confirmed',
+			      type => 'input-date-field',
+			    },
+                          ],
+              'labels' => { 
+			    'vendornum' => 'Vendor',
+			    'vendor_order_id' => 'Vendor Order #',
+			    'msa'	=> 'MSA',
+			    'latanum' => 'LATA',
+			    'rate_center' => 'Rate Center',
+                          },
+              'viewall_dir' => 'browse',
+	      'table' => 'did_order',
+	      'name' => 'Bulk DID Order',
+           )
+          
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+</%init>

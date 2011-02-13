@@ -3030,6 +3030,8 @@ sub tables_hashref {
         'nxx',         'char',    'NULL',       3, '', '', 
         'station',     'char',    'NULL',       4, '', '',
         'name',        'varchar', 'NULL', $char_d, '', '',
+        'rate_center_abbrev', 'varchar', 'NULL', $char_d, '', '',
+        'ordernum',      'int',     'NULL',      '', '', '',
         'svcnum',      'int',     'NULL',      '', '', '',
         'availbatch', 'varchar',  'NULL', $char_d, '', '',
       ],
@@ -3042,6 +3044,45 @@ sub tables_hashref {
                     [ 'svcnum' ],
                     [ 'availbatch' ],
                   ],
+    },
+    
+    'lata' => {
+      'columns' => [
+        'latanum',    'int',      '',      '', '', '', 
+        'description',   'varchar',    '',      $char_d, '', '', 
+      ],
+      'primary_key' => 'latanum',
+      'unique' => [],
+      'index'  => [],
+    },
+    
+    'did_vendor' => {
+      'columns' => [
+        'vendornum',    'serial',      '',      '', '', '', 
+        'vendorname',   'varchar',        '',     $char_d, '', '', 
+      ],
+      'primary_key' => 'vendornum',
+      'unique' => [],
+      'index'  => [],
+    },
+    
+    'did_order' => {
+      'columns' => [
+        'ordernum',    'serial',      '',      '', '', '', 
+        'vendornum',   'int',       '',      '', '', '', 
+        'vendor_order_id',   'varchar',  '',   $char_d, '', '', 
+        'msa',        'varchar', 'NULL', $char_d, '', '',
+        'latanum',      'int',     'NULL',      '', '', '',
+        'rate_center',        'varchar', 'NULL', $char_d, '', '',
+        'state',       'char',    'NULL',       2, '', '', 
+        'quantity',      'int',     '',      '', '', '',
+        'submitted',      'int',     '',      '', '', '',
+        'confirmed',      'int',     'NULL',      '', '', '',
+        'received',      'int',     'NULL',      '', '', '',
+      ],
+      'primary_key' => 'ordernum',
+      'unique' => [ [ 'vendornum', 'vendor_order_id' ] ],
+      'index'  => [],
     },
 
     'reason_type' => {

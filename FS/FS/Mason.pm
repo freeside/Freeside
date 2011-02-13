@@ -266,6 +266,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_pkg_vendor;
   use FS::cust_note_class;
   use FS::svc_port;
+  use FS::lata;
+  use FS::did_vendor;
+  use FS::did_order;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

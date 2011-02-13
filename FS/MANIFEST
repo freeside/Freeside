@@ -559,3 +559,9 @@ t/h_svc_port.t
 FS/cust_main/Status.pm
 FS/NetworkMonitoringSystem.pm
 FS/NetworkMonitoringSystem/Torrus_Internal.pm
+FS/lata.pm
+t/lata.t
+FS/did_vendor.pm
+t/did_vendor.t
+FS/did_order.pm
+t/did_order.t

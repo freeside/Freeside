@@ -1,0 +1,80 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::Record qw(qsearch qsearchs dbh);
+use LWP::Simple;
+use HTML::TableExtract;
+use Data::Dumper;
+
+&untaint_argv;	#what it sounds like  (eww)
+use vars qw(%opt);
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my $content = get("http://www.localcallingguide.com/lca_listlata.php");
+my $te = new HTML::TableExtract();
+$te->parse($content);
+my $table = $te->first_table_found;
+my $sql = 'insert into lata (latanum, description) values ';
+my @sql;
+foreach my $row ( $table->rows ) {
+    my @row = @$row;
+    next unless $row[0] =~ /\d+/;
+    $row[1] =~ s/'//g;
+    push @sql, "( ${row[0]}, '${row[1]}')";
+}
+$sql .= join(',',@sql);
+
+my $sth = $dbh->prepare('delete from lata');
+$sth->execute or die $sth->errstr;
+
+$sth = $dbh->prepare($sql);
+$sth->execute or die $sth->errstr;
+
+$dbh->commit;
+
+###
+# subroutines
+###
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n  freeside-lata-import user \n";
+}
+
+###
+# documentation
+###
+
+=head1 NAME
+
+freeside-lata-import - Pull LATA data from and insert into LATA table
+
+=head1 SYNOPSIS
+
+  freeside-lata-import user
+
+=head1 DESCRIPTION
+
+user - name of an internal Freeside user
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::lata>
+
+=cut
+

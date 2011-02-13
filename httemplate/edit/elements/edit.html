@@ -316,6 +316,11 @@ Example:
 %     foreach grep exists($f->{$_}),
 %       qw( formatted_value );
 %
+%   # select-country
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}),
+%       qw( country );
+%
 %   #htmlarea
 %   $include_common{$_} = $f->{$_}
 %     foreach grep exists($f->{$_}), qw( width height );

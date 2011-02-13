@@ -1,0 +1,65 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Bulk DID Orders',
+                 'html_init'   => $html_init,
+                 'name'        => 'bulk DID orders',
+                 'disableable' => 0,
+                 'query'       => { 'table'     => 'did_order',
+				    'addl_from' => 'left join did_vendor using (vendornum) 
+						    left join lata using (latanum)',
+                                    'hashref'   => {},
+                                    'order_by' => 'ORDER BY ordernum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => $header,
+                 'fields'      => $fields,
+                 'links'       => $links,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+my $html_init = 
+  qq!<A HREF="${p}edit/did_order.html"><I>Add a bulk DID order</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM did_order';
+
+my $link = [ $p.'edit/did_order.html?', 'ordernum' ];
+
+my $display_date = sub {
+    my $date = shift;
+    return '' unless $date;
+    time2str($date_format, $date);
+};
+
+my $header = [ '#', 'Vendor',' Vendor Order #', 'MSA', 'LATA #', 'LATA', 
+		'Rate Center', 'State', 'Quantity', 'Submitted', 'Confirmed',
+		'Received', 
+	    ];
+my $links  = [ ];
+my $fields = [  sub {
+		    my $did_order = shift;
+		    if($did_order->received) {
+			push @$links, $link;
+		    }
+		    else {
+			return $did_order->ordernum;
+		    }
+		}, 'vendorname', 'vendor_order_id', 'msa', 'latanum',
+		'description', 'rate_center', 'state', 'quantity', 
+		sub { &$display_date(shift->submitted); }, 
+		sub { &$display_date(shift->confirmed);	}, 
+		sub { 
+		    my $did_order = shift;
+		    my $ordernum = $did_order->ordernum;
+		    return &$display_date($did_order->received) 
+			if $did_order->received;
+		    "<A HREF='${p}misc/phone_avail-import.html?ordernum=$ordernum'>Upload Received</A>";
+		}, 
+	     ];
+
+</%init>

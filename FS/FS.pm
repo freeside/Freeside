@@ -166,6 +166,12 @@ L<FS::part_device> - Device definition class
 
 L<FS::phone_avail> - Phone number availability cache
 
+L<FS::lata> - LATA number to name mapping class
+
+L<FS::did_vendor> - Bulk DID order vendor class
+
+L<FS::did_order> - Bulk DID order class
+
 L<FS::cdr> - Call Detail Record class
 
 L<FS::cdr_batch> - Call Detail Record batch class

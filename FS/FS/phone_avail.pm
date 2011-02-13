@@ -145,7 +145,10 @@ sub check {
     || $self->ut_numbern('nxx')
     || $self->ut_numbern('station')
     || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum' )
+    || $self->ut_foreign_keyn('ordernum', 'did_order', 'ordernum' )
     || $self->ut_textn('availbatch')
+    || $self->ut_textn('name')
+    || $self->ut_textn('rate_center_abbrev')
   ;
   return $error if $error;
 
@@ -187,8 +190,21 @@ sub process_batch_import {
   };
 
   my $opt = { 'table'   => 'phone_avail',
-              'params'  => [ 'availbatch', 'exportnum', 'countrycode' ],
-              'formats' => { 'default' => [ 'state', $numsub, 'name' ], },
+              'params'  => [ 'availbatch', 'exportnum', 'countrycode', 'ordernum' ],
+              'formats' => { 'default' => [ 'state', $numsub, 'name' ],
+			     'bulk' => [ 'state', $numsub, 'name', 'rate_center_abbrev' ],
+			   },
+	      'postinsert_callback' => sub {  
+		    my $record = shift;
+		    if($record->ordernum) {
+			my $did_order = qsearchs('did_order', 
+						{ 'ordernum' => $record->ordernum } );
+			if($did_order && !$did_order->received) {
+			    $did_order->received(time);
+			    $did_order->replace;
+			}
+		    }
+		}, 
             };
 
   FS::Record::process_batch_import( $job, $opt, @_ );
