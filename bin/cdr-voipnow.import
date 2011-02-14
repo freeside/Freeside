@@ -45,7 +45,8 @@ print "Selecting CDRs from $start_id to ".($end_id || 'end')."...\n";
 my $table = $opt{T} || 'call_history';
 # spelled "disposion" in the table
 my @cols = ( qw( 
-  id extension_number flow channel partyid start answer duration disposion) );
+  id extension_number flow channel partyid start answer duration disposion did
+  client_client_id ) );
 my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE id >= $start_id";
 $sql .= " AND id <= $end_id" if $end_id;
 $sql .= " ORDER BY id";
@@ -80,6 +81,7 @@ while ( $row = $sth->fetchrow_hashref ) {
       startdate     => str2time($row->{start}),
       answerdate    => str2time($row->{answer}),
       cdrbatchnum   => $cdrbatchnum,
+      accountcode   => $row->{client_client_id},
     }
   );
   print $row->{id},"\n" if $opt{v};
@@ -88,7 +90,7 @@ while ( $row = $sth->fetchrow_hashref ) {
     $cdr->dst($row->{'partyid'});
   }
   elsif ( $row->{flow} eq 'in' ) {
-    $cdr->dst($row->{'extension_number'});
+    $cdr->dst($row->{'did'});
     $cdr->src($row->{'partyid'});
   }
   else {
