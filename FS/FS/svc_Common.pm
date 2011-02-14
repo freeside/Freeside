@@ -414,6 +414,15 @@ sub expire {
 Replaces OLD_RECORD with this one.  If there is an error, returns the error,
 otherwise returns false.
 
+Currently available options are: I<export_args> and I<depend_jobnum>.
+
+If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
+jobnums), all provisioning jobs will have a dependancy on the supplied
+jobnum(s) (they will not run until the specific job(s) complete(s)).
+
+If I<export_args> is set to an array reference, the referenced list will be
+passed to export commands.
+
 =cut
 
 sub replace {
@@ -427,6 +436,13 @@ sub replace {
     ( ref($_[0]) eq 'HASH' )
       ? shift
       : { @_ };
+
+  my @jobnums = ();
+  local $FS::queue::jobnums = \@jobnums;
+  warn "[$me] replace: set \$FS::queue::jobnums to $FS::queue::jobnums\n"
+    if $DEBUG;
+  my $depend_jobnums = $options->{'depend_jobnum'} || [];
+  $depend_jobnums = [ $depend_jobnums ] unless ref($depend_jobnums);
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -473,6 +489,9 @@ sub replace {
   #new-style exports!
   unless ( $noexport_hack ) {
 
+    warn "[$me] replace: \$FS::queue::jobnums is $FS::queue::jobnums\n"
+      if $DEBUG;
+
     my $export_args = $options->{'export_args'} || [];
 
     #not quite false laziness, but same pattern as FS::svc_acct::replace and
@@ -518,6 +537,21 @@ sub replace {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting export to ". $insert_part_export->exporttype.
                " (transaction rolled back): $error";
+      }
+    }
+
+    foreach my $depend_jobnum ( @$depend_jobnums ) {
+      warn "[$me] inserting dependancies on supplied job $depend_jobnum\n"
+        if $DEBUG;
+      foreach my $jobnum ( @jobnums ) {
+        my $queue = qsearchs('queue', { 'jobnum' => $jobnum } );
+        warn "[$me] inserting dependancy for job $jobnum on $depend_jobnum\n"
+          if $DEBUG;
+        my $error = $queue->depend_insert($depend_jobnum);
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "error queuing job dependancy: $error";
+        }
       }
     }
 

@@ -986,7 +986,7 @@ sub _realtime_bop_result {
          my $error = $placeholder->depended_delete;
          $error ||= $placeholder->delete;
          warn "error removing provisioning jobs after declined paypendingnum ".
-           $cust_pay_pending->paypendingnum. "\n";
+           $cust_pay_pending->paypendingnum. ": $error\n";
        } else {
          my $e = "error finding job $jobnum for declined paypendingnum ".
               $cust_pay_pending->paypendingnum. "\n";
