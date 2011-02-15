@@ -231,15 +231,10 @@ sub import_results {
 
   my $reself = $self->select_for_update;
 
-  unless ( $reself->status eq 'I' ) {
+  if ( $reself->status ne 'I' 
+      and !$conf->exists('batch-manual_approval') ) {
     $dbh->rollback if $oldAutoCommit;
     return "batchnum ". $self->batchnum. "no longer in transit";
-  }
-
-  my $error = $self->set_status('R');
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
   }
 
   my $total = 0;
@@ -396,7 +391,13 @@ sub import_results {
       $dbh->rollback;
       die $@;
     }
-    $self->set_status('I') if !$close;
+    if ( $close ) {
+      my $error = $self->set_status('R');
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -538,6 +539,7 @@ sub manual_approve {
   my $date = time;
   my %opt = @_;
   my $paybatch = $opt{'paybatch'} || $self->batchnum;
+  my $usernum = $opt{'usernum'} || die "manual approval requires a usernum";
   my $conf = FS::Conf->new;
   return 'manual batch approval disabled' 
     if ( ! $conf->exists('batch-manual_approval') );
@@ -562,8 +564,9 @@ sub manual_approve {
   ) {
     my $new_cust_pay_batch = new FS::cust_pay_batch { 
       $cust_pay_batch->hash,
-      'paid'  => $cust_pay_batch->amount,
-      '_date' => $date,
+      'paid'    => $cust_pay_batch->amount,
+      '_date'   => $date,
+      'usernum' => $usernum,
     };
     my $error = $new_cust_pay_batch->approve($paybatch);
     if ( $error ) {
@@ -572,9 +575,7 @@ sub manual_approve {
     }
     $payments++;
   }
-  return 'no unresolved payments in batch' if $payments == 0;
   $self->set_status('R');
-  
   $dbh->commit;
   return;
 }

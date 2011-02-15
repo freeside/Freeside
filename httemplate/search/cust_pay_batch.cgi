@@ -3,7 +3,10 @@
               'name'        => 'batch details',
 	      'query'       => $sql_query,
 	      'count_query' => $count_query,
-              'html_init'   => $pay_batch ? $html_init : '',
+              'html_init'   => $pay_batch ? 
+                                  include('elements/cust_pay_batch_top.html',
+                                          'pay_batch' => $pay_batch
+                                  ) : '',
 	      'header'      => [ '#',
 	                         'Inv #',
 	                         'Customer',
@@ -66,7 +69,6 @@ die "access denied"
            && (    $conf->exists('batch-enable')
                 || $conf->config('batch-enable_payby')
               )
-           #&& $FS::CurrentUser::CurrentUser->access_right('View customer batched payments')
          );
 
 my( $count_query, $sql_query );
@@ -124,113 +126,9 @@ $sql_query = "SELECT paybatchnum,invnum,custnum,cpb.last,cpb.first," .
              'LEFT JOIN pay_batch USING ( batchnum ) ' .
              "$search ORDER BY $orderby";
 
-my $html_init = '<TABLE>';
+my $html_init = '';
 if ( $pay_batch ) {
-  my $fixed = $conf->config('batch-fixed_format-'. $pay_batch->payby);
-  if (
-       $pay_batch->status eq 'O' 
-       || ( $pay_batch->status eq 'I'
-            && $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')
-          ) 
-       || ( $pay_batch->status eq 'R'
-            && $FS::CurrentUser::CurrentUser->access_right('Redownload resolved batches')
-          ) 
-  ) {
-    $html_init .= qq!<TR><FORM ACTION="$p/misc/download-batch.cgi" METHOD="POST">!;
-    if ( $fixed ) {
-      $html_init .= qq!<INPUT TYPE="hidden" NAME="format" VALUE="$fixed">!;
-    } else {
-      $html_init .= qq!Download batch in format !.
-                    qq!<SELECT NAME="format">!.
-                    qq!<OPTION VALUE="">Default batch mode</OPTION>!.
-                    qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>!.
-                    qq!<OPTION VALUE="csv-chase_canada-E-xactBatch">CSV file for Chase Canada E-xactBatch</OPTION>!.
-                    qq!<OPTION VALUE="PAP">80 byte file for TD Canada Trust PAP Batch</OPTION>!.
-                    qq!<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>!.
-                    qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
-                    qq!<OPTION VALUE="paymentech">Chase Paymentech XML</OPTION>!.
-                    qq!<OPTION VALUE="RBC">Royal Bank of Canada PDS</OPTION>!.
-                    qq!<OPTION VALUE="td_eft1464">TD Commercial Banking EFT 1464 byte</OPTION>!.
-
-                    qq!</SELECT>!;
-    }
-    $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum"><INPUT TYPE="submit" VALUE="Download"></FORM><BR><BR></TR>!;
-  }
-
-  if (
-       $pay_batch->status eq 'I' 
-       || ( $pay_batch->status eq 'R'
-            && $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')
-          ) 
-  ) {
-    $html_init .= '<TR>'.
-                  include('/elements/form-file_upload.html',
-                            'name'      => 'FileUpload',
-                            'action'    => "$p/misc/upload-batch.cgi",
-                            'num_files' => 1,
-                            'fields'    => [ 'batchnum', 'format' ],
-                            'message'   => 'Batch results uploaded.',
-                            ) .
-                  'Upload results<BR></TR><TR>'.
-                  include('/elements/file-upload.html',
-                            'field'   => 'file',
-                            'label'   => 'Filename',
-                            'no_table'=> 1
-                         ).
-                  '<BR></TR>'
-                  ;
-    if ( $fixed and $fixed eq 'td_eft1464' ) {
-      # special case, this one has two upload formats
-      $html_init .= qq!<TR>Format !.
-                    qq!<SELECT NAME="format">!.
-                    qq!<OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>!.
-                    qq!<OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>!.
-                    qq!</SELECT><BR></TR>!;
-    }
-    elsif ( $fixed ) {
-      $html_init .= qq!<INPUT TYPE="hidden" NAME="format" VALUE="$fixed">!;
-    } else {
-      # should pull this from %import_info
-      $html_init .= qq!<TR>Format !.
-                    qq!<SELECT NAME="format">!.
-                    qq!<OPTION VALUE="">Default batch mode</OPTION>!.
-                    qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>!.
-                    qq!<OPTION VALUE="csv-chase_canada-E-xactBatch">CSV file for Chase Canada E-xactBatch</OPTION>!.
-                    qq!<OPTION VALUE="PAP">264 byte results for TD Canada Trust PAP Batch</OPTION>!.
-                    qq!<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>!.
-                    qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
-                    qq!<OPTION VALUE="paymentech">Chase Paymentech XML</OPTION>!.
-                    qq!<OPTION VALUE="RBC">Royal Bank of Canada PDS</OPTION>!.
-                    qq!<OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>!.
-                    qq!<OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>!.
-                    qq!</SELECT><BR></TR>!;
-    }
-    $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;
-    $html_init .= '<TR> <INPUT TYPE="submit" VALUE="Upload"></FORM><BR> </TR>';
-    if ( $conf->exists('batch-manual_approval') 
-          and $conf->config('batch-fixed_format-CHEK') eq 'td_eft1464'
-          and $pay_batch->status eq 'I'
-          and $pay_batch->payby eq 'CHEK' ) {
-      $html_init .= qq!<TR><INPUT TYPE="button" VALUE="Manually approve" onclick="
-if ( confirm('Approve all remaining payments in this batch?') )
-  window.location.href='${p}misc/process/pay_batch-approve.cgi?batchnum=$batchnum';"></TR>!
-    }
-  }
-  $html_init .= '</TABLE>';
+  $html_init = include('elements/cust_pay_batch_top.html', 
+                    'pay_batch' => $pay_batch);
 }
-
-if ($pay_batch) {
-  my $sth = dbh->prepare($count_query) or die dbh->errstr. "doing $count_query";
-  $sth->execute or die "Error executing \"$count_query\": ". $sth->errstr;
-  my $cards = $sth->fetchrow_arrayref->[0];
-
-  my $st = "SELECT SUM(amount) from cust_pay_batch WHERE batchnum=". $batchnum;
-  $sth = dbh->prepare($st) or die dbh->errstr. "doing $st";
-  $sth->execute or die "Error executing \"$st\": ". $sth->errstr;
-  my $total = $sth->fetchrow_arrayref->[0];
-
-  $html_init .= "$cards credit card payments batched<BR>\$" .
-                sprintf("%.2f", $total) ." total in batch<BR>";
-}
-
 </%init>

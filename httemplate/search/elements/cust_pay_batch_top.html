@@ -1,0 +1,127 @@
+% # Download batch
+% if ( $status eq 'O'
+%   or ( $status eq 'I' and $curuser->access_right('Reprocess batches') )
+%   or ( $status eq 'R' and $curuser->access_right('Redownload resolved batches') )
+%   ) {
+<TABLE>
+<TR><FORM ACTION="<%$p%>misc/download-batch.cgi" METHOD="POST">
+<INPUT TYPE="hidden" NAME="batchnum" VALUE="<%$batchnum%>">
+%   if ( $fixed ) {
+<INPUT TYPE="hidden" NAME="format" VALUE="<%$fixed%>">
+%   }
+%   else {
+Download batch in format <SELECT NAME="format">
+%     foreach ( keys %download_formats ) {
+<OPTION VALUE="<%$_%>"><% $download_formats{$_} %></OPTION>
+%     }
+</SELECT>
+%   }
+<INPUT TYPE="submit" VALUE="Download"></FORM><BR><BR></TR>
+% } # end of download
+
+% # Upload batch
+% if ( $pay_batch->status eq 'I'
+%   or ( $pay_batch->status eq 'R'
+%     and $curuser->access_right('Reprocess batches')
+%     and $conf->exists('batch-manual_approval')
+%   ) 
+% ) {
+<TR>
+<% include('/elements/form-file_upload.html',
+              'name'      => 'FileUpload',
+              'action'    => "${p}misc/upload-batch.cgi",
+              'num_files' => 1,
+              'fields'    => [ 'batchnum', 'format' ],
+              'message'   => 'Batch results uploaded.',
+) %>
+Upload results<BR></TR>
+<TR>
+<% include('/elements/file-upload.html',
+              'field'     => 'file',
+              'label'     => 'Filename',
+              'no_table'  => 1,
+) %>
+<INPUT TYPE="hidden" NAME="batchnum" VALUE="<% $batchnum %>">
+<BR></TR>
+%   if ( $fixed ) {
+%     if ( $fixed eq 'td_eft1464' ) { # special case
+<TR>Format <SELECT NAME="format">
+<OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>
+<OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>
+</SELECT></TR>
+%     }
+%     else {
+<INPUT TYPE="hidden" NAME="format" VALUE="<% $fixed %>">
+%     }
+%   }
+%   else {
+<TR>Format <SELECT NAME="format">
+%     foreach ( keys(%upload_formats) ) {
+<OPTION VALUE="<%$_%>"><% $upload_formats{$_} %></OPTION>
+%     }
+%   } # if $fixed
+<TR><INPUT TYPE="submit" VALUE="Upload"></TR>
+</FORM><BR>
+% } # end upload
+
+% # manual approval
+% if ( $fixed eq 'td_eft1464'
+%   and $status eq 'I'
+%   and $payby eq 'CHEK'
+%   and $conf->exists('batch-manual_approval')
+%   ) {
+<TR><INPUT TYPE="button" VALUE="Manually approve" onclick="
+if ( confirm('Approve all remaining payments in this batch?') ) 
+  window.location.href='<%$p%>misc/process/pay_batch-approve.cgi?batchnum=<%$batchnum%>';
+"></TR>
+% } # end manual approval
+</TABLE>
+
+% # summary info
+Batch is <% $statustext{$status} %><BR>
+<%$count%> payments batched<BR>
+<%$money_char%><%$total%> total in batch<BR>
+
+<%init>
+my %opt = @_;
+my $pay_batch = $opt{'pay_batch'} or return;
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+my $payby = $pay_batch->payby;
+my $status = $pay_batch->status;
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $batchnum = $pay_batch->batchnum;
+ 
+my $fixed = $conf->config("batch-fixed_format-$payby");
+
+tie my %download_formats, 'Tie::IxHash', (
+'' => 'Default batch mode',
+'csv-td_canada_trust-merchant_pc_batch' => 
+              'CSV file for TD Canada Trust Merchant PC Batch',
+'csv-chase_canada-E-xactBatch' =>
+              'CSV file for Chase Canada E-xactBatch',
+'PAP' => '80 byte file for TD Canada Trust PAP Batch',
+'BoM' => 'Bank of Montreal ECA batch',
+'ach-spiritone' => 'Spiritone ACH batch',
+'paymentech' => 'XML file for Chase Paymentech',
+'RBC' => 'Royal Bank of Canada PDS batch',
+'td_eft1464' => '1464 byte file for TD Commercial Banking EFT',
+# insert new batch formats here
+);
+
+tie my %upload_formats, 'Tie::IxHash', (
+  %download_formats,
+# minor tweaks
+  'td_eftack' => 'TD EFT Acknowledgement',
+  'td_eftret' => 'TD EFT Returned Items',
+);
+delete $upload_formats{'td_eft1464'};
+$upload_formats{'PAP'} = '264 byte results for TD Canada Trust PAP Batch',
+
+my %statustext = ( 'O' => 'open', 'I' => 'in transit', 'R' => 'resolved' );
+
+my $count_query = "SELECT COUNT(*) FROM cust_pay_batch WHERE batchnum=$batchnum";
+my $count = FS::Record->scalar_sql($count_query);
+my $sum_query = "SELECT SUM(amount) FROM cust_pay_batch WHERE batchnum=$batchnum";
+my $total = sprintf("%.2f", FS::Record->scalar_sql($sum_query));
+</%init>

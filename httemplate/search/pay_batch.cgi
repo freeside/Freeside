@@ -80,6 +80,7 @@
 				      sub { shift->status eq 'O' ? "b" : '' },
 				      sub { shift->status eq 'I' ? "b" : '' },
 				    ],
+                 'html_init'     => $html_init,
       )
 
 %>
@@ -127,5 +128,10 @@ push @where,
 my $extra_sql = scalar(@where) ? 'WHERE ' . join(' AND ', @where) : ''; 
 
 my $link = [ "${p}search/cust_pay_batch.cgi?dcln=1;batchnum=", 'batchnum' ];
+
+my $resolved = $cgi->param('resolved') || 0;
+$cgi->param('resolved' => !$resolved);
+my $html_init = '<A HREF="' . $cgi->self_url . '"><I>'.
+    ($resolved ? 'Hide' : 'Show') . ' resolved batches</I></A><BR>';
 
 </%init>

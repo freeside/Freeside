@@ -290,6 +290,7 @@ sub approve {
       'payinfo'   => $new->payinfo || $old->payinfo,
       'paid'      => $new->paid,
       '_date'     => $new->_date,
+      'usernum'   => $new->usernum,
     } );
   $error = $cust_pay->insert;
   if ( $error ) {
@@ -304,16 +305,37 @@ sub approve {
 Decline this payment.  This will replace the existing record with the 
 same paybatchnum, set its status to 'Declined', and run collection events
 as appropriate.  This should only be called from the batch import process.
- 
 
 =cut
+
 sub decline {
   my $new = shift;
+  my $conf = new FS::Conf;
+
   my $paybatchnum = $new->paybatchnum;
   my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
     or return "paybatchnum $paybatchnum not found";
-  return "paybatchnum $paybatchnum already resolved ('".$old->status."')" 
-    if $old->status;
+  if ( $old->status ) {
+    # Handle the case where payments are rejected after the batch has been 
+    # approved.  Only if manual approval is enabled.
+    if ( $conf->exists('batch-manual_approval') 
+        and lc($old->status) eq 'approved' ) {
+      # Void the payment
+      my $cust_pay = qsearchs('cust_pay', { 
+          custnum  => $new->custnum,
+          paybatch => $new->batchnum
+        });
+      if ( !$cust_pay ) {
+        # should never happen...
+        return "failed to revoke paybatchnum $paybatchnum, payment not found";
+      }
+      $cust_pay->void('Returned payment');
+    }
+    else {
+      # normal case: refuse to do anything
+      return "paybatchnum $paybatchnum already resolved ('".$old->status."')";
+    }
+  } # !$old->status
   $new->status('Declined');
   my $error = $new->replace($old);
   if ( $error ) {
