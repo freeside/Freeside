@@ -25,8 +25,22 @@
 %   my @cust_main = smart_search( 'search' => $string,
 %                                 'no_fuzzy_on_exact' => 1, #pref?
 %                               );
-%   my $return = [ map [ $_->custnum, $_->name ], @cust_main ];
+%   my $return = [ map [ $_->custnum, $_->name, $_->balance ], @cust_main ];
 %     
+<% objToJson($return) %>
+% } elsif ( $sub eq 'invnum_search' ) {
+%
+%   my $string = $cgi->param('arg');
+%   my $inv = qsearchs('cust_bill', { 'invnum' => $string });
+%   my $return = [];
+%   if ( $inv ) {
+%   	my $cust_main = qsearchs({
+%       	'table'   => 'cust_main',
+%       	'hashref' => { 'custnum' => $inv->custnum },
+%       	'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+%     		});
+%   	$return = [ $cust_main->custnum, $cust_main->name, $cust_main->balance ];
+%   }
 <% objToJson($return) %>
 % } 
 <%init>

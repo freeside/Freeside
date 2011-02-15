@@ -41,6 +41,15 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
+  function clearhint_invnum() {
+
+    if ( this.value == 'Not found' || this.value == 'Multiple' ) {
+      this.value = '';
+      this.style.color = '#000000';
+    }
+
+  }
+
   function clearhint_custnum() {
 
     if ( this.value == 'Not found' || this.value == 'Multiple' ) {
@@ -58,6 +67,82 @@ Example:
       this.value = '';
 
   }
+  
+  function <% $opt{prefix} %>search_invnum() {
+
+    this.style.color = '#000000'
+
+    var invnum_obj = this;
+    var searchrow = this.getAttribute('rownum');
+    var invnum = this.value;
+
+    if ( invnum == 'searching...' || invnum == 'Not found' || invnum == '' )
+      return;
+
+    if ( this.getAttribute('magic') == 'nosearch' ) {
+      this.setAttribute('magic', '');
+      return;
+    }
+
+    if ( ( <% $opt{prefix} %>rownum - searchrow ) == 1 ) {
+      <% $opt{prefix} %>addRow();
+    }
+    var customer = document.getElementById('customer'+searchrow);
+    customer.value = 'searching...';
+    customer.disabled = true;
+    customer.style.color = '#000000';
+    customer.style.backgroundColor = '#dddddd';
+
+    var customer_select = document.getElementById('cust_select'+searchrow);
+
+    customer.style.display = '';
+    customer_select.style.display = 'none';
+    
+    var custnum_obj = document.getElementById('custnum'+searchrow);
+    var balance = document.getElementById('balance'+searchrow);
+    balance.value = '';
+
+    function search_invnum_update(customers) {
+      
+      var customerArray = eval('(' + customers + ')');
+
+      custnum_obj.disabled = false;
+      custnum_obj.style.backgroundColor = '#ffffff';
+      customer.disabled = false;
+      customer.style.backgroundColor = '#ffffff';
+
+      if ( customerArray.length == 0 ) {
+
+        custnum_obj.value = 'Not found';
+	customer.value = 'Not found';
+        custnum_obj.style.color = '#ff0000';
+        customer.style.color = '#ff0000';
+
+        customer.style.display = '';
+        customer_select.style.display = 'none';
+
+      } else if ( customerArray.length == 3 ) {
+
+        custnum_obj.value = customerArray[0];
+        custnum_obj.style.color = '#000000';
+        customer.value = customerArray[1];
+        balance.value = customerArray[2];
+
+        customer.style.display = '';
+        customer_select.style.display = 'none';
+
+% if ( $opt{invnum_update_callback} ) {
+        <% $opt{invnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+% }
+
+      }
+
+    }
+
+    invnum_search( invnum, search_invnum_update );
+
+  }
+
 
   function <% $opt{prefix} %>search_custnum() {
 
@@ -88,6 +173,12 @@ Example:
 
     customer.style.display = '';
     customer_select.style.display = 'none';
+
+    var invnum = document.getElementById('invnum'+searchrow);
+    invnum.value = '';
+    
+    var balance = document.getElementById('balance'+searchrow);
+    balance.value = '';
 
     function search_custnum_update(name) {
 
@@ -132,6 +223,9 @@ Example:
     if ( ( <% $opt{prefix} %>rownum - searchrow ) == 1 ) {
       <% $opt{prefix} %>addRow();
     }
+    
+    var invnum = document.getElementById('invnum'+searchrow);
+    invnum.value = '';
 
     var custnum_obj = document.getElementById('custnum'+searchrow);
     custnum_obj.value = 'searching...';
@@ -140,6 +234,9 @@ Example:
     custnum_obj.style.backgroundColor = '#dddddd';
 
     var customer_select = document.getElementById('cust_select'+searchrow);
+    
+    var balance = document.getElementById('balance'+searchrow);
+    balance.value = '';
 
     function search_customer_update(customers) {
 
@@ -157,11 +254,11 @@ Example:
         customer_obj.style.display = '';
         customer_select.style.display = 'none';
 
-
       } else if ( customerArray.length == 1 ) {
 
         custnum_obj.value = customerArray[0][0];
         customer_obj.value = customerArray[0][1];
+        balance.value = customerArray[0][2];
 
         customer_obj.style.display = '';
         customer_select.style.display = 'none';
@@ -250,16 +347,34 @@ Example:
 <TABLE ID="<% $opt{prefix} %>OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 
 <TR>
+  <TH>Inv #</TH>
   <TH>Cust #</TH>
   <TH>Customer</TH>
 % foreach my $header ( @{$opt{header}} ) {
     <TH><% $header %></TH>
 % }
+  <TH>Balance</TH>
 </TR>
 % my $row = 0;
 % for ( $row = 0; exists($param->{"custnum$row"}); $row++ ) { 
 
     <TR>
+      <TD>
+	<INPUT TYPE      = "text"
+               NAME      = "invnum<% $row %>"
+               ID        = "invnum<% $row %>"
+               SIZE      = 8
+               MAXLENGTH = 12
+               STYLE     = "text-align:right;"
+               VALUE     = "<% $param->{"invnum$row"} %>"
+               rownum    = "<% $row %>"
+        >
+        <SCRIPT TYPE="text/javascript">
+          var invnum_input<% $row %> = document.getElementById("invnum<% $row %>");
+          invnum_input<% $row %>.onfocus = clearhint_invnum;
+          invnum_input<% $row %>.onchange = <% $opt{prefix} %>search_invnum;
+        </SCRIPT>
+      </TD>
 
       <TD>
         <INPUT TYPE      = "text"
@@ -332,12 +447,22 @@ Example:
       </TD>
 %     $col++;
 %   }
-
+      <TD>
+	<INPUT TYPE      = "text"
+               NAME      = "balance<% $row %>"
+               ID        = "balance<% $row %>"
+               SIZE      = 8
+               MAXLENGTH = 12
+               STYLE     = "text-align:right;"
+               VALUE     = "<% $param->{"balance$row"} %>"
+               rownum    = "<% $row %>"
+        >
+      </TD>
     </TR>
 % } 
 
 <TR>
-  <TH COLSPAN=2 ID="<% $opt{'prefix'} %>_TOTAL_TOTAL">
+  <TH COLSPAN=3 ID="<% $opt{'prefix'} %>_TOTAL_TOTAL">
     Total <% $row ? $row-1 : 0 %>
     <% PL($opt{name_singular} || 'customer', ( $row ? $row-1 : 0 ) ) %>
   </TH>
@@ -394,7 +519,7 @@ Example:
 
 <% include('/elements/xmlhttp.html',
               'url'  => $p. 'misc/xmlhttp-cust_main-search.cgi',
-              'subs' => [qw( custnum_search smart_search )],
+              'subs' => [qw( custnum_search smart_search invnum_search )],
            )
 %>
 
@@ -411,6 +536,21 @@ Example:
     var tablebody = table.getElementsByTagName('tbody').item(0);
 
     var row = table.insertRow(rownum+1);
+    
+    var invnum_cell = document.createElement('TD');
+
+      var invnum_input = document.createElement('INPUT');
+      invnum_input.setAttribute('name', 'invnum'+<% $opt{prefix} %>rownum);
+      invnum_input.setAttribute('id',   'invnum'+<% $opt{prefix} %>rownum);
+      invnum_input.style.textAlign = 'right';
+      invnum_input.setAttribute('size', 8);
+      invnum_input.setAttribute('maxlength', 12);
+      invnum_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      invnum_input.onfocus = clearhint_invnum;
+      invnum_input.onchange = <% $opt{prefix} %>search_invnum;
+      invnum_cell.appendChild(invnum_input);
+
+    row.appendChild(invnum_cell);
 
     var custnum_cell = document.createElement('TD');
 
@@ -486,6 +626,21 @@ Example:
 
 %     $col++;
 %   }
+
+    var balance_cell = document.createElement('TD');
+
+      var balance_input = document.createElement('INPUT');
+      balance_input.setAttribute('name', 'balance'+<% $opt{prefix} %>rownum);
+      balance_input.setAttribute('id',   'balance'+<% $opt{prefix} %>rownum);
+      balance_input.style.textAlign = 'right';
+      balance_input.setAttribute('size', 8);
+      balance_input.setAttribute('maxlength', 12);
+      balance_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      balance_input.disabled = true;
+      balance_input.style.backgroundColor = '#dddddd';
+      balance_cell.appendChild(balance_input);
+
+    row.appendChild(balance_cell);
 
     //update the total # of rows display
     if ( <% $opt{prefix} %>rownum == 1 ) {
