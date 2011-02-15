@@ -33,7 +33,7 @@ my $empty_label =
 my $empty_value = $opt{'empty_value'} || '';
 
 my @terms = ( 'Payable upon receipt',
-              ( map "Net $_", 0, 10, 15, 20, 30, 45, 60, 90 ),
+              ( map "Net $_", 0, 3, 10, 15, 20, 30, 45, 60, 90 ),
             );
 
 my @pre_options = $opt{pre_options} ? @{ $opt{pre_options} } : ();
