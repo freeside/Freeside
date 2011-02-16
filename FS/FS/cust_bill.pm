@@ -989,6 +989,19 @@ sub generate_email {
       'Filename'   => 'logo.png',
       'Content-ID' => "<$content_id>",
     ;
+   
+    my $barcode;
+    if($conf->exists('invoice-barcode')){
+	my $barcode_content_id = join('.', rand()*(2**32), $$, time). "\@$from";
+	$barcode = build MIME::Entity
+	  'Type'       => 'image/png',
+	  'Encoding'   => 'base64',
+	  'Data'       => $self->invoice_barcode(0),
+	  'Filename'   => 'barcode.png',
+	  'Content-ID' => "<$barcode_content_id>",
+	;
+	$opt{'barcode_cid'} = $barcode_content_id;
+    }
 
     $alternative->attach(
       'Type'        => 'text/html',
@@ -1062,7 +1075,12 @@ sub generate_email {
       #   image/png
 
       $return{'content-type'} = 'multipart/related';
-      $return{'mimeparts'} = [ $alternative, $image, @otherparts ];
+      if($conf->exists('invoice-barcode')){
+	  $return{'mimeparts'} = [ $alternative, $image, $barcode, @otherparts ];
+      }
+      else {
+	  $return{'mimeparts'} = [ $alternative, $image, @otherparts ];
+      }
       $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
       #$return{'disposition'} = 'inline';
 
@@ -2155,19 +2173,7 @@ sub print_latex {
   $params{'logo_file'} = $lh->filename;
 
   if($conf->exists('invoice-barcode')){
-      my $gdbar = new GD::Barcode('Code39',$self->invnum);
-      die "can't create barcode: " . $GD::Barcode::errStr unless $gdbar;
-      my $gd = $gdbar->plot(Height => 20);
-      my $bh = new File::Temp( TEMPLATE => 'barcode.'. $self->invnum. '.XXXXXXXX',
-                           DIR      => $dir,
-                           SUFFIX   => '.png',
-                           UNLINK   => 0,
-                         ) or die "can't open temp file: $!\n";
-      print $bh $gd->png or die "cannot write barcode to file: $!\n";
-
-      my $png_file = $bh->filename;
-      close $bh;
-
+      my $png_file = $self->invoice_barcode($dir);
       my $eps_file = $png_file;
       $eps_file =~ s/\.png$/.eps/g;
       $png_file =~ /(barcode.*png)/;
@@ -2180,7 +2186,7 @@ sub print_latex {
       # after painfuly long experimentation, it was determined that sam2p won't
       #	accept : and other chars in the path, no matter how hard I tried to
       # escape them, hence the chdir (and chdir back, just to be safe)
-      system('sam2p', $png_file, 'EPS:', $eps_file ) == 0
+      system('sam2p', '-j:quiet', $png_file, 'EPS:', $eps_file ) == 0
 	or die "sam2p failed: $!\n";
       unlink($png_file);
       chdir($curr_dir);
@@ -2201,6 +2207,35 @@ sub print_latex {
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
   return ($1, $params{'logo_file'}, $params{'barcode_file'});
 
+}
+
+=item invoice_barcode DIR_OR_FALSE
+
+Generates an invoice barcode PNG. If DIR_OR_FALSE is a true value,
+it is taken as the temp directory where the PNG file will be generated and the
+PNG file name is returned. Otherwise, the PNG image itself is returned.
+
+=cut
+
+sub invoice_barcode {
+    my ($self, $dir) = (shift,shift);
+    
+    my $gdbar = new GD::Barcode('Code39',$self->invnum);
+	die "can't create barcode: " . $GD::Barcode::errStr unless $gdbar;
+    my $gd = $gdbar->plot(Height => 30);
+
+    if($dir) {
+	my $bh = new File::Temp( TEMPLATE => 'barcode.'. $self->invnum. '.XXXXXXXX',
+			   DIR      => $dir,
+			   SUFFIX   => '.png',
+			   UNLINK   => 0,
+			 ) or die "can't open temp file: $!\n";
+	print $bh $gd->png or die "cannot write barcode to file: $!\n";
+	my $png_file = $bh->filename;
+	close $bh;
+	return $png_file;
+    }
+    return $gd->png;
 }
 
 =item print_generic OPTION => VALUE ...
@@ -2564,6 +2599,10 @@ sub print_generic {
     if $params{'logo_file'};
   $invoice_data{'barcode_file'} = $params{'barcode_file'}
     if $params{'barcode_file'};
+  $invoice_data{'barcode_img'} = $params{'barcode_img'}
+    if $params{'barcode_img'};
+  $invoice_data{'barcode_cid'} = $params{'barcode_cid'}
+    if $params{'barcode_cid'};
 
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
@@ -3277,7 +3316,7 @@ sub print_html {
   }
 
   $params{'format'} = 'html';
-
+  
   $self->print_generic( %params );
 }
 

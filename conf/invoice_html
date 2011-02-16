@@ -78,6 +78,14 @@
                        : ''
       %>
       <td align="right">
+    <%=
+	if($barcode_cid) {
+	    $OUT .= qq! <img src="cid:$barcode_cid"><br> !;
+	}
+	elsif($barcode_img) {
+	    $OUT .= qq! <img src="cust_bill-barcode.cgi?invnum=$invnum;template=$template"><br> !;
+	}
+    %>
         Terms: <%= $terms %><BR>
         <%= $po_line %>
       </td>

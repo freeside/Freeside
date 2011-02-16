@@ -125,6 +125,8 @@ my %opt = (
   'notice_name'   => $notice_name,
 );
 
+$opt{'barcode_img'} = 1 if $conf->exists('invoice-barcode');
+
 my @payby =  grep /\w/, $conf->config('payby');
 #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
 @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
