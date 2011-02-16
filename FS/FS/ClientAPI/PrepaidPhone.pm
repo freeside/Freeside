@@ -6,7 +6,7 @@ use FS::Record qw(qsearchs);
 use FS::rate;
 use FS::svc_phone;
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::ClientAPI::PrepaidPhone]';
 
 #TODO:
@@ -230,18 +230,27 @@ Customer balance.
 sub phonenum_balance {
   my $packet = shift;
 
+  warn "$me phonenum_balance called with countrycode ".$packet->{'countrycode'}.
+       " and phonenum ". $packet->{'phonenum'}. "\n"
+    if $DEBUG;
+
   my $svc_phone = qsearchs('svc_phone', {
     'countrycode' => ( $packet->{'countrycode'} || 1 ),
     'phonenum'    => $packet->{'phonenum'},
   });
 
   unless ( $svc_phone ) {
+    warn "$me no phone number found\n" if $DEBUG;
     return { 'custnum' => '',
              'balance' => 0,
            };
   };
 
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+
+  warn "$me returning ". $cust_pkg->cust_main->balance.
+       " balance for custnum ". $cust_pkg->custnum
+    if $DEBUG;
 
   return {
     'custnum' => $cust_pkg->custnum,
