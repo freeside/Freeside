@@ -13,6 +13,7 @@ use String::ShellQuote;
 use HTML::Entities;
 use Locale::Country;
 use Storable qw( freeze thaw );
+use GD::Barcode;
 use FS::UID qw( datasrc );
 use FS::Misc qw( send_email send_fax generate_ps generate_pdf do_print );
 use FS::Record qw( qsearch qsearchs dbh );
@@ -37,6 +38,7 @@ use FS::part_bill_event;
 use FS::payby;
 use FS::bill_batch;
 use FS::cust_bill_batch;
+use Cwd;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -2152,6 +2154,40 @@ sub print_latex {
   close $lh;
   $params{'logo_file'} = $lh->filename;
 
+  if($conf->exists('invoice-barcode')){
+      my $gdbar = new GD::Barcode('Code39',$self->invnum);
+      die "can't create barcode: " . $GD::Barcode::errStr unless $gdbar;
+      my $gd = $gdbar->plot(Height => 20);
+      my $bh = new File::Temp( TEMPLATE => 'barcode.'. $self->invnum. '.XXXXXXXX',
+                           DIR      => $dir,
+                           SUFFIX   => '.png',
+                           UNLINK   => 0,
+                         ) or die "can't open temp file: $!\n";
+      print $bh $gd->png or die "cannot write barcode to file: $!\n";
+
+      my $png_file = $bh->filename;
+      close $bh;
+
+      my $eps_file = $png_file;
+      $eps_file =~ s/\.png$/.eps/g;
+      $png_file =~ /(barcode.*png)/;
+      $png_file = $1;
+      $eps_file =~ /(barcode.*eps)/;
+      $eps_file = $1;
+
+      my $curr_dir = cwd();
+      chdir($dir); 
+      # after painfuly long experimentation, it was determined that sam2p won't
+      #	accept : and other chars in the path, no matter how hard I tried to
+      # escape them, hence the chdir (and chdir back, just to be safe)
+      system('sam2p', $png_file, 'EPS:', $eps_file ) == 0
+	or die "sam2p failed: $!\n";
+      unlink($png_file);
+      chdir($curr_dir);
+
+      $params{'barcode_file'} = $eps_file;
+  }
+
   my @filled_in = $self->print_generic( %params );
   
   my $fh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
@@ -2163,7 +2199,7 @@ sub print_latex {
   close $fh;
 
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
-  return ($1, $params{'logo_file'});
+  return ($1, $params{'logo_file'}, $params{'barcode_file'});
 
 }
 
@@ -2526,6 +2562,8 @@ sub print_generic {
 
   $invoice_data{'logo_file'} = $params{'logo_file'}
     if $params{'logo_file'};
+  $invoice_data{'barcode_file'} = $params{'barcode_file'}
+    if $params{'barcode_file'};
 
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
@@ -3172,9 +3210,10 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 sub print_ps {
   my $self = shift;
 
-  my ($file, $lfile) = $self->print_latex(@_);
+  my ($file, $logofile, $barcodefile) = $self->print_latex(@_);
   my $ps = generate_ps($file);
-  unlink($lfile);
+  unlink($logofile);
+  unlink($barcodefile);
 
   $ps;
 }
@@ -3200,9 +3239,10 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 sub print_pdf {
   my $self = shift;
 
-  my ($file, $lfile) = $self->print_latex(@_);
+  my ($file, $logofile, $barcodefile) = $self->print_latex(@_);
   my $pdf = generate_pdf($file);
-  unlink($lfile);
+  unlink($logofile);
+  unlink($barcodefile);
 
   $pdf;
 }

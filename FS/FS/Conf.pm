@@ -667,6 +667,13 @@ my %payment_gateway_options = (
     'description' => 'Generate a line item on an invoice even when a package is discounted 100%',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'invoice-barcode',
+    'section'     => 'billing',
+    'description' => 'Display a barcode on HTML and PDF invoices',
+    'type'        => 'checkbox',
+  },
 
   {
     'key'         => 'encryption',
