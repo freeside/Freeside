@@ -35,7 +35,7 @@ sub dispatch {
   my ( $self, $name ) = ( shift, shift );
   $name =~ s(/)(::)g;
   my $sub = "FS::ClientAPI::$name";
-  warn "$me dispatch: calling $sub\n" if $DEBUG;
+  warn "$me dispatch: calling $sub with args @_\n" if $DEBUG;
   no strict 'refs';
   &{$sub}(@_);
 }
