@@ -49,7 +49,7 @@ sub AUTOLOAD {
     #no strict 'refs';
     #&{$call}(@_);
     #FS::ClientAPI->dispatch($autoload->{$call}, @_);
-    FS::ClientAPI->dispatch($autoload->{$call}, @_ );
+    FS::ClientAPI->dispatch($autoload->{$call}, { @_ } );
   }else{
     die "No such procedure: $call";
   }
@@ -106,6 +106,7 @@ sub ss2clientapi {
   'new_customer'              => 'Signup/new_customer',
   'capture_payment'           => 'Signup/capture_payment',
   'clear_signup_cache'        => 'Signup/clear_cache',
+  'new_agent'                 => 'Agent/new_agent',
   'agent_login'               => 'Agent/agent_login',
   'agent_logout'              => 'Agent/agent_logout',
   'agent_info'                => 'Agent/agent_info',
