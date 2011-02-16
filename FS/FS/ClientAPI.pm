@@ -2,11 +2,12 @@ package FS::ClientAPI;
 
 use strict;
 use base 'Exporter';
-use vars qw( @EXPORT_OK %handler $domain $DEBUG );
+use vars qw( @EXPORT_OK %handler $domain $DEBUG $me );
 
 @EXPORT_OK = qw( load_clientapi_modules );
 
 $DEBUG = 0;
+$me = '[FS::ClientAPI]';
 
 %handler = ();
 
@@ -34,6 +35,7 @@ sub dispatch {
   my ( $self, $name ) = ( shift, shift );
   $name =~ s(/)(::)g;
   my $sub = "FS::ClientAPI::$name";
+  warn "$me dispatch: calling $sub\n" if $DEBUG;
   no strict 'refs';
   &{$sub}(@_);
 }
