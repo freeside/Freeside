@@ -18,8 +18,7 @@ Invoice date & \textbf{[@-- $date --@]} & \multirow{4}*{[@-- $verticalreturnaddr
 \addressline{[@-- $address2 --@]}
 \addressline{[@-- $city --@], [@-- $state --@]~~[@-- $zip --@]}
 \addressline{[@-- $country --@]}
-\\
-[@-- $barcode_file ? '\includegraphics{'.$barcode_file.'}' : '' --@]
+[@-- $barcode_file ? '\\\\ \includegraphics{'.$barcode_file.'}' : "\\" --@]
 \end{minipage}}}\\
 Customer\#& \textbf{[@-- $custnum --@]} & \\
 Total Due & \textbf{[@-- $balance --@]} & \\
