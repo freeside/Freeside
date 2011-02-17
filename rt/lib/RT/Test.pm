@@ -1,40 +1,40 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +43,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 
 package RT::Test;
@@ -221,12 +221,10 @@ sub bootstrap_config {
         or die "Couldn't open $tmp{'config'}{'RT'}: $!";
 
     print $config qq{
-Set( \$WebPort , $port);
-Set( \$WebBaseURL , "http://localhost:\$WebPort");
-Set( \$LogToSyslog , undef);
-Set( \$LogToScreen , "warning");
+Set( \$WebDomain, "localhost");
+Set( \$WebPort,   $port);
+Set( \$WebPath,   "");
 Set( \$RTAddressRegexp , qr/^bad_re_that_doesnt_match\$/);
-Set( \$MailCommand, 'testfile');
 };
     if ( $ENV{'RT_TEST_DB_SID'} ) { # oracle case
         print $config "Set( \$DatabaseName , '$ENV{'RT_TEST_DB_SID'}' );\n";
@@ -237,6 +235,8 @@ Set( \$MailCommand, 'testfile');
     }
     print $config "Set( \$DevelMode, 0 );\n"
         if $INC{'Devel/Cover.pm'};
+
+    $self->bootstrap_logging( $config );
 
     # set mail catcher
     my $mail_catcher = $tmp{'mailbox'} = File::Spec->catfile(
@@ -254,7 +254,7 @@ Set( \$MailCommand, sub {
     close \$handle;
 } );
 END
-
+    
     print $config $args{'config'} if $args{'config'};
 
     print $config "\n1;\n";
@@ -262,6 +262,29 @@ END
     close $config;
 
     return $config;
+}
+
+sub bootstrap_logging {
+    my $self = shift;
+    my $config = shift;
+
+    # prepare file for logging
+    $tmp{'log'}{'RT'} = File::Spec->catfile(
+        "$tmp{'directory'}", 'rt.debug.log'
+    );
+    open my $fh, '>', $tmp{'log'}{'RT'}
+        or die "Couldn't open $tmp{'config'}{'RT'}: $!";
+    # make world writable so apache under different user
+    # can write into it
+    chmod 0666, $tmp{'log'}{'RT'};
+
+    print $config <<END;
+Set( \$LogToSyslog , undef);
+Set( \$LogToScreen , "warning");
+Set( \$LogToFile, 'debug' );
+Set( \$LogDir, q{$tmp{'directory'}} );
+Set( \$LogToFileNamed, 'rt.debug.log' );
+END
 }
 
 sub set_config_wrapper {
@@ -389,6 +412,12 @@ sub bootstrap_plugins {
     RT->Config->Set( Plugins => @plugins );
     RT->InitPluginPaths;
 
+    my $dba_dbh;
+    $dba_dbh = _get_dbh(
+        RT::Handle->DSN,
+        $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD},
+    ) if @plugins;
+
     require File::Spec;
     foreach my $name ( @plugins ) {
         my $plugin = RT::Plugin->new( name => $name );
@@ -400,10 +429,10 @@ sub bootstrap_plugins {
             if $ENV{'TEST_VERBOSE'};
 
         if ( -e $etc_path ) {
-            my ($ret, $msg) = $RT::Handle->InsertSchema( undef, $etc_path );
+            my ($ret, $msg) = $RT::Handle->InsertSchema( $dba_dbh, $etc_path );
             Test::More::ok($ret || $msg =~ /^Couldn't find schema/, "Created schema: ".($msg||''));
 
-            ($ret, $msg) = $RT::Handle->InsertACL( undef, $etc_path );
+            ($ret, $msg) = $RT::Handle->InsertACL( $dba_dbh, $etc_path );
             Test::More::ok($ret || $msg =~ /^Couldn't find ACLs/, "Created ACL: ".($msg||''));
 
             my $data_file = File::Spec->catfile( $etc_path, 'initialdata' );
@@ -423,6 +452,7 @@ sub bootstrap_plugins {
 
         $RT::Handle->Connect; # XXX: strange but mysql can loose connection
     }
+    $dba_dbh->disconnect if $dba_dbh;
 }
 
 sub _get_dbh {
@@ -687,6 +717,8 @@ sub run_and_capture {
     my $self = shift;
     my %args = @_;
 
+    my $after_open = delete $args{after_open};
+
     my $cmd = delete $args{'command'};
     die "Couldn't find command ($cmd)" unless -f $cmd;
 
@@ -704,7 +736,7 @@ sub run_and_capture {
     my ($child_out, $child_in);
     my $pid = IPC::Open2::open2($child_out, $child_in, $cmd);
 
-    $args{after_open}->($child_in, $child_out) if $args{after_open};
+    $after_open->($child_in, $child_out) if $after_open;
 
     close $child_in;
 

@@ -3,11 +3,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.2 $)dnl
+AC_REVISION($Revision: 1.3 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ([2.53])
-AC_INIT(RT, 3.8.8, [rt-bugs@bestpractical.com])
+AC_INIT(RT, 3.8.9, [rt-bugs@bestpractical.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -397,6 +397,8 @@ AC_CONFIG_FILES([
                  etc/upgrade/3.8-branded-queues-extension
                  etc/upgrade/3.8-ical-extension
                  etc/upgrade/split-out-cf-categories
+                 etc/upgrade/generate-rtaddressregexp
+                 etc/upgrade/vulnerable-passwords
                  sbin/rt-attributes-viewer
                  sbin/rt-session-viewer
                  sbin/rt-dump-database
