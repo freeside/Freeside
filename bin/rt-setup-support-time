@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+use FS::UID 'adminsuidsetup';
+use FS::TicketSystem;
+use strict;
+
+my $fieldname = 'Support time';
+my $queue = 0; #global; change to a queue id if desired
+
+my $fsuser = shift @ARGV or die "Usage: rt-setup-support-time user\n";
+
+my $dbh = adminsuidsetup($fsuser);
+FS::TicketSystem->init;
+my $session = FS::TicketSystem->session();
+my $CurrentUser = $session->{CurrentUser}
+  or die "rt-setup-support-time must run as a valid RT user.\n";
+
+$RT::Handle->BeginTransaction;
+
+sub try {
+  my ($val, $msg) = @_;
+  if ( !$val ) {
+    $RT::Handle->Rollback;
+    die "$msg (reverted changes)\n";
+  }
+}
+
+my $TicketCF = RT::CustomField->new($CurrentUser);
+$TicketCF->LoadByCols(
+  Name => $fieldname,
+  LookupType => 'RT::Queue-RT::Ticket',
+);
+if (!defined($TicketCF->Id)) {
+  print "Creating ticket custom field.\n";
+  try( $TicketCF->Create(
+    Name  => $fieldname,
+    Type  => 'TimeValue',
+    MaxValues => 1,
+    LookupType => 'RT::Queue-RT::Ticket',
+  ) );
+  my $OCF = RT::ObjectCustomField->new($CurrentUser);
+  try( $OCF->Create(
+    CustomField => $TicketCF->Id,
+    ObjectId => $queue,
+  ) );
+}
+
+my $TxnCF = RT::CustomField->new($CurrentUser);
+$TxnCF->LoadByCols(
+  Name => $fieldname,
+  LookupType => 'RT::Queue-RT::Ticket-RT::Transaction',
+);
+if (!defined($TxnCF->Id)) {
+  print "Creating transaction custom field.\n";
+  try( $TxnCF->Create(
+    Name => $fieldname,
+    Type => 'TimeValue',
+    MaxValues => 1,
+    LookupType => 'RT::Queue-RT::Ticket-RT::Transaction',
+    UILocation => 'TimeWorked',
+  ) );
+  my $OCF = RT::ObjectCustomField->new($CurrentUser);
+  try( $OCF->Create(
+    CustomField => $TxnCF->Id,
+    ObjectId => $queue,
+  ) );
+}
+
+my $ScripCondition = RT::ScripCondition->new($CurrentUser);
+$ScripCondition->Load('On Update');
+if (!defined($ScripCondition->Id)) {
+  print "Creating On Update condition.\n";
+  try( $ScripCondition->Create(
+    Name => 'On Update',
+    Description => 'Whenever a ticket is updated',
+    ExecModule => 'AnyTransaction',
+    ApplicableTransTypes => 'Any',
+  ) );
+}
+
+my $ScripAction = RT::ScripAction->new($CurrentUser);
+$ScripAction->Load("Update $fieldname");
+if (!defined($ScripAction->Id)) {
+  print "Creating Update $fieldname action.\n";
+  try( $ScripAction->Create(
+    Name => "Update $fieldname",
+    Description => 'Increment ticket time',
+    ExecModule => 'Accumulate',
+    Argument => $fieldname,
+  ) );
+}
+
+my $Template = RT::Template->new($CurrentUser);
+$Template->Load('Blank');
+try(0, "No blank template found") if !$Template->Id;
+
+my $Scrip = RT::Scrip->new($CurrentUser);
+$Scrip->LoadByCols(
+  ScripCondition => $ScripCondition->Id,
+  ScripAction    => $ScripAction->Id,
+  Queue          => $queue);
+if (!defined($Scrip->Id)) {
+  print "Creating scrip.\n";
+  try( $Scrip->Create(
+    Description => "On Transaction Update $fieldname",
+    ScripCondition => $ScripCondition->Id,
+    ScripAction => $ScripAction->Id,
+    Stage => 'TransactionCreate',
+    Queue => $queue,
+    Template => $Template->Id,
+  ) );
+}
+
+$RT::Handle->Commit;
+print "Done.\n";
+
