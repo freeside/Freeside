@@ -1,40 +1,40 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +43,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 
 package RT::Interface::Web::Handler;
@@ -153,7 +153,47 @@ sub NewApacheHandler {
 
 sub NewCGIHandler {
     require HTML::Mason::CGIHandler;
-    return NewHandler('HTML::Mason::CGIHandler', @_);
+    return NewHandler(
+        'HTML::Mason::CGIHandler',
+        out_method => sub {
+            my $m = HTML::Mason::Request->instance;
+            my $r = $m->cgi_request;
+
+            # Send headers if they have not been sent by us or by user.
+            $r->send_http_header unless $r->http_header_sent;
+
+            # Set up a default
+            $r->content_type('text/html; charset=utf-8')
+                unless $r->content_type;
+
+            if ( $r->content_type =~ /charset=([\w-]+)$/ ) {
+                my $enc = $1;
+                if ( lc $enc !~ /utf-?8$/ ) {
+                    for my $str (@_) {
+                        next unless $str;
+
+                        # only encode perl internal strings
+                        next unless utf8::is_utf8($str);
+                        $str = Encode::encode( $enc, $str );
+                    }
+                }
+            }
+
+            # default to utf8 encoding
+            for my $str (@_) {
+                next unless $str;
+                next unless utf8::is_utf8($str);
+                $str = Encode::encode( 'utf8', $str );
+            }
+
+            # We could perhaps install a new, faster out_method here that
+            # wouldn't have to keep checking whether headers have been
+            # sent and what the $r->method is.  That would require
+            # additions to the Request interface, though.
+            print STDOUT grep {defined} @_;
+        },
+        @_
+    );
 }
 
 sub NewHandler {
