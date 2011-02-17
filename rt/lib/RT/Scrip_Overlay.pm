@@ -1,40 +1,40 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +43,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 
 =head1 NAME
@@ -583,6 +583,66 @@ sub HasRight {
 # }}}
 
 # }}}
+
+
+=head2 SetScripAction
+
+=cut
+
+sub SetScripAction {
+    my $self  = shift;
+    my $value = shift;
+
+    return ( 0, $self->loc("Action is mandatory argument") ) unless $value;
+
+    require RT::ScripAction;
+    my $action = RT::ScripAction->new( $self->CurrentUser );
+    $action->Load($value);
+    return ( 0, $self->loc( "Action '[_1]' not found", $value ) )
+      unless $action->Id;
+
+    return $self->_Set( Field => 'ScripAction', Value => $action->Id );
+}
+
+=head2 SetScripCondition
+
+=cut
+
+sub SetScripCondition {
+    my $self  = shift;
+    my $value = shift;
+
+    return ( 0, $self->loc("Condition is mandatory argument") )
+      unless $value;
+
+    require RT::ScripCondition;
+    my $condition = RT::ScripCondition->new( $self->CurrentUser );
+    $condition->Load($value);
+
+    return ( 0, $self->loc( "Condition '[_1]' not found", $value ) )
+      unless $condition->Id;
+
+    return $self->_Set( Field => 'ScripCondition', Value => $condition->Id );
+}
+
+=head2 SetTemplate
+
+=cut
+
+sub SetTemplate {
+    my $self  = shift;
+    my $value = shift;
+
+    return ( 0, $self->loc("Template is mandatory argument") ) unless $value;
+
+    require RT::Template;
+    my $template = RT::Template->new( $self->CurrentUser );
+    $template->Load($value);
+    return ( 0, $self->loc( "Template '[_1]' not found", $value ) )
+      unless $template->Id;
+
+    return $self->_Set( Field => 'Template', Value => $template->Id );
+}
 
 1;
 

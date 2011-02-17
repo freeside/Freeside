@@ -1,40 +1,40 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +43,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 
 package RT::Interface::Email;
@@ -394,8 +394,9 @@ sub SendEmail {
 
     my $mail_command = RT->Config->Get('MailCommand');
 
-    if ($mail_command eq 'testfile') {
+    if ($mail_command eq 'testfile' and not $Mail::Mailer::testfile::config{outfile}) {
         $Mail::Mailer::testfile::config{outfile} = File::Temp->new;
+        $RT::Logger->info("Storing outgoing emails in $Mail::Mailer::testfile::config{outfile}");
     }
 
     # if it is a sub routine, we just return it;
@@ -444,7 +445,8 @@ sub SendEmail {
             # don't ignore CHLD signal to get proper exit code
             local $SIG{'CHLD'} = 'DEFAULT';
 
-            open my $mail, "|$path $args" or die "couldn't execute program: $!";
+            open my $mail, "|$path $args >/dev/null"
+                or die "couldn't execute program: $!";
 
             # if something wrong with $mail->print we will get PIPE signal, handle it
             local $SIG{'PIPE'} = sub { die "program unexpectedly closed pipe" };
@@ -457,10 +459,14 @@ sub SendEmail {
                 my $msg = "$msgid: `$path $args` exitted with code ". ($?>>8);
                 $msg = ", interrupted by signal ". ($?&127) if $?&127;
                 $RT::Logger->error( $msg );
+                die $msg;
             }
         };
         if ( $@ ) {
             $RT::Logger->crit( "$msgid: Could not send mail with command `$path $args`: " . $@ );
+            if ( $TicketObj ) {
+                _RecordSendEmailFailure( $TicketObj );
+            }
             return 0;
         }
     }
@@ -472,6 +478,9 @@ sub SendEmail {
         ) } };
         unless ( $smtp ) {
             $RT::Logger->crit( "Could not connect to SMTP server.");
+            if ($TicketObj) {
+                _RecordSendEmailFailure( $TicketObj );
+            }
             return 0;
         }
 
@@ -500,6 +509,9 @@ sub SendEmail {
 
         unless ( $status ) {
             $RT::Logger->crit( "$msgid: Could not send mail via SMTP." );
+            if ( $TicketObj ) {
+                _RecordSendEmailFailure( $TicketObj );
+            }
             return 0;
         }
     }
@@ -517,6 +529,9 @@ sub SendEmail {
 
         unless ( $args{'Entity'}->send( @mailer_args ) ) {
             $RT::Logger->crit( "$msgid: Could not send mail." );
+            if ( $TicketObj ) {
+                _RecordSendEmailFailure( $TicketObj );
+            }
             return 0;
         }
     }
@@ -1777,6 +1792,21 @@ sub IsCorrectAction {
         return ( 0, $_ ) unless /^(?:comment|correspond|take|resolve)$/;
     }
     return ( 1, @actions );
+}
+
+sub _RecordSendEmailFailure {
+    my $ticket = shift;
+    if ($ticket) {
+        $ticket->_RecordNote(
+            NoteType => 'SystemError',
+            Content => "Sending the previous mail has failed.  Please contact your admin, they can find more details in the logs.",
+        );
+        return 1;
+    }
+    else {
+        $RT::Logger->error( "Can't record send email failure as ticket is missing" );
+        return;
+    }
 }
 
 eval "require RT::Interface::Email_Vendor";

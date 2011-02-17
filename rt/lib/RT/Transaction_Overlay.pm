@@ -1,40 +1,40 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +43,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 
 =head1 NAME
@@ -176,7 +176,7 @@ sub Create {
        # Entry point of the rule system
        my $ticket = RT::Ticket->new($RT::SystemUser);
        $ticket->Load($args{'ObjectId'});
-       my $rules = RT::Ruleset->FindAllRules(
+       my $rules = $self->{rules} = RT::Ruleset->FindAllRules(
             Stage       => 'TransactionCreate',
             Type        => $args{'Type'},
             TicketObj   => $ticket,
@@ -208,6 +208,22 @@ Scrips do not get persisted to the database with transactions.
 sub Scrips {
     my $self = shift;
     return($self->{'scrips'});
+}
+
+
+=head2 Rules
+
+Returns the array of Rule objects for this transaction.
+This routine is only useful on a freshly created transaction object.
+Rules do not get persisted to the database with transactions.
+
+
+=cut
+
+
+sub Rules {
+    my $self = shift;
+    return($self->{'rules'});
 }
 
 
@@ -292,21 +308,23 @@ If $args{'Type'} is set to C<text/html>, this will return an HTML
 part of the message, if available.  Otherwise it looks for a text/plain
 part. If $args{'Type'} is missing, it defaults to the value of 
 C<$RT::Transaction::PreferredContentType>, if that's missing too, 
-defaults to 'text/plain'.
+defaults to textual.
 
 =cut
 
 sub Content {
     my $self = shift;
     my %args = (
-        Type  => $PreferredContentType || 'text/plain',
+        Type => $PreferredContentType || '',
         Quote => 0,
         Wrap  => 70,
         @_
     );
 
     my $content;
-    if ( my $content_obj = $self->ContentObj( Type => $args{Type} ) ) {
+    if ( my $content_obj =
+        $self->ContentObj( $args{Type} ? ( Type => $args{Type} ) : () ) )
+    {
         $content = $content_obj->Content ||'';
 
         if ( lc $content_obj->ContentType eq 'text/html' ) {
@@ -397,12 +415,16 @@ Returns the RT::Attachment object which contains the content for this Transactio
 
 sub ContentObj {
     my $self = shift;
-    my %args = ( Type => $PreferredContentType || 'text/plain',
-                 @_ );
+    my %args = ( Type => $PreferredContentType, Attachment => undef, @_ );
 
     # If we don't have any content, return undef now.
     # Get the set of toplevel attachments to this transaction.
-    return undef unless my $Attachment = $self->Attachments->First;
+
+    my $Attachment = $args{'Attachment'};
+
+    $Attachment ||= $self->Attachments->First;
+
+    return undef unless ($Attachment);
 
     # If it's a textual part, just return the body.
     if ( RT::I18N::IsTextualContentType($Attachment->ContentType) ) {
@@ -412,14 +434,23 @@ sub ContentObj {
     # If it's a multipart object, first try returning the first part with preferred
     # MIME type ('text/plain' by default).
 
-    elsif ( $Attachment->ContentType =~ '^multipart/' ) {
-        my $plain_parts = $Attachment->Children;
-        $plain_parts->ContentType( VALUE => $args{Type} );
-        $plain_parts->LimitNotEmpty;
+    elsif ( $Attachment->ContentType =~ qr|^multipart/mixed|i ) {
+        my $kids = $Attachment->Children;
+        while (my $child = $kids->Next) {
+            my $ret =  $self->ContentObj(%args, Attachment => $child);
+            return $ret if ($ret);
+        }
+    }
+    elsif ( $Attachment->ContentType =~ qr|^multipart/|i ) {
+        if ( $args{Type} ) {
+            my $plain_parts = $Attachment->Children;
+            $plain_parts->ContentType( VALUE => $args{Type} );
+            $plain_parts->LimitNotEmpty;
 
-        # If we actully found a part, return its content
-        if ( my $first = $plain_parts->First ) {
-            return $first;
+            # If we actully found a part, return its content
+            if ( my $first = $plain_parts->First ) {
+                return $first;
+            }
         }
 
         # If that fails, return the first textual part which has some content.
@@ -526,6 +557,8 @@ sub ContentAsMIME {
     my $self = shift;
 
     my $main_content = $self->ContentObj;
+    return unless $main_content;
+
     my $entity = $main_content->ContentAsMIME;
 
     if ( $main_content->Parent ) {
@@ -557,11 +590,7 @@ sub ContentAsMIME {
         OPERATOR => 'NOT STARTSWITH',
         VALUE => 'multipart/',
     );
-    $attachments->Limit(
-        FIELD => 'Content',
-        OPERATOR => '!=',
-        VALUE => '',
-    );
+    $attachments->LimitNotEmpty;
     while ( my $a = $attachments->Next ) {
         $entity->make_multipart unless $entity->is_multipart;
         $entity->add_part( $a->ContentAsMIME );
@@ -654,6 +683,9 @@ sub BriefDescription {
                 "'" . $self->NewValue . "'"
             )
         );
+    }
+    elsif ( $type =~ /SystemError/ ) {
+        return $self->loc("System error");
     }
 
     if ( my $code = $_BriefDescriptions{$type} ) {

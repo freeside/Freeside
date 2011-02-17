@@ -1,40 +1,40 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +43,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 
 =head1 NAME
@@ -69,6 +69,7 @@ package RT::User;
 use strict;
 no warnings qw(redefine);
 
+use Digest::SHA;
 use Digest::MD5;
 use RT::Principals;
 use RT::ACE;
@@ -988,20 +989,28 @@ sub SetPassword {
 
 }
 
-=head3 _GeneratePassword PASSWORD
+=head3 _GeneratePassword PASSWORD [, SALT]
 
-returns an MD5 hash of the password passed in, in hexadecimal encoding.
+Returns a salted SHA-256 hash of the password passed in, in base64
+encoding.
 
 =cut
 
 sub _GeneratePassword {
     my $self = shift;
-    my $password = shift;
+    my ($password, $salt) = @_;
 
-    my $md5 = Digest::MD5->new();
-    $md5->add(encode_utf8($password));
-    return ($md5->hexdigest);
+    # Generate a random 4-byte salt
+    $salt ||= pack("C4",map{int rand(256)} 1..4);
 
+    # Encode the salt, and a truncated SHA256 of the MD5 of the
+    # password.  The additional, un-necessary level of MD5 allows for
+    # transparent upgrading to this scheme, from the previous unsalted
+    # MD5 one.
+    return MIME::Base64::encode_base64(
+        $salt . substr(Digest::SHA::sha256($salt . Digest::MD5::md5($password)),0,26),
+        "" # No newline
+    );
 }
 
 =head3 _GeneratePasswordBase64 PASSWORD
@@ -1064,23 +1073,32 @@ sub IsPassword {
         return(undef);
      }
 
-    # generate an md5 password 
-    if ($self->_GeneratePassword($value) eq $self->__Value('Password')) {
-        return(1);
+    my $stored = $self->__Value('Password');
+    if (length $stored == 40) {
+        # The truncated SHA256(salt,MD5(passwd)) form from 2010/12 is 40 characters long
+        my $hash = MIME::Base64::decode_base64($stored);
+        # The first 4 bytes are the salt, the rest is substr(SHA256,0,26)
+        my $salt = substr($hash, 0, 4, "");
+        return substr(Digest::SHA::sha256($salt . Digest::MD5::md5($value)), 0, 26) eq $hash;
+    } elsif (length $stored == 32) {
+        # Hex nonsalted-md5
+        return 0 unless Digest::MD5::md5_hex(encode_utf8($value)) eq $stored;
+    } elsif (length $stored == 22) {
+        # Base64 nonsalted-md5
+        return 0 unless Digest::MD5::md5_base64(encode_utf8($value)) eq $stored;
+    } elsif (length $stored == 13) {
+        # crypt() output
+        return 0 unless crypt(encode_utf8($value), $stored) eq $stored;
+    } else {
+        $RT::Logger->warn("Unknown password form");
+        return 0;
     }
 
-    #  if it's a historical password we say ok.
-    if ($self->__Value('Password') eq crypt(encode_utf8($value), $self->__Value('Password'))
-        or $self->_GeneratePasswordBase64($value) eq $self->__Value('Password'))
-    {
-        # ...but upgrade the legacy password inplace.
-        $self->SUPER::SetPassword( $self->_GeneratePassword($value) );
-        return(1);
-    }
-
-    # no password check has succeeded. get out
-
-    return (undef);
+    # We got here by validating successfully, but with a legacy
+    # password form.  Update to the most recent form.
+    my $obj = $self->isa("RT::CurrentUser") ? $self->UserObj : $self;
+    $obj->_Set(Field => 'Password', Value =>  $self->_GeneratePassword($value) );
+    return 1;
 }
 
 sub CurrentUserRequireToSetPassword {
@@ -1352,7 +1370,7 @@ admin right) 'ModifySelf', return 1. otherwise, return undef.
 
 sub CurrentUserCanModify {
     my $self  = shift;
-    my $right = shift;
+    my $field = shift;
 
     if ( $self->CurrentUser->HasRight(Right => 'AdminUsers', Object => $RT::System) ) {
         return (1);
@@ -1360,7 +1378,7 @@ sub CurrentUserCanModify {
 
     #If the field is marked as an "administrators only" field, 
     # don\'t let the user touch it.
-    elsif ( $self->_Accessible( $right, 'admin' ) ) {
+    elsif ( $self->_Accessible( $field, 'admin' ) ) {
         return (undef);
     }
 
@@ -1706,6 +1724,14 @@ sub PreferredKey
 {
     my $self = shift;
     return undef unless RT->Config->Get('GnuPG')->{'Enable'};
+
+    if ( ($self->CurrentUser->Id != $self->Id )  &&
+          !$self->CurrentUser->HasRight(Right =>'AdminUsers', Object => $RT::System) ) {
+          return undef;
+    }
+
+
+
     my $prefkey = $self->FirstAttribute('PreferredKey');
     return $prefkey->Content if $prefkey;
 
@@ -1732,6 +1758,16 @@ sub PreferredKey
 sub PrivateKey {
     my $self = shift;
 
+
+    #If the user wants to see their own values, let them.
+    #If the user is an admin, let them.
+    #Otherwwise, don't let them.
+    #
+    if ( ($self->CurrentUser->Id != $self->Id )  &&
+          !$self->CurrentUser->HasRight(Right =>'AdminUsers', Object => $RT::System) ) {
+          return undef;
+    }
+
     my $key = $self->FirstAttribute('PrivateKey') or return undef;
     return $key->Content;
 }
@@ -1739,7 +1775,11 @@ sub PrivateKey {
 sub SetPrivateKey {
     my $self = shift;
     my $key = shift;
-    # XXX: ACL
+
+    unless ($self->CurrentUserCanModify('PrivateKey')) {
+        return (0, $self->loc("Permission Denied"));
+    }
+
     unless ( $key ) {
         my ($status, $msg) = $self->DeleteAttribute('PrivateKey');
         unless ( $status ) {
@@ -1762,7 +1802,7 @@ sub SetPrivateKey {
     );
     return ($status, $self->loc("Couldn't set private key"))    
         unless $status;
-    return ($status, $self->loc("Unset private key"));
+    return ($status, $self->loc("Set private key"));
 }
 
 sub BasicColumns {

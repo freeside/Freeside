@@ -1,40 +1,40 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-# 
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
-#                                          <jesse@bestpractical.com>
-# 
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-# 
-# 
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +43,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 
 package RT::Config;
@@ -231,6 +231,29 @@ our %META = (
             },  
         },  
     },
+    ResolveDefaultUpdateType => {
+        Section         => 'General',                                      #loc
+        Overridable     => 1,
+        SortOrder       => 9,
+        Widget          => '/Widgets/Form/Select',
+        WidgetArguments => {
+            Description => 'Default Update Type when Resolving',           #loc
+            Values      => [qw(Comment Respond)],
+            ValuesLabel => {
+                Comment => "Comments (Not sent to requestors)",            #loc
+                Respond => "Reply to requestors",                          #loc
+            },
+        },
+    },
+    SuppressAutoOpenOnUpdate => {
+        Section => 'General',
+        Overridable => 1,
+        SortOrder => 10,
+        Widget => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Suppress automatic new to open status change on ticket update' # loc
+        }
+    },
 
     # User overridable options for RT at a glance
     DefaultSummaryRows => {
@@ -340,7 +363,7 @@ our %META = (
             my $value = $self->Get('RTAddressRegexp');
             return if $value;
 
-            $RT::Logger->error(
+            $RT::Logger->debug(
                 'The RTAddressRegexp option is not set in the config.'
                 .' Not setting this option results in additional SQL queries to'
                 .' check whether each address belongs to RT or not.'
@@ -783,8 +806,8 @@ sub SetFromConfig {
                 # RTIR's options is set in main site config or RTFM's
                 warn
                     "Change of config option '$name' at $args{'File'} line $args{'Line'} has been ignored."
-                    ." It's may be ok, but we want you to be aware."
-                    ." This option earlier has been set in $source{'File'} line $source{'Line'}."
+                    ." It may be ok, but we want you to be aware."
+                    ." This option has been set earlier in $source{'File'} line $source{'Line'}."
                 ;
             }
 
@@ -845,9 +868,9 @@ sub SetFromConfig {
 
             # get entry for type we are looking for
             # XXX skip references to scalars or other references.
-            # Otherwie 5.10 goes boom. may be we should skip any
+            # Otherwie 5.10 goes boom. maybe we should skip any
             # reference
-            return if ref($entry) eq 'SCALAR' || ref($entry) eq 'REF';
+            next if ref($entry) eq 'SCALAR' || ref($entry) eq 'REF';
             my $entry_ref = *{$entry}{ ref($ref) };
             next unless $entry_ref;
 

@@ -1,4 +1,4 @@
-m4trace:configure.ac:10: -1- AC_INIT([RT], [3.8.8], [rt-bugs@bestpractical.com])
+m4trace:configure.ac:10: -1- AC_INIT([RT], [3.8.9], [rt-bugs@bestpractical.com])
 m4trace:configure.ac:10: -1- m4_pattern_forbid([^_?A[CHUM]_])
 m4trace:configure.ac:10: -1- m4_pattern_forbid([_AC_])
 m4trace:configure.ac:10: -1- m4_pattern_forbid([^LIBOBJS$], [do not use LIBOBJS directly, use AC_LIBOBJ (see section `AC_LIBOBJ vs LIBOBJS'])
@@ -152,7 +152,7 @@ m4trace:configure.ac:14: -1- m4_pattern_allow([^rt_version_major$])
 m4trace:configure.ac:16: -1- AC_SUBST([rt_version_minor], [8])
 m4trace:configure.ac:16: -1- AC_SUBST_TRACE([rt_version_minor])
 m4trace:configure.ac:16: -1- m4_pattern_allow([^rt_version_minor$])
-m4trace:configure.ac:18: -1- AC_SUBST([rt_version_patch], [8])
+m4trace:configure.ac:18: -1- AC_SUBST([rt_version_patch], [9])
 m4trace:configure.ac:18: -1- AC_SUBST_TRACE([rt_version_patch])
 m4trace:configure.ac:18: -1- m4_pattern_allow([^rt_version_patch$])
 m4trace:configure.ac:25: -1- AC_REQUIRE_AUX_FILE([install-sh])
@@ -680,6 +680,8 @@ m4trace:configure.ac:396: -1- AC_CONFIG_FILES([
                  etc/upgrade/3.8-branded-queues-extension
                  etc/upgrade/3.8-ical-extension
                  etc/upgrade/split-out-cf-categories
+                 etc/upgrade/generate-rtaddressregexp
+                 etc/upgrade/vulnerable-passwords
                  sbin/rt-attributes-viewer
                  sbin/rt-dump-database
                  sbin/rt-setup-database
@@ -699,7 +701,7 @@ m4trace:configure.ac:396: -1- AC_CONFIG_FILES([
                  bin/rt-mailgate
                  bin/rt], [chmod ug+x $ac_file
                ])
-m4trace:configure.ac:422: -1- AC_CONFIG_FILES([
+m4trace:configure.ac:424: -1- AC_CONFIG_FILES([
                  Makefile
                  etc/RT_Config.pm
                  lib/RT.pm
@@ -707,19 +709,19 @@ m4trace:configure.ac:422: -1- AC_CONFIG_FILES([
                  bin/webmux.pl
                  t/data/configs/apache2.2+mod_perl.conf
                  t/data/configs/apache2.2+fastcgi.conf], [])
-m4trace:configure.ac:431: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([LIB@&t@OBJS])
-m4trace:configure.ac:431: -1- m4_pattern_allow([^LIB@&t@OBJS$])
-m4trace:configure.ac:431: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([LTLIBOBJS])
-m4trace:configure.ac:431: -1- m4_pattern_allow([^LTLIBOBJS$])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([top_builddir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([top_build_prefix])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([srcdir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([abs_srcdir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([top_srcdir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([abs_top_srcdir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([builddir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([abs_builddir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([abs_top_builddir])
-m4trace:configure.ac:431: -1- AC_SUBST_TRACE([INSTALL])
+m4trace:configure.ac:433: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([LIB@&t@OBJS])
+m4trace:configure.ac:433: -1- m4_pattern_allow([^LIB@&t@OBJS$])
+m4trace:configure.ac:433: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([LTLIBOBJS])
+m4trace:configure.ac:433: -1- m4_pattern_allow([^LTLIBOBJS$])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([top_builddir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([top_build_prefix])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([srcdir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([abs_srcdir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([top_srcdir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([abs_top_srcdir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([builddir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([abs_builddir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([abs_top_builddir])
+m4trace:configure.ac:433: -1- AC_SUBST_TRACE([INSTALL])
