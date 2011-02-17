@@ -1,0 +1,16 @@
+% my $name = $NamePrefix . $CustomField->Id . '-Value';
+% if ($Multiple) {
+%   $RT::Logger->error("TimeValue Multiple custom field not supported");
+%   return;
+% }
+<& /Elements/EditTimeValue,
+    Name    => $name,
+    Default => $Default,
+    InUnits => $ARGS{"$name-TimeUnits"} || 'minutes',
+&>
+<%ARGS>
+$CustomField => undef
+$NamePrefix => undef
+$Default => undef
+$Multiple => undef
+</%ARGS>

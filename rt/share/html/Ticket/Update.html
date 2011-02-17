@@ -65,8 +65,8 @@
 <table width="100%" border="0">
 % $m->callback(CallbackName => 'AfterTableOpens', ARGSRef => \%ARGS, Ticket => $TicketObj);
 
-<tr><td class="label"><&|/l&>Status</&>:</td>
-<td>
+<tr><td valign="baseline" class="label"><&|/l&>Status</&>:</td>
+<td valign="baseline">
 <& /Elements/SelectStatus, Name=>"Status", DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)), Default => $ARGS{'Status'} || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus)&>
 <span class="label"><&|/l&>Owner</&>:</span>
 <& /Elements/SelectOwner,
@@ -76,13 +76,23 @@
     DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $TicketObj->OwnerObj)),
     Default      => $ARGS{'Owner'}
 &>
-<span class="label"><&|/l&>Worked</&>:</span>
-<& /Elements/EditTimeValue,
+</td>
+<td rowspan=4 valign="top">
+<table style="float:right;">
+<tr>
+<td class="label"><&|/l&>Worked</&>:</td>
+<td><& /Elements/EditTimeValue,
     Name => 'UpdateTimeWorked',
     Default => $ARGS{UpdateTimeWorked}||'',
     InUnits => $ARGS{'UpdateTimeWorked-TimeUnits'}||'minutes',
 &>
 </td></tr>
+<& /Ticket/Elements/EditTransactionCustomFields, 
+    %ARGS,
+    TicketObj   => $TicketObj,
+    UILocation  => 'TimeWorked',
+&>
+</table></td></tr>
 % my $skip;
 % $m->callback( %ARGS, CallbackName => 'BeforeUpdateType', skip => \$skip );
 % if (!$skip) {
@@ -131,7 +141,7 @@
 % }
 % $m->callback( %ARGS, CallbackName => 'AfterGnuPG' );
 
-<tr><td class="label" valign="top"><&|/l&>Message</&>:</td><td>
+<tr><td class="label" valign="top"><&|/l&>Message</&>:</td><td colspan=2>
 % $m->callback( %ARGS, CallbackName => 'BeforeMessageBox' );
 % if (exists $ARGS{UpdateContent}) {
 % # preserve QuoteTransaction so we can use it to set up sane references/in/reply to

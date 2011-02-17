@@ -1334,13 +1334,22 @@ sub ProcessUpdateMessage {
     my $bcc = $args{ARGSRef}->{'UpdateBcc'};
     my $cc  = $args{ARGSRef}->{'UpdateCc'};
 
+    my %txn_customfields;
+
+    foreach my $key ( keys %{ $args{ARGSRef} } ) {
+      if ( $key =~ /^(?:Object-RT::Transaction--)?CustomField-(\d+)/ ) {
+        $txn_customfields{$key} = $args{ARGSRef}->{$key};
+      }
+    }
+
     my %message_args = (
         CcMessageTo  => $cc,
         BccMessageTo => $bcc,
         Sign         => $args{ARGSRef}->{'Sign'},
         Encrypt      => $args{ARGSRef}->{'Encrypt'},
         MIMEObj      => $Message,
-        TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'}
+        TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'},
+        CustomFields => \%txn_customfields,
     );
 
     my @temp_squelch;
@@ -1376,14 +1385,17 @@ sub ProcessUpdateMessage {
     }
 
     my @results;
+    # Do the update via the appropriate Ticket method
     if ( $args{ARGSRef}->{'UpdateType'} =~ /^(private|public)$/ ) {
-        my ( $Transaction, $Description, $Object ) = $args{TicketObj}->Comment(%message_args);
+        my ( $Transaction, $Description, $Object ) = 
+            $args{TicketObj}->Comment(%message_args);
         push( @results, $Description );
-        $Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
+        #$Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
     } elsif ( $args{ARGSRef}->{'UpdateType'} eq 'response' ) {
-        my ( $Transaction, $Description, $Object ) = $args{TicketObj}->Correspond(%message_args);
+        my ( $Transaction, $Description, $Object ) = 
+            $args{TicketObj}->Correspond(%message_args);
         push( @results, $Description );
-        $Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
+        #$Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
     } else {
         push( @results,
             loc("Update type was neither correspondence nor comment.") . " " . loc("Update not recorded.") );
@@ -1716,6 +1728,8 @@ sub ProcessTicketCustomFieldUpdates {
             $ARGSRef->{"Object-RT::Ticket-$1"} = delete $ARGSRef->{$arg};
         } elsif ( $arg =~ /^CustomField-(\d+-.*)/ ) {
             $ARGSRef->{"Object-RT::Ticket--$1"} = delete $ARGSRef->{$arg};
+        } elsif ( $arg =~ /^Object-RT::Transaction-(\d*)-CustomField/ ) {
+            delete $ARGSRef->{$arg}; # don't try to update transaction fields
         }
     }
 

@@ -734,7 +734,8 @@ sub Create {
 
         if ( $self->Id && $Trans ) {
 
-            $TransObj->UpdateCustomFields(ARGSRef => \%args);
+          #$TransObj->UpdateCustomFields(ARGSRef => \%args);
+            $TransObj->UpdateCustomFields(%args);
 
             $RT::Logger->info( "Ticket " . $self->Id . " created in queue '" . $QueueObj->Name . "' by " . $self->CurrentUser->Name );
             $ErrStr = $self->loc( "Ticket [_1] created in queue '[_2]'", $self->Id, $QueueObj->Name );
@@ -2222,6 +2223,7 @@ sub _RecordNote {
         NoteType     => 'Correspond',
         TimeTaken    => 0,
         CommitScrips => 1,
+        CustomFields => {},
         @_
     );
 
@@ -2278,6 +2280,7 @@ sub _RecordNote {
              TimeTaken => $args{'TimeTaken'},
              MIMEObj   => $args{'MIMEObj'}, 
              CommitScrips => $args{'CommitScrips'},
+             CustomFields => $args{'CustomFields'},
     );
 
     unless ($Trans) {

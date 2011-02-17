@@ -1467,6 +1467,7 @@ sub _NewTransaction {
         MIMEObj   => undef,
         ActivateScrips => 1,
         CommitScrips => 1,
+        CustomFields => {},
         @_
     );
 
@@ -1500,6 +1501,7 @@ sub _NewTransaction {
         MIMEObj   => $args{'MIMEObj'},
         ActivateScrips => $args{'ActivateScrips'},
         CommitScrips => $args{'CommitScrips'},
+        CustomFields => $args{'CustomFields'},
     );
 
     # Rationalize the object since we may have done things to it during the caching.

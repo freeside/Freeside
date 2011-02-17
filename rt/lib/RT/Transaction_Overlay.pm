@@ -110,12 +110,13 @@ sub Create {
         NewValue       => undef,
         MIMEObj        => undef,
         ActivateScrips => 1,
-        CommitScrips => 1,
-	ObjectType => 'RT::Ticket',
-	ObjectId => 0,
-	ReferenceType => undef,
-        OldReference       => undef,
-        NewReference       => undef,
+        CommitScrips   => 1,
+	ObjectType     => 'RT::Ticket',
+	ObjectId       => 0,
+	ReferenceType  => undef,
+        OldReference   => undef,
+        NewReference   => undef,
+        CustomFields   => {},
         @_
     );
 
@@ -130,17 +131,17 @@ sub Create {
 
     #lets create our transaction
     my %params = (
-        Type      => $args{'Type'},
-        Data      => $args{'Data'},
-        Field     => $args{'Field'},
-        OldValue  => $args{'OldValue'},
-        NewValue  => $args{'NewValue'},
-        Created   => $args{'Created'},
-	ObjectType => $args{'ObjectType'},
-	ObjectId => $args{'ObjectId'},
+        Type          => $args{'Type'},
+        Data          => $args{'Data'},
+        Field         => $args{'Field'},
+        OldValue      => $args{'OldValue'},
+        NewValue      => $args{'NewValue'},
+        Created       => $args{'Created'},
+	ObjectType    => $args{'ObjectType'},
+	ObjectId      => $args{'ObjectId'},
 	ReferenceType => $args{'ReferenceType'},
-	OldReference => $args{'OldReference'},
-	NewReference => $args{'NewReference'},
+	OldReference  => $args{'OldReference'},
+	NewReference  => $args{'NewReference'},
     );
 
     # Parameters passed in during an import that we probably don't want to touch, otherwise
@@ -158,6 +159,10 @@ sub Create {
         }
     }
 
+    # Set up any custom fields passed at creation.  Has to happen 
+    # before scrips.
+    
+    $self->UpdateCustomFields(%{ $args{'CustomFields'} });
 
     #Provide a way to turn off scrips if we need to
         $RT::Logger->debug('About to think about scrips for transaction #' .$self->Id);

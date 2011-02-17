@@ -102,6 +102,11 @@ our %FieldTypes = (
         'Select date',			# loc
         'Select up to [_1] dates',	# loc
     ],
+    TimeValue => [
+        'Enter multiple time values (UNSUPPORTED)',
+        'Enter a time value',
+        'Enter [_1] time values (UNSUPPORTED)',
+    ],
 );
 
 
@@ -259,6 +264,10 @@ sub Create {
 
     if ( exists $args{'BasedOn'} ) {
         $self->SetBasedOn( $args{'BasedOn'} );
+    }
+
+    if ( exists $args{'UILocation'} ) {
+        $self->SetUILocation( $args{'UILocation'} );
     }
 
     return ($rv, $msg) unless exists $args{'Queue'};
@@ -835,7 +844,7 @@ Returns an array of all possible composite values for custom fields.
 
 sub TypeComposites {
     my $self = shift;
-    return grep !/(?:[Tt]ext|Combobox|Date)-0/, map { ("$_-1", "$_-0") } $self->Types;
+    return grep !/(?:[Tt]ext|Combobox|Date|TimeValue)-0/, map { ("$_-1", "$_-0") } $self->Types;
 }
 
 =head2 SetLookupType
@@ -1445,6 +1454,23 @@ sub BasedOnObj {
     my $attribute = $self->FirstAttribute("BasedOn");
     $obj->Load($attribute->Content) if defined $attribute;
     return $obj;
+}
+
+sub UILocation {
+    my $self = shift;
+    my $tag = $self->FirstAttribute( 'UILocation' );
+    return $tag ? $tag->Content : '';
+}
+
+sub SetUILocation {
+    my $self = shift;
+    my $tag = shift;
+    if ( $tag ) {
+        return $self->SetAttribute( Name => 'UILocation', Content => $tag );
+    }
+    else {
+        return $self->DeleteAttribute('UILocation');
+    }
 }
 
 1;

@@ -82,6 +82,14 @@
         Default => $CustomFieldObj->LookupType, &>
 </td></tr>
 
+% if ( $CustomFieldObj->Id 
+%     and $CustomFieldObj->LookupType =~ /RT::Transaction/ ) {
+<tr><td class="label"><&|/l&>Display&nbsp;with</&></td>
+<td><& /Admin/Elements/EditCustomFieldUILocation,
+        CustomField => $CustomFieldObj &>
+</td></tr>
+% }
+
 <tr><td class="label"><&|/l&>Validation</&></td>
 <td><& /Widgets/ComboBox,
     Name    => 'Pattern',
@@ -191,6 +199,8 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
 
     $CustomFieldObj->SetBasedOn( $BasedOn );
 
+    $CustomFieldObj->SetUILocation( $UILocation );
+
     my $paramtag = "CustomField-". $CustomFieldObj->Id ."-Value";
     # Delete any fields that want to be deleted
     foreach my $key ( keys %ARGS ) {
@@ -267,4 +277,5 @@ $ValuesClass => 'RT::CustomFieldValues'
 $LinkValueTo => undef
 $IncludeContentForValue => undef
 $BasedOn => undef
+$UILocation => undef
 </%ARGS>
