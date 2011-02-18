@@ -1,5 +1,6 @@
 <% include('/elements/header.html', {
              'title' => $title,
+             'head'  => $head,
              'nobr'  => 1,
           })
 %>
@@ -320,5 +321,11 @@ $views{'Jumbo'}           =  'jumbo';
 my %viewname = reverse %views;
 
 my $view =  $cgi->param('show') || $curuser->default_customer_view;
+
+my $ie_compat = $conf->config('ie-compatibility_mode');
+my $head = '';
+if ( $ie_compat ) {
+  $head = qq(<meta http-equiv="X-UA-Compatible" content="IE=$ie_compat" />);
+}
 
 </%init>
