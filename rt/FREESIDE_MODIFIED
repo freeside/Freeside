@@ -26,6 +26,7 @@ lib/RT/Interface/Web_Vendor.pm
  lib/RT/Interface/Web/Handler.pm #freeside comp_root for dashboard emails
  lib/RT/Record.pm #and customfield date patch #fix transaction custom fields
 lib/RT/SavedSearches_Local.pm #saved searches
+lib/RT/Search/Googleish.pm #option to include resolved tickets
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
 lib/RT/Transaction_Overlay.pm #fix transaction custom fields
 lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields #this-month condition 

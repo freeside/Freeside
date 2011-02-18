@@ -1559,6 +1559,16 @@ Use this to set the default units for time entry to hours instead of minutes.
 
 Set($DefaultTimeUnitsToHours, 0);
 
+=item C<$SimpleSearchIncludeResolved>
+
+By default, the simple ticket search in the top bar excludes "resolved" tickets
+unless a status argument is specified.  Set this to a true value to include 
+them.
+
+=cut
+
+Set($SimpleSearchIncludeResolve, 0);
+
 =back
 
 =head1 L<Net::Server> (rt-server) Configuration

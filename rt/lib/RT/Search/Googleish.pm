@@ -176,13 +176,15 @@ sub QueryToSQL {
         push @queue_clauses, "Queue = '$quoted_queue'";
     }
 
+    if ( ! @status_clauses 
+        and ! RT->Config->Get('SimpleSearchIncludeResolved') ) {
+        # implicitly exclude resolved status
+        @status_clauses = map "Status = '$_'", RT::Queue->ActiveStatusArray();
+    }
+
     push @tql_clauses, join( " OR ", sort @id_clauses );
     push @tql_clauses, join( " OR ", sort @owner_clauses );
-    if ( ! @status_clauses ) {
-        push @tql_clauses, join( " OR ", map "Status = '$_'", RT::Queue->ActiveStatusArray());
-    } else {
-        push @tql_clauses, join( " OR ", sort @status_clauses );
-    }
+    push @tql_clauses, join( " OR ", sort @status_clauses );
     push @tql_clauses, join( " OR ", sort @user_clauses );
     push @tql_clauses, join( " OR ", sort @queue_clauses );
     @tql_clauses = grep { $_ ? $_ = "( $_ )" : undef } @tql_clauses;
