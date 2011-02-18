@@ -13,6 +13,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
   'xml_format'    => {
     'xmlrow' => [ 'Telos_CDRS', 'CDRecord' ],
     'xmlkeys' => [ qw(
+      record_type
       seq_num
       a_party_num
       b_party_num
@@ -23,6 +24,12 @@ use FS::cdr qw(_cdr_date_parser_maker);
   },
 
   'import_fields' => [
+    sub { my($cdr, $data, $conf, $param) = @_;
+          $cdr->cdrtypenum($data);
+          # CDR type 2 = SMS records, set billsec = 1 so that 
+          # they'll be charged under per-call rating
+          $cdr->billsec(1) if ( $data == 2 );
+        },
     'uniqueid',
     'src',
     'dst', # usually empty for some reason
