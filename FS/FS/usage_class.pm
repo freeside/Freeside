@@ -181,6 +181,19 @@ my %summary_formats = (
     'span'   => [ qw( 1 1 1 1 1 2 ) ],            # unitprices?
     'width'  => [ qw( 4.3cm 1.4cm 2.5cm 2.5cm 1.4cm 1.6cm ) ],# don't like this
     'show'   => 0,
+   },
+  'usage_4col' => { 
+    'label' => [ qw( col1 col2 col3 col4 ) ],
+    'fields' => [
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                ],
+    'align'  => [ qw( l l l l r r ) ],
+    'span'   => [ qw( 1 1 1 1 1 2 ) ],          
+    'width'  => [ qw( 4.3cm 1.4cm 2.5cm 2.5cm ) ],
+    'show'   => 0,
   },
   'usage_7col' => { 
     'label' => [ qw( col1 col2 col3 col4 col5 col6 col7 ) ],

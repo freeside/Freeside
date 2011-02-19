@@ -2546,6 +2546,19 @@ sub print_generic {
     'total_pages'     => 1,
 
   );
+  
+  my $min_sdate = 999999999999;
+  my $max_edate = 0;
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+    next unless $cust_bill_pkg->pkgnum > 0;
+    $min_sdate = $cust_bill_pkg->sdate if $cust_bill_pkg->sdate < $min_sdate;
+    $max_edate = $cust_bill_pkg->edate if $cust_bill_pkg->edate > $max_edate;
+  }
+
+  $invoice_data{'bill_period'} = '';
+  $invoice_data{'bill_period'} = time2str('%e %h', $min_sdate) 
+    . " to " . time2str('%e %h', $max_edate)
+    if ($max_edate != 0 && $min_sdate != 999999999999);
 
   $invoice_data{finance_section} = '';
   if ( $conf->config('finance_pkgclass') ) {
@@ -4173,6 +4186,73 @@ sub _items_svc_phone_sections {
       #$l->{unit_amount} = sprintf( "%.2f", $l->{unit_amount} );
       push @lines, $l;
     }
+  }
+  
+  if($conf->exists('phone_usage_class_summary')) { 
+      # this only works with Latex
+      my @newlines;
+      my @newsections;
+      foreach my $section ( @sections ) {
+	if($section->{'post_total'}) {
+	    $section->{'description'} = 'Calls Summary: '.$section->{'phonenum'};
+	    $section->{'total_line_generator'} = sub { '' };
+	    $section->{'total_generator'} = sub { '' };
+	    $section->{'header_generator'} = sub { '' };
+	    $section->{'description_generator'} = '';
+	    push @newsections, $section;
+	    my %calls_detail = %$section;
+	    $calls_detail{'post_total'} = '';
+	    $calls_detail{'sort_weight'} = '';
+	    $calls_detail{'description_generator'} = sub { '' };
+	    $calls_detail{'header_generator'} = sub {
+		return ' & Date/Time & Called Number & Duration & Price'
+		    if $format eq 'latex';
+		'';
+	    };
+	    $calls_detail{'description'} = 'Calls Detail: '
+						    . $section->{'phonenum'};
+	    push @newsections, \%calls_detail;	
+	}
+      }
+      foreach my $newsection ( @newsections ) {
+	if($newsection->{'post_total'}) {
+	    foreach my $section ( @sections ) {
+		next unless ($section->{'phonenum'} eq $newsection->{'phonenum'} 
+				&& !$section->{'post_total'});
+		my $newdesc = $section->{'description'};
+		my $tn = $section->{'phonenum'};
+		$newdesc =~ s/$tn//g;
+		my $line = {  ext_description => [],
+			      pkgnum => '',
+			      ref => '',
+			      quantity => '',
+			      calls => $section->{'calls'},
+			      section => $newsection,
+			      duration => $section->{'duration'},
+			      description => $newdesc,
+			      amount => $section->{'amount'},
+			      product_code => 'N/A',
+			    };
+		push @newlines, $line;
+	    }
+	}
+      }
+      foreach my $newsection ( @newsections ) {
+	if(!$newsection->{'post_total'}) {
+	    foreach my $line ( @lines ) {
+		next unless (scalar(@{$line->{'ext_description'}}) &&
+			$line->{'section'}->{'phonenum'} eq $newsection->{'phonenum'}
+			    );
+		my @extdesc = @{$line->{'ext_description'}};
+		my $extdesc = $extdesc[0];
+		$extdesc =~ s/scriptsize/normalsize/g if $format eq 'latex';
+		$line->{'ext_description'} = [ $extdesc ];
+		$line->{'section'} = $newsection;
+		push @newlines, $line;
+	    }
+	}
+      }
+      return(\@newsections, \@newlines);
   }
 
   return(\@sections, \@lines);

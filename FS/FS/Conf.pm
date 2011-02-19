@@ -1270,6 +1270,13 @@ and customer address. Include units.',
   },
 
   { 
+    'key'         => 'phone_usage_class_summary',
+    'section'     => 'invoicing',
+    'description' => 'Summarize usage per DID by usage class and display all CDRs together regardless of usage class. Only valid when svc_phone_sections is enabled.',
+    'type'        => 'checkbox',
+  },
+
+  { 
     'key'         => 'svc_phone_sections',
     'section'     => 'invoicing',
     'description' => 'Create a section for each svc_phone when enabled.  Only valid when invoice_sections is enabled.',
