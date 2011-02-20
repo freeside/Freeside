@@ -13,7 +13,7 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 #you can skip this by not having a NetworkMonitoringSystem configured
-use FS::Cron::nms qw(nms_report);
+use FS::Cron::nms_report qw(nms_report);
 nms_report(%opt);
 
 #you can skip this by setting the disable_cron_billing config
