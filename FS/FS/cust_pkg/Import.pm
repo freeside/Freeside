@@ -170,8 +170,9 @@ sub batch_import {
   my $format = delete $opt->{'format'};
   my @fields = ();
 
-  if ( $format =~ /^(.*)-agent_custid$/ ) {
+  if ( $format =~ /^(.*)-agent_custid(-agent_pkgid)?$/ ) {
     $format = $1;
+    my $agent_pkgid = $2;
     @fields = (
       sub {
         my( $self, $value ) = @_; # $conf, $param
@@ -182,6 +183,7 @@ sub batch_import {
         $self->custnum($cust_main->custnum) if $cust_main;
       },
     );
+    push @fields, 'agent_pkgid' if $agent_pkgid;
   } else {
     @fields = ( 'custnum' );
   }

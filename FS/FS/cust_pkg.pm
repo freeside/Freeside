@@ -594,6 +594,7 @@ sub check {
     || $self->ut_numbern('adjourn')
     || $self->ut_numbern('expire')
     || $self->ut_enum('no_auto', [ '', 'Y' ])
+    || $self->ut_numbern('agent_pkgid')
   ;
   return $error if $error;
 
