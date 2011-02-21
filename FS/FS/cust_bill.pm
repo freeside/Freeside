@@ -4230,7 +4230,7 @@ sub _items_svc_phone_sections {
 			      section => $newsection,
 			      duration => $section->{'duration'},
 			      description => $newdesc,
-			      amount => $section->{'amount'},
+			      amount => sprintf("%.2f",$section->{'amount'}),
 			      product_code => 'N/A',
 			    };
 		push @newlines, $line;
