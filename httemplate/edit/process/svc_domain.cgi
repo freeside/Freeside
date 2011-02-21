@@ -46,6 +46,11 @@ my $new = new FS::svc_domain ( {
   } ( fields('svc_domain'), qw( pkgnum svcpart action ) )
 } );
 
+# trim leading and trailing whitespace to avoid errors caused by pasting into UI
+my $domain = $new->domain;
+$domain =~ s/^\s+|\s+$//g;
+$new->domain($domain);
+
 my $error = '';
 if ($cgi->param('svcnum')) {
   $error  = $new->replace();
