@@ -1,4 +1,4 @@
-packages FS::Cron::nms_report;
+package FS::Cron::nms_report;
 
 use strict;
 use base 'Exporter';
