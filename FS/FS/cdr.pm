@@ -525,6 +525,10 @@ my %export_names = (
     'invoice_header' => "Date,Time,Called From,Destination,Duration,Price",
                        #"Date,Time,Name,Called From,Destination,Duration,Price",
   },
+  'basic' => {
+    'name'           => 'Basic',
+    'invoice_header' => "Date/Time,Called Number,Min/Sec,Price",
+  },
   'default' => {
     'name'           => 'Default',
     'invoice_header' => 'Date,Time,Number,Destination,Duration,Price',
@@ -583,6 +587,12 @@ sub export_formats {
       'dst',                                           #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
+    ],
+    'basic' => [
+      sub { time2str('%d %b - %I:%M %p', shift->calldate_unix) },
+      'dst',
+      $duration_sub,
       sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
     ],
     'default' => [
