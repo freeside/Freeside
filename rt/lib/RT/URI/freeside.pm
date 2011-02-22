@@ -83,6 +83,15 @@ A wrapper for the FS::cust_main::smart_search subroutine.
 sub smart_search { return undef; }
 
 
+=item email_search
+
+A wrapper for the FS::cust_main::email_search subroutine.
+
+=cut
+
+sub email_search { return undef; }
+
+
 =item small_custview
 
 A wrapper for the FS::CGI::small_custview subroutine.

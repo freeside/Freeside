@@ -81,6 +81,7 @@ use RT::Transactions;
 use RT::Reminders;
 use RT::URI::fsck_com_rt;
 use RT::URI;
+use RT::URI::freeside;
 use MIME::Entity;
 
 
