@@ -4192,6 +4192,9 @@ sub _items_svc_phone_sections {
       # this only works with Latex
       my @newlines;
       my @newsections;
+
+      # after this, we'll have only two sections per DID:
+      # Calls Summary and Calls Detail
       foreach my $section ( @sections ) {
 	if($section->{'post_total'}) {
 	    $section->{'description'} = 'Calls Summary: '.$section->{'phonenum'};
@@ -4214,8 +4217,11 @@ sub _items_svc_phone_sections {
 	    push @newsections, \%calls_detail;	
 	}
       }
+
+      # after this, each usage class is collapsed/summarized into a single
+      # line under the Calls Summary section
       foreach my $newsection ( @newsections ) {
-	if($newsection->{'post_total'}) {
+	if($newsection->{'post_total'}) { # this means Calls Summary
 	    foreach my $section ( @sections ) {
 		next unless ($section->{'phonenum'} eq $newsection->{'phonenum'} 
 				&& !$section->{'post_total'});
@@ -4237,21 +4243,27 @@ sub _items_svc_phone_sections {
 	    }
 	}
       }
+
+      # after this, Calls Details is populated with all CDRs
       foreach my $newsection ( @newsections ) {
-	if(!$newsection->{'post_total'}) {
+	if(!$newsection->{'post_total'}) { # this means Calls Details
 	    foreach my $line ( @lines ) {
 		next unless (scalar(@{$line->{'ext_description'}}) &&
 			$line->{'section'}->{'phonenum'} eq $newsection->{'phonenum'}
 			    );
 		my @extdesc = @{$line->{'ext_description'}};
-		my $extdesc = $extdesc[0];
-		$extdesc =~ s/scriptsize/normalsize/g if $format eq 'latex';
-		$line->{'ext_description'} = [ $extdesc ];
+		my @newextdesc;
+		foreach my $extdesc ( @extdesc ) {
+		    $extdesc =~ s/scriptsize/normalsize/g if $format eq 'latex';
+		    push @newextdesc, $extdesc;
+		}
+		$line->{'ext_description'} = \@newextdesc;
 		$line->{'section'} = $newsection;
 		push @newlines, $line;
 	    }
 	}
       }
+
       return(\@newsections, \@newlines);
   }
 
