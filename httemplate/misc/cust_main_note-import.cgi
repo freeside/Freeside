@@ -39,24 +39,22 @@
     custnum_obj.style.backgroundColor = '#dddddd';
 
 
-    //alert('search for custnum ' + custnum + ', row#' + searchrow );
+    function search_custnum_update(customers) {
 
-    function search_custnum_update(name) {
-
-      var name = eval('(' + name + ')' );
+      var customerArray = eval('(' + customers + ')');
 
       custnum_obj.disabled = false;
       custnum_obj.style.backgroundColor = '#ffffff';
 
-      if ( name.length > 0 ) {
-        //alert('custnum found: ' + name);
+      if ( customerArray.length == 0 )  {
+        custnum_obj.value = 'Not found';
+        custnum_obj.style.color = '#ff0000';
+      } else if ( customerArray.length == 3 ) {
+	var name = customerArray[1];
         opt(customer_select,custnum,name,'#000000');
         customer_select.selectedIndex = customer_select.length - 1;
         custnum_obj.value = custnum;
         name_obj.value = name;
-      } else {
-        custnum_obj.value = 'Not found';
-        custnum_obj.style.color = '#ff0000';
       }
 
     }

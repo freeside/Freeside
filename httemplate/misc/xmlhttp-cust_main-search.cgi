@@ -1,24 +1,11 @@
-% if ( $sub eq 'custnum_search' ) {
-% 
+% if ( $sub eq 'custnum_search' ) { 
 %   my $custnum = $cgi->param('arg');
-%   my $cust_main = '';
-%   if ( $custnum =~ /^(\d+)$/ and $1 <= 2147483647 ) {
-%     $cust_main = qsearchs({
-%       'table'   => 'cust_main',
-%       'hashref' => { 'custnum' => $1 },
-%       'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
-%     });
+%   my $return = [];
+%   if ( $custnum =~ /^(\d+)$/ ) {
+%	$return = findbycustnum($1,0);
+%   	$return = findbycustnum($1,1) if(!scalar(@$return));
 %   }
-%   if ( ! $cust_main ) {
-%     $cust_main = qsearchs({
-%       'table'   => 'cust_main',
-%       'hashref' => { 'agent_custid' => $custnum },
-%       'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
-%     });
-%   }
-%     
-"<% $cust_main ? $cust_main->name : '' %>"
-%
+<% objToJson($return) %>
 % } elsif ( $sub eq 'smart_search' ) {
 %
 %   my $string = $cgi->param('arg');
@@ -32,15 +19,7 @@
 %
 %   my $string = $cgi->param('arg');
 %   my $inv = qsearchs('cust_bill', { 'invnum' => $string });
-%   my $return = [];
-%   if ( $inv ) {
-%   	my $cust_main = qsearchs({
-%       	'table'   => 'cust_main',
-%       	'hashref' => { 'custnum' => $inv->custnum },
-%       	'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
-%     		});
-%   	$return = [ $cust_main->custnum, $cust_main->name, $cust_main->balance ];
-%   }
+%   my $return = $inv ? findbycustnum($inv->custnum,0) : [];
 <% objToJson($return) %>
 % } 
 <%init>
@@ -49,4 +28,18 @@ my $conf = new FS::Conf;
 
 my $sub = $cgi->param('sub');
 
+sub findbycustnum{
+    my $custnum = shift;
+    my $agent = shift;
+    my $hashref = { 'custnum' => $custnum };
+    $hashref = { 'agent_custid' => $custnum } if $agent;
+    my $cust_main = qsearchs({
+       	'table'   => 'cust_main',
+       	'hashref' => $hashref,
+       	'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+     		});
+   return [ $cust_main->custnum, $cust_main->name, $cust_main->balance ] 
+	if $cust_main;
+   [];
+}
 </%init>

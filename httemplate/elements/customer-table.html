@@ -180,29 +180,36 @@ Example:
     var balance = document.getElementById('balance'+searchrow);
     balance.value = '';
 
-    function search_custnum_update(name) {
+    function search_custnum_update(customers) {
 
-      var name = eval('(' + name + ')' );
+      var customerArray = eval('(' + customers + ')');
 
       customer.disabled = false;
       customer.style.backgroundColor = '#ffffff';
+      
+      if ( customerArray.length == 0 ) {
 
-      if ( name.length > 0 ) {
-        customer.value = name;
-        customer.setAttribute('magic', 'nosearch');
-% if ( $opt{custnum_update_callback} ) {
-        <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
-% }
-      } else {
-        customer.value = 'Not found';
+	customer.value = 'Not found';
         customer.style.color = '#ff0000';
         custnum_obj.style.color = '#ff0000';
 
-      }
+      } else if ( customerArray.length == 3 ) {
 
+        custnum_obj.value = customerArray[0];
+        custnum_obj.style.color = '#000000';
+        customer.value = customerArray[1];
+        balance.value = customerArray[2];
+
+        customer.style.display = '';
+        customer_select.style.display = 'none';
+
+% if ( $opt{custnum_update_callback} ) {
+        <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+% }
+      }
     }
 
-    custnum_search( custnum, search_custnum_update );
+    custnum_search(custnum, search_custnum_update );
 
   }
 
@@ -280,7 +287,7 @@ Example:
 
         //add the multiple customers
         for ( var s = 0; s < customerArray.length; s++ )
-          opt(customer_select, customerArray[s][0], customerArray[s][1], '#000000');
+          opt(customer_select, customerArray[s][0] + '_' + customerArray[s][2], customerArray[s][1], '#000000');
 
         opt(customer_select, 'cancel', '(Edit search string)', '#000000');
 
@@ -298,16 +305,17 @@ Example:
 
   function select_customer() {
 
-    var custnum = this.options[this.selectedIndex].value;
+    var custnum_balance = this.options[this.selectedIndex].value;
     var customer = this.options[this.selectedIndex].text;
 
     var searchrow = this.getAttribute('rownum');
     var custnum_obj = document.getElementById('custnum'+searchrow);
     var customer_obj = document.getElementById('customer'+searchrow);
+    var balance_obj = document.getElementById('balance'+searchrow);
 
-    if ( custnum == '' ) {
+    if ( custnum_balance == '' ) {
 
-    } else if ( custnum == 'cancel' ) {
+    } else if ( custnum_balance == 'cancel' ) {
 
       custnum_obj.value = '';
       custnum_obj.style.color = '#000000';
@@ -317,12 +325,17 @@ Example:
       customer_obj.focus();
 
     } else {
+    
+      var custnum = custnum_balance.substring(0,custnum_balance.indexOf('_'));
+      var balance = custnum_balance.substring(custnum_balance.indexOf('_')+1);
 
       custnum_obj.value = custnum;
       custnum_obj.style.color = '#000000';
 
       customer_obj.value = customer;
       customer_obj.style.color = '#000000';
+
+      balance_obj.value = balance;
 
       this.style.display = 'none';
       customer_obj.style.display = '';
