@@ -20,18 +20,12 @@ use FS::svc_domain;
 use FS::cust_pkg;
 
 my $DANGEROUS = 0;
-my $DRY = 1;
+my $DRY = 0;
 
-# XXX: use SSL for real version
-my $source_datasrc = '';
-my $source_user = '';
+my $source_datasrc = 'dbi:Pg:dbname=benson';
+
+my $source_user = 'freeside';
 my $source_pw = '';
-
-#### MANUAL ####
-# 1. Destination agent must be created with correct agentnum
-# 2. Destination refnum must be created as per below
-# 3. System domain must be created appropriately
-#####
 
 my $dest_agentnum = 3;
 my $src_agentnum = 1;
@@ -41,14 +35,13 @@ my %domsvc_map = (
   2 => 10375,
 );
 
-# XXX
 my %eventparts = (
- # 'CARD' => [ 1, ],
- # 'CHEK' => [ 2, ],
- # 'BILL' => [ 5, ],
- # 'DCHK' => [ 12, ],
- # 'DCRD' => [ 15, ],
- # 'COMP' => [],
+ 'CARD' => [ 13, 14, 15 ],
+ 'CHEK' => [],
+ 'BILL' => [ 13, ],
+ 'DCHK' => [],
+ 'DCRD' => [ 13, ],
+ 'COMP' => [],
 );
 
 #--
