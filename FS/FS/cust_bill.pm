@@ -2551,8 +2551,10 @@ sub print_generic {
   my $max_edate = 0;
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
     next unless $cust_bill_pkg->pkgnum > 0;
-    $min_sdate = $cust_bill_pkg->sdate if $cust_bill_pkg->sdate < $min_sdate;
-    $max_edate = $cust_bill_pkg->edate if $cust_bill_pkg->edate > $max_edate;
+    $min_sdate = $cust_bill_pkg->sdate
+      if length($cust_bill_pkg->sdate) && $cust_bill_pkg->sdate < $min_sdate;
+    $max_edate = $cust_bill_pkg->edate
+      if length($cust_bill_pkg->edate) && $cust_bill_pkg->edate > $max_edate;
   }
 
   $invoice_data{'bill_period'} = '';
