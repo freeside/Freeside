@@ -3,7 +3,7 @@ package FS::part_event::Action::suspend;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description { 'Suspend'; }
+sub description { 'Suspend all of this customer\'s packages'; }
 
 sub option_fields {
   ( 
