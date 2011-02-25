@@ -35,14 +35,14 @@ with row headers showing the region name and prefixes.
 %     $region = $r;
 %     foreach ($r->regionname, $r->prefixes_short) {
   <TD>
-    <A HREF="<% $p.'edit/rate_region.cgi?'.$r->regionnum %>"><% $_ %></A>
+    <A HREF="<% $p.'edit/rate_region.cgi?regionnum='.$r->regionnum %>"><% $_ %></A>
   </TD>
 %     }
 %   }
 %   elsif ( !$opt{'ratenum'} ) {
 %     $rate = $r;
   <TD>
-    <A HREF="<% $p.'edit/rate.cgi?'.$r->ratenum %>"><% $r->ratename %></A>
+    <A HREF="<% $p.'edit/rate.cgi?ratenum='.$r->ratenum %>"><% $r->ratename %></A>
   </TD>
 %   }
 %   foreach my $rate_time (@rate_time, '') {
@@ -57,11 +57,12 @@ with row headers showing the region name and prefixes.
       <% granularity_detail($detail) %>
       <% min_included_detail($detail) %>
       <% conn_charge_detail($detail) %>
-      <TR><TD><% $rate_time ? delete_link($detail) : '' %></TD></TR>
+      <TR><TD><% ( $rate_time || $cdrtypenum ) ? delete_link($detail) : '' %>
+      </TD></TR>
     </TABLE>
 %     }
 %     else { #!$detail
-    <% add_link($rate, $region, $rate_time) %>
+    <% add_link($rate, $region, $rate_time, $cdrtypenum) %>
 %     }
 %     $col++;
   </TD>
@@ -98,16 +99,16 @@ sub edit_link {
 }
 
 sub add_link {
-  my ($rate, $region, $rate_time) = @_;
+  my ($rate, $region, $rate_time, $cdrtypenum) = @_;
   '<A HREF="javascript:void(0);" onclick="'.
   include( '/elements/popup_link_onclick.html',
              'action'      => "${p}edit/rate_detail.html?ratenum=".
                                   $rate->ratenum.
                                ';dest_regionnum='.
                                   $region->regionnum.
-                               ($rate_time ? 
-                                 ';ratetimenum='.$rate_time->ratetimenum :
-                                 ''),
+                               ';ratetimenum='.
+                                 ($rate_time ? $rate_time->ratetimenum : '').
+                               ";cdrtypenum=$cdrtypenum",
              'actionlabel' => 'Add rate',
              'height'      => 420,
              ).'">'.small('(add)').'</A>'
@@ -172,6 +173,7 @@ die "access denied"
 my %opt = @_;
 my $ratenum = $opt{'ratenum'} || '';
 my $regionnum = $opt{'regionnum'} || '';
+my $cdrtypenum = $opt{'cdrtypenum'} || '';
 
 # either of these, if the $opt isn't passed, will be set to the 
 # correct object when generating each row.
@@ -214,6 +216,7 @@ if ( $ratenum ) {
      push @details, [ map { qsearchs('rate_detail', 
                                       { 'ratenum'        => $ratenum,
                                         'dest_regionnum' => $region->regionnum,
+                                        'cdrtypenum'     => $cdrtypenum,
                                         'ratetimenum'    => $_ } ) or ''
                           } @rtns
                     ];
@@ -227,6 +230,7 @@ elsif ( $regionnum ) {
     push @details, [ map { qsearchs('rate_detail',
                                      { 'ratenum'        => $rate->ratenum,
                                        'dest_regionnum' => $regionnum,
+                                       'cdrtypenum'     => $cdrtypenum,
                                        'ratetimenum'    => $_ } ) or ''
                          } @rtns
                    ];
