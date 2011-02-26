@@ -72,7 +72,7 @@ sub port_graphs_link {
     # hardcoded for 'main' tree for now 
     my $self = shift;
     my $serviceid = shift;
-    my $hash = $self->get_router_serviceids(undef,$serviceid);
+    my $hash = $self->get_router_serviceids(undef,$serviceid) or return '';
     my @keys = keys %$hash; # yeah this is weird...
     my $host = $keys[0];
     my $iface = $hash->{$keys[0]};
@@ -205,7 +205,6 @@ sub _torrus_newddx {
   print $new $ddx;
   close $new;
 
-  # `date ...` created file names with weird chars in them
   my $tmpname = $ddxfile . Date::Format::time2str('%Y%m%d%H%M%S',time);
   rename("$ddxfile", $tmpname) or die $!;
   rename("$ddxfile.new", $ddxfile) or die $!;
@@ -216,7 +215,8 @@ sub _torrus_newddx {
 sub _torrus_reload {
   my($self) = @_;
 
-  #i should use IPC::Run and have better error checking
+  #i should use IPC::Run and have better error checking (commands are silent
+  # for success, or output errors)
 
   system('torrus', 'devdiscover', "--in=$ddxfile");
 
