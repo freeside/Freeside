@@ -39,7 +39,8 @@ my $html_foot = sub {
     my $graph = '';
 
     my $nms = new FS::NetworkMonitoringSystem;
-    my $link = $nms->port_graphs_link($svc_port->serviceid);
+    my $url = $nms->port_graphs_link($svc_port->serviceid);
+    my $link = $url ? qq(<A HREF="$url">Torrus Graphs</A><BR><BR>) : '';
 
     if($start && $end) {
 	$graph = "<BR><BR><IMG SRC=${p}/view/port_graph.html?svcnum=$svcnum;".
@@ -55,7 +56,7 @@ my $html_foot = sub {
     </script>
     <FORM ACTION=? METHOD="GET">
     <INPUT TYPE="HIDDEN" NAME="svcnum" VALUE="'.$svcnum.'">
-    <A HREF="'.$link.'">Torrus Graphs</A><BR><BR>
+    '.$link.'
     <B>Bandwidth Graph</B><BR>
 &nbsp; '.preset_range($default_start,$default_end,'Last Day',$date_format)
     .' | '.preset_range($default_end-86400*7,$default_end,'Last Week',$date_format)
