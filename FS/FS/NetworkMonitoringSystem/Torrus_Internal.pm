@@ -132,9 +132,13 @@ sub add_interface {
 
   #should just use a proper XML parser huh
 
+  my @ddx = split(/\n/, $self->_torrus_loadddx);
+
+  die "Torrus Service ID $serviceid in use\n"
+    if grep /^\s*$serviceid:/, @ddx;
+
   my $newline = "     $serviceid:$interface:Both:main,";
 
-  my @ddx = split(/\n/, $self->_torrus_loadddx);
   my $new = '';
 
   my $added = 0;
@@ -149,10 +153,10 @@ sub add_interface {
 
         while ( my $paramline = shift(@ddx) ) {
           if ( $paramline =~ /^\s*<\/param>/ ) {
-            $new .= "$newline\n$paramline";
+            $new .= "$newline\n$paramline\n";
             last; #paramline
           } else {
-            $new .= $paramline;
+            $new .= "$paramline\n";
           }
         }
 
@@ -165,7 +169,7 @@ sub add_interface {
             qq(     $newline\n").
             qq(   </param>\n);
         }
-        $new .= $hostline;
+        $new .= "$hostline\n";
         last; #hostline
       }
  
@@ -212,7 +216,7 @@ sub _torrus_newddx {
 sub _torrus_reload {
   my($self) = @_;
 
-  #i should have better error checking
+  #i should use IPC::Run and have better error checking
 
   system('torrus', 'devdiscover', "--in=$ddxfile");
 
