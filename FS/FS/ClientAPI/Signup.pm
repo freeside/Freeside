@@ -317,40 +317,38 @@ sub signup_info {
   if ( $agentnum ) {
 
     warn "$me setting agent-specific payment flag\n" if $DEBUG > 1;
-    my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+    my $agent = qsearchs('agent', { 'agentnum' => $agentnum } )
+      or return { 'error' => "Self-service agent #$agentnum does not exist" };
     warn "$me has agent $agent\n" if $DEBUG > 1;
-    if ( $agent ) { #else complain loudly?
-      $signup_info->{'hide_payment_fields'} = [];
-      my $gatewaynum = $conf->config('selfservice-payment_gateway');
-      if ( $gatewaynum ) {
-        my $pg = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
-        die "configured gatewaynum $gatewaynum not found!" if !$pg;
-        my $hide = $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
-        $signup_info->{'hide_payment_fields'} = [
-          map { $hide } @{$signup_info->{'payby'}}
-        ];
-      }
-      else {
-        foreach my $payby (@{$signup_info->{payby}}) {
-          warn "$me checking $payby payment fields\n" if $DEBUG > 1;
-          my $hide = 0;
-          if ( FS::payby->realtime($payby) ) {
-            my $payment_gateway =
-              $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
-                                       'nofatal' => 1,
-                                     );
-            if ( $payment_gateway
-                   && $payment_gateway->gateway_namespace
-                        eq 'Business::OnlineThirdPartyPayment'
-               ) {
-              warn "$me hiding $payby payment fields\n" if $DEBUG > 1;
-              $hide = 1;
-            }
-          }
-          push @{$signup_info->{'hide_payment_fields'}}, $hide;
-        } # foreach $payby
-      }
+    my @paybys = @{ $signup_info->{'payby'} };
+    $signup_info->{'hide_payment_fields'} = [];
+
+    my $gatewaynum = $conf->config('selfservice-payment_gateway');
+    my $force_gateway;
+    if ( $gatewaynum ) {
+      $force_gateway = qsearchs('payment_gateway', { gatewaynum => $gatewaynum });
+      warn "using forced gateway #$gatewaynum - " .
+        $force_gateway->gateway_username . '@' . $force_gateway->gateway_module
+        if $DEBUG > 1;
+      die "configured gatewaynum $gatewaynum not found!" if !$force_gateway;
     }
+    foreach my $payby (@paybys) {
+      warn "$me checking $payby payment fields\n" if $DEBUG > 1;
+      my $hide = 0;
+      if ( FS::payby->realtime($payby) ) {
+        my $gateway = $force_gateway || 
+          $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
+                                   'nofatal' => 1,
+                                 );
+        if ( $gateway && $gateway->gateway_namespace
+                    eq 'Business::OnlineThirdPartyPayment'
+           ) {
+          warn "$me hiding $payby payment fields\n" if $DEBUG > 1;
+          $hide = 1;
+        }
+      }
+      push @{$signup_info->{'hide_payment_fields'}}, $hide;
+    } # foreach $payby
     warn "$me done setting agent-specific payment flag\n" if $DEBUG > 1;
 
     warn "$me setting agent-specific package list\n" if $DEBUG > 1;
