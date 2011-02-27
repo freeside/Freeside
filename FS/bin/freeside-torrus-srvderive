@@ -67,7 +67,6 @@ while (1) {
     $sth->execute($serviceid, $serviceid) or die $sth->errstr;
     my $prev = 0;
     while ( my $row = $sth->fetchrow_arrayref ) {
-      $found++;
       my( $srv_date, $srv_time ) = @$row;
       my $cur = str2time( "$srv_date $srv_time" );
       next if $cur-$prev <= 60;
@@ -75,6 +74,7 @@ while (1) {
       
       warn "no $serviceid for $srv_date $srv_time; adding\n"
         if $DEBUG;
+      $found++;
 
       my @serviceids = $torrus_srvderive->component_serviceids;
 
@@ -113,7 +113,7 @@ while (1) {
 
 
   myexit() if sigterm() || sigint();
-  sleep 60; # unless $found;
+  sleep 60 unless $found;
 }
 
 sub _shouldrun {
