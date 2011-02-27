@@ -71,6 +71,7 @@ while (1) {
       my( $srv_date, $srv_time ) = @$row;
       my $cur = str2time( "$srv_date $srv_time" );
       next if $cur-$prev <= 60;
+      last if time - $cur <= 300;
       
       warn "no $serviceid for $srv_date $srv_time; adding\n"
         if $DEBUG;
@@ -82,7 +83,7 @@ while (1) {
         my $sin = join(',', map dbh->quote("$_$dir"), @serviceids);
 
         my $sum = "
-          SELECT SUM(value) FROM srvexport AS other
+          SELECT COALESCE(SUM(value),0) FROM srvexport AS other
             WHERE other.serviceid IN ($sin)
               AND ABS( $cur - $other_date ) <= 60
         ";
