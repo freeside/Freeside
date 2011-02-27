@@ -93,14 +93,16 @@ while (1) {
           INSERT INTO srvexport ( srv_date, srv_time, serviceid, value, intvl )
             VALUES ( ?, ?, ?, ($sum), ? )
         ";
+        my @param = ( time2str('%Y-%m-%d', $cur), #srv_date
+                      time2str('%X', $cur),       #srv_time
+                      $serviceid,
+                      300, #intvl ... 
+                    );
+        warn $isql. ' with param '. @param. "\n"
+          if $DEBUG;
 
         my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
-        $isth->execute( time2str('%Y-%m-%d', $cur), #srv_date
-                        time2str('%X', $cur),       #srv_time
-                        $serviceid,
-                        300, #intvl ... 
-                      )
-          or die $isth->errstr;
+        $isth->execute( @param )i      or die $isth->errstr;
                         
       }
 
