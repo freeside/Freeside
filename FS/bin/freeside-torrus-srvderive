@@ -68,6 +68,8 @@ while (1) {
       warn "no $serviceid for $srv_date $srv_time; adding\n"
         if $DEBUG;
 
+
+      $prev = $cur;
     }
 
   }
