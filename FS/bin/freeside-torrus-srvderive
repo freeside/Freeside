@@ -2,6 +2,7 @@
 
 use strict;
 use Date::Parse;
+use Date::Format;
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw( adminsuidsetup dbh driver_name );
 use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
@@ -39,6 +40,8 @@ my $other_date = concat_sql([ 'other.srv_date', "' '", 'other.srv_time' ]);
 $other_date = "CAST( $other_date AS TIMESTAMP )" if driver_name =~ /^Pg/i;
 $other_date = str2time_sql. $other_date.  str2time_sql_closing;
 
+my $within = ABS( $_date - $other_date ) <= 60;
+
 my $in  = concat_sql([ '?', "'_IN'" ]);
 my $out = concat_sql([ '?', "'_OUT'" ]);
 
@@ -47,10 +50,10 @@ my $sql = "
     WHERE NOT EXISTS (
                        SELECT 1 FROM srvexport AS other
                          WHERE other.serviceid IN ( $in, $out )
-                           AND ABS( $_date - $other_date ) <= 60
+                           AND $within
                      )
-    ORDER BY id
-    LIMIT 10
+    ORDER BY srv_date, srv_time
+    LIMIT 100
 ";
 
 while (1) {
@@ -74,6 +77,32 @@ while (1) {
       warn "no $serviceid for $srv_date $srv_time; adding\n"
         if $DEBUG;
 
+      my @serviceids = $torrus_srvderive->component_serviceids;
+
+      for my $dir ('_IN', '_OUT') {
+
+        my $sin = join(',', map dbh->quote("$_$dir"), @serviceids);
+
+        my $sum = "
+          SELECT SUM(value) FROM srvexport AS other
+            WHERE other.serviceid IN ($sin)
+              AND $within
+        ";
+
+        my $isql = "
+          INSERT INTO srvexport ( srv_date, srv_time, serviceid, value, intvl )
+            VALUES ( ?, ?, ?, ($sum), ? )
+        ";
+
+        my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
+        $isth->execute( time2str('%Y-%m-%d', $cur), #srv_date
+                        time2str('%X', $cur),       #srv_time
+                        $serviceid,
+                        300, #intvl ... 
+                      )
+          or die $isth->errstr;
+                        
+      }
 
       $prev = $cur;
     }
@@ -82,7 +111,7 @@ while (1) {
 
 
   myexit() if sigterm() || sigint();
-  sleep 60 unless $found;
+  sleep 60; # unless $found;
 }
 
 sub _shouldrun {
