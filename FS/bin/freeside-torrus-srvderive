@@ -102,7 +102,7 @@ while (1) {
           if $DEBUG;
 
         my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
-        $isth->execute( @param )i      or die $isth->errstr;
+        $isth->execute( @param )       or die $isth->errstr;
                         
       }
 
