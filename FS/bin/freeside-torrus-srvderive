@@ -86,7 +86,7 @@ while (1) {
     ";
 
     warn $ssql if $DEBUG > 1;
-    my $sth = dbh->prepare($sql) or die $DBI::errstr; #better recovery?
+    my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery?
     $sth->execute($serviceid, $serviceid) or die $sth->errstr;
     my $prev = 0;
     while ( my $row = $sth->fetchrow_arrayref ) {
