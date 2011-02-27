@@ -1,0 +1,108 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Date::Parse;
+use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
+use FS::UID qw( adminsuidsetup dbh driver_name );
+use FS::Record qw( qsearch str2time_sql str2time_sql_closing );
+use FS::torrus_srvderive;
+
+our $DEBUG = 1;
+
+my $user = shift or die &usage;
+$FS::Daemon::PID_NEWSTYLE = 1;
+daemonize1('freeside-torrus-srvderive');
+
+drop_root();
+
+adminsuidsetup($user);
+
+logfile( "%%%FREESIDE_LOG%%%/torrus-srvderive-log.". $FS::UID::datasrc );
+
+daemonize2();
+
+our $conf = new FS::Conf;
+
+die "not running: network_monitoring_system not Torrus_Internal\n"
+  unless _shouldrun();
+
+#--
+
+my $str2time = str2time_sql();
+my $c = str2time_sql_closing();
+
+my $_date = concat_sql([ 'srvexport.srv_date', "' '", 'srvexport.srv_time' ]);
+$_date = "CAST( $_date AS TIMESTAMP )" if driver_name =~ /^Pg/i;
+$_date = str2time_sql. $_date.  str2time_sql_closing;
+
+my $other_date = concat_sql([ 'other.srv_date', "' '", 'other.srv_time' ]);
+$other_date = "CAST( $other_date AS TIMESTAMP )" if driver_name =~ /^Pg/i;
+$other_date = str2time_sql. $other_date.  str2time_sql_closing;
+
+my $sql = "
+  SELECT DISTINCT srv_date, srv_time FROM srvexport
+    WHERE NOT EXISTS (
+                       SELECT 1 FROM srvexport AS other
+                         WHERE other.serviceid IN ( ?||'_IN', ?||'_OUT')
+                           AND ABS( $_date - $other_date ) <= 60
+                     )
+    ORDER BY id
+";
+
+while (1) {
+
+  #my $found = 0;
+
+  foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
+
+    my $serviceid = $torrus_srvderive->serviceid;
+
+    my $sth = dbh->prepare($sql) or die $DBI::errstr; #better recovery?
+    $sth->execute($serviceid, $serviceid) or die $sth->errstr;
+    my $prev = 0;
+    while ( my $row = $sth->fetchrow_arrayref ) {
+      my( $srv_date, $srv_time ) = @$row;
+      my $cur = str2time( "$srv_date $srv_time" );
+      next if $cur-$prev <= 60;
+      
+      warn "no $serviceid for $srv_date $srv_time; adding\n"
+        if $DEBUG;
+
+    }
+
+  }
+
+
+  myexit() if sigterm() || sigint();
+  sleep 60; #unless $found
+}
+
+sub _shouldrun {
+     $conf->exists('network_monitoring_system')
+  && $conf->config('network_monitoring_system') eq 'Torrus_Internal';
+}
+
+sub usage { 
+  die "Usage:\n\n  freeside-cdrrewrited user\n";
+}
+
+
+=head1 NAME
+
+freeside-torrus-srvderive - Freeside's Torrus virtual port daemon.
+
+=head1 SYNOPSIS
+
+  freeside-torrus-srvderive
+
+=head1 DESCRIPTION
+
+Runs continuously, searches for samples in the srvexport table which do not
+have an entry for combined virtual ports, and adds them.
+
+=head1 SEE ALSO
+
+=cut
+
+1;
+

@@ -23,6 +23,7 @@ bin/freeside-setup
 bin/freeside-sqlradius-radacctd
 bin/freeside-sqlradius-reset
 bin/freeside-sqlradius-seconds
+bin/freeside-torrus-srvderive
 FS.pm
 FS/AccessRight.pm
 FS/CGI.pm
