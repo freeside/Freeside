@@ -51,7 +51,7 @@ my $sql = "
                            AND ABS( $_date - $other_date ) <= 60
                      )
     ORDER BY srv_date, srv_time
-    LIMIT 100
+    LIMIT 1
 ";
 
 while (1) {
