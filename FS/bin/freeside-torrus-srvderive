@@ -51,9 +51,13 @@ my $sql = "
                            AND srvexport.srv_date = other.srv_date
                            AND ABS( $_date - $other_date ) <= 60
                      )
+";
+
+my $orderlimit = "
     ORDER BY srv_date, srv_time
     LIMIT 100
 ";
+
 
 while (1) {
 
@@ -62,6 +66,24 @@ while (1) {
   foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
 
     my $serviceid = $torrus_srvderive->serviceid;
+
+    my @serviceids = $torrus_srvderive->component_serviceids;
+
+    my @in = ();
+    for my $dir ('_IN', '_OUT') {
+      push @in, map dbh->quote("$_$dir"), @serviceids;
+    }
+    my $in = join(',', @in);
+
+    my $ssql = "
+      $sql AND EXISTS (
+                       SELECT 1 FROM srvexport AS other
+                         WHERE other.serviceid IN ($in)
+                           AND srvexport.srv_date = other.srv_date
+                           AND ABS( $_date - $other_date ) <= 60
+                     )
+      $orderlimit
+    ";
 
     warn $sql if $DEBUG > 2;
     my $sth = dbh->prepare($sql) or die $DBI::errstr; #better recovery?
@@ -78,8 +100,6 @@ while (1) {
       warn "no $serviceid for $srv_date $srv_time; adding\n"
         if $DEBUG;
       $found++;
-
-      my @serviceids = $torrus_srvderive->component_serviceids;
 
       for my $dir ('_IN', '_OUT') {
 
