@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.11 2011-02-27 19:10:51 ivan Exp $
+# $Id: HTML.pm,v 1.12 2011-02-27 19:14:47 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -137,7 +137,7 @@ sub render_html
 
               if ( $serviceids && $serviceids->{$iface} ) {
 
-                my $svc_port = $nms->find_svc($serviceids->{$iface})
+                my $svc_port = $nms->find_svc($serviceids->{$iface});
 
                 if ($svc_port) {
                    my $url = $Torrus::Freeside::FSURL.
