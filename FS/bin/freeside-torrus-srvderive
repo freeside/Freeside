@@ -7,7 +7,7 @@ use FS::UID qw( adminsuidsetup dbh driver_name );
 use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
 use FS::torrus_srvderive;
 
-our $DEBUG = 1;
+our $DEBUG = 2;
 
 my $user = shift or die &usage;
 $FS::Daemon::PID_NEWSTYLE = 1;
@@ -57,6 +57,7 @@ while (1) {
 
     my $serviceid = $torrus_srvderive->serviceid;
 
+    warn $sql if $DEBUG > 1;
     my $sth = dbh->prepare($sql) or die $DBI::errstr; #better recovery?
     $sth->execute($serviceid, $serviceid) or die $sth->errstr;
     my $prev = 0;
