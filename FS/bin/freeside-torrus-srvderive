@@ -4,7 +4,7 @@ use strict;
 use Date::Parse;
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw( adminsuidsetup dbh driver_name );
-use FS::Record qw( qsearch str2time_sql str2time_sql_closing );
+use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
 use FS::torrus_srvderive;
 
 our $DEBUG = 1;
