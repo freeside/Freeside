@@ -7,8 +7,9 @@ use IO::File;
 use File::Slurp qw(slurp);
 use Date::Format;
 use XML::Simple;
+use FS::Record qw(qsearch qsearchs dbh);
 use FS::svc_port;
-use FS::Record qw(qsearch dbh);
+use FS::torrus_srvderive_component;
 use Torrus::ConfigTree;
 
 #$DEBUG = 0;
@@ -92,6 +93,14 @@ sub find_svc {
     # for now it's like this, later on just change to qsearchs
 
     return $svc_port[0];
+}
+
+sub find_torrus_srvderive_component {
+    my $self = shift;
+    my $serviceid = shift;
+    return '' unless $serviceid =~ /^[0-9A-Za-z_\-.\\\/ ]+$/;
+  
+    qsearchs('torrus_srvderive_component', { 'serviceid' => $serviceid });
 }
 
 sub report {

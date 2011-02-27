@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.12 2011-02-27 19:14:47 ivan Exp $
+# $Id: HTML.pm,v 1.13 2011-02-27 19:20:37 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -144,8 +144,16 @@ sub render_html
                              "/view/svc_port.cgi?". $svc_port->svcnum;
                    return "<A HREF='$url'>View Service</A>";
                 } else {
-                   return 'Monitored as '. $serviceids->{$iface}.
-                          '; customer service not yet provisioned';
+                  my $component =
+                   $nms->find_torrus_srvderive_component($serviceids->{$iface});
+                  
+                  if ($component) {
+                     return $serviceids->{$iface}. ' combined into '.
+                            $component->torrus_srvderive->serviceid;
+                  } else {
+                     return 'Monitored as '. $serviceids->{$iface}.
+                            '; not yet provisioned or combined';
+                  }
                 }
 
               } else {
