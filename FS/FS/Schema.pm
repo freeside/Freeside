@@ -3271,9 +3271,9 @@ sub tables_hashref {
     # tables of ours for doing torrus virtual port combining
     'torrus_srvderive' => {
       'columns' => [
-        'derivenum',  'serial', '', '', '', '',
-        'serviceid', 'varchar', '', 64, '', '', #srvexport / reportfields
-        #'func',      'varchar', '', $char_d, '', '',
+        'derivenum',     'serial',     '', '', '', '',
+        'serviceid',    'varchar',     '', 64, '', '', #srvexport / reportfields
+        'last_srv_date',   'date', 'NULL', '', '', '',
       ],
       'primary_key' => 'derivenum',
       'unique' => [ ['serviceid'] ],

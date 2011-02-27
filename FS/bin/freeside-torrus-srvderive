@@ -82,8 +82,12 @@ while (1) {
                            AND srvexport.srv_date = other.srv_date
                            AND ABS( $_date - $other_date ) <= 60
                      )
-      $orderlimit
     ";
+
+    $ssql .= " AND srv_date >= '". $torrus_srvderive->last_srv_date. "' "
+      if $torrus_srvderive->last_srv_date;
+
+    $ssql .= $orderlimit;
 
     warn $ssql if $DEBUG > 1;
     my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery?
@@ -125,9 +129,16 @@ while (1) {
 
         my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
         $isth->execute( @param )       or die $isth->errstr;
-        dbh->commit                    or die dbh->errstr;
                         
       }
+
+      if ( $srv_date ne $torrus_srvderive->last_srv_date ) {
+        warn "updating last_srv_date of $serviceid to $srv_date\n" if $DEBUG;
+        $torrus_srvderive->last_srv_date($srv_date);
+        my $error = $torrus_srvderive->replace;
+        die $error if $error;
+      }
+      dbh->commit or die dbh->errstr;
 
       $prev = $cur;
     }
