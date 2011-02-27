@@ -40,7 +40,7 @@ my $other_date = concat_sql([ 'other.srv_date', "' '", 'other.srv_time' ]);
 $other_date = "CAST( $other_date AS TIMESTAMP )" if driver_name =~ /^Pg/i;
 $other_date = str2time_sql. $other_date.  str2time_sql_closing;
 
-my $within = ABS( $_date - $other_date ) <= 60;
+my $within = "ABS( $_date - $other_date ) <= 60";
 
 my $in  = concat_sql([ '?', "'_IN'" ]);
 my $out = concat_sql([ '?', "'_OUT'" ]);
