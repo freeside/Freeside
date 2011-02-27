@@ -47,11 +47,12 @@ my $sql = "
                            AND ABS( $_date - $other_date ) <= 60
                      )
     ORDER BY id
+    LIMIT 10
 ";
 
 while (1) {
 
-  #my $found = 0;
+  my $found = 0;
 
   foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
 
@@ -62,6 +63,7 @@ while (1) {
     $sth->execute($serviceid, $serviceid) or die $sth->errstr;
     my $prev = 0;
     while ( my $row = $sth->fetchrow_arrayref ) {
+      $found++;
       my( $srv_date, $srv_time ) = @$row;
       my $cur = str2time( "$srv_date $srv_time" );
       next if $cur-$prev <= 60;
@@ -77,7 +79,7 @@ while (1) {
 
 
   myexit() if sigterm() || sigint();
-  sleep 60; #unless $found
+  sleep 60 unless $found;
 }
 
 sub _shouldrun {
