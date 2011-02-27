@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.8 2011-02-10 01:08:44 levinse Exp $
+# $Id: HTML.pm,v 1.9 2011-02-27 19:08:12 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -119,50 +119,59 @@ sub render_html
         'freesideFooter' => sub { return $self->freesideFooter(); },
         'freesideComponent' => sub { return $self->freesideComponent(@_); },
         'uri_escape'        => sub { return uri_escape(@_); },
-	'matches'        => sub { return $_[0] =~ $_[1]; },
-	'slash2underscore' => sub { $_[0] =~ s/\//_/g; return $_[0]; },
-	'load_nms'       => sub { return $self->load_nms; },
-	'get_serviceids'    => sub { my $nms = shift; 
-				  my $router = shift;
-				  return $nms->get_router_serviceids($router);
-				},
-	'popup_link'     => sub {  
-				   my $type = shift;
+        'matches'        => sub { return $_[0] =~ $_[1]; },
+        'slash2underscore' => sub { $_[0] =~ s/\//_/g; return $_[0]; },
+        'load_nms'       => sub { return $self->load_nms; },
+        'get_serviceids'    => sub { my $nms = shift; 
+                                  my $router = shift;
+                                  return $nms->get_router_serviceids($router);
+                                },
+        'popup_link'     => sub {  
+          my $type = shift;
 
-				   if($type eq 'nms-add_iface.html') {
-				       my $host = shift;
-				       my $iface = shift;
-				       my $nms = shift;
-				       my $serviceids = shift;
-				       my $svc_port = '';
+          if($type eq 'nms-add_iface.html') {
+              my $host = shift;
+              my $iface = shift;
+              my $nms = shift;
+              my $serviceids = shift;
+              my $svc_port = '';
 
-				       $svc_port = $nms->find_svc($serviceids->{$iface})
-					    if($serviceids && $serviceids->{$iface});
+              if ( $serviceids && $serviceids->{$iface} ) {
 
-				       if($svc_port) {
-					  my $url = $Torrus::Freeside::FSURL."/view/svc_port.cgi?".$svc_port->svcnum;
-					  return "<A HREF='$url'>View Service</A>";
-					}
+                my $svc_port = $nms->find_svc($serviceids->{$iface})
 
-					return
-					    $self->freesideComponent('/elements/popup_link.html',
-						'action' => "/freeside/misc/".
-							$type."?host=$host;iface=$iface",
-						 'label' => 'Monitor for billing',
-						 'actionlabel' => 'Monitor interface',
-					    );
-				   }
-				   elsif($type eq 'nms-add_router.html') {
-					return
-					    $self->freesideComponent('/elements/popup_link.html',
-						'action' => "/freeside/misc/$type",
-						 'label' => 'Add Router',
-						 'actionlabel' => 'Add Router',
-					    );
-				   }
+                if ($svc_port) {
+                   my $url = $Torrus::Freeside::FSURL.
+                             "/view/svc_port.cgi?".$svc_port->svcnum;
+                   return "<A HREF='$url'>View Service</A>";
+                } else {
+                   return 'Monitored as '. $serviceids->{$iface}.
+                          '; customer service not yet provisioned';
+                }
 
-				   '';
-				},
+              } else {
+
+               return
+                   $self->freesideComponent('/elements/popup_link.html',
+                       'action' => "/freeside/misc/".
+                               $type."?host=$host;iface=$iface",
+                        'label' => 'Monitor for billing',
+                        'actionlabel' => 'Monitor interface',
+                   );
+
+              }
+
+          } elsif ($type eq 'nms-add_router.html') {
+               return
+                   $self->freesideComponent('/elements/popup_link.html',
+                       'action' => "/freeside/misc/$type",
+                        'label' => 'Add Router',
+                        'actionlabel' => 'Add Router',
+                   );
+          }
+
+          '';
+       },
 
     };
     
