@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.10 2011-02-27 19:10:15 ivan Exp $
+# $Id: HTML.pm,v 1.11 2011-02-27 19:10:51 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -141,7 +141,7 @@ sub render_html
 
                 if ($svc_port) {
                    my $url = $Torrus::Freeside::FSURL.
-                             "/view/svc_port.cgi?".$svc_port->svcnum;
+                             "/view/svc_port.cgi?". $svc_port->svcnum;
                    return "<A HREF='$url'>View Service</A>";
                 } else {
                    return 'Monitored as '. $serviceids->{$iface}.
