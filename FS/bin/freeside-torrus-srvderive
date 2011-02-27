@@ -8,7 +8,7 @@ use FS::UID qw( adminsuidsetup dbh driver_name );
 use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
 use FS::torrus_srvderive;
 
-our $DEBUG = 3;
+our $DEBUG = 1;
 
 my $user = shift or die &usage;
 $FS::Daemon::PID_NEWSTYLE = 1;

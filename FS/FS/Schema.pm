@@ -347,7 +347,7 @@ sub tables_hashref_torrus {
       ],
       'primary_key' => 'id',
       'unique' => [],
-      'index'  => [ ['srv_date'], ['serviceid'], ],
+      'index'  => [ ['srv_date'], ['srv_date', 'srv_time'], ['serviceid'], ],
     },
 
     #Tables for (currently monthly only) report contents.
