@@ -29,6 +29,8 @@ Example:
 
 <TABLE CELLSPACING=0 CELLPADDING=0>
 
+% unless ( $opt{'disable_links'} ) {
+
 <TR>
   <TD COLSPAN=2 ALIGN="center"><FONT SIZE="-1">(
     <A HREF="javascript:setAll<%$prefix%>(true)">select all</A> |
@@ -36,6 +38,8 @@ Example:
     <A HREF="javascript:toggleAll<%$prefix%>()">toggle all</A>
   )</FONT></TD>
 </TR>
+
+% }
 
 % my $num=0;
 % foreach my $item ( @{ $opt{'names_list'} } ) {

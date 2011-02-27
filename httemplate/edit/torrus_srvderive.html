@@ -1,0 +1,37 @@
+<% include( 'elements/edit.html',
+              'name_singular' => 'virtual port',
+              'table'         => 'torrus_srvderive',
+              'labels'        => { 'serviceid' => 'Virtual Port serviceid',
+                                 },
+              'fields'        => [ 'serviceid',
+                                 ],
+              'viewall_dir'   => 'browse',
+              'html_bottom'   => $html_bottom_sub,
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_bottom_sub = sub {
+  my $torrus_srvderive = shift;
+
+  my $nms = new FS::NetworkMonitoringSystem;
+  my @serviceids = $nms->torrus_serviceids;
+
+  ntable('#cccccc',2).'<TR><TD>'.
+    include( '/elements/checkboxes-table-name.html',
+               'source_obj'    => $torrus_srvderive,
+               'link_table'    => 'torrus_srvderive_component',
+               'num_col'       => 'derivenum',
+               'name_col'      => 'serviceid',
+               'names_list'    => \@serviceids,
+               'disable_links' => 1,
+           ).
+  '</TD></TR></TABLE>';
+
+};
+
+
+</%init>

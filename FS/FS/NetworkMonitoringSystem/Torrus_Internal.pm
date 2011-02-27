@@ -8,7 +8,7 @@ use File::Slurp qw(slurp);
 use Date::Format;
 use XML::Simple;
 use FS::svc_port;
-use FS::Record qw(qsearch);
+use FS::Record qw(qsearch dbh);
 use Torrus::ConfigTree;
 
 #$DEBUG = 0;
@@ -223,6 +223,25 @@ sub _torrus_reload {
   system('torrus', 'compile', '--tree=main'); # , '--verbose'
 
   $self->_torrus_unlock;
+
+}
+
+sub torrus_serviceids {
+  my $self = shift;
+
+  #is this going to get too slow or will the index make it okay?
+  my $sth = dbh->prepare("SELECT DISTINCT(serviceid) FROM srvexport")
+    or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my %serviceid = ();
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    my $serviceid = $row->[0];
+    $serviceid =~ s/_(IN|OUT)$//;
+    $serviceid{$serviceid}=1;
+  }
+  my @serviceids = sort keys %serviceid;
+
+  @serviceids;
 
 }
 

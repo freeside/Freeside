@@ -4,7 +4,7 @@
   <OPTION VALUE="">Select serviceid</OPTION>
 % }
 
-% foreach my $serviceid ( keys %serviceid ) {
+% foreach my $serviceid ( @serviceids ) {
     <OPTION VALUE="<%$serviceid%>"
             <% $serviceid eq $value ? 'SELECTED' : '' %>
     ><% $serviceid %></OPTION>
@@ -18,15 +18,7 @@ my %opt = @_;
 
 my $value = $opt{'curr_value'} || $opt{'value'};
 
-#is this going to get too slow or will the index make it okay?
-my $sth = dbh->prepare("SELECT DISTINCT(serviceid) FROM srvexport")
-  or die dbh->errstr;
-$sth->execute or die $sth->errstr;
-my %serviceid = ();
-while ( my $row = $sth->fetchrow_arrayref ) {
-  my $serviceid = $row->[0];
-  $serviceid =~ s/_(IN|OUT)$//;
-  $serviceid{$serviceid}=1;
-}
+my $nms = new FS::NetworkMonitoringSystem;
+my @serviceids = $nms->torrus_serviceids;
 
 </%init>

@@ -501,6 +501,10 @@ tie my %config_phone, 'Tie::IxHash',
   'View/Edit bulk DID vendors' => [ $fsurl.'browse/did_vendor.html', 'Bulk DID vendors' ],
 ;
 
+tie my %config_nms, 'Tie::IxHash',
+  'View/Edit virtual ports' => [ $fsurl.'browse/torrus_srvderive.html', '' ],
+;
+
 tie my %config_misc, 'Tie::IxHash';
 $config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templates for customer notices' ]
   if $curuser->access_right('Edit templates')
@@ -545,11 +549,14 @@ $config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
   if $conf->config('ticket_system')
   && FS::TicketSystem->access_right(\%session, 'ShowConfigTab');
 $config_menu{'Dialup'}  = [ \%config_dialup, ''    ]
-  if ( $curuser->access_right('Dialup configuration') );
+  if $curuser->access_right('Dialup configuration');
 $config_menu{'Broadband'} = [ \%config_broadband, ''    ]
-  if ( $curuser->access_right('Broadband configuration') );
+  if $curuser->access_right('Broadband configuration');
 $config_menu{'Phone'}  = [ \%config_phone, ''    ]
-  if ( $curuser->access_right('Configuration') );
+  if $curuser->access_right('Configuration');
+$config_menu{'Network Monitoring'} = [ \%config_nms, '' ]
+  if $curuser->access_right('Configuration')
+  && $conf->config('network_monitoring_system') eq 'Torrus_Internal';
 $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
   if $curuser->access_right('Configuration' )
   || $curuser->access_right('Edit advertising sources')

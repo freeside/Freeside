@@ -565,3 +565,7 @@ FS/did_vendor.pm
 t/did_vendor.t
 FS/did_order.pm
 t/did_order.t
+FS/torrus_srvderive.pm
+t/torrus_srvderive.t
+FS/torrus_srvderive_component.pm
+t/torrus_srvderive_component.t

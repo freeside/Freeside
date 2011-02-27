@@ -3268,6 +3268,29 @@ sub tables_hashref {
 
     %{ tables_hashref_torrus() },
 
+    # tables of ours for doing torrus virtual port combining
+    'torrus_srvderive' => {
+      'columns' => [
+        'derivenum',  'serial', '', '', '', '',
+        'serviceid', 'varchar', '', 64, '', '', #srvexport / reportfields
+        #'func',      'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'derivenum',
+      'unique' => [ ['serviceid'] ],
+      'index'  => [],
+    },
+
+    'torrus_srvderive_component' => {
+      'columns' => [
+        'componentnum', 'serial', '', '', '', '',
+        'derivenum',       'int', '', '', '', '',
+        'serviceid',   'varchar', '', 64, '', '', #srvexport / reportfields
+      ],
+      'primary_key' => 'componentnum',
+      'unique'      => [ [ 'derivenum', 'serviceid' ], ],
+      'index'       => [ [ 'derivenum', ], ],
+    },
+
 
     # name type nullability length default local
 

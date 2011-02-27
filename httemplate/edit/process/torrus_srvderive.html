@@ -1,0 +1,21 @@
+<% include( 'elements/process.html',
+               'table'       => 'torrus_srvderive',
+               'viewall_dir' => 'browse',
+               'process_m2name' => {
+                     'link_table'   => 'torrus_srvderive_component',
+                     'num_col'      => 'derivenum',
+                     'name_col'     => 'serviceid',
+                     'names_list'   => \@serviceids,
+                     'param_style'  => 'link_table.value checkboxes',
+               },
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $nms = new FS::NetworkMonitoringSystem;
+my @serviceids = $nms->torrus_serviceids;
+
+</%init>

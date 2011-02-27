@@ -1,0 +1,26 @@
+<% include( 'elements/browse.html',
+              'title'          => 'Virtual network ports',
+              'name_singular'  => 'port',
+              'menubar'        => [ 'Add a new virtual port' =>
+                                      $p.'edit/torrus_srvderive.html',
+                                  ],
+              'query'          => { 'table' => 'torrus_srvderive' },
+              'count_query'    => 'SELECT COUNT(*) FROM torrus_srvderive',
+              'header'         => [ 'Virtual Port', 'Components', ],
+              'fields'         => [ 'serviceid', $components_sub, ],
+              'links'          => [ $link, '', ],
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ $p.'edit/torrus_srvderive.html?', 'derivenum' ];
+
+my $components_sub = sub {
+  my $torrus_srvderive = shift;
+  join('<BR>', $torrus_srvderive->component_serviceids);
+};
+
+</%init>
