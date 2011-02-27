@@ -48,6 +48,7 @@ my $sql = "
     WHERE NOT EXISTS (
                        SELECT 1 FROM srvexport AS other
                          WHERE other.serviceid IN ( $in, $out )
+                           AND srvexport.srv_date = other.srv_date
                            AND ABS( $_date - $other_date ) <= 60
                      )
     ORDER BY srv_date, srv_time
