@@ -94,14 +94,15 @@ while (1) {
         ";
         my @param = ( time2str('%Y-%m-%d', $cur), #srv_date
                       time2str('%X', $cur),       #srv_time
-                      $serviceid,
+                      "$serviceid$dir",
                       300, #intvl ... 
                     );
-        warn $isql. ' with param '. @param. "\n"
+        warn $isql. ' with param '. join(',',@param). "\n"
           if $DEBUG > 1;
 
         my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
         $isth->execute( @param )       or die $isth->errstr;
+        dbh->commit                    or die dbh->errstr;
                         
       }
 
