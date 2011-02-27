@@ -8,7 +8,7 @@ use FS::UID qw( adminsuidsetup dbh driver_name );
 use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
 use FS::torrus_srvderive;
 
-our $DEBUG = 1;
+our $DEBUG = 3;
 
 my $user = shift or die &usage;
 $FS::Daemon::PID_NEWSTYLE = 1;
@@ -51,7 +51,7 @@ my $sql = "
                            AND ABS( $_date - $other_date ) <= 60
                      )
     ORDER BY srv_date, srv_time
-    LIMIT 10
+    LIMIT 100
 ";
 
 while (1) {
@@ -67,11 +67,13 @@ while (1) {
     $sth->execute($serviceid, $serviceid) or die $sth->errstr;
     my $prev = 0;
     while ( my $row = $sth->fetchrow_arrayref ) {
+      last if sigterm() || sigint();
+
       my( $srv_date, $srv_time ) = @$row;
       my $cur = str2time( "$srv_date $srv_time" );
       next if $cur-$prev <= 60;
       last if time - $cur <= 300;
-      
+
       warn "no $serviceid for $srv_date $srv_time; adding\n"
         if $DEBUG;
       $found++;
