@@ -137,7 +137,8 @@ sub add_router {
 sub add_interface {
   my($self, $router_ip, $interface, $serviceid ) = @_;
 
-  $interface =~ s(\/)(_)g;
+  $interface =~ s(\/)(_)g; #slashes become underscores
+  $interface =~ s(\.)(_)g; #periods too, huh
 
   #should just use a proper XML parser huh
 
