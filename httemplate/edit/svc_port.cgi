@@ -3,7 +3,7 @@
              'table'  => 'svc_port',
              'fields' => \@fields,
              'labels' => \%labels,
-             'post_url' => popurl(1). "process/svc_Common.html", #?
+             #'post_url' => popurl(1). "process/svc_Common.html", #?
           )
 %>
 <%init>
