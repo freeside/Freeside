@@ -527,6 +527,10 @@ FS/cgp_rule_condition.pm
 t/cgp_rule_condition.t
 FS/cgp_rule_action.pm
 t/cgp_rule_action.t
+FS/rate_time.pm
+t/rate_time.t
+FS/rate_time_interval.pm
+t/rate_time_interval.t
 FS/msg_template.pm
 t/msg_template.t
 FS/cust_tag.pm
@@ -570,3 +574,7 @@ FS/torrus_srvderive.pm
 t/torrus_srvderive.t
 FS/torrus_srvderive_component.pm
 t/torrus_srvderive_component.t
+FS/areacode.pm
+t/areacode.t
+FS/areacode.pm
+t/areacode.t

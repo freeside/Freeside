@@ -1,0 +1,56 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record;
+use FS::areacode;
+use Locale::SubCountry;
+
+my $fsuser = shift @ARGV or die $usage;
+my $path = shift @ARGV or die $usage;
+
+adminsuidsetup($fsuser);
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+#horribly inefficient but you only have to do it once
+my %state_to_country;
+my $world = Locale::SubCountry::World->new;
+foreach my $countrycode (qw(US CA MX)) {
+  my $c = Locale::SubCountry->new($countrycode);
+  next if !$c->has_sub_countries;
+  $state_to_country{uc $_} = $countrycode foreach $c->all_full_names;
+}
+my %name_to_country = $world->full_name_code_hash;
+
+my $fh;
+open $fh, '<', $path
+  or die "couldn't open $path\n";
+while(<$fh>) {
+  my ($npa, $statecode, $statename, $desc) = 
+    /^(\d{3}) ([A-Z]{2}) ([\w\s]*\w) \(([^)]*)\)/;
+  if (!$npa) {
+    warn "couldn't read $_";
+    next;
+  }
+  my $countrycode = $state_to_country{uc $statename} || 
+                    $name_to_country{uc $statename};
+  if (!$countrycode) {
+    warn "couldn't find country for $statename\n";
+    next;
+  }
+
+  my $areacode = FS::areacode->new({ 
+     'npa'      => $npa,
+     'state'    => $statecode,
+     'country'  => $countrycode,
+     'description' => $desc,
+  });
+  my $error = $areacode->insert;
+  if ($error) {
+    $dbh->rollback;
+    die $error;
+  }
+  print "$npa => $statecode, $countrycode\n";
+}
+$dbh->commit;
+

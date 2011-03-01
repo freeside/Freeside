@@ -271,6 +271,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::did_order;
   use FS::torrus_srvderive;
   use FS::torrus_srvderive_component;
+  use FS::areacode;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

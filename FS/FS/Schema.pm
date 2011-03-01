@@ -3266,6 +3266,18 @@ sub tables_hashref {
       'index'  => [], #recnum
     },
 
+    'areacode'  => {
+      'columns' => [
+        'code',        'char',        '',       3, '', '', 
+        'country',     'char',    'NULL',       2, '', '',
+        'state',       'char',    'NULL',       2, '', '', 
+        'description','varchar',  'NULL',     255, '', '',
+      ], 
+      'primary_key' => 'code',
+      'unique' => [],
+      'index'  => [],
+    },
+
     %{ tables_hashref_torrus() },
 
     # tables of ours for doing torrus virtual port combining

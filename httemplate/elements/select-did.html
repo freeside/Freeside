@@ -99,7 +99,6 @@ Example:
 my %opt = @_;
 
 my $conf = new FS::Conf;
-my $country = $conf->config('countrydefault') || 'US';
 
 #false laziness w/tr-select-did.html
 #XXX make sure this comes through on errors too
@@ -121,6 +120,10 @@ my $export;
 $export = $exports[0] if scalar(@exports);
 
 my $bulknum = $opt{'bulknum'} || 0;
+
+my $country = $export->option('country') ||
+              $conf->config('countrydefault') ||
+              'US';
 
 #my $field = $opt{'field'} || 'phonenum';
 
