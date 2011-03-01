@@ -9,6 +9,7 @@ use Date::Format;
 use XML::Simple;
 use FS::Record qw(qsearch qsearchs dbh);
 use FS::svc_port;
+use FS::torrus_srvderive;
 use FS::torrus_srvderive_component;
 use Torrus::ConfigTree;
 
@@ -30,43 +31,74 @@ sub ddx2hash {
     my $self = shift;
     my $ddx_xml = slurp($ddxfile);
     my $xs = new XML::Simple(RootName=> undef, SuppressEmpty => '', 
-				ForceArray => 1, );
+                                ForceArray => 1, );
     return $xs->XMLin($ddx_xml);
 }
 
 sub get_router_serviceids {
-    my $self = shift;
-    my $router = shift;
-    my $find_serviceid = shift;
-    my $found_serviceid = 0;
-    my $ddx_hash = $self->ddx2hash;
-    if($ddx_hash->{host}){
-	my @hosts = @{$ddx_hash->{host}};
-	foreach my $host ( @hosts ) {
-	    my $param = $host->{param};
-	    if($param && $param->{'snmp-host'} 
-		      && (!$router || $param->{'snmp-host'}->{'value'} eq $router)
-		      && $param->{'RFC2863_IF_MIB::external-serviceid'}) {
-		my $serviceids = $param->{'RFC2863_IF_MIB::external-serviceid'}->{'content'};
-		my %hash = ();
-		if($serviceids) {
-		    my @serviceids = split(',',$serviceids);
-		    foreach my $serviceid ( @serviceids ) {
-			$serviceid =~ s/^\s+|\s+$//g;
-			my @s = split(':',$serviceid);
-			next unless scalar(@s) == 4;
-			$hash{$s[1]} = $s[0] if $router;
-			if ($find_serviceid && $find_serviceid eq $s[0]) {
-			    $hash{$param->{'snmp-host'}->{'value'}} = $s[1];
-			    $found_serviceid = 1;
-			}
-		    }
-		}
-		return \%hash if ($router || $found_serviceid);
-	    }
-	}
+  my $self = shift;
+  my $router = shift;
+  my $find_serviceid = shift;
+  my $found_serviceid = 0;
+  my $ddx_hash = $self->ddx2hash;
+  return '' unless $ddx_hash->{'host'};
+
+  my @hosts = @{$ddx_hash->{host}};
+  foreach my $host ( @hosts ) {
+    my $param = $host->{param};
+    if($param && $param->{'snmp-host'} 
+              && (!$router || $param->{'snmp-host'}->{'value'} eq $router)
+              && $param->{'RFC2863_IF_MIB::external-serviceid'}) {
+      my $serviceids =
+        $param->{'RFC2863_IF_MIB::external-serviceid'}->{'content'};
+      my %hash = ();
+      if ($serviceids) {
+        my @serviceids = split(',',$serviceids);
+        foreach my $serviceid ( @serviceids ) {
+          $serviceid =~ s/^\s+|\s+$//g;
+          my @s = split(':',$serviceid);
+          next unless scalar(@s) == 4;
+          $hash{$s[1]} = $s[0] if $router;
+          if ($find_serviceid && $find_serviceid eq $s[0]) {
+            $hash{$param->{'snmp-host'}->{'value'}} = $s[1];
+            $found_serviceid = 1;
+          }
+        }
+      }
+      return \%hash if ($router || $found_serviceid);
     }
-    '';
+  }
+  '';
+}
+
+#false laziness and probably should be merged w/above, but didn't want to mess
+# that up
+sub all_router_serviceids {
+  my $self = shift;
+  my $ddx_hash = $self->ddx2hash;
+  return () unless $ddx_hash->{'host'};
+
+  my %hash = ();
+  my @hosts = @{$ddx_hash->{host}};
+  foreach my $host ( @hosts ) {
+    my $param = $host->{param};
+    if($param && $param->{'snmp-host'} 
+              && (!$router || $param->{'snmp-host'}->{'value'} eq $router)
+              && $param->{'RFC2863_IF_MIB::external-serviceid'}) {
+      my $serviceids =
+        $param->{'RFC2863_IF_MIB::external-serviceid'}->{'content'};
+      if ($serviceids) {
+        my @serviceids = split(',',$serviceids);
+        foreach my $serviceid ( @serviceids ) {
+          $serviceid =~ s/^\s+|\s+$//g;
+          my @s = split(':',$serviceid);
+          next unless scalar(@s) == 4;
+          $hash{$s[0]}=1;
+        }
+      }
+    }
+  }
+  return sort keys %hash;
 }
 
 sub port_graphs_link {
@@ -236,23 +268,30 @@ sub _torrus_reload {
 
 }
 
+#sub torrus_serviceids {
+#  my $self = shift;
+#
+#  #is this going to get too slow or will the index make it okay?
+#  my $sth = dbh->prepare("SELECT DISTINCT(serviceid) FROM srvexport")
+#    or die dbh->errstr;
+#  $sth->execute or die $sth->errstr;
+#  my %serviceid = ();
+#  while ( my $row = $sth->fetchrow_arrayref ) {
+#    my $serviceid = $row->[0];
+#    $serviceid =~ s/_(IN|OUT)$//;
+#    $serviceid{$serviceid}=1;
+#  }
+#  my @serviceids = sort keys %serviceid;
+#
+#  @serviceids;
+#
+#}
+
 sub torrus_serviceids {
   my $self = shift;
-
-  #is this going to get too slow or will the index make it okay?
-  my $sth = dbh->prepare("SELECT DISTINCT(serviceid) FROM srvexport")
-    or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my %serviceid = ();
-  while ( my $row = $sth->fetchrow_arrayref ) {
-    my $serviceid = $row->[0];
-    $serviceid =~ s/_(IN|OUT)$//;
-    $serviceid{$serviceid}=1;
-  }
-  my @serviceids = sort keys %serviceid;
-
-  @serviceids;
-
+  my @serviceids = $self->all_router_serviceids;
+  push @serviceids, map $_->serviceid, qsearch('torrus_srvderive', {});
+  return sort @serviceids;
 }
 
 1;
