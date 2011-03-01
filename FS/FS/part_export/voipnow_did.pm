@@ -5,7 +5,6 @@ use Tie::IxHash;
 use FS::Record qw(qsearch qsearchs dbh);
 use FS::part_export;
 use FS::areacode;
-use XML::Writer;
 use XML::Simple 'XMLin';
 use Net::SSLeay 'post_https';
 use Cache::FileCache;
@@ -19,6 +18,7 @@ tie my %options, 'Tie::IxHash',
   'login'         => { label=>'VoipNow client login' },
   'password'      => { label=>'VoipNow client password' },
   'country'       => { label=>'Country (two-letter code)' },
+  'cache_time'    => { label=>'Cache lifetime (seconds)' },
 ;
 
 %info = (
@@ -38,7 +38,8 @@ sub did_cache {
   my $self = shift;
   $CACHE ||= new Cache::FileCache( { 
       'namespace' => __PACKAGE__,
-      'default_expires_in' => 300,
+      'default_expires_in' => $self->option('cache_time') || 300,
+      'cache_root' => $FS::UID::cache_dir.'/cache'.$FS::UID::datasrc,
     } );
   return $CACHE->get($self->exportnum) || $self->reload_cache;
 }
@@ -258,6 +259,9 @@ sub voipnow_command {
   my $data = shift;
   my $host = $self->machine;
   my $path = "/soap2/${endpoint}_agent.php";
+
+  eval "use XML::Writer";
+  die $@ if $@;
 
   warn "[$method] constructing request\n" if $DEBUG;
   my $soap_request;

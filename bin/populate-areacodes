@@ -40,7 +40,7 @@ while(<$fh>) {
   }
 
   my $areacode = FS::areacode->new({ 
-     'npa'      => $npa,
+     'code'     => $npa,
      'state'    => $statecode,
      'country'  => $countrycode,
      'description' => $desc,
