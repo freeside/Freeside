@@ -83,7 +83,6 @@ sub all_router_serviceids {
   foreach my $host ( @hosts ) {
     my $param = $host->{param};
     if($param && $param->{'snmp-host'} 
-              && (!$router || $param->{'snmp-host'}->{'value'} eq $router)
               && $param->{'RFC2863_IF_MIB::external-serviceid'}) {
       my $serviceids =
         $param->{'RFC2863_IF_MIB::external-serviceid'}->{'content'};
