@@ -8,7 +8,7 @@ use FS::UID qw( adminsuidsetup dbh driver_name );
 use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
 use FS::torrus_srvderive;
 
-our $DEBUG = 1;
+our $DEBUG = 2;
 
 my $user = shift or die &usage;
 $FS::Daemon::PID_NEWSTYLE = 1;
@@ -89,9 +89,11 @@ while (1) {
 
     $ssql .= $orderlimit;
 
-    warn $ssql if $DEBUG > 1;
+    warn "searching for times to add $serviceid\n" if $DEBUG;
+    warn $ssql if $DEBUG > 2;
     my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery?
     $sth->execute($serviceid, $serviceid) or die $sth->errstr;
+
     my $prev = 0;
     while ( my $row = $sth->fetchrow_arrayref ) {
       last if sigterm() || sigint();
@@ -142,11 +144,12 @@ while (1) {
 
       $prev = $cur;
     }
+    warn "done with $serviceid\n" if $DEBUG;
 
   }
 
-
   myexit() if sigterm() || sigint();
+  warn "restarting main loop\n" if $DEBUG > 1;
   sleep 60 unless $found;
 }
 
