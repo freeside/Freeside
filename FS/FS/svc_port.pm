@@ -238,7 +238,7 @@ sub _format_bandwidth {
     }
     # and hopefully we don't have folks doing Tbps on a single port :)
 
-    $value = sprintf("%.2f$suffix",$value) if $value >= 0;
+    $value = sprintf("%6.2f$suffix",$value) if $value >= 0;
 
     $value;
 }
@@ -342,7 +342,7 @@ sub graph_png {
   my $out_avg = $self->_format_bandwidth($out_sum/$numsamples);
 
   my $percentile = max( $self->_percentile(\@in), $self->_percentile(\@out) );
-  my @percentile = ( $percentile x scalar(@in) );
+  my @percentile = map $percentile, @in;
   $percentile = $self->_format_bandwidth($percentile); #for below
 
   warn "$me timediff=$timediff bwdiff=$bwdiff start=$start end=$end ".
@@ -412,11 +412,11 @@ sub graph_png {
 
   my $black = $gd->colorAllocate(0,0,0);       
   $gd->string(gdMediumBoldFont,50,$height-55,
-    "Current: $in_curr   Average: $in_avg   Maximum: $in_max   Minimum: $in_min",$black);
+    "Current:$in_curr   Average:$in_avg   Maximum:$in_max   Minimum:$in_min",$black);
   $gd->string(gdMediumBoldFont,50,$height-35,
-    "Current: $out_curr   Average: $out_avg   Maximum: $out_max   Minimum: $out_min",$black);
+    "Current:$out_curr   Average:$out_avg   Maximum:$out_max   Minimum:$out_min",$black);
   $gd->string(gdMediumBoldFont,50,$height-15,
-    "95th percentile: $percentile", $black);
+    "95th percentile:$percentile", $black);
 
   return $gd->png;
 }
