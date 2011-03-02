@@ -11,7 +11,7 @@ use FS::Record qw(qsearch qsearchs dbh);
 use FS::svc_port;
 use FS::torrus_srvderive;
 use FS::torrus_srvderive_component;
-use Torrus::ConfigTree;
+#use Torrus::ConfigTree;
 
 #$DEBUG = 0;
 #$me = '[FS::NetworkMonitoringSystem::Torrus_Internal]';
@@ -108,6 +108,11 @@ sub port_graphs_link {
     my @keys = keys %$hash; # yeah this is weird...
     my $host = $keys[0];
     my $iface = $hash->{$keys[0]};
+
+    #Torrus::ConfigTree is only available when running under the web UI
+    eval 'use Torrus::ConfigTree;';
+    die $@ if $@;
+
     my $config_tree = new Torrus::ConfigTree( -TreeName => 'main' );
     my $token = $config_tree->token("/Routers/$host/Interface_Counters/$iface/InOut_bps");
     return $Torrus::Freeside::FSURL."/torrus/main?token=$token";
