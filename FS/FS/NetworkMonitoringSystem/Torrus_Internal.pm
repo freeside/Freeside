@@ -144,7 +144,7 @@ sub report {
     if ($m == 0) { $m=12; $y-- }
     #i should have better error checking
     system('torrus', 'report', '--report=MonthlyUsage', "--date=$y-$m-01");
-    system('torrus', 'report', '--genhtml', '--tree=main');
+    system('torrus', 'report', '--genhtml', '--all2tree=main');
   }
 
 }
