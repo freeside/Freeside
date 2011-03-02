@@ -48,6 +48,7 @@
 % $m->callback( CallbackName => 'BeforeTransactionCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj, NamePrefix => $NamePrefix );
 % if ($CustomFields->Count) {
 % while (my $CF = $CustomFields->Next()) {
+% $CF->SetContextObject($TicketObj || $QueueObj);
 % next unless $CF->CurrentUserHasRight('ModifyCustomField');
 % next unless $CF->UILocation eq $UILocation;
 <tr>
