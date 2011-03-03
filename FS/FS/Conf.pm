@@ -1921,6 +1921,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'signup_server-third_party_as_card',
+    'section'     => 'self-service',
+    'description' => 'Allow customer payment type to be set to CARD even when using third-party credit card billing.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'selfservice-xmlrpc',
     'section'     => 'self-service',
     'description' => 'Run a standalone self-service XML-RPC server on the backend (on port 8080).',

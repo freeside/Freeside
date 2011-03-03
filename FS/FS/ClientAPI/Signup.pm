@@ -586,7 +586,8 @@ sub new_customer {
     unless grep { $_ eq $packet->{'payby'} }
                 $conf->config('signup_server-payby');
 
-  if (FS::payby->realtime($packet->{payby})) {
+  if (FS::payby->realtime($packet->{payby})
+    and not $conf->exists('signup_server-third_party_as_card')) {
     my $payby = $packet->{payby};
 
     my $agent = qsearchs('agent', { 'agentnum' => $agentnum });
