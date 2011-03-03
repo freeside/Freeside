@@ -1567,7 +1567,7 @@ them.
 
 =cut
 
-Set($SimpleSearchIncludeResolve, 0);
+Set($SimpleSearchIncludeResolved, 0);
 
 =back
 
