@@ -285,6 +285,12 @@ sub href_params_new_ticket {
     $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
   }
 
+  # explicit $requestors > config option > invoicing_list
+  $requestors = $conf->config('ticket_system-requestor')
+      if !$requestors;
+  $requestors = $cust_main->invoicing_list_emailonly_scalar
+      if (!$requestors) and defined($cust_main);
+
   my %param = (
     'Queue'       => ($cust_main->agent->ticketing_queueid || $default_queueid),
     'new-MemberOf'=> "freeside://freeside/cust_main/$custnum",

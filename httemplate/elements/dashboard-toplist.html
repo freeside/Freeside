@@ -27,7 +27,9 @@
             <% include('/elements/mcp_lint.html', 'cust_main'=>$cust_main) %>
           </TD>
 	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-	    <FONT SIZE="-1"><A HREF="<% FS::TicketSystem->href_new_ticket($cust_main, join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list ) ) %>">(new ticket)</A></FONT>
+	    <FONT SIZE="-1">
+            <A HREF="<% FS::TicketSystem->href_new_ticket($cust_main) %>">(new ticket)</A>
+            </FONT>
 	  </TD>
 
 %         foreach my $priority ( @custom_priorities, '' ) {

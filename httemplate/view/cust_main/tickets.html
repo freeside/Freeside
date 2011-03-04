@@ -106,13 +106,9 @@ my $res_link  = FS::TicketSystem->href_customer_tickets(
                   { 'statuses' => [ 'resolved' ] }
                 );
 
-my( $new_base, %new_param ) = FS::TicketSystem->href_params_new_ticket(
-                 $cust_main,
-                 join(', ', $cust_main->invoicing_list_emailonly )               );
+my( $new_base, %new_param ) = 
+  FS::TicketSystem->href_params_new_ticket( $cust_main );
 
-my $new_link = FS::TicketSystem->href_new_ticket(
-                 $cust_main,
-                 join(', ', $cust_main->invoicing_list_emailonly )
-               );
+my $new_link = FS::TicketSystem->href_new_ticket( $cust_main );
 
 </%init>

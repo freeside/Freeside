@@ -2570,6 +2570,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'ticket_system-requestor',
+    'section'     => '',
+    'description' => 'Email address to use as the requestor for new tickets.  If blank, the customer\'s invoicing address(es) will be used.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'ticket_system-priority_reverse',
     'section'     => '',
     'description' => 'Enable this to consider lower numbered priorities more important.  A bad habit we picked up somewhere.  You probably want to avoid it and use the default.',
