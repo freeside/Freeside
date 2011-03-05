@@ -4554,7 +4554,7 @@ sub _items_cust_bill_pkg {
             if $DEBUG > 1;
 
           push @d, $cust_bill_pkg->details(%details_opt)
-            unless ($is_summary || $type && $type eq 'R');
+            unless $is_summary; # || ($type && $type eq 'R');
 
           warn "$me _items_cust_bill_pkg calculating amount\n"
             if $DEBUG > 1;
