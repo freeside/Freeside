@@ -37,7 +37,9 @@ die "neither prospect nor customer specified or found"
 $cgi->param('exportnum') =~ /^(\d+)$/ or die 'illegal exportnum';
 my $exportnum = $1;
 
-$cgi->param('phonenum') =~ /^(\d*)$/ or die 'illegal phonenum';
+my $phonenum = $cgi->param('phonenum');
+$phonenum =~ s/\D//g;
+$phonenum =~ /^(\d*)$/ or die 'illegal phonenum';
 my $phonenum = $1;
 
 $cgi->param('locationnum') =~ /^(\-?\d*)$/
