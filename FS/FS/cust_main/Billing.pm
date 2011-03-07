@@ -820,19 +820,21 @@ sub _make_lines {
 
   my $setup = 0;
   my $unitsetup = 0;
-  if ( $options{'resetup'}
-       || ( ! $cust_pkg->setup
-            && ( ! $cust_pkg->start_date
-                 || $cust_pkg->start_date <= $time
-               )
-            && ( ! $conf->exists('disable_setup_suspended_pkgs')
-                 || ( $conf->exists('disable_setup_suspended_pkgs') &&
-                      ! $cust_pkg->getfield('susp')
-                    )
-               )
-          )
-        and !$options{recurring_only}
-    )
+  if (     ! $options{recurring_only}
+       and ! $options{cancel}
+       and ( $options{'resetup'}
+             || ( ! $cust_pkg->setup
+                  && ( ! $cust_pkg->start_date
+                       || $cust_pkg->start_date <= $time
+                     )
+                  && ( ! $conf->exists('disable_setup_suspended_pkgs')
+                       || ( $conf->exists('disable_setup_suspended_pkgs') &&
+                            ! $cust_pkg->getfield('susp')
+                          )
+                     )
+                )
+           )
+     )
   {
     
     warn "    bill setup\n" if $DEBUG > 1;
