@@ -3451,6 +3451,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'previous_balance-show_credit',
+    'section'     => 'invoicing',
+    'description' => 'Show the customer\'s credit balance on invoices when applicable.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'balance_due_below_line',
     'section'     => 'invoicing',
     'description' => 'Place the balance due message below a line.  Only meaningful when when invoice_sections is false.',

@@ -2433,6 +2433,12 @@ sub print_generic {
                            );
   my $embolden_function = $embolden_functions{$format};
 
+  my %newline_tokens = (  'latex'     => '\\\\',
+                          'html'      => '<br>',
+                          'template'  => "\n",
+                        );
+  my $newline_token = $newline_tokens{$format};
+
   warn "$me generating template variables\n"
     if $DEBUG > 1;
 
@@ -3117,6 +3123,26 @@ sub print_generic {
       push @buf,[$self->balance_due_msg, $money_char. 
         sprintf("%10.2f", $balance_due ) ];
     }
+
+    if ( $conf->exists('previous_balance-show_credit')
+        and $cust_main->balance < 0 ) {
+      my $credit_total = {
+        'total_item'    => &$embolden_function($self->credit_balance_msg),
+        'total_amount'  => &$embolden_function(
+          $other_money_char. sprintf('%.2f', -$cust_main->balance)
+        ),
+      };
+      if ( $multisection ) {
+        $adjust_section->{'posttotal'} .= $newline_token .
+          $credit_total->{'total_item'} . ' ' . $credit_total->{'total_amount'};
+      }
+      else {
+        push @total_items, $credit_total;
+      }
+      push @buf,['','-----------'];
+      push @buf,[$self->credit_balance_msg, $money_char. 
+        sprintf("%10.2f", -$cust_main->balance ) ];
+    }
   }
 
   if ( $multisection ) {
@@ -3475,6 +3501,8 @@ sub balance_due_date {
   }
   $duedate;
 }
+
+sub credit_balance_msg { 'Credit Balance Remaining' }
 
 =item invnum_date_pretty
 
