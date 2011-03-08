@@ -1805,6 +1805,9 @@ sub _ProcessObjectCustomFieldUpdates {
         # skip category argument
         next if $arg eq 'Category';
 
+        # and TimeUnits
+        next if $arg eq 'Value-TimeUnits';
+
         # since http won't pass in a form element with a null value, we need
         # to fake it
         if ( $arg eq 'Values-Magic' ) {
