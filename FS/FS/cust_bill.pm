@@ -4578,11 +4578,17 @@ sub _items_cust_bill_pkg {
 
           }
 
-          warn "$me _items_cust_bill_pkg adding details\n"
-            if $DEBUG > 1;
+          unless ( $is_summary ) {
+            warn "$me _items_cust_bill_pkg adding details\n"
+              if $DEBUG > 1;
 
-          push @d, $cust_bill_pkg->details(%details_opt)
-            unless $is_summary; # || ($type && $type eq 'R');
+            #instead of omitting details entirely in this case (unwanted side
+            # effects), just omit CDRs
+            $details_opt{'format_function'} = sub { () }
+              if $type && $type eq 'R';
+
+            push @d, $cust_bill_pkg->details(%details_opt);
+          }
 
           warn "$me _items_cust_bill_pkg calculating amount\n"
             if $DEBUG > 1;
@@ -4590,9 +4596,9 @@ sub _items_cust_bill_pkg {
           my $amount = 0;
           if (!$type) {
             $amount = $cust_bill_pkg->recur;
-          }elsif($type eq 'R') {
+          } elsif ($type eq 'R') {
             $amount = $cust_bill_pkg->recur - $cust_bill_pkg->usage;
-          }elsif($type eq 'U') {
+          } elsif ($type eq 'U') {
             $amount = $cust_bill_pkg->usage;
           }
   
