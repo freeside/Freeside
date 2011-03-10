@@ -726,8 +726,16 @@ sub calculate_taxes {
   foreach my $tax ( keys %$taxlisthash ) {
     foreach ( @{ $taxlisthash->{$tax} }[1 ... scalar(@{ $taxlisthash->{$tax} })] ) {
       next unless ref($_) eq 'FS::cust_bill_pkg';
-      push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
-        splice( @{ $_->_cust_tax_exempt_pkg } );
+     
+      my @cust_tax_exempt_pkg = splice( @{ $_->_cust_tax_exempt_pkg } );
+
+      next unless @cust_tax_exempt_pkg; #just avoiding the prob when irrelevant?
+      die "can't distribute tax exemptions: no line item for ".  Dumper($_).
+          " in packagemap ". join(',', sort {$a<=>$b} keys %packagemap). "\n"
+        unless $packagemap{$_->pkgnum};
+
+      push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg },
+           @cust_tax_exempt_pkg;
     }
   }
 
