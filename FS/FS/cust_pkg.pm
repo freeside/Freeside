@@ -598,6 +598,9 @@ sub check {
   ;
   return $error if $error;
 
+  return "A package with both start date (future start) and setup date (already started) will never bill"
+    if $self->start_date && $self->setup;
+
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   if ( $self->dbdef_table->column('manual_flag') ) {
