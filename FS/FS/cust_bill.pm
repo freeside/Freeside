@@ -2721,7 +2721,7 @@ sub print_generic {
                                             sprintf('%.2f', $pr_total),
                            'summarized'  => $summarypage ? 'Y' : '',
                          };
-  $previous_section->{posttotal} = '0 / 30 / 60/ 90 days overdue '. 
+  $previous_section->{posttotal} = '0 / 30 / 60 / 90 days overdue '. 
     join(' / ', map { $cust_main->balance_date_range(@$_) }
                 $self->_prior_month30s
         )
