@@ -41,14 +41,13 @@ from FS::Record.  The following fields are currently supported:
 
 primary key
 
+=item agentnum
+
+Agent
+
 =item company
 
 company
-
-=item locationnum
-
-locationnum
-
 
 =back
 
@@ -220,6 +219,17 @@ Returns the contacts (see L<FS::contact>) associated with this prospect.
 sub contact {
   my $self = shift;
   qsearch( 'contact', { 'prospectnum' => $self->prospectnum } );
+}
+
+=item cust_location
+
+Returns the locations (see L<FS::cust_location>) associated with this prospect.
+
+=cut
+
+sub cust_location {
+  my $self = shift;
+  qsearch( 'cust_location', { 'prospectnum' => $self->prospectnum } );
 }
 
 =item search HASHREF

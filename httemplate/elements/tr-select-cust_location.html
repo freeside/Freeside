@@ -160,14 +160,8 @@ Example:
 % if ( $opt{'is_optional'} ) {
     <OPTION VALUE="-2" <% $locationnum == -2 ? 'SELECTED' : ''%>><% $opt{'optional_label'} || '(not required)' |h %>
 % }
-%     my @locations = $cust_main ? $cust_main->cust_location : ();
-%     @locations = qsearch('cust_location', 
-%			    { 'prospectnum' => $prospect_main->prospectnum } ) 
-%	    if $prospect_main;
-%     push @locations, $cust_location
-%       if !$cust_main && $cust_location && $cust_location->locationnum>0;
-%     foreach my $loc ( sort $location_sort @locations ) {
-%       next if $loc->disabled;
+%
+%     foreach my $loc ( @cust_location ) {
         <OPTION VALUE="<% $loc->locationnum %>"
                 <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
         ><% $loc->line |h %>
@@ -200,18 +194,26 @@ my $statedefault = $conf->config('statedefault')
 
 my %opt = @_;
 my $cgi           = $opt{'cgi'};
-my $cust_pkg     = $opt{'cust_pkg'};
+my $cust_pkg      = $opt{'cust_pkg'};
 my $cust_main     = $opt{'cust_main'};
 my $prospect_main = $opt{'prospect_main'};
 
 my $prefix = ($cust_main && length($cust_main->ship_last)) ? 'ship_' : '';
 
-my $locationnum;
-if ( length($opt{'curr_value'}) ) {
-  $locationnum = $opt{'curr_value'};
-} else {
+my $locationnum = '';
+if ( $cgi->param('error') ) {
   $cgi->param('locationnum') =~ /^(\-?\d*)$/ or die "illegal locationnum";
   $locationnum = $1;
+} else {
+  if ( length($opt{'curr_value'}) ) {
+    $locationnum = $opt{'curr_value'};
+  } elsif ($prospect_main) {
+    my @cust_location = $prospect_main->cust_location;
+    $locationnum = $cust_location[0]->locationnum if scalar(@cust_location)==1;
+  } else { #?
+    $cgi->param('locationnum') =~ /^(\-?\d*)$/ or die "illegal locationnum";
+    $locationnum = $1;
+  }
 }
 
 #probably could use explicit controls
@@ -248,9 +250,22 @@ my $location_sort = sub {
   or lc($a->address2) cmp lc($b->address2)
 };
 
-my $disabled = ( $locationnum < 0 || ($editable && $locationnum) )
-                 ? ''
-                 : 'DISABLED';
+my @cust_location = ();
+push @cust_location, $cust_main->cust_location if $cust_main;
+push @cust_location, $prospect_main->cust_location if $prospect_main;
+push @cust_location, $cust_location
+  if !$cust_main && $cust_location && $cust_location->locationnum > 0
+  && ! grep { $_->locationnum == $cust_location->locationnum } @cust_location;
+
+@cust_location = sort $location_sort grep !$_->disabled, @cust_location;
+
+my $disabled =
+  ( $locationnum < 0
+    || ( $editable && $locationnum )
+    || ( $prospect_main && !$opt{'is_optional'} && !@cust_location && $addnew )
+  )
+    ? ''
+    : 'DISABLED';
 
 my $th = $opt{'no_bold'} ? 'TD' : 'TH';
 

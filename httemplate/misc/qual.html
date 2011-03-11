@@ -9,39 +9,47 @@
 <% ntable("#cccccc", 2) %>
 
 <% include('/elements/tr-td-label.html',
-             'cgi'       => $cgi,
-	     'label'	=> 'Qualify using',
-	     'cell_style' => 'font-weight: bold',
-	     'id' => 'exportnum',
-	  )
+             'cgi'        => $cgi,
+             'label'      => 'Qualify using',
+             #'cell_style' => 'font-weight: bold',
+             'id'         => 'exportnum',
+          )
 %>
 <TD>
 <% include('/elements/select.html',
-             'cgi'       => $cgi,
-	     'field'	=> 'exportnum',
-	     'options'  => \@export_options,
-	     'labels'   => $export_labels,
-	     'curr_value' => $cgi->param('exportnum'),
-	  )
+             'cgi'        => $cgi,
+             'field'      => 'exportnum',
+             'options'    => \@export_options,
+             'labels'     => $export_labels,
+             'curr_value' => $exportnum,
+          )
 %>
 </TD>
 </TR>
 
 <% include('/elements/tr-input-text.html',
-             'cgi'       => $cgi,
-	     'label'	=> 'Service Telephone Number',
-	     'field'	=> 'phonenum',
-	     'size'	=> '12',
-	     'value'	=> $cgi->param('phonenum'),
+             'cgi'     => $cgi,
+             'label'   => 'Service Telephone Number',
+             'field'   => 'phonenum',
+             'size'    => '12',
+             'value'   => scalar($cgi->param('phonenum')),
+
+             'valign'  => 'middle',
+             'colspan' => 6,
+             'prefix'  => '<TABLE><TR><TD>',
+             'postfix' => '</TD><TD><FONT SIZE="-2">'. join('<BR>',
+                 'Line-share (non dry loops) - always fill in',
+                 'Dry loops - always leave empty',
+               ). '</FONT></TD></TR></TABLE>',
           )
 %>
 
 <% include('/elements/tr-select-cust_location.html',
-             'cgi'       => $cgi,
-	     $table => $cust_main_or_prospect_main,
-	     'alt_format' => $conf->exists('qual-alt-address-format') ? 1 : 0,
-	     'is_optional' => 1,
-	     'no_bold' => 1,
+             'cgi'         => $cgi,
+             $table        => $cust_main_or_prospect_main,
+             'alt_format'  => $conf->exists('qual-alt-address-format') ? 1 : 0,
+             'no_bold'     => 1,
+             #required for ikano.. config? 'is_optional' => 1,
           )
 %>
 </TABLE>
@@ -84,5 +92,10 @@ foreach my $export ( @exports ) {
     push @export_options, $export->exportnum;
     $export_labels->{$export->exportnum} = $export->exportname;
 }
+my $exportnum = $cgi->param('error')
+                  ? scalar($cgi->param('exportnum'))
+                  : scalar(@exports) == 1
+                    ? $exports[0]->exportnum
+                    : '';
 
 </%init>

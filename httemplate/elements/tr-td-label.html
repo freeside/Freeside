@@ -1,10 +1,10 @@
 <TR>
 
-  <TD ALIGN="right" VALIGN="top" STYLE="<% $style %>" ID="<% $opt{label_id} || $opt{id}. '_label0' %>">
-
-    <% $opt{label} %>
-
-  </TD>
+  <TD ALIGN  = "right"
+      VALIGN = "<% $opt{'valign'} || 'top' %>"
+      STYLE  = "<% $style %>"
+      ID     = "<% $opt{label_id} || $opt{id}. '_label0' %>"
+  ><% $opt{label} %></TD>
 
 <%init>
 
