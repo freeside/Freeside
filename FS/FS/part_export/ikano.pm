@@ -258,12 +258,14 @@ sub ikano2fsnote {
      } );
 }
 
+# address always required for Ikano qual, TN optional (assume dry if not given)
 sub qual {
     my($self,$qual) = (shift,shift);
-# address always required for Ikano qual, TN optional (assume dry if not given)
 
-    my %location_hash = $qual->location; 
-    return 'No address provided' unless %location_hash;
+    my %location_hash = $qual->location_hash; 
+    warn Dumper $qual->location_hash;
+    return 'No address provided' unless keys %location_hash;
+
     my $svctn = $qual->phonenum;
 
     my $result = $self->ikano_command('PREQUAL',

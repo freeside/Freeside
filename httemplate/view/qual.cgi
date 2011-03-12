@@ -37,7 +37,7 @@
 %   my $pkglist = $qual_result->{'pkglist'};
 %   my $cust_or_prospect = $qual->cust_or_prospect;
 %   my $locationnum = '';
-%   my %location = $qual->location;
+%   my %location = $qual->location_hash;
 %   if (%location && $location{'locationnum'}) { 
 %      $locationnum = $location{'locationnum'};
 %   }
@@ -82,7 +82,7 @@ if ( $cgi->param('qualnum') ) {
 
 my $qual = qsearchs('qual', { qualnum => $qualnum }) or die "invalid qualnum";
 my $location_line = '';
-my %location_hash = $qual->location;
+my %location_hash = $qual->location_hash;
 my $cust_location;
 if ( %location_hash ) {
     $cust_location = new FS::cust_location(\%location_hash);

@@ -184,8 +184,9 @@ sub part_export {
     '';
 }
 
-sub location {
+sub location_hash {
     my $self = shift;
+    use Data::Dumper; warn Dumper($self);
     if ( $self->locationnum ) {
 	my $l = qsearchs( 'cust_location', 
 		    { 'locationnum' => $self->locationnum });
@@ -206,9 +207,9 @@ sub location {
 	    return %loc_hash;
 	}
     }
-  # prospectnum does not imply any particular address! must specify locationnum
 
-    '';
+  warn "prospectnum does not imply any particular address! must specify locationnum";
+  return ();
 }
 
 sub cust_or_prospect {
