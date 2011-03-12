@@ -2,7 +2,7 @@ package FS::qual;
 
 use strict;
 use base qw( FS::option_Common );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 
 =head1 NAME
 
@@ -74,7 +74,55 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+  my %options = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( $options{'cust_location'} ) {
+    my $cust_location = $options{'cust_location'};
+    my $error = $cust_location->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    $self->locationnum( $cust_location->locationnum );
+  }
+
+  my @qual_option = ();
+  if ( $self->exportnum ) {
+    my $export = qsearchs( 'part_export', { 'exportnum' => $self->exportnum } )
+      or die 'Invalid exportnum';
+
+    my $qres = $export->qual($self);
+    unless ( ref($qres) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Qualification error: $qres";
+    }
+
+    $self->$_($qres->{$_}) foreach grep $qres->{$_}, qw(status vendor_qual_id);
+    @qual_option = ( $qres->{'options'} ) if ref($qres->{'options'});
+  }
+
+  my $error = $self->SUPER::insert(@qual_option);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item delete
 

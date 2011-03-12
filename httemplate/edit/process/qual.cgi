@@ -1,14 +1,11 @@
 %if ($error) {
 %  $cgi->param('error', $error);
-%  $dbh->rollback if $oldAutoCommit;
 <% $cgi->redirect(popurl(3). 'misc/qual.html?'. $cgi->query_string ) %>
 %} else {
-%  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 <% header('Qualification entered') %>
   <SCRIPT TYPE="text/javascript">
-    window.top.location = '<% popurl(3). "view/qual.cgi?qualnum=$qualnum" %>';
+    window.top.location = '<% popurl(3).'view/qual.cgi?qualnum='. $qual->qualnum %>';
   </SCRIPT>
-
   </BODY></HTML>
 %}
 <%init>
@@ -46,83 +43,35 @@ $cgi->param('locationnum') =~ /^(\-?\d*)$/
   or die 'illegal locationnum '. $cgi->param('locationnum');
 my $locationnum = $1;
 
-my $oldAutoCommit = $FS::UID::AutoCommit;
-local $FS::UID::AutoCommit = 0;
-my $dbh = dbh;
 my $error = '';
-my $cust_location;
+my $cust_location = '';
 if ( $locationnum == -1 ) { # adding a new one
-  my %location_hash = map { $_ => scalar($cgi->param($_)) }
-	qw( address1 address2 city county state zip country geocode );
-  $location_hash{$cust_or_prospect."num"} = $custnum_or_prospectnum;
-  $location_hash{location_type} = $cgi->param('location_type') 
-    if $cgi->param('location_type');
-  $location_hash{location_number} = $cgi->param('location_number') 
-    if $cgi->param('location_number');
-  $location_hash{location_kind} = $cgi->param('location_kind') 
-    if $cgi->param('location_kind');
-  $cust_location = new FS::cust_location ( { %location_hash } );
-  $error = $cust_location->insert;
-  die "Unable to insert cust_location: $error" if $error;
-}
-elsif ( $locationnum eq '' ) { # default service location
-    if ( $custnum ) { 
-	  $cust_location = new FS::cust_location ( {
-		$cust_main_or_prospect_main->location_hash,
-		custnum => $custnum,
-	  } );
-    } elsif ( $prospectnum ) {
-	die "a location must be specified explicitly for prospects";
-    }
-}
-elsif ( $locationnum != -2 ) { # -2 = address not required for qual
-  $cust_location = qsearchs('cust_location', { 'locationnum' => $locationnum })
-    or die 'Invalid locationnum'; 
+
+  $cust_location = new FS::cust_location {
+    $cust_or_prospect."num" => $custnum_or_prospectnum,
+    map { $_ => scalar($cgi->param($_)) }
+      qw( address1 address2 city county state zip country geocode ),
+      grep scalar($cgi->param($_)),
+        qw( location_type location_number location_kind )
+  };
+
+          #locationnum '': default service location
+} elsif ( $locationnum eq '' && $cust_or_prospect eq 'prospect' ) {
+    die "a location must be specified explicitly for prospects";
+
+          #locationnum -2: address not required for qual
+} elsif ( $locationnum == -2 && $phonenum eq '' ) {
+  $error = "Nothing to qualify - neither phone number nor address specified";
 }
 
-my $export;
-if ( $exportnum > 0 ) {
- $export = qsearchs( 'part_export', { 'exportnum' => $exportnum } )
-    or die 'Invalid exportnum';
-}
-
-die "Nothing to qualify - neither TN nor address specified" 
-    unless ( defined $cust_location || $phonenum ne '' );
-
-my $qual;
-if ( $locationnum != -2 && $cust_location->locationnum > 0 ) {
-    $qual = new FS::qual( { locationnum => $cust_location->locationnum } );
-}
-else { # a cust_main default service address *OR* address not required
-    $qual = new FS::qual( { $cust_or_prospect."num" => $custnum_or_prospectnum } );
-}
+my $qual = new FS::qual {
+  'status' => 'N',
+};
 $qual->phonenum($phonenum) if $phonenum ne '';
-$qual->status('N');
+$qual->set( $cust_or_prospect."num" => $custnum_or_prospectnum )
+  unless $locationnum == -1 || $locationnum > 0;
+$qual->exportnum($exportnum) if $exportnum > 0;
 
-if ( $export ) {
-    $qual->exportnum($export->exportnum);
-    my $qres = $export->qual($qual);
-    $error = "Qualification error: $qres" unless ref($qres);
-    unless ( $error ) {
-	$qual->status($qres->{'status'}) if $qres->{'status'};
-	$qual->vendor_qual_id($qres->{'vendor_qual_id'}) 
-	    if $qres->{'vendor_qual_id'};
-	$error = $qual->insert($qres->{'options'}) if ref($qres->{'options'});
-    }
-}
-
-unless ( $error || $qual->qualnum ) {
-    $error = $qual->insert;
-}
-
-my $qualnum;
-unless ( $error ) {
-    if($qual->qualnum) {
-	$qualnum = $qual->qualnum;
-    }
-    else {
-	$error = "Unable to save qualification";
-    }
-}
+$error ||= $qual->insert( 'cust_location' => $cust_location );
 
 </%init>
