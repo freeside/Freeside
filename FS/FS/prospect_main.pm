@@ -210,6 +210,15 @@ sub check {
   $self->SUPER::check;
 }
 
+=item name
+
+=cut
+
+sub name {
+  my $self = shift;
+  $self->company; #at least until this is nullable
+}
+
 =item contact
 
 Returns the contacts (see L<FS::contact>) associated with this prospect.

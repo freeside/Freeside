@@ -21,19 +21,11 @@
 					my $self = shift;
 					$self->status_long;
 				      },
-				      sub {
-					  my $self = shift;
-					  my $cust_or_prospect = $self->cust_or_prospect;
-					  return $cust_or_prospect->name 
-					    if $cust_or_prospect->get('custnum');
-					  return "Prospect #".$cust_or_prospect->prospectnum
-					    if $cust_or_prospect->get('prospectnum');
-					  '';
-				      },
+				      sub { shift->cust_or_prospect->name },
 				      'phonenum',
 				      sub {
 					my $self = shift;
-					my %location_hash = $self->location;
+					my %location_hash= $self->location_hash;
 					# ugh...
 					if ( %location_hash ) {
 					    my $loc = new FS::cust_location(\%location_hash); 
