@@ -96,19 +96,23 @@ sub location_label {
     $notfirst++;
   }
 
-  my %location_type;
-  if ( 1 ) { #ikano, switch on via config
-    { no warnings 'void';
-      eval { 'use FS::part_export::ikano;' };
-      die $@ if $@;
+  if ( $self->get($prefix.'location_type') ) {
+    my %location_type;
+    if ( 1 ) { #ikano, switch on via config
+      { no warnings 'void';
+        eval { 'use FS::part_export::ikano;' };
+        die $@ if $@;
+      }
+      %location_type = FS::part_export::ikano->location_types;
+    } else {
+      %location_type = (); #?
     }
-    %location_type = FS::part_export::ikano->location_types;
-  } else {
-    %location_type = (); #?
+
+    $line .= ' '.&$escape( $location_type{ $self->get($prefix.'location_type') }
+                                       ||  $self->get($prefix.'location_type')
+                         );
   }
 
-  $line .= ' '. &$escape( $location_type{ $self->get($prefix.'location_type') })
-    if $self->get($prefix.'location_type');
   $line .= ' '. &$escape($self->get($prefix.'location_number'))
     if $self->get($prefix.'location_number');
 
