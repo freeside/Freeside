@@ -33,7 +33,7 @@ Example:
 
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Agent' %></TD>
-    <TD>
+    <TD <% $colspan %>>
       <% include( '/elements/select-agent.html',
                      'curr_value' => $agentnum,
                      'agents'     => \@agents,
@@ -56,5 +56,7 @@ my @agents =
     : $FS::CurrentUser::CurrentUser->agents(
         'viewall_right' => $opt{'viewall_right'},
       );
+
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
 
 </%init>

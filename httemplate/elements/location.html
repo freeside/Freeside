@@ -140,7 +140,7 @@ Example:
 
 %     #XXX try to parse first
 %     if ( 0 ) {
-%     } else {
+%     } else { #XXX i don't work so well when the dropdown is changed :/  i probably need to be triggered by "default service address"
         Can't parse unit type and number from <B><% $object->get($pre.'address2') |h %></B>
 %    }
 
@@ -156,13 +156,13 @@ Example:
 <TR>
   <<%$th%> ALIGN="right"><%$r%>City</<%$th%>>
   <TD WIDTH="1"><% include('/elements/city.html', %select_hash) %></TD>
-  <<%$th%> ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</<%$th%>>
-  <TD><% include('/elements/select-county.html', %select_hash ) %></TD>
+  <<%$th%> ALIGN="right" WIDTH="1" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</<%$th%>>
+  <TD WIDTH="1"><% include('/elements/select-county.html', %select_hash ) %></TD>
   <<%$th%> ALIGN="right" WIDTH="1"><%$r%>State</<%$th%>>
   <TD WIDTH="1">
     <% include('/elements/select-state.html', %select_hash ) %>
   </TD>
-  <<%$th%>><%$r%>Zip</<%$th%>>
+  <<%$th%> ALIGN="right" WIDTH="1"><%$r%>Zip</<%$th%>>
   <TD>
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>zip"
