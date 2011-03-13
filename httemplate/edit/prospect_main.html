@@ -19,12 +19,6 @@
        { 'field'             => 'contactnum',
          'type'              => 'contact',
          'colspan'           => 6,
-         ##actually o2m, but this seems to be working for edit so far
-         #'m2name_table'      => 'contact',
-         #'m2name_namecol'    => 'contactnum',
-         #'m2_label'          => 'Contact',
-         #'m2_error_callback' => $m2_error_callback,
-
          'o2m_table'      => 'contact',
          'm2_label'       => 'Contact',
          'm2_error_callback' => $m2_error_callback,
@@ -33,6 +27,7 @@
        { 'field'       => 'locationnum',
          'type'        => 'select-cust_location',
          'empty_label' => 'No address',
+         'alt_format'  => $conf->exists('prospect_main-alt_address_format'),
        },
      ],
      'new_callback'    => $new_callback,
@@ -44,6 +39,7 @@
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+my $conf = new FS::Conf;
 
 my $prospectnum;
 if ( $cgi->param('error') ) {
@@ -139,7 +135,7 @@ my $m2_error_callback = sub {
           my $num = $1;
           if ( grep $cgi->param("contactnum$num$_"), @gfields ) {
             my $x = new FS::contact {
-              'contactnum' => $cgi->param("contactnum$num"),
+              'contactnum' => scalar($cgi->param("contactnum$num")),
               map { $_ => scalar($cgi->param("contactnum${num}_$_")) } @fields,
             };
             $x;

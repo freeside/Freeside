@@ -281,50 +281,24 @@ Example:
 %     'disabled'      => $f->{'disabled'},
 %   );
 %
-%   #selectlayers, others?
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}),
-%                  qw( js_only html_only select_only layers_only cell_style);
-%
-%   #select-*
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( empty_label );
+%   $include_common{$_} = $f->{$_} foreach grep exists($f->{$_}),
+%     qw( js_only html_only select_only layers_only cell_style ),#selectlayers,?
+%     qw( empty_label ),                                   # select-*
+%     qw( value_col ),                                     # select-table
+%     qw( table name_col ),                           #(select,checkboxes)-table
+%     qw( target_table link_table ),                       #checkboxes-table
+%     qw( hashref agent_virt agent_null agent_null_right ),#*-table
+%     qw( formatted_value ),                               #fixed
+%     qw( country ),                                       #select-country
+%     qw( width height ),                                  #htmlarea
+%     qw( alt_format ),                                    #select-cust_location
+%   ;
 %
 %   #select-table
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( value_col );
 %   $include_common{$_} = ref( $f->{$_} ) eq 'CODE'
 %                           ? &{ $f->{$_} }( $cgi, $object ) #, $f )
 %                           : $f->{$_}
 %     foreach grep exists($f->{$_}), qw( extra_sql );
-%
-%   #select-table, checkboxes-table
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( table name_col  );
-%
-%   #checkboxes-table
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( target_table link_table );
-%
-%   #*-table
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}),
-%       qw( hashref agent_virt agent_null agent_null_right );
-%
-%   # fixed
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}),
-%       qw( formatted_value );
-%
-%   # select-country
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}),
-%       qw( country );
-%
-%   #htmlarea
-%   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( width height );
-%
 %
 %   if ( $type eq 'tablebreak-tr-title' ) {
 %     $include_common{'table_id'} = 'TableNumber'. $tablenum++;

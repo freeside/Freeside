@@ -4232,12 +4232,19 @@ and customer address. Include units.',
   },
   
   {
-    'key'         => 'qual-alt-address-format',
+    'key'         => 'qual-alt_address_format',
     'section'     => 'UI',
-    'description' => 'Enable the alternate address format (location type, number, and kind) on qualifications',
+    'description' => 'Enable the alternate address format (location type, number, and kind) for qualifications.',
     'type'        => 'checkbox',
   },
-  
+
+  {
+    'key'         => 'prospect_main-alt_address_format',
+    'section'     => 'UI',
+    'description' => 'Enable the alternate address format (location type, number, and kind) for prospects.  Recommended if qual-alt_address_format is set and the main use of propects is for qualifications.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'note-classes',
     'section'     => 'UI',

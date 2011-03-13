@@ -42,6 +42,21 @@ sub rebless { shift; }
 
 sub external_pkg_map { 1; }
 
+sub location_types {
+  (
+    ''     => '(None)',
+    'APT'  => 'Apartment',
+    'BLDG' => 'Building',
+    'FLR'  => 'Floor',
+    'LOT'  => 'Lot',
+    'RM'   => 'Room',
+    'SLIP' => 'Slip',
+    'TRLR' => 'Trailer',
+    'UNIT' => 'Unit',
+    'WING' => 'Wing',
+  );
+}
+
 sub dsl_pull {
 # we distinguish between invalid new data (return error) versus data that
 # has legitimately changed (may eventually execute hooks; now just update)
@@ -263,7 +278,6 @@ sub qual {
     my($self,$qual) = (shift,shift);
 
     my %location_hash = $qual->location_hash; 
-    warn Dumper $qual->location_hash;
     return 'No address provided' unless keys %location_hash;
 
     my $svctn = $qual->phonenum;
