@@ -38,7 +38,8 @@ and other location fields.
 =item location_hash
 
 Returns a list of key/value pairs, with the following keys: address1, address2,
-city, county, state, zip, country.  The shipping address is used if present.
+city, county, state, zip, country, geocode, location_type, location_number,
+location_kind.  The shipping address is used if present.
 
 =cut
 
@@ -88,12 +89,29 @@ sub location_label {
   my $prefix = $self->has_ship_address ? 'ship_' : '';
 
   my $notfirst = 0;
-  foreach (qw ( address1 address2 location_type location_number ) ) {
+  foreach (qw ( address1 address2 ) ) {
     my $method = "$prefix$_";
     $line .= ($notfirst ? $separator : ''). &$escape($self->$method)
       if $self->$method;
     $notfirst++;
   }
+
+  my %location_type;
+  if ( 1 ) { #ikano, switch on via config
+    { no warnings 'void';
+      eval { 'use FS::part_export::ikano;' };
+      die $@ if $@;
+    }
+    %location_type = FS::part_export::ikano->location_types;
+  } else {
+    %location_type = (); #?
+  }
+
+  $line .= ' '. &$escape( $location_type{ $self->get($prefix.'location_type') })
+    if $self->get($prefix.'location_type');
+  $line .= ' '. &$escape($self->get($prefix.'location_number'))
+    if $self->get($prefix.'location_number');
+
   $notfirst = 0;
   foreach (qw ( city county state zip ) ) {
     my $method = "$prefix$_";
@@ -148,6 +166,49 @@ sub geocode {
     if scalar(@cust_tax_location);
 
   $geocode;
+}
+
+=item alternize
+
+Attempts to parse data for location_type and location_number from address1
+and address2.
+
+=cut
+
+sub alternize {
+  my $self = shift;
+  my $prefix = $self->has_ship_address ? 'ship_' : '';
+
+  return '' if $self->get($prefix.'location_type')
+            || $self->get($prefix.'location_number');
+
+  my %parse;
+  if ( 1 ) { #ikano, switch on via config
+    { no warnings 'void';
+      eval { 'use FS::part_export::ikano;' };
+      die $@ if $@;
+    }
+    %parse = FS::part_export::ikano->location_types_parse;
+  } else {
+    %parse = (); #?
+  }
+
+  foreach my $from ('address1', 'address2') {
+    foreach my $parse ( keys %parse ) {
+      my $value = $self->get($prefix.$from);
+      if ( $value =~ s/(^|\W+)$parse\W+(\w+)\W*$//i ) {
+        $self->set($prefix.'location_type', $parse{$parse});
+        $self->set($prefix.'location_number', $2);
+        $self->set($prefix.$from, $value);
+        return '';
+      }
+    }
+  }
+
+  #nothing matched, no changes
+  $self->get($prefix.'address2')
+    ? "Can't parse unit type and number from ${prefix}address2"
+    : '';
 }
 
 =back

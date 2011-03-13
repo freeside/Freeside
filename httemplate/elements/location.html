@@ -20,7 +20,7 @@ Example:
 % if ( $opt{'alt_format'} ) {
 
 <TR>
-    <<%$th%> ALIGN="right">Location kind</<%$th%>>
+    <<%$th%> ALIGN="right">Location&nbsp;kind</<%$th%>>
     <TD>
     <% include('/elements/select.html',
                  'cgi'        => $cgi,
@@ -79,7 +79,7 @@ Example:
       >
 
 <TR>
-    <<%$th%> ALIGN="right">Unit type and #</<%$th%>>
+    <<%$th%> ALIGN="right">Unit&nbsp;type&nbsp;and&nbsp;#</<%$th%>>
     <TD COLSPAN=7>
 
 %     my $location_type = scalar($cgi->param('location_type'))
@@ -136,15 +136,9 @@ Example:
                <% $style %>
         >
 
-%   if ( $object->get($pre.'address2') ) {
-
-%     #XXX try to parse first
-%     if ( 0 ) {
-%     } else { #XXX i don't work so well when the dropdown is changed :/  i probably need to be triggered by "default service address"
-        Can't parse unit type and number from <B><% $object->get($pre.'address2') |h %></B>
-%    }
-
-% }
+%    #XXX i don't work so well when the dropdown is changed :/  i probably need to be triggered by "default service address"
+%    $alt_err =~ s/(ship_)?address2/'<B>'.encode_entities($object->get($1.'address2')).'<\/B>'/e;
+     <% $alt_err %>
 
     </TD>
 
@@ -218,6 +212,8 @@ my $statedefault = $conf->config('statedefault')
 $object->set($pre.'state', $statedefault )
   unless $object->get($pre.'state')
          || $object->get($pre.'country') ne $countrydefault;
+
+my $alt_err = ($opt{'alt_format'} && !$disabled) ? $object->alternize : '';
 
 my @style = ();
 push @style, 'background-color: #dddddd' if $disabled;

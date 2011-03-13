@@ -91,7 +91,8 @@ sub insert {
 
   if ( $options{'cust_location'} ) {
     my $cust_location = $options{'cust_location'};
-    my $error = $cust_location->insert;
+    my $method = $cust_location->locationnum ? 'replace' : 'insert';
+    my $error = $cust_location->$method();
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -186,7 +187,6 @@ sub part_export {
 
 sub location_hash {
     my $self = shift;
-    use Data::Dumper; warn Dumper($self);
     if ( $self->locationnum ) {
 	my $l = qsearchs( 'cust_location', 
 		    { 'locationnum' => $self->locationnum });

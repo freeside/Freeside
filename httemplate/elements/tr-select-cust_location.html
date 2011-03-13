@@ -23,27 +23,39 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
+  function location_disable(what) {
+%   for (@location_fields, 'city_select') { 
+      what.form.<%$_%>.disabled = true;
+      var ftype = what.form.<%$_%>.tagName;
+      if( ftype == 'SELECT') changeSelect(what.form.<%$_%>, '');
+      else what.form.<%$_%>.value = '';
+      if( ftype != 'SELECT') what.form.<%$_%>.style.backgroundColor = '#dddddd';
+%   } 
+  }
+
+  function location_enable(what) {
+%   for (grep { $_ ne 'location_number' } @location_fields, 'city_select') { 
+      what.form.<%$_%>.disabled = false;
+      var ftype = what.form.<%$_%>.tagName;
+      if( ftype != 'SELECT') what.form.<%$_%>.style.backgroundColor = '#ffffff';
+      if( ftype == 'INPUT' ) what.form.<%$_%>.value = '';
+%   } 
+
+    if ( what.form.location_type.options[what.form.location_type.selectedIndex].value ) {
+      what.form.location_number.disabled = false;
+      what.form.location_number.style.backgroundColor = '#ffffff';
+    }
+    what.form.location_number.value = '';
+  }
+
   function locationnum_changed(what) {
     var locationnum = what.options[what.selectedIndex].value;
     if ( locationnum == -2 ) {
-%         for (@location_fields, 'city_select') { 
-            what.form.<%$_%>.disabled = true;
-	    var ftype = what.form.<%$_%>.tagName;
-	    if( ftype == 'SELECT') changeSelect(what.form.<%$_%>, '');
-	    else what.form.<%$_%>.value = '';
-            what.form.<%$_%>.style.backgroundColor = '#dddddd';
-%         } 
-	return;
+      location_disable(what);
+      return;
     }
-    
     if ( locationnum == -1 ) {
-
-%     for (@location_fields, 'city_select') { 
-        what.form.<%$_%>.disabled = false;
-        what.form.<%$_%>.style.backgroundColor = '#ffffff';
-	var ftype = what.form.<%$_%>.tagName;
-	if( ftype == 'INPUT' ) what.form.<%$_%>.value = '';
-%     } 
+      location_enable(what);
 
       changeSelect(what.form.country, <% $countrydefault |js_string %>);
 
@@ -52,52 +64,45 @@ Example:
                                           ''
                                         )
                      );
+      return;
+    }
+
+    if ( locationnum == 0 ) {
+%     if ( $cust_main ) {
+      what.form.address1.value = <% $cust_main->get($prefix.'address1') |js_string %>;
+      what.form.address2.value = <% $cust_main->get($prefix.'address2') |js_string %>;
+      what.form.city.value = <% $cust_main->get($prefix.'city') |js_string %>;
+      what.form.zip.value = <% $cust_main->get($prefix.'zip') |js_string %>;
+
+      changeSelect(what.form.country, <% $cust_main->get($prefix.'country') | js_string %> );
+
+      country_changed( what.form.country,
+                       fix_state_factory( <% $cust_main->get($prefix.'state') | js_string %>,
+                                          <% $cust_main->get($prefix.'county') | js_string %>
+                                        )
+                     );
+%     }
 
     } else {
+      get_location( locationnum, update_location );
+    } 
 
+%   if ( $editable ) {
       if ( locationnum == 0 ) {
-%       if ( $cust_main ) {
-        what.form.address1.value = <% $cust_main->get($prefix.'address1') |js_string %>;
-        what.form.address2.value = <% $cust_main->get($prefix.'address2') |js_string %>;
-        what.form.city.value = <% $cust_main->get($prefix.'city') |js_string %>;
-        what.form.zip.value = <% $cust_main->get($prefix.'zip') |js_string %>;
+%   }
 
-        changeSelect(what.form.country, <% $cust_main->get($prefix.'country') | js_string %> );
+%       #sleep/wait until dropdowns are updated?
+        location_disable(what);
 
-        country_changed( what.form.country,
-                         fix_state_factory( <% $cust_main->get($prefix.'state') | js_string %>,
-                                            <% $cust_main->get($prefix.'county') | js_string %>
-                                          )
-                       );
-%       }
-
+%   if ( $editable ) {
       } else {
-        get_location( locationnum, update_location );
-      } 
 
-%     if ( $editable ) {
-        if ( locationnum == 0 ) {
-%     }
+%       #sleep/wait until dropdowns are updated?
+        location_enable(what);
 
-%#sleep/wait until dropdowns are updated?
-%         for (@location_fields, 'city_select') { 
-            what.form.<%$_%>.disabled = true;
-            what.form.<%$_%>.style.backgroundColor = '#dddddd';
-%         } 
+      }
+%   }
 
-%     if ( $editable ) {
-        } else {
-
-%#sleep/wait until dropdowns are updated?
-%         for (@location_fields, 'city_select') { 
-            what.form.<%$_%>.disabled = false;
-            what.form.<%$_%>.style.backgroundColor = '#ffffff';
-%         } 
-
-        }
-%     }
-
-    }
   }
 
   function fix_state_factory (state, county) {
@@ -181,7 +186,7 @@ Example:
              'disabled'     => $disabled,
              'no_asterisks' => 1,
              'no_bold'      => $opt{'no_bold'},
-	     'alt_format'   => $opt{'alt_format'},
+             'alt_format'   => $opt{'alt_format'},
           )
 %>
 

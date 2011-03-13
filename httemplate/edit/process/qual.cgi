@@ -45,14 +45,18 @@ my $locationnum = $1;
 
 my $error = '';
 my $cust_location = '';
+my %location_hash = (
+  map { $_ => scalar($cgi->param($_)) }
+    qw( address1 address2 city county state zip country geocode ),
+    grep scalar($cgi->param($_)),
+      qw( location_type location_number location_kind )
+);
+
 if ( $locationnum == -1 ) { # adding a new one
 
   $cust_location = new FS::cust_location {
     $cust_or_prospect."num" => $custnum_or_prospectnum,
-    map { $_ => scalar($cgi->param($_)) }
-      qw( address1 address2 city county state zip country geocode ),
-      grep scalar($cgi->param($_)),
-        qw( location_type location_number location_kind )
+    %location_hash,
   };
 
           #locationnum '': default service location
@@ -62,15 +66,21 @@ if ( $locationnum == -1 ) { # adding a new one
           #locationnum -2: address not required for qual
 } elsif ( $locationnum == -2 && $phonenum eq '' ) {
   $error = "Nothing to qualify - neither phone number nor address specified";
+
+} else { #existing location, possibly with an edit
+  $cust_location = qsearchs('cust_location', { 'locationnum'=>$locationnum })
+    or die "Unknown locationnum $locationnum";
+  $cust_location->$_($location_hash{$_}) foreach keys %location_hash;
 }
 
 my $qual = new FS::qual {
   'status' => 'N',
 };
-$qual->phonenum($phonenum) if $phonenum ne '';
+$qual->phonenum($phonenum)       if $phonenum ne '';
+#$qual->locationnum($locationnum) if $locationnum > 0;
+$qual->exportnum($exportnum)     if $exportnum > 0;
 $qual->set( $cust_or_prospect."num" => $custnum_or_prospectnum )
   unless $locationnum == -1 || $locationnum > 0;
-$qual->exportnum($exportnum) if $exportnum > 0;
 
 $error ||= $qual->insert( 'cust_location' => $cust_location );
 

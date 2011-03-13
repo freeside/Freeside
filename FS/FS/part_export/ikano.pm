@@ -51,9 +51,21 @@ sub location_types {
     'LOT'  => 'Lot',
     'RM'   => 'Room',
     'SLIP' => 'Slip',
+    'SUIT' => 'Suite',
     'TRLR' => 'Trailer',
     'UNIT' => 'Unit',
     'WING' => 'Wing',
+  );
+}
+
+sub location_types_parse {
+  my $class = shift;
+  my %t = $class->location_types;
+  delete $t{''};
+  (
+    (map { $_ => $_ } keys %t),
+    (reverse %t),
+    'STE' => 'SUIT', #USPS
   );
 }
 
@@ -280,6 +292,7 @@ sub qual {
     my %location_hash = $qual->location_hash; 
     return 'No address provided' unless keys %location_hash;
 
+    warn Dumper(\%location_hash);
     return 'Location kind is required' unless $location_hash{location_kind};
 
     my $svctn = $qual->phonenum;
