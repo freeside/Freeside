@@ -242,6 +242,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_category;
   use FS::prospect_main;
   use FS::contact;
+  use FS::phone_type;
   use FS::svc_pbx;
   use FS::discount;
   use FS::cust_pkg_discount;
