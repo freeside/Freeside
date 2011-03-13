@@ -5,6 +5,7 @@ use base qw( FS::geocode_Mixin FS::Record );
 use Locale::Country;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch ); #qsearchs );
+use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
@@ -134,12 +135,21 @@ sub check {
     || $self->ut_textn('state')
     || $self->ut_country('country')
     || $self->ut_zip('zip', $self->country)
+    || $self->ut_alphan('location_type')
+    || $self->ut_textn('location_number')
+    || $self->ut_enum('location_kind', [ '', 'R', 'B' ] )
     || $self->ut_alphan('geocode')
   ;
   return $error if $error;
 
   return "No prospect or customer!" unless $self->prospectnum || $self->custnum;
   return "Prospect and customer!"       if $self->prospectnum && $self->custnum;
+
+  my $conf = new FS::Conf;
+  return 'Location kind is required'
+    if $self->prospectnum
+    && $conf->exists('prospect_main-alt_address_format')
+    && ! $self->location_kind;
 
   unless ( qsearch('cust_main_county', {
     'country' => $self->country,
