@@ -1,21 +1,19 @@
 package FS::part_pkg::voip_cdr;
 
 use strict;
-use vars qw(@ISA $DEBUG %info);
+use base qw( FS::part_pkg::recur_Common );
+use vars qw( $DEBUG %info );
 use Date::Format;
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
-use FS::part_pkg::recur_Common;
 use FS::cdr;
 use FS::rate;
 use FS::rate_prefix;
 use FS::rate_detail;
-use FS::part_pkg::recur_Common;
 
 use List::Util qw(first min);
 
-@ISA = qw(FS::part_pkg::recur_Common);
 
 $DEBUG = 0;
 
@@ -340,7 +338,7 @@ sub calc_usage {
   my $disable_tollfree  = $self->option('disable_tollfree');
   my $ignore_unrateable = $self->option('ignore_unrateable', 'Hush!');
   my $use_duration      = $self->option('use_duration');
-  my $region_group	= ($rating_method eq 'prefix' && ($self->option('min_included') || 0) > 0);
+  my $region_group	= ($rating_method eq 'prefix' && ($self->option('min_included',1) || 0) > 0);
   my $region_group_included_min = $region_group ? $self->option('min_included') : 0;
 
   my $output_format     = $self->option('output_format', 'Hush!')
