@@ -50,7 +50,7 @@ day arrives.
 sub calc_prorate {
   my $self  = shift;
   my ($cust_pkg, $sdate, $details, $param) = @_;
-  my $cutoff_day = $self->cutoff_day($cust_pkg) or return; #die?
+  my $cutoff_day = $self->cutoff_day or die "no cutoff_day"; #($cust_pkg)
 
   my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
   if ( $cutoff_day ) {
@@ -88,6 +88,17 @@ sub calc_prorate {
     $charge = sprintf('%.2f', $permonth * $months);
   }
   return $charge;
+}
+
+=item cutoff_day
+
+Returns the value of the "cutoff_day" option, or 1.
+
+=cut
+
+sub cutoff_day {
+  my $self = shift;
+  $self->option('cutoff_day', 1) || 1;
 }
 
 =item prorate_setup CUST_PKG SDATE

@@ -1,12 +1,10 @@
 package FS::part_pkg::recur_Common;
 
 use strict;
-use vars qw( @ISA %info %recur_method );
+use base qw( FS::part_pkg::flat );
+use vars qw( %info %recur_method );
 use Tie::IxHash;
 use Time::Local;
-use FS::part_pkg::flat;
-
-@ISA = qw(FS::part_pkg::flat);
 
 %info = ( 'disabled' => 1 ); #recur_Common not a usable price plan directly
 
@@ -35,20 +33,22 @@ sub calc_recur_Common {
     $charges += $param->{'override_charges'} if $param->{'override_charges'};
 
     if ( $recur_method eq 'prorate' ) {
+
       my $cutoff_day = $self->option('cutoff_day') || 1;
       $charges = $self->calc_prorate(@_, $cutoff_day);
       $charges += $param->{'override_charges'} if $param->{'override_charges'};
-    }
-    elsif ( $recur_method eq 'anniversary' and 
+
+    } elsif ( $recur_method eq 'anniversary' and 
             $self->option('sync_bill_date',1) ) {
+
       my $next_bill = $cust_pkg->cust_main->next_bill_date;
       if ( defined($next_bill) ) {
         my $cutoff_day = (localtime($next_bill))[3];
         $charges = $self->calc_prorate(@_, $cutoff_day);
         $charges += $param->{'override_charges'} if $param->{'override_charges'};
       }
-    } 
-    elsif ( $recur_method eq 'subscription' ) {
+
+    } elsif ( $recur_method eq 'subscription' ) {
 
       my $cutoff_day = $self->option('cutoff_day', 1) || 1;
       my ($day, $mon, $year) = ( localtime($$sdate) )[ 3..5 ];
@@ -60,7 +60,7 @@ sub calc_recur_Common {
 
       $$sdate = timelocal(0, 0, 0, $cutoff_day, $mon, $year);
 
-    }#$recur_method eq 'subscription'
+    }#$recur_method
 
     $charges -= $self->calc_discount( $cust_pkg, $sdate, $details, $param );
 

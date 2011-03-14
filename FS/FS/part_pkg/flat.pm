@@ -126,7 +126,7 @@ sub calc_recur {
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
   my $charge = $self->base_recur($cust_pkg, $sdate);
-  if ( my $cutoff_day = $self->cutoff_day($cust_pkg) ) {
+  if ( my $cutoff_day = $self->flat_cutoff_day($cust_pkg) ) {
     $charge = $self->calc_prorate(@_);
   }
   elsif ( $param->{freq_override} ) {
@@ -140,7 +140,7 @@ sub calc_recur {
   return sprintf('%.2f', $charge - $discount);
 }
 
-sub cutoff_day {
+sub flat_cutoff_day {
   my $self = shift;
   my $cust_pkg = shift;
   if ( $self->option('sync_bill_date',1) ) {

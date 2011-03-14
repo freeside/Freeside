@@ -38,11 +38,6 @@ use FS::part_pkg::flat;
   'weight' => 20,
 );
 
-sub cutoff_day {
-  my $self = shift;
-  $self->option('cutoff_day', 1) || 1;
-}
-
 sub calc_recur {
   my $self = shift;
   return $self->calc_prorate(@_) - $self->calc_discount(@_);
