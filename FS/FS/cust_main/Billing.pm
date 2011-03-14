@@ -916,6 +916,10 @@ sub _make_lines {
     # which can_discount are supported.
     # (the UI should prevent adding discounts to these at the moment)
 
+    warn "calling $method on cust_pkg ". $cust_pkg->pkgnum. " with params ".
+         join(' / ', map "$_=>$params{$_}", keys %param). "\n"
+      if $DEBUG > 2;
+           
     $recur = eval { $cust_pkg->$method( \$sdate, \@details, \%param ) };
     return "$@ running $method for $cust_pkg\n"
       if ( $@ );
