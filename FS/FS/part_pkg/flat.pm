@@ -1,19 +1,16 @@
 package FS::part_pkg::flat;
 
 use strict;
-use vars qw( @ISA %info
-             %usage_recharge_fields @usage_recharge_fieldorder
+use base qw( FS::part_pkg 
+             FS::part_pkg::prorate_Mixin
+             FS::part_pkg::discount_Mixin
            );
+use vars qw( %info %usage_recharge_fields @usage_recharge_fieldorder );
 use Tie::IxHash;
 use List::Util qw(min); # max);
 #use FS::Record qw(qsearch);
 use FS::UI::bytecount;
 use FS::Conf;
-use FS::part_pkg;
-
-@ISA = qw(FS::part_pkg 
-          FS::part_pkg::prorate_Mixin
-          FS::part_pkg::discount_Mixin);
 
 tie my %temporalities, 'Tie::IxHash',
   'upcoming'  => "Upcoming (future)",
