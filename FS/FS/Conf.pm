@@ -4246,6 +4246,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'prospect_main-location_required',
+    'section'     => 'UI',
+    'description' => 'Require an address for prospects.  Recommended if the main use of propects is for qualifications.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'note-classes',
     'section'     => 'UI',
     'description' => 'Use customer note classes',

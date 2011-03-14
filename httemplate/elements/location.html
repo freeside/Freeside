@@ -27,7 +27,7 @@ Example:
                  'field'      => 'location_kind',
                  'id'         => 'location_kind',
                  'disabled'   => $disabled,
-                 'style'      => \@style,
+                 #'style'      => \@style,
                  'options'    => \@location_kind_options,
                  'labels'     => $location_kind_labels,
                  'curr_value' => scalar($cgi->param('location_kind'))
@@ -98,7 +98,7 @@ Example:
                      'field'      => 'location_type',
                      'id'         => 'location_type',
                      'disabled'   => $disabled,
-                     'style'      => \@style,
+                     #'style'      => \@style,
                      'options'    => [ keys %location_types ],
                      'labels'     => \%location_types,
                      'curr_value' => $location_type,
@@ -252,7 +252,7 @@ my %select_hash = (
   'prefix'   => $pre,
   'onchange' => $onchange,
   'disabled' => $disabled,
-  'style'    => \@style,
+  #'style'    => \@style,
 );
 
 my $th = $opt{'no_bold'} ? 'TD' : 'TH';

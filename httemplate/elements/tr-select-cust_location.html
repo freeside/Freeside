@@ -11,6 +11,7 @@ Example:
 
             #optional
             'empty_label'   => '(default service address)',
+            'disable_empty' => 0, #1 to disable
          )
 
 </%doc>
@@ -159,7 +160,7 @@ Example:
   <<%$th%> ALIGN="right"><% $opt{'label'} || 'Service&nbsp;location' %></<%$th%>>
   <TD COLSPAN=7>
     <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
-% if ( !$prospect_main ) {
+% if ( !$prospect_main && !$opt{'disable_empty'} ) {
       <OPTION VALUE=""><% $opt{'empty_label'} || '(default service address)' |h %>
 % }
 % if ( $opt{'is_optional'} ) {
@@ -267,7 +268,9 @@ push @cust_location, $cust_location
 my $disabled =
   ( $locationnum < 0
     || ( $editable && $locationnum )
-    || ( $prospect_main && !$opt{'is_optional'} && !@cust_location && $addnew )
+    || ( ( $prospect_main || $opt{'disable_empty'} )
+         && !$opt{'is_optional'} && !@cust_location && $addnew
+       )
   )
     ? ''
     : 'DISABLED';
