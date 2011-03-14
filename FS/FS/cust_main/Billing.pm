@@ -897,13 +897,6 @@ sub _make_lines {
              || $cust_pkg->setup
              || $time;
 
-    if ( $DEBUG > 2 ) {
-      warn 'part_pkg.freq: '. $part_pkg->freq. "\n";
-      warn 'cust_pkg.bill: '. $cust_pkg->getfield('bill'). "\n";
-      warn "time: $time\n";
-      warn "options{cancel}: $options{cancel}\n";
-    }
-
     #over two params!  lets at least switch to a hashref for the rest...
     my $increment_next_bill = ( $part_pkg->freq ne '0'
                                 && ( $cust_pkg->getfield('bill') || 0 ) <= $time
@@ -925,7 +918,7 @@ sub _make_lines {
 
     warn "calling $method on cust_pkg ". $cust_pkg->pkgnum.
          " for pkgpart ". $cust_pkg->pkgpart.
-         " with params ". join(' / ', map "$_=>$params{$_}", keys %param). "\n"
+         " with params ". join(' / ', map "$_=>$param{$_}", keys %param). "\n"
       if $DEBUG > 2;
            
     $recur = eval { $cust_pkg->$method( \$sdate, \@details, \%param ) };
