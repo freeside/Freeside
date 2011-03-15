@@ -244,7 +244,7 @@ sub rooturl {
   $url_string =~
     s{
        /
-       (browse|config|docs|edit|graph|misc|search|view|pref|rt|elements)
+       (browse|config|docs|edit|graph|misc|search|view|pref|rt|elements|torrus)
        /
        (process/)?
        ([\w\-\.\/]*)
