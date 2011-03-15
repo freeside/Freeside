@@ -19,6 +19,18 @@ sub base_recur {
   $self->option('recur_fee', 1) || 0;
 }
 
+sub cutoff_day {
+  # prorate/subscription only; we don't support sync_bill_date here
+  my $self = shift;
+  my $cust_pkg = shift;
+  my $recur_method = $self->option('recur_method',1) || 'anniversary';
+  if ( $recur_method eq 'prorate' or $recur_method eq 'subscription' ) {
+    return $self->option('cutoff_day',1) || 1;
+  } else {
+    return 0;
+  }
+}
+
 sub calc_recur_Common {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_; #only need $sdate & $param
@@ -28,29 +40,18 @@ sub calc_recur_Common {
   if ( $param->{'increment_next_bill'} ) {
 
     my $recur_method = $self->option('recur_method', 1) || 'anniversary';
-    
+    my $cutoff_day = $self->cutoff_day($cust_pkg);
+
     $charges = $self->base_recur;
     $charges += $param->{'override_charges'} if $param->{'override_charges'};
 
     if ( $recur_method eq 'prorate' ) {
 
-      my $cutoff_day = $self->option('cutoff_day') || 1;
       $charges = $self->calc_prorate(@_, $cutoff_day);
       $charges += $param->{'override_charges'} if $param->{'override_charges'};
 
-    } elsif ( $recur_method eq 'anniversary' and 
-            $self->option('sync_bill_date',1) ) {
-
-      my $next_bill = $cust_pkg->cust_main->next_bill_date;
-      if ( defined($next_bill) ) {
-        my $cutoff_day = (localtime($next_bill))[3];
-        $charges = $self->calc_prorate(@_, $cutoff_day);
-        $charges += $param->{'override_charges'} if $param->{'override_charges'};
-      }
-
     } elsif ( $recur_method eq 'subscription' ) {
 
-      my $cutoff_day = $self->option('cutoff_day', 1) || 1;
       my ($day, $mon, $year) = ( localtime($$sdate) )[ 3..5 ];
 
       if ( $day < $cutoff_day ) {

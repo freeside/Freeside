@@ -40,8 +40,12 @@ use FS::part_pkg::flat;
 
 sub calc_recur {
   my $self = shift;
-  my $cutoff_day = $self->option('cutoff_day') || 1;
-  return $self->calc_prorate(@_, $cutoff_day) - $self->calc_discount(@_);
+  return $self->calc_prorate(@_, $self->cutoff_day) - $self->calc_discount(@_);
+}
+
+sub cutoff_day {
+  my $self = shift;
+  $self->option('cutoff_day') || 1;
 }
 
 1;

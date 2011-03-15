@@ -53,16 +53,15 @@ sub calc_prorate {
 
   my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
 
-  #if ( $cutoff_day ) {
     my $mnow = $$sdate;
 
     # if this is the first bill but the bill date has been set
     # (by prorate_defer_bill), calculate from the setup date,
     # and append the setup fee to @$details.
-    if ( $self->option('prorate_defer_bill')
+    if ( $self->option('prorate_defer_bill',1)
         and ! $cust_pkg->getfield('last_bill') 
         and $cust_pkg->setup ) {
-      warn "[calc_prorate] #".$cust_pkg->pkgnum.": running deferred setup\n";
+      #warn "[calc_prorate] #".$cust_pkg->pkgnum.": running deferred setup\n";
       $param->{'setup_fee'} = $self->calc_setup($cust_pkg, $$sdate, $details);
       $mnow = $cust_pkg->setup;
     }
@@ -86,7 +85,6 @@ sub calc_prorate {
 
     $param->{'months'} = $months;
     $charge = sprintf('%.2f', $permonth * $months);
-  #}
 
   return $charge;
 }
