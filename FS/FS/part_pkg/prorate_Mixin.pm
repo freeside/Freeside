@@ -23,14 +23,14 @@ sub calc_recur {
   ...
   if( conditions that trigger prorate ) {
     # sets $$sdate and $param->{'months'}, returns the prorated charge
-    $charges = $self->calc_prorate($cust_pkg, $sdate, $param);
+    $charges = $self->calc_prorate($cust_pkg, $sdate, $param, $cutoff_day);
   } 
   ...
 }
 
 =head METHODS
 
-=item calc_prorate CUST_PKG SDATE DETAILS PARAM
+=item calc_prorate CUST_PKG SDATE DETAILS PARAM CUTOFF_DAY
 
 Takes all the arguments of calc_recur.  Calculates a prorated charge from 
 the $sdate to the cutoff day for this package definition, and sets the $sdate 
@@ -48,12 +48,12 @@ day arrives.
 =cut
 
 sub calc_prorate {
-  my $self  = shift;
-  my ($cust_pkg, $sdate, $details, $param) = @_;
-  my $cutoff_day = $self->cutoff_day or die "no cutoff_day"; #($cust_pkg)
+  my ($self, $cust_pkg, $sdate, $details, $param, $cutoff_day) = @_;
+  die "no cutoff_day" unless $cutoff_day;
 
   my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
-  if ( $cutoff_day ) {
+
+  #if ( $cutoff_day ) {
     my $mnow = $$sdate;
 
     # if this is the first bill but the bill date has been set
@@ -86,19 +86,9 @@ sub calc_prorate {
 
     $param->{'months'} = $months;
     $charge = sprintf('%.2f', $permonth * $months);
-  }
+  #}
+
   return $charge;
-}
-
-=item cutoff_day
-
-Returns the value of the "cutoff_day" option, or 1.
-
-=cut
-
-sub cutoff_day {
-  my $self = shift;
-  $self->option('cutoff_day', 1) || 1;
 }
 
 =item prorate_setup CUST_PKG SDATE
