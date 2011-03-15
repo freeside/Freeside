@@ -55,7 +55,7 @@ my $sql = "
 
 my $orderlimit = "
     ORDER BY srv_date, srv_time
-    LIMIT 100
+    LIMIT 50
 ";
 
 
@@ -130,7 +130,12 @@ while (1) {
           if $DEBUG > 2;
 
         my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
-        $isth->execute( @param )       or die $isth->errstr;
+
+        #stupid mysql deadlocks all the time here, so we need to recover
+        $isth->execute( @param ) or do {
+          warn "Error inserting data for $serviceid$dir (restarting): ".
+               $isth->errstr;
+        }
                         
       }
 
