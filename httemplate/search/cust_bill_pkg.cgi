@@ -463,8 +463,11 @@ if ( $cgi->param('pkg_tax') ) {
 
 } else {
 
-  #$count_query = "SELECT COUNT(*), ";
-  $count_query = "SELECT COUNT(DISTINCT billpkgnum), ";
+  if ( $use_usage ) {
+    $count_query = "SELECT COUNT(*), ";
+  } else {
+    $count_query = "SELECT COUNT(DISTINCT billpkgnum), ";
+  }
 
   if ( $use_usage eq 'recurring' ) {
     $count_query .= "SUM(setup + recur - usage)";
