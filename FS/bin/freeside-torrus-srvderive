@@ -147,6 +147,7 @@ while (1) {
     warn "done with $serviceid\n" if $DEBUG;
 
   }
+  dbh->commit or die dbh->errstr;
 
   myexit() if sigterm() || sigint();
   warn "restarting main loop\n" if $DEBUG > 1;
