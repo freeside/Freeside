@@ -1,0 +1,91 @@
+<% include('elements/monthly.html',
+                'title'        => $title,
+                'graph_type'   => 'Mountain',
+                'items'        => \@items,
+                'params'       => \@params,
+                'labels'       => \@labels,
+                'graph_labels' => \@labels,
+                'colors'       => \@colors,
+                'links'        => \@links,
+                'remove_empty' => 1,
+                'bottom_total' => 1,
+                'bottom_link'  => $bottom_link,
+                'agentnum'     => $agentnum,
+          )
+%>
+<%init>
+
+#false laziness w/cust_bill_pkg.cgi
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $link = "${p}search/cust_bill_pkg_discount.html?";
+my $bottom_link = $link;
+
+#XXX or virtual
+my( $agentnum, $sel_agent ) = ('', '');
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+  $bottom_link .= "agentnum=$agentnum;";
+  $sel_agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+  die "agentnum $agentnum not found!" unless $sel_agent;
+}
+my $title = $sel_agent ? $sel_agent->agent.' ' : '';
+$title .= 'Discount Overview';
+
+
+my $hue = 0;
+#my $hue_increment = 170;
+#my $hue_increment = 145;
+my $hue_increment = 125;
+
+my @items  = ();
+my @params = ();
+my @labels = ();
+my @colors = ();
+my @links  = ();
+
+foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
+
+  my $col_scheme = Color::Scheme->new
+                     ->from_hue($hue) #->from_hex($agent->color)
+                     ->scheme('analogic')
+                   ;
+  my @_colors = ();
+
+  #foreach my $pkg_class ( @pkg_class ) {
+
+      push @items, 'cust_bill_pkg_discount';
+
+      push @labels,
+        ( $sel_agent ? '' : $agent->agent.' ' );
+        #. ( $classnum eq '0'
+        #    ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
+        #    : ''
+        #  );
+
+      #my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
+      my $row_agentnum = $agent->agentnum;
+      push @params, [ #'classnum'             => $row_classnum,
+                      'agentnum'             => $row_agentnum,
+                      #'use_override'         => $use_override,
+                      #'use_usage'            => $component,
+                      #'average_per_cust_pkg' => $average_per_cust_pkg,
+                    ];
+
+      push @links, "$link?agentnum=$row_agentnum"; #;classnum=$row_classnum;";
+
+      @_colors = ($col_scheme->colors)[0,4,8,1,5,9,2,6,10,3,7,11];
+      push @colors, shift @_colors;
+
+  #}
+
+  $hue += $hue_increment;
+
+}
+
+#use Data::Dumper;
+#warn Dumper(\@items);
+
+</%init>

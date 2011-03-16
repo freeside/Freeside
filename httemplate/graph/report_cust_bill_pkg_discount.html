@@ -1,0 +1,31 @@
+<% include('/elements/header.html', 'Discount Report' ) %>
+
+<FORM ACTION="cust_bill_pkg_discount.html" METHOD="GET">
+
+<TABLE>
+
+<% include('/elements/tr-select-from_to.html' ) %>
+
+<% include('/elements/tr-select-agent.html',
+             'label'         => 'For agent: ',
+             'disable_empty' => 0,
+          )
+%>
+
+%# anything about line items, discounts or packages really
+%# otaker?
+%# package class?
+%# discount picker?  (discount classes and categories?  eek!)
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Display">
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>
