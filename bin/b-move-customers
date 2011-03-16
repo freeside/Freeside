@@ -256,6 +256,9 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
           'preinsert_callback' => sub {
 
             my($row, $object) = @_;
+
+            $object->start_date(''); #bogus start dates on all packages
+
             my $src_svcpart = $row->{'svcpart'} or die "wtf2";
             my $dest_svcpart = $map{'part_svc'}->{$src_svcpart};
             if ( $dest_svcpart ) {
