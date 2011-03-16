@@ -72,6 +72,7 @@ zone "$domain" {
 };
 
 END
+      unlink "$prefix/db.$domain" if -e "$prefix/db.$domain";
 
     } else {
 
