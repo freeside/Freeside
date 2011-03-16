@@ -59,7 +59,7 @@ my $orderlimit = "
 ";
 
 
-while (1) {
+MAIN: while (1) {
 
   my $found = 0;
 
@@ -131,10 +131,13 @@ while (1) {
 
         my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
 
-        #stupid mysql deadlocks all the time here, so we need to recover
-        $isth->execute( @param ) or do {
+        #stupid mysql deadlocks all the time on insert, so we need to recover
+        unless ( $isth->execute(@param) ) {
           warn "Error inserting data for $serviceid$dir (restarting): ".
                $isth->errstr;
+          dbh->rollback; #or die dbh->errstr;
+          sleep 5;
+          next MAIN;
         }
                         
       }
@@ -151,7 +154,7 @@ while (1) {
     }
     warn "done with $serviceid\n" if $DEBUG;
 
-  }
+  } #foreach my $torrus_srvderive
   dbh->commit or die dbh->errstr;
 
   myexit() if sigterm() || sigint();
