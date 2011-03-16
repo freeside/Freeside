@@ -88,6 +88,23 @@ sub _export_unsuspend {
   );
 }
 
+sub captcha_url {
+  my $self = shift;
+  my $google = $self->google_handle;
+  if (exists ($google->{'captcha_url'}) ) {
+    return 'http://www.google.com/accounts/'.$google->{'captcha_url'};
+  }
+  else {
+    return '';
+  }
+}
+
+sub captcha_auth {
+  my $self = shift;
+  my $response = shift;
+  my $google = $self->google_handle('captcha_response' => $response);
+  return (defined($google->{'token'}));
+}
 
 my %google_error = (
   1000 => 'unknown error',
@@ -113,7 +130,9 @@ my %google_error = (
 
 sub google_request {
   my ($self, $method, %opt) = @_;
-  my $google = $self->google_handle;
+  my $google = $self->google_handle(
+    'captcha_response' => delete $opt{'captcha_response'}
+  );
   return $google->{'error'} if $google->{'error'};
 
   # Throw away the result from this; we don't use it yet.
@@ -133,6 +152,7 @@ sub google_request {
 sub google_handle {
   my $self = shift;
   my $class = 'REST::Google::Apps::Provisioning';
+  my %opt = @_;
   eval "use $class";
 
   die "failed to load $class\n" if $@;
@@ -167,24 +187,71 @@ sub google_handle {
     }
   );
 
-  my $cache_id = $self->exportnum . '_token';
-  $google->{'token'} = $CACHE->get($cache_id);
+  my $cache_token = $self->exportnum . '_token';
+  my $cache_captcha = $self->exportnum . '_captcha_token';
+  $google->{'token'} = $CACHE->get($cache_token);
   if ( !$google->{'token'} ) {
-    eval { 
-      $google->authenticate(
-        'username'  => $self->option('username'),
-        'password'  => $self->option('password'),
-      ) 
-    };
+    my %login = (
+      'username' => $self->option('username'),
+      'password' => $self->option('password'),
+    );
+    if ( $opt{'captcha_response'} ) {
+      $login{'logincaptcha'} = $opt{'captcha_response'};
+      $login{'logintoken'} = $CACHE->get($cache_captcha);
+    }
+    eval { $google->captcha_auth(%login); };
     if ( $@ ) {
-      # XXX CAPTCHA
       $google->{'error'} = $@->{'error'};
-      $CACHE->remove($cache_id);
+      $google->{'captcha_url'} = $@->{'captchaurl'};
+      $CACHE->set($cache_captcha, $@->{'captchatoken'}, '1 minute');
       return $google;
     }
-    $CACHE->set($cache_id, $google->{'token'}, '1 hour');
+    $CACHE->remove($cache_captcha);
+    $CACHE->set($cache_token, $google->{'token'}, '1 hour');
   }
   return $google;
+}
+
+# REST::Google::Apps::Provisioning also lacks a way to do this
+sub REST::Google::Apps::Provisioning::captcha_auth {
+  my $self = shift;
+
+  return( 1 ) if $self->{'token'};
+
+  my ( $arg );
+  %{$arg} = @_;
+
+  map { $arg->{lc($_)} = $arg->{$_} } keys %{$arg};
+
+  foreach my $param ( qw/ username password / ) {
+    $arg->{$param} || croak( "Missing required '$param' argument" );
+  }
+
+  my @postargs = (
+    'accountType' => 'HOSTED',
+    'service'     => 'apps',
+    'Email'       => $arg->{'username'} . '@' . $self->{'domain'},
+    'Passwd'      => $arg->{'password'},
+  );
+  if ( $arg->{'logincaptcha'} ) {
+    push @postargs, 
+      'logintoken'  => $arg->{'logintoken'},
+      'logincaptcha'=> $arg->{'logincaptcha'}
+      ;
+  }
+  my $response = $self->{'lwp'}->post(
+    'https://www.google.com/accounts/ClientLogin',
+    \@postargs
+  );
+
+  $response->is_success() || return( 0 );
+
+  foreach ( split( /\n/, $response->content() ) ) {
+    $self->{'token'} = $1 if /^Auth=(.+)$/;
+    last if $self->{'token'};
+  }
+
+  return( 1 ) if $self->{'token'} || return( 0 );
 }
 
 1;

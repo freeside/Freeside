@@ -56,31 +56,47 @@ my $new = new FS::svc_acct ( \%hash );
 
 my $error = '';
 
+# google captcha auth
+if ( $cgi->param('captcha_response') ) {
+  my $part_svc = $svcnum ? 
+                  $old->part_svc : 
+                  qsearchs( 'part_svc', 
+                    { 'svcpart' => $cgi->param('svcpart') }
+                  );
+  my ($export) = $part_svc->part_export('acct_google');
+  if ( $export and
+      ! $export->captcha_auth($cgi->param('captcha_response')) ) { 
+    $error = 'Re-enter the security word.';
+  }
+}
+
 $new->_password($old->_password) if $old;
 if (     $cgi->param('clear_password') eq '*HIDDEN*'
       || $cgi->param('clear_password') =~ /^\(.* encrypted\)$/ ) {
   die "fatal: no previous account to recall hidden password from!" unless $old;
 } else {
-  $error = $new->set_password($cgi->param('clear_password'));
+  $error ||= $new->set_password($cgi->param('clear_password'));
 }
 
-if ( $svcnum ) {
-  foreach ( grep { $old->$_ != $new->$_ }
-                 qw( seconds upbytes downbytes totalbytes )
-          )
-  {
-    my %hash = map { $_ => $new->$_ } 
-               grep { $new->$_ }
-               qw( seconds upbytes downbytes totalbytes );
+if ( ! $error ) {
+  if ( $svcnum ) {
+    foreach ( grep { $old->$_ != $new->$_ }
+                   qw( seconds upbytes downbytes totalbytes )
+            )
+    {
+      my %hash = map { $_ => $new->$_ } 
+                 grep { $new->$_ }
+                 qw( seconds upbytes downbytes totalbytes );
 
-    $error ||= "invalid $_" foreach grep { $hash{$_} !~ /^-?\d+$/ } keys %hash;
-    $error ||= $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
-    last;                                #once is enough
+      $error ||= "invalid $_" foreach grep { $hash{$_} !~ /^-?\d+$/ } keys %hash;
+      $error ||= $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
+      last;                                #once is enough
+    }
+    $error ||= $new->replace($old);
+  } else {
+    $error ||= $new->insert;
+    $svcnum = $new->svcnum;
   }
-  $error ||= $new->replace($old);
-} else {
-  $error ||= $new->insert;
-  $svcnum = $new->svcnum;
 }
 
 </%init>

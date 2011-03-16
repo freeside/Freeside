@@ -340,6 +340,12 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 </TABLE>
 <BR>
 
+% if ( $captcha_url ) {
+<IMG SRC="<% $captcha_url %>"><BR>
+Enter the word shown above: <INPUT TYPE="text" NAME="captcha_response"><BR>
+<BR>
+% }
+
 <INPUT TYPE="submit" VALUE="Submit">
 
 </FORM>
@@ -483,6 +489,12 @@ my $p1 = popurl(1);
 
 sub max {
   (sort(@_))[-1]
+}
+
+my $captcha_url;
+my ($export_google) = $part_svc->part_export('acct_google');
+if ( $export_google ) {
+  $captcha_url = $export_google->captcha_url || '';
 }
 
 </%init>
