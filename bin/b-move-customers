@@ -201,6 +201,9 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
     import_table( 'cust_pkg', 'custnum' => $src_custnum,
       'preinsert_callback' => sub {
         my($row, $object) = @_;
+
+        $object->start_date(''); #bogus start dates on all packages
+
         my $src_pkgpart = $row->{'pkgpart'} or die "wtf";
         my $dest_pkgpart = $map{'part_pkg'}->{$src_pkgpart};
         if ( $dest_pkgpart ) {
@@ -256,9 +259,6 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
           'preinsert_callback' => sub {
 
             my($row, $object) = @_;
-
-            $object->start_date(''); #bogus start dates on all packages
-
             my $src_svcpart = $row->{'svcpart'} or die "wtf2";
             my $dest_svcpart = $map{'part_svc'}->{$src_svcpart};
             if ( $dest_svcpart ) {
