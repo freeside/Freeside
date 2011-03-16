@@ -911,6 +911,7 @@ sub generate_email {
     'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
     'template'      => $args{'template'},
     'notice_name'   => ( $args{'notice_name'} || 'Invoice' ),
+    'no_coupon'     => $args{'no_coupon'},
   );
 
   my $cust_main = $self->cust_main;
@@ -1259,11 +1260,12 @@ sub queueable_email {
   my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
     or die "invalid invoice number: " . $opt{invnum};
 
-  my @args = ( $opt{template} );
-  push @args, $opt{invoice_from}
-    if exists($opt{invoice_from}) && $opt{invoice_from};
+  my %args = ( 'template' => $opt{template} );
+  $args{$_} = $opt{$_}
+    foreach grep { exists($opt{$_}) && $opt{$_} }
+              qw( invoice_from notice_name no_coupon );
 
-  my $error = $self->email( @args );
+  my $error = $self->email( \%args );
   die $error if $error;
 
 }
@@ -1272,16 +1274,18 @@ sub queueable_email {
 sub email {
   my $self = shift;
 
-  my( $template, $invoice_from, $notice_name );
+  my( $template, $invoice_from, $notice_name, $no_coupon );
   if ( ref($_[0]) ) {
     my $opt = shift;
     $template = $opt->{'template'} || '';
     $invoice_from = $opt->{'invoice_from'};
     $notice_name = $opt->{'notice_name'} || 'Invoice';
+    $no_coupon = $opt->{'no_coupon'} || 0;
   } else {
     $template = scalar(@_) ? shift : '';
     $invoice_from = shift if scalar(@_);
     $notice_name = 'Invoice';
+    $no_coupon = 0;
   }
 
   $invoice_from ||= $self->_agent_invoice_from ||    #XXX should go away
@@ -1308,6 +1312,7 @@ sub email {
       'subject'     => $subject,
       'template'    => $template,
       'notice_name' => $notice_name,
+      'no_coupon'   => $no_coupon,
     )
   );
   die "can't email invoice: $error\n" if $error;
@@ -2295,7 +2300,7 @@ sub print_generic {
   my $template = $params{template} ? $params{template} : $self->_agent_template;
   my $templatefile = "invoice_$format";
   $templatefile .= "_$template"
-    if length($template);
+    if length($template) && $conf->exists($templatefile."_$template");
   my @invoice_template = map "$_\n", $conf->config($templatefile)
     or die "cannot load config data $templatefile";
 
@@ -2643,7 +2648,9 @@ sub print_generic {
   warn "$me substituting variables in notes, footer, smallfooter\n"
     if $DEBUG > 1;
 
-  foreach my $include (qw( notes footer smallfooter coupon )) {
+  my @include = (qw( notes footer smallfooter ));
+  push @include, 'coupon' unless $params{'no_coupon'};
+  foreach my $include (@include) {
 
     my $inc_file = $conf->key_orbase("invoice_${format}$include", $template);
     my @inc_src;

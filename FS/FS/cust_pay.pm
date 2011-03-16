@@ -544,7 +544,7 @@ sub send_receipt {
   my $error = '';
 
   if (    ( exists($opt->{'manual'}) && $opt->{'manual'} )
-       || ! $conf->exists('invoice_html_statement')
+       #|| ! $conf->exists('invoice_html_statement')
        || ! $cust_bill
      )
   {
@@ -599,7 +599,7 @@ sub send_receipt {
 
     } else {
 
-      warn "payment_receipt is on, but no payment_receipt_msgnum or invoice_html_statement is configured\n";
+      warn "payment_receipt is on, but no payment_receipt_msgnum\n";
 
     }
 
@@ -611,8 +611,10 @@ sub send_receipt {
     };
 
     $error = $queue->insert(
-      'invnum'   => $cust_bill->invnum,
-      'template' => 'statement',
+      'invnum'      => $cust_bill->invnum,
+      'template'    => 'statement',
+      'notice_name' => 'Statement',
+      'no_coupon'   => 1,
     );
 
   }
