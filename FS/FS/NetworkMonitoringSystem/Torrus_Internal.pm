@@ -212,7 +212,7 @@ sub add_interface {
         unless ( $added ) {
           $new .= 
             qq(   <param name="RFC2863_IF_MIB::external-serviceid">\n).
-            qq(     $newline\n").
+            qq(     $newline\n).
             qq(   </param>\n);
         }
         $new .= "$hostline\n";
