@@ -24,7 +24,7 @@ textarea, input[type="text"], input[type="password"] {
 	 border-radius: 2px;
 }
 
-textarea:hover, input[type="text"]:hover, input[type="password"]:hover {
+textarea:hover, input[type="text"]:hover:not([disabled]), input[type="password"]:hover:not([disabled]) {
   border: 1px solid #7e0079;
   padding: 1px;
 	 -moz-border-radius: 2px;
