@@ -305,9 +305,10 @@ push @cust_location, $cust_location
 
 @cust_location = sort $location_sort grep !$_->disabled, @cust_location;
 
-if ( ( $prospect_main || $opt{'disable_empty'} ) && !$opt{'is_optional'} ) {
-  $cust_location = $cust_location[0];
-}
+$cust_location = $cust_location[0];
+  if ( $prospect_main || $opt{'disable_empty'} )
+  && !$opt{'is_optional'}
+  && @cust_location;
 
 my $disabled =
   ( $locationnum < 0
