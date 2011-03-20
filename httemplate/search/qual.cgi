@@ -22,7 +22,7 @@
 					$self->status_long;
 				      },
 				      sub { shift->cust_or_prospect->name },
-				      'phonenum',
+				      sub { shift->phonenum || '(none - dry loop)' },
 				      sub {
 					my $self = shift;
 					my %location_hash= $self->location_hash;

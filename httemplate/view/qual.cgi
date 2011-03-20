@@ -16,7 +16,7 @@
 <B>Qualification #<% $qual->qualnum %></B>
 <% ntable("#cccccc", 2) %>
 <% include('elements/tr.html', label => 'Status', value => $qual->status_long ) %>
-<% include('elements/tr.html', label => 'Service Telephone Number', value => $qual->phonenum ) %>
+<% include('elements/tr.html', label => 'Service Telephone Number', value => $qual->phonenum || '(none - dry loop)' ) %>
 <% include('elements/tr.html', label => 'Address', value => $location_line ) %>
 % if ( $location_kind ) {
 <% include('elements/tr.html', label => 'Location Kind', value => $location_kind ) %>

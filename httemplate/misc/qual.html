@@ -45,10 +45,11 @@
 %>
 
 <% include('/elements/tr-select-cust_location.html',
-             'cgi'         => $cgi,
-             $table        => $cust_main_or_prospect_main,
-             'alt_format'  => $conf->exists('qual-alt_address_format'),
-             'no_bold'     => 1,
+             'cgi'           => $cgi,
+             $table          => $cust_main_or_prospect_main,
+             'alt_format'    => $conf->exists('qual-alt_address_format'),
+             'disable_empty' => $conf->exists('qual-alt_address_format'),
+             'no_bold'       => 1,
              #required for ikano.. config? 'is_optional' => 1,
           )
 %>

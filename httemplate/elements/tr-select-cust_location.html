@@ -34,29 +34,39 @@ Example:
 %   } 
   }
 
+  function location_clear(what) {
+%   for (grep { $_ ne 'location_number' } @location_fields, 'city_select') { 
+      var ftype = what.form.<%$_%>.tagName;
+      if( ftype == 'INPUT' ) what.form.<%$_%>.value = '';
+%   }
+%   if ( $opt{'alt_format'} ) {
+      changeSelect(what.form.location_kind, '');
+      changeSelect(what.form.location_type, '');
+      what.form.location_number.value = '';
+%   }
+  }
+
   function location_enable(what) {
 %   for (grep { $_ ne 'location_number' } @location_fields, 'city_select') { 
       what.form.<%$_%>.disabled = false;
       var ftype = what.form.<%$_%>.tagName;
       if( ftype != 'SELECT') what.form.<%$_%>.style.backgroundColor = '#ffffff';
-      if( ftype == 'INPUT' ) what.form.<%$_%>.value = '';
 %   } 
 
     if ( what.form.location_type.options[what.form.location_type.selectedIndex].value ) {
       what.form.location_number.disabled = false;
       what.form.location_number.style.backgroundColor = '#ffffff';
     }
-    what.form.location_number.value = '';
   }
 
   function locationnum_changed(what) {
     var locationnum = what.options[what.selectedIndex].value;
-    if ( locationnum == -2 ) {
+    if ( locationnum == -2 ) { //(not required)
       location_disable(what);
       return;
     }
-    if ( locationnum == -1 ) {
-      location_enable(what);
+    if ( locationnum == -1 ) { //Add new location
+      location_clear(what);
 
       changeSelect(what.form.country, <% $countrydefault |js_string %>);
 
@@ -65,10 +75,33 @@ Example:
                                           ''
                                         )
                      );
+
+      location_enable(what);
+      return;
+    }
+    if ( locationnum == -3 ) { //service address location for qualificaitons
+      what.form.address1.value = <% $cust_location->address1 |js_string %>;
+      what.form.address2.value = <% $cust_location->address2 |js_string %>;
+      what.form.city.value = <% $cust_location->city |js_string %>;
+      what.form.zip.value = <% $cust_location->zip |js_string %>;
+%     if ( $opt{'alt_format'} ) {
+        what.form.location_number.value = <% $cust_location->location_number |js_string %>;
+        changeSelect(what.form.location_kind, <% $cust_location->location_kind |js_string %> );
+        changeSelect(what.form.location_type, <% $cust_location->location_type |js_string %> );
+%     }
+
+      changeSelect(what.form.country, <% $cust_location->country | js_string %> );
+
+      country_changed( what.form.country,
+                       fix_state_factory( <% $cust_location->state | js_string %>,
+                                          <% $cust_location->county | js_string %>
+                                        )
+                     );
+      location_enable(what);
       return;
     }
 
-    if ( locationnum == 0 ) {
+    if ( locationnum == 0 ) { //(default service address)
 %     if ( $cust_main ) {
       what.form.address1.value = <% $cust_main->get($prefix.'address1') |js_string %>;
       what.form.address2.value = <% $cust_main->get($prefix.'address2') |js_string %>;
@@ -139,9 +172,16 @@ Example:
   function update_location( string ) {
     var hash = eval('('+string+')');
     document.getElementById('address1').value = hash['address1'];
-    document.getElementById('address2').value = hash['address2'];
     document.getElementById('city').value     = hash['city'];
     document.getElementById('zip').value      = hash['zip'];
+
+%   if ( $opt{'alt_format'} ) {
+      changeSelect( document.getElementById('location_kind'), hash['location_kind']);
+      changeSelect( document.getElementById('location_type'), hash['location_type']);
+      document.getElementById('location_number').value = hash['location_number'];
+%   } else {
+      document.getElementById('address2').value = hash['address2'];
+%   }
 
     var country_el = document.getElementById('country');
 
@@ -238,7 +278,7 @@ if ( $locationnum && $locationnum > 0 ) {
     or die "unknown locationnum";
 } else {
   $cust_location = new FS::cust_location;
-  if ( $locationnum == -1 ) {
+  if ( $locationnum == -1 || $locationnum == -3 ) {
     $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
   } elsif ( $cust_pkg && $cust_pkg->locationnum ) {
     my $pkg_location = $cust_pkg->cust_location;
@@ -265,6 +305,10 @@ push @cust_location, $cust_location
 
 @cust_location = sort $location_sort grep !$_->disabled, @cust_location;
 
+if ( ( $prospect_main || $opt{'disable_empty'} ) && !$opt{'is_optional'} ) {
+  $cust_location = $cust_location[0];
+}
+
 my $disabled =
   ( $locationnum < 0
     || ( $editable && $locationnum )
@@ -274,6 +318,12 @@ my $disabled =
   )
     ? ''
     : 'DISABLED';
+
+if ( $cust_main && $opt{'alt_format'} && ! @cust_location ) {
+  $cust_location->locationnum(-3);
+  $cust_location->alternize;
+  push @cust_location, $cust_location;
+}
 
 my $th = $opt{'no_bold'} ? 'TD' : 'TH';
 

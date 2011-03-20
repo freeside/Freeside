@@ -2,7 +2,7 @@
 
 <TR>
   <TH ALIGN="right"><%$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
-  <TD COLSPAN=5>
+  <TD COLSPAN=7>
     <INPUT TYPE="text" NAME="<%$pre%>last" VALUE="<% $cust_main->get($pre.'last') |h %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>> , 
     <INPUT TYPE="text" NAME="<%$pre%>first" VALUE="<% $cust_main->get($pre.'first') |h %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>

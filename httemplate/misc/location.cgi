@@ -24,7 +24,8 @@ my $cust_location = qsearchs({
 
 my %hash = ();
 %hash = map { $_ => $cust_location->$_() }
-            qw( address1 address2 city county state zip country )
+            qw( address1 address2 city county state zip country
+                location_kind location_type location_number )
   if $cust_location;
 
 </%init>

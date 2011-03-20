@@ -52,7 +52,7 @@ my %location_hash = (
       qw( location_type location_number location_kind )
 );
 
-if ( $locationnum == -1 ) { # adding a new one
+if ( $locationnum == -1 || $locationnum == -3 ) { # adding a new one
 
   $cust_location = new FS::cust_location {
     $cust_or_prospect."num" => $custnum_or_prospectnum,
@@ -80,7 +80,7 @@ $qual->phonenum($phonenum)       if $phonenum ne '';
 #$qual->locationnum($locationnum) if $locationnum > 0;
 $qual->exportnum($exportnum)     if $exportnum > 0;
 $qual->set( $cust_or_prospect."num" => $custnum_or_prospectnum )
-  unless $locationnum == -1 || $locationnum > 0;
+  unless $locationnum == -1 || $locationnum == -3 || $locationnum > 0;
 
 $error ||= $qual->insert( 'cust_location' => $cust_location );
 
