@@ -63,6 +63,14 @@
 %       }
     </UL>
 %  }
+
+%  my $not_avail = $qual_result->{'not_avail'};
+%  if ( keys %$not_avail ) {
+     <BR>
+     Qualifying vendor packages (not yet configured in any package definition):
+     <% join(', ', map $not_avail->{$_}, keys %$not_avail ) |h %>
+%  }
+
 % }
 
 <%init>

@@ -356,21 +356,27 @@ sub qual_result {
     }
 
     my %pkglist = ();
-    my $result = { 'header' => 'Qualifying Packages',
-		   'pkglist' => \%pkglist,
-		 };
-
+    my %found = ();
     my @part_pkgs = qsearch( 'part_pkg', { 'disabled' => '' } );
     foreach my $part_pkg ( @part_pkgs ) {
 	my %vendor_pkg_ids = $part_pkg->vendor_pkg_ids;
 	my $externalid = $vendor_pkg_ids{$self->exportnum} 
 	    if defined $vendor_pkg_ids{$self->exportnum};
-	if ( $externalid && grep( $_ eq $externalid, @externalids )) {
-	    $pkglist{$part_pkg->pkgpart} = $part_pkg->pkg." - ".$part_pkg->comment;
+	if ( $externalid && grep { $_ eq $externalid } @externalids ) {
+	    $pkglist{$part_pkg->pkgpart} = $part_pkg->pkg_comment;
+            $found{$externalid}++;
 	}
     }
 
-    $result;
+    my %not_avail = ();
+    foreach my $externalid ( grep !$found{$_}, @externalids ) {
+      $not_avail{$externalid} = $externalid; #a better label?
+    }
+
+    { 'header'    => 'Qualifying Packages',
+      'pkglist'   => \%pkglist,
+      'not_avail' => \%not_avail,
+    };
 }
 
 sub quals_by_cust_and_pkg { 
