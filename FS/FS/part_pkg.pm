@@ -277,19 +277,20 @@ sub insert {
   }
 
   if ( $options{'part_pkg_vendor'} ) {
-      my($exportnum,$vendor_pkg_id);
-      my %options_part_pkg_vendor = $options{'part_pkg_vendor'};
-      while(($exportnum,$vendor_pkg_id) = each %options_part_pkg_vendor){
-	    my $ppv = new FS::part_pkg_vendor( {
-		    'pkgpart' => $self->pkgpart,
-		    'exportnum' => $exportnum,
-		    'vendor_pkg_id' => $vendor_pkg_id, 
-		} );
-	    my $error = $ppv->insert;
-	    if ( $error ) {
-	      $dbh->rollback if $oldAutoCommit;
-	      return "Error inserting part_pkg_vendor record: $error";
-	    }
+      while ( my ($exportnum, $vendor_pkg_id) =
+                each %{ $options{part_pkg_vendor} }
+            )
+      {
+            my $ppv = new FS::part_pkg_vendor( {
+                    'pkgpart' => $self->pkgpart,
+                    'exportnum' => $exportnum,
+                    'vendor_pkg_id' => $vendor_pkg_id, 
+                } );
+            my $error = $ppv->insert;
+            if ( $error ) {
+              $dbh->rollback if $oldAutoCommit;
+              return "Error inserting part_pkg_vendor record: $error";
+            }
       }
   }
 
@@ -456,48 +457,48 @@ sub replace {
   if ( $options->{'part_pkg_vendor'} ) {
       my($exportnum,$vendor_pkg_id);
       while ( ($exportnum,$vendor_pkg_id) 
-				= each %{$options->{'part_pkg_vendor'}} ) {
-	  my $noinsert = 0;
-	  foreach my $part_pkg_vendor ( @part_pkg_vendor ) {
-	    if($exportnum == $part_pkg_vendor->exportnum
-		&& $vendor_pkg_id ne $part_pkg_vendor->vendor_pkg_id) {
-		$part_pkg_vendor->vendor_pkg_id($vendor_pkg_id);
-		my $error = $part_pkg_vendor->replace;
-		if ( $error ) {
-		  $dbh->rollback if $oldAutoCommit;
-		  return "Error replacing part_pkg_vendor record: $error";
-		}
-		$noinsert = 1;
-		last;
-	    }
-	    elsif($exportnum == $part_pkg_vendor->exportnum
-		&& $vendor_pkg_id eq $part_pkg_vendor->vendor_pkg_id) {
-		$noinsert = 1;
-		last;
-	    }
-	  }
-	  unless ( $noinsert ) {
-	    my $ppv = new FS::part_pkg_vendor( {
-		    'pkgpart' => $new->pkgpart,
-		    'exportnum' => $exportnum,
-		    'vendor_pkg_id' => $vendor_pkg_id, 
-		} );
-	    my $error = $ppv->insert;
-	    if ( $error ) {
-	      $dbh->rollback if $oldAutoCommit;
-	      return "Error inserting part_pkg_vendor record: $error";
-	    }
-	  }
-	  push @current_exportnum, $exportnum;
+                                = each %{$options->{'part_pkg_vendor'}} ) {
+          my $noinsert = 0;
+          foreach my $part_pkg_vendor ( @part_pkg_vendor ) {
+            if($exportnum == $part_pkg_vendor->exportnum
+                && $vendor_pkg_id ne $part_pkg_vendor->vendor_pkg_id) {
+                $part_pkg_vendor->vendor_pkg_id($vendor_pkg_id);
+                my $error = $part_pkg_vendor->replace;
+                if ( $error ) {
+                  $dbh->rollback if $oldAutoCommit;
+                  return "Error replacing part_pkg_vendor record: $error";
+                }
+                $noinsert = 1;
+                last;
+            }
+            elsif($exportnum == $part_pkg_vendor->exportnum
+                && $vendor_pkg_id eq $part_pkg_vendor->vendor_pkg_id) {
+                $noinsert = 1;
+                last;
+            }
+          }
+          unless ( $noinsert ) {
+            my $ppv = new FS::part_pkg_vendor( {
+                    'pkgpart' => $new->pkgpart,
+                    'exportnum' => $exportnum,
+                    'vendor_pkg_id' => $vendor_pkg_id, 
+                } );
+            my $error = $ppv->insert;
+            if ( $error ) {
+              $dbh->rollback if $oldAutoCommit;
+              return "Error inserting part_pkg_vendor record: $error";
+            }
+          }
+          push @current_exportnum, $exportnum;
       }
   }
   foreach my $part_pkg_vendor ( @part_pkg_vendor ) {
       unless ( grep($_ eq $part_pkg_vendor->exportnum, @current_exportnum) ) {
-	my $error = $part_pkg_vendor->delete;
-	if ( $error ) {
-	  $dbh->rollback if $oldAutoCommit;
-	  return "Error deleting part_pkg_vendor record: $error";
-	}
+        my $error = $part_pkg_vendor->delete;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "Error deleting part_pkg_vendor record: $error";
+        }
       }
   }
 
