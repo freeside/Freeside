@@ -129,6 +129,8 @@ sub table_info {
 
     {
 	'name' => 'DSL',
+	'name_plural' => 'DSLs',
+	'lcname_plural' => 'DSLs',
 	'sorts' => [ 'phonenum' ],
 	'display_weight' => 55,
 	'cancel_weight' => 75,

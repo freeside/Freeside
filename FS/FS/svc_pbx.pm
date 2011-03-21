@@ -81,8 +81,9 @@ sub table { 'svc_pbx'; }
 sub table_info {
   {
     'name' => 'PBX',
-    'name_plural' => 'PBXs', #optional,
-    'longname_plural' => 'PBXs', #optional
+    'name_plural' => 'PBXs',
+    'lcname_plural' => 'PBXs',
+    'longname_plural' => 'PBXs',
     'sorts' => 'svcnum', # optional sort field (or arrayref of sort fields, main first)
     'display_weight' => 70,
     'cancel_weight'  => 90,
@@ -91,24 +92,6 @@ sub table_info {
       'title' => 'Name',
       'max_extensions' => 'Maximum number of User Extensions',
       'max_simultaneous' => 'Maximum number of simultaneous users',
-#      'field'         => 'Description',
-#      'another_field' => { 
-#                           'label'     => 'Description',
-#			   'def_label' => 'Description for service definitions',
-#			   'type'      => 'text',
-#			   'disable_default'   => 1, #disable switches
-#			   'disable_fixed'     => 1, #
-#			   'disable_inventory' => 1, #
-#			 },
-#      'foreign_key'   => { 
-#                           'label'        => 'Description',
-#			   'def_label'    => 'Description for service defs',
-#			   'type'         => 'select',
-#			   'select_table' => 'foreign_table',
-#			   'select_key'   => 'key_field_in_table',
-#			   'select_label' => 'label_field_in_table',
-#			 },
-
     },
   };
 }
