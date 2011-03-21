@@ -379,6 +379,7 @@ Example:
 %     $g_row = 1 if $type eq 'tablebreak-tr-title';
 %     $g_row++;
 %     $g_row++ if $type eq 'title';
+%     $g_row += scalar( @{ $f->{options} } )-1 if $type eq 'radio';
 %   } else {
 %     if ( $type eq 'columnstart' ) {
 %       push @g_row_stack, $g_row;

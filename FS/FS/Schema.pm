@@ -982,12 +982,14 @@ sub tables_hashref {
       'columns' => [
         'prospectnum',  'serial',     '',      '', '', '',
         'agentnum',        'int',     '',      '', '', '',
-        'company',     'varchar',     '', $char_d, '', '',
-        #'disabled',     'char', 'NULL',       1, '', '', 
+        'company',     'varchar', 'NULL', $char_d, '', '',
+        'add_date',   @date_type,                  '', '', 
+        'disabled',       'char', 'NULL',       1, '', '', 
+        'custnum',         'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'prospectnum',
       'unique'      => [],
-      'index'       => [ [ 'company' ], [ 'agentnum' ], ],
+      'index'       => [ [ 'company' ], [ 'agentnum' ], [ 'disabled' ] ],
     },
 
     #eventually use for billing & ship from cust_main too

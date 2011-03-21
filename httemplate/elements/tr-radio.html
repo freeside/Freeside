@@ -1,0 +1,21 @@
+% foreach my $option ( @{ $opt{options} } ) { #just arrayref for now
+
+  <% include('tr-td-label.html', @_, label=> $labels->{$option} || $option ) %>
+
+    <TD <% $style %>>
+      <% include('radio.html', @_, value=> $option ) %>
+    </TD>
+
+  </TR>
+
+% }
+<%init>
+
+my %opt = @_;
+
+my $labels = $opt{'option_labels'} || $opt{'labels'};
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>
+

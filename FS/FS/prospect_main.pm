@@ -203,7 +203,7 @@ sub check {
   my $error = 
     $self->ut_numbern('prospectnum')
     || $self->ut_foreign_key('agentnum', 'agent', 'agentnum' )
-    || $self->ut_text('company')
+    || $self->ut_textn('company')
   ;
   return $error if $error;
 
@@ -216,7 +216,12 @@ sub check {
 
 sub name {
   my $self = shift;
-  $self->company; #at least until this is nullable
+  return $self->company if $self->company;
+
+  my $contact = ($self->contact)[0]; #first contact?  good enough for now
+  return $contact->line if $contact;
+
+  $self->prospectnum;
 }
 
 =item contact

@@ -13,10 +13,15 @@
          'empty_label' => 'Select agent',
          'colspan'     => 6,
        },
-       { 'field'   => 'company',
-         'type'    => 'text',
-         'size'    => 50,
-         'colspan' => 6,
+       { 'field'    => 'residential_commercial',
+         'type'     => 'radio',
+         'options'  => [ 'Residential', 'Commercial', ],
+         'onchange' => 'rescom_changed',
+       },
+       { 'field'    => 'company',
+         'type'     => 'text',
+         'size'     => 50,
+         'colspan'  => 6,
        },
        { 'field'             => 'contactnum',
          'type'              => 'contact',
@@ -35,8 +40,10 @@
      ],
      'new_callback'    => $new_callback,
      'edit_callback'   => $edit_callback,
-     'error_callbacck' => $error_callback,
+     'error_callback'  => $error_callback,
      'agent_virt'      => 1,
+     'html_bottom'     => $javascript,
+     'body_etc'        => 'onLoad="rescom_changed()"',
    )
 %>
 <%init>
@@ -103,6 +110,9 @@ my $new_callback = sub {
 
   }
 
+  #config to default to commercial and/or disable residential when someone needs
+  $prospect_main->set('residential_commercial', 'Residential');
+
 };
 
 my $edit_callback = sub {
@@ -115,6 +125,12 @@ my $edit_callback = sub {
   $prospect_main->set('locationnum', $cust_location[0]->locationnum)
     if scalar(@cust_location);
   #warn 'prospect_main.locationnum '.$prospect_main->get('locationnum');
+
+  $prospect_main->set('residential_commercial',
+    length($prospect_main->company)
+      ? 'Commercial'
+      : 'Residential'
+  );
 };
 
 my $error_callback = sub {
@@ -124,6 +140,13 @@ my $error_callback = sub {
     or die 'illegal locationnum '. $cgi->param('locationnum');
   my $locationnum = $1;
   $prospect_main->set('locationnum', $locationnum);
+
+  $prospect_main->set('residential_commercial',
+    ($cgi->param('residential_commercial') eq 'Commercial')
+      ? 'Commercial'
+      : 'Residential'
+  );
+
 };
 
 my $m2_error_callback = sub {
@@ -153,5 +176,19 @@ my $m2_error_callback = sub {
 };
 
 #my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
+
+my $javascript = <<END;
+  <SCRIPT TYPE="text/javascript">
+    function rescom_changed() {
+      var f = document.edit_topform;
+      var c = f.company;
+      if        ( f.residential_commercial_Residential.checked ) {
+        c.disabled = true;
+      } else if ( f.residential_commercial_Commercial.checked ) {
+        c.disabled = false;
+      }
+    }
+  </SCRIPT>
+END
 
 </%init>

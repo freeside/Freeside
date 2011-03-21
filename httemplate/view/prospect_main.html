@@ -23,10 +23,12 @@
    </TR>
 %}
 
-<TR>
-  <TD ALIGN="right">Company</TD>
-  <TD BGCOLOR="#FFFFFF"><B><% $prospect_main->company |h %></B></TD>
-</TR>
+% if ( $prospect_main->company ) { 
+  <TR>
+    <TD ALIGN="right">Company</TD>
+    <TD BGCOLOR="#FFFFFF"><B><% $prospect_main->company |h %></B></TD>
+  </TR>
+% }
 
 % foreach my $contact ( $prospect_main->contact ) {
     <TR>
@@ -58,14 +60,14 @@
 
 % if ( $curuser->access_right('Qualify service') ) { 
 <% include( '/elements/popup_link-prospect_main.html',
-              'action'      => $p. 'misc/qual.html',
-              'label'       => 'New&nbsp;Qualification',
-              'actionlabel' => 'New Qualification',
-              'color'       => '#333399',
-              'prospect_main'   => $prospect_main,
-              'closetext'   => 'Close',
-              'width'       => 763,
-              'height'      => 436,
+              'action'        => $p. 'misc/qual.html',
+              'label'         => 'New&nbsp;Qualification',
+              'actionlabel'   => 'New Qualification',
+              'color'         => '#333399',
+              'prospect_main' => $prospect_main,
+              'closetext'     => 'Close',
+              'width'         => 763,
+              'height'        => 436,
           )
 %>
   | <A HREF="<%$p%>search/qual.cgi?prospectnum=<% $prospect_main->prospectnum %>">View Qualifications</A>
