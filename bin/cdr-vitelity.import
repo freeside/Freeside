@@ -1,0 +1,142 @@
+#!/usr/bin/perl
+
+=pod
+
+cdr-vitelity.import [ -v ] [ -k ] [ -r ]
+                    [ -s date ] [ -e date ]
+                    username
+                    [ exportnum ]
+
+Download CDRs using the Vitelity API.
+
+-v: Be verbose.
+
+-k: Keep the .csv file for debugging purposes, instead of deleting it.
+
+-r: Reset the CDR counter before fetching.  This will download previously 
+imported CDRs.
+
+-s date: Import only records on or after 'date'.  If not specified, the 
+script will import the entire history (if -r is specified) or everything 
+since the last import (if not).  Note that the API request doesn't have any 
+limits, so the entire data file will be downloaded regardless, but parsing 
+and importing the records is considerably slower than downloading them.
+
+-e date: Import only records before 'date'.  See above.
+
+username: a Freeside user
+
+exportnum: Run only for that export.  If not specified, this will run for 
+all Vitelity exports.
+
+=cut
+
+use strict;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearchs qsearch);
+use FS::cdr;
+use FS::part_export;
+use Getopt::Std;
+use File::Temp;
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
+
+my %opt;
+getopts('vrkas:e:', \%opt);
+
+my $user = shift or die &usage;
+my $exportnum = shift;
+my $dbh = adminsuidsetup $user;
+local $FS::UID::AutoCommit = 0;
+
+my @part_exports;
+if ( $exportnum ) {
+  @part_exports = ( qsearchs('part_export', { 'exportnum' => $exportnum }) )
+    or die "exportnum $exportnum not found\n";
+}
+else {
+  @part_exports = qsearch('part_export', { 'exporttype' => 'vitelity' })
+    or die "no Vitelity exports found\n";
+}
+
+foreach my $export (@part_exports) {
+  my $exportnum = $export->exportnum;
+  print "Processing exportnum $exportnum.\n" if $opt{'v'};
+  $export->isa('FS::part_export::vitelity') 
+    or die "exportnum $exportnum is not a Vitelity export\n";
+
+  if ( $opt{'r'} ) {
+    my $result = $export->vitelity_command('resetcdrlist');
+    if ( $result ne 'ok' ) {
+      $dbh->rollback;
+      die "Failed to reset CDR list: $result\n";
+    }
+  }
+
+  my $dir = $FS::UID::cache_dir . "/cache.". $FS::UID::datasrc;
+  my $temp = new File::Temp ( TEMPLATE => 'download.XXXXXXXX',
+                              SUFFIX   => '.csv',
+                              DIR      => $dir,
+                              UNLINK   => !$opt{'k'} )
+    or die "can't open temporary file to store download: $!\n";
+  print "Downloading to ".$temp->filename."\n" if $opt{'v'};
+
+  print "Sending API request..." if $opt{'v'};
+  my @records = eval { $export->vitelity_command('cdrlist') };
+  if ( $@ ) {
+    print "download error: $@\n";
+    exit(-1);
+  }
+  print "received ".scalar(@records)." records\n" if $opt{'v'};
+  if ( !@records ) {
+    print "No records to process.\n" if $opt{'v'};
+    exit(1);
+  }
+
+  print $temp "Date,Source,Destination,Seconds,CallerID,Disposition,Cost\n";
+
+  my $regex = qr/^(\d{4})-(\d{2})-(\d{2})/;
+  my $start = $opt{'s'} ? str2time($opt{'s'}) : '';
+  my $s = time2str('%Y-%m-%d', $start) if $start;
+  my $end = $opt{'e'} ? str2time($opt{'e'}) : '';
+  my $e = time2str('%Y-%m-%d', $end) if $end;
+  my $count = 0;
+  while (my $rec = shift @records) {
+    my $date = substr($rec, 0, 10);
+    next if ($start and $s gt $date);
+    next if ($end and $e le $date);
+    print $temp $rec, "\n";
+    $count++;
+  }
+  close $temp;
+  print "Selected $count records in date range." if $opt{'v'} and ($s or $e);
+
+  my $format = 'vitelity';
+  my $batchname = "vitelity-$exportnum-".time2str('%Y/%m/%d-%T',time);
+
+  print "Importing batch..." if $opt{'v'};
+  my $error = FS::cdr::batch_import( {
+    'file'            => $temp->filename,
+    'format'          => $format,
+    'batch_namevalue' => $batchname,
+  } );
+
+  if ( $error ) {
+    $dbh->rollback;
+    print "error: $error";
+    exit(-2);
+  }
+}
+$dbh->commit;
+print "done.\n";
+exit(0);
+
+sub usage {
+"Usage: 
+cdr-vitelity.import [ -v ] [ -k ] [ -r ]
+                    [ -s date ] [ -e date ]
+                    username
+                    [ exportnum ]
+"
+}
+
