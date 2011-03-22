@@ -3,6 +3,7 @@ package FS::part_export::acct_google;
 use strict;
 use vars qw(%info %SIG $CACHE);
 use Tie::IxHash;
+
 use base 'FS::part_export';
 
 tie my %options, 'Tie::IxHash',
@@ -151,16 +152,23 @@ sub google_request {
 
 sub google_handle {
   my $self = shift;
-  my $class = 'REST::Google::Apps::Provisioning';
   my %opt = @_;
-  eval "use $class";
-
-  die "failed to load $class\n" if $@;
+  my @class = ( 
+    'REST::Google::Apps::Provisioning',
+    'Cache::FileCache',
+    'LWP::UserAgent 5.815',
+  );
+  foreach (@class) {
+    eval "use $_";
+    die "failed to load $_\n" if $@;
+  }
   $CACHE ||= new Cache::FileCache( {
       'namespace'   => __PACKAGE__,
       'cache_root'  => "$FS::UID::cache_dir/cache.$FS::UID::datasrc",
   } );
-  my $google = $class->new( 'domain'  => $self->option('domain') );
+  my $google = REST::Google::Apps::Provisioning->new(
+    'domain'  => $self->option('domain') 
+  );
 
   # REST::Google::Apps::Provisioning lacks error reporting.  We deal 
   # with that by hooking HTTP::Response to throw a useful fatal error 
