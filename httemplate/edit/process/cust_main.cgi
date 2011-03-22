@@ -192,12 +192,27 @@ if ( $new->custnum eq '' ) {
     } elsif ( $svcdb eq 'svc_phone' ) {
 
       my %svc_phone = (
-                        'svcpart' => $svcpart,
-                        map { $_ => scalar($cgi->param($_)) }
-                          qw( countrycode phonenum sip_password pin phone_name )
-                      );
+        'svcpart' => $svcpart,
+        map { $_ => scalar($cgi->param($_)) }
+            qw( countrycode phonenum sip_password pin phone_name )
+      );
 
       $svc = new FS::svc_phone \%svc_phone;
+
+    } elsif ( $svcdb eq 'svc_dsl' ) {
+
+      my %svc_dsl = (
+        'svcpart' => $svcpart,
+        ( map { $_ => scalar($cgi->param("ship_$_")) || scalar($cgi->param($_))}
+              qw( first last company )
+        ),
+        ( map { $_ => scalar($cgi->param($_)) }
+              qw( loop_type phonenum password isp_chg isp_prev vendor_qual_id )
+        ),
+        'desired_due_date'  => time, #XXX enter?
+        'vendor_order_type' => 'NEW',
+      );
+      $svc = new FS::svc_dsl \%svc_dsl;
 
     } else {
       die "$svcdb not handled on new customer yet";

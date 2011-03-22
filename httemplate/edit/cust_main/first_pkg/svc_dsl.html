@@ -1,0 +1,75 @@
+<% ntable("#cccccc") %>
+
+% if ( $opt{'phonenum'} ) {
+
+  <INPUT TYPE="hidden" NAME="loop_type" VALUE="">
+  <INPUT TYPE="hidden" NAME="phonenum" VALUE="<% $opt{'phonenum'} %>">
+
+  <TR>
+    <TD ALIGN="right">Loop Type</TD>
+    <TD BGCOLOR="#eeeeee">Line-share</TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Phone Number</TD>
+    <TD BGCOLOR="#eeeeee"><% $opt{'phonenum'} %></TD>
+  </TR>
+
+% } else {
+
+  <INPUT TYPE="hidden" NAME="loop_type" VALUE="0">
+  <INPUT TYPE="hidden" NAME="phonenum" VALUE="">
+
+  <TR>
+    <TD ALIGN="right">Loop Type</TD>
+    <TD BGCOLOR="#eeeeee">Standalone</TD>
+  </TR>
+
+% }
+
+<TR>
+  <TD ALIGN="right">PPPoE password</TD>
+  <TD>
+    <INPUT TYPE      = "text"
+           NAME      = "password"
+           VALUE     = "<% $opt{'password'} %>"
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">ISP Changing?</TD>
+  <TD>
+    <INPUT TYPE      = "checkbox"
+           NAME      = "isp_chg"
+           VALUE     = "Y"
+           <% $opt{'isp_chg'} eq 'Y' ? 'CHECKED' : '' %>
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Current or Previous ISP</TD>
+  <TD>
+    <INPUT TYPE      = "text"
+           NAME      = "isp_prev"
+           VALUE     = "<% $opt{'isp_prev'} %>"
+    >
+  </TD>
+</TR>
+
+<INPUT TYPE="hidden" NAME="vendor_qual_id" VALUE="<% $opt{'vendor_qual_id'} %>">
+<TR>
+  <TD ALIGN="right">Vendor Qualification ID</TD>
+  <TD BGCOLOR="#eeeeee"><% $opt{'vendor_qual_id'} %></TD>
+</TR>
+
+</TABLE>
+
+<%init>
+
+my %opt = @_;
+
+#my $conf = new FS::Conf;
+
+</%init>

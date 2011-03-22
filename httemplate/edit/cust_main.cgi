@@ -13,7 +13,8 @@
 %#      STYLE="margin-top: 0; margin-bottom: 0">
 >
 
-<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+<INPUT TYPE="hidden" NAME="custnum"     VALUE="<% $custnum %>">
+<INPUT TYPE="hidden" NAME="prospectnum" VALUE="<% $prospectnum %>">
 
 % if ( $custnum ) { 
   Customer #<B><% $cust_main->display_custnum %></B> - 
@@ -187,6 +188,7 @@ function samechanged(what) {
                  'popnum'          => $popnum,
                  'saved_domsvc'    => $saved_domsvc,
                  %svc_phone,
+                 %svc_dsl,
               )
     %>
 
@@ -237,6 +239,8 @@ my $same = '';
 my $pkgpart_svcpart = ''; #first_pkg
 my($username, $password, $popnum, $saved_domsvc) = ( '', '', 0, 0 ); #svc_acct
 my %svc_phone = ();
+my %svc_dsl = ();
+my $prospectnum = '';
 
 if ( $cgi->param('error') ) {
 
@@ -273,6 +277,10 @@ if ( $cgi->param('error') ) {
   $svc_phone{$_} = $cgi->param($_)
     foreach qw( countrycode phonenum sip_password pin phone_name );
 
+  #svc_dsl (phonenum came in with svc_phone)
+  $svc_phone{$_} = $cgi->param($_)
+    foreach qw( password isp_chg isp_prev vendor_qual_id );
+
 } elsif ( $cgi->keywords ) { #editing
 
   die "access denied"
@@ -308,6 +316,44 @@ if ( $cgi->param('error') ) {
   $ss = '';
   $stateid = '';
   $payinfo = '';
+
+  if ( $cgi->param('qualnum') =~ /^(\d+)$/ ) {
+    my $qualnum = $1;
+    my $qual = qsearchs('qual', { 'qualnum' => $qualnum } )
+      or die "unknown qualnum $qualnum";
+
+    my $prospect_main = $qual->cust_or_prospect;
+    $prospectnum = $prospect_main->prospectnum
+      or die "qualification not on a prospect";
+
+    $cust_main->agentnum( $prospect_main->agentnum );
+    $cust_main->company(  $prospect_main->company  );
+
+    #first contact? -> name
+    my @contacts = $prospect_main->contact;
+    my $contact = $contacts[0];
+    $cust_main->first( $contact->first );
+    $cust_main->set( 'last', $contact->get('last') );
+    #XXX contact phone numbers
+
+    #XXX additional/all contacts -> alas (notes for now?  add add'l contact support?)
+
+    #XXX move all contacts and locations
+
+    #location -> address  (all prospect quals have location, right?)
+    my $cust_location = $qual->cust_location;
+    $cust_location->dealternize;
+    $cust_main->$_( $cust_location->$_ )
+      foreach qw( address1 address2 city county state zip country geocode );
+
+    #pkgpart handled by lock_pkgpart below
+
+    #XXX locationnum -> package order
+
+    #service telephone & vendor_qual_id -> svc_dsl
+    $svc_dsl{$_} = $qual->$_
+      foreach qw( phonenum vendor_qual_id );
+  }
 
   if ( $cgi->param('lock_pkgpart') =~ /^(\d+)$/ ) {
     my $pkgpart = $1;

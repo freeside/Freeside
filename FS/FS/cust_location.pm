@@ -203,7 +203,8 @@ sub has_ship_address {
 =item location_hash
 
 Returns a list of key/value pairs, with the following keys: address1, address2,
-city, county, state, zip, country, geocode.
+city, county, state, zip, country, geocode, location_type, location_number,
+location_kind.
 
 =cut
 
@@ -269,6 +270,84 @@ sub move_to {
 
   $dbh->commit if $oldAutoCommit;
   return;
+}
+
+=item alternize
+
+Attempts to parse data for location_type and location_number from address1
+and address2.
+
+=cut
+
+sub alternize {
+  my $self = shift;
+
+  return '' if $self->get('location_type')
+            || $self->get('location_number');
+
+  my %parse;
+  if ( 1 ) { #ikano, switch on via config
+    { no warnings 'void';
+      eval { 'use FS::part_export::ikano;' };
+      die $@ if $@;
+    }
+    %parse = FS::part_export::ikano->location_types_parse;
+  } else {
+    %parse = (); #?
+  }
+
+  foreach my $from ('address1', 'address2') {
+    foreach my $parse ( keys %parse ) {
+      my $value = $self->get($from);
+      if ( $value =~ s/(^|\W+)$parse\W+(\w+)\W*$//i ) {
+        $self->set('location_type', $parse{$parse});
+        $self->set('location_number', $2);
+        $self->set($from, $value);
+        return '';
+      }
+    }
+  }
+
+  #nothing matched, no changes
+  $self->get('address2')
+    ? "Can't parse unit type and number from address2"
+    : '';
+}
+
+=item dealternize
+
+Moves data from location_type and location_number to the end of address1.
+
+=cut
+
+sub dealternize {
+  my $self = shift;
+
+  #false laziness w/geocode_Mixin.pm::line
+  my $lt = $self->get('location_type');
+  if ( $lt ) {
+
+    my %location_type;
+    if ( 1 ) { #ikano, switch on via config
+      { no warnings 'void';
+        eval { 'use FS::part_export::ikano;' };
+        die $@ if $@;
+      }
+      %location_type = FS::part_export::ikano->location_types;
+    } else {
+      %location_type = (); #?
+    }
+
+    $self->address1( $self->address1. ' '. $location_type{$lt} || $lt );
+    $self->location_type('');
+  }
+
+  if ( length($self->location_number) ) {
+    $self->address1( $self->address1. ' '. $self->location_number );
+    $self->location_number('');
+  }
+ 
+  '';
 }
 
 =back

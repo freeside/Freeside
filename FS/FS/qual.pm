@@ -185,28 +185,34 @@ sub part_export {
     '';
 }
 
+sub cust_location {
+  my $self = shift;
+  return '' unless $self->locationnum;
+  qsearchs('cust_location', { 'locationnum' => $self->locationnum } );
+}
+
+sub cust_main {
+  my $self = shift;
+  return '' unless $self->custnum;
+  qsearchs('cust_main', { 'custnum' => $self->custnum } );
+}
+
 sub location_hash {
-    my $self = shift;
-    if ( $self->locationnum ) {
-	my $l = qsearchs( 'cust_location', 
-		    { 'locationnum' => $self->locationnum });
-	if ( $l ) {
-	    my %loc_hash = $l->location_hash;
-	    $loc_hash{locationnum} = $self->locationnum;
-	    return %loc_hash;
-	}
-    }
-    if ( $self->custnum ) {
-	my $c = qsearchs( 'cust_main', { 'custnum' => $self->custnum });
-	
-	if($c) {
-	    # always override location_kind as it would never be known in the 
-	    # case of cust_main "default service address"
-	    my %loc_hash = $c->location_hash;
-	    $loc_hash{location_kind} = $c->company ? 'B' : 'R';
-	    return %loc_hash;
-	}
-    }
+  my $self = shift;
+
+  if ( my $l = $self->cust_location ) {
+    my %loc_hash = $l->location_hash;
+    $loc_hash{locationnum} = $self->locationnum;
+    return %loc_hash;
+  }
+
+  if ( my $c = $self->cust_main ) {
+    # always override location_kind as it would never be known in the 
+    # case of cust_main "default service address"
+    my %loc_hash = $c->location_hash;
+    $loc_hash{location_kind} = $c->company ? 'B' : 'R';
+    return %loc_hash;
+  }
 
   warn "prospectnum does not imply any particular address! must specify locationnum";
   return ();
@@ -226,6 +232,7 @@ sub cust_or_prospect {
 	if $self->custnum;
     return qsearchs('prospect_main', { 'prospectnum' => $self->prospectnum })
 	if $self->prospectnum;
+    '';
 }
 
 sub status_long {

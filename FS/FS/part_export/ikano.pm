@@ -234,7 +234,6 @@ sub dsl_pull {
     my @onotes = $svc_dsl->notes;
     # assume notes we already have don't change & no notes added from our side
     # so using the horrible code below just find what we're missing and add it
-    my $error;
     foreach my $inote ( @inotes ) {
 	my $found = 0;
 	foreach my $onote ( @onotes ) {
@@ -243,7 +242,7 @@ sub dsl_pull {
 		last;
 	    }
 	}
-	$error = $inote->insert unless ( $found );
+	my $error = $inote->insert unless ( $found );
 	if ( $error ) {
 	  $dbh->rollback if $oldAutoCommit;
 	  return "Cannot add note: $error";
@@ -252,7 +251,7 @@ sub dsl_pull {
     
     $svc_dsl->last_pull((time));
     local $FS::svc_Common::noexport_hack = 1;
-    $error = $svc_dsl->replace; 
+    my $error = $svc_dsl->replace; 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Cannot update DSL data: $error";
@@ -373,7 +372,7 @@ sub qual_result {
       $not_avail{$externalid} = $externalid; #a better label?
     }
 
-    { 'header'    => 'Qualifying Packages',
+    { 
       'pkglist'   => \%pkglist,
       'not_avail' => \%not_avail,
     };
@@ -461,15 +460,14 @@ sub valid_order {
 	if $self->option('debug');
 
   # common to all order types/status/loop_type
-  my $error = !($svc_dsl->desired_due_date
-	    &&  grep($_ eq $svc_dsl->vendor_order_type, Net::Ikano->orderTypes)
-	    &&  $svc_dsl->first
-	    &&	$svc_dsl->last
-	    &&	defined $svc_dsl->loop_type
-	    &&  $svc_dsl->vendor_qual_id
-	    );
-  return 'Missing or invalid order data' if $error;
- 
+  return 'No desired_due_date' unless $svc_dsl->desired_due_date; 
+  return 'Unknown vendor_order_type'
+    unless grep $_ eq $svc_dsl->vendor_order_type, Net::Ikano->orderTypes;
+  return 'No first name' unless $svc_dsl->first;
+  return 'No last name' unless $svc_dsl->get('last');
+  return 'No loop type' unless defined $svc_dsl->loop_type;
+  return 'No vendor_qual_id' unless $svc_dsl->vendor_qual_id;
+
   my %vendor_pkg_ids = $svc_dsl->cust_svc->cust_pkg->part_pkg->vendor_pkg_ids;
   return 'Package does not have an external id configured'
     unless defined $vendor_pkg_ids{$self->exportnum};
@@ -481,7 +479,7 @@ sub valid_order {
   # weird ifs & long lines for readability and ease of understanding - don't change
   if($svc_dsl->vendor_order_type eq 'NEW') {
     if($svc_dsl->pushed) {
-	$error = !( ($action eq 'pull' || $action eq 'statuschg' 
+	my $error = !( ($action eq 'pull' || $action eq 'statuschg' 
 			|| $action eq 'delete' || $action eq 'expire')
 	    && 	length($svc_dsl->vendor_order_id) > 0
 	    && 	length($svc_dsl->vendor_order_status) > 0
@@ -492,7 +490,7 @@ sub valid_order {
 	    if ($action eq 'statuschg' && length($svc_dsl->phonenum) < 1);
     }
     else { # unpushed New order - cannot do anything other than push it
-	$error = !($action eq 'insert'
+	my $error = !($action eq 'insert'
 	    && 	length($svc_dsl->vendor_order_id) < 1
 	    && 	length($svc_dsl->vendor_order_status) < 1
 	    && ( ($svc_dsl->phonenum eq '' && $svc_dsl->loop_type eq '0') # dry
@@ -534,7 +532,8 @@ sub _export_insert {
   return $result unless $result eq '';
 
   my $isp_chg = $svc_dsl->isp_chg eq 'Y' ? 'YES' : 'NO';
-  my $contactTN = $svc_dsl->cust_svc->cust_pkg->cust_main->daytime;
+  my $cust_main = $svc_dsl->cust_svc->cust_pkg->cust_main;
+  my $contactTN = $cust_main->daytime || $cust_main->night || '5555555555';
   $contactTN =~ s/[^0-9]//g;
 
   my %vendor_pkg_ids = $svc_dsl->cust_svc->cust_pkg->part_pkg->vendor_pkg_ids;

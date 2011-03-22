@@ -132,9 +132,8 @@ $opt{saved_domsvc} = 0 unless $opt{saved_domsvc};
 
 my $url_prefix = $opt{'relurls'} ? '' : $p;
 
-my @part_pkg = @{$opt{'part_pkg'}};
-
-my @first_svc = ( 'svc_acct', 'svc_phone' );
+my @part_pkg  = @{ $opt{'part_pkg'}  };
+my @first_svc = @{ $opt{'first_svc'} };
 
 my %pkgpart_svcpart = ();
 my %svcdb = ();

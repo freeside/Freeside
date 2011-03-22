@@ -1,14 +1,17 @@
 <% include("/elements/header.html","View Qualification") %>
 
-% if ( $cust_or_prospect->get('custnum') ) {
+% if ( $cust_or_prospect->custnum ) {
 
-  <% include( '/elements/small_custview.html', $cust_or_prospect->custnum, '', 1,
-     "${p}view/cust_main.cgi") %>
+    <% include( '/elements/small_custview.html', $cust_or_prospect,
+                  '',                        #countrydefault override
+                  1,                         #no balance
+                  "${p}view/cust_main.cgi"), #url
+    %>
 
-% } elsif ( $cust_or_prospect->get('prospectnum') ) {
-%  	my $prospectnum = $cust_or_prospect->get('prospectnum');
-% 	my $link = "${p}view/prospect_main.html?$prospectnum";
-	<A HREF="<%$link%>">Prospect #<%$prospectnum%></A>
+% } elsif ( $cust_or_prospect->prospectnum ) {
+
+    <% include( '/elements/small_prospect_view.html', $cust_or_prospect) %>
+
 % }
 
 <BR><BR>
@@ -28,40 +31,46 @@
 <BR><BR>
 
 % if ( $export ) {
-%  my $qual_result = $export->qual_result($qual);
-%  if ($qual_result->{'header'}) {
-	<B><% $qual_result->{'header'} %></B>
-%  }
-%  if ($qual_result->{'pkglist'}) { # one of the possible formats
-%   my $svcpart = '';
-%   my $pkglist = $qual_result->{'pkglist'};
-%   my $cust_or_prospect = $qual->cust_or_prospect;
-%   my $locationnum = '';
-%   my %location = $qual->location_hash;
-%   if (%location && $location{'locationnum'}) { 
-%      $locationnum = $location{'locationnum'};
-%   }
-    <UL>
+%   my $qual_result = $export->qual_result($qual);
+%   if ($qual_result->{'pkglist'}) { # one of the possible formats (?)
+      <B>Qualifying Packages</B> - click to order
+%     my $svcpart = '';
+%     my $pkglist = $qual_result->{'pkglist'};
+%     my $cust_or_prospect = $qual->cust_or_prospect;
+%     my $locationnum = '';
+%     my %location = $qual->location_hash;
+%     my $locationnum = $location{'locationnum'};
+      <UL>
 %       foreach my $pkgpart ( keys %$pkglist ) { 
-%           my %opt = ( 'label' => $pkglist->{$pkgpart},
-%                          'pkgpart' => $pkgpart,
-%                          'locationnum' => $locationnum, );
-%           if ( $export->exporttype eq 'ikano' ) {
-% 		my $pkg_svc = qsearchs('pkg_svc', { 'pkgpart' => $pkgpart,
-%                                                 'primary_svc' => 'Y',
-%                                               } );
-%		$opt{'svcpart'} = $pkg_svc->svcpart if $pkg_svc;
+          <LI>
+
+%           if($cust_or_prospect->custnum) {
+
+%             my %opt = ( 'label'       => $pkglist->{$pkgpart},
+%                         'pkgpart'     => $pkgpart,
+%                         'locationnum' => $location{'locationnum'},
+%                       );
+%             if ( $export->exporttype eq 'ikano' ) {
+%               my $pkg_svc = qsearchs('pkg_svc', { 'pkgpart'     => $pkgpart,
+%                                                   'primary_svc' => 'Y',
+%                                                 }
+%                                     );
+%               $opt{'svcpart'} = $pkg_svc->svcpart if $pkg_svc;
+%             }
+
+              <% include('/view/cust_main/order_pkg_link.html',
+                           $cust_or_prospect, %opt) %>
+
+%           } elsif ($cust_or_prospect->prospectnum) {
+
+%             my $link = "${p}edit/cust_main.cgi?qualnum=". $qual->qualnum.
+%                                              ";lock_pkgpart=$pkgpart";
+              <A HREF="<% $link %>"><% $pkglist->{$pkgpart} |h %></A>
+
 %           }
-	    <LI>
-%		if($cust_or_prospect && $cust_or_prospect->custnum) {
-		   <% include('/view/cust_main/order_pkg_link.html', $qual->cust_or_prospect, %opt) %>
-%		}
-%		else {
-		    <% $opt{label} %>
-%		}
-	    </LI>
+          </LI>
 %       }
-    </UL>
+      </UL>
 %  }
 
 %  my $not_avail = $qual_result->{'not_avail'};
@@ -101,7 +110,7 @@ my $location_kind;
 $location_kind = "Residential" if $cust_location->get('location_kind') eq 'R';
 $location_kind = "Business" if $cust_location->get('location_kind') eq 'B';
 
-my $cust_or_prospect = $qual->cust_or_prospect;
+my $cust_or_prospect = $qual->cust_or_prospect; #or die?  qual without this?
 my $export = $qual->part_export;
 
 </%init>

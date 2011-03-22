@@ -13,7 +13,8 @@
       <TR>
         <TD COLSPAN=2>
           <% include('first_pkg/select-part_pkg.html',
-                       'part_pkg' => \@part_pkg,
+                       'part_pkg'  => \@part_pkg,
+                       'first_svc' => \@first_svc,
                        %opt,
                        # map { $_ => $opt{$_} } qw( pkgpart_svcpart saved_domsvc )
                     )
@@ -69,7 +70,7 @@ if ( $cgi->param('lock_pkgpart') =~ /^([\d, ]+)$/ ) {
 
 }
 
-my @first_svc = ( 'svc_acct', 'svc_phone' );
+my @first_svc = ( 'svc_acct', 'svc_phone', 'svc_dsl' );
 
 @part_pkg =
   grep { $_->svcpart(\@first_svc)

@@ -1,0 +1,11 @@
+% my $link = "${p}view/prospect_main.html?". $prospect_main->prospectnum;
+Prospect: <A HREF="<%$link%>"><% $prospect_main->name %></A>
+<%init>
+
+my($prospect_main, %opt) = @_;
+
+$prospect_main = qsearchs('prospect_main', { 'prospectnum' => $prospect_main } )
+                   || die "unknown prospectnum $prospect_main"
+  unless ref($prospect_main);
+
+</%init>

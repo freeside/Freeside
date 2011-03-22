@@ -96,7 +96,8 @@ sub location_label {
     $notfirst++;
   }
 
-  if ( $self->get($prefix.'location_type') ) {
+  my $lt = $self->get($prefix.'location_type');
+  if ( $lt ) {
     my %location_type;
     if ( 1 ) { #ikano, switch on via config
       { no warnings 'void';
@@ -108,9 +109,7 @@ sub location_label {
       %location_type = (); #?
     }
 
-    $line .= ' '.&$escape( $location_type{ $self->get($prefix.'location_type') }
-                                       ||  $self->get($prefix.'location_type')
-                         );
+    $line .= ' '.&$escape( $location_type{$lt} || $lt );
   }
 
   $line .= ' '. &$escape($self->get($prefix.'location_number'))
@@ -170,49 +169,6 @@ sub geocode {
     if scalar(@cust_tax_location);
 
   $geocode;
-}
-
-=item alternize
-
-Attempts to parse data for location_type and location_number from address1
-and address2.
-
-=cut
-
-sub alternize {
-  my $self = shift;
-  my $prefix = $self->has_ship_address ? 'ship_' : '';
-
-  return '' if $self->get($prefix.'location_type')
-            || $self->get($prefix.'location_number');
-
-  my %parse;
-  if ( 1 ) { #ikano, switch on via config
-    { no warnings 'void';
-      eval { 'use FS::part_export::ikano;' };
-      die $@ if $@;
-    }
-    %parse = FS::part_export::ikano->location_types_parse;
-  } else {
-    %parse = (); #?
-  }
-
-  foreach my $from ('address1', 'address2') {
-    foreach my $parse ( keys %parse ) {
-      my $value = $self->get($prefix.$from);
-      if ( $value =~ s/(^|\W+)$parse\W+(\w+)\W*$//i ) {
-        $self->set($prefix.'location_type', $parse{$parse});
-        $self->set($prefix.'location_number', $2);
-        $self->set($prefix.$from, $value);
-        return '';
-      }
-    }
-  }
-
-  #nothing matched, no changes
-  $self->get($prefix.'address2')
-    ? "Can't parse unit type and number from ${prefix}address2"
-    : '';
 }
 
 =back
