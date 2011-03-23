@@ -11,7 +11,7 @@ sub description { "Run this event the specified number of times"; }
 
 sub option_fields {
   (
-    'run_times'  => { label=>'Interval', type=>'text', value=>'1', },
+    'run_times'  => { label=>'Number of times', type=>'text', value=>'1', },
   );
 }
 
