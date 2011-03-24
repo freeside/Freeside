@@ -457,6 +457,18 @@ sub age2seconds_sql {
 
 }
 
+=item condition_sql_option_integer
+
+As I<condition_sql_option>, but cast the option value to an integer so that
+comparison to other integers is type-correct.
+
+=cut
+
+sub condition_sql_option_integer {
+  my ($class, $option) = @_;
+  'CAST ('.$class->condition_sql_option($option).' AS INTEGER)';
+}
+
 =head1 NEW CONDITION CLASSES
 
 A module should be added in FS/FS/part_event/Condition/ which implements the

@@ -49,7 +49,7 @@ sub condition_sql {
                         AND status != 'failed'
                   )";
 
-  "$existing <= ". $class->condition_sql_option('run_times');
+  "$existing <= ". $class->condition_sql_option_integer('run_times');
 
 }
 
