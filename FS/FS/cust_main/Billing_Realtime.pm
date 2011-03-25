@@ -43,14 +43,11 @@ These methods are available on FS::cust_main objects.
 
 =item realtime_collect [ OPTION => VALUE ... ]
 
-Runs a realtime credit card, ACH (electronic check) or phone bill transaction
-via a Business::OnlinePayment or Business::OnlineThirdPartyPayment realtime
-gateway.  See L<http://420.am/business-onlinepayment> and 
-L<http://420.am/business-onlinethirdpartypayment> for supported gateways.
+Attempt to collect the customer's current balance with a realtime credit 
+card, electronic check, or phone bill transaction (see realtime_bop() below).
 
-On failure returns an error message.
-
-Returns false or a hashref upon success.  The hashref contains keys popup_url reference, and collectitems.  The first is a URL to which a browser should be redirected for completion of collection.  The second is a reference id for the transaction suitable for the end user.  The collectitems is a reference to a list of name value pairs suitable for assigning to a html form and posted to popup_url.
+Returns the result of realtime_bop(): nothing, an error message, or a 
+hashref of state information for a third-party transaction.
 
 Available options are: I<method>, I<amount>, I<description>, I<invnum>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>, I<pkgnum>
 
@@ -68,12 +65,11 @@ the value defined by the business-onlinepayment-description configuration
 option, or "Internet services" if that is unset.
 
 If an I<invnum> is specified, this payment (if successful) is applied to the
-specified invoice.  If you don't specify an I<invnum> you might want to
-call the B<apply_payments> method or set the I<apply> option.
+specified invoice.
 
-I<apply> can be set to true to apply a resulting payment.
+I<apply> will automatically apply a resulting payment.
 
-I<quiet> can be set true to surpress email decline notices.
+I<quiet> can be set true to suppress email decline notices.
 
 I<paynum_ref> can be set to a scalar reference.  It will be filled in with the
 resulting paynum, if any.
@@ -125,8 +121,9 @@ the value defined by the business-onlinepayment-description configuration
 option, or "Internet services" if that is unset.
 
 If an I<invnum> is specified, this payment (if successful) is applied to the
-specified invoice.  If you don't specify an I<invnum> you might want to
-call the B<apply_payments> method or set the I<apply> option.
+specified invoice.  If the customer has exactly one open invoice, that 
+invoice number will be assumed.  If you don't specify an I<invnum> you might 
+want to call the B<apply_payments> method or set the I<apply> option.
 
 I<apply> can be set to true to apply a resulting payment.
 
@@ -142,6 +139,16 @@ I<session_id> is a session identifier associated with this payment.
 I<depend_jobnum> allows payment capture to unlock export jobs
 
 I<discount_term> attempts to take a discount by prepaying for discount_term
+
+A direct (Business::OnlinePayment) transaction will return nothing on success,
+or an error message on failure.
+
+A third-party transaction will return a hashref containing:
+
+- popup_url: the URL to which a browser should be redirected to complete 
+  the transaction.
+- collectitems: an arrayref of name-value pairs to be posted to popup_url.
+- reference: a reference ID for the transaction, to show the customer.
 
 (moved from cust_bill) (probably should get realtime_{card,ach,lec} here too)
 
@@ -233,7 +240,14 @@ sub _bop_defaults {
   }
 
   $options->{payinfo} = $self->payinfo unless exists( $options->{payinfo} );
-  $options->{invnum} ||= '';
+
+  # Default invoice number if the customer has exactly one open invoice.
+  if( ! $options->{'invnum'} ) {
+    $options->{'invnum'} = '';
+    my @open = $self->open_cust_bill;
+    $options->{'invnum'} = $open[0]->invnum if scalar(@open) == 1;
+  }
+
   $options->{payname} = $self->payname unless exists( $options->{payname} );
 }
 
@@ -501,7 +515,6 @@ sub realtime_bop {
   #check the balance
   return "The customer's balance has changed; $options{method} transaction aborted."
     if $self->balance < $balance;
-    #&& $self->balance < $options{amount}; #might as well anyway?
 
   #also check and make sure there aren't *other* pending payments for this cust
 
@@ -536,7 +549,6 @@ sub realtime_bop {
 
   my $cust_pay_pending = new FS::cust_pay_pending {
     'custnum'           => $self->custnum,
-    #'invnum'            => $options{'invnum'},
     'paid'              => $options{amount},
     '_date'             => '',
     'payby'             => $bop_method2payby{$options{method}},
