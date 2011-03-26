@@ -113,7 +113,7 @@ my @exports = $part_svc->part_export_did;
 if ( scalar(@exports) > 1 ) {
   die "more than one DID-providing export attached to svcpart $svcpart";
 }
-my $export = ''
+my $export = '';
 $export = $exports[0] if scalar(@exports);
 
 my $use_selector = scalar(@exports) ? 1 : 0;
