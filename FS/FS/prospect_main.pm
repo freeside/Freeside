@@ -8,6 +8,7 @@ use FS::Record qw( dbh qsearch ); #qsearchs );
 use FS::agent;
 use FS::cust_location;
 use FS::contact;
+use FS::qual;
 
 $DEBUG = 0;
 
@@ -221,7 +222,7 @@ sub name {
   my $contact = ($self->contact)[0]; #first contact?  good enough for now
   return $contact->line if $contact;
 
-  $self->prospectnum;
+  'Prospect #'. $self->prospectnum;
 }
 
 =item contact
@@ -245,6 +246,18 @@ sub cust_location {
   my $self = shift;
   qsearch( 'cust_location', { 'prospectnum' => $self->prospectnum } );
 }
+
+=item qual
+
+Returns the qualifications (see L<FS::qual>) associated with this prospect.
+
+=cut
+
+sub qual {
+  my $self = shift;
+  qsearch( 'qual', { 'prospectnum' => $self->prospectnum } );
+}
+
 
 =item search HASHREF
 

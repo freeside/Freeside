@@ -1,0 +1,22 @@
+% if ( @contacts ) {
+<BR>
+Contacts
+<% ntable("#cccccc",2) %>
+%   foreach my $contact ( @contacts ) {
+      <TR>
+        <TD ALIGN="right">Contact</TD>
+        <TD BGCOLOR="#FFFFFF"><% $contact->line %></TD>
+      </TR>
+%   }
+</TABLE>
+
+% }
+
+<%init>
+
+my( $cust_main ) = @_;
+#my $conf = new FS::Conf;
+
+my @contacts = $cust_main->cust_contact;
+
+</%init>

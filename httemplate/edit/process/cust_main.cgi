@@ -159,7 +159,8 @@ if ( $new->custnum eq '' ) {
 
     $cust_pkg = new FS::cust_pkg ( {
       #later         'custnum' => $custnum,
-      'pkgpart' => $pkgpart,
+      'pkgpart'     => $pkgpart,
+      'locationnum' => scalar($cgi->param('locationnum')),
     } );
     #$error ||= $cust_pkg->check;
 
@@ -226,7 +227,8 @@ if ( $new->custnum eq '' ) {
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => [ $svc ] ) if $cust_pkg;
   $error ||= $new->insert( \%hash, \@invoicing_list,
-                           'tax_exemption' => \@tax_exempt,
+                           'tax_exemption'=> \@tax_exempt,
+                           'prospectnum'  => scalar($cgi->param('prospectnum')),
                          );
 
   my $conf = new FS::Conf;

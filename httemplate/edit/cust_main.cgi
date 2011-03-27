@@ -194,6 +194,8 @@ function samechanged(what) {
 
 % }
 
+<INPUT TYPE="hidden" NAME="locationnum" VALUE="<% $locationnum %>">
+
 <INPUT TYPE="hidden" NAME="usernum" VALUE="<% $cust_main->usernum %>">
 
 %# cust_main/bottomfixup.js
@@ -241,6 +243,7 @@ my($username, $password, $popnum, $saved_domsvc) = ( '', '', 0, 0 ); #svc_acct
 my %svc_phone = ();
 my %svc_dsl = ();
 my $prospectnum = '';
+my $locationnum = '';
 
 if ( $cgi->param('error') ) {
 
@@ -260,7 +263,11 @@ if ( $cgi->param('error') ) {
   $stateid = $cust_main->stateid; # don't mask an entered value on errors
   $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
 
+  $prospectnum = $cgi->param('prospectnum') || '';
+
   $pkgpart_svcpart = $cgi->param('pkgpart_svcpart') || '';
+
+  $locationnum = $cgi->param('locationnum') || '';
 
   #svc_acct
   $username = $cgi->param('username');
@@ -334,11 +341,7 @@ if ( $cgi->param('error') ) {
     my $contact = $contacts[0];
     $cust_main->first( $contact->first );
     $cust_main->set( 'last', $contact->get('last') );
-    #XXX contact phone numbers
-
-    #XXX additional/all contacts -> alas (notes for now?  add add'l contact support?)
-
-    #XXX move all contacts and locations
+    #contact phone numbers?
 
     #location -> address  (all prospect quals have location, right?)
     my $cust_location = $qual->cust_location;
@@ -346,9 +349,10 @@ if ( $cgi->param('error') ) {
     $cust_main->$_( $cust_location->$_ )
       foreach qw( address1 address2 city county state zip country geocode );
 
-    #pkgpart handled by lock_pkgpart below
+    #locationnum -> package order
+    $locationnum = $qual->locationnum;
 
-    #XXX locationnum -> package order
+    #pkgpart handled by lock_pkgpart below
 
     #service telephone & vendor_qual_id -> svc_dsl
     $svc_dsl{$_} = $qual->$_

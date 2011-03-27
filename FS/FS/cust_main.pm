@@ -67,6 +67,7 @@ use FS::agent_payment_gateway;
 use FS::banned_pay;
 use FS::cust_main_note;
 use FS::cust_attachment;
+use FS::contact;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -368,7 +369,8 @@ invoicing_list destination to the newly-created svc_acct.  Here's an example:
 
   $cust_main->insert( {}, [ $email, 'POST' ] );
 
-Currently available options are: I<depend_jobnum>, I<noexport> and I<tax_exemption>.
+Currently available options are: I<depend_jobnum>, I<noexport>,
+I<tax_exemption> and I<prospectnum>.
 
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
@@ -381,6 +383,8 @@ the B<reexport> method.)
 
 The I<tax_exemption> option can be set to an arrayref of tax names.
 FS::cust_main_exemption records will be created and inserted.
+
+If I<prospectnum> is set, moves contacts and locations from that prospect.
 
 =cut
 
@@ -480,16 +484,41 @@ sub insert {
     }
   }
 
-  if ( $invoicing_list ) {
-    $error = $self->check_invoicing_list( $invoicing_list );
+  my $prospectnum = delete $options{'prospectnum'};
+  if ( $prospectnum ) {
+
+    warn "  moving contacts and locations from prospect $prospectnum\n"
+      if $DEBUG > 1;
+
+    my $prospect_main =
+      qsearchs('prospect_main', { 'prospectnum' => $prospectnum } );
+    unless ( $prospect_main ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Unknown prospectnum $prospectnum";
+    }
+    $prospect_main->custnum($self->custnum);
+    $prospect_main->disabled('Y');
+    my $error = $prospect_main->replace;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      #return "checking invoicing_list (transaction rolled back): $error";
       return $error;
     }
-    $self->invoicing_list( $invoicing_list );
-  }
 
+    my @contact = $prospect_main->contact;
+    my @cust_location = $prospect_main->cust_location;
+    my @qual = $prospect_main->qual;
+
+    foreach my $r ( @contact, @cust_location, @qual ) {
+      $r->prospectnum('');
+      $r->custnum($self->custnum);
+      my $error = $r->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
+  }
 
   warn "  setting cust_main_exemption\n"
     if $DEBUG > 1;
@@ -2033,6 +2062,18 @@ sub cust_location {
   qsearch('cust_location', { 'custnum' => $self->custnum } );
 }
 
+=item cust_contact
+
+Returns all contacts (see L<FS::contact>) for this customer.
+
+=cut
+
+#already used :/ sub contact {
+sub cust_contact {
+  my $self = shift;
+  qsearch('contact', { 'custnum' => $self->custnum } );
+}
+
 =item unsuspend
 
 Unsuspends all unflagged suspended packages (see L</unflagged_suspended_pkgs>
@@ -2216,9 +2257,9 @@ sub notes {
   $orderby = "CLASSNUM ASC, $orderby" if $orderby_classnum;
   qsearch( 'cust_main_note',
            { 'custnum' => $self->custnum },
-	   '',
-	   "ORDER BY $orderby",
-	 );
+           '',
+           "ORDER BY $orderby",
+         );
 }
 
 =item agent
@@ -4696,7 +4737,7 @@ sub _agent_plandata {
         " ORDER BY
            CASE WHEN part_event_condition_option.optionname IS NULL
            THEN -1
-	   ELSE ". FS::part_event::Condition->age2seconds_sql('part_event_condition_option.optionvalue').
+           ELSE ". FS::part_event::Condition->age2seconds_sql('part_event_condition_option.optionvalue').
         " END
           , part_event.weight".
         " LIMIT 1"
