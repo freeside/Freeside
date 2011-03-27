@@ -408,24 +408,6 @@ sub quals_by_cust_and_pkg {
     @filtered_quals;
 }
 
-sub notes_html { 
-    my($self,$svc_dsl) = (shift,shift);
-    my $conf = new FS::Conf;
-    my $date_format = $conf->config('date_format') || '%m/%d/%Y';
-    my @notes = $svc_dsl->notes;
-    my $html = '<TABLE border="1" cellspacing="2" cellpadding="2" id="dsl_notes">
-	<TR><TH>Date</TH><TH>By</TH><TH>Priority</TH><TH>Note</TH></TR>';
-    foreach my $note ( @notes ) {
-	$html .= "<TR>
-	    <TD>".time2str("$date_format %H:%M",$note->date)."</TD>
-	    <TD>".$note->by."</TD>
-	    <TD>". ($note->priority eq 'N' ? 'Normal' : 'High') ."</TD>
-	    <TD>".$note->note."</TD></TR>";
-    }
-    $html .= '</TABLE>';
-    $html;
-}
-
 sub loop_type_long { # sub, not a method
     my($svc_dsl) = (shift);
     return $loopType{$svc_dsl->loop_type};
