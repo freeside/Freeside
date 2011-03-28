@@ -6,7 +6,7 @@
               'cust_main'   => $cust_main,
               'closetext'   => 'Close',
               'width'       => 763,
-              'height'      => 538,
+              'height'      => $height,
 	      %optional,
           )
 %>
@@ -14,9 +14,10 @@
 
 my($cust_main, %opt) = @_;
 
-my %optional = ();
-$optional{'pkgpart'} = $opt{'pkgpart'} if $opt{'pkgpart'};
-$optional{'locationnum'} = $opt{'locationnum'} if $opt{'locationnum'};
-$optional{'svcpart'} = $opt{'svcpart'} if $opt{'svcpart'};
+my %optional = map { $_ => $opt{$_} }
+                 grep $opt{$_},
+                   qw( lock_pkgpart lock_locationnum qualnum svcpart );
+
+my $height = $opt{'lock_locationnum'} ? 296 : 538;
 
 </%init>

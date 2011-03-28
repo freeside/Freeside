@@ -11,11 +11,9 @@
 % 
 % # for going right to a provision service after ordering a package
 % if ( $svcpart ) { 
-%    my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
-%    if ( $part_svc ) {
-%	$redir_url = popurl(3)."edit/".$part_svc->svcdb.".cgi?"
-%		    ."pkgnum=".$cust_pkg->pkgnum.";svcpart=$svcpart";
-%   }
+%   $redir_url = popurl(3)."edit/".$part_svc->svcdb.".cgi?".
+%                  "pkgnum=".$cust_pkg->pkgnum. ";svcpart=$svcpart";
+%   $redir_url .= ";qualnum=$qualnum" if $qualnum;
 % }
 <% header('Package ordered') %>
   <SCRIPT TYPE="text/javascript">
@@ -61,12 +59,21 @@ $cgi->param('discountnum') =~ /^(\-?\d*)$/
 my $discountnum = $1;
 
 # for going right to a provision service after ordering a package
-my $svcpart;
+my( $svcpart, $part_svc ) = ( '', '' );
 if ( $cgi->param('svcpart') ) {
-    $cgi->param('svcpart') =~ /^(\-?\d*)$/
-       or die 'illegal svcpart '. $cgi->param('svcpart');
-    $svcpart = $1;
+  $cgi->param('svcpart') =~ /^(\-?\d*)$/
+     or die 'illegal svcpart '. $cgi->param('svcpart');
+  $svcpart = $1;
+  $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } )
+    or die "unknown svcpart $svcpart";
 }
+
+my $qualnum = '';
+if ( $cgi->param('qualnum') ) {
+  $cgi->param('qualnum') =~ /^(\d+)$/ or die 'illegal qualnum';
+  $qualnum = $1;
+}
+
 
 my $cust_pkg = new FS::cust_pkg {
   'custnum'              => $custnum,

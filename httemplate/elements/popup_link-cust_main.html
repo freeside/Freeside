@@ -39,8 +39,8 @@ $params->{'action'} .=
   ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
   'custnum='. $params->{'cust_main'}->custnum;
 
-$params->{'action'} .= ';pkgpart='.$params->{'pkgpart'} if $params->{'pkgpart'};
-$params->{'action'} .= ';locationnum='.$params->{'locationnum'} if $params->{'locationnum'};
-$params->{'action'} .= ';svcpart='.$params->{'svcpart'} if $params->{'svcpart'};
+$params->{'action'} .= ";$_=".$params->{$_}
+  foreach grep $params->{$_},
+    qw( lock_pkgpart lock_locationnum qualnum svcpart );
 
 </%init>

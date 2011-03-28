@@ -46,9 +46,10 @@
 
 %           if($cust_or_prospect->custnum) {
 
-%             my %opt = ( 'label'       => $pkglist->{$pkgpart},
-%                         'pkgpart'     => $pkgpart,
-%                         'locationnum' => $location{'locationnum'},
+%             my %opt = ( 'label'            => $pkglist->{$pkgpart},
+%                         'lock_pkgpart'     => $pkgpart,
+%                         'lock_locationnum' => $location{'locationnum'},
+%                         'qualnum'          => $qual->qualnum,                
 %                       );
 %             if ( $export->exporttype eq 'ikano' ) {
 %               my $pkg_svc = qsearchs('pkg_svc', { 'pkgpart'     => $pkgpart,

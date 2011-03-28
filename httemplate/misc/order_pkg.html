@@ -28,18 +28,27 @@
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
+<INPUT TYPE="hidden" NAME="qualnum" VALUE="<% scalar($cgi->param('qualnum')) |h %>">
 % if ( $svcpart ) {
     <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
 % }
 
 <% ntable("#cccccc", 2) %>
-<% include('/elements/tr-select-cust-part_pkg.html',
-             'curr_value' => $pkgpart,
-             'classnum'   => -1,
-             'cust_main'  => $cust_main,
-             'onchange'   => 'enable_order_pkg',
-          )
-%>
+% if ( $part_pkg ) {
+    <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $part_pkg->pkgpart %>">
+    <TR>
+      <TH ALIGN="right">Package</TH>
+      <TD COLSPAN=6><% $part_pkg->pkg_comment |h %></TD>
+    </TR>
+% } else {
+    <% include('/elements/tr-select-cust-part_pkg.html',
+                 'curr_value' => $pkgpart,
+                 'classnum'   => -1,
+                 'cust_main'  => $cust_main,
+                 'onchange'   => 'enable_order_pkg',
+              )
+    %>
+% }
 
 <TR>
   <TH ALIGN="right">Start date </TD>
@@ -81,11 +90,22 @@
   %>
 % }
 
-<% include('/elements/tr-select-cust_location.html',
-             'cgi'       => $cgi,
-             'cust_main' => $cust_main,
-          )
-%>
+% if ( $cgi->param('lock_locationnum') ) {
+
+    <INPUT TYPE  = "hidden"
+           NAME  = "locationnum"
+           VALUE = "<% scalar($cgi->param('lock_locationnum')) |h %>"
+    >
+
+% } else {
+
+    <% include('/elements/tr-select-cust_location.html',
+                 'cgi'       => $cgi,
+                 'cust_main' => $cust_main,
+              )
+    %>
+
+% }
 
 <TR>
   <TH ALIGN="right">Contract end date </TD>
@@ -101,16 +121,28 @@
 
 </TABLE>
 
-<% include( '/elements/standardize_locations.html',
-            'form'       => "OrderPkgForm",
-            'onlyship'   => 1,
-            'no_company' => 1,
-            'callback'   => 'document.OrderPkgForm.submit();',
-          )
-%>
+% unless ( $cgi->param('lock_locationnum') ) {
+
+  <% include( '/elements/standardize_locations.html',
+                'form'       => "OrderPkgForm",
+                'onlyship'   => 1,
+                'no_company' => 1,
+                'callback'   => 'document.OrderPkgForm.submit();',
+            )
+  %>
+
+% }
 
 <BR>
-<INPUT NAME="submitButton" TYPE="button" VALUE="Order Package" onClick = "this.disabled=true; standardize_locations();" <% $pkgpart ? '' : 'DISABLED' %>>
+% my $onclick = $cgi->param('lock_locationnum')
+%                 ? 'document.OrderPkgForm.submit()'
+%                 : 'standardize_locations()';
+<INPUT NAME="submitButton"
+       TYPE="button"
+       VALUE="Order Package"
+       onClick = "this.disabled=true; <% $onclick %>;"
+       <% $pkgpart ? '' : 'DISABLED' %>
+>
 
 </FORM>
 </BODY>
@@ -133,7 +165,17 @@ my $cust_main = qsearchs({
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
 
-my $pkgpart = scalar($cgi->param('pkgpart'));
+my $part_pkg = '';
+if ( $cgi->param('lock_pkgpart') ) {
+  $part_pkg = qsearchs({
+    'table'     => 'part_pkg',
+    'hashref'   => { 'pkgpart' => scalar($cgi->param('lock_pkgpart')) },
+    'extra_sql' => ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_main->agent ),
+  })
+    or die "unknown pkgpart ". $cgi->param('lock_pkgpart');
+}
+
+my $pkgpart = $part_pkg ? $part_pkg->pkgpart : scalar($cgi->param('pkgpart'));
 
 my $format = $date_format. ' %T %z (%Z)'; #false laziness w/REAL_cust_pkg.cgi?
 my $start_date = '';
@@ -142,6 +184,6 @@ if( ! $conf->exists('order_pkg-no_start_date') ) {
   $start_date = $start_date ? time2str($format, $start_date) : '';
 }
 
-my $svcpart = $cgi->param('svcpart');
+my $svcpart = scalar($cgi->param('svcpart'));
 
 </%init>

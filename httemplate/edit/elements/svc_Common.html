@@ -14,6 +14,13 @@
                    label_fixup($part_svc, $opt);
 
                    $svc_x->setfield('svcpart', $svcpart);
+
+                   if ( my $cb = $opt{'svc_error_callback'} ) {
+                     my $cust_pkg = $pkgnum
+                                      ? qsearchs('cust_pkg', {pkgnum=>$pkgnum})
+                                      : ''; #?
+                     &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
+                   }
                  },
 
                  'edit_callback' => sub {
@@ -29,13 +36,13 @@
                    die "No part_svc entry!" unless $part_svc;
 
                    label_fixup($part_svc, $opt);
-		   
-		   if ( my $cb = $opt{'svc_edit_callback'} ) {
+                   
+                   if ( my $cb = $opt{'svc_edit_callback'} ) {
                      my $cust_pkg = $pkgnum
                                       ? qsearchs('cust_pkg', {pkgnum=>$pkgnum})
                                       : ''; #?
-                      &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
-                    }
+                     &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
+                   }
                  },
 
                  'new_hashref_callback' => sub {
@@ -48,23 +55,23 @@
                  },
 
                  'new_callback' => sub {
-                    my( $cgi, $svc_x, $fields, $opt ) = @_;
+                   my( $cgi, $svc_x, $fields, $opt ) = @_;
 
-                    $part_svc = qsearchs( 'part_svc', { svcpart=>$svcpart });
-                    die "No part_svc entry!" unless $part_svc;
+                   $part_svc = qsearchs( 'part_svc', { svcpart=>$svcpart });
+                   die "No part_svc entry!" unless $part_svc;
 
-                    label_fixup($part_svc, $opt);
+                   label_fixup($part_svc, $opt);
 
-                    #$svcnum='';
+                   #$svcnum='';
 
-                    if ( my $cb = $opt{'svc_new_callback'} ) {
+                   if ( my $cb = $opt{'svc_new_callback'} ) {
                      my $cust_pkg = $pkgnum
-                                      ? qsearchs('cust_pkg', {pkgnum=>$pkgnum})
-                                      : ''; #?
-                      &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
-                    }
+                                     ? qsearchs('cust_pkg', {pkgnum=>$pkgnum})
+                                     : ''; #?
+                     &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
+                   }
 
-                    $svc_x->set_default_and_fixed;
+                   $svc_x->set_default_and_fixed;
 
                  },
 
