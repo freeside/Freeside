@@ -25,27 +25,20 @@ FS::areacode - Object methods for areacode records
 
 =head1 DESCRIPTION
 
-An FS::areacode object represents an example.  FS::areacode inherits from
+An FS::areacode object represents an area code.  FS::areacode inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item code 
+=item areanum - primary key
 
-area code (primary key)
+=item code - area code
 
-=item country
+=item country - two-letter country code
 
-two-letter country code
+=item state - two-letter state code, if appropriate
 
-=item state
-
-two-letter state code, if appropriate
-
-=item description
-
-description (optional)
-
+=item description - description (optional)
 
 =back
 
@@ -92,7 +85,8 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_number('code')
+    $self->ut_numbern('areanum')
+    || $self->ut_number('code')
     || $self->ut_text('country')
     || $self->ut_textn('state')
     || $self->ut_textn('description')

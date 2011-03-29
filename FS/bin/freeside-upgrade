@@ -71,6 +71,19 @@ if ( dbdef->table('cgp_rule_condition') &&
 
 }
 
+if ( dbdef->table('areacode') and
+     dbdef->table('areacode')->primary_key eq 'code' )
+{
+  if ( driver_name =~ /^mysql/i ) {
+    push @bugfix, 
+      'ALTER TABLE areacode DROP PRIMARY KEY',
+      'ALTER TABLE areacode ADD COLUMN (areanum int auto_increment primary key)';
+  }
+  else {
+    push @bugfix, 'ALTER TABLE areacode DROP CONSTRAINT areacode_pkey';
+  }
+}
+
 # RT required field flag
 # for consistency with RT schema: mysql is in CamelCase,
 # pg is in lowercase, and they use different data types.

@@ -3270,13 +3270,14 @@ sub tables_hashref {
 
     'areacode'  => {
       'columns' => [
+        'areanum',   'serial',        '',      '', '', '',
         'code',        'char',        '',       3, '', '', 
         'country',     'char',    'NULL',       2, '', '',
         'state',       'char',    'NULL',       2, '', '', 
         'description','varchar',  'NULL',     255, '', '',
       ], 
-      'primary_key' => 'code',
-      'unique' => [],
+      'primary_key' => 'areanum',
+      'unique' => [ [ 'areanum' ] ],
       'index'  => [],
     },
 
