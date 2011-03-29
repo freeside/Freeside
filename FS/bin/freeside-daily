@@ -51,8 +51,8 @@ if ( $opt{u} ) {
 }
 
 #you can skip this just by not having the config
-use FS::Cron::backup qw(backup_scp);
-backup_scp();
+use FS::Cron::backup qw(backup);
+backup();
 
 #same
 use FS::Cron::rt_tasks qw(rt_escalate);

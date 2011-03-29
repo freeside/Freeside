@@ -312,7 +312,7 @@ sub delete {
 
   my($name, $agentnum) = @_;
   if ( my $cv = FS::Record::qsearchs('conf', {name => $name, agentnum => $agentnum}) ) {
-    warn "[FS::Conf] DELETE $name\n";
+    warn "[FS::Conf] DELETE $name\n" if $DEBUG;
 
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;
@@ -2201,9 +2201,16 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'dump-localdest',
+    'section'     => '',
+    'description' => 'Destination for local database dumps (full path)',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'dump-scpdest',
     'section'     => '',
-    'description' => 'destination for scp database dumps: user@host:/path',
+    'description' => 'Destination for scp database dumps: user@host:/path',
     'type'        => 'text',
   },
 

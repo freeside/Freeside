@@ -9,8 +9,8 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 #you can skip this just by not having the config
-use FS::Cron::backup qw(backup_scp);
-backup_scp();
+use FS::Cron::backup qw(backup);
+backup();
 
 sub usage {
   die "Usage:\n\n  freeside-backup user\n";
@@ -30,7 +30,7 @@ freeside-backup - Runs a backup
 
 =head1 DESCRIPTION
 
-Runs a backup.  See the dump-scpdest configuration option.
+Runs a backup.  See the dump-scpdest and dump-localdest configuration options.
 
 =head1 BUGS
 
