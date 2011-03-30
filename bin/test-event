@@ -1,0 +1,64 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+use FS::Schema qw( dbdef );
+use FS::Record qw(qsearchs);
+use FS::part_event;
+#XXX all event tables
+use FS::cust_main;
+use FS::cust_bill;
+
+my $user = shift or die &usage;
+adminsuidsetup($user);
+
+my $eventpart = shift or die &usage;
+my $table     = shift or die &usage;
+my $tablenum  = shift or die &usage;
+
+my $part_event = qsearchs('part_event', { 'eventpart' => $eventpart } )
+  or die "unknown eventpart $eventpart";
+
+my $pkey = dbdef->table($table)->primary_key;
+
+my $object = qsearchs($table, { $pkey => $tablenum } )
+  or die "can't find $pkey $tablenum in $table";
+
+my $cust_event = $part_event->new_cust_event($object);
+
+###
+# specifics
+###
+
+my @conditions = $part_event->part_event_condition;
+foreach my $condition ( @conditions ) {
+  my $sat = $condition->condition( $object, 'cust_event' => $cust_event );
+  print $condition->conditionname. '.pm: '.
+        ( $sat ? "satisfied\n" : "NOT SATISFIED\n" );
+
+}
+
+###
+# random shit to test pkg_balance_under.pm
+###
+
+#my $cust_main = $object->cust_main;
+#my $pkg_balance = $cust_main->balance_pkgnum($tablenum);
+#print "\nbalance for cust_pkg $tablenum: $pkg_balance\n";
+
+###
+# overall
+###
+
+print "\n";
+
+my $run = $cust_event->test_conditions;
+
+print "\n". $part_event->eventpart.': '. $part_event->event.
+      " for $table $tablenum: ".  ( $run ? "RUN\n" : "DON'T RUN\n" );
+
+sub usage {
+  die "Usage:\n  test-event user eventpart table tablenum\n";
+}
+
+
