@@ -47,7 +47,7 @@ Attributes
 sessions
 );
 
-foreach my $rt_table ( @rt_tables ) {
+foreach my $table ( @rt_tables ) {
   $dbh->do("GRANT SELECT ON $table TO $rouser");
   $dbh->commit();
   $dbh->do("GRANT SELECT ON ${table}_id_seq TO $rouser");
