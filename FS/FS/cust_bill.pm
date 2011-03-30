@@ -5,6 +5,7 @@ use vars qw( @ISA $DEBUG $me $conf
              $money_char $date_format $rdate_format $date_format_long );
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
+use Cwd;
 use List::Util qw(min max);
 use Date::Format;
 use Text::Template 1.20;
@@ -38,7 +39,8 @@ use FS::part_bill_event;
 use FS::payby;
 use FS::bill_batch;
 use FS::cust_bill_batch;
-use Cwd;
+use FS::cust_bill_pay_pkg;
+use FS::cust_credit_bill_pkg;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -649,44 +651,88 @@ sub cust_credit_bill {
   shift->cust_credited(@_);
 }
 
-=item cust_bill_pay_pkgnum PKGNUM
+#=item cust_bill_pay_pkgnum PKGNUM
+#
+#Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice
+#with matching pkgnum.
+#
+#=cut
+#
+#sub cust_bill_pay_pkgnum {
+#  my( $self, $pkgnum ) = @_;
+#  map { $_ } #return $self->num_cust_bill_pay_pkgnum($pkgnum) unless wantarray;
+#  sort { $a->_date <=> $b->_date }
+#    qsearch( 'cust_bill_pay', { 'invnum' => $self->invnum,
+#                                'pkgnum' => $pkgnum,
+#                              }
+#           );
+#}
+
+=item cust_bill_pay_pkg PKGNUM
 
 Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice
-with matching pkgnum.
+applied against the matching pkgnum.
 
 =cut
 
-sub cust_bill_pay_pkgnum {
+sub cust_bill_pay_pkg {
   my( $self, $pkgnum ) = @_;
-  map { $_ } #return $self->num_cust_bill_pay_pkgnum($pkgnum) unless wantarray;
-  sort { $a->_date <=> $b->_date }
-    qsearch( 'cust_bill_pay', { 'invnum' => $self->invnum,
-                                'pkgnum' => $pkgnum,
-                              }
-           );
+
+  qsearch({
+    'select'    => 'cust_bill_pay_pkg.*',
+    'table'     => 'cust_bill_pay_pkg',
+    'addl_from' => ' LEFT JOIN cust_bill_pay USING billpaynum '.
+                   ' LEFT JOIN cust_bill_pkg USING billpkgnum ',
+    'hashref'   => { 'invnum' => $self->invnum,
+                     'pkgnum' => $pkgnum,
+                   },
+  });
+
 }
 
-=item cust_credited_pkgnum PKGNUM
+#=item cust_credited_pkgnum PKGNUM
+#
+#=item cust_credit_bill_pkgnum PKGNUM
+#
+#Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice
+#with matching pkgnum.
+#
+#=cut
+#
+#sub cust_credited_pkgnum {
+#  my( $self, $pkgnum ) = @_;
+#  map { $_ } #return $self->num_cust_credit_bill_pkgnum($pkgnum) unless wantarray;
+#  sort { $a->_date <=> $b->_date }
+#    qsearch( 'cust_credit_bill', { 'invnum' => $self->invnum,
+#                                   'pkgnum' => $pkgnum,
+#                                 }
+#           );
+#}
+#
+#sub cust_credit_bill_pkgnum {
+#  shift->cust_credited_pkgnum(@_);
+#}
 
-=item cust_credit_bill_pkgnum PKGNUM
+=item cust_credit_bill_pkg PKGNUM
 
-Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice
-with matching pkgnum.
+Returns all credit applications (see L<FS::cust_credit_bill>) for this invoice
+applied against the matching pkgnum.
 
 =cut
 
-sub cust_credited_pkgnum {
+sub cust_credit_bill_pkg {
   my( $self, $pkgnum ) = @_;
-  map { $_ } #return $self->num_cust_credit_bill_pkgnum($pkgnum) unless wantarray;
-  sort { $a->_date <=> $b->_date }
-    qsearch( 'cust_credit_bill', { 'invnum' => $self->invnum,
-                                   'pkgnum' => $pkgnum,
-                                 }
-           );
-}
 
-sub cust_credit_bill_pkgnum {
-  shift->cust_credited_pkgnum(@_);
+  qsearch({
+    'select'    => 'cust_credit_bill_pkg.*',
+    'table'     => 'cust_credit_bill_pkg',
+    'addl_from' => ' LEFT JOIN cust_credit_bill USING creditbillnum '.
+                   ' LEFT JOIN cust_bill_pkg    USING billpkgnum ',
+    'hashref'   => { 'invnum' => $self->invnum,
+                     'pkgnum' => $pkgnum,
+                   },
+  });
+
 }
 
 =item tax
@@ -729,8 +775,8 @@ sub owed_pkgnum {
   my $balance = 0;
   $balance += $_->setup + $_->recur for $self->cust_bill_pkg_pkgnum($pkgnum);
 
-  $balance -= $_->amount            for $self->cust_bill_pay_pkgnum($pkgnum);
-  $balance -= $_->amount            for $self->cust_credited_pkgnum($pkgnum);
+  $balance -= $_->amount            for $self->cust_bill_pay_pkg($pkgnum);
+  $balance -= $_->amount            for $self->cust_credit_bill_pkg($pkgnum);
 
   $balance = sprintf( "%.2f", $balance);
   $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
