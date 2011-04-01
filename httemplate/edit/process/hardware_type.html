@@ -1,0 +1,11 @@
+<% include( 'elements/process.html',
+               'table'       => 'hardware_type',
+               'viewall_url' => 'browse/hardware_class.html',
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

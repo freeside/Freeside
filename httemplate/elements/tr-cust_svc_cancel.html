@@ -1,0 +1,24 @@
+<%doc>
+tr-cust_svc_cancel - Short display of a canceled customer service 
+for use in view/cust_main.
+</%doc>
+<TR STYLE="color:#cccccc;">
+  <TD ALIGN="right" VALIGN="top"><% 
+FS::UI::Web::svc_link($m, $part_svc, $cust_svc)
+%></TD>
+  <TD STYLE="padding-bottom:0px;"><B><%
+FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc)
+%></B></TD>
+</TR>
+%# no action links, the service is canceled
+
+<%init>
+my %opt = @_;
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $cust_svc = $opt{'cust_svc'};
+my $part_svc = $opt{'part_svc'} || $cust_svc->part_svc;
+my $cust_pkg = $opt{'cust_pkg'} || $cust_svc->cust_pkg;
+my $svc_x = $cust_svc->svc_x;
+
+</%init>

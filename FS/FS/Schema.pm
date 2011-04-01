@@ -1586,7 +1586,7 @@ sub tables_hashref {
       'index'       => [ [ 'svcnum' ], [ 'optionname' ] ],
     },
 
-    'part_pkg' => {
+   'part_pkg' => {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 
         'pkg',           'varchar',   '',   $char_d, '', '', 
@@ -1745,6 +1745,7 @@ sub tables_hashref {
         'svc',        'varchar',   '',   $char_d, '', '', 
         'svcdb',      'varchar',   '',   $char_d, '', '', 
         'disabled',   'char',  'NULL',   1, '', '', 
+        'preserve',   'char', 'NULL',  1, '', '',
       ],
       'primary_key' => 'svcpart',
       'unique' => [],
@@ -2001,6 +2002,63 @@ sub tables_hashref {
       'primary_key' => 'notenum',
       'unique' => [ ],
       'index' => [ ['svcnum'] ],
+    },
+
+    'svc_dish' => {
+      'columns' => [
+        'svcnum',   'int',     '',     '', '', '',
+        'acctnum',  'varchar', '',     16, '', '',
+        'note',     'text',    'NULL', '', '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [ ],
+      'index' => [ ],
+    },
+
+    'svc_hardware' => {
+      'columns' => [
+        'svcnum',   'int',     '',          '', '', '',
+        'typenum',  'int',     '',          '', '', '',
+        'serial',   'varchar', 'NULL', $char_d, '', '',
+        'ip_addr',  'varchar', 'NULL',      40, '', '',
+        'hw_addr',  'varchar', 'NULL',      12, '', '',
+        'statusnum','int', 'NULL',          '', '', '',
+        'note',     'text',    'NULL',      '', '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [ ],
+      'index' => [ ],
+    },
+
+    'hardware_class' => {
+      'columns' => [
+        'classnum',   'serial', '',      '', '', '',
+        'classname', 'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [ ],
+      'index'  => [ ],
+    },
+
+    'hardware_type' => {
+      'columns' => [
+        'typenum',  'serial', '',      '', '', '',
+        'classnum',    'int', '',      '', '', '',
+        'model',   'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'typenum',
+      'unique' => [ ],
+      'index'  => [ ],
+    },
+
+    'hardware_status' => {
+      'columns' => [
+        'statusnum', 'serial', '',      '', '', '',
+        'label'    ,'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'statusnum',
+      'unique' => [ ],
+      'index'  => [ ],
     },
 
     'domain_record' => {

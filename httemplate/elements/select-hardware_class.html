@@ -1,0 +1,10 @@
+<% include( '/elements/select-table.html',
+                 'table'         => 'hardware_class',
+                 'name_col'      => 'classname',
+                 'hashref'       => { 'disabled' => '' },
+                 %opt,
+             )
+%>
+<%init>
+my %opt = @_;
+</%init>

@@ -43,7 +43,7 @@ fields are currently supported:
 
 =item columnvalue - default or fixed value for the column
 
-=item columnflag - null or empty (no default), `D' for default, `F' for fixed (unchangeable), `S' for selectable choice, `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
+=item columnflag - null or empty (no default), `D' for default, `F' for fixed (unchangeable), `S' for selectable choice, `M' for manual selection from inventory, `A' for automatic selection from inventory, or `H' for selection from a hardware class.  For virtual fields, can also be 'X' for excluded.
 
 =back
 
@@ -94,15 +94,19 @@ sub check {
   ;
   return $error if $error;
 
-  $self->columnflag =~ /^([DFSMAX]?)$/
+  $self->columnflag =~ /^([DFSMAHX]?)$/
     or return "illegal columnflag ". $self->columnflag;
   $self->columnflag(uc($1));
 
   if ( $self->columnflag =~ /^[MA]$/ ) {
     $error =
       $self->ut_foreign_key( 'columnvalue', 'inventory_class', 'classnum' );
-    return $error if $error;
   }
+  if ( $self->columnflag eq 'H' ) {
+    $error = 
+      $self->ut_foreign_key( 'columnvalue', 'hardware_class', 'classnum' );
+  }
+  return $error if $error;
 
   $self->SUPER::check;
 }

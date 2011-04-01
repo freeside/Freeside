@@ -169,14 +169,14 @@ function part_export_areyousure(href) {
 
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
 % my $value = &$formatter($part_svc->part_svc_column($field)->columnvalue);
-%          if ( $flag =~ /^[MA]$/ ) { 
-%            $inventory_class{$value}
-%              ||= qsearchs('inventory_class', { 'classnum' => $value } );
-%       
-
-            <% $inventory_class{$value}
-                  ? $inventory_class{$value}->classname
-                  : "WARNING: inventory_class.classnum $value not found" %>
+% if ( $flag =~ /^[MAH]$/ ) { 
+%   my $select_table = ($flag eq 'H') ? 'hardware_class' : 'inventory_class';
+%   $select_class{$value} ||= 
+%       qsearchs($select_table, { 'classnum' => $value } );
+% 
+            <% $select_class{$value}
+                  ? $select_class{$value}->classname
+                  : "WARNING: $select_table.classnum $value not found" %>
 % } else { 
 
             <% $value %>
@@ -208,6 +208,7 @@ my %flag = (
   'M' => 'Manual selected from inventory',
   #'A' => 'Automatically fill in from inventory',
   'A' => 'Automatically filled in from inventory',
+  'H' => 'Selected from hardware class',
   'X' => 'Excluded',
 );
 
@@ -232,6 +233,6 @@ if ( $cgi->param('orderby') eq 'active' ) {
   @part_svc = sort { lc($a->svc) cmp lc($b->svc) } @part_svc;
 }
 
-my %inventory_class = ();
+my %select_class = ();
 
 </%init>

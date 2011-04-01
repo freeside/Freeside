@@ -1,0 +1,71 @@
+<% include('/elements/header.html', $title ) %>
+
+<FORM ACTION="svc_hardware.cgi" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+
+    <TR><TD>
+    <% include('/elements/selectlayers.html',
+                  'field'           => 'classnum',
+                  'label'           => '',
+                  'options'         => \@classnums,
+                  'labels'          => \%class_labels,
+                  'layer_callback'  => \&layer_callback,
+                  'html_between'    => '</TD><TD>',
+              ) %>
+    </TD></TR>
+
+    <% include('/elements/tr-input-text.html',
+                  'field' => 'serial',
+                  'label' => 'Serial #',
+              ) %>
+    <% include('/elements/tr-input-text.html',
+                  'field' => 'hw_addr',
+                  'label' => 'Hardware address',
+              ) %>
+    <% include('/elements/tr-input-text.html',
+                  'field' => 'ip_addr',
+                  'label' => 'IP address',
+              ) %>
+    <% include('/elements/tr-select-table.html',
+                  'field'     => 'statusnum',
+                  'label'     => 'Service status',
+                  'table'     => 'hardware_status',
+                  'name_col'  => 'label',
+                  'empty_label' => 'any',
+              ) %>
+ 
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Search">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List packages'); #?
+
+my $title = 'Hardware Service Report';
+
+my @classes = qsearch('hardware_class', {});
+my @classnums = ('', map { $_->classnum } @classes);
+my %class_labels = ('' => 'Select hardware class',
+                     map { $_->classnum => $_->classname } @classes);
+
+sub layer_callback {
+  my $classnum = shift or return '';
+  include('/elements/select-hardware_type.html',
+              'field'       => 'classnum'.$classnum.'typenum',
+              'classnum'    => $classnum,
+              'empty_label' => 'any',
+          );
+}
+  
+</%init>
+

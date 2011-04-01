@@ -1,0 +1,10 @@
+<TR>
+  <TD ALIGN="right"><% $opt{'label'} || 'Device type: ' %></TD>
+  <TD><% include('select-hardware_type.html', %opt) %></TD>
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+</%init>

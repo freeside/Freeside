@@ -371,6 +371,20 @@ sub date_inserted {
   $self->h_date('insert');
 }
 
+=item pkg_cancel_date
+
+Returns the date this service's package was canceled.  This normally only 
+exists for a service that's been preserved through cancellation with the 
+part_pkg.preserve flag.
+
+=cut
+
+sub pkg_cancel_date {
+  my $self = shift;
+  my $cust_pkg = $self->cust_pkg or return;
+  return $cust_pkg->getfield('cancel') || '';
+}
+
 =item label
 
 Returns a list consisting of:

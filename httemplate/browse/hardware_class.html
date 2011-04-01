@@ -1,0 +1,44 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Hardware Classes and Types',
+                 'name'        => 'hardware classes',
+                 'menubar'     => $menubar,
+                 'query'       => { 'table' => 'hardware_class' },
+                 'count_query' => 'SELECT COUNT(*) FROM hardware_class',
+                 'header'      => [ '#', 'Hardware class', '', 'Device types' ],
+                 'fields'      => [ 'classnum',
+                                    'classname',
+                                    '',
+                                    $types_sub,
+                                  ],
+                 'links'       => [ $class_link,
+                                    $class_link,
+                                    '',
+                                    '',
+                                  ],
+             )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+my $menubar = 
+  [ 'Hardware statuses'    => $p.'browse/hardware_status.html',
+    'Add a hardware class' => $p.'edit/hardware_class.html',
+    'Add a device type',   => $p.'edit/hardware_type.html', ];
+
+my $types_sub = sub {
+  my $hardware_class = shift;
+  my @rows = map { 
+      my $type_link = $p.'edit/hardware_type.html?'.$_->typenum;
+      [ { 'data' => $_->model, 'link' => $type_link }, ] 
+    } $hardware_class->hardware_type;
+
+  \@rows;
+};
+
+my $class_link = [ "${p}edit/hardware_class.html?", 'classnum' ];
+
+</%init>

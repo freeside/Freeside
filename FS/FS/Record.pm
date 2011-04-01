@@ -21,6 +21,7 @@ use FS::CurrentUser;
 use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
+use NetAddr::IP; # for validation
 #use FS::Conf; #dependency loop bs, in install_callback below instead
 
 use FS::part_virtual_field;
@@ -2374,6 +2375,35 @@ sub ut_ipn {
   } else {
     $self->ut_ip($field);
   }
+}
+
+=item ut_ip46 COLUMN
+
+Check/untaint IPv4 or IPv6 address.
+
+=cut
+
+sub ut_ip46 {
+  my( $self, $field ) = @_;
+  my $ip = NetAddr::IP->new($self->getfield($field))
+    or return "Illegal (IP address) $field: ".$self->getfield($field);
+  $self->setfield($field, lc($ip->addr));
+  return '';
+}
+
+=item ut_ip46n
+
+Check/untaint IPv6 or IPv6 address.  May be null.
+
+=cut
+
+sub ut_ip46n {
+  my( $self, $field ) = @_;
+  if ( $self->getfield($field) =~ /^$/ ) {
+    $self->setfield($field, '');
+    return '';
+  }
+  $self->ut_ip46($field);
 }
 
 =item ut_coord COLUMN [ LOWER [ UPPER ] ]

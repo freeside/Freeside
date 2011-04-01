@@ -137,7 +137,7 @@ my $html_foot = sub {
   #src & charged party as per voip_cdr.pm
   my $search;
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
-  if ( $cust_pkg && $cust_pkg->part_pkg->option('disable_src') ) {
+  if ( $cust_pkg && $cust_pkg->part_pkg->option('disable_src',1) ) {
     $search = "charged_party=$number";
   } else {
     $search = "charged_party_or_src=$number";

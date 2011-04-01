@@ -53,6 +53,8 @@ L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
 =item disabled - Disabled flag, empty or `Y'
 
+=item preserve - Preserve after cancellation, empty or 'Y'
+
 =back
 
 =head1 METHODS
@@ -381,6 +383,7 @@ sub check {
     || $self->ut_text('svc')
     || $self->ut_alpha('svcdb')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_enum('preserve', [ '', 'Y' ] )
   ;
   return $error if $error;
 
@@ -758,7 +761,7 @@ sub process {
 
               map {
                     my $f = $svcdb.'__'.$_;
-                    if ( $param->{ $f.'_flag' } =~ /^[MA]$/ ) {
+                    if ( $param->{ $f.'_flag' } =~ /^[MAH]$/ ) {
                       $param->{ $f } = delete( $param->{ $f.'_classnum' } );
                     }
 		    if ( $param->{ $f.'_flag' } =~ /^S$/ ) {

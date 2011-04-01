@@ -191,7 +191,7 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       ];
   }
 
-  if ( $svcdb eq 'svc_acct' || $svcdb eq 'svc_broadband' ) {
+  if ( $svcdb =~ /^svc_(acct|broadband|hardware)$/ ) {
     $report_svc{"Advanced $lcsname reports"} = 
       [ $fsurl."search/report_$svcdb.html", '' ];
   }
@@ -531,6 +531,9 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
   if $curuser->access_right('Edit inventory')
   || $curuser->access_right('Edit global inventory')
   || $curuser->access_right('Configuration');
+
+$config_misc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
+  if $curuser->access_right('Configuration');
 
 tie my %config_menu, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration' ) ) {

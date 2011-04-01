@@ -1,0 +1,24 @@
+% if ( $cancel_date ) {
+<I>Canceled <% time2str('%b %o %Y', $cancel_date) %></I>
+% } else {
+<SCRIPT>
+function areyousure_delete() {
+  if (confirm("Permanently delete this service?") == true)
+    window.location.href = '<% $cancel_url %>';
+}
+</SCRIPT>
+<A HREF="<% $edit_url %>">Edit this <% $label %></A> | 
+<A HREF="javascript:areyousure_delete()">
+Unprovision this Service</A>
+% }
+<%init>
+my %opt = @_;
+my $svc_x = $opt{'svc'} or die "'svc' required";
+my $svcdb = $opt{'table'} || $svc_x->table;
+my $edit_url = $opt{'edit_url'} || 
+               $p . 'edit/' . $svcdb . '.cgi?' . $svc_x->svcnum;
+my $cancel_url = $p . 'misc/unprovision.cgi?' . $svc_x->svcnum;
+my $cust_svc = $svc_x->cust_svc; # always exists
+my $cancel_date = $cust_svc->pkg_cancel_date;
+my ($label) = $cust_svc->label;
+</%init>

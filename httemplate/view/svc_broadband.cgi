@@ -10,7 +10,7 @@
 
 <% include('/elements/init_overlib.html') %>
 
-<A HREF="<%$p%>edit/svc_broadband.cgi?<%$svcnum%>">Edit this information</A>
+<% include('/view/elements/svc_edit_link.html', $svc_acct) %>
 <BR>
 <%ntable("#cccccc")%>
   <TR>

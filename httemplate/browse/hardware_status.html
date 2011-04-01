@@ -1,0 +1,24 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Hardware Statuses',
+                 'name'        => 'hardware statuses',
+                 'menubar'     => $menubar,
+                 'query'       => { 'table' => 'hardware_status', },
+                 'count_query' => 'SELECT COUNT(*) FROM hardware_status',
+                 'header'      => [ '#', 'Status' ],
+                 'fields'      => [ 'statusnum', 'label' ],
+                 'links'       => [ $link, $link ],
+             )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+my $menubar = [ 'Hardware classes' => $p.'browse/hardware_class.html',
+                'Add a status' => $p.'edit/hardware_status.html' ];
+
+my $link = [ "${p}edit/hardware_status.html?", 'statusnum' ];
+
+</%init>

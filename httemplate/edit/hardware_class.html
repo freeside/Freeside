@@ -1,0 +1,16 @@
+<% include( 'elements/edit.html',
+                 'name'   => 'Hardware Class',
+                 'table'  => 'hardware_class',
+                 'labels' => { 
+                               'classnum'  => 'Class number',
+                               'classname' => 'Class name',
+                             },
+                 'viewall_dir' => 'browse',
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

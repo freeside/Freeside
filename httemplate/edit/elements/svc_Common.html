@@ -104,6 +104,12 @@
                        if $object->svcnum;
                      $f->{'extra_sql'}  .= ' ) ';
                      $f->{'disable_empty'} = $object->svcnum ? 1 : 0,
+                   } elsif ( $flag eq 'H' ) {
+                     $f->{'type'}        = 'select-hardware_type';
+                     $f->{'hashref'}     = {
+                                            'classnum'=>$columndef->columnvalue
+                                           };
+                     $f->{'empty_label'} = 'Select hardware type';
                    }
 
                    if (    $f->{'type'} eq 'select-svc_pbx'

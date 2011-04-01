@@ -1,0 +1,78 @@
+<%doc>
+tr-cust_svc - Short display of a customer service for use in view/cust_main.
+
+Formerly part of view/cust_main/packages/services.html, moved here for 
+cleanliness.
+</%doc>
+<TR>
+  <TD ALIGN="right" VALIGN="top"><% 
+FS::UI::Web::svc_link($m, $part_svc, $cust_svc)
+%></TD>
+  <TD STYLE="padding-bottom:0px"><B><%
+FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc)
+%></B></TD>
+</TR>
+% if ( $cust_svc->overlimit ) {
+<TR>
+  <TD ALIGN="right" COLSPAN="3" VALIGN="top"
+      STYLE="padding-bottom:1px; padding-top:0px">
+    <FONT SIZE="-2" COLOR="#FFD000">Overlimit: <%
+time2str('%b %o %Y' . $opt{'cust_pkg-display_times'} ? ' %l:%M %P' : '',
+$cust_svc->overlimit )
+    %></FONT>
+  </TD>
+</TR>
+% }
+<TR>
+% # first column: recharge link
+  <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px; padding-top:0px">
+% if ( $curuser->access_right('Recharge customer service') 
+%     && $part_svc->svcdb eq 'svc_acct'
+%     && ( $svc_x->seconds ne '' 
+%       || $svc_x->upbytes ne ''
+%       || $svc_x->downbytes ne ''
+%       || $svc_x->totalbytes ne ''
+%     )
+% ) {
+    <FONT SIZE="-2">(&nbsp;<% svc_recharge_link($cust_svc)%>&nbsp;)</FONT>
+% }
+  </TD>
+% # second column: all other action links
+  <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px; padding-top:0px">
+% if ( $part_svc->svcdb eq 'svc_broadband' ) {
+    <FONT SIZE="-1" STYLE="float:left">(&nbsp;<%
+      include('/elements/popup_link-ping.html',
+              'ip' => $svc_x->ip_addr
+      ) %>&nbsp;)</FONT>
+%   my $manage_link = $opt{'svc_broadband-manage_link'};
+%   if ( $manage_link ) {
+    <FONT SIZE="-1" STYLE="float:left">(&nbsp;<A HREF="<% 
+      eval(qq("$manage_link")) 
+    %>">Manage Device</A>&nbsp;)</FONT>
+%   }
+% } #svc_broadband
+% if ( $curuser->access_right('Unprovision customer service') ) {
+    <FONT SIZE="-2">(&nbsp;<% $svc_unprovision_link %>&nbsp;)</FONT>
+% }
+% if ( $part_svc->svcdb eq 'svc_pbx' && $opt{'maestro-status_test'} ) {
+    <FONT SIZE="-2">(&nbsp;<A HREF="<%$p%>misc/maestro-customer_status-test.html?<% $cust_pkg->custnum.'+'.$cust_svc->svcnum %>">Test maestro status</A>&nbsp;)
+    </FONT>
+% }
+  </TD>
+</TR>
+
+<%init>
+my %opt = @_;
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $cust_svc = $opt{'cust_svc'};
+my $part_svc = $opt{'part_svc'} || $cust_svc->part_svc;
+my $cust_pkg = $opt{'cust_pkg'} || $cust_svc->cust_pkg;
+my $svc_x = $cust_svc->svc_x;
+
+my $svc_unprovision_link = 
+  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?! .
+  $cust_svc->svcnum .
+  qq!', 'Permanently unprovision and delete this service?')">Unprovision</A>!;
+
+</%init>

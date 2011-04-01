@@ -38,8 +38,8 @@
 %>
 
 Service #<B><% $svcnum %></B>
-| <A HREF="<%$p%>edit/svc_acct.cgi?<%$svcnum%>">Edit this service</A>
-
+|
+<% include('/view/elements/svc_edit_link.html', 'svc' => $svc_acct) %>
 <% include( 'svc_acct/change_svc.html',
               'part_svc' => \@part_svc,
               %gopt,
@@ -105,7 +105,7 @@ my $svc_acct = qsearchs({
 die "Unknown svcnum" unless $svc_acct;
 
 #false laziness w/all svc_*.cgi
-my $cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );
+my $cust_svc = $svc_acct->cust_svc;
 my $pkgnum = $cust_svc->getfield('pkgnum');
 my($cust_pkg, $custnum);
 if ($pkgnum) {

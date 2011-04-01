@@ -1,0 +1,14 @@
+<% include( '/elements/select-table.html',
+                 'table'         => 'hardware_type',
+                 'name_col'      => 'model',
+                 'hashref'       => $hashref,
+                 %opt,
+             )
+%>
+<%init>
+my %opt = @_;
+my $classnum = delete $opt{'classnum'};
+my $hashref = $opt{'hashref'} || {};
+$hashref->{'classnum'} = $classnum if $classnum;
+
+</%init>

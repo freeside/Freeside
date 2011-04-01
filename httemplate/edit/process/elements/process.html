@@ -133,9 +133,11 @@ Example:
 %  } else { 
 %
 %    my $ext = $opt{'viewall_ext'} || 'html';
+%    my $viewall_dir = $opt{'viewall_dir'} || 'search';
+%    my $viewall_url = $opt{'viewall_url'} || ($viewall_dir . "/$table.$ext");
 %
-<% $cgi->redirect( popurl(3). ($opt{viewall_dir}||'search'). "/$table.$ext" ) %>
-%
+%#<% $cgi->redirect( popurl(3). ($opt{viewall_dir}||'search'). "/$table.$ext" ) %>
+<% $cgi->redirect( popurl(3) . $viewall_url ) %>
 %  }
 %
 %}

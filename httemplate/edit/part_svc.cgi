@@ -9,7 +9,8 @@
       Service Part #<% $part_svc->svcpart ? $part_svc->svcpart : "(NEW)" %>
 <BR><BR>
 Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
-Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>><BR>
+<INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;Disable new orders<BR>
+<INPUT TYPE="checkbox" NAME="preserve" VALUE="Y"<% $hashref->{'preserve'} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;Preserve this service on package cancellation<BR>
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $hashref->{svcpart} %>">
 
 <BR>
@@ -56,6 +57,9 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %    'A' => { 'desc' => 'Automatically fill in from inventory',
 %             'condition' => $inv_sub,
 %           },
+%    'H' => { 'desc' => 'Select from hardware class',
+%             'condition' => sub { $_[0]->{type} ne 'select-hardware' },
+%           },
 %    'X' => { 'desc' => 'Excluded',
 %             'condition' =>
 %               sub { ! $vfields{$_[1]}->{$_[2]} },
@@ -76,7 +80,7 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %    #'form_action'    => 'process/part_svc.cgi',
 %    'form_action'    => 'part_svc.cgi', #self
 %    'form_text'      => [ qw( svc svcpart ) ],
-%    'form_checkbox'  => [ 'disabled' ],
+%    'form_checkbox'  => [ 'disabled', 'preserve' ],
 %    'layer_callback' => sub {
 %      my $layer = shift;
 %      
@@ -90,7 +94,7 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %      my @part_export =
 %        map { qsearch( 'part_export', {exporttype => $_ } ) }
 %          keys %{FS::part_export::export_info($layer)};
-%      $html .= '<BR><BR>'. table(). 
+%      $html .= '<BR><BR>'. include('/elements/table.html') . 
 %               "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
 %      foreach my $part_export ( @part_export ) {
 %        $communigate++ if $part_export->exporttype =~ /^communigate/;
@@ -179,7 +183,7 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %          foreach my $f ( keys %flag ) {
 %
 %            # need to template-ize more httemplate/edit/svc_* first
-%            next if $f eq 'M' and $layer !~ /^svc_(broadband|external|phone)$/;
+%            next if $f eq 'M' and $layer !~ /^svc_(broadband|external|phone|dish)$/;
 %
 %            #here is where the SUB from above is called, to skip some choices
 %            next if $flag{$f}->{condition}
@@ -218,7 +222,8 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %            "        what.form.${layer}__${field}_classnum.style.backgroundColor = '#ffffff';".
 %            "        what.form.${layer}__${field}_classnum.style.display = 'none';".
 %            "      }".
-%            '    } else if ( f == "M" || f == "A" ) { //enable, inventory',
+%            '    } else if ( f == "M" || f == "A" || f == "H" ) { '.
+%                   '//enable, inventory',
 %            "      what.form.${layer}__${field}.disabled = false;".
 %            "      what.form.${layer}__${field}.style.backgroundColor = '#ffffff';".
 %            "      what.form.${layer}__${field}.style.display = 'none';".
@@ -238,10 +243,10 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %
 %        my $disabled = $flag ? ''
 %                             : 'DISABLED STYLE="background-color: #dddddd"';
+%        my $nodisplay = ' STYLE="display:none"';
 %
 %        if ( !$def->{type} || $def->{type} eq 'text' ) {
 %
-%          my $nodisplay = ' STYLE="display:none"';
 %          my $is_inv = ( $flag =~ /^[MA]$/ );
 %
 %          $html .=
@@ -343,6 +348,16 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %                             #doesn't work#'element_etc'  => $disabled,
 %                          );
 %
+%        } elsif ( $def->{type} eq 'select-hardware' ) {
+%
+%          $html .= qq!<INPUT TYPE="text" NAME="${layer}__${field}" $disabled>!;
+%          $html .= include('/elements/select-hardware_class.html',
+%                             'curr_value'    => $value,
+%                             'element_name'  => "${layer}__${field}_classnum",
+%                             'element_etc'   => $flag ne 'H' && $nodisplay,
+%                             'empty_label'   => 'Select hardware class',
+%                          );
+%
 %        } elsif ( $def->{type} eq 'disabled' ) {
 %
 %          $html .=
@@ -372,7 +387,8 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 %
 %      $html .= include('/elements/progress-init.html',
 %                         $layer, #form name
-%                         [ qw(svc svcpart disabled exportnum), @fields ],
+%                         [ qw(svc svcpart disabled preserve exportnum),
+%                           @fields ],
 %                         'process/part_svc.cgi',
 %                         $p.'browse/part_svc.cgi',
 %                         $layer,
@@ -452,6 +468,7 @@ my $svcdb_info = '
     <TD VALIGN="top">
       <UL STYLE="margin:0">
         <LI><B>svc_acct</B>: Accounts - anything with a username (mailbox, shell, RADIUS, etc.)
+        <LI><B>svc_hardware</B>: Equipment supplied to customers
         <LI><B>svc_external</B>: Externally-tracked service
       </UL>
     </TD>
@@ -459,6 +476,7 @@ my $svcdb_info = '
       <UL STYLE="margin:0">
         <LI><B>svc_dsl</B>: DSL
         <LI><B>svc_broadband</B>: Wireless broadband
+        <LI><B>svc_dish</B>: DISH Network
       </UL>
     </TD>
     <TD VALIGN="top">

@@ -1,0 +1,28 @@
+<% include( 'elements/edit.html',
+                 'name'   => 'Device Type',
+                 'table'  => 'hardware_type',
+                 'fields' => \@fields,
+                 'labels' => { 
+                               'typenum'  => 'Type number',
+                               'model'    => 'Device model',
+                               'classnum' => 'Hardware class',
+                             },
+                 'viewall_url' => $p.'browse/hardware_class.html',
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @fields = (
+  { field => 'classnum',
+    type  => 'select-table',
+    table => 'hardware_class',
+    disable_empty => 1,
+    name_col => 'classname',
+  },
+  'model',
+);
+
+</%init>

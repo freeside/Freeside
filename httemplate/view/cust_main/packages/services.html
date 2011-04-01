@@ -10,7 +10,6 @@ function clearhint_search_cust_svc(obj, str) {
 }
     </SCRIPT>
 
-%  #foreach my $svcpart (sort {$a->{svcpart} <=> $b->{svcpart}} @{$pkg->{svcparts}}) {
 %  foreach my $part_svc ( $cust_pkg->part_svc ) {
 
 %    if ( $opt{'cust_pkg-large_pkg_size'} > 0 and
@@ -36,66 +35,26 @@ function clearhint_search_cust_svc(obj, str) {
         </TD>
       </TR>
 %    }
-%    else {
+%    else { # don't summarize
 %      foreach my $cust_svc ( @{ $part_svc->cust_pkg_svc } ) {
-
-      <TR>
-        <TD ALIGN="right" VALIGN="top"><% FS::UI::Web::svc_link($m, $part_svc, $cust_svc) %></TD>
-        <TD STYLE="padding-bottom:0px"><B><% FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc) %></B></TD>
-        <TD><% FS::UI::Web::svc_export_links($m, $part_svc, $cust_svc) %></TD>
-      </TR>
-
-      <TR>
-        <TD ALIGN="right" COLSPAN="3" VALIGN="top" STYLE="padding-bottom:1px;padding-top:0px"><FONT SIZE="-2" COLOR="#FFD000">
-
-            <% $cust_svc->overlimit ? "Overlimit: ". time2str('%b %o %Y' . ($opt{'cust_pkg-display_times'} ? ' %l:%M %P' : ''), $cust_svc->overlimit) : '' %>
-          </FONT></TD>
-      </TR>
-
-      <TR>
-        <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">
-
-%         if ( $curuser->access_right('Recharge customer service')
-%              && $part_svc->svcdb eq 'svc_acct'
-%              && (    $cust_svc->svc_x->seconds    ne ''
-%                   || $cust_svc->svc_x->upbytes    ne ''
-%                   || $cust_svc->svc_x->downbytes  ne ''
-%                   || $cust_svc->svc_x->totalbytes ne ''
-%                 )
-%         ) { 
-            (&nbsp;<%svc_recharge_link($cust_svc)%>&nbsp;)
-%         }
-          </FONT></TD>
-
-          <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px">
-
-%           my $ip_addr = $cust_svc->svc_x->ip_addr;
-
-%           if ( $part_svc->svcdb eq 'svc_broadband' ) {
-              <FONT SIZE="-1" STYLE="float:left">(&nbsp;<% include('/elements/popup_link-ping.html', 'ip'=> $ip_addr ) %>&nbsp;)</FONT>
-
-%           }
-
-%           my $manage_link = $opt{'svc_broadband-manage_link'};
-%           if ( $manage_link && $part_svc->svcdb eq 'svc_broadband' ) {
-%             my $svc_manage_link = eval(qq("$manage_link"));
-              <FONT SIZE="-1" STYLE="float:left">(&nbsp;<A HREF="<% $svc_manage_link %>">Manage Device</A>&nbsp;)</FONT>
-
-%           }
-
-%           if ( $curuser->access_right('Unprovision customer service') ) { 
-              <FONT SIZE="-2">(&nbsp;<%svc_unprovision_link($cust_svc)%>&nbsp;)</FONT>
-%           } 
-
-%           if ( $part_svc->svcdb eq 'svc_pbx' && $opt{'maestro-status_test'} ){
-              <FONT SIZE="-2">(&nbsp;<A HREF="<% $p %>misc/maestro-customer_status-test.html?<% $cust_pkg->custnum.'+'.$cust_svc->svcnum %>">Test maestro status</A>&nbsp;)</FONT>
-%           } 
-
-          </TD>
-        </TR>
+%        if ( $cust_pkg->getfield('cancel') > 0 ) {
+      <% include('/elements/tr-cust_svc_cancel.html',
+                  %opt,
+                  'part_svc' => $part_svc,
+                  'cust_svc' => $cust_svc,
+                  'cust_pkg' => $cust_pkg,
+      ) %>
+%        }
+%        else {
+      <% include('/elements/tr-cust_svc.html',
+                  %opt,
+                  'part_svc' => $part_svc,
+                  'cust_svc' => $cust_svc,
+                  'cust_pkg' => $cust_pkg,
+      ) %>
+%       } #if cancel > 0
 %     } #foreach $cust_svc
-%   }
-
+%   } #if summarizing
 %   if (    ! $cust_pkg->get('cancel')
 %        && $curuser->access_right('Provision customer service') 
 %        && $part_svc->num_avail
@@ -158,12 +117,6 @@ sub svc_provision_link {
             "Link&nbsp;to&nbsp;legacy&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
   }
   $link;
-}
-
-sub svc_unprovision_link {
-  my $cust_svc = shift or return '';
-  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?!. $cust_svc->svcnum.
-  qq!', 'Permanently unprovision and delete this service?')">Unprovision</A>!;
 }
 
 my %hints = (

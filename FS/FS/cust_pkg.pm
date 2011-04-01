@@ -761,6 +761,8 @@ sub cancel {
     map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
+    my $part_svc = $cust_svc->part_svc;
+    next if ( defined($part_svc) and $part_svc->preserve );
     my $error = $cust_svc->cancel( %svc_cancel_opt );
 
     if ( $error ) {
