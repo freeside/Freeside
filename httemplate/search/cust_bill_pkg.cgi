@@ -475,13 +475,12 @@ if ( $cgi->param('pkg_tax') ) {
     $count_query .= "SUM(usage)";
   } elsif ( $unearned ) {
     $count_query .= "SUM(cust_bill_pkg.recur)";
+  } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+    $count_query .= "SUM( COALESCE(cust_bill_pkg_tax_location.amount, cust_bill_pkg.setup + cust_bill_pkg.recur))";
+  } elsif ( $cgi->param('iscredit') eq 'rate') {
+    $count_query .= "SUM( cust_credit_bill_pkg.amount )";
   } else {
-    if ( scalar( grep( /locationtaxid/, $cgi->param ) ) ||
-              $cgi->param('iscredit') eq 'rate') {
-      $count_query .= "SUM( COALESCE(amount, cust_bill_pkg.setup + cust_bill_pkg.recur))";
-    } else {
-      $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
-    }
+    $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
   }
 
   if ( $unearned ) {
