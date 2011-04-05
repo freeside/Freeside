@@ -1750,7 +1750,7 @@ sub batch_import {
 
       eval "use Parse::FixedLength;";
       die $@ if $@;
-      $parser = new Parse::FixedLength $fixedlength_format;
+      $parser = Parse::FixedLength->new($fixedlength_format);
 
     }
     else {
@@ -1854,6 +1854,9 @@ sub batch_import {
       @columns = $parser->fields();
 
     } elsif ( $type eq 'fixedlength' ) {
+
+      last unless scalar(@buffer);
+      $line = shift(@buffer);
 
       @columns = $parser->parse($line);
 
