@@ -295,13 +295,16 @@ sub qual {
 
     my $svctn = $qual->phonenum;
 
+    my $zip = $location_hash{zip};
+    $zip =~ s/(\d{5})-\d{4}/$1/;
+
     my $result = $self->ikano_command('PREQUAL',
       { AddressLine1 => $location_hash{address1},
 	AddressUnitType => $location_hash{location_type},
 	AddressUnitValue => $location_hash{location_number},
 	AddressCity => $location_hash{city},
 	AddressState => $location_hash{state},
-	ZipCode => $location_hash{zip},
+	ZipCode => $zip,
 	Country => $location_hash{country},
 	LocationType => $location_hash{location_kind},
 	PhoneNumber => length($svctn) > 1 ? $svctn : "STANDALONE",
