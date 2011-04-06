@@ -172,6 +172,8 @@ L<FS::did_vendor> - Bulk DID order vendor class
 
 L<FS::did_order> - Bulk DID order class
 
+L<FS::did_order_item> - Bulk DID order item class
+
 L<FS::cdr> - Call Detail Record class
 
 L<FS::cdr_batch> - Call Detail Record batch class

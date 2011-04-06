@@ -588,3 +588,5 @@ FS/hardware_type.pm
 t/hardware_type.t
 FS/hardware_status.pm
 t/hardware_status.t
+FS/did_order_item.pm
+t/did_order_item.t

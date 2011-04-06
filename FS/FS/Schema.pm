@@ -3092,6 +3092,8 @@ sub tables_hashref {
         'station',     'char',    'NULL',       4, '', '',
         'name',        'varchar', 'NULL', $char_d, '', '',
         'rate_center_abbrev', 'varchar', 'NULL', $char_d, '', '',
+        'latanum',      'int',     'NULL',      '', '', '',
+        'msa',        'varchar', 'NULL', $char_d, '', '',
         'ordernum',      'int',     'NULL',      '', '', '',
         'svcnum',      'int',     'NULL',      '', '', '',
         'availbatch', 'varchar',  'NULL', $char_d, '', '',
@@ -3127,16 +3129,28 @@ sub tables_hashref {
       'index'  => [],
     },
     
-    'did_order' => {
+    'did_order_item' => {
       'columns' => [
-        'ordernum',    'serial',      '',      '', '', '', 
-        'vendornum',   'int',       '',      '', '', '', 
-        'vendor_order_id',   'varchar',  '',   $char_d, '', '', 
+        'orderitemnum',    'serial',      '',      '', '', '', 
+        'ordernum',    'int',      '',      '', '', '', 
         'msa',        'varchar', 'NULL', $char_d, '', '',
+        'npa',      'int',     'NULL',      '', '', '',
         'latanum',      'int',     'NULL',      '', '', '',
         'rate_center',        'varchar', 'NULL', $char_d, '', '',
         'state',       'char',    'NULL',       2, '', '', 
         'quantity',      'int',     '',      '', '', '',
+      ],
+      'primary_key' => 'orderitemnum',
+      'unique' => [],
+      'index'  => [],
+    },
+
+    'did_order' => {
+      'columns' => [
+        'ordernum',    'serial',      '',      '', '', '', 
+        'vendornum',   'int',       '',      '', '', '', 
+        'vendor_order_id',   'varchar',  'NULL',   $char_d, '', '', 
+        'custnum',   'int', 'NULL', '', '', '',
         'submitted',      'int',     '',      '', '', '',
         'confirmed',      'int',     'NULL',      '', '', '',
         'received',      'int',     'NULL',      '', '', '',

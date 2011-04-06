@@ -272,6 +272,7 @@ Example:
 %     'options'       => $f->{'options'},
 %     'labels'        => $f->{'labels'},
 %     'multiple'      => $f->{'multiple'},
+%     'label_showkey' => $f->{'label_showkey'},
 %     'disable_empty' => $f->{'disable_empty'},
 %     #select-reason
 %     'reason_class'  => $f->{'reason_class'},
@@ -439,7 +440,7 @@ Example:
 %       }
 %       warn "layer values: ". Dumper($layer_values)
 %         if $opt{'debug'};
-%
+%	
 %       my @existing = &{ $include_sub }(
 %         'label'        => $ex_label,
 %         'fieldnum'     => $fieldnum,

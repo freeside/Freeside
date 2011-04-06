@@ -1,0 +1,69 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <TABLE>
+    <TR>
+%     foreach my $field ( @fields ) {
+%
+%       my $value = '';
+%         $value = $item->get($field);
+
+        <TD>
+          <INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_<%$field%>"
+                 ID    = "<%$id%>_<%$field%>"
+                 SIZE  = "<% $size{$field} || 15 %>"
+                 VALUE = "<% scalar($cgi->param($name."_$field"))
+                             || $value |h %>"
+                 <% $onchange %>
+          ><BR>
+          <FONT SIZE="-1"><% $label{$field} %></FONT>
+        </TD>
+%     }
+    </TR>
+  </TABLE>
+
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'orderitemnum';
+my $id = $opt{'id'} || 'orderitemnum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $item;
+if ( $curr_value ) {
+  $item = qsearchs('did_order_item', { 'orderitemnum' => $curr_value } );
+} else {
+  $item = new FS::did_order_item {};
+}
+
+my %size = ( 'npa' => 3, 
+	     'latanum' => 3,
+	     'state' => 2,
+	     'quantity' => 3,);
+
+tie my %label, 'Tie::IxHash',
+  'msa'        => 'MSA',
+  'npa'        => 'NPA',
+  'latanum'         => 'LATA #',
+  'rate_center'        => 'Rate Center',
+  'state' => 'State',
+  'quantity' => 'Quantity',
+;
+
+my @fields = keys %label;
+
+</%init>

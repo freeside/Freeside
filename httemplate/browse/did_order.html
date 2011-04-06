@@ -4,15 +4,16 @@
                  'name'        => 'bulk DID orders',
                  'disableable' => 0,
                  'query'       => { 'table'     => 'did_order',
-				    'addl_from' => 'left join did_vendor using (vendornum) 
-						    left join lata using (latanum)',
+				    'addl_from' => 'left join did_vendor using (vendornum) ',
                                     'hashref'   => {},
                                     'order_by' => 'ORDER BY ordernum',
                                   },
                  'count_query' => $count_query,
                  'header'      => $header,
                  'fields'      => $fields,
-                 'links'       => $links,
+                 'links'       => [
+				    [ $p.'edit/did_order.html?', 'ordernum' ],
+				  ],
              )
 %>
 <%init>
@@ -28,31 +29,22 @@ my $html_init =
 
 my $count_query = 'SELECT COUNT(*) FROM did_order';
 
-my $link = [ $p.'edit/did_order.html?', 'ordernum' ];
-
 my $display_date = sub {
     my $date = shift;
     return '' unless $date;
     time2str($date_format, $date);
 };
 
-my $header = [ '#', 'Vendor',' Vendor Order #', 'MSA', 'LATA #', 'LATA', 
-		'Rate Center', 'State', 'Quantity', 'Submitted', 'Confirmed',
-		'Received', 
+my $header = [ '#', 'Vendor',' Vendor Order #',  
+		'Submitted', 'Confirmed', 'Customer', 'Received', 
 	    ];
-my $links  = [ ];
 my $fields = [  sub {
 		    my $did_order = shift;
-		    if($did_order->received) {
-			push @$links, $link;
-		    }
-		    else {
-			return $did_order->ordernum;
-		    }
-		}, 'vendorname', 'vendor_order_id', 'msa', 'latanum',
-		'description', 'rate_center', 'state', 'quantity', 
+		    $did_order->ordernum;
+		}, 'vendorname', 'vendor_order_id', 
 		sub { &$display_date(shift->submitted); }, 
 		sub { &$display_date(shift->confirmed);	}, 
+		'custnum',
 		sub { 
 		    my $did_order = shift;
 		    my $ordernum = $did_order->ordernum;

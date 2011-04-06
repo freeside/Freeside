@@ -2,6 +2,10 @@
                'table'       => 'did_order',
                'viewall_dir' => 'browse',
 	       'value_callback' => $value_callback,
+		 'process_o2m' => {
+		   'table'  => 'did_order_item',
+		   'fields' => \@item_fields,
+		 },
            )
 %>
 <%init>
@@ -14,6 +18,8 @@ my $value_callback = sub {
      my ($field, $value) = @_;
      ($field =~ /ed$/ && $value !~ /^\d+$/) ? parse_datetime($value) : $value;
 };
+
+my @item_fields = qw( msa npa latanum rate_center state quantity );
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');

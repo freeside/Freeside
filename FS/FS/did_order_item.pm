@@ -1,19 +1,19 @@
-package FS::did_order;
+package FS::did_order_item;
 
 use strict;
-use base qw( FS::o2m_Common FS::Record );
+use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
-FS::did_order - Object methods for did_order records
+FS::did_order_item - Object methods for did_order_item records
 
 =head1 SYNOPSIS
 
-  use FS::did_order;
+  use FS::did_order_item;
 
-  $record = new FS::did_order \%hash;
-  $record = new FS::did_order { 'column' => 'value' };
+  $record = new FS::did_order_item \%hash;
+  $record = new FS::did_order_item { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -25,34 +25,43 @@ FS::did_order - Object methods for did_order records
 
 =head1 DESCRIPTION
 
-An FS::did_order object represents a bulk DID order.  FS::did_order inherits from
-FS::Record.  The following fields are currently supported:
+An FS::did_order_item object represents an item in a bulk DID order.
+FS::did_order_item inherits from FS::Record.  
+The following fields are currently supported:
 
 =over 4
 
-=item ordernum
+=item orderitemnum
 
 primary key
 
-=item vendornum
+=item ordernum
 
-vendornum
+ordernum
 
-=item vendor_order_id
+=item msa
 
-vendor_order_id
+msa
 
-=item submitted
+=item npa
 
-submitted
+npa
 
-=item confirmed
+=item latanum
 
-confirmed
+latanum
 
-=item received
+=item rate_center
 
-received
+rate_center
+
+=item state
+
+state
+
+=item quantity
+
+quantity
 
 
 =back
@@ -63,7 +72,7 @@ received
 
 =item new HASHREF
 
-Creates a new bulk DID order.  To add it to the database, see L<"insert">.
+Creates a new DID order item.  To add it to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -72,7 +81,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
-sub table { 'did_order'; }
+sub table { 'did_order_item'; }
 
 =item insert
 
@@ -102,7 +111,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid bulk DID order.  If there is
+Checks all fields to make sure this is a valid DID order item.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -115,29 +124,19 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_numbern('ordernum')
-    || $self->ut_foreign_key('vendornum', 'did_vendor', 'vendornum' )
-    || $self->ut_textn('vendor_order_id')
-    || $self->ut_number('submitted')
-    || $self->ut_numbern('confirmed')
-    || $self->ut_numbern('received')
+    $self->ut_numbern('orderitemnum')
+    || $self->ut_number('ordernum')
+    || $self->ut_textn('msa')
+    || $self->ut_numbern('npa')
+    || $self->ut_foreign_keyn('latanum', 'lata', 'latanum')
+    || $self->ut_textn('rate_center')
+    || $self->ut_textn('state')
+    || $self->ut_number('quantity')
   ;
   return $error if $error;
 
   $self->SUPER::check;
 }
-
-=item did_order_item
-
-Returns the did_order_items (see L<FS::did_order_item>) associated with this bulk DID order.
-
-=cut
-
-sub did_order_item {
-  my $self = shift;
-  qsearch( 'did_order_item', { 'ordernum' => $self->ordernum } );
-}
-
 
 =back
 

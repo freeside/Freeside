@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $DEBUG $me );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
+use FS::Misc::DateTime qw( parse_datetime );
 
 @ISA = qw(FS::cust_main_Mixin FS::Record);
 
@@ -190,9 +191,9 @@ sub process_batch_import {
   };
 
   my $opt = { 'table'   => 'phone_avail',
-              'params'  => [ 'availbatch', 'exportnum', 'countrycode', 'ordernum' ],
+              'params'  => [ 'availbatch', 'exportnum', 'countrycode', 'ordernum', 'vendor_order_id', 'confirmed' ],
               'formats' => { 'default' => [ 'state', $numsub, 'name' ],
-			     'bulk' => [ 'state', $numsub, 'name', 'rate_center_abbrev' ],
+			     'bulk' => [ 'state', $numsub, 'name', 'rate_center_abbrev', 'msa', 'latanum' ],
 			   },
 	      'postinsert_callback' => sub {  
 		    my $record = shift;
@@ -201,6 +202,8 @@ sub process_batch_import {
 						{ 'ordernum' => $record->ordernum } );
 			if($did_order && !$did_order->received) {
 			    $did_order->received(time);
+			    $did_order->confirmed(parse_datetime($record->confirmed));
+			    $did_order->vendor_order_id($record->vendor_order_id);
 			    $did_order->replace;
 			}
 		    }

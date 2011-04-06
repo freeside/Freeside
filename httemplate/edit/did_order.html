@@ -6,39 +6,54 @@
                               table => 'did_vendor',
                               disable_empty => 1,
                             },
-                            'vendor_order_id',
-                            'msa',
-                            { field => 'latanum',
-                              type => 'select-table',
-                              name_col => 'description',
-                              table => 'lata',
-                              disable_empty => 1,
-                              label_showkey => 1,
-                            },
-                            'rate_center',
-                            { field => 'state',
-                              type => 'select-state',
-                              country => 'US',
-                            },
-                            'quantity',
+                            { field => 'vendor_order_id',
+			      type => 'hidden',
+			    },
                             { field => 'confirmed',
-                              type => 'input-date-field',
+                              type => 'hidden',
                             },
+			    'custnum',
+			    { type => 'tablebreak-tr-title',
+			      value => 'Order Items',
+			    },
+			    { 'field' => 'orderitemnum',
+			      'type' => 'did_order_item',
+			      'o2m_table' => 'did_order_item',
+			      'm2_label' => 'Item',
+			      'm2_error_callback' => $m2_error_callback,
+			    },
+                            #'msa',
+                            #{ field => 'latanum',
+                            #  type => 'select-table',
+                            #  name_col => 'description',
+                            #  table => 'lata',
+                            #  disable_empty => 1,
+                            #  label_showkey => 1,
+                            #},
+                            #'rate_center',
+                            #{ field => 'state',
+                            #  type => 'select-state',
+                            #  country => 'US',
+                            #},
+                            #'quantity',
                           ],
               'labels' => { 
                             'ordernum'        => 'Order',
                             'vendornum'       => 'Vendor',
                             'vendor_order_id' => 'Vendor Order #',
-                            'msa'             => 'MSA',
-                            'latanum'         => 'LATA',
-                            'rate_center'     => 'Rate Center',
-                            'state'           => 'State',
-                            'quantity'        => 'Quantity',
+			    'custnum'	      => 'Customer',
+                            #'msa'             => 'MSA',
+                            #'latanum'         => 'LATA',
+                            #'rate_center'     => 'Rate Center',
+                            #'state'           => 'State',
+                            #'quantity'        => 'Quantity',
                             'confirmed'       => 'Confirmation Date',
+			    'orderitemnum'     => 'Item',
                           },
               'viewall_dir' => 'browse',
               'table' => 'did_order',
               'name' => 'Bulk DID Order',
+	      'field_callback' => $field_callback,
            )
           
 %>
@@ -46,5 +61,43 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+
+my $field_callback = sub {
+  my ($cgi, $object, $field_hashref ) = @_;
+  if ($object->ordernum) {
+    $field_hashref->{type} = 'text'
+	if $field_hashref->{field} eq 'vendor_order_id';
+    $field_hashref->{type} = 'input-date-field'
+	if $field_hashref->{field} eq 'confirmed';
+  }
+};
+
+my $m2_error_callback = sub {
+  my($cgi, $object) = @_;
+
+  #process_o2m fields in process/did_order.html
+  my @fields = qw( msa npa latanum rate_center state quantity );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^orderitemnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("orderitemnum$num$_"), @gfields ) {
+            my $x = new FS::did_order_item {
+              'orderitemnum' => scalar($cgi->param("orderitemnum$num")),
+              map { $_ => scalar($cgi->param("orderitemnum${num}_$_")) } @fields,
+            };
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+};
+
 
 </%init>

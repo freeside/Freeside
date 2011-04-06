@@ -7,7 +7,7 @@ Import a file containing phone numbers (DIDs).
               'name'      => 'PhonenumImportForm',
               'action'    => 'process/phone_avail-import.html',
               'num_files' => 1,
-              'fields'    => [ 'format', 'availbatch', 'exportnum', 'countrycode', 'ordernum' ],
+              'fields'    => [ 'format', 'availbatch', 'exportnum', 'countrycode', 'ordernum', 'confirmed', 'vendor_order_id' ],
               'message'   => 'DID import successful',
               'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
           )
@@ -25,6 +25,20 @@ Import a file containing phone numbers (DIDs).
 	    <INPUT TYPE="hidden" NAME="ordernum" VALUE="<% $ordernum %>">
 	</TD>
     </TR>
+    <TR>
+	<TD ALIGN="RIGHT">Vendor Order #</TD>
+	<TD>
+	    <INPUT TYPE="text" NAME="vendor_order_id" VALUE="<% $vendor_order_id %>">
+	</TD>
+    </TR>
+    
+    <% include( '/elements/tr-input-date-field.html', {
+		    'name' => 'confirmed',
+		    'label' => 'Order Confirmed',
+		    'value' => $confirmed,
+           })
+    %>
+
 % } 
   <TR>
     <TD ALIGN="RIGHT">Import Format</TD>
@@ -78,7 +92,7 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <BR><BR>
 
 <b>Default</b> format has the following field order: <i>state, number, name</i><br>
-<b>Bulk</b> format has the following field order: <i>state, number, rate center, rate_center_abbrev</i>
+<b>Bulk</b> format has the following field order: <i>state, number, rate center, rate_center_abbrev, msa, latanum</i>
 <BR><BR>
 Field information:
 <ul>
@@ -87,6 +101,8 @@ Field information:
   <li><i>name</i>: optional, rate center
   <li><i>rate center</i>: rate center (required)
   <li><i>rate_center_abbrev</i>: rate center abbreviation
+  <li><i>msa</i>: MSA
+  <li><i>latanum</i>: LATA #
 </ul>
 <BR><BR>
 
@@ -102,11 +118,23 @@ my $conf = new FS::Conf;
 my $ordernum = $cgi->param('ordernum');
 $ordernum = '' unless $ordernum =~ /^\d+$/;
 
-die 'invalid ordernum' 
-    unless (!$ordernum || qsearchs('did_order', { 'ordernum' => $ordernum }));
+my $vendor_order_id = '';
+my $confirmed = '';
+
+my $order = '';
+$order = qsearchs('did_order', { 'ordernum' => $ordernum } ) 
+    if $ordernum;
+
+die 'invalid ordernum' unless (!$ordernum || $order);
 
 my $format = 'default';
-$format = 'bulk' if $ordernum;
+
+if ( $order ) {
+    $format = 'bulk';
+    $confirmed = $order->confirmed;
+    $vendor_order_id = $order->vendor_order_id;
+}
+
 
 my $availbatch =
   time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
