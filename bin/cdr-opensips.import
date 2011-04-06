@@ -10,7 +10,7 @@ use DBI;
 use Getopt::Std;
 
 my %opt;
-getopts('H:U:P:D:T:', \%opt);
+getopts('H:U:P:D:T:s:e:', \%opt);
 my $user = shift or die &usage;
 
 my $dsn = 'dbi:mysql';
@@ -19,6 +19,16 @@ $dsn .= ":host=$opt{H}" if $opt{H};
 
 my $mysql = DBI->connect($dsn, $opt{U}, $opt{P}) 
   or die $DBI::errstr;
+
+my ($start, $end) = ('', '');
+if ( $opt{s} ) {
+  $start = str2time($opt{s}) or die "can't parse start date $opt{s}\n";
+  $start = time2str('%Y-%m-%d', $start);
+}
+if ( $opt{e} ) {
+  $end = str2time($opt{e}) or die "can't parse end date $opt{e}\n";
+  $end = time2str('%Y-%m-%d', $end);
+}
 
 adminsuidsetup $user;
 
@@ -41,7 +51,12 @@ my @cols = ( qw(
   time )
 );
 
-my $sql = 'SELECT '.join(',', @cols). " FROM $table WHERE freesidestatus IS NULL AND sip_code = 200"; # only want successful calls
+my $sql = 'SELECT '.join(',', @cols). " FROM $table".
+  ' WHERE freesidestatus IS NULL' .
+  ' AND sip_code = 200 ' . # only want successful calls
+  ($start && " AND time >= '$start'") .
+  ($end   && " AND time <  '$end'") .
+  ' ORDER BY time'; # should ensure INVITE/ACK/BYE order
 my $sth = $mysql->prepare($sql);
 $sth->execute;
 print "Importing ".$sth->rows." records...\n";
@@ -58,7 +73,12 @@ my $updates = 0;
 my %cdrs;
 my $row;
 while ( $row = $sth->fetchrow_hashref ) {
-  my ($callid) = $row->{'callid'} =~ /(.*)@/;
+  my ($callid) = $row->{'callid'};
+  $callid =~ s/@.*//;
+  if ( !$callid ) {
+    warn $row->{'time'} . ": no callid, skipped.\n";
+    next;
+  }
   my ($src) = $row->{'caller_id'} =~ /^sip:(\d+)@/;
   my ($dst) = $row->{'callee_id'} =~ /^sip:(\d+)@/;
 
@@ -77,9 +97,11 @@ while ( $row = $sth->fetchrow_hashref ) {
   }
   elsif ( $row->{'method'} eq 'ACK' ) {
     $cdr->answerdate($date);
+    next if !check_cdr($cdr, $src, $dst);
   }
   elsif ( $row->{'method'} eq 'BYE' ) {
     $cdr->enddate($date);
+    next if !check_cdr($cdr, $src, $dst);
   }
   if ( $cdr->startdate and $cdr->answerdate and $cdr->enddate ) {
     $cdr->duration($cdr->enddate - $cdr->startdate);
@@ -110,6 +132,19 @@ if ( keys(%cdrs) ) {
 $mysql->disconnect;
 
 sub usage {
-  "Usage: \n  cdr-opensips.import\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\tfreesideuser\n";
+  "Usage: \n  cdr-opensips.import\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\t[ -s start ] [ -e end ]\n\tfreesideuser\n";
 }
 
+sub check_cdr {
+  # Verify that these records belong to the same call.
+  # BYE records sometimes have the caller/callee fields swapped.
+  # We allow empty src/dst so as not to make noise about incomplete calls. If 
+  # this check fails, something is wrong with the source data.
+  my ($cdr, $a, $b) = @_;
+  if ( ( $cdr->src and $cdr->src ne $a and $cdr->src ne $b )
+    or ( $cdr->dst and $cdr->dst ne $a and $cdr->dst ne $b ) ) {
+    warn $cdr->uniqueid . ": src/dst mismatch, skipped.\n";
+    return 0;
+  }
+  return 1;
+}

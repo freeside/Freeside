@@ -2780,7 +2780,7 @@ sub tables_hashref {
         'disposition', 'varchar',  '',      45, \"''", '',
         'amaflags',    'int',      '',      '',     0, '',
         'accountcode', 'varchar',  '',      20, \"''", '',
-        'uniqueid',    'varchar',  '',      32, \"''", '',
+        'uniqueid',    'varchar',  '', $char_d, \"''", '',
         'userfield',   'varchar',  '',     255, \"''", '',
 
         'max_callers', 'int',  'NULL',      '',    '', '',
