@@ -92,7 +92,10 @@ MAIN: while (1) {
     warn "searching for times to add $serviceid\n" if $DEBUG;
     warn $ssql if $DEBUG > 2;
     my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery?
+
+    warn "executing search" if $DEBUG;
     $sth->execute($serviceid, $serviceid) or die $sth->errstr;
+    warn "search executed; checking results" if $DEBUG;
 
     my $prev = 0;
     while ( my $row = $sth->fetchrow_arrayref ) {
