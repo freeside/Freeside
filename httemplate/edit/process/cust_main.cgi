@@ -254,9 +254,15 @@ if ( $new->custnum eq '' ) {
   if ($new->stateid =~ /^xxx/) {
     $new->stateid($old->stateid);
   }
-  if ($new->payby =~ /^(CARD|DCRD)$/ && $new->payinfo =~ /xx/) {
+  if ( $new->payby =~ /^(CARD|DCRD)$/
+       && (    $new->payinfo =~ /xx/
+            || $new->payinfo =~ /^\s*N\/A\s+\(tokenized\)\s*$/
+          )
+     )
+  {
     $new->payinfo($old->payinfo);
-  } elsif ($new->payby =~ /^(CHEK|DCHK)$/ && $new->payinfo =~ /xx/) {
+
+  } elsif ( $new->payby =~ /^(CHEK|DCHK)$/ && $new->payinfo =~ /xx/ ) {
     #fix for #3085 "edit of customer's routing code only surprisingly causes
     #nothing to happen...
     # this probably won't do the right thing when we don't have the
