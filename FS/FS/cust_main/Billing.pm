@@ -1019,11 +1019,11 @@ sub _make_lines {
         'freq'      => $part_pkg->freq,
       };
 
-      if ( $part_pkg->option('recur_temporality', 1) eq 'preceding' ) {
+      if ( $part_pkg->recur_temporality eq 'preceding' ) {
         $cust_bill_pkg->sdate( $hash{last_bill} );
         $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
         $cust_bill_pkg->edate( $time ) if $options{cancel};
-      } else { #if ( $part_pkg->option('recur_temporality', 1) eq 'upcoming' ) {
+      } else { #if ( $part_pkg->recur_temporality eq 'upcoming' ) {
         $cust_bill_pkg->sdate( $sdate );
         $cust_bill_pkg->edate( $cust_pkg->bill );
         #$cust_bill_pkg->edate( $time ) if $options{cancel};

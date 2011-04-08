@@ -7,6 +7,8 @@ our %info = ( 'disabled' => 1 ); #torrus_Common not a usable price plan directly
 
 our $DEBUG = 1;
 
+sub recur_temporality { 'preceding'; }
+
 sub price_info {
     my $self = shift;
     my $str = $self->SUPER::price_info;

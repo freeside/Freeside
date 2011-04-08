@@ -10,7 +10,6 @@ our %info = (
   'weight'    => 54.7, #:/
   'inherit_fields' => [ 'flat', 'global_Mixin' ],
   'fields' => {
-    #'recur_temporality' => { 'hidden' => 1, 'value' => 'preceding' }, #XXX do
     'recur_temporality' => { 'disabled' => 1 },
     'sync_bill_date'    => { 'disabled' => 1 },
     'cutoff_day'        => { 'disabled' => 1 },

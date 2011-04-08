@@ -123,7 +123,7 @@ sub calc_recur {
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
 
   return 0
-    if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
+    if $self->recur_temporality eq 'preceding' && $last_bill == 0;
 
   my $charge = $self->base_recur($cust_pkg, $sdate);
   if ( my $cutoff_day = $self->cutoff_day($cust_pkg) ) {
@@ -207,6 +207,11 @@ sub is_prepaid { 0; } #no, we're postpaid
 sub can_discount {
   my $self = shift;
   $self->freq =~ /^\d+$/ && $self->freq > 0;
+}
+
+sub recur_temporality {
+  my $self = shift;
+  $self->option('recur_temporality', 1);
 }
 
 sub usage_valuehash {
