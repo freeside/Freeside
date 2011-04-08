@@ -94,11 +94,13 @@ MAIN: while (1) {
     warn $ssql if $DEBUG > 2;
     my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery here?
 
-    warn "executing search" if $DEBUG;
+    warn "executing search\n" if $DEBUG;
 
     eval {
-      my $timeout = set_sig_handler(
+      my $h = set_sig_handler(
         'ALRM', sub {
+          local $SIG{__DIE__};
+          warn "search timed out\n";
           dbh->clone()->do("KILL QUERY ". dbh->{"mysql_thread_id"})
             if driver_name eq 'mysql';
           die '_timeout';
@@ -118,7 +120,7 @@ MAIN: while (1) {
       die $@;
     }
 
-    warn "search executed; checking results" if $DEBUG;
+    warn "search executed; checking results\n" if $DEBUG;
 
     my $prev = 0;
     while ( my $row = $sth->fetchrow_arrayref ) {
