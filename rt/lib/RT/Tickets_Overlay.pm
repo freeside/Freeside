@@ -1791,6 +1791,12 @@ sub OrderByCols {
                    $custalias.last || ', ' || $custalias.first
                    )";
                }
+               elsif ( $subkey eq 'Class' ) {
+                   $field = "$custalias.classnum";
+               }
+               elsif ( $subkey eq 'Agent' ) {
+                   $field = "$custalias.agentnum";
+               }
                else {
                    # no other cases exist yet, but for obviousness:
                    $field = $subkey;

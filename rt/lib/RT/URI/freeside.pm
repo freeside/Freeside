@@ -299,6 +299,31 @@ if ($@ &&
   die $@;
 };
 
+=item AgentName
+
+Return the name of the customer's agent.
+
+=cut
+
+sub AgentName { undef }
+
+=item CustomerClass
+
+Return the name of the customer's class.
+
+=cut
+
+sub CustomerClass { undef }
+
+=item CustomerTags
+
+Return the list of tags attached to the customer.  Each tag is returned
+as a hashref with keys "name", "desc", and "color".
+
+=cut
+
+sub CustomerTags { ( ) }
+
 =back
 
 =cut

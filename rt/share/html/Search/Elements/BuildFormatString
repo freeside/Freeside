@@ -72,7 +72,7 @@ $CurrentDisplayColumns => undef
 my @fields = qw(
     id QueueName Subject
 
-    Customer
+    Customer Agent CustomerClass CustomerTags
 
     Status ExtendedStatus UpdateStatus
     Type

@@ -316,23 +316,83 @@ $COLUMN_MAP = {
 
     Customer => {
         title     => 'Customer', #loc
-        attribute => 'Customer', #title/attribute/name... what does it all mean?
+        attribute => 'Customer.Number', #title/attribute/name... what does it all mean?
         value     => sub {
-          my $Ticket = shift;
-          my @Customers = @{ $Ticket->Customers->ItemsArrayRef };
-          my @CustResolvers = map $_->TargetURI->Resolver, @Customers;
-          my @return = ();
-          for ( 0 .. $#CustResolvers ) {
-            my $c = @CustResolvers[$_];
-            push @return, \'<A HREF="', $c->HREF, \'">', $c->AsString, \'</A>';
-            push @return, \'<BR>' if scalar(@CustResolvers) > 1
-                                  && $_ != $#CustResolvers;
-          }
-          @return;
+            my $Ticket = shift;
+            my @return = ();
+            foreach my $c (ticket_cust_resolvers($Ticket)) {
+                push @return, \'<A HREF="', $c->HREF, \'">', 
+                              $c->AsString,
+                              \'</A>',
+                              \'<BR>';
+            }
+            pop @return;
+            @return;
         },
     },
-
+    # For future reference:
+    # hash key = name of the column in the format string 
+    #   (see /Search/Elements/BuildFormatString)
+    # title = displayed name in the table header
+    # attribute = the field to ORDER BY when sorting on this column
+    Agent => {
+        title     => 'Agent',
+        attribute => 'Customer.Agent',
+        value => sub {
+            my $Ticket = shift;
+            my @return = ();
+            foreach my $c (ticket_cust_resolvers($Ticket)) {
+                push @return, $c->AgentName, \'<BR>';
+            }
+            pop @return;
+            @return;
+        },
+    },
+    CustomerClass => {
+        title     => 'Class',
+        attribute => 'Customer.Class',
+        value     => sub {
+            my $Ticket = shift;
+            my @return = ();
+            foreach my $c (ticket_cust_resolvers($Ticket)) {
+                push @return, $c->CustomerClass, \'<BR>';
+            }
+            pop @return;
+            @return;
+        },
+    },
+    CustomerTags => {
+        title     => '',
+        attribute => '',
+        value     => sub {
+            my $Ticket = shift;
+            my @return = ();
+            foreach my $c (ticket_cust_resolvers($Ticket)) {
+                my @tags = sort { $a->{'name'} cmp $b->{'name'} }
+                            $c->CustomerTags;
+                foreach my $t (@tags) {
+                    push @return, \'<SPAN style="background-color:#',
+                                  $t->{'color'},
+                                  \';">&nbsp;',
+                                  $t->{'name'},
+                                  \'&nbsp;</SPAN>',
+                                  \'&nbsp;'
+                                  ;
+                }
+                pop @return;
+                push @return, \'<BR>';
+            }
+            pop @return;
+            @return;
+        },
+    },
 };
+
+sub ticket_cust_resolvers {
+    my $Ticket = shift;
+    my @Customers = @{ $Ticket->Customers->ItemsArrayRef };
+    return map $_->TargetURI->Resolver, @Customers;
+}
 
 # if no GPG support, then KeyOwnerName and KeyRequestors fall back to the regular
 # versions

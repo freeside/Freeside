@@ -142,4 +142,29 @@ sub _FreesideURILabelLong {
 
 }
 
+sub AgentName {
+  my $self = shift;
+  my $rec = $self->_FreesideGetRecord() or return;
+  my $agent = $rec->{'_object'}->agent or return;
+  return $agent->agentnum . ': ' . $agent->agent;
+}
+
+sub CustomerClass {
+  my $self = shift;
+  my $rec = $self->_FreesideGetRecord() or return;
+  my $cust_class = $rec->{'_object'}->cust_class or return;
+  return $cust_class->classname;
+}
+  
+sub CustomerTags {
+  my $self = shift;
+  my $rec = $self->_FreesideGetRecord() or return;
+  my @part_tag = $rec->{'_object'}->part_tag;
+  return map { 
+    { 'name'  => $_->tagname,
+      'desc'  => $_->tagdesc,
+      'color' => $_->tagcolor }
+  } @part_tag;
+}
+
 1;
