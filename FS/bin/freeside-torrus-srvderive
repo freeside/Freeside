@@ -64,7 +64,7 @@ MAIN: while (1) {
 
   my $found = 0;
 
-  foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
+  SERVICEID: foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
 
     my $serviceid = $torrus_srvderive->serviceid;
 
@@ -117,7 +117,7 @@ MAIN: while (1) {
 
     eval {
       my $h = set_sig_handler( 'ALRM', sub { die "_timeout\n"; } );
-      alarm(5*60); #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
+      alarm(10*60); #5*60); #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
       $sth->execute($serviceid, $serviceid) or die $sth->errstr;
       alarm(0);
     };
@@ -127,8 +127,9 @@ MAIN: while (1) {
       warn "search timed out; reconnecting and restarting\n";
       dbh->clone()->do("KILL QUERY ". dbh->{"mysql_thread_id"})
         if driver_name eq 'mysql';
+      dbh->rollback; #or die dbh->errstr;
       adminsuidsetup($user);
-      next MAIN;
+      next SERVICEID; #MAIN;
     } elsif ( $@ ) {
       die $@;
     }
@@ -178,7 +179,7 @@ MAIN: while (1) {
                $isth->errstr;
           dbh->rollback; #or die dbh->errstr;
           sleep 5;
-          next MAIN;
+          next SERVICEID; #MAIN;
         }
                         
       }
