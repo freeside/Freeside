@@ -4,34 +4,33 @@
               'query'         => {
                                    'table'   => 'phone_avail',
                                    'hashref' => {},
-                                   'select'  => 'distinct npa||nxx as npanxx'
+                                   'select'  => 'distinct latanum',
                                  },
-              'count_query'   => 'SELECT COUNT(distinct npa||nxx) FROM phone_avail',
-              'header'        => [ 'NPANXX',
+              'count_query'   => 'SELECT COUNT(distinct latanum) FROM phone_avail',
+              'header'        => [ 'LATA #',
 				   'Available',
 				   'Provisioned',
 				   'Have Usage',
                                  ],
               'fields'        => [
-                'npanxx',
+                'latanum',
 		sub {
-		    my $npanxx = shift->npanxx;
+		    my $latanum = shift->latanum;
 		    my @dids = qsearch('phone_avail',
 					{ 'svcnum' => '',
-					  'npa' => substr($npanxx,0,3),
-					  'nxx' => substr($npanxx,3,3),
+					  'latanum' => $latanum,
 					}
 				      );
 		    return scalar(@dids);
 		},
 		sub {
-		    my $npanxx = shift->npanxx;
-		    my @dids = provisioned_dids($npanxx);
+		    my $latanum = shift->latanum;
+		    my @dids = provisioned_dids($latanum);
 		    return scalar(@dids);
 		},
 		sub {
-		    my $npanxx = shift->npanxx;
-		    my @dids = provisioned_dids($npanxx);
+		    my $latanum = shift->latanum;
+		    my @dids = provisioned_dids($latanum);
 		    my $count = 0;
 		    foreach my $did ( @dids ) {
 			next unless $did->cust_svc;
@@ -74,11 +73,10 @@ die "access denied"
 # XXX: agent virtualize
 
 sub provisioned_dids {
-    my $npanxx = shift;
+    my $latanum = shift;
     qsearch({ 'table' => 'phone_avail',
 	      'hashref' => { 
-		'npa' => substr($npanxx,0,3),
-		'nxx' => substr($npanxx,3,3),
+		'latanum' => $latanum,
 	      },
 	      'extra_sql' => ' and svcnum is not null ',
 	  });
