@@ -76,6 +76,25 @@ MAIN: while (1) {
     }
     my $in = join(',', @in);
 
+    if ( ! $torrus_srvderive->last_srv_date ) {
+      warn "finding initial last_srv_date for $serviceid\n" if $DEBUG;
+      my $dsql = "SELECT srv_date FROM srvexport WHERE serviceid IN ($in)
+                  ORDER BY srv_date LIMIT 1";
+      my $dsth = dbh->prepare($dsql) or die $DBI::errstr;
+      $dsth->execute or die $dsth->errstr;
+      my $date = $dsth->fetchrow_arrayref->[0];
+      if ( $date ) {
+        warn "found initial last_srv_date of $date; updating $serviceid\n"
+          if $DEBUG;
+        $torrus_srvderive->last_srv_date($date);
+        my $error = $torrus_srvderive->replace;
+        die $error if $error;
+      } else {
+        warn "no initial last_srv_date for $serviceid; skipping\n" if $DEBUG;
+        next;
+      }
+    }
+
     my $ssql = "
       $sql AND EXISTS (
                        SELECT 1 FROM srvexport AS other
@@ -98,7 +117,7 @@ MAIN: while (1) {
 
     eval {
       my $h = set_sig_handler( 'ALRM', sub { die "_timeout\n"; } );
-      alarm(5*60); # 15*60);
+      alarm(5*60); #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
       $sth->execute($serviceid, $serviceid) or die $sth->errstr;
       alarm(0);
     };
