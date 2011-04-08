@@ -96,22 +96,22 @@ MAIN: while (1) {
 
     warn "executing search\n" if $DEBUG;
 
-    my $alarm = 0;
     eval {
-      my $h = set_sig_handler( 'ALRM', sub { $alarm = 1; } );
+      my $h = set_sig_handler( 'ALRM', sub { die "_timeout\n"; } );
       alarm(5*60); # 15*60);
       $sth->execute($serviceid, $serviceid) or die $sth->errstr;
       alarm(0);
     };
     alarm(0);
-    die $@ if $@;
     
-    if ( $alarm ) {
+    if ( $@ && $@ eq "_timeout\n" ) {
       warn "search timed out; reconnecting and restarting\n";
       dbh->clone()->do("KILL QUERY ". dbh->{"mysql_thread_id"})
         if driver_name eq 'mysql';
       adminsuidsetup($user);
       next MAIN;
+    } elsif ( $@ ) {
+      die $@;
     }
 
     warn "search executed; checking results\n" if $DEBUG;
