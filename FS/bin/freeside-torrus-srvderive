@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use Sys::SigAction qw( set_sig_handler );
 use Date::Parse;
 use Date::Format;
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
@@ -91,10 +92,32 @@ MAIN: while (1) {
 
     warn "searching for times to add $serviceid\n" if $DEBUG;
     warn $ssql if $DEBUG > 2;
-    my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery?
+    my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery here?
 
     warn "executing search" if $DEBUG;
-    $sth->execute($serviceid, $serviceid) or die $sth->errstr;
+
+    eval {
+      my $timeout = set_sig_handler(
+        'ALRM', sub {
+          dbh->clone()->do("KILL QUERY ". dbh->{"mysql_thread_id"})
+            if driver_name eq 'mysql';
+          die '_timeout';
+        },
+        { mask=>['ALRM'] , safe=>1 }
+      );
+      alarm(5*60); # 15*60);
+      $sth->execute($serviceid, $serviceid) or die $sth->errstr;
+      alarm(0);
+    };
+    alarm(0);
+    if ( $@ =~ /^_timeout/ ) {
+      warn "search timed out; reconnecting and restarting\n";
+      adminsuidsetup($user);
+      next MAIN;
+    } elsif ( $@ ) {
+      die $@;
+    }
+
     warn "search executed; checking results" if $DEBUG;
 
     my $prev = 0;
