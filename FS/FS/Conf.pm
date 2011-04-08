@@ -2055,6 +2055,14 @@ and customer address. Include units.',
     'description' => 'Template to use for welcome messages when a svc_acct record is created.',
     %msg_template_options,
   },
+  
+  {
+    'key'         => 'svc_acct_welcome_exclude',
+    'section'     => 'notification',
+    'description' => 'A list of svc_acct services for which no welcome email is to be sent.',
+    'type'        => 'select-part_svc',
+    'multiple'    => 1,
+  },
 
   {
     'key'         => 'welcome_email',
