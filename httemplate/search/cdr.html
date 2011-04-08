@@ -8,6 +8,7 @@
 			    'order_by'  => 'ORDER BY calldate',
                           },
                'count_query' => $count_query,
+               'count_addl' => [ $totalminutes_sub ],
                'header' => [
                              '', # checkbox column
                              @header,
@@ -45,7 +46,6 @@
                                   '';
                                 }
                               },
-
              )
 %>
 <%init>
@@ -54,6 +54,11 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
 
 my $edit_data = $FS::CurrentUser::CurrentUser->access_right('Edit rating data');
+
+my $totalminutes_sub = sub {
+    my $billsec = shift;
+    sprintf("%.2f",$billsec/60) . ' total minutes';
+};
 
 my $conf = new FS::Conf;
 
@@ -257,7 +262,7 @@ if ( $cgi->param('acctid') =~ /\d/ ) {
 my $search = join(' AND ', @search);
 $search = "WHERE $search" if $search;
 
-my $count_query = "SELECT COUNT(*) FROM cdr $search";
+my $count_query = "SELECT COUNT(*), sum(billsec) FROM cdr $search";
 
 my $qsearch = join(' AND ', @qsearch);
 $qsearch = ( scalar(keys %$hashref) ? ' AND ' : ' WHERE ' ) . $qsearch
