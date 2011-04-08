@@ -1406,7 +1406,7 @@ Set ($DefaultSearchResultFormat, qq{
    '__NEWLINE__',
    '', 
    '<small>__Requestors__</small>',
-   '',
+   '<small>__CustomerTags__</small>',
    '<small>__CreatedRelative__</small>',
    '<small>__ToldRelative__</small>',
    '<small>__LastUpdatedRelative__</small>',
@@ -1810,7 +1810,7 @@ C<Set(@Plugins, (qw(Extension::QuickDelete RT::FM)));>
 
 =cut
 
-Set(@Plugins, qw( RTx::Calendar )); #RTx::Checklist ));
+Set(@Plugins, qw(RTx::Calendar )); #RTx::Checklist ));
 
 =back
 
