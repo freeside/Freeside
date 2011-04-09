@@ -18,7 +18,10 @@
     function classnum_changed(what) {
 
       what.form.pkgpart.disabled = 'disabled'; //disable part_pkg dropdown
-      what.form.submit.disabled = true; //disable the submit button
+      var submitButton = what.form.submitButton; // || what.form.submit;
+      if ( submitButton ) {
+        submitButton.disabled = true; //disable the submit button
+      }
       var discountnum = what.form.discountnum;
       if ( discountnum ) {
         discountnum.disabled = true; //disable discount dropdown
