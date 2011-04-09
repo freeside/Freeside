@@ -856,6 +856,7 @@ sub _realtime_bop_result {
       if ( $error2 ) {
         # gah.  but at least we have a record of the state we had to abort in
         # from cust_pay_pending now.
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
         my $e = "WARNING: $options{method} captured but payment not recorded -".
                 " error inserting payment (". $payment_gateway->gateway_module.
                 "): $error2".
