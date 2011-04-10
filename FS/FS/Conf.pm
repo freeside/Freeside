@@ -2658,6 +2658,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'company_phonenum',
+    'section'     => 'notification',
+    'description' => 'Your company phone number',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'echeck-void',
     'section'     => 'deprecated',
     'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
