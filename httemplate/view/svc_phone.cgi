@@ -135,21 +135,30 @@ my $html_foot = sub {
     unless $svc_phone->countrycode eq '1';
 
   #src & charged party as per voip_cdr.pm
-  my $search;
-  my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
-  if ( $cust_pkg && $cust_pkg->part_pkg->option('disable_src',1) ) {
-    $search = "charged_party=$number";
-  } else {
-    $search = "charged_party_or_src=$number";
-  }
-
-  #XXX default prefix as per voip_cdr.pm
   #XXX handle toll free too
 
-  #my @links = map {
-  #  qq(<A HREF="${p}search/cdr.html?src=$number;freesidestatus=$what{$_}">).
-  #  "View $_ CDRs</A>";
-  #} keys(%what);
+  my $search = "charged_party_or_src=";
+
+  my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+
+  if ( $cust_pkg ) {
+
+    #XXX handle voip_inbound too
+
+    my @part_pkg = grep { $_->plan eq 'voip_cdr' }
+                        $cust_pkg->part_pkg->self_and_bill_linked;
+
+    foreach my $prefix (grep $_, map $_->option('default_prefix'), @part_pkg) {
+      $number .= ",$prefix$number";
+    }
+
+    $search = 'charged_party='
+      unless !@part_pkg || grep { ! $_->option('disable_src',1) } @part_pkg;
+
+  }
+
+  $search .= $number;
+
   my @links = map {
     qq(<A HREF="${p}search/cdr.html?cdrbatchnum=__ALL__;$search;freesidestatus=$what{$_}">).
     "View $_ CDRs</A>";

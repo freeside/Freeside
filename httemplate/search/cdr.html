@@ -168,10 +168,15 @@ if ( $cgi->param('src') =~ $phonenum ) {
   push @search, "src = '$src'";
 }
 
-if ( $cgi->param('dst') =~ $phonenum ) {
-  ( my $dst = $1 ) =~ s/$x//g;
-  $hashref->{'dst'} = $dst;
-  push @search, "dst = '$dst'";
+if ( $cgi->param('dst') ) {
+
+  my @d = map { $_, "1$_" } split(/\s*,\s*/, $cgi->param('dst') );
+  
+  my $search = 'dst IN ('. join(',', map dbh->quote($_), @d). ')';
+
+  push @search,  $search;
+  push @qsearch, $search;
+
 }
 
 if ( $cgi->param('dcontext') =~ /^\s*(.+)\s*$/ ) {
