@@ -552,8 +552,7 @@ sub export_formats {
   my $conf = new FS::Conf;
   my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-  # This is now smarter, and shows the call duration in the 
-  # largest units that accurately reflect the granularity.
+  # call duration in the largest units that accurately reflect the  granularity
   my $duration_sub = sub {
     my($cdr, %opt) = @_;
     my $sec = $opt{seconds} || $cdr->billsec;
@@ -562,7 +561,9 @@ sub export_formats {
       return '1 call';
     }
     elsif ( $opt{granularity} == 60 ) {#full minutes
-      return sprintf("%.0fm",$sec/60);
+      my $min = int($sec/60);
+      $min++ if $sec%60;
+      return $min.'m';
     }
     else { #anything else
       return sprintf("%dm %ds", $sec/60, $sec%60);
