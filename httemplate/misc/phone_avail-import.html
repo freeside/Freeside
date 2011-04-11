@@ -91,18 +91,25 @@ Import a file containing phone numbers (DIDs).
 Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  The file should have a .CSV or .XLS extension.
 <BR><BR>
 
-<b>Default</b> format has the following field order: <i>state, number, name</i><br>
-<b>Bulk</b> format has the following field order: <i>state, number, rate center, rate_center_abbrev, msa, latanum</i>
+% if ( $ordernum ) {
+    <b>Bulk</b> format has the following field order: <i>state, number, rate center, rate_center_abbrev, msa, latanum</i>
+% } else {
+    <b>Default</b> format has the following field order: <i>state, number, name</i><br>
+% }
 <BR><BR>
 Field information:
 <ul>
   <li><i>state</i>: Two-letter state code, i.e. "CA"
   <li><i>number</i>: Phone number
-  <li><i>name</i>: optional, rate center
+
+% if ( $ordernum ) { 
   <li><i>rate center</i>: rate center (required)
   <li><i>rate_center_abbrev</i>: rate center abbreviation
   <li><i>msa</i>: MSA
   <li><i>latanum</i>: LATA #
+% } else {
+  <li><i>name</i>: optional, rate center
+% }
 </ul>
 <BR><BR>
 
