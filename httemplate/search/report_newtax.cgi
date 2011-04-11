@@ -16,7 +16,7 @@
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Tax collected</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Tax invoiced</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;&nbsp;&nbsp;&nbsp;</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Tax credited</TH>
