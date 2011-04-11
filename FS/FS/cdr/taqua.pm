@@ -26,7 +26,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
     sub { my($cdr, $field) = @_; },       #OrigCircuit
     sub { my($cdr, $field) = @_; },       #OrigCircuitType
     'uniqueid',                           #SequenceNumber
-    'accountcode',                        #SessionNumber
+    'sessionnum',                         #SessionNumber
     'src',                                #CallingPartyNumber
     #'dst',                                #CalledPartyNumber
     #CalledPartyNumber
@@ -101,7 +101,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
       }
     },
 
-    sub { my($cdr, $field) = @_; },       #SubscriberNumber
+    'subscriber',                         #SubscriberNumber
     'lastapp',                            #ServiceName
     sub { my($cdr, $field) = @_; },       #some weirdness #ChargeTime
     'lastdata',                           #ServiceInformation

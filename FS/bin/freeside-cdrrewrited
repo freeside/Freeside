@@ -24,8 +24,8 @@ daemonize2();
 
 $conf = new FS::Conf;
 
-die "not running; cdr-asterisk_forward_rewrite and cdr-charged_party_rewrite ".
-    " conf options are both off\n"
+die "not running; cdr-asterisk_forward_rewrite, cdr-charged_party_rewrite ".
+    " and cdr-taqua-accountcode_rewrite conf options are all off\n"
   unless _shouldrun();
 
 #--
@@ -77,6 +77,35 @@ while (1) {
 
     }
 
+    if ( $conf->exists('cdr-taqua-accountcode_rewrite')
+         && $cdr->lastapp eq 'acctcode' && $cdr->cdrtypenum == 1
+       )
+    {
+
+      #find the matching CDR
+      my $primary = qsearchs('cdr', {
+        'sessionnum'  => $cdr->sessionnum,
+        'src'         => $cdr->subscriber,
+        #'accountcode' => '',
+      });
+
+      unless ( $primary ) {
+        warn "WARNING: can't find primary CDR with session ". $cdr->sessionnum.
+             ", src ". $cdr->subscriber. "; will keep trying\n";
+        next;
+      }
+
+      $primary->accountcode( $cdr->lastdata );
+      #$primary->freesiderewritestatus( 'taqua-accountcode-primary' );
+      my $error = $primary->replace;
+      if ( $error ) {
+        warn "WARNING: error rewriting primary CDR (will retry): $error\n"
+        next;
+      }
+
+      push @status, 'taqua-accountcode';
+    }
+
     $cdr->freesiderewritestatus(
       scalar(@status) ? join('/', @status) : 'skipped'
     );
@@ -101,7 +130,8 @@ while (1) {
 
 sub _shouldrun {
      $conf->exists('cdr-asterisk_forward_rewrite')
-  || $conf->exists('cdr-charged_party_rewrite');
+  || $conf->exists('cdr-charged_party_rewrite')
+  || $conf->exists('cdr-taqua-accountcode_rewrite');
 }
 
 sub usage { 
