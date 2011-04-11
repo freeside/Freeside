@@ -551,7 +551,11 @@ sub send_receipt {
     my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
     if ( $msgnum ) {
       my $msg_template = FS::msg_template->by_key($msgnum);
-      $error = $msg_template->send('cust_main'=> $cust_main, 'object'=> $self);
+      $error = $msg_template->send(
+        'cust_main'   => $cust_main,
+        'object'      => $self,
+        'from_config' => 'payment_receipt_from',
+      );
 
     } elsif ( $conf->exists('payment_receipt_email') ) {
 

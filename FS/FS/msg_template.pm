@@ -175,6 +175,14 @@ objects will be available for substitution, with their field names
 prefixed with 'new_' and 'old_' respectively.  This is used in the 
 rt_ticket export when exporting "replace" events.
 
+=item from_config
+
+Configuration option to use as the source address, based on the customer's 
+agentnum.  If unspecified (or the named option is empty), 'invoice_from' 
+will be used.
+
+The I<from_addr> field in the template takes precedence over this.
+
 =item to
 
 Destination address.  The default is to use the customer's 
@@ -291,10 +299,19 @@ sub prepare {
   # no warning when preparing with no destination
 
   my $conf = new FS::Conf;
+  my $from_addr = $self->from_addr;
+
+  if ( !$from_addr ) {
+    if ( $opt{'from_config'} ) {
+      $from_addr = scalar( $conf->config($opt{'from_config'}, 
+                                         $cust_main->agentnum) );
+    }
+    $from_addr ||= scalar( $conf->config('invoice_from',
+                                         $cust_main->agentnum) );
+  }
 
   (
-    'from' => $self->from_addr || 
-              scalar( $conf->config('invoice_from', $cust_main->agentnum) ),
+    'from' => $from_addr,
     'to'   => \@to,
     'bcc'  => $self->bcc_addr || undef,
     'subject'   => $subject,

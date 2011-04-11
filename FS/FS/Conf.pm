@@ -1318,6 +1318,14 @@ and customer address. Include units.',
     'description' => 'Template to use for payment receipts.',
     %msg_template_options,
   },
+  
+  {
+    'key'         => 'payment_receipt_from',
+    'section'     => 'notification',
+    'description' => 'From: address for payment receipts, if not specified in the template.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
 
   {
     'key'         => 'payment_receipt_email',
