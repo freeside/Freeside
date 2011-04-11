@@ -24,7 +24,7 @@
   function standardize_new_location() {
     var form = document.OrderPkgForm;
     var loc = form.locationnum;
-    if (loc.type = 'select-one' && loc.options[loc.selectedIndex].value == -1) {
+    if (loc.type == 'select-one' && loc.options[loc.selectedIndex].value == -1){
       standardize_locations();
     } else {
       form.submit();
