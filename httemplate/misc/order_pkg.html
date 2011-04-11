@@ -5,33 +5,7 @@
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
 
-<SCRIPT TYPE="text/javascript">
-
-  function enable_order_pkg () {
-    if ( document.OrderPkgForm.pkgpart.selectedIndex > 0 ) {
-      document.OrderPkgForm.submitButton.disabled = false;
-      if ( document.OrderPkgForm.pkgpart.options[document.OrderPkgForm.pkgpart.selectedIndex].getAttribute('data-can_discount') == 1 ) {
-        document.OrderPkgForm.discountnum.disabled = false;
-      } else {
-        document.OrderPkgForm.discountnum.disabled = true;
-      }
-    } else {
-      document.OrderPkgForm.submitButton.disabled = true;
-      document.OrderPkgForm.discountnum.disabled = true;
-    }
-  }
-
-  function standardize_new_location() {
-    var form = document.OrderPkgForm;
-    var loc = form.locationnum;
-    if (loc.type == 'select-one' && loc.options[loc.selectedIndex].value == -1){
-      standardize_locations();
-    } else {
-      form.submit();
-    }
-  }
-
-</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
 
 <% include('/elements/error.html') %>
 
@@ -148,9 +122,9 @@
 % my $onclick = $cgi->param('lock_locationnum')
 %                 ? 'document.OrderPkgForm.submit()'
 %                 : 'standardize_new_location()';
-<INPUT NAME="submitButton"
-       TYPE="button"
-       VALUE="Order Package"
+<INPUT NAME    = "submitButton"
+       TYPE    = "button"
+       VALUE   = "Order Package"
        onClick = "this.disabled=true; <% $onclick %>;"
        <% $pkgpart ? '' : 'DISABLED' %>
 >

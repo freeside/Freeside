@@ -1,5 +1,7 @@
 <% include('/elements/header-popup.html', "Change Package") %>
 
+<SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
+
 <% include('/elements/error.html') %>
 
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/change-cust_pkg.html" METHOD=POST>
@@ -40,7 +42,12 @@
 %>
 
 <BR>
-<INPUT NAME="submitButton" TYPE="button" VALUE="Change package" onClick="this.disabled=true; standardize_locations();">
+<INPUT NAME    = "submitButton"
+       TYPE    = "button"
+       VALUE   = "Change package"
+       onClick = "this.disabled=true; standardize_new_location();"
+       <% scalar($cgi->param('pkgpart')) ? '' : 'DISABLED' %>
+>
 
 </FORM>
 </BODY>
