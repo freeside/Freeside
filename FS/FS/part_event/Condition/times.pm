@@ -34,7 +34,7 @@ sub condition {
                    ),
   } );
 
-  scalar(@existing) <= $self->option('run_times');
+  scalar(@existing) < $self->option('run_times');
 
 }
 
@@ -52,7 +52,7 @@ sub condition_sql {
                         AND status != 'failed'
                   )";
 
-  "$existing <= $run_times";
+  "$existing < $run_times";
 
 }
 
