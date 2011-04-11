@@ -21,6 +21,16 @@
     }
   }
 
+  function standardize_new_location() {
+    var form = document.OrderPkgForm;
+    var loc = form.locationnum;
+    if (loc.type = 'select-one' && loc.options[loc.selectedIndex].value == -1) {
+      standardize_locations();
+    } else {
+      form.submit();
+    }
+  }
+
 </SCRIPT>
 
 <% include('/elements/error.html') %>
@@ -144,21 +154,6 @@
        onClick = "this.disabled=true; <% $onclick %>;"
        <% $pkgpart ? '' : 'DISABLED' %>
 >
-
-<SCRIPT TYPE="text/javascript">
-
-  function standardize_new_location() {
-    var form = document.OrderPkgForm;
-    var loc = form.locationnum;
-    if (loc.type = 'select-one' && loc.options[loc.selectedIndex].value == -1) {
-      standardize_locations();
-    } else {
-      form.submit();
-    }
-  }
-
-</SCRIPT>
-
 
 </FORM>
 </BODY>
