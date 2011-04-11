@@ -456,6 +456,7 @@ my @fields = (
         code2country($country). "&nbsp;($country)";
       },
 
+  #state
   sub { my $label = $seen_state{$_[0]->country}->{$_[0]->state}++
                       ? '' : state_label($_[0]->state, $_[0]->country);
 
@@ -488,6 +489,7 @@ my @fields = (
         $label.$countylinks.$addlink;
       },
 
+  #county
   sub { my $label =
           $seen_county{$_[0]->country}->{$_[0]->state}->{$_[0]->county}++ 
             ? '' : $_[0]->county;
@@ -525,19 +527,29 @@ my @fields = (
                          );
       },
 
-  sub { $_[0]->city
-          ? $_[0]->city. '&nbsp;'.
+  #city
+  sub {
+        my $r = shift;
+        if ( $r->city ) {
+
+          if ( $r->taxclass ) { #but if it has a taxclass, can't remove
+            $r->city;
+          } else {
+            $r->city. '&nbsp;'.
               remove_link( col  => 'city',
                            label=> 'remove&nbsp;city',
-                           row  => $_[0],
+                           row  => $r,
                            cgi  => $cgi,
-                         )
-          : '(all)&nbsp;'.
-              expand_link(   desc  => 'Add Cities',
-                             row   => $_[0],
-                             label => 'add&nbsp;cities',
-                             cgi  => $cgi,
                          );
+          }
+        } else {
+          '(all)&nbsp;'.
+            expand_link(   desc  => 'Add Cities',
+                           row   => $r,
+                           label => 'add&nbsp;cities',
+                           cgi  => $cgi,
+                       );
+        }
       },
 );
 
@@ -551,10 +563,24 @@ my @color = (
 if ( $conf->exists('enable_taxclasses') ) {
   push @header, qq!Tax class (<A HREF="${p}edit/part_pkg_taxclass.html">add new</A>)!;
   push @header2, '(per-package classification)';
-  push @fields, sub { $_[0]->taxclass || '(all)&nbsp;'.
-                       separate_taxclasses_link($_[0], 'Separate Taxclasses').
-                       'separate&nbsp;taxclasses</A></FONT>'
-                    };
+  push @fields, sub {
+    my $r = shift;
+    if ( $r->taxclass ) {
+      $r->taxclass;
+    } else {
+      my $sql = 'SELECT COUNT(*) FROM cust_main_county
+                   WHERE country = ? AND state = ? AND county = ?
+                     AND city = ? AND taxclass IS NOT NULL';
+      if ( FS::Record->scalar_sql($sql, map $r->$_,
+                                            qw( country state county city) ) ) {
+        '(none)';
+      } else {
+        '(all)&nbsp;'.
+          separate_taxclasses_link($r, 'Separate Taxclasses').
+          'separate&nbsp;taxclasses</A></FONT>';
+      }
+    }
+  };
   push @color, sub { shift->taxclass ? '000000' : '999999' };
   push @links, '';
   push @link_onclicks, '';
