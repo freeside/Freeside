@@ -2789,7 +2789,7 @@ sub tables_hashref {
         # fields for unitel/RSLCOM/convergent that don't map well to asterisk
         # defaults
         # though these are now used elsewhere:
-        # charged_party, upstream_price, rated_price, carrierid
+        # charged_party, upstream_price, rated_price, carrierid, cdrtypenum
         ###
 
         #cdr_type: Usage = 1, S&E = 7, OC&C = 8
@@ -2835,10 +2835,14 @@ sub tables_hashref {
         #an indexed place to put big numbers
         'cdrid',         'bigint',     'NULL',     '',  '', '', 
 
+        #for taqua accountcode rewriting, for starters
+        'sessionnum',       'int',    'NULL',      '', '', '',
+        'subscriber',   'varchar',    'NULL', $char_d, '', '',
+
         #old
-        'cdrbatch', 'varchar', 'NULL', 255, '', '',
+        'cdrbatch',     'varchar',    'NULL',     255, '', '',
         #new
-        'cdrbatchnum', 'int', 'NULL', '', '', '',
+        'cdrbatchnum',      'int',    'NULL',      '', '', '',
 
       ],
       'primary_key' => 'acctid',
@@ -2846,6 +2850,7 @@ sub tables_hashref {
       'index' => [ [ 'calldate' ],
                    [ 'src' ], [ 'dst' ], [ 'dcontext' ], [ 'charged_party' ],
                    [ 'accountcode' ], [ 'carrierid' ], [ 'cdrid' ],
+                   [ 'sessionnum' ],
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
                    [ 'cdrbatch' ], [ 'cdrbatchnum' ],
                  ],

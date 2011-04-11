@@ -3964,9 +3964,16 @@ and customer address. Include units.',
 
   {
     'key'         => 'cdr-taqua-da_rewrite',
-    'section'     => '',
+    'section'     => 'telephony',
     'description' => 'For the Taqua CDR format, a comma-separated list of directory assistance 800 numbers.  Any CDRs with these numbers as "BilledNumber" will be rewritten to the "CallingPartyNumber" (and CallType "12") on import.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cdr-taqua-accountcode_rewrite',
+    'section'     => 'telephony',
+    'description' => 'For the Taqua CDR format, pull accountcodes from secondary CDRs with matching sessionNumber.',
+    'type'        => 'checkbox',
   },
 
   {
