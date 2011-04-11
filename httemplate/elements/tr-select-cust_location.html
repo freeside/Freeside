@@ -199,7 +199,10 @@ Example:
 <TR>
   <<%$th%> ALIGN="right"><% $opt{'label'} || 'Service&nbsp;location' %></<%$th%>>
   <TD COLSPAN=7>
-    <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
+    <SELECT NAME     = "locationnum"
+            ID       = "locationnum"
+            onChange = "locationnum_changed(this);"
+    >
 % if ( !$prospect_main && !$opt{'disable_empty'} ) {
       <OPTION VALUE=""><% $opt{'empty_label'} || '(default service address)' |h %>
 % }

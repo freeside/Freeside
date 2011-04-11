@@ -94,6 +94,7 @@
 
     <INPUT TYPE  = "hidden"
            NAME  = "locationnum"
+           ID    = "locationnum"
            VALUE = "<% scalar($cgi->param('lock_locationnum')) |h %>"
     >
 
@@ -136,13 +137,28 @@
 <BR>
 % my $onclick = $cgi->param('lock_locationnum')
 %                 ? 'document.OrderPkgForm.submit()'
-%                 : 'standardize_locations()';
+%                 : 'standardize_new_location()';
 <INPUT NAME="submitButton"
        TYPE="button"
        VALUE="Order Package"
        onClick = "this.disabled=true; <% $onclick %>;"
        <% $pkgpart ? '' : 'DISABLED' %>
 >
+
+<SCRIPT TYPE="text/javascript">
+
+  function standardize_new_location() {
+    var form = document.OrderPkgForm;
+    var loc = form.locationnum;
+    if (loc.type = 'select-one' && loc.options[loc.selectedIndex].value == -1) {
+      standardize_locations();
+    } else {
+      form.submit();
+    }
+  }
+
+</SCRIPT>
+
 
 </FORM>
 </BODY>
