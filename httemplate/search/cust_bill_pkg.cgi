@@ -463,7 +463,7 @@ if ( $cgi->param('pkg_tax') ) {
   } elsif ( $unearned ) {
     $count_query .= "SUM(cust_bill_pkg.recur)";
   } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
-    $count_query .= "SUM( COALESCE(cust_bill_pkg_tax_location.amount, cust_bill_pkg.setup + cust_bill_pkg.recur))";
+    $count_query .= "SUM( COALESCE(cust_bill_pkg_tax_rate_location.amount, cust_bill_pkg.setup + cust_bill_pkg.recur))";
   } elsif ( $cgi->param('iscredit') eq 'rate') {
     $count_query .= "SUM( cust_credit_bill_pkg.amount )";
   } else {
