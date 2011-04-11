@@ -99,7 +99,7 @@ while (1) {
       #$primary->freesiderewritestatus( 'taqua-accountcode-primary' );
       my $error = $primary->replace;
       if ( $error ) {
-        warn "WARNING: error rewriting primary CDR (will retry): $error\n"
+        warn "WARNING: error rewriting primary CDR (will retry): $error\n";
         next;
       }
 
