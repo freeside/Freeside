@@ -39,9 +39,12 @@ sub condition {
 }
 
 sub condition_sql {
-  my( $class, $table ) = @_;
+  my( $class, $table, %opt ) = @_;
 
   my %tablenum = %{ FS::part_event->eventtable_pkey_sql };
+
+  my $run_times =
+    $class->condition_sql_option_integer('run_times', $opt{'driver_name'});
 
   my $existing = "( SELECT COUNT(*) FROM cust_event
                       WHERE cust_event.eventpart = part_event.eventpart
@@ -49,7 +52,7 @@ sub condition_sql {
                         AND status != 'failed'
                   )";
 
-  "$existing <= ". $class->condition_sql_option_integer('run_times');
+  "$existing <= $run_times";
 
 }
 

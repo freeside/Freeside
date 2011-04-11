@@ -41,14 +41,14 @@ sub condition {
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
-  my $integer = $opt{'driver_name'} =~ /^mysql/ ? 'UNSIGNED INTEGER' : 'INTEGER';
-  
-  my $servicenum = $class->condition_sql_option('has_service');
+  my $servicenum =
+    $class->condition_sql_option_integer('has_service', $opt{'driver_name'});
+
   my $sql = qq| 0 < ( SELECT COUNT(cs.svcpart)
      FROM cust_bill_pkg cbp, cust_svc cs
     WHERE cbp.invnum = cust_bill.invnum
       AND cs.pkgnum = cbp.pkgnum
-      AND cs.svcpart = CAST( $servicenum AS $integer )
+      AND cs.svcpart = $servicenum
   )
   |;
   return $sql;

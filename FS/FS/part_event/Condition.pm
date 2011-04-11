@@ -145,7 +145,7 @@ passed as an argument.
 This method is used for optimizing event queries.  You may want to add indices
 for any columns referenced.  It is acceptable to return an SQL fragment which
 partially tests the condition; doing so will still reduce the number of
-records which much be returned and tested with the B<condition> method.
+records which must be returned and tested with the B<condition> method.
 
 =cut
 
@@ -457,7 +457,7 @@ sub age2seconds_sql {
 
 }
 
-=item condition_sql_option_integer
+=item condition_sql_option_integer OPTION [ DRIVER_NAME ]
 
 As I<condition_sql_option>, but cast the option value to an integer so that
 comparison to other integers is type-correct.
@@ -465,8 +465,11 @@ comparison to other integers is type-correct.
 =cut
 
 sub condition_sql_option_integer {
-  my ($class, $option) = @_;
-  'CAST ('.$class->condition_sql_option($option).' AS INTEGER)';
+  my ($class, $option, $driver_name) = @_;
+
+  my $integer = ($driver_name =~ /^mysql/) ? 'UNSIGNED INTEGER' : 'INTEGER';
+
+  'CAST ('. $class->condition_sql_option($option). " AS $integer )";
 }
 
 =head1 NEW CONDITION CLASSES
