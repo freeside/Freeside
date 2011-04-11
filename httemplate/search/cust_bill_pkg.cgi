@@ -321,23 +321,10 @@ if ( $cgi->param('out') ) {
 
 } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
 
-  # this should really be shoved out to FS::cust_pkg->location_sql or something
-  # along with the code in report_newtax.cgi
-
-  my %pn = (
-   'county'        => 'tax_rate_location.county',
-   'state'         => 'tax_rate_location.state',
-   'city'          => 'tax_rate_location.city',
-   'locationtaxid' => 'cust_bill_pkg_tax_rate_location.locationtaxid',
-  );
-
-  my %ph = map { ( $pn{$_} => dbh->quote( $cgi->param($_) || '' ) ) }
-           qw( city county state locationtaxid );
-
-  push @where,
-    join( ' AND ', map { "( $_ = $ph{$_} OR $ph{$_} = '' AND $_ IS NULL)" }
-                   keys %ph
-    );
+  push @where, FS::tax_rate_location->location_sql(
+                 map { $_ => (scalar($cgi->param($_)) || '') }
+                   qw( city county state locationtaxid )
+               );
 
 } elsif ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {
 

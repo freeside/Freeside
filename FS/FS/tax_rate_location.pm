@@ -151,6 +151,37 @@ sub check {
 
 =back
 
+=head1 CLASS METHODS
+
+=item location_sql KEY => VALUE, ...
+
+Returns an SQL fragment identifying matching tax_rate_location /
+cust_bill_pkg_tax_rate_location records.
+
+Parameters are county, state, city and locationtaxid
+
+=cut
+
+sub location_sql {
+  my($class, %param) = @_;
+
+  my %pn = (
+   'city'          => 'tax_rate_location.city',
+   'county'        => 'tax_rate_location.county',
+   'state'         => 'tax_rate_location.state',
+   'locationtaxid' => 'cust_bill_pkg_tax_rate_location.locationtaxid',
+  );
+
+  my %ph = map { $pn{$_} => dbh->quote($param{$_}) } keys %pn;
+
+  join( ' AND ',
+    map { "( $_ = $ph{$_} OR $ph{$_} = '' AND $_ IS NULL)" } keys %ph
+  );
+
+}
+
+=back
+
 =head1 SUBROUTINES
 
 =over 4
