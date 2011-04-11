@@ -3141,7 +3141,7 @@ sub tables_hashref {
         'msa',        'varchar', 'NULL', $char_d, '', '',
         'npa',      'int',     'NULL',      '', '', '',
         'latanum',      'int',     'NULL',      '', '', '',
-        'rate_center',        'varchar', 'NULL', $char_d, '', '',
+        'ratecenter',        'varchar', 'NULL', $char_d, '', '',
         'state',       'char',    'NULL',       2, '', '', 
         'quantity',      'int',     '',      '', '', '',
       ],

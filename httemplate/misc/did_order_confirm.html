@@ -1,0 +1,42 @@
+<% include('/elements/header-popup.html', 'Confirm Bulk DID Order' ) %>
+
+<% include('/elements/error.html') %>
+
+<FORM NAME="did_order_confirm" ACTION="<% popurl(1) %>did_order_confirmed.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="ordernum" VALUE="<% $ordernum %>">
+<TABLE>
+    <TR>    
+        <TD>Order #</TD>
+        <TD><% $ordernum %></TD>
+    </TR>
+    <% include( '/elements/tr-input-text.html', 
+            'field' => 'vendor_order_id',
+		    'label' => 'Vendor Order #',
+            'value' => $did_order->vendor_order_id,
+           )
+    %>
+    <% include( '/elements/tr-input-date-field.html', {
+		    'name' => 'confirmed',
+		    'label' => 'Order Confirmed',
+		    'value' => $did_order->confirmed,
+           })
+    %>
+    <TR>
+        <TD COLSPAN="2"><INPUT TYPE="SUBMIT" value="Confirm"></TD>
+    </TR>
+</TABLE>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+$cgi->param('ordernum') =~ /^(\d+)$/ or die 'illegal ordernum';
+my $ordernum = $1;
+my $did_order = qsearchs( {
+  'table'     => 'did_order',
+  'hashref'   => { 'ordernum' => $ordernum },
+} );
+die "No order $ordernum" unless $did_order;
+
+</%init>

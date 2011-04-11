@@ -7,69 +7,57 @@
                               disable_empty => 1,
                             },
                             { field => 'vendor_order_id',
-			      type => 'hidden',
-			    },
+                              type => 'hidden',
+                            },
                             { field => 'confirmed',
                               type => 'hidden',
                             },
-			    'custnum',
-			    { type => 'tablebreak-tr-title',
-			      value => 'Order Items',
-			    },
-			    { 'field' => 'orderitemnum',
-			      'type' => 'did_order_item',
-			      'o2m_table' => 'did_order_item',
-			      'm2_label' => 'Item',
-			      'm2_error_callback' => $m2_error_callback,
-			    },
-                            #'msa',
-                            #{ field => 'latanum',
-                            #  type => 'select-table',
-                            #  name_col => 'description',
-                            #  table => 'lata',
-                            #  disable_empty => 1,
-                            #  label_showkey => 1,
-                            #},
-                            #'rate_center',
-                            #{ field => 'state',
-                            #  type => 'select-state',
-                            #  country => 'US',
-                            #},
-                            #'quantity',
-                          ],
+                            { field => 'stock_or_customer',
+                              type => 'radio',
+                              options => [ 'Stock', 'Customer', ],
+                              onchange => 'stockcust_changed',
+                              curr_value_callback => $stock_or_customer,
+                            },
+                            { field => 'custnum',
+                              type => 'search-cust_main',
+                            },
+                            { type => 'tablebreak-tr-title',
+                              value => 'Order Items',
+                            },
+                            { 'field' => 'orderitemnum',
+                              'type' => 'did_order_item',
+                              'o2m_table' => 'did_order_item',
+                              'm2_label' => 'Item',
+                              'm2_error_callback' => $m2_error_callback,
+                            },
+                        ],
               'labels' => { 
                             'ordernum'        => 'Order',
                             'vendornum'       => 'Vendor',
                             'vendor_order_id' => 'Vendor Order #',
-			    'custnum'	      => 'Customer',
-                            #'msa'             => 'MSA',
-                            #'latanum'         => 'LATA',
-                            #'rate_center'     => 'Rate Center',
-                            #'state'           => 'State',
-                            #'quantity'        => 'Quantity',
+                            'custnum'         => '',
                             'confirmed'       => 'Confirmation Date',
-			    'orderitemnum'     => 'Item',
+                            'orderitemnum'     => 'Item',
                           },
               'viewall_dir' => 'browse',
               'table' => 'did_order',
               'name' => 'Bulk DID Order',
-	      'field_callback' => $field_callback,
+              'field_callback' => $field_callback,
+              'html_bottom' => $javascript,
            )
-          
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
-
 my $field_callback = sub {
   my ($cgi, $object, $field_hashref ) = @_;
   if ($object->ordernum) {
     $field_hashref->{type} = 'text'
-	if $field_hashref->{field} eq 'vendor_order_id';
+        if $field_hashref->{field} eq 'vendor_order_id';
     $field_hashref->{type} = 'input-date-field'
-	if $field_hashref->{field} eq 'confirmed';
+        if $field_hashref->{field} eq 'confirmed';
   }
 };
 
@@ -77,7 +65,7 @@ my $m2_error_callback = sub {
   my($cgi, $object) = @_;
 
   #process_o2m fields in process/did_order.html
-  my @fields = qw( msa npa latanum rate_center state quantity );
+  my @fields = qw( msa npa latanum ratecenter state quantity );
   my @gfields = ( '', map "_$_", @fields );
 
   map {
@@ -99,5 +87,31 @@ my $m2_error_callback = sub {
       $cgi->param;
 };
 
+my $stock_or_customer = sub{
+    my($cgi,$object,$field) = @_;
+    return 'Customer' if $object->custnum;
+    'Stock';
+};
+
+my $javascript = <<END;
+    <SCRIPT TYPE="text/javascript">
+        function stockcust_changed() {
+            var f = document.edit_topform;
+            var custnum = f.custnum;
+            var custnum_search = f.custnum_search;
+            var custnum_select = f.custnum_select;
+            if ( f.stock_or_customer_Stock.checked ) {
+                custnum_search.disabled = true;
+                custnum_select.disabled = true;
+            }
+            else if ( f.stock_or_customer_Customer.checked ) {
+                custnum_search.disabled = false;
+                custnum_select.disabled = false;
+            }
+            custnum.value = '';
+            custnum_search.value = '';
+        }
+    </SCRIPT>
+END
 
 </%init>

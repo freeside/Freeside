@@ -1,0 +1,37 @@
+<% include('/elements/header-popup.html', "DID order confirmed") %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY>
+</HTML>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+$cgi->param('ordernum') =~ /^(\d+)$/ or die 'illegal ordernum';
+my $ordernum = $1;
+my $did_order = qsearchs( {
+  'table'     => 'did_order',
+  'hashref'   => { 'ordernum' => $ordernum },
+} );
+die "No order $ordernum" unless $did_order;
+
+my $confirmed = '';
+$confirmed = parse_datetime($cgi->param('confirmed'))
+    if $cgi->param('confirmed') && $cgi->param('confirmed') !~ /^\d+$/;
+$confirmed = $1
+    if $cgi->param('confirmed') && $cgi->param('confirmed') =~ /^(\d+)$/;
+
+die "invalid confirmation date" unless $confirmed;
+
+my $error = '';
+$did_order->confirmed($confirmed);
+$did_order->vendor_order_id($cgi->param('vendor_order_id'));
+$error = $did_order->replace;
+
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(1). "did_order_confirm.html?". $cgi->query_string );
+}
+
+</%init>

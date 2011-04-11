@@ -4,7 +4,7 @@
 
   <TABLE>
     <TR>
-%     foreach my $field ( @fields ) {
+%     foreach my $field ( @textfields ) {
 %
 %       my $value = '';
 %         $value = $item->get($field);
@@ -17,10 +17,37 @@
                  VALUE = "<% scalar($cgi->param($name."_$field"))
                              || $value |h %>"
                  <% $onchange %>
-          ><BR>
-          <FONT SIZE="-1"><% $label{$field} %></FONT>
+          >
+          <BR><FONT SIZE="-1"><% $label{$field} %></FONT>
         </TD>
 %     }
+%     my $value = '';
+%     $value = $item->get('latanum');
+      <TD><% include('/elements/select-table.html',
+                         'name_col'      => 'description',
+                         'table'         => 'lata',
+                         'disable_empty' => 0,
+                         'empty_label'   => ' ',
+                         'label_showkey' => 1,
+                         'field'         => "${name}_latanum",
+                         'curr_value'    => scalar($cgi->param("${name}_latanum"))
+                                             || $value,
+                      )
+            %>
+        <BR><FONT SIZE="-1">LATA #</FONT>
+      </TD>
+%     $value = $item->get('state');
+      <TD><% include('/elements/select-state.html',
+                         'disable_empty' => 0,
+                         'empty_label'   => ' ',
+                         'country'       => 'US',
+                         'prefix'        => "${name}_",
+                         'state'         => scalar($cgi->param("${name}_state"))
+                                            || $value,
+                      )
+            %>
+          <BR><FONT SIZE="-1">State</FONT>
+      </TD>
     </TR>
   </TABLE>
 
@@ -51,19 +78,14 @@ if ( $curr_value ) {
 }
 
 my %size = ( 'npa' => 3, 
-	     'latanum' => 3,
-	     'state' => 2,
 	     'quantity' => 3,);
 
 tie my %label, 'Tie::IxHash',
-  'msa'        => 'MSA',
-  'npa'        => 'NPA',
-  'latanum'         => 'LATA #',
-  'rate_center'        => 'Rate Center',
-  'state' => 'State',
   'quantity' => 'Quantity',
+  'npa'        => 'NPA',
+  'ratecenter'        => 'Rate Center',
+  'msa'        => 'MSA',
 ;
-
-my @fields = keys %label;
+my @textfields = keys %label;
 
 </%init>

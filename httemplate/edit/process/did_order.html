@@ -1,14 +1,17 @@
 <% include( 'elements/process.html',
                'table'       => 'did_order',
                'viewall_dir' => 'browse',
-	       'value_callback' => $value_callback,
-		 'process_o2m' => {
-		   'table'  => 'did_order_item',
-		   'fields' => \@item_fields,
-		 },
+               'value_callback' => $value_callback,
+               'process_o2m' => {
+                    'table'  => 'did_order_item',
+                    'fields' => \@item_fields,
+                },
            )
 %>
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
 unless($cgi->param('submitted')) {
     $cgi->param('submitted',time);
@@ -19,9 +22,6 @@ my $value_callback = sub {
      ($field =~ /ed$/ && $value !~ /^\d+$/) ? parse_datetime($value) : $value;
 };
 
-my @item_fields = qw( msa npa latanum rate_center state quantity );
-
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+my @item_fields = qw( msa npa latanum ratecenter state quantity );
 
 </%init>

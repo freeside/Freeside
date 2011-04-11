@@ -35,21 +35,37 @@ my $display_date = sub {
     time2str($date_format, $date);
 };
 
-my $header = [ '#', 'Vendor',' Vendor Order #',  
-		'Submitted', 'Confirmed', 'Customer', 'Received', 
-	    ];
+my $header = [ '#', 'Vendor',' Vendor Order #', 'Submitted', 'Confirmed',
+                'Customer', 'Received', ];
 my $fields = [  sub {
 		    my $did_order = shift;
 		    $did_order->ordernum;
 		}, 'vendorname', 'vendor_order_id', 
 		sub { &$display_date(shift->submitted); }, 
-		sub { &$display_date(shift->confirmed);	}, 
-		'custnum',
+		sub {
+		    my $did_order = shift;
+		    my $ordernum = $did_order->ordernum;
+            return &$display_date($did_order->confirmed) if $did_order->confirmed;
+            include( '/elements/popup_link.html',
+              { 'action'      => "${p}misc/did_order_confirm.html?ordernum=$ordernum",
+                'label'       => 'Confirm&nbsp;Bulk&nbsp;DID&nbsp;Order',
+                'actionlabel' => 'Confirm Bulk DID Order',
+                'width'       => 480,
+                'height'      => 300,
+              }
+            )
+        }, 
+        sub {
+            my $did_order = shift;
+            my $cust_main = $did_order->cust_main;
+            return "Stock" unless $cust_main;
+            "<A HREF='${p}view/cust_main.cgi?".$cust_main->custnum."'>".$cust_main->name."</A>";
+        },
 		sub { 
 		    my $did_order = shift;
 		    my $ordernum = $did_order->ordernum;
 		    return &$display_date($did_order->received) 
-			if $did_order->received;
+			    if $did_order->received;
 		    "<A HREF='${p}misc/phone_avail-import.html?ordernum=$ordernum'>Upload Received</A>";
 		}, 
 	     ];

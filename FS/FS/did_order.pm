@@ -138,6 +138,17 @@ sub did_order_item {
   qsearch( 'did_order_item', { 'ordernum' => $self->ordernum } );
 }
 
+=item cust_main
+
+Returns the cust_main (see L<FS::cust_main>), if any, associated with this bulk DID order.
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  return '' unless $self->custnum;
+  qsearchs('cust_main', { 'custnum' => $self->custnum } );
+}
 
 =back
 
