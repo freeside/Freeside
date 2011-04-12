@@ -2553,6 +2553,7 @@ sub print_generic {
     #invoice from info
     'company_name'    => scalar( $conf->config('company_name', $agentnum) ),
     'company_address' => join("\n", $conf->config('company_address', $agentnum) ). "\n",
+    'company_phonenum'=> $conf->config('company_phonenum', $agentnum),
     'returnaddress'   => $returnaddress,
     'agent'           => &$escape_function($cust_main->agent->agent),
 

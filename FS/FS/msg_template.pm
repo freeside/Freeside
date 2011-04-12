@@ -387,6 +387,9 @@ sub substitutions {
       [ company_address   => sub {
           $conf->config('company_address', shift->agentnum)
         } ],
+      [ company_phonenum  => sub {
+          $conf->config('company_phonenum', shift->agentnum)
+        } ],
     ],
     # next_bill_date
     'cust_pkg'  => [qw( 
