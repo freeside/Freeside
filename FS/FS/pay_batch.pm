@@ -383,20 +383,21 @@ sub import_results {
 
   } # foreach (@all_values)
 
+  my $close = 1;
   if ( defined($close_condition) ) {
     # Allow the module to decide whether to close the batch.
     # $close_condition can also die() to abort the whole import.
-    my $close = eval { $close_condition->($self) };
+    $close = eval { $close_condition->($self) };
     if ( $@ ) {
       $dbh->rollback;
       die $@;
     }
-    if ( $close ) {
-      my $error = $self->set_status('R');
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
+  }
+  if ( $close ) {
+    my $error = $self->set_status('R');
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
   }
 
