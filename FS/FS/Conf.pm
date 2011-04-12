@@ -4387,6 +4387,14 @@ and customer address. Include units.',
     'select_enum' => [ '', '7', 'EmulateIE7', '8', 'EmulateIE8' ],
   },
 
+  {
+    'key'         => 'disable_payauto_default',
+    'section'     => 'UI',
+    'description' => 'Disable the "Charge future payments to this (card|check) automatically" checkbox from defaulting to checked.',
+    'type'        => 'checkbox',
+  },
+
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

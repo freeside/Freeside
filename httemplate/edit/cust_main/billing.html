@@ -112,6 +112,14 @@
 %    $text_disabled = 'style="color: #000000";'
 %  }
 %
+%  my $disable_payauto = $conf->exists('disable_payauto_default');
+%  my $CARD_payauto_checked =   $payby eq 'DCRD' ? ''
+%                             : $payby eq 'CARD' ? 'CHECKED'
+%                             : $disable_payauto ? '' : 'CHECKED';
+%  my $CHEK_payauto_checked =   $payby eq 'DCHK' ? ''
+%                             : $payby eq 'CHEK' ? 'CHECKED'
+%                             : $disable_payauto ? '' : 'CHECKED';
+%
 %  my %payby = (
 %
 %    'CARD' =>
@@ -163,7 +171,7 @@
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Exact name on card </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payname" VALUE="!. ( $payby =~ /^(CARD|DCRD)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %
-%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" NAME="CARD_payauto" !. ( $payby eq 'DCRD' ? '' : 'CHECKED' ). '> Charge future payments to this card automatically</TD></TR>'.
+%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" NAME="CARD_payauto" $CARD_payauto_checked> Charge future payments to this card automatically</TD></TR>!.
 %
 %      '</TABLE>',
 %
@@ -201,7 +209,7 @@
 %       ).
 %
 %
-%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" NAME="CHEK_payauto" !. ( $payby eq 'DCHK' ? '' : 'CHECKED' ). '> Charge future payments to this electronic check automatically</TD></TR>'.
+%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" NAME="CHEK_payauto" $CHEK_payauto_checked> Charge future payments to this electronic check automatically</TD></TR>!.
 %
 %        '<TR><TD>&nbsp;</TD></TR>'.
 %        '<TR><TD>&nbsp;</TD></TR>'.
