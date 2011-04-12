@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $opt_p );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::cust_main;
+
+getopts('p:');
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+$FS::cust_main::skip_fuzzyfiles = 1;
+$FS::cust_main::skip_fuzzyfiles = 1;
+
+while (<STDIN>) {
+
+  unless ( /^\s*(\d+)\s*$/ ) { 
+    warn "unparsable line: $_";
+    next;
+  }
+  my $custnum = $1;
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  unless ( $cust_main ) {
+    warn "unknown custnum $custnum\n";
+    next;
+  }
+
+  if ( $opt_p ) {
+    $cust_main->payby($opt_p);
+  }
+
+  my $error = $cust_main->replace;
+  die "$error\n" if $error;
+
+}
+
+sub usage {
+  die "usage: cust_main-bulk_change -p NEW_PAYBY employee_username <custnums.txt\n";
+}
+
+=head1 NAME
+
+cust_main-bulk_change
+
+=head1 SYNOPSIS
+
+  cust_main-bulk_change -p NEW_PAYBY username <custnums.txt
+
+=head1 DESCRIPTION
+
+Command-line tool to change the payby field for a group of customers.
+
+-p: new payby, for example, I<CARD> or I<DCRD>.
+
+user: Employee username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::payinfo_Mixin>, L<FS::cust_main>, L<FS::payby>
+
+=cut
+
+1;
