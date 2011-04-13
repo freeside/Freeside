@@ -681,15 +681,20 @@ sub calc_usage {
 
             $seconds += $charge_sec;
 
-	    $region_group_included_min -= $minutes if $region_group;
+            $region_group_included_min -= $minutes 
+                if $region_group && $rate_detail->region_group;
 
             $included_min{$regionnum}{$ratetimenum} -= $minutes;
-            if ( $region_group_included_min <= 0
+            if ( ($region_group_included_min <= 0 || !$rate_detail->region_group)
 			  && $included_min{$regionnum}{$ratetimenum} <= 0 ) {
               my $charge_min = 0 - $included_min{$regionnum}{$ratetimenum}; #XXX should preserve
                                                               #(display?) this
               $included_min{$regionnum}{$ratetimenum} = 0;
               $charge += ($rate_detail->min_charge * $charge_min); #still not rounded
+            }
+            elsif( $region_group_included_min > 0 && $region_group
+                && $rate_detail->region_group ) {
+                $included_min{$regionnum}{$ratetimenum} = 0 
             }
 
             # choose next rate_detail

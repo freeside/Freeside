@@ -59,6 +59,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item cdrtypenum - CDR type (see L<FS::cdr_type>) if any for this rate
 
+=item region_group - Group in region group for rate plan
+
 =back
 
 =head1 METHODS
@@ -133,6 +135,7 @@ sub check {
     || $self->ut_number('sec_granularity')
 
     || $self->ut_foreign_keyn('classnum', 'usage_class', 'classnum' )
+    || $self->ut_enum('region_group',    [ '', 'Y' ])
   ;
   return $error if $error;
 

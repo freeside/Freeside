@@ -2551,6 +2551,7 @@ sub tables_hashref {
         'ratetimenum',     'int', 'NULL',     '', '', '',
         'classnum',        'int', 'NULL',     '', '', '', 
         'cdrtypenum',      'int', 'NULL',     '', '', '',
+        'region_group', 'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'ratedetailnum',
       'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],
