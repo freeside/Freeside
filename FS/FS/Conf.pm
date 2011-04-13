@@ -655,6 +655,13 @@ my %payment_gateway_options = (
   },
   
   {
+    'key'         => 'credits-auto-apply-disable',
+    'section'     => 'billing',
+    'description' => 'Disable the "Auto-Apply to invoices" UI option for new credits',
+    'type'        => 'checkbox',
+  },
+  
+  {
     'key'         => 'credit-card-surcharge-percentage',
     'section'     => 'billing',
     'description' => 'Add a credit card surcharge to invoices, as a % of the invoice total. WARNING: this is usually prohibited by merchant account / other agreements and/or law, but is currently lawful in AU and UK.',

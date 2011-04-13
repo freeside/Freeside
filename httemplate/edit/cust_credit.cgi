@@ -40,10 +40,14 @@
       <INPUT TYPE="text" NAME="addlinfo" VALUE="<% $cgi->param('addlinfo') |h %>">
     </TD>
 
+% if ( $conf->exists('credits-auto-apply-disable') ) {
+        <INPUT TYPE="HIDDEN" NAME="apply" VALUE="no">
+% } else {
   <TR>
     <TD ALIGN="right">Auto-apply<BR>to invoices</TD>
     <TD><SELECT NAME="apply"><OPTION VALUE="yes" SELECTED>yes<OPTION>no</SELECT></TD>
   </TR>
+% }
 
 % if ( $conf->exists('pkg-balances') ) {
   <% include('/elements/tr-select-cust_pkg-balances.html',
