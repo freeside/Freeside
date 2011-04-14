@@ -112,7 +112,12 @@ sub search_sql {
     $hex =~ s/\W//g;
     push @where, 'svc_hardware.hw_addr LIKE \'%'.$hex.'%\'';
   }
-  '(' . join(' OR ', @where) . ')';
+
+  if ( @where ) {
+    '(' . join(' OR ', @where) . ')';
+  } else {
+    '1 = 0'; #false
+  }
 }
 
 sub label {
