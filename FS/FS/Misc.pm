@@ -767,9 +767,12 @@ sub _pslatex {
 
     local($SIG{CHLD}) = sub {};
     run( \@cmd, '>'=>'/dev/null', '2>'=>'/dev/null', timeout($timeout) )
-      or die "pslatex $file.tex failed; see $file.log for details?\n";
+      or warn "bad exit status from pslatex pass $_\n";
 
   }
+
+  return if -e "$file.dvi" && -s "$file.dvi";
+  die "pslatex $file.tex failed; see $file.log for details?\n";
 
 }
 
