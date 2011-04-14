@@ -69,6 +69,7 @@ MAIN: while (1) {
     my $serviceid = $torrus_srvderive->serviceid;
 
     my @serviceids = $torrus_srvderive->component_serviceids;
+    next unless @serviceids; #don't try to search for empty virtual ports
 
     my @in = ();
     for my $dir ('_IN', '_OUT') {
