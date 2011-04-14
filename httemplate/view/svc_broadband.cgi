@@ -10,7 +10,7 @@
 
 <% include('/elements/init_overlib.html') %>
 
-<% include('/view/elements/svc_edit_link.html', $svc_broadband) %>
+<% include('/view/elements/svc_edit_link.html', 'svc'=>$svc_broadband) %>
 <BR>
 <%ntable("#cccccc")%>
   <TR>
