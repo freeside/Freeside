@@ -1904,7 +1904,7 @@ sub generate_liability_report {
 
       my $sql = "SELECT SUM(amount) $taxwhere AND cust_bill_pkg.pkgnum = 0";
 
-      my $x = &{$scalar_sql}($t, [], $sql );
+      my $x = &{$scalar_sql}($t, [ $itemdesc, $itemdesc ], $sql );
       $tax += $x;
       $taxes{$label}->{'tax'} += $x;
 
@@ -1916,7 +1916,7 @@ sub generate_liability_report {
       $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
              " $creditwhere AND cust_bill_pkg.pkgnum = 0";
 
-      my $y = &{$scalar_sql}($t, [], $sql );
+      my $y = &{$scalar_sql}($t, [ $Itemdesc, $itemdesc ], $sql );
       $credit += $y;
       $taxes{$label}->{'credit'} += $y;
 
