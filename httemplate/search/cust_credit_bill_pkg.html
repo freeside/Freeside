@@ -27,7 +27,7 @@
                    sub { sprintf($money_char.'%.2f', shift->amount ) },
 
                    sub { time2str('%b %d %Y', shift->get('cust_credit_date') ) },
-                   'otaker',
+                   sub { shift->cust_credit_bill->cust_credit->otaker },
                    sub { shift->cust_credit_bill->cust_credit->reason },
 
                    sub { $_[0]->pkgnum > 0
@@ -38,8 +38,16 @@
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
                  ],
-                 #'sort_fields' => [ #XXX add
-                 #],
+                 'sort_fields' => [
+                   'amount',
+                   'cust_credit_date',
+                   '', #'otaker',
+                   '', #reason
+                   '', #line item description
+                   'invnum',
+                   '_date',
+                   #cust fields
+                 ],
                  'links'       => [
                    '',
                    '',
