@@ -119,23 +119,26 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
     $taxes{$label}->{'url_param'} =
       join(';', map { "$_=". uri_escape($t->$_) } @params);
 
-    my $taxwhere = "FROM cust_bill_pkg $addl_from $where AND payby != 'COMP' ".
+    my $payby_itemdesc_loc = 
+      "    payby != 'COMP' ".
+      "AND itemdesc = ? OR ? = '' AND itemdesc IS NULL ".
       "AND ". FS::tax_rate_location->location_sql( map { $_ => $t->$_ }
                                                        @taxparams
                                                  );
+
+    my $taxwhere =
+      "FROM cust_bill_pkg $addl_from $where AND $payby_itemdesc_loc";
 
     my $sql = "SELECT SUM(amount) $taxwhere AND cust_bill_pkg.pkgnum = 0";
 
-    my $x = scalar_sql($t, [], $sql );
+    my $x = scalar_sql($t, [ $itemdesc, $itemdesc ], $sql );
     $tax += $x;
     $taxes{$label}->{'tax'} += $x;
 
-    my $creditfrom = " JOIN cust_credit_bill_pkg USING (billpkgnum,billpkgtaxratelocationnum) ";
-    my $creditwhere = "FROM cust_bill_pkg $addl_from $creditfrom $where ".
-      "AND payby != 'COMP' ".
-      "AND ". FS::tax_rate_location->location_sql( map { $_ => $t->$_ }
-                                                       @taxparams
-                                                 );
+    my $creditfrom =
+      "JOIN cust_credit_bill_pkg USING (billpkgnum,billpkgtaxratelocationnum)";
+    my $creditwhere =
+      "FROM cust_bill_pkg $addl_from $creditfrom $where $payby_itemdesc_loc";
 
     $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
            " $creditwhere AND cust_bill_pkg.pkgnum = 0";
