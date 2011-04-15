@@ -126,3 +126,6 @@ share/html/Callbacks/SearchCustomerFields/*
 share/html/Callbacks/RTx-Statistics/*
 share/html/RTx/Statistics/*
 
+share/html/Callbacks/Results-XLS/*
+share/html/Search/Results.xls
+lib/RT/Extension/SearchResults/XLS.pm
