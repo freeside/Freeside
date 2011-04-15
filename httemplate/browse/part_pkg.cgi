@@ -73,7 +73,7 @@ if ( $cgi->param('missing_recur_fee') ) {
   push @where, "0 = ( SELECT COUNT(*) FROM part_pkg_option
                         WHERE optionname = 'recur_fee'
                           AND part_pkg_option.pkgpart = part_pkg.pkgpart
-                          AND CAST ( optionvalue AS NUMERIC ) > 0
+                          AND CAST( optionvalue AS NUMERIC ) > 0
                     )";
 }
 
@@ -148,6 +148,7 @@ my $filter_change =
 #restore this so pagination works
 $cgi->param('classnum', $classnum) if length($classnum);
 
+#should hide this if there aren't any classes
 my $html_posttotal =
   "$filter_change\n<BR>( show class: ".
   include('/elements/select-pkg_class.html',
