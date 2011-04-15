@@ -38,6 +38,8 @@
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
                  ],
+                 #'sort_fields' => [ #XXX add
+                 #],
                  'links'       => [
                    '',
                    '',
@@ -333,83 +335,8 @@ if ( $cgi->param('cust_tax') ) {
   push @where, $cust_exempt;
 }
 
-my $use_usage = $cgi->param('use_usage');
-
-my $count_query;
-if ( $cgi->param('pkg_tax') ) { #does this mean anything here?
-
-  $count_query =
-    "SELECT COUNT(*),
-            SUM(
-                 ( CASE WHEN part_pkg.setuptax = 'Y'
-                        THEN cust_bill_pkg.setup
-                        ELSE 0
-                   END
-                 )
-                 +
-                 ( CASE WHEN part_pkg.recurtax = 'Y'
-                        THEN cust_bill_pkg.recur
-                        ELSE 0
-                   END
-                 )
-               )
-    ";
-
-  push @where, "(    ( part_pkg.setuptax = 'Y' AND cust_bill_pkg.setup > 0 )
-                  OR ( part_pkg.recurtax = 'Y' AND cust_bill_pkg.recur > 0 ) )",
-               "( tax != 'Y' OR tax IS NULL )";
-
-} elsif ( $cgi->param('taxable') ) { #again, meaningful?
-
-  my $setup_taxable = "(
-    CASE WHEN part_pkg.setuptax = 'Y'
-         THEN 0
-         ELSE cust_bill_pkg.setup
-    END
-  )";
-
-  my $recur_taxable = "(
-    CASE WHEN part_pkg.recurtax = 'Y'
-         THEN 0
-         ELSE cust_bill_pkg.recur
-    END
-  )";
-
-  my $exempt = "(
-    SELECT COALESCE( SUM(amount), 0 ) FROM cust_tax_exempt_pkg
-      WHERE cust_tax_exempt_pkg.billpkgnum = cust_bill_pkg.billpkgnum
-  )";
-
-  $count_query =
-    "SELECT COUNT(*), SUM( $setup_taxable + $recur_taxable - $exempt )";
-
-  push @where,
-    #not tax-exempt package (setup or recur)
-    "(
-          ( ( part_pkg.setuptax != 'Y' OR part_pkg.setuptax IS NULL )
-            AND cust_bill_pkg.setup > 0 )
-       OR
-          ( ( part_pkg.recurtax != 'Y' OR part_pkg.recurtax IS NULL )
-            AND cust_bill_pkg.recur > 0 )
-    )",
-    #not a tax_exempt customer
-    "( tax != 'Y' OR tax IS NULL )";
-    #not covered in full by a monthly tax exemption (texas tax)
-    "0 < ( $setup_taxable + $recur_taxable - $exempt )",
-
-} else {
-
-  $count_query = "SELECT COUNT(*), ";
-
-  if ( $use_usage eq 'recurring' ) { #mean anything?
-    $count_query .= "SUM(setup + recur - usage)";
-  } elsif ( $use_usage eq 'usage' ) { #mean anything?
-    $count_query .= "SUM(usage)";
-  } else {
-    $count_query .= "SUM(cust_credit_bill_pkg.amount)";
-  }
-
-}
+my $count_query = "SELECT COUNT(DISTINCT billpkgnum),
+                          SUM(cust_credit_bill_pkg.amount)";
 
 my $join_cust =
   '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum ) 
@@ -432,28 +359,34 @@ if ( $cgi->param('nottax') ) {
 } elsif ( $cgi->param('istax') ) {
 
   #false laziness w/report_tax.cgi $taxfromwhere
-  if ( $conf->exists('tax-pkg_address') ) {
+  if ( scalar( grep( /locationtaxid/, $cgi->param ) ) ||
+            $cgi->param('iscredit') eq 'rate') {
+
+    $join_pkg .=
+      ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
+      ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
+
+  } elsif ( $conf->exists('tax-pkg_address') ) {
+
     $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
                    LEFT JOIN cust_location              USING ( locationnum ) ';
 
     #quelle kludge, somewhat false laziness w/report_tax.cgi
     s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g for @where;
-  } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ||
-            $cgi->param('iscredit') eq 'rate') {
-    $join_pkg .=
-      ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
-      ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
   }
 
-    if ( $conf->exists('tax-pkg_address') ) {
-      $join_cust_bill_pkg .= ', billpkgtaxlocationnum )';
+  #if ( $cgi->param('iscredit') ) {
+    $join_pkg .= ' JOIN cust_credit_bill_pkg USING ( billpkgnum';
+    if ( $cgi->param('iscredit') eq 'rate' ) {
+      $join_pkg .= ', billpkgtaxratelocationnum )';
+    } elsif ( $conf->exists('tax-pkg_address') ) {
+      $join_pkg .= ', billpkgtaxlocationnum )';
       push @where, "billpkgtaxratelocationnum IS NULL";
-    #} elsif ( $cgi->param('iscredit') eq 'rate' ) {
-    #  $join_pkg .= ', billpkgtaxratelocationnum )';
     } else {
-      $join_cust_bill_pkg .= ' )';
+      $join_pkg .= ' )';
       push @where, "billpkgtaxratelocationnum IS NULL";
     }
+  #}
 
 } else { 
 
@@ -470,21 +403,12 @@ my $where = ' WHERE '. join(' AND ', @where);
 my $join_credit = ' LEFT JOIN cust_credit_bill USING ( creditbillnum )
                     LEFT JOIN cust_credit      USING ( crednum ) ';
 
-#if ($use_usage) {
-#  $count_query .=
-#    " FROM (SELECT cust_bill_pkg.setup, cust_bill_pkg.recur, 
-#             ( SELECT COALESCE( SUM(amount), 0 ) FROM cust_bill_pkg_detail
-#               WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_detail.billpkgnum
-#             ) AS usage FROM cust_bill_pkg  $join_cust $join_pkg $where
-#           ) AS countquery";
-#} else {
-  $count_query .= " FROM cust_credit_bill_pkg
-                        $join_pkg
-                        $join_cust_bill_pkg
-                        $join_credit
-                        $join_cust
-                      $where";
-#}
+$count_query .= " FROM cust_credit_bill_pkg
+                         $join_pkg
+                         $join_cust_bill_pkg
+                         $join_credit
+                         $join_cust
+                       $where";
 
 my @select = ( 'cust_credit_bill_pkg.*',
                'cust_bill_pkg.*',

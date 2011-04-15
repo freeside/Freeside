@@ -49,7 +49,7 @@
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"></TD>
       <% $tax->{base} ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <A HREF="<% $baselink. $link %>;istax=1;iscredit=rate"><% $money_char %><% sprintf('%.2f', $tax->{'credit'} ) %></A>
+        <A HREF="<% $creditlink. $link %>;istax=1;iscredit=rate"><% $money_char %><% sprintf('%.2f', $tax->{'credit'} ) %></A>
       </TD>
       <% !($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
     </TR>
@@ -203,5 +203,6 @@ my $dateagentlink = "begin=$beginning;end=$ending";
 $dateagentlink .= ';agentnum='. $cgi->param('agentnum')
   if length($agentname);
 my $baselink   = $p. "search/cust_bill_pkg.cgi?$dateagentlink";
+my $creditlink = $p. "search/cust_credit_bill_pkg.html?$dateagentlink";
 
 </%init>
