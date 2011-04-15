@@ -121,7 +121,7 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
 
     my $payby_itemdesc_loc = 
       "    payby != 'COMP' ".
-      "AND itemdesc = ? OR ? = '' AND itemdesc IS NULL ".
+      "AND ( itemdesc = ? OR ? = '' AND itemdesc IS NULL ) ".
       "AND ". FS::tax_rate_location->location_sql( map { $_ => $t->$_ }
                                                        @taxparams
                                                  );
