@@ -52,6 +52,15 @@ $Order => 'ASC'
 </%ARGS>
 <%INIT>
 
+eval "use Text::CSV_XS";
+if ( $@ ) {
+  $m->comp('/Error', Why => "Error loading Text::CSV_XS.\n$@");
+  $m->abort;
+  return;
+}
+
+my $csv = Text::CSV_XS->new( { eol => "\n" } );
+
 my $Tickets = RT::Tickets->new( $session{'CurrentUser'} );
 $Tickets->FromSQL( $Query );
 if ( $OrderBy =~ /\|/ ) {
@@ -95,8 +104,8 @@ my @attrs = qw(
     ResolvedObj->ISO LastUpdatedObj->ISO LastUpdatedByObj->Name
 );
 
-$r->content_type('text/tab-separated-values');
-$r->header_out('Content-Disposition' => 'attachment;filename="Results.tsv"');
+$r->content_type('text/csv');
+$r->header_out('Content-Disposition' => 'attachment;filename="Results.csv"');
 {
     my @header;
     foreach my $attr (@attrs) {
@@ -111,8 +120,8 @@ $r->header_out('Content-Disposition' => 'attachment;filename="Results.tsv"');
     foreach my $name ( sort { $cf_name_to_pos{$a} <=> $cf_name_to_pos{$b} } keys %cf_name_to_pos ) {
         push @header, "CF-". $name;
     }
-    $m->out(join("\t", @header));
-    $m->out("\n");
+    $csv->combine(@header);
+    $m->out($csv->string());
     $m->flush_buffer;
 }
 
@@ -150,8 +159,8 @@ while ( my $Ticket = $Tickets->Next()) {
         $_ =~ s{\t}{    }g;
     }
 
-    $m->out(join("\t",@row));
-    $m->out("\n");
+    $csv->combine(@row);
+    $m->out($csv->string());
 
     unless (++$i%10) {
         $i = 0;
