@@ -345,16 +345,7 @@ my $join_cust =
 
 my $join_pkg;
 
-my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum';
-if ( $cgi->param('iscredit') eq 'rate' ) {
-  $join_cust_bill_pkg .= ', billpkgtaxratelocationnum )';
-} elsif ( $conf->exists('tax-pkg_address') ) {
-  $join_cust_bill_pkg .= ', billpkgtaxlocationnum )';
-  push @where, "billpkgtaxratelocationnum IS NULL";
-} else {
-  $join_cust_bill_pkg .= ' )';
-  push @where, "billpkgtaxratelocationnum IS NULL";
-}
+my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum )';
 
 if ( $cgi->param('nottax') ) {
 
@@ -372,8 +363,18 @@ if ( $cgi->param('nottax') ) {
             $cgi->param('iscredit') eq 'rate') {
 
     $join_pkg .=
-      ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
-      ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
+      ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ';
+    if ( $cgi->param('iscredit') eq 'rate' ) {
+      $join_pkg .= ', billpkgtaxratelocationnum )';
+    } elsif ( $conf->exists('tax-pkg_address') ) {
+      $join_pkg .= ', billpkgtaxlocationnum )';
+      push @where, "billpkgtaxratelocationnum IS NULL";
+    } else {
+      $join_pkg .= ' )';
+      push @where, "billpkgtaxratelocationnum IS NULL";
+    }
+
+    $join_pkg .= ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
 
   } elsif ( $conf->exists('tax-pkg_address') ) {
 
