@@ -279,6 +279,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::hardware_type;
   use FS::hardware_status;
   use FS::did_order_item;
+  use FS::msa;
+  use FS::rate_center;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

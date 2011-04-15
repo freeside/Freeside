@@ -168,6 +168,10 @@ L<FS::phone_avail> - Phone number availability cache
 
 L<FS::lata> - LATA number to name mapping class
 
+L<FS::msa> - MSA number to name mapping class
+
+L<FS::rate_center> - Rate center list (for bulk DID orders)
+
 L<FS::did_vendor> - Bulk DID order vendor class
 
 L<FS::did_order> - Bulk DID order class
