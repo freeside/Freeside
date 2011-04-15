@@ -1843,12 +1843,9 @@ sub generate_liability_report {
     $where .= ' AND cust_main.agentnum = '. $agent->agentnum;
   }
 
-  # my ( $location_sql, @location_param ) = FS::cust_pkg->location_sql;
-  # $where .= " AND $location_sql";
-  #my @taxparam = ( 'itemdesc', @location_param );
-  # now something along the lines of geocode matching ?
-  #$where .= FS::cust_pkg->_location_sql_where('cust_tax_location');;
-  my @taxparam = ( 'itemdesc', 'tax_rate_location.state', 'tax_rate_location.county', 'tax_rate_location.city', 'cust_bill_pkg_tax_rate_location.locationtaxid' );
+  #my @taxparam = ( 'itemdesc', 'tax_rate_location.state', 'tax_rate_location.county', 'tax_rate_location.city', 'cust_bill_pkg_tax_rate_location.locationtaxid' );
+  my @taxparams = qw( city county state locationtaxid );
+  my @params = ('itemdesc', @taxparams);
 
   my $select = 'DISTINCT itemdesc,locationtaxid,tax_rate_location.state,tax_rate_location.county,tax_rate_location.city';
 
@@ -1879,13 +1876,13 @@ sub generate_liability_report {
     if ( $args{job} ) {
       if ( time - $min_sec > $last ) {
         $args{job}->update_statustext( int( 100 * $calculated / $count ).
-                                       ",Calculated"
+                                       ",Calculating"
                                      );
         $last = time;
       }
     }
 
-    my @params = map { my $f = $_; $f =~ s/.*\.//; $f } @taxparam;
+    #my @params = map { my $f = $_; $f =~ s/.*\.//; $f } @taxparam;
     my $label = join('~', map { $t->$_ } @params);
     $label = 'Tax'. $label if $label =~ /^~/;
     unless ( exists( $taxes{$label} ) ) {
@@ -1896,23 +1893,27 @@ sub generate_liability_report {
         join(';', map { "$_=". uri_escape($t->$_) } @params);
 
       my $taxwhere = "FROM cust_bill_pkg $addl_from $where AND payby != 'COMP' ".
-        "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
+       "AND ". FS::tax_rate_location->location_sql( map { $_ => $t->$_ }
+                                                        @taxparams
+                                                  );
 
       my $sql = "SELECT SUM(amount) $taxwhere AND cust_bill_pkg.pkgnum = 0";
 
-      my $x = &{$scalar_sql}($t, [ map { $_, $_ } @params ], $sql );
+      my $x = &{$scalar_sql}($t, [], $sql );
       $tax += $x;
       $taxes{$label}->{'tax'} += $x;
 
       my $creditfrom = " JOIN cust_credit_bill_pkg USING (billpkgnum,billpkgtaxratelocationnum) ";
       my $creditwhere = "FROM cust_bill_pkg $addl_from $creditfrom $where ".
         "AND payby != 'COMP' ".
-        "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
+        "AND ". FS::tax_rate_location->location_sql( map { $_ => $t->$_ }
+                                                         @taxparams
+                                                   );
 
       $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
              " $creditwhere AND cust_bill_pkg.pkgnum = 0";
 
-      my $y = &{$scalar_sql}($t, [ map { $_, $_ } @params ], $sql );
+      my $y = &{$scalar_sql}($t, [], $sql );
       $credit += $y;
       $taxes{$label}->{'credit'} += $y;
 
@@ -1972,7 +1973,7 @@ sub generate_liability_report {
   $dateagentlink .= ';agentnum='. $args{agentnum}
     if length($agentname);
   my $baselink   = $args{p}. "search/cust_bill_pkg.cgi?$dateagentlink";
-
+  my $creditlink = $p. "search/cust_credit_bill_pkg.html?$dateagentlink";
 
   print $report <<EOF;
   
@@ -1994,7 +1995,7 @@ sub generate_liability_report {
     <TR>
       <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-      <TH CLASS="grid" BGCOLOR="#cccccc">Tax collected</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">Tax invoiced</TH>
       <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;&nbsp;&nbsp;&nbsp;</TH>
       <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       <TH CLASS="grid" BGCOLOR="#cccccc">Tax credited</TH>
@@ -2040,7 +2041,7 @@ EOF
         <TD CLASS="grid" BGCOLOR="<% '$bgcolor' %>"></TD>
         <% ($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
         <TD CLASS="grid" BGCOLOR="<% '$bgcolor' %>" ALIGN="right">
-          <A HREF="<% '$baselink$link' %>;istax=1;iscredit=rate"><% '$money_char' %><% sprintf('%.2f', $tax->{'credit'} ) %></A>
+          <A HREF="<% '$creditlink$link' %>;istax=1;iscredit=rate"><% '$money_char' %><% sprintf('%.2f', $tax->{'credit'} ) %></A>
         </TD>
         <% !($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
       </TR>
