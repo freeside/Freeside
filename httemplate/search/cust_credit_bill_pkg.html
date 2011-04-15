@@ -356,8 +356,6 @@ if ( $cgi->param('iscredit') eq 'rate' ) {
   push @where, "billpkgtaxratelocationnum IS NULL";
 }
 
- )';
-
 if ( $cgi->param('nottax') ) {
 
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
