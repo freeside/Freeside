@@ -548,7 +548,7 @@ sub _DateFieldLimit {
             $date->SetToNow;
             $date->SetToStart('month', Timezone => 'server');
             $daystart = $date->ISO;
-            $date->AddMonth;
+            $date->AddMonth(Timezone => 'server');
             $dayend = $date->ISO;
         }
         elsif ( lc($value) eq 'last month' ) {

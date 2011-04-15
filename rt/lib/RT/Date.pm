@@ -286,6 +286,8 @@ sub SetToStart {
     my %args = @_;
     my $tz = $args{'Timezone'} || '';
     my @localtime = $self->Localtime($tz);
+    #remove 'offset' so that DST is figured based on the resulting time.
+    pop @localtime;
 
     # This is the cleanest way to implement it, I swear.
     {
@@ -519,16 +521,21 @@ unix time.
 
 =cut
 
-sub AddMonth {
-    require Time::ParseDate;
+sub AddMonth {    
     my $self = shift;
-    my $date = ( 
-        Time::ParseDate::parsedate(
-            '1 month',
-            NOW => $self->Unix
-        )
-    );
-    return $self->Unix($date);
+    my %args = @_;
+    my @localtime = $self->Localtime($args{'Timezone'});
+    # remove offset, as with SetToStart
+    pop @localtime;
+    
+    $localtime[4]++; #month
+    if ( $localtime[4] == 12 ) {
+      $localtime[4] = 0;
+      $localtime[5]++; #year
+    }
+
+    my $new = $self->Timelocal($args{'Timezone'}, @localtime);
+    return $self->Unix($new);
 }
 
 =head2 Unix [unixtime]
