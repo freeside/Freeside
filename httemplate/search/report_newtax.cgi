@@ -131,7 +131,7 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
 
     my $sql = "SELECT SUM(amount) $taxwhere AND cust_bill_pkg.pkgnum = 0";
 
-    my $x = scalar_sql($t, [ $t->itemdesc, $t->itemdesc ], $sql );
+    my $x = scalar_sql($t, [ 'itemdesc', 'itemdesc' ], $sql );
     $tax += $x;
     $taxes{$label}->{'tax'} += $x;
 
@@ -143,7 +143,7 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
     $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
            " $creditwhere AND cust_bill_pkg.pkgnum = 0";
 
-    my $y = scalar_sql($t, [ $t->itemdesc, $t->itemdesc ], $sql );
+    my $y = scalar_sql($t, [ 'itemdesc', 'itemdesc' ], $sql );
     $credit += $y;
     $taxes{$label}->{'credit'} += $y;
 
