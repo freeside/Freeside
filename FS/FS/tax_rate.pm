@@ -1911,7 +1911,7 @@ sub generate_liability_report {
       my $creditfrom =
        "JOIN cust_credit_bill_pkg USING (billpkgnum,billpkgtaxratelocationnum)";
       my $creditwhere =
-        "FROM cust_bill_pkg $addl_from $creditfrom $where $payby_itemdesc_loc";
+        "FROM cust_bill_pkg $addl_from $creditfrom $where AND $payby_itemdesc_loc";
 
       $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
              " $creditwhere AND cust_bill_pkg.pkgnum = 0";
