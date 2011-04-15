@@ -345,7 +345,7 @@ my $join_cust =
 
 my $join_pkg;
 
-my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum ';
+my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum )';
 
 if ( $cgi->param('nottax') ) {
 
