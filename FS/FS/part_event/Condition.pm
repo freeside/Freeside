@@ -469,7 +469,7 @@ sub condition_sql_option_integer {
 
   my $integer = ($driver_name =~ /^mysql/) ? 'UNSIGNED INTEGER' : 'INTEGER';
 
-  'CAST ('. $class->condition_sql_option($option). " AS $integer )";
+  'CAST('. $class->condition_sql_option($option). " AS $integer )";
 }
 
 =head1 NEW CONDITION CLASSES
