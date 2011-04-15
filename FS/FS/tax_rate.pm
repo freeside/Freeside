@@ -1973,7 +1973,7 @@ sub generate_liability_report {
   $dateagentlink .= ';agentnum='. $args{agentnum}
     if length($agentname);
   my $baselink   = $args{p}. "search/cust_bill_pkg.cgi?$dateagentlink";
-  my $creditlink = $p. "search/cust_credit_bill_pkg.html?$dateagentlink";
+  my $creditlink = $args{p}. "search/cust_credit_bill_pkg.html?$dateagentlink";
 
   print $report <<EOF;
   

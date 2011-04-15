@@ -64,6 +64,8 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
+#shit, all sorts of false laxiness w/tax_rate::geneate_liability_report
+
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
