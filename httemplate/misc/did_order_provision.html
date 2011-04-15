@@ -1,29 +1,17 @@
-<% include('/elements/header-popup.html', 'Confirm Bulk DID Order' ) %>
+<% include('/elements/header-popup.html', 'Bulk DID order - DID provisioning' ) %>
 
 <% include('/elements/error.html') %>
 
 <FORM NAME="did_order_confirm" ACTION="<% popurl(1) %>did_order_confirmed.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="action" VALUE="provision">
 <INPUT TYPE="hidden" NAME="ordernum" VALUE="<% $ordernum %>">
-<INPUT TYPE="hidden" NAME="action" VALUE="confirm">
 <TABLE>
     <TR>    
         <TD>Order #</TD>
         <TD><% $ordernum %></TD>
     </TR>
-    <% include( '/elements/tr-input-text.html', 
-            'field' => 'vendor_order_id',
-		    'label' => 'Vendor Order #',
-            'value' => $did_order->vendor_order_id,
-           )
-    %>
-    <% include( '/elements/tr-input-date-field.html', {
-		    'name' => 'confirmed',
-		    'label' => 'Order Confirmed',
-		    'value' => $did_order->confirmed,
-           })
-    %>
     <TR>
-        <TD COLSPAN="2"><INPUT TYPE="SUBMIT" value="Confirm"></TD>
+        <TD COLSPAN="2"><INPUT TYPE="SUBMIT" value="Provision"></TD>
     </TR>
 </TABLE>
 
@@ -39,5 +27,9 @@ my $did_order = qsearchs( {
   'hashref'   => { 'ordernum' => $ordernum },
 } );
 die "No order $ordernum" unless $did_order;
+
+die "Order is not in received status and/or DIDs not assigned to a customer"
+    unless $did_order->received && $did_order->custnum; 
+
 
 </%init>

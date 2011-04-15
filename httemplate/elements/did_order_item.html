@@ -4,24 +4,70 @@
 
   <TABLE>
     <TR>
-%     foreach my $field ( @textfields ) {
-%
-%       my $value = '';
-%         $value = $item->get($field);
-
-        <TD>
-          <INPUT TYPE  = "text"
-                 NAME  = "<%$name%>_<%$field%>"
-                 ID    = "<%$id%>_<%$field%>"
-                 SIZE  = "<% $size{$field} || 15 %>"
-                 VALUE = "<% scalar($cgi->param($name."_$field"))
-                             || $value |h %>"
-                 <% $onchange %>
-          >
-          <BR><FONT SIZE="-1"><% $label{$field} %></FONT>
-        </TD>
-%     }
 %     my $value = '';
+
+%     $value = $item->get('quantity');
+      <TD>
+          <INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_quantity"
+                 ID    = "<%$id%>_quantity"
+                 SIZE  = "3"
+                 VALUE = "<% scalar($cgi->param($name."_quantity"))
+                             || $value |h %>"
+          >
+          <BR><FONT SIZE="-1">Quantity</FONT>
+      </TD>
+      
+%     $value = $item->get('npa');
+      <TD>
+          <INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_npa"
+                 ID    = "<%$id%>_npa"
+                 SIZE  = "3"
+                 VALUE = "<% scalar($cgi->param($name."_npa"))
+                             || $value |h %>"
+          >
+          <BR><FONT SIZE="-1">NPA</FONT>
+      </TD>
+
+%     $value = $item->get('ratecenternum');
+      <TD>
+        <% include('/elements/select-table.html',
+                         'name_col'      => 'description',
+                         'table'         => 'rate_center',
+                         'disable_empty' => 0,
+                         'empty_label'   => ' ',
+                         'field'         => "${name}_ratecenternum",
+                         'id'            => "${id}_ratecenternum",
+                         'curr_value'    => scalar($cgi->param("${name}_ratecenternum"))
+                                             || $value,
+                         'post_options'  => [ 0 => 'Add new...' ],
+                         onchange        => 'ratecenter_changed',
+                  )
+         %>
+        <BR><FONT SIZE="-1">Rate Center</FONT>
+        <div style="display:none; font-size: 80%" id="<%$id%>_rc_div">
+             - add new: <INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_rc_new"
+                 ID    = "<%$id%>_rc_new">
+        </div>
+      </TD>
+
+%     $value = $item->get('msanum');
+      <TD>
+        <% include('/elements/select-table.html',
+                         'name_col'      => 'description',
+                         'table'         => 'msa',
+                         'disable_empty' => 0,
+                         'empty_label'   => ' ',
+                         'field'         => "${name}_msanum",
+                         'curr_value'    => scalar($cgi->param("${name}_msanum"))
+                                             || $value,
+                   )
+         %>
+        <BR><FONT SIZE="-1">MSA</FONT>
+      </TD>
+
 %     $value = $item->get('latanum');
       <TD><% include('/elements/select-table.html',
                          'name_col'      => 'description',
@@ -32,10 +78,11 @@
                          'field'         => "${name}_latanum",
                          'curr_value'    => scalar($cgi->param("${name}_latanum"))
                                              || $value,
-                      )
+                     )
             %>
         <BR><FONT SIZE="-1">LATA #</FONT>
       </TD>
+
 %     $value = $item->get('state');
       <TD><% include('/elements/select-state.html',
                          'disable_empty' => 0,
@@ -44,10 +91,11 @@
                          'prefix'        => "${name}_",
                          'state'         => scalar($cgi->param("${name}_state"))
                                             || $value,
-                      )
+                     )
             %>
           <BR><FONT SIZE="-1">State</FONT>
       </TD>
+
     </TR>
   </TABLE>
 
@@ -61,31 +109,11 @@ my $id = $opt{'id'} || 'orderitemnum';
 
 my $curr_value = $opt{'curr_value'} || $opt{'value'};
 
-my $onchange = '';
-if ( $opt{'onchange'} ) {
-  $onchange = $opt{'onchange'};
-  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
-  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
-                                        #callbacks should act the same
-  $onchange = 'onChange="'. $onchange. '"';
-}
-
 my $item;
 if ( $curr_value ) {
   $item = qsearchs('did_order_item', { 'orderitemnum' => $curr_value } );
 } else {
   $item = new FS::did_order_item {};
 }
-
-my %size = ( 'npa' => 3, 
-	     'quantity' => 3,);
-
-tie my %label, 'Tie::IxHash',
-  'quantity' => 'Quantity',
-  'npa'        => 'NPA',
-  'ratecenter'        => 'Rate Center',
-  'msa'        => 'MSA',
-;
-my @textfields = keys %label;
 
 </%init>

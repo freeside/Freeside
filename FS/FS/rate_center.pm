@@ -1,4 +1,4 @@
-package FS::did_order_item;
+package FS::rate_center;
 
 use strict;
 use base qw( FS::Record );
@@ -6,14 +6,14 @@ use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
-FS::did_order_item - Object methods for did_order_item records
+FS::rate_center - Object methods for rate_center records
 
 =head1 SYNOPSIS
 
-  use FS::did_order_item;
+  use FS::rate_center;
 
-  $record = new FS::did_order_item \%hash;
-  $record = new FS::did_order_item { 'column' => 'value' };
+  $record = new FS::rate_center \%hash;
+  $record = new FS::rate_center { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -25,29 +25,19 @@ FS::did_order_item - Object methods for did_order_item records
 
 =head1 DESCRIPTION
 
-An FS::did_order_item object represents an item in a bulk DID order.
-FS::did_order_item inherits from FS::Record.  
-The following fields are currently supported:
+An FS::rate_center object represents an rate center.  FS::rate_center inherits from
+FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item orderitemnum
+=item ratecenternum
 
 primary key
 
-=item ordernum
+=item description
 
-=item msanum - foreign key to msa table
+description
 
-=item npa
-
-=item latanum - foreign key to lata table
-
-=item ratecenternum - foreign key to rate_center table
-
-=item state
-
-=item quantity
 
 =back
 
@@ -57,7 +47,7 @@ primary key
 
 =item new HASHREF
 
-Creates a new DID order item.  To add it to the database, see L<"insert">.
+Creates a new rate center.  To add the rate center to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -66,7 +56,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
-sub table { 'did_order_item'; }
+sub table { 'rate_center'; }
 
 =item insert
 
@@ -96,7 +86,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid DID order item.  If there is
+Checks all fields to make sure this is a valid rate center.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -109,14 +99,8 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_numbern('orderitemnum')
-    || $self->ut_number('ordernum')
-    || $self->ut_foreign_keyn('msanum', 'msa', 'msanum')
-    || $self->ut_numbern('npa')
-    || $self->ut_foreign_keyn('latanum', 'lata', 'latanum')
-    || $self->ut_foreign_keyn('ratecenternum', 'rate_center', 'ratecenternum')
-    || $self->ut_textn('state')
-    || $self->ut_number('quantity')
+    $self->ut_numbern('ratecenternum')
+    || $self->ut_text('description')
   ;
   return $error if $error;
 

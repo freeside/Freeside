@@ -2,7 +2,7 @@ package FS::did_order;
 
 use strict;
 use base qw( FS::o2m_Common FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 
 =head1 NAME
 
@@ -89,7 +89,43 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+
+  return "Can't delete a DID order which has DIDs received"
+    if qsearch( 'phone_avail', { 'ordernum' => $self->ordernum } );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my @did_order_item = $self->did_order_item;
+
+  foreach my $did_order_item ( @did_order_item ) {
+    my $error = $did_order_item->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't delete DID order item "
+                                . $did_order_item->orderitemnum . ": $error";
+    }
+  }
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+}
+
 
 =item replace OLD_RECORD
 

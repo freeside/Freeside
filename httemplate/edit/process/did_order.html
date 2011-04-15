@@ -4,7 +4,8 @@
                'value_callback' => $value_callback,
                'process_o2m' => {
                     'table'  => 'did_order_item',
-                    'fields' => \@item_fields,
+                    'fields' => [ qw( msanum npa latanum ratecenternum state
+                                  quantity ) ],
                 },
            )
 %>
@@ -22,6 +23,16 @@ my $value_callback = sub {
      ($field =~ /ed$/ && $value !~ /^\d+$/) ? parse_datetime($value) : $value;
 };
 
-my @item_fields = qw( msa npa latanum ratecenter state quantity );
+my @params = $cgi->param;
+foreach my $param ( @params ) {
+    next unless $param =~ /^(orderitemnum[0-9]+)_rc_new$/;
+    my $prefix = $1;
+    my $value = $cgi->param($param);
+    next unless $value =~ /^[A-Za-z0-9\- ]+$/;
+    my $rc = new FS::rate_center({ description => $value });
+    my $error = $rc->insert;
+    die "error inserting new rate center: $error" if $error;
+    $cgi->param("${prefix}_ratecenternum",$rc->ratecenternum);
+}
 
 </%init>

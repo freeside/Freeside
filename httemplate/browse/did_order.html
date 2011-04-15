@@ -1,19 +1,93 @@
 <% include( 'elements/browse.html',
                  'title'       => 'Bulk DID Orders',
-                 'html_init'   => $html_init,
+                 'html_init'   => qq!<A HREF="${p}edit/did_order.html"><I>Add a bulk DID order</I></A><BR><BR>!,
                  'name'        => 'bulk DID orders',
                  'disableable' => 0,
                  'query'       => { 'table'     => 'did_order',
-				    'addl_from' => 'left join did_vendor using (vendornum) ',
+				                    'addl_from' => 'left join did_vendor using (vendornum) ',
                                     'hashref'   => {},
                                     'order_by' => 'ORDER BY ordernum',
                                   },
-                 'count_query' => $count_query,
-                 'header'      => $header,
-                 'fields'      => $fields,
+                 'count_query' => 'SELECT COUNT(*) FROM did_order',
+                 'header'      => [ '#', 'Vendor',' Vendor Order #', 
+                                    'Submitted', 'Confirmed', 'Customer',
+                                    'Received', 'Provision', 'Cancel',
+                                  ],
+                 'fields'      => [ sub {
+                                        my $did_order = shift;
+                                        $did_order->ordernum;
+                                    }, 
+                                    'vendorname', 
+                                    'vendor_order_id', 
+                                    sub { &$display_date(shift->submitted); },
+                                    sub {
+                                        my $did_order = shift;
+                                        my $ordernum = $did_order->ordernum;
+                                        return &$display_date($did_order->confirmed) 
+                                            if $did_order->confirmed;
+                                        include( '/elements/popup_link.html',
+                                          { 'action'      => "${p}misc/did_order_confirm.html?ordernum=$ordernum",
+                                            'label'       => 'Confirm',
+                                            'actionlabel' => 'Confirm Bulk DID Order',
+                                            'width'       => 480,
+                                            'height'      => 300,
+                                          }
+                                        )
+                                    }, 
+                                    sub {
+                                        my $did_order = shift;
+                                        my $cust_main = $did_order->cust_main;
+                                        return "Stock" unless $cust_main;
+                                        "<A HREF='${p}view/cust_main.cgi?".$cust_main->custnum."'>".$cust_main->name."</A>";
+                                    },
+                                    sub { 
+                                        my $did_order = shift;
+                                        my $ordernum = $did_order->ordernum;
+                                        return &$display_date($did_order->received) 
+                                            if $did_order->received;
+                                        "<A HREF='${p}misc/phone_avail-import.html?ordernum=$ordernum'>Upload Received</A>";
+                                    },
+                                    sub {
+                                        my $did_order = shift;
+                                        my $ordernum = $did_order->ordernum;
+                                        my @provisioned = 
+                                            qsearch({ table   => 'phone_avail',
+                                                      hashref => { 'ordernum' => $ordernum, },
+                                                      select  => 'phone_avail.*',
+                                                      extra_sql => ' and svcnum is not null ',
+                                                    });
+                                        return '' 
+                                            unless $did_order->received 
+                                                        && $did_order->custnum
+                                                        && !scalar(@provisioned);
+                                        include( '/elements/popup_link.html',
+                                          { 'action'      => "${p}misc/did_order_provision.html?ordernum=".$did_order->ordernum,
+                                            'label'       => 'Provision All DIDs',
+                                            'actionlabel' => 'Bulk DID order - DID provisioning',
+                                            'width'       => 520,
+                                            'height'      => 300,
+                                          }
+                                        )
+                                    },
+                                    sub {
+                                        my $did_order = shift;
+                                        return '' unless !$did_order->received;
+                                        qq!<A HREF="javascript:areyousure('${p}misc/did_order_confirmed.html?action=cancel;ordernum=!
+                                        . $did_order->ordernum . qq!', 'Cancel this order (#!
+                                        . $did_order->ordernum . qq!)?')">Cancel</A>!
+                                    },
+                                  ],
                  'links'       => [
-				    [ $p.'edit/did_order.html?', 'ordernum' ],
-				  ],
+                                    [ $p.'edit/did_order.html?', 'ordernum' ],
+				                  ],
+                 'html_foot' => '
+                            <script type="text/javascript">
+                                function areyousure(href,msg) {
+                                    if (confirm(msg))
+                                        window.location.href = href;
+                                }
+                            </script>
+                                ',
              )
 %>
 <%init>
@@ -24,50 +98,10 @@ die "access denied"
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-my $html_init = 
-  qq!<A HREF="${p}edit/did_order.html"><I>Add a bulk DID order</I></A><BR><BR>!;
-
-my $count_query = 'SELECT COUNT(*) FROM did_order';
-
 my $display_date = sub {
     my $date = shift;
     return '' unless $date;
     time2str($date_format, $date);
 };
-
-my $header = [ '#', 'Vendor',' Vendor Order #', 'Submitted', 'Confirmed',
-                'Customer', 'Received', ];
-my $fields = [  sub {
-		    my $did_order = shift;
-		    $did_order->ordernum;
-		}, 'vendorname', 'vendor_order_id', 
-		sub { &$display_date(shift->submitted); }, 
-		sub {
-		    my $did_order = shift;
-		    my $ordernum = $did_order->ordernum;
-            return &$display_date($did_order->confirmed) if $did_order->confirmed;
-            include( '/elements/popup_link.html',
-              { 'action'      => "${p}misc/did_order_confirm.html?ordernum=$ordernum",
-                'label'       => 'Confirm&nbsp;Bulk&nbsp;DID&nbsp;Order',
-                'actionlabel' => 'Confirm Bulk DID Order',
-                'width'       => 480,
-                'height'      => 300,
-              }
-            )
-        }, 
-        sub {
-            my $did_order = shift;
-            my $cust_main = $did_order->cust_main;
-            return "Stock" unless $cust_main;
-            "<A HREF='${p}view/cust_main.cgi?".$cust_main->custnum."'>".$cust_main->name."</A>";
-        },
-		sub { 
-		    my $did_order = shift;
-		    my $ordernum = $did_order->ordernum;
-		    return &$display_date($did_order->received) 
-			    if $did_order->received;
-		    "<A HREF='${p}misc/phone_avail-import.html?ordernum=$ordernum'>Upload Received</A>";
-		}, 
-	     ];
 
 </%init>

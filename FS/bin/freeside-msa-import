@@ -1,0 +1,74 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::Record qw(qsearch qsearchs dbh);
+use LWP::Simple;
+use Data::Dumper;
+
+&untaint_argv;	#what it sounds like  (eww)
+use vars qw(%opt);
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my $content = get("http://www.census.gov/population/www/metroareas/lists/2009/List1.txt");
+my @content = split(/\n/,$content);
+
+my $sql = 'insert into msa (msanum, description) values ';
+my @sql;
+foreach my $row ( @content ) {
+    next unless $row =~ /^([0-9]{5})\s+([A-Za-z, \-]{5,80}) .{3}ropolitan Statistical Area/;
+    push @sql, "( $1, '$2')";
+}
+$sql .= join(',',@sql);
+
+my $sth = $dbh->prepare('delete from msa');
+$sth->execute or die $sth->errstr;
+
+$sth = $dbh->prepare($sql);
+$sth->execute or die $sth->errstr;
+
+$dbh->commit;
+
+###
+# subroutines
+###
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n  freeside-msa-import user \n";
+}
+
+###
+# documentation
+###
+
+=head1 NAME
+
+freeside-msa-import - Pull MSA data from census.gov and insert into MSA table
+
+=head1 SYNOPSIS
+
+  freeside-msa-import user
+
+=head1 DESCRIPTION
+
+user - name of an internal Freeside user
+
+=head1 SEE ALSO
+
+L<FS::msa>
+
+=cut
+

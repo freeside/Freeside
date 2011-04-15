@@ -65,7 +65,7 @@ my $m2_error_callback = sub {
   my($cgi, $object) = @_;
 
   #process_o2m fields in process/did_order.html
-  my @fields = qw( msa npa latanum ratecenter state quantity );
+  my @fields = qw( msanum npa latanum ratecenternum state quantity );
   my @gfields = ( '', map "_$_", @fields );
 
   map {
@@ -110,6 +110,22 @@ my $javascript = <<END;
             }
             custnum.value = '';
             custnum_search.value = '';
+        }
+
+        /* o2m or something else is broken, can't put this in the actual
+            component because random JS and other crap is rendered 
+            onto the final output page */
+        function ratecenter_changed(rc) {
+            var idbase = rc.id.substring(0,rc.id.indexOf('_'));
+            var div = document.getElementById(idbase+'_rc_div');
+            var input = document.getElementById(idbase+'_rc_new');
+            if(rc.options[rc.selectedIndex].value == '0') {
+                div.style.display = 'inline';
+            }
+            else {
+                div.style.display = 'none';
+            }
+            input.value = '';
         }
     </SCRIPT>
 END

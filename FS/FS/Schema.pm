@@ -3125,6 +3125,26 @@ sub tables_hashref {
       'index'  => [],
     },
     
+    'msa' => {
+      'columns' => [
+        'msanum',    'int',      '',      '', '', '', 
+        'description',   'varchar',    '',      $char_d, '', '', 
+      ],
+      'primary_key' => 'msanum',
+      'unique' => [],
+      'index'  => [],
+    },
+    
+    'rate_center' => {
+      'columns' => [
+        'ratecenternum',    'serial',      '',      '', '', '', 
+        'description',   'varchar',    '',      $char_d, '', '', 
+      ],
+      'primary_key' => 'ratecenternum',
+      'unique' => [],
+      'index'  => [],
+    },
+
     'did_vendor' => {
       'columns' => [
         'vendornum',    'serial',      '',      '', '', '', 
@@ -3139,10 +3159,10 @@ sub tables_hashref {
       'columns' => [
         'orderitemnum',    'serial',      '',      '', '', '', 
         'ordernum',    'int',      '',      '', '', '', 
-        'msa',        'varchar', 'NULL', $char_d, '', '',
+        'msanum',      'int',     'NULL',      '', '', '',
         'npa',      'int',     'NULL',      '', '', '',
         'latanum',      'int',     'NULL',      '', '', '',
-        'ratecenter',        'varchar', 'NULL', $char_d, '', '',
+        'ratecenternum',      'int',     'NULL',      '', '', '',
         'state',       'char',    'NULL',       2, '', '', 
         'quantity',      'int',     '',      '', '', '',
       ],
