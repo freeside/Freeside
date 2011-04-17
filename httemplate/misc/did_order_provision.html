@@ -10,9 +10,34 @@
         <TD>Order #</TD>
         <TD><% $ordernum %></TD>
     </TR>
+    <TR>    
+        <TD>Customer</TD>
+        <TD><% $cust_main->name %></TD>
+    <TR>
+        <TD>Package/Service</TD>
+        <TD>
+%           if ( !$avail ) {
+                No packages exist for this customer having at least <% scalar(@dids) %>
+                    unprovisioned DIDs, as required for this order.
+%           } else {
+           <SELECT NAME="pkgnum_svcpart">
+%           foreach my $pkgnum ( keys %cust_pkg_phone ) {
+%               my @svcpart = @{$cust_pkg_phone{$pkgnum}};
+%               foreach my $svcpart ( @svcpart ) {
+                    <OPTION value="<%"${pkgnum}_$svcpart"%>">
+                        <% $cust_pkg_label{$pkgnum} %> / <% $svc_label{$svcpart} %>
+                    </OPTION>
+%               }
+%           }
+           </SELECT>
+%           }
+       </TD>
+    </TR>
+%   if ( $avail ) {
     <TR>
         <TD COLSPAN="2"><INPUT TYPE="SUBMIT" value="Provision"></TD>
     </TR>
+%  }
 </TABLE>
 
 <%init>
@@ -31,5 +56,31 @@ die "No order $ordernum" unless $did_order;
 die "Order is not in received status and/or DIDs not assigned to a customer"
     unless $did_order->received && $did_order->custnum; 
 
+my $cust_main = qsearchs('cust_main', { custnum => $did_order->custnum } );
+die "invalid customer" unless $cust_main;
+
+my @pkgs = $cust_main->ncancelled_pkgs;
+die "no packages" unless scalar(@pkgs);
+
+my @dids = qsearch( 'phone_avail', { ordernum => $ordernum } );
+die "no DIDs on order" unless scalar(@dids);
+
+my (%cust_pkg_phone, %cust_pkg_label, %svc_label );
+
+foreach my $pkg ( @pkgs ) {
+    my @avail_part_svc = $pkg->available_part_svc;
+    my @svcpart;
+    foreach my $avail_part_svc ( @avail_part_svc ) {
+        if ($avail_part_svc->svcdb eq 'svc_phone'
+                  && $avail_part_svc->num_avail >= scalar(@dids)) {
+            push @svcpart, $avail_part_svc->svcpart;
+            $svc_label{$avail_part_svc->svcpart} = $avail_part_svc->svc;
+        }
+    }
+    $cust_pkg_phone{$pkg->pkgnum} = \@svcpart if scalar(@svcpart);
+    $cust_pkg_label{$pkg->pkgnum} = $pkg->part_pkg->pkg;
+}
+
+my $avail = keys(%cust_pkg_phone);
 
 </%init>

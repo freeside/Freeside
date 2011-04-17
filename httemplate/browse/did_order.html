@@ -1,14 +1,10 @@
 <% include( 'elements/browse.html',
                  'title'       => 'Bulk DID Orders',
-                 'html_init'   => qq!<A HREF="${p}edit/did_order.html"><I>Add a bulk DID order</I></A><BR><BR>!,
+                 'html_init'   =>  $html_init,
                  'name'        => 'bulk DID orders',
                  'disableable' => 0,
-                 'query'       => { 'table'     => 'did_order',
-				                    'addl_from' => 'left join did_vendor using (vendornum) ',
-                                    'hashref'   => {},
-                                    'order_by' => 'ORDER BY ordernum',
-                                  },
-                 'count_query' => 'SELECT COUNT(*) FROM did_order',
+                 'query'       => $query,
+                 'count_query' => 'SELECT COUNT(*) FROM did_order', # XXX: this is wrong!?
                  'header'      => [ '#', 'Vendor',' Vendor Order #', 
                                     'Submitted', 'Confirmed', 'Customer',
                                     'Received', 'Provision', 'Cancel',
@@ -20,7 +16,7 @@
                                     'vendorname', 
                                     'vendor_order_id', 
                                     sub { &$display_date(shift->submitted); },
-                                    sub {
+                                    sub { # Confirmed
                                         my $did_order = shift;
                                         my $ordernum = $did_order->ordernum;
                                         return &$display_date($did_order->confirmed) 
@@ -34,28 +30,24 @@
                                           }
                                         )
                                     }, 
-                                    sub {
+                                    sub { # Customer
                                         my $did_order = shift;
                                         my $cust_main = $did_order->cust_main;
                                         return "Stock" unless $cust_main;
                                         "<A HREF='${p}view/cust_main.cgi?".$cust_main->custnum."'>".$cust_main->name."</A>";
                                     },
-                                    sub { 
+                                    sub { # Received
                                         my $did_order = shift;
                                         my $ordernum = $did_order->ordernum;
-                                        return &$display_date($did_order->received) 
-                                            if $did_order->received;
-                                        "<A HREF='${p}misc/phone_avail-import.html?ordernum=$ordernum'>Upload Received</A>";
+                                        return "<A HREF='${p}misc/phone_avail-import.html?ordernum=$ordernum'>Upload Received</A>"
+                                            unless $did_order->received;
+                                        "<A HREF='${p}search/phone_avail.html?ordernum=$ordernum'>"
+                                                . &$display_date($did_order->received) . "</A>";
                                     },
-                                    sub {
+                                    sub { # Provision
                                         my $did_order = shift;
                                         my $ordernum = $did_order->ordernum;
-                                        my @provisioned = 
-                                            qsearch({ table   => 'phone_avail',
-                                                      hashref => { 'ordernum' => $ordernum, },
-                                                      select  => 'phone_avail.*',
-                                                      extra_sql => ' and svcnum is not null ',
-                                                    });
+                                        my @provisioned = $did_order->provisioned;
                                         return '' 
                                             unless $did_order->received 
                                                         && $did_order->custnum
@@ -69,7 +61,7 @@
                                           }
                                         )
                                     },
-                                    sub {
+                                    sub { # Cancel
                                         my $did_order = shift;
                                         return '' unless !$did_order->received;
                                         qq!<A HREF="javascript:areyousure('${p}misc/did_order_confirmed.html?action=cancel;ordernum=!
@@ -103,5 +95,30 @@ my $display_date = sub {
     return '' unless $date;
     time2str($date_format, $date);
 };
+
+my $html_init = qq!<A HREF="${p}edit/did_order.html">Add a bulk DID order</A>
+                    <BR><BR>!;
+
+my $query = { 
+    'table'      => 'did_order',
+    'hashref'    => {},
+    'addl_from' => 'left join did_vendor using (vendornum) ',
+    'order_by' => 'ORDER BY ordernum',
+            };
+$query->{'hashref'}->{'custnum'} = $1 if $cgi->param('custnum') =~ /^(\d+)$/;
+if ( $cgi->param('custrcvdunprov') ) {
+    $query->{'hashref'}->{'received'} = { 'op' => '>', 'value' => '0', };
+    $query->{'hashref'}->{'custnum'} = { 'op' => '>', 'value' => '0', };
+    $query->{'addl_from'} .= ' left join phone_avail using (ordernum) ';
+    $query->{'extra_sql'} .= ' and svcnum is null ';
+    $html_init .= qq!<A HREF="${p}browse/did_order.html">Browse all DID orders</A>!;
+}
+else {
+    $html_init .= qq!<A HREF="${p}browse/did_order.html?custrcvdunprov=1">
+                    Browse all non-stock orders with received unprovisioned DIDs
+                    </A>!;
+}
+
+$html_init .= "<BR><BR>";
 
 </%init>

@@ -152,6 +152,7 @@ tie my %rights, 'Tie::IxHash',
   'Customer service rights' => [
     'View customer services', #NEW
     'Provision customer service',
+    'Bulk provision customer service',
     'Recharge customer service', #NEW
     'Unprovision customer service',
     'Change customer service', #NEWNEW

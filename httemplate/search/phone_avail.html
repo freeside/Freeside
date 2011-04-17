@@ -3,7 +3,7 @@
               'name_singular' => 'phone number',
               'query'         => {
                                    'table'   => 'phone_avail',
-                                   'hashref' => {},
+                                   'hashref' => $hashref,
                                    'select'  => join(', ',
                                        'phone_avail.*',
                                        'cust_main.custnum',
@@ -128,6 +128,9 @@ my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
                 ' LEFT JOIN cust_main USING ( custnum ) ';
 
 my $count_query = "SELECT COUNT(*) FROM phone_avail $search"; #$addl_from?
+
+my $hashref = {};
+$hashref->{'ordernum'} = $1 if $cgi->param('ordernum') =~ /^(\d+)$/;
 
 my $link_cust = sub {
   my $phone_avail = shift;

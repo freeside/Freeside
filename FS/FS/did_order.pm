@@ -186,6 +186,21 @@ sub cust_main {
   qsearchs('cust_main', { 'custnum' => $self->custnum } );
 }
 
+=item provisioned
+
+Returns the provisioned DIDs, if any, as phone_avail (see L<FS::phone_avail>) objects.
+
+=cut
+
+sub provisioned {
+  my $self = shift;
+  qsearch({ table   => 'phone_avail',
+              hashref => { 'ordernum' => $self->ordernum, },
+              select  => 'phone_avail.*',
+              extra_sql => ' and svcnum is not null ',
+         });
+}
+
 =back
 
 =head1 SEE ALSO

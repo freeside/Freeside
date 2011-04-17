@@ -8,7 +8,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
-$cgi->param('action') =~ /^(confirm|cancel)$/ or die 'illegal action';
+$cgi->param('action') =~ /^(confirm|cancel|provision)$/ or die 'illegal action';
 my $action = $1;
 my $success_msg = '';
 my $error = '';
@@ -45,4 +45,23 @@ elsif ( $action eq 'cancel' ) {
     $error = $did_order->delete;
     $js = "window.location.href = '${p}browse/did_order.html'";
 }
+elsif ( $action eq 'provision' ) {
+    my $sucess_msg = 'DID order provisioned';
+    $cgi->param('pkgnum_svcpart') =~ /^(\d+)_(\d+)$/ or die 'illegal pkgnum_svcpart';
+    my $pkgnum = $1;
+    my $svcpart = $2;
+    my @dids = qsearch( 'phone_avail', { ordernum => $ordernum } );
+    die "no DIDs on order" unless scalar(@dids);
+    foreach my $did ( @dids ) {
+        my $svc_phone = new FS::svc_phone({
+            pkgnum  => $pkgnum,
+            svcpart => $svcpart,
+            countrycode => 1,
+            phonenum    => $did->npa.$did->nxx.$did->station,
+        });
+        $error = $svc_phone->insert;
+        last if $error;
+    }
+}
+
 </%init>

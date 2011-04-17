@@ -63,6 +63,10 @@ function clearhint_search_cust_svc(obj, str) {
       <TR>
         <TD COLSPAN=3 ALIGN="center" STYLE="padding-bottom:4px;padding-top:0px">
           <B><% svc_provision_link($cust_pkg, $part_svc, \%opt, $curuser) %></B>
+%        if ( $curuser->access_right('Bulk provision customer service') 
+%               && $part_svc->svcdb eq 'svc_phone' ) {
+            <BR><A HREF="<%$p%>browse/did_order.html?custnum=<%$cust_pkg->custnum%>">Browse Received DID Inventory</A> 
+%       }
         </TD>
       </TR>
 
