@@ -110,26 +110,29 @@ while (1) {
         lock_write;
 
         nstore_fd( { _token => '_keepalive' }, $writer );
-        foreach my $agent ( qsearch( 'agent', { disabled => '' } ) ) {
-          my $config = qsearchs( 'conf', { name  => 'selfservice-bulk_ftp_dir',
-                                           agentnum => $agent->agentnum,
-                               } )
-            or next;
 
-          my $session =
-            FS::ClientAPI->dispatch( 'Agent/agent_login',
-                                     { username => $agent->username,
-                                       password => $agent->_password,
-                                     }
-            );
+#commenting izoom stuff out until we can move it to a branch (or just remove)
+#        foreach my $agent ( qsearch( 'agent', { disabled => '' } ) ) {
+#          my $config = qsearchs( 'conf', { name  => 'selfservice-bulk_ftp_dir',
+#                                           agentnum => $agent->agentnum,
+#                               } )
+#            or next;
+#
+#          my $session =
+#            FS::ClientAPI->dispatch( 'Agent/agent_login',
+#                                     { username => $agent->username,
+#                                       password => $agent->_password,
+#                                     }
+#            );
+#
+#          nstore_fd( { _token     => '_ftp_scan',
+#                       dir        => $config->value,
+#                       session_id => $session->{session_id},
+#                     },
+#                     $writer
+#          );
+#        }
 
-          nstore_fd( { _token     => '_ftp_scan',
-                       dir        => $config->value,
-                       session_id => $session->{session_id},
-                     },
-                     $writer
-          );
-        }
         unlock_write;
       }
       next;
