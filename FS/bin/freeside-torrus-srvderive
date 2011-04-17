@@ -64,11 +64,13 @@ my $orderlimit = "
 
 our $kids = 0;
 
-MAIN: while (1) {
+#MAIN: while (1) {
+while (1) {
 
   my $found = 0;
 
-  SERVICEID: foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
+  #SERVICEID: foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
+  foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
 
     &reap_kids;
     if ( $kids >= $max_kids ) {
@@ -95,7 +97,7 @@ MAIN: while (1) {
       my $serviceid = $torrus_srvderive->serviceid;
 
       my @serviceids = $torrus_srvderive->component_serviceids;
-      next unless @serviceids; #don't try to search for empty virtual ports
+      exit unless @serviceids; #don't try to search for empty virtual ports
 
       my @in = ();
       for my $dir ('_IN', '_OUT') {
@@ -118,7 +120,7 @@ MAIN: while (1) {
           die $error if $error;
         } else {
           warn "no initial last_srv_date for $serviceid; skipping\n" if $DEBUG;
-          next;
+          exit;
         }
       }
 
@@ -149,12 +151,14 @@ MAIN: while (1) {
       alarm(0);
       
       if ( $@ && $@ eq "_timeout\n" ) {
-        warn "search timed out; reconnecting and restarting\n";
+        #warn "search timed out; reconnecting and restarting\n";
+        warn "search timed out\n";
         dbh->clone()->do("KILL QUERY ". dbh->{"mysql_thread_id"})
           if driver_name eq 'mysql';
         dbh->rollback; #or die dbh->errstr;
-        adminsuidsetup($user);
-        next SERVICEID; #MAIN;
+        #adminsuidsetup($user);
+        #next SERVICEID; #MAIN;
+        exit;
       } elsif ( $@ ) {
         die $@;
       }
@@ -200,11 +204,13 @@ MAIN: while (1) {
 
           #stupid mysql deadlocks all the time on insert, so we need to recover
           unless ( $isth->execute(@param) ) {
-            warn "Error inserting data for $serviceid$dir (restarting): ".
-                 $isth->errstr;
+            #warn "Error inserting data for $serviceid$dir (restarting): ".
+            #     $isth->errstr;
+            warn "Error inserting data for $serviceid$dir: ". $isth->errstr;
             dbh->rollback; #or die dbh->errstr;
-            sleep 5;
-            next SERVICEID; #MAIN;
+            #sleep 5;
+            #next SERVICEID; #MAIN;
+            exit;
           }
                           
         }
