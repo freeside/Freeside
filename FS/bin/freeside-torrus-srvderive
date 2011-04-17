@@ -59,8 +59,8 @@ my $sql = "
 
 my $orderlimit = "
     ORDER BY srv_date, srv_time
-    LIMIT 50
-";
+    LIMIT 100
+"; #50?
 
 our $kids = 0;
 
@@ -98,6 +98,10 @@ while (1) {
 
       my @serviceids = $torrus_srvderive->component_serviceids;
       exit unless @serviceids; #don't try to search for empty virtual ports
+
+      #nonlocking select statements; rows in this table never change
+      dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED')
+        if driver_name eq 'mysql';
 
       my @in = ();
       for my $dir ('_IN', '_OUT') {
@@ -163,7 +167,7 @@ while (1) {
         die $@;
       }
 
-      warn "search finished; checking results\n" if $DEBUG;
+      warn "search for $serviceid finished; checking results\n" if $DEBUG;
 
       my $prev = 0;
       while ( my $row = $sth->fetchrow_arrayref ) {
