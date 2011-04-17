@@ -74,7 +74,7 @@ while (1) {
 
     &reap_kids;
     if ( $kids >= $max_kids ) {
-      sleep 10;
+      sleep 5;
       redo;
     }
 
@@ -144,7 +144,7 @@ while (1) {
 
       eval {
         my $h = set_sig_handler( 'ALRM', sub { die "_timeout\n"; } );
-        alarm(10*60); #5*60); #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
+        alarm(15*60); #5*60); #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
         $sth->execute($serviceid, $serviceid) or die $sth->errstr;
         alarm(0);
       };
