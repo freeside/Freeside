@@ -75,6 +75,7 @@ while (1) {
     &reap_kids;
     if ( $kids >= $max_kids ) {
       sleep 5;
+      myexit() if sigterm() || sigint();
       redo;
     }
 
@@ -240,7 +241,7 @@ while (1) {
 
   myexit() if sigterm() || sigint();
   warn "restarting main loop\n" if $DEBUG > 1;
-  sleep 60 unless $found;
+  #sleep 60 unless $found;
 }
 
 sub _shouldrun {
