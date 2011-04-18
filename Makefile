@@ -26,13 +26,6 @@ MASONDATA = ${FREESIDE_CACHE}/masondata
 #package maintainers
 DIST_CONF = ${FREESIDE_CONF}/default_conf
 
-#mod_perl v1
-#APACHE_VERSION = 1
-#mod_perl v2 prereleases up to and including 1.999_21
-#APACHE_VERSON = 1.99
-#mod_perl v2 proper and prereleases 1.999_22 and after
-APACHE_VERSION = 2
-
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #redhat, fedora, mandrake
@@ -261,7 +254,7 @@ install-init:
 install-apache:
 	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true
 	[ -d ${APACHE_CONF} ] && \
-	  ( install -o root -m 755 htetc/freeside-base${APACHE_VERSION}.conf ${APACHE_CONF} && \
+	  ( install -o root -m 755 htetc/freeside-base2.conf ${APACHE_CONF} && \
 	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
 	    ( [ ${TORRUS_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-torrus.conf ${APACHE_CONF} || true ) && \
 	    perl -p -i -e "\
