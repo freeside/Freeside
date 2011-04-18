@@ -150,6 +150,13 @@ our %FIELD_METADATA = (
     Tagnum           => [ 'FREESIDEFIELD', 'cust_tag' ],
 );
 
+our %SEARCHABLE_SUBFIELDS = (
+    User => [qw(
+        EmailAddress Name RealName Nickname Organization Address1 Address2
+        WorkPhone HomePhone MobilePhone PagerPhone id
+    )],
+);
+
 # Mapping of Field Type to Function
 our %dispatch = (
     ENUM            => \&_EnumLimit,
@@ -837,6 +844,13 @@ sub _WatcherLimit {
     my $type = $meta->[1] || '';
     my $class = $meta->[2] || 'Ticket';
 
+    # Bail if the subfield is not allowed
+    if (    $rest{SUBKEY}
+        and not grep { $_ eq $rest{SUBKEY} } @{$SEARCHABLE_SUBFIELDS{'User'}})
+    {
+        die "Invalid watcher subfield: '$rest{SUBKEY}'";
+    }
+
     # Owner was ENUM field, so "Owner = 'xxx'" allowed user to
     # search by id and Name at the same time, this is workaround
     # to preserve backward compatibility
@@ -1235,7 +1249,7 @@ Try and turn a CF descriptor into (cfid, cfname) object pair.
 sub _CustomFieldDecipher {
     my ($self, $string) = @_;
 
-    my ($queue, $field, $column) = ($string =~ /^(?:(.+?)\.)?{(.+)}(?:\.(.+))?$/);
+    my ($queue, $field, $column) = ($string =~ /^(?:(.+?)\.)?{(.+)}(?:\.(Content|LargeContent))?$/);
     $field ||= ($string =~ /^{(.*?)}$/)[0] || $string;
 
     my $cf;
@@ -1767,9 +1781,20 @@ sub OrderByCols {
            foreach my $uid ( $self->CurrentUser->Id, $RT::Nobody->Id ) {
                if ( RT->Config->Get('DatabaseType') eq 'Oracle' ) {
                    my $f = ($row->{'ALIAS'} || 'main') .'.Owner';
-                   push @res, { %$row, ALIAS => '', FIELD => "CASE WHEN $f=$uid THEN 1 ELSE 0 END", ORDER => $order } ;
+                   push @res, {
+                       %$row,
+                       FIELD => undef,
+                       ALIAS => '',
+                       FUNCTION => "CASE WHEN $f=$uid THEN 1 ELSE 0 END",
+                       ORDER => $order
+                   };
                } else {
-                   push @res, { %$row, FIELD => "Owner=$uid", ORDER => $order } ;
+                   push @res, {
+                       %$row,
+                       FIELD => undef,
+                       FUNCTION => "Owner=$uid",
+                       ORDER => $order
+                   };
                }
            }
 
@@ -3300,9 +3325,9 @@ is a description of the purpose of that TicketRestriction
 sub DescribeRestrictions {
     my $self = shift;
 
-    my ( $row, %listing );
+    my %listing;
 
-    foreach $row ( keys %{ $self->{'TicketRestrictions'} } ) {
+    foreach my $row ( keys %{ $self->{'TicketRestrictions'} } ) {
         $listing{$row} = $self->{'TicketRestrictions'}{$row}{'DESCRIPTION'};
     }
     return (%listing);
@@ -3377,9 +3402,8 @@ sub DeleteRestriction {
 sub _RestrictionsToClauses {
     my $self = shift;
 
-    my $row;
     my %clause;
-    foreach $row ( keys %{ $self->{'TicketRestrictions'} } ) {
+    foreach my $row ( keys %{ $self->{'TicketRestrictions'} } ) {
         my $restriction = $self->{'TicketRestrictions'}{$row};
 
         # We need to reimplement the subclause aggregation that SearchBuilder does.

@@ -63,7 +63,7 @@ SITE_CONFIG_FILE	=	$(CONFIG_FILE_PATH)/RT_SiteConfig.pm
 
 RT_VERSION_MAJOR	=	3
 RT_VERSION_MINOR	=	8
-RT_VERSION_PATCH	=	9
+RT_VERSION_PATCH	=	10
 
 RT_VERSION		=	$(RT_VERSION_MAJOR).$(RT_VERSION_MINOR).$(RT_VERSION_PATCH)
 TAG 			=	rt-$(RT_VERSION_MAJOR)-$(RT_VERSION_MINOR)-$(RT_VERSION_PATCH)
@@ -527,7 +527,7 @@ apachectl:
 SNAPSHOT=$(shell git describe --tags)
 snapshot:
 	git archive --prefix "$(SNAPSHOT)/"  HEAD | tar -xf -
-	( cd $(SNAPSHOT) && autoconf && ./configure )
+	( cd $(SNAPSHOT) && autoconf && PERL=/usr/bin/perl ./configure )
 	tar -czf "$(SNAPSHOT).tar.gz" "$(SNAPSHOT)/"
 	rm -fr "$(SNAPSHOT)/"
 
