@@ -58,7 +58,7 @@ BEGIN {
     use vars qw ($VERSION  @EXPORT @EXPORT_OK %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.1.1.9 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+    $VERSION = do { my @r = (q$Revision: 1.1.1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
 
     # your exported package globals go here,
     # as well as any optionally exported functions
@@ -200,9 +200,9 @@ sub GetMessageContent {
     
     #Load the sourcefile, if it's been handed to us
     if ($source) {
-	open (SOURCE, "<$source");
-	@lines = (<SOURCE>);
-	close (SOURCE);
+    open( SOURCE, '<', $source ) or die $!;
+	@lines = (<SOURCE>) or die $!;
+	close (SOURCE) or die $!;
     }
     elsif ($args{'Content'}) {
 	@lines = split('\n',$args{'Content'});
@@ -214,7 +214,7 @@ sub GetMessageContent {
     for (@lines) {
 	print $fh $_;
     }
-    close ($fh);
+    close ($fh) or die $!;
     
     #Edit the file if we need to
     if ($edit) {	
@@ -226,9 +226,9 @@ sub GetMessageContent {
 	system ($ENV{'EDITOR'}, $filename);
     }	
     
-    open (READ, "<$filename");
+    open( READ, '<', $filename ) or die $!;
     my @newlines = (<READ>);
-    close (READ);
+    close (READ) or die $!;
 
     unlink ($filename) unless (debug());
     return(\@newlines);
@@ -256,9 +256,6 @@ sub debug {
 # }}}
 
 
-eval "require RT::Interface::CLI_Vendor";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/CLI_Vendor.pm});
-eval "require RT::Interface::CLI_Local";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/CLI_Local.pm});
+RT::Base->_ImportOverlays();
 
 1;

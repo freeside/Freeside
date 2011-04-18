@@ -898,10 +898,11 @@ sub Meta {
 sub Sections {
     my $self = shift;
     my %seen;
-    return sort
+    my @sections = sort
         grep !$seen{$_}++,
         map $_->{'Section'} || 'General',
         values %META;
+    return @sections;
 }
 
 sub Options {
@@ -930,14 +931,6 @@ sub Options {
     return @res;
 }
 
-eval "require RT::Config_Vendor";
-if ($@ && $@ !~ qr{^Can't locate RT/Config_Vendor.pm}) {
-    die $@;
-};
-
-eval "require RT::Config_Local";
-if ($@ && $@ !~ qr{^Can't locate RT/Config_Local.pm}) {
-    die $@;
-};
+RT::Base->_ImportOverlays();
 
 1;

@@ -195,6 +195,8 @@ sub HandleRequest {
     # Process session-related callbacks before any auth attempts
     $HTML::Mason::Commands::m->callback( %$ARGS, CallbackName => 'Session', CallbackPage => '/autohandler' );
 
+    MaybeRejectPrivateComponentRequest();
+
     MaybeShowNoAuthPage($ARGS);
 
     AttemptExternalAuth($ARGS) if RT->Config->Get('WebExternalAuthContinuous') or not _UserLoggedIn();
@@ -410,6 +412,37 @@ sub MaybeShowNoAuthPage {
     SendSessionCookie();
     $m->comp( { base_comp => $m->request_comp }, $m->fetch_next, %$ARGS );
     $m->abort;
+}
+
+=head2 MaybeRejectPrivateComponentRequest
+
+This function will reject calls to private components, like those under
+C</Elements>. If the requested path is a private component then we will
+abort with a C<403> error.
+
+=cut
+
+sub MaybeRejectPrivateComponentRequest {
+    my $m = $HTML::Mason::Commands::m;
+    my $path = $m->request_comp->path;
+
+    # We do not check for dhandler here, because requesting our dhandlers
+    # directly is okay. Mason will invoke the dhandler with a dhandler_arg of
+    # 'dhandler'.
+
+    if ($path =~ m{
+            / # leading slash
+            ( Elements    |
+              _elements   | # mobile UI
+              Widgets     |
+              autohandler | # requesting this directly is suspicious
+              l           ) # loc component
+            ( $ | / ) # trailing slash or end of path
+        }xi) {
+            $m->abort(403);
+    }
+
+    return;
 }
 
 =head2 ShowRequestedPage  \%ARGS
@@ -796,8 +829,15 @@ sub SendStaticFile {
         }
         $type ||= "application/octet-stream";
     }
+
+    # CGI.pm version 3.51 and 3.52 bang charset=iso-8859-1 onto our JS
+    # since we don't specify a charset
+    if ( $type =~ m{application/javascript} &&
+         $type !~ m{charset=([\w-]+)$} ) {
+         $type .= "; charset=utf-8";
+    }
     $HTML::Mason::Commands::r->content_type($type);
-    open my $fh, "<$file" or die "couldn't open file: $!";
+    open( my $fh, '<', $file ) or die "couldn't open file: $!";
     binmode($fh);
     {
         local $/ = \16384;
@@ -841,8 +881,13 @@ sub StripContent {
     # Check for plaintext sig
     return '' if not $html and $content =~ /^(--)?\Q$sig\E$/;
 
-    # Check for html-formatted sig
-    RT::Interface::Web::EscapeUTF8( \$sig );
+    # Check for html-formatted sig; we don't use EscapeUTF8 here
+    # because we want to precisely match the escaping that FCKEditor
+    # uses. see also 311223f5, which fixed this for 4.0
+    $sig =~ s/&/&amp;/g;
+    $sig =~ s/</&lt;/g;
+    $sig =~ s/>/&gt;/g;
+
     return ''
       if $html
           and $content =~ m{^(?:<p>)?(--)?\Q$sig\E(?:</p>)?$}s;
@@ -2254,9 +2299,6 @@ sub _parse_saved_search {
     return ( _load_container_object( $obj_type, $obj_id ), $search_id );
 }
 
-eval "require RT::Interface::Web_Vendor";
-die $@ if ( $@ && $@ !~ qr{^Can't locate RT/Interface/Web_Vendor.pm} );
-eval "require RT::Interface::Web_Local";
-die $@ if ( $@ && $@ !~ qr{^Can't locate RT/Interface/Web_Local.pm} );
+RT::Base->_ImportOverlays();
 
 1;

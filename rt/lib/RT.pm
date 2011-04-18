@@ -57,7 +57,7 @@ use Cwd ();
 
 use vars qw($Config $System $SystemUser $Nobody $Handle $Logger $_INSTALL_MODE);
 
-our $VERSION = '3.8.9';
+our $VERSION = '3.8.10';
 
 
 
@@ -703,9 +703,7 @@ L<DBIx::SearchBuilder>
 
 =cut
 
-eval "require RT_Vendor";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT_Vendor.pm});
-eval "require RT_Local";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT_Local.pm});
+require RT::Base;
+RT::Base->_ImportOverlays();
 
 1;

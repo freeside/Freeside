@@ -278,7 +278,7 @@ sub SaveConfig {
 
     {
         local $/;
-        open my $fh, '<', $file or die $!;
+        open( my $fh, '<', $file ) or die $!;
         $content = <$fh>;
         $content =~ s/^\s*1;\s*$//m;
     }
@@ -326,15 +326,7 @@ C<RT::Installer> class provides access to RT Installer Meta
 
 =cut
 
-eval "require RT::Installer_Vendor";
-if ($@ && $@ !~ qr{^Can't locate RT/Installer_Vendor.pm}) {
-    die $@;
-};
-
-eval "require RT::Installer_Local";
-if ($@ && $@ !~ qr{^Can't locate RT/Installer_Local.pm}) {
-    die $@;
-};
+RT::Base->_ImportOverlays();
 
 1;
 

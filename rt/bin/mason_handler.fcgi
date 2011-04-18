@@ -1,4 +1,4 @@
-#!/Users/falcone/perl5/perlbrew/bin/perl
+#!/usr/bin/perl
 # BEGIN BPS TAGGED BLOCK {{{
 #
 # COPYRIGHT:
@@ -67,6 +67,17 @@ while ( my $cgi = CGI::Fast->new ) {
 
     Module::Refresh->refresh if RT->Config->Get('DevelMode');
     RT::ConnectToDatabase();
+
+    # Each environment has its own way of handling .. and so on in paths,
+    # so RT consistently forbids such paths.
+    if ( $cgi->path_info =~ m{/\.} ) {
+        $RT::Logger->crit("Invalid request for ".$cgi->path_info." aborting");
+        print STDOUT "HTTP/1.0 400\r\n\r\n";
+
+        RT::Interface::Web::Handler->CleanupRequest();
+
+        next;
+    }
 
     my $interp = $RT::Mason::Handler->interp;
     if (

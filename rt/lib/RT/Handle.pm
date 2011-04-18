@@ -82,8 +82,9 @@ L<DBIx::SearchBuilder::Handle>, using the C<DatabaseType> configuration.
 =cut
 
 sub FinalizeDatabaseType {
-    eval "use DBIx::SearchBuilder::Handle::". RT->Config->Get('DatabaseType') .";
-    \@ISA= qw(DBIx::SearchBuilder::Handle::". RT->Config->Get('DatabaseType') .");";
+    eval {
+        use base "DBIx::SearchBuilder::Handle::". RT->Config->Get('DatabaseType');
+    };
 
     if ($@) {
         die "Unable to load DBIx::SearchBuilder database handle for '". RT->Config->Get('DatabaseType') ."'.\n".
@@ -474,10 +475,10 @@ sub InsertSchema {
 
     my (@schema);
 
-    open my $fh_schema, "<$file";
+    open( my $fh_schema, '<', $file ) or die $!;
 
     my $has_local = 0;
-    open my $fh_schema_local, "<" . $self->GetVersionFile( $dbh, $RT::LocalEtcPath . "/schema." . $db_type )
+    open( my $fh_schema_local, "<", $self->GetVersionFile( $dbh, $RT::LocalEtcPath . "/schema." . $db_type ))
         and $has_local = 1;
 
     my $statement = "";
@@ -845,6 +846,22 @@ sub InsertData {
                 next;
             }
 
+            if ( $item->{'BasedOn'} ) {
+                my $basedon = RT::CustomField->new($RT::SystemUser);
+                my ($ok, $msg ) = $basedon->LoadByCols( Name => $item->{'BasedOn'},
+                                                        LookupType => $new_entry->LookupType );
+                if ($ok) {
+                    ($ok, $msg) = $new_entry->SetBasedOn( $basedon );
+                    if ($ok) {
+                        $RT::Logger->debug("Added BasedOn $item->{BasedOn}: $msg");
+                    } else {
+                        $RT::Logger->error("Failed to add basedOn $item->{BasedOn}: $msg");
+                    }
+                } else {
+                    $RT::Logger->error("Unable to load $item->{BasedOn} as a $item->{LookupType} CF.  Skipping BasedOn");
+                }
+            }
+
             foreach my $value ( @{$values} ) {
                 my ( $return, $msg ) = $new_entry->AddValue(%$value);
                 $RT::Logger->error( $msg ) unless $return;
@@ -1065,9 +1082,6 @@ sub ACLEquivGroupId {
 
 __PACKAGE__->FinalizeDatabaseType;
 
-eval "require RT::Handle_Vendor";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT/Handle_Vendor.pm});
-eval "require RT::Handle_Local";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT/Handle_Local.pm});
+RT::Base->_ImportOverlays();
 
 1;

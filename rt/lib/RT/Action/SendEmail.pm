@@ -931,8 +931,14 @@ sub SetSubject {
         return ();
     }
 
-    my $message = $self->TransactionObj->Attachments;
+    # don't use Transaction->Attachments because it caches
+    # and anything which later calls ->Attachments will be hurt
+    # by our RowsPerPage() call.  caching is hard.
+    my $message = RT::Attachments->new( $self->CurrentUser );
+    $message->Limit( FIELD => 'TransactionId', VALUE => $self->TransactionObj->id);
+    $message->OrderBy( FIELD => 'id', ORDER => 'ASC' );
     $message->RowsPerPage(1);
+
     if ( $self->{'Subject'} ) {
         $subject = $self->{'Subject'};
     } elsif ( my $first = $message->First ) {
@@ -1091,10 +1097,7 @@ sub MIMEEncodeString {
     return RT::Interface::Email::EncodeToMIME( String => $_[0], Charset => $_[1] );
 }
 
-eval "require RT::Action::SendEmail_Vendor";
-die $@ if ( $@ && $@ !~ qr{^Can't locate RT/Action/SendEmail_Vendor.pm} );
-eval "require RT::Action::SendEmail_Local";
-die $@ if ( $@ && $@ !~ qr{^Can't locate RT/Action/SendEmail_Local.pm} );
+RT::Base->_ImportOverlays();
 
 1;
 

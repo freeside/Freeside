@@ -1,4 +1,4 @@
-#!/Users/falcone/perl5/perlbrew/bin/perl
+#!/usr/bin/perl
 # BEGIN BPS TAGGED BLOCK {{{
 #
 # COPYRIGHT:
@@ -339,7 +339,7 @@ sub action_upgrade {
 sub get_versions_from_to {
     my ($base_dir, $from, $to) = @_;
 
-    opendir my $dh, $base_dir or die "couldn't open dir: $!";
+    opendir( my $dh, $base_dir ) or die "couldn't open dir: $!";
     my @versions = grep -d "$base_dir/$_" && /\d+\.\d+\.\d+/, readdir $dh;
     closedir $dh;
 

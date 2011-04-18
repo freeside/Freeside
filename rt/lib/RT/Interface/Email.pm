@@ -445,7 +445,7 @@ sub SendEmail {
             # don't ignore CHLD signal to get proper exit code
             local $SIG{'CHLD'} = 'DEFAULT';
 
-            open my $mail, "|$path $args >/dev/null"
+            open( my $mail, '|-', "$path $args >/dev/null" )
                 or die "couldn't execute program: $!";
 
             # if something wrong with $mail->print we will get PIPE signal, handle it
@@ -1809,9 +1809,6 @@ sub _RecordSendEmailFailure {
     }
 }
 
-eval "require RT::Interface::Email_Vendor";
-die $@ if ( $@ && $@ !~ qr{^Can't locate RT/Interface/Email_Vendor.pm} );
-eval "require RT::Interface::Email_Local";
-die $@ if ( $@ && $@ !~ qr{^Can't locate RT/Interface/Email_Local.pm} );
+RT::Base->_ImportOverlays();
 
 1;

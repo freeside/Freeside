@@ -1,4 +1,4 @@
-#!/Users/falcone/perl5/perlbrew/bin/perl
+#!/usr/bin/perl
 # BEGIN BPS TAGGED BLOCK {{{
 #
 # COPYRIGHT:
@@ -487,7 +487,7 @@ sub resolve_dep {
         unless ( $configured ) {
             print <<END;
 You haven't configured the CPAN shell yet.
-Please run `/Users/falcone/perl5/perlbrew/bin/perl -MCPAN -e shell` to configure it.
+Please run `/usr/bin/perl -MCPAN -e shell` to configure it.
 END
             exit(1);
         }
@@ -512,9 +512,9 @@ this situatation:
 
 1) use a different tool to install dependencies by running setting the following
    shell environment variable and rerunning this tool:
-    RT_FIX_DEPS_CMD='/Users/falcone/perl5/perlbrew/bin/perl -MCPAN -e"install %s"'
+    RT_FIX_DEPS_CMD='/usr/bin/perl -MCPAN -e"install %s"'
 2) Attempt to configure CPAN by running:
-   `/Users/falcone/perl5/perlbrew/bin/perl -MCPAN -e shell` program from shell.
+   `/usr/bin/perl -MCPAN -e shell` program from shell.
    If this fails, you may have to manually upgrade CPAN (see below)
 3) Try to update the CPAN client. Download it from:
    http://search.cpan.org/dist/CPAN and try again

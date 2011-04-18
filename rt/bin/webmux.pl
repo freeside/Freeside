@@ -1,4 +1,4 @@
-#!/Users/falcone/perl5/perlbrew/bin/perl
+#!/usr/bin/perl
 # BEGIN BPS TAGGED BLOCK {{{
 #
 # COPYRIGHT:
@@ -73,7 +73,8 @@ sub handler {
         # and make all system() and open "|-" dangerouse, for example DBI
         # can get this FD for DB connection and system() call will close
         # by putting grabage into the socket
-        open $protect_fd, '>/dev/null' or die "Couldn't open /dev/null: $!";
+        open( $protect_fd, '>', '/dev/null' )
+          or die "Couldn't open /dev/null: $!";
         unless ( fileno($protect_fd) == 1 ) {
             warn "We opened /dev/null to protect FD #1, but descriptor #1 is already occupied";
         }
@@ -92,6 +93,20 @@ sub handler {
     Module::Refresh->refresh if RT->Config->Get('DevelMode');
 
     RT::ConnectToDatabase();
+
+    # none of the methods in $r gives us the information we want (most
+    # canonicalize /foo/../bar to /bar which is exactly what we want to avoid)
+    my (undef, $requested) = split ' ', $r->the_request, 3;
+    my $uri = URI->new("http://".$r->hostname.$requested);
+    my $path = URI::Escape::uri_unescape($uri->path);
+
+    ## Each environment has its own way of handling .. and so on in paths,
+    ## so RT consistently forbids such paths.
+    if ( $path =~ m{/\.} ) {
+        $RT::Logger->crit("Invalid request for ".$path." aborting");
+        RT::Interface::Web::Handler->CleanupRequest();
+        return 400;
+    }
 
     my (%session, $status);
     {
