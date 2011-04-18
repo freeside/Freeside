@@ -1436,9 +1436,9 @@ sub tables_hashref {
       'unique' => [],
       'index' => [ ['custnum'], ['pkgpart'], [ 'pkgbatch' ], [ 'locationnum' ],
                    [ 'usernum' ], [ 'agent_pkgid' ],
-                   [ 'start_date' ], ['setup'], ['last_bill'], ['bill'],
-                   ['susp'], ['adjourn'], ['expire'], ['cancel'],
-                   ['change_date'], ['order_date'],
+                   ['order_date'], [ 'start_date' ], ['setup'], ['bill'],
+                   ['last_bill'], ['susp'], ['adjourn'], ['cancel'],
+                   ['expire'], ['contract_end'], ['change_date'],
                  ],
     },
 
