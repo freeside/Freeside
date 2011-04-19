@@ -53,11 +53,18 @@ sub create_initial_data {
   populate_access();
 
   populate_msgcat();
+
+  populate_numbering();
   
   if ( $oldAutoCommit ) {
     dbh->commit or die dbh->errstr;
   }
 
+}
+
+sub pouplate_numbering {
+  eval "use FS::lata_Data;"; # this automatically populates the lata table, if unpopulated
+  eval "use FS::msa_Data;"; # this automatically populates the msa table, if unpopulated
 }
 
 sub populate_locales {

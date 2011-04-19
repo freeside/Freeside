@@ -70,13 +70,17 @@ station
 
 Optional name
 
+=item rate_center_abbrev - abbreviated rate center
+
+=item latanum - LATA #
+
+=item msanum - MSA #
+
+=item ordernum - bulk DID order #
+
 =item svcnum
 
-svcnum
-
 =item availbatch
-
-availbatch
 
 =back
 
@@ -145,11 +149,13 @@ sub check {
     || $self->ut_number('npa')
     || $self->ut_numbern('nxx')
     || $self->ut_numbern('station')
-    || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum' )
-    || $self->ut_foreign_keyn('ordernum', 'did_order', 'ordernum' )
-    || $self->ut_textn('availbatch')
     || $self->ut_textn('name')
     || $self->ut_textn('rate_center_abbrev')
+    || $self->ut_foreign_keyn('latanum', 'lata', 'latanum' )
+    || $self->ut_foreign_keyn('msanum', 'msa', 'msanum' )
+    || $self->ut_foreign_keyn('ordernum', 'did_order', 'ordernum' )
+    || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum' )
+    || $self->ut_textn('availbatch')
   ;
   return $error if $error;
 
@@ -176,6 +182,21 @@ sub part_export {
   qsearchs('part_export', { 'exportnum' => $self->exportnum });
 }
 
+=item msa2msanum
+
+Translate free-form MSA name to a msa.msanum
+
+=cut
+
+sub msa2msanum {
+    my $self = shift;
+    my $msa = shift;
+    my $res = qsearchs('msa', { 'description' => { 'op' => 'ILIKE',
+                                                   'value' => $msa, }
+                              });
+    return 0 unless $res;
+    $res->msanum;
+}
 
 sub process_batch_import {
   my $job = shift;
@@ -190,40 +211,46 @@ sub process_batch_import {
     $phone_avail->station($3);
   };
 
+  my $msasub = sub {
+    my( $phone_avail, $value ) = @_;
+    my $msanum = $phone_avail->msa2msanum($value);
+    die "cannot translate MSA ($value) to msanum" unless $msanum;
+    $phone_avail->msanum($msanum);
+  };
+
   my $opt = { 'table'   => 'phone_avail',
               'params'  => [ 'availbatch', 'exportnum', 'countrycode', 'ordernum', 'vendor_order_id', 'confirmed' ],
               'formats' => { 'default' => [ 'state', $numsub, 'name' ],
-			     'bulk' => [ 'state', $numsub, 'name', 'rate_center_abbrev', 'msa', 'latanum' ],
-			   },
-	      'postinsert_callback' => sub {  
-		    my $record = shift;
-		    if($record->ordernum) {
-			my $did_order = qsearchs('did_order', 
-						{ 'ordernum' => $record->ordernum } );
-			if($did_order && !$did_order->received) {
-			    $did_order->received(time);
-			    $did_order->confirmed(parse_datetime($record->confirmed));
-			    $did_order->vendor_order_id($record->vendor_order_id);
-			    $did_order->replace;
-			}
-		    }
-		}, 
+                 'bulk' => [ 'state', $numsub, 'name', 'rate_center_abbrev', $msasub, 'latanum' ],
+               },
+               'postinsert_callback' => sub {  
+                    my $record = shift;
+                    if($record->ordernum) {
+                    my $did_order = qsearchs('did_order', 
+                                        { 'ordernum' => $record->ordernum } );
+                    if($did_order && !$did_order->received) {
+                        $did_order->received(time);
+                        $did_order->confirmed(parse_datetime($record->confirmed));
+                        $did_order->vendor_order_id($record->vendor_order_id);
+                        $did_order->replace;
+                    }
+                    }
+               }, 
             };
 
   FS::Record::process_batch_import( $job, $opt, @_ );
-
 }
 
 sub flush { # evil direct SQL
     my $opt = shift;
 
     if ( $opt->{'ratecenter'} =~ /^[\w\s]+$/
-	    && $opt->{'state'} =~ /^[A-Z][A-Z]$/ 
-	    && $opt->{'exportnum'} =~ /^\d+$/) {
-	my $sth = dbh->prepare('delete from phone_avail where exportnum = ? '.
-		    ' and state = ? and name = ?');
-	$sth->execute($opt->{'exportnum'},$opt->{'state'},$opt->{'ratecenter'})
-	    or die $sth->errstr;
+        && $opt->{'state'} =~ /^[A-Z][A-Z]$/ 
+        && $opt->{'exportnum'} =~ /^\d+$/) {
+    my $sth = dbh->prepare('delete from phone_avail where exportnum = ? '.
+            ' and state = ? and name = ?');
+    $sth->execute($opt->{'exportnum'},$opt->{'state'},$opt->{'ratecenter'})
+        or die $sth->errstr;
     }
 
     '';

@@ -107,9 +107,12 @@ sub check {
   $self->SUPER::check;
 }
 
-=back
+sub _upgrade_data {  #class method
+  my ($class, %opts) = @_;
+  eval "use FS::lata_Data;"; # this automatically does the upgrade if needed
+}
 
-=head1 BUGS
+=back
 
 =head1 SEE ALSO
 

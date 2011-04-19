@@ -107,6 +107,11 @@ sub check {
   $self->SUPER::check;
 }
 
+sub _upgrade_data {  #class method
+  my ($class, %opts) = @_;
+  eval "use FS::msa_Data;"; # this automatically does the upgrade if needed
+}
+
 =back
 
 =head1 SEE ALSO

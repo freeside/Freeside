@@ -184,6 +184,12 @@ sub upgrade_data {
 
     #insert scripcondition
     'TicketSystem' => [],
+    
+    #insert LATA data if not already present
+    'lata' => [],
+    
+    #insert MSA data if not already present
+    'msa' => [],
 
   ;
 
