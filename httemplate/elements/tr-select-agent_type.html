@@ -1,39 +1,27 @@
-% if ( scalar(@agent_types) == 1 ) { 
-
-  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'typenum' %>" VALUE="<% $agent_types[0]->typenum %>">
-
-% } else { 
+%#% if ( scalar(@agent_types) == 1 ) { 
+%#
+%#  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'typenum' %>" VALUE="<% $agent_types[0]->typenum %>">
+%#
+%#% } else { 
 
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Agent Type' %></TD>
     <TD>
       <% include( '/elements/select-agent_type.html',
                      'curr_value'  => $typenum,
-                     'agent_types' => \@agent_types,
                      %opt,
                  )
       %>
     </TD>
   </TR>
 
-% } 
+%#% } 
 
 <%init>
 
 my %opt = @_;
 my $typenum = $opt{'curr_value'} || $opt{'value'};
 
-my @agent_types = ();
-if ( $opt{'agent_types'} ) {
-  #@agents = @{ $opt{'agents'} };
-
-  #here is the agent virtualization
-#  my $agentnums_href = $FS::CurrentUser::CurrentUser->agentnums_href;
-#  @agent_types = grep $agentnums_href->{$_->agentnum}, @{ $opt{'agent_types'} };
-
-  delete $opt{'agent_types'};
-} else {
-#  @agents = $FS::CurrentUser::CurrentUser->agents;
-}
+delete $opt{'agent_types'} if $opt{'agent_types'}; #?
 
 </%init>
