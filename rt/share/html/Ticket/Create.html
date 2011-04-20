@@ -240,6 +240,7 @@
 <tr><td class="label"><&|/l&>Children</&></td><td><input size="10" name="MemberOf-new" value="<% $ARGS{'MemberOf-new'} || '' %>" /></td></tr>
 <tr><td class="label"><&|/l&>Refers to</&></td><td><input size="10" name="new-RefersTo" value="<% $ARGS{'new-RefersTo'} || '' %>" /></td></tr>
 <tr><td class="label"><&|/l&>Referred to by</&></td><td><input size="10" name="RefersTo-new" value="<% $ARGS{'RefersTo-new'} || '' %>" /></td></tr>
+<tr><td class="label">Customer ID</td><td><input size="10" name="new-Customer" value="<% $ARGS{'new-Customer'} || '' %>" /></td></tr>
 
 
 </table>
@@ -329,6 +330,16 @@ if ($CloneTicket) {
         $clone->{"Object-RT::Ticket--CustomField-$cf_id-Value"} = join "\n",
             @cf_values;
     }
+
+    # Pass customer links along (even though cloning of parent links
+    # in general is disabled).
+    my $customers = $CloneTicketObj->Customers;
+    my @customers;
+    while ( my $customer = $customers->Next ) {
+      my ($custnum) = $customer->Target =~ /cust_main\/(\d+)$/;
+      push @customers, $custnum if $custnum;
+    }
+    $clone->{'new-Customer'} = join(' ', @customers);
 
     for ( keys %$clone ) {
         $ARGS{$_} = $clone->{$_} if not defined $ARGS{$_};
@@ -423,7 +434,18 @@ $m->callback( CallbackName => 'BeforeCreate', ARGSRef => \%ARGS, skip_create => 
 
 if ((!exists $ARGS{'AddMoreAttach'}) and (defined($ARGS{'id'}) and $ARGS{'id'} eq 'new')) { # new ticket?
     if ( $ValidCFs && !$checks_failure && !$skip_create ) {
+# CREATE THE TICKET.
+# For some reason it's done by a Mason component named "Display.html"
+# and the call is buried in obscure error-handling stuff.
+# This comment exists to make it more visually obvious.
+# ************************************************************
+
         $m->comp('Display.html', %ARGS);
+
+# ************************************************************
+# Execution should not continue here.  Display.html calls 
+# Redirect() which does an $m->abort.  We only get here if the 
+# code dies before then, hence "$@".
         $RT::Logger->crit("After display call; error is $@");
         $m->abort();
     }

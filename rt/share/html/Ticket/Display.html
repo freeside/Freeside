@@ -104,6 +104,14 @@ unless ($id || $TicketObj) {
 if ($ARGS{'id'} eq 'new') {
     # {{{ Create a new ticket
 
+    # Massage customer IDs into member links.
+    my @cust_uris = map { 
+      /^(\d+)$/ && "freeside://freeside/cust_main/$1"
+    } split(' ', $ARGS{'new-Customer'});
+    
+    $ARGS{'new-MemberOf'} = 
+      join(' ', $ARGS{'new-MemberOf'}, @cust_uris);
+
     my $Queue = new RT::Queue( $session{'CurrentUser'} );
     $Queue->Load($ARGS{'Queue'});
     unless ( $Queue->id ) {
