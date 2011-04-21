@@ -65,11 +65,11 @@ $name = 'td_eft1464';
       'retacct',
       'cpacode',
     } = $conf->config("batchconfig-td_eft1464");
-    $opt{'origid'} = sprintf('%-10s', $opt{'origid'});
-    $opt{'shortname'} = sprintf('%-15s', $opt{'shortname'});
-    $opt{'longname'} = sprintf('%-30s', $opt{'longname'});
-    $opt{'retbranch'} = '0004'.sprintf('%5s',$opt{'retbranch'});
-    $opt{'retacct'} = sprintf('%-11s', $opt{'retacct'}). ' ';
+    $opt{'origid'} = sprintf('%-10.10s', $opt{'origid'});
+    $opt{'shortname'} = sprintf('%-15.15s', $opt{'shortname'});
+    $opt{'longname'} = sprintf('%-30.30s', $opt{'longname'});
+    $opt{'retbranch'} = '0004'.sprintf('%5.5s',$opt{'retbranch'});
+    $opt{'retacct'} = sprintf('%-11.11s', $opt{'retacct'}). ' ';
     $i = 1;
   },
   header => sub { 
@@ -115,17 +115,17 @@ $name = 'td_eft1464';
       sprintf('%010.0f', $cust_pay_batch->amount*100),
       $opt{'due'}, #due date...? XXX
       sprintf('%09u', $aba),
-      sprintf('%-12s', $account),
+      sprintf('%-12.12s', $account),
       '0' x 22,
       '0' x 3,
       $opt{'shortname'},
-      sprintf('%-30s', 
+      sprintf('%-30.30s', 
         join(' ',
           $cust_pay_batch->first, $cust_pay_batch->last)
       ),
       $opt{'longname'},
       $opt{'origid'},
-      sprintf('%-19s', $cust_pay_batch->paybatchnum), # originator reference num
+      sprintf('%-19.19s', $cust_pay_batch->paybatchnum), # originator reference num
       $opt{'retbranch'},
       $opt{'retacct'}, 
       ' ' x 15,
