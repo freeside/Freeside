@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Cron::upload;
+
+adminsuidsetup shift or die "usage: billco-upload username agentnum\n";
+my $agentnum = shift or die "usage: billco-upload username agentnum\n";
+
+FS::Cron::upload::billco_upload( 'agentnum' => $agentnum
+                                 'v' => 1,
+                                 'l' => 2,
+                               );
+
+1;
