@@ -97,8 +97,8 @@ sub billco_upload {
     or die "no username for agent $agentnum\n";
   my $password = $conf->config( 'billco-password', $agentnum, 1 )
     or die "no password for agent $agentnum\n";
-  my $clicode  = $conf->config( 'billco-clicode', $agentnum )
-    or die "no clicode for agent $agentnum\n";
+  my $clicode  = $conf->config( 'billco-clicode', $agentnum, 1 );
+    #or die "no clicode for agent $agentnum\n";
 
   die "no date provided\n" unless $opt{date};
   my $zipfile  = "$dir/agentnum$agentnum-$opt{date}.zip";
