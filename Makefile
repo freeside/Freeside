@@ -283,7 +283,12 @@ update-selfservice:
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
 	done
 
-install: install-perl-modules install-docs install-init install-apache install-rt install-torrus install-texmf
+install-chown:
+	chown freeside "${FREESIDE_CACHE}/counters.${DATASOURCE}"
+	chown freeside "${FREESIDE_CACHE}/cache.${DATASOURCE}"
+	chown freeside "${FREESIDE_EXPORT}/export.${DATASOURCE}"
+
+install: install-perl-modules install-docs install-init install-apache install-rt install-torrus install-texmf install-chown
 
 deploy: install
 	${HTTPD_RESTART}
