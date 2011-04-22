@@ -13,6 +13,7 @@ use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common;
 use HTTP::Response;
+use Net::FTP;
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw ( upload );
@@ -153,20 +154,44 @@ sub billco_upload {
   unlink "agentnum$agentnum-$opt{date}-header.csv",
          "agentnum$agentnum-$opt{date}-detail.csv";
 
-  my $ua = new LWP::UserAgent;
-  my $res = $ua->request( POST( $url,
-                                'Content_Type' => 'form-data',
-                                'Content' => [ 'username' => $username,
-                                               'pass'     => $password,
-                                               'custid'   => $username,
-                                               'clicode'  => $clicode,
-                                               'file1'    => [ $zipfile ],
-                                             ],
-                              )
-                        );
+  if ( $url =~ /^http/i ) {
 
-  die "upload failed: ". $res->status_line. "\n"
-    unless $res->is_success;
+    my $ua = new LWP::UserAgent;
+    my $res = $ua->request( POST( $url,
+                                  'Content_Type' => 'form-data',
+                                  'Content' => [ 'username' => $username,
+                                                 'pass'     => $password,
+                                                 'custid'   => $username,
+                                                 'clicode'  => $clicode,
+                                                 'file1'    => [ $zipfile ],
+                                               ],
+                                )
+                          );
+
+    die "upload failed: ". $res->status_line. "\n"
+      unless $res->is_success;
+
+  } elsif ( $url =~ /^ftp:\/\/([\w\.]+)(\/.*)$/i ) {
+
+    my($hostname, $path) = ($1, $2);
+
+    my $ftp = new Net::FTP($hostname)
+      or die "can't connect to $hostname: $@\n";
+    $ftp->login($username, $password)
+      or die "can't login to $hostname: ". $ftp->message."\n";
+    $ftp->cwd($path)
+      or die "can't cd $path on $hostname: ". $ftp->message. "\n";
+    $ftp->binary
+      or die "can't set binary mode on $hostname\n";
+
+    $ftp->put($zipfile)
+      or die "can't put $zipfile: ". $ftp->message. "\n";
+
+    $ftp->quit;
+
+  } else {
+    die "unknown scheme in URL $url\n";
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
