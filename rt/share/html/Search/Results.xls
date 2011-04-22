@@ -46,128 +46,82 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 <%ARGS>
-$Query => ''
+$Query => undef
 $OrderBy => 'id'
 $Order => 'ASC'
+$Format => undef
 </%ARGS>
 <%INIT>
 
 use Spreadsheet::WriteExcel;
+use List::Util qw( max );
+
+$r->content_type('application/vnd.ms-excel');
+$r->header_out('Content-Disposition' => 'attachment;filename="Results.xls"');
+
 my $xls;
 my $fh;
 open ($fh, ">",  \$xls) or die "$!";
 my $workbook = Spreadsheet::WriteExcel->new($fh) or die $!;
 my $worksheet = $workbook->add_worksheet();
 
-my $Tickets = RT::Tickets->new( $session{'CurrentUser'} );
-$Tickets->FromSQL( $Query );
-if ( $OrderBy =~ /\|/ ) {
-    # Multiple Sorts
-    my @OrderBy = split /\|/, $OrderBy;
-    my @Order   = split /\|/, $Order;
-    $Tickets->OrderByCols(
-        map { { FIELD => $OrderBy[$_], ORDER => $Order[$_] } }
-        ( 0 .. $#OrderBy )
-    );
-}
-else {
-    $Tickets->OrderBy( FIELD => $OrderBy, ORDER => $Order );
-}
-
-my %cf_id_to_name;
-my %cf_name_to_pos;
-{
-    my $cfs = RT::SQL::PossibleCustomFields(
-        Query => $Query, CurrentUser => $session{'CurrentUser'},
-    );
-    while ( my $cf = $cfs->Next ) {
-        my $name = $cf->Name;
-        $cf_id_to_name{ $cf->id } = $name;
-        next if $cf_name_to_pos{ $name };
-
-        $cf_name_to_pos{ $name } = 
-            (sort { $b <=> $a } values %cf_name_to_pos)[0] + 1;
-    }
-}
-
-my @attrs = qw(
-    id QueueObj->Name Subject Status
-    TimeEstimated TimeWorked TimeLeft
-    Priority FinalPriority
-    OwnerObj->Name 
-    Requestors->MemberEmailAddressesAsString
-    Cc->MemberEmailAddressesAsString
-    AdminCc->MemberEmailAddressesAsString
-    DueObj->ISO ToldObj->ISO CreatedObj->ISO
-    ResolvedObj->ISO LastUpdatedObj->ISO
+my $default_format = $workbook->add_format(
+    color   =>  'black',
+    size    =>  10,
+);
+my $title_format = $workbook->add_format(
+    color   => 'black',
+    size    => 10,
+    bold    => 1,
+    bg_color=> 'silver',
 );
 
-$r->content_type('application/vnd.ms-excel');
-$r->header_out('Content-Disposition' => 'attachment;filename="Results.xls"');
-{
-    my @header;
-    foreach my $attr (@attrs) {
-        my $label = $attr;
-        $label =~ s'Obj-.(?:AsString|Name|ISO)''g;
-        $label =~ s'-\>MemberEmailAddressesAsString''g;
-        push @header, $label;
-    }
+my @width;
+my $row = 1;
 
-    $_ += @header - 1 foreach values %cf_name_to_pos;
+my $WriteHeader = sub {
+    my @header = @_;
+    @width = ();
+    for ( my $item = 0; $item < scalar @header; $item++ ) {
+        my $title = $header[$item];
+        $worksheet->write(0, $item, $title, $title_format);
+        $width[$item] = 1.1 * length($title);
+    }
+};
 
-    foreach my $name ( sort { $cf_name_to_pos{$a} <=> $cf_name_to_pos{$b} } keys %cf_name_to_pos ) {
-        push @header, "CF-". $name;
+my $WriteRow = sub {
+    my @row = @_;
+    my $height = 0;
+    for ( my $item = 0; $item < scalar @row; $item++ ) {
+        my @lines = @{ $row[$item] };
+        # record row/column sizes
+        $height = max( $height, scalar(@lines) );
+        $width[$item] = max( $width[$item], map {length} @lines );
+        $worksheet->write($row, $item, join("\n", @lines), $default_format);
     }
-    my $ws_col = 0;
-    foreach my $ws_val ( @header ) {
-        $worksheet->write(0, $ws_col, $ws_val);
-        $ws_col++;
-    }
+    $worksheet->set_row($row, $height * 14);
+    $row++;
+};
+
+# Write everything to the worksheet
+$m->comp('Elements/ResultsStructuredView',
+          Query         => $Query,
+          OrderBy       => $OrderBy,
+          Order         => $Order,
+          Format        => $Format,
+          WriteHeader   => $WriteHeader,
+          WriteRow      => $WriteRow,
+);
+
+# Set column widths
+for( my $item = 0; $item < scalar @width; $item++ ) {
+    $worksheet->set_column($item, $item, $width[$item]);
 }
 
-my $i = 0;
-my $ws_row = 1;
-while ( my $Ticket = $Tickets->Next()) {
-    my @row;
-    foreach my $attr (@attrs) {
-        my $value;
-        if ($attr =~ /(.*)->ISO$/ and $Ticket->$1->Unix <= 0) {
-            $value = '';
-        } else {
-            my $method = '$Ticket->'.$attr.'()';
-            $method =~ s/->ISO\(\)$/->ISO( Timezone => 'user' )/;
-            $value = eval $method;
-            if ($@) {die "Failed to find $attr - ". $@}; 
-        }
-        push @row, $value;
-    }
-
-    my $values = $Ticket->CustomFieldValues;
-    $values->OrderByCols; # don't sort them
-    while (my $value = $values->Next) {
-        my $pos = $cf_name_to_pos{ $cf_id_to_name{ $value->CustomField } };
-        next unless $pos;
-
-        $row[$pos] = '' unless defined $row[$pos];
-        $row[$pos] .= ', ' if $row[$pos];
-        $row[$pos] .= $value->Content;
-    }
-
-    my $ws_col = 0;
-    foreach my $ws_val ( @row ) {
-        $worksheet->write($ws_row, $ws_col, $ws_val);
-        $ws_col++;
-    }
-    $ws_row++;
-
-    unless (++$i%10) {
-        $i = 0;
-        $m->flush_buffer;
-    }
-}
-
+# and then write everything out.
 $workbook->close;
 close($fh);
 $m->print($xls);
 $m->abort();
+
 </%INIT>

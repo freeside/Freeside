@@ -1,40 +1,40 @@
 %# BEGIN BPS TAGGED BLOCK {{{
-%#
+%# 
 %# COPYRIGHT:
-%#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
-%#                                          <sales@bestpractical.com>
-%#
+%# 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
+%#                                          <jesse@bestpractical.com>
+%# 
 %# (Except where explicitly superseded by other copyright notices)
-%#
-%#
+%# 
+%# 
 %# LICENSE:
-%#
+%# 
 %# This work is made available to you under the terms of Version 2 of
 %# the GNU General Public License. A copy of that license should have
 %# been provided with this software, but in any event can be snarfed
 %# from www.gnu.org.
-%#
+%# 
 %# This work is distributed in the hope that it will be useful, but
 %# WITHOUT ANY WARRANTY; without even the implied warranty of
 %# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %# General Public License for more details.
-%#
+%# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
 %# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 %# 02110-1301 or visit their web page on the internet at
 %# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
-%#
-%#
+%# 
+%# 
 %# CONTRIBUTION SUBMISSION POLICY:
-%#
+%# 
 %# (The following paragraph is not intended to limit the rights granted
 %# to you to modify and distribute this software under the terms of
 %# the GNU General Public License and is only of importance to you if
 %# you choose to contribute your changes and enhancements to the
 %# community by submitting them to Best Practical Solutions, LLC.)
-%#
+%# 
 %# By intentionally submitting any modifications, corrections or
 %# derivatives to this work, or any other work intended for use with
 %# Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,130 +43,47 @@
 %# royalty-free, perpetual, license to use, copy, create derivative
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
-%#
+%# 
 %# END BPS TAGGED BLOCK }}}
 <%ARGS>
-$Query => ''
+$Query => undef
 $OrderBy => 'id'
 $Order => 'ASC'
+$Format => undef
 </%ARGS>
 <%INIT>
 
-eval "use Text::CSV_XS";
-if ( $@ ) {
-  $m->comp('/Error', Why => "Error loading Text::CSV_XS.\n$@");
-  $m->abort;
-  return;
-}
-
-my $csv = Text::CSV_XS->new( { eol => "\n" } );
-
-my $Tickets = RT::Tickets->new( $session{'CurrentUser'} );
-$Tickets->FromSQL( $Query );
-if ( $OrderBy =~ /\|/ ) {
-    # Multiple Sorts
-    my @OrderBy = split /\|/, $OrderBy;
-    my @Order   = split /\|/, $Order;
-    $Tickets->OrderByCols(
-        map { { FIELD => $OrderBy[$_], ORDER => $Order[$_] } }
-        ( 0 .. $#OrderBy )
-    );
-}
-else {
-    $Tickets->OrderBy( FIELD => $OrderBy, ORDER => $Order );
-}
-
-my %cf_id_to_name;
-my %cf_name_to_pos;
-{
-    my $cfs = RT::SQL::PossibleCustomFields(
-        Query => $Query, CurrentUser => $session{'CurrentUser'},
-    );
-    while ( my $cf = $cfs->Next ) {
-        my $name = $cf->Name;
-        $cf_id_to_name{ $cf->id } = $name;
-        next if $cf_name_to_pos{ $name };
-
-        $cf_name_to_pos{ $name } = 
-            (sort { $b <=> $a } values %cf_name_to_pos)[0] + 1;
-    }
-}
-
-my @attrs = qw(
-    id QueueObj->Name Subject Status
-    TimeEstimated TimeWorked TimeLeft
-    Priority FinalPriority
-    OwnerObj->Name 
-    Requestors->MemberEmailAddressesAsString
-    Cc->MemberEmailAddressesAsString
-    AdminCc->MemberEmailAddressesAsString
-    DueObj->ISO ToldObj->ISO CreatedObj->ISO
-    ResolvedObj->ISO LastUpdatedObj->ISO LastUpdatedByObj->Name
-);
+use Text::CSV_XS; #does anyone not have this?
 
 $r->content_type('text/csv');
 $r->header_out('Content-Disposition' => 'attachment;filename="Results.csv"');
-{
-    my @header;
-    foreach my $attr (@attrs) {
-        my $label = $attr;
-        $label =~ s'Obj-.(?:AsString|Name|ISO)''g;
-        $label =~ s'-\>MemberEmailAddressesAsString''g;
-        push @header, $label;
-    }
 
-    $_ += @header - 1 foreach values %cf_name_to_pos;
+my $csv = Text::CSV_XS->new( { eol => "\n" } );
 
-    foreach my $name ( sort { $cf_name_to_pos{$a} <=> $cf_name_to_pos{$b} } keys %cf_name_to_pos ) {
-        push @header, "CF-". $name;
-    }
+my $WriteHeader = sub {
+    my @header = @_;
     $csv->combine(@header);
-    $m->out($csv->string());
-    $m->flush_buffer;
-}
+    $m->out($csv->string);
+};
 
-my $i = 0;
-while ( my $Ticket = $Tickets->Next()) {
-    my @row;
-    foreach my $attr (@attrs) {
-        my $value;
-        if ($attr =~ /(.*)->ISO$/ and $Ticket->$1->Unix <= 0) {
-            $value = '';
-        } else {
-            my $method = '$Ticket->'.$attr.'()';
-            $method =~ s/->ISO\(\)$/->ISO( Timezone => 'user' )/;
-            $value = eval $method;
-            if ($@) {die "Failed to find $attr - ". $@}; 
-        }
-        push @row, $value;
-    }
+my $WriteRow = sub {
+    my @row = @_;
+    $csv->combine(
+        map { join('; ', @$_) } @row
+    );
+    $m->out($csv->string);
+};
 
-    my $values = $Ticket->CustomFieldValues;
-    $values->OrderByCols; # don't sort them
-    while (my $value = $values->Next) {
-        my $pos = $cf_name_to_pos{ $cf_id_to_name{ $value->CustomField } };
-        next unless $pos;
+$m->comp('Elements/ResultsStructuredView',
+          Query         => $Query,
+          OrderBy       => $OrderBy,
+          Order         => $Order,
+          Format        => $Format,
+          WriteHeader   => $WriteHeader,
+          WriteRow      => $WriteRow,
+);
 
-        $row[$pos] = '' unless defined $row[$pos];
-        $row[$pos] .= ', ' if $row[$pos];
-        $row[$pos] .= $value->Content;
-    }
-
-    # remove tabs from all field values, they screw up the tsv
-    for (@row) {
-        $_ = '' unless defined;
-        $_ =~ s/(?:\n|\r)//g;
-        $_ =~ s{\t}{    }g;
-    }
-
-    $csv->combine(@row);
-    $m->out($csv->string());
-
-    unless (++$i%10) {
-        $i = 0;
-        $m->flush_buffer;
-    }
-}
-
+$m->flush_buffer;
 $m->abort();
+
 </%INIT>
