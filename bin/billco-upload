@@ -7,6 +7,7 @@ adminsuidsetup shift or die "usage: billco-upload username agentnum\n";
 my $agentnum = shift or die "usage: billco-upload username agentnum\n";
 
 FS::Cron::upload::billco_upload( 'agentnum' => $agentnum,
+                                 'date' => time,
                                  'v' => 1,
                                  'l' => 2,
                                );
