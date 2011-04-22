@@ -47,6 +47,7 @@
 %# END BPS TAGGED BLOCK }}}
 <ul>
 % while (my $link = $member_of->Next) {
+% next if $link->Target and $link->Target =~ m(^freeside://);
 <li><& /Elements/ShowLink, URI => $link->TargetURI &><br />
 % }
 </ul>

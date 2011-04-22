@@ -73,6 +73,7 @@
     <td class="labeltop"><& ShowRelationLabel, id => $id, Label => loc('Parents'), Relation => 'Parents' &>:</td>
     <td class="value">
 % while (my $link = $Object->MemberOf->Next) {
+%   next if $link->Target and $link->Target =~ m(^freeside://);
       <input type="checkbox" class="checkbox" name="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1" />
         <& ShowLink, URI => $link->TargetURI &><br />
 % }
