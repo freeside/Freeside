@@ -141,10 +141,8 @@ while ( my $Ticket = $Tickets->Next()) {
                 $ColumnMap->{$col}{'value'},
                 Arguments => [ $Ticket, $row ],
             );
-            use DDS;
         } #foreach $subcol
-            warn Dump(\@out);
-        $value .= join('', @out);
+        $value = join('', '<span>', @out, '</span>');
         # strip out all HTML except line breaks
         my $tree = HTML::TreeBuilder->new->parse($value);
         my $text = $plaintext->format($tree);
