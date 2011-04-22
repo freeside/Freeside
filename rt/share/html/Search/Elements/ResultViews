@@ -62,6 +62,7 @@ $ShortQueryString => undef
 <li><a href="<%RT->Config->Get('WebPath')%>/Tools/Offline.html<%$ShortQueryString%>"><&|/l&>Editable text</&></a></li>
 <li><a href="<%RT->Config->Get('WebPath')%>/Search/Results.tsv<%$QueryString%>"><&|/l&>TSV</&></a></li>
 <li><a href="<%RT->Config->Get('WebPath')%>/Search/Results.csv<%$QueryString%>"><&|/l&>CSV</&></a></li>
+<li><a href="<%RT->Config->Get('WebPath')%>/Search/Results.xls<%$QueryString%>"><&|/l&>XLS</&></a></li>
 % # Now let callbacks add their extra tools
 % $m->callback( %ARGS, CallbackName => 'AfterTools' );
 </ul>
