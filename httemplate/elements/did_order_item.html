@@ -14,6 +14,7 @@
                  SIZE  = "3"
                  VALUE = "<% scalar($cgi->param($name."_quantity"))
                              || $value |h %>"
+                 <% $onchange %>
           >
           <BR><FONT SIZE="-1">Quantity</FONT>
       </TD>
@@ -26,6 +27,7 @@
                  SIZE  = "3"
                  VALUE = "<% scalar($cgi->param($name."_npa"))
                              || $value |h %>"
+                 <% $onchange %>
           >
           <BR><FONT SIZE="-1">NPA</FONT>
       </TD>
@@ -108,6 +110,15 @@ my $name = $opt{'element_name'} || $opt{'field'} || 'orderitemnum';
 my $id = $opt{'id'} || 'orderitemnum';
 
 my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+ $onchange = 'onChange="'. $onchange. '"';
+}
 
 my $item;
 if ( $curr_value ) {

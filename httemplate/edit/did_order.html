@@ -44,6 +44,7 @@
               'name' => 'Bulk DID Order',
               'field_callback' => $field_callback,
               'html_bottom' => $javascript,
+              'body_etc'        => 'onLoad="stockcust_changed()"',
            )
 %>
 <%init>
@@ -109,7 +110,6 @@ my $javascript = <<END;
                 custnum_select.disabled = false;
             }
             custnum.value = '';
-            custnum_search.value = '';
         }
 
         /* o2m or something else is broken, can't put this in the actual

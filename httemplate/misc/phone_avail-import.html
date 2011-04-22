@@ -45,6 +45,16 @@ Import a file containing phone numbers (DIDs).
     <TD><% $format %><INPUT TYPE="hidden" NAME="format" VALUE="<% $format %>"></TD>
   </TR>
 
+% if ( scalar(@exports) == 1 ) { 
+%   my $export = $exports[0];
+    <TR>
+        <TD>Export</TD>
+        <TD>
+            <INPUT TYPE="hidden" name="exportnum" value="<%$export->exportnum%>">
+            <% $export->exportname %>
+        </TD>
+    </TR>
+% } else {
   <% include( '/elements/tr-select-table.html',
                 'table'       => 'part_export',
                 'name_col'    => 'label',
@@ -55,6 +65,7 @@ Import a file containing phone numbers (DIDs).
                 #'label_callback' => 
             )
   %>
+% }
 
   <TR>
     <TH ALIGN="right">Country code</TH>
@@ -145,5 +156,7 @@ if ( $order ) {
 
 my $availbatch =
   time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
+                
+my @exports = qsearch('part_export', { 'exporttype' => 'internal_diddb', });
 
 </%init>
