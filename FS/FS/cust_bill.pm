@@ -2866,7 +2866,7 @@ sub print_generic {
     }
 
   }
-
+  
   if ( @pr_cust_bill && !$conf->exists('disable_previous_balance') ) {
     push @buf, ['','-----------'];
     push @buf, [ 'Total Previous Balance',
@@ -2879,7 +2879,7 @@ sub print_generic {
         if $DEBUG > 1;
 
       my ($didsummary,$minutes) = $self->_did_summary;
-      my $didsummary_desc = 'DID Activity Summary (Past 30 days)';
+      my $didsummary_desc = 'DID Activity Summary (since last invoice)';
       push @detail_items, 
 	{ 'description' => $didsummary_desc,
 	    'ext_description' => [ $didsummary, $minutes ],
@@ -3697,7 +3697,7 @@ sub _items_sections {
                     }
                   } @sections;
   push @early, @$extra_sections if $extra_sections;
- 
+
   sort { $a->{sort_weight} <=> $b->{sort_weight} } @early;
 
 }
@@ -4062,7 +4062,10 @@ sub _items_extra_usage_sections {
 sub _did_summary {
     my $self = shift;
     my $end = $self->_date;
-    my $start = $end - 2592000; # 30 days
+    my @cust_bill = sort { $a->_date <=> $b->_date }
+        grep { $_->_date < $self->_date }
+          qsearch( 'cust_bill', { 'custnum' => $self->custnum } );
+    my $start = $cust_bill[-1]->_date+1; # since last invoice
     my $cust_main = $self->cust_main;
     my @pkgs = $cust_main->all_pkgs;
     my($num_activated,$num_deactivated,$num_portedin,$num_portedout,$minutes)
