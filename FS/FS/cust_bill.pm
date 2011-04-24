@@ -4062,10 +4062,12 @@ sub _items_extra_usage_sections {
 sub _did_summary {
     my $self = shift;
     my $end = $self->_date;
-    my @cust_bill = sort { $a->_date <=> $b->_date }
-        grep { $_->_date < $self->_date }
-          qsearch( 'cust_bill', { 'custnum' => $self->custnum } );
-    my $start = $cust_bill[-1]->_date+1; # since last invoice
+
+    # start at date of previous invoice + 1 second or 0 if no previous invoice
+    my $start = $self->scalar_sql("SELECT max(_date) FROM cust_bill WHERE custnum = ? and invnum != ?",$self->custnum,$self->invnum);
+    $start = 0 if !$start;
+    $start++;
+
     my $cust_main = $self->cust_main;
     my @pkgs = $cust_main->all_pkgs;
     my($num_activated,$num_deactivated,$num_portedin,$num_portedout,$minutes)
