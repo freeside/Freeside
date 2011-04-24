@@ -681,6 +681,13 @@ my %payment_gateway_options = (
     'description' => 'Display a barcode on HTML and PDF invoices',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'cust_main-select-billday',
+    'section'     => 'billing',
+    'description' => 'When used with a specific billing event, allows the selection of the day of month on which to charge credit card / bank account automatically, on a per-customer basis',
+    'type'        => 'checkbox',
+  },
 
   {
     'key'         => 'encryption',

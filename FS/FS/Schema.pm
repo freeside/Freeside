@@ -871,6 +871,7 @@ sub tables_hashref {
         'archived', 'char', 'NULL', 1, '', '',
         'email_csv_cdr', 'char', 'NULL', 1, '', '',
         'accountcode_cdr', 'char', 'NULL', 1, '', '',
+        'billday',   'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],

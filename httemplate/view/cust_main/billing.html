@@ -23,6 +23,15 @@ Billing information
   <TD BGCOLOR="#ffffff"><B><% $balance %></B></TD>
 </TR>
 
+% if ( $conf->exists('cust_main-select-billday') 
+%    && ($cust_main->payby eq 'CARD' || $cust_main->payby eq 'CHEK') ) {
+<TR>
+  <TD ALIGN="right">Billing day of month</TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->billday %>
+  </TD>
+</TR>
+% }
+
 <TR>
   <TD ALIGN="right">Billing&nbsp;type</TD>
   <TD BGCOLOR="#ffffff">
