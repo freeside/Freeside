@@ -11,7 +11,8 @@ use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
 use FS::torrus_srvderive;
 
 our $DEBUG = 2;
-our $max_kids = 3;
+our $max_kids = 6;
+our $search_timeout = 30*60; # 15*60 5*60; #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
 our %kids;
 
 my $user = shift or die &usage;
@@ -149,7 +150,7 @@ while (1) {
 
       eval {
         my $h = set_sig_handler( 'ALRM', sub { die "_timeout\n"; } );
-        alarm(15*60); #5*60); #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
+        alarm($search_timeout);
         $sth->execute($serviceid, $serviceid) or die $sth->errstr;
         alarm(0);
       };
