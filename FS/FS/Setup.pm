@@ -62,7 +62,7 @@ sub create_initial_data {
 
 }
 
-sub pouplate_numbering {
+sub populate_numbering {
   eval "use FS::lata_Data;"; # this automatically populates the lata table, if unpopulated
   eval "use FS::msa_Data;"; # this automatically populates the msa table, if unpopulated
 }
