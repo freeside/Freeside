@@ -52,6 +52,7 @@ sub freeside_setup {
 
       package HTML::Mason::Commands;
       use vars qw( $cgi $p $fsurl );
+      use Encode;
       use FS::UID qw( cgisuidsetup );
       use FS::CGI qw( popurl rooturl );
 
@@ -70,6 +71,15 @@ sub freeside_setup {
       } else {
         die "unknown mode $mode";
       }
+
+    #
+    foreach my $param ( $cgi->param ) {
+      my @values = $cgi->param($param);
+      next if $cgi->uploadInfo($values[0]);
+      #warn $param;
+      @values = map decode(utf8=>$_), @values;
+      $cgi->param($param, @values);
+    }
     
   }
 

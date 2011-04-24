@@ -2002,7 +2002,7 @@ sub check {
   ) {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
-    $self->payname =~ /^([µ_0123456789aAáÁàÀâÂåÅäÄãÃªæÆbBcCçÇdDğĞeEéÉèÈêÊëËfFgGhHiIíÍìÌîÎïÏjJkKlLmMnNñÑoOóÓòÒôÔöÖõÕøØºpPqQrRsSßtTuUúÚùÙûÛüÜvVwWxXyYıİÿzZşŞ \,\.\-\'\&]+)$/
+    $self->payname =~ /^([\w \,\.\-\'\&]+)$/
       or return gettext('illegal_name'). " payname: ". $self->payname;
     $self->payname($1);
   }

@@ -124,11 +124,11 @@ sub forksuidsetup {
     if ($confcount) {
       $use_confcompat = 0;
     }else{
-      warn "NO CONFIGURATION RECORDS FOUND";
+      die "NO CONFIGURATION RECORDS FOUND";
     }
 
   } else {
-    warn "NO CONFIGURATION TABLE FOUND" unless $FS::Schema::setup_hack;
+    die "NO CONFIGURATION TABLE FOUND" unless $FS::Schema::setup_hack;
   }
 
   unless ( $callback_hack ) {
@@ -153,6 +153,8 @@ sub myconnect {
   my $handle = DBI->connect( getsecrets(@_), { 'AutoCommit'         => 0,
                                                'ChopBlanks'         => 1,
                                                'ShowErrorStatement' => 1,
+                                               'pg_enable_utf8'     => 1,
+                                               #'mysql_enable_utf8'  => 1,
                                              }
                            )
     or die "DBI->connect error: $DBI::errstr\n";
