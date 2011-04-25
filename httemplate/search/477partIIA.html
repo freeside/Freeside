@@ -22,9 +22,10 @@ die "access denied"
 my $html_init = '<H2>Part IIA</H2>';
 my %search_hash = ();
   
-for ( qw(agentnum magic classnum) ) {
+for ( qw(agentnum magic) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+$search_hash{'classnum'} = [ $cgi->param('classnum') ];
 
 my @row_option = grep { /^\d+$/ } $cgi->param('part2a_row_option')
   if $cgi->param('part2a_row_option');

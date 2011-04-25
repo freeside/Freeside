@@ -81,7 +81,18 @@ die "access denied"
 my %part = map { $_ => 1 } grep { /^\w+$/ } $cgi->param('part');
 my $type = $cgi->param('_type') || 'html';
 my $xlsname = '477report';
-my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi);
+my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi,1);
+
+# save upload and download mappings
+my @download = $cgi->param('part1_column_option');
+my @upload = $cgi->param('part1_row_option');
+for(my $i=0; $i < scalar(@download); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part1_column_option_$i",$download[$i]);
+}
+for(my $i=0; $i < scalar(@upload); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part1_row_option_$i",$upload[$i]);
+}
+
 my $url_mangler = sub {
   my $part = shift;
   my $url = $cgi->url('-path_info' => 1, '-full' => 1);

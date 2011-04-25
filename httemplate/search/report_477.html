@@ -18,7 +18,7 @@
     %>
 
     <% include( '/elements/tr-select-pkg_class.html',
-                   'pre_options' => [ '0' => 'all' ],
+                   'multiple'       => 1,
                    'empty_label' => '(empty class)',
                )
     %>
@@ -46,6 +46,7 @@
     <TR id='partIA' style="display:none"><TD>Part IA</TD><TD><TABLE>
       <TR><TD>Download speeds</TD><TD>
         <TABLE>
+%       my $i = 0;
 %       foreach my $speed ( @FS::Report::FCC_477::download ) {
           <TR>
             <TH><% $speed %></TH>
@@ -56,14 +57,18 @@
                            'hashref'      => { 'disabled' => '' },
                            'element_name' => 'part1_column_option',
                            'disable_empty' => 1,
+                           'curr_value'   =>
+                                FS::Report::FCC_477::restore_fcc477map("part1_column_option_$i"),
                        )
             %>
             </TD>
           </TR>
+%       $i++
 %       }
         </TABLE></TD>
       <TD>Upload speeds</TD><TD>
         <TABLE>
+%       $i = 0;
 %       foreach my $speed ( @FS::Report::FCC_477::upload ) {
           <TR>
             <TH><% $speed %></TH>
@@ -74,15 +79,18 @@
                            'hashref'      => { 'disabled' => '' },
                            'element_name' => 'part1_row_option',
                            'disable_empty' => 1,
+                           'curr_value'   =>
+                                FS::Report::FCC_477::restore_fcc477map("part1_row_option_$i"),
                        )
             %>
             </TD>
           </TR>
+%       $i++
 %       }
         </TABLE></TD></TR>
       <TR><TD>Technologies</TD><TD>
         <TABLE>
-%       my $i = 0;
+%       $i = 0;
 %       foreach my $tech ( @FS::Report::FCC_477::technology ) {
           <TR>
             <TH><% $tech %></TH>
@@ -93,6 +101,8 @@
                            'hashref'      => { 'disabled' => '' },
                            'element_name' => "part1_technology_option_$i",
                            'empty_label'  => '(omit)',
+                           'curr_value'   =>
+                                FS::Report::FCC_477::restore_fcc477map("part1_technology_option_$i"),
                        )
             %>
             </TD>

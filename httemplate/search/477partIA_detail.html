@@ -23,9 +23,11 @@ die "access denied"
 my %opt = @_;
 my %search_hash = ();
   
-for ( qw(agentnum magic classnum) ) {
+for ( qw(agentnum magic) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+
+$search_hash{'classnum'} = [ $cgi->param('classnum') ];
 
 my @column_option = grep { /^\d+/ } $cgi->param('part1_column_option')
   if $cgi->param('part1_column_option');

@@ -26,9 +26,10 @@ my %search_hash = ();
 my @sql_query = ();
 my @count_query = ();
   
-for ( qw(agentnum magic classnum) ) {
+for ( qw(agentnum magic) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+$search_hash{'classnum'} = [ $cgi->param('classnum') ];
 
 my $sql_query = FS::cust_pkg->search( { %search_hash, 'fcc_line' > 1 });
 $sql_query->{select} = 'DISTINCT zip';

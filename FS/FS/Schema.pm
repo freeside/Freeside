@@ -1406,6 +1406,16 @@ sub tables_hashref {
       'index' => [ ['batchnum'], ['invnum'], ['custnum'] ],
     },
 
+    'fcc477map' => {
+      'columns' => [
+        'formkey', 'varchar', '', '', '', '', 
+        'formvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'formkey',
+      'unique'      => [],
+      'index'       => [],
+    },
+
     'cust_pkg' => {
       'columns' => [
         'pkgnum',           'serial',     '', '', '', '', 
