@@ -1,8 +1,22 @@
 <%doc>
 tr-cust_svc - Short display of a customer service for use in view/cust_main.
 
-Formerly part of view/cust_main/packages/services.html, moved here for 
-cleanliness.
+Formerly part of view/cust_main/packages/services.html
+
+Usage:
+
+  <% include('/elements/tr-cust_svc.html',
+                #required
+                'part_svc' => $part_svc,
+                'cust_svc' => $cust_svc,
+                'cust_pkg' => $cust_pkg,
+                #optional
+                'cust_pkg-display_times'    => '', #bool
+                'svc_broadband-manage_link' => '',
+                'maestro-status_test'       => '',
+            )
+  %>
+
 </%doc>
 <TR>
   <TD ALIGN="right" VALIGN="top"><% 
@@ -46,9 +60,10 @@ $cust_svc->overlimit )
       ) %>&nbsp;)</FONT>
 %   my $manage_link = $opt{'svc_broadband-manage_link'};
 %   if ( $manage_link ) {
-    <FONT SIZE="-1" STYLE="float:left">(&nbsp;<A HREF="<% 
-      eval(qq("$manage_link")) 
-    %>">Manage Device</A>&nbsp;)</FONT>
+%     my $ip_addr = $svc_x->ip_addr; #substitution for $manage_link
+      <FONT SIZE="-1" STYLE="float:left">(&nbsp;<A HREF="<% 
+        eval(qq("$manage_link")) 
+      %>">Manage Device</A>&nbsp;)</FONT>
 %   }
 % } #svc_broadband
 % if ( $curuser->access_right('Unprovision customer service') ) {
