@@ -846,13 +846,16 @@ sub _make_lines {
   {
     
     warn "    bill setup\n" if $DEBUG > 1;
-    $lineitems++;
 
-    $setup = eval { $cust_pkg->calc_setup( $time, \@details ) };
-    return "$@ running calc_setup for $cust_pkg\n"
-      if $@;
+    unless ( $cust_pkg->waive_setup ) {
+        $lineitems++;
 
-    $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+        $setup = eval { $cust_pkg->calc_setup( $time, \@details ) };
+        return "$@ running calc_setup for $cust_pkg\n"
+          if $@;
+
+        $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+    }
 
     $cust_pkg->setfield('setup', $time)
       unless $cust_pkg->setup;

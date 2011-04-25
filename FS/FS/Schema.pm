@@ -1443,6 +1443,7 @@ sub tables_hashref {
         'no_auto',            'char', 'NULL',  1, '', '', 
         'quantity',            'int', 'NULL', '', '', '',
         'agent_pkgid',         'int', 'NULL', '', '', '',
+        'waive_setup',        'char', 'NULL',  1, '', '', 
       ],
       'primary_key' => 'pkgnum',
       'unique' => [],

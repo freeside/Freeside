@@ -95,6 +95,7 @@ my $cust_pkg = new FS::cust_pkg {
                                 ? parse_datetime($cgi->param('contract_end'))
                                 : ''
                             ),
+   'waive_setup'         => ( $cgi->param('waive_setup') eq 'Y' ? 'Y' : '' ),
   #'discountnum_disabled' => scalar($cgi->param('discountnum_disabled')),
 };
 

@@ -64,6 +64,13 @@
   %>
 % }
 
+% if ( $curuser->access_right('Waive setup fee') ) {
+    <TR>
+      <TH ALIGN="right">Waive setup fee </TH>
+      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="waive_setup" VALUE="Y"></TD>
+    </TR>
+% }
+
 % if ( $conf->exists('pkg_referral') ) {
   <% include('/elements/tr-select-part_referral.html',
                'curr_value'    => scalar( $cgi->param('refnum') ), #get rid of empty_label first# || $cust_main->refnum,

@@ -194,6 +194,8 @@ Previous pkgpart
 
 Previous locationnum
 
+=item waive_setup
+
 =back
 
 Note: setup, last_bill, bill, adjourn, susp, expire, cancel and change_date
@@ -594,6 +596,7 @@ sub check {
     || $self->ut_numbern('adjourn')
     || $self->ut_numbern('expire')
     || $self->ut_enum('no_auto', [ '', 'Y' ])
+    || $self->ut_enum('waive_setup', [ '', 'Y' ])
     || $self->ut_numbern('agent_pkgid')
   ;
   return $error if $error;
