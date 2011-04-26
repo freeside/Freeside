@@ -2,7 +2,11 @@
 
 <% include('/elements/error.html') %>
 
-<FORM NAME="QualForm" ACTION="<% $p %>edit/process/qual.cgi" METHOD="POST">
+<FORM NAME     = "QualForm"
+      ACTION   = "<% $p %>edit/process/qual.cgi"
+      METHOD   = "POST"
+      onSubmit = "document.QualForm.submitButton.disabled=true;"
+>
 
 <INPUT TYPE="hidden" NAME="<%$cust_or_prospect%>num" VALUE="<% $custnum_or_prospectnum %>">
 
@@ -56,7 +60,11 @@
 </TABLE>
 
 <BR>
-<INPUT type="submit" VALUE="Qualify" onClick = "this.disabled=true;">
+<INPUT TYPE  = "submit"
+       NAME  = "submitButton"
+       ID    = "submitButton" 
+       VALUE = "Qualify"
+>
 
 </FORM>
 </BODY>
