@@ -541,6 +541,10 @@ my %export_names = (
     'name'           => 'Default plus accountcode',
     'invoice_header' => 'Date,Time,Account,Number,Destination,Duration,Price',
   },
+  'description_default' => {
+    'name'           => 'Default with description field as destination',
+    'invoice_header' => 'Caller,Date,Time,Number,Destination,Duration,Price',
+  },
 );
 
 my %export_formats = ();
@@ -626,8 +630,13 @@ sub export_formats {
       'accountcode',
       @{ $export_formats{'default'} }[2..5],
     ];
+  my @default = @{ $export_formats{'default'} };
+  $export_formats{'description_default'} = 
+    [ 'src', @default[0..2], 
+      sub { my($cdr, %opt) = @_; $cdr->description },
+      @default[4,5] ];
 
-  %export_formats
+  return %export_formats;
 }
 
 sub downstream_csv {
