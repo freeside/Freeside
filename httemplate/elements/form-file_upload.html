@@ -72,7 +72,7 @@ Example:
       ACTION   = "<% $fsurl %>misc/file-upload.html"
       METHOD   = "POST"
       ENCTYPE  = "multipart/form-data"
-      onSubmit = "return doUpload(this, <% $opt{key} %>gotUploaded)"
+      onSubmit = "<% $opt{onsubmit} %>return doUpload(this, <% $opt{key} %>gotUploaded)"
 >
 
 <%init>
@@ -89,5 +89,7 @@ my $msg_or_url = $opt{message}
                        'url'     => $opt{url},
                      }
                    : $opt{url};
+
+$opt{onsubmit} .= ';' if $opt{onsubmit} && $opt{onsubmit} !~ /;\s*$/;
 
 </%init>

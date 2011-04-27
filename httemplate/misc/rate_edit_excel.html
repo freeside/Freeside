@@ -4,15 +4,15 @@
   <FONT COLOR="#FF0000">WARNING: This functionality does not yet preserve connection charges.</FONT><BR><BR>
 % }
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'RateImportForm',
-              'action'    => 'process/rate_edit_excel.html',
-              'num_files' => 1,
-              'fields'    => [ 'format' ],
-              'message'   => 'Rate edit successful',
-              'url'       => $p."browse/rate_region.html",
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'RateImportForm',
+     'action'    => 'process/rate_edit_excel.html',
+     'num_files' => 1,
+     'fields'    => [ 'format' ],
+     'message'   => 'Rate edit successful',
+     'url'       => $p."browse/rate_region.html",
+     'onsubmit'  => "document.RateImportForm.submitButton.disabled=true;"
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -46,9 +46,9 @@
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
-             ID      = "submit"
+             ID      = "submitButton"
+             NAME    = "submitButton"
              VALUE   = "Upload"
-             onClick = "document.RateImportForm.submit.disabled=true;"
       >
     </TD>
   </TR>

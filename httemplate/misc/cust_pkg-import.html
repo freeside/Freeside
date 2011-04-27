@@ -3,15 +3,15 @@
 Import a file containing package records.
 <BR><BR>
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'PackageImportForm',
-              'action'    => 'process/cust_pkg-import.html',
-              'num_files' => 1,
-              'fields'    => [ 'agentnum', 'pkgbatch', 'format' ],
-              'message'   => 'Package import successful',
-              'url'       => $p."search/cust_pkg.cgi?pkgbatch=$pkgbatch",
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'PackageImportForm',
+     'action'    => 'process/cust_pkg-import.html',
+     'num_files' => 1,
+     'fields'    => [ 'agentnum', 'pkgbatch', 'format' ],
+     'message'   => 'Package import successful',
+     'url'       => $p."search/cust_pkg.cgi?pkgbatch=$pkgbatch",
+     'onsubmit'  => "document.PackageImportForm.submitButton.disabled=true;"
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -49,9 +49,9 @@ Import a file containing package records.
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
-             ID      = "submit"
+             NAME    = "submitButton"
+             ID      = "submitButton"
              VALUE   = "Import file"
-             onClick = "document.PackageImportForm.submit.disabled=true;"
       >
     </TD>
   </TR>

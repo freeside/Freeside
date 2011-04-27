@@ -1,14 +1,14 @@
 <% include("/elements/header.html",'Call Detail Record Import') %>
   
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'CDRImportForm',
-              'action'    => 'process/cdr-import.html',
-              'num_files' => 1,
-              'fields'    => [ 'format', 'cdrbatch', ],
-              'message'   => 'CDR import successful',
-              'url'       => $p."search/cdr.html?cdrbatch=$cdrbatch",
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'CDRImportForm',
+     'action'    => 'process/cdr-import.html',
+     'num_files' => 1,
+     'fields'    => [ 'format', 'cdrbatch', ],
+     'message'   => 'CDR import successful',
+     'url'       => $p."search/cdr.html?cdrbatch=$cdrbatch",
+     'onsubmit'  => "document.CDRImportForm.submitButton.disabled=true;",
+&>
 
 Import a file containing Call Detail Records (CDRs).<BR><BR>
 
@@ -36,9 +36,9 @@ Import a file containing Call Detail Records (CDRs).<BR><BR>
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
-             ID      = "submit"
+             ID      = "submitButton"
+             NAME    = "submitButton"
              VALUE   = "Import file"
-             onClick = "document.InventoryItemImportForm.submit.disabled=true;"
       >
     </TD>
   </TR>

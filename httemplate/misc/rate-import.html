@@ -1,14 +1,14 @@
 <% include("/elements/header.html",'Import Rate Plan') %>
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'RateImportForm',
-              'action '   => 'process/rate-import.html',
-              'num_files' => 1,
-              'fields'    => [ 'ratename' ],
-              'message'   => 'Rate plan import successful',
-#              'url'       => $p."browse/rate_detail.cgi?ratenum=$ratenum", #XXX how?
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'RateImportForm',
+     'action '   => 'process/rate-import.html',
+     'num_files' => 1,
+     'fields'    => [ 'ratename' ],
+     'message'   => 'Rate plan import successful',
+     #'url'       => $p."browse/rate_detail.cgi?ratenum=$ratenum", #XXX how?
+     'onsubmit'  => "document.RateImportForm.submitButton.disabled=true;",
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -28,9 +28,9 @@
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
-             ID      = "submit"
+             ID      = "submitButton"
+             NAME    = "submitButton"
              VALUE   = "Import rate plan"
-             onClick = "document.RateImportForm.submit.disabled=true;"
       >
     </TD>
   </TR>

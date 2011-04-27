@@ -3,14 +3,14 @@
 Import a CSV file set containing tax rate records.
 <BR><BR>
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'TaxRateUpload',
-              'action'    => 'process/tax-import.cgi', 
-              'num_files' => 6,
-              'fields'    => [ 'format', 'reload' ],
-              'message'   => 'Tax rates imported',
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'TaxRateUpload',
+     'action'    => 'process/tax-import.cgi', 
+     'num_files' => 6,
+     'fields'    => [ 'format', 'reload' ],
+     'message'   => 'Tax rates imported',
+     'onsubmit'  => "document.TaxRateUpload.submitButton.disabled=true;",
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -54,9 +54,10 @@ Import a CSV file set containing tax rate records.
 
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
-      <INPUT TYPE    = "submit"
-             VALUE   = "Import CSV files"
-             onClick = "document.TaxRateUpload.submit.disabled=true;"
+      <INPUT TYPE  = "submit"
+             NAME  = "submitButton"
+             ID    = "submitButton"
+             VALUE = "Import CSV files"
       >
     </TD>
   </TR>

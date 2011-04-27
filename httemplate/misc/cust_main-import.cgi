@@ -3,15 +3,15 @@
 Import a file containing customer records.
 <BR><BR>
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'CustomerImportForm',
-              'action'    => 'process/cust_main-import.cgi',
-              'num_files' => 1,
-              'fields'    => [ 'agentnum', 'custbatch', 'format' ],
-              'message'   => 'Customer import successful',
-              'url'       => $p."search/cust_main.html?custbatch=$custbatch",
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'CustomerImportForm',
+     'action'    => 'process/cust_main-import.cgi',
+     'num_files' => 1,
+     'fields'    => [ 'agentnum', 'custbatch', 'format' ],
+     'message'   => 'Customer import successful',
+     'url'       => $p."search/cust_main.html?custbatch=$custbatch",
+     'onsubmit'  => "document.CustomerImportForm.submitButton.disabled=true;",
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -69,9 +69,9 @@ Import a file containing customer records.
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
-             ID      = "submit"
+             NAME    = "submitButton"
+             ID      = "submitButton"
              VALUE   = "Import file"
-             onClick = "document.CustomerImportForm.submit.disabled=true;"
       >
     </TD>
   </TR>

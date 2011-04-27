@@ -3,18 +3,18 @@
 Import a file containing <% PL($inventory_class->classname) %>, one per line.
 <BR><BR>
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'InventoryItemImportForm',
-              'action'    => 'process/inventory_item-import.html',
-              'num_files' => 1,
-              #'fields'    => [ 'format', 'itembatch', 'classnum', 'agentnum' ],
-              'fields'    => [ 'format', 'classnum', 'agentnum', ],
-              'message'   => 'Inventory import successful',
-              #XXX redirect via $itembatch?  or just back to class browse?
-              #'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
-              'url'       => $p."search/inventory_item.html?classnum=$classnum;avail=1",
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'InventoryImportForm',
+     'action'    => 'process/inventory_item-import.html',
+     'num_files' => 1,
+     #'fields'    => [ 'format', 'itembatch', 'classnum', 'agentnum' ],
+     'fields'    => [ 'format', 'classnum', 'agentnum', ],
+     'message'   => 'Inventory import successful',
+     #XXX redirect via $itembatch?  or just back to class browse?
+     #'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
+     'url'       => $p."search/inventory_item.html?classnum=$classnum;avail=1",
+     'onsubmit'  => "document.InventoryImportForm.submitButton.disabled=true;",
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -37,10 +37,10 @@ Import a file containing <% PL($inventory_class->classname) %>, one per line.
 
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
-      <INPUT TYPE    = "submit"
-             ID      = "submit"
-             VALUE   = "Import file"
-             onClick = "document.InventoryItemImportForm.submit.disabled=true;"
+      <INPUT TYPE  = "submit"
+             NAME  = "submitButton"
+             ID    = "submitButton"
+             VALUE = "Import file"
       >
     </TD>
   </TR>

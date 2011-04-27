@@ -3,15 +3,15 @@
 Import a file containing phone device types, one per line.
 <BR><BR>
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'PartDeviceImportForm',
-              'action'    => 'process/part_device-import.html',
-              'num_files' => 1,
-              'fields'    => [ 'format', ], 
-              'message'   => 'Device type import successful',
-              'url'       => $p.'browse/part_device.html',
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'PartDeviceImportForm',
+     'action'    => 'process/part_device-import.html',
+     'num_files' => 1,
+     'fields'    => [ 'format', ], 
+     'message'   => 'Device type import successful',
+     'url'       => $p.'browse/part_device.html',
+     'onsubmit'  => "document.PartDeviceImportForm.submitButton.disabled=true;",
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -26,9 +26,9 @@ Import a file containing phone device types, one per line.
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
-             ID      = "submit"
+             ID      = "submitButton"
+             NAME    = "submitButton"
              VALUE   = "Import file"
-             onClick = "document.PartDeviceImportForm.submit.disabled=true;"
       >
     </TD>
   </TR>

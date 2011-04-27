@@ -3,15 +3,16 @@
 Import a file containing phone numbers (DIDs).
 <BR><BR>
 
-<% include( '/elements/form-file_upload.html',
-              'name'      => 'PhonenumImportForm',
-              'action'    => 'process/phone_avail-import.html',
-              'num_files' => 1,
-              'fields'    => [ 'format', 'availbatch', 'exportnum', 'countrycode', 'ordernum', 'confirmed', 'vendor_order_id' ],
-              'message'   => 'DID import successful',
-              'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
-          )
-%>
+<& /elements/form-file_upload.html,
+     'name'      => 'PhonenumImportForm',
+     'action'    => 'process/phone_avail-import.html',
+     'num_files' => 1,
+     'fields'    => [ 'format', 'availbatch', 'exportnum', 'countrycode',
+                      'ordernum', 'confirmed', 'vendor_order_id' ],
+     'message'   => 'DID import successful',
+     'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
+     'onsubmit'  => "document.PhonenumImportForm.submitButton.disabled=true;",
+&>
 
 <% &ntable("#cccccc", 2) %>
 
@@ -86,9 +87,9 @@ Import a file containing phone numbers (DIDs).
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
       <INPUT TYPE    = "submit"
-             ID      = "submit"
+             ID      = "submitButton"
+             NAME    = "submitButton"
              VALUE   = "Import file"
-             onClick = "document.PhonenumImportForm.submit.disabled=true;"
       >
     </TD>
   </TR>
