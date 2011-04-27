@@ -128,9 +128,10 @@ share/html/Callbacks/SearchCustomerFields/*
 share/html/Callbacks/RTx-Statistics/*
 share/html/RTx/Statistics/*
 
-share/html/Callbacks/Results-XLS/*
 share/html/Search/Results.xls
-lib/RT/Extension/SearchResults/XLS.pm
-
 share/html/Search/Results.csv
 share/html/Search/Elements/ResultViews
+
+lib/RT/Extension/MobileUI.pm
+share/html/Callbacks/RT-Extension-MobileUI/*
+share/html/m/*

@@ -1,0 +1,13 @@
+<%INIT>
+if ( defined($RT::Extension::MobileUI::VERSION)
+    and RT::Extension::MobileUI::MobileClient() ) {
+    RT::Interface::Web::Redirect(
+      RT->Config->Get('WebURL').'m/ticket/create?'.
+      $m->comp('/Elements/QueryString', %$ARGSRef),
+      );
+    $m->abort;
+}
+</%INIT>
+<%ARGS>
+$ARGSRef => {}
+</%ARGS>

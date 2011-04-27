@@ -1,0 +1,16 @@
+<%init>
+# avoid fatal errors if the extension isn't loaded
+if ( defined( $RT::Extension::MobileUI::VERSION )
+      and RT::Extension::MobileUI->MobileClient()) {
+    my $path = 'm';
+    if ( $ARGSRef->{'q'} ) {
+      $path = "m/tickets/search?q=". $m->interp->apply_escapes($ARGSRef->{'q'});
+    }
+    RT::Interface::Web::Redirect( RT->Config->Get('WebURL') . $path);
+} else { 
+return
+}
+</%init>
+<%ARGS>
+$ARGSRef => {}
+</%ARGS>

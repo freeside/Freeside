@@ -1,0 +1,14 @@
+<%INIT>
+return if $ARGSRef->{'NoRedirect'};
+if ( defined($RT::Extension::MobileUI::VERSION)
+    and RT::Extension::MobileUI::MobileClient()) {
+    my $id = $ARGSRef->{'id'} || ($TicketObj ? $TicketObj->id : undef);
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL').'m/ticket/show?id='.$id);
+    $m->abort;
+}
+</%INIT>
+
+<%ARGS>
+$TicketObj => undef
+$ARGSRef => {}
+</%ARGS>

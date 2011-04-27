@@ -28,10 +28,14 @@ Example:
     <META HTTP-Equiv="Cache-Control" Content="no-cache">
     <META HTTP-Equiv="Pragma" Content="no-cache">
     <META HTTP-Equiv="Expires" Content="0"> 
+% if ( $mobile ) {
+    <META NAME="viewport" content="width=device-width height=device-height user-scalable=yes">
+% }
 
     <% include('menu.html', 'freeside_baseurl' => $fsurl,
                             'position'         => $menu_position,
                             'nocss'            => $nocss,
+                            'mobile'           => $mobile,
               ) |n
     %>
 
@@ -67,6 +71,19 @@ Example:
 
       <TR>
 
+%       if ( $mobile ) {
+
+        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#cccccc">
+          <SCRIPT TYPE="text/javascript">
+            document.write(myBar.toString());
+          </SCRIPT>
+        </TD>
+        <TD STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079;width:auto" BGCOLOR="#cccccc">
+            <% include('searchbar-combined.html') |n %>
+        </TD>
+
+%       } else {
+
         <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
@@ -100,6 +117,7 @@ Example:
         <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
           <% include('searchbar-ticket.html') |n %>
         </TD>
+%       }
 
       </TR>
     </TABLE>
@@ -154,6 +172,9 @@ Example:
 
 my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
 my( $nobr, $nocss ) = ( 0, 0 );
+
+my $mobile;
+
 if ( ref($_[0]) ) {
   my $opt = shift;
   $title   = $opt->{title};
@@ -162,10 +183,18 @@ if ( ref($_[0]) ) {
   $head    = $opt->{head};
   $nobr    = $opt->{nobr};
   $nocss   = $opt->{nocss};
+  $mobile  = $opt->{mobile};
 } else {
   ($title, $menubar) = ( shift, shift );
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
   $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+}
+
+if ( !defined($mobile) ) {
+  $mobile = FS::UI::Web::is_mobile();
+}
+if ( $cgi->param('mobile') =~ /^(\d)$/ ) { # allow client to override
+  $mobile = $1;
 }
 
 my $conf = new FS::Conf;
@@ -182,5 +211,4 @@ if ( scalar(@agentnums) == 1 ) {
 } else {
   $company_name = $conf->config('company_name');
 }
-
 </%init>

@@ -1,0 +1,51 @@
+<DIV STYLE="display:inline;
+            padding:3px 7px;
+            font-size:16px;
+            float:right;
+            border:1px solid #cccccc">
+Search
+<FORM ACTION="<%$fsurl%>search/searchbar.cgi" 
+      METHOD="GET" 
+      STYLE="margin:0; display:inline">
+  <SCRIPT TYPE="text/javascript">
+var hints=new Array(<% join(',', map {"'$hints{$_}'"} @searches) |n%>);
+function update_hint() {
+  var s = document.getElementById('search_for');
+  var q = document.getElementById('q');
+  q.value = hints[s.selectedIndex];
+}
+function clear_hint() {
+  var s = document.getElementById('search_for');
+  var q = document.getElementById('q');
+  if ( q.value == hints[s.selectedIndex] ) {
+    q.value = '';
+  }
+}
+  </SCRIPT>
+  <SELECT NAME="search_for" id="search_for" STYLE="width:auto" onchange="update_hint()">
+% foreach (@searches) {
+    <OPTION NAME="<% $_ %>"><% $_ %></OPTION>
+% }
+  </SELECT>
+  <INPUT NAME="q" ID="q" TYPE="text" STYLE="width:140px" VALUE="<% $hints{$searches[0]} %>" onmousedown="clear_hint()">
+  <INPUT TYPE="submit" VALUE="Search" STYLE="width:auto">
+</FORM>
+</DIV>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+my @searches = ();
+push @searches, 'customers' if $curuser->access_right('List customers');
+push @searches, 'prospects' if $curuser->access_right('List prospects');
+push @searches, 'invoices'  if $curuser->access_right('View invoices');
+push @searches, 'services'  if $curuser->access_right('View customer services');
+push @searches, 'tickets'   if FS::Conf->new->exists('ticket_system');
+
+my %hints = (
+  'customers' => '(cust #, name, company)',
+  'prospects' => '(name, company, phone)',
+  'invoices'  => '(invoice #)',
+  'services'  => '(user, email, phone...)',
+  'tickets'   => '(ticket #, subject, email)',
+);
+
+</%init>

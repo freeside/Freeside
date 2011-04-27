@@ -41,7 +41,17 @@
 
   var myBar = new WebFXMenuBar;
 
-% foreach my $item ( keys %menu ) {
+% if ( $mobile ) {
+%   
+%   my( $subhtml, $submenuname ) = submenu(\%menu, 'Freeside');
+    <% $subhtml |n %>
+    myBar.add(new WebFXMenuButton("Freeside", 
+                                  null,
+                                  null,
+                                  <% $submenuname |n %>));
+% }
+% else {
+%   foreach my $item ( keys %menu ) {
 %
 %     my( $url_or_submenu, $tooltip ) = @{ $menu{$item} };
 %
@@ -59,8 +69,8 @@
           myBar.add(new WebFXMenuButton("<% $item %>", "<% $url_or_submenu %>", "<% $tooltip %>" ));
 
 %     }
-%
-% }
+%   } #foreach $item
+% } #if $mobile
 
   myBar.show( null, 'vertical' );
   myBar.width = 154;
@@ -71,6 +81,8 @@
 my( %opt ) = @_;
 my $conf = new FS::Conf;
 my $fsurl = $opt{'freeside_baseurl'};
+
+my $mobile = $opt{'mobile'} || 0;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -634,7 +646,7 @@ $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
   if keys %report_menu;
 $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
   if keys %tools_menu;
-$menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
+$menu{'Configuration'} = [ \%config_menu, 'Configuration and setup' ]
   if $curuser->access_right('Configuration')
   || $curuser->access_right('Edit package definitions')
   || $curuser->access_right('Edit global package definitions')

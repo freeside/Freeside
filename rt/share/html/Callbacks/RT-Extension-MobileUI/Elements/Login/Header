@@ -1,0 +1,12 @@
+<%init>
+if ( defined($RT::Extension::MobileUI::VERSION) 
+    and ( RT::Extension::MobileUI->MobileClient() ||
+          ($m->request_comp->path() =~ m{^/m(?:\/|$)})) {
+
+    $m->comp('/m/login',%ARGS);
+    $m->abort;
+} else {
+return;
+}
+
+</%init>

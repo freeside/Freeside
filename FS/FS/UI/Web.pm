@@ -484,6 +484,20 @@ sub cust_aligns {
   }
 }
 
+=item is_mobile
+
+Utility function to determine if the client is a mobile browser.
+
+=cut
+
+sub is_mobile {
+  my $ua = $ENV{'HTTP_USER_AGENT'} || '';
+  if ( $ua =~ /(?:hiptop|Blazer|Novarra|Vagabond|SonyEricsson|Symbian|NetFront|UP.Browser|UP.Link|Windows CE|MIDP|J2ME|DoCoMo|J-PHONE|PalmOS|PalmSource|iPhone|iPod|AvantGo|Nokia|Android|WebOS|S60|Opera Mini|Opera Mobi)/io ) {
+    return 1;
+  }
+  return 0;
+}
+    
 ###
 # begin JSRPC code...
 ###
