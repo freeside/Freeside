@@ -153,8 +153,9 @@ sub insert {
         'amount'     => (ref($detail) ? $detail->[2] : '' ),
         'classnum'   => (ref($detail) ? $detail->[3] : '' ),
         'phonenum'   => (ref($detail) ? $detail->[4] : '' ),
-        'duration'   => (ref($detail) ? $detail->[5] : '' ),
-        'regionname' => (ref($detail) ? $detail->[6] : '' ),
+        'accountcode' => (ref($detail) ? $detail->[5] : '' ),
+        'duration'   => (ref($detail) ? $detail->[6] : '' ),
+        'regionname' => (ref($detail) ? $detail->[7] : '' ),
       };
       $error = $cust_bill_pkg_detail->insert;
       if ( $error ) {

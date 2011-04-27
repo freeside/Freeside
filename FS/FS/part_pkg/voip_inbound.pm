@@ -270,6 +270,7 @@ sub calc_usage {
           $charge,
           $cdr->calltypenum, #classnum
           $self->phonenum,
+          $cdr->accountcode,
           $seconds,
           '', #regionname, not set for inbound calls
         ];

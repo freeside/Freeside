@@ -460,6 +460,20 @@
         %>
       </TD>
     </TR>
+
+% if ( $conf->exists('voip-cust_accountcode_cdr') ) { 
+       <TR>
+        <TD COLSPAN="2">
+            <INPUT TYPE="checkbox" 
+                   NAME="accountcode_cdr" 
+                   VALUE="Y" 
+                   <% $cust_main->accountcode_cdr eq "Y" ? 'CHECKED' : '' %>
+            > Breakdown CDRs by accountcode</TD>
+       </TR>
+% } else { 
+       <INPUT TYPE="hidden" NAME="accountcode_cdr" VALUE="<% $cust_main->accountcode_cdr %>">
+% }
+
     <TR>
       <TD ALIGN="right" WIDTH="200">Credit limit </TD>
       <TD WIDTH="408">

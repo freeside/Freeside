@@ -741,6 +741,7 @@ sub calc_usage {
                 $charge,
                 $classnum,
                 $phonenum,
+                $cdr->accountcode,
                 $seconds,
                 $regionname,
               ];
@@ -752,6 +753,7 @@ sub calc_usage {
                 $charge,
                 $classnum,
                 $phonenum,
+                $cdr->accountcode,
                 $seconds,
                 $regionname,
               ];

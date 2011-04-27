@@ -2908,6 +2908,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'voip-cust_accountcode_cdr',
+    'section'     => 'telephony',
+    'description' => 'Enable the per-customer option for CDR breakdown by accountcode.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'voip-cust_cdr_spools',
     'section'     => 'telephony',
     'description' => 'Enable the per-customer option for individual CDR spools.',

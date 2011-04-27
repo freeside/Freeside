@@ -238,6 +238,13 @@ Billing information
   </TR>
 % } 
 
+% if ( $conf->exists('voip-cust_accountcode_cdr') ) { 
+   <TR>
+     <TD ALIGN="right">Breakdown CDRs by accountcode</TD>
+     <TD BGCOLOR="#ffffff"><% $cust_main->accountcode_cdr ? 'yes' : 'no' %></TD>
+   </TR>
+% }
+
 % if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
   <TR>
     <TD ALIGN="right">Email&nbsp;CDRs&nbsp;as&nbsp;CSV</TD>

@@ -55,6 +55,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item phonenum -
 
+=item accountcode - accountcode
+
 =item detail - detail description
 
 =back
@@ -137,6 +139,7 @@ sub check {
     || $self->ut_enum('format', [ '', 'C' ] )
     || $self->ut_numbern('duration')
     || $self->ut_textn('regionname')
+    || $self->ut_textn('accountcode')
     || $self->ut_text('detail')
     || $self->ut_foreign_keyn('classnum', 'usage_class', 'classnum')
     || $self->$phonenum_check_method('phonenum')

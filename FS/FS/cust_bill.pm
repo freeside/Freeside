@@ -2829,6 +2829,9 @@ sub print_generic {
       push @{$late_sections}, @$phone_sections;
       push @detail_items, @$phone_lines;
     }
+    if ($conf->exists('voip-cust_accountcode_cdr') && $cust_main->accountcode_cdr) {
+        # XXX: do something not unlike _items_svc_phone_sections, except generate only one section
+    }
   }else{
     push @sections, { 'description' => '', 'subtotal' => '' };
   }
@@ -4700,7 +4703,6 @@ sub _items_cust_bill_pkg {
                 ext_description => \@d,
               };
             }
-
           }
 
         } # recurring or usage with recurring charge
