@@ -2830,7 +2830,10 @@ sub print_generic {
       push @detail_items, @$phone_lines;
     }
     if ($conf->exists('voip-cust_accountcode_cdr') && $cust_main->accountcode_cdr) {
-        # XXX: do something not unlike _items_svc_phone_sections, except generate only one section
+      my ($accountcode_section, $accountcode_lines) =
+        $self->_items_accountcode_cdr($escape_function_nonbsp,$format);
+      push @{$late_sections}, $accountcode_section;
+      push @detail_items, @$accountcode_lines;
     }
   }else{
     push @sections, { 'description' => '', 'subtotal' => '' };
@@ -4131,6 +4134,73 @@ sub _did_summary {
     ("Activated: $num_activated  Ported-In: $num_portedin  Deactivated: "
 	. "$num_deactivated  Ported-Out: $num_portedout ",
 	    "Total Minutes: $minutes");
+}
+
+sub _items_accountcode_cdr {
+    my $self = shift;
+    my $escape = shift;
+    my $format = shift;
+
+    my $section = { 'amount'        => 0,
+                    'calls'         => 0,
+                    'duration'      => 0,
+                    'sort_weight'   => '',
+                    'phonenum'      => '',
+                    'description'   => 'Usage by Account Code',
+                    'post_total'    => '',
+                    'summarized'    => '',
+                    'total_generator' => sub { '' },
+                    'header'        => '',
+                  };
+    my @lines;
+    my %accountcodes = ();
+
+    foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+        next unless $cust_bill_pkg->pkgnum > 0;
+
+        my @header = $cust_bill_pkg->details_header;
+        next unless scalar(@header);
+        $section->{'header'} = join(',',@header);
+
+        foreach my $detail ( $cust_bill_pkg->cust_bill_pkg_detail ) {
+
+            $section->{'header'} = $detail->formatted('format' => $format)
+                if($detail->detail eq $section->{'header'}); 
+      
+            my $accountcode = $detail->accountcode;
+            next unless $accountcode;
+
+            my $amount = $detail->amount;
+            next unless $amount && $amount > 0;
+
+            $accountcodes{$accountcode} ||= {
+                    description => $accountcode,
+                    pkgnum      => '',
+                    ref         => '',
+                    amount      => 0,
+                    calls       => 0,
+                    duration    => 0,
+                    quantity    => '',
+                    product_code => 'N/A',
+                    section     => $section,
+                    ext_description => [],
+            };
+
+            $accountcodes{$accountcode}{'amount'} += $amount;
+            $accountcodes{$accountcode}{calls}++;
+            $accountcodes{$accountcode}{duration} += $detail->duration;
+            push @{$accountcodes{$accountcode}{ext_description}},
+                $detail->formatted('format' => $format);
+        }
+    }
+
+    foreach my $l ( values %accountcodes ) {
+        $l->{amount} = sprintf( "%.2f", $l->{amount} );
+        unshift @{$l->{ext_description}}, $section->{'header'};
+        push @lines, $l;
+    }
+
+    return ($section,\@lines);
 }
 
 sub _items_svc_phone_sections {
