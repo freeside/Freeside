@@ -21,6 +21,7 @@
                                { field => 'months', type => 'text', size => 2,
                                  postfix => '<BR><FONT SIZE="-1"><I>(blank for non-expiring discount)</I></FONT>',
                                },
+                               { field => 'setup', type => 'checkbox', value=>'Y', },
                              ],
                  'labels' => { 
                                'discountnum' => 'Discount #',
@@ -30,6 +31,7 @@
                                'amount'      => 'Amount&nbsp;',
                                'percent'     => 'Percentage&nbsp;',
                                'months'      => 'Duration (months)',
+                               'setup'       => 'Apply to setup fees',
                              },
                  'viewall_dir' => 'browse',
                  'new_callback' => $new_callback,

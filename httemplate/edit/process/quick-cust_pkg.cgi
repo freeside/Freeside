@@ -91,6 +91,7 @@ my $cust_pkg = new FS::cust_pkg {
   'discountnum_amount'   => scalar($cgi->param('discountnum_amount')),
   'discountnum_percent'  => scalar($cgi->param('discountnum_percent')),
   'discountnum_months'   => scalar($cgi->param('discountnum_months')),
+  'discountnum_setup'    => scalar($cgi->param('discountnum_setup')),
   'contract_end'         => ( scalar($cgi->param('contract_end'))
                                 ? parse_datetime($cgi->param('contract_end'))
                                 : ''

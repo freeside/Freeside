@@ -1534,6 +1534,7 @@ sub tables_hashref {
         'percent',    'decimal',     '',      '', '', '',
         'months',     'decimal', 'NULL',      '', '', '',
         'disabled',      'char', 'NULL',       1, '', '', 
+        'setup',      'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'discountnum',
       'unique' => [],

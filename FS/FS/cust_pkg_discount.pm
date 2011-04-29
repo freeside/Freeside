@@ -106,6 +106,7 @@ sub insert {
       'amount'   => $self->amount,
       'percent'  => $self->percent,
       'months'   => $self->months,
+      'setup'   => $self->setup,
       'disabled' => 'Y',
     };
     my $error = $discount->insert;

@@ -43,6 +43,8 @@ sub calc_discount {
 
   my $br = $self->base_recur($cust_pkg, $sdate);
   $br += $param->{'override_charges'} if $param->{'override_charges'};
+  
+  return 0 if defined $param->{'setup_charge'} && $param->{'setup_charge'} == 0;
 
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
@@ -90,9 +92,19 @@ sub calc_discount {
     ? min( $chg_months,
       $discount->months - $cust_pkg_discount->months_used )
     : $chg_months;
+    
+    if(defined $param->{'setup_charge'}) {
+        next unless $discount->setup;
+
+        if ( $discount->percent ) {
+            $amount = sprintf('%.2f', $discount->percent * $param->{'setup_charge'} / 100 );
+            $months = 1;
+        }
+    }
 
     my $error = $cust_pkg_discount->increment_months_used($months)
-    if $cust_pkg->pkgpart == $param->{real_pkgpart};
+        if ($cust_pkg->pkgpart == $param->{real_pkgpart} 
+            && ! defined $param->{'setup_charge'});
     die "error discounting: $error" if $error;
 
     $amount *= $months;
@@ -114,9 +126,9 @@ sub calc_discount {
     $months = sprintf('%.2f', $months) if $months =~ /\./;
 
     my $d = 'Includes ';
-    $d .= $discount->name. ' ' if $discount->name;
+    $d .= 'setup ' if defined $param->{'setup_charge'};
     $d .= 'discount of '. $discount->description_short;
-    $d .= " for $months month". ( $months!=1 ? 's' : '' );
+    $d .= " for $months month". ( $months!=1 ? 's' : '' ) unless defined $param->{'setup_charge'};
     $d .= ": $money_char$amount" if $months != 1 || $discount->percent;
     push @$details, $d;
 

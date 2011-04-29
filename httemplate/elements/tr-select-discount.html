@@ -64,6 +64,16 @@
            )
   %>
 
+  <% include( '/elements/tr-checkbox.html',
+                'label'     => '<B>Apply discount to setup fee</B>',
+                'field'     => $name.'_setup',
+                'id'        => $name.'_setup',
+                'curr_value' => scalar($cgi->param($name.'_setup')),
+                'value'     => 'Y',
+                'colspan'    => $opt{'colspan'},
+            )
+  %>
+
   <SCRIPT TYPE="text/javascript">
 
 %   my $ge = 'document.getElementById';
@@ -83,6 +93,10 @@
         <% $ge %>('<% $name %>_months').style.visibility = '';
         <% $ge %>('<% $name %>_months_postfix').style.display = '';
         <% $ge %>('<% $name %>_months_postfix').style.visibility = '';
+        <% $ge %>('<% $name %>_setup_label0').style.display = '';
+        <% $ge %>('<% $name %>_setup_label0').style.visibility = '';
+        <% $ge %>('<% $name %>_setup').style.display = '';
+        <% $ge %>('<% $name %>_setup').style.visibility = '';
       } else {
 
         <% $ge %>('<% $name %>__type_label0').style.display = 'none';
@@ -110,6 +124,11 @@
         <% $ge %>('<% $name %>_months').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_months_postfix').style.display = 'none';
         <% $ge %>('<% $name %>_months_postfix').style.visibility = 'hidden';
+        
+        <% $ge %>('<% $name %>_setup_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_setup_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_setup').style.display = 'none';
+        <% $ge %>('<% $name %>_setup').style.visibility = 'hidden';
 
       }
 

@@ -30,6 +30,7 @@ use FS::reason;
 use FS::cust_pkg_discount;
 use FS::discount;
 use FS::UI::Web;
+use Data::Dumper;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -1416,7 +1417,6 @@ sub change {
 
 }
 
-use Data::Dumper;
 use Storable 'thaw';
 use MIME::Base64;
 sub process_bulk_cust_pkg {
@@ -2608,6 +2608,7 @@ sub insert_discount {
     'amount'      => $self->discountnum_amount,
     'percent'     => $self->discountnum_percent,
     'months'      => $self->discountnum_months,
+    'setup'      => $self->discountnum_setup,
     #'disabled'    => $self->discountnum_disabled,
   };
 

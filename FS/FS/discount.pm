@@ -54,6 +54,11 @@ months
 
 disabled
 
+=item setup - apply discount to setup fee (not just to recurring fee)
+
+If the discount is based on a percentage, then the % will be applied to the
+setup and recurring portions. 
+
 =back
 
 =head1 METHODS
@@ -130,6 +135,7 @@ sub check {
     || $self->ut_float('percent') #actually decimal, but this will do
     || $self->ut_floatn('months') #actually decimal, but this will do
     || $self->ut_enum('disabled', [ '', 'Y' ])
+    || $self->ut_enum('setup', [ '', 'Y' ])
   ;
   return $error if $error;
 
@@ -176,6 +182,7 @@ sub description {
   my $self = shift;
   my $desc = $self->description_short;
   $desc .= ' for '. $self->months. ' months' if $self->months;
+  $desc .= ', applies to setup' if $self->setup;
   $desc;
 }
 

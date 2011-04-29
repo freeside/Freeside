@@ -106,7 +106,11 @@ sub calc_setup {
   my $quantity = $cust_pkg->quantity || 1;
 
   my $charge = $quantity * $self->unit_setup($cust_pkg, $sdate, $details);
-  sprintf('%.2f', $charge);
+
+  my $param = { 'setup_charge' => $charge };
+  my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+
+  sprintf('%.2f', $charge - $discount);
 }
 
 sub unit_setup {
