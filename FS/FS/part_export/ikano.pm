@@ -24,6 +24,7 @@ tie my %options, 'Tie::IxHash',
 		    default => 'ATT,BELLCA',
 		    },
   'debug' => { label => 'Debug Mode',  type => 'checkbox' },
+  'import' => { label => 'Import Mode',  type => 'checkbox' },
 ;
 
 %info = (
@@ -69,6 +70,11 @@ sub location_types_parse {
   );
 }
 
+sub import_mode {
+    my $self = shift;
+    $self->option('import');
+}
+
 sub dsl_pull {
 # we distinguish between invalid new data (return error) versus data that
 # has legitimately changed (may eventually execute hooks; now just update)
@@ -78,9 +84,19 @@ sub dsl_pull {
 # current assumptions of what won't change (from their side):
 # vendor_order_id, vendor_qual_id, vendor_order_type, pushed, monitored,
 # last_pull, address (from qual), contact info, ProductCustomId
-    my($self, $svc_dsl, $threshold) = (shift, shift, shift);
-    my $result = $self->valid_order($svc_dsl,'pull');
-    return $result unless $result eq '';
+    my($self, $svc_dsl, $threshold, $import) = (shift, shift, shift, shift);
+
+    return 'Invalid operation - Import Mode is enabled' 
+        if $self->import_mode && !$import;
+
+    return 'invalid arguments' if $import && !$self->import_mode;
+
+    warn "$me dsl_pull: import mode" if $self->option('debug');
+
+    unless ( $import ) { 
+        my $result = $self->valid_order($svc_dsl,'pull');
+        return $result unless $result eq '';
+    }
 
     my $now = time;
     if($now - $svc_dsl->last_pull < $threshold) {
@@ -90,8 +106,8 @@ sub dsl_pull {
 	return '';
     }
   
-    $result = $self->ikano_command('ORDERSTATUS', 
-	{ OrderId => $svc_dsl->vendor_order_id } ); 
+    my $result = $self->ikano_command('ORDERSTATUS', 
+	                            { OrderId => $svc_dsl->vendor_order_id } );
     return $result unless ref($result); # scalar (string) is an error
 
     # now we're getting an OrderResponse which should have one Order in it
@@ -142,8 +158,20 @@ sub dsl_pull {
     return 'Invalid number of products on order' if scalar(@product) != 1;
     my $product = $result->{'Product'}[0];
 
+    $svc_dsl->vendor_order_type('NEW') if $import; # lame
+
     # 3. phonenum 
-    if($svc_dsl->loop_type eq '') { # line-share
+    if ( $import ) {
+        if ( $product->{'PhoneNumber'} eq 'STANDALONE' ) {
+            $svc_dsl->phonenum($product->{'VirtualPhoneNumber'});
+            $svc_dsl->loop_type('0');
+        }
+        else {
+            $svc_dsl->phonenum($product->{'PhoneNumber'});
+            $svc_dsl->loop_type('');
+        }
+    }
+    elsif($svc_dsl->loop_type eq '') { # line-share
 # TN may change only if sub changes it and New or Change order in Completed status
 	my $tn = $product->{'PhoneNumber'};
 	if($tn ne $svc_dsl->phonenum) {
@@ -287,6 +315,8 @@ sub ikano2fsnote {
 # address always required for Ikano qual, TN optional (assume dry if not given)
 sub qual {
     my($self,$qual) = (shift,shift);
+    
+    return 'Invalid operation - Import Mode is enabled' if $self->import_mode;
 
     my %location_hash = $qual->location_hash; 
     return 'No address provided' unless keys %location_hash;
@@ -513,6 +543,13 @@ sub qual2termsid {
 sub _export_insert {
   my( $self, $svc_dsl ) = (shift, shift);
 
+  if($self->import_mode) {
+      warn "$me _export_insert: import mode" if $self->option('debug');
+      $svc_dsl->pushed((time)-2);
+      $svc_dsl->last_pull((time)-1); 
+      return $self->dsl_pull($svc_dsl,0,1);
+  }
+
   my $result = $self->valid_order($svc_dsl,'insert');
   return $result unless $result eq '';
 
@@ -574,6 +611,9 @@ sub _export_insert {
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
+    
+  return 'Invalid operation - Import Mode is enabled' if $self->import_mode;
+
 # XXX only supports password changes now, but should return error if 
 # another change is attempted?
 
@@ -597,6 +637,8 @@ sub _export_replace {
 sub _export_delete {
   my( $self, $svc_dsl ) = (shift, shift);
   
+  return 'Invalid operation - Import Mode is enabled' if $self->import_mode;
+
   my $result = $self->valid_order($svc_dsl,'delete');
   return $result unless $result eq '';
 
@@ -636,6 +678,8 @@ sub _export_delete {
 sub export_expire {
   my($self, $svc_dsl, $date) = (shift, shift, shift);
   
+  return 'Invalid operation - Import Mode is enabled' if $self->import_mode;
+
   my $result = $self->valid_order($svc_dsl,'expire');
   return $result unless $result eq '';
   
@@ -713,6 +757,8 @@ sub export_expire {
 
 sub statuschg {
   my( $self, $svc_dsl, $type ) = (shift, shift, shift);
+  
+  return 'Invalid operation - Import Mode is enabled' if $self->import_mode;
 
   my $result = $self->valid_order($svc_dsl,'statuschg');
   return $result unless $result eq '';

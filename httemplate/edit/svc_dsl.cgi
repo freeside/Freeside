@@ -41,7 +41,10 @@ my $edit_cb = sub {
 
     if ( scalar(@exports) == 1 ) {
         my $export = @exports[0];                
-        if($export->exporttype eq 'ikano') {
+        if($export->exporttype eq 'ikano' && $export->import_mode) {
+            @fields = ();
+        }
+        elsif($export->exporttype eq 'ikano') {
             @fields = ( 'password', 'monitored', );
 
             foreach my $hf ( keys %$ti_fields ) {
@@ -64,6 +67,14 @@ my $new_cb = sub {
     my @exports = $part_svc->part_export_dsl_pull;
     die "more than one DSL-pulling export for svcpart ".$part_svc->svcpart
       if ( scalar(@exports) > 1 );
+    
+    if ( scalar(@exports) == 1 ) {
+        my $export = @exports[0];                
+        if($export->exporttype eq 'ikano' && $export->import_mode) {
+            @fields = ( 'vendor_order_id' );
+            return;
+        }
+    }
 
     my $cust_main = $cust_pkg->cust_main;
 
