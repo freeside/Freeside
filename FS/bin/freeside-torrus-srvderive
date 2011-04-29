@@ -63,6 +63,11 @@ my $orderlimit = "
     LIMIT 100
 "; #50?
 
+if ( driver_name eq 'mysql' ) {
+  dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
+  dbh->commit or die dbh->errstr;
+}
+
 our $kids = 0;
 
 #MAIN: while (1) {
