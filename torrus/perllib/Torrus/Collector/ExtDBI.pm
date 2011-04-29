@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: ExtDBI.pm,v 1.1 2010-12-27 00:03:58 ivan Exp $
+# $Id: ExtDBI.pm,v 1.2 2011-04-29 01:13:20 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 ## Pluggable backend module for ExternalStorage
@@ -63,6 +63,12 @@ sub backendOpenSession
     
     if( defined( $dbh ) )
     {
+
+        if ( $dbh->{Driver}->{Name} =~ /^mysql/i ) {
+          $dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
+          $dbh->commit();
+        }
+
         $sth = $dbh->prepare( Torrus::SQL::SrvExport->sqlInsertStatement() );
         if( not defined( $sth ) )
         {

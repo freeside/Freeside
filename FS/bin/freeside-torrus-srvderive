@@ -102,8 +102,10 @@ while (1) {
       exit unless @serviceids; #don't try to search for empty virtual ports
 
       #nonlocking select statements; rows in this table never change
-      dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED')
-        if driver_name eq 'mysql';
+      if ( driver_name eq 'mysql' ) {
+        dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
+        dbh->commit or die dbh->errstr;
+      }
 
       my @in = ();
       for my $dir ('_IN', '_OUT') {
