@@ -2022,6 +2022,7 @@ sub tables_hashref {
       'columns' => [
         'svcnum',   'int',     '',     '', '', '',
         'acctnum',  'varchar', '',     16, '', '',
+        'installdate', @date_type,         '', '', 
         'note',     'text',    'NULL', '', '', '',
       ],
       'primary_key' => 'svcnum',
@@ -2036,7 +2037,8 @@ sub tables_hashref {
         'serial',   'varchar', 'NULL', $char_d, '', '',
         'ip_addr',  'varchar', 'NULL',      40, '', '',
         'hw_addr',  'varchar', 'NULL',      12, '', '',
-        'statusnum','int', 'NULL',          '', '', '',
+        'smartcard','varchar', 'NULL',      30, '', '',
+        'statusnum','int',     'NULL',      '', '', '',
         'note',     'text',    'NULL',      '', '', '',
       ],
       'primary_key' => 'svcnum',
@@ -2069,6 +2071,7 @@ sub tables_hashref {
       'columns' => [
         'statusnum', 'serial', '',      '', '', '',
         'label'    ,'varchar', '', $char_d, '', '',
+        'disabled',    'char', 'NULL',   1, '', '', 
       ],
       'primary_key' => 'statusnum',
       'unique' => [ ],

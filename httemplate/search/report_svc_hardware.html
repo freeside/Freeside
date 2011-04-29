@@ -20,7 +20,7 @@
 
     <% include('/elements/tr-input-text.html',
                   'field' => 'serial',
-                  'label' => 'Serial #',
+                  'label' => 'Serial number',
               ) %>
     <% include('/elements/tr-input-text.html',
                   'field' => 'hw_addr',
@@ -30,12 +30,20 @@
                   'field' => 'ip_addr',
                   'label' => 'IP address',
               ) %>
+    <% include('/elements/tr-input-text.html',
+                  'field' => 'smartcard',
+                  'label' => 'Smartcard #',
+              ) %>
     <% include('/elements/tr-select-table.html',
                   'field'     => 'statusnum',
                   'label'     => 'Service status',
                   'table'     => 'hardware_status',
                   'name_col'  => 'label',
                   'empty_label' => 'any',
+                  'hashref'   => {},
+                  'extra_sql' => ' WHERE hardware_status.disabled IS NULL
+OR (SELECT COUNT(*) FROM svc_hardware 
+  WHERE svc_hardware.statusnum = hardware_status.statusnum) > 0',
               ) %>
  
   </TABLE>

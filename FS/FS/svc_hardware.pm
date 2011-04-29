@@ -45,6 +45,8 @@ The following fields are currently supported:
 
 =item serial - Serial number
 
+=item smartcard - Smartcard number, for devices that use a smartcard
+
 =item statusnum - Service status (see L<FS::hardware_status>)
 
 =item note - Installation notes: location on property, physical access, etc.
@@ -82,6 +84,7 @@ sub table_info {
       'serial'    => { label => 'Serial number', %opts },
       'hw_addr'   => { label => 'Hardware address', %opts },
       'ip_addr'   => { label => 'IP address', %opts },
+      'smartcard' => { label => 'Smartcard #', %opts },
       'statusnum' => { label => 'Service status', 
                        type  => 'select',
                        select_table => 'hardware_status',
@@ -165,6 +168,7 @@ sub check {
     || $self->ut_ip46n('ip_addr')
     || $self->ut_hexn('hw_addr')
     || $self->ut_alphan('serial')
+    || $self->ut_alphan('smartcard')
     || $self->ut_foreign_keyn('statusnum', 'hardware_status', 'statusnum')
     || $self->ut_textn('note')
   ;

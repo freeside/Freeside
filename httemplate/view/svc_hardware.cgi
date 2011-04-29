@@ -20,5 +20,5 @@ my $status = { field => 'statusnum',
                type  => 'text',
                value => sub { $_[0]->status_label }
             };
-my @fields = ($model, qw( serial hw_addr ip_addr ), $status, 'note' );
+my @fields = ($model, qw( serial hw_addr ip_addr smartcard ), $status, 'note' );
 </%init>

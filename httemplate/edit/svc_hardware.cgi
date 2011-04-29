@@ -35,12 +35,18 @@ my @fields = (
     label => 'IP address',
   },
   {
+    field => 'smartcard',
+    type  => 'text',
+    label => 'Smartcard #',
+  },
+  {
     field => 'statusnum',
     type  => 'select-table',
     table => 'hardware_status',
     label => 'Service status',
     name_col => 'label',
     disable_empty => 1,
+    hashref => { 'disabled' => '' },
   },
   {
     field => 'note',

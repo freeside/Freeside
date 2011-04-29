@@ -36,6 +36,8 @@ The following fields are currently supported:
 
 =item acctnum - DISH account number
 
+=item installdate - Installation date (as Unix timestamp)
+
 =item note - Installation notes: location on property, physical access, etc.
 
 =back
@@ -62,8 +64,9 @@ sub table_info {
     'display_weight' => 58,
     'cancel_weight'  => 85,
     'fields' => {
-      'svcnum'    => { label => 'Service' },
-      'acctnum'   => { label => 'DISH account#', %opts },
+      'svcnum'    =>  { label => 'Service' },
+      'acctnum'   =>  { label => 'DISH account#', %opts },
+      'installdate' => { label => 'Install date', %opts },
       'note'      => { label => 'Installation notes', %opts },
     }
   }
@@ -112,6 +115,7 @@ sub check {
   my $error = 
     $self->ut_numbern('svcnum')
     || $self->ut_text('acctnum')
+    || $self->ut_numbern('installdate')
     || $self->ut_textn('note')
   ;
   return $error if $error;

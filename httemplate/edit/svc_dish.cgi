@@ -21,6 +21,11 @@ my @fields = (
     label => 'DISH Account #',
   },
   {
+    field => 'installdate',
+    type  => 'input-date-field',
+    label => 'Install date',
+  },
+  {
     field => 'note',
     type  => 'textarea',
     rows  => 4,

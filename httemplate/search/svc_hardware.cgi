@@ -10,6 +10,7 @@
                                      'Serial #',
                                      'Hardware addr.',
                                      'IP addr.',
+                                     'Smartcard',
                                      FS::UI::Web::cust_header(),
                                    ],
             'fields'            => [ 'svcnum',
@@ -18,16 +19,19 @@
                                      'serial',
                                      'hw_addr',
                                      'ip_addr',
+                                     'smartcard',
                                      \&FS::UI::Web::cust_fields,
                                    ],
-            'links'             => [ ($link_svc) x 6,
+            'links'             => [ ($link_svc) x 7,
                                      ( map { $_ ne 'Cust. Status' ? 
                                                 $link_cust : '' }
                                        FS::UI::Web::cust_header() )
                                    ],
-            'align'             => 'rllll' . FS::UI::Web::cust_aligns(),
-            'color'             => [ ('') x 4, FS::UI::Web::cust_colors() ],
-            'style'             => [ ('') x 4, FS::UI::Web::cust_styles() ],
+            'align'             => 'rllllll' . FS::UI::Web::cust_aligns(),
+            'color'             => [ ('') x 7,
+                                      FS::UI::Web::cust_colors() ],
+            'style'             => [ $svc_cancel_style, ('') x 6,
+                                      FS::UI::Web::cust_styles() ],
             )
 %>
 <%init>
@@ -67,6 +71,10 @@ if ( $ip ) {
   push @extra_sql, "ip_addr = '".lc($ip->addr)."'";
 }
 
+if ( lc($cgi->param('smartcard')) =~ /^(\w+)$/ ) {
+  push @extra_sql, "LOWER(smartcard) LIKE '%$1%'";
+}
+
 if ( $cgi->param('statusnum') =~ /^(\d+)$/ ) {
   push @extra_sql, "statusnum = $1";
 }
@@ -76,6 +84,10 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   if ( $cgi->param('classnum'.$1.'typenum') =~ /^(\d+)$/ ) {
     push @extra_sql, "svc_hardware.typenum = $1";
   }
+}
+
+if ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+  push @extra_sql, "cust_svc.svcpart = $1";
 }
 
 my ($orderby) = $cgi->param('orderby') =~ /^(\w+( ASC| DESC)?)$/i;
@@ -91,6 +103,7 @@ my $sql_query = {
                     'part_svc.svc',
                     'cust_main.custnum',
                     'hardware_type.model',
+                    'cust_pkg.cancel',
                     FS::UI::Web::cust_sql_fields(),
                  ),
   'hashref'   => {},
@@ -102,5 +115,10 @@ my $sql_query = {
 my $count_query = "SELECT COUNT(*) FROM svc_hardware $addl_from $extra_sql";
 my $link_svc = [ $p.'view/svc_hardware.cgi?', 'svcnum' ];
 my $link_cust = [ $p.'view/cust_main.cgi?', 'custnum' ];
+
+my $svc_cancel_style = sub {
+  my $svc = shift;
+  ( $svc->getfield('cancel') == 0 ) ? '' : 's';
+};
 
 </%init>

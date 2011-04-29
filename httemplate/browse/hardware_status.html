@@ -2,6 +2,8 @@
                  'title'       => 'Hardware Statuses',
                  'name'        => 'hardware statuses',
                  'menubar'     => $menubar,
+                 'disableable' => 1,
+                 'disabled_statuspos' => 2,
                  'query'       => { 'table' => 'hardware_status', },
                  'count_query' => 'SELECT COUNT(*) FROM hardware_status',
                  'header'      => [ '#', 'Status' ],

@@ -12,5 +12,8 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                              : $fields->{$_}
                          );
                  } keys %$fields;
-my @fields = qw( acctnum note );
+my @fields = ('acctnum',
+              { field => 'installdate', type => 'date' },
+              'note'
+              );
 </%init>

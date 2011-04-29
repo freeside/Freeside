@@ -1,12 +1,20 @@
 <% include( 'elements/edit.html',
-                 'name'   => 'Hardware Status',
-                 'table'  => 'hardware_status',
-                 'labels' => { 
-                               'statusnum' => 'Status number',
-                               'label'     => 'Description' ,
-                             },
-                 'viewall_dir' => 'browse',
-           )
+                'name_singular'   => 'Hardware Status',
+                'table'  => 'hardware_status',
+                'labels' => { 
+                              'statusnum' => 'Status number',
+                              'label'     => 'Description' ,
+                              'disabled'  => 'Disable status'
+                            },
+                'fields' => [
+                              'label',
+                              { field => 'disabled',
+                                type  => 'checkbox',
+                                value => 'Y',
+                              },
+                            ],
+                'viewall_dir' => 'browse',
+          )
 %>
 <%init>
 
