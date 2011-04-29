@@ -3410,7 +3410,7 @@ sub charge {
 sub charge_postal_fee {
   my $self = shift;
 
-  my $pkgpart = $conf->config('postal_invoice-fee_pkgpart');
+  my $pkgpart = $conf->config('postal_invoice-fee_pkgpart', $self->agentnum);
   return '' unless ($pkgpart && grep { $_ eq 'POST' } $self->invoicing_list);
 
   my $cust_pkg = new FS::cust_pkg ( {

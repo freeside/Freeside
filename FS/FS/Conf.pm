@@ -3010,6 +3010,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'This allows selection of a package to insert on invoices for customers with postal invoices selected.',
     'type'        => 'select-part_pkg',
+    'per_agent'   => 1,
   },
 
   {
