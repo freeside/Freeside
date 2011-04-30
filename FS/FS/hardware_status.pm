@@ -35,6 +35,7 @@ are currently supported:
 
 =item label - descriptive label
 
+=item disabled - 'Y' to disable
 
 =back
 
@@ -98,6 +99,7 @@ sub check {
   my $error = 
     $self->ut_numbern('statusnum')
     || $self->ut_text('label')
+    || $self->ut_enum('disabled', [ '', 'Y' ])
   ;
   return $error if $error;
 

@@ -1,5 +1,6 @@
 <% include( 'elements/svc_Common.html',
                'table'    => 'svc_dish',
+               'value_callback' => $value_callback,
            )
 %>
 <%init>
@@ -7,4 +8,8 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
 
+my $value_callback = sub {
+  my ($field, $value) = @_;
+  ($field eq 'installdate') ? parse_datetime($value) : $value;
+};
 </%init>
