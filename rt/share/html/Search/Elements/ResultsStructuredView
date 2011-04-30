@@ -50,9 +50,11 @@ $Query => undef
 $OrderBy => 'id'
 $Order => 'ASC'
 $Format => undef
+
 #Callbacks
 $WriteHeader => sub { $RT::Logger->error('WriteHeader callback required'); '' }
 $WriteRow    => sub { $RT::Logger->error('WriteRow callback required'); '' }
+$FormatDate  => sub { $_[0]->AsString }
 </%ARGS>
 <%INIT>
 
@@ -129,12 +131,23 @@ while ( my $Ticket = $Tickets->Next()) {
             }
 
             if ( !exists $ColumnMap->{$col}{'value'} ) {
-                $ColumnMap->{$col}{'value'} = $m->comp(
-                    '/Elements/ColumnMap',
-                    Class => 'RT__Ticket',
-                    Name  => $col,
-                    Attr  => 'value',
-                );
+                my $map = {};
+                foreach ('attribute', 'value', 'date') {
+                    $map->{$_} = $m->comp(
+                        '/Elements/ColumnMap',
+                        Class => 'RT__Ticket',
+                        Name  => $col,
+                        Attr  => $_,
+                    );
+                }
+                # Canonicalize dates
+                if ( defined $map->{'date'} ) {
+                    $map->{value} = sub { 
+                        my $DateObj = $map->{'date'}->(@_) or return undef;
+                        $FormatDate->($DateObj);
+                    };
+                }
+                $ColumnMap->{$col} = $map;
             }
 
             push @out, ProcessColumnMapValue(

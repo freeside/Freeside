@@ -64,6 +64,7 @@ my $COLUMN_MAP = {
     Created => {
         attribute => 'Created',
         title     => 'Created', # loc
+        date      => sub { return $_[0]->CreatedObj },
         value     => sub { return $_[0]->CreatedObj->AsString }
     },
     CreatedRelative => {
@@ -79,6 +80,7 @@ my $COLUMN_MAP = {
     LastUpdated => {
         attribute => 'LastUpdated',
         title     => 'Last Updated', # loc
+        date      => sub { return $_[0]->LastUpdatedObj },
         value     => sub { return $_[0]->LastUpdatedObj->AsString }
     },
     LastUpdatedRelative => {

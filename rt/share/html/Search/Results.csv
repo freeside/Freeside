@@ -81,6 +81,7 @@ $m->comp('Elements/ResultsStructuredView',
           Format        => $Format,
           WriteHeader   => $WriteHeader,
           WriteRow      => $WriteRow,
+          FormatDate    => sub { $_[0]->AsString(Format => 'ISO') },
 );
 
 $m->flush_buffer;

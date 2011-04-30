@@ -55,6 +55,7 @@ $Format => undef
 
 use Spreadsheet::WriteExcel;
 use List::Util qw( max );
+use Date::Format qw( time2str );
 
 $r->content_type('application/vnd.ms-excel');
 $r->header_out('Content-Disposition' => 'attachment;filename="Results.xls"');
@@ -68,6 +69,11 @@ my $worksheet = $workbook->add_worksheet();
 my $default_format = $workbook->add_format(
     color   =>  'black',
     size    =>  10,
+);
+my $date_format = $workbook->add_format(
+    color   => 'black',
+    size    => 10,
+    num_format => 'YYYY-MM-DD', #configurable?
 );
 my $title_format = $workbook->add_format(
     color   => 'black',
@@ -97,10 +103,24 @@ my $WriteRow = sub {
         # record row/column sizes
         $height = max( $height, scalar(@lines) );
         $width[$item] = max( $width[$item], map {length} @lines );
+
+        if ( scalar(@lines) == 1 and 
+            $lines[0] =~ /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/ ) {
+
+            $worksheet->write_date_time($row, $item, $lines[0], $date_format);
+            next;
+        }
+
         $worksheet->write($row, $item, join("\n", @lines), $default_format);
     }
     $worksheet->set_row($row, $height * 14);
     $row++;
+};
+
+my $FormatDate = sub {
+    my $DateObj = shift;
+    return '' if $DateObj->Unix == 0;
+    return time2str('%Y-%m-%dT%H:%M', $DateObj->Unix);
 };
 
 # Write everything to the worksheet
@@ -111,6 +131,7 @@ $m->comp('Elements/ResultsStructuredView',
           Format        => $Format,
           WriteHeader   => $WriteHeader,
           WriteRow      => $WriteRow,
+          FormatDate    => $FormatDate,
 );
 
 # Set column widths

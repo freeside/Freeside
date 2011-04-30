@@ -131,6 +131,7 @@ share/html/RTx/Statistics/*
 share/html/Search/Results.xls
 share/html/Search/Results.csv
 share/html/Search/Elements/ResultViews
+share/html/Elements/ColumnMap
 
 lib/RT/Extension/MobileUI.pm
 share/html/Callbacks/RT-Extension-MobileUI/*
