@@ -494,7 +494,15 @@ sub max {
 my $captcha_url;
 my ($export_google) = $part_svc->part_export('acct_google');
 if ( $export_google ) {
-  $captcha_url = $export_google->captcha_url || '';
+  my $error = $export_google->auth_error;
+  if ( $error ) {
+    if ( $error->{'captcha_url'} ) {
+      $captcha_url = $error->{'captcha_url'};
+    }
+    else {
+      $cgi->param('error', $error->{'message'});
+    }
+  } #if $error
 }
 
 </%init>

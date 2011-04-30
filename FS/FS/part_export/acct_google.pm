@@ -89,15 +89,18 @@ sub _export_unsuspend {
   );
 }
 
-sub captcha_url {
+sub auth_error {
   my $self = shift;
   my $google = $self->google_handle;
-  if (exists ($google->{'captcha_url'}) ) {
-    return 'http://www.google.com/accounts/'.$google->{'captcha_url'};
+  if ( $google->{'error'} ) {
+    my $url = $google->{'captcha_url'} || '';
+    $url = "http://www.google.com/accounts/$url" if $url;
+    return { 'captcha_url' => $url,
+             'message'     => 
+               'Unable to connect to the Google API: '.$google->{'error'}.'.',
+           };
   }
-  else {
-    return '';
-  }
+  return; #nothing on success
 }
 
 sub captcha_auth {
