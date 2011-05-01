@@ -1925,7 +1925,7 @@ sub batch_import {
     next if exists( $param->{skiprow} );
 
     if ( $preinsert_callback ) {
-      my $error = &{$postinsert_callback}($record, $param);
+      my $error = &{$preinsert_callback}($record, $param);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "preinsert_callback error". ( $line ? " for $line" : '' ).
