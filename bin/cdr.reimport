@@ -22,19 +22,28 @@ my($new, $rep, $skip) = (0, 0, 0);
 my $cb = sub {
   my($cdr, $param) = @_;
 
-  my @exists = qsearch({
-    'table'   => 'cdr',
-    'hashref' => { 'uniqueid'  => $cdr->uniqueid,
-                   'src'       => $cdr->src,
-                   'startdate' => $cdr->startdate,
-                 },
+  my @exists = qsearch('cdr', {
+    map { $_ => $cdr->$_() }
+      qw( uniqueid calldate src dst charged_party )
   });
 
   unless ( scalar(@exists) ) {
     $new++;
     return;
   }
-  return "too many matches found!" if scalar(@exists) > 1;
+
+  if ( scalar(@exists) == 2 ) {
+    if ( $exists[0]->freesidestatus || $exists[1]->freesidestatus ) {
+      return "processed double record for uniqueid ". $cdr->uniqueid. "\n";
+    }
+    warn "deleting double record for uniqueid ". $cdr->uniqueid. "\n";
+    my $extra = shift @exists;
+    my $error = $extra->delete;
+    return $error if $error;
+  }
+
+  return "too many matches (". scalar(@exists). ") found!"
+    if scalar(@exists) > 1;
 
   my $exists = $exists[0];
   if ( $exists->freesidestatus ) {
