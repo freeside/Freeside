@@ -1,0 +1,64 @@
+#!/usr/bin/perl
+#
+# Usage:
+#  cdr.reimport user format filename
+#
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cdr;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $format = shift or die &usage;
+
+my $file = shift;
+
+my($new, $rep, $skip) = (0, 0, 0);
+
+#this is what makes it a reimport and should probably be moved to cdr.pm
+my $cb = sub {
+  my($cdr, $param) = @_;
+
+  my @exists = qsearch({
+    'table'   => 'cdr',
+    'hashref' => { 'uniqueid'  => $cdr->uniqueid,
+                   'src'       => $cdr->src,
+                   'startdate' => $cdr->startdate,
+                 },
+  });
+
+  unless ( scalar(@exists) ) {
+    $new++;
+    return;
+  }
+  die "too many matches found!" if scalar(@exists) > 1;
+
+  my $exists = $exists[0];
+  if ( $exists->freesidestatus ) {
+    $skip++;
+    $param->{skiprow} = 1;
+  } else {
+    $rep++;
+    my $error = $exists->delete;
+    die $error if $error;
+  }
+
+};
+
+my $error = FS::cdr::batch_import( {
+  'file'               => $file,
+  'format'             => $format,
+  'batch_namevalue'    => $file,
+  'preinsert_callback' => $cb,
+} );
+die $error if $error;
+
+warn "$skip skipped, $rep replaced, $new new\n";
+
+sub usage {
+  "Usage: \n  cdr.reimport user format filename\n";
+}
+

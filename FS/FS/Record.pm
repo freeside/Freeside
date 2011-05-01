@@ -1633,6 +1633,8 @@ Class method for batch imports.  Available params:
 
 =item fields - Alternate way to specify import, specifying import fields directly as a listref
 
+=item preinsert_callback
+
 =item postinsert_callback
 
 =item params
@@ -1667,9 +1669,14 @@ sub batch_import {
 
   my( $type, $header, $sep_char, $fixedlength_format, 
       $xml_format, $row_callback, @fields );
+
   my $postinsert_callback = '';
   $postinsert_callback = $param->{'postinsert_callback'}
 	  if $param->{'postinsert_callback'};
+  my $preinsert_callback = '';
+  $preinsert_callback = $param->{'preinsert_callback'}
+	  if $param->{'preinsert_callback'};
+
   if ( $param->{'format'} ) {
 
     my $format  = $param->{'format'};
@@ -1916,6 +1923,16 @@ sub batch_import {
       last if exists( $param->{skiprow} );
     }
     next if exists( $param->{skiprow} );
+
+    if ( $preinsert_callback ) {
+      my $error = &{$postinsert_callback}($record, $param);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "preinsert_callback error". ( $line ? " for $line" : '' ).
+               ": $error";
+      }
+      next if exists $param->{skiprow} && $param->{skiprow};
+    }
 
     my $error = $record->insert;
 
