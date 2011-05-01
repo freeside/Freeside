@@ -24,7 +24,7 @@ my $cb = sub {
 
   my @exists = qsearch('cdr', {
     map { $_ => $cdr->$_() }
-      qw( uniqueid calldate src dst charged_party )
+      qw( uniqueid startdate enddate src dst charged_party )
   });
 
   unless ( scalar(@exists) ) {
