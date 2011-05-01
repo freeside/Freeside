@@ -2868,7 +2868,7 @@ sub tables_hashref {
       'unique' => [],
       'index' => [ [ 'calldate' ],
                    [ 'src' ], [ 'dst' ], [ 'dcontext' ], [ 'charged_party' ],
-                   [ 'accountcode' ], [ 'carrierid' ], [ 'cdrid' ],
+                   ['accountcode'], ['uniqueid'], ['carrierid'], ['cdrid'],
                    [ 'sessionnum' ], [ 'subscriber' ],
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
                    [ 'cdrbatch' ], [ 'cdrbatchnum' ],
