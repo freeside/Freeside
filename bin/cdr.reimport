@@ -34,7 +34,7 @@ my $cb = sub {
     $new++;
     return;
   }
-  die "too many matches found!" if scalar(@exists) > 1;
+  return "too many matches found!" if scalar(@exists) > 1;
 
   my $exists = $exists[0];
   if ( $exists->freesidestatus ) {
@@ -43,8 +43,10 @@ my $cb = sub {
   } else {
     $rep++;
     my $error = $exists->delete;
-    die $error if $error;
+    return $error if $error;
   }
+
+  return '';
 
 };
 
