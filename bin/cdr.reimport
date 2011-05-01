@@ -51,7 +51,7 @@ my $cb = sub {
 my $error = FS::cdr::batch_import( {
   'file'               => $file,
   'format'             => $format,
-  'batch_namevalue'    => $file,
+  'batch_namevalue'    => $file."-REIMPORT$$",
   'preinsert_callback' => $cb,
 } );
 die $error if $error;
