@@ -4,7 +4,7 @@ use strict;
 use vars qw( $conf );
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw( adminsuidsetup );
-use FS::Record qw( qsearch ); #qsearchs);
+use FS::Record qw( qsearch qsearchs );
 #use FS::cdr;
 #use FS::cust_pkg;
 #use FS::queue;
@@ -104,6 +104,7 @@ while (1) {
       }
 
       push @status, 'taqua-accountcode';
+      $cdr->status('done'); #so it doesn't try to rate
     }
 
     $cdr->freesiderewritestatus(
@@ -150,9 +151,9 @@ freeside-cdrrewrited - Real-time daemon for CDR rewriting
 
 =head1 DESCRIPTION
 
-Runs continuously, searches for CDRs and does forwarded-call rewriting if the
-"cdr-asterisk_forward_rewrite" or "cdr-charged_party_rewrite" config option is
-enabled.
+Runs continuously, searches for CDRs and does forwarded-call rewriting if any
+of the "cdr-asterisk_forward_rewrite", "cdr-charged_party_rewrite" or
+"cdr-taqua-accountcode_rewrite" config options are enabled.
 
 =head1 SEE ALSO
 
