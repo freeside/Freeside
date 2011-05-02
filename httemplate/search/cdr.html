@@ -182,7 +182,7 @@ if ( $cgi->param('dst') ) {
 if ( $cgi->param('dcontext') =~ /^\s*(.+)\s*$/ ) {
   my $dcontext = $1;
   $hashref->{'dcontext'} = $dcontext;
-  push @search, "dcontext = '$dcontext'";
+  push @search, 'dcontext = '. dbh->quote($dcontext);
 }
 
 if ( $cgi->param('charged_party') ) {
@@ -206,6 +206,12 @@ if ( $cgi->param('charged_party_or_src') ) {
 
   push @search,  $search;
   push @qsearch, $search;
+}
+
+if ( $cgi->param('lastapp') =~ /^\s*(.+)\s*$/ ) {
+  my $lastapp = $1;
+  $hashref->{'lastapp'} = $lastapp;
+  push @search, 'lastapp = '. dbh->quote($lastapp);
 }
 
 if ( $cgi->param('svcnum') =~ /^([\d, ]+)$/ ) {
