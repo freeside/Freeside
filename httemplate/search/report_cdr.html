@@ -70,16 +70,16 @@
   </TR>
 
   <TR>
-    <TD ALIGN="right">Last Application: </TD>
+    <TD ALIGN="right">Charged Party or Source #: </TD>
     <TD>
-      <INPUT TYPE="text" NAME="lastapp" VALUE="" >
+      <INPUT TYPE="text" NAME="charged_party_or_src" VALUE="<% join(',', @charged_party_or_src ) |h %>" >
     </TD>
   </TR>
 
   <TR>
-    <TD ALIGN="right">Freeside service #: </TD>
+    <TD ALIGN="right">Last Application: </TD>
     <TD>
-      <INPUT TYPE="text" NAME="svcnum" VALUE="<% join(',', @svcnum ) %>" >
+      <INPUT TYPE="text" NAME="lastapp" VALUE="" >
     </TD>
   </TR>
 
