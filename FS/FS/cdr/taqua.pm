@@ -16,7 +16,9 @@ use FS::cdr qw(_cdr_date_parser_maker);
     #RecordType
     sub {
       my($cdr, $field, $conf, $hashref) = @_;
-      $hashref->{skiprow} = 1 unless ($field == 0 && $cdr->disposition == 100);
+      $hashref->{skiprow} = 1
+        unless ($field == 0 && $cdr->disposition == 100       )  #regular CDR
+            || ($field == 1 && $cdr->lastapp     eq 'acctcode'); #accountcode
       $cdr->cdrtypenum($field);
     },
 
@@ -48,7 +50,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
     'disposition',
                                           #  -1 => '',
                                           #   0 => '',
-                                          # 100 => '',
+                                          # 100 => '', #regular cdr
                                           # 101 => '',
                                           # 102 => '',
                                           # 103 => '',
