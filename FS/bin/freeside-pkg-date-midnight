@@ -1,0 +1,85 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs dbh);
+use Data::Dumper;
+use POSIX;
+
+&untaint_argv;	#what it sounds like  (eww)
+use vars qw(%opt);
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my $sql = "select cp.* from cust_pkg cp, part_pkg pp
+    where cp.pkgpart = pp.pkgpart and pp.plan = 'flat' 
+        and cp.cancel is null and cp.bill is not null and cp.bill > 0";
+my $sth = $dbh->prepare($sql);
+$sth->execute or die $sth->errstr;
+my $row;
+while ( $row = $sth->fetchrow_hashref ) {
+    my $bill = $row->{'bill'}; # interpret in local time zone
+
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+        localtime($bill);
+
+    if ( $hour != 0 || $min != 0 || $sec != 0 ) {
+        $hour = 0;
+        $min = 0;
+        $sec = 0;
+        my $newbill = mktime($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst);
+        $sql = "update cust_pkg set bill = ? where pkgnum = ?";
+        my $sth2 = $dbh->prepare($sql);
+        $sth2->execute($newbill,$row->{'pkgnum'}) or die $sth2->errstr;
+    }
+}
+
+$dbh->commit;
+
+###
+# subroutines
+###
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n  freeside-pkg-date-midnight user \n";
+}
+
+###
+# documentation
+###
+
+=head1 NAME
+
+freeside-pkg-date-midnight - change the time portion of next bill dates on all active anniversary packages to midnight
+
+=head1 SYNOPSIS
+
+  freeside-pkg-date-midnight user
+
+=head1 DESCRIPTION
+
+user - name of an internal Freeside user
+
+=head1 BUGS
+
+Will be off by an hour when crossing DST boundaries, defeating the purpose of 
+the util. Workaround: run it a day after each DST change (so twice per year
+for time zones subject to DST).
+
+=head1 SEE ALSO
+
+L<FS::cust_pkg>
+
+=cut
+
