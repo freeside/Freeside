@@ -750,7 +750,14 @@ my %payment_gateway_options = (
     'type'        => 'text',
     'per_agent'   => 1,
   },
-
+  
+  {
+    'key'         => 'next-bill-ignore-time',
+    'section'     => 'billing',
+    'description' => 'Ignore the time portion of next bill dates when billing, matching anything from 00:00:00 to 23:59:59 on the billing day.',
+    'type'        => 'checkbox',
+  },
+  
   {
     'key'         => 'business-onlinepayment',
     'section'     => 'billing',
