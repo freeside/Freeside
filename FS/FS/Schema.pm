@@ -1409,8 +1409,8 @@ sub tables_hashref {
 
     'fcc477map' => {
       'columns' => [
-        'formkey',   'varchar',    255, '', '', '',
-        'formvalue',    'text', 'NULL', '', '', '',
+        'formkey',   'varchar',     '', 255, '', '',
+        'formvalue',    'text', 'NULL',  '', '', '',
       ],
       'primary_key' => 'formkey',
       'unique'      => [],
