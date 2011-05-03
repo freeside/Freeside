@@ -116,6 +116,7 @@ sub service_status {
 
   #status in the reseller scenario
   $result{'status'} = substr($cust_pkg->ucfirst_status,0,1);
+  $result{'status'} = 'A' if $result{'status'} eq 'N';
 
   # find "outbound service" y/n
   my @cust_pkg = $cust_main->cust_pkg;
@@ -135,7 +136,7 @@ sub service_status {
 
   return { 
     'custnum' => $cust_main->custnum,
-    'name'    => $cust_main->name,
+    'name'    => ( $svc_pbx->title || $cust_main->name ),
     'email'   => $cust_main->invoicing_list_emailonly_scalar,
     #'agentnum' => $cust_main->agentnum,
     #'agent'    => $cust_main->agent->agent,
