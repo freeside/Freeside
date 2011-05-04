@@ -100,6 +100,8 @@ tie my %report_customers_lists, 'Tie::IxHash',
 ;
 $report_customers_lists{'by active trouble tickets'} = [ $fsurl. 'search/cust_main.cgi?browse=tickets', '' ]
   if $conf->config('ticket_system');
+$report_customers_lists{'with USPS-unvalidated addresses'} = [ $fsurl. 'search/cust_main.cgi?browse=uspsunvalid', '' ]
+  if $conf->config('usps_webtools-userid') && $conf->config('usps_webtools-password');
 
 tie my %report_customers_search, 'Tie::IxHash';
 $report_customers_search{'by ordering employee'} = [ $fsurl. 'search/cust_main-otaker.cgi' ]

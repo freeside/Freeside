@@ -83,6 +83,10 @@
 %      push @select, FS::TicketSystem->sql_num_customer_tickets. " as tickets";
 %      push @addl_headers, 'Tickets';
 %      push @addl_cols, 'tickets';
+%    } elsif ( $query eq 'uspsunvalid' ) {
+%       $search{'country'} = 'US';
+%       $sortby=\*custnum_sort;
+%       $orderby = "ORDER BY custnum";
 %    } else {
 %      die "unknown browse field $query";
 %    }
@@ -131,6 +135,10 @@
 %  #here is the agent virtualization
 %  $addl_qual .= ( $addl_qual ? ' AND ' : '' ).
 %                $FS::CurrentUser::CurrentUser->agentnums_sql;
+%
+%  if ( $cgi->param('browse') && $cgi->param('browse') eq 'uspsunvalid' ) {
+%       $addl_qual .= ' AND ( length(zip) < 9 OR upper(address1) != address1 OR upper(city) != city ) ';
+%  }
 %
 %  if ( $addl_qual ) {
 %    $qual .= ' AND ' if $qual;
