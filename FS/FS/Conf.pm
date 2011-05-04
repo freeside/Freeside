@@ -4422,7 +4422,13 @@ and customer address. Include units.',
     'description' => 'Disable the "Charge future payments to this (card|check) automatically" checkbox from defaulting to checked.',
     'type'        => 'checkbox',
   },
-
+  
+  {
+    'key'         => 'payment-history-report',
+    'section'     => 'UI',
+    'description' => 'Show a link to the payment history report in the Reports menu. DO NOT ENABLE THIS.',
+    'type'        => 'checkbox',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

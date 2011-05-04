@@ -297,6 +297,8 @@ $report_payments{'Unapplied Payments'} = [ $fsurl.'search/report_cust_pay.html?u
 $report_payments{'Payment Batches'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
   if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
 $report_payments{'Unapplied Payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ];
+$report_payments{'Deleted Payments / Payment history table'} = [ $fsurl.'search/report_h_cust_pay.html', 'Deleted payments / payment history table' ]
+  if $conf->exists('payment-history-report');
 
 tie my %report_financial, 'Tie::IxHash';
 if($curuser->access_right('Financial reports')) {
