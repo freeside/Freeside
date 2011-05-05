@@ -849,6 +849,7 @@ sub _realtime_bop_result {
     my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
 
     if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       $cust_pay->invnum(''); #try again with no specific invnum
       $cust_pay->paynum('');
       my $error2 = $cust_pay->insert( $options{'manual'} ?
