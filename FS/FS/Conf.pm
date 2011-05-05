@@ -3867,6 +3867,13 @@ and customer address. Include units.',
     'type'        => 'image',
     'per_agent'   => 1,
   },
+  
+  {
+    'key'         => 'selfservice-view_usage_nodomain',
+    'section'     => 'self-service',
+    'description' => 'Show usernames without their domains in "View my usage" in the self-service interface.',
+    'type'        => 'checkbox',
+  },
 
   {
     'key'         => 'selfservice-bulk_format',

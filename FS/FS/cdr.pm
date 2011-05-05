@@ -560,11 +560,11 @@ sub export_formats {
   my $duration_sub = sub {
     my($cdr, %opt) = @_;
     my $sec = $opt{seconds} || $cdr->billsec;
-    if ( length($opt{granularity}) && 
+    if ( defined $opt{granularity} && 
          $opt{granularity} == 0 ) { #per call
       return '1 call';
     }
-    elsif ( $opt{granularity} == 60 ) {#full minutes
+    elsif ( defined $opt{granularity} && $opt{granularity} == 60 ) {#full minutes
       my $min = int($sec/60);
       $min++ if $sec%60;
       return $min.'m';
@@ -620,7 +620,10 @@ sub export_formats {
       $duration_sub,
 
       #PRICE
-      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
+      sub { my($cdr, %opt) = @_; 
+        $opt{charge} = '0.00' unless defined $opt{charge};
+        $opt{money_char}.$opt{charge}; 
+      },
 
     ],
   );
@@ -659,6 +662,8 @@ sub downstream_csv {
           ref($_) ? &{$_}($self, %opt) : $self->$_();
         }
     @{ $formats{$format} };
+
+  return @columns if defined $opt{'keeparray'};
 
   my $status = $csv->combine(@columns);
   die "FS::CDR: error combining ". $csv->error_input(). "into downstream CSV"

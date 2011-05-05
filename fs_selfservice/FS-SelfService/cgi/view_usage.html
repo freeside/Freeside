@@ -27,8 +27,10 @@
 <%= foreach my $svc ( @svc_acct ) {
       my $link = "${url}view_usage_details;".
         "svcnum=$svc->{'svcnum'};beginning=0;ending=0";
+    my $username = $svc->{'value'};
+    $username =~ s/@.*?$//g if $view_usage_nodomain;
   $OUT .= '<TR><TD>';
-    $OUT .= qq!<A HREF="$link">!. $svc->{'label'}. ': '. $svc->{'value'}.'</A>';
+    $OUT .= qq!<A HREF="$link">!. $svc->{'label'}. ': '. $username .'</A>';
     $OUT .= '</TD><TD ALIGN="right">';
     $OUT .= $svc->{'seconds'};
     $OUT .= '</TD><TD ALIGN="right">';
