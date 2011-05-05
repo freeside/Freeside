@@ -27,7 +27,8 @@ use FS::cdr;
           $time =~ /^(\d{1,2}):(\d{1,2}):(\d{1,2}) (AM|PM)$/
             or die "unparsable time: $time"; #maybe we shouldn't die...
           my $hour = $1;
-          $hour += 12 if $4 eq 'PM';
+          $hour += 12 if $4 eq 'PM' && $hour != 12;
+          $hour = 0 if $4 eq 'AM' && $hour == 12;
           $cdr->startdate(
             timelocal($3, $2, $hour ,$tmp_mday, $tmp_mon, $tmp_year)
           );
