@@ -18,12 +18,16 @@
   <TD COLSPAN=7>
     <TABLE><TR><TD BGCOLOR="#ffffff">
 <%=
-    $amt = $balance;
-    $amt += $amt * $credit_card_surcharge_percentage/100
-	if $credit_card_surcharge_percentage > 0;
+    $amt = '';
+    if ( $balance > 0 ) {
+        $amt = $balance;
+        $amt += $amt * $credit_card_surcharge_percentage/100
+                                    if $credit_card_surcharge_percentage > 0;
+        $amt = sprintf("%.2f",$amt);
+    }
     '';
 %>
-      $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f",$amt)%>">
+      $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=$amt%>">
     </TD></TR></TABLE>
   </TD>
 </TR>
