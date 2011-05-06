@@ -93,7 +93,7 @@ sub price_info {
 }
 
 sub calc_setup {
-  my($self, $cust_pkg, $sdate, $details ) = @_;
+  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   return 0 if $self->prorate_setup($cust_pkg, $sdate);
 
@@ -107,8 +107,12 @@ sub calc_setup {
 
   my $charge = $quantity * $self->unit_setup($cust_pkg, $sdate, $details);
 
-  my $param = { 'setup_charge' => $charge };
-  my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+  my $discount = 0;
+  if ( $charge > 0 ) {
+      $param->{'setup_charge'} = $charge;
+      $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+      delete $param->{'setup_charge'};
+  }
 
   sprintf('%.2f', $charge - $discount);
 }
