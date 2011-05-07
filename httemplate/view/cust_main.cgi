@@ -104,7 +104,7 @@ function areyousure(href, message) {
 
 % if ( $conf->config('cust_main-external_links') ) {
     <% $br++ ? ' | ' : '' %>
-%   my @links = split(/\n/, $conf->config('menu-prepend_links'));
+%   my @links = split(/\n/, $conf->config('cust_main-external_links'));
 %   foreach my $link (@links) {
 %     $link =~ /^\s*(\S+)\s+(.*?)(\s*\(([^\)]*)\))?$/ or next;
 %     my($url, $label, $alt) = ($1, $2, $4);
