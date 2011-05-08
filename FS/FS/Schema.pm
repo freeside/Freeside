@@ -1452,7 +1452,7 @@ sub tables_hashref {
                    [ 'usernum' ], [ 'agent_pkgid' ],
                    ['order_date'], [ 'start_date' ], ['setup'], ['bill'],
                    ['last_bill'], ['susp'], ['adjourn'], ['cancel'],
-                   ['expire'], ['contract_end'], ['change_date'],
+                   ['expire'], ['contract_end'], ['change_date'], ['no_auto'],
                  ],
     },
 
@@ -1631,7 +1631,7 @@ sub tables_hashref {
       'primary_key' => 'pkgpart',
       'unique' => [],
       'index' => [ [ 'promo_code' ], [ 'disabled' ], [ 'classnum' ],
-                   [ 'agentnum' ],
+                   [ 'agentnum' ], ['no_auto'],
                  ],
     },
 

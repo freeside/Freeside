@@ -29,7 +29,6 @@ sub condition_sql {
   # XXX: can be made faster with optimizations?
   # -remove some/all sub-selects?
   # -remove the two main separate selects?
-  # -add indices on cust_pkg.no_auto and part_pkg.no_auto and others?
 
   "0 = (select count(1) from cust_pkg 
             where cust_pkg.no_auto = 'Y' and cust_pkg.pkgnum in
