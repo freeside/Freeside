@@ -28,10 +28,10 @@ sub condition {
 
 }
 
-#sub condition_sql {
-#  my( $self, $table ) = @_;
-#
-#  'true';
-#}
+sub condition_sql {
+  my( $class, $table, %opt ) = @_;
+
+  "cust_main.agentnum = " . $class->condition_sql_option_integer('agentnum', $opt{'driver_name'});
+}
 
 1;
