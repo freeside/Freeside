@@ -45,15 +45,8 @@ while (1) {
                  keys %accountcode_unmatch;
   #hmm :/
   my $extra_sql = '';
-  if ( @recent ) {
-    $extra_sql .= ' AND '.
-      join(' AND ',
-                    map { my($sessionnum,$src) = split(',', $_);
-                          "( sessionnum != '$sessionnum' OR src != '$src' )";
-                        }
-                      @recent
-          );
-  }
+  $extra_sql .= ' AND acctid NOT IN (', join(',', @recent). ') '
+    if @recent;
 
   my $found = 0;
   foreach my $cdr ( 
@@ -117,7 +110,7 @@ while (1) {
           $cdr->status('done'); #so it doesn't try to rate
         } else {
           warn "WARNING: $cantfind; will keep trying\n";
-          $accountcode_unmatch{$cdr->sessionnum.','.$cdr->subscriber} = time;
+          $accountcode_unmatch{$cdr->acctid} = time;
           next;
         }
 
