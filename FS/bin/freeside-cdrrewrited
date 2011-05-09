@@ -105,7 +105,7 @@ while (1) {
 
         my $cantfind = "can't find primary CDR with session ". $cdr->sessionnum.
                        ", src ". $cdr->subscriber;
-        if ( $cdr->calldate_unix + $accountcode_giveup < time ) {
+        if ( $cdr->calldate_unix + $accountcode_giveup > time ) {
           push @status, 'taqua-accountcode-NOTFOUND';
           $cdr->status('done'); #so it doesn't try to rate
         } else {
