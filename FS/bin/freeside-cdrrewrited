@@ -41,12 +41,12 @@ while (1) {
   # rewritten "skipped", i.e. why we're a daemon in the first place
   # instead of just doing this search like normal CDRs
 
+  #hmm :/
   my @recent = grep { ($accountcode_unmatch{$_} + $accountcode_retry) < time }
                  keys %accountcode_unmatch;
-  #hmm :/
-  my $extra_sql = '';
-  $extra_sql .= ' AND acctid NOT IN (', join(',', @recent). ') '
-    if @recent;
+  my $extra_sql = scalar(@recent)
+                    ? ' AND acctid NOT IN (', join(',', @recent). ') '
+                    : '';
 
   my $found = 0;
   foreach my $cdr ( 
