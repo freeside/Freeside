@@ -42,7 +42,7 @@ while (1) {
   # instead of just doing this search like normal CDRs
 
   #hmm :/
-  my @recent = grep { ($accountcode_unmatch{$_} + $accountcode_retry) < time }
+  my @recent = grep { ($accountcode_unmatch{$_} + $accountcode_retry) > time }
                  keys %accountcode_unmatch;
   my $extra_sql = scalar(@recent)
                     ? ' AND acctid NOT IN ('. join(',', @recent). ') '
@@ -105,9 +105,11 @@ while (1) {
 
         my $cantfind = "can't find primary CDR with session ". $cdr->sessionnum.
                        ", src ". $cdr->subscriber;
-        if ( $cdr->calldate_unix - $accountcode_giveup > time ) {
+        if ( $cdr->calldate_unix + $accountcode_giveup < time ) {
+          warn" ERROR: $cantfind; giving up\n";
           push @status, 'taqua-accountcode-NOTFOUND';
           $cdr->status('done'); #so it doesn't try to rate
+          delete $accountcode_unmatch($cdr->acctid}; #so it doesn't suck mem
         } else {
           warn "WARNING: $cantfind; will keep trying\n";
           $accountcode_unmatch{$cdr->acctid} = time;
