@@ -45,7 +45,7 @@ while (1) {
   my @recent = grep { ($accountcode_unmatch{$_} + $accountcode_retry) < time }
                  keys %accountcode_unmatch;
   my $extra_sql = scalar(@recent)
-                    ? ' AND acctid NOT IN (', join(',', @recent). ') '
+                    ? ' AND acctid NOT IN ('. join(',', @recent). ') '
                     : '';
 
   my $found = 0;
