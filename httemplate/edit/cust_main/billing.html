@@ -484,7 +484,7 @@ function toggle(obj) {
 
 % if ( $conf->exists('voip-cust_cdr_squelch') ) { 
       <TR>
-       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="squelch_cdr" VALUE="Y" <% $cust_main->squelch_cdr eq "Y" ? 'CHECKED' : '' %>> Omit CDRs from invoices</TD>
+       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="squelch_cdr" VALUE="Y" <% $cust_main->squelch_cdr eq "Y" ? 'CHECKED' : '' %>> Omit CDRs from printed invoices</TD>
       </TR>
 % } else { 
       <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="<% $cust_main->squelch_cdr %>">
