@@ -47,7 +47,7 @@ use FS::cdr;
     # Duration
     sub {
         my($cdr, $duration) = @_;
-        $duration =~ /^(\d{1,2})m (\d{1,2})s$/
+        $duration =~ /^(\d{1,3})m (\d{1,2})s$/
             or die "unparsable duration: $duration"; #maybe we shouldn't die...
         my $sec = $1*60 + $2;
         $cdr->duration($sec);
