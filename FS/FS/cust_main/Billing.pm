@@ -416,18 +416,27 @@ sub bill {
 
       my $pass = ($cust_pkg->no_auto || $part_pkg->no_auto) ? 'no_auto' : '';
 
-      my $error =
-        $self->_make_lines( 'part_pkg'            => $part_pkg,
-                            'cust_pkg'            => $cust_pkg,
-                            'precommit_hooks'     => \@precommit_hooks,
-                            'line_items'          => $cust_bill_pkg{$pass},
-                            'setup'               => $total_setup{$pass},
-                            'recur'               => $total_recur{$pass},
-                            'tax_matrix'          => $taxlisthash{$pass},
-                            'time'                => $time,
-                            'real_pkgpart'        => $real_pkgpart,
-                            'options'             => \%options,
-                          );
+      my $next_bill = $cust_pkg->getfield('bill') || 0;
+      my $error;
+      while ( $next_bill <= $time ) {
+        $error =
+          $self->_make_lines( 'part_pkg'            => $part_pkg,
+                              'cust_pkg'            => $cust_pkg,
+                              'precommit_hooks'     => \@precommit_hooks,
+                              'line_items'          => $cust_bill_pkg{$pass},
+                              'setup'               => $total_setup{$pass},
+                              'recur'               => $total_recur{$pass},
+                              'tax_matrix'          => $taxlisthash{$pass},
+                              'time'                => $time,
+                              'real_pkgpart'        => $real_pkgpart,
+                              'options'             => \%options,
+                            );
+        # Stop if anything goes wrong, or if we're not incrementing 
+        # the bill date.
+        last if $error;
+        last if ($cust_pkg->getfield('bill') || 0) == $next_bill;
+        $next_bill = $cust_pkg->getfield('bill') || 0;
+      }
       if ($error) {
         $dbh->rollback if $oldAutoCommit && !$options{no_commit};
         return $error;

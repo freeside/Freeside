@@ -50,6 +50,7 @@ day arrives.
 sub calc_prorate {
   my ($self, $cust_pkg, $sdate, $details, $param, $cutoff_day) = @_;
   die "no cutoff_day" unless $cutoff_day;
+  die "can't prorate non-monthly package\n" if $self->freq =~ /\D/;
 
   my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
 
