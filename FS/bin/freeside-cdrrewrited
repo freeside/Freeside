@@ -49,6 +49,7 @@ while (1) {
                     : '';
 
   my $found = 0;
+  my %skip = ();
   foreach my $cdr ( 
     qsearch( {
       'table'     => 'cdr',
@@ -60,6 +61,8 @@ while (1) {
                      ' LIMIT 1024', #arbitrary, but don't eat too much memory
     } )
   ) {
+
+    next if $skip{$cdr->acctid};
 
     $found = 1;
     my @status = ();
@@ -125,6 +128,7 @@ while (1) {
           warn "WARNING: error rewriting primary CDR (will retry): $error\n";
           next;
         }
+        $skip{$primary->acctid} = 1;
 
         push @status, 'taqua-accountcode';
         $cdr->status('done'); #so it doesn't try to rate
