@@ -30,6 +30,10 @@ die "not running; cdr-asterisk_forward_rewrite, cdr-charged_party_rewrite ".
 
 #--
 
+my %accountcode_unmatch = ();
+my $accountcode_retry = 4 * 60 * 60; # 4 hours
+my $accountcode_giveup = 4 * 24 * 60 * 60; # 4 days
+
 while (1) {
 
   #hmm... don't want to do an expensive search with an ever-growing bunch
@@ -37,14 +41,29 @@ while (1) {
   # rewritten "skipped", i.e. why we're a daemon in the first place
   # instead of just doing this search like normal CDRs
 
+  my @recent = grep { ($accountcode_unmatch{$_} + $accountcode_retry) < time }
+                 keys %accountcode_unmatch;
+  #hmm :/
+  my $extra_sql = '';
+  if ( @recent ) {
+    $extra_sql .= ' AND '.
+      join(' AND ',
+                    map { my($sessionnum,$src) = split(',', $_);
+                          "( sessionnum != '$sessionnum' OR src != '$src' )";
+                        }
+                      @recent
+          );
+  }
+
   my $found = 0;
   foreach my $cdr ( 
     qsearch( {
       'table'     => 'cdr',
       'extra_sql' => 'FOR UPDATE',
       'hashref'   => {},
-      'extra_sql' => 'WHERE freesidestatus IS NULL'.
-                     ' AND freesiderewritestatus IS NULL'.
+      'extra_sql' => 'WHERE freesidestatus IS NULL '.
+                     ' AND freesiderewritestatus IS NULL '.
+                     $extra_sql.
                      ' LIMIT 1024', #arbitrary, but don't eat too much memory
     } )
   ) {
@@ -90,21 +109,33 @@ while (1) {
       });
 
       unless ( $primary ) {
-        warn "WARNING: can't find primary CDR with session ". $cdr->sessionnum.
-             ", src ". $cdr->subscriber. "; will keep trying\n";
-        next;
+
+        my $cantfind = "can't find primary CDR with session ". $cdr->sessionnum.
+                       ", src ". $cdr->subscriber;
+        if ( $cdr->calldate_unix + $accountcode_giveup < time ) {
+          push @status, 'taqua-accountcode-NOTFOUND';
+          $cdr->status('done'); #so it doesn't try to rate
+        } else {
+          warn "WARNING: $cantfind; will keep trying\n";
+          $accountcode_unmatch{$cdr->sessionnum.','.$cdr->subscriber} = time;
+          next;
+        }
+
+      } else {
+
+        $primary->accountcode( $cdr->lastdata );
+        #$primary->freesiderewritestatus( 'taqua-accountcode-primary' );
+        my $error = $primary->replace;
+        if ( $error ) {
+          warn "WARNING: error rewriting primary CDR (will retry): $error\n";
+          next;
+        }
+
+        push @status, 'taqua-accountcode';
+        $cdr->status('done'); #so it doesn't try to rate
+
       }
 
-      $primary->accountcode( $cdr->lastdata );
-      #$primary->freesiderewritestatus( 'taqua-accountcode-primary' );
-      my $error = $primary->replace;
-      if ( $error ) {
-        warn "WARNING: error rewriting primary CDR (will retry): $error\n";
-        next;
-      }
-
-      push @status, 'taqua-accountcode';
-      $cdr->status('done'); #so it doesn't try to rate
     }
 
     $cdr->freesiderewritestatus(
