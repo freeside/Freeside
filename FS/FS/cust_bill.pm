@@ -2832,8 +2832,10 @@ sub print_generic {
     if ($conf->exists('voip-cust_accountcode_cdr') && $cust_main->accountcode_cdr) {
       my ($accountcode_section, $accountcode_lines) =
         $self->_items_accountcode_cdr($escape_function_nonbsp,$format);
-      push @{$late_sections}, $accountcode_section;
-      push @detail_items, @$accountcode_lines;
+      if ( scalar(@$accountcode_lines) ) {
+          push @{$late_sections}, $accountcode_section;
+          push @detail_items, @$accountcode_lines;
+      }
     }
   }else{
     push @sections, { 'description' => '', 'subtotal' => '' };
