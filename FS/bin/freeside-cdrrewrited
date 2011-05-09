@@ -106,10 +106,10 @@ while (1) {
         my $cantfind = "can't find primary CDR with session ". $cdr->sessionnum.
                        ", src ". $cdr->subscriber;
         if ( $cdr->calldate_unix + $accountcode_giveup < time ) {
-          warn" ERROR: $cantfind; giving up\n";
+          warn "ERROR: $cantfind; giving up\n";
           push @status, 'taqua-accountcode-NOTFOUND';
           $cdr->status('done'); #so it doesn't try to rate
-          delete $accountcode_unmatch($cdr->acctid}; #so it doesn't suck mem
+          delete $accountcode_unmatch{$cdr->acctid}; #so it doesn't suck mem
         } else {
           warn "WARNING: $cantfind; will keep trying\n";
           $accountcode_unmatch{$cdr->acctid} = time;
