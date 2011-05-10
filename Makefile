@@ -191,6 +191,7 @@ perl-modules:
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
 	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
 	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
+	  s'%%%RT_PATH%%%'${RT_PATH}'g; \
 	  s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	" blib/lib/FS/*.pm;\
 	perl -p -i -e "\

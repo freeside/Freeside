@@ -327,6 +327,8 @@ fixperms:
 
 	chmod 0440 $(DESTDIR)$(CONFIG_FILE)
 	chmod 0640 $(DESTDIR)$(SITE_CONFIG_FILE)
+	# Make this externally readable
+	chmod 0440 $(DESTDIR)$(RT_ETC_PATH)/initialdata
 
 	# Make the system binaries
 	cd $(DESTDIR)$(RT_BIN_PATH) && ( chmod 0755 $(BINARIES) ; chown $(BIN_OWNER) $(BINARIES);  chgrp $(RTGROUP) $(BINARIES))

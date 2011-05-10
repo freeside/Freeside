@@ -84,6 +84,59 @@ sub _upgrade_data {
     );
     die $msg if !$val;
   }
+
+  # Create any missing scrips
+  our (@Groups, @Users, @ACL, @Queues, @ScripActions, @ScripConditions,
+       @Templates, @CustomFields, @Scrips, @Attributes, @Initial, @Final);
+  my $datafile = '%%%RT_PATH%%%/etc/initialdata';
+  eval { require $datafile };
+  if ( $@ ) {
+    warn "Couldn't load RT data from '$datafile': $@\n(skipping)\n";
+    return;
+  }
+
+  my $search = RT::ScripConditions->new($CurrentUser);
+  $search->UnLimit;
+  my %condition = map { lc($_->Name), $_->Id } @{ $search->ItemsArrayRef };
+
+  $search = RT::ScripActions->new($CurrentUser);
+  $search->UnLimit;
+  my %action = map { lc($_->Name), $_->Id } @{ $search->ItemsArrayRef };
+
+  $search = RT::Templates->new($CurrentUser);
+  $search->UnLimit;
+  my %template = map { lc($_->Name), $_->Id } @{ $search->ItemsArrayRef };
+
+  my $Scrip = RT::Scrip->new($CurrentUser);
+  foreach my $s ( @Scrips ) {
+    my $desc = $s->{'Description'};
+    my ($c, $a, $t) = map lc,
+      @{ $s }{'ScripCondition', 'ScripAction', 'Template'};
+    if ( !$condition{$c} ) {
+      warn "ScripCondition '$c' not found.\n";
+      next;
+    }
+    if ( !$action{$a} ) {
+      warn "ScripAction '$a' not found.\n";
+      next;
+    }
+    if ( !$template{$t} ) {
+      warn "Template '$t' not found.\n";
+      next;
+    }
+    my %param = (
+      ScripCondition => $condition{$c},
+      ScripAction => $action{$a},
+      Template => $template{$t},
+      Queue => 0,
+    );
+    $Scrip->LoadByCols(%param);
+    if (!defined($Scrip->Id)) {
+      my ($val, $msg) = $Scrip->Create(%param, Description => $desc);
+      die $msg if !$val;
+    }
+  } #foreach (@Scrips)
+
   return;
 }
 
