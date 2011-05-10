@@ -179,8 +179,10 @@ sub billco_upload {
       or die "can't connect to $hostname: $@\n";
     $ftp->login($username, $password)
       or die "can't login to $hostname: ". $ftp->message."\n";
-    $ftp->cwd($path)
-      or die "can't cd $path on $hostname: ". $ftp->message. "\n";
+    unless ( $ftp->cwd($path) ) {
+      my $msg = "can't cd $path on $hostname: ". $ftp->message. "\n";
+      ( $path eq '/' ) ? warn $msg : die $msg;
+    }
     $ftp->binary
       or die "can't set binary mode on $hostname\n";
 
