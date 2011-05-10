@@ -4151,7 +4151,6 @@ sub _items_accountcode_cdr {
                     'description'   => 'Usage by Account Code',
                     'post_total'    => '',
                     'summarized'    => '',
-                    'total_generator' => sub { '' },
                     'header'        => '',
                   };
     my @lines;
@@ -4188,6 +4187,7 @@ sub _items_accountcode_cdr {
                     ext_description => [],
             };
 
+            $section->{'amount'} += $amount;
             $accountcodes{$accountcode}{'amount'} += $amount;
             $accountcodes{$accountcode}{calls}++;
             $accountcodes{$accountcode}{duration} += $detail->duration;
@@ -4202,7 +4202,9 @@ sub _items_accountcode_cdr {
         push @lines, $l;
     }
 
-    return ($section,\@lines);
+    my @sorted_lines = sort { $a->{'description'} <=> $b->{'description'} } @lines;
+
+    return ($section,\@sorted_lines);
 }
 
 sub _items_svc_phone_sections {
