@@ -8,6 +8,12 @@
   <TD ALIGN="right">Username: </TD>
   <TD><INPUT TYPE="text" NAME="username"></TD>
 </TR>
+<% include( '/elements/tr-checkbox.html',
+            'field' => 'summarize',
+            'label' => 'Summarize',
+            'value' => 'Y',
+          )
+%>
 <TR>
   <TD></TD>
   <TD><FONT SIZE="-1"><I>(leave blank to show all users)</I></FONT></TD>

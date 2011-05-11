@@ -57,6 +57,7 @@
 %            'svc_acct'        => $cgi_svc_acct,
 %            'ip'              => $ip,
 %            'prefix'          => $prefix, 
+%            'summarize'       => $summarize,
 %          } )
 %       }
 %   ) {
@@ -95,6 +96,9 @@ die "access denied"
 ###
 # parse cgi params
 ###
+
+my $summarize = 0;
+$summarize = 1 if $cgi->param('summarize') eq 'Y';
 
 #sort of false laziness w/cust_pay.cgi
 my( $beginning, $ending ) = ( '', '' );
@@ -265,7 +269,42 @@ my $octets_format = sub {
 # the fields
 ###
 
-tie my %fields, 'Tie::IxHash', 
+my %fields;
+if ( $summarize ) {
+tie %fields, 'Tie::IxHash', 
+  'username'          => {
+                           name    => 'User',
+                           attrib  => 'UserName',
+                           fmt     => $user_format,
+                           align   => 'left',
+                         },
+  'dummy'             => {
+                           name    => 'Customer',
+                           attrib  => '',
+                           fmt     => $customer_format,
+                           align   => 'left',
+                         },
+  'acctsessiontime'   => {
+                           name    => 'Duration',
+                           attrib  => 'Acct-Session-Time',
+                           fmt     => $duration_format,
+                           align   => 'right',
+                         },
+  'acctinputoctets'   => {
+                           name    => 'Upload', # (from user)',
+                           attrib  => 'Acct-Input-Octets',
+                           fmt     => $octets_format,
+                           align   => 'right',
+                         },
+  'acctoutputoctets'  => {
+                           name    => 'Download', # (to user)',
+                           attrib  => 'Acct-Output-Octets',
+                           fmt     => $octets_format,
+                           align   => 'right',
+                         },
+;
+} else {
+tie %fields, 'Tie::IxHash',
   'username'          => {
                            name    => 'User',
                            attrib  => 'UserName',
@@ -322,6 +361,7 @@ tie my %fields, 'Tie::IxHash',
                            align   => 'right',
                          },
 ;
+}
 $fields{$_}->{fmt} ||= sub { length($_[0]) ? shift : '&nbsp'; }
   foreach keys %fields;
 

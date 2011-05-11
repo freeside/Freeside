@@ -610,6 +610,7 @@ sub usage_sessions {
 
   my $opt = {};
   my($start, $end, $svc_acct, $ip, $prefix) = ( '', '', '', '', '');
+  my $summarize = 0;
   if ( ref($_[0]) ) {
     $opt = shift;
     $start    = $opt->{stoptime_start};
@@ -617,6 +618,7 @@ sub usage_sessions {
     $svc_acct = $opt->{svc_acct};
     $ip       = $opt->{ip};
     $prefix   = $opt->{prefix};
+    $summarize   = $opt->{summarize};
   } else {
     ( $start, $end ) = splice(@_, 0, 2);
     $svc_acct = @_ ? shift : '';
@@ -643,6 +645,10 @@ sub usage_sessions {
                  "$str2time acctstarttime ) as acctstarttime",
                  "$str2time acctstoptime ) as acctstoptime",
                );
+
+  @fields = ( 'username', 'sum(acctsessiontime) as acctsessiontime', 'sum(acctinputoctets) as acctinputoctets',
+              'sum(acctoutputoctets) as acctoutputoctets',
+            ) if $summarize;
 
   my @param = ();
   my @where = ();
@@ -696,11 +702,15 @@ sub usage_sessions {
   my $where = join(' AND ', @where);
   $where = "WHERE $where" if $where;
 
+  my $groupby = '';
+  $groupby = 'GROUP BY username' if $summarize;
+
+  my $orderby = 'ORDER BY AcctStartTime DESC';
+  $orderby = '' if $summarize;
+
   my $sth = $dbh->prepare('SELECT '. join(', ', @fields).
-                          "  FROM radacct
-                             $where
-                             ORDER BY AcctStartTime DESC
-  ") or die $dbh->errstr;                                 
+                          "  FROM radacct $where $groupby $orderby
+                        ") or die $dbh->errstr;                                 
   $sth->execute(@param) or die $sth->errstr;
 
   [ map { { %$_ } } @{ $sth->fetchall_arrayref({}) } ];
