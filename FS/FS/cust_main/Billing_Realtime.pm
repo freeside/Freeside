@@ -522,24 +522,6 @@ sub realtime_bop {
     'custnum' => $self->custnum,
     'status'  => { op=>'!=', value=>'done' } 
   });
-  # This is a problem.  A self-service third party payment that fails somehow 
-  # can't be retried, EVER, until someone manually clears it.  Totally 
-  # arbitrary fix: if the existing payment is more than two minutes old, 
-  # kill it.  This doesn't limit how long it can take the pending payment 
-  # to complete, only how long it will obstruct new payments.
-  my @still_pending;
-  foreach (@pending) {
-    if ( time - $_->_date > 120 ) {
-      my $error = $_->delete;
-      warn "error deleting stale pending payment ".$_->paypendingnum.": $error"
-        if $error; # not fatal, it will fail anyway
-    }
-    else {
-      push @still_pending, $_;
-    }
-  }
-  @pending = @still_pending;
-
   return "A payment is already being processed for this customer (".
          join(', ', map 'paypendingnum '. $_->paypendingnum, @pending ).
          "); $options{method} transaction aborted."
