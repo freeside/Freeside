@@ -2,7 +2,7 @@
 
 Example:
 
- include( 'elements/process.html',
+ <& elements/process.html,
 
    ###
    # required
@@ -78,7 +78,7 @@ Example:
    'agent_virt'       => 1,
    'agent_null_right' => 'Access Right Name',
 
- )
+ &>
 
 </%doc>
 %if ( $error ) {

@@ -2,7 +2,7 @@
 
 Example:
 
-  include( 'elements/search.html',
+  <& elements/search.html,
 
     ###
     # required
@@ -163,7 +163,7 @@ Example:
     # each hashref: http://search.cpan.org/dist/Spreadsheet-WriteExcel/lib/Spreadsheet/WriteExcel.pm#Format_methods_and_Format_properties
     'xls_format' => => [],
     
-  )
+  &>
 
 </%doc>
 % if ( $type eq 'csv' ) {

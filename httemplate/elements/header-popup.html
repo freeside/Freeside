@@ -20,7 +20,7 @@ Example:
 <HTML>
   <HEAD>
     <TITLE>
-      <% $title %>
+      <% $title |h %>
     </TITLE>
     <META HTTP-Equiv="Cache-Control" Content="no-cache">
     <META HTTP-Equiv="Pragma" Content="no-cache">
@@ -30,7 +30,7 @@ Example:
   <BODY BGCOLOR="#f8f8f8" <% $etc %>>
     <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
     <FONT SIZE=6>
-      <CENTER><% $title %></CENTER>
+      <CENTER><% $title |h %></CENTER>
     </FONT>
 
 % unless ( $nobr ) {

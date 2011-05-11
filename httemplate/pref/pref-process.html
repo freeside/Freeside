@@ -21,7 +21,7 @@ if ( grep { $cgi->param($_) !~ /^\s*$/ }
 
   $access_user = qsearchs( 'access_user', {
     'username'  => getotaker,
-    '_password' => $cgi->param('_password'),
+    '_password' => scalar($cgi->param('_password')),
   } );
 
   $error = 'Current password incorrect; password not changed'
@@ -48,7 +48,7 @@ unless ( $error ) { # if ($access_user) {
   my %param = $access_user->options;
 
   #XXX autogen
-  my @paramlist = qw( menu_position default_customer_view
+  my @paramlist = qw( locale menu_position default_customer_view
                       disable_html_editor
                       email_address
                       snom-ip snom-username snom-password

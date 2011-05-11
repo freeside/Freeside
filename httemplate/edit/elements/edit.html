@@ -2,7 +2,7 @@
 
 Example:
 
-  include( 'elements/edit.html',  
+  <& elements/edit.html,  
     'name_singular' =>  #singular name for the record
                         # (preferred, will be pluralized automatically)
     'name'          =>  #name for the record
@@ -182,7 +182,7 @@ Example:
     #run before display to manipulate element of the 'fields' arrayref
     'field_callback' => sub { my( $cgi, $object, $field_hashref ) = @_; },
 
-  );
+  &>
 
 </%doc>
 

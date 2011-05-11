@@ -1,11 +1,20 @@
 % $m->call_next;
 <%init>
+
   dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile');
+
+  my $locale =  $FS::CurrentUser::CurrentUser->option('locale')
+             || FS::Conf->new->config('locale')
+             || 'en_US';
+  $locale =~ s/_/-/g;
+  $lh = FS::L10N->get_handle($locale) || die "Unknown locale $locale";
+
 </%init>
 <%filter>
 
-my $profile = '';
 if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
+
+  my $profile = '';
 
   if ( lc($r->content_type) =~ /^text\/html/
        && $FS::CurrentUser::CurrentUser->option('show_db_profile')
@@ -35,9 +44,10 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
   }
 
   dbh->{'private_profile'} = {};
+
+  s/(<\/BODY>[\s\n]*<\/HTML>[\s\n]*)$/$profile$1/i;
 }
 
-s/(<\/BODY>[\s\n]*<\/HTML>[\s\n]*)$/$profile$1/i;
 </%filter>
 <%cleanup>
    dbh->commit();

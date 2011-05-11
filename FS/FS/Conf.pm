@@ -8,6 +8,7 @@ use MIME::Base64;
 use FS::ConfItem;
 use FS::ConfDefaults;
 use FS::Conf_compat17;
+use FS::Locales;
 use FS::payby;
 use FS::conf;
 use FS::Record qw(qsearch qsearchs);
@@ -1800,9 +1801,9 @@ and customer address. Include units.',
   {
     'key'         => 'locale',
     'section'     => 'UI',
-    'description' => 'Message locale',
+    'description' => 'Default locale',
     'type'        => 'select',
-    'select_enum' => [ qw(en_US) ],
+    'select_enum' => [ FS::Locales->locales ],
   },
 
   {

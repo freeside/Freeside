@@ -137,6 +137,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::TicketSystem;
   use FS::NetworkMonitoringSystem;
   use FS::Tron qw( tron_lint );
+  use FS::Locales;
+  use FS::L10N;
 
   use FS::agent;
   use FS::agent_type;
@@ -406,6 +408,11 @@ if ( -e $addl_handler_use_file ) {
     $m->comp('/elements/errorpage-popup.html', @_);
   }
 
+  sub mt {
+    use vars qw($lh);
+    $lh->maketext(@_);
+  }
+
   sub redirect {
     my( $location ) = @_;
     use vars qw($m);
@@ -526,13 +533,15 @@ sub mason_interps {
     ${$_[0]} = "'". ${$_[0]}. "'";
   };
 
+  my $defang_sub = sub {
+    ${$_[0]} = $html_defang->defang(${$_[0]});
+  };
+
   my $fs_interp = new HTML::Mason::Interp (
     %interp,
     comp_root    => $fs_comp_root,
-    escape_flags => { 'js_string' => $js_string_sub,
-                      'defang'    => sub {
-                        ${$_[0]} = $html_defang->defang(${$_[0]});
-                      },
+    escape_flags => { 'js_string'   => $js_string_sub,
+                      'defang'      => $defang_sub,
                     },
     compiler     => HTML::Mason::Compiler::ToObject->new(
                       allow_globals        => [qw(%session)],

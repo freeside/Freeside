@@ -39,6 +39,8 @@ L<FS::CurrentUser> -  Package representing the current user
 
 L<FS::CGI> - Non OO-subroutines for the web interface.
 
+L<FS::Locales> - Locales
+
 L<FS::Msgcat> - Message catalog
 
 L<FS::SearchCache> - Search cache

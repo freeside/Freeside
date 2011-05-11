@@ -51,7 +51,7 @@ sub freeside_setup {
     } else {
 
       package HTML::Mason::Commands;
-      use vars qw( $cgi $p $fsurl );
+      use vars qw( $cgi $p $fsurl $lh );
       use Encode;
       use FS::UID qw( cgisuidsetup );
       use FS::CGI qw( popurl rooturl );

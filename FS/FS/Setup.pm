@@ -103,7 +103,7 @@ sub populate_addl_locales {
 
 sub _add_country {
 
-  use Locale::SubCountry;
+  use Locale::SubCountry 1.44;
 
   my( $country ) = shift;
 

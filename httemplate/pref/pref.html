@@ -31,6 +31,20 @@ Interface
 <% ntable("#cccccc",2) %>
 
   <TR>
+    <TH ALIGN="right">Locale: </TH>
+    <TD>
+      <SELECT NAME="locale">
+%       foreach my $locale ( FS::Locales->locales ) {
+%         my %info = FS::Locales->locale_info($locale);
+%         my $selected = ($locale eq $curuser->option('locale'))
+%                          ? 'SELECTED' : '';
+          <OPTION VALUE="<% $locale %>" <%$selected%>><% $info{name} %> (<% $info{country} %>)
+%       }
+      </SELECT>
+    </TD>
+  </TR>
+
+  <TR>
     <TH ALIGN="right">Menu location: </TH>
     <TD>
       <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> Left<BR>

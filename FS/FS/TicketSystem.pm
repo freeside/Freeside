@@ -28,7 +28,7 @@ sub AUTOLOAD {
 }
 
 sub _upgrade_data {
-  return if $system ne 'RT_Internal';
+  return if !defined($system) || $system ne 'RT_Internal';
   my ($class, %opts) = @_;
 
   # go ahead and use the RT API for this

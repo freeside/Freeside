@@ -1,7 +1,7 @@
 package FS::Msgcat;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $locale $debug );
+use vars qw( @ISA @EXPORT_OK $conf $def_locale $debug );
 use Exporter;
 use FS::UID;
 #use FS::Record qw( qsearchs ); # wtf?  won't import...
@@ -16,7 +16,7 @@ FS::UID->install_callback( sub {
   eval "use FS::Conf;";
   die $@ if $@;
   $conf = new FS::Conf;
-  $locale = $conf->config('locale') || 'en_US';
+  $def_locale = $conf->config('locale') || 'en_US';
   $debug = $conf->exists('show-msgcat-codes')
 });
 
@@ -52,17 +52,28 @@ sub gettext {
   $debug ? geterror(@_) : _gettext(@_);
 }
 
+#though i guess we don't really have to cache here since we do it in
+# FS::L10N::DBI
+our %cache;
+
 sub _gettext {
   my $msgcode = shift;
+  my $locale =  (@_ && shift)
+             || $FS::CurrentUser::CurrentUser->option('locale')
+             || $def_locale;
+
+  return $cache{$locale}->{$msgcode} if exists $cache{$locale}->{$msgcode};
+
   my $msgcat = FS::Record::qsearchs('msgcat', {
     'msgcode' => $msgcode,
-    'locale' => $locale
+    'locale'  => $locale,
   } );
   if ( $msgcat ) {
-    $msgcat->msg;
+    $cache{$locale}->{$msgcode} = $msgcat->msg;
   } else {
-    warn "WARNING: message for msgcode $msgcode in locale $locale not found";
-    $msgcode;
+    warn "WARNING: message for msgcode $msgcode in locale $locale not found"
+      unless $locale eq 'en_US';
+    $cache{$locale}->{$msgcode} = $msgcode;
   }
 
 }
@@ -78,6 +89,7 @@ sub geterror {
   my $msgcode = shift;
   my $msg = _gettext($msgcode);
   if ( $msg eq $msgcode ) {
+    my $locale = $FS::CurrentUser::CurrentUser->option('locale') || $def_locale;
     "Error code $msgcode (message for locale $locale not found)";
   } else {
     "$msg (error code $msgcode)";
@@ -92,7 +104,7 @@ i18n/l10n, eek
 
 =head1 SEE ALSO
 
-L<FS::msgcat>, L<FS::Record>, schema.html from the base documentation.
+L<FS::Locales>, L<FS::msgcat>
 
 =cut
 
