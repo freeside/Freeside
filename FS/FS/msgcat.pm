@@ -126,7 +126,7 @@ sub _upgrade_data { #class method
 
   #"repopulate_msgcat", false laziness w/FS::Setup::populate_msgcat
 
-  my %messages = FS::Setup::msgcat_messages();
+  my %messages = _legacy_messages();
 
   foreach my $msgcode ( keys %messages ) {
     foreach my $locale ( keys %{$messages{$msgcode}} ) {
@@ -148,6 +148,122 @@ sub _upgrade_data { #class method
     }
   }
 
+}
+
+sub _legacy_messages {
+
+  #  'msgcode' => {
+  #    'en_US' => 'Message',
+  #  },
+
+  (
+
+    'passwords_dont_match' => {
+      'en_US' => "Passwords don't match",
+    },
+
+    'invalid_card' => {
+      'en_US' => 'Invalid credit card number',
+    },
+
+    'unknown_card_type' => {
+      'en_US' => 'Unknown card type',
+    },
+
+    'not_a' => {
+      'en_US' => 'Not a ',
+    },
+
+    'empty_password' => {
+      'en_US' => 'Empty password',
+    },
+
+    'no_access_number_selected' => {
+      'en_US' => 'No access number selected',
+    },
+
+    'illegal_text' => {
+      'en_US' => 'Illegal (text)',
+      #'en_US' => 'Only letters, numbers, spaces, and the following punctuation symbols are permitted: ! @ # $ % & ( ) - + ; : \' " , . ? / in field',
+    },
+
+    'illegal_or_empty_text' => {
+      'en_US' => 'Illegal or empty (text)',
+      #'en_US' => 'Only letters, numbers, spaces, and the following punctuation symbols are permitted: ! @ # $ % & ( ) - + ; : \' " , . ? / in required field',
+    },
+
+    'illegal_username' => {
+      'en_US' => 'Illegal username',
+    },
+
+    'illegal_password' => {
+      'en_US' => 'Illegal password (',
+    },
+
+    'illegal_password_characters' => {
+      'en_US' => ' characters)',
+    },
+
+    'username_in_use' => {
+      'en_US' => 'Username in use',
+    },
+
+    'phonenum_in_use' => {
+      'en_US' => 'Phone number in use',
+    },
+
+    'illegal_email_invoice_address' => {
+      'en_US' => 'Illegal email invoice address',
+    },
+
+    'illegal_name' => {
+      'en_US' => 'Illegal (name)',
+      #'en_US' => 'Only letters, numbers, spaces and the following punctuation symbols are permitted: , . - \' in field',
+    },
+
+    'illegal_phone' => {
+      'en_US' => 'Illegal (phone)',
+      #'en_US' => '',
+    },
+
+    'illegal_zip' => {
+      'en_US' => 'Illegal (zip)',
+      #'en_US' => '',
+    },
+
+    'expired_card' => {
+      'en_US' => 'Expired card',
+    },
+
+    'daytime' => {
+      'en_US' => 'Day Phone',
+    },
+
+    'night' => {
+      'en_US' => 'Night Phone',
+    },
+
+    'svc_external-id' => {
+      'en_US' => 'External ID',
+    },
+
+    'svc_external-title' => {
+      'en_US' => 'Title',
+    },
+
+    'stateid' => {
+      'en_US' => 'Driver\'s License',
+    },
+
+    'stateid_state' => {
+      'en_US' => 'Driver\'s License State',
+    },
+
+    'invalid_domain' => {
+      'en_US' => 'Invalid domain',
+    },
+
+  );
 }
 
 =back
