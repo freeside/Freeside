@@ -522,6 +522,19 @@ sub realtime_bop {
     'custnum' => $self->custnum,
     'status'  => { op=>'!=', value=>'done' } 
   });
+
+  #for third-party payments only, remove pending payments if they're in the 
+  #'thirdparty' (waiting for customer action) state.
+  if ( $namespace eq 'Business::OnlineThirdPartyPayment' ) {
+    foreach ( grep { $_->status eq 'thirdparty' } @pending ) {
+      my $error = $_->delete;
+      warn "error deleting unfinished third-party payment ".
+          $_->paypendingnum . ": $error\n"
+        if $error;
+    }
+    @pending = grep { $_->status ne 'thirdparty' } @pending;
+  }
+
   return "A payment is already being processed for this customer (".
          join(', ', map 'paypendingnum '. $_->paypendingnum, @pending ).
          "); $options{method} transaction aborted."
@@ -594,6 +607,9 @@ sub realtime_bop {
 
   if ( $transaction->is_success() && $namespace eq 'Business::OnlineThirdPartyPayment' ) {
 
+    $cust_pay_pending->status('thirdparty');
+    my $cpp_err = $cust_pay_pending->replace;
+    return { error => $cpp_err } if $cpp_err;
     return { reference => $cust_pay_pending->paypendingnum,
              map { $_ => $transaction->$_ } qw ( popup_url collectitems ) };
 

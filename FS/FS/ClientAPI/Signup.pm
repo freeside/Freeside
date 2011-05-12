@@ -904,8 +904,8 @@ sub capture_payment {
     return { error => '_decline', bill_error => $bill_error };
   }
 
-  if ($cust_pay_pending->status ne 'pending') {
-    my $bill_error = "Payment with id $paypendingnum is not pending, but ".
+  if ($cust_pay_pending->status ne 'thirdparty') {
+    my $bill_error = "Payment with id $paypendingnum is not thirdparty, but ".
                      $cust_pay_pending->status.  "; Transaction aborted.";
     return { error => '_decline', bill_error => $bill_error };
   }

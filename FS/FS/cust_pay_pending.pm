@@ -96,6 +96,10 @@ Aquires basic lock on payunique
 
 Transaction is pending with the gateway
 
+=item thirdparty
+
+Customer has been sent to an off-site payment gateway to complete processing
+
 =item authorized
 
 Only used for two-stage transactions that require a separate capture step

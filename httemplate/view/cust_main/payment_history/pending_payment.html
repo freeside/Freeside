@@ -33,6 +33,7 @@ my $info = $payby ? "($payby$payinfo)" : '';
 
 my %statusaction = (
   'new'        => 'delete',
+  'thirdparty' => 'delete',
   'pending'    => 'complete',
   'captured'   => 'capture',
 );
