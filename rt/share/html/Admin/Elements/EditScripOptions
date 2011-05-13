@@ -2,10 +2,14 @@
 <tr><td></td><td><table>
 % my $prefix = $Name.'Rules-';
 % foreach my $o (@options) {
+%   my $curr_value = $rules{ $o->{'name'} };
   <tr><td align="right"><% $o->{'label'} %>:</td>
   <td>
 %   if ( $o->{'type'} eq 'text' ) {
-  <input type="text" name="<% $prefix.$o->{'name'} %>" value="<% $rules{$o->{'name'}} %>">
+  <input type="text" name="<% $prefix.$o->{'name'} %>" value="<% $curr_value %>">
+%   }
+%   elsif ( $o->{'type'} eq 'checkbox' ) {
+  <input type="checkbox" name="<% $prefix.$o->{'name'} %>" value="1" <% $curr_value ? 'CHECKED' : '' %>>
 %   }
 %   elsif ( $o->{'type'} eq 'select' and ref $o->{'options'} ) {
   <select name="<% $prefix.$o->{'name'} %>">
@@ -13,7 +17,7 @@
 %     while (@choices) {
 %       my $v = shift @choices;
 %       my $l = shift @choices;
-  <option value="<% $v %>"<% ($rules{$o->{'name'}} eq $v) ? ' SELECTED' : ''%>>
+  <option value="<% $v %>"<% ($curr_value eq $v) ? ' SELECTED' : ''%>>
   <% $l %></option>
 %     }
   </select>

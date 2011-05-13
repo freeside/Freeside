@@ -6,6 +6,7 @@ config.layout.in
  etc/RT_SiteConfig.pm
  etc/schema.Pg
  etc/schema.mysql-4.1
+etc/initialdata
 
 lib/RT/Attribute_Overlay.pm #bugfix
  lib/RT/Config.pm
@@ -24,6 +25,7 @@ lib/RT/Action/EscalateQueue.pm #ticket escalation
 lib/RT/Action/SetPriority_Local.pm #ticket escalation
 lib/RT/CustomFieldValues/Queues.pm #ticket escalation
 lib/RT/Condition/CustomFieldChange.pm #create ticket on custom field change
+lib/RT/Condition/CustomFieldTransaction.pm #notify on custom field change
 lib/RT/Interface/Web_Vendor.pm
  lib/RT/Interface/Web/Handler.pm #freeside comp_root for dashboard emails
  lib/RT/Record.pm #and customfield date patch #fix transaction custom fields

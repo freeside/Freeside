@@ -97,6 +97,13 @@
     { Name        => 'Extract Subject Tag',                               # loc
       Description => 'Extract tags from a Transaction\'s subject and add them to the Ticket\'s subject.', # loc
       ExecModule  => 'ExtractSubjectTag' },
+
+    #freeside
+    { Name        => 'Set Priority',
+      Description => 'Set ticket priority',
+      ExecModule  => 'SetPriority',
+      Argument    => '',
+    },
 );
 
 @ScripConditions = (
@@ -183,6 +190,18 @@
        Description          => 'Whenever a ticket is reopened', # loc
        ApplicableTransTypes => 'Status,Set',
        ExecModule           => 'ReopenTicket',
+    },
+
+    #freeside
+    {  Name                 => 'On Custom Field Transaction',
+       Description          => 'When a custom field is changed',
+       ExecModule           => 'CustomFieldTransaction',
+       ApplicableTransTypes => 'Any',
+    },
+    {  Name                 => 'On Custom Field Change',
+       Description          => 'When a custom field is changed to some value',
+       ExecModule           => 'CustomFieldChange',
+       ApplicableTransTypes => 'Any',
     },
 
 );
@@ -486,6 +505,17 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
 }
 }
 },
+    {  Queue       => 0,
+       Name        => 'Custom Field Transaction',
+       Description => 'Custom field value changed',
+       Content     => q[Subject: {$Transaction->BriefDescription()}
+
+{RT->Config->Get('WebURL')}Ticket/Display.html?id={$Ticket->id}
+
+{$Transaction->Content()}
+],
+    },
+
 );
 # }}}
 
