@@ -307,6 +307,7 @@ if($curuser->access_right('Financial reports')) {
 
   %report_financial = (
     'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
+    'Daily Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time_daily.html', 'Sales, credits and receipts (broken down by day) summary graph' ],
     'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
     'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
     'Employee Commission Report' => [ $fsurl.'search/report_employee_commission.html', '' ],

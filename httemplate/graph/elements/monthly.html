@@ -19,12 +19,19 @@ Example:
     'links'           => \@links,      # or \%link, #opt
     'link_fromparam'  => 'param_from', #defaults to 'begin'
     'link_toparam'    => 'param_to',   #defaults to 'end'
+    'daily'           => 1, # omit for monthly granularity
 
     #optional, pulled from CGI params if not specified
     'start_month'     => $smonth,
     'start_year'      => $syear,
     'end_month'       => $emonth,
     'end_year'        => $eyear,
+
+
+    #optional, pulled from CGI params if not specified, 
+    #only if 'daily' option is given
+    'start_day'       => $sday,
+    'end_day'         => $eday,
 
     #optional
     'agentnum'        => $agentnum,
@@ -42,8 +49,7 @@ Example:
             'data'          => $data->{'data'},
             'row_labels'    => $data->{'item_labels'},
             'graph_labels'  => $opt{'graph_labels'} || $data->{'item_labels'},
-            'col_labels'    => [ map { my $m = $_; $m =~ s/^(\d+)\//$mon[$1-1] / ; $m }
-                                 @{$data->{label}} ],
+            'col_labels'    => $col_labels,
             'axis_labels'   => $data->{label},
             'colors'        => $data->{colors},
             'links'         => \@links,
@@ -83,27 +89,40 @@ $opt{'start_year'}  ||= $cgi->param('start_year'); # || 1899+$curyear;
 $opt{'end_month'} ||= $cgi->param('end_month'); # || $curmon+1;
 $opt{'end_year'}  ||= $cgi->param('end_year'); # || 1900+$curyear;
 
-my $report = new FS::Report::Table::Monthly (
+if ( $opt{'daily'} ) { # daily granularity
+    $opt{'start_day'} ||= $cgi->param('start_day');
+    $opt{'end_day'} ||= $cgi->param('end_day');
+}
 
-  'items'        => \@items,
-  'params'       => $opt{'params'},
-  'item_labels'  => ( $cgi->param('_type') =~ /^(png)$/
-                        ? $opt{'graph_labels'}
-                        : $opt{'labels'}
-                    ),
-  'colors'       => $opt{'colors'},
-  'links'        => $opt{'links'},
+my %reportopts = (
+      'items'        => \@items,
+      'params'       => $opt{'params'},
+      'item_labels'  => ( $cgi->param('_type') =~ /^(png)$/
+                            ? $opt{'graph_labels'}
+                            : $opt{'labels'}
+                        ),
+      'colors'       => $opt{'colors'},
+      'links'        => $opt{'links'},
 
-  'start_month'  => $opt{'start_month'},
-  'start_year'   => $opt{'start_year'},
-  'end_month'    => $opt{'end_month'},
-  'end_year'     => $opt{'end_year'},
-
-  'agentnum'     => $opt{'agentnum'},
-  'remove_empty' => $opt{'remove_empty'},
-  'doublemonths' => $opt{'doublemonths'},
+      'start_day'    => $opt{'start_day'},
+      'start_month'  => $opt{'start_month'},
+      'start_year'   => $opt{'start_year'},
+      'end_day'      => $opt{'end_day'},
+      'end_month'    => $opt{'end_month'},
+      'end_year'     => $opt{'end_year'},
+      'agentnum'     => $opt{'agentnum'},
+      'remove_empty' => $opt{'remove_empty'},
+      'doublemonths' => $opt{'doublemonths'},
 );
+
+my $report;
+$report = new FS::Report::Table::Daily(%reportopts) if $opt{'daily'};
+$report = new FS::Report::Table::Monthly(%reportopts) unless $opt{'daily'};
 my $data = $report->data;
+
+my $col_labels = [ map { my $m = $_; $m =~ s/^(\d+)\//$mon[$1-1] / ; $m }
+                             @{$data->{label}} ];
+$col_labels = $data->{label} if $opt{'daily'};
 
 my @links;
 foreach my $link (@{ $data->{'links'} }) {

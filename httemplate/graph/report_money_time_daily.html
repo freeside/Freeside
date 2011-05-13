@@ -1,0 +1,26 @@
+<% include('/elements/header.html', 'Daily Sales, Credits and Receipts Summary' ) %>
+
+<FORM ACTION="money_time_daily.cgi" METHOD="GET">
+
+<TABLE>
+
+<% include( '/elements/tr-input-beginning_ending.html' ) %>
+
+<% include('/elements/tr-select-agent.html',
+             'label'         => 'For agent: ',
+             'disable_empty' => 0,
+          )
+%>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Display">
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

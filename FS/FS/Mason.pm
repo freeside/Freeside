@@ -133,7 +133,9 @@ if ( -e $addl_handler_use_file ) {
                  );
   use FS::Misc::eps2png qw( eps2png );
   use FS::Report::FCC_477;
+  use FS::Report::Table;
   use FS::Report::Table::Monthly;
+  use FS::Report::Table::Daily;
   use FS::TicketSystem;
   use FS::NetworkMonitoringSystem;
   use FS::Tron qw( tron_lint );

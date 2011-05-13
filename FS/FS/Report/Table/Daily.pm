@@ -1,4 +1,4 @@
-package FS::Report::Table::Monthly;
+package FS::Report::Table::Daily;
 
 use strict;
 use vars qw( @ISA );
@@ -9,18 +9,20 @@ use Time::Local qw( timelocal );
 
 =head1 NAME
 
-FS::Report::Table::Monthly - Tables of report data, indexed monthly
+FS::Report::Table::Daily - Tables of report data, indexed daily
 
 =head1 SYNOPSIS
 
-  use FS::Report::Table::Monthly;
+  use FS::Report::Table::Daily;
 
-  my $report = new FS::Report::Table::Monthly (
+  my $report = new FS::Report::Table::Daily (
     'items' => [ 'invoiced', 'netsales', 'credits', 'receipts', ],
     'start_month' => 4,
     'start_year'  => 2000,
     'end_month'   => 4,
     'end_year'    => 2020,
+    'start_day'   => 2,
+    'end_day'     => 27,
     #opt
     'agentnum'    => 54
     'params'      => [ [ 'paramsfor', 'item_one' ], [ 'item', 'two' ] ], # ...
@@ -43,53 +45,46 @@ Returns a hashref of data (!! describe)
 sub data {
   my $self = shift;
 
+  my $sday = $self->{'start_day'};
   my $smonth = $self->{'start_month'};
   my $syear = $self->{'start_year'};
+  my $eday = $self->{'end_day'};
   my $emonth = $self->{'end_month'};
   my $eyear = $self->{'end_year'};
   my $agentnum = $self->{'agentnum'};
 
   my %data;
 
-  while ( $syear < $eyear || ( $syear == $eyear && $smonth < $emonth+1 ) ) {
+  my $sdate = timelocal(0,0,0,$sday,$smonth-1,$syear);
+  my $edate = timelocal(0,0,0,$eday,$emonth-1,$eyear);
 
-    if ( $self->{'doublemonths'} ) {
-	my($firstLabel,$secondLabel) = @{$self->{'doublemonths'}};
-	push @{$data{label}}, "$smonth/$syear $firstLabel";
-	push @{$data{label}}, "$smonth/$syear $secondLabel";
-    }
-    else {
-	push @{$data{label}}, "$smonth/$syear";
-    }
+  warn "daily range $sdate $edate\n";
 
-    my $speriod = timelocal(0,0,0,1,$smonth-1,$syear);
+  # XXX: use date_format config for the labels since we have day in the labels now?
+  # XXX: leap seconds / DST 
+  while ( $sdate < $edate ) {
+    my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($sdate);
+    $mon++;
+    $year += 1900;
+    warn "label=$mday/$mon/$year\n";
+    push @{$data{label}}, "$mday/$mon/$year";
+
+    my $speriod = $sdate;
+    $sdate += 86400;
+    my $eperiod = $sdate;
+
     push @{$data{speriod}}, $speriod;
-    if ( ++$smonth == 13 ) { $syear++; $smonth=1; }
-    my $eperiod = timelocal(0,0,0,1,$smonth-1,$syear);
     push @{$data{eperiod}}, $eperiod;
-  
+
     my $col = 0;
     my @items = @{$self->{'items'}};
     my $i;
     for ( $i = 0; $i < scalar(@items); $i++ ) {
-      if ( $self->{'doublemonths'} ) {
-	  my $item = $items[$i]; 
-	  my @param = $self->{'params'} ? @{ $self->{'params'}[$i] }: ();
-	  my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
-	  push @{$data{data}->[$col]}, $value;
-	  $item = $items[$i+1]; 
-	  @param = $self->{'params'} ? @{ $self->{'params'}[++$i] }: ();
-	  $value = $self->$item($speriod, $eperiod, $agentnum, @param);
-	  push @{$data{data}->[$col++]}, $value;
-      }
-      else {
 	  my $item = $items[$i];
 	  my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
 	  my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
 	  push @{$data{data}->[$col++]}, $value;
-      }
     }
-
   }
 
   #these need to get generalized, sheesh
@@ -129,6 +124,7 @@ sub data {
   }
 
   \%data;
+
 }
 
 =back
@@ -142,4 +138,3 @@ Documentation.
 =cut
 
 1;
-
