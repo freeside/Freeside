@@ -140,7 +140,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::NetworkMonitoringSystem;
   use FS::Tron qw( tron_lint );
   use FS::Locales;
-  use FS::L10N;
+  use FS::Maketext qw( mt );
 
   use FS::agent;
   use FS::agent_type;
@@ -408,11 +408,6 @@ if ( -e $addl_handler_use_file ) {
   sub errorpage_popup {
     use vars qw($m);
     $m->comp('/elements/errorpage-popup.html', @_);
-  }
-
-  sub mt {
-    use vars qw($lh);
-    $lh->maketext(@_);
   }
 
   sub redirect {

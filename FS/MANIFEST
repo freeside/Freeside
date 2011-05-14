@@ -597,3 +597,6 @@ t/rate_center.t
 FS/Locales.pm
 t/Locales.t
 FS/L10N.pm
+t/L10N.t
+FS/Maketext.pm
+t/Maketext.t

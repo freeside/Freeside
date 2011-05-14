@@ -1,13 +1,9 @@
 % $m->call_next;
 <%init>
 
-  dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile');
+  $FS::Maketext::lh = '';
 
-  my $locale =  $FS::CurrentUser::CurrentUser->option('locale')
-             || FS::Conf->new->config('locale')
-             || 'en_US';
-  $locale =~ s/_/-/g;
-  $lh = FS::L10N->get_handle($locale) || die "Unknown locale $locale";
+  dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile');
 
 </%init>
 <%filter>
