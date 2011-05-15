@@ -583,7 +583,7 @@ $config_menu{'Broadband'} = [ \%config_broadband, ''    ]
 $config_menu{'Phone'}  = [ \%config_phone, ''    ]
   if $curuser->access_right('Configuration');
 $config_menu{'Network Monitoring'} = [ \%config_nms, '' ]
-  if $curuser->access_right('Configuration')
+  if $curuser->access_right('Configure network monitoring')
   && $conf->config('network_monitoring_system') eq 'Torrus_Internal';
 $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
   if $curuser->access_right('Configuration' )

@@ -14,7 +14,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Configure network monitoring');
 
 my $html_bottom_sub = sub {
   my $torrus_srvderive = shift;
