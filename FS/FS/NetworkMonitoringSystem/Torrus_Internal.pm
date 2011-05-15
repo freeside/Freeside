@@ -155,11 +155,14 @@ sub report {
 }
 
 sub add_router {
-  my($self, $ip) = @_;
+  my($self, $ip, $community) = @_;
+
+  $community = qq!<param name="snmp-community" value="$community"/>\n !
+    if length($community) > 1;
 
   my $newhost = 
     qq(  <host>\n).
-    qq(    <param name="snmp-host" value="$ip"/>\n).
+    qq(    <param name="snmp-host" value="$ip"/>\n).$community.
     qq(  </host>\n);
 
   my $ddx = $self->_torrus_loadddx;

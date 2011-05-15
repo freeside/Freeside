@@ -311,6 +311,8 @@ tie my %rights, 'Tie::IxHash',
 
     { rightname=>'Broadband configuration' },
     { rightname=>'Broadband global configuration', global=>1 },
+    
+    { rightname=> 'Configure network monitoring', global=>1 },
 
     #{ rightname=>'Edit employees', global=>1, },
     #{ rightname=>'Edit employee groupss', global=>1, },

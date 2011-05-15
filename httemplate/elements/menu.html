@@ -638,7 +638,8 @@ if ( $conf->config('ticket_system') ) {
     ],
 }
 
-if ( $conf->config('network_monitoring_system') eq 'Torrus_Internal' ) {
+if ( $conf->config('network_monitoring_system') eq 'Torrus_Internal' &&
+  $curuser->access_right('Configure network monitoring') ) {
   $menu{'Network Main'} =
     [ $fsurl.'torrus/main', 'Network monitoring start page' ],
 }

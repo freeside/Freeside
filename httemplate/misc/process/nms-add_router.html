@@ -2,12 +2,16 @@
 </BODY></HTML>
 <%init>
 
-# XXX: access rights
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configure network monitoring');
 
 my $host = $cgi->param('host'); 
 die 'invalid host' unless $host =~ /^[0-9.a-zA-Z\-]+$/;
 
+my $community = $cgi->param('community'); 
+die 'invalid SNMP community string' unless $community =~ /^[0-9.a-zA-Z\-]*$/;
+
 my $nms = new FS::NetworkMonitoringSystem;
-$nms->add_router($host);
+$nms->add_router($host,$community);
 
 </%init>
