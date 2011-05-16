@@ -1,5 +1,5 @@
 <& /elements/header.html, mt('Invoice View'), menubar(
-  mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+  mt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
 ) &>
 
 % if ( $conf->exists('deleteinvoices')

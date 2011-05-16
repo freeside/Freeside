@@ -14,20 +14,21 @@
 % #it would be nice if the menubar could be hidden for print, but better to
 % # have it available than not, otherwise the user winds up at a dead end
   <% menubar(
-       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
      )
   %>
   <BR><BR>
 % } elsif ( $link eq 'email' ) {
 %  if ( $email_error ) {
-      <& /elements/header-popup.html, mt("Error re-emailing receipt: $email_error") &>
+      <& /elements/header-popup.html, mt("Error re-emailing receipt") &>
+%       warn "Error re-emailing receipt: $email_error";
 %  } else {
       <& /elements/header-popup.html, mt("Re-emailed receipt") &>
 %  }
 % } else { 
 
   <& /elements/header.html, mt("$thing Receipt"), menubar(
-       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
        mt('Print receipt') => $pr_link,
      )
   &>

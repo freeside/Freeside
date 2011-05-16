@@ -11,7 +11,7 @@
 % #it would be nice if the menubar could be hidden for print, but better to
 % # have it available than not, otherwise the user winds up at a dead end
   <% menubar(
-       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
      )
   %>
   <BR><BR>
@@ -19,7 +19,7 @@
 % } else { 
 
   <& /elements/header.html, mt('Refund Receipt'), menubar(
-       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
        mt('Print receipt') => $pr_link,
      )
   &>

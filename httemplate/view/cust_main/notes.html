@@ -54,7 +54,7 @@
 %                                             'edit/cust_main_note.cgi'.
 %                                             "?custnum=$custnum".
 %                                             ";notenum=$notenum",
-%                            'actionlabel' => 'Edit customer note',
+%                            'actionlabel' => mt('Edit customer note'),
 %                            'width'       => 616,
 %                            'height'      => 538, #575
 %                            'frame'       => 'top',
@@ -63,13 +63,14 @@
 %
 %   my $edit = '';
 %   if ($curuser->access_right('Edit customer note') ) {
-%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(edit)</A>!;
+%     my $editlabel = mt('edit');
+%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>($editlabel)</A>!;
 %   }
 %
 % if ( $last_classnum != $note->classnum && !$skipheader ) {
 % my $tmp_classnum = $note->classnum ? $note->classnum : 0;
 % $classes{$tmp_classnum} = $note->classname ne '' ? $note->classname 
-%						     : 'Other';
+%						     : mt('Other');
 % if ( $last_classnum != -1 ) {
     </TABLE>
   </DIV>
@@ -82,15 +83,15 @@
 	>
 	<% include("/elements/table-grid.html") %>
 	<TR>
-	    <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
+	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
 %   if ( $conf->exists('cust_main_note-display_times') ) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
+	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Time') |h %></TH>
 %   }
-	    <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
+	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Person') |h %></TH>
 %   if ($conf->exists('note-classes') && $conf->config('note-classes') == 1) {
-	    <TH CLASS="grid" BGCOLOR="#cccccc">Class</TH>
+	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Class') |h %></TH>
 %   }
-	    <TH CLASS="grid" BGCOLOR="#cccccc">Note</TH>
+	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Note') |h %></TH>
 %   if ($curuser->access_right('Edit customer note') ) {
 	    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;</TH>
 %   }
@@ -124,7 +125,7 @@
 
 % if ( $conf->exists('note-classes') && $conf->config('note-classes') == 2 ) {
 % 	my($classnum,$classname);
-Show notes of class: &nbsp; 
+<% mt('Show notes of class:') |h %> &nbsp; 
 % 	foreach my $classnum ( sort { $b <=> $a } (keys %classes) ) {
 	    <A	id="notes_tablink_<% $classnum %>"
 		HREF="javascript:display_notes_classnum(<% $classnum %>)"
