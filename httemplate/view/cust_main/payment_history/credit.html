@@ -121,32 +121,21 @@ if (    scalar(@cust_credit_bill)   == 0
 }
 #
 my $delete = '';
-if ( $cust_credit->closed !~ /^Y/i
-
-     #s'pose deleting a credit isn't bad like deleting a payment
-     # and this needs to be generally available until we have credit voiding..
-     #&& $conf->exists('deletecredits')
-
-     && $curuser->access_right('Delete credit')
-   )
-{
-  $delete = qq! (<A HREF="javascript:areyousure('!.
-            qq!${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum.
-            qq!', 'Are you sure you want to delete this credit?')">!.
-            qq!delete</A>)!;
-}
+$delete = areyousure_link("${p}misc/delete-cust_credit.cgi?".$cust_credit->crednum,
+                            mt('Are you sure you want to delete this credit?'),
+                            '',
+                            mt('delete')
+                          )
+if ( $cust_credit->closed !~ /^Y/i && $curuser->access_right('Delete credit') );
 
 my $unapply = '';
-if (    $cust_credit->closed !~ /^Y/i
-     && scalar(@cust_credit_bill)
-     && $curuser->access_right('Unapply credit')
-   )
-{
-  $unapply = qq! (<A HREF="javascript:areyousure('!.
-             qq!${p}misc/unapply-cust_credit.cgi?!. $cust_credit->crednum.
-             qq!', 'Are you sure you want to unapply this credit?')">!.
-             qq!unapply</A>)!;
-}
+$unapply = areyousure_link("${p}misc/unapply-cust_credit.cgi?".$cust_credit->crednum,
+                            mt('Are you sure you want to unapply this credit?'),
+                            '',
+                            mt('unapply')
+                          )
+if ( $cust_credit->closed !~ /^Y/i && scalar(@cust_credit_bill)
+     && $curuser->access_right('Unapply credit') );
 
 my $reason = $cust_credit->reason
                ? ' ('. $cust_credit->reason. ')'

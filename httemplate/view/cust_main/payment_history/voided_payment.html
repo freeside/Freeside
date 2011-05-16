@@ -34,19 +34,14 @@ if ( $opt{'pkg-balances'} && $cust_pay_void->pkgnum ) {
 }
 
 my $unvoid = '';
-if ( $cust_pay_void->closed !~ /^Y/i
-     && $curuser->access_right('Unvoid')
-   )
-{
-  $unvoid = qq! (<A HREF="javascript:areyousure('!.
-            qq!${p}misc/unvoid-cust_pay_void.cgi?!. $cust_pay_void->paynum.
-            qq!', 'Are you sure you want to unvoid this payment?')"!.
-            qq! TITLE="!.mt('Unvoid this payment from the database').
-              ( $cust_pay_void->payby =~ /^(CARD|CHEK)$/
+my $unvoidmsg = $cust_pay_void->payby =~ /^(CARD|CHEK)$/
                 ? ' ('.mt('do not send anything to the payment gateway') .')'
-                : '' 
-              ). '"'.
-            '>'.mt('unvoid').'</A>)';
-}
+                : '';
+$unvoid = areyousure_link("${p}misc/unvoid-cust_pay_void.cgi?".$cust_pay_void->paynum,
+                            mt('Are you sure you want to unvoid this payment?'),
+                            mt('Unvoid this payment from the database') . $unvoidmsg,
+                            mt('unvoid')
+                         )
+    if ( $cust_pay_void->closed !~ /^Y/i && $curuser->access_right('Unvoid') );
 
 </%init>

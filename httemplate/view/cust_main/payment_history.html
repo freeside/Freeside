@@ -478,4 +478,9 @@ sub translate_payby_refund {
     $payby;
 };
 
+sub areyousure_link {
+    my ($url,$msg,$title,$label) = (shift,shift,shift,shift);
+    ' (<A HREF="javascript:areyousure(\''.$url.'\',\''.$msg.'\')" TITLE="'.$title.'">'.$label.'</A>)';
+}
+
 </%init>

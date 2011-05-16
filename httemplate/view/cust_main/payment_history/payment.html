@@ -169,7 +169,15 @@ if (    $cust_pay->closed !~ /^Y/i
 }
 
 my $void = '';
-if (    $cust_pay->closed !~ /^Y/i
+my $voidmsg = $cust_pay->payby =~ /^(CARD|CHEK)$/
+              ? ' (' . mt('do not send anything to the payment gateway').')'
+              : '';
+$void = areyousure_link("${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
+                        mt('Are you sure you want to void this payment?'),
+                        mt('Void this payment from the database') . $voidmsg,
+                        mt('void')
+                       )
+    if (    $cust_pay->closed !~ /^Y/i
      && (    ( $cust_pay->payby eq 'CARD'
                && $curuser->access_right('Credit card void')
              )
@@ -180,43 +188,24 @@ if (    $cust_pay->closed !~ /^Y/i
                && $curuser->access_right('Regular void')
              )
         )
-   )
-{
-  $void = qq! (<A HREF="javascript:areyousure('!.
-          qq!${p}misc/void-cust_pay.cgi?!. $cust_pay->paynum.
-          qq!', 'Are you sure you want to void this payment?')"!.
-          qq! TITLE="Void this payment from the database!.
-            ( $cust_pay->payby =~ /^(CARD|CHEK)$/
-              ? ' (do not send anything to the payment gateway)'
-              : '' 
-            ). '"'.
-          qq!>void</A>)!;
-}
+   );
 
 my $delete = '';
-if ( $cust_pay->closed !~ /^Y/i
-     && $opt{'deletepayments'}
-     && $curuser->access_right('Delete payment')
-   )
-{
-  $delete = qq! (<A HREF="javascript:areyousure('!.
-            qq!${p}misc/delete-cust_pay.cgi?!. $cust_pay->paynum.
-            qq!', 'Are you sure you want to delete this payment?')"!.
-            qq! TITLE="Delete this payment from the database completely - not recommended"!.
-            qq!>delete</A>)!;
-}
+$delete = areyousure_link("${p}misc/delete-cust_pay.cgi?".$cust_pay->paynum,
+                            mt('Are you sure you want to delete this payment?'),
+                            mt('Delete this payment from the database completely - not recommended'),
+                            mt('delete')
+                         )
+    if ( $cust_pay->closed !~ /^Y/i && $opt{'deletepayments'}
+                                 && $curuser->access_right('Delete payment') );
 
 my $unapply = '';
-if (    $cust_pay->closed !~ /^Y/i
-     && scalar(@cust_bill_pay)           
-     && $curuser->access_right('Unapply payment')
-   )
-{
-  $unapply = qq! (<A HREF="javascript:areyousure('!.
-             qq!${p}misc/unapply-cust_pay.cgi?!. $cust_pay->paynum.
-             qq!', 'Are you sure you want to unapply this payment?')"!.
-             qq! TITLE="Keep this payment, but dissociate it from the invoices it is currently applied against"!.
-             qq!>unapply</A>)!;
-}
+$unapply = areyousure_link("${p}misc/unapply-cust_pay.cgi?".$cust_pay->paynum,
+                            mt('Are you sure you want to unapply this payment?'),
+                            mt('Keep this payment, but dissociate it from the invoices it is currently applied against'),
+                            mt('unapply')
+                          )
+    if ( $cust_pay->closed !~ /^Y/i && scalar(@cust_bill_pay)           
+                                && $curuser->access_right('Unapply payment') );
 
 </%init>
