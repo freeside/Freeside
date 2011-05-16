@@ -111,7 +111,13 @@
 <tr><td class="label"> <&|/l&>Make subject</&>: </td>
 <td class="value"> <input name="Subject" size="20" value="<% $ARGS{Subject} || '' %>"/> </td></tr>
 <tr><td class="label"> <&|/l&>Make priority</&>: </td>
-<td class="value"> <& /Elements/SelectPriority, Name => "Priority", Default => $ARGS{Priority} &> </td></tr>
+% my $rel = ($ARGS{Priority} =~ s/^R//);
+<td class="value"> <& /Elements/SelectPriority, Name => "Priority", Default => $ARGS{Priority} &> 
+<select name="Priority-Mode">
+<option value="absolute" <% !$rel && 'selected' %>>absolute</option>
+<option value="relative" <%  $rel && 'selected' %>>relative</option>
+</select>
+</td></tr>
 <tr><td class="label"> <&|/l&>Make queue</&>: </td>
 <td class="value"> <& /Elements/SelectQueue, Name => "Queue", Default => $ARGS{Queue} &> </td></tr>
 <tr><td class="label"> <&|/l&>Make Status</&>: </td>
@@ -283,7 +289,7 @@ $Page ||= 1;
 $Format ||= RT->Config->Get('DefaultSearchResultFormat');
 
 # inject _CHECKBOX to the first field.
-$Format =~ s/'?([^']+)'?,/'___CHECKBOX__$1',/;
+$Format =~ s/'?([^']+)'?,/'___CHECKBOX__$1',/;      #'
 
 my $Tickets = RT::Tickets->new( $session{'CurrentUser'} );
 $Tickets->FromSQL($Query);
@@ -331,6 +337,13 @@ my $cf_del_keys;
 @$cf_del_keys = grep { /^Bulk-Delete-CustomField/ } keys %ARGS;
 my $cf_add_keys;
 @$cf_add_keys = grep { /^Bulk-Add-CustomField/ } keys %ARGS;
+
+if ( defined($ARGS{'Priority'})
+     and ($ARGS{'Priority-Mode'} || '') eq 'relative' ) {
+    # magic in Ticket::SetPriority
+    $ARGS{'Priority'} = 'R'.$ARGS{'Priority'};
+}
+delete $ARGS{'Priority-Mode'};
 
 unless ( $ARGS{'AddMoreAttach'} ) {
     # Add session attachments if any to be processed by ProcessUpdateMessage
