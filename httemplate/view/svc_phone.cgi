@@ -39,7 +39,7 @@ my $html_foot = sub {
   ###
 
   my $e911 = 
-    'E911 Information'.
+    mt('E911 Information').
     &ntable("#cccccc"). '<TR><TD>'. ntable("#cccccc",2).
       '<TR><TD>'.mt('Location').'</TD>'.
       '<TD BGCOLOR="#FFFFFF">'.

@@ -1,14 +1,14 @@
 % my %which = (
-%   ''      => 'Billing',
-%   'ship_' => 'Service',
+%   ''      => mt('Billing'),
+%   'ship_' => mt('Service'),
 % );
 % foreach my $which ( '', 'ship_' ) {
 %   my $pre = $cust_main->get("${which}last") ? $which : '';
 
-<% $which{$which} %> address
+<% $which{$which} %> <% mt('address') |h %>
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
 <TR>
-  <TD ALIGN="right">Contact name</TD>
+  <TD ALIGN="right"><% mt('Contact name') |h %></TD>
   <TD COLSPAN=5 BGCOLOR="#ffffff">
     <% $cust_main->get("${pre}last"). ', '. $cust_main->get("${pre}first") |h %>
   </TD>
@@ -18,11 +18,11 @@
 % } 
 </TR>
 <TR>
-  <TD ALIGN="right">Company</TD>
+  <TD ALIGN="right"><% mt('Company') |h %></TD>
   <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}company") |h %></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Address</TD>
+  <TD ALIGN="right"><% mt('Address') |h %></TD>
   <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address1") |h %></TD>
 </TR>
 
@@ -31,8 +31,8 @@
 %     ( $conf->exists('cust_main-require_address2')
 %       && ! ( $pre xor $cust_main->has_ship_address )
 %     )
-%       ? 'Unit&nbsp;#'
-%       : '&nbsp;';
+%       ? mt('Unit #')
+%       : ' ';
 
   <TR>
     <TD ALIGN="right"><% $address2_label %></TD>
@@ -42,43 +42,41 @@
 % } 
 
 <TR>
-  <TD ALIGN="right">City</TD>
+  <TD ALIGN="right"><% mt('City') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}city") |h %></TD>
 % if ( $cust_main->get("${pre}county") ) {
-    <TD ALIGN="right">County</TD>
+    <TD ALIGN="right"><% mt('County') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}county") |h %></TD>
 % }
-  <TD ALIGN="right">State</TD>
+  <TD ALIGN="right"><% mt('State') |h %></TD>
   <TD BGCOLOR="#ffffff"><% state_label( $cust_main->get("${pre}state"), $cust_main->get("${pre}country") ) |h %></TD>
-  <TD ALIGN="right">Zip</TD>
+  <TD ALIGN="right"><% mt('Zip') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}zip") %></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Country</TD>
+  <TD ALIGN="right"><% mt('Country') |h %></TD>
   <TD BGCOLOR="#ffffff"><% code2country( $cust_main->get("${pre}country") ) %></TD>
 </TR>
 <TR>
   <TD ALIGN="right"><% $daytime_label %></TD>
   <TD COLSPAN=3 BGCOLOR="#ffffff">
-    <% include('/elements/phonenumber.html',
+    <& /elements/phonenumber.html,
                   $cust_main->get("${pre}daytime"),
                   'callable'=>1
-               )
-    %>
+    &>
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right"><% $night_label %></TD>
   <TD COLSPAN=3 BGCOLOR="#ffffff">
-    <% include('/elements/phonenumber.html',
+    <& /elements/phonenumber.html,
                   $cust_main->get("${pre}night"),
                   'callable'=>1
-               )
-    %>
+    &>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Fax</TD>
+  <TD ALIGN="right"><% mt('Fax') |h %></TD>
   <TD COLSPAN=3 BGCOLOR="#ffffff">
     <% $cust_main->get("${pre}fax") || '&nbsp' %>
   </TD>
@@ -96,7 +94,7 @@
 <BR>
 % }
 % } 
-<% include('contacts_new.html', $cust_main) %>
+<& contacts_new.html, $cust_main &>
 <%once>
 
 my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/

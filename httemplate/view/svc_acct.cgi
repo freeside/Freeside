@@ -36,7 +36,7 @@
               %gopt,
 &>
 
-<% mt('Service') |h %> #<B><% $svcnum %></B>
+<% mt('Service #') |h %><B><% $svcnum %></B>
 |
 <& /view/elements/svc_edit_link.html, 'svc' => $svc_acct &>
 <& svc_acct/change_svc.html,

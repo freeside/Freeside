@@ -47,7 +47,7 @@
 <% ntable("#cccccc", 2) %>
 
 <TR>
-  <TD ALIGN="right"><% mt('Payment') |h %>#</TD>
+  <TD ALIGN="right"><% mt('Payment #') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->paynum %></B></TD>
 </TR>
 
@@ -86,13 +86,13 @@
     </TR>
 
     <TR>
-      <TD ALIGN="right"><% mt('Authorization') |h %>#</TD>
+      <TD ALIGN="right"><% mt('Authorization #') |h %></TD>
       <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->authorization %></B></TD>
     </TR>
 
 %   if ( $cust_pay->order_number ) {
       <TR>
-        <TD ALIGN="right"><% mt('Order') |h %>#</TD>
+        <TD ALIGN="right"><% mt('Order #') |h %></TD>
         <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->order_number %></B></TD>
       </TR>
 %   }

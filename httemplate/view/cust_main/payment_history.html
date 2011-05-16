@@ -3,33 +3,29 @@
 % my $s = 0;
 % if ( $payby{'BILL'} && $curuser->access_right(['Post payment', 'Post check payment' ]) ) { 
   <% $s++ ? ' | ' : '' %>
-  <% include('/elements/popup_link-cust_main.html',
-               'label'       => 'Enter check payment',
+  <& /elements/popup_link-cust_main.html,
+               'label'       => mt('Enter check payment'),
                'action'      => "${p}edit/cust_pay.cgi?popup=1;payby=BILL",
                'cust_main'   => $cust_main,
-               'actionlabel' => 'Enter check payment',
+               'actionlabel' => mt('Enter check payment'),
                'width'       => 392,
-               #default# 'height' => 336,
-            )
-  %>
+  &>
 % } 
 
 % if ( $payby{'CASH'} && $curuser->access_right(['Post payment', 'Post cash payment']) ) { 
   <% $s++ ? ' | ' : '' %>
-  <% include('/elements/popup_link-cust_main.html',
-               'label'       => 'Enter cash payment',
+  <& /elements/popup_link-cust_main.html,
+               'label'       => mt('Enter cash payment'),
                'action'      => "${p}edit/cust_pay.cgi?popup=1;payby=CASH",
                'cust_main'   => $cust_main,
-               'actionlabel' => 'Enter cash payment',
+               'actionlabel' => mt('Enter cash payment'),
                'width'       => 392,
-               #default# 'height' => 336,
-            )
-  %>
+  &>
 % } 
 
 % if ( $payby{'WEST'} && $curuser->access_right('Post payment') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;custnum=<% $custnum %>">Enter Western Union payment</A>
+  <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;custnum=<% $custnum %>"><% mt('Enter Western Union payment') |h %></A>
 % } 
 
 % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
@@ -37,7 +33,7 @@
 %        && ! $cust_main->is_encrypted($cust_main->payinfo)
 %      ) {
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>misc/payment.cgi?payby=CARD;custnum=<% $custnum %>">Process credit card payment</A>
+  <A HREF="<% $p %>misc/payment.cgi?payby=CARD;custnum=<% $custnum %>"><% mt('Process credit card payment') |h %></A>
 % } 
 
 % if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
@@ -45,12 +41,12 @@
 %        && ! $cust_main->is_encrypted($cust_main->payinfo)
 %      ) {
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>misc/payment.cgi?payby=CHEK;custnum=<% $custnum %>">Process electronic check (ACH) payment</A>
+  <A HREF="<% $p %>misc/payment.cgi?payby=CHEK;custnum=<% $custnum %>"><% mt('Process electronic check (ACH) payment') |h %></A>
 % } 
 
 % if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline/POS) credit card payment</A>
+  <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline/POS) credit card payment') |h %></A>
 % } 
 
 <BR>
@@ -58,15 +54,13 @@
 %# credit link
 
 % if ( $curuser->access_right('Post credit') ) { 
-  <% include('/elements/popup_link-cust_main.html',
-               'label'       => 'Enter credit',
+  <& /elements/popup_link-cust_main.html,
+               'label'       => mt('Enter credit'),
                'action'      => "${p}edit/cust_credit.cgi",
                'cust_main'   => $cust_main,
-               'actionlabel' => 'Enter credit',
+               'actionlabel' => mt('Enter credit'),
                'width'       => 616, #make room for reasons #540 default
-               #default# 'height' => 336,
-            )
-  %>
+  &>
   <BR>
 % } 
 
@@ -75,28 +69,24 @@
 % $s = 0;
 % if ( $payby{'BILL'} && $curuser->access_right(['Post refund', 'Post check refund']) ) { 
   <% $s++ ? ' | ' : '' %>
-  <% include('/elements/popup_link-cust_main.html',
-               'label'       => 'Enter check refund',
+  <& /elements/popup_link-cust_main.html,
+               'label'       => mt('Enter check refund'),
                'action'      => "${p}edit/cust_refund.cgi?popup=1;payby=BILL",
                'cust_main'   => $cust_main,
-               'actionlabel' => 'Enter check refund',
+               'actionlabel' => mt('Enter check refund'),
                'width'       => 392,
-               #default# 'height' => 336,
-            )
-  %>
+  &>
 % } 
 
 % if ( $payby{'CASH'} && $curuser->access_right(['Post refund', 'Post cash refund']) ) { 
   <% $s++ ? ' | ' : '' %>
-  <% include('/elements/popup_link-cust_main.html',
-               'label'       => 'Enter cash refund',
+  <& /elements/popup_link-cust_main.html,
+               'label'       => mt('Enter cash refund'),
                'action'      => "${p}edit/cust_refund.cgi?popup=1;payby=CASH",
                'cust_main'   => $cust_main,
-               'actionlabel' => 'Enter cash refund',
+               'actionlabel' => mt('Enter cash refund'),
                'width'       => 392,
-               #default# 'height' => 336,
-            )
-  %>
+  &>
 % } 
 
 %# someday, perhaps.  very few gateways let you do unlinked refunds at all.
@@ -120,7 +110,7 @@
 
 % if ( $payby{'MCRD'} && $curuser->access_right('Post refund') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_refund.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline/POS) credit card refund</A>
+  <A HREF="<% $p %>edit/cust_refund.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline/POS) credit card refund') |h %></A>
 % } 
 
 <BR>
@@ -134,22 +124,20 @@
 % if ( $view_exemptions || $add_adjustment ) {
 
 %   if ( $view_exemptions ) {
-      <A HREF="<% $p %>search/cust_tax_exempt_pkg.cgi?custnum=<% $custnum %>">View tax exemptions</A>
+      <A HREF="<% $p %>search/cust_tax_exempt_pkg.cgi?custnum=<% $custnum %>"><% mt('View tax exemptions') |h %></A>
       <% $add_adjustment ? '|' : '' %>
 %   } 
 
 %   if ( $add_adjustment ) {
-      <% include('/elements/popup_link.html', {
+      <& /elements/popup_link.html, {
            'action' => $p.'edit/cust_tax_adjustment.html?custnum='. $cust_main->custnum,
-           'label'  => 'Add tax adjustment',
-           'actionlabel' => 'Add tax adjustment',
-           #'color'  => '#333399',
-           #'width' => 763,
+           'label'  => mt('Add tax adjustment'),
+           'actionlabel' => mt('Add tax adjustment'),
            'height' => 200,
-         })
-      %>
+         }
+      &>
       |
-      <A HREF="<% $p %>search/cust_tax_adjustment.html?custnum=<% $custnum %>">View tax adjustments</A>
+      <A HREF="<% $p %>search/cust_tax_adjustment.html?custnum=<% $custnum %>"><% mt('View tax adjustments') |h %></A>
 %   } 
 
   <BR>
@@ -161,9 +149,9 @@
 %      && $curuser->access_right('View customer batched payments')
 %    )
 % { 
-    View batched payments:
+    <% mt('View batched payments:') |h %> 
 %   foreach my $status (qw( Queued In-transit Complete All )) {
-      <A HREF="<% $p %>search/cust_pay_batch.cgi?status=<% $status{$status} %>;custnum=<% $custnum %>"><% $status %></A> 
+      <A HREF="<% $p %>search/cust_pay_batch.cgi?status=<% $status{$status} %>;custnum=<% $custnum %>"><% mt($status) |h %></A> 
       <% $status ne 'All' ? '|' : '' %>
 %   }
     <BR>
@@ -175,24 +163,24 @@
 %      && scalar($cust_main->cust_pay_pending)
 %    )
 % {
-    <A HREF="<% $p %>search/cust_pay_pending.html?magic=_date;statusNOT=done;custnum=<% $custnum %>">View pending payments</A><BR>
+    <A HREF="<% $p %>search/cust_pay_pending.html?magic=_date;statusNOT=done;custnum=<% $custnum %>"><% mt('View pending payments') |h %></A><BR>
 % }
 
 %# and now the table
 
-<% include("/elements/table-grid.html") %>
+<& /elements/table-grid.html &>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
 
 <TR>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Description</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Invoice</FONT></TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment</FONT></TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>In-house<BR>Credit</FONT></TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Refund</FONT></TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Balance</FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Description') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1><% mt('Invoice') |h %></FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1><% mt('Payment') |h %></FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>In-house Credit</FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1><% mt('Refund') |h %></FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1><% mt('Balance') |h %></FONT></TH>
 </TR>
 
 %#display payment history
@@ -209,8 +197,8 @@
      </TD>
 
      <TD CLASS="grid" BGCOLOR="#dddddd">
-       <I>Starting balance on <% time2str($date_format, $date) %></I>
-       (<A HREF="javascript:void(0);" onClick="show_history();">show prior history</A>)
+       <I><% mt("Starting balance on [_1]", time2str($date_format, $date) ) |h %></I>
+       (<A HREF="javascript:void(0);" onClick="show_history();"><% mt('show prior history') |h %></A>)
      </TD>
 
      <TD CLASS="grid" BGCOLOR="#dddddd"></TD>

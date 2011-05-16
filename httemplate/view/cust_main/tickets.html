@@ -9,8 +9,8 @@ function updateTicketLink() {
     keys %new_param),'Queue=') %>" + selector.options[selector.selectedIndex].value;
 }
 </SCRIPT>
-<A id="CreateTicketLink" HREF="<% $new_link %>">Create new ticket</A>
- in queue
+<A id="CreateTicketLink" HREF="<% $new_link %>"><% mt('Create new ticket') |h %></A>
+ <% mt('in queue') |h %> 
 %# fetch list of queues in which the user can create tickets
 % my $session = FS::TicketSystem->session();
 % my %queues = FS::TicketSystem->queues($session, 'CreateTicket');
@@ -31,22 +31,22 @@ function updateTicketLink() {
 </FORM>
 <BR>
 
-(<A HREF="<% $open_link %>">View <% $openlabel %> tickets for this customer</A>)
-(<A HREF="<% $res_link  %>">View resolved tickets for this customer</A>)
+(<A HREF="<% $open_link %>"><% mt("View $openlabel tickets for this customer") |h %></A>)
+(<A HREF="<% $res_link  %>"><% mt('View resolved tickets for this customer') |h %></A>)
 <BR><BR>
 
-<% include("/elements/table-grid.html") %>
+<& /elements/table-grid.html &>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
 
 <TR>
-  <TH CLASS="grid" BGCOLOR="#cccccc">#</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Subject</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Queue</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Owner</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Priority</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('#') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Subject') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Queue') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Owner') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Priority') |h %></TH>
 </TR>
 
 % foreach my $ticket ( @tickets ) {

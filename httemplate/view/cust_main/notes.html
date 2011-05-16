@@ -30,7 +30,7 @@
 
 </SCRIPT>
 
-  <% include('/elements/init_overlib.html') %>
+  <& /elements/init_overlib.html &>
 
 % my $bgcolor1 = '#eeeeee';
 % my $bgcolor2 = '#ffffff';
@@ -81,7 +81,7 @@
 	<DIV 	id="notes_<% $tmp_classnum %>"
 		style="display:<% $display %>"
 	>
-	<% include("/elements/table-grid.html") %>
+	<& /elements/table-grid.html &>
 	<TR>
 	    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
 %   if ( $conf->exists('cust_main_note-display_times') ) {

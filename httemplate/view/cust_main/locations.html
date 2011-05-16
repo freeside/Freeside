@@ -10,7 +10,7 @@ span.loclabel {
 %   my $packages = $packages_in{$locationnum};
 %   my $loc = $locations{$locationnum};
 %   next if $loc->disabled and scalar(@$packages) == 0;
-<% include('/elements/table-grid.html') %>
+<& /elements/table-grid.html &>
 <TR><TH COLSPAN=3 ALIGN="left" VALIGN="bottom" 
 STYLE="padding-bottom: 0px; 
   padding-left: 0px; 
@@ -34,7 +34,7 @@ Default service location:
 % }
 </SPAN></TH></TR>
 %   if (@$packages) {
-<% include('packages/section.html', 'packages' => $packages ) %>
+<& packages/section.html, 'packages' => $packages &>
 %   }
 </TABLE><BR>
 % } #foreach $locationnum
@@ -69,8 +69,8 @@ sub edit_location_link {
   my $locationnum = shift;
   include( '/elements/popup_link.html',
     'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
-    'label'       => '(Edit location)',
-    'actionlabel' => 'Edit',
+    'label'       => '('.mt('Edit location').')',
+    'actionlabel' => mt('Edit'),
   );
 }
 
@@ -78,10 +78,9 @@ sub disable_location_link {
   my $locationnum = shift;
   include( '/elements/popup_link.html',
     'action'      => $p. "misc/disable-cust_location.cgi?locationnum=$locationnum",
-    'label'       => '(Disable location)',
-    'actionlabel' => 'Disable',
+    'label'       => '('.mt('Disable location').')',
+    'actionlabel' => mt('Disable'),
   );
 }
-
 
 </%init>

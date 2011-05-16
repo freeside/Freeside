@@ -38,7 +38,7 @@
 <% ntable("#cccccc", 2) %>
 
 <TR>
-  <TD ALIGN="right"><% mt('Refund') |h %>#</TD>
+  <TD ALIGN="right"><% mt('Refund #') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->refundnum %></B></TD>
 </TR>
 
@@ -70,13 +70,13 @@
     </TR>
 
     <TR>
-      <TD ALIGN="right"><% mt('Authorization') |h %>#</TD>
+      <TD ALIGN="right"><% mt('Authorization #') |h %></TD>
       <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->authorization %></B></TD>
     </TR>
 
 %   if ( $cust_refund->order_number ) {
       <TR>
-        <TD ALIGN="right"><% mt('Order') |h %>#</TD>
+        <TD ALIGN="right"><% mt('Order #') |h %></TD>
         <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->order_number %></B></TD>
       </TR>
 %   }
