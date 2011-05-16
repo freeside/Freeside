@@ -1,15 +1,14 @@
-<% include( '/elements/popup_link-cust_main.html',
+<& /elements/popup_link-cust_main.html,
               'action'      => $p. 'misc/order_pkg.html',
-              'label'       => $opt{'label'} || 'Order&nbsp;new&nbsp;package',
-              'actionlabel' => 'Order new package',
+              'label'       => $opt{'label'} || mt('Order new package'),
+              'actionlabel' => mt('Order new package'),
               'color'       => '#333399',
               'cust_main'   => $cust_main,
-              'closetext'   => 'Close',
+              'closetext'   => mt('Close'),
               'width'       => 763,
               'height'      => $height,
 	      %optional,
-          )
-%>
+&>
 <%init>
 
 my($cust_main, %opt) = @_;

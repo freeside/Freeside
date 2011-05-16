@@ -2,24 +2,24 @@
 
 % if ( $curuser->access_right('Qualify service') ) { 
   <% $s++ ? ' | ' : '' %>
-  <% include('qual_link.html', $cust_main) %>
+  <& qual_link.html, $cust_main &>
 % }
 
 % if ( $curuser->access_right('Order customer package') ) { 
   <% $s++ ? ' | ' : '' %>
-  <% include('order_pkg_link.html', $cust_main) %>
+  <& order_pkg_link.html, $cust_main &>
 % } 
 
 % if ( $curuser->access_right('One-time charge')
 %        && $conf->config('payby-default') ne 'HIDE'
 %      ) {
   <% $s++ ? ' | ' : '' %>
-  <% include('one_time_charge_link.html', $cust_main) %>
+  <& one_time_charge_link.html, $cust_main &>
 % } 
 
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>">Bulk order and cancel packages</A> (preserves services)
+  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A> (<% mt('preserves services') |h %>)
 % } 
 
 <BR><BR>
@@ -30,7 +30,7 @@
 
 % if ( @$packages ) {
 
-Current packages
+<% mt('Current packages') |h %> 
 % } 
 % if ( $cust_main->num_cancelled_pkgs ) {
 %     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
@@ -41,53 +41,53 @@ Current packages
 %     {
 %       my $prev = $cgi->param('showcancelledpackages');
 %       $cgi->param('showcancelledpackages', 1);
-  ( <a href="<% $cgi->self_url %>">show
+  ( <a href="<% $cgi->self_url %>"><% mt('show') |h %> 
 %       $cgi->param('showcancelledpackages', $prev);
 %   } else {
 %       $cgi->param('showcancelledpackages', 0);
-  ( <a href="<% $cgi->self_url %>">hide
+  ( <a href="<% $cgi->self_url %>"><% mt('hide') |h %> 
 %       $cgi->param('showcancelledpackages', 1);
 %   } 
 
- cancelled packages</a> )
+ <% mt('cancelled packages') |h %></a> )
 % } 
 % if ( $num_old_packages ) {
 %   $cgi->param('showoldpackages', 1);
-    ( <a href="<% $cgi->self_url %>">show old packages</a> )
+    ( <a href="<% $cgi->self_url %>"><% mt('show old packages') |h %></a> )
 % } elsif ( $cgi->param('showoldpackages') ) {
 %   $cgi->param('showoldpackages', 0);
-    ( <a href="<% $cgi->self_url %>">hide old packages</a> )
+    ( <a href="<% $cgi->self_url %>"><% mt('hide old packages') |h %></a> )
 % }
 
     </TD>
     <TD ALIGN="right">
-      <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>">Package reports</A>
+      <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>"><% mt('Package reports') |h %></A>
 % if ( $curuser->access_right('Qualify service') ) { 
-    | <A HREF="<%$p%>search/qual.cgi?custnum=<% $cust_main->custnum %>">View Qualifications</A>
+    | <A HREF="<%$p%>search/qual.cgi?custnum=<% $cust_main->custnum %>"><% mt('View Qualifications') |h %></A>
 % }
       <BR>
-      Service reports:
-        <A HREF="<%$p%>search/report_svc_acct.html?custnum=<% $cust_main->custnum %>">accounts</A><BR>
-      Usage reports:
-        <A HREF="<%$p%>search/report_cdr.html?custnum=<% $cust_main->custnum %>">CDRs</A>
+      <% mt('Service reports:') |h %> 
+        <A HREF="<%$p%>search/report_svc_acct.html?custnum=<% $cust_main->custnum %>"><% mt('accounts') |h %></A><BR>
+      <% mt('Usage reports:') |h %> 
+        <A HREF="<%$p%>search/report_cdr.html?custnum=<% $cust_main->custnum %>"><% mt('CDRs') |h %></A>
     </TD>
   </TR>
 
   <TR>
     <TD COLSPAN=2>
 % if ( $conf->exists('cust_pkg-group_by_location') and $show_location ) {
-<% include('locations.html',
+<& locations.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
-) %>
+ &>
 % }
 % else {
 % # in this format, put all packages in one section
-<% include('/elements/table-grid.html') %>
-<% include('packages/section.html',
+<& /elements/table-grid.html &>
+<& packages/section.html,
     'packages'      => $packages,
     'show_location' => $show_location,
-) %>
+ &>
 </TABLE>
 % }
     </TD>

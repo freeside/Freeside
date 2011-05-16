@@ -1,19 +1,19 @@
 <% ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
 <TR>
-  <TD ALIGN="right">Customer&nbsp;number</TD>
+  <TD ALIGN="right"><% mt('Customer number') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->display_custnum %></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Status</TD>
+  <TD ALIGN="right"><% mt('Status') |h %></TD>
   <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% ucfirst($cust_main->status) %></B></FONT></TD>
 </TR>
 
 % my @part_tag = $cust_main->part_tag;
 % if ( $conf->config('cust_tag-location') =~ /^(cust_misc|)$/ && @part_tag ) {
 <TR>
-  <TD ALIGN="right">Tags</TD>
+  <TD ALIGN="right"><% mt('Tags') |h %></TD>
   <TD BGCOLOR="#ffffff">
 %   foreach my $part_tag ( @part_tag ) {
       <FONT <% length($part_tag->tagcolor)
@@ -30,7 +30,7 @@
 %         && !$curuser->access_right('View customers of all agents')  ) {
 %  my $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
    <TR>
-     <TD ALIGN="right">Agent</TD>
+     <TD ALIGN="right"><% mt('Agent') |h %></TD>
      <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent %></TD>
    </TR>
 % }
@@ -39,7 +39,7 @@
 %       && ! $conf->exists('cust_main-default_agent_custid') ) {
 
 <TR>
-  <TD ALIGN="right">Agent customer ref#</TD>
+  <TD ALIGN="right"><% mt('Agent customer ref#') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->agent_custid %></TD>
 </TR>
 %
@@ -47,8 +47,8 @@
 
 %  #if ( $cust_main->classnum ) {
      <TR>
-       <TD ALIGN="right">Class</TD>
-       <TD BGCOLOR="#ffffff"><% $cust_main->classname || '(none)' %></TD>
+       <TD ALIGN="right"><% mt('Class') |h %></TD>
+       <TD BGCOLOR="#ffffff"><% $cust_main->classname || '('.mt('none').')' %></TD>
      </TR>
 %  #}
 
@@ -58,14 +58,14 @@
 %    } );
 
 <TR>
-  <TD ALIGN="right">Advertising&nbsp;source</TD>
+  <TD ALIGN="right"><% mt('Advertising source') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $referral->refnum %>: <% $referral->referral%></TD>
 </TR>
 % } 
 
 
 <TR>
-  <TD ALIGN="right">Referring&nbsp;Customer</TD>
+  <TD ALIGN="right"><% mt('Referring Customer') |h %></TD>
   <TD BGCOLOR="#ffffff">
 %
 %  my $referring_cust_main = '';
@@ -93,12 +93,12 @@
 </TR>
 
 <TR>
-  <TD ALIGN="right">Order taker</TD>
+  <TD ALIGN="right"><% mt('Order taker') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->otaker %></TD>
 </TR>
 
   <TR>
-    <TD ALIGN="right">Signup Date</TD>
+    <TD ALIGN="right"><% mt('Signup Date') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->signupdate ? time2str($date_format, $cust_main->signupdate) : '' %></TD>
   </TR>
 
@@ -110,7 +110,7 @@
 %              : '';
 
   <TR>
-    <TD ALIGN="right">Date of Birth</TD>
+    <TD ALIGN="right"><% mt('Date of Birth') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
   </TR>
 
@@ -119,7 +119,7 @@
 % if ( $conf->exists('cust_main-require_censustract') ) {
 
   <TR>
-    <TD ALIGN="right">Census tract</TD>
+    <TD ALIGN="right"><% mt('Census tract') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->censustract  %></TD>
   </TR>
 

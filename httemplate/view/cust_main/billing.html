@@ -1,16 +1,16 @@
-Billing information
+<% mt('Billing information') |h %> 
 %# If we can't see the unencrypted card, then bill now is an exercise in
 %# frustration (without some sort of job queue magic to send it to a secure
 %# machine, anyway)
 %if (  $FS::CurrentUser::CurrentUser->access_right('Bill customer now')
 %      && ! $cust_main->is_encrypted($cust_main->payinfo)
 %   ) { 
-%#  (<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>">Bill now</A>)
-  (<% include('/elements/bill.html',
+%#  (<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>"><% mt('Bill now') |h %></A>)
+  (<& /elements/bill.html,
                 custnum   => $cust_main->custnum,
-                label     => 'Bill now',
+                label     => mt('Bill now'),
                 url       => $p.'view/cust_main.cgi?'.$cust_main->custnum,
-  ) %>)
+   &>)
 % } 
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
@@ -19,30 +19,30 @@ Billing information
 %  =~ s/^(\-?)(.*)$/<FONT SIZE=+1>$1<\/FONT>$money_char$2/;
 
 <TR>
-  <TD ALIGN="right">Balance due</TD>
+  <TD ALIGN="right"><% mt('Balance due') |h %></TD>
   <TD BGCOLOR="#ffffff"><B><% $balance %></B></TD>
 </TR>
 
 % if ( $conf->exists('cust_main-select-billday') 
 %    && ($cust_main->payby eq 'CARD' || $cust_main->payby eq 'CHEK') ) {
 <TR>
-  <TD ALIGN="right">Billing day of month</TD>
+  <TD ALIGN="right"><% mt('Billing day of month') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->billday %>
   </TD>
 </TR>
 % }
 
 <TR>
-  <TD ALIGN="right">Billing&nbsp;type</TD>
+  <TD ALIGN="right"><% mt('Billing type') |h %></TD>
   <TD BGCOLOR="#ffffff">
 % if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) { 
 
-
-    Credit&nbsp;card&nbsp;<% $cust_main->payby eq 'CARD' ? '(automatic)' : '(on-demand)' %>
+%   my $autodemand = $cust_main->payby eq 'CARD' ? 'automatic' : 'on-demand';
+    <% mt("Credit card ([_1])",$autodemand) |h %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Card number</TD>
+  <TD ALIGN="right"><% mt('Card number') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->paymask %></TD>
 </TR>
 %
@@ -60,49 +60,50 @@ Billing information
 %
 
 <TR>
-  <TD ALIGN="right">Expiration</TD>
+  <TD ALIGN="right"><% mt('Expiration') |h %></TD>
   <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
 </TR>
 % if ( $cust_main->paystart_month ) { 
 
   <TR>
-    <TD ALIGN="right">Start date</TD>
+    <TD ALIGN="right"><% mt('Start date') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->paystart_month. '/'. $cust_main->paystart_year %>
   </TR>
 % } elsif ( $cust_main->payissue ) { 
 
   <TR>
-    <TD ALIGN="right">Issue #</TD>
+    <TD ALIGN="right"><% mt('Issue #') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->payissue %>
   </TR>
 % } 
 
 
 <TR>
-  <TD ALIGN="right">Name on card</TD>
+  <TD ALIGN="right"><% mt('Name on card') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
 % } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
 %     my( $account, $aba ) = split('@', $cust_main->paymask );
 
 
-    Electronic&nbsp;check&nbsp;<% $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' %>
+% my $autodemand = $cust_main->payby eq 'CHEK' ? 'automatic' : 'on-demand';
+    <% mt("Electronic check ([_1])",$autodemand) |h %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">ABA/Routing code</TD>
+  <TD ALIGN="right"><% mt('ABA/Routing code') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $aba %></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Account number</TD>
+  <TD ALIGN="right"><% mt('Account number') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $account %></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Account type</TD>
+  <TD ALIGN="right"<% mt('>Account type') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->paytype %></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Bank name</TD>
+  <TD ALIGN="right"<% mt('>Bank name') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
 % if ( $conf->exists('show_bankstate') ) {
@@ -114,43 +115,39 @@ Billing information
 % } elsif ( $cust_main->payby eq 'LECB' ) {
 %     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
 %     my $payinfo = "$1-$2-$3";
-%
 
-
-    Phone&nbsp;bill&nbsp;billing
+    <% mt('Phone bill billing') |h %> 
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Phone number</TD>
+  <TD ALIGN="right"><% mt('Phone number') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $payinfo %></TD>
 </TR>
 % } elsif ( $cust_main->payby eq 'BILL' ) { 
 
-
-    Billing
+    <% mt('Billing') |h %> 
   </TD>
 </TR>
 % if ( $cust_main->payinfo ) { 
 
 <TR>
-  <TD ALIGN="right">P.O. </TD>
+  <TD ALIGN="right"<% mt('>P.O.') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payinfo %></TD>
 </TR>
 % } 
 
 
 <TR>
-  <TD ALIGN="right">Attention</TD>
+  <TD ALIGN="right"><% mt('Attention') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payname |h %></TD>
 </TR>
 % } elsif ( $cust_main->payby eq 'COMP' ) { 
 
-
-    Complimentary
+    <% mt('Complimentary') |h %> 
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Authorized&nbsp;by</TD>
+  <TD ALIGN="right"><% mt('Authorized by') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payinfo %></TD>
 </TR>
 %
@@ -168,55 +165,58 @@ Billing information
 %
 
 <TR>
-  <TD ALIGN="right">Expiration</TD>
+  <TD ALIGN="right"><% mt('Expiration') |h %></TD>
   <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
 </TR>
 % } 
 
+% my $yes = mt('yes');
+% my $no = mt('no');
+
 % my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 <TR>
-  <TD ALIGN="right">Tax&nbsp;exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->tax ? 'yes' : 'no' %></TD>
+  <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.mt('all taxes').')' : '' %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
 </TR>
 % foreach my $exempt_group ( @exempt_groups ) {
 <TR>
-  <TD ALIGN="right">Tax&nbsp;exempt (<% $exempt_group %> taxes)</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->tax_exemption($exempt_group) ? 'yes' : 'no' %></TD>
+  <TD ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->tax_exemption($exempt_group) ? $yes : $no %></TD>
 </TR>
 % }
 
 % if ( $conf->exists('enable_taxproducts') ) {
 <TR>
-  <TD ALIGN="right">Tax&nbsp;location</TD>
+  <TD ALIGN="right"><% mt('Tax location') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->geocode('cch') %></TD>
 </TR>
 % }
 <TR>
-  <TD ALIGN="right">Postal&nbsp;invoices</TD>
+  <TD ALIGN="right"><% mt('Postal invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no' %>
+    <% ( grep { $_ eq 'POST' } @invoicing_list ) ? $yes : $no %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">FAX&nbsp;invoices</TD>
+  <TD ALIGN="right"><% mt('FAX invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% ( grep { $_ eq 'FAX' } @invoicing_list ) ? 'yes' : 'no' %>
+    <% ( grep { $_ eq 'FAX' } @invoicing_list ) ? $yes : $no %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Email&nbsp;invoices</TD>
+  <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
+    <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Invoice&nbsp;terms</TD>
+  <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% $cust_main->invoice_terms || 'Default ('. ( $conf->config('invoice_default_terms') || 'Payable upon receipt' ). ')' %>
+    <% $cust_main->invoice_terms || mt('Default').' ('. ( $conf->config('invoice_default_terms') || mt('Payable upon receipt') ). ')' %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Credit&nbsp;limit</TD>
+  <TD ALIGN="right"><% mt('Credit limit') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% length($cust_main->credit_limit) ? 
         $money_char.sprintf("%.2f", $cust_main->credit_limit) :
@@ -226,35 +226,35 @@ Billing information
 
 % if ( $conf->exists('voip-cust_cdr_spools') ) { 
   <TR>
-    <TD ALIGN="right">Spool&nbsp;CDRs</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->spool_cdr ? 'yes' : 'no' %></TD>
+    <TD ALIGN="right"><% mt('Spool CDRs') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->spool_cdr ? $yes : $no %></TD>
   </TR>
 % } 
 
 % if ( $conf->exists('voip-cust_cdr_squelch') ) { 
   <TR>
-    <TD ALIGN="right">Print&nbsp;CDRs</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->squelch_cdr ? 'no' : 'yes' %></TD>
+    <TD ALIGN="right"><% mt('Print CDRs') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->squelch_cdr ? $no : $yes %></TD>
   </TR>
 % } 
 
 % if ( $conf->exists('voip-cust_accountcode_cdr') ) { 
    <TR>
-     <TD ALIGN="right">Breakdown CDRs by accountcode</TD>
-     <TD BGCOLOR="#ffffff"><% $cust_main->accountcode_cdr ? 'yes' : 'no' %></TD>
+     <TD ALIGN="right"><% mt('Breakdown CDRs by accountcode') |h %></TD>
+     <TD BGCOLOR="#ffffff"><% $cust_main->accountcode_cdr ? $yes : $no %></TD>
    </TR>
 % }
 
 % if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
   <TR>
-    <TD ALIGN="right">Email&nbsp;CDRs&nbsp;as&nbsp;CSV</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->email_csv_cdr ? 'yes' : 'no' %></TD>
+    <TD ALIGN="right"><% mt('Email CDRs as CSV') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->email_csv_cdr ? $yes : $no %></TD>
   </TR>
 % } 
 
 % if ( $show_term || $cust_main->cdr_termination_percentage ) {
   <TR>
-    <TD ALIGN="right">CDR termination settlement</TD>
+    <TD ALIGN="right"><% mt('CDR termination settlement') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->cdr_termination_percentage %><% $cust_main->cdr_termination_percentage =~ /\d/ ? '%' : '' %></TD>
   </TR>
 % }
