@@ -450,4 +450,32 @@ foreach my $cust_refund ($cust_main->cust_refund) {
 
 }
 
+sub translate_payby {
+    my ($payby,$payinfo) = (shift,shift);
+    my %payby = (
+        BILL    => $payinfo ? mt('Check #') : '',
+        CHEK    => mt('Electronic check '),
+        PREP    => mt('Prepaid card '),
+        CARD    => mt('Credit card #'),
+        COMP    => mt('Complimentary by '),
+        CASH    => mt('Cash'),
+        WEST    => mt('Western Union'),
+        MCRD    => mt('Manual credit card'),
+    );
+    $payby = (exists $payby{$payby}) ? $payby{$payby} : $payby; 
+    $payby;
+};
+
+sub translate_payby_refund {
+    my ($payby,$payinfo) = (shift,shift);
+    my %payby = (
+        BILL    => $payinfo ? mt('Check #') : mt('Check'),
+        CHEK    => mt('Electronic check '),
+        CARD    => 'CARD ',
+        COMP    => 'COMP ',
+    );
+    $payby = (exists $payby{$payby}) ? $payby{$payby} : $payby; 
+    $payby;
+};
+
 </%init>

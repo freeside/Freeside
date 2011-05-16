@@ -1,4 +1,4 @@
-<% $pre %>Payment<% $post %> by <% $otaker %>
+<% $payment %>
 <% "$info$desc$view$apply$refund$void$delete$unapply" %>
 <%init>
 
@@ -16,7 +16,7 @@ if ( $payby eq 'CARD' ) {
   $payinfo = $cust_pay->paymask;
 } elsif ( $payby eq 'CHEK' ) {
   my( $account, $aba ) = split('@', $cust_pay->paymask );
-  $payinfo = "ABA $aba, Acct #$account";
+  $payinfo = mt("ABA [_1], Acct #[_2]",$aba,$account);
 } else {
   $payinfo = $cust_pay->payinfo;
 }
@@ -24,15 +24,7 @@ my @cust_bill_pay = $cust_pay->cust_bill_pay;
 my @cust_pay_refund = $cust_pay->cust_pay_refund;
 
 my $target = "$payby$payinfo";
-$payby =~ s/^BILL$/Check #/ if $payinfo;
-$payby =~ s/^CHEK$/Electronic check /;
-$payby =~ s/^PREP$/Prepaid card /;
-$payby =~ s/^CARD$/Credit card #/; 
-$payby =~ s/^COMP$/Complimentary by /; 
-$payby =~ s/^CASH$/Cash/;
-$payby =~ s/^WEST$/Western Union/;
-$payby =~ s/^MCRD$/Manual credit card/;
-$payby =~ s/^BILL$//;
+$payby = translate_payby($payby,$payinfo);
 my $info = $payby ? "($payby$payinfo)" : '';
 
 my $desc = '';
@@ -48,20 +40,28 @@ if ($conf->exists('cust_bill_pay_pkg-manual')) {
   %cust_bill_pay_height = ('height' => 436);
 }
 
-my( $pre, $post, $apply, $ext ) = ( '', '', '', '' );
+my( $apply, $ext ) = ( '', '', '', '' );
+
+my $otaker = $cust_pay->otaker;
+$otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
+$otaker = '<i>customer self-service</i>' if $otaker eq 'fs_selfservice';
+
+my $payment = mt("Payment by [_1]",$otaker);
+
 if (    scalar(@cust_bill_pay)   == 0
      && scalar(@cust_pay_refund) == 0 ) {
   #completely unapplied
-  $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
-  $post = '</FONT></B>';
+  $payment = '<B><FONT COLOR="#FF0000">' 
+                . mt("Unapplied Payment by [_1]",$otaker)
+                . '</FONT></B>';
   if ( $curuser->access_right('Apply payment') ) {
     if ( $cust_pay->cust_main->total_owed > 0 ) {
       $apply = ' ('.
                include( '/elements/popup_link.html',
-                          'label'       => 'apply',
+                          'label'       => mt('apply'),
                           'action'      => "${p}edit/cust_bill_pay.cgi?".
                                            $cust_pay->paynum,
-                          'actionlabel' => 'Apply payment',
+                          'actionlabel' => mt('Apply payment'),
                           %cust_bill_pay_width,
                           %cust_bill_pay_height,
                       ).
@@ -70,12 +70,11 @@ if (    scalar(@cust_bill_pay)   == 0
     if ( $cust_pay->cust_main->total_unapplied_refunds > 0 ) {
       $apply.= ' ('.
                include( '/elements/popup_link.html',
-                          'label'       => 'apply to refund',
+                          'label'       => mt('apply to refund'),
                           'action'      => "${p}edit/cust_pay_refund.cgi?".
                                            $cust_pay->paynum,
-                          'actionlabel' => 'Apply payment to refund',
+                          'actionlabel' => mt('Apply payment to refund'),
                           'width'       => 392,
-                          #default# 'height' => 336,
                       ).
                ')';
     }
@@ -89,7 +88,7 @@ if (    scalar(@cust_bill_pay)   == 0
           && scalar(@cust_pay_refund) == 1
           && $cust_pay->unapplied == 0     ) {
   #applied to one refund
-  $desc .= ' refunded on '. time2str($date_format, $cust_pay_refund[0]->_date);
+  $desc .= mt(" refunded on [_1]", time2str($date_format, $cust_pay_refund[0]->_date) );
 } else {
   #complicated
   $desc .= '<BR>';
@@ -104,7 +103,7 @@ if (    scalar(@cust_bill_pay)   == 0
     } elsif ( $app->isa('FS::cust_pay_refund') ) {
       $desc .= '&nbsp;&nbsp;'.
                '$'. $app->amount.
-               ' refunded on '. time2str($date_format, $app->_date).
+               mt(" refunded on [_1]", time2str($date_format, $app->_date) ) .
                '<BR>';
     } else {
       die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
@@ -118,10 +117,10 @@ if (    scalar(@cust_bill_pay)   == 0
       if ( $cust_pay->cust_main->total_owed > 0 ) {
         $apply = ' ('.
                  include( '/elements/popup_link.html',
-                            'label'      => 'apply',
+                            'label'      => mt('apply'),
                             'action'     => "${p}edit/cust_bill_pay.cgi?".
                                             $cust_pay->paynum,
-                            'actionlabel' => 'Apply payment',
+                            'actionlabel' => mt('Apply payment'),
                             %cust_bill_pay_width,
                             %cust_bill_pay_height,
                         ).
@@ -130,12 +129,11 @@ if (    scalar(@cust_bill_pay)   == 0
       if ( $cust_pay->cust_main->total_unapplied_refunds > 0 ) {
         $apply.= ' ('.
                  include( '/elements/popup_link.html',
-                            'label'      => 'apply to refund',
+                            'label'      => mt('apply to refund'),
                             'action'     => "${p}edit/cust_pay_refund.cgi?".
                                             $cust_pay->paynum,
-                            'actionlabel' => 'Apply payment to refund',
+                            'actionlabel' => mt('Apply payment to refund'),
                             'width'      => 392,
-                            #default# 'height' => 336,
                         ).
                  ')';
       }
@@ -146,10 +144,10 @@ if (    scalar(@cust_bill_pay)   == 0
 
 my $view =
   ' ('. include('/elements/popup_link.html',
-                  'label'     => 'view receipt',
+                  'label'     => mt('view receipt'),
                   'action'    => "${p}view/cust_pay.html?link=popup;paynum=".
                                   $cust_pay->paynum,
-                  'actionlabel' => 'Payment Receipt',
+                  'actionlabel' => mt('Payment Receipt'),
                ).
    ')';
 
@@ -220,9 +218,5 @@ if (    $cust_pay->closed !~ /^Y/i
              qq! TITLE="Keep this payment, but dissociate it from the invoices it is currently applied against"!.
              qq!>unapply</A>)!;
 }
-
-my $otaker = $cust_pay->otaker;
-$otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
-$otaker = '<i>customer self-service</i>' if $otaker eq 'fs_selfservice';
 
 </%init>

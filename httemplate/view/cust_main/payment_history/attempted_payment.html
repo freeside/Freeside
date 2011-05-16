@@ -1,4 +1,4 @@
-<I>Payment attempt <% $info |h %></I>
+<I><% mt('Payment attempt') |h %> <% $info |h %></I>
 <%init>
 
 my( $cust_pay_pending, %opt ) = @_;
@@ -14,20 +14,12 @@ if ( $payby eq 'CARD' ) {
   $payinfo = $cust_pay_pending->paymask;
 } elsif ( $payby eq 'CHEK' ) {
   my( $account, $aba ) = split('@', $cust_pay_pending->paymask );
-  $payinfo = "ABA $aba, Acct #$account";
+  $payinfo = mt("ABA [_1], Acct #[_2]",$aba,$account);
 } else {
   $payinfo = $cust_pay_pending->payinfo;
 }
 
-$payby =~ s/^BILL$/Check #/ if $payinfo;
-$payby =~ s/^CHEK$/Electronic check /;
-$payby =~ s/^PREP$/Prepaid card /;
-$payby =~ s/^CARD$/Credit card #/; 
-$payby =~ s/^COMP$/Complimentary by /; 
-$payby =~ s/^CASH$/Cash/;
-$payby =~ s/^WEST$/Western Union/;
-$payby =~ s/^MCRD$/Manual credit card/;
-$payby =~ s/^BILL$//;
+$payby = translate_payby($payby,$payinfo);
 my $info = $payby ? "($payby$payinfo)" : '';
 
 if ( $opt{'pkg-balances'} && $cust_pay_pending->pkgnum ) {

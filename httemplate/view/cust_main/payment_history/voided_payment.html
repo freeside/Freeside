@@ -1,5 +1,5 @@
-<DEL>Payment <% $info %> by <% $cust_pay_void->otaker %></DEL>
-<I>voided <% time2str($date_format, $cust_pay_void->void_date) %>
+<DEL><% mt("Payment [_1] by [_2]", $info, $cust_pay_void->otaker ) |h %></DEL>
+<I><% mt("voided [_1]", time2str($date_format, $cust_pay_void->void_date) ) |h %> 
 % my $void_user = $cust_pay_void->void_access_user;
 % if ($void_user) {
     by <% $void_user->username %></I>
@@ -20,20 +20,12 @@ if ( $payby eq 'CARD' ) {
   $payinfo = $cust_pay_void->paymask;
 } elsif ( $payby eq 'CHEK' ) {
   my( $account, $aba ) = split('@', $cust_pay_void->paymask );
-  $payinfo = "ABA $aba, Acct #$account";
+  $payinfo = mt("ABA [_1], Acct #[_2]",$aba,$account);
 } else {
   $payinfo = $cust_pay_void->payinfo;
 }
 
-$payby =~ s/^BILL$/Check #/ if $payinfo;
-$payby =~ s/^CHEK$/Electronic check /;
-$payby =~ s/^PREP$/Prepaid card /;
-$payby =~ s/^CARD$/Credit card #/; 
-$payby =~ s/^COMP$/Complimentary by /; 
-$payby =~ s/^CASH$/Cash/;
-$payby =~ s/^WEST$/Western Union/;
-$payby =~ s/^MCRD$/Manual credit card/;
-$payby =~ s/^BILL$//;
+$payby = translate_payby($payby,$payinfo);
 my $info = $payby ? "($payby$payinfo)" : '';
 
 if ( $opt{'pkg-balances'} && $cust_pay_void->pkgnum ) {
@@ -49,12 +41,12 @@ if ( $cust_pay_void->closed !~ /^Y/i
   $unvoid = qq! (<A HREF="javascript:areyousure('!.
             qq!${p}misc/unvoid-cust_pay_void.cgi?!. $cust_pay_void->paynum.
             qq!', 'Are you sure you want to unvoid this payment?')"!.
-            qq! TITLE="Unvoid this payment from the database!.
+            qq! TITLE="!.mt('Unvoid this payment from the database').
               ( $cust_pay_void->payby =~ /^(CARD|CHEK)$/
-                ? ' (do not send anything to the payment gateway)'
+                ? ' ('.mt('do not send anything to the payment gateway') .')'
                 : '' 
               ). '"'.
-            qq!>unvoid</A>)!;
+            '>'.mt('unvoid').'</A>)';
 }
 
 </%init>

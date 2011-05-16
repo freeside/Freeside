@@ -1,4 +1,4 @@
-<b><font size="+1" color="#FF0000">Pending payment </font></b> <% "$info $status ($link)" %>
+<b><font size="+1" color="#FF0000"><% mt('Pending payment') |h %> </font></b> <% "$info $status ($link)" %>
 <%init>
 
 my( $cust_pay_pending, %opt ) = @_;
@@ -14,21 +14,13 @@ if ( $payby eq 'CARD' ) {
   $payinfo = $cust_pay_pending->paymask;
 } elsif ( $payby eq 'CHEK' ) {
   my( $account, $aba ) = split('@', $cust_pay_pending->paymask );
-  $payinfo = "ABA $aba, Acct #$account";
+  $payinfo = mt("ABA [_1], Acct #[_2]",$aba,$account);
 } else {
   $payinfo = $cust_pay_pending->payinfo;
 }
 
 my $target = "$payby$payinfo";
-$payby =~ s/^BILL$/Check #/ if $payinfo;
-$payby =~ s/^CHEK$/Electronic check /;
-$payby =~ s/^PREP$/Prepaid card /;
-$payby =~ s/^CARD$/Credit card #/; 
-$payby =~ s/^COMP$/Complimentary by /; 
-$payby =~ s/^CASH$/Cash/;
-$payby =~ s/^WEST$/Western Union/;
-$payby =~ s/^MCRD$/Manual credit card/;
-$payby =~ s/^BILL$//;
+$payby = translate_payby($payby,$payinfo);
 my $info = $payby ? "($payby$payinfo)" : '';
 
 my %statusaction = (
@@ -51,11 +43,11 @@ if ( $action && $edit_pending ) {
 	       'action' => $p. 'edit/cust_pay_pending.html'.
 			     '?paypendingnum='. $cust_pay_pending->paypendingnum.
 			     ";action=$action",
-	       'label'  => $action,
+	       'label'  => mt($action),
 	       'color'  => '#ff0000',
 	       'width'  => 655,
 	       'height' => ( $action eq 'delete' ? 480 : 575 ),
-	       'actionlabel' => ucfirst($action). ' pending payment',
+	       'actionlabel' => mt(ucfirst($action). ' pending payment'),
 	    );
 }
 

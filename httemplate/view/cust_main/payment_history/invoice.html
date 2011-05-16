@@ -1,5 +1,4 @@
-<% $link %><% $pre %>Invoice #<% $cust_bill->display_invnum %>
-(Balance $ <% $cust_bill->owed %>)<% $post %><% $link ? '</A>' : '' %><% $delete %><% $events %>
+<% $link %><% $invoice %><% $link ? '</A>' : '' %><% $delete %><% $events %>
 <%init>
 
 my( $cust_bill, %opt ) = @_;
@@ -8,11 +7,11 @@ my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-my($pre, $post) = ('', '');
-if ( $cust_bill->owed > 0 ) {
-  $pre = '<B><FONT SIZE="+1" COLOR="#FF0000">Open ';
-  $post = '</FONT></B>';
-}
+my $invoice = mt("Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed);
+$invoice = '<B><FONT SIZE="+1" COLOR="#FF0000">' .
+    mt("Open Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed) .
+    '</FONT></B>'
+if ( $cust_bill->owed > 0 );
 
 my $invnum = $cust_bill->invnum;
 
@@ -26,7 +25,7 @@ if ( $opt{'deleteinvoices'} && $curuser->access_right('Delete invoices') ) {
             qq!${p}misc/delete-cust_bill.html?$invnum',!.
             qq!'Are you sure you want to delete this invoice?')"!.
             qq! TITLE="Delete this invoice from the database completely"!.
-            qq!>delete</A>)!;
+            mt('delete') . '</A>)';
 }
 
 my $events = '';
@@ -38,7 +37,7 @@ if ( $cust_bill->num_cust_event
    ) {
   $events =
     qq!<BR><FONT SIZE="-1"><A HREF="${p}search/cust_event.html?invnum=$invnum!.
-    '">(&nbsp;View invoice events&nbsp;)</A></FONT>';
+    '">( '.mt('View invoice events').' )</A></FONT>';
 }
 #
 

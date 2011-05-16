@@ -1,5 +1,5 @@
-<% $pre %>Credit<% $post %>
-by <% $cust_credit->otaker %><% "$reason$desc$apply$delete$unapply" %>
+<% $credit %>
+<% "$reason$desc$apply$delete$unapply" %>
 <%init>
 
 my( $cust_credit, %opt ) = @_;
@@ -25,20 +25,22 @@ if ($conf->exists('cust_credit_bill_pkg-manual')) {
   %cust_credit_bill_height = ('height' => 436);
 }
 
-my( $pre, $post, $apply, $ext ) = ( '', '', '', '' );
+my( $apply, $ext ) = ( '', '', '', '' );
+my $credit = mt("Credit by [_1]", $cust_credit->otaker );
 if (    scalar(@cust_credit_bill)   == 0
      && scalar(@cust_credit_refund) == 0 ) {
   #completely unapplied
-  $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
-  $post = '</FONT></B>';
+  $credit = '<B><FONT COLOR="#FF0000">'
+        . mt("Unapplied Credit by [_1]", $cust_credit->otaker )
+        . '</FONT></B>';
   if ( $curuser->access_right('Apply credit') ) {
     if ( $cust_credit->cust_main->total_owed > 0 ) {
       $apply = ' ('.
                include( '/elements/popup_link.html',
-                          'label'    => 'apply',
+                          'label'    => mt('apply'),
                           'action'   => "${p}edit/cust_credit_bill.cgi?".
                                         $cust_credit->crednum,
-                          'actionlabel' => 'Apply credit',
+                          'actionlabel' => mt('Apply credit'),
                           %cust_credit_bill_width,
                           %cust_credit_bill_height,
                       ).
@@ -47,12 +49,11 @@ if (    scalar(@cust_credit_bill)   == 0
     if ( $cust_credit->cust_main->total_unapplied_refunds > 0 ) {
       $apply.= ' ('.
                include( '/elements/popup_link.html',
-                          'label'    => 'apply to refund',
+                          'label'    => mt('apply to refund'),
                           'action'   => "${p}edit/cust_credit_refund.cgi?".
                                         $cust_credit->crednum,
-                          'actionlabel' => 'Apply credit to refund',
+                          'actionlabel' => mt('Apply credit to refund'),
                           'width'    => 392,
-                          #default# 'height' => 336,
                       ).
                ')';
     }
@@ -66,7 +67,7 @@ if (    scalar(@cust_credit_bill)   == 0
           && scalar(@cust_credit_refund) == 1
           && $cust_credit->credited == 0      ) {
   #applied to one refund
-  $desc .= ' refunded on '.  time2str($date_format, $cust_credit_refund[0]->_date);
+  $desc .= mt(" refunded on [_1]", time2str($date_format, $cust_credit_refund[0]->_date) );
 } else {
   #complicated
   $desc .= '<BR>';
@@ -81,7 +82,7 @@ if (    scalar(@cust_credit_bill)   == 0
     } elsif ( $app->isa('FS::cust_credit_refund') ) {
       $desc .= '&nbsp;&nbsp;'.
                '$'. $app->amount.
-               ' refunded on '. time2str($date_format, $app->_date).
+               mt(" refunded on [_1]", time2str($date_format, $app->_date) ).
                '<BR>';
     } else {
       die "$app is not a FS::cust_credit_bill or a FS::cust_credit_refund";
@@ -94,10 +95,10 @@ if (    scalar(@cust_credit_bill)   == 0
       if ( $cust_credit->cust_main->total_owed > 0 ) {
         $apply = ' ('.
                  include( '/elements/popup_link.html',
-                            'label'       => 'apply',
+                            'label'       => mt('apply'),
                             'action'      => "${p}edit/cust_credit_bill.cgi?".
                                              $cust_credit->crednum,
-                            'actionlabel' => 'Apply credit',
+                            'actionlabel' => mt('Apply credit'),
                             %cust_credit_bill_width,
                             %cust_credit_bill_height,
                         ).
@@ -106,12 +107,11 @@ if (    scalar(@cust_credit_bill)   == 0
       if ( $cust_credit->cust_main->total_unapplied_refunds > 0 ) {
         $apply.= ' ('.
                  include( '/elements/popup_link.html',
-                            'label'       => 'apply to refund',
+                            'label'       => mt('apply to refund'),
                             'action'      => "${p}edit/cust_credit_refund.cgi?".
                                              $cust_credit->crednum,
-                            'actionlabel' => 'Apply credit to refund',
+                            'actionlabel' => mt('Apply credit to refund'),
                             'width'       => 392,
-                            #default# 'height' => 336,
                         ).
                  ')';
       }
