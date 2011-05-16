@@ -1,10 +1,9 @@
-<% include('elements/svc_Common.html',
+<& elements/svc_Common.html,
               'table'     => 'svc_phone',
               'fields'    => \@fields,
 	      'labels'    => \%labels,
               'html_foot' => $html_foot,
-          )
-%>
+&>
 <%init>
 
 my $conf = new FS::Conf;
@@ -42,7 +41,7 @@ my $html_foot = sub {
   my $e911 = 
     'E911 Information'.
     &ntable("#cccccc"). '<TR><TD>'. ntable("#cccccc",2).
-      '<TR><TD>Location</TD>'.
+      '<TR><TD>'.mt('Location').'</TD>'.
       '<TD BGCOLOR="#FFFFFF">'.
         $svc_phone->location_label( 'join_string'     => '<BR>',
                                     'double_space'    => ' &nbsp; ',

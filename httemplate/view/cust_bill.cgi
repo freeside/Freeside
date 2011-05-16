@@ -1,6 +1,6 @@
-<% include("/elements/header.html",'Invoice View', menubar(
-  "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
-)) %>
+<& /elements/header.html, mt('Invoice View'), menubar(
+  mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+) &>
 
 % if ( $conf->exists('deleteinvoices')
 %      && $curuser->access_right('Delete invoices' )
@@ -16,10 +16,10 @@
 
     <A HREF  = "javascript:areyousure(
                   '<%$p%>misc/delete-cust_bill.html?<% $invnum %>',
-                  'Are you sure you want to delete this invoice?'
+                  '<% mt('Are you sure you want to delete this invoice?') |h %>'
                )"
-       TITLE = "Delete this invoice from the database completely"
-    >Delete this invoice</A>
+       TITLE = "<% mt('Delete this invoice from the database completely') |h %>"
+    ><% mt('Delete this invoice') |h %></A>
     <BR><BR>
 
 % }
@@ -32,42 +32,42 @@
 % {
 %     my $s = 0;
 
-      Post 
+      <% mt('Post') |h %> 
 
 %     if ( $payby{'BILL'} && $curuser->access_right(['Post payment', 'Post check payment']) ) { 
           <% $s++ ? ' | ' : '' %>
-          <A HREF="<% $p %>edit/cust_pay.cgi?payby=BILL;invnum=<% $invnum %>">check</A>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=BILL;invnum=<% $invnum %>"><% mt('check') |h %></A>
 %     } 
 
 %     if ( $payby{'CASH'} && $curuser->access_right(['Post payment', 'Post cash payment']) ) { 
           <% $s++ ? ' | ' : '' %>
-          <A HREF="<% $p %>edit/cust_pay.cgi?payby=CASH;invnum=<% $invnum %>">cash</A>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=CASH;invnum=<% $invnum %>"><% mt('cash') |h %></A>
 %     } 
 
 %     if ( $payby{'WEST'} && $curuser->access_right(['Post payment']) ) { 
           <% $s++ ? ' | ' : '' %>
-          <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;invnum=<% $invnum %>">Western Union</A>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;invnum=<% $invnum %>"><% mt('Western Union') |h %></A>
 %     } 
 
 %     if ( $payby{'MCRD'} && $curuser->access_right(['Post payment']) ) { 
           <% $s++ ? ' | ' : '' %>
-          <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<% $invnum %>">manual credit card</A>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<% $invnum %>"><% mt('manual credit card') |h %></A>
 %     } 
 
-      payment against this invoice<BR><BR>
+      <% mt('payment against this invoice') |h %><BR><BR>
 
 % } 
 
 % if ( $curuser->access_right('Resend invoices') ) {
 
-    <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>">Re-print this invoice</A>
+    <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>
 
 %   if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
-        | <A HREF="<% $p %>misc/send-invoice.cgi?method=email;<% $link %>">Re-email this invoice</A>
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=email;<% $link %>"><% mt('Re-email this invoice') |h %></A>
 %   } 
 
 %   if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
-        | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>">Re-fax this invoice</A>
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>"><% mt('Re-fax this invoice') |h %></A>
 %   } 
 
     <BR><BR>
@@ -76,17 +76,17 @@
 
 % if ( $conf->exists('invoice_latex') ) { 
 
-  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>">View typeset invoice PDF</A>
+  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>"><% mt('View typeset invoice PDF') |h %></A>
   <BR><BR>
 % } 
 
 % my $br = 0;
 % if ( $cust_bill->num_cust_event ) { $br++;
-<A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>">(&nbsp;View invoice events&nbsp;)</A> 
+<A HREF="<%$p%>search/cust_event.html?invnum=<% $cust_bill->invnum %>">( <% mt('View invoice events') |h %> )</A> 
 % } 
 
 % if ( $cust_bill->num_cust_bill_event ) { $br++;
-<A HREF="<%$p%>search/cust_bill_event.cgi?invnum=<% $cust_bill->invnum %>">(&nbsp;View deprecated, old-style invoice events&nbsp;)</A> 
+<A HREF="<%$p%>search/cust_bill_event.cgi?invnum=<% $cust_bill->invnum %>">( <% mt('View deprecated, old-style invoice events') |h %> )</A> 
 % }
 
 <% $br ? '<BR><BR>' : '' %>
@@ -97,7 +97,7 @@
   <PRE><% join('', $cust_bill->print_text(\%opt) ) %></PRE>
 % } 
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

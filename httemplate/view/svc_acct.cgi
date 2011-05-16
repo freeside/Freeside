@@ -1,71 +1,66 @@
 % if ( $custnum ) { 
 
-  <% include("/elements/header.html","View $svc account") %>
-  <% include( '/elements/small_custview.html', $custnum, '', 1,
-     "${p}view/cust_main.cgi") %>
+  <& /elements/header.html, mt("View $svc account") &>
+  <& /elements/small_custview.html, $custnum, '', 1,
+     "${p}view/cust_main.cgi" &> 
   <BR>
 
 % } else { 
+% my $delmsg = mt('Permanently delete this account?');
 
   <SCRIPT>
   function areyousure(href) {
-      if (confirm("Permanently delete this account?") == true)
+      if (confirm("<% $delmsg %>") == true)
           window.location.href = href;
   }
   </SCRIPT>
   
-  <% include("/elements/header.html",'View account', menubar(
-    "Cancel this (unaudited) account" =>
+  <& /elements/header.html, mt('View account'), menubar(
+    mt("Cancel this (unaudited) account") =>
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')",
-  )) %>
+  ) &>
 
 % } 
 
-<% include( 'svc_acct/radius_usage.html',
+<& svc_acct/radius_usage.html,
               'svc_acct' => $svc_acct,
               'part_svc' => $part_svc,
               'cust_pkg' => $cust_pkg,
               %gopt,
-          )
-%>
+&>
 
-<% include( 'svc_acct/change_svc_form.html',
+<& svc_acct/change_svc_form.html,
               'part_svc' => \@part_svc,
               'svcnum'   => $svcnum,
               'pkgnum'   => $pkgnum,
               %gopt,
-          )
-%>
+&>
 
-Service #<B><% $svcnum %></B>
+<% mt('Service') |h %> #<B><% $svcnum %></B>
 |
-<% include('/view/elements/svc_edit_link.html', 'svc' => $svc_acct) %>
-<% include( 'svc_acct/change_svc.html',
+<& /view/elements/svc_edit_link.html, 'svc' => $svc_acct &>
+<& svc_acct/change_svc.html,
               'part_svc' => \@part_svc,
               %gopt,
-          )
-%>
+&>
 
-<% include( 'svc_acct/basics.html',
+<& svc_acct/basics.html,
               'svc_acct' => $svc_acct,
               'part_svc' => $part_svc,
               %gopt,
-          )
-%>
+&>
 
 </FORM>
 <BR>
 
-<% include( 'svc_acct/cardfortress.html',
+<& svc_acct/cardfortress.html,
               'svc_acct' => $svc_acct,
               %gopt,
-          )
-%>
+&>
 
-<% include( 'svc_acct/hosting.html',
+<& svc_acct/hosting.html,
               %gopt,
-          )
-%>
+&>
 
 %#remove this?  does anybody even use it?  it was a misunderstood customer
 %#request IIRC?
@@ -76,11 +71,11 @@ Service #<B><% $svcnum %></B>
 <BR><BR>
 % }
 
-<% include('elements/svc_export_settings.html', $svc_acct) %>
+<& elements/svc_export_settings.html, $svc_acct &>
 
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"

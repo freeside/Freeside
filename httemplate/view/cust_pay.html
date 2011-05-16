@@ -1,100 +1,97 @@
 % if ( $link eq 'popup' ) { 
 
-  <% include('/elements/header-popup.html', "$thing Receipt" ) %>
+  <& /elements/header-popup.html, mt("$thing Receipt") &>
 
   <div align="center">
-    <A HREF="javascript:self.parent.location = '<% $pr_link %>'">Print</A> | 
-    <A HREF="javascript:self.location = '<% $email_link %>'">Re-email</A>
+    <A HREF="javascript:self.parent.location = '<% $pr_link %>'"><% mt('Print') |h %></A> | 
+    <A HREF="javascript:self.location = '<% $email_link %>'"><% mt('Re-email') |h %></A>
   </div><BR>
 
 % } elsif ( $link eq 'print' ) { 
 
-  <% include('/elements/header-popup.html', "$thing Receipt" ) %>
+  <& /elements/header-popup.html, mt("$thing Receipt") &>
   
 % #it would be nice if the menubar could be hidden for print, but better to
 % # have it available than not, otherwise the user winds up at a dead end
   <% menubar(
-       "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
      )
   %>
   <BR><BR>
 % } elsif ( $link eq 'email' ) {
 %  if ( $email_error ) {
-      <% include('/elements/header-popup.html', "Error re-emailing receipt: $email_error" ) %>
+      <& /elements/header-popup.html, mt("Error re-emailing receipt: $email_error") &>
 %  } else {
-      <% include('/elements/header-popup.html', "Re-emailed receipt" ) %>
+      <& /elements/header-popup.html, mt("Re-emailed receipt") &>
 %  }
 % } else { 
 
-  <% include('/elements/header.html', "$thing Receipt", menubar(
-       "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
-       'Print receipt' => $pr_link,
-     ))
-  %>
+  <& /elements/header.html, mt("$thing Receipt"), menubar(
+       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt('Print receipt') => $pr_link,
+     )
+  &>
 
 % }
 
 % unless ($link =~ /^(popup|email)$/ ) {
-  <% include('/elements/small_custview.html',
+  <& /elements/small_custview.html,
                $custnum,
                scalar($conf->config('countrydefault')),
                1, #no balance
-            )
-  %>
+  &>
   <BR><BR>
 % } 
 
 <% ntable("#cccccc", 2) %>
 
 <TR>
-  <TD ALIGN="right">Payment#</TD>
+  <TD ALIGN="right"><% mt('Payment') |h %>#</TD>
   <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->paynum %></B></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Date</TD>
+  <TD ALIGN="right"><% mt('Date') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% time2str"%a&nbsp;%b&nbsp;%o,&nbsp;%Y&nbsp;%r", $cust_pay->_date %></B></TD>
 </TR>
 
 % if ( $void ) {
 
   <TR>
-    <TD ALIGN="right">Void Date</TD>
+    <TD ALIGN="right"><% mt('Void Date') |h %></TD>
     <TD BGCOLOR="#FFFFFF"><B><% time2str"%a&nbsp;%b&nbsp;%o,&nbsp;%Y&nbsp;%r", $cust_pay->void_date %></B></TD>
   </TR>
 
 %#  <TR>
-%#    <TD ALIGN="right">Void reason</TD>
+%#    <TD ALIGN="right"><% mt('Void reason') |h %></TD>
 %#    <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->reason %></B></TD>
 %#  </TR>
 
 % }
-
 <TR>
-  <TD ALIGN="right">Amount</TD>
+  <TD ALIGN="right"><% mt('Amount') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% $money_char. $cust_pay->paid %></B></TD>
 </TR>
-
 <TR>
-  <TD ALIGN="right">Payment method</TD>
+  <TD ALIGN="right"><% mt('Payment method') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->payby_name %> #<% $cust_pay->paymask %></B></TD>
 </TR>
 
 % if ( $cust_pay->payby =~ /^(CARD|CHEK|LECB)$/ && $cust_pay->paybatch ) { 
 
     <TR>
-      <TD ALIGN="right">Processor</TD>
+      <TD ALIGN="right"><% mt('Processor') |h %></TD>
       <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->processor %></B></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right">Authorization#</TD>
+      <TD ALIGN="right"><% mt('Authorization') |h %>#</TD>
       <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->authorization %></B></TD>
     </TR>
 
 %   if ( $cust_pay->order_number ) {
       <TR>
-        <TD ALIGN="right">Order#</TD>
+        <TD ALIGN="right"><% mt('Order') |h %>#</TD>
         <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->order_number %></B></TD>
       </TR>
 %   }
@@ -104,7 +101,7 @@
 % if ( $conf->exists('pkg-balances') && $cust_pay->pkgnum ) {
 %   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cust_pay->pkgnum } );
     <TR>
-      <TD ALIGN="right">For package</TD>
+      <TD ALIGN="right"><% mt('For package') |h %></TD>
       <TD BGCOLOR="#FFFFFF"><B><% $cust_pkg->pkg_label_long %></B></TD>
     </TR>
 
@@ -129,7 +126,7 @@
     </BODY>
   </HTML>
 % } else {
-  <% include('/elements/footer.html') %>
+  <& /elements/footer.html &>
 % }
 
 <%init>

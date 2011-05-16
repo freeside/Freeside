@@ -1,83 +1,82 @@
 % if ( $link eq 'popup' ) { 
 
-  <% include('/elements/header-popup.html', "Refund Receipt" ) %>
+  <& /elements/header-popup.html, mt('Refund Receipt') &>
 
-  <CENTER><A HREF="javascript:self.parent.location = '<% $pr_link %>'">Print</A></CENTER><BR>
+  <CENTER><A HREF="javascript:self.parent.location = '<% $pr_link %>'"><% mt('Print') |h %></A></CENTER><BR>
 
 % } elsif ( $link eq 'print' ) { 
 
-  <% include('/elements/header-popup.html', "Refund Receipt" ) %>
+  <& /elements/header-popup.html, mt('Refund Receipt') &>
   
 % #it would be nice if the menubar could be hidden for print, but better to
 % # have it available than not, otherwise the user winds up at a dead end
   <% menubar(
-       "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
      )
   %>
   <BR><BR>
 
 % } else { 
 
-  <% include('/elements/header.html', "Refund Receipt", menubar(
-       "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
-       'Print receipt' => $pr_link,
-     ))
-  %>
+  <& /elements/header.html, mt('Refund Receipt'), menubar(
+       mt('View this customer')." (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+       mt('Print receipt') => $pr_link,
+     )
+  &>
 
 % }
 
 % unless ($link eq 'popup' ) {
-  <% include('/elements/small_custview.html',
+  <& /elements/small_custview.html,
                $custnum,
                scalar($conf->config('countrydefault')),
                1, #no balance
-            )
-  %>
+  &>
   <BR><BR>
 % } 
 
 <% ntable("#cccccc", 2) %>
 
 <TR>
-  <TD ALIGN="right">Refund#</TD>
+  <TD ALIGN="right"><% mt('Refund') |h %>#</TD>
   <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->refundnum %></B></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Date</TD>
+  <TD ALIGN="right"><% mt('Date') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% time2str"%a&nbsp;%b&nbsp;%o,&nbsp;%Y&nbsp;%r", $cust_refund->_date %></B></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Amount</TD>
+  <TD ALIGN="right"><% mt('Amount') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% $money_char. $cust_refund->refund %></B></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Reason</TD>
+  <TD ALIGN="right"><% mt('Reason') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->reason %></B></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Refund method</TD>
+  <TD ALIGN="right"><% mt('Refund method') |h %></TD>
   <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->payby_name %><% $cust_refund->paymask ? ' #'.$cust_refund->paymask : '' %></B></TD>
 </TR>
 
 % if ( $cust_refund->payby =~ /^(CARD|CHEK|LECB)$/ && $cust_refund->paybatch ) { 
 
     <TR>
-      <TD ALIGN="right">Processor</TD>
+      <TD ALIGN="right"><% mt('Processor') |h %></TD>
       <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->processor %></B></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right">Authorization#</TD>
+      <TD ALIGN="right"><% mt('Authorization') |h %>#</TD>
       <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->authorization %></B></TD>
     </TR>
 
 %   if ( $cust_refund->order_number ) {
       <TR>
-        <TD ALIGN="right">Order#</TD>
+        <TD ALIGN="right"><% mt('Order') |h %>#</TD>
         <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->order_number %></B></TD>
       </TR>
 %   }
@@ -98,7 +97,7 @@
     </BODY>
   </HTML>
 % } else {
-  <% include('/elements/footer.html') %>
+  <& /elements/footer.html &>
 % }
 
 <%init>

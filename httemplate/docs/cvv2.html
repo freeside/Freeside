@@ -1,23 +1,23 @@
 <HTML>
   <HEAD>
     <TITLE>
-      CVV2 information
+      <% mt('CVV2 information') |h %>
     </TITLE>
   </HEAD>
   <BODY BGCOLOR="#f8f8f8">
-  The CVV2 number (also called CVC2 or CID) is a three- or four-digit
-  security code used to reduce credit card fraud.<BR><BR>
+  <% mt('The CVV2 number (also called CVC2 or CID) is a three- or four-digit security code used to reduce credit card fraud') |h %>
+  <BR><BR>
   <TABLE BORDER=0 CELLSPACING=4>
     <TR>
-      <TH>Visa / MasterCard / Discover</TH>
-      <TH>American Express</TH>
+      <TH><% mt('Visa/MasterCard/Discover') |h %></TH>
+      <TH><% mt('American Express') |h %></TH>
     </TR>
     <TR>
       <TD>
-        <IMG BORDER=0 ALT="Visa/MasterCard/Discover" SRC="../images/cvv2.png">
+        <IMG BORDER=0 ALT="<% mt('Visa/MasterCard/Discover') |h %>" SRC="../images/cvv2.png">
       </TD>
       <TD>
-        <IMG BORDER=0 ALT="American Express" SRC="../images/cvv2_amex.png">
+        <IMG BORDER=0 ALT="<% mt('American Express') |h %>" SRC="../images/cvv2_amex.png">
       </TD>
   </TABLE>
   </BODY>
