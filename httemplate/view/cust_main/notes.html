@@ -63,8 +63,7 @@
 %
 %   my $edit = '';
 %   if ($curuser->access_right('Edit customer note') ) {
-%     my $editlabel = mt('edit');
-%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>($editlabel)</A>!;
+%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(!.mt('edit').')</A>';
 %   }
 %
 % if ( $last_classnum != $note->classnum && !$skipheader ) {

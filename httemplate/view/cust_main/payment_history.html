@@ -471,12 +471,27 @@ sub translate_payby_refund {
     my %payby = (
         BILL    => $payinfo ? mt('Check #') : mt('Check'),
         CHEK    => mt('Electronic check '),
-        CARD    => 'CARD ',
-        COMP    => 'COMP ',
+        CARD    => mt('Credit card #'),
+        COMP    => mt('Complimentary by '),
     );
     $payby = (exists $payby{$payby}) ? $payby{$payby} : $payby; 
     $payby;
 };
+
+sub translate_payinfo {
+    my $object = shift;
+    my $payby = $object->payby;
+    my $payinfo = $object->payinfo;
+
+    if ( $payby eq 'CARD' ) {
+        $payinfo = $object->paymask;
+    } elsif ( $payby eq 'CHEK' ) {
+        my( $account, $aba ) = split('@', $object->paymask );
+        $payinfo = mt("ABA [_1], Acct #[_2]",$aba,$account);
+    }
+
+    ($payby,$payinfo);
+}
 
 sub areyousure_link {
     my ($url,$msg,$title,$label) = (shift,shift,shift,shift);

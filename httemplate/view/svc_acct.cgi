@@ -1,6 +1,6 @@
 % if ( $custnum ) { 
 
-  <& /elements/header.html, mt("View $svc account") &>
+  <& /elements/header.html, mt("View [_1] account",$svc) &>
   <& /elements/small_custview.html, $custnum, '', 1,
      "${p}view/cust_main.cgi" &> 
   <BR>
@@ -10,7 +10,7 @@
 
   <SCRIPT>
   function areyousure(href) {
-      if (confirm("<% $delmsg %>") == true)
+      if (confirm(<% $delmsg |js_string %>) == true)
           window.location.href = href;
   }
   </SCRIPT>

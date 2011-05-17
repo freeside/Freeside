@@ -7,22 +7,13 @@ my( $cust_pay, %opt ) = @_;
 my $date_format = $opt{'date_format'} || '%m/%d/%Y';
 
 my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-my $payby = $cust_pay->payby;
-
-my $payinfo;
-if ( $payby eq 'CARD' ) {
-  $payinfo = $cust_pay->paymask;
-} elsif ( $payby eq 'CHEK' ) {
-  my( $account, $aba ) = split('@', $cust_pay->paymask );
-  $payinfo = mt("ABA [_1], Acct #[_2]",$aba,$account);
-} else {
-  $payinfo = $cust_pay->payinfo;
-}
 my @cust_bill_pay = $cust_pay->cust_bill_pay;
 my @cust_pay_refund = $cust_pay->cust_pay_refund;
 
+my ($payby,$payinfo) = translate_payinfo($cust_pay);
 my $target = "$payby$payinfo";
 $payby = translate_payby($payby,$payinfo);
 my $info = $payby ? "($payby$payinfo)" : '';
@@ -40,7 +31,7 @@ if ($conf->exists('cust_bill_pay_pkg-manual')) {
   %cust_bill_pay_height = ('height' => 436);
 }
 
-my( $apply, $ext ) = ( '', '', '', '' );
+my $apply = '';
 
 my $otaker = $cust_pay->otaker;
 $otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
@@ -95,24 +86,21 @@ if (    scalar(@cust_bill_pay)   == 0
   foreach my $app ( sort { $a->_date <=> $b->_date }
                          ( @cust_bill_pay, @cust_pay_refund ) ) {
     if ( $app->isa('FS::cust_bill_pay') ) {
-      $desc .= '&nbsp;&nbsp;'.
-               '$'. $app->amount.
-               ' '. $app->applied_to_invoice.
-               '<BR>';
-               #' on '. time2str($date_format, $cust_bill_pay->_date).
+      $desc .= '&nbsp;&nbsp;' . $money_char . $app->amount . ' ' .
+                $app->applied_to_invoice . '<BR>';
     } elsif ( $app->isa('FS::cust_pay_refund') ) {
-      $desc .= '&nbsp;&nbsp;'.
-               '$'. $app->amount.
-               mt(" refunded on [_1]", time2str($date_format, $app->_date) ) .
-               '<BR>';
+      $desc .= '&nbsp;&nbsp;' .
+               mt("[_1][_2] refunded on [_3]", $money_char, $app->amount,
+                        time2str($date_format, $app->_date) ) . '<BR>';
     } else {
       die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
     }
   }
   if ( $cust_pay->unapplied > 0 ) {
     $desc .= '&nbsp;&nbsp;'.
-             '<B><FONT COLOR="#FF0000">$'.
-             $cust_pay->unapplied. ' unapplied</FONT></B>';
+             '<B><FONT COLOR="#FF0000">' .
+             mt("[_1][_2] unapplied", $money_char, $cust_pay->unapplied) .
+             '</FONT></B>';
     if ( $curuser->access_right('Apply payment') ) {
       if ( $cust_pay->cust_main->total_owed > 0 ) {
         $apply = ' ('.
@@ -164,8 +152,8 @@ if (    $cust_pay->closed !~ /^Y/i
 ) {
   $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
             qq!paynum=!. $cust_pay->paynum. '"'.
-            qq! TITLE="Send a refund for this payment to the payment gateway"!.
-            qq!>refund</A>)!;
+            qq! TITLE="! .mt('Send a refund for this payment to the payment gateway') 
+            . '">' . mt('refund') . '</A>)';
 }
 
 my $void = '';

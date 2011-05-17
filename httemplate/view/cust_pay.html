@@ -20,8 +20,7 @@
   <BR><BR>
 % } elsif ( $link eq 'email' ) {
 %  if ( $email_error ) {
-      <& /elements/header-popup.html, mt("Error re-emailing receipt") &>
-%       warn "Error re-emailing receipt: $email_error";
+      <& /elements/header-popup.html, mt("Error re-emailing receipt: [_1]", $email_error) &>
 %  } else {
       <& /elements/header-popup.html, mt("Re-emailed receipt") &>
 %  }

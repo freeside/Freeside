@@ -11,7 +11,6 @@ my $payby = $cust_refund->payby;
 my $payinfo = $payby eq 'CARD'
                 ? $cust_refund->paymask
                 : $cust_refund->payinfo;
-
 $payby = translate_payby_refund($payby,$payinfo);
 
 my $refund = mt("Refund by [_1]",$cust_refund->otaker);
@@ -28,7 +27,6 @@ my $view =
                   'actionlabel' => mt('Payment Receipt'),
                ).
    ')';
-
 
 my $delete = '';
 $delete = areyousure_link("${p}misc/delete-cust_refund.cgi?".$cust_refund->refundnum,

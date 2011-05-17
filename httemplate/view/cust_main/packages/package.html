@@ -229,12 +229,10 @@ sub pkg_change_location_link {
   );
 }
 
-sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates', @_ ); }
+sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', mt('Edit dates'), @_ ); }
 
 sub pkg_discount_link {
   my $cust_pkg = shift or return '';
-  #my $part_pkg = shift;
-  #my $custnum = $cust_pkg->custnum;
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p.'edit/cust_pkg_discount.html',
     'label'       => mt('Discount'),

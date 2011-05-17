@@ -106,11 +106,10 @@ sub svc_provision_link {
                     'part_svc' => $part_svc, 
                     'query'    => $pkgnum_svcpart,
                   );
-    #$url = "${p}edit/$svcpart->{svcdb}.cgi?$pkgnum_svcpart";
   }
 
   my $link = qq!<A CLASS="provision" HREF="$url">!.
-             "Provision&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
+             mt("Provision [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
   if ( $opt->{'legacy_link'}
        && $curuser->access_right('View/link unlinked services')
      )
@@ -118,18 +117,18 @@ sub svc_provision_link {
     $link .= '<BR>'.
              qq!<A CLASS="provision" HREF="${p}misc/link.cgi?!.
              qq!$pkgnum_svcpart">!.
-            "Link&nbsp;to&nbsp;legacy&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
+            mt("Link to legacy [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
   }
   $link;
 }
 
 my %hints = (
-svc_acct      => '(user or email)',
-svc_domain    => '(domain)',
-svc_broadband => '(ip or mac)',
-svc_forward   => '(email)',
-svc_phone     => '(phone)',
-svc_pbx       => '(phone)',
+svc_acct      => mt('(user or email)'),
+svc_domain    => mt('(domain)'),
+svc_broadband => mt('(ip or mac)'),
+svc_forward   => mt('(email)'),
+svc_phone     => mt('(phone)'),
+svc_pbx       => mt('(phone)'),
 );
 
 </%init>

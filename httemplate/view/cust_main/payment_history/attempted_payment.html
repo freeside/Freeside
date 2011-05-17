@@ -3,22 +3,7 @@
 
 my( $cust_pay_pending, %opt ) = @_;
 
-my $date_format = $opt{'date_format'} || '%m/%d/%Y';
-
-my $curuser = $FS::CurrentUser::CurrentUser;
-
-my $payby = $cust_pay_pending->payby;
-
-my $payinfo;
-if ( $payby eq 'CARD' ) {
-  $payinfo = $cust_pay_pending->paymask;
-} elsif ( $payby eq 'CHEK' ) {
-  my( $account, $aba ) = split('@', $cust_pay_pending->paymask );
-  $payinfo = mt("ABA [_1], Acct #[_2]",$aba,$account);
-} else {
-  $payinfo = $cust_pay_pending->payinfo;
-}
-
+my ($payby,$payinfo) = translate_payinfo($cust_pay_pending);
 $payby = translate_payby($payby,$payinfo);
 my $info = $payby ? "($payby$payinfo)" : '';
 

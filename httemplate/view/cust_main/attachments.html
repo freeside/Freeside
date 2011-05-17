@@ -1,19 +1,19 @@
 % if ( scalar(@attachments) ) {
 
-  <% include('/elements/init_overlib.html') %>
+  <& /elements/init_overlib.html &>
 
-  <% include("/elements/table-grid.html") %>
+  <& /elements/table-grid.html &>
 
   <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
 %   if ( $conf->exists('cust_main_note-display_times') ) {
-      <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Time') |h %></TH>
 %   }
-    <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Filename</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Description</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Size</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Person') |h %></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Filename') |h %></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Description') |h %></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Type') |h %></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Size') |h %></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
   </TR>
 
@@ -48,34 +48,35 @@
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum;".
 %                           "undelete=1",
-%                           'Undelete attachment');
-%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(undelete)</A>!;
+%                           mt('Undelete attachment'));
+%       $edit .= linkstr($clickjs, mt('undelete'));
 %     }
 %     if ($curuser->access_right('Purge attachment')) {
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum;".
 %                           "purge=1",
-%                           'Purge attachment',
-%                           'Permanently remove this file?');
-%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(purge)</A>!;
+%                           mt('Purge attachment'),
+%                           mt('Permanently remove this file?') );
+%       $edit .= linkstr($clickjs,mt('purge'));
 %     }
 %   }
 %   else { # you can download or edit it
 %     if ($curuser->access_right('Edit attachment') ) {
 %       my $clickjs = popup('edit/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum",
-%                           'Edit attachment properties');
-%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(edit)</A>!;
+%                           mt('Edit attachment properties'));
+%       $edit .= linkstr($clickjs,mt('edit'));
 %     }
 %     if($curuser->access_right('Delete attachment') ) {
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum;delete=1",
 %                           'Delete attachment',
 %                           'Delete this file?');
-%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(delete)</A>!;
+%       $edit .= linkstr($clickjs,mt('delete'));
 %     }
 %     if ($curuser->access_right('Download attachment') ) {
-%       $edit .= qq!&nbsp; <A HREF="!.popurl(1).'attachment.html?'.$attachnum.qq!">(download)</A>!;
+%       $edit .= qq!&nbsp; <A HREF="!.popurl(1).'attachment.html?'.$attachnum.qq!">(!
+%                               . mt('download') .')</A>';
 %     }
 %   }
 
@@ -129,6 +130,11 @@ sub note_datestr {
     if $conf->exists('cust_main_note-display_times');
   ( my $strip = time2str($format, $note->_date) ) =~ s/ (\d)/$1/g;
   $strip;
+}
+
+sub linkstr {
+    my ($clickjs, $label) = (shift,shift);
+    '&nbsp; <A HREF="javascript:void(0);" '. $clickjs . '>(' . mt($label) . ')</A>';
 }
 
 sub size_units {
