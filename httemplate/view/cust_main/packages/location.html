@@ -1,7 +1,7 @@
 <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
 
 % unless ( $cust_pkg->locationnum ) {
-  <I><FONT SIZE=-1>(default service address)</FONT><BR>
+  <I><FONT SIZE=-1>(<% mt('default service address') |h %>)</FONT><BR>
 % }
 
   <% $loc->location_label( 'join_string'     => '<BR>',
@@ -48,8 +48,8 @@ sub pkg_change_location_link {
     'action'      => $p. "misc/change_pkg.cgi?locationnum=-1;pkgpart=$pkgpart;".
                      "address1=;address2=;city=;county=;state=$statedefault;".
                      "zip=;country=$countrydefault",
-    'label'       => 'Change&nbsp;location',
-    'actionlabel' => 'Change',
+    'label'       => mt('Change location'),
+    'actionlabel' => mt('Change'),
     'cust_pkg'    => $cust_pkg,
   );
 }
@@ -58,8 +58,8 @@ sub edit_location_link {
   my $locationnum = shift;
   include( '/elements/popup_link.html',
     'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
-    'label'       => 'Edit&nbsp;location',
-    'actionlabel' => 'Edit',
+    'label'       => mt('Edit location'),
+    'actionlabel' => mt('Edit'),
   );
 }
 

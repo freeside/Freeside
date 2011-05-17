@@ -5,12 +5,12 @@
 
 <TR>
 % #my $width = $show_location ? 'WIDTH="25%"' : 'WIDTH="33%"';
-  <TH CLASS="grid" BGCOLOR="#cccccc">Package</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Package') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
 %   if ( $show_location ) {
-  <TH CLASS="grid" BGCOLOR="#cccccc">Location</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Location') |h %></TH>
 % }
-  <TH CLASS="grid" BGCOLOR="#cccccc">Services</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Services') |h %></TH>
 </TR>
 
 % #$FS::cust_pkg::DEBUG = 2;
@@ -32,12 +32,12 @@
 
   <!--pkgnum: <% $cust_pkg->pkgnum %>-->
   <TR>
-    <% include('package.html',  %iopt) %>
-    <% include('status.html',   %iopt) %>
+    <& package.html, %iopt &>
+    <& status.html, %iopt &>
 %     if ( $show_location ) {
-    <% include('location.html', %iopt) %>
+    <& location.html, %iopt &>
 %     }
-    <% include('services.html', %iopt) %>
+    <& services.html, %iopt &>
   </TR>
 
 %   } #foreach $cust_pkg
@@ -90,6 +90,5 @@ my %conf_opt = (
   # for packages.html Change location link
   'show_location'             => $show_location,
 );
-
 
 </%init>

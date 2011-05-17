@@ -20,7 +20,7 @@ function clearhint_search_cust_svc(obj, str) {
 %       my $href="${p}search/cust_pkg_svc.html?svcpart=".$part_svc->svcpart.
 %          ";pkgnum=".$cust_pkg->pkgnum;
         <A HREF="<% $href %>"><% $part_svc->svc %></A>&nbsp;
-        <A HREF="<% $href %>"><B>(view all <% $cust_pkg->num_svcs %>)</B></A>
+        <A HREF="<% $href %>"><B>(<% mt("view all [_1]", $cust_pkg->num_svcs) |h %>)</B></A>
 %     my $hint = $hints{$part_svc->svcdb};
 %     if ( $hint ) {
         <BR>
@@ -38,20 +38,20 @@ function clearhint_search_cust_svc(obj, str) {
 %    else { # don't summarize
 %      foreach my $cust_svc ( @{ $part_svc->cust_pkg_svc } ) {
 %        if ( $cust_pkg->getfield('cancel') > 0 ) {
-      <% include('/elements/tr-cust_svc_cancel.html',
+      <& /elements/tr-cust_svc_cancel.html,
                   %opt,
                   'part_svc' => $part_svc,
                   'cust_svc' => $cust_svc,
                   'cust_pkg' => $cust_pkg,
-      ) %>
+       &>
 %        }
 %        else {
-      <% include('/elements/tr-cust_svc.html',
+      <& /elements/tr-cust_svc.html,
                   %opt,
                   'part_svc' => $part_svc,
                   'cust_svc' => $cust_svc,
                   'cust_pkg' => $cust_pkg,
-      ) %>
+       &>
 %       } #if cancel > 0
 %     } #foreach $cust_svc
 %   } #if summarizing
@@ -65,7 +65,7 @@ function clearhint_search_cust_svc(obj, str) {
           <B><% svc_provision_link($cust_pkg, $part_svc, \%opt, $curuser) %></B>
 %        if ( $curuser->access_right('Bulk provision customer service') 
 %               && $part_svc->svcdb eq 'svc_phone' ) {
-            <BR><A HREF="<%$p%>browse/did_order.html?custnum=<%$cust_pkg->custnum%>">Browse Received DID Inventory</A> 
+            <BR><A HREF="<%$p%>browse/did_order.html?custnum=<%$cust_pkg->custnum%>"><% mt('Browse Received DID Inventory') |h %></A> 
 %       }
         </TD>
       </TR>

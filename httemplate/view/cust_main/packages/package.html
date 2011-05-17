@@ -13,7 +13,7 @@
 % if ( $cust_pkg->quantity > 1 ) {
     <TR>
       <TD COLSPAN=2>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Quantity: 
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<% mt('Quantity:') |h %> 
         <B><% $cust_pkg->quantity %></B>
       </TD>
     </TR>
@@ -81,20 +81,20 @@
 
 %       if ( @invoice_detail ) {
           <TD VALIGN="top">
-            <% include('/elements/table-grid.html') %>
+            <& /elements/table-grid.html &>
               <TR>
                 <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
                   <FONT SIZE="-1">
-                    Invoice details
+                    <% mt('Invoice details') |h %> 
 %                   if ( $editi && ! $cust_pkg->get('cancel') ) {
-                      (<% include('/elements/popup_link.html', { 
+                      (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'I',
-                                    'label'       => 'edit',
-                                    'actionlabel' => 'Edit invoice details',
+                                    'label'       => mt('edit'),
+                                    'actionlabel' => mt('Edit invoice details'),
                                     'color'       => '#333399',
                                     'width'       => 763,
-                                 })
-                       %>)
+                                 }
+                       &>)
 %                   }
                   </FONT>
                 </TH>
@@ -112,8 +112,8 @@
               <FONT SIZE="-1">
                 (&nbsp;<% include('/elements/popup_link.html', { 
                                'action'      => $editlink. 'I',
-                               'label'       => 'Add&nbsp;invoice&nbsp;details',
-                               'actionlabel' => 'Add invoice details',
+                               'label'       => mt('Add invoice details'),
+                               'actionlabel' => mt('Add invoice details'),
                                'color'       => '#333399',
                                'width'       => 763,
                             })
@@ -125,20 +125,20 @@
 
 %       if ( @comments ) { 
           <TD VALIGN="top">
-            <% include('/elements/table-grid.html') %>
+            <& /elements/table-grid.html &>
               <TR>
                 <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
                   <FONT SIZE="-1">
-                    Comments
+                    <% mt('Comments') |h %> 
 %                   if ( $editc ) {
-                      (<% include('/elements/popup_link.html', { 
+                      (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'C',
-                                    'label'       => 'edit',
-                                    'actionlabel' => 'Edit comments',
+                                    'label'       => mt('edit'),
+                                    'actionlabel' => mt('Edit comments'),
                                     'color'       => '#333399',
                                     'width'       => 763,
-                                 })
-                       %>)
+                                 }
+                       &>)
 %                   }
                   </FONT>
                 </TH>
@@ -154,14 +154,14 @@
           <TD>
 %           if ( $editc ) {
               <FONT SIZE="-1">
-                (&nbsp;<% include('/elements/popup_link.html', { 
+                (&nbsp;<& /elements/popup_link.html, { 
                                'action'      => $editlink. 'C',
-                               'label'       => 'Add&nbsp;comments',
-                               'actionlabel' => 'Add comments',
+                               'label'       => mt('Add comments'),
+                               'actionlabel' => mt('Add comments'),
                                'color'       => '#333399',
                                'width'       => 763,
-                            })
-                  %>&nbsp;)
+                            }
+                  &>&nbsp;)
               </FONT>
 %           }
           </TD>
@@ -210,8 +210,8 @@ sub pkg_change_link {
   my $locationnum = $cust_pkg->locationnum;
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p. "misc/change_pkg.cgi?locationnum=$locationnum",
-    'label'       => 'Change&nbsp;package',
-    'actionlabel' => 'Change',
+    'label'       => mt('Change package'),
+    'actionlabel' => mt('Change'),
     'cust_pkg'    => $cust_pkg,
   );
 }
@@ -223,8 +223,8 @@ sub pkg_change_location_link {
     'action'      => $p. "misc/change_pkg.cgi?locationnum=-1;pkgpart=$pkgpart;".
                      "address1=;address2=;city=;county=;state=$statedefault;".
                      "zip=;country=$countrydefault",
-    'label'       => 'Change&nbsp;location',
-    'actionlabel' => 'Change',
+    'label'       => mt('Change location'),
+    'actionlabel' => mt('Change'),
     'cust_pkg'    => $cust_pkg,
   );
 }
@@ -237,8 +237,8 @@ sub pkg_discount_link {
   #my $custnum = $cust_pkg->custnum;
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p.'edit/cust_pkg_discount.html',
-    'label'       => 'Discount',
-    'actionlabel' => 'Discount',
+    'label'       => mt('Discount'),
+    'actionlabel' => mt('Discount'),
     'cust_pkg'    => $cust_pkg,
     'width'       => 616,
   );
@@ -251,13 +251,13 @@ sub pkg_customize_link {
   qq!<A HREF="${p}edit/part_pkg.cgi?!.
     "clone=". $part_pkg->pkgpart. ';'.
     "pkgnum=". $cust_pkg->pkgnum.
-    qq!">Customize</A>!;
+    qq!">!.mt('Customize').'</A>';
 }
 
 sub pkg_event_link {
   my($cust_pkg) = @_;
   qq!<a href="${p}search/cust_event.html?pkgnum=!. $cust_pkg->pkgnum. qq!">!.
-  'View package events'.
+  mt('View package events').
   '</a>';
 }
 
