@@ -121,9 +121,6 @@ sub check {
 sub _upgrade_data { #class method
   my( $class, %opts) = @_;
 
-  eval "use FS::Setup;";
-  die $@ if $@;
-
   #"repopulate_msgcat", false laziness w/FS::Setup::populate_msgcat
 
   my %messages = _legacy_messages();
