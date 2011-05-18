@@ -1,7 +1,7 @@
 <& elements/svc_Common.html,
               'table'     => 'svc_phone',
               'fields'    => \@fields,
-	      'labels'    => \%labels,
+	          'labels'    => \%labels,
               'html_foot' => $html_foot,
 &>
 <%init>
@@ -39,9 +39,9 @@ my $html_foot = sub {
   ###
 
   my $e911 = 
-    mt('E911 Information').
+    emt('E911 Information').
     &ntable("#cccccc"). '<TR><TD>'. ntable("#cccccc",2).
-      '<TR><TD>'.mt('Location').'</TD>'.
+      '<TR><TD>'.emt('Location').'</TD>'.
       '<TD BGCOLOR="#FFFFFF">'.
         $svc_phone->location_label( 'join_string'     => '<BR>',
                                     'double_space'    => ' &nbsp; ',

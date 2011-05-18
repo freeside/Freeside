@@ -1,9 +1,9 @@
-<% include('/elements/header.html', {
+<& /elements/header.html, {
              'title' => $title,
              'head'  => $head,
              'nobr'  => 1,
-          })
-%>
+          }
+&>
 <BR>
 % my @part_tag = $cust_main->part_tag;
 % if ( $conf->config('cust_tag-location') eq 'top' && @part_tag ) {
@@ -22,17 +22,16 @@
 </TABLE>
 % }
 
-<% include('/elements/menubar.html',
+<& /elements/menubar.html,
              { 'newstyle' => 1,
                'selected' => $viewname{$view},
                'url_base' => $cgi->url. "?custnum=$custnum;show=",
              },
              %views,
-          )
-%>
+&>
 <DIV CLASS="fstabcontainer">
 
-<% include('/elements/init_overlib.html') %>
+<& /elements/init_overlib.html &>
 
 <SCRIPT TYPE="text/javascript">
 function areyousure(href, message) {
@@ -51,45 +50,42 @@ function areyousure(href, message) {
 %        && $cust_main->ncancelled_pkgs
 %      ) {
 
-  <% include( '/elements/popup_link-cust_main.html',
+  <& /elements/popup_link-cust_main.html,
               { 'action'      => $p. 'misc/cancel_cust.html',
-                'label'       => 'Cancel&nbsp;this&nbsp;customer',
-                'actionlabel' => 'Confirm Cancellation',
+                'label'       => emt('Cancel this customer'),
+                'actionlabel' => emt('Confirm Cancellation'),
                 'color'       => '#ff0000',
                 'cust_main'   => $cust_main,
                 'width'       => 616, #make room for reasons
                 'height'      => 366,
               }
-            )
-  %> | 
+  &> | 
 
 % }
 
 % if ( $curuser->access_right('Merge customer') ) {
 
-  <% include( '/elements/popup_link-cust_main.html',
+  <& /elements/popup_link-cust_main.html,
               { 'action'      => $p. 'misc/merge_cust.html',
-                'label'       => 'Merge&nbsp;this&nbsp;customer',
-                'actionlabel' => 'Merge customer',
-                #'color'       => '#ff0000',
+                'label'       => emt('Merge this customer'),
+                'actionlabel' => emt('Merge customer'),
                 'cust_main'   => $cust_main,
                 'width'       => 480,
                 'height'      => 192,
               }
-            )
-  %> | 
+  &> | 
 
 % } 
 
 % if ( $conf->exists('deletecustomers')
 %        && $curuser->access_right('Delete customer')
 %      ) {
-  <A HREF="<% $p %>misc/delete-customer.cgi?<% $custnum%>">Delete this customer</A> | 
+  <A HREF="<% $p %>misc/delete-customer.cgi?<% $custnum%>"><% mt('Delete this customer') |h %></A> | 
 % } 
 
 % unless ( $conf->exists('disable_customer_referrals') ) { 
-  <A HREF="<% $p %>edit/cust_main.cgi?referral_custnum=<% $custnum %>">Refer a new customer</A> | 
-  <A HREF="<% $p %>search/cust_main.cgi?referral_custnum=<% $custnum %>">View this customer's referrals</A>
+  <A HREF="<% $p %>edit/cust_main.cgi?referral_custnum=<% $custnum %>"><% mt('Refer a new customer') |h %></A> | 
+  <A HREF="<% $p %>search/cust_main.cgi?referral_custnum=<% $custnum %>"><% mt('View this customer\'s referrals') |h %></A>
 % } 
 
 <BR><BR>
@@ -99,7 +95,7 @@ function areyousure(href, message) {
 %      || $curuser->access_right('View customer billing events')
 %    ) {
 % $br=1;
-  <A HREF="<% $p %>search/cust_event.html?custnum=<% $custnum %>">View billing events for this customer</A>
+  <A HREF="<% $p %>search/cust_event.html?custnum=<% $custnum %>"><% mt('View billing events for this customer') |h %></A>
 % }
 
 % if ( $conf->config('cust_main-external_links') ) {
@@ -119,25 +115,26 @@ function areyousure(href, message) {
 
 %my $signupurl = $conf->config('signupurl');
 %if ( $signupurl ) {
-  This customer's signup URL: <A HREF="<% $signupurl %>?ref=<% $custnum %>"><% $signupurl %>?ref=<% $custnum %></A><BR><BR>
+  <% mt('This customer\'s signup URL:') |h %>
+  <A HREF="<% $signupurl %>?ref=<% $custnum %>"><% $signupurl %>?ref=<% $custnum %></A>
+  <BR><BR>
 % } 
 
 %if ( $conf->exists('maestro-status_test') ) {
-  <A HREF="<% $p %>misc/maestro-customer_status-test.html?<% $custnum %>">Test maestro status</A><BR><BR>
+  <A HREF="<% $p %>misc/maestro-customer_status-test.html?<% $custnum %>"><% mt('Test maestro status') |h %></A>
+  <BR><BR>
 % } 
 
 <A NAME="cust_main"></A>
 <TABLE BORDER=0>
 <TR>
   <TD VALIGN="top">
-    <% include('cust_main/contacts.html', $cust_main ) %>
+    <& cust_main/contacts.html, $cust_main &>
   </TD>
   <TD VALIGN="top" STYLE="padding-left: 54px">
-    <% include('cust_main/misc.html', $cust_main ) %>
+    <& cust_main/misc.html, $cust_main &>
 % if ( $conf->config('payby-default') ne 'HIDE' ) { 
-
-      <BR>
-      <% include('cust_main/billing.html', $cust_main ) %>
+      <BR><& cust_main/billing.html, $cust_main &>
 % } 
 
   </TD>
@@ -149,8 +146,7 @@ function areyousure(href, message) {
 % if ( $view eq 'notes' || $view eq 'jumbo' ) {
 
 %if ( $cust_main->comments =~ /[^\s\n\r]/ ) {
-<BR>
-Comments
+<BR><% mt('Comments') |h %> 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
 <TR>
   <TD BGCOLOR="#ffffff">
@@ -166,55 +162,53 @@ Comments
 
 %   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {
       <BR>
-      <A NAME="cust_main_note"><FONT SIZE="+2">Notes</FONT></A><BR>
+      <A NAME="cust_main_note"><FONT SIZE="+2"><% mt('Notes') |h %></FONT></A><BR>
 %   }
 
 %   if ( $curuser->access_right('Add customer note') &&
 %        ! $conf->exists('cust_main-disable_notes')
 %      ) {
 
-  <% include( '/elements/popup_link-cust_main.html',
-                'label'       => 'Add customer note',
+  <& /elements/popup_link-cust_main.html,
+                'label'       => emt('Add customer note'),
                 'action'      => $p. 'edit/cust_main_note.cgi',
-                'actionlabel' => 'Enter customer note',
+                'actionlabel' => emt('Enter customer note'),
                 'cust_main'   => $cust_main,
                 'width'       => 616,
                 'height'      => 538, #575
-            )
-  %>
+  &>
 
 %   }
 
 <BR>
 
-<% include('cust_main/notes.html', 'custnum' => $cust_main->custnum ) %>
+<& cust_main/notes.html, 'custnum' => $cust_main->custnum &>
 
 % }
 <BR>
 
 % if(! $conf->config('disable_cust_attachment') 
 %  and $curuser->access_right('Add attachment')) {
-<% include( '/elements/popup_link-cust_main.html',
-              'label'       => 'Attach file',
+<& /elements/popup_link-cust_main.html,
+              'label'       => emt('Attach file'),
               'action'      => $p.'edit/cust_main_attach.cgi',
-              'actionlabel' => 'Upload file',
+              'actionlabel' => emt('Upload file'),
               'cust_main'   => $cust_main,
               'width'       => 480,
               'height'      => 296,
-          )
-%>
+&>
 % }
 % if( $curuser->access_right('View attachments') ) {
-<% include('cust_main/attachments.html', 'custnum' => $cust_main->custnum ) %>
+<& cust_main/attachments.html, 'custnum' => $cust_main->custnum &>
 %   if ($cgi->param('show_deleted')) {
 <A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
            ($view ? ";show=$view" : '') . '#notes' 
-           %>"><I>(Show active attachments)</I></A>
+           %>"><I>(<% mt('Show active attachments') |h %>)</I></A>
 %   }
 % elsif($curuser->access_right('View deleted attachments')) {
 <A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
            ($view ? ";show=$view" : '') . ';show_deleted=1#notes'
-           %>"><I>(Show deleted attachments)</I></A>
+           %>"><I>(<% mt('Show deleted attachments') |h %>)</I></A>
 %   }
 % }
 <BR>
@@ -223,13 +217,13 @@ Comments
 
 % if ( $view eq 'jumbo' ) {
     <BR><BR>
-    <A NAME="tickets"><FONT SIZE="+2">Tickets</FONT></A><BR>
+    <A NAME="tickets"><FONT SIZE="+2"><% mt('Tickets') |h %></FONT></A><BR>
 % }
 
 % if ( $view eq 'tickets' || $view eq 'jumbo' ) {
 
 % if ( $conf->config('ticket_system') ) { 
-  <% include('cust_main/tickets.html', $cust_main ) %>
+  <& cust_main/tickets.html, $cust_main &>
 % } 
   <BR><BR>
 
@@ -237,40 +231,41 @@ Comments
 
 % if ( $view eq 'jumbo' ) { #XXX enable me && $curuser->access_right('View customer packages') { 
 
-  <A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A><BR>
+  <A NAME="cust_pkg"><FONT SIZE="+2"><% mt('Packages') |h %></FONT></A><BR>
 % }
 
 % if ( $view eq 'packages' || $view eq 'jumbo' ) {
 
 % #XXX enable me# if ( $curuser->access_right('View customer packages') { 
-<% include('cust_main/packages.html', $cust_main ) %>
+<& cust_main/packages.html, $cust_main &>
 % #}
 
 % }
 
 % if ( $view eq 'jumbo' ) {
     <BR><BR>
-    <A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
+    <A NAME="history"><FONT SIZE="+2"><% mt('Payment History') |h %></FONT></A>
+    <BR>
 % }
 
 % if ( $view eq 'payment_history' || $view eq 'jumbo' ) {
 
 % if ( $conf->config('payby-default') ne 'HIDE' ) { 
-  <% include('cust_main/payment_history.html', $cust_main ) %>
+  <& cust_main/payment_history.html, $cust_main &>
 % } 
 
 % }
 
 % if ( $view eq 'change_history' ) { #  || $view eq 'jumbo' 	 
-<% include('cust_main/change_history.html', $cust_main ) %> 	 
+<& cust_main/change_history.html, $cust_main &> 	 
 % }
 
 % if ( $view eq 'custom' ) { 
-<% include('cust_main/custom.html', $cust_main ) %>
+<& cust_main/custom.html, $cust_main &>
 % }
 
 </DIV>
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -304,19 +299,19 @@ $title = "Customer: $title";
 
 #false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
 tie my %views, 'Tie::IxHash',
-       'Basics'           => 'basics',
-       'Notes'            => 'notes', #notes and files?
+       emt('Basics')       => 'basics',
+       emt('Notes')        => 'notes', #notes and files?
 ;
-$views{'Tickets'}         =  'tickets'
+$views{emt('Tickets')}     =  'tickets'
                                if $conf->config('ticket_system');
-$views{'Packages'}        =  'packages';
-$views{'Payment History'} =  'payment_history'
+$views{emt('Packages')}    =  'packages';
+$views{emt('Payment History')} =  'payment_history'
                                unless $conf->config('payby-default' eq 'HIDE');
-$views{'Change History'}  =  'change_history'
+$views{emt('Change History')}  =  'change_history'
   if $curuser->access_right('View customer history');
-$views{$conf->config('cust_main-custom_title') || 'Custom'} =  'custom'
+$views{$conf->config('cust_main-custom_title') || emt('Custom')} =  'custom'
   if $conf->config('cust_main-custom_link');
-$views{'Jumbo'}           =  'jumbo';
+$views{emt('Jumbo')}           =  'jumbo';
 
 my %viewname = reverse %views;
 

@@ -1,12 +1,12 @@
 % if ( $custnum ) { 
 
-  <& /elements/header.html, mt("View [_1] account",$svc) &>
+  <& /elements/header.html, emt("View [_1] account",$svc) &>
   <& /elements/small_custview.html, $custnum, '', 1,
      "${p}view/cust_main.cgi" &> 
   <BR>
 
 % } else { 
-% my $delmsg = mt('Permanently delete this account?');
+% my $delmsg = emt('Permanently delete this account?');
 
   <SCRIPT>
   function areyousure(href) {
@@ -15,8 +15,8 @@
   }
   </SCRIPT>
   
-  <& /elements/header.html, mt('View account'), menubar(
-    mt("Cancel this (unaudited) account") =>
+  <& /elements/header.html, emt('View account'), menubar(
+    emt("Cancel this (unaudited) account") =>
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')",
   ) &>
 

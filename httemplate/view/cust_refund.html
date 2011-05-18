@@ -1,26 +1,26 @@
 % if ( $link eq 'popup' ) { 
 
-  <& /elements/header-popup.html, mt('Refund Receipt') &>
+  <& /elements/header-popup.html, emt('Refund Receipt') &>
 
   <CENTER><A HREF="javascript:self.parent.location = '<% $pr_link %>'"><% mt('Print') |h %></A></CENTER><BR>
 
 % } elsif ( $link eq 'print' ) { 
 
-  <& /elements/header-popup.html, mt('Refund Receipt') &>
+  <& /elements/header-popup.html, emt('Refund Receipt') &>
   
 % #it would be nice if the menubar could be hidden for print, but better to
 % # have it available than not, otherwise the user winds up at a dead end
   <% menubar(
-       mt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
+       emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
      )
   %>
   <BR><BR>
 
 % } else { 
 
-  <& /elements/header.html, mt('Refund Receipt'), menubar(
-       mt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
-       mt('Print receipt') => $pr_link,
+  <& /elements/header.html, emt('Refund Receipt'), menubar(
+       emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
+       emt('Print receipt') => $pr_link,
      )
   &>
 
