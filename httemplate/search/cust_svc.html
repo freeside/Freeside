@@ -1,11 +1,11 @@
-<% include( 'elements/search.html',
-              'title'       => 'Service search results',
-	      'name'        => 'services',
+<& elements/search.html,
+          'title'       => emt('Service search results'),
+	      'name'        => emt('services'),
 	      'query'       => $sql_query,
 	      'count_query' => $count_query,
 	      'redirect'    => $link,
-	      'header'      => [ '#',
-	                         'Service',
+	      'header'      => [ emt('#'),
+	                         emt('Service'),
 				 # package?
 				 FS::UI::Web::cust_header(),
 	                       ],
@@ -36,8 +36,7 @@
                            '',
                            FS::UI::Web::cust_styles(),
                          ],
-          )
-%>
+&>
 <%init>
 
 die "access denied"

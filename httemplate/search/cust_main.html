@@ -1,7 +1,7 @@
-<% include( 'elements/search.html',
-                  'title'       => 'Customer Search Results', 
+<& elements/search.html,
+                  'title'       => emt('Customer Search Results'), 
                   'menubar'     => $menubar,
-                  'name'        => 'customers',
+                  'name'        => emt('customers'),
                   'query'       => $sql_query,
                   'count_query' => $count_query,
                   'header'      => [ FS::UI::Web::cust_header(
@@ -29,8 +29,7 @@
                                      ),
                                      map '', @extra_fields
                                    ],
-              )
-%>
+&>
 <%init>
 
 die "access denied"
@@ -105,7 +104,7 @@ if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') )
   $uri->query_form( \%search_hash );
   my $query = $uri->query;
 
-  push @$menubar, 'Email a notice to these customers' =>
+  push @$menubar, emt('Email a notice to these customers') =>
                     "${p}misc/email-customers.html?table=cust_main&$query",
 
 }

@@ -1,6 +1,6 @@
-<% include( 'elements/search.html',
-                 'title'       => 'Account Search Results',
-                 'name'        => 'accounts',
+<& elements/search.html,
+                 'title'       => emt('Account Search Results'),
+                 'name'        => emt('accounts'),
                  'query'       => $sql_query,
                  'count_query' => $count_query,
                  'redirect'    => $link,
@@ -11,8 +11,7 @@
                  'color'       => \@color,
                  'style'       => \@style,
                  'footer'      => \@footer,
-             )
-%>
+&>
 <%once>
 
 #false laziness w/ClientAPI/MyAccount.pm
@@ -83,7 +82,7 @@ if ( $conf->exists('report-showpasswords') #its a terrible idea
      && $curuser->access_right('List service passwords') #but if you insist...
    )
 {
-  push @header, 'Password';
+  push @header, emt('Password');
   push @fields, 'get_cleartext_password';
   push @links, $link;
   $align .= 'l';
@@ -91,7 +90,7 @@ if ( $conf->exists('report-showpasswords') #its a terrible idea
   push @style, '';
 }
 
-push @header, 'Real Name';
+push @header, emt('Real Name');
 push @fields, 'finger';
 push @links, $link;
 $align .= 'l';
@@ -100,7 +99,7 @@ push @style, '';
 
 #hide the UID, its much less useful these days
 if ( $cgi->param('show_uid') ) { #XXX add a checkbox
-  push @header, 'UID';
+  push @header, emt('UID');
   push @fields, 'uid';
   push @links, $link;
   $align .= 'l';
@@ -108,7 +107,7 @@ if ( $cgi->param('show_uid') ) { #XXX add a checkbox
   push @style, '';
 }
 
-push @header, 'Last Login';
+push @header, emt('Last Login');
 push @fields, 'last_login_text';
 push @links, $link;
 $align .= 'r';
@@ -140,8 +139,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   if ( $sortby eq 'seconds' ) {
     my $tot_time = 0;
-    #push @header, 'Time remaining';
-    push @header, 'Time';
+    push @header, emt('Time');
     push @fields, sub { my $svc_acct = shift;
                         $tot_time += $svc_acct->seconds;
                         format_time($svc_acct->seconds);
@@ -158,7 +156,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     if ( $conf->exists('svc_acct-display_paid_time_remaining') ) {
       my $tot_paid_time = 0;
       my %tot = ( '30'=>0, '60'=>0, '90'=>0 );
-      push @header, 'Paid time', 'Last 30', 'Last 60', 'Last 90';
+      push @header, emt('Paid time'), emt('Last 30'), emt('Last 60'), emt('Last 90');
       push @fields,
         sub {
           my $svc_acct = shift;
