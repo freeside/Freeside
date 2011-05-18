@@ -4,14 +4,20 @@ use base qw( Exporter );
 use FS::CurrentUser;
 use FS::Conf;
 use FS::L10N;
+use HTML::Entities qw( encode_entities );
 
-our @EXPORT_OK = qw( mt );
+our @EXPORT_OK = qw( mt emt );
 
 our $lh;
 
 sub mt {
   $lh ||= lh();
   $lh->maketext(@_);
+}
+
+# HTML-escaped version of mt()
+sub emt {
+    encode_entities(mt(@_));
 }
 
 sub lh {

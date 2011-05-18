@@ -140,7 +140,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::NetworkMonitoringSystem;
   use FS::Tron qw( tron_lint );
   use FS::Locales;
-  use FS::Maketext qw( mt );
+  use FS::Maketext qw( mt emt );
 
   use FS::agent;
   use FS::agent_type;
