@@ -27,31 +27,32 @@
 </%doc>
 <SCRIPT>
 function areyousure(href) {
-  if (confirm("Permanently delete this <% $label %>?") == true)
+% my $delmsg = emt("Permanently delete this [_1]?", $label);
+  if (confirm(<% $delmsg |js_string %>) == true)
     window.location.href = href;
 }
 </SCRIPT>
 
 % if ( $custnum ) { 
 
-  <% include("/elements/header.html","View $label: $value") %>
+  <& /elements/header.html,emt("View [_1]: [_2]",$label,$value) &>
 
-  <% include( '/elements/small_custview.html', $custnum, '', 1,
-     "${p}view/cust_main.cgi") %>
+  <& /elements/small_custview.html, $custnum, '', 1,
+     "${p}view/cust_main.cgi" &>
   <BR>
 
 % } else { 
 
-  <% include("/elements/header.html","View $label: $value", menubar(
-      "Cancel this (unaudited) $label" =>
+  <& /elements/header.html,emt("View [_1]: [_2]",$label,$value), menubar(
+      emt("Cancel this (unaudited) [_1]",$label) =>
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')"
-  )) %>
+  ) &>
 
 % } 
 
-Service #<B><% $svcnum %></B>
+<% mt('Service #') |h %><B><% $svcnum %></B>
 % my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
-| <% include('/view/elements/svc_edit_link.html', 'svc' => $svc_x) %>
+| <& /view/elements/svc_edit_link.html, 'svc' => $svc_x &>
 <BR>
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
@@ -83,7 +84,7 @@ Service #<B><% $svcnum %></B>
 
 %	$value = time2str($date_format,$value) if ( $type eq 'date' && $value );
 %	$value = time2str("$date_format %H:%M",$value) if ( $type eq 'datetime' && $value );
-%	$value = $value eq 'Y' ? 'Yes' : 'No' if ( $type eq 'checkbox' );
+%	$value = $value eq 'Y' ? emt('Yes') : emt('No') if ( $type eq 'checkbox' );
 %       #eventually more options for <SELECT>, etc. fields
 
         <TD BGCOLOR="#ffffff"><% $value %><TD>

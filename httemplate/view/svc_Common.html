@@ -1,9 +1,8 @@
-<% include('elements/svc_Common.html',
+<& elements/svc_Common.html,
              'table'    => $table,
 	     'edit_url' => $edit_url, #$p."edit/svc_Common.html?svcdb=$table;svcnum=",
 	     %opt,
-          )
-%>
+&>
 <%init>
 
 # false laziness w/edit/svc_Common.html
