@@ -89,8 +89,8 @@
 %                   if ( $editi && ! $cust_pkg->get('cancel') ) {
                       (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'I',
-                                    'label'       => mt('edit'),
-                                    'actionlabel' => mt('Edit invoice details'),
+                                    'label'       => emt('edit'),
+                                    'actionlabel' => emt('Edit invoice details'),
                                     'color'       => '#333399',
                                     'width'       => 763,
                                  }
@@ -112,8 +112,8 @@
               <FONT SIZE="-1">
                 (&nbsp;<% include('/elements/popup_link.html', { 
                                'action'      => $editlink. 'I',
-                               'label'       => mt('Add invoice details'),
-                               'actionlabel' => mt('Add invoice details'),
+                               'label'       => emt('Add invoice details'),
+                               'actionlabel' => emt('Add invoice details'),
                                'color'       => '#333399',
                                'width'       => 763,
                             })
@@ -133,8 +133,8 @@
 %                   if ( $editc ) {
                       (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'C',
-                                    'label'       => mt('edit'),
-                                    'actionlabel' => mt('Edit comments'),
+                                    'label'       => emt('edit'),
+                                    'actionlabel' => emt('Edit comments'),
                                     'color'       => '#333399',
                                     'width'       => 763,
                                  }
@@ -156,8 +156,8 @@
               <FONT SIZE="-1">
                 (&nbsp;<& /elements/popup_link.html, { 
                                'action'      => $editlink. 'C',
-                               'label'       => mt('Add comments'),
-                               'actionlabel' => mt('Add comments'),
+                               'label'       => emt('Add comments'),
+                               'actionlabel' => emt('Add comments'),
                                'color'       => '#333399',
                                'width'       => 763,
                             }
@@ -210,8 +210,8 @@ sub pkg_change_link {
   my $locationnum = $cust_pkg->locationnum;
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p. "misc/change_pkg.cgi?locationnum=$locationnum",
-    'label'       => mt('Change package'),
-    'actionlabel' => mt('Change'),
+    'label'       => emt('Change package'),
+    'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
   );
 }
@@ -223,20 +223,20 @@ sub pkg_change_location_link {
     'action'      => $p. "misc/change_pkg.cgi?locationnum=-1;pkgpart=$pkgpart;".
                      "address1=;address2=;city=;county=;state=$statedefault;".
                      "zip=;country=$countrydefault",
-    'label'       => mt('Change location'),
-    'actionlabel' => mt('Change'),
+    'label'       => emt('Change location'),
+    'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
   );
 }
 
-sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', mt('Edit dates'), @_ ); }
+sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', emt('Edit dates'), @_ ); }
 
 sub pkg_discount_link {
   my $cust_pkg = shift or return '';
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p.'edit/cust_pkg_discount.html',
-    'label'       => mt('Discount'),
-    'actionlabel' => mt('Discount'),
+    'label'       => emt('Discount'),
+    'actionlabel' => emt('Discount'),
     'cust_pkg'    => $cust_pkg,
     'width'       => 616,
   );
@@ -249,13 +249,13 @@ sub pkg_customize_link {
   qq!<A HREF="${p}edit/part_pkg.cgi?!.
     "clone=". $part_pkg->pkgpart. ';'.
     "pkgnum=". $cust_pkg->pkgnum.
-    qq!">!.mt('Customize').'</A>';
+    qq!">!.emt('Customize').'</A>';
 }
 
 sub pkg_event_link {
   my($cust_pkg) = @_;
   qq!<a href="${p}search/cust_event.html?pkgnum=!. $cust_pkg->pkgnum. qq!">!.
-  mt('View package events').
+  emt('View package events').
   '</a>';
 }
 

@@ -1,7 +1,7 @@
 % if ( @part_svc || $opt{'showall'} ) {
 
 | <SELECT NAME="svcpart" onChange="enable_change()">
-    <OPTION VALUE="">Change service</OPTION>
+    <OPTION VALUE=""><% mt('Change service') |h %></OPTION>
     <OPTION VALUE="">--------------</OPTION>
 % foreach my $opt_part_svc ( @part_svc ) { 
 
@@ -9,7 +9,7 @@
 % } 
 
   </SELECT>
-  <INPUT NAME="submit" TYPE="submit" VALUE="Change" disabled>
+  <INPUT NAME="submit" TYPE="submit" VALUE="<% mt('Change') |h %>" disabled>
 
 % } 
 

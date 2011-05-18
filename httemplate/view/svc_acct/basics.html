@@ -1,112 +1,106 @@
 <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
-<% include('/view/elements/tr.html', label=>'Service',  value=>$part_svc->svc) %>
-<% include('/view/elements/tr.html', label=>'Username', value=>$svc_acct->username) %>
-<% include('/view/elements/tr.html', label=>'Domain',   value=>$domain) %>
+<& /view/elements/tr.html, label=>mt('Service'),  value=>$part_svc->svc &>
+<& /view/elements/tr.html, label=>mt('Username'), value=>$svc_acct->username &>
+<& /view/elements/tr.html, label=>mt('Domain'),   value=>$domain &>
 
 % if ( $opt{'communigate'} ) {
-  <% include('/view/elements/tr.html', label=>'Aliases', value=>$svc_acct->cgp_aliases) %>
+  <& /view/elements/tr.html, label=>mt('Aliases'), value=>$svc_acct->cgp_aliases &>
 %}
 
 % if ( $svc_acct->pbxsvc ) {
-  <% include('/view/elements/tr.html', label=>'PBX', value=>$svc_acct->pbx_title) %>
+  <& /view/elements/tr.html, label=>mt('PBX'), value=>$svc_acct->pbx_title &>
 %}
 
 % my $show_pw = '';
 % my $password = $svc_acct->get_cleartext_password; 
 % if ( $password =~ /^\*\w+\* (.*)$/ ) {
 %   $password = $1;
-%   $show_pw .= '<I>(login disabled)</I> ';
+%   $show_pw .= '<I>('. mt('login disabled') .')</I> ';
 % } 
 % if ( ! $password
 %      && $svc_acct->_password_encryption ne 'plain'
 %      && $svc_acct->_password
 %    )
 % {
-%   $show_pw .= '<I>('. uc($svc_acct->_password_encryption). ' encrypted)</I>';
+%   $show_pw .= '<I>('. uc($svc_acct->_password_encryption). ' '.mt('encrypted').')</I>';
 % } elsif ( $conf->exists('showpasswords') ) { 
 %   $show_pw .= '<PRE>'. encode_entities($password). '</PRE>';
 % } else { 
-%   $show_pw .= '<I>(hidden)</I>';
+%   $show_pw .= '<I>('. mt('hidden') .')</I>';
 % } 
 % $password = ''; 
-<% include('/view/elements/tr.html', label=>'Password', value=>$show_pw) %>
+<& /view/elements/tr.html, label=>mt('Password'), value=>$show_pw &>
 
 
 % if ( $conf->exists('security_phrase') ) {
-  <%include('/view/elements/tr.html', label=>'Security phrase', value=>$svc_acct->sec_phrase)%>
+  <& /view/elements/tr.html, label=>mt('Security phrase'), value=>$svc_acct->sec_phrase &>
 % } 
 
 % if ( $svc_acct->popnum ) {
 %   my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
-    <% include('/view/elements/tr.html', label=>'Access number', value=>$svc_acct_pop->text) %>
+    <& /view/elements/tr.html, label=>mt('Access number'), value=>$svc_acct_pop->text &>
 % } 
 
 % if ($svc_acct->uid ne '') { 
-  <% include('/view/elements/tr.html', label=>'UID', value=>$svc_acct->uid) %>
+  <& /view/elements/tr.html, label=>mt('UID'), value=>$svc_acct->uid &>
 % } 
 
 % if ($svc_acct->gid ne '') { 
-  <% include('/view/elements/tr.html', label=>'GID', value=>$svc_acct->gid) %>
+  <& /view/elements/tr.html, label=>mt('GID'), value=>$svc_acct->gid &>
 % } 
 
 % if ($svc_acct->finger ne '') { 
-  <% include('/view/elements/tr.html', label=>'Real Name', value=>$svc_acct->finger) %>
+  <& /view/elements/tr.html, label=>mt('Real Name'), value=>$svc_acct->finger &>
 % } 
 
 % if ($svc_acct->dir ne '') { 
-  <% include('/view/elements/tr.html', label=>'Home directory', value=>$svc_acct->dir) %>
+  <& /view/elements/tr.html, label=>mt('Home directory'), value=>$svc_acct->dir &>
 % } 
 
 % if ($svc_acct->shell ne '') { 
-  <% include('/view/elements/tr.html', label=>'Shell', value=>$svc_acct->shell) %>
+  <& /view/elements/tr.html, label=>mt('Shell'), value=>$svc_acct->shell &>
 % } 
 
 % if ($svc_acct->quota ne '' && ! $opt{'communigate'} ) { 
 
-  <% include('/view/elements/tr.html', label=>'Quota', value=>$svc_acct->quota) %>
+  <& /view/elements/tr.html, label=>mt('Quota'), value=>$svc_acct->quota &>
 
 % } elsif ( $opt{'communigate'} ) {
 
-  <% include( 'communigate.html', %opt ) %>
+  <& communigate.html, %opt &>
 
 % }
 
 % if ($svc_acct->slipip) { 
-  <% include('/view/elements/tr.html',
-       label=>'IP address',
+  <& /view/elements/tr.html,
+       label=>mt('IP address'),
        value=> ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
-                 ? "<I>(Dynamic)</I>"
+                 ? "<I>(".mt('Dynamic').")</I>"
                  : $svc_acct->slipip
-     )
-  %>
+  &>
 % } 
 
-<% include('usage.html',
-             'svc_acct' => $svc_acct,
-          )
-%>
+<& usage.html, 'svc_acct' => $svc_acct &>
 
 % foreach my $attribute ( grep /^radius_/, $svc_acct->fields ) {
 %   $attribute =~ /^radius_(.*)$/;
 %   my $pattribute = $FS::raddb::attrib{$1};
-    <% include('/view/elements/tr.html', label=>"Radius (reply) $pattribute",
+    <& /view/elements/tr.html, label=>mt("Radius (reply) [_1]",$pattribute),
                           value=>$svc_acct->getfield($attribute)
-              )
-    %>
+    &>
 % } 
 
 % foreach my $attribute ( grep /^rc_/, $svc_acct->fields ) {
 %   $attribute =~ /^rc_(.*)$/;
 %   my $pattribute = $FS::raddb::attrib{$1};
-    <% include('/view/elements/tr.html', label=>"Radius (check) $pattribute",
+    <& /view/elements/tr.html, label=>mt("Radius (check) [_1]",$pattribute),
                           value=>$svc_acct->getfield($attribute)
-              )
-    %>
+    &>
 % } 
 
-<% include('/view/elements/tr.html', label=>'RADIUS groups',
-                      value=>join('<BR>', $svc_acct->radius_groups) ) %>
+<& /view/elements/tr.html, label=>mt('RADIUS groups'),
+                      value=>join('<BR>', $svc_acct->radius_groups) &>
 
 %# Can this be abstracted further?  Maybe a library function like
 %# widget('HTML', 'view', $svc_acct) ?  It would definitely make UI 

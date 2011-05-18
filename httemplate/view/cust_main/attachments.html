@@ -48,35 +48,35 @@
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum;".
 %                           "undelete=1",
-%                           mt('Undelete attachment'));
-%       $edit .= linkstr($clickjs, mt('undelete'));
+%                           emt('Undelete attachment'));
+%       $edit .= linkstr($clickjs, emt('undelete'));
 %     }
 %     if ($curuser->access_right('Purge attachment')) {
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum;".
 %                           "purge=1",
-%                           mt('Purge attachment'),
-%                           mt('Permanently remove this file?') );
-%       $edit .= linkstr($clickjs,mt('purge'));
+%                           emt('Purge attachment'),
+%                           emt('Permanently remove this file?') );
+%       $edit .= linkstr($clickjs,emt('purge'));
 %     }
 %   }
 %   else { # you can download or edit it
 %     if ($curuser->access_right('Edit attachment') ) {
 %       my $clickjs = popup('edit/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum",
-%                           mt('Edit attachment properties'));
-%       $edit .= linkstr($clickjs,mt('edit'));
+%                           emt('Edit attachment properties'));
+%       $edit .= linkstr($clickjs,emt('edit'));
 %     }
 %     if($curuser->access_right('Delete attachment') ) {
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum;delete=1",
 %                           'Delete attachment',
 %                           'Delete this file?');
-%       $edit .= linkstr($clickjs,mt('delete'));
+%       $edit .= linkstr($clickjs,emt('delete'));
 %     }
 %     if ($curuser->access_right('Download attachment') ) {
 %       $edit .= qq!&nbsp; <A HREF="!.popurl(1).'attachment.html?'.$attachnum.qq!">(!
-%                               . mt('download') .')</A>';
+%                               . emt('download') .')</A>';
 %     }
 %   }
 
@@ -134,7 +134,7 @@ sub note_datestr {
 
 sub linkstr {
     my ($clickjs, $label) = (shift,shift);
-    '&nbsp; <A HREF="javascript:void(0);" '. $clickjs . '>(' . mt($label) . ')</A>';
+    '&nbsp; <A HREF="javascript:void(0);" '. $clickjs . '>(' . emt($label) . ')</A>';
 }
 
 sub size_units {

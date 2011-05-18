@@ -1,4 +1,4 @@
-<% mt('Billing information') |h %> 
+<% emt('Billing information') |h %> 
 %# If we can't see the unencrypted card, then bill now is an exercise in
 %# frustration (without some sort of job queue magic to send it to a secure
 %# machine, anyway)
@@ -8,7 +8,7 @@
 %#  (<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>"><% mt('Bill now') |h %></A>)
   (<& /elements/bill.html,
                 custnum   => $cust_main->custnum,
-                label     => mt('Bill now'),
+                label     => emt('Bill now'),
                 url       => $p.'view/cust_main.cgi?'.$cust_main->custnum,
    &>)
 % } 
@@ -170,12 +170,12 @@
 </TR>
 % } 
 
-% my $yes = mt('yes');
-% my $no = mt('no');
+% my $yes = emt('yes');
+% my $no = emt('no');
 
 % my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 <TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.mt('all taxes').')' : '' %></TD>
+  <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
 </TR>
 % foreach my $exempt_group ( @exempt_groups ) {
@@ -212,7 +212,7 @@
 <TR>
   <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
   <TD BGCOLOR="#ffffff">
-    <% $cust_main->invoice_terms || mt('Default').' ('. ( $conf->config('invoice_default_terms') || mt('Payable upon receipt') ). ')' %>
+    <% $cust_main->invoice_terms || emt('Default').' ('. ( $conf->config('invoice_default_terms') || emt('Payable upon receipt') ). ')' %>
   </TD>
 </TR>
 <TR>

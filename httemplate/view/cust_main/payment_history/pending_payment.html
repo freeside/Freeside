@@ -22,7 +22,7 @@ my %statusaction = (
 my $edit_pending =
   $FS::CurrentUser::CurrentUser->access_right('Edit customer pending payments');
 
-my $status = mt("Status: [_1]",$cust_pay_pending->status);
+my $status = emt("Status: [_1]",$cust_pay_pending->status);
 
 my $action = $statusaction{$cust_pay_pending->status};
 
@@ -32,11 +32,11 @@ if ( $action && $edit_pending ) {
 	       'action' => $p. 'edit/cust_pay_pending.html'.
 			     '?paypendingnum='. $cust_pay_pending->paypendingnum.
 			     ";action=$action",
-	       'label'  => mt($action),
+	       'label'  => emt($action),
 	       'color'  => '#ff0000',
 	       'width'  => 655,
 	       'height' => ( $action eq 'delete' ? 480 : 575 ),
-	       'actionlabel' => mt(ucfirst($action). ' pending payment'),
+	       'actionlabel' => emt(ucfirst($action). ' pending payment'),
 	    );
 }
 

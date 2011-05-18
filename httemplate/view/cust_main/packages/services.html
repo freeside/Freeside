@@ -109,7 +109,7 @@ sub svc_provision_link {
   }
 
   my $link = qq!<A CLASS="provision" HREF="$url">!.
-             mt("Provision [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
+             emt("Provision [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
   if ( $opt->{'legacy_link'}
        && $curuser->access_right('View/link unlinked services')
      )
@@ -117,18 +117,18 @@ sub svc_provision_link {
     $link .= '<BR>'.
              qq!<A CLASS="provision" HREF="${p}misc/link.cgi?!.
              qq!$pkgnum_svcpart">!.
-            mt("Link to legacy [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
+            emt("Link to legacy [_1] ([_2])",$svc_nbsp,$num_avail).'</A>';
   }
   $link;
 }
 
 my %hints = (
-svc_acct      => mt('(user or email)'),
-svc_domain    => mt('(domain)'),
-svc_broadband => mt('(ip or mac)'),
-svc_forward   => mt('(email)'),
-svc_phone     => mt('(phone)'),
-svc_pbx       => mt('(phone)'),
+svc_acct      => emt('(user or email)'),
+svc_domain    => emt('(domain)'),
+svc_broadband => emt('(ip or mac)'),
+svc_forward   => emt('(email)'),
+svc_phone     => emt('(phone)'),
+svc_pbx       => emt('(phone)'),
 );
 
 </%init>

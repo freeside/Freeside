@@ -54,7 +54,7 @@
 %                                             'edit/cust_main_note.cgi'.
 %                                             "?custnum=$custnum".
 %                                             ";notenum=$notenum",
-%                            'actionlabel' => mt('Edit customer note'),
+%                            'actionlabel' => emt('Edit customer note'),
 %                            'width'       => 616,
 %                            'height'      => 538, #575
 %                            'frame'       => 'top',
@@ -63,13 +63,13 @@
 %
 %   my $edit = '';
 %   if ($curuser->access_right('Edit customer note') ) {
-%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(!.mt('edit').')</A>';
+%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(!.emt('edit').')</A>';
 %   }
 %
 % if ( $last_classnum != $note->classnum && !$skipheader ) {
 % my $tmp_classnum = $note->classnum ? $note->classnum : 0;
 % $classes{$tmp_classnum} = $note->classname ne '' ? $note->classname 
-%						     : mt('Other');
+%						     : emt('Other');
 % if ( $last_classnum != -1 ) {
     </TABLE>
   </DIV>

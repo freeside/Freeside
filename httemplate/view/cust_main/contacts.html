@@ -1,6 +1,6 @@
 % my %which = (
-%   ''      => mt('Billing'),
-%   'ship_' => mt('Service'),
+%   ''      => emt('Billing'),
+%   'ship_' => emt('Service'),
 % );
 % foreach my $which ( '', 'ship_' ) {
 %   my $pre = $cust_main->get("${which}last") ? $which : '';
@@ -13,7 +13,7 @@
     <% $cust_main->get("${pre}last"). ', '. $cust_main->get("${pre}first") |h %>
   </TD>
 % if ( $which eq '' && $conf->exists('show_ss') ) { 
-    <TD ALIGN="right">SS#</TD>
+    <TD ALIGN="right"><% mt('SS#') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->masked('ss') || '&nbsp' %></TD>
 % } 
 </TR>
@@ -31,7 +31,7 @@
 %     ( $conf->exists('cust_main-require_address2')
 %       && ! ( $pre xor $cust_main->has_ship_address )
 %     )
-%       ? mt('Unit #')
+%       ? emt('Unit #')
 %       : ' ';
 
   <TR>

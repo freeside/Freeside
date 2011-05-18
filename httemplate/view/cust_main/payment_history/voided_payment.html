@@ -24,12 +24,12 @@ if ( $opt{'pkg-balances'} && $cust_pay_void->pkgnum ) {
 
 my $unvoid = '';
 my $unvoidmsg = $cust_pay_void->payby =~ /^(CARD|CHEK)$/
-                ? ' ('.mt('do not send anything to the payment gateway') .')'
+                ? ' ('.emt('do not send anything to the payment gateway') .')'
                 : '';
 $unvoid = areyousure_link("${p}misc/unvoid-cust_pay_void.cgi?".$cust_pay_void->paynum,
-                            mt('Are you sure you want to unvoid this payment?'),
-                            mt('Unvoid this payment from the database') . $unvoidmsg,
-                            mt('unvoid')
+                            emt('Are you sure you want to unvoid this payment?'),
+                            emt('Unvoid this payment from the database') . $unvoidmsg,
+                            emt('unvoid')
                          )
     if ( $cust_pay_void->closed !~ /^Y/i && $curuser->access_right('Unvoid') );
 

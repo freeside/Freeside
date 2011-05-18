@@ -19,7 +19,7 @@ STYLE="padding-bottom: 0px;
   border-bottom-width: 1px;">
 <SPAN CLASS="loclabel">
 %   if (! $locationnum) {
-Default service location: 
+<% mt('Default service location:') |h %> 
 %   }
 %   elsif ( $loc->disabled ) {
 <FONT COLOR="#808080"><I>
@@ -69,8 +69,8 @@ sub edit_location_link {
   my $locationnum = shift;
   include( '/elements/popup_link.html',
     'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
-    'label'       => '('.mt('Edit location').')',
-    'actionlabel' => mt('Edit'),
+    'label'       => '('.emt('Edit location').')',
+    'actionlabel' => emt('Edit'),
   );
 }
 
@@ -78,8 +78,8 @@ sub disable_location_link {
   my $locationnum = shift;
   include( '/elements/popup_link.html',
     'action'      => $p. "misc/disable-cust_location.cgi?locationnum=$locationnum",
-    'label'       => '('.mt('Disable location').')',
-    'actionlabel' => mt('Disable'),
+    'label'       => '('.emt('Disable location').')',
+    'actionlabel' => emt('Disable'),
   );
 }
 

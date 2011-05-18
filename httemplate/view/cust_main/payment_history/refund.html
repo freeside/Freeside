@@ -13,26 +13,26 @@ my $payinfo = $payby eq 'CARD'
                 : $cust_refund->payinfo;
 $payby = translate_payby_refund($payby,$payinfo);
 
-my $refund = mt("Refund by [_1]",$cust_refund->otaker);
+my $refund = emt("Refund by [_1]",$cust_refund->otaker);
 $refund = '<B><FONT COLOR="#FF0000">' 
-    . mt("Unapplied Refund by [_1]",$cust_refund->otaker) 
+    . emt("Unapplied Refund by [_1]",$cust_refund->otaker) 
     . '</FONT></B>' 
     if $cust_refund->unapplied > 0;
 
 my $view =
   ' ('. include('/elements/popup_link.html',
-                  'label'     => mt('view receipt'),
+                  'label'     => emt('view receipt'),
                   'action'    => "${p}view/cust_refund.html?link=popup;".
                                  'refundnum='. $cust_refund->refundnum,
-                  'actionlabel' => mt('Payment Receipt'),
+                  'actionlabel' => emt('Payment Receipt'),
                ).
    ')';
 
 my $delete = '';
 $delete = areyousure_link("${p}misc/delete-cust_refund.cgi?".$cust_refund->refundnum,
-                           mt('Are you sure you want to delete this refund?'),
-                           mt('Delete this refund from the database completely - not recommended'),
-                           mt('delete')
+                           emt('Are you sure you want to delete this refund?'),
+                           emt('Delete this refund from the database completely - not recommended'),
+                           emt('delete')
                           ) 
     if ( $cust_refund->closed !~ /^Y/i && $opt{'deleterefunds'} 
                                 && $curuser->access_right('Delete refund') );

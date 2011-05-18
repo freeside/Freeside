@@ -1,15 +1,14 @@
 % if ( $cancel_date ) {
-<I>Canceled <% time2str('%b %o %Y', $cancel_date) %></I>
+<I><% mt("Canceled [_1]", time2str('%b %o %Y', $cancel_date) ) |h %></I>
 % } else {
 <SCRIPT>
 function areyousure_delete() {
-  if (confirm("Permanently delete this service?") == true)
+  if (confirm(<% mt('Permanently delete this service?') |js_string %>) == true)
     window.location.href = '<% $cancel_url %>';
 }
 </SCRIPT>
-<A HREF="<% $edit_url %>">Edit this <% $label %></A> | 
-<A HREF="javascript:areyousure_delete()">
-Unprovision this Service</A>
+<A HREF="<% $edit_url %>"><% mt("Edit this [_1]", $label) |h %></A> | 
+<A HREF="javascript:areyousure_delete()"><% mt('Unprovision this Service') |h %></A>
 % }
 <%init>
 my %opt = @_;
