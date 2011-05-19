@@ -54,6 +54,14 @@ Interface
   </TR>
 
   <TR>
+    <TH ALIGN="right">Enable mobile-friendly menu: </TH>
+    <TD COLSPAN=2>
+      <INPUT TYPE="checkbox" NAME="mobile_menu" VALUE="Y"
+<% $curuser->option('mobile_menu') ? 'CHECKED' : '' %>>
+    </TD>
+  </TR>
+ 
+  <TR>
     <TH ALIGN="right">Default customer view: </TH>
     <TD COLSPAN=2>
       <SELECT NAME="default_customer_view">
@@ -67,7 +75,7 @@ Interface
       </SELECT>
     </TD>
   </TR>
-  
+ 
   <TR>
     <TH ALIGN="right" COLSPAN=1>Disable HTML editor for customer notes: </TH>
     <TD ALIGN="left" COLSPAN=2>

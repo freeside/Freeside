@@ -190,19 +190,19 @@ if ( ref($_[0]) ) {
   $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
 }
 
-if ( !defined($mobile) ) {
-  $mobile = FS::UI::Web::is_mobile();
-}
-if ( $cgi->param('mobile') =~ /^(\d)$/ ) { # allow client to override
-  $mobile = $1;
-}
-
 my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $menu_position = $curuser->option('menu_position')
                     || 'top'; #new default for 1.9
+
+if ( !defined($mobile) ) {
+  $mobile = $curuser->option('mobile_menu',1) && FS::UI::Web::is_mobile();
+}
+if ( $cgi->param('mobile') =~ /^(\d)$/ ) { # allow client to override
+  $mobile = $1;
+}
 
 my $company_name;
 my @agentnums = $curuser->agentnums;
