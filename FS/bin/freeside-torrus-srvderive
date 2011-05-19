@@ -60,8 +60,8 @@ my $sql = "
 
 my $orderlimit = "
     ORDER BY srv_date, srv_time
-    LIMIT 100
-"; #50?
+    LIMIT 50
+";
 
 if ( driver_name eq 'mysql' ) {
   dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
@@ -195,9 +195,12 @@ while (1) {
 
           my $sin = join(',', map dbh->quote("$_$dir"), @serviceids);
 
+          my $srv_date = time2str('%Y-%m-%d', $cur);
+
           my $sum = "
             SELECT COALESCE(SUM(value),0) FROM srvexport AS other
               WHERE other.serviceid IN ($sin)
+                AND other.srv_date = '$srv_date'
                 AND ABS( $cur - $other_date ) <= 60
           ";
 
@@ -205,10 +208,10 @@ while (1) {
             INSERT INTO srvexport ( srv_date, srv_time, serviceid, value, intvl )
               VALUES ( ?, ?, ?, ($sum), ? )
           ";
-          my @param = ( time2str('%Y-%m-%d', $cur), #srv_date
-                        time2str('%X', $cur),       #srv_time
-                        "$serviceid$dir",
-                        300, #intvl ... 
+          my @param = ( $srv_date,
+                        time2str('%X', $cur), #srv_time
+                        "$serviceid$dir",     #serviceid
+                        300,                  #intvl ... 
                       );
           warn $isql. ' with param '. join(',',@param). "\n"
             if $DEBUG > 2;
