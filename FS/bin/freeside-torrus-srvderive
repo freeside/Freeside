@@ -12,7 +12,7 @@ use FS::torrus_srvderive;
 
 our $DEBUG = 2;
 our $max_kids = 6;
-our $search_timeout = 30*60; # 15*60 5*60; #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
+our $search_timeout = 60*60; #30*60; # 15*60 5*60; #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
 our %kids;
 
 my $user = shift or die &usage;
@@ -63,7 +63,7 @@ my $orderlimit = "
     LIMIT 50
 ";
 
-if ( driver_name eq 'mysql' ) {
+if ( driver_name =~ /mysql/i ) {
   dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
   dbh->commit or die dbh->errstr;
 }
@@ -107,7 +107,7 @@ while (1) {
       exit unless @serviceids; #don't try to search for empty virtual ports
 
       #nonlocking select statements; rows in this table never change
-      if ( driver_name eq 'mysql' ) {
+      if ( driver_name =~ /mysql/i ) {
         dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
         dbh->commit or die dbh->errstr;
       }
@@ -167,7 +167,7 @@ while (1) {
         #warn "search timed out; reconnecting and restarting\n";
         warn "search timed out\n";
         dbh->clone()->do("KILL QUERY ". dbh->{"mysql_thread_id"})
-          if driver_name eq 'mysql';
+          if driver_name =~ /mysql/i;
         dbh->rollback; #or die dbh->errstr;
         #adminsuidsetup($user);
         #next SERVICEID; #MAIN;
