@@ -319,9 +319,12 @@ if($curuser->access_right('Financial reports')) {
   );
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
-  $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (internal taxclass system)' ];
-  $report_financial{'Tax Liability'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (vendor data tax products system)' ]
-    if $conf->exists('enable_taxproducts');
+
+  my $taxproducts = $conf->exists('enable_taxproducts');
+  $report_financial{'Tax Liability'. ($taxproducts ? ' (internal tax data)' : '')} = [ $fsurl.'search/report_tax.html', 'Tax liability report (internal tax data)' ];
+  $report_financial{'Tax Liability (vendor tax data)'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (vendor tax data)' ]
+    if $taxproducts;
+
   $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
 
 } elsif($curuser->access_right('Receivables report')) {
