@@ -203,14 +203,18 @@ while (1) {
                 AND other.srv_date = '$srv_date'
                 AND ABS( $cur - $other_date ) <= 60
           ";
+          my $ssth = dbh->prepare($sum) or die $DBI::errstr;
+          $ssth->execute or die $ssth->errstr; #better recovery?
+          my $value = $ssth->fetchrow_arrayref->[0];
 
           my $isql = "
-            INSERT INTO srvexport ( srv_date, srv_time, serviceid, value, intvl )
-              VALUES ( ?, ?, ?, ($sum), ? )
+            INSERT INTO srvexport (srv_date, srv_time, serviceid, value, intvl)
+              VALUES ( ?, ?, ?, ?, ? )
           ";
           my @param = ( $srv_date,
                         time2str('%X', $cur), #srv_time
                         "$serviceid$dir",     #serviceid
+                        $value,
                         300,                  #intvl ... 
                       );
           warn $isql. ' with param '. join(',',@param). "\n"
