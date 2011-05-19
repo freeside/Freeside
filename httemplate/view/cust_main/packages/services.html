@@ -90,7 +90,7 @@ my $conf = new FS::Conf;
 
 sub svc_provision_link {
   my ($cust_pkg, $part_svc, $opt, $curuser) = @_;
-  ( my $svc_nbsp = $part_svc->svc ) =~ s/\s+/&nbsp;/g;
+  ( my $svc_nbsp = $part_svc->svc ) =~ s/\s+/ /g;
   my $num_avail = $part_svc->num_avail;
   my $pkgnum_svcpart = "pkgnum=". $cust_pkg->pkgnum. ';'.
                        "svcpart=". $part_svc->svcpart;
