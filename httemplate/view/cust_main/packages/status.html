@@ -4,13 +4,13 @@
 %#this should use cust_pkg->status and cust_pkg->statuscolor eventually
 
 % if ( $cust_pkg->order_date ) {
-    <% pkg_status_row($cust_pkg, 'Ordered', 'order_date', %opt ) %>
+    <% pkg_status_row($cust_pkg, emt('Ordered'), 'order_date', %opt ) %>
 % }
 
 % if ( $cust_pkg->get('cancel') ) { #status: cancelled
 %   my $cpr = $cust_pkg->last_cust_pkg_reason('cancel');
 
-    <% pkg_status_row($cust_pkg, 'Cancelled', 'cancel', 'color'=>'FF0000', %opt ) %>
+    <% pkg_status_row($cust_pkg, emt('Cancelled'), 'cancel', 'color'=>'FF0000', %opt ) %>
 
     <% pkg_status_row_colspan( $cust_pkg,
          ( $cpr ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
@@ -21,14 +21,14 @@
 
 %   unless ( $cust_pkg->get('setup') ) { 
 
-        <% pkg_status_row_colspan( $cust_pkg, 'Never billed', '', 'colspan'=>$colspan, %opt, ) %>
+        <% pkg_status_row_colspan( $cust_pkg, emt('Never billed'), '', 'colspan'=>$colspan, %opt, ) %>
 
 %   } else { 
 
-       <% pkg_status_row( $cust_pkg, 'Setup', 'setup', %opt ) %>
+       <% pkg_status_row( $cust_pkg, emt('Setup'), 'setup', %opt ) %>
        <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
        <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
-       <% pkg_status_row_if( $cust_pkg, 'Suspended', 'susp', %opt, curuser=>$curuser ) %>
+       <% pkg_status_row_if( $cust_pkg, emt('Suspended'), 'susp', %opt, curuser=>$curuser ) %>
 
 %   } 
 %
@@ -37,7 +37,7 @@
 %   if ( $cust_pkg->get('susp') ) { #status: suspended
 %     my $cpr = $cust_pkg->last_cust_pkg_reason('susp');
 
-    <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900', %opt ) %>
+    <% pkg_status_row( $cust_pkg, emt('Suspended'), 'susp', 'color'=>'FF9900', %opt ) %>
 
     <% pkg_status_row_colspan( $cust_pkg,
          ( $cpr ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
@@ -51,18 +51,18 @@
     <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
 %   unless ( $cust_pkg->get('setup') ) { 
-      <% pkg_status_row_colspan( $cust_pkg, 'Never billed', '', 'colspan'=>$colspan, %opt ) %>
+      <% pkg_status_row_colspan( $cust_pkg, emt('Never billed'), '', 'colspan'=>$colspan, %opt ) %>
 %   } else { 
-      <% pkg_status_row($cust_pkg, 'Setup', 'setup', %opt ) %>
+      <% pkg_status_row($cust_pkg, emt('Setup'), 'setup', %opt ) %>
 %   } 
 
     <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
     <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
 %   if ( $part_pkg->option('suspend_bill', 1) ) {
-      <% pkg_status_row_if( $cust_pkg, 'Next&nbsp;bill', 'bill', %opt, curuser=>$curuser ) %>
+      <% pkg_status_row_if( $cust_pkg, emt('Next bill'), 'bill', %opt, curuser=>$curuser ) %>
 %   }
-    <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', %opt, curuser=>$curuser ) %>
-    <% pkg_status_row_if( $cust_pkg, 'Contract ends', 'contract_end', %opt ) %>
+    <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
+    <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
     <TR>
       <TD COLSPAN=<%$colspan%>>
@@ -83,7 +83,7 @@
 %
 %       unless ( $part_pkg->freq ) {
 
-          <% pkg_status_row_colspan( $cust_pkg, 'Not&nbsp;yet&nbsp;billed&nbsp;(one-time&nbsp;charge)', '', 'colspan'=>$colspan, %opt ) %>
+          <% pkg_status_row_colspan( $cust_pkg, emt('Not yet billed (one-time charge)'), '', 'colspan'=>$colspan, %opt ) %>
 
           <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
@@ -91,7 +91,7 @@
 
           <% pkg_status_row_if(
                $cust_pkg,
-               ( $part_pkg->freq ? 'Start billing' : 'Bill on' ),
+               ( $part_pkg->freq ? emt('Start billing') : emt('Bill on') ),
                'start_date',
                %opt
              )
@@ -109,13 +109,13 @@
 
 %       } else { 
 
-          <% pkg_status_row_colspan($cust_pkg, "Not&nbsp;yet&nbsp;billed&nbsp;($billed_or_prepaid&nbsp;". myfreq($part_pkg). ')', '', 'colspan'=>$colspan, %opt ) %>
+          <% pkg_status_row_colspan($cust_pkg, emt("Not yet billed ($billed_or_prepaid [_1])", myfreq($part_pkg) ), '', 'colspan'=>$colspan, %opt ) %>
 
           <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
-          <% pkg_status_row_if($cust_pkg, 'Start billing', 'start_date', %opt) %>
+          <% pkg_status_row_if($cust_pkg, emt('Start billing'), 'start_date', %opt) %>
 
 %       } 
 %
@@ -123,9 +123,9 @@
 %
 %       unless ( $part_pkg->freq ) { 
 
-          <% pkg_status_row_colspan($cust_pkg, 'One-time&nbsp;charge', '', 'colspan'=>$colspan, %opt ) %>
+          <% pkg_status_row_colspan($cust_pkg, emt('One-time charge'), '', 'colspan'=>$colspan, %opt ) %>
 
-          <% pkg_status_row($cust_pkg, 'Billed', 'setup', %opt) %>
+          <% pkg_status_row($cust_pkg, emt('Billed'), 'setup', %opt) %>
 
           <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
@@ -136,7 +136,7 @@
 %         if (scalar($cust_pkg->overlimit)) {
 
             <% pkg_status_row_colspan( $cust_pkg,
-                 'Overlimit',
+                 emt('Overlimit'),
                  $billed_or_prepaid. '&nbsp;'. myfreq($part_pkg),
                  'color'=>'FFD000', 'colspan'=>$colspan,
                  %opt
@@ -145,7 +145,7 @@
 
 %         } else {
             <% pkg_status_row_colspan( $cust_pkg,
-                 'Active',
+                 emt('Active'),
                  $billed_or_prepaid. '&nbsp;'. myfreq($part_pkg),
                  'color'=>'00CC00', 'colspan'=>$colspan,
                  %opt
@@ -157,7 +157,7 @@
 
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
-          <% pkg_status_row($cust_pkg, 'Setup', 'setup', %opt) %>
+          <% pkg_status_row($cust_pkg, emt('Setup'), 'setup', %opt) %>
 
 %       } 
 %
@@ -171,10 +171,10 @@
       <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill', %opt, curuser=>$curuser ) %>
-      <% pkg_status_row_if($cust_pkg, 'Will automatically suspend by', 'autosuspend', %opt) %>
-      <% pkg_status_row_if( $cust_pkg, 'Will suspend on', 'adjourn', %opt, curuser=>$curuser ) %>
-      <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', %opt, curuser=>$curuser ) %>
-      <% pkg_status_row_if( $cust_pkg, 'Contract ends', 'contract_end', %opt ) %>
+      <% pkg_status_row_if($cust_pkg, emt('Will automatically suspend by'), 'autosuspend', %opt) %>
+      <% pkg_status_row_if( $cust_pkg, emt('Will suspend on'), 'adjourn', %opt, curuser=>$curuser ) %>
+      <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
+      <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
 %     if ( $part_pkg->freq ) { 
 
@@ -290,18 +290,19 @@ sub pkg_status_row_changed {
   return '' unless $cust_pkg->change_date;
 
   my $html =
-    pkg_status_row( $cust_pkg, 'Package&nbsp;changed', 'change_date', %opt );
+    pkg_status_row( $cust_pkg, emt('Package changed'), 'change_date', %opt );
 
   my $old = $cust_pkg->old_cust_pkg;
   if ( $old ) {
     my $part_pkg = $old->part_pkg;
-    my $label = 'Changed from '. $cust_pkg->change_pkgnum. ': '.
-                $part_pkg->pkg_comment(nopartpkg => 1);
-    $html .= pkg_status_row_colspan( $cust_pkg, $label, '',
+    $html .= pkg_status_row_colspan( $cust_pkg, 
+                                     emt("Changed from [_1]: [_2]",
+                                            $cust_pkg->change_pkgnum,
+                                            $part_pkg->pkg_comment(nopartpkg => 1) ),
+                                     '',
                                      'size'    => '-1',
                                      'align'   => 'right',
                                      'colspan' => $opt{'colspan'},
-                                     #%opt,
                                    );
   }
 
@@ -319,9 +320,8 @@ sub pkg_status_row_noauto {
   return '' unless $cust_main->payby =~ /^(CARD|CHEK)$/;
   my $what = lc(FS::payby->shortname($cust_main->payby));
 
-  pkg_status_row_colspan( $cust_pkg, "No automatic $what charge", '',
+  pkg_status_row_colspan( $cust_pkg, emt("No automatic $what charge"), '',
                           'colspan' => $opt{'colspan'},
-                          #%opt,
                         );
 }
 
@@ -334,21 +334,20 @@ sub pkg_status_row_discount {
 
     my $discount = $cust_pkg_discount->discount;
 
-    my $label = '<B>Discount</B>: '. $discount->description;
+    my $label = '<B>'.emt('Discount').'</B>: '. $discount->description;
     if ( $discount->months ) {
       my $remaining = $discount->months - $cust_pkg_discount->months_used;
       $remaining = sprintf('%.2f', $remaining) if $remaining =~ /\./;
-      $label .= " ($remaining months remaining)"
+      $label .= emt("([_1] months remaining)",$remaining);
     }
 
     $label .= ' <FONT SIZE="-1">('.
                 '<A HREF="../misc/delete-cust_pkg_discount.html?'.
                   $cust_pkg_discount->pkgdiscountnum.
-                '">remove&nbsp;discount</A>)</FONT>';
+                '">'.emt('remove discount').'</A>)</FONT>';
 
     $html .= pkg_status_row_colspan( $cust_pkg, $label, '',
                                      'colspan' => $opt{'colspan'},
-                                     #%opt,
                                    );
 
   }
@@ -405,8 +404,8 @@ sub pkg_datestr {
 sub pkg_suspend_link {
   include( '/elements/popup_link-cust_pkg.html',
              'action'      => $p. 'misc/cancel_pkg.html?method=suspend',
-             'label'       => 'Suspend&nbsp;now',
-             'actionlabel' => 'Suspend',
+             'label'       => emt('Suspend now'),
+             'actionlabel' => emt('Suspend'),
              'color'       => '#FF9900',
              'cust_pkg'    => shift,
          )
@@ -415,8 +414,8 @@ sub pkg_suspend_link {
 sub pkg_adjourn_link {
   include( '/elements/popup_link-cust_pkg.html',
              'action'      => $p. 'misc/cancel_pkg.html?method=adjourn',
-             'label'       => 'Suspend&nbsp;later',
-             'actionlabel' => 'Adjourn',
+             'label'       => emt('Suspend later'),
+             'actionlabel' => emt('Adjourn'),
              'color'       => '#CC6600',
              'cust_pkg'    => shift,
          )
@@ -425,21 +424,21 @@ sub pkg_adjourn_link {
 sub pkg_delay_link  {
   include( '/elements/popup_link-cust_pkg.html',
              'action'      => $p. 'misc/delay_susp_pkg.html',
-             'label'       => 'Delay&nbsp;suspend',
-             'actionlabel' => 'Delay suspend for',
+             'label'       => emt('Delay suspend'),
+             'actionlabel' => emt('Delay suspend for'),
              'cust_pkg'    => shift,
          )
 }
 
-sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend', @_ ); }
-sub pkg_unadjourn_link { pkg_link('misc/unadjourn_pkg', 'Abort',     @_ ); }
-sub pkg_unexpire_link  { pkg_link('misc/unexpire_pkg',  'Abort',     @_ ); }
+sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    emt('Unsuspend'), @_ ); }
+sub pkg_unadjourn_link { pkg_link('misc/unadjourn_pkg', emt('Abort'),     @_ ); }
+sub pkg_unexpire_link  { pkg_link('misc/unexpire_pkg',  emt('Abort'),     @_ ); }
 
 sub pkg_cancel_link {
   include( '/elements/popup_link-cust_pkg.html',
              'action'      => $p. 'misc/cancel_pkg.html?method=cancel',
-             'label'       => 'Cancel&nbsp;now',
-             'actionlabel' => 'Cancel',
+             'label'       => emt('Cancel now'),
+             'actionlabel' => emt('Cancel'),
              'color'       => '#ff0000',
              'cust_pkg'    => shift,
          )
@@ -448,8 +447,8 @@ sub pkg_cancel_link {
 sub pkg_expire_link {
   include( '/elements/popup_link-cust_pkg.html',
              'action'      => $p. 'misc/cancel_pkg.html?method=expire',
-             'label'       => 'Cancel&nbsp;later',
-             'actionlabel' => 'Expire', #"Cancel package $num later"
+             'label'       => emt('Cancel later'),
+             'actionlabel' => emt('Expire'),
              'color'       => '#CC0000',
              'cust_pkg'    => shift,
          )
@@ -458,8 +457,8 @@ sub pkg_expire_link {
 sub svc_recharge_link {
   include( '/elements/popup_link-cust_svc.html',
              'action'      => $p. 'misc/recharge_svc.html',
-             'label'       => 'Recharge',
-             'actionlabel' => 'Recharge',
+             'label'       => emt('Recharge'),
+             'actionlabel' => emt('Recharge'),
              'color'       => '#333399',
              'cust_svc'    => shift,
          )
