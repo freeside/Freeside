@@ -1,7 +1,6 @@
-<% include( 'elements/cust_pay_or_refund.html',
+<& elements/cust_pay_or_refund.html,
                 'thing'         => 'pay',
                 'amount_field'  => 'paid',
-                'name_singular' => 'payment',
-                'name_verb'     => 'paid',
-          )
-%>
+                'name_singular' => emt('payment'),
+                'name_verb'     => emt('paid'),
+&>

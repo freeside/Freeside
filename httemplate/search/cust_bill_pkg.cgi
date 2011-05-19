@@ -1,32 +1,30 @@
-<% include( 'elements/search.html',
-                 'title'       => 'Line items',
-                 'name'        => 'line items',
+<& elements/search.html,
+                 'title'       => emt('Line items'),
+                 'name'        => emt('line items'),
                  'query'       => $query,
                  'count_query' => $count_query,
                  'count_addl'  => [ $money_char. '%.2f total',
                                     $unearned ? ( $money_char. '%.2f unearned revenue' ) : (),
                                   ],
                  'header'      => [
-                   #'#',
-                   'Description',
+                   emt('Description'),
                    ( $unearned
-                     ? ( 'Unearned', 'Owed', 'Payment date' )
-                     : ( 'Setup charge' )
+                     ? ( emt('Unearned'), emt('Owed'), emt('Payment date') )
+                     : ( emt('Setup charge') )
                    ),
                    ( $use_usage eq 'usage'
-                     ? 'Usage charge'
-                     : 'Recurring charge'
+                     ? emt('Usage charge')
+                     : emt('Recurring charge')
                    ),
                    ( $unearned
-                     ? ( 'Charge start', 'Charge end' )
+                     ? ( emt('Charge start'), emt('Charge end') )
                      : ()
                    ),
-                   'Invoice',
-                   'Date',
+                   emt('Invoice'),
+                   emt('Date'),
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
-                   #'billpkgnum',
                    sub { $_[0]->pkgnum > 0
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
@@ -127,8 +125,7 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-           )
-%>
+&>
 <%init>
 
 #LOTS of false laziness below w/cust_credit_bill_pkg.cgi

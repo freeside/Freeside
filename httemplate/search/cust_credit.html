@@ -1,10 +1,9 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => $title,
-                 'name'        => 'credits',
+                 'name'        => emt('credits'),
                  'query'       => $sql_query,
                  'count_query' => $count_query,
                  'count_addl'  => \@count_addl,
-                 #'redirect'    => $link,
                  'header'      => \@header,
                  'fields'      => \@fields,
                  'sort_fields' => \@sort_fields,
@@ -12,8 +11,7 @@
                  'links' => \@links,
                  'color' => \@color,
                  'style' => \@style,
-      )
-%>
+&>
 <%init>
 
 die "access denied"
@@ -21,11 +19,10 @@ die "access denied"
 
 my $money_char = FS::Conf->new->config('money_char') || '$';
 
-my $title = 'Credit Search Results';
-#my( $count_query, $sql_query );
+my $title = emt('Credit Search Results');
 
 my $unapplied = $cgi->param('unapplied');
-$title = "Unapplied $title" if $unapplied;
+$title = emt("Unapplied $title") if $unapplied;
 my $clink = sub {
   my $cust_bill = shift;
   $cust_bill->cust_main_custnum
@@ -37,7 +34,7 @@ my (@header, @fields, @sort_fields, $align, @links, @color, @style);
 $align = '';
 
 #amount
-push @header, 'Amount';
+push @header, emt('Amount');
 push @fields, sub { $money_char .sprintf('%.2f', shift->amount) };
 push @sort_fields, 'amount';
 $align .= 'r';
@@ -47,7 +44,7 @@ push @style, '';
 
 # unapplied amount
 if ($unapplied) {
-  push @header, 'Unapplied';
+  push @header, emt('Unapplied');
   push @fields, sub { $money_char .sprintf('%.2f', shift->unapplied_amount) };
   push @sort_fields, '';
   $align .= 'r';
@@ -56,9 +53,9 @@ if ($unapplied) {
   push @style, '';
 }
 
-push @header, 'Date', 
-              'By',
-              'Reason',
+push @header, emt('Date'), 
+              emt('By'),
+              emt('Reason'),
               FS::UI::Web::cust_header(),
               ;
 push @fields, sub { time2str('%b %d %Y', shift->_date ) },
