@@ -103,15 +103,9 @@ $report_customers_lists{'by active trouble tickets'} = [ $fsurl. 'search/cust_ma
 $report_customers_lists{'with USPS-unvalidated addresses'} = [ $fsurl. 'search/cust_main.cgi?browse=uspsunvalid', '' ]
   if $conf->config('usps_webtools-userid') && $conf->config('usps_webtools-password');
 
-tie my %report_customers_search, 'Tie::IxHash';
-$report_customers_search{'by ordering employee'} = [ $fsurl. 'search/cust_main-otaker.cgi' ]
-  if $curuser->access_right('Configuration');
-
 tie my %report_customers, 'Tie::IxHash';
 $report_customers{'List customers'} = [ \%report_customers_lists, 'List customers' ]
   if $curuser->access_right('List customers');
-$report_customers{'Search customers'} = [ \%report_customers_search, 'Search customers' ]
-  if keys %report_customers_search;
 $report_customers{'Zip code distribution'}     = [ $fsurl. 'search/report_cust_main-zip.html', 'Zip codes by number of customers' ];
 $report_customers{'Advanced customer reports'} = [ $fsurl. 'search/report_cust_main.html', 'by status, signup date, agent, etc.' ]
   if    $curuser->access_right('List customers')
