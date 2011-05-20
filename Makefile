@@ -216,7 +216,7 @@ perl-modules:
 	  s|%%%DIST_CONF%%%|${DIST_CONF}|g;\
 	" blib/script/*
 
-install-perl-modules: perl-modules
+install-perl-modules: perl-modules install-rt-initialdata
 	[ -L ${PERL_INC_DEV_KLUDGE}/FS ] \
 	  && rm ${PERL_INC_DEV_KLUDGE}/FS \
 	  && mv ${PERL_INC_DEV_KLUDGE}/FS.old ${PERL_INC_DEV_KLUDGE}/FS \
@@ -375,6 +375,11 @@ install-rt:
 	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
 	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
 	" ${RT_PATH}/etc/RT_SiteConfig.pm; fi
+
+install-rt-initialdata:
+	if [ ${RT_ENABLED} -eq 1 ]; then \
+	  install -D -o freeside -g freeside -m 0440 rt/etc/initialdata \
+	  ${RT_PATH}/etc/initialdata; fi
 
 configure-torrus:
 	cd torrus; \
