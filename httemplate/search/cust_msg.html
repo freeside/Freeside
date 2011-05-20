@@ -1,0 +1,122 @@
+<& 'elements/search.html',
+       'title' => $title,
+       'name'  => 'messages',
+       'query' => $query,
+       'count_query' => $count_query,
+       'header' => [ 
+                     'Date',
+                     'Template',
+                     'Destination',
+                     'Status',
+                     '', #error
+                  ],
+       'fields' => [ 
+                     sub { 
+                       my $date = $_[0]->_date;
+                       $date ? time2str('%Y-%m-%d %T',$_[0]->_date) : '' 
+                     },
+                     'msgname',
+                     'env_to',
+                     'status',
+                     sub { encode_entities($_[0]->error) },
+                  ],
+       'align' => 'rllcl',
+       'links' => [ ],
+       'link_onclicks' => [ 
+                    $sub_popup_link,
+                    $sub_popup_link,
+                    $sub_popup_link,
+                    '',
+                    '',
+                  ],
+       'color' => [ ('') x 3, 
+                     $statuscolor,
+                     $statuscolor,
+                  ],
+       'html_init' => $html_init,
+       'really_disable_download' => 1,
+&>
+<%init>
+#hmm...
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customers of all agents');
+
+my $conf = new FS::Conf;
+
+my $title = 'Outgoing Message Log';
+
+my @where;
+if ( $cgi->param('status') =~ /^(\w+)$/ ) {
+  push @where, "status = '$1'";
+}
+my ($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
+push @where, "(_date >= $beginning AND _date <= $ending)";
+
+my $order_by = '_date';
+if ( $cgi->param('order_by') =~ /^(\w+)$/ ) {
+  $order_by = $1;
+}
+
+my $where = '';
+$where = ' WHERE '.join(' AND ', @where) if @where;
+my $query = {
+  'table'     => 'cust_msg',
+  'select'    => join(', ',
+                   'cust_msg.*',
+                   'msg_template.msgname',
+                 ),
+  'addl_from' => ' LEFT JOIN msg_template USING ( msgnum )',
+  'hashref'   => {},
+  'extra_sql' => $where,
+  'order_by'  => "ORDER BY $order_by",
+};
+my $count_query = 'SELECT COUNT(*) FROM cust_msg'.$where;
+
+my $sub_popup_link = sub {
+  my $custmsgnum = $_[0]->custmsgnum;
+  include('/elements/popup_link_onclick.html',
+    'action'      => $p. 'view/cust_msg.html?' . $custmsgnum,
+    'actionlabel' => 'Message detail',
+    'width'       => 600,
+    'height'      => 500,
+  );
+};
+
+my %color = (
+  'prepared' => '0000FF',
+  'failed'   => 'FF0000',
+  'sent'     => '',
+);
+my $statuscolor = sub { $color{$_[0]->status} };
+
+my $html_init = qq!<FORM ACTION="$p/search/cust_msg.html" METHOD="GET">
+<TABLE cellspacing="10">!.
+'<TR><TD>From '.
+include('/elements/input-date-field.html',
+  { 'name'  => 'beginning', 'value' => $cgi->param('beginning') }
+).
+'</TD><TD> To '.
+include('/elements/input-date-field.html',
+  { 'name'  => 'ending', 'value' => ($cgi->param('ending') || ''), 
+    'noinit' => 1, }
+).
+'</TD><TD> Status '.
+include('/elements/select.html',
+  'field' => 'status',
+  'curr_value' => $cgi->param('status') || '',
+  'options' => [ '', 'failed', 'sent', 'prepared' ],
+  'labels' => { ''        => '(any)', 
+                'failed'  => 'failed',
+                'sent'    => 'sent',
+                'prepared'=> 'prepared' },
+) .
+'</TD>
+<TD><INPUT type="submit" value="Search"></TD></TR>
+</TABLE></FORM><BR>
+<STYLE type="text/css">
+a:link {text-decoration: none}
+a:visited {text-decoration: none}
+a:hover {text-decoration: underline}
+</STYLE>';
+
+</%init>

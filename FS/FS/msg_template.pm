@@ -7,11 +7,16 @@ use FS::Misc qw( generate_email send_email );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 
+use FS::cust_main;
+use FS::cust_msg;
+
 use Date::Format qw( time2str );
 use HTML::Entities qw( decode_entities encode_entities ) ;
 use HTML::FormatText;
 use HTML::TreeBuilder;
-use vars '$DEBUG';
+use vars qw( $DEBUG $conf );
+
+FS::UID->install_callback( sub { $conf = new FS::Conf; } );
 
 $DEBUG=0;
 
@@ -188,6 +193,11 @@ The I<from_addr> field in the template takes precedence over this.
 Destination address.  The default is to use the customer's 
 invoicing_list addresses.  Multiple addresses may be comma-separated.
 
+=item preview
+
+Set to true when preparing a message for previewing, rather than to actually 
+send it.  This turns off logging.
+
 =back
 
 =cut
@@ -298,7 +308,6 @@ sub prepare {
   }
   # no warning when preparing with no destination
 
-  my $conf = new FS::Conf;
   my $from_addr = $self->from_addr;
 
   if ( !$from_addr ) {
@@ -309,8 +318,20 @@ sub prepare {
     $from_addr ||= scalar( $conf->config('invoice_from',
                                          $cust_main->agentnum) );
   }
+  my @cust_msg = ();
+  if ( $conf->exists('log_sent_mail') and !$opt{'preview'} ) {
+    my $cust_msg = FS::cust_msg->new({
+        'custnum' => $cust_main->custnum,
+        'msgnum'  => $self->msgnum,
+        'status'  => 'prepared',
+      });
+    $cust_msg->insert;
+    @cust_msg = ('cust_msg' => $cust_msg);
+  }
 
   (
+    'custnum' => $cust_main->custnum,
+    'msgnum'  => $self->msgnum,
     'from' => $from_addr,
     'to'   => \@to,
     'bcc'  => $self->bcc_addr || undef,
@@ -318,6 +339,7 @@ sub prepare {
     'html_body' => $body,
     'text_body' => HTML::FormatText->new(leftmargin => 0, rightmargin => 70
                     )->format( HTML::TreeBuilder->new_from_content($body) ),
+    @cust_msg,
   );
 
 }
@@ -339,8 +361,7 @@ sub send {
 # helper sub for package dates
 my $ymd = sub { $_[0] ? time2str('%Y-%m-%d', $_[0]) : '' };
 
-# needed for some things
-my $conf = new FS::Conf;
+#my $conf = new FS::Conf;
 
 #return contexts and fill-in values
 # If you add anything, be sure to add a description in 
@@ -504,7 +525,6 @@ sub _upgrade_data {
     [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from', '' ],
   );
  
-  my $conf = new FS::Conf;
   my @agentnums = ('', map {$_->agentnum} qsearch('agent', {}));
   foreach my $agentnum (@agentnums) {
     foreach (@fixes) {

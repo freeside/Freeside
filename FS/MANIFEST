@@ -594,6 +594,8 @@ FS/msa.pm
 t/msa.t
 FS/rate_center.pm
 t/rate_center.t
+FS/cust_msg.pm
+t/cust_msg.t
 FS/Locales.pm
 t/Locales.t
 FS/L10N.pm

@@ -3354,6 +3354,24 @@ sub tables_hashref {
       'index'       => [ ['agentnum'], ]
     },
 
+    'cust_msg' => {
+      'columns' => [
+        'custmsgnum', 'serial',     '',     '', '', '',
+        'custnum',       'int',     '',     '', '', '',
+        'msgnum',        'int', 'NULL',     '', '', '',
+        '_date',    @date_type,                 '', '',
+        'env_from',  'varchar', 'NULL',    255, '', '',
+        'env_to',    'varchar', 'NULL',    255, '', '',
+        'header',       'blob', 'NULL',     '', '', '',
+        'body',         'blob', 'NULL',     '', '', '',
+        'error',     'varchar', 'NULL',    255, '', '',
+        'status',    'varchar',     '',$char_d, '', '',
+      ],
+      'primary_key' => 'custmsgnum',
+      'unique'      => [ ],
+      'index'       => [ ['custnum'], ],
+    },
+
     'svc_cert' => {
       'columns' => [
         'svcnum',                'int',     '',      '', '', '', 

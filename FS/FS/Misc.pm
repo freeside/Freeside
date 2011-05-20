@@ -89,6 +89,11 @@ encoding which, if specified, overrides the default "7bit".
 
 (optional) type parameter for multipart/related messages
 
+=item cust_msg
+
+(optional) L<FS::cust_msg> object.  If provided, it will be updated 
+with the message envelope information, contents, and server response.
+
 =back
 
 =cut
@@ -171,12 +176,13 @@ sub send_email {
   }
   my $message_id = join('.', rand()*(2**32), $$, time). "\@$domain";
 
+  my $time = time;
   my $message = MIME::Entity->build(
     'From'       => $options{'from'},
     'To'         => join(', ', @to),
     'Sender'     => $options{'from'},
     'Reply-To'   => $options{'from'},
-    'Date'       => time2str("%a, %d %b %Y %X %z", time),
+    'Date'       => time2str("%a, %d %b %Y %X %z", $time),
     'Subject'    => $options{'subject'},
     'Message-ID' => "<$message_id>",
     @mimeargs,
@@ -238,13 +244,30 @@ sub send_email {
   eval { sendmail($message, { transport => $transport,
                               from      => $options{from},
                               to        => \@to }) };
- 
+
+  my $error = '';
   if(ref($@) and $@->isa('Email::Sender::Failure')) {
-    return ($@->code ? $@->code.' ' : '').$@->message
+    $error = $@->code.' ' if $@->code;
+    $error .= $@->message;
   }
   else {
-    return $@;
+    $error = $@;
   }
+
+  # Logging
+  my $cust_msg = $options{'cust_msg'};
+  if ( $cust_msg ) {
+    $cust_msg->env_from($options{from});
+    $cust_msg->env_to(join(",", @to));
+    $cust_msg->header($message->header_as_string);
+    $cust_msg->body($message->body_as_string);
+    $cust_msg->_date($time);
+    $cust_msg->error($error);
+    $cust_msg->status( $error ? 'failed' : 'sent' );
+    $cust_msg->replace;
+  };
+  return $error;
+   
 }
 
 =item generate_email OPTION => VALUE ...
@@ -279,6 +302,10 @@ Will be placed inside an HTML <BODY> tag.
 
 Email body (Text alternative).  Arrayref of lines, or scalar.
 
+=item cust_msg (optional)
+
+An L<FS::cust_msg> object.  Will be passed through to send_email.
+
 =back
 
 Constructs a multipart message from text_body and html_body.
@@ -300,6 +327,7 @@ sub generate_email {
     'to'      => $args{'to'},
     'bcc'     => $args{'bcc'},
     'subject' => $args{'subject'},
+    'cust_msg'=> $args{'cust_msg'},
   );
 
   #if (ref($args{'to'}) eq 'ARRAY') {

@@ -1,0 +1,55 @@
+<& /elements/header-popup.html &>
+<TABLE>
+<TR><TD>From:</TD><TD><% $cust_msg->env_from %></TD></TR>
+<TR><TD>To:</TD><TD><% $env_to %></TD></TR>
+% if ( $date ) {
+<TR><TD><% $label{$cust_msg->status} %></TD><TD><% $date %></TD></TR>
+% }
+% if ( $cust_msg->error ) {
+<TR><TD>Error:</TD><TD><% encode_entities($cust_msg->error) %></TD></TR>
+% }
+<TR><TD colspan=2>
+<FORM name="myform">
+<SCRIPT type="text/javascript">
+function toggle_display(obj) {
+  document.getElementById('content-header').style.display = 
+    (obj.value == 'header' ? 'block' : 'none');
+  document.getElementById('content-body').style.display = 
+    (obj.value == 'body' ? 'block' : 'none');
+}
+</SCRIPT>
+<INPUT type="radio" name="what_to_show" onchange="toggle_display(this)" value="header" checked> Header
+<INPUT type="radio" name="what_to_show" onchange="toggle_display(this)" value="body"> Body
+</FORM>
+</TR>
+<TR><TD colspan=2 style="text-align:center">
+<TEXTAREA id="content-header" style="font-family:monospace" 
+readonly=1 cols=80 rows=20>
+<% encode_entities($cust_msg->header) %>
+</TEXTAREA>
+<TEXTAREA id="content-body" style="font-family:monospace;display:none" 
+readonly=1 cols=80 rows=20>
+<% encode_entities($cust_msg->body) %>
+</TEXTAREA>
+</TD></TR>
+</TABLE>
+
+<& /elements/footer.html &>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" if !$curuser->access_right('View customers of all agents');
+
+my ($custmsgnum) = $cgi->keywords;
+$custmsgnum =~ /^(\d+)$/ or die "illegal custmsgnum";
+my $cust_msg = qsearchs('cust_msg', { 'custmsgnum' => $custmsgnum });
+my $date = '';
+$date = time2str('%Y-%m-%d %T', $cust_msg->_date) if ( $cust_msg->_date );
+my $env_to = join('</TD></TR><TR><TD></TD><TD>', split(',', $cust_msg->env_to));
+
+my %label = (
+  'sent'   => 'Sent:',
+  'failed' => 'Attempted: ',
+  'prepared' => 'Not sent',
+);
+</%init>

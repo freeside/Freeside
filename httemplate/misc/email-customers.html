@@ -186,7 +186,7 @@ if ( $cgi->param('action') eq 'preview' ) {
     $sql_query->{'extra_sql'} .= ' LIMIT 1';
     $sql_query->{'order_by'} = '';
     my $cust = qsearchs($sql_query)->cust_main;
-    my %message = $msg_template->prepare( 'cust_main' => $cust );
+    my %message = $msg_template->prepare( 'cust_main' => $cust, 'preview' => 1 );
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
 }

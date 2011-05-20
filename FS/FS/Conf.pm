@@ -623,6 +623,13 @@ my %payment_gateway_options = (
   },
 
   {
+    'key'         => 'log_sent_mail',
+    'section'     => 'notification',
+    'description' => 'Enable logging of template-generated email.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'alert_expiration',
     'section'     => 'notification',
     'description' => 'Enable alerts about billing method expiration (i.e. expiring credit cards).',
