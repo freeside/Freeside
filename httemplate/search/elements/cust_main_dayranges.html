@@ -15,7 +15,7 @@ Example:
   };
 
 </%doc>
-<% include( 'search.html',
+<& search.html,
                  'name'        => 'customers',
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
@@ -25,7 +25,7 @@ Example:
                                     '30-60',
                                     '60-90',
                                     '90+',
-                                    'Total',
+                                    emt('Total'),
                                     @pay_head,
                                   ],
                  'footer'      => [
@@ -68,12 +68,9 @@ Example:
                                     '',
                                     @pay_links,
                                   ],
-                 #'align'       => 'rlccrrrrr',
                  'align'       => FS::UI::Web::cust_aligns(). 
                                    'rrrrr'.
                                   ('c' x @pay_labels),
-                 #'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
-                 #'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
                  'size'        => [ ( map '', FS::UI::Web::cust_header() ),
                                     #'-1', '', '', '', '',  '', ],
                                     '', '', '', '', '',  '', 
@@ -95,8 +92,7 @@ Example:
                                     ( map '', @pay_labels ),
                                   ],
                %opt,
-             )
-%>
+&>
 <%init>
 
 my %opt = @_;
@@ -118,7 +114,6 @@ if($cgi->param('as_of')) {
   $opt{'title'} .= ' ('.$cgi->param('as_of').')' if $offset > 0;
 }
 
-#my $range_cols = join(',', map &{$range_sub}( @$_ ), @ranges );
 my $range_cols = join(',', map call_range_sub($range_sub, @$_, 'offset' => $offset ), @$ranges );
 
 my $select_count_pkgs = FS::cust_main->select_count_pkgs_sql;
@@ -163,7 +158,6 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 #prospect active inactive suspended cancelled
 if ( grep { $cgi->param('status') eq $_ } FS::cust_main->statuses() ) {
   my $method = $cgi->param('status'). '_sql';
-  #push @where, $class->$method();
   push @where, FS::cust_main->$method();
 }
 
@@ -222,7 +216,7 @@ if($opt{'payment_links'} && $curuser->access_right('Process payment') && @payby)
 
   @pay_labels = (map { my $payby = $_; 
                        my $label = $label{$payby};
-                       sub {($payby eq $_[0]->payby) ? "<b>$label (on file)</b>" : $label}
+                       sub {($payby eq $_[0]->payby) ? "<b>".emt("$label (on file)")."</b>" : emt($label)}
                      } @payby );
 
   @pay_links = (map { [ "${p}misc/payment.cgi?payby=$_;custnum=", 'custnum' ] }

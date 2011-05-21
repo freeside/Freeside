@@ -1,55 +1,51 @@
-<% include('/elements/header.html', 'Invoice Report' ) %>
+<& /elements/header.html, emt('Invoice Report') &>
 
 <FORM ACTION="cust_bill.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0
 
-  <% include( '/elements/tr-select-agent.html',
+  <& /elements/tr-select-agent.html,
                  'curr_value'    => scalar( $cgi->param('agentnum') ),
-                 'label'         => 'Invoices for agent: ',
+                 'label'         => emt('Invoices for agent: '),
                  'disable_empty' => 0,
-             )
-  %>
+  &>
 
-  <% include( '/elements/tr-input-beginning_ending.html' ) %>
+  <& /elements/tr-input-beginning_ending.html &>
 
-  <% include( '/elements/tr-input-lessthan_greaterthan.html',
-                label   => 'Charged',
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                label   => emt('Charged'),
                 field   => 'charged',
-            )
-  %>
+  &>
 
-  <% include( '/elements/tr-input-lessthan_greaterthan.html',
-                label   => 'Owed',
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                label   => emt('Owed'),
                 field   => 'owed',
-            )
-  %>
-  <% include( '/elements/tr-select-payby.html',
-                label   => 'Payment method:',
+  &>
+  <& /elements/tr-select-payby.html,
+                label   => emt('Payment method:'),
                 payby_type   => 'cust',
                 multiple     => 1,
                 all_selected => 1,
-            )
-  %>
+  &>
 
   <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
-    <TD>Show only open invoices</TD>
+    <TD><% mt('Show only open invoices') |h %></TD>
   </TR>
   <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="newest_percust" VALUE="1"></TD>
-    <TD>Show only the single most recent invoice per-customer</TD>
+    <TD><% mt('Show only the single most recent invoice per-customer') |h %></TD>
   </TR>
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Get Report">
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"

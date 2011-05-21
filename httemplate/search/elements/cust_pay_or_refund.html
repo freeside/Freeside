@@ -39,8 +39,8 @@ Examples:
          )
 
 </%doc>
-<% include( 'search.html',
-                'title'          => $title,
+<& search.html,
+                'title'          => $title, # XXX: translate
                 'name_singular'  => $name_singular,
                 'query'          => $sql_query,
                 'count_query'    => $count_query,
@@ -53,8 +53,7 @@ Examples:
                 'links'          => \@links,
                 'color'          => \@color,
                 'style'          => \@style,
-          )
-%>
+&>
 <%init>
 
 my %opt = @_;
@@ -158,21 +157,21 @@ push @fields, 'payby_payinfo_pretty',
 push @sort_fields, '', $amount_field;
 
 if ( $unapplied ) {
-  push @header, 'Unapplied';
+  push @header, emt('Unapplied');
   $align .= 'r';
   push @links, '';
   push @fields, sub { sprintf('$%.2f', shift->unapplied_amount) };
   push @sort_fields, '';
 }
 
-push @header, 'Date';
+push @header, emt('Date');
 $align .= 'r';
 push @links, '';
 push @fields, sub { time2str('%b %d %Y', shift->_date ) };
 push @sort_fields, '_date';
 
 unless ( $opt{'disable_by'} ) {
-  push @header, 'By';
+  push @header, emt('By');
   $align .= 'c';
   push @links, '';
   push @fields, sub { my $o = shift->otaker;
@@ -183,7 +182,7 @@ unless ( $opt{'disable_by'} ) {
 }
 
 if ( $tax_names ) {
-  push @header, ('Tax names', 'Tax province');
+  push @header, (emt('Tax names'), emt('Tax province'));
   $align .= 'cc';
   push @links, ('','');
   push @fields, sub { join (' + ', map { /^(.*?)(, \w\w)?$/; $1 }

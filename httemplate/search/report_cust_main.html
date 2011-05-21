@@ -1,4 +1,4 @@
-<% include('/elements/header.html', 'Customer Report' ) %>
+<& /elements/header.html, emt('Customer Report') &>
 
 <FORM ACTION="cust_main.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="bill">
@@ -6,66 +6,56 @@
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
     <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
     </TR>
 
-    <% include( '/elements/tr-select-agent.html',
+    <& /elements/tr-select-agent.html,
                   'curr_value'    => scalar($cgi->param('agentnum')),
                   'disable_empty' => 0,
-               )
-    %>
+    &>
 
-    <% include( '/elements/tr-select-cust_main-status.html',
-                  'label' => 'Status'
-              )
-    %>
+    <& /elements/tr-select-cust_main-status.html,
+                  'label' => emt('Status'),
+    &>
 
-    <% include( '/elements/tr-select-cust_class.html',
-                  'label'        => 'Class',
+    <& /elements/tr-select-cust_class.html,
+                  'label'        => emt('Class'),
                   'multiple'     => 1,
-                  'pre_options'  => [ '' => '(none)' ],
+                  'pre_options'  => [ '' => emt('(none)') ],
                   'all_selected' => 1,
-              )
-    %>
+    &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center">Address</TD>
+      <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
       <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
     </TR>
 
-%   foreach my $field (qw( signupdate )) {
-
-      <TR>
-        <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
+    <TR>
+        <TD ALIGN="right" VALIGN="center"><% mt('Signup date') |h %></TD>
         <TD>
-          <TABLE>
-            <% include( '/elements/tr-input-beginning_ending.html',
-                          prefix   => $field,
-                          layout   => 'horiz',
-                      )
-            %>
-          </TABLE>
+        <TABLE>
+            <& /elements/tr-input-beginning_ending.html,
+                      prefix   => 'signupdate',
+                      layout   => 'horiz',
+            &>
+        </TABLE>
         </TD>
-      </TR>
+    </TR>
 
-%   }
-
-    <% include( '/elements/tr-select-cust_tag.html',
-		  'cgi'		 => $cgi,
-		  'is_report'    => 1,
+    <& /elements/tr-select-cust_tag.html,
+                  'cgi'		 => $cgi,
+                  'is_report'    => 1,
                   'multiple'     => 1,
-              )
-    %>
+    &>
 
-    <% include( '/elements/tr-select-payby.html',
+    <& /elements/tr-select-payby.html,
                   'payby_type'   => 'cust',
                   'multiple'     => 1,
                   'all_selected' => 1,
-              )
-    %>
+    &>
 
     <TR>
-      <TD ALIGN="right">Payment expiration before</TD>
+      <TD ALIGN="right"><% mt('Payment expiration before') |h %></TD>
       <TD>
         <SELECT NAME="paydate_month" DISABLED>
 %         foreach my $month ( 1 .. 12 ) {
@@ -96,36 +86,34 @@
     </SCRIPT>
  
     <TR>
-      <TD ALIGN="right">Invoice terms</TD>
+      <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
       <TD>
-        <% include( '/elements/select-terms.html',
-                      'pre_options' => [ '' => 'all' ],
+        <& /elements/select-terms.html,
+                      'pre_options' => [ '' => emt('all') ],
                       'empty_value' => 'NULL',
-                  )
-        %>
+        &>
       </TD>
     </TR>
     
-    <% include( '/elements/tr-input-lessthan_greaterthan.html',
-                  label   => 'Current balance',
+    <& /elements/tr-input-lessthan_greaterthan.html,
+                  label   => emt('Current balance'),
                   field   => 'current_balance',
-              )
-    %>
+    &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center">Include cancelled packages</TD>
+      <TD ALIGN="right" VALIGN="center"><% mt('Include cancelled packages') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center">Without census tract</TD>
+      <TD ALIGN="right" VALIGN="center"><% mt('Without census tract') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="no_censustract"></TD>
     </TR>
 
 %   if ( $conf->exists('enable_taxproducts') ) {
 
       <TR>
-        <TD ALIGN="right" VALIGN="center">With hardcoded tax location</TD>
+        <TD ALIGN="right" VALIGN="center"><% mt('With hardcoded tax location') |h %></TD>
           <TD><INPUT TYPE="checkbox" NAME="with_geocode"></TD>
       </TR>
 
@@ -136,22 +124,22 @@
     </TR>
 
     <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
     </TR>
-    <% include( '/elements/tr-select-cust-fields.html' ) %>
+    <& /elements/tr-select-cust-fields.html &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center">Add package columns</TD>
+      <TD ALIGN="right" VALIGN="center"><% mt('Add package columns') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="flattened_pkgs"></TD>
     </TR>
   </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Get Report">
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"
@@ -162,10 +150,3 @@ die "access denied"
 my $conf = new FS::Conf;
 
 </%init>
-<%once>
-
-my %label = (
-  'signupdate'     => 'Signup date',
-);
-
-</%once>

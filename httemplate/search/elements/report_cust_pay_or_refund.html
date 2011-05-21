@@ -13,7 +13,7 @@ Examples:
          )
 
 </%doc>
-<% include('/elements/header.html', $title ) %>
+<& /elements/header.html, emt($title) &>
 
 <FORM ACTION="<% $table %>.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
@@ -23,7 +23,7 @@ Examples:
 
   <TR>
     <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1">Search options</FONT>
+      <FONT SIZE="+1"><% mt('Search options') |h %></FONT>
     </TH>
   </TR>
 
@@ -31,18 +31,18 @@ Examples:
     <TD ALIGN="right"><% ucfirst(PL($name_singular)) %> of type: </TD>
     <TD>
       <SELECT NAME="payby" onChange="payby_changed(this)">
-        <OPTION VALUE="">all</OPTION>
-        <OPTION VALUE="CARD">credit card (all)</OPTION>
-        <OPTION VALUE="CARD-VisaMC">credit card (Visa/MasterCard)</OPTION>
-        <OPTION VALUE="CARD-Amex">credit card (American Express)</OPTION>
-        <OPTION VALUE="CARD-Discover">credit card (Discover)</OPTION>
-        <OPTION VALUE="CARD-Maestro">credit card (Maestro/Switch/Solo)</OPTION>
-        <OPTION VALUE="CHEK">electronic check / ACH</OPTION>
-        <OPTION VALUE="BILL">check</OPTION>
-        <OPTION VALUE="PREP">prepaid card</OPTION>
-        <OPTION VALUE="CASH">cash</OPTION>
-        <OPTION VALUE="WEST">Western Union</OPTION>
-        <OPTION VALUE="MCRD">manual credit card</OPTION>
+        <OPTION VALUE=""><% mt('all') |h %></OPTION>
+        <OPTION VALUE="CARD"><% mt('credit card (all)') |h %></OPTION>
+        <OPTION VALUE="CARD-VisaMC"><% mt('credit card (Visa/MasterCard)') |h %></OPTION>
+        <OPTION VALUE="CARD-Amex"><% mt('credit card (American Express)') |h %></OPTION>
+        <OPTION VALUE="CARD-Discover"><% mt('credit card (Discover)') |h %></OPTION>
+        <OPTION VALUE="CARD-Maestro"><% mt('credit card (Maestro/Switch/Solo)') |h %></OPTION>
+        <OPTION VALUE="CHEK"><% mt('electronic check / ACH') |h %></OPTION>
+        <OPTION VALUE="BILL"><% mt('check') |h %></OPTION>
+        <OPTION VALUE="PREP"><% mt('prepaid card') |h %></OPTION>
+        <OPTION VALUE="CASH"><% mt('cash') |h %></OPTION>
+        <OPTION VALUE="WEST"><% mt('Western Union') |h %></OPTION>
+        <OPTION VALUE="MCRD"><% mt('manual credit card') |h %></OPTION>
       </SELECT>
     </TD>
   </TR>
@@ -64,71 +64,66 @@ Examples:
   </SCRIPT>
 
   <TR>
-    <TD ALIGN="right"><FONT ID="checkno_caption" COLOR="#bbbbbb">Check #: </FONT></TD>
+    <TD ALIGN="right"><FONT ID="checkno_caption" COLOR="#bbbbbb"><% mt('Check #:') |h %> </FONT></TD>
     <TD>
       <INPUT TYPE="text" NAME="payinfo" DISABLED STYLE="background-color: #dddddd">
     </TD>
   </TR>
 
-  <% include( '/elements/tr-select-agent.html',
+  <& /elements/tr-select-agent.html,
                  'curr_value'    => scalar($cgi->param('agentnum')),
-                 'label'         => 'for agent: ',
+                 'label'         => emt('for agent: '),
                  'disable_empty' => 0,
-             )
-  %>
+  &>
 
-  <% include( '/elements/tr-select-user.html' ) %>
+  <& /elements/tr-select-user.html &>
 
   <TR>
-    <TD ALIGN="right" VALIGN="center">Payment</TD>
+    <TD ALIGN="right" VALIGN="center"><% mt('Payment') |h %></TD>
     <TD>
       <TABLE>
-        <% include( '/elements/tr-input-beginning_ending.html',
+        <& /elements/tr-input-beginning_ending.html,
                       layout   => 'horiz',
-                  )
-        %>
+        &>
       </TABLE>
     </TD>
   </TR>
 
 % if ( $void ) {
     <TR>
-      <TD ALIGN="right" VALIGN="center">Voided</TD>
+      <TD ALIGN="right" VALIGN="center"><% mt('Voided') |h %></TD>
       <TD>
         <TABLE>
-          <% include( '/elements/tr-input-beginning_ending.html',
+          <& /elements/tr-input-beginning_ending.html,
                         prefix => 'void',
                         layout => 'horiz',
-                    )
-          %>
+          &>
         </TABLE>
       </TD>
     </TR>
 % }
 
-  <% include( '/elements/tr-input-lessthan_greaterthan.html',
-                'label' => 'Amount',
-		'field' => 'paid',
-            )
-  %>
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                'label' => emt('Amount'),
+                'field' => 'paid',
+  &>
 
 % if ( $table eq 'cust_pay' ) { 
-  <% include( '/elements/tr-checkbox.html',
-                'label' => 'Include tax names',
-		'field' => 'tax_names',
+  <& /elements/tr-checkbox.html,
+                'label' => emt('Include tax names'),
+                'field' => 'tax_names',
                 'value' => 1,
-            )
-  %>
+  &>
 % }
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Get Report">
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 my %opt = @_;
