@@ -33,18 +33,26 @@ if ($conf->exists('cust_bill_pay_pkg-manual')) {
 
 my $apply = '';
 
+my $italicize_otaker = 0;
 my $otaker = $cust_pay->otaker;
-$otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
-$otaker = '<i>customer self-service</i>' if $otaker eq 'fs_selfservice';
+if ( $otaker eq 'fs_daily' ) {
+    $otaker = 'auto billing';
+    $italicize_otaker = 1;
+}
+if ( $otaker eq 'fs_selfservice' ) {
+    $otaker = 'customer self-service';
+    $italicize_otaker = 1;
+}
 
 my $payment = emt("Payment by [_1]",$otaker);
+$payment =~ s/$otaker/<i>$otaker<\/i>/ if $italicize_otaker;
 
 if (    scalar(@cust_bill_pay)   == 0
      && scalar(@cust_pay_refund) == 0 ) {
   #completely unapplied
-  $payment = '<B><FONT COLOR="#FF0000">' 
-                . emt("Unapplied Payment by [_1]",$otaker)
-                . '</FONT></B>';
+  $payment = emt("Unapplied Payment by [_1]",$otaker);
+  $payment =~ s/$otaker/<i>$otaker<\/i>/ if $italicize_otaker;
+  $payment = '<B><FONT COLOR="#FF0000">'.$payment.'</FONT></B>';
   if ( $curuser->access_right('Apply payment') ) {
     if ( $cust_pay->cust_main->total_owed > 0 ) {
       $apply = ' ('.
