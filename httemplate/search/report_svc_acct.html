@@ -1,4 +1,4 @@
-<% include('/elements/header.html', $title ) %>
+<& /elements/header.html, $title &>
 
 <FORM ACTION="svc_acct.cgi" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
@@ -7,23 +7,21 @@
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
     <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
     </TR>
 
 % unless ( $custnum ) {
-    <% include( '/elements/tr-select-agent.html',
+    <& /elements/tr-select-agent.html,
                    'curr_value'    => scalar( $cgi->param('agentnum') ),
                    'disable_empty' => 0,
-              )
-    %>
+    &>
 
 %   # just this customer's domains?
-    <% include( '/elements/tr-select-domain.html',
+    <& /elements/tr-select-domain.html,
                    'element_name'  => 'domsvc',
                    'curr_value'    => scalar( $cgi->param('domsvc') ),
                    'disable_empty' => 0,
-              )
-    %>
+    &>
 % }
 
     <SCRIPT type="text/javascript">
@@ -55,61 +53,60 @@
               </TD>
               <TD>
                 <INPUT NAME="<% $invert %>" ID="<% $invert %>" TYPE="hidden">
-                <A HREF="javascript:void(0)" onClick="toggle('<% $field %>'); return false;">Invert</A>
+                <A HREF="javascript:void(0)" onClick="toggle('<% $field %>'); return false;"><% mt('Invert') |h %></A>
               </TD>
             </TR>
           </TABLE>
         </TD>
         <TD>
           <TABLE>
-            <% include( '/elements/tr-input-beginning_ending.html',
+            <& /elements/tr-input-beginning_ending.html,
                           prefix   => $field,
                           layout   => 'horiz',
-                      )
-            %>
+            &>
           </TABLE>
         </TD>
       </TR>
 
 %   }
     
-    <% include( '/elements/tr-selectmultiple-part_pkg.html' ) %> 
+    <& /elements/tr-selectmultiple-part_pkg.html &> 
 
     <TR>
       <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
     </TR>
  
     <TR>
-      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
     </TR>
 
 %   #move to /elements/tr-select-cust_pkg-fields if anything else needs it...
     <TR>
-      <TD ALIGN="right">Package fields</TD>
+      <TD ALIGN="right"><% mt('Package fields') |h %></TD>
       <TD>
         <SELECT NAME="cust_pkg_fields">
-          <OPTION VALUE="">(none)
-          <OPTION VALUE="setup,last_bill,bill,cancel">Setup date | Last bill date | Next bill date | Cancel date
+          <OPTION VALUE=""><% mt('(none)') |h %> 
+          <OPTION VALUE="setup,last_bill,bill,cancel"><% mt('Setup date | Last bill date | Next bill date | Cancel date') |h %> 
         </SELECT>
       </TD>
     </TR>
 
-    <% include( '/elements/tr-select-cust-fields.html' ) %>
+    <& /elements/tr-select-cust-fields.html &>
                        
   </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Get Report">
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages'); #?
 
-my $title = 'Account Report';
+my $title = emt('Account Report');
 
 #false laziness w/report_cust_pkg.html
 my $custnum = '';
@@ -120,7 +117,7 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
     'hashref'   => { 'custnum' => $custnum },
     'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
   }) or die "unknown custnum $custnum";
-  $title .= ': '. $cust_main->name;
+  $title = emt("Account Report: [_1]", $cust_main->name);
 }
 
 </%init>
