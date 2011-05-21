@@ -16,7 +16,10 @@ use FS::did_order_item;
 use FS::rate_center;
 use FS::phone_avail;
 use FS::did_vendor;
+use FS::svc_phone;
 use Data::Dumper;
+
+print "started time=".time."\n";
 
 #### SET THESE! #################################
 my $file = '/home/levinse/dids1.csv';
@@ -46,6 +49,7 @@ my $min_date = 1262304000; # January 1st 2010
 my %did_order = ();
 my %rate_center = ();
 my %rate_center_abbrev = ();
+my %cust2pkg = ();
 my %msamap = ( 
 # YOU CANNOT USE THE STATE/NPA/LATA OF A DID TO TRY TO FIND ITS MSA. IT HAS 
 # NOTHING IN COMMON WITH THE STATE OF THE MSA. THERE IS SIMPLY INSUFFICIENT
@@ -68,12 +72,15 @@ my %msamap = (
  'Portland ME' => 38860, 
 );
 my $skipto = 0; 
-my $limit = 0;
+my $limit = 900;
 my $linenum = 1;
 
-# cache the whole LATA table in one query for performance
+# cache LATA and MSA tables in one query for performance
 my @latas = qsearch('lata', {});
 my %latas = map { $_->latanum => $_->description } @latas;
+
+my @msas = qsearch('msa', {});
+my %msas = map { $_->msanum => $_->description } @msas;
 
 # now add in the brain-dead LATA hacks
 $latas{636} = 'BRAINERD-FARGO ND';
@@ -84,106 +91,22 @@ $latas{460} = 'SOUTHEAST FL GR-EA';
 $latas{952} = 'TAMPA FLORIDA';
 $latas{524} = 'KANSAS CITY';
 
-
+my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
 sub parsedt {
     my ($dt,$min,$max) = (shift,shift,shift);
-    my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
     my $epoch = $parser->parse_datetime($dt);
     return $epoch->epoch 
         if ($parser->success && $epoch->epoch >= $min && $epoch->epoch <= $max);
     fatal("invalid date $dt (min=$min, max=$max)");
 }
 
-sub latacheck {
-    my ($latanum,$latadesc) = (shift,shift);
-    fatal("no lata found for latanum $latanum") unless exists($latas{$latanum});
-
-    # unsurprisingly, our idea of a LATA name doesn't always match their idea 
-    # of the same. Specifically, they randomly expand the state portion and
-    # abbreviate it arbitrarily
-
-    my $ourdesc = $latas{$latanum};
-
-    # strip off the fixed state abbreviation portion in ours
-    $ourdesc =~ s/ ..$//;
-    
-    # strip off the variable state abbreviation (or full name) portion in theirs
-    $latadesc =~ s/\s\w+$// unless uc($ourdesc) eq uc($latadesc); # yeah...long story :(
-
-    fatal("their LATA description '$latadesc' doesn't match our LATA description '$ourdesc'")
-        unless uc($ourdesc) eq uc($latadesc);
-}
-
-# XXX: performance
-sub msacheck {
-    my $msadesc = shift;
-    my $state = shift;
-    my $msanum = -1; 
-
-    # XXX: no idea what the MSA is for Danbury, so discard it for now and deal with it manually/later
-    $msadesc = '' if $msadesc eq 'Danbury';
-
-    # hax on hax
-    $msadesc = 'Portland OR' if ($msadesc eq 'Portland' && $state eq 'OR');
-    $msadesc = 'Portland ME' if ($msadesc eq 'Portland' && $state eq 'ME');
-
-    # not everything in their file has a MSA
-    if ( $msadesc =~ /^[\w\s]+$/ ) {
-
-        # their idea of a MSA differs from our idea of it
-        if ( exists($msamap{$msadesc}) ) {
-            $msanum = $msamap{$msadesc};
-        }
-        else {
-            my @msa = qsearch('msa', { 'description' => {
-                                                'op' => 'ILIKE',
-                                                'value' => "$msadesc%" 
-                                            }
-                                      });
-
-            # so now we have two cases for a match and everything else is a non-match
-            foreach my $msa ( @msa ) {
-                # a. our MSA stripped of state portion matches their MSA exactly
-                my $msatest1 = $msa->description;
-                $msatest1 =~ s/,.*?$//;
-                if($msatest1 eq $msadesc) {
-                    fatal("multiple MSA matches (case 1) for $msadesc") unless $msanum == -1;
-                    $msanum = $msa->msanum;
-                }
-                
-                # b. our MSA stripped of state portion and up to the first hyphen matches their MSA exactly
-                my $msatest2 = $msa->description;
-                if($msatest2 =~ /^([\w\s]+)-/ && $1 eq $msadesc) {
-                    fatal("multiple MSA matches (case 2) for $msadesc") unless $msanum == -1;
-                    $msanum = $msa->msanum;
-                }
-            }
-
-            $msamap{$msadesc} = $msanum if $msanum != -1;
-        }
-        fatal("msa $msadesc not found") if $msanum == -1;
-        warn "$msadesc matched msanum $msanum for line $linenum\n" if $debug;
-    }
-
-    $msanum;
-}
-
-sub ratecentercheck {
-    my ($rate_center, $rate_center_abbrev) = (shift,shift);
-   
-    if ( exists $rate_center{$rate_center} ) {
-        fatal("rate center abbreviation for '$rate_center' doesn't exist or doesn't match '$rate_center_abbrev'")
-            unless ( exists $rate_center_abbrev{$rate_center} &&
-                      $rate_center_abbrev{$rate_center} eq $rate_center_abbrev);
-    } else {
-        my $rc = new FS::rate_center{ description => $rate_center };
-        my $error = $rc->insert;
-        fatal("can't insert rate center '$rate_center': $error") if $error;
-        $rate_center{$rate_center} = $rc->ratecenternum;
-        $rate_center_abbrev{$rate_center} = $rate_center_abbrev;
-    }
-    
-    $rate_center{$rate_center};
+sub msatest {
+    my ($their,$our) = (shift,shift);
+    my $a = $our;
+    $a =~ s/,.*?$//;
+    return 1 if $a eq $their;
+    return 1 if ($our =~ /^([\w\s]+)-/ && $1 eq $their);
+    0;
 }
 
 sub trim {
@@ -235,11 +158,73 @@ sub suffer {
                                         && $latanum =~ /^\d{3}$/ 
                                         && $latadesc =~ /^[\w\s\-]+$/);
 
-    latacheck($latanum,$latadesc);
-    my $msanum = msacheck($msadesc,$state);
-    my $ratecenternum = ratecentercheck($rate_center,$rate_center_abbrev);
+
+    ### LATA ###
+
+    fatal("no lata found for latanum $latanum") unless exists($latas{$latanum});
+
+    # unsurprisingly, our idea of a LATA name doesn't always match their idea 
+    # of the same. Specifically, they randomly expand the state portion and
+    # abbreviate it arbitrarily
+
+    my $ourdesc = $latas{$latanum};
+
+    # strip off the fixed state abbreviation portion in ours
+    $ourdesc =~ s/ ..$//;
+    
+    # strip off the variable state abbreviation (or full name) portion in theirs
+    $latadesc =~ s/\s\w+$// unless uc($ourdesc) eq uc($latadesc); # yeah...long story :(
+
+    fatal("their LATA description '$latadesc' doesn't match our LATA description '$ourdesc'")
+        unless uc($ourdesc) eq uc($latadesc);
+
+
+    ### MSA ###
+
+    my $msanum = -1;
+    
+    # XXX: no idea what the MSA is for Danbury, so discard it for now and deal with it manually/later
+    $msadesc = '' if $msadesc eq 'Danbury';
+
+    # hax on hax
+    $msadesc = 'Portland OR' if ($msadesc eq 'Portland' && $state eq 'OR');
+    $msadesc = 'Portland ME' if ($msadesc eq 'Portland' && $state eq 'ME');
+
+    # not everything in their file has a MSA
+    if ( $msadesc =~ /^[\w\s]+$/ ) {
+
+        # their idea of a MSA differs from our idea of it
+        if ( exists($msamap{$msadesc}) ) {
+            $msanum = $msamap{$msadesc};
+        }
+        else {
+            my @msa = grep { msatest($msadesc,$_->description) } @msas;
+            fatal("multiple MSA matches for '$msadesc'") if(scalar(@msa) > 1);
+            $msanum = $msa[0]->msanum if scalar(@msa) == 1;
+            $msamap{$msadesc} = $msanum if $msanum != -1;
+        }
+        fatal("msa $msadesc not found") if $msanum == -1;
+        warn "$msadesc matched msanum $msanum for line $linenum\n" if $debug;
+    }
+
+
+    ### RATE CENTER ###
+    
+    if ( exists $rate_center{$rate_center} ) {
+        fatal("rate center abbreviation for '$rate_center' doesn't exist or doesn't match '$rate_center_abbrev'")
+            unless ( exists $rate_center_abbrev{$rate_center} &&
+                      $rate_center_abbrev{$rate_center} eq $rate_center_abbrev);
+    } else {
+        print "creating new rate center '$rate_center' '$rate_center_abbrev'\n";
+        my $rc = new FS::rate_center{ description => $rate_center };
+        my $error = $rc->insert;
+        fatal("can't insert rate center '$rate_center' '$rate_center_abbrev': $error") 
+            if $error;
+        $rate_center{$rate_center} = $rc->ratecenternum;
+        $rate_center_abbrev{$rate_center} = $rate_center_abbrev;
+    }
+    my $ratecenternum = $rate_center{$rate_center};
    
-    # now we passed most basic checks/lookups (and possibly created a rate center)
 
     my $order = order($ordernum,$submitted,$confirmed,$received,$customer);
     my $order_item = order_item($order,$npa,$latanum,$state,$msanum,$ratecenternum);
@@ -249,7 +234,7 @@ sub suffer {
     warn "Pass $linenum\n" if $debug;
 
     my $time = time;
-    warn "Done $linenum time=$time\n" if ($linenum % 100 == 0);
+    print "Done $linenum time=$time\n" if ($linenum % 100 == 0);
 }
 
 sub phone_avail {
@@ -280,7 +265,6 @@ sub phone_avail {
     $pa;
 }
 
-# XXX: performance
 sub order_item {
     my($order,$npa,$latanum,$state,$msanum,$ratecenternum) 
                                         = (shift,shift,shift,shift,shift,shift);
@@ -329,13 +313,40 @@ sub order {
         if ( exists($custname2num{$customer}) ) {
             $cust{'custnum'} = $custname2num{$customer};
         } else {
+            print "new customer case for '$customer'\n";
             my @cust_main = smart_search('search' => $customer);
             fatal(scalar(@cust_main) . " customers found for $customer") 
                 unless scalar(@cust_main) == 1;
-            $cust{'custnum'} = $cust_main[0]->custnum;
+            my $cust_main = $cust_main[0];
             
-            # cache it, or we'll be going even slower than we already are
-            $custname2num{$customer} = $cust_main[0]->custnum; 
+            $cust{'custnum'} = $cust_main->custnum;
+            $custname2num{$customer} = $cust_main->custnum; 
+            $cust2pkg{$cust_main->custnum} = {};
+            
+            my @pkgs = $cust_main->ncancelled_pkgs;
+            fatal("no packages") unless scalar(@pkgs);
+
+            foreach my $pkg ( @pkgs ) {
+                my @avail_part_svc = $pkg->available_part_svc;
+                my @svcpart;
+                foreach my $avail_part_svc ( @avail_part_svc ) {
+                    if ($avail_part_svc->svcdb eq 'svc_phone') {
+                        push @svcpart, $avail_part_svc->svcpart;
+                    }
+                }
+                fatal("multiple svc_phone services") if scalar(@svcpart) > 1;
+                fatal("multiple packages with svc_phone services") 
+                    if (exists $cust2pkg{$cust_main->custnum}->{pkgnum}
+                            && scalar(@svcpart));
+                if(scalar(@svcpart) == 1) {
+                    $cust2pkg{$cust_main->custnum}->{pkgnum} = $pkg->pkgnum;
+                    $cust2pkg{$cust_main->custnum}->{svcpart} = $svcpart[0];
+                }
+            }
+
+            fatal("no pkg/svc") 
+                unless (exists $cust2pkg{$cust_main->custnum}->{pkgnum}
+                        && exists $cust2pkg{$cust_main->custnum}->{svcpart});
         }
     }
 
@@ -367,9 +378,6 @@ sub order {
     $o;
 }
 
-# XXX: damn it...this sub increases the import time by a factor of THREE!
-# should probably modify and run it in batch for each customer, as opposed to per DID
-# if import finishes in under two hours, leaving as-is
 sub provision {
     my($did,$customer,$phone_avail) = (shift,shift,shift);
 
@@ -377,45 +385,27 @@ sub provision {
     # because of the above, we now need to do the internal did db
     # export's job ourselves (set the svcnum for the DID in phone_avail)
 
-    my $cust_main = qsearchs('cust_main', { custnum => $custname2num{$customer} }) 
-                        || fatal('invalid customer');
+    fatal("customer not found") unless exists $cust2pkg{$custname2num{$customer}};
 
-    my @pkgs = $cust_main->ncancelled_pkgs;
-    fatal("no packages") unless scalar(@pkgs);
-
-    my $thepkg;
-    my $svcpart;
-    foreach my $pkg ( @pkgs ) {
-        my @avail_part_svc = $pkg->available_part_svc;
-        my @svcpart;
-        foreach my $avail_part_svc ( @avail_part_svc ) {
-            if ($avail_part_svc->svcdb eq 'svc_phone') {
-                push @svcpart, $avail_part_svc->svcpart;
-            }
-        }
-        fatal("multiple svc_phone services") if scalar(@svcpart) > 1;
-        fatal("multiple packages with svc_phone services") 
-            if ($thepkg && scalar(@svcpart));
-        if(scalar(@svcpart) == 1) {
-            $thepkg = $pkg;
-            $svcpart = $svcpart[0];
-        }
-    }
-
-    fatal("no pkg/svc") unless ($thepkg && $svcpart);
-    
     my $svc_phone = new FS::svc_phone({
-            pkgnum  => $thepkg->pkgnum,
-            svcpart => $svcpart,
+            pkgnum  => $cust2pkg{$custname2num{$customer}}->{pkgnum},
+            svcpart => $cust2pkg{$custname2num{$customer}}->{svcpart},
             countrycode => 1,
             phonenum    => $did,
         });
+    
+    # XXX: THIS LINE CAUSES PERFORMANCE TO DEGRADE AND THE SCRIPT NEVER FINISHES! WHY!?
+    # -unattaching the exports has no effect
+    # -after each successive call, the time taken to complete 100 rows becomes greater
+    # -commenting out this call results in a constant time taken to complete 100 rows
+    # -after 10K rows we get a random error that makes no sense
     my $error = $svc_phone->insert;
+
     fatal("can't insert svc_phone: $error") if $error;
 
-    $phone_avail->svcnum($svc_phone->svcnum);
-    $error = $phone_avail->replace;
-    fatal("can't replace phone_avail: $error") if $error;
+    #$phone_avail->svcnum($svc_phone->svcnum);
+    #$error = $phone_avail->replace;
+    #fatal("can't replace phone_avail: $error") if $error;
 
     '';
 }
@@ -428,7 +418,7 @@ sub fatal {
 
 my $csv = new Text::CSV;
 open (CSV, "<", $file) or die $!;
-warn "Starting main loop time=".time;
+print "Starting main loop time=".time."\n";
 while (<CSV>) {
     if ( $linenum == 1 ) { # skip header
         $linenum++;
@@ -451,8 +441,8 @@ while (<CSV>) {
         suffer($linenum,@columns);
     } else {
         my $err = $csv->error_diag . "(" . $csv->error_input . ")";
-        warn "WARNING: failed to parse line $linenum: " . $csv->error_diag
-            . " (" . $csv->error_input . ")";
+        print "WARNING: failed to parse line $linenum: " . $csv->error_diag
+            . " (" . $csv->error_input . ")\n";
     }
     $linenum++;
 }
