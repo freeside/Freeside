@@ -1,4 +1,4 @@
-<% include('/elements/header.html', $title ) %>
+<& /elements/header.html, emt($title) &>
 
 <FORM ACTION="cust_credit.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
@@ -6,35 +6,32 @@
 
 <TABLE>
 
-  <% include( '/elements/tr-select-user.html',
-                'label'       => 'Credits by employee: ',
+  <& /elements/tr-select-user.html,
+                'label'       => emt('Credits by employee: '),
                 'access_user' => \%access_user,
-            )
-  %>
+  &>
 
-  <% include( '/elements/tr-select-agent.html',
+  <& /elements/tr-select-agent.html,
                  'curr_value'    => scalar( $cgi->param('agentnum') ),
-                 'label'         => 'for agent: ',
+                 'label'         => emt('for agent: '),
                  'disable_empty' => 0,
-             )
-  %>
+  &>
 
-  <% include( '/elements/tr-input-beginning_ending.html' ) %>
+  <& /elements/tr-input-beginning_ending.html &>
 
-  <% include( '/elements/tr-input-lessthan_greaterthan.html',
-                'label' => 'Amount',
-		'field' => 'amount',
-            )
-  %>
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                'label' => emt('Amount'),
+                'field' => 'amount',
+  &>
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Get Report">
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 
 <%init>
 

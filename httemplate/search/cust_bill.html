@@ -1,5 +1,5 @@
-<% include( 'elements/search.html',
-                 'title'       => 'Invoice Search Results',
+<& elements/search.html,
+                 'title'       => emt('Invoice Search Results'),
                  'html_init'   => $html_init,
                  'menubar'     => $menubar,
                  'name'        => 'invoices',
@@ -7,11 +7,11 @@
                  'count_query' => $count_query,
                  'count_addl'  => $count_addl,
                  'redirect'    => $link,
-                 'header'      => [ 'Invoice #',
-                                    'Balance',
-                                    'Net Amount',
-                                    'Gross Amount',
-                                    'Date',
+                 'header'      => [ emt('Invoice #'),
+                                    emt('Balance'),
+                                    emt('Net Amount'),
+                                    emt('Gross Amount'),
+                                    emt('Date'),
                                     FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [
@@ -56,10 +56,7 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-
-  
-      )
-%>
+&>
 <%init>
 
 die "access denied"
@@ -71,7 +68,6 @@ my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 
 my( $count_query, $sql_query );
 my $count_addl = '';
-#my $distinct = '';
 my %search;
 
 if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
@@ -82,7 +78,6 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   $count_query = "SELECT COUNT(*) FROM cust_bill $join_cust_main $where";
 
   $sql_query = {
-    #'select'    => '*',
     'table'     => 'cust_bill',
     'addl_from' => $join_cust_main,
     'hashref'   => {},
@@ -159,7 +154,6 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     'table'     => 'cust_bill',
     'addl_from' => $join_cust_main,
     'hashref'   => {},
-    #'select'    => "$distinct ". join(', ',
     'select'    => join(', ',
                      'cust_bill.*',
                      #( map "cust_main.$_", qw(custnum last first company) ),
@@ -207,31 +201,31 @@ my $html_init = join("\n", map {
 '<SCRIPT TYPE="text/javascript">
 
 function confirm_print_process() {
-  if ( ! confirm("Are you sure you want to reprint these invoices?") ) {
+  if ( ! confirm('.emt("Are you sure you want to reprint these invoices?").') ) {
     return;
   }
   print_process();
 }
 function confirm_email_process() {
-  if ( ! confirm("Are you sure you want to re-email these invoices?") ) {
+  if ( ! confirm('.emt("Are you sure you want to re-email these invoices?").') ) {
     return;
   }
   email_process();
 }
 function confirm_fax_process() {
-  if ( ! confirm("Are you sure you want to re-fax these invoices?") ) {
+  if ( ! confirm('.emt("Are you sure you want to re-fax these invoices?").') ) {
     return;
   }
   fax_process();
 }
 function confirm_ftp_process() {
-  if ( ! confirm("Are you sure you want to re-FTP these invoices?") ) {
+  if ( ! confirm('.emt("Are you sure you want to re-FTP these invoices?").') ) {
     return;
   }
   ftp_process();
 }
 function confirm_spool_process() {
-  if ( ! confirm("Are you sure you want to re-spool these invoices?") ) {
+  if ( ! confirm('.emt("Are you sure you want to re-spool these invoices?").') ) {
     return;
   }
   spool_process();
@@ -243,20 +237,20 @@ my $menubar = [];
 
 if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
 
-  push @$menubar, 'Print these invoices' =>
+  push @$menubar, emt('Print these invoices') =>
                     "javascript:confirm_print_process()",
-                  'Email these invoices' =>
+                  emt('Email these invoices') =>
                     "javascript:confirm_email_process()";
 
-  push @$menubar, 'Fax these invoices' =>
+  push @$menubar, emt('Fax these invoices') =>
                     "javascript:confirm_fax_process()"
     if $conf->exists('hylafax');
 
-  push @$menubar, 'FTP these invoices' =>
+  push @$menubar, emt('FTP these invoices') =>
                     "javascript:confirm_ftp_process()"
     if $conf->exists('cust_bill-ftpformat');
 
-  push @$menubar, 'Spool these invoices' =>
+  push @$menubar, emt('Spool these invoices') =>
                     "javascript:confirm_spool_process()"
     if $conf->exists('cust_bill-spoolformat');
 
