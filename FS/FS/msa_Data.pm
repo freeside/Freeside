@@ -17,7 +17,7 @@ unless ( $count ) {
     my $sql = 'insert into msa (msanum, description) values ';
     my @sql;
     foreach my $row ( @content ) {
-        next unless $row =~ /^([0-9]{5})\s+([A-Za-z, \-]{5,80}) .{3}ropolitan Statistical Area/;
+        next unless $row =~ /^([0-9]{5})\s+([A-Za-z,\. \-]{5,80}) .{3}ropolitan Statistical Area/;
         push @sql, "( $1, '$2')";
     }
     $sql .= join(',',@sql);
