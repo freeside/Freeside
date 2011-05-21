@@ -1,39 +1,35 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                   'html_init'   => $html_init, 
-                  'title'       => 'Package Search Results', 
+                  'title'       => emt('Package Search Results'), 
                   'name'        => 'packages',
                   'query'       => $sql_query,
                   'count_query' => $count_query,
-                  #'redirect'    => $link,
-                  'header'      => [ '#',
-                                     'Quan.',
-                                     'Package',
-                                     'Class',
-                                     'Status',
-                                     'Setup',
-                                     'Base Recur',
-                                     'Freq.',
-                                     'Setup',
-                                     'Last bill',
-                                     'Next bill',
-                                     'Adjourn',
-                                     'Susp.',
-                                     'Expire',
-                                     'Contract end',
-                                     'Cancel',
-                                     'Reason',
+                  'header'      => [ emt('#'),
+                                     emt('Quan.'),
+                                     emt('Package'),
+                                     emt('Class'),
+                                     emt('Status'),
+                                     emt('Setup'),
+                                     emt('Base Recur'),
+                                     emt('Freq.'),
+                                     emt('Setup'),
+                                     emt('Last bill'),
+                                     emt('Next bill'),
+                                     emt('Adjourn'),
+                                     emt('Susp.'),
+                                     emt('Expire'),
+                                     emt('Contract end'),
+                                     emt('Cancel'),
+                                     emt('Reason'),
                                      FS::UI::Web::cust_header(
                                        $cgi->param('cust_fields')
                                      ),
-                                     'Services',
+                                     emt('Services'),
                                    ],
                   'fields'      => [
                     'pkgnum',
                     'quantity',
-                    sub { #my $part_pkg = $part_pkg{shift->pkgpart};
-                          #$part_pkg->pkg; # ' - '. $part_pkg->comment;
-                          $_[0]->pkg; # ' - '. $_[0]->comment;
-                        },
+                    sub { $_[0]->pkg; },
                     'classname',
                     sub { ucfirst(shift->status); },
                     sub { sprintf( $money_char.'%.2f',
@@ -45,20 +41,8 @@
                                    $c->part_pkg->base_recur($c)
                                  );
                         },
-                    sub { #shift->part_pkg->freq_pretty;
+                    sub { FS::part_pkg::freq_pretty(shift); },
 
-                          #my $part_pkg = $part_pkg{shift->pkgpart};
-                          #$part_pkg->freq_pretty;
-
-                          FS::part_pkg::freq_pretty(shift);
-                        },
-
-                    #sub { time2str('%b %d %Y', shift->setup); },
-                    #sub { time2str('%b %d %Y', shift->last_bill); },
-                    #sub { time2str('%b %d %Y', shift->bill); },
-                    #sub { time2str('%b %d %Y', shift->susp); },
-                    #sub { time2str('%b %d %Y', shift->expire); },
-                    #sub { time2str('%b %d %Y', shift->get('cancel')); },
                     ( map { time_or_blank($_) }
           qw( setup last_bill bill adjourn susp expire contract_end cancel ) ),
 
@@ -73,13 +57,6 @@
                         },
 
                     \&FS::UI::Web::cust_fields,
-                    #sub { '<table border=0 cellspacing=0 cellpadding=0 STYLE="border:none">'.
-                    #      join('', map { '<tr><td align="right" style="border:none">'. $_->[0].
-                    #                     ':</td><td style="border:none">'. $_->[1]. '</td></tr>' }
-                    #                   shift->labels
-                    #          ).
-                    #      '</table>';
-                    #    },
                     sub {
                       my $cust_pkg = shift;
                       my $type = $cgi->param('_type') || '';
@@ -159,8 +136,7 @@
                     ),
                     '',
                   ],
-              )
-%>
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -170,8 +146,6 @@ die "access denied"
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
-
-# my %part_pkg = map { $_->pkgpart => $_ } qsearch('part_pkg', {});
 
 my %search_hash = ();
 
@@ -243,23 +217,6 @@ my $clink = sub {
     : '';
 };
 
-#if ( scalar(@cust_pkg) == 1 ) {
-#  print $cgi->redirect("${p}view/cust_main.cgi?". $cust_pkg[0]->custnum.
-#                       "#cust_pkg". $cust_pkg[0]->pkgnum );
-
-#    my @cust_svc = qsearch( 'cust_svc', { 'pkgnum' => $pkgnum } );
-#    my $rowspan = scalar(@cust_svc) || 1;
-
-#    my $n2 = '';
-#    foreach my $cust_svc ( @cust_svc ) {
-#      my($label, $value, $svcdb) = $cust_svc->label;
-#      my $svcnum = $cust_svc->svcnum;
-#      my $sview = $p. "view";
-#      print $n2,qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
-#            qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
-#      $n2="</TR><TR>";
-#    }
-
 sub time_or_blank {
    my $column = shift;
    return sub {
@@ -277,18 +234,18 @@ my $html_init = sub {
   if ( $curuser->access_right('Bulk change customer packages') ) {
     $text .= include('/elements/init_overlib.html').
              include( '/elements/popup_link.html',
-               'label'       => 'Change these packages',
+               'label'       => emt('Change these packages'),
                'action'      => "${p}misc/bulk_change_pkg.cgi?$query",
-               'actionlabel' => 'Change Packages',
+               'actionlabel' => emt('Change Packages'),
                'width'       => 569,
                'height'      => 210,
              ). '<BR>';
 
     if ( $curuser->access_right('Edit customer package dates') ) {
       $text .= include( '/elements/popup_link.html',
-                 'label'       => 'Increment next bill date',
+                 'label'       => emt('Increment next bill date'),
                  'action'      => "${p}misc/bulk_pkg_increment_bill.cgi?$query",
-                 'actionlabel' => 'Increment Bill Date',
+                 'actionlabel' => emt('Increment Bill Date'),
                  'width'       => 569,
                  'height'      => 210,
               ). '<BR>';

@@ -1,13 +1,11 @@
-<% include( 'elements/cust_pay_or_refund.html',
+<& elements/cust_pay_or_refund.html,
                 'thing'         => 'pay_void',
                 'amount_field'  => 'paid',
-                'name_singular' => 'voided payment',
-                'name_verb'     => 'voided', # 'paid',
+                'name_singular' => emt('voided payment'),
+                'name_verb'     => emt('voided'), 
                 'disable_by'    => 1, #showing original not voiding otaker
-                'addl_header'   => [ 'Void Date', ],  # 'Void Reason' ],
+                'addl_header'   => [ emt('Void Date'), ],  
                 'addl_fields'   => [
                   sub { time2str('%b %d %Y', shift->void_date ) },
-                  #'reason',
                 ],
-          )
-%>
+&>

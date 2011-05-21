@@ -1,4 +1,4 @@
-<% include('/elements/header.html', 'Accounts Receivable Aging Summary' ) %>
+<& /elements/header.html, emt('Accounts Receivable Aging Summary') &>
 
 <FORM NAME="OneTrueForm" ACTION="report_receivables.cgi" METHOD="GET">
 
@@ -6,19 +6,18 @@
 
   <TR>
     <TH CLASS="background" COLSPAN=2 ALIGN="left">
-      <FONT SIZE="+1">Search options</FONT>
+      <FONT SIZE="+1"><% mt('Search options') |h %></FONT>
     </TH>
   </TR>
 
-  <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
+  <& /elements/tr-select-agent.html, 'disable_empty'=>0  &>
 
-  <% include( '/elements/tr-select-cust_main-status.html',
-                'label' => 'Customer Status'
-            )
-  %>
+  <& /elements/tr-select-cust_main-status.html,
+                'label' => emt('Customer Status'),
+  &>
   
   <TR>
-    <TD ALIGN="right">Customers</TD>
+    <TD ALIGN="right"><% mt('Customers') |h %></TD>
     <TD>
       <SCRIPT TYPE="text/javascript">
 function toggle(obj) {
@@ -30,28 +29,40 @@ function toggle(obj) {
 }
       </SCRIPT>
       <TABLE STYLE="padding: 0px">
-        <TR><TD><INPUT TYPE="radio" NAME="all_customers" VALUE="1" onClick="toggle(this)"></TD>
-        <TD>All customers (even those without an outstanding balance)</TD></TR>
-        <TR><TD><INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="toggle(this)"></TD>
-        <TD>Customers with a balance over <INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0"> days old</TD></TR>
-        <TR><TD></TD>
-        <TD><INPUT TYPE="checkbox" NAME="negative" VALUE="1">&nbsp;Including customers with credit balances</TD></TR>
+        <TR>
+            <TD><INPUT TYPE="radio" NAME="all_customers" VALUE="1" onClick="toggle(this)"></TD>
+            <TD><% mt('All customers (even those without an outstanding balance)') |h %></TD>
+        </TR>
+        <TR>
+            <TD><INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="toggle(this)"></TD>
+            <TD>
+%       my $daysinput = qq!<INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0">!;
+%       my $str = emt("Customers with a balance over [_1] days old",'XXXDAYSXXX'); # yeah it's a hack
+%       $str =~ s/XXXDAYSXXX/$daysinput/;
+            <% $str %>
+            </TD>
+        </TR>
+        <TR>
+            <TD></TD>
+            <TD><INPUT TYPE="checkbox" NAME="negative" VALUE="1">&nbsp;<% mt('Including customers with credit balances') |h %></TD>
+        </TR>
       </TABLE>
     </TD>
   </TR>
-  <% include( '/elements/tr-input-date-field.html', {
+  <& /elements/tr-input-date-field.html, {
                 'name'      => 'as_of',
                 'value'     => time,
-                'label'     => 'As of date ',
+                'label'     => emt('As of date '),
                 'format'    => FS::Conf->new->config('date_format') || '%m/%d/%Y',
-  } ) %>
+                } 
+  &>
 
 </TABLE>
 
 <BR><INPUT TYPE="submit" VALUE="Get Report">
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 
 <%init>
 
