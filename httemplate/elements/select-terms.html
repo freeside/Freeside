@@ -26,13 +26,13 @@ my $conf = new FS::Conf;
 
 my $empty_label =
   $opt{'empty_label'}
-  || 'Default ('.
-       ($conf->config('invoice_default_terms') || 'Payable upon receipt').
+  || emt('Default').' ('.
+       ($conf->config('invoice_default_terms') || emt('Payable upon receipt')).
      ')';
 
 my $empty_value = $opt{'empty_value'} || '';
 
-my @terms = ( 'Payable upon receipt',
+my @terms = ( emt('Payable upon receipt'),
               ( map "Net $_", 0, 3, 9, 10, 15, 20, 30, 45, 60, 90 ),
             );
 

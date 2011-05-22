@@ -3,14 +3,13 @@
 % } else { 
 
   <TR>
-    <TD ALIGN="right"><% $opt{'label'} || 'Domain' %></TD>
+    <TD ALIGN="right"><% $opt{'label'} || emt('Domain') %></TD>
     <TD>
-      <% include('/elements/select-svc_acct-domain.html',
+      <& /elements/select-svc_acct-domain.html,
                    'curr_value' => $domsvc,
                    'part_svc'   => $part_svc,
                    'cust_pkg'   => $cust_pkg,
-                )
-      %>
+      &>
     </TD>
   </TR>
 % } 

@@ -1,6 +1,6 @@
-<% include('tr-td-label.html', @_ ) %>
+<& tr-td-label.html, @_  &>
 
-  <TD <% $colspan %> <% $cell_style %> ID="<% $opt{input_id} || $opt{id}.'_input0' %>"><% include('search-cust_main.html', @_ ) %></TD>
+  <TD <% $colspan %> <% $cell_style %> ID="<% $opt{input_id} || $opt{id}.'_input0' %>"><& search-cust_main.html, @_  &></TD>
 
 </TR>
 

@@ -6,7 +6,7 @@
 % }
 
 <INPUT TYPE="text" NAME="<% $name %>" ID="<% $name %>_text" VALUE="<% $value %>">
-<IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $name  %>_button" STYLE="cursor: pointer" TITLE="Select date">
+<IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $name  %>_button" STYLE="cursor: pointer" TITLE="<% mt('Select date') |h %>">
 
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({

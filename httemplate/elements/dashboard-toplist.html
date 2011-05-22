@@ -1,6 +1,6 @@
 % if ( $conf->exists('dashboard-toplist') ) {
 
-  <% include('/elements/table-grid.html') %>
+  <& /elements/table-grid.html &>
 
 % my $bgcolor1 = '#eeeeee';
 %     my $bgcolor2 = '#ffffff';
@@ -24,11 +24,11 @@
 	    <A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->name %></A>
 	  </TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-            <% include('/elements/mcp_lint.html', 'cust_main'=>$cust_main) %>
+            <& /elements/mcp_lint.html, 'cust_main'=>$cust_main &>
           </TD>
 	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
 	    <FONT SIZE="-1">
-            <A HREF="<% FS::TicketSystem->href_new_ticket($cust_main) %>">(new ticket)</A>
+            <A HREF="<% FS::TicketSystem->href_new_ticket($cust_main) %>"><% mt('(new ticket)') |h %></A>
             </FONT>
 	  </TD>
 
@@ -51,7 +51,7 @@
 
         <TR>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-	    Unknown customer number <% $custnum %>
+	    <% mt("Unknown customer number [_1]", $custnum) |h %> 
 	  </TD>
         </TR>
 
@@ -75,7 +75,7 @@
 
       <TR>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% $line %></TH>
-	<TH CLASS="grid" BGCOLOR="#cccccc">Lint</TH>
+	<TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Lint') |h %></TH>
 	<TH CLASS="grid" BGCOLOR="#cccccc"></TH>
 %       foreach my $priority ( @custom_priorities, '' ) {
           <TH CLASS="grid" BGCOLOR="#cccccc">

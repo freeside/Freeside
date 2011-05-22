@@ -1,52 +1,45 @@
-%
-%
-%  #my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-%  my ($curmon,$curyear) = (localtime(time))[4,5];
-%  
-%  #find first month
-%  my $syear = 1899+$curyear;
-%  my $smonth = $curmon+1;
-%  
-%  #want 12 month by default, not 13
-%  $smonth++;
-%  if ( $smonth > 12 ) { $smonth-=12; $syear++ }
-%  
-%  #find last month
-%  my $eyear = 1900+$curyear;
-%  my $emonth = $curmon+1;
-%
-%  my %hash = (
-%    'show_month_abbr' => 1,
-%    'start_year'      => '1999',
-%    'end_year'        => '2012', #haha, well...
-%     @_,
-%  );
-%
-%
-
-
 <TR>
-  <TD ALIGN="right">From: </TD>
+  <TD ALIGN="right"><% mt('From: ') |h %></TD>
   <TD>
-    <% include('/elements/select-month_year.html',
+    <& /elements/select-month_year.html,
                   'prefix'        => 'start',
                   'selected_mon'  => $smonth,
                   'selected_year' => $syear,
                   %hash,
-               )
-    %>
+    &>
   </TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">To: </TD>
+  <TD ALIGN="right"><% mt('To: ') |h %></TD>
   <TD>
-    <% include('/elements/select-month_year.html',
+    <& /elements/select-month_year.html,
                   'prefix'        => 'end',
                   'selected_mon'  => $emonth,
                   'selected_year' => $eyear,
                   %hash,
-               )
-    %>
+    &>
   </TD>
 </TR>
+<%init>
+  my ($curmon,$curyear) = (localtime(time))[4,5];
+  
+  #find first month
+  my $syear = 1899+$curyear;
+  my $smonth = $curmon+1;
+  
+  #want 12 month by default, not 13
+  $smonth++;
+  if ( $smonth > 12 ) { $smonth-=12; $syear++ }
+  
+  #find last month
+  my $eyear = 1900+$curyear;
+  my $emonth = $curmon+1;
+
+  my %hash = (
+    'show_month_abbr' => 1,
+    'start_year'      => '1999',
+    'end_year'        => '2012', #haha, well...
+     @_,
+  );
+</%init>

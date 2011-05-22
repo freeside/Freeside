@@ -1,4 +1,4 @@
 % if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') |h %></FONT>
+  <FONT SIZE="+1" COLOR="#ff0000"><% mt("Error: [_1]", $cgi->param('error')) |h %></FONT>
   <BR><BR>
 % } 

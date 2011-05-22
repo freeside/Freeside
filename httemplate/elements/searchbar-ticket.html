@@ -2,8 +2,8 @@
 
   <FORM ACTION="<% FS::TicketSystem->baseurl %>index.html" METHOD="GET" STYLE="margin:0">
     <INPUT NAME="q" TYPE="text" VALUE="<% $ticketing_label |n %>" STYLE="width:<% $width %>" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
-    <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" CLASS="fslink" STYLE="font-size:11px">Advanced</A>
-    <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
+    <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" CLASS="fslink" STYLE="font-size:11px"><% mt('Advanced') |h %></A>
+    <INPUT TYPE="submit" VALUE="<% mt('Search tickets') |h %>" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
   </FORM>
   <% $menu_position eq 'left' ? '<BR>' : '' %>
 
@@ -19,7 +19,7 @@
 </SCRIPT>
 <%once>
 
-my $ticketing_label = '(ticket #, subject, email or fulltext:text)';
+my $ticketing_label = emt('(ticket #, subject, email or fulltext:text)');
 
 </%once>
 <%init>

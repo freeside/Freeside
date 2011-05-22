@@ -1,4 +1,4 @@
-<% include("/elements/header.html", "Error") %>
+<& /elements/header.html, emt("Error") &>
 
 % while (@_) {
 
@@ -8,4 +8,3 @@
 
 % $m->flush_buffer();
 % $HTML::Mason::Commands::m->abort();
-% #die "shouldn't fall through to here (mason \$m->abort didn't)";

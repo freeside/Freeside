@@ -1,14 +1,13 @@
-<% include( '/elements/select-table.html',
+<& /elements/select-table.html,
                  'table'       => 'part_referral',
                  'name_col'    => 'referral',
                  'value'       => $refnum,
-                 'empty_label' => 'Select advertising source',
+                 'empty_label' => emt('Select advertising source'),
                  'hashref'     => { 'disabled' => '' },
                  'extra_sql'   => ' AND '.
                                   FS::part_referral->acl_agentnum_sql(1),
                  %opt,
-             )
-%>
+&>
 <%init>
 
 my %opt = @_;

@@ -1,15 +1,14 @@
-<% include( '/elements/select-table.html',
+<& /elements/select-table.html,
                  'table'         => 'agent',
                  'name_col'      => 'agent',
                  'value'         => $agentnum || '',
                  'agent_virt'    => 1,
-                 'empty_label'   => 'all',
+                 'empty_label'   => emt('all'),
                  'hashref'       => { 'disabled' => '' },
                  'order_by'      => ' ORDER BY agent',
                  'disable_empty' => $disable_empty,
                  %opt,
-             )
-%>
+&>
 <%init>
 
 my %opt = @_;

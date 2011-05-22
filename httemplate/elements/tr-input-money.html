@@ -1,9 +1,8 @@
-<% include('tr-input-text.html', @_,
+<& tr-input-text.html, @_,
              'type'   => 'text',
              'prefix' => $money_char,
              'size'   => 8,
-          )
-%>
+&>
 <%once>
 
 my $conf = new FS::Conf;
