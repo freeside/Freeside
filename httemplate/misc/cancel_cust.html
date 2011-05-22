@@ -1,13 +1,11 @@
-<% include('/elements/header-popup.html', 'Cancel customer' ) %>
+<& /elements/header-popup.html, emt('Cancel customer')  &>
 
-<% include('/elements/error.html') %>
-
+<& /elements/error.html &>
 
 <FORM NAME="cust_cancel_popup" ACTION="<% popurl(1) %>cust_main-cancel.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
-
- <P ALIGN="center"><B>Permanently delete all services and cancel this customer?</B>
+ <P ALIGN="center"><B><% mt('Permanently delete all services and cancel this customer?') |h %></B>
 
 <TABLE BORDER="0" CELLSPACING="2"
 STYLE="margin-left:auto; margin-right:auto">
@@ -15,17 +13,17 @@ STYLE="margin-left:auto; margin-right:auto">
   <TD ALIGN="right">
     <INPUT TYPE="radio" NAME="now_or_later" VALUE="0" onclick="toggle(false)" CHECKED />
   </TD>
-  <TD ALIGN="left">Cancel now</TD>
+  <TD ALIGN="left"><% mt('Cancel now') |h %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">
     <INPUT TYPE="radio" NAME="now_or_later" VALUE="1" onclick="toggle(true)" />
   </TD>
-  <TD ALIGN="left">Cancel on date:&nbsp;
-  <% include('/elements/input-date-field.html', {
+  <TD ALIGN="left"><% mt('Cancel on date: ') |h %> 
+  <& /elements/input-date-field.html, {
               'name'    => 'expire',
               'value'   => time,
-    } ) %>
+    }  &>
   </TD>
 </TR>
 </TABLE>
@@ -38,23 +36,30 @@ function toggle(val) {
 }
 toggle(false);
 </SCRIPT> 
-<% $ban %>
+% if ( $cust_main->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
+% my $ban = "Ban this customer's ";
+% $ban .= 'credit card' if $cust_main->payby =~ /^(CARD|DCRD)$/;
+% $ban .= 'ACH account' if $cust_main->payby =~ /^(CHEK|DCHK)$/;
+    <P ALIGN="center">
+         <INPUT TYPE="checkbox" NAME="ban" ID="ban" VALUE="1"><% mt($ban) |h %> 
+% }
 
 <TABLE BGCOLOR="#cccccc", BORDER="0" CELLSPACING="2"
 STYLE="margin-left:auto; margin-right:auto">
-<% include('/elements/tr-select-reason.html',
+<& /elements/tr-select-reason.html,
              'field'          => 'reasonnum',
              'reason_class'   => 'C',
              'cgi'            => $cgi,
              'control_button' => "document.getElementById('confirm_cancel_cust_button')",
-          )
-%>
+&>
 
 </TABLE>
 
 <BR>
 <P ALIGN="CENTER">
-<INPUT TYPE="submit" NAME="submit" ID="confirm_cancel_cust_button" VALUE="Cancel customer" DISABLED> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Don't cancel" onClick="parent.cClick();"> 
+<INPUT TYPE="submit" NAME="submit" ID="confirm_cancel_cust_button" VALUE="<% mt('Cancel customer') |h %>" DISABLED> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<INPUT TYPE="BUTTON" VALUE="<% mt("Don't cancel") |h %>" onClick="parent.cClick();"> 
 
 </FORM>
 </BODY>
@@ -75,17 +80,6 @@ my $cust_main = qsearchs( {
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 } );
 die "No customer # $custnum" unless $cust_main;
-
-my $ban = '';
-if ( $cust_main->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
-  $ban = '<P ALIGN="center">'.
-         '<INPUT TYPE="checkbox" NAME="ban" ID="ban" VALUE="1"> Ban this customer\'s ';
-  if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-    $ban .= 'credit card';
-  } elsif (  $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-    $ban .= 'ACH account';
-  }
-}
 
 </%init>
 

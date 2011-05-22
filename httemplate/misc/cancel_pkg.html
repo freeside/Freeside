@@ -1,31 +1,27 @@
-%# if ( $link eq 'popup' ) { 
-  <% include('/elements/header-popup.html', $title ) %>
-%# } else { 
-%#  <%  include("/elements/header.html", $title, '') %>
-%# } 
+<& /elements/header-popup.html, emt($title) &>
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <FORM NAME="sc_popup" ACTION="<% popurl(1) %>process/cancel_pkg.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 <INPUT TYPE="hidden" NAME="method" VALUE="<% $method %>">
 
-
 <BR><BR>
-<% ucfirst($method) %> <% $part_pkg->pkg_comment %>
+<% emt(ucfirst($method)." [_1]", $part_pkg->pkg_comment) %>
 <% ntable("#cccccc", 2) %>
 
 % if ($method eq 'expire' || $method eq 'adjourn') {
 <TR>
-  <TD><% $submit =~ /^(\w*)\s/ %> package on </TD>
+% $submit =~ /^(\w*)\s/;
+  <TD><% mt("$1 package on") |h %> </TD>
     <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<% $date |h %>">
-        <IMG SRC="<% $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="Select date">
-        <BR><I>m/d/y</I>
+        <IMG SRC="<% $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="<% mt('Select date') |h %>">
+        <BR><I><% mt('m/d/y') |h %></I>
     </TD>
 </TR>
 <SCRIPT TYPE="text/javascript">
@@ -39,18 +35,17 @@
 %}
 %
 
-<% include('/elements/tr-select-reason.html',
+<& /elements/tr-select-reason.html,
              'field'          => 'reasonnum',
              'reason_class'   => $class,
              'curr_value'     => $reasonnum,
              'control_button' => "document.getElementById('confirm_cancel_pkg_button')",
-          )
-%>
+&>
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" NAME="submit" ID="confirm_cancel_pkg_button" VALUE="<% $submit %>" DISABLED>
+<INPUT TYPE="submit" NAME="submit" ID="confirm_cancel_pkg_button" VALUE="<% mt($submit) |h %>" DISABLED>
 
 </FORM>
 </BODY>

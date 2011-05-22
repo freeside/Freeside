@@ -1,4 +1,4 @@
-<% include('/elements/header.html', "Customer cancelled") %>
+<& /elements/header.html, emt("Customer cancelled") &>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>

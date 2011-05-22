@@ -1,18 +1,16 @@
-<% include( '/elements/header.html', "Process $type{$payby} payment" ) %>
-<% include( '/elements/small_custview.html', $cust_main, '', '', popurl(2) . "view/cust_main.cgi" ) %>
+<& /elements/header.html, emt("Process [_1] payment",$type{$payby})  &>
+<& /elements/small_custview.html, $cust_main, '', '', popurl(2) . "view/cust_main.cgi" &>
 <FORM NAME="OneTrueForm" ACTION="process/payment.cgi" METHOD="POST" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="custnum"   VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="payby"     VALUE="<% $payby %>">
 <INPUT TYPE="hidden" NAME="payunique" VALUE="<% $payunique %>">
 <INPUT TYPE="hidden" NAME="balance"   VALUE="<% $balance %>">
 
-<% include('/elements/init_overlib.html') %>
-
-% #include( '/elements/table.html', '#cccccc' ) 
+<& /elements/init_overlib.html &>
 
 <% ntable('#cccccc') %>
   <TR>
-    <TH ALIGN="right">Payment amount</TH>
+    <TH ALIGN="right"><% mt('Payment amount') |h %></TH>
     <TD COLSPAN=7>
       <TABLE><TR><TD BGCOLOR="#ffffff">
         <% $money_char %><INPUT NAME     = "amount"
@@ -67,11 +65,10 @@
 
 % }
 
-<% include('/elements/tr-select-discount_term.html',
+<& /elements/tr-select-discount_term.html,
              'custnum' => $custnum,
              'cgi'     => $cgi
-          )
-%>
+&>
 
 % if ( $payby eq 'CARD' ) {
 %
@@ -85,13 +82,13 @@
 %   }
 
     <TR>
-      <TH ALIGN="right">Card&nbsp;number</TH>
+      <TH ALIGN="right"><% mt('Card number') |h %></TH>
       <TD COLSPAN=7>
         <TABLE>
           <TR>
             <TD>
               <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%$payinfo%>"> </TD>
-            <TH>Exp.</TH>
+            <TH><% mt('Exp.') |h %></TH>
             <TD>
               <SELECT NAME="month">
 % for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) { 
@@ -116,22 +113,21 @@
       </TD>
     </TR>
     <TR>
-      <TH ALIGN="right">CVV2</TH>
+      <TH ALIGN="right"><% mt('CVV2') |h %></TH>
       <TD><INPUT TYPE="text" NAME="paycvv" VALUE="<% $paycvv %>" SIZE=4 MAXLENGTH=4>
-          (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
+          (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
       </TD>
     </TR>
     <TR>
-      <TH ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TH>
+      <TH ALIGN="right"><% mt('Exact name on card') |h %></TH>
       <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%$payname%>"></TD>
     </TR>
 
-    <% include( '/elements/location.html',
+    <& /elements/location.html,
                   'object'         => $cust_main, #XXX errors???
                   'no_asterisks'   => 1,
-                  'address1_label' => 'Card billing address',
-              )
-    %>
+                  'address1_label' => emt('Card billing address'),
+    &>
 
 % } elsif ( $payby eq 'CHEK' ) {
 %
@@ -153,34 +149,33 @@
     <INPUT TYPE="hidden" NAME="month" VALUE="12">
     <INPUT TYPE="hidden" NAME="year" VALUE="2037">
     <TR>
-      <TD ALIGN="right">Account&nbsp;number</TD>
+      <TD ALIGN="right"><% mt('Account number') |h %></TD>
       <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$payinfo1%>"></TD>
-      <TD ALIGN="right">Type</TD>
+      <TD ALIGN="right"><% mt('Type') |h %></TD>
       <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
     </TR>
     <TR>
-      <TD ALIGN="right">ABA/Routing&nbsp;number</TD>
+      <TD ALIGN="right"><% mt('ABA/Routing number') |h %></TD>
       <TD>
         <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$payinfo2%>">
-        (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
+        (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
       </TD>
     </TR>
     <TR>
-      <TD ALIGN="right">Bank&nbsp;name</TD>
+      <TD ALIGN="right"><% mt('Bank name') |h %></TD>
       <TD><INPUT TYPE="text" NAME="payname" VALUE="<%$payname%>"></TD>
     </TR>
 
 %   if ( $conf->exists('show_bankstate') ) {
       <TR>
-        <TD ALIGN="right">Bank&nbsp;state</TD>
-        <TD><% include('/elements/select-state.html',
+        <TD ALIGN="right"><% mt('Bank state') |h %></TD>
+        <TD><& /elements/select-state.html,
                          'disable_empty' => 0,
-                         'empty_label'   => '(choose)',
+                         'empty_label'   => emt('(choose)'),
                          'state'         => $paystate,
                          'country'       => $cust_main->country,
                          'prefix'        => 'pay',
-                      )
-            %>
+            &>
         </TD>
       </TR>
 %   } else {
@@ -190,8 +185,8 @@
 %   if ( $conf->exists('show_ss') ) {
       <TR>
         <TD ALIGN="right">
-          Account&nbsp;holder<BR>
-          Social&nbsp;security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#
+          <% mt('Account holder') |h %><BR>
+          <% mt('Social security or tax ID #') |h %> 
         </TD>
         <TD><INPUT TYPE="text" NAME="ss" VALUE="<% $ss %>"></TD>
       </TR>
@@ -202,19 +197,18 @@
 %   if ( $conf->exists('show_stateid') ) {
       <TR>
         <TD ALIGN="right">
-          Account&nbsp;holder<BR>
-          Driver&rsquo;s&nbsp;license&nbsp;or&nbsp;state&nbsp;ID&nbsp;#
+          <% mt('Account holder') |h %><BR>
+          <% mt("Driver's license or state ID #") |h %> 
         </TD>
         <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>"></TD>
-        <TD ALIGN="right">State</TD>
-        <TD><% include('/elements/select-state.html',
+        <TD ALIGN="right"><% mt('State') |h %></TD>
+        <TD><& /elements/select-state.html,
                          'disable_empty' => 0,
-                         'empty_label'   => '(choose)',
+                         'empty_label'   => emt('(choose)'),
                          'state'         => $stateid_state,
                          'country'       => $cust_main->country,
                          'prefix'        => 'stateid_',
-                      )
-            %>
+            &>
         </TD>
       </TR>
 %   } else {
@@ -228,7 +222,7 @@
 <TR>
   <TD COLSPAN=2>
     <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
-    Remember this information
+    <% mt('Remember this informatio') |h %>
   </TD>
 </TR>
 
@@ -245,7 +239,7 @@
           <TR>
             <TD COLSPAN=2>
               <INPUT TYPE="checkbox" NAME="batch" VALUE="1">
-              Add to current batch
+              <% mt('Add to current batch') |h %> 
             </TD>
           </TR>
 
@@ -255,24 +249,24 @@
 <TR>
   <TD COLSPAN=2>
     <INPUT TYPE="checkbox"<% ( ( $payby eq 'CARD' && $cust_main->payby ne 'DCRD' ) || ( $payby eq 'CHEK' && $cust_main->payby eq 'CHEK' ) ) ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
-    Charge future payments to this <% $type{$payby} %> automatically
+    <% mt("Charge future payments to this [_1] automatically",$type{$payby}) |h %> 
   </TD>
 </TR>
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" NAME="process" VALUE="Process payment">
+<INPUT TYPE="submit" NAME="process" VALUE="<% mt('Process payment') |h %>">
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Process payment');
 
-my %type = ( 'CARD' => 'credit card',
-             'CHEK' => 'electronic check (ACH)',
+my %type = ( 'CARD' => emt('credit card'),
+             'CHEK' => emt('electronic check (ACH)'),
            );
 
 $cgi->param('payby') =~ /^(CARD|CHEK)$/

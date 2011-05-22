@@ -1,4 +1,4 @@
-<% include('/elements/header-popup.html', 'Order new package' ) %>
+<& /elements/header-popup.html, emt('Order new package') &>
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
@@ -7,7 +7,7 @@
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
 
@@ -21,64 +21,61 @@
 % if ( $part_pkg ) {
     <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $part_pkg->pkgpart %>">
     <TR>
-      <TH ALIGN="right">Package</TH>
+      <TH ALIGN="right"><% mt('Package') |h %></TH>
       <TD COLSPAN=6><% $part_pkg->pkg_comment |h %></TD>
     </TR>
 % } else {
-    <% include('/elements/tr-select-cust-part_pkg.html',
+    <& /elements/tr-select-cust-part_pkg.html,
                  'curr_value' => $pkgpart,
                  'classnum'   => -1,
                  'cust_main'  => $cust_main,
                  'onchange'   => 'enable_order_pkg',
-              )
-    %>
+    &>
 % }
 
 <TR>
-  <TH ALIGN="right">Start date </TD>
+  <TH ALIGN="right"><% mt('Start date') |h %> </TD>
   <TD COLSPAN=6>
-    <% include('/elements/input-date-field.html',{
+    <& /elements/input-date-field.html,{
                 'name'      => 'start_date',
                 'format'    => $date_format,
                 'value'     => $start_date,
                 'noinit'    => 1,
-              }) %>
-    <FONT SIZE=-1>(leave blank to start immediately)</FONT>
+              } &>
+    <FONT SIZE=-1>(<% mt('leave blank to start immediately') |h %>)</FONT>
   </TD>
 </TR>
 
 % if ( $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
 %   my $what = lc(FS::payby->shortname($cust_main->payby));
     <TR>
-      <TH ALIGN="right">Disable automatic <% $what %> charge </TH>
+      <TH ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TH>
       <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
     </TR>
 % }
 
 % if ( $curuser->access_right('Discount customer package') ) {
-  <% include('/elements/tr-select-discount.html',
+  <& /elements/tr-select-discount.html,
                'element_etc' => 'DISABLED',
                'colspan'     => 7,
                'cgi'         => $cgi,
-            )
-  %>
+  &>
 % }
 
 % if ( $curuser->access_right('Waive setup fee') ) {
     <TR>
-      <TH ALIGN="right">Waive setup fee </TH>
+      <TH ALIGN="right"><% mt('Waive setup fee') |h %> </TH>
       <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="waive_setup" VALUE="Y"></TD>
     </TR>
 % }
 
 % if ( $conf->exists('pkg_referral') ) {
-  <% include('/elements/tr-select-part_referral.html',
+  <& /elements/tr-select-part_referral.html,
                'curr_value'    => scalar( $cgi->param('refnum') ), #get rid of empty_label first# || $cust_main->refnum,
                'disable_empty' => 1,
                'multiple'      => $conf->exists('pkg_referral-multiple'),
                'colspan'       => 7,
-            )
-  %>
+  &>
 % }
 
 % if ( $cgi->param('lock_locationnum') ) {
@@ -91,23 +88,22 @@
 
 % } else {
 
-    <% include('/elements/tr-select-cust_location.html',
+    <& /elements/tr-select-cust_location.html,
                  'cgi'       => $cgi,
                  'cust_main' => $cust_main,
-              )
-    %>
+    &>
 
 % }
 
 <TR>
-  <TH ALIGN="right">Contract end date </TD>
+  <TH ALIGN="right"><% mt('Contract end date') |h %> </TD>
   <TD COLSPAN=6>
-    <% include('/elements/input-date-field.html',{
+    <& /elements/input-date-field.html,{
                 'name'      => 'contract_end',
                 'format'    => $date_format,
                 'value'     => '',
                 'noinit'    => 1,
-                }) %>
+                } &>
   </TD>
 </TR>
 
@@ -115,13 +111,12 @@
 
 % unless ( $cgi->param('lock_locationnum') ) {
 
-  <% include( '/elements/standardize_locations.html',
+  <& /elements/standardize_locations.html,
                 'form'       => "OrderPkgForm",
                 'onlyship'   => 1,
                 'no_company' => 1,
                 'callback'   => 'document.OrderPkgForm.submit();',
-            )
-  %>
+  &>
 
 % }
 

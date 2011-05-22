@@ -1,8 +1,8 @@
-<& /elements/header.html, mt('Billing Main') &>
+<& /elements/header.html, emt('Billing Main') &>
 
-<% include('/elements/dashboard-install_welcome.html') %>
+<& /elements/dashboard-install_welcome.html &>
 
-<% include('/elements/dashboard-toplist.html') %>
+<& /elements/dashboard-toplist.html &>
 
 %  my $sth = dbh->prepare(
 %    #"SELECT DISTINCT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
@@ -21,14 +21,14 @@
 %
 %  if ( @custnums ) {
 
-  <% include('/elements/table-grid.html') %>
+  <& /elements/table-grid.html &>
 
 % my $bgcolor1 = '#eeeeee';
 %     my $bgcolor2 = '#ffffff';
 %     my $bgcolor = $bgcolor2;
 
   <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=1>Customers I recently added or modified</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=1><% mt('Customers I recently added or modified') |h %></TH>
   </TR>
 
 % foreach my $custnum ( @custnums ) { 

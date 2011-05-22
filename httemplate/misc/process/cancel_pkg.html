@@ -1,4 +1,4 @@
-<% header("Package $past{$method}") %>
+<% header(emt("Package $past{$method}")) %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
@@ -50,10 +50,6 @@ if ($method eq 'expire' || $method eq 'adjourn'){
 }
 
 my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
-
-#my $otaker = $FS::CurrentUser::CurrentUser->name;
-#$otaker = $FS::CurrentUser::CurrentUser->username
-#  if ($otaker eq "User, Legacy");
 
 if ($reasonnum == -1) {
   $reasonnum = {

@@ -1,8 +1,8 @@
-<% include('/elements/header.html', "View Message catalog", menubar(
-  'Edit message catalog' => $p. "edit/msgcat.cgi",
-)) %>
+<& /elements/header.html, emt("View Message catalog"), menubar(
+  emt('Edit message catalog') => $p. "edit/msgcat.cgi",
+) &>
 <%  $widget->html %>
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"
@@ -13,14 +13,12 @@ my $widget = new HTML::Widgets::SelectLayers(
   'options'        => { 'en_US'=>'en_US' },
   'layer_callback' => sub {
     my $layer = shift;
-    my $html = "<BR>Messages for locale $layer<BR>". table().
-               "<TR><TH COLSPAN=2>Code</TH>".
-               "<TH>Message</TH>";
+    my $html = "<BR>".emt("Messages for locale [_1]",$layer)."<BR>". table().
+               "<TR><TH COLSPAN=2>".emt('Code')."</TH>".
+               "<TH>".emt('Message')."</TH>";
     $html .= "<TH>en_US Message</TH>" unless $layer eq 'en_US';
     $html .= '</TR>';
 
-    #foreach my $msgcat ( sort { $a->msgcode cmp $b->msgcode }
-    #                       qsearch('msgcat', { 'locale' => $layer } ) ) {
     foreach my $msgcat ( qsearch('msgcat', { 'locale' => $layer } ) ) {
       $html .= '<TR><TD>'. $msgcat->msgnum. '</TD>'.
                '<TD>'. $msgcat->msgcode. '</TD>'.
