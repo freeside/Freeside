@@ -21,9 +21,9 @@
 
 % my $fs_popup = include( '/elements/popup_link_onclick.html',
 %                           'action'      => $fsurl.'docs/about.html',
-%                           'label'       => 'Freeside',
+%                           'label'       => emt('Freeside'),
 %                           'style'       => 'color:#999999',
-%                           'actionlabel' => 'About',
+%                           'actionlabel' => emt('About'),
 %                           'width'       => 300,
 %                           'height'      => 360,
 %                           'color'       => '#7e0079',
@@ -62,11 +62,11 @@
 %         my( $subhtml, $submenuname ) = submenu($url_or_submenu, $item);
 
           <% $subhtml |n %>
-          myBar.add(new WebFXMenuButton("<% $item %>", null, "<% $tooltip %>", <% $submenuname |n %> ));
+          myBar.add(new WebFXMenuButton("<% emt($item) %>", null, "<% emt($tooltip) %>", <% $submenuname |n %> ));
 
 %     } else { 
     
-          myBar.add(new WebFXMenuButton("<% $item %>", "<% $url_or_submenu %>", "<% $tooltip %>" ));
+          myBar.add(new WebFXMenuButton("<% emt($item) %>", "<% $url_or_submenu %>", "<% emt($tooltip) %>" ));
 
 %     }
 %   } #foreach $item
@@ -365,7 +365,6 @@ tie my %tools_importing, 'Tie::IxHash',
   'Payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
   'Phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'misc/cdr-import.html', '' ],
-#  'Import call rates and regions' => [ $fsurl.'misc/rate-import.html', '' ],
 ;
 if ( $conf->exists('enable_taxproducts') ) {
   if ( $conf->exists('taxdatadirectdownload') ) {
@@ -380,11 +379,6 @@ if ( $conf->exists('enable_taxproducts') ) {
 tie my %tools_exporting, 'Tie::IxHash',
   'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],
 ;
-
-#    <!-- <BR>View active NAS ports: 
-#      <A HREF="browse/nas.cgi">session server</A> -->
-#      <!-- or <A HREF="browse/nas-sqlradius.cgi">RADIUS</A>
-#    <BR> -->
 
 tie my %tools_ticketing, 'Tie::IxHash',
   'Offline'      => [ $fsurl.'rt/Tools/Offline.html', '' ],

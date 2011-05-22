@@ -1,14 +1,13 @@
-<% include("/elements/header-popup.html", 'One-time charge', '',
+<& /elements/header-popup.html, emt('One-time charge'), '',
             ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
-          )
-%>
+&>
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <SCRIPT TYPE="text/javascript">
 
@@ -84,25 +83,25 @@ function bill_now_changed (what) {
 <TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
 
 <TR>
-  <TD ALIGN="right">Amount </TD>
+  <TD ALIGN="right"><% mt('Amount') |h %> </TD>
   <TD>
-    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
+    <% $money_char %><INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
   </TD>
 </TR>
 
 % if ( $conf->exists('invoice-unitprice') ) {
     <TR>
-      <TD ALIGN="right">Quantity </TD>
+      <TD ALIGN="right"><% mt('Quantity') |h %> </TD>
       <TD>
         <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $quantity %>">
       </TD>
     </TR>
 % }
 
-<% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
+<& /elements/tr-select-pkg_class.html, 'curr_value' => $cgi->param('classnum')  &>
 
 <TR>
-  <TD ALIGN="right">Invoice now</TD>
+  <TD ALIGN="right"><% mt('Invoice now') |h %></TD>
   <TD>
     <INPUT TYPE  = "checkbox"
            NAME  = "bill_now"
@@ -110,19 +109,18 @@ function bill_now_changed (what) {
            <% $cgi->param('bill_now') ? 'CHECKED' : '' %>
            onChange = "bill_now_changed(this);"
     >
-    with terms 
-    <% include('/elements/select-terms.html',
+    <% mt('with terms') |h %> 
+    <& /elements/select-terms.html,
                  'curr_value'  => scalar($cgi->param('invoice_terms')),
                  'empty_value' => $default_terms,
                  'disabled'    => ( $cgi->param('bill_now') ? 0 : 1 ),
-              )
-    %>
+    &>
   </TD>
 </TR>
 
 %# false laziness w/misc/order_pkg.html
 <TR>
-  <TD ALIGN="right">Charge date </TD>
+  <TD ALIGN="right"><% mt('Charge date') |h %> </TD>
   <TD>
     <INPUT TYPE  = "text"
            NAME  = "start_date"
@@ -133,14 +131,14 @@ function bill_now_changed (what) {
     >
     <IMG SRC   = "<%$fsurl%>images/calendar.png"
          ID    = "start_date_button"
-         TITLE = "Select date"
+         TITLE = "<% mt('Select date') |h %>"
          STYLE = "cursor:pointer<% $cgi->param('bill_now') ? ';display:none' : '' %>"
     >
     <IMG SRC   = "<%$fsurl%>images/calendar-disabled.png"
          ID    = "start_date_button_disabled"
          <% $cgi->param('bill_now') ? '' : 'STYLE="display:none"' %>
     >
-    <FONT SIZE=-1>(leave blank to charge immediately)</FONT>
+    <FONT SIZE=-1>(<% mt('leave blank to charge immediately') |h %>)</FONT>
   </TD>
 </TR>
 
@@ -156,24 +154,24 @@ function bill_now_changed (what) {
 % if ( $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
 %   my $what = lc(FS::payby->shortname($cust_main->payby));
     <TR>
-      <TD ALIGN="right">Disable automatic <% $what %> charge </TD>
+      <TD ALIGN="right"><% mt('Disable automatic $what charge') |h %> </TD>
       <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
     </TR>
 % }
 
 <TR>
-  <TD ALIGN="right">Tax exempt </TD>
+  <TD ALIGN="right"><% mt('Tax exempt') |h %> </TD>
   <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
 </TR>
 
-<% include('/elements/tr-select-taxclass.html', 'curr_value' => $cgi->param('taxclass') ) %>
+<& /elements/tr-select-taxclass.html, 'curr_value' => $cgi->param('taxclass')  &>
 
-<% include('/elements/tr-select-taxproduct.html', 'label' => 'Tax product', 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $cgi->param('taxproductnum') ) %>
+<& /elements/tr-select-taxproduct.html, 'label' => emt('Tax product'), 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $cgi->param('taxproductnum')  &>
 
-<% include('/elements/tr-select-taxoverride.html', 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => $cgi->param('tax_override') ) %>
+<& /elements/tr-select-taxoverride.html, 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => $cgi->param('tax_override')  &>
 
 <TR>
-  <TD ALIGN="right">Description </TD>
+  <TD ALIGN="right"><% mt('Description') |h %> </TD>
   <TD>
     <INPUT TYPE="text" NAME="pkg" SIZE="50" MAXLENGTH="50" VALUE="<% $pkg %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
   </TD>
@@ -181,7 +179,7 @@ function bill_now_changed (what) {
 
 <TR>
   <TD></TD>
-  <TD><FONT SIZE="-1">Optional additional description (also printed on invoice): </FONT></TD>
+  <TD><FONT SIZE="-1"><% mt('Optional additional description (also printed on invoice):') |h %> </FONT></TD>
 </TR>
 
 % my $row = 0;
@@ -203,7 +201,7 @@ function bill_now_changed (what) {
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="Add one-time charge" <% $cgi->param('error') ? '' :' DISABLED' %>>
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% mt('Add one-time charge') |h %>" <% $cgi->param('error') ? '' :' DISABLED' %>>
 
 </FORM>
 
@@ -258,6 +256,7 @@ die "access denied"
 
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+my $money_char = $conf->config('money_char') || '$';
 
 $cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
 my $custnum = $1;
@@ -283,12 +282,11 @@ my $pkg = $1;
 
 my $default_terms;
 if ( $cust_main->invoice_terms ) {
-  $default_terms = 'Customer default ('. $cust_main->invoice_terms. ')';
+  $default_terms = emt("Customer default ([_1])", $cust_main->invoice_terms);
 } else {
-  $default_terms =
-    'Default ('.
-       ($conf->config('invoice_default_terms') || 'Payable upon receipt').
-    ')';
+  $default_terms = emt("Default ([_1])",
+            ($conf->config('invoice_default_terms') || emt('Payable upon receipt'))
+                      );
 }
 
 </%init>

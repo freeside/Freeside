@@ -1,4 +1,4 @@
-<% include('/elements/header.html', "$action $svc account") %>
+<& /elements/header.html, "$action $svc account" &>
 
 <% include('/elements/error.html') %>
 
