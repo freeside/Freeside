@@ -444,7 +444,7 @@ if ( $cgi->param('browse')
   if ( $cgi->param('search_cust') ) {
     $sortby = \*company_sort;
     $orderby = "ORDER BY LOWER(company || ' ' || last || ' ' || first )";
-    push @cust_main, smart_search( 'search' => $cgi->param('search_cust'),
+    push @cust_main, smart_search( 'search' => scalar($cgi->param('search_cust')),
                                    'no_fuzzy_on_exact' => 1, #pref?
                                  );
   }
