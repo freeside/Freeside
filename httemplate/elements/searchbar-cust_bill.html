@@ -3,7 +3,7 @@
   <FORM ACTION="<%$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
     <INPUT NAME="invnum" TYPE="text" VALUE="<% $inv_label |n %>" STYLE="width:56px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
 %   if ( $curuser->access_right('List invoices') ) { 
-    <A HREF="<%$fsurl%>search/report_cust_bill.html" CLASS="fslink" STYLE="font-size: 11px">Adv</A>\
+    <A HREF="<%$fsurl%>search/report_cust_bill.html" CLASS="fslink" STYLE="font-size: 11px"><% mt('Adv') |h %></A>\
 %   } 
     <BR>
     <INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px;margin-top:3px">
@@ -22,7 +22,7 @@
 </SCRIPT>
 <%once>
 
-my $inv_label = '(inv #)';
+my $inv_label = emt('(inv #)');
 
 </%once>
 <%init>

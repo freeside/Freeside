@@ -32,14 +32,13 @@ Example:
 % } else { 
 
   <TR>
-    <TD ALIGN="right"><% $opt{'label'} || 'Agent' %></TD>
+    <TD ALIGN="right"><% $opt{'label'} || emt('Agent') %></TD>
     <TD <% $colspan %>>
-      <% include( '/elements/select-agent.html',
+      <& /elements/select-agent.html,
                      'curr_value' => $agentnum,
                      'agents'     => \@agents,
                      %opt,
-                 )
-      %>
+      &>
     </TD>
   </TR>
 

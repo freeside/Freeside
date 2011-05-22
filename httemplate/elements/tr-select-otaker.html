@@ -1,6 +1,6 @@
 <TR>
-  <TD ALIGN="right"><% $opt{'label'} || 'Employee: ' %></TD>
-  <TD><% include('select-otaker.html', %opt) %></TD>
+  <TD ALIGN="right"><% $opt{'label'} || emt('Employee: ') %></TD>
+  <TD><& select-otaker.html, %opt &></TD>
 </TR>
 
 <%init>

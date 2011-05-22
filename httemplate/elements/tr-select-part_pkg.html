@@ -9,12 +9,12 @@
 %
 %   unless ( $opt{'js_only'} ) {
 
-      <% include('tr-td-label.html', %opt) %>
+      <& tr-td-label.html, %opt &>
         <TD <% $cell_style %>>
 
 %   }
 %
-          <% include( '/elements/select-part_pkg.html', %opt ) %>
+          <& /elements/select-part_pkg.html, %opt &>
 %
 %   unless ( $opt{'js_only'} ) {
 
@@ -30,10 +30,6 @@ my( %opt ) = @_;
 
 my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
 
-$opt{'label'} ||= 'Package definition';
-
-#taken care of (better) in select-part_pkg now (is there anything using this
-# that needs to override the disabed=>'' ??)
-#$opt{'part_pkg'} ||= [ qsearch( 'part_pkg', {} ) ]; # { disabled=>'' } )
+$opt{'label'} ||= emt('Package definition');
 
 </%init>

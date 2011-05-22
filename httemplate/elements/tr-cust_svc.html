@@ -63,7 +63,7 @@ $cust_svc->overlimit )
 %     my $ip_addr = $svc_x->ip_addr; #substitution for $manage_link
       <FONT SIZE="-1" STYLE="float:left">(&nbsp;<A HREF="<% 
         eval(qq("$manage_link")) 
-      %>">Manage Device</A>&nbsp;)</FONT>
+      %>"><% mt('Manage Device') |h %></A>&nbsp;)</FONT>
 %   }
 % } #svc_broadband
 % if ( $curuser->access_right('Unprovision customer service') ) {
@@ -88,6 +88,6 @@ my $svc_x = $cust_svc->svc_x;
 my $svc_unprovision_link = 
   qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?! .
   $cust_svc->svcnum .
-  qq!', 'Permanently unprovision and delete this service?')">Unprovision</A>!;
+  qq!', '!.emt('Permanently unprovision and delete this service?').')">'.emt('Unprovision').'</A>';
 
 </%init>

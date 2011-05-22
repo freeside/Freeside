@@ -1,5 +1,14 @@
 % if ( scalar( @{$opt{'part_referrals'}} ) == 0 ) {
-    <P><FONT SIZE="+1" COLOR="#ff0000">You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to <A HREF="<% popurl(2) %>browse/part_referral.html">advertising source listing</A> and create one or more advertising sources.</FONT>
+    <P><FONT SIZE="+1" COLOR="#ff0000">
+    <% mt('At least one advertising source must be created prior to adding a customer, but none have been created.') |h %> 
+
+% #hack
+%   my $createlink = qq!<A HREF="<% popurl(2) %>browse/part_referral.html">!; 
+%   my $createlabel = emt("To create one, see [_1]advertising source listing","XXXLINKXXX").'</A>';
+%   $createlabel =~ s/XXXLINKXXX/$createlink/;
+    <% $createlabel %>
+
+    </FONT>
 %   } elsif ( scalar( @{$opt{'part_referrals'}} ) == 1 ) {
 
      <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'refnum' %>" VALUE="<% $opt{'part_referrals'}->[0]->refnum %>">
@@ -10,14 +19,13 @@
 %      if ( $opt{'label'} ) {
          <TD ALIGN="right"><% $opt{'label'} %></TD>
 %      } else {
-         <TH ALIGN="right"><%$r%>Advertising source</TH>
+         <TH ALIGN="right"><%$r%><% mt('Advertising source') |h %></TH>
 %      }
        <TD COLSPAN="<% $colspan %>">
-         <% include( '/elements/select-part_referral.html',
+         <& /elements/select-part_referral.html,
                        'curr_value' => $refnum,
                        %opt
-                   )
-         %>
+         &>
        </TD>
      </TR>
 

@@ -1,45 +1,3 @@
-%
-%
-%  my %opt = @_;
-%
-%  my $prefix = $opt{'prefix'} || '';
-%  my $disabled = $opt{'disabled'} || '';
-%  my $empty = $opt{'empty_option'} || '';
-%  my $start_year = $opt{'start_year'};
-%  my $end_year = $opt{'end_year'} || '2037';
-%
-%  my @mon;
-%  if ( $opt{'show_month_abbr'} ) {
-%    @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-%  } else {
-%    @mon = ( ( map "0$_", 1 .. 9 ), 10 .. 12 ), 
-%  }
-%
-%  my $date = $opt{'selected_date'} || '';
-%  $date = '' if $date eq '-';
-%  #$date ||= '01-2000' unless $empty;
-%
-%  my $mon  = $opt{'selected_mon'}  || 0;
-%  my $year = $opt{'selected_year'} || 0;
-%  if ( $date ) {
-%    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-%      ( $mon, $year ) = ( $2, $1 );
-%    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-%      ( $mon, $year ) = ( $1, $3 );
-%    } else {
-%      die "unrecognized expiration date format: $date";
-%    }
-%  }
-%
-%  unless ( $start_year ) {
-%    my @t = localtime;
-%    $start_year = $t[5] + 1900;
-%  }
-%  $start_year = $year if $start_year > $year && $year > 0;
-%
-%
-
-
 <SELECT NAME="<% $prefix %>_month" SIZE="1" <% $disabled%>>
 
 <% $empty ? '<OPTION VALUE="">' : '' %>
@@ -57,6 +15,44 @@
    <OPTION<% $_ == $year ? ' SELECTED' : '' %> VALUE="<% $_ %>"><% $_ %>
 % } 
 
-
 </SELECT>
 
+<%init>
+  my %opt = @_;
+
+  my $prefix = $opt{'prefix'} || '';
+  my $disabled = $opt{'disabled'} || '';
+  my $empty = $opt{'empty_option'} || '';
+  my $start_year = $opt{'start_year'};
+  my $end_year = $opt{'end_year'} || '2037';
+
+  my @mon;
+  if ( $opt{'show_month_abbr'} ) {
+    @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+    # XXX: localization
+  } else {
+    @mon = ( ( map "0$_", 1 .. 9 ), 10 .. 12 ), 
+  }
+
+  my $date = $opt{'selected_date'} || '';
+  $date = '' if $date eq '-';
+
+  my $mon  = $opt{'selected_mon'}  || 0;
+  my $year = $opt{'selected_year'} || 0;
+  if ( $date ) {
+    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+      ( $mon, $year ) = ( $2, $1 );
+    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+      ( $mon, $year ) = ( $1, $3 );
+    } else {
+      die "unrecognized expiration date format: $date";
+    }
+  }
+
+  unless ( $start_year ) {
+    my @t = localtime;
+    $start_year = $t[5] + 1900;
+  }
+  $start_year = $year if $start_year > $year && $year > 0;
+
+</%init>

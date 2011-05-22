@@ -4,7 +4,7 @@
 >
 
 % unless ( $opt{'multiple'} ) {
-    <OPTION VALUE="" <% '' eq $value ? 'SELECTED' : '' %> >all
+    <OPTION VALUE="" <% '' eq $value ? 'SELECTED' : '' %> ><% mt('all') |h %> 
 % }
 
 % foreach my $option ( keys %{ $opt{'paybys'} } ) { 
@@ -26,8 +26,6 @@ my %opt = @_;
 
 my $method = 'payby';
 $method = 'cust_payby'  if $opt{'payby_type'} eq 'cust';
-#$method = 'event_payby' if $opt{'payby_type'} eq 'event';
-#$method = 'pay_payby'   if $opt{'payby_type'} eq 'pay';
 
 unless ( $opt{'paybys'} ) {
   tie %{ $opt{'paybys'} }, 'Tie::IxHash', FS::payby->$method();

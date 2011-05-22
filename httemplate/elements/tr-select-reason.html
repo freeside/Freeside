@@ -64,15 +64,15 @@ Example:
 </SCRIPT>
 
 <TR>
-  <TD ALIGN="right">Reason</TD>
+  <TD ALIGN="right"><% mt('Reason') |h %></TD>
   <TD>
     <SELECT id="<% $id %>" name="<% $name %>" onFocus="sh_add<% $func_suffix %>()" onChange="sh_add<% $func_suffix %>()">
-      <OPTION VALUE="" <% ($init_reason eq '') ? 'SELECTED' : '' %>>Select Reason...</OPTION>
+      <OPTION VALUE="" <% ($init_reason eq '') ? 'SELECTED' : '' %>><% mt('Select Reason...') |h %></OPTION>
 %    foreach my $reason (@reasons) {
       <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reasontype->type %> : <% $reason->reason %></OPTION>
 %    }
 %    if ($curuser->access_right($add_access_right)) {
-      <OPTION VALUE="-1" <% ($init_reason == -1) ? 'SELECTED' : '' %>>Add new reason</OPTION>
+      <OPTION VALUE="-1" <% ($init_reason == -1) ? 'SELECTED' : '' %>><% mt('Add new reason') |h %></OPTION>
 %    }
 %
     </SELECT>
@@ -83,13 +83,13 @@ Example:
 %   if (scalar(@types) < 1) {  # we should never reach this
 <TR>
   <TD ALIGN="right">
-    <P>No reason types.  Go add some. </P>
+    <P><% mt('No reason types. Please add some.') |h %></P>
   </TD>
 </TR>
 %   }elsif (scalar(@types) == 1) {
 <TR>
   <TD ALIGN="right">
-    <P id="new<% $name %>TLabel" style="display:<% $display %>">Reason Type</P>
+    <P id="new<% $name %>TLabel" style="display:<% $display %>"><% mt('Reason Type') |h %></P>
   </TD>
   <TD>
     <P id="new<% $name %>T" disabled="<% $disabled %>" style="display:<% $display %>"><% $types[0]->type %>
@@ -101,7 +101,7 @@ Example:
 
 <TR>
   <TD ALIGN="right">
-    <P id="new<% $id %>TLabel" style="display:<% $display %>">Reason Type</P>
+    <P id="new<% $id %>TLabel" style="display:<% $display %>"><% mt('Reason Type') |h %></P>
   </TD>
   <TD>
     <SELECT id="new<% $id %>T" name="new<% $name %>T" "<% $disabled %>" style="display:<% $display %>">
@@ -115,7 +115,7 @@ Example:
 
 <TR>
   <TD ALIGN="right">
-    <P id="new<% $id %>Label" style="display:<% $display %>">New Reason</P>
+    <P id="new<% $id %>Label" style="display:<% $display %>"><% mt('New Reason') |h %></P>
   </TD>
   <TD><INPUT id="new<% $id %>" name="new<% $name %>" type="text" value="<% $init_newreason |h %>" "<% $disabled %>" style="display:<% $display %>"></TD>
 </TR>

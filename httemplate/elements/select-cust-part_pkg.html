@@ -18,12 +18,11 @@ Example:
 
 </%doc>
 
-<% include( '/elements/select-part_pkg.html',
-              'empty_label'    => 'Select package', #? need here in case removed
+<& /elements/select-part_pkg.html,
+              'empty_label'    => emt('Select package'), #? need here in case removed
                                                     #from select-part_pkg ??
               %opt,
-          )
-%>
+&>
 <%init>
 
 my( %opt ) = @_;
@@ -32,10 +31,5 @@ my $cust_main = $opt{'cust_main'}
   or die "cust_main not specified";
 
 $opt{'extra_sql'} .= ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_main->agent );
-#  ' AND ( agentnum IS NOT NULL '.
-#  '         OR 0 < ( SELECT COUNT(*) FROM type_pkgs '.
-#  '                    WHERE typenum = '. $cust_main->agent->typenum.
-#  '                      AND type_pkgs.pkgpart = part_pkg.pkgpart )'.
-#  '     )';
 
 </%init>

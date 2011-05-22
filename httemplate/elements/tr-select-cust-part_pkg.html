@@ -1,10 +1,9 @@
 %if ( scalar(@pkg_class) > 1 && ! $conf->exists('disable-cust-pkg_class') ) {
 
-  <% include('/elements/xmlhttp.html',
+  <& /elements/xmlhttp.html,
                 'url'  => $p.'misc/cust-part_pkg.cgi',
                 'subs' => [ 'get_part_pkg' ],
-            )
-  %>
+  &>
 
   <SCRIPT TYPE="text/javascript">
 
@@ -57,29 +56,27 @@
   </SCRIPT>
 
   <TR>
-    <TH ALIGN="right">Package Class</TH>
+    <TH ALIGN="right"><% mt('Package Class') |h %></TH>
     <TD COLSPAN=7>
-      <% include('/elements/select-cust-pkg_class.html',
+      <& /elements/select-cust-pkg_class.html,
                    'curr_value' => $opt{'classnum'},
                    'pkg_class'  => \@pkg_class,
                    'onchange'   => 'classnum_changed',
-                )
-      %>
+      &>
     </TD>
   </TR>
 
 %}
 
 <TR>
-  <TH ALIGN="right">Package</TH>
+  <TH ALIGN="right"><% mt('Package') |h %></TH>
   <TD COLSPAN=7>
-    <% include('/elements/select-cust-part_pkg.html',
+    <& /elements/select-cust-part_pkg.html,
                  'curr_value' => $opt{'curr_value'}, #$pkgpart
                  'classnum'   => $opt{'classnum'},
                  'cust_main'  => $opt{'cust_main'},  #$cust_main
                  'onchange'   => 'enable_order_pkg',
-              )
-    %>
+    &>
   </TD>
 </TR>
 
@@ -94,9 +91,6 @@ $pre_label .= ' ' if length($pre_label) && $pre_label =~ /\S$/;
 
 my $cust_main = $opt{'cust_main'}
   or die "cust_main not specified";
-
-#my @pkg_class = sort { $a->classname cmp $b->classname }
-#                     qsearch( 'pkg_class', { 'disabled' => '' } );
 
 #"normal" part_pkg agent virtualization (agentnum or type)
 my @part_pkg = qsearch({
