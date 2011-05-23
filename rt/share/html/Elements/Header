@@ -68,7 +68,7 @@ $id =~ s|-$||g;
 my $head = '';
 
 if ($Refresh && $Refresh =~ /^(\d+)/ && $1 > 0) {
-  $head .= '<meta http-equiv="refresh" content="$Refresh" />';
+  $head .= qq( <meta http-equiv="refresh" content="$Refresh" /> );
 }
 
 my $WebPath = RT->Config->Get('WebPath');
