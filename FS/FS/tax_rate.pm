@@ -1196,9 +1196,14 @@ sub _cch_extract_csv_from_dbf {
           $date;
         };
   while (my $row = $cursor->fetch_hashref) {
-    $csv->combine( map { ($table->field_type($_) eq 'D')
-                         ? &{$format_date}($row->{$_}) 
-                         : $row->{$_}
+    $csv->combine( map { my $type = $table->field_type($_);
+                         if ($type eq 'D') {
+                           &{$format_date}($row->{$_}) ;
+                         } elsif ($type eq 'N' && $row->{$_} =~ /e-/i ) {
+                           sprintf('%.8f', $row->{$_}); #db row is numeric(14,8)
+                         } else {
+                           $row->{$_};
+                         }
                        }
                    @fields
     );
