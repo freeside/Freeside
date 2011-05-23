@@ -580,8 +580,12 @@ FS/areacode.pm
 t/areacode.t
 FS/svc_dish.pm
 t/svc_dish.t
+FS/h_svc_dish.pm
+t/h_svc_dish.t
 FS/svc_hardware.pm
 t/svc_hardware.t
+FS/h_svc_hardware.pm
+t/h_svc_hardware.t
 FS/hardware_class.pm
 t/hardware_class.t
 FS/hardware_type.pm

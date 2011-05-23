@@ -278,7 +278,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::torrus_srvderive_component;
   use FS::areacode;
   use FS::svc_dish;
+  use FS::h_svc_dish;
   use FS::svc_hardware;
+  use FS::h_svc_hardware;
   use FS::hardware_class;
   use FS::hardware_type;
   use FS::hardware_status;
