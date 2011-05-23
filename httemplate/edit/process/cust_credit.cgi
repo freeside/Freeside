@@ -12,11 +12,10 @@
 %      or die "unknown custnum $custnum";
 %    $cust_main->apply_credits;
 %  }
-%  #print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 %
 %  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 %  
-<% header('Credit sucessful') %>
+<% header(emt('Credit sucessful')) %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>

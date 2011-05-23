@@ -1,11 +1,11 @@
-<& /elements/header.html, "$action $svc account" &>
+<& /elements/header.html, emt("$action [_1] account",$svc) &>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 % if ( $cust_main ) { 
 
-  <% include( '/elements/small_custview.html', $cust_main, '', 1,
-              popurl(2) . "view/cust_main.cgi") %>
+  <& /elements/small_custview.html, $cust_main, '', 1,
+              popurl(2) . "view/cust_main.cgi" &>
   <BR>
 % } 
 
@@ -27,17 +27,24 @@ function randomPass() {
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
 
-Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
+% if ( $svcnum ) {
+% my $svclabel = emt("Service #[_1]",$svcnum);
+% $svclabel =~ s/$svcnum/<B>$svcnum<\/B>/;
+<% $svclabel %>
+% } else {
+<% mt("Service # (NEW)") |h %>
+% }
+<BR>
 
 <% ntable("#cccccc",2) %>
 
 <TR>
-  <TD ALIGN="right">Service</TD>
+  <TD ALIGN="right"><% mt('Service') |h %></TD>
   <TD BGCOLOR="#eeeeee"><% $part_svc->svc %></TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right">Username</TD>
+  <TD ALIGN="right"><% mt('Username') |h %></TD>
   <TD>
     <INPUT TYPE="text" NAME="username" VALUE="<% $username %>" SIZE=<% $ulen2 %> MAXLENGTH=<% $ulen %>>
   </TD>
@@ -45,10 +52,10 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 
 %if ( $part_svc->part_svc_column('_password')->columnflag ne 'F' ) {
 <TR>
-  <TD ALIGN="right">Password</TD>
+  <TD ALIGN="right"><% mt('Password') |h %></TD>
   <TD>
     <INPUT TYPE="text" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
-    <INPUT TYPE="button" VALUE="Generate" onclick="randomPass();">
+    <INPUT TYPE="button" VALUE="<% mt('Generate') |h %>" onclick="randomPass();">
   </TD>
 </TR>
 %}else{
@@ -59,18 +66,15 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %my $sec_phrase = $svc_acct->sec_phrase;
 %if ( $conf->exists('security_phrase') 
 %  && $part_svc->part_svc_column('sec_phrase')->columnflag ne 'F' ) {
-%
-
 
   <TR>
-    <TD ALIGN="right">Security phrase</TD>
+    <TD ALIGN="right"><% mt('Security phrase') |h %></TD>
     <TD>
       <INPUT TYPE="text" NAME="sec_phrase" VALUE="<% $sec_phrase %>" SIZE=32>
-      (for forgotten passwords)
+      (<% mt('for forgotten passwords') |h %>)
     </TD>
   </TD>
 % } else { 
-
 
   <INPUT TYPE="hidden" NAME="sec_phrase" VALUE="<% $sec_phrase %>">
 % } 
@@ -79,7 +83,6 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %my $domsvc = $svc_acct->domsvc || 0;
 %if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
 %
-
 
   <INPUT TYPE="hidden" NAME="domsvc" VALUE="<% $domsvc %>">
 % } else { 
@@ -100,11 +103,9 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %                                                 'pkgnum'  => $pkgnum,
 %                                                )
 %                );
-%
-
 
   <TR>
-    <TD ALIGN="right">Domain</TD>
+    <TD ALIGN="right"><% mt('Domain') |h %></TD>
     <TD>
       <SELECT NAME="domsvc" SIZE=1>
 % foreach my $svcnum (
@@ -113,7 +114,6 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %           ) {
 %             my $svc_domain = $svc_domain{$svcnum};
 %        
-
 
              <OPTION VALUE="<% $svcnum %>" <% $svcnum == $domsvc ? ' SELECTED' : '' %>><% $svc_domain{$svcnum} %>
 % } 
@@ -127,7 +127,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 % if ( $communigate ) {
 
     <TR>
-      <TD ALIGN="right">Aliases</TD>
+      <TD ALIGN="right"><% mt('Aliases') |h %></TD>
       <TD><INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_acct->cgp_aliases %>"></TD>
     </TR>
 
@@ -136,25 +136,22 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 % }
 
 
-<% include('/elements/tr-select-svc_pbx.html',
+<& /elements/tr-select-svc_pbx.html,
              'curr_value' => $svc_acct->pbxsvc,
              'part_svc'   => $part_svc,
              'cust_pkg'   => $cust_pkg,
-          )
-%>
+&>
 
 %#pop
 %my $popnum = $svc_acct->popnum || 0;
 %if ( $part_svc->part_svc_column('popnum')->columnflag eq 'F' ) {
 %
 
-
   <INPUT TYPE="hidden" NAME="popnum" VALUE="<% $popnum %>">
 % } else { 
 
-
   <TR>
-    <TD ALIGN="right">Access number</TD>
+    <TD ALIGN="right"><% mt('Access number') |h %></TD>
     <TD><% FS::svc_acct_pop::popselector($popnum) %></TD>
   </TR>
 % } 
@@ -167,7 +164,6 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %  
 % if ( length($svc_acct->$xid()) ) { 
 
-  
       <TR>
         <TD ALIGN="right"><% uc($xid) %></TD>
           <TD BGCOLOR="#eeeeee"><% $svc_acct->$xid() %></TD>
@@ -175,11 +171,9 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
         </TD>
       </TR>
 % } 
-
   
     <INPUT TYPE="hidden" NAME="<% $xid %>" VALUE="<% $svc_acct->$xid() %>">
 % } else { 
-
   
     <TR>
       <TD ALIGN="right"><% uc($xid) %></TD>
@@ -195,13 +189,12 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %     && ! $svc_acct->finger ) { 
 %
 
-
   <INPUT TYPE="hidden" NAME="finger" VALUE="">
 % } else { 
 
 
   <TR>
-    <TD ALIGN="right">Real Name</TD>
+    <TD ALIGN="right"><% mt('Real Name') |h %></TD>
     <TD>
       <INPUT TYPE="text" NAME="finger" VALUE="<% $svc_acct->finger %>">
     </TD>
@@ -219,7 +212,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 
 
   <TR>
-    <TD ALIGN="right">Home directory</TD>
+    <TD ALIGN="right"><% mt('Home directory') |h %></TD>
     <TD><INPUT TYPE="text" NAME="dir" VALUE="<% $svc_acct->dir %>"></TD>
   </TR>
 % } 
@@ -231,20 +224,18 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %   ) {
 %
 
-
   <INPUT TYPE="hidden" NAME="shell" VALUE="<% $shell %>">
 % } else { 
 
 
   <TR>
-    <TD ALIGN="right">Shell</TD>
+    <TD ALIGN="right"><% mt('Shell') |h %></TD>
     <TD>
       <SELECT NAME="shell" SIZE=1>
 %
 %           my($etc_shell);
 %           foreach $etc_shell (@shells) {
 %        
-
 
           <OPTION<% $etc_shell eq $shell ? ' SELECTED' : '' %>><% $etc_shell %>
 % } 
@@ -255,18 +246,17 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
   </TR>
 % } 
 
-<% include('svc_acct/communigate.html',
+<& svc_acct/communigate.html,
              'svc_acct'    => $svc_acct,
              'part_svc'    => $part_svc,
              'communigate' => $communigate,
-          )
-%>
+&>
 
 % if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { 
   <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">
 % } else { 
   <TR>
-    <TD ALIGN="right">IP</TD>
+    <TD ALIGN="right"><% mt('IP') |h %></TD>
     <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
   </TR>
 % } 
@@ -280,12 +270,12 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %   my $tf = $uf . "_threshold";
 %   if ( $curuser->access_right('Edit usage') ) { 
   <TR>
-    <TD ALIGN="right"><% $label{$uf} %> remaining</TD>
-    <TD><INPUT TYPE="text" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>">(blank disables)</TD>
+    <TD ALIGN="right"><% mt("[_1] remaining",$label{$uf}) |h %> </TD>
+    <TD><INPUT TYPE="text" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>">(<% mt('blank disables') |h %>)</TD>
   </TR>
   <TR>
-    <TD ALIGN="right"><% $label{$uf} %> threshold</TD>
-    <TD><INPUT TYPE="text" NAME="<% $tf %>" VALUE="<% $svc_acct->$tf %>">(blank disables)</TD>
+    <TD ALIGN="right"><% mt("[_1] threshold",$label{$uf}) |h %> </TD>
+    <TD><INPUT TYPE="text" NAME="<% $tf %>" VALUE="<% $svc_acct->$tf %>">(<% mt('blank disables') |h %>)</TD>
   </TR>
 %   }else{
       <INPUT TYPE="hidden" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>">
@@ -299,10 +289,8 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %
 % if ( $part_svc->part_svc_column($r)->columnflag =~ /^[FA]$/ ) { 
 
-
     <INPUT TYPE="hidden" NAME="<% $r %>" VALUE="<% $svc_acct->getfield($r) %>">
 % } else { 
-
 
     <TR>
       <TD ALIGN="right"><% $FS::raddb::attrib{$a} %></TD>
@@ -312,37 +300,31 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 % } 
 
 
-
 <TR>
-  <TD ALIGN="right">RADIUS groups</TD>
+  <TD ALIGN="right"><% mt('RADIUS groups') |h %></TD>
 % if ( $part_svc->part_svc_column('usergroup')->columnflag eq 'F' ) { 
-
 
     <TD BGCOLOR="#eeeeee"><% join('<BR>', @groups) %></TD>
 % } else { 
 
-
     <TD><% FS::svc_acct::radius_usergroup_selector( \@groups ) %></TD>
 % } 
-
 
 </TR>
 % foreach my $field ($svc_acct->virtual_fields) { 
 % # If the flag is X, it won't even show up in $svc_acct->virtual_fields. 
 % if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) { 
 
-
     <% $svc_acct->pvf($field)->widget('HTML', 'edit', $svc_acct->getfield($field)) %>
 % } 
 % } 
-
   
 </TABLE>
 <BR>
 
 % if ( $captcha_url ) {
 <IMG SRC="<% $captcha_url %>"><BR>
-Enter the word shown above: <INPUT TYPE="text" NAME="captcha_response"><BR>
+<% mt('Enter the word shown above:') |h %> <INPUT TYPE="text" NAME="captcha_response"><BR>
 <BR>
 % }
 
@@ -350,7 +332,7 @@ Enter the word shown above: <INPUT TYPE="text" NAME="captcha_response"><BR>
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 
 <%init>
 

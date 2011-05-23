@@ -1,11 +1,10 @@
 <% &ntable("#cccccc") %>
 
 %# tags
-<% include('/elements/tr-select-cust_tag.html',
+<& /elements/tr-select-cust_tag.html,
              'custnum' => $custnum,
              'cgi'     => $cgi,
-          )
-%>
+&>
 
 %# agent
 % if ( $cgi->param('lock_agentnum') =~ /^(\d+)$/ && $curuser->agentnum($1) ) {
@@ -16,20 +15,19 @@
     <INPUT TYPE="hidden" NAME="lock_agentnum" VALUE="<% $agentnum %>">
     <INPUT TYPE="hidden" NAME="agentnum"      VALUE="<% $agentnum %>">
     <TR>
-      <TD ALIGN="right">Agent</TD>
+      <TD ALIGN="right"><% mt('Agent') |h %></TD>
       <TD CLASS="fsdisabled"><% $cust_main->agent->agent |h %></TD>
     </TR>
  
 % } else {
 
-  <% include('/elements/tr-select-agent.html', 
+  <& /elements/tr-select-agent.html, 
                 'curr_value'    => $cust_main->agentnum,
-                'label'         => "<B>${r}Agent</B>",
-                'empty_label'   => 'Select agent',
+                'label'         => "<B>${r}".emt('Agent')."</B>",
+                'empty_label'   => emt('Select agent'),
                 'disable_empty' => ( $cust_main->agentnum ? 1 : 0 ),
-                'viewall_right' => 'None', #override default 'View customers of all agents'
-             )
-  %>
+                'viewall_right' => emt('None'), 
+  &>
 
 % }
 
@@ -37,7 +35,7 @@
 % if ( $conf->exists('cust_main-edit_agent_custid') ) {
 
     <TR>
-      <TD ALIGN="right">Customer identifier</TD>
+      <TD ALIGN="right"><% mt('Customer identifier') |h %></TD>
       <TD><INPUT TYPE="text" NAME="agent_custid" VALUE="<% $cust_main->agent_custid %>"></TD>
     </TR>
 
@@ -48,13 +46,10 @@
 % }
 
 %# class
-<% include('/elements/tr-select-cust_class.html',
+<& /elements/tr-select-cust_class.html,
              'curr_value'  => $cust_main->classnum,
-             'label'       => "Class",
-             #'empty_label' => '(none)',
-             #'disable_empty' => 
-          )
-%>
+             'label'       => emt("Class"),
+&>
 
 %# referral (advertising source)
 %my $refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
@@ -64,10 +59,9 @@
 
 % } else { 
 
-   <% include('/elements/tr-select-part_referral.html',
+   <& /elements/tr-select-part_referral.html,
                 'curr_value' => $refnum
-             )
-   %>
+   &>
 % } 
 
 
@@ -80,7 +74,7 @@
 %) {
 
   <TR>
-    <TD ALIGN="right">Referring customer</TD>
+    <TD ALIGN="right"><% mt('Referring customer') |h %></TD>
     <TD>
       <A HREF="<% popurl(1) %>/cust_main.cgi?<% $cust_main->referral_custnum %>"><% $cust_main->referral_custnum %>: <% $referring_cust_main->name %></A>
     </TD>
@@ -92,12 +86,10 @@
   <TR>
     <TD ALIGN="right">Referring customer</TD>
     <TD>
-      <!-- <INPUT TYPE="text" NAME="referral_custnum" VALUE=""> -->
-      <% include('/elements/search-cust_main.html',
+      <& /elements/search-cust_main.html,
                     'field_name' => 'referral_custnum',
                     'curr_value' => $cust_main->referral_custnum,
-                 )
-      %>
+      &>
     </TD>
   </TR>
 
@@ -107,13 +99,13 @@
 
 %# signup date
 % if ( $conf->exists('cust_main-edit_signupdate') ) {
-    <% include('/elements/tr-input-date-field.html', {
+    <& /elements/tr-input-date-field.html, {
                   'name'        => 'signupdate',
                   'value'       => $cust_main->signupdate,
-                  'label'       => 'Signup date',
+                  'label'       => emt('Signup date'),
                   'format'      => ( $conf->config('date_format') || "%m/%d/%Y" ),
-              })
-    %>
+              }
+    &>
 % }
 
 </TABLE>

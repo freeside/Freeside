@@ -1,16 +1,14 @@
-<% include('/elements/header.html',
+<& /elements/header.html,
       $title,
       '',
       ' onUnload="myclose()"' #hmm, in billing.html
-) %>
+&>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <FORM NAME   = "CustomerForm"
       METHOD = "POST"
       ACTION = "<% popurl(1) %>process/cust_main.cgi"
-%#      STYLE = "margin-bottom: 0"
-%#      STYLE="margin-top: 0; margin-bottom: 0">
 >
 
 <INPUT TYPE="hidden" NAME="custnum"     VALUE="<% $custnum %>">
@@ -25,12 +23,12 @@
 % } 
 
 %# agent, agent_custid, refnum (advertising source), referral_custnum
-<% include('cust_main/top_misc.html', $cust_main, 'custnum' => $custnum ) %>
+<& cust_main/top_misc.html, $cust_main, 'custnum' => $custnum  &>
 
 %# birthdate
 % if ( $conf->exists('cust_main-enable_birthdate') ) {
   <BR>
-  <% include('cust_main/birthdate.html', $cust_main) %>
+  <& cust_main/birthdate.html, $cust_main &>
 % }
 
 %# latitude and longitude
@@ -62,7 +60,7 @@
 <BR>
 <FONT SIZE="+1"><B>Billing address</B></FONT>
 
-<% include('cust_main/contact.html',
+<& cust_main/contact.html,
              'cust_main'    => $cust_main,
              'pre'          => '',
              'onchange'     => 'bill_changed(this)',
@@ -70,8 +68,7 @@
              'ss'           => $ss,
              'stateid'      => $stateid,
              'same_checked' => $same_checked, #for address2 "Unit #" labeling
-          )
-%>
+&>
 
 <SCRIPT>
 function bill_changed(what) {
@@ -138,29 +135,27 @@ function samechanged(what) {
 </SCRIPT>
 
 <BR>
-<FONT SIZE="+1"><B>Service address</B></FONT>
+<FONT SIZE="+1"><B><% mt('Service address') |h %></B></FONT>
 
-(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>>same as billing address)
-<% include('cust_main/contact.html',
+(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>><% mt('same as billing address') |h %>)
+<& cust_main/contact.html,
              'cust_main' => $cust_main,
              'pre'       => 'ship_',
              'onchange'  => '',
              'disabled'  => $ship_disabled,
              'style'     => \@ship_style
-          )
-%>
+&>
 
 %# billing info
-<% include( 'cust_main/billing.html', $cust_main,
+<& cust_main/billing.html, $cust_main,
                'payinfo'        => $payinfo,
                'invoicing_list' => \@invoicing_list,
-           )
-%>
+&>
 
 % my $ro_comments = $conf->exists('cust_main-use_comments')?'':'readonly';
 % if (!$ro_comments || $cust_main->comments) {
 
-    <BR>Comments
+    <BR><% mt('Comments') |h %> 
     <% &ntable("#cccccc") %>
       <TR>
         <TD>
@@ -178,19 +173,17 @@ function samechanged(what) {
 
 % unless ( $custnum ) {
 
-    <% include('cust_main/first_pkg.html', $cust_main,
+    <& cust_main/first_pkg.html, $cust_main,
                  'pkgpart_svcpart' => $pkgpart_svcpart,
                  'disable_empty'   =>
                    scalar( $cgi->param('lock_pkgpart') =~ /^(\d+)$/ ),
-                 #svc_acct
                  'username'        => $username,
                  'password'        => $password,
                  'popnum'          => $popnum,
                  'saved_domsvc'    => $saved_domsvc,
                  %svc_phone,
                  %svc_dsl,
-              )
-    %>
+    &>
 
 % }
 
@@ -210,7 +203,7 @@ function samechanged(what) {
     <INPUT TYPE="hidden" NAME="<% $hidden %>" VALUE="">
 % } 
 
-<% include('cust_main/bottomfixup.html') %>
+<& cust_main/bottomfixup.html &>
 
 <BR>
 <INPUT TYPE    = "button"
@@ -221,7 +214,7 @@ function samechanged(what) {
 >
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 
 <%init>
 
@@ -373,6 +366,7 @@ my %keep = map { $_=>1 } qw( error tagnum lock_agentnum lock_pkgpart );
 $cgi->delete( grep !$keep{$_}, $cgi->param );
 
 my $title = $custnum ? 'Edit Customer' : 'Add Customer';
+$title = emt($title);
 $title .= ": ". $cust_main->name if $custnum;
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;

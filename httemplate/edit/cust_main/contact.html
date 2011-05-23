@@ -1,14 +1,14 @@
 <% &ntable("#cccccc") %>
 
 <TR>
-  <TH ALIGN="right"><%$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
+  <TH ALIGN="right"><%$r%><% mt('Contact name (last, first)') |h %></TH>
   <TD COLSPAN=7>
     <INPUT TYPE="text" NAME="<%$pre%>last" VALUE="<% $cust_main->get($pre.'last') |h %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>> , 
     <INPUT TYPE="text" NAME="<%$pre%>first" VALUE="<% $cust_main->get($pre.'first') |h %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 % if ( $conf->exists('show_ss') && !$pre ) { 
 
-  <TD ALIGN="right">SS#</TD>
+  <TD ALIGN="right"><% mt('SS#') |h %></TD>
   <TD><INPUT TYPE="text" NAME="ss" VALUE="<% $opt{ss} %>" SIZE=11></TD>
 % } elsif ( !$pre ) { 
 
@@ -19,13 +19,13 @@
 </TR>
 
 <TR>
-  <TD ALIGN="right">Company</TD>
+  <TD ALIGN="right"><% mt('Company') |h %></TD>
   <TD COLSPAN=7>
     <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') |h %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
 
-<% include('/elements/location.html',
+<& /elements/location.html,
              'prefix'       => $pre,
              'object'       => $cust_main,
              'onchange'     => $onchange,
@@ -34,8 +34,7 @@
              'same_checked' => $opt{'same_checked'},
              'geocode'      => $opt{'geocode'},
              'censustract'  => $opt{'censustract'},
-          )
-%>
+&>
 
 <TR>
   <TD ALIGN="right"><% $daytime_label %></TD>
@@ -52,7 +51,7 @@
 </TR>
 
 <TR>
-  <TD ALIGN="right">Fax</TD>
+  <TD ALIGN="right"><% mt('Fax') |h %></TD>
   <TD COLSPAN=5>
     <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
@@ -64,15 +63,14 @@
   <TD ALIGN="right"><% $stateid_label %></TD>
   <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $opt{stateid} %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>></TD>
   <TD ALIGN="right"><% $stateid_state_label %></TD>
-  <TD><% include('/elements/select-state.html',
+  <TD><& /elements/select-state.html,
                    'state'    => $cust_main->stateid_state,
                    'country'  => $cust_main->country,
                    'prefix'   => 'stateid_',
                    'onchange' => $onchange,
                    'disabled' => $disabled,
                    'style'    => \@style,
-                )
-      %>
+      &>
   </TD>
 </TR>
 % } elsif ( !$pre ) { 
@@ -82,11 +80,10 @@
 % } 
 
 </TABLE>
-<%$r%>required fields<BR>
+<%$r%><% mt('required fields') |h %><BR>
 
 <%init>
 
-#my( $cust_main, $pre, $onchange, $disabled, %opt ) = @_;
 my %opt = @_;
 my $cust_main = $opt{'cust_main'};
 my $pre       = $opt{'pre'};
@@ -94,7 +91,6 @@ my $onchange  = $opt{'onchange'};
 my $disabled  = $opt{'disabled'};
 my @style     = ( $opt{'style'} ? @{ $opt{'style'} } : () );
 
-#push @style, 'background-color: #dddddd' if $disabled;
 my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
 
 my $conf = new FS::Conf;
@@ -122,15 +118,6 @@ $opt{geocode} ||= $cust_main->get('geocode');
 if ( $conf->exists('cust_main-require_censustract') ) {
   $opt{censustract} ||= $cust_main->censustract;
 }
-
-#my($county_html, $state_html, $country_html) =
-#  FS::cust_main_county::regionselector( $cust_main->get($pre.'county'),
-#                                        $cust_main->get($pre.'state'),
-#                                        $cust_main->get($pre.'country'),
-#                                        $pre,
-#                                        $onchange,
-#                                        $disabled,
-#                                      );
 
 my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
                   ? 'Day Phone'

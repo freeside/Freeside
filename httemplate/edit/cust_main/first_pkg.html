@@ -7,18 +7,16 @@
 % if ( @part_pkg ) {
 
     <BR><BR>
-    <FONT SIZE="+1"><B>First package</B></FONT>
+    <FONT SIZE="+1"><B><% mt('First package') |h %></B></FONT>
     <% ntable("#cccccc") %>
 
       <TR>
         <TD COLSPAN=2>
-          <% include('first_pkg/select-part_pkg.html',
+          <& first_pkg/select-part_pkg.html,
                        'part_pkg'  => \@part_pkg,
                        'first_svc' => \@first_svc,
                        %opt,
-                       # map { $_ => $opt{$_} } qw( pkgpart_svcpart saved_domsvc )
-                    )
-          %>
+          &>
 
 % } 
 <%init>

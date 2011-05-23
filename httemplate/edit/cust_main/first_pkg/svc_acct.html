@@ -1,7 +1,7 @@
 <% ntable("#cccccc") %>
 
   <TR>
-    <TD ALIGN="right">Username</TD>
+    <TD ALIGN="right"><% mt('Username') |h %></TD>
     <TD>
       <INPUT TYPE      = "text"
              NAME      = "username"
@@ -13,16 +13,16 @@
   </TR>
 
   <TR>
-    <TD ALIGN="right">Domain</TD>
+    <TD ALIGN="right"><% mt('Domain') |h %></TD>
     <TD>
       <SELECT NAME="domsvc">
-        <OPTION>(none)</OPTION>
+        <OPTION>(<% mt('none') |h %>)</OPTION>
       </SELECT>
     </TD>
   </TR>
 
   <TR>
-    <TD ALIGN="right">Password</TD>
+    <TD ALIGN="right"><% mt('Password') |h %></TD>
     <TD>
       <INPUT TYPE      = "text"
              NAME      = "_password"
@@ -37,7 +37,7 @@
 
 % if ( $opt{'password_verify'} ) {
     <TR>
-      <TD ALIGN="right">Re-enter Password</TD>
+      <TD ALIGN="right"><% mt('Re-enter Password') |h %></TD>
       <TD>
         <INPUT TYPE      = "text"
                NAME      = "_password2"
@@ -50,7 +50,7 @@
 
 % if ( $conf->exists('security_phrase') ) {
     <TR>
-      <TD ALIGN="right">Security Phrase</TD>
+      <TD ALIGN="right"><% mt('Security Phrase') |h %></TD>
       <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="<% $opt{'sec_phrase'} %>">
       </TD>
     </TR>
@@ -62,7 +62,7 @@
     <INPUT TYPE="hidden" NAME="popnum" VALUE="">
 % } else {
     <TR>
-      <TD ALIGN="right">Access number</TD>
+      <TD ALIGN="right"><% mt('Access number') |h %></TD>
 %#           XXX should gain "area code" selection and labels on the dropdowns
       <TD><% FS::svc_acct_pop::popselector($opt{'popnum'}) %></TD>
     </TR>
@@ -72,14 +72,10 @@
 
 <%init>
 
-#use FS::svc_acct_pop;
-
 my( %opt ) = @_;
 
 my $conf = new FS::Conf;
 
-#false laziness: (mostly) copied from edit/svc_acct.cgi
-#$ulen = $svc_acct->dbdef_table->column('username')->length;
 my $ulen = dbdef->table('svc_acct')->column('username')->length;
 my $ulen2 = $ulen+2;
 my $passwordmax = $conf->config('passwordmax') || 8;

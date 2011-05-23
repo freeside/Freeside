@@ -1,11 +1,10 @@
-<% include('elements/ApplicationCommon.html',
+<& elements/ApplicationCommon.html,
      'form_action' => 'process/cust_bill_pay.cgi',
      'src_table'   => 'cust_pay',
-     'src_thing'   => 'payment',
+     'src_thing'   => emt('payment'),
      'dst_table'   => 'cust_bill',
-     'dst_thing'   => 'invoice',
-   )
-%>
+     'dst_thing'   => emt('invoice'),
+&>
 <%init>
 
 die "access denied"

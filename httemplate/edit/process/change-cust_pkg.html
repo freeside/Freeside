@@ -3,7 +3,7 @@
 %   $cgi->redirect(popurl(3). 'misc/change_pkg.cgi?'. $cgi->query_string );
 % } else {
 
-    <% header("Package changed") %>
+    <% header(emt("Package changed")) %>
       <SCRIPT TYPE="text/javascript">
         window.top.location.reload();
       </SCRIPT>
@@ -19,7 +19,6 @@ die "access denied"
   unless $curuser->access_right('Change customer package');
 
 my $cust_pkg = qsearchs({
-  #'select'    => 'cust_pkg.*',
   'table'     => 'cust_pkg',
   'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
   'hashref'   => { 'pkgnum' => scalar($cgi->param('pkgnum')), },

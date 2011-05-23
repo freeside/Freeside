@@ -97,7 +97,6 @@ my $cust_pkg = new FS::cust_pkg {
                                 : ''
                             ),
    'waive_setup'         => ( $cgi->param('waive_setup') eq 'Y' ? 'Y' : '' ),
-  #'discountnum_disabled' => scalar($cgi->param('discountnum_disabled')),
 };
 
 my %opt = ( 'cust_pkg' => $cust_pkg );

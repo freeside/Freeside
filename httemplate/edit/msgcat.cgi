@@ -1,7 +1,7 @@
-<% header("Edit Message catalog" ) %>
+<% header(emt("Edit Message catalog")) %>
 <BR>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <% $widget->html %>
 
@@ -20,9 +20,9 @@ my $widget = new HTML::Widgets::SelectLayers(
   'layer_callback' => sub {
     my $layer = shift;
     my $html = qq!<INPUT TYPE="hidden" NAME="locale" VALUE="$layer">!.
-               "<BR>Messages for locale $layer<BR>". table().
-               "<TR><TH COLSPAN=2>Code</TH>".
-               "<TH>Message</TH>";
+               "<BR>".emt("Messages for locale [_1]",$layer)."<BR>". table().
+               "<TR><TH COLSPAN=2>".emt('Code')."</TH>".
+               "<TH>".emt('Message')."</TH>";
     $html .= "<TH>en_US Message</TH>" unless $layer eq 'en_US';
     $html .= '</TR>';
 
@@ -44,7 +44,7 @@ my $widget = new HTML::Widgets::SelectLayers(
       $html .= '</TR>';
     }
 
-    $html .= '</TABLE><BR><INPUT TYPE="submit" VALUE="Apply changes">';
+    $html .= '</TABLE><BR><INPUT TYPE="submit" VALUE="'.emt('Apply changes').'">';
 
     $html;
   },

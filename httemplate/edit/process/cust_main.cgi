@@ -60,9 +60,6 @@ $cgi->param('invoicing_list', join(',', @invoicing_list) );
 my $new = new FS::cust_main ( {
   map {
     $_, scalar($cgi->param($_))
-#  } qw(custnum agentnum last first ss company address1 address2 city county
-#       state zip daytime night fax payby payinfo paydate payname tax
-#       otaker refnum)
   } fields('cust_main')
 } );
 
@@ -98,7 +95,6 @@ foreach my $dfield (qw( birthdate signupdate )) {
       if ( $dt ) {
         $parsed = $dt->epoch;
       } else {
-    #    $error ||= $cgi->param('birthdate') . " is an invalid birthdate:" . $parser->errmsg;
         $error ||= "Invalid $dfield: $value";
       }
 
@@ -162,11 +158,7 @@ if ( $new->custnum eq '' ) {
       'pkgpart'     => $pkgpart,
       'locationnum' => scalar($cgi->param('locationnum')),
     } );
-    #$error ||= $cust_pkg->check;
 
-    #$cust_svc = new FS::cust_svc ( { 'svcpart' => $svcpart } );
-
-    #$error ||= $cust_svc->check;
 
     my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
     my $svcdb = $part_svc->svcdb;
@@ -218,8 +210,6 @@ if ( $new->custnum eq '' ) {
     } else {
       die "$svcdb not handled on new customer yet";
     }
-
-    #$error ||= $svc_acct->check;
 
   }
 

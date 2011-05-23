@@ -1,14 +1,12 @@
-<% include('/elements/xmlhttp.html',
+<& /elements/xmlhttp.html,
               'url'  => $url_prefix.'misc/svc_acct-domains.cgi',
               'subs' => [ $opt{'prefix'}. 'get_domains' ],
-           )
-%>
+&>
 
-<% include('/elements/xmlhttp.html',
+<& /elements/xmlhttp.html,
               'url'  => $url_prefix.'misc/part_svc-columns.cgi',
               'subs' => [ $opt{'prefix'}. 'get_part_svc' ],
-           )
-%>
+&>
 
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="">
 
@@ -101,19 +99,16 @@
 
 </SCRIPT>
 
-<% include( '/elements/selectlayers.html',
+<& /elements/selectlayers.html,
               'field'        => $opt{'prefix'}. 'pkgpart_svcpart',
               'curr_value'   => $opt{pkgpart_svcpart},
               'options'      => \@options,
               'labels'       => \%labels,
               'html_between' => '</TD></TR></TABLE>',
-              #'onchange'     => $opt{'prefix'}. 'pkgpart_svcpart_changed(this,0);',
               'onchange'     => $opt{'prefix'}. 'pkgpart_svcpart_changed_too(what,0)',
-
               'layer_callback' => $layer_callback,
               'layermap'       => \%layermap,
-          )
-%>
+&>
 
 <SCRIPT TYPE="text/javascript">
   pkgpart_svcpart_changed_too( document.CustomerForm.pkgpart_svcpart,
@@ -156,13 +151,9 @@ my %labels = ( '' => ( $opt{'empty_label'} || '(none)' ),
 
 my $layer_callback = sub {
   my $layer = shift;
-  #$layer_fields, $layer_values, $layer_prefix
-
-#  my( $pkgpart, $svcpart ) = split('_', $layer);
-#  my $svcdb = $svcdb{$pkgpart};
   my $svcdb = $layer;
 
-  return '' unless $svcdb; #'<BR><BR><BR><BR><BR>'
+  return '' unless $svcdb; 
 
   #full path cause we're being slung around as a coderef (mason closures?)
   include("/edit/cust_main/first_pkg/$svcdb.html", %opt, );

@@ -1,5 +1,4 @@
 %if ( $payby_default eq 'HIDE' ) {
-%
 %  $cust_main->payby('BILL') unless $cust_main->payby;
 %  my $payby = $cust_main->payby;
 
@@ -35,11 +34,11 @@
 %
 %  my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
-  <BR><FONT SIZE="+1"><B>Billing information</B></FONT>
+  <BR><FONT SIZE="+1"><B><% mt('Billing information') |h %></B></FONT>
   <% &ntable("#cccccc") %>
 
     <TR>
-      <TD ALIGN="right" WIDTH="200"><%$r%>Billing type</TD>
+      <TD ALIGN="right" WIDTH="200"><%$r%><% mt('Billing type') |h %></TD>
 
   <SCRIPT>
 
@@ -106,7 +105,7 @@
 
   </SCRIPT>
 
-  <% include('/elements/init_overlib.html') %>
+  <& /elements/init_overlib.html &>
 
 %  my $payby = $cust_main->payby;
 %  my $paytype = $cust_main->paytype;
@@ -147,10 +146,10 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Card number </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Card number').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="!. ( $payby =~ /^(CARD|DCRD)$/ ? $payinfo : '' ). qq!" MAXLENGTH=19 onChange="card_changed(this)" onKeyUp="card_changed(this)"></TD></TR>!.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Expiration </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Expiration').qq! </TD>!.
 %          '<TD WIDTH="408">'.
 %
 %          include('/elements/select-month_year.html',
@@ -161,14 +160,13 @@
 %
 %          '</TD></TR>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">CVV2&nbsp;!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">!.emt('CVV2').qq!&nbsp;!.
 %
-%          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)!.
+%          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">!.emt('help').qq!</A>)!.
 %          qq!</TD>!.
 %          '<TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_paycvv" VALUE="'. ( $payby =~ /^(CARD|DCRD)$/ && !$cust_main->is_encrypted($cust_main->paycvv) ? $cust_main->paycvv : '' ). '" SIZE=4 MAXLENGTH=4>'.
 %
-%
-%        qq!<TR><TD ALIGN="right" WIDTH="200"><SPAN ID="paystart_label" $text_disabled>Start date </SPAN></TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200"><SPAN ID="paystart_label" $text_disabled>!.emt('Start date').qq! </SPAN></TD>!.
 %          '<TD WIDTH="408">'.
 %
 %          include('/elements/select-month_year.html',
@@ -186,13 +184,13 @@
 %                    )
 %                 ).
 %
-%        qq!<SPAN ID="payissue_label" $text_disabled> or Issue number </SPAN>!.
+%        qq!<SPAN ID="payissue_label" $text_disabled>!.emt('or Issue number').qq! </SPAN>!.
 %          '<INPUT TYPE="text" NAME="CARD_payissue" VALUE="'. ( $payby =~ /^(CARD|DCRD)$/ ? $cust_main->payissue : '' ). qq!" SIZE=3 MAXLENGTH=2 $disabled></TD></TR>!.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Exact name on card </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Exact name on card').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payname" VALUE="!. ( $payby =~ /^(CARD|DCRD)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %
-%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CARD_payauto" $CARD_payauto_checked> Charge future payments to this card automatically</TD></TR>!.
+%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CARD_payauto" $CARD_payauto_checked> !.emt('Charge future payments to this card automatically').qq!</TD></TR>!.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
 %        qq!<TR><TD COLSPAN=2 WIDTH="608" id="card_billday" style="display: $billday_card_display">
@@ -207,27 +205,27 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Account number </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Account number').qq! </TD>!.
 %          qq!<TD><INPUT TYPE="text" SIZE=12 NAME="CHEK_payinfo1" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $account : '' ). '"></TD>'.
-%          qq!<TD ALIGN="right">Type</TD><TD><SELECT NAME="CHEK_paytype">!.
+%          qq!<TD ALIGN="right">!.emt('Type').qq!</TD><TD><SELECT NAME="CHEK_paytype">!.
 %            join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes).
 %          qq!</SELECT></TD></TR>!.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}ABA/Routing number </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('ABA/Routing number').qq! </TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="CHEK_payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!" SIZE=10 MAXLENGTH=9> !.
-%          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)!.
+%          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">!.emt('help').qq!</A>)!.
 %          qq!</TD></TR>!.
 %
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_month" VALUE="12">!.
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_year" VALUE="2037">!.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Bank name </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Bank name').qq! </TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" NAME="CHEK_payname" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %      ( $conf->exists('show_bankstate') ?
 %          qq!<TR><TD ALIGN="right" WIDTH="200">$paystate_label</TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408">!.
 %          include('/elements/select-state.html',
-%                    'empty'   => '(choose)',
+%                    'empty'   => emt('(choose)'),
 %                    'state'   => $cust_main->paystate,
 %                    'country' => $cust_main->country,
 %                    'prefix'  => 'CHEK_pay',
@@ -237,7 +235,7 @@
 %       ).
 %
 %
-%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CHEK_payauto" $CHEK_payauto_checked> Charge future payments to this electronic check automatically</TD></TR>!.
+%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CHEK_payauto" $CHEK_payauto_checked> !.emt('Charge future payments to this electronic check automatically').qq!</TD></TR>!.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
 %        qq!<TR><TD COLSPAN=2 WIDTH="608" id="chek_billday" style="display: $billday_chek_display">
@@ -256,7 +254,7 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Phone number </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Phone number').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="LECB_payinfo" VALUE="!. ( $payby eq 'LECB' ? $cust_main->payinfo : '' ). qq!" MAXLENGTH=15 SIZE=16></TD></TR>!.
 %
 %        qq!<INPUT TYPE="hidden" NAME="LECB_exp_month" VALUE="12">!.
@@ -276,13 +274,13 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">P.O. </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">!.emt('P.O.').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payinfo" VALUE="!. ( $payby eq 'BILL' ? $cust_main->payinfo : '' ). qq!"></TD></TR>!.
 %
 %        qq!<INPUT TYPE="hidden" NAME="BILL_exp_month" VALUE="12">!.
 %        qq!<INPUT TYPE="hidden" NAME="BILL_exp_year" VALUE="2037">!.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">Attention </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">!.emt('Attention').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payname" VALUE="!. encode_entities( $payby eq 'BILL' ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %
 %        '<TR><TD>&nbsp;</TD></TR>'.
@@ -297,10 +295,10 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Approved by </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Approved by').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""></TD></TR>!.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Expiration </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Expiration').qq! </TD>!.
 %          '<TD WIDTH="408">'.
 %
 %          include('/elements/select-month_year.html',
@@ -323,7 +321,7 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Amount </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Amount').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="CASH_paid" VALUE="!. ( $payby eq 'CASH' ? $cust_main->paid : '' ). qq!"></TD></TR>!.
 %
 %        '<TR><TD>&nbsp;</TD></TR>'.
@@ -339,7 +337,7 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Amount </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Amount').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="WEST_paid" VALUE="!. ( $payby eq 'WEST' ? $cust_main->paid : '' ). qq!"></TD></TR>!.
 %
 %        '<TR><TD>&nbsp;</TD></TR>'.
@@ -355,7 +353,7 @@
 %
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Amount </TD>!.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Amount').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="MCRD_paid" VALUE="!. ( $payby eq 'MCRD' ? $cust_main->paid : '' ). qq!"></TD></TR>!.
 %
 %        '<TR><TD>&nbsp;</TD></TR>'.
@@ -388,15 +386,14 @@
 %  );
 
   <TD WIDTH="408">
-    <% include( '/elements/selectlayers.html',
+    <& /elements/selectlayers.html,
                   'field'      => 'payby',
                   'curr_value' => $payby2option{$payby || $payby_default || $payby[0] },
                   'options'    => \@options,
                   'labels'     => \%allopt,
                   'html_between' => '</TD></TR></TABLE>',
                   'layer_callback' => sub { my $layer = shift; $payby{$layer}; },
-              )
-    %>
+    &>
 
   <% &ntable("#cccccc") %>
 
@@ -425,7 +422,7 @@
           ? 'CHECKED'
           : ''
 
-        %>> Postal mail invoice
+        %>> <% mt('Postal mail invoice') |h %> 
 
       </TD>
     </TR>
@@ -437,7 +434,7 @@
           ? 'CHECKED'
           : ''
 
-        %>> Fax invoice
+        %>> <% mt('Fax invoice') |h %> 
 
       </TD>
     </TR>
@@ -452,17 +449,16 @@
     </TR>
 
     <TR>
-      <TD ALIGN="right" WIDTH="200">Invoice terms </TD>
+      <TD ALIGN="right" WIDTH="200"><% mt('Invoice terms') |h %> </TD>
       <TD WIDTH="408">
-        <% include('/elements/select-terms.html',
+        <& /elements/select-terms.html,
                      'curr_value' => $cust_main->invoice_terms,
-                  )
-        %>
+        &>
       </TD>
     </TR>
 
     <TR>
-      <TD ALIGN="right" WIDTH="200">Credit limit </TD>
+      <TD ALIGN="right" WIDTH="200"><% mt('Credit limit') |h %> </TD>
       <TD WIDTH="408">
         <SCRIPT TYPE="text/javascript">
 function toggle(obj) {
@@ -470,13 +466,13 @@ function toggle(obj) {
 }
         </SCRIPT>
         <INPUT TYPE="text" NAME="credit_limit" VALUE=<% sprintf('"%.2f"', $cust_main->credit_limit) %><% length($cust_main->credit_limit) ? '' : ' DISABLED' %>>
-        <INPUT TYPE="checkbox" NAME="no_credit_limit" VALUE=1 onclick="toggle(this)"<% length($cust_main->credit_limit) ? '' : ' CHECKED'%>> Unlimited
+        <INPUT TYPE="checkbox" NAME="no_credit_limit" VALUE=1 onclick="toggle(this)"<% length($cust_main->credit_limit) ? '' : ' CHECKED'%>> <% mt('Unlimited') |h %> 
       </TD>
     </TR>
 
 % if ( $conf->exists('voip-cust_cdr_spools') ) { 
       <TR>
-       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="spool_cdr" VALUE="Y" <% $cust_main->spool_cdr eq "Y" ? 'CHECKED' : '' %>> Spool CDRs</TD>
+       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="spool_cdr" VALUE="Y" <% $cust_main->spool_cdr eq "Y" ? 'CHECKED' : '' %>> <% mt('Spool CDRs') |h %></TD>
       </TR>
 % } else { 
       <INPUT TYPE="hidden" NAME="spool_cdr" VALUE="<% $cust_main->spool_cdr %>">
@@ -484,7 +480,7 @@ function toggle(obj) {
 
 % if ( $conf->exists('voip-cust_cdr_squelch') ) { 
       <TR>
-       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="squelch_cdr" VALUE="Y" <% $cust_main->squelch_cdr eq "Y" ? 'CHECKED' : '' %>> Omit CDRs from printed invoices</TD>
+       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="squelch_cdr" VALUE="Y" <% $cust_main->squelch_cdr eq "Y" ? 'CHECKED' : '' %>> <% mt('Omit CDRs from printed invoices') |h %></TD>
       </TR>
 % } else { 
       <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="<% $cust_main->squelch_cdr %>">
@@ -492,7 +488,7 @@ function toggle(obj) {
 
 % if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
       <TR>
-       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="email_csv_cdr" VALUE="Y" <% $cust_main->email_csv_cdr eq "Y" ? 'CHECKED' : '' %>> Attach CDRs as CSV to emailed invoices</TD>
+       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="email_csv_cdr" VALUE="Y" <% $cust_main->email_csv_cdr eq "Y" ? 'CHECKED' : '' %>> <% mt('Attach CDRs as CSV to emailed invoices') |h %></TD>
       </TR>
 % } else { 
       <INPUT TYPE="hidden" NAME="email_csv_cdr" VALUE="<% $cust_main->email_csv_cdr %>">
@@ -505,7 +501,7 @@ function toggle(obj) {
                    NAME="accountcode_cdr" 
                    VALUE="Y" 
                    <% $cust_main->accountcode_cdr eq "Y" ? 'CHECKED' : '' %>
-            > Breakdown CDRs by accountcode</TD>
+            > <% mt('Breakdown CDRs by accountcode') |h %></TD>
        </TR>
 % } else { 
        <INPUT TYPE="hidden" NAME="accountcode_cdr" VALUE="<% $cust_main->accountcode_cdr %>">
@@ -513,7 +509,7 @@ function toggle(obj) {
 
 % if ( $show_term || $cust_main->cdr_termination_percentage ) {
       <TR>
-       <TD ALIGN="right">CDR termination settlement</TD>
+       <TD ALIGN="right"><% mt('CDR termination settlement') |h %></TD>
        <TD><INPUT TYPE  = "text"
                   NAME  = "cdr_termination_percentage"
                   SIZE  = 6
@@ -527,7 +523,7 @@ function toggle(obj) {
 
   </TABLE>
 
-  <% $r %> required fields
+  <% $r %> <% mt('required fields') |h %> 
 % } 
 
 <%once>

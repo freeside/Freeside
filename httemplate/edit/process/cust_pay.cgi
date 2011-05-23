@@ -11,7 +11,7 @@
 %  }
 %  if ( $link eq 'popup' ) {
 %    
-<% header('Payment entered') %>
+<% header(emt('Payment entered')) %>
     <SCRIPT TYPE="text/javascript">
       window.top.location.reload();
     </SCRIPT>

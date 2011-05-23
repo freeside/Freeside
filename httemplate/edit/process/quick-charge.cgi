@@ -2,7 +2,7 @@
 %   $cgi->param('error', $error );
 <% $cgi->redirect($p.'quick-charge.html?'. $cgi->query_string) %>
 % } else {
-<% header("One-time charge added") %>
+<% header(emt("One-time charge added")) %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
