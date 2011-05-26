@@ -18,22 +18,23 @@ use FS::phone_avail;
 use FS::did_vendor;
 use FS::svc_phone;
 use Data::Dumper;
+use Time::HiRes qw(usleep ualarm gettimeofday tv_interval);
 
 print "started time=".time."\n";
 
 #### SET THESE! #################################
 my $file = '/home/levinse/dids1.csv';
 my $did_vendor_id = 1; 
-my $dry = 1; 
-my $debug = 0;
-my $internal_diddb_exportnum = 2; # IMPORTANT: set this to the correct exportnum or everything will go in wrong into phone_avail
+my $dry = 0; 
+my $internal_diddb_exportnum = 1; # IMPORTANT: set this to the correct exportnum or everything will go in wrong into phone_avail
+
+# optionally set this one (probably not)
 my %custname2num = (); # MyCust => 12345,
 ################################################
 
 my $user = shift;
 adminsuidsetup $user;
 
-# oh yeah this is fun when you can't Ctrl+C me
 local $SIG{HUP} = 'IGNORE';
 local $SIG{INT} = 'IGNORE';
 local $SIG{QUIT} = 'IGNORE';
@@ -72,8 +73,9 @@ my %msamap = (
  'Portland ME' => 38860, 
 );
 my $skipto = 0; 
-my $limit = 900;
+my $limit = 0;
 my $linenum = 1;
+my $debug = 0;
 
 # cache LATA and MSA tables in one query for performance
 my @latas = qsearch('lata', {});
@@ -403,9 +405,9 @@ sub provision {
 
     fatal("can't insert svc_phone: $error") if $error;
 
-    #$phone_avail->svcnum($svc_phone->svcnum);
-    #$error = $phone_avail->replace;
-    #fatal("can't replace phone_avail: $error") if $error;
+    $phone_avail->svcnum($svc_phone->svcnum);
+    $error = $phone_avail->replace;
+    fatal("can't replace phone_avail: $error") if $error;
 
     '';
 }
