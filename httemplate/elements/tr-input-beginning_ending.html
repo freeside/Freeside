@@ -7,7 +7,7 @@
 
 <TR>
   <TD ALIGN="right">From date: </TD>
-  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>beginning" ID="<% $opt{prefix} %>beginning_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>beginning_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>beginning_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
+  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>beginning" ID="<% $opt{prefix} %>beginning_text" VALUE="<% $from %>" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>beginning_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>beginning_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "<% $opt{prefix} %>beginning_text",
@@ -26,7 +26,7 @@
 % }
 
   <TD ALIGN="right">To date: </TD>
-  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>ending" ID="<% $opt{prefix} %>ending_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>ending_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>ending_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
+  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>ending" ID="<% $opt{prefix} %>ending_text" VALUE="<% $to %>" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>ending_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>ending_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "<% $opt{prefix} %>ending_text",
@@ -38,12 +38,14 @@
 </SCRIPT>
 </TR>
 
+% unless ( $datesrequired ) {
 <TR>
   <TD></TD>
   <TD COLSPAN=<% $opt{layout} =~ /^h/i ? 3 : 1 %>>
     <FONT SIZE="-1">(leave one or both dates blank for an open-ended search)</FONT>
   </TD>
 </TR>
+% }
 
 <%once>
 
@@ -57,6 +59,13 @@ my %opt = @_;
 my $conf = new FS::Conf;
 
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+my $datesrequired = 0;
+$datesrequired = $opt{'datesrequired'} if $opt{'datesrequired'};
+
+my $from = '';
+$from = $opt{'from'} if $opt{'from'};
+my $to = '';
+$to = $opt{'to'} if $opt{'to'};
 
 $opt{prefix} = '' unless defined $opt{prefix};
 $opt{prefix} .= '_' if $opt{prefix};

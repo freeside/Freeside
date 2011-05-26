@@ -4,7 +4,12 @@
 
 <TABLE>
 
-<% include( '/elements/tr-input-beginning_ending.html' ) %>
+<% include( '/elements/tr-input-beginning_ending.html',
+                'datesrequired' => 1,
+                'from' => time2str('%m/%d/%Y',$from),
+                'to' => time2str('%m/%d/%Y',time),
+            ) 
+%>
 
 <% include('/elements/tr-select-agent.html',
              'label'         => 'For agent: ',
@@ -19,6 +24,8 @@
 
 <% include('/elements/footer.html') %>
 <%init>
+
+my $from = time - 30*86400;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
