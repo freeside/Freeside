@@ -10,7 +10,7 @@ die "access denied"
 
 my $widget = new HTML::Widgets::SelectLayers(
   'selected_layer' => 'en_US',
-  'options'        => { 'en_US'=>'en_US' },
+  'options'        => { 'en_US'=>'en_US', 'iw_IL' => 'iw_IL', },
   'layer_callback' => sub {
     my $layer = shift;
     my $html = "<BR>".emt("Messages for locale [_1]",$layer)."<BR>". table().
@@ -28,7 +28,7 @@ my $widget = new HTML::Widgets::SelectLayers(
           'locale'  => 'en_US',
           'msgcode' => $msgcat->msgcode,
         } );
-        $html .= '<TD>'. $en_msgcat->msg. '</TD>';
+        $html .= '<TD>'. $en_msgcat->msg. '</TD>' if $en_msgcat;
       }
       $html .= '</TR>';
     }
