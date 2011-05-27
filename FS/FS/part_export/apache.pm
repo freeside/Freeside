@@ -17,7 +17,7 @@ tie my %options, 'Tie::IxHash',
     label   => 'Template',
     type    => 'textarea',
     default => <<'END',
-<VirtualHost $domain> #generic
+<VirtualHost $zone> #generic
 #<VirtualHost ip.addr> #preferred, http://httpd.apache.org/docs/dns-caveats.html
 DocumentRoot /var/www/$zone
 ServerName $zone
@@ -25,6 +25,23 @@ ServerAlias *.$zone
 #BandWidthModule On
 #LargeFileLimit 4096 12288
 #FrontpageEnable on
+</VirtualHost>
+
+END
+  },
+  'template_inactive' => {
+    label   => 'Template (when suspended)',
+    type    => 'textarea',
+    default => <<'END',
+<VirtualHost $zone> #generic
+#<VirtualHost ip.addr> #preferred, http://httpd.apache.org/docs/dns-caveats.html
+DocumentRoot /var/www/$zone
+ServerName $zone
+ServerAlias *.$zone
+#BandWidthModule On
+#LargeFileLimit 4096 12288
+#FrontpageEnable on
+Redirect 402 /
 </VirtualHost>
 
 END

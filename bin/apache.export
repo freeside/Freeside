@@ -39,14 +39,19 @@ foreach my $export ( @exports ) {
 
   open(HTTPD_CONF,">$file") or die "can't open $file: $!";
 
-  my $template = $export->option('template');
-
   my @svc_www = $export->svc_x;
 
   foreach my $svc_www ( @svc_www ) {
     use vars qw($zone $username $dir $email $config);
     $zone = $svc_www->domain_record->zone;
     $config = $svc_www->config;
+    my $template = $export->option('template');
+    my $cust_pkg = $svc_www->cust_svc->cust_pkg;
+    if ( $cust_pkg->getfield('susp') or $cust_pkg->getfield('cancel') ) {
+      $template = $export->option('template_inactive') 
+                  || $export->option('template');
+      # Fall back to the regular template if template_inactive doesn't exist
+    }
     if ( $svc_www->svc_acct ) {
       $username = $svc_www->svc_acct->username;
       $dir = $svc_www->svc_acct->dir;
