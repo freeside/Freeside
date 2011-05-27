@@ -190,7 +190,7 @@
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Exact name on card').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payname" VALUE="!. ( $payby =~ /^(CARD|DCRD)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %
-%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CARD_payauto" $CARD_payauto_checked> !.emt('Charge future payments to this card automatically').qq!</TD></TR>!.
+%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CARD_payauto" $CARD_payauto_checked> !.emt('Charge future payments to this [_1] automatically','credit card').qq!</TD></TR>!.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
 %        qq!<TR><TD COLSPAN=2 WIDTH="608" id="card_billday" style="display: $billday_card_display">
@@ -235,7 +235,7 @@
 %       ).
 %
 %
-%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CHEK_payauto" $CHEK_payauto_checked> !.emt('Charge future payments to this electronic check automatically').qq!</TD></TR>!.
+%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CHEK_payauto" $CHEK_payauto_checked> !.emt('Charge future payments to this [_1] automatically','electronic check').qq!</TD></TR>!.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
 %        qq!<TR><TD COLSPAN=2 WIDTH="608" id="chek_billday" style="display: $billday_chek_display">

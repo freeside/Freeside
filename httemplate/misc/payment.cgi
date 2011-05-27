@@ -222,7 +222,7 @@
 <TR>
   <TD COLSPAN=2>
     <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
-    <% mt('Remember this informatio') |h %>
+    <% mt('Remember this information') |h %>
   </TD>
 </TR>
 
@@ -265,8 +265,8 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Process payment');
 
-my %type = ( 'CARD' => emt('credit card'),
-             'CHEK' => emt('electronic check (ACH)'),
+my %type = ( 'CARD' => 'credit card',
+             'CHEK' => 'electronic check (ACH)',
            );
 
 $cgi->param('payby') =~ /^(CARD|CHEK)$/

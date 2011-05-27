@@ -40,7 +40,7 @@ Example:
 % } 
 
 <TR>
-  <<%$th%> ALIGN="right"><%$r%><% $opt{'address1_label'} || 'Address' %></<%$th%>>
+  <<%$th%> ALIGN="right"><%$r%><% $opt{'address1_label'} || emt('Address') %></<%$th%>>
   <TD COLSPAN=7>
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>address1"
@@ -148,15 +148,15 @@ Example:
 
 
 <TR>
-  <<%$th%> ALIGN="right"><%$r%>City</<%$th%>>
+  <<%$th%> ALIGN="right"><%$r%><% mt('City') |h %></<%$th%>>
   <TD WIDTH="1"><% include('/elements/city.html', %select_hash) %></TD>
   <<%$th%> ALIGN="right" WIDTH="1" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</<%$th%>>
   <TD WIDTH="1"><% include('/elements/select-county.html', %select_hash ) %></TD>
-  <<%$th%> ALIGN="right" WIDTH="1"><%$r%>State</<%$th%>>
+  <<%$th%> ALIGN="right" WIDTH="1"><%$r%><% mt('State') |h %></<%$th%>>
   <TD WIDTH="1">
     <% include('/elements/select-state.html', %select_hash ) %>
   </TD>
-  <<%$th%> ALIGN="right" WIDTH="1"><%$r%>Zip</<%$th%>>
+  <<%$th%> ALIGN="right" WIDTH="1"><%$r%><% mt('Zip') |h %></<%$th%>>
   <TD>
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>zip"
@@ -171,7 +171,7 @@ Example:
 </TR>
 
 <TR>
-  <<%$th%> ALIGN="right"><%$r%>Country</<%$th%>>
+  <<%$th%> ALIGN="right"><%$r%><% mt('Country') |h %></<%$th%>>
   <TD COLSPAN=6><% include('/elements/select-country.html', %select_hash ) %></TD>
 </TR>
 

@@ -29,7 +29,7 @@
 <BR>
 % if(! $disabled) {
 <INPUT TYPE="submit" NAME="submit" 
-    VALUE="<% $attachnum ? "Apply Changes" : "Upload File" %>">
+    VALUE="<% $attachnum ? emt("Apply changes") : emt("Upload File") %>">
 % }
 % if(defined $attach and $curuser->access_right('Delete attachment')) {
 <BR>

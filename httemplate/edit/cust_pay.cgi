@@ -43,7 +43,7 @@
 <TR>
   <TD ALIGN="right"><% mt('Amount') |h %></TD>
   <TD BGCOLOR="#ffffff" ALIGN="right"><% $money_char %></TD>
-  <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> by <B><% FS::payby->payname($payby) %></B></TD>
+  <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
 </TR>
 
   <& /elements/tr-select-discount_term.html,
@@ -142,8 +142,8 @@ die "access denied"
 
 my $paybatch = "webui-$_date-$$-". rand() * 2**32;
 
-my $title = emt('Post '. FS::payby->payname($payby). ' payment');
-$title .= emt(" against Invoice #[_1]",$linknum) if $link eq 'invnum';
+my $title = mt('Post '. FS::payby->payname($payby). ' payment');
+$title .= mt(" against Invoice #[_1]",$linknum) if $link eq 'invnum';
 
 my $custnum;
 if ( $link eq 'invnum' ) {

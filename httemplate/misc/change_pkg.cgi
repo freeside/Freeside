@@ -40,7 +40,7 @@
 <BR>
 <INPUT NAME    = "submitButton"
        TYPE    = "button"
-       VALUE   = "Change package"
+       VALUE   = "<% mt("Change package") |h %>"
        onClick = "this.disabled=true; standardize_new_location();"
        <% scalar($cgi->param('pkgpart')) ? '' : 'DISABLED' %>
 >

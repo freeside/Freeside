@@ -29,7 +29,7 @@
 % }
 
 <BR><BR>
-<INPUT TYPE="submit" VALUE="<% $notenum ? "Apply Changes" : "Add Note" %>">
+<INPUT TYPE="submit" VALUE="<% $notenum ? emt("Apply changes") : emt("Add Note") %>">
 
 </FORM>
 </BODY>

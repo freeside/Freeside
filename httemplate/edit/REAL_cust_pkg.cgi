@@ -129,7 +129,7 @@
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Apply Changes">
+<INPUT TYPE="submit" VALUE="<% mt('Apply changes') |h %>">
 </FORM>
 
 <% include('/elements/footer.html') %>

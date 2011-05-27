@@ -84,7 +84,7 @@
 % } elsif ( ! $conf->exists('disable_customer_referrals') ) { 
 
   <TR>
-    <TD ALIGN="right">Referring customer</TD>
+    <TD ALIGN="right"><% mt('Referring customer') |h %></TD>
     <TD>
       <& /elements/search-cust_main.html,
                     'field_name' => 'referral_custnum',

@@ -6,7 +6,7 @@
 % } else { 
 
   <TR>
-    <TD ALIGN="right" WIDTH="176"><% $opt{'label'} || '<B>Discount</B>' %></TD>
+    <TD ALIGN="right" WIDTH="176"><% $opt{'label'} || '<B>'.emt('Discount').'</B>' %></TD>
     <TD <% $colspan %>>
       <% include( '/elements/select-discount.html',
                     'curr_value' => $discountnum,

@@ -58,7 +58,7 @@
 %  }
 
 <BR>
-<FONT SIZE="+1"><B>Billing address</B></FONT>
+<FONT SIZE="+1"><B><% mt('Billing address') |h %></B></FONT>
 
 <& cust_main/contact.html,
              'cust_main'    => $cust_main,
@@ -209,7 +209,7 @@ function samechanged(what) {
 <INPUT TYPE    = "button"
        NAME    = "submitButton"
        ID      = "submitButton"
-       VALUE   = "<% $custnum ?  "Apply Changes" : "Add Customer" %>"
+       VALUE   = "<% $custnum ?  emt("Apply changes") : emt("Add Customer") %>"
        onClick = "this.disabled=true; bottomfixup(this.form);"
 >
 </FORM>
@@ -366,7 +366,7 @@ my %keep = map { $_=>1 } qw( error tagnum lock_agentnum lock_pkgpart );
 $cgi->delete( grep !$keep{$_}, $cgi->param );
 
 my $title = $custnum ? 'Edit Customer' : 'Add Customer';
-$title = emt($title);
+$title = mt($title);
 $title .= ": ". $cust_main->name if $custnum;
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;

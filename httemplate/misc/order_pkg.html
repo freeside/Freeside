@@ -126,7 +126,7 @@
 %                 : 'standardize_new_location()';
 <INPUT NAME    = "submitButton"
        TYPE    = "button"
-       VALUE   = "Order Package"
+       VALUE   = "<% mt("Order Package") |h %>"
        onClick = "this.disabled=true; <% $onclick %>;"
        <% $pkgpart ? '' : 'DISABLED' %>
 >

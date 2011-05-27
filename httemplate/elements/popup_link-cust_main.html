@@ -27,7 +27,7 @@ Example:
 % }
 <%init>
 
-my $params = { 'closetext' => 'Close' };
+my $params = { 'closetext' => emt('Close') };
 
 if (ref($_[0]) eq 'HASH') {
   $params = { %$params, %{ $_[0] } };
