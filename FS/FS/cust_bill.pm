@@ -245,6 +245,7 @@ sub delete {
     cust_pay_batch
     cust_bill_pay_batch
     cust_bill_pkg
+    cust_bill_batch
   )) {
 
     foreach my $linked ( $self->$table() ) {
@@ -731,6 +732,17 @@ sub cust_credit_bill_pkg {
                    "   AND cust_bill_pkg.pkgnum = $pkgnum",
   });
 
+}
+
+=item cust_bill_batch
+
+Returns all invoice batch records (L<FS::cust_bill_batch>) for this invoice.
+
+=cut
+
+sub cust_bill_batch {
+  my $self = shift;
+  qsearch('cust_bill_batch', { 'invnum' => $self->invnum });
 }
 
 =item tax

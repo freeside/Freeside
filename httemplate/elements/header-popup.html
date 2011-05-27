@@ -27,7 +27,7 @@ Example:
     <META HTTP-Equiv="Expires" Content="0"> 
     <% $head %>
   </HEAD>
-  <BODY BGCOLOR="#f8f8f8" <% $etc %>>
+  <BODY <% $etc %>>
     <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
     <FONT SIZE=6>
       <CENTER><% $title |h %></CENTER>
@@ -55,6 +55,7 @@ if ( ref($_[0]) ) {
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
   $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
 }
+$etc .= 'BGCOLOR="#f8f8f8"' if (! $etc =~ /BGCOLOR/i );
 
 my $conf = new FS::Conf;
 

@@ -1,20 +1,4 @@
-% if($magic eq 'print') {
-<% include('/elements/header.html', "Download Batch") %>
-<FORM NAME="OneTrueForm">
-<INPUT TYPE="hidden" NAME="batchnum" VALUE="<% $batchnum %>">
-% $cgi->delete('magic');
-<% include('/elements/progress-init.html',
-              'OneTrueForm',
-              [ 'batchnum' ],
-              $p.'misc/process/bill_batch-print.html',
-              {'url' => $cgi->self_url . ';magic=download'},
-              '',
-) %></FORM>
-<SCRIPT TYPE="text/javascript">process();</SCRIPT>
-<% include('/elements/footer.html') %>
-% }
-% 
-% elsif($magic eq 'download') {
+% if($magic eq 'download') {
 %   $m->clear_buffer;
 %   $r->content_type('application/pdf');
 %   $r->headers_out->add('Content-Disposition' => 'attachment;filename="invoice_batch_'.$batchnum.'.pdf"');
@@ -23,6 +7,26 @@
 %   my $error = $batch->replace;
 %   warn "error deleting cached PDF: '$error'\n" if $error;
 % }
+%
+% elsif ($magic eq 'download_popup') {
+%
+<& /elements/header-popup.html,
+  { 'etc' => 'BGCOLOR="#ccccff"' } &>
+<SCRIPT type="text/javascript">
+function start() {
+window.open('<% $cgi->self_url . ';magic=download' %>');
+parent.nd(1);
+}
+</SCRIPT>
+<TABLE WIDTH="100%"><TR><TD STYLE="text-align:center;vertical-align:middle">
+<FONT SIZE="+1">
+<A HREF="javascript:start()">Download batch #<% $batchnum %></A>
+</FONT>
+</TD></TR></TABLE>
+<& /elements/footer.html &>
+%
+% }
+%
 % else {
 <% include('/search/elements/search.html', 
               'title'     => $close ?
@@ -39,11 +43,11 @@
                                'addl_from' => 
                                  'LEFT JOIN cust_bill USING ( invnum ) '.
                                  'LEFT JOIN cust_main USING ( custnum )',
-                               'extra_sql' => '',
-                                 " WHERE batchnum = $batchnum",
+                               'extra_sql' => " WHERE batchnum = $batchnum",
                              },
               'count_query' => "SELECT COUNT(*) FROM cust_bill_batch WHERE batchnum = $batchnum",
               'html_init' => $html_init,
+              'html_foot' => $html_foot,
               'header'    => [ 'Invoice #',
                                'Amount',
                                'Date',
@@ -75,21 +79,36 @@ $batch = FS::bill_batch->by_key($batchnum);
 die "Batch '$batchnum' not found!\n" if !$batch;
 
 my $magic = $cgi->param('magic');
-my $html_init = '';
+$cgi->delete('magic');
 
 my $close = $cgi->param('close');
 $batch->close if $close;
 
-if(!$magic) {
-  $cgi->param('magic' => 'print');
-  $cgi->delete('close');
-  $html_init  = '<A HREF="'.$cgi->self_url.'">Download this batch</A><BR>';
-  if($batch->status eq 'O') {
+my $html_init = '';
+my $html_foot = '';
+if ( !$magic ) {
+  $html_init .= qq!<FORM NAME="OneTrueForm">
+    <INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;
+  $html_init .= include('/elements/progress-init.html',
+                  'OneTrueForm',
+                  [ 'batchnum' ],
+                  $p.'misc/process/bill_batch-print.html',
+                  {
+                    'popup_url' => $cgi->self_url . ';magic=download_popup',
+                  },
+                  '',
+  );
+  $html_init .= '</FORM>
+<A HREF="javascript:process()">Download this batch</A></BR>';
+  if ( $batch->status eq 'O' ) {
     $cgi->param('close' => 1);
-    $cgi->delete('magic');
     $html_init .= '<A HREF="'.$cgi->self_url.'">Close this batch</A><BR>';
   }
   $html_init .= '<BR>';
+  if ( $cgi->param('start_download') ) {
+    $cgi->delete('start_download');
+    $html_foot = '<SCRIPT TYPE="text/javascript">process();</SCRIPT>';
+  }
 }
 
 my $link = [ "$p/view/cust_bill.cgi?", 'invnum' ];

@@ -57,7 +57,7 @@ my $count_query = 'SELECT COUNT(*) FROM bill_batch';
 my $extra_sql = ''; # may add something here later
 my $link = [ "${p}view/bill_batch.cgi?batchnum=", 'batchnum' ];
 my $dlink = sub {
-  [ "${p}view/bill_batch.cgi?magic=print;".
+  [ "${p}view/bill_batch.cgi?start_download=1;".
       (shift->status eq 'O' ? 'close=1;' : '').
       'batchnum=',
     'batchnum'] 

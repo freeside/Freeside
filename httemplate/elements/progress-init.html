@@ -11,6 +11,12 @@ In misc/something.html:
              $p.'misc/process_something.html',
              { url => $p.'where_to_go_next.html' },
          #or { message => 'Finished!' },
+         #or { url => $p.'where_to_go.html',
+               message => 'Finished' },
+         # which displays the message, then waits for confirmation before 
+         # redirecting to the URL.
+         #or { popup_url => $p.'popup_contents.html' }
+         # which loads that URL into the popup after completion
          ) %>
   </FORM>
   <SCRIPT TYPE="text/javascript>process();</SCRIPT>
@@ -118,6 +124,8 @@ if ( ref($url_or_message) ) { #its a message or something
   $url_or_message_link = 'message='. uri_escape( $url_or_message->{'message'} );
   $url_or_message_link .= ';url='.   uri_escape( $url_or_message->{'url'} )
     if $url_or_message->{'url'};
+  $url_or_message_link = 'popup_url=' .uri_escape( $url_or_message->{'popup_url'} )
+    if $url_or_message->{'popup_url'};
 } else {
   $url_or_message_link = "url=$url_or_message";
 }

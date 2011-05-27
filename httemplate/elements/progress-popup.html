@@ -2,6 +2,7 @@
 %  my $jobnum = $cgi->param('jobnum');
 %  my $url = $cgi->param('url');
 %  my $message = $cgi->param('message');
+%  my $popup_url = $cgi->param('popup_url');
 %  my $formname = scalar($cgi->param('formname'));
 %
 
@@ -64,11 +65,12 @@ function updateStatus( status_statustext ) {
 % } elsif ( $url ) { 
 
     window.top.location.href = '<% $url %>';
+% } elsif ( $popup_url ) {
+    document.parentWindow.location.replace('<% $popup_url %>');
 % } else { 
 
     alert('job done but no url or message specified');
 % } 
-
   } else if ( status.indexOf('done') > -1 ) {
 
     document.getElementById("progress_message").innerHTML = "Loading report";
