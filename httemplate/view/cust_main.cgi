@@ -43,7 +43,7 @@ function areyousure(href, message) {
 % if ( $view eq 'basics' || $view eq 'jumbo' ) {
 
 % if ( $curuser->access_right('Edit customer') ) { 
-  <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>">Edit this customer</A> | 
+  <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>"><% mt('Edit this customer') |h %></A> | 
 % } 
 
 % if ( $curuser->access_right('Cancel customer')
@@ -295,7 +295,7 @@ die "Customer not found!" unless $cust_main;
 my $title = $cust_main->name;
 $title = '('. $cust_main->display_custnum. ") $title"
   if $conf->exists('cust_main-title-display_custnum');
-$title = "Customer: $title";
+$title = mt("Customer:")." ".$title;
 
 #false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
 tie my %views, 'Tie::IxHash',

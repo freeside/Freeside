@@ -8,7 +8,7 @@
 %  errorpage(emt("No matching customers found!"));
 % } # errorpage quits, so we don't need an 'else' below
 
-<& /elements/header.html, emt("Customer Search Results"), '' &>
+<& /elements/header.html, mt("Customer Search Results"), '' &>
 % $total ||= scalar(@cust_main); 
 
 <% mt("[_1] matching customers found",$total) |h %>

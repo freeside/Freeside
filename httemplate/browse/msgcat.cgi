@@ -1,4 +1,4 @@
-<& /elements/header.html, emt("View Message catalog"), menubar(
+<& /elements/header.html, mt("View Message catalog"), menubar(
   emt('Edit message catalog') => $p. "edit/msgcat.cgi",
 ) &>
 <%  $widget->html %>

@@ -1,4 +1,4 @@
-<& /elements/header.html, emt('Invoice View'), menubar(
+<& /elements/header.html, mt('Invoice View'), menubar(
   emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
 ) &>
 

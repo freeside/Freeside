@@ -1,4 +1,4 @@
-<& /elements/header.html, emt("Customer cancelled") &>
+<& /elements/header.html, mt("Customer cancelled") &>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>

@@ -1,4 +1,4 @@
-<& /elements/header.html, emt("Process [_1] payment",$type{$payby})  &>
+<& /elements/header.html, mt("Process [_1] payment",$type{$payby})  &>
 <& /elements/small_custview.html, $cust_main, '', '', popurl(2) . "view/cust_main.cgi" &>
 <FORM NAME="OneTrueForm" ACTION="process/payment.cgi" METHOD="POST" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="custnum"   VALUE="<% $custnum %>">

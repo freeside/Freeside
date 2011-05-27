@@ -1,6 +1,6 @@
 % if ( $custnum ) { 
 
-  <& /elements/header.html, emt("View [_1] account",$svc) &>
+  <& /elements/header.html, mt("View [_1] account",$svc) &>
   <& /elements/small_custview.html, $custnum, '', 1,
      "${p}view/cust_main.cgi" &> 
   <BR>
@@ -15,7 +15,7 @@
   }
   </SCRIPT>
   
-  <& /elements/header.html, emt('View account'), menubar(
+  <& /elements/header.html, mt('View account'), menubar(
     emt("Cancel this (unaudited) account") =>
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')",
   ) &>

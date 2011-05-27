@@ -35,7 +35,7 @@ function areyousure(href) {
 
 % if ( $custnum ) { 
 
-  <& /elements/header.html,emt("View [_1]: [_2]",$label,$value) &>
+  <& /elements/header.html, mt("View [_1]: [_2]",$label,$value) &>
 
   <& /elements/small_custview.html, $custnum, '', 1,
      "${p}view/cust_main.cgi" &>
@@ -43,7 +43,7 @@ function areyousure(href) {
 
 % } else { 
 
-  <& /elements/header.html,emt("View [_1]: [_2]",$label,$value), menubar(
+  <& /elements/header.html, mt("View [_1]: [_2]",$label,$value), menubar(
       emt("Cancel this (unaudited) [_1]",$label) =>
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')"
   ) &>

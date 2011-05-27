@@ -1,4 +1,4 @@
-<& /elements/header-popup.html, emt('Enter Credit') &>
+<& /elements/header-popup.html, mt('Enter Credit') &>
 
 <& /elements/error.html &>
 

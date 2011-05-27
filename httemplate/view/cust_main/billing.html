@@ -220,7 +220,7 @@
   <TD BGCOLOR="#ffffff">
     <% length($cust_main->credit_limit) ? 
         $money_char.sprintf("%.2f", $cust_main->credit_limit) :
-        'Unlimited' %>
+        emt('Unlimited') %>
   </TD>
 </TR>
 
