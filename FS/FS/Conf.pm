@@ -4444,6 +4444,13 @@ and customer address. Include units.',
     'description' => 'Show a link to the payment history report in the Reports menu. DO NOT ENABLE THIS.',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'cust-email-high-visibility',
+    'section'     => 'UI',
+    'description' => 'Move the invoicing e-mail address field to the top of the billing address section and highlight it.',
+    'type'        => 'checkbox',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

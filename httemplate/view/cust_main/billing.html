@@ -203,12 +203,14 @@
     <% ( grep { $_ eq 'FAX' } @invoicing_list ) ? $yes : $no %>
   </TD>
 </TR>
+% unless ( $conf->exists('cust-email-high-visibility')) {
 <TR>
   <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
   </TD>
 </TR>
+% }
 <TR>
   <TD ALIGN="right"><% mt('Invoice terms') |h %></TD>
   <TD BGCOLOR="#ffffff">

@@ -17,6 +17,14 @@
     <TD BGCOLOR="#ffffff"><% $cust_main->masked('ss') || '&nbsp' %></TD>
 % } 
 </TR>
+% if ( $conf->exists('cust-email-high-visibility') && $which eq '') {
+<TR>
+  <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
+  <TD BGCOLOR="#ffff00">
+    <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
+  </TD>
+</TR>
+% }
 <TR>
   <TD ALIGN="right"><% mt('Company') |h %></TD>
   <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}company") |h %></TD>
@@ -115,6 +123,8 @@ my $stateid_state_label = FS::Msgcat::_gettext('stateid_state') =~ /^(stateid_st
 
 my( $cust_main ) = @_;
 my $conf = new FS::Conf;
+my @invoicing_list = $cust_main->invoicing_list;
+my $no = emt('no');
 
 </%init>
 
