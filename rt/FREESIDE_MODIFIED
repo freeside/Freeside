@@ -10,8 +10,9 @@ etc/initialdata
 
 lib/RT/Attribute_Overlay.pm #bugfix
  lib/RT/Config.pm
-lib/RT/CustomField.pm #CheckMandatoryFields
+lib/RT/CustomField.pm #reverted
 lib/RT/CustomField_Overlay.pm #customfield date patch #timeworked custom fields
+lib/RT/CustomField_Vendor.pm #mandatory fields
 lib/RT/Interface/Web.pm #customfield date patch
                         #fix transaction custom fields
                         #fix Web.pm Overlay/Vendor/Local inclusion
@@ -35,7 +36,7 @@ lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
 lib/RT/Transaction_Overlay.pm #fix transaction custom fields
 lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields #this-month condition 
  lib/RT/Ticket_Overlay.pm #fix transaction custom fields
-lib/RT/Ticket_Vendor.pm #bulk increment priority
+lib/RT/Ticket_Vendor.pm #bulk increment priority #mandatory fields
  lib/RT/Users_Overlay.pm
  lib/RT/Groups_Overlay.pm
 lib/RT/Date.pm #this-month condition
@@ -86,16 +87,18 @@ share/html/Elements/ShowLink_Checklist
  share/html/Elements/SelectCustomerClass #SearchCustomerFields
  share/html/Elements/SelectCustomerTag #SearchCustomerFields
 share/html/Prefs/SavedSearches.html #saved searches
-share/html/Search/Bulk.html #bulk increment priority
+share/html/Search/Bulk.html #bulk increment priority #mandatory fields
  share/html/Search/Build.html
 share/html/Search/Results.tsv #content-type bug fix
  share/html/Search/Elements/BuildFormatString
  share/html/Search/Elements/PickCFs #customfield date patch
 share/html/Ticket/Checklist.html
- share/html/Ticket/Display.html #timeworked custom fields
+share/html/Ticket/Display.html #timeworked custom fields #mandatory fields
+share/html/Ticket/Modify.html #mandatory fields
+share/html/Ticket/ModifyAll.html #mandatory fields
 share/html/Ticket/Elements/AddCustomers
- share/html/Ticket/Elements/CheckMandatoryFields
 share/html/Ticket/Elements/EditCustomers
+share/html/Ticket/Elements/EditCustomFields #mandatory fields
 share/html/Ticket/Elements/EditTransactionCustomFields #timeworked custom fields
 share/html/Ticket/Elements/ShowCustomers
 share/html/Ticket/Elements/ShowMembers_Checklist
@@ -123,7 +126,7 @@ share/html/Elements/EditCustomers
 
 share/html/Callbacks/RTx-Checklist/*
 
-share/html/Callbacks/CheckMandatoryFields/*
+share/html/Callbacks/CheckMandatoryFields/* #removed
 
 share/html/Callbacks/TimeToResolve/*
 

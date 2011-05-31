@@ -79,8 +79,10 @@ $m->comp(
 # Now let callbacks have a chance at editing %ARGS
 $m->callback( TicketObj => $TicketObj, CustomFields => $CustomFields, ARGSRef => \%ARGS );
 
-my @results = ProcessTicketBasics(TicketObj => $TicketObj, ARGSRef => \%ARGS);
+my @results;
+push @results, ProcessTicketBasics(TicketObj => $TicketObj, ARGSRef => \%ARGS);
 push @results, ProcessObjectCustomFieldUpdates(Object => $TicketObj, ARGSRef => \%ARGS);
+push @results, ProcessTicketStatus(TicketObj => $TicketObj, ARGSRef => \%ARGS);
 
 $TicketObj->ApplyTransactionBatch;
 

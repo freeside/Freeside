@@ -34,6 +34,7 @@ use_ok(RT::Interface::Web_Vendor);
 
 package HTML::Mason::Commands;
 use strict;
+no warnings qw(redefine);
 
 =head2 ProcessTicketCustomers 
 
@@ -195,6 +196,106 @@ sub ProcessObjectCustomers {
 
     return @results;
 
+}
+
+=head2 ProcessTicketBasics ( TicketObj => $Ticket, ARGSRef => \%ARGS );
+
+Updates all core ticket fields except Status, and returns an array of results
+messages.
+
+=cut
+
+sub ProcessTicketBasics {
+
+    my %args = (
+        TicketObj => undef,
+        ARGSRef   => undef,
+        @_
+    );
+
+    my $TicketObj = $args{'TicketObj'};
+    my $ARGSRef   = $args{'ARGSRef'};
+
+    # {{{ Set basic fields
+    my @attribs = qw(
+        Subject
+        FinalPriority
+        Priority
+        TimeEstimated
+        TimeWorked
+        TimeLeft
+        Type
+        Queue
+    );
+
+    if ( $ARGSRef->{'Queue'} and ( $ARGSRef->{'Queue'} !~ /^(\d+)$/ ) ) {
+        my $tempqueue = RT::Queue->new($RT::SystemUser);
+        $tempqueue->Load( $ARGSRef->{'Queue'} );
+        if ( $tempqueue->id ) {
+            $ARGSRef->{'Queue'} = $tempqueue->id;
+        }
+    }
+
+    my @results = UpdateRecordObject(
+        AttributesRef => \@attribs,
+        Object        => $TicketObj,
+        ARGSRef       => $ARGSRef,
+    );
+
+    # We special case owner changing, so we can use ForceOwnerChange
+    if ( $ARGSRef->{'Owner'} && ( $TicketObj->Owner != $ARGSRef->{'Owner'} ) ) {
+        my ($ChownType);
+        if ( $ARGSRef->{'ForceOwnerChange'} ) {
+            $ChownType = "Force";
+        } else {
+            $ChownType = "Give";
+        }
+
+        my ( $val, $msg ) = $TicketObj->SetOwner( $ARGSRef->{'Owner'}, $ChownType );
+        push( @results, $msg );
+    }
+
+    # }}}
+
+    return (@results);
+}
+
+=head2 ProcessTicketStatus (TicketObj => RT::Ticket, ARGSRef => {})
+
+Process updates to the 'Status' field of the ticket.  If the new value 
+of Status is 'resolved', this will check required custom fields before 
+allowing the update.
+
+=cut
+
+sub ProcessTicketStatus {
+    my %args = (
+        TicketObj => undef,
+        ARGSRef   => undef,
+        @_
+    );
+
+    my $TicketObj = $args{'TicketObj'};
+    my $ARGSRef   = $args{'ARGSRef'};
+    my @results;
+
+    return () if !$ARGSRef->{'Status'};
+
+    if ( lc( $ARGSRef->{'Status'} ) eq 'resolved' ) {
+        foreach my $field ( $TicketObj->MissingRequiredFields ) {
+            push @results, loc('Missing required field: [_1]', $field->Name);
+        }
+    }
+    if ( @results ) {
+        $m->notes('RedirectToBasics' => 1);
+        return @results;
+    }
+
+    return UpdateRecordObject(
+        AttributesRef => [ 'Status' ],
+        Object        => $TicketObj,
+        ARGSRef       => $ARGSRef,
+    );
 }
 
 1;

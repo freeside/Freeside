@@ -164,9 +164,12 @@ if ($ARGS{'id'} eq 'new') {
     push @Actions, ProcessTicketLinks(   ARGSRef => \%ARGS, TicketObj => $TicketObj );
     push @Actions, ProcessTicketDates(   ARGSRef => \%ARGS, TicketObj => $TicketObj );
     push @Actions, ProcessTicketCustomFieldUpdates(ARGSRef => \%ARGS, TicketObj => $TicketObj );
+    # If this fails due to required fields being empty, it will set
+    # notes('RedirectToBasics').
+    push @Actions, ProcessTicketStatus(  ARGSRef => \%ARGS, TicketObj => $TicketObj );
 
-    # XXX: we shouldn't block actions here if user has no right to see the ticket,
-    # but we should allow him to see actions he has done
+    # XXX: we shouldn't block actions here if user has no right to see the 
+    # ticket, but we should allow him to see actions he has done
     unless ($TicketObj->CurrentUserHasRight('ShowTicket')) {
         Abort("No permission to view ticket");
     }
@@ -197,7 +200,14 @@ if (@Actions) {
     my $key = Digest::MD5::md5_hex( rand(1024) );
     push @{ $session{"Actions"}->{$key} ||= [] }, @Actions;
     $session{'i'}++;
-    my $url = RT->Config->Get('WebURL') . "Ticket/Display.html?id=" . $TicketObj->id . "&results=" . $key;
+    my $url = RT->Config->Get('WebURL');
+    if ( $m->notes('RedirectToBasics') ) {
+        $url .= 'Ticket/Modify.html';
+    }
+    else {
+        $url .= 'Ticket/Display.html';
+    }
+    $url .= '?id=' . $TicketObj->id . "&results=" . $key;
     $url .= '#' . $ARGS{Anchor} if $ARGS{Anchor};
     RT::Interface::Web::Redirect($url);
 }

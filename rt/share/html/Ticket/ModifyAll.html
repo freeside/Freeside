@@ -236,6 +236,7 @@ unless ($OnlySearchForPeople or $OnlySearchForGroup or $ARGS{'AddMoreAttach'} ) 
     push @results, ProcessTicketBasics( TicketObj => $Ticket, ARGSRef => \%ARGS );
     push @results, ProcessTicketLinks( TicketObj => $Ticket, ARGSRef => \%ARGS);
 }
+    push @results, ProcessTicketStatus( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
 $Ticket->ApplyTransactionBatch;
 

@@ -441,13 +441,20 @@ unless ( $ARGS{'AddMoreAttach'} ) {
                 }
             }
         }
-        my @tempresults = (
+        my @statusresults =
+          ProcessTicketStatus( TicketObj => $Ticket, ARGSRef => \%ARGS );
+
+          my @tempresults = (
             @watchresults,  @basicresults, @dateresults,
-            @updateresults, @linkresults,  @cfresults
+            @updateresults, @linkresults,  @cfresults,
+            @statusresults
         );
 
         @tempresults =
-          map { loc( "Ticket [_1]: [_2]", $Ticket->Id, $_ ) } @tempresults;
+          map { 
+              $_ =~ /^Ticket \d+:/ ?  $_ : 
+              loc( "Ticket [_1]: [_2]", $Ticket->Id, $_ ) 
+            } @tempresults;
 
         @results = ( @results, @tempresults );
     }
