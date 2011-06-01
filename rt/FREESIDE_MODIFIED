@@ -105,7 +105,7 @@ share/html/Ticket/Elements/ShowMembers_Checklist
  share/html/Ticket/Elements/BulkLinks
  share/html/Ticket/Elements/ShowSummary
  share/html/Ticket/Elements/ShowTransactionAttachments
- share/html/Ticket/Elements/Tabs #saved searches
+ share/html/Ticket/Elements/Tabs #saved searches #mandatory fields
 share/html/Ticket/Update.html #timeworked custom fields
 share/html/Ticket/ModifyCustomers.html
  html/NoAuth/css/3.5-default/main.css

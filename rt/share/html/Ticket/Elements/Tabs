@@ -196,7 +196,9 @@ if ($Ticket) {
     if ( $can{'ModifyTicket'} ) {
         if ( $Ticket->Status ne 'resolved' ) {
             $actions->{'G'} = {
-                path =>
+                path => 
+                    ($Ticket->MissingRequiredFields) ? 
+                    "Ticket/Modify.html?Status=resolved&id=$id" :
                     "Ticket/Update.html?Action="
                     . RT->Config->Get('ResolveDefaultUpdateType', $session{'CurrentUser'})
                     . "&DefaultStatus=resolved&id="
