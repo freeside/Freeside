@@ -52,6 +52,12 @@ case "$1" in
         freeside-selfservice-xmlrpcd $SELFSERVICE_USER
         echo "done."
 
+        if [ -e /usr/local/bin/torrus ]; then
+          echo -n "Starting torrus collector: "
+          /usr/local/bin/torrus collector --tree=main
+          echo "done."
+        fi
+
         echo -n "Starting freeside-torrus-srvderive: "
         freeside-torrus-srvderive $QUEUED_USER
         echo "done."
@@ -121,6 +127,12 @@ case "$1" in
         if [ -e /var/run/freeside/torrus-srvderive.pid ]; then
           echo -n "Stopping freeside-torrus-srvderive: "
           kill `cat /var/run/freeside/torrus-srvderive.pid`
+          echo "done."
+        fi
+
+        if [ -e /var/run/torrus/collector.main_?.pid ]; then
+          echo -n "Stopping torrus collector: "
+          kill `cat /var/run/torrus/collector.main_?.pid`
           echo "done."
         fi
 
