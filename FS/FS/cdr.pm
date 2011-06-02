@@ -911,7 +911,7 @@ my %import_options = (
                },
 
                           #drop the || 'csv' to allow auto xls for csv types?
-  'format_types' => { map { $_ => ( lc($cdr_info{$_}->{'type'}) || 'csv' ); }
+  'format_types' => { map { $_ => lc($cdr_info{$_}->{'type'} || 'csv'); }
                           keys %cdr_info
                     },
 
