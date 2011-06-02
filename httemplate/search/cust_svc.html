@@ -75,6 +75,7 @@ if ( length( $cgi->param('search_svc') ) ) {
 
   $cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unknown svcdb";
   push @extra_sql, "svcdb = '$1'";
+  $addl_from .= " LEFT JOIN $1 USING ( svcnum ) ";
 
   push @extra_sql, 'pkgnum IS NULL'
     if $cgi->param('magic') eq 'unlinked';

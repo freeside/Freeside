@@ -80,7 +80,8 @@ sub table_info {
     'name' => 'Port',
     #'name_plural' => 'Ports', #optional,
     #'longname_plural' => 'Ports', #optional
-    'sorts' => [ 'svcnum', 'serviceid' ], # optional sort field (or arrayref of sort fields, main first)
+    #'sorts' => [ 'svcnum', 'serviceid' ], # optional sort field (or arrayref of sort fields, main first)
+    'sorts' => [ 'serviceid' ], # optional sort field (or arrayref of sort fields, main first)
     'display_weight' => 75,
     'cancel_weight'  => 10,
     'fields' => {
