@@ -62,11 +62,11 @@
 %         my( $subhtml, $submenuname ) = submenu($url_or_submenu, $item);
 
           <% $subhtml |n %>
-          myBar.add(new WebFXMenuButton("<% emt($item) %>", null, "<% emt($tooltip) %>", <% $submenuname |n %> ));
+          myBar.add(new WebFXMenuButton(<% mt($item) |js_string %>, null, <% mt($tooltip) |js_string %>, <% $submenuname |n %> ));
 
 %     } else { 
     
-          myBar.add(new WebFXMenuButton("<% emt($item) %>", "<% $url_or_submenu %>", "<% emt($tooltip) %>" ));
+          myBar.add(new WebFXMenuButton(<% mt($item) |js_string %>, "<% $url_or_submenu %>", <% mt($tooltip) |js_string %> ));
 
 %     }
 %   } #foreach $item
