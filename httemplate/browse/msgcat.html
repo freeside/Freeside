@@ -1,0 +1,27 @@
+<& elements/browse.html,
+     title         => mt('Message catalog'),
+     name_singular => 'string', #mt?
+     menubar       => $menubar,
+     query         => { 'table' => 'msgcat',
+                      },
+     count_query   => $count_query,
+     header        => [ mt('Message code'), mt('Message string') ],
+     fields        => [ 'msgcode', 'msg' ],
+     links         => [ $link, $link ],
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+my $menubar = [ mt('Add a string') => $p.'edit/msgcat.html' ];
+
+my $where = '';
+
+my $count_query = 'SELECT COUNT(*) FROM msgcat';
+
+my $link = [ "${p}edit/msgcat.html?", 'msgnum' ];
+
+</%init>
