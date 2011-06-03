@@ -40,7 +40,7 @@ function taxproductquickchargemagic() {
   str += 'magic=taxproductnum;taxproductnum=';
   str += escape(document.getElementById('taxproductnum').value);
   cClick();
-  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, <% mt('Close') %>);
+  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, <% mt('Close') |js_string %>);
 
 }
 
@@ -66,7 +66,7 @@ function taxoverridequickchargemagic() {
   str += 'magic=taxoverride;tax_override=';
   str += document.getElementById('tax_override').value;
   cClick();
-  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, <% mt('Close') %>);
+  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, <% mt('Close') |js_string %>);
 
 }
 
