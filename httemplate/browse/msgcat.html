@@ -1,13 +1,14 @@
 <& elements/browse.html,
      title         => mt('Message catalog'),
-     name_singular => 'string', #mt?
-     menubar       => $menubar,
-     query         => { 'table' => 'msgcat',
+     name_singular => 'string', #mt? no, we need to do it through the quant/PL stuff
+     query         => { 'table'     => 'msgcat', 
+                        'hashref'   => { 'locale' => $locale, },
                       },
      count_query   => $count_query,
      header        => [ mt('Message code'), mt('Message string') ],
      fields        => [ 'msgcode', 'msg' ],
-     links         => [ $link, $link ],
+     links         => $locale eq 'en_US' ? [] : [ $link, $link ],
+     html_init     => $html_init,
 &>
 <%init>
 
@@ -16,12 +17,20 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('Configuration');
 
-my $menubar = [ mt('Add a string') => $p.'edit/msgcat.html' ];
+my $locale = $cgi->param('locale') || 'en_US';
+die "invalid locale" unless $locale =~ /^[A-Za-z_]+$/;
 
-my $where = '';
-
-my $count_query = 'SELECT COUNT(*) FROM msgcat';
+my $count_query = "SELECT COUNT(*) FROM msgcat where locale = '$locale'";
 
 my $link = [ "${p}edit/msgcat.html?", 'msgnum' ];
+
+my $html_init = '';
+foreach my $alocale ( FS::Locales->locales ) {
+     my %info = FS::Locales->locale_info($alocale);
+     my $selectedstart = $alocale eq $locale ? '<B>' : '';
+     my $selectedend = $alocale eq $locale ? '</B>' : '';
+     $html_init .= qq!<A HREF="msgcat.html?locale=$alocale">$selectedstart$info{name} ($info{country})$selectedend</A> &nbsp; !;
+}
+$html_init .= '<BR><BR>';
 
 </%init>
