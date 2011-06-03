@@ -13,6 +13,7 @@ my $error;
 foreach my $param ( grep { /^\d+$/ } $cgi->param ) {
   my $old = qsearchs('msgcat', { msgnum=>$param } );
   next if $old->msg eq $cgi->param($param); #no need to update identical records
+  die "editing en_US locale is currently disabled" if $old->locale eq 'en_US';
   my $new = new FS::msgcat { $old->hash };
   $new->msg($cgi->param($param));
   $error = $new->replace($old);
