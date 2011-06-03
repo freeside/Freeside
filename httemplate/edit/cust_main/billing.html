@@ -95,6 +95,13 @@
       return true;
     }
 
+    function init_payauto_changed(){
+        var f = document.getElementById('CARD_payauto');
+        if(f != null) payauto_changed(f);
+        f = document.getElementById('CHEK_payauto');
+        if(f != null) payauto_changed(f);
+    }
+
     function payauto_changed(payauto_field){
         var f = (payauto_field.name == 'CARD_payauto') ? 'card_billday' : 'chek_billday';
         f = document.getElementById(f);
@@ -129,7 +136,7 @@
 %
 %  sub billday_options {
 %   my $curr_value = shift;
-%   my $ret = '<OPTION></OPTION>';
+%   my $ret = '';
 %   for my $billday ( 1 .. 28 ) {
 %       my $sel = '';
 %       $sel = "SELECTED='SELECTED'" if $curr_value == $billday;
@@ -190,12 +197,12 @@
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Exact name on card').qq! </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="CARD_payname" VALUE="!. ( $payby =~ /^(CARD|DCRD)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %
-%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CARD_payauto" $CARD_payauto_checked> !.emt('Charge future payments to this [_1] automatically','credit card').qq!</TD></TR>!.
+%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CARD_payauto" NAME="CARD_payauto" $CARD_payauto_checked> !.emt('Charge future payments to this [_1] automatically','credit card').qq!</TD></TR>!.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
-%        qq!<TR><TD COLSPAN=2 WIDTH="608" id="card_billday" style="display: $billday_card_display">
-%                    Charge on the <SELECT NAME="billday">!
-%                . billday_options($cust_main->billday) . qq!</SELECT> day of each month</TD></TR>!
+%        qq!<TR><TD COLSPAN="2" id="card_billday" style="display: $billday_card_display">
+%                    Charge on this day of each month <SELECT NAME="billday">!
+%                . billday_options($cust_main->billday) . qq!</SELECT> </TD></TR>!
 %        : ''
 %      ).
 %
@@ -235,18 +242,14 @@
 %       ).
 %
 %
-%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" NAME="CHEK_payauto" $CHEK_payauto_checked> !.emt('Charge future payments to this [_1] automatically','electronic check').qq!</TD></TR>!.
+%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CHEK_payauto" NAME="CHEK_payauto" $CHEK_payauto_checked> !.emt('Charge future payments to this [_1] automatically','electronic check').qq!</TD></TR>!.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
-%        qq!<TR><TD COLSPAN=2 WIDTH="608" id="chek_billday" style="display: $billday_chek_display">
-%                    Charge on the <SELECT NAME="billday">!
-%                . billday_options($cust_main->billday) . qq!</SELECT> day of each month</TD></TR>!
+%        qq!<TR><TD COLSPAN="4" id="chek_billday" style="display: $billday_chek_display">
+%                    Charge on this day of each month <SELECT NAME="billday">!
+%                . billday_options($cust_main->billday) . qq!</SELECT> </TD></TR>!
 %        : ''
 %      ).
-%
-%        '<TR><TD>&nbsp;</TD></TR>'.
-%        '<TR><TD>&nbsp;</TD></TR>'.
-%        '<TR><TD>&nbsp;</TD></TR>'.
 %
 %      '</TABLE>',
 %
@@ -393,6 +396,7 @@
                   'labels'     => \%allopt,
                   'html_between' => '</TD></TR></TABLE>',
                   'layer_callback' => sub { my $layer = shift; $payby{$layer}; },
+                  'onchange'    => 'init_payauto_changed();',
     &>
 
   <% &ntable("#cccccc") %>
