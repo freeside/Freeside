@@ -29,6 +29,7 @@
     </TR>
 % }
 
+% unless ( $conf->exists('cust-edit-alt-field-order') ) {
 <TR>
   <TD ALIGN="right"><% mt('Company') |h %></TD>
   <TD COLSPAN=7>
@@ -67,6 +68,49 @@
     <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
+
+% } else {
+
+<TR>
+  <TD ALIGN="right"><% $daytime_label %></TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><% $night_label %></TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+  </TD>
+</TR>
+
+<& /elements/location.html,
+             'prefix'       => $pre,
+             'object'       => $cust_main,
+             'onchange'     => $onchange,
+             'disabled'     => $disabled,
+             'style'        => \@style,
+             'same_checked' => $opt{'same_checked'},
+             'geocode'      => $opt{'geocode'},
+             'censustract'  => $opt{'censustract'},
+&>
+
+<TR>
+  <TD ALIGN="right"><% mt('Fax') |h %></TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><% mt('Company') |h %></TD>
+  <TD COLSPAN=7>
+    <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') |h %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+  </TD>
+</TR>
+
+% }
 
 % if ( $conf->exists('show_stateid') && !$pre ) { 
 

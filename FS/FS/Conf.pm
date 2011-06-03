@@ -4451,6 +4451,13 @@ and customer address. Include units.',
     'description' => 'Move the invoicing e-mail address field to the top of the billing address section and highlight it.',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'cust-edit-alt-field-order',
+    'section'     => 'UI',
+    'description' => 'An alternate ordering of fields for the New Customer and Edit Customer screens.',
+    'type'        => 'checkbox',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
