@@ -74,6 +74,18 @@ sub _gettext {
     warn "WARNING: message for msgcode $msgcode in locale $locale not found"
       unless $locale eq 'en_US';
     $cache{$locale}->{$msgcode} = $msgcode;
+
+    my @translate_auto_insert = $conf->config('translate-auto-insert');
+    if ( $locale ne 'en_US' && grep { $_ eq $locale } @translate_auto_insert ) {
+
+        # :(
+        my $newmsgcat = new FS::Record('msgcat', { locale     => $locale,
+                                         msgcode    => $msgcode,
+                                         msg        => $msgcode,
+                                       });
+        warn "WARNING: auto-inserting message for msgcode $msgcode in locale $locale";
+        $newmsgcat->insert;
+    }
   }
 
 }

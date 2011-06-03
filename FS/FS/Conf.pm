@@ -4458,6 +4458,18 @@ and customer address. Include units.',
     'description' => 'An alternate ordering of fields for the New Customer and Edit Customer screens.',
     'type'        => 'checkbox',
   },
+  
+  {
+    'key'         => 'translate-auto-insert',
+    'section'     => '',
+    'description' => 'Auto-insert untranslated strings for selected non-en_US locales with their default/en_US values. DO NOT TURN THIS ON.',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub { map { $_ => '' } 
+                            grep { $_ ne 'en_US' } FS::Locales::locales;
+			             },
+    'option_sub'  => sub { ''; },
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
