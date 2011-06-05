@@ -106,25 +106,25 @@ sub calc_recur {
   $output = 0 if $output < 0;
 
   my $totalcharge =
-    $total  * sprintf('%.2f', $self->option('recur_total_charge'));
+     sprintf('%.2f', $total * $self->option('recur_total_charge'));
   $totalcharge = $self->option('recur_total_cap')
     if $self->option('recur_total_cap')
     && $totalcharge > $self->option('recur_total_cap');
 
   my $inputcharge =
-    $input  * sprintf('%.2f', $self->option('recur_input_charge'));
+     sprintf('%.2f', $input * $self->option('recur_input_charge'));
   $inputcharge = $self->option('recur_input_cap')
     if $self->option('recur_input_cap')
     && $inputcharge > $self->option('recur_input_cap');
 
   my $outputcharge = 
-    $output * sprintf('%.2f', $self->option('recur_output_charge'));
+    sprintf('%.2f', $output * $self->option('recur_output_charge'));
   $outputcharge = $self->option('recur_output_cap')
     if $self->option('recur_output_cap')
     && $outputcharge > $self->option('recur_output_cap');
 
   my $hourscharge =
-    $hours * sprintf('%.2f', $self->option('recur_hourly_charge'));
+    sprintf('%.2f', $hours * $self->option('recur_hourly_charge'));
   $hourscharge = $self->option('recur_hourly_cap')
     if $self->option('recur_hourly_cap')
     && $hourscharge > $self->option('recur_hourly_cap');
