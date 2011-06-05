@@ -32,9 +32,9 @@
         </tr>
         <tr><td colspan=2><br></td></tr>
         <%= 
-          my ($last) = grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section)} reverse @sections;
+          my ($last) = grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section) and $_->{'description'} !~ /^\d+ $/ } reverse @sections;
           
-          foreach my $section ( grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section)} @sections ) {
+          foreach my $section ( grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section) and $_->{'description'} !~ /^\d+ $/ } @sections ) {
             $OUT .= '<tr><td><b>'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '</b></td>';
             my $celltype = ($last == $section) ? 'th' : 'td';
             $OUT .= qq(<$celltype align="right"><b>). $section->{'subtotal'}. "</b></$celltype></tr>";

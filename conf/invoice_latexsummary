@@ -21,7 +21,7 @@
 \textbf{\underline{Summary of New Charges}} & \\
 &\\
 [@--
-  foreach my $section ( grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section)} @sections ) {
+  foreach my $section ( grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section) and $_->{'description'} !~ /^\d+ $/ } @sections ) {
     $OUT .= '\textbf{'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '}';
     $OUT .= '&\textbf{'. $section->{'subtotal'}. '}\\\\';
   }
