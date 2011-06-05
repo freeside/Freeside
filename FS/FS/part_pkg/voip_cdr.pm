@@ -48,6 +48,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
   'shortname' => 'VoIP/telco CDR rating (standard)',
   'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
+    'suspend_bill' => { 'name' => 'Continue recurring billing while suspended',
+                        'type' => 'checkbox',
+                      },
     #false laziness w/flat.pm
     'recur_temporality' => { 'name' => 'Charge recurring fee for period',
                              'type' => 'select',
@@ -270,7 +273,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        411_rewrite
                        output_format usage_mandate summarize_usage usage_section
                        bill_every_call bill_inactive_svcs
-                       count_available_phones
+                       count_available_phones suspend_bill
                      )
                   ],
   'weight' => 40,
