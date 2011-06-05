@@ -2883,7 +2883,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_pkg-show_fcc_voice_grade_equivalent',
     'section'     => 'UI',
-    'description' => "Show a field on package definitions for assigning a DSO equivalency number suitable for use on FCC form 477.",
+    'description' => "Show a field on package definitions for assigning a DS0 equivalency number suitable for use on FCC form 477.",
     'type'        => 'checkbox',
   },
 

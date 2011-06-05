@@ -121,6 +121,7 @@
     %>
 
     <TR id='partIIA' style="display:none"><TD>Part IIA</TD><TD><TABLE>
+%   $i = 0;
 %   foreach my $option ( @FS::Report::FCC_477::part2aoption ) {
     <TR>
       <TH><% $option %></TH>
@@ -130,10 +131,13 @@
                      'name_col'     => 'name',
                      'hashref'      => { 'disabled' => '' },
                      'element_name' => 'part2a_row_option',
+                     'curr_value'   =>
+                           FS::Report::FCC_477::restore_fcc477map("part2a_row_option_$i"),
                  )
       %>
       </TD>
     </TR>
+%    $i++
 %   }
   </TABLE></TD></TR>
 
@@ -146,6 +150,7 @@
     %>
 
     <TR id='partIIB' style="display:none"><TD>Part IIB</TD><TD><TABLE>
+%   $i = 0;
 %   foreach my $option ( @FS::Report::FCC_477::part2boption ) {
     <TR>
       <TH><% $option %></TH>
@@ -155,10 +160,13 @@
                      'name_col'     => 'name',
                      'hashref'      => { 'disabled' => '' },
                      'element_name' => 'part2b_row_option',
+                      'curr_value'   =>
+                            FS::Report::FCC_477::restore_fcc477map("part2b_row_option_$i"),
                  )
       %>
       </TD>
     </TR>
+%    $i++
 %   }
   </TABLE></TD></TR>
 
@@ -185,8 +193,22 @@
                    'label' => 'Enable part V?',
                    'field' => 'part',
                    'value' => 'V',
+                   'onchange' => 'partchange(this)',
                )
     %>
+    <TR id='partV' style="display:none">
+        <TD>Part V</TD>
+        <TD>
+            <% include( '/elements/select-table.html',
+                     'table'        => 'part_pkg_report_option',
+                     'name_col'     => 'name',
+                     'hashref'      => { 'disabled' => '' },
+                     'element_name' => 'partv_report_option',
+                 )
+            %>
+        </TD>
+    </TR>
+
 
     <% include( '/elements/tr-checkbox.html',
                    'label' => 'Enable part VI?',

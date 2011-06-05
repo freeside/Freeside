@@ -93,6 +93,16 @@ for(my $i=0; $i < scalar(@upload); $i++) {
     &FS::Report::FCC_477::save_fcc477map("part1_row_option_$i",$upload[$i]);
 }
 
+my @part2a_row_option = $cgi->param('part2a_row_option');
+for(my $i=0; $i < scalar(@part2a_row_option); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part2a_row_option_$i",$part2a_row_option[$i]);
+}
+
+my @part2b_row_option = $cgi->param('part2b_row_option');
+for(my $i=0; $i < scalar(@part2b_row_option); $i++) {
+    &FS::Report::FCC_477::save_fcc477map("part2b_row_option_$i",$part2b_row_option[$i]);
+}
+
 my $url_mangler = sub {
   my $part = shift;
   my $url = $cgi->url('-path_info' => 1, '-full' => 1);
