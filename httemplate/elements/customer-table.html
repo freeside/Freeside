@@ -494,12 +494,12 @@ Example:
       </TD>
 %     $col++;
 %   }
-      <TD>
+      <TD STYLE="text-align:right;">
+        <% $money_char %> 
         <SPAN 
                NAME      = "balance<% $row %>"
                ID        = "balance<% $row %>"
                rownum    = "<% $row %>"
-               STYLE     = "text-align:center;"
         >
         </SPAN>
       </TD>
@@ -649,11 +649,12 @@ Example:
     row.appendChild(customer_cell);
     
     var balance_cell = document.createElement('TD');
+        balance_cell.style.textAlign = 'right';
+        balance_cell.innerHTML = '<% $money_char %>';
         
         var balance_span = document.createElement('SPAN');
         balance_span.setAttribute('name', 'balance'+<% $opt{prefix} %>rownum);
         balance_span.setAttribute('id',   'balance'+<% $opt{prefix} %>rownum);
-        balance_span.style.textAlign = 'center';
         balance_span.setAttribute('rownum', <% $opt{prefix} %>rownum);
         balance_cell.appendChild(balance_span);
 
@@ -720,6 +721,7 @@ Example:
 <%init>
 
 my(%opt) = @_;
+my $conf = new FS::Conf;
 
 $opt{prefix} = '' unless defined $opt{prefix};
 $opt{prefix} .= '_' if $opt{prefix};
@@ -739,5 +741,7 @@ my %align = (
   'r' => 'right',
   'c' => 'center',
 );
+
+my $money_char = $conf->config('money_char') || '$';
 
 </%init>
