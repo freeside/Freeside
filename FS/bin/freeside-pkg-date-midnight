@@ -5,6 +5,7 @@ use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs dbh);
 use Data::Dumper;
+use Date::Manip::Date;
 use POSIX;
 
 &untaint_argv;	#what it sounds like  (eww)
@@ -24,6 +25,11 @@ while ( $row = $sth->fetchrow_hashref ) {
 
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
         localtime($bill);
+
+    my $date = new Date::Manip::Date;
+    my $err = $date->parse($bill);
+
+    my $datefixed = $date->calc(?,1);
 
     if ( $hour != 0 || $min != 0 || $sec != 0 ) {
         $hour = 0;
@@ -70,12 +76,6 @@ freeside-pkg-date-midnight - change the time portion of next bill dates on all a
 =head1 DESCRIPTION
 
 user - name of an internal Freeside user
-
-=head1 BUGS
-
-Will be off by an hour when crossing DST boundaries, defeating the purpose of 
-the util. Workaround: run it a day after each DST change (so twice per year
-for time zones subject to DST).
 
 =head1 SEE ALSO
 
