@@ -128,7 +128,7 @@ Example:
         custnum_obj.value = customerArray[0];
         custnum_obj.style.color = '#000000';
         customer.value = customerArray[1];
-        balance.innerHTML = customerArray[2];
+        balance.innerHTML = customerArray[2] + ' &nbsp; ';
         status.innerHTML = customerArray[3]; 
         status.style.color = '#'+customerArray[4];
 
@@ -205,7 +205,7 @@ Example:
         custnum_obj.value = customerArray[0];
         custnum_obj.style.color = '#000000';
         customer.value = customerArray[1];
-        balance.innerHTML = customerArray[2];
+        balance.innerHTML = customerArray[2] + ' &nbsp; ';
         status.innerHTML = customerArray[3]; 
         status.style.color = '#'+customerArray[4];
 
@@ -277,7 +277,7 @@ Example:
 
         custnum_obj.value = customerArray[0][0];
         customer_obj.value = customerArray[0][1];
-        balance.innerHTML = customerArray[0][2];
+        balance.innerHTML = customerArray[0][2] + ' &nbsp; ';
         status.innerHTML = customerArray[0][3]; 
         status.style.color = '#'+customerArray[0][4];
 
@@ -345,7 +345,7 @@ Example:
       var pos_underscore2 = custnum_balance_status.indexOf('_',pos_underscore1+1); 
       var pos_underscore3 = custnum_balance_status.indexOf('_',pos_underscore2+1); 
       var custnum = custnum_balance_status.substring(0,pos_underscore1);
-      var balance = custnum_balance_status.substring(pos_underscore1+1,pos_underscore2);
+      var balance = custnum_balance_status.substring(pos_underscore1+1,pos_underscore2) + ' &nbsp; ';
       var status = custnum_balance_status.substring(pos_underscore2+1,pos_underscore3);
       var color = custnum_balance_status.substring(pos_underscore3+1);
 
@@ -502,6 +502,7 @@ Example:
                rownum    = "<% $row %>"
         >
         </SPAN>
+        &nbsp;
       </TD>
     </TR>
 % } 

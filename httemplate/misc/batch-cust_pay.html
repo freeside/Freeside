@@ -96,14 +96,17 @@ function select_discount_term(row, prefix) {
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post payment batch');
 
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
 my @header  = ( '', 'Amount', 'Check #' );
-my @fields  = ( sub {'$'}, 'paid', 'payinfo' );
+my @fields  = ( sub { "$money_char" }, 'paid', 'payinfo' );
 my @types   = ( 'immutable', '', '' );
 my @align   = ( 'c', 'r', 'r' );
 my @sizes   = ( 0, 8, 10 );
 my @colors  = ( '', '', '' );
 my %param   = ();
-my @footer  = ( '$', '_TOTAL', '' );
+my @footer  = ( "$money_char", '_TOTAL', '' );
 my @footer_align = ( 'c', 'r', 'r' );
 my $custnum_update_callback = '';
 
