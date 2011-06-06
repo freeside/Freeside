@@ -377,7 +377,8 @@ install-rt:
 	" ${RT_PATH}/etc/RT_SiteConfig.pm; fi
 
 install-rt-initialdata:
-	if [ ${RT_ENABLED} -eq 1 ]; then \
+	if [ ${RT_ENABLED} -eq 1 ] && [ -d ${RT_PATH} ]; then \
+	  chown -R freeside:freeside ${RT_PATH}/etc; \
 	  install -D -o freeside -g freeside -m 0440 rt/etc/initialdata \
 	  ${RT_PATH}/etc/initialdata; fi
 
