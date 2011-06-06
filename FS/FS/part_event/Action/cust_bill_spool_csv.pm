@@ -20,15 +20,6 @@ sub option_fields {
                                                 'billco'  => 'Billco',
                                               },
                            },
-    'spooldest'         => { label   => 'For destination',
-                             type    => 'select',
-                             options => [ '', qw( POST EMAIL FAX ) ],
-                             option_labels => { ''      => '(all)',
-                                                'POST'  => 'Postal Mail',
-                                                'EMAIL' => 'Email',
-                                                'FAX'   => 'Fax',
-                                              },
-                           },
     'spoolbalanceover'  => { label =>
                                'If balance (this invoice and previous) over',
                              type  => 'money',
@@ -50,7 +41,6 @@ sub do_action {
 
   $cust_bill->spool_csv(
     'format'       => $self->option('spoolformat'),
-    'dest'         => $self->option('spooldest'),
     'balanceover'  => $self->option('spoolbalanceover'),
     'agent_spools' => $self->option('spoolagent_spools'),
   );
