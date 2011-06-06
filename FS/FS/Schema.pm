@@ -2817,7 +2817,7 @@ sub tables_hashref {
         'charged_party',       'varchar', 'NULL', $char_d, '', '',
 
         'upstream_currency',      'char', 'NULL',       3, '', '',
-        'upstream_price',      'decimal', 'NULL',  '10,2', '', '', 
+        'upstream_price',      'decimal', 'NULL',  '10,4', '', '', 
         'upstream_rateplanid',     'int', 'NULL',      '', '', '', #?
 
         # how it was rated internally...
