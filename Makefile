@@ -375,6 +375,8 @@ install-rt:
 	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
 	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
 	" ${RT_PATH}/etc/RT_SiteConfig.pm; fi
+	if [ ${RT_ENABLED} -eq 1 ]; then \
+	  chown -R freeside:freeside ${RT_PATH}/etc; fi
 
 install-rt-initialdata:
 	if [ ${RT_ENABLED} -eq 1 ] && [ -d ${RT_PATH} ]; then \
