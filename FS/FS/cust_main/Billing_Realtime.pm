@@ -1285,7 +1285,8 @@ Implementation note: If I<amount> is unspecified or equal to the amount of the
 orignal payment, first an attempt is made to "void" the transaction via
 the gateway (to cancel a not-yet settled transaction) and then if that fails,
 the normal attempt is made to "refund" ("credit") the transaction via the
-gateway is attempted.
+gateway is attempted. No attempt to "void" the transaction is made if the 
+gateway has introspection data and doesn't support void.
 
 #The additional options I<payname>, I<address1>, I<address2>, I<city>, I<state>,
 #I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
@@ -1415,14 +1416,28 @@ sub realtime_refund_bop {
   }
 
   #first try void if applicable
+  my $void = new Business::OnlinePayment( $processor, @bop_options );
+
+  my $tryvoid = 1;
+  if ($void->can('info')) {
+      my $paytype = '';
+      $paytype = 'ECHECK' if $cust_pay && $cust_pay->payby eq 'CHEK';
+      $paytype = 'CC' if $cust_pay && $cust_pay->payby eq 'CARD';
+      my %supported_actions = $void->info('supported_actions');
+      $tryvoid = 0 
+        if ( %supported_actions && $paytype 
+                && defined($supported_actions{$paytype}) 
+                && !grep{ $_ eq 'Void' } @{$supported_actions{$paytype}} );
+  }
+
   if ( $cust_pay && $cust_pay->paid == $amount
     && (
       ( not defined($disable_void_after) )
       || ( time < ($cust_pay->_date + $disable_void_after ) )
     )
+    && $tryvoid
   ) {
     warn "  attempting void\n" if $DEBUG > 1;
-    my $void = new Business::OnlinePayment( $processor, @bop_options );
     if ( $void->can('info') ) {
       if ( $cust_pay->payby eq 'CARD'
            && $void->info('CC_void_requires_card') )
