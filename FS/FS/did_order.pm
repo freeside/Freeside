@@ -124,6 +124,8 @@ sub delete {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
 }
 
 =item merge SOURCE_ORDER
@@ -133,11 +135,11 @@ Merges the DID order given by SOURCE_ORDER into THIS order.
 The following fields from the source order are transferred, only if they aren't
 set in this order:
 -vendor order #
--submitted
 -confirmed
 -customer
 
-DID order items are transferred into this order.
+DID order items are transferred into this order. Per-order customer is cleared
+if any order items are assigned to a customer.
 
 The source order is deleted.
 
@@ -157,25 +159,57 @@ sub merge {
 
     return "DID vendors do not match"
         if $src->vendornum != $self->vendornum;
+        
+    local $SIG{HUP} = 'IGNORE';
+    local $SIG{INT} = 'IGNORE';
+    local $SIG{QUIT} = 'IGNORE';
+    local $SIG{TERM} = 'IGNORE';
+    local $SIG{TSTP} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
 
-    my @move_if_unset = qw( vendor_order_id submitted confirmed custnum );
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+
+    my @move_if_unset = qw( vendor_order_id confirmed custnum );
     foreach my $f ( @move_if_unset ) {
         $self->$f($src->$f) if !$self->$f;
     }
 
     my $error = '';
-    my @did_order_items = qsearch('did_order_item', { 'ordernum' => $src->ordernum });
-    foreach my $did_order_item ( @did_order_items ) {
+    my $item_has_cust = 0;
+    my @did_order_item = $src->did_order_item;
+    foreach my $did_order_item ( @did_order_item ) {
         $did_order_item->ordernum($self->ordernum);
+        $item_has_cust = 1 if $did_order_item->custnum;
         $error = $did_order_item->replace;
-        return $error if $error;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "can't replace did order item "
+                                  . $did_order_item->orderitemnum . ": $error";
+        }
     }
 
+    @did_order_item = $self->did_order_item;
+    foreach my $did_order_item ( @did_order_item ) {
+        $item_has_cust = 1 if $did_order_item->custnum;
+    }
+
+    $self->custnum('') if $item_has_cust;
+
     $error = $src->delete;
-    return $error if !$error;
+    if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't delete source order: $error"; 
+    }
 
     $error = $self->replace;
-    return $error if !$error;
+    if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't replace target order: $error"; 
+    }
+
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
     '';
 }
