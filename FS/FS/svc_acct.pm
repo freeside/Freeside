@@ -1590,6 +1590,8 @@ sub set_password {
       $pass = crypt($pass, $saltset[int(rand(64))].$saltset[int(rand(64))]);
     }
     # else $encryption eq 'plain', do nothing
+    $pass .= '=' x (4 - length($pass) % 4) #properly padded base64
+      if $encryption eq 'md5' || $encryption eq 'sha1';
     $pass = '{'.uc($encryption).'}'.$pass;
   }
   # else encoding eq 'plain'
