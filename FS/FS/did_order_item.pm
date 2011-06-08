@@ -126,6 +126,18 @@ sub check {
   $self->SUPER::check;
 }
 
+=item rate_center
+
+Returns the rate_center for this order item.
+
+=cut
+
+sub rate_center {
+    my $self = shift;
+    return '' unless $self->ratecenternum;
+    qsearchs('rate_center', { 'ratecenternum' => $self->ratecenternum });
+}
+
 =back
 
 =head1 SEE ALSO

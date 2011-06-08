@@ -24,6 +24,17 @@ my $did_order = qsearchs( {
 } );
 die "No order $ordernum" unless $did_order;
 
+sub didprov {
+    my($pkgnum,$svcpart,$phonenum) = (shift,shift,shift);
+    my $svc_phone = new FS::svc_phone({
+        pkgnum  => $pkgnum,
+        svcpart => $svcpart,
+        countrycode => 1,
+        phonenum    => $phonenum,
+    });
+    $cgi->param('error',$svc_phone->insert);
+}
+
 my $action = $cgi->param('action');
 if ( $action eq 'confirm' ) {
     my $confirmed = '';
@@ -48,6 +59,8 @@ elsif ( $action eq 'cancel' ) {
     $js = "window.location.href = '${p}browse/did_order.html'";
 }
 elsif ( $action eq 'provision' ) {
+    # XXX: most of this should move into did_order.pm and become transaction-enabled
+
     $header = 'DID order provisioned';
     my @dids = qsearch( 'phone_avail', { ordernum => $ordernum } );
     die "no DIDs on order" unless scalar(@dids);
@@ -60,20 +73,45 @@ elsif ( $action eq 'provision' ) {
         my $pkgnum = $1;
         my $svcpart = $2;
         if ( $did_order->custnum && $did_order->custnum == $custnum ) {
-        # this is our old per-order custnum case
+            # per-order custnum case
 
             foreach my $did ( @dids ) {
-                my $svc_phone = new FS::svc_phone({
-                    pkgnum  => $pkgnum,
-                    svcpart => $svcpart,
-                    countrycode => 1,
-                    phonenum    => $did->npa.$did->nxx.$did->station,
-                });
-                $cgi->param('error',$svc_phone->insert);
+                didprov($pkgnum,$svcpart,$did->npa.$did->nxx.$did->station);
                 last if $cgi->param('error');
             }
         }
-        # XXX: now what do we do for order items? Not clear how to match a DID in an order item
+        elsif(!$did_order->custnum) {  # multi-customer/stock case
+
+            # get each order item for this customer for this order
+            my @did_order_item = qsearch('did_order_item', {
+                                                'ordernum' => $ordernum,
+                                                'custnum' => $custnum,
+                                        });
+            foreach my $did_order_item ( @did_order_item ) {
+                # get imported unprovisioned DIDs for this order matching this order item
+                my $didsearch = {   'ordernum'  => $ordernum,
+                                    'svcnum'    => '',
+                                };
+                $didsearch->{'npa'} = $did_order_item->npa 
+                                                    if $did_order_item->npa;
+                $didsearch->{'state'} = $did_order_item->state
+                                                    if $did_order_item->state;
+                $didsearch->{'name'} = $did_order_item->rate_center->description 
+                                            if $did_order_item->rate_center;
+                $didsearch->{'msanum'} = $did_order_item->msanum
+                                                    if $did_order_item->msanum;
+                $didsearch->{'latanum'} = $did_order_item->latanum
+                                                    if $did_order_item->latanum;
+                @dids = qsearch('phone_avail', $didsearch);
+                my $limit = $did_order_item->quantity;
+                foreach my $did ( @dids ) {
+                    didprov($pkgnum,$svcpart,$did->npa.$did->nxx.$did->station);
+                    $limit--;
+                    last if $cgi->param('error') || $limit == 0;
+                }
+                last if $cgi->param('error');
+            }
+        }
     }
     $popup = '-popup';
 }
