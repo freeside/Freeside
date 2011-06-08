@@ -226,14 +226,14 @@ sub process_batch_import {
                'postinsert_callback' => sub {  
                     my $record = shift;
                     if($record->ordernum) {
-                    my $did_order = qsearchs('did_order', 
-                                        { 'ordernum' => $record->ordernum } );
-                    if($did_order && !$did_order->received) {
-                        $did_order->received(time);
-                        $did_order->confirmed(parse_datetime($record->confirmed));
-                        $did_order->vendor_order_id($record->vendor_order_id);
-                        $did_order->replace;
-                    }
+                        my $did_order = qsearchs('did_order', 
+                                            { 'ordernum' => $record->ordernum } );
+                        if($did_order && !$did_order->received) {
+                            $did_order->received(time);
+                            $did_order->confirmed(parse_datetime($record->confirmed));
+                            $did_order->vendor_order_id($record->vendor_order_id);
+                            $did_order->replace;
+                        }
                     }
                }, 
             };

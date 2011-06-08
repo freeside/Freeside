@@ -1,17 +1,19 @@
-<% include('/elements/header-popup.html', $success_msg ) %>
+<% include("/elements/header$popup.html", $header ) %>
+<% include('/elements/error.html') %>
+% unless ( $cgi->param('error') ) {
   <SCRIPT TYPE="text/javascript">
     <% $js %>
   </SCRIPT>
+% }
   </BODY>
 </HTML>
 <%init>
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
-$cgi->param('action') =~ /^(confirm|cancel|provision)$/ or die 'illegal action';
 my $action = $1;
-my $success_msg = '';
-my $error = '';
+my $header = '';
+my $popup = '';
 my $js = 'window.top.location.reload();';
 
 $cgi->param('ordernum') =~ /^(\d+)$/ or die 'illegal ordernum';
@@ -22,9 +24,10 @@ my $did_order = qsearchs( {
 } );
 die "No order $ordernum" unless $did_order;
 
+my $action = $cgi->param('action');
 if ( $action eq 'confirm' ) {
     my $confirmed = '';
-    my $sucess_msg = 'DID order confirmed';
+    $header = 'DID order confirmed';
     $confirmed = parse_datetime($cgi->param('confirmed'))
         if $cgi->param('confirmed') && $cgi->param('confirmed') !~ /^\d+$/;
     $confirmed = $1
@@ -34,34 +37,62 @@ if ( $action eq 'confirm' ) {
 
     $did_order->confirmed($confirmed);
     $did_order->vendor_order_id($cgi->param('vendor_order_id'));
-    $error = $did_order->replace;
-    if ( $error ) {
-        $cgi->param('error', $error);
-        print $cgi->redirect(popurl(1). "did_order_confirm.html?". $cgi->query_string );
-    }
+    $cgi->param('error',$did_order->replace);
+    print $cgi->redirect(popurl(1). "did_order_confirm.html?". $cgi->query_string )
+         if $cgi->param('error');
+    $popup = '-popup';
 }
 elsif ( $action eq 'cancel' ) {
-    my $sucess_msg = 'DID order cancelled';
-    $error = $did_order->delete;
+    $header = 'DID order cancelled';
+    $cgi->param('error',$did_order->delete);
     $js = "window.location.href = '${p}browse/did_order.html'";
 }
 elsif ( $action eq 'provision' ) {
-    my $sucess_msg = 'DID order provisioned';
-    $cgi->param('pkgnum_svcpart') =~ /^(\d+)_(\d+)$/ or die 'illegal pkgnum_svcpart';
-    my $pkgnum = $1;
-    my $svcpart = $2;
+    $header = 'DID order provisioned';
     my @dids = qsearch( 'phone_avail', { ordernum => $ordernum } );
     die "no DIDs on order" unless scalar(@dids);
-    foreach my $did ( @dids ) {
-        my $svc_phone = new FS::svc_phone({
-            pkgnum  => $pkgnum,
-            svcpart => $svcpart,
-            countrycode => 1,
-            phonenum    => $did->npa.$did->nxx.$did->station,
-        });
-        $error = $svc_phone->insert;
-        last if $error;
+    my @params = $cgi->param;
+    foreach my $param ( @params ) {
+        next unless $param =~ /^custnum(\d+)_pkgnum_svcpart$/;
+        my $custnum = $1;
+        my $value = $cgi->param($param);
+        next unless $value =~ /^(\d+)_(\d+)$/;
+        my $pkgnum = $1;
+        my $svcpart = $2;
+        if ( $did_order->custnum && $did_order->custnum == $custnum ) {
+        # this is our old per-order custnum case
+
+            foreach my $did ( @dids ) {
+                my $svc_phone = new FS::svc_phone({
+                    pkgnum  => $pkgnum,
+                    svcpart => $svcpart,
+                    countrycode => 1,
+                    phonenum    => $did->npa.$did->nxx.$did->station,
+                });
+                $cgi->param('error',$svc_phone->insert);
+                last if $cgi->param('error');
+            }
+        }
+        # XXX: now what do we do for order items? Not clear how to match a DID in an order item
     }
+    $popup = '-popup';
 }
+elsif ( $action eq 'merge' ) {
+    $header = 'DID order merged';
+    $cgi->param('target_ordernum') =~ /^(\d+)$/ or die 'illegal target_ordernum';
+    my $target_ordernum = $1;
+    my $target_did_order = qsearchs( {
+      'table'     => 'did_order',
+      'hashref'   => { 'ordernum' => $target_ordernum },
+    } );
+    die "No order $target_ordernum" unless $target_did_order;
+    $cgi->param('error',$target_did_order->merge($did_order));
+    $js = "window.location.href = '${p}browse/did_order.html'";
+}
+else { 
+    die "illegal action";
+}
+
+$header = 'Error' if $cgi->param('error');
 
 </%init>

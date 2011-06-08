@@ -126,6 +126,59 @@ sub delete {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 }
 
+=item merge SOURCE_ORDER
+
+Merges the DID order given by SOURCE_ORDER into THIS order. 
+
+The following fields from the source order are transferred, only if they aren't
+set in this order:
+-vendor order #
+-submitted
+-confirmed
+-customer
+
+DID order items are transferred into this order.
+
+The source order is deleted.
+
+The operation fails if:
+-either order has a received time; or
+-the DID vendors do not match between the orders
+
+=cut
+
+sub merge {
+    my $self = shift;
+    my $src = shift;
+    return "invalid source order" unless $src;
+
+    return "DIDs received for either order" 
+        if $src->received || $self->received;
+
+    return "DID vendors do not match"
+        if $src->vendornum != $self->vendornum;
+
+    my @move_if_unset = qw( vendor_order_id submitted confirmed custnum );
+    foreach my $f ( @move_if_unset ) {
+        $self->$f($src->$f) if !$self->$f;
+    }
+
+    my $error = '';
+    my @did_order_items = qsearch('did_order_item', { 'ordernum' => $src->ordernum });
+    foreach my $did_order_item ( @did_order_items ) {
+        $did_order_item->ordernum($self->ordernum);
+        $error = $did_order_item->replace;
+        return $error if $error;
+    }
+
+    $error = $src->delete;
+    return $error if !$error;
+
+    $error = $self->replace;
+    return $error if !$error;
+
+    '';
+}
 
 =item replace OLD_RECORD
 
@@ -176,15 +229,47 @@ sub did_order_item {
 
 =item cust_main
 
-Returns the cust_main (see L<FS::cust_main>), if any, associated with this bulk DID order.
+Returns all cust_main (see L<FS::cust_main>), if any, associated with this
+bulk DID order.
 
 =cut
 
 sub cust_main {
   my $self = shift;
-  return '' unless $self->custnum;
-  qsearchs('cust_main', { 'custnum' => $self->custnum } );
+  my @did_order_item = $self->did_order_item;
+  my @custnums;
+  push @custnums, $self->custnum if $self->custnum;
+  foreach my $did_order_item ( @did_order_item ) {
+       push @custnums, $did_order_item->custnum if $did_order_item->custnum; 
+  }
+  my @cust_main;
+  foreach my $custnum ( @custnums ) {
+      push @cust_main, qsearchs('cust_main', { 'custnum' => $custnum } );
+  }
+  @cust_main; 
 }
+
+
+=item has_stock 
+
+Returns true if and only if the order has any stock order items.
+
+=cut
+
+sub has_stock {
+    my $self = shift;
+    my $items_with_custnum = 0;
+    my @did_order_item = $self->did_order_item;
+    foreach my $did_order_item ( @did_order_item ) {
+        $items_with_custnum++ if $did_order_item->custnum;
+    }
+
+    return 0 if ($items_with_custnum == scalar(@did_order_item) 
+                    && $items_with_custnum != 0 && !$self->custnum) 
+                || $self->custnum;
+    1;
+}
+
 
 =item provisioned
 

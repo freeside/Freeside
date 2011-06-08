@@ -98,6 +98,18 @@
           <BR><FONT SIZE="-1">State</FONT>
       </TD>
 
+%     $value = $item->get('custnum');
+      <TD><INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_custnum"
+                 ID    = "<%$id%>_custnum"
+                 SIZE  = "7"
+                 VALUE = "<% scalar($cgi->param($name."_custnum"))
+                             || $value |h %>"
+                 <% $onchange %>
+          >
+          <BR><FONT SIZE="-1">Customer #</FONT>
+      </TD>
+
     </TR>
   </TABLE>
 

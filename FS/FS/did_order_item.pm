@@ -49,6 +49,8 @@ primary key
 
 =item quantity
 
+=item custnum - foreign key to cust_main table, optional
+
 =back
 
 =head1 METHODS
@@ -117,6 +119,7 @@ sub check {
     || $self->ut_foreign_keyn('ratecenternum', 'rate_center', 'ratecenternum')
     || $self->ut_textn('state')
     || $self->ut_number('quantity')
+    || $self->ut_foreign_keyn('custnum', 'cust_main', 'custnum')
   ;
   return $error if $error;
 
@@ -127,7 +130,7 @@ sub check {
 
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::did_order>, <FS::Record>, schema.html from the base documentation.
 
 =cut
 

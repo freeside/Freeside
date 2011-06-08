@@ -12,6 +12,12 @@
                             { field => 'confirmed',
                               type => 'hidden',
                             },
+                            { field => 'received',
+                              type => 'hidden',
+                            },
+                            { field => 'submitted',
+                              type => 'hidden',
+                            },
                             { field => 'stock_or_customer',
                               type => 'radio',
                               options => [ 'Stock', 'Customer', ],
@@ -104,12 +110,12 @@ my $javascript = <<END;
             if ( f.stock_or_customer_Stock.checked ) {
                 custnum_search.disabled = true;
                 custnum_select.disabled = true;
+                custnum.value = '';
             }
             else if ( f.stock_or_customer_Customer.checked ) {
                 custnum_search.disabled = false;
                 custnum_select.disabled = false;
             }
-            custnum.value = '';
         }
 
         /* o2m or something else is broken, can't put this in the actual

@@ -4,10 +4,10 @@
                  'name'        => 'bulk DID orders',
                  'disableable' => 0,
                  'query'       => $query,
-                 'count_query' => 'SELECT COUNT(*) FROM did_order', # XXX: this is wrong!?
+                 'count_query' => 'SELECT COUNT(*) FROM did_order', # XXX: this is wrong!
                  'header'      => [ '#', 'Vendor',' Vendor Order #', 
                                     'Submitted', 'Confirmed', 'Customer',
-                                    'Received', 'Provision', 'Cancel',
+                                    'Received', 'Provision', 'Cancel', 'Merge Into',
                                   ],
                  'fields'      => [ sub {
                                         my $did_order = shift;
@@ -32,9 +32,19 @@
                                     }, 
                                     sub { # Customer
                                         my $did_order = shift;
-                                        my $cust_main = $did_order->cust_main;
-                                        return "Stock" unless $cust_main;
-                                        "<A HREF='${p}view/cust_main.cgi?".$cust_main->custnum."'>".$cust_main->name."</A>";
+                                        my @cust_main = $did_order->cust_main;
+                                        my $has_stock = $did_order->has_stock;
+                                        if (scalar(@cust_main) == 1 && !$has_stock) {
+                                            my $cust_main = $cust_main[0];
+                                            return "<A HREF='${p}view/cust_main.cgi?".$cust_main->custnum."'>".$cust_main->name."</A>"
+                                        }
+                                        elsif(scalar(@cust_main) == 0 && $has_stock) {
+                                            return 'Stock';
+                                        }
+                                        elsif(scalar(@cust_main) > 0 && !$has_stock) {
+                                            return 'Multiple';
+                                        }
+                                        'Multiple/Stock';
                                     },
                                     sub { # Received
                                         my $did_order = shift;
@@ -50,11 +60,11 @@
                                         my @provisioned = $did_order->provisioned;
                                         return '' 
                                             unless $did_order->received 
-                                                        && $did_order->custnum
+                                                        && scalar($did_order->cust_main)
                                                         && !scalar(@provisioned);
                                         include( '/elements/popup_link.html',
                                           { 'action'      => "${p}misc/did_order_provision.html?ordernum=".$did_order->ordernum,
-                                            'label'       => 'Provision All DIDs',
+                                            'label'       => 'Provision DIDs',
                                             'actionlabel' => 'Bulk DID order - DID provisioning',
                                             'width'       => 520,
                                             'height'      => 300,
@@ -68,6 +78,11 @@
                                         . $did_order->ordernum . qq!', 'Cancel this order (#!
                                         . $did_order->ordernum . qq!)?')">Cancel</A>!
                                     },
+                                    sub { # Merge
+                                        my $did_order = shift;
+                                        return '' unless !$did_order->received;
+                                        &$merge_select($did_order->ordernum);
+                                    },
                                   ],
                  'links'       => [
                                     [ $p.'edit/did_order.html?', 'ordernum' ],
@@ -77,6 +92,12 @@
                                 function areyousure(href,msg) {
                                     if (confirm(msg))
                                         window.location.href = href;
+                                }
+
+                                function mergeconfirm(select,source_ordernum) {
+                                    var target_ordernum = select.options[select.selectedIndex].value;
+                                    areyousure("'.$p.'misc/did_order_confirmed.html?action=merge;ordernum="+source_ordernum+";target_ordernum="+target_ordernum,
+                                                "Merge order #" + source_ordernum + " into order #" + target_ordernum + "?");
                                 }
                             </script>
                                 ',
@@ -90,27 +111,26 @@ die "access denied"
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-my $display_date = sub {
-    my $date = shift;
-    return '' unless $date;
-    time2str($date_format, $date);
-};
-
 my $html_init = qq!<A HREF="${p}edit/did_order.html">Add a bulk DID order</A>
                     <BR><BR>!;
-
 my $query = { 
     'table'      => 'did_order',
     'hashref'    => {},
     'addl_from' => 'left join did_vendor using (vendornum) ',
     'order_by' => 'ORDER BY ordernum',
             };
-$query->{'hashref'}->{'custnum'} = $1 if $cgi->param('custnum') =~ /^(\d+)$/;
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+    $query->{'extra_sql'} .= " where (custnum = $1 or $1 in (select distinct "
+                            . " custnum from did_order_item where "
+                            . " did_order_item.ordernum = did_order.ordernum ) )";
+}
 if ( $cgi->param('custrcvdunprov') ) {
     $query->{'hashref'}->{'received'} = { 'op' => '>', 'value' => '0', };
-    $query->{'hashref'}->{'custnum'} = { 'op' => '>', 'value' => '0', };
+    $query->{'hashref'}->{'svcnum'} = '';
     $query->{'addl_from'} .= ' left join phone_avail using (ordernum) ';
-    $query->{'extra_sql'} .= ' and svcnum is null ';
+    $query->{'extra_sql'} .= " and (custnum > 0 or 0 < (select count(1) from "
+                      . " did_order_item where did_order_item.custnum > 0 and "
+                      . " did_order_item.ordernum = did_order.ordernum) )";
     $html_init .= qq!<A HREF="${p}browse/did_order.html">Browse all DID orders</A>!;
 }
 else {
@@ -118,7 +138,32 @@ else {
                     Browse all non-stock orders with received unprovisioned DIDs
                     </A>!;
 }
-
 $html_init .= "<BR><BR>";
+
+my @merge_targets = qsearch({
+                                'table'     => 'did_order',
+                                'hashref'   => { 'received' => '' },
+                                'order_by'  => 'ORDER BY ordernum',
+                            });
+
+my $merge_select = sub {
+    my $source_ordernum = shift;
+    my $merge_select = '';
+    if ( @merge_targets ) {
+        $merge_select = "<SELECT onchange='mergeconfirm(this,$source_ordernum)'><OPTION></OPTION>";
+        foreach my $order ( @merge_targets ) {
+            next if $order->ordernum == $source_ordernum;
+            $merge_select .= "<OPTION>".$order->ordernum."</OPTION>";
+        }
+        $merge_select .= "</SELECT>";
+    }
+    $merge_select;
+};
+
+my $display_date = sub {
+    my $date = shift;
+    return '' unless $date;
+    time2str($date_format, $date);
+};
 
 </%init>
