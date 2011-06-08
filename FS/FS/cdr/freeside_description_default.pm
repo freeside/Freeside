@@ -37,9 +37,9 @@ use FS::cdr;
     # Number
     sub {
         my($cdr, $number) = @_;
-        $number =~ /(\d+)$/ 
+        $number =~ /(\d+)\s(\d+)$/ 
             or die "unparsable number: $number"; #maybe we shouldn't die...
-        $cdr->dst($1);
+        $cdr->dst("$1$2");
     },           
 
     'description',      # Destination (regionname)
