@@ -88,6 +88,15 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                      'select_key'   => 'ratenum',
                      'select_label' => 'ratename',
                    },
+                   
+    'intrastate_ratenum'   => { 'name' => 'Optional alternate intrastate rate plan',
+                     'type' => 'select',
+                     'select_table' => 'rate',
+                     'select_key'   => 'ratenum',
+                     'select_label' => 'ratename',
+                     'disable_empty' => 0,
+                     'empty_label'   => '',
+                   },
 
     'min_included' => { 'name' => 'Minutes included when using the "single price per minute" rating method or when using the "prefix" rating method ("region group" billing)',
                     },
@@ -252,8 +261,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        recur_method cutoff_day
                        add_full_period
                        cdr_svc_method
-                       rating_method ratenum min_charge min_included
-		       sec_granularity
+                       rating_method ratenum intrastate_ratenum 
+                       min_charge min_included
+		               sec_granularity
                        ignore_unrateable
                        default_prefix
                        disable_src
@@ -273,7 +283,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        411_rewrite
                        output_format usage_mandate summarize_usage usage_section
                        bill_every_call bill_inactive_svcs
-                       count_available_phones suspend_bill
+                       count_available_phones suspend_bill 
                      )
                   ],
   'weight' => 40,
@@ -495,6 +505,30 @@ sub calc_usage {
           my $eff_ratenum = $cdr->is_tollfree('accountcode')
             ? $cust_pkg->part_pkg->option('accountcode_tollfree_ratenum')
             : '';
+
+          my $intrastate_ratenum = $cust_pkg->part_pkg->option('accountcode_tollfree_ratenum');
+          if ( $intrastate_ratenum && !$cdr->is_tollfree ) {
+            # this is relatively easy only because:
+            # -assume all numbers are valid NANP numbers NOT in a fully-qualified format
+            # -disregard toll-free
+            # -disregard private or unknown numbers
+            # -there is exactly one record in rate_prefix for a given NPANXX
+            # -default to interstate if we can't find one or both of the prefixes
+            my $dstprefix = $cdr->dst;
+            $dstprefix =~ /^(\d{6})/;
+            $dstprefix = qsearchs('rate_prefix', {   'countrycode' => '1', 
+                                                        'npa' => $1, 
+                                                 }) || '';
+            my $srcprefix = $cdr->src;
+            $srcprefix =~ /^(\d{6})/;
+            $srcprefix = qsearchs('rate_prefix', {   'countrycode' => '1',
+                                                     'npa' => $1, 
+                                                 }) || '';
+            $eff_ratenum = $intrastate_ratenum if ($srcprefix && $dstprefix
+                && $srcprefix->state && $dstprefix->state
+                && $srcprefix->state eq $dstprefix->state);
+          }
+
           $eff_ratenum ||= $ratenum;
           $rate = qsearchs('rate', { 'ratenum' => $eff_ratenum })
             or die "ratenum $eff_ratenum not found!";

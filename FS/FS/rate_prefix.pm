@@ -108,6 +108,9 @@ sub check {
     || $self->ut_number('countrycode')
     || $self->ut_numbern('npa')
     || $self->ut_numbern('nxx')
+    || $self->ut_foreign_keyn('latanum', 'lata', 'latanum')
+    || $self->ut_textn('state')
+    || $self->ut_textn('ocn')
   ;
   return $error if $error;
 

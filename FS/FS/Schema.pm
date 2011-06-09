@@ -2593,6 +2593,9 @@ sub tables_hashref {
         'countrycode', 'varchar',     '',  3, '', '', 
         'npa',         'varchar', 'NULL', 10, '', '', #actually the whole prefix
         'nxx',         'varchar', 'NULL',  3, '', '', #actually not used
+        'latanum',     'int',     'NULL',      '', '', '',
+        'state',       'char',    'NULL',       2, '', '', 
+        'ocn',         'char',    'NULL',       4, '', '', 
       ],
       'primary_key' => 'prefixnum',
       'unique'      => [],

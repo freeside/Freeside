@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+
+use strict;
+use DBI;
+use FS::UID qw(adminsuidsetup);
+use FS::rate_prefix;
+use FS::rate_region;
+use FS::rate_detail;
+use FS::Record qw(qsearch qsearchs dbh);
+
+# Assumption: 1-to-1 relationship between rate_region and rate_prefix, with
+# two rate_detail per rate_region: one for interstate; one for intrastate
+#
+# Create interstate and intrastate rate plans - run the script once
+# per spreadsheet, setting the appropriate values below.
+####### SET THESE! ####################
+my $ratenum = 3;
+my $file = "/home/levinse/domestic_interstate.xls";
+my $sheet_name = 'domestic_interstate';
+#######################################
+
+my $user = shift or die "no user specified";
+adminsuidsetup $user;
+
+local $SIG{HUP} = 'IGNORE';
+local $SIG{INT} = 'IGNORE';
+local $SIG{QUIT} = 'IGNORE';
+local $SIG{TERM} = 'IGNORE';
+local $SIG{TSTP} = 'IGNORE';
+local $SIG{PIPE} = 'IGNORE';
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbhfs = dbh;
+
+my $dbh = DBI->connect("DBI:Excel:file=$file")
+  or die "can't connect: $DBI::errstr";
+
+my $sth = $dbh->prepare("select * from $sheet_name")
+  or die "can't prepare: ". $dbh->errstr;
+$sth->execute
+  or die "can't execute: ". $sth->errstr;
+
+my @rp_cache = qsearch('rate_prefix', {} ) or die "can't cache rate_prefix";
+my %rp_cache = map { $_->npa => $_ } @rp_cache;
+
+sub fatal {
+    my $msg = shift;
+    $dbhfs->rollback if $oldAutoCommit;
+    die $msg;
+}
+
+while ( my $row = $sth->fetchrow_hashref ) {
+  my $lata = $row->{'lata'};
+  my $ocn = $row->{'ocn'};
+  my $state = $row->{'state'};
+  my $rate = $row->{'rate'};
+  my $npanxx = $row->{'lrn'};
+  my $error = '';
+
+  my $rp;
+  if ( $rp_cache{$npanxx} ) {
+      $rp = $rp_cache{$npanxx};
+  } 
+  else {
+     my $rr = new FS::rate_region { 'regionname' => $state };
+     $error = $rr->insert;
+     fatal("can't insert rr") if $error;
+
+     $rp = new FS::rate_prefix {   'countrycode'   => '1',
+                                   'npa'           => $npanxx,
+                                   'ocn'           => $ocn,
+                                   'state'         => $state,
+                                   'latanum'       => $lata,
+                                   'regionnum'     => $rr->regionnum,
+                               }; 
+     $error = $rp->insert;
+     fatal("can't insert rp") if $error;
+     $rp_cache{$npanxx} = $rp;
+  }
+
+  my $rd = new FS::rate_detail {    'ratenum'         => $ratenum,
+                                    'min_included'    => 0,
+                                    'min_charge'      => $rate,
+                                    'sec_granularity' => 60,
+                                    'dest_regionnum'  => $rp->regionnum,
+                                };
+  $error = $rd->insert;
+  fatal("can't insert rd") if $error;
+}
+
+$dbhfs->commit or die $dbhfs->errstr if $oldAutoCommit;
