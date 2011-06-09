@@ -11,14 +11,16 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a );
-getopts('m:p:r:e:d:v:P:a');
+use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c );
+getopts('c:m:p:r:e:d:v:P:a');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
 $opt_e =~ s/^\.//;
 
 $opt_p ||= '';
+
+die "invalid cdrtypenum" if $opt_c && $opt_c !~ /^\d+$/;
 
 my %options = ();
 
@@ -92,12 +94,15 @@ foreach my $filename ( @$ls ) {
 
   warn "Processing $filename\n" if $opt_v;
 
-  my $error = FS::cdr::batch_import( {
+  my $import_options = {
     'file'            => "$cachedir/$filename",
     'format'          => $format,
     'batch_namevalue' => $filename,
     'empty_ok'        => 1,
-  } );
+  };
+  $import_options->{'cdrtypenum'} = $opt_c if $opt_c;
+  
+  my $error = FS::cdr::batch_import($import_options);
   die $error if $error;
 
   if ( $opt_d ) {
@@ -161,7 +166,7 @@ cdr.sftp_and_import - Download CDR files from a remote server via SFTP
 
   cdr.sftp_and_import [ -m method ] [ -p prefix ] [ -e extension ] 
     [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
-    [ -a ] user format [sftpuser@]servername
+    [ -a ] [ -c cdrtypenum ] user format [sftpuser@]servername
 
 =head1 DESCRIPTION
 
@@ -184,6 +189,8 @@ or FTP and then import them into the database.
 
 -v: set verbosity level; this script only has one level, but it will 
     be passed as the 'debug' argument to the transport method
+
+-c: cdrtypenum to set, defaults to none
 
 user: freeside username
 

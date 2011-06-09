@@ -1853,10 +1853,12 @@ sub batch_import {
       next if $line =~ /^\s*$/; #skip empty lines
 
       $line = &{$row_callback}($line) if $row_callback;
+      
+      next if $line =~ /^\s*$/; #skip empty lines
 
       $parser->parse($line) or do {
         $dbh->rollback if $oldAutoCommit;
-        return "can't parse: ". $parser->error_input();
+        return "can't parse: ". $parser->error_input() . " " . $parser->error_diag;
       };
       @columns = $parser->fields();
 

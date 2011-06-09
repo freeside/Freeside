@@ -948,6 +948,14 @@ sub batch_import {
   my $iopt = _import_options;
   $opt->{$_} = $iopt->{$_} foreach keys %$iopt;
 
+  if ( defined $opt->{'cdrtypenum'} ) {
+        $opt->{'preinsert_callback'} = sub {
+                my($record,$param) = (shift,shift);
+                $record->cdrtypenum($opt->{'cdrtypenum'});
+                '';
+        };
+  }
+
   FS::Record::batch_import( $opt );
 
 }
