@@ -103,11 +103,19 @@
     }
 
     function payauto_changed(payauto_field){
-        var f = (payauto_field.name == 'CARD_payauto') ? 'card_billday' : 'chek_billday';
-        f = document.getElementById(f);
-        if ( f == null) return;
-        if(payauto_field.checked) f.style.display = '';
-        else f.style.display = 'none';
+        var span = (payauto_field.name == 'CARD_payauto') ? 'card_billday' : 'chek_billday';
+        var select = document.getElementById('select_'+span);
+        span = document.getElementById(span);
+        if (span == null || select == null) return;
+        if(payauto_field.checked) {
+            span.style.color = '#000000';
+            select.disabled = false;
+        }
+        else {
+            span.style.color = '#999999';
+            select.disabled = true;
+            select.selectedIndex = 0;
+        }
     }
     
   </SCRIPT>
@@ -145,8 +153,10 @@
 %   $ret;
 %  }
 %
-%  my $card_billday_style = $payby eq 'CARD' ? '' : 'style="display: none"';
-%  my $chek_billday_style = $payby eq 'CHEK' ? '' : 'style="display: none"';
+%  my $card_billday_style = $payby eq 'CARD' ? '' : 'style="color: #999999"';
+%  my $chek_billday_style = $payby eq 'CHEK' ? '' : 'style="color: #999999"';
+%  my $card_billday_select_disabled = $payby eq 'CARD' ? '' : 'DISABLED';
+%  my $chek_billday_select_disabled = $payby eq 'CHEK' ? '' : 'DISABLED';
 %
 %  my %payby = (
 %
@@ -200,16 +210,17 @@
 %
 %        qq!<TR><TD COLSPAN=2 WIDTH="608">!.
 %           qq!<INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CARD_payauto" NAME="CARD_payauto" $CARD_payauto_checked> !.
-%           emt('Charge future payments to this [_1] automatically','credit card').
+%           emt('Charge future payments to this [_1] automatically','credit card').'</TD></TR>'.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
-%        qq!<BR><DIV id="card_billday" $card_billday_style>
-%                    Charge on this day of each month <SELECT NAME="billday">!
-%                . billday_options($cust_main->billday) . qq!</SELECT> </DIV>!
+%        qq!<TR><TD ALIGN="RIGHT" id="card_billday" $card_billday_style>
+%                    Charge on this day of each month</TD><TD> &nbsp; 
+%                   <SELECT id="select_card_billday" $card_billday_select_disabled NAME="billday">!
+%                . billday_options($cust_main->billday) . qq!</SELECT> </TD></TR>!
 %        : ''
 %      ).
 %
-%      '</TD></TR></TABLE>',
+%      '</TABLE>',
 %
 %    'CHEK' => 
 %
@@ -247,16 +258,17 @@
 %
 %        qq!<TR><TD COLSPAN=4 WIDTH="608">!.
 %           qq!<INPUT TYPE="checkbox" onchange="payauto_changed(this);" ID="CHEK_payauto" NAME="CHEK_payauto" $CHEK_payauto_checked> !.
-%           emt('Charge future payments to this [_1] automatically','electronic check').
+%           emt('Charge future payments to this [_1] automatically','electronic check').'</TD></TR>'.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
-%        qq!<DIV id="chek_billday" $chek_billday_style>
-%                    Charge on this day of each month <SELECT NAME="billday">!
-%                . billday_options($cust_main->billday) . qq!</SELECT> </DIV>!
+%        qq!<TR><TD ALIGN="RIGHT" id="chek_billday" $chek_billday_style>
+%                    Charge on this day of each month</TD><TD> &nbsp;
+%                   <SELECT id="select_chek_billday" $chek_billday_select_disabled NAME="billday">!
+%                . billday_options($cust_main->billday) . qq!</SELECT> </TD></TR>!
 %        : ''
 %      ).
 %
-%      '</TD></TR></TABLE>',
+%      '</TABLE>',
 %
 %    'LECB' =>  
 %
