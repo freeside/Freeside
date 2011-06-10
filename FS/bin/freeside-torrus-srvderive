@@ -5,7 +5,7 @@ use POSIX qw( :sys_wait_h );
 use Sys::SigAction qw( set_sig_handler );
 use Date::Parse;
 use Date::Format;
-use IPC::Run;
+use IPC::Run qw( run ); #timeout );
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw( adminsuidsetup forksuidsetup dbh driver_name );
 use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
