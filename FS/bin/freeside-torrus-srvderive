@@ -5,6 +5,7 @@ use POSIX qw( :sys_wait_h );
 use Sys::SigAction qw( set_sig_handler );
 use Date::Parse;
 use Date::Format;
+use IPC::Run;
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw( adminsuidsetup forksuidsetup dbh driver_name );
 use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
@@ -135,6 +136,46 @@ while (1) {
           warn "no initial last_srv_date for $serviceid; skipping\n" if $DEBUG;
           exit;
         }
+      }
+
+      #alternate (hopefully more efficient) path: if we're more than a day
+      #behind, call native torrus srvderive
+      my $last_srv_date = $torrus_srvderive->last_srv_date;
+      my $currdate = time2str('%Y-%m-%d', time);
+      if ( $last_srv_date ne $currdate ) {
+        warn "serviceid $serviceid last_srv_date != $currdate\n" if $DEBUG;
+
+        #delete records from last_srv_date
+        my $dsql =
+          'DELETE FROM srvexport WHERE srv_date = ? AND serviceid IN(?,?)';
+         my $dsth = dbh->prepare($dsql) or die $DBI::errstr;
+         $dsth->execute($last_srv_date, $serviceid.'_IN', $serviceid.'_OUT')
+           or die $dsth->errstr;
+        dbh->commit or die dbh->errstr;
+
+        foreach my $dir ('_IN','_OUT') {
+
+          #XX TORRUS_PATH
+          my @cmd = ( '/usr/local/bin/torrus', 'srvderive',
+                        "--start=$last_srv_date", "--end=$currdate",
+                        "--out=$serviceid$dir", "--func=SUM",
+                        map "$_$dir", @serviceids
+                    );
+
+          warn "calling native srvderive: ". join(' ', @cmd). "\n" if $DEBUG;
+          run( \@cmd ); #verbose?  timeout?
+
+        }
+        warn "native srvderive done" if $DEBUG;
+
+        $torrus_srvderive->last_srv_date($currdate);
+        my $error = $torrus_srvderive->replace;
+        die $error if $error;
+
+        #don't bother trying today's immediately
+        warn "done with $serviceid for now\n" if $DEBUG;
+        exit; #end-of-kid
+
       }
 
       my $ssql = "
