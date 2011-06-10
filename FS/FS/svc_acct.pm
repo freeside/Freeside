@@ -2676,12 +2676,12 @@ sub crypt_password {
 
       my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
       if ( $encryption eq 'crypt' ) {
-        crypt(
+        return crypt(
           $self->_password,
           $saltset[int(rand(64))].$saltset[int(rand(64))]
         );
       } elsif ( $encryption eq 'md5' ) {
-        unix_md5_crypt( $self->_password );
+        return unix_md5_crypt( $self->_password );
       } elsif ( $encryption eq 'blowfish' ) {
         croak "unknown encryption method $encryption";
       } else {
@@ -2689,7 +2689,7 @@ sub crypt_password {
       }
 
     } elsif ( $self->_password =~ /^\{CRYPT\}(.+)$/ ) {
-      $1;
+      return $1;
     }
 
   } elsif ( $self->_password_encoding eq 'crypt' ) {
@@ -2702,12 +2702,16 @@ sub crypt_password {
 
     my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
     if ( $encryption eq 'crypt' ) {
-      crypt(
+      return crypt(
         $self->_password,
         $saltset[int(rand(64))].$saltset[int(rand(64))]
       );
     } elsif ( $encryption eq 'md5' ) {
-      unix_md5_crypt( $self->_password );
+      return unix_md5_crypt( $self->_password );
+    } elsif ( $encryption eq 'sha1_base64' ) { #for acct_sql
+      my $pass = sha1_base64( $self->_password );
+      $pass .= '=' x (4 - length($pass) % 4); #properly padded base64
+      return $pass;
     } elsif ( $encryption eq 'blowfish' ) {
       croak "unknown encryption method $encryption";
     } else {
@@ -2728,12 +2732,12 @@ sub crypt_password {
 
       my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
       if ( $encryption eq 'crypt' ) {
-        crypt(
+        return crypt(
           $self->_password,
           $saltset[int(rand(64))].$saltset[int(rand(64))]
         );
       } elsif ( $encryption eq 'md5' ) {
-        unix_md5_crypt( $self->_password );
+        return unix_md5_crypt( $self->_password );
       } elsif ( $encryption eq 'blowfish' ) {
         croak "unknown encryption method $encryption";
       } else {

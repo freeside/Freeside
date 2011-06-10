@@ -23,7 +23,7 @@ tie my %options, 'Tie::IxHash',
                           },
   'primary_key'        => { label => 'Database primary key' },
   'crypt'              => { label => 'Password encryption',
-                            type=>'select', options=>[qw(crypt md5)],
+                            type=>'select', options=>[qw(crypt md5 sha1_base64)],
                             default=>'crypt',
                           },
 ;
