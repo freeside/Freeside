@@ -363,7 +363,7 @@ sub order {
         fatal("customer mismatch for vendor order #$vendor_order_id")
             unless (    ($o->custnum && $cust{'custnum'} 
                           && ($o->custnum == $cust{'custnum'} 
-                            || $vendor_order_id eq '293745')
+                            || $vendor_order_id eq '293745' || $vendor_order_id eq '300001')
                         )
                         ||
                         (!$o->custnum && !exists($cust{'custnum'}))
@@ -400,11 +400,10 @@ sub provision {
             phonenum    => $did,
         });
     
-    # XXX: THIS LINE CAUSES PERFORMANCE TO DEGRADE AND THE SCRIPT NEVER FINISHES! WHY!?
+    # XXX: THIS LINE CAUSES PERFORMANCE TO DEGRADE
     # -unattaching the exports has no effect
     # -after each successive call, the time taken to complete 100 rows becomes greater
     # -commenting out this call results in a constant time taken to complete 100 rows
-    # -after 10K rows we get a random error that makes no sense
     my $error = $svc_phone->insert;
 
     fatal("can't insert svc_phone: $error") if $error;
