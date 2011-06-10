@@ -334,6 +334,10 @@ sub check {
 
   return $x unless ref($x);
 
+  my $nw_coords = $conf->exists('svc_broadband-require-nw-coordinates');
+  my $lat_lower = $nw_coords ? 1 : -90;
+  my $lon_upper = $nw_coords ? -1 : 180;
+
   my $error =
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('blocknum')
@@ -343,8 +347,8 @@ sub check {
     || $self->ut_ipn('ip_addr')
     || $self->ut_hexn('mac_addr')
     || $self->ut_hexn('auth_key')
-    || $self->ut_coordn('latitude', -90, 90)
-    || $self->ut_coordn('longitude', -180, 180)
+    || $self->ut_coordn('latitude', $lat_lower, 90)
+    || $self->ut_coordn('longitude', -180, $lon_upper)
     || $self->ut_sfloatn('altitude')
     || $self->ut_textn('vlan_profile')
     || $self->ut_textn('plan_id')

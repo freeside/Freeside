@@ -5,6 +5,8 @@
      'fields'               => \@fields, 
      'field_callback'       => $callback,
      'dummy'                => $cgi->query_string,
+     'onsubmit'             => 'validate_coords',
+     'html_foot'            => $js,
      )
 %>
 <%init>
@@ -16,6 +18,84 @@ die "access denied"
 #  -Kristian
 
 my $conf = new FS::Conf;
+
+my $js = <<END
+    <script type="text/javascript">
+        function validate_coords(f){
+END
+;
+if ( $conf->exists('svc_broadband-require-nw-coordinates') ) {
+$js .= <<END
+            var lon = f.longitude;
+            var lat = f.latitude;
+            if ( lon == null || lat == null || 
+                lon.value.length == 0 || lat.value.length == 0 ) return true;
+
+            return (ut_coord(lat.value,1,90) && ut_coord(lon.value,-180,-1));
+        } // validate_coords
+
+        /* this is a JS re-implementation of FS::Record::ut_coord */
+        function ut_coord(coord,lower,upper) {
+            var neg = /^-/.test(coord);
+            coord = coord.replace(/^-/,'');
+
+            var d = 0;
+            var m = 0;
+            var s = 0;
+            
+            var t1 = /^(\\s*\\d{1,3}(?:\\.\\d+)?)\\s*\$/.exec(coord);
+            var t2 = /^(\\s*\\d{1,3})\\s+(\\d{1,2}(?:\\.\\d+))\\s*\$/.exec(coord);
+            var t3 = /^(\\s*\\d{1,3})\\s+(\\d{1,2})\\s+(\\d{1,3})\\s*\$/.exec(coord);
+            if ( t1 != null ) {
+                d = t1[1];
+            } else if ( t2 != null ) {
+                d = t2[1];
+                m = t2[2];
+            } else if ( t3 != null ) {
+                d = t3[1];
+                m = t3[2];
+                s = t3[3];
+            } else {
+                alert('Invalid co-ordinates! Latitude must be positive and longitude must be negative.');
+                return false;
+            } 
+            
+            var ts = /^\\d{3}\$/.exec(s);
+            if ( ts != null || s > 59 ) {
+               s /= 1000; 
+            } else {
+                s /= 60;
+            }
+            s /= 60;
+
+            m /= 60;
+            if ( m > 59 ) {
+                alert('Invalid coordinate with minutes > 59');
+                return false;
+            }
+
+            var tmp = parseInt(d)+parseInt(m)+parseInt(s);
+            tmp = tmp.toFixed(8);
+            coord = (neg ? -1 : 1) * tmp;
+
+            if(coord < lower) {
+                alert('Error: invalid coordinate < '+lower);
+                return false;
+            }
+            if(coord > upper) {
+                alert('Error: invalid coordinate > '+upper);
+                return false;
+            }
+
+            return true;
+END
+;
+}
+$js .= <<END
+        }
+    </script>
+END
+;
 
 my @fields = (
   qw( description ip_addr speed_down speed_up blocknum ),

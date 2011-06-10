@@ -4446,6 +4446,13 @@ and customer address. Include units.',
   },
   
   {
+    'key'         => 'svc_broadband-require-nw-coordinates',
+    'section'     => 'UI',
+    'description' => 'On svc_broadband add/edit, require latitude and longitude in the North Western quadrant',
+    'type'        => 'checkbox',
+  },
+  
+  {
     'key'         => 'cust-email-high-visibility',
     'section'     => 'UI',
     'description' => 'Move the invoicing e-mail address field to the top of the billing address section and highlight it.',
