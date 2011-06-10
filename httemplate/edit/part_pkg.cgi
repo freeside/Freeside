@@ -45,6 +45,7 @@
                             'agentnum'         => 'Agent',
                             'setup_fee'        => 'Setup fee',
                             'recur_fee'        => 'Recurring fee',
+                            'recur_show_zero'  => 'Show zero recurring',
                             'discountnum'      => 'Offer discounts for longer terms',
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
                             'svc_dst_pkgpart'  => 'Include services of package',
@@ -107,8 +108,15 @@
                               { field    => 'recur_fee',
                                 type     => 'money',
                                 disabled => sub { $recur_disabled },
+                                onchange => 'recur_changed',
                               },
-                                
+
+                              { field    => 'recur_show_zero',
+                                type     => 'checkbox',
+                                value    => 'Y',
+                                disabled => sub { $recur_show_zero_disabled },
+                              },
+
                               #price plan
                               #setup fee
                               #recurring frequency
@@ -324,6 +332,7 @@ my @taxproductnums = ( qw( setup recur ), sort (keys %taxproductnums) );
 
 my %options = ();
 my $recur_disabled = 1;
+my $recur_show_zero_disabled = 1;
 
 my $pkgpart = '';
 
@@ -335,6 +344,10 @@ my $error_callback = sub {
   $opt->{action} = 'Custom' if $cgi->param('pkgnum');
 
   $recur_disabled = $cgi->param('freq') ? 0 : 1;
+  $recur_show_zero_disabled =
+    $cgi->param('freq')
+      ? $cgi->param('recur_fee') ? 0 : 1
+      : 1;
 
   foreach ($cgi->param) {
     /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
@@ -512,16 +525,34 @@ my $javascript = <<'END';
       if ( freq == '0' ) {
         what.form.recur_fee.disabled = true;
         what.form.recur_fee.style.backgroundColor = '#dddddd';
+        what.form.recur_show_zero.disabled = true;
+        //what.form.recur_show_zero.style.backgroundColor= '#dddddd';
       } else {
         what.form.recur_fee.disabled = false;
         what.form.recur_fee.style.backgroundColor = '#ffffff';
+        what.form.recur_show_zero.disabled = false;
+        //what.form.recur_show_zero.style.backgroundColor= '#ffffff';
       }
 
     }
 
+    function recur_changed(what) {
+      var recur = what.value;
+      if ( recur == 0 ) {
+        what.form.recur_show_zero.disabled = false;
+      } else {
+        what.form.recur_show_zero.disabled = true;
+      }
+    }
+
     function agent_changed(what) {
 
-      var agentnum = what.options[what.selectedIndex].value;
+      var agentnum;
+      if ( what.type == 'select-one' ) {
+        agentnum = what.options[what.selectedIndex].value;
+      } else {
+        agentnum = what.value;
+      }
 
       if ( agentnum == 0 ) {
         what.form.agent_type.disabled = false;

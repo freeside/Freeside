@@ -413,13 +413,20 @@ sub previous_cust_bill_pkg {
 
 Returns an array of detail information for the invoice line item.
 
-Currently available options are: I<format> I<escape_function>
+Currently available options are: I<format>, I<escape_function> and
+I<format_function>.
 
 If I<format> is set to html or latex then the array members are improved
 for tabular appearance in those environments if possible.
 
 If I<escape_function> is set then the array members are processed by this
 function before being returned.
+
+I<format_function> overrides the normal HTML or LaTeX function for returning
+formatted CDRs.  It can be set to a subroutine which returns an empty list
+to skip usage detail:
+
+  'format_function' => sub { () },
 
 =cut
 
@@ -872,7 +879,7 @@ sub cust_bill_pkg_detail {
   my %hash = ( 'billpkgnum' => $self->billpkgnum );
   $hash{classnum} = $classnum if $classnum;
 
-  qsearch ( 'cust_bill_pkg_detail', { %hash  } ),
+  qsearch( 'cust_bill_pkg_detail', \%hash ),
 
 }
 
@@ -883,8 +890,21 @@ Returns the list of associated cust_bill_pkg_discount objects.
 =cut
 
 sub cust_bill_pkg_discount {
-    my $self = shift;
-    qsearch ( 'cust_bill_pkg_discount', { 'billpkgnum' => $self->billpkgnum } );
+  my $self = shift;
+  qsearch( 'cust_bill_pkg_discount', { 'billpkgnum' => $self->billpkgnum } );
+}
+
+=item recur_show_zero
+
+=cut
+
+sub recur_show_zero {
+  my $self = shift;
+
+     $self->recur == 0
+  && $self->pkgnum
+  && $self->cust_pkg->part_pkg->recur_show_zero;
+
 }
 
 =back

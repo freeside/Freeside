@@ -4575,22 +4575,9 @@ sub _items_cust_bill_pkg {
   foreach my $cust_bill_pkg ( @$cust_bill_pkgs )
   {
 
-    warn "$me _items_cust_bill_pkg considering cust_bill_pkg $cust_bill_pkg\n"
+    warn "$me _items_cust_bill_pkg considering cust_bill_pkg ".
+         $cust_bill_pkg->billpkgnum. ", pkgnum ". $cust_bill_pkg->pkgnum. "\n"
       if $DEBUG > 1;
-
-    $discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
-        			&& $conf->exists('discount-show-always'));
-
-    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
-      if ( $_ && !$cust_bill_pkg->hidden ) {
-        $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
-        $_->{amount}      =~ s/^\-0\.00$/0.00/;
-        $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
-        push @b, { %$_ }
-          unless ( $_->{amount} == 0 && !$discount_show_always );
-        $_ = undef;
-      }
-    }
 
     foreach my $display ( grep { defined($section)
                                  ? $_->section eq $section
@@ -4670,9 +4657,13 @@ sub _items_cust_bill_pkg {
 
         }
 
-        if ( ( $cust_bill_pkg->recur != 0  || $cust_bill_pkg->setup == 0 || 
-		($discount_show_always && $cust_bill_pkg->recur == 0) ) &&
-             ( !$type || $type eq 'R' || $type eq 'U' )
+        if (    ( !$type || $type eq 'R' || $type eq 'U' )
+             && (
+                     $cust_bill_pkg->recur != 0
+                  || $cust_bill_pkg->setup == 0
+                  || $discount_show_always
+                  || $cust_bill_pkg->recur_show_zero
+                )
            )
         {
 
@@ -4817,20 +4808,37 @@ sub _items_cust_bill_pkg {
 
     }
 
+    $discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
+                                && $conf->exists('discount-show-always'));
+
+    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
+      if ( $_ && !$cust_bill_pkg->hidden ) {
+        $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+        $_->{amount}      =~ s/^\-0\.00$/0.00/;
+        $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+        push @b, { %$_ }
+          if $_->{amount} != 0
+          || $discount_show_always
+          || $cust_bill_pkg->recur_show_zero;
+        $_ = undef;
+      }
+    }
+
   }
+
+  #foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
+  #  if ( $_  ) {
+  #    $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+  #    $_->{amount}      =~ s/^\-0\.00$/0.00/;
+  #    $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+  #    push @b, { %$_ }
+  #      if $_->{amount} != 0
+  #      || $discount_show_always
+  #  }
+  #}
 
   warn "$me _items_cust_bill_pkg done considering cust_bill_pkgs\n"
     if $DEBUG > 1;
-
-  foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
-    if ( $_  ) {
-      $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
-      $_->{amount}      =~ s/^\-0\.00$/0.00/;
-      $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
-      push @b, { %$_ }
-        unless ( $_->{amount} == 0 && !$discount_show_always );
-    }
-  }
 
   @b;
 

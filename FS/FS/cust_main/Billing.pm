@@ -603,27 +603,47 @@ sub bill {
 
 #discard bundled packages of 0 value
 sub _omit_zero_value_bundles {
+  my @in = @_;
 
   my @cust_bill_pkg = ();
   my @cust_bill_pkg_bundle = ();
   my $sum = 0;
   my $discount_show_always = 0;
 
-  foreach my $cust_bill_pkg ( @_ ) {
+  foreach my $cust_bill_pkg ( @in ) {
+
     $discount_show_always = ($cust_bill_pkg->get('discounts')
 				&& scalar(@{$cust_bill_pkg->get('discounts')})
 				&& $conf->exists('discount-show-always'));
+
+    warn "  pkgnum ". $cust_bill_pkg->pkgnum.
+         " sum $sum, recur_show_zero ". $cust_bill_pkg->recur_show_zero. "\n"
+      if $DEBUG > 0;
+
     if (scalar(@cust_bill_pkg_bundle) && !$cust_bill_pkg->pkgpart_override) {
       push @cust_bill_pkg, @cust_bill_pkg_bundle 
-			if ($sum > 0 || ($sum == 0 && $discount_show_always));
+        if $sum > 0
+        || ($sum == 0 && (    $discount_show_always
+                           || grep $_->recur_show_zero, @cust_bill_pkg_bundle )
+           );
       @cust_bill_pkg_bundle = ();
       $sum = 0;
     }
+
     $sum += $cust_bill_pkg->setup + $cust_bill_pkg->recur;
     push @cust_bill_pkg_bundle, $cust_bill_pkg;
+
   }
+
   push @cust_bill_pkg, @cust_bill_pkg_bundle
-			if ($sum > 0 || ($sum == 0 && $discount_show_always));
+    if $sum > 0
+    || ($sum == 0 && (    $discount_show_always
+                       || grep $_->recur_show_zero, @cust_bill_pkg_bundle )
+       );
+
+  warn "  _omit_zero_value_bundles: ". scalar(@in).
+       '->'. scalar(@cust_bill_pkg). "\n" #. Dumper(@cust_bill_pkg). "\n"
+    if $DEBUG > 2;
 
   (@cust_bill_pkg);
 
@@ -1024,10 +1044,12 @@ sub _make_lines {
     my $discount_show_always = ($recur == 0 && scalar(@discounts) 
 				&& $conf->exists('discount-show-always'));
 
-    if ( $setup != 0 ||
-         $recur != 0 ||
-         (!$part_pkg->hidden && $options{has_hidden}) || #include some $0 lines
-	 $discount_show_always ) 
+    if (    $setup != 0
+         || $recur != 0
+         || (!$part_pkg->hidden && $options{has_hidden}) #include some $0 lines
+         || $discount_show_always
+         || ($recur == 0 && $part_pkg->recur_show_zero)
+       ) 
     {
 
       warn "    charges (setup=$setup, recur=$recur); adding line items\n"

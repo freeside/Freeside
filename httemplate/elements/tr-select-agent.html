@@ -24,7 +24,11 @@ Example:
 </%doc>
 % if ( scalar(@agents) == 1 ) { 
 
-  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'agentnum' %>" VALUE="<% $agents[0]->agentnum %>">
+  <INPUT TYPE  = "hidden"
+         NAME  = "<% $opt{'field'} || 'agentnum' %>"
+         ID    = "<% $opt{'field'} || 'agentnum' %>"
+         VALUE = "<% $agents[0]->agentnum %>"
+  >
 
 %# YUCK.  empty row so we don't throw g_row in edit.html off :/
   <TR>

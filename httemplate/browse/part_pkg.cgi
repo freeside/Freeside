@@ -226,7 +226,7 @@ push @fields, sub {
     ],
     [
       { data=>( $is_recur
-                  ? $money_char.sprintf('%.2f ', $part_pkg->option('recur_fee') )
+                  ? $money_char.sprintf('%.2f ', $part_pkg->option('recur_fee'))
                   : $part_pkg->freq_pretty
               ),
         align=> ( $is_recur ? 'right' : 'center' ),
@@ -238,6 +238,14 @@ push @fields, sub {
            }
         : ()
       ),
+    ],
+    [ { data    =>
+          ( $part_pkg->option('recur_fee') == 0 && $part_pkg->recur_show_zero )
+            ? ' (printed on invoices)'
+            : '',
+        align   => 'center', #?
+        colspan => 2,
+      },
     ],
     ( map { 
             my $dst_pkg = $_->dst_pkg;

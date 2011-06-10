@@ -6,6 +6,7 @@
                                 ? ' CHECKED'
                                 : ''
                            %>
+                           <% $opt{disabled} %>
                            <% $onchange %>
                     ><% $opt{'postfix'} %>
 <%init>
@@ -15,5 +16,10 @@ my %opt = @_;
 my $onchange = $opt{'onchange'}
                  ? 'onChange="'. $opt{'onchange'}. '(this)"'
                  : '';
+
+$opt{'disabled'} = &{ $opt{'disabled'} }( \%opt )
+  if ref($opt{'disabled'}) eq 'CODE';
+$opt{'disabled'} = 'DISABLED'
+  if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
 
 </%init>

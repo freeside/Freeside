@@ -15,7 +15,9 @@ my %opt = @_;
 my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
 
 my $onchange = $opt{'onchange'}
-                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 ? join(' ', map $_.'="'. $opt{'onchange'}. '(this)"',
+                                 qw( onChange onKeyDown onKeyUp onKeyPress )
+                       )
                  : '';
 
 my $size = $opt{'size'}
