@@ -55,7 +55,7 @@ if ( ref($_[0]) ) {
   $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
   $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
 }
-$etc .= 'BGCOLOR="#f8f8f8"' if (! $etc =~ /BGCOLOR/i );
+$etc .= ' BGCOLOR="#f8f8f8"' unless $etc =~ /BGCOLOR/i;
 
 my $conf = new FS::Conf;
 
