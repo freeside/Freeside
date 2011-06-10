@@ -150,10 +150,14 @@ while (1) {
         #delete records from last_srv_date
         my $dsql =
           'DELETE FROM srvexport WHERE srv_date = ? AND serviceid IN(?,?)';
-         my $dsth = dbh->prepare($dsql) or die $DBI::errstr;
-         $dsth->execute($last_srv_date, $serviceid.'_IN', $serviceid.'_OUT')
-           or die $dsth->errstr;
+        my $dsth = dbh->prepare($dsql) or die $DBI::errstr;
+        warn "$dsql $last_srv_date ${serviceid}_IN ${serviceid}_OUT\n"
+          if $DEBUG;
+        $dsth->execute($last_srv_date, $serviceid.'_IN', $serviceid.'_OUT')
+          or die $dsth->errstr;
         dbh->commit or die dbh->errstr;
+
+        sleep 20;
 
         foreach my $dir ('_IN','_OUT') {
 
@@ -165,7 +169,9 @@ while (1) {
                     );
 
           warn "calling native srvderive: ". join(' ', @cmd). "\n" if $DEBUG;
-          run( \@cmd ); #verbose?  timeout?
+          my $out_and_err = '';
+          run( \@cmd, '>&', \$out_and_err ) #verbose?  timeout?
+            or die "error calling native srvder: $out_and_err\n";
 
         }
         warn "native srvderive done" if $DEBUG;
