@@ -176,6 +176,8 @@ while (1) {
         }
         warn "native srvderive done" if $DEBUG;
 
+        sleep 20;
+
         $torrus_srvderive->last_srv_date($currdate);
         my $error = $torrus_srvderive->replace;
         die $error if $error;
