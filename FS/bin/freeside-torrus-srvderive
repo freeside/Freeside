@@ -12,7 +12,7 @@ use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
 use FS::torrus_srvderive;
 
 our $DEBUG = 2;
-our $max_kids = 16;
+our $max_kids = 4;
 our $search_timeout = 2*60*60; #60*60; #30*60; # 15*60 5*60; #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
 our %kids;
 
@@ -157,8 +157,6 @@ while (1) {
           or die $dsth->errstr;
         dbh->commit or die dbh->errstr;
 
-        sleep 20;
-
         foreach my $dir ('_IN','_OUT') {
 
           #XX TORRUS_PATH
@@ -175,8 +173,6 @@ while (1) {
 
         }
         warn "native srvderive done" if $DEBUG;
-
-        sleep 20;
 
         $torrus_srvderive->last_srv_date($currdate);
         my $error = $torrus_srvderive->replace;
