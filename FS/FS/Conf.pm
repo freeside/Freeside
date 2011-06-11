@@ -4448,7 +4448,7 @@ and customer address. Include units.',
   {
     'key'         => 'svc_broadband-require-nw-coordinates',
     'section'     => 'UI',
-    'description' => 'On svc_broadband add/edit, require latitude and longitude in the North Western quadrant',
+    'description' => 'On svc_broadband add/edit, require latitude and longitude in the North Western quadrant, e.g. for North American co-ordinates, etc.',
     'type'        => 'checkbox',
   },
   
