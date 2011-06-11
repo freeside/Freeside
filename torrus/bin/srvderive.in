@@ -15,7 +15,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: srvderive.in,v 1.1 2010-12-27 00:04:02 ivan Exp $
+# $Id: srvderive.in,v 1.2 2011-06-11 00:20:14 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 # Combine SUM or MAX from several service IDs and create a new one
@@ -128,7 +128,7 @@ my $endtime;
 
 if( defined($enddate) )
 {
-    $endtime = str2time( $startdate ); 
+    $endtime = str2time( $enddate ); 
     if( not defined($endtime) )
     {
         Error('Cannot parse end date: ' . $enddate);
