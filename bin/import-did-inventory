@@ -360,14 +360,14 @@ sub order {
                         || $o->vendor_order_id == 293011) # yet another bad data hack
                     && $o->confirmed == $confirmed
                     && $o->received == $received);
-        fatal("customer mismatch for vendor order #$vendor_order_id")
-            unless (    ($o->custnum && $cust{'custnum'} 
-                          && ($o->custnum == $cust{'custnum'} 
-                            || $vendor_order_id eq '293745' || $vendor_order_id eq '300001')
-                        )
-                        ||
-                        (!$o->custnum && !exists($cust{'custnum'}))
-                   );
+#        fatal("customer mismatch for vendor order #$vendor_order_id")
+#           unless (    ($o->custnum && $cust{'custnum'} 
+#                        && ($o->custnum == $cust{'custnum'} 
+#                         || $vendor_order_id eq '293745' || $vendor_order_id eq '300001')
+#                     )
+#                    ||
+#                   (!$o->custnum && !exists($cust{'custnum'}))
+#             );
     } else {
         $o = new FS::did_order{ vendornum       => $did_vendor_id,
                                 vendor_order_id => $vendor_order_id,
