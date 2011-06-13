@@ -462,7 +462,7 @@ foreach my $INC ( @INC ) {
     }
     unless ( keys %$info ) {
       warn "no %info hash found in FS::part_export::$mod, skipping\n"
-        unless $mod =~ /^(passwdfile|null)$/; #hack but what the heck
+        unless $mod =~ /^(passwdfile|null|.+_Common)$/; #hack but what the heck
       next;
     }
     warn "got export info from FS::part_export::$mod: $info\n" if $DEBUG;
