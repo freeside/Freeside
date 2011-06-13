@@ -120,6 +120,9 @@ sub calc_discount {
         $param->{'discount_left_recur'}{$discount->discountnum} = 0;
         $months = 1;
     }
+    elsif ( $discount->setup && $discount->months == 1 && $discount->amount ) {
+        next;
+    }
 
     my $error = $cust_pkg_discount->increment_months_used($months)
         if (defined $param->{'real_pkgpart'} 
