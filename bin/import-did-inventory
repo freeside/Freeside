@@ -90,7 +90,7 @@ $latas{636} = 'BRAINERD-FARGO ND';
 $latas{920} = 'CONNECTICUT';
 $latas{334} = 'AUBURN-HUNTINGTON IN';
 $latas{232} = 'NORTHEAST - PA';
-$latas{460} = 'SOUTHEAST FL GR-EA';
+$latas{460} = 'SOUTHEAST FL GG-EA';
 $latas{952} = 'TAMPA FLORIDA';
 $latas{524} = 'KANSAS CITY';
 
