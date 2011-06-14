@@ -23,10 +23,10 @@ use Time::HiRes qw(usleep ualarm gettimeofday tv_interval);
 print "started time=".time."\n";
 
 #### SET THESE! #################################
-my $file = '/home/levinse/dids1.csv';
+my $file = '/home/levinse/dids4.csv';
 my $did_vendor_id = 1; 
 my $dry = 0; 
-my $internal_diddb_exportnum = 2; # IMPORTANT: set this to the correct exportnum or everything will go in wrong into phone_avail
+my $internal_diddb_exportnum = 1; # IMPORTANT: set this to the correct exportnum or everything will go in wrong into phone_avail
 
 # optionally set this one (probably not)
 my %custname2num = (); # MyCust => 12345,
@@ -90,7 +90,7 @@ $latas{636} = 'BRAINERD-FARGO ND';
 $latas{920} = 'CONNECTICUT';
 $latas{334} = 'AUBURN-HUNTINGTON IN';
 $latas{232} = 'NORTHEAST - PA';
-$latas{460} = 'SOUTHEAST FL GG-EA';
+$latas{460} = 'SOUTHEAST FL GR-EA';
 $latas{952} = 'TAMPA FLORIDA';
 $latas{524} = 'KANSAS CITY';
 
@@ -164,7 +164,8 @@ sub suffer {
 
     ### LATA ###
 
-    fatal("no lata found for latanum $latanum") unless exists($latas{$latanum});
+    fatal("no lata found for latanum $latanum") unless exists($latas{$latanum}) 
+        || $latanum == 460;
 
     # unsurprisingly, our idea of a LATA name doesn't always match their idea 
     # of the same. Specifically, they randomly expand the state portion and
