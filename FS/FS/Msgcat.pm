@@ -58,6 +58,8 @@ our %cache;
 
 sub _gettext {
   my $msgcode = shift;
+  return '' unless defined($msgcode) && length($msgcode) > 0;
+
   my $locale =  (@_ && shift)
              || $FS::CurrentUser::CurrentUser->option('locale')
              || $def_locale;
@@ -85,6 +87,7 @@ sub _gettext {
                                        });
         warn "WARNING: auto-inserting message for msgcode $msgcode in locale $locale";
         $newmsgcat->insert;
+        return $msgcode; # or maybe this should be below the next bracket?
     }
   }
 
