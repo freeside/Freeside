@@ -180,7 +180,7 @@ sub suffer {
     $latadesc =~ s/\s\w+$// unless uc($ourdesc) eq uc($latadesc); # yeah...long story :(
 
     fatal("their LATA description '$latadesc' doesn't match our LATA description '$ourdesc'")
-        unless uc($ourdesc) eq uc($latadesc);
+        unless (uc($ourdesc) eq uc($latadesc) || $latanum == 460);
 
 
     ### MSA ###
