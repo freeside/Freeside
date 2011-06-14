@@ -26,7 +26,7 @@ print "started time=".time."\n";
 my $file = '/home/levinse/dids1.csv';
 my $did_vendor_id = 1; 
 my $dry = 0; 
-my $internal_diddb_exportnum = 1; # IMPORTANT: set this to the correct exportnum or everything will go in wrong into phone_avail
+my $internal_diddb_exportnum = 2; # IMPORTANT: set this to the correct exportnum or everything will go in wrong into phone_avail
 
 # optionally set this one (probably not)
 my %custname2num = (); # MyCust => 12345,
@@ -67,6 +67,7 @@ my %msamap = (
  'Miami' => 33100,
  'Jackson' => 27140,
  'St Cloud' => 41060,
+ 'Stratford' => 14860,
  
 # more hax upon hax (the above are unique, no issues)
  'Portland OR' => 38900, 
