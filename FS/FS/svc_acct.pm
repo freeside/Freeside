@@ -1369,8 +1369,7 @@ sub check {
       $self->setfield('finger', $cust_main->first.' '.$cust_main->get('last') );
     }
   }
-  $self->getfield('finger') =~
-    /^([µ_0123456789aAáÁàÀâÂåÅäÄãÃªæÆbBcCçÇdDðÐeEéÉèÈêÊëËfFgGhHiIíÍìÌîÎïÏjJkKlLmMnNñÑoOóÓòÒôÔöÖõÕøØºpPqQrRsSßtTuUúÚùÙûÛüÜvVwWxXyYýÝÿzZþÞ \t\!\@\#\$\%\&\(\)\-\+\;\'\"\,\.\?\/\*\<\>]*)$/
+  $self->getfield('finger') =~ /^([\w \,\.\-\'\&]+)$/
       or return "Illegal finger: ". $self->getfield('finger');
   $self->setfield('finger', $1);
 
