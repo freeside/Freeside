@@ -549,6 +549,10 @@ function toggle(obj) {
   <% $r %> <% mt('required fields') |h %> 
 % } 
 
+<script type="text/javascript">
+    init_payauto_changed();
+</script>
+
 <%once>
 
 my $paystate_label = FS::Msgcat::_gettext('paystate');
