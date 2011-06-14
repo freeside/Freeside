@@ -164,8 +164,7 @@ sub suffer {
 
     ### LATA ###
 
-    fatal("no lata found for latanum $latanum") unless exists($latas{$latanum}) 
-        || $latanum == 460;
+    fatal("no lata found for latanum $latanum") unless exists($latas{$latanum});
 
     # unsurprisingly, our idea of a LATA name doesn't always match their idea 
     # of the same. Specifically, they randomly expand the state portion and
