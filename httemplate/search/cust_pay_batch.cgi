@@ -3,10 +3,8 @@
               'name'        => 'batch details',
 	      'query'       => $sql_query,
 	      'count_query' => $count_query,
-              'html_init'   => $pay_batch ? 
-                                  include('elements/cust_pay_batch_top.html',
-                                          'pay_batch' => $pay_batch
-                                  ) : '',
+              'html_init'   => $pay_batch ? $html_init : '',
+              'disable_download' => 1,
 	      'header'      => [ '#',
 	                         'Inv #',
 	                         'Customer',
