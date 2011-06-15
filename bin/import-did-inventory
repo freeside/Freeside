@@ -98,6 +98,7 @@ my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
 sub parsedt {
     my ($dt,$min,$max) = (shift,shift,shift);
     my $epoch = $parser->parse_datetime($dt);
+    warn "dt=$dt min=$min max=$max epoch=$epoch\n";
     return $epoch->epoch 
         if ($parser->success && $epoch->epoch >= $min && $epoch->epoch <= $max);
     fatal("invalid date $dt (min=$min, max=$max)");
