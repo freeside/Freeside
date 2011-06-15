@@ -94,9 +94,9 @@ $latas{460} = 'SOUTHEAST FL GR-EA';
 $latas{952} = 'TAMPA FLORIDA';
 $latas{524} = 'KANSAS CITY';
 
-my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
 sub parsedt {
     my ($dt,$min,$max) = (shift,shift,shift);
+    my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
     my $epoch = $parser->parse_datetime($dt);
     warn "dt=$dt min=$min max=$max epoch=$epoch\n";
     return $epoch->epoch 
