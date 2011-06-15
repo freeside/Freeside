@@ -87,8 +87,8 @@ sub _gettext {
                                        });
         warn "WARNING: auto-inserting message for msgcode $msgcode in locale $locale";
         $newmsgcat->insert;
-        return $msgcode; # or maybe this should be below the next bracket?
     }
+    return $msgcode;
   }
 
 }
