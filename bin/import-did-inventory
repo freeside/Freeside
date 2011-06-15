@@ -361,7 +361,7 @@ sub order {
             unless ( ( abs($o->submitted-$submitted) < 5
                         || $o->vendor_order_id == 293011) # yet another bad data hack
                     && abs($o->confirmed-$confirmed) < 5
-                    && abs($o->received == $received) < 5 
+                    && abs($o->received-$received) < 5 
                    );
 #        fatal("customer mismatch for vendor order #$vendor_order_id")
 #           unless (    ($o->custnum && $cust{'custnum'} 
