@@ -356,6 +356,7 @@ sub order {
     my $o;
     if( exists $did_order{$vendor_order_id} ) {
         $o = $did_order{$vendor_order_id};
+#       warn "$submitted $confirmed $received $vendor_order_id".Dumper($o);
         fatal("vendor order #$vendor_order_id - order data differs from one item to another")
             unless ( ($o->submitted == $submitted
                         || $o->vendor_order_id == 293011) # yet another bad data hack
