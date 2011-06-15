@@ -358,10 +358,11 @@ sub order {
         $o = $did_order{$vendor_order_id};
 #       warn "$submitted $confirmed $received $vendor_order_id".Dumper($o);
         fatal("vendor order #$vendor_order_id - order data differs from one item to another")
-            unless ( ($o->submitted == $submitted
+            unless ( ( abs($o->submitted-$submitted) < 5
                         || $o->vendor_order_id == 293011) # yet another bad data hack
-                    && $o->confirmed == $confirmed
-                    && $o->received == $received);
+                    && abs($o->confirmed-$confirmed) < 5
+                    && abs($o->received == $received) < 5 
+                   );
 #        fatal("customer mismatch for vendor order #$vendor_order_id")
 #           unless (    ($o->custnum && $cust{'custnum'} 
 #                        && ($o->custnum == $cust{'custnum'} 
