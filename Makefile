@@ -409,7 +409,7 @@ clean:
 	make clean
 
 check-conflicts:
-	! grep -r --exclude=config.log --exclude=config.status --exclude=gnupg_details_on_output_formats --exclude=mason_handler '^=======$$' .
+	! grep -r --exclude=config.log --exclude=config.status --exclude=gnupg_details_on_output_formats --exclude=mason_handler. '^=======$$' .
 
 #these are probably only useful if you're me...
 
