@@ -94,11 +94,12 @@ $latas{460} = 'SOUTHEAST FL GR-EA';
 $latas{952} = 'TAMPA FLORIDA';
 $latas{524} = 'KANSAS CITY';
 
+my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
 sub parsedt {
     my ($dt,$min,$max) = (shift,shift,shift);
-    my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
+    $dt = "$dt 00:00:00";
     my $epoch = $parser->parse_datetime($dt);
-    warn "dt=$dt min=$min max=$max epoch=$epoch\n";
+    warn "dt='$dt' min=$min max=$max epoch=$epoch\n";
     return $epoch->epoch 
         if ($parser->success && $epoch->epoch >= $min && $epoch->epoch <= $max);
     fatal("invalid date $dt (min=$min, max=$max)");
