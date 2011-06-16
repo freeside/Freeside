@@ -14,8 +14,14 @@ sub maketext {
     $Lexicon{$key} = FS::Msgcat::_gettext( $key, $lang );
   }
 
-  $lh->SUPER::maketext($key, @rest);
+  my $res = eval { $lh->SUPER::maketext($key, @rest) };
+  if ( !$res || $@ ) {
+    my $errmsg = "MT error for '$key'";
+    warn "$errmsg\n";
+    return $errmsg;
+  }
 
+  $res;
 }
 
 1;
