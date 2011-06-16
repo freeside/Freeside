@@ -172,6 +172,7 @@
       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if($cust_pkg, emt('Will automatically suspend by'), 'autosuspend', %opt) %>
+      <% pkg_status_row_if($cust_pkg, emt('Automatic suspension delayed until'), 'dundate', %opt) %>
       <% pkg_status_row_if( $cust_pkg, emt('Will suspend on'), 'adjourn', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
@@ -422,11 +423,15 @@ sub pkg_adjourn_link {
 }
 
 sub pkg_delay_link  {
+  my($cust_pkg) = shift;
   include( '/elements/popup_link-cust_pkg.html',
              'action'      => $p. 'misc/delay_susp_pkg.html',
-             'label'       => emt('Delay suspend'),
+             'label'       => ( $cust_pkg->dundate
+                                  ? emt('Edit suspension delay')
+                                  : emt('Delay suspend')
+                              ),
              'actionlabel' => emt('Delay suspend for'),
-             'cust_pkg'    => shift,
+             'cust_pkg'    => $cust_pkg,
          )
 }
 

@@ -596,6 +596,7 @@ sub check {
     || $self->ut_numbern('cancel')
     || $self->ut_numbern('adjourn')
     || $self->ut_numbern('expire')
+    || $self->ut_numbern('dundate')
     || $self->ut_enum('no_auto', [ '', 'Y' ])
     || $self->ut_enum('waive_setup', [ '', 'Y' ])
     || $self->ut_numbern('agent_pkgid')

@@ -1,4 +1,4 @@
-<% header("Package suspension delayed") %>
+<% header($msg) %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
@@ -21,21 +21,27 @@ $cgi->param('pkgnum') =~ /^(\d+)$/ or die "Illegal pkgnum";
 $pkgnum = $1;
 
 #untaint date
-parse_datetime($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
-my $date = $1;
+my $date = '';
+my $msg = '';
+if ( $cgi->param('date') ) {
+  parse_datetime($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
+  $date = $1;
+  $msg = 'Package suspension delayed';
+} else {
+  $msg = 'Suspension delay removed';
+}
 
 $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
 if ($cust_pkg) {
-  $cust_main = $cust_pkg->cust_main;
-  $cust_main->dundate( $date );
-  $error = $cust_main->replace;
+  $cust_pkg->dundate( $date );
+  $error = $cust_pkg->replace;
 } else {
-  $error = "Invalid pkgnum";
+  $error = "Unknown pkgnum";
 }
 
 if ($error) {
   $cgi->param('error', $error);
-  print $cgi->redirect(popurl(2). "cancel_pkg.html?". $cgi->query_string );
+  print $cgi->redirect(popurl(2). "delay_susp_pkg.html?". $cgi->query_string );
 }
 
 </%init>

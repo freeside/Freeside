@@ -68,6 +68,10 @@ my $title = 'Delay Suspension of Package';
 my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
   or die "Unknown pkgnum: $pkgnum";
 
+$date = time2str($date_format, $cust_pkg->dundate) 
+  if $cust_pkg->dundate
+  && ! $cgi->param('error');
+
 my $part_pkg = $cust_pkg->part_pkg;
 
 </%init>

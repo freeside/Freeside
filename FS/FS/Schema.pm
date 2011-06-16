@@ -1436,6 +1436,7 @@ sub tables_hashref {
         'cancel',         @date_type,             '', '', 
         'expire',         @date_type,             '', '', 
         'contract_end',   @date_type,             '', '',
+        'dundate',        @date_type,             '', '',
         'change_date',    @date_type,             '', '',
         'change_pkgnum',       'int', 'NULL', '', '', '',
         'change_pkgpart',      'int', 'NULL', '', '', '',
