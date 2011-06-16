@@ -47,6 +47,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
     'min_charge' => { 'name' => 'Charge per minute',
                     },
+    
+    'min_included' => { 'name' => 'Minutes included',
+                    },
 
     'sec_granularity' => { 'name' => 'Granularity',
                            'type' => 'select',
@@ -145,7 +148,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
   'fieldorder' => [qw(
                        recur_temporality
                        recur_method cutoff_day add_full_period
-                       min_charge sec_granularity
+                       min_charge min_included sec_granularity
                        default_prefix
                        disable_tollfree
                        use_amaflags use_disposition
@@ -207,7 +210,9 @@ sub calc_usage {
 
   my $spool_cdr = $cust_pkg->cust_main->spool_cdr;
 
-  my %included_min = ();
+  my $included_min = ($self->option('min_included') 
+                        && $self->option('min_included') > 0) 
+                                        ? $self->option('min_included') : 0;
 
   my $charges = 0;
 
@@ -254,32 +259,47 @@ sub calc_usage {
       my $minutes = sprintf("%.1f",$seconds / 60); 
       $minutes =~ s/\.0$// if $granularity == 60; # count whole minutes, convert to integer
       $minutes = 1 unless $granularity; # per call
-      my $charge = sprintf('%.2f', ( $self->option('min_charge') * $minutes )
-                                + 0.00000001 ); #so 1.00005 rounds to 1.0001
-      next if !$charge;
-      $charges += $charge;
-      my @call_details = ($cdr->downstream_csv( 'format' => $output_format,
-                                             'charge'  => $charge,
-                                             'minutes' => $minutes,
-                                             'granularity' => $granularity,
-                                           )
-                        );
-      push @$details,
-        [ 'C',
-          $call_details[0],
-          $charge,
-          $cdr->calltypenum, #classnum
-          $self->phonenum,
-          $cdr->accountcode,
-          $seconds,
-          '', #regionname, not set for inbound calls
-        ];
 
-    my $error = $cdr->set_status_and_rated_price( 'done',
+      my $charge_min = $minutes;
+      my $charge = 0;
+
+      $included_min -= $minutes;
+      if ( $included_min > 0 ) {
+        $charge_min = 0;
+      }
+      else {
+         $charge_min = 0 - $included_min;
+         $included_min = 0;
+      }
+      
+      $charge = sprintf('%.2f', ( $self->option('min_charge') * $charge_min )
+                                + 0.00000001 ); #so 1.00005 rounds to 1.0001
+
+      if ( $charge > 0 ) {
+        $charges += $charge;
+        my @call_details = ($cdr->downstream_csv( 'format' => $output_format,
+                                            'charge'  => $charge,
+                                            'minutes' => $minutes,
+                                            'granularity' => $granularity,
+                                          )
+                                );
+        push @$details,
+            [ 'C',
+              $call_details[0],
+              $charge,
+              $cdr->calltypenum, #classnum
+              $self->phonenum,
+              $cdr->accountcode,
+              $seconds,
+              '', #regionname, not set for inbound calls
+            ];
+     }
+
+     my $error = $cdr->set_status_and_rated_price( 'done',
                                                   $charge,
                                                   $cust_svc->svcnum,
                                                   'inbound' => 1 );
-    die $error if $error;
+     die $error if $error;
 
     } #$cdr
   } # $cust_svc
