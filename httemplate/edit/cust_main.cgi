@@ -308,6 +308,8 @@ if ( $cgi->param('error') ) {
 
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
+  $cust_main->agentnum( $conf->config('default_agentnum') )
+    if $conf->exists('default_agentnum');
   $cust_main->otaker( &getotaker );
   $cust_main->referral_custnum( $cgi->param('referral_custnum') );
   @invoicing_list = ();

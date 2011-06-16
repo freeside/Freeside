@@ -1836,22 +1836,17 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'default_agentnum',
+    'section'     => 'UI',
+    'description' => 'Default agent for the backoffice',
+    'type'        => 'select-agent',
+  },
+
+  {
     'key'         => 'signup_server-default_agentnum',
     'section'     => 'self-service',
     'description' => 'Default agent for the signup server',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::agent;
-			   map { $_->agentnum => $_->agent }
-                               FS::Record::qsearch('agent', { disabled=>'' } );
-			 },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::agent;
-			   my $agent = FS::Record::qsearchs(
-			     'agent', { 'agentnum'=>shift }
-			   );
-                           $agent ? $agent->agent : '';
-			 },
+    'type'        => 'select-agent',
   },
 
   {

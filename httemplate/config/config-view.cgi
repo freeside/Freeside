@@ -212,7 +212,7 @@ Click on a configuration value to change it.
               </td>
             </tr>
 
-%   } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class)$/ ) {
+%   } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class|agent)$/ ) {
 %
 %     my $table = $1;
 %     my $namecol = $namecol{$table};
@@ -318,6 +318,7 @@ my %namecol = (
   'part_svc'  => 'svc',
   'part_pkg'  => 'pkg',
   'pkg_class' => 'classname',
+  'agent'     => 'agent',
 );
 </%once>
 <%init>

@@ -323,7 +323,7 @@ my @config_items = $conf->config_items;
 my %confitems = map { $_->key => $_ } @config_items;
 
 my %element_types = map { $_ => 1 } qw(
-  select-part_svc select-part_pkg select-pkg_class
+  select-part_svc select-part_pkg select-pkg_class select-agent
 );
 
 </%once>

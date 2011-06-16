@@ -65,7 +65,7 @@
 
 %     } elsif ( $type eq 'text' || $type eq 'select' ) {
         configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %>;
-%     } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class)$/ && ! $i->multiple ) {
+%     } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class|agent)$/ && ! $i->multiple ) {
 %       my $table = $1;
 %       my $namecol = $namecol{$table};
 %       my $pkey = dbdef->table($table)->primary_key;
@@ -95,6 +95,7 @@ my %namecol = (
   'part_svc'  => 'svc',
   'part_pkg'  => 'pkg',
   'pkg_class' => 'classname',
+  'agent'     => 'agent',
 );
 </%once>
 <%init>
@@ -158,7 +159,7 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     }
   } elsif (
     $type =~ /^(editlist|selectmultiple)$/
-    or ( $type =~ /^select(-(sub|part_svc|part_pkg|pkg_class))?$/
+    or ( $type =~ /^select(-(sub|part_svc|part_pkg|pkg_class|agent))?$/
          || $i->multiple )
   ) {
     if ( scalar(@{[ $cgi->param($i->key.$n) ]}) ) {
@@ -168,7 +169,7 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     } else {
       $conf->delete($i->key, $agentnum);
     }
-  } elsif ( $type =~ /^(text|select(-(sub|part_svc|part_pkg|pkg_class))?)$/ ) {
+  } elsif ( $type =~ /^(text|select(-(sub|part_svc|part_pkg|pkg_class|agent))?)$/ ) {
     if ( $cgi->param($i->key.$n) ne '' ) {
       my $error = &{$i->validate}($cgi->param($i->key.$n), $n) if $i->validate;
       push @error, $error if $error;
