@@ -15,7 +15,7 @@
 <INPUT TYPE="hidden" NAME="prospectnum" VALUE="<% $prospectnum %>">
 
 % if ( $custnum ) { 
-  Customer #<B><% $cust_main->display_custnum %></B> - 
+  <% mt('Customer #') |h %><B><% $cust_main->display_custnum %></B> - 
   <B><FONT COLOR="#<% $cust_main->statuscolor %>">
     <% ucfirst($cust_main->status) %>
   </FONT></B>
