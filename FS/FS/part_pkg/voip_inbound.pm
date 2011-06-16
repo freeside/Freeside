@@ -81,6 +81,12 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
     'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
                          },
+    
+    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to: ',
+                         },
+
+    'ignore_disposition' => { 'name' => 'Do not charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
+                         },
 
     'skip_dcontext' => { 'name' => 'Do not charge for CDRs where the dcontext is set to any of these (comma-separated) values:',
                        },
@@ -152,7 +158,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        default_prefix
                        disable_tollfree
                        use_amaflags use_disposition
-                       use_disposition_taqua use_carrierid use_cdrtypenum
+                       use_disposition_taqua use_carrierid
+                       use_cdrtypenum ignore_cdrtypenum
+                       ignore_disposition
                        skip_dcontext skip_dstchannel_prefix
                        skip_dst_length_less skip_lastapp
                        use_duration
@@ -329,6 +337,8 @@ sub check_chargable {
     use_disposition_taqua
     use_carrierid
     use_cdrtypenum
+    ignore_cdrtypenum
+    ignore_disposition
     skip_dcontext
     skip_dstchannel_prefix
     skip_dst_length_less
@@ -347,6 +357,10 @@ sub check_chargable {
 
   return "disposition != 100"
     if $opt{'use_disposition_taqua'} && $cdr->disposition != 100;
+    
+  return "disposition IN ( $opt{'ignore_disposition'} )"
+    if $opt{'ignore_disposition'} =~ /\S/
+    && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'ignore_disposition'});
 
   return "carrierid != $opt{'use_carrierid'}"
     if length($opt{'use_carrierid'})
@@ -356,6 +370,10 @@ sub check_chargable {
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
     if length($opt{'use_cdrtypenum'})
     && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
+    
+  return "cdrtypenum == $opt{'ignore_cdrtypenum'}"
+    if length($opt{'ignore_cdrtypenum'})
+    && $cdr->cdrtypenum eq $opt{'ignore_cdrtypenum'}; #eq otherwise 0 matches ''
 
   return "dcontext IN ( $opt{'skip_dcontext'} )"
     if $opt{'skip_dcontext'} =~ /\S/

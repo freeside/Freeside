@@ -154,6 +154,12 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
     'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
                          },
+    
+    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to: ',
+                         },
+    
+    'ignore_disposition' => { 'name' => 'Do not charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
+                         },
 
     'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these values: ',
     },
@@ -270,7 +276,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        domestic_prefix international_prefix
                        disable_tollfree
                        use_amaflags use_disposition
-                       use_disposition_taqua use_carrierid use_cdrtypenum
+                       use_disposition_taqua use_carrierid 
+                       use_cdrtypenum ignore_cdrtypenum
+                       ignore_disposition
                        skip_dcontext skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
@@ -877,6 +885,8 @@ sub check_chargable {
     use_disposition_taqua
     use_carrierid
     use_cdrtypenum
+    ignore_cdrtypenum
+    ignore_disposition
     skip_dst_prefix
     skip_dcontext
     skip_dstchannel_prefix
@@ -898,6 +908,10 @@ sub check_chargable {
 
   return "disposition != 100"
     if $opt{'use_disposition_taqua'} && $cdr->disposition != 100;
+  
+  return "disposition IN ( $opt{'ignore_disposition'} )"
+    if $opt{'ignore_disposition'} =~ /\S/
+    && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'ignore_disposition'});
 
   return "carrierid != $opt{'use_carrierid'}"
     if length($opt{'use_carrierid'})
@@ -907,6 +921,10 @@ sub check_chargable {
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
     if length($opt{'use_cdrtypenum'})
     && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
+  
+  return "cdrtypenum == $opt{'ignore_cdrtypenum'}"
+    if length($opt{'ignore_cdrtypenum'})
+    && $cdr->cdrtypenum eq $opt{'ignore_cdrtypenum'}; #eq otherwise 0 matches ''
 
   foreach(split(',',$opt{'skip_dst_prefix'})) {
     return "dst starts with '$_'"
