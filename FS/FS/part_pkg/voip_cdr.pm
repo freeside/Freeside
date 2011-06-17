@@ -46,7 +46,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 %info = (
   'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
   'shortname' => 'VoIP/telco CDR rating (standard)',
-  'inherit_fields' => [ 'global_Mixin' ],
+  'inherit_fields' => [ 'prorate_Mixin', 'global_Mixin' ],
   'fields' => {
     'suspend_bill' => { 'name' => 'Continue recurring billing while suspended',
                         'type' => 'checkbox',
@@ -61,10 +61,6 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                                    'subscription',
                          'default' => '1',
                        },
-    'add_full_period'=> { 'name' => 'When prorating first month, also bill '.
-                                    'for one full period after that',
-                          'type' => 'checkbox',
-                        },
     'recur_method'  => { 'name' => 'Recurring fee method',
                          #'type' => 'radio',
                          #'options' => \%recur_method,
@@ -259,8 +255,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
   },
   'fieldorder' => [qw(
                        recur_temporality
-                       recur_method cutoff_day
-                       add_full_period
+                       recur_method cutoff_day ),
+                       FS::part_pkg::prorate_Mixin::fieldorder,
+                    qw(
                        cdr_svc_method
                        rating_method ratenum intrastate_ratenum 
                        min_charge min_included
@@ -297,11 +294,6 @@ sub price_info {
     my $str = $self->SUPER::price_info;
     $str .= " plus usage" if $str;
     $str;
-}
-
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
 }
 
 sub calc_recur {

@@ -9,15 +9,11 @@ use DBI;
 %info = (
   'name' => 'Base charge plus additional fees for external services from a configurable SQL query',
   'shortname' => 'External SQL query',
-  'inherit_fields' => [ 'global_Mixin' ],
+  'inherit_fields' => [ 'prorate_Mixin', 'global_Mixin' ],
   'fields' => {
     'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating or '.
                                    'subscription',
                          'default' => '1',
-                       },
-    'add_full_period'=> { 'name' => 'When prorating first month, also bill '.
-                                    'for one full period after that',
-                          'type' => 'checkbox',
                        },
 
     'recur_method'  => { 'name' => 'Recurring fee method',
@@ -39,8 +35,9 @@ use DBI;
                  'default' => '',
                },
   },
-  'fieldorder' => [qw( recur_method cutoff_day
-                      add_full_period datasrc db_username db_password query 
+  'fieldorder' => [qw( recur_method cutoff_day ),
+                   FS::part_pkg::prorate_Mixin::fieldorder,
+                   qw( datasrc db_username db_password query 
                   )],
   'weight' => '58',
 );

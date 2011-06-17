@@ -24,7 +24,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 %info = (
   'name' => 'VoIP flat rate pricing of CDRs for inbound calls',
   'shortname' => 'VoIP/telco CDR rating (inbound)',
-  'inherit_fields' => [ 'global_Mixin' ],
+  'inherit_fields' => [ 'prorate_Mixin', 'global_Mixin' ],
   'fields' => {
     #false laziness w/flat.pm
     'recur_temporality' => { 'name' => 'Charge recurring fee for period',
@@ -35,10 +35,6 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                                    'subscription',
                          'default' => '1',
                        },
-    'add_full_period'=> { 'name' => 'When prorating first month, also bill '.
-                                    'for one full period after that',
-                          'type' => 'checkbox',
-                        },
 
     'recur_method'  => { 'name' => 'Recurring fee method',
                          'type' => 'select',
@@ -148,8 +144,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
   },
   'fieldorder' => [qw(
                        recur_temporality
-                       recur_method cutoff_day add_full_period
-                       min_charge min_included sec_granularity
+                       recur_method cutoff_day ),
+                       FS::part_pkg::prorate_Mixin::fieldorder,
+                   qw( min_charge min_included sec_granularity
                        default_prefix
                        disable_tollfree
                        use_amaflags
@@ -171,11 +168,6 @@ sub price_info {
     my $str = $self->SUPER::price_info;
     $str .= " plus usage" if $str;
     $str;
-}
-
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
 }
 
 sub calc_recur {

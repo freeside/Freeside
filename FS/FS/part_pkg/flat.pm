@@ -25,7 +25,7 @@ tie my %contract_years, 'Tie::IxHash', (
 %info = (
   'name' => 'Flat rate (anniversary billing)',
   'shortname' => 'Anniversary',
-  'inherit_fields' => [ 'usage_Mixin', 'global_Mixin' ],
+  'inherit_fields' => [ 'prorate_Mixin', 'usage_Mixin', 'global_Mixin' ],
   'fields' => {
     #false laziness w/voip_cdr.pm
     'recur_temporality' => { 'name' => 'Charge recurring fee for period',
@@ -56,6 +56,13 @@ tie my %contract_years, 'Tie::IxHash', (
                                     'the customer\'s next bill date',
                           'type' => 'checkbox',
                         },
+    'prorate_round_day' => {
+                          'name' => 'When synchronizing, round the prorated '.
+                                    'period to the nearest full day',
+                          'type' => 'checkbox',
+                        },
+    'add_full_period' => { 'disabled' => 1 }, # doesn't make sense with sync?
+
     'suspend_bill' => { 'name' => 'Continue recurring billing while suspended',
                         'type' => 'checkbox',
                       },
@@ -72,7 +79,8 @@ tie my %contract_years, 'Tie::IxHash', (
   'fieldorder' => [ qw( recur_temporality 
                         expire_months adjourn_months
                         contract_end_months
-                        start_1st sync_bill_date prorate_defer_bill
+                        start_1st
+                        sync_bill_date prorate_defer_bill prorate_round_day
                         suspend_bill unsuspend_adjust_bill
                         externalid ),
                   ],

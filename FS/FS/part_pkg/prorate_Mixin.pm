@@ -7,7 +7,29 @@ use Time::Local qw(timelocal);
 @ISA = qw(FS::part_pkg);
 %info = ( 
   'disabled'  => 1,
+  # define all fields that are referenced in this code
+  'fields' => {
+    'add_full_period' => { 
+                'name' => 'When prorating first month, also bill for one full '.
+                          'period after that',
+                'type' => 'checkbox',
+    },
+    'prorate_round_day' => { 
+                'name' => 'When prorating, round to the nearest full day',
+                'type' => 'checkbox',
+    },
+    'prorate_defer_bill' => {
+                'name' => 'When prorating, defer the first bill until the '.
+                          'billing day',
+                'type' => 'checkbox',
+    },
+  },
+  'fieldorder' => [ qw(prorate_defer_bill prorate_round_day add_full_period) ],
 );
+
+sub fieldorder {
+  @{ $info{'fieldorder'} }
+}
 
 =head1 NAME
 
@@ -134,7 +156,13 @@ sub _endpoints {
   # only works for freq >= 1 month; probably can't be fixed
   my ($sec, $min, $hour, $mday, $mon, $year) = (localtime($mnow))[0..5];
   if( $self->option('prorate_round_day',1) ) {
-    $mday++ if $hour >= 12;
+    # If the time is 12:00-23:59, move to the next day by adding 18 
+    # hours to $mnow.  Because of DST this can end up from 05:00 to 18:59
+    # but it's always within the next day.
+    $mnow += 64800 if $hour >= 12;
+    # Get the new day, month, and year.
+    ($mday,$mon,$year) = (localtime($mnow))[3..5];
+    # Then set $mnow to midnight on that day.
     $mnow = timelocal(0,0,0,$mday,$mon,$year);
   }
   my $mend;

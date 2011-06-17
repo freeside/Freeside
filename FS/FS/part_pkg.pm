@@ -1630,6 +1630,10 @@ foreach my $name (keys(%info)) {
   my $parents = $info{$name}->{'inherit_fields'} || [];
   my (%fields, %field_exists, @fieldorder);
   foreach my $parent ($name, @$parents) {
+    if ( !exists($info{$parent}) ) {
+      warn "$name tried to inherit from nonexistent '$parent'\n";
+      next;
+    }
     %fields = ( # avoid replacing existing fields
       %{ $info{$parent}->{'fields'} || {} },
       %fields
@@ -1639,7 +1643,8 @@ foreach my $name (keys(%info)) {
       next if $field_exists{$_};
       $field_exists{$_} = 1;
       # allow inheritors to remove inherited fields from the fieldorder
-      push @fieldorder, $_ if !exists($fields{$_}->{'disabled'});
+      push @fieldorder, $_ if !exists($fields{$_}) or
+                              !exists($fields{$_}->{'disabled'});
     }
   }
   $plans{$name}->{'fields'} = \%fields;

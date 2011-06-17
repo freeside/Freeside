@@ -19,6 +19,13 @@ sub base_recur {
   $self->option('recur_fee', 1) || 0;
 }
 
+sub calc_setup {
+  # moved from all descendant packages which just had $self->option('setup_fee')
+  my($self, $cust_pkg, $sdate, $details, $param) = @_;
+  return 0 if $self->prorate_setup($cust_pkg, $sdate);
+  $self->option('setup_fee');
+}
+
 sub cutoff_day {
   # prorate/subscription only; we don't support sync_bill_date here
   my $self = shift;

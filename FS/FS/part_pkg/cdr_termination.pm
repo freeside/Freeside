@@ -16,7 +16,7 @@ tie my %temporalities, 'Tie::IxHash',
 %info = (
   'name' => 'VoIP rating of CDR records for termination partners.',
   'shortname' => 'VoIP/telco CDR termination',
-  'inherit_fields' => [ 'global_Mixin' ],
+  'inherit_fields' => [ 'prorate_Mixin', 'global_Mixin' ],
   'fields' => {
     #'cdr_column'    => { 'name' => 'Column from CDR records',
     #                     'type' => 'select',
@@ -46,11 +46,6 @@ tie my %temporalities, 'Tie::IxHash',
                                    'subscription',
                          'default' => '1',
                        },
-    'add_full_period'=> { 'name' => 'When prorating first month, also bill '.
-                                    'for one full period after that',
-                          'type' => 'checkbox',
-                        },
-
     'recur_method'  => { 'name' => 'Recurring fee method',
                          #'type' => 'radio',
                          #'options' => \%recur_method,
@@ -79,9 +74,9 @@ tie my %temporalities, 'Tie::IxHash',
 
   },
                        #cdr_column
-  'fieldorder' => [qw(
-                       recur_temporality recur_method cutoff_day
-                       add_full_period
+  'fieldorder' => [qw( recur_temporality recur_method cutoff_day ),
+                       FS::part_pkg::prorate_Mixin::fieldorder, 
+                       qw(
                        output_format usage_section summarize_usage usage_mandate
                      )
                   ],
@@ -89,11 +84,6 @@ tie my %temporalities, 'Tie::IxHash',
   'weight' => 48,
 
 );
-
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
-}
 
 sub calc_recur {
   my $self = shift;

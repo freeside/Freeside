@@ -24,8 +24,8 @@ use FS::part_pkg::flat;
                           'type' => 'checkbox',
                         },
     'prorate_round_day'=> {
-                          'name' => 'When prorating first month, round to '.
-                                    'the nearest full day',
+                          'name' => 'Round the prorated period to the nearest '.
+                                    'full day',
                           'type' => 'checkbox',
                         },
     'prorate_defer_bill'=> {
