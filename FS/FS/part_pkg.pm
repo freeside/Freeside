@@ -1484,6 +1484,40 @@ sub _upgrade_data { # class method
       die $error if $error;
     }
   }
+
+  # migrate use_disposition_taqua and use_disposition to disposition_in
+  @part_pkg_option = qsearch('part_pkg_option',
+    { 'optionname'  => { op => 'LIKE',
+                         value => 'use_disposition%',
+                       },
+      'optionvalue' => 1,
+    });
+  my %newopts = map { $_->pkgpart => $_ } 
+    qsearch('part_pkg_option',  { 'optionname'  => 'disposition_in', } );
+  foreach my $old_opt (@part_pkg_option) {
+        my $pkgpart = $old_opt->pkgpart;
+        my $newval = $old_opt->optionname eq 'use_disposition_taqua' ? '100' 
+                                                                  : 'ANSWERED';
+        my $error = $old_opt->delete;
+        die $error if $error;
+
+        if ( exists($newopts{$pkgpart}) ) {
+            my $opt = $newopts{$pkgpart};
+            $opt->optionvalue($opt->optionvalue.",$newval");
+            $error = $opt->replace;
+            die $error if $error;
+        } else {
+            my $new_opt = new FS::part_pkg_option {
+                'pkgpart'     => $pkgpart,
+                'optionname'  => 'disposition_in',
+                'optionvalue' => $newval,
+              };
+              $error = $new_opt->insert;
+              die $error if $error;
+              $newopts{$pkgpart} = $new_opt;
+        }
+  }
+
 }
 
 =item curuser_pkgs_sql

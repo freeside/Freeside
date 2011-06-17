@@ -68,14 +68,6 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                         'type' => 'checkbox',
                       },
 
-    'use_disposition' => { 'name' => 'Do not charge for CDRs where the disposition flag is not set to "ANSWERED".',
-                           'type' => 'checkbox',
-                         },
-
-    'use_disposition_taqua' => { 'name' => 'Do not charge for CDRs where the disposition is not set to "100" (Taqua).',
-                                 'type' => 'checkbox',
-                               },
-
     'use_carrierid' => { 'name' => 'Do not charge for CDRs where the Carrier ID is not set to: ',
                          },
 
@@ -86,6 +78,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                          },
 
     'ignore_disposition' => { 'name' => 'Do not charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
+                         },
+    
+    'disposition_in' => { 'name' => 'Do not charge for CDRs where the Disposition is not set to any of these (comma-separated) values: ',
                          },
 
     'skip_dcontext' => { 'name' => 'Do not charge for CDRs where the dcontext is set to any of these (comma-separated) values:',
@@ -157,10 +152,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        min_charge min_included sec_granularity
                        default_prefix
                        disable_tollfree
-                       use_amaflags use_disposition
-                       use_disposition_taqua use_carrierid
+                       use_amaflags
+                       use_carrierid
                        use_cdrtypenum ignore_cdrtypenum
-                       ignore_disposition
+                       ignore_disposition disposition_in
                        skip_dcontext skip_dstchannel_prefix
                        skip_dst_length_less skip_lastapp
                        use_duration
@@ -333,11 +328,10 @@ sub check_chargable {
 
   my @opt = qw(
     use_amaflags
-    use_disposition
-    use_disposition_taqua
     use_carrierid
     use_cdrtypenum
     ignore_cdrtypenum
+    disposition_in
     ignore_disposition
     skip_dcontext
     skip_dstchannel_prefix
@@ -352,11 +346,9 @@ sub check_chargable {
   return 'amaflags != 2'
     if $opt{'use_amaflags'} && $cdr->amaflags != 2;
 
-  return 'disposition != ANSWERED'
-    if $opt{'use_disposition'} && $cdr->disposition ne 'ANSWERED';
-
-  return "disposition != 100"
-    if $opt{'use_disposition_taqua'} && $cdr->disposition != 100;
+  return "disposition NOT IN ( $opt{'disposition_in'} )"
+    if $opt{'disposition_in'} =~ /\S/
+    && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'disposition_in'});
     
   return "disposition IN ( $opt{'ignore_disposition'} )"
     if $opt{'ignore_disposition'} =~ /\S/
