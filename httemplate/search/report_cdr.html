@@ -1,5 +1,13 @@
 <% include('/elements/header.html', 'Call Detail Record Search' ) %>
 
+<SCRIPT type="text/javascript">
+    function clearfield(which){
+        var f = document.getElementById(which);
+        if ( f == null) return;
+        f.value = '';
+    }
+</SCRIPT>
+
 <FORM ACTION="cdr.html" METHOD="GET">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
@@ -102,6 +110,21 @@
             )
   %>
 
+  <TR>
+    <TD ALIGN="right">Top</TD>
+    <TD><INPUT TYPE="TEXT" id="top_dst" NAME="top_dst" SIZE="7" onfocus="clearfield('top_src');"> destinations</TD>
+  </TR>
+  
+  <TR>
+    <TD ALIGN="right">Top</TD>
+    <TD><INPUT TYPE="TEXT" id="top_src" NAME="top_src" SIZE="7" onfocus="clearfield('top_dst');"> sources</TD>
+  </TR>
+  
+  <TR>
+    <TD ALIGN="right"></TD>
+    <TD><INPUT TYPE="TEXT" NAME="longest" SIZE="7"> longest calls</TD>
+  </TR>
+  
   <% include( '/elements/tr-select-cdrbatch.html' ) %>
 
   <TR>

@@ -1,31 +1,13 @@
 <% include( 'elements/search.html',
                'title' => $title,
                'name'  => 'call detail records',
-
-               'query' => { 'table'     => 'cdr',
-                            'hashref'   => $hashref,
-			    'extra_sql' => $qsearch,
-			    'order_by'  => 'ORDER BY calldate',
-                          },
+               'query' => $query,
                'count_query' => $count_query,
-               'count_addl' => [ $totalminutes_sub ],
-               'header' => [
-                             '', # checkbox column
-                             @header,
-                           ],
-               'fields' => [
-                             sub {
-                               return '' unless $edit_data;
-                               $areboxes = 1;
-                               my $cdr = shift;
-                               my $acctid = $cdr->acctid;
-                               qq!<INPUT NAME="acctid$acctid" TYPE="checkbox" VALUE="1">!;
-                             },
-                             @fields,       #XXX fill in some pretty-print
-                                            #processing, etc.
-                           ],
+               'count_addl' => $nototalminutes ? '' : [ $totalminutes_sub ],
+               'disable_total' => $topmode ? 1 : '',
+               'header' => \@header,
+               'fields' => \@fields,
                'links' => \@links,
-
                'html_form'   => qq!<FORM NAME="cdrForm" ACTION="$p/misc/cdr.cgi" METHOD="POST">!,
                #false laziness w/queue.html
                'html_foot' => sub {
@@ -270,6 +252,8 @@ if ( $cgi->param('acctid') =~ /\d/ ) {
 # finish it up
 ###
 
+my $nototalminutes = 0;
+
 my $search = join(' AND ', @search);
 $search = "WHERE $search" if $search;
 
@@ -278,6 +262,20 @@ my $count_query = "SELECT COUNT(*), sum(billsec) FROM cdr $search";
 my $qsearch = join(' AND ', @qsearch);
 $qsearch = ( scalar(keys %$hashref) ? ' AND ' : ' WHERE ' ) . $qsearch
   if $qsearch;
+
+my $query =     {   'table'     => 'cdr',
+                    'hashref'   => $hashref,
+			        'extra_sql' => $qsearch,
+			        'order_by'  => 'ORDER BY calldate',
+                };
+
+if ( $cgi->param('longest') =~ /^(\d+)$/ && $cgi->param('longest') > 0 ) {
+    $cgi->param('maxrecords',$1);
+    $count_query = "SELECT $1";
+    $query->{'order_by'} = 'ORDER BY billsec desc';
+    $nototalminutes = 1;
+}
+
 
 ###
 # display fields
@@ -303,6 +301,7 @@ my @header = map {
                      ucfirst($header);
                    }
                  } @fields;
+unshift @header, ' ';
 
 my $date_sub_factory = sub {
   my $column = shift;
@@ -324,8 +323,60 @@ my %links = (
 );
 
 @fields = map { exists($fields{$_}) ? $fields{$_} : $_ } @fields;
+unshift @fields, sub {
+                       return '' unless $edit_data;
+                       $areboxes = 1;
+                       my $cdr = shift;
+                       my $acctid = $cdr->acctid;
+                       qq!<INPUT NAME="acctid$acctid" TYPE="checkbox" VALUE="1">!;
+                     };
 
-              #checkbox column
 my @links = ( '', map { exists($links{$_}) ? $links{$_} : '' } @fields );
+
+
+###
+# top dst / top src
+###
+
+my $topmode = 0;
+
+if ( $cgi->param('top_dst') =~ /^(\d+)$/ && $cgi->param('top_dst') > 0 ) {
+        $topmode = $1;
+        @fields = ('dst');
+        @header = ('Destination');
+}
+elsif ( $cgi->param('top_src') =~ /^(\d+)$/ && $cgi->param('top_src') > 0 ) {
+        $topmode = $1;
+        @fields = ('src');
+        @header = ('Source');
+}
+
+if ( $topmode ) {
+    my $whichfield = $fields[0];
+    $query = {  'select'    => "$whichfield, count(1) as cnt",
+                'table'     => 'cdr',
+                'hashref'   => {},
+                'extra_sql' => "$search
+                                group by $whichfield
+                                order by cnt desc",
+             };
+    $count_query = "SELECT $topmode";
+
+    # this is weird, maybe we should change search.html
+    $cgi->param('maxrecords',$topmode);
+    
+    # kind of hacked
+    my $link = "${p}search/cdr.html?".$cgi->query_string;
+    $link =~ s/;top_(dst|src)=(\d+|)//g;
+    $link =~ s/;maxrecords=(\d+|)//;
+    $link =~ s/;(src|dst)=(\d+|)//g;
+    $link = [ "$link;$whichfield=", sub { shift->$whichfield } ];
+    @links = ($link);
+
+    push @fields, 'cnt';
+    push @header, '# Calls';
+    
+    $nototalminutes = 1;
+}
 
 </%init>
