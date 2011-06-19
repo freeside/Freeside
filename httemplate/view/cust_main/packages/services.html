@@ -12,18 +12,26 @@ function clearhint_search_cust_svc(obj, str) {
 
 %  foreach my $part_svc ( $cust_pkg->part_svc ) {
 
+%    my $num_cust_svc = $cust_pkg->num_cust_svc( $part_svc->svcpart );
+
 %    if ( $opt{'cust_pkg-large_pkg_size'} > 0 and
-%         $opt{'cust_pkg-large_pkg_size'} <= $cust_pkg->num_svcs ) {
+%         $opt{'cust_pkg-large_pkg_size'} <= $num_cust_svc ) {
 %      # summarize
       <TR>
-        <TD ALIGN="center" VALIGN="top">
+        <TD ALIGN="right" VALIGN="top">
 %       my $href="${p}search/cust_pkg_svc.html?svcpart=".$part_svc->svcpart.
 %          ";pkgnum=".$cust_pkg->pkgnum;
-        <A HREF="<% $href %>"><% $part_svc->svc %></A>&nbsp;
+        <A HREF="<% $href %>"><% $part_svc->svc %></A>
+        </TD>
+        <TD ALIGN="left" VALIGN="top">
         <A HREF="<% $href %>"><B>(<% mt("view all [_1]", $cust_pkg->num_svcs) |h %>)</B></A>
+        </TD>
+      </TR>
 %     my $hint = $hints{$part_svc->svcdb};
 %     if ( $hint ) {
-        <BR>
+      <TR>
+        <TD></TD>
+        <TD ALIGN="left" VALIGN="top">
         <FORM name="svcpart<%$part_svc->svcpart%>_search" STYLE="display:inline"
         ACTION="<%$p%>search/cust_pkg_svc.html" METHOD="GET">
         <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%$part_svc->svcpart%>">
@@ -31,9 +39,9 @@ function clearhint_search_cust_svc(obj, str) {
         <INPUT TYPE="text" NAME="search_svc"
         onfocus="clearhint_search_cust_svc(this, '<%$hint%>')" VALUE="<%$hint%>">
         <INPUT TYPE="submit" VALUE="Search"></FORM>
-%     } #$hint
         </TD>
       </TR>
+%     } #$hint
 %    }
 %    else { # don't summarize
 %      foreach my $cust_svc ( @{ $part_svc->cust_pkg_svc } ) {
