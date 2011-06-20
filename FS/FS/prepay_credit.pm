@@ -1,11 +1,14 @@
 package FS::prepay_credit;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $DEBUG $me );
 use FS::Record qw(qsearchs dbh);
 use FS::agent;
 
 @ISA = qw(FS::Record);
+
+$DEBUG = 0;
+$me = '[FS::prepay_credit]';
 
 =head1 NAME
 
@@ -170,7 +173,16 @@ sub generate {
 
     my $identifier = join('', map($codeset[int(rand $#codeset)], (1..$length) ) );
 
-    redo if qsearchs('prepay_credit',{identifier=>$identifier}) && $condup++<23;
+    if ( qsearchs('prepay_credit',{identifier=>$identifier}) ) {
+      if ( $condup++ < 54 ) {
+        warn "$me generate: duplicate identifier $identifier; retrying\n"
+          if $DEBUG;
+        redo;
+      } else {
+        warn "$me generate: giving up after 54 tries"
+          if $DEBUG;
+      }
+    }
     $condup = 0;
 
     my $prepay_credit = new FS::prepay_credit {
