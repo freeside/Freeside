@@ -2903,8 +2903,7 @@ sub print_generic {
       push @detail_items, 
 	{ 'description' => $didsummary_desc,
 	    'ext_description' => [ $didsummary, $minutes ],
-	}
-	if !$multisection;
+	};
   }
 
   foreach my $section (@sections, @$late_sections) {
