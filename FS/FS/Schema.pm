@@ -3156,6 +3156,7 @@ sub tables_hashref {
                     [ 'exportnum', 'countrycode', 'npa', 'nxx', 'station' ], # #
                     [ 'svcnum' ],
                     [ 'availbatch' ],
+                    [ 'latanum' ],
                   ],
     },
     

@@ -1,43 +1,53 @@
 <% include( 'elements/search.html',
-              'title'         => 'Phone Number (DID) Search Results',
-              'name_singular' => 'phone number',
+              'title'         => 'LATA Search Results',
+              'name_singular' => 'LATA',
               'query'         => {
                                    'table'   => 'phone_avail',
                                    'hashref' => {},
                                    'select'  => 'distinct latanum',
                                  },
               'count_query'   => 'SELECT COUNT(distinct latanum) FROM phone_avail',
-              'header'        => [ 'LATA #',
+              'header'        => [ 'LATA',
 				   'Available',
 				   'Provisioned',
 				   'Have Usage',
                                  ],
               'fields'        => [
-                'latanum',
-		sub {
+        sub { # LATA
+            my $did_order = shift;
+            my $lata = $did_order->lata;
+            $lata = $lata ? $lata->description : '';
+            $did_order->latanum . " - " . $lata;
+        },
+		sub { # Available
 		    my $latanum = shift->latanum;
 		    my @dids = qsearch('phone_avail',
-					{ 'svcnum' => '',
-					  'latanum' => $latanum,
-					}
-				      );
+                                    { 'svcnum' => '',
+                                      'latanum' => $latanum,
+                                    }
+                          );
 		    return scalar(@dids);
 		},
-		sub {
+		sub { # Provisioned
 		    my $latanum = shift->latanum;
 		    my @dids = provisioned_dids($latanum);
 		    return scalar(@dids);
 		},
-		sub {
+		sub { # Have Usage
 		    my $latanum = shift->latanum;
 		    my @dids = provisioned_dids($latanum);
+
+            warn "have usage ".time;
+            return ''; # XXX disabled temporarily
+
 		    my $count = 0;
 		    foreach my $did ( @dids ) {
-			next unless $did->cust_svc;
-			my $svc_phone = $did->cust_svc->svc_x;
-			next unless $svc_phone;
-			my @cdrs = $svc_phone->get_cdrs;
-			$count++ if scalar(@cdrs);
+                next unless $did->cust_svc;
+                my $svc_phone = $did->cust_svc->svc_x;
+                warn "inside loop ".time;
+                next unless $svc_phone;
+                my @cdrs = $svc_phone->get_cdrs;
+                $count++ if scalar(@cdrs);
 		    }
 		    $count;
 		},
@@ -65,6 +75,8 @@
 %>
 <%init>
 
+warn "started @ ".time;
+
 die "access denied"
   unless ( $FS::CurrentUser::CurrentUser->access_right('List inventory')
 	 && $FS::CurrentUser::CurrentUser->access_right('List services')
@@ -74,12 +86,10 @@ die "access denied"
 
 sub provisioned_dids {
     my $latanum = shift;
-    qsearch({ 'table' => 'phone_avail',
-	      'hashref' => { 
-		'latanum' => $latanum,
-	      },
-	      'extra_sql' => ' and svcnum is not null ',
-	  });
+    qsearch({   'table' => 'phone_avail',
+	            'hashref' => { 'latanum' => $latanum, },
+	            'extra_sql' => ' and svcnum is not null ',
+	        });
 }
 
 </%init>

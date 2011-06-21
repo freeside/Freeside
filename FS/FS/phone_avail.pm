@@ -182,6 +182,16 @@ sub part_export {
   qsearchs('part_export', { 'exportnum' => $self->exportnum });
 }
 
+=item lata 
+
+=cut
+
+sub lata {
+  my $self = shift;
+  return '' unless $self->latanum;
+  qsearchs('lata', { 'latanum' => $self->latanum });
+}
+
 =item msa2msanum
 
 Translate free-form MSA name to a msa.msanum
