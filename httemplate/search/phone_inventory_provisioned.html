@@ -39,10 +39,9 @@
 
 		    my $count = 0;
 		    foreach my $did ( @dids ) {
-                my $cust_svc = $did->cust_svc;
-                next unless $cust_svc;
+                my $svcnum = $did->svcnum;
+                next unless $svcnum;
 
-                my $svcnum = $cust_svc->svcnum;
                 my $sql = "select count(1) from cdr where src = 
                     (select phonenum from svc_phone where svcnum = $svcnum)
                     or charged_party = (select phonenum from svc_phone where
