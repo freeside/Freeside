@@ -14,68 +14,73 @@
                                  ],
               'fields'        => [
         sub { # LATA
-            my $did_order = shift;
-            my $lata = $did_order->lata;
+            my $phone_avail = shift;
+            my $lata = $phone_avail->lata;
             $lata = $lata ? $lata->description : '';
-            $did_order->latanum . " - " . $lata;
+            $phone_avail->latanum . " - " . $lata;
         },
 		sub { # Available
 		    my $latanum = shift->latanum;
-		    my @dids = qsearch('phone_avail',
+		    my $cnt = qsearchs({ 'table'    => 'phone_avail',
+                                 'hashref'  => 
                                     { 'svcnum' => '',
                                       'latanum' => $latanum,
-                                    }
-                          );
-		    return scalar(@dids);
+                                    },
+                                 'select'   => 'count(1) as cnt',
+                          });
+		    ($cnt) ? $cnt->cnt : '';
 		},
 		sub { # Provisioned
 		    my $latanum = shift->latanum;
-		    my @dids = provisioned_dids($latanum);
-		    return scalar(@dids);
+            my $cnt = qsearchs({   'table'     => 'phone_avail',
+                        'hashref'   => { 'latanum' => $latanum,
+                                         'svcnum' => { op => '>',
+                                                        value => '0'
+                                                     },
+                                        },
+                        'select'    => 'count(1) as cnt'
+                    });
+		    ($cnt) ? $cnt->cnt : '';
 		},
 		sub { # Have Usage
-            my $did_order = shift;
-		    my @dids = provisioned_dids($did_order->latanum);
-
+            my $phone_avail = shift;
+            return '' unless $phone_avail->latanum;
+            my $latanum = $phone_avail->latanum;
 		    my $count = 0;
-		    foreach my $did ( @dids ) {
-                my $svcnum = $did->svcnum;
-                next unless $svcnum;
-
-                my $sql = "select count(1) from cdr where src = 
-                    (select phonenum from svc_phone where svcnum = $svcnum)
-                    or charged_party = (select phonenum from svc_phone where
-                        svcnum = $svcnum)";
-                my $c = $did_order->scalar_sql($sql);
-                $count++ if $c > 0;
-		    }
+            my $sql = "select count(1) from cdr where src in 
+                (select phonenum from svc_phone where svcnum in (
+                    select svcnum from phone_avail where latanum = $latanum
+                        and svcnum is not null) )
+                or charged_party in (select phonenum from svc_phone where
+                    svcnum in (select svcnum from phone_avail where
+                        latanum = $latanum and svcnum is not null) )";
+            my $c = $phone_avail->scalar_sql($sql);
+            $count++ if $c > 0;
 		    $count;
 		},
               ],
               'align'         => 'lccc',
               'links'         => [
                 '',
-		'',
-		'',
-		'',
+                '',
+                '',
+                '',
               ],
               'color' => [ 
                            '',
-			   '',
-			   '',
-			   '',
+                           '',
+                           '',
+                           '',
                          ],
               'style' => [ 
                            '',
-			   '',
-			   '',
-			   '',
+                           '',
+                           '',
+                           '',
                          ],
       )
 %>
 <%init>
-
-warn "started @ ".time;
 
 die "access denied"
   unless ( $FS::CurrentUser::CurrentUser->access_right('List inventory')
@@ -83,13 +88,5 @@ die "access denied"
 	 );
 
 # XXX: agent virtualize
-
-sub provisioned_dids {
-    my $latanum = shift;
-    qsearch({   'table' => 'phone_avail',
-	            'hashref' => { 'latanum' => $latanum, },
-	            'extra_sql' => ' and svcnum is not null ',
-	        });
-}
 
 </%init>
