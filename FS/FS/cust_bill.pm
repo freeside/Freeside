@@ -4134,10 +4134,8 @@ sub _did_summary {
 
 	    # increment usage minutes
         if ( $phone_inserted ) {
-            my @cdrs = $phone_inserted->get_cdrs('begin'=>$start,'end'=>$end);
-            foreach my $cdr ( @cdrs ) {
-                $minutes += $cdr->billsec/60;
-            }
+            my @cdrs = $phone_inserted->get_cdrs('begin'=>$start,'end'=>$end,'billsec_sum'=>1);
+            $minutes = $cdrs[0]->billsec_sum if scalar(@cdrs) == 1;
         }
         else {
             warn "WARNING: no matching h_svc_phone insert record for insert time $inserted, svcnum " . $h_cust_svc->svcnum;

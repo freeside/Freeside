@@ -727,7 +727,8 @@ sub get_cdrs {
       'table'      => 'cdr',
       'hashref'    => \%hash,
       'extra_sql'  => $extra_sql,
-      'order_by'   => "ORDER BY startdate $for_update",
+      'order_by'   => $options{'billsec_sum'} ? '' : "ORDER BY startdate $for_update",
+      'select'     => $options{'billsec_sum'} ? 'sum(billsec) as billsec_sum' : '*',
     } );
 
   @cdrs;
