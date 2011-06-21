@@ -197,34 +197,42 @@ sub dbdef_dist {
     my $tableobj = $dbdef->table($table)
       or die "unknown table $table";
 
-    my %indices = $tableobj->indices;
+    my %h_indices = ();
+
+    unless ( $table eq 'cust_event' ) { #others?
+
+      my %indices = $tableobj->indices;
     
-    my %h_indices = map { 
-                          ( "h_$_" =>
-                              DBIx::DBSchema::Index->new({
-                                'name'    => 'h_'. $indices{$_}->name,
-                                'unique'  => 0,
-                                'columns' => [ @{$indices{$_}->columns} ],
-                              })
-                          );
-                        }
-                        keys %indices;
+      %h_indices = map { 
+                         ( "h_$_" =>
+                             DBIx::DBSchema::Index->new({
+                               'name'    => 'h_'. $indices{$_}->name,
+                               'unique'  => 0,
+                               'columns' => [ @{$indices{$_}->columns} ],
+                             })
+                         );
+                       }
+                       keys %indices;
 
-    $h_indices{"h_${table}_srckey"} = DBIx::DBSchema::Index->new({
-                                        'name'    => "h_${table}_srckey",
-                                        'unique'  => 0,
-                                        'columns' => [ 'history_action', #right?
-                                                       $tableobj->primary_key,
-                                                     ],
-                                      });
+      $h_indices{"h_${table}_srckey"} =
+        DBIx::DBSchema::Index->new({
+          'name'    => "h_${table}_srckey",
+          'unique'  => 0,
+          'columns' => [ 'history_action', #right?
+                         $tableobj->primary_key,
+                       ],
+        });
 
-    $h_indices{"h_${table}_srckey2"} = DBIx::DBSchema::Index->new({
-                                         'name'    => "h_${table}_srckey2",
-                                         'unique'  => 0,
-                                         'columns' => [ 'history_date',
-                                                        $tableobj->primary_key,
-                                                      ],
-                                       });
+      $h_indices{"h_${table}_srckey2"} =
+         DBIx::DBSchema::Index->new({
+           'name'    => "h_${table}_srckey2",
+           'unique'  => 0,
+           'columns' => [ 'history_date',
+                          $tableobj->primary_key,
+                        ],
+         });
+
+    }
 
     my $h_tableobj = DBIx::DBSchema::Table->new( {
       'name'          => "h_$table",
