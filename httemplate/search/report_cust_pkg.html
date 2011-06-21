@@ -33,7 +33,7 @@
 
           if ( what.options[what.selectedIndex].value == '<% $status %>' ) {
 
-%           foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
+%           foreach my $field (@date_fields) {
 %             if ( $disable{$status}->{$field} ) {
 
                 what.form.<% $field %>_beginning_text.disabled = true;
@@ -89,7 +89,7 @@
 
 %   }
 
-%   foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end cancel )) {
+%   foreach my $field (@date_fields) {
 
       <TR>
         <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
@@ -174,24 +174,26 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
 </%init>
 <%once>
 
-my %label = (
-  'setup'     => 'Setup',
-  'last_bill' => 'Last bill',
-  'bill'      => 'Next bill',
-  'adjourn'   => 'Adjourns',
-  'susp'      => 'Suspended',
-  'expire'    => 'Expires',
+tie my %label, 'Tie::IxHash',
+  'setup'        => 'Setup',
+  'last_bill'    => 'Last bill',
+  'bill'         => 'Next bill',
+  'adjourn'      => 'Adjourns',
+  'susp'         => 'Suspended',
+  'dundate'      => 'Suspension delayed until',
+  'expire'       => 'Expires',
   'contract_end' => 'Contract ends',
-  'cancel'    => 'Cancelled',
-);
+  'cancel'       => 'Cancelled',
+;
+my @date_fields = keys %label;
 
 #false laziness w/cust_pkg.cgi
 my %disable = (
   'all'             => {},
   'not yet billed'  => { 'setup'=>1, 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
-  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, 'contract_end'=>1, 'dundate'=>1, },
   'active'          => { 'susp'=>1, 'cancel'=>1 },
-  'suspended'       => { 'cancel' => 1 },
+  'suspended'       => { 'cancel'=>1, 'dundate'=>1, },
   'cancelled'       => {},
   ''                => {},
 );
@@ -202,6 +204,7 @@ my %checkbox = (
   'last_bill' => 0,
   'bill'      => 0,
   'susp'      => 1,
+  'dundate'   => 1,
   'expire'    => 1,
   'cancel'    => 1,
 );

@@ -17,6 +17,7 @@
                                      emt('Next bill'),
                                      emt('Adjourn'),
                                      emt('Susp.'),
+                                     emt('Susp. delay'),
                                      emt('Expire'),
                                      emt('Contract end'),
                                      emt('Cancel'),
@@ -44,7 +45,7 @@
                     sub { FS::part_pkg::freq_pretty(shift); },
 
                     ( map { time_or_blank($_) }
-          qw( setup last_bill bill adjourn susp expire contract_end cancel ) ),
+          qw( setup last_bill bill adjourn susp dundate expire contract_end cancel ) ),
 
                     sub { my $self = shift;
                           my $return = '';
@@ -104,17 +105,19 @@
                     '',
                     '',
                     '',
+                    '',
                     FS::UI::Web::cust_colors(),
                     '',
                   ],
-                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '', '', '', '',
+                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '', '', '', '', '',
                                FS::UI::Web::cust_styles() ],
                   'size'  => [ '', '', '', '', '-1' ],
-                  'align' => 'rrlccrrlrrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
+                  'align' => 'rrlccrrlrrrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
                   'links' => [
                     $link,
                     $link,
                     $link,
+                    '',
                     '',
                     '',
                     '',
@@ -176,9 +179,9 @@ $search_hash{report_option} = join(',', @report_option) if @report_option;
 #false laziness w/report_cust_pkg.html
 my %disable = (
   'all'             => {},
-  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, 'contract_end'=>1, 'dundate'=>1, },
   'active'          => { 'susp'=>1, 'cancel'=>1 },
-  'suspended'       => { 'cancel' => 1 },
+  'suspended'       => { 'cancel' =>1, 'dundate'=>1, },
   'cancelled'       => {},
   ''                => {},
 );

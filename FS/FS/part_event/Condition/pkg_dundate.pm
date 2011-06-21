@@ -23,10 +23,10 @@ sub condition {
 
 }
 
-#sub condition_sql {
-#  my( $self, $table ) = @_;
-#
-#  'true';
-#}
+sub condition_sql {
+  my( $class, $table, %opt ) = @_;
+  return 'true' unless $table eq 'cust_pkg';
+  "COALESCE($table.dundate,0) <= ". $opt{'time'};
+}
 
 1;
