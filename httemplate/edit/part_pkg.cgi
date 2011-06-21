@@ -50,7 +50,7 @@
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
                             'svc_dst_pkgpart'  => 'Include services of package',
                             'report_option'    => 'Report classes',
-                            'fcc_ds0s'         => 'Voice-grade eqivalents',
+                            'fcc_ds0s'         => 'Voice-grade equivalents',
                           },
 
               'fields' => [
