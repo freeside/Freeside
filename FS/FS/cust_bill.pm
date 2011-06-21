@@ -4100,7 +4100,7 @@ sub _did_summary {
 
 	    my $inserted = $h_cust_svc->date_inserted;
 	    my $deleted = $h_cust_svc->date_deleted;
-	    my $phone_inserted = $h_cust_svc->h_svc_x($inserted);
+	    my $phone_inserted = $h_cust_svc->h_svc_x($inserted+5);
 	    my $phone_deleted;
 	    $phone_deleted =  $h_cust_svc->h_svc_x($deleted) if $deleted;
 	    
@@ -4133,10 +4133,15 @@ sub _did_summary {
 	    }
 
 	    # increment usage minutes
-	    my @cdrs = $phone_inserted->get_cdrs('begin'=>$start,'end'=>$end);
-	    foreach my $cdr ( @cdrs ) {
-		$minutes += $cdr->billsec/60;
-	    }
+        if ( $phone_inserted ) {
+            my @cdrs = $phone_inserted->get_cdrs('begin'=>$start,'end'=>$end);
+            foreach my $cdr ( @cdrs ) {
+                $minutes += $cdr->billsec/60;
+            }
+        }
+        else {
+            warn "WARNING: no matching h_svc_phone insert record for insert time $inserted, svcnum " . $h_cust_svc->svcnum;
+        }
 
 	    # don't look at this service again
 	    push @seen, $h_cust_svc->svcnum;
