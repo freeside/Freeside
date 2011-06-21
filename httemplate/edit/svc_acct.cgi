@@ -302,12 +302,21 @@ function randomPass() {
 
 <TR>
   <TD ALIGN="right"><% mt('RADIUS groups') |h %></TD>
-% if ( $part_svc->part_svc_column('usergroup')->columnflag eq 'F' ) { 
-
+% if ( $part_svc_usergroup->columnflag eq 'F' ) { 
     <TD BGCOLOR="#eeeeee"><% join('<BR>', @groups) %></TD>
 % } else { 
-
-    <TD><% FS::svc_acct::radius_usergroup_selector( \@groups ) %></TD>
+%   my $radius_group_selected = '';
+%   if ( $svc_acct->svcnum ) {
+%      $radius_group_selected = join(',',$svc_acct->radius_groups('NUMBERS'));
+%   }
+%   elsif ( !$svc_acct->svcnum && $part_svc_usergroup->columnflag eq 'D' ) {
+%       $radius_group_selected = $part_svc_usergroup->columnvalue;
+%   }
+    <TD><& /elements/select-radius_group.html, 
+                curr_value => $radius_group_selected,
+                element_name => 'radius_usergroup',
+        &>
+    </TD>
 % } 
 
 </TR>
@@ -433,9 +442,10 @@ unless ( $svcnum || $cgi->param('error') ) { #adding
 
 }
 
+my $part_svc_usergroup = $part_svc->part_svc_column('usergroup');
 #fixed radius groups always override & display
-if ( $part_svc->part_svc_column('usergroup')->columnflag eq 'F' ) {
-  @groups = split(',', $part_svc->part_svc_column('usergroup')->columnvalue);
+if ( $part_svc_usergroup->columnflag eq 'F' ) {
+  @groups = split(',', $part_svc_usergroup->columnvalue);
 }
 
 my $action = $svcnum ? 'Edit' : 'Add';

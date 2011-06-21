@@ -124,7 +124,9 @@ L<FS::acct_snarf> - External mail account class
 
 L<FS::acct_rt_transaction> - Time worked application to account class
 
-L<FS::radius_usergroup> - RADIUS groups
+L<FS::radius_usergroup> - RADIUS user group membership
+
+L<FS::radius_group> - RADIUS groups
 
 L<FS::svc_domain> - Domain class
 

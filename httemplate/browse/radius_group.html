@@ -1,0 +1,24 @@
+<& elements/browse.html,
+                 'title'       => 'RADIUS Groups',
+                 'name'        => 'RADIUS Groups',
+                 'menubar'     => [ 'Add a RADIUS Group' => $p.'edit/radius_group.html', ],
+                 'query'       => { 'table' => 'radius_group' },
+                 'count_query' => 'SELECT COUNT(*) FROM radius_group',
+                 'header'      => [ '#', 'RADIUS Group', 'Description' ],
+                 'fields'      => [ 'groupnum',
+                                    'groupname',
+                                    'description',
+                                  ],
+                 'links'       => [ [ $p.'edit/radius_group.html?', 'groupnum' ],
+                                    '',
+                                    '',
+                                  ],
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+</%init>

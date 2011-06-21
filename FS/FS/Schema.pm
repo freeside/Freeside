@@ -2329,11 +2329,23 @@ sub tables_hashref {
       'columns' => [
         'usergroupnum', 'serial', '', '', '', '', 
         'svcnum',       'int', '', '', '', '', 
-        'groupname',    'varchar', '', $char_d, '', '', 
+        'groupname',    'varchar', 'NULL', $char_d, '', '', 
+        'groupnum',     'int', 'NULL', '', '', '', 
       ],
       'primary_key' => 'usergroupnum',
       'unique'      => [],
       'index'       => [ [ 'svcnum' ], [ 'groupname' ] ],
+    },
+    
+    'radius_group' => {
+      'columns' => [
+        'groupnum', 'serial', '', '', '', '', 
+        'groupname',    'varchar', '', $char_d, '', '', 
+        'description',  'varchar', 'NULL', $char_d, '', '', 
+      ],
+      'primary_key' => 'groupnum',
+      'unique'      => [ ['groupname'] ],
+      'index'       => [],
     },
 
     'msgcat' => {

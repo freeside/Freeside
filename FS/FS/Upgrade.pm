@@ -191,6 +191,9 @@ sub upgrade_data {
     #insert MSA data if not already present
     'msa' => [],
 
+    # migrate to radius_group and groupnum instead of groupname
+    'radius_usergroup' => [],
+
   ;
 
   \%hash;

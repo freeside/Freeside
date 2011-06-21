@@ -1,0 +1,16 @@
+<& elements/edit.html,
+                 'name'   => 'RADIUS Group',
+                 'table'  => 'radius_group',
+                 'labels' => { 
+                               'groupnum'  => 'Group',
+                               'groupname' => 'RADIUS Group',
+                               'description' => 'Description',
+                             },
+                 'viewall_dir' => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

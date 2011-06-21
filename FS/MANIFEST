@@ -606,3 +606,5 @@ FS/L10N.pm
 t/L10N.t
 FS/Maketext.pm
 t/Maketext.t
+FS/radius_group.pm
+t/radius_group.t

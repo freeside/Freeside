@@ -43,6 +43,7 @@ use FS::svc_pbx;
 use FS::raddb;
 use FS::queue;
 use FS::radius_usergroup;
+use FS::radius_group;
 use FS::export_svc;
 use FS::part_export;
 use FS::svc_forward;
@@ -335,7 +336,7 @@ sub table_info {
                        },
         'usergroup' => {
                          label => 'RADIUS groups',
-                         type  => 'radius_usergroup_selector',
+                         type  => 'select-radius_group.html',
                          disable_inventory => 1,
                          disable_select => 1,
                        },
@@ -709,10 +710,10 @@ sub insert {
   }
 
   if ( $self->usergroup ) {
-    foreach my $groupname ( @{$self->usergroup} ) {
+    foreach my $groupnum ( @{$self->usergroup} ) {
       my $radius_usergroup = new FS::radius_usergroup ( {
         svcnum    => $self->svcnum,
-        groupname => $groupname,
+        groupnum  => $groupnum,
       } );
       my $error = $radius_usergroup->insert;
       if ( $error ) {
@@ -1010,10 +1011,10 @@ sub replace {
   $error = $new->check;
   return $error if $error;
 
-  $old->usergroup( [ $old->radius_groups ] );
+  $old->usergroup( [ $old->radius_groups('NUMBERS') ] );
   if ( $DEBUG ) {
     warn $old->email. " old groups: ". join(' ',@{$old->usergroup}). "\n";
-    warn $new->email. "new groups: ". join(' ',@{$new->usergroup}). "\n";
+    warn $new->email. " new groups: ". join(' ',@{$new->usergroup}). "\n";
   }
   if ( $new->usergroup ) {
     #(sorta) false laziness with FS::part_export::sqlradius::_export_replace
@@ -1025,7 +1026,7 @@ sub replace {
       }
       my $radius_usergroup = qsearchs('radius_usergroup', {
         svcnum    => $old->svcnum,
-        groupname => $oldgroup,
+        groupnum  => $oldgroup,
       } );
       my $error = $radius_usergroup->delete;
       if ( $error ) {
@@ -1037,7 +1038,7 @@ sub replace {
     foreach my $newgroup ( @newgroups ) {
       my $radius_usergroup = new FS::radius_usergroup ( {
         svcnum    => $new->svcnum,
-        groupname => $newgroup,
+        groupnum => $newgroup,
       } );
       my $error = $radius_usergroup->insert;
       if ( $error ) {
@@ -2560,8 +2561,18 @@ sub radius_groups {
     #radius_usergroup records can be inserted...
     @{$self->usergroup};
   } else {
-    map { $_->groupname }
-      qsearch('radius_usergroup', { 'svcnum' => $self->svcnum } );
+     my $format = shift || '';
+     my @groups = qsearch({ 'table'         => 'radius_usergroup',
+                            'addl_from'     => 'left join radius_group using (groupnum)',
+                            'select'        => 'radius_group.*',
+                            'hashref'       => { 'svcnum' => $self->svcnum },
+                        });
+
+     # this is to preserve various legacy behaviour / avoid re-writing other code
+     return map { $_->groupnum } @groups if $format eq 'NUMBERS';
+     return map { $_->description . " (" . $_->groupname . ")" } @groups
+        if $format eq 'COMBINED';
+     map { $_->groupname } @groups;
   }
 }
 
@@ -3102,56 +3113,6 @@ sub append_fuzzyfiles {
 }
 
 
-
-=item radius_usergroup_selector GROUPS_ARRAYREF [ SELECTNAME ]
-
-=cut
-
-sub radius_usergroup_selector {
-  my $sel_groups = shift;
-  my %sel_groups = map { $_=>1 } @$sel_groups;
-
-  my $selectname = shift || 'radius_usergroup';
-
-  my $dbh = dbh;
-  my $sth = $dbh->prepare(
-    'SELECT DISTINCT(groupname) FROM radius_usergroup ORDER BY groupname'
-  ) or die $dbh->errstr;
-  $sth->execute() or die $sth->errstr;
-  my @all_groups = map { $_->[0] } @{$sth->fetchall_arrayref};
-
-  my $html = <<END;
-    <SCRIPT>
-    function ${selectname}_doadd(object) {
-      var myvalue = object.${selectname}_add.value;
-      var optionName = new Option(myvalue,myvalue,false,true);
-      var length = object.$selectname.length;
-      object.$selectname.options[length] = optionName;
-      object.${selectname}_add.value = "";
-    }
-    </SCRIPT>
-    <SELECT MULTIPLE NAME="$selectname">
-END
-
-  foreach my $group ( @all_groups ) {
-    $html .= qq(<OPTION VALUE="$group");
-    if ( $sel_groups{$group} ) {
-      $html .= ' SELECTED';
-      $sel_groups{$group} = 0;
-    }
-    $html .= ">$group</OPTION>\n";
-  }
-  foreach my $group ( grep { $sel_groups{$_} } keys %sel_groups ) {
-    $html .= qq(<OPTION VALUE="$group" SELECTED>$group</OPTION>\n);
-  };
-  $html .= '</SELECT>';
-
-  $html .= qq!<BR><INPUT TYPE="text" NAME="${selectname}_add">!.
-           qq!<INPUT TYPE="button" VALUE="Add new group" onClick="${selectname}_doadd(this.form)">!;
-
-  $html;
-}
-
 =item reached_threshold
 
 Performs some activities when svc_acct thresholds (such as number of seconds
@@ -3240,9 +3201,6 @@ The $recref stuff in sub check should be cleaned up.
 The suspend, unsuspend and cancel methods update the database, but not the
 current object.  This is probably a bug as it's unexpected and
 counterintuitive.
-
-radius_usergroup_selector?  putting web ui components in here?  they should
-probably live somewhere else...
 
 insertion of RADIUS group stuff in insert could be done with child_objects now
 (would probably clean up export of them too)

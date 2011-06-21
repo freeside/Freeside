@@ -1,0 +1,10 @@
+<& elements/process.html,
+               'table'       => 'radius_group',
+               'viewall_dir' => 'browse',
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

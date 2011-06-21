@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
 use FS::svc_acct;
+use FS::radius_group;
 
 @ISA = qw(FS::Record);
 
@@ -29,8 +30,8 @@ FS::radius_usergroup - Object methods for radius_usergroup records
 =head1 DESCRIPTION
 
 An FS::radius_usergroup object links an account (see L<FS::svc_acct>) with a
-RADIUS group.  FS::radius_usergroup inherits from FS::Record.  The following
-fields are currently supported:
+RADIUS group (see L<FS::radius_group>).  FS::radius_usergroup inherits from
+FS::Record.  The following fields are currently supported:
 
 =over 4
 
@@ -38,7 +39,7 @@ fields are currently supported:
 
 =item svcnum - Account (see L<FS::svc_acct>).
 
-=item groupname - group name
+=item groupnum - RADIUS group (see L<FS::radius_group>).
 
 =back
 
@@ -96,10 +97,11 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  die "radius_usergroup.groupname is deprecated" if $self->groupname;
+
   $self->ut_numbern('usergroupnum')
-    || $self->ut_number('svcnum')
     || $self->ut_foreign_key('svcnum','svc_acct','svcnum')
-    || $self->ut_text('groupname')
+    || $self->ut_foreign_key('groupnum','radius_group','groupnum')
     || $self->SUPER::check
   ;
 }
@@ -115,15 +117,49 @@ sub svc_acct {
   qsearchs('svc_acct', { svcnum => $self->svcnum } );
 }
 
+=item radius_group
+
+Returns the RADIUS group associated with this record (see L<FS::radius_group>).
+
+=cut
+
+sub radius_group {
+  my $self = shift;
+  qsearchs('radius_group', { 'groupnum'  => $self->groupnum } );
+}
+
+sub _upgrade_data {  #class method
+  my ($class, %opts) = @_;
+
+  my %group_cache = map { $_->groupname => $_->groupnum } 
+                                                qsearch('radius_group', {});
+
+  my @radius_usergroup = qsearch('radius_usergroup', {} );
+  my $error = '';
+  foreach my $rug ( @radius_usergroup ) {
+        my $groupname = $rug->groupname;
+        next unless $groupname;
+        unless(defined($group_cache{$groupname})) {
+            my $g = new FS::radius_group {
+                            'groupname' => $groupname,
+                            'description' => $groupname,
+                            };
+            $error = $g->insert;
+            die $error if $error;
+            $group_cache{$groupname} = $g->groupnum;
+        }
+        $rug->groupnum($group_cache{$groupname});
+        $rug->groupname('');
+        $error = $rug->replace;
+        die $error if $error;
+  }
+}
+
 =back
-
-=head1 BUGS
-
-Don't let 'em get you down.
 
 =head1 SEE ALSO
 
-L<svc_acct>, L<FS::Record>, schema.html from the base documentation.
+L<svc_acct>, L<FS::radius_group>, L<FS::Record>, schema.html from the base documentation.
 
 =cut
 

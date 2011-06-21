@@ -672,7 +672,8 @@ the following keys:
 
 =item def_label - Optional description of the field in the context of service definitions
 
-=item type - Currently "text", "select", "disabled", or "radius_usergroup_selector"
+=item type - Currently "text", "select", "checkbox", "textarea", "disabled", 
+some components specified by "select-.*.html", and a bunch more...
 
 =item disable_default - This field should not allow a default value in service definitions
 

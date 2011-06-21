@@ -314,31 +314,14 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
 %            qq!<TEXTAREA NAME="${layer}__${field}">!. encode_entities($value).
 %            '</TEXTAREA>';
 %
-%        } elsif ( $def->{type} eq 'select-svc_pbx.html' ) {
+%        } elsif ( $def->{type} =~ /select-(.*?).html/ ) {
 %
-%          $html .= include('/elements/select-svc_pbx.html',
+%          $html .= include("/elements/".$def->{type},
 %                             'curr_value'   => $value,
 %                             'element_name' => "${layer}__${field}",
 %                             'element_etc'  => $disabled,
 %                             'multiple'     => ($flag eq 'S'),
 %                          );
-%
-%        } elsif ( $def->{type} eq 'select-lnp_status.html' ) {
-%
-%          $html .= include('/elements/select-lnp_status.html',
-%                             'curr_value'   => $value,
-%                             'element_name' => "${layer}__${field}",
-%                             'element_etc'  => $disabled,
-%                             'multiple'     => ($flag eq 'S'),
-%                          );
-%
-%        } elsif ( $def->{type} eq 'radius_usergroup_selector' ) {
-%
-%          #XXX disable the RADIUS usergroup selector?  ugh it sure does need
-%          #an overhaul, people have dum group problems because of it
-%
-%          $html .= FS::svc_acct::radius_usergroup_selector(
-%            [ split(',', $value) ], "${layer}__${field}" );
 %
 %        } elsif ( $def->{type} eq 'communigate_pro-accessmodes' ) {
 %
