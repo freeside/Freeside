@@ -34,20 +34,21 @@
 		    return scalar(@dids);
 		},
 		sub { # Have Usage
-		    my $latanum = shift->latanum;
-		    my @dids = provisioned_dids($latanum);
-
-            warn "have usage ".time;
-            return ''; # XXX disabled temporarily
+            my $did_order = shift;
+		    my @dids = provisioned_dids($did_order->latanum);
 
 		    my $count = 0;
 		    foreach my $did ( @dids ) {
-                next unless $did->cust_svc;
-                my $svc_phone = $did->cust_svc->svc_x;
-                warn "inside loop ".time;
-                next unless $svc_phone;
-                my @cdrs = $svc_phone->get_cdrs;
-                $count++ if scalar(@cdrs);
+                my $cust_svc = $did->cust_svc;
+                next unless $cust_svc;
+
+                my $svcnum = $cust_svc->svcnum;
+                my $sql = "select count(1) from cdr where src = 
+                    (select phonenum from svc_phone where svcnum = $svcnum)
+                    or charged_party = (select phonenum from svc_phone where
+                        svcnum = $svcnum)";
+                my $c = $did_order->scalar_sql($sql);
+                $count++ if $c > 0;
 		    }
 		    $count;
 		},
