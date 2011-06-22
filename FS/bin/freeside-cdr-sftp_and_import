@@ -95,7 +95,7 @@ foreach my $filename ( @$ls ) {
   warn "Processing $filename\n" if $opt_v;
  
   my $ungziped = $filename;
-  my $ungziped =~ s/\.gz$//;
+  $ungziped =~ s/\.gz$//;
   if ( $opt_g ) {
       if(system('gunzip', "$cachedir/$filename") != 0) {
         warn "gunzip of '$cachedir/$filename' failed" if $opt_v;
