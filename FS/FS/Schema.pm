@@ -3164,6 +3164,7 @@ sub tables_hashref {
       'columns' => [
         'latanum',    'int',      '',      '', '', '', 
         'description',   'varchar',    '',      $char_d, '', '', 
+        'have_usage',   'int',    'NULL',      '', '', '', 
       ],
       'primary_key' => 'latanum',
       'unique' => [],

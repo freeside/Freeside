@@ -7,17 +7,19 @@
                                    'select'  => 'distinct latanum',
                                  },
               'count_query'   => 'SELECT COUNT(distinct latanum) FROM phone_avail',
-              'header'        => [ 'LATA',
+              'header'        => [ 
+                    'LATA #',
+                    'LATA Description',
 				   'Available',
 				   'Provisioned',
 				   'Have Usage',
                                  ],
               'fields'        => [
-        sub { # LATA
+                'latanum',
+        sub { # LATA Description
             my $phone_avail = shift;
-            my $lata = $phone_avail->lata;
-            $lata = $lata ? $lata->description : '';
-            $phone_avail->latanum . " - " . $lata;
+            return '' unless $phone_avail->lata;
+            $phone_avail->lata->description;
         },
 		sub { # Available
 		    my $latanum = shift->latanum;
@@ -44,19 +46,8 @@
 		},
 		sub { # Have Usage
             my $phone_avail = shift;
-            return '' unless $phone_avail->latanum;
-            my $latanum = $phone_avail->latanum;
-		    my $count = 0;
-            my $sql = "select count(1) from cdr where src in 
-                (select phonenum from svc_phone where svcnum in (
-                    select svcnum from phone_avail where latanum = $latanum
-                        and svcnum is not null) )
-                or charged_party in (select phonenum from svc_phone where
-                    svcnum in (select svcnum from phone_avail where
-                        latanum = $latanum and svcnum is not null) )";
-            my $c = $phone_avail->scalar_sql($sql);
-            $count++ if $c > 0;
-		    $count;
+            return '' unless $phone_avail->lata;
+            $phone_avail->lata->have_usage;
 		},
               ],
               'align'         => 'lccc',

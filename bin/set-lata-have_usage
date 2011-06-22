@@ -1,0 +1,81 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::lata;
+use FS::phone_avail;
+use FS::svc_phone;
+use Data::Dumper;
+
+print "started time=".time."\n";
+
+my $user = shift;
+adminsuidsetup $user;
+
+local $SIG{HUP} = 'IGNORE';
+local $SIG{INT} = 'IGNORE';
+local $SIG{QUIT} = 'IGNORE';
+local $SIG{TERM} = 'IGNORE';
+local $SIG{TSTP} = 'IGNORE';
+local $SIG{PIPE} = 'IGNORE';
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my %latas = map { $_->latanum => $_ } qsearch('lata', {});
+
+foreach my $lata ( keys %latas ) {
+        next unless $latas{$lata}->have_usage > 0;
+        $latas{$lata}->have_usage(0);
+        my $error = $latas{$lata}->replace;
+        if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            die "error replacing LATA $lata: $error";
+        }
+}
+print "cleared have_usage for all LATAs time=".time."\n";
+
+my @dids = qsearch({     'table'     => 'svc_phone',
+                                'hashref'   => 
+                                    { 'latanum' =>
+                                        { 'op'      => '>',
+                                          'value'   => '0',
+                                        },
+                                    },
+                                'addl_from' => 'join phone_avail using (svcnum)',
+                                  });
+print "DID query finished time=".time."\n";
+
+my $count = 0;
+foreach my $did ( @dids ) {
+    print "count=$count time=".time."\n" if $count % 1000 == 0;
+    my @cdrs = $did->get_cdrs;
+    my $lata = $latas{$did->latanum};
+    $count++;
+    if ( scalar(@cdrs) ) {
+        if ( !$lata->have_usage ) {
+            $lata->have_usage(1);
+        }
+        else {
+            $lata->have_usage($lata->have_usage+1);
+        }
+    }
+}
+
+print "Set have_usage finished time=".time."\n";
+
+foreach my $lata ( keys %latas ) {
+    if ( $latas{$lata}->modified ) {
+        print "$lata ".$latas{$lata}->have_usage."\n";
+        my $error = $latas{$lata}->replace;
+        if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            die "error replacing LATA $lata: $error";
+        }
+    }
+}
+
+$dbh->commit or die $dbh->errstr if $oldAutoCommit;
+print "done time=".time."\n";

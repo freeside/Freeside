@@ -38,6 +38,7 @@ primary key
 
 description
 
+=item have_usage - a reporting hack
 
 =back
 
@@ -101,6 +102,7 @@ sub check {
   my $error = 
     $self->ut_numbern('latanum')
     || $self->ut_text('description')
+    || $self->ut_numbern('have_usage')
   ;
   return $error if $error;
 
