@@ -14,8 +14,8 @@ use FS::cdr qw( _cdr_date_parser_maker );
   'row_callback'  => sub { my $row = shift;
                         return ' ' if $row =~ /.*Log (begins|ends)$/;
                         die "invalid row format for '$row'" unless
-                            $row =~ /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ([A-Za-z ]+) (\[SMSC:\w+\] \[SVC:\w*\] \[ACT:\w*\] \[BINF:\w*\] \[FID:\w*\]) \[from:(|\+)(\d+)\] \[to:(|\+)(\d+)\] (\[flags:.*?\]) \[msg:(\d+):(.*?)\] (\[udh:.*?\])$/;
-                        $row = "$1,$2,$3,$5,$7,$8,$9,$11";
+                            $row =~ /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ([A-Za-z ]+) (\[SMSC:\w+\] \[SVC:\w*\] \[ACT:\w*\] \[BINF:\w*\] \[FID:\w*\]) \[from:(\s|)(|\+)(\d+)\] \[to:(|\+)(\d+)\] (\[flags:.*?\]) \[msg:(\d+):(.*?)\] (\[udh:.*?\])$/;
+                        $row = "$1,$2,$3,$6,$8,$9,$10,$12";
                         $row;
                      },
   'import_fields' => [
