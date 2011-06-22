@@ -8,33 +8,33 @@
                                  },
               'count_query'   => 'SELECT COUNT(distinct latanum) FROM phone_avail',
               'header'        => [ 
-                    'LATA #',
-                    'LATA Description',
-				   'Available',
-				   'Provisioned',
-				   'Have Usage',
+                                   '#',
+                                   'LATA',
+                                   'Available',
+                                   'Provisioned',
+                                   'Have Usage',
                                  ],
               'fields'        => [
                 'latanum',
-        sub { # LATA Description
-            my $phone_avail = shift;
-            return '' unless $phone_avail->lata;
-            $phone_avail->lata->description;
-        },
-		sub { # Available
-		    my $latanum = shift->latanum;
-		    my $cnt = qsearchs({ 'table'    => 'phone_avail',
+                sub { # LATA Description
+                    my $phone_avail = shift;
+                    return '' unless $phone_avail->lata;
+                    $phone_avail->lata->description;
+                },
+                sub { # Available
+                    my $latanum = shift->latanum;
+                    my $cnt = qsearchs({ 'table'    => 'phone_avail',
                                  'hashref'  => 
                                     { 'svcnum' => '',
                                       'latanum' => $latanum,
                                     },
                                  'select'   => 'count(1) as cnt',
                           });
-		    ($cnt) ? $cnt->cnt : '';
-		},
-		sub { # Provisioned
-		    my $latanum = shift->latanum;
-            my $cnt = qsearchs({   'table'     => 'phone_avail',
+                    ($cnt) ? $cnt->cnt : '';
+                },
+                sub { # Provisioned
+                    my $latanum = shift->latanum;
+                    my $cnt = qsearchs({   'table'     => 'phone_avail',
                         'hashref'   => { 'latanum' => $latanum,
                                          'svcnum' => { op => '>',
                                                         value => '0'
@@ -42,16 +42,17 @@
                                         },
                         'select'    => 'count(1) as cnt'
                     });
-		    ($cnt) ? $cnt->cnt : '';
-		},
-		sub { # Have Usage
-            my $phone_avail = shift;
-            return '' unless $phone_avail->lata;
-            $phone_avail->lata->have_usage;
-		},
+                    ($cnt) ? $cnt->cnt : '';
+                },
+                sub { # Have Usage
+                    my $phone_avail = shift;
+                    return '' unless $phone_avail->lata;
+                    $phone_avail->lata->have_usage;
+                },
               ],
-              'align'         => 'lccc',
+              'align'         => 'rlrrr',
               'links'         => [
+                '',
                 '',
                 '',
                 '',
@@ -62,8 +63,10 @@
                            '',
                            '',
                            '',
+                           '',
                          ],
               'style' => [ 
+                           '',
                            '',
                            '',
                            '',
@@ -75,8 +78,8 @@
 
 die "access denied"
   unless ( $FS::CurrentUser::CurrentUser->access_right('List inventory')
-	 && $FS::CurrentUser::CurrentUser->access_right('List services')
-	 );
+         && $FS::CurrentUser::CurrentUser->access_right('List services')
+         );
 
 # XXX: agent virtualize
 
