@@ -25,6 +25,7 @@ FS::UI::Web::svc_link($m, $part_svc, $cust_svc)
   <TD STYLE="padding-bottom:0px"><B><%
 FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc)
 %></B></TD>
+<TD><% FS::UI::Web::svc_export_links($m, $part_svc, $cust_svc) %></TD>
 </TR>
 % if ( $cust_svc->overlimit ) {
 <TR>
