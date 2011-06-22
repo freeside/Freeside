@@ -9,15 +9,18 @@
                 'count_query'     => "SELECT count(*) from router $count_sql",
                 'header'          => [ 'Router name',
                                        'Address block(s)',
+                                       'Action',
                                      ],
                 'fields'          => [ 'routername',
                                        sub { join( '<BR>', map { $_->NetAddr }
                                                                shift->addr_block
                                                  );
                                            },
+                                       sub { 'Delete' },
                                      ],
                 'links'           => [ [ "${p2}edit/router.cgi?", 'routernum' ],
                                        '',
+                                       [ "${p}misc/delete-router.html?", 'routernum' ],
                                      ],
                 'agent_virt'      => 1,
                 'agent_null_right'=> "Broadband global configuration",

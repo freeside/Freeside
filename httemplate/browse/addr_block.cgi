@@ -158,7 +158,4 @@ my $autoassign_link = sub {
   [ "$url;blocknum=", 'blocknum' ];
 }; 
 
-my $delete_link = sub {
-};
-
 </%init>
