@@ -28,6 +28,9 @@ reconcile_breakage(%opt);
 use FS::Cron::upload qw(upload);
 upload(%opt);
 
+use FS::Cron::set_lata_have_usage qw(set_lata_have_usage);
+set_lata_have_usage(%opt);
+
 # Send alerts about upcoming credit card expiration.
 use FS::Cron::alert_expiration qw(alert_expiration);
 my $conf = new FS::Conf;

@@ -706,8 +706,8 @@ sub get_cdrs {
 
   my @orwhere =  map " $_ = '$number'        ", @fields;
   push @orwhere, map " $_ = '$prefix$number' ", @fields
-    if length($prefix);
-  if ( $prefix =~ /^\+(\d+)$/ ) {
+    if defined($prefix) && length($prefix);
+  if ( $prefix && $prefix =~ /^\+(\d+)$/ ) {
     push @orwhere, map " $_ = '$1$number' ", @fields
   }
 
