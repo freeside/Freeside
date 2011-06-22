@@ -2,7 +2,7 @@ package FS::router;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs qsearch );
+use FS::Record qw( qsearchs qsearch dbh );
 use FS::addr_block;
 
 @ISA = qw( FS::Record FS::m2m_Common );
@@ -90,6 +90,39 @@ sub check {
   $self->SUPER::check;
 }
 
+=item delete
+
+Deletes this router if and only if no address blocks (see L<FS::addr_block>)
+are currently allocated to it.
+
+=cut
+
+sub delete {
+    my $self = shift;
+
+    return 'Router has address blocks allocated to it' if $self->addr_block;
+    
+    local $SIG{HUP} = 'IGNORE';
+    local $SIG{INT} = 'IGNORE';
+    local $SIG{QUIT} = 'IGNORE';
+    local $SIG{TERM} = 'IGNORE';
+    local $SIG{TSTP} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+    
+    my $error = $self->SUPER::delete;
+    if ( $error ) {
+       $dbh->rollback if $oldAutoCommit;
+       return $error;
+    }
+  
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    '';
+}
+
 =item addr_block
 
 Returns a list of FS::addr_block objects (address blocks) associated
@@ -138,8 +171,6 @@ sub agent {
 }
 
 =back
-
-=head1 BUGS
 
 =head1 SEE ALSO
 

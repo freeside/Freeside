@@ -1,0 +1,19 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect("${p}browse/addr_block.cgi") %>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Broadband configuration')
+  || $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal blocknum";
+my $blocknum = $1;
+
+my $addr_block = qsearchs('addr_block',{'blocknum'=>$blocknum});
+my $error = $addr_block->delete;
+
+</%init>

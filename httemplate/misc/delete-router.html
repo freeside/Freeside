@@ -1,0 +1,19 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect("${p}browse/router.cgi") %>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Broadband configuration')
+  || $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal routernum";
+my $routernum = $1;
+
+my $router = qsearchs('router',{'routernum'=>$routernum});
+my $error = $router->delete;
+
+</%init>

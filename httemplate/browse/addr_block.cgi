@@ -14,6 +14,7 @@
                                      'Action(s)',
                                      '',
                                      '',
+                                     '',
                                    ],
                 'fields'        => [ 'NetAddr',
                                      sub { my $block = shift;
@@ -28,22 +29,37 @@
                                      $allocate_text,
                                      sub { shift->router ? '' : '<FONT SIZE="-2">(split)</FONT>' },
                                      sub { '<FONT SIZE="-2">('. (shift->manual_flag ? 'allow' : 'prevent'). ' automatic ip assignment)</FONT>' },
+                                     sub { 
+                                        my $block = shift;
+                                        if(!$block->router && scalar($block->svc_broadband) == 0) {
+                                            return '<FONT SIZE="-2">(delete)</FONT>';
+                                        }
+                                        '';
+                                     },
                                    ],
                 'links'         => [ '',
                                      '',
                                      [ 'javascript:void(0)', '' ],
                                      $split_link,
                                      $autoassign_link,
+                                     sub {
+                                        my $block = shift;
+                                        if(!$block->router && scalar($block->svc_broadband) == 0) {
+                                            [ "${p}misc/delete-addr_block.html?", 'blocknum' ];
+                                        }
+                                     },
                                    ],
                 'link_onclicks' => [ '',
                                      '',
                                      $allocate_link,
+                                     '',
                                      '',
                                    ],
                 'cell_styles'   => [ '',
                                      '',
                                      'border-right:none;',
                                      'border-left:none;',
+                                     '',
                                    ],
                 'agent_virt'    => 1,
                 'agent_null_right' => 'Broadband global configuration',
@@ -141,5 +157,8 @@ my $autoassign_link = sub {
   $url .=  $block->manual_flag ? '' : 'Y';
   [ "$url;blocknum=", 'blocknum' ];
 }; 
+
+my $delete_link = sub {
+};
 
 </%init>

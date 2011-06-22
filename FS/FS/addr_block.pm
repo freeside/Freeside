@@ -76,13 +76,34 @@ otherwise returns false.
 Deletes this record from the database.  If there is an error, returns the
 error, otherwise returns false.
 
+=cut
+
 sub delete {
   my $self = shift;
-  return 'Block must be deallocated before deletion'
-    if $self->router;
+  return 'Block must be deallocated and have no services before deletion'
+    if $self->router || $self->svc_broadband;
 
-  $self->SUPER::delete;
+    local $SIG{HUP} = 'IGNORE';
+    local $SIG{INT} = 'IGNORE';
+    local $SIG{QUIT} = 'IGNORE';
+    local $SIG{TERM} = 'IGNORE';
+    local $SIG{TSTP} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+    
+    my $error = $self->SUPER::delete;
+    if ( $error ) {
+       $dbh->rollback if $oldAutoCommit;
+       return $error;
+    }
+  
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    '';
 }
+
 
 =item replace OLD_RECORD
 
