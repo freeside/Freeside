@@ -96,7 +96,13 @@ foreach my $filename ( @$ls ) {
  
   my $ungziped = $filename;
   my $ungziped =~ s/\.gz$//;
-  system("gunzip $cachedir/$filename") if $opt_g;
+  if ( $opt_g ) {
+      if(system('gunzip', "$cachedir/$filename") != 0) {
+        warn "gunzip of '$cachedir/$filename' failed" if $opt_v;
+        unlink "$cachedir/$filename";
+        next;
+      }
+  }
 
   my $import_options = {
     'file'            => "$cachedir/$ungziped",
