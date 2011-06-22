@@ -72,7 +72,7 @@ END
     $where_pkg .= <<END;
       and 0 < ( select count(*) from cust_main
                   where cust_pkg.custnum = cust_main.custnum
-                    and cust_main.agentnum = $opt{a}
+                    and cust_main.agentnum IN ( $opt{a} )
               )
 END
   }
