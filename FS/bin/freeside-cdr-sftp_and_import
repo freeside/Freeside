@@ -11,8 +11,8 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c );
-getopts('c:m:p:r:e:d:v:P:a');
+use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c $opt_g );
+getopts('c:m:p:r:e:d:v:P:ag');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
@@ -93,9 +93,13 @@ foreach my $filename ( @$ls ) {
   }
 
   warn "Processing $filename\n" if $opt_v;
+ 
+  my $ungziped = $filename;
+  my $ungziped =~ s/\.gz$//;
+  system("gunzip $cachedir/$filename") if $opt_g;
 
   my $import_options = {
-    'file'            => "$cachedir/$filename",
+    'file'            => "$cachedir/$ungziped",
     'format'          => $format,
     'batch_namevalue' => $filename,
     'empty_ok'        => 1,
@@ -119,6 +123,7 @@ foreach my $filename ( @$ls ) {
   }
 
   unlink "$cachedir/$filename";
+  unlink "$cachedir/$ungziped" if $opt_g;
 
 }
 
