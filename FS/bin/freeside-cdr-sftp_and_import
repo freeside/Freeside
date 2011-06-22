@@ -160,7 +160,7 @@ sub sftp {
 
 =head1 NAME
 
-cdr.sftp_and_import - Download CDR files from a remote server via SFTP
+freeside-cdr-sftp_and_import - Download CDR files from a remote server via SFTP
 
 =head1 SYNOPSIS
 
