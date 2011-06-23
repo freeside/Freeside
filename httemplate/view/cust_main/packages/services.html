@@ -24,7 +24,7 @@ function clearhint_search_cust_svc(obj, str) {
         <A HREF="<% $href %>"><% $part_svc->svc %></A>
         </TD>
         <TD ALIGN="left" VALIGN="top">
-        <A HREF="<% $href %>"><B>(<% mt("view all [_1]", $cust_pkg->num_svcs) |h %>)</B></A>
+        <A HREF="<% $href %>"><B>(<% mt("view all [_1]", $num_cust_svc) |h %>)</B></A>
         </TD>
       </TR>
 %     my $hint = $hints{$part_svc->svcdb};
