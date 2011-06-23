@@ -51,7 +51,9 @@
             label   => 'CDR Type',
             table   => 'cdr_type',
             name_col    => 'cdrtypename',
-            post_options => [ 'none', 'none' ] )
+            disable_empty   => 1,
+            pre_options => [    '',     'all', 
+                                'none', 'none' ] )
   %>
 
   <% include ( '/elements/tr-input-beginning_ending.html' ) %>
