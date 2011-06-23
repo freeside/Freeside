@@ -243,7 +243,7 @@
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_year" VALUE="2037">!.
 %
 %        ( $conf->exists('cust_main-require-bank-branch') ? 
-%               qq!<TR><TD ALIGN="right">$r Branch number</TD><TD COLSPAN="3">
+%               qq!<TR><TD ALIGN="right">$r !.emt('Branch number').qq!</TD><TD COLSPAN="3">
 %                   <INPUT TYPE="text" name="CHEK_payinfo3" VALUE=$branch></TD></TR>! : '' ).
 %   
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Bank name').qq! </TD>!.

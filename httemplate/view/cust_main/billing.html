@@ -84,6 +84,8 @@
 </TR>
 % } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
 %     my( $account, $aba ) = split('@', $cust_main->paymask );
+%  my $branch = '';
+%  ($branch,$aba) = split('\.',$aba) if $conf->exists('cust_main-require-bank-branch');
 
 
 % my $autodemand = $cust_main->payby eq 'CHEK' ? 'automatic' : 'on-demand';
@@ -94,16 +96,23 @@
   <TD ALIGN="right"><% mt('ABA/Routing code') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $aba %></TD>
 </TR>
+
+% if ( $conf->exists('cust_main-require-bank-branch') ) {
 <TR>
+  <TD ALIGN="right"><% mt('Branch number') |h %></TD>
+  <TD BGCOLOR="#ffffff"><% $branch %></TD>
+<TR>
+% }
+
   <TD ALIGN="right"><% mt('Account number') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $account %></TD>
 </TR>
 <TR>
-  <TD ALIGN="right"<% mt('>Account type') |h %></TD>
+  <TD ALIGN="right"><% mt('Account type') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->paytype %></TD>
 </TR>
 <TR>
-  <TD ALIGN="right"<% mt('>Bank name') |h %></TD>
+  <TD ALIGN="right"><% mt('Bank name') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
 % if ( $conf->exists('show_bankstate') ) {
