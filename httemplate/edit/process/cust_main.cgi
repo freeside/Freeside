@@ -42,8 +42,11 @@ $cgi->param('payby', $payby);
 
 if ( $payby ) {
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
-    $cgi->param('payinfo',
-      $cgi->param('payinfo1'). '@'. $cgi->param('payinfo2') );
+      my $payinfo = $cgi->param('payinfo1'). '@';
+      $payinfo .= $cgi->param('payinfo3').'.' 
+            if $conf->exists('cust_main-require-bank-branch');
+      $payinfo .= $cgi->param('payinfo2');
+      $cgi->param('payinfo',$payinfo);
   }
   $cgi->param('paydate',
     $cgi->param( 'exp_month' ). '-'. $cgi->param( 'exp_year' ) );

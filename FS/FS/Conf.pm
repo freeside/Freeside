@@ -4455,6 +4455,13 @@ and customer address. Include units.',
   },
   
   {
+    'key'         => 'cust_main-require-bank-branch',
+    'section'     => 'UI',
+    'description' => 'An alternate DCHK/CHEK format; require entry of bank branch number.',
+    'type'        => 'checkbox',
+  },
+  
+  {
     'key'         => 'cust-edit-alt-field-order',
     'section'     => 'UI',
     'description' => 'An alternate ordering of fields for the New Customer and Edit Customer screens.',

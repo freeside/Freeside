@@ -125,6 +125,8 @@
 %  my $payby = $cust_main->payby;
 %  my $paytype = $cust_main->paytype;
 %  my( $account, $aba ) = split('@', $payinfo);
+%  my $branch = '';
+%  ($branch,$aba) = split('\.',$aba) if $conf->exists('cust_main-require-bank-branch');
 %
 %  my $disabled = 'DISABLED style="background-color: #dddddd"';
 %  my $text_disabled = 'style="color: #999999"';
@@ -240,6 +242,10 @@
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_month" VALUE="12">!.
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_year" VALUE="2037">!.
 %
+%        ( $conf->exists('cust_main-require-bank-branch') ? 
+%               qq!<TR><TD ALIGN="right">$r Branch number</TD><TD COLSPAN="3">
+%                   <INPUT TYPE="text" name="CHEK_payinfo3" VALUE=$branch></TD></TR>! : '' ).
+%   
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Bank name').qq! </TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" NAME="CHEK_payname" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %      ( $conf->exists('show_bankstate') ?

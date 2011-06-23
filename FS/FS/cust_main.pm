@@ -1910,8 +1910,12 @@ sub check {
   } elsif ( $check_payinfo && $self->payby =~ /^(CHEK|DCHK)$/ ) {
 
     my $payinfo = $self->payinfo;
-    $payinfo =~ s/[^\d\@]//g;
-    if ( $conf->exists('echeck-nonus') ) {
+    $payinfo =~ s/[^\d\@\.]//g;
+    if ( $conf->exists('cust_main-require-bank-branch') ) {
+      $payinfo =~ /^(\d+)\@(\d+)\.(\d+)$/ or return 'invalid echeck account@branch.bank';
+      $payinfo = "$1\@$2.$3";
+    }
+    elsif ( $conf->exists('echeck-nonus') ) {
       $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
       $payinfo = "$1\@$2";
     } else {
