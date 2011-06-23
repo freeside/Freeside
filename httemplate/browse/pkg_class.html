@@ -19,6 +19,8 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+my $conf = new FS::Conf;
+
 my $html_init = 
   'Package classes define groups of packages, for taxation, ordering '.
   'convenience and reporting.<BR><BR>'.
@@ -31,6 +33,12 @@ my $link = [ $p.'edit/pkg_class.html?', 'classnum' ];
 my $header = [ '#', 'Class' ];
 my $fields = [ 'classnum', 'classname' ];
 my $links  = [ $link, $link ];
+
+if($conf->exists('cust_main-require_censustract')) {
+    push @{$fields}, 'fcc_ds0s';
+    push @{$header}, 'FCC form 477 voice-grade equivalents';
+    push @{$links}, '';
+}
 
 my $cat_query = 'SELECT COUNT(*) FROM pkg_class where categorynum IS NOT NULL';
 my $sth = dbh->prepare($cat_query)

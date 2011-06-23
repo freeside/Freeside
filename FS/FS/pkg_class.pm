@@ -49,6 +49,8 @@ Number of associated pkg_category (see L<FS::pkg_category>)
 
 Disabled flag, empty or 'Y'
 
+=item fcc_ds0s - Optional DS0 equivalency number for FCC form 477
+
 =back
 
 =head1 METHODS
@@ -64,6 +66,16 @@ L<"insert">.
 
 sub table { 'pkg_class'; }
 sub _target_table { 'part_pkg'; }
+
+sub check {
+    my $self = shift;
+    my $error = $self->ut_numbern('fcc_ds0s')
+        || $self->SUPER::check
+    ;
+    return $error if $error;
+
+    '';
+}
 
 =item insert
 
