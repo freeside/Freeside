@@ -71,19 +71,7 @@
                         }
                       }
                       else {
-                          [ map {
-                                  [ 
-                                    { 'data' => $_->[0]. ':',
-                                      'align'=> 'right',
-                                    },
-                                    { 'data' => $_->[1],
-                                      'align'=> 'left',
-                                      'link' => $p. 'view/' .
-                                                $_->[2]. '.cgi?'. $_->[3],
-                                    },
-                                  ];
-                                } $cust_pkg->labels
-                          ];
+                          [ $process_svc_labels->( $cust_pkg ) ]
                       }
                     }
                   ],
@@ -259,6 +247,52 @@ my $html_init = sub {
                 );
   }
   return $text;
+};
+
+my $large_pkg_size = $conf->config('cust_pkg-large_pkg_size');
+
+my $process_svc_labels = sub {
+  my $cust_pkg = shift;
+  my @out;
+  foreach my $part_svc ( $cust_pkg->part_svc) {
+    # some false laziness with view/cust_main/packages/services.html
+
+    my $num_cust_svc = $cust_pkg->num_cust_svc( $part_svc->svcpart );
+
+    if ( $large_pkg_size > 0 and $large_pkg_size <= $num_cust_svc ) {
+      my $href = $p.'search/cust_pkg_svc.html?svcpart='.$part_svc->svcpart.
+          ';pkgnum='.$cust_pkg->pkgnum;
+      push @out, [
+        { 'data'  => $part_svc->svc . ':',
+          'align' => 'right',
+          'rowspan' => 2 },
+        { 'data'  => mt('(view all [_1])', $num_cust_svc),
+          'data_style' => 'b',
+          'align' => 'left',
+          'link'  => $href, },
+      ],
+      [
+        { 'data'  => include('/elements/search-cust_svc.html',
+                        'svcpart' => $part_svc->svcpart,
+                        'pkgnum'  => $cust_pkg->pkgnum,
+                    ),
+          'align' => 'left' },
+      ];
+    }
+    else {
+      foreach ( map { [ $_->label ] } @{ $part_svc->cust_pkg_svc } ) {
+        push @out, [ 
+        { 'data' => $_->[0]. ':',
+          'align'=> 'right', },
+        { 'data' => $_->[1],
+          'align'=> 'left',
+          'link' => $p. 'view/' .
+          $_->[2]. '.cgi?'. $_->[3], },
+        ];
+      }
+    }
+  } #foreach $cust_pkg
+  return @out;
 };
 
 </%init>

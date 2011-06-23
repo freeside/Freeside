@@ -119,13 +119,30 @@
 %      $cust_main->company,
 %    );
 %
-%    my(@lol_cust_svc);
-%    my($rowspan)=0;#scalar( @{$all_pkgs{$custnum}} );
-%    foreach ( @{$all_pkgs{$custnum}} ) {
-%      my @cust_svc = $_->cust_svc;
-%      push @lol_cust_svc, \@cust_svc;
-%      $rowspan += scalar(@cust_svc) || 1;
+%    my @all_cust_svc;
+%    my @pkg_rowspans;
+%    foreach my $cust_pkg ( @{$all_pkgs{$custnum}} ) {
+%      my %cust_svc_by_svcpart;
+%      foreach my $svc ( $cust_pkg->cust_svc ) {
+%        push @{ $cust_svc_by_svcpart{$svc->svcpart} ||= [] }, $svc;
+%      }
+%      push @all_cust_svc, \%cust_svc_by_svcpart;
+%      if ( !keys %cust_svc_by_svcpart ) {
+%        # no services
+%        push @pkg_rowspans, 1;
+%      }
+%      else {
+%        my $rows = 0;
+%        foreach (values %cust_svc_by_svcpart) { 
+%        # summarizing takes two rows per svcpart,
+%        # full display takes one per cust_svc
+%          $rows += ( $large_pkg_size > 0 && $large_pkg_size <= scalar @$_ ) ? 
+%                              2 : scalar @$_;
+%        }
+%        push @pkg_rowspans, $rows;
+%      }
 %    }
+%    my $rowspan = List::Util::sum(@pkg_rowspans) || 1;
 %
 %    my $view;
 %    if ( defined $cgi->param('quickpay') && $cgi->param('quickpay') eq 'yes' ) {
@@ -141,16 +158,16 @@
 %    my $statuscol = $cust_main->statuscolor;
 
     <TR>
-      <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>>
+      <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <A HREF="<% $view %>"><FONT SIZE=-1><% $cust_main->display_custnum %></FONT></A>
       </TD>
-      <TD CLASS="grid" ALIGN="center" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>>
+      <TD CLASS="grid" ALIGN="center" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <FONT SIZE="-1" COLOR="#<% $statuscol %>"><B><% ucfirst($status) %></B></FONT>
       </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <A HREF="<% $view %>"><FONT SIZE=-1><% "$last, $first" %></FONT></A>
       </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <% $pcompany %>
       </TD>
 
@@ -165,10 +182,10 @@
 %        : '<FONT SIZE=-1>&nbsp;</FONT>';
 %      
 
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <A HREF="<% $view %>"><FONT SIZE=-1><% "$ship_last, $ship_first" %></FONT></A>
       </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <% $pship_company %></A>
       </TD>
 % }
@@ -177,7 +194,7 @@
 % if ( $addl_col eq 'tickets' ) { 
 % if ( @custom_priorities ) { 
 
-        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %> ALIGN=right>
+        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %> ALIGN=right>
             <FONT SIZE=-1>
                <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
 % foreach my $priority ( @custom_priorities, '' ) { 
@@ -203,7 +220,7 @@
                <TH ALIGN=right STYLE="border-top: dashed 1px black">
                <FONT SIZE=-1>
 % } else { 
-          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %> ALIGN=right>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %> ALIGN=right>
             <FONT SIZE=-1>
 % } 
 %           my $ahref = '';
@@ -227,7 +244,7 @@
         </FONT></TD>
 % } else { 
 
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %> ALIGN=right><FONT SIZE=-1>
           <% $cust_main->get($addl_col) %>
         </FONT></TD>
 
@@ -245,29 +262,55 @@
 %                   : ';show=packages';
 %      my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
 %      my $pkgview = "${p}view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag";
-%      my @cust_svc = @{shift @lol_cust_svc};
-%      my $rowspan = scalar(@cust_svc) || 1;
+%      # cust_svc stuff, built earlier
+%      my %cust_svc_by_svcpart = %{ shift @all_cust_svc };
+%      my $pkg_rowspan = shift @pkg_rowspans;
 
-        <% $n1 %><TD CLASS="grid" BGCOLOR="<% $bgcolor %>"  ROWSPAN="<% $rowspan%>">
+        <% $n1 %><TD CLASS="grid" BGCOLOR="<% $bgcolor %>"  ROWSPAN="<% $pkg_rowspan%>">
             <A HREF="<% $pkgview %>"><FONT SIZE=-1><% $pkg_comment %></FONT></A>
         </TD>
 
 %       my $n2 = '';
-%      foreach my $cust_svc ( @cust_svc ) {
-%         my($label, $value, $svcdb) = $cust_svc->label;
-%         my($svcnum) = $cust_svc->svcnum;
-%         my($sview) = $p.'view';
-            <% $n2 %>
-            <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+%       my $td = '<TD CLASS="grid" BGCOLOR="'.$bgcolor.'">';
+%
+%       foreach my $svcpart ( sort keys %cust_svc_by_svcpart ) { #sort order?
+%         my $these = $cust_svc_by_svcpart{$svcpart};
+%         my $num_cust_svc = scalar @$these; # always at least 1
+%         if ( $large_pkg_size > 0 && $num_cust_svc >= $large_pkg_size ) {
+        <% $n2 %>
+%           # summarize
+%           # link opens a new search for this pkgnum/svcpart combo
+%           my $href = $p.'search/cust_pkg_svc.html?svcpart='.$svcpart.
+%                     ';pkgnum='.$pkgnum;
+          <% $td %>
+            <A HREF="<% $href %>"><% $these->[0]->part_svc->svc %></A>
+          </TD>
+          <% $td %>
+            <A HREF="<% $href %>"><B>(<% mt("view all [_1]", $num_cust_svc) |h %>)</B></A>
+          </TD>
+        </TR><TR>
+          <% $td %></TD>
+          <% $td %><& /elements/search-cust_svc.html, 
+                    'svcpart' => $svcpart,
+                    'pkgnum'  => $pkgnum,
+                    &></TD>
+%           $n2="</TR><TR>";
+%         }
+%         else { # do not summarize
+%           foreach my $cust_svc ( @$these ) {
+          <% $n2 %>
+            <% $td %>
                 <% FS::UI::Web::svc_link($m, $cust_svc->part_svc, $cust_svc) %>
             </TD> 
-           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+            <% $td %>
                 <% FS::UI::Web::svc_label_link($m, $cust_svc->part_svc, $cust_svc) %>
             </TD>
-%          $n2="</TR><TR>";
-%      }
+%             $n2="</TR><TR>";
+%           } #foreach $cust_svc
+%         }
+%       } # foreach $svcpart
 %
-%      unless ( @cust_svc ) {
+%      unless ( %cust_svc_by_svcpart ) {
             <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" COLSPAN=2>&nbsp;</TD>
 %      }
 %
@@ -292,6 +335,8 @@ die "access denied"
 
 my $conf = new FS::Conf;
 my $maxrecords = $conf->config('maxsearchrecordsperpage');
+# summarize more than this many services of the same svcpart
+my $large_pkg_size = $conf->config('cust_pkg-large_pkg_size') || 0;
 
 my $limit = '';
 $limit .= "LIMIT $maxrecords" if $maxrecords;

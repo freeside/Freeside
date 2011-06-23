@@ -1,0 +1,53 @@
+<%doc>
+
+Example:
+
+  <& /elements/search-cust_svc.html,
+        'svcpart' => 10,
+        'pkgnum'  => 315,
+        'svcdb'   => 'svc_acct',
+  &>
+
+</%doc>
+% if ( $first ) {
+%   $first = 0;
+<SCRIPT TYPE="text/javascript">
+function clearhint_search_cust_svc(obj, str) {
+  if (obj.value == str) obj.value='';
+}
+</SCRIPT>
+% }
+<FORM STYLE="display:inline" 
+      ACTION="<%$p%>search/cust_pkg_svc.html" METHOD="GET">
+% foreach ('svcpart', 'pkgnum') {
+%   if ($opt{$_}) {
+  <INPUT TYPE="hidden" NAME="<% $_ %>" VALUE="<% $opt{$_} %>">
+%   }
+% }
+  <INPUT TYPE="text" NAME="search_svc" VALUE="<% $hint %>"
+    onfocus="clearhint_search_cust_svc(this, '<% $hint %>')">
+  <INPUT TYPE="submit" VALUE="Search">
+</FORM>
+<%init>
+
+my %hints = (
+svc_acct      => emt('(user or email)'),
+svc_domain    => emt('(domain)'),
+svc_broadband => emt('(ip or mac)'),
+svc_forward   => emt('(email)'),
+svc_phone     => emt('(phone)'),
+svc_pbx       => emt('(phone)'),
+''            => '',
+);
+
+my( %opt ) = @_;
+if ( !$opt{'svcdb'} and $opt{'svcpart'} ) {
+  my $part_svc = qsearchs('part_svc', { 'svcpart' => $opt{'svcpart'} }); 
+  $opt{'svcdb'} = $part_svc->svcdb if $part_svc;
+}
+my $hint = $hints{$opt{'svcdb'} || ''};
+
+</%init>
+<%shared>
+my $first = 1;
+</%shared>
