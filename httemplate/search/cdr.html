@@ -95,6 +95,19 @@ if ( $cgi->param('freesidestatus') eq 'NULL' ) {
 }
 
 ###
+# cdrtypenum
+###
+
+if ( $cgi->param('cdrtypenum') =~ /^(\d+)$/ ) {
+    $hashref->{'cdrtypenum'} = $1;
+    push @search, "cdrtypenum = $1";
+}
+elsif ( $cgi->param('cdrtypenum') eq 'none' ) {
+    $hashref->{'cdrtypenum'} = '';
+    push @search, "cdrtypenum is null";
+}
+
+###
 # termpartNstatus
 ###
 
