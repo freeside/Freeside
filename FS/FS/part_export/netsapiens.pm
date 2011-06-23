@@ -1,8 +1,6 @@
 package FS::part_export::netsapiens;
 
 use vars qw(@ISA $me %info);
-use URI; #needed?
-use URI::Escape;
 use MIME::Base64;
 use Tie::IxHash;
 use FS::part_export;
@@ -91,7 +89,7 @@ sub ns_registrar {
   my($self, $svc_phone) = (shift, shift);
 
   $self->ns_subscriber($svc_phone).
-    '/registrar_config/'. uri_escape($self->ns_devicename($svc_phone));
+    '/registrar_config/'. $self->ns_devicename($svc_phone);
 }
 
 sub ns_devicename {
@@ -112,7 +110,7 @@ sub ns_dialplan {
   my $phonenum    = $svc_phone->phonenum;
 
   #"/dialplans/DID+Table/dialplan_config/sip:$countrycode$phonenum\@*"
-  "/dialplans/DID+Table/dialplan_config/". uri_escape("sip:$phonenum\@*")
+  "/domains_config/admin-only/dialplans/DID+Table/dialplan_config/sip:$phonenum\@*,*,*,*,*,*,*";
 }
 
 sub ns_device {
@@ -247,7 +245,6 @@ sub export_device_insert {
   my $domain = $self->ns_domain($svc_phone);
   my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
-  #my $device = $self->ns_devicename($svc_phone);
 
   my $ns = $self->ns_device_command(
     'PUT', $self->ns_device($svc_phone, $phone_device),
