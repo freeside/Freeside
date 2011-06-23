@@ -45,9 +45,14 @@ function randomPass() {
 
 <TR>
   <TD ALIGN="right"><% mt('Username') |h %></TD>
-  <TD>
-    <INPUT TYPE="text" NAME="username" VALUE="<% $username %>" SIZE=<% $ulen2 %> MAXLENGTH=<% $ulen %>>
-  </TD>
+% if ( $conf->exists('svc_acct-no_edit_username') ) {
+    <TD BGCOLOR="#eeeeee"><% $svc_acct->username() %></TD>
+    <INPUT TYPE="hidden" NAME="username" VALUE="<% $username %>">
+% } else {
+    <TD>
+      <INPUT TYPE="text" NAME="username" VALUE="<% $username %>" SIZE=<% $ulen2 %> MAXLENGTH=<% $ulen %>>
+    </TD>
+% }
 </TR>
 
 %if ( $part_svc->part_svc_column('_password')->columnflag ne 'F' ) {

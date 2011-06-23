@@ -2904,6 +2904,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'svc_acct-no_edit_username',
+    'section'     => 'shell',
+    'description' => 'Disallow username editing.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'zone-underscore',
     'section'     => 'BIND',
     'description' => 'Allow underscores in zone names.  As underscores are illegal characters in zone names, this option is not recommended.',

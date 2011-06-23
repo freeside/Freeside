@@ -993,6 +993,10 @@ sub replace {
 
   }
 
+  return "can't change username"
+    if $old->username ne $new->username
+    && $conf->exists('svc_acct-no_edit_username');
+
   #change homdir when we change username
   $new->setfield('dir', '') if $old->username ne $new->username;
 
