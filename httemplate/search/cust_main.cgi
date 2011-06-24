@@ -123,25 +123,26 @@
 %    my @pkg_rowspans;
 %    foreach my $cust_pkg ( @{$all_pkgs{$custnum}} ) {
 %      my %cust_svc_by_svcpart;
-%      foreach my $svc ( $cust_pkg->cust_svc ) {
-%        push @{ $cust_svc_by_svcpart{$svc->svcpart} ||= [] }, $svc;
-%      }
-%      push @all_cust_svc, \%cust_svc_by_svcpart;
-%      if ( !keys %cust_svc_by_svcpart ) {
-%        # no services
-%        push @pkg_rowspans, 1;
-%      }
-%      else {
-%        my $rows = 0;
-%        foreach (values %cust_svc_by_svcpart) { 
-%        # summarizing takes two rows per svcpart,
-%        # full display takes one per cust_svc
-%          $rows += ( $large_pkg_size > 0 && $large_pkg_size <= scalar @$_ ) ? 
-%                              2 : scalar @$_;
+%      my $rows = 0;
+%      foreach my $part_svc ( $cust_pkg->part_svc ) {
+%        my $svcpart = $part_svc->svcpart;
+%        my $num_cust_svc = $cust_pkg->num_cust_svc($svcpart);
+%        if ( $large_pkg_size > 0 and $num_cust_svc >= $large_pkg_size ) {
+%          # don't retrieve the cust_svc records, just stash the 
+%          # part_svc and num_cust_svc for later
+%          $cust_svc_by_svcpart{$svcpart} = 
+%            [ 'summarize', $part_svc, $num_cust_svc ];
+%          $rows += 2;
 %        }
-%        push @pkg_rowspans, $rows;
-%      }
-%    }
+%        elsif ( $num_cust_svc ) {
+%          $cust_svc_by_svcpart{$svcpart} = [ $cust_pkg->cust_svc($svcpart) ];
+%          $rows += $num_cust_svc;
+%        } #if summarize
+%      } #foreach $part_svc
+%      $rows ||= 1; # in case the package has no services
+%      push @all_cust_svc, \%cust_svc_by_svcpart;
+%      push @pkg_rowspans, $rows;
+%    } #foreach $cust_pkg
 %    my $rowspan = List::Util::sum(@pkg_rowspans) || 1;
 %
 %    my $view;
@@ -275,15 +276,16 @@
 %
 %       foreach my $svcpart ( sort keys %cust_svc_by_svcpart ) { #sort order?
 %         my $these = $cust_svc_by_svcpart{$svcpart};
-%         my $num_cust_svc = scalar @$these; # always at least 1
-%         if ( $large_pkg_size > 0 && $num_cust_svc >= $large_pkg_size ) {
+%         if ( $these->[0] eq 'summarize' ) {
+%           my $part_svc = $these->[1];
+%           my $num_cust_svc = $these->[2];
         <% $n2 %>
 %           # summarize
 %           # link opens a new search for this pkgnum/svcpart combo
 %           my $href = $p.'search/cust_pkg_svc.html?svcpart='.$svcpart.
 %                     ';pkgnum='.$pkgnum;
           <% $td %>
-            <A HREF="<% $href %>"><% $these->[0]->part_svc->svc %></A>
+            <A HREF="<% $href %>"><% $part_svc->svc %></A>
           </TD>
           <% $td %>
             <A HREF="<% $href %>"><B>(<% mt("view all [_1]", $num_cust_svc) |h %>)</B></A>
@@ -293,10 +295,11 @@
           <% $td %><& /elements/search-cust_svc.html, 
                     'svcpart' => $svcpart,
                     'pkgnum'  => $pkgnum,
+                    'svcdb'   => $part_svc->svcdb,
                     &></TD>
 %           $n2="</TR><TR>";
 %         }
-%         else { # do not summarize
+%         elsif ( scalar @$these ) { # do not summarize
 %           foreach my $cust_svc ( @$these ) {
           <% $n2 %>
             <% $td %>
