@@ -23,7 +23,7 @@ unless ( $access_pkgnum ) {
       url=>'customer_order_pkg', 'indent'=>2 };
 }
 
-if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
+if ( $balance > 0 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
 
   #XXXFIXME still a bit sloppy for multi-gateway of differing namespace
   my $i = 0;
