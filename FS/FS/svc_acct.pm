@@ -2563,7 +2563,13 @@ sub radius_groups {
       unless ref($self->usergroup) eq 'ARRAY';
     #when provisioning records, export callback runs in svc_Common.pm before
     #radius_usergroup records can be inserted...
-    @{$self->usergroup};
+    my $groups = join(',',@{$self->usergroup});
+    my @groups;
+    return @groups unless length($groups);
+    @groups = qsearch({ 'table'         => 'radius_group',
+                           'extra_sql'     => "where groupnum in ($groups)",
+                        });
+    map { $_->groupname } @groups;
   } else {
      my $format = shift || '';
      my @groups = qsearch({ 'table'         => 'radius_usergroup',
