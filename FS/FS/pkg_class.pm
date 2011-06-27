@@ -69,12 +69,8 @@ sub _target_table { 'part_pkg'; }
 
 sub check {
     my $self = shift;
-    my $error = $self->ut_numbern('fcc_ds0s')
-        || $self->SUPER::check
-    ;
-    return $error if $error;
-
-    '';
+    $self->ut_numbern('fcc_ds0s')
+        || $self->SUPER::check;
 }
 
 =item insert
