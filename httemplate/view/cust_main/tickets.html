@@ -12,8 +12,7 @@ function updateTicketLink() {
 <A id="CreateTicketLink" HREF="<% $new_link %>"><% mt('Create new ticket') |h %></A>
  <% mt('in queue') |h %> 
 %# fetch list of queues in which the user can create tickets
-% my $session = FS::TicketSystem->session();
-% my %queues = FS::TicketSystem->queues($session, 'CreateTicket');
+% my %queues = FS::TicketSystem->queues('', 'CreateTicket');
 % if( $conf->exists('ticket_system-force_default_queueid') ) {
 <B><% $queues{$new_param{'Queue'}} %></B>
 <INPUT TYPE="hidden" NAME="Queue" VALUE="<% $new_param{'Queue'} %>">
@@ -46,7 +45,12 @@ function updateTicketLink() {
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Queue') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Owner') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Due') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Estimated Time') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Priority') |h %></TH>
+% if ( $ss_priority ) {
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Customer Priority') |h %></TH>
+% }
 </TR>
 
 % foreach my $ticket ( @tickets ) {
@@ -78,6 +82,14 @@ function updateTicketLink() {
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $ticket->{owner} %>
     </TD>
+
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $date_formatter->($ticket->{due}) %>
+    </TD>
+
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{timeestimated} %>
+    </TD>
   
     <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $ticket->{content}
@@ -85,7 +97,13 @@ function updateTicketLink() {
            : $ticket->{priority}
       %>
     </TD>
-  
+
+%   if ( $ss_priority ) {
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{"CF.{$ss_priority}"} %>
+    </TD>
+%   }
+
   </TR>
 
 % } 
@@ -93,6 +111,8 @@ function updateTicketLink() {
 </TABLE>
 
 <%init>
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
 
 my( $conf ) = new FS::Conf;
 my( $cust_main ) = @_;
@@ -102,7 +122,7 @@ my $open_link = FS::TicketSystem->href_customer_tickets($cust_main->custnum);
 my $openlabel = join('/', FS::TicketSystem->statuses );
 
 my $res_link  = FS::TicketSystem->href_customer_tickets(
-                  $cust_main->custnum,
+                  $cust_main->Custnum,
                   { 'statuses' => [ 'resolved' ] }
                 );
 
@@ -110,5 +130,15 @@ my( $new_base, %new_param ) =
   FS::TicketSystem->href_params_new_ticket( $cust_main );
 
 my $new_link = FS::TicketSystem->href_new_ticket( $cust_main );
+
+my $ss_priority = FS::TicketSystem->selfservice_priority;
+
+my $format = $conf->config('date_format') || '%Y-%m-%d';
+
+my $date_formatter = sub {
+  my $time = str2time($_[0], 'GMT');
+  # exclude times within 24 hours of zero
+  ($time > 86400) ? time2str($format, $time) : '';
+};
 
 </%init>

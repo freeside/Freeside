@@ -18,6 +18,7 @@ use FS::SelfService qw(
   unprovision_svc change_pkg suspend_pkg domainselector
   list_svcs list_svc_usage list_cdr_usage list_support_usage
   myaccount_passwd list_invoices create_ticket get_ticket did_report
+  adjust_ticket_priority
   mason_comp port_graph
 );
 
@@ -77,6 +78,7 @@ my @actions = ( qw(
   myaccount
   tktcreate
   tktview
+  ticket_priority
   didreport
   invoices
   view_invoice
@@ -276,9 +278,26 @@ sub tktcreate {
 
 sub tktview {
  get_ticket(	'session_id' => $session_id,
-		'ticket_id' => $cgi->param('ticket_id'),
-		'reply' => $cgi->param('reply'),
+		'ticket_id' => ($cgi->param('ticket_id') || ''),
+                'subject'   => ($cgi->param('subject') || ''),
+		'reply'     => ($cgi->param('reply') || ''),
 	    );
+}
+
+sub ticket_priority {
+  my %values;
+  foreach ( $cgi->param ) {
+    if ( /^ticket(\d+)$/ ) {
+      # a 'ticket1001' param implies the existence of a 'priority1001' param
+      # but if that's empty, we need to send it as empty rather than forget
+      # it.
+      $values{$1} = $cgi->param("priority$1") || '';
+    }
+  }
+  $action = 'myaccount';
+  # this returns an updated customer_info for myaccount
+  adjust_ticket_priority( 'session_id' => $session_id,
+                          'values'     => \%values );
 }
 
 sub customer_order_pkg {

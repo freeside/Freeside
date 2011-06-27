@@ -108,6 +108,16 @@
     &>
 % }
 
+% # permission to edit ticket subjects
+% if ( $conf->exists('ticket_system-selfservice_edit_subject') ) {
+  <TR>
+    <TD ALIGN="right">
+      <INPUT TYPE="checkbox" NAME="edit_subject" VALUE="Y" <% 
+        $cust_main->edit_subject ? 'CHECKED' : '' %>></TD>
+    <TD ALIGN="left"><% mt('Can edit ticket subjects') |h %></TD>
+  </TR>
+% }
+
 </TABLE>
 
 <%init>

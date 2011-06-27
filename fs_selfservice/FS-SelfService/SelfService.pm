@@ -64,6 +64,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
   'create_ticket'             => 'MyAccount/create_ticket',
   'get_ticket'                => 'MyAccount/get_ticket',
+  'adjust_ticket_priority'    => 'MyAccount/adjust_ticket_priority',
   'did_report'                => 'MyAccount/did_report',
   'signup_info'               => 'Signup/signup_info',
   'skin_info'                 => 'MyAccount/skin_info',

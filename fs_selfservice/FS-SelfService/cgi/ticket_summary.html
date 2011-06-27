@@ -1,0 +1,65 @@
+<SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">
+<TR><TH BGCOLOR="#ff6666" COLSPAN=8>Open Tickets</TH></TR>
+<TR>
+<%=
+my $col1 = "ffffff";
+my $col2 = "dddddd";
+my $col = $col1;
+
+my $can_set_priority = 
+  grep { exists($_->{'_selfservice_priority'}) } @tickets;
+if ( $can_set_priority ) {
+  $OUT .= qq!<FORM ACTION="$selfurl" METHOD="POST">! .
+          qq!<INPUT TYPE="hidden" NAME="session" VALUE="$session_id">! .
+          qq!<INPUT TYPE="hidden" NAME="action" VALUE="ticket_priority">!;
+}
+$date_format ||= '%Y-%m-%d';
+my $date_formatter = sub {
+  my $time = Date::Parse::str2time($_[0], 'GMT'); # RT internal dates are GMT
+  # exclude times within 24 hours of zero
+  ($time > 86400) ? Date::Format::time2str($date_format, $time) : ''
+};
+
+my @titles = ('#', qw(Subject Queue Status Created Due));
+push @titles, 'Estimated<BR>Minutes';
+push @titles, 'Priority';
+
+$OUT .= join("\n", map { "<TH VALIGN=\"top\">$_</TH>" } @titles) . '</TR>';
+
+foreach my $ticket ( @tickets ) {
+  my $id = $ticket->{'id'};
+  my $td = qq!<TD BGCOLOR="#$col">!;
+  my $link = qq!<A HREF="${url}tktview;ticket_id=$id">!;
+  $OUT .= '<TR>' . $td . $link . $id . '</A></TD>'.
+$td. $link . $ticket->{'subject'} . '</A></TD>'.
+$td. $ticket->{'queue'} . '</TD>'.
+$td. $ticket->{'status'} . '</TD>'.
+$td. $date_formatter->($ticket->{'created'}) . '</TD>'.
+$td. $date_formatter->($ticket->{'due'}) . '</TD>'.
+qq!<TD BGCOLOR="#$col" ALIGN="right">!. ($ticket->{'timeestimated'} || '') 
+.  '</TD>'.
+qq!<TD BGCOLOR="#$col" ALIGN="right">!;
+  if ( $can_set_priority ) {
+    $OUT .= '<INPUT TYPE="hidden" NAME="ticket'.$id.'" VALUE="1">' .
+            '<INPUT TYPE="text" SIZE=4 NAME="priority'.$id.'"' .
+            'VALUE="'.$ticket->{'_selfservice_priority'}.'"></TD>';
+    if ( exists($ticket_error{$id}) ) {
+      # display error message compactly
+      $OUT .= '<TD><FONT COLOR="#ff0000" onmouseover="'.
+              "return overlib('".$ticket_error{$id}."', AUTOSTATUS, WRAP);" .
+              '" onmouseout="nd();">*</FONT></TD>';
+    }
+  }
+  else {
+    $OUT .= ($ticket->{'content'} || $ticket->{'priority'}) . '</TD>';
+  }
+  $OUT .= '</TR>';
+  $col = $col eq $col1 ? $col2 : $col1;
+} #foreach my $ticket
+if ( $can_set_priority ) {
+  $OUT .= '<TR><TD COLSPAN=8 ALIGN="right">
+<INPUT TYPE="submit" VALUE="Save changes"></TD></TR></FORM>';
+}
+%>
+</TABLE>

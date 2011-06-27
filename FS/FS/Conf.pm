@@ -2540,7 +2540,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'ticket_system',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:RT_Installation">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
     'type'        => 'select',
     #'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
@@ -2558,7 +2558,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'ticket_system-default_queueid',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Default queue used when creating new customer tickets.',
     'type'        => 'select-sub',
     'options_sub' => sub {
@@ -2584,13 +2584,13 @@ and customer address. Include units.',
   },
   {
     'key'         => 'ticket_system-force_default_queueid',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Disallow queue selection when creating new tickets from customer view.',
     'type'        => 'checkbox',
   },
   {
     'key'         => 'ticket_system-selfservice_queueid',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Queue used when creating new customer tickets from self-service.  Defautls to ticket_system-default_queueid if not specified.',
     #false laziness w/above
     'type'        => 'select-sub',
@@ -2618,49 +2618,63 @@ and customer address. Include units.',
 
   {
     'key'         => 'ticket_system-requestor',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Email address to use as the requestor for new tickets.  If blank, the customer\'s invoicing address(es) will be used.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'ticket_system-priority_reverse',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Enable this to consider lower numbered priorities more important.  A bad habit we picked up somewhere.  You probably want to avoid it and use the default.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'ticket_system-custom_priority_field',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Custom field from the ticketing system to use as a custom priority classification.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'ticket_system-custom_priority_field-values',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Values for the custom field from the ticketing system to break down and sort customer ticket lists.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'ticket_system-custom_priority_field_queue',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Ticketing system queue in which the custom field specified in ticket_system-custom_priority_field is located.',
     'type'        => 'text',
   },
 
   {
+    'key'         => 'ticket_system-selfservice_priority_field',
+    'section'     => 'ticketing',
+    'description' => 'Custom field from the ticket system to use as a customer-managed priority field.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'ticket_system-selfservice_edit_subject',
+    'section'     => 'ticketing',
+    'description' => 'Allow customers to edit ticket subjects through selfservice.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'ticket_system-escalation',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'Enable priority escalation of tickets as part of daily batch processing.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'ticket_system-rt_external_datasrc',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'With external RT integration, the DBI data source for the external RT installation, for example, <code>DBI:Pg:user=rt_user;password=rt_word;host=rt.example.com;dbname=rt</code>',
     'type'        => 'text',
 
@@ -2668,7 +2682,7 @@ and customer address. Include units.',
 
   {
     'key'         => 'ticket_system-rt_external_url',
-    'section'     => '',
+    'section'     => 'ticketing',
     'description' => 'With external RT integration, the URL for the external RT installation, for example, <code>https://rt.example.com/rt</code>',
     'type'        => 'text',
   },

@@ -74,7 +74,7 @@ sub skin_info {
       or die "no agentnum for custnum $custnum";
 
   #} elsif ( $context eq 'agent' ) {
-  } elsif ( $p->{'agentnum'} =~ /^(\d+)$/ ) {
+  } elsif ( defined($p->{'agentnum'}) and $p->{'agentnum'} =~ /^(\d+)$/ ) {
     $agentnum = $1;
   }
 
@@ -97,7 +97,7 @@ sub skin_info {
     $skin_info_cache_agent = {
       'agentnum' => $agentnum,
       ( map { $_ => scalar( $conf->config($_, $agentnum) ) }
-        qw( company_name ) ),
+        qw( company_name date_format ) ),
       ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
         qw( body_bgcolor box_bgcolor
             text_color link_color vlink_color hlink_color alink_color
@@ -295,6 +295,10 @@ sub access_info {
   $info->{'self_suspend_reason'} = 
       $conf->config('selfservice-self_suspend_reason', $cust_main->agentnum);
 
+  $info->{'edit_ticket_subject'} =
+      $conf->exists('ticket_system-selfservice_edit_subject') && 
+      $cust_main->edit_subject;
+
   return { %$info,
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
@@ -316,7 +320,12 @@ sub customer_info {
   }else{
     $return{'require_address2'} = '';
   }
-  
+
+  if ( $conf->exists('ticket_system') ) {
+    warn "$me customer_info: initializing ticket system\n" if $DEBUG;
+    FS::TicketSystem->init();
+  }
+ 
   if ( $custnum ) { #customer record
 
     my $search = { 'custnum' => $custnum };
@@ -1909,13 +1918,13 @@ sub create_ticket {
   );
 
   if ( ref($err_or_ticket) ) {
-    warn "$me create_ticket: sucessful: ". $err_or_ticket->id. "\n"
+    warn "$me create_ticket: successful: ". $err_or_ticket->id. "\n"
       if $DEBUG;
     return { 'error'     => '',
              'ticket_id' => $err_or_ticket->id,
            };
   } else {
-    warn "$me create_ticket: unsucessful: $err_or_ticket\n"
+    warn "$me create_ticket: unsuccessful: $err_or_ticket\n"
       if $DEBUG;
     return { 'error' => $err_or_ticket };
   }
@@ -2009,61 +2018,134 @@ sub get_ticket {
 
   warn "$me get_ticket: initializing ticket system\n" if $DEBUG;
   FS::TicketSystem->init();
+  return { 'error' => 'get_ticket configuration error' }
+    if $FS::TicketSystem::system ne 'RT_Internal';
 
-  if(length($p->{'reply'})) {
-# currently this allows anyone to correspond on any ticket as fs_selfservice
-# probably bad...
-      my @err_or_res = FS::TicketSystem->correspond_ticket(
-	'', #create RT session based on FS CurrentUser (fs_selfservice)
-	'ticket_id' => $p->{'ticket_id'},
-	'content' => $p->{'reply'},
-      );
-    
-    return { 'error' => 'unable to reply to ticket' } 
-	unless ( $err_or_res[0] != 0 && defined $err_or_res[2] );
+  # check existence and ownership as part of this
+  warn "$me get_ticket: fetching ticket\n" if $DEBUG;
+  my $rt_session = FS::TicketSystem->session('');
+  my $Ticket = FS::TicketSystem->get_ticket_object(
+    $rt_session, 
+    ticket_id => $p->{'ticket_id'},
+    custnum => $custnum
+  );
+  return { 'error' => 'ticket not found' } if !$Ticket;
+
+  if ( length( $p->{'subject'} || '' ) ) {
+    # subject change
+    if ( $p->{'subject'} ne $Ticket->Subject ) {
+      my ($val, $msg) = $Ticket->SetSubject($p->{'subject'});
+      return { 'error' => "unable to set subject: $msg" } if !$val;
+    }
   }
 
-  warn "$me get_ticket: getting ticket\n" if $DEBUG;
+  if(length($p->{'reply'})) {
+    my @err_or_res = FS::TicketSystem->correspond_ticket(
+      $rt_session,
+      'ticket_id' => $p->{'ticket_id'},
+      'content' => $p->{'reply'},
+    );
+
+    return { 'error' => 'unable to reply to ticket' } 
+    unless ( $err_or_res[0] != 0 && defined $err_or_res[2] );
+  }
+
+  warn "$me get_ticket: getting ticket history\n" if $DEBUG;
   my $err_or_ticket = FS::TicketSystem->get_ticket(
-    '', #create RT session based on FS CurrentUser (fs_selfservice)
+    $rt_session,
     'ticket_id' => $p->{'ticket_id'},
   );
 
-  if ( ref($err_or_ticket) ) {
-
-# since we're bypassing the RT security/permissions model by always using
-# fs_selfservice as the RT user (as opposed to a requestor, which we
-# can't do since we want all tickets linked to a cust), we check below whether
-# the requested ticket was actually linked to this customer
-    my @custs = @{$err_or_ticket->{'custs'}};
-    my @txns = @{$err_or_ticket->{'txns'}};
-    my @filtered_txns;
-
-    return { 'error' => 'no customer' } unless ( $custnum && scalar(@custs) );
-
-    return { 'error' => 'invalid ticket requested' } 
-	unless grep($_ eq $custnum, @custs);
-
-    foreach my $txn ( @txns ) {
-	push @filtered_txns, $txn 
-	    if ($txn->{'type'} eq 'EmailRecord' 
-		|| $txn->{'type'} eq 'Correspond'
-		|| $txn->{'type'} eq 'Create');
-    }
-
-    warn "$me get_ticket: sucessful: \n"
-      if $DEBUG;
-    return { 'error'     => '',
-             'transactions' => \@filtered_txns,
-	     'ticket_id' => $p->{'ticket_id'},
-           };
-  } else {
-    warn "$me create_ticket: unsucessful: $err_or_ticket\n"
+  if ( !ref($err_or_ticket) ) { # there is no way this should ever happen
+    warn "$me get_ticket: unsuccessful: $err_or_ticket\n"
       if $DEBUG;
     return { 'error' => $err_or_ticket };
   }
+
+  my @custs = @{$err_or_ticket->{'custs'}};
+  my @txns = @{$err_or_ticket->{'txns'}};
+  my @filtered_txns;
+
+  # superseded by check in get_ticket_object
+  #return { 'error' => 'invalid ticket requested' } 
+  #unless grep($_ eq $custnum, @custs);
+
+  foreach my $txn ( @txns ) {
+    push @filtered_txns, $txn 
+    if ($txn->{'type'} eq 'EmailRecord' 
+      || $txn->{'type'} eq 'Correspond'
+      || $txn->{'type'} eq 'Create');
+  }
+
+  warn "$me get_ticket: successful: \n"
+  if $DEBUG;
+  return { 'error'     => '',
+    'transactions' => \@filtered_txns,
+    'ticket_fields' => $err_or_ticket->{'fields'},
+    'ticket_id' => $p->{'ticket_id'},
+  };
 }
 
+sub adjust_ticket_priority {
+  my $p = shift;
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  warn "$me adjust_ticket_priority: initializing ticket system\n" if $DEBUG;
+  FS::TicketSystem->init;
+  my $ss_priority = FS::TicketSystem->selfservice_priority;
+
+  return { 'error' => 'adjust_ticket_priority configuration error' }
+    if $FS::TicketSystem::system ne 'RT_Internal'
+      or !$ss_priority;
+
+  my $values = $p->{'values'}; #hashref, id => priority value
+  my %ticket_error;
+
+  foreach my $id (keys %$values) {
+    warn "$me adjust_ticket_priority: fetching ticket $id\n" if $DEBUG;
+    my $Ticket = FS::TicketSystem->get_ticket_object('',
+      'ticket_id' => $id,
+      'custnum'   => $custnum,
+    );
+    if ( !$Ticket ) {
+      $ticket_error{$id} = 'ticket not found';
+      next;
+    }
+    
+  # RT API stuff--would we gain anything by wrapping this in FS::TicketSystem?
+  # We're not going to implement it for RT_External.
+    my $old_value = $Ticket->FirstCustomFieldValue($ss_priority);
+    my $new_value = $values->{$id};
+    next if $old_value eq $new_value;
+
+    warn "$me adjust_ticket_priority: updating ticket $id\n" if $DEBUG;
+
+    # AddCustomFieldValue works fine (replacing any existing value) if it's 
+    # a single-valued custom field, which it should be.  If it's not, you're 
+    # doing something wrong.
+    my ($val, $msg);
+    if ( length($new_value) ) {
+      ($val, $msg) = $Ticket->AddCustomFieldValue( 
+        Field => $ss_priority,
+        Value => $new_value,
+      );
+    }
+    else {
+      ($val, $msg) = $Ticket->DeleteCustomFieldValue(
+        Field => $ss_priority,
+        Value => $old_value,
+      );
+    }
+
+    $ticket_error{$id} = $msg if !$val;
+    warn "$me adjust_ticket_priority: $id: $msg\n" if $DEBUG and !$val;
+  }
+  return { 'error' => '',
+           'ticket_error' => \%ticket_error,
+           %{ customer_info($p) } # send updated customer info back
+         }
+}
 
 #--
 

@@ -881,6 +881,7 @@ sub tables_hashref {
         'email_csv_cdr', 'char', 'NULL', 1, '', '',
         'accountcode_cdr', 'char', 'NULL', 1, '', '',
         'billday',   'int', 'NULL', '', '', '',
+        'edit_subject', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],

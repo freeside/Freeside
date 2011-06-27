@@ -35,7 +35,6 @@ sub baseurl {
 sub access_right {
   my( $self, $session, $right ) = @_;
 
-  #return '' unless $conf->config('ticket_system');
   return '' unless FS::Conf->new->config('ticket_system');
 
   $session = $self->session($session);
@@ -63,41 +62,34 @@ sub session {
   $session;
 }
 
+my $firsttime = 1;
+
 sub init {
   my $self = shift;
+  if ( $firsttime ) {
 
-  warn "$me init: loading RT libraries\n" if $DEBUG;
-  eval '
-    use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
-    use RT;
-    #it looks like the rest are taken care of these days in RT::InitClasses
-    #use RT::Ticket;
-    #use RT::Transactions;
-    #use RT::Users;
-    #use RT::CurrentUser;
-    #use RT::Templates;
-    #use RT::Queues;
-    #use RT::ScripActions;
-    #use RT::ScripConditions;
-    #use RT::Scrips;
-    #use RT::Groups;
-    #use RT::GroupMembers;
-    #use RT::CustomFields;
-    #use RT::CustomFieldValues;
-    #use RT::ObjectCustomFieldValues;
+    # this part only needs to be done once
+    warn "$me init: loading RT libraries\n" if $DEBUG;
+    eval '
+      use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
+      use RT;
 
-    #for web external auth...
-    use RT::Interface::Web;
-  ';
-  die $@ if $@;
+      #for web external auth...
+      use RT::Interface::Web;
+    ';
+    die $@ if $@;
 
-  warn "$me init: loading RT config\n" if $DEBUG;
-  {
-    local $SIG{__DIE__};
-    eval 'RT::LoadConfig();';
+    warn "$me init: loading RT config\n" if $DEBUG;
+    {
+      local $SIG{__DIE__};
+      eval 'RT::LoadConfig();';
+    }
+    die $@ if $@;
+
+    $firsttime = 0;
   }
-  die $@ if $@;
 
+  # this needs to be done on each fork
   warn "$me init: initializing RT\n" if $DEBUG;
   {
     local $SIG{__DIE__};
@@ -106,6 +98,106 @@ sub init {
   die $@ if $@;
 
   warn "$me init: complete" if $DEBUG;
+}
+
+=item customer_tickets CUSTNUM [ LIMIT ] [ PRIORITYVALUE ]
+
+Replacement for the one in RT_External so that we can access custom fields 
+properly.
+
+=cut
+
+sub _customer_tickets_search {
+  my ( $self, $custnum, $limit, $priority ) = @_;
+
+  $custnum =~ /^\d+$/ or die "invalid custnum: $custnum";
+  $limit =~ /^\d+$/ or die "invalid limit: $limit";
+
+  my $session = $self->session();
+  my $CurrentUser = $session->{CurrentUser} 
+    or die "unable to create an RT session";
+
+  my $Tickets = RT::Tickets->new($CurrentUser);
+
+  my $rtql = "MemberOf = 'freeside://freeside/cust_main/$custnum'";
+
+  if ( defined( $priority ) ) {
+    my $custom_priority = FS::Conf->new->config('ticket_system-custom_priority_field');
+    $rtql .= " AND CF.{$custom_priority} = '$priority'";
+  }
+
+  $rtql .= ' AND ( ' .
+           join(' OR ', map { "Status = '$_'" } $self->statuses) .
+           ' )';
+
+  $Tickets->FromSQL($rtql);
+
+  $Tickets->RowsPerPage($limit);
+
+  return $Tickets;
+}
+
+sub customer_tickets {
+  my $Tickets = _customer_tickets_search(@_);
+
+  my $conf = FS::Conf->new;
+  my $priority_order =
+    $conf->exists('ticket_system-priority_reverse') ? 'ASC' : 'DESC';
+  my $custom_priority = 
+    $conf->config('ticket_system-custom_priority_field') || '';
+
+  my @order_by;
+  my $ss_priority = selfservice_priority();
+  push @order_by, { FIELD => "CF.{$ss_priority}", ORDER => $priority_order }
+    if $ss_priority;
+  push @order_by,
+    { FIELD => 'Priority', ORDER => $priority_order },
+    { FIELD => 'Id',       ORDER => 'DESC' },
+  ;
+
+  $Tickets->OrderByCols(@order_by);
+
+  my @tickets;
+  while ( my $t = $Tickets->Next ) {
+    push @tickets, _ticket_info($t);
+  }
+  return \@tickets;
+}
+
+sub num_customer_tickets {
+  my $Tickets = _customer_tickets_search(@_);
+  return $Tickets->CountAll;
+}
+
+sub _ticket_info {
+  # Takes an RT::Ticket; returns a hashref of the ticket's fields, including 
+  # custom fields.  Also returns custom and selfservice priority values as 
+  # _custom_priority and _selfservice_priority.
+  my $t = shift;
+
+  my $custom_priority = 
+    FS::Conf->new->config('ticket_system-custom_priority_field') || '';
+  my $ss_priority = selfservice_priority();
+
+  my %ticket_info;
+  foreach my $name ( $t->ReadableAttributes ) {
+    # lowercase names, and skip attributes with non-scalar values
+    $ticket_info{lc($name)} = $t->$name if !ref($t->$name);
+  }
+  $ticket_info{'owner'} = $t->OwnerObj->Name;
+  $ticket_info{'queue'} = $t->QueueObj->Name;
+  foreach my $CF ( @{ $t->CustomFields->ItemsArrayRef } ) {
+    my $name = 'CF.{'.$CF->Name.'}';
+    $ticket_info{$name} = $t->CustomFieldValuesAsString($CF->Id);
+  }
+  # make this easy to find
+  if ( $custom_priority ) {
+    $ticket_info{'_custom_priority'} = $ticket_info{"CF.{$custom_priority}"};
+  }
+  if ( $ss_priority ) {
+    $ticket_info{'_selfservice_priority'} = $ticket_info{"CF.{$ss_priority}"};
+  }
+  return \%ticket_info;
 }
 
 =item create_ticket SESSION_HASHREF, OPTION => VALUE ...
@@ -219,8 +311,8 @@ sub create_ticket {
 
 Class method. Retrieves a ticket. If there is an error, returns the scalar
 error. Otherwise, currently returns a slightly tricky data structure containing
-a list of the linked customers and each transaction's content, description, and
-create time.
+the ticket's attributes, a list of the linked customers, each transaction's 
+content, description, and create time.
 
 Accepts the following options:
 
@@ -262,7 +354,48 @@ sub get_ticket {
 
   { txns => [ @txns ],
     custs => [ @custs ],
+    fields => _ticket_info($Ticket),
   };
+}
+
+=item get_ticket_object SESSION_HASHREF, OPTION => VALUE...
+
+Class method.  Retrieve the RT::Ticket object with the specified 
+ticket_id.  If custnum is supplied, will also check that the object 
+is a member of that customer.  If there is no ticket or the custnum 
+check fails, returns nothing.  The meaning of that case is 
+"to this customer, the ticket does not exist".
+
+Options:
+
+=over 4
+
+=item ticket_id
+
+=item custnum
+
+=back
+
+=cut
+
+sub get_ticket_object {
+  my $self = shift;
+  my ($session, %opt) = @_;
+  $session = $self->session(shift);
+  my $Ticket = RT::Ticket->new($session->{CurrentUser});
+  $Ticket->Load($opt{'ticket_id'});
+  return if ( !$Ticket->id );
+  my $custnum = $opt{'custnum'};
+  if ( defined($custnum) && $custnum =~ /^\d+$/ ) {
+    # probably the most efficient way to check ticket ownership
+    my $Link = RT::Link->new($session->{CurrentUser});
+    $Link->LoadByCols( LocalBase => $opt{'ticket_id'},
+                       Type      => 'MemberOf',
+                       Target    => "freeside://freeside/cust_main/$custnum",
+                     );
+    return if ( !$Link->id );
+  }
+  return $Ticket;
 }
 
 
@@ -425,6 +558,21 @@ sub _web_external_auth {
 
   $session;
 
+}
+
+=item selfservice_priority
+
+Returns the configured self-service priority field.
+
+=cut
+
+my $selfservice_priority;
+
+sub selfservice_priority {
+  return $selfservice_priority ||= do {
+    my $conf = FS::Conf->new;
+    $conf->config('ticket_system-selfservice_priority_field') || '';
+  }
 }
 
 1;

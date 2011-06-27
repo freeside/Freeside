@@ -350,7 +350,7 @@ my @config_items = grep { $page_agent ? $_->per_agent : 1 }
 my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );
 my %deleteable = map { $_ => 1 } @deleteable;
 
-my @sections = qw(required billing invoicing notification UI self-service username password session shell BIND telephony );
+my @sections = qw(required billing invoicing notification UI self-service ticketing username password session shell BIND telephony );
 push @sections, '', 'deprecated';
 
 my %section_items = ();

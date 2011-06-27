@@ -22,9 +22,16 @@ else {
 <FORM ACTION="<%=$selfurl%>" METHOD=POST>
     <input type="hidden" name="session" value="<%=$session_id%>">
     <input type="hidden" name="ticket_id" value="<%=$ticket_id%>">
+<%= if ( $edit_ticket_subject ) { $OUT .= '
+    Subject:<BR><input type="text" name="subject" value="' . 
+    $ticket_fields{'subject'} . '" style="width:440px">
+    <BR><BR>';
+}
+%>
     <input type="hidden" name="action" value="tktview">
     Add reply to ticket:
-    <BR><textarea name="reply" cols="60" rows="10"></textarea>
+    <BR>
+    <textarea name="reply" cols="60" rows="10" style="width:440px"></textarea>
     <BR><input type="submit" value="Reply">
 </form> 
 

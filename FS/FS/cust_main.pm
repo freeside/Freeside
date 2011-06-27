@@ -324,6 +324,10 @@ A suggestion to events (see L<FS::part_bill_event">) to delay until this unix ti
 
 Discourage individual CDR printing, empty or `Y'
 
+=item edit_subject
+
+Allow self-service editing of ticket subjects, empty or 'Y'
+
 =back
 
 =head1 METHODS

@@ -403,5 +403,9 @@ sub create_ticket {
   return 'create_ticket unimplemented w/external RT (write something w/RT::Client::REST?)';
 }
 
+sub init { } #unimplemented
+
+sub selfservice_priority { '' } #unimplemented
+
 1;
 
