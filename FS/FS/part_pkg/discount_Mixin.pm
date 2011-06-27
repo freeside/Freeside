@@ -130,11 +130,12 @@ sub calc_discount {
             && ! defined $param->{'setup_charge'});
     die "error discounting: $error" if $error;
 
+    $amount = min($amount, $br);
     $amount *= $months;
     $amount = sprintf('%.2f', $amount);
 
     next unless $amount > 0;
-            
+
     # transfer remainder of discount, if any, to setup
     if ( $discount->setup && $discount->amount
         && (!$discount->months || $discount->months != 1)
