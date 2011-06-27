@@ -1686,6 +1686,7 @@ sub check {
     || $self->ut_floatn('cdr_termination_percentage')
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
+    || $self->ut_enum('edit_subject', [ '', 'Y' ] )
   ;
 
   #barf.  need message catalogs.  i18n.  etc.
