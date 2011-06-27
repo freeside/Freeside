@@ -82,33 +82,6 @@ Hello <%= $name %>!<BR><BR>
   }
 %>
 
-<%=
-  if ( @tickets ) {
-    $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
-            '<TR><TH BGCOLOR="#ff6666" COLSPAN=6>Open Tickets</TH></TR>'.
-            '<TR><TH>#</TH><TH>Subject</TH><TH>Priority</TH><TH>Queue</TH>'.
-            '<TH>Status</TH><TH>Created</TH></TR>';
-    my $col1 = "ffffff";
-    my $col2 = "dddddd";
-    my $col = $col1;
-
-    foreach my $ticket ( @tickets ) {
-      my $td = qq!<TD BGCOLOR="#$col">!;
-      my $link = qq!<A HREF="${url}tktview;ticket_id=$ticket->{id}">!;
-      $OUT .=
-        "<TR>$td $link". $ticket->{'id'}. "</A></TD>".
-        $td. $ticket->{'subject'}. "</TD>".
-        $td. ($ticket->{'content'} || $ticket->{'priority'}). "</TD>".
-        $td. $ticket->{'queue'}. "</TD>".
-        $td. $ticket->{'status'}. "</TD>".
-        $td. $ticket->{'created'}. "</TD>".
-        '</TR>';
-      $col = $col eq $col1 ? $col2 : $col1;
-    }
-    $OUT .= '</TABLE>';
-  } else {
-    $OUT .= '';
-  }
-%>
+<%= include('ticket_summary') if @tickets %> 
 
 <%= include('footer') %>
