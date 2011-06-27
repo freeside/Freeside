@@ -4222,7 +4222,7 @@ sub balance_date_sql {
 =item unapplied_payments_date_sql START_TIME [ END_TIME ]
 
 Returns an SQL fragment to retreive the total unapplied payments for this
-customer, only considering invoices with date earlier than START_TIME, and
+customer, only considering payments with date earlier than START_TIME, and
 optionally not later than END_TIME.
 
 Times are specified as SQL fragments or numeric
