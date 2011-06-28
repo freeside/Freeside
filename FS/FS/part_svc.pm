@@ -12,7 +12,7 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -815,6 +815,9 @@ sub process_bulk_cust_svc {
 
   my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
+
+  local($FS::svc_Common::noexport_hack) = 1
+    if $param->{'noexport'};
 
   my $old_part_svc =
     qsearchs('part_svc', { 'svcpart' => $param->{'old_svcpart'} } );

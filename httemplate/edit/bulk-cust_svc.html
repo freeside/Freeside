@@ -4,7 +4,7 @@
 
 <% include('/elements/progress-init.html',
               'OneTrueForm',
-              [qw( old_svcpart new_svcpart pkgpart )],
+              [qw( old_svcpart new_svcpart pkgpart noexport )],
               'process/bulk-cust_svc.cgi',
               $p.'browse/part_svc.cgi',
            )
@@ -74,11 +74,13 @@ to new service definition
 
 </SELECT>
 <BR>
-
 <BR>
 
+<INPUT TYPE="checkbox" NAME="noexport" VALUE="Y"> Disable exports (provisioning) of changes
+<BR><BR>
+
 <SCRIPT TYPE="text/javascript">
-var confirm_change = '<P ALIGN="center"><B>Bulk customer service change - Are you sure?</B><BR><P ALIGN="CENTER" <INPUT TYPE="button" VALUE="Yes, make changes" onClick="process();">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Cancel" onClick="cClick()">';
+var confirm_change = '<P ALIGN="center"><B>Bulk customer service change - Are you sure?</B><BR><P ALIGN="CENTER"><INPUT TYPE="button" VALUE="Yes, make changes" onClick="process();">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Cancel" onClick="cClick()">';
 </SCRIPT>
 
 <INPUT TYPE="button" VALUE="Bulk change customer services" onClick="overlib(confirm_change, CAPTION, 'Confirm bulk customer service change', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 128, TEXTSIZE, 3, BGCOLOR, '#ff0000', CGCOLOR, '#ff0000' );">
