@@ -50,7 +50,7 @@ sub access_right {
 sub session {
   my( $self, $session ) = @_;
 
-  if ( $session && $session->{'Current_User'} ) {
+  if ( $session && $session->{'Current_User'} ) { # does this even work?
     warn "$me session: using existing session and CurrentUser: \n".
          Dumper($session->{'CurrentUser'})
       if $DEBUG;
@@ -123,16 +123,23 @@ sub _customer_tickets_search {
 
   if ( defined( $priority ) ) {
     my $custom_priority = FS::Conf->new->config('ticket_system-custom_priority_field');
-    $rtql .= " AND CF.{$custom_priority} = '$priority'";
+    if ( length( $priority ) ) {
+      $rtql .= " AND CF.{$custom_priority} = '$priority'";
+    }
+    else {
+      $rtql .= " AND CF.{$custom_priority} IS NULL";
+    }
   }
 
   $rtql .= ' AND ( ' .
            join(' OR ', map { "Status = '$_'" } $self->statuses) .
            ' )';
 
+  warn "$me _customer_tickets_search:\n$rtql\n" if $DEBUG;
   $Tickets->FromSQL($rtql);
 
   $Tickets->RowsPerPage($limit);
+  warn "\n\n" . $Tickets->BuildSelectQuery . "\n\n" if $DEBUG > 1;
 
   return $Tickets;
 }
@@ -192,7 +199,7 @@ sub _ticket_info {
   }
   # make this easy to find
   if ( $custom_priority ) {
-    $ticket_info{'_custom_priority'} = $ticket_info{"CF.{$custom_priority}"};
+    $ticket_info{'content'} = $ticket_info{"CF.{$custom_priority}"};
   }
   if ( $ss_priority ) {
     $ticket_info{'_selfservice_priority'} = $ticket_info{"CF.{$ss_priority}"};
