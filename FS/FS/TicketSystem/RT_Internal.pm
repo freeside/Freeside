@@ -172,7 +172,8 @@ sub customer_tickets {
 }
 
 sub num_customer_tickets {
-  my $Tickets = _customer_tickets_search(@_);
+  my ( $self, $custnum, $priority ) = @_;
+  my $Tickets = $self->_customer_tickets_search($custnum, 0, $priority);
   return $Tickets->CountAll;
 }
 
