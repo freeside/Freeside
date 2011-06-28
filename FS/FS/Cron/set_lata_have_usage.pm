@@ -41,7 +41,7 @@ sub set_lata_have_usage {
     my %latas = map { $_->latanum => $_ } qsearch('lata', {});
 
     foreach my $lata ( keys %latas ) {
-            next unless $latas{$lata}->have_usage > 0;
+            next unless $latas{$lata}->have_usage && $latas{$lata}->have_usage > 0;
             $latas{$lata}->have_usage(0);
             my $error = $latas{$lata}->replace;
             if ( $error ) {
