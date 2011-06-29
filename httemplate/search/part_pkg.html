@@ -45,9 +45,10 @@ if (1) { #commission reports
 
   if (1) { #employee commission reports 
 
-    $group_by = join(', ', ( map "access_user.$_", qw( usernum username    ) ),
-                           ( map "part_pkg.$_",    qw( pkgpart pkg comment ) ),
-                    );
+    $group_by = join(', ',
+      ( map "access_user.$_", qw( usernum username    ) ),
+      ( map "part_pkg.$_",    qw( pkgpart pkg comment plan ) ),
+    );
 
     $select = $group_by;
 
@@ -123,11 +124,9 @@ if (1) { #commission reports
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
-  my $where = "WHERE cust_bill_pkg.pkgnum > 0
-                 AND cust_bill._date >= $beginning
-                 AND cust_bill._date <= $ending         ";
-  my $and = "    AND $match
-                 AND cust_pkg.pkgpart = part_pkg.pkgpart";
+  push @where, " cust_bill_pkg.pkgnum > 0      ",
+               " cust_bill._date >= $beginning ",
+               " cust_bill._date <= $ending    ";
 
   push @header, '#'; # of sales';
   push @links, ''; #link to detail report
@@ -148,7 +147,8 @@ if (1) { #commission reports
               " FROM cust_bill_pkg
                 LEFT JOIN cust_pkg  USING ( pkgnum )
                 LEFT JOIN cust_bill USING ( invnum )
-                $where AND pkgpart = ? AND ";
+               WHERE ". join(' AND ', @where).
+               " AND pkgpart = ? AND ";
     my @arg = ($part_pkg->pkgpart);
     if (1) { #employee commission reports 
       $sql .= 'usernum = ?';
@@ -208,6 +208,8 @@ my $extra_sql = scalar(@where) ? 'WHERE ' . join(' AND ', @where) : '';
 $extra_sql .= "GROUP BY $group_by" if $group_by;
 my $order_by = join(', ', @order_by);
 
-my $count_query = "SELECT COUNT(*) FROM part_pkg $addl_from $extra_sql";
+#XXX agent?
+my $count_query = "SELECT COUNT(*) FROM ( SELECT 1 FROM part_pkg $addl_from $extra_sql ) AS num";
+warn $count_query;
 
 </%init>
