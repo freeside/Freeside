@@ -83,7 +83,7 @@ Hello <%= $name %>!<BR><BR>
   }
 %>
 
-<%= if ( @tickets) {
+<%= if (@tickets) {
       $OUT .= include('ticket_summary');
     } else {
       $OUT .= '';

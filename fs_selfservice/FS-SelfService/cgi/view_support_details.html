@@ -1,8 +1,5 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header', 'Usage details') %>
 
 <FONT SIZE=4>Support usage details for
 <%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $beginning) %> -
@@ -74,5 +71,4 @@
 </TABLE>
 <BR>
 
-</TD></TR></TABLE>
 <%= include('footer') %>
