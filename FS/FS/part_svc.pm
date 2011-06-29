@@ -875,13 +875,21 @@ sub _upgrade_data {  #class method
     next if $col->columnvalue =~ /^[\d,]+$/ || !$col->columnvalue;
     my @groupnames = split(',',$col->columnvalue);
     my @groupnums;
+    my $error = '';
     foreach my $groupname ( @groupnames ) {
-        my $g = qsearchs('radius_group', { 'groupname' => $groupname } )
-                    || die "invalid group ".$groupname;
+        my $g = qsearchs('radius_group', { 'groupname' => $groupname } );
+        unless ( $g ) {
+            $g = new FS::radius_group {
+                            'groupname' => $groupname,
+                            'description' => $groupname,
+                            };
+            $error = $g->insert;
+            die $error if $error;
+        }
         push @groupnums, $g->groupnum;
     }
     $col->columnvalue(join(',',@groupnums));
-    my $error = $col->replace;
+    $error = $col->replace;
     die $error if $error;
   }
 
