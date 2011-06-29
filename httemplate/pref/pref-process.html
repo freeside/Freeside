@@ -73,4 +73,14 @@ unless ( $error ) { # if ($access_user) {
 
 }
 
+if ( !$error and ($FS::TicketSystem::system || '') eq 'RT_Internal' ) {
+  # sync RT user locale on every update
+  my $locale = $access_user->option('locale');
+  FS::TicketSystem->init;
+  my $UserObj = FS::TicketSystem->session('')->{'CurrentUser'}->UserObj;
+  # Bypass RT ModifySelf ACL
+  $UserObj->CurrentUser( RT::SystemUser );
+  my ($val, $msg) = $UserObj->SetLang($locale);
+  $error = $msg if !$val;
+}
 </%init>

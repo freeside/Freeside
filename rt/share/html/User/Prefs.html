@@ -74,10 +74,10 @@
     <td class="label"><&|/l&>Nickname</&>:</td>
     <td class="value"><input name="NickName" value="<%$UserObj->NickName || ''%>" /></td>
   </tr>
-  <tr>
-    <td class="label"><&|/l&>Language</&>:</td>
-    <td class="value"><& /Elements/SelectLang, Name => 'Lang', Default => $UserObj->Lang &></td>
-  </tr>
+%#  <tr>
+%#    <td class="label"><&|/l&>Language</&>:</td>
+%#    <td class="value"><& /Elements/SelectLang, Name => 'Lang', Default => $UserObj->Lang &></td>
+%#  </tr>
   <tr>
     <td class="label"><&|/l&>Timezone</&>:</td>
     <td class="value"><& /Elements/SelectTimezone, Name => 'Timezone', Default => $UserObj->Timezone &></td>
