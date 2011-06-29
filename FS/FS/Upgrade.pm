@@ -193,6 +193,7 @@ sub upgrade_data {
 
     # migrate to radius_group and groupnum instead of groupname
     'radius_usergroup' => [],
+    'part_svc'         => [],
 
   ;
 

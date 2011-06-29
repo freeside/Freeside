@@ -308,7 +308,7 @@ function randomPass() {
 <TR>
   <TD ALIGN="right"><% mt('RADIUS groups') |h %></TD>
 % if ( $part_svc_usergroup->columnflag eq 'F' ) { 
-    <TD BGCOLOR="#eeeeee"><% join('<BR>', @groups) %></TD>
+    <TD BGCOLOR="#eeeeee"><% join('<BR>', @groupnames) %></TD>
 % } else { 
 %   my $radius_group_selected = '';
 %   if ( $svc_acct->svcnum ) {
@@ -449,8 +449,13 @@ unless ( $svcnum || $cgi->param('error') ) { #adding
 
 my $part_svc_usergroup = $part_svc->part_svc_column('usergroup');
 #fixed radius groups always override & display
+my @groupnames; # only used for display of Fixed RADIUS groups
 if ( $part_svc_usergroup->columnflag eq 'F' ) {
-  @groups = split(',', $part_svc_usergroup->columnvalue);
+  @groups = split(',',$part_svc_usergroup->columnvalue);
+  @groupnames = map { $_->description . " (" . $_->groupname . ")" } 
+                    qsearch({ 'table'         => 'radius_group',
+                           'extra_sql'     => "where groupnum in (".$part_svc_usergroup->columnvalue.")",
+                        });
 }
 
 my $action = $svcnum ? 'Edit' : 'Add';

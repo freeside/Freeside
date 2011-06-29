@@ -867,6 +867,26 @@ sub process_bulk_cust_svc {
 
 }
 
+sub _upgrade_data {  #class method
+  my ($class, %opts) = @_;
+
+  my @part_svc_column = qsearch('part_svc_column', { 'columnname' => 'usergroup' });
+  foreach my $col ( @part_svc_column ) {
+    next if $col->columnvalue =~ /^[\d,]+$/ || !$col->columnvalue;
+    my @groupnames = split(',',$col->columnvalue);
+    my @groupnums;
+    foreach my $groupname ( @groupnames ) {
+        my $g = qsearchs('radius_group', { 'groupname' => $groupname } )
+                    || die "invalid group ".$groupname;
+        push @groupnums, $g->groupnum;
+    }
+    $col->columnvalue(join(',',@groupnums));
+    my $error = $col->replace;
+    die $error if $error;
+  }
+
+}
+
 =head1 BUGS
 
 Delete is unimplemented.
