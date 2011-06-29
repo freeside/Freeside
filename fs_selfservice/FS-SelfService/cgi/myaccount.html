@@ -59,7 +59,7 @@ Hello <%= $name %>!<BR><BR>
   if ( @support_services ) {
     $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
             '<TR><TH BGCOLOR="#ff6666" COLSPAN="3">Support Time Remaining</TH>'.
-            '</TR><TR><TH ALIGN="left">#</TH><TH>Package</TH>'.
+            '</TR><TR><TH>Package</TH><TH></TH>'.
             '<TH>Time Remaining</TH></TR>';
     my $col1 = "ffffff";
     my $col2 = "dddddd";
@@ -70,9 +70,10 @@ Hello <%= $name %>!<BR><BR>
       my $a = qq!<A HREF="${url}view_support_details;svcnum=!.
               $support->{'svcnum'}. '">';
       $OUT .=
-        "<TR>$td$a". $support->{'pkgnum'}. "</A></TD>".
-        $td.$a. $support->{'pkg'}. "</A></TD>".
-        $td.$a. $support->{'time'}. "</A></TD>".
+        "<TR>".
+          $td.$a. $support->{'pkg'}. "</A></TD>".
+          $td.'&nbsp;</TD>'.
+          $td.$a. $support->{'time'}. "</A></TD>".
         '</TR>';
       $col = $col eq $col1 ? $col2 : $col1;
     }
@@ -82,6 +83,11 @@ Hello <%= $name %>!<BR><BR>
   }
 %>
 
-<%= include('ticket_summary') if @tickets %> 
+<%= if ( @tickets) {
+      $OUT .= include('ticket_summary');
+    } else {
+      $OUT .= '';
+    }
+%>
 
 <%= include('footer') %>

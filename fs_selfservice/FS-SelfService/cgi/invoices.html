@@ -13,7 +13,7 @@
       my $td = qq!<TD BGCOLOR="#$col">!;
       my $a=qq!<A HREF="${url}view_invoice;invnum=!. $invoice->{'invnum'}. '">';
       $OUT .=
-        "<TR>$td${a}Invoice #". $invoice->{'invnum'}. "</A></TD>$td</TD>".
+        "<TR>$td${a}Invoice #". $invoice->{'invnum'}. "</A></TD>$td&nbsp;</TD>".
         "$td$a". $invoice->{'date'}. "</A></TD>$td</TD>".
         '</TR>';
       $col = $col eq $col1 ? $col2 : $col1;
