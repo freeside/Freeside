@@ -38,14 +38,22 @@ my @header = ();
 my @fields = ();
 my @links  = ();
 my $align  = '';
+my $group_by = '';
+my $match = '';
 
 if (1) { #commission reports
 
   if (1) { #employee commission reports 
 
-    $select = 'DISTINCT usernum, username, part_pkg.*';
+    $group_by = join(', ', ( map "access_user.$_", qw( usernum username    ) ),
+                           ( map "part_pkg.$_",    qw( pkgpart pkg comment ) ),
+                    );
+
+    $select = $group_by;
 
     $addl_from .= ' CROSS JOIN access_user ';
+
+    $match = 'cust_pkg.usernum = access_user.usernum';
 
     if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
 
@@ -70,6 +78,8 @@ if (1) { #commission reports
 
   } elsif (0) { #agent commission reports
 
+    $match = 'cust_main.agentnum = agent.agentnum'; #XXX need to join to this
+
     if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 
       #agent virt
@@ -91,6 +101,13 @@ if (1) { #commission reports
 
   }
 
+  $addl_from .= "
+    LEFT JOIN cust_pkg ON ( part_pkg.pkgpart = cust_pkg.pkgpart
+                              AND $match )
+    LEFT JOIN cust_bill_pkg USING ( pkgnum )
+    LEFT JOIN cust_bill USING ( invnum )
+  ";
+
   $title .= ' commission report';
   $name = "commissionable $name";
 
@@ -106,40 +123,17 @@ if (1) { #commission reports
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
-  my $match = '';
-  if (1) { #employee commission reports 
-    $match = 'cust_pkg.usernum = access_user.usernum';
-  } elsif (0) { #agent commission reports
-    $match = 'cust_main.agentnum = agent.agentnum';
-  }
-
-  my $from_cust_bill_pkg_where = "FROM cust_bill_pkg
-                                      LEFT JOIN cust_bill USING ( invnum )
-                                      LEFT JOIN cust_pkg  USING ( pkgnum )
-                                    WHERE cust_bill_pkg.pkgnum > 0
-                                      AND cust_bill._date >= $beginning
-                                      AND cust_bill._date <= $ending         ";
-  my $and = "                         AND $match
-                                      AND cust_pkg.pkgpart = part_pkg.pkgpart";
-
-  push @where, "EXISTS( SELECT 1 $from_cust_bill_pkg_where $and )";
+  my $where = "WHERE cust_bill_pkg.pkgnum > 0
+                 AND cust_bill._date >= $beginning
+                 AND cust_bill._date <= $ending         ";
+  my $and = "    AND $match
+                 AND cust_pkg.pkgpart = part_pkg.pkgpart";
 
   push @header, '#'; # of sales';
   push @links, ''; #link to detail report
   $align .= 'r';
   push @fields, 'num_cust_pkg';
-  $select .= ", ( SELECT COUNT(DISTINCT pkgnum)
-                    $from_cust_bill_pkg_where $and )
-                AS num_cust_pkg";
-#  push @fields, sub {
-#    my $part_pkg = shift;
-#    my $sql =
-#      #"SELECT COUNT( SELECT DISTINCT pkgnum $from_cust_bill_pkg_where )";
-#      "SELECT COUNT(DISTINCT pkgnum) $from_cust_bill_pkg_where";
-#    my $sth = dbh->prepare($sql) or die dbh->errstr;
-#    $sth->execute or die $sth->errstr;
-#    $sth->fetchrow_arrayref->[0];
-#  };
+  $select .= ", COUNT(DISTINCT cust_pkg.pkgnum) AS num_cust_pkg";
 
   push @header, 'Sales';
   push @links, ''; #link to detail report
@@ -149,7 +143,12 @@ if (1) { #commission reports
 #    ", SUM( SELECT setup+recur $from_cust_bill_pkg_where ) AS pkg_sales";
   push @fields, sub {
     my $part_pkg = shift;
-    my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $from_cust_bill_pkg_where AND pkgpart = ? AND ";
+    my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur)".
+#              " FROM cust_bill_pkg $addl_from $where AND pkgpart = ? AND ";
+              " FROM cust_bill_pkg
+                LEFT JOIN cust_pkg  USING ( pkgnum )
+                LEFT JOIN cust_bill USING ( invnum )
+                $where AND pkgpart = ? AND ";
     my @arg = ($part_pkg->pkgpart);
     if (1) { #employee commission reports 
       $sql .= 'usernum = ?';
@@ -206,6 +205,7 @@ push @order_by, 'pkgpart'; #pkg?
 
 $select ||= 'part_pkg.*';
 my $extra_sql = scalar(@where) ? 'WHERE ' . join(' AND ', @where) : ''; 
+$extra_sql .= "GROUP BY $group_by" if $group_by;
 my $order_by = join(', ', @order_by);
 
 my $count_query = "SELECT COUNT(*) FROM part_pkg $addl_from $extra_sql";
