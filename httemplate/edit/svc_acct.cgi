@@ -455,7 +455,7 @@ if ( $part_svc_usergroup->columnflag eq 'F' ) {
   @groupnames = map { $_->description . " (" . $_->groupname . ")" } 
                     qsearch({ 'table'         => 'radius_group',
                            'extra_sql'     => "where groupnum in (".$part_svc_usergroup->columnvalue.")",
-                        });
+                        }) if length($part_svc_usergroup->columnvalue);
 }
 
 my $action = $svcnum ? 'Edit' : 'Add';
