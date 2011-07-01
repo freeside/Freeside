@@ -452,7 +452,7 @@ my $part_svc_usergroup = $part_svc->part_svc_column('usergroup');
 my @groupnames; # only used for display of Fixed RADIUS groups
 if ( $part_svc_usergroup->columnflag eq 'F' ) {
   @groups = split(',',$part_svc_usergroup->columnvalue);
-  @groupnames = map { $_->description . " (" . $_->groupname . ")" } 
+  @groupnames = map { $_->long_description } 
                     qsearch({ 'table'         => 'radius_group',
                            'extra_sql'     => "where groupnum in (".$part_svc_usergroup->columnvalue.")",
                         }) if length($part_svc_usergroup->columnvalue);

@@ -207,8 +207,16 @@ Click on a configuration value to change it.
 
             <tr>
               <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
+%               if ( $i->multiple ) {
+                    <% join('<BR>',
+                        map { $_ . ": " . &{ $i->option_sub }($_) }
+                                            $conf->config($i->key,$agentnum)
+                        )
+                    %>
+%               } else {
                 <% $conf->config($i->key, $agentnum) %>: 
                 <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) %>
+%               }
               </td>
             </tr>
 

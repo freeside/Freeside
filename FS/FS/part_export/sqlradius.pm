@@ -14,6 +14,7 @@ use Carp qw( cluck );
 
 $DEBUG = 0;
 
+my %groups;
 tie %options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
   'username' => { label=>'Database username' },
@@ -47,7 +48,21 @@ tie %options, 'Tie::IxHash',
     type  => 'checkbox',
     label => 'Show the Called-Station-ID on session reports',
   },
-  'overlimit_groups' => { label => 'Radius groups to assign to svc_acct which has exceeded its bandwidth or time limit (if not overridden by overlimit_groups global or per-agent config)', } ,
+  'overlimit_groups' => {
+      label => 'Radius groups to assign to svc_acct which has exceeded its bandwidth or time limit (if not overridden by overlimit_groups global or per-agent config)', 
+      type  => 'select',
+      multi => 1,
+      option_label  => sub {
+        $groups{$_[0]};
+      },
+      option_values => sub {
+        %groups = (
+              map { $_->groupnum, $_->long_description } 
+                  qsearch('radius_group', {}),
+            );
+            sort keys (%groups);
+      },
+   } ,
   'groups_susp_reason' => { label =>
                              'Radius group mapping to reason (via template user) (svcnum|username|username@domain  reasonnum|reason)',
                             type  => 'textarea',

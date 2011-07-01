@@ -2856,8 +2856,21 @@ and customer address. Include units.',
     'key'         => 'overlimit_groups',
     'section'     => '',
     'description' => 'RADIUS group (or comma-separated groups) to assign to svc_acct which has exceeded its bandwidth or time limit.',
-    'type'        => 'text',
+    'type'        => 'select-sub',
     'per_agent'   => 1,
+    'multiple'    => 1,
+    'options_sub' => sub { require FS::Record;
+                           require FS::radius_group;
+			   map { $_->groupnum => $_->long_description }
+                               FS::Record::qsearch('radius_group', {} );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::radius_group;
+			   my $radius_group = FS::Record::qsearchs(
+			     'radius_group', { 'groupnum' => shift }
+			   );
+               $radius_group ? $radius_group->long_description : '';
+			 },
   },
 
   {

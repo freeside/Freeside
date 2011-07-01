@@ -6,7 +6,7 @@ use Exporter;
 use Tie::IxHash;
 use FS::UID qw( dbh driver_name );
 use FS::Conf;
-use FS::Record qw(qsearchs str2time_sql);
+use FS::Record qw(qsearchs qsearch str2time_sql);
 
 use FS::svc_domain;
 $FS::svc_domain::whois_hack = 1;
@@ -47,6 +47,35 @@ sub upgrade_config {
     if $conf->exists('payment_receipt_email')
     || $conf->config('payment_receipt_msgnum');
 
+  upgrade_overlimit_groups($conf);
+  map { upgrade_overlimit_groups($conf,$_->agentnum) } qsearch('agent', {});
+  
+}
+
+sub upgrade_overlimit_groups {
+    my $conf = shift;
+    my $agentnum = shift;
+    my @groups = $conf->config('overlimit_groups',$agentnum); 
+    if(scalar(@groups)) {
+        my $groups = join(',',@groups);
+        my @groupnums;
+        my $error = '';
+        if ( $groups !~ /^[\d,]+$/ ) {
+            foreach my $groupname ( @groups ) {
+                my $g = qsearchs('radius_group', { 'groupname' => $groupname } );
+                unless ( $g ) {
+                    $g = new FS::radius_group {
+                                    'groupname' => $groupname,
+                                    'description' => $groupname,
+                                    };
+                    $error = $g->insert;
+                    die $error if $error;
+                }
+                push @groupnums, $g->groupnum;
+            }
+            $conf->set('overlimit_groups',join("\n",@groupnums),$agentnum);
+        }
+    }
 }
 
 =item upgrade
@@ -194,6 +223,7 @@ sub upgrade_data {
     # migrate to radius_group and groupnum instead of groupname
     'radius_usergroup' => [],
     'part_svc'         => [],
+    'part_export'      => [],
 
   ;
 

@@ -431,6 +431,34 @@ sub export_info {
   my $r = { map { %{$exports{$_}} } keys %exports };
 }
 
+
+sub _upgrade_data {  #class method
+  my ($class, %opts) = @_;
+
+  my @part_export_option = qsearch('part_export_option', { 'optionname' => 'overlimit_groups' });
+  foreach my $opt ( @part_export_option ) {
+    next if $opt->optionvalue =~ /^[\d\s]+$/ || !$opt->optionvalue;
+    my @groupnames = split(' ',$opt->optionvalue);
+    my @groupnums;
+    my $error = '';
+    foreach my $groupname ( @groupnames ) {
+        my $g = qsearchs('radius_group', { 'groupname' => $groupname } );
+        unless ( $g ) {
+            $g = new FS::radius_group {
+                            'groupname' => $groupname,
+                            'description' => $groupname,
+                            };
+            $error = $g->insert;
+            die $error if $error;
+        }
+        push @groupnums, $g->groupnum;
+    }
+    $opt->optionvalue(join(' ',@groupnums));
+    $error = $opt->replace;
+    die $error if $error;
+  }
+}
+
 #=item exporttype2svcdb EXPORTTYPE
 #
 #Returns the applicable I<svcdb> for an I<exporttype>.

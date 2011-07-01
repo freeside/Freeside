@@ -2227,20 +2227,19 @@ sub _op_overlimit {
 
   my $cust_pkg = $self->cust_svc->cust_pkg;
 
-  my $conf_overlimit =
+  my @conf_overlimit =
     $cust_pkg
       ? $conf->config('overlimit_groups', $cust_pkg->cust_main->agentnum )
       : $conf->config('overlimit_groups');
 
   foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
 
-    my $groups = $conf_overlimit || $part_export->option('overlimit_groups');
-    next unless $groups;
-
-    my $gref = &{ $self->_fieldhandlers->{'usergroup'} }( $self, $groups );
+    my @groups = scalar(@conf_overlimit) ? @conf_overlimit
+                                         : split(' ',$part_export->option('overlimit_groups'));
+    next unless scalar(@groups);
 
     my $other = new FS::svc_acct $self->hashref;
-    $other->usergroup( $gref );
+    $other->usergroup(\@groups);
 
     my($new,$old);
     if ($action eq 'suspend') {

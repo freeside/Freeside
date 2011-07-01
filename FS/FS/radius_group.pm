@@ -112,6 +112,19 @@ sub check {
   $self->SUPER::check;
 }
 
+=item long_description
+
+Returns a description for this group consisting of its description field, 
+if any, and the RADIUS group name.
+
+=cut
+
+sub long_description {
+    my $self = shift;
+    $self->description ? $self->description . " (". $self->groupname . ")"
+                       : $self->groupname;
+}
+
 =back
 
 =head1 BUGS

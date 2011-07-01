@@ -10,7 +10,7 @@
 
 my %opt = @_;
 
-my %groups = map { $_->groupnum => $_->description . " (" . $_->groupname . ")" }
+my %groups = map { $_->groupnum => $_->long_description }
                                                     qsearch('radius_group', {});
 my @sel_groups = split(/,/,$opt{'curr_value'});
 
