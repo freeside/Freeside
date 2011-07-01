@@ -1,0 +1,39 @@
+<% include('/elements/header.html', 'Employee audit report' ) %>
+
+<FORM ACTION="employee_audit.html" METHOD="GET">
+    <TABLE>
+        <% include( '/elements/tr-select-user.html' ) %>
+        <% include( '/elements/tr-input-beginning_ending.html', ) %>
+
+        <% include( '/elements/tr-td-label.html', label => 'Include:' ) %>
+        <TD>
+            <% map { include('/elements/checkbox.html', 
+                                field => $_, id => $_, postfix => $tables{$_} )
+                        . "<BR>"
+                   } keys(%tables)
+            %>
+        </TD>
+        </TR>
+
+    </TABLE>
+<INPUT TYPE="submit" VALUE="Get Report">
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my %tables = (
+    cust_pay        => 'Payments',
+    cust_refund     => 'Refunds',
+    cust_credit     => 'Credits',
+    cust_bill       => 'Invoices',
+    cust_main       => 'Customers',
+    cust_pkg        => 'Packages',
+    cust_main_invoice => 'Customer invoice destinations',
+    cust_pkg_discount => 'Discount applications',
+);
+
+</%init>

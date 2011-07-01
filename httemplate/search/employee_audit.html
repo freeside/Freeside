@@ -1,0 +1,45 @@
+<% include("/elements/header.html", "Employee Audit Report") %>
+<% include("/elements/change_history_common.html", 
+    'history'   => \@history,
+    'tables'    => \%tables,
+    ) %>
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my %tables = (
+    cust_pay        => 'Payments',
+    cust_refund     => 'Refunds',
+    cust_credit     => 'Credits',
+    cust_bill       => 'Invoices',
+    cust_main       => 'Customers',
+    cust_pkg        => 'Packages',
+    cust_main_invoice => 'Customer invoice destinations',
+    cust_pkg_discount => 'Discount applications',
+);
+
+my $history_user = ($cgi->param('usernum') && $cgi->param('usernum') =~ /^(\d+)$/) 
+                    ? qsearchs('access_user', { 'usernum' => $1 } )
+                    : '';
+$history_user = $history_user->username if $history_user;
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+
+my @checked_tables = grep { defined($cgi->param($_)) } keys(%tables);
+
+my @history;
+foreach my $table ( @checked_tables ) {
+  my @extra_sql;
+  push @extra_sql, "history_user = '$history_user'" if $history_user;
+  push @extra_sql, "history_date >= $beginning" if $beginning;
+  push @extra_sql, "history_date <= $ending" if $ending;
+  my @items = qsearch({
+    'table'     => "h_$table",
+    'extra_sql' => scalar(@extra_sql) ? "WHERE ".join(' AND ',@extra_sql) : '',
+  });
+  push @history, @items;
+}
+
+</%init>

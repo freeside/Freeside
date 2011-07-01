@@ -13,113 +13,13 @@
 %   $cgi->param('change_history-years', $chy);
 % }
 
-<% include("/elements/table-grid.html") %>
-% my $bgcolor1 = '#eeeeee';
-%   my $bgcolor2 = '#ffffff';
-%   my $bgcolor = '';
+<% include("/elements/change_history_common.html",
+        'history'   => \@history,
+        'tables'    => \%tables,
+        'single_cust'   => 1,
+    ) %>
 
-<TR>
-  <TH CLASS="grid" BGCOLOR="#cccccc">User</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Item</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Action</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Description</TH>
-</TR>
-
-% foreach my $item ( sort { $a->history_date <=> $b->history_date
-%                           #|| table order
-%                           || $a->historynum <=> $b->historynum
-%                         }
-%                         @history
-%                  )
-% {
-%
-%   my $history_other = '';
-%   my $act  = $item->history_action;
-%   if ( $act =~ /^replace/ ) {
-%     my $pkey = $item->primary_key;
-%     my $date = $item->history_date;
-%     $history_other = qsearchs({
-%       'table'     => $item->table,
-%       'hashref'   => { $pkey            => $item->$pkey(),
-%                        'history_action' => $replace_other{$act},
-%                        'historynum'     => { 'op'    => $replace_dir{$act},
-%                                              'value' => $item->historynum
-%                                            },
-%                      },
-%       'extra_sql' => "
-%         AND history_date $replace_direq{$act} $date
-%         AND ($date $replace_op{$act} $fuzz) $replace_direq{$act} history_date
-%         ORDER BY historynum $replace_ord{$act} LIMIT 1
-%       ",
-%     });
-%   }
-%
-%   if ( $bgcolor eq $bgcolor1 ) {
-%     $bgcolor = $bgcolor2;
-%   } else {
-%     $bgcolor = $bgcolor1;
-%   }
-
-  <TR>
-    <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     my $otaker = $item->history_user;
-%     $otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
-%     $otaker = '<i>customer self-service</i>' if $otaker eq 'fs_selfservice';
-%     $otaker = '<i>job queue</i>'             if $otaker eq 'fs_queue';
-      <% $otaker %>
-    </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     my $d = time2str('%b %o, %Y', $item->history_date );
-%     $d =~ s/ /&nbsp;/g;
-      <% $d %>
-    </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     my $t = time2str('%r', $item->history_date );
-%     $t =~ s/ /&nbsp;/g;
-      <% $t %>
-    </TD>
-    <TD ALIGN="center" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-%     my $label = $h_tables{$item->table};
-%     $label = &{ $h_table_labelsub{$item->table} }( $item, $label )
-%       if $h_table_labelsub{$item->table};
-      <% $label %>
-    </TD>
-    <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <% $action{$item->history_action} %>
-    </TD>
-    <TD ALIGN="left" CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <% join(', ',
-           map  { my $value = ( $_ =~ /(^pay(info|cvv)|^ss|_password)$/ ) 
-                                ? 'N/A'
-                                : $item->get($_);
-                  $value = time2str($cust_pkg_date_format, $value)
-                   if $item->table eq 'h_cust_pkg'
-                   && $cust_pkg_date_fields{$_}
-                   && $value;
-
-                  $value = substr($value, 0, 77).'...' if length($value) > 80;
-                  $value = encode_entities($value);
-                  "<I>$_</I>:<B>$value</B>";
-                }
-           grep { $history_other
-                    ? ( $item->get($_) ne $history_other->get($_) )
-                    : ( $item->get($_) =~ /\S/ )
-                }
-           grep { ! /^(history|custnum$)/i }
-                $item->fields
-         )
-      %>
-    </TD>
-  </TR>
-
-% }
-
-</TABLE>
-<%once>
-
-# length-switching 
+<%init>
 
 tie my %years, 'Tie::IxHash',
     .5 => '6 months',
@@ -128,42 +28,6 @@ tie my %years, 'Tie::IxHash',
    5  => '5 years',
   39  => 'all history',
 ;
-
-# labeling history rows
-
-my %action = (
-  'insert'      => 'Insert', #'Create',
-  'replace_old' => 'Change&nbsp;from',
-  'replace_new' => 'Change&nbsp;to',
-  'delete'      => 'Remove',
-);
-
-# finding the other replace row
-
-my %replace_other = (
-  'replace_new' => 'replace_old',
-  'replace_old' => 'replace_new',
-);
-my %replace_dir = (
-  'replace_new' => '<',
-  'replace_old' => '>',
-);
-my %replace_direq = (
-  'replace_new' => '<=',
-  'replace_old' => '>=',
-);
-my %replace_op = (
-  'replace_new' => '-',
-  'replace_old' => '+',
-);
-my %replace_ord = (
-  'replace_new' => 'DESC',
-  'replace_old' => 'ASC',
-);
-
-my $fuzz = 5; #seems like a lot
-
-# which tables to search and what to call them
 
 tie my %tables, 'Tie::IxHash',
   'cust_main'         => 'Customer',
@@ -196,32 +60,6 @@ my %table_join = (
   'phone_device'     => $svc_join,
 );
 
-my %h_tables = map { ( "h_$_" => $tables{$_} ) } keys %tables;
-
-my %pkgpart = ();
-my $pkg_labelsub = sub {
-  my($item, $label) = @_;
-  $pkgpart{$item->pkgpart} ||= $item->part_pkg->pkg;
-  $label. ': <b>'. encode_entities($pkgpart{$item->pkgpart}). '</b>';
-};
-
-my $svc_labelsub = sub {
-  my($item, $label) = @_;
-  $label. ': <b>'. encode_entities($item->label($item->history_date)). '</b>';
-};
-
-my %h_table_labelsub = (
-  'h_cust_pkg'      => $pkg_labelsub,
-  'h_svc_acct'      => $svc_labelsub,
-  #'h_radius_usergroup' =>
-  'h_svc_domain'    => $svc_labelsub,
-  'h_svc_www'       => $svc_labelsub,
-  'h_svc_forward'   => $svc_labelsub,
-  'h_svc_broadband' => $svc_labelsub,
-  'h_svc_external'  => $svc_labelsub,
-  'h_svc_phone'     => $svc_labelsub,
-  #'h_phone_device'
-);
 
 # cust_main
 # cust_main_invoice
@@ -259,8 +97,6 @@ my %h_table_labelsub = (
 # cust_location?
 # cust_main-exemption?? (295.ca named tax exemptions)
 
-</%once>
-<%init>
 
 my( $cust_main ) = @_;
 
@@ -270,16 +106,6 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access deined"
   unless $curuser->access_right('View customer history');
-
-my $cust_pkg_date_format = '%b %o, %Y';
-$cust_pkg_date_format .= ' %l:%M:%S%P'
-  if $conf->exists('cust_pkg-display_times')
-  || $curuser->option('cust_pkg-display_times');
-
-my %cust_pkg_date_fields = map { $_=>1 } qw(
-  start_date setup bill last_bill susp adjourn cancel expire contract_end
-  change_date
-);
 
 # find out the beginning of this customer history, if possible
 my $h_insert = qsearchs({
