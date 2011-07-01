@@ -193,11 +193,6 @@ The I<from_addr> field in the template takes precedence over this.
 Destination address.  The default is to use the customer's 
 invoicing_list addresses.  Multiple addresses may be comma-separated.
 
-=item preview
-
-Set to true when preparing a message for previewing, rather than to actually 
-send it.  This turns off logging.
-
 =back
 
 =cut
@@ -318,16 +313,16 @@ sub prepare {
     $from_addr ||= scalar( $conf->config('invoice_from',
                                          $cust_main->agentnum) );
   }
-  my @cust_msg = ();
-  if ( $conf->exists('log_sent_mail') and !$opt{'preview'} ) {
-    my $cust_msg = FS::cust_msg->new({
-        'custnum' => $cust_main->custnum,
-        'msgnum'  => $self->msgnum,
-        'status'  => 'prepared',
-      });
-    $cust_msg->insert;
-    @cust_msg = ('cust_msg' => $cust_msg);
-  }
+#  my @cust_msg = ();
+#  if ( $conf->exists('log_sent_mail') and !$opt{'preview'} ) {
+#    my $cust_msg = FS::cust_msg->new({
+#        'custnum' => $cust_main->custnum,
+#        'msgnum'  => $self->msgnum,
+#        'status'  => 'prepared',
+#      });
+#    $cust_msg->insert;
+#    @cust_msg = ('cust_msg' => $cust_msg);
+#  }
 
   (
     'custnum' => $cust_main->custnum,
@@ -339,7 +334,6 @@ sub prepare {
     'html_body' => $body,
     'text_body' => HTML::FormatText->new(leftmargin => 0, rightmargin => 70
                     )->format( HTML::TreeBuilder->new_from_content($body) ),
-    @cust_msg,
   );
 
 }

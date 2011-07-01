@@ -76,7 +76,7 @@
 
       <SCRIPT>
         function areyousure(href) {
-          return confirm("Send this notice to <% $num_cust %> customers?");
+          return confirm("Send this notice to <% ($num_cust > 1) ? "$num_cust customers" : '1 customer' %> ?");
         }
       </SCRIPT>
 
@@ -107,18 +107,22 @@ Template:
     <% include('/elements/tr-input-text.html',
                  'field' => 'from',
                  'label' => 'From:',
+                 'size'  => 50,
               )
     %>
 
     <% include('/elements/tr-input-text.html',
                  'field' => 'subject',
                  'label' => 'Subject:',
+                 'size'  => 50,
               )
     %>
 
     <TR>
-      <TD ALIGN="right" VALIGN="top">Message: </TD>
-      <TD><% include('/elements/htmlarea.html', 'field'=>'html_body') %></TD>
+      <TD ALIGN="right" VALIGN="top" STYLE="padding-top:3px">Message: </TD>
+      <TD><& '/elements/htmlarea.html', 
+              'field' => 'html_body',
+              'width' => 600 &></TD>
     </TR>
 
   </TABLE>
@@ -160,7 +164,7 @@ else {
   @search{keys %search} = map { /\0/ ? [ split /\0/, $_ ] : $_ } values %search;
 } 
 
-my $title = 'Send bulk customer notices';
+my $title = 'Send customer notices';
 
 my $num_cust;
 my $from = $cgi->param('from') || '';
@@ -185,8 +189,9 @@ if ( $cgi->param('action') eq 'preview' ) {
         or die "template not found: ".$cgi->param('msgnum');
     $sql_query->{'extra_sql'} .= ' LIMIT 1';
     $sql_query->{'order_by'} = '';
-    my $cust = qsearchs($sql_query)->cust_main;
-    my %message = $msg_template->prepare( 'cust_main' => $cust, 'preview' => 1 );
+    my $object = qsearchs($sql_query);
+    my $cust = $object->cust_main;
+    my %message = $msg_template->prepare( 'cust_main' => $cust );
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
 }

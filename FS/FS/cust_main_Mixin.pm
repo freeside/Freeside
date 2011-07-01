@@ -408,9 +408,6 @@ sub email_search_result {
       or die "msgnum $msgnum not found\n";
   }
 
-  $param->{'payby'} = [ split(/\0/, $param->{'payby'}) ]
-    unless ref($param->{'payby'});
-
   my $sql_query = $class->search($param->{'search'});
 
   my $count_query   = delete($sql_query->{'count_query'});
@@ -463,15 +460,16 @@ sub email_search_result {
       @message = $msg_template->prepare( 'cust_main' => $cust_main );
     }
     else {
-      my $to = $cust_main->invoicing_list_emailonly_scalar;
-      next if !$to;
+      my @to = $cust_main->invoicing_list_emailonly;
+      next if !@to;
 
       @message = (
         'from'      => $from,
-        'to'        => $to,
+        'to'        => \@to,
         'subject'   => $subject,
         'html_body' => $html_body,
         'text_body' => $text_body,
+        'custnum'   => $cust_main->custnum,
       );
     } #if $msg_template
 

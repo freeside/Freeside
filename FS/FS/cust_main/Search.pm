@@ -471,6 +471,33 @@ sub search {
   my @where = ();
   my $orderby;
 
+  # initialize these to prevent warnings
+  $params = {
+    'custnum'       => '',
+    'agentnum'      => '',
+    'usernum'       => '',
+    'status'        => '',
+    'address'       => '',
+    'paydate_year'  => '',
+    'invoice_terms' => '',
+    'custbatch'     => '',
+    %$params
+  };
+
+  ##
+  # explicit custnum(s)
+  ##
+
+  if ( $params->{'custnum'} ) {
+    my @custnums = ref($params->{'custnum'}) ? 
+                      @{ $params->{'custnum'} } : 
+                      $params->{'custnum'};
+    push @where, 
+      'cust_main.custnum IN (' . 
+      join(',', map { $_ =~ /^(\d+)$/ ? $1 : () } @custnums ) .
+      ')' if scalar(@custnums) > 0;
+  }
+
   ##
   # parse agent
   ##

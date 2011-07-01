@@ -97,6 +97,17 @@ function areyousure(href, message) {
 % $br=1;
   <A HREF="<% $p %>search/cust_event.html?custnum=<% $custnum %>"><% mt('View billing events for this customer') |h %></A>
 % }
+% 
+% my $email_link = ($cust_main->invoicing_list_emailonly) && 
+%   include('/elements/email-link.html',
+%            'table' => 'cust_main', 
+%            'search_hash' => { 'custnum' => $custnum },
+%            'label' => 'Email a notice to this customer',
+% );
+% if ( $email_link and $br ) {
+ | 
+% }
+<% $email_link || '' %>
 
 % if ( $conf->config('cust_main-external_links') ) {
     <% $br++ ? ' | ' : '' %>

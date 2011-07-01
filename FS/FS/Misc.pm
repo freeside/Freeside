@@ -89,10 +89,14 @@ encoding which, if specified, overrides the default "7bit".
 
 (optional) type parameter for multipart/related messages
 
-=item cust_msg
+=item custnum
 
-(optional) L<FS::cust_msg> object.  If provided, it will be updated 
-with the message envelope information, contents, and server response.
+(optional) L<FS::cust_main> key; if passed, the message will be logged
+(if logging is enabled) with this custnum.
+
+=item msgnum
+
+(optional) L<FS::msg_template> key, for logging.
 
 =back
 
@@ -255,18 +259,20 @@ sub send_email {
   }
 
   # Logging
-  my $cust_msg = $options{'cust_msg'};
-  if ( $cust_msg ) {
-    $cust_msg->env_from($options{from});
-    $cust_msg->env_to(join(",", @to));
-    $cust_msg->header($message->header_as_string);
-    $cust_msg->body($message->body_as_string);
-    $cust_msg->_date($time);
-    $cust_msg->error($error);
-    $cust_msg->status( $error ? 'failed' : 'sent' );
-    $cust_msg->replace;
-  };
-  return $error;
+  if ( $conf->exists('log_sent_mail') and $options{'custnum'} ) {
+    my $cust_msg = FS::cust_msg->new({
+        'env_from'  => $options{'from'},
+        'env_to'    => join(', ', @to),
+        'header'    => $message->header_as_string,
+        'body'      => $message->body_as_string,
+        '_date'     => $time,
+        'error'     => $error,
+        'custnum'   => $options{'custnum'},
+        'msgnum'    => $options{'msgnum'},
+        'status'    => ($error ? 'failed' : 'sent'),
+    });
+    $cust_msg->insert; # ignore errors
+  }
    
 }
 
@@ -302,9 +308,9 @@ Will be placed inside an HTML <BODY> tag.
 
 Email body (Text alternative).  Arrayref of lines, or scalar.
 
-=item cust_msg (optional)
+=item custnum, msgnum (optional)
 
-An L<FS::cust_msg> object.  Will be passed through to send_email.
+Customer and template numbers, passed through to send_email for logging.
 
 =back
 
@@ -322,21 +328,9 @@ sub generate_email {
 
   my $me = '[FS::Misc::generate_email]';
 
-  my %return = (
-    'from'    => $args{'from'},
-    'to'      => $args{'to'},
-    'bcc'     => $args{'bcc'},
-    'subject' => $args{'subject'},
-    'cust_msg'=> $args{'cust_msg'},
-  );
-
-  #if (ref($args{'to'}) eq 'ARRAY') {
-  #  $return{'to'} = $args{'to'};
-  #} else {
-  #  $return{'to'} = [ grep { $_ !~ /^(POST|FAX)$/ }
-  #                         $self->cust_main->invoicing_list
-  #                  ];
-  #}
+  my @fields = qw(from to bcc subject custnum msgnum);
+  my %return;
+  @return{@fields} = @args{@fields};
 
   warn "$me creating HTML/text multipart message"
     if $DEBUG;

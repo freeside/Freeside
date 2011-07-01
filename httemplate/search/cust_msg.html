@@ -16,7 +16,9 @@
                        $date ? time2str('%Y-%m-%d %T',$_[0]->_date) : '' 
                      },
                      'msgname',
-                     'env_to',
+                     sub {
+                       join('<BR>', split(/,\s*/, $_[0]->env_to) )
+                     },
                      'status',
                      sub { encode_entities($_[0]->error) },
                   ],
@@ -83,7 +85,6 @@ my $sub_popup_link = sub {
 };
 
 my %color = (
-  'prepared' => '0000FF',
   'failed'   => 'FF0000',
   'sent'     => '',
 );
@@ -104,11 +105,10 @@ include('/elements/input-date-field.html',
 include('/elements/select.html',
   'field' => 'status',
   'curr_value' => $cgi->param('status') || '',
-  'options' => [ '', 'failed', 'sent', 'prepared' ],
+  'options' => [ '', 'failed', 'sent', ],
   'labels' => { ''        => '(any)', 
                 'failed'  => 'failed',
-                'sent'    => 'sent',
-                'prepared'=> 'prepared' },
+                'sent'    => 'sent', },
 ) .
 '</TD>
 <TD><INPUT type="submit" value="Search"></TD></TR>
