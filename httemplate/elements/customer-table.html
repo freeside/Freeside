@@ -128,7 +128,7 @@ Example:
         custnum_obj.value = customerArray[0];
         custnum_obj.style.color = '#000000';
         customer.value = customerArray[1];
-        balance.innerHTML = customerArray[2] + ' &nbsp; ';
+        balance.innerHTML = '<% $money_char %>' + customerArray[2] + ' &nbsp; ';
         status.innerHTML = customerArray[3]; 
         status.style.color = '#'+customerArray[4];
 
@@ -205,7 +205,7 @@ Example:
         custnum_obj.value = customerArray[0];
         custnum_obj.style.color = '#000000';
         customer.value = customerArray[1];
-        balance.innerHTML = customerArray[2] + ' &nbsp; ';
+        balance.innerHTML = '<% $money_char %>' + customerArray[2] + ' &nbsp; ';
         status.innerHTML = customerArray[3]; 
         status.style.color = '#'+customerArray[4];
 
@@ -277,7 +277,7 @@ Example:
 
         custnum_obj.value = customerArray[0][0];
         customer_obj.value = customerArray[0][1];
-        balance.innerHTML = customerArray[0][2] + ' &nbsp; ';
+        balance.innerHTML = '<% $money_char %>' + customerArray[0][2] + ' &nbsp; ';
         status.innerHTML = customerArray[0][3]; 
         status.style.color = '#'+customerArray[0][4];
 
@@ -355,7 +355,7 @@ Example:
       customer_obj.value = customer;
       customer_obj.style.color = '#000000';
 
-      balance_obj.innerHTML = balance;
+      balance_obj.innerHTML = '<% $money_char %>' + balance;
 
       status_obj.innerHTML = status;
       status_obj.style.color = '#'+color;
@@ -495,7 +495,6 @@ Example:
 %     $col++;
 %   }
       <TD STYLE="text-align:right;">
-        <% $money_char %> 
         <SPAN 
                NAME      = "balance<% $row %>"
                ID        = "balance<% $row %>"
@@ -651,7 +650,6 @@ Example:
     
     var balance_cell = document.createElement('TD');
         balance_cell.style.textAlign = 'right';
-        balance_cell.innerHTML = '<% $money_char %>';
         
         var balance_span = document.createElement('SPAN');
         balance_span.setAttribute('name', 'balance'+<% $opt{prefix} %>rownum);
