@@ -7,7 +7,8 @@
 %  if ( $cgi->param('apply') eq 'yes' ) {
 %    my $cust_main = qsearchs('cust_main', { 'custnum' => $linknum })
 %      or die "unknown custnum $linknum";
-%    $cust_main->apply_payments( 'manual' => 1 );
+%    $cust_main->apply_payments( 'manual' => 1,
+%                                'backdate_application' => ($_date < time-86400) );
 %  }
 %  if ( $link eq 'popup' ) {
 %    

@@ -2147,11 +2147,14 @@ sub apply_payments {
 
     my $amount = min( $payment->unapplied, $owed );
 
-    my $cust_bill_pay = new FS::cust_bill_pay ( {
+    my $cbp = {
       'paynum' => $payment->paynum,
       'invnum' => $cust_bill->invnum,
       'amount' => $amount,
-    } );
+    };
+    $cbp->{_date} = $payment->_date 
+        if $options{'manual'} && $options{'backdate_application'};
+    my $cust_bill_pay = new FS::cust_bill_pay($cbp);
     $cust_bill_pay->pkgnum( $payment->pkgnum )
       if $conf->exists('pkg-balances') && $payment->pkgnum;
     my $error = $cust_bill_pay->insert(%options);
