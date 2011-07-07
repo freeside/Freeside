@@ -5,6 +5,8 @@ use vars qw( @ISA $DEBUG $me );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
 use FS::Misc::DateTime qw( parse_datetime );
+use FS::msa;
+use Data::Dumper;
 
 @ISA = qw(FS::cust_main_Mixin FS::Record);
 
@@ -201,11 +203,23 @@ Translate free-form MSA name to a msa.msanum
 sub msa2msanum {
     my $self = shift;
     my $msa = shift;
-    my $res = qsearchs('msa', { 'description' => { 'op' => 'ILIKE',
-                                                   'value' => $msa, }
+    my @msas = qsearch('msa', { 'description' => { 'op' => 'ILIKE',
+                                                   'value' => "%$msa%", }
                               });
-    return 0 unless $res;
-    $res->msanum;
+    return 0 unless scalar(@msas);
+    my @msa = grep { $self->msatest($msa,$_->description) } @msas;
+    return 0 unless scalar(@msa) == 1;
+    $msa[0]->msanum;
+}
+
+sub msatest {
+    my $self = shift;
+    my ($their,$our) = (shift,shift);
+    my $a = $our;
+    $a =~ s/,.*?$//;
+    return 1 if $a eq $their;
+    return 1 if ($our =~ /^([\w\s]+)-/ && $1 eq $their);
+    0;
 }
 
 sub process_batch_import {
@@ -223,6 +237,7 @@ sub process_batch_import {
 
   my $msasub = sub {
     my( $phone_avail, $value ) = @_;
+    return '' if !$value;
     my $msanum = $phone_avail->msa2msanum($value);
     die "cannot translate MSA ($value) to msanum" unless $msanum;
     $phone_avail->msanum($msanum);

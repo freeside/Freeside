@@ -28,7 +28,7 @@ foreach my $param ( @params ) {
     if ( $param =~ /^(orderitemnum[0-9]+)_rc_new$/ ) {
         my $prefix = $1;
         my $value = $cgi->param($param);
-        if( $value =~ /^[A-Za-z0-9\- ]+$/ ) {
+        if( $value =~ /^[A-Za-z0-9:\- ]+$/ ) {
             my $rc = new FS::rate_center({ description => $value });
             my $error = $rc->insert;
             die "error inserting new rate center: $error" if $error;
