@@ -109,7 +109,7 @@ my $args_callback = sub {
   }
 
   $options{$_} = scalar( $cgi->param($_) )
-    for (qw( setup_fee recur_fee ));
+    for (qw( setup_fee recur_fee disable_line_item_date_ranges ));
   
   push @args, 'options' => \%options;
 

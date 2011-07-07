@@ -38,6 +38,7 @@
                             'taxproduct_select'=> 'Tax products',
                             'plan'             => 'Price plan',
                             'disabled'         => 'Disable new orders',
+                            'disable_line_item_date_ranges' => 'Disable line item date ranges',
                             'setup_cost'       => 'Setup cost',
                             'recur_cost'       => 'Recur cost',
                             'pay_weight'       => 'Payment weight',
@@ -88,6 +89,7 @@
                                    : ()
                               ),
                               {field=>'disabled', type=>$disabled_type, value=>'Y'},
+                              {field=>'disable_line_item_date_ranges', type=>$disabled_type, value=>'Y'},
 
                               { type  => 'tablebreak-tr-title',
                                 value => 'Pricing', #better name?
@@ -369,9 +371,8 @@ my $error_callback = sub {
         }
         @options;
 
-  #$cgi->param($_, $options{$_}) foreach (qw( setup_fee recur_fee ));
   $object->set($_ => scalar($cgi->param($_)) )
-    foreach (qw( setup_fee recur_fee ));
+    foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
   $pkgpart = $object->pkgpart;
 
@@ -384,7 +385,7 @@ my $new_object_callback = sub {
 
   my $part_pkg = FS::part_pkg->new( $hashref );
   $part_pkg->set($_ => '0')
-    foreach (qw( setup_fee recur_fee ));
+    foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
   $part_pkg;
 
@@ -422,7 +423,7 @@ my $edit_callback = sub {
   %options = $object->options;
 
   $object->set($_ => $object->option($_))
-    foreach (qw( setup_fee recur_fee ));
+    foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
   $pkgpart = $object->pkgpart;
 
@@ -468,7 +469,7 @@ my $clone_callback = sub {
   %options = $object->options;
 
   $object->set($_ => $options{$_})
-    foreach (qw( setup_fee recur_fee ));
+    foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
   $recur_disabled = $object->freq ? 0 : 1;
 };

@@ -4679,7 +4679,8 @@ sub _items_cust_bill_pkg {
           $description .= " (" . time2str($date_format, $cust_bill_pkg->sdate).
                           " - ". time2str($date_format, $cust_bill_pkg->edate).
                           ")"
-            unless $conf->exists('disable_line_item_date_ranges');
+            unless $conf->exists('disable_line_item_date_ranges')
+                || $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1);
 
           my @d = ();
 
