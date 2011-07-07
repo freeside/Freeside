@@ -6,6 +6,7 @@ use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              %virtual_fields_cache
              $nowarn_identical $nowarn_classload
              $no_update_diff $no_check_foreign
+             @encrypt_payby
            );
 use Exporter;
 use Carp qw(carp cluck croak confess);
@@ -29,6 +30,8 @@ use FS::part_virtual_field;
 use Tie::IxHash;
 
 @ISA = qw(Exporter);
+
+@encrypt_payby = qw( CARD DCRD CHEK DCHK );
 
 #export dbdef for now... everything else expects to find it here
 @EXPORT_OK = qw(
@@ -531,6 +534,11 @@ sub qsearch {
          && eval 'defined(@FS::'. $table . '::encrypted_fields)' ) {
       foreach my $record (@return) {
         foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
+          next if $field eq 'payinfo' 
+                    && ($record->isa('FS::payinfo_transaction_Mixin') 
+                        || $record->isa('FS::payinfo_Mixin') )
+                    && $record->payby
+                    && !grep { $record->payby eq $_ } @encrypt_payby;
           # Set it directly... This may cause a problem in the future...
           $record->setfield($field, $record->decrypt($record->getfield($field)));
         }
@@ -999,6 +1007,11 @@ sub insert {
        && $conf->exists('encryption')
   ) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
+      next if $field eq 'payinfo' 
+                && ($self->isa('FS::payinfo_transaction_Mixin') 
+                    || $self->isa('FS::payinfo_Mixin') )
+                && $self->payby
+                && !grep { $self->payby eq $_ } @encrypt_payby;
       $self->{'saved'} = $self->getfield($field);
       $self->setfield($field, $self->encrypt($self->getfield($field)));
     }
@@ -1279,6 +1292,11 @@ sub replace {
        && scalar( eval '@FS::'. $new->table . '::encrypted_fields')
   ) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
+      next if $field eq 'payinfo' 
+                && ($new->isa('FS::payinfo_transaction_Mixin') 
+                    || $new->isa('FS::payinfo_Mixin') )
+                && $new->payby
+                && !grep { $new->payby eq $_ } @encrypt_payby;
       $saved->{$field} = $new->getfield($field);
       $new->setfield($field, $new->encrypt($new->getfield($field)));
     }
