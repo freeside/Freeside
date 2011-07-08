@@ -1,6 +1,6 @@
 <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
 <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">
-<TR><TH BGCOLOR="#ff6666" COLSPAN=8>Open Tickets</TH></TR>
+<TR><TH BGCOLOR="#ff6666" COLSPAN=15>Open Tickets</TH></TR>
 <TR>
 <%=
 my $col1 = "ffffff";
@@ -25,20 +25,23 @@ my @titles = ('#', qw(Subject Queue Status Created Due));
 push @titles, 'Estimated<BR>Minutes';
 push @titles, 'Priority';
 
-$OUT .= join("\n", map { "<TH VALIGN=\"top\">$_</TH>" } @titles) . '</TR>';
+$OUT .= join("\n", map { "<TH VALIGN=\"top\">$_</TH><TH>&nbsp;</TH>" } @titles)
+      . '</TR>';
 
 foreach my $ticket ( @tickets ) {
   my $id = $ticket->{'id'};
   my $td = qq!<TD BGCOLOR="#$col">!;
+  my $space = $td.'&nbsp;</TD>';
   my $link = qq!<A HREF="${url}tktview;ticket_id=$id">!;
-  $OUT .= '<TR>' . $td . $link . $id . '</A></TD>'.
-$td. $link . $ticket->{'subject'} . '</A></TD>'.
-$td. $ticket->{'queue'} . '</TD>'.
-$td. $ticket->{'status'} . '</TD>'.
-$td. $date_formatter->($ticket->{'created'}) . '</TD>'.
-$td. $date_formatter->($ticket->{'due'}) . '</TD>'.
+  $OUT .= '<TR>' . 
+$td. $link . $id . '</A></TD>'. $space .
+$td. $link . $ticket->{'subject'} . '</A></TD>'. $space .
+$td. $ticket->{'queue'} . '</TD>'. $space .
+$td. $ticket->{'status'} . '</TD>'. $space .
+$td. $date_formatter->($ticket->{'created'}) . '</TD>'. $space .
+$td. $date_formatter->($ticket->{'due'}) . '</TD>'. $space .
 qq!<TD BGCOLOR="#$col" ALIGN="right">!. ($ticket->{'timeestimated'} || '') 
-.  '</TD>'.
+.  '</TD>'. $space .
 qq!<TD BGCOLOR="#$col" ALIGN="right">!;
   if ( $can_set_priority ) {
     $OUT .= '<INPUT TYPE="hidden" NAME="ticket'.$id.'" VALUE="1">' .
@@ -58,7 +61,7 @@ qq!<TD BGCOLOR="#$col" ALIGN="right">!;
   $col = $col eq $col1 ? $col2 : $col1;
 } #foreach my $ticket
 if ( $can_set_priority ) {
-  $OUT .= '<TR><TD COLSPAN=8 ALIGN="right">
+  $OUT .= '<TR><TD COLSPAN=15 ALIGN="right">
 <INPUT TYPE="submit" VALUE="Save changes"></TD></TR></FORM>';
 }
 %>
