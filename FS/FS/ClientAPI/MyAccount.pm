@@ -321,7 +321,7 @@ sub customer_info {
     $return{'require_address2'} = '';
   }
 
-  if ( $conf->exists('ticket_system') ) {
+  if ( $FS::TicketSystem::system ) {
     warn "$me customer_info: initializing ticket system\n" if $DEBUG;
     FS::TicketSystem->init();
   }
