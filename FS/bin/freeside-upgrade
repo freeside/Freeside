@@ -127,6 +127,19 @@ my @statements = dbdef->sql_update_schema( dbdef_dist(datasrc),
                                            { 'nullify_default' => 1, },
                                          );
 
+#### NEW CUSTOM FIELDS (prevent columns from being dropped by upgrade)
+my $cfsth = $dbh->prepare("SELECT * FROM part_virtual_field") 
+                                                         or die $dbh->errstr;
+$cfsth->execute or die $cfsth->errstr;
+my $cf; 
+# likely a very inefficient implementation of this
+while ( $cf = $cfsth->fetchrow_hashref ) {
+    my $tbl = $cf->{'dbtable'};
+    my $name = $cf->{'name'};
+    @statements = grep { $_ !~ /^\s*ALTER\s+TABLE\s+$tbl\s+DROP\s+COLUMN\s+cf_$name\s*$/i }
+                                                                    @statements;
+}
+
 @statements = 
   grep { $_ !~ /^CREATE +INDEX +h_queue/i } #useless, holds up queue insertion
        @statements;
