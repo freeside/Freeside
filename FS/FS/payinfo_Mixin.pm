@@ -132,34 +132,46 @@ sub mask_payinfo {
   my $payinfo = scalar(@_) ? shift : $self->payinfo;
 
   # Check to see if it's encrypted...
-  my $paymask;
   if ( $self->is_encrypted($payinfo) ) {
-    $paymask = 'N/A';
+    return 'N/A';
   } elsif ( $payinfo =~ /^99\d{14}$/ || $payinfo eq 'N/A' ) { #token
-    $paymask = 'N/A (tokenized)'; #?
-  } else {
-    # if not, mask it...
+    return 'N/A (tokenized)'; #?
+  } else { # if not, mask it...
+
     if ($payby eq 'CARD' || $payby eq 'DCRD' || $payby eq 'MCRD') {
+
       # Credit Cards
+
+      # special handling for Local Isracards: always show last 4 
+      if ( $payinfo =~ /^(\d{8,9})$/ ) {
+
+        return 'x'x(length($payinfo)-4).
+               substr($payinfo,(length($payinfo)-4));
+
+      }
+
       my $conf = new FS::Conf;
       my $mask_method = $conf->config('card_masking_method') || 'first6last4';
       $mask_method =~ /^first(\d+)last(\d+)$/
         or die "can't parse card_masking_method $mask_method";
       my($first, $last) = ($1, $2);
 
-      $paymask = substr($payinfo,0,$first).
-                 'x'x(length($payinfo)-$first-$last).
-                 substr($payinfo,(length($payinfo)-$last));
+      return substr($payinfo,0,$first).
+             'x'x(length($payinfo)-$first-$last).
+             substr($payinfo,(length($payinfo)-$last));
+
     } elsif ($payby eq 'CHEK' || $payby eq 'DCHK' ) {
+
       # Checks (Show last 2 @ bank)
       my( $account, $aba ) = split('@', $payinfo );
-      $paymask = 'x'x(length($account)-2).
-                 substr($account,(length($account)-2))."@".$aba;
+      return 'x'x(length($account)-2).
+             substr($account,(length($account)-2))."@".$aba;
+
     } else { # Tie up loose ends
-      $paymask = $payinfo;
+      return $payinfo;
     }
   }
-  $paymask;
+  #die "shouldn't be reached";
 }
 
 =item payinfo_check
