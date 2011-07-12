@@ -249,7 +249,7 @@ sub prepare {
       } 
     } 
   } 
-  $_ = encode_entities($_) foreach values(%hash);
+  $_ = encode_entities($_ || '') foreach values(%hash);
 
 
   ###
@@ -386,12 +386,11 @@ sub substitutions {
       cust_status ucfirst_cust_status cust_statuscolor
 
       signupdate dundate
-      expdate
       packages recurdates
       ),
-      # expdate is a special case
-      [ signupdate_ymd    => sub { time2str('%Y-%m-%d', shift->signupdate) } ],
-      [ dundate_ymd       => sub { time2str('%Y-%m-%d', shift->dundate) } ],
+      [ expdate           => sub { shift->paydate_epoch } ], #compatibility
+      [ signupdate_ymd    => sub { $ymd->(shift->signupdate) } ],
+      [ dundate_ymd       => sub { $ymd->(shift->dundate) } ],
       [ paydate_my        => sub { sprintf('%02d/%04d', shift->paydate_monthyear) } ],
       [ otaker_first      => sub { shift->access_user->first } ],
       [ otaker_last       => sub { shift->access_user->last } ],

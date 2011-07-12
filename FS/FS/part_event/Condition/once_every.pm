@@ -31,7 +31,7 @@ sub condition {
                      'eventpart' => $self->eventpart,
                      'tablenum'  => $tablenum,
                      'status'    => { op=>'!=', value=>'failed'  },
-                     '_date'     => { op=>'>=', value=>$max_date },
+                     '_date'     => { op=>'>',  value=>$max_date },
                    },
     'extra_sql' => ( $opt{'cust_event'}->eventnum =~ /^(\d+)$/
                        ? " AND eventnum != $1 "

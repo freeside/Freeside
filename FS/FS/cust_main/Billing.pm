@@ -1663,7 +1663,7 @@ sub do_cust_event {
         if $DEBUG > 1;
 
       #if ( my $error = $cust_event->do_event(%options) ) { #XXX %options?
-      if ( my $error = $cust_event->do_event() ) {
+      if ( my $error = $cust_event->do_event( 'time' => $time ) ) {
         #XXX wtf is this?  figure out a proper dealio with return value
         #from do_event
         return $error;

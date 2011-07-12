@@ -2915,6 +2915,60 @@ sub paydate_monthyear {
   }
 }
 
+=item paydate_epoch
+
+Returns the exact time in seconds corresponding to the payment method 
+expiration date.  For CARD/DCRD customers this is the end of the month;
+for others (COMP is the only other payby that uses paydate) it's the start.
+Returns 0 if the paydate is empty or set to the far future.
+
+=cut
+
+sub paydate_epoch {
+  my $self = shift;
+  my ($month, $year) = $self->paydate_monthyear;
+  return 0 if !$year or $year >= 2037;
+  if ( $self->payby eq 'CARD' or $self->payby eq 'DCRD' ) {
+    $month++;
+    if ( $month == 13 ) {
+      $month = 1;
+      $year++;
+    }
+    return timelocal(0,0,0,1,$month-1,$year) - 1;
+  }
+  else {
+    return timelocal(0,0,0,1,$month-1,$year);
+  }
+}
+
+=item paydate_epoch_sql
+
+Class method.  Returns an SQL expression to obtain the payment expiration date
+as a number of seconds.
+
+=cut
+
+# Special expiration date behavior for non-CARD/DCRD customers has been 
+# carefully preserved.  Do we really use that?
+sub paydate_epoch_sql {
+  my $class = shift;
+  my $table = shift || 'cust_main';
+  my ($case1, $case2);
+  if ( driver_name eq 'Pg' ) {
+    $case1 = "EXTRACT( EPOCH FROM CAST( $table.paydate AS TIMESTAMP ) + INTERVAL '1 month') - 1";
+    $case2 = "EXTRACT( EPOCH FROM CAST( $table.paydate AS TIMESTAMP ) )";
+  }
+  elsif ( lc(driver_name) eq 'mysql' ) {
+    $case1 = "UNIX_TIMESTAMP( DATE_ADD( CAST( $table.paydate AS DATETIME ), INTERVAL 1 month ) ) - 1";
+    $case2 = "UNIX_TIMESTAMP( CAST( $table.paydate AS DATETIME ) )";
+  }
+  else { return '' }
+  return "CASE WHEN $table.payby IN('CARD','DCRD') 
+  THEN ($case1)
+  ELSE ($case2)
+  END"
+}
+
 =item tax_exemption TAXNAME
 
 =cut
