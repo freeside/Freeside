@@ -554,6 +554,7 @@ sub check {
     || $self->ut_enum('custom', [ '', 'Y' ] )
     || $self->ut_enum('no_auto', [ '', 'Y' ])
     || $self->ut_enum('recur_show_zero', [ '', 'Y' ])
+    || $self->ut_enum('setup_show_zero', [ '', 'Y' ])
     #|| $self->ut_moneyn('setup_cost')
     #|| $self->ut_moneyn('recur_cost')
     || $self->ut_floatn('setup_cost')

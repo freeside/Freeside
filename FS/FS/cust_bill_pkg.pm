@@ -899,12 +899,25 @@ sub cust_bill_pkg_discount {
 =cut
 
 sub recur_show_zero {
-  my $self = shift;
+  #my $self = shift;
+  #   $self->recur == 0
+  #&& $self->pkgnum
+  #&& $self->cust_pkg->part_pkg->recur_show_zero;
 
-     $self->recur == 0
-  && $self->pkgnum
-  && $self->cust_pkg->part_pkg->recur_show_zero;
+  shift->_X_show_zero('recur');
 
+}
+
+sub setup_show_zero {
+  shift->_X_show_zero('setup');
+}
+
+sub _X_show_zero {
+  my( $self, $what ) = @_;
+
+  return 0 unless $self->$what() == 0 && $self->pkgnum;
+
+  $self->cust_pkg->_X_show_zero($what);
 }
 
 =back

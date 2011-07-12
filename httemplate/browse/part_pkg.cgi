@@ -220,32 +220,38 @@ push @fields, sub {
                sprintf('%.2f', $part_pkg->option('setup_fee') ),
         align=>'right'
       },
-      { data => ( $is_recur ? ' setup' : ' one-time' ),
+      { data => ( ( $is_recur ? ' setup' : ' one-time' ).
+                  ( $part_pkg->option('recur_fee') == 0
+                      && $part_pkg->setup_show_zero
+                    ? ' (printed on invoices)'
+                    : ''
+                  )
+                ),
         align=>'left',
       },
     ],
     [
-      { data=>( $is_recur
-                  ? $money_char.sprintf('%.2f ', $part_pkg->option('recur_fee'))
-                  : $part_pkg->freq_pretty
-              ),
+      { data=>(
+          $is_recur
+            ? $money_char. sprintf('%.2f ', $part_pkg->option('recur_fee'))
+            : $part_pkg->freq_pretty
+        ),
         align=> ( $is_recur ? 'right' : 'center' ),
         colspan=> ( $is_recur ? 1 : 2 ),
       },
       ( $is_recur
-        ?  { data => ( $is_recur ? $part_pkg->freq_pretty : '' ),
+        ?  { data => ( $is_recur
+               ? $part_pkg->freq_pretty.
+                 ( $part_pkg->option('recur_fee') == 0
+                     && $part_pkg->recur_show_zero
+                   ? ' (printed on invoices)'
+                   : ''
+                 )
+               : '' ),
              align=>'left',
            }
         : ()
       ),
-    ],
-    [ { data    =>
-          ( $part_pkg->option('recur_fee') == 0 && $part_pkg->recur_show_zero )
-            ? ' (printed on invoices)'
-            : '',
-        align   => 'center', #?
-        colspan => 2,
-      },
     ],
     ( map { 
             my $dst_pkg = $_->dst_pkg;

@@ -616,15 +616,18 @@ sub _omit_zero_value_bundles {
 				&& scalar(@{$cust_bill_pkg->get('discounts')})
 				&& $conf->exists('discount-show-always'));
 
-    warn "  pkgnum ". $cust_bill_pkg->pkgnum.
-         " sum $sum, recur_show_zero ". $cust_bill_pkg->recur_show_zero. "\n"
+    warn "  pkgnum ". $cust_bill_pkg->pkgnum. " sum $sum, ".
+         "setup_show_zero ". $cust_bill_pkg->setup_show_zero.
+         "recur_show_zero ". $cust_bill_pkg->recur_show_zero. "\n"
       if $DEBUG > 0;
 
     if (scalar(@cust_bill_pkg_bundle) && !$cust_bill_pkg->pkgpart_override) {
       push @cust_bill_pkg, @cust_bill_pkg_bundle 
         if $sum > 0
         || ($sum == 0 && (    $discount_show_always
-                           || grep $_->recur_show_zero, @cust_bill_pkg_bundle )
+                           || grep {$_->recur_show_zero || $_->setup_show_zero}
+                                   @cust_bill_pkg_bundle
+                         )
            );
       @cust_bill_pkg_bundle = ();
       $sum = 0;
@@ -638,7 +641,9 @@ sub _omit_zero_value_bundles {
   push @cust_bill_pkg, @cust_bill_pkg_bundle
     if $sum > 0
     || ($sum == 0 && (    $discount_show_always
-                       || grep $_->recur_show_zero, @cust_bill_pkg_bundle )
+                       || grep {$_->recur_show_zero || $_->setup_show_zero}
+                               @cust_bill_pkg_bundle
+                     )
        );
 
   warn "  _omit_zero_value_bundles: ". scalar(@in).
@@ -1048,7 +1053,8 @@ sub _make_lines {
          || $recur != 0
          || (!$part_pkg->hidden && $options{has_hidden}) #include some $0 lines
          || $discount_show_always
-         || ($recur == 0 && $part_pkg->recur_show_zero)
+         || ($setup == 0 && $cust_pkg->_X_show_zero('setup'))
+         || ($recur == 0 && $cust_pkg->_X_show_zero('recur'))
        ) 
     {
 

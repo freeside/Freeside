@@ -600,6 +600,8 @@ sub check {
     || $self->ut_enum('no_auto', [ '', 'Y' ])
     || $self->ut_enum('waive_setup', [ '', 'Y' ])
     || $self->ut_numbern('agent_pkgid')
+    || $self->ut_enum('recur_show_zero', [ '', 'Y', 'N', ])
+    || $self->ut_enum('setup_show_zero', [ '', 'Y', 'N', ])
   ;
   return $error if $error;
 
@@ -3279,6 +3281,15 @@ sub _location_sql_where {
     AND ( $table.${prefix}state   = ? $or_empty_state  $ornull )
     AND   $table.${prefix}country = ?
   ";
+}
+
+sub _X_show_zero {
+  my( $self, $what ) = @_;
+
+  my $what_show_zero = $what. '_show_zero';
+  length($self->$what_show_zero())
+    ? ($self->$what_show_zero() eq 'Y')
+    : $self->part_pkg->$what_show_zero();
 }
 
 =head1 SUBROUTINES

@@ -4612,13 +4612,21 @@ sub _items_cust_bill_pkg {
  
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
 
-        if ( $cust_bill_pkg->setup != 0 && (!$type || $type eq 'S') ) {
+        if (    (!$type || $type eq 'S')
+             && (    $cust_bill_pkg->setup != 0
+                  || $cust_bill_pkg->setup_show_zero
+                )
+           )
+         {
 
           warn "$me _items_cust_bill_pkg adding setup\n"
             if $DEBUG > 1;
 
           my $description = $desc;
-          $description .= ' Setup' if $cust_bill_pkg->recur != 0;
+          $description .= ' Setup'
+            if $cust_bill_pkg->recur != 0
+            || $discount_show_always
+            || $cust_bill_pkg->recur_show_zero;
 
           my @d = ();
           unless ( $cust_pkg->part_pkg->hide_svc_detail
@@ -4647,6 +4655,7 @@ sub _items_cust_bill_pkg {
             push @{ $s->{ext_description} }, @d;
           } else {
             $s = {
+              _is_setup       => 1,
               description     => $description,
               #pkgpart         => $part_pkg->pkgpart,
               pkgnum          => $cust_bill_pkg->pkgnum,
@@ -4822,7 +4831,9 @@ sub _items_cust_bill_pkg {
         push @b, { %$_ }
           if $_->{amount} != 0
           || $discount_show_always
-          || $cust_bill_pkg->recur_show_zero;
+          || ( ! $_->{_is_setup} && $cust_bill_pkg->recur_show_zero )
+          || (   $_->{_is_setup} && $cust_bill_pkg->setup_show_zero )
+        ;
         $_ = undef;
       }
     }

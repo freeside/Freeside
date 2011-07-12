@@ -45,6 +45,7 @@
                             'credit_weight'    => 'Credit weight',
                             'agentnum'         => 'Agent',
                             'setup_fee'        => 'Setup fee',
+                            'setup_show_zero'  => 'Show zero setup',
                             'recur_fee'        => 'Recurring fee',
                             'recur_show_zero'  => 'Show zero recurring',
                             'discountnum'      => 'Offer discounts for longer terms',
@@ -91,17 +92,23 @@
                               {field=>'disabled', type=>$disabled_type, value=>'Y'},
                               {field=>'disable_line_item_date_ranges', type=>$disabled_type, value=>'Y'},
 
-                              { type  => 'tablebreak-tr-title',
-                                value => 'Pricing', #better name?
+                              { type     => 'tablebreak-tr-title',
+                                value    => 'Pricing', #better name?
                               },
-                              { field => 'plan',
-                                type  => 'selectlayers-select',
-                                options => [ keys %plan_labels ],
-                                labels  => \%plan_labels,
+                              { field    => 'plan',
+                                type     => 'selectlayers-select',
+                                options  => [ keys %plan_labels ],
+                                labels   => \%plan_labels,
                                 onchange => 'aux_planchanged(what);',
                               },
-                              { field => 'setup_fee',
-                                type  => 'money',
+                              { field    => 'setup_fee',
+                                type     => 'money',
+                                onchange => 'setup_changed',
+                              },
+                              { field    => 'setup_show_zero',
+                                type     => 'checkbox',
+                                value    => 'Y',
+                                disabled => sub { $setup_show_zero_disabled },
                               },
                               { field    => 'freq',
                                 type     => 'part_pkg_freq',
@@ -334,6 +341,7 @@ my @taxproductnums = ( qw( setup recur ), sort (keys %taxproductnums) );
 
 my %options = ();
 my $recur_disabled = 1;
+my $setup_show_zero_disabled = 0;
 my $recur_show_zero_disabled = 1;
 
 my $pkgpart = '';
@@ -345,10 +353,12 @@ my $error_callback = sub {
 
   $opt->{action} = 'Custom' if $cgi->param('pkgnum');
 
+  $setup_show_zero_disabled = ($cgi->param('setup_fee') > 0) ? 1 : 0;
+
   $recur_disabled = $cgi->param('freq') ? 0 : 1;
   $recur_show_zero_disabled =
     $cgi->param('freq')
-      ? $cgi->param('recur_fee') ? 0 : 1
+      ? $cgi->param('recur_fee') > 0 ? 1 : 0
       : 1;
 
   foreach ($cgi->param) {
@@ -394,7 +404,14 @@ my $new_object_callback = sub {
 my $edit_callback = sub {
   my( $cgi, $object, $fields, $opt ) = @_;
 
+  $setup_show_zero_disabled = ($object->option('setup_fee') > 0) ? 1 : 0;
+
   $recur_disabled = $object->freq ? 0 : 1;
+
+  $recur_show_zero_disabled =
+    $object->freq
+      ? $object->option('recur_fee') > 0 ? 1 : 0
+      : 1;
 
   (@agent_type) =
     map {$_->typenum} qsearch('type_pkgs', { 'pkgpart' => $object->pkgpart } );
@@ -422,7 +439,7 @@ my $edit_callback = sub {
 
   %options = $object->options;
 
-  $object->set($_ => $object->option($_))
+  $object->set($_ => $object->option($_, 1))
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
   $pkgpart = $object->pkgpart;
@@ -531,15 +548,24 @@ my $javascript = <<'END';
       } else {
         what.form.recur_fee.disabled = false;
         what.form.recur_fee.style.backgroundColor = '#ffffff';
-        what.form.recur_show_zero.disabled = false;
+        recur_changed( what.form.recur_fee );
         //what.form.recur_show_zero.style.backgroundColor= '#ffffff';
       }
 
     }
 
+    function setup_changed(what) {
+      var setup = what.value;
+      if ( parseFloat(setup) == 0 ) {
+        what.form.setup_show_zero.disabled = false;
+      } else {
+        what.form.setup_show_zero.disabled = true;
+      }
+    }
+
     function recur_changed(what) {
       var recur = what.value;
-      if ( recur == 0 ) {
+      if ( parseFloat(recur) == 0 ) {
         what.form.recur_show_zero.disabled = false;
       } else {
         what.form.recur_show_zero.disabled = true;
