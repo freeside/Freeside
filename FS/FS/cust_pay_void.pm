@@ -207,7 +207,7 @@ sub check {
     $payinfo =~ s/\D//g;
     $self->payinfo($payinfo);
     if ( $self->payinfo ) {
-      $self->payinfo =~ /^(\d{13,16})$/
+      $self->payinfo =~ /^(\d{13,16}|\d{8,9})$/
         or return "Illegal (mistyped?) credit card number (payinfo)";
       $self->payinfo($1);
       validate($self->payinfo) or return "Illegal credit card number";

@@ -1853,7 +1853,7 @@ sub check {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
-    $payinfo =~ /^(\d{13,16})$/
+    $payinfo =~ /^(\d{13,16}|\d{8,9})$/
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
     $payinfo = $1;
     $self->payinfo($payinfo);
