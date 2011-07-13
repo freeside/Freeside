@@ -22,6 +22,7 @@ $svcnum = $1;
 
 #untaint prepaid
 my $prepaid = $cgi->param('prepaid');
+$prepaid =~ s/\W//g;
 $prepaid =~ /^(\w*)$/;
 $prepaid = $1;
 

@@ -18,14 +18,17 @@
     }
   }
 </SCRIPT>
-<TR>
-  <TD><INPUT TYPE="radio" NAME="payby" onchange="toggle_prep(this)" VALUE="PREP" <% $payby eq "PREP" ? 'checked' : '' %> <% $recharge_label ? '' : 'disabled' %>></TD>
-  <TD>Prepaid Card</TD>
 % if ($recharge_label) {
-  <TD><INPUT TYPE="radio" NAME="payby" onchange="toggle_prep(this)" VALUE="<% $cust_svc->cust_pkg->cust_main->payby %>" <% $payby eq "PREP" ? '' : 'checked' %>></TD>
-  <TD><% $recharge_label %></TD>
+    <TR>
+      <TD><INPUT TYPE="radio" NAME="payby" onchange="toggle_prep(this)" VALUE="PREP" <% $payby eq "PREP" ? 'checked' : '' %>></TD>
+      <TD>Prepaid Card</TD>
+      <TD><INPUT TYPE="radio" NAME="payby" onchange="toggle_prep(this)" VALUE="<% $cust_svc->cust_pkg->cust_main->payby %>" <% $payby eq "PREP" ? '' : 'checked' %>></TD>
+      <TD><% $recharge_label %></TD>
+    </TR>
+% } else {
+%   $payby = 'PREP';
+    <INPUT TYPE="hidden" NAME="payby" VALUE="PREP">
 % }
-</TR>
 <TR>
   <TD>Enter prepaid card: </TD>
   <TD><INPUT TYPE="text" NAME="prepaid" VALUE="<% $prepaid |h %>" <% $payby eq "PREP" ? '' : 'disabled' %>></TD>
