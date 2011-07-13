@@ -1,11 +1,13 @@
 % if($magic eq 'download') {
-%   $m->clear_buffer;
-%   $r->content_type('application/pdf');
-%   $r->headers_out->add('Content-Disposition' => 'attachment;filename="invoice_batch_'.$batchnum.'.pdf"');
-<% $batch->pdf %>
+%   my $content = $batch->pdf;
 %   $batch->pdf('');
 %   my $error = $batch->replace;
 %   warn "error deleting cached PDF: '$error'\n" if $error;
+%
+%   $m->clear_buffer;
+%   $r->content_type('application/pdf');
+%   $r->headers_out->add('Content-Disposition' => 'attachment;filename="invoice_batch_'.$batchnum.'.pdf"');
+<% $content %>
 % }
 %
 % elsif ($magic eq 'download_popup') {

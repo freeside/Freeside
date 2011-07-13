@@ -66,7 +66,7 @@ function updateStatus( status_statustext ) {
 
     window.top.location.href = '<% $url %>';
 % } elsif ( $popup_url ) {
-    document.parentWindow.location.replace('<% $popup_url %>');
+    document.location.replace('<% $popup_url %>');
 % } else { 
 
     alert('job done but no url or message specified');
