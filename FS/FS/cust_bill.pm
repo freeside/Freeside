@@ -2168,7 +2168,7 @@ sub print_text {
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
   $params{$_} = $opt{$_} 
-    foreach grep $opt{$_}, qw( unsquealch_cdr notice_name );
+    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name );
 
   $self->print_generic( %params );
 }
@@ -2210,7 +2210,7 @@ sub print_latex {
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
   $params{$_} = $opt{$_} 
-    foreach grep $opt{$_}, qw( unsquealch_cdr notice_name );
+    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name );
 
   $template ||= $self->_agent_template;
 
