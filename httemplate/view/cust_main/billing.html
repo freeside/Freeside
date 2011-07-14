@@ -244,7 +244,7 @@
 
 % if ( $conf->exists('voip-cust_cdr_squelch') ) { 
   <TR>
-    <TD ALIGN="right"><% mt('Print CDRs') |h %></TD>
+    <TD ALIGN="right"><% mt($conf->exists('voip-cdr_email') ? 'Print CDRs' : 'Show CDRs') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->squelch_cdr ? $no : $yes %></TD>
   </TR>
 % } 
