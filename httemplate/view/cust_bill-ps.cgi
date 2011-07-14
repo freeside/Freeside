@@ -1,4 +1,4 @@
-<% $cust_bill->print_ps(\%opt) %>
+<% $ps %>
 <%init>
 
 die "access denied"
@@ -16,9 +16,12 @@ if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) {
   $notice_name = ( $cgi->param('notice_name') || 'Invoice' );
 }
 
+my $conf = new FS::Conf;
+
 my %opt = (
-  'template'    => $template,
-  'notice_name' => $notice_name,
+  'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
+  'template'      => $template,
+  'notice_name'   => $notice_name,
 );
 
 my $cust_bill = qsearchs({
@@ -30,6 +33,10 @@ my $cust_bill = qsearchs({
 });
 die "Invoice #$invnum not found!" unless $cust_bill;
 
+my $ps = $cust_bill->print_ps(\%opt);
+
 http_header('Content-Type' => 'application/postscript' );
+http_header('Content-Length' => length($pdf) );
+http_header('Cache-control' => 'max-age=60' );
 
 </%init>

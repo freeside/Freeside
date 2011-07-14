@@ -17,9 +17,12 @@ if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) {
   $notice_name = ( $cgi->param('notice_name') || 'Invoice' );
 }
 
+my $conf = new FS::Conf;
+
 my %opt = (
-  'template'    => $template,
-  'notice_name' => $notice_name,
+  'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
+  'template'      => $template,
+  'notice_name'   => $notice_name,
 );
 
 my $cust_bill = qsearchs({
