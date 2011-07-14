@@ -25,16 +25,27 @@ if($error) {
 if($lnp) {
     $OUT .= "<table>"
 	    . qq!<input type="hidden" name="lnp" value="1">!
-	    . lnp_textfield(phonenum,"Phone Number")
+	    . lnp_textfield("phonenum","Phone Number")
 	    . lnp_textfield("lnp_desired_due_date","Requested Port-In Date")
 	    . lnp_textfield("lnp_other_provider","Current Provider")
 	    . lnp_textfield("lnp_other_provider_account","Current Provider's Account #")
 	    . "</table>";
 } else {
+    if ( $svcnum ) {
+       $OUT .= qq!<INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">!;
+       $OUT .= qq!<INPUT TYPE="hidden" NAME="phonenum" VALUE="">!;
+       $OUT .= qq!<TABLE><TR><TD>Email</TD><TD><INPUT TYPE="text" NAME="email"
+                    VALUE="$email"></TD></TR>
+                    <TR><TD>Forward to</TD><TD>
+                        <INPUT TYPE="text" NAME="forwarddst" VALUE="$forwarddst">
+                        </TD></TR></TABLE>!;
+    }
+    else {
     didselector('field' => 'phonenum', 
 		'svcpart' => $svcpart,
 		'bulknum' => $numavail,
 		);
+    }
 }
 %>
 <BR><BR><INPUT TYPE="submit" VALUE="Setup">

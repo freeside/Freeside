@@ -39,6 +39,14 @@ foreach my $pkg (
               "$td><B>". $cust_svc->{label}[1]. '</B>';
     $OUT .= '<BR><I>password: '. encode_entities($cust_svc->{_password}). '</I>'
       if exists($cust_svc->{_password});
+    if ( exists($cust_svc->{svchash}) ) {
+        $OUT .= '<BR><I>Email: '. encode_entities($cust_svc->{svchash}->{email}). '</I>'
+          if exists($cust_svc->{svchash}->{email}) 
+              && length($cust_svc->{svchash}->{email});
+        $OUT .= '<BR><I>Forward to: '. encode_entities($cust_svc->{svchash}->{forwarddst}). '</I>'
+          if exists($cust_svc->{svchash}->{forwarddst}) 
+              && length($cust_svc->{svchash}->{forwarddst});
+    }
     $OUT .= '</TD>'.
               "$td><FONT SIZE=-1>";
               
@@ -50,7 +58,8 @@ foreach my $pkg (
     unless ( $cust_svc->{'svcnum'} == $svcnum ) {
       $OUT .= qq!(<A HREF="javascript:areyousure('${url}delete_svc;svcnum=$cust_svc->{svcnum}', 'This will permanently delete the $cust_svc->{label}[1] $cust_svc->{label}[0].  Are you sure?')">!.
               'delete</A>)';
-
+      $OUT .=  qq!<BR>(<A HREF="${url}provision_svc;pkgnum=$pkg->{pkgnum};svcpart=$cust_svc->{'svcpart'};svcnum=$cust_svc->{'svcnum'}">modify</A>)!
+            if ( exists($cust_svc->{svchash}) && $cust_svc->{label}[2] eq 'svc_phone' );
     }
     $OUT .= '</FONT></TD></TR>';
     $col = $col eq $col1 ? $col2 : $col1;
