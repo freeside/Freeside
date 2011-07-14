@@ -5,7 +5,7 @@
 <SCRIPT TYPE="text/javascript">
 function warnUnload() {
   if(document.getElementById("OneTrueTable").rows.length > 3 &&
-     !document.OneTrueForm.submit.disabled) {
+     !document.OneTrueForm.btnsubmit.disabled) {
     return "The current batch will be lost.";
   }
   else {
@@ -54,7 +54,7 @@ function select_discount_term(row, prefix) {
            )
 %>
 
-<FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.submit.disabled=true;window.onbeforeunload = null;">
+<FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.btnsubmit.disabled=true;window.onbeforeunload = null;">
 
 <!-- <B>Batch</B> <INPUT TYPE="text" NAME="paybatch"><BR><BR> -->
 
@@ -73,11 +73,8 @@ function select_discount_term(row, prefix) {
           )
 %>
 
-<!-- <BR>
-<INPUT TYPE="button" VALUE="TEST addrow" onclick="addRow()"> -->
-
 <BR>
-<INPUT TYPE="submit" NAME="submit" VALUE="Post payment batch">
+<INPUT TYPE="button" VALUE="Post payment batch" name="btnsubmit" onclick="window.onbeforeunload = null; document.OneTrueForm.submit(); this.disabled = true;">
 
 </FORM>
 
