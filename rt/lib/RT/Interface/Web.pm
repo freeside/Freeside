@@ -438,7 +438,11 @@ sub MaybeRejectPrivateComponentRequest {
               autohandler | # requesting this directly is suspicious
               l           ) # loc component
             ( $ | / ) # trailing slash or end of path
-        }xi) {
+        }xi
+        && $path !~ m{ /RTx/Statistics/\w+/Elements/Chart }xi
+      )
+    {
+            warn "rejecting private component $path\n";
             $m->abort(403);
     }
 
@@ -2317,7 +2321,6 @@ sub _parse_saved_search {
     return ( _load_container_object( $obj_type, $obj_id ), $search_id );
 }
 
-package RT::Interface::Web;
 RT::Base->_ImportOverlays();
 
 1;

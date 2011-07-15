@@ -16,6 +16,7 @@ lib/RT/CustomField_Vendor.pm #mandatory fields
 lib/RT/Interface/Web.pm #customfield date patch
                         #fix transaction custom fields
                         #fix Web.pm Overlay/Vendor/Local inclusion
+                        #fix MaybeRejectPrivateComponentRequest for RTx::Statistics
 lib/RT/Action.pm #create ticket on custom field change
 lib/RT/Condition.pm #create ticket on custom field change
 lib/RT/Scrip_Overlay.pm #create ticket on custom field change
