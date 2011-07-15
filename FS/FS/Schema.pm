@@ -2753,14 +2753,16 @@ sub tables_hashref {
         'payby',   'char',     '',       4, '', '', 
         'payinfo', 'varchar',  '',     128, '', '', #say, a 512-big digest _hex encoded
 	#'paymask', 'varchar',  'NULL', $char_d, '', ''
-        '_date',   @date_type, '', '', 
-        'otaker',  'varchar',  'NULL',     32, '', '', 
-        'usernum',   'int', 'NULL', '', '', '',
+        '_date',            @date_type,         '', '', 
+        'end_date',         @date_type,         '', '', 
+        'otaker',  'varchar',  'NULL',      32, '', '', 
+        'usernum',     'int',  'NULL',      '', '', '',
+        'bantype', 'varchar',  'NULL', $char_d, '', '',
         'reason',  'varchar',  'NULL', $char_d, '', '', 
       ],
       'primary_key' => 'bannum',
-      'unique'      => [ [ 'payby', 'payinfo' ] ],
-      'index'       => [ [ 'usernum' ] ],
+      'unique'      => [],
+      'index '      => [ [ 'payby', 'payinfo' ], [ 'usernum' ], ],
     },
 
     'pkg_category' => {

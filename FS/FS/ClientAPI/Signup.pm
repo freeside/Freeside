@@ -22,6 +22,7 @@ use FS::acct_snarf;
 use FS::queue;
 use FS::reg_code;
 use FS::payby;
+use FS::banned_pay;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::Signup]';
@@ -562,6 +563,7 @@ sub new_customer {
         payinfo paycvv paydate payname paystate paytype
         paystart_month paystart_year payissue
         payip
+        override_ban_warn
 
         referral_custnum comments
       )
@@ -806,6 +808,18 @@ sub new_customer {
 
   $error = $placeholder->delete;
   return { 'error' => $error } if $error;
+
+  if ( $conf->exists('signup-duplicate_cc-warn_hours') ) {
+    my $hours = $conf->config('signup-duplicate_cc-warn_hours');
+    my $ban = new FS::banned_pay $cust_main->_new_banned_pay_hashref;
+    $ban->end_date( int( time + $hours*3600 ) );
+    $ban->bantype('warn');
+    $ban->reason('signup-duplicate_cc-warn_hours');
+    $error = $ban->insert;
+    warn "WARNING: error inserting temporary banned_pay for ".
+         " signup-duplicate_cc-warn_hours (proceeding anyway): $error"
+      if $error;
+  }
 
   my %return = ( 'error'          => '',
                  'signup_service' => $svc_x,

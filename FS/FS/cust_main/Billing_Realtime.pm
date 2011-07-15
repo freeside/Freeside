@@ -4,7 +4,6 @@ use strict;
 use vars qw( $conf $DEBUG $me );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Data::Dumper;
-use Digest::MD5 qw(md5_base64);
 use Business::CreditCard 0.28;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
@@ -13,6 +12,7 @@ use FS::payby;
 use FS::cust_pay;
 use FS::cust_pay_pending;
 use FS::cust_refund;
+use FS::banned_pay;
 
 $realtime_bop_decline_quiet = 0;
 
@@ -401,11 +401,11 @@ sub realtime_bop {
   # check for banned credit card/ACH
   ###
 
-  my $ban = qsearchs('banned_pay', {
+  my $ban = FS::banned_pay->ban_search(
     'payby'   => $bop_method2payby{$options{method}},
-    'payinfo' => md5_base64($options{payinfo}),
-  } );
-  return "Banned credit card" if $ban;
+    'payinfo' => $options{payinfo},
+  );
+  return "Banned credit card" if $ban && $ban->bantype ne 'warn';
 
   ###
   # massage data

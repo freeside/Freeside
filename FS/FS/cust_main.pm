@@ -776,7 +776,7 @@ sub get_prepay {
 
     $prepay_credit = qsearchs(
       'prepay_credit',
-      { 'identifier' => $prepay_credit },
+      { 'identifier' => $identifier },
       '',
       'FOR UPDATE'
     );
@@ -1865,12 +1865,17 @@ sub check {
       && cardtype($self->payinfo) eq "Unknown";
 
     unless ( $ignore_banned_card ) {
-      my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
+      my $ban = FS::banned_pay->ban_search( %{ $self->_banned_pay_hashref } );
       if ( $ban ) {
-        return 'Banned credit card: banned on '.
-               time2str('%a %h %o at %r', $ban->_date).
-               ' by '. $ban->otaker.
-               ' (ban# '. $ban->bannum. ')';
+        if ( $ban->bantype eq 'warn' ) {
+          #or others depending on value of $ban->reason ?
+          return '_duplicate_card' unless $self->override_ban_warn;
+        } else {
+          return 'Banned credit card: banned on '.
+                 time2str('%a %h %o at %r', $ban->_date).
+                 ' by '. $ban->otaker.
+                 ' (ban# '. $ban->bannum. ')';
+        }
       }
     }
 
@@ -1931,12 +1936,17 @@ sub check {
     $self->paycvv('');
 
     unless ( $ignore_banned_card ) {
-      my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
+      my $ban = FS::banned_pay->ban_search( %{ $self->_banned_pay_hashref } );
       if ( $ban ) {
-        return 'Banned ACH account: banned on '.
-               time2str('%a %h %o at %r', $ban->_date).
-               ' by '. $ban->otaker.
-               ' (ban# '. $ban->bannum. ')';
+        if ( $ban->bantype eq 'warn' ) {
+          #or others depending on value of $ban->reason ?
+          return '_duplicate_ach' unless $self->override_ban_warn;
+        } else {
+          return 'Banned ACH account: banned on '.
+                 time2str('%a %h %o at %r', $ban->_date).
+                 ' by '. $ban->otaker.
+                 ' (ban# '. $ban->bannum. ')';
+        }
       }
     }
 
@@ -2216,7 +2226,7 @@ sub cancel {
     return ( "Can't (yet) ban encrypted credit cards" )
       if $self->is_encrypted($self->payinfo);
 
-    my $ban = new FS::banned_pay $self->_banned_pay_hashref;
+    my $ban = new FS::banned_pay $self->_new_banned_pay_hashref;
     my $error = $ban->insert;
     return ( $error ) if $error;
 
@@ -2250,9 +2260,16 @@ sub _banned_pay_hashref {
 
   {
     'payby'   => $payby2ban{$self->payby},
-    'payinfo' => md5_base64($self->payinfo),
+    'payinfo' => $self->payinfo,
     #don't ever *search* on reason! #'reason'  =>
   };
+}
+
+sub _new_banned_pay_hashref {
+  my $self = shift;
+  my $hr = $self->_banned_pay_hashref;
+  $hr->{payinfo} = md5_base64($hr->{payinfo});
+  $hr;
 }
 
 =item notes

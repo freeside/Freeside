@@ -3946,8 +3946,15 @@ and customer address. Include units.',
   {
     'key'         => 'signup-recommend_daytime',
     'section'     => 'self-service',
-    'description' => 'Encourage the entry of a daytime phone number  invoicing email address on signup.',
+    'description' => 'Encourage the entry of a daytime phone number on signup.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'signup-duplicate_cc-warn_hours',
+    'section'     => 'self-service',
+    'description' => 'Issue a warning if the same credit card is used for multiple signups within this many hours.',
+    'type'        => 'text',
   },
 
   {

@@ -2,6 +2,7 @@ package FS::banned_pay;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::Record );
+use Digest::MD5 qw(md5_base64);
 use FS::Record qw( qsearch qsearchs );
 use FS::UID qw( getotaker );
 use FS::CurrentUser;
@@ -42,7 +43,11 @@ supported:
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
+=item end_date - optional end date, also specified as a UNIX timestamp.
+
 =item usernum - order taker (assigned automatically, see L<FS::access_user>)
+
+=item bantype - Ban type: "" or null (regular ban), "warn" (warning)
 
 =item reason - reason (text)
 
@@ -110,6 +115,8 @@ sub check {
     || $self->ut_enum('payby', [ 'CARD', 'CHEK' ] )
     || $self->ut_text('payinfo')
     || $self->ut_numbern('_date')
+    || $self->ut_numbern('end_date')
+    || $self->ut_enum('bantype', [ '', 'warn' ] )
     || $self->ut_textn('reason')
   ;
   return $error if $error;
@@ -119,6 +126,31 @@ sub check {
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   $self->SUPER::check;
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=item ban_search OPTION => VALUE ...
+
+Takes two parameters: payby and payinfo, and searches for an (un-expired) ban
+matching those items.
+
+Returns the ban, or false if no ban was found.
+
+=cut
+
+sub ban_search {
+  my( $class, %opt ) = @_;
+  qsearchs({
+    'table'     => 'banned_pay',
+    'hashref'   => {
+                     'payby'   => $opt{payby},
+                     'payinfo' => md5_base64($opt{payinfo}),
+                   },
+    'extra_sql' => 'AND end_date IS NULL OR end_date >= '. time,
+  });
 }
 
 # Used by FS::Upgrade to migrate to a new database.

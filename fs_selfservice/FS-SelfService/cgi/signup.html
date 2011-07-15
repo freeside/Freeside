@@ -43,6 +43,14 @@
   $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum mac_addr countrycode phonenum sip_password pin / );
 %>
 
+<%=
+  if ($override_ban_warn) {
+    $OUT .= 'Are you sure you want to sign up again? <SELECT NAME="override_ban_warn"><OPTION VALUE="0">No<OPTION VALUE="1">Yes</SELECT><BR><BR>';
+  } else {
+    $OUT .= '';
+  }
+%>
+
 Where did you hear about our service? <SELECT NAME="refnum">
 <%=
   $OUT .= '<OPTION VALUE="">' unless $refnum;

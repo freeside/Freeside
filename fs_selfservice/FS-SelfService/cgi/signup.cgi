@@ -229,6 +229,7 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
 
                 payby payinfo paycvv paydate payname paystate paytype
                 invoicing_list referral_custnum promo_code reg_code
+                override_ban_warn
                 pkgpart refnum agentnum
                 username sec_phrase _password popnum
                 mac_addr
@@ -249,10 +250,19 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
         qw( popup_url reference amount );
       print_collect($rv);
     } elsif ( $error ) {
+
       #fudge the snarf info
       no strict 'refs';
       ${$_} = $cgi->param($_) foreach grep { /^snarf_/ } $cgi->param;
+
+      if ( $error =~ /^_duplicate_(card|ach)$/ ) {
+        my $what = ($1 eq 'card') ? 'Credit card' : 'Electronic check';
+        $error = "Warning: $what already used to sign up recently";
+        $init_data->{'override_ban_warn'} = 1;
+      }
+
       print_form();
+
     } else {
       print_okay(
         'pkgpart' => scalar($cgi->param('pkgpart')),
@@ -277,7 +287,7 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
 
 sub print_form {
 
-  $error = "Error: $error" if $error;
+  $error = "Error: $error" if $error && $error !~ /^Warning:/i;
 
   my $r = {
     $cgi->Vars,

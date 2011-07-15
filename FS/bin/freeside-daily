@@ -16,6 +16,10 @@ adminsuidsetup $user;
 use FS::Cron::nms_report qw(nms_report);
 nms_report(%opt);
 
+#no way to skip this yet, but should be harmless/quick
+use FS::Cron::expire_banned_pay qw(expire_banned_pay);
+expire_banned_pay(%opt);
+
 #you can skip this by setting the disable_cron_billing config
 use FS::Cron::bill qw(bill);
 bill(%opt);
