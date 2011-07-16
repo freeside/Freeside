@@ -51,7 +51,8 @@ sub _upgrade_data {
     die $msg if !$val;
   }
   my $Principal = $User->PrincipalObj; # can this ever fail?
-  my @rights = ( qw(ShowTicket SeeQueue ModifyTicket ReplyToTicket) );
+  my @rights = ( qw(ShowTicket SeeQueue ModifyTicket ReplyToTicket 
+                    CreateTicket SeeCustomField) );
   foreach (@rights) {
     next if $Principal->HasRight( 'Right' => $_, Object => $RT::System );
     my ($val, $msg) = $Principal->GrantRight(
