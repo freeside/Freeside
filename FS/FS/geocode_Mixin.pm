@@ -155,7 +155,8 @@ sub geocode {
   $zip ||= '';
   $plus4 ||= '';
   #CCH specific location stuff
-  my $extra_sql = "AND plus4lo <= '$plus4' AND plus4hi >= '$plus4'";
+  my $extra_sql = $plus4 ? "AND plus4lo <= '$plus4' AND plus4hi >= '$plus4'"
+                         : '';
 
   my @cust_tax_location =
     qsearch( {
@@ -167,6 +168,11 @@ sub geocode {
            );
   $geocode = $cust_tax_location[0]->geocode
     if scalar(@cust_tax_location);
+
+  warn "WARNING: customer ". $self->custnum.
+       ": multiple locations for zip ". $self->get("${prefix}zip").
+       "; using arbitrary geocode $geocode\n"
+    if scalar(@cust_tax_location) > 1;
 
   $geocode;
 }
