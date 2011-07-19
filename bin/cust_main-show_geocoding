@@ -1,0 +1,33 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw( qsearchs );
+use FS::cust_main;
+
+my $user = shift or die "usage: cust_main-show_geocoding username custnum ...\n";
+adminsuidsetup $user;
+
+my @custnums = @ARGV;
+
+while ( my $custnum = shift @custnums ) {
+
+  my $cust_main = qsearchs({
+    'table' => 'cust_main',
+    'hashref' => { 'custnum' => $custnum }
+  });
+  if ( !$cust_main ) {
+    warn "can't find custnum $custnum\n";
+    next;
+  }
+
+  my $output =
+    $cust_main->custnum. ': '. $cust_main->name. ': '.
+      'zip: '. $cust_main->zip. ', '.
+      'database geocode: '. $cust_main->get('geocode'). ', ';
+
+  $cust_main->set('geocode', '');
+  $output .= 'computed geocode: '. $cust_main->geocode('cch');
+
+  print "$output\n";
+}
