@@ -149,7 +149,7 @@ sub ban_search {
                      'payby'   => $opt{payby},
                      'payinfo' => md5_base64($opt{payinfo}),
                    },
-    'extra_sql' => 'AND end_date IS NULL OR end_date >= '. time,
+    'extra_sql' => 'AND ( end_date IS NULL OR end_date >= '. time. ' ) ',
   });
 }
 
