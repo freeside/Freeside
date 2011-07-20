@@ -1473,6 +1473,11 @@ sub replace {
     && $self->payby =~ /^(CARD|DCRD)$/
     && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
 
+  local($ignore_banned_card) = 1
+    if (    $old->payby  =~ /^(CARD|DCRD)$/ && $self->payby =~ /^(CARD|DCRD)$/
+         || $old->payby  =~ /^(CHEK|DCHK)$/ && $self->payby =~ /^(CHEK|DCHK)$/ )
+    && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -1869,7 +1874,11 @@ sub check {
       if ( $ban ) {
         if ( $ban->bantype eq 'warn' ) {
           #or others depending on value of $ban->reason ?
-          return '_duplicate_card' unless $self->override_ban_warn;
+          return '_duplicate_card'.
+                 ': disabled from'. time2str('%a %h %o at %r', $ban->_date).
+                 ' until '.         time2str('%a %h %o at %r', $ban->_end_date).
+                 ' (ban# '. $ban->bannum. ')'
+            unless $self->override_ban_warn;
         } else {
           return 'Banned credit card: banned on '.
                  time2str('%a %h %o at %r', $ban->_date).

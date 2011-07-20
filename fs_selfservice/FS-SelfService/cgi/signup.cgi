@@ -255,7 +255,7 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
       no strict 'refs';
       ${$_} = $cgi->param($_) foreach grep { /^snarf_/ } $cgi->param;
 
-      if ( $error =~ /^_duplicate_(card|ach)$/ ) {
+      if ( $error =~ /^_duplicate_(card|ach)/ ) {
         my $what = ($1 eq 'card') ? 'Credit card' : 'Electronic check';
         $error = "Warning: $what already used to sign up recently";
         $init_data->{'override_ban_warn'} = 1;
