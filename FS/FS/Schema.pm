@@ -117,6 +117,7 @@ sub dbdef_dist {
     #false laziness w/sub indices in DBIx::DBSchema::DBD (well, sorta)
     #and sub sql_create_table in DBIx::DBSchema::Table (slighty more?)
     my $unique = $tables_hashref->{$tablename}{'unique'};
+    warn "missing index for $tablename\n" unless defined $tables_hashref->{$tablename}{'index'};
     my @index  = @{ $tables_hashref->{$tablename}{'index'} };
 
     # kludge to avoid avoid "BLOB/TEXT column 'statustext' used in key
@@ -2762,7 +2763,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'bannum',
       'unique'      => [],
-      'index '      => [ [ 'payby', 'payinfo' ], [ 'usernum' ], ],
+      'index'       => [ [ 'payby', 'payinfo' ], [ 'usernum' ], ],
     },
 
     'pkg_category' => {
