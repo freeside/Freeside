@@ -1520,12 +1520,34 @@ isn't an open batch, one will be created.
 
 sub batch_invoice {
   my ($self, $opt) = @_;
-  my $batch = FS::bill_batch->get_open_batch;
+  my $bill_batch = $self->get_open_bill_batch;
   my $cust_bill_batch = FS::cust_bill_batch->new({
-      batchnum => $batch->batchnum,
+      batchnum => $bill_batch->batchnum,
       invnum   => $self->invnum,
   });
   return $cust_bill_batch->insert($opt);
+}
+
+=item get_open_batch
+
+Returns the currently open batch as an FS::bill_batch object, creating a new
+one if necessary.  (A per-agent batch if invoice_print_pdf-spoolagent is
+enabled)
+
+=cut
+
+sub get_open_bill_batch {
+  my $self = shift;
+  my $hashref = { status => 'O' };
+  $hashref->{'agentnum'} = $conf->exists('invoice_print_pdf-spoolagent')
+                             ? $self->cust_main->agentnum
+                             : '';
+  my $batch = qsearchs('bill_batch', $hashref);
+  return $batch if $batch;
+  $batch = FS::bill_batch->new($hashref);
+  my $error = $batch->insert;
+  die $error if $error;
+  return $batch;
 }
 
 =item ftp_invoice [ TEMPLATENAME ] 

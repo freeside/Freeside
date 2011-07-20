@@ -272,9 +272,11 @@ tie my %rights, 'Tie::IxHash',
   'Miscellaneous rights' => [
     { rightname=>'Job queue', global=>1 },
     { rightname=>'Time queue', global=>1 },
-    { rightname=>'Process batches', global=>1 },
-    { rightname=>'Reprocess batches', global=>1 },
-    { rightname=>'Redownload resolved batches', global=>1 },
+    { rightname=>'Process batches', global=>1 }, #Process payment batches
+    { rightname=>'Reprocess batches', global=>1 }, #Reprocess payment batches
+    { rightname=>'Redownload resolved batches', global=>1 }, #Redownload resolved payment batches
+    { rightname=>'Process invoice batches', },
+    { rightname=>'Process global invoice batches', global=>1 },
     { rightname=>'Import', global=>1 }, #some of these are ag-virt'ed now?  give em their own ACLs
     { rightname=>'Export', global=>1 },
     { rightname=> 'Edit rating data', desc=>'Delete CDRs', global=>1 },

@@ -395,8 +395,11 @@ $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Ente
 $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_date;open=1;intransit=1', 'Process credit card and electronic check batches' ]
   if ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
      && $curuser->access_right('Process batches');
-$tools_menu{'Download invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ] 
-  if $conf->exists('invoice_print_pdf');
+$tools_menu{'Download invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ]
+  if $curuser->access_right('Process invoice batches')
+  || $curuser->access_right('Process global invoice batches')
+  || $curuser->access_right('Configuration'); #XXX remove in 2.5
+  #now there's a standalone event#if $conf->exists('invoice_print_pdf');
 $tools_menu{'Bulk DID Orders'} =  [ $fsurl.'browse/did_order.html', 'View/manage bulk DID orders' ]
   if $curuser->access_right('Import');
 $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]

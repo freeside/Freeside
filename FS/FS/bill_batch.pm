@@ -2,9 +2,11 @@ package FS::bill_batch;
 
 use strict;
 use vars qw( @ISA $me $DEBUG );
-use FS::Record qw( qsearch qsearchs dbh );
-use FS::cust_bill_batch;
 use CAM::PDF;
+use FS::Conf;
+use FS::Record qw( qsearch qsearchs dbh );
+use FS::agent;
+use FS::cust_bill_batch;
 
 @ISA = qw( FS::Record );
 $me = '[ FS::bill_batch ]';
@@ -36,6 +38,8 @@ inherits from FS::Record.  The following fields are currently supported:
 =over 4
 
 =item batchnum - primary key
+
+=item agentnum - empty for global batches or agent (see L<FS::agent>)
 
 =item status - either 'O' (open) or 'R' (resolved/closed).
 
@@ -96,25 +100,37 @@ sub close {
   return $self->replace;
 }
 
-=back
+sub check {
+  my $self = shift;
 
-=head1 CLASS METHODS
+  my $error =
+       $self->ut_numbern('batchnum')
+    || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
+    || $self->ut_enum('status', [ 'O', 'R' ] )
+  ;
+  return $error if $error;
 
-=item get_open_batch
+  $self->SUPER::check;
+}
 
-Returns the currently open batch.  There should only be one at a time.
+=item agent
+
+Returns the agent (see L<FS::agent>) for this invoice batch.
 
 =cut
 
-sub get_open_batch {
-  my $class = shift;
-  my $batch = qsearchs('bill_batch', { status => 'O' });
-  return $batch if $batch;
-  $batch = FS::bill_batch->new({status => 'O'});
-  my $error = $batch->insert;
-  die $error if $error;
-  return $batch;
+sub agent {
+  my $self = shift;
+  qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 }
+
+=back
+
+=head1 SUBROUTINES
+
+=item process_print_pdf
+
+=cut
 
 use Storable 'thaw';
 use Data::Dumper;
@@ -133,7 +149,6 @@ sub process_print_pdf {
   my $error = $batch->replace;
   die $error if $error;
 }
-
 
 =back
 

@@ -1258,7 +1258,14 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_print_pdf',
     'section'     => 'invoicing',
-    'description' => 'Store postal invoices for download in PDF format rather than printing them directly.',
+    'description' => 'For all invoice print operations, store postal invoices for download in PDF format rather than printing them directly.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'invoice_print_pdf-spoolagent',
+    'section'     => 'invoicing',
+    'description' => 'Store postal invoices PDF downloads in per-agent spools.',
     'type'        => 'checkbox',
   },
 

@@ -3339,13 +3339,14 @@ sub tables_hashref {
 
     'bill_batch' => {
       'columns' => [
-        'batchnum',         'serial',     '', '', '', '',
-        'status',             'char', 'NULL','1', '', '',
-        'pdf',                'blob', 'NULL', '', '', '',
+        'batchnum',         'serial',     '',  '', '', '',
+        'agentnum',            'int', 'NULL',  '', '', '',
+        'status',             'char', 'NULL', '1', '', '',
+        'pdf',                'blob', 'NULL',  '', '', '',
       ],
       'primary_key' => 'batchnum',
       'unique'      => [],
-      'index'       => [],
+      'index'       => [ ['agentnum'] ],
     },
 
     'cust_bill_batch' => {
