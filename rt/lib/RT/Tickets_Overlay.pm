@@ -1470,7 +1470,7 @@ sub _CustomFieldLimit {
                 %rest
             );
         }
-        elsif ( $cf->Type eq 'Date' ) {
+        elsif ( $cfid and $cf->Type eq 'Date' ) {
             $self->_DateFieldLimit( 
                 'Content',
                 $op,
