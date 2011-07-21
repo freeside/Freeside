@@ -23,7 +23,7 @@ system join('',
   "cvs diff -u @ARGV | ( cd /home/$USER/freeside2.3/$prefix; patch -p0 ) ",
   " && cvs diff -u @ARGV | ( cd /home/$USER/freeside2.1/$prefix; patch -p0 ) ",
   " && ( ( cvs commit  -m $desc @ARGV & ); ",
-  "( sleep 1;cd /home/$USER/freeside2.3/$prefix; cvs commit -m $desc @ARGV & ) ); "
+  "( sleep 1;cd /home/$USER/freeside2.3/$prefix; cvs commit -m $desc @ARGV & ); ",
   "( sleep 1;cd /home/$USER/freeside2.1/$prefix; cvs commit -m $desc @ARGV & ) )"
 );
 
