@@ -150,17 +150,11 @@ sub customer_tickets {
   my $conf = FS::Conf->new;
   my $priority_order =
     $conf->exists('ticket_system-priority_reverse') ? 'ASC' : 'DESC';
-  my $custom_priority = 
-    $conf->config('ticket_system-custom_priority_field') || '';
 
-  my @order_by;
-  my $ss_priority = selfservice_priority();
-  push @order_by, { FIELD => "CF.{$ss_priority}", ORDER => $priority_order }
-    if $ss_priority;
-  push @order_by,
+  my @order_by = (
     { FIELD => 'Priority', ORDER => $priority_order },
     { FIELD => 'Id',       ORDER => 'DESC' },
-  ;
+  );
 
   $Tickets->OrderByCols(@order_by);
 
@@ -168,6 +162,7 @@ sub customer_tickets {
   while ( my $t = $Tickets->Next ) {
     push @tickets, _ticket_info($t);
   }
+
   return \@tickets;
 }
 

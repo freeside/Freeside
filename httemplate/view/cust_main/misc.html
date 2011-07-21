@@ -125,6 +125,15 @@
 
 % }
 
+% if ( $conf->exists('ticket_system-selfservice_edit_subject') ) {
+
+  <TR>
+    <TD ALIGN="right"><% mt('Edit ticket subjects') %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->edit_subject ? 'yes' : 'no' %></TD>
+  </TR>
+
+% }
+
 </TABLE></TD></TR></TABLE>
 <%init>
 

@@ -132,6 +132,14 @@ my( $new_base, %new_param ) =
 my $new_link = FS::TicketSystem->href_new_ticket( $cust_main );
 
 my $ss_priority = FS::TicketSystem->selfservice_priority;
+if ( $ss_priority ) {
+  use sort 'stable';
+  no warnings 'uninitialized';
+  @tickets = sort { 
+    ($b->{'content'} eq $a->{'content'}) &&
+    $b->{'_selfservice_priority'} <=> $a->{'_selfservice_priority'}
+  } @tickets;
+}
 
 my $format = $conf->config('date_format') || '%Y-%m-%d';
 

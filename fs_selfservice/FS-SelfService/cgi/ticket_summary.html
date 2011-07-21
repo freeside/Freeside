@@ -10,6 +10,12 @@ my $col = $col1;
 my $can_set_priority = 
   grep { exists($_->{'_selfservice_priority'}) } @tickets;
 if ( $can_set_priority ) {
+  use sort 'stable';
+  @tickets = sort { 
+              ($b->{'_selfservice_priority'} || 0) <=> 
+              ($a->{'_selfservice_priority'} || 0)
+  } @tickets;
+
   $OUT .= qq!<FORM ACTION="$selfurl" METHOD="POST">! .
           qq!<INPUT TYPE="hidden" NAME="session" VALUE="$session_id">! .
           qq!<INPUT TYPE="hidden" NAME="action" VALUE="ticket_priority">!;
