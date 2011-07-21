@@ -366,11 +366,12 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
   } else {
 
-    $regions{$label}->{'url_param'} .= ';taxclassNULL=1'
-      if $cgi->param('show_taxclasses');
-
     my $same_sql = $r->sql_taxclass_sameregion;
     $mywhere .= " AND $same_sql" if $same_sql;
+
+    $regions{$label}->{'url_param'} .= ';taxclassNULL=1'
+      if $cgi->param('show_taxclasses')
+      || $same_sql;
 
   }
 
