@@ -73,6 +73,7 @@
                    \&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields' => [
+                   '',
                    'setup', #broken in $unearned case i guess
                    ( $unearned ? ('', '') : () ),
                    ( $use_usage eq 'recurring' ? 'recur - usage' :
@@ -201,12 +202,9 @@ if ( $cgi->param('taxclass')
   #
   #} else {
 
-    push @where,
-      ' ( '. join(' OR ',
-                    map ' part_pkg.taxclass = '.dbh->quote($_),
-                        $cgi->param('taxclass')
-                 ).
-      ' ) ';
+    push @where, ' part_pkg.taxclass IN ( '.
+                   join(', ', map dbh->quote($_), $cgi->param('taxclass') ).
+                 ' ) ';
 
   #}
 
@@ -312,6 +310,7 @@ if ( $cgi->param('out') ) {
     die "unknown base region for empty taxclass" unless $cust_main_county;
 
     my $same_sql = $cust_main_county->sql_taxclass_sameregion;
+    $same_sql =~ s/taxclass/part_pkg.taxclass/g;
     push @where, $same_sql if $same_sql;
 
   }
