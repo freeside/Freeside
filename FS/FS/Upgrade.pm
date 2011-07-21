@@ -129,6 +129,24 @@ sub upgrade {
 
   }
 
+  # decrypt all payinfo where payby = BILL
+  # kind of a weird spot for this, but it's better than duplicating
+  # all this code in each class...
+  my @decrypt_tables = qw( cust_main cust_pay_void cust_pay cust_refund cust_pay_pending );
+  foreach my $table ( @decrypt_tables ) {
+      my @objects = qsearch({   'table'     => $table,
+                                'hashref'   => { 'payby' => 'BILL', },
+                                'extra_sql' => 'AND LENGTH(payinfo) > 100',
+                              });
+      foreach my $object ( @objects ) {
+          my $payinfo = $object->decrypt($object->payinfo);
+          die "error decrypting payinfo" if $payinfo eq $object->payinfo;
+          $object->payinfo($payinfo);
+          my $error = $object->replace;
+          die $error if $error;
+      }
+  }
+
 }
 
 =item upgrade_data
