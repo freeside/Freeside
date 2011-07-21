@@ -1,26 +1,51 @@
-# BEGIN LICENSE BLOCK
-# 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
-# 
-# (Except where explictly superceded by other copyright notices)
-# 
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
-# 
-# 
-# END LICENSE BLOCK
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+
 use strict;
 
 use RT;
@@ -29,14 +54,12 @@ package RT::Interface::CLI;
 
 
 BEGIN {
-    use Exporter ();
-    use vars qw ($VERSION  @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+    use base 'Exporter';
+    use vars qw ($VERSION  @EXPORT @EXPORT_OK %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
-    
-    @ISA         = qw(Exporter);
-    
+    $VERSION = do { my @r = (q$Revision: 1.1.1.10 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+
     # your exported package globals go here,
     # as well as any optionally exported functions
     @EXPORT_OK   = qw(&CleanEnv 
@@ -76,11 +99,6 @@ BEGIN {
 
 =head1 METHODS
 
-=begin testing
-
-ok(require RT::Interface::CLI);
-
-=end testing
 
 =cut
 
@@ -182,9 +200,9 @@ sub GetMessageContent {
     
     #Load the sourcefile, if it's been handed to us
     if ($source) {
-	open (SOURCE, "<$source");
-	@lines = (<SOURCE>);
-	close (SOURCE);
+    open( SOURCE, '<', $source ) or die $!;
+	@lines = (<SOURCE>) or die $!;
+	close (SOURCE) or die $!;
     }
     elsif ($args{'Content'}) {
 	@lines = split('\n',$args{'Content'});
@@ -196,21 +214,21 @@ sub GetMessageContent {
     for (@lines) {
 	print $fh $_;
     }
-    close ($fh);
+    close ($fh) or die $!;
     
     #Edit the file if we need to
     if ($edit) {	
 
 	unless ($ENV{'EDITOR'}) {
-	    $RT::Logger->crit('No $EDITOR variable defined'. "\n");
+	    $RT::Logger->crit('No $EDITOR variable defined');
 	    return undef;
 	}
 	system ($ENV{'EDITOR'}, $filename);
     }	
     
-    open (READ, "<$filename");
+    open( READ, '<', $filename ) or die $!;
     my @newlines = (<READ>);
-    close (READ);
+    close (READ) or die $!;
 
     unlink ($filename) unless (debug());
     return(\@newlines);
@@ -225,7 +243,7 @@ sub debug {
     my $val = shift;
     my ($debug);
     if ($val) {
-	$RT::Logger->debug($val."\n");
+	$RT::Logger->debug($val);
 	if ($debug) {
 	    print STDERR "$val\n";
 	}
@@ -238,9 +256,6 @@ sub debug {
 # }}}
 
 
-eval "require RT::Interface::CLI_Vendor";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/CLI_Vendor.pm});
-eval "require RT::Interface::CLI_Local";
-die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/CLI_Local.pm});
+RT::Base->_ImportOverlays();
 
 1;
