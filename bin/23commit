@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# usage: 21commit 'log message' filename filename ...
+# usage: 23commit 'log message' filename filename ...
 
 use Cwd;
 use String::ShellQuote;
@@ -18,9 +18,9 @@ die "no files!" unless @ARGV;
 
 #print <<END;
 system join('',
-  "( cd /home/$USER/freeside2.1/$prefix; cvs update @ARGV ) && ",
-  "cvs diff -u @ARGV | ( cd /home/$USER/freeside2.1/$prefix; patch -p0 ) ",
+  "( cd /home/$USER/freeside2.3/$prefix; cvs update @ARGV ) && ",
+  "cvs diff -u @ARGV | ( cd /home/$USER/freeside2.3/$prefix; patch -p0 ) ",
   " && ( ( cvs commit  -m $desc @ARGV & ); ",
-  "( sleep 1;cd /home/$USER/freeside2.1/$prefix; cvs commit -m $desc @ARGV & ) )"
+  "( sleep 1;cd /home/$USER/freeside2.3/$prefix; cvs commit -m $desc @ARGV & ) )"
 );
 
