@@ -3005,7 +3005,8 @@ sub search {
   # parse fcc_line
   ###
 
-  push @where,  "part_pkg.fcc_ds0s > 0" if $params->{fcc_line};
+  push @where,  "(part_pkg.fcc_ds0s > 0 OR pkg_class.fcc_ds0s > 0)" 
+                                                        if $params->{fcc_line};
 
   ###
   # parse censustract
