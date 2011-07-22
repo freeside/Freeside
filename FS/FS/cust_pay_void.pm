@@ -258,7 +258,8 @@ sub _upgrade_data {  # class method
 
   foreach my $cust_pay_void (qsearch('cust_pay_void', {'void_usernum' => ''})) {
     $sth->execute($cust_pay_void->paynum) or die $sth->errstr;
-    my $usernum = $sth->fetchrow_arrayref->[0] or next;
+    my $row = $sth->fetchrow_arrayref;
+    my $usernum = $row ? $row->[0] : '';
     if ( $usernum ) {
       $cust_pay_void->void_usernum($usernum);
       my $error = $cust_pay_void->replace;
