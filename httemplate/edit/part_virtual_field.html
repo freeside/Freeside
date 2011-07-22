@@ -1,0 +1,44 @@
+<% include('elements/edit.html',
+             'name_singular' => 'custom field',
+             'viewall_dir'  => 'browse',
+             'table'         => 'part_virtual_field',
+             'labels' => { 'vfieldpart'     => '',
+                           'dbtable'        => 'Table',
+                           'name'           => 'Name',
+                           'length'         => 'Length',
+                           'label'          => 'Label',
+                           'dbtable_dummy'  => 'Table',
+                         },
+             'fields' => [ 
+                           { field=>'vfieldpart', type=>'hidden', },
+                           { field=>'name', type=>'text', },
+                           { field  => 'dbtable',
+                             type   => 'select',
+                             options => [ 'svc_broadband', 'router', 'cust_main', ],
+                           },
+                           { field=>'label', type=>'text', },
+                           { field=>'length', type=>'text', },
+                         ],
+            'edit_callback' => $callback,
+            'error_callback' => $callback,
+            'html_init'      => 'Please be patient after clicking the button as 
+                                this process may take more than 10 seconds.
+                                <br><br>',
+          )
+%>
+<%init>
+
+my $callback = sub {
+  my ($cgi, $object, $fields) = (shift, shift, shift);
+  my @edit_fixed_fields = qw( dbtable name length );
+  foreach my $f ( @{$fields} ) {
+      # XXX: editing anything other than label is disabled for now
+      $f->{type} = 'fixed' 
+        if $object->vfieldpart && grep { $f->{field} eq $_ } @edit_fixed_fields;
+  }
+};
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

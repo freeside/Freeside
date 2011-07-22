@@ -1,0 +1,35 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Custom field definitions',
+                 'menubar'     => [ 'Add a new field' => $p.'edit/part_virtual_field.html', ],
+                 'name'        => 'custom fields',
+                 'query'       => { 'table'     => 'part_virtual_field',
+                                    'hashref'   => {},
+                                    'order_by' => 'ORDER BY dbtable',
+                                  },
+                 'count_query' => 'SELECT COUNT(1) from part_virtual_field',
+                 'header'      => [ '#',
+                                    'Table',
+                                    'Name',
+                                    'Length',
+                                    'Label',
+                                  ],
+                 'fields'      => [ 'vfieldpart',
+                                    'dbtable',
+                                    'name',
+                                    'length',
+                                    'label',
+                                  ],
+                 'links'       => [ [ $p.'edit/part_virtual_field.html?', 'vfieldpart' ],
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                  ],
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

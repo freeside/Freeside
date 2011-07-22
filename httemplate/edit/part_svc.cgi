@@ -15,20 +15,7 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
 
 <BR>
 
-
-% #YUCK.  false laziness w/part_svc.pm.  go away virtual fields, please
 % my %vfields;
-% foreach my $svcdb ( FS::part_svc->svc_tables() ) {
-%   eval "use FS::$svcdb;";
-%   my $self = "FS::$svcdb"->new;
-%   $vfields{$svcdb} = {};
-%   foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
-%     my $pvf = $self->pvf($field);
-%     $vfields{$svcdb}->{$field} = $pvf;
-%     #warn "\$vfields{$svcdb}->{$field} = $pvf";
-%   } #next $field
-% } #next $svcdb
-%
 %  #code duplication w/ edit/part_svc.cgi, should move this hash to part_svc.pm
 %  # and generalize the subs
 %  # condition sub is tested to see whether to disable display of this choice

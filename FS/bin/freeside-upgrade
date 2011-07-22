@@ -127,18 +127,27 @@ my @statements = dbdef->sql_update_schema( dbdef_dist(datasrc),
                                            { 'nullify_default' => 1, },
                                          );
 
-#### NEW CUSTOM FIELDS (prevent columns from being dropped by upgrade)
+#### NEW CUSTOM FIELDS:
+# 1. prevent new custom field columns from being dropped by upgrade
+# 2. migrate old virtual fields to real fields (new custom fields)
+####
 my $cfsth = $dbh->prepare("SELECT * FROM part_virtual_field") 
                                                          or die $dbh->errstr;
 $cfsth->execute or die $cfsth->errstr;
 my $cf; 
-# likely a very inefficient implementation of this
 while ( $cf = $cfsth->fetchrow_hashref ) {
     my $tbl = $cf->{'dbtable'};
     my $name = $cf->{'name'};
-    @statements = grep { $_ !~ /^\s*ALTER\s+TABLE\s+$tbl\s+DROP\s+COLUMN\s+cf_$name\s*$/i }
+    @statements = grep { $_ !~ /^\s*ALTER\s+TABLE\s+(h_|)$tbl\s+DROP\s+COLUMN\s+cf_$name\s*$/i }
                                                                     @statements;
+    push @statements, 
+        "ALTER TABLE $tbl ADD COLUMN cf_$name varchar(".$cf->{'length'}.")"
+     unless (dbdef->table($tbl) && dbdef->table($tbl)->column("cf_$name"));
+    push @statements, 
+        "ALTER TABLE h_$tbl ADD COLUMN cf_$name varchar(".$cf->{'length'}.")"
+     unless (dbdef->table("h_$tbl") && dbdef->table("h_$tbl")->column("cf_$name"));
 }
+warn "Custom fields schema upgrade completed";
 
 @statements = 
   grep { $_ !~ /^CREATE +INDEX +h_queue/i } #useless, holds up queue insertion
@@ -239,6 +248,30 @@ $dbh = adminsuidsetup($user);
 
 warn "Re-initialization with updated schema completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
+
+#### NEW CUSTOM FIELDS:
+# 3. migrate old virtual field data to the new custom fields
+####
+$cfsth = $dbh->prepare("SELECT * FROM virtual_field left join part_virtual_field using (vfieldpart)")
+                                                         or die $dbh->errstr;
+$cfsth->execute or die $cfsth->errstr;
+my @cfst;
+while ( $cf = $cfsth->fetchrow_hashref ) {
+    my $tbl = $cf->{'dbtable'};
+    my $name = $cf->{'name'};
+    my $dtable = dbdef->table($tbl);
+    next unless $dtable && $dtable->primary_key; # XXX: warn first?
+    my $pkey = $dtable->primary_key;
+    next unless $dtable->column($pkey)->type =~ /int/i; # XXX: warn first?
+    push @cfst, "UPDATE $tbl set cf_$name = '".$cf->{'value'}."' WHERE $pkey = ".$cf->{'recnum'};
+    push @cfst, "DELETE FROM virtual_field WHERE vfieldnum = ".$cf->{'vfieldnum'};
+}
+foreach my $cfst ( @cfst ) {
+    warn "$cfst\n";
+    $dbh->do( $cfst )
+      or die "Error: ". $dbh->errstr. "\n executing: $cfst";
+}
+warn "Custom fields data upgrade completed";
 
 upgrade_config()
   unless $DRY_RUN || $opt_s;

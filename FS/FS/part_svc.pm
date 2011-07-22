@@ -82,12 +82,12 @@ the part_svc_column table appropriately (see L<FS::part_svc_column>).
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
-=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null or empty (no default), `D' for default, `F' for fixed (unchangeable), `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
+=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null or empty (no default), `D' for default, `F' for fixed (unchangeable), `M' for manual selection from inventory, or `A' for automatic selection from inventory. 
 
 =back
 
 If you want to add part_svc_column records for fields that do not exist as
-(real or virtual) fields in the I<svcdb> table, make sure to list then in 
+fields in the I<svcdb> table, make sure to list then in 
 EXTRA_FIELDS_ARRAYREF also.
 
 If EXPORTNUMS_HASHREF is specified (keys are exportnums and values are
@@ -617,28 +617,6 @@ sub _svc_defs {
     sort { $info{$a}->{'display_weight'} <=> $info{$b}->{'display_weight'} }
     keys %info,
   ;
-  
-  # yuck.  maybe this won't be so bad when virtual fields become real fields
-  my %vfields;
-  foreach my $svcdb (grep dbdef->table($_), keys %svc_defs ) {
-    eval "use FS::$svcdb;";
-    my $self = "FS::$svcdb"->new;
-    $vfields{$svcdb} = {};
-    foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
-      my $pvf = $self->pvf($field);
-      my @list = $pvf->list;
-      if (scalar @list) {
-        $svc_defs{$svcdb}->{$field} = { desc        => $pvf->label,
-                                        type        => 'select',
-                                        select_list => \@list };
-      } else {
-        $svc_defs{$svcdb}->{$field} = $pvf->label;
-      } #endif
-      $vfields{$svcdb}->{$field} = $pvf;
-      warn "\$vfields{$svcdb}->{$field} = $pvf"
-        if $DEBUG;
-    } #next $field
-  } #next $svcdb
   
   $svc_defs = \%svc_defs; #cache
   

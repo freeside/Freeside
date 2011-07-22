@@ -2,8 +2,8 @@ package FS::Record;
 
 use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $conf $conf_encryption $me
              %virtual_fields_cache
+             $conf $conf_encryption $me
              $nowarn_identical $nowarn_classload
              $no_update_diff $no_check_foreign
              @encrypt_payby
@@ -23,6 +23,7 @@ use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
 use NetAddr::IP; # for validation
+use Data::Dumper;
 #use FS::Conf; #dependency loop bs, in install_callback below instead
 
 use FS::part_virtual_field;
@@ -378,22 +379,12 @@ sub qsearch {
     my $pkey = $dbdef_table->primary_key;
 
     my @real_fields = grep exists($record->{$_}), real_fields($table);
-    my @virtual_fields;
-    if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
-      @virtual_fields = grep exists($record->{$_}), "FS::$table"->virtual_fields;
-    } else {
-      cluck "warning: FS::$table not loaded; virtual fields not searchable"
-        unless $nowarn_classload;
-      @virtual_fields = ();
-    }
 
     my $statement .= "SELECT $select FROM $stable";
     $statement .= " $addl_from" if $addl_from;
-    if ( @real_fields or @virtual_fields ) {
+    if ( @real_fields ) {
       $statement .= ' WHERE '. join(' AND ',
-        get_real_fields($table, $record, \@real_fields) ,
-        get_virtual_fields($table, $pkey, $record, \@virtual_fields),
-        );
+        get_real_fields($table, $record, \@real_fields));
     }
 
     $statement .= " $extra_sql" if defined($extra_sql);
@@ -459,20 +450,10 @@ sub qsearch {
 
   $sth->execute or croak "Error executing \"$statement\": ". $sth->errstr;
 
-  # virtual fields and blessings are nonsense in a heterogeneous UNION, right?
   my $table = $stable[0];
   my $pkey = '';
   $table = '' if grep { $_ ne $table } @stable;
   $pkey = dbdef->table($table)->primary_key if $table;
-
-  my @virtual_fields = ();
-  if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
-    @virtual_fields = "FS::$table"->virtual_fields;
-  } else {
-    cluck "warning: FS::$table not loaded; virtual fields not returned either"
-      unless $nowarn_classload;
-    @virtual_fields = ();
-  }
 
   my %result;
   tie %result, "Tie::IxHash";
@@ -485,28 +466,6 @@ sub qsearch {
 
   $sth->finish;
 
-  if ( keys(%result) and @virtual_fields ) {
-    $statement =
-      "SELECT virtual_field.recnum, part_virtual_field.name, ".
-             "virtual_field.value ".
-      "FROM part_virtual_field JOIN virtual_field USING (vfieldpart) ".
-      "WHERE part_virtual_field.dbtable = '$table' AND ".
-      "virtual_field.recnum IN (".
-      join(',', keys(%result)). ") AND part_virtual_field.name IN ('".
-      join(q!', '!, @virtual_fields) . "')";
-    warn "[debug]$me $statement\n" if $DEBUG > 1;
-    $sth = $dbh->prepare($statement) or croak "$dbh->errstr doing $statement";
-    $sth->execute or croak "Error executing \"$statement\": ". $sth->errstr;
-
-    foreach (@{ $sth->fetchall_arrayref({}) }) {
-      my $recnum = $_->{recnum};
-      my $name = $_->{name};
-      my $value = $_->{value};
-      if (exists($result{$recnum})) {
-        $result{$recnum}->{$name} = $value;
-      }
-    }
-  }
   my @return;
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
@@ -555,50 +514,6 @@ sub qsearch {
 }
 
 ## makes this easier to read
-
-sub get_virtual_fields {
-   my $table = shift;
-   my $pkey = shift;
-   my $record = shift;
-   my $virtual_fields = shift;
-   
-   return
-    ( map {
-      my $op = '=';
-      my $column = $_;
-      if ( ref($record->{$_}) ) {
-        $op = $record->{$_}{'op'} if $record->{$_}{'op'};
-	if ( uc($op) eq 'ILIKE' ) {
-	  $op = 'LIKE';
-	  $record->{$_}{'value'} = lc($record->{$_}{'value'});
-	  $column = "LOWER($_)";
-	}
-	$record->{$_} = $record->{$_}{'value'};
-      }
-
-      # ... EXISTS ( SELECT name, value FROM part_virtual_field
-      #              JOIN virtual_field
-      #              ON part_virtual_field.vfieldpart = virtual_field.vfieldpart
-      #              WHERE recnum = svc_acct.svcnum
-      #              AND (name, value) = ('egad', 'brain') )
-
-      my $value = $record->{$_};
-
-      my $subq;
-
-      $subq = ($value ? 'EXISTS ' : 'NOT EXISTS ') .
-      "( SELECT part_virtual_field.name, virtual_field.value ".
-      "FROM part_virtual_field JOIN virtual_field ".
-      "ON part_virtual_field.vfieldpart = virtual_field.vfieldpart ".
-      "WHERE virtual_field.recnum = ${table}.${pkey} ".
-      "AND part_virtual_field.name = '${column}'".
-      ($value ? 
-        " AND virtual_field.value ${op} '${value}'"
-      : "") . ")";
-      $subq;
-
-    } @{ $virtual_fields } ) ;
-}
 
 sub get_real_fields {
   my $table = shift;
@@ -1110,34 +1025,6 @@ sub insert {
 
   }
 
-  my @virtual_fields = 
-      grep defined($self->getfield($_)) && $self->getfield($_) ne "",
-          $self->virtual_fields;
-  if (@virtual_fields) {
-    my %v_values = map { $_, $self->getfield($_) } @virtual_fields;
-
-    my $vfieldpart = $self->vfieldpart_hashref;
-
-    my $v_statement = "INSERT INTO virtual_field(recnum, vfieldpart, value) ".
-                    "VALUES (?, ?, ?)";
-
-    my $v_sth = dbh->prepare($v_statement) or do {
-      dbh->rollback if $FS::UID::AutoCommit;
-      return dbh->errstr;
-    };
-
-    foreach (keys(%v_values)) {
-      $v_sth->execute($self->getfield($primary_key),
-                      $vfieldpart->{$_},
-                      $v_values{$_})
-      or do {
-        dbh->rollback if $FS::UID::AutoCommit;
-        return $v_sth->errstr;
-      };
-    }
-  }
-
-
   my $h_sth;
   if ( defined dbdef->table('h_'. $table) ) {
     my $h_statement = $self->_h_statement('insert');
@@ -1209,17 +1096,6 @@ sub delete {
   }
 
   my $primary_key = $self->dbdef_table->primary_key;
-  my $v_sth;
-  my @del_vfields;
-  my $vfp = $self->vfieldpart_hashref;
-  foreach($self->virtual_fields) {
-    next if $self->getfield($_) eq '';
-    unless(@del_vfields) {
-      my $st = "DELETE FROM virtual_field WHERE recnum = ? AND vfieldpart = ?";
-      $v_sth = dbh->prepare($st) or return dbh->errstr;
-    }
-    push @del_vfields, $_;
-  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1231,9 +1107,6 @@ sub delete {
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found, statement:\n$statement" if $rc eq "0E0";
   $h_sth->execute or return $h_sth->errstr if $h_sth;
-  $v_sth->execute($self->getfield($primary_key), $vfp->{$_}) 
-    or return $v_sth->errstr 
-        foreach (@del_vfields);
   
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
@@ -1362,44 +1235,6 @@ sub replace {
     $h_new_sth = '';
   }
 
-  # For virtual fields we have three cases with different SQL 
-  # statements: add, replace, delete
-  my $v_add_sth;
-  my $v_rep_sth;
-  my $v_del_sth;
-  my (@add_vfields, @rep_vfields, @del_vfields);
-  my $vfp = $old->vfieldpart_hashref;
-  foreach(grep { exists($diff{$_}) } $new->virtual_fields) {
-    if($diff{$_} eq '') {
-      # Delete
-      unless(@del_vfields) {
-        my $st = "DELETE FROM virtual_field WHERE recnum = ? ".
-                 "AND vfieldpart = ?";
-        warn "[debug]$me $st\n" if $DEBUG > 2;
-        $v_del_sth = dbh->prepare($st) or return dbh->errstr;
-      }
-      push @del_vfields, $_;
-    } elsif($old->getfield($_) eq '') {
-      # Add
-      unless(@add_vfields) {
-        my $st = "INSERT INTO virtual_field (value, recnum, vfieldpart) ".
-	         "VALUES (?, ?, ?)";
-        warn "[debug]$me $st\n" if $DEBUG > 2;
-        $v_add_sth = dbh->prepare($st) or return dbh->errstr;
-      }
-      push @add_vfields, $_;
-    } else {
-      # Replace
-      unless(@rep_vfields) {
-        my $st = "UPDATE virtual_field SET value = ? ".
-                 "WHERE recnum = ? AND vfieldpart = ?";
-        warn "[debug]$me $st\n" if $DEBUG > 2;
-        $v_rep_sth = dbh->prepare($st) or return dbh->errstr;
-      }
-      push @rep_vfields, $_;
-    }
-  }
-
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE'; 
@@ -1411,23 +1246,6 @@ sub replace {
   #not portable #return "Record not found (or records identical)." if $rc eq "0E0";
   $h_old_sth->execute or return $h_old_sth->errstr if $h_old_sth;
   $h_new_sth->execute or return $h_new_sth->errstr if $h_new_sth;
-
-  $v_del_sth->execute($old->getfield($primary_key),
-                      $vfp->{$_})
-        or return $v_del_sth->errstr
-      foreach(@del_vfields);
-
-  $v_add_sth->execute($new->getfield($_),
-                      $old->getfield($primary_key),
-                      $vfp->{$_})
-        or return $v_add_sth->errstr
-      foreach(@add_vfields);
-
-  $v_rep_sth->execute($new->getfield($_),
-                      $old->getfield($primary_key),
-                      $vfp->{$_})
-        or return $v_rep_sth->errstr
-      foreach(@rep_vfields);
 
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
@@ -1470,35 +1288,49 @@ sub rep {
 
 =item check
 
-Checks virtual fields (using check_blocks).  Subclasses should still provide 
-a check method to validate real fields, foreign keys, etc., and call this 
-method via $self->SUPER::check.
-
-(FIXME: Should this method try to make sure that it I<is> being called from 
-a subclass's check method, to keep the current semantics as far as possible?)
+Checks custom fields. Subclasses should still provide a check method to validate
+non-custom fields, foreign keys, etc., and call this method via $self->SUPER::check.
 
 =cut
 
-sub check {
-  #confess "FS::Record::check not implemented; supply one in subclass!";
-  my $self = shift;
-
-  foreach my $field ($self->virtual_fields) {
-    for ($self->getfield($field)) {
-      # See notes on check_block in FS::part_virtual_field.
-      eval $self->pvf($field)->check_block;
-      if ( $@ ) {
-        #this is bad, probably want to follow the stack backtrace up and see
-        #wtf happened
-        my $err = "Fatal error checking $field for $self";
-        cluck "$err: $@";
-        return "$err (see log for backtrace): $@";
-
-      }
-      $self->setfield($field, $_);
+sub check { 
+    my $self = shift;
+    foreach my $field ($self->virtual_fields) {
+        my $error = $self->ut_textn($field);
+        return $error if $error;
     }
+    '';
+}
+
+=item virtual_fields [ TABLE ]
+
+Returns a list of virtual fields defined for the table.  This should not 
+be exported, and should only be called as an instance or class method.
+
+=cut
+
+sub virtual_fields {
+  my $self = shift;
+  my $table;
+  $table = $self->table or confess "virtual_fields called on non-table";
+
+  confess "Unknown table $table" unless dbdef->table($table);
+
+  return () unless dbdef->table('part_virtual_field');
+
+  unless ( $virtual_fields_cache{$table} ) {
+    my $concat = [ "'cf_'", "name" ];
+    my $query = "SELECT ".concat_sql($concat).' from part_virtual_field ' .
+                "WHERE dbtable = '$table'";
+    my $dbh = dbh;
+    my $result = $dbh->selectcol_arrayref($query);
+    confess "Error executing virtual fields query: $query: ". $dbh->errstr
+      if $dbh->err;
+    $virtual_fields_cache{$table} = $result;
   }
-  '';
+
+  @{$virtual_fields_cache{$table}};
+
 }
 
 =item process_batch_import JOB OPTIONS_HASHREF PARAMS
@@ -2737,40 +2569,9 @@ sub ut_agentnum_acl {
 
 }
 
-=item virtual_fields [ TABLE ]
-
-Returns a list of virtual fields defined for the table.  This should not 
-be exported, and should only be called as an instance or class method.
-
-=cut
-
-sub virtual_fields {
-  my $self = shift;
-  my $table;
-  $table = $self->table or confess "virtual_fields called on non-table";
-
-  confess "Unknown table $table" unless dbdef->table($table);
-
-  return () unless dbdef->table('part_virtual_field');
-
-  unless ( $virtual_fields_cache{$table} ) {
-    my $query = 'SELECT name from part_virtual_field ' .
-                "WHERE dbtable = '$table'";
-    my $dbh = dbh;
-    my $result = $dbh->selectcol_arrayref($query);
-    confess "Error executing virtual fields query: $query: ". $dbh->errstr
-      if $dbh->err;
-    $virtual_fields_cache{$table} = $result;
-  }
-
-  @{$virtual_fields_cache{$table}};
-
-}
-
-
 =item fields [ TABLE ]
 
-This is a wrapper for real_fields and virtual_fields.  Code that called
+This is a wrapper for real_fields.  Code that called
 fields before should probably continue to call fields.
 
 =cut
@@ -2784,48 +2585,9 @@ sub fields {
     $table = $something;
     $something = "FS::$table";
   }
-  return (real_fields($table), $something->virtual_fields());
+  return (real_fields($table));
 }
 
-=item pvf FIELD_NAME
-
-Returns the FS::part_virtual_field object corresponding to a field in the 
-record (specified by FIELD_NAME).
-
-=cut
-
-sub pvf {
-  my ($self, $name) = (shift, shift);
-
-  if(grep /^$name$/, $self->virtual_fields) {
-    return qsearchs('part_virtual_field', { dbtable => $self->table,
-                                            name    => $name } );
-  }
-  ''
-}
-
-=item vfieldpart_hashref TABLE
-
-Returns a hashref of virtual field names and vfieldparts applicable to the given
-TABLE.
-
-=cut
-
-sub vfieldpart_hashref {
-  my $self = shift;
-  my $table = $self->table;
-
-  return {} unless dbdef->table('part_virtual_field');
-
-  my $dbh = dbh;
-  my $statement = "SELECT vfieldpart, name FROM part_virtual_field WHERE ".
-                  "dbtable = '$table'";
-  my $sth = $dbh->prepare($statement);
-  $sth->execute or croak "Execution of '$statement' failed: ".$dbh->errstr;
-  return { map { $_->{name}, $_->{vfieldpart} } 
-    @{$sth->fetchall_arrayref({})} };
-
-}
 
 =item encrypt($value)
 
@@ -3004,6 +2766,29 @@ sub real_fields {
   my($table_obj) = dbdef->table($table);
   confess "Unknown table $table" unless $table_obj;
   $table_obj->columns;
+}
+
+=item pvf FIELD_NAME
+
+Returns the FS::part_virtual_field object corresponding to a field in the 
+record (specified by FIELD_NAME).
+
+=cut
+
+sub pvf {
+  my ($self, $name) = (shift, shift);
+
+  if(grep /^$name$/, $self->virtual_fields) {
+    $name =~ s/^cf_//;
+    my $concat = [ "'cf_'", "name" ];
+    return qsearchs({   table   =>  'part_virtual_field',
+                        hashref =>  { dbtable => $self->table,
+                                      name    => $name 
+                                    },
+                        select  =>  'vfieldpart, dbtable, length, label, '.concat_sql($concat).' as name',
+                    });
+  }
+  ''
 }
 
 =item _quote VALUE, TABLE, COLUMN

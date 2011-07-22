@@ -1,5 +1,9 @@
 <% &ntable("#cccccc") %>
 
+% foreach my $field ($cust_main->virtual_fields) {
+    <% $cust_main->pvf($field)->widget('HTML', 'edit',$cust_main->getfield($field)) %>
+% }
+
 %# tags
 <& /elements/tr-select-cust_tag.html,
              'custnum' => $custnum,

@@ -1,0 +1,48 @@
+<% include( 'elements/process.html',
+    'table'          => 'part_virtual_field',
+    'viewall_dir'    => 'browse',
+    'precheck_callback' => sub {
+        my ($cgi) = @_;
+        $act = 'edit' if $cgi->param('vfieldpart');
+        my @permitted_tables = qw( svc_broadband router cust_main );
+        return 'Table not in list of permitted tables' 
+            unless $cgi->param('dbtable') 
+                && grep { $_ eq $cgi->param('dbtable') } @permitted_tables;
+        '';
+    },
+    'noerror_callback' => sub {
+        my ($cgi, $object) = @_;
+        if ( $act eq 'add' ) {
+            use FS::Schema qw( reload_dbdef );
+            warn "cf add started schema modification, time=".time;
+            my $dbh = dbh;
+            my $sql = "ALTER TABLE ".$object->dbtable." ADD COLUMN cf_".$object->name." varchar(".$object->length.")";
+            $dbh->do($sql) or die $dbh->errstr;
+            $sql = "ALTER TABLE h_".$object->dbtable." ADD COLUMN cf_".$object->name." varchar(".$object->length.")";
+            $dbh->do($sql) or die $dbh->errstr;
+
+            # apparently nothing happens w/o commit here - but is this OK?
+            $dbh->commit or die $dbh->errstr; 
+
+            # reload schema
+            my $dbdef_file = "/usr/local/etc/freeside/dbdef.".datasrc # XXX: fix this
+            my $dbdef = new_native DBIx::DBSchema $dbh;
+            $dbdef->save($dbdef_file);
+            delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
+            reload_dbdef($dbdef_file);
+            
+            warn "cf add done schema modification, time=".time;
+        }
+        # XXX: edit is going to be harder: possibly add editing length and renaming column
+        '';
+    },
+)
+%>
+<%init>
+
+my $act = 'add';
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

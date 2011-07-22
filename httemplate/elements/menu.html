@@ -538,7 +538,7 @@ $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Whe
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 if ( $curuser->access_right('Configuration') ) {
-  $config_misc{'Virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
+  $config_misc{'Custom fields'} = [ $fsurl.'browse/part_virtual_field.html', 'Locally defined fields', ];
   $config_misc{'Message catalog'} = [ $fsurl.'browse/msgcat.html', 'Change error messages and other customizable labels for each locale' ];
 }
 $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ]
