@@ -1,0 +1,155 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Format qw(time2str);
+use File::Temp qw(tempdir);
+use Net::SFTP::Foreign;
+use Expect;
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::pay_batch;
+use FS::cust_pay_batch;
+use FS::Conf;
+
+use vars qw( $opt_v $opt_a );
+getopts('va:');
+
+#$Net::SFTP::Foreign::debug = -1;
+sub HELP_MESSAGE { "
+  Usage:
+      freeside-eftca-download [ -v ] [ -a archivedir ] user\n
+" }
+
+my @fields = (
+  'tid',          # transaction ID
+  'paybatchnum',  # reference field
+  'returncode',   # status code
+  'returndate',
+  'paid',         # dollars and cents, with decimal
+  'type',
+  'first',
+  'last',
+  'account',
+  'bank',
+  'transit',
+);
+
+my $user = shift or die &HELP_MESSAGE;
+adminsuidsetup $user;
+
+if ( $opt_a ) {
+  die "no such directory: $opt_a\n"
+    unless -d $opt_a;
+  die "archive directory $opt_a is not writable by the freeside user\n"
+    unless -w $opt_a;
+}
+
+#my $tmpdir = File::Temp->newdir();
+my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
+
+my $conf = new FS::Conf;
+my @batchconf = $conf->config('batchconfig-eft_canada');
+# BIN, terminalID, merchantID, username, password
+my $username = $batchconf[0] or die "no EFT Canada batch username configured\n";
+my $password = $batchconf[1] or die "no EFT Canada batch password configured\n";
+
+my $host = 'ftp.eftcanada.com';
+print STDERR "Connecting to $username\@$host...\n" if $opt_v;
+
+my $sftp = Net::SFTP::Foreign->new( host => $host,
+                                    user => $username,
+                                    password => $password,
+                                    timeout => 30,
+                                    );
+die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" if $sftp->error;
+
+$sftp->setcwd('/Returns');
+
+my $files = $sftp->ls('.', wanted => qr/^ReturnFile/, names_only => 1);
+die "no response files found\n" if !@$files;
+
+FILE: foreach my $filename (@$files) {
+  print STDERR "Retrieving $filename\n" if $opt_v;
+  $sftp->get("$filename", "$tmpdir/$filename");
+  if($sftp->error) {
+    warn "failed to download $filename\n";
+    next FILE;
+  }
+
+  #move to server archive dir
+  $sftp->rename("$filename", "Archive/$filename");
+  if($sftp->error) {
+    warn "failed to archive $filename on server\n";
+  } # process it anyway though
+
+  #copy to local archive dir
+  if ( $opt_a ) {
+    print STDERR "Copying $tmpdir/$filename to archive dir $opt_a\n"
+      if $opt_v;
+    system 'cp', "$tmpdir/$filename", $opt_a;
+    warn "failed to copy $tmpdir/$filename to $opt_a: $@" if $@;
+  }
+
+  open my $fh, "<$tmpdir/$filename";
+  # Some duplication with FS::pay_batch::import_results, but we're really 
+  # doing something different here.
+  my $csv = new Text::CSV_XS ( { quote_char => undef, sep_char => '|' } );
+  my %hash;
+  while (my $line = <$fh>) {
+    next if $line =~ /^\s*$/;
+    $csv->parse($line) or do {
+      warn "can't parse $filename: ".$csv->error_input."\n";
+      next FILE; #parsing errors = reading the wrong kind of file
+    };
+    @hash{@fields} = $csv->fields();
+    print STDERR "voiding paybatchnum#$hash{paybatchnum}\n" if $opt_v;
+    my $cpb = qsearchs('cust_pay_batch', 
+                        { paybatchnum => $hash{'paybatchnum'} });
+    if ( !$cpb ) {
+      warn "can't find paybatchnum #$hash{paybatchnum} ($hash{first} $hash{last}, $hash{paid})\n";
+      next;
+    }
+    my $error = $cpb->decline("Returned payment ($hash{returncode})");
+    if ( $error ) {
+      warn "can't void paybatchnum #$hash{paybatchnum}: $error\n";
+    }
+  }
+  close $fh;
+}
+
+print STDERR "Finished!\n" if $opt_v;
+
+=head1 NAME
+
+freeside-eftca-download - Retrieve payment batch responses from EFT Canada.
+
+=head1 SYNOPSIS
+
+  freeside-eftca-download [ -v ] [ -a archivedir ] user
+
+=head1 DESCRIPTION
+
+Command line tool to download returned payment reports from the EFT Canada 
+gateway and void the returned payments.  Uses the login and password from 
+'batchconfig-eft_canada'.
+
+-v: Be verbose.
+
+-a directory: Archive response files in the provided directory.
+
+user: freeside username
+
+=head1 BUGS
+
+You need to manually SFTP to ftp.eftcanada.com from the freeside account 
+and accept their key before running this script.
+
+=head1 SEE ALSO
+
+L<FS::pay_batch>
+
+=cut
+
+1;
+
