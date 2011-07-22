@@ -300,26 +300,32 @@ sub approve {
   return;
 }
 
-=item decline
+=item decline [ REASON ]
 
 Decline this payment.  This will replace the existing record with the 
 same paybatchnum, set its status to 'Declined', and run collection events
 as appropriate.  This should only be called from the batch import process.
 
+REASON is a string description of the decline reason, defaulting to 
+'Returned payment'.
+
 =cut
 
 sub decline {
   my $new = shift;
-  my $conf = new FS::Conf;
+  my $reason = shift || 'Returned payment';
+  #my $conf = new FS::Conf;
 
   my $paybatchnum = $new->paybatchnum;
   my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
     or return "paybatchnum $paybatchnum not found";
   if ( $old->status ) {
     # Handle the case where payments are rejected after the batch has been 
-    # approved.  Only if manual approval is enabled.
-    if ( $conf->exists('batch-manual_approval') 
-        and lc($old->status) eq 'approved' ) {
+    # approved.  FS::pay_batch::import_results won't allow results to be 
+    # imported to a closed batch unless batch-manual_approval is enabled, 
+    # so we don't check it here.
+#    if ( $conf->exists('batch-manual_approval') and
+    if ( lc($old->status) eq 'approved' ) {
       # Void the payment
       my $cust_pay = qsearchs('cust_pay', { 
           custnum  => $new->custnum,
@@ -329,7 +335,7 @@ sub decline {
         # should never happen...
         return "failed to revoke paybatchnum $paybatchnum, payment not found";
       }
-      $cust_pay->void('Returned payment');
+      $cust_pay->void($reason);
     }
     else {
       # normal case: refuse to do anything

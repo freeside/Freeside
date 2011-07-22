@@ -3122,7 +3122,8 @@ and customer address. Include units.',
     'description' => 'Fixed (unchangeable) format for electronic check batches.',
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone', 'RBC', 'td_eft1464'
+                       'paymentech', 'ach-spiritone', 'RBC', 'td_eft1464',
+                       'eft_canada'
                      ]
   },
 
@@ -3180,6 +3181,13 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised, but is needed for payment processors that provide a report of rejected rather than approved payments.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'batchconfig-eft_canada',
+    'section'     => 'billing',
+    'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.',
+    'type'        => 'textarea',
   },
 
   {

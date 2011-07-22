@@ -1,0 +1,122 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Format qw(time2str);
+use File::Temp qw(tempdir);
+use Net::SFTP::Foreign;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearch qsearchs);
+use FS::pay_batch;
+use FS::Conf;
+
+use vars qw( $opt_a $opt_v );
+getopts('av');
+
+#$Net::SFTP::Foreign::debug = -1;
+
+sub HELP_MESSAGE { "
+  Usage:
+    freeside-eftca-upload [ -v ] user batchnum
+    freeside-eftca-upload -a [ -v ] user\n
+" }
+
+my $user = shift or die &HELP_MESSAGE;
+adminsuidsetup $user;
+
+my @batches; 
+
+if($opt_a) {
+  @batches = qsearch('pay_batch', { 'status' => 'O', 'payby' => 'CHEK' })
+    or die "No open batches found.\n";
+}
+else {
+  my $batchnum = shift;
+  die &HELP_MESSAGE if !$batchnum;
+  @batches = qsearchs('pay_batch', { batchnum => $batchnum } );
+  die "Can't find payment batch '$batchnum'\n" if !@batches;
+}
+
+my $conf = new FS::Conf;
+my @batchconf = $conf->config('batchconfig-eft_canada');
+my $username = $batchconf[0] or die "no EFT Canada batch username configured\n";
+my $password = $batchconf[1] or die "no EFT Canada batch password configured\n";
+
+my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
+
+my @filenames;
+
+foreach my $pay_batch (@batches) {
+  my $batchnum = $pay_batch->batchnum;
+  my $filename = time2str('%Y%m%d', time) . '-' . sprintf('%06d.csv',$batchnum);
+  print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
+  my $text = $pay_batch->export_batch('eft_canada');
+  open OUT, ">$tmpdir/$filename";
+  print OUT $text;
+  close OUT;
+  push @filenames, $filename;
+}
+
+my $host = 'ftp.eftcanada.com';
+print STDERR "Connecting to $username\@$host...\n" if $opt_v;
+
+my $sftp = Net::SFTP::Foreign->new( host => $host,
+                                    user => $username,
+                                    password => $password,
+                                    timeout => 30,
+                                    );
+die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" 
+    if $sftp->error;
+
+foreach my $filename (@filenames) {
+  $sftp->put("$tmpdir/$filename", "$filename")
+    or die "failed to upload file (".$sftp->error.")\n";
+}
+
+$FS::UID::AutoCommit = 0;
+foreach my $pay_batch (@batches) {
+  # Auto-approve and close the batch.  Some false laziness with manual_approve.
+  my $batchnum = $pay_batch->batchnum;
+  my $error;
+  foreach my $cpb ( qsearch('cust_pay_batch', { 'batchnum' => $batchnum } ) ) {
+    $cpb->setfield('paid', $cpb->amount);
+    $error = $cpb->approve($batchnum);
+    last if $error;
+  }
+  $error ||= $pay_batch->set_status('R');
+  die "error closing batch $batchnum: $error\n\n" if $error;
+}
+dbh->commit;
+
+print STDERR "Finished!\n" if $opt_v;
+
+=head1 NAME
+
+freeside-eftca-upload - Transmit a payment batch to EFT Canada via SFTP.
+
+=head1 SYNOPSIS
+
+  freeside-paymentech-upload [ -a ] [ -v ] user batchnum
+
+=head1 DESCRIPTION
+
+Command line tool to upload a payment batch to the EFT Canada gateway.  The 
+batch will be exported to a comma-delimited file and transmitted via SFTP.
+Use L<freeside-eftca-download> to retrieve the response file.
+
+-a: Send all open batches, instead of specifying a batchnum.
+
+-v: Be verbose.
+
+user: freeside username
+
+batchnum: pay_batch primary key
+
+=head1 SEE ALSO
+
+L<FS::pay_batch>
+
+=cut
+
+1;
+
