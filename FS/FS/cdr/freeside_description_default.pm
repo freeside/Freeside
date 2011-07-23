@@ -10,6 +10,7 @@ use FS::cdr;
 %info = (
   'name'          => 'Freeside default with description field as destination',
   'weight'        => 25,
+  'type'          => 'csv',
   'header'        => 1,
   'import_fields' => [
     'charged_party',     # Billed number
