@@ -152,7 +152,6 @@ sub cust_pay {
 
 =item send_receipt HASHREF | OPTION => VALUE ...
 
-
 Sends a payment receipt for the associated payment, against this specific
 invoice.  If there is an error, returns the error, otherwise returns false.
 
