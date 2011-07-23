@@ -1339,7 +1339,7 @@ sub order_pkg {
       'svc_domain'   => [ qw( domain ) ],
       'svc_phone'    => [ qw( phonenum pin sip_password phone_name ) ],
       'svc_external' => [ qw( id title ) ],
-      'svc_pbx'      => [ qw( id name ) ],
+      'svc_pbx'      => [ qw( id title ) ],
     );
   
     my $svc_x = "FS::$svcdb"->new( {
