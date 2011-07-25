@@ -1,5 +1,5 @@
 %{!?_initrddir:%define _initrddir /etc/rc.d/init.d}
-%{!?version:%define version 2.1.1}
+%{!?version:%define version 2.3.0}
 %{!?release:%define release 8}
 
 Summary: Freeside ISP Billing System
