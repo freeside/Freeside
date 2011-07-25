@@ -1,2 +1,2 @@
 #!/bin/sh
-cvs2cl -F trunk
+cvs2cl -F FREESIDE_2_3_BRANCH
