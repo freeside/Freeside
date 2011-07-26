@@ -701,6 +701,7 @@ sub tables_hashref {
         'duration', 'int', 'NULL', '',  0, '',
         'phonenum', 'varchar', 'NULL', 15, '', '',
         'accountcode', 'varchar',  'NULL',      20, '', '',
+        'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
         'detail',  'varchar', '', 255, '', '', 
       ],

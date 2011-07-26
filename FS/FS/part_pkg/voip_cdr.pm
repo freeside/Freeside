@@ -774,6 +774,7 @@ sub calc_usage {
                 $classnum,
                 $phonenum,
                 $cdr->accountcode,
+                $cdr->startdate,
                 $seconds,
                 $regionname,
               ];
@@ -786,6 +787,7 @@ sub calc_usage {
                 $classnum,
                 $phonenum,
                 $cdr->accountcode,
+                $cdr->startdate,
                 $seconds,
                 $regionname,
               ];

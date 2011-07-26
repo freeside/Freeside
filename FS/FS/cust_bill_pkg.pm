@@ -154,8 +154,9 @@ sub insert {
         'classnum'   => (ref($detail) ? $detail->[3] : '' ),
         'phonenum'   => (ref($detail) ? $detail->[4] : '' ),
         'accountcode' => (ref($detail) ? $detail->[5] : '' ),
-        'duration'   => (ref($detail) ? $detail->[6] : '' ),
-        'regionname' => (ref($detail) ? $detail->[7] : '' ),
+        'startdate'  => (ref($detail) ? $detail->[6] : '' ),
+        'duration'   => (ref($detail) ? $detail->[7] : '' ),
+        'regionname' => (ref($detail) ? $detail->[8] : '' ),
       };
       $error = $cust_bill_pkg_detail->insert;
       if ( $error ) {

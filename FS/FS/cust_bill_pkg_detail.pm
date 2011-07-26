@@ -57,6 +57,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item accountcode - accountcode
 
+=item startdate - CDR startdate, if any
+
 =item detail - detail description
 
 =back
