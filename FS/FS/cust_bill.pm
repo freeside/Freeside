@@ -2351,7 +2351,6 @@ notice_name - overrides "Invoice" as the name of the sent document (templates fr
 # (alignment in text invoice?) problems to change them all to '%.2f' ?
 # yes: fixed width (dot matrix) text printing will be borked
 sub print_generic {
-
   my( $self, %params ) = @_;
   my $today = $params{today} ? $params{today} : time;
   warn "$me print_generic called on $self with suffix $params{template}\n"
@@ -4222,21 +4221,25 @@ sub _items_accountcode_cdr {
                     quantity    => '',
                     product_code => 'N/A',
                     section     => $section,
-                    ext_description => [],
+                    ext_description => [ $section->{'header'} ],
+                    detail_temp => [],
             };
 
             $section->{'amount'} += $amount;
             $accountcodes{$accountcode}{'amount'} += $amount;
             $accountcodes{$accountcode}{calls}++;
             $accountcodes{$accountcode}{duration} += $detail->duration;
-            push @{$accountcodes{$accountcode}{ext_description}},
-                $detail->formatted('format' => $format);
+            push @{$accountcodes{$accountcode}{detail_temp}}, $detail;
         }
     }
 
     foreach my $l ( values %accountcodes ) {
         $l->{amount} = sprintf( "%.2f", $l->{amount} );
-        unshift @{$l->{ext_description}}, $section->{'header'};
+        my @sorted_detail = sort { $a->startdate <=> $b->startdate } @{$l->{detail_temp}};
+        foreach my $sorted_detail ( @sorted_detail ) {
+            push @{$l->{ext_description}}, $sorted_detail->formatted('format'=>$format);
+        }
+        delete $l->{detail_temp};
         push @lines, $l;
     }
 
