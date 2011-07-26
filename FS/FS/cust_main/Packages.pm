@@ -395,16 +395,32 @@ sub active_pkgs {
        $self->unsuspended_pkgs;
 }
 
+=item billing_pkgs
+
+Returns active packages, and also any suspended packages which are set to
+continue billing while suspended.
+
+=cut
+
+sub billing_pkgs {
+  my $self = shift;
+  grep { my $part_pkg = $_->part_pkg;
+         $part_pkg->freq ne '' && $part_pkg->freq ne '0'
+           && ( ! $_->susp || $part_pkg->option('suspend_bill', 1) );
+       }
+       $self->ncancelled_pkgs;
+}
+
 =item next_bill_date
 
 Returns the next date this customer will be billed, as a UNIX timestamp, or
-undef if no active package has a next bill date.
+undef if no billing package has a next bill date.
 
 =cut
 
 sub next_bill_date {
   my $self = shift;
-  min( map $_->get('bill'), grep $_->get('bill'), $self->active_pkgs );
+  min( map $_->get('bill'), grep $_->get('bill'), $self->billing_pkgs );
 }
 
 =item num_cancelled_pkgs
