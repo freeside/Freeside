@@ -140,7 +140,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::NetworkMonitoringSystem;
   use FS::Tron qw( tron_lint );
   use FS::Locales;
-  use FS::Maketext qw( mt emt );
+  use FS::Maketext qw( mt emt js_mt );
 
   use FS::agent;
   use FS::agent_type;
@@ -526,6 +526,7 @@ sub mason_interps {
 
   my $html_defang = new HTML::Defang (%defang_opts);
 
+  #false laziness w/ FS::Maketext js_mt
   my $js_string_sub = sub {
     #${$_[0]} =~ s/(['\\\n])/'\\'.($1 eq "\n" ? 'n' : $1)/ge;
     ${$_[0]} =~ s/(['\\])/\\$1/g;
