@@ -1,4 +1,4 @@
-<% include('/elements/header.html', $title ) %>
+<% include('/elements/header.html', mt($title, @title_arg) %>
 
 <FORM ACTION="cust_pkg.cgi" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="bill">
@@ -159,6 +159,8 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages');
 
 my $title = 'Package Report';
+#false laziness w/report_cust_bill.html
+my @title_arg = ();
 
 my $custnum = '';
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
@@ -168,7 +170,8 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
     'hashref'   => { 'custnum' => $custnum },
     'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
   }) or die "unknown custnum $custnum";
-  $title .= ': '. $cust_main->name;
+  $title .= ': [_1]';
+  push @title_arg, $cust_main->name;
 }
 
 </%init>
