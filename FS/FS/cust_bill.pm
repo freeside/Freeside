@@ -5221,6 +5221,11 @@ sub search_sql_where {
     push @search, "cust_main.agentnum = $1";
   }
 
+  #agentnum
+  if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_bill.custnum = $1";
+  }
+
   #_date
   if ( $param->{_date} ) {
     my($beginning, $ending) = @{$param->{_date}};

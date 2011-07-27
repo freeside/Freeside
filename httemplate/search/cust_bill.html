@@ -93,6 +93,10 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     $search{'agentnum'} = $1;
   }
 
+  if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+    $search{'custnum'} = $1;
+  }
+
   # begin/end/beginning/ending
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
   $search{'_date'} = [ $beginning, $ending ]
