@@ -1,15 +1,18 @@
-<& /elements/header.html, mt('Invoice Report') &>
+<& /elements/header.html, mt($title, @title_arg) &>
 
 <FORM ACTION="cust_bill.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0
 
+% unless ( $custnum ) {
   <& /elements/tr-select-agent.html,
                  'curr_value'    => scalar( $cgi->param('agentnum') ),
                  'label'         => emt('Invoices for agent: '),
                  'disable_empty' => 0,
   &>
+% }
 
   <& /elements/tr-input-beginning_ending.html &>
 
@@ -22,21 +25,29 @@
                 label   => emt('Owed'),
                 field   => 'owed',
   &>
+
+% if ( $cust_main ) {
+  <INPUT TYPE="hidden" NAME="payby" VALUE="<% $cust_main->payby %>">
+% } else {
   <& /elements/tr-select-payby.html,
                 label   => emt('Payment method:'),
                 payby_type   => 'cust',
                 multiple     => 1,
                 all_selected => 1,
   &>
+% }
 
   <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD><% mt('Show only open invoices') |h %></TD>
   </TR>
+
+% unless ( $custnum ) {
   <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="newest_percust" VALUE="1"></TD>
     <TD><% mt('Show only the single most recent invoice per-customer') |h %></TD>
   </TR>
+% }
 
 </TABLE>
 
@@ -50,5 +61,22 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List invoices');
+
+my $title = 'Invoice Report';
+#false laziness w/report_cust_pkg.html
+my @title_arg = ();
+
+my $custnum = '';
+my $cust_main = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+  $cust_main = qsearchs({
+    'table'     => 'cust_main', 
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown custnum $custnum";
+  $title .= ': [_1]';
+  push @title_arg, $cust_main->name;
+}
 
 </%init>

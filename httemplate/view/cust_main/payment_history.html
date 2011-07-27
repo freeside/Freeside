@@ -1,3 +1,7 @@
+<TABLE>
+  <TR>
+    <TD ALIGN="left">
+
 %# payment links
 
 % my $s = 0;
@@ -27,6 +31,9 @@
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;custnum=<% $custnum %>"><% mt('Enter Western Union payment') |h %></A>
 % } 
+
+<BR>
+% $s=0;
 
 % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
 %        && $curuser->access_right(['Process payment', 'Process credit card payment'])
@@ -113,7 +120,16 @@
   <A HREF="<% $p %>edit/cust_refund.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline/POS) credit card refund') |h %></A>
 % } 
 
+    </TD>
+    <TD ALIGN="right" VALIGN="top">
+
+%# invoice reports
+% if ( $curuser->access_right('List invoices') ) { 
+  <A HREF="<% $p %>search/report_cust_bill.html?custnum=<% $custnum %>"><% mt('Invoice reports') |h %></A>
+% } 
 <BR>
+
+%# XXX payments, credits, refund reports
 
 %# tax exemption link
 
@@ -165,6 +181,11 @@
 % {
     <A HREF="<% $p %>search/cust_pay_pending.html?magic=_date;statusNOT=done;custnum=<% $custnum %>"><% mt('View pending payments') |h %></A><BR>
 % }
+
+    </TD>
+  </TR>
+  <TR>
+    <TD COLSPAN=2>
 
 %# and now the table
 
@@ -318,6 +339,9 @@
 %  balance_forward_row($balance, $lastdate, $money_char);
 %}
 
+</TABLE>
+    </TD>
+  </TR>
 </TABLE>
 
 <SCRIPT TYPE="text/javascript">
