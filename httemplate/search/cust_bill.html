@@ -205,31 +205,31 @@ my $html_init = join("\n", map {
 '<SCRIPT TYPE="text/javascript">
 
 function confirm_print_process() {
-  if ( ! confirm('.emt("Are you sure you want to reprint these invoices?").') ) {
+  if ( ! confirm('.js_mt("Are you sure you want to reprint these invoices?").') ) {
     return;
   }
   print_process();
 }
 function confirm_email_process() {
-  if ( ! confirm('.emt("Are you sure you want to re-email these invoices?").') ) {
+  if ( ! confirm('.js_mt("Are you sure you want to re-email these invoices?").') ) {
     return;
   }
   email_process();
 }
 function confirm_fax_process() {
-  if ( ! confirm('.emt("Are you sure you want to re-fax these invoices?").') ) {
+  if ( ! confirm('.js_mt("Are you sure you want to re-fax these invoices?").') ) {
     return;
   }
   fax_process();
 }
 function confirm_ftp_process() {
-  if ( ! confirm('.emt("Are you sure you want to re-FTP these invoices?").') ) {
+  if ( ! confirm('.js_mt("Are you sure you want to re-FTP these invoices?").') ) {
     return;
   }
   ftp_process();
 }
 function confirm_spool_process() {
-  if ( ! confirm('.emt("Are you sure you want to re-spool these invoices?").') ) {
+  if ( ! confirm('.js_mt("Are you sure you want to re-spool these invoices?").') ) {
     return;
   }
   spool_process();

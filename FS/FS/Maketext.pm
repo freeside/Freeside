@@ -6,7 +6,7 @@ use FS::Conf;
 use FS::L10N;
 use HTML::Entities qw( encode_entities );
 
-our @EXPORT_OK = qw( mt emt );
+our @EXPORT_OK = qw( mt emt js_mt );
 
 our $lh;
 
@@ -18,6 +18,16 @@ sub mt {
 # HTML-escaped version of mt()
 sub emt {
     encode_entities(mt(@_));
+}
+
+# Javascript-escaped version of mt()
+sub js_mt {
+  my $s = mt(@_);
+  #false laziness w/Mason.pm
+  $s =~ s/(['\\])/\\$1/g;
+  $s =~ s/\r/\\r/g;
+  $s =~ s/\n/\\n/g;
+  $s = "'$s'";
 }
 
 sub lh {
