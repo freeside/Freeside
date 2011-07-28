@@ -608,3 +608,5 @@ FS/Maketext.pm
 t/Maketext.t
 FS/radius_group.pm
 t/radius_group.t
+FS/template_content.pm
+t/template_content.t

@@ -3386,8 +3386,21 @@ sub tables_hashref {
         'bcc_addr',  'varchar', 'NULL',     255, '', '',
       ],
       'primary_key' => 'msgnum',
-      'unique'      => [ ['msgname', 'mime_type'] ],
-      'index'       => [ ['agentnum'], ]
+      'unique'      => [ ],
+      'index'       => [ ['agentnum'], ],
+    },
+
+    'template_content' => {
+      'columns' => [
+        'contentnum', 'serial',     '',      '', '', '',
+        'msgnum',        'int',     '',      '', '', '',
+        'locale',    'varchar', 'NULL',      16, '', '',
+        'subject',   'varchar', 'NULL',     512, '', '',
+        'body',         'text', 'NULL',      '', '', '',
+      ],
+      'primary_key' => 'contentnum',
+      'unique'      => [ ['msgnum', 'locale'] ],
+      'index'       => [ ],
     },
 
     'cust_msg' => {

@@ -6,9 +6,11 @@ use Text::Template;
 use FS::Misc qw( generate_email send_email );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
+use FS::UID qw( dbh );
 
 use FS::cust_main;
 use FS::cust_msg;
+use FS::template_content;
 
 use Date::Format qw( time2str );
 use HTML::Entities qw( decode_entities encode_entities ) ;
@@ -47,37 +49,19 @@ supported:
 
 =over 4
 
-=item msgnum
+=item msgnum - primary key
 
-primary key
+=item msgname - Name of the template.  This will appear in the user interface;
+if it needs to be localized for some users, add it to the message catalog.
 
-=item msgname
+=item agentnum - Agent associated with this template.  Can be NULL for a 
+global template.
 
-Template name.
+=item mime_type - MIME type.  Defaults to text/html.
 
-=item agentnum
+=item from_addr - Source email address.
 
-Agent associated with this template.  Can be NULL for a global template.
-
-=item mime_type
-
-MIME type.  Defaults to text/html.
-
-=item from_addr
-
-Source email address.
-
-=item subject
-
-The message subject line, in L<Text::Template> format.
-
-=item body
-
-The message body, as plain text or HTML, in L<Text::Template> format.
-
-=item disabled
-
-disabled
+=item disabled - disabled ('Y' or NULL).
 
 =back
 
@@ -98,14 +82,41 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'msg_template'; }
 
-=item insert
+=item insert [ CONTENT ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+A default (no locale) L<FS::template_content> object will be created.  CONTENT 
+is an optional hash containing 'subject' and 'body' for this object.
+
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+  my %content = @_;
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( !$error ) {
+    $content{'msgnum'} = $self->msgnum;
+    $content{'subject'} ||= '';
+    $content{'body'} ||= '';
+    my $template_content = new FS::template_content (\%content);
+    $error = $template_content->insert;
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  return;
+}
 
 =item delete
 
@@ -115,14 +126,59 @@ Delete this record from the database.
 
 # the delete method can be inherited from FS::Record
 
-=item replace OLD_RECORD
+=item replace [ OLD_RECORD ] [ CONTENT ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+CONTENT is an optional hash containing 'subject', 'body', and 'locale'.  If 
+supplied, an L<FS::template_content> object will be created (or modified, if 
+one already exists for this locale).
+
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $self = shift;
+  my $old = ( ref($_[0]) and $_[0]->isa('FS::Record') ) 
+              ? shift
+              : $self->replace_old;
+  my %content = @_;
+  
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace($old);
+
+  if ( !$error and %content ) {
+    $content{'locale'} ||= '';
+    my $new_content = qsearchs('template_content', {
+                        'msgnum' => $self->msgnum,
+                        'locale' => $content{'locale'},
+                      } );
+    if ( $new_content ) {
+      $new_content->subject($content{'subject'});
+      $new_content->body($content{'body'});
+      $error = $new_content->replace;
+    }
+    else {
+      $content{'msgnum'} = $self->msgnum;
+      $new_content = new FS::template_content \%content;
+      $error = $new_content->insert;
+    }
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  warn "committing FS::msg_template->replace\n" if $DEBUG and $oldAutoCommit;
+  $dbh->commit if $oldAutoCommit;
+  return;
+}
+    
+
 
 =item check
 
@@ -143,8 +199,6 @@ sub check {
     || $self->ut_text('msgname')
     || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
     || $self->ut_textn('mime_type')
-    || $self->ut_anything('subject')
-    || $self->ut_anything('body')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_textn('from_addr')
   ;
@@ -153,6 +207,21 @@ sub check {
   $self->mime_type('text/html') unless $self->mime_type;
 
   $self->SUPER::check;
+}
+
+=item content_locales
+
+Returns a hashref of the L<FS::template_content> objects attached to 
+this template, with the locale as key.
+
+=cut
+
+sub content_locales {
+  my $self = shift;
+  return $self->{'_content_locales'} ||= +{
+    map { $_->locale , $_ } 
+    qsearch('template_content', { 'msgnum' => $self->msgnum })
+  };
 }
 
 =item prepare OPTION => VALUE
@@ -202,6 +271,12 @@ sub prepare {
 
   my $cust_main = $opt{'cust_main'};
   my $object = $opt{'object'};
+
+  # localization
+  my $locale = $cust_main->locale || '';
+  warn "no locale for cust#".$cust_main->custnum."; using default content\n"
+    if $DEBUG and !$locale;
+  my $content = $self->content($cust_main->locale);
   warn "preparing template '".$self->msgname."' to cust#".$cust_main->custnum."\n"
     if($DEBUG);
 
@@ -257,11 +332,11 @@ sub prepare {
   ###
   my $subject_tmpl = new Text::Template (
     TYPE   => 'STRING',
-    SOURCE => $self->subject,
+    SOURCE => $content->subject,
   );
   my $subject = $subject_tmpl->fill_in( HASH => \%hash );
 
-  my $body = $self->body;
+  my $body = $content->body;
   my ($skin, $guts) = eviscerate($body);
   @$guts = map { 
     $_ = decode_entities($_); # turn all punctuation back into itself
@@ -505,6 +580,32 @@ sub substitutions {
   };
 }
 
+=item content LOCALE
+
+Returns the L<FS::template_content> object appropriate to LOCALE, if there 
+is one.  If not, returns the one with a NULL locale.
+
+=cut
+
+sub content {
+  my $self = shift;
+  my $locale = shift;
+  qsearchs('template_content', 
+            { 'msgnum' => $self->msgnum, 'locale' => $locale }) || 
+  qsearchs('template_content',
+            { 'msgnum' => $self->msgnum, 'locale' => '' });
+}
+
+=item agent
+
+Returns the L<FS::agent> object for this template.
+
+=cut
+
+sub agent {
+  qsearchs('agent', { 'agentnum' => $_[0]->agentnum });
+}
+
 sub _upgrade_data {
   my ($self, %opts) = @_;
 
@@ -524,14 +625,14 @@ sub _upgrade_data {
       my ($newname, $oldname, $subject, $from, $bcc) = @$_;
       if ($conf->exists($oldname, $agentnum)) {
         my $new = new FS::msg_template({
-           'msgname'   => $oldname,
-           'agentnum'  => $agentnum,
-           'from_addr' => ($from && $conf->config($from, $agentnum)) || 
-                          $conf->config('invoice_from', $agentnum),
-           'bcc_addr'  => ($bcc && $conf->config($from, $agentnum)) || '',
-           'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
-           'mime_type' => 'text/html',
-           'body'      => join('<BR>',$conf->config($oldname, $agentnum)),
+          'msgname'   => $oldname,
+          'agentnum'  => $agentnum,
+          'from_addr' => ($from && $conf->config($from, $agentnum)) || 
+                         $conf->config('invoice_from', $agentnum),
+          'bcc_addr'  => ($bcc && $conf->config($from, $agentnum)) || '',
+          'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
+          'mime_type' => 'text/html',
+          'body'      => join('<BR>',$conf->config($oldname, $agentnum)),
         });
         my $error = $new->insert;
         die $error if $error;
@@ -540,6 +641,19 @@ sub _upgrade_data {
         $conf->delete($from, $agentnum) if $from;
         $conf->delete($subject, $agentnum) if $subject;
       }
+    }
+  }
+  foreach my $msg_template ( qsearch('msg_template', {}) ) {
+    if ( $msg_template->subject || $msg_template->body ) {
+      # create new default content
+      my %content;
+      foreach ('subject','body') {
+        $content{$_} = $msg_template->$_;
+        $msg_template->setfield($_, '');
+      }
+
+      my $error = $msg_template->replace(%content);
+      die $error if $error;
     }
   }
 }

@@ -289,6 +289,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::rate_center;
   use FS::cust_msg;
   use FS::radius_group;
+  use FS::template_content;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
