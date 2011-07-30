@@ -1,0 +1,20 @@
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+my ($batchnum) = $cgi->keywords;
+$batchnum =~ /^\d+$/ or die "invalid batchnum '$batchnum'";
+my $batch = FS::bill_batch->by_key($batchnum)
+  or die "Batch $batchnum not found";
+
+# send the batch
+my $content = $batch->pdf;
+$m->clear_buffer;
+$r->content_type('application/pdf');
+$r->headers_out->add( 'Content-Disposition' => 
+  'attachment;filename="invoice_batch_'.$batchnum.'.pdf"');
+$m->print($content);
+
+$batch->pdf('');
+my $error = $batch->replace;
+warn "error deleting cached PDF: '$error'\n" if $error;
+</%init>

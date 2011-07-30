@@ -84,6 +84,7 @@ sub print_pdf {
       die $error if $error;
     }
   }
+  $job->update_statustext(100, 'Combining invoices') if $job;
 
   return $pdf_out->toPDF;
 }
@@ -143,6 +144,11 @@ sub process_print_pdf {
   die "no batchnum specified!\n" if ! exists($param->{batchnum});
   my $batch = FS::bill_batch->by_key($param->{batchnum});
   die "batch '$param->{batchnum}' not found!\n" if !$batch;
+
+  if ( $param->{'close'} ) {
+    my $error = $batch->close;
+    die $error if $error;
+  }
 
   my $pdf = $batch->print_pdf($job);
   $batch->pdf($pdf);
