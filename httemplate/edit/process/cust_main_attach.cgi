@@ -24,6 +24,10 @@ $cgi->param('attachnum') =~ /^(\d*)$/
   or die "Illegal attachnum: ". $cgi->param('attachnum');
 my $attachnum = $1;
 
+my $filename = $cgi->param('file');
+# strip directory names; thanks, IE7
+$filename =~ s!.*[\/\\]!!;
+
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $delete = $cgi->param('delete');
@@ -49,7 +53,7 @@ if($attachnum) {
   else {
     map { $new->$_($old->$_) } 
       ('_date', 'otaker', 'body', 'disabled');
-    $new->filename($cgi->param('filename') || $old->filename);
+    $new->filename($filename || $old->filename);
     $new->mime_type($cgi->param('mime_type') || $old->mime_type);
     $new->title($cgi->param('title'));
     if($delete and not $old->disabled) {
@@ -62,10 +66,10 @@ if($attachnum) {
 }
 else { # This is a new attachment, so require a file.
 
-  my $filename = $cgi->param('file');
   if($filename) {
     $new->filename($filename);
-    $new->mime_type($cgi->uploadInfo($filename)->{'Content-Type'});
+    # use the original filename here, not the stripped form
+    $new->mime_type($cgi->uploadInfo($cgi->param('file'))->{'Content-Type'});
     $new->title($cgi->param('title'));
     
     local $/;
