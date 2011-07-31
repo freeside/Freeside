@@ -12,13 +12,17 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                              : $fields->{$_}
                          );
                  } keys %$fields;
-my $model = { field => 'typenum',
-              type  => 'text',
-              value => sub { $_[0]->hardware_type->model }
-            };
+my $model =  { field => 'typenum',
+               type  => 'text',
+               value => sub { $_[0]->hardware_type->model }
+             };
 my $status = { field => 'statusnum',
                type  => 'text',
                value => sub { $_[0]->status_label }
-            };
-my @fields = ($model, qw( serial hw_addr ip_addr smartcard ), $status, 'note' );
+             };
+my $note =   { field => 'note',
+               type  => 'text',
+               value => sub { encode_entities($_[0]->note) }
+             };
+my @fields = ($model, qw( serial hw_addr ip_addr smartcard ), $status, $note );
 </%init>

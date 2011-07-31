@@ -14,6 +14,8 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                  } keys %$fields;
 my @fields = ('acctnum',
               { field => 'installdate', type => 'date' },
-              'note'
+              { field => 'note', 
+                value => sub { encode_entities($_[0]->note) } 
+              },
               );
 </%init>

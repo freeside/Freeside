@@ -28,8 +28,8 @@ my @fields = (
   {
     field => 'note',
     type  => 'textarea',
-    rows  => 4,
-    cols  => 30,
+    rows  => 8,
+    cols  => 50,
     label => 'Installation notes',
   },
 
