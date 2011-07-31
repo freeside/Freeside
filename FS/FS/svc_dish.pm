@@ -116,7 +116,7 @@ sub check {
     $self->ut_numbern('svcnum')
     || $self->ut_text('acctnum')
     || $self->ut_numbern('installdate')
-    || $self->ut_textn('note')
+    || $self->ut_anything('note')
   ;
   return $error if $error;
 

@@ -170,7 +170,7 @@ sub check {
     || $self->ut_alphan('serial')
     || $self->ut_alphan('smartcard')
     || $self->ut_foreign_keyn('statusnum', 'hardware_status', 'statusnum')
-    || $self->ut_textn('note')
+    || $self->ut_anything('note')
   ;
   return $error if $error;
 
