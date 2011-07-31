@@ -6,19 +6,22 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="attachnum" VALUE="<% $attachnum %>">
 
-<BR><BR>
-
-<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 % if(defined $attach) {
 %   if($curuser->access_right("Download attachment")) {
 <A HREF="<% $p.'view/attachment.html?'.$attachnum %>">Download this file</A><BR>
 %   }
+% }
+
+<BR>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+% if ( defined $attach ) {
 <TR><TD> Filename </TD>
-<TD><INPUT TYPE="text" NAME="filename" SIZE=40 MAXLENGTH=255 VALUE="<% $attach->filename %>"<% $disabled %>></TD></TR>
+<TD><INPUT TYPE="text" NAME="file" SIZE=40 MAXLENGTH=255 VALUE="<% $cgi->param('file') || $attach->filename |h %>"<% $disabled %>></TD></TR>
 <TR><TD> Description </TD>
-<TD><INPUT TYPE="text" NAME="title" SIZE=40 MAXLENGTH=80 VALUE="<% $attach->title %>"<% $disabled %></TD></TR>
+<TD><INPUT TYPE="text" NAME="title" SIZE=40 MAXLENGTH=80 VALUE="<% $cgi->param('title') || $attach->title |h %>"<% $disabled %></TD></TR>
 <TR><TD> MIME type </TD>
-<TD><INPUT TYPE="text" NAME="mime_type" VALUE="<% $attach->mime_type %>"<% $disabled %></TD></TR>
+<TD><INPUT TYPE="text" NAME="mime_type" SIZE=40 VALUE="<% $cgi->param('mime_type') || $attach->mime_type |h %>"<% $disabled %></TD></TR>
 <TR><TD> Size </TD><TD><% $attach->size %></TD></TR>
 % }
 % else { # !defined $attach
@@ -47,9 +50,8 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $attachnum = '';
 my $attach;
-if ( $cgi->param('error') ) {
-  #$comment     = $cgi->param('comment');
-} elsif ( $cgi->param('attachnum') =~ /^(\d+)$/ ) {
+
+if ( $cgi->param('attachnum') =~ /^(\d+)$/ ) {
   $attachnum = $1;
   die "illegal query ". $cgi->keywords unless $attachnum;
   $attach = qsearchs('cust_attachment', { 'attachnum' => $attachnum });

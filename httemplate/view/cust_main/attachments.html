@@ -86,12 +86,12 @@
         &nbsp;<% $attach->usernum ? $attach->access_user->name : $attach->otaker %>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-       &nbsp;<% $attach->filename %>
+       &nbsp;<% $attach->filename |h %>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-       &nbsp;<% $attach->title %>
+       &nbsp;<% $attach->title |h %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-       &nbsp;<% $attach->mime_type %>
+       &nbsp;<% $attach->mime_type |h %>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
        &nbsp;<% size_units( $attach->size ) %>
