@@ -1,0 +1,185 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Text::CSV;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs dbh);
+use DateTime::Format::Natural;
+use FS::cust_main;
+use FS::cust_main::Search qw(smart_search);
+use FS::svc_dish;
+use FS::svc_hardware;
+use FS::hardware_type;
+use Data::Dumper;
+use Time::HiRes qw(usleep ualarm gettimeofday tv_interval);
+
+print "started time=".time."\n";
+
+#### ASSUMPTIONS 
+# 1. Customer Number column is the Freeside customer number and it is correct.
+# No name checking against the Customer Name column. Customers pre-created and 
+# packages ordered.
+# 2. Customers have only one package which provides for exactly one svc_dish
+# service and at least five svc_hardware services. We provision the svc_dish 
+# with the given account # and date, and provision as many devices as there 
+# are, by looking up the device type given the string, and using the receiver
+# s/n and smartcard s/n.
+# 3. Each of the device types in the spreadsheet was already entered manually
+# and is identical to the string in the spreadsheet.
+# 4. All dates are DD/MM/YYYY. All device types have the same classnum.
+# All device types have a unique name. 
+# There are at least the first four fields per row. 
+# There are at most five devices per row.
+# The svcpart of all svc_hardware services is identical, same for dish.
+###
+
+# INSTRUCTIONS: save the spreadsheet as CSV (in ASCII), set the
+# below variables, and run this script, passing in a fs username as an arg.
+
+### SET THESE!
+my $file = '/home/levinse/dish1.csv';
+my $classnum = 1; # hardware classnum as per assumptions section
+my $dry = 0;
+###
+
+my $user = shift;
+adminsuidsetup $user;
+
+local $SIG{HUP} = 'IGNORE';
+local $SIG{INT} = 'IGNORE';
+local $SIG{QUIT} = 'IGNORE';
+local $SIG{TERM} = 'IGNORE';
+local $SIG{TSTP} = 'IGNORE';
+local $SIG{PIPE} = 'IGNORE';
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+my $max_date = time;
+my $min_date = 1104537600; # January 1st 2005
+
+my %hardware_type = map { $_->model => $_->typenum } 
+                        qsearch('hardware_type', { 'classnum' => $classnum });
+
+my $skipto = 0; 
+my $limit = 0;
+my $linenum = 1;
+my $debug = 1;
+
+my $parser = new DateTime::Format::Natural( 'time_zone' => 'local' );
+sub parsedt {
+    my ($dt,$min,$max) = (shift,shift,shift);
+    $dt = "$dt 00:00:00";
+    my $epoch = $parser->parse_datetime($dt);
+#    warn "dt='$dt' min=$min max=$max epoch=$epoch\n";
+    return $epoch->epoch 
+        if ($parser->success && $epoch->epoch >= $min && $epoch->epoch <= $max);
+    fatal("invalid date $dt (min=$min, max=$max)");
+}
+
+sub trim {
+    my $str = shift;
+    $str =~ s/^\s+|\s+$//g;
+    $str;
+}
+
+sub suffer {
+    my $linenum = shift;
+    my @columns = @_;
+
+    my $custnum = trim($columns[1]);
+    fatal("invalid custnum $custnum") unless $custnum =~ /^\d+$/;
+    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum });
+    fatal("custnum $custnum not found") unless $cust_main;
+
+    my $dish_account = trim($columns[2]);
+    fatal("invalid dish account") unless $dish_account =~ /^\d+$/;
+
+    my $installed = parsedt(trim($columns[3]),$min_date,$max_date);
+
+    my @pkgs = $cust_main->ncancelled_pkgs;
+    my $pkg;
+    my $hardware_svcpart = 0;
+    my $dish_svcpart = 0;
+    foreach my $cust_pkg ( @pkgs ) {
+        my @avail_part_svc = $cust_pkg->available_part_svc;
+        foreach my $avail_part_svc ( @avail_part_svc ) {
+            $hardware_svcpart = $avail_part_svc->svcpart
+                if $avail_part_svc->svcdb eq 'svc_hardware' && $avail_part_svc->num_avail > 4;
+            $dish_svcpart = $avail_part_svc->svcpart
+                if $avail_part_svc->svcdb eq 'svc_dish' && $avail_part_svc->num_avail == 1;
+        }
+        if ( $hardware_svcpart && $dish_svcpart ) { # picks last matching pkg
+            $pkg = $cust_pkg;
+            last;
+        }
+    }
+    fatal("no matching pkgs found") unless $pkg;
+
+    for(my $i=4;$i<17;$i+=3){
+        my $type = trim($columns[$i]);
+        next unless $type;
+        fatal("device type $type not found") unless exists($hardware_type{$type});
+        my $svc_hardware = new FS::svc_hardware {'typenum'  => $hardware_type{$type},
+                                                'serial'    => trim($columns[$i+1]),
+                                                'smartcard' => trim($columns[$i+2]),
+                                                'pkgnum'    => $pkg->pkgnum,
+                                                'svcpart'   => $hardware_svcpart,
+                                                };
+        my $error = $svc_hardware->insert;
+        fatal("error inserting hardware: $error") if $error;
+    }
+
+    my $svc_dish = new FS::svc_dish { 'acctnum'     => $dish_account,
+                                  'installdate'  => $installed,
+                                  'pkgnum'      => $pkg->pkgnum,
+                                  'svcpart'     => $dish_svcpart,
+                                };
+    my $error = $svc_dish->insert;
+    fatal("error inserting dish: $error") if $error;
+
+    warn "Pass $linenum\n" if $debug;
+
+}
+
+sub fatal {
+    my $msg = shift;
+    $dbh->rollback if $oldAutoCommit;
+    die $msg;
+}
+
+my $csv = new Text::CSV;
+open (CSV, "<", $file) or die $!;
+print "Starting main loop time=".time."\n";
+while (<CSV>) {
+    if ( $linenum == 1 ) { # skip header
+        $linenum++;
+        next;
+    }
+
+    if( $skipto > $linenum ) { # debug stuff
+        $linenum++;
+        next;
+    }
+
+    last if $limit > 0 && $limit <= $linenum;
+
+    # kept getting these errors for many lines:
+    # "EIQ - Binary character inside quoted field, binary off"
+    $_ =~ s/[^[:ascii:]]//g;
+
+    if ($csv->parse($_)) {
+        my @columns = $csv->fields();
+        suffer($linenum,@columns);
+    } else {
+        my $err = $csv->error_diag . "(" . $csv->error_input . ")";
+        print "WARNING: failed to parse line $linenum: " . $csv->error_diag
+            . " (" . $csv->error_input . ")\n";
+    }
+    $linenum++;
+}
+close CSV;
+
+fatal("COMMIT ABORTED DUE TO DRY RUN BEING ON") if $dry;
+$dbh->commit or die $dbh->errstr if $oldAutoCommit;
