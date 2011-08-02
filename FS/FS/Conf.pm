@@ -2862,7 +2862,7 @@ and customer address. Include units.',
   {
     'key'         => 'overlimit_groups',
     'section'     => '',
-    'description' => 'RADIUS group (or comma-separated groups) to assign to svc_acct which has exceeded its bandwidth or time limit.',
+    'description' => 'RADIUS group(s) to assign to svc_acct which has exceeded its bandwidth or time limit.',
     'type'        => 'select-sub',
     'per_agent'   => 1,
     'multiple'    => 1,
