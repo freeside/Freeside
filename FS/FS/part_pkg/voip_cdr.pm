@@ -899,6 +899,11 @@ sub check_chargable {
     if $opt{'ignore_disposition'} =~ /\S/
     && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'ignore_disposition'});
 
+  foreach(split(/\s*,\s*/, $opt{'skip_dst_prefix'})) {
+    return "dst starts with '$_'"
+    if length($_) && substr($cdr->dst,0,length($_)) eq $_;
+  }
+
   return "carrierid != $opt{'use_carrierid'}"
     if length($opt{'use_carrierid'})
     && $cdr->carrierid ne $opt{'use_carrierid'} #ne otherwise 0 matches ''
@@ -911,11 +916,6 @@ sub check_chargable {
   return "cdrtypenum == $opt{'ignore_cdrtypenum'}"
     if length($opt{'ignore_cdrtypenum'})
     && $cdr->cdrtypenum eq $opt{'ignore_cdrtypenum'}; #eq otherwise 0 matches ''
-
-  foreach(split(',',$opt{'skip_dst_prefix'})) {
-    return "dst starts with '$_'"
-    if length($_) && substr($cdr->dst,0,length($_)) eq $_;
-  }
 
   return "dcontext IN ( $opt{'skip_dcontext'} )"
     if $opt{'skip_dcontext'} =~ /\S/
