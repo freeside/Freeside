@@ -4608,6 +4608,21 @@ sub _items_cust_bill_pkg {
   foreach my $cust_bill_pkg ( @$cust_bill_pkgs )
   {
 
+    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
+      if ( $_ && !$cust_bill_pkg->hidden ) {
+        $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+        $_->{amount}      =~ s/^\-0\.00$/0.00/;
+        $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+        push @b, { %$_ }
+          if $_->{amount} != 0
+          || $discount_show_always
+          || ( ! $_->{_is_setup} && $_->{recur_show_zero} )
+          || (   $_->{_is_setup} && $_->{setup_show_zero} )
+        ;
+        $_ = undef;
+      }
+    }
+
     warn "$me _items_cust_bill_pkg considering cust_bill_pkg ".
          $cust_bill_pkg->billpkgnum. ", pkgnum ". $cust_bill_pkg->pkgnum. "\n"
       if $DEBUG > 1;
@@ -4622,7 +4637,8 @@ sub _items_cust_bill_pkg {
                         )
     {
 
-      warn "$me _items_cust_bill_pkg considering display item $display\n"
+      warn "$me _items_cust_bill_pkg considering cust_bill_pkg_display ".
+           $display->billpkgdisplaynum. "\n"
         if $DEBUG > 1;
 
       my $type = $display->type;
@@ -4691,6 +4707,7 @@ sub _items_cust_bill_pkg {
               #pkgpart         => $part_pkg->pkgpart,
               pkgnum          => $cust_bill_pkg->pkgnum,
               amount          => $cust_bill_pkg->setup,
+              setup_show_zero => $cust_bill_pkg->setup_show_zero,
               unit_amount     => $cust_bill_pkg->unitsetup,
               quantity        => $cust_bill_pkg->quantity,
               ext_description => \@d,
@@ -4797,6 +4814,7 @@ sub _items_cust_bill_pkg {
                 #pkgpart         => $part_pkg->pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
+                recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 unit_amount     => $cust_bill_pkg->unitrecur,
                 quantity        => $cust_bill_pkg->quantity,
                 ext_description => \@d,
@@ -4818,6 +4836,7 @@ sub _items_cust_bill_pkg {
                 #pkgpart         => $part_pkg->pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
+                recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 unit_amount     => $cust_bill_pkg->unitrecur,
                 quantity        => $cust_bill_pkg->quantity,
                 ext_description => \@d,
@@ -4854,33 +4873,20 @@ sub _items_cust_bill_pkg {
     $discount_show_always = ($cust_bill_pkg->cust_bill_pkg_discount
                                 && $conf->exists('discount-show-always'));
 
-    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
-      if ( $_ && !$cust_bill_pkg->hidden ) {
-        $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
-        $_->{amount}      =~ s/^\-0\.00$/0.00/;
-        $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
-        push @b, { %$_ }
-          if $_->{amount} != 0
-          || $discount_show_always
-          || ( ! $_->{_is_setup} && $cust_bill_pkg->recur_show_zero )
-          || (   $_->{_is_setup} && $cust_bill_pkg->setup_show_zero )
-        ;
-        $_ = undef;
-      }
-    }
-
   }
 
-  #foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
-  #  if ( $_  ) {
-  #    $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
-  #    $_->{amount}      =~ s/^\-0\.00$/0.00/;
-  #    $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
-  #    push @b, { %$_ }
-  #      if $_->{amount} != 0
-  #      || $discount_show_always
-  #  }
-  #}
+  foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
+    if ( $_  ) {
+      $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+      $_->{amount}      =~ s/^\-0\.00$/0.00/;
+      $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+      push @b, { %$_ }
+        if $_->{amount} != 0
+        || $discount_show_always
+        || ( ! $_->{_is_setup} && $_->{recur_show_zero} )
+        || (   $_->{_is_setup} && $_->{setup_show_zero} )
+    }
+  }
 
   warn "$me _items_cust_bill_pkg done considering cust_bill_pkgs\n"
     if $DEBUG > 1;
