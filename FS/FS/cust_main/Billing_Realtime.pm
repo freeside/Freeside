@@ -427,76 +427,87 @@ sub realtime_bop {
 
   my $paydate = '';
   my %content = ();
-  if ( $namespace eq 'Business::OnlinePayment' && $options{method} eq 'CC' ) {
 
-    $content{card_number} = $options{payinfo};
-    $paydate = exists($options{'paydate'})
-                    ? $options{'paydate'}
-                    : $self->paydate;
-    $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-    $content{expiration} = "$2/$1";
+  if ( $namespace eq 'Business::OnlinePayment' ) {
 
-    my $paycvv = exists($options{'paycvv'})
-                   ? $options{'paycvv'}
-                   : $self->paycvv;
-    $content{cvv2} = $paycvv
-      if length($paycvv);
+    if ( $options{method} eq 'CC' ) {
 
-    my $paystart_month = exists($options{'paystart_month'})
-                           ? $options{'paystart_month'}
-                           : $self->paystart_month;
+      $content{card_number} = $options{payinfo};
+      $paydate = exists($options{'paydate'})
+                      ? $options{'paydate'}
+                      : $self->paydate;
+      $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+      $content{expiration} = "$2/$1";
 
-    my $paystart_year  = exists($options{'paystart_year'})
-                           ? $options{'paystart_year'}
-                           : $self->paystart_year;
+      my $paycvv = exists($options{'paycvv'})
+                     ? $options{'paycvv'}
+                     : $self->paycvv;
+      $content{cvv2} = $paycvv
+        if length($paycvv);
 
-    $content{card_start} = "$paystart_month/$paystart_year"
-      if $paystart_month && $paystart_year;
+      my $paystart_month = exists($options{'paystart_month'})
+                             ? $options{'paystart_month'}
+                             : $self->paystart_month;
 
-    my $payissue       = exists($options{'payissue'})
-                           ? $options{'payissue'}
-                           : $self->payissue;
-    $content{issue_number} = $payissue if $payissue;
+      my $paystart_year  = exists($options{'paystart_year'})
+                             ? $options{'paystart_year'}
+                             : $self->paystart_year;
 
-    if ( $self->_bop_recurring_billing( 'payinfo'        => $options{'payinfo'},
-                                        'trans_is_recur' => $trans_is_recur,
-                                      )
-       )
-    {
-      $content{recurring_billing} = 'YES';
-      $content{acct_code} = 'rebill'
-        if $conf->exists('credit_card-recurring_billing_acct_code');
+      $content{card_start} = "$paystart_month/$paystart_year"
+        if $paystart_month && $paystart_year;
+
+      my $payissue       = exists($options{'payissue'})
+                             ? $options{'payissue'}
+                             : $self->payissue;
+      $content{issue_number} = $payissue if $payissue;
+
+      if ( $self->_bop_recurring_billing(
+             'payinfo'        => $options{'payinfo'},
+             'trans_is_recur' => $trans_is_recur,
+           )
+         )
+      {
+        $content{recurring_billing} = 'YES';
+        $content{acct_code} = 'rebill'
+          if $conf->exists('credit_card-recurring_billing_acct_code');
+      }
+
+    } elsif ( $options{method} eq 'ECHECK' ){
+
+      ( $content{account_number}, $content{routing_code} ) =
+        split('@', $options{payinfo});
+      $content{bank_name} = $options{payname};
+      $content{bank_state} = exists($options{'paystate'})
+                               ? $options{'paystate'}
+                               : $self->getfield('paystate');
+      $content{account_type}=
+        (exists($options{'paytype'}) && $options{'paytype'})
+          ? uc($options{'paytype'})
+          : uc($self->getfield('paytype')) || 'PERSONAL CHECKING';
+      $content{account_name} = $self->getfield('first'). ' '.
+                               $self->getfield('last');
+
+      $content{customer_org} = $self->company ? 'B' : 'I';
+      $content{state_id}       = exists($options{'stateid'})
+                                   ? $options{'stateid'}
+                                   : $self->getfield('stateid');
+      $content{state_id_state} = exists($options{'stateid_state'})
+                                   ? $options{'stateid_state'}
+                                   : $self->getfield('stateid_state');
+      $content{customer_ssn} = exists($options{'ss'})
+                                 ? $options{'ss'}
+                                 : $self->ss;
+
+    } elsif ( $options{method} eq 'LEC' ) {
+      $content{phone} = $options{payinfo};
+    } else {
+      die "unknown method ". $options{method};
     }
 
-  } elsif ( $namespace eq 'Business::OnlinePayment' && $options{method} eq 'ECHECK' ){
-    ( $content{account_number}, $content{routing_code} ) =
-      split('@', $options{payinfo});
-    $content{bank_name} = $options{payname};
-    $content{bank_state} = exists($options{'paystate'})
-                             ? $options{'paystate'}
-                             : $self->getfield('paystate');
-    $content{account_type}= (exists($options{'paytype'}) && $options{'paytype'})
-                               ? uc($options{'paytype'})
-                               : uc($self->getfield('paytype')) || 'PERSONAL CHECKING';
-    $content{account_name} = $self->getfield('first'). ' '.
-                             $self->getfield('last');
-
-    $content{customer_org} = $self->company ? 'B' : 'I';
-    $content{state_id}       = exists($options{'stateid'})
-                                 ? $options{'stateid'}
-                                 : $self->getfield('stateid');
-    $content{state_id_state} = exists($options{'stateid_state'})
-                                 ? $options{'stateid_state'}
-                                 : $self->getfield('stateid_state');
-    $content{customer_ssn} = exists($options{'ss'})
-                               ? $options{'ss'}
-                               : $self->ss;
-  } elsif ( $namespace eq 'Business::OnlinePayment' && $options{method} eq 'LEC' ) {
-    $content{phone} = $options{payinfo};
   } elsif ( $namespace eq 'Business::OnlineThirdPartyPayment' ) {
     #move along
   } else {
-    #die an evil death
+    die "unknown namespace $namespace";
   }
 
   ###
