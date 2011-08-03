@@ -682,17 +682,17 @@ sub set_display {
                     || $cust_pkg->part_pkg->option('usage_mandate', 'Hush!');
 
   # or use the category from $opt{'part_pkg'} if its not bundled?
-  my $section = $cust_pkg->part_pkg->categoryname;
+  my $categoryname = $cust_pkg->part_pkg->categoryname;
 
   return $self->set('display', [])
-    unless $separate || $section || $usage_mandate;
+    unless $separate || $categoryname || $usage_mandate;
   
   my @display = ();
 
-  my %hash = ( 'section' => $section );
+  my %hash = ( 'section' => $categoryname );
 
-  $section =            $part_pkg->option('usage_section', 'Hush!')
-           || $cust_pkg->part_pkg->option('usage_section', 'Hush!');
+  my $usage_section =            $part_pkg->option('usage_section', 'Hush!')
+                    || $cust_pkg->part_pkg->option('usage_section', 'Hush!');
 
   my $summary =            $part_pkg->option('summarize_usage', 'Hush!')
               || $cust_pkg->part_pkg->option('summarize_usage', 'Hush!');
@@ -708,18 +708,18 @@ sub set_display {
                      };
   }
 
-  if ($separate && $section && $summary) {
+  if ($separate && $usage_section && $summary) {
     push @display, new FS::cust_bill_pkg_display { type    => 'U',
                                                    summary => 'Y',
                                                    %hash,
                                                  };
   }
-  if ($usage_mandate || $section && $summary) {
+  if ($usage_mandate || ($usage_section && $summary) ) {
     $hash{post_total} = 'Y';
   }
 
   if ($separate || $usage_mandate) {
-    $hash{section} = $section if ($separate || $usage_mandate);
+    $hash{section} = $usage_section if $usage_section;
     push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
   }
 
