@@ -45,7 +45,8 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+<&| /Widgets/TitleBox, %ARGS &><% $m->content |n%></&>
 <%init>
 # For compatibility with 3.4
-$m->comp('/Widgets/TitleBox', %ARGS );
+# $m->comp('/Widgets/TitleBox', %ARGS ); Doesn't actually work
 </%init>

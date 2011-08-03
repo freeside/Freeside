@@ -15,7 +15,7 @@ resolve.</p>
 %	  Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[$#dates-1]);
 <&|/Elements/TitleBox, 
 	title => $title,
-	title_href => "/RTx/Statistics/Resolution/index.html?$QueryString" &>
+	title_href => $RT::WebPath ."/RTx/Statistics/Resolution/index.html?$QueryString" &>
 <TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH=100%>
 % if ($ShowHeader) {
 <& /RTx/Statistics/Elements/CollectionAsTable/Header, 
@@ -105,6 +105,8 @@ for(0..$diff-1) {
  &>
 
 </form>
+
+<% Statistics::DebugInit($m) |n %>
 
 <%ARGS>
 $max => $Statistics::TimeToResolveMaxRows
@@ -247,7 +249,7 @@ $QueueObj->Load($Queue);
 # the arrays, so that they end up in start to finish order.
 $eEpoch += $Statistics::secsPerDay;
 $n = 0;
-until ($#dates == $diff ) {	
+until ($#dates == $diff ) {
     my $date = new RT::Date($session{CurrentUser});
     $date->Set(Value=>$endRange - $n, Format => 'unix');
     # Note: we used to adjust the time to local midnight, but
