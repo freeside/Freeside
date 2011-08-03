@@ -1221,46 +1221,12 @@ sub _handle_taxes {
     } #if $conf->exists('enable_taxproducts') ...
 
   }
- 
-  my @display = ();
-  my $separate = $conf->exists('separate_usage');
-  my $temp_pkg = new FS::cust_pkg { pkgpart => $real_pkgpart };
-  my $usage_mandate = $temp_pkg->part_pkg->option('usage_mandate', 'Hush!');
-  my $section = $temp_pkg->part_pkg->categoryname;
-  if ( $separate || $section || $usage_mandate ) {
 
-    my %hash = ( 'section' => $section );
-
-    $section = $temp_pkg->part_pkg->option('usage_section', 'Hush!');
-    my $summary = $temp_pkg->part_pkg->option('summarize_usage', 'Hush!');
-    if ( $separate ) {
-      push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
-      push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
-    } else {
-      push @display, new FS::cust_bill_pkg_display
-                       { type => '',
-                         %hash,
-                         ( ( $usage_mandate ) ? ( 'summary' => 'Y' ) : () ),
-                       };
-    }
-
-    if ($separate && $section && $summary) {
-      push @display, new FS::cust_bill_pkg_display { type    => 'U',
-                                                     summary => 'Y',
-                                                     %hash,
-                                                   };
-    }
-    if ($usage_mandate || $section && $summary) {
-      $hash{post_total} = 'Y';
-    }
-
-    if ($separate || $usage_mandate) {
-      $hash{section} = $section if ($separate || $usage_mandate);
-      push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
-    }
-
-  }
-  $cust_bill_pkg->set('display', \@display);
+  #what's this doing in the middle of _handle_taxes?  probably should split
+  #this into three parts above in _make_lines
+  $cust_bill_pkg->set_display(   part_pkg     => $part_pkg,
+                                 real_pkgpart => $real_pkgpart,
+                             );
 
   my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
   foreach my $key (keys %tax_cust_bill_pkg) {

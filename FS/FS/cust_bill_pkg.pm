@@ -657,6 +657,76 @@ sub unitrecur {
     : $self->getfield('unitrecur');
 }
 
+=item set_display OPTION => VALUE ...
+
+A helper method for I<insert>, populates the pseudo-field B<display> with
+appropriate FS::cust_bill_pkg_display objects.
+
+Options are passed as a list of name/value pairs.  Options are:
+
+part_pkg: FS::part_pkg object from the 
+
+real_pkgpart: if this line item comes from a bundled package, the pkgpart of the owning package.  Otherwise the same as the part_pkg's pkgpart above.
+
+=cut
+
+sub set_display {
+  my( $self, %opt ) = @_;
+  my $part_pkg = $opt{'part_pkg'};
+  my $cust_pkg = new FS::cust_pkg { pkgpart => $opt{real_pkgpart} };
+
+  my $conf = new FS::Conf;
+
+  my $separate = $conf->exists('separate_usage');
+  my $usage_mandate =            $part_pkg->option('usage_mandate', 'Hush!')
+                    || $cust_pkg->part_pkg->option('usage_mandate', 'Hush!');
+
+  # or use the category from $opt{'part_pkg'} if its not bundled?
+  my $section = $cust_pkg->part_pkg->categoryname;
+
+  return $self->set('display', [])
+    unless $separate || $section || $usage_mandate;
+  
+  my @display = ();
+
+  my %hash = ( 'section' => $section );
+
+  $section =            $part_pkg->option('usage_section', 'Hush!')
+           || $cust_pkg->part_pkg->option('usage_section', 'Hush!');
+
+  my $summary =            $part_pkg->option('summarize_usage', 'Hush!')
+              || $cust_pkg->part_pkg->option('summarize_usage', 'Hush!');
+
+  if ( $separate ) {
+    push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
+    push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
+  } else {
+    push @display, new FS::cust_bill_pkg_display
+                     { type => '',
+                       %hash,
+                       ( ( $usage_mandate ) ? ( 'summary' => 'Y' ) : () ),
+                     };
+  }
+
+  if ($separate && $section && $summary) {
+    push @display, new FS::cust_bill_pkg_display { type    => 'U',
+                                                   summary => 'Y',
+                                                   %hash,
+                                                 };
+  }
+  if ($usage_mandate || $section && $summary) {
+    $hash{post_total} = 'Y';
+  }
+
+  if ($separate || $usage_mandate) {
+    $hash{section} = $section if ($separate || $usage_mandate);
+    push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
+  }
+
+  $self->set('display', \@display);
+
+}
+
 =item disintegrate
 
 Returns a list of cust_bill_pkg objects each with no more than a single class
