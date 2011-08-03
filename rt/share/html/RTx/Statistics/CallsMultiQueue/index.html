@@ -21,7 +21,7 @@ The line chart below shows the same information in a graphical form.
 %	  Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[0]) . " through " .
 %	  Statistics::FormatDate($Statistics::PerDayDateFormat, $dates[$#dates-1]);
 
-<& /Elements/TitleBoxStart, title => $title, title_href => "/RTx/Statistics/OpenStalled/index.html?$QueryString"&>
+<& /Elements/TitleBoxStart, title => $title, title_href => $RT::WebPath."/RTx/Statistics/OpenStalled/index.html?$QueryString"&>
 <TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH="100%">
 % if ($ShowHeader) {
 <& /RTx/Statistics/Elements/CollectionAsTable/Header, 
