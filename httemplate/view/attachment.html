@@ -1,4 +1,3 @@
-<% $attach->body %>
 <%init>
 my ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
@@ -8,9 +7,9 @@ $FS::CurrentUser::CurrentUser->access_right('Download attachment') or die 'acces
 my $attach = qsearchs('cust_attachment', { attachnum => $attachnum }) or die "Attachment not found: $attachnum";
 die 'access denied' if $attach->disabled;
 
+$r->subprocess_env('no-gzip' => 1); # disable mod_deflate
 $m->clear_buffer;
 $r->content_type($attach->mime_type || 'text/plain');
 $r->headers_out->add('Content-Disposition' => 'attachment;filename=' . $attach->filename);
-
-
+$m->print($attach->body);
 </%init>
