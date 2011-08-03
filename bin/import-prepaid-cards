@@ -1,0 +1,104 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Text::CSV;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::prepay_credit;
+use Data::Dumper;
+use Time::HiRes qw(usleep ualarm gettimeofday tv_interval);
+
+print "started time=".time."\n";
+
+# INSTRUCTIONS: save the spreadsheet as CSV (in ASCII), set the
+# below variables, and run this script, passing in a fs username as an arg.
+
+### SET THESE!
+my $file = '/home/levinse/prepaidcards.csv';
+my $amount = '11.95';
+my $dry = 0;
+###
+
+my $user = shift;
+adminsuidsetup $user;
+
+local $SIG{HUP} = 'IGNORE';
+local $SIG{INT} = 'IGNORE';
+local $SIG{QUIT} = 'IGNORE';
+local $SIG{TERM} = 'IGNORE';
+local $SIG{TSTP} = 'IGNORE';
+local $SIG{PIPE} = 'IGNORE';
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $skipto = 0; 
+my $limit = 0;
+my $linenum = 1;
+my $debug = 0;
+
+sub trim {
+    my $str = shift;
+    $str =~ s/^\s+|\s+$//g;
+    $str;
+}
+
+sub suffer {
+    my $linenum = shift;
+    my @columns = @_;
+
+    my $cardnum = trim($columns[0]);
+
+    my $prepay_credit = new FS::prepay_credit { 'identifier' => $cardnum,
+                                       'amount'     => $amount,
+                                    };
+    my $error = $prepay_credit->insert;
+    fatal("error inserting card: $error") if $error;
+
+    warn "Pass $linenum\n" if $debug;
+    my $time = time;
+    print "Done $linenum time=$time\n" if ($linenum % 1000 == 0);
+}
+
+sub fatal {
+    my $msg = shift;
+    $dbh->rollback if $oldAutoCommit;
+    die $msg;
+}
+
+my $csv = new Text::CSV;
+open (CSV, "<", $file) or die $!;
+print "Starting main loop time=".time."\n";
+while (<CSV>) {
+    if ( $linenum == 1 ) { # skip header
+        $linenum++;
+        next;
+    }
+
+    if( $skipto > $linenum ) { # debug stuff
+        $linenum++;
+        next;
+    }
+
+    last if $limit > 0 && $limit <= $linenum;
+
+    # kept getting these errors for many lines:
+    # "EIQ - Binary character inside quoted field, binary off"
+    $_ =~ s/[^[:ascii:]]//g;
+
+    if ($csv->parse($_)) {
+        my @columns = $csv->fields();
+        suffer($linenum,@columns);
+    } else {
+        my $err = $csv->error_diag . "(" . $csv->error_input . ")";
+        print "WARNING: failed to parse line $linenum: " . $csv->error_diag
+            . " (" . $csv->error_input . ")\n";
+    }
+    $linenum++;
+}
+close CSV;
+
+fatal("COMMIT ABORTED DUE TO DRY RUN BEING ON") if $dry;
+$dbh->commit or die $dbh->errstr if $oldAutoCommit;
