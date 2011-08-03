@@ -105,10 +105,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('View invoices') #remove this in 1.9 EVENTUALLY
-      || $curuser->access_right('View customer payments');
-      #'View customer refunds' ???
-
+  unless $curuser->access_right('View invoices') #remove this in 2.5 (2.7?)
+      || $curuser->access_right('View refunds');
 
 $cgi->param('refundnum') =~ /^(\d+)$/ or die "no refundnum";
 my $refundnum = $1;
