@@ -10,13 +10,16 @@
 
   <% include('/elements/footer.html') %>
 
-% } else {
+% #2.5/2.7?# } elsif ( $curuser->access_right('View payments') ) {
+% } elsif ( $curuser->access_right(['View invoices', 'View payments']) ) {
 <% $cgi->redirect(popurl(3). "view/cust_pay.html?paynum=$paynum" ) %>
+% } else {
+<% $cgi->redirect(popurl(3). "view/cust_main.html?custnum=$custnum" ) %>
 % }
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Process payment');
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('Process payment');
 
 #some false laziness w/MyAccount::process_payment
 

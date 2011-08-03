@@ -74,8 +74,9 @@ $title = 'Unapplied ' if $unapplied;
 $title .= "\u$name_singular Search Results";
 
 my $link = '';
-if (    ( $curuser->access_right('View invoices') #XXX for now
-          || $curuser->access_right('View customer payments')
+if (    ( $curuser->access_right('View invoices') #remove in 2.5 (2.7?)
+          || ($curuser->access_right('View payments') && $table =~ /^cust_pay/)
+          || ($curuser->access_right('View refunds') && $table eq 'cust_refund')
         )
      && ! $opt{'disable_link'}
    )

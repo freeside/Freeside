@@ -134,8 +134,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('View invoices') #remove this in 1.9 EVENTUALLY
-  || $curuser->access_right('View customer payments');
+  unless $curuser->access_right('View invoices') #remove this in 2.5 (2.7?)
+  || $curuser->access_right('View payments');
 
 $cgi->param('paynum') =~ /^(\d+)$/ or die "no paynum";
 my $paynum = $1;

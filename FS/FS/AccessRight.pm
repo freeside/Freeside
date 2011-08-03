@@ -186,6 +186,7 @@ tie my %rights, 'Tie::IxHash',
   # customer payment rights
   ###
   'Customer payment rights' => [
+    'View payments',
     { rightname=>'Post payment', desc=>'Make check or cash payments.' },
     'Post check payment',
     'Post cash payment',
@@ -206,6 +207,7 @@ tie my %rights, 'Tie::IxHash',
     'Apply credit', #NEWNEW
     { rightname=>'Unapply credit', desc=>'Enable "unapplication" of unclosed credits.' }, #aka unapplycredits
     { rightname=>'Delete credit', desc=>'Enable deletion of unclosed credits. Be very careful!  Only delete credits that were data-entry errors, not adjustments.' }, #aka. deletecredits Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
+    'View refunds',
     { rightname=>'Post refund', desc=>'Enable posting of check and cash refunds.' },
     'Post check refund',
     'Post cash refund',
