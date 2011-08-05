@@ -1937,7 +1937,7 @@ sub extra_part_svc {
   my $self = shift;
 
   my $pkgnum  = $self->pkgnum;
-  my $pkgpart = $self->pkgpart;
+  #my $pkgpart = $self->pkgpart;
 
 #  qsearch( {
 #    'table'     => 'part_svc',
@@ -1956,23 +1956,27 @@ sub extra_part_svc {
 #    'extra_param' => [ [$self->pkgpart=>'int'], [$self->pkgnum=>'int'] ],
 #  } );
 
-#seems to benchmark slightly faster...
+#seems to benchmark slightly faster... (or did?)
+
+  my @pkgparts = map $_->pkgpart, $self->part_pkg->self_and_svc_linked;
+  my $pkgparts = join(',', @pkgparts);
+
   qsearch( {
     #'select'      => 'DISTINCT ON (svcpart) part_svc.*',
     #MySQL doesn't grok DISINCT ON
     'select'      => 'DISTINCT part_svc.*',
     'table'       => 'part_svc',
     'addl_from'   =>
-      'LEFT JOIN pkg_svc  ON (     pkg_svc.svcpart   = part_svc.svcpart 
-                               AND pkg_svc.pkgpart   = ?
+      "LEFT JOIN pkg_svc  ON (     pkg_svc.svcpart   = part_svc.svcpart 
+                               AND pkg_svc.pkgpart IN ($pkgparts)
                                AND quantity > 0
                              )
        LEFT JOIN cust_svc ON (     cust_svc.svcpart = part_svc.svcpart )
        LEFT JOIN cust_pkg USING ( pkgnum )
-      ',
+      ",
     'hashref'     => {},
     'extra_sql'   => "WHERE pkgsvcnum IS NULL AND cust_pkg.pkgnum = ? ",
-    'extra_param' => [ [$self->pkgpart=>'int'], [$self->pkgnum=>'int'] ],
+    'extra_param' => [ [$self->pkgnum=>'int'] ],
   } );
 }
 
