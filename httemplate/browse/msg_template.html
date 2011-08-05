@@ -10,10 +10,12 @@
               'disabled_statuspos' => 2,
               'agent_virt'         => 1,
               'agent_null_right'   => ['Edit global templates','Configuration'],
-              'agent_pos'          => 3,
-              'header' => [ 'Name' ],
-              'fields' => [ 'msgname' ],
-              'links'  => [ $link ],
+              'agent_pos'          => 1,
+              'header' => [ 'Name', '', ('' x scalar @locales) ],
+              'fields' => [ 'msgname', @locales ],
+              'links'  => [ $link, @locale_links ],
+              'cell_style' => 
+                          [ '', '', ($locale_style) x (scalar @locales) ],
           )
 %>
 <%init>
@@ -23,6 +25,22 @@ die "access denied"
   ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates')
   ||     $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my $link = [ "${p}edit/msg_template.html?", 'msgnum' ];
+my $link = [ "${p}edit/msg_template.html?msgnum=", 'msgnum' ];
+
+my $locale_style = 'font-size:0.8em; padding:3px; background-color:';
+
+my (@locales, @locale_links);
+foreach my $l ( FS::Locales->locales ) {
+  push @locales, sub {
+    exists ( $_[0]->content_locales->{$l} )
+    ? +{ FS::Locales->locale_info($l) }->{'name'} 
+    : '';
+  };
+  push @locale_links, sub {
+    my $content = $_[0]->content_locales->{$l} or return '';
+    [ "${p}edit/msg_template.html?locale=$l;msgnum=", 'msgnum' ];
+  };
+}
+    
 
 </%init>

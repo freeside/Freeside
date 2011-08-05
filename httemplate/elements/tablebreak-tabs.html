@@ -1,0 +1,34 @@
+<%doc>
+<& /elements/tablebreak-tabs.html,
+   tabs => [                              #required
+     'Foo' => ';mode=foo',
+     'Bar' => ';mode=bar',
+     'Other' => '',
+   ],
+   selected => 'Foo',                     #required
+   url_base => $p.'edit/something.html',  #optional
+   table_id => 'OneTrueTable',            #optional
+   always_show_tabs => 0, #optional, 
+                          #controls whether this will show only one tab
+&>
+
+For use in edit/elements/edit.html 'fields' hashes.
+
+</%doc>
+% if (scalar(@$tabs) >= 2 or $opt{'always_show_tabs'}) {
+</TABLE><BR>
+<& /elements/menubar.html,
+    { newstyle => 1, %opt },
+    @$tabs &>
+<DIV CLASS="fstabcontainer">
+<TABLE <% $id %> BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+% }
+<%init>
+
+my %opt = @_;
+my $tabs = delete $opt{'tabs'} || []; # must be an arrayref
+
+my $id = '';
+$id = 'ID="'. $opt{'table_id'}. '"' if $opt{'table_id'};
+
+</%init>

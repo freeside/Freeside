@@ -1,13 +1,37 @@
 <% include( 'elements/process.html',  
               'table'       => 'msg_template',
               'viewall_dir' => 'browse',
+              #'popup_reload'=> 1,
+              'debug'       => 1,
+              'precheck_callback' => \&precheck_callback,
+              'args_callback' => \&args_callback,
           )
 %>
 <%init>
-
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
   ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates')
   ||     $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+sub precheck_callback {
+  my $cgi = shift;
+  # validate some fields
+  $cgi->param('locale') =~ /^(\w*)$/;
+  my $locale = $1;
+  return mt('Language required') if $locale eq 'new'; # the user didn't choose
+  die "unknown locale $locale" if ( $locale and 
+                                    !FS::Locales->locale_info($locale) );
+}
+
+sub args_callback {
+  my ($cgi, $object) = @_;
+  my %content;
+  $cgi->param('locale') =~ /^(\w*)$/;
+  $content{'locale'} = $1;
+  # no validation of these; they can contain just about anything
+  $content{'subject'} = $cgi->param('subject') || '';
+  $content{'body'} = $cgi->param('body') || '';
+  return %content;
+}
 
 </%init>

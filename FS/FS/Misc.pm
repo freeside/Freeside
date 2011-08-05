@@ -9,6 +9,7 @@ use IPC::Run qw( run timeout );   # for _pslatex
 use IPC::Run3; # for do_print... should just use IPC::Run i guess
 use File::Temp;
 use Tie::IxHash;
+use Encode;
 #do NOT depend on any FS:: modules here, causes weird (sometimes unreproducable
 #until on client machine) dependancy loops.  put them in FS::Misc::Something
 #instead
@@ -187,7 +188,7 @@ sub send_email {
     'Sender'     => $options{'from'},
     'Reply-To'   => $options{'from'},
     'Date'       => time2str("%a, %d %b %Y %X %z", $time),
-    'Subject'    => $options{'subject'},
+    'Subject'    => Encode::encode('MIME-Header', $options{'subject'}),
     'Message-ID' => "<$message_id>",
     @mimeargs,
   );
@@ -352,8 +353,8 @@ sub generate_email {
 
   $alternative->attach(
     'Type'        => 'text/plain',
-    #'Encoding'    => 'quoted-printable',
-    'Encoding'    => '7bit',
+    'Encoding'    => 'quoted-printable',
+    #'Encoding'    => '7bit',
     'Data'        => $data,
     'Disposition' => 'inline',
   );

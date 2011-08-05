@@ -1,34 +1,142 @@
 <% include( 'elements/edit.html',  
-              'html_init'     => '<TABLE id="outerTable"><TR><TD>',
-              'name_singular' => 'template',
-              'table'         => 'msg_template',
-              'viewall_dir'   => 'browse',
-              'agent_virt'    => 1,
-              'agent_null'    => 1,
-              'agent_null_right' => ['Edit global templates', 'Configuration'],
+    'html_init'     => '<TABLE id="outerTable"><TR><TD>',
+    'body_etc'      => $body_etc,
+    'name_singular' => 'template',
+    'table'         => 'msg_template',
+    'viewall_dir'   => 'browse',
+    'agent_virt'    => 1,
+    'agent_null'    => 1,
+    'agent_null_right' => ['Edit global templates', 'Configuration'],
 
-              'fields' => [ 'msgname',
-                            { field=>'from_addr', size=>60, },
-                            { field=>'bcc_addr',  size=>60, },
-                            { field=>'subject',   size=>80, },
-                            { field=>'body', type=>'htmlarea', width=>763 },
-                          ],
-              'labels' => { 'msgnum'    => 'Template',
-                            'msgname'   => 'Template name',
-                            'from_addr' => 'From: ',
-                            'bcc_addr'  => 'Bcc: ',
-                            'subject'   => 'Subject: ',
-                            'body'      => 'Message template',
-                          },
-              'html_foot' => "</TD>$sidebar</TR></TABLE>",
-          )
-%>
+    'fields' => [
+      { field => 'agentnum',
+        type  => 'select-agent',
+      },
+      { field => 'msgname',   size=>60, },
+      { field => 'from_addr', size=>60, },
+      { field => 'bcc_addr',  size=>60, },
+      { type  => 'tablebreak-tabs',
+        include_opt_callback => \&menubar_opt_callback,
+      },
+      # template_content fields
+      { field => 'locale', type => 'hidden' },
+      { field => 'subject',   size=>60, },
+      { field => 'body',
+        type  => 'htmlarea',
+        width => 763
+      },
+    ],
+    'labels' => { 
+      'msgnum'    => 'Template',
+      'agentnum'  => 'Agent',
+      'msgname'   => 'Template name',
+      'from_addr' => 'From: ',
+      'bcc_addr'  => 'Bcc: ',
+      'locale'    => 'Language',
+      'subject'   => 'Subject: ',
+      'body'      => 'Message body',
+    },
+    'edit_callback'   => \&edit_callback,
+    'error_callback'  => \&edit_callback,
+    'html_bottom' => '</DIV>',
+    'html_foot' => "</TD>$sidebar</TR></TABLE>",
+    )
+    %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
   ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates')
   ||     $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $body_etc = '';
+$body_etc = q!onload="document.getElementById('locale').onchange()"!
+  if $cgi->param('locale') eq 'new';
+
+sub new_callback {
+  my ($cgi, $object, $fields_listref, $opt_hashref) = @_;
+  my $template_content = new FS::template_content { 'locale' => '' };
+  $object->{'Hash'} = { $object->hash, $template_content->hash };
+}
+
+sub edit_callback {
+  my ($cgi, $object, $fields_listref, $opt_hashref) = @_;
+  $cgi->param('locale') =~ /^(\w*)$/ or die 'bad locale '.$cgi->param('locale');
+  my $locale = $1;
+
+  # fetch the content object and merge its fields
+  my %args = (
+    'msgnum' => $object->msgnum,
+    'locale' => $locale
+  );
+  my $template_content = qsearchs('template_content', \%args) 
+                        || new FS::template_content( { %args });
+  $object->{'Hash'} = { $object->hash, $template_content->hash };
+
+  # set up the locale selector if this is a new content
+  if ( $locale eq 'new' ) {
+
+    # make a list of available locales
+    my $content_locales = $object->content_locales;
+    my @locales = grep { !exists($content_locales->{$_}) } FS::Locales->locales;
+    my %labels;
+    foreach (@locales) {
+      my %info = FS::Locales->locale_info($_);
+      $labels{$_} = $info{'name'}; # ignoring country for now
+    }
+    unshift @locales, 'new';
+    $labels{'new'} = 'Select language';
+
+    # insert a field def
+    my $i = 0;
+    $i++ until ( $fields_listref->[$i]->{'field'} eq 'locale' );
+    my $locale_field = $fields_listref->[$i];
+
+    my $onchange_locale = "document.getElementById('submit').disabled = 
+    (this.options[this.selectedIndex].value == 'new');";
+
+    %$locale_field = (
+      field   => 'locale',
+      type    => 'select',
+      options => \@locales,
+      labels  => \%labels,
+      curr_value  => 'new',
+      onchange    => $onchange_locale,
+    );
+  } # else it's already set up correctly
+}
+
+sub menubar_opt_callback {
+  my $object = shift;
+  # generate no tabs for new msg_templates.
+  my $msgnum = $object->msgnum or return; 
+  my (@tabs, @options, %labels);
+  push @tabs, mt('Default'), '';
+  my $display_new = 0;
+  my $selected = '';
+  foreach my $l (FS::Locales->locales) {
+    if ( exists $object->content_locales->{$l} ) {
+      my %info = FS::Locales->locale_info($l);
+      push @tabs,
+           $info{'name'},
+           ';locale='.$l;
+      $selected = $info{'name'} if $object->locale eq $l;
+    }
+    else {
+      $display_new = 1; # there is at least one unused locale left
+    }
+  }
+  push @tabs, mt('New'), ';locale=new' if $display_new;
+  $selected = mt('New') if $object->locale eq 'new';
+  $selected ||= mt('Default');
+  (
+    'url_base' => $p.'edit/msg_template.html?msgnum='.$msgnum,
+    'selected' => $selected,
+    'tabs'     => \@tabs
+  );
+}
+
+my $onchange_locale = '';
 
 # Create hints pane
 
