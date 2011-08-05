@@ -45,7 +45,7 @@ sub calc_recur {
 
 sub cutoff_day {
   my $self = shift;
-  $self->option('cutoff_day') || 1;
+  $self->option('cutoff_day', 1) || 1;
 }
 
 1;
