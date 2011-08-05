@@ -2,12 +2,13 @@ package FS::Misc::DateTime;
 
 use base qw( Exporter );
 use vars qw( @EXPORT_OK );
+use POSIX;
 use Carp;
 use Date::Parse;
 use DateTime::Format::Natural;
 use FS::Conf;
 
-@EXPORT_OK = qw( parse_datetime );
+@EXPORT_OK = qw( parse_datetime day_end );
 
 =head1 NAME
 
@@ -53,6 +54,28 @@ sub parse_datetime {
     return str2time($string);
   }
   
+}
+
+=item day_end TIME
+
+If the next-bill-ignore-time configuration setting is turned off, just 
+returns the passed-in value.
+
+If the next-bill-ignore-time configuration setting is turned on, parses TIME
+as an integer UNIX timestamp and returns a new timestamp with the same date but
+23:59:59 for the time.
+
+=cut
+
+sub day_end {
+    my $time = shift;
+
+    my $conf = new FS::Conf;
+    return $time unless $conf->exists('next-bill-ignore-time');
+
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+        localtime($time);
+    mktime(59,59,23,$mday,$mon,$year,$wday,$yday,$isdst);
 }
 
 =back

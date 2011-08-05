@@ -7,6 +7,7 @@ use Data::Dumper;
 use List::Util qw( min );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs dbdef );
+use FS::Misc::DateTime qw( day_end );
 use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_display;
@@ -20,7 +21,6 @@ use FS::cust_bill_pkg_tax_rate_location;
 use FS::part_event;
 use FS::part_event_condition;
 use FS::pkg_category;
-use POSIX;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -113,7 +113,7 @@ sub bill_and_collect {
   my $job = $options{'job'};
 
   $job->update_statustext('0,cleaning expired packages') if $job;
-  $error = $self->cancel_expired_pkgs( $self->day_end( $options{actual_time} ) );
+  $error = $self->cancel_expired_pkgs( day_end( $options{actual_time} ) );
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -121,7 +121,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
-  $error = $self->suspend_adjourned_pkgs( $self->day_end( $options{actual_time} ) );
+  $error = $self->suspend_adjourned_pkgs( day_end( $options{actual_time} ) );
   if ( $error ) {
     $error = "Error adjourning custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -163,19 +163,6 @@ sub bill_and_collect {
 
   '';
 
-}
-
-sub day_end {
-    # XXX: sometimes "incorrect" if crossing DST boundaries?
-
-    my $self = shift;
-    my $time = shift;
-
-    return $time unless $conf->exists('next-bill-ignore-time');
-
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
-        localtime($time);
-    mktime(59,59,23,$mday,$mon,$year,$wday,$yday,$isdst);
 }
 
 sub cancel_expired_pkgs {
@@ -882,7 +869,7 @@ sub _make_lines {
        and ( $options{'resetup'}
              || ( ! $cust_pkg->setup
                   && ( ! $cust_pkg->start_date
-                       || $cust_pkg->start_date <= $self->day_end($time)
+                       || $cust_pkg->start_date <= day_end($time)
                      )
                   && ( ! $conf->exists('disable_setup_suspended_pkgs')
                        || ( $conf->exists('disable_setup_suspended_pkgs') &&
@@ -927,7 +914,7 @@ sub _make_lines {
   if (     ! $cust_pkg->start_date
        and ( ! $cust_pkg->susp || $part_pkg->option('suspend_bill', 1) )
        and
-            ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= $self->day_end($time) )
+            ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= day_end($time) )
          || ( $part_pkg->plan eq 'voip_cdr'
                && $part_pkg->option('bill_every_call')
             )
@@ -951,7 +938,7 @@ sub _make_lines {
 
     #over two params!  lets at least switch to a hashref for the rest...
     my $increment_next_bill = ( $part_pkg->freq ne '0'
-                                && ( $cust_pkg->getfield('bill') || 0 ) <= $self->day_end($time)
+                                && ( $cust_pkg->getfield('bill') || 0 ) <= day_end($time)
                                 && !$options{cancel}
                               );
     my %param = ( 'precommit_hooks'     => $precommit_hooks,
