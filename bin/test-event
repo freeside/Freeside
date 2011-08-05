@@ -26,6 +26,8 @@ my $object = qsearchs($table, { $pkey => $tablenum } )
 
 my $cust_event = $part_event->new_cust_event($object);
 
+print "\n";
+
 ###
 # specifics
 ###
@@ -33,6 +35,10 @@ my $cust_event = $part_event->new_cust_event($object);
 my @conditions = $part_event->part_event_condition;
 foreach my $condition ( @conditions ) {
   my $sat = $condition->condition( $object, 'cust_event' => $cust_event );
+
+  my $sql = $condition->condition_sql();
+  
+
   print $condition->conditionname. '.pm: '.
         ( $sat ? "satisfied\n" : "NOT SATISFIED\n" );
 
@@ -49,8 +55,6 @@ foreach my $condition ( @conditions ) {
 ###
 # overall
 ###
-
-print "\n";
 
 my $run = $cust_event->test_conditions;
 

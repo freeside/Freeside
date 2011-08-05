@@ -31,3 +31,6 @@ while ( my $custnum = shift @custnums ) {
 
   print "$output\n";
 }
+
+1;
+
