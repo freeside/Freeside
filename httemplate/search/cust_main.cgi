@@ -321,7 +321,7 @@
 %    }
 %
 %    unless ( @{$all_pkgs{$custnum}} ) {
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" COLSPAN=3>&nbsp;</TD>!;
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" COLSPAN=3>&nbsp;</TD>
 %    }
 %    
     </TR>
