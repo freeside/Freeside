@@ -7,6 +7,7 @@ use Date::Parse;
 use DBI 1.33; #The "clone" method was added in DBI 1.33. 
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch qsearchs );
+use FS::Misc::DateTime qw( day_end );
 use FS::queue;
 use FS::cust_main;
 use FS::part_event;
@@ -184,6 +185,8 @@ sub bill_where {
   # generate where_pkg/where_event search clause
   ###
 
+  my $billtime = day_end($time);
+
   # select * from cust_main where
   my $where_pkg = <<"END";
     EXISTS(
@@ -195,7 +198,7 @@ sub bill_where {
                            OR ( start_date IS NOT NULL AND start_date <= $^T )
                          )
                    )
-                OR bill  IS NULL OR bill  <= $time 
+                OR bill  IS NULL OR bill  <= $billtime 
                 OR ( expire  IS NOT NULL AND expire  <= $^T )
                 OR ( adjourn IS NOT NULL AND adjourn <= $^T )
               )
