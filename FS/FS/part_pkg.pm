@@ -1067,6 +1067,10 @@ sub self_and_bill_linked {
   shift->_self_and_linked('bill', @_);
 }
 
+sub self_and_svc_linked {
+  shift->_self_and_linked('svc', @_);
+}
+
 sub _self_and_linked {
   my( $self, $type, $hidden ) = @_;
   $hidden ||= '';
