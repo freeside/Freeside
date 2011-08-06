@@ -2959,6 +2959,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'echeck-no_routing',
+    'section'     => 'billing',
+    'description' => 'Disable the routing number entirely for Electronic Check payment info.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'voip-cust_accountcode_cdr',
     'section'     => 'telephony',
     'description' => 'Enable the per-customer option for CDR breakdown by accountcode.',

@@ -135,7 +135,7 @@
 %       $stateid, $stateid_state )
 %     = ( '', '', '', '', '', '', '', '' );
 %   if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-%     $cust_main->paymask =~ /^([\dx]+)\@([\dx]+)$/i
+%     $cust_main->paymask =~ /^([\dx]+)\@([\dx]*)$/i
 %       or die "unparsable payinfo ". $cust_main->payinfo;
 %     ($payinfo1, $payinfo2) = ($1, $2);
 %     $payname = $cust_main->payname;
@@ -154,13 +154,17 @@
       <TD ALIGN="right"><% mt('Type') |h %></TD>
       <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
     </TR>
-    <TR>
-      <TD ALIGN="right"><% mt('ABA/Routing number') |h %></TD>
-      <TD>
-        <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$payinfo2%>">
-        (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
-      </TD>
-    </TR>
+%   if ( $conf->exists('echeck-no_routing') ) {
+      <INPUT TYPE="text" NAME="payinfo2" VALUE="<%$payinfo2%>">
+%   } else {
+      <TR>
+        <TD ALIGN="right"><% mt('ABA/Routing number') |h %></TD>
+        <TD>
+          <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$payinfo2%>">
+          (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
+        </TD>
+      </TR>
+%   }
     <TR>
       <TD ALIGN="right"><% mt('Bank name') |h %></TD>
       <TD><INPUT TYPE="text" NAME="payname" VALUE="<%$payname%>"></TD>
