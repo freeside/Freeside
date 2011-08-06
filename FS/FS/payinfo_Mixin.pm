@@ -165,7 +165,8 @@ sub mask_payinfo {
       # Checks (Show last 2 @ bank)
       my( $account, $aba ) = split('@', $payinfo );
       return 'x'x(length($account)-2).
-             substr($account,(length($account)-2))."@".$aba;
+             substr($account,(length($account)-2)).
+             ( length($aba) ? "@".$aba : '');
 
     } else { # Tie up loose ends
       return $payinfo;

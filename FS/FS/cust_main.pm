@@ -1933,8 +1933,10 @@ sub check {
     if ( $conf->exists('cust_main-require-bank-branch') ) {
       $payinfo =~ /^(\d+)\@(\d+)\.(\d+)$/ or return 'invalid echeck account@branch.bank';
       $payinfo = "$1\@$2.$3";
-    }
-    elsif ( $conf->exists('echeck-nonus') ) {
+    } elsif ( $conf->exists('echeck-no_routing') ) {
+      $payinfo =~ /^(\d+)\@(\d*)$/ or return 'invalid echeck account';
+      $payinfo = "$1\@$2";
+    } elsif ( $conf->exists('echeck-nonus') ) {
       $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
       $payinfo = "$1\@$2";
     } else {

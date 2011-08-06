@@ -511,7 +511,11 @@ sub translate_payinfo {
         $payinfo = $object->paymask;
     } elsif ( $payby eq 'CHEK' ) {
         my( $account, $aba ) = split('@', $object->paymask );
-        $payinfo = emt("ABA [_1], Acct #[_2]",$aba,$account);
+        if ( $conf->exists('echeck-no_routing') ) {
+          $payinfo = emt("Acct #[_1]", $account);
+        } else {
+          $payinfo = emt("ABA [_1], Acct #[_2]",$aba,$account);
+        }
     }
 
     ($payby,$payinfo);
