@@ -21,6 +21,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied" unless $curuser->access_right('Process payment');
 
+my $conf = new FS::Conf;
+
 #some false laziness w/MyAccount::process_payment
 
 $cgi->param('custnum') =~ /^(\d+)$/
@@ -201,7 +203,6 @@ if ( $cgi->param('save') ) {
 
   #false laziness w/FS:;cust_main::realtime_bop - check both to make sure
   # working correctly
-  my $conf = new FS::Conf;
   if ( $payby eq 'CARD' &&
        grep { $_ eq cardtype($payinfo) } $conf->config('cvv-save') ) {
     $new->set( 'paycvv' => $paycvv );
