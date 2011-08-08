@@ -820,6 +820,14 @@ my %payment_gateway_options = (
   },
 
   {
+    'key'         => 'business-onlinepayment-currency',
+    'section'     => 'billing',
+    'description' => 'Currency parameter for Business::OnlinePayment transactions.',
+    'type'        => 'select',
+    'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD ) ],
+  },
+
+  {
     'key'         => 'countrydefault',
     'section'     => 'UI',
     'description' => 'Default two-letter country code (if not supplied, the default is `US\')',
