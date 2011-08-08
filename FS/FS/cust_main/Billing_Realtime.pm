@@ -306,6 +306,10 @@ sub _bop_content {
   $content{referer} = 'http://cleanwhisker.420.am/'; #XXX fix referer :/
   $content{phone} = $self->daytime || $self->night;
 
+  my $currency =    $conf->exists('business-onlinepayment-currency')
+                 && $conf->config('business-onlinepayment-currency');
+  $content{currency} = $currency if $currency;
+
   \%content;
 }
 
