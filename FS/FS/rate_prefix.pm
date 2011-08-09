@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::rate_region;
+use FS::lata;
 
 @ISA = qw(FS::Record);
 
