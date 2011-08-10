@@ -78,6 +78,9 @@ Example:
    'agent_virt'       => 1,
    'agent_null_right' => 'Access Right Name',
 
+   #special bulk insert mode
+   'bulk' => 'field',
+
  &>
 
 </%doc>
@@ -85,6 +88,9 @@ Example:
 %
 %  my $edit_ext = $opt{'edit_ext'} || 'html';
 %  my $url = $opt{'error_redirect'} || popurl(2)."$table.$edit_ext";
+
+%  #my $query = $m->scomp('/elements/create_uri_query');
+%  #$cgi->redirect("$url?$query");
 %  if ( length($cgi->query_string) > 1920 ) { #stupid IE 2083 URL limit
 % 
 %    my $session = int(rand(4294967296)); #XXX
@@ -128,7 +134,7 @@ Example:
 %
 %  if ( $opt{'redirect'} ) {
 %
-<% $cgi->redirect( $opt{'redirect'}. $pkeyvalue ) %>
+<% $cgi->redirect( $opt{'redirect'}. $new_pkey) %>
 %
 %  } else { 
 %
@@ -163,13 +169,13 @@ my $fields = $opt{'fields'}
              #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
              || [ fields($table) ];
 
-my $pkeyvalue = $cgi->param($pkey);
+my $old_pkey = $cgi->param($pkey);
 
 my $old = '';
-if ( $pkeyvalue ) {
+if ( $old_pkey ) {
   $old = qsearchs({
     'table'   => $table,
-    'hashref' => { $pkey => $pkeyvalue },
+    'hashref' => { $pkey => $old_pkey },
     'extra_sql' => ( $opt{'agent_virt'}
                        ? ' AND '. $curuser->agentnums_sql(
                                     'null_right' => $opt{'agent_null_right'}
@@ -179,144 +185,162 @@ if ( $pkeyvalue ) {
   });
 }
 
+my $bfield = $opt{'bulk'};
+
 my %hash =
   map { my @entry = ( $_ => scalar($cgi->param($_)) );
         $opt{'value_callback'} ? ( $_ => &{ $opt{'value_callback'} }( @entry ))
                                : ( @entry )
-      } @$fields;
+      } grep { $_ ne $bfield } @$fields;
 
-my $new = $class->new( \%hash );
-
-if ($old && exists($opt{'copy_on_empty'})) {
-  foreach my $field (@{$opt{'copy_on_empty'}}) {
-    $new->set($field, $old->get($field))
-      unless scalar($cgi->param($field));
-  }
+my @values = ( 1 );
+if ( $bfield ) {
+  @values = $cgi->param($bfield);
+  warn join(',', @values);
 }
 
-if ( $opt{'agent_virt'} ) {
+my $new;
+my $new_pkey = '';
+foreach my $value ( @values ) {
 
-  if ( ! $new->agentnum
-       && (    ! $opt{'agent_null_right'}
-            || ! $curuser->access_right($opt{'agent_null_right'})
-          )
-     )
-  {
+  $new = $class->new( \%hash );
 
-    $error ||= 'Select an agent';
+  $new->$bfield($value) if $bfield;
+
+  if ($old && exists($opt{'copy_on_empty'})) {
+    foreach my $field (@{$opt{'copy_on_empty'}}) {
+      $new->set($field, $old->get($field))
+        unless scalar($cgi->param($field));
+    }
+  }
+
+  if ( $opt{'agent_virt'} ) {
+
+    if ( ! $new->agentnum
+         && (    ! $opt{'agent_null_right'}
+              || ! $curuser->access_right($opt{'agent_null_right'})
+            )
+       )
+    {
+
+      $error ||= 'Select an agent';
+
+    } else {
+
+      die "illegal agentnum"
+        unless $curuser->agentnums_href->{$new->agentnum}
+            or $curuser->access_right('View customers of all agents')
+            or $opt{'agent_null_right'}
+               && ! $new->agentnum
+               && $curuser->access_right($opt{'agent_null_right'});
+
+    }
+
+  }
+
+  $error ||= $new->check;
+
+  my @args = ();
+  if ( !$error && $opt{'args_callback'} ) {
+    @args = &{ $opt{'args_callback'} }( $cgi, $new );
+  }
+
+  if ( !$error && $opt{'debug'} ) {
+    warn "$me updating record in $table table using $class class\n";
+    warn Dumper(\%hash);
+    warn "with args: \n". Dumper(\@args) if @args;
+  }
+
+  if ( !$error ) {
+    if ( $old_pkey ) {
+      $error = $new->replace($old, @args);
+    } else {
+      $error = $new->insert(@args);
+      $new_pkey = $new->getfield($pkey);
+    }
+  }
+
+  if ( !$error && $opt{'process_m2m'} ) {
+
+    my @process_m2m = ref($opt{'process_m2m'}) eq 'ARRAY'
+                        ? @{ $opt{'process_m2m'} }
+                        :  ( $opt{'process_m2m'} );
+
+    foreach my $process_m2m (@process_m2m) {
+
+      $process_m2m->{'params'} ||= scalar($cgi->Vars);
+
+      warn "$me processing m2m:\n". Dumper( %$process_m2m )
+        if $opt{'debug'};
+
+      $error = $new->process_m2m( %$process_m2m );
+    }
+
+  }
+
+  if ( !$error && $opt{'process_m2name'} ) {
+
+    my @process_m2name = ref($opt{'process_m2name'}) eq 'ARRAY'
+                           ? @{ $opt{'process_m2name'} }
+                           :  ( $opt{'process_m2name'} );
+
+
+    foreach my $process_m2name (@process_m2name) {
+
+      if ( $opt{'debug'} ) {
+        warn "$me processing m2name:\n". Dumper( %{ $process_m2name },
+                                                 'params' => scalar($cgi->Vars),
+                                               );
+      }
+
+      $error = $new->process_m2name( %{ $process_m2name },
+                                     'params' => scalar($cgi->Vars),
+                                   );
+    }
+
+  }
+
+  if ( !$error && $opt{'process_o2m'} ) {
+
+    my @process_o2m = ref($opt{'process_o2m'}) eq 'ARRAY'
+                           ? @{ $opt{'process_o2m'} }
+                           :  ( $opt{'process_o2m'} );
+
+
+    foreach my $process_o2m (@process_o2m) {
+
+      if ( $opt{'debug'} ) {
+        warn "$me processing o2m:\n". Dumper( %{ $process_o2m },
+                                                 'params' => scalar($cgi->Vars),
+                                               );
+      }
+
+      $error = $new->process_o2m( %{ $process_o2m },
+                                     'params' => scalar($cgi->Vars),
+                                   );
+    }
+
+  }
+
+
+  if ( $error ) {
+
+    $cgi->param('error', $error);
+    if ( $opt{'clear_on_error'} && scalar(@{$opt{'clear_on_error'}}) ) {
+      foreach my $field (@{$opt{'clear_on_error'}}) {
+        $cgi->param($field, '')
+      }
+    }
 
   } else {
 
-    die "illegal agentnum"
-      unless $curuser->agentnums_href->{$new->agentnum}
-          or $curuser->access_right('View customers of all agents')
-          or $opt{'agent_null_right'}
-             && ! $new->agentnum
-             && $curuser->access_right($opt{'agent_null_right'});
-
-  }
-
-}
-
-$error ||= $new->check;
-
-my @args = ();
-if ( !$error && $opt{'args_callback'} ) {
-  @args = &{ $opt{'args_callback'} }( $cgi, $new );
-}
-
-if ( !$error && $opt{'debug'} ) {
-  warn "$me updating record in $table table using $class class\n";
-  warn Dumper(\%hash);
-  warn "with args: \n". Dumper(\@args) if @args;
-}
-
-if ( !$error ) {
-  if ( $pkeyvalue ) {
-    $error = $new->replace($old, @args);
-  } else {
-    $error = $new->insert(@args);
-    $pkeyvalue = $new->getfield($pkey);
-  }
-}
-
-if ( !$error && $opt{'process_m2m'} ) {
-
-  my @process_m2m = ref($opt{'process_m2m'}) eq 'ARRAY'
-                      ? @{ $opt{'process_m2m'} }
-                      :  ( $opt{'process_m2m'} );
-
-  foreach my $process_m2m (@process_m2m) {
-
-    $process_m2m->{'params'} ||= scalar($cgi->Vars);
-
-    warn "$me processing m2m:\n". Dumper( %$process_m2m )
-      if $opt{'debug'};
-
-    $error = $new->process_m2m( %$process_m2m );
-  }
-
-}
-
-if ( !$error && $opt{'process_m2name'} ) {
-
-  my @process_m2name = ref($opt{'process_m2name'}) eq 'ARRAY'
-                         ? @{ $opt{'process_m2name'} }
-                         :  ( $opt{'process_m2name'} );
-
-
-  foreach my $process_m2name (@process_m2name) {
-
-    if ( $opt{'debug'} ) {
-      warn "$me processing m2name:\n". Dumper( %{ $process_m2name },
-                                               'params' => scalar($cgi->Vars),
-                                             );
+    if ( $opt{'noerror_callback'} ) {
+      &{ $opt{'noerror_callback'} }( $cgi, $new );
     }
 
-    $error = $new->process_m2name( %{ $process_m2name },
-                                   'params' => scalar($cgi->Vars),
-                                 );
   }
 
-}
-
-if ( !$error && $opt{'process_o2m'} ) {
-
-  my @process_o2m = ref($opt{'process_o2m'}) eq 'ARRAY'
-                         ? @{ $opt{'process_o2m'} }
-                         :  ( $opt{'process_o2m'} );
-
-
-  foreach my $process_o2m (@process_o2m) {
-
-    if ( $opt{'debug'} ) {
-      warn "$me processing o2m:\n". Dumper( %{ $process_o2m },
-                                               'params' => scalar($cgi->Vars),
-                                             );
-    }
-
-    $error = $new->process_o2m( %{ $process_o2m },
-                                   'params' => scalar($cgi->Vars),
-                                 );
-  }
-
-}
-
-
-if ( $error ) {
-
-  $cgi->param('error', $error);
-  if ( $opt{'clear_on_error'} && scalar(@{$opt{'clear_on_error'}}) ) {
-    foreach my $field (@{$opt{'clear_on_error'}}) {
-      $cgi->param($field, '')
-    }
-  }
-
-} else {
-
-  if ( $opt{'noerror_callback'} ) {
-    &{ $opt{'noerror_callback'} }( $cgi, $new );
-  }
+  last if $error;
 
 }
 

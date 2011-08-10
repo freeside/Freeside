@@ -18,45 +18,44 @@ Example:
     <TABLE>
 
       <TR>
-        <TD>
+        <TD VALIGN="top">
           <% include('/elements/select-state.html',
                        'prefix'        => 'phonenum_', #$field.'_',
                        'country'       => $country,
+                       'svcpart'       => $svcpart,
                        'disable_empty' => 0,
                        'empty_label'   => 'Select state',
                     )
           %>
+          <BR><FONT SIZE="-1">State</FONT>
         </TD>
-        <TD>
+        <TD VALIGN="top">
           <% include('/elements/select-areacode.html',
                        'state_prefix' => 'phonenum_', #$field.'_',
                        'svcpart'      => $svcpart,
                        'empty'        => 'Select area code',
                     )
           %>
+          <BR><FONT SIZE="-1">Area code</FONT>
         </TD>
-        <TD>
+        <TD VALIGN="top">
           <% include('/elements/select-exchange.html',
                        'svcpart' => $svcpart,
                        'empty'   => 'Select exchange',
                     )
           %>
+          <BR><FONT SIZE="-1">City / Exchange</FONT>
         </TD>
-        <TD>
+        <TD VALIGN="top">
           <% include('/elements/select-phonenum.html',
-                       'svcpart' => $svcpart,
-                       'empty'   => 'Select phone number',
-		       'bulknum' => $bulknum,
+                       'svcpart'  => $svcpart,
+                       'empty'    => 'Select phone number',
+		       'bulknum'  => $bulknum,
+                       'multiple' => $multiple,
                     )
           %>
+          <BR><FONT SIZE="-1">Phone number</FONT>
         </TD>
-      </TR>
-
-      <TR>
-        <TD><FONT SIZE="-1">State</FONT></TD>
-        <TD><FONT SIZE="-1">Area code</FONT></TD>
-        <TD><FONT SIZE="-1">City / Exchange</FONT></TD>
-        <TD><FONT SIZE="-1">Phone number</FONT></TD>
       </TR>
 
     </TABLE>
@@ -118,7 +117,8 @@ $export = $exports[0] if scalar(@exports);
 
 my $use_selector = scalar(@exports) ? 1 : 0;
 
-my $bulknum = $opt{'bulknum'} || 0;
+my $bulknum = $opt{'bulknum'} || 0; #Bulk DID orders via ordering system, vs.
+my $multiple = $opt{'multiple'} || 0; #just selecting a bunch at a time
 
 my $country  = ( $export && $export->option('country') )
             || $conf->config('countrydefault')
