@@ -1,36 +1,56 @@
-<% include( 'elements/svc_Common.html',
-               'table'    => 'svc_phone',
-               'fields'   => \@fields,
-               'svc_new_callback' => sub {
-                 my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt ) = @_;
-                 $svc_x->locationnum($cust_pkg->locationnum) if $cust_pkg;
-               },
-           )
-%>
+<& elements/svc_Common.html,
+     'table'            => 'svc_phone',
+     'fields'           => [],
+     'begin_callback'   => $begin_callback,
+     'svc_new_callback' => sub {
+       my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt ) = @_;
+       $svc_x->locationnum($cust_pkg->locationnum) if $cust_pkg;
+     },
+&>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+my $begin_callback = sub {
+  my( $cgi, $fields, $opt ) = @_;
 
-my $conf = new FS::Conf;
+  my $bulk = $cgi->param('bulk') ? 1 : 0;
 
-my @fields = ( 'countrycode',
-               { field => 'phonenum',
-                 type  => 'select-did',
-                 label => 'Phone number',
-               },
-             );
+  my $right = $bulk ? 'Bulk provision customer service'
+                    :      'Provision customer service';
 
-push @fields, { field => 'domsvc',
-                type  => 'select-svc-domain',
-                label => 'Domain',
-              }
-  if $conf->exists('svc_phone-domain');
+  die "access denied"
+    unless $FS::CurrentUser::CurrentUser->access_right($right);
 
-push @fields, { field => 'pbxsvc',
-                type  => 'select-svc_pbx',
-                label => 'PBX',
-              },
+  my $conf = new FS::Conf;
+
+  push @$fields,
+              'countrycode',
+              { field    => 'phonenum',
+                type     => 'select-did',
+                label    => 'Phone number',
+                multiple => $bulk,
+              };
+
+  push @$fields, { field => 'domsvc',
+                   type  => 'select-svc-domain',
+                   label => 'Domain',
+                 }
+    if $conf->exists('svc_phone-domain');
+
+  push @$fields, { field => 'pbxsvc',
+                   type  => 'select-svc_pbx',
+                   label => 'PBX',
+                 };
+
+  if ( $bulk ) {
+
+    push @$fields, { field => 'bulk',
+                     type  => 'hidden',
+                     value => '1',
+                   };
+
+  } else {
+
+    push @$fields,
               'sip_password',
               'pin',
               { field => 'phone_name',
@@ -62,10 +82,11 @@ push @fields, { field => 'pbxsvc',
                 },
               },
               { field => 'custnum', type=> 'hidden' }, #for new cust_locations
-;
+    ;
+  }
 
-if ( $conf->exists('svc_phone-lnp') ) {
-    push @fields,
+  if ( $conf->exists('svc_phone-lnp') && !$bulk ) {
+    push @$fields,
             { value   => 'Number Portability',
 	      type    => 'tablebreak-tr-title',
 				colspan => 8,
@@ -87,7 +108,9 @@ if ( $conf->exists('svc_phone-lnp') ) {
 	    },
             'lnp_other_provider',
             'lnp_other_provider_account',
-;
-}
+    ;
+  }
+
+};
 
 </%init>

@@ -42,7 +42,9 @@ Example:
 <%init>
 
 my %opt = @_;
-foreach my $opt (qw( state country prefix onchange disabled empty_label )) {
+foreach my $opt (qw(
+  state country prefix onchange disabled empty_label svcpart
+)) {
   $opt{$opt} = '' unless exists($opt{$opt}) && defined($opt{$opt});
 }
 
@@ -61,6 +63,17 @@ my $style =
     : '';
 
 tie my %states, 'Tie::IxHash', states_hash( $opt{'country'} ); 
+
+if ( $opt{'svcpart'} ) {
+
+  my $sth = dbh->prepare(
+    'SELECT DISTINCT state FROM phone_avail WHERE svcnum IS NULL'
+  ) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my %avail_states = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref };
+
+  delete $states{$_} foreach grep ! $avail_states{$_}, keys %states;
+}
 
 </%init>
 

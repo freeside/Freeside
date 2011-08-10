@@ -30,7 +30,9 @@
           what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
 
 %     if ($opt{empty}) {
-        opt(what.form.<% $opt{'prefix'} %>phonenum, '', '<% $opt{empty} %>');
+        if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ){
+          opt(what.form.<% $opt{'prefix'} %>phonenum, '', '<% $opt{empty} %>');
+        }
 %     }
 
       // add the new phonenums
@@ -127,10 +129,15 @@
 <DIV ID="phonenumerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different city/exchange</B></DIV>
 % }
 
-<SELECT ID="<% $opt{'prefix'} %>phonenum" NAME="<% $opt{'prefix'} %>phonenum" 
-    notonChange="<% $opt{'prefix'} %>phonenum_changed(this); <% $opt{'onchange'} %>"
-    <% $opt{'disabled'} %>>
-  <OPTION VALUE="">Select phone number</OPTION>
+<SELECT <% $opt{multiple} ? 'MULTIPLE SIZE=25' : '' %>
+        ID   = "<% $opt{'prefix'} %>phonenum"
+        NAME = "<% $opt{'prefix'} %>phonenum" 
+        <% $opt{'disabled'} %>
+%#        notonChange="<% $opt{'prefix'} %>phonenum_changed(this); <% $opt{'onchange'} %>"
+>
+% unless ( $opt{multiple} ) {
+    <OPTION VALUE="">Select phone number</OPTION>
+% }
 </SELECT>
 
 <%init>

@@ -1,13 +1,32 @@
-<% include( 'elements/svc_Common.html',
-               'table'    => 'svc_phone',
-               'args_callback' => $args_callback,
+<& elements/svc_Common.html,
+               'table'          => 'svc_phone',
+               'args_callback'  => $args_callback,
 	       'value_callback' => $value_callback,
-           )
-%>
+               %opt,
+&>
 <%init>
 
+my %opt = ();
+if ( $cgi->param('bulk') ) {
+  $opt{'bulk'}     = 'phonenum';
+
+  my $cust_pkg = qsearchs('cust_pkg', { pkgnum=>scalar($cgi->param('pkgnum')) })
+    or die "unknown pkgnum";
+  my $custnum = $cust_pkg->custnum;
+
+  my $show =
+    $FS::CurrentUser::CurrentUser->default_customer_view =~ /^(jumbo|packages)$/
+      ? ''
+      : ';show=packages';
+  #my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
+  $opt{'redirect'}= popurl(3)."view/cust_main.cgi?custnum=$custnum$show;dummy=";
+}
+
+my $right = $opt{'bulk'} ? 'Bulk provision customer service'
+                         :      'Provision customer service';
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+  unless $FS::CurrentUser::CurrentUser->access_right($right);
 
 my $tollfreephonenum = $cgi->param('tollfreephonenum');
 $cgi->param('phonenum',$tollfreephonenum) if $tollfreephonenum =~ /^\d+$/;

@@ -38,7 +38,9 @@
       // blank the current phonenum too
       for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
           what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
-      opt(what.form.<% $opt{'prefix'} %>phonenum, '', 'Select phone number');
+      if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ) {
+        opt(what.form.<% $opt{'prefix'} %>phonenum, '', 'Select phone number');
+      }
 
 %     if ($opt{empty}) {
         opt(what.form.<% $opt{'prefix'} %>areacode, '', '<% $opt{empty} %>');
