@@ -22,7 +22,8 @@ if ( $exchangestring ) {
   if ( $exchangestring eq 'tollfree' ) {
       $opts{'tollfree'} = 1;
   }
-  elsif ( $exchangestring =~ /^([\w\s]+), ([A-Z][A-Z])$/ ) {
+  #elsif ( $exchangestring =~ /^([\w\s\:\,\(\)\-]+), ([A-Z][A-Z])$/ ) {
+  elsif ( $exchangestring =~ /^(.+), ([A-Z][A-Z])$/ ) {
       $opts{'ratecenter'} = $1;
       $opts{'state'} = $2;
   }
