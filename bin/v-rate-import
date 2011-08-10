@@ -112,7 +112,7 @@ while ( my $row = $csv->getline($fh) ) {
   #warn Dumper($rp);
 
   my %hash = ( 'min_included'    => 0,
-               'sec_granularity' => 60,
+               'sec_granularity' => 6, #60,
                'dest_regionnum'  => $rp->regionnum,
              );
 
