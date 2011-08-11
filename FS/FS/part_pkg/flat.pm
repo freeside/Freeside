@@ -219,6 +219,8 @@ sub is_free_options {
 
 sub is_prepaid { 0; } #no, we're postpaid
 
+sub can_start_date { ! shift->option('start_1st', 1) }
+
 #XXX discounts only on recurring fees for now (no setup/one-time or usage)
 sub can_discount {
   my $self = shift;

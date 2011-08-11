@@ -867,6 +867,8 @@ sub is_free {
 
 sub can_discount { 0; }
 
+sub can_start_date { 1; }
+
 sub freqs_href {
   # moved to FS::Misc to make this accessible to other packages
   # at initialization

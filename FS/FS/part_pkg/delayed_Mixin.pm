@@ -25,7 +25,7 @@ use vars qw(%info);
 sub calc_setup {
   my($self, $cust_pkg, $time ) = @_;
 
-  unless ( $self->option('delay_setup') ) {
+  unless ( $self->option('delay_setup', 1) ) {
     my $d = $cust_pkg->bill || $time;
     $d += 86400 * $self->option('free_days');
     $cust_pkg->bill($d);
@@ -37,7 +37,7 @@ sub calc_setup {
 sub calc_remain {
   my ($self, $cust_pkg, %options) = @_;
 
-  unless ( $self->option('delay_setup') ) {
+  unless ( $self->option('delay_setup', 1) ) {
     my $last_bill = $cust_pkg->last_bill || 0;
     my $next_bill = $cust_pkg->getfield('bill') || 0;
     my $free_days = $self->option('free_days');
@@ -48,5 +48,7 @@ sub calc_remain {
 
   return $self->SUPER::calc_remain($cust_pkg, %options);
 }
+
+sub can_start_date { ! shift->option('delay_setup', 1) }
 
 1;
