@@ -1,4 +1,4 @@
-package FS::part_pkg::bulk;
+package FS::part_pkg::bulk_Common;
 use base qw( FS::part_pkg::flat );
 
 use strict;
@@ -56,12 +56,7 @@ sub calc_recur {
   my $conf = new FS::Conf;
   my $money_char = $conf->config('money_char') || '$';
   
-  my $svc_setup_fee = $self->option('svc_setup_fee');
-
   my $last_bill = $cust_pkg->last_bill;
-
-  return sprintf("%.2f", $self->base_recur($cust_pkg, $sdate) )
-    unless $$sdate > $last_bill;
 
   my $total_svc_charge = 0;
   my %n_setup = ();
@@ -70,58 +65,39 @@ sub calc_recur {
 
   my $summarize = $self->option('summarize_svcs',1);
 
-  warn "$me billing for bulk services from ". time2str('%x', $last_bill).
-                                      " to ". time2str('%x', $$sdate). "\n"
-    if $DEBUG;
+  foreach my $cust_svc ( $self->_bulk_cust_svc( $cust_pkg, $sdate ) ) {
 
-                                           #   END      START
-  foreach my $h_cust_svc ( $cust_pkg->h_cust_svc( $$sdate, $last_bill ) ) {
-
-    my @label = $h_cust_svc->label_long( $$sdate, $last_bill );
-    die "fatal: no historical label found, wtf?" unless scalar(@label); #?
+    my @label = $cust_svc->label_long( $$sdate, $last_bill );
+    die "fatal: no label found, wtf?" unless scalar(@label); #?
     my $svc_details = $label[0]. ': '. $label[1]. ': ';
-    $part_svc_label{$h_cust_svc->svcpart} ||= $label[0];
+    $part_svc_label{$cust_svc->svcpart} ||= $label[0];
 
     my $svc_charge = 0;
 
-    my $svc_start = $h_cust_svc->date_inserted;
-    if ( $svc_start < $last_bill ) {
-      $svc_start = $last_bill;
-    } elsif ( $svc_setup_fee ) {
-      $svc_charge += $svc_setup_fee;
-      $svc_details .= $money_char. sprintf('%.2f setup, ', $svc_setup_fee);
-      $n_setup{$h_cust_svc->svcpart}++;
+    my $setup = $self->_bulk_setup($cust_pkg, $cust_svc);
+    if ( $setup ) {
+      $svc_charge += $setup;
+      $svc_details .= $money_char. sprintf('%.2f setup, ', $setup);
+      $n_setup{$cust_svc->svcpart}++;
     }
 
-    my $svc_end = $h_cust_svc->date_deleted;
-    $svc_end = ( !$svc_end || $svc_end > $$sdate ) ? $$sdate : $svc_end;
-
-    my $recur_charge;
-    if ( $self->option('no_prorate',1) ) {
-      $recur_charge = $self->option('svc_recur_fee');
-    }
-    else {
-      $recur_charge = $self->option('svc_recur_fee') 
-                                     * ( $svc_end - $svc_start )
-                                     / ( $$sdate  - $last_bill );
+    my( $recur, $r_details ) = $self->_bulk_recur($cust_pkg, $cust_svc, $sdate);
+    if ( $recur ) {
+      $svc_charge += $recur;
+      $svc_details .= $money_char. sprintf('%.2f', $recur). $r_details;
+      $n_recur{$cust_svc->svcpart}++;
+      push @$details, $svc_details if !$summarize;
     }
 
-    $svc_details .= $money_char. sprintf('%.2f', $recur_charge ).
-                    ' ('.  time2str('%x', $svc_start).
-                    ' - '. time2str('%x', $svc_end  ). ')'
-      if $recur_charge;
-
-    $svc_charge += $recur_charge;
-    $n_recur{$h_cust_svc->svcpart}++;
-    push @$details, $svc_details if !$summarize;
     $total_svc_charge += $svc_charge;
 
   }
+
   if ( $summarize ) {
     foreach my $svcpart (keys %part_svc_label) {
       push @$details, sprintf('Setup fee: %d @ '.$money_char.'%.2f',
-        $n_setup{$svcpart}, $svc_setup_fee )
-        if $svc_setup_fee and $n_setup{$svcpart};
+        $n_setup{$svcpart}, $self->option('svc_setup_fee') )
+        if $self->option('svc_setup_fee') and $n_setup{$svcpart};
       push @$details, sprintf('%d services @ '.$money_char.'%.2f',
         $n_recur{$svcpart}, $self->option('svc_recur_fee') )
         if $n_recur{$svcpart};
@@ -133,9 +109,7 @@ sub calc_recur {
 
 sub can_discount { 0; }
 
-sub hide_svc_detail {
-  1;
-}
+sub hide_svc_detail { 1; }
 
 sub is_free_options {
   qw( setup_fee recur_fee svc_setup_fee svc_recur_fee );
