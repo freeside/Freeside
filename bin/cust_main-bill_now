@@ -1,0 +1,22 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw( adminsuidsetup );
+#use FS::Schema qw( dbdef );
+use FS::Record qw(qsearchs);
+use FS::cust_main;
+
+my $user = shift or die &usage;
+adminsuidsetup($user);
+
+my $custnum = shift or die &usage;
+my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  or die "unknown custnum $custnum\n";
+
+$cust_main->bill_and_collect( debug=>2, check_freq=>'1d' );
+
+sub usage {
+  die "Usage:\n  cust_main-bill_now user custnum\n";
+}
+
+1;
