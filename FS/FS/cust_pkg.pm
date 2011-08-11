@@ -284,7 +284,7 @@ sub insert {
   }
 
   my $free_days = $part_pkg->option('free_days');
-  if ( $free_days && $part_pkg->option('delay_setup') ) { #&& !$self->start_date
+  if ( $free_days && $part_pkg->option('delay_setup',1) ) { #&& !$self->start_date
     my ($mday,$mon,$year) = (localtime(time) )[3,4,5];
     #my $start_date = ($self->start_date || timelocal(0,0,0,$mday,$mon,$year)) + 86400 * $free_days;
     my $start_date = timelocal(0,0,0,$mday,$mon,$year) + 86400 * $free_days;
