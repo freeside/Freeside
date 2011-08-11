@@ -23,10 +23,6 @@ $me = '[FS::part_pkg::bulk_Common]';
                                    'instead of a detailed list',
                          'type' => 'checkbox',
                        },
-    'no_prorate'    => { 'name' => 'Don\'t prorate recurring fees on services '.
-                                   'active for a partial month',
-                         'type' => 'checkbox',
-                       },
   },
   'fieldorder' => [ 'svc_setup_fee', 'svc_recur_fee',
                     'summarize_svcs', 'no_prorate' ],
