@@ -133,14 +133,14 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                             'type' => 'checkbox',
                           },
 
-    'use_amaflags' => { 'name' => 'Do not charge for CDRs where the amaflags field is not set to "2" ("BILL"/"BILLING").',
+    'use_amaflags' => { 'name' => 'Only charge for CDRs where the amaflags field is set to "2" ("BILL"/"BILLING").',
                         'type' => 'checkbox',
                       },
 
-    'use_carrierid' => { 'name' => 'Do not charge for CDRs where the Carrier ID is not set to: ',
+    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to: ',
                          },
 
-    'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
+    'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to: ',
                          },
     
     'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to: ',
@@ -149,7 +149,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
     'ignore_disposition' => { 'name' => 'Do not charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
                          },
     
-    'disposition_in' => { 'name' => 'Do not charge for CDRs where the Disposition is not set to any of these (comma-separated) values: ',
+    'disposition_in' => { 'name' => 'Only charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
                          },
 
     'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these values: ',
