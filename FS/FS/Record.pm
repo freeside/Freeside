@@ -2,8 +2,9 @@ package FS::Record;
 
 use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $conf $conf_encryption $me
              %virtual_fields_cache
+             $conf $conf_encryption $money_char
+             $me
              $nowarn_identical $nowarn_classload
              $no_update_diff $no_check_foreign
              @encrypt_payby
@@ -59,6 +60,7 @@ FS::UID->install_callback( sub {
   die $@ if $@;
   $conf = FS::Conf->new; 
   $conf_encryption = $conf->exists('encryption');
+  $money_char = $conf->config('money_char') || '$';
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
   if ( driver_name eq 'Pg' ) {
     eval "use DBD::Pg ':pg_types'";
@@ -2242,7 +2244,7 @@ sub ut_text {
   #warn "notexist ". \&notexist. "\n";
   #warn "AUTOLOAD ". \&AUTOLOAD. "\n";
   $self->getfield($field)
-    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>]+)$/
+    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>$money_char]+)$/
       or return gettext('illegal_or_empty_text'). " $field: ".
                  $self->getfield($field);
   $self->setfield($field,$1);
