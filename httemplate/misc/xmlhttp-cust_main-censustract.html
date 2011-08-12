@@ -55,13 +55,14 @@ if ( $sub eq 'censustract' ) {
 
       my($zip5, $zip4) = split('-',$arg{zip});
 
+      $arg{year} ||= '2011';
       #ugh  workaround a mess at ffiec
-      $arg{year} = " $arg{year}" unless $arg{year} = "2010";
+      $arg{year} = " $arg{year}" if $arg{year} ne '2011';
       my @ffiec_args = (
         __VIEWSTATE => $viewstate,
         __EVENTVALIDATION => $eventvalidation,
         ddlbYear    => $arg{year},
-        ddlbYear    => ' 2009',
+        ddlbYear    => '2011', #' 2009',
         txtAddress  => $arg{address},
         txtCity     => $arg{city},  
         ddlbState   => $arg{state},
