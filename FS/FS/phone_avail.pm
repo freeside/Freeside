@@ -203,6 +203,11 @@ Translate free-form MSA name to a msa.msanum
 sub msa2msanum {
     my $self = shift;
     my $msa = shift;
+
+    if ( $msa =~ /(.+[^,])\s+(\w{2}(-\w{2})*)$/ ) {
+      $msa = "$1, $2";
+    }
+
     my @msas = qsearch('msa', { 'description' => { 'op' => 'ILIKE',
                                                    'value' => "%$msa%", }
                               });
@@ -215,6 +220,12 @@ sub msa2msanum {
 sub msatest {
     my $self = shift;
     my ($their,$our) = (shift,shift);
+
+    $their =~ s/^\s+//;
+    $their =~ s/\s+$//;
+    $their =~ s/\s+/ /g;
+    return 1 if $our eq $their;
+
     my $a = $our;
     $a =~ s/,.*?$//;
     return 1 if $a eq $their;
