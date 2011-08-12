@@ -149,9 +149,10 @@ my @merge_targets = qsearch({
 my $merge_select = sub {
     my $source_ordernum = shift;
     my $merge_select = '';
-    if ( @merge_targets ) {
+    my @targets = grep { $_->ordernum != $source_ordernum } @merge_targets;
+    if ( @targets ) {
         $merge_select = "<SELECT onchange='mergeconfirm(this,$source_ordernum)'><OPTION></OPTION>";
-        foreach my $order ( @merge_targets ) {
+        foreach my $order ( @targets ) {
             next if $order->ordernum == $source_ordernum;
             $merge_select .= "<OPTION>".$order->ordernum."</OPTION>";
         }
