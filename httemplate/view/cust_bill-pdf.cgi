@@ -6,13 +6,13 @@ die "access denied"
 
 my( $invnum, $template, $notice_name );
 my($query) = $cgi->keywords;
-if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) {
+if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) { #probably not necessary anymore?
   $template = $2;
   $invnum = $3;
   $notice_name = 'Invoice';
 } else {
   $invnum = $cgi->param('invnum');
-  $invnum =~ s/\.pdf//i;
+  $invnum =~ s/\.pdf//i; #probably not necessary anymore
   $template = $cgi->param('template');
   $notice_name = ( $cgi->param('notice_name') || 'Invoice' );
 }
@@ -37,6 +37,7 @@ die "Invoice #$invnum not found!" unless $cust_bill;
 my $pdf = $cust_bill->print_pdf(\%opt);
 
 http_header('Content-Type' => 'application/pdf' );
+http_header('Content-Disposition' => "filename=$invnum.pdf" );
 http_header('Content-Length' => length($pdf) );
 http_header('Cache-control' => 'max-age=60' );
 
