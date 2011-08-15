@@ -6,7 +6,7 @@ die "access denied"
 
 my( $invnum, $template, $notice_name );
 my($query) = $cgi->keywords;
-if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) {
+if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) { #probably not necessary anymore?
   $template = $2;
   $invnum = $3;
   $notice_name = 'Invoice';
@@ -36,7 +36,8 @@ die "Invoice #$invnum not found!" unless $cust_bill;
 my $ps = $cust_bill->print_ps(\%opt);
 
 http_header('Content-Type' => 'application/postscript' );
-http_header('Content-Length' => length($pdf) );
+http_header('Content-Disposition' => "filename=$invnum.ps" );
+http_header('Content-Length' => length($ps) );
 http_header('Cache-control' => 'max-age=60' );
 
 </%init>
