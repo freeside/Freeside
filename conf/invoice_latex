@@ -229,7 +229,7 @@
   }
 --@]
 \begin{flushright}
-Terms: [@-- $terms --@]\\
+[@-- $terms ? "Terms: $terms" : '' --@]\\
 [@-- $po_line --@]\\
 \end{flushright}
 \end{minipage}}

@@ -86,7 +86,7 @@
 	    $OUT .= qq! <img src="cust_bill-barcode.cgi?invnum=$invnum;template=$template"><br> !;
 	}
     %>
-        Terms: <%= $terms %><BR>
+        <%= $terms ? "Terms: $terms" : '' %><BR>
         <%= $po_line %>
       </td>
     </tr>
