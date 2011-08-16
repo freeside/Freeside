@@ -35,7 +35,7 @@
             <td>
             </td>
             <td align="center">
-              Customer #<BR>
+              Customer&nbsp;#<BR>
               <B><%= $custnum %></B>
             </td>
           </tr>
