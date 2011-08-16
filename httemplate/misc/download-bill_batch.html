@@ -12,10 +12,15 @@ $m->clear_buffer;
 $r->content_type('application/pdf');
 $r->headers_out->add( 'Content-Disposition' => 
   'attachment;filename="invoice_batch_'.$batchnum.'.pdf"');
+my $cookie = CGI::Cookie->new(
+  -name => "bill_batch_download",
+  -value => $batchnum,
+  -expires => '+1d',
+);
+$r->headers_out->add( 'Set-Cookie' => $cookie->as_string );
 $m->print($content);
 
-#$batch->pdf('');
-#my $error = $batch->replace;
-#  warn "error deleting cached PDF: '$error'\n" if $error;
-#}
+$batch->pdf('');
+my $error = $batch->replace;
+warn "error deleting cached PDF: '$error'\n" if $error;
 </%init>
