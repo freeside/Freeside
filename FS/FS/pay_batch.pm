@@ -477,18 +477,11 @@ sub export_batch {
     }
   }
 
-  my $delim = exists($info->{'delimiter'}) ? $info->{'delimiter'} : "\n";
+  if ($first_download) { #remove or reduce entries if customer's balance changed
 
-  my $h = $info->{'header'};
-  if(ref($h) eq 'CODE') {
-    $batch .= &$h($self, \@cust_pay_batch) . $delim;
-  }
-  else {
-    $batch .= $h . $delim;
-  }
-  foreach my $cust_pay_batch (@cust_pay_batch) {
+    my @new = ();
+    foreach my $cust_pay_batch (@cust_pay_batch) {
 
-    if ($first_download) {
       my $balance = $cust_pay_batch->cust_main->balance;
       if ($balance <= 0) { # then don't charge this customer
         my $error = $cust_pay_batch->delete;
@@ -507,20 +500,35 @@ sub export_batch {
         }
       }
       # else $balance >= $cust_pay_batch->amount
-    }
 
+      push @new, $cust_pay_batch;
+    }
+    @cust_pay_batch = @new;
+
+  }
+
+  my $delim = exists($info->{'delimiter'}) ? $info->{'delimiter'} : "\n";
+
+  my $h = $info->{'header'};
+  if (ref($h) eq 'CODE') {
+    $batch .= &$h($self, \@cust_pay_batch). $delim;
+  } else {
+    $batch .= $h. $delim;
+  }
+
+  foreach my $cust_pay_batch (@cust_pay_batch) {
     $batchcount++;
     $batchtotal += $cust_pay_batch->amount;
-    $batch .= &{$info->{'row'}}($cust_pay_batch, $self, $batchcount, $batchtotal) . $delim;
-
+    $batch .=
+      &{$info->{'row'}}($cust_pay_batch, $self, $batchcount, $batchtotal).
+      $delim;
   }
 
   my $f = $info->{'footer'};
-  if(ref($f) eq 'CODE') {
-    $batch .= &$f($self, $batchcount, $batchtotal) . $delim;
-  }
-  else {
-    $batch .= $f . $delim;
+  if (ref($f) eq 'CODE') {
+    $batch .= &$f($self, $batchcount, $batchtotal). $delim;
+  } else {
+    $batch .= $f. $delim;
   }
 
   if ($info->{'autopost'}) {
