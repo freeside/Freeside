@@ -256,8 +256,8 @@ foreach my $value ( @values ) {
       $error = $new->replace($old, @args);
     } else {
       $error = $new->insert(@args);
-      $new_pkey = $new->getfield($pkey);
     }
+    $new_pkey = $new->getfield($pkey);
   }
 
   if ( !$error && $opt{'process_m2m'} ) {
