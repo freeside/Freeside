@@ -54,7 +54,10 @@ sub process_whatever { #class method
            )
 %>
 
-<% include('/elements/init_overlib.html') %>
+% if (!$noinit) { 
+<& /elements/init_overlib.html &>
+%   $noinit = 1;
+% }
 
 <SCRIPT TYPE="text/javascript">
 
@@ -114,6 +117,9 @@ function <%$key%>myCallback( jobnum ) {
 
 </SCRIPT>
 
+<%once>
+my $noinit = 0;
+</%once>
 <%init>
 
 my( $formname, $fields, $action, $url_or_message, $key ) = @_;
@@ -126,6 +132,7 @@ if ( ref($url_or_message) ) { #its a message or something
     if $url_or_message->{'url'};
   $url_or_message_link = 'popup_url=' .uri_escape( $url_or_message->{'popup_url'} )
     if $url_or_message->{'popup_url'};
+
 } else {
   $url_or_message_link = "url=$url_or_message";
 }
