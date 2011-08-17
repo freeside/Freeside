@@ -1,13 +1,6 @@
 <% include( 'elements/search.html',
                   'html_init'     => $html_init,
-                  'html_foot'     => sub { if (scalar(keys %state_hash) > 1) {
-                                             '<BR><B>'.
-                                               'WARNING: multiple states found'.
-                                             '</B><BR>';
-                                           } else { 
-                                             '';
-                                           }
-                                         },
+                  'html_foot'     => $html_foot,,
                   'name'          => 'regions',
                   'query'         => [ @sql_query ],
                   'count_query'   =>  $count_query,
@@ -37,14 +30,16 @@
                                      ],
                   'fields'        => [
                     sub { my $row = shift; 
-                          $state_hash{substr($row->censustract, 0, 2)} = 1;
-                          substr($row->censustract, 2, 3)
+                          $state_hash{substr($row->censustract, 0, 2)}++;
+                          substr($row->censustract, 2, 3) || 'none'
                         },
-                    sub { my $row = shift; substr($row->censustract, 5) },
+                    sub { my $row = shift;
+                          substr($row->censustract, 5) || 'none'
+                        },
                     'upload',
                     'download',
                     'technology_code',
-                    sub { $cgi->param('_type') eq 'xml' ? '0' : '' },  # doesn't really work
+                    sub { $cgi->param('_type') eq 'xml' ? '0' : '' },#broken
                     'quantity',
                     sub { my $row = shift; sprintf "%.2f", $row->residential },
                   ],
@@ -134,8 +129,8 @@ my $link = 'cust_pkg.cgi?'. join(';',
                                       map { my $key = $_;
                                             my @values = ref($search_hash{$_}) 
                                               ? @{ $search_hash{$_} }
-                                              : $search_hash{$_}
-                                            map { "$key=$_" } @values
+                                              : $search_hash{$_};
+                                            map { "$key=$_" } @values;
                                           }
                                           keys %search_hash        
                                 ). ';';
@@ -148,4 +143,23 @@ my $link_suffix = sub { my $row = shift;
                           if @column_option[$row->download - 1];
                         $result;
                       };
+
+my $html_foot = sub {
+  if (scalar(keys %state_hash) > 1) {
+    '<BR><B>WARNING: multiple states found</B><BR>'.
+    '<TABLE BORDER=0>'. #nicer formatting someday
+    join('', map { '<TR>'.
+                     "<TD>$_</TD>".
+                     qq(<TD><A HREF="${link}state=$_">).
+                       $state_hash{$_}. '</A></TD>'.
+                   '</TR>';
+                 }
+                 keys %state_hash
+        ).
+    '</TABLE>';
+  } else { 
+    '';
+  }
+};
+
 </%init>
