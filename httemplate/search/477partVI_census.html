@@ -31,10 +31,10 @@
                   'fields'        => [
                     sub { my $row = shift; 
                           $state_hash{substr($row->censustract, 0, 2)}++;
-                          substr($row->censustract, 2, 3) || 'none'
+                          substr($row->censustract, 2, 3) || 'None'
                         },
                     sub { my $row = shift;
-                          substr($row->censustract, 5) || 'none'
+                          substr($row->censustract, 5) || 'None'
                         },
                     'upload',
                     'download',
@@ -149,9 +149,13 @@ my $html_foot = sub {
     '<BR><B>WARNING: multiple states found</B><BR>'.
     '<TABLE BORDER=0>'. #nicer formatting someday
     join('', map { '<TR>'.
-                     "<TD>$_</TD>".
-                     qq(<TD><A HREF="${link}state=$_">).
-                       $state_hash{$_}. '</A></TD>'.
+                     '<TD>'.
+                       ( &FS::Report::FCC_477::statenum2state($_) || 'None' ).
+                     '</TD>'.
+                     '<TD>'.
+                       qq(<A HREF="${link}censustract2=$_">).
+                       $state_hash{$_}. ' census tracts</A>'.
+                     '</TD>'.
                    '</TR>';
                  }
                  keys %state_hash

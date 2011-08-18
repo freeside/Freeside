@@ -1,11 +1,11 @@
 package FS::Report::FCC_477;
+use base qw( FS::Report );
 
 use strict;
-use vars qw( @ISA @upload @download @technology @part2aoption @part2boption );
-use FS::Report;
+use vars qw( @upload @download @technology @part2aoption @part2boption
+             %states
+           );
 use FS::Record qw( dbh );
-
-@ISA = qw( FS::Report );
 
 =head1 NAME
 
@@ -77,6 +77,70 @@ Documentation.
  'other broadband',
 );
 
+#from the select at http://www.ffiec.gov/census/default.aspx
+%states = (
+  '01' => 'ALABAMA (AL)',
+  '02' => 'ALASKA (AK)',
+  '04' => 'ARIZONA (AZ)',
+  '05' => 'ARKANSAS (AR)',
+  '06' => 'CALIFORNIA (CA)',
+  '08' => 'COLORADO (CO)',
+
+  '09' => 'CONNECTICUT (CT)',
+  '10' => 'DELAWARE (DE)',
+  '11' => 'DISTRICT OF COLUMBIA (DC)',
+  '12' => 'FLORIDA (FL)',
+  '13' => 'GEORGIA (GA)',
+  '15' => 'HAWAII (HI)',
+
+  '16' => 'IDAHO (ID)',
+  '17' => 'ILLINOIS (IL)',
+  '18' => 'INDIANA (IN)',
+  '19' => 'IOWA (IA)',
+  '20' => 'KANSAS (KS)',
+  '21' => 'KENTUCKY (KY)',
+
+  '22' => 'LOUISIANA (LA)',
+  '23' => 'MAINE (ME)',
+  '24' => 'MARYLAND (MD)',
+  '25' => 'MASSACHUSETTS (MA)',
+  '26' => 'MICHIGAN (MI)',
+  '27' => 'MINNESOTA (MN)',
+
+  '28' => 'MISSISSIPPI (MS)',
+  '29' => 'MISSOURI (MO)',
+  '30' => 'MONTANA (MT)',
+  '31' => 'NEBRASKA (NE)',
+  '32' => 'NEVADA (NV)',
+  '33' => 'NEW HAMPSHIRE (NH)',
+
+  '34' => 'NEW JERSEY (NJ)',
+  '35' => 'NEW MEXICO (NM)',
+  '36' => 'NEW YORK (NY)',
+  '37' => 'NORTH CAROLINA (NC)',
+  '38' => 'NORTH DAKOTA (ND)',
+  '39' => 'OHIO (OH)',
+
+  '40' => 'OKLAHOMA (OK)',
+  '41' => 'OREGON (OR)',
+  '42' => 'PENNSYLVANIA (PA)',
+  '44' => 'RHODE ISLAND (RI)',
+  '45' => 'SOUTH CAROLINA (SC)',
+  '46' => 'SOUTH DAKOTA (SD)',
+
+  '47' => 'TENNESSEE (TN)',
+  '48' => 'TEXAS (TX)',
+  '49' => 'UTAH (UT)',
+  '50' => 'VERMONT (VT)',
+  '51' => 'VIRGINIA (VA)',
+  '53' => 'WASHINGTON (WA)',
+
+  '54' => 'WEST VIRGINIA (WV)',
+  '55' => 'WISCONSIN (WI)',
+  '56' => 'WYOMING (WY)',
+  '72' => 'PUERTO RICO (PR)',
+);
+
 sub restore_fcc477map {
     my $key = shift;
     FS::Record::scalar_sql('',"select formvalue from fcc477map where formkey = ?",$key);
@@ -112,5 +176,16 @@ sub parse_technology_option {
   }
   return (@result);
 }
+
+sub statenum2state {
+  my $num = shift;
+  $states{$num};
+}
+
+#sub statenum2abbr {
+#  my $num = shift;
+#  $states{$num} =~ /\((\w\w)\)$/ or return '';
+#  $1;
+#}
 
 1;

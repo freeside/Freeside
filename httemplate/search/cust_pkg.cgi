@@ -154,7 +154,8 @@ for (qw( pkgpart classnum )) {
   $search_hash{$_} = [ $cgi->param($_) ];
 }
 
-for my $param ( qw(censustract) ) {
+#scalars that need to be passed if empty
+for my $param (qw(censustract censustract2 )) {
   $search_hash{$param} = $cgi->param($param) || ''
     if ( grep { /$param/ } $cgi->param );
 }
