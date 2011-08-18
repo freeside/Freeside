@@ -146,8 +146,8 @@ my $link_suffix = sub { my $row = shift;
                         my $result = 'censustract='. $row->censustract. ';';
                         my @ro = grep $_,
                           @row_option[$row->upload - 1],
-                          @column_option[$row->download - 1],
-                          @technology_option[$row->technology_code - 1],
+                          @column_option[$row->download - 2],
+                          @technology_option[$row->technology_code],
                         ;
                         $result .= 'report_option='. join(',',@ro) if @ro;
                         $result;
