@@ -161,9 +161,8 @@ for my $param (qw( censustract censustract2 )) {
     if grep { $_ eq $param } $cgi->param;
 }
 
-my @report_option = $cgi->param('report_option')
-  if $cgi->param('report_option');
-$search_hash{report_option} = join(',', @report_option) if @report_option;
+my $report_option = $cgi->param('report_option');
+$search_hash{report_option} = $report_option if $report_option;
 
 ###
 # parse dates
@@ -249,7 +248,7 @@ my $html_init = sub {
     $text .= include( '/elements/email-link.html',
                 'search_hash' => \%search_hash,
                 'table'       => 'cust_pkg',
-                );
+                ). '<BR><BR>';
   }
   return $text;
 };
