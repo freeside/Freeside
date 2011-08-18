@@ -142,25 +142,44 @@ Documentation.
 );
 
 sub restore_fcc477map {
-    my $key = shift;
-    FS::Record::scalar_sql('',"select formvalue from fcc477map where formkey = ?",$key);
+  my $key = shift;
+  FS::Record::scalar_sql('',"select formvalue from fcc477map where formkey = ?",$key);
 }
 
 sub save_fcc477map {
-    my $key = shift;
-    my $value = shift;
+  my $key = shift;
+  my $value = shift;
 
-    # lame, particularly lack of transactions
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
-    my $sql = "delete from fcc477map where formkey = ?";
-    my $sth = dbh->prepare($sql) or die dbh->errstr;
-    $sth->execute($key) or die "Error removing FCC 477 form defaults: " . $sth->errstr;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
 
-    $sql = "insert into fcc477map (formkey,formvalue) values (?,?)";
-    $sth = dbh->prepare($sql) or die dbh->errstr;
-    $sth->execute($key,$value) or die "Error setting FCC 477 form defaults: " . $sth->errstr;
+  # lame (should be normal FS::Record access)
 
-    '';
+  my $sql = "delete from fcc477map where formkey = ?";
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute($key) or do {
+    warn "WARNING: Error removing FCC 477 form defaults: " . $sth->errstr;
+    $dbh->rollback if $oldAutoCommit;
+  };
+
+  $sql = "insert into fcc477map (formkey,formvalue) values (?,?)";
+  $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute($key,$value) or do {
+    warn "WARNING: Error setting FCC 477 form defaults: " . $sth->errstr;
+    $dbh->rollback if $oldAutoCommit;
+  };
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
 }
 
 sub parse_technology_option {
