@@ -30,7 +30,8 @@
                                      ],
                   'fields'        => [
                     sub { my $row = shift; 
-                          $state_hash{substr($row->censustract, 0, 2)}++;
+                          my $state = substr($row->censustract, 0, 2);
+                          $state_hash{$state}++;
                           substr($row->censustract, 2, 3) || 'None'
                         },
                     sub { my $row = shift;
@@ -40,7 +41,11 @@
                     'download',
                     'technology_code',
                     sub { $cgi->param('_type') eq 'xml' ? '0' : '' },#broken
-                    'quantity',
+                    sub { my $row = shift;
+                          my $state = substr($row->censustract, 0, 2);
+                          $state_pkgcount{$state} += $row->quantity;
+                          $row->quantity;
+                        },
                     sub { my $row = shift; sprintf "%.2f", $row->residential },
                   ],
                   'links'        => [
@@ -71,6 +76,7 @@ my $html_init = '<H2>Part VI</H2>';
 my %search_hash = ();
 my @sql_query = ();
 my %state_hash = ();
+my %state_pkgcount = ();
   
 for ( qw(agentnum magic) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
@@ -154,7 +160,8 @@ my $html_foot = sub {
                      '</TD>'.
                      '<TD>'.
                        qq(<A HREF="${link}censustract2=$_">).
-                       $state_hash{$_}. ' census tracts</A>'.
+                       $state_pkgcount{$_}. ' packages</A> in '.
+                       $state_hash{$_}. ' census tracts'.
                      '</TD>'.
                    '</TR>';
                  }
