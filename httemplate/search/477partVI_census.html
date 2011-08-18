@@ -147,6 +147,7 @@ my $link_suffix = sub { my $row = shift;
                         my @ro = grep $_,
                           @row_option[$row->upload - 1],
                           @column_option[$row->download - 1],
+                          @technology_option[$row->technology_code - 1],
                         ;
                         $result .= 'report_option='. join(',',@ro) if @ro;
                         $result;
