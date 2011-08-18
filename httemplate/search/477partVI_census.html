@@ -144,10 +144,11 @@ my $link = 'cust_pkg.cgi?'. join(';',
 
 my $link_suffix = sub { my $row = shift;
                         my $result = 'censustract='. $row->censustract. ';';
-                        $result .= 'report_option='. @row_option[$row->upload - 1]
-                          if @row_option[$row->upload - 1];
-                        $result .= 'report_option='. @column_option[$row->download - 1]
-                          if @column_option[$row->download - 1];
+                        my @ro = grep $_,
+                          @row_option[$row->upload - 1],
+                          @column_option[$row->download - 1],
+                        ;
+                        $result .= 'report_option='. join(',',@ro) if @ro;
                         $result;
                       };
 
