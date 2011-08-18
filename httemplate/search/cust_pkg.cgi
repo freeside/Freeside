@@ -145,11 +145,14 @@ my %search_hash = ();
 $search_hash{'query'} = $cgi->keywords;
 
 #scalars
-for (qw( agentnum custnum magic status classnum custom cust_fields pkgbatch )) {
+for (qw( agentnum custnum magic status custom cust_fields pkgbatch )) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
 
-$search_hash{'pkgpart'} = [ $cgi->param('pkgpart') ];
+#arrays
+for (qw( pkgpart classnum )) {
+  $search_hash{$_} = [ $cgi->param($_) ];
+}
 
 for my $param ( qw(censustract) ) {
   $search_hash{$param} = $cgi->param($param) || ''
