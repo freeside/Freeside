@@ -172,7 +172,7 @@ my $html_foot = sub {
                        ( &FS::Report::FCC_477::statenum2state($_) || 'None' ).
                      '</TD>'.
                      '<TD>'.
-                       qq(<A HREF="${link}censustract2=$_$roa_r$row_c$row_t">).
+                       qq(<A HREF="${link}censustract2=$_$roa_r$roa_c$roa_t">).
                        $state_pkgcount{$_}. ' packages</A> in '.
                        $state_hash{$_}. ' census tracts'.
                      '</TD>'.
