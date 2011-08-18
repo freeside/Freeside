@@ -3018,16 +3018,13 @@ sub search {
          } @report_option;
   }
 
-  foreach my $any ( grep /^report_option_any/ keys %$params ) {
+  foreach my $any ( grep /^report_option_any/, keys %$params ) {
 
     my @report_option_any = ();
-    if ( exists($params->{$any}) ) {
-      if ( ref($params->{$any}) eq 'ARRAY' ) {
-        @report_option_any = @{ $params->{$any} };
-      } elsif ( $params->{$any} =~ /^([,\d]*)$/ ) {
-        @report_option_any = split(',', $1);
-      }
-
+    if ( ref($params->{$any}) eq 'ARRAY' ) {
+      @report_option_any = @{ $params->{$any} };
+    } elsif ( $params->{$any} =~ /^([,\d]*)$/ ) {
+      @report_option_any = split(',', $1);
     }
 
     if (@report_option_any) {
