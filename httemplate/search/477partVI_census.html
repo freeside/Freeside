@@ -147,7 +147,7 @@ my $link_suffix = sub { my $row = shift;
                         my @ro = grep $_,
                           @row_option[$row->upload - 1],
                           @column_option[$row->download - 2],
-                          @technology_option[$row->technology_code],
+                          @technology_option[$row->technology_code - 1],
                         ;
                         $result .= 'report_option='. join(',',@ro) if @ro;
                         $result;
@@ -155,6 +155,10 @@ my $link_suffix = sub { my $row = shift;
 
 my $html_foot = sub {
   if (scalar(keys %state_hash) > 1) {
+
+    my $roa = join(',', grep $_, @technology_option);
+    $roa = ";report_option_any=$roa" if $roa;
+    
     '<BR><B>WARNING: multiple states found</B><BR>'.
     '<TABLE BORDER=0>'. #nicer formatting someday
     join('', map { '<TR>'.
@@ -162,7 +166,7 @@ my $html_foot = sub {
                        ( &FS::Report::FCC_477::statenum2state($_) || 'None' ).
                      '</TD>'.
                      '<TD>'.
-                       qq(<A HREF="${link}censustract2=$_">).
+                       qq(<A HREF="${link}censustract2=$_$roa">).
                        $state_pkgcount{$_}. ' packages</A> in '.
                        $state_hash{$_}. ' census tracts'.
                      '</TD>'.

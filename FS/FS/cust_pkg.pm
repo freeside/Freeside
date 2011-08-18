@@ -2987,6 +2987,7 @@ sub search {
       } elsif ( @c_where ) {
         push @where, ' ( '. join(' OR ', @c_where). ' ) ';
       }
+      warn $where[-1];
 
     }
     
@@ -2998,11 +2999,13 @@ sub search {
   ###
 
   my @report_option = ();
-  if ( exists($params->{'report_option'})
-       && $params->{'report_option'} =~ /^([,\d]*)$/
-     )
-  {
-    @report_option = split(',', $1);
+  if ( exists($params->{'report_option'}) ) {
+    if ( ref($params->{'report_option'}) eq 'ARRAY' ) {
+      @report_option = @{ $params->{'report_option'} };
+    } elsif ( $params->{'report_option'} =~ /^([,\d]*)$/ ) {
+      @report_option = split(',', $1);
+    }
+
   }
 
   if (@report_option) {
@@ -3015,7 +3018,26 @@ sub search {
          } @report_option;
   }
 
-  #eslaf
+  my @report_option_any = ();
+  if ( exists($params->{'report_option_any'}) ) {
+    if ( ref($params->{'report_option_any'}) eq 'ARRAY' ) {
+      @report_option_any = @{ $params->{'report_option_any'} };
+    } elsif ( $params->{'report_option_any'} =~ /^([,\d]*)$/ ) {
+      @report_option_any = split(',', $1);
+    }
+
+  }
+
+  if (@report_option_any) {
+    # this will result in the empty set for the dangling comma case as it should
+    push @where, ' ( '. join(' OR ',
+      map{ "0 < ( SELECT count(*) FROM part_pkg_option
+                    WHERE part_pkg_option.pkgpart = part_pkg.pkgpart
+                    AND optionname = 'report_option_$_'
+                    AND optionvalue = '1' )"
+         } @report_option_any
+    ). ' ) ';
+  }
 
   ###
   # parse custom
