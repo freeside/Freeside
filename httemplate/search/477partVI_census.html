@@ -173,7 +173,7 @@ my $html_foot = sub {
                      '</TD>'.
                      '<TD>'.
                        qq(<A HREF="${link}censustract2=$_$roa_r$roa_c$roa_t">).
-                       #can't get this count to match the link# $state_pkgcount{$_}.
+                       $state_pkgcount{$_}.
                       ' packages</A> in '.
                        $state_hash{$_}. ' census tracts'.
                      '</TD>'.

@@ -164,7 +164,7 @@ for my $param (qw( censustract censustract2 )) {
 my $report_option = $cgi->param('report_option');
 $search_hash{report_option} = $report_option if $report_option;
 
-for my $param (grep /^report_option_any/, $cgi->params) {
+for my $param (grep /^report_option_any/, $cgi->param) {
   $search_hash{$param} = $cgi->param($param);
 }
 
