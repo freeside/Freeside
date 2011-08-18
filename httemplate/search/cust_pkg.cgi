@@ -150,14 +150,15 @@ for (qw( agentnum custnum magic status custom cust_fields pkgbatch )) {
 }
 
 #arrays
-for (qw( pkgpart classnum )) {
-  $search_hash{$_} = [ $cgi->param($_) ];
+for my $param (qw( pkgpart classnum )) {
+  $search_hash{$param} = [ $cgi->param($param) ];
+    if grep { $_ eq $param } $cgi->param;
 }
 
 #scalars that need to be passed if empty
-for my $param (qw(censustract censustract2 )) {
+for my $param (qw( censustract censustract2 )) {
   $search_hash{$param} = $cgi->param($param) || ''
-    if ( grep { /$param/ } $cgi->param );
+    if grep { $_ eq $param } $cgi->param;
 }
 
 my @report_option = $cgi->param('report_option')
