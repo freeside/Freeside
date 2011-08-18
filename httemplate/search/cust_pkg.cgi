@@ -151,7 +151,7 @@ for (qw( agentnum custnum magic status custom cust_fields pkgbatch )) {
 
 #arrays
 for my $param (qw( pkgpart classnum )) {
-  $search_hash{$param} = [ $cgi->param($param) ];
+  $search_hash{$param} = [ $cgi->param($param) ]
     if grep { $_ eq $param } $cgi->param;
 }
 
