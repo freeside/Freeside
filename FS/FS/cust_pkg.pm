@@ -1801,7 +1801,7 @@ sub h_cust_svc {
       FS::h_cust_svc->sql_h_search(@_),  
     ) ]
   );
-  if ( $mode eq 'I' ) {
+  if ( defined($mode) && $mode eq 'I' ) {
     my %hidden_svcpart = map { $_->svcpart => $_->hidden } $self->part_svc;
     return grep { !$hidden_svcpart{$_->svcpart} } @cust_svc;
   } else {
@@ -2956,34 +2956,42 @@ sub search {
   # parse package class
   ###
 
-  #false lazinessish w/graph/cust_bill_pkg.cgi
-  my $classnum = 0;
-  my @pkg_class = ();
-  if ( exists($params->{'classnum'})
-       && $params->{'classnum'} =~ /^(\d*)$/
-     )
-  {
-    $classnum = $1;
-    if ( $classnum ) { #a specific class
-      push @where, "part_pkg.classnum = $classnum";
+  if ( exists($params->{'classnum'}) ) {
 
-      #@pkg_class = ( qsearchs('pkg_class', { 'classnum' => $classnum } ) );
-      #die "classnum $classnum not found!" unless $pkg_class[0];
-      #$title .= $pkg_class[0]->classname.' ';
+    my @classnum = ();
+    if ( ref($params->{'classnum'}) ) {
 
-    } elsif ( $classnum eq '' ) { #the empty class
+      if ( ref($params->{'classnum'}) eq 'HASH' ) {
+        @classnum = grep $params->{'classnum'}{$_}, keys %{ $params->{'classnum'} };
+      } elsif ( ref($params->{'classnum'}) eq 'ARRAY' ) {
+        @classnum = @{ $params->{'classnum'} };
+      } else {
+        die 'unhandled classnum ref '. $params->{'classnum'};
+      }
 
-      push @where, "part_pkg.classnum IS NULL";
-      #$title .= 'Empty class ';
-      #@pkg_class = ( '(empty class)' );
-    } elsif ( $classnum eq '0' ) {
-      #@pkg_class = qsearch('pkg_class', {} ); # { 'disabled' => '' } );
-      #push @pkg_class, '(empty class)';
-    } else {
-      die "illegal classnum";
+
+    } elsif ( $params->{'classnum'} =~ /^(\d*)$/ && $1 ne '0' ) {
+      @classnum = ( $1 );
     }
+
+    if ( @classnum ) {
+
+      my @c_where = ();
+      my @nums = grep $_, @classnum;
+      push @c_where, 'part_pkg.classnum IN ('. join(',',@nums). ')' if @nums;
+      my $null = scalar( grep { $_ eq '' } @classnum );
+      push @c_where, 'part_pkg.classnum IS NULL' if $null;
+
+      if ( scalar(@c_where) == 1 ) {
+        push @where, @c_where;
+      } elsif ( @c_where ) {
+        push @where, ' ( '. join(' OR ', @c_where). ' ) ';
+      }
+
+    }
+    
+
   }
-  #eslaf
 
   ###
   # parse package report options
