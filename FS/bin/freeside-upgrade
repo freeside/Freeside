@@ -84,21 +84,6 @@ if ( dbdef->table('areacode') and
   }
 }
 
-# RT required field flag
-# for consistency with RT schema: mysql is in CamelCase,
-# pg is in lowercase, and they use different data types.
-my ($t, $creq, $cdis) = 
-  map { driver_name =~ /^mysql/i ? $_ : lc($_) }
-  ('CustomFields','Required','Disabled');
-
-if ( dbdef->table($t) && 
-     ! dbdef->table($t)->column($creq) ) {
-  push @bugfix,
-    "ALTER TABLE $t ADD COLUMN $creq ".
-    dbdef->table($t)->column($cdis)->type .
-    ' NOT NULL DEFAULT 0';
-}
-
 if ( $DRY_RUN ) {
   print
     join(";\n", @bugfix ). ";\n";

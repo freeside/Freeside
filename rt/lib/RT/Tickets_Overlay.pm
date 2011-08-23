@@ -145,9 +145,11 @@ our %FIELD_METADATA = (
     WatcherGroup     => [ 'MEMBERSHIPFIELD', ], #loc_left_pair
     HasAttribute     => [ 'HASATTRIBUTE', 1 ],
     HasNoAttribute     => [ 'HASATTRIBUTE', 0 ],
+    #freeside
     Agentnum         => [ 'FREESIDEFIELD', ],
     Classnum         => [ 'FREESIDEFIELD', ],
     Tagnum           => [ 'FREESIDEFIELD', 'cust_tag' ],
+    WillResolve      => [ 'DATE'            => 'WillResolve', ], #loc_left_pair
 );
 
 our %SEARCHABLE_SUBFIELDS = (

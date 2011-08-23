@@ -1,7 +1,7 @@
 package FS::Cron::rt_tasks;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $DEBUG );
+use vars qw( @ISA @EXPORT_OK $DEBUG $conf );
 use Exporter;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw(qsearch qsearchs);
@@ -11,83 +11,91 @@ use FS::Conf;
 use Date::Parse qw(str2time);
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw ( rt_escalate );
+@EXPORT_OK = qw ( rt_daily );
 $DEBUG = 0;
+
+FS::UID->install_callback( sub {
+  eval "use FS::Conf;";
+  die $@ if $@;
+  $conf = FS::Conf->new;
+});
+
 
 my %void = ();
 
-sub rt_escalate {
+sub rt_daily {
   my %opt = @_;
+  my @custnums = @ARGV; # ick
+
   # RT_External installations should have their own cron scripts for this
   my $system = $FS::TicketSystem::system;
   return if $system ne 'RT_Internal';
 
-  my $conf = new FS::Conf;
-  return if !$conf->exists('ticket_system-escalation');
-
   FS::TicketSystem->init;
   $DEBUG = 1 if $opt{'v'};
   RT::Config->Set( LogToScreen => 'debug' ) if $DEBUG;
-  
-  #we're at now now (and later).
-  my $time = $opt{'d'} ? str2time($opt{'d'}) : $^T;
-  $time += $opt{'y'} * 86400 if $opt{'y'};
-  my $error = '';
+ 
+  # if -d or -y is in use, bail out.  There's no reliable way to tell RT 
+  # to use an alternate system time.
+  if ( $opt{'d'} or $opt{'y'} ) {
+    warn "Forced date options in use - RT daily tasks skipped.\n";
+    return;
+  }
 
   my $session = FS::TicketSystem->session();
   my $CurrentUser = $session->{'CurrentUser'}
     or die "Failed to create RT session";
- 
+
   # load some modules that aren't handled in FS::TicketSystem 
   foreach (qw(
-    Search::ActiveTicketsInQueue 
+    Search::ActiveTicketsInQueue
     Action::EscalatePriority
     Action::EscalateQueue
+    Action::ScheduledResolve
     )) {
     eval "use RT::$_";
     die $@ if $@;
   }
 
   # adapted from rt-crontool
-  # Mechanics:
-  # We're using EscalatePriority, so search in all queues that have a 
-  # priority range defined. Select all active tickets in those queues and
-  # EscalatePriority, then EscalateQueue them.
 
   # to make some actions work without complaining
   %void = map { $_ => "RT::$_"->new($CurrentUser) }
     (qw(Scrip ScripAction));
 
-  # Most of this stuff is common to any condition -> action processing 
-  # we might want to do, but escalation is the only one we do now.
+  # compile actions to be run
+  my (@actions, @active_tickets);
   my $queues = RT::Queues->new($CurrentUser);
   $queues->UnLimit;
-  my @actions = ();
-  my @active_tickets = ();
   while (my $queue = $queues->Next) {
-    if ( $queue->InitialPriority == $queue->FinalPriority ) {
-      warn "Queue '".$queue->Name."' (skipped)\n" if $DEBUG;
-      next;
-    }
     warn "Queue '".$queue->Name."'\n" if $DEBUG;
+    my $CurrentUser = $queue->CurrentUser;
+    my %opt = @_;
     my $tickets = RT::Tickets->new($CurrentUser);
     my $search = RT::Search::ActiveTicketsInQueue->new(
       TicketsObj  => $tickets,
-      Argument    => $queue->Name,
+      Argument    => $queue->Id,
       CurrentUser => $CurrentUser,
     );
     $search->Prepare;
+    foreach my $custnum ( @custnums ) {
+      die "invalid custnum passed to rt_daily: $custnum"
+        if !$custnum =~ /^\d+$/;
+      $tickets->LimitMemberOf(
+        "freeside://freeside/cust_main/$custnum",
+        ENTRYAGGREGATOR => 'OR',
+        SUBCLAUSE => 'custnum'
+      );
+    }
     while (my $ticket = $tickets->Next) {
       warn 'Ticket #'.$ticket->Id()."\n" if $DEBUG;
-      my @a = (
-        action($ticket, 'EscalatePriority', "CurrentTime:$time"),
-        action($ticket, 'EscalateQueue')
-      );
-      next if !@a;
+      my @a = task_actions($ticket);
       push @actions, @a;
-      push @active_tickets, $ticket; # avoid RT's overzealous garbage collector
+      push @active_tickets, $ticket if @a; # avoid garbage collection
     }
   }
+
+  # and then commit them all
   foreach (grep {$_} @actions) {
     my ($val, $msg) = $_->Commit;
     if ( $DEBUG ) {
@@ -100,6 +108,20 @@ sub rt_escalate {
     }
   }
   return;
+}
+
+sub task_actions {
+  my $ticket = shift;
+  (
+    ### escalation ###
+    $conf->exists('ticket_system-escalation') ? (
+      action($ticket, 'EscalatePriority', "CurrentTime: $^T"),
+      action($ticket, 'EscalateQueue')
+    ) : (),
+
+    ### scheduled resolve ###
+    action($ticket, 'ScheduledResolve'),
+  );
 }
 
 sub action {

@@ -104,6 +104,16 @@
       ExecModule  => 'SetPriority',
       Argument    => '',
     },
+    { Name        => 'Cancel Scheduled Resolve',
+      Description => 'Set ticket not to resolve in the future',
+      ExecModule  => 'SetWillResolve',
+      Argument    => '',
+    },
+    { Name        => 'Scheduled Resolve',
+      Description => 'Resolve ticket if its WillResolve date has passed',
+      ExecModule  => 'ScheduledResolve',
+      Argument    => '',
+    },
 );
 
 @ScripConditions = (
@@ -563,6 +573,10 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
     {  Description    => "On transaction, add any tags in the transaction's subject to the ticket's subject",
        ScripCondition => 'On Transaction',
        ScripAction    => 'Extract Subject Tag',
+       Template       => 'Blank' },
+    {  Description    => 'On Correspond, cancel future resolve',
+       ScripCondition => 'On Correspond',
+       ScripAction    => 'Cancel Scheduled Resolve',
        Template       => 'Blank' },
 );
 
