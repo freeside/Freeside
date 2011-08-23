@@ -4,6 +4,7 @@ use strict;
 use vars qw( $conf $system $AUTOLOAD );
 use FS::Conf;
 use FS::UID qw( dbh driver_name );
+use FS::Record qw( dbdef );
 
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
@@ -25,6 +26,54 @@ sub AUTOLOAD {
 
   $self .= "::$system";
   $self->$sub(@_);
+}
+
+# Our schema changes
+my %columns = (
+  Tickets => {
+    WillResolve => { type => 'timestamp', null => 1, default => '', },
+  },
+  CustomFields => {
+    Required => { type => 'integer', default => 0, null => 0 },
+  },
+);
+
+sub _upgrade_schema {
+  my $system = FS::Conf->new->config('ticket_system');
+  return if !defined($system) || $system ne 'RT_Internal';
+  my ($class, %opts) = @_;
+
+  my $dbh = dbh;
+  my @sql;
+  my $case = driver_name eq 'mysql' ? sub {@_} : sub {map lc, @_};
+  foreach my $tablename (keys %columns) {
+    my $table = dbdef->table(&$case($tablename));
+    if ( !$table ) {
+      warn 
+      "$tablename table does not exist.  Your RT installation is incomplete.\n";
+      next;
+    }
+    foreach my $colname (keys %{ $columns{$tablename} }) {
+      if ( !$table->column(&$case($colname)) ) {
+        my $col = new DBIx::DBSchema::Column {
+            table_obj => $table,
+            name => &$case($colname),
+            %{ $columns{$tablename}->{$colname} }
+          };
+        $col->table_obj($table);
+        push @sql, $col->sql_add_column($dbh);
+      }
+    } #foreach $colname
+  } #foreach $tablename
+
+  return if !@sql;
+  warn "Upgrading RT schema:\n";
+  foreach my $statement (@sql) {
+    warn "$statement\n";
+    $dbh->do( $statement )
+      or die "Error: ". $dbh->errstr. "\n executing: $statement";
+  }
+  return;
 }
 
 sub _upgrade_data {

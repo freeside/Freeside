@@ -404,6 +404,7 @@ CREATE TABLE Tickets (
   Due TIMESTAMP NULL  ,
   Resolved TIMESTAMP NULL  ,
 
+  WillResolve TIMESTAMP NULL  ,
 
   LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated TIMESTAMP NULL  ,

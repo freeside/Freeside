@@ -75,6 +75,13 @@
     <td class="label date resolved"><&|/l&>Closed</&>:</td>
     <td class="value date resolved"><% $Ticket->ResolvedObj->AsString  %></td>
   </tr>
+% my $willresolve = $Ticket->WillResolveObj;
+% if ( $willresolve && $willresolve->Unix > 0 ) {
+  <tr>
+    <td class="label date willresolve"><&|/l&>Will Resolve</&>:</td>
+    <td class="value date willresolve"><% $willresolve->AsString %></td>
+  </tr>
+% } # else don't display either of them
   <tr>
     <td class="label date updated"><&|/l&>Updated</&>:</td>
 % my $UpdatedString = $Ticket->LastUpdated ? loc("[_1] by [_2]", $Ticket->LastUpdatedAsString, $m->scomp('/Elements/ShowUser', User => $Ticket->LastUpdatedByObj)) : loc("Never");

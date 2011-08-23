@@ -67,7 +67,29 @@
 
 <tr><td valign="baseline" class="label"><&|/l&>Status</&>:</td>
 <td valign="baseline">
-<& /Elements/SelectStatus, Name=>"Status", DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)), Default => $ARGS{'Status'} || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus)&>
+<script type="text/javascript">
+function changeStatus() {
+  var Status_select = document.getElementById('Status');
+  var x = Status_select.options[Status_select.selectedIndex].value;
+  var text = document.getElementById('WillResolve_Date');
+  var button = document.getElementById('WillResolve_Date_date_button');
+  if (x == 'resolved' || x == 'rejected' || x == 'deleted') {
+    text.disabled = true;
+    button.style.display = 'none';
+  }
+  else {
+    text.disabled = false;
+    button.style.display = 'inline';
+  }
+}
+</script>
+<& /Elements/SelectStatus, 
+    Name=>"Status",
+    DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)),
+    Default => $ARGS{'Status'}
+              || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus,
+    onchange => 'changeStatus()'
+)&>
 <span class="label"><&|/l&>Owner</&>:</span>
 <& /Elements/SelectOwner,
     Name         => "Owner",
@@ -76,6 +98,18 @@
     DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $TicketObj->OwnerObj)),
     Default      => $ARGS{'Owner'}
 &>
+<span class="label"><&|/l&>Close this Ticket on</&>:</span>
+<& /Elements/SelectDate, 
+    menu_prefix => 'WillResolve',
+    current => 0,
+    ShowTime => 0,
+&>
+% if ( $TicketObj->WillResolve ) {
+<span class="label"> (<% $TicketObj->WillResolveObj->AsString %>)</span>
+% }
+<script type="text/javascript">
+changeStatus();
+</script>
 </td>
 <td rowspan=4 valign="top">
 <table style="float:right;">

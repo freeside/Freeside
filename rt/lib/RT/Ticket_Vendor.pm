@@ -33,4 +33,33 @@ sub MissingRequiredFields {
     return @results;
 }
 
+# Declare the 'WillResolve' field
+sub _VendorAccessible {
+    {
+        WillResolve =>
+        {read => 1, write => 1, sql_type => 11, length => 0, is_blob => 0, is_numeric => 0, type => 'datetime', default => ''},
+    },
+};
+
+sub WillResolveObj {
+  my $self = shift;
+
+  my $time = new RT::Date( $self->CurrentUser );
+
+  if ( my $willresolve = $self->WillResolve ) {
+    $time->Set( Format => 'sql', Value => $willresolve );
+  }
+  else {
+    $time->Set( Format => 'unix', Value => -1 );
+  }
+
+  return $time;
+}
+
+sub WillResolveAsString {
+  my $self = shift;
+  return $self->WillResolveObj->AsString();
+}
+
+
 1;

@@ -303,6 +303,8 @@ sub upgrade_schema_data {
 
     #fix classnum character(1)
     'cust_bill_pkg_detail' => [],
+    #add necessary columns to RT schema
+    'TicketSystem' => [],
 
   ;
 

@@ -62,8 +62,8 @@ use FS::Cron::backup qw(backup);
 backup();
 
 #same
-use FS::Cron::rt_tasks qw(rt_escalate);
-rt_escalate(%opt);
+use FS::Cron::rt_tasks qw(rt_daily);
+rt_daily(%opt);
 
 my $deldir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/";
 unlink <${deldir}.invoice*>;
