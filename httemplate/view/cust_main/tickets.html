@@ -133,11 +133,22 @@ my $new_link = FS::TicketSystem->href_new_ticket( $cust_main );
 
 my $ss_priority = FS::TicketSystem->selfservice_priority;
 if ( $ss_priority ) {
+  my $dir = $conf->exists('ticket_system-priority_reverse') ? -1 : 1;
   use sort 'stable';
-  no warnings 'uninitialized';
+  # sort in the following way:
   @tickets = sort { 
-    ($b->{'content'} eq $a->{'content'}) &&
-    $b->{'_selfservice_priority'} <=> $a->{'_selfservice_priority'}
+    # within a severity level...
+    ( $a->{'content'} eq $b->{'content'} ) ? (
+      # no-priority tickets sort last
+      (
+        ($a->{'_selfservice_priority'} eq '') <=> 
+        ($b->{'_selfservice_priority'} eq '')
+      ) ||
+      # otherwise obey ticket_system-priority_reverse
+      ( $dir * 
+        ($b->{'_selfservice_priority'} <=> $a->{'_selfservice_priority'})
+      )
+    ) : 0; # but don't rearrange between severity levels
   } @tickets;
 }
 
