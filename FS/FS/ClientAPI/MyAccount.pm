@@ -339,7 +339,25 @@ sub customer_info {
       $return{balance} = $cust_main->balance;
     }
 
-    $return{tickets} = [ ($cust_main->tickets) ];
+    my @tickets = $cust_main->tickets;
+    # unavoidable false laziness w/ httemplate/view/cust_main/tickets.html
+    if ( FS::TicketSystem->selfservice_priority ) {
+      my $dir = $conf->exists('ticket_system-priority_reverse') ? -1 : 1;
+      $return{tickets} = [ 
+        sort { 
+          (
+            ($a->{'_selfservice_priority'} eq '') <=>
+            ($b->{'_selfservice_priority'} eq '')
+          ) ||
+          ( $dir * 
+            ($b->{'_selfservice_priority'} <=> $a->{'_selfservice_priority'}) 
+          )
+        } @tickets
+      ];
+    }
+    else {
+      $return{tickets} = \@tickets;
+    }
 
     unless ( $session->{'pkgnum'} ) {
       my @open = map {
