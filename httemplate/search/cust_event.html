@@ -191,6 +191,7 @@ my $sql_query = {
   'extra_sql' => $where,
   'order_by'  => 'ORDER BY _date ASC',
   'addl_from' => $join,
+  'debug' => 2,
 };
 
 my $count_sql = "SELECT COUNT(*) FROM cust_event $join $where";

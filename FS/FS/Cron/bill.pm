@@ -156,6 +156,15 @@ sub bill {
 #
 #  -l: debugging level
 
+=item bill_where
+
+Internal function.  Returns a WHERE clause to select the set of customers who 
+have actionable packages (no setup date, or bill date in the past, or expire 
+or adjourn dates in the past) or events (does a complete where_conditions_sql 
+scan).
+
+=cut
+
 sub bill_where {
   my( %opt ) = @_;
 
@@ -209,12 +218,15 @@ END
   my $where_event = join(' OR ', map {
     my $eventtable = $_;
 
+    # joins and where clauses to test event conditions
     my $join  = FS::part_event_condition->join_conditions_sql(  $eventtable );
     my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
                                                                 'time'=>$time,
                                                               );
     $where = $where ? "AND $where" : '';
 
+    # test to return all applicable part_events (defined on this eventtable,
+    # not disabled, check_freq correct, and all event conditions true)
     my $are_part_event = 
       "EXISTS ( SELECT 1 FROM part_event $join
                   WHERE check_freq = '$check_freq'
@@ -227,8 +239,11 @@ END
     if ( $eventtable eq 'cust_main' ) { 
       $are_part_event;
     } else {
-      "EXISTS ( SELECT 1 FROM $eventtable
-                  WHERE cust_main.custnum = $eventtable.custnum
+      my $cust_join = FS::part_event->eventtables_cust_join->{$eventtable}
+                      || '';
+      my $custnum = FS::part_event->eventtables_custnum->{$eventtable};
+      "EXISTS ( SELECT 1 FROM $eventtable $cust_join
+                  WHERE cust_main.custnum = $custnum
                     AND $are_part_event
               )
       ";

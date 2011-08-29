@@ -3581,6 +3581,56 @@ sub cust_statement {
       qsearch($opt);
 }
 
+=item svc_x SVCDB [ OPTION => VALUE | EXTRA_QSEARCH_PARAMS_HASHREF ]
+
+Returns all services of type SVCDB (such as 'svc_acct') for this customer.  
+
+Optionally, a list or hashref of additional arguments to the qsearch call can 
+be passed following the SVCDB.
+
+=cut
+
+sub svc_x {
+  my $self = shift;
+  my $svcdb = shift;
+  if ( ! $svcdb =~ /^svc_\w+$/ ) {
+    warn "$me svc_x requires a svcdb";
+    return;
+  }
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  $opt->{'table'} = $svcdb;
+  $opt->{'addl_from'} = 
+    'LEFT JOIN cust_svc USING (svcnum) LEFT JOIN cust_pkg USING (pkgnum) '.
+    ($opt->{'addl_from'} || '');
+
+  my $custnum = $self->custnum;
+  $custnum =~ /^\d+$/ or die "bad custnum '$custnum'";
+  my $where = "cust_pkg.custnum = $custnum";
+
+  my $extra_sql = $opt->{'extra_sql'} || '';
+  if ( keys %{ $opt->{'hashref'} } ) {
+    $extra_sql = " AND $where $extra_sql";
+  }
+  else {
+    if ( $opt->{'extra_sql'} =~ /^\s*where\s(.*)/si ) {
+      $extra_sql = "WHERE $where AND $1";
+    }
+    else {
+      $extra_sql = "WHERE $where $extra_sql";
+    }
+  }
+  $opt->{'extra_sql'} = $extra_sql;
+
+  qsearch($opt);
+}
+
+# required for use as an eventtable; 
+sub svc_acct {
+  my $self = shift;
+  $self->svc_x('svc_acct', @_);
+}
+
 =item cust_credit
 
 Returns all the credits (see L<FS::cust_credit>) for this customer.

@@ -51,6 +51,7 @@ sub eventtable_hashref {
       'cust_bill'      => 1,
       'cust_pkg'       => 1,
       'cust_pay_batch' => 1,
+      'svc_acct'       => 1,
     };
 }
 

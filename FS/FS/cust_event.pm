@@ -10,6 +10,7 @@ use FS::part_event;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_bill;
+use FS::svc_acct;
 
 $DEBUG = 0;
 $me = '[FS::cust_event]';
@@ -138,7 +139,7 @@ sub check {
                               $dbdef_eventtable->primary_key
                             )
     || $self->ut_number('_date')
-    || $self->ut_enum('status', [qw( new locked done failed )])
+    || $self->ut_enum('status', [qw( new locked done failed initial)])
     || $self->ut_anything('statustext')
   ;
   return $error if $error;
@@ -190,6 +191,11 @@ sub test_conditions {
   my $object = $self->cust_X;
   my @conditions = $part_event->part_event_condition;
   $opt{'cust_event'} = $self;
+  $opt{'time'} = $self->_date
+      or die "test_conditions called without cust_event._date\n";
+    # this MUST be set, or all hell breaks loose in event conditions.
+    # it MUST be in the same time as in the cust_event object, or
+    # future time-dependent events will trigger incorrectly.
 
   #no unsatisfied conditions
   #! grep ! $_->condition( $object, %opt ), @conditions;
@@ -212,6 +218,8 @@ Runs the event action.
 
 sub do_event {
   my $self = shift;
+  my %opt = @_; # currently only 'time'
+  my $time = $opt{'time'} || time;
 
   my $part_event = $self->part_event;
 
@@ -242,7 +250,7 @@ sub do_event {
   }
 
   #replace or add myself
-  $self->_date(time);
+  $self->_date($time);
   $self->status($status);
   $self->statustext($statustext);
 
@@ -291,7 +299,7 @@ sub retriable {
   $self->replace($old);
 }
 
-=item join_cust_sql
+=item join_sql
 
 =cut
 
@@ -302,9 +310,13 @@ sub join_sql {
        JOIN part_event USING ( eventpart )
   LEFT JOIN cust_bill ON ( eventtable = 'cust_bill' AND tablenum = invnum  )
   LEFT JOIN cust_pkg  ON ( eventtable = 'cust_pkg'  AND tablenum = pkgnum  )
+
+  LEFT JOIN cust_svc  ON ( eventtable = 'svc_acct'  AND tablenum = svcnum  )
+  LEFT JOIN cust_pkg AS cust_pkg_for_svc ON ( cust_svc.pkgnum = cust_pkg_for_svc.pkgnum )
   LEFT JOIN cust_main ON (    ( eventtable = 'cust_main' AND tablenum = cust_main.custnum )
                            OR ( eventtable = 'cust_bill' AND cust_bill.custnum = cust_main.custnum )
                            OR ( eventtable = 'cust_pkg'  AND cust_pkg.custnum  = cust_main.custnum )
+                           OR ( eventtable = 'svc_acct'  AND cust_pkg_for_svc.custnum  = cust_main.custnum )
                          )
   ";
 
@@ -324,6 +336,8 @@ specified in HASHREF.  Valid parameters are
 =item invnum
 
 =item pkgnum
+
+=item svcnum
 
 =item failed
 
@@ -384,6 +398,11 @@ sub search_sql_where {
 
   if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
     push @search, "part_event.eventtable = 'cust_pkg'",
+                  "tablenum = '$1'";
+  }
+
+  if ( $param->{'svcnum'} =~ /^(\d+)$/ ) {
+    push @search, "part_event.eventtable = 'svc_acct'",
                   "tablenum = '$1'";
   }
 

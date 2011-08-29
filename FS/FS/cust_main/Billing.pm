@@ -1447,8 +1447,12 @@ sub retry_realtime {
   my $mine = 
   '( '
    . join ( ' OR ' , map { 
+    my $cust_join = FS::part_event->eventtables_cust_join->{$_} || '';
+    my $custnum = FS::part_event->eventtables_custnum->{$_};
     "( part_event.eventtable = " . dbh->quote($_) 
-    . " AND tablenum IN( SELECT " . dbdef->table($_)->primary_key . " from $_ where custnum = " . dbh->quote( $self->custnum ) . "))" ;
+    . " AND tablenum IN( SELECT " . dbdef->table($_)->primary_key 
+    . " from $_ $cust_join"
+    . " where $custnum = " . dbh->quote( $self->custnum ) . "))" ;
    } FS::part_event->eventtables)
    . ') ';
 
@@ -1608,7 +1612,7 @@ sub do_cust_event {
     #XXX lock event
     
     #re-eval event conditions (a previous event could have changed things)
-    unless ( $cust_event->test_conditions( 'time' => $time ) ) {
+    unless ( $cust_event->test_conditions ) {
       #don't leave stray "new/locked" records around
       my $error = $cust_event->delete;
       return $error if $error;
@@ -1732,45 +1736,45 @@ sub due_cust_event {
 
       @objects = @{ $opt{'objects'} };
 
+    } elsif ( $eventtable eq 'cust_main' ) {
+
+      @objects = ( $self );
+
     } else {
 
-      #my @objects = $self->$eventtable(); # sub cust_main { @{ [ $self ] }; }
-      if ( $eventtable eq 'cust_main' ) {
-        @objects = ( $self );
-      } else {
+      my $cm_join = " LEFT JOIN cust_main USING ( custnum )";
+      # linkage not needed here because FS::cust_main->$eventtable will 
+      # already supply it
 
-        my $cm_join =
-          "LEFT JOIN cust_main USING ( custnum )";
+      #some false laziness w/Cron::bill bill_where
 
-        #some false laziness w/Cron::bill bill_where
+      my $join  = FS::part_event_condition->join_conditions_sql( $eventtable);
+      my $where = FS::part_event_condition->where_conditions_sql($eventtable,
+        'time'=>$opt{'time'},
+      );
+      $where = $where ? "AND $where" : '';
 
-        my $join  = FS::part_event_condition->join_conditions_sql( $eventtable);
-        my $where = FS::part_event_condition->where_conditions_sql($eventtable,
-                                                           'time'=>$opt{'time'},
-                                                                  );
-        $where = $where ? "AND $where" : '';
+      my $are_part_event = 
+      "EXISTS ( SELECT 1 FROM part_event $join
+        WHERE check_freq = '$check_freq'
+        AND eventtable = '$eventtable'
+        AND ( disabled = '' OR disabled IS NULL )
+        $where
+        )
+      ";
+      #eofalse
 
-        my $are_part_event = 
-          "EXISTS ( SELECT 1 FROM part_event $join
-                      WHERE check_freq = '$check_freq'
-                        AND eventtable = '$eventtable'
-                        AND ( disabled = '' OR disabled IS NULL )
-                        $where
-                  )
-          ";
-        #eofalse
-
-        @objects = $self->$eventtable(
-                     'addl_from' => $cm_join,
-                     'extra_sql' => " AND $are_part_event",
-                   );
-      }
-
-    }
+      @objects = $self->$eventtable(
+        'addl_from' => $cm_join,
+        'extra_sql' => " AND $are_part_event",
+      );
+    } # if ( !$opt{objects} and $eventtable ne 'cust_main' )
 
     my @e_cust_event = ();
 
-    my $cross = "CROSS JOIN $eventtable";
+    my $linkage = FS::part_event->eventtables_cust_join->{$eventtable} || '';
+
+    my $cross = "CROSS JOIN $eventtable $linkage";
     $cross .= ' LEFT JOIN cust_main USING ( custnum )'
       unless $eventtable eq 'cust_main';
 
@@ -1818,7 +1822,9 @@ sub due_cust_event {
              " possible events found for $eventtable ". $object->$pkey(). "\n";
       }
 
-      push @e_cust_event, map { $_->new_cust_event($object) } @part_event;
+      push @e_cust_event, map { 
+        $_->new_cust_event($object, 'time' => $opt{'time'}) 
+      } @part_event;
 
     }
 
@@ -1852,8 +1858,7 @@ sub due_cust_event {
   
   my %unsat = ();
 
-  @cust_event = grep $_->test_conditions( 'time'          => $opt{'time'},
-                                          'stats_hashref' => \%unsat ),
+  @cust_event = grep $_->test_conditions( 'stats_hashref' => \%unsat ),
                      @cust_event;
 
   warn "  ". scalar(@cust_event). " cust events left satisfying conditions\n"
