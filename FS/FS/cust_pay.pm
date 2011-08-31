@@ -204,7 +204,7 @@ sub insert {
       }
       my @pkgs = $cust_main->_discount_pkgs_and_bill;
       my $cust_bill = shift(@pkgs);
-      @pkgs = &FS::cust_main::Billing::_discountable_pkgs_at_term($months, @pkgs);
+      @pkgs = &FS::cust_main::Billing_Discount::_discountable_pkgs_at_term($months, @pkgs);
       $_->bill($_->last_bill) foreach @pkgs;
       $error = $cust_main->bill( 
         'recurring_only' => 1,
