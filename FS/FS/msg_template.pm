@@ -430,6 +430,20 @@ sub send {
 # helper sub for package dates
 my $ymd = sub { $_[0] ? time2str('%Y-%m-%d', $_[0]) : '' };
 
+# helper sub for usage-related messages
+my $usage_warning = sub {
+  my $svc = shift;
+  foreach my $col (qw(seconds upbytes downbytes totalbytes)) {
+    my $amount = $svc->$col; next if $amount eq '';
+    my $method = $col.'_threshold';
+    my $threshold = $svc->$method; next if $threshold eq '';
+    return [$col, $amount, $threshold] if $amount <= $threshold;
+    # this only returns the first one that's below threshold, if there are 
+    # several.
+  }
+  return ['', '', ''];
+};
+
 #my $conf = new FS::Conf;
 
 #return contexts and fill-in values
@@ -514,6 +528,9 @@ sub substitutions {
       domain
       ),
       [ password          => sub { shift->getfield('_password') } ],
+      [ column            => sub { &$usage_warning(shift)->[0] } ],
+      [ amount            => sub { &$usage_warning(shift)->[1] } ],
+      [ threshold         => sub { &$usage_warning(shift)->[2] } ],
     ],
     'svc_domain' => [qw(
       svcnum

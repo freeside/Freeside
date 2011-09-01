@@ -81,7 +81,20 @@
            length($actionfields{'reasonnum'}) == 0 ) {
         return 'Reason required';
       }
+      if ( $cgi->param('_initialize') ) {
+        $cgi->param('disabled', 'Y');
+      }
       return '';
+    },
+    'noerror_callback' => sub {
+      my ($cgi, $new) = @_;
+      if ( $cgi->param('_initialize') ) {
+        my $job = new FS::queue { 
+          'job' => 'FS::part_event::process_initialize'
+        };
+        my $error = $job->insert('eventpart' => $new->eventpart);
+        warn "error queueing job: $error\n" if $error; # can't do anything else
+      }
     },
 
     'agent_virt'       => 1,

@@ -159,6 +159,16 @@ sub label_long {
   $self->label(@_);
 }
 
+sub cust_main {
+  my $self = shift;
+  (($self->cust_svc || return)->cust_pkg || return)->cust_main || return
+}
+
+sub cust_linked {
+  my $self = shift;
+  defined($self->cust_main);
+}
+
 =item check
 
 Checks the validity of fields in this record.

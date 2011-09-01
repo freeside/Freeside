@@ -52,7 +52,7 @@ following fields are currently supported:
 
 =item event - event name
 
-=item eventtable - table name against which this event is triggered; currently "cust_bill" (the traditional invoice events), "cust_main" (customer events) or "cust_pkg (package events) (or "cust_statement")
+=item eventtable - table name against which this event is triggered: one of "cust_main", "cust_bill", "cust_statement", "cust_pkg", "svc_acct".
 
 =item check_freq - how often events of this type are checked; currently "1d" (daily) and "1m" (monthly) are recognized.  Note that the apprioriate freeside-daily and/or freeside-monthly cron job needs to be in place.
 
@@ -178,14 +178,16 @@ sub part_event_condition {
   qsearch( 'part_event_condition', { 'eventpart' => $self->eventpart } );
 }
 
-=item new_cust_event OBJECT
+=item new_cust_event OBJECT, [ OPTION => VALUE ]
 
 Creates a new customer event (see L<FS::cust_event>) for the provided object.
+
+The only option allowed is 'time', to set the "current" time for the event.
 
 =cut
 
 sub new_cust_event {
-  my( $self, $object ) = @_;
+  my( $self, $object, %opt ) = @_;
 
   confess "**** $object is not a ". $self->eventtable
     if ref($object) ne "FS::". $self->eventtable;
@@ -195,7 +197,8 @@ sub new_cust_event {
   new FS::cust_event {
     'eventpart' => $self->eventpart,
     'tablenum'  => $object->$pkey(),
-    '_date'     => time, #i think we always want the real "now" here.
+    #'_date'     => time, #i think we always want the real "now" here.
+    '_date'     => ($opt{'time'} || time),
     'status'    => 'new',
   };
 }
@@ -252,6 +255,90 @@ sub templatename {
   }
 }
 
+=item initialize PARAMS
+
+Identify all objects eligible for this event and create L<FS::cust_event>
+records for each of them, as of the present time, with status "initial".  When 
+combined with conditions that prevent an event from running more than once
+(at all or within some period), this will exclude any objects that met the 
+conditions before the event was created.
+
+If an L<FS::part_event> object needs to be initialized, it should be created 
+in a disabled state to avoid running the event prematurely for any existing 
+objects.  C<initialize> will enable it once all the cust_event records 
+have been created.
+
+This may take some time, so it should be run from the job queue.
+
+=cut
+
+sub initialize {
+  my $self = shift;
+  my $time = time; # $opt{'time'}?
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $eventpart = $self->eventpart;
+  $eventpart =~ /^\d+$/ or die "bad eventpart $eventpart";
+  my $eventtable = $self->eventtable;
+
+  # find all objects that meet the conditions for this part_event
+  my $linkage = '';
+  # this is the 'object' side of the FROM clause
+  if ( $eventtable ne 'cust_main' ) {
+    $linkage = ($self->eventtables_cust_join->{$eventtable} || '') . 
+        ' LEFT JOIN cust_main USING (custnum) '
+  }
+
+  # this is the 'event' side
+  my $join  = FS::part_event_condition->join_conditions_sql( $eventtable );
+  my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
+    'time' => $time
+  );
+  $join = $linkage . 
+      " INNER JOIN part_event ON ( part_event.eventpart = $eventpart ) $join";
+
+  $where .= ' AND cust_main.agentnum = '.$self->agentnum
+    if $self->agentnum;
+  # don't enforce check_freq since this is a special, out-of-order check,
+  # and don't enforce disabled because we want to do this with the part_event 
+  # disabled.
+  my @objects = qsearch({
+      table     => $eventtable,
+      hashref   => {},
+      addl_from => $join,
+      extra_sql => "WHERE $where",
+      debug     => 1,
+  });
+  warn "initialize: ".(scalar @objects) ." $eventtable objects found\n" 
+    if $DEBUG;
+  my $error = '';
+  foreach my $object ( @objects ) {
+    # test conditions
+    my $cust_event = $self->new_cust_event($object, 'time' => $time);
+    next unless $cust_event->test_conditions;
+
+    $cust_event->status('initial');
+    $error = $cust_event->insert;
+    last if $error;
+  }
+  if ( !$error and $self->disabled ) {
+    $self->disabled('');
+    $error = $self->replace;
+  }
+  if ( $error ) {
+    $dbh->rollback;
+    return $error;
+  }
+  $dbh->commit if $oldAutoCommit;
+  return;
+}
+
+=cut
+
+
 =back
 
 =head1 CLASS METHODS
@@ -274,6 +361,7 @@ sub eventtable_labels {
     'cust_main'      => 'Customer',
     'cust_pay_batch' => 'Batch payment',
     'cust_statement' => 'Statement',  #too general a name here? "Invoice group"?
+    'svc_acct'       => 'Login service',
   ;
 
   \%hash
@@ -312,6 +400,7 @@ sub eventtable_pkey {
     'cust_pkg'       => 'pkgnum',
     'cust_pay_batch' => 'paybatchnum',
     'cust_statement' => 'statementnum',
+    'svc_acct'       => 'svcnum',
   };
 }
 
@@ -336,6 +425,36 @@ Returns a list of eventtable values (run order).
 sub eventtables_runorder {
   shift->eventtables; #same for now
 }
+
+=item eventtables_cust_join
+
+Returns a hash reference of SQL expressions to join each eventtable to 
+a table with a 'custnum' field.
+
+=cut
+
+sub eventtables_cust_join {
+  my %hash = (
+    'svc_acct' => 'LEFT JOIN cust_svc USING (svcnum) LEFT JOIN cust_pkg USING (pkgnum)',
+  );
+  \%hash;
+}
+
+=item eventtables_custnum
+
+Returns a hash reference of SQL expressions for the 'custnum' field when 
+I<eventtables_cust_join> is in effect.  The default is "$eventtable.custnum".
+
+=cut
+
+sub eventtables_custnum {
+  my %hash = (
+    map({ $_, "$_.custnum" } shift->eventtables),
+    'svc_acct' => 'cust_pkg.custnum'
+  );
+  \%hash;
+}
+
 
 =item check_freq_labels
 
@@ -373,6 +492,35 @@ hashrefs with the following keys:
 =item default_weight
 
 =item deprecated
+
+=back
+
+=head1 ADDING NEW EVENTTABLES
+
+To add an eventtable, you must:
+
+=over 4
+
+=item Add the table to "eventtable_labels" (with a label) and to 
+"eventtable_pkey" (with its primary key).
+
+=item If the table doesn't have a "custnum" field of its own (such 
+as a svc_x table), add a suitable join expression to 
+eventtables_cust_join and an expression for the final custnum field 
+to eventtables_custnum.
+
+=item Create a method named FS::cust_main->$eventtable(): a wrapper 
+around qsearch() to return all records in the new table belonging to 
+the cust_main object.  This method must accept 'addl_from' and 
+'extra_sql' arguments in the way qsearch() does.  For svc_ tables, 
+wrap the svc_x() method.
+
+=item Add it to FS::cust_event->join_sql and search_sql_where so that 
+search/cust_event.html will find it.
+
+=item Create a UI link/form to search for events linked to objects 
+in the new eventtable, using search/cust_event.html.  Place this 
+somewhere appropriate to the eventtable.
 
 =back
 
@@ -430,12 +578,28 @@ sub all_actions {
        keys %actions
 }
 
+=item process_initialize 'eventpart' => EVENTPART
+
+Job queue wrapper for "initialize".  EVENTPART identifies the 
+L<FS::part_event> object to initialize.
+
+=cut
+
+sub process_initialize {
+  my %opt = @_;
+  my $part_event =
+      qsearchs('part_event', { eventpart => $opt{'eventpart'}})
+        or die "eventpart '$opt{eventpart}' not found!\n";
+  $part_event->initialize;
+}
+
 =back
 
 =head1 SEE ALSO
 
 L<FS::part_event_option>, L<FS::part_event_condition>, L<FS::cust_main>,
-L<FS::cust_pkg>, L<FS::cust_bill>, L<FS::cust_bill_event>, L<FS::Record>,
+L<FS::cust_pkg>, L<FS::svc_acct>, L<FS::cust_bill>, L<FS::cust_bill_event>, 
+L<FS::Record>,
 schema.html from the base documentation.
 
 =cut

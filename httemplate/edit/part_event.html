@@ -22,6 +22,11 @@
                               type    => 'checkbox',
                               value   => 'Y',
                             },
+                            { field   => '_initialize',
+                              type      => 'checkbox',
+                              onchange  => '_initialize_changed',
+                              value   => 'Y',
+                            }, 
                             { type    => 'title',
                               value   => 'Event Conditions',
                             },
@@ -54,7 +59,6 @@
                               layer_values_callback => $action_layer_values,
                               html_between => n_a('action'),
                             },
-
                           ],
               'labels' => {
                             'eventpart'  => 'Event',
@@ -67,6 +71,7 @@
                             'conditionname' => 'Add&nbsp;new&nbsp;condition',
                             #'weight',
                             'action'     => 'Action',
+                            '_initialize' => 'Initialize event',
                           },
               'viewall_dir' => 'browse',
               'new_callback' => sub { #start empty for new events only
@@ -467,6 +472,16 @@
 
     return seen_condition;
 
+  }
+
+  function _initialize_changed(what) {
+    document.getElementById('disabled').disabled = what.checked;
+    if ( what.checked ) {
+%# because it's not an immediately obvious concept
+      alert('Initializing the event will treat it as "already run" on the '+
+            'current date for all existing customers.  This affects '+
+            'conditions that prevent running an event more than once.');
+    }
   }
 
 </SCRIPT>

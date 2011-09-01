@@ -13,6 +13,7 @@ sub eventtable_hashref {
     { 'cust_main' => 0,
       'cust_bill' => 0,
       'cust_pkg'  => 1,
+      'svc_acct'  => 1,
     };
 }
 
@@ -27,8 +28,9 @@ sub option_fields {
 }
 
 sub condition {
-  my( $self, $cust_pkg ) = @_;
+  my( $self, $object ) = @_;
 
+  my $cust_pkg = $self->cust_pkg($object);
   #XXX test
   my $hashref = $self->option('status') || {};
   $hashref->{ $cust_pkg->status };

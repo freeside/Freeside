@@ -192,6 +192,21 @@ sub cust_main {
 
 }
 
+=item cust_pkg OBJECT
+
+Return the package object (L<FS::cust_pkg>) associated with the provided 
+object.  The object must be either a service (L<FS::svc_Common>) or a 
+package.
+
+=cut
+
+sub cust_pkg {
+  my( $self, $object ) = @_;
+  $object->isa('FS::cust_pkg')      ? $object :
+  $object->isa('FS::svc_Common')    ? $object->cust_svc->cust_pkg :
+  undef;
+}
+
 =item option_label OPTIONNAME
 
 Returns the label for the specified option name.
