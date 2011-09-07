@@ -71,7 +71,7 @@
     </td>
   </tr>
   <tr>
-    <td class="label"><&|/l&>Close After</&>:</td>
+    <td class="label"><&|/l&>Resolve After</&>:</td>
     <td class="entry">
       <& /Elements/SelectDate, menu_prefix => 'WillResolve', current => 0 &> (<% $TicketObj->WillResolveObj->AsString %>)
     </td>

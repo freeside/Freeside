@@ -72,7 +72,7 @@
 % }
   </tr>
   <tr>
-    <td class="label date resolved"><&|/l&>Closed</&>:</td>
+    <td class="label date resolved"><&|/l&>Resolved</&>:</td>
     <td class="value date resolved"><% $Ticket->ResolvedObj->AsString  %></td>
   </tr>
 % my $willresolve = $Ticket->WillResolveObj;

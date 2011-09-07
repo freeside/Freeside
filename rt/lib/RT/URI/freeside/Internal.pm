@@ -26,14 +26,13 @@
 # END LICENSE BLOCK
 #
 use strict;
-no warnings qw(redefine);
 
 #use vars qw($conf);
 
 use FS;
 use FS::UID qw(dbh);
 use FS::CGI qw(popurl);
-use FS::UI::Web::small_custview qw(small_custview);
+use FS::UI::Web::small_custview;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch dbdef);
 use FS::cust_main;
