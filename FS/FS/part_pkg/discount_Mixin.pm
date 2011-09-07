@@ -36,10 +36,15 @@ Takes all the arguments of calc_recur.  Calculates and returns  the amount
 by which to reduce the recurring fee; also increments months used on the 
 discount and generates an invoice detail describing it.
 
+If the configuration option 'discount-show_available' is enabled, and this 
+package is eligible for a prepayment discount but doesn't have one, an 
+invoice detail will be generated to describe the available discounts.
+
 =cut
 
 sub calc_discount {
   my($self, $cust_pkg, $sdate, $details, $param ) = @_;
+  my $conf = new FS::Conf;
 
   my $br = $self->base_recur_permonth($cust_pkg, $sdate);
   $br += $param->{'override_charges'} if $param->{'override_charges'};
@@ -155,7 +160,6 @@ sub calc_discount {
     push @{ $param->{'discounts'} }, $cust_bill_pkg_discount;
 
     #add details on discount to invoice
-    my $conf = new FS::Conf;
     my $money_char = $conf->config('money_char') || '$';
     $months = sprintf('%.2f', $months) if $months =~ /\./;
 
@@ -169,7 +173,46 @@ sub calc_discount {
     $tot_discount += $amount;
   }
 
+  if (!@cust_pkg_discount and $conf->exists('discount-show_available') ) {
+    push @$details, $self->available_discounts;
+  }
+
   sprintf('%.2f', $tot_discount);
 }
+
+=item available_discounts
+
+Returns a list of details decribing the available prepayment discounts 
+for this package.
+
+=cut
+
+sub available_discounts {
+  my $self = shift;
+  return if $self->freq ne '1';
+  my @details;
+  my $money_char = FS::Conf->new->config('money_char') || '$';
+  my @discounts = map { $_->discount } $self->part_pkg_discount;
+  # probably the most logical way to arrange these
+  foreach my $discount (sort { $a->months <=> $b->months } @discounts) {
+    my $months = $discount->months;
+    my $amount;
+    if ( $discount->amount > 0 ) {
+      $amount = $money_char . sprintf('%.2f', $discount->amount);
+    }
+    elsif ( $discount->percent ) {
+      $amount = $discount->percent .'%';
+    }
+    else { #?
+      next;
+    }
+    push @details, "Prepay $months months for $amount discount."
+      # better way to display this?
+      # if it's a problem, we'll add discount.invoice_text or something
+      # for the customer-visible text line.
+    }
+  return @details;
+}
+
 
 1;
