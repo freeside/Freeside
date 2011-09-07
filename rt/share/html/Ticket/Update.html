@@ -90,15 +90,7 @@ function changeStatus() {
               || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus,
     onchange => 'changeStatus()'
 )&>
-<span class="label"><&|/l&>Owner</&>:</span>
-<& /Elements/SelectOwner,
-    Name         => "Owner",
-    TicketObj    => $TicketObj,
-    QueueObj     => $TicketObj->QueueObj,
-    DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $TicketObj->OwnerObj)),
-    Default      => $ARGS{'Owner'}
-&>
-<span class="label"><&|/l&>Close this Ticket on</&>:</span>
+<span class="label"><&|/l&>Resolve this Ticket on</&>:</span>
 <& /Elements/SelectDate, 
     menu_prefix => 'WillResolve',
     current => 0,
@@ -132,6 +124,15 @@ changeStatus();
 % if (!$skip) {
 <input type="hidden" class="hidden" name="id" value="<%$TicketObj->Id%>" /><br />
 % }
+<tr><td class="label"><&|/l&>Owner</&>:</td>
+<td><& /Elements/SelectOwner,
+    Name         => "Owner",
+    TicketObj    => $TicketObj,
+    QueueObj     => $TicketObj->QueueObj,
+    DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $TicketObj->OwnerObj)),
+    Default      => $ARGS{'Owner'}
+&></td>
+</tr>
 <tr><td class="label"><&|/l&>Update Type</&>:</td>
 <td><select name="UpdateType">
 % if ($CanComment) {

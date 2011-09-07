@@ -28,16 +28,16 @@ lib/RT/Action/SetPriority_Local.pm #ticket escalation
 lib/RT/CustomFieldValues/Queues.pm #ticket escalation
 lib/RT/Condition/CustomFieldChange.pm #create ticket on custom field change
 lib/RT/Condition/CustomFieldTransaction.pm #notify on custom field change
-lib/RT/Interface/Web_Vendor.pm
+lib/RT/Interface/Web_Vendor.pm #willresolve
  lib/RT/Interface/Web/Handler.pm #freeside comp_root for dashboard emails
  lib/RT/Record.pm #and customfield date patch #fix transaction custom fields
 lib/RT/SavedSearches_Local.pm #saved searches
 lib/RT/Search/Googleish.pm #option to include resolved tickets
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
 lib/RT/Transaction_Overlay.pm #fix transaction custom fields
-lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields #this-month condition 
+lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields #this-month condition #willresolve
  lib/RT/Ticket_Overlay.pm #fix transaction custom fields
-lib/RT/Ticket_Vendor.pm #bulk increment priority #mandatory fields
+lib/RT/Ticket_Vendor.pm #bulk increment priority #mandatory fields #willresolve
  lib/RT/Users_Overlay.pm
  lib/RT/Groups_Overlay.pm
 lib/RT/Date.pm #this-month condition
@@ -107,7 +107,7 @@ share/html/Ticket/Elements/ShowMembers_Checklist
  share/html/Ticket/Elements/ShowSummary
  share/html/Ticket/Elements/ShowTransactionAttachments
  share/html/Ticket/Elements/Tabs #saved searches #mandatory fields
-share/html/Ticket/Update.html #timeworked custom fields
+share/html/Ticket/Update.html #timeworked custom fields #willresolve
 share/html/Ticket/ModifyCustomers.html
  html/NoAuth/css/3.5-default/main.css
  html/NoAuth/css/3.5-default/misc.css
@@ -144,3 +144,11 @@ share/html/Elements/ColumnMap
 lib/RT/Extension/MobileUI.pm
 share/html/Callbacks/RT-Extension-MobileUI/*
 share/html/m/*
+
+#willresolve
+lib/RT/Action/ScheduledResolve.pm
+lib/RT/Action/SetWillResolve.pm
+lib/RT/Transaction_Vendor.pm
+share/html/Elements/SelectStatus 
+share/html/Ticket/Elements/EditDates
+share/html/Ticket/Elements/ShowDates
