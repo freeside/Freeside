@@ -682,7 +682,14 @@ my %payment_gateway_options = (
     'description' => 'Generate a line item on an invoice even when a package is discounted 100%',
     'type'        => 'checkbox',
   },
-  
+
+  {
+    'key'         => 'discount-show_available',
+    'section'     => 'billing',
+    'description' => 'Show available prepayment discounts on invoices.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'invoice-barcode',
     'section'     => 'billing',
