@@ -507,6 +507,8 @@ sub translate_payinfo {
     my $payby = $object->payby;
     my $payinfo = $object->payinfo;
 
+    my $conf = new FS::Conf;
+
     if ( $payby eq 'CARD' ) {
         $payinfo = $object->paymask;
     } elsif ( $payby eq 'CHEK' ) {
