@@ -26,6 +26,7 @@
 # END LICENSE BLOCK
 #
 use strict;
+no warnings qw(redefine);
 
 #use vars qw($conf);
 
