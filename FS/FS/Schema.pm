@@ -1621,9 +1621,7 @@ sub tables_hashref {
         'pkg',           'varchar',   '',   $char_d, '', '', 
         'comment',       'varchar',   '',   $char_d, '', '', 
         'promo_code',    'varchar', 'NULL', $char_d, '', '', 
-        'setup',         @perl_type, '', '', 
         'freq',          'varchar',   '',   $char_d, '', '', #billing frequency
-        'recur',         @perl_type, '', '', 
         'setuptax',      'char', 'NULL', 1, '', '', 
         'recurtax',      'char', 'NULL', 1, '', '', 
         'plan',          'varchar', 'NULL', $char_d, '', '', 
