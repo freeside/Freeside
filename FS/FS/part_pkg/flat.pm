@@ -1,14 +1,13 @@
 package FS::part_pkg::flat;
+use base qw( FS::part_pkg::prorate_Mixin
+             FS::part_pkg::discount_Mixin
+             FS::part_pkg
+           );
 
 use strict;
-use base qw( FS::part_pkg 
-             FS::part_pkg::prorate_Mixin
-             FS::part_pkg::discount_Mixin
-           );
 use vars qw( %info %usage_recharge_fields @usage_recharge_fieldorder );
 use Tie::IxHash;
-use List::Util qw(min); # max);
-#use FS::Record qw(qsearch);
+use List::Util qw( min );
 use FS::UI::bytecount;
 use FS::Conf;
 

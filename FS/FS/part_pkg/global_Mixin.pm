@@ -1,9 +1,7 @@
 package FS::part_pkg::global_Mixin;
 
 use strict;
-use vars qw(@ISA %info);
-use FS::part_pkg;
-@ISA = qw(FS::part_pkg);
+use vars qw(%info);
 
 %info = (
   'disabled' => 1,

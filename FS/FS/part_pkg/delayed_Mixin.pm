@@ -1,5 +1,4 @@
 package FS::part_pkg::delayed_Mixin;
-use base qw( FS::part_pkg );
 
 use strict;
 use vars qw(%info);

@@ -1,10 +1,8 @@
 package FS::part_pkg::usage_Mixin;
 
 use strict;
-use vars qw( @ISA %info );
-use FS::part_pkg;
+use vars qw( %info );
 use FS::UI::bytecount;
-@ISA = qw(FS::part_pkg);
 
 # Field definitions for time and data usage, other than CDRs.
 

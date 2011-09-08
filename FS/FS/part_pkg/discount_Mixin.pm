@@ -1,14 +1,12 @@
 package FS::part_pkg::discount_Mixin;
 
 use strict;
-use vars qw(@ISA %info);
-use FS::part_pkg;
+use vars qw( %info );
+use Time::Local qw( timelocal );
+use List::Util  qw( min );
 use FS::cust_pkg;
 use FS::cust_bill_pkg_discount;
-use Time::Local qw(timelocal);
-use List::Util 'min';
 
-@ISA = qw(FS::part_pkg);
 %info = ( 'disabled' => 1 );
 
 =head1 NAME
