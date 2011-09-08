@@ -851,10 +851,7 @@ Returns true if this package is free.
 
 sub is_free {
   my $self = shift;
-  unless ( $self->plan ) {
-    $self->setup =~ /^\s*0+(\.0*)?\s*$/
-      && $self->recur =~ /^\s*0+(\.0*)?\s*$/;
-  } elsif ( $self->can('is_free_options') ) {
+  if ( $self->can('is_free_options') ) {
     not grep { $_ !~ /^\s*0*(\.0*)?\s*$/ }
          map { $self->option($_) } 
              $self->is_free_options;
@@ -1287,38 +1284,11 @@ sub _rebless {
   $self;
 }
 
-#fallbacks that eval the setup and recur fields, for backwards compat
-
-sub calc_setup {
-  my $self = shift;
-  warn 'no price plan class for '. $self->plan. ", eval-ing setup\n";
-  $self->_calc_eval('setup', @_);
-}
-
-sub calc_recur {
-  my $self = shift;
-  warn 'no price plan class for '. $self->plan. ", eval-ing recur\n";
-  $self->_calc_eval('recur', @_);
-}
-
-use vars qw( $sdate @details );
-sub _calc_eval {
-  #my( $self, $field, $cust_pkg ) = @_;
-  my( $self, $field, $cust_pkg, $sdateref, $detailsref ) = @_;
-  *sdate = $sdateref;
-  *details = $detailsref;
-  $self->$field() =~ /^(.*)$/
-    or die "Illegal $field (pkgpart ". $self->pkgpart. '): '.
-            $self->$field(). "\n";
-  my $prog = $1;
-  return 0 if $prog =~ /^\s*$/;
-  my $value = eval $prog;
-  die $@ if $@;
-  $value;
-}
+#fatal fallbacks
+sub calc_setup { die 'no calc_setup for '. shift->plan. "\n"; }
+sub calc_recur { die 'no calc_recur for '. shift->plan. "\n"; }
 
 #fallback that return 0 for old legacy packages with no plan
-
 sub calc_remain { 0; }
 sub calc_cancel { 0; }
 sub calc_units  { 0; }
