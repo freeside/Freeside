@@ -1,10 +1,9 @@
 package FS::part_pkg::prorate_Mixin;
 
 use strict;
-use vars qw(@ISA %info);
-use Time::Local qw(timelocal);
+use vars qw( %info );
+use Time::Local qw( timelocal );
 
-@ISA = qw(FS::part_pkg);
 %info = ( 
   'disabled'  => 1,
   # define all fields that are referenced in this code

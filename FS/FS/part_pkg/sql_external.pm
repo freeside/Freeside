@@ -1,7 +1,7 @@
 package FS::part_pkg::sql_external;
+use base qw( FS::part_pkg::discount_Mixin FS::part_pkg::recur_Common );
 
 use strict;
-use base qw( FS::part_pkg::recur_Common FS::part_pkg::discount_Mixin );
 use vars qw( %info );
 use DBI;
 #use FS::Record qw(qsearch qsearchs);

@@ -1,7 +1,7 @@
 package FS::part_pkg::recur_Common;
+use base qw( FS::part_pkg::flat );
 
 use strict;
-use base qw( FS::part_pkg::flat );
 use vars qw( %info %recur_method );
 use Tie::IxHash;
 use Time::Local;
