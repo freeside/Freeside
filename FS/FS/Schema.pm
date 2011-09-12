@@ -1863,7 +1863,7 @@ sub tables_hashref {
         'popnum',    'int',    'NULL',   '', '', '', 
         'uid',       'int', 'NULL',   '', '', '', 
         'gid',       'int', 'NULL',   '', '', '', 
-        'finger',    'varchar',   'NULL',   $char_d, '', '', 
+        'finger',    'varchar',   'NULL',   2*$char_d, '', '', 
         'dir',       'varchar',   'NULL',   $char_d, '', '', 
         'shell',     'varchar',   'NULL',   $char_d, '', '', 
         'quota',     'varchar',   'NULL',   $char_d, '', '', 
