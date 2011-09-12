@@ -839,7 +839,7 @@ sub tables_hashref {
         'daytime',  'varchar', 'NULL', 20, '', '', 
         'night',    'varchar', 'NULL', 20, '', '', 
         'fax',      'varchar', 'NULL', 12, '', '', 
-        'ship_last',     'varchar', 'NULL', $char_d, '', '', 
+        'ship_last',     'varchar', 'NULL', 2*$char_d, '', '', 
 #        'ship_middle',   'varchar', 'NULL', $char_d, '', '', 
         'ship_first',    'varchar', 'NULL', $char_d, '', '', 
         'ship_company',  'varchar', 'NULL', $char_d, '', '', 
