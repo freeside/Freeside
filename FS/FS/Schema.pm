@@ -862,7 +862,7 @@ sub tables_hashref {
         'paystart_month', 'int', 'NULL', '', '', '', 
         'paystart_year',  'int', 'NULL', '', '', '', 
         'payissue', 'varchar', 'NULL', 2, '', '', 
-        'payname',  'varchar', 'NULL', $char_d, '', '', 
+        'payname',  'varchar', 'NULL', 2*$char_d, '', '', 
         'paystate', 'varchar', 'NULL', $char_d, '', '', 
         'paytype',  'varchar', 'NULL', $char_d, '', '', 
         'payip',    'varchar', 'NULL', 15, '', '', 
