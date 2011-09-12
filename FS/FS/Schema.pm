@@ -819,7 +819,7 @@ sub tables_hashref {
         'classnum', 'int', 'NULL', '', '', '',
         'custbatch', 'varchar', 'NULL', $char_d, '', '',
 #        'titlenum', 'int',  'NULL',   '', '', '', 
-        'last',     'varchar', '',     $char_d, '', '', 
+        'last',     'varchar', '',   2*$char_d, '', '', 
 #        'middle',   'varchar', 'NULL', $char_d, '', '', 
         'first',    'varchar', '',     $char_d, '', '', 
         'ss',       'varchar', 'NULL', 11, '', '', 
@@ -1619,7 +1619,7 @@ sub tables_hashref {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 
         'pkg',           'varchar',   '',   $char_d, '', '', 
-        'comment',       'varchar',   '',   $char_d, '', '', 
+        'comment',       'varchar',   '', 2*$char_d, '', '', 
         'promo_code',    'varchar', 'NULL', $char_d, '', '', 
         'freq',          'varchar',   '',   $char_d, '', '', #billing frequency
         'setuptax',      'char', 'NULL', 1, '', '', 
