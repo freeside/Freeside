@@ -288,7 +288,7 @@ sub cgisetotaker {
     $user = lc ( $cgi->connection->user );
   } else {
     die "fatal: Can't get REMOTE_USER! for cgi $cgi - you need to setup ".
-        "Apache user authentication as documented in httemplate/docs/install.html";
+        "Apache user authentication as documented in the installation instructions";
   }
   $user;
 }
