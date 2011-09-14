@@ -576,7 +576,6 @@ sub tables_hashref {
         'seconds',     'int', 'NULL', '', '', '', 
         'weight',      'int', '', '', '', '', 
         'plan',       'varchar', 'NULL', $char_d, '', '', 
-        'plandata',   'text', 'NULL', '', '', '', 
         'reason',     'int', 'NULL', '', '', '', 
         'disabled',     'char', 'NULL', 1, '', '', 
       ],
