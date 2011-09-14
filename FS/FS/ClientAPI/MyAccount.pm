@@ -20,6 +20,7 @@ use FS::Msgcat qw(gettext);
 use FS::Misc qw(card_types);
 use FS::Misc::DateTime qw(parse_datetime);
 use FS::ClientAPI_SessionCache;
+use FS::cust_svc;
 use FS::svc_acct;
 use FS::svc_domain;
 use FS::svc_phone;
@@ -416,6 +417,11 @@ sub customer_info {
     if ( $conf->config('prepayment_discounts-credit_type') ) {
       #need to eval?
       $return{discount_terms_hash} = { $cust_main->discount_terms_hash };
+    }
+
+    if ( $session->{'svcnum'} ) {
+      my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $session->{'svcnum'} });
+      $return{'svc_label'} = ($cust_svc->label)[1] if $cust_svc;
     }
 
   } elsif ( $session->{'svcnum'} ) { #no customer record
