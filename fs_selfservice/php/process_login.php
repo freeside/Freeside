@@ -6,7 +6,7 @@ $freeside = new FreesideSelfService();
 $response = $freeside->login( array( 
   'username' => strtolower($_POST['username']),
   'domain'   => strtolower($_POST['domain']),
-  'password' => strtolower($_POST['password']),
+  'password' => $_POST['password'],
 ) );
 
 #error_log("[login] received response from freeside: $response");
