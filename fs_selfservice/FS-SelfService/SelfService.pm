@@ -72,6 +72,8 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'domain_select_hash'        => 'Signup/domain_select_hash',  # expose?
   'new_customer'              => 'Signup/new_customer',
   'capture_payment'           => 'Signup/capture_payment',
+  #N/A 'clear_signup_cache'        => 'Signup/clear_cache',
+  'new_agent'                 => 'Agent/new_agent',
   'agent_login'               => 'Agent/agent_login',
   'agent_logout'              => 'Agent/agent_logout',
   'agent_info'                => 'Agent/agent_info',
@@ -893,6 +895,20 @@ External text title.
 
 =back
 
+Fields used when provisioning an svc_pbx service:
+
+=over 4
+
+=item id
+
+Numeric ID.
+
+=item name
+
+Text name.
+
+=back
+
 Returns a hash reference with a single key, B<error>, empty on success, or an
 error message on errors.  The special error '_decline' is returned for
 declined transactions.
@@ -919,8 +935,20 @@ New package to order (see L<FS::part_pkg>).
 
 =back
 
-Returns a hash reference with a single key, B<error>, empty on success, or an
-error message on errors.  
+Returns a hash reference with the following keys:
+
+=over 4
+
+=item error
+
+Empty on success, or an error message on errors.  
+
+=item pkgnum
+
+On success, the new pkgnum
+
+=back
+
 
 =item renew_info
 
