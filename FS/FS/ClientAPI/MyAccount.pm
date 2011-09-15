@@ -1065,7 +1065,7 @@ sub list_pkgs {
                           my $primary_cust_svc = $_->primary_cust_svc;
                           +{ $_->hash,
                             $_->part_pkg->hash,
-                            #status => $_->status,
+                            status => $_->status,
                             part_svc =>
                               [ map $_->hashref, $_->available_part_svc ],
                             cust_svc => 
