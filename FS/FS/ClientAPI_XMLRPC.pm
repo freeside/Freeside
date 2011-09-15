@@ -83,6 +83,7 @@ sub ss2clientapi {
   'list_pkgs'                 => 'MyAccount/list_pkgs',     #add to ss (added?)
   'list_svcs'                 => 'MyAccount/list_svcs',     #add to ss (added?)
   'list_svc_usage'            => 'MyAccount/list_svc_usage',   
+  'port_graph'                => 'MyAccount/port_graph',   
   'list_cdr_usage'            => 'MyAccount/list_cdr_usage',   
   'list_support_usage'        => 'MyAccount/list_support_usage',   
   'order_pkg'                 => 'MyAccount/order_pkg',     #add to ss cgi!
@@ -95,10 +96,14 @@ sub ss2clientapi {
   'charge'                    => 'MyAccount/charge',        #?
   'part_svc_info'             => 'MyAccount/part_svc_info',
   'provision_acct'            => 'MyAccount/provision_acct',
+  'provision_phone'           => 'MyAccount/provision_phone',
   'provision_external'        => 'MyAccount/provision_external',
   'unprovision_svc'           => 'MyAccount/unprovision_svc',
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
   'create_ticket'             => 'MyAccount/create_ticket',
+  'get_ticket'                => 'MyAccount/get_ticket',
+  'adjust_ticket_priority'    => 'MyAccount/adjust_ticket_priority',
+  'did_report'                => 'MyAccount/did_report',
   'signup_info'               => 'Signup/signup_info',
   'skin_info'                 => 'MyAccount/skin_info',
   'access_info'               => 'MyAccount/access_info',
@@ -111,12 +116,16 @@ sub ss2clientapi {
   'agent_logout'              => 'Agent/agent_logout',
   'agent_info'                => 'Agent/agent_info',
   'agent_list_customers'      => 'Agent/agent_list_customers',
+  'check_username'            => 'Agent/check_username',
+  'suspend_username'          => 'Agent/suspend_username',
+  'unsuspend_username'        => 'Agent/unsuspend_username',
   'mason_comp'                => 'MasonComponent/mason_comp',
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
-  'bulk_processrow'           => 'Bulk/processrow',
-  'check_username'            => 'Bulk/check_username',
+  #izoom
+  #'bulk_processrow'           => 'Bulk/processrow',
+  #conflicts w/Agentone# 'check_username'            => 'Bulk/check_username',
   #sg
   'ping'                      => 'SGNG/ping',
   'decompify_pkgs'            => 'SGNG/decompify_pkgs',
