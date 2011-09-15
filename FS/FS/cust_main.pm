@@ -68,6 +68,7 @@ use FS::banned_pay;
 use FS::cust_main_note;
 use FS::cust_attachment;
 use FS::contact;
+use FS::Locales;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -1692,6 +1693,7 @@ sub check {
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
     || $self->ut_enum('edit_subject', [ '', 'Y' ] )
+    || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
 
   #barf.  need message catalogs.  i18n.  etc.

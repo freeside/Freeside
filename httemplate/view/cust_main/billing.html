@@ -273,6 +273,15 @@
   </TR>
 % }
 
+% if ( $cust_main->locale ) {
+% my %locale_info = FS::Locales->locale_info($cust_main->locale);
+  <TR>
+    <TD ALIGN="right"><% mt('Invoicing locale') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $locale_info{name} . " (" . $locale_info{country} .")" %></TD>
+  </TR>
+% }
+
+
 </TABLE></TD></TR></TABLE>
 <%once>
 

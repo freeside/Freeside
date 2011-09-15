@@ -16,6 +16,38 @@ Click on a configuration value to change it.
 %   }
 %
 % }
+% if ( @locales ) {
+( 
+% if ( $locale ) {
+%   $cgi->delete('locale');
+    <a href="<%$cgi->self_url%>">global settings</a> | 
+% }
+<script type='text/javascript'>
+function changeLocale(what) {
+  //var what = document.getElementById('select-locale');
+  if(what.selectedIndex > 0) {
+    what.form.submit();
+  }
+}
+</script>
+invoice language options: 
+<form action="<% $cgi->self_url %>" method="GET" style="display:inline;">
+<& /elements/select.html,
+    'field' => 'locale',
+    'options' => [ '', @locales ],
+    'labels'  => { map { 
+        my %info = FS::Locales->locale_info($_);
+        $_ => "$info{name} ($info{country})"
+    } @locales },
+    'curr_value' => $locale,
+    'id' => 'select-locale',
+    'onchange' => 'changeLocale'
+    &>
+  )
+%   $cgi->param('locale', $locale);
+% }
+</form>
+
 <BR><BR>
 
 <% include('/elements/init_overlib.html') %>
@@ -89,11 +121,12 @@ Click on a configuration value to change it.
 %       if $agent && $cgi->param('showagent');
 %
 %     #indentation :/
+%     my $action = 'config.cgi?key=' . $i->key . 
+%       ";agentnum=$agentnum" . ($locale ? ";locale=$locale" : '');
 
     <tr>
       <td><% include('/elements/popup_link.html',
-                       'action'      => 'config.cgi?key='.      $i->key.
-                                                  ';agentnum='. $agentnum,
+                       'action'      => $action,
                        'width'       => $width,
                        'height'      => $height,
                        'actionlabel' => 'Enter configuration value',
@@ -128,12 +161,12 @@ Click on a configuration value to change it.
             </tr>
 
 %   } elsif ( $type eq 'image' ) {
+%           my $args = 'key=' . $i->key . ";agentnum=$agentnum;locale=$locale";
 
             <tr>
               <td bgcolor='#ffffff'>
                 <% $conf->exists($i->key, $agentnum)
-                     ? '<img src="config-image.cgi?key='.      $i->key.
-                                                 ';agentnum='. $agentnum. '">'
+                     ? '<img src="config-image.cgi?'.$args.'">'
                      : 'empty'
                 %>
               </td>
@@ -141,18 +174,19 @@ Click on a configuration value to change it.
             <tr>
               <td>
                 <% $conf->exists($i->key, $agentnum)
-                     ? qq!<a href="config-download.cgi?key=!. $i->key. ';agentnum='. $agentnum. qq!">download</a>!
+                     ? '<a href="config-download.cgi?'.$args.'">download</a>'
                      : ''
                 %>
               </td>
             </tr>
 
 %   } elsif ( $type eq 'binary' ) {
+%           my $args = 'key=' . $i->key . ";agentnum=$agentnum;locale=$locale";
 
             <tr>
               <td>
                 <% $conf->exists($i->key, $agentnum)
-                     ? qq!<a href="config-download.cgi?key=!. $i->key. ';agentnum='. $agentnum. qq!">download</a>!
+                     ? '<a href="config-download.cgi?'.$args.'">download</a>'
                      : 'empty'
                 %>
               </td>
@@ -344,14 +378,37 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/) {
   die "Agent $page_agentnum not found!" unless $page_agent;
 
   push @menubar, 'View all agents' => $p.'browse/agent.cgi';
+}
+
+my $conf = new FS::Conf;
+my $conf_global = $conf;
+
+my @locales = $conf_global->config('available-locales');
+
+# if this is set, we are in locale mode, so limit the displayed items 
+# to those with per_locale.
+my $locale;
+my $locale_desc;
+if ( $cgi->param('locale') =~ /^\w+_\w+$/ ) {
+  $locale = $cgi->param('locale');
+  # and set the context on $conf
+  $conf = new FS::Conf { 'locale' => $locale, 'localeonly' => 1 };
+  my %locale_info = FS::Locales->locale_info($locale);
+  $locale_desc = "$locale_info{name} ($locale_info{country})";
+
+  $title = 'Invoice Configuration'; #for now it is only invoicing
+  $title .= ' for '.$page_agent->agent if $page_agent;
+  $title .= ', '.$locale_desc;
+
+} elsif ($page_agent) {
   $title = 'Agent Configuration for '. $page_agent->agent;
+  $title .= ", $locale_desc" if $locale;
 } else {
   $title = 'Global Configuration';
 }
 
-my $conf = new FS::Conf;
- 
-my @config_items = grep { $page_agent ? $_->per_agent : 1 }
+my @config_items = grep { !defined($locale) or $_->per_locale }
+                   grep { $page_agent ? $_->per_agent : 1 }
                    grep { $page_agent ? 1 : !$_->agentonly }
                         $conf->config_items; 
 

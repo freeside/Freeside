@@ -28,8 +28,11 @@ Returns a list of the available locales.
 =cut
 
 tie our %locales, 'Tie::IxHash',
-  'en_US', { name => 'English', country => 'United States', },
-  'iw_IL', { name => 'Hebrew',  country => 'Israel', rtl=>1, },
+  'en_CA', { name => 'English',     country => 'Canada', },
+  'en_US', { name => 'English',     country => 'United States', },
+  'fr_CA', { name => 'French',      country => 'Canada', },
+  'fr_FR', { name => 'French',      country => 'France', },
+  'iw_IL', { name => 'Hebrew',      country => 'Israel', rtl=>1, },
 ;
 
 sub locales {
@@ -45,6 +48,17 @@ Returns a hash of information about a locale.
 sub locale_info {
   my($class, $locale) = @_;
   %{ $locales{$locale} };
+}
+
+=item description LOCALE
+
+Returns "Language (Country)" for a locale.
+
+=cut
+
+sub description {
+  my($class, $locale) = @_;
+  $locales{$locale}->{'name'} . ' (' . $locales{$locale}->{'country'} . ')';
 }
 
 =back

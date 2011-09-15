@@ -47,16 +47,25 @@ but this may change in the future.
 
 =over 4
 
-=item new
+=item new [ HASHREF ]
 
 Create a new configuration object.
+
+HASHREF may contain options to set the configuration context.  Currently 
+accepts C<locale>, and C<localeonly> to disable fallback to the null locale.
 
 =cut
 
 sub new {
-  my($proto) = @_;
+  my($proto) = shift;
+  my $opts = shift || {};
   my($class) = ref($proto) || $proto;
-  my($self) = { 'base_dir' => $base_dir };
+  my $self = {
+    'base_dir'    => $base_dir,
+    'locale'      => $opts->{locale},
+    'localeonly'  => $opts->{localeonly}, # for config-view.cgi ONLY
+  };
+  warn "FS::Conf created with no locale fallback.\n" if $self->{localeonly};
   bless ($self, $class);
 }
 
@@ -108,14 +117,26 @@ sub _usecompat {
 sub _config {
   my($self,$name,$agentnum,$agentonly)=@_;
   my $hashref = { 'name' => $name };
-  $hashref->{agentnum} = $agentnum;
   local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
-  my $cv = FS::Record::qsearchs('conf', $hashref);
-  if (!$agentonly && !$cv && defined($agentnum) && $agentnum) {
-    $hashref->{agentnum} = '';
-    $cv = FS::Record::qsearchs('conf', $hashref);
+  my $cv;
+  my @a = (
+    ($agentnum || ()),
+    ($agentonly && $agentnum ? () : '')
+  );
+  my @l = (
+    ($self->{locale} || ()),
+    ($self->{localeonly} && $self->{locale} ? () : '')
+  );
+  # try with the agentnum first, then fall back to no agentnum if allowed
+  foreach my $a (@a) {
+    $hashref->{agentnum} = $a;
+    foreach my $l (@l) {
+      $hashref->{locale} = $l;
+      $cv = FS::Record::qsearchs('conf', $hashref);
+      return $cv if $cv;
+    }
   }
-  return $cv;
+  return undef;
 }
 
 sub config {
@@ -268,10 +289,14 @@ sub set {
 
   warn "[FS::Conf] SET $name\n" if $DEBUG;
 
-  my $old = FS::Record::qsearchs('conf', {name => $name, agentnum => $agentnum});
-  my $new = new FS::conf { $old ? $old->hash 
-                                : ('name' => $name, 'agentnum' => $agentnum)
-                         };
+  my $hashref = {
+    name => $name,
+    agentnum => $agentnum,
+    locale => $self->{locale}
+  };
+
+  my $old = FS::Record::qsearchs('conf', $hashref);
+  my $new = new FS::conf { $old ? $old->hash : %$hashref };
   $new->value($value);
 
   my $error;
@@ -312,7 +337,7 @@ sub delete {
   return $self->_usecompat('delete', @_) if use_confcompat;
 
   my($name, $agentnum) = @_;
-  if ( my $cv = FS::Record::qsearchs('conf', {name => $name, agentnum => $agentnum}) ) {
+  if ( my $cv = FS::Record::qsearchs('conf', {name => $name, agentnum => $agentnum, locale => $self->{locale}}) ) {
     warn "[FS::Conf] DELETE $name\n" if $DEBUG;
 
     my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -1035,6 +1060,7 @@ my %payment_gateway_options = (
     'description' => 'Subject: header on email invoices.  Defaults to "Invoice".  The following substitutions are available: $name, $name_short, $invoice_number, and $invoice_date.',
     'type'        => 'text',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1065,6 +1091,7 @@ my %payment_gateway_options = (
     'description' => 'Notes section for HTML invoices.  Defaults to the same data in invoice_latexnotes if not specified.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1073,6 +1100,7 @@ my %payment_gateway_options = (
     'description' => 'Footer for HTML invoices.  Defaults to the same data in invoice_latexfooter if not specified.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1081,6 +1109,7 @@ my %payment_gateway_options = (
     'description' => 'Summary initial page for HTML invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1088,6 +1117,7 @@ my %payment_gateway_options = (
     'section'     => 'invoicing',
     'description' => 'Return address for HTML invoices.  Defaults to the same data in invoice_latexreturnaddress if not specified.',
     'type'        => 'textarea',
+    'per_locale'  => 1,
   },
 
   {
@@ -1152,6 +1182,7 @@ and customer address. Include units.',
     'description' => 'Notes section for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1160,6 +1191,7 @@ and customer address. Include units.',
     'description' => 'Footer for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1168,6 +1200,7 @@ and customer address. Include units.',
     'description' => 'Summary initial page for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1176,6 +1209,7 @@ and customer address. Include units.',
     'description' => 'Remittance coupon for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1254,6 +1288,7 @@ and customer address. Include units.',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+    'per_locale'  => 1,
   },
 
   {
@@ -1832,7 +1867,12 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Default locale',
     'type'        => 'select',
-    'select_enum' => [ FS::Locales->locales ],
+    'options_sub' => sub {
+      map { $_ => FS::Locales->description($_) } FS::Locales->locales;
+    },
+    'option_sub'  => sub {
+      FS::Locales->description(shift)
+    },
   },
 
   {
@@ -3361,6 +3401,7 @@ and customer address. Include units.',
     'type'        => 'image',
     'per_agent'   => 1, #XXX just view/logo.cgi, which is for the global
                         #old-style editor anyway...?
+    'per_locale'  => 1,
   },
 
   {
@@ -3369,6 +3410,7 @@ and customer address. Include units.',
     'description' => 'Company logo for printed and PDF invoices, in EPS format.',
     'type'        => 'image',
     'per_agent'   => 1, #XXX as above, kinda
+    'per_locale'  => 1,
   },
 
   {
@@ -4551,6 +4593,20 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'An alternate ordering of fields for the New Customer and Edit Customer screens.',
     'type'        => 'checkbox',
+  },
+  
+  {
+    'key'         => 'available-locales',
+    'section'     => '',
+    'description' => 'Limit available locales (employee preferences, per-customer locale selection, etc.) to a particular set.',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub { 
+      map { $_ => FS::Locales->description($_) }
+      grep { $_ ne 'en_US' } 
+      FS::Locales->locales;
+    },
+    'option_sub'  => sub { FS::Locales->description(shift) },
   },
   
   {

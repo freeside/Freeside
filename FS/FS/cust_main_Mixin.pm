@@ -538,6 +538,41 @@ sub process_email_search_result {
 
 }
 
+=item conf
+
+Returns a configuration handle (L<FS::Conf>) set to the customer's locale, 
+if they have one.  If not, returns an FS::Conf with no locale.
+
+=cut
+
+sub conf {
+  my $self = shift;
+  return $self->{_conf} if (ref $self and $self->{_conf});
+  my $cust_main = $self->cust_main;
+  my $conf = new FS::Conf { 
+    'locale' => ($cust_main ? $cust_main->locale : '')
+  };
+  $self->{_conf} = $conf if ref $self;
+  return $conf;
+}
+
+=item mt TEXT [, ARGS ]
+
+Localizes a text string (see L<Locale::Maketext>) for the customer's locale,
+if they have one.
+
+=cut
+
+sub mt {
+  my $self = shift;
+  return $self->{_lh}->maketext(@_) if (ref $self and $self->{_lh});
+  my $cust_main = $self->cust_main;
+  my $locale = $cust_main ? $cust_main->locale : '';
+  my $lh = FS::L10N->get_handle($locale);
+  $self->{_lh} = $lh if ref $self;
+  return $lh->maketext(@_);
+}
+
 =back
 
 =head1 BUGS

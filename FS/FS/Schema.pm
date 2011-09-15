@@ -884,6 +884,7 @@ sub tables_hashref {
         'accountcode_cdr', 'char', 'NULL', 1, '', '',
         'billday',   'int', 'NULL', '', '', '',
         'edit_subject', 'char', 'NULL', 1, '', '',
+        'locale', 'varchar', 'NULL', 16, '', '', 
       ],
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],
@@ -3262,13 +3263,14 @@ sub tables_hashref {
 
     'conf' => {
       'columns' => [
-        'confnum',  'serial',  '', '', '', '', 
-        'agentnum', 'int',  'NULL', '', '', '', 
-        'name',     'varchar', '', $char_d, '', '', 
-        'value',    'text', 'NULL', '', '', '',
+        'confnum',  'serial',     '',      '', '', '', 
+        'agentnum', 'int',    'NULL',      '', '', '', 
+        'locale',   'varchar','NULL',      16, '', '',
+        'name',     'varchar',    '', $char_d, '', '', 
+        'value',    'text',   'NULL',      '', '', '',
       ],
       'primary_key' => 'confnum',
-      'unique' => [ [ 'agentnum', 'name' ]],
+      'unique' => [ [ 'agentnum', 'locale', 'name' ] ],
       'index' => [],
     },
 

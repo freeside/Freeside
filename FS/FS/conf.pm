@@ -3,6 +3,7 @@ package FS::conf;
 use strict;
 use vars qw( @ISA );
 use FS::Record;
+use FS::Locales;
 
 @ISA = qw(FS::Record);
 
@@ -94,6 +95,7 @@ sub check {
     || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
     || $self->ut_text('name')
     || $self->ut_anything('value')
+    || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
   return $error if $error;
 

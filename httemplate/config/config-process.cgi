@@ -25,7 +25,7 @@
 %  }
 %
 %} else {
-<% header('Configuration set') %>
+<& /elements/header.html, 'Configuration set' &>
   <SCRIPT TYPE="text/javascript">
 %   my $n = 0;
 %   foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
@@ -103,7 +103,9 @@ my %namecol = (
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied\n" unless $curuser->access_right('Configuration');
 
-my $conf = new FS::Conf;
+my $locale = $cgi->param('locale') || '';
+
+my $conf = new FS::Conf { 'locale' => $locale };
 
 if ( $conf->exists('disable_settings_changes') ) {
   my @changers = split(/\s*,\s*/, $conf->config('disable_settings_changes'));
