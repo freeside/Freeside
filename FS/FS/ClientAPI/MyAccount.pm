@@ -1062,8 +1062,10 @@ sub list_pkgs {
   { 'svcnum'   => $session->{'svcnum'},
     'custnum'  => $custnum,
     'cust_pkg' => [ map {
-                          { $_->hash,
+                          my $primary_cust_svc = $_->primary_cust_svc;
+                          +{ $_->hash,
                             $_->part_pkg->hash,
+                            #status => $_->status,
                             part_svc =>
                               [ map $_->hashref, $_->available_part_svc ],
                             cust_svc => 
@@ -1081,6 +1083,14 @@ sub list_pkgs {
                                       $ref;
                                     } $_->cust_svc
                               ],
+                            primary_cust_svc =>
+                              $primary_cust_svc
+                                ? { $primary_cust_svc->hash,
+                                    label => [ $primary_cust_svc->label ],
+                                    finger => $primary_cust_svc->svc_x->finger, #uuh
+                                    $primary_cust_svc->part_svc->hash,
+                                  }
+                                : {}, #'' ?
                           };
                         } $cust_main->ncancelled_pkgs
                   ],
