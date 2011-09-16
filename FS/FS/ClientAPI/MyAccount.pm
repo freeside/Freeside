@@ -936,6 +936,28 @@ sub invoice {
 
 }
 
+sub invoice_pdf {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $invnum = $p->{'invnum'};
+
+  my $cust_bill = qsearchs('cust_bill', { 'invnum'  => $invnum,
+                                          'custnum' => $custnum } )
+    or return { 'error' => "Can't find invnum" };
+
+  #my %return;
+
+  return { 'error'       => '',
+           'invnum'      => $invnum,
+           'invoice_pdf' => $cust_bill->print_pdf( { unsquelch_cdr => 1 } ),
+         };
+
+}
+
 sub invoice_logo {
   my $p = shift;
 
@@ -981,13 +1003,25 @@ sub list_invoices {
 
   my @cust_bill = $cust_main->cust_bill;
 
+  my $balance = 0;
+
   return  { 'error'       => '',
-            'invoices'    =>  [ map { { 'invnum' => $_->invnum,
-                                        '_date'  => $_->_date,
-					'date'   => time2str("%b %o, %Y", $_->_date),
-                                      }
-                                    } @cust_bill
-                              ]
+            'invoices'    => [
+              map {
+                    my $owed = $_->owed;
+                    $balance += $owed;
+                    +{ 'invnum'     => $_->invnum,
+                       '_date'      => $_->_date,
+                       'date'       => time2str("%b %o, %Y", $_->_date),
+                       'date_short' => time2str("%m-%d-%Y",  $_->_date),
+                       'previous'   => sprintf('%.2f', ($_->previous)[0]),
+                       'charged'    => sprintf('%.2f', $_->charged),
+                       'owed'       => sprintf('%.2f', $owed),
+                       'balance'    => sprintf('%.2f', $balance),
+                     }
+                  }
+                  @cust_bill
+            ]
           };
 }
 
