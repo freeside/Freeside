@@ -1,8 +1,9 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $conf
+use vars qw( @ISA $DEBUG $me 
              $money_char $date_format $rdate_format $date_format_long );
+             # but NOT $conf
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
 use Cwd;
@@ -41,6 +42,7 @@ use FS::bill_batch;
 use FS::cust_bill_batch;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
+use FS::L10N;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -49,7 +51,7 @@ $me = '[FS::cust_bill]';
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
-  $conf = new FS::Conf;
+  my $conf = new FS::Conf; #global
   $money_char       = $conf->config('money_char')       || '$';  
   $date_format      = $conf->config('date_format')      || '%x'; #/YY
   $rdate_format     = $conf->config('date_format')      || '%m/%d/%Y';  #/YYYY
@@ -364,6 +366,7 @@ cust_bill-default_agent_invid is set and it has a value, invnum otherwise.
 
 sub display_invnum {
   my $self = shift;
+  my $conf = $self->conf;
   if ( $conf->exists('cust_bill-default_agent_invid') && $self->agent_invid ){
     return $self->agent_invid;
   } else {
@@ -807,6 +810,7 @@ If there is an error, returns the error, otherwise returns false.
 
 sub apply_payments_and_credits {
   my( $self, %options ) = @_;
+  my $conf = $self->conf;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -955,6 +959,7 @@ sub generate_email {
 
   my $self = shift;
   my %args = @_;
+  my $conf = $self->conf;
 
   my $me = '[FS::cust_bill::generate_email]';
 
@@ -989,7 +994,7 @@ sub generate_email {
 
     my $alternative = build MIME::Entity
       'Type'        => 'multipart/alternative',
-      'Encoding'    => '7bit',
+      #'Encoding'    => '7bit',
       'Disposition' => 'inline'
     ;
 
@@ -1017,8 +1022,8 @@ sub generate_email {
 
     $alternative->attach(
       'Type'        => 'text/plain',
-      #'Encoding'    => 'quoted-printable',
-      'Encoding'    => '7bit',
+      'Encoding'    => 'quoted-printable',
+      #'Encoding'    => '7bit',
       'Data'        => $data,
       'Disposition' => 'inline',
     );
@@ -1240,6 +1245,7 @@ sub queueable_send {
 
 sub send {
   my $self = shift;
+  my $conf = $self->conf;
 
   my( $template, $invoice_from, $notice_name );
   my $agentnums = '';
@@ -1329,6 +1335,7 @@ sub queueable_email {
 #sub email_invoice {
 sub email {
   my $self = shift;
+  my $conf = $self->conf;
 
   my( $template, $invoice_from, $notice_name, $no_coupon );
   if ( ref($_[0]) ) {
@@ -1378,6 +1385,7 @@ sub email {
 
 sub email_subject {
   my $self = shift;
+  my $conf = $self->conf;
 
   #my $template = scalar(@_) ? shift : '';
   #per-template?
@@ -1409,6 +1417,7 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 
 sub lpr_data {
   my $self = shift;
+  my $conf = $self->conf;
   my( $template, $notice_name );
   if ( ref($_[0]) ) {
     my $opt = shift;
@@ -1444,6 +1453,7 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 #sub print_invoice {
 sub print {
   my $self = shift;
+  my $conf = $self->conf;
   my( $template, $notice_name );
   if ( ref($_[0]) ) {
     my $opt = shift;
@@ -1483,6 +1493,7 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 
 sub fax_invoice {
   my $self = shift;
+  my $conf = $self->conf;
   my( $template, $notice_name );
   if ( ref($_[0]) ) {
     my $opt = shift;
@@ -1538,6 +1549,7 @@ enabled)
 
 sub get_open_bill_batch {
   my $self = shift;
+  my $conf = $self->conf;
   my $hashref = { status => 'O' };
   $hashref->{'agentnum'} = $conf->exists('invoice_print_pdf-spoolagent')
                              ? $self->cust_main->agentnum
@@ -1560,6 +1572,7 @@ TEMPLATENAME is unused?
 
 sub ftp_invoice {
   my $self = shift;
+  my $conf = $self->conf;
   my $template = scalar(@_) ? shift : '';
 
   $self->send_csv(
@@ -1582,6 +1595,7 @@ TEMPLATENAME is unused?
 
 sub spool_invoice {
   my $self = shift;
+  my $conf = $self->conf;
   my $template = scalar(@_) ? shift : '';
 
   $self->spool_csv(
@@ -2091,6 +2105,7 @@ sub realtime_lec {
 
 sub realtime_bop {
   my( $self, $method ) = (shift,shift);
+  my $conf = $self->conf;
   my %opt = @_;
 
   my $cust_main = $self->cust_main;
@@ -2219,6 +2234,7 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 
 sub print_latex {
   my $self = shift;
+  my $conf = $self->conf;
   my( $today, $template, %opt );
   if ( ref($_[0]) ) {
     %opt = %{ shift() };
@@ -2284,6 +2300,7 @@ sub print_latex {
                            SUFFIX   => '.tex',
                            UNLINK   => 0,
                          ) or die "can't open temp file: $!\n";
+  binmode($fh, ':utf8'); # language support
   print $fh join('', @filled_in );
   close $fh;
 
@@ -2352,6 +2369,7 @@ notice_name - overrides "Invoice" as the name of the sent document (templates fr
 # yes: fixed width (dot matrix) text printing will be borked
 sub print_generic {
   my( $self, %params ) = @_;
+  my $conf = $self->conf;
   my $today = $params{today} ? $params{today} : time;
   warn "$me print_generic called on $self with suffix $params{template}\n"
     if $DEBUG;
@@ -2635,7 +2653,11 @@ sub print_generic {
     'total_pages'     => 1,
 
   );
-  
+ 
+  #localization
+  my $lh = FS::L10N->get_handle($cust_main->locale);
+  $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
+
   my $min_sdate = 999999999999;
   my $max_edate = 0;
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
@@ -2770,9 +2792,9 @@ sub print_generic {
       if ($format eq 'latex');
   }
 
-  $invoice_data{'po_line'} =
+  $invoice_data{'po_line'} = 
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
-      ? &$escape_function("Purchase Order #". $cust_main->payinfo)
+      ? &$escape_function($self->mt("Purchase Order #").$cust_main->payinfo)
       : $nbsp;
 
   my %money_chars = ( 'latex'    => '',
@@ -2801,7 +2823,7 @@ sub print_generic {
   warn "$me generating sections\n"
     if $DEBUG > 1;
 
-  my $previous_section = { 'description' => 'Previous Charges',
+  my $previous_section = { 'description' => $self->mt('Previous Charges'),
                            'subtotal'    => $other_money_char.
                                             sprintf('%.2f', $pr_total),
                            'summarized'  => $summarypage ? 'Y' : '',
@@ -2813,7 +2835,7 @@ sub print_generic {
     if $conf->exists('invoice_include_aging');
 
   my $taxtotal = 0;
-  my $tax_section = { 'description' => 'Taxes, Surcharges, and Fees',
+  my $tax_section = { 'description' => $self->mt('Taxes, Surcharges, and Fees'),
                       'subtotal'    => $taxtotal,   # adjusted below
                       'summarized'  => $summarypage ? 'Y' : '',
                     };
@@ -2825,7 +2847,8 @@ sub print_generic {
 
 
   my $adjusttotal = 0;
-  my $adjust_section = { 'description' => 'Credits, Payments, and Adjustments',
+  my $adjust_section = { 'description' => 
+    $self->mt('Credits, Payments, and Adjustments'),
                          'subtotal'    => 0,   # adjusted below
                          'summarized'  => $summarypage ? 'Y' : '',
                        };
@@ -2910,7 +2933,7 @@ sub print_generic {
   
   if ( @pr_cust_bill && !$conf->exists('disable_previous_balance') ) {
     push @buf, ['','-----------'];
-    push @buf, [ 'Total Previous Balance',
+    push @buf, [ $self->mt('Total Previous Balance'),
                  $money_char. sprintf("%10.2f", $pr_total) ];
     push @buf, ['',''];
   }
@@ -3066,7 +3089,7 @@ sub print_generic {
   
   if ( $taxtotal ) {
     my $total = {};
-    $total->{'total_item'} = 'Sub-total';
+    $total->{'total_item'} = $self->mt('Sub-total');
     $total->{'total_amount'} =
       $other_money_char. sprintf('%.2f', $self->charged - $taxtotal );
 
@@ -3083,7 +3106,8 @@ sub print_generic {
   $invoice_data{'taxtotal'} = sprintf('%.2f', $taxtotal);
 
   push @buf,['','-----------'];
-  push @buf,[( $conf->exists('disable_previous_balance') 
+  push @buf,[$self->mt( 
+              $conf->exists('disable_previous_balance') 
                ? 'Total Charges'
                : 'Total New Charges'
              ),
@@ -3092,7 +3116,7 @@ sub print_generic {
 
   {
     my $total = {};
-    my $item = 'Total';
+    my $item = $self->mt('Total');
     $item = $conf->config('previous_balance-exclude_from_total')
          || 'Total New Charges'
       if $conf->exists('previous_balance-exclude_from_total');
@@ -3107,11 +3131,11 @@ sub print_generic {
       &$embolden_function( $other_money_char.  sprintf( '%.2f', $amount ) );
     if ( $multisection ) {
       if ( $adjust_section->{'sort_weight'} ) {
-        $adjust_section->{'posttotal'} = 'Balance Forward '. $other_money_char.
-          sprintf("%.2f", ($self->billing_balance || 0) );
+        $adjust_section->{'posttotal'} = $self->mt('Balance Forward').' '.
+          $other_money_char.  sprintf("%.2f", ($self->billing_balance || 0) );
       } else {
-        $adjust_section->{'pretotal'} = 'New charges total '. $other_money_char.
-                                        sprintf('%.2f', $self->charged );
+        $adjust_section->{'pretotal'} = $self->mt('New charges total').' '.
+          $other_money_char.  sprintf('%.2f', $self->charged );
       } 
     }else{
       push @total_items, $total;
@@ -3316,25 +3340,24 @@ sub print_generic {
     }
 
     #setup subroutine for the template
-    sub FS::cust_bill::_template::invoice_lines {
-      my $lines = shift || scalar(@FS::cust_bill::_template::buf);
+    #sub FS::cust_bill::_template::invoice_lines { # good god, no
+    $invoice_data{invoice_lines} = sub { # much better
+      my $lines = shift || scalar(@buf);
       map { 
-        scalar(@FS::cust_bill::_template::buf)
-          ? shift @FS::cust_bill::_template::buf
+        scalar(@buf)
+          ? shift @buf
           : [ '', '' ];
       }
       ( 1 .. $lines );
-    }
+    };
 
     my $lines;
     my @collect;
     while (@buf) {
       push @collect, split("\n",
-        $text_template->fill_in( HASH => \%invoice_data,
-                                 PACKAGE => 'FS::cust_bill::_template'
-                               )
+        $text_template->fill_in( HASH => \%invoice_data )
       );
-      $FS::cust_bill::_template::page++;
+      $invoice_data{'page'}++;
     }
     map "$_\n", @collect;
   }else{
@@ -3546,6 +3569,7 @@ sub _translate_old_latex_format {
 
 sub terms {
   my $self = shift;
+  my $conf = $self->conf;
 
   #check for an invoice-specific override
   return $self->invoice_terms if $self->invoice_terms;
@@ -3574,10 +3598,11 @@ sub due_date2str {
 
 sub balance_due_msg {
   my $self = shift;
-  my $msg = 'Balance Due';
+  my $msg = $self->mt('Balance Due');
   return $msg unless $self->terms;
   if ( $self->due_date ) {
-    $msg .= ' - Please pay by '. $self->due_date2str($date_format);
+    $msg .= ' - ' . $self->mt('Please pay by'). ' '.
+      $self->due_date2str($date_format);
   } elsif ( $self->terms ) {
     $msg .= ' - '. $self->terms;
   }
@@ -3586,6 +3611,7 @@ sub balance_due_msg {
 
 sub balance_due_date {
   my $self = shift;
+  my $conf = $self->conf;
   my $duedate = '';
   if (    $conf->exists('invoice_default_terms') 
        && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
@@ -3594,7 +3620,10 @@ sub balance_due_date {
   $duedate;
 }
 
-sub credit_balance_msg { 'Credit Balance Remaining' }
+sub credit_balance_msg { 
+  my $self = shift;
+  $self->mt('Credit Balance Remaining')
+}
 
 =item invnum_date_pretty
 
@@ -3605,7 +3634,7 @@ Returns a string with the invoice number and date, for example:
 
 sub invnum_date_pretty {
   my $self = shift;
-  'Invoice #'. $self->invnum. ' ('. $self->_date_pretty. ')';
+  $self->mt('Invoice #'). $self->invnum. ' ('. $self->_date_pretty. ')';
 }
 
 =item _date_pretty
@@ -4011,6 +4040,7 @@ sub _condensed_total_line_generator {
 
 sub _items_extra_usage_sections {
   my $self = shift;
+  my $conf = $self->conf;
   my $escape = shift;
   my $format = shift;
 
@@ -4250,6 +4280,7 @@ sub _items_accountcode_cdr {
 
 sub _items_svc_phone_sections {
   my $self = shift;
+  my $conf = $self->conf;
   my $escape = shift;
   my $format = shift;
 
@@ -4497,6 +4528,7 @@ sub _items {
 
 sub _items_previous {
   my $self = shift;
+  my $conf = $self->conf;
   my $cust_main = $self->cust_main;
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
   my @b = ();
@@ -4505,7 +4537,7 @@ sub _items_previous {
                ? 'due '. $_->due_date2str($date_format)
                : time2str($date_format, $_->_date);
     push @b, {
-      'description' => 'Previous Balance, Invoice #'. $_->invnum. " ($date)",
+      'description' => $self->mt('Previous Balance, Invoice #'). $_->invnum. " ($date)",
       #'pkgpart'     => 'N/A',
       'pkgnum'      => 'N/A',
       'amount'      => sprintf("%.2f", $_->owed),
@@ -4588,6 +4620,7 @@ sub _items_tax {
 
 sub _items_cust_bill_pkg {
   my $self = shift;
+  my $conf = $self->conf;
   my $cust_bill_pkgs = shift;
   my %opt = @_;
 
@@ -4913,7 +4946,7 @@ sub _items_credits {
       #'description' => 'Credit ref\#'. $_->crednum.
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
-      'description' => 'Credit applied '.
+      'description' => $self->mt('Credit applied').' '.
                        time2str($date_format,$_->cust_credit->_date). $reason,
       'amount'      => sprintf("%.2f",$_->amount),
     };
@@ -4933,7 +4966,7 @@ sub _items_payments {
     #something more elaborate if $_->amount ne ->cust_pay->paid ?
 
     push @b, {
-      'description' => "Payment received ".
+      'description' => $self->mt('Payment received').' '.
                        time2str($date_format,$_->cust_pay->_date ),
       'amount'      => sprintf("%.2f", $_->amount )
     };
@@ -5159,6 +5192,7 @@ Currently only supported on PostgreSQL.
 =cut
 
 sub due_date_sql {
+  my $conf = new FS::Conf;
 'COALESCE(
   SUBSTRING(
     COALESCE(

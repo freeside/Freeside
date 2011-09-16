@@ -24,6 +24,7 @@ function SafeOnsubmit() {
 
 <FORM NAME="OneTrueForm" ACTION="config-process.cgi" METHOD="POST" enctype="multipart/form-data" onSubmit="SafeOnsubmit()">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agentnum %>">
+<INPUT TYPE="hidden" NAME="locale" VALUE="<% $locale %>">
 <INPUT TYPE="hidden" NAME="key" VALUE="<% $key %>">
 
 Setting <b><% $key %></b>
@@ -49,7 +50,8 @@ Setting <b><% $key %></b>
   <% $conf->exists($key, $agentnum)
        ? 'Current image<br>'.
          '<img src="config-image.cgi?key='.      $key.
-                                   ';agentnum='. $agentnum. '"><br>'
+                                   ';agentnum='. $agentnum.
+                                   ';locale='.   $locale .'"><br>'
        : ''
   %>
 
@@ -318,10 +320,6 @@ Setting <b><% $key %></b>
 </HTML>
 <%once>
 
-my $conf = new FS::Conf;
-my @config_items = $conf->config_items; 
-my %confitems = map { $_->key => $_ } @config_items;
-
 my %element_types = map { $_ => 1 } qw(
   select-part_svc select-part_pkg select-pkg_class select-agent
 );
@@ -338,6 +336,15 @@ my $agentnum = '';
 if ($cgi->param('agentnum') =~ /(\d+)$/) {
   $agentnum=$1;
 }
+
+my $locale = '';
+if ( $cgi->param('locale') =~ /^(\w+_\w+)$/) {
+  $locale = $1;
+}
+
+my $conf = new FS::Conf { 'locale' => $locale, 'localeonly' => 1 };
+my @config_items = $conf->config_items; 
+my %confitems = map { $_->key => $_ } @config_items;
 
 my $agent = '';
 my $title;

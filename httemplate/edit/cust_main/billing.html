@@ -555,6 +555,24 @@ function toggle(obj) {
       <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="<% $cust_main->cdr_termination_percentage %>">
 % }
 
+%my @available_locales = $conf->config('available-locales');
+%if ( scalar(@available_locales) ) {
+%   push @available_locales, '';
+%    my %locale_labels = map { 
+%        my %ll;
+%        my %info = FS::Locales->locale_info($_);
+%        $ll{$_} = $info{name} . " (" . $info{country} . ")";
+%        %ll;
+%    } FS::Locales->locales;
+  <& /elements/tr-select.html, 
+        'label'         => emt('Invoicing locale'),
+        'field'         => 'locale',
+        'options'       => \@available_locales,
+        'labels'        => \%locale_labels,
+        'curr_value'    => $cust_main->locale,
+  &>
+% }
+
   </TABLE>
 
   <% $r %> <% mt('required fields') |h %> 

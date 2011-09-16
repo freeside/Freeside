@@ -21,6 +21,8 @@
 
 \usepackage{fancyhdr,lastpage,ifthen,array,fslongtable,afterpage,caption,multirow,bigstrut}
 \usepackage{graphicx}			% required for logo graphic
+\usepackage[utf8]{inputenc}             % multilanguage support
+\usepackage[T1]{fontenc}
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
 \addtolength{\hoffset}{-0.6cm}		% left margin on page
@@ -125,10 +127,10 @@
   \ifthenelse{\equal{\thepage}{1}}
   { % First page
     \begin{tabular}{ccc}
-    Invoice date & Invoice \#& Customer \#\\
+    [@-- join(' & ', emt('Invoice date'), emt('Invoice #'), emt('Customer #') ) --@]\\
     \vspace{0.2cm}
     \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]} \\\hline
-    \rule{0pt}{5ex} &~~ \huge{\textsc{[@-- $notice_name || 'Invoice' --@]}} & \\
+    \rule{0pt}{5ex} &~~ \huge{\textsc{[@-- emt($notice_name) --@]}} & \\
     \vspace{-0.2cm}
      & & \\\hline
     \end{tabular}
@@ -136,7 +138,7 @@
   { % ... pages
     \small{
       \begin{tabular}{lll}
-      Invoice date & Invoice \#& Customer\#\\
+      [@-- join(' & ', emt('Invoice date'), emt('Invoice #'), emt('Customer #') ) --@]\\
       \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]}\\
       \end{tabular}
     }
@@ -161,19 +163,18 @@
 
 \newcommand{\FSdescriptionlength} { [@-- $unitprices ? '8.2cm' : '12.8cm' --@] }
 \newcommand{\FSdescriptioncolumncount} { [@-- $unitprices ? '4' : '6' --@] }
-\newcommand{\FSunitcolumns}{ [@-- $unitprices ? '\makebox[2.5cm][l]{\textbf{~~Unit Price}}&\makebox[1.4cm]{\textbf{~Quantity}}&' : '' --@] }
+\newcommand{\FSunitcolumns}{ [@-- 
+  $unitprices 
+  ? '\makebox[2.5cm][l]{\textbf{~~'.emt('Unit Price').'}}&\makebox[1.4cm]{\textbf{~'.emt('Quantity').'}}&' 
+  : '' --@] }
 
 \newcommand{\FShead}{
   \hline
   \rule{0pt}{2.5ex}
   \makebox[1.4cm]{\textbf{Ref}} &
-%  \makebox[2.9cm][l]{\textbf{Description}}&
-%  \makebox[1.4cm][l]{}&
-%  \makebox[1.4cm][l]{}&
-%  \makebox[2.5cm][l]{}&
-  \multicolumn{\FSdescriptioncolumncount}{l}{\makebox[\FSdescriptionlength][l]{\textbf{Description}}}&
+  \multicolumn{\FSdescriptioncolumncount}{l}{\makebox[\FSdescriptionlength][l]{\textbf{[@-- emt('Description') --@]}}}&
   \FSunitcolumns
-  \makebox[1.6cm][r]{\textbf{Amount}} \\
+  \makebox[1.6cm][r]{\textbf{[@-- emt('Amount') --@]}} \\
   \hline
 }
 
@@ -217,7 +218,7 @@
 \begin{minipage}[t]{6.4cm}
 [@--
   if ($ship_enable) {
-    $OUT .= '\textbf{Service Address}\\\\';
+    $OUT .= '\textbf{' . emt('Service Address') . '}\\\\';
     $OUT .= "\\addressline{$ship_company}";
     $OUT .= "\\addressline{$ship_address1}";
     $OUT .= "\\addressline{$ship_address2}";
@@ -229,7 +230,7 @@
   }
 --@]
 \begin{flushright}
-[@-- $terms ? "Terms: $terms" : '' --@]\\
+[@-- $terms ? emt('Terms') .": $terms" : '' --@]\\
 [@-- $po_line --@]\\
 \end{flushright}
 \end{minipage}}
@@ -252,7 +253,7 @@
         if $coupon;
       $OUT .= '\begin{longtable}{cllllllr}';
       $OUT .= '\caption*{ ';
-      $OUT .= ($section->{'description'}) ? $section->{'description'}: 'Charges';
+      $OUT .= ($section->{'description'}) ? $section->{'description'}: emt('Charges');
       $OUT .= '}\\\\';
       if ($section->{header_generator}) {
         $OUT .= &{$section->{header_generator}}();
@@ -260,14 +261,14 @@
         $OUT .= '\FShead';
       }
       $OUT .= '\endfirsthead';
-      $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\\\';
+      $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}'.emt('Continued from previous page').'}\\\\';
       if ($section->{header_generator}) {
         $OUT .= &{$section->{header_generator}}();
       } else {
         $OUT .= '\FShead';
       }
       $OUT .= '\endhead';
-      $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\\\';
+      $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}'.emt('Continued on next page...').'}\\\\';
       $OUT .= '\endfoot';
       $OUT .= '\hline';
 

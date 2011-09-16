@@ -193,7 +193,7 @@ old_ for replace operations):
   <LI><code>$pkgnum</code>
   <LI><code>$custnum</code>
   <LI>All other fields in <b>svc_acct</b> are also available.
-  <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker, agent_custid.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
+  <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker, agent_custid, locale.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
 </UL>
 END
 );
@@ -263,7 +263,7 @@ sub _export_command {
     {
       no strict 'refs';
       foreach my $custf (qw( company address1 address2 city state zip country
-                             daytime night fax otaker agent_custid
+                             daytime night fax otaker agent_custid locale
                         ))
       {
         ${$custf} = $cust_pkg->cust_main->$custf();
@@ -343,6 +343,7 @@ sub _export_command {
   $fax = shell_quote $fax;
   $otaker = shell_quote $otaker; 
   $agent_custid = shell_quote $agent_custid;
+  $locale = shell_quote $locale;
 
   my $command_string = eval(qq("$command"));
   my @ssh_cmd_args = (
@@ -419,6 +420,7 @@ sub _export_replace {
     if $error;
 
   $new_agent_custid = $new_cust_main ? $new_cust_main->agent_custid : '';
+  $new_locale = $new_cust_main ? $new_cust_main->locale : '';
   $old_pkgnum = $old_cust_pkg ? $old_cust_pkg->pkgnum : '';
   $old_custnum = $old_cust_pkg ? $old_cust_pkg->custnum : '';
   $new_pkgnum = $new_cust_pkg ? $new_cust_pkg->pkgnum : '';
@@ -432,6 +434,7 @@ sub _export_replace {
   $new_crypt_password = shell_quote $new_crypt_password;
   $new_ldap_password  = shell_quote $new_ldap_password;
   $new_agent_custid = shell_quote $new_agent_custid;
+  $new_locale = shell_quote $new_locale;
 
   my $command_string = eval(qq("$command"));
 
