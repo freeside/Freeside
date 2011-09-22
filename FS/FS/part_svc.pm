@@ -82,7 +82,7 @@ the part_svc_column table appropriately (see L<FS::part_svc_column>).
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
-=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null or empty (no default), `D' for default, `F' for fixed (unchangeable), `M' for manual selection from inventory, or `A' for automatic selection from inventory. 
+=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null or empty (no default), `D' for default, `F' for fixed (unchangeable), , `S' for selectable choice, `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
 
 =back
 

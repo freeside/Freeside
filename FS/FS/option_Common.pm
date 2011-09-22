@@ -1,11 +1,10 @@
 package FS::option_Common;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use base qw( FS::Record );
+use vars qw( $DEBUG );
 use Scalar::Util qw( blessed );
 use FS::Record qw( qsearch qsearchs dbh );
-
-@ISA = qw( FS::Record );
 
 $DEBUG = 0;
 

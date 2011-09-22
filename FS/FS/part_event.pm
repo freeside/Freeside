@@ -1,18 +1,16 @@
 package FS::part_event;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use base qw( FS::m2name_Common FS::option_Common );
+use vars qw( $DEBUG );
 use Carp qw(confess);
 use FS::Record qw( dbh qsearch qsearchs );
-use FS::option_Common;
-use FS::m2name_Common;
 use FS::Conf;
 use FS::part_event_option;
 use FS::part_event_condition;
 use FS::cust_event;
 use FS::agent;
 
-@ISA = qw( FS::m2name_Common FS::option_Common ); # FS::Record );
 $DEBUG = 0;
 
 =head1 NAME

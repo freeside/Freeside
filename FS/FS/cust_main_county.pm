@@ -328,7 +328,7 @@ sub taxline {
             'taxnum'     => $self->taxnum,
             'year'       => 1900+$year,
             'month'      => $mon,
-            'amount'     => sprintf("%.2f", $addl ),
+            'amount'     => sprintf('%.2f', $addl ),
           } );
           if ($cust_bill_pkg->billpkgnum) {
             $cust_tax_exempt_pkg->billpkgnum($cust_bill_pkg->billpkgnum);

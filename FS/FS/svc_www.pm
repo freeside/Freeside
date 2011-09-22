@@ -163,15 +163,15 @@ returns the error, otherwise returns false.
 
 =cut
 
-sub replace {
-  my ( $new, $old ) = ( shift, shift );
-  my $error;
-
-  $error = $new->SUPER::replace($old, @_);
-  return $error if $error;
-
-  '';
-}
+#sub replace {
+#  my ( $new, $old ) = ( shift, shift );
+#  my $error;
+#
+#  $error = $new->SUPER::replace($old, @_);
+#  return $error if $error;
+#
+#  '';
+#}
 
 =item suspend
 

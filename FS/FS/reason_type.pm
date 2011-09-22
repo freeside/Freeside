@@ -131,12 +131,7 @@ sub enabled_reasons {
 		     } );
 }
 
-# _populate_initial_data
-#
 # Used by FS::Setup to initialize a new database.
-#
-#
-
 sub _populate_initial_data {  # class method
   my ($self, %opts) = @_;
 
@@ -169,12 +164,7 @@ sub _populate_initial_data {  # class method
 
 }
 
-# _upgrade_data
-#
 # Used by FS::Upgrade to migrate to a new database.
-#
-#
-
 sub _upgrade_data {  # class method
   my ($self, %opts) = @_;
 

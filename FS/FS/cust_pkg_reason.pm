@@ -319,8 +319,6 @@ sub _upgrade_data { # class method
 
 =head1 BUGS
 
-Here be termites.  Don't use on wooden computers.
-
 =head1 SEE ALSO
 
 L<FS::Record>, schema.html from the base documentation.

@@ -16,9 +16,7 @@ FS::m2name_Common - Mixin class for tables with a related table listing names
 
 =head1 SYNOPSIS
 
-use FS::m2name_Common;
-
-@ISA = qw( FS::m2name_Common FS::Record );
+    use base qw( FS::m2name_Common FS::Record );
 
 =head1 DESCRIPTION
 
