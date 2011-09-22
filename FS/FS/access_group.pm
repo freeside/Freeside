@@ -1,13 +1,10 @@
 package FS::access_group;
 
 use strict;
-use vars qw( @ISA );
+use base qw(FS::m2m_Common FS::m2name_Common FS::Record);
 use FS::Record qw( qsearch qsearchs );
-use FS::m2name_Common;
 use FS::access_groupagent;
 use FS::access_right;
-
-@ISA = qw(FS::m2m_Common FS::m2name_Common FS::Record);
 
 =head1 NAME
 
