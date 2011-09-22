@@ -105,10 +105,12 @@ foreach my $filename ( @$ls ) {
       }
   }
 
+  my $file_timestamp = $filename.'-'.time2str('%Y-%m-%d', time);
+
   my $import_options = {
     'file'            => "$cachedir/$ungziped",
     'format'          => $format,
-    'batch_namevalue' => $filename.'-'.time2str('%Y-%m-%d', time),
+    'batch_namevalue' => $file_timestamp,
     'empty_ok'        => 1,
   };
   $import_options->{'cdrtypenum'} = $opt_c if $opt_c;
@@ -123,7 +125,7 @@ foreach my $filename ( @$ls ) {
   if ( $opt_d ) {
     if($opt_m eq 'ftp') {
       my $ftp = ftp();
-      $ftp->rename($filename, "$opt_d/$filename")
+      $ftp->rename($filename, "$opt_d/$file_timestamp")
         or do {
           unlink "$cachedir/$filename";
           unlink "$cachedir/$ungziped" if $opt_g;
@@ -132,7 +134,7 @@ foreach my $filename ( @$ls ) {
     }
     else {
       my $sftp = sftp();
-      $sftp->rename($filename, "$opt_d/$filename")
+      $sftp->rename($filename, "$opt_d/$file_timestamp")
         or do {
           unlink "$cachedir/$filename";
           unlink "$cachedir/$ungziped" if $opt_g;
