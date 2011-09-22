@@ -85,7 +85,8 @@ sub table_info {
     'display_weight' => 75,
     'cancel_weight'  => 10,
     'fields' => {
-      'serviceid'         => 'Torrus serviceid',
+      'svcnum'    => 'Service',
+      'serviceid' => 'Torrus serviceid',
     },
   };
 }
