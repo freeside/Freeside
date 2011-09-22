@@ -4563,7 +4563,7 @@ and customer address. Include units.',
   {
     'key'         => 'payment-history-report',
     'section'     => 'UI',
-    'description' => 'Show a link to the payment history report in the Reports menu. DO NOT ENABLE THIS.',
+    'description' => 'Show a link to the raw database payment history report in the Reports menu.  DO NOT ENABLE THIS for modern installations.',
     'type'        => 'checkbox',
   },
   
