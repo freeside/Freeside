@@ -2833,7 +2833,7 @@ sub tables_hashref {
         'amaflags',    'int',      '',      '',     0, '',
         'accountcode', 'varchar',  '',      20, \"''", '',
         'uniqueid',    'varchar',  '', $char_d, \"''", '',
-        'userfield',   'varchar',  '',     255, \"''", '',
+        'userfield',   'varchar',  '',     512, \"''", '',
 
         'max_callers', 'int',  'NULL',      '',    '', '',
 
