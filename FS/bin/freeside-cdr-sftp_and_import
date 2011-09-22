@@ -2,6 +2,7 @@
 
 use strict;
 use Getopt::Std;
+use Date::Format;
 use Net::SFTP::Foreign::Compat;
 use Net::FTP;
 use FS::UID qw(adminsuidsetup datasrc);
@@ -107,24 +108,36 @@ foreach my $filename ( @$ls ) {
   my $import_options = {
     'file'            => "$cachedir/$ungziped",
     'format'          => $format,
-    'batch_namevalue' => $filename,
+    'batch_namevalue' => $filename.'-'.str2time('%Y-%m-%d'),
     'empty_ok'        => 1,
   };
   $import_options->{'cdrtypenum'} = $opt_c if $opt_c;
   
   my $error = FS::cdr::batch_import($import_options);
-  die $error if $error;
+  if ( $error ) {
+    unlink "$cachedir/$filename";
+    unlink "$cachedir/$ungziped" if $opt_g;
+    die $error;
+  }
 
   if ( $opt_d ) {
     if($opt_m eq 'ftp') {
       my $ftp = ftp();
       $ftp->rename($filename, "$opt_d/$filename")
-        or die "Can't move $filename to $opt_d: ".$ftp->message . "\n";
+        or do {
+          unlink "$cachedir/$filename";
+          unlink "$cachedir/$ungziped" if $opt_g;
+          die "Can't move $filename to $opt_d: ".$ftp->message . "\n";
+        };
     }
     else {
       my $sftp = sftp();
       $sftp->rename($filename, "$opt_d/$filename")
-        or die "can't move $filename to $opt_d: ". $sftp->error . "\n";
+        or do {
+          unlink "$cachedir/$filename";
+          unlink "$cachedir/$ungziped" if $opt_g;
+          die "can't move $filename to $opt_d: ". $sftp->error . "\n";
+        };
     }
   }
 
@@ -146,12 +159,12 @@ use vars qw( $sftp $ftp );
 sub ftp {
   return $ftp if $ftp && $ftp->pwd;
   
-  my ($hostname, $user) = reverse split('@', $servername);
-  my ($user, $pass) = split(':', $user);
+  my ($hostname, $userpass) = reverse split('@', $servername);
+  my ($ftp_user, $ftp_pass) = split(':', $userpass);
 
   my $ftp = Net::FTP->new($hostname, %options) 
     or die "FTP connection to '$hostname' failed.";
-  $ftp->login($user, $pass) or die "FTP login failed: ".$ftp->message;
+  $ftp->login($ftp_user, $ftp_pass) or die "FTP login failed: ".$ftp->message;
   $ftp->cwd($opt_r) or die "can't chdir to $opt_r\n" if $opt_r;
   return $ftp;
 }
