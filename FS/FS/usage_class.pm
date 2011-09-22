@@ -443,8 +443,7 @@ sub total_line_generator {
 
 }
 
-
-
+# Used by FS::Setup to initialize a new database.
 sub _populate_initial_data {
   my ($class, %opts) = @_;
 
@@ -459,6 +458,7 @@ sub _populate_initial_data {
 
 }
 
+# Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {
   my $class = shift;
 

@@ -17,7 +17,7 @@ FS::cust_main::Packages - Packages mixin for cust_main
 
 =head1 SYNOPSIS
 
-=head1 DESRIPTION
+=head1 DESCRIPTION
 
 These methods are available on FS::cust_main objects;
 

@@ -75,7 +75,7 @@ sub upload {
 
       eval "&billco_upload( 'agentnum' => $agentnum, 'date' => $date );";
       warn "billco_upload failed: $@\n"
-        if ( $@ );
+        if $@;
 
     }
 
@@ -93,6 +93,7 @@ sub billco_upload {
   my $agentnum = $opt{agentnum} or die "no agentnum provided\n";
   my $url      = $conf->config( 'billco-url', $agentnum )
     or die "no url for agent $agentnum\n";
+  $url =~ s/^\s+//; $url =~ s/\s+$//;
   my $username = $conf->config( 'billco-username', $agentnum, 1 )
     or die "no username for agent $agentnum\n";
   my $password = $conf->config( 'billco-password', $agentnum, 1 )
@@ -175,7 +176,7 @@ sub billco_upload {
 
     my($hostname, $path) = ($1, $2);
 
-    my $ftp = new Net::FTP($hostname)
+    my $ftp = new Net::FTP($hostname) #, Passive=>1 )
       or die "can't connect to $hostname: $@\n";
     $ftp->login($username, $password)
       or die "can't login to $hostname: ". $ftp->message."\n";
