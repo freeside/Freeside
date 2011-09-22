@@ -915,7 +915,6 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
-
   {
     'key'         => 'maxsearchrecordsperpage',
     'section'     => 'UI',
