@@ -6,7 +6,7 @@ use FS::Record qw(qsearchs);
 use FS::rate;
 use FS::svc_phone;
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::ClientAPI::PrepaidPhone]';
 
 #TODO:
