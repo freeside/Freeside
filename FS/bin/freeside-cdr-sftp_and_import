@@ -2,7 +2,7 @@
 
 use strict;
 use Getopt::Std;
-use Date::Format qw(str2time);
+use Date::Format;
 use Net::SFTP::Foreign::Compat;
 use Net::FTP;
 use FS::UID qw(adminsuidsetup datasrc);
@@ -108,7 +108,7 @@ foreach my $filename ( @$ls ) {
   my $import_options = {
     'file'            => "$cachedir/$ungziped",
     'format'          => $format,
-    'batch_namevalue' => $filename.'-'.str2time('%Y-%m-%d'),
+    'batch_namevalue' => $filename.'-'.time2str('%Y-%m-%d', time),
     'empty_ok'        => 1,
   };
   $import_options->{'cdrtypenum'} = $opt_c if $opt_c;
