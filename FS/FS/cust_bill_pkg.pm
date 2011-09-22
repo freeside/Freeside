@@ -146,18 +146,29 @@ sub insert {
 
   if ( $self->get('details') ) {
     foreach my $detail ( @{$self->get('details')} ) {
-      my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail {
-        'billpkgnum' => $self->billpkgnum,
-        'format'     => (ref($detail) ? $detail->[0] : '' ),
-        'detail'     => (ref($detail) ? $detail->[1] : $detail ),
-        'amount'     => (ref($detail) ? $detail->[2] : '' ),
-        'classnum'   => (ref($detail) ? $detail->[3] : '' ),
-        'phonenum'   => (ref($detail) ? $detail->[4] : '' ),
-        'accountcode' => (ref($detail) ? $detail->[5] : '' ),
-        'startdate'  => (ref($detail) ? $detail->[6] : '' ),
-        'duration'   => (ref($detail) ? $detail->[7] : '' ),
-        'regionname' => (ref($detail) ? $detail->[8] : '' ),
-      };
+      my %hash = ();
+      if ( ref($detail) ) {
+        if ( ref($detail) eq 'ARRAY' ) {
+          #carp "this way sucks, use a hash"; #but more useful/friendly
+          $hash{'format'}      = $detail->[0];
+          $hash{'detail'}      = $detail->[1];
+          $hash{'amount'}      = $detail->[2];
+          $hash{'classnum'}    = $detail->[3];
+          $hash{'phonenum'}    = $detail->[4];
+          $hash{'accountcode'} = $detail->[5];
+          $hash{'startdate'}   = $detail->[6];
+          $hash{'duration'}    = $detail->[7];
+          $hash{'regionname'}  = $detail->[8];
+        } elsif ( ref($detail) eq 'HASH' ) {
+          %hash = %$detail;
+        } else {
+          die "unknow detail type ". ref($detail);
+        }
+      } else {
+        $hash{'detail'} = $detail;
+      }
+      $hash{'billpkgnum'} = $self->billpkgnum;
+      my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail \%hash;
       $error = $cust_bill_pkg_detail->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;

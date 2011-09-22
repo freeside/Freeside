@@ -768,33 +768,33 @@ sub calc_usage {
 
           if ( scalar(@call_details) == 1 ) {
             $call_details =
-              [ 'C',
-                $call_details[0],
-                $charge,
-                $classnum,
-                $phonenum,
-                $cdr->accountcode,
-                $cdr->startdate,
-                $seconds,
-                $regionname,
-              ];
+              { format      => 'C',
+                detail      => $call_details[0],
+                amount      => $charge,
+                classnum    => $classnum,
+                phonenum    => $phonenum,
+                accountcode => $cdr->accountcode,
+                startdate   => $cdr->startdate,
+                duration    => $seconds,
+                regionname  => $regionname,
+              };
           } else { #only used for $rating_method eq 'upstream' now
             $csv->combine(@call_details);
             $call_details =
-              [ 'C',
-                $csv->string,
-                $charge,
-                $classnum,
-                $phonenum,
-                $cdr->accountcode,
-                $cdr->startdate,
-                $seconds,
-                $regionname,
-              ];
+              { format      => 'C',
+                detail      => $csv->string,
+                amount      => $charge,
+                classnum    => $classnum,
+                phonenum    => $phonenum,
+                accountcode => $cdr->accountcode,
+                startdate   => $cdr->startdate,
+                duration    => $seconds,
+                regionname  => $regionname,
+              };
           }
-          warn "  adding details on charge to invoice: [ ".
-              join(', ', @{$call_details} ). " ]"
-            if ( $DEBUG && ref($call_details) );
+          #warn "  adding details on charge to invoice: [ ".
+          #    join(', ', @{$call_details} ). " ]"
+          #  if ( $DEBUG && ref($call_details) );
           push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
         }
 
@@ -821,14 +821,9 @@ sub calc_usage {
 
   } # $cust_svc
 
-  unshift @$details, [ 'C',
-                       FS::cdr::invoice_header($output_format),
-                       '',
-                       '',
-                       '',
-                       '',
-                       '',
-                     ]
+  unshift @$details, { format => 'C',
+                       detail => FS::cdr::invoice_header($output_format),
+                     }
     if @$details && $rating_method ne 'upstream';
 
 #  if ( $spool_cdr && length($downstream_cdr) ) {

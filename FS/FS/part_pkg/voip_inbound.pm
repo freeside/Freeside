@@ -279,16 +279,16 @@ sub calc_usage {
                                           )
                                 );
         push @$details,
-            [ 'C',
-              $call_details[0],
-              $charge,
-              $cdr->calltypenum, #classnum
-              $self->phonenum,
-              $cdr->accountcode,
-              $cdr->startdate,
-              $seconds,
-              '', #regionname, not set for inbound calls
-            ];
+          { format      => 'C',
+            detail      => $call_details[0],
+            amount      => $charge,
+            classnum    => $cdr->calltypenum, #classnum
+            phonenum    => $self->phonenum,
+            accountcode => $cdr->accountcode,
+            startdate   => $cdr->startdate,
+            duration    => $seconds,
+            # regionname?? => '', #regionname, not set for inbound calls
+          };
      }
 
      my $error = $cdr->set_status_and_rated_price( 'done',
@@ -299,14 +299,9 @@ sub calc_usage {
 
     } #$cdr
   } # $cust_svc
-  unshift @$details, [ 'C',
-                       FS::cdr::invoice_header($output_format),
-                       '',
-                       '',
-                       '',
-                       '',
-                       '',
-                     ]
+  unshift @$details, { format => 'C',
+                       detail => FS::cdr::invoice_header($output_format),
+                     }
     if @$details;
 
   $charges;
