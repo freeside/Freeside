@@ -2,7 +2,7 @@
 
 use strict;
 use Getopt::Std;
-use Date::Format;
+use Date::Format qw(str2time);
 use Net::SFTP::Foreign::Compat;
 use Net::FTP;
 use FS::UID qw(adminsuidsetup datasrc);
