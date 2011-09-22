@@ -2,6 +2,18 @@
 #
 # chkconfig: 345 86 16
 # description: Freeside daemons
+#
+### BEGIN INIT INFO
+# Provides:          freeside
+# Required-Start:    $time $remote_fs
+# Required-Stop:     $remote_fs
+# Should-Start:      postgresql mysql
+# Should-Stop:       postgresql mysql
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start Freeside daemons at boot time
+# Description:       Enable Freeside daemons
+### END INIT INFO
 
 QUEUED_USER=%%%QUEUED_USER%%%
 
