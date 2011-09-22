@@ -10,8 +10,8 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $tax_class = new FS::tax_class {
-  'taxclass' => $cgi->param('taxclass'),
-  'description' => $cgi->param('description'),
+  'taxclass'    => scalar($cgi->param('taxclass')),
+  'description' => scalar($cgi->param('description')),
 };
 
 #maybe this whole thing should be in a transaction.  at some point, no biggie

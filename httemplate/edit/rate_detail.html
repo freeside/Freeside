@@ -52,10 +52,10 @@
 
                  ],
      'new_hashref_callback' => sub {
-        { ratenum        => $cgi->param('ratenum'),
-          dest_regionnum => $cgi->param('dest_regionnum'),
-          ratetimenum    => $cgi->param('ratetimenum'),
-          cdrtypenum     => $cgi->param('cdrtypenum'),
+        { ratenum        => scalar($cgi->param('ratenum')),
+          dest_regionnum => scalar($cgi->param('dest_regionnum')),
+          ratetimenum    => scalar($cgi->param('ratetimenum')),
+          cdrtypenum     => scalar($cgi->param('cdrtypenum')),
           min_included   => 0,
           conn_charge    => 0,
         }

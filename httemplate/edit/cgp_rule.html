@@ -59,7 +59,7 @@ my $m2_error_callback_cond = sub {
           my $num = $1;
           if ( grep $cgi->param("ruleconditionnum$num$_"), @gfields ) {
             my $x = new FS::cgp_rule_condition {
-              'ruleconditionnum' => $cgi->param("ruleconditionnum$num"),
+              'ruleconditionnum' => scalar($cgi->param("ruleconditionnum$num")),
               map { $_ => scalar($cgi->param("ruleconditionnum${num}_$_")) } @fields,
             };
             $x;
@@ -84,7 +84,7 @@ my $m2_error_callback_action = sub {
           my $num = $1;
           if ( grep $cgi->param("ruleactionnum$num$_"), @gfields ) {
             my $x = new FS::cgp_rule_action {
-              'ruleactionnum' => $cgi->param("ruleactionnum$num"),
+              'ruleactionnum' => scalar($cgi->param("ruleactionnum$num")),
               map { $_ => scalar($cgi->param("ruleactionnum${num}_$_")) } @fields,
             };
             $x;

@@ -18,6 +18,9 @@ tie my %rights, 'Tie::IxHash', FS::AccessRight->rights_info;
 </%once>
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
 my $html_bottom_sub = sub {
   my $access_group = shift;
 

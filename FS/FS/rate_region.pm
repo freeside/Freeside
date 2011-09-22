@@ -248,6 +248,7 @@ Returns all prefixes (see L<FS::rate_prefix>) for this region.
 sub rate_prefix {
   my $self = shift;
 
+  map { $_ } #return $self->num_rate_prefix unless wantarray;
   sort {    $a->countrycode cmp $b->countrycode
          or $a->npa         cmp $b->npa
          or $a->nxx         cmp $b->nxx
@@ -264,7 +265,7 @@ destionation.
 
 sub dest_detail {
   my $self = shift;
-  qsearch( 'rate_detail', { 'dest_regionnum' => $self->regionnum, } );
+  qsearch( 'rate_detail', { 'dest_regionnum' => $self->regionnum } );
 }
 
 =item prefixes_short

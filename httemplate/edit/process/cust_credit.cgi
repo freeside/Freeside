@@ -42,9 +42,10 @@ if ($reasonnum == -1) {
 
   $error = 'Enter a new reason (or select an existing one)'
     unless $cgi->param('newreasonnum') !~ /^\s*$/;
-  my $reason = new FS::reason({ 'reason_type' => $cgi->param('newreasonnumT'),
-                                'reason'      => $cgi->param('newreasonnum'),
-                              });
+  my $reason = new FS::reason {
+                 'reason_type' => scalar($cgi->param('newreasonnumT')),
+                 'reason'      => scalar($cgi->param('newreasonnum')),
+               };
   $error ||= $reason->insert;
   $cgi->param('reasonnum', $reason->reasonnum)
     unless $error;
