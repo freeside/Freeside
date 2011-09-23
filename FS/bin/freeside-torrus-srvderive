@@ -8,12 +8,11 @@ use Date::Format;
 use IPC::Run qw( run ); #timeout );
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw( adminsuidsetup forksuidsetup dbh driver_name );
-use FS::Record qw( qsearch str2time_sql str2time_sql_closing concat_sql );
+use FS::Record qw( qsearch );
 use FS::torrus_srvderive;
 
 our $DEBUG = 2;
 our $max_kids = 4;
-our $search_timeout = 2*60*60; #60*60; #30*60; # 15*60 5*60; #$torrus_srvderive->last_srv_date ? 5*60 : 15*60);
 our %kids;
 
 my $user = shift or die &usage;
@@ -34,9 +33,6 @@ die "not running: network_monitoring_system not Torrus_Internal\n"
   unless _shouldrun();
 
 #--
-
-my $in  = concat_sql([ '?', "'_IN'" ]);
-my $out = concat_sql([ '?', "'_OUT'" ]);
 
 our $kids = 0;
 
@@ -129,7 +125,7 @@ while (1) {
           warn "calling native srvderive: ". join(' ', @cmd). "\n" if $DEBUG;
           my $out_and_err = '';
           run( \@cmd, '>&', \$out_and_err ) #verbose?  timeout?
-            or die "error calling native srvder: $out_and_err\n";
+            or die "error calling native srvderive: $out_and_err\n";
 
         }
         warn "native srvderive done" if $DEBUG;
