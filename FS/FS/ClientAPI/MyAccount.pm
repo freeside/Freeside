@@ -630,18 +630,16 @@ sub payment_info {
            %return,
          };
 
-};
+}
 
 #some false laziness with httemplate/process/payment.cgi - look there for
 #ACH and CVV support stuff
-sub process_payment {
 
+sub validate_payment {
   my $p = shift;
 
   my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
-
-  my %return;
 
   my $custnum = $session->{'custnum'};
 
@@ -673,7 +671,6 @@ sub process_payment {
   #false laziness w/process/payment.cgi
   my $payinfo;
   my $paycvv = '';
-  my $paynum = '';
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
   
     $p->{'payinfo1'} =~ /^([\dx]+)$/
@@ -728,38 +725,105 @@ sub process_payment {
     'CHEK' => [ qw( ss paytype paystate stateid stateid_state payip ) ],
   );
 
+  my $card_type = '';
+  $card_type = cardtype($payinfo) if $payby eq 'CARD';
+
+  { 
+    'cust_main'      => $cust_main, #XXX or just custnum??
+    'amount'         => $amount,
+    'payby'          => $payby,
+    'payinfo'        => $payinfo,
+    'paymask'        => $cust_main->mask_payinfo( $payby, $payinfo ),
+    'card_type'      => $card_type,
+    'paydate'        => $p->{'year'}. '-'. $p->{'month'}. '-01',
+    'paydate_pretty' => $p->{'month'}. ' / '. $p->{'year'},
+    'payname'        => $payname,
+    'paybatch'       => $paybatch, #this doesn't actually do anything
+    'paycvv'         => $paycvv,
+    'payname'        => $payname,
+    'discount_term'  => $discount_term,
+    'pkgnum'         => $session->{'pkgnum'},
+    map { $_ => $p->{$_} } ( @{ $payby2fields{$payby} },
+                             qw( save auto ),
+                           )
+  };
+
+}
+
+sub store_payment {
+  my $p = shift;
+
+  my $validate = validate_payment($p);
+  return $validate if $validate->{'error'};
+
+  my $conf = new FS::Conf;
+  my $timeout = $conf->config('selfservice-session_timeout') || '1 hour'; #?
+  _cache->set( 'payment_'.$p->{'session_id'}, $validate, $timeout );
+
+  +{ map { $_=>$validate->{$_} }
+      qw( card_type paymask payname paydate_pretty amount )
+  };
+
+}
+
+sub process_stored_payment {
+  my $p = shift;
+
+  my $session_id = $p->{'session_id'};
+
+  my $payment_info = _cache->get( "payment_$session_id" )
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  do_process_payment($payment_info);
+
+}
+
+sub process_payment {
+  my $p = shift;
+
+  my $payment_info = validate_payment($p);
+  return $payment_info if $payment_info->{'error'};
+
+  do_process_payment($payment_info);
+
+}
+
+sub do_process_payment {
+  my $validate = shift;
+
+  my $cust_main = $validate->{'cust_main'};
+
+  my $amount = delete $validate->{'amount'};
+  my $paynum = '';
+
+  my $payby = delete $validate->{'payby'};
+
   my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
-    'quiet'    => 1,
-    'payinfo'  => $payinfo,
-    'paydate'  => $p->{'year'}. '-'. $p->{'month'}. '-01',
-    'payname'  => $payname,
-    'paybatch' => $paybatch, #this doesn't actually do anything
-    'paycvv'   => $paycvv,
-    'paynum_ref' => \$paynum,
-    'pkgnum'   => $session->{'pkgnum'},
-    'discount_term' => $discount_term,
+    'quiet'       => 1,
     'selfservice' => 1,
-    map { $_ => $p->{$_} } @{ $payby2fields{$payby} }
+    'fake'        => 1, #XXX DO NOT CHECK ME IN
+    'paynum_ref'  => \$paynum,
+    %$validate,
   );
   return { 'error' => $error } if $error;
 
   $cust_main->apply_payments;
 
-  if ( $p->{'save'} ) {
+  if ( $validate->{'save'} ) {
     my $new = new FS::cust_main { $cust_main->hash };
-    if ($payby eq 'CARD' || $payby eq 'DCRD') {
-      $new->set( $_ => $p->{$_} )
+    if ($validate->{'payby'} eq 'CARD' || $validate->{'payby'} eq 'DCRD') {
+      $new->set( $_ => $validate->{$_} )
         foreach qw( payname paystart_month paystart_year payissue payip
                     address1 address2 city state zip country );
-      $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
+      $new->set( 'payby' => $validate->{'auto'} ? 'CARD' : 'DCRD' );
     } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
-      $new->set( $_ => $p->{$_} )
+      $new->set( $_ => $validate->{$_} )
         foreach qw( payname payip paytype paystate
                     stateid stateid_state );
-      $new->set( 'payby' => $p->{'auto'} ? 'CHEK' : 'DCHK' );
+      $new->set( 'payby' => $validate->{'auto'} ? 'CHEK' : 'DCHK' );
     }
-    $new->set( 'payinfo' => $cust_main->card_token || $payinfo );
-    $new->set( 'paydate' => $p->{'year'}. '-'. $p->{'month'}. '-01' );
+    $new->set( 'payinfo' => $cust_main->card_token || $validate->{'payinfo'} );
+    $new->set( 'paydate' => $validate->{'paydate'} );
     my $error = $new->replace($cust_main);
     if ( $error ) {
       #no, this causes customers to process their payments again
@@ -767,21 +831,22 @@ sub process_payment {
       #XXX just warn verosely for now so i can figure out how these happen in
       # the first place, eventually should redirect them to the "change
       #address" page but indicate the payment did process??
-      delete($p->{'payinfo'}); #don't want to log this!
+      delete($validate->{'payinfo'}); #don't want to log this!
       warn "WARNING: error changing customer info when processing payment (not returning to customer as a processing error): $error\n".
            "NEW: ". Dumper($new)."\n".
            "OLD: ". Dumper($cust_main)."\n".
-           "PACKET: ". Dumper($p)."\n";
+           "PACKET: ". Dumper($validate)."\n";
     #} else {
       #not needed...
       #$cust_main = $new;
     }
   }
 
+  my $cust_pay = '';
   my $receipt_html = '';
-  if($paynum) { 
+  if ($paynum) {
       # currently supported for realtime CC only; send receipt data to SS
-      my $cust_pay = qsearchs('cust_pay', { 'paynum' => $paynum } );
+      $cust_pay = qsearchs('cust_pay', { 'paynum' => $paynum } );
       if($cust_pay) {
 	$receipt_html = qq!
 <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=2>
@@ -802,7 +867,7 @@ sub process_payment {
 
 <TR>
   <TD ALIGN="right">Amount</TD>
-  <TD BGCOLOR="#FFFFFF"><B>! . $cust_pay->paid . qq!</B></TD>
+  <TD BGCOLOR="#FFFFFF"><B>! . sprintf('%.2f', $cust_pay->paid) . qq!</B></TD>
 
 </TR>
 
@@ -817,7 +882,29 @@ sub process_payment {
       }
   }
 
-  return { 'error' => '', 'receipt_html' => $receipt_html, };
+  if ( $cust_pay ) {
+
+    my($gw, $auth, $order) = split(':', $cust_pay->paybatch);
+
+    return {
+      'error'        => '',
+      'amount'       => sprintf('%.2f', $cust_pay->paid),
+      'date'         => $cust_pay->_date,
+      'date_pretty'  => time2str('%Y-%m-%d', $cust_pay->_date),
+      'time_pretty'  => time2str('%T', $cust_pay->_date),
+      'auth_num'     => $auth,
+      'order_num'    => $order,
+      'receipt_html' => $receipt_html,
+    };
+
+  } else {
+
+    return {
+      'error'        => '',
+      'receipt_html' => '',
+    };
+
+  }
 
 }
 
@@ -1006,6 +1093,7 @@ sub list_invoices {
   my $balance = 0;
 
   return  { 'error'       => '',
+            'balance'     => $cust_main->balance,
             'invoices'    => [
               map {
                     my $owed = $_->owed;
