@@ -35,46 +35,13 @@ die "not running: network_monitoring_system not Torrus_Internal\n"
 
 #--
 
-my $str2time = str2time_sql();
-my $c = str2time_sql_closing();
-
-my $_date = concat_sql([ 'srvexport.srv_date', "' '", 'srvexport.srv_time' ]);
-$_date = "CAST( $_date AS TIMESTAMP )" if driver_name =~ /^Pg/i;
-$_date = str2time_sql. $_date.  str2time_sql_closing;
-
-my $other_date = concat_sql([ 'other.srv_date', "' '", 'other.srv_time' ]);
-$other_date = "CAST( $other_date AS TIMESTAMP )" if driver_name =~ /^Pg/i;
-$other_date = str2time_sql. $other_date.  str2time_sql_closing;
-
 my $in  = concat_sql([ '?', "'_IN'" ]);
 my $out = concat_sql([ '?', "'_OUT'" ]);
-
-my $sql = "
-  SELECT DISTINCT srv_date, srv_time FROM srvexport
-    WHERE NOT EXISTS (
-                       SELECT 1 FROM srvexport AS other
-                         WHERE other.serviceid IN ( $in, $out )
-                           AND srvexport.srv_date = other.srv_date
-                           AND ABS( $_date - $other_date ) <= 60
-                     )
-";
-
-my $orderlimit = "
-    ORDER BY srv_date, srv_time
-    LIMIT 200
-";
-
-if ( driver_name =~ /mysql/i ) {
-  dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
-  dbh->commit or die dbh->errstr;
-}
 
 our $kids = 0;
 
 #MAIN: while (1) {
 while (1) {
-
-  my $found = 0;
 
   #SERVICEID: foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
   foreach my $torrus_srvderive ( qsearch('torrus_srvderive', {}) ) {
@@ -107,12 +74,6 @@ while (1) {
       my @serviceids = $torrus_srvderive->component_serviceids;
       exit unless @serviceids; #don't try to search for empty virtual ports
 
-      #nonlocking select statements; rows in this table never change
-      if ( driver_name =~ /mysql/i ) {
-        dbh->do('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
-        dbh->commit or die dbh->errstr;
-      }
-
       my @in = ();
       for my $dir ('_IN', '_OUT') {
         push @in, map dbh->quote("$_$dir"), @serviceids;
@@ -138,13 +99,12 @@ while (1) {
         }
       }
 
-      #alternate (hopefully more efficient) path: if we're more than a day
-      #behind, call native torrus srvderive
+      #if we're more than a day behind, call native torrus srvderive
       my $last_srv_date = $torrus_srvderive->last_srv_date;
       my $currdate = time2str('%Y-%m-%d', time);
       if ( $last_srv_date ne $currdate
-           && time - str2time($last_srv_date) > (24+6)*60*60 #6 hour window for
-         ) {                                                 #yesterday
+           && time - str2time($last_srv_date) > (24)*60*60
+         ) {
         warn "serviceid $serviceid last_srv_date != $currdate\n" if $DEBUG;
 
         #delete records from last_srv_date
@@ -180,130 +140,25 @@ while (1) {
 
         #don't bother trying today's immediately
         warn "done with $serviceid for now\n" if $DEBUG;
-        exit; #end-of-kid
 
-      }
+      } else {
 
-      my $ssql = "
-        $sql AND EXISTS (
-                         SELECT 1 FROM srvexport AS other
-                           WHERE other.serviceid IN ($in)
-                             AND srvexport.srv_date = other.srv_date
-                             AND ABS( $_date - $other_date ) <= 60
-                       )
-      ";
-
-      $ssql .= " AND srv_date >= '". $torrus_srvderive->last_srv_date. "' "
-        if $torrus_srvderive->last_srv_date;
-
-      $ssql .= $orderlimit;
-
-      warn "searching for times to add $serviceid\n" if $DEBUG;
-      warn $ssql if $DEBUG > 2;
-      my $sth = dbh->prepare($ssql) or die $DBI::errstr; #better recovery here?
-
-      eval {
-        my $h = set_sig_handler( 'ALRM', sub { die "_timeout\n"; } );
-        alarm($search_timeout);
-        $sth->execute($serviceid, $serviceid) or die $sth->errstr;
-        alarm(0);
-      };
-      alarm(0);
-      
-      if ( $@ && $@ eq "_timeout\n" ) {
-        #warn "search timed out; reconnecting and restarting\n";
-        warn "search timed out\n";
-        dbh->clone()->do("KILL QUERY ". dbh->{"mysql_thread_id"})
-          if driver_name =~ /mysql/i;
-        dbh->rollback; #or die dbh->errstr;
-        #adminsuidsetup($user);
-        #next SERVICEID; #MAIN;
-        exit;
-      } elsif ( $@ ) {
-        die $@;
-      }
-
-      warn "search for $serviceid finished; checking results\n" if $DEBUG;
-
-      my $prev = 0;
-      while ( my $row = $sth->fetchrow_arrayref ) {
-        last if sigterm() || sigint();
-
-        my( $srv_date, $srv_time ) = @$row;
-        my $cur = str2time( "$srv_date $srv_time" );
-        next if $cur-$prev <= 60;
-        last if time - $cur <= 300;
-
-        warn "no $serviceid for $srv_date $srv_time; adding\n"
+        warn "serviceid $serviceid last_srv_date == $currdate; skipping\n"
           if $DEBUG;
-        $found++;
 
-        for my $dir ('_IN', '_OUT') {
-
-          my $sin = join(',', map dbh->quote("$_$dir"), @serviceids);
-
-          my $srv_date = time2str('%Y-%m-%d', $cur);
-
-          my $sum = "
-            SELECT COALESCE(SUM(value),0) FROM srvexport AS other
-              WHERE other.serviceid IN ($sin)
-                AND other.srv_date = '$srv_date'
-                AND ABS( $cur - $other_date ) <= 60
-          ";
-          my $ssth = dbh->prepare($sum) or die $DBI::errstr;
-          $ssth->execute or die $ssth->errstr; #better recovery?
-          my $value = $ssth->fetchrow_arrayref->[0];
-
-          my $isql = "
-            INSERT INTO srvexport (srv_date, srv_time, serviceid, value, intvl)
-              VALUES ( ?, ?, ?, ?, ? )
-          ";
-          my @param = ( $srv_date,
-                        time2str('%X', $cur), #srv_time
-                        "$serviceid$dir",     #serviceid
-                        $value,
-                        300,                  #intvl ... 
-                      );
-          warn $isql. ' with param '. join(',',@param). "\n"
-            if $DEBUG > 2;
-
-          my $isth = dbh->prepare($isql) or die $DBI::errstr; #better recovery?
-
-          #stupid mysql deadlocks all the time on insert, so we need to recover
-          unless ( $isth->execute(@param) ) {
-            #warn "Error inserting data for $serviceid$dir (restarting): ".
-            #     $isth->errstr;
-            warn "Error inserting data for $serviceid$dir: ". $isth->errstr;
-            dbh->rollback; #or die dbh->errstr;
-            #sleep 5;
-            #next SERVICEID; #MAIN;
-            exit;
-          }
-                          
-        }
-
-        if ( $srv_date ne $torrus_srvderive->last_srv_date ) {
-          warn "updating last_srv_date of $serviceid to $srv_date\n" if $DEBUG;
-          $torrus_srvderive->last_srv_date($srv_date);
-          my $error = $torrus_srvderive->replace;
-          die $error if $error;
-        }
-        dbh->commit or die dbh->errstr;
-
-        $prev = $cur;
       }
-      warn "done with $serviceid\n" if $DEBUG;
 
-      exit;
-      #end-of-kid
+      exit; #end-of-kid
+
     }
 
   } #foreach my $torrus_srvderive
   dbh->commit or die dbh->errstr;
 
   myexit() if sigterm() || sigint();
+  warn "sleeping an hour\n" if $DEBUG > 1;
+  sleep 60*60;
   warn "restarting main loop\n" if $DEBUG > 1;
-  #sleep 60 unless $found;
 }
 
 sub _shouldrun {
