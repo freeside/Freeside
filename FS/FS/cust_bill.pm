@@ -7,8 +7,9 @@ use vars qw( @ISA $DEBUG $me
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
 use Cwd;
-use List::Util qw(min max);
+use List::Util qw(min max sum);
 use Date::Format;
+use Date::Language;
 use Text::Template 1.20;
 use File::Temp 0.14;
 use String::ShellQuote;
@@ -2657,6 +2658,12 @@ sub print_generic {
   #localization
   my $lh = FS::L10N->get_handle($cust_main->locale);
   $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
+  my %info = FS::Locales->locale_info($cust_main->locale || 'en_US');
+  # eval to avoid death for unimplemented languages
+  my $dh = eval { Date::Language->new($info{'name'}) } ||
+           Date::Language->new(); # fall back to English
+  $invoice_data{'time2str'} = sub { $dh->time2str(@_) };
+  # eventually use this date handle everywhere in here, too
 
   my $min_sdate = 999999999999;
   my $max_edate = 0;
@@ -2734,10 +2741,29 @@ sub print_generic {
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
+
+  # the customer's current balance as shown on the invoice before this one
   $invoice_data{'true_previous_balance'} = sprintf("%.2f", ($self->previous_balance || 0) );
+
+  # the change in balance from that invoice to this one
   $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
+
+  # the sum of amount owed on all previous invoices
   $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
+
+  # the sum of amount owed on all invoices
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
+
+  # info from customer's last invoice before this one, for some 
+  # summary formats
+  $invoice_data{'last_bill'} = {};
+  my $last_bill = $pr_cust_bill[-1];
+  if ( $last_bill ) {
+    $invoice_data{'last_bill'} = {
+      '_date'     => $last_bill->_date, #unformatted
+      # all we need for now
+    };
+  }
 
   my $summarypage = '';
   if ( $conf->exists('invoice_usesummary', $agentnum) ) {
@@ -2792,6 +2818,9 @@ sub print_generic {
       if ($format eq 'latex');
   }
 
+  # let invoices use either of these as needed
+  $invoice_data{'po_num'} = ($cust_main->payby eq 'BILL') 
+    ? $cust_main->payinfo : '';
   $invoice_data{'po_line'} = 
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
       ? &$escape_function($self->mt("Purchase Order #").$cust_main->payinfo)
@@ -2893,8 +2922,24 @@ sub print_generic {
           push @detail_items, @$accountcode_lines;
       }
     }
-  }else{
+  } else {# not multisection
+    # make a default section
     push @sections, { 'description' => '', 'subtotal' => '' };
+    # and calculate the finance charge total, since it won't get done otherwise.
+    # XXX possibly other totals?
+    # XXX possibly finance_pkgclass should not be used in this manner?
+    if ( $conf->exists('finance_pkgclass') ) {
+      my @finance_charges;
+      foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+        if ( grep { $_->section eq $invoice_data{finance_section} }
+             $cust_bill_pkg->cust_bill_pkg_display ) {
+          # I think these are always setup fees, but just to be sure...
+          push @finance_charges, $cust_bill_pkg->recur + $cust_bill_pkg->setup;
+        }
+      }
+      $invoice_data{finance_amount} = 
+        sprintf('%.2f', sum( @finance_charges ) || 0);
+    }
   }
 
   unless (    $conf->exists('disable_previous_balance')
@@ -3019,6 +3064,9 @@ sub print_generic {
       $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
                                  $line_item->{'unit_amount'};
       $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+
+      $detail->{'sdate'} = $line_item->{'sdate'};
+      $detail->{'edate'} = $line_item->{'edate'};
   
       push @detail_items, $detail;
       push @buf, ( [ $detail->{'description'},
@@ -3031,7 +3079,7 @@ sub print_generic {
     if ( $section->{'description'} ) {
       push @buf, ( ['','-----------'],
                    [ $section->{'description'}. ' sub-total',
-                      $money_char. sprintf("%10.2f", $section->{'subtotal'})
+                      $section->{'subtotal'} # already formatted this 
                    ],
                    [ '', '' ],
                    [ '', '' ],
@@ -3116,7 +3164,7 @@ sub print_generic {
 
   {
     my $total = {};
-    my $item = $self->mt('Total');
+    my $item = 'Total';
     $item = $conf->config('previous_balance-exclude_from_total')
          || 'Total New Charges'
       if $conf->exists('previous_balance-exclude_from_total');
@@ -3126,7 +3174,7 @@ sub print_generic {
                      ? 0
                      : $pr_total
                    );
-    $total->{'total_item'} = &$embolden_function($item);
+    $total->{'total_item'} = &$embolden_function($self->mt($item));
     $total->{'total_amount'} =
       &$embolden_function( $other_money_char.  sprintf( '%.2f', $amount ) );
     if ( $multisection ) {
@@ -3361,6 +3409,7 @@ sub print_generic {
     }
     map "$_\n", @collect;
   }else{
+    # this is where we actually create the invoice
     warn "filling in template for invoice ". $self->invnum. "\n"
       if $DEBUG;
     warn join("\n", map " $_ => ". $invoice_data{$_}, keys %invoice_data). "\n"
@@ -3647,6 +3696,57 @@ sub _date_pretty {
   my $self = shift;
   time2str($date_format, $self->_date);
 }
+
+# I like how _date_pretty was documented but this one wasn't.
+
+=item _items_sections LATE SUMMARYPAGE ESCAPE EXTRA_SECTIONS FORMAT
+
+Generate section information for all items appearing on this invoice.
+This will only be called for multi-section invoices.
+
+For each line item (L<FS::cust_bill_pkg> record), this will fetch all 
+related display records (L<FS::cust_bill_pkg_display>) and organize 
+them into two groups ("early" and "late" according to whether they come 
+before or after the total), then into sections.  A subtotal is calculated 
+for each section.
+
+Section descriptions are returned in sort weight order.  Each consists 
+of a hash containing:
+
+description: the package category name, escaped
+subtotal: the total charges in that section
+tax_section: a flag indicating that the section contains only tax charges
+summarized: same as tax_section, for some reason
+sort_weight: the package category's sort weight
+
+If 'condense' is set on the display record, it also contains everything 
+returned from C<_condense_section()>, i.e. C<_condensed_foo_generator>
+coderefs to generate parts of the invoice.  This is not advised.
+
+Takes way too many arguments, all mandatory:
+
+LATE: an arrayref to push the "late" section hashes onto.  The "early"
+group is simply returned from the method.  Yes, I know.  Don't ask.
+
+SUMMARYPAGE: a flag indicating whether this is a summary-format invoice.
+Turning this on has the following effects:
+- Ignores display items with the 'summary' flag.
+- Combines all items into the "early" group.
+- Creates sections for all non-disabled package categories, even if they 
+have no charges on this invoice, as well as a section with no name.
+
+ESCAPE: an escape function to use for section titles.  Why not just 
+let the calling environment escape things itself?  Beats the heck out 
+of me.
+
+EXTRA_SECTIONS: an arrayref of additional sections to return after the 
+sorted list.  If there are any of these, section subtotals exclude 
+usage charges.
+
+FORMAT: 'latex', 'html', or 'template' (i.e. text).  Not used, but 
+passed through to C<_condense_section()>.
+
+=cut
 
 use vars qw(%pkg_category_cache);
 sub _items_sections {
@@ -4509,7 +4609,7 @@ sub _items_svc_phone_sections {
 
 }
 
-sub _items {
+sub _items { # seems to be unused
   my $self = shift;
 
   #my @display = scalar(@_)
@@ -4558,6 +4658,21 @@ sub _items_previous {
 
   #};
 }
+
+=item _items_pkg [ OPTIONS ]
+
+Return line item hashes for each package item on this invoice. Nearly 
+equivalent to 
+
+$self->_items_cust_bill_pkg([ $self->cust_bill_pkg ])
+
+The only OPTIONS accepted is 'section', which may point to a hashref 
+with a key named 'condensed', which may have a true value.  If it 
+does, this method tries to merge identical items into items with 
+'quantity' equal to the number of items (not the sum of their 
+separate quantities, for some reason).
+
+=cut
 
 sub _items_pkg {
   my $self = shift;
@@ -4618,6 +4733,36 @@ sub _items_tax {
   $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
 }
 
+=item _items_cust_bill_pkg CUST_BILL_PKGS OPTIONS
+
+Takes an arrayref of L<FS::cust_bill_pkg> objects, and returns a
+list of hashrefs describing the line items they generate on the invoice.
+
+OPTIONS may include:
+
+format: the invoice format.
+
+escape_function: the function used to escape strings.
+
+format_function: the function used to format CDRs.
+
+section: a hashref containing 'description'; if this is present, 
+cust_bill_pkg_display records not belonging to this section are 
+ignored.
+
+multisection: a flag indicating that this is a multisection invoice,
+which does something complicated.
+
+multilocation: a flag to display the location label for the package.
+
+Returns a list of hashrefs, each of which may contain:
+
+pkgnum, description, amount, unit_amount, quantity, _is_setup, and 
+ext_description, which is an arrayref of detail lines to show below 
+the package line.
+
+=cut
+
 sub _items_cust_bill_pkg {
   my $self = shift;
   my $conf = $self->conf;
@@ -4627,9 +4772,9 @@ sub _items_cust_bill_pkg {
   my $format = $opt{format} || '';
   my $escape_function = $opt{escape_function} || sub { shift };
   my $format_function = $opt{format_function} || '';
-  my $unsquelched = $opt{unsquelched} || '';
+  my $unsquelched = $opt{unsquelched} || ''; #unused
   my $section = $opt{section}->{description} if $opt{section};
-  my $summary_page = $opt{summary_page} || '';
+  my $summary_page = $opt{summary_page} || ''; #unused
   my $multilocation = $opt{multilocation} || '';
   my $multisection = $opt{multisection} || '';
   my $discount_show_always = 0;
@@ -4691,6 +4836,10 @@ sub _items_cust_bill_pkg {
           if $DEBUG > 1;
  
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
+
+        # start/end dates for invoice formats that do nonstandard 
+        # things with them
+        my %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate');
 
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
@@ -4850,6 +4999,7 @@ sub _items_cust_bill_pkg {
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 unit_amount     => $cust_bill_pkg->unitrecur,
                 quantity        => $cust_bill_pkg->quantity,
+                %item_dates,
                 ext_description => \@d,
               };
             }
@@ -4872,6 +5022,7 @@ sub _items_cust_bill_pkg {
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
                 unit_amount     => $cust_bill_pkg->unitrecur,
                 quantity        => $cust_bill_pkg->quantity,
+                %item_dates,
                 ext_description => \@d,
               };
             }
