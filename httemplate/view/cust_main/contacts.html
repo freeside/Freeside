@@ -84,6 +84,15 @@
   </TD>
 </TR>
 <TR>
+  <TD ALIGN="right"><% $mobile_label %></TD>
+  <TD COLSPAN=3 BGCOLOR="#ffffff">
+    <& /elements/phonenumber.html,
+                  $cust_main->get("${pre}mobile"),
+                  'callable'=>1
+    &>
+  </TD>
+</TR>
+<TR>
   <TD ALIGN="right"><% mt('Fax') |h %></TD>
   <TD COLSPAN=3 BGCOLOR="#ffffff">
     <% $cust_main->get("${pre}fax") || '&nbsp' %>
@@ -108,9 +117,13 @@
 my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
                       ? 'Day&nbsp;Phone'
                       : FS::Msgcat::_gettext('daytime');
-my $night_label = FS::Msgcat::_gettext('night') =~ /^(night)?$/
+my $night_label   = FS::Msgcat::_gettext('night') =~ /^(night)?$/
                       ? 'Night&nbsp;Phone'
                       : FS::Msgcat::_gettext('night');
+my $mobile_label = FS::Msgcat::_gettext('mobile') =~ /^(mobile)?$/
+                      ? 'Mobile&nbsp;Phone'
+                      : FS::Msgcat::_gettext('Mobile');
+
 my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
                       ? 'Driver&rsquo;s&nbsp;License'
                       : FS::Msgcat::_gettext('stateid');

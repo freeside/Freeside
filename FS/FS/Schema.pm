@@ -839,6 +839,7 @@ sub tables_hashref {
         'daytime',  'varchar', 'NULL', 20, '', '', 
         'night',    'varchar', 'NULL', 20, '', '', 
         'fax',      'varchar', 'NULL', 12, '', '', 
+        'mobile',   'varchar', 'NULL', 12, '', '', 
         'ship_last',     'varchar', 'NULL', 2*$char_d, '', '', 
 #        'ship_middle',   'varchar', 'NULL', $char_d, '', '', 
         'ship_first',    'varchar', 'NULL', $char_d, '', '', 
@@ -853,6 +854,7 @@ sub tables_hashref {
         'ship_daytime',  'varchar', 'NULL', 20, '', '', 
         'ship_night',    'varchar', 'NULL', 20, '', '', 
         'ship_fax',      'varchar', 'NULL', 12, '', '', 
+        'ship_mobile',   'varchar', 'NULL', 12, '', '', 
         'payby',    'char', '',     4, '', '', 
         'payinfo',  'varchar', 'NULL', 512, '', '', 
         'paycvv',   'varchar', 'NULL', 512, '', '', 
@@ -899,12 +901,12 @@ sub tables_hashref {
                    [ 'last' ], [ 'company' ],
                    [ 'county' ], [ 'state' ], [ 'country' ],
                    [ 'zip' ],
-                   [ 'daytime' ], [ 'night' ], [ 'fax' ],
+                   [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'mobile' ],
                    #shipping
                    [ 'ship_last' ], [ 'ship_company' ],
                    [ 'ship_county' ], [ 'ship_state' ], [ 'ship_country' ],
                    [ 'ship_zip' ],
-                   [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ],
+                   [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ], [ 'ship_mobile' ]
                  ],
     },
 
