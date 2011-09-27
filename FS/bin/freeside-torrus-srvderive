@@ -82,7 +82,8 @@ while (1) {
                     ORDER BY srv_date LIMIT 1";
         my $dsth = dbh->prepare($dsql) or die $DBI::errstr;
         $dsth->execute or die $dsth->errstr;
-        my $date = $dsth->fetchrow_arrayref->[0];
+        my $row = $dsth->fetchrow_arrayref;
+        my $date = (defined($row) && ref($row)) ? $row->[0] : '';
         if ( $date ) {
           warn "found initial last_srv_date of $date; updating $serviceid\n"
             if $DEBUG;
