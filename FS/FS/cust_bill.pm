@@ -3697,8 +3697,6 @@ sub _date_pretty {
   time2str($date_format, $self->_date);
 }
 
-# I like how _date_pretty was documented but this one wasn't.
-
 =item _items_sections LATE SUMMARYPAGE ESCAPE EXTRA_SECTIONS FORMAT
 
 Generate section information for all items appearing on this invoice.
