@@ -63,6 +63,13 @@
 </TR>
 
 <TR>
+  <TD ALIGN="right"><% $mobile_label %></TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+  </TD>
+</TR>
+
+<TR>
   <TD ALIGN="right"><% mt('Fax') |h %></TD>
   <TD COLSPAN=5>
     <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
@@ -82,6 +89,13 @@
   <TD ALIGN="right"><% $night_label %></TD>
   <TD COLSPAN=5>
     <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><% $mobile_label %></TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
 
@@ -175,11 +189,15 @@ if ( $conf->exists('cust_main-require_censustract') ) {
 }
 
 my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
-                  ? 'Day Phone'
-                  : FS::Msgcat::_gettext('daytime');
-my $night_label = FS::Msgcat::_gettext('night') =~/^(night)?$/
-                ? 'Night Phone'
-                : FS::Msgcat::_gettext('night') || 'Night Phone';
+                      ? 'Day Phone'
+                      : FS::Msgcat::_gettext('daytime');
+my $night_label   = FS::Msgcat::_gettext('night') =~/^(night)?$/
+                      ? 'Night Phone'
+                      : FS::Msgcat::_gettext('night') || 'Night Phone';
+my $mobile_label = FS::Msgcat::_gettext('mobile') =~/^(mobile)?$/
+                      ? 'Mobile Phone'
+                      : FS::Msgcat::_gettext('mobile') || 'Mobile Phone';
+
 my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
                   ? 'Driver&rsquo;s License'
                   : FS::Msgcat::_gettext('stateid') || 'Driver&rsquo;s License';

@@ -211,6 +211,10 @@ phone (optional)
 
 phone (optional)
 
+=item mobile
+
+phone (optional)
+
 =item ship_first
 
 Shipping first name
@@ -254,6 +258,10 @@ phone (optional)
 phone (optional)
 
 =item ship_fax
+
+phone (optional)
+
+=item ship_mobile
 
 phone (optional)
 
@@ -1747,9 +1755,10 @@ sub check {
   }
 
   $error =
-    $self->ut_phonen('daytime', $self->country)
-    || $self->ut_phonen('night', $self->country)
-    || $self->ut_phonen('fax', $self->country)
+       $self->ut_phonen('daytime', $self->country)
+    || $self->ut_phonen('night',   $self->country)
+    || $self->ut_phonen('fax',     $self->country)
+    || $self->ut_phonen('mobile',  $self->country)
   ;
   return $error if $error;
 
@@ -1759,7 +1768,7 @@ sub check {
   }
 
   if ( $conf->exists('cust_main-require_phone')
-       && ! length($self->daytime) && ! length($self->night)
+       && ! length($self->daytime) && ! length($self->night) && ! length($self->mobile)
      ) {
 
     my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
@@ -1768,8 +1777,12 @@ sub check {
     my $night_label = FS::Msgcat::_gettext('night') =~ /^(night)?$/
                         ? 'Night Phone'
                         : FS::Msgcat::_gettext('night');
-  
-    return "$daytime_label or $night_label is required"
+
+    my $mobile_label = FS::Msgcat::_gettext('mobile') =~ /^(mobile)?$/
+                        ? 'Mobile Phone'
+                        : FS::Msgcat::_gettext('mobile');
+
+    return "$daytime_label, $night_label or $mobile_label is required"
   
   }
 
@@ -1807,9 +1820,10 @@ sub check {
     #eofalse
 
     $error =
-      $self->ut_phonen('ship_daytime', $self->ship_country)
-      || $self->ut_phonen('ship_night', $self->ship_country)
-      || $self->ut_phonen('ship_fax', $self->ship_country)
+         $self->ut_phonen('ship_daytime', $self->ship_country)
+      || $self->ut_phonen('ship_night',   $self->ship_country)
+      || $self->ut_phonen('ship_fax',     $self->ship_country)
+      || $self->ut_phonen('ship_mobile',  $self->ship_country)
     ;
     return $error if $error;
 
@@ -2062,7 +2076,7 @@ Returns a list of fields which have ship_ duplicates.
 sub addr_fields {
   qw( last first company
       address1 address2 city county state zip country
-      daytime night fax
+      daytime night fax mobile
     );
 }
 

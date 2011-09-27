@@ -51,7 +51,7 @@
 %    push @ship_style, 'background-color:#dddddd';
 %    foreach (
 %      qw( last first company address1 address2 city county state zip country
-%          daytime night fax )
+%          daytime night fax mobile )
 %    ) {
 %      $cust_main->set("ship_$_", $cust_main->get($_) );
 %    }
@@ -73,7 +73,7 @@
 <SCRIPT>
 function bill_changed(what) {
   if ( what.form.same.checked ) {
-% for (qw( last first company address1 address2 city zip daytime night fax )) { 
+% for (qw( last first company address1 address2 city zip daytime night fax mobile )) { 
     what.form.ship_<%$_%>.value = what.form.<%$_%>.value;
 % } 
 
@@ -103,7 +103,7 @@ function samechanged(what) {
   if ( what.checked ) {
     bill_changed(what);
 
-%   my @fields = qw( last first company address1 address2 city city_select county state zip country daytime night fax );
+%   my @fields = qw( last first company address1 address2 city city_select county state zip country daytime night fax mobile );
 %   for (@fields) { 
       what.form.ship_<%$_%>.disabled = true;
       what.form.ship_<%$_%>.style.backgroundColor = '#dddddd';
