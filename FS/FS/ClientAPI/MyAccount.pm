@@ -547,7 +547,7 @@ sub edit_info {
     $p->{'payinfo1'} =~ /^([\dx]+)$/
       or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
     my $payinfo1 = $1;
-     $p->{'payinfo2'} =~ /^([\dx]+)$/
+     $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by -require-bank-branch?
       or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
     my $payinfo2 = $1;
     $payinfo = $payinfo1. '@'. $payinfo2;
