@@ -3067,6 +3067,7 @@ sub print_generic {
 
       $detail->{'sdate'} = $line_item->{'sdate'};
       $detail->{'edate'} = $line_item->{'edate'};
+      $detail->{'seconds'} = $line_item->{'seconds'};
   
       push @detail_items, $detail;
       push @buf, ( [ $detail->{'description'},
@@ -3721,10 +3722,10 @@ If 'condense' is set on the display record, it also contains everything
 returned from C<_condense_section()>, i.e. C<_condensed_foo_generator>
 coderefs to generate parts of the invoice.  This is not advised.
 
-Takes way too many arguments, all mandatory:
+Arguments:
 
 LATE: an arrayref to push the "late" section hashes onto.  The "early"
-group is simply returned from the method.  Yes, I know.  Don't ask.
+group is simply returned from the method.
 
 SUMMARYPAGE: a flag indicating whether this is a summary-format invoice.
 Turning this on has the following effects:
@@ -3733,9 +3734,7 @@ Turning this on has the following effects:
 - Creates sections for all non-disabled package categories, even if they 
 have no charges on this invoice, as well as a section with no name.
 
-ESCAPE: an escape function to use for section titles.  Why not just 
-let the calling environment escape things itself?  Beats the heck out 
-of me.
+ESCAPE: an escape function to use for section titles.
 
 EXTRA_SECTIONS: an arrayref of additional sections to return after the 
 sorted list.  If there are any of these, section subtotals exclude 
@@ -4871,7 +4870,7 @@ sub _items_cust_bill_pkg {
               push @d, &{$escape_function}($loc);
             }
 
-          }
+          } #unless hiding service details
 
           push @d, $cust_bill_pkg->details(%details_opt)
             if $cust_bill_pkg->recur == 0;
@@ -4920,6 +4919,7 @@ sub _items_cust_bill_pkg {
                 || $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1);
 
           my @d = ();
+          my @seconds = (); # for display of usage info
 
           #at least until cust_bill_pkg has "past" ranges in addition to
           #the "future" sdate/edate ones... see #3032
@@ -4952,6 +4952,27 @@ sub _items_cust_bill_pkg {
                 if $format eq 'latex' && length($loc) > $maxlength;
               push @d, &{$escape_function}($loc);
             }
+
+            # Display of seconds_since_sqlradacct:
+            # On the invoice, when processing @detail_items, look for a field
+            # named 'seconds'.  This will contain total seconds for each 
+            # service, in the same order as @ext_description.  For services 
+            # that don't support this it will show undef.
+            if ( $conf->exists('svc_acct-usage_seconds') 
+                 and ! $cust_bill_pkg->pkgpart_override ) {
+              foreach my $cust_svc ( 
+                  $cust_pkg->h_cust_svc(@dates, 'I') 
+                ) {
+
+                # eval because not having any part_export_usage exports 
+                # is a fatal error, last_bill/_date because that's how 
+                # sqlradius_hour billing does it
+                my $sec = eval {
+                  $cust_svc->seconds_since_sqlradacct($dates[1] || 0, $dates[0]);
+                };
+                push @seconds, $sec;
+              }
+            } #if svc_acct-usage_seconds
 
           }
 
@@ -5000,6 +5021,7 @@ sub _items_cust_bill_pkg {
                 %item_dates,
                 ext_description => \@d,
               };
+              $r->{'seconds'} = \@seconds if grep {defined $_} @seconds;
             }
 
           } else {  # $type eq 'U'

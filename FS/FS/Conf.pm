@@ -4488,6 +4488,13 @@ and customer address. Include units.',
     'description' => 'Enable DID activity summary on invoices, showing # DIDs activated/deactivated/ported-in/ported-out and total minutes usage, covering period since last invoice.',
     'type'        => 'checkbox',
   },
+
+  {
+    'key'         => 'svc_acct-usage_seconds',
+    'section'     => 'invoicing',
+    'description' => 'Enable calculation of RADIUS usage time for invoices.  You must modify your template to display this information.',
+    'type'        => 'checkbox',
+  },
   
   {
     'key'         => 'opensips_gwlist',
