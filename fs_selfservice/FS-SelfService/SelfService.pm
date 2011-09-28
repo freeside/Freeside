@@ -29,6 +29,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'customer_info'             => 'MyAccount/customer_info',
+  'customer_info_short'       => 'MyAccount/customer_info_short',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'                   => 'MyAccount/invoice',
   'invoice_pdf'               => 'MyAccount/invoice_pdf',
