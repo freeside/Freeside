@@ -67,6 +67,7 @@ sub ss2clientapi {
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'customer_info'             => 'MyAccount/customer_info',
+  'customer_info_short'       => 'MyAccount/customer_info_short',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'                   => 'MyAccount/invoice',
   'invoice_pdf'               => 'MyAccount/invoice_pdf',
@@ -76,6 +77,8 @@ sub ss2clientapi {
   'payment_info'              => 'MyAccount/payment_info',
   'payment_info_renew_info'   => 'MyAccount/payment_info_renew_info',
   'process_payment'           => 'MyAccount/process_payment',
+  'store_payment'             => 'MyAccount/store_payment',
+  'process_stored_payment'    => 'MyAccount/process_stored_payment',
   'process_payment_order_pkg' => 'MyAccount/process_payment_order_pkg',
   'process_payment_change_pkg' => 'MyAccount/process_payment_change_pkg',
   'process_payment_order_renew' => 'MyAccount/process_payment_order_renew',

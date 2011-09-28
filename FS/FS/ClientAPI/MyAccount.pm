@@ -443,6 +443,70 @@ sub customer_info {
 
 }
 
+sub customer_info_short {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my %return;
+
+  my $conf = new FS::Conf;
+
+  if ( $custnum ) { #customer record
+
+    my $search = { 'custnum' => $custnum };
+    $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+    my $cust_main = qsearchs('cust_main', $search )
+      or return { 'error' => "unknown custnum $custnum" };
+
+    $return{small_custview} =
+      small_custview( $cust_main,
+                      scalar($conf->config('countrydefault')),
+                      1, ##nobalance
+                    );
+
+    $return{name} = $cust_main->first. ' '. $cust_main->get('last');
+
+    $return{payby} = $cust_main->payby;
+
+    #none of these are terribly expensive if we want 'em...
+    #for (@cust_main_editable_fields) {
+    #  $return{$_} = $cust_main->get($_);
+    #}
+    #
+    #if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+    #  $return{payinfo} = $cust_main->paymask;
+    #  @return{'month', 'year'} = $cust_main->paydate_monthyear;
+    #}
+    #
+    #$return{'invoicing_list'} =
+    #  join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
+    #$return{'postal_invoicing'} =
+    #  0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
+
+    if ( $session->{'svcnum'} ) {
+      my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $session->{'svcnum'} });
+      $return{'svc_label'} = ($cust_svc->label)[1] if $cust_svc;
+    }
+
+  } elsif ( $session->{'svcnum'} ) { #no customer record
+
+    #uuh, not supproted yet... die?
+    return { 'error' => 'customer_info_short not yet supported as agent' };
+
+  } else {
+
+    return { 'error' => 'Expired session' }; #XXX redirect to login w/this err!
+
+  }
+
+  return { 'error'          => '',
+           'custnum'        => $custnum,
+           %return,
+         };
+}
+
 sub edit_info {
   my $p = shift;
   my $session = _cache->get($p->{'session_id'})
