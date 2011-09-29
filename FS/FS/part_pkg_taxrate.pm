@@ -292,7 +292,9 @@ sub batch_import {
                                                    time_zone => 'floating',
                                                  );
       my $dt = $parser->parse_datetime( $hash->{'effdate'} );
-      $hash->{'effdate'} = $dt ? $dt->epoch : '';
+      return "Can't parse effdate ". $hash->{'effdate'}. ': '. $parser->errstr
+        unless $dt;
+      $hash->{'effdate'} = $dt->epoch;
  
       $hash->{'country'} = 'US'; # CA is available
 
@@ -300,6 +302,13 @@ sub batch_import {
 
       if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
         delete($hash->{actionflag});
+
+        foreach my $intfield (qw( taxproductnum taxclassnum effdate )) {
+          if ( $hash->{$intfield} eq '' ) {
+            return "$intfield is empty in search! -- ".
+                   join(" ", map { "$_ => *". $hash->{$_}. '*' } keys(%$hash) );
+          }
+        }
 
         my $part_pkg_taxrate = qsearchs('part_pkg_taxrate', $hash);
         unless ( $part_pkg_taxrate ) {
