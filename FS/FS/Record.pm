@@ -274,7 +274,7 @@ sub _bind_type {
 
   my $bind_type = { TYPE => SQL_VARCHAR };
 
-  if ( $type =~ /(big)?(int|serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
+  if ( $type =~ /(big)?(int|serial)/i && $value =~ /^-?\d+(\.\d+)?$/ ) {
 
     $bind_type = { TYPE => SQL_INTEGER };
 
