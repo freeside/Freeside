@@ -433,6 +433,7 @@ sub customer_info {
     if ( $session->{'svcnum'} ) {
       my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $session->{'svcnum'} });
       $return{'svc_label'} = ($cust_svc->label)[1] if $cust_svc;
+      $return{'svcnum'} = $session->{'svcnum'};
     }
 
   } elsif ( $session->{'svcnum'} ) { #no customer record
@@ -500,6 +501,7 @@ sub customer_info_short {
     if ( $session->{'svcnum'} ) {
       my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $session->{'svcnum'} });
       $return{'svc_label'} = ($cust_svc->label)[1] if $cust_svc;
+      $return{'svcnum'} = $session->{'svcnum'};
     }
 
   } elsif ( $session->{'svcnum'} ) { #no customer record
