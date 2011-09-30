@@ -387,8 +387,8 @@ sub customer_info {
                       ( $session->{'pkgnum'} ? 1 : 0 ), #nobalance
                     );
 
-    $return{name} = $cust_main->name;
-    $return{ship_name} = $cust_main->ship_name;
+    $return{name} = $cust_main->first. ' '. $cust_main->get('last');
+    $return{ship_name} = $cust_main->ship_first. ' '. $cust_main->get('ship_last');
 
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
@@ -477,8 +477,8 @@ sub customer_info_short {
                       1, ##nobalance
                     );
 
-    $return{name} = $cust_main->name;
-    $return{ship_name} = $cust_main->ship_name;
+    $return{name} = $cust_main->first. ' '. $cust_main->get('last');
+    $return{ship_name} = $cust_main->ship_first. ' '. $cust_main->get('ship_last');
 
     $return{payby} = $cust_main->payby;
 
