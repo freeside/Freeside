@@ -44,12 +44,22 @@ $me = '[FS::ClientAPI::MyAccount]';
 use vars qw( @cust_main_editable_fields );
 @cust_main_editable_fields = qw(
   first last company address1 address2 city
-    county state zip country daytime night fax
+    county state zip country
+    daytime night fax mobile
   ship_first ship_last ship_company ship_address1 ship_address2 ship_city
-    ship_state ship_zip ship_country ship_daytime ship_night ship_fax
+    ship_state ship_zip ship_country
+    ship_daytime ship_night ship_fax ship_mobile
+  locale
   payby payinfo payname paystart_month paystart_year payissue payip
   ss paytype paystate stateid stateid_state
 );
+
+BEGIN { #preload to reduce time customer_info takes
+  if ( $FS::TicketSystem::system ) {
+    warn "$me: initializing ticket system\n" if $DEBUG;
+    FS::TicketSystem->init();
+  }
+}
 
 sub _cache {
   $cache ||= new FS::ClientAPI_SessionCache( {
@@ -377,7 +387,8 @@ sub customer_info {
                       ( $session->{'pkgnum'} ? 1 : 0 ), #nobalance
                     );
 
-    $return{name} = $cust_main->first. ' '. $cust_main->get('last');
+    $return{name} = $cust_main->name;
+    $return{ship_name} = $cust_main->ship_name;
 
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
@@ -466,22 +477,23 @@ sub customer_info_short {
                       1, ##nobalance
                     );
 
-    $return{name} = $cust_main->first. ' '. $cust_main->get('last');
+    $return{name} = $cust_main->name;
+    $return{ship_name} = $cust_main->ship_name;
 
     $return{payby} = $cust_main->payby;
 
     #none of these are terribly expensive if we want 'em...
-    #for (@cust_main_editable_fields) {
-    #  $return{$_} = $cust_main->get($_);
-    #}
-    #
-    #if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-    #  $return{payinfo} = $cust_main->paymask;
-    #  @return{'month', 'year'} = $cust_main->paydate_monthyear;
-    #}
-    #
-    #$return{'invoicing_list'} =
-    #  join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
+    for (@cust_main_editable_fields) {
+      $return{$_} = $cust_main->get($_);
+    }
+    
+    if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+      $return{payinfo} = $cust_main->paymask;
+      @return{'month', 'year'} = $cust_main->paydate_monthyear;
+    }
+    
+    $return{'invoicing_list'} =
+      join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
     #$return{'postal_invoicing'} =
     #  0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
 
