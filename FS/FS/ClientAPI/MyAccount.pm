@@ -2148,6 +2148,11 @@ sub myaccount_passwd {
   } )
     or return { 'error' => "Service not found" };
 
+  if ( exists($p->{'old_password'}) ) {
+    return "Incorrect password."
+      unless $svc_acct->check_password($p->{'old_password'});
+  }
+
   $svc_acct->_password($p->{'new_password'});
   my $error = $svc_acct->replace();
 
