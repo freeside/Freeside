@@ -272,7 +272,7 @@
       $OUT .= '\endfoot';
       $OUT .= '\hline';
 
-      if (scalar(@sections) > 1) {
+      if (scalar(@sections) > 1 and !$section->{no_subtotal}) {
         if ($section->{total_generator}) {
           $OUT .= &{$section->{total_generator}}($section);
         } else {
