@@ -25,7 +25,7 @@
 %  }
 %
 %} else {
-<& /elements/header.html, 'Configuration set' &>
+<& /elements/header-popup.html, 'Configuration set' &>
   <SCRIPT TYPE="text/javascript">
 %   my $n = 0;
 %   foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
