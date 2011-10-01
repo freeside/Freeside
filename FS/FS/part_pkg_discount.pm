@@ -112,7 +112,7 @@ Returns the discount associated with this part_pkg_discount.
 
 sub discount {
   my $self = shift;
-  qsearch('discount', { 'discountnum' => $self->discountnum });
+  qsearchs('discount', { 'discountnum' => $self->discountnum });
 }
 
 =back

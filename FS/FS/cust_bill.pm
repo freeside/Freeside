@@ -2662,7 +2662,8 @@ sub print_generic {
   # eval to avoid death for unimplemented languages
   my $dh = eval { Date::Language->new($info{'name'}) } ||
            Date::Language->new(); # fall back to English
-  $invoice_data{'time2str'} = sub { $dh->time2str(@_) };
+  # prototype here to silence warnings
+  $invoice_data{'time2str'} = sub ($;$$) { $dh->time2str(@_) };
   # eventually use this date handle everywhere in here, too
 
   my $min_sdate = 999999999999;
@@ -2924,7 +2925,8 @@ sub print_generic {
     }
   } else {# not multisection
     # make a default section
-    push @sections, { 'description' => '', 'subtotal' => '' };
+    push @sections, { 'description' => '', 'subtotal' => '', 
+      'no_subtotal' => 1 };
     # and calculate the finance charge total, since it won't get done otherwise.
     # XXX possibly other totals?
     # XXX possibly finance_pkgclass should not be used in this manner?
@@ -2990,9 +2992,9 @@ sub print_generic {
       my ($didsummary,$minutes) = $self->_did_summary;
       my $didsummary_desc = 'DID Activity Summary (since last invoice)';
       push @detail_items, 
-	{ 'description' => $didsummary_desc,
-	    'ext_description' => [ $didsummary, $minutes ],
-	};
+       { 'description' => $didsummary_desc,
+           'ext_description' => [ $didsummary, $minutes ],
+       };
   }
 
   foreach my $section (@sections, @$late_sections) {
@@ -3088,7 +3090,7 @@ sub print_generic {
     }
   
   }
-  
+
   $invoice_data{current_less_finance} =
     sprintf('%.2f', $self->charged - $invoice_data{finance_amount} );
 
@@ -3267,6 +3269,7 @@ sub print_generic {
         unless $adjust_section->{sort_weight};
     }
 
+    # create Balance Due message
     { 
       my $total;
       $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
@@ -3327,6 +3330,26 @@ sub print_generic {
       if $unsquelched;
   }
 
+  # make a discounts-available section, even without multisection
+  if ( $conf->exists('discount-show_available') 
+       and my @discounts_avail = $self->_items_discounts_avail ) {
+    my $discount_section = {
+      'description' => $self->mt('Discounts Available'),
+      'subtotal'    => '',
+      'no_subtotal' => 1,
+    };
+
+    push @sections, $discount_section;
+    push @detail_items, map { +{
+        'ref'         => '', #should this be something else?
+        'section'     => $discount_section,
+        'description' => &$escape_function( $_->{description} ),
+        'amount'      => $money_char . &$escape_function( $_->{amount} ),
+        'ext_description' => [ &$escape_function($_->{ext_description}) || () ],
+    } } @discounts_avail;
+  }
+
+  # All sections and items are built; now fill in templates.
   my @includelist = ();
   push @includelist, 'summary' if $summarypage;
   foreach my $include ( @includelist ) {
@@ -3389,8 +3412,7 @@ sub print_generic {
     }
 
     #setup subroutine for the template
-    #sub FS::cust_bill::_template::invoice_lines { # good god, no
-    $invoice_data{invoice_lines} = sub { # much better
+    $invoice_data{invoice_lines} = sub {
       my $lines = shift || scalar(@buf);
       map { 
         scalar(@buf)
@@ -5145,6 +5167,119 @@ sub _items_payments {
 
   @b;
 
+}
+
+=item _items_discounts_avail
+
+Returns an array of line item hashrefs representing available term discounts
+for this invoice.  This makes the same assumptions that apply to term 
+discounts in general: that the package is billed monthly, at a flat rate, 
+with no usage charges.  A prorated first month will be handled, as will 
+a setup fee if the discount is allowed to apply to setup fees.
+
+=cut
+
+sub _items_discounts_avail {
+  my $self = shift;
+  my %total;
+  my $pkgnums = 0;
+  my $pkgnums_times_discounts = 0;
+  # tricky, because packages may not all be eligible for the same discounts
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+    my $cust_pkg = $cust_bill_pkg->cust_pkg or next;
+    my $part_pkg = $cust_pkg->part_pkg or next;
+    # for simplicity, skip all this if the customer already has a term discount
+    return () if $cust_pkg->cust_pkg_discount_active;
+
+    $pkgnums++;
+    next if $part_pkg->freq ne '1';
+
+    foreach my $discount ( 
+      map { $_->discount } $part_pkg->part_pkg_discount 
+    ) {
+
+      $total{$discount->discountnum} ||= 
+        { 
+          discount      => $discount,
+          pkgnums       => [],
+          base_current  => 0,
+          base_permonth => 0,
+          setup_include => 0,
+          setup_exclude => 0,
+        };
+      my $hash = $total{$discount->discountnum};
+      $hash->{discount} = $discount;
+      $hash->{thismonth}      += $cust_bill_pkg->recur || 0;
+      $hash->{setup}          += $cust_bill_pkg->setup || 0;
+      $hash->{base_permonth}  += $part_pkg->base_recur_permonth;
+
+      # and make a list of pkgnums
+      push @{ $hash->{pkgnums} }, $cust_pkg->pkgnum;
+      $pkgnums_times_discounts++;
+    }
+  }
+
+  # Test for the simple case where all packages on the invoice 
+  # are eligible for the same set of discounts.  If not, we need 
+  # to list eligibility in the ext_description.
+  my $list_pkgnums = ( $pkgnums_times_discounts != $pkgnums * keys(%total) );
+
+  foreach my $hash (values %total) {
+    my $discount = $hash->{discount};
+    my ($amount, $term_total, $percent, $permonth);
+    my $months = $discount->months;
+    $hash->{months} = $months;
+
+    if ( $discount->percent ) {
+
+      # per discount_Mixin, percent discounts are calculated on the base 
+      # recurring fee, not the prorated fee.
+      $percent = $discount->percent;
+      $amount = sprintf('%.2f', 0.01 * $percent * $hash->{base_permonth});
+      # percent discounts apply to setup fee
+      if ( $discount->setup ) {
+        $hash->{setup} *= (1 - 0.01*$percent);
+      }
+
+    }
+    elsif ( $discount->amount > 0 ) {
+
+      # amount discounts are amount * number of packages
+      $amount = $discount->amount * scalar(@{ $hash->{pkgnums} });
+      $percent = sprintf('%.0f', 100 * $amount / $hash->{base_permonth});
+
+      # flat discounts are applied to setup and recur together
+      if ( $discount->setup ) {
+        $hash->{thismonth} += $hash->{setup};
+        $hash->{setup} = 0;
+      }
+
+    }
+
+    $permonth = max( $hash->{base_permonth} - $amount, 0);
+    $term_total = max( $hash->{thismonth} - $amount , 0 ) # this month
+                  + $permonth * ($months - 1) # rest of the term
+                  + $hash->{setup}; # setup fee
+
+    $hash->{description} = $self->mt('Save [_1]% by paying for [_2] months',
+      $percent, $months,
+    );
+    $hash->{amount} = $self->mt('[_1] ([_2] per month)', 
+      sprintf('%.2f',$term_total), #no money_char to accommodate template quirk
+      $money_char.sprintf('%.2f',$permonth) );
+
+    my @detail;
+    if ( $list_pkgnums ) {
+      push @detail, $self->mt('for item'). ' '.
+                join(', ', map { "#$_" } @{ $hash->{pkgnums} });
+    }
+    if ( !$discount->setup and $hash->{setup} ) {
+      push @detail, $self->mt('excluding setup fees');
+    }
+    $hash->{ext_description} = join ', ', @detail;
+  }
+
+  sort { -( $a->{months} <=> $b->{months} ) } values(%total);
 }
 
 =item call_details [ OPTION => VALUE ... ]
