@@ -1,6 +1,6 @@
 
                                  { emt($notice_name) }
-                                 { substr(emt("Page [_1] of [_2]          ", $page, $total_pages), 0, 19); } { use Date::Format; time2str("%x", $date); }  { emt("Invoice #") . $invnum; }
+                                 { substr(emt("Page [_1] of [_2]          ", $page, $total_pages), 0, 19); } { time2str("%x", $date); }  { emt("Invoice #") . $invnum; }
 
 
 { $company_name; }
