@@ -473,13 +473,17 @@ sub shellcommands_queue {
 }
 
 sub ssh_cmd { #subroutine, not method
-  # XXX shouldn't this use $opt->{'stdin_string'} at some point?
   use Net::OpenSSH;
   my $opt = { @_ };
   my $ssh = Net::OpenSSH->new($opt->{'user'}.'@'.$opt->{'host'});
   die "Couldn't establish SSH connection: ". $ssh->error if $ssh->error;
-  my ($output, $errput) = $ssh->capture2($opt->{'command'});
+
+  my $ssh_opt = {};
+  $ssh_opt->{'stdin_data'} = $opt->{'stdin_string'}
+    if exists($opt->{'stdin_string'});
+  my ($output, $errput) = $ssh->capture2($ssh_opt, $opt->{'command'});
   die "Error running SSH command: ". $ssh->error if $ssh->error;
+
   if ($errput && $opt->{'ignored_errors'} && length($opt->{'ignored_errors'})) {
     my @ignored_errors = split('\n',$opt->{'ignored_errors'});
     foreach my $ignored_error ( @ignored_errors ) {
