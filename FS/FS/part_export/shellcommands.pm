@@ -80,6 +80,9 @@ tie my %options, 'Tie::IxHash',
                              'Radius group mapping to reason (via template user)',
 			    type  => 'textarea',
 			  },
+  'ignored_errors' => { label   => 'Regexes of errors to ignore, separated by newlines',
+                        type    => 'textarea'
+                      },
 #  'no_queue' => { label => 'Run command immediately',
 #                   type  => 'checkbox',
 #                },
@@ -351,6 +354,7 @@ sub _export_command {
     host          => $self->machine,
     command       => $command_string,
     stdin_string  => $stdin_string,
+    ignored_errors => $self->option('ignored_errors') || '',
   );
 
   if($self->option($action . '_no_queue')) {
@@ -443,6 +447,7 @@ sub _export_replace {
     host          => $self->machine,
     command       => $command_string,
     stdin_string  => $stdin_string,
+    ignored_errors => $self->option('ignored_errors') || '',
   );
 
   if($self->option('usermod_no_queue')) {
@@ -468,8 +473,27 @@ sub shellcommands_queue {
 }
 
 sub ssh_cmd { #subroutine, not method
-  use Net::SSH '0.08';
-  &Net::SSH::ssh_cmd( { @_ } );
+  use Net::OpenSSH;
+  my $opt = { @_ };
+  my $ssh = Net::OpenSSH->new($opt->{'user'}.'@'.$opt->{'host'});
+  die "Couldn't establish SSH connection: ". $ssh->error if $ssh->error;
+
+  my $ssh_opt = {};
+  $ssh_opt->{'stdin_data'} = $opt->{'stdin_string'}
+    if exists($opt->{'stdin_string'});
+  my ($output, $errput) = $ssh->capture2($ssh_opt, $opt->{'command'});
+  die "Error running SSH command: ". $ssh->error if $ssh->error;
+
+  if ($errput && $opt->{'ignored_errors'} && length($opt->{'ignored_errors'})) {
+    my @ignored_errors = split('\n',$opt->{'ignored_errors'});
+    foreach my $ignored_error ( @ignored_errors ) {
+        $errput =~ s/$ignored_error//g;
+    }
+    chomp($errput);
+  }
+  die $errput if $errput;
+  die $output if $output;
+  '';
 }
 
 #sub shellcommands_insert { #subroutine, not method
