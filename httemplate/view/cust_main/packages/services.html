@@ -74,7 +74,7 @@ function clearhint_search_cust_svc(obj, str) {
 %        if ( $curuser->access_right('Bulk provision customer service') 
 %               && $part_svc->svcdb eq 'svc_phone' ) {
 %          if ( $part_svc->num_avail > 5 ) {
-%             $opt{'bulk'} = 1;
+%             local $opt{'bulk'} = 1;
               <BR><% svc_provision_link($cust_pkg, $part_svc, \%opt, $curuser) %>
 %           }
 %           #XXX if there's orders for this customer {
