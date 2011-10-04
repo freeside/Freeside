@@ -1310,12 +1310,18 @@ sub list_svcs {
   my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
+  my $pkgnum = $session->{'pkgnum'} || $p->{'pkgnum'} || '';
+  if ( ! $pkgnum && $p->{'svcnum'} ) {
+    my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $p->{'svcnum'} } );
+    $pkgnum = $cust_svc->pkgnum if $cust_svc;
+  }
+
   my @cust_svc = ();
   #foreach my $cust_pkg ( $cust_main->ncancelled_pkgs ) {
   foreach my $cust_pkg ( $p->{'ncancelled'} 
                          ? $cust_main->ncancelled_pkgs
                          : $cust_main->unsuspended_pkgs ) {
-    next if $session->{'pkgnum'} && $cust_pkg->pkgnum != $session->{'pkgnum'};
+    next if $pkgnum && $cust_pkg->pkgnum != $pkgnum;
     push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
   }
   if ( $p->{'svcdb'} ) {
@@ -1356,6 +1362,7 @@ sub list_svcs {
                 %hash,
                 'username'   => $svc_x->username,
                 'email'      => $svc_x->email,
+                'finger'     => $svc_x->finger,
                 'seconds'    => $svc_x->seconds,
                 'upbytes'    => display_bytecount($svc_x->upbytes),
                 'downbytes'  => display_bytecount($svc_x->downbytes),
@@ -1372,11 +1379,12 @@ sub list_svcs {
                 # more...
               );
 
-            } elsif ( $svcdb eq 'svc_phone' || $svcdb eq 'svc_port' ) {
-              %hash = (
-                %hash,
-              );
             }
+            # elsif ( $svcdb eq 'svc_phone' || $svcdb eq 'svc_port' ) {
+            #  %hash = (
+            #    %hash,
+            #  );
+            #}
 
             \%hash;
           }
