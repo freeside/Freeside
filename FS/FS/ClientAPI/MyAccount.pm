@@ -1379,6 +1379,14 @@ sub list_svcs {
                 # more...
               );
 
+            } elsif ( $svcdb eq 'svc_dsl' ) {
+              if ( $svc_x->first || $svc_x->get('last') || $svc_x->company ) {
+                $hash{'name'} = $svc_x->first. ' '. $svc_x->get('last');
+                $hash{'name'} = $svc_x->company. ' ('. $hash{'name'}. ')'
+                  if $svc_x->company;
+              } else {
+                $hash{'name'} = $cust_main->name;
+              }
             }
             # elsif ( $svcdb eq 'svc_phone' || $svcdb eq 'svc_port' ) {
             #  %hash = (
