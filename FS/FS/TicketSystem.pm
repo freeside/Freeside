@@ -142,18 +142,30 @@ sub _upgrade_data {
     return;
   }
 
-  # Cache existing ScripCondition, ScripAction, and Template IDs
-  my $search = RT::ScripConditions->new($CurrentUser);
-  $search->UnLimit;
-  my %condition = map { lc($_->Name), $_->Id } @{ $search->ItemsArrayRef };
+  # Cache existing ScripCondition, ScripAction, and Template IDs.
+  # Complicated because we don't want to just step on multiple IDs 
+  # with the same name.
+  my $cachify = sub {
+    my ($class, $hash) = @_;
+    my $search = $class->new($CurrentUser);
+    $search->UnLimit;
+    while ( my $item = $search->Next ) {
+      my $ids = $hash->{lc($item->Name)} ||= [];
+      if ( $item->Creator == 1 ) { # RT::SystemUser
+        unshift @$ids, $item->Id;
+      }
+      else {
+        push @$ids, $item->Id;
+      }
+    }
+  };
 
-  $search = RT::ScripActions->new($CurrentUser);
-  $search->UnLimit;
-  my %action = map { lc($_->Name), $_->Id } @{ $search->ItemsArrayRef };
-
-  $search = RT::Templates->new($CurrentUser);
-  $search->UnLimit;
-  my %template = map { lc($_->Name), $_->Id } @{ $search->ItemsArrayRef };
+  my (%condition, %action, %template);
+  &$cachify('RT::ScripConditions', \%condition);
+  &$cachify('RT::ScripActions', \%action);
+  &$cachify('RT::Templates', \%template);
+  # $condition{name} = [ ids... ]
+  # with the id of the system-created object first, if there is one
 
   # ScripConditions
   my $ScripCondition = RT::ScripCondition->new($CurrentUser);
@@ -162,7 +174,7 @@ sub _upgrade_data {
     next if exists( $condition{ lc($sc->{Name}) } );
     my ($val, $msg) = $ScripCondition->Create( %$sc );
     die $msg if !$val;
-    $condition{ lc($ScripCondition->Name) } = $ScripCondition->Id;
+    $condition{ lc($ScripCondition->Name) } = [ $ScripCondition->Id ];
   }
 
   # ScripActions
@@ -172,7 +184,7 @@ sub _upgrade_data {
     next if exists( $action{ lc($sa->{Name}) } );
     my ($val, $msg) = $ScripAction->Create( %$sa );
     die $msg if !$val;
-    $action{ lc($ScripAction->Name) } = $ScripAction->Id;
+    $action{ lc($ScripAction->Name) } = [ $ScripAction->Id ];
   }
 
   # Templates
@@ -182,38 +194,54 @@ sub _upgrade_data {
     next if exists( $template{ lc($t->{Name}) } );
     my ($val, $msg) = $Template->Create( %$t );
     die $msg if !$val;
-    $template{ lc($Template->Name) } = $Template->Id;
+    $template{ lc($Template->Name) } = [ $Template->Id ];
   }
 
   # Scrips
+  my %scrip; # $scrips{condition}{action}{template} = id
+  my $search = RT::Scrips->new($CurrentUser);
+  $search->Limit(FIELD => 'Queue', VALUE => 0);
+  while (my $item = $search->Next) {
+    my ($c, $a, $t) = map {lc $item->$_->Name} 
+      ('ScripConditionObj', 'ScripActionObj', 'TemplateObj');
+    if ( exists $scrip{$c}{$a}{$t} and $item->Creator == 1 ) {
+      warn "Deleting duplicate scrip $c $a [$t]\n";
+      my ($val, $msg) = $item->Delete;
+      warn "error deleting scrip: $msg\n" if !$val;
+    }
+    else {
+      $scrip{$c}{$a}{$t} = $item->id;
+    }
+  }
   my $Scrip = RT::Scrip->new($CurrentUser);
   foreach my $s ( @Scrips ) {
     my $desc = $s->{'Description'};
     my ($c, $a, $t) = map lc,
       @{ $s }{'ScripCondition', 'ScripAction', 'Template'};
-    if ( !$condition{$c} ) {
+    # skip existing scrips
+    next if ( exists($scrip{$c}{$a}{$t}) );
+    if ( !exists($condition{$c}) ) {
       warn "ScripCondition '$c' not found.\n";
       next;
     }
-    if ( !$action{$a} ) {
+    if ( !exists($action{$a}) ) {
       warn "ScripAction '$a' not found.\n";
       next;
     }
-    if ( !$template{$t} ) {
+    if ( !exists($template{$t}) ) {
       warn "Template '$t' not found.\n";
       next;
     }
-    my %param = (
-      ScripCondition => $condition{$c},
-      ScripAction => $action{$a},
-      Template => $template{$t},
+    my %new_param = (
+      ScripCondition => $condition{$c}->[0],
+      ScripAction => $action{$a}->[0],
+      Template => $template{$t}->[0],
       Queue => 0,
+      Description => $desc,
     );
-    $Scrip->LoadByCols(%param);
-    if (!defined($Scrip->Id)) {
-      my ($val, $msg) = $Scrip->Create(%param, Description => $desc);
-      die $msg if !$val;
-    }
+    warn "Creating scrip: $c $a [$t]\n";
+    my ($val, $msg) = $Scrip->Create(%new_param);
+    die $msg if !$val;
   } #foreach (@Scrips)
 
   return;
