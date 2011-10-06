@@ -1380,6 +1380,7 @@ sub list_svcs {
               );
 
             } elsif ( $svcdb eq 'svc_dsl' ) {
+              $hash{'phonenum'} = $svc_x->phonenum;
               if ( $svc_x->first || $svc_x->get('last') || $svc_x->company ) {
                 $hash{'name'} = $svc_x->first. ' '. $svc_x->get('last');
                 $hash{'name'} = $svc_x->company. ' ('. $hash{'name'}. ')'
