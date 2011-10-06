@@ -475,12 +475,16 @@ sub shellcommands_queue {
 sub ssh_cmd { #subroutine, not method
   use Net::OpenSSH;
   my $opt = { @_ };
-  my $ssh = Net::OpenSSH->new($opt->{'user'}.'@'.$opt->{'host'});
+  open my $def_in, '<', '/dev/null' or die "unable to open /dev/null\n";
+  my $ssh = Net::OpenSSH->new(
+    $opt->{'user'}.'@'.$opt->{'host'},
+    'default_stdin_fh' => $def_in
+  );
   die "Couldn't establish SSH connection: ". $ssh->error if $ssh->error;
 
   my $ssh_opt = {};
   $ssh_opt->{'stdin_data'} = $opt->{'stdin_string'}
-    if exists($opt->{'stdin_string'});
+    if exists($opt->{'stdin_string'}) and length($opt->{'stdin_string'});
   my ($output, $errput) = $ssh->capture2($ssh_opt, $opt->{'command'});
   die "Error running SSH command: ". $ssh->error if $ssh->error;
 
