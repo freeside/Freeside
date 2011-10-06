@@ -25,6 +25,8 @@ use FS::svc_acct;
 use FS::svc_domain;
 use FS::svc_phone;
 use FS::svc_external;
+use FS::svc_dsl;
+use FS::dsl_device;
 use FS::part_svc;
 use FS::cust_main;
 use FS::cust_bill;
@@ -1400,6 +1402,82 @@ sub list_svcs {
           @cust_svc
     ],
   };
+
+}
+
+sub _customer_svc_x {
+  my($custnum, $svcnum, $table) = @_;
+
+  $custnum =~ /^(\d+)$/ or die "illegal custnum";
+  my $search = " AND custnum = $1";
+  #$search .= " AND agentnum = ". $session->{'agentnum'} if $context eq 'agent';
+
+  qsearchs( {
+    'table'     => ($table || 'svc_acct'),
+    'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                   'LEFT JOIN cust_pkg  USING ( pkgnum  ) ',#.
+                   #'LEFT JOIN cust_main USING ( custnum ) ',
+    'hashref'   => { 'svcnum' => $svcnum, },
+    'extra_sql' => $search, #important
+  } );
+
+}
+
+sub list_dsl_devices {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $svc_dsl = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_dsl' )
+    or return { 'error' => "Service not found" };
+
+  return {
+    'devices' => [ map {
+                         +{ 'mac_addr' => $_->mac_addr };
+                       } $svc_dsl->dsl_device
+                 ],
+  };
+
+}
+
+sub add_dsl_device {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $svc_dsl = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_dsl' )
+    or return { 'error' => "Service not found" };
+
+  return { 'error' => 'No MAC address supplied' }
+    unless length($p->{'mac_addr'});
+
+  my $dsl_device = new FS::dsl_device { 'svcnum'   => $svc_dsl->svcnum,
+                                        'mac_addr' => scalar($p->{'mac_addr'}),
+                                      };
+  my $error = $dsl_device->insert;
+  return { 'error' => $error };
+
+}
+
+sub delete_dsl_device {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $svc_dsl = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_dsl' )
+    or return { 'error' => "Service not found" };
+
+  my $dsl_device = qsearchs('dsl_device', { 'svcnum'   => $svc_dsl->svcnum,
+                                            'mac_addr' => scalar($p->{'mac_addr'}),
+                                          }
+                           )
+    or return { 'error' => 'Unknown MAC address: '. $p->{'mac_addr'} };
+
+  my $error = $dsl_device->delete;
+  return { 'error' => $error };
 
 }
 

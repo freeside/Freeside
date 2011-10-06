@@ -1,0 +1,22 @@
+<% include( 'elements/process.html',
+               'table'    => 'dsl_device',
+               'redirect' => sub {
+                 my( $cgi, $dsl_device ) = @_;
+                 popurl(3).'view/svc_dsl.cgi?'.
+                   'svcnum='. $dsl_device->svcnum.
+                   ';devicenum=';
+               },
+           )
+%>
+<%init>
+
+if($cgi->param('sel_mac_addr') && !$cgi->param('mac_addr')) {
+    $cgi->param('mac_addr',$cgi->param('sel_mac_addr'));
+}
+
+# :/  needs agent-virt so you can't futz with arbitrary devices
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+</%init>
