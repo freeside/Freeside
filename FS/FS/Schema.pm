@@ -2023,6 +2023,19 @@ sub tables_hashref {
       'unique' => [ ],
       'index' => [ ['phonenum'], ['vendor_order_id'] ],
     },
+
+    'dsl_device' => {
+      'columns' => [
+        'devicenum', 'serial',     '', '', '', '',
+        #part_device?  or our own part_dsl_device?
+        #'devicepart',   'int',     '', '', '', '',
+        'svcnum',       'int',     '', '', '', '', 
+        'mac_addr', 'varchar',     '', 12, '', '', 
+      ],
+      'primary_key' => 'devicenum',
+      'unique' => [ [ 'mac_addr' ], ],
+      'index'  => [ [ 'svcnum' ], ], # [ 'devicepart' ] ],
+    },
     
     'dsl_note' => {
       'columns' => [
