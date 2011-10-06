@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $conf $DEBUG $me );
 use FS::Record qw( qsearch qsearchs );
 use FS::svc_Common;
+use FS::dsl_device;
 use FS::dsl_note;
 use FS::qual;
 
@@ -271,6 +272,18 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item dsl_device
+
+Returns the MAC addresses associated with this DSL service, as FS::dsl_device
+objects.
+
+=cut
+
+sub dsl_device {
+  my $self = shift;
+  qsearch('dsl_device', { 'svcnum' => $self->svcnum });
 }
 
 sub predelete_hook_first {

@@ -33,33 +33,44 @@ my $svc_cb = sub {
     
     # if no DSL-pulling exports, then just display everything, which is the
     # default behaviour implemented above
-    return if ( scalar(@exports) == 0 );
+    if ( scalar(@exports) ) {
 
-    my $export = @exports[0];
+      my $export = @exports[0];
 
-    @fields = ( 'phonenum',
-            { field => 'loop_type', 
-              value => 'FS::part_export::'.$export->exporttype.'::loop_type_long'
-            },
-            { field => 'desired_due_date', type => 'date', },
-            { field => 'due_date', type => 'date', },
-            { field => 'pushed', type => 'datetime', },
-            { field => 'monitored', type => 'checkbox', },
-            { field => 'last_pull', type => 'datetime', },
-            'first',
-            'last',
-            'company'  );
+      @fields = (
+        'phonenum',
+        { field => 'loop_type', 
+          value => 'FS::part_export::'.$export->exporttype.'::loop_type_long'
+        },
+        { field => 'desired_due_date', type => 'date', },
+        { field => 'due_date', type => 'date', },
+        { field => 'pushed', type => 'datetime', },
+        { field => 'monitored', type => 'checkbox', },
+        { field => 'last_pull', type => 'datetime', },
+        'first',
+        'last',
+        'company',
+      );
 
-    my $status = '';
-    if($export->exporttype eq 'ikano') {
-        push @fields, qw ( username password isp_chg isp_prev staticips );
-        $status = "Ikano " . $svc_dsl->vendor_order_type . " order #"
-                . $svc_dsl->vendor_order_id . " &nbsp; Status: " 
-                . $svc_dsl->vendor_order_status;
-    }
-    # else add any other export-specific stuff here
+      my $status = '';
+      if($export->exporttype eq 'ikano') {
+          push @fields, qw ( username password isp_chg isp_prev staticips );
+          $status = "Ikano " . $svc_dsl->vendor_order_type . " order #"
+                  . $svc_dsl->vendor_order_id . " &nbsp; Status: " 
+                  . $svc_dsl->vendor_order_status;
+      }
+      # else add any other export-specific stuff here
    
-    $footer = "<B>$status</B>";
+      $footer = "<B>$status</B>";
+
+    }
+
+    $footer .= '<BR><BR>'.
+               include( '/view/elements/svc_devices.html',
+                          'svc_x'   => $svc_dsl,
+                          'table'   => 'dsl_device',
+                          'no_edit' => 1,
+                      );
 
     my @notes = $svc_dsl->notes;
     if ( @notes ) {
@@ -68,7 +79,7 @@ my $svc_cb = sub {
       my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
       $footer .=
-        "<BR><BR>Order Notes<BR>". ntable('#cccccc', 2). #id="dsl_notes"
+        "Order Notes<BR>". ntable('#cccccc', 2). #id="dsl_notes"
         '<TR><TH>Date</TH><TH>By</TH><TH>Priority</TH><TH>Note</TH></TR>';
 
       foreach my $note ( @notes ) {

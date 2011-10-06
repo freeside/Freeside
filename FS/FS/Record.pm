@@ -2385,6 +2385,42 @@ sub ut_hexn {
   $self->setfield($field, uc($1));
   '';
 }
+
+=item ut_mac_addr COLUMN
+
+Check/untaint mac addresses.  May be null.
+
+=cut
+
+sub ut_mac_addr {
+  my($self, $field) = @_;
+
+  my $mac = $self->get($field);
+  $mac =~ s/\s+//g;
+  $mac =~ s/://g;
+  $self->set($field, $mac);
+
+  my $e = $self->ut_hex($field);
+  return $e if $e;
+
+  return "Illegal (mac address) $field: ". $self->getfield($field)
+    unless length($self->getfield($field)) == 12;
+
+  '';
+
+}
+
+=item ut_mac_addrn COLUMN
+
+Check/untaint mac addresses.  May be null.
+
+=cut
+
+sub ut_mac_addrn {
+  my($self, $field) = @_;
+  ($self->getfield($field) eq '') ? '' : $self->ut_mac_addr($field);
+}
+
 =item ut_ip COLUMN
 
 Check/untaint ip addresses.  IPv4 only for now, though ::1 is auto-translated

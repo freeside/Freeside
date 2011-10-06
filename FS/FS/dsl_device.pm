@@ -106,7 +106,7 @@ sub check {
   my $error = 
     $self->ut_numbern('devicenum')
     || $self->ut_foreign_key('svcnum', 'svc_dsl', 'svcnum' )
-    || $self->ut_mac_addrn('mac_addr')
+    || $self->ut_mac_addr('mac_addr')
   ;
   return $error if $error;
 

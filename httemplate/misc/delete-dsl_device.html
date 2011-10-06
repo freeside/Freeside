@@ -1,0 +1,23 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p. "view/svc_dsl.cgi?". $svcnum) %>
+% }
+<%init>
+
+# :/  needs agent-virt so you can't futz with arbitrary devices
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+#untaint devicenum
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal devicenum";
+my $devicenum = $1;
+
+my $dsl_device = qsearchs('dsl_device', { 'devicenum' => $devicenum } );
+my $svcnum = $dsl_device->svcnum;
+
+my $error = $dsl_device->delete;
+
+</%init>

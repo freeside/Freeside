@@ -1,0 +1,31 @@
+<% include( 'elements/edit.html',
+                 'name'   => 'DSL device',
+                 'table'  => 'dsl_device',
+                 'labels' => { 
+                               'devicenum'  => 'Device',
+                               'mac_addr'   => 'MAC address',
+                             },
+                 'fields' => [ { field => 'mac_addr',
+			         type => 'select-mac',
+			       },
+                               { 'field' => 'svcnum',
+                                 'type'  => 'hidden',
+                               },
+                             ],
+                 'menubar' => [], #disable viewall
+                 #'viewall_dir' => 'browse',
+                 'new_callback' => sub {
+                                     my( $cgi, $object ) = @_;
+                                     $object->svcnum( $cgi->param('svcnum') );
+                                   },
+           )
+%>
+<%init>
+
+# :/  needs agent-virt so you can't futz with arbitrary devices
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+
+</%init>

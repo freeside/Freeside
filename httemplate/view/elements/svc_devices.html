@@ -1,0 +1,102 @@
+<%doc>
+
+#Example:
+
+  include( 'elements/svc_devices.html',
+             #required
+             'svc_x' => $svc_phone,     #or $svc_dsl
+             'table' => 'phone_device', #or dsl_device
+
+             #optional
+             'no_edit' => 0, #set true to turn off edit link
+         )
+
+</%doc>
+<% $devices %>
+<%init>
+
+  my %opt = @_;
+  my $table = $opt{'table'}; #part_device, dsl_device
+  my $svc_x = $opt{'svc_x'};
+
+  my $devices = '';
+
+  my $num_part_device = 0;
+  if ( $table eq 'phone_device' )  {
+    my $sth = dbh->prepare("SELECT COUNT(*) FROM part_device")
+                              #WHERE disabled = '' OR disabled IS NULL;");
+      or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+    $num_part_device = $sth->fetchrow_arrayref->[0];
+}
+
+  my @devices = $svc_x->$table();
+
+  #should move the below to proper mason code above instead of making $devices
+  if ( @devices || $num_part_device || $table eq 'dsl_device' ) {
+    my $svcnum = $svc_x->svcnum;
+    $devices .=
+      qq[Devices (<A HREF="${p}edit/$table.html?svcnum=$svcnum">Add device</A>)<BR>];
+    if ( @devices ) {
+
+      $devices .= qq!
+        <SCRIPT>
+          function areyousure(href) {
+           if (confirm("Are you sure you want to delete this device?") == true)
+             window.location.href = href;
+          }
+        </SCRIPT>
+      !;
+
+
+      $devices .= 
+        include('/elements/table-grid.html').
+          '<TR>';
+
+      $devices .=
+            '<TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>'
+        if $table eq 'phone_device';
+
+      $devices .=
+            '<TH CLASS="grid" BGCOLOR="#cccccc">MAC Addr</TH>'.
+            '<TH CLASS="grid" BGCOLOR="#cccccc"></TH>'.
+            '<TH CLASS="grid" BGCOLOR="#cccccc"></TH>'.
+          '</TR>';
+      my $bgcolor1 = '#eeeeee';
+      my $bgcolor2 = '#ffffff';
+      my $bgcolor = '';
+
+      foreach my $device ( @devices ) {
+
+        if ( $bgcolor eq $bgcolor1 ) {
+          $bgcolor = $bgcolor2;
+        } else {
+          $bgcolor = $bgcolor1;
+        }
+        my $td = qq(<TD CLASS="grid" BGCOLOR="$bgcolor">);
+
+        my $devicenum = $device->devicenum;
+        my $export_links = join( '<BR>', @{ $device->export_links } )
+          if $device->can('export_links');
+
+        $devices .= '<TR>';
+        $devices .= $td. $device->part_device->devicename. '</TD>'
+          if $table eq 'phone_device'; #$devices->can('part_device');
+
+        $devices .=   $td. $device->mac_addr. '</TD>'.
+                      $td. $export_links. '</TD>'.
+                      "$td( ";
+
+        $devices .= qq(<A HREF="${p}edit/$table.html?$devicenum">edit</A> | )
+          unless $opt{'no_edit'};
+
+        $devices .= qq(<A HREF="javascript:areyousure('${p}misc/delete-$table.html?$devicenum')">delete</A>).
+                      ' )</TD>'.
+                    '</TR>';
+      }
+      $devices .= '</TABLE><BR>';
+    }
+    $devices .= '<BR>';
+  }
+
+</%init>
