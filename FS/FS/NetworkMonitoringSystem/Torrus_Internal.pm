@@ -178,6 +178,7 @@ sub add_interface {
 
   $interface =~ s(\/)(_)g; #slashes become underscores
   $interface =~ s(\.)(_)g; #periods too, huh
+  $interface =~ s(\-)(_)g; #yup, and dashes
 
   #should just use a proper XML parser huh
 
