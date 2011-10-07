@@ -87,29 +87,31 @@ sub _upgrade_data {
   # bypass RT ACLs--we're going to do lots of things
   my $CurrentUser = $RT::SystemUser;
 
-  # selfservice user
-  my $User = RT::User->new($CurrentUser);
-  $User->Load('%%%SELFSERVICE_USER%%%');
-  if (!defined($User->Id)) {
-    my ($val, $msg) = $User->Create(
-      'Name' => '%%%SELFSERVICE_USER%%%',
-      'Gecos' => '%%%SELFSERVICE_USER%%%',
-      'Privileged' => 1,
-      # any other fields needed?
-    );
-    die $msg if !$val;
-  }
-  my $Principal = $User->PrincipalObj; # can this ever fail?
-  my @rights = ( qw(ShowTicket SeeQueue ModifyTicket ReplyToTicket 
-                    CreateTicket SeeCustomField) );
-  foreach (@rights) {
-    next if $Principal->HasRight( 'Right' => $_, Object => $RT::System );
-    my ($val, $msg) = $Principal->GrantRight(
-      'Right' => $_,
-      'Object' => $RT::System,
-    );
-    die $msg if !$val;
-  }
+  # selfservice and cron users
+  foreach my $username ('%%%SELFSERVICE_USER', 'fs_daily') {
+    my $User = RT::User->new($CurrentUser);
+    $User->Load($username);
+    if (!defined($User->Id)) {
+      my ($val, $msg) = $User->Create(
+        'Name' => $username,
+        'Gecos' => $username,
+        'Privileged' => 1,
+        # any other fields needed?
+      );
+      die $msg if !$val;
+    }
+    my $Principal = $User->PrincipalObj; # can this ever fail?
+    my @rights = ( qw(ShowTicket SeeQueue ModifyTicket ReplyToTicket 
+                      CreateTicket SeeCustomField) );
+    foreach (@rights) {
+      next if $Principal->HasRight( 'Right' => $_, Object => $RT::System );
+      my ($val, $msg) = $Principal->GrantRight(
+        'Right' => $_,
+        'Object' => $RT::System,
+      );
+      die $msg if !$val;
+    }
+  } #foreach $username
 
   # EscalateQueue custom field and friends
   my $CF = RT::CustomField->new($CurrentUser);
