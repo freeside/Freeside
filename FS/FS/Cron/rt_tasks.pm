@@ -31,7 +31,6 @@ sub rt_daily {
   my $system = $FS::TicketSystem::system;
   return if $system ne 'RT_Internal';
 
-  FS::TicketSystem->init;
   $DEBUG = 1 if $opt{'v'};
   RT::Config->Set( LogToScreen => 'debug' ) if $DEBUG;
  
@@ -42,6 +41,7 @@ sub rt_daily {
     return;
   }
 
+  FS::TicketSystem->init;
   my $session = FS::TicketSystem->session();
   my $CurrentUser = $session->{'CurrentUser'}
     or die "Failed to create RT session";
@@ -69,7 +69,6 @@ sub rt_daily {
   $queues->UnLimit;
   while (my $queue = $queues->Next) {
     warn "Queue '".$queue->Name."'\n" if $DEBUG;
-    my $CurrentUser = $queue->CurrentUser;
     my %opt = @_;
     my $tickets = RT::Tickets->new($CurrentUser);
     my $search = RT::Search::ActiveTicketsInQueue->new(
