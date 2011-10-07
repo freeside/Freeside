@@ -66,6 +66,7 @@ sub ss2clientapi {
   'login_info'                => 'MyAccount/login_info',
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
+  'switch_acct'               => 'MyAccount/switch_acct',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
@@ -107,6 +108,7 @@ sub ss2clientapi {
   'provision_external'        => 'MyAccount/provision_external',
   'unprovision_svc'           => 'MyAccount/unprovision_svc',
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
+  'reset_passwd'              => 'MyAccount/reset_passwd',
   'create_ticket'             => 'MyAccount/create_ticket',
   'get_ticket'                => 'MyAccount/get_ticket',
   'adjust_ticket_priority'    => 'MyAccount/adjust_ticket_priority',
