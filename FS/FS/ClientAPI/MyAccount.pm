@@ -251,6 +251,25 @@ sub logout {
   }
 }
 
+sub switch_acct {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $svc_acct = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct' )
+    or return { 'error' => "Service not found" };
+
+  $session->{'svcnum'} = $svc_acct->svcnum;
+
+  my $conf = new FS::Conf;
+  my $timeout = $conf->config('selfservice-session_timeout') || '1 hour';
+  _cache->set( $p->{'session_id'}, $session, $timeout );
+
+  return { 'error' => '' };
+
+}
+
 sub payment_gateway {
   # internal use only
   # takes a cust_main and a cust_payby entry, returns the payment_gateway
@@ -2259,6 +2278,66 @@ sub myaccount_passwd {
          };
 
 }
+
+sub reset_passwd {
+  my $p = shift;
+
+  my $conf = new FS::Conf;
+  my $verification = $conf->config('selfservice-password_reset_verification')
+    or return { 'error' => 'Password resets disabled' };
+
+  my $username = $p->{'username'};
+
+  my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
+    or return { 'error' => 'Account not found' };
+
+  my $svc_acct = qsearchs('svc_acct', { 'username' => $p->{'username'},
+                                        'domsvc'   => $svc_domain->svcnum  }
+                         )
+    or return { 'error' => 'Account not found' };
+
+  my $cust_pkg = $svc_acct->cust_svc->cust_pkg
+    or return { 'error' => 'Account not found' };
+
+  my $cust_main = $cust_pkg->cust_main;
+
+  my %verify = (
+    'paymask' => sub { 
+      my( $p, $cust_main ) = @_;
+      $cust_main->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/
+        && $p->{'paymask'} eq substr($cust_main->paymask, -4)
+    },
+    'amount'  => sub {
+      my( $p, $cust_main ) = @_;
+      my $cust_pay = qsearchs({
+        'table' => 'cust_pay',
+        'hashref' => { 'custnum' => $cust_main->custnum },
+        'order_by' => 'ORDER BY _date DESC LIMIT 1',
+      })
+        or return 0;
+
+      $p->{'amount'} == $cust_pay->paid;
+    },
+    'zip'     => sub {
+      my( $p, $cust_main ) = @_;
+      $p->{'zip'} eq $cust_main->zip
+        || ( $cust_main->ship_zip && $p->{'zip'} eq $cust_main->ship_zip );
+    },
+  );
+
+  foreach my $verify ( split(',', $verification) ) {
+
+    &{ $verify{$verify} }( $p, $cust_main )
+      or return { 'error' => 'Account not found' };
+
+  }
+
+  #we're verified.  now what?
+ 
+
+  return { 'error' => '' };
+}
+
 
 sub create_ticket {
   my $p = shift;

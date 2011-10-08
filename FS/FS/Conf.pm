@@ -2465,6 +2465,16 @@ and customer address. Include units.',
     'type'        => 'select-part_svc',
     'multiple'    => 1,
   },
+
+  {
+    'key'         => 'selfservice-password_reset_verification',
+    'section'     => 'self-service',
+    'description' => 'If enabled, specifies the type of verification required for self-service password resets.',
+    'type'        => 'select',
+    'select_hash' => [ '' => 'Password reset disabled',
+                       'paymask,amount,zip' => 'Verify with credit card (or bank account) last 4 digits, payment amount and zip code',
+                     ],
+  },
   
   {
     'key'         => 'selfservice-recent-did-age',
