@@ -267,7 +267,7 @@ sub calc_usage {
          $included_min = 0;
       }
       
-      $charge = sprintf('%.2f', ( $self->option('min_charge') * $charge_min )
+      $charge = sprintf('%.4f', ( $self->option('min_charge') * $charge_min )
                                 + 0.00000001 ); #so 1.00005 rounds to 1.0001
 
       if ( $charge > 0 ) {
