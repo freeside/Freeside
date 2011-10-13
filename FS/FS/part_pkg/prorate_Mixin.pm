@@ -98,7 +98,11 @@ sub calc_prorate {
     my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
 
     # add a full period if currently billing for a partial period
-    if ( ( $self->option('add_full_period',1) 
+    # or periods up to freq_override if billing for an override interval
+    if ( ($param->{'freq_override'} || 0) > 1 ) {
+      $months += $param->{'freq_override'} - 1;
+    }
+    elsif ( ( $self->option('add_full_period',1) 
         or $self->option('prorate_defer_bill',1) ) # necessary
         and $months < $self->freq ) {
       $months += $self->freq;

@@ -189,29 +189,43 @@ sub insert {
 
   if ( my $credit_type = $conf->config('prepayment_discounts-credit_type') ) {
     if ( my $months = $self->discount_term ) {
-      #hmmm... error handling
-      my ($credit, $savings, $total) = 
-        $cust_main->discount_term_values($months);
+      # XXX this should be moved out somewhere, but discount_term_values
+      # doesn't fit right
+      my ($cust_bill) = ($cust_main->cust_bill)[-1]; # most recent invoice
+      return "can't accept prepayment for an unbilled customer" if !$cust_bill;
+
+      my %billing_pkgs = map { $_->pkgnum => $_ } $cust_main->billing_pkgs;
+      my $credit = 0; # sum of recurring charges from that invoice
+      my $last_bill_date = 0; # the real bill date
+      foreach my $item ( $cust_bill->cust_bill_pkg ) {
+        next if !exists($billing_pkgs{$item->pkgnum}); # skip inactive packages
+        $credit += $item->recur;
+        $last_bill_date = $item->cust_pkg->last_bill 
+          if defined($item->cust_pkg) 
+            and $item->cust_pkg->last_bill > $last_bill_date
+      }
+
       my $cust_credit = new FS::cust_credit {
         'custnum' => $self->custnum,
-        'amount'  => $credit,
+        'amount'  => sprintf('%.2f', $credit),
         'reason'  => 'customer chose to prepay for discount',
       };
       $error = $cust_credit->insert('reason_type' => $credit_type);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "error inserting cust_pay: $error";
+        return "error inserting prepayment credit: $error";
       }
-      my @pkgs = $cust_main->_discount_pkgs_and_bill;
-      my $cust_bill = shift(@pkgs);
-      @pkgs = &FS::cust_main::Billing_Discount::_discountable_pkgs_at_term($months, @pkgs);
-      $_->bill($_->last_bill) foreach @pkgs;
-      $error = $cust_main->bill( 
-        'recurring_only' => 1,
-        'time'           => $cust_bill->invoice_date,
+      # don't apply it yet
+
+      # bill for the entire term
+      $_->bill($_->last_bill) foreach (values %billing_pkgs);
+      $error = $cust_main->bill(
+        # no recurring_only, we want unbilled packages with start dates to 
+        # get billed
         'no_usage_reset' => 1,
-        'pkg_list'       => \@pkgs,
-        'freq_override'   => $months,
+        'time'           => $last_bill_date, # not $cust_bill->_date
+        'pkg_list'       => [ values %billing_pkgs ],
+        'freq_override'  => $months,
       );
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
@@ -227,6 +241,8 @@ sub insert {
         $dbh->rollback if $oldAutoCommit;
         return "balance after prepay discount attempt: $new_balance";
       }
+      # user friendly: override the "apply only to this invoice" mode
+      $self->invnum('');
       
     }
 
