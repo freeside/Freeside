@@ -88,7 +88,7 @@ sub _upgrade_data {
   my $CurrentUser = $RT::SystemUser;
 
   # selfservice and cron users
-  foreach my $username ('%%%SELFSERVICE_USER', 'fs_daily') {
+  foreach my $username ('%%%SELFSERVICE_USER%%%', 'fs_daily') {
     my $User = RT::User->new($CurrentUser);
     $User->Load($username);
     if (!defined($User->Id)) {
