@@ -1,6 +1,24 @@
-<% include( '/search/elements/search.html',
-               'really_disable_download'  => 1,
-               'disable_nonefound' => 1,
-               @_,
-           )
+<%doc>
+
+Example:
+
+  <& elements/browse.html,
+       'title'              => 'Things',
+       'name_singular'      => 'thing',
+       'query'              => { 'table' => 'tablename', },
+       'count_query'        => 'SELECT COUNT(*) FROM tablename',
+       'header'             => [ 'Label' ],
+       'fields'             => [ 'columnname' ],
+       'disableable'        => 1,
+       'disabled_statuspos' => 2,
+       #All options from /search/elements/search.html are available.
+  &>
+
+
 %>
+</%doc>
+<& /search/elements/search.html,
+     'really_disable_download'  => 1,
+     'disable_nonefound'        => 1,
+     @_,
+&>
