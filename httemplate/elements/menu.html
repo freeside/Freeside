@@ -424,11 +424,40 @@ tie my %config_employees, 'Tie::IxHash',
   'Employee groups' => [ $fsurl.'browse/access_group.html', 'Employee groups allow you to control access to the backend' ],
 ;
 
+tie my %config_dialup, 'Tie::IxHash',
+  'Access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
+;
+
+tie my %config_broadband, 'Tie::IxHash',
+  'Routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
+  'Address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
+;
+
+tie my %config_phone, 'Tie::IxHash',
+  'View/Edit phone device types' => [ $fsurl.'browse/part_device.html', 'Phone device types' ],
+  'View/Edit bulk DID vendors' => [ $fsurl.'browse/did_vendor.html', 'Bulk DID vendors' ],
+;
+
+tie my %config_radius, 'Tie::IxHash',
+  'RADIUS Groups' => [ $fsurl.'browse/radius_group.html', 'Manage RADIUS groups' ],
+  'RADIUS Clients' => [ $fsurl.'browse/nas.html', 'Manage RADIUS clients' ],
+;
+
 tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
-  $config_export_svc{'Exports'} = [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ];
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
+  $config_export_svc{'Provisioning exports'} = [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ];
 }
+$config_export_svc{'Dialup'}  = [ \%config_dialup, ''    ]
+  if $curuser->access_right('Dialup configuration');
+$config_export_svc{'Broadband'} = [ \%config_broadband, ''    ]
+  if $curuser->access_right('Broadband configuration');
+$config_export_svc{'Phone'}  = [ \%config_phone, ''    ]
+  if $curuser->access_right('Configuration');
+$config_export_svc{'RADIUS'} = [ \%config_radius, '' ]
+  if $curuser->access_right('Configuration');
+$config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
+  if $curuser->access_right('Configuration');
 
 tie my %config_pkg_reason, 'Tie::IxHash',
   'Cancel reasons' => [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ],
@@ -454,6 +483,7 @@ if ( $curuser->access_right('Configuration') ) {
 }
 
 tie my %config_cust, 'Tie::IxHash',
+  'Customer tags'       => [ $fsurl.'browse/part_tag.html', '' ],
   'Customer classes'    =>  [ $fsurl.'browse/cust_class.html', 'Customer classes define groups of customers for reporting.' ],
   'Customer categories' =>  [ $fsurl.'browse/cust_category.html', 'Customer categories define groups of customer classes.' ],
 ;
@@ -509,20 +539,6 @@ tie my %config_ticketing, 'Tie::IxHash',
   #"System Configuraiton"?  useless, just makes people report errors about missing Module::Versions::Report #'Ticketing Tools'     => [ $fsurl.'rt/Admin/Tools', '' ], 
 ;
 
-tie my %config_dialup, 'Tie::IxHash',
-  'Access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
-;
-
-tie my %config_broadband, 'Tie::IxHash',
-  'Routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
-  'Address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
-;
-
-tie my %config_phone, 'Tie::IxHash',
-  'View/Edit phone device types' => [ $fsurl.'browse/part_device.html', 'Phone device types' ],
-  'View/Edit bulk DID vendors' => [ $fsurl.'browse/did_vendor.html', 'Bulk DID vendors' ],
-;
-
 tie my %config_nms, 'Tie::IxHash',
   'View/Edit virtual ports' => [ $fsurl.'browse/torrus_srvderive.html', '' ],
 ;
@@ -532,8 +548,6 @@ $config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templa
   if $curuser->access_right('Edit templates')
   || $curuser->access_right('Edit global templates')
   || $curuser->access_right('Configuration');
-$config_misc{'Tags'} = [ $fsurl.'browse/part_tag.html', '' ]
-  if $curuser->access_right('Configuration');
 $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
@@ -546,49 +560,44 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
   || $curuser->access_right('Edit global inventory')
   || $curuser->access_right('Configuration');
 
-$config_misc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
-  if $curuser->access_right('Configuration');
-
-$config_misc{'RADIUS Groups'} = [ $fsurl.'browse/radius_group.html', 'Manage RADIUS groups' ]
-  if $curuser->access_right('Configuration');
-
 tie my %config_menu, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration' ) ) {
   %config_menu = (
     'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
     'separator'     => '', #its a separator!
     'Employees'     => [ \%config_employees, '' ],
+    'Resellers'     => [ \%config_agent, '' ],
+    'separator2'    => '', #its a separator!
+    'Customers'     => [ \%config_cust, '' ],
   );
 }
-$config_menu{'Provisioning and services'} = [ \%config_export_svc, '' ]
-  if $curuser->access_right('Configuration' );
 $config_menu{'Packages'} = [ \%config_pkg, '' ]
   if    $curuser->access_right('Configuration' )
      || $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
-$config_menu{'Customers'} = [ \%config_cust, '' ]
-  if $curuser->access_right('Configuration');
-$config_menu{'Resellers'} = [ \%config_agent, '' ]
-  if $curuser->access_right('Configuration');
+
+if ( $curuser->access_right('Configuration' ) ) {
+  $config_menu{'Services'} = [ \%config_export_svc, '' ];
+  $config_menu{separator3} = '';
+}
+
 $config_menu{'Billing'} = [ \%config_billing, '' ]
   if $curuser->access_right('Edit billing events')
   || $curuser->access_right('Edit global billing events');
 $config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
   if $conf->config('ticket_system')
   && FS::TicketSystem->access_right(\%session, 'ShowConfigTab');
-$config_menu{'Dialup'}  = [ \%config_dialup, ''    ]
-  if $curuser->access_right('Dialup configuration');
-$config_menu{'Broadband'} = [ \%config_broadband, ''    ]
-  if $curuser->access_right('Broadband configuration');
-$config_menu{'Phone'}  = [ \%config_phone, ''    ]
-  if $curuser->access_right('Configuration');
 $config_menu{'Network Monitoring'} = [ \%config_nms, '' ]
   if $curuser->access_right('Configure network monitoring')
   && $conf->config('network_monitoring_system') eq 'Torrus_Internal';
-$config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
-  if $curuser->access_right('Configuration' )
-  || $curuser->access_right('Edit advertising sources')
-  || $curuser->access_right('Edit global advertising sources');
+
+if (   $curuser->access_right('Configuration' )
+     || $curuser->access_right('Edit advertising sources')
+     || $curuser->access_right('Edit global advertising sources')
+   ) {
+  $config_menu{separator9} = '';
+  $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ];
+}
 
 
 my $wiki = 'http://www.freeside.biz/mediawiki/index.php';
