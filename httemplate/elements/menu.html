@@ -549,8 +549,9 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
 $config_misc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
   if $curuser->access_right('Configuration');
 
-$config_misc{'RADIUS Groups'} = [ $fsurl.'browse/radius_group.html', 'Manage RADIUS groups' ]
-  if $curuser->access_right('Configuration');
+if ( $curuser->access_right('Configuration') ) {
+  $config_misc{'RADIUS Groups'} = [ $fsurl.'browse/radius_group.html', 'Manage RADIUS groups' ];
+  $config_misc{'RADIUS Clients'} = [ $fsurl.'browse/nas.html', 'Manage RADIUS clients' ];
 
 tie my %config_menu, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration' ) ) {

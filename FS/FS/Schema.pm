@@ -2242,29 +2242,31 @@ sub tables_hashref {
 
     'nas' => {
       'columns' => [
-        'nasnum',   'serial',     '',    '', '', '', 
-        'nas',      'varchar', '',    $char_d, '', '', 
-        'nasip',    'varchar', '',    15, '', '', 
-        'nasfqdn',  'varchar', '',    $char_d, '', '', 
-        'last',     'int',     '',    '', '', '', 
+        'nasnum',       'serial',     '',  '',              '', '', 
+        'nasname',     'varchar',     '', 128,              '', '',
+        'shortname',   'varchar', 'NULL',  32,              '', '',
+        'type',        'varchar',     '',  30,         'other', '',
+        'ports',           'int', 'NULL',  '',              '', '',
+        'secret',      'varchar',     '',  60,        'secret', '',
+        'server',      'varchar', 'NULL',  64,              '', '',
+        'community',   'varchar', 'NULL',  50,              '', '',
+        'description', 'varchar',     '', 200, 'RADIUS Client', '',
       ],
       'primary_key' => 'nasnum',
-      'unique'      => [ [ 'nas' ], [ 'nasip' ] ],
-      'index'       => [ [ 'last' ] ],
+      'unique'      => [ [ 'nasname' ], ],
+      'index'       => [],
     },
 
-#    'session' => {
-#      'columns' => [
-#        'sessionnum', 'serial',       '',   '', '', '', 
-#        'portnum',    'int',       '',   '', '', '', 
-#        'svcnum',     'int',       '',   '', '', '', 
-#        'login',      @date_type, '', '', 
-#        'logout',     @date_type, '', '', 
-#      ],
-#      'primary_key' => 'sessionnum',
-#      'unique'      => [],
-#      'index'       => [ [ 'portnum' ] ],
-#    },
+    'export_nas' => {
+      'columns' => [
+        'exportnasnum', 'serial', '', '', '', '', 
+        'exportnum',       'int', '', '', '', '', 
+        'nasnum',          'int', '', '', '', '', 
+      ],
+      'primary_key' => 'exportnasnum',
+      'unique'      => [ [ 'exportnum', 'nasnum' ] ],
+      'index'       => [ [ 'exportnum' ], [ 'nasnum' ] ],
+    },
 
     'queue' => {
       'columns' => [

@@ -4,7 +4,7 @@
       VALIGN = "<% $opt{'valign'} || 'top' %>"
       STYLE  = "<% $style %>"
       ID     = "<% $opt{label_id} || $opt{id}. '_label0' %>"
-  ><% $opt{label} %></TD>
+  ><% $required %><% $opt{label} %></TD>
 
 <%init>
 
@@ -13,5 +13,7 @@ my %opt = @_;
 my $style = 'padding-top: 3px';
 $style .= '; '. $opt{'cell_style'}
   if $opt{'cell_style'};
+
+my $required = $opt{'required'} ? '<font color="#ff0000">*</font>&nbsp;' : '';
 
 </%init>
