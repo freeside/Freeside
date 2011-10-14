@@ -1,0 +1,41 @@
+<& elements/edit.html,  
+    'name_singular' => 'RADIUS client',
+    'table'         => 'nas',
+    'viewall_dir'   => 'browse',
+    'labels'        => { 'nasnum'      => 'NAS',
+                         'nasname'     => 'Hostname',
+                         'shortname'   => 'Short name',
+                         'secret'      => 'Shared secret',
+                         'type'        => 'Type',
+                         'ports'       => 'Ports',
+                         'server'      => 'Server',
+                         'community'   => 'Community',
+                         'description' => 'Description',
+                       },
+    'fields'        => [
+      { field=> 'nasname', required=>1, size=>40, maxlength=>128 },
+      { field=>'shortname', size=>16, maxlength=>32 },
+      { field=>'secret', size=>40, maxlength=>60, required=>1 },
+      { field=>'type', type=>'select',
+        options=>[qw( cisco computone livingston max40xx multitech netserver
+                      pathras patton portslave tc usrhiper other )],
+      },
+      { field=>'ports', size=>5 },
+      { field=>'server', size=>40, maxlength=>64 },
+      { field=>'community', size=>40, maxlength=>50 },
+      { field=>'description', size=>100, maxlength=>200 },
+    ],
+    'html_bottom'   => '<font color="#ff0000">*</font>&nbsp;'.
+                       emt('required fields'). '<BR>',
+    'new_hashref_callback' => sub { +{ 'type'        => 'other',
+                                       'secret'      => 'secret',
+                                       'description' => 'RADIUS Client',
+                                     };
+                                  },
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

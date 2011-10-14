@@ -1,0 +1,33 @@
+<& elements/browse.html,
+     'title'              => 'RADIUS clients',
+     'name_singular'      => 'RADIUS client',
+     'query'              => { 'table' => 'nas', },
+     'count_query'        => 'SELECT COUNT(*) FROM nas',
+     'header'             => [ 'Hostname', 'Short name', #'Shared secret',
+                               'Type', 'Ports', 'Server', 'Community',
+                               'Description',
+                             ],
+     'fields'             => [ 'nasname',
+                               'shortname',
+                               #'secret',
+                               'type',
+                               'ports',
+                               'server',
+                               'community',
+                               'description',
+                             ],
+     'links'               => [ $link, $link ],
+     'align'               => 'lllrlll',
+     'add_link'            => 1,
+     #'disableable'        => 1,
+     #'disabled_statuspos' => 2,
+     #All options from /search/elements/search.html are available.
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ $p.'edit/nas.html?', 'nasnum' ];
+
+</%init>

@@ -1,11 +1,8 @@
 package FS::nas;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw(qsearchs); #qsearch);
-use FS::UID qw( dbh );
-
-@ISA = qw(FS::Record);
+use base qw( FS::Record );
+use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
@@ -16,11 +13,7 @@ FS::nas - Object methods for nas records
   use FS::nas;
 
   $record = new FS::nas \%hash;
-  $record = new FS::nas {
-    'nasnum'  => 1,
-    'nasip'   => '10.4.20.23',
-    'nasfqdn' => 'box1.brc.nv.us.example.net',
-  };
+  $record = new FS::nas { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -30,26 +23,49 @@ FS::nas - Object methods for nas records
 
   $error = $record->check;
 
-  $error = $record->heartbeat($timestamp);
-
 =head1 DESCRIPTION
 
-An FS::nas object represents an Network Access Server on your network, such as
-a terminal server or equivalent.  FS::nas inherits from FS::Record.  The
-following fields are currently supported:
+An FS::nas object represents a RADIUS client.  FS::nas inherits from
+FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item nasnum - primary key
+=item nasnum
 
-=item nas - NAS name
+primary key
 
-=item nasip - NAS ip address
+=item nasname
 
-=item nasfqdn - NAS fully-qualified domain name
+nasname
 
-=item last - timestamp indicating the last instant the NAS was in a known
-             state (used by the session monitoring).
+=item shortname
+
+shortname
+
+=item type
+
+type
+
+=item ports
+
+ports
+
+=item secret
+
+secret
+
+=item server
+
+server
+
+=item community
+
+community
+
+=item description
+
+description
+
 
 =back
 
@@ -110,35 +126,25 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  $self->ut_numbern('nasnum')
-    || $self->ut_text('nas')
-    || $self->ut_ip('nasip')
-    || $self->ut_domain('nasfqdn')
-    || $self->ut_numbern('last')
-    || $self->SUPER::check
-    ;
-}
+  my $error = 
+    $self->ut_numbern('nasnum')
+    || $self->ut_text('nasname')
+    || $self->ut_textn('shortname')
+    || $self->ut_text('type')
+    || $self->ut_numbern('ports')
+    || $self->ut_text('secret')
+    || $self->ut_textn('server')
+    || $self->ut_textn('community')
+    || $self->ut_text('description')
+  ;
+  return $error if $error;
 
-=item heartbeat TIMESTAMP
-
-Updates the timestamp for this nas
-
-=cut
-
-sub heartbeat {
-  my($self, $timestamp) = @_;
-  my $dbh = dbh;
-  my $sth =
-    $dbh->prepare("UPDATE nas SET last = ? WHERE nasnum = ? AND last < ?");
-  $sth->execute($timestamp, $self->nasnum, $timestamp) or die $sth->errstr;
-  $self->last($timestamp);
+  $self->SUPER::check;
 }
 
 =back
 
 =head1 BUGS
-
-heartbeat method uses SQL directly and doesn't update history tables.
 
 =head1 SEE ALSO
 

@@ -29,42 +29,36 @@
 %       }
 %     }
 %
-%     if ( $type eq 'html-print' ) {
-
-        <% $opt{nohtmlheader}
-             ? ''
-             : include( '/elements/header-popup.html', $opt{'title'} )
-        %>
-
-%     } elsif ( $type eq 'select' ) {
-
-        <% $opt{nohtmlheader}
-             ? ''
-             : include( '/elements/header-popup.html', $opt{'title'} )
-        %>
-        <% defined($opt{'html_init'}) 
-              ? ( ref($opt{'html_init'})
-                    ? &{$opt{'html_init'}}()
-                    : $opt{'html_init'}
-                )
-              : ''
-        %>
-
-%     } else {
+%     unless ( $opt{nohtmlheader} ) {
 %
-%       my @menubar = ();
-%       if ( $opt{'menubar'} ) {
-%         @menubar = @{ $opt{'menubar'} };
-%       #} else {
-%       #  @menubar = ( 'Main menu' => $p );
-%       }
+%       if ( $type eq 'html-print' ) {
+          <& /elements/header-popup.html, $opt{'title'} &>
+%       } else {
+%         if ( $type eq 'select' ) {
+            <&/elements/header-popup.html, $opt{'title'} &>
+%         } else {
+%
+%           my @menubar = ();
+%           if ( $opt{'menubar'} ) {
+%             @menubar = @{ $opt{'menubar'} };
+%           #} else {
+%           #  @menubar = ( 'Main menu' => $p );
+%           }
 
-        <% $opt{nohtmlheader}
-             ? ''
-             : include( '/elements/header.html', $opt{'title'},
-                          include( '/elements/menubar.html', @menubar )
-                      )
-        %>
+            <& /elements/header.html, $opt{'title'},
+                 include( '/elements/menubar.html', @menubar )
+            &>
+
+%         }
+%       }
+%
+%     }
+%
+%     unless ( $type eq 'html-print' ) {
+
+%       if ( $opt{'add_link'} ) { #or after html_init?
+          <A HREF="<%$p%>edit/<% $opt{query}->{table} %>.html"><I>Add a <% $opt{'name_singular'} %></I></A><BR><BR>
+%       }
 
         <% defined($opt{'html_init'}) 
               ? ( ref($opt{'html_init'})
