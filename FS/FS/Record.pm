@@ -2076,7 +2076,7 @@ sub ut_text {
   #warn "notexist ". \&notexist. "\n";
   #warn "AUTOLOAD ". \&AUTOLOAD. "\n";
   $self->getfield($field)
-    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>$money_char]+)$/
+    =~ /^([\wô \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>$money_char]+)$/
       or return gettext('illegal_or_empty_text'). " $field: ".
                  $self->getfield($field);
   $self->setfield($field,$1);
@@ -2086,7 +2086,7 @@ sub ut_text {
 =item ut_textn COLUMN
 
 Check/untaint text.  Alphanumerics, spaces, and the following punctuation
-symbols are currently permitted: ! @ # $ % & ( ) - + ; : ' " , . ? /
+symbols are currently permitted: ! @ # $ % & ( ) - + ; : ' " , . ? / = [ ] < >
 May be null.  If there is an error, returns the error, otherwise returns false.
 
 =cut
