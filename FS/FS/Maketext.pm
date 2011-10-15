@@ -11,6 +11,7 @@ our @EXPORT_OK = qw( mt emt js_mt );
 our $lh;
 
 sub mt {
+  return '' if $_[0] eq '';
   $lh ||= lh();
   $lh->maketext(@_);
 }
