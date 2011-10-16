@@ -3341,6 +3341,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-edit_calling_list_exempt',
+    'section'     => 'UI',
+    'description' => 'Display the "calling_list_exempt" checkbox on customer edit.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'support-key',
     'section'     => '',
     'description' => 'A support key enables access to commercial services delivered over the network, such as the payroll module, access to the internal ticket system, priority support and optional backups.',
