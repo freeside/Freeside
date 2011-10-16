@@ -120,6 +120,20 @@
         $cust_main->edit_subject ? 'CHECKED' : '' %>></TD>
     <TD ALIGN="left"><% mt('Can edit ticket subjects') |h %></TD>
   </TR>
+% } else {
+  <INPUT TYPE="hidden" NAME="edit_subject" VALUE="<% $cust_main->edit_subject %>">
+% }
+
+% # permission to edit
+% if ( $conf->exists('cust_main-edit_calling_list_exempt') ) {
+  <TR>
+    <TD ALIGN="right">
+      <INPUT TYPE="checkbox" NAME="calling_list_exempt" VALUE="Y" <% 
+        $cust_main->calling_list_exempt ? 'CHECKED' : '' %>></TD>
+    <TD ALIGN="left"><% mt('Calling list exempt') |h %></TD>
+  </TR>
+% } else {
+  <INPUT TYPE="hidden" NAME="calling_list_exempt" VALUE="<% $cust_main->calling_list_exempt %>">
 % }
 
 </TABLE>

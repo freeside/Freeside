@@ -887,6 +887,7 @@ sub tables_hashref {
         'billday',   'int', 'NULL', '', '', '',
         'edit_subject', 'char', 'NULL', 1, '', '',
         'locale', 'varchar', 'NULL', 16, '', '', 
+        'calling_list_exempt', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],

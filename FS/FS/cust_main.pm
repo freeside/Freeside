@@ -337,6 +337,10 @@ Discourage individual CDR printing, empty or `Y'
 
 Allow self-service editing of ticket subjects, empty or 'Y'
 
+=item calling_list_exempt
+
+Do not call, empty or 'Y'
+
 =back
 
 =head1 METHODS
@@ -1701,6 +1705,7 @@ sub check {
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
     || $self->ut_enum('edit_subject', [ '', 'Y' ] )
+    || $self->ut_enum('calling_list_exempt', [ '', 'Y' ] )
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
 
