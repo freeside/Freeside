@@ -251,16 +251,20 @@ sub _export_suspend {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'insert',
-    'check', $self->export_username($new), $new->radius_check );
-  unless ( ref($err_or_queue) ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $err_or_queue;
+  my @newgroups = $self->suspended_usergroups($svc_acct);
+
+  unless (@newgroups) { #don't change password if assigning to a suspended group
+
+    my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'insert',
+      'check', $self->export_username($new), $new->radius_check );
+    unless ( ref($err_or_queue) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+
   }
 
-  my $error;
-  my (@newgroups) = $self->suspended_usergroups($svc_acct);
-  $error =
+  my $error =
     $self->sqlreplace_usergroups( $new->svcnum,
                                   $self->export_username($new),
 				  '',
