@@ -234,15 +234,10 @@
 %            join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes).
 %          qq!</SELECT></TD></TR>!.
 %
-%        ( $conf->exists('echeck-no_routing')
-%          ? '<INPUT TYPE="hidden" NAME="CHEK_payinfo2" VALUE="'.
-%              ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). '">'
-%          :
-%            qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('ABA/Routing number').qq! </TD>!.
-%              qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="CHEK_payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!" SIZE=10 MAXLENGTH=9> !.
-%              qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">!.emt('help').qq!</A>)!.
-%              qq!</TD></TR>!
-%        ).
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('ABA/Routing number').qq! </TD>!.
+%          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="CHEK_payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!" SIZE=10 MAXLENGTH=9> !.
+%          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">!.emt('help').qq!</A>)!.
+%          qq!</TD></TR>!.
 %
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_month" VALUE="12">!.
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_year" VALUE="2037">!.

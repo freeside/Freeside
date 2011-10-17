@@ -93,12 +93,10 @@
   </TD>
 </TR>
 
-% unless ( $conf->exists('echeck-no_routing') ) {
-  <TR>
-    <TD ALIGN="right"><% mt('ABA/Routing code') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $aba %></TD>
-  </TR>
-% }
+<TR>
+  <TD ALIGN="right"><% mt('ABA/Routing code') |h %></TD>
+  <TD BGCOLOR="#ffffff"><% $aba %></TD>
+</TR>
 
 % if ( $conf->exists('cust_main-require-bank-branch') ) {
 <TR>

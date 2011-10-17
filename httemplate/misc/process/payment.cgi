@@ -83,13 +83,8 @@ if ( $payby eq 'CHEK' ) {
     $cgi->param('payinfo1') =~ /^(\d+)$/
       or errorpage("illegal account number ". $cgi->param('payinfo1'));
     my $payinfo1 = $1;
-    if ( $conf->exists('echeck-no_routing') ) {
-      $cgi->param('payinfo2') =~ /^(\d*)$/
-        or errorpage("illegal ABA/routing number ". $cgi->param('payinfo2'));
-    } else {
-      $cgi->param('payinfo2') =~ /^(\d+)$/
-        or errorpage("illegal ABA/routing number ". $cgi->param('payinfo2'));
-    }
+    $cgi->param('payinfo2') =~ /^(\d+)$/
+      or errorpage("illegal ABA/routing number ". $cgi->param('payinfo2'));
     my $payinfo2 = $1;
     $payinfo = $payinfo1. '@'. $payinfo2;
   }
