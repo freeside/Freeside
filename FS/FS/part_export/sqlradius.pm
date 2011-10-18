@@ -358,7 +358,7 @@ sub suspended_usergroups {
       if (!$userspec && exists($reasonmap{$r->reason}));
   }
   my $suspend_user;
-  if ($userspec =~ /^d+$/ ){
+  if ($userspec =~ /^\d+$/ ){
     $suspend_user = qsearchs( 'svc_acct', { 'svcnum' => $userspec } );
   }elsif ($userspec =~ /^\S+\@\S+$/){
     my ($username,$domain) = split(/\@/, $userspec);
