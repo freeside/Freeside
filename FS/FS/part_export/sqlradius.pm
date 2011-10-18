@@ -268,7 +268,7 @@ sub _export_suspend {
     $self->sqlreplace_usergroups( $new->svcnum,
                                   $self->export_username($new),
 				  '',
-                                  $svc_acct->usergroup,
+                                  [ $svc_acct->radius_groups ],
 				  \@newgroups,
 				);
   if ( $error ) {
@@ -307,7 +307,7 @@ sub _export_unsuspend {
                                          $self->export_username($svc_acct),
                                          '',
 					 \@oldgroups,
-					 $svc_acct->usergroup,
+					 [ $svc_acct->radius_groups ],
 				       );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
