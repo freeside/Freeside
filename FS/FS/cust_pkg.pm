@@ -1000,6 +1000,19 @@ sub suspend {
     }
   }
 
+  my %hash = $self->hash;
+  if ( $date ) {
+    $hash{'adjourn'} = $date;
+  } else {
+    $hash{'susp'} = $suspend_time;
+  }
+  my $new = new FS::cust_pkg ( \%hash );
+  $error = $new->replace( $self, options => { $self->options } );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   unless ( $date ) {
 
     my @labels = ();
@@ -1053,19 +1066,6 @@ sub suspend {
 
     }
 
-  }
-
-  my %hash = $self->hash;
-  if ( $date ) {
-    $hash{'adjourn'} = $date;
-  } else {
-    $hash{'susp'} = $suspend_time;
-  }
-  my $new = new FS::cust_pkg ( \%hash );
-  $error = $new->replace( $self, options => { $self->options } );
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
