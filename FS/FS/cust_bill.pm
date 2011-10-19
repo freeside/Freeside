@@ -243,7 +243,6 @@ sub delete {
     cust_event
     cust_credit_bill
     cust_bill_pay
-    cust_bill_pay
     cust_credit_bill
     cust_pay_batch
     cust_bill_pay_batch
@@ -2856,7 +2855,7 @@ sub print_generic {
   my $previous_section = { 'description' => $self->mt('Previous Charges'),
                            'subtotal'    => $other_money_char.
                                             sprintf('%.2f', $pr_total),
-                           'summarized'  => $summarypage ? 'Y' : '',
+                           'summarized'  => '', #why? $summarypage ? 'Y' : '',
                          };
   $previous_section->{posttotal} = '0 / 30 / 60 / 90 days overdue '. 
     join(' / ', map { $cust_main->balance_date_range(@$_) }
@@ -2867,12 +2866,11 @@ sub print_generic {
   my $taxtotal = 0;
   my $tax_section = { 'description' => $self->mt('Taxes, Surcharges, and Fees'),
                       'subtotal'    => $taxtotal,   # adjusted below
-                      'summarized'  => $summarypage ? 'Y' : '',
                     };
   my $tax_weight = _pkg_category($tax_section->{description})
                         ? _pkg_category($tax_section->{description})->weight
                         : 0;
-  $tax_section->{'summarized'} = $summarypage && !$tax_weight ? 'Y' : '';
+  $tax_section->{'summarized'} = ''; #why? $summarypage && !$tax_weight ? 'Y' : '';
   $tax_section->{'sort_weight'} = $tax_weight;
 
 
@@ -2880,12 +2878,11 @@ sub print_generic {
   my $adjust_section = { 'description' => 
     $self->mt('Credits, Payments, and Adjustments'),
                          'subtotal'    => 0,   # adjusted below
-                         'summarized'  => $summarypage ? 'Y' : '',
                        };
   my $adjust_weight = _pkg_category($adjust_section->{description})
                         ? _pkg_category($adjust_section->{description})->weight
                         : 0;
-  $adjust_section->{'summarized'} = $summarypage && !$adjust_weight ? 'Y' : '';
+  $adjust_section->{'summarized'} = ''; #why? $summarypage && !$adjust_weight ? 'Y' : '';
   $adjust_section->{'sort_weight'} = $adjust_weight;
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
