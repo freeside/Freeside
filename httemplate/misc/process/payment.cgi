@@ -81,11 +81,16 @@ if ( $payby eq 'CHEK' ) {
     $payinfo = $cust_main->payinfo;
   } else {
     $cgi->param('payinfo1') =~ /^(\d+)$/
-      or errorpage("illegal account number ". $cgi->param('payinfo1'));
+      or errorpage("Illegal account number ". $cgi->param('payinfo1'));
     my $payinfo1 = $1;
     $cgi->param('payinfo2') =~ /^(\d+)$/
-      or errorpage("illegal ABA/routing number ". $cgi->param('payinfo2'));
+      or errorpage("Illegal ABA/routing number ". $cgi->param('payinfo2'));
     my $payinfo2 = $1;
+    if ( $conf->exists('cust_main-require-bank-branch') ) {
+      $cgi->param('payinfo3') =~ /^(\d+)$/
+        or errorpage("Illegal branch number ". $cgi->param('payinfo2'));
+      $payinfo2 = "$1.$payinfo2";
+    }
     $payinfo = $payinfo1. '@'. $payinfo2;
   }
 
