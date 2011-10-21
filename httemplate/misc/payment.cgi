@@ -131,13 +131,15 @@
 
 % } elsif ( $payby eq 'CHEK' ) {
 %
-%   my( $payinfo1, $payinfo2, $payname, $ss, $paytype, $paystate,
+%   my( $account, $aba, $branch, $payname, $ss, $paytype, $paystate,
 %       $stateid, $stateid_state )
-%     = ( '', '', '', '', '', '', '', '' );
+%     = ( '', '', '', '', '', '', '', '', '' );
 %   if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-%     $cust_main->paymask =~ /^([\dx]+)\@([\dx]*)$/i
+%     $cust_main->paymask =~ /^([\dx]+)\@([\d\.x]*)$/i
 %       or die "unparsable payinfo ". $cust_main->payinfo;
-%     ($payinfo1, $payinfo2) = ($1, $2);
+%     ($account, $aba) = ($1, $2);
+%     ($branch,$aba) = split('\.',$aba)
+%       if $conf->exists('cust_main-require-bank-branch');
 %     $payname = $cust_main->payname;
 %     $ss = $cust_main->ss;
 %     $paytype = $cust_main->getfield('paytype');
@@ -150,17 +152,25 @@
     <INPUT TYPE="hidden" NAME="year" VALUE="2037">
     <TR>
       <TD ALIGN="right"><% mt('Account number') |h %></TD>
-      <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$payinfo1%>"></TD>
+      <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$account%>"></TD>
       <TD ALIGN="right"><% mt('Type') |h %></TD>
       <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
     </TR>
     <TR>
       <TD ALIGN="right"><% mt('ABA/Routing number') |h %></TD>
       <TD>
-        <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$payinfo2%>">
+        <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$aba%>">
         (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
       </TD>
     </TR>
+%   if ( $conf->exists('cust_main-require-bank-branch') ) {
+      <TR>
+        <TD ALIGN="right"><% mt('Branch number') |h %></TD>
+        <TD>
+          <INPUT TYPE="text" NAME="payinfo3" VALUE="<%$branch%>">
+        </TD>
+      </TR>
+%   }
     <TR>
       <TD ALIGN="right"><% mt('Bank name') |h %></TD>
       <TD><INPUT TYPE="text" NAME="payname" VALUE="<%$payname%>"></TD>
