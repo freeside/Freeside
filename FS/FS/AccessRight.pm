@@ -366,6 +366,8 @@ sub default_superuser_rights {
     'View customers of all agents',
     'View/link unlinked services',
     'Edit usage',
+    'Credit card void',
+    'Echeck void',
   );
 
   no warnings 'uninitialized';
