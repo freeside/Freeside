@@ -49,73 +49,91 @@ if ( $opt_a ) {
 my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
 
 my $conf = new FS::Conf;
-my @batchconf = $conf->config('batchconfig-eft_canada');
-# BIN, terminalID, merchantID, username, password
-my $username = $batchconf[0] or die "no EFT Canada batch username configured\n";
-my $password = $batchconf[1] or die "no EFT Canada batch password configured\n";
 
-my $host = 'ftp.eftcanada.com';
-print STDERR "Connecting to $username\@$host...\n" if $opt_v;
+my @agents;
+if ( $conf->exists('batch-spoolagent') ) {
+  @agents = qsearchs('agent', { 'disabled' => '' });
+} else {
+  @agents = (1);
+}
 
-my $sftp = Net::SFTP::Foreign->new( host => $host,
-                                    user => $username,
-                                    password => $password,
-                                    timeout => 30,
+foreach my $agent (@agents) {
+
+  my @batchconf;
+  if ( $conf->exists('batch-spoolagent') ) {
+    @batchconf = $conf->config('batchconfig-eft_canada', $agent->agentnum, 1);
+    next unless $batchconf[0];
+  } else {
+    @batchconf = $conf->config('batchconfig-eft_canada');
+  }
+  # BIN, terminalID, merchantID, username, password
+  my $user = $batchconf[0] or die "no EFT Canada batch username configured\n";
+  my $pass = $batchconf[1] or die "no EFT Canada batch password configured\n";
+
+  my $host = 'ftp.eftcanada.com';
+  print STDERR "Connecting to $user\@$host...\n" if $opt_v;
+
+  my $sftp = Net::SFTP::Foreign->new( host     => $host,
+                                      user     => $user,
+                                      password => $pass,
+                                      timeout  => 30,
                                     );
-die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" if $sftp->error;
+  die "failed to connect to '$user\@$host'\n(".$sftp->error.")\n" if $sftp->error;
 
-$sftp->setcwd('/Returns');
+  $sftp->setcwd('/Returns');
 
-my $files = $sftp->ls('.', wanted => qr/^ReturnFile/, names_only => 1);
-die "no response files found\n" if !@$files;
+  my $files = $sftp->ls('.', wanted => qr/^ReturnFile/, names_only => 1);
+  die "no response files found\n" if !@$files;
 
-FILE: foreach my $filename (@$files) {
-  print STDERR "Retrieving $filename\n" if $opt_v;
-  $sftp->get("$filename", "$tmpdir/$filename");
-  if($sftp->error) {
-    warn "failed to download $filename\n";
-    next FILE;
-  }
-
-  #move to server archive dir
-  $sftp->rename("$filename", "Archive/$filename");
-  if($sftp->error) {
-    warn "failed to archive $filename on server\n";
-  } # process it anyway though
-
-  #copy to local archive dir
-  if ( $opt_a ) {
-    print STDERR "Copying $tmpdir/$filename to archive dir $opt_a\n"
-      if $opt_v;
-    system 'cp', "$tmpdir/$filename", $opt_a;
-    warn "failed to copy $tmpdir/$filename to $opt_a: $@" if $@;
-  }
-
-  open my $fh, "<$tmpdir/$filename";
-  # Some duplication with FS::pay_batch::import_results, but we're really 
-  # doing something different here.
-  my $csv = new Text::CSV_XS ( { quote_char => undef, sep_char => '|' } );
-  my %hash;
-  while (my $line = <$fh>) {
-    next if $line =~ /^\s*$/;
-    $csv->parse($line) or do {
-      warn "can't parse $filename: ".$csv->error_input."\n";
-      next FILE; #parsing errors = reading the wrong kind of file
-    };
-    @hash{@fields} = $csv->fields();
-    print STDERR "voiding paybatchnum#$hash{paybatchnum}\n" if $opt_v;
-    my $cpb = qsearchs('cust_pay_batch', 
-                        { paybatchnum => $hash{'paybatchnum'} });
-    if ( !$cpb ) {
-      warn "can't find paybatchnum #$hash{paybatchnum} ($hash{first} $hash{last}, $hash{paid})\n";
-      next;
+  FILE: foreach my $filename (@$files) {
+    print STDERR "Retrieving $filename\n" if $opt_v;
+    $sftp->get("$filename", "$tmpdir/$filename");
+    if($sftp->error) {
+      warn "failed to download $filename\n";
+      next FILE;
     }
-    my $error = $cpb->decline("Returned payment ($hash{returncode})");
-    if ( $error ) {
-      warn "can't void paybatchnum #$hash{paybatchnum}: $error\n";
+
+    #move to server archive dir
+    $sftp->rename("$filename", "Archive/$filename");
+    if($sftp->error) {
+      warn "failed to archive $filename on server\n";
+    } # process it anyway though
+
+    #copy to local archive dir
+    if ( $opt_a ) {
+      print STDERR "Copying $tmpdir/$filename to archive dir $opt_a\n"
+        if $opt_v;
+      system 'cp', "$tmpdir/$filename", $opt_a;
+      warn "failed to copy $tmpdir/$filename to $opt_a: $@" if $@;
     }
+
+    open my $fh, "<$tmpdir/$filename";
+    # Some duplication with FS::pay_batch::import_results, but we're really 
+    # doing something different here.
+    my $csv = new Text::CSV_XS ( { quote_char => undef, sep_char => '|' } );
+    my %hash;
+    while (my $line = <$fh>) {
+      next if $line =~ /^\s*$/;
+      $csv->parse($line) or do {
+        warn "can't parse $filename: ".$csv->error_input."\n";
+        next FILE; #parsing errors = reading the wrong kind of file
+      };
+      @hash{@fields} = $csv->fields();
+      print STDERR "voiding paybatchnum#$hash{paybatchnum}\n" if $opt_v;
+      my $cpb = qsearchs('cust_pay_batch', 
+                          { paybatchnum => $hash{'paybatchnum'} });
+      if ( !$cpb ) {
+        warn "can't find paybatchnum #$hash{paybatchnum} ($hash{first} $hash{last}, $hash{paid})\n";
+        next;
+      }
+      my $error = $cpb->decline("Returned payment ($hash{returncode})");
+      if ( $error ) {
+        warn "can't void paybatchnum #$hash{paybatchnum}: $error\n";
+      }
+    }
+    close $fh;
   }
-  close $fh;
+
 }
 
 print STDERR "Finished!\n" if $opt_v;
