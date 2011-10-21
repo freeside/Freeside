@@ -43,11 +43,16 @@ my ($trans_code, $process_date);
         $cust_pay_batch->first, $cust_pay_batch->last;
     }
     my ($account, $aba) = split('@', $cust_pay_batch->payinfo);
-    # standard format for Canadian bank ID
-    $aba =~ /^0(\d{3})(\d{5})$/
-      or die "invalid routing number '$aba'\n";
-    push @fields, sprintf('%05s', $2),
-                  sprintf('%03s', $1),
+    my($bankno, $branch);
+    if ( $aba =~ /^0(\d{3})(\d{5})$/ ) { # standard format for Canadian bank ID
+      ($bankno, $branch) = ( $1, $2 );
+    } elsif ( $aba =~ /^(\d{5})\.(\d{3})$/ ) { #how we store branches
+      ($branch, $bankno) = ( $1, $2 );
+    } else {
+      die "invalid branch/routing number '$aba'\n";
+    }
+    push @fields, sprintf('%05s', $branch),
+                  sprintf('%03s', $bankno),
                   sprintf('%012s', $account),
                   sprintf('%.02f', $cust_pay_batch->amount);
     # DB = debit
