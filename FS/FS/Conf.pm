@@ -3253,6 +3253,14 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'batch-spoolagent',
+    'section'     => 'billing',
+    'description' => 'Store payment batches per-agent.',
+    'type'        => 'checkbox',
   },
 
   {

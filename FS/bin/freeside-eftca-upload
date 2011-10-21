@@ -38,15 +38,11 @@ else {
 }
 
 my $conf = new FS::Conf;
-my @batchconf = $conf->config('batchconfig-eft_canada');
-my $username = $batchconf[0] or die "no EFT Canada batch username configured\n";
-my $password = $batchconf[1] or die "no EFT Canada batch password configured\n";
 
 my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
 
-my @filenames;
-
 foreach my $pay_batch (@batches) {
+
   my $batchnum = $pay_batch->batchnum;
   my $filename = time2str('%Y%m%d', time) . '-' . sprintf('%06d.csv',$batchnum);
   print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
@@ -54,27 +50,27 @@ foreach my $pay_batch (@batches) {
   open OUT, ">$tmpdir/$filename";
   print OUT $text;
   close OUT;
-  push @filenames, $filename;
-}
 
-my $host = 'ftp.eftcanada.com';
-print STDERR "Connecting to $username\@$host...\n" if $opt_v;
+  my @batchconf = $conf->config('batchconfig-eft_canada', $pay_batch->agentnum);
+  my $user = $batchconf[0] or die "no EFT Canada batch username configured\n";
+  my $pass = $batchconf[1] or die "no EFT Canada batch password configured\n";
 
-my $sftp = Net::SFTP::Foreign->new( host => $host,
-                                    user => $username,
-                                    password => $password,
-                                    timeout => 30,
+  my $host = 'ftp.eftcanada.com';
+  print STDERR "Connecting to $user\@$host...\n" if $opt_v;
+
+  my $sftp = Net::SFTP::Foreign->new( host     => $host,
+                                      user     => $user,
+                                      password => $pass,
+                                      timeout  => 30,
                                     );
-die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" 
-    if $sftp->error;
+  die "failed to connect to '$user\@$host'\n(".$sftp->error.")\n" 
+      if $sftp->error;
 
-foreach my $filename (@filenames) {
   $sftp->put("$tmpdir/$filename", "$filename")
     or die "failed to upload file (".$sftp->error.")\n";
-}
 
-$FS::UID::AutoCommit = 0;
-foreach my $pay_batch (@batches) {
+  undef $sftp; #$sftp->disconnect;
+
   # Auto-approve and close the batch.  Some false laziness with manual_approve.
   my $batchnum = $pay_batch->batchnum;
   my $error;
@@ -86,7 +82,6 @@ foreach my $pay_batch (@batches) {
   $error ||= $pay_batch->set_status('R');
   die "error closing batch $batchnum: $error\n\n" if $error;
 }
-dbh->commit;
 
 print STDERR "Finished!\n" if $opt_v;
 

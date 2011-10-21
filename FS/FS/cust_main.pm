@@ -2481,6 +2481,7 @@ sub batch_card {
     'status' => 'O',
     'payby'  => FS::payby->payby2payment($payby),
   );
+  $pay_batch{agentnum} = $self->agentnum if $conf->exists('batch-spoolagent');
 
   my $pay_batch = qsearchs( 'pay_batch', \%pay_batch );
 
