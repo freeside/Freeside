@@ -122,6 +122,16 @@ sub check {
   $self->SUPER::check;
 }
 
+=item agent
+
+Returns the L<FS::agent> object for this template.
+
+=cut
+
+sub agent {
+  qsearchs('agent', { 'agentnum' => $_[0]->agentnum });
+}
+
 =item rebalance
 
 =cut
