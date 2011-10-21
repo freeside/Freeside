@@ -5,8 +5,9 @@ use vars qw( @ISA $DEBUG %import_info %export_info $conf );
 use Time::Local;
 use Text::CSV_XS;
 use FS::Record qw( dbh qsearch qsearchs );
-use FS::cust_pay;
 use FS::Conf;
+use FS::cust_pay;
+use FS::agent;
 use Date::Parse qw(str2time);
 use Business::CreditCard qw(cardtype);
 
@@ -39,6 +40,8 @@ from FS::Record.  The following fields are currently supported:
 =over 4
 
 =item batchnum - primary key
+
+=item agentnum - optional agent number for agent batches
 
 =item payby - CARD or CHEK
 
@@ -112,6 +115,7 @@ sub check {
     $self->ut_numbern('batchnum')
     || $self->ut_enum('payby', [ 'CARD', 'CHEK' ])
     || $self->ut_enum('status', [ 'O', 'I', 'R' ])
+    || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
   ;
   return $error if $error;
 

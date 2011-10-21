@@ -1382,19 +1382,19 @@ sub tables_hashref {
 
     'pay_batch' => { #batches of payments to an external processor
       'columns' => [
-        'batchnum',   'serial',    '',   '', '', '', 
-	'payby',      'char',      '',    4, '', '', # CARD/CHEK
-        'status',     'char', 'NULL',     1, '', '', 
-        'download',   @date_type, '', '', 
-        'upload',     @date_type, '', '', 
+        'batchnum', 'serial',     '', '', '', '', 
+        'agentnum',    'int', 'NULL', '', '', '', 
+	'payby',      'char',     '',  4, '', '', # CARD/CHEK
+        'status',     'char', 'NULL',  1, '', '', 
+        'download',       @date_type,     '', '', 
+        'upload',         @date_type,     '', '', 
       ],
       'primary_key' => 'batchnum',
       'unique' => [],
       'index' => [],
     },
 
-    'cust_pay_batch' => { #what's this used for again?  list of customers
-                          #in current CARD batch? (necessarily CARD?)
+    'cust_pay_batch' => { #list of customers in current CARD/CHEK batch
       'columns' => [
         'paybatchnum',   'serial',    '',   '', '', '', 
         'batchnum',   'int',    '',   '', '', '', 
