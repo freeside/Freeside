@@ -228,7 +228,7 @@ if (    $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions')
    )
 {
-  $report_packages{'Package definitions'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ];
+  $report_packages{'Package definitions (by # active)'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ];
   $report_packages{'separator'} =  '';
 }
 if ( $curuser->access_right('Financial reports') ) {
