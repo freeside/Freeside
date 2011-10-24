@@ -22,8 +22,19 @@ sub base_recur {
 sub calc_setup {
   # moved from all descendant packages which just had $self->option('setup_fee')
   my($self, $cust_pkg, $sdate, $details, $param) = @_;
+
   return 0 if $self->prorate_setup($cust_pkg, $sdate);
-  $self->option('setup_fee');
+
+  my $charge = $self->option('setup_fee');
+
+  my $discount = 0;
+  if ( $charge > 0 ) {
+      $param->{'setup_charge'} = $charge;
+      $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
+      delete $param->{'setup_charge'};
+  }
+
+  sprintf('%.2f', $charge - $discount);
 }
 
 sub cutoff_day {
