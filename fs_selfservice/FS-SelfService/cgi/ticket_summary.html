@@ -23,7 +23,7 @@ my $date_formatter = sub {
 };
 
 my @titles = ('#', qw(Subject Queue Status Created Due));
-push @titles, 'Estimated<BR>Minutes';
+push @titles, 'Estimated<BR>Hours';
 push @titles, 'Priority';
 
 $OUT .= join("\n", map { "<TH VALIGN=\"top\">$_</TH><TH>&nbsp;</TH>" } @titles)
@@ -41,8 +41,11 @@ $td. $ticket->{'queue'} . '</TD>'. $space .
 $td. $ticket->{'status'} . '</TD>'. $space .
 $td. $date_formatter->($ticket->{'created'}) . '</TD>'. $space .
 $td. $date_formatter->($ticket->{'due'}) . '</TD>'. $space .
-qq!<TD BGCOLOR="#$col" ALIGN="right">!. ($ticket->{'timeestimated'} || '') 
-.  '</TD>'. $space .
+qq!<TD BGCOLOR="#$col" ALIGN="right">!. 
+  ($ticket->{'timeestimated'} ? 
+    sprintf('%.1f', $ticket->{'timeestimated'} / 60.0) # .1f?
+  : ''
+  ) .  '</TD>'. $space .
 qq!<TD BGCOLOR="#$col" ALIGN="right">!;
   if ( $can_set_priority ) {
     $OUT .= '<INPUT TYPE="hidden" NAME="ticket'.$id.'" VALUE="1">' .
