@@ -5,7 +5,7 @@
           'color'       => '#333399',
           'cust_main'   => $cust_main,
           'closetext'   => emt('Close'),
-          'width'       => 763,
+          'width'       => 960, #763,
           'height'      => $height,
           %optional,
 &>
@@ -17,6 +17,6 @@ my %optional = map { $_ => $opt{$_} }
                  grep $opt{$_},
                    qw( lock_pkgpart lock_locationnum qualnum svcpart );
 
-my $height = $opt{'lock_locationnum'} ? 296 : 538;
+my $height = $opt{'lock_locationnum'} ? 336 : 576;
 
 </%init>

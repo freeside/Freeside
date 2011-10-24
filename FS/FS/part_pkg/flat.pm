@@ -220,11 +220,7 @@ sub is_prepaid { 0; } #no, we're postpaid
 
 sub can_start_date { ! shift->option('start_1st', 1) }
 
-#XXX discounts only on recurring fees for now (no setup/one-time or usage)
-sub can_discount {
-  my $self = shift;
-  $self->freq =~ /^\d+$/ && $self->freq > 0;
-}
+sub can_discount { 1; }
 
 sub recur_temporality {
   my $self = shift;

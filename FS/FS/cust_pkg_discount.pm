@@ -171,6 +171,9 @@ sub check {
   ;
   return $error if $error;
 
+  return "Discount does not apply to setup fees, and package has no recurring"
+    if ! $self->discount->setup && ! $self->cust_pkg->freq;
+
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   $self->SUPER::check;

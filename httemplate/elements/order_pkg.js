@@ -8,8 +8,10 @@ function pkg_changed () {
     if ( discountnum ) {
       if ( form.pkgpart.options[form.pkgpart.selectedIndex].getAttribute('data-can_discount') == 1 ) {
         form.discountnum.disabled = false;
+        discountnum_changed(form.discountnum);
       } else {
         form.discountnum.disabled = true;
+        discountnum_changed(form.discountnum);
       }
     }
 
@@ -29,6 +31,7 @@ function pkg_changed () {
   } else {
     form.submitButton.disabled = true;
     if ( discountnum ) { form.discountnum.disabled = true; }
+    discountnum_changed(form.discountnum);
   }
 }
 
