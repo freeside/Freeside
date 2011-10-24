@@ -67,7 +67,7 @@ my $twhere = "
     AND (    ( Transactions.Type = 'Set'
                AND Transactions.Field = 'TimeWorked'
                AND Transactions.NewValue != Transactions.OldValue )
-          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' )
+          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' OR Transactions.Type='Touch' )
                AND Transactions.TimeTaken > 0
              )
         )

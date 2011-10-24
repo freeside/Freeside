@@ -47,9 +47,9 @@ die "access denied"
 #some amount of false laziness w/timeworked.html...
 
 my $transactiontime = "
-  CASE transactions.type when 'Set'
-    THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60
-    ELSE timetaken*60
+  CASE Transactions.Type when 'Set'
+    THEN (to_number(NewValue,'999999')-to_number(OldValue, '999999')) * 60
+    ELSE TimeTaken*60
   END
 ";
 
@@ -62,7 +62,7 @@ my $where = "
     AND (    ( Transactions.Type = 'Set'
                AND Transactions.Field = 'TimeWorked'
                AND Transactions.NewValue != Transactions.OldValue )
-          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' )
+          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' OR Transactions.Type='Touch' )
                AND Transactions.TimeTaken > 0
              )
         )
