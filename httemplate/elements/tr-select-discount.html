@@ -81,12 +81,14 @@
     function <% $name %>_changed(what) {
       var <% $name %> = what.options[what.selectedIndex].value;
 
-      if ( <% $name %> == '-1' ) {
+      if ( <% $name %> == '-1' && ! what.disabled ) {
         <% $ge %>('<% $name %>__type_label0').style.display = '';
         <% $ge %>('<% $name %>__type_label0').style.visibility = '';
         <% $ge %>('<% $name %>__type').style.display = '';
         <% $ge %>('<% $name %>__type').style.visibility = '';
-%       #XXX retrieve previous visibility for amount, percent :/
+
+        <% $name %>__type_changed( <% $ge %>('<% $name %>__type') );
+
         <% $ge %>('<% $name %>_months_label0').style.display = '';
         <% $ge %>('<% $name %>_months_label0').style.visibility = '';
         <% $ge %>('<% $name %>_months').style.display = '';
@@ -104,19 +106,7 @@
         <% $ge %>('<% $name %>__type').style.display = 'none';
         <% $ge %>('<% $name %>__type').style.visibility = 'hidden';
 
-%       #XXX save visibility settings for amount, percent :/
-        <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
-        <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_amount_input0').style.display = 'none';
-        <% $ge %>('<% $name %>_amount_input0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_amount_input0').style.display = 'none';
-        <% $ge %>('<% $name %>_amount_input0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_percent_label0').style.display = 'none';
-        <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
-        <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
-        <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
+        <% $name %>__type_changed( <% $ge %>('<% $name %>__type') );
 
         <% $ge %>('<% $name %>_months_label0').style.display = 'none';
         <% $ge %>('<% $name %>_months_label0').style.visibility = 'hidden';
@@ -137,15 +127,15 @@
     function <% $name %>__type_changed(what) {
       var <% $name %>__type = what.options[what.selectedIndex].value;
 
-      if ( <% $name %>__type == '<% $select %>' ) {
+      if ( <% $name %>__type == '<% $select %>' || what.style.display == 'none' ) {
         <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
         <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_amount').style.display = 'none';
-        <% $ge %>('<% $name %>_amount').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_amount_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_amount_input0').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_percent_label0').style.display = 'none';
         <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_percent').style.display = 'none';
-        <% $ge %>('<% $name %>_percent').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
       } else if ( <% $name %>__type == 'Amount' ) {
         <% $ge %>('<% $name %>_amount_label0').style.display = '';
         <% $ge %>('<% $name %>_amount_label0').style.visibility = '';
