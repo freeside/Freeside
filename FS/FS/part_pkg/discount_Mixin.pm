@@ -42,7 +42,7 @@ sub calc_discount {
 
   my $br = $self->base_recur_permonth($cust_pkg, $sdate);
   $br += $param->{'override_charges'} if $param->{'override_charges'};
-  
+ 
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
 
@@ -91,14 +91,13 @@ sub calc_discount {
       $discount->months - $cust_pkg_discount->months_used )
     : $chg_months;
 
-    if(defined $param->{'setup_charge'}) {
+    if (defined $param->{'setup_charge'}) {
         next unless $discount->setup;
 
-        if ( $discount->percent ) {
+        if ( $discount->percent > 0 ) {
             $amount = sprintf('%.2f', $discount->percent * $param->{'setup_charge'} / 100 );
             $months = 1;
-        }
-        elsif ( $discount->amount && $discount->months == 1) {
+        } elsif ( $discount->amount > 0 && $discount->months == 1) {
             $discount_left = $param->{'setup_charge'} - $discount->amount;
             $amount = $param->{'setup_charge'} if $discount_left < 0;
             $amount = $discount->amount if $discount_left >= 0;
@@ -107,42 +106,49 @@ sub calc_discount {
             # transfer remainder of discount, if any, to recur
             $param->{'discount_left_recur'}{$discount->discountnum} = 
                 0 - $discount_left if $discount_left < 0;
-        }
-        else {
+        } else {
             next; 
         }
-    }
-    elsif ( defined $param->{'discount_left_recur'}{$discount->discountnum}
-        && $param->{'discount_left_recur'}{$discount->discountnum} > 0) {
+    } elsif ( defined $param->{'discount_left_recur'}{$discount->discountnum}
+              && $param->{'discount_left_recur'}{$discount->discountnum} > 0
+            ) {
         # use up transferred remainder of discount from setup
         $amount = $param->{'discount_left_recur'}{$discount->discountnum};
         $param->{'discount_left_recur'}{$discount->discountnum} = 0;
         $months = 1;
-    }
-    elsif ( $discount->setup && $discount->months == 1 && $discount->amount ) {
+    } elsif (    $discount->setup
+              && $discount->months == 1
+              && $discount->amount > 0
+            ) {
         next;
     }
 
-    my $error = $cust_pkg_discount->increment_months_used($months)
-        if (defined $param->{'real_pkgpart'} 
-            && $cust_pkg->pkgpart == $param->{'real_pkgpart'} 
-            && ! defined $param->{'setup_charge'});
-    die "error discounting: $error" if $error;
+    if ( ! defined $param->{'setup_charge'} ) {
+      my $error = $cust_pkg_discount->increment_months_used($months)
+        if defined $param->{'real_pkgpart'} 
+        && $cust_pkg->pkgpart == $param->{'real_pkgpart'};
+      die "error discounting: $error" if $error;
 
-    $amount = min($amount, $br);
-    $amount *= $months;
+      $amount = min($amount, $br);
+      $amount *= $months;
+    }
+
     $amount = sprintf('%.2f', $amount);
 
     next unless $amount > 0;
 
     # transfer remainder of discount, if any, to setup
-    if ( $discount->setup && $discount->amount
+    if ( $discount->setup && $discount->amount > 0
         && (!$discount->months || $discount->months != 1)
-        && !defined $param->{'setup_charge'}) {
-        $discount_left = $br - $amount;
-        $amount = $br if $discount_left < 0;
+        && !defined $param->{'setup_charge'}
+       )
+    {
+      $discount_left = $br - $amount;
+      if ( $discount_left < 0 ) {
+        $amount = $br;
         $param->{'discount_left_setup'}{$discount->discountnum} = 
-                                    0 - $discount_left if $discount_left < 0;
+          0 - $discount_left;
+      }
     }
 
     #record details in cust_bill_pkg_discount
