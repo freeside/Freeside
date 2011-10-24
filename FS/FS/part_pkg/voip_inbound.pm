@@ -272,12 +272,16 @@ sub calc_usage {
 
       if ( $charge > 0 ) {
         $charges += $charge;
-        my @call_details = ($cdr->downstream_csv( 'format' => $output_format,
-                                            'charge'  => $charge,
-                                            'minutes' => $minutes,
-                                            'granularity' => $granularity,
-                                          )
-                                );
+        my @call_details = (
+          $cdr->downstream_csv( 'format'      => $output_format,
+                                'charge'      => $charge,
+                                'seconds'     => ($use_duration
+                                                   ? $cdr->duration
+                                                   : $cdr->billsec
+                                                 ),
+                                'granularity' => $granularity,
+                              )
+        );
         push @$details,
           { format      => 'C',
             detail      => $call_details[0],
