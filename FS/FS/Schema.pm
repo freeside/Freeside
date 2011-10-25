@@ -538,6 +538,23 @@ sub tables_hashref {
       'index' => [ ['custnum'], ['_date'], ['statementnum'], ['agent_invid'] ],
     },
 
+    #for importing invoices from a legacy system for display purposes only
+    # no effect upon balance
+    'legacy_cust_bill' => {
+      'columns' => [
+        'legacyinvnum',  'serial',     '',      '', '', '',
+        'legacyid',     'varchar', 'NULL', $char_d, '', '',
+        'custnum',          'int',     '',      '', '', '', 
+        '_date',       @date_type,                  '', '', 
+        'charged',    @money_type,                  '', '', 
+        'content_pdf',     'blob', 'NULL',      '', '', '',
+        'content_html',    'text', 'NULL',      '', '', '',
+      ],
+      'primary_key' => 'legacyinvnum',
+      'unique' => [],
+      'index'  => [ ['legacyid', 'custnum'], ],
+    },
+
     'cust_statement' => {
       'columns' => [
         'statementnum', 'serial', '', '', '', '',
