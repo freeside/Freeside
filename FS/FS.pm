@@ -332,6 +332,8 @@ L<FS::cust_bill_pkg> - Invoice line item class
 
 L<FS::cust_bill_pkg_detail> - Invoice line item detail class
 
+L<FS::legacy_cust_bill> - Legacy data invoice class
+
 L<FS::part_bill_event> - (Old) Invoice event definition class
 
 L<FS::cust_bill_event> - (Old) Completed invoice event class

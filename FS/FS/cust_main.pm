@@ -40,6 +40,7 @@ use FS::payby;
 use FS::cust_pkg;
 use FS::cust_svc;
 use FS::cust_bill;
+use FS::legacy_cust_bill;
 use FS::cust_pay;
 use FS::cust_pay_pending;
 use FS::cust_pay_void;
@@ -3573,6 +3574,25 @@ sub open_cust_bill {
     #@_
   );
 
+}
+
+=item legacy_cust_bill [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
+
+Returns all the legacy invoices (see L<FS::legacy_cust_bill>) for this customer.
+
+=cut
+
+sub legacy_cust_bill {
+  my $self = shift;
+
+  #return $self->num_legacy_cust_bill unless wantarray;
+
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->_date <=> $b->_date }
+      qsearch({ 'table'    => 'legacy_cust_bill',
+                'hashref'  => { 'custnum' => $self->custnum, },
+                'order_by' => 'ORDER BY _date ASC',
+             });
 }
 
 =item cust_statement [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]

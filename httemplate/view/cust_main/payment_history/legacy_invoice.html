@@ -1,0 +1,23 @@
+<% $link %><% $invoice %><% $link ? '</A>' : '' %>
+<%init>
+
+my( $legacy_cust_bill ) = @_; #, %opt )
+
+my $invoice;
+if ( length($legacy_cust_bill->legacyid) ) {
+  $invoice = emt('Legacy Invoice #[_1]', $legacy_cust_bill->legacyid);
+} else {
+  $invoice = emt('Legacy Invoice');
+}
+
+my $legacyinvnum = $legacy_cust_bill->legacyinvnum;
+
+my $link = '';
+if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') ) {
+  $link = length($legacy_cust_bill->content_html)
+            ? qq!<A HREF="${p}view/legacy_cust_bill.html?$legacyinvnum">!
+            : length($legacy_cust_bill->content_pdf)
+              ? qq!<A HREF="${p}view/legacy_cust_bill-pdf.cgi?$legacyinvnum">!
+              : '';
+
+</%init>

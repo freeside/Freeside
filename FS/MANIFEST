@@ -614,3 +614,5 @@ FS/dsl_device.pm
 t/dsl_device.t
 FS/export_nas.pm
 t/export_nas.t
+FS/legacy_cust_bill.pm
+t/legacy_cust_bill.t

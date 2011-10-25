@@ -290,6 +290,11 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_msg;
   use FS::radius_group;
   use FS::template_content;
+  use FS::dsl_device;
+  use FS::nas;
+  use FS::nas;
+  use FS::export_nas;
+  use FS::legacy_cust_bill;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

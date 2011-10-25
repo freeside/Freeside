@@ -396,6 +396,15 @@ my %opt = (
   )
 );
 
+#legacy invoices
+foreach my $legacy_cust_bill ($cust_main->legacy_cust_bill) {
+  push @history, {
+    'date'   => $legacy_cust_bill->_date,
+    'desc'   => include('payment_history/legacy_invoice.html', $legacy_cust_bill, %opt ),
+    'charge' => $legacy_cust_bill->charged,
+  };
+}
+
 #invoices
 foreach my $cust_bill ($cust_main->cust_bill) {
   push @history, {
