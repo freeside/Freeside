@@ -1,0 +1,62 @@
+<& /elements/header.html, mt('Legacy Invoice View'), menubar(
+  emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
+) &>
+
+% if ( 0 ) { #implement resending of legacy invoices?
+% #if ( $curuser->access_right('Resend invoices') ) {
+
+    <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>
+
+%   if ( grep { $_ ne 'POST' } $legacy_cust_bill->cust_main->invoicing_list ) { 
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=email;<% $link %>"><% mt('Re-email this invoice') |h %></A>
+%   } 
+
+%   if ( $conf->exists('hylafax') && length($legacy_cust_bill->cust_main->fax) ) { 
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>"><% mt('Re-fax this invoice') |h %></A>
+%   } 
+
+    <BR><BR>
+
+% } 
+
+% if ( length($legacy_cust_bill->content_pdf) ) {
+
+  <A HREF="<% $p %>view/legacy_cust_bill-pdf.cgi?<% $link %>"><% mt('View typeset invoice PDF') |h %></A>
+  <BR><BR>
+% } 
+
+<% $legacy_cust_bill->content_html %>
+
+<& /elements/footer.html &>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('View invoices');
+
+my $legacyinvnum;
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) {
+  $legacyinvnum = $3;
+} else {
+  $legacyinvnum = $cgi->param('legacyinvnum');
+}
+
+my $conf = new FS::Conf;
+
+my $legacy_cust_bill = qsearchs({
+  'select'    => 'legacy_cust_bill.*',
+  'table'     => 'legacy_cust_bill',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'legacyinvnum' => $legacyinvnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die "Legacy invoice #$legacyinvnum not found!" unless $legacy_cust_bill;
+
+my $custnum = $legacy_cust_bill->custnum;
+my $display_custnum = $legacy_cust_bill->cust_main->display_custnum;
+
+my $link = "legacyinvnum=$legacyinvnum";
+
+</%init>
