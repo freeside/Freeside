@@ -852,7 +852,6 @@ sub _make_lines {
   my $old_cust_pkg = new FS::cust_pkg \%hash;
 
   my @details = ();
-  my @discounts = ();
   my $lineitems = 0;
 
   $cust_pkg->pkgpart($part_pkg->pkgpart);
@@ -863,7 +862,8 @@ sub _make_lines {
 
   my $setup = 0;
   my $unitsetup = 0;
-  my %setup_param = ();
+  my @setup_discounts = ();
+  my %setup_param = ( 'discounts' => \@setup_discounts );
   if (     ! $options{recurring_only}
        and ! $options{cancel}
        and ( $options{'resetup'}
@@ -910,6 +910,7 @@ sub _make_lines {
   #XXX unit stuff here too
   my $recur = 0;
   my $unitrecur = 0;
+  my @recur_discounts = ();
   my $sdate;
   if (     ! $cust_pkg->start_date
        and ( ! $cust_pkg->susp || $part_pkg->option('suspend_bill', 1) )
@@ -941,13 +942,13 @@ sub _make_lines {
                                 && ( $cust_pkg->getfield('bill') || 0 ) <= day_end($time)
                                 && !$options{cancel}
                               );
-    my %param = ( 'precommit_hooks'     => $precommit_hooks,
+    my %param = ( %setup_param,
+                  'precommit_hooks'     => $precommit_hooks,
                   'increment_next_bill' => $increment_next_bill,
-                  'discounts'           => \@discounts,
+                  'discounts'           => \@recur_discounts,
                   'real_pkgpart'        => $real_pkgpart,
                   'freq_override'	=> $options{freq_override} || '',
                   'setup_fee'           => 0,
-                  %setup_param,
                 );
 
     my $method = $options{cancel} ? 'calc_cancel' : 'calc_recur';
@@ -1033,8 +1034,10 @@ sub _make_lines {
       return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
     }
 
-    my $discount_show_always = ($recur == 0 && scalar(@discounts) 
-				&& $conf->exists('discount-show-always'));
+    my $discount_show_always = $conf->exists('discount-show-always')
+                               && (    ($setup == 0 && scalar(@setup_discounts))
+                                    || ($recur == 0 && scalar(@recur_discounts))
+                                  );
 
     if (    $setup != 0
          || $recur != 0
@@ -1063,7 +1066,7 @@ sub _make_lines {
         'unitrecur' => $unitrecur,
         'quantity'  => $cust_pkg->quantity,
         'details'   => \@details,
-        'discounts' => \@discounts,
+        'discounts' => [ @setup_discounts, @recur_discounts ],
         'hidden'    => $part_pkg->hidden,
         'freq'      => $part_pkg->freq,
       };
