@@ -267,7 +267,9 @@
 %
 %  my $charge  = exists($item->{'charge'})
 %                  ? sprintf("$money_char\%.2f", $item->{'charge'})
-%                  : '';
+%                  : exists($item->{'charge_nobal'})
+%                    ? sprintf("$money_char\%.2f", $item->{'charge_nobal'})
+%                    : '';
 %
 %  my $payment = exists($item->{'payment'})
 %                  ? sprintf("-&nbsp;$money_char\%.2f", $item->{'payment'})
@@ -401,7 +403,7 @@ foreach my $legacy_cust_bill ($cust_main->legacy_cust_bill) {
   push @history, {
     'date'   => $legacy_cust_bill->_date,
     'desc'   => include('payment_history/legacy_invoice.html', $legacy_cust_bill, %opt ),
-    'charge' => $legacy_cust_bill->charged,
+    'charge_nobal' => $legacy_cust_bill->charged,
   };
 }
 
