@@ -57,6 +57,8 @@ sub create_initial_data {
 
   populate_numbering();
 
+  enable_encryption();
+  
   if ( $oldAutoCommit ) {
     dbh->commit or die dbh->errstr;
   }
