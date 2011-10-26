@@ -929,7 +929,7 @@ sub insert {
                     || $self->isa('FS::payinfo_Mixin') )
                 && $self->payby
                 && !grep { $self->payby eq $_ } @encrypt_payby;
-      $self->{'saved'} = $self->getfield($field);
+      $saved->{$field} = $self->getfield($field);
       $self->setfield($field, $self->encrypt($self->getfield($field)));
     }
   }
