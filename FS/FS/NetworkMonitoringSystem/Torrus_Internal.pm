@@ -176,6 +176,7 @@ sub add_router {
 sub add_interface {
   my($self, $router_ip, $interface, $serviceid ) = @_;
 
+  #false laziness w/torrus/perllib/Torrus/Renderer.pm iface_underscore, update both
   $interface =~ s(\/)(_)g; #slashes become underscores
   $interface =~ s(\.)(_)g; #periods too, huh
   $interface =~ s(\-)(_)g; #yup, and dashes

@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: HTML.pm,v 1.14 2011-03-01 00:09:39 ivan Exp $
+# $Id: HTML.pm,v 1.14.2.1 2011-10-26 02:44:18 ivan Exp $
 # Stanislav Sinyagin <ssinyagin@yahoo.com>
 
 package Torrus::Renderer::HTML;
@@ -120,7 +120,10 @@ sub render_html
         'freesideComponent' => sub { return $self->freesideComponent(@_); },
         'uri_escape'        => sub { return uri_escape(@_); },
         'matches'        => sub { return $_[0] =~ $_[1]; },
-        'iface_underscore' => sub { $_[0] =~ s/[\/\.]/_/g; return $_[0]; },
+
+        #false laziness w/Torrus_Internal::add_interface, update both
+        'iface_underscore' => sub { $_[0] =~ s/[\/\.\-]/_/g; return $_[0]; },
+
         'load_nms'       => sub { return $self->load_nms; },
         'get_serviceids'    => sub { my $nms = shift; 
                                   my $router = shift;
@@ -131,13 +134,15 @@ sub render_html
 
           if($type eq 'nms-add_iface.html') {
               my $host = shift;
-              my $iface = shift;
+              my $interface = shift;
               my $nms = shift;
               my $serviceids = shift;
 
-              if ( $serviceids && $serviceids->{$iface} ) {
+              if ( $serviceids && $serviceids->{$interface} ) {
 
-                my $svc_port = $nms->find_svc($serviceids->{$iface});
+                my $serviceid = $serviceids->{$interface};
+
+                my $svc_port = $nms->find_svc($serviceid);
 
                 if ($svc_port) {
                    my $url = $Torrus::Freeside::FSURL.
@@ -145,13 +150,13 @@ sub render_html
                    return "<A HREF='$url'>View Service</A>";
                 } else {
                   my $component =
-                   $nms->find_torrus_srvderive_component($serviceids->{$iface});
+                   $nms->find_torrus_srvderive_component($serviceid);
                   
                   if ($component) {
-                     return $serviceids->{$iface}. ' combined into '.
+                     return "$serviceid combined into ".
                             $component->torrus_srvderive->serviceid;
                   } else {
-                     return 'Monitored as '. $serviceids->{$iface}.
+                     return "Monitored as $serviceid".
                             '; not yet provisioned or combined';
                   }
                 }
@@ -161,7 +166,7 @@ sub render_html
                return
                    $self->freesideComponent('/elements/popup_link.html',
                        'action' => "/freeside/misc/".
-                               $type."?host=$host;iface=$iface",
+                               $type."?host=$host;iface=$interface",
                         'label' => 'Monitor for billing',
                         'actionlabel' => 'Monitor interface',
                    );
