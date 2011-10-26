@@ -1838,7 +1838,7 @@ sub _h_statement {
   ;
 
   # If we're encrypting then don't store the payinfo in the history
-  if ( $conf && $conf->exists('encryption') ) {
+  if ( $conf && $conf->exists('encryption') && $self->table ne 'banned_pay' ) {
     @fields = grep { $_ ne 'payinfo' } @fields;
   }
 
