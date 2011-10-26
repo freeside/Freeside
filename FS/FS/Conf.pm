@@ -732,7 +732,7 @@ my %payment_gateway_options = (
   {
     'key'         => 'encryption',
     'section'     => 'billing',
-    'description' => 'Enable encryption of credit cards and eheck numbers',
+    'description' => 'Enable encryption of credit cards and echeck numbers',
     'type'        => 'checkbox',
   },
 
