@@ -129,15 +129,17 @@ sub upgrade {
 
   }
 
-  # decrypt all payinfo where payby = BILL
+  # decrypt inadvertantly-encrypted payinfo where payby != CARD,DCRD,CHEK,DCHK
   # kind of a weird spot for this, but it's better than duplicating
   # all this code in each class...
   my @decrypt_tables = qw( cust_main cust_pay_void cust_pay cust_refund cust_pay_pending );
   foreach my $table ( @decrypt_tables ) {
-      my @objects = qsearch({   'table'     => $table,
-                                'hashref'   => { 'payby' => 'BILL', },
-                                'extra_sql' => 'AND LENGTH(payinfo) > 100',
-                              });
+      my @objects = qsearch({
+        'table'     => $table,
+        'hashref'   => {},
+        'extra_sql' => "WHERE payby NOT IN ( 'CARD', 'DCRD', 'CHEK', 'DCHK' ) ".
+                       " AND LENGTH(payinfo) > 100",
+      });
       foreach my $object ( @objects ) {
           my $payinfo = $object->decrypt($object->payinfo);
           die "error decrypting payinfo" if $payinfo eq $object->payinfo;
