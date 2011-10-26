@@ -22,6 +22,9 @@ $realtime_bop_decline_quiet = 0;
 $DEBUG = 0;
 $me = '[FS::cust_main::Billing_Realtime]';
 
+our $BOP_TESTING = 0;
+our $BOP_TESTING_SUCCESS = 1;
+
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
   #yes, need it for stuff below (prolly should be cached)
@@ -602,9 +605,7 @@ sub realtime_bop {
   my $cpp_pending_err = $cust_pay_pending->replace;
   return $cpp_pending_err if $cpp_pending_err;
 
-  #config?
-  my $BOP_TESTING = 0;
-  my $BOP_TESTING_SUCCESS = 1;
+  warn Dumper($transaction) if $DEBUG > 2;
 
   unless ( $BOP_TESTING ) {
     $transaction->test_transaction(1)
