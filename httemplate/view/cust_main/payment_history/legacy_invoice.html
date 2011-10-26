@@ -19,5 +19,6 @@ if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') ) {
             : length($legacy_cust_bill->content_pdf)
               ? qq!<A HREF="${p}view/legacy_cust_bill-pdf.cgi?$legacyinvnum">!
               : '';
+}
 
 </%init>
