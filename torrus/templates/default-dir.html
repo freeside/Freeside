@@ -16,7 +16,7 @@
     router = nodeName(parent(parent(token)));
     serviceids = get_serviceids(nms,router);
 
-    # HACK! this doesn't do what you think it does...
+    # this displays the link on the port detail page
     popup_link('nms-add_iface.html',router,uri_escape(iface_underscore(nodeName(token))),nms,serviceids);
  END; 
  IF matches(thepath,'Routers/$');

@@ -8,7 +8,7 @@ perllib/Torrus/Renderer/HTML.pm          # header/footer, add interface popups
  perllib/Torrus/ReportOutput/Freeside.pm # header/footer
 perllib/Torrus/ReportOutput/HTML.pm      # header/footer
 templates/html-incblocks.txt             # header/footer
-tempaltes/default-rrd.html               # title beautification
-tempaltes/default-dir.html               # add interface popups
+templates/default-rrd.html               # title beautification
+templates/default-dir.html               # add interface popups
 sup/webplain/torrus.css                  # skinning
 bin/srvderive.in                         # --end and commit bugfixes
