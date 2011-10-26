@@ -732,7 +732,7 @@ my %payment_gateway_options = (
   {
     'key'         => 'encryption',
     'section'     => 'billing',
-    'description' => 'Enable encryption of credit cards.',
+    'description' => 'Enable encryption of credit cards and eheck numbers',
     'type'        => 'checkbox',
   },
 
@@ -740,20 +740,21 @@ my %payment_gateway_options = (
     'key'         => 'encryptionmodule',
     'section'     => 'billing',
     'description' => 'Use which module for encryption?',
-    'type'        => 'text',
+    'type'        => 'select',
+    'select_enum' => [ '', 'Crypt::OpenSSL::RSA', ],
   },
 
   {
     'key'         => 'encryptionpublickey',
     'section'     => 'billing',
-    'description' => 'Your RSA Public Key - Required if Encryption is turned on.',
+    'description' => 'Encryption public key',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'encryptionprivatekey',
     'section'     => 'billing',
-    'description' => 'Your RSA Private Key - Including this will enable the "Bill Now" feature.  However if the system is compromised, a hacker can use this key to decode the stored credit card information.  This is generally not a good idea.',
+    'description' => 'Encryption private key',
     'type'        => 'textarea',
   },
 
