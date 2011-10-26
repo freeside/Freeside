@@ -5,6 +5,7 @@ use vars qw( @ISA @EXPORT_OK );
 use Exporter;
 #use Tie::DxHash;
 use Tie::IxHash;
+use Crypt::OpenSSL::RSA;
 use FS::UID qw( dbh driver_name );
 use FS::Record;
 
@@ -13,7 +14,7 @@ $FS::svc_domain::whois_hack = 1;
 $FS::svc_domain::whois_hack = 1;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( create_initial_data );
+@EXPORT_OK = qw( create_initial_data enable_encryption );
 
 =head1 NAME
 
@@ -55,10 +56,31 @@ sub create_initial_data {
   populate_msgcat();
 
   populate_numbering();
-  
+
   if ( $oldAutoCommit ) {
     dbh->commit or die dbh->errstr;
   }
+
+}
+
+sub enable_encryption {
+
+  eval "use FS::Conf";
+  die $@ if $@;
+
+  my $conf = new FS::Conf;
+
+  die "encryption key(s) already in place"
+    if $conf->exists('encryptionpublickey')
+    || $conf->exists('encryptionprivatekey');
+
+  my $length = 2048;
+  my $rsa = Crypt::OpenSSL::RSA->generate_key($length);
+
+  $conf->set('encryption', 1);
+  $conf->set('encryptionmodule',     'Crypt::OpenSSL::RSA');
+  $conf->set('encryptionpublickey',  $rsa->get_public_key_string );
+  $conf->set('encryptionprivatekey', $rsa->get_private_key_string );
 
 }
 

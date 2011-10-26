@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Setup qw(enable_encryption);
+
+my $user = shift or die "Usage: enable-encryption user\n";
+
+adminsuidsetup $user;
+
+enable_encryption;
