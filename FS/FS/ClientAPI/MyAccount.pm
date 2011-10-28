@@ -30,6 +30,7 @@ use FS::dsl_device;
 use FS::part_svc;
 use FS::cust_main;
 use FS::cust_bill;
+use FS::legacy_cust_bill;
 use FS::cust_main_county;
 use FS::cust_pkg;
 use FS::payby;
@@ -1143,6 +1144,52 @@ sub invoice_pdf {
 
 }
 
+sub legacy_invoice {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $legacyinvnum = $p->{'legacyinvnum'};
+
+  my $legacy_cust_bill = qsearchs('legacy_cust_bill', {
+    'legacyinvnum' => $legacyinvnum,
+    'custnum'      => $custnum,
+  }) or return { 'error' => "Can't find legacyinvnum" };
+
+  #my %return;
+
+  return { 'error'        => '',
+           'legacyinvnum' => $legacyinvnum,
+           'invoice_html' => $legacy_cust_bill->content_html,
+         };
+
+}
+
+sub legacy_invoice_pdf {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $legacyinvnum = $p->{'legacyinvnum'};
+
+  my $legacy_cust_bill = qsearchs('legacy_cust_bill', {
+    'legacyinvnum' => $legacyinvnum,
+    'custnum'      => $custnum,
+  }) or return { 'error' => "Can't find legacyinvnum" };
+
+  #my %return;
+
+  return { 'error'        => '',
+           'legacyinvnum' => $legacyinvnum,
+           'invoice_pdf'  => $legacy_cust_bill->content_pdf,
+         };
+
+}
+
 sub invoice_logo {
   my $p = shift;
 
@@ -1187,6 +1234,7 @@ sub list_invoices {
     or return { 'error' => "unknown custnum $custnum" };
 
   my @cust_bill = $cust_main->cust_bill;
+  my @legacy_cust_bill = $cust_main->legacy_cust_bill;
 
   my $balance = 0;
 
@@ -1196,18 +1244,32 @@ sub list_invoices {
               map {
                     my $owed = $_->owed;
                     $balance += $owed;
-                    +{ 'invnum'     => $_->invnum,
-                       '_date'      => $_->_date,
-                       'date'       => time2str("%b %o, %Y", $_->_date),
-                       'date_short' => time2str("%m-%d-%Y",  $_->_date),
-                       'previous'   => sprintf('%.2f', ($_->previous)[0]),
-                       'charged'    => sprintf('%.2f', $_->charged),
-                       'owed'       => sprintf('%.2f', $owed),
-                       'balance'    => sprintf('%.2f', $balance),
+                    +{ 'invnum'       => $_->invnum,
+                       '_date'        => $_->_date,
+                       'date'         => time2str("%b %o, %Y", $_->_date),
+                       'date_short'   => time2str("%m-%d-%Y",  $_->_date),
+                       'previous'     => sprintf('%.2f', ($_->previous)[0]),
+                       'charged'      => sprintf('%.2f', $_->charged),
+                       'owed'         => sprintf('%.2f', $owed),
+                       'balance'      => sprintf('%.2f', $balance),
                      }
                   }
                   @cust_bill
-            ]
+            ],
+            'legacy_invoices' => [
+              map {
+                    +{ 'legacyinvnum' => $_->legacyinvnum,
+                       'legacyid'     => $_->legacyid,
+                       '_date'        => $_->_date,
+                       'date'         => time2str("%b %o, %Y", $_->_date),
+                       'date_short'   => time2str("%m-%d-%Y",  $_->_date),
+                       'charged'      => sprintf('%.2f', $_->charged),
+                       'has_content'  => (    length($_->content_pdf)
+                                           || length($_->content_html) ),
+                     }
+                  }
+                  @legacy_cust_bill
+            ],
           };
 }
 

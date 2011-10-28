@@ -72,6 +72,8 @@ sub ss2clientapi {
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'                   => 'MyAccount/invoice',
   'invoice_pdf'               => 'MyAccount/invoice_pdf',
+  'legacy_invoice'            => 'MyAccount/legacy_invoice',
+  'legacy_invoice_pdf'        => 'MyAccount/legacy_invoice_pdf',
   'invoice_logo'              => 'MyAccount/invoice_logo',
   'list_invoices'             => 'MyAccount/list_invoices', #?
   'cancel'                    => 'MyAccount/cancel',        #add to ss cgi!
