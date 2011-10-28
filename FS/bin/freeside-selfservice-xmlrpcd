@@ -36,7 +36,7 @@ my $lock_file = "$FREESIDE_LOCK/selfservice-xmlrpcd.writelock";
 
 #freeside xmlrpc.cgi
 my %typelookup = (
-  base64 => [10, sub {$_[0] =~ /[^\x09\x0a\x0d\x20-\x7f]/}, 'as_base64'],
+#not utf-8 safe#  base64 => [10, sub {$_[0] =~ /[^\x09\x0a\x0d\x20-\x7f]/}, 'as_base64'],
   dateTime => [35, sub {$_[0] =~ /^\d{8}T\d\d:\d\d:\d\d$/}, 'as_dateTime'],
   string => [40, sub {1}, 'as_string'],
 );
