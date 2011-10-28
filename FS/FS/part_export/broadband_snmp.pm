@@ -6,7 +6,7 @@ use base 'FS::part_export';
 use Net::SNMP qw(:asn1 :snmp);
 use Tie::IxHash;
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 my $me = '['.__PACKAGE__.']';
 
