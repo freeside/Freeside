@@ -401,6 +401,18 @@ or hidden by default).
 
 =cut
 
+=item weight
+
+Returns the 'weight' element from the export's %info hash, or 0 if there is 
+no weight defined.
+
+=cut
+
+sub weight {
+  my $self = shift;
+  export_info()->{$self->exporttype}->{'weight'} || 0;
+}
+
 =back
 
 =head1 SUBROUTINES

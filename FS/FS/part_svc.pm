@@ -434,6 +434,7 @@ sub part_export {
   my $self = shift;
   my %search;
   $search{'exporttype'} = shift if @_;
+  sort { $a->weight <=> $b->weight }
   map { qsearchs('part_export', { 'exportnum' => $_->exportnum, %search } ) }
     qsearch('export_svc', { 'svcpart' => $self->svcpart } );
 }
