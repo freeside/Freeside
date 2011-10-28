@@ -129,6 +129,11 @@ sub upgrade {
 
   }
 
+  local($FS::cust_main::ignore_expired_card) = 1;
+  local($FS::cust_main::ignore_illegal_zip) = 1;
+  local($FS::cust_main::ignore_banned_card) = 1;
+  local($FS::cust_main::skip_fuzzyfiles) = 1;
+
   # decrypt inadvertantly-encrypted payinfo where payby != CARD,DCRD,CHEK,DCHK
   # kind of a weird spot for this, but it's better than duplicating
   # all this code in each class...
