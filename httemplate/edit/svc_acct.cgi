@@ -97,7 +97,7 @@ function randomPass() {
 %  if ( $domsvc ) {
 %    my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $domsvc, } );
 %    if ( $svc_domain ) {
-%      $svc_domain{$svc_domain->svcnum} = $svc_domain;
+%      $svc_domain{$svc_domain->svcnum} = $svc_domain->domain;
 %    } else {
 %      warn "unknown svc_domain.svcnum for svc_acct.domsvc: $domsvc";
 %    }
