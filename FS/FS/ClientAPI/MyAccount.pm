@@ -1162,6 +1162,7 @@ sub legacy_invoice {
 
   return { 'error'        => '',
            'legacyinvnum' => $legacyinvnum,
+           'legacyid'     => $legacy_cust_bill->legacyid,
            'invoice_html' => $legacy_cust_bill->content_html,
          };
 
@@ -1185,6 +1186,7 @@ sub legacy_invoice_pdf {
 
   return { 'error'        => '',
            'legacyinvnum' => $legacyinvnum,
+           'legacyid'     => $legacy_cust_bill->legacyid,
            'invoice_pdf'  => $legacy_cust_bill->content_pdf,
          };
 
