@@ -2476,7 +2476,14 @@ and customer address. Include units.',
                        'paymask,amount,zip' => 'Verify with credit card (or bank account) last 4 digits, payment amount and zip code',
                      ],
   },
-  
+
+  {
+    'key'         => 'selfservice-password_reset_msgnum',
+    'section'     => 'self-service',
+    'description' => 'Template to use for password reset emails.',
+    %msg_template_options,
+  },
+
   {
     'key'         => 'selfservice-recent-did-age',
     'section'     => 'self-service',

@@ -262,6 +262,10 @@ The I<from_addr> field in the template takes precedence over this.
 Destination address.  The default is to use the customer's 
 invoicing_list addresses.  Multiple addresses may be comma-separated.
 
+=item substitutions
+
+A hash reference of additional substitutions
+
 =back
 
 =cut
@@ -324,8 +328,12 @@ sub prepare {
       } 
     } 
   } 
-  $_ = encode_entities($_ || '') foreach values(%hash);
 
+  if ( $opt{substitutions} ) {
+    $hash{$_} = $opt{substitutions}->{$_} foreach keys %{$opt{substitutions}};
+  }
+
+  $_ = encode_entities($_ || '') foreach values(%hash);
 
   ###
   # clean up template

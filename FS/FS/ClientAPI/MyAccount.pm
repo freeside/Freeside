@@ -4,12 +4,16 @@ use 5.008; #require 5.8+ for Time::Local 1.05+
 use strict;
 use vars qw( $cache $DEBUG $me );
 use subs qw( _cache _provision );
+use IO::Scalar;
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
 use Date::Format;
-use Business::CreditCard;
 use Time::Duration;
 use Time::Local qw(timelocal_nocheck);
+use Business::CreditCard;
+use HTML::Entities;
+use Text::CSV_XS;
+use Spreadsheet::WriteExcel;
 use FS::UI::Web::small_custview qw(small_custview); #less doh
 use FS::UI::Web;
 use FS::UI::bytecount qw( display_bytecount );
@@ -19,6 +23,7 @@ use FS::Record qw(qsearch qsearchs dbh);
 use FS::Msgcat qw(gettext);
 use FS::Misc qw(card_types);
 use FS::Misc::DateTime qw(parse_datetime);
+use FS::TicketSystem;
 use FS::ClientAPI_SessionCache;
 use FS::cust_svc;
 use FS::svc_acct;
@@ -35,11 +40,7 @@ use FS::cust_main_county;
 use FS::cust_pkg;
 use FS::payby;
 use FS::acct_rt_transaction;
-use HTML::Entities;
-use FS::TicketSystem;
-use Text::CSV_XS;
-use IO::Scalar;
-use Spreadsheet::WriteExcel;
+use FS::msg_template;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
@@ -2396,12 +2397,93 @@ sub reset_passwd {
 
   }
 
-  #we're verified.  now what?
- 
+  #okay, we're verified, now create a unique session
+
+  my $reset_session = {
+    'svcnum' => $svc_acct->svcnum,
+  };
+
+  my $timeout = '1 hour'; #?
+
+  my $reset_session_id;
+  do {
+    $reset_session_id = md5_hex(md5_hex(time(). {}. rand(). $$))
+  } until ( ! defined _cache->get("reset_passwd_$reset_session_id") ); #just in case
+
+  _cache->set( "reset_passwd_$reset_session_id", $reset_session, $timeout );
+
+  #email it
+
+  my $msgnum = $conf->config('selfservice-password_reset_msgnum', $cust_main->agentnum);
+  #die "selfservice-password_reset_msgnum unset" unless $msgnum;
+  return { 'error' => "selfservice-password_reset_msgnum unset" } unless $msgnum;
+  my $msg_template = qsearchs('msg_template', { msgnum => $msgnum } );
+  my $error = $msg_template->send( 'cust_main'     => $cust_main,
+                                   'object'        => $svc_acct,
+                                   'substitutions' => {
+                                     'session_id' => $reset_session_id,
+                                   }
+                                 );
+  if ( $error ) {
+    return { 'error' => $error }; #????
+  }
 
   return { 'error' => '' };
 }
 
+sub check_reset_passwd {
+  my $p = shift;
+
+  my $conf = new FS::Conf;
+  my $verification = $conf->config('selfservice-password_reset_verification')
+    or return { 'error' => 'Password resets disabled' };
+
+  my $reset_session = _cache->get('reset_passwd_'. $p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $svcnum = $reset_session->{'svcnum'};
+
+  my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
+    or return { 'error' => "Service not found" };
+
+  return { 'error'    => '',
+           'username' => $svc_acct->username,
+         };
+
+}
+
+sub process_reset_passwd {
+  my $p = shift;
+
+  my $conf = new FS::Conf;
+  my $verification = $conf->config('selfservice-password_reset_verification')
+    or return { 'error' => 'Password resets disabled' };
+
+  return { 'error' => "New passwords don't match." }
+    if $p->{'new_password'} ne $p->{'new_password2'};
+
+  return { 'error' => 'Enter new password' }
+    unless length($p->{'new_password'});
+
+  my $reset_session = _cache->get('reset_passwd_'. $p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $svcnum = $reset_session->{'svcnum'};
+
+  my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
+    or return { 'error' => "Service not found" };
+
+  $svc_acct->_password($p->{'new_password'});
+  my $error = $svc_acct->replace();
+
+  my($label, $value) = $svc_acct->cust_svc->label;
+
+  return { 'error' => $error,
+           #'label' => $label,
+           #'value' => $value,
+         };
+
+}
 
 sub create_ticket {
   my $p = shift;
