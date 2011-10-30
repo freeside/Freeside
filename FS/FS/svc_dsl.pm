@@ -76,6 +76,8 @@ Vendor/telco DSL order status (e.g. (N)ew, (A)ssigned, (R)ejected, (M)revised,
 
 =item phonenum - DSL Telephone Number
 
+=item gateway_access_number - Gateway access number, if different
+
 =item loop_type - Loop-type - vendor/telco-specific
 
 =item local_voice_provider - Local Voice Provider's name
@@ -129,56 +131,55 @@ sub table_info {
     my %dis2 = ( disable_inventory=>1, disable_select=>1 );
 
     {
-	'name' => 'DSL',
-	'name_plural' => 'DSLs',
-	'lcname_plural' => 'DSLs',
-	'sorts' => [ 'phonenum' ],
-	'display_weight' => 55,
-	'cancel_weight' => 75,
-	'fields' => {
-	    'pushed' => { 	label => 'Pushed', 
-				type => 'disabled' },
-	    'desired_due_date' => { 	label => 'Desired Due Date', %dis2, },
-	    'due_date' => { 		label => 'Due Date', %dis2, },
-	    'vendor_order_id' => { label => 'Vendor Order ID', %dis2, },
-	    'vendor_qual_id' => { label => 'Vendor Qualification ID', 
-				type => 'disabled' },
-	    'vendor_order_type' => { label => 'Vendor Order Type',
-				    disable_inventory => 1,
-				},
-	    'vendor_order_status' => { label => 'Vendor Order Status',
-				    disable_inventory => 1,
-				    },
-	    'first' => { 	label => 'First Name', %dis2, },
-	    'last' => {  	label => 'Last Name', %dis2, },
-	    'company' => {	label => 'Company Name', %dis2, },
-	    'phonenum' => {	label => 'Service Telephone Number', },
-	    'loop_type' => {	label => 'Loop Type',
-				    disable_inventory => 1,
-			},
-	    'local_voice_provider' => {		label => 'Local Voice Provider',
-				    disable_inventory => 1,
-			},
-	    'circuitnum' => {	label => 'Circuit #',	},
-	    'rate_band' => {	label => 'Rate Band',
-				    disable_inventory => 1,
-			},
-	    'vpi' => { label => 'VPI', disable_inventory => 1 },
-	    'vci' => { label => 'VCI', disable_inventory => 1 },
-	    'isp_chg' => {	label => 'ISP Changing?', 
-				type => 'checkbox', %dis2 },
-	    'isp_prev' => {	label => 'Current or Previous ISP',
-				    disable_inventory => 1,
-			},
-	    'username' => {	label => 'PPPoE Username',
-				type => 'text',
-			},
-	    'password' => {	label => 'PPPoE Password', %dis2 },
-	    'staticips' => { 	label => 'Static IPs', %dis1 },
-	    'monitored' => {	label => 'Monitored', 
-				type => 'checkbox', %dis2 },
-	    'last_pull' => { 	label => 'Last Pull', type => 'disabled' },
-	},
+        'name' => 'DSL',
+        'name_plural' => 'DSLs',
+        'lcname_plural' => 'DSLs',
+        'sorts' => [ 'phonenum' ],
+        'display_weight' => 55,
+        'cancel_weight' => 75,
+        'fields' => {
+            'pushed'                => { label => 'Pushed', 
+                                         type  => 'disabled' },
+            'desired_due_date'      => { label => 'Desired Due Date', %dis2, },
+            'due_date'              => { label => 'Due Date', %dis2, },
+            'vendor_order_id'       => { label => 'Vendor Order ID', %dis2, },
+            'vendor_qual_id'        => { label => 'Vendor Qualification ID', 
+                                         type => 'disabled' },
+            'vendor_order_type'     => { label => 'Vendor Order Type',
+                                         disable_inventory => 1, },
+            'vendor_order_status'   => { label => 'Vendor Order Status',
+                                         disable_inventory => 1, },
+            'first'                 => { label => 'First Name', %dis2, },
+            'last'                  => { label => 'Last Name', %dis2, },
+            'company'               => { label => 'Company Name', %dis2, },
+            'phonenum'              => { label => 'Service Telephone Number', },
+            'gateway_access_number' => { label => 'Gateway Access Number'.
+                                                  ' (if different)', },
+            'loop_type'             => { label => 'Loop Type',
+                                         disable_inventory => 1, },
+            'local_voice_provider'  => { label => 'Local Voice Provider',
+                                         disable_inventory => 1, },
+            'circuitnum'            => { label => 'Circuit #',        },
+            'rate_band'             => { label => 'Rate Band',
+                                         disable_inventory => 1, },
+            'vpi'                   => { label => 'VPI',
+                                         disable_inventory => 1 },
+            'vci'                   => { label => 'VCI',
+                                         disable_inventory => 1 },
+            'isp_chg'               => { label => 'ISP Changing?', 
+                                         type  => 'checkbox',
+                                         %dis2, },
+            'isp_prev'              => { label => 'Current or Previous ISP',
+                                         disable_inventory => 1, },
+            'username'              => { label => 'PPPoE Username',
+                                         type  => 'text', },
+            'password'              => { label => 'PPPoE Password', %dis2 },
+            'staticips'             => { label => 'Static IPs', %dis1 },
+            'monitored'             => { label => 'Monitored', 
+                                         type => 'checkbox', %dis2 },
+            'last_pull'             => { label => 'Last Pull',
+                                         type  => 'disabled' },
+        },
     };
 }
 
@@ -255,6 +256,7 @@ sub check {
     || $self->ut_textn('last')
     || $self->ut_textn('company')
     || $self->ut_numbern('phonenum')
+    || $self->ut_numbern('gateway_access_number')
     || $self->ut_alphasn('loop_type')
     || $self->ut_textn('local_voice_provider')
     || $self->ut_textn('circuitnum')
@@ -270,6 +272,9 @@ sub check {
     || $self->ut_numbern('last_pull')
   ;
   return $error if $error;
+
+  $self->gateway_access_number('')
+    if $self->phonenum && $self->phonenum eq $self->gateway_access_number;
 
   $self->SUPER::check;
 }
