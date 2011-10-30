@@ -111,6 +111,8 @@ sub ss2clientapi {
   'unprovision_svc'           => 'MyAccount/unprovision_svc',
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
   'reset_passwd'              => 'MyAccount/reset_passwd',
+  'check_reset_passwd'        => 'MyAccount/check_reset_passwd',
+  'process_reset_passwd'      => 'MyAccount/process_reset_passwd',
   'create_ticket'             => 'MyAccount/create_ticket',
   'get_ticket'                => 'MyAccount/get_ticket',
   'adjust_ticket_priority'    => 'MyAccount/adjust_ticket_priority',
