@@ -24,11 +24,16 @@ my $html_foot = sub { "
   function ikano_loop_type_changed() {
         var loop_type = document.getElementById('loop_type').value;
         var phonenum = document.getElementById('phonenum');
+        var gateway_access_number = document.getElementById('gateway_access_number');
         if(loop_type == '0') {
             phonenum.value = '';
             phonenum.disabled = true;        
+            gateway_access_number.value = '';
+            gateway_access_number.disabled = true;
+        } else {
+            phonenum.disabled = false;
+            gateway_access_number.disabled = false;
         }
-        else phonenum.disabled = false;
   }
 </SCRIPT>
 "; };
@@ -58,7 +63,7 @@ my $edit_cb = sub {
         # else add any other export-specific stuff here
     }
     else {
-        push @fields, qw( first last company phonenum circuitnum rate_band vpi vci );
+        push @fields, qw( first last company phonenum gateway_access_number circuitnum rate_band vpi vci );
     }
 };
 
@@ -123,6 +128,10 @@ my $new_cb = sub {
         { field => 'phonenum',
           value => $phonenum,
         };
+        { field => 'gateway_access_number',
+          value => '',
+        };
+
 
     }
 
