@@ -26,19 +26,51 @@ L<freeside-selfservice-clientd>, L<freeside-selfservice-server>,L<FS::SelfServic
 
 use strict;
 use vars qw($DEBUG $AUTOLOAD);
+use XMLRPC::Lite; # for XMLRPC::Data
 use FS::SelfService;
 
 $DEBUG = 0;
 $FS::SelfService::DEBUG = $DEBUG;
 
+#false laziness w/FS::ClientAPI_XMLRPC.pm
+our %typefix = (
+  'invoice_pdf'        => { 'invoice_pdf' => 'base64', },
+  'legacy_invoice_pdf' => { 'invoice_pdf' => 'base64', },
+  'skin_info'          => { 'logo'              => 'base64',
+                            'title_left_image'  => 'base64',
+                            'title_right_image' => 'base64',
+                            'menu_top_image'    => 'base64',
+                            'menu_body_image'   => 'base64',
+                            'menu_bottom_image' => 'base64',
+                          },
+  'invoice_logo'       => { 'logo' => 'base64', },
+);
+
 sub AUTOLOAD {
   my $call = $AUTOLOAD;
   $call =~ s/^FS::SelfService::XMLRPC:://;
+
   if (exists($FS::SelfService::autoload{$call})) {
+
     shift; #discard package name;
+
     $call = "FS::SelfService::$call";
+
     no strict 'refs';
-    &{$call}(@_);
+
+    my $return = &{$call}(@_);
+
+    if ( exists($typefix{$call}) ) {
+      my $typefix = $typefix{$call};
+      foreach my $field ( grep exists($return->{$_}), keys %$typefix ) {
+        my $type = $typefix->{$field};
+        $return->{$field} = XMLRPC::Data->value($return->{$field})
+                                        ->type($type);
+      }
+    }
+
+    $return;
+
   }else{
     die "No such procedure: $call";
   }
