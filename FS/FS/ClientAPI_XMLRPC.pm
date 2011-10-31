@@ -30,10 +30,25 @@ L<FS::SelfService::XMLRPC>, L<FS::SelfService>
 use strict;
 
 use vars qw($DEBUG $AUTOLOAD);
+use XMLRPC::Lite; # for XMLRPC::Data
 use FS::ClientAPI;
 
 $DEBUG = 0;
 $FS::ClientAPI::DEBUG = $DEBUG;
+
+#false laziness w/FS::SelfService/XMLRPC.pm, same problem as below but worse
+our %typefix = (
+  'invoice_pdf'        => { 'invoice_pdf' => 'base64', },
+  'legacy_invoice_pdf' => { 'invoice_pdf' => 'base64', },
+  'skin_info'          => { 'logo'              => 'base64',
+                            'title_left_image'  => 'base64',
+                            'title_right_image' => 'base64',
+                            'menu_top_image'    => 'base64',
+                            'menu_body_image'   => 'base64',
+                            'menu_bottom_image' => 'base64',
+                          },
+  'invoice_logo'       => { 'logo' => 'base64', },
+);
 
 sub AUTOLOAD {
   my $call = $AUTOLOAD;
@@ -44,12 +59,27 @@ sub AUTOLOAD {
   my $autoload = &ss2clientapi;
 
   if (exists($autoload->{$call})) {
+
     shift; #discard package name;
+
     #$call = "FS::SelfService::$call";
     #no strict 'refs';
     #&{$call}(@_);
     #FS::ClientAPI->dispatch($autoload->{$call}, @_);
-    FS::ClientAPI->dispatch($autoload->{$call}, { @_ } );
+
+    my $return = FS::ClientAPI->dispatch($autoload->{$call}, { @_ } );
+
+    if ( exists($typefix{$call}) ) {
+      my $typefix = $typefix{$call};
+      foreach my $field ( grep exists($return->{$_}), keys %$typefix ) {
+        my $type = $typefix->{$field};
+        $return->{$field} = XMLRPC::Data->value($return->{$field})
+                                        ->type($type);
+      }
+    }
+
+    $return;
+
   }else{
     die "No such procedure: $call";
   }
