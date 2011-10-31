@@ -1,4 +1,9 @@
-<& elements/process.html, table=>'nas', viewall_dir=>'browse', &>
+<& elements/process.html,
+    table       => 'nas',
+    viewall_dir => 'browse',
+    process_m2m => { link_table => 'export_nas',
+                     target_table => 'part_export' },
+&>
 <%init>
 
 die "access denied"

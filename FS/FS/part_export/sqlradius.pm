@@ -106,6 +106,7 @@ END
   'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS)',
   'options'  => \%options,
   'nodomain' => 'Y',
+  'nas'      => 'Y', # show export_nas selection in UI
   'notes'    => $notes1.
                 'This export does not export RADIUS realms (see also '.
                 'sqlradius_withdomain).  '.
@@ -761,7 +762,7 @@ sub update_svc {
            AcctInputOctets, AcctOutputOctets
       FROM radacct
       WHERE FreesideStatus IS NULL
-        AND AcctStopTime != 0
+        AND AcctStopTime IS NOT NULL
   ") or die $dbh->errstr;
   $sth->execute() or die $sth->errstr;
 
@@ -862,6 +863,72 @@ sub _try_decrement {
     warn "  no existing $column value for svc_acct - skipping\n" if $DEBUG;
   }
   return 'skipped';
+}
+
+=item export_nas_insert NAS
+
+=item export_nas_delete NAS
+
+=item export_nas_replace NEW_NAS OLD_NAS
+
+Update the NAS table (allowed RADIUS clients) on the attached RADIUS 
+server.  Currently requires the table to be named 'nas' and to follow 
+the stock schema (/etc/freeradius/nas.sql).
+
+=cut
+
+sub export_nas_insert {  shift->export_nas_action('insert', @_); }
+sub export_nas_delete {  shift->export_nas_action('delete', @_); }
+sub export_nas_replace { shift->export_nas_action('replace', @_); }
+
+sub export_nas_action {
+  my $self = shift;
+  my ($action, $new, $old) = @_;
+  # find the NAS in the target table by its name
+  my $nasname = ($action eq 'replace') ? $old->nasname : $new->nasname;
+  my $nasnum = $new->nasnum;
+
+  my $err_or_queue = $self->sqlradius_queue('', "nas_$action", 
+    nasname => $nasname,
+    nasnum => $nasnum
+  );
+  return $err_or_queue unless ref $err_or_queue;
+  '';
+}
+
+sub sqlradius_nas_insert {
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my %opt = @_;
+  my $nas = qsearchs('nas', { nasnum => $opt{'nasnum'} })
+    or die "nasnum ".$opt{'nasnum'}.' not found';
+  # insert actual NULLs where FS::Record has translated to empty strings
+  my @values = map { length($nas->$_) ? $nas->$_ : undef }
+    qw( nasname shortname type secret server community description );
+  my $sth = $dbh->prepare('INSERT INTO nas 
+(nasname, shortname, type, secret, server, community, description)
+VALUES (?, ?, ?, ?, ?, ?, ?)');
+  $sth->execute(@values) or die $dbh->errstr;
+}
+
+sub sqlradius_nas_delete {
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my %opt = @_;
+  my $sth = $dbh->prepare('DELETE FROM nas WHERE nasname = ?');
+  $sth->execute($opt{'nasname'}) or die $dbh->errstr;
+}
+
+sub sqlradius_nas_replace {
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my %opt = @_;
+  my $nas = qsearchs('nas', { nasnum => $opt{'nasnum'} })
+    or die "nasnum ".$opt{'nasnum'}.' not found';
+  my @values = map {$nas->$_} 
+    qw( nasname shortname type secret server community description );
+  my $sth = $dbh->prepare('UPDATE nas SET
+    nasname = ?, shortname = ?, type = ?, secret = ?,
+    server = ?, community = ?, description = ?
+    WHERE nasname = ?');
+  $sth->execute(@values, $opt{'nasname'}) or die $dbh->errstr;
 }
 
 ###

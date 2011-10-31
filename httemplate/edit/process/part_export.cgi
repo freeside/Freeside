@@ -39,4 +39,14 @@ if ( $exportnum ) {
 #  $exportnum = $new->exportnum;
 }
 
+my $info = FS::part_export::export_info()->{$new->exporttype};
+if ( $info->{nas} ) {
+  my @nasnums = map { /^nasnum(\d+)$/ ? $1 : () } keys %{ $cgi->Vars };
+  $error ||= $new->process_m2m(
+    link_table    => 'export_nas',
+    target_table  => 'nas',
+    params        => \@nasnums
+  );
+}
+
 </%init>

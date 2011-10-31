@@ -1,8 +1,11 @@
 package FS::export_nas;
 
 use strict;
+use vars qw($noexport_hack);
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
+
+$noexport_hack = '';
 
 =head1 NAME
 
@@ -70,7 +73,11 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+  $self->SUPER::insert || 
+  ($noexport_hack ? '' : $self->part_export->export_nas_insert($self->nas));
+}
 
 =item delete
 
@@ -78,16 +85,21 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+  ($noexport_hack ? '' : $self->part_export->export_nas_delete($self->nas))
+  || $self->SUPER::delete;
+}
 
 =item replace OLD_RECORD
 
-Replaces the OLD_RECORD with this one in the database.  If there is an error,
-returns the error, otherwise returns false.
+Unavailable.  Delete the record and create a new one.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  die "replace not implemented for export_nas records";
+}
 
 =item check
 
@@ -111,6 +123,16 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub part_export {
+  my $self = shift;
+  qsearchs('part_export', { 'exportnum' => $self->exportnum });
+}
+
+sub nas {
+  my $self = shift;
+  qsearchs('nas', { 'nasnum' => $self->nasnum });
 }
 
 =back

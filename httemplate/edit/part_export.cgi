@@ -139,6 +139,26 @@ my $widget = new HTML::Widgets::SelectLayers(
         $html .= '</TD></TR>';
       }
     }
+
+    if ( $exports->{$layer}{nas} and qsearch('nas',{}) ) {
+      # show NAS checkboxes
+      $html .= '<TR><TD ALIGN="right">Export RADIUS clients</TD><TD>';
+
+      $html .= include('/elements/checkboxes-table.html',
+                        'source_obj'    => $part_export,
+                        'link_table'    => 'export_nas',
+                        'target_table'  => 'nas',
+                        #hashref => {},
+                        'name_callback' => sub { 
+                          $_[0]->shortname . ' (' . $_[0]->nasname . ')',
+                        },
+                        'default'       => 'yes',
+                        'target_link'   => $p.'edit/nas.html?',
+                      );
+
+      $html .= '</TD></TR>';
+    }
+
     $html .= '</TABLE>';
 
     $html .= '<INPUT TYPE="hidden" NAME="options" VALUE="'.

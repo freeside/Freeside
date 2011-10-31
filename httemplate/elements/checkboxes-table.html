@@ -81,6 +81,10 @@
 %                    ? 'CHECKED'
 %                    : '';
 %
+%     } elsif ( !$sourcenum ) { # newly created object, has no links yet
+%
+%       $checked = $opt{'default'} ? 'CHECKED' : ''
+%
 %     } else {
 %
 %       $checked = qsearchs( $opt{'link_table'}, {
