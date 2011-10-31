@@ -1,0 +1,91 @@
+#!/usr/bin/perl -w
+
+use strict;
+use DBI;
+use FS::UID qw(adminsuidsetup); #datasrc
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::nas;
+use FS::export_nas;
+use FS::part_export;
+
+my $user = shift or die &usage;
+my $filename = shift or die &usage;
+my $all_nas = [];
+
+my $client;
+my $in;
+open ($in, '<', $filename) or die "can't open $filename for reading\n";
+my $i = 0;
+while (my $line = <$in>) {
+  $i++;
+  $line =~ s/#.*//;
+  my @t = grep $_, split(/\s+/, $line);
+  next if !@t;
+  if ( $client ) {
+    if ( $t[0] eq 'ipaddr' ) {
+      $client->{nasname} = $t[2];
+    }
+    elsif ( $t[0] eq 'secret' ) {
+      $client->{secret} = $t[2];
+    }
+    elsif( $t[0] eq 'shortname' ) {
+      $client->{shortname} = $t[2];
+    }
+    elsif( $t[0] eq 'nastype' ) {
+      $client->{type} = $t[2];
+    }
+    elsif( $t[0] eq 'virtual_server' ) {
+      $client->{server} = $t[2];
+    }
+    elsif( $t[0] eq '}' ) {
+      $client->{description} = $client->{shortname};
+      push @$all_nas, $client;
+      undef $client;
+    }
+    else {
+      warn "unknown parameter '$t[0]' (line $i), skipped\n";
+      next;
+    }
+  }
+  else { # not in a client section
+    die "parse error (line $i)\n" if $t[0] ne 'client' or $t[2] ne '{';
+    $client = { nasname => $t[1],
+                shortname => $t[1] }; # hostname
+  }
+}
+close $in;
+
+warn scalar(@$all_nas)." records found.\n";
+
+adminsuidsetup $user;
+
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+# cache NAS names we already know about, and don't import them
+my %existing_names = map { $_->nasname , $_->nasnum } qsearch('nas', {});
+
+my $inserted = 0;
+foreach my $row (@$all_nas) {
+  my %hash = %$row;
+  if (my $num = $existing_names{ $hash{nasname} }) {
+    warn "NAS $hash{nasname} already exists as #$num (skipped)\n";
+  }
+  else {
+    my $nas = FS::nas->new(\%hash);
+    my $error = $nas->insert;
+    if ( $error ) {
+      $dbh->rollback;
+      die "error inserting $hash{nasname}: $error (changes reverted)\n";
+    }
+    $inserted++;
+  }
+} #foreach $row
+
+warn "Inserted $inserted NAS records.\n\n";
+$dbh->commit;
+
+sub usage {
+  die "Usage:\n\n  clients.conf.import user filename\n\n";
+}
+

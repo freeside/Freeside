@@ -8,7 +8,7 @@
                          'secret'      => 'Shared secret',
                          'type'        => 'Type',
                          'ports'       => 'Ports',
-                         'server'      => 'Server',
+                         'server'      => 'Virtual server',
                          'community'   => 'Community',
                          'description' => 'Description',
                        },
@@ -25,8 +25,7 @@
       { field=>'community', size=>40, maxlength=>50 },
       { field=>'description', size=>100, maxlength=>200 },
     ],
-    'html_bottom'   => '<font color="#ff0000">*</font>&nbsp;'.
-                       emt('required fields'). '<BR>',
+    'html_bottom'   => \&html_bottom,
     'new_hashref_callback' => sub { +{ 'type'        => 'other',
                                        'secret'      => 'secret',
                                        'description' => 'RADIUS Client',
@@ -37,5 +36,25 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+sub html_bottom {
+  my $nas = shift;
+  '<font color="#ff0000">*</font>&nbsp;'.
+  emt('required fields'). '<BR><BR>'.
+  '<FONT SIZE="+1"><B>'.emt('Export to these RADIUS servers:').
+  '</B></FONT><BR>'.
+
+  include('/elements/checkboxes-table.html',
+            'source_obj'    => $nas,
+            'link_table'    => 'export_nas',
+            'target_table'  => 'part_export',
+            'hashref'       => { 'exporttype' => 'sqlradius' },
+            'name_callback' => sub { $_[0]->label },
+            'default'       => 'yes',
+            'target_link'   => $p.'edit/part_export.cgi?',
+            'disable-able'  => 1,
+          )
+}
+
 
 </%init>

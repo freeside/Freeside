@@ -4,8 +4,8 @@ use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG %exports );
 use Exporter;
 use Tie::IxHash;
+use base qw( FS::option_Common FS::m2m_Common ); # m2m for 'export_nas'
 use FS::Record qw( qsearch qsearchs dbh );
-use FS::option_Common;
 use FS::part_svc;
 use FS::part_export_option;
 use FS::export_svc;
@@ -13,7 +13,6 @@ use FS::export_svc;
 #for export modules, though they should probably just use it themselves
 use FS::queue;
 
-@ISA = qw( FS::option_Common );
 @EXPORT_OK = qw(export_info);
 
 $DEBUG = 0;

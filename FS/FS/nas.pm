@@ -1,8 +1,10 @@
 package FS::nas;
 
 use strict;
-use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use base qw( FS::m2m_Common FS::Record );
+use FS::Record qw( qsearch qsearchs dbh );
+use FS::export_nas;
+use FS::part_export;
 
 =head1 NAME
 
@@ -30,41 +32,23 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item nasnum
+=item nasnum - primary key
 
-primary key
+=item nasname - "NAS name", i.e. IP address
 
-=item nasname
+=item shortname - short descriptive name
 
-nasname
-
-=item shortname
-
-shortname
-
-=item type
-
-type
+=item type - the equipment vendor
 
 =item ports
 
-ports
+=item secret - the authentication secret for this client
 
-=item secret
-
-secret
-
-=item server
-
-server
+=item server - virtual server name (optional)
 
 =item community
 
-community
-
-=item description
-
-description
+=item description - a longer descriptive name
 
 
 =back
@@ -91,26 +75,62 @@ sub table { 'nas'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-# the insert method can be inherited from FS::Record
-
 =item delete
 
-Delete this record from the database.
+Delete this record from the database and remove all linked exports.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $self = shift;
+  my $error = $self->process_m2m([])
+           || $self->SUPER::delete;
+
+  if ( $error ) {
+    $dbh->rollback;
+    return $error;
+  }
+  
+  $dbh->commit if $oldAutoCommit;
+  '';
+}
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+To change the list of linked exports, see the C<export_nas> method.
+
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my ($self, $old) = @_;
+  $old ||= qsearchs('nas', { 'nasnum' => $self->nasnum });
+
+  my $error;
+  foreach my $part_export ( $self->part_export ) {
+    $error ||= $part_export->export_nas_replace($self, $old);
+  }
+
+  $error ||= $self->SUPER::replace($old);
+
+  if ( $error ) {
+    $dbh->rollback;
+    return $error;
+  }
+
+  $dbh->commit if $oldAutoCommit;
+  '';
+}
 
 =item check
 
@@ -140,6 +160,18 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item part_export
+
+Return all L<FS::part_export> objects to which this NAS is being exported.
+
+=cut
+
+sub part_export {
+  my $self = shift;
+  map { qsearchs('part_export', { exportnum => $_->exportnum }) } 
+        qsearch('export_nas', { nasnum => $self->nasnum})
 }
 
 =back

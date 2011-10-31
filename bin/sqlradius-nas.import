@@ -1,0 +1,67 @@
+#!/usr/bin/perl -w
+
+use strict;
+use DBI;
+use FS::UID qw(adminsuidsetup); #datasrc
+use FS::Record qw(qsearch qsearchs dbh);
+use FS::nas;
+use FS::export_nas;
+use FS::part_export;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+$FS::export_nas::noexport_hack = 1;
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $exportnum = shift or die &usage;
+my $part_export = qsearchs('part_export', { exportnum => $exportnum })
+  or die "export $exportnum not found.\n";
+
+$part_export->isa('FS::part_export::sqlradius')
+  or die "export $exportnum is not an sqlradius export.\n";
+
+my $raddbh = DBI->connect(
+  $part_export->option('datasrc'),
+  $part_export->option('username'),
+  $part_export->option('password')
+);
+
+# cache NAS names we already know about, and don't import them
+my %existing_names = map { $_->nasname , $_->nasnum } qsearch('nas', {});
+
+my @fields = (qw( nasname shortname type secret server community description ));
+my $sql = 'SELECT '.join(', ',@fields).' FROM nas';
+my $all_nas = $raddbh->selectall_arrayref($sql)
+  or die "unable to retrieve NAS records: ".$dbh->errstr."\n";
+
+warn scalar(@$all_nas)." records found.\n";
+my $inserted = 0;
+foreach my $row (@$all_nas) {
+  my %hash;
+  @hash{@fields} = @$row;
+  if (my $num = $existing_names{ $hash{nasname} }) {
+    warn "NAS $hash{nasname} already exists as #$num (skipped)\n";
+  }
+  else {
+    my $nas = FS::nas->new(\%hash);
+    my $error = $nas->insert 
+             || $nas->process_m2m(link_table => 'export_nas',
+                                  target_table => 'part_export',
+                                  params => [ $exportnum ]);
+    if ( $error ) {
+      $dbh->rollback;
+      die "error inserting $hash{nasname}: $error (changes reverted)\n";
+    }
+    $inserted++;
+  }
+} #foreach $row
+
+warn "Inserted $inserted NAS records.\n\n";
+$dbh->commit;
+
+sub usage {
+  die "Usage:\n\n  sqlradius-nas.import user exportnum\n\n";
+}
+
