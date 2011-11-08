@@ -2485,6 +2485,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-hide_invoices-taxclass',
+    'section'     => 'self-service',
+    'description' => 'Hide invoices with only this package tax class from self-service.  Typically set to something like "Previous balance" and used when importing legacy invoices into legacy_cust_bill.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'selfservice-recent-did-age',
     'section'     => 'self-service',
     'description' => 'If specified, defines "recent", in number of seconds, for "Download recently allocated DIDs" in self-service.',

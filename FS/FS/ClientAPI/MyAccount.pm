@@ -1236,8 +1236,20 @@ sub list_invoices {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  my @cust_bill = $cust_main->cust_bill;
+  my $conf = new FS::Conf;
+
   my @legacy_cust_bill = $cust_main->legacy_cust_bill;
+
+  my @cust_bill = $cust_main->cust_bill;
+
+  my $hide_taxclass = $conf->config('selfservice-hide_invoices-taxclass');
+  if ( $hide_taxclass ) {
+    @cust_bill = grep { my @cust_bill_pkg = $_->cust_bill_pkg;
+                        my @part_pkg= grep $_, map $_->part_pkg, @cust_bill_pkg;
+                        grep { $_->taxclass ne $hide_taxclass } @part_pkg;
+                      }
+                   @cust_bill;
+  }
 
   my $balance = 0;
 
@@ -1434,13 +1446,15 @@ sub list_svcs {
             my $svc_x = $_->svc_x;
             my($label, $value) = $_->label;
             my $svcdb = $_->part_svc->svcdb;
-            my $part_pkg = $_->cust_pkg->part_pkg;
+            my $cust_pkg = $_->cust_pkg;
+            my $part_pkg = $cust_pkg->part_pkg;
 
             my %hash = (
-              'svcnum' => $_->svcnum,
-              'svcdb'  => $svcdb,
-              'label'  => $label,
-              'value'  => $value,
+              'svcnum'     => $_->svcnum,
+              'svcdb'      => $svcdb,
+              'label'      => $label,
+              'value'      => $value,
+              'pkg_status' => $cust_pkg->status,
             );
 
             if ( $svcdb eq 'svc_acct' ) {
