@@ -107,7 +107,7 @@ sub check {
   my $error =
     $self->ut_numbern('msgnum')
     || $self->ut_text('msgcode')
-    || $self->ut_text('msg')
+#    || $self->ut_text('msg')
   ;
   return $error if $error;
 
