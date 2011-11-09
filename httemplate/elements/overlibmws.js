@@ -1,7 +1,7 @@
 /*
  Do not remove or change this notice.
  overlibmws.js core module - Copyright Foteos Macrides 2002-2010. All rights reserved.
-   Initial: August 18, 2002 - Last Revised: January 5, 2010
+   Initial: August 18, 2002 - Last Revised: March 2, 2010
  This module is subject to the same terms of usage as for Erik Bosrup's overLIB,
  though only a minority of the code and API now correspond with Erik's version.
  See the overlibmws Change History and Command Reference via:
@@ -149,16 +149,17 @@ function OLulCl(){if(over)cClick();window.removeEventListener("unload",OLulCl,fa
 // Loads defaults then args into runtime variables.
 function overlib(){
 if(!(OLloaded&&OLgateOK))return;if((OLexclusivePI)&&OLisExclusive(arguments))return true;if(OLchkMh)OLmh();if(OLndt&&
-!OLtimerid)OLndt=0;if(over){if(OLfilterPI)o3_filter=0;cClick();}if(parent!=self){if(parent.OLo2Ref){parent.OLeval(
-parent.OLo2Ref);parent.OLo2Ref="";}if(parent.OLifRef){parent.OLeval(parent.OLifRef);parent.OLifRef="";}}if(OLo2Ref){
-eval(OLo2Ref);OLo2Ref="";}if(OLifRef){eval(OLifRef);OLifRef="";}OLload(OLp1or2);OLload(OLp1);OLfnRef="";OLifX=0;OLifY=0;
-OLhover=0;if(OLcrossframePI&&parent!=self)OLchkFRAME(arguments);OLsetRunTimeVar();OLparseTokens('o3_',arguments);if(!(
-over=OLmkLyr()))return false;over.onmouseover=over.onmouseout=null;if(o3_decode)OLdecode();if(OLprintPI)OLchkPrint();
-if(OLbubblePI)OLchkForBubbleEffect();if(OLdebugPI)OLsetDebugCanShow();if(OLshadowPI)OLinitShadow();if(OLiframePI)OLinitIfs();
-if(OLfilterPI)OLinitFilterLyr();if(OLexclusivePI&&o3_exclusive&&o3_exclusivestatus!="")o3_status=o3_exclusivestatus;else
-if(o3_autostatus==2&&o3_cap!="")o3_status=o3_cap;else if(o3_autostatus==1&&o3_text!="")o3_status=o3_text;if(!o3_delay){
-return OLmain();}else{OLdelayid=setTimeout("OLmain()",o3_delay);if(o3_status!=""){self.status=o3_status;return true;}else
-if(!(OLop7&&event&&event.type=='mouseover'))return false;}
+!OLtimerid)OLndt=0;if(over){if(OLfilterPI)o3_filter=0;cClick();}if(parent!=self){new Array('try{','if(parent.OLo2Ref){',
+'parent.OLeval(parent.OLo2Ref);','parent.OLo2Ref="";','}','if(parent.OLifRef){','parent.OLeval(parent.OLifRef);',
+'parent.OLifRef="";','}','}','catch(e){','}').join('\n')};if(OLo2Ref){eval(OLo2Ref);OLo2Ref="";}if(OLifRef){eval(OLifRef);
+OLifRef="";}OLload(OLp1or2);OLload(OLp1);OLfnRef="";OLifX=0;OLifY=0;OLhover=0;if(OLcrossframePI&&parent!=self)OLchkFRAME(
+arguments);OLsetRunTimeVar();OLparseTokens('o3_',arguments);if(!(over=OLmkLyr()))return false;over.onmouseover=
+over.onmouseout=null;if(o3_decode)OLdecode();if(OLprintPI)OLchkPrint();if(OLbubblePI)OLchkForBubbleEffect();if(OLdebugPI)
+OLsetDebugCanShow();if(OLshadowPI)OLinitShadow();if(OLiframePI)OLinitIfs();if(OLfilterPI)OLinitFilterLyr();if(OLexclusivePI
+&&o3_exclusive&&o3_exclusivestatus!="")o3_status=o3_exclusivestatus;else if(o3_autostatus==2&&o3_cap!="")o3_status=o3_cap;
+else if(o3_autostatus==1&&o3_text!="")o3_status=o3_text;if(!o3_delay){return OLmain();}else{OLdelayid=setTimeout("OLmain()",
+o3_delay);if(o3_status!=""){self.status=o3_status;return true;}else if(!(OLop7&&event&&event.type=='mouseover'))
+return false;}
 }
 function OLeval(s){eval(s);}
 
