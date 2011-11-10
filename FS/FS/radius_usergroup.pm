@@ -96,25 +96,29 @@ and replace methods.
 
 sub check {
   my $self = shift;
-
+  my $svcnum = $self->svcnum;
   die "radius_usergroup.groupname is deprecated" if $self->groupname;
 
   $self->ut_numbern('usergroupnum')
-    || $self->ut_foreign_key('svcnum','svc_acct','svcnum')
+    || ( $self->ut_foreign_key('svcnum','svc_acct','svcnum')
+      && $self->ut_foreign_key('svcnum','svc_broadband','svcnum')
+      && "Can't find radius_usergroup.svcnum $svcnum in svc_acct.svcnum or svc_broadband.svcnum" ) 
     || $self->ut_foreign_key('groupnum','radius_group','groupnum')
     || $self->SUPER::check
   ;
 }
 
-=item svc_acct
+=item svc_x
 
-Returns the account associated with this record (see L<FS::svc_acct>).
+Returns the account associated with this record (see L<FS::svc_acct> and 
+L<FS::svc_broadband>).
 
 =cut
 
 sub svc_acct {
   my $self = shift;
-  qsearchs('svc_acct', { svcnum => $self->svcnum } );
+  qsearchs('svc_acct', { svcnum => $self->svcnum } ) ||
+  qsearchs('svc_broadband', { svcnum => $self->svcnum } )
 }
 
 =item radius_group

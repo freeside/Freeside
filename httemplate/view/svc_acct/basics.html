@@ -100,7 +100,7 @@
 % } 
 
 <& /view/elements/tr.html, label=>mt('RADIUS groups'),
-                      value=>join('<BR>', $svc_acct->radius_groups('COMBINED')) &>
+    value=>join('<BR>', $svc_acct->radius_groups('long_description')) &>
 
 %# Can this be abstracted further?  Maybe a library function like
 %# widget('HTML', 'view', $svc_acct) ?  It would definitely make UI 

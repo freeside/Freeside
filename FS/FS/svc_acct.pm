@@ -1,7 +1,10 @@
 package FS::svc_acct;
 
 use strict;
-use base qw( FS::svc_Domain_Mixin FS::svc_CGP_Mixin FS::svc_CGPRule_Mixin
+use base qw( FS::svc_Domain_Mixin
+             FS::svc_CGP_Mixin
+             FS::svc_CGPRule_Mixin
+             FS::svc_Radius_Mixin
              FS::svc_Common );
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
@@ -339,6 +342,7 @@ sub table_info {
                          type  => 'select-radius_group.html',
                          disable_inventory => 1,
                          disable_select => 1,
+                         multiple => 1,
                        },
         'seconds'   => { label => 'Seconds',
                          label_sort => 'with Time Remaining',
@@ -531,22 +535,6 @@ sub table { 'svc_acct'; }
 
 sub table_dupcheck_fields { ( 'username', 'domsvc' ); }
 
-sub _fieldhandlers {
-  {
-    #false laziness with edit/svc_acct.cgi
-    'usergroup' => sub { 
-                         my( $self, $groups ) = @_;
-                         if ( ref($groups) eq 'ARRAY' ) {
-                           $groups;
-                         } elsif ( length($groups) ) {
-                           [ split(/\s*,\s*/, $groups) ];
-                         } else {
-                           [];
-                         }
-                       },
-  };
-}
-
 sub last_login {
   shift->_lastlog('in', @_);
 }
@@ -699,7 +687,7 @@ sub insert {
   my $dbh = dbh;
 
   my @jobnums;
-  my $error = $self->SUPER::insert(
+  my $error = $self->SUPER::insert( # usergroup is here
     'jobnums'       => \@jobnums,
     'child_objects' => $self->child_objects,
     %options,
@@ -707,20 +695,6 @@ sub insert {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
-  }
-
-  if ( $self->usergroup ) {
-    foreach my $groupnum ( @{$self->usergroup} ) {
-      my $radius_usergroup = new FS::radius_usergroup ( {
-        svcnum    => $self->svcnum,
-        groupnum  => $groupnum,
-      } );
-      my $error = $radius_usergroup->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-    }
   }
 
   unless ( $skip_fuzzyfiles ) {
@@ -935,20 +909,10 @@ sub delete {
     }
   }
 
-  my $error = $self->SUPER::delete;
+  my $error = $self->SUPER::delete; # usergroup here
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
-  }
-
-  foreach my $radius_usergroup (
-    qsearch('radius_usergroup', { 'svcnum' => $self->svcnum } )
-  ) {
-    my $error = $radius_usergroup->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -1011,49 +975,7 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  # redundant, but so $new->usergroup gets set
-  $error = $new->check;
-  return $error if $error;
-
-  $old->usergroup( [ $old->radius_groups('NUMBERS') ] );
-  if ( $DEBUG ) {
-    warn $old->email. " old groups: ". join(' ',@{$old->usergroup}). "\n";
-    warn $new->email. " new groups: ". join(' ',@{$new->usergroup}). "\n";
-  }
-  if ( $new->usergroup ) {
-    #(sorta) false laziness with FS::part_export::sqlradius::_export_replace
-    my @newgroups = @{$new->usergroup};
-    foreach my $oldgroup ( @{$old->usergroup} ) {
-      if ( grep { $oldgroup eq $_ } @newgroups ) {
-        @newgroups = grep { $oldgroup ne $_ } @newgroups;
-        next;
-      }
-      my $radius_usergroup = qsearchs('radius_usergroup', {
-        svcnum    => $old->svcnum,
-        groupnum  => $oldgroup,
-      } );
-      my $error = $radius_usergroup->delete;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error deleting radius_usergroup $oldgroup: $error";
-      }
-    }
-
-    foreach my $newgroup ( @newgroups ) {
-      my $radius_usergroup = new FS::radius_usergroup ( {
-        svcnum    => $new->svcnum,
-        groupnum => $newgroup,
-      } );
-      my $error = $radius_usergroup->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error adding radius_usergroup $newgroup: $error";
-      }
-    }
-
-  }
-
-  $error = $new->SUPER::replace($old, @_);
+  $error = $new->SUPER::replace($old, @_); # usergroup here
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error if $error;
@@ -1191,14 +1113,9 @@ sub check {
 
   my($recref) = $self->hashref;
 
-  my $x = $self->setfixed( $self->_fieldhandlers );
+  my $x = $self->setfixed;
   return $x unless ref($x);
   my $part_svc = $x;
-
-  if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
-    $self->usergroup(
-      [ split(',', $part_svc->part_svc_column('usergroup')->columnvalue) ] );
-  }
 
   my $error = $self->ut_numbern('svcnum')
               #|| $self->ut_number('domsvc')
@@ -2549,41 +2466,7 @@ sub get_cdrs {
 
 }
 
-=item radius_groups
-
-Returns all RADIUS groups for this account (see L<FS::radius_usergroup>).
-
-=cut
-
-sub radius_groups {
-  my $self = shift;
-  if ( $self->usergroup ) {
-    confess "explicitly specified usergroup not an arrayref: ". $self->usergroup
-      unless ref($self->usergroup) eq 'ARRAY';
-    #when provisioning records, export callback runs in svc_Common.pm before
-    #radius_usergroup records can be inserted...
-    my $groups = join(',',@{$self->usergroup});
-    my @groups;
-    return @groups unless length($groups);
-    @groups = qsearch({ 'table'         => 'radius_group',
-                           'extra_sql'     => "where groupnum in ($groups)",
-                        });
-    map { $_->groupname } @groups;
-  } else {
-     my $format = shift || '';
-     my @groups = qsearch({ 'table'         => 'radius_usergroup',
-                            'addl_from'     => 'left join radius_group using (groupnum)',
-                            'select'        => 'radius_group.*',
-                            'hashref'       => { 'svcnum' => $self->svcnum },
-                        });
-
-     # this is to preserve various legacy behaviour / avoid re-writing other code
-     return map { $_->groupnum } @groups if $format eq 'NUMBERS';
-     return map { $_->description . " (" . $_->groupname . ")" } @groups
-        if $format eq 'COMBINED';
-     map { $_->groupname } @groups;
-  }
-}
+# sub radius_groups has moved to svc_Radius_Mixin
 
 =item clone_suspended
 
