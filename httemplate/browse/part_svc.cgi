@@ -60,12 +60,14 @@ function part_export_areyousure(href) {
     <TH COLSPAN=2 CLASS="grid" BGCOLOR="#cccccc">Modifier</TH>
 
   </TR>
-
+% my $conf = FS::Conf->new;
 % foreach my $part_svc ( @part_svc ) {
 %     my $svcdb = $part_svc->svcdb;
 %     my $svc_x = "FS::$svcdb"->new( { svcpart => $part_svc->svcpart } );
 %     my @dfields = $svc_x->fields;
-%     push @dfields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
+%     push @dfields, 'usergroup' if $svcdb eq 'svc_acct' #double kludge
+%                                or ($svcdb eq 'svc_broadband' 
+%                                    and $conf->exists('svc_broadband-radius'));
 %     my @fields =
 %       grep { my $col = $part_svc->part_svc_column($_);
 %              my $def = FS::part_svc->svc_table_fields($svcdb)->{$_};

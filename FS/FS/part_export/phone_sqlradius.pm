@@ -44,7 +44,6 @@ tie %options, 'Tie::IxHash',
   'options'  => \%options,
   'notes'    => <<END,
 Real-time export of <b>radcheck</b> table
-<!--, <b>radreply</b> and <b>usergroup</b>-- tables>
 to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a>
 or <a href="http://radius.innercite.com/">ICRADIUS</a>.
 <br><br>

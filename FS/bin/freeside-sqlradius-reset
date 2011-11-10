@@ -19,14 +19,14 @@ adminsuidsetup $user;
 my @exports = ();
 if ( @ARGV ) {
   foreach my $exportnum ( @ARGV ) {
-    foreach my $exporttype (qw( sqlradius sqlradius_withdomain phone_sqlradius )) {
+    foreach my $exporttype (qw( sqlradius sqlradius_withdomain ohone_sqlradius broadband_sqlradius )) {
     push @exports, qsearch('part_export', { exportnum  => $exportnum,
                                             exporttype => $exporttype, } );
     }
   }
  } else {
   @exports = qsearch('part_export', { exporttype=>'sqlradius' } );
-  push @exports, qsearch('part_export', { exporttype=>'sqlradius_withdomain' } );
+  push @exports, qsearch('part_export', { exporttype=>'sqlradius_withdomain' } ); 
 }
 
 unless ( $opt_n ) {
@@ -34,7 +34,8 @@ unless ( $opt_n ) {
     my $icradius_dbh = DBI->connect(
       map { $export->option($_) } qw( datasrc username password )
     ) or die $DBI::errstr;
-    for my $table (qw( radcheck radreply usergroup )) {
+    my $usergroup = $export->option('usergroup') || 'usergroup';
+    for my $table (qw( radcheck radreply ), $usergroup) {
       my $sth = $icradius_dbh->prepare("DELETE FROM $table");
       $sth->execute or die "Can't reset $table table: ". $sth->errstr;
     }

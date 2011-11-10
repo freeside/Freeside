@@ -159,13 +159,13 @@ my($label, $value, $svcdb) = $cust_svc->label;
 
 my $part_svc = $cust_svc->part_svc;
 
-  #false laziness w/edit/svc_Common.html
-  #override default labels with service-definition labels if applicable
-  my $labels = $opt{labels}; #not -> here
-  foreach my $field ( keys %$labels ) {
-    my $col = $part_svc->part_svc_column($field);
-    $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\S*$/;
-  }
+#false laziness w/edit/svc_Common.html
+#override default labels with service-definition labels if applicable
+my $labels = $opt{labels}; #not -> here
+foreach my $field ( keys %$labels ) {
+  my $col = $part_svc->part_svc_column($field);
+  $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\s*$/;
+}
 
 my $pkgnum = $cust_svc->pkgnum;
 

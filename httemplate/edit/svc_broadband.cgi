@@ -1,4 +1,4 @@
-<% include('elements/svc_Common.html',
+<& elements/svc_Common.html,
      'post_url'             => popurl(1). 'process/svc_broadband.cgi',
      'name'                 => 'broadband service',
      'table'                => 'svc_broadband',
@@ -7,8 +7,7 @@
      'dummy'                => $cgi->query_string,
      'onsubmit'             => 'validate_coords',
      'html_foot'            => $js,
-     )
-%>
+&>
 <%init>
 
 die "access denied"
@@ -100,8 +99,18 @@ END
 my @fields = (
   qw( description ip_addr speed_down speed_up blocknum ),
   { field=>'block_label', type=>'fixed' },
-  qw( mac_addr latitude longitude altitude vlan_profile performance_profile authkey plan_id )
+  qw( mac_addr latitude longitude altitude vlan_profile 
+      performance_profile authkey plan_id ),
 );
+
+if ( $conf->exists('svc_broadband-radius') ) {
+  push @fields,
+  { field     => 'usergroup',
+    type      => 'select-radius_group',
+    multiple  => 1,
+  }
+}
+
 
 my $fixedblock = '';
 
@@ -116,10 +125,17 @@ my $callback = sub {
 
   my $columndef = $part_svc->part_svc_column($fieldref->{'field'});
   if ($columndef->columnflag eq 'F') {
-    $fieldref->{'type'} = 'fixed';
+    $fieldref->{'type'} = length($columndef->columnvalue)
+                            ? 'fixed'
+                            : 'hidden';
     $fieldref->{'value'} = $columndef->columnvalue;
     $fixedblock = $fieldref->{value}
       if $fieldref->{field} eq 'blocknum';
+
+    if ( $fieldref->{field} eq 'usergroup' ) {
+      $fieldref->{'formatted_value'} = 
+        [ $object->radius_groups('long_description') ];
+    }
   }
 
   if ($object->svcnum) { 

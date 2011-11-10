@@ -9,7 +9,7 @@ use FS::addr_block;
 use FS::part_svc_router;
 use NetAddr::IP;
 
-@ISA = qw( FS::svc_Common );
+@ISA = qw( FS::svc_Radius_Mixin FS::svc_Common );
 
 $FS::UID::callback{'FS::svc_broadband'} = sub { 
   $conf = new FS::Conf;
@@ -115,6 +115,15 @@ sub table_info {
      'longitude'    => 'Longitude',
      'altitude'     => 'Altitude',
      'vlan_profile' => 'VLAN profile',
+     'usergroup'    => { 
+                         label => 'RADIUS groups',
+                         type  => 'select-radius_group.html',
+                         #select_table => 'radius_group',
+                         #select_key   => 'groupnum',
+                         #select_label => 'groupname',
+                         disable_inventory => 1,
+                         multiple => 1,
+                       },
     },
   };
 }

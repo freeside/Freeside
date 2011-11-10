@@ -192,6 +192,8 @@ sub insert {
     }
   }
 
+  # XXX shouldn't this update fixed values?
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -714,11 +716,6 @@ sub process {
   my $old = qsearchs('part_svc', { 'svcpart' => $param->{'svcpart'} }) 
     if $param->{'svcpart'};
 
-  $param->{'svc_acct__usergroup'} =
-    ref($param->{'svc_acct__usergroup'})
-      ? join(',', @{$param->{'svc_acct__usergroup'}} )
-      : $param->{'svc_acct__usergroup'};
-
   #unmunge cgp_accessmodes (falze laziness-ish w/edit/process/svc_acct.cgi)
   $param->{'svc_acct__cgp_accessmodes'} ||=
     join(' ', sort
@@ -737,14 +734,17 @@ sub process {
     } ( fields('part_svc'),
         map { my $svcdb = $_;
               my @fields = fields($svcdb);
-              push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
+              push @fields, 'usergroup' if $svcdb eq 'svc_acct'
+                                        or $svcdb eq 'svc_broadband'; #kludge
 
               map {
                     my $f = $svcdb.'__'.$_;
-                    if ( $param->{ $f.'_flag' } =~ /^[MAH]$/ ) {
+                    my $flag = $param->{ $f.'_flag' } || ''; #silence warnings
+                    if ( $flag =~ /^[MAH]$/ ) {
                       $param->{ $f } = delete( $param->{ $f.'_classnum' } );
                     }
-		    if ( $param->{ $f.'_flag' } =~ /^S$/ ) {
+		    if ( $flag =~ /^S$/ 
+                          or $_ eq 'usergroup' ) {
                       $param->{ $f } = ref($param->{ $f })
                                          ? join(',', @{$param->{ $f }} )
                                          : $param->{ $f };

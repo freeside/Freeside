@@ -128,7 +128,12 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::delete;
+  # clean up export_nas records
+  my $error = $self->process_m2m(
+    'link_table'    => 'export_nas',
+    'target_table'  => 'nas',
+    'params'        => [],
+  ) || $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

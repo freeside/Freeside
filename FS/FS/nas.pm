@@ -87,8 +87,11 @@ sub delete {
   my $dbh = dbh;
 
   my $self = shift;
-  my $error = $self->process_m2m([])
-           || $self->SUPER::delete;
+  my $error = $self->process_m2m(
+    link_table    => 'export_nas',
+    target_table  => 'part_export',
+    params        => []
+  ) || $self->SUPER::delete;
 
   if ( $error ) {
     $dbh->rollback;

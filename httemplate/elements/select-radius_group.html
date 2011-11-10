@@ -1,17 +1,6 @@
-<SELECT MULTIPLE NAME = "<% $opt{'element_name'} || $opt{'field'} || 'usergroup' %>"
-        <% $opt{'element_etc'} %>
->
-% foreach my $selopt ( keys %groups ) {
-%  my $selected = (grep{ $_ eq $selopt } @sel_groups) ? 'SELECTED' : '';
-    <OPTION VALUE="<%$selopt%>" <% $selected %>><% $groups{$selopt} %></OPTION>
-% }
-</SELECT>
-<%init>
-
-my %opt = @_;
-
-my %groups = map { $_->groupnum => $_->long_description }
-                                                    qsearch('radius_group', {});
-my @sel_groups = split(/,/,$opt{'curr_value'});
-
-</%init>
+<& /elements/select-table.html,
+    table       => 'radius_group',
+    name_col    => 'long_description',
+    order_by    => 'groupname', # better idea?
+    @_ 
+&>

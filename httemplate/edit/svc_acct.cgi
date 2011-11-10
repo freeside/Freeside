@@ -312,7 +312,7 @@ function randomPass() {
 % } else { 
 %   my $radius_group_selected = '';
 %   if ( $svc_acct->svcnum ) {
-%      $radius_group_selected = join(',',$svc_acct->radius_groups('NUMBERS'));
+%      $radius_group_selected = join(',',$svc_acct->radius_groups('groupnum'));
 %   }
 %   elsif ( !$svc_acct->svcnum && $part_svc_usergroup->columnflag eq 'D' ) {
 %       $radius_group_selected = $part_svc_usergroup->columnvalue;
@@ -320,6 +320,7 @@ function randomPass() {
     <TD><& /elements/select-radius_group.html, 
                 curr_value => $radius_group_selected,
                 element_name => 'radius_usergroup',
+                multiple => 1,
         &>
     </TD>
 % } 
