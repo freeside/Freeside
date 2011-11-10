@@ -1,8 +1,9 @@
-packages FS::part_export::http_status;
+package FS::part_export::http_status;
 use base qw( FS::part_export );
 
 use strict;
 use warnings;
+use vars qw( %info );
 use LWP::UserAgent;
 use HTTP::Request::Common;
 
@@ -29,7 +30,7 @@ sub export_getstatus {
   my $url = $self->option('url');
   {
     no strict 'refs';
-    ${$_} = $svc_x->getfield($x) foreach $svc_x->fields;
+    ${$_} = $svc_x->getfield($_) foreach $svc_x->fields;
 
     $url = eval(qq($url));
   }
@@ -40,7 +41,6 @@ sub export_getstatus {
 
   $$htmlref = $response->is_error ? $response->error_as_HTML
                                   : $response->content;
-
 
   #hash data note yet implemented for this status export
 

@@ -985,6 +985,26 @@ sub export_getsettings {
   ( \%settings, \%defaults );
 }
 
+=item export_getstatus
+
+Runs export_getstatus callbacks and returns a two item list consisting of an
+HTML status and a status hashref.
+
+=cut
+
+sub export_getstatus {
+  my $self = shift;
+  my $html = '';
+  my %hash = ();
+  my $error = $self->export('getstatus', \$html, \%hash);
+  if ( $error ) {
+    #XXX bubble this up better
+    warn "error running export_getstatus: $error";
+    return ( '', {} );
+  }
+  ( $html, \%hash );
+}
+
 =item export HOOK [ EXPORT_ARGS ]
 
 Runs the provided export hook (i.e. "suspend", "unsuspend") for this service.
