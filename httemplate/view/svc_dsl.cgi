@@ -65,6 +65,19 @@ my $svc_cb = sub {
 
     }
 
+    if ( grep $_->can('export_getstatus'), $part_svc->part_export ) {
+
+      $footer .= '<BR><BR>'.
+                 include('/elements/popup_link.html', {
+                   'action' => $p.'view/svc_dsl_status.html'.
+                               '?svcnum='. $svc_dsl->svcnum,
+                   'label'  => 'View line status',
+                   'width'  => 763,
+                   'height' => 256,
+                 });
+
+    }
+
     $footer .= '<BR><BR>'.
                include( '/view/elements/svc_devices.html',
                           'svc_x'   => $svc_dsl,

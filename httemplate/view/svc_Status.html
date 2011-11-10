@@ -1,0 +1,22 @@
+<& /elements/header-popup.html,
+     {
+       'title'   => '',
+       'nobr'    => 0,  #1 for no <BR><BR> after the title
+     }
+&>
+% foreach my $export ( grep $_->can('export_getstatus'), $part_svc->part_export ) {
+%   my $html = '';
+%   my %hash = ();
+%   $export->export_getstatus( $svc_x, \$html, \%hash );
+<% $html %>
+% }
+<%init>
+
+$cgi->param('svcnum') =~ /^(\d+)$/ or die 'illegal svcnum';
+my $svcnum = $1;
+
+my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );
+die "Unknown svcnum" unless $cust_svc;
+my $svc_x = $cust_svc->svc_x;
+
+</%init>
