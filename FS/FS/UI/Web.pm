@@ -655,7 +655,9 @@ sub job_status {
   }
 
   #to_json(\@return);  #waiting on deb 5.0 for new JSON.pm?
-  objToJson(\@return);
+  #silence the warning though
+  my $to_json = JSON->can('to_json') || JSON->can('objToJson');
+  &$to_json(\@return);
 
 }
 
