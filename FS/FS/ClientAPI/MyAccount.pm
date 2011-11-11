@@ -1521,6 +1521,21 @@ sub _customer_svc_x {
 
 }
 
+sub svc_status_html {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'})
+    or return { 'error' => "Service not found" };
+
+  my $html = $svc_x->getstatus_html;
+
+  return { 'html' => $html };
+
+}
+
 sub list_dsl_devices {
   my $p = shift;
 
