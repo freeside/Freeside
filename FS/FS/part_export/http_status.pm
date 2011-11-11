@@ -32,7 +32,7 @@ sub export_getstatus {
     no strict 'refs';
     ${$_} = $svc_x->getfield($_) foreach $svc_x->fields;
 
-    $url = eval(qq($url));
+    $url = eval(qq("$url"));
   }
 
   my $req = HTTP::Request::Common::GET( $url );
