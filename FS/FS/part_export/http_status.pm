@@ -27,12 +27,14 @@ sub rebless { shift; }
 sub export_getstatus {
   my( $self, $svc_x, $htmlref, $hashref ) = @_;
 
-  my $url = $self->option('url');
+  my $url;
+  my $urlopt = $self->option('url');
+  no strict 'vars';
   {
     no strict 'refs';
     ${$_} = $svc_x->getfield($_) foreach $svc_x->fields;
 
-    $url = eval(qq("$url"));
+    $url = eval(qq("$urlopt"));
   }
 
   my $req = HTTP::Request::Common::GET( $url );
