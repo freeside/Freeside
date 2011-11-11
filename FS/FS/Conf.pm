@@ -4275,6 +4275,25 @@ and customer address. Include units.',
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'svc_broadband-manage_link_text',
+    'section'     => 'UI',
+    'description' => 'Label for "Manage Device" link',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'svc_broadband-manage_link_loc',
+    'section'     => 'UI',
+    'description' => 'Location for "Manage Device" link',
+    'type'        => 'select',
+    'select_hash' => [
+      'bottom' => 'Near Unprovision link',
+      'right'  => 'With export-related links',
+    ],
+  },
+
+
   #more fine-grained, service def-level control could be useful eventually?
   {
     'key'         => 'svc_broadband-allow_null_ip_addr',
