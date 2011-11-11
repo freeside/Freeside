@@ -69,7 +69,7 @@ my $svc_cb = sub {
 
       $footer .= '<BR><BR>'.
                  include('/elements/popup_link.html', {
-                   'action' => $p.'view/svc_dsl_status.html'.
+                   'action' => $p.'view/svc_Status.html'.
                                '?svcnum='. $svc_dsl->svcnum,
                    'label'  => 'View line status',
                    'width'  => 763,
