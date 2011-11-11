@@ -279,6 +279,15 @@ sub check {
   $self->SUPER::check;
 }
 
+=item gateway_access_or_phonenum
+
+=cut
+
+sub gateway_access_or_phonenum {
+  my $self = shift;
+  $self->gateway_access_number || $self->phonenum;
+}
+
 =item dsl_device
 
 Returns the MAC addresses associated with this DSL service, as FS::dsl_device

@@ -33,6 +33,9 @@ sub export_getstatus {
   {
     no strict 'refs';
     ${$_} = $svc_x->getfield($_) foreach $svc_x->fields;
+    if ( $svc_x->table eq 'svc_dsl' ) {
+      ${$_} = $svc_x->$_() foreach (qw( gateway_access_or_phonenum ));
+    }
 
     $url = eval(qq("$urlopt"));
   }
