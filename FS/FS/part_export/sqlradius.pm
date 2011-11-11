@@ -12,7 +12,7 @@ use Carp qw( cluck );
 @ISA = qw(FS::part_export);
 @EXPORT_OK = qw( sqlradius_connect );
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 my %groups;
 tie %options, 'Tie::IxHash',
@@ -119,10 +119,20 @@ sub _groups_susp_reason_map { map { reverse( /^\s*(\S+)\s*(.*)$/ ) }
 
 sub rebless { shift; }
 
-sub export_username {
+sub export_username { # override for other svcdb
   my($self, $svc_acct) = (shift, shift);
   warn "export_username called on $self with arg $svc_acct" if $DEBUG > 1;
   $svc_acct->username;
+}
+
+sub radius_reply { #override for other svcdb
+  my($self, $svc_acct) = (shift, shift);
+  $svc_acct->radius_reply;
+}
+
+sub radius_check { #override for other svcdb
+  my($self, $svc_acct) = (shift, shift);
+  $svc_acct->radius_check;
 }
 
 sub _export_insert {
@@ -130,7 +140,7 @@ sub _export_insert {
 
   foreach my $table (qw(reply check)) {
     my $method = "radius_$table";
-    my %attrib = $svc_x->$method();
+    my %attrib = $self->$method($svc_x);
     next unless keys %attrib;
     my $err_or_queue = $self->sqlradius_queue( $svc_x->svcnum, 'insert',
       $table, $self->export_username($svc_x), %attrib );

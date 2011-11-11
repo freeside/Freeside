@@ -126,7 +126,11 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
 %               )
 %        } fields($layer);
 %      }
-%      push @fields, 'usergroup' if $layer eq 'svc_acct'; #kludge
+%      push @fields, 'usergroup' 
+%        if $layer eq 'svc_acct'
+%          or ( $layer eq 'svc_broadband' and 
+%               $conf->exists('svc_broadband-radius') ); # double kludge
+%               # (but we do want to check the config, right?)
 %      $part_svc->svcpart($clone) if $clone; #haha, undone below
 %
 %
@@ -307,7 +311,9 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
 %                             'curr_value'   => $value,
 %                             'element_name' => "${layer}__${field}",
 %                             'element_etc'  => $disabled,
-%                             'multiple'     => ($flag eq 'S'),
+%                             'multiple'     => ($def->{multiple} ||
+%                                                $flag eq 'S'),
+%                                 # allow the table def to force 'multiple'
 %                          );
 %
 %        } elsif ( $def->{type} eq 'communigate_pro-accessmodes' ) {
@@ -387,6 +393,7 @@ Table <% $widget->html %>
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+my $conf = FS::Conf->new;
 my $part_svc;
 my $clone = '';
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {#clone
