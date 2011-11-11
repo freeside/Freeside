@@ -1138,8 +1138,27 @@ sub find_duplicates {
   return grep { $conflict_svcparts{$_->cust_svc->svcpart} } @dup;
 }
 
+=item getstatus_html
 
+=cut
 
+sub getstatus_html {
+  my $self = shift;
+
+  my $part_svc = $self->cust_svc->part_svc;
+
+  my $html = '';
+
+  foreach my $export ( grep $_->can('export_getstatus'), $part_svc->part_export ) {
+    my $export_html = '';
+    my %hash = ();
+    $export->export_getstatus( $self, \$export_html, \%hash );
+    $html .= $export_html;
+  }
+
+  $html;
+
+}
 
 =back
 

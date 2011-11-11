@@ -2,15 +2,15 @@
 
 Example:
 
-  include( '/elements/header-popup.html',
-           {
-             'title'   => 'Title',
-             'menubar' => \@menubar,
-             'etc'     => '', #included in <BODY> tag, for things like onLoad=
-             'head'    => '', #included before closing </HEAD> tag
-             'nobr'    => 0,  #1 for no <BR><BR> after the title
-           }
-         );
+  <& /elements/header-popup.html,
+       {
+         'title'   => 'Title',
+         'menubar' => \@menubar,
+         'etc'     => '', #included in <BODY> tag, for things like onLoad=
+         'head'    => '', #included before closing </HEAD> tag
+         'nobr'    => 0,  #1 for no <BR><BR> after the title
+       }
+  &>
 
   #old-style
   include( '/elements/header.html', 'Title', $menubar, $etc, $head);
@@ -29,14 +29,14 @@ Example:
   </HEAD>
   <BODY <% $etc %>>
     <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
+% if ( $title ) {
     <FONT SIZE=6>
       <CENTER><% $title |h %></CENTER>
     </FONT>
-
+% }
 % unless ( $nobr ) {
     <BR><!--<BR>-->
 % }
-
 <%init>
 
 my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
