@@ -1,11 +1,10 @@
 package FS::cdr::enswitch;
+use base qw( FS::cdr );
 
 use strict;
-use vars qw( @ISA %info $tmp_mon $tmp_mday $tmp_year );
-use Time::Local;
-use FS::cdr qw(_cdr_min_parser_maker);
-
-@ISA = qw(FS::cdr);
+use vars qw( %info $tmp_mon $tmp_mday $tmp_year );
+use FS::Record qw( qsearchs );
+use FS::cdr_type;
 
 %info = (
   'name'          => 'Enswitch',
@@ -26,7 +25,7 @@ use FS::cdr qw(_cdr_min_parser_maker);
     skip(5),        #Destination customer, Destination type
                     #Destination number
                     #Destination group ID, Destination group name,
-    'in_calling_type',  #Inbound calling type,
+    \&in_calling_type,  #Inbound calling type,
     \&in_calling_num,   #Inbound calling number,
     '',                 #Inbound called type,
     \&in_called_num,    #Inbound called number,
@@ -48,6 +47,25 @@ use FS::cdr qw(_cdr_min_parser_maker);
 );
 
 sub skip { map {''} (1..$_[0]) }
+
+#create CDR types with names matching in_calling_type valuesj - 'none'
+# (without the quotes) for blank
+our %cdr_type = ();
+sub in_calling_type {
+  my ($record, $data) = @_;
+
+  $data ||= 'none';
+
+  my $cdr_type = exists($cdr_type{$data})
+                   ? $cdr_type{$data}
+                   : qsearchs('cdr_type', { 'cdrtypename' => $data } );
+
+  $cdr_type{$data} = $cdr_type;
+
+  $record->set('in_calling_type', $data); #for below
+  $record->set('cdrtypenum', $cdr_type->cdrtypenum) if $cdr_type;
+
+}
 
 sub in_calling_num {
   my ($record, $data) = @_;
