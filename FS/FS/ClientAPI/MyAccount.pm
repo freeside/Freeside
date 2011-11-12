@@ -1140,7 +1140,10 @@ sub invoice_pdf {
 
   return { 'error'       => '',
            'invnum'      => $invnum,
-           'invoice_pdf' => $cust_bill->print_pdf( { unsquelch_cdr => 1 } ),
+           'invoice_pdf' => $cust_bill->print_pdf({
+                              'unsquelch_cdr' => 1,
+                              'locale'        => $p->{'locale'},
+                            }),
          };
 
 }
@@ -1154,10 +1157,15 @@ sub legacy_invoice {
 
   my $legacyinvnum = $p->{'legacyinvnum'};
 
-  my $legacy_cust_bill = qsearchs('legacy_cust_bill', {
+  my %hash = (
     'legacyinvnum' => $legacyinvnum,
     'custnum'      => $custnum,
-  }) or return { 'error' => "Can't find legacyinvnum" };
+  );
+
+  my $legacy_cust_bill =
+         qsearchs('legacy_cust_bill', { %hash, 'locale' => $p->{'locale'} } )
+      || qsearchs('legacy_cust_bill', \%hash )
+    or return { 'error' => "Can't find legacyinvnum" };
 
   #my %return;
 
