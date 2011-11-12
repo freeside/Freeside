@@ -1527,7 +1527,8 @@ sub svc_status_html {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'})
+  #XXX only svc_dsl for now
+  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_dsl')
     or return { 'error' => "Service not found" };
 
   my $html = $svc_x->getstatus_html;
