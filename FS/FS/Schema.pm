@@ -549,10 +549,11 @@ sub tables_hashref {
         'charged',    @money_type,                  '', '', 
         'content_pdf',     'blob', 'NULL',      '', '', '',
         'content_html',    'text', 'NULL',      '', '', '',
+        'locale',       'varchar', 'NULL',      16, '', '', 
       ],
       'primary_key' => 'legacyinvnum',
       'unique' => [],
-      'index'  => [ ['legacyid', 'custnum'], ],
+      'index'  => [ ['legacyid', 'custnum', 'locale' ], ],
     },
 
     'cust_statement' => {

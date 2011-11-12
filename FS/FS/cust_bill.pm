@@ -2362,11 +2362,13 @@ unsquelch_cdr - overrides any per customer cdr squelching when true
 
 notice_name - overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
+locale - override customer's locale
+
 =cut
 
 #what's with all the sprintf('%10.2f')'s in here?  will it cause any
 # (alignment in text invoice?) problems to change them all to '%.2f' ?
-# yes: fixed width (dot matrix) text printing will be borked
+# yes: fixed width/plain text printing will be borked
 sub print_generic {
   my( $self, %params ) = @_;
   my $conf = $self->conf;
@@ -2655,7 +2657,7 @@ sub print_generic {
   );
  
   #localization
-  my $lh = FS::L10N->get_handle($cust_main->locale);
+  my $lh = FS::L10N->get_handle( $params{'locale'} || $cust_main->locale );
   $invoice_data{'emt'} = sub { &$escape_function($self->mt(@_)) };
   my %info = FS::Locales->locale_info($cust_main->locale || 'en_US');
   # eval to avoid death for unimplemented languages
