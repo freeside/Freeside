@@ -549,7 +549,7 @@ Example:
 
           // only spawn if we're the last element... return if not
 
-          var field_regex = /(\d+)(_[a-z]+)?$/;
+          var field_regex = /(\d+)(_[a-z_]+)?$/;
           var match = field_regex.exec(what.name);
           if ( !match ) {
             alert(what.name + " didn't match for " + what);

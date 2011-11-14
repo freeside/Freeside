@@ -1,0 +1,66 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <TABLE>
+    <TR>
+%     foreach my $field ( @fields ) {
+%
+%       my $value = $rate_tier_detail->get($field);
+
+        <TD>
+          <% $field eq 'min_charge' ? $money_char : '' %>
+          <INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_<%$field%>"
+                 ID    = "<%$id%>_<%$field%>"
+                 SIZE  = "<% $size{$field} || 15 %>"
+                 STYLE = "text-align:right"
+                 VALUE = "<% scalar($cgi->param($name."_$field"))
+                             || $value |h %>"
+                 <% $onchange %>
+          ><BR>
+          <FONT SIZE="-1"><% $label{$field} %></FONT>
+        </TD>
+%     }
+    </TR>
+  </TABLE>
+
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'tierdetailnum';
+my $id = $opt{'id'} || 'tierdetailnum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $rate_tier_detail;
+if ( $curr_value ) {
+  $rate_tier_detail = qsearchs('rate_tier_detail', { 'tierdetailnum' => $curr_value } );
+} else {
+  $rate_tier_detail = new FS::rate_tier_detail {};
+}
+
+my %size = ( 'title' => 12 );
+
+tie my %label, 'Tie::IxHash',
+  'min_quan'   => 'Minimum quantity',
+  'min_charge' => 'Charge per minute/call',
+;
+
+my @fields = keys %label;
+
+</%init>

@@ -1,16 +1,15 @@
 package FS::part_pkg::voip_inbound;
+use base qw( FS::part_pkg::recur_Common );
 
 use strict;
-use vars qw(@ISA $DEBUG %info);
+use vars qw($DEBUG %info);
 use Date::Format;
 use Tie::IxHash;
+use Text::CSV_XS;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
-use FS::part_pkg::recur_Common;
 use FS::cdr;
-use FS::part_pkg::recur_Common;
-
-@ISA = qw(FS::part_pkg::recur_Common);
+use FS::rate_detail;
 
 $DEBUG = 0;
 
@@ -55,10 +54,6 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
     'default_prefix' => { 'name'    => 'Default prefix optionally prepended to customer DID numbers when searching for CDR records',
                           'default' => '+1',
                         },
-
-    'disable_tollfree' => { 'name' => 'Disable automatic toll-free processing',
-                            'type' => 'checkbox',
-                          },
 
     'use_amaflags' => { 'name' => 'Only charge for CDRs where the amaflags field is set to "2" ("BILL"/"BILLING").',
                         'type' => 'checkbox',
@@ -148,7 +143,6 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        FS::part_pkg::prorate_Mixin::fieldorder,
                    qw( min_charge min_included sec_granularity
                        default_prefix
-                       disable_tollfree
                        use_amaflags
                        use_carrierid
                        use_cdrtypenum ignore_cdrtypenum
@@ -160,7 +154,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        bill_every_call
                      )
                   ],
-  'weight' => 40,
+  'weight' => 42,
 );
 
 sub price_info {
@@ -205,25 +199,21 @@ sub calc_usage {
 
   my $spool_cdr = $cust_pkg->cust_main->spool_cdr;
 
-  my $included_min = ($self->option('min_included') 
-                        && $self->option('min_included') > 0) 
-                                        ? $self->option('min_included') : 0;
 
   my $charges = 0;
 
 #  my $downstream_cdr = '';
 
-  my $disable_tollfree  = $self->option('disable_tollfree');
-  my $ignore_unrateable = $self->option('ignore_unrateable', 'Hush!');
-  my $use_duration      = $self->option('use_duration');
-
-  my $output_format     = $self->option('output_format', 'Hush!') || 'default';
+  my $included_min  = $self->option('min_included', 1) || 0;
+  my $use_duration  = $self->option('use_duration');
+  my $output_format = $self->option('output_format', 1) || 'default';
+  my $granularity   = length($self->option('sec_granularity'))
+                        ? $self->option('sec_granularity')
+                        : 60;
 
   #for check_chargable, so we don't keep looking up options inside the loop
   my %opt_cache = ();
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
   my $csv = new Text::CSV_XS;
 
   foreach my $cust_svc (
@@ -232,19 +222,25 @@ sub calc_usage {
     my $svc_phone = $cust_svc->svc_x;
 
     foreach my $cdr ( $svc_phone->get_cdrs(
-      'for_update'     => 1,
-      'status'         => '', # unprocessed only
-      'default_prefix' => $self->option('default_prefix'),
       'inbound'        => 1,
+      'default_prefix' => $self->option('default_prefix'),
+      'status'         => '', # unprocessed only
+      'for_update'     => 1,
       )
     ) {
+
+      my $reason = $self->check_chargable( $cdr,
+                                           'option_cache' => \%opt_cache,
+                                         );
+      if ( $reason ) {
+        warn "not charging for CDR ($reason)\n" if $DEBUG;
+        next;
+      }
+
       if ( $DEBUG > 1 ) {
         warn "rating inbound CDR $cdr\n".
              join('', map { "  $_ => ". $cdr->{$_}. "\n" } keys %$cdr );
       }
-      my $granularity = length($self->option('sec_granularity'))
-                          ? $self->option('sec_granularity')
-                          : 60;
 
       my $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
 
@@ -287,7 +283,7 @@ sub calc_usage {
               $call_details[0],
               $charge,
               $cdr->calltypenum, #classnum
-              $self->phonenum,
+              '', #phonenum,
               $cdr->accountcode,
               $cdr->startdate,
               $seconds,
@@ -353,8 +349,7 @@ sub check_chargable {
 
   return "carrierid != $opt{'use_carrierid'}"
     if length($opt{'use_carrierid'})
-    && $cdr->carrierid ne $opt{'use_carrierid'} #ne otherwise 0 matches ''
-    && ! $flags{'da_rewrote'};
+    && $cdr->carrierid ne $opt{'use_carrierid'}; #ne otherwise 0 matches ''
 
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
     if length($opt{'use_cdrtypenum'})

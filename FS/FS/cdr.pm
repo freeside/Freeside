@@ -401,13 +401,15 @@ error, otherwise returns false.
 
 sub set_status_and_rated_price {
   my($self, $status, $rated_price, $svcnum, %opt) = @_;
-  if($opt{'inbound'}) {
+
+  if ($opt{'inbound'}) {
+
     my $term = qsearchs('cdr_termination', {
         acctid   => $self->acctid, 
         termpart => 1 # inbound
     });
     my $error;
-    if($term) {
+    if ( $term ) {
       warn "replacing existing cdr status (".$self->acctid.")\n" if $term;
       $error = $term->delete;
       return $error if $error;
@@ -419,13 +421,19 @@ sub set_status_and_rated_price {
         status      => $status,
         svcnum      => $svcnum,
     });
+    $term->rated_seconds($opt{rated_seconds}) if exists($opt{rated_seconds});
+    $term->rated_minutes($opt{rated_minutes}) if exists($opt{rated_minutes});
     return $term->insert;
-  }
-  else {
+
+  } else {
+
     $self->freesidestatus($status);
     $self->rated_price($rated_price);
+    $self->rated_seconds($opt{rated_seconds}) if exists($opt{rated_seconds});
+    $self->rated_minutes($opt{rated_minutes}) if exists($opt{rated_minutes});
     $self->svcnum($svcnum) if $svcnum;
     return $self->replace();
+
   }
 }
 
@@ -641,6 +649,20 @@ sub export_formats {
 
   return %export_formats;
 }
+
+=item downstream_csv OPTION => VALUE ...
+
+Options:
+
+format
+
+charge
+
+seconds
+
+granularity
+
+=cut
 
 sub downstream_csv {
   my( $self, %opt ) = @_;

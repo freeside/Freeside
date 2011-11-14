@@ -820,11 +820,21 @@ sub usage {
   if ( $self->get('details') ) {
 
     @values = 
-      map { $_->[2] }
-      grep { ref($_) && ( defined($classnum) ? $_->[3] eq $classnum : 1 ) }
+      map { ref($_) eq 'HASH'
+              ? $_->{'amount'}
+              : $_->[2] 
+          }
+      grep { ref($_) && ( defined($classnum)
+                            ? $classnum eq ( ref($_) eq 'HASH'
+                                               ? $_->{'classnum'}
+                                               : $_->[3]
+                                           )
+                            : 1
+                        )
+           }
       @{ $self->get('details') };
 
-  }else{
+  } else {
 
     my $hashref = { 'billpkgnum' => $self->billpkgnum };
     $hashref->{ 'classnum' } = $classnum if defined($classnum);
@@ -852,11 +862,14 @@ sub usage_classes {
 
     my %seen = ();
     foreach my $detail ( grep { ref($_) } @{$self->get('details')} ) {
-      $seen{ $detail->[3] } = 1;
+      $seen{ ref($detail) eq 'HASH'
+               ? $detail->{'classnum'}
+               : $detail->[3]
+           } = 1;
     }
     keys %seen;
 
-  }else{
+  } else {
 
     map { $_->classnum }
         qsearch({ table   => 'cust_bill_pkg_detail',

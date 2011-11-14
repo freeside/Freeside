@@ -1,0 +1,24 @@
+%   unless ( $opt{'js_only'} ) {
+
+      <% include('tr-td-label.html', %opt) %>
+        <TD <% $cell_style %>>
+
+%   }
+%
+            <% include( '/elements/rate_tier_detail.html', %opt ) %>
+%
+%   unless ( $opt{'js_only'} ) {
+
+        </TD>
+      </TR>
+
+%   }
+<%init>
+
+my( %opt ) = @_;
+
+my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+$opt{'label'} ||= 'Tier';
+
+</%init>

@@ -616,3 +616,7 @@ FS/export_nas.pm
 t/export_nas.t
 FS/legacy_cust_bill.pm
 t/legacy_cust_bill.t
+FS/rate_tier.pm
+t/rate_tier.t
+FS/rate_tier_detail.pm
+t/rate_tier_detail.t

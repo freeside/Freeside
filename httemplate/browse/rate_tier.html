@@ -1,0 +1,53 @@
+<% include( 'elements/browse.html',
+              'title'         => 'Tiering plans',
+              'name_singular' => 'tiering plan',
+              'menubar'       => [ 'Add a new tier plan' =>
+                                     $p.'edit/rate_tier.html',
+                                 ],
+              'query'         => { 'table' => 'rate_tier', },
+              'count_query'   => 'SELECT COUNT(*) FROM rate_tier',
+              'header'        => [ 'Plan', 'Tiers', ],
+              'fields'        => [ 'tiername',
+                                   $details_sub,
+                                 ],
+              'links'         => [ $link, ],
+              #'disableable'   => 1,
+              #'disabled_statuspos' => 1,
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $link = [ "${p}edit/rate_tier.html?", 'tiernum' ];
+
+my $details_sub = sub {
+  my $rate_tier = shift;
+
+  [ [ { 'data'  => 'Minimum quantity',
+        'align' => 'center',
+      },
+      { 'data'  => 'Charge per minute/call',
+        'align' => 'center',
+      },
+    ],
+    map { my $rate_tier_detail = $_;
+          [
+            { 'data'  => $rate_tier_detail->min_quan,
+              'align' => 'right',
+            },
+            { 'data'  => $money_char. $rate_tier_detail->min_charge,
+              'align' => 'right',
+            },
+          ];
+        }
+      $rate_tier->rate_tier_detail
+  ];
+
+};
+
+</%init>
