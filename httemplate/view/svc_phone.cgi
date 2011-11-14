@@ -56,7 +56,7 @@ my $html_foot = sub {
   ###
   # Devices
   ###
-  my $devices = include('elements/svc_devices.html',
+  my $devices = include('/view/elements/svc_devices.html',
                           'svc_x' => $svc_phone,
                           'table' => 'phone_device',
                        );
