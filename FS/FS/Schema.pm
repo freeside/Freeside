@@ -2685,6 +2685,30 @@ sub tables_hashref {
       'index'       => [],
     },
 
+    #not really part of the above rate_ stuff (used with flat rate rather than
+    # rated billing), but could be eventually, and its a rate
+    'rate_tier' => {
+      'columns' => [
+        'tiernum',   'serial', '',      '', '', '',
+        'tiername', 'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'tiernum',
+      'unique'      => [ [ 'tiername'], ],
+      'index'       => [],
+    },
+
+    'rate_tier_detail' => {
+      'columns' => [
+        'tierdetailnum', 'serial', '',     '', '', '',
+        'tiernum',          'int', '',     '', '', '',
+        'min_quan',         'int', '',     '', '', '',
+        'min_charge',   'decimal', '', '10,4', '', '',
+      ],
+      'primary_key' => 'tierdetailnum',
+      'unique'      => [],
+      'index'       => [ ['tiernum'], ],
+    },
+
     'usage_class' => {
       'columns' => [
         'classnum',    'serial',      '',      '', '', '', 
@@ -2872,16 +2896,10 @@ sub tables_hashref {
         'max_callers', 'int',  'NULL',      '',    '', '',
 
         ###
-        # fields for unitel/RSLCOM/convergent that don't map well to asterisk
-        # defaults
-        # though these are now used elsewhere:
+        # old fields for unitel/RSLCOM/convergent that don't map to asterisk
+        # ones we adoped moved to "own fields" section below
         # charged_party, upstream_price, rated_price, carrierid, cdrtypenum
         ###
-
-        #cdr_type: Usage = 1, S&E = 7, OC&C = 8
-        'cdrtypenum',              'int', 'NULL',      '', '', '',
-
-        'charged_party',       'varchar', 'NULL', $char_d, '', '',
 
         'upstream_currency',      'char', 'NULL',       3, '', '',
         'upstream_price',      'decimal', 'NULL',  '10,4', '', '', 
@@ -2889,7 +2907,6 @@ sub tables_hashref {
 
         # how it was rated internally...
         'ratedetailnum',           'int', 'NULL',      '', '', '',
-        'rated_price',         'decimal', 'NULL',  '10,4', '', '',
 
         'distance',            'decimal', 'NULL',      '', '', '',
         'islocal',                 'int', 'NULL',      '', '', '', # '',  '', 0, '' instead?
@@ -2900,16 +2917,24 @@ sub tables_hashref {
         'description',         'varchar', 'NULL', $char_d, '', '',
         'quantity',                'int', 'NULL',      '', '', '', 
 
-        #cdr_carrier: Telstra =1, Optus = 2, RSL COM = 3
-        'carrierid',               'int', 'NULL',      '', '', '',
-
         'upstream_rateid',         'int', 'NULL',      '', '', '',
         
         ###
         #and now for our own fields
         ###
 
-        # a svcnum... right..?
+        'cdrtypenum',              'int', 'NULL',      '', '', '',
+
+        'charged_party',       'varchar', 'NULL', $char_d, '', '',
+
+        # how it was rated internally...
+        'rated_price',         'decimal', 'NULL',  '10,4', '', '',
+        'rated_seconds',           'int', 'NULL',      '', '', '',
+        'rated_minutes', 'double precision', 'NULL',   '', '', '',
+
+        'carrierid',               'int', 'NULL',      '', '', '',
+
+        # service it was matched to
         'svcnum',             'int',   'NULL',     '',   '', '', 
 
         #NULL, done (or something)
@@ -2960,6 +2985,8 @@ sub tables_hashref {
         'acctid',        'bigint',     '',      '', '', '', 
         'termpart',         'int',     '',      '', '', '',#future use see below
         'rated_price',  'decimal', 'NULL',  '10,4', '', '',
+        'rated_seconds',    'int', 'NULL',      '', '', '',
+        'rated_minutes', 'double precision', 'NULL',   '', '', '',
         'status',       'varchar', 'NULL',      32, '', '',
         'svcnum',           'int', 'NULL',      '', '', '',
       ],

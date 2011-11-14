@@ -25,7 +25,7 @@
 %                           'style'       => 'color:#999999',
 %                           'actionlabel' => emt('About'),
 %                           'width'       => 300,
-%                           'height'      => 360,
+%                           'height'      => 375,
 %                           'color'       => '#7e0079',
 %                           'scrolling'   => 'no',
 %                       );
@@ -503,6 +503,8 @@ tie my %config_billing_rates, 'Tie::IxHash',
   'Usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation.' ],
   'Time periods' => [ $fsurl.'browse/rate_time.html', 'Time periods define days and hours for rate plans' ],
   'Edit rates with Excel' => [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ], #"Edit with Excel" ?
+  'separator'     => '', #its a separator!
+  'Tiering plans' => [ $fsurl.'browse/rate_tier.html', 'Rating tiers' ],
 ;
 
 tie my %config_billing, 'Tie::IxHash';

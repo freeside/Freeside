@@ -1,0 +1,54 @@
+<% include( 'elements/edit.html',
+              'table'         => 'rate_tier',
+              'name_singular' => 'tiering plan',
+              'fields'        => [
+                'tiername',
+                #{ field=>'disabled', type=>'checkbox', value=>'Y' },
+                { 'field'             => 'tierdetailnum',
+                  'type'              => 'rate_tier_detail',
+                  'colspan'           => 2,
+                  'o2m_table'         => 'rate_tier_detail',
+                  'm2_label'          => 'Tier',
+                  'm2_error_callback' => $m2_error_callback,
+                },
+              ],
+              'labels'        => { 'tiernum'       => 'Plan #',
+                                   'tiername'      => 'Tiering plan',
+                                   'tierdetailnum' => 'Tier',
+                                 },
+              'viewall_dir' => 'browse',
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $m2_error_callback = sub {
+  my($cgi, $object) = @_;
+
+  #process_o2m fields in process/rate_tier.html
+  my @fields = qw( min_quan min_charge );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^tierdetailnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("tierdetailnum$num$_"), @gfields ) {
+            my $x = new FS::rate_tier_detail {
+              'tierdetailnum' => scalar($cgi->param("tierdetailnum$num")),
+              map { $_ => scalar($cgi->param("tierdetailnum${num}_$_")) }
+                  @fields,
+            };
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+};
+
+</%init>

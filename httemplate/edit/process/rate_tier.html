@@ -1,0 +1,15 @@
+<% include( 'elements/process.html',
+               'table'       => 'rate_tier',
+               'viewall_dir' => 'browse',
+               'process_o2m' => {
+                 'table'  => 'rate_tier_detail',
+                 'fields' => [qw( min_quan min_charge )],
+               },
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
