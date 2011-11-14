@@ -826,11 +826,10 @@ usage.
 sub usage {
   my( $self, $classnum ) = @_;
   my $sum = 0;
-  my @values = ();
 
   if ( $self->get('details') ) {
 
-    @values = 
+    foreach my $value (
       map { ref($_) eq 'HASH'
               ? $_->{'amount'}
               : $_->[2] 
@@ -843,20 +842,26 @@ sub usage {
                             : 1
                         )
            }
-      @{ $self->get('details') };
+      @{ $self->get('details') }
+    ) {
+      $sum += $value if $value;
+    }
+
+    return $sum;
 
   } else {
 
-    my $hashref = { 'billpkgnum' => $self->billpkgnum };
-    $hashref->{ 'classnum' } = $classnum if defined($classnum);
-    @values = map { $_->amount } qsearch('cust_bill_pkg_detail', $hashref);
+    my $sql = 'SELECT SUM(COALESCE(amount,0)) FROM cust_bill_pkg_detail '.
+              ' WHERE billpkgnum = '. $self->billpkgnum;
+    $sql .= " AND classnum = $classnum" if defined($classnum);
+
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+
+    return $sth->fetchrow_arrayref->[0];
 
   }
 
-  foreach ( @values ) {
-    $sum += $_ if $_;
-  }
-  $sum;
 }
 
 =item usage_classes
