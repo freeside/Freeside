@@ -3034,7 +3034,7 @@ sub print_generic {
     $options{'section'} = $section if $multisection;
     $options{'format'} = $format;
     $options{'escape_function'} = $escape_function;
-    $options{'format_function'} = sub { () } unless $unsquelched;
+    $options{'no_usage'} = 1 unless $unsquelched;
     $options{'unsquelched'} = $unsquelched;
     $options{'summary_page'} = $summarypage;
     $options{'skip_usage'} =
@@ -4762,6 +4762,7 @@ format: the invoice format.
 
 escape_function: the function used to escape strings.
 
+DEPRECATED? (expensive, mostly unused?)
 format_function: the function used to format CDRs.
 
 section: a hashref containing 'description'; if this is present, 
@@ -4790,6 +4791,7 @@ sub _items_cust_bill_pkg {
   my $format = $opt{format} || '';
   my $escape_function = $opt{escape_function} || sub { shift };
   my $format_function = $opt{format_function} || '';
+  my $no_usage = $opt{no_usage} || '';
   my $unsquelched = $opt{unsquelched} || ''; #unused
   my $section = $opt{section}->{description} if $opt{section};
   my $summary_page = $opt{summary_page} || ''; #unused
@@ -4846,6 +4848,7 @@ sub _items_cust_bill_pkg {
       my %details_opt = ( 'format'          => $format,
                           'escape_function' => $escape_function,
                           'format_function' => $format_function,
+                          'no_usage'        => $opt{'no_usage'},
                         );
 
       if ( $cust_bill_pkg->pkgnum > 0 ) {
@@ -5003,7 +5006,7 @@ sub _items_cust_bill_pkg {
 
             #instead of omitting details entirely in this case (unwanted side
             # effects), just omit CDRs
-            $details_opt{'format_function'} = sub { () }
+            $details_opt{'no_usage'} = 1
               if $type && $type eq 'R';
 
             push @d, $cust_bill_pkg->details(%details_opt);

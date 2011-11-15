@@ -3,6 +3,7 @@ package FS::cust_bill_pkg;
 use strict;
 use vars qw( @ISA $DEBUG $me );
 use Carp;
+use Text::CSV_XS;
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_main_Mixin;
 use FS::cust_pkg;
@@ -444,61 +445,100 @@ to skip usage detail:
 
 sub details {
   my ( $self, %opt ) = @_;
-  my $format = $opt{format} || '';
   my $escape_function = $opt{escape_function} || sub { shift };
-  return () unless defined dbdef->table('cust_bill_pkg_detail');
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
   my $csv = new Text::CSV_XS;
 
-  my $format_sub = sub { my $detail = shift;
-                         $csv->parse($detail) or return "can't parse $detail";
-                         join(' - ', map { &$escape_function($_) }
-                                     $csv->fields
-                             );
-                       };
+  if ( $opt{format_function} ) {
 
-  $format_sub = sub { my $detail = shift;
-                      $csv->parse($detail) or return "can't parse $detail";
-                      join('</TD><TD>', map { &$escape_function($_) }
-                                        $csv->fields
-                          );
-                    }
-    if $format eq 'html';
+    #this still expects to be passed a cust_bill_pkg_detail object as the
+    #second argument, which is expensive
+    carp "deprecated format_function passed to cust_bill_pkg->details";
+    my $format_sub = $opt{format_function} if $opt{format_function};
 
-  $format_sub = sub { my $detail = shift;
-                      $csv->parse($detail) or return "can't parse $detail";
-                      #join(' & ', map { '\small{'. &$escape_function($_). '}' }
-                      #            $csv->fields );
-                      my $result = '';
-                      my $column = 1;
-                      foreach ($csv->fields) {
-                        $result .= ' & ' if $column > 1;
-                        if ($column > 6) {                     # KLUDGE ALERT!
-                          $result .= '\multicolumn{1}{l}{\scriptsize{'.
-                                     &$escape_function($_). '}}';
-                        }else{
-                          $result .= '\scriptsize{'.  &$escape_function($_). '}';
-                        }
-                        $column++;
-                      }
-                      $result;
-                    }
-    if $format eq 'latex';
+    map { ( $_->format eq 'C'
+              ? &{$format_sub}( $_->detail, $_ )
+              : &{$escape_function}( $_->detail )
+          )
+        }
+      qsearch ({ 'table'    => 'cust_bill_pkg_detail',
+                 'hashref'  => { 'billpkgnum' => $self->billpkgnum },
+                 'order_by' => 'ORDER BY detailnum',
+              });
 
-  $format_sub = $opt{format_function} if $opt{format_function};
+  } elsif ( $opt{'no_usage'} ) {
 
-  map { ( $_->format eq 'C'
-          ? &{$format_sub}( $_->detail, $_ )
-          : &{$escape_function}( $_->detail )
-        )
-      }
-    qsearch ({ 'table'    => 'cust_bill_pkg_detail',
-               'hashref'  => { 'billpkgnum' => $self->billpkgnum },
-               'order_by' => 'ORDER BY detailnum',
-            });
-    #qsearch ( 'cust_bill_pkg_detail', { 'lineitemnum' => $self->lineitemnum });
+    my $sql = "SELECT detail FROM cust_bill_pkg_detail ".
+              "  WHERE billpkgnum = ". $self->billpkgnum.
+              "    AND ( format IS NULL OR format != 'C' ".
+              "  ORDER BY detailnum";
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+
+    map &{$escape_function}( $_->[0] ), @{ $sth->fetchall_arrayref };
+
+  } else {
+
+    my $format_sub;
+    my $format = $opt{format} || '';
+    if ( $format eq 'html' ) {
+
+      $format_sub = sub { my $detail = shift;
+                          $csv->parse($detail) or return "can't parse $detail";
+                          join('</TD><TD>', map { &$escape_function($_) }
+                                            $csv->fields
+                              );
+                        };
+
+    } elsif ( $format eq 'latex' ) {
+
+      $format_sub = sub {
+        my $detail = shift;
+        $csv->parse($detail) or return "can't parse $detail";
+        #join(' & ', map { '\small{'. &$escape_function($_). '}' }
+        #            $csv->fields );
+        my $result = '';
+        my $column = 1;
+        foreach ($csv->fields) {
+          $result .= ' & ' if $column > 1;
+          if ($column > 6) {                     # KLUDGE ALERT!
+            $result .= '\multicolumn{1}{l}{\scriptsize{'.
+                       &$escape_function($_). '}}';
+          }else{
+            $result .= '\scriptsize{'.  &$escape_function($_). '}';
+          }
+          $column++;
+        }
+        $result;
+      };
+
+    } else {
+
+      $format_sub = sub { my $detail = shift;
+                          $csv->parse($detail) or return "can't parse $detail";
+                          join(' - ', map { &$escape_function($_) }
+                                      $csv->fields
+                              );
+                        };
+
+    }
+
+    my $sql = "SELECT format, detail FROM cust_bill_pkg_detail ".
+              "  WHERE billpkgnum = ". $self->billpkgnum.
+              "  ORDER BY detailnum";
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+
+    #avoid the fetchall_arrayref and loop for less memory usage?
+
+    map { $_->[0] eq 'C'
+            ? &{$format_sub}(      $_->[1] )
+            : &{$escape_function}( $_->[1] );
+        }
+      @{ $sth->fetchall_arrayref };
+
+  }
+
 }
 
 =item details_header [ OPTION => VALUE ... ]
@@ -514,8 +554,6 @@ sub details_header {
   my $self = shift;
   return '' unless defined dbdef->table('cust_bill_pkg_detail');
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
   my $csv = new Text::CSV_XS;
 
   my @detail = 
@@ -825,10 +863,10 @@ usage.
 
 sub usage {
   my( $self, $classnum ) = @_;
-  my $sum = 0;
 
   if ( $self->get('details') ) {
 
+    my $sum = 0;
     foreach my $value (
       map { ref($_) eq 'HASH'
               ? $_->{'amount'}
