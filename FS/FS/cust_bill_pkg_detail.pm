@@ -163,11 +163,13 @@ for tabular appearance in those environments if possible.
 If I<escape_function> is set then the format is processed by this
 function before being returned.
 
+DEPRECATED? (mostly unused, expensive)
 If I<format_function> is set then the detail is handed to this callback
 for processing.
 
 =cut
 
+#totally false laziness w/cust_bill_pkg->detail
 sub formatted {
   my ( $self, %opt ) = @_;
   my $format = $opt{format} || '';
