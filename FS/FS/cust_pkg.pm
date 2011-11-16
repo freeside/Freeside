@@ -1921,7 +1921,7 @@ sub part_svc {
       max( 0, $pkg_svc->quantity - $num_cust_svc );
     $part_svc->{'Hash'}{'cust_pkg_svc'} =
         $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : []
-      unless exists($opt{summarize_size}) && $opt{summarize_size}
+      unless exists($opt{summarize_size}) && $opt{summarize_size} > 0
           && $num_cust_svc >= $opt{summarize_size};
     $part_svc->{'Hash'}{'hidden'} = $pkg_svc->hidden;
     $part_svc;
