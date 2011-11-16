@@ -15,8 +15,8 @@ function clearhint_search_cust_svc(obj, str) {
 %    my $num_cust_svc = $cust_pkg->num_cust_svc( $part_svc->svcpart );
 
 %    if ( $opt{'cust_pkg-large_pkg_size'} > 0 and
-%         $opt{'cust_pkg-large_pkg_size'} <= $num_cust_svc ) {
-%      # summarize
+%         $opt{'cust_pkg-large_pkg_size'} <= $num_cust_svc ) { # summarize
+%
       <TR>
         <TD ALIGN="right" VALIGN="top">
 %       my $href="${p}search/cust_pkg_svc.html?svcpart=".$part_svc->svcpart.
@@ -42,8 +42,9 @@ function clearhint_search_cust_svc(obj, str) {
         </TD>
       </TR>
 %     } #$hint
-%    }
-%    else { # don't summarize
+%
+%    } else { # don't summarize
+%
 %      foreach my $cust_svc ( @{ $part_svc->cust_pkg_svc } ) {
 %        if ( $cust_pkg->getfield('cancel') > 0 ) {
       <& /elements/tr-cust_svc_cancel.html,
