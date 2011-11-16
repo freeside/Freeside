@@ -133,7 +133,12 @@
 
 %       } else { 
 %
-%         if (scalar($cust_pkg->overlimit)) {
+%         my $num_cust_svc = $cust_pkg->num_cust_svc;
+%         my $summarize = $opt{'cust_pkg-large_pkg_size'} > 0
+%                           && $opt{'cust_pkg-large_pkg_size'} <= $num_cust_svc;
+%
+%         #overlimit process is expensive with many services, so skip w/summary
+%         if ( !$summarize && scalar($cust_pkg->overlimit) ) {
 
             <% pkg_status_row_colspan( $cust_pkg,
                  emt('Overlimit'),
