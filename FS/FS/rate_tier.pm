@@ -118,6 +118,7 @@ sub rate_tier_detail {
   if ( defined($_[0]) && length($_[0]) ) {
 
     my $quantity = shift;
+    $quantity = int( $quantity + 0.00001 );
 
     qsearchs({
       'table'    => 'rate_tier_detail',
