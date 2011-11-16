@@ -10,7 +10,10 @@ function clearhint_search_cust_svc(obj, str) {
 }
     </SCRIPT>
 
-%  foreach my $part_svc ( $cust_pkg->part_svc ) {
+%  foreach my $part_svc ( $cust_pkg->part_svc(
+%                           'summarize_size' => $opt{'cust_pkg-large_pkg_size'}
+%                       ) )
+%  {
 
 %    my $num_cust_svc = $cust_pkg->num_cust_svc( $part_svc->svcpart );
 

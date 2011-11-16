@@ -1882,7 +1882,7 @@ sub available_part_svc {
       $self->part_pkg->pkg_svc;
 }
 
-=item part_svc
+=item part_svc [ OPTION => VALUE ... ]
 
 Returns a list of FS::part_svc objects representing provisioned and available
 services included in this package.  Each FS::part_svc object also has the
@@ -1896,15 +1896,20 @@ following extra fields:
 
 =item cust_pkg_svc (services) - array reference containing the provisioned services, as cust_svc objects
 
-svcnum
-label -> ($cust_svc->label)[1]
-
 =back
+
+Accepts one option: summarize_size.  If specified and non-zero, will omit the
+extra cust_pkg_svc option for objects where num_cust_svc is this size or
+greater.
 
 =cut
 
+#svcnum
+#label -> ($cust_svc->label)[1]
+
 sub part_svc {
   my $self = shift;
+  my %opt = @_;
 
   #XXX some sort of sort order besides numeric by svcpart...
   my @part_svc = sort { $a->svcpart <=> $b->svcpart } map {
@@ -1915,7 +1920,9 @@ sub part_svc {
     $part_svc->{'Hash'}{'num_avail'}    =
       max( 0, $pkg_svc->quantity - $num_cust_svc );
     $part_svc->{'Hash'}{'cust_pkg_svc'} =
-      $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
+        $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : []
+      unless exists($opt{summarize_size}) && $opt{summarize_size}
+          && $num_cust_svc >= $opt{summarize_size};
     $part_svc->{'Hash'}{'hidden'} = $pkg_svc->hidden;
     $part_svc;
   } $self->part_pkg->pkg_svc;
