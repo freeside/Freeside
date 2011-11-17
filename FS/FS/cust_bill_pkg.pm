@@ -470,7 +470,7 @@ sub details {
 
     my $sql = "SELECT detail FROM cust_bill_pkg_detail ".
               "  WHERE billpkgnum = ". $self->billpkgnum.
-              "    AND ( format IS NULL OR format != 'C' ".
+              "    AND ( format IS NULL OR format != 'C' ) ".
               "  ORDER BY detailnum";
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
