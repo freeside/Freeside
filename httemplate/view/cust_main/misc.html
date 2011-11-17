@@ -77,7 +77,7 @@
 %
 
 
-<A HREF="<% popurl(1) %>cust_main.cgi?<% $cust_main->referral_custnum %>"><%$cust_main->referral_custnum %>: 
+<A HREF="<% popurl(1) %>cust_main.cgi?<% $cust_main->referral_custnum %>"><%$referring_cust_main->display_custnum %>: 
 <%
   ( $referring_cust_main->company
       ? $referring_cust_main->company. ' ('.
@@ -125,10 +125,6 @@
 
 % }
 
-% foreach (sort { $a cmp $b } $cust_main->virtual_fields) {
-    <% $cust_main->pvf($_)->widget('HTML', 'view', $cust_main->getfield($_)) %>
-% }
-
 % if ( $conf->exists('ticket_system-selfservice_edit_subject') ) {
 
   <TR>
@@ -136,6 +132,10 @@
     <TD BGCOLOR="#ffffff"><% $cust_main->edit_subject ? 'yes' : 'no' %></TD>
   </TR>
 
+% }
+
+% foreach (sort { $a cmp $b } $cust_main->virtual_fields) {
+    <% $cust_main->pvf($_)->widget('HTML', 'view', $cust_main->getfield($_)) %>
 % }
 
 </TABLE></TD></TR></TABLE>
