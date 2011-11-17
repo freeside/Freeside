@@ -676,6 +676,15 @@ sub auto_agent_custid {
 
     $counter->unlock;
 
+  } elsif ( $format eq '1001XXXXXXXX' ) {
+
+    my $counter = new File::CounterFile 'cust_main.agent_custid';
+    $counter->lock;
+
+    $agent_custid = '1001'. $counter->inc;
+
+    $counter->unlock;
+
   } else {
     die "Unknown cust_main-auto_agent_custid format: $format";
   }
