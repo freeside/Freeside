@@ -2468,7 +2468,7 @@ sub ut_zip {
     {
       $self->setfield($field,'');
     } else {
-      $self->getfield($field) =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
+      $self->getfield($field) =~ /^\s*(\w[\w\-\s]{0,8}\w)\s*$/
         or return gettext('illegal_zip'). " $field: ". $self->getfield($field);
       $self->setfield($field,$1);
     }
