@@ -107,7 +107,6 @@ sub calc_usage {
   # pass one: find the total minutes/calls and store the CDRs
   ###
   my $total = 0;
-  my @cdrs = ();
 
   my @cust_svc;
   if( $self->option('bill_inactive_svcs',1) ) {
@@ -161,11 +160,16 @@ sub calc_usage {
            $included_min = 0;
         }
 
-        $cdr->tmp_inout( $pass );
-        $cdr->tmp_rated_seconds( $seconds );
-        $cdr->tmp_rated_minutes( $charge_min );
-        $cdr->tmp_svcnum( $cust_svc->svcnum );
-        push @cdrs, $cdr;
+        my $error = $cdr->set_status_and_rated_price(
+          'processing-tiered',
+          '', #charge,
+          $cust_svc->svcnum,
+          'inbound'       => ($pass eq 'inbound'),
+          'rated_minutes' => $charge_min,
+          'rated_seconds' => $seconds,
+        );
+        die $error if $error;
+
         $total += $charge_min;
 
       } # $cdr
@@ -191,55 +195,79 @@ sub calc_usage {
   my $charges = 0;
   my @invoice_details_sort;
 
-  foreach my $cdr (@cdrs) {
+  $options{'status'} = 'processing-tiered';
 
-    my $charge_min = $cdr->tmp_rated_minutes;
+  foreach my $cust_svc (@cust_svc) {
 
-    my $charge = sprintf('%.4f', ( $min_charge * $charge_min )
-                                 + 0.0000000001 ); #so 1.00005 rounds to 1.0001
-
-
-    if ( $charge > 0 ) {
-      $charges += $charge;
-
-      my $detail = 
-        $cdr->downstream_csv( 'format'  => $output_format,
-                              'charge'  => $charge,
-                              'seconds' => ($use_duration ? 
-                                              $cdr->duration : 
-                                              $cdr->billsec),
-                              'granularity' => $granularity,
-                            );
-
-      my $call_details =
-        { format      => 'C',
-          detail      => $detail,
-          amount      => $charge,
-          #classnum    => $cdr->calltypenum, #classnum
-          #phonenum    => $phonenum, #XXX need this to sort on them
-          accountcode => $cdr->accountcode,
-          startdate   => $cdr->startdate,
-          duration    => $cdr->tmp_rated_seconds,
-        };
-
-       #warn "  adding details on charge to invoice: [ ".
-      #    join(', ', @{$call_details} ). " ]"
-      #  if ( $DEBUG && ref($call_details) );
-      push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
+    my $svc_x;
+    if( $self->option('bill_inactive_svcs',1) ) {
+      $svc_x = $cust_svc->h_svc_x($$sdate, $last_bill);
+    }
+    else {
+      $svc_x = $cust_svc->svc_x;
     }
 
-    my $error = $cdr->set_status_and_rated_price(
-      'done',
-      $charge,
-      $cdr->tmp_svcnum,
-      'inbound'       => ($cdr->tmp_inout eq 'inbound'),
-      'rated_minutes' => $charge_min,
-      'rated_seconds' => $cdr->tmp_rated_seconds,
-    );
-    die $error if $error;
+    foreach my $pass (split('_', $cdr_inout)) {
 
+      $options{'inbound'} = ( $pass eq 'inbound' );
 
-  }
+      foreach my $cdr (
+        $svc_x->get_cdrs( %options )
+      ) {
+
+        my $object = $options{'inbound'}
+                       ? $cdr->cdr_termination( 1 ) #1: inbound
+                       : $cdr;
+
+        my $charge_min = $object->rated_minutes;
+
+        my $charge = sprintf('%.4f', ( $min_charge * $charge_min )
+                                     + 0.0000000001 ); #so 1.00005 rounds to 1.0001
+
+        if ( $charge > 0 ) {
+          $charges += $charge;
+
+          my $detail = 
+            $cdr->downstream_csv( 'format'  => $output_format,
+                                  'charge'  => $charge,
+                                  'seconds' => ($use_duration ? 
+                                                  $cdr->duration : 
+                                                  $cdr->billsec),
+                                  'granularity' => $granularity,
+                                );
+
+          my $call_details =
+            { format      => 'C',
+              detail      => $detail,
+              amount      => $charge,
+              #classnum    => $cdr->calltypenum, #classnum
+              #phonenum    => $phonenum, #XXX need this to sort on them
+              accountcode => $cdr->accountcode,
+              startdate   => $cdr->startdate,
+              duration    => $object->rated_seconds,
+            };
+
+           #warn "  adding details on charge to invoice: [ ".
+          #    join(', ', @{$call_details} ). " ]"
+          #  if ( $DEBUG && ref($call_details) );
+          push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
+        }
+
+        my $error = $cdr->set_status_and_rated_price(
+          'done',
+          $charge,
+          $cust_svc->svcnum,
+          'inbound'       => $options{'inbound'},
+          'rated_minutes' => $charge_min,
+          'rated_seconds' => $object->rated_seconds,
+        );
+        die $error if $error;
+
+      } # $cdr
+
+    } # $pass
+
+  } # $cust_svc
 
   my @sorted_invoice_details = sort { ${$a}[1] <=> ${$b}[1] } @invoice_details_sort;
   foreach my $sorted_call_detail ( @sorted_invoice_details ) {

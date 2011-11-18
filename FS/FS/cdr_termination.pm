@@ -119,8 +119,8 @@ sub check {
     || $self->ut_foreign_key('acctid', 'cdr', 'acctid')
     #|| $self->ut_foreign_key('termpart', 'part_termination', 'termpart')
     || $self->ut_number('termpart')
-    || $self->ut_float('rated_price')
-    || $self->ut_enum('status', [ '', 'done' ] ) # , 'skipped' ] )
+    || $self->ut_floatn('rated_price')
+    || $self->ut_enum('status', [ '', 'processing-tiered', 'done' ] ) # , 'skipped' ] )
   ;
   return $error if $error;
 
