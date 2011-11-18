@@ -344,7 +344,7 @@ unshift @fields, sub {
                        qq!<INPUT NAME="acctid$acctid" TYPE="checkbox" VALUE="1">!;
                      };
 
-my @links = ( '', map { exists($links{$_}) ? $links{$_} : '' } @fields );
+my @links = ( map { exists($links{$_}) ? $links{$_} : '' } @fields );
 
 
 ###
