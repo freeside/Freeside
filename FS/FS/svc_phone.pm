@@ -650,7 +650,7 @@ Accepts the following options:
 
 =item for_update => 1: SELECT the CDRs "FOR UPDATE".
 
-=item status => "" (or "done"): Return only CDRs with that processing status.
+=item status => "" (or "processing-tiered", "done"): Return only CDRs with that processing status.
 
 =item inbound => 1: Return CDRs for inbound calls.  With "status", will filter 
 on inbound processing status.
@@ -673,25 +673,24 @@ sub get_cdrs {
   my @where;
 
   if ( $options{'inbound'} ) {
+
     @fields = ( 'dst' );
     if ( exists($options{'status'}) ) {
-      # must be 'done' or ''
-      my $sq = 'EXISTS ( SELECT 1 FROM cdr_termination '.
-        'WHERE cdr.acctid = cdr_termination.acctid '.
-        'AND cdr_termination.status = \'done\' '.
-        'AND cdr_termination.termpart = 1 )';
-      if ( $options{'status'} eq 'done' ) {
-        push @where, $sq;
-      }
-      elsif ($options{'status'} eq '' ) {
-        push @where, "NOT $sq";
-      }
-      else {
-        warn "invalid status: $options{'status'} (ignored)\n";
+      my $status = $options{'status'};
+      if ( $status ) {
+        push @where, 'EXISTS ( SELECT 1 FROM cdr_termination '.
+          'WHERE cdr.acctid = cdr_termination.acctid '.
+          "AND cdr_termination.status = '$status' ". #quoting kludge
+          'AND cdr_termination.termpart = 1 )';
+      } else {
+        push @where, 'NOT EXISTS ( SELECT 1 FROM cdr_termination '.
+          'WHERE cdr.acctid = cdr_termination.acctid '.
+          'AND cdr_termination.termpart = 1 )';
       }
     }
-  }
-  else {
+
+  } else {
+
     @fields = ( 'charged_party' );
     push @fields, 'src' if !$options{'disable_src'};
     $hash{'freesidestatus'} = $options{'status'}

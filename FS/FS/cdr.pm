@@ -130,9 +130,9 @@ following fields are currently supported:
 
 =item svcnum - Link to customer service (see L<FS::cust_svc>)
 
-=item freesidestatus - NULL, done (or something)
+=item freesidestatus - NULL, processing-tiered, done
 
-=item freesiderewritestatus - NULL, done (or something)
+=item freesiderewritestatus - NULL, done, skipped
 
 =item cdrbatch
 
@@ -404,10 +404,7 @@ sub set_status_and_rated_price {
 
   if ($opt{'inbound'}) {
 
-    my $term = qsearchs('cdr_termination', {
-        acctid   => $self->acctid, 
-        termpart => 1 # inbound
-    });
+    my $term = $self->cdr_termination( 1 ); #1: inbound
     my $error;
     if ( $term ) {
       warn "replacing existing cdr status (".$self->acctid.")\n" if $term;
@@ -419,10 +416,10 @@ sub set_status_and_rated_price {
         termpart    => 1,
         rated_price => $rated_price,
         status      => $status,
-        svcnum      => $svcnum,
     });
     $term->rated_seconds($opt{rated_seconds}) if exists($opt{rated_seconds});
     $term->rated_minutes($opt{rated_minutes}) if exists($opt{rated_minutes});
+    $term->svcnum($svcnum) if $svcnum;
     return $term->insert;
 
   } else {
@@ -435,6 +432,29 @@ sub set_status_and_rated_price {
     return $self->replace();
 
   }
+}
+
+=item cdr_termination [ TERMPART ]
+
+=cut
+
+sub cdr_termination {
+  my $self = shift;
+
+  if ( scalar(@_) && $_[0] ) {
+    my $termpart = shift;
+
+    qsearchs('cdr_termination', { acctid   => $self->acctid,
+                                  termpart => $termpart,
+                                }
+            );
+
+  } else {
+
+    qsearch('cdr_termination', { acctid => $self->acctid, } );
+
+  }
+
 }
 
 =item calldate_unix 
@@ -753,14 +773,13 @@ sub clear_status {
     return $error;
   } 
 
-  my @cdr_termination = qsearch('cdr_termination', 
-				{ 'acctid' => $self->acctid } );
-  foreach my $cdr_termination ( @cdr_termination ) {
-      $cdr_termination->status('');
-      $error = $cdr_termination->replace;
+  foreach my $cdr_termination ( $self->cdr_termination ) {
+      #$cdr_termination->status('');
+      #$error = $cdr_termination->replace;
+      $error = $cdr_termination->delete;
       if ( $error ) {
-	$dbh->rollback if $oldAutoCommit;
-	return $error;
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
       } 
   }
   
