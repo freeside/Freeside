@@ -19,7 +19,7 @@ adminsuidsetup $user;
 my @exports = ();
 if ( @ARGV ) {
   foreach my $exportnum ( @ARGV ) {
-    foreach my $exporttype (qw( sqlradius sqlradius_withdomain ohone_sqlradius broadband_sqlradius )) {
+    foreach my $exporttype (qw( sqlradius sqlradius_withdomain phone_sqlradius broadband_sqlradius )) {
     push @exports, qsearch('part_export', { exportnum  => $exportnum,
                                             exporttype => $exporttype, } );
     }
