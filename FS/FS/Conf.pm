@@ -4294,6 +4294,12 @@ and customer address. Include units.',
     ],
   },
 
+  {
+    'key'         => 'svc_broadband-manage_link-new_window',
+    'section'     => 'UI',
+    'description' => 'Open the "Manage Device" link in a new window',
+    'type'        => 'checkbox',
+  },
 
   #more fine-grained, service def-level control could be useful eventually?
   {
