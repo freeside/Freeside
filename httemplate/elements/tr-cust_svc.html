@@ -29,7 +29,7 @@ FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc)
 %></B></TD>
 <TD ALIGN="right"><% FS::UI::Web::svc_export_links($m, $part_svc, $cust_svc) %>
 %   if ( $manage_link and $opt{'manage_link_loc'} eq 'right' ) {
-      <A HREF="<% $manage_link %>"><% $opt{'manage_link_text'} |h %></A>
+      <A HREF="<% $manage_link %>" <% $manage_target %>><% $opt{'manage_link_text'} |h %></A>
 % }
 </TD>
 </TR>
@@ -66,7 +66,7 @@ $cust_svc->overlimit )
               'ip' => $svc_x->ip_addr
       ) %>&nbsp;)</FONT>
 %   if ( $manage_link and $opt{'manage_link_loc'} eq 'bottom' ) {
-      <FONT SIZE="-2">(&nbsp;<A HREF="<% $manage_link %>"><% $opt{'manage_link_text'} |h %></A>&nbsp;)</FONT>
+      <FONT SIZE="-2">(&nbsp;<A HREF="<% $manage_link %>" <% $manage_target %>><% $opt{'manage_link_text'} |h %></A>&nbsp;)</FONT>
 %   }
 % } #svc_broadband
 % if ( $curuser->access_right('Unprovision customer service') ) {
@@ -94,11 +94,13 @@ my $svc_unprovision_link =
   qq!', '!.emt('Permanently unprovision and delete this service?').qq!')">!.emt('Unprovision').'</A>';
 
 my $manage_link = $opt{'manage_link'};
+my $manage_target = '';
 if ( $part_svc->svcdb eq 'svc_broadband' and $manage_link ) {
   my $ip_addr = $svc_x->ip_addr; #substitution for $manage_link
   $manage_link = eval(qq("$manage_link"));
   $opt{'manage_link_text'} ||= mt('Manage Device');
   $opt{'manage_link_loc'}  ||= 'bottom';
+  $manage_target = ' target="_blank"' if $opt{'manage_link-new_window'};
 }
 else {
   $manage_link = '';
