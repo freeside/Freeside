@@ -274,7 +274,8 @@ tie my %rights, 'Tie::IxHash',
   'Miscellaneous rights' => [
     { rightname=>'Job queue', global=>1 },
     { rightname=>'Time queue', global=>1 },
-    { rightname=>'Process batches', global=>1 }, #Process payment batches
+    { rightname=>'Process batches', }, #Process payment batches
+    { rightname=>'Process global batches', global=>1 }, #Process global payment batches
     { rightname=>'Reprocess batches', global=>1 }, #Reprocess payment batches
     { rightname=>'Redownload resolved batches', global=>1 }, #Redownload resolved payment batches
     { rightname=>'Process invoice batches', },
