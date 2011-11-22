@@ -111,7 +111,11 @@ unless ($pay_batch){
   $orderby = "pay_batch.download,paybatchnum";
 }
 
-push @search, $curuser->agentnums_sql({ table=>'cust_main' });
+push @search, $curuser->agentnums_sql({ table => 'cust_main' });
+
+push @search, $curuser->agentnums_sql({ table      => 'pay_batch',
+                                        null_right => 'Process global batches',
+                                     });
 
 my $search = ' WHERE ' . join(' AND ', @search);
 
