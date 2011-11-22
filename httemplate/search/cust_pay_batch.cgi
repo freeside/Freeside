@@ -60,9 +60,12 @@
 
 my $conf = new FS::Conf;
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports')
-      || $FS::CurrentUser::CurrentUser->access_right('Process batches')
+  unless $curuser->access_right('Financial reports')
+      || $curuser->access_right('Process batches')
+      || $curuser->access_right('Process global batches')
       || ( $cgi->param('custnum') 
            && (    $conf->exists('batch-enable')
                 || $conf->config('batch-enable_payby')
@@ -108,7 +111,8 @@ unless ($pay_batch){
   $orderby = "pay_batch.download,paybatchnum";
 }
 
-push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+push @search, $curuser->agentnums_sql({ table=>'cust_main' });
+
 my $search = ' WHERE ' . join(' AND ', @search);
 
 $count_query = 'SELECT COUNT(*) FROM cust_pay_batch AS cpb ' .
