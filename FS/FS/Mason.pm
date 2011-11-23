@@ -295,6 +295,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::nas;
   use FS::export_nas;
   use FS::legacy_cust_bill;
+  use FS::radius_attr;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

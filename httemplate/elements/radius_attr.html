@@ -1,0 +1,89 @@
+% if ( $first_row ) {
+%   $first_row = '';
+<SCRIPT TYPE="text/javascript">
+var ops_for_type = {
+%   foreach my $type ('C','R') {
+'<%$type%>': [<% join(',', map {"'$_'"} FS::radius_attr->ops($type)) %>],
+%   }
+};
+function change_attrtype(what) {
+  var new_type = what.value;
+  var select_op = document.getElementById(
+    what.id.replace(/_attrtype$/, '_op')
+  );
+  if ( select_op ) {
+    var options = select_op.options;
+    var new_ops = ops_for_type[new_type];
+    while ( options.length > 0 )
+      options.remove(0);
+    for ( var x in new_ops ) {
+      // Option(text, value, defaultSelected)
+      options.add(new Option(new_ops[x], new_ops[x], (options.length == 0)));
+    }
+  }
+  <% $onchange %>(what);
+}
+</SCRIPT>
+% } #if $first_row
+<INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+<& select.html,
+  field       => $name.'_attrtype',
+  id          => $name.'_attrtype',
+  options     => ['C','R'],
+  labels      => { 'C' => 'Check', 'R' => 'Reply' },
+  curr_value  => $radius_attr->attrtype,
+  onchange    => 'change_attrtype(this)',
+&>
+<& input-text.html,
+  field       => $name.'_attrname',
+  curr_value  => $radius_attr->attrname,
+  onchange    => $onchange,
+  size        => 40, #longest attribute name in freeradius dict = 46
+&>
+<& select.html,
+  field       => $name.'_op',
+  id          => $name.'_op',
+  options     => [ FS::radius_attr->ops($radius_attr->attrtype) ],
+  curr_value  => $radius_attr->op,
+  onchange    => $onchange,
+&>
+<& input-text.html,
+  field       => $name.'_value',
+  curr_value  => $radius_attr->value,
+  onchange    => $onchange,
+  size        => 20, #tend to be shorter than attribute names
+&>
+<%shared>
+my $first_row = 1;
+</%shared>
+<%init>
+
+my( %opt ) = @_;
+
+# for an 'onchange' option that will work in both select.html and 
+# input-text.html:
+# - don't start with "onchange="
+# - don't end with (what) or (this)
+# - don't end with a semicolon
+# - don't have quotes
+my $onchange = $opt{'onchange'} || '';
+$onchange =~ s/\((what|this)\);?$//;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'attrnum';
+my $id = $opt{'id'} || 'attrnum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+my $radius_attr;
+
+if ( $curr_value ) {
+  $radius_attr = qsearchs('radius_attr', { 'attrnum' => $curr_value })  
+    or die "attrnum $curr_value not found";
+}
+else {
+  $radius_attr = new FS::radius_attr {
+    'attrtype' => 'C',
+    'op'       => '==',
+  };
+}
+
+</%init>

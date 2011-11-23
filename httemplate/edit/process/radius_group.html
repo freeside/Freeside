@@ -1,10 +1,27 @@
 <& elements/process.html,
-               'table'       => 'radius_group',
-               'viewall_dir' => 'browse',
+  'table'       => 'radius_group',
+  'viewall_dir' => 'browse',
+  'process_o2m' => {
+    'table'   => 'radius_attr',
+    'fields'  => [ qw( attrtype attrname op value )],
+  },
+  'precheck_callback' => $precheck_callback,
 &>
 <%init>
-
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $precheck_callback = sub {
+  my $cgi = shift;
+  my $param = $cgi->Vars;
+  # remove rows with a blank attrname and attrnum
+  foreach my $k (grep /^attrnum\d+$/, keys %$param) {
+    if ( !length($param->{$k}) and !length($param->{$k.'_attrname'}) ) {
+      delete $param->{$k.'_'.$_} foreach qw(attrtype attrname op value);
+      delete $param->{$k};
+    }
+  }
+  '';
+};
 
 </%init>

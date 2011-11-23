@@ -620,3 +620,5 @@ FS/rate_tier.pm
 t/rate_tier.t
 FS/rate_tier_detail.pm
 t/rate_tier_detail.t
+FS/radius_attr.pm
+t/radius_attr.t

@@ -1,16 +1,58 @@
 <& elements/edit.html,
-                 'name'   => 'RADIUS Group',
-                 'table'  => 'radius_group',
-                 'labels' => { 
-                               'groupnum'  => 'Group',
-                               'groupname' => 'RADIUS Group',
-                               'description' => 'Description',
-                             },
-                 'viewall_dir' => 'browse',
+  'name'   => 'RADIUS Group',
+  'table'  => 'radius_group',
+  'labels' => { 
+    'groupnum'  => 'Group',
+    'groupname' => 'RADIUS Group',
+    'description' => 'Description',
+    'attrnum'   => 'Attribute',
+    'priority'  => 'Priority',
+  },
+  'viewall_dir' => 'browse',
+  'fields' => [
+    { 'field'     => 'groupname',
+      'type'      => 'text',
+      'size'      => 20,
+      'colspan'   => 6, # just to not interfere with radius_attr columns
+    },
+    { 'field'     => 'description',
+      'type'      => 'text',
+      'size'      => 40,
+      'colspan'   => 6,
+    },
+    { 'field'     => 'priority',
+      'type'      => 'text',
+      'size'      => 2,
+      'colspan'   => 6, # just to not interfere with radius_attr columns
+    },
+    {
+      'field'     => 'attrnum',
+      'type'      => 'radius_attr',
+      'o2m_table' => 'radius_attr',
+      'm2_label'  => 'Attribute',
+      'm2_error_callback' => $m2_error_callback,
+    },
+  ],
+  #debug => 1
 &>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+my $m2_error_callback = sub { # reconstruct the list
+  my ($cgi, $object) = @_;
+
+  warn Dumper({$cgi->Vars});
+  my @fields = qw(attrname attrtype op value);
+  map {
+    my $k = $_;
+    next if !length($cgi->param($k.'_attrname'));
+    new FS::radius_attr {
+      'groupnum' => $object->groupnum,
+      'attrnum'  => scalar( $cgi->param($k) ),
+      map {  $_  => scalar( $cgi->param($k.'_'.$_) ) } @fields,
+    };
+  } grep /^attrnum\d+$/, ($cgi->param);
+};
 </%init>

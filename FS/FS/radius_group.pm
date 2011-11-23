@@ -1,8 +1,9 @@
 package FS::radius_group;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::o2m_Common FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use FS::radius_attr;
 
 =head1 NAME
 
@@ -42,6 +43,10 @@ groupname
 
 description
 
+=item priority
+
+priority - for export
+
 
 =back
 
@@ -77,7 +82,9 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+# I'd delete any linked attributes here but we don't really support group
+# deletion.  We would also have to delete linked records from 
+# radius_usergroup and part_svc_column...
 
 =item replace OLD_RECORD
 
@@ -86,7 +93,28 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+# To keep these things from proliferating, we will follow the same 
+# export/noexport switches that radius_attr uses.  If you _don't_ use
+# Freeside to maintain your RADIUS group attributes, then it probably 
+# shouldn't try to rename groups either.
+
+sub replace {
+  my ($self, $old) = @_;
+  $old ||= $self->replace_old;
+
+  my $error = $self->check;
+  return $error if $error;
+
+  if ( !$FS::radius_attr::noexport_hack ) {
+    foreach ( qsearch('part_export', {}) ) {
+      next if !$_->option('export_attrs',1);
+      $error = $_->export_group_replace($self, $old);
+      return $error if $error;
+    }
+  }
+
+  $self->SUPER::replace($old);
+}
 
 =item check
 
@@ -106,6 +134,7 @@ sub check {
     $self->ut_numbern('groupnum')
     || $self->ut_text('groupname')
     || $self->ut_textn('description')
+    || $self->ut_numbern('priority')
   ;
   return $error if $error;
 
@@ -123,6 +152,22 @@ sub long_description {
     my $self = shift;
     $self->description ? $self->description . " (". $self->groupname . ")"
                        : $self->groupname;
+}
+
+=item radius_attr
+
+Returns all L<FS::radius_attr> objects (check and reply attributes) for 
+this group.
+
+=cut
+
+sub radius_attr {
+  my $self = shift;
+  qsearch({
+      table   => 'radius_attr', 
+      hashref => {'groupnum' => $self->groupnum },
+      order_by  => 'ORDER BY attrtype, attrname',
+  })
 }
 
 =back

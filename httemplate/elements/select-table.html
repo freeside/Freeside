@@ -124,7 +124,7 @@ Example:
 
 my( %opt ) = @_;
 
-warn "elements/select-table.html: \n". Dumper(%opt)
+warn "elements/select-table.html: \n". Dumper(\%opt)
   if exists $opt{debug} && $opt{debug};
 
 $opt{'extra_option_attributes'} ||= [];
