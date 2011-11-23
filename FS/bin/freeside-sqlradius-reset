@@ -35,7 +35,10 @@ unless ( $opt_n ) {
       map { $export->option($_) } qw( datasrc username password )
     ) or die $DBI::errstr;
     my $usergroup = $export->option('usergroup') || 'usergroup';
-    for my $table (qw( radcheck radreply ), $usergroup) {
+    my @attr_tables;
+    @attr_tables = qw( radgroupcheck radgroupreply )
+      if $export->option('export_attrs');
+    for my $table (qw( radcheck radreply ), $usergroup, @attr_tables) {
       my $sth = $icradius_dbh->prepare("DELETE FROM $table");
       $sth->execute or die "Can't reset $table table: ". $sth->errstr;
     }
@@ -46,6 +49,9 @@ unless ( $opt_n ) {
 use FS::svc_Common;
 $FS::svc_Common::overlimit_missing_cust_svc_nonfatal_kludge = 1;
 $FS::svc_Common::overlimit_missing_cust_svc_nonfatal_kludge = 1;
+
+# this is the same across all exports, for now
+my @radius_attrs = qsearch('radius_attr', {});
 
 foreach my $export ( @exports ) {
 
@@ -84,6 +90,13 @@ foreach my $export ( @exports ) {
     my $error = $export->export_insert($svc_x);
     die $error if $error;
 
+  }
+
+  if ( $export->option('export_attrs') ) {
+    foreach my $attr (@radius_attrs) {
+      my $error = $export->export_attr_insert($attr);
+      die $error if $error;
+    }
   }
 }
 

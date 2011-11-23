@@ -34,7 +34,11 @@ tie %options, 'Tie::IxHash',
   'radius_password' => { label=>'Fixed password' },
   'ip_addr_as' => { label => 'Send IP address as',
                     default => 'Framed-IP-Address' },
-;
+  'export_attrs' => { 
+    type => 'checkbox', 
+    label => 'Export RADIUS group attributes to this database', 
+  },
+  ;
 
 %info = (
   'svc'      => 'svc_broadband',

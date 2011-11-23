@@ -2391,9 +2391,24 @@ sub tables_hashref {
         'groupnum', 'serial', '', '', '', '', 
         'groupname',    'varchar', '', $char_d, '', '', 
         'description',  'varchar', 'NULL', $char_d, '', '', 
+        'priority', 'int', '', '', '1', '',
       ],
       'primary_key' => 'groupnum',
       'unique'      => [ ['groupname'] ],
+      'index'       => [],
+    },
+
+    'radius_attr' => {
+      'columns' => [
+        'attrnum',   'serial', '', '', '', '',
+        'groupnum',     'int', '', '', '', '',
+        'attrname', 'varchar', '', $char_d, '', '',
+        'value',    'varchar', '', $char_d, '', '',
+        'attrtype',    'char', '', 1, '', '',
+        'op',          'char', '', 2, '', '',
+      ],
+      'primary_key' => 'attrnum',
+      'unique'      => [ ['groupnum','attrname'] ], #?
       'index'       => [],
     },
 
