@@ -43,7 +43,6 @@ die "access denied"
 my $m2_error_callback = sub { # reconstruct the list
   my ($cgi, $object) = @_;
 
-  warn Dumper({$cgi->Vars});
   my @fields = qw(attrname attrtype op value);
   map {
     my $k = $_;
