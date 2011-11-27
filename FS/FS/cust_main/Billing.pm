@@ -253,7 +253,8 @@ charges, etc.
 =item freq_override
 
 If set, then override the normal frequency and look for a part_pkg_discount
-to take at that frequency.
+to take at that frequency.  This will exclude any packages that aren't billed
+on a monthly cycle.
 
 =item time
 
@@ -845,6 +846,12 @@ sub _make_lines {
   my $taxlisthash = $params{tax_matrix} or die "no tax accumulator specified";
   my $time = $params{'time'} or die "no time specified";
   my (%options) = %{$params{options}};
+
+  if ( $part_pkg->freq ne '1' and ($options{'freq_override'} || 0) > 0 ) {
+    # this should never happen
+    die 'freq_override billing attempted on non-monthly package '.
+      $cust_pkg->pkgnum;
+  }
 
   my $dbh = dbh;
   my $real_pkgpart = $params{real_pkgpart};

@@ -5203,44 +5203,52 @@ sub _items_discounts_avail {
     foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
       my $cust_pkg = $cust_bill_pkg->cust_pkg or next;
       my $part_pkg = $cust_pkg->part_pkg or next;
-
-      next if $part_pkg->freq ne '1';
+      my $freq = $part_pkg->freq;
       my $setup = $cust_bill_pkg->setup || 0;
       my $recur = $cust_bill_pkg->recur || 0;
-      my $permonth = $part_pkg->base_recur_permonth || 0;
 
-      my ($discount) = grep { $_->months == $months } 
-                       map { $_->discount } $part_pkg->part_pkg_discount;
+      if ( $freq eq '1' ) { #monthly
+        my $permonth = $part_pkg->base_recur_permonth || 0;
 
-      $hash->{base} += $setup + $recur + ($months - 1) * $permonth;
-      if ($discount) {
+        my ($discount) = grep { $_->months == $months } 
+                         map { $_->discount } $part_pkg->part_pkg_discount;
 
-        my $discountable;
-        if ( $discount->setup ) {
-          $discountable += $setup;
-        }
-        else {
-          $hash->{discounted} += $setup;
-        }
+        $hash->{base} += $setup + $recur + ($months - 1) * $permonth;
 
-        if ( $discount->percent ) {
-          $discountable += $months * $permonth;
-          $discountable -= ($discountable * $discount->percent / 100);
-          $discountable -= ($permonth - $recur); # correct for prorate
+        if ( $discount ) {
+
+          my $discountable;
+          if ( $discount->setup ) {
+            $discountable += $setup;
+          }
+          else {
+            $hash->{discounted} += $setup;
+          }
+
+          if ( $discount->percent ) {
+            $discountable += $months * $permonth;
+            $discountable -= ($discountable * $discount->percent / 100);
+            $discountable -= ($permonth - $recur); # correct for prorate
+            $hash->{discounted} += $discountable;
+          }
+          else {
+            $discountable += $recur;
+            $discountable -= $discount->amount * $recur/$permonth;
+
+            $discountable += ($months - 1) * max($permonth - $discount->amount,0);
+          }
+
           $hash->{discounted} += $discountable;
+          push @{ $hash->{pkgnums} }, $cust_pkg->pkgnum;
         }
-        else {
-          $discountable += $recur;
-          $discountable -= $discount->amount * $recur/$permonth;
-
-          $discountable += ($months - 1) * max($permonth - $discount->amount,0);
+        else { #no discount
+          $hash->{discounted} += $setup + $recur + ($months - 1) * $permonth;
+          $hash->{list_pkgnums} = 1;
         }
-
-        $hash->{discounted} += $discountable;
-        push @{ $hash->{pkgnums} }, $cust_pkg->pkgnum;
-      }
-      else { #no discount
-        $hash->{discounted} += $setup + $recur + ($months - 1) * $permonth;
+      } #if $freq eq '1'
+      else { # all non-monthly packages: include current charges only
+        $hash->{discounted} += $setup + $recur;
+        $hash->{base} += $setup + $recur;
         $hash->{list_pkgnums} = 1;
       }
     } #foreach $cust_bill_pkg

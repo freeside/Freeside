@@ -194,7 +194,14 @@ sub insert {
       my ($cust_bill) = ($cust_main->cust_bill)[-1]; # most recent invoice
       return "can't accept prepayment for an unbilled customer" if !$cust_bill;
 
-      my %billing_pkgs = map { $_->pkgnum => $_ } $cust_main->billing_pkgs;
+      # %billing_pkgs contains this customer's active monthly packages. 
+      # Recurring fees for those packages will be credited and then rebilled 
+      # for the full discount term.  Other packages on the last invoice 
+      # (canceled, non-monthly recurring, or one-time charges) will be 
+      # left as they are.
+      my %billing_pkgs = map { $_->pkgnum => $_ } 
+                         grep { $_->part_pkg->freq eq '1' } 
+                         $cust_main->billing_pkgs;
       my $credit = 0; # sum of recurring charges from that invoice
       my $last_bill_date = 0; # the real bill date
       foreach my $item ( $cust_bill->cust_bill_pkg ) {
