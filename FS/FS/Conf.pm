@@ -3779,8 +3779,15 @@ and customer address. Include units.',
     'type'        => 'select',
     'select_hash' => [ '' => 'No',
                        '1YMMXXXXXXXX' => '1YMMXXXXXXXX',
-                       '1001XXXXXXXX' => '1001XXXXXXXX',
                      ],
+  },
+
+  {
+    'key'         => 'cust_main-custnum-display_prefix',
+    'section'     => 'UI',
+    'description' => 'Prefix the customer number with this number for display purposes (and zero fill to 8 digits).',
+    'type'        => 'text',
+    #and then probably agent-virt this to merge these instances
   },
 
   {
