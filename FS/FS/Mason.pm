@@ -295,6 +295,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::nas;
   use FS::export_nas;
   use FS::legacy_cust_bill;
+  use FS::rate_tier;
+  use FS::rate_tier_detail;
   use FS::radius_attr;
   # Sammath Naur
 
