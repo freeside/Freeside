@@ -142,6 +142,19 @@ sub smart_search {
       } );
     }
 
+    #if this becomes agent-virt need to get a list of all prefixes the current
+    #user can see (via their agents)
+    my $prefix = $conf->config('cust_main-custnum-display_prefix');
+    if ( $prefix && $prefix eq substr($num, 0, length($prefix)) ) {
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => { 'custnum' => 0 + substr($num, length($prefix)),
+                         %options,
+                       },
+        'extra_sql' => " AND $agentnums_sql", #agent virtualization
+      } );
+    }
+
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
       'hashref'   => { 'agent_custid' => $num, %options },
