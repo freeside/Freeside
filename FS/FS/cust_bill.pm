@@ -796,6 +796,23 @@ sub owed_pkgnum {
   $balance;
 }
 
+=item hide
+
+Returns true if this invoice should be hidden.  See the
+selfservice-hide_invoices-taxclass configuraiton setting.
+
+=cut
+
+sub hide {
+  my $self = shift;
+  my $conf = $self->conf;
+  my $hide_taxclass = $conf->config('selfservice-hide_invoices-taxclass')
+    or return '';
+  my @cust_bill_pkg = $self->cust_bill_pkg;
+  my @part_pkg = grep $_, map $_->part_pkg, @cust_bill_pkg;
+  ! grep { $_->taxclass ne $hide_taxclass } @part_pkg;
+}
+
 =item apply_payments_and_credits [ OPTION => VALUE ... ]
 
 Applies unapplied payments and credits to this invoice.
@@ -1335,6 +1352,7 @@ sub queueable_email {
 #sub email_invoice {
 sub email {
   my $self = shift;
+  return if $self->hide;
   my $conf = $self->conf;
 
   my( $template, $invoice_from, $notice_name, $no_coupon );
@@ -1453,7 +1471,9 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 #sub print_invoice {
 sub print {
   my $self = shift;
+  return if $self->hide;
   my $conf = $self->conf;
+
   my( $template, $notice_name );
   if ( ref($_[0]) ) {
     my $opt = shift;
@@ -1493,7 +1513,9 @@ I<notice_name>, if specified, overrides "Invoice" as the name of the sent docume
 
 sub fax_invoice {
   my $self = shift;
+  return if $self->hide;
   my $conf = $self->conf;
+
   my( $template, $notice_name );
   if ( ref($_[0]) ) {
     my $opt = shift;
