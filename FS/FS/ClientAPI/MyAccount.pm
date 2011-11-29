@@ -1570,6 +1570,7 @@ sub process_acct_forward {
                            );
 
   if ( $p->{'dst'} eq '' ) {
+    warn Dumper($p);
     if ( $old ) {
       my $error = $old->delete;
       return { 'error' => $error };
@@ -1592,7 +1593,9 @@ sub process_acct_forward {
     my $conf = new FS::Conf;
     $new->svcpart($conf->config('selfservice-svc_forward_svcpart'));
     $new->pkgnum($old->cust_svc->pkgnum);
+    warn Dumper($new);
     $error = $new->insert;
+    warn $error;
   }
 
   return { 'error' => $error };
