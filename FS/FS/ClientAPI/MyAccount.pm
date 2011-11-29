@@ -1584,8 +1584,14 @@ sub process_acct_forward {
   my $error;
   if ( $old ) {
     $new->svcnum($old->svcnum);
+    my $cust_svc = $old->cust_svc;
+    $new->svcpart($old->svcpart);
+    $new->pkgnuym($old->pkgnum);
     $error = $new->replace($old);
   } else {
+    my $conf = new FS::Conf;
+    $new->svcpart($conf->config('selfservice-svc_forward_svcpart'));
+    $new->pkgnum($old->cust_svc->pkgnum);
     $error = $new->insert;
   }
 

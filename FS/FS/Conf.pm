@@ -2475,6 +2475,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-svc_forward_svcpart',
+    'section'     => 'self-service',
+    'description' => 'Service for self-service forward editing.',
+    'type'        => 'select-part_svc',
+  },
+
+  {
     'key'         => 'selfservice-password_reset_verification',
     'section'     => 'self-service',
     'description' => 'If enabled, specifies the type of verification required for self-service password resets.',
