@@ -1569,6 +1569,7 @@ sub process_acct_forward {
                              { 'srcsvc' => $p->{'svcnum'} },
                              'svc_forward',
                            );
+  warn $old;
 
   if ( $p->{'dst'} eq '' ) {
     if ( $old ) {
