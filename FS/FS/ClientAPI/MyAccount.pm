@@ -1583,8 +1583,6 @@ sub process_acct_forward {
                                   'dst'    => $p->{'dst'},
                                 };
 
-  warn $new;
-
   my $error;
   if ( $old ) {
     warn "old: $old\n";
@@ -1594,6 +1592,7 @@ sub process_acct_forward {
     $new->pkgnuym($old->pkgnum);
     $error = $new->replace($old);
   } else {
+    warn "new: $new\n";
     my $conf = new FS::Conf;
     $new->svcpart($conf->config('selfservice-svc_forward_svcpart'));
     $new->pkgnum($old->cust_svc->pkgnum);
