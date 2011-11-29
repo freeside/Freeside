@@ -1583,6 +1583,8 @@ sub process_acct_forward {
                                   'dst'    => $p->{'dst'},
                                 };
 
+  warn $new;
+
   my $error;
   if ( $old ) {
     $new->svcnum($old->svcnum);
