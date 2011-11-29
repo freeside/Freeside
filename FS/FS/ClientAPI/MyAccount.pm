@@ -1560,8 +1560,6 @@ sub acct_forward_info {
 
 sub process_acct_forward {
   my $p = shift;
-  warn Dumper($p);
-
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
@@ -1569,7 +1567,6 @@ sub process_acct_forward {
                              { 'srcsvc' => $p->{'svcnum'} },
                              'svc_forward',
                            );
-  warn $old;
 
   if ( $p->{'dst'} eq '' ) {
     if ( $old ) {
@@ -1585,20 +1582,21 @@ sub process_acct_forward {
 
   my $error;
   if ( $old ) {
-    warn "old: $old\n";
     $new->svcnum($old->svcnum);
     my $cust_svc = $old->cust_svc;
     $new->svcpart($old->svcpart);
     $new->pkgnuym($old->pkgnum);
     $error = $new->replace($old);
   } else {
-    warn "new: $new\n";
     my $conf = new FS::Conf;
     $new->svcpart($conf->config('selfservice-svc_forward_svcpart'));
-    $new->pkgnum($old->cust_svc->pkgnum);
-    warn Dumper($new);
+
+    my $svc_acct = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct' )
+      or return { 'error' => 'No service' }; #how would we even get here?
+
+    $new->pkgnum( $svc_acct->cust_svc->pkgnum );
+
     $error = $new->insert;
-    warn $error;
   }
 
   return { 'error' => $error };
