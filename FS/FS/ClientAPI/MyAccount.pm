@@ -1587,6 +1587,7 @@ sub process_acct_forward {
 
   my $error;
   if ( $old ) {
+    warn "old: $old\n";
     $new->svcnum($old->svcnum);
     my $cust_svc = $old->cust_svc;
     $new->svcpart($old->svcpart);
