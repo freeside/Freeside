@@ -27,6 +27,7 @@ use FS::TicketSystem;
 use FS::ClientAPI_SessionCache;
 use FS::cust_svc;
 use FS::svc_acct;
+use FS::svc_forward;
 use FS::svc_domain;
 use FS::svc_phone;
 use FS::svc_external;
@@ -1503,7 +1504,8 @@ sub list_svcs {
 }
 
 sub _customer_svc_x {
-  my($custnum, $svcnum, $table) = @_;
+  my($custnum, $svcnum, $table) = (shift, shift, shift);
+  my $hashref = ref($svcnum) ? $svcnum : { 'svcnum' => $svcnum };
 
   $custnum =~ /^(\d+)$/ or die "illegal custnum";
   my $search = " AND custnum = $1";
@@ -1514,7 +1516,7 @@ sub _customer_svc_x {
     'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  ) '.
                    'LEFT JOIN cust_pkg  USING ( pkgnum  ) ',#.
                    #'LEFT JOIN cust_main USING ( custnum ) ',
-    'hashref'   => { 'svcnum' => $svcnum, },
+    'hashref'   => $hashref,
     'extra_sql' => $search, #important
   } );
 
@@ -1533,6 +1535,61 @@ sub svc_status_html {
   my $html = $svc_x->getstatus_html;
 
   return { 'html' => $html };
+
+}
+
+sub acct_forward_info {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $svc_forward = _customer_svc_x( $custnum,
+                                     { 'srcsvc' => $p->{'svcnum'} },
+                                     'svc_forward',
+                                   )
+    or return { 'error' => '',
+                'dst'   => '',
+              };
+
+  return { 'error' => '',
+           'dst'   => $svc_forward->dst || $svc_forward->dstsvc_acct->email,
+         };
+
+}
+
+sub process_acct_forward {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $old = _customer_svc_x( $custnum,
+                             { 'srcsvc' => $p->{'svcnum'} },
+                             'svc_forward',
+                           );
+
+  if ( $p->{'dst'} eq '' ) {
+    if ( $old ) {
+      my $error = $old->delete;
+      return { 'error' => $error };
+    }
+    return { 'error' => '' };
+  }
+
+  my $new = new FS::svc_forward { 'srcsvc' => $p->{'svcnum'},
+                                  'dst'    => $p->{'dst'},
+                                };
+
+  my $error;
+  if ( $old ) {
+    $new->svcnum($old->svcnum);
+    $error = $new->replace($old);
+  } else {
+    $error = $new->insert;
+  }
+
+  return { 'error' => $error };
 
 }
 
