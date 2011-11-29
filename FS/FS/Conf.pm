@@ -2494,7 +2494,7 @@ and customer address. Include units.',
   {
     'key'         => 'selfservice-hide_invoices-taxclass',
     'section'     => 'self-service',
-    'description' => 'Hide invoices with only this package tax class from self-service.  Typically set to something like "Previous balance" and used when importing legacy invoices into legacy_cust_bill.',
+    'description' => 'Hide invoices with only this package tax class from self-service and supress sending (emailing, printing, faxing) them.  Typically set to something like "Previous balance" and used when importing legacy invoices into legacy_cust_bill.',
     'type'        => 'text',
   },
 

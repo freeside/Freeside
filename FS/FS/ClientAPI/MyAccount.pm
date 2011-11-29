@@ -1248,16 +1248,7 @@ sub list_invoices {
 
   my @legacy_cust_bill = $cust_main->legacy_cust_bill;
 
-  my @cust_bill = $cust_main->cust_bill;
-
-  my $hide_taxclass = $conf->config('selfservice-hide_invoices-taxclass');
-  if ( $hide_taxclass ) {
-    @cust_bill = grep { my @cust_bill_pkg = $_->cust_bill_pkg;
-                        my @part_pkg= grep $_, map $_->part_pkg, @cust_bill_pkg;
-                        grep { $_->taxclass ne $hide_taxclass } @part_pkg;
-                      }
-                   @cust_bill;
-  }
+  my @cust_bill = grep ! $_->hide, $cust_main->cust_bill;
 
   my $balance = 0;
 
