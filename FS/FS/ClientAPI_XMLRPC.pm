@@ -122,6 +122,7 @@ sub ss2clientapi {
   'list_svc_usage'            => 'MyAccount/list_svc_usage',   
   'svc_status_html'           => 'MyAccount/svc_status_html',
   'acct_forward_info'         => 'MyAccount/acct_forward_info',
+  'process_acct_forward'      => 'MyAccount/process_acct_forward',
   'list_dsl_devices'          => 'MyAccount/list_dsl_devices',   
   'add_dsl_device'            => 'MyAccount/add_dsl_device',   
   'delete_dsl_device'         => 'MyAccount/delete_dsl_device',   
