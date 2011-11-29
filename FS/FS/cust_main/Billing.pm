@@ -253,8 +253,9 @@ charges, etc.
 =item freq_override
 
 If set, then override the normal frequency and look for a part_pkg_discount
-to take at that frequency.  This will exclude any packages that aren't billed
-on a monthly cycle.
+to take at that frequency.  This is appropriate only when the normal 
+frequency for all packages is monthly, and is an error otherwise.  Use
+C<pkg_list> to limit the set of packages included in billing.
 
 =item time
 
