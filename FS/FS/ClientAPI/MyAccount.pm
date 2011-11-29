@@ -1560,6 +1560,7 @@ sub acct_forward_info {
 
 sub process_acct_forward {
   my $p = shift;
+  warn Dumper($p);
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
@@ -1570,7 +1571,6 @@ sub process_acct_forward {
                            );
 
   if ( $p->{'dst'} eq '' ) {
-    warn Dumper($p);
     if ( $old ) {
       my $error = $old->delete;
       return { 'error' => $error };
