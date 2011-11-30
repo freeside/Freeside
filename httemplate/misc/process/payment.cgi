@@ -129,7 +129,7 @@ if ( $payby eq 'CHEK' ) {
   die "unknown payby $payby";
 }
 
-$cgi->param('discount_term') =~ /^(\d)*$/
+$cgi->param('discount_term') =~ /^(\d*)$/
   or errorpage("illegal discount_term");
 my $discount_term = $1;
 
