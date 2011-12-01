@@ -211,7 +211,7 @@ sub _upgrade_data { # class method
   #remove nullability if scalar(@migrated) - $count == 0 && ->column('action');
   
   #seek expirations/adjourns without reason
-  foreach my $field qw( expire adjourn cancel susp ) {
+  foreach my $field (qw( expire adjourn cancel susp )) {
     my $addl_from =
       "LEFT JOIN h_cust_pkg ON ".
       "(cust_pkg_reason.pkgnum = h_cust_pkg.pkgnum AND".
@@ -271,7 +271,7 @@ sub _upgrade_data { # class method
   }
 
   #seek cancels/suspends without reason, but with expire/adjourn reason
-  foreach my $field qw( cancel susp ) {
+  foreach my $field (qw( cancel susp )) {
 
     my %precursor_map = ( 'cancel' => 'expire', 'susp' => 'adjourn' );
     my $precursor = $precursor_map{$field};
