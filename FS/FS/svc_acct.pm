@@ -26,7 +26,7 @@ use Carp;
 use Fcntl qw(:flock);
 use Date::Format;
 use Crypt::PasswdMD5 1.2;
-use Digest::SHA1 'sha1_base64';
+use Digest::SHA 'sha1_base64';
 use Digest::MD5 'md5_base64';
 use Data::Dumper;
 use Text::Template;
