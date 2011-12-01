@@ -1045,41 +1045,54 @@ sub generate_email {
       'Disposition' => 'inline',
     );
 
-    $args{'from'} =~ /\@([\w\.\-]+)/;
-    my $from = $1 || 'example.com';
-    my $content_id = join('.', rand()*(2**32), $$, time). "\@$from";
 
-    my $logo;
-    my $agentnum = $cust_main->agentnum;
-    if ( defined($args{'template'}) && length($args{'template'})
-         && $conf->exists( 'logo_'. $args{'template'}. '.png', $agentnum )
-       )
-    {
-      $logo = 'logo_'. $args{'template'}. '.png';
+    my $htmldata;
+    my $image = '';
+    my $barcode = '';
+    if ( $conf->exists('invoice_email_pdf')
+         and scalar($conf->config('invoice_email_pdf_note')) ) {
+
+      $htmldata = join('<BR>', $conf->config('invoice_email_pdf_note') );
+
     } else {
-      $logo = "logo.png";
-    }
-    my $image_data = $conf->config_binary( $logo, $agentnum);
 
-    my $image = build MIME::Entity
-      'Type'       => 'image/png',
-      'Encoding'   => 'base64',
-      'Data'       => $image_data,
-      'Filename'   => 'logo.png',
-      'Content-ID' => "<$content_id>",
-    ;
+      $args{'from'} =~ /\@([\w\.\-]+)/;
+      my $from = $1 || 'example.com';
+      my $content_id = join('.', rand()*(2**32), $$, time). "\@$from";
+
+      my $logo;
+      my $agentnum = $cust_main->agentnum;
+      if ( defined($args{'template'}) && length($args{'template'})
+           && $conf->exists( 'logo_'. $args{'template'}. '.png', $agentnum )
+         )
+      {
+        $logo = 'logo_'. $args{'template'}. '.png';
+      } else {
+        $logo = "logo.png";
+      }
+      my $image_data = $conf->config_binary( $logo, $agentnum);
+
+      $image = build MIME::Entity
+        'Type'       => 'image/png',
+        'Encoding'   => 'base64',
+        'Data'       => $image_data,
+        'Filename'   => 'logo.png',
+        'Content-ID' => "<$content_id>",
+      ;
    
-    my $barcode;
-    if($conf->exists('invoice-barcode')){
-	my $barcode_content_id = join('.', rand()*(2**32), $$, time). "\@$from";
-	$barcode = build MIME::Entity
-	  'Type'       => 'image/png',
-	  'Encoding'   => 'base64',
-	  'Data'       => $self->invoice_barcode(0),
-	  'Filename'   => 'barcode.png',
-	  'Content-ID' => "<$barcode_content_id>",
-	;
-	$opt{'barcode_cid'} = $barcode_content_id;
+      if ($conf->exists('invoice-barcode')) {
+        my $barcode_content_id = join('.', rand()*(2**32), $$, time). "\@$from";
+        $barcode = build MIME::Entity
+          'Type'       => 'image/png',
+          'Encoding'   => 'base64',
+          'Data'       => $self->invoice_barcode(0),
+          'Filename'   => 'barcode.png',
+          'Content-ID' => "<$barcode_content_id>",
+        ;
+        $opt{'barcode_cid'} = $barcode_content_id;
+      }
+
+      $htmldata = $self->print_html({ 'cid'=>$content_id, %opt });
     }
 
     $alternative->attach(
@@ -1092,13 +1105,14 @@ sub generate_email {
                          '    </title>',
                          '  </head>',
                          '  <body bgcolor="#e8e8e8">',
-                         $self->print_html({ 'cid'=>$content_id, %opt }),
+                         $htmldata,
                          '  </body>',
                          '</html>',
                        ],
       'Disposition' => 'inline',
       #'Filename'    => 'invoice.pdf',
     );
+
 
     my @otherparts = ();
     if ( $cust_main->email_csv_cdr ) {
@@ -1138,7 +1152,7 @@ sub generate_email {
 
       $related->add_part($alternative);
 
-      $related->add_part($image);
+      $related->add_part($image) if $image;
 
       my $pdf = build MIME::Entity $self->mimebuild_pdf(\%opt);
 
@@ -1154,11 +1168,10 @@ sub generate_email {
       #   image/png
 
       $return{'content-type'} = 'multipart/related';
-      if($conf->exists('invoice-barcode')){
-	  $return{'mimeparts'} = [ $alternative, $image, $barcode, @otherparts ];
-      }
-      else {
-	  $return{'mimeparts'} = [ $alternative, $image, @otherparts ];
+      if ($conf->exists('invoice-barcode') && $barcode) {
+        $return{'mimeparts'} = [ $alternative, $image, $barcode, @otherparts ];
+      } else {
+        $return{'mimeparts'} = [ $alternative, $image, @otherparts ];
       }
       $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
       #$return{'disposition'} = 'inline';
