@@ -33,7 +33,6 @@ sub condition {
 
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
-  # ick
   my $delay = $class->condition_sql_option_integer('delay', 
     $opt{'driver_name'}); # returns 0 for null
   my $as_of = $opt{'time'} . " - ($delay * 86400)"; # in seconds
