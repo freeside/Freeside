@@ -13,33 +13,42 @@ sub option_fields {
   (
     'delay' => { label  => 'Delay additional days',
                  type   => 'text',
-                 value  => '1',
+                 value  => '0',
                },
   );
 }
 
-
 sub condition {
-  my( $self, $object ) = @_;
+  my( $self, $object, %opt ) = @_;
 
   my $cust_main = $self->cust_main($object);
 
-  my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-  
-  my $delay = $self->option('delay');
-  $delay = 0 unless length($delay);
+  my $delay = $self->option('delay') || 0;
+  my $as_of = $opt{'time'} - $delay * 86400; # $opt{'time'}, not time()
 
-  (!$cust_main->billday) || ($mday >= $cust_main->billday + $delay);
+  my ($mday) = (localtime($as_of))[3]; # what day it was $delay days before now
+  
+  (!$cust_main->billday) || ($mday >= $cust_main->billday);
 }
 
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
-
-  my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+  # ick
+  my $delay = $class->condition_sql_option_integer('delay', 
+    $opt{'driver_name'}); # returns 0 for null
+  my $as_of = $opt{'time'} . " - ($delay * 86400)"; # in seconds
+  my $mday;
+  if ( $opt{'driver_name'} eq 'Pg' ) {
+    $mday = "EXTRACT( DAY FROM TO_TIMESTAMP($as_of) )";
+  }
+  elsif ( $opt{'driver_name'} eq 'mysql' ) {
+    $mday = "DAY( FROM_UNIXTIME($as_of) )";
+  }
+  else { 
+    return 'true'
+  }
   
-  my $delay = $class->condition_sql_option_integer('delay', $opt{'driver_name'});
-  
-  "cust_main.billday is null or $mday >= (cust_main.billday + $delay)";
+  "cust_main.billday is null or $mday >= cust_main.billday";
 }
 
 1;
