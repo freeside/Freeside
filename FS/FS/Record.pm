@@ -1309,7 +1309,9 @@ sub replace {
                    ? ($_, $new->getfield($_)) : () } $old->fields;
                    
   unless (keys(%diff) || $no_update_diff ) {
-    carp "[warning]$me $new -> replace $old: records identical"
+    carp "[warning]$me ". ref($new)."->replace ".
+           ( $primary_key ? "$primary_key ".$new->get($primary_key) : '' ).
+         ": records identical"
       unless $nowarn_identical;
     return '';
   }
