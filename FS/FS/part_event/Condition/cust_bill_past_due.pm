@@ -17,25 +17,31 @@ sub eventtable_hashref {
     };
 }
 
+sub option_fields {
+  (
+    'delay' => { label  => 'Delay additional days',
+      type   => 'text',
+      value  => '0',
+    },
+  );
+}
+
 sub condition {
   my($self, $cust_bill, %opt) = @_;
 
-  # If the invoice date is 1/1 at noon and the terms are Net 15,
-  # the due_date will be 1/16 at noon.  Past due events will not 
-  # trigger until after the start of 1/17.
+  my $delay = $self->option('delay') || 0;
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($opt{'time'}))[0..5];
-  my $start_of_today = timelocal(0,0,0,$mday,$mon,$year)+1;
-  ($cust_bill->due_date || $cust_bill->_date) < $start_of_today;
+  my $as_of = timelocal(0,0,0,$mday,$mon,$year) - $delay * 86400;
+  $as_of >= ($cust_bill->due_date || $cust_bill->_date);
 }
 
 sub condition_sql {
-  return 'true' if $FS::UID::driver_name ne 'Pg';
   my( $class, $table, %opt ) = @_;
+  return 'true' if $opt{'driver_name'} ne 'Pg';
+  my $delay = $class->condition_sql_option_integer('delay', 'Pg');
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($opt{'time'}))[0..5];
-  my $start_of_today = timelocal(0,0,0,$mday,$mon,$year)+1;
-
-  FS::cust_bill->due_date_sql . " < $start_of_today";
-
+  my $as_of = timelocal(0,0,0,$mday,$mon,$year) . " - ($delay * 86400)";
+  "( $as_of ) >= ".FS::cust_bill->due_date_sql;
 }
 
 1;
