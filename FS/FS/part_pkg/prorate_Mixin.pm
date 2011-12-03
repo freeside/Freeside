@@ -103,7 +103,7 @@ sub calc_prorate {
       $months += $param->{'freq_override'} - 1;
     }
     elsif ( ( $self->option('add_full_period',1) 
-        or $self->option('prorate_defer_bill',1) ) # necessary
+        or $self->option('prorate_defer_bill',1) )
         and $months < $self->freq ) {
       $months += $self->freq;
       $$sdate = $self->add_freq($mstart);
@@ -131,10 +131,12 @@ sub prorate_setup {
       and $cutoff_day
   ) {
     my ($mnow, $mend, $mstart) = $self->_endpoints($sdate, $cutoff_day);
-    # if today is the cutoff day, set the next bill to right now instead 
-    # of waiting a month.
+    # If today is the cutoff day, set the next bill and setup both to 
+    # midnight today, so that the customer will be billed normally for a 
+    # month starting today.
     if ( $mnow - $mstart < 86400 ) {
-      $cust_pkg->bill($mnow);
+      $cust_pkg->setup($mstart);
+      $cust_pkg->bill($mstart);
     }
     else {
       $cust_pkg->bill($mend);
