@@ -531,7 +531,7 @@ sub details {
 
     #avoid the fetchall_arrayref and loop for less memory usage?
 
-    map { $_->[0] eq 'C'
+    map { (defined($_->[0]) && $_->[0] eq 'C')
             ? &{$format_sub}(      $_->[1] )
             : &{$escape_function}( $_->[1] );
         }
