@@ -652,8 +652,7 @@ sub _upgrade_data {
         my $new = new FS::msg_template({
           'msgname'   => $oldname,
           'agentnum'  => $agentnum,
-          'from_addr' => ($from && $conf->config($from, $agentnum)) || 
-                         $conf->config('invoice_from', $agentnum),
+          'from_addr' => ($from && $conf->config($from, $agentnum)) || '',
           'bcc_addr'  => ($bcc && $conf->config($from, $agentnum)) || '',
           'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
           'mime_type' => 'text/html',
