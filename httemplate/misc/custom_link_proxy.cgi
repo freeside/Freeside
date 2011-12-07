@@ -14,14 +14,15 @@ my $conf = new FS::Conf;
 my $url = $conf->config('cust_main-custom_link');
 
 my $agentnum = $cust_main->agentnum;
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $usernum = $curuser->usernum;
 # like eval(qq("$url")) but with fewer things that can go wrong
 # and if $custnum isn't mentioned, assume it goes at the end
 $url =~ s/\$custnum/$custnum/ or $url .= $custnum;
 $url =~ s/\$agentnum/$agentnum/;
+$url =~ s/\$usernum/$usernum/;
 
 #warn $url;
-
-my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
   unless $curuser->access_right('View customer');
