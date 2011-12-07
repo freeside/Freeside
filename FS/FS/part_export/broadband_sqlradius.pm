@@ -26,6 +26,10 @@ tie %options, 'Tie::IxHash',
 #    type  => 'checkbox',
 #    label => 'Hide IP address on session reports',
 #  },
+  'mac_delimiter' => {
+    label => 'Separate MAC address octets with',
+    default => '-',
+  },
   'mac_as_password' => { 
     type => 'checkbox',
     default => '1',
@@ -69,7 +73,8 @@ sub rebless { shift; }
 
 sub export_username {
   my($self, $svc_broadband) = (shift, shift);
-  $svc_broadband->mac_addr;
+  my $mac_addr = $svc_broadband->mac_addr;
+  join( ($self->option('mac_delimiter',1) || ''), $mac_addr =~ /../g );
 }
 
 sub radius_reply {
@@ -87,7 +92,9 @@ sub radius_check {
   my $password_attrib = $conf->config('radius-password') || 'Password';
   my %check;
   if ( $self->option('mac_as_password') ) {
-    $check{$password_attrib} = $svc_broadband->mac_addr; #formatting?
+    my $mac_addr = $svc_broadband->mac_addr;
+    $check{$password_attrib} =
+      join( ($self->option('mac_delimiter',1) || ''), $mac_addr =~ /../g );
   }
   elsif ( length( $self->option('radius_password',1)) ) {
     $check{$password_attrib} = $self->option('radius_password');
