@@ -14,6 +14,7 @@
     <TD COLSPAN=7>
       <TABLE><TR><TD BGCOLOR="#ffffff">
         <% $money_char %><INPUT NAME     = "amount"
+                                ID       = "amount"
                                 TYPE     = "text"
                                 VALUE    = "<% $amount %>"
                                 SIZE     = 8
@@ -67,7 +68,7 @@
 
 <& /elements/tr-select-discount_term.html,
              'custnum' => $custnum,
-             'cgi'     => $cgi
+             'amount_id' => 'amount',
 &>
 
 % if ( $payby eq 'CARD' ) {

@@ -1,12 +1,33 @@
 % if ( scalar(@discount_term) ) {
   <TR>
-    <TD ALIGN="right">Prepayment for</TD>
+    <TD ALIGN="right"><% emt('Prepayment for') %></TD>
+%  if ( $amount_id ) {
+    <SCRIPT type="text/javascript">
+var discounted_total = <% encode_json \%discounted_total %>;
+function change_discount_term(what) {
+  var new_term = what.value;
+  var amount_field = document.getElementById('<% $amount_id %>');
+  if(new_term == "") {
+    amount_field.readOnly = false;
+    amount_field.value = '';
+  }
+  else {
+    amount_field.value = discounted_total[new_term];
+    amount_field.readOnly = true;
+  }
+}
+</SCRIPT>
+% }
     <TD COLSPAN=2>
-      <% include('select-discount_term.html',
-                   'discount_term' => \@discount_term,
-                   'cgi'           => $opt{'cgi'},
-                )
-      %>
+      <& select.html,
+        field   => 'discount_term',
+        id      => 'discount_term',
+        options => [ '', @discount_term ],
+        labels  => { '' => mt('1 month'), 
+                     map { $_ => mt('[_1] months', $_) } @discount_term },
+        curr_value => '',
+        onchange => $amount_id ? 'change_discount_term(this)' : '',
+      &>
     </TD>
   </TR>
 
@@ -20,6 +41,16 @@ my $custnum = $opt{'custnum'};
 my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
   or die "unknown custnum $custnum\n";
 
-my @discount_term = $cust_main->discount_terms;
+my @discount_term = ();
+my %discounted_total = ();
+my $last_bill = ($cust_main->cust_bill)[-1];
+if ( $last_bill ) { # if not, there are no discounts possible
+  my %plans = $last_bill->discount_plans;
+  @discount_term = sort { $a <=> $b } keys %plans;
+  %discounted_total = map { $_, $plans{$_}->discounted_total } @discount_term;
+}
+
+# the DOM id of an input to be disabled/populated with the amount due
+my $amount_id = $opt{'amount_id'};
 
 </%init>
