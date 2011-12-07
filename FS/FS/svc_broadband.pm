@@ -347,6 +347,11 @@ sub check {
   my $lat_lower = $nw_coords ? 1 : -90;
   my $lon_upper = $nw_coords ? -1 : 180;
 
+  # remove delimiters
+  my $mac_addr = uc($self->get('mac_addr'));
+  $mac_addr =~ s/[-: ]//g;
+  $self->set('mac_addr', $mac_addr);
+
   my $error =
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('blocknum')
