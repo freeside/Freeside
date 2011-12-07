@@ -997,13 +997,28 @@ sub ParseCcAddressesFromHead {
     my $user = $args{'CurrentUser'}->UserObj;
 
     return
-        grep $_ ne $current_address && !RT::EmailParser->IsRTAddress( $_ ),
+        grep {  $_ ne $current_address 
+                && !RT::EmailParser->IsRTAddress( $_ )
+                && !IgnoreCcAddress( $_ )
+             }
         map lc $user->CanonicalizeEmailAddress( $_->address ),
         map Email::Address->parse( $args{'Head'}->get( $_ ) ),
         qw(To Cc);
 }
 
+=head2 IgnoreCcAddress ADDRESS
 
+Returns true if ADDRESS matches the $IgnoreCcRegexp config variable.
+
+=cut
+
+sub IgnoreCcAddress {
+    my $address = shift;
+    if ( my $address_re = RT->Config->Get('IgnoreCcRegexp') ) {
+        return 1 if $address =~ /$address_re/i;
+    }
+    return undef;
+}
 
 =head2 ParseSenderAddressFromHead HEAD
 
