@@ -293,6 +293,17 @@ can generate a naive first pass regexp by using
 
 Set($RTAddressRegexp , undef);
 
+=item C<$IgnoreCcRegexp>
+
+C<$IgnoreCcRegexp> is a regexp to exclude addresses from automatic addition 
+to the Cc list.  Use this for addresses that are I<not> received by RT but
+are sometimes added to Cc lists by mistake.  Unlike C<$RTAddressRegexp>, 
+these addresses can still receive email from RT otherwise.
+
+=cut
+
+Set($IgnoreCcRegexp, undef);
+
 =item C<$CanonicalizeEmailAddressMatch>, C<$CanonicalizeEmailAddressReplace>
 
 RT provides functionality which allows the system to rewrite
