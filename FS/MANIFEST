@@ -502,6 +502,8 @@ FS/h_svc_www.pm
 t/h_svc_www.t
 FS/discount.pm
 t/discount.t
+FS/discount_plan.pm
+t/discount_plan.t
 FS/cust_pkg_discount.pm
 t/cust_pkg_discount.t
 FS/cust_bill_pkg_discount.pm

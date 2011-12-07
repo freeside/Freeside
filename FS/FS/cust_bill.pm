@@ -43,6 +43,7 @@ use FS::bill_batch;
 use FS::cust_bill_batch;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
+use FS::discount_plan;
 use FS::L10N;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
@@ -746,6 +747,18 @@ Returns all invoice batch records (L<FS::cust_bill_batch>) for this invoice.
 sub cust_bill_batch {
   my $self = shift;
   qsearch('cust_bill_batch', { 'invnum' => $self->invnum });
+}
+
+=item discount_plans
+
+Returns all discount plans (L<FS::discount_plan>) for this invoice, as a 
+hash keyed by term length.
+
+=cut
+
+sub discount_plans {
+  my $self = shift;
+  FS::discount_plan->all($self);
 }
 
 =item tax
@@ -5218,108 +5231,34 @@ a setup fee if the discount is allowed to apply to setup fees.
 
 sub _items_discounts_avail {
   my $self = shift;
-  my %terms;
   my $list_pkgnums = 0; # if any packages are not eligible for all discounts
- 
-  my ($previous_balance) = $self->previous;
 
-  foreach (qsearch('discount',{ 'months' => { op => '>', value => 1} })) {
-    $terms{$_->months} = {
-      pkgnums       => [],
-      base          => $previous_balance || 0, # pre-discount sum of charges
-      discounted    => $previous_balance || 0, # post-discount sum
-      list_pkgnums  => 0, # whether any packages are not discounted
-    }
-  }
-  foreach my $months (keys %terms) {
-    my $hash = $terms{$months};
+  my %plans = $self->discount_plans;
 
-    # tricky, because packages may not all be eligible for the same discounts
-    foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
-      my $cust_pkg = $cust_bill_pkg->cust_pkg or next;
-      my $part_pkg = $cust_pkg->part_pkg or next;
-      my $freq = $part_pkg->freq;
-      my $setup = $cust_bill_pkg->setup || 0;
-      my $recur = $cust_bill_pkg->recur || 0;
+  $list_pkgnums = grep { $_->list_pkgnums } values %plans;
 
-      if ( $freq eq '1' ) { #monthly
-        my $permonth = $part_pkg->base_recur_permonth || 0;
+  map {
+    my $months = $_;
+    my $plan = $plans{$months};
 
-        my ($discount) = grep { $_->months == $months } 
-                         map { $_->discount } $part_pkg->part_pkg_discount;
-
-        $hash->{base} += $setup + $recur + ($months - 1) * $permonth;
-
-        if ( $discount ) {
-
-          my $discountable;
-          if ( $discount->setup ) {
-            $discountable += $setup;
-          }
-          else {
-            $hash->{discounted} += $setup;
-          }
-
-          if ( $discount->percent ) {
-            $discountable += $months * $permonth;
-            $discountable -= ($discountable * $discount->percent / 100);
-            $discountable -= ($permonth - $recur); # correct for prorate
-            $hash->{discounted} += $discountable;
-          }
-          else {
-            $discountable += $recur;
-            $discountable -= $discount->amount * $recur/$permonth;
-
-            $discountable += ($months - 1) * max($permonth - $discount->amount,0);
-          }
-
-          $hash->{discounted} += $discountable;
-          push @{ $hash->{pkgnums} }, $cust_pkg->pkgnum;
-        }
-        else { #no discount
-          $hash->{discounted} += $setup + $recur + ($months - 1) * $permonth;
-          $hash->{list_pkgnums} = 1;
-        }
-      } #if $freq eq '1'
-      else { # all non-monthly packages: include current charges only
-        $hash->{discounted} += $setup + $recur;
-        $hash->{base} += $setup + $recur;
-        $hash->{list_pkgnums} = 1;
-      }
-    } #foreach $cust_bill_pkg
-
-    # don't show this line if no packages have discounts at this term
-    # or if there are no new charges to apply the discount to
-    delete $terms{$months} if $hash->{base} == $hash->{discounted}
-                           or $hash->{base} == 0;
-
-  }
-
-  $list_pkgnums = grep { $_->{list_pkgnums} > 0 } values %terms;
-
-  foreach my $months (keys %terms) {
-    my $hash = $terms{$months};
-    my $term_total = sprintf('%.2f', $hash->{discounted});
-    # possibly shouldn't include previous balance in these?
-    my $percent = sprintf('%.0f', 100 * (1 - $term_total / $hash->{base}) );
+    my $term_total = sprintf('%.2f', $plan->discounted_total);
+    my $percent = sprintf('%.0f', 
+                          100 * (1 - $term_total / $plan->base_total) );
     my $permonth = sprintf('%.2f', $term_total / $months);
+    my $detail = $self->mt('discount on item'). ' '.
+                 join(', ', map { "#$_" } $plan->pkgnums)
+      if $list_pkgnums;
 
-    $hash->{description} = $self->mt('Save [_1]% by paying for [_2] months',
-      $percent, $months
-    );
-    $hash->{amount} = $self->mt('[_1] ([_2] per month)', 
-      $term_total, $money_char.$permonth
-    );
-
-    my @detail;
-    if ( $list_pkgnums ) {
-      push @detail, $self->mt('discount on item'). ' '.
-                join(', ', map { "#$_" } @{ $hash->{pkgnums} });
+    +{
+      description => $self->mt('Save [_1]% by paying for [_2] months',
+                                $percent, $months),
+      amount      => $self->mt('[_1] ([_2] per month)', 
+                                $term_total, $money_char.$permonth),
+      ext_description => ($detail || ''),
     }
-    $hash->{ext_description} = join ', ', @detail;
-  }
+  } #map
+  sort { $b <=> $a } keys %plans;
 
-  map { $terms{$_} } sort {$b <=> $a} keys %terms;
 }
 
 =item call_details [ OPTION => VALUE ... ]

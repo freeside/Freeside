@@ -138,7 +138,8 @@ I<session_id> is a session identifier associated with this payment.
 
 I<depend_jobnum> allows payment capture to unlock export jobs
 
-I<discount_term> attempts to take a discount by prepaying for discount_term
+I<discount_term> attempts to take a discount by prepaying for discount_term.
+The payment will fail if I<amount> is incorrect for this discount term.
 
 A direct (Business::OnlinePayment) transaction will return nothing on success,
 or an error message on failure.
@@ -410,6 +411,24 @@ sub realtime_bop {
     'payinfo' => $options{payinfo},
   );
   return "Banned credit card" if $ban && $ban->bantype ne 'warn';
+
+  ###
+  # check for term discount validity
+  ###
+
+  my $discount_term = $options{discount_term};
+  if ( $discount_term ) {
+    my $bill = ($self->cust_bill)[-1]
+      or return "Can't apply a term discount to an unbilled customer";
+    my $plan = FS::discount_plan->new(
+      cust_bill => $bill,
+      months    => $discount_term
+    ) or return "No discount available for term '$discount_term'";
+    
+    if ( $plan->discounted_total != $options{amount} ) {
+      return "Incorrect term prepayment amount (term $discount_term, amount $options{amount}, requires ".$plan->discounted_total.")";
+    }
+  }
 
   ###
   # massage data

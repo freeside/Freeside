@@ -43,12 +43,12 @@
 <TR>
   <TD ALIGN="right"><% mt('Amount') |h %></TD>
   <TD BGCOLOR="#ffffff" ALIGN="right"><% $money_char %></TD>
-  <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
+  <TD><INPUT TYPE="text" NAME="paid" ID="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=9> <% mt('by') |h %> <B><% mt(FS::payby->payname($payby)) |h %></B></TD>
 </TR>
 
   <& /elements/tr-select-discount_term.html,
                'custnum' => $custnum,
-               'cgi'     => $cgi
+               'amount_id' => 'paid',
   &>
 
 % if ( $payby eq 'BILL' ) { 
