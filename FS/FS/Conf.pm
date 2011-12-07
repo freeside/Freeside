@@ -4490,7 +4490,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-custom_link',
     'section'     => 'UI',
-    'description' => 'URL to use as source for the "Custom" tab in the View Customer page.  The customer number will be appended, or you can insert "$custnum" to have it inserted elsewhere.  "$agentnum" will be replaced with the agent number.',
+    'description' => 'URL to use as source for the "Custom" tab in the View Customer page.  The customer number will be appended, or you can insert "$custnum" to have it inserted elsewhere.  "$agentnum" will be replaced with the agent number, and "$usernum" will be replaced with the employee number.',
     'type'        => 'textarea',
   },
 
