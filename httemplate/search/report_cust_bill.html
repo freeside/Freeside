@@ -37,7 +37,23 @@
   &>
 % }
 
+% if ( $conf->exists('cust_bill-enable_promised_date') ) {
   <TR>
+    
+    <TD ALIGN="right" STYLE="vertical-align:text-top">
+      <% emt('Promised payment date:') %></TD>
+    <TD>
+      <INPUT TYPE="checkbox" NAME="promised_date"   CHECKED VALUE="null">
+        <% emt('None') %> <BR>
+      <INPUT TYPE="checkbox" NAME="promised_date"   CHECKED VALUE="past">
+        <% emt('In the past') %><BR>
+      <INPUT TYPE="checkbox" NAME="promised_date"   CHECKED VALUE="future">
+        <% emt('In the future') %><BR>
+    </TD>
+  </TR>
+% }
+
+<TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD><% mt('Show only open invoices') |h %></TD>
   </TR>
@@ -48,6 +64,7 @@
     <TD><% mt('Show only the single most recent invoice per-customer') |h %></TD>
   </TR>
 % }
+
 
 </TABLE>
 
@@ -61,6 +78,8 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List invoices');
+
+my $conf = new FS::Conf;
 
 my $title = 'Invoice Report';
 #false laziness w/report_cust_pkg.html

@@ -1,4 +1,4 @@
-<% $link %><% $invoice %><% $link ? '</A>' : '' %><% $delete %><% $events %>
+<% $link %><% $invoice %><% $link ? '</A>' : '' %><% $delete %><% $under %>
 <%init>
 
 my( $cust_bill, %opt ) = @_;
@@ -8,10 +8,17 @@ my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $invoice = emt("Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed);
-$invoice = '<B><FONT SIZE="+1" COLOR="#FF0000">' .
+
+my $under = '';
+if ( $cust_bill->owed > 0 ) {
+  $invoice = '<B><FONT SIZE="+1" COLOR="#FF0000">' .
     emt("Open Invoice #[_1] (Balance [_2])",$cust_bill->display_invnum,$cust_bill->owed) .
-    '</FONT></B>'
-if ( $cust_bill->owed > 0 );
+    '</FONT></B>';
+  if ( $cust_bill->promised_date ) {
+    $under .= '<BR>'. emt('Payment promised on [_1]',
+        time2str($opt{'date_format'}, $cust_bill->promised_date));
+  }
+} #if $cust_bill->owed
 
 my $invnum = $cust_bill->invnum;
 
@@ -34,10 +41,10 @@ if ( $cust_bill->num_cust_event
           || $curuser->access_right('View customer billing events')
         )
    ) {
-  $events =
-    qq!<BR><FONT SIZE="-1"><A HREF="${p}search/cust_event.html?invnum=$invnum!.
-    '">( '.emt('View invoice events').' )</A></FONT>';
+  $under .=
+    qq!<BR><A HREF="${p}search/cust_event.html?invnum=$invnum">( !.
+      emt('View invoice events').' )</A>';
 }
-#
+$under = '<FONT SIZE="-1">'.$under.'</FONT>' if length($under);
 
 </%init>

@@ -1,0 +1,19 @@
+<& /elements/header-popup.html, 'Edit promised date' &>
+<FORM method="POST" action="process/cust_bill-promised_date.html">
+<B><% emt('Invoice #[_1]', $invnum) %></B><BR>
+<% ntable('cccccc',2) %>
+<INPUT TYPE="hidden" NAME="invnum" VALUE="<%$invnum%>">
+<& /elements/tr-input-date-field.html,
+  'promised_date',
+  $cust_bill->promised_date,
+  emt('Promised date'),
+&>
+</TABLE>
+<INPUT TYPE="submit" NAME="submit" VALUE="<% emt('Set date') %>">
+</FORM>
+<& /elements/footer.html &>
+<%init>
+my ($invnum) = $cgi->keywords;
+$invnum =~ /^\d+$/ or die "Illegal invnum";
+my $cust_bill = qsearchs('cust_bill', { invnum => $invnum });
+</%init>

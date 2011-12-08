@@ -1,0 +1,19 @@
+<SCRIPT TYPE="text/javascript">window.top.location.reload()</SCRIPT>
+<%init>
+# XXX ACL?
+
+$cgi->param('invnum') =~ /^(\d+)$/
+  or die "Illegal invnum";
+my $invnum = $1;
+
+my $promised_date = '';
+if ( length($cgi->param('promised_date')) ) {
+  $promised_date = parse_datetime($cgi->param('promised_date'))
+    or die "Illegal promised_date";
+}
+
+my $cust_bill = qsearchs('cust_bill', { invnum => $invnum });
+$cust_bill->promised_date($promised_date);
+my $error = $cust_bill->replace;
+die $error if $error; # nothing fancy here
+</%init>

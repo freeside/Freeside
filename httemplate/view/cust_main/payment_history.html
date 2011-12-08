@@ -398,6 +398,8 @@ my %opt = (
   )
 );
 
+$opt{'date_format'} ||= '%m/%d/%Y';
+
 #legacy invoices
 foreach my $legacy_cust_bill ($cust_main->legacy_cust_bill) {
   push @history, {

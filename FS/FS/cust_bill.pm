@@ -144,6 +144,8 @@ Specific use cases
 
 =item agent_invid - legacy invoice number
 
+=item promised_date - customer promised payment date, for collection
+
 =back
 
 =head1 METHODS
@@ -5620,6 +5622,15 @@ sub search_sql_where {
           $newest_where
     )";
 
+  }
+
+  #promised_date - also has an option to accept nulls
+  if ( $param->{promised_date} ) {
+    my($beginning, $ending, $null) = @{$param->{promised_date}};
+
+    push @search, "(( cust_bill.promised_date >= $beginning AND ".
+                    "cust_bill.promised_date <  $ending )" .
+                    ($null ? ' OR cust_bill.promised_date IS NULL ) ' : ')');
   }
 
   #agent virtualization

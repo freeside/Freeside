@@ -435,6 +435,17 @@ sub apply_to_lineitems {
 
   }
 
+  # unset promised payment date if there is one
+  my $cust_bill = $self->cust_bill;
+  if ( $cust_bill->promised_date and $cust_bill->owed <= 0 ) {
+    $cust_bill->set('promised_date', '');
+    my $error = $cust_bill->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+  
   #everything should always be applied to line items in full now... sanity check
   $applied = sprintf('%.2f', $applied);
   unless ( $applied == $self->amount ) {
