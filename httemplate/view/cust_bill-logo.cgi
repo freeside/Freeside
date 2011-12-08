@@ -16,6 +16,8 @@ if ( $cgi->param('invnum') ) {
   $conf = $cust_bill->conf;
   $agentnum = $cust_bill->cust_main->agentnum;
 } else {
+  # assume the default config
+  $conf = FS::Conf->new;
   my($query) = $cgi->keywords;
   $query =~ /^([^\.\/]*)$/ or die 'illegal query';
   $templatename = $1;
