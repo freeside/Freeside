@@ -28,6 +28,7 @@ lib/RT/Action/SetPriority_Local.pm #ticket escalation
 lib/RT/CustomFieldValues/Queues.pm #ticket escalation
 lib/RT/Condition/CustomFieldChange.pm #create ticket on custom field change
 lib/RT/Condition/CustomFieldTransaction.pm #notify on custom field change
+lib/RT/Interface/Email.pm #IgnoreCcRegexp
 lib/RT/Interface/Web_Vendor.pm #willresolve
  lib/RT/Interface/Web/Handler.pm #freeside comp_root for dashboard emails
  lib/RT/Record.pm #and customfield date patch #fix transaction custom fields
@@ -45,6 +46,7 @@ lib/RT/Queue_Local.pm #fix saved settings when renaming queues
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
+
 
 # 3.9-fix-queue-caching bugfix branch
 # github.com/bestpractical/rt/commit/7e211c1199836d49f007d7f677105e5c73cc0348
