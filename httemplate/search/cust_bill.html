@@ -128,7 +128,26 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     $search{'newest_percust'} = 1;
     $count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
   }
-  
+
+  # promised date
+  my $start_of_day = timelocal(0, 0, 0, (localtime(time))[3,4,5]);
+  foreach ( $cgi->param('promised_date') ) {
+    # only if at least one box is checked
+    $search{promised_date} ||= [ $start_of_day, $start_of_day, 0 ];
+    if ($_ eq 'past') {
+      # accept everything before today
+      $search{promised_date}[0] = 0;
+    }
+    elsif ( $_ eq 'future' ) {
+      # accept everything after today
+      $search{promised_date}[1] = 4294967295;
+    }
+    elsif ( $_ eq 'null' ) {
+      # accept nulls
+      $search{promised_date}[2] = 1;
+    }
+  }
+
   my $payby_sql = '';
   $payby_sql = ' AND (' . 
     join(' OR ', map { "cust_main.payby = '$_'" } $cgi->param('payby') ) . 

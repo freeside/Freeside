@@ -4681,6 +4681,13 @@ and customer address. Include units.',
     'description' => 'An alternate ordering of fields for the New Customer and Edit Customer screens.',
     'type'        => 'checkbox',
   },
+
+  {
+    'key'         => 'cust_bill-enable_promised_date',
+    'section'     => 'UI',
+    'description' => 'Enable display/editing of the "promised payment date" field on invoices.',
+    'type'        => 'checkbox',
+  },
   
   {
     'key'         => 'available-locales',

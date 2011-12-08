@@ -58,6 +58,27 @@
 
 % } 
 
+% if ( $conf->exists('cust_bill-enable_promised_date') ) {
+%   my $onclick = include('/elements/popup_link_onclick.html',
+%      'action'      => $p.'misc/cust_bill-promised_date.html?'.$invnum,
+%      'actionlabel' => emt('Set promised payment date'),
+%      'width'       => 320,
+%      'height'      => 240,
+%   );
+%   $onclick = '<A HREF="#" onclick="'.$onclick.'">';
+%   if ( $cust_bill->promised_date ) {
+%     my $date_format = $conf->config('date_format') || '%b %o, %Y';
+      <% mt('Payment promised by [_1]', 
+            time2str($date_format, $cust_bill->promised_date) ) %>
+      (&nbsp;<% $onclick %><% mt('change') |h %></A>&nbsp;)
+      <BR><BR>
+%   }
+%   elsif ( $cust_bill->owed > 0 ) {
+    <% $onclick %><% mt('Set promised payment date' ) |h %></A>
+    <BR><BR>
+%   }
+% }
+
 % if ( $curuser->access_right('Resend invoices') ) {
 
     <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>

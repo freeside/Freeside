@@ -532,6 +532,7 @@ sub tables_hashref {
         'closed',      'char', 'NULL',  1, '', '', #not yet used much
         'statementnum', 'int', 'NULL', '', '', '', #invoice aggregate statements
         'agent_invid',  'int', 'NULL', '', '', '', #(varchar?) importing legacy
+        'promised_date', @date_type,       '', '',
       ],
       'primary_key' => 'invnum',
       'unique' => [ [ 'custnum', 'agent_invid' ] ], #agentnum?  huh
