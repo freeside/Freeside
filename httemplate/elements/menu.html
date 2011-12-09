@@ -451,7 +451,7 @@ if ( $curuser->access_right('Configuration') ) {
 $config_export_svc{'Dialup'}  = [ \%config_dialup, ''    ]
   if $curuser->access_right('Dialup configuration');
 $config_export_svc{'Broadband'} = [ \%config_broadband, ''    ]
-  if $curuser->access_right('Broadband configuration');
+  if $curuser->access_right('Wireless broadband configuration');
 $config_export_svc{'Phone'}  = [ \%config_phone, ''    ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'RADIUS'} = [ \%config_radius, '' ]
@@ -670,7 +670,7 @@ $menu{'Configuration'} = [ \%config_menu, 'Configuration and setup' ]
   || $curuser->access_right('Edit billing events')
   || $curuser->access_right('Edit global billing events')
   || $curuser->access_right('Dialup configuration')
-  || $curuser->access_right('Broadband configuration')
+  || $curuser->access_right('Wireless broadband configuration')
   || $curuser->access_right('Phone configuration')
   || $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
