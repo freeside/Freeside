@@ -429,6 +429,7 @@ tie my %config_dialup, 'Tie::IxHash',
 ;
 
 tie my %config_broadband, 'Tie::IxHash',
+  'Towers'         => [ $fsurl.'browse/tower.html', 'Towers and sectors' ],
   'Routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
   'Address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
 ;
