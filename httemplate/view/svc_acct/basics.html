@@ -77,7 +77,10 @@
        label=>mt('IP address'),
        value=> ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
                  ? "<I>(".mt('Dynamic').")</I>"
-                 : $svc_acct->slipip
+                 : $svc_acct->slipip. ' '.
+                   include('/elements/popup_link-ping.html',
+                             'ip'=>$svc_acct->slipip,
+                          )
   &>
 % } 
 
