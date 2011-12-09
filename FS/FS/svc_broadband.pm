@@ -95,6 +95,7 @@ sub table_info {
     'longname_plural' => 'Fixed (username-less) broadband services',
     'display_weight' => 50,
     'cancel_weight'  => 70,
+    'ip_field' => 'ip_addr',
     'fields' => {
       'description' => 'Descriptive label for this particular device.',
       'speed_down'  => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',

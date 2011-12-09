@@ -5,6 +5,7 @@ use vars qw( @ISA $noexport_hack $DEBUG $me
              $overlimit_missing_cust_svc_nonfatal_kludge );
 use Carp qw( cluck carp croak confess ); #specify cluck have to specify them all
 use Scalar::Util qw( blessed );
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
 use FS::cust_svc;
@@ -13,6 +14,7 @@ use FS::queue;
 use FS::cust_main;
 use FS::inventory_item;
 use FS::inventory_class;
+use FS::NetworkMonitoringSystem;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -315,6 +317,8 @@ sub insert {
     }
 
   }
+
+  $self->nms_ip_insert;
 
   if ( exists $options{'jobnums'} ) {
     push @{ $options{'jobnums'} }, @jobnums;
@@ -1158,6 +1162,32 @@ sub getstatus_html {
 
   $html;
 
+}
+
+=item nms_ip_insert
+
+=cut
+
+sub nms_ip_insert {
+  my $self = shift;
+  my $conf = new FS::Conf;
+  return '' unless grep { $self->table eq $_ }
+                     $conf->config('nms-auto_add-svc_ips');
+  my $ip_field = $self->table_info->{'ip_field'};
+
+  #XXX perhaps i should be job-queued, i take awhile, right?
+  my $nms = new FS::NetworkMonitoringSystem;
+  $nms->add_router( $self->$ip_field(),
+                    $conf->config('nms-auto_add-community')
+                  );
+}
+
+=item nms_delip
+
+=cut
+
+sub nms_ip_delete {
+#XXX not yet implemented
 }
 
 =back

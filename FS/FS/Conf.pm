@@ -2650,11 +2650,25 @@ and customer address. Include units.',
 
   {
     'key'         => 'network_monitoring_system',
-    'section'     => '',
+    'section'     => 'network_monitoring',
     'description' => 'Networking monitoring system (NMS) integration.  <b>Torrus_Internal</b> uses the built-in Torrus ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Torrus_Installation">integrated networking monitoring system installation instructions</a>).',
     'type'        => 'select',
-    #'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
     'select_enum' => [ '', qw(Torrus_Internal) ],
+  },
+
+  {
+    'key'         => 'nms-auto_add-svc_ips',
+    'section'     => 'network_monitoring',
+    'description' => 'Automatically add (and remove) IP addresses from these service tables to the network monitoring system.',
+    'type'        => 'selectmultiple',
+    'select_enum' => [ 'svc_acct', 'svc_broadband', 'svc_dsl' ],
+  },
+
+  {
+    'key'         => 'nms-auto_add-community',
+    'section'     => 'network_monitoring',
+    'description' => 'SNMP community string to use when automatically adding IP addresses from these services to the network monitoring system.',
+    'type'        => 'text',
   },
 
   {
