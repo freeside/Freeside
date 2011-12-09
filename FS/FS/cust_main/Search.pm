@@ -18,7 +18,7 @@ use FS::svc_acct;
 $DEBUG = 0;
 $me = '[FS::cust_main::Search]';
 
-@fuzzyfields = @FS::cust_main::fuzzyfields;
+@fuzzyfields = ( 'first', 'last', 'company', 'address1' );
 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
@@ -859,7 +859,7 @@ sub fuzzy_search {
 
 sub check_and_rebuild_fuzzyfiles {
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
-  rebuild_fuzzyfiles() if grep { ! -e "$dir/cust_main.$_" } @fuzzyfields
+  rebuild_fuzzyfiles() if grep { ! -e "$dir/cust_main.$_" } @fuzzyfields;
 }
 
 =item rebuild_fuzzyfiles
@@ -900,6 +900,41 @@ sub rebuild_fuzzyfiles {
     close LOCK;
   }
 
+}
+
+=item append_fuzzyfiles FIRSTNAME LASTNAME COMPANY ADDRESS1
+
+=cut
+
+sub append_fuzzyfiles {
+  #my( $first, $last, $company ) = @_;
+
+  check_and_rebuild_fuzzyfiles();
+
+  use Fcntl qw(:flock);
+
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
+
+  foreach my $field (@fuzzyfields) {
+    my $value = shift;
+
+    if ( $value ) {
+
+      open(CACHE,">>$dir/cust_main.$field")
+        or die "can't open $dir/cust_main.$field: $!";
+      flock(CACHE,LOCK_EX)
+        or die "can't lock $dir/cust_main.$field: $!";
+
+      print CACHE "$value\n";
+
+      flock(CACHE,LOCK_UN)
+        or die "can't unlock $dir/cust_main.$field: $!";
+      close CACHE;
+    }
+
+  }
+
+  1;
 }
 
 =item all_X

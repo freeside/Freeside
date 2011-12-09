@@ -14,7 +14,7 @@ use vars qw( $DEBUG $me $conf
              @encrypted_fields
              $import
              $ignore_expired_card $ignore_illegal_zip $ignore_banned_card
-             $skip_fuzzyfiles @fuzzyfields
+             $skip_fuzzyfiles
              @paytypes
            );
 use Carp;
@@ -83,7 +83,6 @@ $ignore_illegal_zip = 0;
 $ignore_banned_card = 0;
 
 $skip_fuzzyfiles = 0;
-@fuzzyfields = ( 'first', 'last', 'company', 'address1' );
 
 @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('payinfo', 'paycvv'); }
@@ -1629,6 +1628,7 @@ Used by insert & replace to update the fuzzy search cache
 
 =cut
 
+use FS::cust_main::Search;
 sub queue_fuzzyfiles_update {
   my $self = shift;
 
@@ -1643,16 +1643,16 @@ sub queue_fuzzyfiles_update {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-  my $error = $queue->insert( map $self->getfield($_), @fuzzyfields );
+  my $queue = new FS::queue { 'job' => 'FS::cust_main::Search::append_fuzzyfiles' };
+  my $error = $queue->insert( map $self->getfield($_), @FS::cust_main::Search::fuzzyfields );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "queueing job (transaction rolled back): $error";
   }
 
   if ( $self->ship_last ) {
-    $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-    $error = $queue->insert( map $self->getfield("ship_$_"), @fuzzyfields );
+    $queue = new FS::queue { 'job' => 'FS::cust_main::Search::append_fuzzyfiles' };
+    $error = $queue->insert( map $self->getfield("ship_$_"), @FS::cust_main::Search::fuzzyfields );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
@@ -4414,42 +4414,6 @@ sub search {
 =head1 SUBROUTINES
 
 =over 4
-
-=item append_fuzzyfiles FIRSTNAME LASTNAME COMPANY ADDRESS1
-
-=cut
-
-use FS::cust_main::Search;
-sub append_fuzzyfiles {
-  #my( $first, $last, $company ) = @_;
-
-  FS::cust_main::Search::check_and_rebuild_fuzzyfiles();
-
-  use Fcntl qw(:flock);
-
-  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
-
-  foreach my $field (@fuzzyfields) {
-    my $value = shift;
-
-    if ( $value ) {
-
-      open(CACHE,">>$dir/cust_main.$field")
-        or die "can't open $dir/cust_main.$field: $!";
-      flock(CACHE,LOCK_EX)
-        or die "can't lock $dir/cust_main.$field: $!";
-
-      print CACHE "$value\n";
-
-      flock(CACHE,LOCK_UN)
-        or die "can't unlock $dir/cust_main.$field: $!";
-      close CACHE;
-    }
-
-  }
-
-  1;
-}
 
 =item batch_charge
 
