@@ -452,7 +452,7 @@ if ( $curuser->access_right('Configuration') ) {
 $config_export_svc{'Dialup'}  = [ \%config_dialup, ''    ]
   if $curuser->access_right('Dialup configuration');
 $config_export_svc{'Broadband'} = [ \%config_broadband, ''    ]
-  if $curuser->access_right('Wireless broadband configuration');
+  if $curuser->access_right('Broadband configuration');
 $config_export_svc{'Phone'}  = [ \%config_phone, ''    ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'RADIUS'} = [ \%config_radius, '' ]
