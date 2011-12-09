@@ -38,7 +38,8 @@ readonly=1 cols=80 rows=20>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-die "access denied" if !$curuser->access_right('View customers of all agents');
+die "access denied" if !$curuser->access_right('View email logs'))
+                    && !$curuser->access_right('Configuration');
 
 my ($custmsgnum) = $cgi->keywords;
 $custmsgnum =~ /^(\d+)$/ or die "illegal custmsgnum";
