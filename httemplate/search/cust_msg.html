@@ -41,7 +41,7 @@
 <%init>
 #hmm...
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View customers of all agents');
+  unless $FS::CurrentUser::CurrentUser->access_right('View email logs');
 
 my $conf = new FS::Conf;
 
