@@ -63,11 +63,13 @@
       ExecModule  => 'NotifyAsComment',
       Argument    => 'Requestor,Cc' },
 
-    { Name        => 'Notify Requestors and Ccs',                         # loc
-      Description => 'Send mail to requestors and Ccs',                   # loc
-      ExecModule  => 'Notify',
-      Argument    => 'Requestor,Cc' },
+# deprecated
+#    { Name        => 'Notify Requestors and Ccs',                         # loc
+#      Description => 'Send mail to requestors and Ccs',                   # loc
+#      ExecModule  => 'Notify',
+#      Argument    => 'Requestor,Cc' },
 
+# not yet deprecated
     { Name        => 'Notify Owner, Requestors, Ccs and AdminCcs as Comment',    # loc
       Description => 'Send mail to owner and all watchers as a "comment"',          # loc
       ExecModule  => 'NotifyAsComment',
@@ -80,10 +82,12 @@
       Description => 'Sends mail to explicitly listed Ccs and Bccs',      # loc
       ExecModule  => 'NotifyAsComment',
       Argument    => 'OtherRecipients' },
-    { Name        => 'Notify Other Recipients',                           # loc
-      Description => 'Sends mail to explicitly listed Ccs and Bccs',      # loc
-      ExecModule  => 'Notify',
-      Argument    => 'OtherRecipients' },
+# deprecated
+#    { Name        => 'Notify Other Recipients',                           # loc
+#      Description => 'Sends mail to explicitly listed Ccs and Bccs',      # loc
+#      ExecModule  => 'Notify',
+#      Argument    => 'OtherRecipients' },
+
     { Name        => 'User Defined',                                      # loc
       Description => 'Perform a user-defined action',                     # loc
       ExecModule  => 'UserDefined', },
@@ -113,6 +117,12 @@
       Description => 'Resolve ticket if its WillResolve date has passed',
       ExecModule  => 'ScheduledResolve',
       Argument    => '',
+    },
+# combine these into a single action so they can see each other in the headers
+    { Name        => 'Notify Requestors, Ccs, and Other Recipients',
+      Description => 'Send mail to requestors, watchers, and explicit Ccs',
+      ExecModule  => 'Notify',
+      Argument    => 'Requestor,Cc,OtherRecipients',
     },
 );
 
@@ -550,14 +560,18 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
        ScripCondition => 'On Correspond',
        ScripAction    => 'Notify AdminCcs',
        Template       => 'Admin Correspondence' },
-    {  Description    => 'On Correspond Notify Requestors and Ccs',
+#    {  Description    => 'On Correspond Notify Requestors and Ccs',
+#       ScripCondition => 'On Correspond',
+#       ScripAction    => 'Notify Requestors And Ccs',
+#       Template       => 'Correspondence' },
+#    {  Description    => 'On Correspond Notify Other Recipients',
+#       ScripCondition => 'On Correspond',
+#       ScripAction    => 'Notify Other Recipients',
+#       Template       => 'Correspondence' },
+    {  Description    => 'On Correspond Notify Requestors, Ccs, and Other Recipients',
        ScripCondition => 'On Correspond',
-       ScripAction    => 'Notify Requestors And Ccs',
-       Template       => 'Correspondence' },
-    {  Description    => 'On Correspond Notify Other Recipients',
-       ScripCondition => 'On Correspond',
-       ScripAction    => 'Notify Other Recipients',
-       Template       => 'Correspondence' },
+       ScripAction    => 'Notify Requestors, Ccs, and Other Recipients',
+       Template       => 'Correspondence', },
     {  Description    => 'On Comment Notify AdminCcs as Comment',
        ScripCondition => 'On Comment',
        ScripAction    => 'Notify AdminCcs As Comment',
@@ -646,3 +660,18 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
       },
     },
 );
+
+# freeside upgrade
+# Obsolete/erroneous scrips
+# If
+#   $Delete_Scrips{conditionname}{actionname}{templatename}
+# exists, and the scrip was created by the system user, it 
+# will be deleted on upgrade.  Lowercase all the names here.
+
+%Delete_Scrips = (
+  'on correspond' => {
+    'notify requestors and ccs' => { 'correspondence' => 1 },
+    'notify other recipients'   => { 'correspondence' => 1 },
+  }
+);
+

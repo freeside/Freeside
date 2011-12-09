@@ -136,7 +136,8 @@ sub _upgrade_data {
 
   # Load from RT data file
   our (@Groups, @Users, @ACL, @Queues, @ScripActions, @ScripConditions,
-       @Templates, @CustomFields, @Scrips, @Attributes, @Initial, @Final);
+       @Templates, @CustomFields, @Scrips, @Attributes, @Initial, @Final,
+       %Delete_Scrips);
   my $datafile = '%%%RT_PATH%%%/etc/initialdata';
   eval { require $datafile };
   if ( $@ ) {
@@ -208,6 +209,11 @@ sub _upgrade_data {
       ('ScripConditionObj', 'ScripActionObj', 'TemplateObj');
     if ( exists $scrip{$c}{$a}{$t} and $item->Creator == 1 ) {
       warn "Deleting duplicate scrip $c $a [$t]\n";
+      my ($val, $msg) = $item->Delete;
+      warn "error deleting scrip: $msg\n" if !$val;
+    }
+    elsif ( exists $Delete_Scrips{$c}{$a}{$t} and $item->Creator == 1 ) {
+      warn "Deleting obsolete scrip $c $a [$t]\n";
       my ($val, $msg) = $item->Delete;
       warn "error deleting scrip: $msg\n" if !$val;
     }
