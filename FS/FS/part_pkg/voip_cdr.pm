@@ -43,11 +43,11 @@ tie my %temporalities, 'Tie::IxHash',
 
 tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
-# previously "1" was "ignore 
+# previously "1" was "ignore"
 tie my %unrateable_opts, 'Tie::IxHash',
-  ''  => 'Exit with a fatal error',
-  1   => 'Flag for later review',
-  2   => 'Ignore and continue',
+  '' => 'Exit with a fatal error',
+  1  => 'Ignore and continue',
+  2  => 'Flag for later review',
 ;
 
 %info = (
@@ -646,11 +646,6 @@ sub calc_usage {
       if ( ! $rate_detail && $charge eq '' ) {
 
         if ( $ignore_unrateable == 2 ) {
-          # throw a warning--not recommended
-          warn "no rate_detail found for CDR.acctid: ". $cdr->acctid.
-               "; skipping\n"
-        }
-        else {
           # mark the CDR as unrateable
           my $error = $cdr->set_status_and_rated_price(
             'failed',
@@ -658,7 +653,12 @@ sub calc_usage {
             $cust_svc->svcnum
           );
           die $error if $error;
-        }#if $ignore_unrateable
+        }
+        elsif ( $ignore_unrateable == 1 ) {
+          # warn and continue
+          warn "no rate_detail found for CDR.acctid: ". $cdr->acctid.
+               "; skipping\n"
+        } #if $ignore_unrateable
 
       } else { # there *is* a rate_detail (or call_details), proceed...
         # About this section:
