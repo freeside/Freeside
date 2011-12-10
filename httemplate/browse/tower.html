@@ -1,0 +1,44 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Towers',
+                 'name'        => 'towers',
+                 'menubar'     => [ 'Add a new tower' =>
+                                      $p.'edit/tower.html',
+                                  ],
+                 'query'       => { 'table' => 'tower', },
+                 'count_query' => 'SELECT COUNT(*) FROM tower',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 1,
+                 'header'      => [ 'Name', 'Sectors', ],
+                 'fields'      => [ 'towername',
+                                    $sector_sub,
+                                  ],
+                 'links'       => [ $link,
+                                    '',
+                                  ],
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ "${p}edit/tower.html?", 'towernum' ];
+
+my $sector_sub = sub {
+  my $tower = shift;
+  
+  [ map {
+
+          [
+            { 'data' => $_->sectorname,
+              'link' => ( $_->ip_addr ? 'http://'. $_->ip_addr : '' ),
+            },
+          ],
+
+        }
+      $tower->tower_sector
+  ];
+
+};
+
+</%init>

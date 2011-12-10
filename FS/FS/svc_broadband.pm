@@ -2,12 +2,13 @@ package FS::svc_broadband;
 
 use strict;
 use vars qw(@ISA $conf);
+use NetAddr::IP;
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::svc_Common;
 use FS::cust_svc;
 use FS::addr_block;
 use FS::part_svc_router;
-use NetAddr::IP;
+use FS::tower_sector;
 
 @ISA = qw( FS::svc_Radius_Mixin FS::svc_Common );
 
@@ -97,7 +98,8 @@ sub table_info {
     'cancel_weight'  => 70,
     'ip_field' => 'ip_addr',
     'fields' => {
-      'description' => 'Descriptive label for this particular device.',
+      'svcnum'      => 'Service',
+      'description' => 'Descriptive label for this particular device',
       'speed_down'  => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
       'speed_up'    => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
       'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
@@ -356,6 +358,7 @@ sub check {
   my $error =
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('blocknum')
+    || $self->ut_foreign_keyn('sectornum', 'tower_sector', 'sectornum')
     || $self->ut_textn('description')
     || $self->ut_numbern('speed_up')
     || $self->ut_numbern('speed_down')
@@ -476,6 +479,16 @@ is /32.
 sub NetAddr {
   my $self = shift;
   new NetAddr::IP ($self->ip_addr);
+}
+
+=item tower_sector
+
+=cut
+
+sub tower_sector {
+  my $self = shift;
+  return '' unless $self->sectornum;
+  qsearchs('tower_sector', { sectornum => $self->sectornum });
 }
 
 =item addr_block

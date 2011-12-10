@@ -1,0 +1,11 @@
+<% include('tr-td-label.html', label => emt('Tower sector'), %opt ) %>
+  <TD <% $style %>>
+  <% include( '/elements/select-tower_sector.html', %opt ) %>
+  </TD>
+</TR>
+<%init>
+
+my( %opt ) = @_;
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>

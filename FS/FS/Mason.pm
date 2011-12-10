@@ -299,6 +299,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::rate_tier_detail;
   use FS::radius_attr;
   use FS::discount_plan;
+  use FS::tower;
+  use FS::tower_sector;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
