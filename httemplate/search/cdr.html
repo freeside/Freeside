@@ -80,15 +80,21 @@ my @qsearch = @search;
 # freesidestatus
 ###
 
-if ( $cgi->param('freesidestatus') eq 'NULL' ) {
+my $status = $cgi->param('freesidestatus');
+if ( $status eq 'NULL' ) {
 
   $title = "Unprocessed $title";
   $hashref->{'freesidestatus'} = ''; # Record.pm will take care of it
   push @search, "( freesidestatus IS NULL OR freesidestatus = '' )";
 
-} elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
-
-  $title = "Processed $title";
+} elsif ( $status =~ /^([\w ]+)$/ ) {
+  
+  if ( $status eq 'done' ) {
+    $title = "Processed $title";
+  }
+  elsif ( $status eq 'failed' ) {
+    $title = "Skipped $title";
+  }
   $hashref->{'freesidestatus'} = $1;
   push @search, "freesidestatus = '$1'";
 

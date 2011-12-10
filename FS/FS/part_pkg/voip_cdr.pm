@@ -43,6 +43,13 @@ tie my %temporalities, 'Tie::IxHash',
 
 tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
+# previously "1" was "ignore 
+tie my %unrateable_opts, 'Tie::IxHash',
+  ''  => 'Exit with a fatal error',
+  1   => 'Flag for later review',
+  2   => 'Ignore and continue',
+;
+
 %info = (
   'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
   'shortname' => 'VoIP/telco CDR rating (standard)',
@@ -105,8 +112,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                            'select_options' => \%granularity,
                          },
 
-    'ignore_unrateable' => { 'name' => 'Ignore calls without a rate in the rate tables.  By default, the system will throw a fatal error upon encountering unrateable calls.',
-                             'type' => 'checkbox',
+    'ignore_unrateable' => { 'name' => 'Handling of calls without a rate in the rate table',
+                             'type' => 'select',
+                             'select_options' => \%unrateable_opts,
                            },
 
     'default_prefix' => { 'name'    => 'Default prefix optionally prepended to customer DID numbers when searching for CDR records',
@@ -637,8 +645,20 @@ sub calc_usage {
       #if ( ! $rate_detail && ! scalar(@call_details) ) {}
       if ( ! $rate_detail && $charge eq '' ) {
 
-        warn "no rate_detail found for CDR.acctid: ". $cdr->acctid.
-             "; skipping\n"
+        if ( $ignore_unrateable == 2 ) {
+          # throw a warning--not recommended
+          warn "no rate_detail found for CDR.acctid: ". $cdr->acctid.
+               "; skipping\n"
+        }
+        else {
+          # mark the CDR as unrateable
+          my $error = $cdr->set_status_and_rated_price(
+            'failed',
+            '',
+            $cust_svc->svcnum
+          );
+          die $error if $error;
+        }#if $ignore_unrateable
 
       } else { # there *is* a rate_detail (or call_details), proceed...
         # About this section:
