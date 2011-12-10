@@ -47,10 +47,12 @@ sub new {
 
   my ($previous_balance) = $cust_bill->previous;
   my $self = {
+    cust_bill     => $cust_bill,
+    months        => $months,
     pkgnums       => [],
     base          => $previous_balance || 0, # sum of charges before discount
     discounted    => $previous_balance || 0, # sum of charges after discount
-    list_pkgnums  => 0, # whether any packages are not discounted
+    list_pkgnums  => undef, # whether any packages are not discounted
   };
 
   foreach my $cust_bill_pkg ( $cust_bill->cust_bill_pkg ) {
@@ -180,6 +182,19 @@ plan.
 sub pkgnums {
   my $self = shift;
   @{ $self->{pkgnums} };
+}
+
+=item list_pkgnums
+
+Returns a true value if any packages listed on the invoice do not 
+receive a discount, either because there isn't one at the specified
+term length or because they're not monthly recurring packages.
+
+=cut
+
+sub list_pkgnums {
+  my $self = shift;
+  $self->{list_pkgnums};
 }
 
 # any others?  don't think so
