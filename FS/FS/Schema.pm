@@ -2498,24 +2498,49 @@ sub tables_hashref {
 
     'svc_broadband' => {
       'columns' => [
-        'svcnum', 'int', '', '', '', '', 
-        'description', 'varchar', 'NULL', $char_d, '', '', 
-        'blocknum', 'int', 'NULL', '', '', '', 
-        'speed_up', 'int', 'NULL', '', '', '', 
-        'speed_down', 'int', 'NULL', '', '', '', 
-        'ip_addr', 'varchar', 'NULL', 15, '', '', 
-        'mac_addr', 'varchar', 'NULL', 12, '', '', 
-        'authkey',  'varchar', 'NULL', 32, '', '', 
-        'latitude', 'decimal', 'NULL', '', '', '', 
-        'longitude', 'decimal', 'NULL', '', '', '', 
-        'altitude', 'decimal', 'NULL', '', '', '', 
-        'vlan_profile', 'varchar', 'NULL', $char_d, '', '', 
+        'svcnum',                  'int',     '',      '', '', '', 
+        'description',         'varchar', 'NULL', $char_d, '', '', 
+        'blocknum',                'int', 'NULL',      '', '', '', 
+        'sectornum',               'int', 'NULL',      '', '', '',
+        'speed_up',                'int', 'NULL',      '', '', '', 
+        'speed_down',              'int', 'NULL',      '', '', '', 
+        'ip_addr',             'varchar', 'NULL',      15, '', '', 
+        'mac_addr',            'varchar', 'NULL',      12, '', '', 
+        'authkey',             'varchar', 'NULL',      32, '', '', 
+        'latitude',            'decimal', 'NULL',      '', '', '', 
+        'longitude',           'decimal', 'NULL',      '', '', '', 
+        'altitude',            'decimal', 'NULL',      '', '', '', 
+        'vlan_profile',        'varchar', 'NULL', $char_d, '', '', 
         'performance_profile', 'varchar', 'NULL', $char_d, '', '',
-        'plan_id', 'varchar', 'NULL', $char_d, '', '',
+        'plan_id',             'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique'      => [ [ 'mac_addr' ] ],
       'index'       => [],
+    },
+
+    'tower' => {
+      'columns' => [
+        'towernum',   'serial',     '',      '', '', '',
+        #'agentnum',      'int', 'NULL',      '', '', '',
+        'towername', 'varchar',     '', $char_d, '', '',
+        'disabled',     'char', 'NULL',       1, '', '',
+      ],
+      'primary_key' => 'towernum',
+      'unique'      => [ [ 'towername' ] ], # , 'agentnum' ] ],
+      'index'       => [],
+    },
+
+    'tower_sector' => {
+      'columns' => [
+        'sectornum',   'serial',     '',      '', '', '',
+        'towernum',       'int',     '',      '', '', '',
+        'sectorname', 'varchar',     '', $char_d, '', '',
+        'ip_addr',    'varchar', 'NULL',      15, '', '',
+      ],
+      'primary_key' => 'sectornum',
+      'unique'      => [ [ 'towernum', 'sectorname' ], [ 'ip_addr' ], ],
+      'index'       => [ [ 'towernum' ] ],
     },
 
     'part_virtual_field' => {

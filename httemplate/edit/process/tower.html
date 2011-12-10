@@ -1,0 +1,7 @@
+<& elements/process.html, 
+    table       => 'tower',
+    viewall_dir => 'browse',
+    process_o2m => { 'table'  => 'tower_sector',
+                     'fields' => [qw( sectorname ip_addr )],
+                   },
+&>

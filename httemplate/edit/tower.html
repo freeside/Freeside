@@ -1,0 +1,37 @@
+<& elements/edit.html,
+     name_singular => 'tower',
+     table         => 'tower',
+     viewall_dir   => 'browse',
+     fields        => [ 'towername',
+                        { field=>'disabled', type=>'checkbox', value=>'Y', },
+                        { field             => 'sectornum',
+                          type              => 'tower_sector',
+                          o2m_table         => 'tower_sector',
+                          m2_label          => 'Sector',
+                          m2_error_callback => $m2_error_callback,
+                        },
+                      ],
+     labels        => { 'towernum'  => 'Tower',
+                        'towername' => 'Name',
+                        'sectornum' => 'Sector',
+                        'disabled'  => 'Disabled',
+                      },
+&>
+<%init>
+
+my $m2_error_callback = sub { # reconstruct the list
+  my ($cgi, $object) = @_;
+
+  my @fields = qw(sectorname ip_addr);
+  map {
+    my $k = $_;
+    next if !length($cgi->param($k.'_sectorname'));
+    new FS::tower_sector {
+      'towernum'  => $object->towernum,
+      'sectornum' => scalar( $cgi->param($k) ),
+      map { $_ => scalar( $cgi->param($k.'_'.$_) ) } @fields,
+    };
+  } grep /^sectornum\d+$/, ($cgi->param);
+};
+
+</%init>

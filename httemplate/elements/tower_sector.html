@@ -1,0 +1,60 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <TABLE>
+    <TR>
+%     foreach my $field ( @fields ) {
+
+        <TD>
+          <INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_<%$field%>"
+                 ID    = "<%$id%>_<%$field%>"
+                 SIZE  = "<% $size{$field} || 15 %>"
+                 VALUE = "<% scalar($cgi->param($name."_$field"))
+                             || $tower_sector->get($field) |h %>"
+                 <% $onchange %>
+          ><BR>
+          <FONT SIZE="-1"><% $label{$field} %></FONT>
+        </TD>
+%     }
+    </TR>
+  </TABLE>
+
+
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'sectornum';
+my $id = $opt{'id'} || 'sectornum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $tower_sector;
+if ( $curr_value ) {
+  $tower_sector = qsearchs('tower_sector', { 'sectornum' => $curr_value } );
+} else {
+  $tower_sector = new FS::tower_sector {};
+}
+
+my %size = ( 'title' => 12 );
+
+tie my %label, 'Tie::IxHash',
+  'sectorname' => 'Name',
+  'ip_addr'    => 'IP Address',
+;
+
+my @fields = keys %label;
+
+</%init>

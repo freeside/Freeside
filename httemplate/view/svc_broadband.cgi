@@ -22,6 +22,7 @@ my @fields = (
   'speed_down',
   'speed_up',
   { field => 'ip_addr', value => \&ip_addr },
+  { field => 'sectornum', value => \&sectornum },
   'mac_addr',
   'latitude',
   'longitude',
@@ -58,6 +59,17 @@ sub usergroup {
   my $svc = shift;
   my $usergroup = $svc->usergroup;
   join('<BR>', $svc->radius_groups('long_description'));
+}
+
+sub sectornum {
+  my $svc_broadband = shift;
+  return '' unless $svc_broadband->sectornum;
+  my $tower_sector = $svc_broadband->tower_sector;
+  my $link = $tower_sector->ip_addr
+               ? '<A HREF="http://'. $tower_sector->ip_addr. '">'
+               : '';
+
+  $link .  $tower_sector->description. ( $link ? '</A>' : '');
 }
 
 </%init>
