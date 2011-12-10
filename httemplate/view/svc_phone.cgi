@@ -68,6 +68,7 @@ my $html_foot = sub {
   tie my %what, 'Tie::IxHash',
     'pending' => 'NULL',
     'billed'  => 'done',
+    'skipped' => 'failed',
   ;
 
   my $number = $svc_phone->phonenum;
