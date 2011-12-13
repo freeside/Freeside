@@ -403,6 +403,7 @@ sub calc_usage {
     my %options = (
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
+        'cdrtypenum'     => $self->option('use_cdrtypenum'),
         'status'         => '',
         'for_update'     => 1,
       );  # $last_bill, $$sdate )
@@ -434,6 +435,8 @@ sub calc_usage {
       if ( $rating_method eq 'prefix' ) {
 
         my $da_rewrote = 0;
+        # this will result in those CDRs being marked as done... is that 
+        # what we want?
         if ( length($cdr->dst) && grep { $cdr->dst eq $_ } @dirass ){
           $cdr->dst('411');
           $da_rewrote = 1;
@@ -448,6 +451,8 @@ sub calc_usage {
 
           warn "not charging for CDR ($reason)\n" if $DEBUG;
           $charge = 0;
+          # this will result in those CDRs being marked as done... is that 
+          # what we want?
 
         } else {
           
@@ -767,17 +772,19 @@ sub calc_usage {
           warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
           $charges += $charge;
 
-          @call_details = (
-            $cdr->downstream_csv( 'format'         => $output_format,
-                                  'granularity'    => $rate_detail->sec_granularity, 
-                                  'seconds'        => ($use_duration ?
-                                                       $cdr->duration :
-                                                       $cdr->billsec),
-                                  'charge'         => $charge,
-                                  'pretty_dst'     => $pretty_destnum,
-                                  'dst_regionname' => $regionname,
-                                )
-          );
+          if ( !$self->sum_usage ) {
+            @call_details = (
+              $cdr->downstream_csv( 'format'         => $output_format,
+                                    'granularity'    => $rate_detail->sec_granularity, 
+                                    'seconds'        => ($use_duration ?
+                                                         $cdr->duration :
+                                                         $cdr->billsec),
+                                    'charge'         => $charge,
+                                    'pretty_dst'     => $pretty_destnum,
+                                    'dst_regionname' => $regionname,
+                                  )
+            );
+          }
         } #if(there is a rate_detail)
  
 
@@ -799,6 +806,7 @@ sub calc_usage {
                 regionname  => $regionname,
               };
           } else { #only used for $rating_method eq 'upstream' now
+                   # and for sum_ formats
             $csv->combine(@call_details);
             $call_details =
               { format      => 'C',
@@ -812,9 +820,6 @@ sub calc_usage {
                 regionname  => $regionname,
               };
           }
-          #warn "  adding details on charge to invoice: [ ".
-          #    join(', ', @{$call_details} ). " ]"
-          #  if ( $DEBUG && ref($call_details) );
           push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
         }
 
@@ -833,11 +838,44 @@ sub calc_usage {
       }
 
     } # $cdr
- 
-    my @sorted_invoice_details = sort { @{$a}[1] <=> @{$b}[1] } @invoice_details_sort;
-    foreach my $sorted_call_detail ( @sorted_invoice_details ) {
+
+    if ( !$self->sum_usage ) {
+      #sort them
+      my @sorted_invoice_details = 
+        sort { @{$a}[1] <=> @{$b}[1] } @invoice_details_sort;
+      foreach my $sorted_call_detail ( @sorted_invoice_details ) {
         push @$details, @{$sorted_call_detail}[0];
+      }
     }
+    else { #$self->sum_usage
+      my $sum_detail = {
+        amount    => 0,
+        format    => 'C',
+        classnum  => '', #XXX
+        duration  => 0,
+        phonenum  => $svc_x->phonenum,
+        accountcode => '', #XXX
+        startdate => '', #XXX
+        regionnam => '',
+      };
+      # combine the entire set of CDRs
+      foreach ( @invoice_details_sort ) {
+        $sum_detail->{amount} += $_->[0]{amount};
+        $sum_detail->{duration} += $_->[0]{duration};
+      }
+      my $total_cdr = FS::cdr->new({
+          'billsec' => $sum_detail->{duration},
+          'src'     => $sum_detail->{phonenum},
+      });
+      $sum_detail->{detail} = $total_cdr->downstream_csv(
+        format    => $output_format,
+        seconds   => $sum_detail->{duration},
+        charge    => sprintf('%.2f',$sum_detail->{amount}),
+        phonenum  => $sum_detail->{phonenum},
+        count     => scalar(@invoice_details_sort),
+      );
+      push @$details, $sum_detail;
+    } #if $self->sum_usage
 
   } # $cust_svc
 
@@ -924,6 +962,7 @@ sub check_chargable {
     && $cdr->carrierid ne $opt{'use_carrierid'} #ne otherwise 0 matches ''
     && ! $flags{'da_rewrote'};
 
+  # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
     if length($opt{'use_cdrtypenum'})
     && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
@@ -999,6 +1038,21 @@ sub calc_units {
   }
   $count;
 }
+
+# tells whether cust_bill_pkg_detail should return a single line for 
+# each phonenum
+sub sum_usage {
+  my $self = shift;
+  $self->option('output_format') =~ /^sum_/;
+}
+
+# and whether cust_bill should show a detail line for the service label 
+# (separate from usage details)
+sub hide_svc_detail {
+  my $self = shift;
+  $self->option('output_format') =~ /^sum_/;
+}
+
 
 1;
 
