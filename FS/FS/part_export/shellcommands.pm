@@ -80,7 +80,11 @@ tie my %options, 'Tie::IxHash',
                              'Radius group mapping to reason (via template user)',
 			    type  => 'textarea',
 			  },
-  'ignored_errors' => { label   => 'Regexes of errors to ignore, separated by newlines',
+  'ignore_all_output' => { 
+      label => 'Ignore all output and errors from the command',
+      type  => 'checkbox',
+  },
+  'ignored_errors' => { label   => 'Regexes of specific errors to ignore, separated by newlines',
                         type    => 'textarea'
                       },
 #  'no_queue' => { label => 'Run command immediately',
@@ -354,7 +358,8 @@ sub _export_command {
     host          => $self->machine,
     command       => $command_string,
     stdin_string  => $stdin_string,
-    ignored_errors => $self->option('ignored_errors') || '',
+    ignore_all_output => $self->option('ignore_all_output'),
+    ignored_errors    => $self->option('ignored_errors') || '',
   );
 
   if($self->option($action . '_no_queue')) {
@@ -447,6 +452,7 @@ sub _export_replace {
     host          => $self->machine,
     command       => $command_string,
     stdin_string  => $stdin_string,
+    ignore_all_output => $self->option('ignore_all_output'),
     ignored_errors => $self->option('ignored_errors') || '',
   );
 
@@ -480,12 +486,14 @@ sub ssh_cmd { #subroutine, not method
     $opt->{'user'}.'@'.$opt->{'host'},
     'default_stdin_fh' => $def_in
   );
+  # ignore_all_output doesn't override this
   die "Couldn't establish SSH connection: ". $ssh->error if $ssh->error;
 
   my $ssh_opt = {};
   $ssh_opt->{'stdin_data'} = $opt->{'stdin_string'}
     if exists($opt->{'stdin_string'}) and length($opt->{'stdin_string'});
   my ($output, $errput) = $ssh->capture2($ssh_opt, $opt->{'command'});
+  return if $opt->{'ignore_all_output'};
   die "Error running SSH command: ". $ssh->error if $ssh->error;
 
   if ($errput && $opt->{'ignored_errors'} && length($opt->{'ignored_errors'})) {

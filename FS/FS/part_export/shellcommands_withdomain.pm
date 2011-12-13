@@ -66,6 +66,10 @@ tie my %options, 'Tie::IxHash',
                type=>'select', options=>[qw(crypt md5)],
                default => 'crypt',
              },
+  'ignore_all_output' => {
+    label => 'Ignore all output and errors from the command',
+    type  => 'checkbox',
+  },
 ;
 
 %info = (
