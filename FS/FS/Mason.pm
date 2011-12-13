@@ -114,7 +114,6 @@ if ( -e $addl_handler_use_file ) {
                                         #selectlayers.html
   use Locale::Country;
   use Business::US::USPS::WebTools::AddressStandardization;
-  use HTML::GoogleMaps;
   use Geo::GoogleEarth::Pluggable;
   use LWP::UserAgent;
   use Storable qw( nfreeze thaw );
