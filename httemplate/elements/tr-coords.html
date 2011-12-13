@@ -1,0 +1,14 @@
+<TR>
+  <TD ALIGN="right"><% mt('Latitude') |h %></TD>
+  <TD COLSPAN=5>
+    <FONT STYLE="background-color: #ffffff; border: 1px solid #ffffff"><% $latitude %></FONT>
+    &nbsp;<% mt('Longitude') |h %>
+    <FONT STYLE="background-color: #ffffff; border: 1px solid #ffffff"><% $longitude %></FONT>
+    <& /elements/coord-links.html, $latitude, $longitude, $name &>
+  </TD>
+</TR>
+<%init>
+
+my ($latitude, $longitude, $name) = @_;
+
+</%init>

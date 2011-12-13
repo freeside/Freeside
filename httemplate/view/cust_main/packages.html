@@ -26,7 +26,7 @@
 
 <TABLE>
   <TR>
-    <TD ALIGN="left">
+    <TD ALIGN="left" VALIGN="top">
 
 % if ( @$packages ) {
 
@@ -85,6 +85,7 @@
 % # in this format, put all packages in one section
 <& /elements/table-grid.html &>
 <& packages/section.html,
+    'cust_main'     => $cust_main,
     'packages'      => $packages,
     'show_location' => $show_location,
  &>

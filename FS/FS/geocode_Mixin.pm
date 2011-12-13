@@ -4,6 +4,7 @@ use strict;
 use vars qw( $DEBUG $me );
 use Carp;
 use Locale::Country;
+use Geo::Coder::Googlev3; #compile time for now, until others are supported
 use FS::Record qw( qsearchs qsearch );
 use FS::Conf;
 use FS::cust_pkg;
@@ -129,6 +130,36 @@ sub location_label {
     if $self->country ne $cydefault;
 
   $line;
+}
+
+=item set_coord
+
+=cut
+
+sub set_coord {
+  my $self = shift;
+  my $pre = scalar(@_) ? shift : '';
+
+  #my $module = FS::Conf->new->config('geocode_module') || 'Geo::Coder::Googlev3';
+
+  my $geocoder = Geo::Coder::Googlev3->new;
+  my $location = $geocoder->geocode( location =>
+    $self->get($pre.'address1'). ','.
+    ( $self->get($pre.'address2') ? $self->get($pre.'address2').',' : '' ).
+    $self->get($pre.'city'). ','.
+    $self->get($pre.'state'). ','.
+    code2country($self->get($pre.'country'))
+  );
+
+  #errors?
+
+  my $geo_loc = $location->{'geometry'}{'location'} or return;
+  if ( $geo_loc->{'lat'} && $geo_loc->{'lng'} ) {
+    $self->set($pre.'latitude',  $geo_loc->{'lat'} );
+    $self->set($pre.'longitude', $geo_loc->{'lng'} );
+    $self->set($pre.'coord_auto', 'Y');
+  }
+
 }
 
 =item geocode DATA_VENDOR

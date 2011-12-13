@@ -1,0 +1,120 @@
+<& /elements/header-popup.html, {
+     title => '',#$name,
+     head  => $head,
+     etc   => 'onload="html_googlemaps_initialize()"',
+     nobr  => 1,
+   }
+&>
+
+<% $map_div %>
+
+<%init>
+
+my $name = js_string( scalar($cgi->param('name')) );
+
+my $point = [ map scalar($cgi->param($_)), qw( longitude latitude ) ];
+
+my( $head, $map_div ) = onload_render(
+  $name,
+  map scalar($cgi->param($_)), qw( lat lon )
+);
+
+#false laziness w/Mason.pm
+sub js_string {
+    my $string = shift;
+    $string =~ s/(['\\])/\\$1/g;
+    $string =~ s/\r/\\r/g;
+    $string =~ s/\n/\\n/g;
+    $string = "'". $string. "'";
+    return $string;
+}
+
+#subroutines below derived from HTML::GoogleMapsV3, but without using
+#Geo::Coder::Google or GPS::Point
+sub onload_render 
+{
+##	my $self = shift;
+        my( $name, $latitude, $longitude ) = @_;
+
+	#map_canvas { height: 100% }
+	
+	my $header='
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<style type="text/css">
+  		html { height: 100% }
+  		body { height: 100%; margin: 0px; padding: 0px }
+  		#map_canvas { height: 100% }
+	</style>
+	<script type="text/javascript" src="http://maps.google.com/maps/api/js?libraries=panoramio,geometry&v=3.4&sensor=false">
+	</script>
+	<script type="text/javascript">
+  	var lengthLine=0;
+  	function html_googlemaps_initialize() {
+    var latlng = new google.maps.LatLng(' .$latitude . ',' . $longitude . ');
+    var myOptions = {
+      zoom: 14,
+      center: latlng,
+      rotateControl: true,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    
+    map = new google.maps.Map(document.getElementById("map_canvas"),
+        myOptions);
+    
+    map.setOptions( {rotateControl : true });
+    
+
+	';
+
+##our own hacked in code for displaying a marker at the center
+$header .= '
+var markerOptions = {
+  map: map,
+  position: latlng,
+  title: '. $name. '
+};
+var marker = new google.maps.Marker(markerOptions);
+';
+
+##	if( defined $self->{polyline} ) {
+##		foreach my $polyline ( keys %{$self->{polyline}} ) {
+##			$header .= $self->{polyline}->{$polyline} . "\n";
+##		}
+##	}
+	
+	$header .= '}
+	</script>';
+	
+	
+	#my $div = '<div id="map_canvas" style="width:80%; height:75%"></div>';
+	my $div = '<div id="map_canvas" style="width:100%; height:100%"></div>';
+
+
+	$header .= "<SCRIPT>
+	
+	panoramioLayer = new google.maps.panoramio.PanoramioLayer();
+	
+	function panoramioOn(){ 
+								panoramioLayer.setMap(map);
+	}
+	function panoramioOff() {
+		panoramioLayer.setMap(null);
+	}
+	
+	function panoramioToggle() {
+		if( panoramioLayer.getMap() == null ) {
+			panoramioOn(); 
+		} else {
+			panoramioOff();
+		}
+	}	
+	
+
+		
+	</SCRIPT>";
+
+	return ($header,$div)
+	
+}
+
+</%init>

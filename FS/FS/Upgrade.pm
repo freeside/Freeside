@@ -47,6 +47,9 @@ sub upgrade_config {
     if $conf->exists('payment_receipt_email')
     || $conf->config('payment_receipt_msgnum');
 
+  $conf->touch('geocode-require_nw_coordinates')
+    if $conf->exists('svc_broadband-require-nw-coordinates');
+
   upgrade_overlimit_groups($conf);
   map { upgrade_overlimit_groups($conf,$_->agentnum) } qsearch('agent', {});
   

@@ -23,6 +23,7 @@ my $args_callback = sub {
   my $cust_location = new FS::cust_location {
     map { $_ => scalar($cgi->param($_)) }
         qw( address1 address2 city county state zip country
+            latitude longitude
             location_kind location_type location_number
           )
   };

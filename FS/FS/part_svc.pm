@@ -872,6 +872,21 @@ sub _upgrade_data {  #class method
     die $error if $error;
   }
 
+  my @badlabels = qsearch({
+    'table' => 'part_svc_column',
+    'hashref' => {},
+    'extra_sql' => 'WHERE columnlabel IN ('.
+      "'Descriptive label for this particular device.',".
+      "'IP address.  Leave blank for automatic assignment.',".
+      "'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',".
+      "'Maximum download speed for this service in Kbps.  0 denotes unlimited.')"
+  });
+  foreach my $col ( @badlabels ) {
+    $col->columnlabel('');
+    my $error = $col->replace;
+    die $error if $error;
+  }
+
 }
 
 =head1 BUGS

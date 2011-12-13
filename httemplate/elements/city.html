@@ -123,6 +123,9 @@ my $pre = $opt{'prefix'};
 my $text_style   = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 my $select_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 
+push @$text_style,   @{ $opt{'text_style'} }   if $opt{'text_style'};
+push @$select_style, @{ $opt{'select_style'} } if $opt{'select_style'};
+
 my @cities = cities( $opt{'county'}, $opt{'state'}, $opt{'country'} );
 my $saved_city = '';
 if ( scalar(@cities) > 1 || $cities[0] ) {

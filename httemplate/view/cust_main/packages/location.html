@@ -1,15 +1,27 @@
-<TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+<TD CLASS="inv" BGCOLOR="<% $bgcolor %>" WIDTH="20%">
 
 % unless ( $cust_pkg->locationnum ) {
   <I><FONT SIZE=-1>(<% mt('default service address') |h %>)</FONT><BR>
 % }
 
-  <% $loc->location_label( 'join_string'     => '<BR>',
-                           'double_space'    => ' &nbsp; ',
-                           'escape_function' => \&encode_entities,
-                           'countrydefault'  => $countrydefault,
-                         )
-  %>
+    <% $loc->location_label( 'join_string'     => '<BR>',
+                             'double_space'    => ' &nbsp; ',
+                             'escape_function' => \&encode_entities,
+                             'countrydefault'  => $countrydefault,
+                           )
+    %>
+
+%   if ( $loc->latitude && $loc->longitude ) {
+        <BR>
+        <FONT SIZE=-1>
+        <% $loc->latitude %>, <% $loc->longitude %>
+        <& /elements/coord-links.html,
+             $loc->latitude,
+             $loc->longitude,
+             $opt{'cust_main'}->name_short. ': '. $opt{'part_pkg'}->pkg
+        &>
+        </FONT>
+%   }
 
 % unless ( $cust_pkg->locationnum ) {
   </I>
@@ -19,10 +31,11 @@
 %      && $FS::CurrentUser::CurrentUser->access_right('Change customer package')
 %    )
 % {
+  <BR>
   <FONT SIZE=-1>
     (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
 %   if ( $cust_pkg->locationnum ) {
-&nbsp;(&nbsp;<%edit_location_link($cust_pkg->locationnum)%>&nbsp;)
+        (&nbsp;<%edit_location_link($cust_pkg->locationnum)%>&nbsp;)
 %   }
   </FONT>
 % } 

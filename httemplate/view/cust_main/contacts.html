@@ -65,6 +65,14 @@
   <TD ALIGN="right"><% mt('Country') |h %></TD>
   <TD BGCOLOR="#ffffff"><% code2country( $cust_main->get("${pre}country") ) %></TD>
 </TR>
+
+% if ( $cust_main->get($pre.'latitude') && $cust_main->get($pre.'longitude') ) {
+  <& /elements/tr-coords.html, $cust_main->get($pre.'latitude'),
+                               $cust_main->get($pre.'longitude'),
+                               $cust_main->name_short,
+  &>
+% }
+
 <TR>
   <TD ALIGN="right"><% $daytime_label %></TD>
   <TD COLSPAN=3 BGCOLOR="#ffffff">

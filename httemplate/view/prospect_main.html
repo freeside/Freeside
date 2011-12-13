@@ -51,7 +51,13 @@
            )
         %>
       </TD>
-  </TR>
+    </TR>
+%   if ( $cust_location->latitude && $cust_location->longitude ) {
+      <& /elements/tr-coords.html, $cust_location->latitude,
+                                   $cust_location->longitude,
+                                   $prospect_main->name,
+      &>
+%   }
 % }
 
 </TABLE>

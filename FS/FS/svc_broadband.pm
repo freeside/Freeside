@@ -347,10 +347,6 @@ sub check {
 
   return $x unless ref($x);
 
-  my $nw_coords = $conf->exists('svc_broadband-require-nw-coordinates');
-  my $lat_lower = $nw_coords ? 1 : -90;
-  my $lon_upper = $nw_coords ? -1 : 180;
-
   # remove delimiters
   my $mac_addr = uc($self->get('mac_addr'));
   $mac_addr =~ s/[-: ]//g;
@@ -366,8 +362,8 @@ sub check {
     || $self->ut_ipn('ip_addr')
     || $self->ut_hexn('mac_addr')
     || $self->ut_hexn('auth_key')
-    || $self->ut_coordn('latitude', $lat_lower, 90)
-    || $self->ut_coordn('longitude', -180, $lon_upper)
+    || $self->ut_coordn('latitude')
+    || $self->ut_coordn('longitude')
     || $self->ut_sfloatn('altitude')
     || $self->ut_textn('vlan_profile')
     || $self->ut_textn('plan_id')
@@ -397,6 +393,17 @@ sub check {
     my $addr_agentnum = $self->addr_block->agentnum;
     if ($addr_agentnum && $addr_agentnum != $cust_pkg->cust_main->agentnum) {
       return "Address block does not service this customer";
+    }
+  }
+
+  if ( $cust_pkg && ! $self->latitude && ! $self->longitude ) {
+    my $l = $cust_pkg->cust_location_or_main;
+    if ( $l->ship_latitude && $l->ship_longitude ) {
+      $self->latitude  = $l->ship_latitude;
+      $self->longitude = $l->ship_longitude;
+    } elsif ( $l->latitude && $l->longitude ) {
+      $self->latitude  = $l->latitude;
+      $self->longitude = $l->longitude;
     }
   }
 
