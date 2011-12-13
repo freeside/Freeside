@@ -658,6 +658,10 @@ on inbound processing status.
 =item default_prefix => "XXX": Also accept the phone number of the service prepended 
 with the chosen prefix.
 
+=item begin, end: Start and end of a date range, as unix timestamp.
+
+=item cdrtypenum: Only return CDRs with this type number.
+
 =item disable_src => 1: Only match on "charged_party", not "src".
 
 =item by_svcnum: not supported for svc_phone
@@ -695,6 +699,10 @@ sub get_cdrs {
     push @fields, 'src' if !$options{'disable_src'};
     $hash{'freesidestatus'} = $options{'status'}
       if exists($options{'status'});
+  }
+
+  if ($options{'cdrtypenum'}) {
+    $hash{'cdrtypenum'} = $options{'cdrtypenum'};
   }
   
   my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';

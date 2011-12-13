@@ -1296,6 +1296,9 @@ sub calc_units  { 0; }
 #fallback for everything except bulk.pm
 sub hide_svc_detail { 0; }
 
+#fallback for packages that can't/won't summarize usage
+sub sum_usage { 0; }
+
 =item recur_cost_permonth CUST_PKG
 
 recur_cost divided by freq (only supported for monthly and longer frequencies)

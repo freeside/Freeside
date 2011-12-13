@@ -916,9 +916,9 @@ sub usage_classes {
 
     my %seen = ();
     foreach my $detail ( grep { ref($_) } @{$self->get('details')} ) {
-      $seen{ ref($detail) eq 'HASH'
+      $seen{ (ref($detail) eq 'HASH'
                ? $detail->{'classnum'}
-               : $detail->[3]
+               : $detail->[3]) || ''
            } = 1;
     }
     keys %seen;

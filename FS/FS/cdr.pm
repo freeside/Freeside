@@ -573,6 +573,14 @@ my %export_names = (
     'name'           => 'Default with description field as destination',
     'invoice_header' => 'Caller,Date,Time,Number,Destination,Duration,Price',
   },
+  'sum_duration' => {
+    'name'           => 'Summary (one line per service, with duration)',
+    'invoice_header' => 'Caller,Calls,Minutes,Price',
+  },
+  'sum_count' => {
+    'name'           => 'Summary (one line per service, with count)',
+    'invoice_header' => 'Caller,Messages,Price',
+  },
 );
 
 my %export_formats = ();
@@ -621,6 +629,19 @@ sub export_formats {
       $duration_sub,                                   #DURATION
       #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
       sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
+    ],
+    'sum_duration' => [ 
+      # for summary formats, the CDR is a fictitious object containing the 
+      # total billsec and the phone number of the service
+      'src',
+      sub { my($cdr, %opt) = @_; $opt{count} },
+      sub { my($cdr, %opt) = @_; int($opt{seconds}/60).'m' },
+      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
+    ],
+    'sum_count' => [
+      'src',
+      sub { my($cdr, %opt) = @_; $opt{count} },
+      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
     ],
     'basic' => [
       sub { time2str('%d %b - %I:%M %p', shift->calldate_unix) },
@@ -671,6 +692,8 @@ sub export_formats {
 }
 
 =item downstream_csv OPTION => VALUE ...
+
+Returns a string of formatted call details for display on an invoice.
 
 Options:
 

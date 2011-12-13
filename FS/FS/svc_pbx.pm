@@ -283,6 +283,10 @@ with the chosen prefix.
 =item by_svcnum => 1: Select CDRs where the svcnum field matches, instead of 
 title/charged_party.  Normally this field is set after processing.
 
+=item begin, end: Start and end of date range, as unix timestamp.
+
+=item cdrtypenum: Only return CDRs with this type number.
+
 =back
 
 =cut
@@ -295,7 +299,11 @@ sub get_cdrs {
   my @fields = ( 'charged_party' );
   $hash{'freesidestatus'} = $options{'status'}
     if exists($options{'status'});
-  
+
+  if ($options{'cdrtypenum'}) {
+    $hash{'cdrtypenum'} = $options{'cdrtypenum'};
+  }
+
   my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';
 
   if ( $options{'by_svcnum'} ) {
