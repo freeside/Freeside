@@ -46,6 +46,7 @@ if (ref($_[0]) eq 'HASH') {
 }
 
 my $label = $params->{'label'};
+$label =~ s/ /&nbsp;/g;
 my $onclick = include('/elements/popup_link_onclick.html', $params);
 
 </%init>

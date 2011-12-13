@@ -135,12 +135,18 @@ sub check {
     || $self->ut_textn('state')
     || $self->ut_country('country')
     || $self->ut_zip('zip', $self->country)
+    || $self->ut_coordn('latitude')
+    || $self->ut_coordn('longitude')
+    || $self->ut_enum('coord_auto', [ '', 'Y' ])
     || $self->ut_alphan('location_type')
     || $self->ut_textn('location_number')
     || $self->ut_enum('location_kind', [ '', 'R', 'B' ] )
     || $self->ut_alphan('geocode')
   ;
   return $error if $error;
+
+  $self->set_coord
+    unless $self->latitude && $self->longitude;
 
   return "No prospect or customer!" unless $self->prospectnum || $self->custnum;
   return "Prospect and customer!"       if $self->prospectnum && $self->custnum;

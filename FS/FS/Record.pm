@@ -3,7 +3,7 @@ package FS::Record;
 use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              %virtual_fields_cache
-             $conf $conf_encryption $money_char
+             $conf $conf_encryption $money_char $lat_lower $lon_upper
              $me
              $nowarn_identical $nowarn_classload
              $no_update_diff $no_check_foreign
@@ -56,18 +56,25 @@ my $rsa_decrypt;
 $conf = '';
 $conf_encryption = '';
 FS::UID->install_callback( sub {
+
   eval "use FS::Conf;";
   die $@ if $@;
   $conf = FS::Conf->new; 
   $conf_encryption = $conf->exists('encryption');
   $money_char = $conf->config('money_char') || '$';
+  my $nw_coords = $conf->exists('geocode-require_nw_coordinates');
+  $lat_lower = $nw_coords ? 1 : -90;
+  $lon_upper = $nw_coords ? -1 : 180;
+
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
+
   if ( driver_name eq 'Pg' ) {
     eval "use DBD::Pg ':pg_types'";
     die $@ if $@;
   } else {
     eval "sub PG_BYTEA { die 'guru meditation #9: calling PG_BYTEA when not running Pg?'; }";
   }
+
 } );
 
 =head1 NAME
@@ -2511,11 +2518,17 @@ for lower and upper bounds, respectively.
 =cut
 
 sub ut_coord {
-
   my ($self, $field) = (shift, shift);
 
-  my $lower = shift if scalar(@_);
-  my $upper = shift if scalar(@_);
+  my($lower, $upper);
+  if ( $field =~ /latitude/ ) {
+    $lower = $lat_lower;
+    $upper = 90;
+  } elsif ( $field =~ /longitude/ ) {
+    $lower = -180;
+    $upper = $lon_upper;
+  }
+
   my $coord = $self->getfield($field);
   my $neg = $coord =~ s/^(-)//;
 
@@ -2563,7 +2576,7 @@ sub ut_coordn {
 
   my ($self, $field) = (shift, shift);
 
-  if ($self->getfield($field) =~ /^$/) {
+  if ($self->getfield($field) =~ /^\s*$/) {
     return '';
   } else {
     return $self->ut_coord($field, @_);

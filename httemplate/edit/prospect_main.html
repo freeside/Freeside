@@ -184,8 +184,10 @@ my $javascript = <<END;
       var c = f.company;
       if        ( f.residential_commercial_Residential.checked ) {
         c.disabled = true;
+        c.style.backgroundColor = '#dddddd';
       } else if ( f.residential_commercial_Commercial.checked ) {
         c.disabled = false;
+        c.style.backgroundColor = '#ffffff';
       }
     }
   </SCRIPT>

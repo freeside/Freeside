@@ -1,0 +1,22 @@
+<& /elements/init_overlib.html &>
+
+<& /elements/popup_link.html,
+     'action'      => $p. 'view/map.html?'. $query,
+     'label'       => mt('map'),
+     'actionlabel' => $name,
+     'width'       => 763,
+     'height'      => 575,
+     #'color'
+&>
+
+<A HREF="<%$p%>view/kml.cgi?<% $query %>"><% mt('earth') |h %></A>
+
+<%init>
+
+my ($latitude, $longitude, $name) = @_;
+
+my $query = 'name='. uri_escape($name).
+            ';lat='. $latitude.
+            ';lon='. $longitude;
+
+</%init>

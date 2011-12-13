@@ -270,7 +270,9 @@ if ( $cgi->param('error') ) {
 my $editable = $cust_main ? 0 : 1; #could use explicit control
 my $addnew = $cust_main ? 1 : ( $locationnum>0 ? 0 : 1 );
 
-my @location_fields = qw( address1 address2 city county state zip country );
+my @location_fields = qw( address1 address2 city county state zip country
+                          latitude longitude
+                        );
 if ( $opt{'alt_format'} ) {
     push @location_fields, qw( location_type location_number location_kind );
 }
