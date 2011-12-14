@@ -1,5 +1,14 @@
 <& elements/edit.html,
      name_singular => 'string', #mt?
      table         => 'msgcat',
+     fields        => [ { field=>'msgcode', type=>'fixed' },
+                        { field=>'locale',  type=>'fixed' },
+                        'msg',
+                      ],
+     labels        => { 'msgnum'  => 'String',
+                        'msgcode' => 'Code',
+                        'locale'  => 'Locale',
+                        'msg'     => 'String',
+                      },
      viewall_dir   => 'browse',
 &>
