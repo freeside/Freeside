@@ -1,4 +1,7 @@
 <& elements/process.html, 
     table       => 'msgcat',
-    viewall_dir => 'browse',
+    #viewall_dir => 'browse',
+    redirect    => sub { my($cgi, $msgcat) = @_;
+                         $p. 'browse/msgcat.html?locale='. $msgcat->locale;
+                       },
 &>
