@@ -28,11 +28,13 @@ Returns a list of the available locales.
 =cut
 
 tie our %locales, 'Tie::IxHash',
-  'en_CA', { name => 'English',     country => 'Canada', },
-  'en_US', { name => 'English',     country => 'United States', },
-  'fr_CA', { name => 'French',      country => 'Canada', },
-  'fr_FR', { name => 'French',      country => 'France', },
-  'iw_IL', { name => 'Hebrew',      country => 'Israel', rtl=>1, },
+  'en_CA', { name => 'English',        country => 'Canada', },
+  'en_US', { name => 'English',        country => 'United States', },
+  'fr_CA', { name => 'French',         country => 'Canada', },
+  'fr_FR', { name => 'French',         country => 'France', },
+  'fr_HT', { name => 'French',         country => 'Haiti', },
+  'ht_HT', { name => 'Haitian Creole', country => 'Haiti', },
+  'iw_IL', { name => 'Hebrew',         country => 'Israel', rtl=>1, },
 ;
 
 sub locales {
