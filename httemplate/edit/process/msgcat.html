@@ -2,6 +2,6 @@
     table       => 'msgcat',
     #viewall_dir => 'browse',
     redirect    => sub { my($cgi, $msgcat) = @_;
-                         popurl(3). 'browse/msgcat.html?locale='. $msgcat->locale;
+                         popurl(3). 'browse/msgcat.html?locale='. $msgcat->locale.';dummy=';
                        },
 &>
