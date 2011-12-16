@@ -264,7 +264,10 @@ if ( $cgi->param('out') ) {
     #warn "neither nottax nor istax parameters specified";
   }
 
-  if ( $cgi->param('taxclassNULL') ) {
+  if ( $cgi->param('taxclassNULL')
+       && ! $cgi->param('istax')  #no taxclass in this case
+     )
+  {
 
     my %hash = ( 'country' => scalar($cgi->param('country')) );
     foreach (qw( state county )) {
