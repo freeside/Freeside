@@ -14,7 +14,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: F5BigIp.pm,v 1.1 2010-12-27 00:03:48 ivan Exp $
+# $Id: F5BigIp.pm,v 1.2 2011-12-16 22:43:52 ivan Exp $
 # Shawn Ferry <sferry at sevenspace dot com> <lalartu at obscure dot org>
 
 # F5 BigIp Load Balancer
@@ -167,8 +167,8 @@ sub discover
     my $result = $dd->retrieveSnmpOIDs( '4.x_globalAttrProductCode' );
     my $product_code = $result->{'4.x_globalAttrProductCode'};
 
-    $product_name = %f5_product->{$product_code}->{'product'};
-    if( %f5_product->{$product_code}->{'supported'} )
+    $product_name = $f5_product{$product_code}->{'product'};
+    if( $f5_product{$product_code}->{'supported'} )
     {
         $devdetails->setCap( 'BigIp_' . $product_name );
     }
