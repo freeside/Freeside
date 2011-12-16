@@ -788,40 +788,41 @@ sub calc_usage {
         } #if(there is a rate_detail)
  
 
-        if ( $charge > 0 ) {
-          #just use FS::cust_bill_pkg_detail objects?
-          my $call_details;
-          my $phonenum = $svc_x->phonenum;
+        #if ( $charge > 0 ) {
+        # generate a detail record for every call; filter out $charge = 0 
+        # later.
+        my $call_details;
+        my $phonenum = $svc_x->phonenum;
 
-          if ( scalar(@call_details) == 1 ) {
-            $call_details =
-              { format      => 'C',
-                detail      => $call_details[0],
-                amount      => $charge,
-                classnum    => $classnum,
-                phonenum    => $phonenum,
-                accountcode => $cdr->accountcode,
-                startdate   => $cdr->startdate,
-                duration    => $seconds,
-                regionname  => $regionname,
-              };
-          } else { #only used for $rating_method eq 'upstream' now
-                   # and for sum_ formats
-            $csv->combine(@call_details);
-            $call_details =
-              { format      => 'C',
-                detail      => $csv->string,
-                amount      => $charge,
-                classnum    => $classnum,
-                phonenum    => $phonenum,
-                accountcode => $cdr->accountcode,
-                startdate   => $cdr->startdate,
-                duration    => $seconds,
-                regionname  => $regionname,
-              };
-          }
-          push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
+        if ( scalar(@call_details) == 1 ) {
+          $call_details =
+          { format      => 'C',
+            detail      => $call_details[0],
+            amount      => $charge,
+            classnum    => $classnum,
+            phonenum    => $phonenum,
+            accountcode => $cdr->accountcode,
+            startdate   => $cdr->startdate,
+            duration    => $seconds,
+            regionname  => $regionname,
+          };
+        } else { #only used for $rating_method eq 'upstream' now
+          # and for sum_ formats
+          $csv->combine(@call_details);
+          $call_details =
+          { format      => 'C',
+            detail      => $csv->string,
+            amount      => $charge,
+            classnum    => $classnum,
+            phonenum    => $phonenum,
+            accountcode => $cdr->accountcode,
+            startdate   => $cdr->startdate,
+            duration    => $seconds,
+            regionname  => $regionname,
+          };
         }
+        push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
+        #} $charge > 0
 
         # if the customer flag is on, call "downstream_csv" or something
         # like it to export the call downstream!
@@ -844,39 +845,42 @@ sub calc_usage {
       my @sorted_invoice_details = 
         sort { @{$a}[1] <=> @{$b}[1] } @invoice_details_sort;
       foreach my $sorted_call_detail ( @sorted_invoice_details ) {
-        push @$details, @{$sorted_call_detail}[0];
+        my $d = $sorted_call_detail->[0];
+        push @$details, $d if $d->{amount} > 0;
       }
     }
     else { #$self->sum_usage
-      my $sum_detail = {
-        amount    => 0,
-        format    => 'C',
-        classnum  => '', #XXX
-        duration  => 0,
-        phonenum  => $svc_x->phonenum,
-        accountcode => '', #XXX
-        startdate => '', #XXX
-        regionnam => '',
-      };
-      # combine the entire set of CDRs
-      foreach ( @invoice_details_sort ) {
-        $sum_detail->{amount} += $_->[0]{amount};
-        $sum_detail->{duration} += $_->[0]{duration};
-      }
-      my $total_cdr = FS::cdr->new({
-          'billsec' => $sum_detail->{duration},
-          'src'     => $sum_detail->{phonenum},
-      });
-      $sum_detail->{detail} = $total_cdr->downstream_csv(
-        format    => $output_format,
-        seconds   => $sum_detail->{duration},
-        charge    => sprintf('%.2f',$sum_detail->{amount}),
-        phonenum  => $sum_detail->{phonenum},
-        count     => scalar(@invoice_details_sort),
-      );
-      push @$details, $sum_detail;
+      my $count = scalar(@invoice_details_sort);
+      if ( $count > 0 ) {
+        my $sum_detail = {
+          amount    => 0,
+          format    => 'C',
+          classnum  => '', #XXX
+          duration  => 0,
+          phonenum  => $svc_x->phonenum,
+          accountcode => '', #XXX
+          startdate => '', #XXX
+          regionnam => '',
+        };
+        # combine the entire set of CDRs
+        foreach ( @invoice_details_sort ) {
+          $sum_detail->{amount} += $_->[0]{amount};
+          $sum_detail->{duration} += $_->[0]{duration};
+        }
+        my $total_cdr = FS::cdr->new({
+            'billsec' => $sum_detail->{duration},
+            'src'     => $sum_detail->{phonenum},
+        });
+        $sum_detail->{detail} = $total_cdr->downstream_csv(
+          format    => $output_format,
+          seconds   => $sum_detail->{duration},
+          charge    => sprintf('%.2f',$sum_detail->{amount}),
+          phonenum  => $sum_detail->{phonenum},
+          count     => $count,
+        );
+        push @$details, $sum_detail;
+      } # if $count > 0
     } #if $self->sum_usage
-
   } # $cust_svc
 
   unshift @$details, { format => 'C',
