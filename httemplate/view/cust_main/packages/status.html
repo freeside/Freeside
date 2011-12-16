@@ -241,7 +241,7 @@ unless ( $part_pkg->is_prepaid ) {
 sub myfreq {
   my $part_pkg = shift;
   my $freq = $part_pkg->freq_pretty;
-  $freq =~ s/ /&nbsp;/g;
+  #$freq =~ s/ /&nbsp;/g;
   $freq;
 }
 
