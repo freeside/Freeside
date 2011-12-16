@@ -12,3 +12,9 @@ tempaltes/default-rrd.html               # title beautification
 tempaltes/default-dir.html               # add interface popups
 sup/webplain/torrus.css                  # skinning
 bin/srvderive.in                         # --end and commit bugfixes
+
+#backport from torrus 2.01, so not really a modification :)
+perllib/Torrus/Devdiscover/Arbor_E.pm
+perllib/Torrus/Devdiscover/F5BigIP.pm
+perllib/Torrus/Devdiscover/FTPS.pm
+

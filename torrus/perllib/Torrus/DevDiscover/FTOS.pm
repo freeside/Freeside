@@ -15,7 +15,7 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-# $Id: FTOS.pm,v 1.1 2010-12-27 00:03:54 ivan Exp $
+# $Id: FTOS.pm,v 1.1.1.1.2.1 2011-12-16 22:43:56 ivan Exp $
 # Jon Nistor <nistor at snickers.org>
 
 # Force10 Networks Real Time Operating System Software
@@ -165,7 +165,7 @@ sub discover
     if( defined( $chassisSerial ) )
     {
         $data->{'param'}{'comment'} =
-            %f10ChassisType->{$chassisSerial->{'chType'}} .
+            $f10ChassisType{$chassisSerial->{'chType'}} .
             ', Hw Serial#: ' . $chassisSerial->{'chSerialNumber'};
     }
     else
@@ -191,7 +191,7 @@ sub discover
                                      ( $dd->oiddef('chRpmCpuIndex') ) )
             {
                 my $cpuType = $dd->oiddef('chRpmCpuIndex') . "." . $ftosCPUidx;
-                my $cpuName = %f10CPU->{$ftosCpuTable->{$cpuType}};
+                my $cpuName = $f10CPU{$ftosCpuTable->{$cpuType}};
 
                 Debug("FTOS::CPU index $ftosCPUidx, $cpuName");
 
