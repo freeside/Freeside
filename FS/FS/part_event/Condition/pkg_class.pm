@@ -11,8 +11,8 @@ sub description {
 }
 
 sub eventtable_hashref {
-    { 'cust_main' => 0,
-      'cust_bill' => 0,
+    { 'cust_main' => 1,
+      'cust_bill' => 1,
       'cust_pkg'  => 1,
     };
 }
@@ -28,11 +28,22 @@ sub option_fields {
 }
 
 sub condition {
-  my( $self, $cust_pkg ) = @_;
+  my( $self, $object ) = @_;
 
-  #XXX test
+  # interpretation depends on the eventtable
   my $hashref = $self->option('pkgclass') || {};
-  $hashref->{ $cust_pkg->part_pkg->classnum };
+  if ( $object->isa('FS::cust_pkg') ) {
+    # is this package in that class?
+    $hashref->{ $object->part_pkg->classnum };
+  }
+  elsif ( $object->isa('FS::cust_main') ) {
+    # does this customer have an active package in that class?
+    grep { $hashref->{ $_->part_pkg->classnum } } $object->ncancelled_pkgs;
+  }
+  elsif ( $object->isa('FS::cust_bill') ) {
+    # does a package of that class appear on this invoice?
+    grep { $hashref->{ $_->part_pkg->classnum } } $object->cust_pkg;
+  }
 }
 
 1;
