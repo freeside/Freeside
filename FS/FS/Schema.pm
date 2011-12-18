@@ -3,9 +3,9 @@ package FS::Schema;
 use vars qw(@ISA @EXPORT_OK $DEBUG $setup_hack %dbdef_cache);
 use subs qw(reload_dbdef);
 use Exporter;
-use DBIx::DBSchema 0.33;
+use DBIx::DBSchema 0.40; #0.40 for mysql upgrade fixes
 use DBIx::DBSchema::Table;
-use DBIx::DBSchema::Column 0.06;
+use DBIx::DBSchema::Column;
 use DBIx::DBSchema::Index;
 
 @ISA = qw(Exporter);
@@ -2668,19 +2668,19 @@ sub tables_hashref {
 
     'rate_detail' => {
       'columns' => [
-        'ratedetailnum',   'serial',  '',     '', '', '', 
-        'ratenum',         'int',     '',     '', '', '', 
-        'orig_regionnum',  'int', 'NULL',     '', '', '', 
-        'dest_regionnum',  'int',     '',     '', '', '', 
-        'min_included',    'int',     '',     '', '', '', 
-        'conn_charge',     'decimal', '', '10,4', '0', '',
-        'conn_sec',        'int',     '',     '', '0', '',
-        'min_charge',      'decimal', '', '10,5', '', '', #@money_type, '', '', 
-        'sec_granularity', 'int',     '',     '', '', '', 
-        'ratetimenum',     'int', 'NULL',     '', '', '',
-        'classnum',        'int', 'NULL',     '', '', '', 
-        'cdrtypenum',      'int', 'NULL',     '', '', '',
-        'region_group', 'char', 'NULL',       1, '', '', 
+        'ratedetailnum',   'serial',  '',     '',      '', '', 
+        'ratenum',         'int',     '',     '',      '', '', 
+        'orig_regionnum',  'int', 'NULL',     '',      '', '', 
+        'dest_regionnum',  'int',     '',     '',      '', '', 
+        'min_included',    'int',     '',     '',      '', '', 
+        'conn_charge',     'decimal', '', '10,4', '0.0000', '',
+        'conn_sec',        'int',     '',     '',      '0', '',
+        'min_charge',      'decimal', '', '10,5',       '', '',
+        'sec_granularity', 'int',     '',     '',       '', '', 
+        'ratetimenum',     'int', 'NULL',     '',       '', '',
+        'classnum',        'int', 'NULL',     '',       '', '', 
+        'cdrtypenum',      'int', 'NULL',     '',       '', '',
+        'region_group', 'char', 'NULL',        1,       '', '', 
       ],
       'primary_key' => 'ratedetailnum',
       'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],
