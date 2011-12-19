@@ -161,6 +161,16 @@ sub label_long {
   $self->label(@_);
 }
 
+sub cust_main {
+  my $self = shift;
+  (($self->cust_svc || return)->cust_pkg || return)->cust_main || return
+}
+
+sub cust_linked {
+  my $self = shift;
+  defined($self->cust_main);
+}
+
 =item check
 
 Checks the validity of fields in this record.
@@ -318,7 +328,11 @@ sub insert {
 
   }
 
-  $self->nms_ip_insert;
+  my $nms_ip_error = $self->nms_ip_insert;
+  if ( $nms_ip_error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "error queuing IP insert: $nms_ip_error";
+  }
 
   if ( exists $options{'jobnums'} ) {
     push @{ $options{'jobnums'} }, @jobnums;
@@ -1175,11 +1189,14 @@ sub nms_ip_insert {
                      $conf->config('nms-auto_add-svc_ips');
   my $ip_field = $self->table_info->{'ip_field'};
 
-  #XXX perhaps i should be job-queued, i take awhile, right?
-  my $nms = new FS::NetworkMonitoringSystem;
-  $nms->add_router( $self->$ip_field(),
-                    $conf->config('nms-auto_add-community')
-                  );
+  my $queue = FS::queue->new( {
+                'job'    => 'FS::NetworkMonitoringSystem::queued_add_router',
+                'svcnum' => $self->svcnum,
+  } );
+  $queue->insert( 'FS::NetworkMonitoringSystem',
+                  $self->$ip_field(),
+                  $conf->config('nms-auto_add-community')
+                );
 }
 
 =item nms_delip
