@@ -5,6 +5,7 @@ use vars qw( @ISA $noexport_hack $DEBUG $me
              $overlimit_missing_cust_svc_nonfatal_kludge );
 use Carp qw( cluck carp croak confess ); #specify cluck have to specify them all
 use Scalar::Util qw( blessed );
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
 use FS::cust_svc;
@@ -13,6 +14,7 @@ use FS::queue;
 use FS::cust_main;
 use FS::inventory_item;
 use FS::inventory_class;
+use FS::NetworkMonitoringSystem;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -324,6 +326,12 @@ sub insert {
       }
     }
 
+  }
+
+  my $nms_ip_error = $self->nms_ip_insert;
+  if ( $nms_ip_error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "error queuing IP insert: $nms_ip_error";
   }
 
   if ( exists $options{'jobnums'} ) {
@@ -1168,6 +1176,35 @@ sub getstatus_html {
 
   $html;
 
+}
+
+=item nms_ip_insert
+
+=cut
+
+sub nms_ip_insert {
+  my $self = shift;
+  my $conf = new FS::Conf;
+  return '' unless grep { $self->table eq $_ }
+                     $conf->config('nms-auto_add-svc_ips');
+  my $ip_field = $self->table_info->{'ip_field'};
+
+  my $queue = FS::queue->new( {
+                'job'    => 'FS::NetworkMonitoringSystem::queued_add_router',
+                'svcnum' => $self->svcnum,
+  } );
+  $queue->insert( 'FS::NetworkMonitoringSystem',
+                  $self->$ip_field(),
+                  $conf->config('nms-auto_add-community')
+                );
+}
+
+=item nms_delip
+
+=cut
+
+sub nms_ip_delete {
+#XXX not yet implemented
 }
 
 =back
