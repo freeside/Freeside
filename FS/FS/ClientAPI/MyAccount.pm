@@ -1716,9 +1716,10 @@ sub list_support_usage {
 }
 
 sub _list_cdr_usage {
-  my($svc_phone, $begin, $end) = @_;
-  map [ $_->downstream_csv('format' => 'default', 'keeparray' => 1) ], #XXX config for format
-                       $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, );
+  # XXX CDR type support...
+  my($svc_phone, $begin, $end, %opt) = @_;
+  map [ $_->downstream_csv(%opt, 'keeparray' => 1) ],
+    $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, );
 }
 
 sub list_cdr_usage {
@@ -1743,12 +1744,26 @@ sub _usage_details {
   return { 'error' => 'No service selected in list_svc_usage' } 
     unless $svc_x;
 
-  my $header = $svcdb eq 'svc_phone'
-                 ? [ split(',', FS::cdr::invoice_header('default') ) ]  #XXX
-                 : [];
-
   my $cust_pkg = $svc_x->cust_svc->cust_pkg;
   my $freq     = $cust_pkg->part_pkg->freq;
+  my %callback_opt;
+  my $header = [];
+  if ( $svcdb eq 'svc_phone' ) {
+    my $format   = $cust_pkg->part_pkg->option('output_format') || '';
+    $format = '' if $format =~ /^sum_/;
+    # sensible default if there is no format or it's a summary format
+    if ( $cust_pkg->part_pkg->plan eq 'voip_inbound' ) {
+      $format ||= 'source_default';
+      $callback_opt{inbound} = 1;
+    }
+    else {
+      $format ||= 'default';
+    }
+    
+    $callback_opt{format} = $format;
+    $header = [ split(',', FS::cdr::invoice_header($format) ) ];
+  }
+
   my $start    = $cust_pkg->setup;
   #my $end      = $cust_pkg->bill; # or time?
   my $end      = time;
@@ -1758,7 +1773,9 @@ sub _usage_details {
     $p->{ending}    = $end;
   }
 
-  my (@usage) = &$callback($svc_x, $p->{beginning}, $p->{ending});
+  my (@usage) = &$callback($svc_x, $p->{beginning}, $p->{ending}, 
+    %callback_opt
+  );
 
   #kinda false laziness with FS::cust_main::bill, but perhaps
   #we should really change this bit to DateTime and DateTime::Duration

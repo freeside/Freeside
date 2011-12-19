@@ -9,7 +9,7 @@
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
 } ''; %>
- 
+
 <TABLE WIDTH="100%">
   <TR>
     <TD WIDTH="50%">
@@ -32,9 +32,11 @@
 </TABLE>
 <TABLE BGCOLOR="#cccccc">
   <TR>
-<%= foreach my $header (@header) {
-      $OUT .= qq(<TH ALIGN="right">$header</TH>);
-    }
+<%= $space = '<TD>&nbsp;</TD>';
+  $OUT .= join($space, 
+    map { '<TH ALIGN="right">'.$_.'</TH>' } 
+    @header
+  )
 %>
   </TR>
 <%= my $total = 0;
@@ -42,7 +44,9 @@
     my $dtotal = 0;
     foreach my $usage ( @usage ) {
       $OUT .= '<TR>';
-      $OUT .= qq(<TD>$_</TD>) foreach @{$usage};
+      $OUT .= join($space,
+        map { "<TD>$_</TD>" } @{$usage}
+      );
       $OUT .= '</TR>';
     }
 %>
