@@ -503,7 +503,16 @@ sub check {
 
   $self->countrycode(1) unless $self->countrycode;
 
-  unless ( length($self->sip_password) ) {
+  unless ( length($self->pin) ) {
+    my $random_pin = $conf->config('svc_phone-random_pin');
+    if ( $random_pin =~ /^\d+$/ ) {
+      $self->pin(
+        join('', map int(rand(10)), 0..($random_pin-1))
+      );
+    }
+  }
+
+  unless ( length($self->sip_password) ) { # option for this?
 
     $self->sip_password(
       join('', map $pw_set[ int(rand $#pw_set) ], (0..16) )

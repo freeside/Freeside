@@ -4,9 +4,34 @@ use vars qw(@ISA $me %info);
 use MIME::Base64;
 use Tie::IxHash;
 use FS::part_export;
+use Date::Format qw( time2str );
 
 @ISA = qw(FS::part_export);
 $me = '[FS::part_export::netsapiens]';
+
+#These export options set default values for the various commands
+#to create/update objects.  Add more options as needed.
+
+my %tristate = ( type => 'select', options => [ '', 'yes', 'no' ]);
+
+tie my %subscriber_fields, 'Tie::IxHash',
+  'admin_vmail'     => { label=>'VMail Prov.', %tristate },
+  'dial_plan'       => { label=>'Dial Translation' },
+  'dial_policy'     => { label=>'Dial Permission' },
+  'call_limit'      => { label=>'Call Limit' },
+  'domain_dir'      => { label=>'Dir Lst', %tristate },
+;
+
+tie my %registrar_fields, 'Tie::IxHash',
+  'authenticate_register' => { label=>'Authenticate Registration', %tristate },
+  'authentication_realm'  => { label=>'Authentication Realm' },
+;
+
+tie my %dialplan_fields, 'Tie::IxHash',
+  'responder'       => { label=>'Application' }, #this could be nicer
+  'from_name'       => { label=>'Source Name Translation' },
+  'from_user'       => { label=>'Source User Translation' },
+;
 
 tie my %options, 'Tie::IxHash',
   'login'           => { label=>'NetSapiens tac2 User API username' },
@@ -17,6 +42,11 @@ tie my %options, 'Tie::IxHash',
   'device_url'      => { label=>'NetSapiens tac2 Device URL' },
   'domain'          => { label=>'NetSapiens Domain' },
   'debug'           => { label=>'Enable debugging', type=>'checkbox' },
+  %subscriber_fields,
+  %registrar_fields,
+  %dialplan_fields,
+  'did_countrycode' => { label=>'Use country code in DID destination',
+                         type =>'checkbox' },
 ;
 
 %info = (
@@ -45,6 +75,8 @@ sub ns_device_command {
 sub _ns_command {
   my( $self, $prefix, $method, $command ) = splice(@_,0,4);
 
+  # kludge to curb excessive paranoia in LWP 6.0+
+  local $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
   eval 'use REST::Client';
   die $@ if $@;
 
@@ -106,8 +138,12 @@ sub ns_devicename {
 sub ns_dialplan {
   my($self, $svc_phone) = (shift, shift);
 
-  #my $countrycode = $svc_phone->countrycode;
+  my $countrycode = $svc_phone->countrycode || '1';
   my $phonenum    = $svc_phone->phonenum;
+  # Only in the dialplan destination, nowhere else
+  if ( $self->option('did_countrycode') ) {
+    $phonenum = $countrycode . $phonenum;
+  }
 
   #"/dialplans/DID+Table/dialplan_config/sip:$countrycode$phonenum\@*"
   "/domains_config/admin-only/dialplans/DID+Table/dialplan_config/sip:$phonenum\@*,*,*,*,*,*,*";
@@ -129,26 +165,41 @@ sub ns_create_or_update {
   #my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
 
+  #deal w/unaudited netsapiens services?
+  my $cust_main = $svc_phone->cust_svc->cust_pkg->cust_main;
+
   my( $firstname, $lastname );
   if ( $svc_phone->phone_name =~ /^\s*(\S+)\s+(\S.*\S)\s*$/ ) {
     $firstname = $1;
     $lastname  = $2;
   } else {
-    #deal w/unaudited netsapiens services?
-    my $cust_main = $svc_phone->cust_svc->cust_pkg->cust_main;
     $firstname = $cust_main->get('first');
     $lastname  = $cust_main->get('last');
   }
 
+  my ($email) = ($cust_main->invoicing_list_emailonly, '');
+  my $custnum = $cust_main->custnum;
+
   # Piece 1 (already done) - User creation
+  
+  $phonenum =~ /^(\d{3})/;
+  my $area_code = $1;
 
   my $ns = $self->ns_command( 'PUT', $self->ns_subscriber($svc_phone), 
     'subscriber_login' => $phonenum.'@'.$domain,
     'firstname'        => $firstname,
     'lastname'         => $lastname,
     'subscriber_pin'   => $svc_phone->pin,
-    'dial_plan'        => 'Default', #config?
-    'dial_policy'      => $dial_policy,
+    'callid_name'      => "$firstname $lastname",
+    'callid_nmbr'      => $phonenum,
+    'callid_emgr'      => $phonenum,
+    'email_address'    => $email,
+    'area_code'        => $area_code,
+    'srv_code'         => $custnum,
+    'date_created'     => time2str('%Y-%m-%d %H:%M:%S', time),
+    $self->options_named(keys %subscriber_fields),
+    # allow this to be overridden for suspend
+    ( $dial_policy ? ('dial_policy' => $dial_policy) : () ),
   );
 
   if ( $ns->responseCode !~ /^2/ ) {
@@ -159,7 +210,10 @@ sub ns_create_or_update {
   #Piece 2 - sip device creation 
 
   my $ns2 = $self->ns_command( 'PUT', $self->ns_registrar($svc_phone),
-    'termination_match' => $self->ns_devicename($svc_phone)
+    'termination_match' => $self->ns_devicename($svc_phone),
+    'authentication_key'=> $svc_phone->sip_password,
+    'srv_code'          => $custnum,
+    $self->options_named(keys %registrar_fields),
   );
 
   if ( $ns2->responseCode !~ /^2/ ) {
@@ -172,6 +226,8 @@ sub ns_create_or_update {
   my $ns3 = $self->ns_command( 'PUT', $self->ns_dialplan($svc_phone),
     'to_user' => $phonenum,
     'to_host' => $domain,
+    'plan_description' => "$custnum: $lastname, $firstname", #config?
+    $self->options_named(keys %dialplan_fields),
   );
 
   if ( $ns3->responseCode !~ /^2/ ) {
@@ -185,9 +241,23 @@ sub ns_create_or_update {
 sub ns_delete {
   my($self, $svc_phone) = (shift, shift);
 
-  my $ns = $self->ns_command( 'DELETE', $self->ns_subscriber($svc_phone) );
+  # do the create steps in reverse order, though I'm not sure it matters
 
-  #delete other things?
+  my $ns3 = $self->ns_command( 'DELETE', $self->ns_dialplan($svc_phone) );
+
+  if ( $ns3->responseCode !~ /^2/ ) {
+     return $ns3->responseCode. ' '.
+            join(', ', $self->ns_parse_response( $ns3->responseContent ) );
+  }
+
+  my $ns2 = $self->ns_command( 'DELETE', $self->ns_registrar($svc_phone) );
+
+  if ( $ns2->responseCode !~ /^2/ ) {
+     return $ns2->responseCode. ' '.
+            join(', ', $self->ns_parse_response( $ns2->responseContent ) );
+  }
+
+  my $ns = $self->ns_command( 'DELETE', $self->ns_subscriber($svc_phone) );
 
   if ( $ns->responseCode !~ /^2/ ) {
      return $ns->responseCode. ' '.
@@ -212,7 +282,7 @@ sub ns_parse_response {
 
 sub _export_insert {
   my($self, $svc_phone) = (shift, shift);
-  $self->ns_create_or_update($svc_phone, 'Permit All');
+  $self->ns_create_or_update($svc_phone);
 }
 
 sub _export_replace {
@@ -304,6 +374,14 @@ sub export_links {
   #push @$arrayref, qq!<A HREF="http://example.com/~!. $svc_phone->username.
   #                 qq!">!. $svc_phone->username. qq!</A>!;
   '';
+}
+
+sub options_named {
+  my $self = shift;
+  map { 
+        my $v = $self->option($_);
+        length($v) ? ($_ => $v) : ()
+      } @_
 }
 
 1;
