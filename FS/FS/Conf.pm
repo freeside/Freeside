@@ -4147,7 +4147,14 @@ and customer address. Include units.',
     'description' => 'Maximum length of the phone service "Name" field (svc_phone.phone_name).  Sometimes useful to limit this (to 15?) when exporting as Caller ID data.',
     'type'        => 'text',
   },
-  
+
+  {
+    'key'         => 'svc_phone-random_pin',
+    'section'     => 'telephony',
+    'description' => 'Number of random digits to generate in the "PIN" field, if empty.',
+    'type'        => 'text',
+  },
+
   {
     'key'         => 'svc_phone-lnp',
     'section'     => 'telephony',
