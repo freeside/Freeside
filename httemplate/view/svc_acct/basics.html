@@ -42,6 +42,17 @@
     <& /view/elements/tr.html, label=>mt('Access number'), value=>$svc_acct_pop->text &>
 % } 
 
+% if ( $svc_acct->sectornum && $conf->exists('svc_acct-tower_sector') ) {
+%   my $tower_sector = $svc_acct->tower_sector;
+%   my $link = $tower_sector->ip_addr
+%                ? '<A HREF="http://'. $tower_sector->ip_addr. '">'
+%                : '';
+    <& /view/elements/tr.html,
+        label => mt('Tower sector'),
+        value => $link. $tower_sector->description. ($link ? '</A>' : ''),
+    &>
+% }
+
 % if ($svc_acct->uid ne '') { 
   <& /view/elements/tr.html, label=>mt('UID'), value=>$svc_acct->uid &>
 % } 

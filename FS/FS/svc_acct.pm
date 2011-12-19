@@ -5,6 +5,7 @@ use base qw( FS::svc_Domain_Mixin
              FS::svc_CGP_Mixin
              FS::svc_CGPRule_Mixin
              FS::svc_Radius_Mixin
+             FS::svc_Tower_Mixin
              FS::svc_Common );
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
@@ -53,6 +54,7 @@ use FS::svc_forward;
 use FS::svc_www;
 use FS::cdr;
 use FS::acct_snarf;
+use FS::tower_sector;
 
 $DEBUG = 0;
 $me = '[FS::svc_acct]';
@@ -338,6 +340,7 @@ sub table_info {
                          disable_inventory => 1,
                          disable_select => 1, #UI wonky, pry works otherwise
                        },
+        'sectornum' => 'Tower sector',
         'usergroup' => {
                          label => 'RADIUS groups',
                          type  => 'select-radius_group.html',
@@ -1122,6 +1125,7 @@ sub check {
               #|| $self->ut_number('domsvc')
               || $self->ut_foreign_key( 'domsvc', 'svc_domain', 'svcnum' )
               || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
+              || $self->ut_foreign_keyn('sectornum','tower_sector','sectornum')
               || $self->ut_textn('sec_phrase')
               || $self->ut_snumbern('seconds')
               || $self->ut_snumbern('upbytes')

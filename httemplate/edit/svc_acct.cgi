@@ -160,6 +160,19 @@ function randomPass() {
     <TD><% FS::svc_acct_pop::popselector($popnum) %></TD>
   </TR>
 % } 
+
+%#tower (huh)
+%if ( $conf->exists('svc_acct-tower_sector')
+%     && $part_svc->part_svc_column('sectornum')->columnflag ne 'F' ) {
+    <& /elements/tr-select-tower_sector.html,
+         'curr_value' => $svc_acct->sectornum,
+         #'part_svc'   => $part_svc,
+         #'cust_pkg'   => $cust_pkg,
+    &>
+%} else {
+    <INPUT TYPE="hidden" NAME="sectornum" VALUE="<% $svc_acct->sectornum %>">
+%}
+
 % #uid/gid 
 % foreach my $xid (qw( uid gid )) { 
 %
