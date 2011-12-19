@@ -850,70 +850,14 @@ sub calc_usage {
       }
     }
     else { #$self->sum_usage
-      my $count = scalar(@invoice_details_sort);
-      if ( $count > 0 ) {
-        my $sum_detail = {
-          amount    => 0,
-          format    => 'C',
-          classnum  => '', #XXX
-          duration  => 0,
-          phonenum  => $svc_x->phonenum,
-          accountcode => '', #XXX
-          startdate => '', #XXX
-          regionnam => '',
-        };
-        # combine the entire set of CDRs
-        foreach ( @invoice_details_sort ) {
-          $sum_detail->{amount} += $_->[0]{amount};
-          $sum_detail->{duration} += $_->[0]{duration};
-        }
-        my $total_cdr = FS::cdr->new({
-            'billsec' => $sum_detail->{duration},
-            'src'     => $sum_detail->{phonenum},
-        });
-        $sum_detail->{detail} = $total_cdr->downstream_csv(
-          format    => $output_format,
-          seconds   => $sum_detail->{duration},
-          charge    => sprintf('%.2f',$sum_detail->{amount}),
-          phonenum  => $sum_detail->{phonenum},
-          count     => $count,
-        );
-        push @$details, $sum_detail;
-      } # if $count > 0
-    } #if $self->sum_usage
+        push @$details, $self->sum_detail($svc_x, \@invoice_details_sort);
+    }
   } # $cust_svc
 
   unshift @$details, { format => 'C',
                        detail => FS::cdr::invoice_header($output_format),
                      }
     if @$details && $rating_method ne 'upstream';
-
-#  if ( $spool_cdr && length($downstream_cdr) ) {
-#
-#    use FS::UID qw(datasrc);
-#    my $dir = '/usr/local/etc/freeside/export.'. datasrc. '/cdr';
-#    mkdir $dir, 0700 unless -d $dir;
-#    $dir .= '/'. $cust_pkg->custnum.
-#    mkdir $dir, 0700 unless -d $dir;
-#    my $filename = time2str("$dir/CDR%Y%m%d-spool.CSV", time); #XXX invoice date instead?  would require changing the order things are generated in cust_main::bill insert cust_bill first - with transactions it could be done though
-#
-#    push @{ $param->{'precommit_hooks'} },
-#         sub {
-#               #lock the downstream spool file and append the records 
-#               use Fcntl qw(:flock);
-#               use IO::File;
-#               my $spool = new IO::File ">>$filename"
-#                 or die "can't open $filename: $!\n";
-#               flock( $spool, LOCK_EX)
-#                 or die "can't lock $filename: $!\n";
-#               seek($spool, 0, 2)
-#                 or die "can't seek to end of $filename: $!\n";
-#               print $spool $downstream_cdr;
-#               flock( $spool, LOCK_UN );
-#               close $spool;
-#             };
-#
-#  } #if ( $spool_cdr && length($downstream_cdr) )
 
   $charges;
 }
@@ -1048,6 +992,41 @@ sub calc_units {
 sub sum_usage {
   my $self = shift;
   $self->option('output_format') =~ /^sum_/;
+}
+
+sub sum_detail {
+  my $self = shift;
+  my $svc_x = shift;
+  my $invoice_details = shift || [];
+  my $count = scalar(@$invoice_details);
+  return () if !$count;
+  my $sum_detail = {
+    amount    => 0,
+    format    => 'C',
+    classnum  => '', #XXX
+    duration  => 0,
+    phonenum  => $svc_x->phonenum,
+    accountcode => '', #XXX
+    startdate => '', #XXX
+    regionnam => '',
+  };
+  # combine the entire set of CDRs
+  foreach ( @$invoice_details ) {
+    $sum_detail->{amount} += $_->[0]{amount};
+    $sum_detail->{duration} += $_->[0]{duration};
+  }
+  my $total_cdr = FS::cdr->new({
+      'billsec' => $sum_detail->{duration},
+      'src'     => $sum_detail->{phonenum},
+    });
+  $sum_detail->{detail} = $total_cdr->downstream_csv(
+    format    => $self->option('output_format'),
+    seconds   => $sum_detail->{duration},
+    charge    => sprintf('%.2f',$sum_detail->{amount}),
+    phonenum  => $sum_detail->{phonenum},
+    count     => $count,
+  );
+  return $sum_detail;
 }
 
 # and whether cust_bill should show a detail line for the service label 

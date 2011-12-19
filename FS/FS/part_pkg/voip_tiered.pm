@@ -227,7 +227,7 @@ sub calc_usage {
         if ( $charge > 0 ) {
           $charges += $charge;
 
-          my $detail = 
+          my $detail = $self->sum_usage ? '' :
             $cdr->downstream_csv( 'format'  => $output_format,
                                   'charge'  => $charge,
                                   'seconds' => ($use_duration ? 
@@ -267,11 +267,22 @@ sub calc_usage {
 
     } # $pass
 
+    if ( $self->sum_usage ) {
+      # then summarize all accumulated details within this svc_x
+      # and then flush them
+      push @$details, $self->sum_detail($svc_x, \@invoice_details_sort);
+      @invoice_details_sort = ();
+    }
+
   } # $cust_svc
 
-  my @sorted_invoice_details = sort { ${$a}[1] <=> ${$b}[1] } @invoice_details_sort;
-  foreach my $sorted_call_detail ( @sorted_invoice_details ) {
-      push @$details, ${$sorted_call_detail}[0];
+  if ( !$self->sum_usage ) {
+    #sort them
+    my @sorted_invoice_details = 
+      sort { ${$a}[1] <=> ${$b}[1] } @invoice_details_sort;
+    foreach my $sorted_call_detail ( @sorted_invoice_details ) {
+        push @$details, ${$sorted_call_detail}[0];
+    }
   }
 
   unshift @$details, { format => 'C',
