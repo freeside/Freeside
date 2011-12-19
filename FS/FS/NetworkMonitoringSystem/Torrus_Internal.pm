@@ -5,6 +5,7 @@ use strict;
 use Fcntl qw(:flock);
 use IO::File;
 use File::Slurp qw(slurp);
+use IPC::Run qw(run);
 use Date::Format;
 use XML::Simple;
 use FS::Record qw(qsearch qsearchs dbh);
@@ -154,11 +155,18 @@ sub report {
 
 }
 
+sub queued_add_router {
+  my $self = shift;
+  my $error = $self->add_router(@_);
+  die $error if $error;
+}
+
 sub add_router {
   my($self, $ip, $community) = @_;
 
-  $community = qq!<param name="snmp-community" value="$community"/>\n !
-    if length($community) > 1;
+  $community = (defined($community) && length($community) > 1)
+                 ? qq!<param name="snmp-community" value="$community"/>\n !
+                 : '';
 
   my $newhost = 
     qq(  <host>\n).
@@ -257,23 +265,31 @@ sub _torrus_newddx {
   close $new;
 
   my $tmpname = $ddxfile . Date::Format::time2str('%Y%m%d%H%M%S',time);
-  rename("$ddxfile", $tmpname) or die $!;
+  rename($ddxfile, $tmpname) or die $!;
   rename("$ddxfile.new", $ddxfile) or die $!;
 
-  $self->_torrus_reload;
+  my $error = $self->_torrus_reload;
+  if ( $error ) { #revert routers.ddx
+    rename($ddxfile, "$tmpname.FAILED") or die $!;
+    rename($tmpname, $ddxfile) or die $!;
+  }
+  
+  $self->_torrus_unlock;
+
+  return $error;
 }
 
 sub _torrus_reload {
   my($self) = @_;
 
-  #i should use IPC::Run and have better error checking (commands are silent
-  # for success, or output errors)
+  my $stderr = '';
+  run( ['torrus', 'devdiscover', "--in=$ddxfile"], '2>'=>\$stderr );
+  return $stderr if $stderr;
 
-  system('torrus', 'devdiscover', "--in=$ddxfile");
+  run( ['torrus', 'compile', '--tree=main'] ); # , '--verbose'
+  #typically the errors happen at the discover stage...
 
-  system('torrus', 'compile', '--tree=main'); # , '--verbose'
-
-  $self->_torrus_unlock;
+  '';
 
 }
 
