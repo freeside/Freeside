@@ -137,6 +137,7 @@ sub table_info {
         'sorts' => [ 'phonenum' ],
         'display_weight' => 55,
         'cancel_weight' => 75,
+        'ip_field' => 'staticips',
         'fields' => {
             'pushed'                => { label => 'Pushed', 
                                          type  => 'disabled' },

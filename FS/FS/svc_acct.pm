@@ -254,6 +254,7 @@ sub table_info {
     'sorts' => [ 'username', 'uid', 'seconds', 'last_login' ],
     'display_weight' => 10,
     'cancel_weight'  => 50, 
+    'ip_field' => 'slipip',
     'fields' => {
         'dir'       => 'Home directory',
         'uid'       => {
