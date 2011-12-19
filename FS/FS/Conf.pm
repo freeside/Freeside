@@ -4735,13 +4735,17 @@ and customer address. Include units.',
   {
     'key'         => 'translate-auto-insert',
     'section'     => '',
-    'description' => 'Auto-insert untranslated strings for selected non-en_US locales with their default/en_US values. DO NOT TURN THIS ON.',
-    'type'        => 'select-sub',
+    'description' => 'Auto-insert untranslated strings for selected non-en_US locales with their default/en_US values.  Do not turn this on unless translating the interface into a new language.',
+    'type'        => 'select',
     'multiple'    => 1,
-    'options_sub' => sub { map { $_ => '' } 
-                            grep { $_ ne 'en_US' } FS::Locales::locales;
-			             },
-    'option_sub'  => sub { ''; },
+    'select_enum' => [ grep { $_ ne 'en_US' } FS::Locales::locales ],
+  },
+
+  {
+    'key'         => 'svc_acct-tower_sector',
+    'section'     => '',
+    'description' => 'Track tower and sector for svc_acct (account) services.',
+    'type'        => 'checkbox',
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
