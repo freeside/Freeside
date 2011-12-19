@@ -610,6 +610,22 @@ sub export_formats {
     }
   };
 
+  my $price_sub = sub {
+    my ($cdr, %opt) = @_;
+    my $price;
+    if ( defined($opt{charge}) ) {
+      $price = $opt{charge};
+    }
+    elsif ( $opt{inbound} ) {
+      my $term = $cdr->cdr_termination(1); # 1 = inbound
+      $price = $term->rated_price if defined $term;
+    }
+    else {
+      $price = $cdr->rated_price;
+    }
+    length($price) ? ($opt{money_char} . $price) : '';
+  };
+
   %export_formats = (
     'simple' => [
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
@@ -618,7 +634,7 @@ sub export_formats {
       'dst',                                           #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
-      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
+      $price_sub,
     ],
     'simple2' => [
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
@@ -628,7 +644,7 @@ sub export_formats {
       'dst',                                           #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
-      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
+      $price_sub,
     ],
     'sum_duration' => [ 
       # for summary formats, the CDR is a fictitious object containing the 
@@ -636,18 +652,18 @@ sub export_formats {
       'src',
       sub { my($cdr, %opt) = @_; $opt{count} },
       sub { my($cdr, %opt) = @_; int($opt{seconds}/60).'m' },
-      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
+      $price_sub,
     ],
     'sum_count' => [
       'src',
       sub { my($cdr, %opt) = @_; $opt{count} },
-      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
+      $price_sub,
     ],
     'basic' => [
       sub { time2str('%d %b - %I:%M %p', shift->calldate_unix) },
       'dst',
       $duration_sub,
-      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
+      $price_sub,
     ],
     'default' => [
 
@@ -669,11 +685,7 @@ sub export_formats {
       $duration_sub,
 
       #PRICE
-      sub { my($cdr, %opt) = @_; 
-        $opt{charge} = '0.00' unless defined $opt{charge};
-        $opt{money_char}.$opt{charge}; 
-      },
-
+      $price_sub,
     ],
   );
   $export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} }, ];
