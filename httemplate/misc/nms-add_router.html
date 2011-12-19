@@ -1,4 +1,4 @@
-<% header('Add Router') %>
+<& /elements/header-popup.html, 'Add Router' &>
 
 <FORM NAME="nms-add_iface" ACTION="<% popurl(1) %>process/nms-add_router.html" METHOD=POST>
 Router Hostname/IP 
@@ -16,7 +16,7 @@ SNMP Community String (optional)
 <BR>
 <INPUT TYPE="submit" NAME="submit" ID="submit_nms-add_router" VALUE="Add Router">
 </FORM>
-
+</BODY></HTML>
 <%init>
 
 # XXX: access rights, disable/enable submit button, something's wrong with style

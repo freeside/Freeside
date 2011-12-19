@@ -1,4 +1,4 @@
-<% header('Interface added') %>
+<& /elements/header-popup.html, 'Interface added') &>
 <SCRIPT TYPE="text/javascript">
   window.top.location.reload();
 </SCRIPT>
@@ -9,16 +9,17 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configure network monitoring');
 
 my $host = $cgi->param('host'); 
-die 'invalid host' unless $host =~ /^[0-9.a-zA-Z\-]+$/;
+errorpage_popup('invalid host') unless $host =~ /^[0-9.a-zA-Z\-]+$/;
 
 my $iface = $cgi->param('iface');
-die 'invalid iface' unless $iface =~ /^[0-9A-Za-z_\-.\\\/ ]+$/;
+errorpage_popup('invalid iface') unless $iface =~ /^[0-9A-Za-z_\-.\\\/ ]+$/;
 
 my $serviceid = $cgi->param('serviceid');
 #die 'invalid serviceid' unless $serviceid =~ /^[0-9A-Za-z_\-.\\\/ ]+$/;
-die 'invalid serviceid' unless $serviceid =~ /^[0-9A-Za-z_]+$/;
+errorpage_popup('invalid serviceid') unless $serviceid =~ /^[0-9A-Za-z_]+$/;
   
 my $nms = new FS::NetworkMonitoringSystem;
-$nms->add_interface($host,$iface,$serviceid);
+my $error = $nms->add_interface($host,$iface,$serviceid);
+errorpage_popup($error) if $error;
 
 </%init>
