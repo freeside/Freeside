@@ -63,7 +63,7 @@ sub new {
     my $recur = $cust_bill_pkg->recur || 0;
 
     if ( $freq eq '1' ) { # monthly recurring package
-      my $permonth = $part_pkg->base_recur_permonth || 0;
+      my $permonth = $part_pkg->base_recur_permonth($cust_pkg) || 0;
 
       my ($discount) = grep { $_->months == $months }
       map { $_->discount } $part_pkg->part_pkg_discount;

@@ -60,7 +60,7 @@ sub calc_recur_Common {
     my $recur_method = $self->option('recur_method', 1) || 'anniversary';
     my $cutoff_day = $self->cutoff_day($cust_pkg);
 
-    $charges = $self->base_recur;
+    $charges = $self->base_recur($cust_pkg);
     $charges += $param->{'override_charges'} if $param->{'override_charges'};
 
     if ( $recur_method eq 'prorate' ) {
