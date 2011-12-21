@@ -427,6 +427,7 @@ sub calc_usage {
       my $seconds = '';
       my $weektime = '';
       my $regionname = '';
+      my $ratename = '';
       my $classnum = '';
       my $countrycode;
       my $number;
@@ -514,8 +515,9 @@ sub calc_usage {
             ? $cust_pkg->part_pkg->option('accountcode_tollfree_ratenum')
             : '';
 
-          my $intrastate_ratenum = $cust_pkg->part_pkg->option('accountcode_tollfree_ratenum');
+          my $intrastate_ratenum = $cust_pkg->part_pkg->option('intrastate_ratenum');
           if ( $intrastate_ratenum && !$cdr->is_tollfree ) {
+            $ratename = 'Interstate'; #until proven otherwise
             # this is relatively easy only because:
             # -assume all numbers are valid NANP numbers NOT in a fully-qualified format
             # -disregard toll-free
@@ -532,9 +534,12 @@ sub calc_usage {
             $srcprefix = qsearchs('rate_prefix', {   'countrycode' => '1',
                                                      'npa' => $1, 
                                                  }) || '';
-            $eff_ratenum = $intrastate_ratenum if ($srcprefix && $dstprefix
+            if ($srcprefix && $dstprefix
                 && $srcprefix->state && $dstprefix->state
-                && $srcprefix->state eq $dstprefix->state);
+                && $srcprefix->state eq $dstprefix->state) {
+              $eff_ratenum = $intrastate_ratenum;
+              $ratename = 'Intrastate'; # XXX possibly just use the ratename?
+            }
           }
 
           $eff_ratenum ||= $ratenum;
@@ -786,7 +791,6 @@ sub calc_usage {
             );
           }
         } #if(there is a rate_detail)
- 
 
         #if ( $charge > 0 ) {
         # generate a detail record for every call; filter out $charge = 0 
@@ -821,6 +825,8 @@ sub calc_usage {
             regionname  => $regionname,
           };
         }
+        $call_details->{'ratename'} = $ratename;
+
         push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
         #} $charge > 0
 
@@ -998,35 +1004,45 @@ sub sum_detail {
   my $self = shift;
   my $svc_x = shift;
   my $invoice_details = shift || [];
-  my $count = scalar(@$invoice_details);
-  return () if !$count;
-  my $sum_detail = {
-    amount    => 0,
-    format    => 'C',
-    classnum  => '', #XXX
-    duration  => 0,
-    phonenum  => $svc_x->phonenum,
-    accountcode => '', #XXX
-    startdate => '', #XXX
-    regionnam => '',
-  };
+  return () if !@$invoice_details;
+  my $details_by_rate = {};
   # combine the entire set of CDRs
   foreach ( @$invoice_details ) {
-    $sum_detail->{amount} += $_->[0]{amount};
-    $sum_detail->{duration} += $_->[0]{duration};
+    my $d = $_->[0];
+    my $sum = $details_by_rate->{ $d->{ratename} } ||= {
+      amount      => 0,
+      format      => 'C',
+      classnum    => '', #XXX
+      duration    => 0,
+      phonenum    => $svc_x->phonenum,
+      accountcode => '', #XXX
+      startdate   => '', #XXX
+      regionname  => '',
+      count       => 0,
+    };
+    $sum->{amount} += $d->{amount};
+    $sum->{duration} += $d->{duration};
+    $sum->{count}++;
   }
-  my $total_cdr = FS::cdr->new({
-      'billsec' => $sum_detail->{duration},
-      'src'     => $sum_detail->{phonenum},
-    });
-  $sum_detail->{detail} = $total_cdr->downstream_csv(
-    format    => $self->option('output_format'),
-    seconds   => $sum_detail->{duration},
-    charge    => sprintf('%.2f',$sum_detail->{amount}),
-    phonenum  => $sum_detail->{phonenum},
-    count     => $count,
-  );
-  return $sum_detail;
+  my @details;
+  foreach my $ratename ( sort keys(%$details_by_rate) ) {
+    my $sum = $details_by_rate->{$ratename};
+    next if $sum->{count} == 0;
+    my $total_cdr = FS::cdr->new({
+        'billsec' => $sum->{duration},
+        'src'     => $sum->{phonenum},
+      });
+    $sum->{detail} = $total_cdr->downstream_csv(
+      format    => $self->option('output_format'),
+      seconds   => $sum->{duration},
+      charge    => sprintf('%.2f',$sum->{amount}),
+      ratename  => $ratename,
+      phonenum  => $sum->{phonenum},
+      count     => $sum->{count},
+    );
+    push @details, $sum;
+  }
+  @details;
 }
 
 # and whether cust_bill should show a detail line for the service label 
