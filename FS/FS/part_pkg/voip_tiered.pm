@@ -98,6 +98,7 @@ sub calc_usage {
   my %options = (
     'disable_src'    => $self->option('disable_src'),
     'default_prefix' => $self->option('default_prefix'),
+    'cdrtypenum'     => $self->option('use_cdrtypenum'),
     'status'         => '',
     'for_update'     => 1,
   );  # $last_bill, $$sdate )

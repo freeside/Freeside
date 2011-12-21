@@ -575,11 +575,11 @@ my %export_names = (
   },
   'sum_duration' => {
     'name'           => 'Summary (one line per service, with duration)',
-    'invoice_header' => 'Caller,Calls,Minutes,Price',
+    'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
   },
   'sum_count' => {
     'name'           => 'Summary (one line per service, with count)',
-    'invoice_header' => 'Caller,Messages,Price',
+    'invoice_header' => 'Caller,Rate,Messages,Price',
   },
 );
 
@@ -650,12 +650,14 @@ sub export_formats {
       # for summary formats, the CDR is a fictitious object containing the 
       # total billsec and the phone number of the service
       'src',
+      sub { my($cdr, %opt) = @_; $opt{ratename} },
       sub { my($cdr, %opt) = @_; $opt{count} },
       sub { my($cdr, %opt) = @_; int($opt{seconds}/60).'m' },
       $price_sub,
     ],
     'sum_count' => [
       'src',
+      sub { my($cdr, %opt) = @_; $opt{ratename} },
       sub { my($cdr, %opt) = @_; $opt{count} },
       $price_sub,
     ],
@@ -711,9 +713,13 @@ Options:
 
 format
 
-charge
+charge - override the 'rated_price' field of the CDR
 
-seconds
+seconds - override the 'billsec' field of the CDR
+
+count - number of usage events included in this record, for summary formats
+
+ratename - name of the rate table used to rate this call
 
 granularity
 
