@@ -143,15 +143,20 @@ sub set_coord {
   #my $module = FS::Conf->new->config('geocode_module') || 'Geo::Coder::Googlev3';
 
   my $geocoder = Geo::Coder::Googlev3->new;
-  my $location = $geocoder->geocode( location =>
-    $self->get($pre.'address1'). ','.
-    ( $self->get($pre.'address2') ? $self->get($pre.'address2').',' : '' ).
-    $self->get($pre.'city'). ','.
-    $self->get($pre.'state'). ','.
-    code2country($self->get($pre.'country'))
-  );
 
-  #errors?
+  my $location = eval {
+    $geocoder->geocode( location =>
+      $self->get($pre.'address1'). ','.
+      ( $self->get($pre.'address2') ? $self->get($pre.'address2').',' : '' ).
+      $self->get($pre.'city'). ','.
+      $self->get($pre.'state'). ','.
+      code2country($self->get($pre.'country'))
+    );
+  };
+  if ( $@ ) {
+    warn "geocoding error: $@\n";
+    return;
+  }
 
   my $geo_loc = $location->{'geometry'}{'location'} or return;
   if ( $geo_loc->{'lat'} && $geo_loc->{'lng'} ) {
