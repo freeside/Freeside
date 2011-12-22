@@ -93,9 +93,9 @@ sub price_info {
     my $setup = $self->option('setup_fee') || 0;
     my $recur = $self->option('recur_fee', 1) || 0;
     my $str = '';
-    $str = $money_char . $setup . ' one-time' if $setup;
+    $str = $money_char . $setup . ($recur ? ' setup ' : ' one-time') if $setup;
     $str .= ', ' if ($setup && $recur);
-    $str .= $money_char . $recur . ' recurring ' if $recur;
+    $str .= $money_char. $recur. '/'. $self->freq_pretty if $recur;
     $str;
 }
 
