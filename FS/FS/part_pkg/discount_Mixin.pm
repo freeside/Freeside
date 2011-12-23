@@ -133,7 +133,7 @@ sub calc_discount {
       $amount *= $months;
     }
 
-    $amount = sprintf('%.2f', $amount);
+    $amount = sprintf('%.2f', $amount + 0.00000001 ); #so 1.005 rounds to 1.01
 
     next unless $amount > 0;
 
