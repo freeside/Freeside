@@ -172,7 +172,10 @@ sub description_short {
   my $desc = $self->name ? $self->name.': ' : '';
   $desc .= $money_char. sprintf('%.2f/month ', $self->amount)
     if $self->amount > 0;
-  $desc .= $self->percent. '% '
+
+  ( my $percent = $self->percent ) =~ s/\.0+$//;
+  $percent =~ s/(\.\d*[1-9])0+$/$1/;
+  $desc .= $percent. '% '
     if $self->percent > 0;
 
   $desc;
@@ -181,8 +184,13 @@ sub description_short {
 sub description {
   my $self = shift;
   my $desc = $self->description_short;
-  $desc .= ' for '. $self->months. ' months' if $self->months;
+
+  ( my $months = $self->months ) =~ s/\.0+$//;
+  $months =~ s/(\.\d*[1-9])0+$/$1/;
+  $desc .= " for $months months" if $months;
+
   $desc .= ', applies to setup' if $self->setup;
+
   $desc;
 }
 
