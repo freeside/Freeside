@@ -133,7 +133,7 @@ sub calc_discount {
       $amount *= $months;
     }
 
-    $amount = sprintf('%.2f', $amount);
+    $amount = sprintf('%.2f', $amount + 0.00000001 ); #so 1.005 rounds to 1.01
 
     next unless $amount > 0;
 
@@ -155,7 +155,7 @@ sub calc_discount {
     my $cust_bill_pkg_discount = new FS::cust_bill_pkg_discount {
       'pkgdiscountnum' => $cust_pkg_discount->pkgdiscountnum,
       'amount'         => $amount,
-      'months'         => $months,
+      'months'         => ( defined($param->{'setup_charge'}) ? 0 : $months ),
     };
     push @{ $param->{'discounts'} }, $cust_bill_pkg_discount;
 

@@ -75,42 +75,47 @@ sub calc_prorate {
 
   my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
 
-    my $mnow = $$sdate;
+  my $mnow = $$sdate;
 
-    # if this is the first bill but the bill date has been set
-    # (by prorate_defer_bill), calculate from the setup date,
-    # and append the setup fee to @$details.
-    if ( $self->option('prorate_defer_bill',1)
-        and ! $cust_pkg->getfield('last_bill') 
-        and $cust_pkg->setup ) {
-      #warn "[calc_prorate] #".$cust_pkg->pkgnum.": running deferred setup\n";
-      $param->{'setup_fee'} = $self->calc_setup($cust_pkg, $$sdate, $details);
-      $mnow = $cust_pkg->setup;
-    }
+  # if this is the first bill but the bill date has been set
+  # (by prorate_defer_bill), calculate from the setup date,
+  # and append the setup fee to @$details.
+  if ( $self->option('prorate_defer_bill',1)
+         && ! $cust_pkg->getfield('last_bill') 
+         && $cust_pkg->setup
+     )
+  {
+    #warn "[calc_prorate] #".$cust_pkg->pkgnum.": running deferred setup\n";
+    $param->{'setup_fee'} = $self->calc_setup($cust_pkg, $$sdate, $details);
+    $mnow = $cust_pkg->setup;
+  }
 
-    my ($mend, $mstart);
-    ($mnow, $mend, $mstart) = $self->_endpoints($mnow, $cutoff_day);
+  my ($mend, $mstart);
+  ($mnow, $mend, $mstart) = $self->_endpoints($mnow, $cutoff_day);
 
-    # next bill date will be figured as $$sdate + one period
-    $$sdate = $mstart;
+  # next bill date will be figured as $$sdate + one period
+  $$sdate = $mstart;
 
-    my $permonth = $charge / $self->freq;
-    my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
+  my $permonth = $charge / $self->freq;
+  my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
 
-    # add a full period if currently billing for a partial period
-    # or periods up to freq_override if billing for an override interval
-    if ( ($param->{'freq_override'} || 0) > 1 ) {
-      $months += $param->{'freq_override'} - 1;
-    }
-    elsif ( ( $self->option('add_full_period',1) 
-        or $self->option('prorate_defer_bill',1) )
-        and $months < $self->freq ) {
-      $months += $self->freq;
-      $$sdate = $self->add_freq($mstart);
-    }
+  # add a full period if currently billing for a partial period
+  # or periods up to freq_override if billing for an override interval
+  if ( ($param->{'freq_override'} || 0) > 1 ) {
+    $months += $param->{'freq_override'} - 1;
+  } elsif ( ( $self->option('add_full_period',1) 
+                || $self->option('prorate_defer_bill',1) # necessary
+            )
+            && $months < $self->freq
+          )
+  {
+    $months += $self->freq;
+    $$sdate = $self->add_freq($mstart);
+  }
 
-    $param->{'months'} = $months;
-    $charge = sprintf('%.2f', $permonth * $months);
+  $param->{'months'} = $months;
+                                                  #so 1.005 rounds to 1.01
+  $charge = sprintf('%.2f', $permonth * $months + 0.00000001 );
 
   return $charge;
 }
