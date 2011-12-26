@@ -97,7 +97,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -r ] [ -k ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -o ] [ -v ] [ -l level ] [ -m ] [ -r ] [ -k ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -127,6 +127,8 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
       separated list).
 
   -s: re-charge setup fees
+
+  -o: For packages which are more than one billing period behind, only charge for one billing period rather than catching up.
 
   -v: enable debugging
 

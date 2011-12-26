@@ -420,11 +420,17 @@ sub bill {
                               'real_pkgpart'        => $real_pkgpart,
                               'options'             => \%options,
                             );
-        # Stop if anything goes wrong, or if we're not incrementing 
-        # the bill date.
+
+        # Stop if anything goes wrong
         last if $error;
+
+        # or if we're not incrementing the bill date.
         last if ($cust_pkg->getfield('bill') || 0) == $next_bill;
+
         $next_bill = $cust_pkg->getfield('bill') || 0;
+
+        #stop if -o was passed to freeside-daily
+        last if $options{'one_recur'};
       }
       if ($error) {
         $dbh->rollback if $oldAutoCommit && !$options{no_commit};

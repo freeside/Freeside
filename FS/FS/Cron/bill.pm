@@ -93,6 +93,7 @@ sub bill {
           'check_freq'   => $check_freq,
           'resetup'      => ( $opt{'s'} ? $opt{'s'} : 0 ),
           'not_pkgpart'  => $opt{'g'}, #$not_pkgpart,
+          'one_recur'    => $opt{'o'},
       );
 
       if ( $opt{'m'} ) {
