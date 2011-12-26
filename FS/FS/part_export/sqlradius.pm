@@ -1136,6 +1136,91 @@ sub sqlradius_group_replace {
 }
 
 ###
+# class method to fetch groups/attributes from the sqlradius install on upgrade
+###
+
+sub _upgrade_exporttype {
+  # do this only if the radius_attr table is empty
+  local $FS::radius_attr::noexport_hack = 1;
+  my $class = shift;
+  return if qsearch('radius_attr', {});
+
+  foreach my $self ($class->all_sqlradius) {
+    my $error = $self->import_attrs;
+    die "exportnum ".$self->exportnum.":\n$error\n" if $error;
+  }
+  return;
+}
+
+sub import_attrs {
+  my $self = shift;
+  my $dbh = sqlradius_connect( map $self->option($_),
+                                   qw( datasrc username password ) );
+  my $usergroup = $self->option('usergroup') || 'usergroup';
+  my $error;
+  warn "Importing RADIUS groups and attributes from ".$self->option('datasrc').
+    "\n";
+
+  # map out existing groups and attrs
+  my %attrs_of;
+  my %groupnum_of;
+  foreach my $radius_group ( qsearch('radius_group', {}) ) {
+    $attrs_of{$radius_group->groupname} = +{
+      map { $_->attrname => $_ } $radius_group->radius_attr
+    };
+    $groupnum_of{$radius_group->groupname} = $radius_group->groupnum;
+  }
+
+  # get groupnames from radgroupcheck and radgroupreply
+  my $sql = '
+SELECT groupname, attribute, op, value, \'C\' FROM radgroupcheck
+UNION
+SELECT groupname, attribute, op, value, \'R\' FROM radgroupreply';
+  foreach my $row ( @{ $dbh->selectall_arrayref($sql) } ) {
+    my ($groupname, $attrname, $op, $value, $attrtype) = @$row;
+    warn "$groupname.$attrname\n";
+    if ( !exists($groupnum_of{$groupname}) ) {
+      my $radius_group = new FS::radius_group {
+        'groupname' => $groupname,
+        'priority'  => 1,
+      };
+      $error = $radius_group->insert;
+      return "error inserting group $groupname: $error" if $error;
+      $attrs_of{$groupname} = {};
+      $groupnum_of{$groupname} = $radius_group->groupnum;
+    }
+
+    my $a = $attrs_of{$groupname};
+    my $old = $a->{$attrname};
+    my $new;
+
+    if ( defined $old ) {
+      # replace
+      $new = new FS::radius_attr {
+        $old->hash,
+        'op'    => $op,
+        'value' => $value,
+      };
+      $error = $new->replace($old);
+      return "error modifying attr $attrname: $error" if $error;
+    }
+    else {
+      $new = new FS::radius_attr {
+        'groupnum' => $groupnum_of{$groupname},
+        'attrname' => $attrname,
+        'attrtype' => $attrtype,
+        'op'       => $op,
+        'value'    => $value,
+      };
+      $error = $new->insert;
+      return "error inserting attr $attrname: $error" if $error;
+    }
+    $attrs_of{$groupname}->{$attrname} = $new;
+  } #foreach $row
+  return;
+}
+
+###
 #class methods
 ###
 

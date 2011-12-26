@@ -473,6 +473,12 @@ sub _upgrade_data {  #class method
     $error = $opt->replace;
     die $error if $error;
   }
+  # pass downstream
+  my %exports_in_use;
+  $exports_in_use{ref $_} = 1 foreach qsearch('part_export', {});
+  foreach (keys(%exports_in_use)) {
+    $_->_upgrade_exporttype(%opts) if $_->can('_upgrade_exporttype');
+  }
 }
 
 #=item exporttype2svcdb EXPORTTYPE
