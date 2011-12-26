@@ -102,11 +102,14 @@ sub data {
 
     my $col = 0;
     #these need to get generalized, sheesh
+    #(though we now return a list of item indices that are present in the 
+    #output, so the front-end code could do this)
     my @newitems = ();
     my @newlabels = ();
     my @newdata = ();
     my @newcolors = ();
     my @newlinks = ();
+    my @indices = ();
     foreach my $item ( @{$self->{'items'}} ) {
 
       if ( grep { $_ != 0 } @{$data{'data'}->[$col]} ) {
@@ -115,6 +118,7 @@ sub data {
         push @newdata,   $data{'data'}->[$col];
         push @newcolors, $data{'colors'}->[$col];
         push @newlinks,  $data{'links'}->[$col];
+        push @indices,   $col;
       }
 
       $col++;
@@ -125,6 +129,7 @@ sub data {
     $data{'data'}        = \@newdata;
     $data{'colors'}      = \@newcolors;
     $data{'links'}       = \@newlinks;
+    $data{'indices'}     = \@indices;
 
   }
 
