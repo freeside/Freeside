@@ -382,7 +382,7 @@ sub bill {
 
     next if $options{'not_pkgpart'}->{$cust_pkg->pkgpart};
 
-    warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG > 1;
+    warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG;
 
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
