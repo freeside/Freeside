@@ -7,7 +7,7 @@ use FS::Conf;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vl:sy:nmrkg:u", \%opt);
+getopts("p:a:d:vl:sy:nmrkg:uo", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
