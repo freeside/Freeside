@@ -1736,11 +1736,13 @@ sub num_cust_event {
   $sth->fetchrow_arrayref->[0];
 }
 
-=item cust_svc [ SVCPART ]
+=item cust_svc [ SVCPART ] (old, deprecated usage)
+
+=item cust_svc [ OPTION => VALUE ... ] (current usage)
 
 Returns the services for this package, as FS::cust_svc objects (see
-L<FS::cust_svc>).  If a svcpart is specified, return only the matching
-services.
+L<FS::cust_svc>).  Available options are svcpart and svcdb.  If either is
+spcififed, returns only the matching services.
 
 =cut
 
@@ -1749,9 +1751,25 @@ sub cust_svc {
 
   return () unless $self->num_cust_svc(@_);
 
-  if ( @_ ) {
-    return qsearch( 'cust_svc', { 'pkgnum'  => $self->pkgnum,
-                                  'svcpart' => shift,          } );
+  my %opt = ();
+  if ( @_ && $_[0] =~ /^\d+/ ) {
+    $opt{svcpart} = shift;
+  } elsif ( @_ && ref($_[0]) eq 'HASH' ) {
+    %opt = %{ $_[0] };
+  } elsif ( @_ ) {
+    %opt = @_;
+  }
+
+  my %search = (
+    'table'   => 'cust_svc',
+    'hashref' => { 'pkgnum' => $self->pkgnum },
+  );
+  if ( $opt{svcpart} ) {
+    $search{hashref}->{svcpart} = $opt{'svcpart'};
+  }
+  if ( $opt{'svcdb'} ) {
+    $search{addl_from} = ' LEFT JOIN part_svc USING ( svcpart ) ';
+    $search{hashref}->{svcdb} = $opt{'svcdb'};
   }
 
   cluck "cust_pkg->cust_svc called" if $DEBUG > 2;
@@ -1759,9 +1777,7 @@ sub cust_svc {
   #if ( $self->{'_svcnum'} ) {
   #  values %{ $self->{'_svcnum'}->cache };
   #} else {
-    $self->_sort_cust_svc(
-      [ qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } ) ]
-    );
+    $self->_sort_cust_svc( [ qsearch(\%search) ] );
   #}
 
 }
@@ -1829,10 +1845,12 @@ sub _sort_cust_svc {
 
 }
 
-=item num_cust_svc [ SVCPART ]
+=item num_cust_svc [ SVCPART ] (old, deprecated usage)
 
-Returns the number of provisioned services for this package.  If a svcpart is
-specified, counts only the matching services.
+=item num_cust_svc [ OPTION => VALUE ... ] (current usage)
+
+Returns the number of services for this package.  Available options are svcpart
+and svcdb.  If either is spcififed, returns only the matching services.
 
 =cut
 
@@ -1847,11 +1865,31 @@ sub num_cust_svc {
   cluck "cust_pkg->num_cust_svc called, _num_cust_svc:".$self->{'_num_cust_svc'}
     if $DEBUG > 2;
 
-  my $sql = 'SELECT COUNT(*) FROM cust_svc WHERE pkgnum = ?';
-  $sql .= ' AND svcpart = ?' if @_;
+  my %opt = ();
+  if ( @_ && $_[0] =~ /^\d+/ ) {
+    $opt{svcpart} = shift;
+  } elsif ( @_ && ref($_[0]) eq 'HASH' ) {
+    %opt = %{ $_[0] };
+  } elsif ( @_ ) {
+    %opt = @_;
+  }
 
-  my $sth = dbh->prepare($sql)     or die  dbh->errstr;
-  $sth->execute($self->pkgnum, @_) or die $sth->errstr;
+  my $select = 'SELECT COUNT(*) FROM cust_svc ';
+  my $where = ' WHERE pkgnum = ? ';
+  my @param = ($self->pkgnum);
+
+  if ( $opt{'svcpart'} ) {
+    $where .= ' AND svcpart = ? ';
+    push @param, $opt{'svcpart'};
+  }
+  if ( $opt{'svcdb'} ) {
+    $select .= ' LEFT JOIN part_svc USING ( svcpart ) ';
+    $where .= ' AND svcdb = ? ';
+    push @param, $opt{'svcdb'};
+  }
+
+  my $sth = dbh->prepare("$select $where") or die  dbh->errstr;
+  $sth->execute(@param) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
 }
 
@@ -2652,7 +2690,8 @@ All svc_accts which are part of this package have their values reset.
 sub set_usage {
   my ($self, $valueref, %opt) = @_;
 
-  foreach my $cust_svc ($self->cust_svc){
+  #only svc_acct can set_usage for now
+  foreach my $cust_svc ( $self->cust_svc( 'svcdb'=>'svc_acct' ) ) {
     my $svc_x = $cust_svc->svc_x;
     $svc_x->set_usage($valueref, %opt)
       if $svc_x->can("set_usage");
@@ -2672,7 +2711,8 @@ All svc_accts which are part of this package have their values incremented.
 sub recharge {
   my ($self, $valueref) = @_;
 
-  foreach my $cust_svc ($self->cust_svc){
+  #only svc_acct can set_usage for now
+  foreach my $cust_svc ( $self->cust_svc( 'svcdb'=>'svc_acct' ) ) {
     my $svc_x = $cust_svc->svc_x;
     $svc_x->recharge($valueref)
       if $svc_x->can("recharge");
