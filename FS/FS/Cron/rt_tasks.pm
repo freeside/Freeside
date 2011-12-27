@@ -31,9 +31,6 @@ sub rt_daily {
   my $system = $FS::TicketSystem::system;
   return if $system ne 'RT_Internal';
 
-  $DEBUG = 1 if $opt{'v'};
-  RT::Config->Set( LogToScreen => 'debug' ) if $DEBUG;
- 
   # if -d or -y is in use, bail out.  There's no reliable way to tell RT 
   # to use an alternate system time.
   if ( $opt{'d'} or $opt{'y'} ) {
@@ -46,6 +43,9 @@ sub rt_daily {
   my $CurrentUser = $session->{'CurrentUser'}
     or die "Failed to create RT session";
 
+  $DEBUG = 1 if $opt{'v'};
+  RT::Config->Set( LogToScreen => 'debug' ) if $DEBUG;
+ 
   # load some modules that aren't handled in FS::TicketSystem 
   foreach (qw(
     Search::ActiveTicketsInQueue
