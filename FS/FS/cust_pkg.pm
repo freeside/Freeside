@@ -775,7 +775,7 @@ sub cancel {
     #schwartz
     map  { $_->[0] }
     sort { $a->[1] <=> $b->[1] }
-    map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
+    map  { [ $_, $_->svc_x ? $_->svc_x->table_info->{'cancel_weight'} : -1 ]; }
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
     my $part_svc = $cust_svc->part_svc;
