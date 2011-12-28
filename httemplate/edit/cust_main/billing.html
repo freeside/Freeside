@@ -6,7 +6,7 @@
 
   <INPUT TYPE="hidden" NAME="<%$payby%>_payinfo" VALUE="<% $cust_main->paymask %>">
 
-% foreach my $field (qw( payname paycvv paystart_month paystart_year payissue payip paytype paystate )) { 
+% foreach my $field (qw( payname paycvv paystart_month paystart_year payissue payip paytype paystate billday )) { 
 
     <INPUT TYPE="hidden" NAME="<% $payby.'_'.$field %>" VALUE="<% $cust_main->get($field) %>">
 
@@ -103,9 +103,9 @@
     }
 
     function payauto_changed(payauto_field){
-        var span = (payauto_field.name == 'CARD_payauto') ? 'card_billday' : 'chek_billday';
-        var select = document.getElementById('select_'+span);
-        span = document.getElementById(span);
+        var select = (payauto_field.name == 'CARD_payauto') ? 'CARD_billday' : 'CHEK_billday';
+        var span = document.getElementById('td_'+select);
+        select = document.getElementById(select);
         if (span == null || select == null) return;
         if(payauto_field.checked) {
             span.style.color = '#000000';
@@ -114,7 +114,7 @@
         else {
             span.style.color = '#999999';
             select.disabled = true;
-            select.selectedIndex = 0;
+            //why? select.selectedIndex = 0;
         }
     }
     
@@ -126,7 +126,8 @@
 %  my $paytype = $cust_main->paytype;
 %  my( $account, $aba ) = split('@', $payinfo);
 %  my $branch = '';
-%  ($branch,$aba) = split('\.',$aba) if $conf->exists('cust_main-require-bank-branch');
+%  ($branch,$aba) = split('\.',$aba)
+%    if $conf->exists('cust_main-require-bank-branch');
 %
 %  my $disabled = 'DISABLED style="background-color: #dddddd"';
 %  my $text_disabled = 'style="color: #999999"';
@@ -215,9 +216,9 @@
 %           emt('Charge future payments to this [_1] automatically','credit card').'</TD></TR>'.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
-%        qq!<TR><TD ALIGN="RIGHT" id="card_billday" $card_billday_style>
+%        qq!<TR><TD ALIGN="RIGHT" id="td_CARD_billday" $card_billday_style>
 %                    Charge on this day of each month</TD><TD> &nbsp; 
-%                   <SELECT id="select_card_billday" $card_billday_select_disabled NAME="billday">!
+%                   <SELECT id="CARD_billday" $card_billday_select_disabled NAME="CARD_billday">!
 %                . billday_options($cust_main->billday) . qq!</SELECT> </TD></TR>!
 %        : ''
 %      ).
@@ -267,9 +268,9 @@
 %           emt('Charge future payments to this [_1] automatically','electronic check').'</TD></TR>'.
 %
 %      ( $conf->exists('cust_main-select-billday') ?
-%        qq!<TR><TD ALIGN="RIGHT" id="chek_billday" $chek_billday_style>
+%        qq!<TR><TD ALIGN="RIGHT" id="td_CHEK_billday" $chek_billday_style>
 %                    Charge on this day of each month</TD><TD> &nbsp;
-%                   <SELECT id="select_chek_billday" $chek_billday_select_disabled NAME="billday">!
+%                   <SELECT id="CHEK_billday" $chek_billday_select_disabled NAME="CHEK_billday">!
 %                . billday_options($cust_main->billday) . qq!</SELECT> </TD></TR>!
 %        : ''
 %      ).

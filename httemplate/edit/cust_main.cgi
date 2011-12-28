@@ -194,7 +194,7 @@ function samechanged(what) {
 
 %# cust_main/bottomfixup.js
 % foreach my $hidden (
-%    'payauto',
+%    'payauto', 'billday',
 %    'payinfo', 'payinfo1', 'payinfo2', 'payinfo3', 'paytype',
 %    'payname', 'paystate', 'exp_month', 'exp_year', 'paycvv',
 %    'paystart_month', 'paystart_year', 'payissue',
