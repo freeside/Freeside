@@ -11,6 +11,10 @@ use Carp qw(confess);
 
 FS::svc_Radius_Mixin - partial base class for services with RADIUS groups
 
+=head1 METHODS
+
+=over 4
+
 =cut
 
 
@@ -90,5 +94,9 @@ sub radius_groups {
                         'extra_sql' => "where groupnum in ($groups)"});
   return map {$_->$method} @groups;
 }
+
+=back
+
+=cut
 
 1;
