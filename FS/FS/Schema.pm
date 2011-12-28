@@ -2282,6 +2282,7 @@ sub tables_hashref {
         'server',      'varchar', 'NULL',  64,              '', '',
         'community',   'varchar', 'NULL',  50,              '', '',
         'description', 'varchar',     '', 200, 'RADIUS Client', '',
+        'svcnum',          'int', 'NULL',  '',              '', '',
       ],
       'primary_key' => 'nasnum',
       'unique'      => [ [ 'nasname' ], ],

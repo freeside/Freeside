@@ -2,6 +2,7 @@
   table   => 'svc_broadband',
   labels  => \%labels,
   fields  => \@fields,
+  svc_callback => \&svc_callback,
 &>
 <%init>
 
@@ -96,5 +97,26 @@ sub coordinates {
   $s->latitude. ', '. $s->longitude. ' '.
     include('/elements/coord-links.html', $s->latitude, $s->longitude, $d);
 }
+
+sub svc_callback {
+  # trying to move to the callback style
+  my ($cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt) = @_;
+  # again, we assume at most one of these exports per part_svc
+  my ($nas_export) = $part_svc->part_export('broadband_nas');
+  if ( $nas_export ) {
+    my $nas = qsearchs('nas', { 'svcnum' => $svc_x->svcnum });
+    if ( $nas ) {
+      $svc_x->set($_, $nas->$_) foreach (fields('nas'));
+      push @$fields, qw(shortname secret type ports server community);
+      $opt->{'labels'}{'shortname'}  = 'Short name';
+      $opt->{'labels'}{'secret'}     = 'Shared secret';
+      $opt->{'labels'}{'type'}       = 'Type';
+      $opt->{'labels'}{'ports'}      = 'Ports';
+      $opt->{'labels'}{'server'}     = 'Server';
+      $opt->{'labels'}{'community'}  = 'Community';
+    } #if $nas
+  } #$nas_export
+};
+
 
 </%init>

@@ -48,7 +48,9 @@ sub html_bottom {
             'source_obj'    => $nas,
             'link_table'    => 'export_nas',
             'target_table'  => 'part_export',
-            'hashref'       => { 'exporttype' => 'sqlradius' },
+            'hashref'       => { 'exporttype' => 
+                                  { op => 'LIKE', value => '%sqlradius' }
+                                },
             'name_callback' => sub { $_[0]->label },
             'default'       => 'yes',
             'target_link'   => $p.'edit/part_export.cgi?',

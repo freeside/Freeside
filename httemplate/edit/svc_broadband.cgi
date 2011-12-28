@@ -3,7 +3,9 @@
      'name'                 => 'broadband service',
      'table'                => 'svc_broadband',
      'fields'               => \@fields, 
-     'field_callback'       => $callback,
+     'field_callback'       => $field_callback,
+     'svc_new_callback'     => $svc_edit_callback,
+     'svc_edit_callback'    => $svc_edit_callback,
      'dummy'                => $cgi->query_string,
      'onsubmit'             => 'validate_coords',
      'html_foot'            => $js,
@@ -113,17 +115,57 @@ if ( $conf->exists('svc_broadband-radius') ) {
   }
 }
 
-
 my $fixedblock = '';
 
-my $callback = sub {
+my $part_svc;
+
+my $svc_edit_callback = sub {
+  my ($cgi, $svc_x, $part_svc_x, $cust_pkg, $fields, $opt) = @_;
+
+  $part_svc = $part_svc_x; #for field_callback to use
+
+  $opt->{'labels'}{'block_label'} = 'Block';
+
+  my ($nas_export) = $part_svc->part_export('broadband_nas');
+  #can we assume there's only one of these per part_svc?
+  if ( $nas_export ) {
+    my $nas;
+    if ( $svc_x->svcnum ) {
+      $nas = qsearchs('nas', { 'svcnum' => $svc_x->svcnum });
+    }
+    $nas ||= $nas_export->default_nas;
+    $svc_x->set($_, $nas->$_) foreach fields('nas');
+
+    # duplicates the fields in httemplate/edit/nas.html (mostly)
+    push @$fields,
+      { type  => 'tablebreak-tr-title', 
+        #value => 'Attached NAS',
+        value => $nas_export->exportname,
+        colspan => 2,
+      },
+      { field=>'nasnum', type=>'hidden', },
+      { field=>'shortname', size=>16, maxlength=>32 },
+      { field=>'secret', size=>40, maxlength=>60, required=>1 },
+      { field=>'type', type=>'select',
+        options=>[qw( cisco computone livingston max40xx multitech netserver
+        pathras patton portslave tc usrhiper other )],
+      },
+      { field=>'ports', size=>5 },
+      { field=>'server', size=>40, maxlength=>64 },
+      { field=>'community', size=>40, maxlength=>50 },
+    ;
+
+    $opt->{'labels'}{'shortname'} = 'Short name';
+    $opt->{'labels'}{'secret'}    = 'Shared secret';
+    $opt->{'labels'}{'type'}      = 'Type';
+    $opt->{'labels'}{'ports'}     = 'Ports';
+    $opt->{'labels'}{'server'}    = 'Server';
+    $opt->{'labels'}{'community'} = 'Community';
+  }
+};
+
+my $field_callback = sub {
   my ($cgi, $object, $fieldref) = @_;
-
-  my $svcpart = $object->svcnum ? $object->cust_svc->svcpart
-                                : $cgi->param('svcpart');
-
-  my $part_svc = qsearchs( 'part_svc', { svcpart => $svcpart } );
-  die "No part_svc entry!" unless $part_svc;
 
   my $columndef = $part_svc->part_svc_column($fieldref->{'field'});
   if ($columndef->columnflag eq 'F') {
