@@ -51,8 +51,12 @@ $action ||= $part_export->exportnum ? 'Edit' : 'Add';
 #my $exports = FS::part_export::export_info($svcdb);
 my $exports = FS::part_export::export_info();
 
-my %layers = map { $_ => "$_ - ". $exports->{$_}{desc} } keys %$exports;
-$layers{''}='';
+tie my %layers, 'Tie::IxHash',
+  '' => '',
+  map { $_ => "$_ - ". $exports->{$_}{desc} } 
+  sort { $a cmp $b }
+  keys %$exports;
+;
 
 my $widget = new HTML::Widgets::SelectLayers(
   'selected_layer' => $part_export->exporttype,
@@ -83,6 +87,13 @@ my $widget = new HTML::Widgets::SelectLayers(
                       ? $optinfo->{default}
                       : ''
                     );
+      if ( $type eq 'title' ) {
+        $html .= qq!<TR><TH COLSPAN=1 ALIGN="right"><FONT SIZE="+1">! .
+                 $label .
+                 '</FONT></TH></TR>';
+        next;
+      }
+
       # 'freeform': disables table formatting of options.  Instead, each 
       # option can define "before" and "after" strings which are inserted 
       # around the selector.

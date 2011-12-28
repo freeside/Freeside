@@ -1,6 +1,6 @@
 <& elements/svc_Common.html,
   table       => 'svc_broadband',
-  fields      => [ fields('svc_broadband'), 'usergroup' ],
+  fields      => [ fields('svc_broadband'), fields('nas'), 'usergroup' ],
   precheck_callback => \&precheck,
 &>
 <%init>

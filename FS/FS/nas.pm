@@ -50,6 +50,7 @@ FS::Record.  The following fields are currently supported:
 
 =item description - a longer descriptive name
 
+=item svcnum - the L<FS::svc_broadband> record that 'owns' this device
 
 =back
 
@@ -94,7 +95,7 @@ sub delete {
   ) || $self->SUPER::delete;
 
   if ( $error ) {
-    $dbh->rollback;
+    $dbh->rollback if $oldAutoCommit;
     return $error;
   }
   
@@ -159,6 +160,7 @@ sub check {
     || $self->ut_textn('server')
     || $self->ut_textn('community')
     || $self->ut_text('description')
+    || $self->ut_foreign_keyn('svcnum', 'svc_broadband', 'svcnum')
   ;
   return $error if $error;
 

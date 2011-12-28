@@ -2,6 +2,8 @@ package FS::svc_broadband;
 
 use strict;
 use vars qw(@ISA $conf);
+
+use base qw(FS::svc_Radius_Mixin FS::svc_Tower_Mixin FS::svc_Common);
 use NetAddr::IP;
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::svc_Common;
@@ -9,8 +11,6 @@ use FS::cust_svc;
 use FS::addr_block;
 use FS::part_svc_router;
 use FS::tower_sector;
-
-@ISA = qw( FS::svc_Radius_Mixin FS::svc_Tower_Mixin FS::svc_Common );
 
 $FS::UID::callback{'FS::svc_broadband'} = sub { 
   $conf = new FS::Conf;
@@ -399,11 +399,11 @@ sub check {
   if ( $cust_pkg && ! $self->latitude && ! $self->longitude ) {
     my $l = $cust_pkg->cust_location_or_main;
     if ( $l->ship_latitude && $l->ship_longitude ) {
-      $self->latitude  = $l->ship_latitude;
-      $self->longitude = $l->ship_longitude;
+      $self->latitude(  $l->ship_latitude  );
+      $self->longitude( $l->ship_longitude );
     } elsif ( $l->latitude && $l->longitude ) {
-      $self->latitude  = $l->latitude;
-      $self->longitude = $l->longitude;
+      $self->latitude(  $l->latitude  );
+      $self->longitude( $l->longitude );
     }
   }
 

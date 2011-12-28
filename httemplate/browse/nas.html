@@ -28,6 +28,14 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my $link = [ $p.'edit/nas.html?', 'nasnum' ];
+my $link = sub {
+  my $nas = shift;
+  if ( $nas->svcnum ) {
+    return [ $p.'view/svc_broadband.cgi?', 'svcnum' ];
+  }
+  else {
+    return [ $p.'edit/nas.html?', 'nasnum' ];
+  }
+};
 
 </%init>
