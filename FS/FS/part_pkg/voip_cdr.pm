@@ -1,19 +1,18 @@
 package FS::part_pkg::voip_cdr;
+use base qw( FS::part_pkg::recur_Common );
 
 use strict;
-use base qw( FS::part_pkg::recur_Common );
 use vars qw( $DEBUG %info );
-use Date::Format;
+use List::Util qw(first min);
 use Tie::IxHash;
+use Date::Format;
+use Text::CSV_XS;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::cdr;
 use FS::rate;
 use FS::rate_prefix;
 use FS::rate_detail;
-
-use List::Util qw(first min);
-
 
 $DEBUG = 0;
 
@@ -268,8 +267,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
                     qw(
                        cdr_svc_method
                        rating_method ratenum intrastate_ratenum 
-                       min_charge min_included
-		               sec_granularity
+                       min_charge min_included sec_granularity
                        ignore_unrateable
                        default_prefix
                        disable_src
@@ -341,7 +339,9 @@ sub calc_usage {
 
   my $spool_cdr = $cust_pkg->cust_main->spool_cdr;
 
-  my %included_min = ();
+  my %included_min = (); #region groups w/prefix rating
+
+  my $included_min = $self->option('min_included', 1) || 0; #single price rating
 
   my $charges = 0;
 
@@ -375,8 +375,6 @@ sub calc_usage {
   #for check_chargable, so we don't keep looking up options inside the loop
   my %opt_cache = ();
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
   my $csv = new Text::CSV_XS;
 
   my($svc_table, $svc_field) = split('\.', $cdr_svc_method);
@@ -625,7 +623,18 @@ sub calc_usage {
           && $granularity  # 0 is per call
           && $seconds % $granularity;
         my $minutes = $granularity ? ($seconds / 60) : 1;
-        $charge = sprintf('%.4f', ( $self->option('min_charge') * $minutes )
+
+        my $charge_min = $minutes;
+
+        $included_min -= $minutes;
+        if ( $included_min > 0 ) {
+          $charge_min = 0;
+        } else {
+           $charge_min = 0 - $included_min;
+           $included_min = 0;
+        }
+
+        $charge = sprintf('%.4f', ( $self->option('min_charge') * $charge_min )
                                   + 0.0000000001 ); #so 1.00005 rounds to 1.0001
 
         warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
