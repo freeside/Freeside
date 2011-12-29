@@ -1,6 +1,8 @@
 <SCRIPT TYPE="text/javascript">window.top.location.reload()</SCRIPT>
 <%init>
 # XXX ACL?
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
 
 $cgi->param('invnum') =~ /^(\d+)$/
   or die "Illegal invnum";
@@ -13,7 +15,10 @@ if ( length($cgi->param('promised_date')) ) {
 }
 
 my $cust_bill = qsearchs('cust_bill', { invnum => $invnum });
+my $cust_main = $cust_bill->cust_main;
+
 $cust_bill->promised_date($promised_date);
-my $error = $cust_bill->replace;
+# also reset failed payment events
+my $error = $cust_bill->replace || $cust_main->retry_realtime;
 die $error if $error; # nothing fancy here
 </%init>
