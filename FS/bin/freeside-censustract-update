@@ -1,0 +1,91 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Parse 'str2time';
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch dbh);
+use FS::Conf;
+use FS::cust_main;
+use FS::h_cust_main;
+
+my %opt;
+getopts('d:', \%opt);
+
+my $user = shift or die &usage;
+adminsuidsetup($user);
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $conf = FS::Conf->new;
+my $current_year = $conf->config('census_year') 
+  or die "No current census year configured.\n";
+my $date = str2time($opt{d}) if $opt{d};
+$date ||= time;
+my %h_cust_main = map { $_->custnum => $_ }
+  qsearch(
+    'h_cust_main',
+    { censusyear => { op => '!=', value => $current_year } },
+    FS::h_cust_main->sql_h_search($date),
+  ) ; #the state of these customers as of $date
+
+my @cust_main = qsearch( 'cust_main',
+  { censusyear => { op => '!=', value => $current_year } },
+); # all possibly interesting customers
+
+warn scalar(@cust_main)." records found.\n";
+my $queued = 0; my $updated = 0;
+foreach my $cust_main (@cust_main) {
+  my $error;
+  my $h = $h_cust_main{$cust_main->custnum};
+  if ( defined($h) and $h->censustract eq $cust_main->censustract ) {
+    # the tract code hasn't been changed since $date
+    # so update it now
+    my $job = FS::queue->new({
+        job => 'FS::cust_main::process_censustract_update'
+    });
+    $error = $job->insert($cust_main->custnum);
+    $queued++;
+  }
+  elsif ($cust_main->censusyear eq '') {
+    # the tract number is assumed current, so just set the year
+    $cust_main->set('censusyear', $current_year);
+    $error = $cust_main->replace;
+    $updated++;
+  }
+  if ( $error ) {
+    $dbh->rollback;
+    die "error updating ".$cust_main->custnum.": $error\n";
+  }
+}
+warn "Queued $queued census code lookups, updated year in $updated records.\n";
+$dbh->commit;
+
+sub usage {
+    "Usage:\n\n  freeside-censustract-update [ -d date ] user\n\n"
+  }
+
+=head1 NAME
+
+freeside-censustract-update - Update census tract codes to the current year.
+
+=head1 SYNOPSIS
+
+  freeside-censustract-update [ -d date ] user
+
+=head1 DESCRIPTION
+
+Finds all customers whose census tract codes don't appear to be current 
+and updates them to the current year.  The "current year" is defined by 
+the I<census_tract> configuration variable, not the calendar year.
+
+The -d option tells the script to assume that tract codes last modified
+after some date are already current.  Those customers will just have 
+their 'censusyear' field set to the current year.  For all other 
+customers with non-current censusyear values, the current tract code 
+will be looked up externally and stored in the censustract field.
+
+The actual tract code lookup runs from the job queue, because it's slow.
+A separate job will be created for each customer.
+
+=cut

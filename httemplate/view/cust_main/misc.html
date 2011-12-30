@@ -119,7 +119,9 @@
 % if ( $conf->exists('cust_main-require_censustract') ) {
 
   <TR>
-    <TD ALIGN="right"><% mt('Census tract') |h %></TD>
+    <TD ALIGN="right">
+      <% mt('Census tract ([_1])', $cust_main->censusyear) |h %>
+    </TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->censustract  %></TD>
   </TR>
 

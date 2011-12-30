@@ -64,6 +64,7 @@ if ( -e $addl_handler_use_file ) {
   use DateTime;
   use DateTime::Format::Strptime;
   use FS::Misc::DateTime qw( parse_datetime );
+  use FS::Misc::Geo qw( get_censustract );
   use Lingua::EN::Inflect qw(PL);
   Lingua::EN::Inflect::classical names=>0; #Categorys
   use Tie::IxHash;
