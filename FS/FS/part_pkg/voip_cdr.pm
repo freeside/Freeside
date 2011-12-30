@@ -10,9 +10,9 @@ use Text::CSV_XS;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::cdr;
-use FS::rate;
-use FS::rate_prefix;
-use FS::rate_detail;
+#use FS::rate;
+#use FS::rate_prefix;
+#use FS::rate_detail;
 
 $DEBUG = 0;
 
@@ -236,7 +236,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
                            'type' => 'checkbox',
                          },
 
-    #XXX also have option for an external db
+    #XXX also have option for an external db?  these days we suck them into ours
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
 #                        'select_options' => \%cdr_location,
@@ -335,27 +335,14 @@ sub calc_usage {
     if $self->recur_temporality eq 'preceding'
     && ( $last_bill eq '' || $last_bill == 0 );
 
-  my $ratenum = $cust_pkg->part_pkg->option('ratenum');
-
-  my $spool_cdr = $cust_pkg->cust_main->spool_cdr;
-
-  my %included_min = (); #region groups w/prefix rating
+  my $charges = 0;
 
   my $included_min = $self->option('min_included', 1) || 0; #single price rating
 
-  my $charges = 0;
-
-#  my $downstream_cdr = '';
-
   my $cdr_svc_method    = $self->option('cdr_svc_method',1)||'svc_phone.phonenum';
   my $rating_method     = $self->option('rating_method') || 'prefix';
-  my $intl              = $self->option('international_prefix') || '011';
-  my $domestic_prefix   = $self->option('domestic_prefix');
-  my $disable_tollfree  = $self->option('disable_tollfree');
-  my $ignore_unrateable = $self->option('ignore_unrateable', 'Hush!');
-  my $use_duration      = $self->option('use_duration');
-  my $region_group	= ($rating_method eq 'prefix' && ($self->option('min_included',1) || 0) > 0);
-  my $region_group_included_min = $region_group ? $self->option('min_included') : 0;
+  my $region_group_included_min = $self->option('min_included',1) || 0;
+  my %region_group_included_min = ();
 
   my $output_format     = $self->option('output_format', 'Hush!')
                           || ( $rating_method eq 'upstream_simple'
@@ -363,17 +350,7 @@ sub calc_usage {
                                  : 'default'
                              );
 
-  my @dirass = ();
-  if ( $self->option('411_rewrite') ) {
-    my $dirass = $self->option('411_rewrite');
-    $dirass =~ s/\s//g;
-    @dirass = split(',', $dirass);
-  }
-
-  my %interval_cache = (); # for timed rates
-
-  #for check_chargable, so we don't keep looking up options inside the loop
-  my %opt_cache = ();
+  my $use_duration = $self->option('use_duration');
 
   my $csv = new Text::CSV_XS;
 
@@ -398,6 +375,7 @@ sub calc_usage {
     else {
       $svc_x = $cust_svc->svc_x;
     }
+
     my %options = (
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
@@ -409,451 +387,117 @@ sub calc_usage {
 
     my @invoice_details_sort;
 
+    #first rate any outstanding CDRs not yet rated
     foreach my $cdr (
       $svc_x->get_cdrs( %options )
     ) {
-      if ( $DEBUG > 1 ) {
-        warn "rating CDR $cdr\n".
-             join('', map { "  $_ => ". $cdr->{$_}. "\n" } keys %$cdr );
-      }
 
-      my $rate_detail;
-      my( $rate_region, $regionnum );
-      my $rate;
-      my $pretty_destnum;
-      my $charge = '';
-      my $seconds = '';
-      my $weektime = '';
-      my $regionname = '';
-      my $ratename = '';
+      my $error = $cdr->rate(
+        'part_pkg'                          => $self,
+        'svcnum'                            => $svc_x->svcnum,
+        'single_price_included_min'         => \$included_min,
+        'region_group_included_min'         => \$region_group_included_min,
+        'region_group_included_min_hashref' => \%region_group_included_min,
+      );
+      die $error if $error; #??
+
+    } # $cdr
+
+    #then add details to invoices & get a total
+    $options{'status'} = 'rated';
+    foreach my $cdr (
+      $svc_x->get_cdrs( %options )
+    ) {
+
       my $classnum = '';
-      my $countrycode;
-      my $number;
-
       my @call_details = ();
+      
       if ( $rating_method eq 'prefix' ) {
 
-        my $da_rewrote = 0;
-        # this will result in those CDRs being marked as done... is that 
-        # what we want?
-        if ( length($cdr->dst) && grep { $cdr->dst eq $_ } @dirass ){
-          $cdr->dst('411');
-          $da_rewrote = 1;
+        $classnum = $cdr->rated_classnum;
+
+        unless ( $self->sum_usage ) {
+          @call_details = ($cdr->downstream_csv(
+            'format'         => $output_format,
+            'granularity'    => $cdr->rated_granularity, 
+            'seconds'        =>($use_duration ? $cdr->duration : $cdr->billsec),
+            'charge'         => $cdr->rated_price,
+            'pretty_dst'     => $cdr->rated_pretty_dst,
+            'dst_regionname' => $cdr->rated_regionname,
+          ));
         }
 
-        my $reason = $self->check_chargable( $cdr,
-                                             'da_rewrote'   => $da_rewrote,
-                                             'option_cache' => \%opt_cache,
-                                           );
-
-        if ( $reason ) {
-
-          warn "not charging for CDR ($reason)\n" if $DEBUG;
-          $charge = 0;
-          # this will result in those CDRs being marked as done... is that 
-          # what we want?
-
-        } else {
-          
-          ###
-          # look up rate details based on called station id
-          # (or calling station id for toll free calls)
-          ###
-
-          my( $to_or_from );
-          if ( $cdr->is_tollfree && ! $disable_tollfree )
-          { #tollfree call
-            $to_or_from = 'from';
-            $number = $cdr->src;
-          } else { #regular call
-            $to_or_from = 'to';
-            $number = $cdr->dst;
-          }
-
-          warn "parsing call $to_or_from $number\n" if $DEBUG;
-
-          #remove non-phone# stuff and whitespace
-          $number =~ s/\s//g;
-#          my $proto = '';
-#          $dest =~ s/^(\w+):// and $proto = $1; #sip:
-#          my $siphost = '';
-#          $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
-
-          #determine the country code
-          $countrycode = '';
-          if (    $number =~ /^$intl(((\d)(\d))(\d))(\d+)$/
-               || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
-             )
-          {
-
-            my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
-            #first look for 1 digit country code
-            if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
-              $countrycode = $one;
-              $number = $u1.$u2.$rest;
-            } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
-              $countrycode = $two;
-              $number = $u2.$rest;
-            } else { #3 digit country code
-              $countrycode = $three;
-              $number = $rest;
-            }
-
-          } else {
-            $countrycode = length($domestic_prefix) ? $domestic_prefix : '1';
-            $number =~ s/^$countrycode//;# if length($number) > 10;
-          }
-
-          warn "rating call $to_or_from +$countrycode $number\n" if $DEBUG;
-          $pretty_destnum = "+$countrycode $number";
-          #asterisks here causes inserting the detail to barf, so:
-          $pretty_destnum =~ s/\*//g;
-
-          my $eff_ratenum = $cdr->is_tollfree('accountcode')
-            ? $cust_pkg->part_pkg->option('accountcode_tollfree_ratenum')
-            : '';
-
-          my $intrastate_ratenum = $cust_pkg->part_pkg->option('intrastate_ratenum');
-          if ( $intrastate_ratenum && !$cdr->is_tollfree ) {
-            $ratename = 'Interstate'; #until proven otherwise
-            # this is relatively easy only because:
-            # -assume all numbers are valid NANP numbers NOT in a fully-qualified format
-            # -disregard toll-free
-            # -disregard private or unknown numbers
-            # -there is exactly one record in rate_prefix for a given NPANXX
-            # -default to interstate if we can't find one or both of the prefixes
-            my $dstprefix = $cdr->dst;
-            $dstprefix =~ /^(\d{6})/;
-            $dstprefix = qsearchs('rate_prefix', {   'countrycode' => '1', 
-                                                        'npa' => $1, 
-                                                 }) || '';
-            my $srcprefix = $cdr->src;
-            $srcprefix =~ /^(\d{6})/;
-            $srcprefix = qsearchs('rate_prefix', {   'countrycode' => '1',
-                                                     'npa' => $1, 
-                                                 }) || '';
-            if ($srcprefix && $dstprefix
-                && $srcprefix->state && $dstprefix->state
-                && $srcprefix->state eq $dstprefix->state) {
-              $eff_ratenum = $intrastate_ratenum;
-              $ratename = 'Intrastate'; # XXX possibly just use the ratename?
-            }
-          }
-
-          $eff_ratenum ||= $ratenum;
-          $rate = qsearchs('rate', { 'ratenum' => $eff_ratenum })
-            or die "ratenum $eff_ratenum not found!";
-
-          my @ltime = localtime($cdr->startdate);
-          $weektime = $ltime[0] + 
-                      $ltime[1]*60 +   #minutes
-                      $ltime[2]*3600 + #hours
-                      $ltime[6]*86400; #days since sunday
-          # if there's no timed rate_detail for this time/region combination,
-          # dest_detail returns the default.  There may still be a timed rate 
-          # that applies after the starttime of the call, so be careful...
-          $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
-                                              'phonenum'    => $number,
-                                              'weektime'    => $weektime,
-                                              'cdrtypenum'  => $cdr->cdrtypenum,
-                                            });
-
-          if ( $rate_detail ) {
-
-            $rate_region = $rate_detail->dest_region;
-            $regionnum = $rate_region->regionnum;
-            $regionname = $rate_region->regionname;
-            warn "  found rate for regionnum $regionnum ".
-                 "and rate detail $rate_detail\n"
-              if $DEBUG;
-
-            if ( !exists($interval_cache{$regionnum}) ) {
-              my @intervals = (
-                sort { $a->stime <=> $b->stime }
-                map { my $r = $_->rate_time; $r ? $r->intervals : () }
-                $rate->rate_detail
-              );
-              $interval_cache{$regionnum} = \@intervals;
-              warn "  cached ".scalar(@intervals)." interval(s)\n"
-                if $DEBUG;
-            }
-
-          } elsif ( $ignore_unrateable ) {
-
-            $rate_region = '';
-            $regionnum = '';
-            #code below will throw a warning & skip
-
-          } else {
-
-            die "FATAL: no rate_detail found in ".
-                $rate->ratenum. ":". $rate->ratename. " rate plan ".
-                "for +$countrycode $number (CDR acctid ". $cdr->acctid. "); ".
-                "add a rate or set ignore_unrateable flag on the package def\n";
-          }
-
-        }
 
       } elsif ( $rating_method eq 'upstream_simple' ) {
 
-        #XXX $charge = sprintf('%.2f', $cdr->upstream_price);
-        $charge = sprintf('%.3f', $cdr->upstream_price);
-        $charges += $charge;
-        warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
+        $classnum = $cdr->calltypenum; #? meaningful these days?
 
-        @call_details = ($cdr->downstream_csv( 'format' => $output_format,
-                                               'charge' => $charge,
-                                             )
-                        );
-        $classnum = $cdr->calltypenum;
+        @call_details = ($cdr->downstream_csv(
+          'format' => $output_format,
+          'charge' => $cdr->rated_price,
+        ));
 
       } elsif ( $rating_method eq 'single_price' ) {
 
-        # a little false laziness w/below
-        # $rate_detail = new FS::rate_detail({sec_granularity => ... }) ?
-
-        my $granularity = length($self->option('sec_granularity'))
-                            ? $self->option('sec_granularity')
+        my $granularity = length($self->option_cacheable('sec_granularity'))
+                            ? $self->option_cacheable('sec_granularity')
                             : 60;
 
-        $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
-
-        $seconds += $granularity - ( $seconds % $granularity )
-          if $seconds      # don't granular-ize 0 billsec calls (bills them)
-          && $granularity  # 0 is per call
-          && $seconds % $granularity;
-        my $minutes = $granularity ? ($seconds / 60) : 1;
-
-        my $charge_min = $minutes;
-
-        $included_min -= $minutes;
-        if ( $included_min > 0 ) {
-          $charge_min = 0;
-        } else {
-           $charge_min = 0 - $included_min;
-           $included_min = 0;
-        }
-
-        $charge = sprintf('%.4f', ( $self->option('min_charge') * $charge_min )
-                                  + 0.0000000001 ); #so 1.00005 rounds to 1.0001
-
-        warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
-        $charges += $charge;
-
-        @call_details = ($cdr->downstream_csv( 'format'  => $output_format,
-                                               'charge'  => $charge,
-                                               'seconds' => ($use_duration ? 
-                                                             $cdr->duration : 
-                                                             $cdr->billsec),
-                                               'granularity' => $granularity,
-                                             )
-                        );
+        @call_details = ($cdr->downstream_csv(
+          'format'      => $output_format,
+          'charge'      => $cdr->rated_price,
+          'seconds'     => ($use_duration ? $cdr->duration : $cdr->billsec),
+          'granularity' => $granularity,
+        ));
 
       } else {
         die "don't know how to rate CDRs using method: $rating_method\n";
       }
 
-      ###
-      # find the price and add detail to the invoice
-      ###
+      $charges += $cdr->rated_price;
 
-      # if $rate_detail is not found, skip this CDR... i.e. 
-      # don't add it to invoice, don't set its status to done,
-      # don't call downstream_csv or something on it...
-      # but DO emit a warning...
-      #if ( ! $rate_detail && ! scalar(@call_details) ) {}
-      if ( ! $rate_detail && $charge eq '' ) {
+      #if ( $cdr->rated_price > 0 ) {
+      # generate a detail record for every call; filter out
+      # $cdr->rated_price == 0 # later.
+      my $call_details;
+      my $phonenum = $svc_x->phonenum;
 
-        if ( $ignore_unrateable == 2 ) {
-          # mark the CDR as unrateable
-          my $error = $cdr->set_status_and_rated_price(
-            'failed',
-            '',
-            $cust_svc->svcnum
-          );
-          die $error if $error;
-        }
-        elsif ( $ignore_unrateable == 1 ) {
-          # warn and continue
-          warn "no rate_detail found for CDR.acctid: ". $cdr->acctid.
-               "; skipping\n"
-        } #if $ignore_unrateable
-
-      } else { # there *is* a rate_detail (or call_details), proceed...
-        # About this section:
-        # We don't round _anything_ (except granularizing) 
-        # until the final $charge = sprintf("%.2f"...).
-
-        unless ( @call_details || ( $charge ne '' && $charge == 0 ) ) {
-
-          my $seconds_left = $use_duration ? $cdr->duration : $cdr->billsec;
-          # charge for the first (conn_sec) seconds
-          $seconds = min($seconds_left, $rate_detail->conn_sec);
-          $seconds_left -= $seconds; 
-          $weektime     += $seconds;
-          $charge = $rate_detail->conn_charge; 
-
-          my $etime;
-          while($seconds_left) {
-            my $ratetimenum = $rate_detail->ratetimenum; # may be empty
-
-            # find the end of the current rate interval
-            if(@{ $interval_cache{$regionnum} } == 0) {
-              # There are no timed rates in this group, so just stay 
-              # in the default rate_detail for the entire duration.
-              # Set an "end" of 1 past the end of the current call.
-              $etime = $weektime + $seconds_left + 1;
-            } 
-            elsif($ratetimenum) {
-              # This is a timed rate, so go to the etime of this interval.
-              # If it's followed by another timed rate, the stime of that 
-              # interval should match the etime of this one.
-              my $interval = $rate_detail->rate_time->contains($weektime);
-              $etime = $interval->etime;
-            }
-            else {
-              # This is a default rate, so use the stime of the next 
-              # interval in the sequence.
-              my $next_int = first { $_->stime > $weektime } 
-                              @{ $interval_cache{$regionnum} };
-              if ($next_int) {
-                $etime = $next_int->stime;
-              }
-              else {
-                # weektime is near the end of the week, so decrement 
-                # it by a full week and use the stime of the first 
-                # interval.
-                $weektime -= (3600*24*7);
-                $etime = $interval_cache{$regionnum}->[0]->stime;
-              }
-            }
-
-            my $charge_sec = min($seconds_left, $etime - $weektime);
-
-            $seconds_left -= $charge_sec;
-
-            $included_min{$regionnum}{$ratetimenum} = $rate_detail->min_included
-              unless exists $included_min{$regionnum}{$ratetimenum};
-
-            my $granularity = $rate_detail->sec_granularity;
-
-            my $minutes;
-            if ( $granularity ) { # charge per minute
-              # Round up to the nearest $granularity
-              if ( $charge_sec and $charge_sec % $granularity ) {
-                $charge_sec += $granularity - ($charge_sec % $granularity);
-              }
-              $minutes = $charge_sec / 60; #don't round this
-            }
-            else { # per call
-              $minutes = 1;
-              $seconds_left = 0;
-            }
-
-            $seconds += $charge_sec;
-
-            $region_group_included_min -= $minutes 
-                if $region_group && $rate_detail->region_group;
-
-            $included_min{$regionnum}{$ratetimenum} -= $minutes;
-            if ( ($region_group_included_min <= 0 || !$rate_detail->region_group)
-			  && $included_min{$regionnum}{$ratetimenum} <= 0 ) {
-              my $charge_min = 0 - $included_min{$regionnum}{$ratetimenum}; #XXX should preserve
-                                                              #(display?) this
-              $included_min{$regionnum}{$ratetimenum} = 0;
-              $charge += ($rate_detail->min_charge * $charge_min); #still not rounded
-            }
-            elsif( $region_group_included_min > 0 && $region_group
-                && $rate_detail->region_group ) {
-                $included_min{$regionnum}{$ratetimenum} = 0 
-            }
-
-            # choose next rate_detail
-            $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
-                                                'phonenum'    => $number,
-                                                'weektime'    => $etime,
-                                                'cdrtypenum'  => $cdr->cdrtypenum })
-                    if($seconds_left);
-            # we have now moved forward to $etime
-            $weektime = $etime;
-
-          } #while $seconds_left
-          # this is why we need regionnum/rate_region....
-          warn "  (rate region $rate_region)\n" if $DEBUG;
-
-          $classnum = $rate_detail->classnum;
-          $charge = sprintf('%.2f', $charge + 0.000001); # NOW round it.
-          warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
-          $charges += $charge;
-
-          if ( !$self->sum_usage ) {
-            @call_details = (
-              $cdr->downstream_csv( 'format'         => $output_format,
-                                    'granularity'    => $rate_detail->sec_granularity, 
-                                    'seconds'        => ($use_duration ?
-                                                         $cdr->duration :
-                                                         $cdr->billsec),
-                                    'charge'         => $charge,
-                                    'pretty_dst'     => $pretty_destnum,
-                                    'dst_regionname' => $regionname,
-                                  )
-            );
-          }
-        } #if(there is a rate_detail)
-
-        #if ( $charge > 0 ) {
-        # generate a detail record for every call; filter out $charge = 0 
-        # later.
-        my $call_details;
-        my $phonenum = $svc_x->phonenum;
-
-        if ( scalar(@call_details) == 1 ) {
-          $call_details =
-          { format      => 'C',
-            detail      => $call_details[0],
-            amount      => $charge,
-            classnum    => $classnum,
-            phonenum    => $phonenum,
-            accountcode => $cdr->accountcode,
-            startdate   => $cdr->startdate,
-            duration    => $seconds,
-            regionname  => $regionname,
-          };
-        } else { #only used for $rating_method eq 'upstream' now
-          # and for sum_ formats
-          $csv->combine(@call_details);
-          $call_details =
-          { format      => 'C',
-            detail      => $csv->string,
-            amount      => $charge,
-            classnum    => $classnum,
-            phonenum    => $phonenum,
-            accountcode => $cdr->accountcode,
-            startdate   => $cdr->startdate,
-            duration    => $seconds,
-            regionname  => $regionname,
-          };
-        }
-        $call_details->{'ratename'} = $ratename;
-
-        push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
-        #} $charge > 0
-
-        # if the customer flag is on, call "downstream_csv" or something
-        # like it to export the call downstream!
-        # XXX price plan option to pick format, or something...
-        #$downstream_cdr .= $cdr->downstream_csv( 'format' => 'XXX format' )
-        #  if $spool_cdr;
-
-        my $error = $cdr->set_status_and_rated_price( 'done',
-                                                      $charge,
-                                                      $cust_svc->svcnum,
-                                                    );
-        die $error if $error;
-
+      if ( scalar(@call_details) == 1 ) {
+        $call_details =
+        { format      => 'C',
+          detail      => $call_details[0],
+          amount      => $cdr->rated_price,
+          classnum    => $classnum,
+          phonenum    => $phonenum,
+          accountcode => $cdr->accountcode,
+          startdate   => $cdr->startdate,
+          duration    => $cdr->rated_seconds,
+          regionname  => $cdr->rated_regionname,
+        };
+      } else { #only used for $rating_method eq 'upstream' now
+        # and for sum_ formats
+        $csv->combine(@call_details);
+        $call_details =
+        { format      => 'C',
+          detail      => $csv->string,
+          amount      => $cdr->rated_price,
+          classnum    => $classnum,
+          phonenum    => $phonenum,
+          accountcode => $cdr->accountcode,
+          startdate   => $cdr->startdate,
+          duration    => $cdr->rated_seconds,
+          regionname  => $cdr->rated_regionname,
+        };
       }
+      $call_details->{'ratename'} = $cdr->rated_ratename;
 
-    } # $cdr
+      push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
+      #} $charge > 0
+
+      my $error = $cdr->set_status('done');
+      die $error if $error; #??
+
+    }
 
     if ( !$self->sum_usage ) {
       #sort them
@@ -881,82 +525,59 @@ sub calc_usage {
 sub check_chargable {
   my( $self, $cdr, %flags ) = @_;
 
-  #should have some better way of checking these options from a hash
-  #or something
-
-  my @opt = qw(
-    use_amaflags
-    use_carrierid
-    use_cdrtypenum
-    ignore_cdrtypenum
-    disposition_in
-    ignore_disposition
-    skip_dst_prefix
-    skip_dcontext
-    skip_dstchannel_prefix
-    skip_src_length_more noskip_src_length_accountcode_tollfree
-    skip_dst_length_less noskip_dst_length_accountcode_tollfree
-    skip_lastapp
-    skip_max_callers
-  );
-  foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
-    $flags{option_cache}->{$opt} = $self->option($opt, 1);
-  }
-  my %opt = %{ $flags{option_cache} };
-
   return 'amaflags != 2'
-    if $opt{'use_amaflags'} && $cdr->amaflags != 2;
+    if $self->option_cacheable('use_amaflags') && $cdr->amaflags != 2;
 
-  return "disposition NOT IN ( $opt{'disposition_in'} )"
-    if $opt{'disposition_in'} =~ /\S/
-    && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'disposition_in'});
+  return "disposition NOT IN ( $self->option_cacheable('disposition_in') )"
+    if $self->option_cacheable('disposition_in') =~ /\S/
+    && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('disposition_in'));
   
-  return "disposition IN ( $opt{'ignore_disposition'} )"
-    if $opt{'ignore_disposition'} =~ /\S/
-    && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'ignore_disposition'});
+  return "disposition IN ( $self->option_cacheable('ignore_disposition') )"
+    if $self->option_cacheable('ignore_disposition') =~ /\S/
+    && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('ignore_disposition'));
 
-  foreach(split(/\s*,\s*/, $opt{'skip_dst_prefix'})) {
+  foreach(split(/\s*,\s*/, $self->option_cacheable('skip_dst_prefix'))) {
     return "dst starts with '$_'"
     if length($_) && substr($cdr->dst,0,length($_)) eq $_;
   }
 
-  return "carrierid != $opt{'use_carrierid'}"
-    if length($opt{'use_carrierid'})
-    && $cdr->carrierid ne $opt{'use_carrierid'} #ne otherwise 0 matches ''
+  return "carrierid != $self->option_cacheable('use_carrierid')"
+    if length($self->option_cacheable('use_carrierid'))
+    && $cdr->carrierid ne $self->option_cacheable('use_carrierid') #ne otherwise 0 matches ''
     && ! $flags{'da_rewrote'};
 
   # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
-  return "cdrtypenum != $opt{'use_cdrtypenum'}"
-    if length($opt{'use_cdrtypenum'})
-    && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
+  return "cdrtypenum != $self->option_cacheable('use_cdrtypenum')"
+    if length($self->option_cacheable('use_cdrtypenum'))
+    && $cdr->cdrtypenum ne $self->option_cacheable('use_cdrtypenum'); #ne otherwise 0 matches ''
   
-  return "cdrtypenum == $opt{'ignore_cdrtypenum'}"
-    if length($opt{'ignore_cdrtypenum'})
-    && $cdr->cdrtypenum eq $opt{'ignore_cdrtypenum'}; #eq otherwise 0 matches ''
+  return "cdrtypenum == $self->option_cacheable('ignore_cdrtypenum')"
+    if length($self->option_cacheable('ignore_cdrtypenum'))
+    && $cdr->cdrtypenum eq $self->option_cacheable('ignore_cdrtypenum'); #eq otherwise 0 matches ''
 
-  return "dcontext IN ( $opt{'skip_dcontext'} )"
-    if $opt{'skip_dcontext'} =~ /\S/
-    && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $opt{'skip_dcontext'});
+  return "dcontext IN ( $self->option_cacheable('skip_dcontext') )"
+    if $self->option_cacheable('skip_dcontext') =~ /\S/
+    && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'));
 
-  my $len_prefix = length($opt{'skip_dstchannel_prefix'});
-  return "dstchannel starts with $opt{'skip_dstchannel_prefix'}"
+  my $len_prefix = length($self->option_cacheable('skip_dstchannel_prefix'));
+  return "dstchannel starts with $self->option_cacheable('skip_dstchannel_prefix')"
     if $len_prefix
-    && substr($cdr->dstchannel,0,$len_prefix) eq $opt{'skip_dstchannel_prefix'};
+    && substr($cdr->dstchannel,0,$len_prefix) eq $self->option_cacheable('skip_dstchannel_prefix');
 
-  my $dst_length = $opt{'skip_dst_length_less'};
+  my $dst_length = $self->option_cacheable('skip_dst_length_less');
   return "destination less than $dst_length digits"
     if $dst_length && length($cdr->dst) < $dst_length
-    && ! ( $opt{'noskip_dst_length_accountcode_tollfree'}
+    && ! ( $self->option_cacheable('noskip_dst_length_accountcode_tollfree')
             && $cdr->is_tollfree('accountcode')
          );
 
-  return "lastapp is $opt{'skip_lastapp'}"
-    if length($opt{'skip_lastapp'}) && $cdr->lastapp eq $opt{'skip_lastapp'};
+  return "lastapp is $self->option_cacheable('skip_lastapp')"
+    if length($self->option_cacheable('skip_lastapp')) && $cdr->lastapp eq $self->option_cacheable('skip_lastapp');
 
-  my $src_length = $opt{'skip_src_length_more'};
+  my $src_length = $self->option_cacheable('skip_src_length_more');
   if ( $src_length ) {
 
-    if ( $opt{'noskip_src_length_accountcode_tollfree'} ) {
+    if ( $self->option_cacheable('noskip_src_length_accountcode_tollfree') ) {
 
       if ( $cdr->is_tollfree('accountcode') ) {
         return "source less than or equal to $src_length digits"
@@ -973,10 +594,10 @@ sub check_chargable {
 
   }
 
-  return "max_callers <= $opt{skip_max_callers}"
-    if length($opt{'skip_max_callers'})
+  return "max_callers <= ". $self->option_cacheable('skip_max_callers')
+    if length($self->option_cacheable('skip_max_callers'))
       and length($cdr->max_callers)
-      and $cdr->max_callers <= $opt{'skip_max_callers'};
+      and $cdr->max_callers <= $self->option_cacheable('skip_max_callers');
 
   #all right then, rate it
   '';

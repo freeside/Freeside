@@ -1,0 +1,178 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch qsearchs );
+use FS::cdr;
+use FS::svc_phone;
+use FS::part_pkg;
+
+my $user = shift or die &usage;
+
+daemonize1('freeside-cdrrated');
+
+drop_root();
+
+adminsuidsetup($user);
+
+logfile( "%%%FREESIDE_LOG%%%/cdrrated-log.". $FS::UID::datasrc );
+
+daemonize2();
+
+our $conf = new FS::Conf;
+
+die "not running; cdr-prerate conf option is off\n"
+  unless _shouldrun();
+
+#--
+
+my $extra_sql = '';
+my @cdrtypenums = $conf->config('cdr-prerate-cdrtypenums');
+if ( @cdrtypenums ) {
+  $extra_sql .= ' AND cdrtypenum IN ('. join(',', @cdrtypenums ). ')';
+}
+
+our %svcnum = ();
+our %pkgpart = ();
+our %part_pkg = ();
+
+#some false laziness w/freeside-cdrrewrited
+
+while (1) {
+
+  my $found = 0;
+  foreach my $cdr (
+    qsearch( {
+      'table'     => 'cdr',
+      'hashref'   => { 'freesidestatus' => '' },
+      'extra_sql' => $extra_sql.
+                     ' LIMIT 1024'. #arbitrary, but don't eat too much memory
+                     ' FOR UPDATE',
+    } )
+
+  ) {
+
+    $found = 1;
+
+    #find the matching service - some weird false laziness w/svc_phone::get_cdrs
+
+    #in charged_party or src
+    #hmm... edge case; get_cdrs rating will match a src if a charged_party is
+    # present #but doesn't match a service...
+    my $number = $cdr->charged_party || $cdr->src;
+
+    #technically default_prefix. phonenum or phonenum (or default_prefix without the + . phonenum)
+    #but for now we're just assuming default_prefix is +1
+    my $prefix = '+1'; #$options{'default_prefix'};
+
+    $number = substr($number, length($prefix))
+      if $prefix eq substr($number, 0, length($prefix));
+    if ( $prefix && $prefix =~ /^\+(\d+)$/ ) {
+      $prefix = $1;
+      $number = substr($number, length($prefix))
+        if $prefix eq substr($number, 0, length($prefix));
+    }
+
+    unless ( $svcnum{$number} ) {
+      #only phone number matching supported right now
+      my $svc_phone = qsearchs('svc_phone', { 'phonenum' => $number } );
+      unless ( $svc_phone ) {
+        #XXX set freesideratestatus or something so we don't keep retrying?
+        next;
+      }
+
+      $svcnum{$number} = $svc_phone->svcnum;
+
+      my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+      unless ( $cust_pkg ) {
+        #XXX unlinked svc_phone?
+        # warn and also set freesideratestatus or somesuch?
+        next;
+      }
+
+      #get the package, search through the part_pkg and linked for a voip_cdr def w/matching cdrtypenum (or no use_cdrtypenum)
+      my @part_pkg =
+        grep { $_->plan eq 'voip_cdr'
+                 && ( ! length($_->option_cacheable('use_cdrtypenum'))
+                      || $_->option_cacheable('use_cdrtypenum')
+                           eq $cdr->cdrtypenum #eq otherwise 0 matches ''
+                    )
+                 && ( ! length($_->option_cacheable('ignore_cdrtypenum'))
+                      || $_->option_cacheable('ignore_cdrtypenum')
+                           ne $cdr->cdrtypenum #ne otherwise 0 matches ''
+                    )
+
+             }
+          $cust_pkg->part_pkg->self_and_bill_linked;
+
+      if ( ! @part_pkg ) {
+        #XXX no package for this CDR
+        # warn and also set freesideratestatus or somesuch?
+        #  or at least warn
+        next;
+      } elsif ( scalar(@part_pkg) > 1 ) {
+        warn "multiple package could rate CDR ". $cdr->acctid. "\n";
+        # and also set freesideratestatus or somesuch?
+        next;
+      }
+
+      $pkgpart{$number} = $part_pkg[0]->pkgpart;
+      $part_pkg{ $part_pkg[0]->pkgpart } ||= $part_pkg[0];
+
+    } 
+
+    #unless ( $part_pkg{$pkgpart{$number}} ) {
+    #}
+
+    #XXX if $part_pkg->option('min_included') then we can't prerate this CDR
+      
+    my $error = $cdr->rate(
+      'part_pkg' => $part_pkg{ $pkgpart{$number} },
+      'svcnum'   => $svcnum{ $number },
+    );
+    if ( $error ) {
+      #XXX ???
+      warn $error;
+      sleep 30;
+    }
+
+    last if sigterm() || sigint();
+
+  }
+
+  myexit() if sigterm() || sigint();
+  sleep 5 unless $found;
+
+}
+
+#--
+
+sub _shouldrun {
+  $conf->exists('cdr-prerate');
+}
+
+sub usage { 
+  die "Usage:\n\n  freeside-cdrrewrited user\n";
+}
+
+=head1 NAME
+
+freeside-cdrrated - Real-time daemon for CDR rating
+
+=head1 SYNOPSIS
+
+  freeside-cdrrated
+
+=head1 DESCRIPTION
+
+Runs continuously, searches for CDRs and which can be pre-rated, and rates them.
+
+=head1 SEE ALSO
+
+cdr-prerate configuration setting
+
+=cut
+
+1;
+

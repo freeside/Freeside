@@ -1801,11 +1801,12 @@ sub tables_hashref {
 
     'part_svc' => {
       'columns' => [
-        'svcpart',    'serial',    '',   '', '', '', 
-        'svc',        'varchar',   '',   $char_d, '', '', 
-        'svcdb',      'varchar',   '',   $char_d, '', '', 
-        'disabled',   'char',  'NULL',   1, '', '', 
-        'preserve',   'char', 'NULL',  1, '', '',
+        'svcpart',      'serial',     '',        '', '', '', 
+        'svc',         'varchar',     '',   $char_d, '', '', 
+        'svcdb',       'varchar',     '',   $char_d, '', '', 
+        'disabled',       'char', 'NULL',         1, '', '', 
+        'preserve',       'char', 'NULL',         1, '', '',
+        #'no_selfservice', 'char', 'NULL',         1, '', '',
       ],
       'primary_key' => 'svcpart',
       'unique' => [],
@@ -2984,9 +2985,15 @@ sub tables_hashref {
         'charged_party',       'varchar', 'NULL', $char_d, '', '',
 
         # how it was rated internally...
-        'rated_price',         'decimal', 'NULL',  '10,4', '', '',
-        'rated_seconds',           'int', 'NULL',      '', '', '',
-        'rated_minutes', 'double precision', 'NULL',   '', '', '',
+        'rated_pretty_dst',       'varchar', 'NULL', $char_d, '', '',
+        'rated_regionname',       'varchar', 'NULL', $char_d, '', '',
+        'rated_price',            'decimal', 'NULL',  '10,4', '', '',
+        'rated_seconds',              'int', 'NULL',      '', '', '',
+        'rated_minutes', 'double precision', 'NULL',      '', '', '',
+        'rated_granularity',          'int', 'NULL',      '', '', '',
+        'rated_ratedetailnum',        'int', 'NULL',      '', '', '',
+        'rated_classnum',             'int', 'NULL',      '', '', '', 
+        'rated_ratename',         'varchar', 'NULL', $char_d, '', '', 
 
         'carrierid',               'int', 'NULL',      '', '', '',
 

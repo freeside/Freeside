@@ -4755,6 +4755,35 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cdr-prerate',
+    'section'     => 'telephony',
+    'description' => 'Experimental feature to rate CDRs immediately, rather than waiting until invoice generation time.  Can reduce invoice generation time when processing lots of CDRs.  Currently works with "VoIP/telco CDR rating (standard)" price plans using "Phone numbers (svc_phone.phonenum)" CDR service matching, without any included minutes.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cdr-prerate-cdrtypenums',
+    'section'     => 'telephony',
+    'description' => 'When using cdr-prerate to rate CDRs immediately, limit processing to these CDR types.',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub { require FS::Record;
+                           require FS::cdr_type;
+                           map { $_->cdrtypenum => $_->cdrtypename }
+                               FS::Record::qsearch( 'cdr_type', 
+			                            {} #{ 'disabled' => '' }
+						  );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::cdr_type;
+                           my $cdr_type = FS::Record::qsearchs(
+			     'cdr_type', { 'cdrtypenum'=>shift } );
+                           $cdr_type ? $cdr_type->cdrtypename : '';
+			 },
+  },
+  
+  
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

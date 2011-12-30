@@ -323,6 +323,19 @@ sub option {
   $obj ? $obj->$valuecol() : '';
 }
 
+=item option_cacheable OPTIONNAME
+
+Same as the option method, but may cache and return a cached value.
+Good for use within loops; otherwise, probably avoid.
+
+=cut
+
+sub option_cacheable {
+  my( $self, $name ) = @_;
+  return $self->{option_cache}{$name} if exists $self->{option_cache}{$name};
+  $self->{option_cache}{$name} = $self->option($name,1);
+}
+
 
 sub option_table {
   my $self = shift;
