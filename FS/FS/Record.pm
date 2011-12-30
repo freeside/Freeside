@@ -662,6 +662,8 @@ sub get_real_fields {
             qq-( $column $op "" )-;
           }
         }
+      } elsif ( $op eq '!=' ) {
+        qq-( $column IS NULL OR $column != ? )-;
       #if this needs to be re-enabled, it needs to use a custom op like
       #"APPROX=" or something (better name?, not '=', to avoid affecting other
       # searches
