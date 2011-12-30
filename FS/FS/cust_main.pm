@@ -465,6 +465,8 @@ sub insert {
 
   $self->signupdate(time) unless $self->signupdate;
 
+  $self->censusyear($conf->config('census_year')) if $self->censustract;
+
   $self->auto_agent_custid()
     if $conf->config('cust_main-auto_agent_custid') && ! $self->agent_custid;
 
@@ -1514,6 +1516,12 @@ sub replace {
          || $old->payby  =~ /^(CHEK|DCHK)$/ && $self->payby =~ /^(CHEK|DCHK)$/ )
     && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
 
+  if ( $self->censustract ne '' and $self->censustract ne $old->censustract ) {
+    # update censusyear whenever tract code changes
+    $self->censusyear($conf->config('census_year'));
+  }
+
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -1722,6 +1730,7 @@ sub check {
     || $self->ut_coordn('latitude')
     || $self->ut_coordn('longitude')
     || $self->ut_enum('coord_auto', [ '', 'Y' ])
+    || $self->ut_numbern('censusyear')
     || $self->ut_anything('comments')
     || $self->ut_numbern('referral_custnum')
     || $self->ut_textn('stateid')
@@ -4967,6 +4976,36 @@ sub process_bill_and_collect {
   $param->{'retry'} = 1;
 
   $cust_main->bill_and_collect( %$param );
+}
+
+=item process_censustract_update CUSTNUM
+
+Queueable function to update the census tract to the current year (as set in 
+the 'census_year' configuration variable) and retrieve the new tract code.
+
+=cut
+
+sub process_censustract_update { 
+  eval "use FS::Misc::Geo qw(get_censustract)";
+  die $@ if $@;
+  my $custnum = shift;
+  my $cust_main = qsearchs( 'cust_main', { custnum => $custnum })
+      or die "custnum '$custnum' not found!\n";
+
+  my $new_year = $conf->config('census_year') or return;
+  my $new_tract = get_censustract({ $cust_main->location_hash }, $new_year);
+  if ( $new_tract =~ /^\d/ ) {
+    # then it's a tract code
+        $cust_main->set('censustract', $new_tract);
+    $cust_main->set('censusyear',  $new_year);
+    my $error = $cust_main->replace;
+    die $error if $error;
+  }
+  else {
+    # it's an error message
+    die $new_tract;
+  }
+  return;
 }
 
 sub _upgrade_data { #class method

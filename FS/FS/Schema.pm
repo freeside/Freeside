@@ -895,6 +895,7 @@ sub tables_hashref {
         'payip',    'varchar', 'NULL', 15, '', '', 
         'geocode',  'varchar', 'NULL', 20,  '', '',
         'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
+        'censusyear', 'char', 'NULL', 4, '', '',
         'tax',      'char', 'NULL', 1, '', '', 
         'otaker',   'varchar', 'NULL',    32, '', '', 
         'usernum',   'int', 'NULL', '', '', '',

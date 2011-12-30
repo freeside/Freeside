@@ -37,11 +37,11 @@ function post_geocode() {
   var cf = document.CustomerForm;
   var state_el = cf.elements['ship_state'];
   var census_data = new Array(
-    'year',   <% $conf->config('census_year') || '2011' %>,
-    'address', cf.elements['ship_address1'].value,
-    'city',    cf.elements['ship_city'].value,
-    'state',   state_el.options[ state_el.selectedIndex ].value,
-    'zip',     cf.elements['ship_zip'].value
+    'year',     <% $conf->config('census_year') || '2011' %>,
+    'address1', cf.elements['ship_address1'].value,
+    'city',     cf.elements['ship_city'].value,
+    'state',    state_el.options[ state_el.selectedIndex ].value,
+    'zip',      cf.elements['ship_zip'].value
   );
 
   censustract( census_data, update_censustract );
@@ -62,16 +62,17 @@ function update_censustract(arg) {
 
   var cf = document.CustomerForm;
 
-  var msacode    = argsHash['msacode'];
+/*  var msacode    = argsHash['msacode'];
   var statecode  = argsHash['statecode'];
   var countycode = argsHash['countycode'];
   var tractcode  = argsHash['tractcode'];
-  var error      = argsHash['error'];
   
   var newcensus = 
     new String(statecode)  +
     new String(countycode) +
-    new String(tractcode).replace(/\s$/, '');  // JSON 1 workaround
+    new String(tractcode).replace(/\s$/, '');  // JSON 1 workaround */
+  var error      = argsHash['error'];
+  var newcensus  = argsHash['censustract'];
 
   set_censustract = function () {
 
