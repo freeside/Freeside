@@ -1499,12 +1499,14 @@ sub replace {
 
   }
 
-  $self->set_coord
-    if ! $self->coord_auto && ! $self->latitude && ! $self->longitude;
+  unless ( $import ) {
+    $self->set_coord
+      if ! $self->coord_auto && ! $self->latitude && ! $self->longitude;
 
-  $self->set_coord('ship_')
-    if $self->has_ship_address && ! $self->ship_coord_auto
-    && ! $self->ship_latitude && ! $self->ship_longitude;
+    $self->set_coord('ship_')
+      if $self->has_ship_address && ! $self->ship_coord_auto
+      && ! $self->ship_latitude && ! $self->ship_longitude;
+  }
 
   local($ignore_expired_card) = 1
     if $old->payby  =~ /^(CARD|DCRD)$/
@@ -4984,6 +4986,7 @@ sub _upgrade_data { #class method
   local($ignore_illegal_zip) = 1;
   local($ignore_banned_card) = 1;
   local($skip_fuzzyfiles) = 1;
+  local($import) = 1; #prevent automatic geocoding (need its own variable?)
   $class->_upgrade_otaker(%opts);
 
 }
