@@ -1,7 +1,9 @@
 package FS::cdr;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $DEBUG $me );
+use vars qw( @ISA @EXPORT_OK $DEBUG $me
+             $conf $cdr_prerate %cdr_prerate_cdrtypenums
+           );
 use Exporter;
 use Tie::IxHash;
 use Date::Parse;
@@ -24,6 +26,17 @@ use FS::rate_detail;
 
 $DEBUG = 0;
 $me = '[FS::cdr]';
+
+#ask FS::UID to run this stuff for us later
+FS::UID->install_callback( sub { 
+  $conf = new FS::Conf;
+
+  my @cdr_prerate_cdrtypenums;
+  $cdr_prerate = $conf->exists('cdr-prerate');
+  @cdr_prerate_cdrtypenums = $conf->config('cdr-prerate-cdrtypenums')
+    if $cdr_prerate;
+  %cdr_prerate_cdrtypenums = map { $_=>1 } @cdr_prerate_cdrtypenums;
+});
 
 =head1 NAME
 
@@ -1240,7 +1253,15 @@ sub clear_status {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $self->freesidestatus('');
+  if ( $cdr_prerate && $cdr_prerate_cdrtypenums{$self->cdrtypenum}
+       && $self->freesidestatus eq 'done'
+     )
+  { #special case
+    $self->freesidestatus('rated');
+  } else {
+    $self->freesidestatus('');
+  }
+
   my $error = $self->replace;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
