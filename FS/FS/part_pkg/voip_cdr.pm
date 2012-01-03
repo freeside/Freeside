@@ -3,7 +3,6 @@ use base qw( FS::part_pkg::recur_Common );
 
 use strict;
 use vars qw( $DEBUG %info );
-use List::Util qw(first min);
 use Tie::IxHash;
 use Date::Format;
 use Text::CSV_XS;

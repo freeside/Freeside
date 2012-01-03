@@ -5,6 +5,7 @@ use vars qw( @ISA @EXPORT_OK $DEBUG $me
              $conf $cdr_prerate %cdr_prerate_cdrtypenums
            );
 use Exporter;
+use List::Util qw(first min);
 use Tie::IxHash;
 use Date::Parse;
 use Date::Format;
