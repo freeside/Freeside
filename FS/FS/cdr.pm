@@ -10,6 +10,7 @@ use Tie::IxHash;
 use Date::Parse;
 use Date::Format;
 use Time::Local;
+use List::Util qw( first min );
 use FS::UID qw( dbh );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
@@ -426,7 +427,9 @@ sub set_status {
 
 Sets the status and rated price.
 
-Available options are: inbound, rated_seconds, rated_minutes, rated_classnum, rated_ratename
+Available options are: inbound, rated_pretty_dst, rated_regionname,
+rated_seconds, rated_minutes, rated_granularity, rated_ratedetailnum,
+rated_classnum, rated_ratename.
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -833,10 +836,12 @@ sub rate_prefix {
 sub rate_upstream_simple {
   my( $self, %opt ) = @_;
 
-  $self->set_status_and_rated_price( 'rated',
-                                     sprintf('%.3f', $self->upstream_price),
-                                     $opt{'svcnum'},
-                                   );
+  $self->set_status_and_rated_price(
+    'rated',
+    sprintf('%.3f', $self->upstream_price),
+    $opt{'svcnum'},
+    'rated_classnum' => $self->calltypenum,
+  );
 }
 
 sub rate_single_price {
@@ -874,10 +879,13 @@ sub rate_single_price {
     sprintf('%.4f', ( $part_pkg->option_cacheable('min_charge') * $charge_min )
                     + 0.0000000001 ); #so 1.00005 rounds to 1.0001
 
-  $self->set_status_and_rated_price( 'rated',
-                                     $charge,
-                                     $opt{'svcnum'},
-                                   );
+  $self->set_status_and_rated_price(
+    'rated',
+    $charge,
+    $opt{'svcnum'},
+    'rated_granularity' => $granularity,
+    'rated_seconds'     => $seconds,
+  );
 
 }
 
@@ -1021,12 +1029,16 @@ my %export_names = (
     'invoice_header' => 'Caller,Date,Time,Number,Destination,Duration,Price',
   },
   'sum_duration' => {
-    'name'           => 'Summary (one line per service, with duration)',
+    'name'           => 'Summary, one line per service',
     'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
   },
   'sum_count' => {
-    'name'           => 'Summary (one line per service, with count)',
+    'name'           => 'Number of calls, one line per service',
     'invoice_header' => 'Caller,Rate,Messages,Price',
+  },
+  'sum_duration_prefix' => {
+    'name'           => 'Summary, one line per destination prefix',
+    'invoice_header' => 'Caller,Rate,Calls,Minutes,Price',
   },
 );
 
@@ -1215,6 +1227,8 @@ Returns an ordered list of key value pairs containing invoice format names
 as keys (for use with part_pkg::voip_cdr) and "pretty" format names as values.
 
 =cut
+
+# in the future, load this dynamically from detail_format classes
 
 sub invoice_formats {
   map { ($_ => $export_names{$_}->{'name'}) }

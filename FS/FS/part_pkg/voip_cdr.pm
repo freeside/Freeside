@@ -9,6 +9,7 @@ use Text::CSV_XS;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::cdr;
+use FS::detail_format;
 #use FS::rate;
 #use FS::rate_prefix;
 #use FS::rate_detail;
@@ -349,9 +350,9 @@ sub calc_usage {
                                  : 'default'
                              );
 
-  my $use_duration = $self->option('use_duration');
+  my $formatter = FS::detail_format->new($output_format, buffer => $details);
 
-  my $csv = new Text::CSV_XS;
+  my $use_duration = $self->option('use_duration');
 
   my($svc_table, $svc_field) = split('\.', $cdr_svc_method);
 
@@ -384,7 +385,7 @@ sub calc_usage {
       );  # $last_bill, $$sdate )
     $options{'by_svcnum'} = 1 if $svc_field eq 'svcnum';
 
-    my @invoice_details_sort;
+    #my @invoice_details_sort;
 
     #first rate any outstanding CDRs not yet rated
     foreach my $cdr (
@@ -404,118 +405,18 @@ sub calc_usage {
 
     #then add details to invoices & get a total
     $options{'status'} = 'rated';
+
     foreach my $cdr (
-      $svc_x->get_cdrs( %options )
+      $svc_x->get_cdrs( %options ) 
     ) {
-
-      my $classnum = '';
-      my @call_details = ();
-      
-      if ( $rating_method eq 'prefix' ) {
-
-        $classnum = $cdr->rated_classnum;
-
-        unless ( $self->sum_usage ) {
-          @call_details = ($cdr->downstream_csv(
-            'format'         => $output_format,
-            'granularity'    => $cdr->rated_granularity, 
-            'seconds'        =>($use_duration ? $cdr->duration : $cdr->billsec),
-            'charge'         => $cdr->rated_price,
-            'pretty_dst'     => $cdr->rated_pretty_dst,
-            'dst_regionname' => $cdr->rated_regionname,
-          ));
-        }
-
-
-      } elsif ( $rating_method eq 'upstream_simple' ) {
-
-        $classnum = $cdr->calltypenum; #? meaningful these days?
-
-        @call_details = ($cdr->downstream_csv(
-          'format' => $output_format,
-          'charge' => $cdr->rated_price,
-        ));
-
-      } elsif ( $rating_method eq 'single_price' ) {
-
-        my $granularity = length($self->option_cacheable('sec_granularity'))
-                            ? $self->option_cacheable('sec_granularity')
-                            : 60;
-
-        @call_details = ($cdr->downstream_csv(
-          'format'      => $output_format,
-          'charge'      => $cdr->rated_price,
-          'seconds'     => ($use_duration ? $cdr->duration : $cdr->billsec),
-          'granularity' => $granularity,
-        ));
-
-      } else {
-        die "don't know how to rate CDRs using method: $rating_method\n";
-      }
-
+      # at this point we officially Do Not Care about the rating method
       $charges += $cdr->rated_price;
-
-      #if ( $cdr->rated_price > 0 ) {
-      # generate a detail record for every call; filter out
-      # $cdr->rated_price == 0 # later.
-      my $call_details;
-      my $phonenum = $svc_x->phonenum;
-
-      if ( scalar(@call_details) == 1 ) {
-        $call_details =
-        { format      => 'C',
-          detail      => $call_details[0],
-          amount      => $cdr->rated_price,
-          classnum    => $classnum,
-          phonenum    => $phonenum,
-          accountcode => $cdr->accountcode,
-          startdate   => $cdr->startdate,
-          duration    => $cdr->rated_seconds,
-          regionname  => $cdr->rated_regionname,
-        };
-      } else { #only used for $rating_method eq 'upstream' now
-        # and for sum_ formats
-        $csv->combine(@call_details);
-        $call_details =
-        { format      => 'C',
-          detail      => $csv->string,
-          amount      => $cdr->rated_price,
-          classnum    => $classnum,
-          phonenum    => $phonenum,
-          accountcode => $cdr->accountcode,
-          startdate   => $cdr->startdate,
-          duration    => $cdr->rated_seconds,
-          regionname  => $cdr->rated_regionname,
-        };
-      }
-      $call_details->{'ratename'} = $cdr->rated_ratename;
-
-      push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
-      #} $charge > 0
-
-      my $error = $cdr->set_status('done');
-      die $error if $error; #??
-
+      $formatter->append($cdr);
     }
+  }
 
-    if ( !$self->sum_usage ) {
-      #sort them
-      my @sorted_invoice_details = 
-        sort { @{$a}[1] <=> @{$b}[1] } @invoice_details_sort;
-      foreach my $sorted_call_detail ( @sorted_invoice_details ) {
-        my $d = $sorted_call_detail->[0];
-        push @$details, $d if $d->{amount} > 0;
-      }
-    }
-    else { #$self->sum_usage
-        push @$details, $self->sum_detail($svc_x, \@invoice_details_sort);
-    }
-  } # $cust_svc
-
-  unshift @$details, { format => 'C',
-                       detail => FS::cdr::invoice_header($output_format),
-                     }
-    if @$details && $rating_method ne 'upstream';
+  $formatter->finish; #writes into $details
+  unshift @$details, $formatter->header if @$details;
 
   $charges;
 }
@@ -627,51 +528,6 @@ sub calc_units {
 sub sum_usage {
   my $self = shift;
   $self->option('output_format') =~ /^sum_/;
-}
-
-sub sum_detail {
-  my $self = shift;
-  my $svc_x = shift;
-  my $invoice_details = shift || [];
-  return () if !@$invoice_details;
-  my $details_by_rate = {};
-  # combine the entire set of CDRs
-  foreach ( @$invoice_details ) {
-    my $d = $_->[0];
-    my $sum = $details_by_rate->{ $d->{ratename} } ||= {
-      amount      => 0,
-      format      => 'C',
-      classnum    => '', #XXX
-      duration    => 0,
-      phonenum    => $svc_x->phonenum,
-      accountcode => '', #XXX
-      startdate   => '', #XXX
-      regionname  => '',
-      count       => 0,
-    };
-    $sum->{amount} += $d->{amount};
-    $sum->{duration} += $d->{duration};
-    $sum->{count}++;
-  }
-  my @details;
-  foreach my $ratename ( sort keys(%$details_by_rate) ) {
-    my $sum = $details_by_rate->{$ratename};
-    next if $sum->{count} == 0;
-    my $total_cdr = FS::cdr->new({
-        'billsec' => $sum->{duration},
-        'src'     => $sum->{phonenum},
-      });
-    $sum->{detail} = $total_cdr->downstream_csv(
-      format    => $self->option('output_format'),
-      seconds   => $sum->{duration},
-      charge    => sprintf('%.2f',$sum->{amount}),
-      ratename  => $ratename,
-      phonenum  => $sum->{phonenum},
-      count     => $sum->{count},
-    );
-    push @details, $sum;
-  }
-  @details;
 }
 
 # and whether cust_bill should show a detail line for the service label 

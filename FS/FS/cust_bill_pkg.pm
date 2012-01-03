@@ -19,6 +19,8 @@ use FS::cust_bill_pkg_tax_location;
 use FS::cust_bill_pkg_tax_rate_location;
 use FS::cust_tax_adjustment;
 
+use List::Util qw(sum);
+
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
 $DEBUG = 0;
@@ -147,30 +149,8 @@ sub insert {
 
   if ( $self->get('details') ) {
     foreach my $detail ( @{$self->get('details')} ) {
-      my %hash = ();
-      if ( ref($detail) ) {
-        if ( ref($detail) eq 'ARRAY' ) {
-          #carp "this way sucks, use a hash"; #but more useful/friendly
-          $hash{'format'}      = $detail->[0];
-          $hash{'detail'}      = $detail->[1];
-          $hash{'amount'}      = $detail->[2];
-          $hash{'classnum'}    = $detail->[3];
-          $hash{'phonenum'}    = $detail->[4];
-          $hash{'accountcode'} = $detail->[5];
-          $hash{'startdate'}   = $detail->[6];
-          $hash{'duration'}    = $detail->[7];
-          $hash{'regionname'}  = $detail->[8];
-        } elsif ( ref($detail) eq 'HASH' ) {
-          %hash = %$detail;
-        } else {
-          die "unknow detail type ". ref($detail);
-        }
-      } else {
-        $hash{'detail'} = $detail;
-      }
-      $hash{'billpkgnum'} = $self->billpkgnum;
-      my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail \%hash;
-      $error = $cust_bill_pkg_detail->insert;
+      $detail->billpkgnum($self->billpkgnum);
+      $error = $detail->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting cust_bill_pkg_detail: $error";
@@ -351,6 +331,8 @@ sub check {
   ;
   return $error if $error;
 
+  $self->regularize_details;
+
   #if ( $self->pkgnum != 0 ) { #allow unchecked pkgnum 0 for tax! (add to part_pkg?)
   if ( $self->pkgnum > 0 ) { #allow -1 for non-pkg line items and 0 for tax (add to part_pkg?)
     return "Unknown pkgnum ". $self->pkgnum
@@ -361,6 +343,50 @@ sub check {
     unless qsearchs( 'cust_bill' ,{ 'invnum' => $self->invnum } );
 
   $self->SUPER::check;
+}
+
+=item regularize_details
+
+Converts the contents of the 'details' pseudo-field to 
+L<FS::cust_bill_pkg_detail> objects, if they aren't already.
+
+=cut
+
+sub regularize_details {
+  my $self = shift;
+  if ( $self->get('details') ) {
+    foreach my $detail ( @{$self->get('details')} ) {
+      if ( ref($detail) ne 'FS::cust_bill_pkg_detail' ) {
+        # then turn it into one
+        my %hash = ();
+        if ( ! ref($detail) ) {
+          $hash{'detail'} = 'detail';
+        }
+        elsif ( ref($detail) eq 'HASH' ) {
+          %hash = %$detail;
+        }
+        elsif ( ref($detail) eq 'ARRAY' ) {
+          carp "passing invoice details as arrays is deprecated";
+          #carp "this way sucks, use a hash"; #but more useful/friendly
+          $hash{'format'}      = $detail->[0];
+          $hash{'detail'}      = $detail->[1];
+          $hash{'amount'}      = $detail->[2];
+          $hash{'classnum'}    = $detail->[3];
+          $hash{'phonenum'}    = $detail->[4];
+          $hash{'accountcode'} = $detail->[5];
+          $hash{'startdate'}   = $detail->[6];
+          $hash{'duration'}    = $detail->[7];
+          $hash{'regionname'}  = $detail->[8];
+        }
+        else {
+          die "unknown detail type ". ref($detail);
+        }
+        $detail = new FS::cust_bill_pkg_detail \%hash;
+      }
+      $detail->billpkgnum($self->billpkgnum) if $self->billpkgnum;
+    }
+  }
+  return;
 }
 
 =item cust_pkg
@@ -863,29 +889,15 @@ usage.
 
 sub usage {
   my( $self, $classnum ) = @_;
+  $self->regularize_details;
 
   if ( $self->get('details') ) {
 
-    my $sum = 0;
-    foreach my $value (
-      map { ref($_) eq 'HASH'
-              ? $_->{'amount'}
-              : $_->[2] 
-          }
-      grep { ref($_) && ( defined($classnum)
-                            ? $classnum eq ( ref($_) eq 'HASH'
-                                               ? $_->{'classnum'}
-                                               : $_->[3]
-                                           )
-                            : 1
-                        )
-           }
+    return sum( 
+      map { $_->amount || 0 }
+      grep { !defined($classnum) or $classnum eq $_->classnum }
       @{ $self->get('details') }
-    ) {
-      $sum += $value if $value;
-    }
-
-    return $sum;
+    );
 
   } else {
 
@@ -911,16 +923,11 @@ details.
 
 sub usage_classes {
   my( $self ) = @_;
+  $self->regularize_details;
 
   if ( $self->get('details') ) {
 
-    my %seen = ();
-    foreach my $detail ( grep { ref($_) } @{$self->get('details')} ) {
-      $seen{ (ref($detail) eq 'HASH'
-               ? $detail->{'classnum'}
-               : $detail->[3]) || ''
-           } = 1;
-    }
+    my %seen = ( map { $_->classnum => 1 } @{ $self->get('details') } );
     keys %seen;
 
   } else {

@@ -191,10 +191,9 @@ sub calc_usage {
 
   my $output_format = $self->option('output_format', 'Hush!') || 'default';
 
-  my $csv = new Text::CSV_XS;
+  my $formatter = FS::detail_format->new($output_format, buffer => $details);
 
   my $charges = 0;
-  my @invoice_details_sort;
 
   $options{'status'} = 'processing-tiered';
 
@@ -211,6 +210,8 @@ sub calc_usage {
     foreach my $pass (split('_', $cdr_inout)) {
 
       $options{'inbound'} = ( $pass eq 'inbound' );
+      # tell the formatter what we're sending it
+      $formatter->inbound($options{'inbound'});
 
       foreach my $cdr (
         $svc_x->get_cdrs( %options )
@@ -227,31 +228,6 @@ sub calc_usage {
 
         if ( $charge > 0 ) {
           $charges += $charge;
-
-          my $detail = $self->sum_usage ? '' :
-            $cdr->downstream_csv( 'format'  => $output_format,
-                                  'charge'  => $charge,
-                                  'seconds' => ($use_duration ? 
-                                                  $cdr->duration : 
-                                                  $cdr->billsec),
-                                  'granularity' => $granularity,
-                                );
-
-          my $call_details =
-            { format      => 'C',
-              detail      => $detail,
-              amount      => $charge,
-              #classnum    => $cdr->calltypenum, #classnum
-              #phonenum    => $phonenum, #XXX need this to sort on them
-              accountcode => $cdr->accountcode,
-              startdate   => $cdr->startdate,
-              duration    => $object->rated_seconds,
-            };
-
-           #warn "  adding details on charge to invoice: [ ".
-          #    join(', ', @{$call_details} ). " ]"
-          #  if ( $DEBUG && ref($call_details) );
-          push @invoice_details_sort, [ $call_details, $cdr->calldate_unix ];
         }
 
         my $error = $cdr->set_status_and_rated_price(
@@ -264,32 +240,16 @@ sub calc_usage {
         );
         die $error if $error;
 
+        $formatter->append($cdr);
+
       } # $cdr
 
     } # $pass
 
-    if ( $self->sum_usage ) {
-      # then summarize all accumulated details within this svc_x
-      # and then flush them
-      push @$details, $self->sum_detail($svc_x, \@invoice_details_sort);
-      @invoice_details_sort = ();
-    }
-
   } # $cust_svc
 
-  if ( !$self->sum_usage ) {
-    #sort them
-    my @sorted_invoice_details = 
-      sort { ${$a}[1] <=> ${$b}[1] } @invoice_details_sort;
-    foreach my $sorted_call_detail ( @sorted_invoice_details ) {
-        push @$details, ${$sorted_call_detail}[0];
-    }
-  }
-
-  unshift @$details, { format => 'C',
-                       detail => FS::cdr::invoice_header($output_format),
-                     }
-    if @$details;
+  $formatter->finish;
+  unshift @$details, $formatter->header if @$details;
 
   $charges;
 }
