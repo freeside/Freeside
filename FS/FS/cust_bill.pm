@@ -4986,11 +4986,20 @@ sub _items_cust_bill_pkg {
           my $description = ($is_summary && $type && $type eq 'U')
                             ? "Usage charges" : $desc;
 
-          $description .= " (" . time2str($date_format, $cust_bill_pkg->sdate).
-                          " - ". time2str($date_format, $cust_bill_pkg->edate).
-                          ")"
-            unless $conf->exists('disable_line_item_date_ranges')
-                || $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1);
+          unless (
+            $conf->exists('disable_line_item_date_ranges')
+              || $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1)
+          ) {
+            my $time_period;
+            my $date_style = $conf->config('cust_bill-line_item-date_style');
+            if ( $date_style eq 'month_of' ) {
+              $time_period = time2str('The month of %B', $cust_bill_pkg->sdate);
+            } else {
+              $time_period =      time2str($date_format, $cust_bill_pkg->sdate).
+                           " - ". time2str($date_format, $cust_bill_pkg->edate);
+            }
+            $description .= " ($time_period)";
+          }
 
           my @d = ();
           my @seconds = (); # for display of usage info
