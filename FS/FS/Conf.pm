@@ -3532,6 +3532,16 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_bill-line_item-date_style',
+    'section'     => 'billing',
+    'description' => 'Display format for line item date ranges on invoice line items.',
+    'type'        => 'select',
+    'select_hash' => [ ''         => 'STARTDATE-ENDDATE',
+                       'month_of' => 'Month of MONTHNAME',
+                     ],
+  },
+
+  {
     'key'         => 'support_packages',
     'section'     => '',
     'description' => 'A list of packages eligible for RT ticket time transfer, one pkgpart per line.', #this should really be a select multiple, or specified in the packages themselves...
