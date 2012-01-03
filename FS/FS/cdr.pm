@@ -1254,6 +1254,7 @@ sub clear_status {
   my $dbh = dbh;
 
   if ( $cdr_prerate && $cdr_prerate_cdrtypenums{$self->cdrtypenum}
+       && $self->rated_ratedetailnum #avoid putting old CDRs back in "rated"
        && $self->freesidestatus eq 'done'
      )
   { #special case
