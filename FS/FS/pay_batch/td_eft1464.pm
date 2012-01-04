@@ -101,6 +101,9 @@ $name = 'td_eft1464';
   row => sub {
     my ($cust_pay_batch, $pay_batch) = @_;
     my ($account, $aba) = split('@', $cust_pay_batch->payinfo);
+    if ( $aba =~ /^(\d+)\.(\d+)$/ ) {  #branch.route
+      $aba = $2.$1; #routebranch
+    }
     $i++;
     # The 1464 byte format supports up to 5 payments per line,
     # but we're only going to send 1.
