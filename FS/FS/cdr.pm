@@ -692,8 +692,11 @@ sub rate_prefix {
   if ( !exists($interval_cache{$regionnum}) ) {
     my @intervals = (
       sort { $a->stime <=> $b->stime }
-      map { my $r = $_->rate_time; $r ? $r->intervals : () }
-      $rate->rate_detail
+        map { $_->rate_time->intervals }
+          qsearch({ 'table'     => 'rate_detail',
+                    'hashref'   => { 'ratenum' => $rate->ratenum },
+                    'extra_sql' => 'AND ratetimenum IS NOT NULL',
+                 })
     );
     $interval_cache{$regionnum} = \@intervals;
     warn "  cached ".scalar(@intervals)." interval(s)\n"
@@ -1256,6 +1259,7 @@ CDR reprocessing.
 
 sub clear_status {
   my $self = shift;
+  my %opt = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1271,6 +1275,7 @@ sub clear_status {
   if ( $cdr_prerate && $cdr_prerate_cdrtypenums{$self->cdrtypenum}
        && $self->rated_ratedetailnum #avoid putting old CDRs back in "rated"
        && $self->freesidestatus eq 'done'
+       && ! $opt{'rerate'}
      )
   { #special case
     $self->freesidestatus('rated');
