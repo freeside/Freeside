@@ -570,8 +570,11 @@ sub calc_usage {
             if ( !exists($interval_cache{$regionnum}) ) {
               my @intervals = (
                 sort { $a->stime <=> $b->stime }
-                map { my $r = $_->rate_time; $r ? $r->intervals : () }
-                $rate->rate_detail
+                  map { $_->rate_time->intervals }
+                    qsearch({ 'table'     => 'rate_detail',
+                              'hashref'   => { 'ratenum' => $rate->ratenum },
+                              'extra_sql' => 'AND ratetimenum IS NOT NULL',
+                           })
               );
               $interval_cache{$regionnum} = \@intervals;
               warn "  cached ".scalar(@intervals)." interval(s)\n"
