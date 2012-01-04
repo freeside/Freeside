@@ -360,7 +360,7 @@ sub regularize_details {
         # then turn it into one
         my %hash = ();
         if ( ! ref($detail) ) {
-          $hash{'detail'} = 'detail';
+          $hash{'detail'} = $detail;
         }
         elsif ( ref($detail) eq 'HASH' ) {
           %hash = %$detail;
