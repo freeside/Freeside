@@ -252,7 +252,8 @@ tie my %report_inventory, 'Tie::IxHash',
 tie my %report_rating, 'Tie::IxHash',
   'RADIUS sessions' => [ $fsurl.'search/sqlradius.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'search/report_cdr.html', '' ],
-  'Unrateable CDRs' => [ $fsurl.'search/cdr.html?freesidestatus=failed' ],
+  'Unrateable CDRs' => [ $fsurl.'search/cdr.html?freesidestatus=failed'.
+                                               ';cdrbatchnum=_ALL_' ],
   'Time worked' => [ $fsurl.'search/report_rt_transaction.html', '' ],
   'Time worked summary' => [ $fsurl.'search/report_rt_ticket.html', '' ],
 ;
