@@ -412,6 +412,7 @@ sub calc_usage {
       # at this point we officially Do Not Care about the rating method
       $charges += $cdr->rated_price;
       $formatter->append($cdr);
+      $cdr->set_status('done');
     }
   }
 
