@@ -42,12 +42,13 @@ sub finish {
   my $buffer = $self->{buffer};
   foreach my $svcnum (keys %$svcnums) {
 
+    my $subtotal = $svcnums->{$svcnum};
+    next if $subtotal->{amount} < 0.01;
+
     my $cust_svc = qsearchs('cust_svc', { svcnum => $svcnum })
       or die "svcnum #$svcnum not found";
     my $phonenum = $cust_svc->svc_x->label;
     warn "processing $phonenum\n" if $DEBUG;
-
-    my $subtotal = $svcnums->{$svcnum};
 
     $self->csv->combine(
       $phonenum,

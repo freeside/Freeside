@@ -62,11 +62,13 @@ sub finish {
     my $total_duration = sum( map { $_->{'duration'} } @subtotals );
     $prefix =~ s/(...)(...)/$1 - $2/;
 
+    next if $total_amount < 0.01;
+
     $self->csv->combine(
       $prefix,
       map({ 
-          ($_->{count} || ''), 
-          ($_->{duration} ? int($_->{duration}/60) . ' min' : '')
+          $_->{count},
+          (int($_->{duration}/60) . ' min'),
         } @subtotals ),
       $self->money_char . sprintf('%.02f',$total_amount),
     );
