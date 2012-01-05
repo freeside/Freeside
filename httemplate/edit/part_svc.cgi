@@ -9,8 +9,26 @@
       Service Part #<% $part_svc->svcpart ? $part_svc->svcpart : "(NEW)" %>
 <BR><BR>
 Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
+
+Self-service access:
+<SELECT NAME="selfservice_access">
+% tie my %selfservice_access, 'Tie::IxHash', #false laziness w/browse/part_svc
+%   ''         => 'Yes',
+%   'hidden'   => 'Hidden',
+%   'readonly' => 'Read-only',
+% ;
+% for (keys %selfservice_access) {
+  <OPTION VALUE="<% $_ %>"
+          <% $_ eq $hashref->{'selfservice_access'} ? 'SELECTED' : '' %>
+  ><% $selfservice_access{$_} %>
+% }
+</SELECT><BR>
+
 <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;Disable new orders<BR>
+
 <INPUT TYPE="checkbox" NAME="preserve" VALUE="Y"<% $hashref->{'preserve'} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;Preserve this service on package cancellation<BR>
+
+
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $hashref->{svcpart} %>">
 
 <BR>
@@ -67,6 +85,7 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
 %    #'form_action'    => 'process/part_svc.cgi',
 %    'form_action'    => 'part_svc.cgi', #self
 %    'form_text'      => [ qw( svc svcpart ) ],
+%    'form_select'    => [ 'selfservice_access' ],
 %    'form_checkbox'  => [ 'disabled', 'preserve' ],
 %    'layer_callback' => sub {
 %      my $layer = shift;
@@ -363,7 +382,8 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
 %
 %      $html .= include('/elements/progress-init.html',
 %                         $layer, #form name
-%                         [ qw(svc svcpart disabled preserve exportnum),
+%                         [ qw(svc svcpart selfservice_access disabled preserve
+%                              exportnum),
 %                           @fields ],
 %                         'process/part_svc.cgi',
 %                         $p.'browse/part_svc.cgi',

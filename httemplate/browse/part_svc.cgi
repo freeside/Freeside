@@ -51,6 +51,8 @@ function part_export_areyousure(href) {
 
     <TH CLASS="grid" BGCOLOR="#cccccc"><A HREF="<% do { $cgi->param('orderby', 'active'); $cgi->self_url; } %>"><FONT SIZE=-1>Customer<BR>Services</FONT></A></TH>
 
+    <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Customer<BR>Self-service</FONT></TH>
+
     <TH CLASS="grid" BGCOLOR="#cccccc">Export</TH>
 
     <TH CLASS="grid" BGCOLOR="#cccccc">Field</TH>
@@ -118,6 +120,14 @@ function part_export_areyousure(href) {
 % } 
 
     </TD>
+
+% tie my %selfservice_access, 'Tie::IxHash', #false laziness w/edit/part_svc.cgi
+%   ''         => 'Yes',
+%   'hidden'   => 'Hidden',
+%   'readonly' => 'Read-only',
+% ;
+    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="center">
+      <% $selfservice_access{$part_svc->selfservice_access} %></TD>
 
     <TD ROWSPAN=<% $rowspan %> CLASS="inv" BGCOLOR="<% $bgcolor %>">
       <TABLE CLASS="inv">
