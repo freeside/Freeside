@@ -204,6 +204,8 @@ L<FS::svc_pbx> - PBX service class
 
 L<FS::svc_cert> - Certificate service class
 
+L<FS::svc_dish> - Dish network service class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items
@@ -434,17 +436,27 @@ L<FS::h_svc_acct> - Historical account objects
 
 L<FS::h_svc_broadband> - Historical broadband connection objects
 
+L<FS::h_svc_cert> - Historical certificate services
+
+L<FS::h_svc_dish> - Historical Dish Network services
+
 L<FS::h_svc_domain> - Historical domain objects
+
+L<FS::h_svc_dsl> - Historical DSL objects
 
 L<FS::h_svc_external> - Historical externally tracked service objects
 
 L<FS::h_svc_forward> - Historical mail forwarding alias objects
 
+L<FS::h_svc_hardware> - Historical isntalled hardware service objects
+
 L<FS::h_svc_mailinglist> - Historical mailing list objects
+
+L<FS::h_svc_pbx> - Historical PBX objects
 
 L<FS::h_svc_phone> - Historical phone number objects
 
-L<FS::h_svc_pbx> - Historical PBX objects
+L<FS::h_svc_port> - Historical port number objects
 
 L<FS::h_svc_www> - Historical web virtual host objects
 
