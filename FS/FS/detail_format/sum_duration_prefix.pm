@@ -2,7 +2,7 @@ package FS::detail_format::sum_duration_prefix;
 
 use strict;
 use vars qw( $DEBUG );
-use parent qw(FS::detail_format);
+use base qw(FS::detail_format);
 use List::Util qw(sum);
 
 $DEBUG = 0;

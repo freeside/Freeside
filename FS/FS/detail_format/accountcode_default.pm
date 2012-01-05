@@ -1,7 +1,7 @@
 package FS::detail_format::accountcode_default;
 
 use strict;
-use parent qw(FS::detail_format);
+use base qw(FS::detail_format);
 use Date::Format qw(time2str);
 
 sub name { 'Default with accountcode' }

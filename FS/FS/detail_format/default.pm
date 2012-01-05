@@ -1,7 +1,7 @@
 package FS::detail_format::default;
 
 use strict;
-use parent qw(FS::detail_format);
+use base qw(FS::detail_format);
 use Date::Format qw(time2str);
 
 sub name { 'Default' }

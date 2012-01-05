@@ -2,7 +2,7 @@ package FS::detail_format::sum_duration;
 
 use strict;
 use vars qw( $DEBUG );
-use parent qw(FS::detail_format);
+use base qw(FS::detail_format);
 use FS::Record qw(qsearchs);
 use FS::cust_svc;
 use FS::svc_Common; # for label
