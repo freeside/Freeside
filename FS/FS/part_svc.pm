@@ -386,6 +386,7 @@ sub check {
     || $self->ut_alpha('svcdb')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_enum('preserve', [ '', 'Y' ] )
+    || $self->ut_enum('selfservice_access', [ '', 'hidden', 'readonly' ] )
   ;
   return $error if $error;
 

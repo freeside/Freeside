@@ -1805,11 +1805,12 @@ sub tables_hashref {
 
     'part_svc' => {
       'columns' => [
-        'svcpart',    'serial',    '',   '', '', '', 
-        'svc',        'varchar',   '',   $char_d, '', '', 
-        'svcdb',      'varchar',   '',   $char_d, '', '', 
-        'disabled',   'char',  'NULL',   1, '', '', 
-        'preserve',   'char', 'NULL',  1, '', '',
+        'svcpart',             'serial',     '',        '', '', '', 
+        'svc',                'varchar',     '',   $char_d, '', '', 
+        'svcdb',              'varchar',     '',   $char_d, '', '', 
+        'disabled',              'char', 'NULL',         1, '', '', 
+        'preserve',              'char', 'NULL',         1, '', '',
+        'selfservice_access', 'varchar', 'NULL',   $char_d, '', '',
       ],
       'primary_key' => 'svcpart',
       'unique' => [],

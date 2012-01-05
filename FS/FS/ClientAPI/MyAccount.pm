@@ -1422,6 +1422,9 @@ sub list_svcs {
     next if $pkgnum && $cust_pkg->pkgnum != $pkgnum;
     push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
   }
+
+  @cust_svc = grep { $_->part_svc->selfservice_access ne 'hidden' } @cust_svc;
+
   if ( $p->{'svcdb'} ) {
     my $svcdb = ref($p->{'svcdb'}) eq 'HASH'
                   ? $p->{'svcdb'}
@@ -1445,7 +1448,8 @@ sub list_svcs {
       map { 
             my $svc_x = $_->svc_x;
             my($label, $value) = $_->label;
-            my $svcdb = $_->part_svc->svcdb;
+            my $part_svc = $_->part_svc;
+            my $svcdb = $part_svc->svcdb;
             my $cust_pkg = $_->cust_pkg;
             my $part_pkg = $cust_pkg->part_pkg;
 
@@ -1455,6 +1459,7 @@ sub list_svcs {
               'label'      => $label,
               'value'      => $value,
               'pkg_status' => $cust_pkg->status,
+              'readonly'   => ( $part_svc->selfservice_access eq 'readonly' ),
             );
 
             if ( $svcdb eq 'svc_acct' ) {
