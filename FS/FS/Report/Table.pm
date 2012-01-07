@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA $DEBUG );
 use FS::Report;
 use Time::Local qw( timelocal );
-use FS::UID qw( dbh );
+use FS::UID qw( dbh driver_name );
 use FS::Report::Table;
 use FS::CurrentUser;
 
@@ -347,6 +347,8 @@ the fraction of the line item duration that falls within the specified
 interval and return that fraction of the recurring charges.  This is 
 somewhat experimental.
 
+'project': enable if this is a projected period.  This is very experimental.
+
 =cut
 
 sub cust_bill_pkg {
@@ -362,8 +364,7 @@ sub cust_bill_pkg {
   $sum;
 }
 
-my $cust_bill_pkg_from =
-  ' cust_bill_pkg
+my $cust_bill_pkg_join = '
     LEFT JOIN cust_bill USING ( invnum )
     LEFT JOIN cust_main USING ( custnum )
     LEFT JOIN cust_pkg USING ( pkgnum )
@@ -373,6 +374,10 @@ my $cust_bill_pkg_from =
 sub cust_bill_pkg_setup {
   my $self = shift;
   my ($speriod, $eperiod, $agentnum, %opt) = @_;
+  # no projecting setup fees--use real invoices only
+  # but evaluate this anyway, because the design of projection is that
+  # if there are somehow real setup fees in the future, we want to count
+  # them
 
   $agentnum ||= $opt{'agentnum'};
 
@@ -383,7 +388,8 @@ sub cust_bill_pkg_setup {
   );
 
   my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg.setup),0)
-  FROM $cust_bill_pkg_from
+  FROM cust_bill_pkg
+  $cust_bill_pkg_join
   WHERE " . join(' AND ', grep $_, @where);
 
   $self->scalar_sql($total_sql);
@@ -394,6 +400,7 @@ sub cust_bill_pkg_recur {
   my ($speriod, $eperiod, $agentnum, %opt) = @_;
 
   $agentnum ||= $opt{'agentnum'};
+  my $cust_bill_pkg = $opt{'project'} ? 'v_cust_bill_pkg' : 'cust_bill_pkg';
 
   my @where = (
     'pkgnum != 0',
@@ -401,31 +408,40 @@ sub cust_bill_pkg_recur {
   );
 
   # subtract all usage from the line item regardless of date
-  my $item_usage = '( SELECT COALESCE(SUM(cust_bill_pkg_detail.amount),0)
-    FROM cust_bill_pkg_detail
-    WHERE cust_bill_pkg_detail.billpkgnum = cust_bill_pkg.billpkgnum )';
+  my $item_usage;
+  if ( $opt{'project'} ) {
+    $item_usage = 'usage'; #already calculated
+  }
+  else {
+    $item_usage = '( SELECT COALESCE(SUM(amount),0)
+      FROM cust_bill_pkg_detail
+      WHERE cust_bill_pkg_detail.billpkgnum = cust_bill_pkg.billpkgnum )';
+  }
   my $recur_fraction = '';
 
   if ( $opt{'distribute'} ) {
     push @where, "cust_main.agentnum = $agentnum" if $agentnum;
     push @where,
-      "cust_bill_pkg.sdate < $eperiod",
-      "cust_bill_pkg.edate > $speriod",
+      "$cust_bill_pkg.sdate < $eperiod",
+      "$cust_bill_pkg.edate > $speriod",
     ;
     # the fraction of edate - sdate that's within [speriod, eperiod]
     $recur_fraction = " * 
-      CAST(LEAST($eperiod, cust_bill_pkg.edate) - 
-       GREATEST($speriod, cust_bill_pkg.sdate) AS DECIMAL) / 
-      (cust_bill_pkg.edate - cust_bill_pkg.sdate)";
+      CAST(LEAST($eperiod, $cust_bill_pkg.edate) - 
+       GREATEST($speriod, $cust_bill_pkg.sdate) AS DECIMAL) / 
+      ($cust_bill_pkg.edate - $cust_bill_pkg.sdate)";
   }
   else {
+    # we don't want to have to create v_cust_bill
+    my $_date = $opt{'project'} ? 'v_cust_bill_pkg._date' : 'cust_bill._date';
     push @where, 
-      $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
+      $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, $_date);
   }
 
-  my $total_sql = "SELECT COALESCE(SUM(
-  (cust_bill_pkg.recur - $item_usage) $recur_fraction),0)
-  FROM $cust_bill_pkg_from
+  my $total_sql = 'SELECT '.
+  "COALESCE(SUM(($cust_bill_pkg.recur - $item_usage) $recur_fraction),0)
+  FROM $cust_bill_pkg 
+  $cust_bill_pkg_join
   WHERE ".join(' AND ', grep $_, @where);
 
   $self->scalar_sql($total_sql);
@@ -626,6 +642,101 @@ sub scalar_sql {
 }
 
 =back
+
+=head1 METHODS
+
+=over 4
+
+=item init_projection
+
+Sets up for future projection of all observables on the report.  Currently 
+this is limited to 'cust_bill_pkg'.
+
+=cut
+
+sub init_projection {
+  # this is weird special case stuff--some redesign may be needed 
+  # to use it for anything else
+  my $self = shift;
+
+  if ( driver_name ne 'Pg' ) {
+    # also database-specific for now
+    die "projection reports not supported on this platform";
+  }
+
+  my %items = map {$_ => 1} @{ $self->{items} };
+  if ($items{'cust_bill_pkg'}) {
+    my $dbh = dbh;
+    # v_ for 'virtual'
+    my @sql = (
+      # could use TEMPORARY TABLE but we're already transaction-protected
+      'DROP TABLE IF EXISTS v_cust_bill_pkg',
+      'CREATE TABLE v_cust_bill_pkg ' . 
+       '(LIKE cust_bill_pkg,
+          usage numeric(10,2), _date integer, expire integer)',
+      # XXX this should be smart enough to take only the ones with 
+      # sdate/edate overlapping the ROI, for performance
+      "INSERT INTO v_cust_bill_pkg ( 
+        SELECT cust_bill_pkg.*,
+          (SELECT COALESCE(SUM(amount),0) FROM cust_bill_pkg_detail 
+          WHERE cust_bill_pkg_detail.billpkgnum = cust_bill_pkg.billpkgnum),
+          cust_bill._date,
+          cust_pkg.expire
+        FROM cust_bill_pkg $cust_bill_pkg_join
+      )",
+    );
+    foreach my $sql (@sql) {
+      warn "[init_projection] $sql\n" if $DEBUG;
+      $dbh->do($sql) or die $dbh->errstr;
+    }
+  }
+}
+
+=item extend_projection START END
+
+Generates data for the next period of projection.  This will be called 
+for sequential periods where the END of one equals the START of the next
+(with no gaps).
+
+=cut
+
+sub extend_projection {
+  my $self = shift;
+  my ($speriod, $eperiod) = @_;
+  my %items = map {$_ => 1} @{ $self->{items} };
+  if ($items{'cust_bill_pkg'}) {
+    # append, head-to-tail, new line items identical to any that end within the 
+    # period (and aren't expiring)
+    my @fields = ( FS::cust_bill_pkg->fields, qw( usage _date expire ) );
+    my $insert_fields = join(',', @fields);
+    #advance (sdate, edate) by one billing period
+    foreach (@fields) {
+      if ($_ eq 'edate') {
+        $_ = '(edate + (edate - sdate)) AS edate' #careful of integer overflow
+      }
+      elsif ($_ eq 'sdate') {
+        $_ = 'edate AS sdate'
+      }
+      elsif ($_ eq 'setup') {
+        $_ = '0 AS setup' #because recurring only
+      }
+      elsif ($_ eq '_date') {
+        $_ = '(_date + (edate - sdate)) AS _date'
+      }
+    }
+    my $select_fields = join(',', @fields);
+    my $dbh = dbh;
+    my $sql =
+      "INSERT INTO v_cust_bill_pkg ($insert_fields)
+        SELECT $select_fields FROM v_cust_bill_pkg
+        WHERE edate >= $speriod AND edate < $eperiod 
+              AND recur > 0
+              AND (expire IS NULL OR expire > edate)";
+    warn "[extend_projection] $sql\n" if $DEBUG;
+    my $rows = $dbh->do($sql) or die $dbh->errstr;
+    warn "[extend_projection] $rows rows\n" if $DEBUG;
+  }
+}
 
 =head1 BUGS
 
