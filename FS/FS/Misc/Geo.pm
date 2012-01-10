@@ -9,7 +9,7 @@ use HTTP::Request::Common qw( GET POST );
 use HTML::TokeParser;
 use Data::Dumper;
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 @EXPORT_OK = qw( get_censustract );
 
