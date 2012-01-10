@@ -155,28 +155,28 @@ any delimiter and linked from the elements in @data.
 %   );
 %
 %   http_header('Content-Type' => 'image/png' );
+%   http_header('Cache-Control' => 'no-cache' );
 %
 %   $chart->_set_colors();
 %   
 <% $chart->scalar_png([ $opt{'axis_labels'}, @data ]) %>
 %
 % } else {
+% # image and download links should use the cached data
+% # just directly reference this component
+% my $myself = $p.'graph/elements/report.html?session='.$session;
 %
 <% include('/elements/header.html', $opt{'title'} ) %>
 % unless ( $opt{'graph_type'} eq 'none' ) {
-% $cgi->param('_type', 'png'); 
 
-<IMG SRC="<% $cgi->self_url %>" WIDTH="976" HEIGHT="384">
+<IMG SRC="<% "$myself;_type=png" %>" WIDTH="976" HEIGHT="384">
 % }
 <P ALIGN="right">
 
 % unless ( $opt{'disable_download'} ) { 
-%   $cgi->param('_type', "xls" ); 
             Download full results<BR>
-            as <A HREF="<% $cgi->self_url %>">Excel spreadsheet</A><BR>
-%   $cgi->param('_type', 'csv'); 
-            as <A HREF="<% $cgi->self_url %>">CSV file</A></P>
-%   $cgi->param('_type', "html" ); 
+            as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
+            as <A HREF="<% "$myself;_type=csv" %>">CSV file</A></P>
 % } 
 %
 </P>
@@ -271,6 +271,16 @@ any delimiter and linked from the elements in @data.
 <%init>
 
 my(%opt) = @_;
+my $session;
+# load from cache if possible, to avoid recalculating
+if ( $cgi->param('session') =~ /^(\d+)$/ ) {
+  $session = $1;
+  %opt = %{ $m->cache->get($session) };
+}
+else {
+  $session = sprintf("%10d%6d", time, int(rand(1000000)));
+  $m->cache->set($session, \%opt, '1h');
+}
 
 my $sprintf = $opt{'sprintf'} || '%.2f';
 

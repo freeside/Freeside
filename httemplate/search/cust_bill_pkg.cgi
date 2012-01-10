@@ -145,8 +145,16 @@ my $agentnums_sql =
 my @where = ( $agentnums_sql );
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @where, "_date >= $beginning",
-             "_date <= $ending";
+
+if ( $cgi->param('distribute') == 1 ) {
+  push @where, "sdate <= $ending",
+               "edate >  $beginning",
+  ;
+}
+else {
+  push @where, "_date >= $beginning",
+               "_date <= $ending";
+}
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";

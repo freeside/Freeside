@@ -6,6 +6,13 @@
 
 <% include('/elements/tr-select-from_to.html' ) %>
 
+<TR>
+  <TD ALIGN="right">Project to:</TD>
+  <TD><& /elements/select-month_year.html, 
+    prefix => 'project',
+    show_month_abbr => 1 &></TD>
+</TR>
+
 <% include('/elements/tr-select-agent.html',
              'label'         => 'For agent: ',
              'disable_empty' => 0,
@@ -28,19 +35,28 @@
 </TR>
 -->
 
+% foreach ( qw(Setup Usage) ) {
+<& /elements/tr-select.html,
+    'label'   => "$_ fees",
+    'field'   => 'use_'.lc($_),
+    'options' => [ 0, 1, 2 ],
+    'labels'  => { 0 => 'Combine', 1 => 'Separate', 2 => 'Do not show' },
+&>
+% }
+
 <TR>
   <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="use_override" VALUE="1"></TD>
   <TD>Separate sub-packages from parents</TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="use_usage" VALUE="1"></TD>
-  <TD>Separate rated usage from recurring fees</TD>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="average_per_cust_pkg" VALUE="1"></TD>
+  <TD>Average per customer package</TD>
 </TR>
 
 <TR>
-  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="average_per_cust_pkg" VALUE="1"></TD>
-  <TD>Average per customer package</TD>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="distribute" VALUE="1"></TD>
+  <TD>Distribute recurring fees over billing period</TD>
 </TR>
 
 </TABLE>

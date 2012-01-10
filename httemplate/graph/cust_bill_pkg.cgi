@@ -22,9 +22,19 @@ die "access denied"
 my $link = "${p}search/cust_bill_pkg.cgi?nottax=1";
 my $bottom_link = "$link;";
 
+my $use_usage = $cgi->param('use_usage') || 0;
+my $use_setup = $cgi->param('use_setup') || 0;
 my $use_override         = $cgi->param('use_override')         ? 1 : 0;
-my $use_usage            = $cgi->param('use_usage')            ? 1 : 0;
 my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
+my $distribute           = $cgi->param('distribute')           ? 1 : 0;
+
+my %charge_labels = (
+  'SR' => 'setup + recurring',
+  'RU' => 'recurring',
+  'S'  => 'setup',
+  'R'  => 'recurring',
+  'U'  => 'usage',
+);
 
 #XXX or virtual
 my( $agentnum, $sel_agent, $all_agent ) = ('', '', '');
@@ -94,6 +104,21 @@ my @labels = ();
 my @colors = ();
 my @links  = ();
 
+my @components = ( 'SRU' );
+# split/omit components as appropriate
+if ( $use_setup == 1 ) {
+  @components = ( 'S', 'RU' );
+}
+elsif ( $use_setup == 2 ) {
+  @components = ( 'RU' );
+}
+if ( $use_usage == 1 ) {
+  $components[-1] =~ s/U//; push @components, 'U';
+}
+elsif ( $use_usage == 2 ) {
+  $components[-1] =~ s/U//;
+}
+
 foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
   my $col_scheme = Color::Scheme->new
@@ -108,7 +133,7 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
   my $n = 0;
 
   foreach my $pkg_class ( @pkg_class ) {
-    foreach my $component ( $use_usage ? ('recurring', 'usage') : ('') ) {
+    foreach my $component ( @components ) {
 
       push @items, 'cust_bill_pkg';
 
@@ -118,20 +143,22 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
             ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
             : ''
         ).
-        " $component";
+        ' '.$charge_labels{$component};
 
       my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
       my $row_agentnum = $all_agent || $agent->agentnum;
       push @params, [ ($all_class ? () : ('classnum' => $row_classnum) ),
                       ($all_agent ? () : ('agentnum' => $row_agentnum) ),
                       'use_override'         => $use_override,
-                      'use_usage'            => $component,
+                      'charges'              => $component,
                       'average_per_cust_pkg' => $average_per_cust_pkg,
+                      'distribute'           => $distribute,
                     ];
 
       push @links, "$link;".($all_agent ? '' : "agentnum=$row_agentnum;").
                    ($all_class ? '' : "classnum=$row_classnum;").
-                   "use_override=$use_override;use_usage=$component;";
+                   "distribute=$distribute;".
+                   "use_override=$use_override;charges=$component;";
 
       @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
         unless @recur_colors;
@@ -147,5 +174,7 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
 }
 
 #use Data::Dumper;
-
+if ( $cgi->param('debug') == 1 ) {
+  $FS::Report::Table::DEBUG = 1;
+}
 </%init>

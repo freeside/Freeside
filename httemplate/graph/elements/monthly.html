@@ -64,6 +64,7 @@ Example:
 <%init>
 
 my(%opt) = @_;
+$opt{'debug'} ||= $cgi->param('debug');
 
 my $conf = new FS::Conf;
 my $money_char = $opt{'disable_money'} ? '' : $conf->config('money_char');
@@ -89,6 +90,11 @@ $opt{'start_year'}  ||= $cgi->param('start_year'); # || 1899+$curyear;
 $opt{'end_month'} ||= $cgi->param('end_month'); # || $curmon+1;
 $opt{'end_year'}  ||= $cgi->param('end_year'); # || 1900+$curyear;
 
+#find end of projection
+$opt{'project_month'} ||= $cgi->param('project_month') || 0;
+$opt{'project_year'}  ||= $cgi->param('project_year') || 0;
+# setting these to zero prevents projection on reports that don't support it
+
 if ( $opt{'daily'} ) { # daily granularity
     $opt{'start_day'} ||= $cgi->param('start_day');
     $opt{'end_day'} ||= $cgi->param('end_day');
@@ -110,19 +116,38 @@ my %reportopts = (
       'end_day'      => $opt{'end_day'},
       'end_month'    => $opt{'end_month'},
       'end_year'     => $opt{'end_year'},
+      'project_day'    => $opt{'project_day'},
+      'project_month'  => $opt{'project_month'},
+      'project_year'   => $opt{'project_year'},
       'agentnum'     => $opt{'agentnum'},
       'remove_empty' => $opt{'remove_empty'},
       'doublemonths' => $opt{'doublemonths'},
 );
+
+warn Dumper({ 'REPORTOPTS' => \%reportopts }) if $opt{'debug'};
 
 my $report;
 $report = new FS::Report::Table::Daily(%reportopts) if $opt{'daily'};
 $report = new FS::Report::Table::Monthly(%reportopts) unless $opt{'daily'};
 my $data = $report->data;
 
+warn Dumper({'DATA' => $data}) if $opt{'debug'};
+
+if ( $data->{'error'} ) {
+  die $data->{'error'}; # could be smarter
+}
+
 my $col_labels = [ map { my $m = $_; $m =~ s/^(\d+)\//$mon[$1-1] / ; $m }
                              @{$data->{label}} ];
 $col_labels = $data->{label} if $opt{'daily'};
+
+if ( $opt{'remove_empty'} ) {
+  # need to filter out series labels for collapsed rows
+  $opt{'graph_labels'} = [ 
+    map { $opt{'graph_labels'}[$_] } 
+    @{ $data->{indices} }
+  ];
+}
 
 my @links;
 foreach my $link (@{ $data->{'links'} }) {
