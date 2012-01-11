@@ -10,7 +10,7 @@ use DBI;
 use Getopt::Std;
 
 my %opt;
-getopts('H:U:P:D:T:s:e:', \%opt);
+getopts('H:U:P:D:T:s:e:c:', \%opt);
 my $user = shift or die &usage;
 
 my $dsn = 'dbi:mysql';
@@ -79,8 +79,21 @@ while ( $row = $sth->fetchrow_hashref ) {
     warn $row->{'time'} . ": no callid, skipped.\n";
     next;
   }
-  my ($src) = $row->{'caller_id'} =~ /^sip:(\d+)@/;
-  my ($dst) = $row->{'callee_id'} =~ /^sip:(\d+)@/;
+
+  #i guess now we're NANPA-centric, but at least we warn on non-numeric numbers
+  my $src = '';
+  if ( $row->{'caller_id'} =~ /^sip:(\+1)?(\d+)@/ ) {
+    $src = $2;
+  } else {
+    warn "unparseable caller_id ". $row->{'caller_id'}. "\n";
+  }
+
+  my $dst = '';
+  if ( $row->{'callee_id'} =~ /^sip:(\+1)?(\d+)@/ ) {
+    $dst = $2;
+  } else {
+    warn "unparseable callee_id ". $row->{'callee_id'}. "\n";
+  }
 
   my $cdr = $cdrs{$callid};
   if ( !$cdr ) {
@@ -88,6 +101,7 @@ while ( $row = $sth->fetchrow_hashref ) {
       uniqueid    => $callid,
       cdrbatchnum => $cdrbatchnum,
     });
+    $cdr->cdrtypenum($opt{c}) if $opt{c};
   }
   my $date = str2time($row->{'time'});
   if ( $row->{'method'} eq 'INVITE' ) {
@@ -132,7 +146,7 @@ if ( keys(%cdrs) ) {
 $mysql->disconnect;
 
 sub usage {
-  "Usage: \n  cdr-opensips.import\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\t[ -s start ] [ -e end ]\n\tfreesideuser\n";
+  "Usage: \n  cdr-opensips.import\n\t[ -H host ]\n\t-D database\n\t-U user\n\t-P password\n\t[ -s start ] [ -e end ] [ -c cdrtypenum ] \n\tfreesideuser\n";
 }
 
 sub check_cdr {
