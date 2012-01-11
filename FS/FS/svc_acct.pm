@@ -1182,40 +1182,42 @@ sub check {
     or return gettext('illegal_username'). " ($usernamemin-$ulen): ". $recref->{username};
   $recref->{username} = $1;
 
+  my $uerror = gettext('illegal_username'). ': '. $recref->{username};
+
   unless ( $username_uppercase ) {
-    $recref->{username} =~ /[A-Z]/ and return gettext('illegal_username');
+    $recref->{username} =~ /[A-Z]/ and return $uerror;
   }
   if ( $username_letterfirst ) {
-    $recref->{username} =~ /^[a-z]/ or return gettext('illegal_username');
+    $recref->{username} =~ /^[a-z]/ or return $uerror;
   } elsif ( $username_letter ) {
-    $recref->{username} =~ /[a-z]/ or return gettext('illegal_username');
+    $recref->{username} =~ /[a-z]/ or return $uerror;
   }
   if ( $username_noperiod ) {
-    $recref->{username} =~ /\./ and return gettext('illegal_username');
+    $recref->{username} =~ /\./ and return $uerror;
   }
   if ( $username_nounderscore ) {
-    $recref->{username} =~ /_/ and return gettext('illegal_username');
+    $recref->{username} =~ /_/ and return $uerror;
   }
   if ( $username_nodash ) {
-    $recref->{username} =~ /\-/ and return gettext('illegal_username');
+    $recref->{username} =~ /\-/ and return $uerror;
   }
   unless ( $username_ampersand ) {
-    $recref->{username} =~ /\&/ and return gettext('illegal_username');
+    $recref->{username} =~ /\&/ and return $uerror;
   }
   unless ( $username_percent ) {
-    $recref->{username} =~ /\%/ and return gettext('illegal_username');
+    $recref->{username} =~ /\%/ and return $uerror;
   }
   unless ( $username_colon ) {
-    $recref->{username} =~ /\:/ and return gettext('illegal_username');
+    $recref->{username} =~ /\:/ and return $uerror;
   }
   unless ( $username_slash ) {
-    $recref->{username} =~ /\// and return gettext('illegal_username');
+    $recref->{username} =~ /\// and return $uerror;
   }
   unless ( $username_equals ) {
-    $recref->{username} =~ /\=/ and return gettext('illegal_username');
+    $recref->{username} =~ /\=/ and return $uerror;
   }
   unless ( $username_pound ) {
-    $recref->{username} =~ /\#/ and return gettext('illegal_username');
+    $recref->{username} =~ /\#/ and return $uerror;
   }
 
 
