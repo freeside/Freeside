@@ -864,7 +864,8 @@ sub _upgrade_data {  #class method
                             'description' => $groupname,
                             };
             $error = $g->insert;
-            die $error if $error;
+            die "Error inserting new radius_group for service definition group \"$groupname\": $error"
+              if $error;
         }
         push @groupnums, $g->groupnum;
     }
