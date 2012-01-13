@@ -9,20 +9,23 @@
                                  'Service',
                                  'Router',
                                  'IP Address',
-                                 FS::UI::Web::cust_header(),
+                                 FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                ],
               'fields'      => [ 'svcnum',
                                  'svc',
-                                 sub { $routerbyblock{shift->blocknum}->routername; },
+                                 sub {
+                                   my $blocknum = shift->blocknum or return '';
+                                   $routerbyblock{$blocknum}->routername;
+                                 },
                                  'ip_addr',
                                  \&FS::UI::Web::cust_fields,
                                ],
               'links'       => [ $link,
                                  $link,
-                                 $link_router,
+                                 '', #$link_router,
                                  $link,
                                  ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
-                                       FS::UI::Web::cust_header()
+                                       FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                  ),
                                ],
               'align'       => 'rllr'. FS::UI::Web::cust_aligns(),
@@ -78,9 +81,10 @@ foreach my $router (qsearch('router', {})) {
 my $link = [ $p.'view/svc_broadband.cgi?', 'svcnum' ];
 
 #XXX get the router link working
-my $link_router = sub { my $routernum = $routerbyblock{shift->blocknum}->routernum;
-                        [ $p.'view/router.cgi?'.$routernum, 'routernum' ];
-                      };
+#my $link_router = sub {
+#  my $routernum = $routerbyblock{shift->blocknum}->routernum;
+#  [ $p.'view/router.cgi?'.$routernum, 'routernum' ];
+#};
 
 my $link_cust = [ $p.'view/cust_main.cgi?', 'custnum' ];
 
