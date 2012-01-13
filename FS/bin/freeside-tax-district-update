@@ -1,0 +1,78 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Parse 'str2time';
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch dbh);
+use FS::Conf;
+use FS::cust_main;
+use FS::h_cust_main;
+
+my %opt;
+getopts('n', \%opt);
+
+my $user = shift or die &usage;
+adminsuidsetup($user);
+$FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $conf = FS::Conf->new;
+my $method = $conf->config('tax_district_method')
+  or die "no tax district lookup method configured.\n";
+
+my %limit;
+%limit = ( district => '' ) if $opt{'n'};
+my @location = qsearch( 'cust_main', \%limit ),
+               qsearch( 'cust_location', { disabled => '', %limit } );
+
+# breaking the rules somewhat by modifying cust_location records in place 
+# instead of doing a proper package change, but we're not changing the 
+# actual address
+warn scalar(@location)." records found.\n";
+my $queued = 0; my $updated = 0;
+foreach my $location (@location) {
+  my $error;
+  my $job = FS::queue->new({
+      job => 'FS::geocode_Mixin::process_district_update'
+    });
+  my $class = ref($location);
+  my $id = $class eq 'FS::cust_main' ? 
+                                  $location->custnum : 
+                                  $location->locationnum;
+  $error = $job->insert($class, $id);
+  if ( $error ) {
+    $dbh->rollback;
+    die "error queueing update for $class $id\n";
+  }
+  $queued++;
+}
+warn "Queued $queued tax district lookups.\n";
+$dbh->commit;
+
+sub usage {
+  "Usage:\n\n  freeside-tax-district-update [ -n ] user\n\n"
+}
+
+=head1 NAME
+
+freeside-tax-district-update - Update tax district codes from a lookup source.
+
+=head1 SYNOPSIS
+
+  freeside-tax-district-update [ -n ] user
+
+=head1 DESCRIPTION
+
+Updates the 'district' field for all customers and service locations 
+using an online tax information lookup method.  Currently the only 
+one supported is the Washington Department of Revenue sales tax table, 
+and looking up the tax district will create a cust_main_county record
+with the tax rate for that district.
+
+The -n option tells the script to ignore customers and locations that 
+already have a district code.
+
+The actual lookup operation will run from the job queue.
+
+=cut

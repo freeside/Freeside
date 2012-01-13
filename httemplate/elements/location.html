@@ -209,6 +209,14 @@ Example:
 %   } else {
       <INPUT TYPE="hidden" NAME="censustract" VALUE="<% $opt{censustract} %>">
 %   } 
+%   if ( $conf->config('tax_district_method') or $object->get('district') ) {
+    <TR>
+      <<%$th%> ALIGN="right">Tax district<BR>(automatic)</<%$th%>>
+      <TD>
+        <INPUT TYPE="text" NAME="district" VALUE="<%$object->get('district')%>">
+      </TD>
+    </TR>
+%   }
 % } 
 
 <%init>

@@ -10,7 +10,7 @@
                            'table'    => 'cust_main_county',
                            'hashref'  => $hashref,
                            'order_by' =>
-                             'ORDER BY country, state, county, city, taxclass',
+                  'ORDER BY country, state, county, city, district, taxclass',
                          },
      'count_query'    => $count_query,
      'header'         => \@header,
@@ -440,11 +440,12 @@ if ( $taxclass ) {
 
 $cell_style = '';
 
-my @header        = ( 'Country', 'State/Province', 'County', 'City' );
-my @header2       = ( '', '', '', '', );
-my @links         = ( '', '', '', '', );
-my @link_onclicks = ( '', '', '', '', );
-my $align = 'llll';
+my @header        = ( 'Country', 'State/Province', 'County', 'City', '' );
+# last column is 'district', but usually unused
+my @header2       = ( '', '', '', '', '' );
+my @links         = ( '', '', '', '', '' );
+my @link_onclicks = ( '', '', '', '', '' );
+my $align = 'lllll';
 
 my %seen_country = ();
 my %seen_state = ();
@@ -532,7 +533,8 @@ my @fields = (
         my $r = shift;
         if ( $r->city ) {
 
-          if ( $r->taxclass ) { #but if it has a taxclass, can't remove
+          if ( $r->taxclass #but if it has a taxclass, can't remove
+              or $r->district ) { # or a district
             $r->city;
           } else {
             $r->city. '&nbsp;'.
@@ -551,6 +553,21 @@ my @fields = (
                        );
         }
       },
+
+  #district
+  sub {
+        my $r = shift;
+        if ( $r->district ) {
+          $r->district . '&nbsp;'.
+            remove_link( col  => 'district',
+                         label=> 'remove&nbsp;district',
+                         row  => $r,
+                         cgi  => $cgi,
+                       );
+        }
+        # manually editing districts is not exactly intended
+      },
+
 );
 
 my @color = (
@@ -607,7 +624,8 @@ my $cb_sub = sub {
   my $cust_main_county = shift;
 
   if ( $cb_oldrow ) {
-    if (    $cb_oldrow->city     ne $cust_main_county->city 
+    if (    $cb_oldrow->district ne $cust_main_county->district
+         || $cb_oldrow->city     ne $cust_main_county->city 
          || $cb_oldrow->county   ne $cust_main_county->county  
          || $cb_oldrow->state    ne $cust_main_county->state  
          || $cb_oldrow->country  ne $cust_main_county->country 

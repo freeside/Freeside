@@ -13,6 +13,7 @@ use FS::payby;
 use FS::conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh datasrc use_confcompat);
+use FS::Misc::Geo;
 
 $base_dir = '%%%FREESIDE_CONF%%%';
 
@@ -3745,6 +3746,14 @@ and customer address. Include units.',
     'description' => 'The year to use in census tract lookups',
     'type'        => 'select',
     'select_enum' => [ qw( 2010 2009 2008 ) ],
+  },
+
+  {
+    'key'         => 'tax_district_method',
+    'section'     => 'UI',
+    'description' => 'The method to use to look up tax district codes.',
+    'type'        => 'select',
+    'select_hash' => [ FS::Misc::Geo::get_district_methods() ],
   },
 
   {

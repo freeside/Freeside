@@ -1165,7 +1165,7 @@ sub _handle_taxes {
 
     } else {
 
-      my @loc_keys = qw( city county state country );
+      my @loc_keys = qw( district city county state country );
       my %taxhash;
       if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
         my $cust_location = $cust_pkg->cust_location;
@@ -1182,7 +1182,7 @@ sub _handle_taxes {
 
       my @taxes = ();
       my %taxhash_elim = %taxhash;
-      my @elim = qw( city county state );
+      my @elim = qw( district city county state );
       do { 
 
         #first try a match with taxclass

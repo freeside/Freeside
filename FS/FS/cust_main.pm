@@ -609,6 +609,20 @@ sub insert {
     }
   }
 
+  # FS::geocode_Mixin::after_insert or something?
+  if ( $conf->config('tax_district_method') and !$import ) {
+    # if anything non-empty, try to look it up
+    my $queue = new FS::queue {
+      'job'     => 'FS::geocode_Mixin::process_district_update',
+      'custnum' => $self->custnum,
+    };
+    my $error = $queue->insert( ref($self), $self->custnum );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing tax district update: $error";
+    }
+  }
+
   # cust_main exports!
   warn "  exporting\n" if $DEBUG > 1;
 
@@ -1633,6 +1647,25 @@ sub replace {
     }
   }
 
+  # FS::geocode_Mixin::after_replace ?
+  # though this will go away anyway once we move customer bill/service 
+  # locations into cust_location
+  # We can trigger this on any address change--just have to make sure 
+  # not to trigger it on itself.
+  if ( $conf->config('tax_district_method') and !$import 
+      and ( $self->get('ship_address1') ne $old->get('ship_address1')
+        or  $self->get('address1')      ne $old->get('address1') ) ) {
+    my $queue = new FS::queue {
+      'job'     => 'FS::geocode_Mixin::process_district_update',
+      'custnum' => $self->custnum,
+    };
+    my $error = $queue->insert( ref($self), $self->custnum );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing tax district update: $error";
+    }
+  }
+
   # cust_main exports!
 
   my $export_args = $options{'export_args'} || [];
@@ -1739,6 +1772,7 @@ sub check {
     || $self->ut_textn('stateid_state')
     || $self->ut_textn('invoice_terms')
     || $self->ut_alphan('geocode')
+    || $self->ut_alphan('district')
     || $self->ut_floatn('cdr_termination_percentage')
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
@@ -2143,8 +2177,9 @@ sub has_ship_address {
 
 =item location_hash
 
-Returns a list of key/value pairs, with the following keys: address1, adddress2,
-city, county, state, zip, country, and geocode.  The shipping address is used if present.
+Returns a list of key/value pairs, with the following keys: address1, 
+adddress2, city, county, state, zip, country, district, and geocode.  The 
+shipping address is used if present.
 
 =cut
 
