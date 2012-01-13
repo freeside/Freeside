@@ -211,7 +211,8 @@ sub check {
         or return "Illegal (mistyped?) credit card number (payinfo)";
       $self->payinfo($1);
       validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
+      return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
+                                 && cardtype($self->payinfo) eq "Unknown";
     } else {
       $self->payinfo('N/A');
     }
