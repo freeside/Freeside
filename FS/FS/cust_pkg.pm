@@ -1350,12 +1350,16 @@ sub change {
     $hash{$_} = '' foreach qw(setup bill last_bill);
   }
 
+  # allow $opt->{'locationnum'} = '' to specifically set it to null
+  # (i.e. customer default location)
+  $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
+
   # Create the new package.
   my $cust_pkg = new FS::cust_pkg {
     custnum      => $self->custnum,
     pkgpart      => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
     refnum       => ( $opt->{'refnum'}      || $self->refnum       ),
-    locationnum  => ( $opt->{'locationnum'} || $self->locationnum  ),
+    locationnum  => ( $opt->{'locationnum'}                        ),
     %hash,
   };
 
