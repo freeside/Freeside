@@ -76,6 +76,10 @@ Country (see L<FS::cust_main_county>)
 
 Geocode
 
+=item district
+
+Tax district code (optional)
+
 =item disabled
 
 Disabled flag; set to 'Y' to disable the location.
@@ -102,6 +106,26 @@ sub table { 'cust_location'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+=cut
+
+sub insert {
+  my $self = shift;
+  my $error = $self->SUPER::insert(@_);
+
+  #false laziness with cust_main, will go away eventually
+  my $conf = new FS::Conf;
+  if ( !$error and $conf->config('tax_district_method') ) {
+
+    my $queue = new FS::queue {
+      'job' => 'FS::geocode_Mixin::process_district_update'
+    };
+    $error = $queue->insert( ref($self), $self->locationnum );
+
+  }
+
+  $error || '';
+}
+
 =item delete
 
 Delete this record from the database.
@@ -110,6 +134,30 @@ Delete this record from the database.
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+
+=cut
+
+sub replace {
+  my $self = shift;
+  my $old = shift;
+  $old ||= $self->replace_old;
+  my $error = $self->SUPER::replace($old);
+
+  #false laziness with cust_main, will go away eventually
+  my $conf = new FS::Conf;
+  if ( !$error and $conf->config('tax_district_method') 
+    and $self->get('address1') ne $old->get('address1') ) {
+
+    my $queue = new FS::queue {
+      'job' => 'FS::geocode_Mixin::process_district_update'
+    };
+    $error = $queue->insert( ref($self), $self->locationnum );
+
+  }
+
+  $error || '';
+}
+
 
 =item check
 
@@ -142,6 +190,7 @@ sub check {
     || $self->ut_textn('location_number')
     || $self->ut_enum('location_kind', [ '', 'R', 'B' ] )
     || $self->ut_alphan('geocode')
+    || $self->ut_alphan('district')
   ;
   return $error if $error;
 

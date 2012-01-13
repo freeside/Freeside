@@ -132,7 +132,13 @@ sub location_label {
   $line;
 }
 
-=item set_coord
+=item set_coord [ PREFIX ]
+
+Look up the coordinates of the location using (currently) the Google Maps
+API and set the 'latitude' and 'longitude' fields accordingly.
+
+PREFIX, if specified, will be prepended to all location field names,
+including latitude and longitude.
 
 =cut
 
@@ -211,6 +217,54 @@ sub geocode {
     if scalar(@cust_tax_location) > 1;
 
   $geocode;
+}
+
+=item process_district_update CLASS ID
+
+Queueable function to update the tax district code using the selected method 
+(config 'tax_district_method').  CLASS is either 'FS::cust_main' or 
+'FS::cust_location'; ID is the key in one of those tables.
+
+=cut
+
+sub process_district_update {
+  my $class = shift;
+  my $id = shift;
+
+  eval "use FS::Misc::Geo qw(get_district); use FS::Conf; use $class;";
+  die $@ if $@;
+  die "$class has no location data" if !$class->can('location_hash');
+
+  my $conf = FS::Conf->new;
+  my $method = $conf->config('tax_district_method')
+    or return; #nothing to do if null
+  my $self = $class->by_key($id) or die "object $id not found";
+
+  # dies on error, fine
+  my $tax_info = get_district({ $self->location_hash }, $method);
+  
+  if ( $tax_info ) {
+    $self->set('district', $tax_info->{'district'} );
+    my $error = $self->replace;
+    die $error if $error;
+
+    my %hash = map { $_ => $tax_info->{$_} } 
+      qw( district city county state country );
+    my $old = qsearchs('cust_main_county', \%hash);
+    if ( $old ) {
+      my $new = new FS::cust_main_county { $old->hash, %$tax_info };
+      warn "updating tax rate for district ".$tax_info->{'district'} if $DEBUG;
+      $error = $new->replace($old);
+    }
+    else {
+      my $new = new FS::cust_main_county $tax_info;
+      warn "creating tax rate for district ".$tax_info->{'district'} if $DEBUG;
+      $error = $new->insert;
+    }
+    die $error if $error;
+
+  }
+  return;
 }
 
 =back

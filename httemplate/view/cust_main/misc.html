@@ -127,6 +127,16 @@
 
 % }
 
+% if ( $cust_main->district ) {
+
+  <TR>
+    <TD ALIGN="right"><% mt('Tax district') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->district %></TD>
+  </TR>
+
+% }
+
+
 % if ( $conf->exists('ticket_system-selfservice_edit_subject') ) {
 
   <TR>

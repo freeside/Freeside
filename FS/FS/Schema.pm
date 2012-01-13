@@ -896,6 +896,7 @@ sub tables_hashref {
         'geocode',  'varchar', 'NULL', 20,  '', '',
         'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
         'censusyear', 'char', 'NULL', 4, '', '',
+        'district', 'varchar', 'NULL', 20, '', '',
         'tax',      'char', 'NULL', 1, '', '', 
         'otaker',   'varchar', 'NULL',    32, '', '', 
         'usernum',   'int', 'NULL', '', '', '',
@@ -1054,6 +1055,7 @@ sub tables_hashref {
         'coord_auto',         'char', 'NULL',       1, '', '',
         'country',            'char',     '',       2, '', '', 
         'geocode',         'varchar', 'NULL',      20, '', '',
+        'district',        'varchar', 'NULL',      20, '', '',
         'location_type',   'varchar', 'NULL',      20, '', '',
         'location_number', 'varchar', 'NULL',      20, '', '',
         'location_kind',      'char', 'NULL',       1, '', '',
@@ -1178,11 +1180,12 @@ sub tables_hashref {
       'index'       => [ [ 'custnum' ], [ 'billpkgnum' ] ],
     },
 
-    'cust_main_county' => { #county+state+country are checked off the
-                            #cust_main_county for validation and to provide
-                            # a tax rate.
+    'cust_main_county' => { #district+city+county+state+country are checked 
+                            #off the cust_main_county for validation and to 
+                            #provide a tax rate.
       'columns' => [
         'taxnum',   'serial',   '',    '', '', '', 
+        'district', 'varchar',  'NULL',    20, '', '',
         'city',     'varchar',  'NULL',    $char_d, '', '',
         'county',   'varchar',  'NULL',    $char_d, '', '', 
         'state',    'varchar',  'NULL',    $char_d, '', '', 
@@ -1197,7 +1200,8 @@ sub tables_hashref {
       'primary_key' => 'taxnum',
       'unique' => [],
   #    'unique' => [ ['taxnum'], ['state', 'county'] ],
-      'index' => [ [ 'city' ], [ 'county' ], [ 'state' ], [ 'country' ],
+      'index' => [ [ 'district' ], [ 'city' ], [ 'county' ], [ 'state' ], 
+                   [ 'country' ],
                    [ 'taxclass' ],
                  ],
     },

@@ -7,6 +7,7 @@
                    'state'    => 'State',
                    'county'   => 'County',
                    'city'     => 'City',
+                   'district' => 'District',
                    'taxclass' => 'Tax class',
                    'taxname'  => 'Tax name',
                    'tax'      => 'Tax rate',
@@ -47,6 +48,9 @@ my @fields = (
   { field=>'county',   type=>'fixed', },
   { field=>'city',     type=>'fixed', },
 );
+
+push @fields, { field=>'district', type=>'fixed', }
+  if $cust_main_county->district;
 
 push @fields, { field=>'taxclass', type=>'fixed', }
   if $conf->exists('enable_taxclasses');

@@ -56,6 +56,8 @@ currently supported:
 
 =item taxnum - primary key (assigned automatically for new tax rates)
 
+=item district - tax district (optional)
+
 =item city
 
 =item county
@@ -119,6 +121,7 @@ sub check {
   $self->exempt_amount(0) unless $self->exempt_amount;
 
   $self->ut_numbern('taxnum')
+    || $self->ut_alphan('district')
     || $self->ut_textn('city')
     || $self->ut_textn('county')
     || $self->ut_anything('state')
