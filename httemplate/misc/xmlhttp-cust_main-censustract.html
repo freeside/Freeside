@@ -1,117 +1,14 @@
 <% objToJson($return) %>
 <%init>
 
-my $DEBUG = 0;
-
-my $url='http://www.ffiec.gov/Geocode/default.aspx';
-
-my $sub = $cgi->param('sub');
-
-my $return = {};
-my $error = '';
-
-use LWP::UserAgent;
-use HTTP::Request;
-use HTTP::Request::Common qw( GET POST );
-use HTML::TokeParser;
-
-if ( $sub eq 'censustract' ) {
-
-  my %arg = $cgi->param('arg');
-  warn join('', map "$_: $arg{$_}\n", keys %arg )
-    if $DEBUG;
-
-  my $ua = new LWP::UserAgent;
-  my $res = $ua->request( GET( $url ) );
-
-  warn $res->as_string
-    if $DEBUG > 1;
-
-  unless ($res->code  eq '200') {
-
-    $error = $res->message;
-
-  } else {
-
-    my $content = $res->content;
-    my $p = new HTML::TokeParser \$content;
-    my $viewstate;
-    my $eventvalidation;
-    while (my $token = $p->get_tag('input') ) {
-      if ($token->[1]->{name} eq '__VIEWSTATE') {
-        $viewstate = $token->[1]->{value};
-      }
-      if ($token->[1]->{name} eq '__EVENTVALIDATION') {
-        $eventvalidation = $token->[1]->{value};
-      }
-      last if $viewstate && $eventvalidation;
-    }
-
-    unless ($viewstate && $eventvalidation ) {
-
-      $error = "either no __VIEWSTATE or __EVENTVALIDATION found";
-
-    } else {
-
-      my($zip5, $zip4) = split('-',$arg{zip});
-
-      $arg{year} ||= '2011';
-      #ugh  workaround a mess at ffiec
-      $arg{year} = " $arg{year}" if $arg{year} ne '2011';
-      my @ffiec_args = (
-        __VIEWSTATE => $viewstate,
-        __EVENTVALIDATION => $eventvalidation,
-        ddlbYear    => $arg{year},
-        ddlbYear    => '2011', #' 2009',
-        txtAddress  => $arg{address},
-        txtCity     => $arg{city},  
-        ddlbState   => $arg{state},
-        txtZipCode  => $zip5,
-        btnSearch   => 'Search',
-      );
-      warn join("\n", @ffiec_args )
-        if $DEBUG;
-
-      push @{ $ua->requests_redirectable }, 'POST';
-      $res = $ua->request( POST( $url, \@ffiec_args ) );
-      warn $res->as_string
-        if $DEBUG > 1;
-
-      unless ($res->code  eq '200') {
-
-        $error = $res->message;
-
-      } else {
-
-        my @id = qw( MSACode StateCode CountyCode TractCode );
-        $content = $res->content;
-        warn $res->content if $DEBUG > 1;
-        $p = new HTML::TokeParser \$content;
-        my $prefix = 'UcGeoResult11_lb';
-        my $compare =
-          sub { my $t=shift; scalar( grep { lc($t) eq lc("$prefix$_")} @id ) };
-
-        while (my $token = $p->get_tag('span') ) {
-          next unless ( $token->[1]->{id} && &$compare( $token->[1]->{id} ) );
-          $token->[1]->{id} =~ /^$prefix(\w+)$/;
-          $return->{lc($1)} = $p->get_trimmed_text("/span");
-        }
-
-        $error = "No census tract found" unless $return->{tractcode};
-        $return->{tractcode} .= ' '
-          unless $error || $JSON::VERSION >= 2; #broken JSON 1 workaround
-
-      } #unless ($res->code  eq '200')
-
-    } #unless ($viewstate)
-
-  } #unless ($res->code  eq '200')
-
-  $error = "FFIEC Geocoding error: $error" if $error;
-  $return->{'error'} = $error;
-
-  $return;
-
+my %arg = $cgi->param('arg');
+my $year = delete($arg{'year'});
+my $return = get_censustract(\%arg, $year);
+if ( $return =~ /^\d/ ) {
+  $return = { 'censustract' => $return };
+}
+else {
+  $return = { 'error' => $return };
 }
 
 </%init>
