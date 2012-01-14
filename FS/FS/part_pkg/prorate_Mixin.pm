@@ -75,11 +75,14 @@ sub calc_prorate {
 
   my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
 
+  my $add_period = $self->option('add_full_period',1);
+
   my $mnow = $$sdate;
 
   # if this is the first bill but the bill date has been set
   # (by prorate_defer_bill), calculate from the setup date,
-  # and append the setup fee to @$details.
+  # append the setup fee to @$details, and make sure to bill for 
+  # a full period after the bill date.
   if ( $self->option('prorate_defer_bill',1)
          && ! $cust_pkg->getfield('last_bill') 
          && $cust_pkg->setup
@@ -88,6 +91,7 @@ sub calc_prorate {
     #warn "[calc_prorate] #".$cust_pkg->pkgnum.": running deferred setup\n";
     $param->{'setup_fee'} = $self->calc_setup($cust_pkg, $$sdate, $details);
     $mnow = $cust_pkg->setup;
+    $add_period = 1;
   }
 
   my ($mend, $mstart);
@@ -103,12 +107,8 @@ sub calc_prorate {
   # or periods up to freq_override if billing for an override interval
   if ( ($param->{'freq_override'} || 0) > 1 ) {
     $months += $param->{'freq_override'} - 1;
-  } elsif ( ( $self->option('add_full_period',1) 
-                || $self->option('prorate_defer_bill',1) # necessary
-            )
-            && $months < $self->freq
-          )
-  {
+  } 
+  elsif ( $add_period && $months < $self->freq) {
     $months += $self->freq;
     $$sdate = $self->add_freq($mstart);
   }
