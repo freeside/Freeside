@@ -121,7 +121,7 @@ sub skin_info {
           )
       ),
       ( map { $_ => $conf->exists("selfservice-$_", $agentnum ) }
-        qw( menu_skipblanks menu_skipheadings menu_nounderline )
+        qw( menu_skipblanks menu_skipheadings menu_nounderline no_logo )
       ),
       ( map { $_ => scalar($conf->config_binary("selfservice-$_", $agentnum)) }
         qw( title_left_image title_right_image
