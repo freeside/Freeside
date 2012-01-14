@@ -2032,14 +2032,15 @@ sub check {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/[^\d\@\.]//g;
-    if ( $conf->exists('cust_main-require-bank-branch') ) {
-      $payinfo =~ /^(\d+)\@(\d+)\.(\d+)$/ or return 'invalid echeck account@branch.bank';
+    if ( $conf->config('echeck-country') eq 'CA' ) {
+      $payinfo =~ /^(\d+)\@(\d{5})\.(\d{3})$/
+        or return 'invalid echeck account@branch.bank';
       $payinfo = "$1\@$2.$3";
-    } elsif ( $conf->exists('echeck-nonus') ) {
-      $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
+    } elsif ( $conf->config('echeck-country') eq 'US' ) {
+      $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
       $payinfo = "$1\@$2";
     } else {
-      $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
+      $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@routing';
       $payinfo = "$1\@$2";
     }
     $self->payinfo($payinfo);

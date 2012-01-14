@@ -50,6 +50,16 @@ sub upgrade_config {
   $conf->touch('geocode-require_nw_coordinates')
     if $conf->exists('svc_broadband-require-nw-coordinates');
 
+  unless ( $conf->config('echeck-country') ) {
+    if ( $conf->exists('cust_main-require-bank-branch') ) {
+      $conf->set('echeck-country', 'CA');
+    } elsif ( $conf->exists('echeck-nonus') ) {
+      $conf->set('echeck-country', 'XX');
+    } else {
+      $conf->set('echeck-country', 'US');
+    }
+  }
+
   upgrade_overlimit_groups($conf);
   map { upgrade_overlimit_groups($conf,$_->agentnum) } qsearch('agent', {});
   

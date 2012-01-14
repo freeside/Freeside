@@ -3068,6 +3068,17 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'echeck-country',
+    'section'     => 'billing',
+    'description' => 'Format electronic check information for the specified country.',
+    'type'        => 'select',
+    'select_hash' => [ 'US' => 'United States',
+                       'CA' => 'Canada (enables branch)',
+                       'XX' => 'Other',
+                     ],
+  },
+
+  {
     'key'         => 'voip-cust_accountcode_cdr',
     'section'     => 'telephony',
     'description' => 'Enable the per-customer option for CDR breakdown by accountcode.',
@@ -4713,13 +4724,6 @@ and customer address. Include units.',
     'key'         => 'cust-email-high-visibility',
     'section'     => 'UI',
     'description' => 'Move the invoicing e-mail address field to the top of the billing address section and highlight it.',
-    'type'        => 'checkbox',
-  },
-  
-  {
-    'key'         => 'cust_main-require-bank-branch',
-    'section'     => 'UI',
-    'description' => 'An alternate DCHK/CHEK format; require entry of bank branch number.',
     'type'        => 'checkbox',
   },
   
