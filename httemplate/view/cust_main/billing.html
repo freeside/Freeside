@@ -85,7 +85,7 @@
 % } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
 %     my( $account, $aba ) = split('@', $cust_main->paymask );
 %  my $branch = '';
-%  ($branch,$aba) = split('\.',$aba) if $conf->exists('cust_main-require-bank-branch');
+%  ($branch,$aba) = split('\.',$aba) if $conf->config('echeck-country') eq 'CA';
 
 
 % my $autodemand = $cust_main->payby eq 'CHEK' ? 'automatic' : 'on-demand';
@@ -93,12 +93,17 @@
   </TD>
 </TR>
 
+%  #false laziness w/edit/cust_main/billing.html and misc/payment.cgi
+%  my $routing_label = $conf->config('echeck-country') eq 'US'
+%                        ? 'ABA/Routing number'
+%                        : 'Routing number';
+
 <TR>
-  <TD ALIGN="right"><% mt('ABA/Routing code') |h %></TD>
+  <TD ALIGN="right"><% mt($routing_label) |h %></TD>
   <TD BGCOLOR="#ffffff"><% $aba %></TD>
 </TR>
 
-% if ( $conf->exists('cust_main-require-bank-branch') ) {
+% if ( $conf->config('echeck-country') eq 'CA' ) {
 <TR>
   <TD ALIGN="right"><% mt('Branch number') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $branch %></TD>

@@ -127,7 +127,7 @@
 %  my( $account, $aba ) = split('@', $payinfo);
 %  my $branch = '';
 %  ($branch,$aba) = split('\.',$aba)
-%    if $conf->exists('cust_main-require-bank-branch');
+%    if $conf->config('echeck-country') eq 'CA';
 %
 %  my $disabled = 'DISABLED style="background-color: #dddddd"';
 %  my $text_disabled = 'style="color: #999999"';
@@ -160,6 +160,14 @@
 %  my $chek_billday_style = $payby eq 'CHEK' ? '' : 'style="color: #999999"';
 %  my $card_billday_select_disabled = $payby eq 'CARD' ? '' : 'DISABLED';
 %  my $chek_billday_select_disabled = $payby eq 'CHEK' ? '' : 'DISABLED';
+%
+%  #false laziness w/view/cust_main/billing.html and misc/payment.cgi
+%  my $routing_label = $conf->config('echeck-country') eq 'US'
+%                        ? 'ABA/Routing number'
+%                        : 'Routing number';
+%  my $routing_size      = $conf->config('echeck-country') eq 'CA' ? 4 : 10;
+%  my $routing_maxlength = $conf->config('echeck-country') eq 'CA' ? 3 : 9;
+%
 %
 %  my %payby = (
 %
@@ -235,17 +243,17 @@
 %            join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes).
 %          qq!</SELECT></TD></TR>!.
 %
-%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('ABA/Routing number').qq! </TD>!.
-%          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="CHEK_payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!" SIZE=10 MAXLENGTH=9> !.
+%        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt($routing_label).qq! </TD>!.
+%          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=$routing_size MAXLENGTH=$routing_maxlength NAME="CHEK_payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!"> !.
 %          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">!.emt('help').qq!</A>)!.
 %          qq!</TD></TR>!.
 %
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_month" VALUE="12">!.
 %        qq!<INPUT TYPE="hidden" NAME="CHEK_exp_year" VALUE="2037">!.
 %
-%        ( $conf->exists('cust_main-require-bank-branch') ? 
+%        ( $conf->config('echeck-country') eq 'CA' ? 
 %               qq!<TR><TD ALIGN="right">$r !.emt('Branch number').qq!</TD><TD COLSPAN="3">
-%                   <INPUT TYPE="text" name="CHEK_payinfo3" VALUE=$branch></TD></TR>! : '' ).
+%                   <INPUT TYPE="text" name="CHEK_payinfo3" VALUE="$branch" SIZE=6 MAXLENGTH=5></TD></TR>! : '' ).
 %   
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}!.emt('Bank name').qq! </TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" NAME="CHEK_payname" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.

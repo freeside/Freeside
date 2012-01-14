@@ -140,7 +140,7 @@
 %       or die "unparsable payinfo ". $cust_main->payinfo;
 %     ($account, $aba) = ($1, $2);
 %     ($branch,$aba) = split('\.',$aba)
-%       if $conf->exists('cust_main-require-bank-branch');
+%       if $conf->config('echeck-country') eq 'CA';
 %     $payname = $cust_main->payname;
 %     $ss = $cust_main->ss;
 %     $paytype = $cust_main->getfield('paytype');
@@ -148,6 +148,13 @@
 %     $stateid = $cust_main->getfield('stateid');
 %     $stateid_state = $cust_main->getfield('stateid_state');
 %   }
+%
+%  #false laziness w/{edit,view}/cust_main/billing.html
+%  my $routing_label = $conf->config('echeck-country') eq 'US'
+%                        ? 'ABA/Routing number'
+%                        : 'Routing number';
+%  my $routing_size      = $conf->config('echeck-country') eq 'CA' ? 4 : 10;
+%  my $routing_maxlength = $conf->config('echeck-country') eq 'CA' ? 3 : 9;
 
     <INPUT TYPE="hidden" NAME="month" VALUE="12">
     <INPUT TYPE="hidden" NAME="year" VALUE="2037">
@@ -158,17 +165,17 @@
       <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
     </TR>
     <TR>
-      <TD ALIGN="right"><% mt('ABA/Routing number') |h %></TD>
+      <TD ALIGN="right"><% mt($routing_label) |h %></TD>
       <TD>
-        <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$aba%>">
+        <INPUT TYPE="text" SIZE="<% $routing_size %>" MAXLENGTH="<% $routing_maxlength %>" NAME="payinfo2" VALUE="<%$aba%>">
         (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;"><% mt('help') |h %></A>)
       </TD>
     </TR>
-%   if ( $conf->exists('cust_main-require-bank-branch') ) {
+%   if ( $conf->config('echeck-country') eq 'CA' ) {
       <TR>
         <TD ALIGN="right"><% mt('Branch number') |h %></TD>
         <TD>
-          <INPUT TYPE="text" NAME="payinfo3" VALUE="<%$branch%>">
+          <INPUT TYPE="text" NAME="payinfo3" VALUE="<%$branch%>" SIZE=6 MAXLENGTH=5>
         </TD>
       </TR>
 %   }

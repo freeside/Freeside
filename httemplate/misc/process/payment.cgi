@@ -86,8 +86,8 @@ if ( $payby eq 'CHEK' ) {
     $cgi->param('payinfo2') =~ /^(\d+)$/
       or errorpage("Illegal ABA/routing number ". $cgi->param('payinfo2'));
     my $payinfo2 = $1;
-    if ( $conf->exists('cust_main-require-bank-branch') ) {
-      $cgi->param('payinfo3') =~ /^(\d+)$/
+    if ( $conf->config('echeck-country') eq 'CA' ) {
+      $cgi->param('payinfo3') =~ /^(\d{5})$/
         or errorpage("Illegal branch number ". $cgi->param('payinfo2'));
       $payinfo2 = "$1.$payinfo2";
     }

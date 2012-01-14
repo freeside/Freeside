@@ -44,7 +44,7 @@ if ( $payby ) {
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
       my $payinfo = $cgi->param('payinfo1'). '@';
       $payinfo .= $cgi->param('payinfo3').'.' 
-            if $conf->exists('cust_main-require-bank-branch');
+            if $conf->config('echeck-country') eq 'CA';
       $payinfo .= $cgi->param('payinfo2');
       $cgi->param('payinfo',$payinfo);
   }
