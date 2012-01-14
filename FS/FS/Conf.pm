@@ -3970,6 +3970,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-no_logo',
+    'section'     => 'self-service',
+    'description' => 'Disable the logo in self-service',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'selfservice-title_color',
     'section'     => 'self-service',
     'description' => 'HTML color for the self-service title, for example, #000000',
