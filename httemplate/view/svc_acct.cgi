@@ -71,6 +71,8 @@
 <BR><BR>
 % }
 
+<& elements/svc_export_status.html, $svc_acct &>
+
 <& elements/svc_export_settings.html, $svc_acct &>
 
 <% joblisting({'svcnum'=>$svcnum}, 1) %>

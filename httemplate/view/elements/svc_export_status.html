@@ -1,0 +1,24 @@
+%   my ( $html, $hashref ) = $svc_x->export_getstatus;
+%   if ( keys %$hashref ) {
+
+    Status settings
+    <% ntable('#cccccc',2) %>
+
+%     foreach my $key ( sort {$a cmp $b} keys %$hashref ) {
+        <TR>
+          <TD ALIGN="right"><% $key |h %></TD>
+          <TD BGCOLOR="#ffffff">
+            <B><% $hashref->{$key} |h %></B>
+          </TD>
+        </TR>
+%     }
+
+    </TABLE>
+    <BR>
+
+%   }
+<%init>
+
+my $svc_x = shift;
+
+</%init>
