@@ -33,16 +33,16 @@ sub export_getstatus {
   my($self, $svc_acct, $htmlref, $hashref) = @_;
 
   my $dbh = DBI->connect( map $self->option($_), qw(datasrc username password) )
-    or do { $hashref->{'error'} = "can't connect: ".  $DBI::errstr; return; };
+    or return "can't connect: ".  $DBI::errstr;
 
   ###
   #vacation settings
   ###
 
   my $vsth = $dbh->prepare('SELECT * FROM vacation WHERE email = ?')
-    or do { $hashref->{'error'} = "can't prepare: ". $dbh->errstr; return; };
+    or return "can't prepare: ". $dbh->errstr;
   $vsth->execute( $svc_acct->email )
-    or do { $hashref->{'error'} = "can't execute: ". $vsth->errstr; return; };
+    or return "can't execute: ". $vsth->errstr;
 
   my $vrow = $vsth->fetchrow_hashref;
   if ( $vrow ) {
@@ -60,9 +60,9 @@ sub export_getstatus {
   ###
 
   my $ssth = $dbh->prepare('SELECT * FROM users WHERE address = ?')
-    or do { $hashref->{'error'} = "can't prepare: ". $dbh->errstr; return; };
+    or return "can't prepare: ". $dbh->errstr;
   $ssth->execute( $svc_acct->email )
-    or do { $hashref->{'error'} = "can't execute: ". $ssth->errstr; return; };
+    or return "can't execute: ". $ssth->errstr;
 
   my $srow = $ssth->fetchrow_hashref;
   if ( $srow ) {
@@ -80,6 +80,9 @@ sub export_getstatus {
   #my $lsth = $dbh->prepare('SELECT * FROM 
 
   #htmlref not implemented/used for this status export
+
+
+  ''; #no errors
 
 }
 
