@@ -996,9 +996,8 @@ sub export_getsettings {
   my %defaults = ();
   my $error = $self->export('getsettings', \%settings, \%defaults);
   if ( $error ) {
-    #XXX bubble this up better
     warn "error running export_getsetings: $error";
-    return ( {}, {} );
+    return ( { 'error' => $error }, {} );
   }
   ( \%settings, \%defaults );
 }
@@ -1016,9 +1015,8 @@ sub export_getstatus {
   my %hash = ();
   my $error = $self->export('getstatus', \$html, \%hash);
   if ( $error ) {
-    #XXX bubble this up better
     warn "error running export_getstatus: $error";
-    return ( '', {} );
+    return ( '', { 'error' => $error } );
   }
   ( $html, \%hash );
 }

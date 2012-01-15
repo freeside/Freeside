@@ -7,9 +7,7 @@
 %     foreach my $key ( sort {$a cmp $b} keys %$hashref ) {
         <TR>
           <TD ALIGN="right"><% $key |h %></TD>
-          <TD BGCOLOR="#ffffff">
-            <B><% $hashref->{$key} |h %></B>
-          </TD>
+          <TD BGCOLOR="#ffffff"><% $hashref->{$key} |h %></TD>
         </TR>
 %     }
 
