@@ -1,4 +1,4 @@
-package FS::part_export_acct_sql_status;
+package FS::part_export::acct_sql_status;
 use base qw( FS::part_export::sql_Common );
 
 use strict;
