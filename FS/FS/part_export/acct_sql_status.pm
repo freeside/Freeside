@@ -5,11 +5,12 @@ use strict;
 use warnings;
 use vars qw( %info );
 
-my $options = __PACKAGE__->sql_options;
+my $options = { %{__PACKAGE__->sql_options} };#a new hashref so we don't pollute
 delete $options->{$_} for qw( table schema static primary_key );
 
 %info = (
   'svc'      => 'svc_acct',
+  'desc'     => 'Mailbox status information from SQL',
   'options'  => $options,
   'nodomain' => '',
   'notes'    => <<END
