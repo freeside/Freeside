@@ -4,14 +4,15 @@ use base qw( FS::part_export::sql_Common );
 use strict;
 use warnings;
 use vars qw( %info );
+use Tie::IxHash;
 
-my $options = { %{__PACKAGE__->sql_options} };#a new hashref so we don't pollute
-delete $options->{$_} for qw( table schema static primary_key );
+tie my %options, 'Tie::IxHash', %{__PACKAGE__->sql_options};
+delete $options{$_} for qw( table schema static primary_key );
 
 %info = (
   'svc'      => 'svc_acct',
   'desc'     => 'Mailbox status information from SQL',
-  'options'  => $options,
+  'options'  => \%options,
   'nodomain' => '',
   'notes'    => <<END
 Read mailbox status information (vacation and spam settings) from an SQL
