@@ -5,7 +5,7 @@ use strict;
 use vars qw( %info );
 use FS::Record; #qw(qsearchs);
 
-my $options = __PACKAGE__->sql_options;
+my $options = { %{__PACKAGE__->sql_options} };#a new hashref so we don't pollute
 $options->{'crypt'} = { label => 'Password encryption',
                         type=>'select', options=>[qw(crypt md5 sha1_base64)],
                         default=>'crypt',
