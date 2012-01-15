@@ -3,13 +3,14 @@ use base qw( FS::part_export::sql_Common );
 
 use strict;
 use vars qw( %info );
+use Tie::IxHash;
 use FS::Record; #qw(qsearchs);
 
-my $options = { %{__PACKAGE__->sql_options} };#a new hashref so we don't pollute
-$options->{'crypt'} = { label => 'Password encryption',
-                        type=>'select', options=>[qw(crypt md5 sha1_base64)],
-                        default=>'crypt',
-                      };
+tie my %options, 'Tie::IxHash', %{__PACKAGE__->sql_options};
+$options{'crypt'} = { label => 'Password encryption',
+                      type=>'select', options=>[qw(crypt md5 sha1_base64)],
+                      default=>'crypt',
+                    };
 
 tie my %vpopmail_map, 'Tie::IxHash',
   'pw_name'   => 'username',
@@ -62,7 +63,7 @@ my $postfix_native_mailbox_map =
   'svc'      => 'svc_acct',
   'desc'     => 'Real-time export of accounts to SQL databases '.
                 '(vpopmail, Postfix+Courier IMAP, others?)',
-  'options'  => $options,
+  'options'  => \%options,
   'nodomain' => '',
   'notes'    => <<END
 Export accounts (svc_acct records) to SQL databases.  Currently has default
