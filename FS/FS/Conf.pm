@@ -3693,6 +3693,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
