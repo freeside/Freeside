@@ -2993,7 +2993,7 @@ sub print_generic {
     }
   }
 
-  unless (    $conf->exists('disable_previous_balance')
+  unless (    $conf->exists('disable_previous_balance', $agentnum)
            || $conf->exists('previous_balance-summary_only')
          )
   {
@@ -3027,7 +3027,8 @@ sub print_generic {
 
   }
   
-  if ( @pr_cust_bill && !$conf->exists('disable_previous_balance') ) {
+  if ( @pr_cust_bill && !$conf->exists('disable_previous_balance', $agentnum) ) 
+    {
     push @buf, ['','-----------'];
     push @buf, [ $self->mt('Total Previous Balance'),
                  $money_char. sprintf("%10.2f", $pr_total) ];
@@ -3143,7 +3144,7 @@ sub print_generic {
   $invoice_data{current_less_finance} =
     sprintf('%.2f', $self->charged - $invoice_data{finance_amount} );
 
-  if ( $multisection && !$conf->exists('disable_previous_balance')
+  if ( $multisection && !$conf->exists('disable_previous_balance', $agentnum)
     || $conf->exists('previous_balance-summary_only') )
   {
     unshift @sections, $previous_section if $pr_total;
@@ -3207,7 +3208,7 @@ sub print_generic {
 
   push @buf,['','-----------'];
   push @buf,[$self->mt( 
-              $conf->exists('disable_previous_balance') 
+              $conf->exists('disable_previous_balance', $agentnum) 
                ? 'Total Charges'
                : 'Total New Charges'
              ),
@@ -3221,7 +3222,7 @@ sub print_generic {
          || 'Total New Charges'
       if $conf->exists('previous_balance-exclude_from_total');
     my $amount = $self->charged +
-                   ( $conf->exists('disable_previous_balance') ||
+                   ( $conf->exists('disable_previous_balance', $agentnum) ||
                      $conf->exists('previous_balance-exclude_from_total')
                      ? 0
                      : $pr_total
@@ -3248,7 +3249,7 @@ sub print_generic {
     push @buf,['',''];
   }
   
-  unless ( $conf->exists('disable_previous_balance') ) {
+  unless ( $conf->exists('disable_previous_balance', $agentnum) ) {
     #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
   
     # credits
