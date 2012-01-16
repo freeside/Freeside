@@ -106,6 +106,24 @@ tie %hash, 'Tie::IxHash',
     longname  => 'Manual credit card', 
     cust_main => 'BILL', #this is a payment type only, customers go to BILL...
   },
+  'APPL' => {
+    tinyname  => 'apple store',
+    shortname => 'Apple Store',
+    longname  => 'Apple Store',
+    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+  },
+  'ANRD' => {
+    tinyname  => 'android market',
+    shortname => 'Android Market',
+    longname  => 'Android Market',
+    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+  },
+  'EDI' => {
+    tinyname  => 'EDI',
+    shortname => 'Electronic Debit',
+    longname  => 'Electronic Debit',
+    cust_main => '', #not a customer type
+  },
   'COMP' => {
     tinyname  => 'comp',
     shortname => 'Complimentary',
