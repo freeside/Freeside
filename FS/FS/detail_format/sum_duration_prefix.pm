@@ -41,8 +41,10 @@ sub append {
     # but interstate-ness should be symmetric, yes?  if A places an
     # interstate call to B, then B receives an interstate call from A.
     my $subtotal = $prefixes->{$prefix}{$cdr->rated_ratename}
-      or die "unknown rated_ratename '" .$cdr->rated_ratename.
-             "' in CDR #".$cdr->acctid."\n";
+      or next; 
+      # silently skip calls that are neither interstate nor intrastate
+    #or die "unknown rated_ratename '" .$cdr->rated_ratename.
+    #         "' in CDR #".$cdr->acctid."\n";
     $subtotal->{count}++;
     $subtotal->{duration} += $object->rated_seconds;
     $subtotal->{amount} += $object->rated_price;
