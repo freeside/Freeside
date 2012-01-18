@@ -70,7 +70,7 @@ sub dbdef { $dbdef; }
 Returns the current canoical database definition as defined in this file.
 
 Optionally, pass a DBI data source to enable syntax specific to that database.
-Currently, this enables "TYPE=InnoDB" for MySQL databases.
+Currently, this enables "ENGINE=InnoDB" for MySQL databases.
 
 =cut
 
@@ -79,7 +79,7 @@ sub dbdef_dist {
   
   my $local_options = '';
   if ( $datasrc =~ /^dbi:mysql/i ) {
-    $local_options = 'TYPE=InnoDB';
+    $local_options = 'ENGINE=InnoDB';
   }
 
   ###
