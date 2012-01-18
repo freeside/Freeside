@@ -1,3 +1,4 @@
+% if ( ! $opt{'multiple'} ) {
 <& /elements/select-table.html,
     table       => 'tower_sector',
     name_col    => 'description',
@@ -5,3 +6,45 @@
     empty_label => ' ',
     @_ 
 &>
+% }
+% else { # currently only multiple sectors, not towers
+<& /elements/select-table.html,
+    table       => 'tower',
+    name_col    => 'towername',
+    id          => 'towernum',
+    field       => 'dummy_towernum',
+    onchange    => 'change_towernum(this.value);',
+    element_etc => 'STYLE="vertical-align:top"',
+&>
+<SELECT NAME="sectornum" ID="sectornum" MULTIPLE SIZE="6"></SELECT>
+<SCRIPT TYPE="text/javascript">
+var sectors_of = <% encode_json(\%sectors_of) %>;
+var select_sectornum = document.getElementById('sectornum');
+function change_towernum(towernum) {
+  select_sectornum.options.length = 0;
+  for (var sectornum in sectors_of[towernum]) {
+    var o = document.createElement('OPTION');
+    o.value = sectornum;
+    o.text = sectors_of[towernum][sectornum];
+    o.selected = true;
+    select_sectornum.add(o, null);
+  }
+  return;
+}
+change_towernum('');
+% }
+</SCRIPT>
+<BR>
+<INPUT TYPE="checkbox" VALUE="none" NAME="sectornum" CHECKED> No sector
+<%init>
+my %opt = @_;
+
+my %sectors_of;
+if ( $opt{'multiple'} ) {
+  foreach my $sector ( qsearch('tower_sector',{}) ) {
+    $sectors_of{$sector->towernum} ||= {};
+    $sectors_of{$sector->towernum}->{$sector->sectornum} = $sector->sectorname;
+    $sectors_of{''}->{$sector->sectornum} = $sector->description;
+  }
+}
+</%init>

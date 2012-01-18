@@ -1462,7 +1462,7 @@ sub set_password {
   if ( !$encoding ) {
     # set encoding to system default
     ($encoding, $encryption) =
-      split(/-/, lc($conf->config('default-password-encoding')));
+      split(/-/, lc($conf->config('default-password-encoding') || ''));
     $encoding ||= 'legacy';
     $self->_password_encoding($encoding);
   }
@@ -2846,6 +2846,9 @@ sub search {
     push @where, "svcpart = $1";
   }
 
+  # sector and tower
+  my @where_sector = $class->tower_sector_sql($params);
+  push @where, @where_sector if @where_sector;
 
   # here is the agent virtualization
   #if ($params->{CurrentUser}) {
@@ -2872,6 +2875,9 @@ sub search {
                   ' LEFT JOIN part_svc  USING ( svcpart ) '.
                   ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
                   ' LEFT JOIN cust_main USING ( custnum ) ';
+
+  $addl_from .= ' LEFT JOIN tower_sector USING ( sectornum )'
+    if @where_sector;
 
   my $count_query = "SELECT COUNT(*) FROM svc_acct $addl_from $extra_sql";
   #if ( keys %svc_acct ) {

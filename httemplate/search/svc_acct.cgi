@@ -119,6 +119,10 @@ for (qw( domain domsvc agentnum custnum popnum svcpart cust_fields )) {
   $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
 }
 
+for (qw( towernum sectornum )) {
+  $search_hash{$_} = [ $cgi->param($_) ] if $cgi->param($_);
+}
+
 my $timepermonth = '';
 
 my $orderby = 'ORDER BY svcnum';

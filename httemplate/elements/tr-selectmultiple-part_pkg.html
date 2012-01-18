@@ -1,6 +1,5 @@
-<TR>
-  <TD ALIGN="right"><% $opt{'label'} || 'Packages' %></TD>
-  <TD>
+<& tr-td-label.html, label => emt('Packages'), %opt &>
+  <TD <% $style %>>
     <% include( '/elements/select-table.html',
                   'table'         => 'part_pkg',
 		  'name_col'      => 'pkg',
@@ -8,12 +7,14 @@
 		  'element_etc'   => 'multiple',
 		  %opt,
               )
-    %>
+  %>
   </TD>
 </TR>
 
 <%init>
 
 my %opt = @_;
+my $style = $opt{'cell_style'};
+$style = 'STYLE="'.$style.'"' if $style;
 
 </%init>

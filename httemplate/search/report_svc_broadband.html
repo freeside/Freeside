@@ -26,13 +26,20 @@
                     'multiple'      => 'multiple',
               )
     %>
-% }
 
     <% include( '/elements/tr-selectmultiple-part_pkg.html',
                 %pkg_search,
               )
     %> 
 
+%     if ( FS::tower_sector->count > 0 ) {
+    <& /elements/tr-select-tower_sector.html,
+          'multiple'    => 1,
+          'label'       => 'Tower/Sector',
+    &>
+%     }
+
+%   }
     <TR>
       <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
     </TR>
