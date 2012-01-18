@@ -8,6 +8,7 @@
               'header'      => [ '#',
                                  'Service',
                                  'Router',
+                                 @tower_header,
                                  'IP Address',
                                  FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                ],
@@ -17,22 +18,26 @@
                                    my $blocknum = shift->blocknum or return '';
                                    $routerbyblock{$blocknum}->routername;
                                  },
+                                 @tower_fields,
                                  'ip_addr',
                                  \&FS::UI::Web::cust_fields,
                                ],
               'links'       => [ $link,
                                  $link,
                                  '', #$link_router,
+                                 (map '', @tower_fields),
                                  $link,
                                  ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                        FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                  ),
                                ],
-              'align'       => 'rllr'. FS::UI::Web::cust_aligns(),
+              'align'       => 'rll'.('r' x @tower_fields).'r'.
+                                FS::UI::Web::cust_aligns(),
               'color'       => [ 
                                  '',
                                  '',
                                  '',
+                                 (map '', @tower_fields),
                                  '',
                                  FS::UI::Web::cust_colors(),
                                ],
@@ -40,6 +45,7 @@
                                  '',
                                  '',
                                  '',
+                                 (map '', @tower_fields),
                                  '',
                                  FS::UI::Web::cust_styles(),
                                ],
@@ -60,7 +66,7 @@ else {
   foreach (qw(custnum agentnum svcpart)) {
     $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
   }
-  foreach (qw(pkgpart routernum)) {
+  foreach (qw(pkgpart routernum towernum sectornum)) {
     $search_hash{$_} = [ $cgi->param($_) ] if $cgi->param($_);
   }
 }
@@ -70,6 +76,14 @@ if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
 }
 
 my $sql_query = FS::svc_broadband->search(\%search_hash);
+
+my @tower_header;
+my @tower_fields;
+if ( FS::tower_sector->count > 0 ) {
+  push @tower_header, 'Tower/Sector';
+  push @tower_fields, sub { $_[0]->tower_sector ? 
+                            $_[0]->tower_sector->description : '' };
+}
 
 my %routerbyblock = ();
 foreach my $router (qsearch('router', {})) {

@@ -72,6 +72,16 @@
     
     <& /elements/tr-selectmultiple-part_pkg.html &> 
 
+%   my $conf = new FS::Conf;
+%   if ( $conf->exists('svc_acct-tower_sector') 
+%        and FS::tower_sector->count > 0 ) {
+    <& /elements/tr-select-tower_sector.html,
+          'multiple'    => 1,
+          'label'       => 'Tower/Sector',
+    &>
+%   }
+
+
     <TR>
       <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
     </TR>

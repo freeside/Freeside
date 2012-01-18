@@ -9,12 +9,10 @@
                  'disableable' => 1,
                  'disabled_statuspos' => 1,
                  'header'      => [ 'Name', 'Sectors', ],
-                 'fields'      => [ 'towername',
+                 'fields'      => [ $tower_sub,
                                     $sector_sub,
                                   ],
-                 'links'       => [ $link,
-                                    '',
-                                  ],
+                 'links'       => [ ],
              )
 %>
 <%init>
@@ -22,22 +20,66 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my $link = [ "${p}edit/tower.html?", 'towernum' ];
+my $num_svc_links = sub {
+  my ($query_string, $sectors) = @_;
+  my $num_svc_broadband = FS::svc_broadband->count("sectornum IN($sectors)");
+  my $num_svc_acct =      FS::svc_acct->count("sectornum IN($sectors)");
+
+  {
+    'data' => $num_svc_broadband ? 
+                '<B>'.$num_svc_broadband.'</B>'.
+                ' broadband'
+                : '',
+    'link' => $p.'search/svc_broadband.cgi?'.$query_string,
+    'size' => '-1',
+    'align'=> 'right',
+    'colspan'=> 2,
+  },
+
+  {
+    'data' => $num_svc_acct ? 
+                '<B>'.$num_svc_acct.'</B>'.
+                ' login'
+                : '',
+    'link' => $p.'search/svc_acct.cgi?magic=advanced;'.$query_string,
+    'size' => '-1',
+    'align'=> 'right',
+    'colspan'=> 2,
+  },
+};
+
+my $tower_sub = sub {
+  my $tower = shift;
+  my $sectors = join(',', map { $_->sectornum } $tower->tower_sector);
+  [ #rows
+    [
+      { 'data' => $tower->towername, },
+      { 'data' => ' (edit) ', size => '-1', 
+        'link' => $p.'edit/tower.html?' . $tower->towernum },
+    ],
+    # turn these into rows
+    map { [ $_ ] } 
+      &{$num_svc_links}( 'towernum='.$tower->towernum, $sectors )
+  ] #rows
+};
 
 my $sector_sub = sub {
   my $tower = shift;
   
-  [ map {
-
-          [
-            { 'data' => $_->sectorname,
-              'link' => ( $_->ip_addr ? 'http://'. $_->ip_addr : '' ),
-            },
-          ],
-
-        }
-      $tower->tower_sector
-  ];
+  [ #rows
+    map {
+      my $sector = $_;
+      my $sectornum = $sector->sectornum;
+      [
+        {
+          'data' => $sector->sectorname,
+          'link' => ( $sector->ip_addr ? 'http://'. $sector->ip_addr : '' ),
+        },
+        
+        &{$num_svc_links}( 'sectornum='.$sectornum, $sectornum )
+      ]
+    } $tower->tower_sector
+  ] #rows
 
 };
 

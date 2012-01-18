@@ -2802,6 +2802,22 @@ sub scalar_sql {
   defined($scalar) ? $scalar : '';
 }
 
+=item count [ WHERE ]
+
+Convenience method for the common case of "SELECT COUNT(*) FROM table", 
+with optional WHERE.  Must be called as method on a class with an 
+associated table.
+
+=cut
+
+sub count {
+  my($self, $where) = (shift, shift);
+  my $table = $self->table or die 'count called on object of class '.ref($self);
+  my $sql = "SELECT COUNT(*) FROM $table";
+  $sql .= " WHERE $where" if $where;
+  $self->scalar_sql($sql);
+}
+
 =back
 
 =head1 SUBROUTINES

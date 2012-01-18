@@ -4,7 +4,7 @@ use strict;
 use vars qw(@ISA $conf);
 
 use base qw(FS::svc_Radius_Mixin FS::svc_Tower_Mixin FS::svc_Common);
-use NetAddr::IP;
+{ no warnings 'redefine'; use NetAddr::IP; }
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::svc_Common;
 use FS::cust_svc;
@@ -159,6 +159,10 @@ Parameters:
 
 =item routernum - arrayref
 
+=item sectornum - arrayref
+
+=item towernum - arrayref
+
 =item order_by
 
 =back
@@ -214,6 +218,13 @@ sub search {
     elsif ( $routernum =~ /^(\d+)$/ ) {
       push @where, "addr_block.routernum = $1";
     }
+  }
+
+  #sector and tower, as above
+  my @where_sector = $class->tower_sector_sql($params);
+  if ( @where_sector ) {
+    push @where, @where_sector;
+    push @from, 'LEFT JOIN tower_sector USING ( sectornum )';
   }
  
   #svcnum
