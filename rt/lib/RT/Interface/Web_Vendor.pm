@@ -118,6 +118,14 @@ sub ProcessTicketCustomers {
     }
 
     ###
+    #remove any declared non-customer addresses
+    ###
+
+    my $exclude_regexp = RT->Config->Get('NonCustomerEmailRegexp');
+    @Requestors = grep { not $_->EmailAddress =~ $exclude_regexp } @Requestors
+      if defined $exclude_regexp;
+
+    ###
     #link ticket (and requestors) to customers
     ###
 
@@ -350,6 +358,179 @@ sub ProcessTicketStatus {
         Object        => $TicketObj,
         ARGSRef       => $ARGSRef,
     );
+}
+
+=head2 ProcessUpdateMessage
+
+Takes paramhash with fields ARGSRef, TicketObj and SkipSignatureOnly.
+
+Don't write message if it only contains current user's signature and
+SkipSignatureOnly argument is true. Function anyway adds attachments
+and updates time worked field even if skips message. The default value
+is true.
+
+=cut
+
+# change from stock: if txn custom fields are set but there's no content
+# or attachment, create a Touch txn instead of doing nothing
+
+sub ProcessUpdateMessage {
+
+    my %args = (
+        ARGSRef           => undef,
+        TicketObj         => undef,
+        SkipSignatureOnly => 1,
+        @_
+    );
+
+    if ( $args{ARGSRef}->{'UpdateAttachments'}
+        && !keys %{ $args{ARGSRef}->{'UpdateAttachments'} } )
+    {
+        delete $args{ARGSRef}->{'UpdateAttachments'};
+    }
+
+    # Strip the signature
+    $args{ARGSRef}->{UpdateContent} = RT::Interface::Web::StripContent(
+        Content        => $args{ARGSRef}->{UpdateContent},
+        ContentType    => $args{ARGSRef}->{UpdateContentType},
+        StripSignature => $args{SkipSignatureOnly},
+        CurrentUser    => $args{'TicketObj'}->CurrentUser,
+    );
+
+    my %txn_customfields;
+
+    foreach my $key ( keys %{ $args{ARGSRef} } ) {
+      if ( $key =~ /^(?:Object-RT::Transaction--)?CustomField-(\d+)/ ) {
+        next if $key =~ /(TimeUnits|Magic)$/;
+        $txn_customfields{$key} = $args{ARGSRef}->{$key};
+      }
+    }
+
+    # If, after stripping the signature, we have no message, create a 
+    # Touch transaction if necessary
+    if (    not $args{ARGSRef}->{'UpdateAttachments'}
+        and not length $args{ARGSRef}->{'UpdateContent'} )
+    {
+        #if ( $args{ARGSRef}->{'UpdateTimeWorked'} ) {
+        #      $args{ARGSRef}->{TimeWorked} = $args{TicketObj}->TimeWorked +
+        #          delete $args{ARGSRef}->{'UpdateTimeWorked'};
+        #  }
+
+        my $timetaken = $args{ARGSRef}->{'UpdateTimeWorked'};
+        if ( $timetaken or grep {length $_} values %txn_customfields ) {
+            my ( $Transaction, $Description, $Object ) =
+                $args{TicketObj}->Touch( 
+                  CustomFields => \%txn_customfields,
+                  TimeTaken => $timetaken
+                );
+            return $Description;
+        }
+
+        return;
+    }
+
+    if ( $args{ARGSRef}->{'UpdateSubject'} eq $args{'TicketObj'}->Subject ) {
+        $args{ARGSRef}->{'UpdateSubject'} = undef;
+    }
+
+    my $Message = MakeMIMEEntity(
+        Subject => $args{ARGSRef}->{'UpdateSubject'},
+        Body    => $args{ARGSRef}->{'UpdateContent'},
+        Type    => $args{ARGSRef}->{'UpdateContentType'},
+    );
+
+    $Message->head->add( 'Message-ID' => Encode::encode_utf8(
+        RT::Interface::Email::GenMessageId( Ticket => $args{'TicketObj'} )
+    ) );
+    my $old_txn = RT::Transaction->new( $session{'CurrentUser'} );
+    if ( $args{ARGSRef}->{'QuoteTransaction'} ) {
+        $old_txn->Load( $args{ARGSRef}->{'QuoteTransaction'} );
+    } else {
+        $old_txn = $args{TicketObj}->Transactions->First();
+    }
+
+    if ( my $msg = $old_txn->Message->First ) {
+        RT::Interface::Email::SetInReplyTo(
+            Message   => $Message,
+            InReplyTo => $msg
+        );
+    }
+
+    if ( $args{ARGSRef}->{'UpdateAttachments'} ) {
+        $Message->make_multipart;
+        $Message->add_part($_) foreach values %{ $args{ARGSRef}->{'UpdateAttachments'} };
+    }
+
+    if ( $args{ARGSRef}->{'AttachTickets'} ) {
+        require RT::Action::SendEmail;
+        RT::Action::SendEmail->AttachTickets( RT::Action::SendEmail->AttachTickets,
+            ref $args{ARGSRef}->{'AttachTickets'}
+            ? @{ $args{ARGSRef}->{'AttachTickets'} }
+            : ( $args{ARGSRef}->{'AttachTickets'} ) );
+    }
+
+    my $bcc = $args{ARGSRef}->{'UpdateBcc'};
+    my $cc  = $args{ARGSRef}->{'UpdateCc'};
+
+    my %message_args = (
+        CcMessageTo  => $cc,
+        BccMessageTo => $bcc,
+        Sign         => $args{ARGSRef}->{'Sign'},
+        Encrypt      => $args{ARGSRef}->{'Encrypt'},
+        MIMEObj      => $Message,
+        TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'},
+        CustomFields => \%txn_customfields,
+    );
+
+    my @temp_squelch;
+    foreach my $type (qw(Cc AdminCc)) {
+        if (grep $_ eq $type || $_ eq ( $type . 's' ), @{ $args{ARGSRef}->{'SkipNotification'} || [] }) {
+            push @temp_squelch, map $_->address, Email::Address->parse( $message_args{$type} );
+            push @temp_squelch, $args{TicketObj}->$type->MemberEmailAddresses;
+            push @temp_squelch, $args{TicketObj}->QueueObj->$type->MemberEmailAddresses;
+        }
+    }
+    if (grep $_ eq 'Requestor' || $_ eq 'Requestors', @{ $args{ARGSRef}->{'SkipNotification'} || [] }) {
+            push @temp_squelch, map $_->address, Email::Address->parse( $message_args{Requestor} );
+            push @temp_squelch, $args{TicketObj}->Requestors->MemberEmailAddresses;
+    }
+
+    if (@temp_squelch) {
+        require RT::Action::SendEmail;
+        RT::Action::SendEmail->SquelchMailTo( RT::Action::SendEmail->SquelchMailTo, @temp_squelch );
+    }
+
+    unless ( $args{'ARGSRef'}->{'UpdateIgnoreAddressCheckboxes'} ) {
+        foreach my $key ( keys %{ $args{ARGSRef} } ) {
+            next unless $key =~ /^Update(Cc|Bcc)-(.*)$/;
+
+            my $var   = ucfirst($1) . 'MessageTo';
+            my $value = $2;
+            if ( $message_args{$var} ) {
+                $message_args{$var} .= ", $value";
+            } else {
+                $message_args{$var} = $value;
+            }
+        }
+    }
+
+    my @results;
+    # Do the update via the appropriate Ticket method
+    if ( $args{ARGSRef}->{'UpdateType'} =~ /^(private|public)$/ ) {
+        my ( $Transaction, $Description, $Object ) =
+            $args{TicketObj}->Comment(%message_args);
+        push( @results, $Description );
+        #$Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
+    } elsif ( $args{ARGSRef}->{'UpdateType'} eq 'response' ) {
+        my ( $Transaction, $Description, $Object ) =
+            $args{TicketObj}->Correspond(%message_args);
+        push( @results, $Description );
+        #$Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
+    } else {
+        push( @results,
+            loc("Update type was neither correspondence nor comment.") . " " . loc("Update not recorded.") );
+    }
+    return @results;
 }
 
 1;
