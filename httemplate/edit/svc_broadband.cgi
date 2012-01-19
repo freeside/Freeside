@@ -167,6 +167,13 @@ my $svc_edit_callback = sub {
 my $field_callback = sub {
   my ($cgi, $object, $fieldref) = @_;
 
+  unless ( $part_svc ) {
+    my $svcpart = $object->svcnum ? $object->cust_svc->svcpart;
+                    : $cgi->param('svcpart');
+    $part_svc = qsearchs( 'part_svc', { svcpart => $svcpart } );
+    die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
+  }
+
   my $columndef = $part_svc->part_svc_column($fieldref->{'field'});
   if ($columndef->columnflag eq 'F') {
     $fieldref->{'type'} = length($columndef->columnvalue)
