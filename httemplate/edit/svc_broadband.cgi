@@ -168,8 +168,8 @@ my $field_callback = sub {
   my ($cgi, $object, $fieldref) = @_;
 
   unless ( $part_svc ) {
-    my $svcpart = $object->svcnum ? $object->cust_svc->svcpart;
-                    : $cgi->param('svcpart');
+    my $svcpart = $object->svcnum ? $object->cust_svc->svcpart
+                                  : $cgi->param('svcpart');
     $part_svc = qsearchs( 'part_svc', { svcpart => $svcpart } );
     die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
   }
