@@ -341,6 +341,18 @@ made of multiple email adresses.
 
 Set($ValidateUserEmailAddresses, undef);
 
+=item C<$NonCustomerEmailRegexp>
+
+Normally, when a ticket is linked to a customer, any requestors on that
+ticket that didn't previously have customer memberships are linked to 
+the customer also.  C<$NonCustomerEmailRegexp> is a regexp for email 
+addresses that should I<not> automatically be linked to a customer in 
+this way.
+
+=cut
+
+Set($NonCustomerEmailRegexp, undef);
+
 =item C<@MailPlugins>
 
 C<@MailPlugins> is a list of auth plugins for L<RT::Interface::Email>

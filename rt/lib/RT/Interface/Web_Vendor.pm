@@ -118,6 +118,14 @@ sub ProcessTicketCustomers {
     }
 
     ###
+    #remove any declared non-customer addresses
+    ###
+
+    my $exclude_regexp = RT->Config->Get('NonCustomerEmailRegexp');
+    @Requestors = grep { not $_->EmailAddress =~ $exclude_regexp } @Requestors
+      if defined $exclude_regexp;
+
+    ###
     #link ticket (and requestors) to customers
     ###
 
