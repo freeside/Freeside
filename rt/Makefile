@@ -86,7 +86,7 @@ WEB_USER		=	freeside
 WEB_GROUP		=	freeside
 
 
-APACHECTL		=	/usr/sbin/apachectl
+APACHECTL		=	
 
 # {{{ Files and directories 
 
