@@ -63,14 +63,14 @@ SITE_CONFIG_FILE	=	$(CONFIG_FILE_PATH)/RT_SiteConfig.pm
 
 RT_VERSION_MAJOR	=	3
 RT_VERSION_MINOR	=	8
-RT_VERSION_PATCH	=	10
+RT_VERSION_PATCH	=	11
 
 RT_VERSION		=	$(RT_VERSION_MAJOR).$(RT_VERSION_MINOR).$(RT_VERSION_PATCH)
 TAG 			=	rt-$(RT_VERSION_MAJOR)-$(RT_VERSION_MINOR)-$(RT_VERSION_PATCH)
 
 
 # This is the group that all of the installed files will be chgrp'ed to.
-RTGROUP			=	www
+RTGROUP			=	www-data
 
 
 # User which should own rt binaries.
@@ -82,8 +82,8 @@ LIBS_OWNER 		=	root
 # Group that should own all of RT's libraries, generally root.
 LIBS_GROUP		=	bin
 
-WEB_USER		=	www
-WEB_GROUP		=	www
+WEB_USER		=	www-data
+WEB_GROUP		=	www-data
 
 
 APACHECTL		=	/usr/sbin/apachectl

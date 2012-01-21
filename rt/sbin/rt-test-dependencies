@@ -303,7 +303,7 @@ Log::Dispatch::Perl
 
 $deps{'FASTCGI'} = [ text_to_hash( << '.') ];
 CGI 3.38
-FCGI
+FCGI 0.74
 CGI::Fast 
 .
 
@@ -588,12 +588,12 @@ sub check_perl_version {
 
 sub check_users {
   section("users");
-  print_found("rt group (www)",      defined getgrnam("www"));
+  print_found("rt group (www-data)",      defined getgrnam("www-data"));
   print_found("bin owner (root)",   defined getpwnam("root"));
   print_found("libs owner (root)", defined getpwnam("root"));
   print_found("libs group (bin)", defined getgrnam("bin"));
-  print_found("web owner (www)",    defined getpwnam("www"));
-  print_found("web group (www)",   defined getgrnam("www"));
+  print_found("web owner (www-data)",    defined getpwnam("www-data"));
+  print_found("web group (www-data)",   defined getgrnam("www-data"));
 }
 
 
