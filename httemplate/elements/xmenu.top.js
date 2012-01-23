@@ -14,7 +14,9 @@
  
 // check browsers
 var ua = navigator.userAgent;
-var opera = /opera [56789]|opera\/[56789]/i.test(ua);
+// "window.opera" exists in Opera 10+, and needs to be preserved for FCKeditor 
+// to work.
+var opera = window.opera || /opera [56789]|opera\/[56789]/i.test(ua);
 var ie = !opera && /MSIE/.test(ua);
 var ie50 = ie && /MSIE 5\.[01234]/.test(ua);
 var ie6 = ie && /MSIE [6789]/.test(ua);
@@ -190,8 +192,10 @@ WebFXMenu.prototype.show = function (relObj, sDir) {
 	var divElement = document.getElementById(this.id);
 	if ( divElement ) {
 
-	  divElement.style.left = opera ? this.left : this.left + "px";
-	  divElement.style.top = opera ? this.top : this.top + "px";
+	  //divElement.style.left = opera ? this.left : this.left + "px";
+	  //divElement.style.top = opera ? this.top : this.top + "px";
+	  divElement.style.left = this.left + "px";
+	  divElement.style.top = this.top + "px";
 	  divElement.style.visibility = "visible";
 
 	  if ( ie ) {
