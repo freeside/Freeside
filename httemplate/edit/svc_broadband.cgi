@@ -6,6 +6,7 @@
      'field_callback'       => $field_callback,
      'svc_new_callback'     => $svc_edit_callback,
      'svc_edit_callback'    => $svc_edit_callback,
+     'svc_error_callback'   => $svc_edit_callback,
      'dummy'                => $cgi->query_string,
      'onsubmit'             => 'validate_coords',
      'html_foot'            => $js,
@@ -166,13 +167,6 @@ my $svc_edit_callback = sub {
 
 my $field_callback = sub {
   my ($cgi, $object, $fieldref) = @_;
-
-  unless ( $part_svc ) {
-    my $svcpart = $object->svcnum ? $object->cust_svc->svcpart
-                                  : $cgi->param('svcpart');
-    $part_svc = qsearchs( 'part_svc', { svcpart => $svcpart } );
-    die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
-  }
 
   my $columndef = $part_svc->part_svc_column($fieldref->{'field'});
   if ($columndef->columnflag eq 'F') {
