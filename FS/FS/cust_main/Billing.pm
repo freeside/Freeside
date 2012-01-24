@@ -177,7 +177,8 @@ sub cancel_expired_pkgs {
   foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
     my $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
-                                           'reason_otaker' => $cpr->otaker
+                                           'reason_otaker' => $cpr->otaker,
+                                           'time'          => $time,
                                          )
                                        : ()
                                  );
@@ -407,7 +408,8 @@ sub bill {
 
       my $next_bill = $cust_pkg->getfield('bill') || 0;
       my $error;
-      while ( $next_bill <= $time ) {
+      # let this run once if this is the last bill upon cancellation
+      while ( $next_bill <= $time or $options{cancel} ) {
         $error =
           $self->_make_lines( 'part_pkg'            => $part_pkg,
                               'cust_pkg'            => $cust_pkg,
@@ -426,6 +428,9 @@ sub bill {
 
         # or if we're not incrementing the bill date.
         last if ($cust_pkg->getfield('bill') || 0) == $next_bill;
+
+        # or if we're letting it run only once
+        last if $options{cancel};
 
         $next_bill = $cust_pkg->getfield('bill') || 0;
 

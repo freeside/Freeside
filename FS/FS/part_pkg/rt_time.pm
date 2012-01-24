@@ -52,12 +52,13 @@ sub calc_recur {
 
 sub can_discount { 0; }
 
-sub calc_cancel {
-  my $self = shift;
-  my($cust_pkg, $sdate, $details, $param ) = @_;
-
-  $self->calc_usage(@_);
-}
+# use the default
+#sub calc_cancel {
+#  my $self = shift;
+#  my($cust_pkg, $sdate, $details, $param ) = @_;
+#
+#  $self->calc_usage(@_);
+#}
 
 sub calc_usage {
   my $self = shift;

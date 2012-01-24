@@ -177,12 +177,13 @@ sub calc_recur {
 
 }
 
-sub calc_cancel {
-  my $self = shift;
-  my($cust_pkg, $sdate, $details, $param ) = @_;
-
-  $self->calc_usage(@_);
-}
+# use the default
+#sub calc_cancel {
+#  my $self = shift;
+#  my($cust_pkg, $sdate, $details, $param ) = @_;
+#
+#  $self->calc_usage(@_);
+#}
 
 #false laziness w/voip_sqlradacct calc_recur resolve it if that one ever gets used again
 

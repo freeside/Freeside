@@ -70,7 +70,14 @@ tie my %contract_years, 'Tie::IxHash', (
                                     'unsuspending',
                           'type' => 'checkbox',
                         },
-
+    'bill_recur_on_cancel' => {
+                        'name' => 'Bill the last period on cancellation',
+                        'type' => 'checkbox',
+                        },
+    'bill_suspend_as_cancel' => {
+                        'name' => 'Bill immediately upon suspension', #desc?
+                        'type' => 'checkbox',
+                        },
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
                     },
@@ -81,6 +88,8 @@ tie my %contract_years, 'Tie::IxHash', (
                         start_1st
                         sync_bill_date prorate_defer_bill prorate_round_day
                         suspend_bill unsuspend_adjust_bill
+                        bill_recur_on_cancel
+                        bill_suspend_as_cancel
                         externalid ),
                   ],
   'weight' => 10,
@@ -138,7 +147,7 @@ sub calc_recur {
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
 
   return 0
-    if $self->recur_temporality eq 'preceding' && $last_bill == 0;
+    if $self->recur_temporality eq 'preceding' && !$last_bill;
 
   my $charge = $self->base_recur($cust_pkg, $sdate);
   if ( my $cutoff_day = $self->cutoff_day($cust_pkg) ) {

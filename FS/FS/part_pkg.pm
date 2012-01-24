@@ -1290,7 +1290,6 @@ sub calc_recur { die 'no calc_recur for '. shift->plan. "\n"; }
 
 #fallback that return 0 for old legacy packages with no plan
 sub calc_remain { 0; }
-sub calc_cancel { 0; }
 sub calc_units  { 0; }
 
 #fallback for everything except bulk.pm
@@ -1298,6 +1297,23 @@ sub hide_svc_detail { 0; }
 
 #fallback for packages that can't/won't summarize usage
 sub sum_usage { 0; }
+
+# somewhat more intelligent fallback--
+# covers the standard cases of billing outstanding usage or just running
+# another recurring billing cycle
+sub calc_cancel {
+  my $self = shift;
+  my $conf = new FS::Conf;
+  if ( $self->recur_temporality eq 'preceding'
+       and $self->option('bill_recur_on_cancel',1) ) {
+    return $self->calc_recur(@_);
+  }
+  elsif ( $conf->exists('bill_usage_on_cancel') # should be a package option?
+          and $self->can('calc_usage') ) {
+    return $self->calc_usage(@_);
+  }
+  0;
+}
 
 =item recur_cost_permonth CUST_PKG
 

@@ -691,11 +691,19 @@ Available options are:
 
 =item quiet - can be set true to supress email cancellation notices.
 
-=item time -  can be set to cancel the package based on a specific future or historical date.  Using time ensures that the remaining amount is calculated correctly.  Note however that this is an immediate cancel and just changes the date.  You are PROBABLY looking to expire the account instead of using this.
+=item time -  can be set to cancel the package based on a specific future or 
+historical date.  Using time ensures that the remaining amount is calculated 
+correctly.  Note however that this is an immediate cancel and just changes 
+the date.  You are PROBABLY looking to expire the account instead of using 
+this.
 
-=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+=item reason - can be set to a cancellation reason (see L<FS:reason>), 
+either a reasonnum of an existing reason, or passing a hashref will create 
+a new reason.  The hashref should have the following keys: typenum - Reason 
+type (see L<FS::reason_type>, reason - Text of the new reason.
 
-=item date - can be set to a unix style timestamp to specify when to cancel (expire)
+=item date - can be set to a unix style timestamp to specify when to 
+cancel (expire)
 
 =item nobill - can be set true to skip billing if it might otherwise be done.
 
@@ -739,23 +747,26 @@ sub cancel {
     return "";  # no error
   }
 
-  my $date = $options{date} if $options{date}; # expire/cancel later
-  $date = '' if ($date && $date <= time);      # complain instead?
+  # XXX possibly set cancel_time to the expire date?
+  my $cancel_time = $options{'time'} || time;
+  my $date = $options{'date'} if $options{'date'}; # expire/cancel later
+  $date = '' if ($date && $date <= $cancel_time);      # complain instead?
 
   #race condition: usage could be ongoing until unprovisioned
   #resolved by performing a change package instead (which unprovisions) and
   #later cancelling
-  if ( !$options{nobill} && !$date && $conf->exists('bill_usage_on_cancel') ) {
+  if ( !$options{nobill} && !$date ) {
+    # && $conf->exists('bill_usage_on_cancel') ) { #calc_cancel checks this
       my $copy = $self->new({$self->hash});
       my $error =
-        $copy->cust_main->bill( pkg_list => [ $copy ], cancel => 1 );
+        $copy->cust_main->bill( 'pkg_list' => [ $copy ], 
+                                'cancel'   => 1,
+                                'time'     => $cancel_time );
       warn "Error billing during cancel, custnum ".
         #$self->cust_main->custnum. ": $error"
         ": $error"
         if $error;
   }
-
-  my $cancel_time = $options{'time'} || time;
 
   if ( $options{'reason'} ) {
     $error = $self->insert_reason( 'reason' => $options{'reason'},
@@ -790,10 +801,7 @@ sub cancel {
   }
 
   unless ($date) {
-
-    # Add a credit for remaining service
-    my $last_bill = $self->getfield('last_bill') || 0;
-    my $next_bill = $self->getfield('bill') || 0;
+    # credit remaining time if appropriate
     my $do_credit;
     if ( exists($options{'unused_credit'}) ) {
       $do_credit = $options{'unused_credit'};
@@ -801,25 +809,13 @@ sub cancel {
     else {
       $do_credit = $self->part_pkg->option('unused_credit_cancel', 1);
     }
-    if ( $do_credit
-          and $last_bill > 0 # the package has been billed
-          and $next_bill > 0 # the package has a next bill date
-          and $next_bill >= $cancel_time # which is in the future
-    ) {
-      my $remaining_value = $self->calc_remain('time' => $cancel_time);
-      if ( $remaining_value > 0 ) {
-        my $error = $self->cust_main->credit(
-          $remaining_value,
-          'Credit for unused time on '. $self->part_pkg->pkg,
-          'reason_type' => $conf->config('cancel_credit_type'),
-        );
-        if ($error) {
-          $dbh->rollback if $oldAutoCommit;
-          return "Error crediting customer \$$remaining_value for unused time".
-                 " on ". $self->part_pkg->pkg. ": $error";
-        }
-      } #if $remaining_value
-    } #if $do_credit
+    if ( $do_credit ) {
+      my $error = $self->credit_remaining($cancel_time);
+      if ($error) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
 
   } #unless $date
 
@@ -978,6 +974,7 @@ sub suspend {
     return "";  # no error                     # complain on adjourn?
   }
 
+  my $suspend_time = $options{'time'} || time;
   my $date = $options{date} if $options{date}; # adjourn/suspend later
   $date = '' if ($date && $date <= time);      # complain instead?
 
@@ -986,7 +983,23 @@ sub suspend {
     return "Package $pkgnum expires before it would be suspended.";
   }
 
-  my $suspend_time = $options{'time'} || time;
+  # some false laziness with sub cancel
+  if ( !$options{nobill} && !$date &&
+       $self->part_pkg->option('bill_suspend_as_cancel',1) ) {
+    # kind of a kludge--'bill_suspend_as_cancel' to avoid having to 
+    # make the entire cust_main->bill path recognize 'suspend' and 
+    # 'cancel' separately.
+    warn "Billing $pkgnum on suspension (at $suspend_time)\n" if $DEBUG;
+    my $copy = $self->new({$self->hash});
+    my $error =
+      $copy->cust_main->bill( 'pkg_list' => [ $copy ], 
+                              'cancel'   => 1,
+                              'time'     => $suspend_time );
+    warn "Error billing during suspend, custnum ".
+      #$self->cust_main->custnum. ": $error"
+      ": $error"
+      if $error;
+  }
 
   if ( $options{'reason'} ) {
     $error = $self->insert_reason( 'reason' => $options{'reason'},
@@ -1014,6 +1027,14 @@ sub suspend {
   }
 
   unless ( $date ) {
+    # credit remaining time if appropriate
+    if ( $self->part_pkg->option('unused_credit_suspend', 1) ) {
+      my $error = $self->credit_remaining($suspend_time);
+      if ($error) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
 
     my @labels = ();
 
@@ -1071,6 +1092,34 @@ sub suspend {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
+}
+
+sub credit_remaining {
+  # Add a credit for remaining service
+  my $self = shift;
+  my $time = shift or die 'no suspend/cancel time';
+  my $conf = FS::Conf->new;
+  my $last_bill = $self->getfield('last_bill') || 0;
+  my $next_bill = $self->getfield('bill') || 0;
+  if ( $last_bill > 0         # the package has been billed
+      and $next_bill > 0      # the package has a next bill date
+      and $next_bill >= $time # which is in the future
+  ) {
+    my $remaining_value = $self->calc_remain('time' => $time);
+    if ( $remaining_value > 0 ) {
+      warn "Crediting for $remaining_value on package ".$self->pkgnum."\n"
+        if $DEBUG;
+      my $error = $self->cust_main->credit(
+        $remaining_value,
+        'Credit for unused time on '. $self->part_pkg->pkg,
+        'reason_type' => $conf->config('cancel_credit_type'),
+      ); # need 'suspend_credit_type'?
+      return "Error crediting customer \$$remaining_value for unused time".
+        " on ". $self->part_pkg->pkg. ": $error"
+        if $error;
+    } #if $remaining_value
+  } #if $last_bill, etc.
+  '';
 }
 
 =item unsuspend [ OPTION => VALUE ... ]
@@ -1333,23 +1382,23 @@ sub change {
   }
 
   my $unused_credit = 0;
-  if ( $opt->{'keep_dates'} ) {
+  my $keep_dates = $opt->{'keep_dates'};
+  # Special case.  If the pkgpart is changing, and the customer is
+  # going to be credited for remaining time, don't keep setup, bill, 
+  # or last_bill dates, and DO pass the flag to cancel() to credit 
+  # the customer.
+  if ( $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart ) {
+    $keep_dates = 0;
+    $unused_credit = 1 if $self->part_pkg->option('unused_credit_change', 1);
+    $hash{$_} = '' foreach qw(setup bill last_bill);
+  }
+
+  if ( $keep_dates ) {
     foreach my $date ( qw(setup bill last_bill susp adjourn cancel expire 
                           start_date contract_end ) ) {
       $hash{$date} = $self->getfield($date);
     }
   }
-  # Special case.  If the pkgpart is changing, and the customer is
-  # going to be credited for remaining time, don't keep setup, bill, 
-  # or last_bill dates, and DO pass the flag to cancel() to credit 
-  # the customer.
-  if ( $opt->{'pkgpart'} 
-      and $opt->{'pkgpart'} != $self->pkgpart
-      and $self->part_pkg->option('unused_credit_change', 1) ) {
-    $unused_credit = 1;
-    $hash{$_} = '' foreach qw(setup bill last_bill);
-  }
-
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
   $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
@@ -1413,7 +1462,14 @@ sub change {
 
   #Good to go, cancel old package.  Notify 'cancel' of whether to credit 
   #remaining time.
-  $error = $self->cancel( quiet=>1, unused_credit => $unused_credit );
+  #Don't allow billing the package (preceding period packages and/or 
+  #outstanding usage) if we are keeping dates (i.e. location changing), 
+  #because the new package will be billed for the same date range.
+  $error = $self->cancel(
+    quiet         => 1, 
+    unused_credit => $unused_credit,
+    nobill        => $keep_dates
+  );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
