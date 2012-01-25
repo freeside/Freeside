@@ -34,7 +34,7 @@ function change_towernum(towernum) {
 change_towernum('');
 </SCRIPT>
 <BR>
-<INPUT TYPE="checkbox" VALUE="none" NAME="sectornum" CHECKED> No sector
+<INPUT TYPE="checkbox" VALUE="none" NAME="sectornum" CHECKED> <% $empty_label %>
 % }
 <%init>
 my %opt = @_;
@@ -47,4 +47,5 @@ if ( $opt{'multiple'} ) {
     $sectors_of{''}->{$sector->sectornum} = $sector->description;
   }
 }
+my $empty_label = $opt{'empty_label'} || 'Include services with no tower/sector';
 </%init>
