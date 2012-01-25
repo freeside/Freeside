@@ -3270,7 +3270,8 @@ sub search {
                                   $params->{'cust_fields'}
                                 ),
                      ),
-    'extra_sql'   => "$extra_sql $orderby",
+    'extra_sql'   => $extra_sql,
+    'order_by'    => $orderby,
     'addl_from'   => $addl_from,
     'count_query' => $count_query,
   };
