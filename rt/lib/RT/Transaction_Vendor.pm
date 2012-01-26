@@ -31,5 +31,7 @@ $_BriefDescriptions{'Set'} = sub {
     }
 };
 
+$_BriefDescriptions{'Touch'} = sub { 'Updated' };
+
 1;
 

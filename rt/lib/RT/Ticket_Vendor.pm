@@ -13,6 +13,37 @@ sub SetPriority {
   $Ticket->SUPER::SetPriority($value);
 }
 
+=head2 Touch
+
+Creates a Touch transaction (a null transaction).  Like Comment and 
+Correspond but without any content.
+
+=cut
+
+sub Touch {
+    my $self = shift;
+    my %args = (
+        TimeTaken => 0,
+        ActivateScrips => 1,
+        CommitScrips => 1,
+        CustomFields => {},
+        @_
+    );
+    unless ( $self->CurrentUserHasRight('ModifyTicket')
+              or $self->CurrentUserHasRight('CommentOnTicket')
+              or $self->CurrentUserHasRight('ReplyToTicket')) {
+        return ( 0, $self->loc("Permission Denied"));
+    }
+    $self->_NewTransaction(
+        Type => 'Touch',
+        TimeTaken => $args{'TimeTaken'},
+        ActivateScrips => $args{'ActivateScrips'},
+        CommitScrips => $args{'CommitScrips'},
+        CustomFields => $args{'CustomFields'},
+    );
+}
+
+
 =head2 MissingRequiredFields {
 
 Return all custom fields with the Required flag set for which this object
