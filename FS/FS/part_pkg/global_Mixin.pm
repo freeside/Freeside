@@ -19,6 +19,11 @@ use vars qw(%info);
                  'cancellation',
       'type' => 'checkbox',
     },
+    'unused_credit_suspend' => {
+      'name' => 'Credit the customer for the unused portion of service when '.
+                'suspending',
+      'type' => 'checkbox',
+    },
     'unused_credit_change' => {
       'name' => 'Credit the customer for the unused portion of service when '.
                 'changing packages',
@@ -29,6 +34,7 @@ use vars qw(%info);
     setup_fee
     recur_fee
     unused_credit_cancel
+    unused_credit_suspend
     unused_credit_change
   )],
 );

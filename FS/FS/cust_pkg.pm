@@ -810,7 +810,7 @@ sub cancel {
       $do_credit = $self->part_pkg->option('unused_credit_cancel', 1);
     }
     if ( $do_credit ) {
-      my $error = $self->credit_remaining($cancel_time);
+      my $error = $self->credit_remaining('cancel', $cancel_time);
       if ($error) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
@@ -1029,7 +1029,7 @@ sub suspend {
   unless ( $date ) {
     # credit remaining time if appropriate
     if ( $self->part_pkg->option('unused_credit_suspend', 1) ) {
-      my $error = $self->credit_remaining($suspend_time);
+      my $error = $self->credit_remaining('suspend', $suspend_time);
       if ($error) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
@@ -1094,11 +1094,25 @@ sub suspend {
   ''; #no errors
 }
 
+=item credit_remaining MODE TIME
+
+Generate a credit for this package for the time remaining in the current 
+billing period.  MODE is either "suspend" or "cancel" (determines the 
+credit type).  TIME is the time of suspension/cancellation.  Both options
+are mandatory.
+
+=cut
+
 sub credit_remaining {
   # Add a credit for remaining service
-  my $self = shift;
-  my $time = shift or die 'no suspend/cancel time';
+  my ($self, $mode, $time) = @_;
+  die 'credit_remaining requires suspend or cancel' 
+    unless $mode eq 'suspend' or $mode eq 'cancel';
+  die 'no suspend/cancel time' unless $time > 0;
+
   my $conf = FS::Conf->new;
+  my $reason_type = $conf->config($mode.'_credit_type');
+
   my $last_bill = $self->getfield('last_bill') || 0;
   my $next_bill = $self->getfield('bill') || 0;
   if ( $last_bill > 0         # the package has been billed
@@ -1112,8 +1126,8 @@ sub credit_remaining {
       my $error = $self->cust_main->credit(
         $remaining_value,
         'Credit for unused time on '. $self->part_pkg->pkg,
-        'reason_type' => $conf->config('cancel_credit_type'),
-      ); # need 'suspend_credit_type'?
+        'reason_type' => $reason_type,
+      );
       return "Error crediting customer \$$remaining_value for unused time".
         " on ". $self->part_pkg->pkg. ": $error"
         if $error;

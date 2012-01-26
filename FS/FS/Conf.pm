@@ -632,6 +632,21 @@ my %payment_gateway_options = (
   },
 );
 
+# takes the reason class (C, R, S) as an argument
+sub reason_type_options {
+  my $reason_class = shift;
+
+  'type'        => 'select-sub',
+  'options_sub' => sub {
+    map { $_->typenum => $_->type } 
+      qsearch('reason_type', { class => $reason_class });
+  },
+  'option_sub'  => sub {
+    my $type = FS::reason_type->by_key(shift);
+    $type ? $type->type : '';
+  }
+}
+
 #Billing (81 items)
 #Invoicing (50 items)
 #UI (69 items)
@@ -3586,77 +3601,35 @@ and customer address. Include units.',
     'key'         => 'cancel_credit_type',
     'section'     => 'billing',
     'description' => 'The group to use for new, automatically generated credit reasons resulting from cancellation.',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::reason_type;
-			   map { $_->typenum => $_->type }
-                               FS::Record::qsearch('reason_type', { class=>'R' } );
-			 },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::reason_type;
-			   my $reason_type = FS::Record::qsearchs(
-			     'reason_type', { 'typenum' => shift }
-			   );
-                           $reason_type ? $reason_type->type : '';
-			 },
+    reason_type_options('R'),
+  },
+
+  {
+    'key'         => 'suspend_credit_type',
+    'section'     => 'billing',
+    'description' => 'The group to use for new, automatically generated credit reasons resulting from package suspension.',
+    reason_type_options('R'),
   },
 
   {
     'key'         => 'referral_credit_type',
     'section'     => 'deprecated',
     'description' => 'Used to be the group to use for new, automatically generated credit reasons resulting from referrals.  Now set in a package billing event for the referral.',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::reason_type;
-			   map { $_->typenum => $_->type }
-                               FS::Record::qsearch('reason_type', { class=>'R' } );
-			 },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::reason_type;
-			   my $reason_type = FS::Record::qsearchs(
-			     'reason_type', { 'typenum' => shift }
-			   );
-                           $reason_type ? $reason_type->type : '';
-			 },
+    reason_type_options('R'),
   },
 
   {
     'key'         => 'signup_credit_type',
     'section'     => 'billing', #self-service?
     'description' => 'The group to use for new, automatically generated credit reasons resulting from signup and self-service declines.',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::reason_type;
-			   map { $_->typenum => $_->type }
-                               FS::Record::qsearch('reason_type', { class=>'R' } );
-			 },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::reason_type;
-			   my $reason_type = FS::Record::qsearchs(
-			     'reason_type', { 'typenum' => shift }
-			   );
-                           $reason_type ? $reason_type->type : '';
-			 },
+    reason_type_options('R'),
   },
 
   {
     'key'         => 'prepayment_discounts-credit_type',
     'section'     => 'billing',
     'description' => 'Enables the offering of prepayment discounts and establishes the credit reason type.',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::reason_type;
-                           map { $_->typenum => $_->type }
-                               FS::Record::qsearch('reason_type', { class=>'R' } );
-                         },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::reason_type;
-                           my $reason_type = FS::Record::qsearchs(
-                             'reason_type', { 'typenum' => shift }
-                           );
-                           $reason_type ? $reason_type->type : '';
-                         },
-
+    reason_type_options('R'),
   },
 
   {
