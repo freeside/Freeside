@@ -279,7 +279,6 @@ if ( $cgi->param('session') =~ /^(\d+)$/ ) {
 }
 else {
   $session = sprintf("%010d%06d", time, int(rand(1000000)));
-  sleep(2);
   $m->cache->set($session, \%opt, '1h');
 }
 
