@@ -880,7 +880,7 @@ sub rebuild_fuzzyfiles {
     flock(LOCK,LOCK_EX)
       or die "can't lock $dir/cust_main.$fuzzy: $!";
 
-    open (CACHE,">$dir/cust_main.$fuzzy.tmp")
+    open (CACHE, '>:encoding(UTF-8)', "$dir/cust_main.$fuzzy.tmp")
       or die "can't open $dir/cust_main.$fuzzy.tmp: $!";
 
     foreach my $field ( $fuzzy, "ship_$fuzzy" ) {
@@ -920,7 +920,7 @@ sub append_fuzzyfiles {
 
     if ( $value ) {
 
-      open(CACHE,">>$dir/cust_main.$field")
+      open(CACHE, '>>:encoding(UTF-8)', "$dir/cust_main.$field" )
         or die "can't open $dir/cust_main.$field: $!";
       flock(CACHE,LOCK_EX)
         or die "can't lock $dir/cust_main.$field: $!";
@@ -944,7 +944,7 @@ sub append_fuzzyfiles {
 sub all_X {
   my( $self, $field ) = @_;
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
-  open(CACHE,"<$dir/cust_main.$field")
+  open(CACHE, '<:encoding(UTF-8)', "$dir/cust_main.$field")
     or die "can't open $dir/cust_main.$field: $!";
   my @array = map { chomp; $_; } <CACHE>;
   close CACHE;
