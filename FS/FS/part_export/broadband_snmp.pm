@@ -11,8 +11,8 @@ $DEBUG = 0;
 my $me = '['.__PACKAGE__.']';
 
 tie my %snmp_version, 'Tie::IxHash',
-  v1  => SNMP_VERSION_1,
-  v2c => SNMP_VERSION_2C,
+  v1  => 'snmpv1',
+  v2c => 'snmpv2c',
   # 3 => 'v3' not implemented
 ;
 
