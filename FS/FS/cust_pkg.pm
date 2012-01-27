@@ -3108,7 +3108,6 @@ sub search {
       } elsif ( @c_where ) {
         push @where, ' ( '. join(' OR ', @c_where). ' ) ';
       }
-      warn $where[-1];
 
     }
     
