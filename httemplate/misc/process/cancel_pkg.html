@@ -1,4 +1,4 @@
-<% header(emt("Package $past{$method}")) %>
+<% header(emt("Package $past_method")) %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
@@ -10,6 +10,7 @@ my %past = ( 'cancel'  => 'cancelled',
              'expire'  => 'expired',
              'suspend' => 'suspended',
              'adjourn' => 'adjourned',
+             'resume'  => 'scheduled to resume',
            );
 
 #i'm sure this is false laziness with somewhere, at least w/misc/cancel_pkg.html
@@ -17,6 +18,7 @@ my %right = ( 'cancel'  => 'Cancel customer package immediately',
               'expire'  => 'Cancel customer package later',
               'suspend' => 'Suspend customer package',
               'adjourn' => 'Suspend customer package later',
+              'resume'  => 'Unsuspend customer package', #later?
             );
 
 </%once>
@@ -24,8 +26,9 @@ my %right = ( 'cancel'  => 'Cancel customer package immediately',
 
 #untaint method
 my $method = $cgi->param('method');
-$method =~ /^(cancel|expire|suspend|adjourn)$/ or die "Illegal method";
+$method =~ /^(cancel|expire|suspend|adjourn|resume)$/ or die "Illegal method";
 $method = $1;
+my $past_method = $past{$method};
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right($right{$method});
@@ -35,30 +38,42 @@ my $pkgnum = $cgi->param('pkgnum');
 $pkgnum =~ /^(\d+)$/ or die "Illegal pkgnum";
 $pkgnum = $1;
 
-#untaint reasonnum
-my $reasonnum = $cgi->param('reasonnum');
-$reasonnum =~ /^(-?\d+)$/ or die "Illegal reasonnum";
-$reasonnum = $1;
-
 my $date = time;
-if ($method eq 'expire' || $method eq 'adjourn'){
+if ($method eq 'expire' || $method eq 'adjourn' || $method eq 'resume'){
   #untaint date
-  $date = $cgi->param('date');
+  $date = $cgi->param('date'); #huh?
   parse_datetime($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
   $date = $1;
-  $method = ($method eq 'expire') ? 'cancel' : 'suspend';
+  $method = 'cancel'    if $method eq 'expire';
+  $method = 'suspend'   if $method eq 'adjourn';
+  $method = 'unsuspend' if $method eq 'resume';
+}
+
+my $resume_date;
+if ( $method eq 'suspend' ) { #or 'adjourn'
+  $resume_date = parse_datetime($cgi->param('resume_date'))
+    if $cgi->param('resume_date');
 }
 
 my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
 
-if ($reasonnum == -1) {
-  $reasonnum = {
-    'typenum' => scalar( $cgi->param('newreasonnumT') ),
-    'reason'  => scalar( $cgi->param('newreasonnum' ) ),
-  };
+#untaint reasonnum
+my $reasonnum = $cgi->param('reasonnum');
+if ( $method ne 'unsuspend' ) { #i.e. 'resume'
+  $reasonnum =~ /^(-?\d+)$/ or die "Illegal reasonnum";
+  $reasonnum = $1;
+
+  if ($reasonnum == -1) {
+    $reasonnum = {
+      'typenum' => scalar( $cgi->param('newreasonnumT') ),
+      'reason'  => scalar( $cgi->param('newreasonnum' ) ),
+    };
+  }
 }
 
-my $error = $cust_pkg->$method( 'reason' => $reasonnum, 'date' => $date );
+my $error = $cust_pkg->$method( 'reason'      => $reasonnum,
+                                'date'        => $date,
+                                'resume_date' => $resume_date );
 
 if ($error) {
   $cgi->param('error', $error);

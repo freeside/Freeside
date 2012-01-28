@@ -61,6 +61,7 @@
 %#}
   <& .row_display, cust_pkg=>$cust_pkg, column=>'adjourn',  label=>'Adjournment', note=>'(will <b>suspend</b> this package when the date is reached)' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'susp',     label=>'Suspension' &>
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'resume',   label=>'Resumption', note=> '(will <b>unsuspend</b> this package when the date is reached' &>
 
   <& .row_display, cust_pkg=>$cust_pkg, column=>'expire',   label=>'Expiration', note=>'(will <b>cancel</b> this package when the date is reached)' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'cancel',   label=>'Cancellation' &>
@@ -192,7 +193,7 @@ if ( $cgi->param('error') ) {
   $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   die "No package!" unless $cust_pkg;
 
-  foreach my $col (qw( start_date setup last_bill bill adjourn expire )) {
+  foreach my $col (qw( start_date setup last_bill bill )) {
     my $value = $cgi->param($col);
     $cust_pkg->set( $col, $value ? parse_datetime($value) : '' );
   }

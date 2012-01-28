@@ -1,10 +1,5 @@
 <& /elements/header-popup.html, mt($title) &>
 
-<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
-
 <& /elements/error.html &>
 
 <FORM NAME="sc_popup" ACTION="<% popurl(1) %>process/cancel_pkg.html" METHOD=POST>
@@ -15,37 +10,47 @@
 <% emt(ucfirst($method)." [_1]", $part_pkg->pkg_comment) %>
 <% ntable("#cccccc", 2) %>
 
-% if ($method eq 'expire' || $method eq 'adjourn') {
-<TR>
-% $submit =~ /^(\w*)\s/;
-  <TD><% mt("$1 package on") |h %> </TD>
-    <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<% $date |h %>">
-        <IMG SRC="<% $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="<% mt('Select date') |h %>">
-        <BR><I><% mt('m/d/y') |h %></I>
-    </TD>
-</TR>
-<SCRIPT TYPE="text/javascript">
-  Calendar.setup({
-    inputField: "expire_date",
-    ifFormat:   "<% $date_format %>",
-    button:     "expire_button",
-    align:      "BR"
-  });
-</SCRIPT>
-%}
-%
+% my $date_init = 0;
+% if ($method eq 'expire' || $method eq 'adjourn' || $method eq 'resume') {
+%   $submit =~ /^(\w*)\s/;
+<& /elements/tr-input-date-field.html, {
+    'name'    => 'date',
+    'value'   => $date,
+    'label'   => mt("$1 package on"),
+    'format'  => $date_format,
+} &>
+%   $date_init = 1;
+% }
 
+% unless ( $method eq 'resume' ) { #the only one that doesn't need a reason
 <& /elements/tr-select-reason.html,
-             'field'          => 'reasonnum',
-             'reason_class'   => $class,
-             'curr_value'     => $reasonnum,
-             'control_button' => "document.getElementById('confirm_cancel_pkg_button')",
+     'field'          => 'reasonnum',
+     'reason_class'   => $class,
+     'curr_value'     => $reasonnum,
+     'control_button' => "document.getElementById('confirm_cancel_pkg_button')",
 &>
+% }
 
+% if ( ( $method eq 'adjourn' or $method eq 'suspend' ) and 
+%      $curuser->access_right('Unsuspend customer package') )  { #later?
+%   my $resume_date = $cgi->param('error') 
+%                     ? str2time($cgi->param('resume_date'))
+%                     : $cust_pkg->get('resume');
+
+<& /elements/tr-input-date-field.html, {
+    'name'    => 'resume_date',
+    'value'   => $resume_date,
+    'label'   => mt('Unsuspend on'),
+    'format'  => $date_format,
+    'noinit'  => $date_init,
+} &>
+% }
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" NAME="submit" ID="confirm_cancel_pkg_button" VALUE="<% mt($submit) |h %>" DISABLED>
+<INPUT TYPE="submit" NAME="submit" ID="confirm_cancel_pkg_button" 
+  VALUE="<% mt($submit) |h %>"
+  <% $method ne 'resume' ? 'DISABLED' : '' %>>
 
 </FORM>
 </BODY>
@@ -56,13 +61,13 @@
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-my $date = time2str($date_format, time);
+my $date;
 
 my($pkgnum, $reasonnum);
 if ( $cgi->param('error') ) {
   $pkgnum    = $cgi->param('pkgnum');
   $reasonnum = $cgi->param('reasonnum');
-  $date      = $cgi->param('date');
+  $date      = str2time($cgi->param('date'));
 } elsif ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   $pkgnum    = $1;
   $reasonnum = '';
@@ -90,6 +95,10 @@ if ($method eq 'cancel') {
   $class  = 'S';
   $submit = "Suspend Later";
   $right  = 'Suspend customer package later';
+} elsif ( $method eq 'resume') {
+  $class  = '';
+  $submit = 'Unsuspend Later';
+  $right  = 'Unsuspend customer package'; #later?
 } else {
   die 'illegal query (unknown method param)';
 }
@@ -103,5 +112,8 @@ my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
   or die "Unknown pkgnum: $pkgnum";
 
 my $part_pkg = $cust_pkg->part_pkg;
+
+$date ||= $cust_pkg->get($method);
+$date ||= time;
 
 </%init>

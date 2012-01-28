@@ -146,7 +146,7 @@ sub bill {
 #      (or now, if no -d switch was given).
 #
 #  -n: When used with "-d" and/or "-y", specifies that invoices should be dated
-#      with today's date, irregardless of the pretend date used to pre-generate
+#      with today's date, regardless of the pretend date used to pre-generate
 #      the invoices.
 #
 #  -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
@@ -211,6 +211,7 @@ sub bill_where {
                 OR bill  IS NULL OR bill  <= $billtime 
                 OR ( expire  IS NOT NULL AND expire  <= $^T )
                 OR ( adjourn IS NOT NULL AND adjourn <= $^T )
+                OR ( resume  IS NOT NULL AND resume  <= $^T )
               )
     )
 END

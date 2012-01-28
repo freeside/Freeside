@@ -605,6 +605,7 @@ sub check {
     || $self->ut_numbern('susp')
     || $self->ut_numbern('cancel')
     || $self->ut_numbern('adjourn')
+    || $self->ut_numbern('resume')
     || $self->ut_numbern('expire')
     || $self->ut_numbern('dundate')
     || $self->ut_enum('no_auto', [ '', 'Y' ])
@@ -617,6 +618,9 @@ sub check {
 
   return "A package with both start date (future start) and setup date (already started) will never bill"
     if $self->start_date && $self->setup;
+
+  return "A future unsuspend date can only be set for a package with a suspend date"
+    if $self->resume and !$self->susp and !$self->adjourn;
 
   $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
@@ -936,9 +940,21 @@ Available options are:
 
 =over 4
 
-=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+=item reason - can be set to a cancellation reason (see L<FS:reason>), 
+either a reasonnum of an existing reason, or passing a hashref will create 
+a new reason.  The hashref should have the following keys: 
+- typenum - Reason type (see L<FS::reason_type>
+- reason - Text of the new reason.
 
-=item date - can be set to a unix style timestamp to specify when to suspend (adjourn)
+=item date - can be set to a unix style timestamp to specify when to 
+suspend (adjourn)
+
+=item time - can be set to override the current time, for calculation 
+of final invoices or unused-time credits
+
+=item resume_date - can be set to a time when the package should be 
+unsuspended.  This may be more convenient than calling C<unsuspend()>
+separately.
 
 =back
 
@@ -976,7 +992,7 @@ sub suspend {
 
   my $suspend_time = $options{'time'} || time;
   my $date = $options{date} if $options{date}; # adjourn/suspend later
-  $date = '' if ($date && $date <= time);      # complain instead?
+  $date = '' if ($date && $date <= $suspend_time); # complain instead?
 
   if ( $date && $old->get('expire') && $old->get('expire') < $date ) {
     dbh->rollback if $oldAutoCommit;
@@ -1019,6 +1035,12 @@ sub suspend {
   } else {
     $hash{'susp'} = $suspend_time;
   }
+
+  my $resume_date = $options{'resume_date'} || 0;
+  if ( $resume_date > ($date || $suspend_time) ) {
+    $hash{'resume'} = $resume_date;
+  }
+
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
   if ( $error ) {
@@ -1098,7 +1120,7 @@ sub suspend {
 
 Generate a credit for this package for the time remaining in the current 
 billing period.  MODE is either "suspend" or "cancel" (determines the 
-credit type).  TIME is the time of suspension/cancellation.  Both options
+credit type).  TIME is the time of suspension/cancellation.  Both arguments
 are mandatory.
 
 =cut
@@ -1146,6 +1168,11 @@ Available options are:
 
 =over 4
 
+=item date
+
+Can be set to a date to unsuspend the package in the future (the 'resume' 
+field).
+
 =item adjust_next_bill
 
 Can be set true to adjust the next bill date forward by
@@ -1180,14 +1207,37 @@ sub unsuspend {
 
   my $pkgnum = $old->pkgnum;
   if ( $old->get('cancel') || $self->get('cancel') ) {
-    dbh->rollback if $oldAutoCommit;
+    $dbh->rollback if $oldAutoCommit;
     return "Can't unsuspend cancelled package $pkgnum";
   }
 
   unless ( $old->get('susp') && $self->get('susp') ) {
-    dbh->rollback if $oldAutoCommit;
+    $dbh->rollback if $oldAutoCommit;
     return "";  # no error                     # complain instead?
   }
+
+  my $date = $opt{'date'};
+  if ( $date and $date > time ) { # return an error if $date <= time?
+
+    if ( $old->get('expire') && $old->get('expire') < $date ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Package $pkgnum expires before it would be unsuspended.";
+    }
+
+    my $new = new FS::cust_pkg { $self->hash };
+    $new->set('resume', $date);
+    $error = $new->replace($self, options => $self->options);
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    else {
+      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+      return '';
+    }
+  
+  } #if $date 
 
   foreach my $cust_svc (
     qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
@@ -1229,7 +1279,8 @@ sub unsuspend {
   }
 
   $hash{'susp'} = '';
-  $hash{'adjourn'} = '' if $hash{'adjourn'} < time;
+  $hash{'adjourn'} = '' if $hash{'adjourn'} and $hash{'adjourn'} < time;
+  $hash{'resume'} = '' if !$hash{'adjourn'};
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
   if ( $error ) {
@@ -1287,6 +1338,7 @@ sub unadjourn {
 
   my %hash = $self->hash;
   $hash{'adjourn'} = '';
+  $hash{'resume'}  = '';
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
   if ( $error ) {
@@ -1409,7 +1461,7 @@ sub change {
 
   if ( $keep_dates ) {
     foreach my $date ( qw(setup bill last_bill susp adjourn cancel expire 
-                          start_date contract_end ) ) {
+                          resume start_date contract_end ) ) {
       $hash{$date} = $self->getfield($date);
     }
   }

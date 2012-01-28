@@ -1481,6 +1481,7 @@ sub tables_hashref {
         'last_bill',      @date_type,             '', '', 
         'susp',           @date_type,             '', '', 
         'adjourn',        @date_type,             '', '', 
+        'resume',         @date_type,             '', '', 
         'cancel',         @date_type,             '', '', 
         'expire',         @date_type,             '', '', 
         'contract_end',   @date_type,             '', '',
