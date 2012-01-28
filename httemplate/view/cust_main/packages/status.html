@@ -61,6 +61,7 @@
 %   if ( $part_pkg->option('suspend_bill', 1) ) {
       <% pkg_status_row_if( $cust_pkg, emt('Next bill'), 'bill', %opt, curuser=>$curuser ) %>
 %   }
+    <% pkg_status_row_if( $cust_pkg, emt('Will resume'), 'resume', %opt, curuser=>$curuser ) %>
     <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
     <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
@@ -69,7 +70,8 @@
         <FONT SIZE=-1>
 %         if ( $curuser->access_right('Unsuspend customer package') ) { 
             (&nbsp;<% pkg_unsuspend_link($cust_pkg) %>&nbsp;)
-%         } 
+            (&nbsp;<% pkg_resume_link($cust_pkg) %>&nbsp;)
+%         }
 %         if ( $curuser->access_right('Cancel customer package immediately') ) {
             (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
 %         } 
@@ -179,6 +181,7 @@
       <% pkg_status_row_if($cust_pkg, emt('Will automatically suspend by'), 'autosuspend', %opt) %>
       <% pkg_status_row_if($cust_pkg, emt('Automatic suspension delayed until'), 'dundate', %opt) %>
       <% pkg_status_row_if( $cust_pkg, emt('Will suspend on'), 'adjourn', %opt, curuser=>$curuser ) %>
+      <% pkg_status_row_if( $cust_pkg, emt('Will resume on'), 'resume', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
@@ -440,7 +443,17 @@ sub pkg_delay_link  {
          )
 }
 
-sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    emt('Unsuspend'), @_ ); }
+sub pkg_resume_link {
+  include( '/elements/popup_link-cust_pkg.html',
+             'action'      => $p. 'misc/cancel_pkg.html?method=resume',
+             'label'       => emt('Unsuspend later'),
+             'actionlabel' => emt('Resume'),
+             'color'       => '#00CC00',
+             'cust_pkg'    => shift,
+         )
+}
+
+sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    emt('Unsuspend now'), @_ ); }
 sub pkg_unadjourn_link { pkg_link('misc/unadjourn_pkg', emt('Abort'),     @_ ); }
 sub pkg_unexpire_link  { pkg_link('misc/unexpire_pkg',  emt('Abort'),     @_ ); }
 

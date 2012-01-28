@@ -129,6 +129,14 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $error = $self->unsuspend_resumed_pkgs( day_end( $options{actual_time} ) );
+  if ( $error ) {
+    $error = "Error resuming custnum ".$self->custnum. ": $error";
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
+  }
+
   $job->update_statustext('20,billing packages') if $job;
   $error = $self->bill( %options );
   if ( $error ) {
@@ -184,7 +192,7 @@ sub cancel_expired_pkgs {
     push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
   }
 
-  scalar(@errors) ? join(' / ', @errors) : '';
+  join(' / ', @errors);
 
 }
 
@@ -226,7 +234,25 @@ sub suspend_adjourned_pkgs {
     push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
   }
 
-  scalar(@errors) ? join(' / ', @errors) : '';
+  join(' / ', @errors);
+
+}
+
+sub unsuspend_resumed_pkgs {
+  my ( $self, $time, %options ) = @_;
+  
+  my @unsusp_pkgs = $self->ncancelled_pkgs( { 
+    'extra_sql' => " AND resume IS NOT NULL AND resume > 0 AND resume <= $time "
+  } );
+
+  my @errors = ();
+
+  foreach my $cust_pkg ( @unsusp_pkgs ) {
+    my $error = $cust_pkg->unsuspend( 'time' => $time );
+    push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
+  }
+
+  join(' / ', @errors);
 
 }
 
@@ -2158,6 +2184,7 @@ sub apply_payments {
 
     cancel_expired_pkgs
     suspend_adjourned_pkgs
+    unsuspend_resumed_pkgs
 
     bill
       (do_cust_event pre-bill)
