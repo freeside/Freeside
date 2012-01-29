@@ -1,12 +1,11 @@
 package FS::svc_broadband;
+use base qw(FS::svc_Radius_Mixin FS::svc_Tower_Mixin FS::svc_Common);
 
 use strict;
-use vars qw(@ISA $conf);
+use vars qw($conf);
 
-use base qw(FS::svc_Radius_Mixin FS::svc_Tower_Mixin FS::svc_Common);
 { no warnings 'redefine'; use NetAddr::IP; }
 use FS::Record qw( qsearchs qsearch dbh );
-use FS::svc_Common;
 use FS::cust_svc;
 use FS::addr_block;
 use FS::part_svc_router;
