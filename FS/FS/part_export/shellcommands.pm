@@ -353,6 +353,7 @@ sub _export_command {
   $locale = shell_quote $locale;
 
   my $command_string = eval(qq("$command"));
+
   my @ssh_cmd_args = (
     user          => $self->option('user') || 'root',
     host          => $self->machine,
@@ -377,6 +378,7 @@ sub _export_command {
 sub _export_replace {
   my($self, $new, $old ) = (shift, shift, shift);
   my $command = $self->option('usermod');
+  return '' if $command =~ /^\s*$/;
   my $stdin = $self->option('usermod_stdin');
   no strict 'vars';
   {
