@@ -82,6 +82,13 @@ tie %hash, 'Tie::IxHash',
     payname   => 'Check',
     longname  => 'Billing',
   },
+  'PPAL' => {
+    tinyname  => 'PayPal',
+    shortname => 'PayPal',
+    longname  => 'PayPal',
+    cust_main => '', #not yet a customer type, but could be once we can do
+                     # invoice presentment via paypal
+  },
   'PREP' => {
     tinyname  => 'prepaid card',
     shortname => 'Prepaid card',
@@ -122,6 +129,12 @@ tie %hash, 'Tie::IxHash',
     tinyname  => 'EDI',
     shortname => 'Electronic Debit',
     longname  => 'Electronic Debit',
+    cust_main => '', #not a customer type
+  },
+  'WIRE' => {
+    tinyname  => 'Wire',
+    shortname => 'Wire transfer',
+    longname  => 'Wire transfer',
     cust_main => '', #not a customer type
   },
   'COMP' => {
