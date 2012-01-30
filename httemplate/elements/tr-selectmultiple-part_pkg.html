@@ -2,10 +2,11 @@
   <TD <% $style %>>
     <% include( '/elements/select-table.html',
                   'table'         => 'part_pkg',
-		  'name_col'      => 'pkg',
-		  'disable_empty' => 1,
-		  'element_etc'   => 'multiple',
-		  %opt,
+                  'name_col'      => 'pkg',
+                  'disable_empty' => 1,
+                  'element_etc'   => 'multiple',
+                  'extra_sql'     => 'WHERE ' . FS::part_pkg->curuser_pkgs_sql,
+                  %opt,
               )
   %>
   </TD>
