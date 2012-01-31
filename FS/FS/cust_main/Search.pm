@@ -64,7 +64,8 @@ sub smart_search {
   my %options = @_;
 
   #here is the agent virtualization
-  my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
+  my $agentnums_sql = 
+    $FS::CurrentUser::CurrentUser->agentnums_sql(table => 'cust_main');
 
   my @cust_main = ();
 
@@ -730,7 +731,8 @@ sub search {
   $orderby ||= 'ORDER BY custnum';
 
   # here is the agent virtualization
-  push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+  push @where,
+    $FS::CurrentUser::CurrentUser->agentnums_sql(table => 'cust_main');
 
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
@@ -753,7 +755,7 @@ sub search {
       push @select, "array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
 
     }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
-      push @select, "GROUP_CONCAT(pkg SEPARATOR '|') as magic";
+      push @select, "GROUP_CONCAT(part_pkg.pkg SEPARATOR '|') as magic";
       $addl_from .= " LEFT JOIN part_pkg using ( pkgpart )";
     }else{
       warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
@@ -795,6 +797,7 @@ sub search {
   my $sql_query = {
     'table'         => 'cust_main',
     'select'        => $select,
+    'addl_from'     => $addl_from,
     'hashref'       => {},
     'extra_sql'     => $extra_sql,
     'order_by'      => $orderby,
