@@ -1512,7 +1512,7 @@ sub retry_realtime {
                                      ).
                           ' ) ';
 
-  my @cust_event = qsearchs({
+  my @cust_event = qsearch({
     'table'     => 'cust_event',
     'select'    => 'cust_event.*',
     'addl_from' => "LEFT JOIN part_event USING ( eventpart ) $join",
