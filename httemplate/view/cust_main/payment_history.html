@@ -123,8 +123,14 @@
     </TD>
     <TD ALIGN="right" VALIGN="top">
 
-%# invoice reports
+%# invoice reports, combined statement
 % if ( $curuser->access_right('List invoices') ) { 
+%   if ( $conf->exists('cust_main-print_statement_link')
+%        and $num_cust_bill > 0 ) {
+  <A HREF="<% $p %>view/cust_main_statement-pdf.cgi?<% $custnum %>"><%
+  mt('Print a current statement') |h %></A>
+  <BR>
+%   }
   <A HREF="<% $p %>search/report_cust_bill.html?custnum=<% $custnum %>"><% mt('Invoice reports') |h %></A>
 % } 
 <BR>
@@ -410,12 +416,14 @@ foreach my $legacy_cust_bill ($cust_main->legacy_cust_bill) {
 }
 
 #invoices
+my $num_cust_bill = 0;
 foreach my $cust_bill ($cust_main->cust_bill) {
   push @history, {
     'date'   => $cust_bill->_date,
     'desc'   => include('payment_history/invoice.html', $cust_bill, %opt ),
     'charge' => $cust_bill->charged,
   };
+  $num_cust_bill++;
 }
 
 #statements

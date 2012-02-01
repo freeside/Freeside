@@ -4673,6 +4673,13 @@ and customer address. Include units.',
     'select_enum' => [ 'Classic', 'Recurring' ],
   },
 
+  {
+    'key'         => 'cust_main-print_statement_link',
+    'section'     => 'UI',
+    'description' => 'Show a link to download a current statement for the customer.',
+    'type'        => 'checkbox',
+  },
+
   { 
     'key'         => 'username-pound',
     'section'     => 'username',
