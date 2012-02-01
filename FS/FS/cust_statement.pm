@@ -60,6 +60,10 @@ Creates a new record.  To add the record to the database, see L<"insert">.
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
 
+Pass "statementnum => 'ALL'" to create a temporary statement that includes 
+all of the customer's invoices.  This statement can't be inserted and won't
+set the statementnum field on any invoices.
+
 =cut
 
 sub new { FS::Record::new(@_); }
@@ -165,7 +169,16 @@ Returns the associated invoices (cust_bill records) for this statement.
 
 sub cust_bill {
   my $self = shift;
-  qsearch('cust_bill', { 'statementnum' => $self->statementnum } );
+  # we use it about a thousand times, let's cache it
+  $self->{Hash}->{cust_bill} ||= [
+    qsearch('cust_bill', { 
+        $self->statementnum eq 'ALL' ?
+          ('custnum' => $self->custnum) :
+          ('statementnum' => $self->statementnum)
+    } )
+  ];
+
+  @{ $self->{Hash}->{cust_bill} }
 }
 
 sub _aggregate {
