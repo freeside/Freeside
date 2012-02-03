@@ -388,6 +388,7 @@ in the job fail, the entire job will abort and return an error.
 use Storable qw(thaw);
 use MIME::Base64;
 use Data::Dumper qw(Dumper);
+use Digest::SHA qw(sha1); # for duplicate checking
 
 sub email_search_result {
   my($class, $param) = @_;
@@ -438,32 +439,23 @@ sub email_search_result {
     }
 
     my $cust_main = $obj->cust_main;
-    my @message;
+    tie my %message, 'Tie::IxHash';
     if ( !$cust_main ) { 
       next; # unlinked object; nothing else we can do
     }
 
-    if( $sent_to{$cust_main->custnum} ) {
-      # avoid duplicates
-      $dups++;
-      next;
-    }
-
-    $sent_to{$cust_main->custnum} = 1;
-    
     if ( $msg_template ) {
-      # XXX add support for other context objects?
-      # If we do that, handling of "duplicates" will 
-      # have to be smarter.  Currently we limit to 
-      # one message per custnum because they'd all
-      # be identical.
-      @message = $msg_template->prepare( 'cust_main' => $cust_main );
+      # Now supports other context objects.
+      %message = $msg_template->prepare(
+        'cust_main' => $cust_main,
+        'object'    => $obj,
+      );
     }
     else {
       my @to = $cust_main->invoicing_list_emailonly;
       next if !@to;
 
-      @message = (
+      %message = (
         'from'      => $from,
         'to'        => \@to,
         'subject'   => $subject,
@@ -473,7 +465,19 @@ sub email_search_result {
       );
     } #if $msg_template
 
-    $error = send_email( generate_email( @message ) );
+    # For non-cust_main searches, we avoid duplicates based on message
+    # body text.  
+    my $unique = $cust_main->custnum;
+    $unique .= sha1($message{'text_body'}) if $class ne 'FS::cust_main';
+    if( $sent_to{$unique} ) {
+      # avoid duplicates
+      $dups++;
+      next;
+    }
+
+    $sent_to{$unique} = 1;
+    
+    $error = send_email( generate_email( %message ) );
 
     if($error) {
       # queue the sending of this message so that the user can see what we
@@ -484,7 +488,7 @@ sub email_search_result {
         'status'     => 'failed',
         'statustext' => $error,
       };
-      $queue->insert(@message);
+      $queue->insert(%message);
       push @retry_jobs, $queue;
     }
     else {
