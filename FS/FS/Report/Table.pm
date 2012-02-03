@@ -546,12 +546,12 @@ sub cust_bill_pkg_discount {
 
 }
 
-sub setup_pkg  { shift->pkg_field( @_, 'setup' ); }
-sub susp_pkg   { shift->pkg_field( @_, 'susp'  ); }
-sub cancel_pkg { shift->pkg_field( @_, 'cancel'); }
+sub setup_pkg  { shift->pkg_field( 'setup',  @_ ); }
+sub susp_pkg   { shift->pkg_field( 'susp',   @_ ); }
+sub cancel_pkg { shift->pkg_field( 'cancel', @_ ); }
  
 sub pkg_field {
-  my( $self, $speriod, $eperiod, $agentnum, $field ) = @_;
+  my( $self, $field, $speriod, $eperiod, $agentnum ) = @_;
   $self->scalar_sql("
     SELECT COUNT(*) FROM cust_pkg
         LEFT JOIN cust_main USING ( custnum )
