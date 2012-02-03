@@ -11,6 +11,10 @@
                  'color'       => \@color,
                  'style'       => \@style,
                  'footer'      => \@footer,
+                 'html_init'   => include('/elements/email-link.html',
+                                    'search_hash' => \%search_hash,
+                                    'table'       => 'svc_acct'
+                                  ),
 &>
 <%once>
 

@@ -191,7 +191,10 @@ if ( $cgi->param('action') eq 'preview' ) {
     $sql_query->{'order_by'} = '';
     my $object = qsearchs($sql_query);
     my $cust = $object->cust_main;
-    my %message = $msg_template->prepare( 'cust_main' => $cust );
+    my %message = $msg_template->prepare(
+      'cust_main' => $cust,
+      'object' => $object
+    );
     ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
   }
 }
