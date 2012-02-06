@@ -181,9 +181,9 @@ sub data {
 
   }
   # clean up after ourselves
-  dbh->rollback;
-  # may be useful for debugging
-  #dbh->commit;
+  #dbh->rollback;
+  # leave in until development is finished, for diagnostics
+  dbh->commit;
 
   \%data;
 }
