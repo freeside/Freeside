@@ -422,8 +422,8 @@ sub cust_bill_pkg_recur {
   if ( $opt{'distribute'} ) {
     push @where, "cust_main.agentnum = $agentnum" if $agentnum;
     push @where,
-      "$cust_bill_pkg.sdate < $eperiod",
-      "$cust_bill_pkg.edate > $speriod",
+      "$cust_bill_pkg.sdate <  $eperiod",
+      "$cust_bill_pkg.edate >= $speriod",
     ;
     # the fraction of edate - sdate that's within [speriod, eperiod]
     $recur_fraction = " * 
@@ -705,14 +705,26 @@ sub extend_projection {
   my ($speriod, $eperiod) = @_;
   my %items = map {$_ => 1} @{ $self->{items} };
   if ($items{'cust_bill_pkg'}) {
-    # append, head-to-tail, new line items identical to any that end within the 
-    # period (and aren't expiring)
+    # What we do here:
+    # Find all line items that end after the start of the period (and have 
+    # recurring fees, and don't expire before they end).  Choose the latest 
+    # one for each package.  If it ends before the end of the period, copy
+    # it forward by one billing period.
+    # Repeat this until the latest line item for each package no longer ends
+    # within the period.  This is certain to happen in finitely many 
+    # iterations as long as freq > 0.
+    # - Pg only, obviously.
+    # - Gives bad results if freq_override is used.
     my @fields = ( FS::cust_bill_pkg->fields, qw( usage _date expire ) );
     my $insert_fields = join(',', @fields);
-    #advance (sdate, edate) by one billing period
+    my $add_freq = sub { # emulate FS::part_pkg::add_freq
+      my $field = shift;
+      "EXTRACT( EPOCH FROM TO_TIMESTAMP($field) + (CASE WHEN freq ~ E'\\\\D' ".
+      "THEN freq ELSE freq || 'mon' END)::INTERVAL) AS $field";
+    };
     foreach (@fields) {
       if ($_ eq 'edate') {
-        $_ = '(edate + (edate - sdate)) AS edate' #careful of integer overflow
+        $_ = $add_freq->('edate');
       }
       elsif ($_ eq 'sdate') {
         $_ = 'edate AS sdate'
@@ -721,20 +733,31 @@ sub extend_projection {
         $_ = '0 AS setup' #because recurring only
       }
       elsif ($_ eq '_date') {
-        $_ = '(_date + (edate - sdate)) AS _date'
+        $_ = $add_freq->('_date');
       }
     }
     my $select_fields = join(',', @fields);
     my $dbh = dbh;
     my $sql =
+    # Subquery here because we need to DISTINCT the whole set, select the 
+    # latest charge per pkgnum, and _then_ check edate < $eperiod 
+    # and edate < expire.
       "INSERT INTO v_cust_bill_pkg ($insert_fields)
-        SELECT $select_fields FROM v_cust_bill_pkg
-        WHERE edate >= $speriod AND edate < $eperiod 
+        SELECT $select_fields FROM (
+          SELECT DISTINCT ON (pkgnum) * FROM v_cust_bill_pkg
+            WHERE edate >= $speriod 
               AND recur > 0
-              AND (expire IS NULL OR expire > edate)";
-    warn "[extend_projection] $sql\n" if $DEBUG;
-    my $rows = $dbh->do($sql) or die $dbh->errstr;
-    warn "[extend_projection] $rows rows\n" if $DEBUG;
+              AND freq IS NOT NULL
+              AND freq != '0'
+            ORDER BY pkgnum, edate DESC
+          ) AS v1 
+          WHERE edate < $eperiod AND (edate < expire OR expire IS NULL)";
+    my $rows;
+    do {
+      warn "[extend_projection] $sql\n" if $DEBUG;
+      $rows = $dbh->do($sql) or die $dbh->errstr;
+      warn "[extend_projection] $rows rows\n" if $DEBUG;
+    } until $rows == 0;
   }
 }
 
