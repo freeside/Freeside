@@ -1111,7 +1111,12 @@ sub _make_lines {
         'freq'      => $part_pkg->freq,
       };
 
-      if ( $part_pkg->recur_temporality eq 'preceding' ) {
+      if ( $part_pkg->option('prorate_defer_bill',1) 
+           and !$hash{last_bill} ) {
+        # both preceding and upcoming, technically
+        $cust_bill_pkg->sdate( $cust_pkg->setup );
+        $cust_bill_pkg->edate( $cust_pkg->bill );
+      } elsif ( $part_pkg->recur_temporality eq 'preceding' ) {
         $cust_bill_pkg->sdate( $hash{last_bill} );
         $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
         $cust_bill_pkg->edate( $time ) if $options{cancel};

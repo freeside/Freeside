@@ -3,6 +3,7 @@ package FS::part_pkg::prorate_Mixin;
 use strict;
 use vars qw( %info );
 use Time::Local qw( timelocal );
+use Date::Format qw( time2str );
 
 %info = ( 
   'disabled'  => 1,
@@ -22,8 +23,13 @@ use Time::Local qw( timelocal );
                           'billing day',
                 'type' => 'checkbox',
     },
+    'prorate_verbose' => {
+                'name' => 'Show prorate details on the invoice',
+                'type' => 'checkbox',
+    },
   },
-  'fieldorder' => [ qw(prorate_defer_bill prorate_round_day add_full_period) ],
+  'fieldorder' => [ qw(prorate_defer_bill prorate_round_day 
+                       add_full_period prorate_verbose) ],
 );
 
 sub fieldorder {
@@ -65,6 +71,7 @@ billing period after that.
 instead of using the exact time.
 - prorate_defer_bill: Don't bill the prorate interval until the prorate 
 day arrives.
+- prorate_verbose: Generate details to explain the prorate calculations.
 
 =cut
 
@@ -72,6 +79,8 @@ sub calc_prorate {
   my ($self, $cust_pkg, $sdate, $details, $param, $cutoff_day) = @_;
   die "no cutoff_day" unless $cutoff_day;
   die "can't prorate non-monthly package\n" if $self->freq =~ /\D/;
+
+  my $money_char = FS::Conf->new->config('money_char') || '$';
 
   my $charge = $self->base_recur($cust_pkg, $sdate) || 0;
 
@@ -103,12 +112,28 @@ sub calc_prorate {
   my $permonth = $charge / $self->freq;
   my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
 
+  if ( $self->option('prorate_verbose',1) 
+      and $months > 0 and $months < $self->freq ) {
+    push @$details, 
+          'Prorated (' . time2str('%b %d', $mnow) .
+            ' - ' . time2str('%b %d', $mend) . '): ' . $money_char . 
+            sprintf('%.2f', $permonth * $months + 0.00000001 );
+  }
+
   # add a full period if currently billing for a partial period
   # or periods up to freq_override if billing for an override interval
   if ( ($param->{'freq_override'} || 0) > 1 ) {
     $months += $param->{'freq_override'} - 1;
   } 
   elsif ( $add_period && $months < $self->freq) {
+
+    if ( $self->option('prorate_verbose',1) ) {
+      # calculate the prorated and add'l period charges
+      push @$details,
+        'First full month: ' . $money_char . 
+          sprintf('%.2f', $permonth);
+    }
+
     $months += $self->freq;
     $$sdate = $self->add_freq($mstart);
   }

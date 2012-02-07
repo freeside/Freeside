@@ -32,8 +32,12 @@ use FS::part_pkg::flat;
                         'name' => 'Defer the first bill until the billing day',
                         'type' => 'checkbox',
                         },
+    'prorate_verbose' => {
+                        'name' => 'Show prorate details on the invoice',
+                        'type' => 'checkbox',
+                        },
   },
-  'fieldorder' => [ 'cutoff_day', 'prorate_defer_bill', 'add_full_period', 'prorate_round_day' ],
+  'fieldorder' => [ 'cutoff_day', 'prorate_defer_bill', 'add_full_period', 'prorate_round_day', 'prorate_verbose' ],
   'freq' => 'm',
   'weight' => 20,
 );
