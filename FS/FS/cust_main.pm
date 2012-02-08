@@ -5063,6 +5063,10 @@ sub _upgrade_data { #class method
     "UPDATE cust_main SET paydate = SUBSTRING(paydate FROM 1 FOR 5) || '0' || SUBSTRING(paydate FROM 6) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
   }
 
+  push @statements, #fix the weird BILL with a cc# in payinfo problem
+    #DCRD to be safe, or CARD?
+    "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16";
+
   foreach my $sql ( @statements ) {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
