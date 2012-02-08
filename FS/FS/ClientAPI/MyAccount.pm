@@ -585,7 +585,7 @@ sub edit_info {
     $p->{'payinfo1'} =~ /^([\dx]+)$/
       or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
     my $payinfo1 = $1;
-     $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by -require-bank-branch?
+     $p->{'payinfo2'} =~ /^([\dx\.]+)$/ # . turned on by echeck-country CA ?
       or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
     my $payinfo2 = $1;
     $payinfo = $payinfo1. '@'. $payinfo2;
@@ -790,7 +790,7 @@ sub validate_payment {
    
     $payinfo = $p->{'payinfo'};
 
-    #more intelligent mathing will be needed here if you change
+    #more intelligent matching will be needed here if you change
     #card_masking_method and don't remove existing paymasks
     $payinfo = $cust_main->payinfo
       if $cust_main->paymask eq $payinfo;
@@ -912,7 +912,7 @@ sub do_process_payment {
 
   if ( $validate->{'save'} ) {
     my $new = new FS::cust_main { $cust_main->hash };
-    if ($validate->{'payby'} eq 'CARD' || $validate->{'payby'} eq 'DCRD') {
+    if ($payby eq 'CARD' || $payby eq 'DCRD') {
       $new->set( $_ => $validate->{$_} )
         foreach qw( payname paystart_month paystart_year payissue payip
                     address1 address2 city state zip country );
