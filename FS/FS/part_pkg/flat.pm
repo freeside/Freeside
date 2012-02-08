@@ -6,6 +6,7 @@ use base qw( FS::part_pkg::prorate_Mixin
 
 use strict;
 use vars qw( %info %usage_recharge_fields @usage_recharge_fieldorder );
+use FS::Record qw( qsearch );
 use Tie::IxHash;
 use List::Util qw( min );
 use FS::UI::bytecount;
@@ -180,6 +181,22 @@ sub base_recur_permonth {
   sprintf('%.2f', $self->base_recur($cust_pkg) / $self->freq );
 }
 
+sub calc_cancel {
+  my $self = shift;
+  my $conf = new FS::Conf;
+  if ( $self->recur_temporality eq 'preceding'
+       and $self->option('bill_recur_on_cancel', 1) ) {
+    # run another recurring cycle
+    return $self->calc_recur(@_);
+  }
+  elsif ( $conf->exists('bill_usage_on_cancel') # should be a package option?
+          and $self->can('calc_usage') ) {
+    # bill for outstanding usage
+    return $self->calc_usage(@_);
+  }
+  0;
+}
+
 sub calc_remain {
   my ($self, $cust_pkg, %options) = @_;
 
@@ -196,19 +213,28 @@ sub calc_remain {
               || ! $next_bill
               || $next_bill < $time;
 
-  my %sec = (
-    'h' =>    3600, # 60 * 60
-    'd' =>   86400, # 60 * 60 * 24
-    'w' =>  604800, # 60 * 60 * 24 * 7
-    'm' => 2629744, # 60 * 60 * 24 * 365.2422 / 12 
-  );
-
-  $self->freq =~ /^(\d+)([hdwm]?)$/
-    or die 'unparsable frequency: '. $self->freq;
-  my $freq_sec = $1 * $sec{$2||'m'};
-  return 0 unless $freq_sec;
-
-  sprintf("%.2f", $self->base_recur($cust_pkg, \$time) * ( $next_bill - $time ) / $freq_sec );
+  # Use actual charge for this period, not base_recur (for discounts).
+  # Use sdate < $time and edate >= $time because when billing on 
+  # cancellation, edate = $time.
+  my $credit = 0;
+  foreach my $item ( 
+    qsearch('cust_bill_pkg', { 
+      pkgnum => $cust_pkg->pkgnum,
+      sdate => {op => '<' , value => $time},
+      edate => {op => '>=', value => $time},
+      recur => {op => '>' , value => 0},
+    })
+  ) {
+    # hack to deal with the weird behavior of edate on package cancellation
+    my $edate = $item->edate;
+    if ( $self->recur_temporality eq 'preceding' ) {
+      $edate = $self->add_freq($item->sdate);
+    }
+    $credit += ($item->recur - $item->usage) * 
+               ($edate - $time) / ($edate - $item->sdate);
+  } 
+  sprintf('%.2f', $credit);
+  #sprintf("%.2f", $self->base_recur($cust_pkg, \$time) * ( $next_bill - $time ) / $freq_sec );
 
 }
 

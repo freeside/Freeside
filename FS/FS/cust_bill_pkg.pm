@@ -896,7 +896,7 @@ sub usage {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
 
-    return $sth->fetchrow_arrayref->[0];
+    return $sth->fetchrow_arrayref->[0] || 0;
 
   }
 

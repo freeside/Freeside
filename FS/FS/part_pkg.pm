@@ -1293,6 +1293,10 @@ sub calc_remain { 0; }
 sub calc_cancel { 0; }
 sub calc_units  { 0; }
 
+#fallback for everything not based on flat.pm
+sub recur_temporality { 'upcoming'; }
+sub calc_cancel { 0; }
+
 #fallback for everything except bulk.pm
 sub hide_svc_detail { 0; }
 
