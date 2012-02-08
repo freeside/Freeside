@@ -893,7 +893,7 @@ sub usage {
 
   if ( $self->get('details') ) {
 
-    return sum( 
+    return sum( 0, 
       map { $_->amount || 0 }
       grep { !defined($classnum) or $classnum eq $_->classnum }
       @{ $self->get('details') }
@@ -908,7 +908,7 @@ sub usage {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
 
-    return $sth->fetchrow_arrayref->[0];
+    return $sth->fetchrow_arrayref->[0] || 0;
 
   }
 
