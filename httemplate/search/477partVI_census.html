@@ -114,9 +114,9 @@ foreach my $row ( @row_option ) {
       my $extracolumns = "$rowcount AS upload, $columncount AS download, $tech_code as technology_code";
       my $percent = "CASE WHEN count(*) > 0 THEN 100-100*cast(count(cust_main.company) as numeric)/cast(count(*) as numeric) ELSE cast(0 as numeric) END AS residential";
       $sql_query->{select} = "count(*) AS quantity, $extracolumns, censustract, $percent";
-      $sql_query->{extra_sql} =~ /^(.*)(ORDER BY pkgnum)(.*)$/s
-        or die "couldn't parse extra_sql";
-      $sql_query->{extra_sql} = "$1 GROUP BY censustract $3";
+      $sql_query->{order_by} =~ /^(.*)(ORDER BY pkgnum)(.*)$/s
+        or die "couldn't parse order_by";
+      $sql_query->{order_by} = "$1 GROUP BY censustract $3";
       push @sql_query, $sql_query;
     }
     $columncount++;
