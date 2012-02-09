@@ -36,7 +36,7 @@ sub get_censustract {
 
   warn Dumper($location, $year) if $DEBUG;
 
-  my $url='http://www.ffiec.gov/Geocode/default.aspx';
+  my $url = 'http://www.ffiec.gov/Geocode/default.aspx';
 
   my $return = {};
   my $error = '';
@@ -75,14 +75,11 @@ sub get_censustract {
 
       my($zip5, $zip4) = split('-',$location->{zip});
 
-      $year ||= '2011';
-      #ugh  workaround a mess at ffiec
-      $year = " $year" if $year ne '2011';
+      $year ||= '2011'; #2012 per http://transition.fcc.gov/form477/techfaqs.html soon/now?
       my @ffiec_args = (
         __VIEWSTATE => $viewstate,
         __EVENTVALIDATION => $eventvalidation,
         ddlbYear    => $year,
-        ddlbYear    => '2011', #' 2009',
         txtAddress  => $location->{address1},
         txtCity     => $location->{city},  
         ddlbState   => $location->{state},
@@ -117,7 +114,10 @@ sub get_censustract {
           $return->{lc($1)} = $p->get_trimmed_text("/span");
         }
 
-        $error = "No census tract found" unless $return->{tractcode};
+        unless ( $return->{tractcode} ) {
+          warn "$error: $content ". Dumper($return) if $DEBUG;
+          $error = "No census tract found";
+        }
         $return->{tractcode} .= ' '
           unless $error || $JSON::VERSION >= 2; #broken JSON 1 workaround
 
