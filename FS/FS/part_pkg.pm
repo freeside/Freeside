@@ -1290,7 +1290,6 @@ sub calc_recur { die 'no calc_recur for '. shift->plan. "\n"; }
 
 #fallback that return 0 for old legacy packages with no plan
 sub calc_remain { 0; }
-sub calc_cancel { 0; }
 sub calc_units  { 0; }
 
 #fallback for everything not based on flat.pm
