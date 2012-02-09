@@ -51,19 +51,18 @@ sub export_setstatus {
   $self->shellcommands_queue( @shallargs, 'command' =>
     $self->option('spam_enable'). ' '.
     shell_quote($svc_acct->email)
-  );
-
-  $self->shellcommands_queue( @shallargs, 'command' =>
-    $self->option('spam_tag2_level'). ' '.
-    shell_quote($svc_acct->email). ' '.
-    $hashref->{'spam_tag2_level'}
-  );
-
-  $self->shellcommands_queue( @shallargs, 'command' =>
-    $self->option('spam_kill_level'). ' '.
-    shell_quote($svc_acct->email). ' '.
-    $hashref->{'spam_kill_level'}
-  );
+  )
+    || $self->shellcommands_queue( @shallargs, 'command' =>
+         $self->option('spam_tag2_level'). ' '.
+         shell_quote($svc_acct->email). ' '.
+         $hashref->{'spam_tag2_level'}
+       )
+    || $self->shellcommands_queue( @shallargs, 'command' =>
+         $self->option('spam_kill_level'). ' '.
+         shell_quote($svc_acct->email). ' '.
+         $hashref->{'spam_kill_level'}
+       )
+  ;
 
 }
 
