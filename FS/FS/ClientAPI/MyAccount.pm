@@ -1543,6 +1543,39 @@ sub svc_status_html {
 
 }
 
+sub svc_status_hash {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  #XXX only svc_acct for now
+  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
+    or return { 'error' => "Service not found" };
+
+  my ( $html, $hashref ) = $svc_x->export_getstatus;
+  return $hashref;
+
+}
+
+sub set_svc_status_hash {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  #XXX only svc_acct for now
+  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
+    or return { 'error' => "Service not found" };
+
+  my $error = $svc_x->export_setstatus($p); #$p? returns error?
+  return { 'error' => $error } if $error;
+
+  return {}; #? { 'error' => '' }
+
+}
+
+
 sub acct_forward_info {
   my $p = shift;
 
