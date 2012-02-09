@@ -22,6 +22,7 @@ die "access denied"
 
 my $num_svc_links = sub {
   my ($query_string, $sectors) = @_;
+  return if !$sectors;
   my $num_svc_broadband = FS::svc_broadband->count("sectornum IN($sectors)");
   my $num_svc_acct =      FS::svc_acct->count("sectornum IN($sectors)");
 
