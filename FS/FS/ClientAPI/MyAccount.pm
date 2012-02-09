@@ -1568,6 +1568,8 @@ sub set_svc_status_hash {
   my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
     or return { 'error' => "Service not found" };
 
+  warn "set_svc_status_hash ". join(' / ', map "$_=>".$p->{$_}, keys %$p )
+    if $DEBUG;
   my $error = $svc_x->export_setstatus($p); #$p? returns error?
   return { 'error' => $error } if $error;
 
