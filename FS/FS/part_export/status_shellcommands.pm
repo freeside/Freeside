@@ -48,16 +48,16 @@ sub export_setstatus {
     #ignored_errors    => $self->option('ignored_errors') || '',
   );
 
-  $self->shellcommands_queue( @shallargs, 'command' =>
+  $self->shellcommands_queue( @shellargs, 'command' =>
     $self->option('spam_enable'). ' '.
     shell_quote($svc_acct->email)
   )
-    || $self->shellcommands_queue( @shallargs, 'command' =>
+    || $self->shellcommands_queue( @shellargs, 'command' =>
          $self->option('spam_tag2_level'). ' '.
          shell_quote($svc_acct->email). ' '.
          $hashref->{'spam_tag2_level'}
        )
-    || $self->shellcommands_queue( @shallargs, 'command' =>
+    || $self->shellcommands_queue( @shellargs, 'command' =>
          $self->option('spam_kill_level'). ' '.
          shell_quote($svc_acct->email). ' '.
          $hashref->{'spam_kill_level'}
