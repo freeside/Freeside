@@ -41,5 +41,4 @@ my $count_query = delete($sql_query->{'count_query'});
 $count_query =~ s/COUNT\(\*\)/count(DISTINCT substr(zip,1,5))/;
 $count_query =~ s/ORDER BY [.\w]+//;
 
-warn "\ncount_query:\n$count_query\n\nsql_query:\n".Dumper($sql_query)."\n\n";
 </%init>
