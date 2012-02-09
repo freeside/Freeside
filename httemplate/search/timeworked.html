@@ -78,9 +78,7 @@ my $groupby = join(',', @groupby);
 my $where = "
   WHERE ObjectType='RT::Ticket'
     AND ( ( Transactions.Type='Set' AND Field='TimeWorked' )
-          OR Transactions.Type='Create'
-          OR Transactions.Type='Comment'
-          OR Transactions.Type='Correspond'
+          OR Transactions.Type IN ( 'Create', 'Comment', 'Correspond', 'Touch' )
         )
     AND $wheretimeleft
 ";
