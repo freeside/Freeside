@@ -3,6 +3,7 @@ use base qw( FS::part_export::shellcommands );
 
 use vars qw( %info );
 use Tie::IxHash;
+use String::ShellQuote;
 
 tie my %options, 'Tie::IxHash',
   'user' => { label=>'Remote username', default=>'root' },
@@ -38,10 +39,31 @@ sub _export_unsuspend {}
 sub export_setstatus {
   my($self, $svc_acct, $hashref) = @_;
 
-  $self->_export_command('spam_enable', $svc_acct->email);
+  my @shellargs = (
+    $svc_acct->svcnum,
+    user          => $self->option('user') || 'root',
+    host          => $self->machine,
+    #stdin_string  => $stdin_string,
+    ignore_all_output => $self->option('ignore_all_output'),
+    #ignored_errors    => $self->option('ignored_errors') || '',
+  );
 
-  $self->_export_command('spam_tag2_level', $svc_acct->email, $hashref->{'spam_tag2_level'} );
-  $self->_export_command('spam_kill_level', $svc_acct->email, $hashref->{'spam_kill_level'} );
+  $self->shellcommands_queue( @shallargs, 'command' =>
+    $self->option('spam_enable'). ' '.
+    shell_quote($svc_acct->email)
+  );
+
+  $self->shellcommands_queue( @shallargs, 'command' =>
+    $self->option('spam_tag2_level'). ' '.
+    shell_quote($svc_acct->email). ' '.
+    $hashref->{'spam_tag2_level'}
+  );
+
+  $self->shellcommands_queue( @shallargs, 'command' =>
+    $self->option('spam_kill_level'). ' '.
+    shell_quote($svc_acct->email). ' '.
+    $hashref->{'spam_kill_level'}
+  );
 
 }
 
