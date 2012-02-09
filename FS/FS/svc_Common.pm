@@ -1021,6 +1021,24 @@ sub export_getstatus {
   ( $html, \%hash );
 }
 
+=item export_setstatus
+
+Runs export_setstatus callbacks.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+sub export_setstatus {
+  my( $self, @args ) = @_;
+  my $error = $self->export('setstatus', @args);
+  if ( $error ) {
+    warn "error running export_setstatus: $error";
+    return $error;
+  }
+  '';
+}
+
+
 =item export HOOK [ EXPORT_ARGS ]
 
 Runs the provided export hook (i.e. "suspend", "unsuspend") for this service.
