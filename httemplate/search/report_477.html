@@ -33,13 +33,23 @@
           element.style.display = 'none';
         }
       }
+      function toggleV() {
+        document.getElementById('enableV').disabled =
+          ! (document.getElementById('enableIIA').checked ||
+             document.getElementById('enableIIB').checked);
+      }
+      function toggleVI() {
+        document.getElementById('enableVI').disabled =
+          ! document.getElementById('enableIA').checked;
+      }
     </SCRIPT>
 
     <% include( '/elements/tr-checkbox.html',
                    'label' => 'Enable part IA?',
                    'field' => 'part',
+                   'id'    => 'enableIA',
                    'value' => 'IA',
-                   'onchange' => 'partchange(this)',
+                   'onchange' => 'partchange(this); toggleVI();',
                )
     %>
 
@@ -115,8 +125,9 @@
     <% include( '/elements/tr-checkbox.html',
                    'label' => 'Enable part IIA?',
                    'field' => 'part',
+                   'id'    => 'enableIIA',
                    'value' => 'IIA',
-                   'onchange' => 'partchange(this)',
+                   'onchange' => 'partchange(this); toggleV();',
                )
     %>
 
@@ -144,8 +155,9 @@
     <% include( '/elements/tr-checkbox.html',
                    'label' => 'Enable part IIB?',
                    'field' => 'part',
+                   'id'    => 'enableIIB',
                    'value' => 'IIB',
-                   'onchange' => 'partchange(this)',
+                   'onchange' => 'partchange(this); toggleV();',
                )
     %>
 
@@ -173,6 +185,7 @@
     <% include( '/elements/tr-checkbox.html',
                    'label' => 'Enable part IV?',
                    'field' => 'part',
+                   'id'    => 'enableIV', #unused
                    'value' => 'IV',
                    'onchange' => 'partchange(this)',
                )
@@ -193,7 +206,10 @@
                    'label' => 'Enable part V?',
                    'field' => 'part',
                    'value' => 'V',
+                   'id'    => 'enableV',
                    'onchange' => 'partchange(this)',
+                   'postfix'  => 
+                    '&nbsp;<FONT SIZE="-1">(requires Part IIA or IIB)</FONT>',
                )
     %>
     <TR id='partV' style="display:none">
@@ -213,10 +229,16 @@
     <% include( '/elements/tr-checkbox.html',
                    'label' => 'Enable part VI?',
                    'field' => 'part',
+                   'id'    => 'enableVI',
                    'value' => 'VI_census',
+                   'postfix'  =>
+                    '&nbsp;<FONT SIZE="-1">(requires part IA)</FONT>',
                )
     %>
-
+  <SCRIPT TYPE="text/javascript">
+  toggleV();
+  toggleVI();
+  </SCRIPT>
   </TABLE>
 
 <BR>

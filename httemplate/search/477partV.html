@@ -1,7 +1,7 @@
 <% include( 'elements/search.html',
                   'html_init'         => $html_init,
                   'name'              => 'zip code',
-                  'query'             => [ @sql_query ],
+                  'query'             => $sql_query,
                   'count_query'       => $count_query,
                   'nohtmlheader'      => 1,
                   'disable_total'     => 1,
@@ -10,6 +10,7 @@
                   'no_field_elements' => 1,
                   'fields'            => [ 'zip' ],
                   'url'               => $opt{url} || '',
+                  'disable_download'  => 1,
 
               )
 %>
@@ -33,24 +34,12 @@ $search_hash{'classnum'} = [ $cgi->param('classnum') ];
 $search_hash{report_option} = $cgi->param('partv_report_option')
   if $cgi->param('partv_report_option');
 
-my $sql_query = FS::cust_pkg->search( { %search_hash, 'fcc_line' > 1 });
+my $sql_query = FS::cust_pkg->search( { %search_hash, 'fcc_line' => 1 });
 $sql_query->{select} = 'DISTINCT substr(zip,1,5) as zip';
-$sql_query->{extra_sql} =~ s/ORDER BY [.\w]+//;
-push @sql_query, $sql_query;
-push @count_query, delete($sql_query->{'count_query'});
-$count_query[0] =~ s/COUNT\(\*\)/count(DISTINCT substr(zip,1,5))/;
-$count_query[0] =~ s/ORDER BY [.\w]+//;
+$sql_query->{order_by} = 'ORDER BY substr(zip,1,5)';
+my $count_query = delete($sql_query->{'count_query'});
+$count_query =~ s/COUNT\(\*\)/count(DISTINCT substr(zip,1,5))/;
+$count_query =~ s/ORDER BY [.\w]+//;
 
-$search_hash{report_option} = $cgi->param('partv_report_option')
-  if $cgi->param('partv_report_option');
-
-$sql_query = FS::cust_pkg->search( { %search_hash } );
-$sql_query->{select} = 'DISTINCT substr(zip,1,5) as zip';
-$sql_query->{extra_sql} =~ s/ORDER BY [.\w]+//;
-push @sql_query, $sql_query;
-push @count_query, delete($sql_query->{'count_query'});
-$count_query[1] =~ s/COUNT\(\*\)/count(DISTINCT substr(zip,1,5))/;
-$count_query[1] =~ s/ORDER BY [.\w]+//;
-my $count_query = join(' UNION ', @count_query);
-
+warn "\ncount_query:\n$count_query\n\nsql_query:\n".Dumper($sql_query)."\n\n";
 </%init>
