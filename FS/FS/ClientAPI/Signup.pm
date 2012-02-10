@@ -403,6 +403,8 @@ sub signup_info {
           qw( body_bgcolor box_bgcolor menu_bgcolor ) ),
         ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
           qw( head body_header body_footer ) ),
+        ( map { $_ => join("\n", $conf->config("signup_server-$_", $agentnum ) ) }
+          qw( terms_of_service ) ),
       };
 
       $cache->set("signup_info_cache_agent$agentnum", $signup_info_cache_agent);

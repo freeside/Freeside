@@ -5,7 +5,12 @@
   <%= $head %>
 </HEAD>
 <BODY BGCOLOR="<%= $body_bgcolor || '#e8e8e8' %>" onUnload="myclose()">
-
+<%= if ( $terms_of_service =~ /\S/ ) { # enable overlib
+  $OUT .= qq!<SCRIPT type="text/javascript" src="$_.js"></SCRIPT>\n!
+    foreach (qw(overlibmws overlibmws_iframe overlibmws_draggable 
+                overlibmws_crossframe iframecontentmws ));
+}
+%>
 <script type="text/javascript">
   var mywindow = -1;
   function myopen(filename,windowname,properties) {
@@ -387,9 +392,32 @@ if ( @optional_packages ) {
 $OUT = ''
 }
 %>
-
-<BR><INPUT TYPE="submit" NAME="signup" VALUE="Signup">
-<script language="JavaScript">
+<%=
+  if ( $terms_of_service =~ /\S/ ) {
+    my $title = 'Terms of Service'; #config?
+    my $onclick = qq[overlib( terms_content, CAPTION, "$title", STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, CLOSETEXT, "Close" );];
+    # Container for $terms_of_service to avoid nasty escaping.
+    $OUT .= qq[
+<BR>
+<DIV id="div_terms" style="display:none">$terms_of_service</DIV>
+<SCRIPT type="text/javascript">
+function agree_to_terms (val) {
+  document.getElementById("signup").disabled = !val;
+}
+function show_terms () {
+  overlib( document.getElementById('div_terms').innerHTML,
+    CAPTION, '$title', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE,
+    CLOSECLICK, CLOSETEXT, 'Close' );
+}
+</SCRIPT>
+<INPUT TYPE="checkbox" onchange="agree_to_terms(this.checked)">&nbsp;
+I agree to the <a href="javascript:void(0);" onclick="show_terms();">Terms of Service</a>.
+];
+  }
+%>
+<BR><INPUT TYPE="submit" ID="signup" NAME="signup" VALUE="Signup">
+<script language="javascript">
+<%= length($terms_of_service) ? 'agree_to_terms(false)' : '' %>
 
 function fixup_form() {
     
