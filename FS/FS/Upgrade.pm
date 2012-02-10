@@ -263,6 +263,8 @@ sub upgrade_data {
     'part_svc'         => [],
     'part_export'      => [],
 
+    #insert default tower_sector if not present
+    'tower',
   ;
 
   \%hash;

@@ -137,7 +137,12 @@ Returns a description for this sector including tower name.
 
 sub description {
   my $self = shift;
-  $self->tower->towername. ' sector '. $self->sectorname;
+  if ( $self->sectorname eq '_default' ) {
+    $self->tower->towername
+  }
+  else {
+    $self->tower->towername. ' sector '. $self->sectorname
+  }
 }
 
 =back

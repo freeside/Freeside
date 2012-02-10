@@ -4,6 +4,8 @@
      viewall_dir   => 'browse',
      fields        => [ 'towername',
                         { field=>'disabled', type=>'checkbox', value=>'Y', },
+                        { field             => 'default_ip_addr',
+                          curr_value_callback => $default_ip_addr_callback },
                         { field             => 'sectornum',
                           type              => 'tower_sector',
                           o2m_table         => 'tower_sector',
@@ -15,6 +17,7 @@
                         'towername' => 'Name',
                         'sectornum' => 'Sector',
                         'disabled'  => 'Disabled',
+                        'default_ip_addr' => 'Tower IP address',
                       },
 &>
 <%init>
@@ -32,6 +35,12 @@ my $m2_error_callback = sub { # reconstruct the list
       map { $_ => scalar( $cgi->param($k.'_'.$_) ) } @fields,
     };
   } grep /^sectornum\d+$/, ($cgi->param);
+};
+
+my $default_ip_addr_callback = sub {
+  my ($cgi, $object) = @_;
+  my $sector = $object ? $object->default_sector : '';
+  $sector ? $sector->ip_addr : '';
 };
 
 </%init>

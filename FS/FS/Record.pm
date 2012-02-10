@@ -900,10 +900,12 @@ sub insert {
   my $error = $self->check;
   return $error if $error;
 
-  #single-field unique keys are given a value if false
+  #single-field non-null unique keys are given a value if empty
   #(like MySQL's AUTO_INCREMENT or Pg SERIAL)
   foreach ( $self->dbdef_table->unique_singles) {
-    $self->unique($_) unless $self->getfield($_);
+    next if $self->getfield($_);
+    next if $self->dbdef_table->column($_)->null eq 'NULL';
+    $self->unique($_);
   }
 
   #and also the primary key, if the database isn't going to
