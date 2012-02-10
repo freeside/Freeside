@@ -1997,6 +1997,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'signup_server-terms_of_service',
+    'section'     => 'self-service',
+    'description' => 'Terms of Service for the signup server.  May contain HTML.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'selfservice_server-base_url',
     'section'     => 'self-service',
     'description' => 'Base URL for the self-service web interface - necessary for some widgets to find their way, including retrieval of non-US state information and phone number provisioning.',
