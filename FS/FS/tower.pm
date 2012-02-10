@@ -2,8 +2,9 @@ package FS::tower;
 
 use strict;
 use base qw( FS::o2m_Common FS::Record );
-use FS::Record qw( qsearch ); #qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::tower_sector;
+use List::Util qw( max );
 
 =head1 NAME
 
@@ -69,15 +70,11 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
 
 =cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
@@ -112,10 +109,22 @@ sub check {
   $self->SUPER::check;
 }
 
+=item default_sector
+
+Returns the default sector.
+
+=cut
+
+sub default_sector {
+  my $self = shift;
+  qsearchs('tower_sector', { towernum => $self->towernum,
+                             sectorname => '_default' });
+}
+
 =item tower_sector
 
 Returns the sectors of this tower, as FS::tower_sector objects (see
-L<FS::tower_sector>).
+L<FS::tower_sector>), except for the default sector.
 
 =cut
 
@@ -123,9 +132,54 @@ sub tower_sector {
   my $self = shift;
   qsearch({
     'table'    => 'tower_sector',
-    'hashref'  => { 'towernum' => $self->towernum },
+    'hashref'  => { 'towernum'    => $self->towernum,
+                    'sectorname'  => { op => '!=', value => '_default' },
+                  },
     'order_by' => 'ORDER BY sectorname',
   });
+}
+
+=item process_o2m
+
+Wrapper for the default method (see L<FS::o2m_Common>) to manage the 
+default sector.
+
+=cut
+
+sub process_o2m {
+  my $self = shift;
+  my %opt = @_;
+  my $params = $opt{params};
+
+  # Adjust to make sure our default sector is in the list.
+  my $default_sector = $self->default_sector
+    or warn "creating default sector for tower ".$self->towernum."\n";
+  my $idx = max(0, map { $_ =~ /^sectornum(\d+)$/ ? $1 : 0 } keys(%$params));
+  $idx++; # append to the param list
+  my $prefix = "sectornum$idx";
+  # empty sectornum will create the default sector if it doesn't exist yet
+  $params->{$prefix} = $default_sector ? $default_sector->sectornum : '';
+  $params->{$prefix.'_sectorname'} = '_default';
+  $params->{$prefix.'_ip_addr'} = $params->{'default_ip_addr'} || '';
+
+  $self->SUPER::process_o2m(%opt);
+}
+
+sub _upgrade_data {
+  # Create default sectors for any tower that doesn't have one.
+  # Shouldn't do any harm if they're missing, but just for completeness.
+  my $class = shift;
+  foreach my $tower (qsearch('tower',{})) {
+    next if $tower->default_sector;
+    my $sector = FS::tower_sector->new({
+        towernum => $tower->towernum,
+        sectorname => '_default',
+        ip_addr => '',
+    });
+    my $error = $sector->insert;
+    die "error creating default sector: $error\n" if $error;
+  }
+  '';
 }
 
 =back

@@ -51,7 +51,9 @@ my $num_svc_links = sub {
 
 my $tower_sub = sub {
   my $tower = shift;
-  my $sectors = join(',', map { $_->sectornum } $tower->tower_sector);
+  my $sectors = join(',', 
+    map { $_->sectornum } $tower->tower_sector, $tower->default_sector
+  );
   [ #rows
     [
       { 'data' => $tower->towername, },
