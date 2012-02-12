@@ -736,7 +736,7 @@ sub search {
 
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
-  my $addl_from = 'LEFT JOIN cust_pkg USING ( custnum  ) ';
+  my $pkg_join = 'LEFT JOIN cust_pkg USING ( custnum ) ';
 
   my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
 
@@ -756,13 +756,13 @@ sub search {
 
     }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
       push @select, "GROUP_CONCAT(part_pkg.pkg SEPARATOR '|') as magic";
-      $addl_from .= " LEFT JOIN part_pkg using ( pkgpart )";
+      $pkg_join .= " LEFT JOIN part_pkg using ( pkgpart )";
     }else{
       warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
            "omitting packing information from report.";
     }
 
-    my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
+    my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $pkg_join $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
 
     my $sth = dbh->prepare($header_query) or die dbh->errstr;
     $sth->execute() or die $sth->errstr;
@@ -797,7 +797,6 @@ sub search {
   my $sql_query = {
     'table'         => 'cust_main',
     'select'        => $select,
-    'addl_from'     => $addl_from,
     'hashref'       => {},
     'extra_sql'     => $extra_sql,
     'order_by'      => $orderby,
