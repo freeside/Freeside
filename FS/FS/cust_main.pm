@@ -5037,6 +5037,10 @@ sub process_censustract_update {
         $cust_main->set('censustract', $new_tract);
     $cust_main->set('censusyear',  $new_year);
 
+    local($ignore_expired_card) = 1;
+    local($ignore_illegal_zip) = 1;
+    local($ignore_banned_card) = 1;
+    local($skip_fuzzyfiles) = 1;
     local($import) = 1; #prevent automatic geocoding (need its own variable?)
     my $error = $cust_main->replace;
     die $error if $error;
