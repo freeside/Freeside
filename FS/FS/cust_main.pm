@@ -5010,7 +5010,7 @@ sub _upgrade_data { #class method
     'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL',
   );
   # fix yyyy-m-dd formatted paydates
-  if ( driver_name =~ /^mysql$/i ) {
+  if ( driver_name =~ /^mysql/i ) {
     push @statements,
     "UPDATE cust_main SET paydate = CONCAT( SUBSTRING(paydate FROM 1 FOR 5), '0', SUBSTRING(paydate FROM 6) ) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
   }
@@ -5020,8 +5020,8 @@ sub _upgrade_data { #class method
   }
 
   push @statements, #fix the weird BILL with a cc# in payinfo problem
-    #DCRD to be safe, or CARD?
-    "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16";
+    #DCRD to be safe
+    "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16 and payinfo ". regexp_sql. q( '^[0-9]*$' );
 
   foreach my $sql ( @statements ) {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
