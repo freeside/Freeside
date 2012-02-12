@@ -498,13 +498,18 @@ sub ssh_cmd { #subroutine, not method
   return if $opt->{'ignore_all_output'};
   die "Error running SSH command: ". $ssh->error if $ssh->error;
 
-  if ($errput && $opt->{'ignored_errors'} && length($opt->{'ignored_errors'})) {
+  if ( ($output || $errput)
+       && $opt->{'ignored_errors'} && length($opt->{'ignored_errors'})
+  ) {
     my @ignored_errors = split('\n',$opt->{'ignored_errors'});
     foreach my $ignored_error ( @ignored_errors ) {
+        $output =~ s/$ignored_error//g;
         $errput =~ s/$ignored_error//g;
     }
+    chomp($output);
     chomp($errput);
   }
+
   die $errput if $errput;
   die $output if $output;
   '';
