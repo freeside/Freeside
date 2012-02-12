@@ -506,6 +506,8 @@ sub ssh_cmd { #subroutine, not method
         $output =~ s/$ignored_error//g;
         $errput =~ s/$ignored_error//g;
     }
+    $output =~ s/[\s\n]//g;
+    $errput =~ s/[\s\n]//g;
     chomp($output);
     chomp($errput);
   }
