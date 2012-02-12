@@ -4993,7 +4993,7 @@ sub _items_cust_bill_pkg {
           ) {
             my $time_period;
             my $date_style = $conf->config('cust_bill-line_item-date_style');
-            if ( $date_style eq 'month_of' ) {
+            if ( defined($date_style) && $date_style eq 'month_of' ) {
               $time_period = time2str('The month of %B', $cust_bill_pkg->sdate);
             } else {
               $time_period =      time2str($date_format, $cust_bill_pkg->sdate).
