@@ -5036,6 +5036,8 @@ sub process_censustract_update {
     # then it's a tract code
         $cust_main->set('censustract', $new_tract);
     $cust_main->set('censusyear',  $new_year);
+
+    local($import) = 1; #prevent automatic geocoding (need its own variable?)
     my $error = $cust_main->replace;
     die $error if $error;
   }
