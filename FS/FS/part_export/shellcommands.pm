@@ -508,8 +508,6 @@ sub ssh_cmd { #subroutine, not method
     }
     $output =~ s/[\s\n]//g;
     $errput =~ s/[\s\n]//g;
-    chomp($output);
-    chomp($errput);
   }
 
   die $errput if $errput;
