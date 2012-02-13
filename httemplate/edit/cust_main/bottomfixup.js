@@ -37,7 +37,7 @@ function post_geocode() {
   var cf = document.CustomerForm;
   var state_el = cf.elements['ship_state'];
   var census_data = new Array(
-    'year',     <% $conf->config('census_year') || '2011' %>,
+    'year',     <% $conf->config('census_year') || '2012' %>,
     'address1', cf.elements['ship_address1'].value,
     'city',     cf.elements['ship_city'].value,
     'state',    state_el.options[ state_el.selectedIndex ].value,
@@ -90,12 +90,12 @@ function update_censustract(arg) {
     var choose_censustract =
       '<CENTER><BR><B>Confirm censustract</B><BR>' +
       '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
-      'census_year=<% $conf->config('census_year') || '2008' %>' +
+      'census_year=<% $conf->config('census_year') || '2012' %>' +
       '&latitude=' + cf.elements['latitude'].value +
       '&longitude=' + cf.elements['longitude'].value +
       '" target="_blank">Map service module location</A><BR>' +
       '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
-      'census_year=<% $conf->config('census_year') || '2008' %>' +
+      'census_year=<% $conf->config('census_year') || '2012' %>' +
       '&zip_code=' + cf.elements['ship_zip'].value +
       '" target="_blank">Map zip code center</A><BR><BR>' +
       '<TABLE>';
