@@ -465,7 +465,7 @@ sub insert {
 
   $self->signupdate(time) unless $self->signupdate;
 
-  $self->censusyear($conf->config('census_year')) if $self->censustract;
+  $self->censusyear($conf->config('census_year')||'2012') if $self->censustract;
 
   $self->auto_agent_custid()
     if $conf->config('cust_main-auto_agent_custid') && ! $self->agent_custid;
@@ -1534,7 +1534,7 @@ sub replace {
 
   if ( $self->censustract ne '' and $self->censustract ne $old->censustract ) {
     # update censusyear whenever tract code changes
-    $self->censusyear($conf->config('census_year'));
+    $self->censusyear($conf->config('census_year')||'2012');
   }
 
 
