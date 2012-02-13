@@ -60,21 +60,23 @@ sub get_dids {
   }
 
   my $dids = $self->gp_command('getDIDs', %getdids);
-  if ( $dids->{'type'} eq 'Error' ) {
-    die "Error running VoIP Innovations getDIDs: ".
-        $search->{'statuscode'}. ': '. $search->{'status'}; #die??
-  }
 
-  #use Data::Dumper;
-  #warn Dumper($dids);
+  if ( $dids->{'type'} eq 'Error' ) {
+    my $error =  "Error running VoIP Innovations getDIDs: ".
+        $dids->{'statuscode'}. ': '. $dids->{'status'}. "\n";
+    warn $error;
+    die $error;
+  }
 
   my $search = $dids->{'search'};
 
   if ( $search->{'statuscode'} == 302200 ) {
     return [];
   } elsif ( $search->{'statuscode'} != 100 ) {
-    die "Error running VoIP Innovations getDIDs: ".
-        $search->{'statuscode'}. ': '. $search->{'status'}; #die??
+    my $error = "Error running VoIP Innovations getDIDs: ".
+                 $search->{'statuscode'}. ': '. $search->{'status'}. "\n";
+    warn $error;
+    die $error;
   }
 
   my @return = ();
@@ -246,7 +248,10 @@ sub gp_command {
   my( $self, $command, @args ) = @_;
 
   eval "use Net::GlobalPOPs::MediaServicesAPI;";
-  die $@ if $@;
+  if ( $@ ) {
+    warn $@;
+    die $@;
+  }
 
   my $gp = Net::GlobalPOPs::MediaServicesAPI->new(
     'login'    => $self->option('login'),
