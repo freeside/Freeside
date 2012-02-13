@@ -72,7 +72,9 @@ if ( $opt{'svcpart'} ) {
   $sth->execute or die $sth->errstr;
   my %avail_states = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref };
 
-  delete $states{$_} foreach grep ! $avail_states{$_}, keys %states;
+  if ( %avail_states ) {
+    delete $states{$_} foreach grep ! $avail_states{$_}, keys %states;
+  }
 }
 
 </%init>
