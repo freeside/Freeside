@@ -247,7 +247,7 @@ sub get_dids {
 sub gp_command {
   my( $self, $command, @args ) = @_;
 
-  eval "use Net::GlobalPOPs::MediaServicesAPI;";
+  eval "use Net::GlobalPOPs::MediaServicesAPI 0.03;";
   if ( $@ ) {
     warn $@;
     die $@;
@@ -359,7 +359,7 @@ sub _export_unsuspend {
 sub globalpops_voip_command {
   my($login, $password, $method, @args) = @_;
 
-  eval "use Net::GlobalPOPs::MediaServicesAPI;";
+  eval "use Net::GlobalPOPs::MediaServicesAPI 0.03;";
   die $@ if $@;
 
   my $gp = new Net::GlobalPOPs
