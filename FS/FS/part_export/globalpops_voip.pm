@@ -60,6 +60,10 @@ sub get_dids {
   }
 
   my $dids = $self->gp_command('getDIDs', %getdids);
+  if ( $dids->{'type'} eq 'Error' ) {
+    die "Error running VoIP Innovations getDIDs: ".
+        $search->{'statuscode'}. ': '. $search->{'status'}; #die??
+  }
 
   #use Data::Dumper;
   #warn Dumper($dids);
