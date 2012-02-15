@@ -126,11 +126,13 @@ foreach my $row ( @row_option ) {
 
 my $count_query = 'SELECT count(*) FROM ( ('.
    join( ') UNION ALL (',
-          map { my $extra = $_->{extra_sql};  my $addl = $_->{addl_from};
-                "SELECT censustract from cust_pkg $addl $extra";
-              }
-          @sql_query
-       ). ') ) AS foo';
+      map { my $addl_from = $_->{addl_from};
+            my $extra_sql = $_->{extra_sql};
+            my $order_by  = $_->{order_by};
+            "SELECT censustract from cust_pkg $addl_from $extra_sql $order_by";
+          }
+      @sql_query
+   ). ') ) AS foo';
 
 my $link = 'cust_pkg.cgi?'. join(';',
                                       map { my $key = $_;
