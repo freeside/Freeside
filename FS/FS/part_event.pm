@@ -253,6 +253,67 @@ sub templatename {
   }
 }
 
+=item targets
+
+Returns all objects (of type C<FS::eventtable>, for this object's 
+C<eventtable>) eligible for processing under this event, as of right now.
+The L<FS::cust_event> object used to test event conditions will be 
+included in each object as the 'cust_event' pseudo-field.
+
+This is not used in normal event processing (which is done on a 
+per-customer basis to control timing of pre- and post-billing events)
+but can be useful when configuring events.
+
+=cut
+
+sub targets {
+  my $self = shift;
+  my $time = time; # $opt{'time'}?
+
+  my $eventpart = $self->eventpart;
+  $eventpart =~ /^\d+$/ or die "bad eventpart $eventpart";
+  my $eventtable = $self->eventtable;
+
+  # find all objects that meet the conditions for this part_event
+  my $linkage = '';
+  # this is the 'object' side of the FROM clause
+  if ( $eventtable ne 'cust_main' ) {
+    $linkage = 
+        ($self->eventtables_cust_join->{$eventtable} || '') .
+        ' LEFT JOIN cust_main USING (custnum) ';
+  }
+
+  # this is the 'event' side
+  my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
+  my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
+    'time' => $time
+  );
+  $join = $linkage .
+      " INNER JOIN part_event ON ( part_event.eventpart = $eventpart ) $join";
+
+  $where .= ' AND cust_main.agentnum = '.$self->agentnum
+    if $self->agentnum;
+  # don't enforce check_freq since this is a special, out-of-order check
+  # and don't enforce disabled because we want to be able to see targets 
+  # for a disabled event
+
+  my @objects = qsearch({
+      table     => $eventtable,
+      hashref   => {},
+      addl_from => $join,
+      extra_sql => "WHERE $where",
+  });
+  my @tested_objects;
+  foreach my $object ( @objects ) {
+    my $cust_event = $self->new_cust_event($object, 'time' => $time);
+    next unless $cust_event->test_conditions;
+
+    $object->set('cust_event', $cust_event);
+    push @tested_objects, $object;
+  }
+  @tested_objects;
+}
+
 =item initialize PARAMS
 
 Identify all objects eligible for this event and create L<FS::cust_event>
@@ -272,52 +333,15 @@ This may take some time, so it should be run from the job queue.
 
 sub initialize {
   my $self = shift;
-  my $time = time; # $opt{'time'}?
+  my $error;
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $eventpart = $self->eventpart;
-  $eventpart =~ /^\d+$/ or die "bad eventpart $eventpart";
-  my $eventtable = $self->eventtable;
-
-  # find all objects that meet the conditions for this part_event
-  my $linkage = '';
-  # this is the 'object' side of the FROM clause
-  if ( $eventtable ne 'cust_main' ) {
-    $linkage = ($self->eventtables_cust_join->{$eventtable} || '') . 
-        ' LEFT JOIN cust_main USING (custnum) '
-  }
-
-  # this is the 'event' side
-  my $join  = FS::part_event_condition->join_conditions_sql( $eventtable );
-  my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
-    'time' => $time
-  );
-  $join = $linkage . 
-      " INNER JOIN part_event ON ( part_event.eventpart = $eventpart ) $join";
-
-  $where .= ' AND cust_main.agentnum = '.$self->agentnum
-    if $self->agentnum;
-  # don't enforce check_freq since this is a special, out-of-order check,
-  # and don't enforce disabled because we want to do this with the part_event 
-  # disabled.
-  my @objects = qsearch({
-      table     => $eventtable,
-      hashref   => {},
-      addl_from => $join,
-      extra_sql => "WHERE $where",
-      debug     => 1,
-  });
-  warn "initialize: ".(scalar @objects) ." $eventtable objects found\n" 
-    if $DEBUG;
-  my $error = '';
+  my @objects = $self->targets;
   foreach my $object ( @objects ) {
-    # test conditions
-    my $cust_event = $self->new_cust_event($object, 'time' => $time);
-    next unless $cust_event->test_conditions;
-
+    my $cust_event = $object->get('cust_event');
     $cust_event->status('initial');
     $error = $cust_event->insert;
     last if $error;

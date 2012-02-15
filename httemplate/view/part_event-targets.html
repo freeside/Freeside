@@ -1,0 +1,128 @@
+<& /elements/header-popup.html,
+     {
+       'title'   => 'Event query - '.$part_event->event,
+     }
+&>
+% if ( $objects > 0 ) {
+  <% emt("[quant,_1,$label]", $objects) %>
+%   if ( $part_event->eventtable ne 'cust_main' ) {
+  <% emt("belonging to [quant,_1,customer]", $customers) %>
+%   }
+<BR><BR>
+<TABLE class="grid" cellspacing=0 width="100%" style="font-size:80%">
+  <TR style='background-color:#cccccc'>
+%   foreach my $header ('Trigger', @cust_header, @header) {
+    <TH><% $header %></TH>
+%   }
+  </TR>
+
+%   my @rowcolors = ('ffffff','eeeeee');
+%   my $row = 0;
+  <TR style="background-color:#<% $rowcolors[$row++ % 2] %>">
+%   foreach my $object (@targets) {
+%     # now works for all eventtables, including cust_pkg
+%     my $link = $p . 'view/' . $part_event->eventtable . '.cgi?' .
+%        $object->$pkey;
+    <TD><A target="_blank" href="<% $link %>">
+    <% ucfirst $label %> #<% $object->$pkey %></A></TD>
+
+%     my $cust_main = $object->cust_main; # via Mixin
+%     my $i = 0; # hack to avoid messing with cust_aligns/colors/styles
+%     foreach (@cust_fields) {
+%       if ($cust_header[$i] eq 'Cust. Status') {
+    <TD style="text-align:center;
+               font-weight:bold;
+               color:#<% $cust_main->cust_statuscolor %>"><% $_->($cust_main) %></TD>
+%       }
+%       else {
+    <TD><% $_->($cust_main) %></TD>
+%       }
+%     $i++;
+%     } #foreach @cust_fields
+
+%     foreach (@fields) {
+    <TD><% ref($_) eq 'CODE' ? $_->($object) : $object->$_ %></TD>
+%     }
+  </TR>
+%   } #foreach $object
+
+</TABLE>
+
+% } #object > 0
+% else {
+
+<% emt("No matching ${label}s found.") %>
+
+%}
+<& /elements/footer.html &>
+<%once>
+use List::MoreUtils qw(uniq);
+</%once>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('Edit billing events')
+        || $curuser->access_right('Edit global billing events');
+
+my ($eventpart) = $cgi->keywords;
+$eventpart =~ /^\d+$/ or die 'illegal eventpart';
+
+my $part_event = FS::part_event->by_key($eventpart)
+  or die "Event definition $eventpart not found.\n";
+my @targets = $part_event->targets;
+my $total = @targets;
+
+# in imitation of search/elements/search-html.html
+my @header;
+my @fields;
+my ($pkey, $label);
+$pkey = dbdef->table($part_event->eventtable)->primary_key;
+
+for ($part_event->eventtable) {
+  if (/^cust_main$/) {
+    # very likely to appear in events
+    my %paybys = FS::payby->cust_payby2longname;
+    push @header, 'Balance', 'Payment Method';
+    push @fields, 'balance', sub{ $paybys{$_[0]->payby} };
+    $label = 'customer';
+  }
+  elsif (/^cust_bill$/) {
+    push @header, 'Invoice Date', 'Amount', 'Balance';
+    push @fields, date_format('_date'), 'charged', 'owed';
+    $label = 'invoice';
+  }
+  elsif (/^cust_statement$/) {
+    push @header, 'Statement Date', 'Amount', 'Balance';
+    push @fields, date_format('_date'), 'charged', 'owed';
+    $label = 'statement';
+  }
+  elsif (/^cust_pkg$/) {
+    push @header, 'Package', 'Next Bill', 'Frequency';
+    push @fields, sub {$_[0]->part_pkg->pkg}, date_format('bill'), 
+        sub {$_[0]->part_pkg->freq_pretty};
+    $label = 'package';
+  }
+  elsif (/^svc_acct$/) {
+    push @header, 'Username', 'Domain';
+    push @fields, 'username', 'domain';
+    $label = 'service';
+  }
+  else {}
+}
+
+my @cust_header = FS::UI::Web::cust_header();
+my @cust_fields = FS::UI::Web::cust_fields_subs();
+
+my $objects = scalar(@targets);
+my $customers = uniq(map {$_->cust_main->custnum} @targets);
+
+sub date_format {
+  my $column = shift;
+  sub { my $obj = shift;
+        my $value = $obj->get($column);
+        $value ? time2str('%b %d %Y', $value) : '';
+      };
+}
+
+</%init>

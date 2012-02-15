@@ -22,14 +22,14 @@
                                           'Action',
                                         ],
                 'fields'             => [ 'eventpart',
-                                          'event',
+                                          $event_sub,
                                           $eventtable_sub,
                                           $check_freq_sub,
                                           $conditions_sub,
                                           $action_sub,
                                         ],
                 'links'              => [ $link,
-                                          $link,
+                                          '',
                                           '',
                                           '',
                                           '',
@@ -39,6 +39,33 @@
           )
 %>
 <%once>
+
+my $link = [ $p.'edit/part_event.html?', 'eventpart' ];
+
+my $event_sub = sub {
+  my $part_event = shift;
+  my $onclick = include('/elements/popup_link_onclick.html',
+    action      => $p.'view/part_event-targets.html?'.$part_event->eventpart,
+    actionlabel => 'Event query - '.$part_event->event,
+    width       => 650,
+    height      => 420,
+    close_text  => 'Close',
+  );
+  [#rows
+    [#subcolumns
+      {
+        'data' => $part_event->event,
+        'link' => $p.'edit/part_event.html?'.$part_event->eventpart,
+      },
+      {
+        'data' => ' (query) ',
+        'size' => '-1',
+        'data_style'  => 'b',
+        'onclick' => $onclick,
+      },
+    ],
+  ];
+};
 
 my $eventtable_labels = FS::part_event->eventtable_labels;
 my $eventtable_sub = sub { $eventtable_labels->{ shift->eventtable }; };
@@ -130,8 +157,6 @@ my $action_sub = sub {
   ];
 
 };
-
-my $link = [ $p.'edit/part_event.html?', 'eventpart' ];
 
 </%once>
 <%init>
