@@ -296,6 +296,11 @@
 %                                       ? '<A HREF="'. $e->{'link'}. '">'
 %                                       : ''
 %                                   ).
+%                                   ( $e->{'onclick'} # don't use with 'link'
+%                                       ? '<A HREF="#" onclick="' .
+%                                         $e->{'onclick'}.'">'
+%                                       : ''
+%                                   ).
 %                                   ( $e->{'size'}
 %                                      ? '<FONT SIZE="'.uc($e->{'size'}).'">'
 %                                      : ''
@@ -310,7 +315,9 @@
 %                                       : ''
 %                                   ).
 %                                   ( $e->{'size'} ? '</FONT>' : '' ).
-%                                   ( $e->{'link'} ? '</A>'    : '' ).
+%                                   ( $e->{'link'} || $e->{'onclick'} 
+%                                       ? '</A>'
+%                                       : '' ).
 %                                   '</td>';
 %
 %                                 } @$rowref ).
