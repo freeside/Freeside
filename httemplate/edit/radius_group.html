@@ -8,7 +8,9 @@
     'attrnum'   => 'Attribute',
     'priority'  => 'Priority',
   },
-  'viewall_dir' => 'browse',
+  'menubar' => \@menubar,
+  'edit_callback' => $edit_callback,
+  'error_callback' => $edit_callback,
   'fields' => [
     { 'field'     => 'groupname',
       'type'      => 'text',
@@ -39,6 +41,16 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @menubar = ('View all RADIUS Groups' => $p.'browse/radius_group.html');
+
+my $edit_callback = sub {
+  my ($cgi, $object) = @_;
+  if ( $object->groupnum ) {
+    my $link = $p.'misc/delete-radius_group.html?'.$object->groupnum;
+    push @menubar, 'Delete this Group', $link;
+  }
+};
 
 my $m2_error_callback = sub { # reconstruct the list
   my ($cgi, $object) = @_;

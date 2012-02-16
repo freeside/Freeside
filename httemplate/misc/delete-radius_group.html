@@ -1,0 +1,16 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p.'browse/radius_group.html') %>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my ($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ or die "Illegal groupnum";
+my $group = FS::radius_group->by_key($1);
+my $error = $group->delete;
+
+</%init>
