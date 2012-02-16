@@ -2129,12 +2129,13 @@ sub tables_hashref {
 
     'hardware_type' => {
       'columns' => [
-        'typenum',  'serial', '',      '', '', '',
-        'classnum',    'int', '',      '', '', '',
-        'model',   'varchar', '', $char_d, '', '',
+        'typenum',  'serial',     '',      '', '', '',
+        'classnum',    'int',     '',      '', '', '',
+        'model',   'varchar',     '', $char_d, '', '',
+        'revision','varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'typenum',
-      'unique' => [ ],
+      'unique' => [ [ 'classnum', 'model', 'revision' ] ],
       'index'  => [ ],
     },
 

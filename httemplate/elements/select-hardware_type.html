@@ -1,14 +1,36 @@
-<% include( '/elements/select-table.html',
-                 'table'         => 'hardware_type',
-                 'name_col'      => 'model',
-                 'hashref'       => $hashref,
-                 %opt,
-             )
-%>
+<& /elements/select-tiered.html, tiers => [
+  {
+    field     => 'classnum',
+    table     => 'hardware_class',
+    hashref   => ($classnum ? { classnum => $classnum } : {}),
+    name_col  => 'classname',
+    empty_label => '(all)',
+  },
+  {
+    field     => 'model',
+    table     => 'hardware_type',
+    select    => 'classnum, model',
+    name_col  => 'model',
+    value_col => 'model',
+    link_col  => 'classnum',
+    hashref   => $hashref,
+    extra_sql => 'GROUP BY classnum, model',
+    empty_label => '(all)',
+  },
+  {
+    table     => 'hardware_type',
+    name_col  => 'revision',
+    value_col => 'typenum',
+    link_col  => 'model',
+    empty_label => $opt{'empty_label'},
+  },
+],
+  field => 'typenum',
+  %opt,
+&>
 <%init>
 my %opt = @_;
-my $classnum = delete $opt{'classnum'};
 my $hashref = $opt{'hashref'} || {};
-$hashref->{'classnum'} = $classnum if $classnum;
+my $classnum = $hashref->{classnum};
 
 </%init>

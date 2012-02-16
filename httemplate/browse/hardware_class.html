@@ -33,7 +33,17 @@ my $types_sub = sub {
   my $hardware_class = shift;
   my @rows = map { 
       my $type_link = $p.'edit/hardware_type.html?'.$_->typenum;
-      [ { 'data' => $_->model, 'link' => $type_link }, ] 
+      my $num_svcs = FS::svc_hardware->count("typenum = ".$_->typenum);
+      $num_svcs = $num_svcs > 0 ? 
+        mt('<B>[_1]</B> [numerate,_1,service]',$num_svcs) : '';
+      my $search_link = $p.'search/svc_hardware.cgi?typenum='.$_->typenum;
+
+      [ 
+        { 'data' => $_->model, 'link' => $type_link },
+        { 'data' => $_->revision, 'link' => $type_link },
+        { 'data' => $num_svcs, 'link' => $search_link, 'size' => -1 }
+      ]
+
     } $hardware_class->hardware_type;
 
   \@rows;

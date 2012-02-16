@@ -7,6 +7,7 @@
             'header'            => [ '#',
                                      'Service',
                                      'Device type',
+                                     '', #revision
                                      'Serial #',
                                      'Hardware addr.',
                                      'IP addr.',
@@ -16,21 +17,22 @@
             'fields'            => [ 'svcnum',
                                      'svc',
                                      'model',
+                                     'revision',
                                      'serial',
                                      'hw_addr',
                                      'ip_addr',
                                      'smartcard',
                                      \&FS::UI::Web::cust_fields,
                                    ],
-            'links'             => [ ($link_svc) x 7,
+            'links'             => [ ($link_svc) x 8,
                                      ( map { $_ ne 'Cust. Status' ? 
                                                 $link_cust : '' }
                                        FS::UI::Web::cust_header() )
                                    ],
-            'align'             => 'rllllll' . FS::UI::Web::cust_aligns(),
-            'color'             => [ ('') x 7,
+            'align'             => 'rlllllll' . FS::UI::Web::cust_aligns(),
+            'color'             => [ ('') x 8,
                                       FS::UI::Web::cust_colors() ],
-            'style'             => [ $svc_cancel_style, ('') x 6,
+            'style'             => [ $svc_cancel_style, ('') x 7,
                                       FS::UI::Web::cust_styles() ],
             )
 %>
@@ -38,7 +40,6 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List services');
-
 
 my $addl_from = '
  LEFT JOIN cust_svc  USING ( svcnum  )
@@ -66,9 +67,9 @@ if ( $cgi->param('hw_addr') =~ /^(\S+)$/ ) {
   push @extra_sql, "hw_addr LIKE '%$hw_addr%'";
 }
 
-my $ip = NetAddr::IP->new($cgi->param('ip_addr'));
-if ( $ip ) {
-  push @extra_sql, "ip_addr = '".lc($ip->addr)."'";
+if ( $cgi->param('ip_addr') ) {
+  my $ip = NetAddr::IP->new($cgi->param('ip_addr'));
+  push @extra_sql, "ip_addr = '".lc($ip->addr)."'" if $ip;
 }
 
 if ( lc($cgi->param('smartcard')) =~ /^(\w+)$/ ) {
@@ -81,9 +82,14 @@ if ( $cgi->param('statusnum') =~ /^(\d+)$/ ) {
 
 if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   push @extra_sql, "hardware_type.classnum = $1";
-  if ( $cgi->param('classnum'.$1.'typenum') =~ /^(\d+)$/ ) {
-    push @extra_sql, "svc_hardware.typenum = $1";
-  }
+}
+
+if ( $cgi->param('model') =~ /^([\w\s]+)$/ ) {
+  push @extra_sql, "hardware_type.model = '$1'";
+}
+
+if ( $cgi->param('typenum') =~ /^(\d+)$/ ) {
+  push @extra_sql, "svc_hardware.typenum = $1";
 }
 
 if ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
@@ -103,6 +109,7 @@ my $sql_query = {
                     'part_svc.svc',
                     'cust_main.custnum',
                     'hardware_type.model',
+                    'hardware_type.revision',
                     'cust_pkg.cancel',
                     FS::UI::Web::cust_sql_fields(),
                  ),
@@ -111,7 +118,6 @@ my $sql_query = {
   'order_by'  => "ORDER BY $orderby",
   'addl_from' => $addl_from,
 };
-
 my $count_query = "SELECT COUNT(*) FROM svc_hardware $addl_from $extra_sql";
 my $link_svc = [ $p.'view/svc_hardware.cgi?', 'svcnum' ];
 my $link_cust = [ $p.'view/cust_main.cgi?', 'custnum' ];
