@@ -39,6 +39,8 @@ to which this device type belongs.
 
 =item model - descriptive model name or number
 
+=item revision - revision name/number, subordinate to model
+
 =back
 
 =head1 METHODS
@@ -102,6 +104,7 @@ sub check {
     $self->ut_numbern('typenum')
     || $self->ut_foreign_key('classnum', 'hardware_class', 'classnum')
     || $self->ut_text('model')
+    || $self->ut_textn('revision')
   ;
   return $error if $error;
 
@@ -117,6 +120,17 @@ Returns the L<FS::hardware_class> associated with this device.
 sub hardware_class {
   my $self = shift;
   return qsearchs('hardware_class', { 'classnum' => $self->classnum });
+}
+
+=item description
+
+Returns the model and revision number.
+
+=cut
+
+sub description {
+  my $self = shift;
+  $self->model . ($self->revision ? ' '.$self->revision : '');
 }
 
 =back

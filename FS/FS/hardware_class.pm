@@ -112,7 +112,11 @@ Returns all L<FS::hardware_type> objects belonging to this class.
 
 sub hardware_type {
   my $self = shift;
-  return qsearch('hardware_type', { 'classnum' => $self->classnum });
+  qsearch({
+      table   => 'hardware_type',
+      hashref => { 'classnum' => $self->classnum },
+      order_by=> 'ORDER BY model, revision',
+  })
 }
 
 =back

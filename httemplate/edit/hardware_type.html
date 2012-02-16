@@ -6,6 +6,7 @@
                                'typenum'  => 'Type number',
                                'model'    => 'Device model',
                                'classnum' => 'Hardware class',
+                               'revision' => 'Revision',
                              },
                  'viewall_url' => $p.'browse/hardware_class.html',
            )
@@ -22,7 +23,8 @@ my @fields = (
     disable_empty => 1,
     name_col => 'classname',
   },
-  'model',
+  { field => 'model', size => 50, },
+  { field => 'revision', size => 50, },
 );
 
 </%init>

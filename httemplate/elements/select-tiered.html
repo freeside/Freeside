@@ -1,0 +1,191 @@
+<%doc>
+Usage:
+
+<& /elements/select-tiered.html,
+  tiers       => [
+    { table => 'table1', ... }, # most select-table options are supported
+    { table => 'table2', ..., link_col = 't2num' }, # foreign key in table1
+  ],
+  prefix      => '', # to avoid name conflicts
+  curr_value  => 42, # in the last table
+  field       => 'fieldname', # NAME attribute of the last element
+&>
+
+This creates a group of SELECT elements (similar to select-table.html) for
+drill-down navigation of data with one-to-many relationships.
+
+'tiers' is required, and must be an arrayref of hashes, each describing one
+tier of selection (from most general to most specific).  Each tier can 
+contain the following:
+- table, select, addl_from, hashref, extra_sql: as in FS::Record::qsearch.
+- records, an arrayref of exact records.  Either this or "table" must be 
+  provided.
+- field: the NAME attribute of the select element.  Optional.
+- name_col: the column/method name to obtain the record's text label in the 
+  select element.
+- value_col: the column/method name to obtain the record's value, which is
+  sent on form submission.  Defaults to the primary key.
+- link_col: the column/method name to associate the record to the value_col
+  of a record in the previous table's value_col.  (That is, the foreign key.)
+- empty_label: the label to use for an option with the logical meaning of 
+  "all of these" and a value of ''.
+- curr_value: the currently selected value.  This will constrain the current
+  values of preceding tiers.
+- multiple: set to true for a multiple-style selector.  This should work but 
+  isn't fully tested.
+- after: an HTML string to be inserted after the select element, before 
+  the next one.  By default there's nothing between them.
+
+For convenience, "curr_value" and "field" can be passed as part of the 
+main argument list, and will be applied to the last tier.
+
+</%doc>
+% $i = 0;
+% foreach my $tier (@$tiers) {
+%   my $onchange;
+%   $onchange="onchange='${pre}select_change(this, $i)'"
+%     if $i < scalar(@$tiers) - 1;
+<SELECT 
+  NAME="<% $tier->{field} %>"
+  ID="<% $pre."select_".$i %>"
+  <%$onchange%>
+  <% $tier->{multiple} ? 'MULTIPLE' : '' %>
+  >
+%   if ( $i == 0 ) {
+%     my $options = $tiers_by_key->[0]->{''};
+%     foreach ( sort keys %$options ) {
+  <OPTION VALUE="<%$_ |h%>"><% $options->{$_} |h%></OPTION>
+%     }
+%   }
+%   $i++;
+</SELECT>
+<% $tier->{after} %>
+% } #foreach $tier
+<SCRIPT type="text/javascript">
+% my $json = JSON->new->canonical; #sort
+var <% $pre %>tiers = <% $json->encode($tiers_by_key) %>;
+var <% $pre %>curr_values = <% $json->encode($curr_values) %>;
+function <% $pre %>select_change(select_this, i) {
+
+  i++; // operate on the next tier selector
+  var next_options = new Object; // use like a hash
+  // slight hack here: empty_label implies not multiple, so if the 'all'
+  // option is selected, it will be the "value" property of the select.
+  var all = (select_this.value == '');
+  // combine all of the options of this one
+  for (var j = 0; j < select_this.options.length; j++) {
+    var this_opt = select_this.options[j];
+    if ( this_opt.selected || all ) {
+      for (var next_key in <% $pre %>tiers[i][this_opt.value]) {
+        next_options[next_key] = <% $pre %>tiers[i][this_opt.value][next_key];
+      } // for next_key
+    } // if selected
+  } // for this_opt
+
+  var select_next = document.getElementById('<% $pre."select_" %>' + i);
+  select_next.options.length = 0; // clear it
+  for (var next_key in next_options) {
+    var o = document.createElement('OPTION');
+    o.value = next_key;
+    o.text = next_options[next_key];
+
+    if ( next_key == '' ) {
+      select_next.add(o, select_next.options[0]); //insert at top
+    } else {
+      select_next.add(o, null); //append
+    }
+    // then select it if we're selecting them all, or if it's the only one,
+    // or if it's the current value at that tier
+    o.selected = select_next.multiple
+              || (next_options.length == 1)
+              || (next_key == <% $pre %>curr_values[i])
+              ;
+  }
+  if ( i < <% scalar(@$tiers) - 1 %> ) {
+    <% $pre %>select_change(select_next, i);
+  }
+  return;
+}
+<% $pre %>select_change(document.getElementById('<% $pre %>select_0'), 0);
+</SCRIPT>
+<%init>
+my %opt = @_;
+my $pre = $opt{prefix} || '';
+my $tiers = $opt{tiers} or die "no tiers defined";
+
+my $i;
+for( $i = 0; $i < @$tiers; $i++ ) {
+  my $tier = $tiers->[$i];
+  my $key = $tier->{value_col};
+  my $name_col = $tier->{name_col};
+  if ( !exists($tier->{records}) ) {
+    # minor false laziness w/ select-table
+    my $dbdef_table = dbdef->table($tier->{table})
+      or die "can't find dbdef for ".$tier->{table}." table\n";
+    $key ||= $dbdef_table->primary_key;
+    my $hashref = $tier->{hashref} || {};
+    my $select = $tier->{select} || '*';
+    # we don't yet support agent_virt
+    $tier->{records} = [ qsearch({
+        'select'    => $select, # the real magic
+        'table'     => $tier->{table},
+        'addl_from' => $tier->{addl_from},
+        'hashref'   => $hashref,
+        'extra_sql' => $tier->{extra_sql},
+    }) ];
+  }
+
+  # set up options
+  my %children_of;
+  if ( $i == 0 ) {
+    $children_of{''} = {
+      map { $_->$key => $_->$name_col } @{ $tier->{records} }
+    };
+  }
+  else {
+    my $link_col = $tier->{link_col} 
+      or die "no link_col in '".$tier->{table}."' tier\n";
+    # %children_of maps the option values in the previous tier 
+    # to hashes of their linked options in this tier. 
+    foreach my $rec (@{ $tier->{records} }) {
+      $children_of{ $rec->$link_col } ||= {};
+      $children_of{ $rec->$link_col }->{ $rec->$key } = $rec->$name_col;
+    }
+  }
+
+  if ( defined $tier->{empty_label} ) {
+    foreach my $key (keys %children_of) {
+      # only create "all" options if there are multiple choices
+      if ( scalar(keys %{ $children_of{$key} }) > 1 ) {
+        $children_of{$key}->{''} = $tier->{empty_label};
+      }
+    }
+  }
+  $tier->{by_key} = \%children_of;
+}
+
+$i = scalar(@$tiers) - 1;
+$tiers->[$i]->{curr_value} ||= $opt{curr_value};
+$tiers->[$i]->{field} ||= $opt{field};
+
+# We expect the usual case to be $opt{curr_value}, i.e.
+# current value in the last tier.  So trace it backward.
+while($i >= 1) {
+  my $curr_value = $tiers->[$i]->{curr_value};
+  last if !defined($curr_value);
+
+  my $tier = $tiers->[$i];
+  foreach my $key ( %{ $tier->{by_key} } ) {
+    my $options = $tier->{by_key}->{$key};
+    if ( exists( $options->{$curr_value} ) ) {
+      warn "tier $i curr_value ($curr_value) found under key $key\n";
+      $tiers->[$i-1]->{curr_value} = $key;
+      last;
+    }
+  }
+  $i--;
+}
+
+my $tiers_by_key = [ map { $_->{by_key} } @$tiers ];
+my $curr_values = [ map { $_->{curr_value} || '' } @$tiers ];
+</%init>

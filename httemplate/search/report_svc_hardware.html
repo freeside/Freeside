@@ -7,15 +7,19 @@
       <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
     </TR>
 
-    <TR><TD>
-    <% include('/elements/selectlayers.html',
-                  'field'           => 'classnum',
-                  'label'           => '',
-                  'options'         => \@classnums,
-                  'labels'          => \%class_labels,
-                  'layer_callback'  => \&layer_callback,
-                  'html_between'    => '</TD><TD>',
-              ) %>
+    <& /elements/tr-td-label.html, label => 'Device type' &>
+%#    <% include('/elements/selectlayers.html',
+%#                  'field'           => 'classnum',
+%#                  'label'           => '',
+%#                  'options'         => \@classnums,
+%#                  'labels'          => \%class_labels,
+%#                  'layer_callback'  => \&layer_callback,
+%#                  'html_between'    => '</TD><TD>',
+%#              ) %>
+    <TD>
+      <& /elements/select-hardware_type.html,
+          'empty_label' => '(all)'
+       &>
     </TD></TR>
 
     <% include('/elements/tr-input-text.html',
@@ -71,6 +75,7 @@ sub layer_callback {
   include('/elements/select-hardware_type.html',
               'field'       => 'classnum'.$classnum.'typenum',
               'classnum'    => $classnum,
+              'prefix'      => $classnum,
               'empty_label' => 'any',
           );
 }
