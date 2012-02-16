@@ -14,7 +14,7 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                  } keys %$fields;
 my $model =  { field => 'typenum',
                type  => 'text',
-               value => sub { $_[0]->hardware_type->model }
+               value => sub { $_[0]->hardware_type->description }
              };
 my $status = { field => 'statusnum',
                type  => 'text',
