@@ -2,7 +2,7 @@ package FS::radius_group;
 
 use strict;
 use base qw( FS::o2m_Common FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::radius_attr;
 
 =head1 NAME
@@ -82,9 +82,50 @@ Delete this record from the database.
 
 =cut
 
-# I'd delete any linked attributes here but we don't really support group
-# deletion.  We would also have to delete linked records from 
-# radius_usergroup and part_svc_column...
+sub delete {
+  # okay, I guess we support it now
+  my $self = shift;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $groupnum = $self->groupnum;
+  my $error = $self->process_o2m(
+                'table' => 'radius_usergroup',
+                'num_col' => 'groupnum',
+                'fields' => ['groupnum'], # just delete them
+                'params' => {},
+              ) || $self->SUPER::delete(@_);
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $part_svc_column (
+    qsearch('part_svc_column', { columnname => 'usergroup' }) 
+  ) {
+    my $new_values = join(',', 
+      grep { $_ != $groupnum } split(',', $part_svc_column->columnvalue)
+    );
+    next if $new_values eq $part_svc_column->columnvalue;
+    $part_svc_column->set(columnvalue => $new_values);
+    $error = $part_svc_column->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+  dbh->commit;
+  '';
+}
 
 =item replace OLD_RECORD
 
