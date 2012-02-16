@@ -13,9 +13,13 @@ tie my %options, 'Tie::IxHash',
   'spam_tag2_level'  => { label=>'Spam set tag2 level command', },
   'spam_kill_level' => { label=>'Spam set kill level command', },
 
-  'ignore_all_output' => {
-    label => 'Ignore all output and errors from the command',
-    type  => 'checkbox',
+  'fail_on_output' => {
+      label => 'Treat any output from the command as an error',
+      type  => 'checkbox',
+  },
+  'ignore_all_errors' => {
+      label => 'Ignore all errors from the command',
+      type  => 'checkbox',
   },
 ;
 
@@ -44,7 +48,8 @@ sub export_setstatus {
     user          => $self->option('user') || 'root',
     host          => $self->machine,
     #stdin_string  => $stdin_string,
-    ignore_all_output => $self->option('ignore_all_output'),
+    fail_on_output    => $self->option('fail_on_output'),
+    ignore_all_errors => $self->option('ignore_all_errors'),
     #ignored_errors    => $self->option('ignored_errors') || '',
   );
 

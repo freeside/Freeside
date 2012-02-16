@@ -78,10 +78,14 @@ tie my %options, 'Tie::IxHash',
              },
   'groups_susp_reason' => { label =>
                              'Radius group mapping to reason (via template user)',
-			    type  => 'textarea',
-			  },
-  'ignore_all_output' => { 
-      label => 'Ignore all output and errors from the command',
+                             type  => 'textarea',
+                          },
+  'fail_on_output' => {
+      label => 'Treat any output from the command as an error',
+      type  => 'checkbox',
+  },
+  'ignore_all_errors' => {
+      label => 'Ignore all errors from the command',
       type  => 'checkbox',
   },
   'ignored_errors' => { label   => 'Regexes of specific errors to ignore, separated by newlines',
@@ -359,14 +363,16 @@ sub _export_command {
     host          => $self->machine,
     command       => $command_string,
     stdin_string  => $stdin_string,
-    ignore_all_output => $self->option('ignore_all_output'),
     ignored_errors    => $self->option('ignored_errors') || '',
-  );
+    ignore_all_errors => $self->option('ignore_all_errors'),
+    fail_on_output    => $self->option('fail_on_output'),
+ );
 
   if($self->option($action . '_no_queue')) {
     # discard return value just like freeside-queued.
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
+    $error = $error->full_message if ref $error; # Exception::Class::Base
     return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
       if $error;
   }
@@ -454,14 +460,16 @@ sub _export_replace {
     host          => $self->machine,
     command       => $command_string,
     stdin_string  => $stdin_string,
-    ignore_all_output => $self->option('ignore_all_output'),
-    ignored_errors => $self->option('ignored_errors') || '',
+    ignored_errors    => $self->option('ignored_errors') || '',
+    ignore_all_errors => $self->option('ignore_all_errors'),
+    fail_on_output    => $self->option('fail_on_output'),
   );
 
   if($self->option('usermod_no_queue')) {
     # discard return value just like freeside-queued.
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
+    $error = $error->full_message if ref $error; # Exception::Class::Base
     return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
       if $error;
   }
@@ -488,14 +496,17 @@ sub ssh_cmd { #subroutine, not method
     $opt->{'user'}.'@'.$opt->{'host'},
     'default_stdin_fh' => $def_in
   );
-  # ignore_all_output doesn't override this
+  # ignore_all_errors doesn't override SSH connection/auth errors--
+  # probably correct
   die "Couldn't establish SSH connection: ". $ssh->error if $ssh->error;
 
   my $ssh_opt = {};
   $ssh_opt->{'stdin_data'} = $opt->{'stdin_string'}
     if exists($opt->{'stdin_string'}) and length($opt->{'stdin_string'});
+
   my ($output, $errput) = $ssh->capture2($ssh_opt, $opt->{'command'});
-  return if $opt->{'ignore_all_output'};
+
+  return if $opt->{'ignore_all_errors'};
   die "Error running SSH command: ". $ssh->error if $ssh->error;
 
   if ( ($output || $errput)
@@ -510,8 +521,8 @@ sub ssh_cmd { #subroutine, not method
     $errput =~ s/[\s\n]//g;
   }
 
-  die $errput if $errput;
-  die $output if $output;
+  die "$errput\n" if $errput;
+  die "$output\n" if $output and $opt->{'fail_on_output'};
   '';
 }
 
@@ -521,6 +532,24 @@ sub ssh_cmd { #subroutine, not method
 #}
 #sub shellcommands_delete { #subroutine, not method
 #}
+
+sub _upgrade_exporttype {
+  my $class = shift;
+  $class =~ /^FS::part_export::(\w+)$/;
+  foreach my $self ( qsearch('part_export', { 'exporttype' => $1 }) ) {
+    my %options = $self->options;
+    my $changed = 0;
+    # 2011-12-13 - 2012-02-16: ignore_all_output option
+    if ( $options{'ignore_all_output'} ) {
+      # ignoring STDOUT is now the default
+      $options{'ignore_all_errors'} = 1;
+      delete $options{'ignore_all_output'};
+      $changed++;
+    }
+    my $error = $self->replace(%options) if $changed;
+    die $error if $error;
+  }
+}
 
 1;
 
