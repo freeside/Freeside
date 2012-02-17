@@ -39,6 +39,19 @@ push @$Conditions,
             Path => '/Elements/SelectCustomerTag',
         },
     },
+    {
+        Name => 'Refnum',
+        Field => 'Advertising Source',
+        Op => {
+            Type => 'component',
+            Path => '/Elements/SelectBoolean',
+            Arguments => { TrueVal=> '=', FalseVal => '!=' },
+        },
+        Value => {
+            Type => 'component',
+            Path => '/Elements/SelectCustomerReferral',
+        },
+    },
 ;
 </%init>
 <%ARGS>

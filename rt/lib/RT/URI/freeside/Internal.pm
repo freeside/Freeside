@@ -53,7 +53,7 @@ See L<RT::URI::freeside> for public/private interface documentation.
 
 
 
-sub _FreesideGetRecord {
+sub _FreesideGetRecord { # cache this?
 
   my $self = shift;
   my ($table, $pkey) = ($self->{'fstable'}, $self->{'fspkey'});
@@ -165,6 +165,13 @@ sub CustomerTags {
       'desc'  => $_->tagdesc,
       'color' => $_->tagcolor }
   } @part_tag;
+}
+
+sub Referral {
+  my $self = shift;
+  my $rec = $self->_FreesideGetRecord() or return;
+  my $ref = qsearchs('part_referral', { refnum => $rec->{'_object'}->refnum });
+  $ref ? $ref->referral : ''
 }
 
 1;

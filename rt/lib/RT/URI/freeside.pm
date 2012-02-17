@@ -326,6 +326,12 @@ sub CustomerTags { ( ) }
 
 =back
 
+=item Referral
+
+Return the customer's advertising source, as a string.
+
 =cut
+
+sub Referral { undef }
 
 1;

@@ -148,6 +148,7 @@ our %FIELD_METADATA = (
     #freeside
     Agentnum         => [ 'FREESIDEFIELD', ],
     Classnum         => [ 'FREESIDEFIELD', ],
+    Refnum           => [ 'FREESIDEFIELD', ],
     Tagnum           => [ 'FREESIDEFIELD', 'cust_tag' ],
     WillResolve      => [ 'DATE'            => 'WillResolve', ], #loc_left_pair
 );
@@ -1823,6 +1824,9 @@ sub OrderByCols {
                }
                elsif ( $subkey eq 'Agent' ) {
                    $field = "$custalias.agentnum";
+               }
+               elsif ( $subkey eq 'Referral' ) {
+                   $field = "$custalias.refnum";
                }
                else {
                    # no other cases exist yet, but for obviousness:
