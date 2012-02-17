@@ -391,6 +391,19 @@ $COLUMN_MAP = {
             @return;
         },
     },
+    AdvertisingSource => {
+        title     => 'Advertising Source',
+        attribute => 'Customer.Referral',
+        value => sub {
+            my $Ticket = shift;
+            my @return = ();
+            foreach my $c (ticket_cust_resolvers($Ticket)) {
+                push @return, $c->Referral, \'<BR>';
+            }
+            pop @return;
+            @return;
+        },
+    },
 };
 
 sub ticket_cust_resolvers {

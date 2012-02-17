@@ -89,6 +89,7 @@ share/html/Elements/ShowLink_Checklist
  share/html/Elements/SelectCustomerAgent #SearchCustomerFields
  share/html/Elements/SelectCustomerClass #SearchCustomerFields
  share/html/Elements/SelectCustomerTag #SearchCustomerFields
+ share/html/Elements/SelectCustomerReferral #SearchCustomerFields
 share/html/Prefs/SavedSearches.html #saved searches
 share/html/Search/Bulk.html #bulk increment priority #mandatory fields
  share/html/Search/Build.html
