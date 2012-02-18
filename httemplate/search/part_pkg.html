@@ -219,6 +219,6 @@ my $order_by = join(', ', @order_by);
 #my $count_query = "SELECT COUNT(*) FROM ( SELECT 1 FROM part_pkg $addl_from $extra_sql ) AS num";
 #mysql?
 my $count_query = "SELECT COUNT(*) FROM ( SELECT DISTINCT part_pkg.pkgpart FROM part_pkg $addl_from $extra_sql ) AS num";
-warn $count_query;
+#warn $count_query;
 
 </%init>
