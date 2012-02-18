@@ -1,18 +1,19 @@
 <% include( 'elements/search.html',
-              'title'       => $title,
-              'name'        => $name,
-              'header'      => \@header,
-              'query'       => { 'select'    => $select,
-                                 'table'     => 'part_pkg',
-                                 'addl_from' => $addl_from,
-                                 'hashref'   => {},
-                                 'extra_sql' => $extra_sql,
-                                 'order_by'  => "ORDER BY $order_by",
-                               },
-              'count_query' => $count_query,
-              'fields'      => \@fields,
-              'links'       => \@links,
-              'align'       => $align,
+              'title'        => $title,
+              'name_singular' => $name,
+              'header'       => \@header,
+              'query'        => { 'select'    => $select,
+                                  'table'     => 'part_pkg',
+                                  'addl_from' => $addl_from,
+                                  'hashref'   => {},
+                                  'extra_sql' => $extra_sql,
+                                  'order_by'  => "ORDER BY $order_by",
+                                },
+              'count_query'  => $count_query,
+              'fields'       => \@fields,
+              'links'        => \@links,
+              'align'        => $align,
+              'sort_fields'  => [],
           )
 %>
 <%init>
@@ -63,6 +64,8 @@ if (1) { #commission reports
         or die "unknown usernum";
 
       $title = $access_user->name;
+
+      $match = 'cust_pkg.usernum = '. $access_user->usernum;
 
     } else {
 
@@ -187,7 +190,7 @@ if (1) { #commission reports
       my $access_user = qsearchs('access_user', { 'usernum' => $part_pkg->get('usernum'), })
         or die "unknown usernum";
 
-      return 0 unless $access_user->user_custnum;
+      return $money_char.'0.00' unless $access_user->user_custnum;
       push @arg, $access_user->user_custnum;
 
     } elsif (0) { #agent commission reports
@@ -209,7 +212,9 @@ $extra_sql .= "GROUP BY $group_by" if $group_by;
 my $order_by = join(', ', @order_by);
 
 #XXX agent?
-my $count_query = "SELECT COUNT(*) FROM ( SELECT 1 FROM part_pkg $addl_from $extra_sql ) AS num";
+#my $count_query = "SELECT COUNT(*) FROM ( SELECT 1 FROM part_pkg $addl_from $extra_sql ) AS num";
+#mysql?
+my $count_query = "SELECT COUNT(*) FROM ( SELECT DISTINCT part_pkg.pkgpart FROM part_pkg $addl_from $extra_sql ) AS num";
 warn $count_query;
 
 </%init>
