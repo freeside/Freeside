@@ -34,6 +34,7 @@ my $name = 'package definition';
 my $select = '';
 my $addl_from = '';
 my @where = ();
+my @top_where = ();
 my @order_by = ();
 my @header = ();
 my @fields = ();
@@ -65,7 +66,7 @@ if (1) { #commission reports
 
       $title = $access_user->name;
 
-      $match = 'cust_pkg.usernum = '. $access_user->usernum;
+      push @top_where, 'access_user.usernum = '. $access_user->usernum;
 
     } else {
 
@@ -196,6 +197,8 @@ if (1) { #commission reports
     } elsif (0) { #agent commission reports
       push @arg, 'XXXagent_custnum'; #$agent->agent_custnum
     }
+    #warn $sql;
+    #warn join(',', @arg);
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute(@arg) or die $sth->errstr;
     $money_char. sprintf('%.2f', $sth->fetchrow_arrayref->[0] );
@@ -207,7 +210,8 @@ if (1) { #commission reports
 push @order_by, 'pkgpart'; #pkg?
 
 $select ||= 'part_pkg.*';
-my $extra_sql = scalar(@where) ? 'WHERE ' . join(' AND ', @where) : ''; 
+push @top_where, @where;
+my $extra_sql = scalar(@top_where) ? 'WHERE ' . join(' AND ', @top_where) : ''; 
 $extra_sql .= "GROUP BY $group_by" if $group_by;
 my $order_by = join(', ', @order_by);
 
@@ -215,6 +219,6 @@ my $order_by = join(', ', @order_by);
 #my $count_query = "SELECT COUNT(*) FROM ( SELECT 1 FROM part_pkg $addl_from $extra_sql ) AS num";
 #mysql?
 my $count_query = "SELECT COUNT(*) FROM ( SELECT DISTINCT part_pkg.pkgpart FROM part_pkg $addl_from $extra_sql ) AS num";
-#warn $count_query;
+warn $count_query;
 
 </%init>
