@@ -21,7 +21,8 @@
 % if ( $conf->exists('cust-email-high-visibility') && !$pre ) {
     <TR>
       <TD ALIGN="right" WIDTH="200">
-        <% $conf->exists('cust_main-require_invoicing_list_email') ? $r : '' %>Email address(es)
+        <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum) 
+          ? $r : '' %>Email address(es)
       </TD>
       <TD bgcolor="#FFFF00">
         <INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>">
@@ -208,5 +209,7 @@ my $stateid_state_label = FS::Msgcat::_gettext('stateid_state') =~ /^(stateid_st
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
 my @invoicing_list = $cust_main->invoicing_list;
+
+my $agentnum = $cust_main->agentnum if $cust_main->custnum;
 
 </%init>

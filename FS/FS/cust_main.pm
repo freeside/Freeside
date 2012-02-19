@@ -1847,7 +1847,7 @@ sub check {
     return $error if $error;
   }
 
-  if ( $conf->exists('cust_main-require_phone')
+  if ( $conf->exists('cust_main-require_phone', $self->agentnum)
        && ! length($self->daytime) && ! length($self->night) && ! length($self->mobile)
      ) {
 
@@ -3214,7 +3214,7 @@ sub check_invoicing_list {
   }
 
   return "Email address required"
-    if $conf->exists('cust_main-require_invoicing_list_email')
+    if $conf->exists('cust_main-require_invoicing_list_email', $self->agentnum)
     && ! grep { $_ !~ /^([A-Z]+)$/ } @$arrayref;
 
   '';

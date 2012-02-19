@@ -480,7 +480,8 @@
 % unless ( $conf->exists('cust-email-high-visibility')) {
     <TR>
       <TD ALIGN="right" WIDTH="200">
-        <% $conf->exists('cust_main-require_invoicing_list_email') ? $r : '' %>Email address(es)
+        <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum) 
+            ? $r : '' %>Email address(es)
       </TD>
       <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>"></TD>
     </TR>
@@ -613,5 +614,7 @@ if ( $cust_main->custnum ) {
   $term_sth->execute($cust_main->custnum) or die $term_sth->errstr;
   $show_term = $term_sth->fetchrow_arrayref->[0];
 }
+
+my $agentnum = $cust_main->agentnum if $cust_main->custnum;
 
 </%init>
