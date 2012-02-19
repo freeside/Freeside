@@ -186,7 +186,6 @@ sub signup_info {
       'company_name'       => scalar($conf->config('company_name')),
       #per-agent?
       'agent_ship_address' => scalar($conf->exists('agent-ship_address')),
-      'require_phone'      => scalar($conf->exists('cust_main-require_phone')),
       'logo'               => scalar($conf->config_binary('logo.png')),
       'prepaid_template_custnum' => $conf->exists('signup_server-prepaid-template-custnum'),
     };
@@ -405,6 +404,9 @@ sub signup_info {
           qw( head body_header body_footer ) ),
         ( map { $_ => join("\n", $conf->config("signup_server-$_", $agentnum ) ) }
           qw( terms_of_service ) ),
+
+        ( map { $_ => scalar($conf->exists($_, $agentnum)) } 
+          qw(cust_main-require_phone) ),
       };
 
       $cache->set("signup_info_cache_agent$agentnum", $signup_info_cache_agent);

@@ -1163,6 +1163,7 @@ sub check {
 
   my $cust_pkg;
   local $username_letter = $username_letter;
+  local $username_uppercase = $username_uppercase;
   if ($self->svcnum) {
     my $cust_svc = $self->cust_svc
       or return "no cust_svc record found for svcnum ". $self->svcnum;
@@ -1174,6 +1175,8 @@ sub check {
   if ($cust_pkg) {
     $username_letter =
       $conf->exists('username-letter', $cust_pkg->cust_main->agentnum);
+    $username_uppercase =
+      $conf->exists('username-uppercase', $cust_pkg->cust_main->agentnum);
   }
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;

@@ -1786,6 +1786,7 @@ and customer address. Include units.',
     'section'     => 'username',
     'description' => 'Allow uppercase characters in usernames.  Not recommended for use with FreeRADIUS with MySQL backend, which is case-insensitive by default.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   { 
@@ -3589,6 +3590,7 @@ and customer address. Include units.',
     'section'     => '',
     'description' => 'Require daytime or night phone for all customer records.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
@@ -3596,6 +3598,7 @@ and customer address. Include units.',
     'section'     => '',
     'description' => 'Email address field is required: require at least one invoicing email address for all customer records.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
