@@ -209,6 +209,9 @@ my @lines = (
     },
 );
 
+#freeside
+push @lines, $m->comp('/Elements/CustomerFields', 'PickBasics');
+
 $m->callback( Conditions => \@lines );
 
 </%INIT>

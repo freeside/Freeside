@@ -299,39 +299,19 @@ if ($@ &&
   die $@;
 };
 
-=item AgentName
+=item CustomerInfo
 
-Return the name of the customer's agent.
+Return a hashref of customer information, including all fields from 
+C<cust_main> as well as:
 
-=cut
-
-sub AgentName { undef }
-
-=item CustomerClass
-
-Return the name of the customer's class.
-
-=cut
-
-sub CustomerClass { undef }
-
-=item CustomerTags
-
-Return the list of tags attached to the customer.  Each tag is returned
-as a hashref with keys "name", "desc", and "color".
+- AgentName: the name of the customer's agent
+- CustomerClass: the name of the customer's class
+- CustomerTags: an arrayref of tags attached to the customer, each
+  as a hashref with keys "name", "desc", and "color".
+- Referral: the name of the customer's advertising source.
 
 =cut
 
-sub CustomerTags { ( ) }
-
-=back
-
-=item Referral
-
-Return the customer's advertising source, as a string.
-
-=cut
-
-sub Referral { undef }
+sub CustomerInfo { {} }
 
 1;

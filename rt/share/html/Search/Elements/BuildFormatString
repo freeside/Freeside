@@ -69,11 +69,15 @@ $CurrentDisplayColumns => undef
 # it -- and it grows per request.
 
 # All the things we can display in the format string by default
-my @fields = qw(
+# referenced by their ColumnMap keys
+my @fields = (
+  qw(
     id QueueName Subject
+  ),
+    
+    $m->comp('/Elements/CustomerFields', 'Names'), #freeside
 
-    Customer Agent CustomerClass CustomerTags AdvertisingSource
-
+  qw(
     Status ExtendedStatus UpdateStatus
     Type
 
@@ -99,7 +103,7 @@ my @fields = qw(
     Bookmark
 
     NEWLINE
-
+  )
 ); # loc_qw
 
 $m->callback( CallbackOnce => 1, CallbackName => 'SetFieldsOnce', Fields => \@fields );

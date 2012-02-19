@@ -86,10 +86,10 @@ share/html/Elements/ShowCustomFieldTimeValue #timeworked custom fields
 share/html/Elements/ShowLink_Checklist
  share/html/Elements/ShowUserVerbose
  share/html/Elements/Footer
- share/html/Elements/SelectCustomerAgent #SearchCustomerFields
- share/html/Elements/SelectCustomerClass #SearchCustomerFields
- share/html/Elements/SelectCustomerTag #SearchCustomerFields
- share/html/Elements/SelectCustomerReferral #SearchCustomerFields
+# share/html/Elements/SelectCustomerAgent #SearchCustomerFields
+# share/html/Elements/SelectCustomerClass #SearchCustomerFields
+# share/html/Elements/SelectCustomerTag #SearchCustomerFields
+# share/html/Elements/SelectCustomerReferral #SearchCustomerFields
 share/html/Prefs/SavedSearches.html #saved searches
 share/html/Search/Bulk.html #bulk increment priority #mandatory fields
  share/html/Search/Build.html
@@ -134,7 +134,7 @@ share/html/Callbacks/CheckMandatoryFields/* #removed
 
 share/html/Callbacks/TimeToResolve/*
 
-share/html/Callbacks/SearchCustomerFields/*
+#share/html/Callbacks/SearchCustomerFields/*
 
 share/html/Callbacks/RTx-Statistics/*
 share/html/RTx/Statistics/*
@@ -155,3 +155,8 @@ lib/RT/Transaction_Vendor.pm
 share/html/Elements/SelectStatus 
 share/html/Ticket/Elements/EditDates
 share/html/Ticket/Elements/ShowDates
+
+#SearchCustomerFields improvements
+share/html/Elements/CustomerFields
+share/html/Search/Elements/ConditionRow # bugfix for select options list
+share/html/Search/Elements/PickBasics

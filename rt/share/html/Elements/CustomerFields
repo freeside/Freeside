@@ -1,0 +1,215 @@
+<%doc>
+All accessible Freeside customer fields fields go in here.  Those of 
+them outside cust_main also need to go in RT::URI::freeside::Internal
+(where they should be pulled into CustomerInfo).  Nothing should need 
+to go in RT::Tickets_Overlay; it already resolves "Customer.foo" as 
+"cust_main.foo", and "Customer.cust_bar.foo" as "JOIN cust_bar using 
+(custnum) ... cust_bar.foo".
+
+About the keys:
+- 'Value' makes the field a search criterion.  This also requires 'Op'.
+  See Search/Elements/PickBasics.
+- 'Display' makes it an output column, and is either the cust_main 
+  field, the CustomerInfo key, or a coderef that takes the RT::Ticket
+  as an argument.
+- 'OrderBy' makes it a sort key, and must be set to an RT-SQL field
+  name to sort by.
+</%doc>
+<%once>
+return unless $RT::URI::freeside::IntegrationType eq 'Internal';
+
+my @customer_fields = ( # ordered
+  {
+    # custnum
+    Name    => 'Customer',
+    Label   => 'Customer',
+    Display => sub {
+                my $Ticket = shift;
+                my @return = ();
+                foreach my $c (ticket_cust_resolvers($Ticket)) {
+                    push @return, \'<A HREF="', $c->HREF, \'">',
+                                  $c->AsString,
+                                  \'</A>',
+                                  \'<BR>';
+                }
+                pop @return;
+                @return;
+              },
+    OrderBy => 'Customer.Number',
+  },
+  {
+    #Column name (format string)
+    Name    => 'Agent',
+    # Column heading/query builder name
+    Label   => 'Agent',
+    # Column value (coderef, cust_main field, or CustomerInfo key)
+    Display => 'AgentName',
+    # Query builder options
+    # RT-SQL field, defaults to Name
+    QueryName => 'Customer.agentnum',
+    #QueryLabel => 'Agent' #defaults to Label
+    Op      => equals_notequals,
+    Value   => select_table('agent', 'agentnum', 'agent'),
+    # RT-SQL sort key (if any)
+    OrderBy => 'Customer.agentnum',
+  },
+  {
+    Name    => 'CustomerClass',
+    Label   => 'Customer Class',
+    Display => 'CustomerClass',
+    QueryName => 'Customer.classnum',
+    Op      => equals_notequals,
+    Value   => select_table('cust_class', 'classnum', 'classname'),
+    OrderBy => 'Customer.classnum',
+  },
+  {
+    Name    => 'AdvertisingSource',
+    Label   => 'Advertising Source',
+    Display => 'Referral',
+    QueryName => 'Customer.refnum',
+    Op      => equals_notequals,
+    Value   => select_table('part_referral', 'refnum', 'referral'),
+    OrderBy => 'Customer.refnum',
+  },
+  {
+    Name    => 'BillingType',
+    Label   => 'Billing Type',
+    Display => 'BillingType',
+    QueryName => 'Customer.payby',
+    Op      => equals_notequals,
+    Value   => {
+      Type => 'select',
+      Options => [ '' => '-',
+        map { $_, FS::payby->longname($_) } FS::payby->cust_payby 
+      ],
+    },
+  },
+  {
+    Name    => 'InvoiceEmail',
+    Label   => 'Invoice Email',
+    Display => 'InvoiceEmail',
+    # query/sort needed?
+  },
+  {
+    Name    => 'City',
+    Label   => 'City',
+    Display => 'city',
+    OrderBy => 'Customer.city',
+  },
+  {
+    Name    => 'State',
+    Label   => 'State',
+    Display => 'state',
+    OrderBy => 'Customer.state',
+  },
+  {
+    Name    => 'CustomerTags',
+    Label   => '',
+    Display => sub {
+                my $Ticket = shift;
+                my @return = ();
+                foreach my $c (ticket_cust_resolvers($Ticket)) {
+                  foreach my $t (@{ $c->CustomerInfo->{CustomerTags} }) {
+                    push @return, \'<SPAN style="background-color:#',
+                    $t->{'color'},
+                    \';">&nbsp;',
+                    $t->{'name'},
+                    \'&nbsp;</SPAN>',
+                    \'&nbsp;'
+                    ;
+                  }
+                  pop @return;
+                  push @return, \'<BR>';
+                }
+                pop @return;
+                @return;
+              },
+    QueryName => 'Customer.cust_tag.tagnum',
+    QueryLabel => 'Tag',
+    Op      => equals_notequals,
+    Value   => select_table('part_tag', 'tagnum', 'tagname'),
+    OrderBy => '',
+  },
+);
+
+#helper subs
+#Op      
+sub equals_notequals {
+  return {
+      Type => 'component',
+      Path => '/Elements/SelectBoolean',
+      Arguments => { TrueVal=> '=', FalseVal=> '!=' },
+  }
+}
+
+#Value
+sub select_table {
+  my ($table, $value_col, $name_col, $hashref) = @_;
+  $hashref ||= { disabled => '' }; # common case
+  return {
+    Type => 'select',
+    Options => [ 
+      '' => '-',
+      map { $_->$value_col, $_->$name_col }
+      qsearch($table, $hashref)
+    ],
+  }
+}
+
+sub ticket_cust_resolvers {
+    my $Ticket = shift;
+    my @Customers = @{ $Ticket->Customers->ItemsArrayRef };
+    return map $_->TargetURI->Resolver, @Customers;
+}
+
+sub cust_info_attribute { # the simple case of $resolver->CustomerInfo->{foo}
+    my $attribute = shift;
+    sub {
+        my $Ticket = shift;
+        my @return;
+        foreach my $c (ticket_cust_resolvers($Ticket)) {
+            push @return, $c->CustomerInfo->{$attribute}, '<BR>';
+        }
+        pop @return; #trailing <BR>
+        @return;
+    };
+}
+
+</%once>
+<%init>
+return unless $RT::URI::freeside::IntegrationType eq 'Internal';
+
+my $arg = shift;
+if ( $arg eq 'Names' ) {
+  return map { $_->{Name} } @customer_fields;
+}
+elsif ( $arg eq 'ColumnMap' ) {
+  return map {
+    my $f = $_;
+
+    $f->{Name} => {
+        title     => $f->{Label},
+        attribute => $f->{OrderBy} || '',
+        value     => ref($f->{Display}) eq 'CODE' ? 
+                      $f->{Display} : 
+                      cust_info_attribute($f->{Display})
+      }
+  } #map
+  grep { exists $_->{Display} }
+  @customer_fields;
+}
+elsif ( $arg eq 'PickBasics' ) {
+  return map {
+    my $f = $_;
+    {
+      Name  => ($f->{QueryName} || $f->{Name}),
+      Field => ($f->{QueryLabel} || $f->{Label}),
+      Op    => $f->{Op},
+      Value => $f->{Value},
+    }
+  } #map
+  grep { exists $_->{Value} }
+  @customer_fields;
+}
+else { die "unknown CustomerFields mode '$arg'\n"; }
+</%init>
