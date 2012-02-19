@@ -146,10 +146,11 @@ our %FIELD_METADATA = (
     HasAttribute     => [ 'HASATTRIBUTE', 1 ],
     HasNoAttribute     => [ 'HASATTRIBUTE', 0 ],
     #freeside
-    Agentnum         => [ 'FREESIDEFIELD', ],
-    Classnum         => [ 'FREESIDEFIELD', ],
-    Refnum           => [ 'FREESIDEFIELD', ],
-    Tagnum           => [ 'FREESIDEFIELD', 'cust_tag' ],
+    Customer         => [ 'FREESIDEFIELD', ],
+#    Agentnum         => [ 'FREESIDEFIELD', ],
+#    Classnum         => [ 'FREESIDEFIELD', ],
+#    Refnum           => [ 'FREESIDEFIELD', ],
+#    Tagnum           => [ 'FREESIDEFIELD', 'cust_tag' ],
     WillResolve      => [ 'DATE'            => 'WillResolve', ], #loc_left_pair
 );
 
@@ -1804,36 +1805,23 @@ sub OrderByCols {
            push @res, { %$row, FIELD => "Priority", ORDER => $order } ;
 
        } elsif ( $field eq 'Customer' ) { #Freeside
-           if ( $subkey eq 'Number' ) {
-               my ($linkalias, $custnum_sql) = $self->JoinToCustLinks;
-               push @res, { %$row,
-                            ALIAS => '',
-                            FIELD => $custnum_sql,
-                        };
+           # OrderBy(FIELD => expression) doesn't work, it has to be 
+           # an actual field, so we have to do the join even if sorting
+           # by custnum
+           my $custalias = $self->JoinToCustomer;
+           my $cust_field = lc($subkey);
+           if ( !$cust_field or $cust_field eq 'number' ) {
+               $cust_field = 'custnum';
            }
-           else {
-               my $custalias = $self->JoinToCustomer;
-               my $field;
-               if ( $subkey eq 'Name' ) {
-                   $field = "COALESCE( $custalias.company,
-                   $custalias.last || ', ' || $custalias.first
-                   )";
-               }
-               elsif ( $subkey eq 'Class' ) {
-                   $field = "$custalias.classnum";
-               }
-               elsif ( $subkey eq 'Agent' ) {
-                   $field = "$custalias.agentnum";
-               }
-               elsif ( $subkey eq 'Referral' ) {
-                   $field = "$custalias.refnum";
-               }
-               else {
-                   # no other cases exist yet, but for obviousness:
-                   $field = $subkey;
-               }
-               push @res, { %$row, ALIAS => '', FIELD => $field };
+           elsif ( $cust_field eq 'name' ) {
+               $cust_field = "COALESCE( $custalias.company,
+               $custalias.last || ', ' || $custalias.first
+               )";
            }
+           else { # order by cust_main fields directly: 'Customer.agentnum'
+               $cust_field = $subkey;
+           }
+           push @res, { %$row, ALIAS => $custalias, FIELD => $cust_field };
 
        } #Freeside
 
@@ -1853,26 +1841,31 @@ sub JoinToCustLinks {
     # Return the linkalias for further join/limit action,
     # and an sql expression to retrieve the custnum.
     my $self = shift;
-    my $linkalias = $self->Join(
-        TYPE   => 'LEFT',
-        ALIAS1 => 'main',
-        FIELD1 => 'id',
-        TABLE2 => 'Links',
-        FIELD2 => 'LocalBase',
-    );
+    # only join once for each RT::Tickets object
+    my $linkalias = $self->{cust_linkalias};
+    if (!$linkalias) {
+        $linkalias = $self->Join(
+            TYPE   => 'LEFT',
+            ALIAS1 => 'main',
+            FIELD1 => 'id',
+            TABLE2 => 'Links',
+            FIELD2 => 'LocalBase',
+        );
 
-    $self->SUPER::Limit(
-        LEFTJOIN => $linkalias,
-        FIELD    => 'Type',
-        OPERATOR => '=',
-        VALUE    => 'MemberOf',
-    );
-    $self->SUPER::Limit(
-        LEFTJOIN => $linkalias,
-        FIELD    => 'Target',
-        OPERATOR => 'STARTSWITH',
-        VALUE    => 'freeside://freeside/cust_main/',
-    );
+        $self->SUPER::Limit(
+            LEFTJOIN => $linkalias,
+            FIELD    => 'Type',
+            OPERATOR => '=',
+            VALUE    => 'MemberOf',
+        );
+        $self->SUPER::Limit(
+            LEFTJOIN => $linkalias,
+            FIELD    => 'Target',
+            OPERATOR => 'STARTSWITH',
+            VALUE    => 'freeside://freeside/cust_main/',
+        );
+        $self->{cust_linkalias} = $linkalias;
+    }
     my $custnum_sql = "CAST(SUBSTR($linkalias.Target,31) AS ";
     if ( RT->Config->Get('DatabaseType') eq 'mysql' ) {
         $custnum_sql .= 'SIGNED INTEGER)';
@@ -1886,7 +1879,8 @@ sub JoinToCustLinks {
 sub JoinToCustomer {
     my $self = shift;
     my ($linkalias, $custnum_sql) = $self->JoinToCustLinks;
-
+    # don't reuse this join, though--negative queries need 
+    # independent joins
     my $custalias = $self->Join(
         TYPE       => 'LEFT',
         EXPRESSION => $custnum_sql,
@@ -1908,20 +1902,29 @@ sub _FreesideFieldLimit {
         $op = '=' if $op eq '!=';
         $op =~ s/\bNOT\b//;
     }
-    my $meta = $FIELD_METADATA{$field};
-    if ( $meta->[1] ) {
+
+    my $cust_field = $rest{SUBKEY} || 'custnum';
+    my $table2;
+    # compound subkey: separate into table name and field in that table
+    # (must be linked by custnum)
+    ($table2, $cust_field) = ($1, $2) if $cust_field =~ /^(\w+)?\.(\w+)$/;
+
+    $cust_field = lc($cust_field);
+    $cust_field = 'custnum' if !$cust_field or $cust_field eq 'number';
+
+    if ( $table2 ) {
         $alias = $self->Join(
             TYPE        => 'LEFT',
             ALIAS1      => $alias,
             FIELD1      => 'custnum',
-            TABLE2      => $meta->[1],
+            TABLE2      => $table2,
             FIELD2      => 'custnum',
         );
     }
 
     $self->SUPER::Limit(
         LEFTJOIN        => $alias,
-        FIELD           => lc($field),
+        FIELD           => $cust_field,
         OPERATOR        => $op,
         VALUE           => $value,
         ENTRYAGGREGATOR => 'AND',
@@ -1929,7 +1932,7 @@ sub _FreesideFieldLimit {
     $self->_SQLLimit(
         %rest,
         ALIAS           => $alias,
-        FIELD           => lc($field),
+        FIELD           => 'custnum',
         OPERATOR        => $is_negative ? 'IS' : 'IS NOT',
         VALUE           => 'NULL',
         QUOTEVALUE      => 0,

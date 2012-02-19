@@ -38,6 +38,7 @@ use FS::Conf;
 use FS::Record qw(qsearchs qsearch dbdef);
 use FS::cust_main;
 use FS::cust_svc;
+use FS::payby;
 
 =head1 NAME
 
@@ -53,7 +54,7 @@ See L<RT::URI::freeside> for public/private interface documentation.
 
 
 
-sub _FreesideGetRecord { # cache this?
+sub _FreesideGetRecord {
 
   my $self = shift;
   my ($table, $pkey) = ($self->{'fstable'}, $self->{'fspkey'});
@@ -142,36 +143,31 @@ sub _FreesideURILabelLong {
 
 }
 
-sub AgentName {
+# no need to have a separate wrapper method for every one of these things
+sub CustomerInfo {
   my $self = shift;
   my $rec = $self->_FreesideGetRecord() or return;
-  my $agent = $rec->{'_object'}->agent or return;
-  return $agent->agentnum . ': ' . $agent->agent;
-}
+  my $cust_main = $rec->{'_object'};
+  my $agent = $cust_main->agent;
+  my $class = $cust_main->cust_class;
+  my $referral = qsearchs('part_referral', { refnum => $cust_main->refnum });
+  my @part_tags = $cust_main->part_tag;
 
-sub CustomerClass {
-  my $self = shift;
-  my $rec = $self->_FreesideGetRecord() or return;
-  my $cust_class = $rec->{'_object'}->cust_class or return;
-  return $cust_class->classname;
-}
-  
-sub CustomerTags {
-  my $self = shift;
-  my $rec = $self->_FreesideGetRecord() or return;
-  my @part_tag = $rec->{'_object'}->part_tag;
-  return map { 
-    { 'name'  => $_->tagname,
-      'desc'  => $_->tagdesc,
-      'color' => $_->tagcolor }
-  } @part_tag;
-}
+  return $self->{CustomerInfo} ||= {
+    $cust_main->hash,
 
-sub Referral {
-  my $self = shift;
-  my $rec = $self->_FreesideGetRecord() or return;
-  my $ref = qsearchs('part_referral', { refnum => $rec->{'_object'}->refnum });
-  $ref ? $ref->referral : ''
+    AgentName     => ($agent ? ($agent->agentnum.': '.$agent->agent) : ''),
+    CustomerClass => ($class ? $class->classname : ''),
+    CustomerTags  => [
+      sort { $a->{'name'} <=> $b->{'name'} }
+      map { 
+        { name => $_->tagname, desc => $_->tagdesc, color => $_->tagcolor }
+      } @part_tags
+    ],
+    Referral      => ($referral ? $referral->referral : ''),
+    InvoiceEmail  => $cust_main->invoicing_list_emailonly_scalar,
+    BillingType   => FS::payby->longname($cust_main->payby),
+  }
 }
 
 1;
