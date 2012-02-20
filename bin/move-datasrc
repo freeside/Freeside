@@ -1,0 +1,15 @@
+#!/bin/sh
+
+NEWDATASRC=
+NEWUSER=
+NEWPASS=
+
+cd /usr/local/etc/freeside
+
+mv secrets secrets.OLD
+echo "$NEWDATASRC\n$NEWUSER\n$NEWPASS" >secrets
+
+for a in cache clientapi_session conf counters dbdef export
+  do mv $a.DBI:Pg:dbname=freeside "$a.$NEWDATASRC"
+done
+
