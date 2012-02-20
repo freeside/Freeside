@@ -1,0 +1,7 @@
+#!/usr/bin/perl
+
+use DBIx::DBSchema;
+
+$l = load DBIx::DBSchema "/usr/local/etc/freeside/dbdef.DBI:mysql:dbname=freeside";
+
+print $l->pretty_print, "\n";
