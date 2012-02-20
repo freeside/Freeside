@@ -1,2 +1,0 @@
-#!/bin/sh
-cvs2cl -F trunk
