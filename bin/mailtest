@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Misc (send_email);
+use FS::Record;
+
+adminsuidsetup(shift) or die "usage: mailtest username\n";
+
+my $error = FS::Misc::send_email ( 
+  from    => 'ivan-test@freeside.biz',
+  to      => 'ivan-test@freeside.biz',
+  subject => 'Testing SASL',
+  body    =>  [ "hi there\n", "i'm testing SASL\n" ],
+);
+
+die "can't send test email: $error\n"
+  if $error;
+
