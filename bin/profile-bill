@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+use strict;
+use DBIx::Profile;
+use FS::UID qw( adminsuidsetup dbh );
+use FS::Record qw(qsearchs);
+
+my $user = shift;
+adminsuidsetup( $user );
+
+my $custnum = shift;
+
+my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum })
+  or die "unknown custnum $custnum";
+
+#foreach my $cust_bill ( $cust_main->open_cust_bill ) {
+#  print $cust_bill->invnum. "\n";
+#}
+
+$FS::cust_main::Billing::DEBUG = 1;
+
+$cust_main->bill_and_collect();
+
+print dbh->sprintProfile, "\n";
+

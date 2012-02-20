@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::svc_acct;
+
+my $user = shift or die;
+adminsuidsetup $user;
+
+my $svcnum = shift or die;
+
+my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $svcnum } );
+
+my %reply = $svc_acct->radius_reply;
+
+use Data::Dumper;
+print Dumper(\%reply);
