@@ -1,0 +1,58 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Data::Dumper;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::part_event;
+use FS::part_event_condition;
+
+my $fs_user = shift or die "usage: event-search username";
+adminsuidsetup( $fs_user );
+
+my $eventtable = 'cust_bill';
+my $pkey = 'invnum';
+#my $pkey_value = 33623;
+my $pkey_value = 34333;
+
+    my $cross = "CROSS JOIN $eventtable";
+    $cross .= ' LEFT JOIN cust_main USING ( custnum )'
+      unless $eventtable eq 'cust_main';
+
+my $cross_where = "$eventtable.$pkey = $pkey_value";
+
+      my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
+
+      @FS::part_event_condition::SKIP_CONDITION_SQL = ( 'once' );
+
+      my $extra_sql =
+        FS::part_event_condition->where_conditions_sql( $eventtable,
+                                                        #'time'=>$opt{'time'}
+							'time'=>time,
+                                                      );
+
+      my $order = FS::part_event_condition->order_conditions_sql( $eventtable );
+
+      $extra_sql = "AND $extra_sql" if $extra_sql;
+
+      #here is the agent virtualization
+      $extra_sql .= " AND (    part_event.agentnum IS NULL
+                            OR part_event.agentnum = 5 )";
+
+      $extra_sql .= " $order";
+
+
+      my @part_event = qsearch( {
+        #'debug'     => ( $opt{'debug'} > 3 ? 1 : 0 ),
+        'select'    => 'part_event.*',
+        'table'     => 'part_event',
+        'addl_from' => "$cross $join",
+        'hashref'   => { 'check_freq' => '1d', #( $opt{'check_freq'} || '1d' ),
+                         'eventtable' => $eventtable,
+                         'disabled'   => '',
+                       },
+        'extra_sql' => "AND $cross_where $extra_sql",
+      } );
+
+warn scalar(@part_event). " found\n";
+warn Dumper(@part_event);
