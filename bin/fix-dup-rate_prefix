@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::rate_prefix;
+
+adminsuidsetup shift;
+
+#select * from rate_prefix where 1 < ( select count(*) from rate_prefix as other where rate_prefix.countrycode = other.countrycode and ( rate_prefix.npa = other.npa or ( rate_prefix.npa is null and other.npa is null ) ) ) order by countrycode, npa;
+
+foreach my $dup (
+  qsearch({
+    'select' => 'DISTINCT ON ( countrycode, npa ) *',
+    'table'  => 'rate_prefix',
+    'extra_sql' => ' where 1 < ( select count(*) from rate_prefix as other where rate_prefix.countrycode = other.countrycode and ( rate_prefix.npa = other.npa or ( rate_prefix.npa is null and other.npa is null ) ) )',
+  })
+
+) {
+
+  my @all = qsearch('rate_prefix', { map { $_=>$dup->$_() } qw( countrycode npa ) } );
+
+  my $first = shift(@all);
+
+  foreach my $extra (@all) {
+
+    
+
+  }
+
+}
