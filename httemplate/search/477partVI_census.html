@@ -1,64 +1,27 @@
 <% include( 'elements/search.html',
-                  'html_init'     => $html_init,
-                  'html_foot'     => $html_foot,
-                  'name'          => 'regions',
-                  'query'         => [ @sql_query ],
-                  'count_query'   =>  $count_query,
-                  'order_by'      => 'ORDER BY censustract',
-                  'avoid_quote'   => 1,
-                  'no_csv_header' => 1,
-                  'nohtmlheader'  => 1,
-                  'header'        => [
-                                       'County code',
-                                       'Census tract code',
-                                       'Upload rate',
-                                       'Download rate',
-                                       'Technology code',
-                                       'Technology code other',
-                                       'Quantity',
-                                       'Percentage residential',
-                                     ],
-                  'xml_elements'  => [
-                                       'county_fips',
-                                       'census_tract',
-                                       'upload_rate_code',
-                                       'download_rate_code',
-                                       'technology_code',
-                                       'technology_code_other',
-                                       'value',
-                                       'percentage',
-                                     ],
-                  'fields'        => [
-                    sub { my $row = shift; 
-                          my $state = substr($row->censustract, 0, 2);
-                          $state_hash{$state}++;
-                          substr($row->censustract, 2, 3) || 'None';
-                        },
-                    sub { my $row = shift;
-                          substr($row->censustract, 5) || 'None';
-                        },
-                    'upload',
-                    'download',
-                    'technology_code',
-                    sub { $cgi->param('_type') eq 'xml' ? '0' : '' },#broken
-                    sub { my $row = shift;
-                          my $state = substr($row->censustract, 0, 2);
-                          $state_pkgcount{$state} += $row->quantity;
-                          $row->quantity;
-                        },
-                    sub { my $row = shift; sprintf "%.2f", $row->residential },
-                  ],
-                  'links'        => [
-                    [ $link, $link_suffix ],
-                    [ $link, $link_suffix ],
-                    [ $link, $link_suffix ],
-                    [ $link, $link_suffix ],
-                    [ $link, $link_suffix ],
-                    [ $link, $link_suffix ],
-                    [ $link, $link_suffix ],
-                    [ $link, $link_suffix ],
-                  ],
-                  'url'          => $opt{url} || '',
+                  'html_init'       => '<H2>Part VI</H2>',
+                  'html_foot'       => $html_foot,
+                  'name'            => 'regions',
+                  'query'           => [ @sql_query ],
+                  'count_query'     =>  $count_query,
+                  'order_by'        => 'ORDER BY censustract',
+                  'avoid_quote'     => 1,
+                  'no_csv_header'   => 1,
+                  'nohtmlheader'    => 1,
+                  'header'          => \@header,
+                  'xml_elements'    => [
+                                         'county_fips',
+                                         'census_tract',
+                                         'upload_rate_code',
+                                         'download_rate_code',
+                                         'technology_code',
+                                         'technology_code_other',
+                                         'value',
+                                         'percentage',
+                                       ],
+                  'fields'          => \@fields,
+                  'links'           => \@links,
+                  'url'             => $opt{url} || '',
                   'xml_row_element' => 'Datarow',
               )
 %>
@@ -71,12 +34,52 @@ die "access denied"
 
 my %opt = @_;
 
-my $html_init = '<H2>Part VI</H2>';
+my %state_hash = ();
+my %state_pkgcount = ();
+
+my @header = ();
+my @fields = ();
+my @links = ();
+my $num = ($cgi->param('offset') =~ /^(\d+)$/) ? $1 : 0;
+unless ( $cgi->param('_type') eq 'xml' ) {
+  push @header, '#';
+  push @fields, sub { ++$num };
+  push @links,  '';
+}
+push @header,
+  'County code',
+  'Census tract code',
+  'Upload rate',
+  'Download rate',
+  'Technology code',
+  'Technology code other',
+  'Quantity',
+  'Percentage residential',
+;
+push @fields,
+  sub { my $row = shift; 
+        my $state = substr($row->censustract, 0, 2);
+        $state_hash{$state}++;
+        substr($row->censustract, 2, 3) || 'None';
+      },
+  sub { my $row = shift;
+        substr($row->censustract, 5) || 'None';
+      },
+  'upload',
+  'download',
+  'technology_code',
+  sub { $cgi->param('_type') eq 'xml' ? '0' : '' },#broken
+  sub { my $row = shift;
+        my $state = substr($row->censustract, 0, 2);
+        $state_pkgcount{$state} += $row->quantity;
+        $row->quantity;
+      },
+  sub { my $row = shift; sprintf "%.2f", $row->residential },
+;
+push @links, ( [ $link, $link_suffix ] x 8 );
 
 my %search_hash = ();
 my @sql_query = ();
-my %state_hash = ();
-my %state_pkgcount = ();
   
 for ( qw(agentnum magic) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
