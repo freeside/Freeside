@@ -546,6 +546,8 @@ sub mason_interps {
     ${$_[0]} =~ s/(['\\])/\\$1/g;
     ${$_[0]} =~ s/\r/\\r/g;
     ${$_[0]} =~ s/\n/\\n/g;
+    # prevent premature termination of the script
+    ${$_[0]} =~ s[</script>][<\\/script>]ig;
     ${$_[0]} = "'". ${$_[0]}. "'";
   };
 

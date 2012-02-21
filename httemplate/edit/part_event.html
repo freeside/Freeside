@@ -485,6 +485,9 @@ tie my %all_conditions, 'Tie::IxHash',
   '' => { 'description' => '*** Select new condition ***', },
   FS::part_event_condition->conditions();
 
+# *** Select new condition *** sorts to the beginning anyway
+(tied %all_conditions)->SortByValue;
+
 my %condition_labels = map { $_ => $all_conditions{$_}->{'description'} }
                            keys %all_conditions;
 
@@ -523,6 +526,8 @@ my %condition_remove_warnings =
 tie my %all_actions, 'Tie::IxHash', 
   '' => { 'description' => '*** Select event action ***', },
   FS::part_event->actions();
+
+(tied %all_actions)->SortByValue;
 
 my %action_labels = map { $_ => $all_actions{$_}->{'description'} }
                         keys %all_actions;

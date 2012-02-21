@@ -162,6 +162,7 @@ Example:
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
+my $date_noinit = 0;
 
 </%once>
 <%init>
@@ -220,10 +221,24 @@ sub layer_callback {
     my $type = $lf->{type} || 'text';
 
     my $include = $type;
-    $include = "input-$include" if $include =~ /^(text|money)$/;
-    $include = "tr-$include" unless $include eq 'hidden';
 
-    $html .= include( "/elements/$include.html",
+    if ( $include eq 'date' ) {
+      # several important differences from other tr-*
+      $html .= include( '/elements/tr-input-date-field.html',
+        {
+          'name'  => "$layer_prefix$field",
+          'value' => $value,
+          'label' => $lf->{label},
+          'format'=> $lf->{format},
+          'noinit'=> $date_noinit,
+        }
+      );
+      $date_noinit = 1;
+    }
+    else {
+      $include = "input-$include" if $include =~ /^(text|money)$/;
+      $include = "tr-$include" unless $include eq 'hidden';
+      $html .= include( "/elements/$include.html",
                         %$lf,
                         'field'      => "$layer_prefix$field",
                         'id'         => "$layer_prefix$field", #separate?
@@ -233,8 +248,8 @@ sub layer_callback {
                         'value'      => ( $lf->{'value'} || $value ), #hmm.
                         'curr_value' => $value,
                     );
-
-  }
+    }
+  } #foreach $field
   $html .= '</TABLE>';
   return $html;
 }
