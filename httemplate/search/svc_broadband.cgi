@@ -15,8 +15,8 @@
               'fields'      => [ 'svcnum',
                                  'svc',
                                  sub {
-                                   my $blocknum = shift->blocknum or return '';
-                                   $routerbyblock{$blocknum}->routername;
+                                   my $router = shift->router; 
+                                   $router ? $router->routername : '';
                                  },
                                  @tower_fields,
                                  'ip_addr',

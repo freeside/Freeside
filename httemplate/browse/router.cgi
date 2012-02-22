@@ -9,6 +9,7 @@
                 'count_query'     => "SELECT count(*) from router $count_sql",
                 'header'          => [ 'Router name',
                                        'Address block(s)',
+                                       'IP addressing',
                                        'Action',
                                      ],
                 'fields'          => [ 'routername',
@@ -16,9 +17,11 @@
                                                                shift->addr_block
                                                  );
                                            },
+                                       sub { shift->auto_addr ? 'Automatic' : 'Manual' },
                                        sub { 'Delete' },
                                      ],
                 'links'           => [ [ "${p2}edit/router.cgi?", 'routernum' ],
+                                       '',
                                        '',
                                        [ "${p}misc/delete-router.html?", 'routernum' ],
                                      ],
@@ -51,5 +54,6 @@ my $count_sql = $extra_sql.  ( $extra_sql =~ /WHERE/ ? ' AND' : 'WHERE' ).
   $FS::CurrentUser::CurrentUser->agentnums_sql(
     'null_right' => 'Broadband global configuration',
   );
+
 
 </%init>

@@ -40,6 +40,9 @@ fields are currently supported:
 
 =item svcnum - svcnum of the owning FS::svc_broadband, if appropriate
 
+=item auto_addr - flag to automatically assign IP addresses to services
+linked to this router ('Y' or null).
+
 =back
 
 =head1 METHODS
@@ -83,6 +86,7 @@ sub check {
   my $error =
     $self->ut_numbern('routernum')
     || $self->ut_text('routername')
+    || $self->ut_enum('auto_addr', [ '', 'Y' ])
     || $self->ut_agentnum_acl('agentnum', 'Broadband global configuration')
   ;
   return $error if $error;
@@ -128,11 +132,23 @@ sub delete {
 Returns a list of FS::addr_block objects (address blocks) associated
 with this object.
 
+=item auto_addr_block
+
+Returns a list of address blocks on which auto-assignment of IP addresses
+is enabled.
+
 =cut
 
 sub addr_block {
   my $self = shift;
   return qsearch('addr_block', { routernum => $self->routernum });
+}
+
+sub auto_addr_block {
+  my $self = shift;
+  return () if !$self->auto_addr;
+  return qsearch('addr_block', { routernum => $self->routernum,
+                                 manual_flag => '' });
 }
 
 =item part_svc_router

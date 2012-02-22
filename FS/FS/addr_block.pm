@@ -8,6 +8,7 @@ use FS::svc_broadband;
 use FS::Conf;
 use NetAddr::IP;
 use Carp qw( carp );
+use List::Util qw( first );
 
 @ISA = qw( FS::Record );
 
@@ -222,37 +223,43 @@ sub cidr {
   $self->NetAddr->cidr;
 }
 
-=item next_free_addr
+=item free_addrs
 
 Returns a NetAddr::IP object corresponding to the first unassigned address 
 in the block (other than the network, broadcast, or gateway address).  If 
-there are no free addresses, returns false.  There are never free addresses
+there are no free addresses, returns nothing.  There are never free addresses
 when manual_flag is true.
+
+=item next_free_addr
+
+Returns a NetAddr::IP object for the first unassigned address in the block,
+or '' if there are none.
 
 =cut
 
-sub next_free_addr {
+sub free_addrs {
   my $self = shift;
 
-  return '' if $self->manual_flag;
+  return if $self->manual_flag;
 
   my $conf = new FS::Conf;
   my @excludeaddr = $conf->config('exclude_ip_addr');
   
-my @used =
-( (map { $_->NetAddr->addr }
-    ($self,
-     qsearch('svc_broadband', { blocknum => $self->blocknum }))
-  ), @excludeaddr
-);
+  my %used = map { $_ => 1 }
+  (
+    (map { $_->NetAddr->addr }
+      ($self,
+       qsearch('svc_broadband', { blocknum => $self->blocknum }))
+    ), @excludeaddr
+  );
 
-  my @free = $self->NetAddr->hostenum;
-  while (my $ip = shift @free) {
-    if (not grep {$_ eq $ip->addr;} @used) { return $ip; };
-  }
+  grep { !$used{$_->addr} } $self->NetAddr->hostenum;
 
-  '';
+}
 
+sub next_free_addr {
+  my $self = shift;
+  ($self->free_addrs, '')[0]
 }
 
 =item allocate -- deprecated

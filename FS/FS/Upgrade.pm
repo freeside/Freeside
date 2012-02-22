@@ -264,7 +264,10 @@ sub upgrade_data {
     'part_export'      => [],
 
     #insert default tower_sector if not present
-    'tower',
+    'tower' => [],
+
+    #routernum/blocknum
+    'svc_broadband' => [],
   ;
 
   \%hash;

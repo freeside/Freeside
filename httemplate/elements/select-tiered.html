@@ -35,6 +35,7 @@ contain the following:
   isn't fully tested.
 - after: an HTML string to be inserted after the select element, before 
   the next one.  By default there's nothing between them.
+- onchange: an additional javascript function to be called on change.
 
 For convenience, "curr_value" and "field" can be passed as part of the 
 main argument list, and will be applied to the last tier.
@@ -43,8 +44,13 @@ main argument list, and will be applied to the last tier.
 % $i = 0;
 % foreach my $tier (@$tiers) {
 %   my $onchange;
-%   $onchange="onchange='${pre}select_change(this, $i)'"
+%   $onchange="${pre}select_change(this, $i)"
 %     if $i < scalar(@$tiers) - 1;
+%
+%   $onchange .= ';'.$tier->{onchange}."(this, $i);"
+%     if $tier->{onchange};
+%
+%   $onchange = "onchange='$onchange'" if $onchange;
 <SELECT 
   NAME="<% $tier->{field} %>"
   ID="<% $pre."select_".$i %>"
@@ -54,7 +60,8 @@ main argument list, and will be applied to the last tier.
 %   if ( $i == 0 ) {
 %     my $options = $tiers_by_key->[0]->{''};
 %     foreach ( sort keys %$options ) {
-  <OPTION VALUE="<%$_ |h%>"><% $options->{$_} |h%></OPTION>
+  <OPTION VALUE="<%$_ |h%>" <% $curr_values->[$i] eq $_ ? 'SELECTED' : ''%>>
+  <% $options->{$_} |h%></OPTION>
 %     }
 %   }
 %   $i++;
@@ -178,7 +185,6 @@ while($i >= 1) {
   foreach my $key ( %{ $tier->{by_key} } ) {
     my $options = $tier->{by_key}->{$key};
     if ( exists( $options->{$curr_value} ) ) {
-      warn "tier $i curr_value ($curr_value) found under key $key\n";
       $tiers->[$i-1]->{curr_value} = $key;
       last;
     }

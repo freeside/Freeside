@@ -27,7 +27,7 @@ $labels{'coordinates'} = 'Latitude/Longitude';
 
 my @fields = (
   'description',
-  { field => 'router', value => \&router },
+  { field => 'routernum', value => \&router },
   'speed_down',
   'speed_up',
   { field => 'ip_addr', value => \&ip_addr },
@@ -48,9 +48,10 @@ push @fields,
 
 sub router {
   my $svc = shift;
-  my $addr_block = $svc->addr_block or return '';
-  my $router = $addr_block->router or return '';
-  $router->routernum . ': ' . $router->routername;
+  my $router = $svc->router or return '';
+  my $block = $svc->addr_block;
+  $block = '; '.$block->cidr if $block;
+  $router->routernum . ': ' . $router->routername . $block
 }
 
 sub ip_addr {
