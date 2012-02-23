@@ -269,6 +269,23 @@ sub option_label {
 
 =back
 
+=item option_type OPTION
+
+Returns the type of the option, as a string: 'text', 'money', 'date',
+or 'freq'.
+
+=cut
+
+sub option_type {
+  my( $self, $optionname ) = @_;
+
+  my %option_fields = $self->option_fields;
+
+  ref( $option_fields{$optionname} )
+    ? $option_fields{$optionname}->{'type'} 
+    : 'text'
+}
+
 =item option_age_from OPTION FROM_TIMESTAMP
 
 Retreives a condition option, parses it from a frequency (such as "1d", "1w" or
