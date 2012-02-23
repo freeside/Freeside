@@ -410,6 +410,7 @@ sub email_search_result {
   }
 
   my $sql_query = $class->search($param->{'search'});
+  $sql_query->{'select'} = $sql_query->{'table'} . '.*';
 
   my $count_query   = delete($sql_query->{'count_query'});
   my $count_sth = dbh->prepare($count_query)
