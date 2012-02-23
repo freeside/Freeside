@@ -76,7 +76,6 @@ push @fields,
       },
   sub { my $row = shift; sprintf "%.2f", $row->residential },
 ;
-push @links, ( [ $link, $link_suffix ] x 8 );
 
 my %search_hash = ();
 my @sql_query = ();
@@ -137,6 +136,7 @@ my $count_query = 'SELECT count(*) FROM ( ('.
       @sql_query
    ). ') ) AS foo';
 
+
 my $link = 'cust_pkg.cgi?'. join(';',
                                       map { my $key = $_;
                                             my @values = ref($search_hash{$_}) 
@@ -157,6 +157,9 @@ my $link_suffix = sub { my $row = shift;
                         $result .= 'report_option='. join(',',@ro) if @ro;
                         $result;
                       };
+
+push @links, ( [ $link, $link_suffix ] x 8 );
+
 
 my $html_foot = sub {
   if (scalar(keys %state_hash) > 1) {
