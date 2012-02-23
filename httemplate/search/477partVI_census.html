@@ -158,7 +158,7 @@ my $link_suffix = sub { my $row = shift;
                         $result;
                       };
 
-push @links, ( [ $link, $link_suffix ] x 8 );
+for (1..8) { push @links, [ $link, $link_suffix ]; }
 
 
 my $html_foot = sub {
