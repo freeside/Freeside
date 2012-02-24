@@ -188,6 +188,7 @@ if ( $cgi->param('action') eq 'preview' ) {
                              { msgnum => $cgi->param('msgnum') } )
         or die "template not found: ".$cgi->param('msgnum');
     $sql_query->{'extra_sql'} .= ' LIMIT 1';
+    $sql_query->{'select'} = "$table.*";
     $sql_query->{'order_by'} = '';
     my $object = qsearchs($sql_query);
     my $cust = $object->cust_main;

@@ -375,7 +375,7 @@ sub generate_email {
                        '      '. encode_entities($return{'subject'}), 
                        '    </title>',
                        '  </head>',
-                       '  <body bgcolor="#e8e8e8">',
+                       '  <body bgcolor="#ffffff">',
                        @html_data,
                        '  </body>',
                        '</html>',
