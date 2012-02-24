@@ -34,6 +34,9 @@ my %accountcode_unmatch = ();
 my $accountcode_retry = 4 * 60 * 60; # 4 hours
 my $accountcode_giveup = 4 * 24 * 60 * 60; # 4 days
 
+my %cdr_type = map { lc($_->cdrtypename) => $_->cdrtypenum } 
+  qsearch('cdr_type',{});
+
 while (1) {
 
   #hmm... don't want to do an expensive search with an ever-growing bunch
@@ -50,6 +53,8 @@ while (1) {
 
   my $found = 0;
   my %skip = ();
+  my %warning = ();
+
   foreach my $cdr ( 
     qsearch( {
       'table'     => 'cdr',
@@ -83,6 +88,45 @@ while (1) {
 
       push @status, 'asterisk_forward';
 
+    }
+
+    # XXX weird special case stuff--can we modularize this somehow?
+    # reference RT#16271
+    if ( $conf->exists('cdr-asterisk_australia_rewrite') and
+         $cdr->disposition eq 'ANSWERED' ) {
+      my $dst = $cdr->dst;
+      my $type;
+      if ( $dst =~ /^0?(12|13|1800|1900|0055)/ ) {
+        # toll free or smart numbers, any length
+        $type = 'tollfree';
+        $cdr->charged_party($dst);
+      }
+      elsif ( $dst =~ /^(11|0011)/ ) {
+        # will be followed by country code
+        $type = 'international';
+        $dst =~ s/^$1/0011/; #standardize
+        $cdr->dst($dst);
+      }
+      elsif ( length($dst) == 10 and$dst =~ /^04/ ) {
+        $type = 'mobile';
+      }
+      elsif ( length($dst) == 10 and $dst =~ /^02|03|07|08/ ) {
+        $type = 'domestic';
+      }
+      elsif ( length($dst) == 8 ) {
+        # local call, no area code
+        $type = 'domestic';
+      }
+      else {
+        $type = 'other';
+      }
+      if ( $type and exists($cdr_type{$type}) ) {
+        $cdr->cdrtypenum($cdr_type{$type});
+        push @status, 'asterisk_australia';
+      }
+      else {
+        $warning{"no CDR type defined for $type calls"}++;
+      }
     }
 
     if ( $conf->exists('cdr-charged_party_rewrite') && ! $cdr->charged_party ) {
@@ -153,6 +197,11 @@ while (1) {
 
   }
 
+  foreach (sort keys %warning) {
+    warn "WARNING: $_ (x $warning{$_})\n";
+  }
+  %warning = ();
+
   myexit() if sigterm() || sigint();
   #sleep 1 unless $found;
   sleep 5 unless $found;
@@ -163,6 +212,7 @@ while (1) {
 
 sub _shouldrun {
      $conf->exists('cdr-asterisk_forward_rewrite')
+  || $conf->exists('cdr-asterisk_australia_rewrite')
   || $conf->exists('cdr-charged_party_rewrite')
   || $conf->exists('cdr-taqua-accountcode_rewrite');
 }

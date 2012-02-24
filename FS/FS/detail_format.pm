@@ -171,8 +171,11 @@ sub single_detail {
   die "$me error combining ".$self->csv->error_input."\n"
     if !$status;
 
+  my $rated_price = $cdr->rated_price;
+  $rated_price = 0 if $cdr->freesidestatus eq 'no-charge';
+
   FS::cust_bill_pkg_detail->new( {
-      'amount'      => $cdr->rated_price,
+      'amount'      => $rated_price,
       'classnum'    => $cdr->rated_classnum,
       'duration'    => $cdr->rated_seconds,
       'regionname'  => $cdr->rated_regionname,
@@ -250,6 +253,7 @@ sub price {
   my $cdr = shift;
   my $object = $self->{inbound} ? $cdr->cdr_termination(1) : $cdr;
   my $price = $object->rated_price if $object;
+  $price = '0.00' if $object->freesidestatus eq 'no-charge';
   length($price) ? $self->money_char . $price : '';
 }
 

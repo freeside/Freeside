@@ -100,6 +100,8 @@ tie my %unrateable_opts, 'Tie::IxHash',
                      'empty_label'   => '',
                    },
 
+    'calls_included' => { 'name' => 'Number of calls included at no usage charge', },
+
     'min_included' => { 'name' => 'Minutes included when using the "single price per minute" rating method or when using the "prefix" rating method ("region group" billing)',
                     },
 
@@ -267,6 +269,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
                     qw(
                        cdr_svc_method
                        rating_method ratenum intrastate_ratenum 
+                       calls_included
                        min_charge min_included sec_granularity
                        ignore_unrateable
                        default_prefix
@@ -339,6 +342,7 @@ sub calc_usage {
   my $charges = 0;
 
   my $included_min = $self->option('min_included', 1) || 0; #single price rating
+  my $included_calls = $self->option('calls_included', 1) || 0;
 
   my $cdr_svc_method    = $self->option('cdr_svc_method',1)||'svc_phone.phonenum';
   my $rating_method     = $self->option('rating_method') || 'prefix';
@@ -410,11 +414,20 @@ sub calc_usage {
     foreach my $cdr (
       $svc_x->get_cdrs( %options ) 
     ) {
+      my $error;
       # at this point we officially Do Not Care about the rating method
-      $charges += $cdr->rated_price;
-      $formatter->append($cdr);
-      my $error = $cdr->set_status('done');
+      if ( $included_calls > 0 ) {
+        $included_calls--;
+        #$charges += 0, obviously
+        #but don't set the rated price to zero--there should be a record
+        $error = $cdr->set_status('no-charge');
+      }
+      else {
+        $charges += $cdr->rated_price;
+        $error = $cdr->set_status('done');
+      }
       die $error if $error;
+      $formatter->append($cdr);
     }
   }
 

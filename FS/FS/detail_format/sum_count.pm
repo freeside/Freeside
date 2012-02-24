@@ -31,7 +31,8 @@ sub append {
     my $subtotal = ($svcnums->{$svcnum} ||=
       { count => 0, duration => 0, amount => 0 });
     $subtotal->{count}++;
-    $subtotal->{amount} += $object->rated_price;
+    $subtotal->{amount} += $object->rated_price
+      if $object->freesidestatus ne 'no-charge';
   }
 }
 

@@ -47,7 +47,8 @@ sub append {
     #         "' in CDR #".$cdr->acctid."\n";
     $subtotal->{count}++;
     $subtotal->{duration} += $object->rated_seconds;
-    $subtotal->{amount} += $object->rated_price;
+    $subtotal->{amount} += $object->rated_price
+      if $object->freesidestatus ne 'no-charge';
   }
 }
 

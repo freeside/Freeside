@@ -32,7 +32,8 @@ sub append {
       { count => 0, duration => 0, amount => 0 });
     $subtotal->{count}++;
     $subtotal->{duration} += $object->rated_seconds;
-    $subtotal->{amount} += $object->rated_price;
+    $subtotal->{amount} += $object->rated_price
+      if $object->freesidestatus ne 'no-charge';
   }
 }
 

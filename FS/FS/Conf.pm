@@ -4258,6 +4258,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-asterisk_australia_rewrite',
+    'section'     => 'telephony',
+    'description' => 'For Asterisk CDRs, assign CDR type numbers based on Australian conventions.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_pkg-show_autosuspend',
     'section'     => 'UI',
     'description' => 'Show package auto-suspend dates.  Use with caution for now; can slow down customer view for large insallations.',
