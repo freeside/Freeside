@@ -736,7 +736,7 @@ sub search {
 
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
-  my $pkg_join = 'LEFT JOIN cust_pkg USING ( custnum ) ';
+  my $addl_from = '';
 
   my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
 
@@ -750,19 +750,22 @@ sub search {
 
   if ($params->{'flattened_pkgs'}) {
 
+    my $pkg_join = '';
+
     if ($dbh->{Driver}->{Name} eq 'Pg') {
 
       push @select, "array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
 
-    }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
+    } elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
       push @select, "GROUP_CONCAT(part_pkg.pkg SEPARATOR '|') as magic";
-      $pkg_join .= " LEFT JOIN part_pkg using ( pkgpart )";
-    }else{
+      $addl_from .= ' LEFT JOIN cust_pkg USING ( custnum ) '; #Pg too w/flatpkg?
+      $pkg_join  .= ' LEFT JOIN part_pkg USING ( pkgpart ) ';
+    } else {
       warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
            "omitting packing information from report.";
     }
 
-    my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $pkg_join $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
+    my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $pkg_join $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
 
     my $sth = dbh->prepare($header_query) or die dbh->errstr;
     $sth->execute() or die $sth->errstr;
@@ -797,6 +800,7 @@ sub search {
   my $sql_query = {
     'table'         => 'cust_main',
     'select'        => $select,
+    'addl_from'     => $addl_from,
     'hashref'       => {},
     'extra_sql'     => $extra_sql,
     'order_by'      => $orderby,
