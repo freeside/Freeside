@@ -76,7 +76,7 @@ function update_censustract(arg) {
 
   set_censustract = function () {
 
-    cf.elements['censustract'].value = newcensus
+    cf.elements['censustract'].value = newcensus;
     cf.submit();
 
   }
@@ -87,12 +87,15 @@ function update_censustract(arg) {
     if (error) { newcensus = error; }
     newcensus.replace(/.*ndefined.*/, 'Not found');
 
+    var latitude = cf.elements['latitude' ].value || '<% $company_latitude %>';
+    var longitude= cf.elements['longitude'].value || '<% $company_longitude %>';
+
     var choose_censustract =
       '<CENTER><BR><B>Confirm censustract</B><BR>' +
       '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
       'census_year=<% $conf->config('census_year') || '2012' %>' +
-      '&latitude=' + cf.elements['latitude'].value +
-      '&longitude=' + cf.elements['longitude'].value +
+      '&latitude=' + latitude +
+      '&longitude=' + longitude +
       '" target="_blank">Map service module location</A><BR>' +
       '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
       'census_year=<% $conf->config('census_year') || '2012' %>' +
@@ -153,5 +156,9 @@ function copyelement(from, to) {
 <%init>
 
 my $conf = new FS::Conf;
+
+my $company_latitude  = $conf->config('company_latitude');
+my $company_longitude = $conf->config('company_longitude');
+
 
 </%init>
