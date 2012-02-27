@@ -62,8 +62,6 @@ if ( $svc_x ) {
     foreach qw(routernum blocknum ip_addr svcpart);
 }
 
-warn Dumper(\%opt);
-
 my $svcpart = $opt{'svcpart'} || '';
 my %fixed; #  which fields are fixed
 $svcpart =~ /^\d*$/ or die "invalid svcpart '$svcpart'";
