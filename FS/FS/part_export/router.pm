@@ -302,13 +302,13 @@ sub _queue {
 }
 
 sub _get_router {
-  my ($self, $svc_broadband, %args) = (shift, shift, shift, @_);
+  my ($self, $svc_broadband, %args) = (shift, shift, @_);
 
   my $router;
   if ($args{'routernum'}) {
     $router = qsearchs('router', { routernum => $args{'routernum'}});
   } else {
-    $router = $svc_broadband->addr_block->router;
+    $router = $svc_broadband->router;
   }
 
   return($router);

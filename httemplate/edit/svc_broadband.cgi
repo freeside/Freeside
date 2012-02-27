@@ -100,10 +100,9 @@ END
 ;
 
 my @fields = (
-  qw( description ip_addr speed_down speed_up ),
+  qw( description speed_down speed_up ),
   { field=>'sectornum', type=>'select-tower_sector', },
-  qw( blocknum ),
-  { field=>'block_label', type=>'fixed' },
+  { field=>'routernum', type=>'select-router_block_ip', },
   qw( mac_addr latitude longitude altitude vlan_profile 
       performance_profile authkey plan_id ),
 );

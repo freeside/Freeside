@@ -101,15 +101,15 @@ sub table_info {
       'description' => 'Descriptive label for this particular device',
       'speed_down'  => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
       'speed_up'    => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
-      'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
-      'sectornum'   => 'Tower sector',
-      'blocknum'    => { 'label' => 'Address block',
-                         'type'  => 'select',
-                         'select_table' => 'addr_block',
-                         'select_key'   => 'blocknum',
-                         'select_label' => 'cidr',
-                         'disable_inventory' => 1,
-                       },
+      #'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
+      #'blocknum'    => 
+      #{ 'label' => 'Address block',
+      #                   'type'  => 'select',
+      #                   'select_table' => 'addr_block',
+      #                    'select_key'   => 'blocknum',
+      #                   'select_label' => 'cidr',
+      #                   'disable_inventory' => 1,
+      #                 },
      'plan_id' => 'Service Plan Id',
      'performance_profile' => 'Peformance Profile',
      'authkey'      => 'Authentication key',
@@ -118,6 +118,8 @@ sub table_info {
      'longitude'    => 'Longitude',
      'altitude'     => 'Altitude',
      'vlan_profile' => 'VLAN profile',
+     'sectornum'    => 'Tower/sector',
+     'routernum'    => 'Router/block',
      'usergroup'    => { 
                          label => 'RADIUS groups',
                          type  => 'select-radius_group.html',
@@ -209,13 +211,20 @@ sub search {
 
   #routernum, can be arrayref
   for my $routernum ( $params->{'routernum'} ) {
-    push @from, 'LEFT JOIN addr_block USING ( blocknum )';
+    # this no longer uses addr_block
     if ( ref $routernum and grep { $_ } @$routernum ) {
-      my $where = join(',', map { /^(\d+)$/ ? $1 : () } @$routernum );
-      push @where, "addr_block.routernum IN ($where)" if $where;
+      my $in = join(',', map { /^(\d+)$/ ? $1 : () } @$routernum );
+      my @orwhere;
+      push @orwhere, "svc_broadband.routernum IN ($in)" if $in;
+      push @orwhere, "svc_broadband.routernum IS NULL" 
+        if grep /^none$/, @$routernum;
+      push @where, '( '.join(' OR ', @orwhere).' )';
     }
     elsif ( $routernum =~ /^(\d+)$/ ) {
-      push @where, "addr_block.routernum = $1";
+      push @where, "svc_broadband.routernum = $1";
+    }
+    elsif ( $routernum eq 'none' ) {
+      push @where, "svc_broadband.routernum IS NULL";
     }
   }
 
@@ -327,8 +336,6 @@ Delete this record from the database.
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-=cut
-
 # Standard FS::svc_Common::replace
 
 =item suspend
@@ -365,6 +372,7 @@ sub check {
   my $error =
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('blocknum')
+    || $self->ut_foreign_keyn('routernum', 'router', 'routernum')
     || $self->ut_foreign_keyn('sectornum', 'tower_sector', 'sectornum')
     || $self->ut_textn('description')
     || $self->ut_numbern('speed_up')
@@ -380,8 +388,8 @@ sub check {
   ;
   return $error if $error;
 
-  if($self->speed_up < 0) { return 'speed_up must be positive'; }
-  if($self->speed_down < 0) { return 'speed_down must be positive'; }
+  if(($self->speed_up || 0) < 0) { return 'speed_up must be positive'; }
+  if(($self->speed_down || 0) < 0) { return 'speed_down must be positive'; }
 
   my $cust_svc = $self->svcnum
                  ? qsearchs('cust_svc', { 'svcnum' => $self->svcnum } )
@@ -393,18 +401,27 @@ sub check {
     $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $self->pkgnum } );
     return "Invalid pkgnum" unless $cust_pkg;
   }
-    
-  if ($self->blocknum) {
-    $error = $self->ut_foreign_key('blocknum', 'addr_block', 'blocknum');
-    return $error if $error;
-  }
+  my $agentnum = $cust_pkg->cust_main->agentnum if $cust_pkg;
 
-  if ($cust_pkg && $self->blocknum) {
-    my $addr_agentnum = $self->addr_block->agentnum;
-    if ($addr_agentnum && $addr_agentnum != $cust_pkg->cust_main->agentnum) {
-      return "Address block does not service this customer";
+  if ($self->routernum) {
+    return "Router ".$self->routernum." does not provide this service"
+      unless qsearchs('part_svc_router', { 
+        svcpart => $self->cust_svc->svcpart,
+        routernum => $self->routernum
+    });
+  
+    my $router = $self->router;
+    return "Router ".$self->routernum." does not serve this customer"
+      if $router->agentnum and $router->agentnum != $agentnum;
+
+    if ( $router->auto_addr ) {
+      my $error = $self->assign_ip_addr;
+      return $error if $error;
     }
-  }
+    else {
+      $self->blocknum('');
+    }
+  } # if $self->routernum
 
   if ( $cust_pkg && ! $self->latitude && ! $self->longitude ) {
     my $l = $cust_pkg->cust_location_or_main;
@@ -423,55 +440,60 @@ sub check {
   $self->SUPER::check;
 }
 
+=item assign_ip_addr
+
+Assign an address block matching the selected router, and the selected block
+if there is one.
+
+=cut
+
+sub assign_ip_addr {
+  my $self = shift;
+  my @blocks;
+  my $ip_addr;
+
+  if ( $self->blocknum and $self->addr_block->routernum == $self->routernum ) {
+    # simple case: user chose a block, find an address in that block
+    # (this overrides an existing IP address if it's not in the block)
+    @blocks = ($self->addr_block);
+  }
+  elsif ( $self->routernum ) {
+    @blocks = $self->router->auto_addr_block;
+  }
+  else { 
+    return '';
+  }
+
+  foreach my $block ( @blocks ) {
+    if ( $self->ip_addr and $block->NetAddr->contains($self->NetAddr) ) {
+      # don't change anything
+      return '';
+    }
+    $ip_addr = $block->next_free_addr;
+    last if $ip_addr;
+  }
+  if ( $ip_addr ) {
+    $self->set(ip_addr => $ip_addr->addr);
+    return '';
+  }
+  else {
+    return 'No IP address available on this router';
+  }
+}
+
 sub _check_ip_addr {
   my $self = shift;
 
   if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
-
-    return '' if $conf->exists('svc_broadband-allow_null_ip_addr'); #&& !$self->blocknum
-
-    return "Must supply either address or block"
-      unless $self->blocknum;
-    my $next_addr = $self->addr_block->next_free_addr;
-    if ($next_addr) {
-      $self->ip_addr($next_addr->addr);
-    } else {
-      return "No free addresses in addr_block (blocknum: ".$self->blocknum.")";
-    }
-
+    return '' if $conf->exists('svc_broadband-allow_null_ip_addr'); 
+    return 'IP address required';
   }
-
-  if (not($self->blocknum)) {
-    return "Must supply either address or block"
-      unless ($self->ip_addr and $self->ip_addr ne '0.0.0.0');
-    my @block = grep { $_->NetAddr->contains($self->NetAddr) }
-                 map { $_->addr_block }
-                 $self->allowed_routers;
-    if (scalar(@block)) {
-      $self->blocknum($block[0]->blocknum);
-    }else{
-      return "Address not with available block.";
-    }
-  }
-
-  # This should catch errors in the ip_addr.  If it doesn't,
-  # they'll almost certainly not map into the block anyway.
-  my $self_addr = $self->NetAddr; #netmask is /32
-  return ('Cannot parse address: ' . $self->ip_addr) unless $self_addr;
-
-  my $block_addr = $self->addr_block->NetAddr;
-  unless ($block_addr->contains($self_addr)) {
-    return 'blocknum '.$self->blocknum.' does not contain address '.$self->ip_addr;
-  }
-
-  my $router = $self->addr_block->router 
-    or return 'Cannot assign address from unallocated block:'.$self->addr_block->blocknum;
-  if(grep { $_->routernum == $router->routernum} $self->allowed_routers) {
-  } # do nothing
-  else {
-    return 'Router '.$router->routernum.' cannot provide svcpart '.$self->svcpart;
-  }
-
+#  if (my $dup = qsearchs('svc_broadband', {
+#        ip_addr => $self->ip_addr,
+#        svcnum  => {op=>'!=', value => $self->svcnum}
+#      }) ) {
+#    return 'IP address conflicts with svcnum '.$dup->svcnum;
+#  }
   '';
 }
 
@@ -510,6 +532,17 @@ sub addr_block {
   qsearchs('addr_block', { blocknum => $self->blocknum });
 }
 
+=item router
+
+Returns the FS::router record for this service.
+
+=cut
+
+sub router {
+  my $self = shift;
+  qsearchs('router', { routernum => $self->routernum });
+}
+
 =back
 
 =item allowed_routers
@@ -520,7 +553,34 @@ Returns a list of allowed FS::router objects.
 
 sub allowed_routers {
   my $self = shift;
-  map { $_->router } qsearch('part_svc_router', { svcpart => $self->svcpart });
+  map { $_->router } qsearch('part_svc_router', 
+    { svcpart => $self->cust_svc->svcpart });
+}
+
+
+#class method
+sub _upgrade_data {
+  my $class = shift;
+
+  # set routernum to addr_block.routernum
+  foreach my $self (qsearch('svc_broadband', {
+      blocknum => {op => '!=', value => ''},
+      routernum => ''
+    })) {
+    my $addr_block = $self->addr_block;
+    if ( my $routernum = $addr_block->routernum ) {
+      $self->set(routernum => $routernum);
+      my $error = $self->replace;
+      die "error assigning routernum $routernum to service ".$self->svcnum.
+          ":\n$error\n"
+        if $error;
+    }
+    else {
+      warn "svcnum ".$self->svcnum.
+        ": no routernum in address block ".$addr_block->cidr.", skipped\n";
+    }
+  }
+  '';
 }
 
 =head1 BUGS
@@ -529,6 +589,8 @@ The business with sb_field has been 'fixed', in a manner of speaking.
 
 allowed_routers isn't agent virtualized because part_svc isn't agent
 virtualized
+
+Having both routernum and blocknum as foreign keys is somewhat dubious.
 
 =head1 SEE ALSO
 

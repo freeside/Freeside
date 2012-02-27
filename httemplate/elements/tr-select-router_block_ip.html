@@ -1,0 +1,94 @@
+<script type="text/javascript">
+var auto_addr_routernum = <% encode_json(\%auto_addr_routernum) %>;
+function hide_if_auto_addr(obj, i) {
+  var routernum = obj.value;
+  var select_blocknum = document.getElementsByName('blocknum')[0];
+  var label_auto_addr = document.getElementById('label_auto_addr');
+  var input_ip_addr = document.getElementById('input_ip_addr');
+  var auto = ( auto_addr_routernum[routernum] == 'Y' );
+  select_blocknum.style.display = auto ? '' : 'none';
+  label_auto_addr.style.display = auto ? '' : 'none';
+  input_ip_addr.style.display = !auto ? '' : 'none';
+}
+</script>
+<& /elements/tr-td-label.html, label => ($opt{'label'} || 'Router') &>
+<td>
+  <& /elements/select-tiered.html, prefix => 'router_', tiers => [
+  {
+    field     => 'routernum',
+    records   => \@routers,
+    name_col  => 'routername',
+    value_col => 'routernum',
+    onchange  => 'hide_if_auto_addr',
+    curr_value=> $opt{'routernum'},
+  },
+  {
+    field     => 'blocknum',
+    table     => 'addr_block',
+    hashref   => (exists($fixed{'blocknum'}) ? 
+                    { blocknum => $fixed{'blocknum'} } : {}
+                 ),
+    name_col  => 'cidr',
+    link_col  => 'routernum',
+    empty_label => '(any)',
+    curr_value  => $opt{'blocknum'},
+  },
+]
+&>
+</td></tr>
+<& /elements/tr-td-label.html, label => 'IP address' &>
+<td>
+% if ( $fixed{'ip_addr'} ) {
+  <input type="hidden" id="input_ip_addr" name="ip_addr" 
+    value="<% $opt{'ip_addr'} |h%>"><% $opt{'ip_addr'} || '' %>
+% }
+% else {
+  <input type="text" id="input_ip_addr" name="ip_addr" 
+    style="display:none" value="<% $opt{'ip_addr'} |h%>">
+% }
+  <span id="label_auto_addr"><% $opt{'ip_addr'} || '' %> 
+  <i>(automatic)</i></span>
+</td> </tr>
+<script type="text/javascript">
+hide_if_auto_addr(document.getElementsByName('routernum')[0],0);
+</script>
+<%init>
+my %opt = @_;
+my @routers;
+
+my $svc_x = $opt{'object'};
+if ( $svc_x ) {
+  $opt{$_} = $svc_x->$_
+    foreach qw(routernum blocknum ip_addr svcpart);
+}
+
+warn Dumper(\%opt);
+
+my $svcpart = $opt{'svcpart'} || '';
+my %fixed; #  which fields are fixed
+$svcpart =~ /^\d*$/ or die "invalid svcpart '$svcpart'";
+if ( $svcpart ) {
+  my $part_svc = FS::part_svc->by_key($svcpart);
+  # Traditionally, columnflag 'F' on IP address means that it MUST 
+  # be auto-assigned (or, if null IP addresses are allowed, that 
+  # it must be null).
+  foreach (qw(routernum blocknum ip_addr)) {
+    my $psc = $part_svc->part_svc_column($_);
+    if ( $psc and $psc->columnflag eq 'F' ) {
+      $fixed{$_} = $psc->columnvalue;
+    }
+  }
+  if ( $fixed{'routernum'} ) {
+    @routers = (FS::router->by_key($fixed{'routernum'}))
+  }
+  else {
+    @routers = map { $_->router } 
+      qsearch('part_svc_router', { svcpart => $svcpart });
+  }
+}
+else {
+  @routers = qsearch('router', {});
+}
+
+my %auto_addr_routernum = map { $_->routernum, $_->auto_addr } @routers;
+</%init>
