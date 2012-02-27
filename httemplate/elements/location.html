@@ -204,6 +204,7 @@ Example:
       <TR><<%$th%> ALIGN="right">Census tract<BR>(automatic)</<%$th%>>
         <TD>
           <INPUT TYPE="text" NAME="censustract" VALUE="<% $opt{censustract} %>">
+          <INPUT TYPE="hidden" NAME="censusyear" VALUE="<% $object->get('censusyear') %>">
         </TD>
       </TR>
 %   } else {
