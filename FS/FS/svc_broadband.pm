@@ -395,18 +395,21 @@ sub check {
                  ? qsearchs('cust_svc', { 'svcnum' => $self->svcnum } )
                  : '';
   my $cust_pkg;
+  my $svcpart;
   if ($cust_svc) {
     $cust_pkg = $cust_svc->cust_pkg;
+    $svcpart = $cust_svc->svcpart;
   }else{
     $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $self->pkgnum } );
     return "Invalid pkgnum" unless $cust_pkg;
+    $svcpart = $self->svcpart;
   }
   my $agentnum = $cust_pkg->cust_main->agentnum if $cust_pkg;
 
   if ($self->routernum) {
     return "Router ".$self->routernum." does not provide this service"
       unless qsearchs('part_svc_router', { 
-        svcpart => $self->cust_svc->svcpart,
+        svcpart => $svcpart,
         routernum => $self->routernum
     });
   
@@ -543,8 +546,6 @@ sub router {
   qsearchs('router', { routernum => $self->routernum });
 }
 
-=back
-
 =item allowed_routers
 
 Returns a list of allowed FS::router objects.
@@ -553,9 +554,12 @@ Returns a list of allowed FS::router objects.
 
 sub allowed_routers {
   my $self = shift;
+  my $svcpart = $self->svcnum ? $self->cust_svc->svcpart : $self->svcpart;
   map { $_->router } qsearch('part_svc_router', 
     { svcpart => $self->cust_svc->svcpart });
 }
+
+=back
 
 
 #class method
