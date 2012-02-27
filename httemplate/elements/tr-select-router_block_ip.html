@@ -60,6 +60,9 @@ my $svc_x = $opt{'object'};
 if ( $svc_x ) {
   $opt{$_} = $svc_x->$_
     foreach qw(routernum blocknum ip_addr svcpart);
+  if ( $svc_x->svcnum ) {
+    $opt{'svcpart'} = $svc_x->cust_svc->svcpart;
+  }
 }
 
 my $svcpart = $opt{'svcpart'} || '';
