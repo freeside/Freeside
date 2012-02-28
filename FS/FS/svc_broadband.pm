@@ -561,6 +561,25 @@ sub allowed_routers {
 =back
 
 
+=item mac_addr_formatted CASE DELIMITER
+
+Format the MAC address (for use by exports).  If CASE starts with "l"
+(for "lowercase"), it's returned in lowercase.  DELIMITER is inserted
+between octets.
+
+=cut
+
+sub mac_addr_formatted {
+  my $self = shift;
+  my ($case, $delim) = @_;
+  my $addr = $self->mac_addr;
+  $addr = lc($addr) if $case =~ /^l/i;
+  join( $delim || '', $addr =~ /../g );
+}
+
+=back
+
+
 #class method
 sub _upgrade_data {
   my $class = shift;

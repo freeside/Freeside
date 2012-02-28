@@ -76,19 +76,11 @@ END
 
 sub rebless { shift; }
 
-sub _mac_format {
-  my $self = shift;
-  my $addr = shift;
-  if ( $self->option('mac_case',1) eq 'lowercase' ) {
-    $addr = lc($addr);
-  }
-  join( ($self->option('mac_delimiter',1) || ''), $addr =~ /../g );
-}
-
 sub export_username {
   my($self, $svc_broadband) = (shift, shift);
-  my $mac_addr = $svc_broadband->mac_addr;
-  $self->_mac_format($svc_broadband->mac_addr);
+  $svc_broadband->mac_addr_formatted(
+    $self->option('mac_case'), $self->option('mac_delimiter')
+  );
 }
 
 sub radius_reply {
@@ -106,7 +98,7 @@ sub radius_check {
   my $password_attrib = $conf->config('radius-password') || 'Password';
   my %check;
   if ( $self->option('mac_as_password') ) {
-    $check{$password_attrib} = $self->_mac_format($svc_broadband->mac_addr);
+    $check{$password_attrib} = $self->export_username($svc_broadband);
   }
   elsif ( length( $self->option('radius_password',1)) ) {
     $check{$password_attrib} = $self->option('radius_password');
