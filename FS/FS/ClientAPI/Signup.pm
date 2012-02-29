@@ -185,7 +185,6 @@ sub signup_info {
       'signup_service'     => $svc_x,
       'company_name'       => scalar($conf->config('company_name')),
       #per-agent?
-      'agent_ship_address' => scalar($conf->exists('agent-ship_address')),
       'logo'               => scalar($conf->config_binary('logo.png')),
       'prepaid_template_custnum' => $conf->exists('signup_server-prepaid-template-custnum'),
     };
@@ -374,13 +373,6 @@ sub signup_info {
 
     $signup_info->{'company_name'} = $conf->config('company_name', $agentnum);
 
-    if ( $signup_info->{'agent_ship_address'} && $agent->agent_custnum ) {
-      my $cust_main = $agent->agent_cust_main;
-      my $prefix = length($cust_main->ship_last) ? 'ship_' : '';
-      $signup_info->{"ship_$_"} = $cust_main->get("$prefix$_")
-        foreach qw( address1 city county state zip country );
-    }
-
     #some of the above could probably be cached, too
 
     my $signup_info_cache_agent = $cache->get("signup_info_cache_agent$agentnum");
@@ -406,8 +398,18 @@ sub signup_info {
           qw( terms_of_service ) ),
 
         ( map { $_ => scalar($conf->exists($_, $agentnum)) } 
-          qw(cust_main-require_phone) ),
+          qw(cust_main-require_phone agent-ship_address) ),
       };
+
+      if ( $signup_info_cache_agent->{'agent-ship_address'} 
+           && $agent->agent_cust_main ) {
+
+        my $cust_main = $agent->agent_cust_main;
+        my $prefix = length($cust_main->ship_last) ? 'ship_' : '';
+        $signup_info_cache_agent->{"ship_$_"} = $cust_main->get("$prefix$_")
+          foreach qw( address1 city county state zip country );
+
+      }
 
       $cache->set("signup_info_cache_agent$agentnum", $signup_info_cache_agent);
 
@@ -576,7 +578,9 @@ sub new_customer {
   }
 
   my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
-  if ( $conf->exists('agent_ship_address') && $agent->agent_custnum ) {
+  if ( $conf->exists('agent-ship_address', $agentnum) 
+    && $agent->agent_custnum ) {
+
     my $agent_cust_main = $agent->agent_cust_main;
     my $prefix = length($agent_cust_main->ship_last) ? 'ship_' : '';
     $cust_main->set("ship_$_", $agent_cust_main->get("$prefix$_") )

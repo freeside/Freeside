@@ -2883,6 +2883,7 @@ and customer address. Include units.',
     'section'     => '',
     'description' => "Use the agent's master service address as the service address (only ship_address2 can be entered, if blank on the master address).  Useful for multi-tenant applications.",
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   { 'key'         => 'referral_credit',
