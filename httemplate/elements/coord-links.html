@@ -9,14 +9,30 @@
      #'color'
 &>
 
+% if ( $origin ) {
+  <& /elements/popup_link.html,
+      'action'      => $p. "view/directions.html?origin=$origin;". $query,
+      'label'       => mt('dir'),
+      'actionlabel' => $name,
+      'width'       => 763,
+      'height'      => 575,
+  &>
+% }
+
 <A HREF="<%$p%>view/kml.cgi?<% $query %>"><% mt('earth') |h %></A>
 
 <%init>
 
-my ($latitude, $longitude, $name) = @_;
+my ($latitude, $longitude, $name, $agentnum) = @_;
 
 my $query = 'name='. uri_escape($name).
             ';lat='. $latitude.
             ';lon='. $longitude;
 
+my $origin;
+#for directions link
+if ( $agentnum =~ /^\d+$/ ) {
+  $origin = FS::Conf->new->config('company_address', $agentnum);
+  $origin = uri_escape($origin);
+}
 </%init>

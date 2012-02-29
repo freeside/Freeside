@@ -89,14 +89,22 @@ sub coordinates {
   return '' unless $s->latitude && $s->longitude;
 
   my $d = $s->description;
+  my $agentnum;
   unless ($d) {
-    my $cust_pkg = $s->cust_svc->cust_pkg;
-    $d = $cust_pkg->cust_main->name_short if $cust_pkg;
+    if ( my $cust_pkg = $s->cust_svc->cust_pkg ) {
+      $d = $cust_pkg->cust_main->name_short;
+      $agentnum = $cust_pkg->cust_main->agentnum;
+    }
   }
   
   #'Latitude: '. $s->latitude. ', Longitude: '. $s->longitude. ' '.
   $s->latitude. ', '. $s->longitude. ' '.
-    include('/elements/coord-links.html', $s->latitude, $s->longitude, $d);
+    include('/elements/coord-links.html', 
+      $s->latitude,
+      $s->longitude,
+      $d,
+      $agentnum
+    );
 }
 
 sub svc_callback {

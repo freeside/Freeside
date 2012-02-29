@@ -4,11 +4,11 @@
     <FONT STYLE="background-color: #ffffff; border: 1px solid #ffffff"><% $latitude %></FONT>
     &nbsp;<% mt('Longitude') |h %>
     <FONT STYLE="background-color: #ffffff; border: 1px solid #ffffff"><% $longitude %></FONT>
-    <& /elements/coord-links.html, $latitude, $longitude, $name &>
+    <& /elements/coord-links.html, @_ &>
   </TD>
 </TR>
 <%init>
 
-my ($latitude, $longitude, $name) = @_;
+my ($latitude, $longitude, $name, $agentnum) = @_;
 
 </%init>
