@@ -18,7 +18,8 @@
         <& /elements/coord-links.html,
              $loc->latitude,
              $loc->longitude,
-             $opt{'cust_main'}->name_short. ': '. $opt{'part_pkg'}->pkg
+             $opt{'cust_main'}->name_short. ': '. $opt{'part_pkg'}->pkg,
+             $opt{'cust_main'}->agentnum,
         &>
         </FONT>
 %   }
