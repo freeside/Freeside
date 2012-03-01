@@ -1,6 +1,48 @@
-function bottomfixup(what) {
+<%init>
+my %opt = @_; # custnum
+my $conf = new FS::Conf;
 
-%# ../cust_main.cgi
+my $company_latitude  = $conf->config('company_latitude');
+my $company_longitude = $conf->config('company_longitude');
+
+my @fixups = ('copy_payby_fields', 'standardize_locations');
+
+push @fixups, 'fetch_censustract'
+    if $conf->exists('cust_main-require_censustract');
+
+push @fixups, 'check_unique'
+    if $conf->exists('cust_main-check_unique') and !$opt{'custnum'};
+
+push @fixups, 'do_submit'; # always last
+</%init>
+
+var fixups = <% encode_json(\@fixups) %>;
+var fixup_position;
+
+%# state machine to deal with all the asynchronous stuff we're doing
+%# call this after each fixup on success:
+function submit_continue() {
+  window[ fixups[fixup_position++] ].call();
+}
+
+%# or on failure:
+function submit_abort() {
+  fixup_position = 0;
+  document.CustomerForm.submitButton.disabled = false;
+  cClick();
+}
+
+function bottomfixup(what) {
+  fixup_position = 0;
+  document.CustomerForm.submitButton.disabled = true;
+  submit_continue();
+}
+
+function do_submit() {
+  document.CustomerForm.submit();
+}
+
+function copy_payby_fields() {
   var layervars = new Array(
     'payauto', 'billday',
     'payinfo', 'payinfo1', 'payinfo2', 'payinfo3', 'paytype',
@@ -18,20 +60,17 @@ function bottomfixup(what) {
                  cf.elements[field]
                );
   }
-
-  //this part does USPS address correction
-  standardize_locations();
-
+  submit_continue();
 }
 
+%# call submit_continue() on completion...
+%# otherwise not touching standardize_locations for now
 <% include( '/elements/standardize_locations.js',
-            'callback', 'post_geocode();'
+            'callback' => 'submit_continue();'
           )
 %>
 
-function post_geocode() {
-
-% if ( $conf->exists('cust_main-require_censustract') ) {
+function fetch_censustract() {
 
   //alert('fetch census tract data');
   var cf = document.CustomerForm;
@@ -45,12 +84,6 @@ function post_geocode() {
   );
 
   censustract( census_data, update_censustract );
-
-% }else{
-
-  document.CustomerForm.submit();
-
-% }
 
 }
 
@@ -77,7 +110,7 @@ function update_censustract(arg) {
   set_censustract = function () {
 
     cf.elements['censustract'].value = newcensus;
-    cf.submit();
+    submit_continue();
 
   }
 
@@ -112,12 +145,12 @@ function update_censustract(arg) {
 
     choose_censustract = choose_censustract +
       '<TR><TD ALIGN="center">' +
-        '<BUTTON TYPE="button" onClick="document.CustomerForm.submit();"><IMG SRC="<%$p%>images/error.png" ALT=""> Use entered census tract </BUTTON>' + 
+        '<BUTTON TYPE="button" onClick="submit_continue();"><IMG SRC="<%$p%>images/error.png" ALT=""> Use entered census tract </BUTTON>' + 
       '</TD><TD ALIGN="center">' +
         '<BUTTON TYPE="button" onClick="set_censustract();"><IMG SRC="<%$p%>images/tick.png" ALT=""> Use calculated census tract </BUTTON>' + 
       '</TD></TR>' +
       '<TR><TD COLSPAN=2 ALIGN="center">' +
-        '<BUTTON TYPE="button" onClick="document.CustomerForm.submitButton.disabled=false; parent.cClick();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission</BUTTON></TD></TR>' +
+        '<BUTTON TYPE="button" onClick="submit_abort();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission</BUTTON></TD></TR>' +
         
       '</TABLE></CENTER>';
 
@@ -125,7 +158,7 @@ function update_censustract(arg) {
 
   } else {
 
-    cf.submit();
+    submit_continue();
 
   }
 
@@ -153,12 +186,24 @@ function copyelement(from, to) {
   //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
 }
 
-<%init>
+function check_unique() {
+  var search_hash = new Object;
+% foreach ($conf->config('cust_main-check_unique')) {
+  search_hash['<% $_ %>'] = document.CustomerForm.elements['<% $_ %>'].value;
+% }
 
-my $conf = new FS::Conf;
+%# supported in IE8+, Firefox 3.5+, WebKit, Opera 10.5+
+  duplicates_form(JSON.stringify(search_hash), confirm_unique);
+}
 
-my $company_latitude  = $conf->config('company_latitude');
-my $company_longitude = $conf->config('company_longitude');
+function confirm_unique(arg) {
+  if ( arg.match(/\S/) ) {
+%# arg contains a complete form to choose an existing customer, or not
+  overlib( arg, CAPTION, 'Duplicate customer', STICKY, AUTOSTATUSCAP, 
+      CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 
+      268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+  } else { // no duplicates
+    submit_continue();
+  }
+}
 
-
-</%init>

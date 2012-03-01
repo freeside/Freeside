@@ -66,6 +66,16 @@ my $new = new FS::cust_main ( {
   } fields('cust_main')
 } );
 
+$cgi->param('duplicate_of_custnum') =~ /^(\d+)$/;
+my $duplicate_of = $1;
+if ( $duplicate_of ) {
+  # then negate all changes to the customer; the only change we should
+  # make is to order a package, if requested
+  $new = qsearchs('cust_main', { 'custnum' => $duplicate_of })
+  # this should never happen
+    or die "nonexistent existing customer (custnum $duplicate_of)";
+}
+
 if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
   $new->setfield("ship_$_", '') foreach qw(
     last first company address1 address2 city county state zip
@@ -122,7 +132,7 @@ my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 my @tax_exempt = grep { $cgi->param("tax_$_") eq 'Y' } @exempt_groups;
 
 #perhaps this stuff should go to cust_main.pm
-if ( $new->custnum eq '' ) {
+if ( $new->custnum eq '' or $duplicate_of ) {
 
   my $cust_pkg = '';
   my $svc;
@@ -216,23 +226,31 @@ if ( $new->custnum eq '' ) {
 
   }
 
+
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => [ $svc ] ) if $cust_pkg;
-  $error ||= $new->insert( \%hash, \@invoicing_list,
+  if ( $duplicate_of ) {
+    # order the package and service normally
+    $error ||= $new->order_pkgs( \%hash ) if $cust_pkg;
+  }
+  else {
+    # create the customer
+    $error ||= $new->insert( \%hash, \@invoicing_list,
                            'tax_exemption'=> \@tax_exempt,
                            'prospectnum'  => scalar($cgi->param('prospectnum')),
-                         );
+                           );
 
-  my $conf = new FS::Conf;
-  if ( $conf->exists('backend-realtime') && ! $error ) {
+    my $conf = new FS::Conf;
+    if ( $conf->exists('backend-realtime') && ! $error ) {
 
-    my $berror =    $new->bill
-                 || $new->apply_payments_and_credits
-                 || $new->collect( 'realtime' => 1 );
-    warn "Warning, error billing during backend-realtime: $berror" if $berror;
+      my $berror =    $new->bill
+                   || $new->apply_payments_and_credits
+                   || $new->collect( 'realtime' => 1 );
+      warn "Warning, error billing during backend-realtime: $berror" if $berror;
 
-  }
+    }
+  } #if $duplicate_of
   
 } else { #create old record object
 

@@ -22,6 +22,21 @@
 %   my $return = $inv ? findbycustnum($inv->custnum,0) : [];
 <% objToJson($return) %>
 % } 
+% elsif ( $sub eq 'exact_search' ) {
+%   # XXX possibly should query each element separately
+%   my $hashref = decode_json($cgi->param('arg'));
+%   my @cust_main = qsearch('cust_main', $hashref);
+%   my $return = [];
+%   foreach (@cust_main) {
+%     push @$return, {
+%       custnum => $_->custnum,
+%       name => $_->name_short,
+%       address1 => $_->address1,
+%       city => $_->city,
+%     };
+%   }
+<% objToJson($return) %>
+% }
 <%init>
 
 my $conf = new FS::Conf;

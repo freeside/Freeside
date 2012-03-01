@@ -1,19 +1,23 @@
-<% include('/elements/init_overlib.html') %>
+<& /elements/init_overlib.html &>
 
-<% include( '/elements/xmlhttp.html',
-              'url'  => $p.'misc/xmlhttp-cust_main-address_standardize.html',
-              'subs' => [ 'address_standardize' ],
-              #'method' => 'POST', #could get too long?
-          )
-%>
+<& /elements/xmlhttp.html,
+  url  => $p.'misc/xmlhttp-cust_main-address_standardize.html',
+  subs => [ 'address_standardize' ],
+  #'method' => 'POST', #could get too long?
+&>
 
-<% include( '/elements/xmlhttp.html',
-              'url'  => $p.'misc/xmlhttp-cust_main-censustract.html',
-              'subs' => [ 'censustract' ],
-              #'method' => 'POST', #could get too long?
-          )
-%>
+<& /elements/xmlhttp.html,
+  url  => $p.'misc/xmlhttp-cust_main-censustract.html',
+  subs => [ 'censustract' ],
+  #'method' => 'POST', #could get too long?
+&>
+
+<INPUT TYPE="hidden" NAME="duplicate_of_custnum" VALUE="">
+<& /elements/xmlhttp.html,
+  url  => $p.'misc/xmlhttp-cust_main-duplicates.html',
+  subs => [ 'duplicates_form' ]
+&>
 
 <SCRIPT TYPE="text/javascript">
-  <% include('bottomfixup.js') %>
+<& bottomfixup.js, @_ &>
 </SCRIPT>
