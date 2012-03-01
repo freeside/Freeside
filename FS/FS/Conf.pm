@@ -3588,6 +3588,17 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-check_unique',
+    'section'     => '',
+    'description' => 'Warn before creating a customer record where these fields duplicate another customer.',
+    'type'        => 'select',
+    'multiple'    => 1,
+    'select_hash' => [ 
+      'address1' => 'Billing address',
+    ],
+  },
+
+  {
     'key'         => 'svc_acct-display_paid_time_remaining',
     'section'     => '',
     'description' => 'Show paid time remaining in addition to time remaining.',

@@ -195,7 +195,7 @@ function samechanged(what) {
     <INPUT TYPE="hidden" NAME="<% $hidden %>" VALUE="">
 % } 
 
-<& cust_main/bottomfixup.html &>
+<& cust_main/bottomfixup.html, 'custnum' => $custnum &>
 
 <BR>
 <INPUT TYPE    = "button"
