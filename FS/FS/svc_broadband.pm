@@ -102,15 +102,15 @@ sub table_info {
       'description' => 'Descriptive label for this particular device',
       'speed_down'  => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
       'speed_up'    => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
-      #'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
-      #'blocknum'    => 
-      #{ 'label' => 'Address block',
-      #                   'type'  => 'select',
-      #                   'select_table' => 'addr_block',
-      #                    'select_key'   => 'blocknum',
-      #                   'select_label' => 'cidr',
-      #                   'disable_inventory' => 1,
-      #                 },
+      'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
+      'blocknum'    => 
+      { 'label' => 'Address block',
+                         'type'  => 'select',
+                         'select_table' => 'addr_block',
+                          'select_key'   => 'blocknum',
+                         'select_label' => 'cidr',
+                         'disable_inventory' => 1,
+                       },
      'plan_id' => 'Service Plan Id',
      'performance_profile' => 'Peformance Profile',
      'authkey'      => 'Authentication key',
@@ -417,8 +417,11 @@ sub check {
       if $router->agentnum and $router->agentnum != $agentnum;
 
     if ( $router->auto_addr ) {
-      my $error = $self->assign_ip_addr;
-      return $error if $error;
+      my $addr_block = $self->addr_block;
+      unless ( $addr_block and $addr_block->manual_flag ) {
+        my $error = $self->assign_ip_addr;
+        return $error if $error;
+      }
     }
     else {
       $self->blocknum('');
@@ -577,9 +580,6 @@ sub mac_addr_formatted {
   join( $delim || '', $addr =~ /../g );
 }
 
-=back
-
-
 #class method
 sub _upgrade_data {
   my $class = shift;
@@ -590,9 +590,20 @@ sub _upgrade_data {
       routernum => ''
     })) {
     my $addr_block = $self->addr_block;
-    if ( my $routernum = $addr_block->routernum ) {
+    my $ip_addr = $self->ip_addr;
+    my $routernum = $addr_block->routernum;
+    if ( $routernum ) {
       $self->set(routernum => $routernum);
-      my $error = $self->replace;
+      my $error = $self->check;
+      # sanity check: don't allow this to change IP address or block
+      # (other than setting blocknum to null for a non-auto-assigned router)
+      if ( $self->ip_addr ne $ip_addr 
+        or ($self->blocknum and $self->blocknum != $addr_block->blocknum)) {
+        die "Upgrading service ".$self->svcnum." would change its block/address.\n\nCheck your router and address block configuration.\n";
+        next;
+      }
+
+      $error ||= $self->replace;
       die "error assigning routernum $routernum to service ".$self->svcnum.
           ":\n$error\n"
         if $error;
@@ -604,6 +615,8 @@ sub _upgrade_data {
   }
   '';
 }
+
+=back
 
 =head1 BUGS
 
