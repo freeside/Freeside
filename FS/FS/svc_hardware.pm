@@ -154,19 +154,25 @@ and replace methods.
 
 sub check {
   my $self = shift;
+  my $conf = FS::Conf->new;
 
   my $x = $self->setfixed;
   return $x unless ref $x;
 
   my $hw_addr = $self->getfield('hw_addr');
   $hw_addr = join('', split(/\W/, $hw_addr));
+  if ( $conf->exists('svc_hardware-check_mac_addr') ) {
+    $hw_addr = uc($hw_addr);
+    $hw_addr =~ /^[0-9A-F]{12}$/ 
+      or return "Illegal (MAC address) ".$self->getfield('hw_addr');
+  }
   $self->setfield('hw_addr', $hw_addr);
 
   my $error = 
     $self->ut_numbern('svcnum')
     || $self->ut_foreign_key('typenum', 'hardware_type', 'typenum')
     || $self->ut_ip46n('ip_addr')
-    || $self->ut_hexn('hw_addr')
+    || $self->ut_alphan('hw_addr')
     || $self->ut_alphan('serial')
     || $self->ut_alphan('smartcard')
     || $self->ut_foreign_keyn('statusnum', 'hardware_status', 'statusnum')

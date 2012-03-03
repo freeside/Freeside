@@ -4407,6 +4407,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'svc_hardware-check_mac_addr',
+    'section'     => '', #?
+    'description' => 'Require the "hardware address" field in hardware services to be a valid MAC address.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'tax-report_groups',
     'section'     => '',
     'description' => 'List of grouping possibilities for tax names on reports, one per line, "label op value" (op can be = or !=).',
