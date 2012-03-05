@@ -606,8 +606,8 @@ sub _upgrade_data {
       }
 
       $error ||= $self->replace;
-      die "error assigning routernum $routernum to service ".$self->svcnum.
-          ":\n$error\n"
+      warn "WARNING: error assigning routernum $routernum to service ".$self->svcnum.
+          ":\n$error; skipped\n"
         if $error;
     }
     else {
