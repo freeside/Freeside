@@ -602,7 +602,7 @@ sub _upgrade_data {
       # (other than setting blocknum to null for a non-auto-assigned router)
       if ( $self->ip_addr ne $ip_addr 
         or ($self->blocknum and $self->blocknum != $addr_block->blocknum)) {
-        die "Upgrading service ".$self->svcnum." would change its block/address.\n\nCheck your router and address block configuration.\n";
+        warn "WARNING: Upgrading service ".$self->svcnum." would change its block/address; skipped.\n";
         next;
       }
 
