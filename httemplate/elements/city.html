@@ -15,10 +15,19 @@ Example:
     disabled      => 0, #bool
 #    disable_empty => 1, #defaults to 1, disable the empty option
 #    empty_label   => 'all', #label for empty option
+#    disable_select => 1, # disable the selector (just show a text input)
     style         => [ 'attribute:value', 'another:value' ],
   );
 
 </%doc>
+
+% if ( $disable_select ) {
+<SCRIPT TYPE="text/javascript">
+function <% $pre %>county_changed(what, callback) {}
+</SCRIPT>
+% }
+% else {
+
 
 <% include('/elements/xmlhttp.html',
               'url'  => $p.'misc/cities.cgi',
@@ -87,6 +96,8 @@ Example:
 
 </SCRIPT>
 
+% } #!disable_select
+
 <INPUT TYPE     = "text"
        NAME     = "<%$pre%>city"
        ID       = "<%$pre%>city"
@@ -95,6 +106,8 @@ Example:
        <% $opt{'disabled'} %>
        <% $text_style %>
 >
+
+% if ( !$disable_select ) {
 
 <SELECT NAME     = "<%$pre%>city_select"
         ID       = "<%$pre%>city_select"
@@ -112,13 +125,18 @@ Example:
 % }
 
 </SELECT>
-
+% }
 %#           VALUE    = "<% $curr_value |h %>"
 <%init>
 
 my %opt = @_;
 
 my $pre = $opt{'prefix'};
+
+my $conf = new FS::Conf;
+# Using tax_district_method implies that there's not a preloaded city/county
+# tax district table.
+my $disable_select = 1 if $conf->config('tax_district_method');
 
 my $text_style   = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 my $select_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
@@ -128,7 +146,7 @@ push @$select_style, @{ $opt{'select_style'} } if $opt{'select_style'};
 
 my @cities = cities( $opt{'county'}, $opt{'state'}, $opt{'country'} );
 my $saved_city = '';
-if ( scalar(@cities) > 1 || $cities[0] ) {
+if ( scalar(@cities) > 1 || $cities[0] and !$disable_select ) {
   push @$text_style, 'display:none';
 } else {
   push @$select_style, 'display:none';
