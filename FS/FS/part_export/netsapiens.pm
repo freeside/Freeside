@@ -41,6 +41,7 @@ tie my %options, 'Tie::IxHash',
   'device_password' => { label=>'NetSapiens tac2 Device API password' },
   'device_url'      => { label=>'NetSapiens tac2 Device URL' },
   'domain'          => { label=>'NetSapiens Domain' },
+  'domain_no_tld'   => { label=>'Omit TLD from domains', type=>'checkbox' },
   'debug'           => { label=>'Enable debugging', type=>'checkbox' },
   %subscriber_fields,
   %registrar_fields,
@@ -105,7 +106,12 @@ sub _ns_command {
 
 sub ns_domain {
   my($self, $svc_phone) = (shift, shift);
-  $svc_phone->domain || $self->option('domain');
+  my $domain = $svc_phone->domain || $self->option('domain');
+
+  $domain =~ s/\.\w{2,4}$//
+    if $self->option('domain_no_tld');
+  
+  $domain;
 }
 
 sub ns_subscriber {
