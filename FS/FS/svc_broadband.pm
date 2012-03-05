@@ -585,6 +585,8 @@ sub mac_addr_formatted {
 sub _upgrade_data {
   my $class = shift;
 
+  local($FS::svc_Common::noexport_hack) = 1;
+
   # set routernum to addr_block.routernum
   foreach my $self (qsearch('svc_broadband', {
       blocknum => {op => '!=', value => ''},
