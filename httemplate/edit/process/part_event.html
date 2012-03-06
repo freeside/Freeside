@@ -39,6 +39,7 @@
                                                  split(/\0/, $value)
                                            };
                                 } elsif ( $info->{'type'} eq 'freq' ) {
+                                  $value = '0' if !length($value);
                                   $value .= $params->{$cgi_field.'_units'};
                                 }
 
