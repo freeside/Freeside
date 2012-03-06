@@ -23,6 +23,9 @@ sub option_fields {
   (
     'has_service' => { 'label'      => 'Has service',
                        'type'       => 'select-part_svc',
+                       'multiple'   => 1, #the HTML element seems to have it
+                                          #by default, but edit/part_event.html
+                                          #(and process) need to know
                      },
   );
 }
