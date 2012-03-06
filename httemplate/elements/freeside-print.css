@@ -1,0 +1,6 @@
+.fshead, .fsmenubar, .fssearchbar, .noprint {
+  display: none;
+}
+a {
+  text-decoration: none;
+}
