@@ -135,7 +135,21 @@ any delimiter and linked from the elements in @data.
 %   my $class = "Chart::$graph_type";
 %
 %   my $chart = $class->new(976,384);
-%   
+% # the chart area itself is 900 pixels wide, and the date labels are ~60 each.
+% # staggered, we can fit about 28 of them.
+% # they're about 12 pixels high, so vertically, we can fit about 60 (allowing
+% # space for them to be readable).
+% # after that we have to start skipping labels. also remove the dots, since 
+% # they're just a blob at that point.
+%   my $num_labels = scalar(@{ $opt{axis_labels} });
+%   my %chart_opt;
+%   if ( $num_labels > 28 ) {
+%     $chart_opt{x_ticks} = 'vertical';
+%     if ( $num_labels > 60 ) {
+%       $chart_opt{skip_x_ticks} = int($num_labels / 60) + 1;
+%       $chart_opt{pt_size} = 1;
+%     }
+%   }
 %   my $d = 0;
 %   $chart->set(
 %     #'min_val' => 0,
@@ -152,6 +166,7 @@ any delimiter and linked from the elements in @data.
 %                 },
 %     'legend_labels' => $opt{'graph_labels'},
 %     'brush_size' => 4,
+%     %chart_opt,
 %   );
 %
 %   http_header('Content-Type' => 'image/png' );
@@ -169,9 +184,10 @@ any delimiter and linked from the elements in @data.
 <% include('/elements/header.html', $opt{'title'} ) %>
 % unless ( $opt{'graph_type'} eq 'none' ) {
 
-<IMG SRC="<% "$myself;_type=png" %>" WIDTH="976" HEIGHT="384">
+<IMG SRC="<% "$myself;_type=png" %>" WIDTH="976" HEIGHT="384"
+ STYLE="page-break-after:always;">
 % }
-<P ALIGN="right">
+<P ALIGN="right" CLASS="noprint">
 
 % unless ( $opt{'disable_download'} ) { 
             Download full results<BR>
@@ -180,88 +196,109 @@ any delimiter and linked from the elements in @data.
 % } 
 %
 </P>
-<% include('/elements/table.html', 'f8f8f8') %>
-
-<TR>
-
-  <TD></TD>
-
+%# indexed by item, then by entry (the element indices of @{$data[$i]}).
+% my @cell = ();
+% my @styles;
+% my $num_entries = scalar(@col_labels);
+% my $num_items = scalar(@items);
+% $cell[0] = ['']; #top left corner
 % foreach my $column ( @col_labels ) {
-%       $column =~ s/ /\<BR\>/; # working on a smarter way to do this
-    <TH><% $column %></TH>
-% } 
+%   $column =~ s/ /\<BR\>/;
+%   push @{$cell[0]}, $column;
+% }
+% if ( ! $opt{'nototal'} ) {
+%   $num_entries++;
+%   push @{$cell[0]}, emt('Total');
+% }
 
-% unless ( $opt{'nototal'} ) { 
-    <TH>Total</TH>
-% } 
+% # i for item, e for entry
 
-</TR>
-
-% my @bottom_total = ();
+% my $i = 1;
 % foreach my $row ( @items ) {
+% #make a style
+%   my $color = shift @{ $opt{'colors'} };
+%   push @styles, ".i$i { text-align: right; color: #$color; }";
+% #create the data row
+%   my $links = shift @{$opt{'links'}} || [''];
+%   my $link_prefix = shift @$links;
+%   $link_prefix = '<A CLASS="cell" HREF="'.$link_prefix if $link_prefix;
+%   my $label = shift @row_labels;
+%   $cell[$i] = [ $label ];
 %
-%     my $color = shift( @{ $opt{'colors'} } );
-%     my @links = @{ shift( @{ $opt{'links'} } ) };
-% #   $opt{'links'} is an array parallel to items.
-% #   Each element of that is an array containing a prefix,
-% #   followed by suffixes matched to the cells of the table.
-%     my $link_prefix = shift @links;
-%     $link_prefix = $link_prefix ? qq(<A HREF="$link_prefix) : '';    #"
-%     my $label = shift( @row_labels );
-
-      <TR>
-
-        <TH>
-          <FONT COLOR="#<% $color %>"><% $label %></FONT>
-        </TH>
-
-%       my $total = 0;
-%       my $col = 0;
-%       foreach my $column ( @{ shift( @data ) } ) {
-
-          <TD ALIGN="right" BGCOLOR="#ffffff">
-            <% $link_prefix ? $link_prefix . shift(@links) . '">' : '' %><FONT COLOR="#<% $color %>"><% $money_char %><% sprintf($sprintf,, $column) %></FONT><% $link_prefix ? '</A>' : '' %>
-          </TD>
-%
-%         $total += $column;
-%         $bottom_total[$col++] += $column;
-%      
-%       } 
-
-%       unless ( $opt{'nototal'} ) { 
-            <TD ALIGN="right" BGCOLOR="#f5f6be">
-              <% $link_prefix ? $link_prefix. shift(@links) . '">' : '' %><FONT COLOR="#<% $color %>"><% $money_char %><% sprintf($sprintf, $total) %></FONT><% $link_prefix ? '</A>' : '' %>
-            </TD>
-%           $bottom_total[$col++] += $total; 
-%       } 
-
-      </TR>
-
-% } 
-
+%   my $data_row = shift @data;
+%   if ( ! $opt{'nototal'} ) {
+%     push @$data_row, sum(@$data_row);
+%   }
+%   foreach my $entry ( @$data_row ) {
+%     $entry = $money_char . sprintf($sprintf, $entry);
+%     $entry = $link_prefix . shift(@$links) . "\">$entry</A>" if $link_prefix;
+%     push @{$cell[$i]}, $entry;
+%   }
+%   $i++;
+% }
 % if ( $opt{'bottom_total'} ) {
+%   # it's an extra item
+%   $num_items++;
+%   push @styles, ".i$i { text-align: right; background-color: #f5f6be; }";
+%   my $links = $opt{'bottom_link'} || [];
+%   my $link_prefix = shift @$links;
+%   $cell[$i] = [ emt('Total') ];
+%   for (my $e = 0; $e < $num_entries + 1; $e++) {
+%     my $entry = sum(map { $_->[$e] } @data);
+%     $entry = $money_char . sprintf($sprintf, $entry);
+%     $entry = $link_prefix . shift(@$links) . "\">$entry</A>" if $link_prefix;
+%     push @{$cell[$i]}, $entry;
+%   }
+% }
+
+<STYLE type="text/css">
+a.cell {
+  color: inherit !important;
+}
+td.cell {
+  border-color: #000;
+}
+<% join("\n", @styles) %>
+%# item labels
+.e0 {
+  text-align: center;
+  font-weight: bold;
+}
+%# totals
+% if ( ! $opt{'nototal'} ) {
+.e<% $num_entries %> {
+  text-align: right;
+  background-color: #f5f6be;
+}
+% }
+%# date labels
+.i0 {
+  text-align: center;
+  font-weight: bold;
+}
+</STYLE>
+
+<% include('/elements/table.html', 'f8f8f8') %>
+% if ( $opt{'transpose'} ) {
+%   for ( my $e = 0; $e < $num_entries + 1; $e++ ) {
   <TR>
-    <TH>Total</TH>
-%   my @bottom_links = $opt{'bottom_link'} ? @{ $opt{'bottom_link'} } : ();
-%   my $prefix = shift(@bottom_links);
-%   pop @bottom_links if $opt{'nototal'};
-%   foreach my $total ( @bottom_total ) { 
-
-      <TD ALIGN="right" BGCOLOR="#f5f6be">
-        <% $prefix
-              ? '<A HREF="'. $prefix .shift(@bottom_links). '">'
-              : ''
-        %><% $money_char %><% sprintf($sprintf, $total) %><% $prefix ? '</A>' : '' %>
-
-      </TD>
-
-% } 
-
+%     for ( my $i = 0; $i < $num_items + 1; $i++ ) {
+    <TD CLASS="<%"cell i$i e$e"%>"><% $cell[$i][$e] %></TD>
+%     }
   </TR>
-
-% } 
-
+%   }
+%
+% } else { #!transpose
+%
+%   for (my $i = 0; $i < $num_items + 1; $i++) {
+  <TR>
+%     for (my $e = 0; $e < $num_entries + 1; $e++) {
+    <TD CLASS="<%"cell i$i e$e"%>"><% $cell[$i][$e] %></TD>
+%     }
+  </TR>
+%   }
 </TABLE>
+% }
 
 <% include('/elements/footer.html') %>
 % } 

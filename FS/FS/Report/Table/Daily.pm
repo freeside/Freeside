@@ -58,7 +58,7 @@ sub data {
   my $sdate = timelocal(0,0,0,$sday,$smonth-1,$syear);
   my $edate = timelocal(0,0,0,$eday,$emonth-1,$eyear);
 
-  warn "daily range $sdate $edate\n";
+  #warn "daily range $sdate $edate\n";
 
   # XXX: use date_format config for the labels since we have day in the labels now?
   # XXX: leap seconds / DST 
@@ -66,7 +66,7 @@ sub data {
     my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($sdate);
     $mon++;
     $year += 1900;
-    warn "label=$mday/$mon/$year\n";
+    #warn "label=$mday/$mon/$year\n";
     push @{$data{label}}, "$mday/$mon/$year";
 
     my $speriod = $sdate;

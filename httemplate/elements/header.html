@@ -47,7 +47,7 @@ Example:
 
   </HEAD>
   <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
-    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px">
+    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px" CLASS="fshead">
       <tr>
         <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"></td>
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
@@ -69,7 +69,7 @@ Example:
 
 % if ( $menu_position eq 'top' ) {
 
-      <TR>
+      <TR CLASS="fsmenubar">
 
 %       if ( $mobile ) {
 
@@ -92,7 +92,7 @@ Example:
 
       </TR>
 
-      <TR>
+      <TR CLASS="fssearchbar">
 
         <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
           <% include('searchbar-prospect.html') |n %>
@@ -124,7 +124,7 @@ Example:
 
 % } else { #$menu_position eq 'left'
 
-      <TR>
+      <TR CLASS="fsmenubar">
 
         <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
         </TD>
@@ -140,7 +140,7 @@ Example:
 
 % if ( $menu_position eq 'left' ) {
 
-        <TD BGCOLOR="#cccccc" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right">
+        <TD BGCOLOR="#cccccc" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right" CLASS="fsmenubar">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
@@ -156,7 +156,7 @@ Example:
         </TD>
 
 % }
-
+%# page content starts here
         <TD CLASS="background" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
           <FONT SIZE=6>
