@@ -20,8 +20,8 @@ die "no files!" unless @ARGV;
 system join('',
   "( cd /home/$USER/freeside2.3/$prefix; git pull ) && ",
   "( cd /home/$USER/freeside2.1/$prefix; git pull ) && ",
-  "git diff -u @ARGV | ( cd /home/$USER/freeside2.3/$prefix; patch -p0 ) ",
-  " && git diff -u @ARGV | ( cd /home/$USER/freeside2.1/$prefix; patch -p0 ) ",
+  "git diff -u @ARGV | ( cd /home/$USER/freeside2.3/$prefix; patch ) ",
+  " && git diff -u @ARGV | ( cd /home/$USER/freeside2.1/$prefix; patch ) ",
   " && ( ( git commit  -m $desc @ARGV && git push); ",
   "( cd /home/$USER/freeside2.3/$prefix; git commit -m $desc @ARGV && git push); ",
   "( cd /home/$USER/freeside2.1/$prefix; git commit -m $desc @ARGV && git push) )"
