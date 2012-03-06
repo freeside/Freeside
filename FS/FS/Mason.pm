@@ -55,7 +55,7 @@ if ( -e $addl_handler_use_file ) {
 
   #use CGI::Carp qw(fatalsToBrowser);
   use CGI::Cookie;
-  use List::Util qw( max min );
+  use List::Util qw( max min sum );
   use Data::Dumper;
   use Date::Format;
   use Time::Local;
