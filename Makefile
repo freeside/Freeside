@@ -103,9 +103,6 @@ RT_DB_DATABASE = freeside
 
 TORRUS_ENABLED = 0
 
-# for cvs-upgrade-deploy target, the username who checked out the CVS copy.
-CVS_USER = ivan
-
 # for auto-version updates, so we can "make release" more things automatically
 RPM_SPECFILE = rpm/freeside.spec
 
@@ -118,7 +115,7 @@ RT_PATH = /opt/rt3
 FREESIDE_PATH = `pwd`
 PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.10.1/
 
-VERSION=2.3.2cvs
+VERSION=2.3.2git
 TAG=freeside_2_3_2
 
 DEBVERSION = `echo ${VERSION} | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
@@ -129,7 +126,6 @@ help:
 	@echo "supported targets:"
 	@echo "                   create-database create-config"
 	@echo "                   install deploy"
-	@echo "                   cvs-upgrade-deploy"
 	@echo "                   configure-rt create-rt"
 	@echo "                   clean help"
 	@echo
@@ -296,12 +292,6 @@ deploy: install
 	${HTTPD_RESTART}
 	${FREESIDE_RESTART}
 
-cvs-upgrade-deploy:
-	su ${CVS_USER} -c 'cvs update -d -P'
-	make install-perl-modules
-	su freeside -c "freeside-upgrade ${CVS_USER}" #not really the same user
-	make deploy
-
 dev: dev-perl-modules dev-docs
 
 create-database:
@@ -418,30 +408,28 @@ check-conflicts:
 .PHONY: release
 release:
 	# Update the changelog
-	./bin/cvs2cl
-	cvs commit -m "Updated for ${VERSION}" ChangeLog
+	#./bin/cvs2cl
+	#cvs commit -m "Updated for ${VERSION}" ChangeLog
 
 	# Update the RPM specfile
-	cvs edit ${RPM_SPECFILE}
-	perl -p -i -e "s/\d+[^\}]+/${VERSION}/ if /%define\s+version\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
-	perl -p -i -e "s/\d+[^\}]+/1/ if /%define\s+release\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
-	cvs commit -m "Updated for ${VERSION}" ${RPM_SPECFILE}
+	#cvs edit ${RPM_SPECFILE}
+	#perl -p -i -e "s/\d+[^\}]+/${VERSION}/ if /%define\s+version\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
+	#perl -p -i -e "s/\d+[^\}]+/1/ if /%define\s+release\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
+	#cvs commit -m "Updated for ${VERSION}" ${RPM_SPECFILE}
 
 	# Update the Debian changelog
-	cvs edit debian/changelog
-	dch -v ${DEBVERSION} -p "New upstream release"
-	cvs commit -m "Updated for ${VERSION}" debian/changelog
+	#cvs edit debian/changelog
+	#dch -v ${DEBVERSION} -p "New upstream release"
+	#cvs commit -m "Updated for ${VERSION}" debian/changelog
 
 	# Make sure other people's changes are pulled in!
-	cvs update -d -P || true #it exits 1...
+	git pull
 
 	# Tag the release
-	#cvs tag ${TAG}
-	cvs tag -F ${TAG}
+	git tag ${TAG}
 
 	#cd /home/ivan
-	cvs export -r ${TAG} -d freeside-${VERSION} freeside
-	tar czvf freeside-${VERSION}.tar.gz freeside-${VERSION}
+        git archive ${TAG} | gzip -9 >freeside-${VERSION}.tar.gz
 
 	scp freeside-${VERSION}.tar.gz ivan@420.am:/var/www/www.sisd.com/freeside/
 	mv freeside-${VERSION} freeside-${VERSION}.tar.gz ..
