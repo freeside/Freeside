@@ -21,8 +21,11 @@
   </TR>
 </TABLE>
 <%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+  unless $curuser->access_right('List packages');
 
 my $money_char = FS::Conf->new()->config('money_char') || '$';
 
@@ -68,18 +71,21 @@ my @pay_cond;
 push @pay_cond, "cust_bill_pay._date < $end" if $end;
 push @pay_cond, "cust_bill_pay._date > $begin" if $begin;
 
-my $pay_cond = '';
-$pay_cond = 'WHERE '.join(' AND ', @pay_cond) if @pay_cond;
+my $extra_sql = '';
+$extra_sql = 'WHERE '. join(' AND ', @pay_cond) if @pay_cond;
+$extra_sql .= ( $extra_sql ? ' AND ' : ' WHERE ' ).
+              $curuser->agentnums_sql( 'table' => 'cust_main' );
 
 my $pkg_payments = {
   map { $_->pkgpart => $_->total_pay }
   qsearch({
     'table'     => 'cust_pkg',
     'select'    => 'pkgpart, sum(cust_bill_pay_pkg.amount) AS total_pay',
-    'addl_from' => 'INNER JOIN cust_bill_pkg USING (pkgnum)
+    'addl_from' => 'LEFT  JOIN cust_main         USING ( custnum )
+                    INNER JOIN cust_bill_pkg     USING (pkgnum)
                     INNER JOIN cust_bill_pay_pkg USING (billpkgnum)
-                    INNER JOIN cust_bill_pay USING (billpaynum)',
-    'extra_sql' => $pay_cond . ' GROUP BY pkgpart',
+                    INNER JOIN cust_bill_pay     USING (billpaynum)',
+    'extra_sql' => "$extra_sql GROUP BY pkgpart",
 }) };
 
 my @head = ('Package', 'Suspended', 'Unsuspended', 'Payments');
@@ -87,7 +93,19 @@ my @rows = ();
 my @totals = map {0} @head;
 $totals[0] = 'Total';
 
-foreach my $part_pkg (qsearch('part_pkg', {} )) {
+my $pkg_agentnums_sql = $curuser->agentnums_sql(
+                          'null'       => 1,
+                          'table'      => 'part_pkg',
+                        );
+
+my $extra_sql = " WHERE $pkg_agentnums_sql";
+
+foreach my $part_pkg (qsearch({ 'table'     => 'part_pkg',
+                                'hashref'   => {},
+                                'extra_sql' => $extra_sql,
+                             })
+                     )
+{
   my @row = ();
   next if !$part_pkg->freq; # exclude one-time packages
   my $pkgpart = $part_pkg->pkgpart;
