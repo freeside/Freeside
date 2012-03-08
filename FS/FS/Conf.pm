@@ -3848,9 +3848,16 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-custnum-display_prefix',
     'section'     => 'UI',
-    'description' => 'Prefix the customer number with this number for display purposes (and zero fill to 8 digits).',
+    'description' => 'Prefix the customer number with this string for display purposes.',
     'type'        => 'text',
     #and then probably agent-virt this to merge these instances
+  },
+
+  {
+    'key'         => 'cust_main-custnum-display_length',
+    'section'     => 'UI',
+    'description' => 'Zero fill the customer number to this many digits for display purposes.',
+    'type'        => 'text',
   },
 
   {
