@@ -52,7 +52,7 @@ function areyousure(href) {
 
 <% mt('Service #') |h %><B><% $svcnum %></B>
 % my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
-| <& /view/elements/svc_edit_link.html, 'svc' => $svc_x &>
+| <& /view/elements/svc_edit_link.html, 'svc' => $svc_x, 'edit_url' => $url &>
 <BR>
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>

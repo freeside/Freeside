@@ -14,8 +14,8 @@ function areyousure_delete() {
 my %opt = @_;
 my $svc_x = $opt{'svc'} or die "'svc' required";
 my $svcdb = $opt{'table'} || $svc_x->table;
-my $edit_url = $opt{'edit_url'} || 
-               $p . 'edit/' . $svcdb . '.cgi?' . $svc_x->svcnum;
+my $edit_url = ($opt{'edit_url'} || 
+               $p . 'edit/' . $svcdb . '.cgi?' ). $svc_x->svcnum;
 my $cancel_url = $p . 'misc/unprovision.cgi?' . $svc_x->svcnum;
 my $cust_svc = $svc_x->cust_svc; # always exists
 my $cancel_date = $cust_svc->pkg_cancel_date;
