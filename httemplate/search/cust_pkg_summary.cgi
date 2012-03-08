@@ -21,8 +21,11 @@
   </TR>
 </TABLE>
 <%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+  unless $curuser->access_right('List packages');
 
 my $title = 'Package Summary Report';
 my ($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
@@ -61,7 +64,19 @@ if( !$begin ) {
   splice @head, 1, 1;
 }
 
-foreach my $part_pkg (qsearch('part_pkg', {} )) {
+my $agentnums_sql = $curuser->agentnums_sql(
+                      'null'       => 1,
+                      'table'      => 'part_pkg',
+                    );
+
+my $extra_sql = " WHERE $agentnums_sql";
+
+foreach my $part_pkg (qsearch({ 'table'     => 'part_pkg',
+                                'hashref'   => {},
+                                'extra_sql' => $extra_sql,
+                             })
+                     )
+{
   my @row = ();
   next if !$part_pkg->freq; # exclude one-time packages
   push @row, $part_pkg->pkg;
@@ -70,10 +85,15 @@ foreach my $part_pkg (qsearch('part_pkg', {} )) {
     if($cond) {
       my $result = qsearchs({ 
                             'table'     => 'h_cust_pkg',
+                            'addl_from' => $addl_from.
+                                           ' LEFT JOIN cust_main USING ( custnum )',
+
                             'hashref'   => {},
                             'select'    => 'count(*)',
-                            'addl_from' => $addl_from,
-                            'extra_sql' => 'WHERE pkgpart = '.$part_pkg->pkgpart.$cond,
+                            'extra_sql' => 'WHERE pkgpart = '.$part_pkg->pkgpart.$cond.
+                                           ' AND '. $curuser->agentnums_sql(
+                                                      'table' => 'cust_main',
+                                                    ),
                             });
       $row[$i] = $result->getfield('count');
       $totals[$i] += $row[$i];
