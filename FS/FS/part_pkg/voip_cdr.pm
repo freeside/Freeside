@@ -20,6 +20,8 @@ tie my %cdr_svc_method, 'Tie::IxHash',
   'svc_phone.phonenum' => 'Phone numbers (svc_phone.phonenum)',
   'svc_pbx.title'      => 'PBX name (svc_pbx.title)',
   'svc_pbx.svcnum'     => 'Freeside service # (svc_pbx.svcnum)',
+  'svc_pbx.ip.src'     => 'PBX name to source IP address',
+  'svc_pbx.ip.dst'     => 'PBX name to destination IP address',
 ;
 
 tie my %rating_method, 'Tie::IxHash',
@@ -75,8 +77,9 @@ tie my %unrateable_opts, 'Tie::IxHash',
                        },
 
     'cdr_svc_method' => { 'name' => 'CDR service matching method',
-                          'type' => 'radio',
-                          'options' => \%cdr_svc_method,
+#                          'type' => 'radio',
+                          'type' => 'select',
+                          'select_options' => \%cdr_svc_method,
                         },
 
     'rating_method' => { 'name' => 'Rating method',
@@ -102,7 +105,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
 
     'calls_included' => { 'name' => 'Number of calls included at no usage charge', },
 
-    'min_included' => { 'name' => 'Minutes included when using the "single price per minute" rating method or when using the "prefix" rating method ("region group" billing)',
+    'min_included' => { 'name' => 'Minutes included when using the "single price per minute" or "prefix" rating method',
                     },
 
     'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
@@ -359,7 +362,7 @@ sub calc_usage {
 
   my $use_duration = $self->option('use_duration');
 
-  my($svc_table, $svc_field) = split('\.', $cdr_svc_method);
+  my($svc_table, $svc_field, $by_ip_addr) = split('\.', $cdr_svc_method);
 
   my @cust_svc;
   if( $self->option('bill_inactive_svcs',1) ) {
@@ -388,7 +391,12 @@ sub calc_usage {
         'status'         => '',
         'for_update'     => 1,
       );  # $last_bill, $$sdate )
-    $options{'by_svcnum'} = 1 if $svc_field eq 'svcnum';
+    if ( $svc_field eq 'svcnum' ) {
+      $options{'by_svcnum'} = 1;
+    }
+    elsif ($svc_table eq 'svc_pbx' and $svc_field eq 'ip') {
+      $options{'by_ip_addr'} = $by_ip_addr;
+    }
 
     #my @invoice_details_sort;
 

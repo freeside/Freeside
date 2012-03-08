@@ -223,6 +223,17 @@ if ( $cgi->param('svcnum') =~ /^([\d, ]+)$/ ) {
 }
 
 ###
+# src/dst_ip_addr
+###
+foreach my $field ('src_ip_addr','dst_ip_addr') {
+  if ( $cgi->param($field) ) {
+    my $search = FS::cdr->ip_addr_sql($field, $cgi->param($field));
+    push @search, $search;
+    push @qsearch, $search;
+  }
+}
+
+###
 # cdrbatchnum (or legacy cdrbatch)
 ###
 

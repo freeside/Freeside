@@ -2940,6 +2940,10 @@ sub tables_hashref {
         'lastapp',     'varchar',  '', $char_d, \"''", '', 
         'lastdata',    'varchar',  '', $char_d, \"''", '', 
 
+        #currently only opensips
+        'src_ip_addr', 'varchar',  'NULL',  15,    '', '',
+        'dst_ip_addr', 'varchar',  'NULL',  15,    '', '',
+
         #these don't seem to be logged by most of the SQL cdr_* modules
         #except tds under sql-illegal names, so;
         # ... don't rely on them for rating?
@@ -3039,6 +3043,7 @@ sub tables_hashref {
                    [ 'sessionnum' ], [ 'subscriber' ],
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
                    [ 'cdrbatch' ], [ 'cdrbatchnum' ],
+                   [ 'src_ip_addr' ], [ 'dst_ip_addr' ],
                  ],
     },
 

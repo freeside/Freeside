@@ -82,15 +82,26 @@ while ( $row = $sth->fetchrow_hashref ) {
 
   #i guess now we're NANPA-centric, but at least we warn on non-numeric numbers
   my $src = '';
-  if ( $row->{'caller_id'} =~ /^sip:(\+1)?(\d+)@/ ) {
+  my $src_ip = '';
+  if ( $row->{'caller_id'} =~ /^sip:(\+1?)?(\w+)@(.*)/ ) {
     $src = $2;
+    my $rest = $3;
+    if ($rest =~ /^([\d\.]{7,15})/) {
+      # canonicalize it so that ascii sort order works
+      $src_ip = sprintf('%03d.%03d.%03d.%03d', split('\.', $1));
+    }
   } else {
     warn "unparseable caller_id ". $row->{'caller_id'}. "\n";
   }
 
   my $dst = '';
-  if ( $row->{'callee_id'} =~ /^sip:(\+1)?(\d+)@/ ) {
+  my $dst_ip = '';
+  if ( $row->{'callee_id'} =~ /^sip:(\+1?)?(\w+)@(.*)/ ) {
     $dst = $2;
+    my $rest = $3;
+    if ($rest =~ /^([\d\.]{7,15})/) {
+      $dst_ip = sprintf('%03d.%03d.%03d.%03d', split('\.', $1));
+    }
   } else {
     warn "unparseable callee_id ". $row->{'callee_id'}. "\n";
   }
@@ -108,6 +119,8 @@ while ( $row = $sth->fetchrow_hashref ) {
     $cdr->startdate($date);
     $cdr->src($src);
     $cdr->dst($dst);
+    $cdr->src_ip_addr($src_ip);
+    $cdr->dst_ip_addr($dst_ip);
   }
   elsif ( $row->{'method'} eq 'ACK' ) {
     $cdr->answerdate($date);

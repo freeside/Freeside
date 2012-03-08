@@ -87,6 +87,10 @@ following fields are currently supported:
 
 =item lastdata - Last application data
 
+=item src_ip_addr - Source IP address (dotted quad, zero-filled)
+
+=item dst_ip_addr - Destination IP address (same)
+
 =item startdate - Start of call (UNIX-style integer timestamp)
 
 =item answerdate - Answer time of call (UNIX-style integer timestamp)
@@ -187,6 +191,8 @@ sub table_info {
         'dstchannel'            => 'Destination channel',
         #'lastapp'               => '',
         #'lastdata'              => '',
+        'src_ip_addr'           => 'Source IP',
+        'dst_ip_addr'           => 'Dest. IP',
         'startdate'             => 'Start date',
         'answerdate'            => 'Answer date',
         'enddate'               => 'End date',
@@ -1568,6 +1574,31 @@ sub _upgrade_data {
     $sth->execute($cdrbatchnum{$cdrbatch}, $cdrbatch) or die $sth->errstr;
   }
 
+}
+
+=item ip_addr_sql FIELD RANGE
+
+Returns an SQL condition to search for CDRs with an IP address 
+within RANGE.  FIELD is either 'src_ip_addr' or 'dst_ip_addr'.  RANGE 
+should be in the form "a.b.c.d-e.f.g.h' (dotted quads), where any of 
+the leftmost octets of the second address can be omitted if they're 
+the same as the first address.
+
+=cut
+
+sub ip_addr_sql {
+  my $class = shift;
+  my ($field, $range) = @_;
+  $range =~ /^[\d\.-]+$/ or die "bad ip address range '$range'";
+  my @r = split('-', $range);
+  my @saddr = split('\.', $r[0] || '');
+  my @eaddr = split('\.', $r[1] || '');
+  unshift @eaddr, (undef) x (4 - scalar @eaddr);
+  for(0..3) {
+    $eaddr[$_] = $saddr[$_] if !defined $eaddr[$_];
+  }
+  "$field >= '".sprintf('%03d.%03d.%03d.%03d', @saddr) . "' AND ".
+  "$field <= '".sprintf('%03d.%03d.%03d.%03d', @eaddr) . "'";
 }
 
 =back

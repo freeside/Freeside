@@ -1,6 +1,6 @@
 <% include('elements/svc_Common.html',
              'table'     => 'svc_pbx',
-	     'edit_url'  => $p."edit/svc_Common.html?svcdb=svc_pbx;svcnum=",
+             'edit_url'  => $p."edit/svc_Common.html?svcdb=svc_pbx;svcnum=",
              'labels'    => \%labels,
              'html_foot' => $html_foot,
           )
@@ -43,12 +43,14 @@ my $html_foot = sub {
 
   my $cdr_svc_method = $voip_pkg->option('cdr_svc_method')
                        || 'svc_phone.phonenum';
-  return '' unless $cdr_svc_method =~ /^svc_pbx\.(\w+)$/;
+  return '' unless $cdr_svc_method =~ /^svc_pbx\.(.*)$/;
   my $field = $1;
 
   my $search;
   if ( $field eq 'title' ) {
     $search = 'charged_party='. uri_escape($svc_pbx->title);
+  } elsif ( $field =~ /^ip\.(\w+)$/ ) {
+    $search = "$1_ip_addr=". uri_escape($svc_pbx->title);
   } elsif ( $field eq 'svcnum' ) {
     $search = 'svcnum='. $svc_pbx->svcnum;
   } else {

@@ -283,6 +283,10 @@ with the chosen prefix.
 =item by_svcnum => 1: Select CDRs where the svcnum field matches, instead of 
 title/charged_party.  Normally this field is set after processing.
 
+=item by_ip_addr => 'src' or 'dst': Select CDRs where the src_ip_addr or 
+dst_ip_addr field matches title.  In this case, some special logic is applied
+to allow title to indicate a range of IP addresses.
+
 =item begin, end: Start and end of date range, as unix timestamp.
 
 =item cdrtypenum: Only return CDRs with this type number.
@@ -308,6 +312,10 @@ sub get_cdrs {
 
   if ( $options{'by_svcnum'} ) {
     $hash{'svcnum'} = $self->svcnum;
+  }
+  elsif ( $options{'by_ip_addr'} =~ /^src|dst$/) {
+    my $field = 'cdr.'.$options{'by_ip_addr'}.'_ip_addr';
+    push @where, FS::cdr->ip_addr_sql($field, $self->title);
   }
   else {
     #matching by title
