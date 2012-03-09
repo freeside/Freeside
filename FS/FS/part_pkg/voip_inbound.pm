@@ -10,6 +10,7 @@ use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::cdr;
 use FS::rate_detail;
+use FS::detail_format;
 
 $DEBUG = 0;
 
@@ -208,6 +209,10 @@ sub calc_usage {
   my $included_min  = $self->option('min_included', 1) || 0;
   my $use_duration  = $self->option('use_duration');
   my $output_format = $self->option('output_format', 1) || 'default';
+
+  my $formatter = 
+    FS::detail_format->new($output_format, buffer => $details, inbound => 1);
+
   my $granularity   = length($self->option('sec_granularity'))
                         ? $self->option('sec_granularity')
                         : 60;
@@ -279,31 +284,41 @@ sub calc_usage {
                                 'granularity' => $granularity,
                               )
         );
-        push @$details,
-          { format      => 'C',
-            detail      => $call_details[0],
-            amount      => $charge,
-            classnum    => $cdr->calltypenum, #classnum
-            #phonenum    => $self->phonenum,
-            accountcode => $cdr->accountcode,
-            startdate   => $cdr->startdate,
-            duration    => $seconds,
-            # regionname?? => '', #regionname, not set for inbound calls
-          };
-     }
+#        push @$details,
+#          { format      => 'C',
+#            detail      => $call_details[0],
+#            amount      => $charge,
+#            classnum    => $cdr->calltypenum, #classnum
+#            #phonenum    => $self->phonenum,
+#            accountcode => $cdr->accountcode,
+#            startdate   => $cdr->startdate,
+#            duration    => $seconds,
+#            # regionname?? => '', #regionname, not set for inbound calls
+#          };
+      }
 
-     my $error = $cdr->set_status_and_rated_price( 'done',
-                                                  $charge,
-                                                  $cust_svc->svcnum,
-                                                  'inbound' => 1 );
-     die $error if $error;
+      # eventually use FS::cdr::rate for this
+      my $error = $cdr->set_status_and_rated_price(
+        'done',
+        $charge,
+        $cust_svc->svcnum,
+        'rated_seconds'     => $use_duration ? $cdr->duration : $cdr->billsec,
+        'rated_granularity' => $granularity, 
+        'rated_classnum'    => $cdr->calltypenum,
+        'inbound'        => 1,
+      );
+      die $error if $error;
+      $formatter->append($cdr);
 
     } #$cdr
   } # $cust_svc
-  unshift @$details, { format => 'C',
-                       detail => FS::cdr::invoice_header($output_format),
-                     }
-    if @$details;
+#  unshift @$details, { format => 'C',
+#                       detail => FS::cdr::invoice_header($output_format),
+#                     }
+#    if @$details;
+  
+  $formatter->finish;
+  unshift @$details, $formatter->header if @$details;
 
   $charges;
 }
