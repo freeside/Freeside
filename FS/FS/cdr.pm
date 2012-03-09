@@ -553,6 +553,10 @@ my %export_names = (
     'invoice_header' => "Date,Time,Called From,Destination,Duration,Price",
                        #"Date,Time,Name,Called From,Destination,Duration,Price",
   },
+  'accountcode_simple' => {
+    'name'           => 'Simple with accountcode',
+    'invoice_header' => "Date,Time,Called From,Account,Duration,Price",
+  },
   'basic' => {
     'name'           => 'Basic',
     'invoice_header' => "Date/Time,Called Number,Min/Sec,Price",
@@ -644,6 +648,14 @@ sub export_formats {
       'dst',                                           #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+      $price_sub,
+    ],
+    'accountcode_simple' => [
+      sub { time2str($date_format, shift->calldate_unix ) },   #DATE
+      sub { time2str('%r', shift->calldate_unix ) },   #TIME
+      'src',                                           #called from
+      'accountcode',                                   #NUMBER_DIALED
+      $duration_sub,                                   #DURATION
       $price_sub,
     ],
     'sum_duration' => [ 
