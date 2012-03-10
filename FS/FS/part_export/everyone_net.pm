@@ -20,7 +20,7 @@ tie my %options, 'Tie::IxHash',
   'options'=> \%options,
   'notes'  => <<'END'
 Real-time export to
-<a href="http://www.cp.net/">Everyone.net</a> via the XRC Remote API.
+<a href="http://www.everyone.net/">Everyone.net</a> via the XRC Remote API.
 Requires installation of
 <a href="http://search.cpan.org/dist/Net-XRC">Net::XRC</a>
 from CPAN.
