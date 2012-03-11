@@ -18,3 +18,6 @@ perllib/Torrus/Devdiscover/Arbor_E.pm
 perllib/Torrus/Devdiscover/F5BigIP.pm
 perllib/Torrus/Devdiscover/FTPS.pm
 
+#a new device for dacentec
+xmlconfig/vendor/ractivity.xml
+perllib/Torrus/DevDiscover/Ractivity.pm

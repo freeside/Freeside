@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<!--
+   Copyright (C) 2012  Freeside Internet Services, Inc.
+
+   File: ractivity.xml
+   Description: Ractivity Power Distribution Unit monitor example for Torrus.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+-->
+<configuration>
+
+  <definitions>
+    <def name="product" value="1.3.6.1.4.1.34097.1"/>,
+    <def name="name" value="1.3.6.1.4.1.34097.1.1"/>,
+    <def name="version" value="1.3.6.1.4.1.34097.1.2"/>,
+    <def name="date" value="1.3.6.1.4.1.34097.1.3"/>,
+    <def name="general" value="1.3.6.1.4.1.34097.2"/>,
+    <def name="Voltage" value="1.3.6.1.4.1.34097.2.1"/>,
+    <def name="MaxTotCurentTime" value="1.3.6.1.4.1.34097.2.10"/>,
+    <def name="TotKwh" value="1.3.6.1.4.1.34097.2.11"/>,
+    <def name="Intrusion" value="1.3.6.1.4.1.34097.2.12"/>,
+    <def name="Airflow" value="1.3.6.1.4.1.34097.2.13"/>,
+    <def name="Beep" value="1.3.6.1.4.1.34097.2.14"/>,
+    <def name="ControllerName" value="1.3.6.1.4.1.34097.2.15"/>,
+    <def name="RackPosition" value="1.3.6.1.4.1.34097.2.16"/>,
+    <def name="Frequency" value="1.3.6.1.4.1.34097.2.2"/>,
+    <def name="TotCurrent" value="1.3.6.1.4.1.34097.2.3"/>,
+    <def name="TotPower" value="1.3.6.1.4.1.34097.2.4"/>,
+    <def name="TemperatureInside" value="1.3.6.1.4.1.34097.2.5"/>,
+    <def name="HumidityInside" value="1.3.6.1.4.1.34097.2.6"/>,
+    <def name="MaxTotCurrentWarning" value="1.3.6.1.4.1.34097.2.7"/>,
+    <def name="MaxTotCurentOff" value="1.3.6.1.4.1.34097.2.8"/>,
+    <def name="MaxTotCurrent" value="1.3.6.1.4.1.34097.2.9"/>,
+    <def name="port" value="1.3.6.1.4.1.34097.3"/>,
+    <def name="portTable" value="1.3.6.1.4.1.34097.3.1"/>,
+    <def name="portEntry" value="1.3.6.1.4.1.34097.3.1.1"/>,
+    <def name="PortNr" value="1.3.6.1.4.1.34097.3.1.1.1"/>,
+    <def name="MaxCurrent" value="1.3.6.1.4.1.34097.3.1.1.10"/>,
+    <def name="MaxCurrentTime" value="1.3.6.1.4.1.34097.3.1.1.11"/>,
+    <def name="MaxCurrentWarning" value="1.3.6.1.4.1.34097.3.1.1.12"/>,
+    <def name="MaxCurrentOff" value="1.3.6.1.4.1.34097.3.1.1.13"/>,
+    <def name="Priority" value="1.3.6.1.4.1.34097.3.1.1.14"/>,
+    <def name="DelayOn" value="1.3.6.1.4.1.34097.3.1.1.15"/>,
+    <def name="PortName" value="1.3.6.1.4.1.34097.3.1.1.2"/>,
+    <def name="Current" value="1.3.6.1.4.1.34097.3.1.1.3"/>,
+    <def name="RealPower" value="1.3.6.1.4.1.34097.3.1.1.4"/>,
+    <def name="ApparentPower" value="1.3.6.1.4.1.34097.3.1.1.5"/>,
+    <def name="PowerFactor" value="1.3.6.1.4.1.34097.3.1.1.6"/>,
+    <def name="State" value="1.3.6.1.4.1.34097.3.1.1.7"/>,
+    <def name="kWh" value="1.3.6.1.4.1.34097.3.1.1.8"/>,
+    <def name="kWhTime" value="1.3.6.1.4.1.34097.3.1.1.9"/>,
+    <def name="temp" value="1.3.6.1.4.1.34097.4"/>,
+    <def name="tempTable" value="1.3.6.1.4.1.34097.4.1"/>,
+    <def name="tempEntry" value="1.3.6.1.4.1.34097.4.1.1"/>,
+    <def name="TempNr" value="1.3.6.1.4.1.34097.4.1.1.1"/>,
+    <def name="Temperature" value="1.3.6.1.4.1.34097.4.1.1.2"/>,
+    <def name="MaxTemp" value="1.3.6.1.4.1.34097.4.1.1.3"/>,
+    <def name="MaxTempTime" value="1.3.6.1.4.1.34097.4.1.1.4"/>,
+    <def name="TempWarning" value="1.3.6.1.4.1.34097.4.1.1.5"/>,
+  </definitions>
+
+  <datasources>
+
+    <template name="PDU">
+
+      <param name="data-file" value="%system-id%_power.rrd" />
+      <param name="data-dir" value="XXX" />
+
+      <leaf name="kWh">
+        <param name="comment" value="KiloWatt Hours" />
+        <param name="comment" value="KiloWatt Hours" />
+        <param name="vertical-label" value="kWh" />
+        <param name="ds-type" value="collector" />
+        <param name="collector-type" value="snmp" />
+        <param name="storage-type" value="rrd" />
+        <param name="collector-period" value="300" />
+        <param name="collector-timeoffset" value="0" />
+      </leaf>
+
+  </datasources>
+
+</configuration>
