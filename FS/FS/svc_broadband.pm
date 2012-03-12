@@ -136,7 +136,7 @@ sub table_info {
 
 sub table { 'svc_broadband'; }
 
-sub table_dupcheck_fields { ( 'mac_addr' ); }
+sub table_dupcheck_fields { ( 'ip_addr', 'mac_addr' ); }
 
 =item search HASHREF
 
@@ -405,7 +405,13 @@ sub check {
   }
   my $agentnum = $cust_pkg->cust_main->agentnum if $cust_pkg;
 
-  if ($self->routernum) {
+  if ( $conf->exists('auto_router') and $self->ip_addr and !$self->routernum ) {
+    # assign_router is guaranteed to provide a router that's legal
+    # for this agent and svcpart
+    my $error = $self->_check_ip_addr || $self->assign_router;
+    return $error if $error;
+  }
+  elsif ($self->routernum) {
     return "Router ".$self->routernum." does not provide this service"
       unless qsearchs('part_svc_router', { 
         svcpart => $svcpart,
@@ -416,16 +422,19 @@ sub check {
     return "Router ".$self->routernum." does not serve this customer"
       if $router->agentnum and $router->agentnum != $agentnum;
 
-    if ( $router->auto_addr ) {
+    if ( $router->manual_addr ) {
+      $self->blocknum('');
+    }
+    else {
       my $addr_block = $self->addr_block;
       unless ( $addr_block and $addr_block->manual_flag ) {
         my $error = $self->assign_ip_addr;
         return $error if $error;
       }
     }
-    else {
-      $self->blocknum('');
-    }
+ 
+    my $error = $self->_check_ip_addr;
+    return $error if $error;
   } # if $self->routernum
 
   if ( $cust_pkg && ! $self->latitude && ! $self->longitude ) {
@@ -439,15 +448,12 @@ sub check {
     }
   }
 
-  $error = $self->_check_ip_addr;
-  return $error if $error;
-
   $self->SUPER::check;
 }
 
 =item assign_ip_addr
 
-Assign an address block matching the selected router, and the selected block
+Assign an IP address matching the selected router, and the selected block
 if there is one.
 
 =cut
@@ -468,6 +474,7 @@ sub assign_ip_addr {
   else { 
     return '';
   }
+#warn "assigning ip address in blocks\n".join("\n",map{$_->cidr} @blocks)."\n";
 
   foreach my $block ( @blocks ) {
     if ( $self->ip_addr and $block->NetAddr->contains($self->NetAddr) ) {
@@ -486,12 +493,38 @@ sub assign_ip_addr {
   }
 }
 
+=item assign_router
+
+Assign an address block and router matching the selected IP address.
+Does nothing if IP address is null.
+
+=cut
+
+sub assign_router {
+  my $self = shift;
+  return '' if !$self->ip_addr;
+  #warn "assigning router/block for ".$self->ip_addr."\n";
+  foreach my $router ($self->allowed_routers) {
+    foreach my $block ($router->addr_block) {
+      if ( $block->NetAddr->contains($self->NetAddr) ) {
+        $self->blocknum($block->blocknum);
+        $self->routernum($block->routernum);
+        return '';
+      }
+    }
+  }
+  return $self->ip_addr.' is not in an allowed block.';
+}
+
 sub _check_ip_addr {
   my $self = shift;
 
   if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
     return '' if $conf->exists('svc_broadband-allow_null_ip_addr'); 
     return 'IP address required';
+  }
+  else {
+    return 'Cannot parse address: '.$self->ip_addr unless $self->NetAddr;
   }
 #  if (my $dup = qsearchs('svc_broadband', {
 #        ip_addr => $self->ip_addr,
@@ -505,10 +538,17 @@ sub _check_ip_addr {
 sub _check_duplicate {
   my $self = shift;
 
-  return "MAC already in use"
-    if ( $self->mac_addr &&
-         scalar( qsearch( 'svc_broadband', { 'mac_addr', $self->mac_addr } ) )
-       );
+  $self->lock_table;
+
+  my @dup;
+  @dup = $self->find_duplicates('global', 'ip_addr');
+  if ( @dup ) {
+    return "IP address in use (svcnum ".$dup[0]->svcnum.")";
+  }
+  @dup = $self->find_duplicates('global', 'mac_addr');
+  if ( @dup ) {
+    return "MAC address in use (svcnum ".$dup[0]->svcnum.")";
+  }
 
   '';
 }
@@ -557,8 +597,15 @@ Returns a list of allowed FS::router objects.
 sub allowed_routers {
   my $self = shift;
   my $svcpart = $self->svcnum ? $self->cust_svc->svcpart : $self->svcpart;
-  map { $_->router } qsearch('part_svc_router', 
+  my @r = map { $_->router } qsearch('part_svc_router', 
     { svcpart => $self->cust_svc->svcpart });
+  if ( $self->cust_main ) {
+    my $agentnum = $self->cust_main->agentnum;
+    return grep { !$_->agentnum or $_->agentnum == $agentnum } @r;
+  }
+  else {
+    return @r;
+  }
 }
 
 =back
