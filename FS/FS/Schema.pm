@@ -2484,7 +2484,7 @@ sub tables_hashref {
         'routername', 'varchar', '', $char_d, '', '', 
         'svcnum', 'int', 'NULL', '', '', '', 
         'agentnum',   'int', 'NULL', '', '', '', 
-        'auto_addr', 'char', 'NULL', 1, '', '',
+        'manual_addr', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'routernum',
       'unique'      => [],

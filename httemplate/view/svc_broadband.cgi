@@ -17,7 +17,6 @@ my %labels = map { $_ => ( ref($fields->{$_})
 #my %labels = ();
 
 $labels{'description'} = emt('Description');
-$labels{'router'} = emt('Router');
 $labels{'speed_down'} = emt('Download Speed');
 $labels{'speed_up'} = emt('Upload Speed');
 $labels{'ip_addr'} = emt('IP Address');
