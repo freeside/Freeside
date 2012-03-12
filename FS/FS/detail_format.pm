@@ -235,6 +235,7 @@ sub duration {
   my $cdr = shift;
   my $object = $self->{inbound} ? $cdr->cdr_termination(1) : $cdr;
   my $sec = $object->rated_seconds if $object;
+  $sec ||= 0;
   # XXX termination objects don't have rated_granularity so this may 
   # result in inbound CDRs being displayed as min/sec when they shouldn't.
   # Should probably fix this.

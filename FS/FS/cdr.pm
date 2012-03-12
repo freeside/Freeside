@@ -152,7 +152,7 @@ following fields are currently supported:
 
 =item svcnum - Link to customer service (see L<FS::cust_svc>)
 
-=item freesidestatus - NULL, processing-tiered, rated, done
+=item freesidestatus - NULL, processing-tiered, rated, done, skipped, no-charge, failed
 
 =item freesiderewritestatus - NULL, done, skipped
 
@@ -545,7 +545,7 @@ sub rate_prefix {
                                          );
   if ( $reason ) {
     warn "not charging for CDR ($reason)\n" if $DEBUG;
-    return $self->set_status_and_rated_price( 'rated',
+    return $self->set_status_and_rated_price( 'skipped',
                                               0,
                                               $opt{'svcnum'},
                                             );
