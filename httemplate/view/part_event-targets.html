@@ -3,6 +3,16 @@
        'title'   => 'Event query - '.$part_event->event,
      }
 &>
+<FORM STYLE="display:inline" ACTION=<%$cgi->url%> METHOD="GET">
+When event is run on <& /elements/input-date-field.html, {
+  'name'    => 'date',
+  'value'   => $time,
+  'format'  => FS::Conf->new->config('date_format') || '%m/%d/%Y',
+} &>
+<INPUT TYPE="hidden" NAME="eventpart" VALUE="<%$eventpart%>">
+<INPUT TYPE="submit" VALUE="Refresh">
+</FORM>
+<BR><BR>
 % if ( $objects > 0 ) {
   <% emt("[quant,_1,$label]", $objects) %>
 %   if ( $part_event->eventtable ne 'cust_main' ) {
@@ -18,8 +28,8 @@
 
 %   my @rowcolors = ('ffffff','eeeeee');
 %   my $row = 0;
-  <TR style="background-color:#<% $rowcolors[$row++ % 2] %>">
 %   foreach my $object (@targets) {
+  <TR style="background-color:#<% $rowcolors[$row++ % 2] %>">
 %     # now works for all eventtables, including cust_pkg
 %     my $link = $p . 'view/' . $part_event->eventtable . '.cgi?' .
 %        $object->$pkey;
@@ -65,12 +75,14 @@ die "access denied"
   unless $curuser->access_right('Edit billing events')
         || $curuser->access_right('Edit global billing events');
 
-my ($eventpart) = $cgi->keywords;
+my ($eventpart) = $cgi->param('eventpart');
 $eventpart =~ /^\d+$/ or die 'illegal eventpart';
+
+my $time = parse_datetime($cgi->param('date')) || time;
 
 my $part_event = FS::part_event->by_key($eventpart)
   or die "Event definition $eventpart not found.\n";
-my @targets = $part_event->targets;
+my @targets = $part_event->targets('time' => $time);
 my $total = @targets;
 
 # in imitation of search/elements/search-html.html

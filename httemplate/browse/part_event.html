@@ -45,7 +45,8 @@ my $link = [ $p.'edit/part_event.html?', 'eventpart' ];
 my $event_sub = sub {
   my $part_event = shift;
   my $onclick = include('/elements/popup_link_onclick.html',
-    action      => $p.'view/part_event-targets.html?'.$part_event->eventpart,
+    action      => $p.'view/part_event-targets.html?eventpart='.
+                    $part_event->eventpart,
     actionlabel => 'Event query - '.$part_event->event,
     width       => 650,
     height      => 420,
