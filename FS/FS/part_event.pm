@@ -253,7 +253,7 @@ sub templatename {
   }
 }
 
-=item targets
+=item targets OPTIONS
 
 Returns all objects (of type C<FS::eventtable>, for this object's 
 C<eventtable>) eligible for processing under this event, as of right now.
@@ -268,7 +268,8 @@ but can be useful when configuring events.
 
 sub targets {
   my $self = shift;
-  my $time = time; # $opt{'time'}?
+  my %opt = @_;
+  my $time = $opt{'time'} || time;
 
   my $eventpart = $self->eventpart;
   $eventpart =~ /^\d+$/ or die "bad eventpart $eventpart";
@@ -305,8 +306,8 @@ sub targets {
   });
   my @tested_objects;
   foreach my $object ( @objects ) {
-    my $cust_event = $self->new_cust_event($object, 'time' => $time);
-    next unless $cust_event->test_conditions;
+    my $cust_event = $self->new_cust_event($object);
+    next unless $cust_event->test_conditions('time' => $time);
 
     $object->set('cust_event', $cust_event);
     push @tested_objects, $object;
