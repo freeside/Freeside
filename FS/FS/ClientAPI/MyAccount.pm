@@ -2485,7 +2485,7 @@ sub myaccount_passwd {
       unless $svc_acct->check_password($p->{'old_password'});
   }
 
-  $svc_acct->_password($p->{'new_password'});
+  $svc_acct->set_password($p->{'new_password'});
   my $error = $svc_acct->replace();
 
   my($label, $value) = $svc_acct->cust_svc->label;
@@ -2626,7 +2626,7 @@ sub process_reset_passwd {
   my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
     or return { 'error' => "Service not found" };
 
-  $svc_acct->_password($p->{'new_password'});
+  $svc_acct->set_password($p->{'new_password'});
   my $error = $svc_acct->replace();
 
   my($label, $value) = $svc_acct->cust_svc->label;
