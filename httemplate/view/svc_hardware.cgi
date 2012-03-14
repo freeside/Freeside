@@ -6,6 +6,7 @@
 %>
 <%init>
 
+my $conf = new FS::Conf;
 my $fields = FS::svc_hardware->table_info->{'fields'};
 my %labels = map { $_ =>  ( ref($fields->{$_})
                              ? $fields->{$_}{'label'}
@@ -24,5 +25,22 @@ my $note =   { field => 'note',
                type  => 'text',
                value => sub { encode_entities($_[0]->note) }
              };
-my @fields = ($model, qw( serial hw_addr ip_addr smartcard ), $status, $note );
+my $hw_addr ={ field => 'hw_addr',
+               type  => 'text',
+               value => sub { 
+                my $hw_addr = $_[0]->hw_addr;
+                $conf->exists('svc_hardware-check_mac_addr') ?
+                  join(':', $hw_addr =~ /../g) : $hw_addr
+                },
+              };
+
+my @fields = (
+  $model,
+  'serial',
+  $hw_addr,
+  'ip_addr',
+  'smartcard',
+  $status,
+  $note,
+);
 </%init>

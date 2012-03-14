@@ -164,7 +164,7 @@ sub check {
   if ( $conf->exists('svc_hardware-check_mac_addr') ) {
     $hw_addr = uc($hw_addr);
     $hw_addr =~ /^[0-9A-F]{12}$/ 
-      or return "Illegal (MAC address) ".$self->getfield('hw_addr');
+      or return "Illegal (MAC address) '".$self->getfield('hw_addr')."'";
   }
   $self->setfield('hw_addr', $hw_addr);
 

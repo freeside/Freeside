@@ -103,7 +103,8 @@ my @fields = (
   qw( description speed_down speed_up ),
   { field=>'sectornum', type=>'select-tower_sector', },
   { field=>'routernum', type=>'select-router_block_ip' },
-    qw( mac_addr latitude longitude altitude vlan_profile 
+  { field=>'mac_addr' , type=>'input-mac_addr' },
+    qw( latitude longitude altitude vlan_profile 
     performance_profile authkey plan_id )
 );
 
