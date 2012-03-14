@@ -1,0 +1,11 @@
+<& /elements/tr-input-mask.html, 
+  format => '__:__:__:__:__:__',
+  allowed => '0123456789ABCDEFabcdef',
+  %opt,
+&>
+<%init>
+my %opt = @_;
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+$value =~ s/\W//g;
+$opt{curr_value} = join(':', $value =~ /../g);
+</%init>

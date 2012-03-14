@@ -26,7 +26,8 @@ my @fields = (
   },
   {
     field => 'hw_addr',
-    type  => 'text',
+    type  => $conf->exists('svc_hardware-check_mac_addr') ? 
+              'input-mac_addr' : 'text',
     label => 'Hardware address',
   },
   {

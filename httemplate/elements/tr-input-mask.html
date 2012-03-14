@@ -1,0 +1,41 @@
+% if ( !$init ) {
+<script type="text/javascript" src="<%$p%>elements/masked_input_1.1.js">
+</script>
+% $init++;
+% }
+<& /elements/tr-input-text.html, id => $id, @_ &>
+<script type="text/javascript">
+MaskedInput({
+  elm: document.getElementById('<%$id%>'),
+  format: '<% $opt{format} %>',
+  <% $opt{allowed} ? "allowed: '$opt{allowed}'," : '' %>
+  <% $opt{typeon}  ? "typeon:  '$opt{typeon}',"  : '' %>
+});
+document.getElementById('<%$id%>').value = <% $value |js_string %>;
+</script>
+<%shared>
+my $init = 0;
+</%shared>
+<%init>
+my %opt = @_;
+# must have a DOM id
+my $id = $opt{id} || sprintf('input%04d',int(rand(10000)));
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value} || '';
+</%init>
+<%doc>
+Set up a text input field with input masking.
+
+<& /elements/tr-input-mask.html,
+  format    => '____-__-__',
+  #typeon   => '_YMDhms',    # which characters in the format represent blanks
+  #allowed  => '0123456789', # characters allowed in the blanks
+  ... all other options as for tr-input-text.html
+&>
+
+Note that the value sent on form submission will contain the mask 
+separators, and if value/curr_value is passed, it should also be 
+formatted to fit the mask.
+
+Uses masked_input_1.1.js by Kendall Conrad, available under a Creative Commons
+Attribution-ShareAlike license.
+</%doc>
