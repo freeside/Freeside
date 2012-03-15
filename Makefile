@@ -429,7 +429,7 @@ release:
 	git tag -f ${TAG}
 
 	#cd /home/ivan
-	git archive ${TAG} | gzip -9 >freeside-${VERSION}.tar.gz
+	git archive --prefix=freeside-${VERSION}/ ${TAG} | gzip -9 >freeside-${VERSION}.tar.gz
 
 	scp freeside-${VERSION}.tar.gz ivan@420.am:/var/www/www.sisd.com/freeside/
 	mv freeside-${VERSION}.tar.gz ..
