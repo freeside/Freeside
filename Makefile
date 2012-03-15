@@ -426,7 +426,7 @@ release:
 	git pull
 
 	# Tag the release
-	git tag ${TAG}
+	git tag -f ${TAG}
 
 	#cd /home/ivan
 	git archive ${TAG} | gzip -9 >freeside-${VERSION}.tar.gz
