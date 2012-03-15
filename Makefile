@@ -113,7 +113,7 @@ RT_PATH = /opt/rt3
 
 #only used for dev kludge now, not a big deal
 FREESIDE_PATH = `pwd`
-PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.10.1/
+PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.14.2/
 
 VERSION=2.3.2
 TAG=freeside_2_3_2
@@ -432,7 +432,7 @@ release:
 	git archive ${TAG} | gzip -9 >freeside-${VERSION}.tar.gz
 
 	scp freeside-${VERSION}.tar.gz ivan@420.am:/var/www/www.sisd.com/freeside/
-	mv freeside-${VERSION} freeside-${VERSION}.tar.gz ..
+	mv freeside-${VERSION}.tar.gz ..
 
 	#these things failing should not make release target fail, so: "|| true"
 
