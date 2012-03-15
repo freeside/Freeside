@@ -40,8 +40,9 @@ fields are currently supported:
 
 =item svcnum - svcnum of the owning FS::svc_broadband, if appropriate
 
-=item auto_addr - flag to automatically assign IP addresses to services
-linked to this router ('Y' or null).
+=item manual_addr - set to 'Y' to allow services linked to this router 
+to have any IP address, rather than one in an address block belonging 
+to the router.
 
 =back
 
@@ -86,7 +87,7 @@ sub check {
   my $error =
     $self->ut_numbern('routernum')
     || $self->ut_text('routername')
-    || $self->ut_enum('auto_addr', [ '', 'Y' ])
+    || $self->ut_enum('manual_addr', [ '', 'Y' ])
     || $self->ut_agentnum_acl('agentnum', 'Broadband global configuration')
   ;
   return $error if $error;
@@ -146,7 +147,7 @@ sub addr_block {
 
 sub auto_addr_block {
   my $self = shift;
-  return () if !$self->auto_addr;
+  return () if $self->manual_addr;
   return qsearch('addr_block', { routernum => $self->routernum,
                                  manual_flag => '' });
 }

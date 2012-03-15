@@ -17,7 +17,7 @@
                                                                shift->addr_block
                                                  );
                                            },
-                                       sub { shift->auto_addr ? 'Automatic' : 'Manual' },
+                                       sub { shift->manual_addr ? 'Manual' : 'Automatic' },
                                        sub { 'Delete' },
                                      ],
                 'links'           => [ [ "${p2}edit/router.cgi?", 'routernum' ],

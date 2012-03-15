@@ -102,9 +102,10 @@ END
 my @fields = (
   qw( description speed_down speed_up ),
   { field=>'sectornum', type=>'select-tower_sector', },
-  { field=>'routernum', type=>'select-router_block_ip', },
-  qw( mac_addr latitude longitude altitude vlan_profile 
-      performance_profile authkey plan_id ),
+  { field=>'routernum', type=>'select-router_block_ip' },
+  { field=>'mac_addr' , type=>'input-mac_addr' },
+    qw( latitude longitude altitude vlan_profile 
+    performance_profile authkey plan_id )
 );
 
 if ( $conf->exists('svc_broadband-radius') ) {
@@ -115,16 +116,12 @@ if ( $conf->exists('svc_broadband-radius') ) {
   }
 }
 
-my $fixedblock = '';
-
 my $part_svc;
 
 my $svc_edit_callback = sub {
   my ($cgi, $svc_x, $part_svc_x, $cust_pkg, $fields, $opt) = @_;
 
   $part_svc = $part_svc_x; #for field_callback to use
-
-  $opt->{'labels'}{'block_label'} = 'Block';
 
   my ($nas_export) = $part_svc->part_export('broadband_nas');
   #can we assume there's only one of these per part_svc?
@@ -173,60 +170,13 @@ my $field_callback = sub {
                             ? 'fixed'
                             : 'hidden';
     $fieldref->{'value'} = $columndef->columnvalue;
-    $fixedblock = $fieldref->{value}
-      if $fieldref->{field} eq 'blocknum';
-
+    
     if ( $fieldref->{field} eq 'usergroup' ) {
       $fieldref->{'formatted_value'} = 
         [ $object->radius_groups('long_description') ];
     }
   }
 
-  if ($object->svcnum) { 
-
-    $fieldref->{type} = 'hidden'
-      if $fieldref->{field} eq 'blocknum';
-      
-    $fieldref->{value} = $object->addr_block->label
-      if $fieldref->{field} eq 'block_label' && $object->addr_block;
-
-  } else { 
-
-    if ($fieldref->{field} eq 'block_label') {
-      if ($fixedblock && $object->addr_block) {
-        $object->blocknum($fixedblock);
-        $fieldref->{value} = $object->addr_block->label;
-      }else{
-        $fieldref->{type} = 'hidden';
-      }
-    }
-
-    if ($fieldref->{field} eq 'blocknum') {
-      if ( $fixedblock or $conf->exists('auto_router') ) {
-        $fieldref->{type} = 'hidden';
-        $fieldref->{value} = $fixedblock;
-        return;
-      }
-
-      my $cust_pkg = qsearchs( 'cust_pkg', {pkgnum => $cgi->param('pkgnum')} );
-      die "No cust_pkg entry!" unless $cust_pkg;
-
-      $object->svcpart($part_svc->svcpart);
-      my @addr_block =
-        grep {  ! $_->agentnum
-               || $cust_pkg->cust_main->agentnum == $_->agentnum
-               && $FS::CurrentUser::CurrentUser->agentnum($_->agentnum)
-             }
-        map { $_->addr_block } $object->allowed_routers;
-      my @options = map { $_->blocknum } 
-                    sort { $a->label cmp $b->label } @addr_block;
-      my %option_labels = map { ( $_->blocknum => $_->label ) } @addr_block;
-      $fieldref->{type}    = 'select';
-      $fieldref->{options} = \@options;
-      $fieldref->{labels}  = \%option_labels;
-    }
-
-  }
 }; 
 
 </%init>

@@ -1,14 +1,22 @@
 <script type="text/javascript">
-var auto_addr_routernum = <% encode_json(\%auto_addr_routernum) %>;
-function hide_if_auto_addr(obj, i) {
+var manual_addr_routernum = <% encode_json(\%manual_addr_routernum) %>;
+var ip_addr_curr_value = <% $opt{'ip_addr'} |js_string %>;
+function lock_ip_addr(obj, i) {
   var routernum = obj.value;
   var select_blocknum = document.getElementsByName('blocknum')[0];
-  var label_auto_addr = document.getElementById('label_auto_addr');
   var input_ip_addr = document.getElementById('input_ip_addr');
-  var auto = ( auto_addr_routernum[routernum] == 'Y' );
-  select_blocknum.style.display = auto ? '' : 'none';
-  label_auto_addr.style.display = auto ? '' : 'none';
-  input_ip_addr.style.display = !auto ? '' : 'none';
+  if ( manual_addr_routernum[routernum] == 'Y' ) {
+%# enable ip_addr, default it to its previous value, and hide block selection
+    select_blocknum.style.display = 'none';
+    input_ip_addr.value = ip_addr_curr_value;
+    input_ip_addr.disabled = false;
+  }
+  else {
+%# the reverse
+    select_blocknum.style.display = '';
+    input_ip_addr.disabled = true;
+    input_ip_addr.value = '(automatic)';
+  }
 }
 </script>
 <& /elements/tr-td-label.html, label => ($opt{'label'} || 'Router') &>
@@ -19,7 +27,7 @@ function hide_if_auto_addr(obj, i) {
     records   => \@routers,
     name_col  => 'routername',
     value_col => 'routernum',
-    onchange  => 'hide_if_auto_addr',
+    onchange  => 'lock_ip_addr',
     curr_value=> $opt{'routernum'},
   },
   {
@@ -44,17 +52,18 @@ function hide_if_auto_addr(obj, i) {
 % }
 % else {
   <input type="text" id="input_ip_addr" name="ip_addr" 
-    style="display:none" value="<% $opt{'ip_addr'} |h%>">
+  value="<% $opt{'ip_addr'} |h%>">
 % }
-  <span id="label_auto_addr"><% $opt{'ip_addr'} || '' %> 
-  <i>(automatic)</i></span>
 </td> </tr>
+<input type="hidden" name="prev_ip_addr" value="<% $opt{'ip_addr'} |h%>">
 <script type="text/javascript">
-hide_if_auto_addr(document.getElementsByName('routernum')[0],0);
+lock_ip_addr(document.getElementsByName('routernum')[0],0);
 </script>
 <%init>
+
 my %opt = @_;
 my @routers;
+my $conf = FS::Conf->new;
 
 my $svc_x = $opt{'object'};
 if ( $svc_x ) {
@@ -91,5 +100,17 @@ else {
   @routers = qsearch('router', {});
 }
 
-my %auto_addr_routernum = map { $_->routernum, $_->auto_addr } @routers;
+my %manual_addr_routernum = map { $_->routernum, $_->manual_addr } @routers;
+
+if ( $conf->exists('auto_router') ) {
+  # Then show an "(automatic)" router, with no blocks.  manual_addr is on
+  # so that the ip_addr field will be unlocked.
+  unshift @routers, FS::router->new({
+      'routernum'   => '',
+      'routername'  => '(automatic)',
+      'manual_addr' => 'Y',
+  });
+  $manual_addr_routernum{''} = 'Y';
+}
+
 </%init>

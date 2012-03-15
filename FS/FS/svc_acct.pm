@@ -2524,7 +2524,8 @@ sub check_password {
 
   if ( $self->_password_encoding eq 'ldap' ) {
 
-    my $auth = from_rfc2307 Authen::Passphrase $self->_password;
+    $password =~ s/^{PLAIN}/{CLEARTEXT}/;
+    my $auth = from_rfc2307 Authen::Passphrase $password;
     return $auth->match($check_password);
 
   } elsif ( $self->_password_encoding eq 'crypt' ) {

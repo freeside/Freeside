@@ -17,7 +17,6 @@ my %labels = map { $_ => ( ref($fields->{$_})
 #my %labels = ();
 
 $labels{'description'} = emt('Description');
-$labels{'router'} = emt('Router');
 $labels{'speed_down'} = emt('Download Speed');
 $labels{'speed_up'} = emt('Upload Speed');
 $labels{'ip_addr'} = emt('IP Address');
@@ -32,7 +31,7 @@ my @fields = (
   'speed_up',
   { field => 'ip_addr', value => \&ip_addr },
   { field => 'sectornum', value => \&sectornum },
-  'mac_addr',
+  { field => 'mac_addr', value => \&mac_addr },
   #'latitude',
   #'longitude',
   { field => 'coordinates', value => \&coordinates },
@@ -65,6 +64,11 @@ sub ip_addr {
             '<br>Gateway: ' . $addr_block->ip_gateway;
   }
   $out;
+}
+
+sub mac_addr {
+  my $svc = shift;
+  join(':', $svc->mac_addr =~ /../g);
 }
 
 sub usergroup {
