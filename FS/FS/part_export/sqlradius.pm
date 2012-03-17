@@ -1185,7 +1185,10 @@ SELECT groupname, attribute, op, value, \'R\' FROM radgroupreply';
         'priority'  => 1,
       };
       $error = $radius_group->insert;
-      return "error inserting group $groupname: $error" if $error;
+      if ( $error ) {
+        warn "error inserting group $groupname: $error";
+        next;#don't continue trying to insert the attribute
+      }
       $attrs_of{$groupname} = {};
       $groupnum_of{$groupname} = $radius_group->groupnum;
     }
@@ -1202,7 +1205,10 @@ SELECT groupname, attribute, op, value, \'R\' FROM radgroupreply';
         'value' => $value,
       };
       $error = $new->replace($old);
-      return "error modifying attr $attrname: $error" if $error;
+      if ( $error ) {
+        warn "error modifying attr $attrname: $error";
+        next;
+      }
     }
     else {
       $new = new FS::radius_attr {
@@ -1213,7 +1219,10 @@ SELECT groupname, attribute, op, value, \'R\' FROM radgroupreply';
         'value'    => $value,
       };
       $error = $new->insert;
-      return "error inserting attr $attrname: $error" if $error;
+      if ( $error ) {
+        warn "error inserting attr $attrname: $error" if $error;
+        next;
+      }
     }
     $attrs_of{$groupname}->{$attrname} = $new;
   } #foreach $row

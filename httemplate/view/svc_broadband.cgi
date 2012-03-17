@@ -47,10 +47,11 @@ push @fields,
 
 sub router {
   my $svc = shift;
-  my $router = $svc->router or return '';
+  my $router = $svc->router;
   my $block = $svc->addr_block;
+  $router = $router->routernum . ': ' . $router->routername if $router;
   $block = '; '.$block->cidr if $block;
-  $router->routernum . ': ' . $router->routername . $block
+  $router . $block
 }
 
 sub ip_addr {
