@@ -421,7 +421,7 @@ sub check {
   
     my $router = $self->router;
     return "Router ".$self->routernum." does not serve this customer"
-      if $router->agentnum and $router->agentnum != $agentnum;
+      if $router->agentnum and $agentnum and $router->agentnum != $agentnum;
 
     if ( $router->manual_addr ) {
       $self->blocknum('');
@@ -599,7 +599,7 @@ sub allowed_routers {
   my $self = shift;
   my $svcpart = $self->svcnum ? $self->cust_svc->svcpart : $self->svcpart;
   my @r = map { $_->router } qsearch('part_svc_router', 
-    { svcpart => $self->cust_svc->svcpart });
+    { svcpart => $svcpart });
   if ( $self->cust_main ) {
     my $agentnum = $self->cust_main->agentnum;
     return grep { !$_->agentnum or $_->agentnum == $agentnum } @r;
