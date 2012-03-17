@@ -80,19 +80,24 @@ sub new {
           $self->{discounted} += $setup;
         }
 
-        if ( $discount->percent ) {
+        if ( $discount->percent > 0 ) {
           $discountable += $months * $permonth;
           $discountable -= ($discountable * $discount->percent / 100);
           $discountable -= ($permonth - $recur); # correct for prorate
           $self->{discounted} += $discountable;
         }
-        else {
+        elsif ( $discount->amount > 0 ) {
           $discountable += $recur;
           $discountable -= $discount->amount * $recur/$permonth;
           $discountable += ($months - 1) * max($permonth - $discount->amount,0);
+          $self->{discounted} += $discountable;
+        }
+        else {
+          warn "discountnum ".$discount->discountnum.
+            " has no amount or percentage, ignored\n";
+          $self->{discounted} = $self->{base};
         }
 
-        $self->{discounted} += $discountable;
         push @{ $self->{pkgnums} }, $cust_pkg->pkgnum;
       }
       else { #no discount

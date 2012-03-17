@@ -5261,6 +5261,9 @@ sub _items_discounts_avail {
                  join(', ', map { "#$_" } $plan->pkgnums)
       if $list_pkgnums;
 
+    # discounts for non-integer months don't work anyway
+    $months = sprintf("%d", $months);
+
     +{
       description => $self->mt('Save [_1]% by paying for [_2] months',
                                 $percent, $months),
