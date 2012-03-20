@@ -355,11 +355,35 @@ sub condition_sql_option_option {
      )";
 
   "( SELECT optionname FROM part_event_condition_option_option
-       WHERE optionnum = $optionnum
+       WHERE optionnum IN $optionnum
    )";
 
 }
 
+#used for part_event/Condition/cust_bill_has_service.pm
+#a little false laziness w/above and condition_sql_option_integer
+sub condition_sql_option_option_integer {
+  my( $class, $option, $driver_name ) = @_;
+
+  ( my $condname = $class ) =~ s/^.*:://;
+
+  my $optionnum = 
+    "( SELECT optionnum FROM part_event_condition_option
+        WHERE part_event_condition_option.eventconditionnum =
+              cond_$condname.eventconditionnum
+          AND part_event_condition_option.optionname  = '$option'
+          AND part_event_condition_option.optionvalue = 'HASH'
+     )";
+
+  my $integer = ($driver_name =~ /^mysql/) ? 'UNSIGNED INTEGER' : 'INTEGER';
+
+  my $optionname = "CAST(optionname AS $integer)";
+
+  "( SELECT $optionname FROM part_event_condition_option_option
+       WHERE optionnum IN $optionnum
+   )";
+
+}
 
 =item condition_sql_option_age_from OPTION FROM_TIMESTAMP
 
