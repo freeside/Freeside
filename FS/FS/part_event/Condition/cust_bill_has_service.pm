@@ -6,7 +6,7 @@ use FS::cust_bill;
 use base qw( FS::part_event::Condition );
 
 sub description {
-  'Invoice is billing for certain service definitions';
+  'Invoice is billing for (any of) certain service definitions';
 }
 
 sub eventtable_hashref {
