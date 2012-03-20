@@ -16,9 +16,6 @@ sub eventtable_hashref {
     };
 }
 
-# could not find component for path '/elements/tr-select-part_svc.html'
-# sub disabled { 1; }
-
 sub option_fields {
   (
     'has_service' => { 'label'      => 'Has service',
@@ -44,14 +41,16 @@ sub condition {
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
-  my $servicenum =
-    $class->condition_sql_option_option('has_service');
+  my $servicenums =
+    $class->condition_sql_option_option_integer( 'has_service',
+                                                 $opt{'driver_name'},
+                                               );
 
   my $sql = qq| 0 < ( SELECT COUNT(cs.svcpart)
      FROM cust_bill_pkg cbp, cust_svc cs
     WHERE cbp.invnum = cust_bill.invnum
       AND cs.pkgnum = cbp.pkgnum
-      AND cs.svcpart IN $servicenum
+      AND cs.svcpart IN $servicenums
   )
   |;
   return $sql;
