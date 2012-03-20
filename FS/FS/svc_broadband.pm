@@ -639,6 +639,11 @@ sub _upgrade_data {
       routernum => ''
     })) {
     my $addr_block = $self->addr_block;
+    if ( !$addr_block ) {
+      # super paranoid mode
+      warn "WARNING: svcnum ".$self->svcnum." is assigned to addr_block ".$self->blocknum.", which does not exist; skipped.\n";
+      next;
+    }
     my $ip_addr = $self->ip_addr;
     my $routernum = $addr_block->routernum;
     if ( $routernum ) {
