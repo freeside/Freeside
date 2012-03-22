@@ -2,9 +2,13 @@ package FS::svc_hardware;
 
 use strict;
 use base qw( FS::svc_Common );
+use vars qw( $conf );
 use FS::Record qw( qsearch qsearchs );
 use FS::hardware_type;
 use FS::hardware_status;
+use FS::Conf;
+
+FS::UID->install_callback(sub { $conf = FS::Conf->new; });
 
 =head1 NAME
 
@@ -125,7 +129,7 @@ sub search_sql {
 
 sub label {
   my $self = shift;
-  $self->serial || $self->hw_addr;
+  $self->serial || $self->display_hw_addr;
 }
 
 =item insert
@@ -213,6 +217,18 @@ sub status_label {
   $status->label;
 }
 
+=item display_hw_addr
+
+Returns the 'hw_addr' field, formatted as a MAC address if the
+'svc_hardware-check_mac_addr' option is enabled.
+
+=cut
+
+sub display_hw_addr {
+  my $self = shift;
+  ($conf->exists('svc_hardware-check_mac_addr') ? 
+    join(':', $self->hw_addr =~ /../g) : $self->hw_addr)
+}
 
 =back
 
