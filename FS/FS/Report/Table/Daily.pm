@@ -3,7 +3,9 @@ package FS::Report::Table::Daily;
 use strict;
 use vars qw( @ISA );
 use FS::Report::Table;
+use FS::Conf;
 use Time::Local qw( timelocal );
+use Date::Format qw( time2str );
 
 @ISA = qw( FS::Report::Table );
 
@@ -58,16 +60,15 @@ sub data {
   my $sdate = timelocal(0,0,0,$sday,$smonth-1,$syear);
   my $edate = timelocal(0,0,0,$eday,$emonth-1,$eyear);
 
+  my $conf = FS::Conf->new;
+  my $date_format = $conf->config('date_format') || '%d/%m/%Y';
+
   #warn "daily range $sdate $edate\n";
 
   # XXX: use date_format config for the labels since we have day in the labels now?
   # XXX: leap seconds / DST 
   while ( $sdate < $edate ) {
-    my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($sdate);
-    $mon++;
-    $year += 1900;
-    #warn "label=$mday/$mon/$year\n";
-    push @{$data{label}}, "$mday/$mon/$year";
+    push @{$data{label}}, time2str($date_format, $sdate);
 
     my $speriod = $sdate;
     $sdate += 86400;
