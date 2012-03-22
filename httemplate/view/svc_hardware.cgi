@@ -25,19 +25,11 @@ my $note =   { field => 'note',
                type  => 'text',
                value => sub { encode_entities($_[0]->note) }
              };
-my $hw_addr ={ field => 'hw_addr',
-               type  => 'text',
-               value => sub { 
-                my $hw_addr = $_[0]->hw_addr;
-                $conf->exists('svc_hardware-check_mac_addr') ?
-                  join(':', $hw_addr =~ /../g) : $hw_addr
-                },
-              };
 
 my @fields = (
   $model,
   'serial',
-  $hw_addr,
+  'display_hw_addr',
   'ip_addr',
   'smartcard',
   $status,

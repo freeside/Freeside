@@ -19,7 +19,7 @@
                                      'model',
                                      'revision',
                                      'serial',
-                                     'hw_addr',
+                                     'display_hw_addr',
                                      'ip_addr',
                                      'smartcard',
                                      \&FS::UI::Web::cust_fields,
