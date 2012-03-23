@@ -175,8 +175,15 @@ if ( $cgi->param('error') ) {
     if ( $errors{'_setup_areyousure'} ) {
       push @errors,
         "You are attempting to remove the setup date.  This will re-charge the
-         customer for the setup fee. Are you sure you want to do this? ".
+         customer for the setup fee.  Are you sure you want to do this? ".
         '<INPUT TYPE="checkbox" NAME="setup_areyousure" VALUE="1">';
+    }
+
+    if ( $errors{'_setupadd_areyousure'} ) {
+      push @errors,
+        "You are attempting to add a setup date.  This will prevent charging the
+         customer for the setup fee.  Are you sure you want to do this? ".
+        '<INPUT TYPE="checkbox" NAME="setupadd_areyousure" VALUE="1">';
     }
 
     if ( $errors{'_start'} ) {

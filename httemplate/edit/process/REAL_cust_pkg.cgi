@@ -34,6 +34,10 @@ push @errors, '_setup_areyousure'
   if ! $hash{'setup'} && $old->setup         # if the setup date was removed
   && ! $cgi->param('setup_areyousure');      # and it wasn't confirmed 
 
+push @errors, '_setupadd_areyousure'
+  if $hash{'setup'} && ! $old->setup         # if the setup date was added
+  && ! $cgi->param('setupadd_areyousure');   # and it wasn't confirmed 
+
 push @errors, '_start'
   if $hash{'start_date'} && !$old->start_date # if a start date was added
   && $hash{'setup'};                          # but there's a setup date
