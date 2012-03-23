@@ -142,7 +142,7 @@ any delimiter and linked from the elements in @data.
 % # after that we have to start skipping labels. also remove the dots, since 
 % # they're just a blob at that point.
 %   my $num_labels = scalar(@{ $opt{axis_labels} });
-%   my %chart_opt;
+%   my %chart_opt = %{ $opt{chart_options} || {} };
 %   if ( $num_labels > 28 ) {
 %     $chart_opt{x_ticks} = 'vertical';
 %     if ( $num_labels > 60 ) {
@@ -212,7 +212,6 @@ any delimiter and linked from the elements in @data.
 % }
 
 % # i for item, e for entry
-
 % my $i = 1;
 % foreach my $row ( @items ) {
 % #make a style
@@ -225,11 +224,13 @@ any delimiter and linked from the elements in @data.
 %   my $label = shift @row_labels;
 %   $cell[$i] = [ $label ];
 %
-%   my $data_row = shift @data;
+%   my $data_row = $data[$i-1];
+%#   my $data_row = shift @data;
 %   if ( ! $opt{'nototal'} ) {
 %     push @$data_row, sum(@$data_row);
 %   }
-%   foreach my $entry ( @$data_row ) {
+%   foreach ( @$data_row ) {
+%     my $entry = $_;
 %     $entry = $money_char . sprintf($sprintf, $entry);
 %     $entry = $link_prefix . shift(@$links) . "\">$entry</A>" if $link_prefix;
 %     push @{$cell[$i]}, $entry;
@@ -242,6 +243,7 @@ any delimiter and linked from the elements in @data.
 %   push @styles, ".i$i { text-align: right; background-color: #f5f6be; }";
 %   my $links = $opt{'bottom_link'} || [];
 %   my $link_prefix = shift @$links;
+%   $link_prefix = '<A CLASS="cell" HREF="'.$link_prefix if $link_prefix;
 %   $cell[$i] = [ emt('Total') ];
 %   for (my $e = 0; $e < $num_entries + 1; $e++) {
 %     my $entry = sum(map { $_->[$e] } @data);

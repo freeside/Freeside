@@ -1,0 +1,83 @@
+<& elements/monthly.html,
+  'title'           => $title,
+  'items'           => \@items,
+  'labels'          => \@labels,
+  'graph_labels'    => \@labels,
+  'params'          => \@params,
+  'colors'          => \@colors,
+  'links'           => \@links,
+  'agentnum'        => $agentnum,
+  'sprintf'         => '%u',
+  'disable_money'   => 1,
+  'bottom_total'    => (scalar @items > 1 ? 1 : 0),
+  'bottom_link'     => $bottom_link,
+  'link_fromparam'  => 'signupdate_begin',
+  'link_toparam'    => 'signupdate_end',
+  'chart_options'   => { precision => 0 },
+&>
+<%init>
+
+#XXX use a different ACL for package churn?
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+#false laziness w/money_time.cgi, cust_bill_pkg.cgi
+my $title = 'Customer Signup',
+
+#XXX or virtual
+my( $agentnum, $agent ) = ('', '');
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+  $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+  die "agentnum $agentnum not found!" unless $agent;
+}
+
+my $agentname = $agent ? $agent->agent.' ' : '';
+$title = "$agentname $title" if $agentname;
+
+my $link = $p.'search/cust_main.html?';
+$link .= "agentnum=$agentnum;" if $agentnum;
+
+my $bottom_link = $link;
+
+my @referral;
+my $all_referral = 0;
+if ( $cgi->param('refnum') eq 'all' ) {
+  @referral = ('');
+  $all_referral = 1;
+}
+elsif ( $cgi->param('refnum') =~ /^(\d*)$/ ) {
+  if ( $1 ) {
+    @referral = ( qsearchs('part_referral', { 'refnum' => $1 } ) );
+    die "refnum $1 not found!" unless @referral;
+    $title .= ' - '.$referral[0]->referral;
+    $bottom_link .= ";refnum=$1";
+  }
+  else { #refnum = ''
+    @referral = qsearch('part_referral', {});
+    $title .= ' by Advertising Source';
+  }
+}
+
+my (@items, @labels, @colors, @params, @links);
+
+my $hue = 0;
+my $hue_increment = 125;
+my @signup_colors;
+
+foreach my $referral (@referral) {
+  push @items, 'signups';
+  push @labels, ( $all_referral ? 'Signups' : $referral->referral );
+  push @params, ( $all_referral ? [] : [ 'refnum' => $referral->refnum ] );
+  push @links, $link . ($all_referral ? '' : "refnum=".$referral->refnum.';');
+  if ( !@signup_colors ) {
+    @signup_colors = Color::Scheme->new
+                        ->from_hue($hue)
+                        ->scheme('analogic')
+                        ->colors;
+    $hue += $hue_increment;
+  }
+  push @colors, shift @signup_colors;
+}
+
+</%init>

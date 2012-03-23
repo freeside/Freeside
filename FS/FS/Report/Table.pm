@@ -32,6 +32,24 @@ options in %opt.
 
 =over 4
 
+=item signups: The number of customers signed up.
+
+=cut
+
+sub signups {
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+  my @where = (
+    $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, 'signupdate')
+  );
+  if ( $opt{'refnum'} ) {
+    push @where, "refnum = ".$opt{'refnum'};
+  }
+
+  $self->scalar_sql(
+    "SELECT COUNT(*) FROM cust_main WHERE ".join(' AND ', @where)
+  );
+}
+
 =item invoiced: The total amount charged on all invoices.
 
 =cut
