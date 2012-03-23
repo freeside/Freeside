@@ -447,6 +447,8 @@ HASHREF.  Valid parameters are
 
 =item address
 
+=item refnum
+
 =item cancelled_pkgs
 
 bool
@@ -551,6 +553,13 @@ sub search {
                                qw(address1 address2 ship_address1 ship_address2)
                           ).
                  ')';
+  }
+
+  ###
+  # refnum
+  ###
+  if ( $params->{'refnum'} =~ /^(\d+)$/ ) {
+    push @where, "refnum = $1";
   }
 
   ##

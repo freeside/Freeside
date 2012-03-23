@@ -108,6 +108,7 @@ tie my %report_customers, 'Tie::IxHash';
 $report_customers{'List customers'} = [ \%report_customers_lists, 'List customers' ]
   if $curuser->access_right('List customers');
 $report_customers{'Zip code distribution'}     = [ $fsurl. 'search/report_cust_main-zip.html', 'Zip codes by number of customers' ];
+$report_customers{'Customer signup report'}       = [ $fsurl. 'graph/report_cust_signup.html', 'New customer signups by date' ],
 $report_customers{'Advanced customer reports'} = [ $fsurl. 'search/report_cust_main.html', 'by status, signup date, agent, etc.' ]
   if    $curuser->access_right('List customers')
      && $curuser->access_right('List packages');
