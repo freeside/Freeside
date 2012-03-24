@@ -463,7 +463,7 @@ sub assign_ip_addr {
   my @blocks;
   my $ip_addr;
 
-  if ( $self->blocknum and $self->addr_block->routernum == $self->routernum ) {
+  if ( $self->addr_block and $self->addr_block->routernum == $self->routernum ) {
     # simple case: user chose a block, find an address in that block
     # (this overrides an existing IP address if it's not in the block)
     @blocks = ($self->addr_block);
@@ -482,15 +482,13 @@ sub assign_ip_addr {
       return '';
     }
     $ip_addr = $block->next_free_addr;
-    last if $ip_addr;
+    if ( $ip_addr ) {
+      $self->set(ip_addr => $ip_addr->addr);
+      $self->set(blocknum => $block->blocknum);
+      return '';
+    }
   }
-  if ( $ip_addr ) {
-    $self->set(ip_addr => $ip_addr->addr);
-    return '';
-  }
-  else {
-    return 'No IP address available on this router';
-  }
+  return 'No IP address available on this router';
 }
 
 =item assign_router
@@ -667,6 +665,38 @@ sub _upgrade_data {
         ": no routernum in address block ".$addr_block->cidr.", skipped\n";
     }
   }
+
+  # assign blocknums to services that should have them
+  my @all_blocks = qsearch('addr_block', { });
+  SVC: foreach my $self ( 
+    qsearch({
+        'select' => 'svc_broadband.*',
+        'table' => 'svc_broadband',
+        'addl_from' => 'JOIN router USING (routernum)',
+        'hashref' => {},
+        'extra_sql' => 'WHERE svc_broadband.blocknum IS NULL '.
+                       'AND router.manual_addr IS NULL',
+    }) 
+  ) {
+   
+    next SVC if $self->ip_addr eq '';
+    my $NetAddr = $self->NetAddr;
+    # inefficient, but should only need to run once
+    foreach my $block (@all_blocks) {
+      if ($block->NetAddr->contains($NetAddr)) {
+        $self->set(blocknum => $block->blocknum);
+        my $error = $self->replace;
+        warn "WARNING: error assigning blocknum ".$block->blocknum.
+        " to service ".$self->svcnum."\n$error; skipped\n"
+          if $error;
+        next SVC;
+      }
+    }
+    warn "WARNING: no block found containing ".$NetAddr->addr." for service ".
+      $self->svcnum;
+    #next SVC;
+  }
+
   '';
 }
 
