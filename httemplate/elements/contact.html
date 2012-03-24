@@ -21,11 +21,7 @@
 %             && $contact_phone->countrycode ne '1';
 %         }
 %       } elsif ( $field eq 'emailaddress' ) {
-%         #XXX multiple not yet supported
-%         my $contact_email = qsearchs('contact_email', {
-%           'contactnum' => $curr_value,
-%         });
-%         $value = $contact_email->emailaddress if $contact_email;
+%         $value = join(', ', map $_->emailaddress, $contact->contact_email);
 %       } else {
 %         $value = $contact->get($field);
 %       }

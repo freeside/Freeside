@@ -135,15 +135,21 @@ sub insert {
   }
 
   if ( $self->get('emailaddress') =~ /\S/ ) {
-    my $contact_email = new FS::contact_email {
-      'contactnum'   => $self->contactnum,
-      'emailaddress' => $self->get('emailaddress'),
-    };
-    $error = $contact_email->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+
+    foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
+ 
+      my $contact_email = new FS::contact_email {
+        'contactnum'   => $self->contactnum,
+        'emailaddress' => $email,
+      };
+      $error = $contact_email->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
     }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -160,7 +166,38 @@ Delete this record from the database.
 
 # the delete method can be inherited from FS::Record
 
-# XXX delete contact_phone, contact_email
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $object ( $self->contact_phone, $self->contact_email ) {
+    my $error = $object->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item replace OLD_RECORD
 
@@ -209,6 +246,34 @@ sub replace {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+  }
+
+  if ( defined($self->get('emailaddress')) ) {
+
+    #ineffecient but whatever, how many email addresses can there be?
+
+    foreach my $contact_email ( $self->contact_email ) {
+      my $error = $contact_email->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
+    foreach my $email ( split(/\s*,\s*/, $self->get('emailaddress') ) ) {
+ 
+      my $contact_email = new FS::contact_email {
+        'contactnum'   => $self->contactnum,
+        'emailaddress' => $email,
+      };
+      $error = $contact_email->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -284,6 +349,22 @@ sub line {
   $data .= ' ('. $self->comment. ')'
     if $self->comment;
   $data;
+}
+
+sub cust_location {
+  my $self = shift;
+  return '' unless $self->locationnum;
+  qsearchs('cust_location', { 'locationnum' => $self->locationnum } );
+}
+
+sub contact_phone {
+  my $self = shift;
+  qsearch('contact_phone', { 'contactnum' => $self->contactnum } );
+}
+
+sub contact_email {
+  my $self = shift;
+  qsearch('contact_email', { 'contactnum' => $self->contactnum } );
 }
 
 =back
