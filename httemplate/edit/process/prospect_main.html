@@ -34,7 +34,7 @@ my $args_callback = sub {
 
 };
 
-my @contact_fields = qw( first last title comment emailaddress );
+my @contact_fields = qw( classnum first last title comment emailaddress );
 foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
   push @contact_fields, 'phonetypenum'.$phone_type->phonetypenum;
 }

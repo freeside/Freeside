@@ -5,6 +5,7 @@ use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::prospect_main;
 use FS::cust_main;
+use FS::contact_class;
 use FS::cust_location;
 use FS::contact_phone;
 use FS::contact_email;
@@ -322,8 +323,9 @@ sub check {
   my $error = 
     $self->ut_numbern('contactnum')
     || $self->ut_foreign_keyn('prospectnum', 'prospect_main', 'prospectnum')
-    || $self->ut_foreign_keyn('custnum', 'cust_main', 'custnum')
+    || $self->ut_foreign_keyn('custnum',     'cust_main',     'custnum')
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
+    || $self->ut_foreign_keyn('classnum',    'contact_class', 'classnum')
     || $self->ut_textn('last')
     || $self->ut_textn('first')
     || $self->ut_textn('title')
@@ -355,6 +357,18 @@ sub cust_location {
   my $self = shift;
   return '' unless $self->locationnum;
   qsearchs('cust_location', { 'locationnum' => $self->locationnum } );
+}
+
+sub contact_class {
+  my $self = shift;
+  return '' unless $self->classnum;
+  qsearchs('contact_class', { 'classnum' => $self->classnum } );
+}
+
+sub contact_classname {
+  my $self = shift;
+  my $contact_class = $self->contact_class or return '';
+  $contact_class->classname;
 }
 
 sub contact_phone {

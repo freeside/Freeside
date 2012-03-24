@@ -981,6 +981,7 @@ sub tables_hashref {
         'prospectnum',   'int', 'NULL',      '', '', '',
         'custnum',       'int', 'NULL',      '', '', '',
         'locationnum',   'int', 'NULL',      '', '', '', #not yet
+        'classnum',      'int', 'NULL',      '', '', '',
 #        'titlenum',      'int', 'NULL',      '', '', '', #eg Mr. Mrs. Dr. Rev.
         'last',      'varchar',     '', $char_d, '', '', 
 #        'middle',    'varchar', 'NULL', $char_d, '', '', 

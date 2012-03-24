@@ -32,7 +32,7 @@
 
 % foreach my $contact ( $prospect_main->contact ) {
     <TR>
-      <TD ALIGN="right">Contact</TD>
+      <TD ALIGN="right"><% $contact->contact_classname %> Contact</TD>
       <TD BGCOLOR="#FFFFFF"><% $contact->line %></TD>
     </TR>
 %}

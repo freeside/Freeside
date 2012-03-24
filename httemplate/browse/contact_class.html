@@ -1,7 +1,7 @@
 <% include( 'elements/browse.html',
-                 'title'       => 'Contact classes',
+                 'title'       => 'Contact types',
                  'html_init'   => $html_init,
-                 'name'        => 'contact classes',
+                 'name'        => 'contact types',
                  'disableable' => 1,
                  'disabled_statuspos' => 1,
                  'query'       => { 'table'     => 'contact_class',
@@ -21,7 +21,7 @@ die "access denied"
 
 my $html_init = 
   'Contact classes define types for contacts.<BR><BR>'.
-  qq!<A HREF="${p}edit/contact_class.html"><I>Add a contact class</I></A><BR><BR>!;
+  qq!<A HREF="${p}edit/contact_class.html"><I>Add a contact type</I></A><BR><BR>!;
 
 my $count_query = 'SELECT COUNT(*) FROM contact_class';
 

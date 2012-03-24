@@ -1,6 +1,10 @@
 <% include( 'elements/class_Common.html',
-              'name'   => 'Contact Class',
+              'name'   => 'Contact Type',
               'table'  => 'contact_class',
 	      'nocat' => 1,
+              'addl_labels' => { 'classnum'  => 'Type number',
+                                 'classname' => 'Type name',
+                                 'disabled'  => 'Disable type',
+                               },
           )
 %>
