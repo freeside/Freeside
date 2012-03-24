@@ -2,7 +2,7 @@ package FS::part_pkg::prorate_Mixin;
 
 use strict;
 use vars qw( %info );
-use Time::Local qw( timelocal );
+use Time::Local qw( timelocal timelocal_nocheck );
 use Date::Format qw( time2str );
 
 %info = ( 
@@ -202,28 +202,17 @@ sub _endpoints {
   }
   my $mend;
   my $mstart;
-  # if cutoff day > 28, force it to the 1st of next month
-  if ( $cutoff_day > 28 ) {
-    $cutoff_day = 1;
-    # and if we are currently after the 28th, roll the current day 
-    # forward to that day
-    if ( $mday > 28 ) {
-      $mday = 1;
-      #set $mnow = $mend so the amount billed will be zero
-      $mnow = timelocal(0,0,0,1,$mon == 11 ? 0 : $mon + 1,$year+($mon==11));
-    }
-  }
   if ( $mday >= $cutoff_day ) {
     $mend = 
-      timelocal(0,0,0,$cutoff_day,$mon == 11 ? 0 : $mon + 1,$year+($mon==11));
+      timelocal_nocheck(0,0,0,$cutoff_day,$mon == 11 ? 0 : $mon + 1,$year+($mon==11));
     $mstart =
-      timelocal(0,0,0,$cutoff_day,$mon,$year);
+      timelocal_nocheck(0,0,0,$cutoff_day,$mon,$year);
   }
   else {
     $mend = 
-      timelocal(0,0,0,$cutoff_day,$mon,$year);
+      timelocal_nocheck(0,0,0,$cutoff_day,$mon,$year);
     $mstart = 
-      timelocal(0,0,0,$cutoff_day,$mon == 0 ? 11 : $mon - 1,$year-($mon==0));
+      timelocal_nocheck(0,0,0,$cutoff_day,$mon == 0 ? 11 : $mon - 1,$year-($mon==0));
   }
   return ($mnow, $mend, $mstart);
 }
