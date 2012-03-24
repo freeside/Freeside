@@ -84,7 +84,9 @@ sub calc_discount {
     $amount += $discount->amount
         if $cust_pkg->pkgpart == $param->{'real_pkgpart'};
     $amount += sprintf('%.2f', $discount->percent * $br / 100 );
-    my $chg_months = $param->{'months'} || $cust_pkg->part_pkg->freq;
+    my $chg_months = defined($param->{'months'}) ?
+                      $param->{'months'} :
+                      $cust_pkg->part_pkg->freq;
 
     my $months = $discount->months
     ? min( $chg_months,
