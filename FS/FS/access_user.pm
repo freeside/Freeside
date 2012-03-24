@@ -507,7 +507,7 @@ sub default_customer_view {
 
   $self->option('default_customer_view')
     || $conf->config('cust_main-default_view')
-    || 'jumbo'; #'basics' in 1.9.1?
+    || 'basics'; #s/jumbo/basics/ starting with 3.0
 
 }
 
