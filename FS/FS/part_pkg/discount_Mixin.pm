@@ -82,7 +82,7 @@ sub calc_discount {
     #UI enforces one or the other (for now?  probably for good)
     my $amount = 0;
     $amount += $discount->amount
-        if defined $param->{'real_pkgpart'} && $cust_pkg->pkgpart == $param->{'real_pkgpart'};
+        if $cust_pkg->pkgpart == $param->{'real_pkgpart'};
     $amount += sprintf('%.2f', $discount->percent * $br / 100 );
     my $chg_months = $param->{'months'} || $cust_pkg->part_pkg->freq;
 
@@ -124,10 +124,12 @@ sub calc_discount {
     }
 
     if ( ! defined $param->{'setup_charge'} ) {
-      my $error = $cust_pkg_discount->increment_months_used($months)
-        if defined $param->{'real_pkgpart'} 
-        && $cust_pkg->pkgpart == $param->{'real_pkgpart'};
-      die "error discounting: $error" if $error;
+      if ( $cust_pkg->pkgpart == $param->{'real_pkgpart'} ) {
+        push @{ $param->{precommit_hooks} }, sub {
+          my $error = $cust_pkg_discount->increment_months_used($months);
+          die "error discounting: $error" if $error;
+        };
+      }
 
       $amount = min($amount, $br);
       $amount *= $months;
