@@ -25,7 +25,7 @@
 
 my ($latitude, $longitude, $name, $agentnum) = @_;
 
-my $query = 'name='. uri_escape($name).
+my $query = 'name='. uri_escape_utf8($name).
             ';lat='. $latitude.
             ';lon='. $longitude;
 
