@@ -498,7 +498,7 @@ sub access_right {
 
 Returns the default customer view for this user, from the 
 "default_customer_view" user preference, the "cust_main-default_view" config,
-or the hardcoded default, "jumbo" (may change to "basics" in the near future).
+or the hardcoded default, "basics" (formerly "jumbo" prior to 3.0).
 
 =cut
 
