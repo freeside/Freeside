@@ -294,6 +294,8 @@ L<FS::reason> - Reason class
 
 L<FS::cust_pkg_reason> - Package reason class
 
+L<FS::contact_class> - Contact class class
+
 L<FS::contact> - Contact class
 
 L<FS::contact_phone> - Contact phone class

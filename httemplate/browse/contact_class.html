@@ -1,0 +1,34 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Contact classes',
+                 'html_init'   => $html_init,
+                 'name'        => 'contact classes',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 1,
+                 'query'       => { 'table'     => 'contact_class',
+                                    'hashref'   => {},
+                                    'order_by' => 'ORDER BY classnum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => $header,
+                 'fields'      => $fields,
+                 'links'       => $links,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  'Contact classes define types for contacts.<BR><BR>'.
+  qq!<A HREF="${p}edit/contact_class.html"><I>Add a contact class</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM contact_class';
+
+my $link = [ $p.'edit/contact_class.html?', 'classnum' ];
+
+my $header = [ '#', 'Class' ];
+my $fields = [ 'classnum', 'classname' ];
+my $links  = [ $link, $link ];
+
+</%init>

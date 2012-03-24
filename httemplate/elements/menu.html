@@ -491,9 +491,11 @@ tie my %config_cust, 'Tie::IxHash',
   'Customer tags'       => [ $fsurl.'browse/part_tag.html', '' ],
   'Customer classes'    =>  [ $fsurl.'browse/cust_class.html', 'Customer classes define groups of customers for reporting.' ],
   'Customer categories' =>  [ $fsurl.'browse/cust_category.html', 'Customer categories define groups of customer classes.' ],
+  'separator'     => '', #its a separator!
+  'Contact classes'    =>  [ $fsurl.'browse/contact_class.html', 'Contact classes define types for contacts.' ],
 ;
   
-$config_cust{'Customer note classes'} = [ $fsurl.'browse/cust_note_class.html', 'Customer note classes define groups of notes for reporting.' ]
+$config_cust{'Note classes'} = [ $fsurl.'browse/cust_note_class.html', 'Note classes define groups of customer notes for reporting.' ]
     if ($conf->exists('note-classes') && $conf->config('note-classes') > 0);
 
 tie my %config_agent, 'Tie::IxHash',
@@ -576,6 +578,7 @@ if ( $curuser->access_right('Configuration' ) ) {
     'Resellers'     => [ \%config_agent, '' ],
     'separator2'    => '', #its a separator!
     'Customers'     => [ \%config_cust, '' ],
+    #or this? 'Customers and Contacts' => [ \%config_cust, '' ],
   );
 }
 $config_menu{'Packages'} = [ \%config_pkg, '' ]

@@ -938,7 +938,7 @@ sub tables_hashref {
                  ],
     },
 
-    'cust_recon' => {  # what purpose does this serve?
+    'cust_recon' => {  # (some sort of not-well understood thing for OnPac)
       'columns' => [
         'reconid',      'serial',  '',          '', '', '', 
         'recondate',    @date_type,                 '', '', 
@@ -964,7 +964,17 @@ sub tables_hashref {
       'index' => [],
     },
 
-    #eventually for cust_main too
+    'contact_class' => {
+      'columns' => [
+        'classnum',    'serial',   '',      '', '', '', 
+        'classname',   'varchar',  '', $char_d, '', '', 
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [],
+      'index' => [ ['disabled'] ],
+    },
+
     'contact' => {
       'columns' => [
         'contactnum', 'serial',     '',      '', '', '',
@@ -1586,7 +1596,8 @@ sub tables_hashref {
         'percent',    'decimal',     '',   '7,4', '', '',
         'months',     'decimal', 'NULL',   '7,4', '', '',
         'disabled',      'char', 'NULL',       1, '', '', 
-        'setup',      'char', 'NULL',       1, '', '', 
+        'setup',         'char', 'NULL',       1, '', '', 
+        #'linked',        'char', 'NULL',       1, '', '',
       ],
       'primary_key' => 'discountnum',
       'unique' => [],
