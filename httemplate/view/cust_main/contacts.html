@@ -5,8 +5,8 @@
 % foreach my $which ( '', 'ship_' ) {
 %   my $pre = $cust_main->get("${which}last") ? $which : '';
 
-<% $which{$which} %> <% mt('address') |h %>
-<% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
+<FONT CLASS="fsinnerbox-title"><% $which{$which} %> <% mt('address') |h %></FONT>
+<TABLE CLASS="fsinnerbox">
 <TR>
   <TD ALIGN="right"><% mt('Contact name') |h %></TD>
   <TD COLSPAN=5 BGCOLOR="#ffffff">
@@ -17,18 +17,23 @@
     <TD BGCOLOR="#ffffff"><% $cust_main->masked('ss') || '&nbsp' %></TD>
 % } 
 </TR>
+
 % if ( $conf->exists('cust-email-high-visibility') && $which eq '') {
-<TR>
-  <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
-  <TD BGCOLOR="#ffff00">
-    <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
-  </TD>
-</TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
+    <TD BGCOLOR="#ffff00">
+      <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
+    </TD>
+  </TR>
 % }
-<TR>
-  <TD ALIGN="right"><% mt('Company') |h %></TD>
-  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}company") |h %></TD>
-</TR>
+
+% if ( $cust_main->get("${pre}company") ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Company') |h %></TD>
+    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}company") |h %></TD>
+  </TR>
+% }
+
 <TR>
   <TD ALIGN="right"><% mt('Address') |h %></TD>
   <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address1") |h %></TD>
@@ -74,42 +79,30 @@
   &>
 % }
 
-<TR>
-  <TD ALIGN="right"><% $daytime_label %></TD>
-  <TD COLSPAN=3 BGCOLOR="#ffffff">
-    <& /elements/phonenumber.html,
-                  $cust_main->get("${pre}daytime"),
-                  'callable'=>1,
-                  'calling_list_exempt'=>$cust_main->calling_list_exempt,
-    &>
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% $night_label %></TD>
-  <TD COLSPAN=3 BGCOLOR="#ffffff">
-    <& /elements/phonenumber.html,
-                  $cust_main->get("${pre}night"),
-                  'callable'=>1,
-                  'calling_list_exempt'=>$cust_main->calling_list_exempt,
-    &>
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% $mobile_label %></TD>
-  <TD COLSPAN=3 BGCOLOR="#ffffff">
-    <& /elements/phonenumber.html,
-                  $cust_main->get("${pre}mobile"),
-                  'callable'=>1,
-                  'calling_list_exempt'=>$cust_main->calling_list_exempt,
-    &>
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right"><% mt('Fax') |h %></TD>
-  <TD COLSPAN=3 BGCOLOR="#ffffff">
-    <% $cust_main->get("${pre}fax") || '&nbsp' %>
-  </TD>
-</TR>
+% foreach my $phone (grep $cust_main->get($pre.$_), qw( daytime night mobile )){
+
+  <TR>
+    <TD ALIGN="right"><% $phone_label{$phone} %></TD>
+    <TD COLSPAN=3 BGCOLOR="#ffffff">
+      <& /elements/phonenumber.html,
+                    $cust_main->get($pre.$phone),
+                    'callable'=>1,
+                    'calling_list_exempt'=>$cust_main->calling_list_exempt,
+      &>
+    </TD>
+  </TR>
+
+% }
+
+% if ( $cust_main->get("${pre}fax") ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Fax') |h %></TD>
+    <TD COLSPAN=3 BGCOLOR="#ffffff">
+      <% $cust_main->get("${pre}fax") || '&nbsp' %>
+    </TD>
+  </TR>
+% }
+
 % if ( $which eq '' && $conf->exists('show_stateid') ) { 
   <TR>
     <TD ALIGN="right"><% $stateid_label %></TD>
@@ -118,23 +111,31 @@
     <TD BGCOLOR="#ffffff"><% $cust_main->stateid_state || '&nbsp' %></TD>
   </TR>
 % } 
-</TABLE></TD></TR></TABLE>
+
+</TABLE>
 % if ( $which ne 'ship_' ) {
 <BR>
 % }
 % } 
-<& contacts_new.html, $cust_main &>
 <%once>
 
-my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
-                      ? 'Day&nbsp;Phone'
-                      : FS::Msgcat::_gettext('daytime');
-my $night_label   = FS::Msgcat::_gettext('night') =~ /^(night)?$/
-                      ? 'Night&nbsp;Phone'
-                      : FS::Msgcat::_gettext('night');
-my $mobile_label = FS::Msgcat::_gettext('mobile') =~ /^(mobile)?$/
-                      ? 'Mobile&nbsp;Phone'
-                      : FS::Msgcat::_gettext('Mobile');
+my %phone_label = (
+
+  'daytime' => ( FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
+                   ? 'Day&nbsp;Phone'
+                   : FS::Msgcat::_gettext('daytime')
+               ),
+
+  'night'   => ( FS::Msgcat::_gettext('night') =~ /^(night)?$/
+                   ? 'Night&nbsp;Phone'
+                   : FS::Msgcat::_gettext('night')
+               ),
+
+  'mobile'  => ( FS::Msgcat::_gettext('mobile') =~ /^(mobile)?$/
+                   ? 'Mobile&nbsp;Phone'
+                   : FS::Msgcat::_gettext('Mobile')
+               ),
+);
 
 my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
                       ? 'Driver&rsquo;s&nbsp;License'

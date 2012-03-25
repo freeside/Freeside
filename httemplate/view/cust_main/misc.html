@@ -1,4 +1,4 @@
-<% ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
+<TABLE CLASS="fsinnerbox">
 
 <TR>
   <TD ALIGN="right"><% mt('Customer number') |h %></TD>
@@ -150,7 +150,7 @@
     <% $cust_main->pvf($_)->widget('HTML', 'view', $cust_main->getfield($_)) %>
 % }
 
-</TABLE></TD></TR></TABLE>
+</TABLE>
 <%init>
 
 my( $cust_main ) = @_;

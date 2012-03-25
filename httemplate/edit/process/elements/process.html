@@ -62,6 +62,10 @@ Example:
                       'fields' => [qw( fieldname fieldname2 )],
                     },
 
+   'skip_process' => 0, #boolean, if set true, will skip the main table
+                        #add/edit processing and only run any linked table
+                        #process_ items
+
    #checks CGI params and whatever else before much else runs
    #return an error string or empty for no error
    'precheck_callback' => sub { my( $cgi ) = @_; },
@@ -204,62 +208,71 @@ my $new;
 my $new_pkey = '';
 foreach my $value ( @values ) {
 
-  $new = $class->new( \%hash );
+  if ($opt{'skip_process'}) {
 
-  $new->$bfield($value) if $bfield;
+    $new = $old;
+    $new_pkey = $old_pkey;
 
-  if ($old && exists($opt{'copy_on_empty'})) {
-    foreach my $field (@{$opt{'copy_on_empty'}}) {
-      $new->set($field, $old->get($field))
-        unless scalar($cgi->param($field));
-    }
-  }
+  } else {
 
-  if ( $opt{'agent_virt'} ) {
+    $new = $class->new( \%hash );
 
-    if ( ! $new->agentnum
-         && (    ! $opt{'agent_null_right'}
-              || ! $curuser->access_right($opt{'agent_null_right'})
-            )
-       )
-    {
+    $new->$bfield($value) if $bfield;
 
-      $error ||= 'Select an agent';
-
-    } else {
-
-      die "illegal agentnum"
-        unless $curuser->agentnums_href->{$new->agentnum}
-            or $curuser->access_right('View customers of all agents')
-            or $opt{'agent_null_right'}
-               && ! $new->agentnum
-               && $curuser->access_right($opt{'agent_null_right'});
-
+    if ($old && exists($opt{'copy_on_empty'})) {
+      foreach my $field (@{$opt{'copy_on_empty'}}) {
+        $new->set($field, $old->get($field))
+          unless scalar($cgi->param($field));
+      }
     }
 
-  }
+    if ( $opt{'agent_virt'} ) {
 
-  $error ||= $new->check;
+      if ( ! $new->agentnum
+           && (    ! $opt{'agent_null_right'}
+                || ! $curuser->access_right($opt{'agent_null_right'})
+              )
+         )
+      {
 
-  my @args = ();
-  if ( !$error && $opt{'args_callback'} ) {
-    @args = &{ $opt{'args_callback'} }( $cgi, $new );
-  }
+        $error ||= 'Select an agent';
 
-  if ( !$error && $opt{'debug'} ) {
-    warn "$me updating record in $table table using $class class\n";
-    warn Dumper(\%hash);
-    warn "with args: \n". Dumper(\@args) if @args;
-  }
+      } else {
 
-  if ( !$error ) {
-    if ( $old_pkey ) {
-      $error = $new->replace($old, @args);
-    } else {
-      $error = $new->insert(@args);
+        die "illegal agentnum"
+          unless $curuser->agentnums_href->{$new->agentnum}
+              or $curuser->access_right('View customers of all agents')
+              or $opt{'agent_null_right'}
+                 && ! $new->agentnum
+                 && $curuser->access_right($opt{'agent_null_right'});
+
+      }
+
     }
-    $new_pkey = $new->getfield($pkey);
-  }
+
+    $error ||= $new->check;
+
+    my @args = ();
+    if ( !$error && $opt{'args_callback'} ) {
+      @args = &{ $opt{'args_callback'} }( $cgi, $new );
+    }
+
+    if ( !$error && $opt{'debug'} ) {
+      warn "$me updating record in $table table using $class class\n";
+      warn Dumper(\%hash);
+      warn "with args: \n". Dumper(\@args) if @args;
+    }
+
+    if ( !$error ) {
+      if ( $old_pkey ) {
+        $error = $new->replace($old, @args);
+      } else {
+        $error = $new->insert(@args);
+      }
+      $new_pkey = $new->getfield($pkey);
+    }
+
+  } #unless $opt{'skip_process'}
 
   if ( !$error && $opt{'process_m2m'} ) {
 
@@ -344,5 +357,4 @@ foreach my $value ( @values ) {
   last if $error;
 
 }
-
 </%init>
