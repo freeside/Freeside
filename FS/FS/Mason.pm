@@ -303,6 +303,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::discount_plan;
   use FS::tower;
   use FS::tower_sector;
+  use FS::contact_class;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
