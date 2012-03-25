@@ -4,6 +4,24 @@
 
   <TABLE>
     <TR>
+%     if ( @contact_class ) {
+        <TD>
+          <SELECT NAME="<%$name%>_classnum" <% $onchange %>>
+            <OPTION VALUE="">
+%           my $classnum = scalar($cgi->param($name.'_classnum'))
+%                            || $contact->classnum;
+%           foreach my $contact_class (@contact_class) {
+              <OPTION VALUE="<% $contact_class->classnum %>"
+                 <% ($contact_class->classnum == $classnum) ? 'SELECTED' : '' %>
+              ><% $contact_class->classname |h %>
+%           }
+          <SELECT><BR>
+          <FONT SIZE="-1">Type</FONT>
+        </TD>
+%     } else {
+        <INPUT TYPE="hidden" NAME="<%$name%>_classnum" VALUE="">
+%     }
+%
 %     foreach my $field ( @fields ) {
 %
 %       my $value = '';
@@ -60,6 +78,8 @@ if ( $opt{'onchange'} ) {
   $onchange = 'onChange="'. $onchange. '"';
 }
 
+my @contact_class = qsearch('contact_class', { 'disabled' => '' });
+
 my $contact;
 if ( $curr_value ) {
   $contact = qsearchs('contact', { 'contactnum' => $curr_value } );
@@ -81,7 +101,7 @@ foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
   next if $phone_type->typename eq 'Home';
   my $f = 'phonetypenum'.$phone_type->phonetypenum;
   $label{$f} = $phone_type->typename. ' phone';
-  $size{$f} = $first++ ? 11 : 15;
+  $size{$f} = $first++ ? 10 : 15;
 }
 
 $label{'comment'} = 'Comment';
