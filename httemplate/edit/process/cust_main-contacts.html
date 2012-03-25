@@ -1,0 +1,20 @@
+<% include('elements/process.html',
+     'table'          => 'cust_main',
+     'error_redirect' => popurl(3). 'edit/cust_main-contacts.html?',
+     'agent_virt'     => 1,
+     'skip_process'   => 1, #we don't want to make any changes to cust_main
+     'process_o2m' => {
+       'table'  => 'contact',
+       'fields' => \@contact_fields,
+     },
+     'redirect' => popurl(3). 'view/cust_main.cgi?',
+   )
+%>
+<%init>
+
+my @contact_fields = qw( classnum first last title comment emailaddress );
+foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+  push @contact_fields, 'phonetypenum'.$phone_type->phonetypenum;
+}
+
+</%init>

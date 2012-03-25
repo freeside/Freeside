@@ -115,7 +115,7 @@ a.fstab {
          padding-right:12px;*/
          padding-left:4px;
          padding-right:4px;
-         font-size:16px;
+         font-size:18px;
          font-weight:bold;
          text-decoration:none;
          overflow:visible;
@@ -148,7 +148,7 @@ a.fstabselected {
          padding-right:12px;*/
          padding-left:4px;
          padding-right:4px;
-         font-size:16px;
+         font-size:18px;
          font-weight:bold;
          text-decoration:none;
          overflow:visible;
@@ -218,6 +218,32 @@ div.fstabcontainer {
   /*float:left;*/
   font-size:150%;
   font-weight:bold;
+}
+
+.fsinnerbox {
+  background-color:#cccccc;
+  padding:2px;
+  -moz-box-shadow:  1px 1px 2px #666666;
+  -webkit-box-shadow:  1px 1px 2px #666666;
+  box-shadow: 1px 1px 2px #666666;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
+}
+
+.fsinnerbox-title {
+  font-size:110%;
+  font-weight:bold;
+  background-color:#cccccc;
+  padding:2px;
+         -moz-border-radius-topleft:8px;
+         -moz-border-radius-topright:8px;
+         -webkit-border-radius-topleft:8px;
+         -webkit-border-radius-topright:8px;
+         border-radius-topleft:8px;
+         border-radius-topright:8px;
+  -moz-box-shadow:  1px 0px 1px #999999;
+  -webkit-box-shadow:  1px 0px 1px #999999;
+  box-shadow: 1px 0px 1px #999999;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#999999', Direction=90, Strength=1);
 }
 
 .background {

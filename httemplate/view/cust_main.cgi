@@ -150,6 +150,11 @@ function areyousure(href, message) {
 
   </TD>
 </TR>
+<TR>
+  <TD COLSPAN = 2>
+    <& cust_main/contacts_new.html, $cust_main &>
+  </TD>
+</TR>
 </TABLE>
 
 % }
