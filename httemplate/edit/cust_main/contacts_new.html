@@ -1,0 +1,61 @@
+<DIV ID="contacts_div" STYLE="display:<% $display %>">
+<BR>
+<FONT CLASS="fsinnerbox-title">Contacts</FONT>
+<% include('/edit/elements/edit.html',
+     'embed'           => $opt{cust_main},
+     'table'           => 'cust_main',
+     'labels'          => { 'contactnum'  => 'Contact',
+                            #'locationnum' => '&nbsp;',
+                          },
+     'fields'          => [
+       { 'field'             => 'contactnum',
+         'type'              => 'contact',
+         'colspan'           => 6,
+         'm2m_method'        => 'cust_contact',
+         'm2m_dstcol'        => 'contactnum',   
+         'm2_label'          => 'Contact',
+         'm2_error_callback' => $m2_error_callback,
+       },
+     ],
+     'agent_virt'      => 1,
+    )
+%>
+</DIV>
+<%init>
+
+my %opt = @_;
+
+my $display = ($opt{'cust_main'}->residential_commercial eq 'Commercial')
+                ? ''
+                : 'none';
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $conf = new FS::Conf;
+
+my $m2_error_callback = sub {
+  my($cgi, $object) = @_;
+
+  #process_o2m fields in process/cust_main-contacts.html
+  my @fields = qw( first last title comment );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^contactnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("contactnum$num$_"), @gfields ) {
+            my $x = new FS::contact {
+              'contactnum' => scalar($cgi->param("contactnum$num")),
+              map { $_ => scalar($cgi->param("contactnum${num}_$_")) } @fields,
+            };
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+};
+
+</%init>

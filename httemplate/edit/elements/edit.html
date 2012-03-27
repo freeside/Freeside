@@ -111,6 +111,11 @@ Example:
     #we're in a popup (no title/menu/searchboxes)
     'popup' => 1,
 
+    #we're embedded (rows only: no header at all, no html_init, no error
+    # display, no <FORM>, no hidden fields for table name or primary key, no
+    # display of primary key, no submit button, no html_foot, no footer)
+    'embed' => $object, #need to pass the object
+
     ###
     # HTML callbacks
     ###
@@ -186,41 +191,60 @@ Example:
 
 </%doc>
 
-<% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
-              $title,
-              include( '/elements/menubar.html', @menubar ),
-              $opt{'body_etc'},
-           )
-%>
+% unless ( $opt{embed} ) {
+%
+%   my $title = $opt{action}. ' '. ( $opt{name} || $opt{'name_singular'} );
+%
+%   my $viewall_url = $p . ( $opt{'viewall_dir'} || 'search' ) . "/$table.html";
+%   $viewall_url = $opt{'viewall_url'} if $opt{'viewall_url'};  
+%
+%   my @menubar;
+%   if ( $opt{'menubar'} ) {
+%     @menubar = @{ $opt{'menubar'} };
+%   } else {
+%     my $items = $opt{'name'} ? $opt{'name'}.'s' : PL($opt{'name_singular'});
+%     @menubar = (
+%       "View all $items" => $viewall_url,
+%     );
+%   }
 
-<% defined($opt{'html_init'}) 
-      ? ( ref($opt{'html_init'})
-            ? &{$opt{'html_init'}}()
-            : $opt{'html_init'}
-        )
-      : ''
-%>
+  <% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
+                $title,
+                include( '/elements/menubar.html', @menubar ),
+                $opt{'body_etc'},
+             )
+  %>
 
-<% include('/elements/error.html') %>
+  <% defined($opt{'html_init'}) 
+        ? ( ref($opt{'html_init'})
+              ? &{$opt{'html_init'}}()
+              : $opt{'html_init'}
+          )
+        : ''
+  %>
+
+  <% include('/elements/error.html') %>
 
 % my $url = $opt{'post_url'} || popurl(1)."process/$table.html";
 
-<FORM NAME   = "edit_topform"
-      METHOD = POST
-      ACTION = "<% $url %>"
-      <% $opt{onsubmit} ? 'onSubmit="return '.$opt{onsubmit}.'(this)"' : '' %>
->
+  <FORM NAME   = "edit_topform"
+        METHOD = POST
+        ACTION = "<% $url %>"
+        <% $opt{onsubmit} ? 'onSubmit="return '.$opt{onsubmit}.'(this)"' : '' %>
+  >
 
-<INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
-<INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
+  <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
+  <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
 
-<FONT SIZE="+1"><B>
-<% ( $opt{labels} && exists $opt{labels}->{$pkey} )
-      ? $opt{labels}->{$pkey}
-      : $pkey
-%>
-</B></FONT>
-#<% ( !$clone && $object->$pkey() ) || "(NEW)" %>
+  <FONT SIZE="+1"><B>
+  <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
+        ? $opt{labels}->{$pkey}
+        : $pkey
+  %>
+  </B></FONT>
+  #<% ( !$clone && $object->$pkey() ) || "(NEW)" %>
+
+% }
 
 % my $tablenum = 0;
 <TABLE ID="TableNumber<% $tablenum++ %>" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
@@ -723,24 +747,28 @@ Example:
       : $opt{'html_bottom'}
 %>
 
-<BR>
+% unless ($opt{'embed'}) {
 
-<INPUT TYPE     = "submit"
-       ID       = "submit"
-       VALUE    = "<% ( !$clone && $object->$pkey() )
-                        ? "Apply changes"
-                        : "Add ". ( $opt{'name'} || $opt{'name_singular'} )
-                   %>"
->
+  <BR>
 
-</FORM>
+  <INPUT TYPE     = "submit"
+         ID       = "submit"
+         VALUE    = "<% ( !$clone && $object->$pkey() )
+                          ? "Apply changes"
+                          : "Add ". ( $opt{'name'} || $opt{'name_singular'} )
+                     %>"
+  >
 
-<% ref( $opt{'html_foot'} )
-      ? &{ $opt{'html_foot'} }( $object )
-      : $opt{'html_foot'}
-%>
+  </FORM>
 
-<% include("/elements/footer.html") %>
+  <% ref( $opt{'html_foot'} )
+        ? &{ $opt{'html_foot'} }( $object )
+        : $opt{'html_foot'}
+  %>
+
+  <% include("/elements/footer.html") %>
+
+% }
 <%init>
 
 my(%opt) = @_;
@@ -756,116 +784,113 @@ my $fields = $opt{'fields'}
              || [ grep { $_ ne $pkey } fields($table) ];
 #my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
 
-#$m->comp('/elements/handle_uri_query');
-if ( $cgi->param('redirect') ) {
-  my $session = $cgi->param('redirect');
-  my $pref = $curuser->option("redirect$session");
-  die "unknown redirect session $session\n" unless length($pref);
-  $cgi = new CGI($pref);
-}
-
-&{$opt{'begin_callback'}}( $cgi, $fields, \%opt )
-  if $opt{'begin_callback'};
-
-my %qsearch = (
-    'table'     => $table,
-    'extra_sql' => ( $opt{'agent_virt'}
-                       ? ' AND '. $curuser->agentnums_sql(
-                                    'null_right' => $opt{'agent_null_right'}
-                                  )
-                       : ''
-                   ),
-);
-
-my $mode;
-my $object;
+my( $mode, $object);
 my $clone = '';
-if ( $cgi->param('error') ) {
+if ( $opt{'embed'} ) {
 
-  $mode = 'error';
+  $object = $opt{'embed'};
+  $mode = $cgi->param('error')
+            ? 'error'
+            : $object->$pkey()
+              ? 'edit'
+              : 'new';
 
-  $object = $class->new( {
-    map { $_ => scalar($cgi->param($_)) } fields($table)
-  });
-
-  &{$opt{'error_callback'}}( $cgi, $object, $fields, \%opt )
-    if $opt{'error_callback'};
-
-} elsif ( $cgi->param('clone') =~ /^(\d+)$/ ) {
-
-  $mode = 'clone';
-
-  $clone = $1;
-
-  $qsearch{'extra_sql'} = ' AND '. $opt{'agent_clone_extra_sql'}
-    if $opt{'agent_clone_extra_sql'};
-
-  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } })
-    or die "$pkey $clone not found in $table";
-
-  &{$opt{'clone_callback'}}( $cgi, $object, $fields, \%opt )
-    if $opt{'clone_callback'};
-
-  #$object->$pkey('');
-
-  $opt{action} ||= 'Add';
-
-} elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing
-
-  $mode = 'edit';
-
-  my $value;
-  if ( $cgi->param($pkey) ) {
-    $value = $cgi->param($pkey)
-  } else { 
-    my( $query ) = $cgi->keywords;
-    $value = $query;
-  }
-  $value =~ /^(\d+)$/ or die "unparsable $pkey";
-  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $1 } })
-    or die "$pkey $1 not found in $table";
-  
-  warn "$table $pkey => $1"
-    if $opt{'debug'};
-
-  &{$opt{'edit_callback'}}( $cgi, $object, $fields, \%opt )
-    if $opt{'edit_callback'};
-
-} else { #adding
-
-  $mode = 'new';
-
-  my $hashref = $opt{'new_hashref_callback'}
-                  ? &{$opt{'new_hashref_callback'}}
-                  : {};
-
-  $object = $opt{'new_object_callback'}
-              ? &{$opt{'new_object_callback'}}( $cgi, $hashref, $fields, \%opt )
-              : $class->new( $hashref );
-
-  &{$opt{'new_callback'}}( $cgi, $object, $fields, \%opt )
-    if $opt{'new_callback'};
-
-}
-
-&{$opt{'end_callback'}}( $cgi, $object, $fields, \%opt )
-  if $opt{'end_callback'};
-
-$opt{action} ||= $object->$pkey() ? 'Edit' : 'Add';
-
-my $title = $opt{action}. ' '. ( $opt{name} || $opt{'name_singular'} );
-
-my $viewall_url = $p . ( $opt{'viewall_dir'} || 'search' ) . "/$table.html";
-$viewall_url = $opt{'viewall_url'} if $opt{'viewall_url'};  
-
-my @menubar = ();
-if ( $opt{'menubar'} ) {
-  @menubar = @{ $opt{'menubar'} };
 } else {
-  my $items = $opt{'name'} ? $opt{'name'}.'s' : PL($opt{'name_singular'});
-  @menubar = (
-    "View all $items" => $viewall_url,
+
+  #$m->comp('/elements/handle_uri_query');
+  if ( $cgi->param('redirect') ) {
+    my $session = $cgi->param('redirect');
+    my $pref = $curuser->option("redirect$session");
+    die "unknown redirect session $session\n" unless length($pref);
+    $cgi = new CGI($pref);
+  }
+
+  &{$opt{'begin_callback'}}( $cgi, $fields, \%opt )
+    if $opt{'begin_callback'};
+
+  my %qsearch = (
+      'table'     => $table,
+      'extra_sql' => ( $opt{'agent_virt'}
+                         ? ' AND '. $curuser->agentnums_sql(
+                                      'null_right' => $opt{'agent_null_right'}
+                                    )
+                         : ''
+                     ),
   );
+
+  if ( $cgi->param('error') ) {
+
+    $mode = 'error';
+
+    $object = $class->new( {
+      map { $_ => scalar($cgi->param($_)) } fields($table)
+    });
+
+    &{$opt{'error_callback'}}( $cgi, $object, $fields, \%opt )
+      if $opt{'error_callback'};
+
+  } elsif ( $cgi->param('clone') =~ /^(\d+)$/ ) {
+
+    $mode = 'clone';
+
+    $clone = $1;
+
+    $qsearch{'extra_sql'} = ' AND '. $opt{'agent_clone_extra_sql'}
+      if $opt{'agent_clone_extra_sql'};
+
+    $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } })
+      or die "$pkey $clone not found in $table";
+
+    &{$opt{'clone_callback'}}( $cgi, $object, $fields, \%opt )
+      if $opt{'clone_callback'};
+
+    #$object->$pkey('');
+
+    $opt{action} ||= 'Add';
+
+  } elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing
+
+    $mode = 'edit';
+
+    my $value;
+    if ( $cgi->param($pkey) ) {
+      $value = $cgi->param($pkey)
+    } else { 
+      my( $query ) = $cgi->keywords;
+      $value = $query;
+    }
+    $value =~ /^(\d+)$/ or die "unparsable $pkey";
+    $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $1 } })
+      or die "$pkey $1 not found in $table";
+
+    warn "$table $pkey => $1"
+      if $opt{'debug'};
+
+    &{$opt{'edit_callback'}}( $cgi, $object, $fields, \%opt )
+      if $opt{'edit_callback'};
+
+  } else { #adding
+
+    $mode = 'new';
+
+    my $hashref = $opt{'new_hashref_callback'}
+                    ? &{$opt{'new_hashref_callback'}}
+                    : {};
+
+    $object = $opt{'new_object_callback'}
+                ? &{$opt{'new_object_callback'}}( $cgi, $hashref, $fields, \%opt )
+                : $class->new( $hashref );
+
+    &{$opt{'new_callback'}}( $cgi, $object, $fields, \%opt )
+      if $opt{'new_callback'};
+
+  }
+
+  &{$opt{'end_callback'}}( $cgi, $object, $fields, \%opt )
+    if $opt{'end_callback'};
+
+  $opt{action} ||= $object->$pkey() ? 'Edit' : 'Add';
+
 }
 
 </%init>

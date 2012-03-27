@@ -34,7 +34,7 @@
 %
 %  my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
-  <BR><FONT SIZE="+1"><B><% mt('Billing information') |h %></B></FONT>
+  <BR><FONT CLASS="fsinnerbox-title"><% mt('Billing information') |h %></FONT>
   <% &ntable("#cccccc") %>
 
     <TR>
@@ -580,7 +580,7 @@ function toggle(obj) {
 
   </TABLE>
 
-  <% $r %> <% mt('required fields') |h %> 
+  <% $r %><% mt('required fields') |h %> 
 % } 
 
 <script type="text/javascript">
