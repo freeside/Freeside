@@ -1690,6 +1690,8 @@ sub tables_hashref {
         'no_auto',          'char', 'NULL',  1, '', '', 
         'recur_show_zero',  'char', 'NULL',  1, '', '',
         'setup_show_zero',  'char', 'NULL',  1, '', '',
+        'successor',     'int',     'NULL', '', '', '',
+        'family_pkgpart','int',     'NULL', '', '', '',
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],

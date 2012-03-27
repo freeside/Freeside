@@ -694,6 +694,13 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'part_pkg-lineage',
+    'section'     => '',
+    'description' => 'When editing a package definition, if setup or recur fees are changed, create a new package rather than changing the existing package.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'apacheip',
     #not actually deprecated yet
     #'section'     => 'deprecated',
