@@ -45,6 +45,7 @@ my $select = '*';
 my $orderby = 'pkgpart';
 my %hash = ();
 my $extra_count = '';
+my $family_pkgpart;
 
 if ( $cgi->param('active') ) {
   $orderby = 'num_active DESC';
@@ -75,6 +76,16 @@ if ( $cgi->param('missing_recur_fee') ) {
                           AND part_pkg_option.pkgpart = part_pkg.pkgpart
                           AND CAST( optionvalue AS NUMERIC ) > 0
                     )";
+}
+
+if ( $cgi->param('family') =~ /^(\d+)$/ ) {
+  $family_pkgpart = $1;
+  push @where, "family_pkgpart = $1";
+  # Hiding disabled or one-time charges and limiting by classnum aren't 
+  # very useful in this mode, so all links should still refer back to the 
+  # non-family-limited display.
+  $cgi->param('showdisabled', 1);
+  $cgi->delete('family');
 }
 
 push @where, FS::part_pkg->curuser_pkgs_sql
@@ -209,6 +220,16 @@ push @fields, sub {
                   $part_pkg->part_pkg_discount;
 
   [
+    ( !$family_pkgpart &&
+      $part_pkg->pkgpart == $part_pkg->family_pkgpart ? () : [
+      {
+        'align'=> 'center',
+        'colspan' => 2,
+        'size' => '-1',
+        'data' => '<b>Show all versions</b>',
+        'link' => $p.'browse/part_pkg.cgi?family='.$part_pkg->family_pkgpart,
+      }
+    ] ),
     [
       { data =>$plan,
         align=>'center',

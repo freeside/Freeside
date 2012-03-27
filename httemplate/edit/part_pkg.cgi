@@ -24,6 +24,8 @@
               'error_callback'        => $error_callback,
               'field_callback'        => $field_callback,
 
+              'onsubmit'              => 'confirm_submit',
+
               'labels' => { 
                             'pkgpart'          => 'Package Definition',
                             'pkg'              => 'Package (customer-visible)',
@@ -66,6 +68,8 @@
                             },
 
                             { field=>'custom',  type=>'hidden' },
+                            { field=>'family_pkgpart', type=>'hidden' },
+                            { field=>'successor', type=>'hidden' },
 
                             { type => 'columnstart' },
                             
@@ -593,7 +597,7 @@ my $javascript = <<'END';
 
     }
 
-    function aux_planchanged(what) {
+    function aux_planchanged(what) { //?
 
       alert('called!');
       var plan = what.options[what.selectedIndex].value;
@@ -609,8 +613,28 @@ my $javascript = <<'END';
 
     }
 
-  </SCRIPT>
 END
+
+my $warning =
+  'Changing the setup or recurring fee will create a new package definition. '.
+  'Continue?';
+              
+if ( $conf->exists('part_pkg-lineage') ) {
+  $javascript .= "
+    function confirm_submit(f) {
+    
+      var fields = Array('setup_fee','recur_fee');
+      for(var i=0; i < fields.length; i++) {
+          if ( f[fields[i]].value != f[fields[i]].defaultValue ) {
+              return confirm('$warning');
+          }
+      }
+      return true;
+    }
+";
+}
+
+$javascript .= '</SCRIPT>';
 
 tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 
