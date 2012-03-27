@@ -302,4 +302,17 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   
 }
 
+unless ( $error ) { #XXX i guess i should be transactional... all in the insert
+                    # or replace call
+  my @contact_fields = qw( classnum first last title comment emailaddress );
+  foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+    push @contact_fields, 'phonetypenum'.$phone_type->phonetypenum;
+  }
+
+  $error = $new->process_o2m( 'table'  => 'contact',
+                              'fields' => \@contact_fields,
+                              'params' => scalar($cgi->Vars),
+                            );
+}
+
 </%init>

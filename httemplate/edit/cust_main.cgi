@@ -50,7 +50,7 @@
 %  }
 
 <BR>
-<FONT SIZE="+1"><B><% mt('Billing address') |h %></B></FONT>
+<FONT CLASS="fsinnerbox-title"><% mt('Billing address') |h %></FONT>
 
 <& cust_main/contact.html,
              'cust_main'    => $cust_main,
@@ -127,9 +127,9 @@ function samechanged(what) {
 </SCRIPT>
 
 <BR>
-<FONT SIZE="+1"><B><% mt('Service address') |h %></B></FONT>
+<FONT CLASS="fsinnerbox-title"><% mt('Service address') |h %></FONT>
 
-(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>><% mt('same as billing address') |h %>)
+<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>><% mt('same as billing address') |h %>
 <& cust_main/contact.html,
              'cust_main' => $cust_main,
              'pre'       => 'ship_',
@@ -138,17 +138,23 @@ function samechanged(what) {
              'style'     => \@ship_style
 &>
 
+<& cust_main/contacts_new.html,
+             'cust_main' => $cust_main,
+&>
+
 %# billing info
 <& cust_main/billing.html, $cust_main,
                'payinfo'        => $payinfo,
                'invoicing_list' => \@invoicing_list,
 &>
+<BR>
 
 % my $ro_comments = $conf->exists('cust_main-use_comments')?'':'readonly';
 % if (!$ro_comments || $cust_main->comments) {
 
-    <BR><% mt('Comments') |h %> 
-    <% &ntable("#cccccc") %>
+    <BR>
+    <FONT CLASS="fsinnerbox-title"><% mt('Comments') |h %></FONT>
+    <TABLE CLASS="fsinnerbox">
       <TR>
         <TD>
           <TEXTAREA NAME = "comments"
@@ -204,6 +210,7 @@ function samechanged(what) {
        VALUE   = "<% $custnum ?  emt("Apply changes") : emt("Add Customer") %>"
        onClick = "this.disabled=true; bottomfixup(this.form);"
 >
+<BR><BR>
 </FORM>
 
 <& /elements/footer.html &>

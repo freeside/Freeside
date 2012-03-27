@@ -1,4 +1,4 @@
-<% &ntable("#cccccc") %>
+<TABLE CLASS="fsinnerbox">
 
 <TR>
   <TH ALIGN="right"><%$r%><% mt('Contact name (last, first)') |h %></TH>
@@ -14,8 +14,6 @@
 
   <TD><INPUT TYPE="hidden" NAME="ss" VALUE="<% $opt{ss} %>"></TD>
 % } 
-
-
 </TR>
 
 % if ( $conf->exists('cust-email-high-visibility') && !$pre ) {
@@ -30,100 +28,19 @@
     </TR>
 % }
 
-% unless ( $conf->exists('cust-edit-alt-field-order') ) {
-<TR>
-  <TD ALIGN="right"><% mt('Company') |h %></TD>
-  <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') |h %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
+% unless ( $conf->exists('cust-edit-alt-field-order') ) { #standard order
 
-<& /elements/location.html,
-             'prefix'       => $pre,
-             'object'       => $cust_main,
-             'onchange'     => $onchange,
-             'disabled'     => $disabled,
-             'style'        => \@style,
-             'same_checked' => $opt{'same_checked'},
-             'geocode'      => $opt{'geocode'},
-             'censustract'  => $opt{'censustract'},
-&>
+  <& company &>
+  <& location &>
+  <& phones &>
+  <& fax &>
 
-<TR>
-  <TD ALIGN="right"><% $daytime_label %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
+% } else { #alternate field order
 
-<TR>
-  <TD ALIGN="right"><% $night_label %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right"><% $mobile_label %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right"><% mt('Fax') |h %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
-
-% } else {
-
-<TR>
-  <TD ALIGN="right"><% $daytime_label %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right"><% $night_label %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right"><% $mobile_label %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
-
-<& /elements/location.html,
-             'prefix'       => $pre,
-             'object'       => $cust_main,
-             'onchange'     => $onchange,
-             'disabled'     => $disabled,
-             'style'        => \@style,
-             'same_checked' => $opt{'same_checked'},
-             'geocode'      => $opt{'geocode'},
-             'censustract'  => $opt{'censustract'},
-&>
-
-<TR>
-  <TD ALIGN="right"><% mt('Fax') |h %></TD>
-  <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right"><% mt('Company') |h %></TD>
-  <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') |h %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
-  </TD>
-</TR>
+  <& phones &>
+  <& location &>
+  <& fax &>
+  <& company &>
 
 % }
 
@@ -152,16 +69,88 @@
 </TABLE>
 <%$r%><% mt('required fields') |h %><BR>
 
+<%def company>
+% my $display = ($cust_main->residential_commercial eq 'Commercial')
+%                 ? '' : 'none';
+  <TR ID="<%$pre%>company_row" STYLE="display:<%$display%>">
+    <TD ALIGN="right"><% mt('Company') |h %></TD>
+    <TD COLSPAN=7>
+      <INPUT TYPE="text" NAME="<%$pre%>company" ID="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') |h %>" SIZE=60 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+    </TD>
+  </TR>
+</%def>
+
+<%def location>
+  <& /elements/location.html,
+               'prefix'       => $pre,
+               'object'       => $cust_main,
+               'onchange'     => $onchange,
+               'disabled'     => $disabled,
+               'style'        => \@style,
+               'same_checked' => $opt{'same_checked'},
+               'geocode'      => $opt{'geocode'},
+               'censustract'  => $opt{'censustract'},
+  &>
+</%def>
+
+<%def phones>
+  <TR>
+    <TD ALIGN="right" VALIGN="top"><% mt('Phones') %></TD>
+    <TD COLSPAN=6>
+
+      <TABLE CELLSPACING=0 CELLPADDING=0>
+        <TR>
+          <TD>
+            <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+            <BR><FONT SIZE=-1><% $daytime_label %></FONT>
+          </TD>
+          <TD>&nbsp;</TD>
+          <TD>
+            <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+            <BR><FONT SIZE=-1><% $night_label %></FONT>
+          </TD>
+          <TD>&nbsp;</TD>
+          <TD>
+            <INPUT TYPE="text" NAME="<%$pre%>mobile" VALUE="<% $cust_main->get($pre.'mobile') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+            <BR><FONT SIZE=-1><% $mobile_label %></FONT>
+          </TD>
+        </TR>
+      </TABLE>
+    </TD>
+  </TR>
+</%def>
+
+<%def fax>
+  <TR>
+    <TD ALIGN="right"><% mt('Fax') |h %></TD>
+    <TD COLSPAN=5>
+      <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+    </TD>
+  </TR>
+</%def>
+
+<%once>
+
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+
+</%once>
+<%shared>
+
+my( %opt, $cust_main, $pre, $onchange, $disabled, @style, $style,
+    $daytime_label, $night_label, $mobile_label,
+  );
+
+</%shared>
 <%init>
 
-my %opt = @_;
-my $cust_main = $opt{'cust_main'};
-my $pre       = $opt{'pre'};
-my $onchange  = $opt{'onchange'};
-my $disabled  = $opt{'disabled'};
-my @style     = ( $opt{'style'} ? @{ $opt{'style'} } : () );
+%opt = @_;
+$cust_main = $opt{'cust_main'};
+$pre       = $opt{'pre'};
+$onchange  = $opt{'onchange'};
+$disabled  = $opt{'disabled'};
+@style     = ( $opt{'style'} ? @{ $opt{'style'} } : () );
 
-my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
+$style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
 
 my $conf = new FS::Conf;
 
@@ -189,15 +178,15 @@ if ( $conf->exists('cust_main-require_censustract') ) {
   $opt{censustract} ||= $cust_main->censustract;
 }
 
-my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
-                      ? 'Day Phone'
-                      : FS::Msgcat::_gettext('daytime');
-my $night_label   = FS::Msgcat::_gettext('night') =~/^(night)?$/
-                      ? 'Night Phone'
-                      : FS::Msgcat::_gettext('night') || 'Night Phone';
-my $mobile_label = FS::Msgcat::_gettext('mobile') =~/^(mobile)?$/
-                      ? 'Mobile Phone'
-                      : FS::Msgcat::_gettext('mobile') || 'Mobile Phone';
+$daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
+                   ? 'Day'
+                   : FS::Msgcat::_gettext('daytime');
+$night_label   = FS::Msgcat::_gettext('night') =~/^(night)?$/
+                   ? 'Night'
+                   : FS::Msgcat::_gettext('night') || 'Night';
+$mobile_label = FS::Msgcat::_gettext('mobile') =~/^(mobile)?$/
+                   ? 'Mobile'
+                   : FS::Msgcat::_gettext('mobile') || 'Mobile';
 
 my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
                   ? 'Driver&rsquo;s License'
@@ -205,8 +194,6 @@ my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
 my $stateid_state_label = FS::Msgcat::_gettext('stateid_state') =~ /^(stateid_state)?$/
                         ? 'Driver&rsquo;s License State'
                         : FS::Msgcat::_gettext('stateid_state') || 'Driver&rsquo;s License State';
-
-my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
 my @invoicing_list = $cust_main->invoicing_list;
 

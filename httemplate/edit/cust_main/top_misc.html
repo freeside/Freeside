@@ -1,4 +1,49 @@
-<% &ntable("#cccccc") %>
+<TABLE CLASS="fsinnerbox">
+
+<TR>
+  <TD ALIGN="right">Residential</TD>
+  <TD><INPUT TYPE     = "radio"
+             NAME     = "residential_commercial"
+             ID       = "residential_commercial_Residential"
+             VALUE    = "Residential"
+             onChange = "rescom_changed(this)"
+       <% $cust_main->residential_commercial eq 'Commercial' ? '' : 'CHECKED' %>
+  ></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Commercial</TD>
+  <TD><INPUT TYPE     = "radio"
+             NAME     = "residential_commercial"
+             ID       = "residential_commercial_Commercial"
+             VALUE    = "Commercial"
+             onChange = "rescom_changed(this)"
+       <% $cust_main->residential_commercial eq 'Commercial' ? 'CHECKED' : '' %>
+  ></TD>
+</TR>
+
+<SCRIPT TYPE="text/javascript">
+  function rescom_changed() {
+    var f = document.CustomerForm;
+
+    if        ( f.residential_commercial_Residential.checked ) {
+      document.getElementById('contacts_div').style.display = 'none';
+    } else { // if ( f.residential_commercial_Commercial.checked ) {
+      document.getElementById('contacts_div').style.display = '';
+    }
+
+    if        ( f.residential_commercial_Residential.checked && ! f.company.value.length ) {
+      document.getElementById('company_row').style.display = 'none'
+    } else { // if ( f.residential_commercial_Commercial.checked ) {
+      document.getElementById('company_row').style.display = '';
+    }
+
+    if        ( f.residential_commercial_Residential.checked && ! f.ship_company.value.length ) {
+      document.getElementById('ship_company_row').style.display = 'none'
+    } else { // if ( f.residential_commercial_Commercial.checked ) {
+      document.getElementById('ship_company_row').style.display = '';
+    }
+  }
+</SCRIPT>
 
 % foreach my $field ($cust_main->virtual_fields) {
     <% $cust_main->pvf($field)->widget('HTML', 'edit',$cust_main->getfield($field)) %>
@@ -143,6 +188,23 @@
 my( $cust_main, %opt ) = @_;
 
 my $custnum = $opt{'custnum'};
+
+if ( $cgi->param('error') ) {
+  $cust_main->set('residential_commercial',
+    ($cgi->param('residential_commercial') eq 'Commercial')
+      ? 'Commercial'
+      : 'Residential'
+  );
+} elsif ( $custnum ) { #editing
+  $cust_main->set('residential_commercial',
+    length($cust_main->company)
+      ? 'Commercial'
+      : 'Residential'
+  );
+} else { #new customer
+  #config to default to commercial and/or disable residential when someone needs
+  $cust_main->set('residential_commercial', 'Residential');
+}
 
 my $conf = new FS::Conf;
 
