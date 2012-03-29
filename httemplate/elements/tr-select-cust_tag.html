@@ -28,7 +28,7 @@ my $cgi = $opt{'cgi'};
 my $is_report = $opt{'is_report'};
 
 my @curr_tagnum = ();
-if ( $cgi->param('error') ) {
+if ( $cgi && $cgi->param('error') ) {
   @curr_tagnum = $cgi->param('tagnum');
 } elsif ( $opt{'custnum'} ) {
   @curr_tagnum = map $_->tagnum,
