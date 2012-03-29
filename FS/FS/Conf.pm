@@ -2269,6 +2269,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'require_cash_deposit_info',
+    'section'     => 'billing',
+    'description' => 'When recording cash payments, display bank deposit information fields.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'paymentforcedtobatch',
     'section'     => 'deprecated',
     'description' => 'See batch-enable_payby and realtime-disable_payby.  Used to (for CHEK): Cause per customer payment entry to be forced to a batch processor rather than performed realtime.',
