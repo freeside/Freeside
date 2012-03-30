@@ -2940,7 +2940,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
   },
 
   {
@@ -2976,7 +2976,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
   },
 
   {
