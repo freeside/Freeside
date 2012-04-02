@@ -32,21 +32,32 @@ options in %opt.
 
 =over 4
 
-=item signups: The number of customers signed up.
+=item signups: The number of customers signed up.  Options are "refnum" 
+(limit by advertising source) and "indirect" (boolean, tells us to limit 
+to customers that have a referral_custnum that matches the advertising source).
 
 =cut
 
 sub signups {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
-  my @where = (
-    $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, 'signupdate')
+  my @where = ( $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, 
+      'cust_main.signupdate')
   );
-  if ( $opt{'refnum'} ) {
+  my $join = '';
+  if ( $opt{'indirect'} ) {
+    $join = " JOIN cust_main AS referring_cust_main".
+            " ON (cust_main.referral_custnum = referring_cust_main.custnum)";
+
+    if ( $opt{'refnum'} ) {
+      push @where, "referring_cust_main.refnum = ".$opt{'refnum'};
+    }
+  }
+  elsif ( $opt{'refnum'} ) {
     push @where, "refnum = ".$opt{'refnum'};
   }
 
   $self->scalar_sql(
-    "SELECT COUNT(*) FROM cust_main WHERE ".join(' AND ', @where)
+    "SELECT COUNT(*) FROM cust_main $join WHERE ".join(' AND ', @where)
   );
 }
 

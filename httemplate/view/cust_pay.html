@@ -98,6 +98,28 @@
 
 % }
 
+% if ( $cust_pay->payby eq 'CASH' && $cust_pay->payinfo ) {
+    <TR>
+      <TD ALIGN="right"><% mt('Bank') |h %></TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->bank %></B></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right"><% mt('Teller #') |h %></TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->teller %></B></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right"><% mt('Depositor') |h %></TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->depositor %></B></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right"><% mt('Account #') |h %></TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->account %></B></TD>
+    </TR>
+% }
+
 % if ( $conf->exists('pkg-balances') && $cust_pay->pkgnum ) {
 %   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cust_pay->pkgnum } );
     <TR>

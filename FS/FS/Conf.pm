@@ -694,6 +694,13 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'part_pkg-lineage',
+    'section'     => '',
+    'description' => 'When editing a package definition, if setup or recur fees are changed, create a new package rather than changing the existing package.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'apacheip',
     #not actually deprecated yet
     #'section'     => 'deprecated',
@@ -2284,6 +2291,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'require_cash_deposit_info',
+    'section'     => 'billing',
+    'description' => 'When recording cash payments, display bank deposit information fields.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'paymentforcedtobatch',
     'section'     => 'deprecated',
     'description' => 'See batch-enable_payby and realtime-disable_payby.  Used to (for CHEK): Cause per customer payment entry to be forced to a batch processor rather than performed realtime.',
@@ -2926,7 +2940,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
   },
 
   {
@@ -2962,7 +2976,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
   },
 
   {

@@ -107,7 +107,11 @@ function <% $pre %>county_changed(what, callback) {}
        <% $text_style %>
 >
 
-% if ( !$disable_select ) {
+% if ( $disable_select ) {
+%# avoid JS errors
+<INPUT TYPE="hidden" ID="city_select">
+% }
+% else {
 
 <SELECT NAME     = "<%$pre%>city_select"
         ID       = "<%$pre%>city_select"

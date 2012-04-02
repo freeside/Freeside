@@ -103,6 +103,13 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item fcc_ds0s - Optional DS0 equivalency number for FCC form 477
 
+=item successor - Foreign key for the part_pkg that replaced this record.
+If this record is not obsolete, will be null.
+
+=item family_pkgpart - Foreign key for the part_pkg that was the earliest
+ancestor of this record.  If this record is not a successor to another 
+part_pkg, will be equal to pkgpart.
+
 =back
 
 =head1 METHODS
@@ -190,6 +197,16 @@ sub insert {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  # set family_pkgpart
+  if ( $self->get('family_pkgpart') eq '' ) {
+    $self->set('family_pkgpart' => $self->pkgpart);
+    $error = $self->SUPER::replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   my $conf = new FS::Conf;
@@ -294,7 +311,7 @@ sub insert {
       }
   }
 
-  warn "  commiting transaction" if $DEBUG;
+  warn "  committing transaction" if $DEBUG and $oldAutoCommit;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -360,6 +377,28 @@ sub replace {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+  
+  my $conf = new FS::Conf;
+  if ( $conf->exists('part_pkg-lineage') ) {
+    if ( grep { $options->{options}->{$_} ne $old->option($_, 1) }
+          qw(setup_fee recur_fee) #others? config?
+        ) { 
+    
+      warn "  superseding package" if $DEBUG;
+
+      my $error = $new->supersede($old, %$options);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+      else {
+        warn "  committing transaction" if $DEBUG and $oldAutoCommit;
+        $dbh->commit if $oldAutoCommit;
+        return $error;
+      }
+    }
+    #else nothing
+  }
 
   #plandata shit stays in replace for upgrades until after 2.0 (or edit
   #_upgrade_data)
@@ -501,8 +540,18 @@ sub replace {
         }
       }
   }
+  
+  # propagate changes to certain core fields
+  if ( $conf->exists('part_pkg-lineage') ) {
+    warn "  propagating changes to family" if $DEBUG;
+    my $error = $new->propagate($old);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
-  warn "  commiting transaction" if $DEBUG;
+  warn "  committing transaction" if $DEBUG and $oldAutoCommit;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
@@ -573,6 +622,8 @@ sub check {
            : $self->ut_agentnum_acl('agentnum', \@null_agentnum_right)
        )
     || $self->ut_numbern('fcc_ds0s')
+    || $self->ut_foreign_keyn('successor', 'part_pkg', 'pkgpart')
+    || $self->ut_foreign_keyn('family_pkgpart', 'part_pkg', 'pkgpart')
     || $self->SUPER::check
   ;
   return $error if $error;
@@ -585,6 +636,76 @@ sub check {
     if ! $self->taxclass && $conf->exists('require_taxclasses');
 
   '';
+}
+
+=item supersede OLD [, OPTION => VALUE ... ]
+
+Inserts this package as a successor to the package OLD.  All options are as
+for C<insert>.  After inserting, disables OLD and sets the new package as its
+successor.
+
+=cut
+
+sub supersede {
+  my ($new, $old, %options) = @_;
+  my $error;
+
+  $new->set('pkgpart' => '');
+  $new->set('family_pkgpart' => $old->family_pkgpart);
+  warn "    inserting successor package\n" if $DEBUG;
+  $error = $new->insert(%options);
+  return $error if $error;
+ 
+  warn "    disabling superseded package\n" if $DEBUG; 
+  $old->set('successor' => $new->pkgpart);
+  $old->set('disabled' => 'Y');
+  $error = $old->SUPER::replace; # don't change its options/pkg_svc records
+  return $error if $error;
+
+  warn "  propagating changes to family" if $DEBUG;
+  $new->propagate($old);
+}
+
+=item propagate OLD
+
+If any of certain fields have changed from OLD to this package, then,
+for all packages in the same lineage as this one, sets those fields 
+to their values in this package.
+
+=cut
+
+my @propagate_fields = (
+  qw( pkg classnum setup_cost recur_cost taxclass
+  setuptax recurtax pay_weight credit_weight
+  )
+);
+
+sub propagate {
+  my $new = shift;
+  my $old = shift;
+  my %fields = (
+    map { $_ => $new->get($_) }
+    grep { $new->get($_) ne $old->get($_) }
+    @propagate_fields
+  );
+
+  my @part_pkg = qsearch('part_pkg', { 
+      'family_pkgpart' => $new->family_pkgpart 
+  });
+  my @error;
+  foreach my $part_pkg ( @part_pkg ) {
+    my $pkgpart = $part_pkg->pkgpart;
+    next if $pkgpart == $new->pkgpart; # don't modify $new
+    warn "    propagating to pkgpart $pkgpart\n" if $DEBUG;
+    foreach ( keys %fields ) {
+      $part_pkg->set($_, $fields{$_});
+    }
+    # SUPER::replace to avoid changing non-core fields
+    my $error = $part_pkg->SUPER::replace;
+    push @error, "pkgpart $pkgpart: $error"
+      if $error;
+  }
+  join("\n", @error);
 }
 
 =item pkg_comment [ OPTION => VALUE... ]
@@ -1277,7 +1398,7 @@ sub _rebless {
   }
   return $self if ref($self) =~ /::$plan$/; #already blessed into plan subclass
   my $class = ref($self). "::$plan";
-  warn "reblessing $self into $class" if $DEBUG;
+  warn "reblessing $self into $class" if $DEBUG > 1;
   eval "use $class;";
   die $@ if $@;
   bless($self, $class) unless $@;
@@ -1407,6 +1528,14 @@ sub _upgrade_data { # class method
                                'primary_svc' => $primary,
                                'options'     => $options,
                              );
+    die $error if $error;
+  }
+
+  # set family_pkgpart on any packages that don't have it
+  @part_pkg = qsearch('part_pkg', { 'family_pkgpart' => '' });
+  foreach my $part_pkg (@part_pkg) {
+    $part_pkg->set('family_pkgpart' => $part_pkg->pkgpart);
+    my $error = $part_pkg->SUPER::replace;
     die $error if $error;
   }
 
