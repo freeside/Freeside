@@ -1594,6 +1594,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'disable_maxselect',
+    'section'     => 'UI',
+    'description' => 'Prevent changing the number of records per page.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'session-start',
     'section'     => 'session',
     'description' => 'If defined, the command which is executed on the Freeside machine when a session begins.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.',

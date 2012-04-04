@@ -130,7 +130,9 @@
 
             </TD>
 
-%           unless ( $opt{'disable_download'} || $type eq 'html-print' ) { 
+%           if ( $curuser->access_right('Download report data')
+%                 and !$opt{'disable_download'}
+%                 and $type ne 'html-print' ) { 
 
               <TD ALIGN="right">
 
@@ -469,6 +471,8 @@
 
 %   } 
 <%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
 
 my %args = @_;
 my $type           = $args{'type'};

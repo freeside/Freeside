@@ -180,6 +180,44 @@ sub _upgrade_data { # class method
 
   }
 
+  my @all_groups = qsearch('access_group', {});
+
+  ### ACL_list_all_customers
+  if ( !FS::upgrade_journal->is_done('ACL_list_all_customers') ) {
+
+    # grant "List all customers" to all users who have "List customers"
+    for my $group (@all_groups) {
+      if ( $group->access_right('List customers') ) {
+        my $access_right = FS::access_right->new( {
+            'righttype'   => 'FS::access_group',
+            'rightobjnum' => $group->groupnum,
+            'rightname'   => 'List all customers',
+        } );
+        my $error = $access_right->insert;
+        die $error if $error;
+      }
+    }
+    
+    FS::upgrade_journal->set_done('ACL_list_all_customers');
+  }
+
+  ### ACL_download_report_data
+  if ( !FS::upgrade_journal->is_done('ACL_download_report_data') ) {
+
+    # grant to everyone
+    for my $group (@all_groups) {
+      my $access_right = FS::access_right->new( {
+          'righttype'   => 'FS::access_group',
+          'rightobjnum' => $group->groupnum,
+          'rightname'   => 'Download report data',
+      } );
+      my $error = $access_right->insert;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('ACL_download_report_data');
+  }
+
   '';
 
 }
