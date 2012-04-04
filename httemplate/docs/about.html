@@ -1,14 +1,34 @@
-<% include('/elements/header-popup.html', { title=>'Freeside', nobr=>1 } ) %>
+<% include('/elements/header-popup.html', { title=>$title, nobr=>1 } ) %>
 
 <% include('/elements/init_overlib.html') %>
 
 <CENTER>
-<IMG SRC="<%$fsurl%>images/small-logo.png" BORDER="0"><BR>
-<H3>version <% $FS::VERSION %></H3>
+% if ( $agentnum ) {
+
+    <IMG SRC="<%$fsurl%>view/logo-agent.cgi?agentnum=<%$agentnum%>" BORDER="0"><BR>
+
+%   my $url = $conf->config('company_url', $agentnum);
+%   if ( $url ) {
+      <BR><BR>
+      <A HREF="<% $conf->config('company_url', $agentnum) %>" TARGET="_blank"><%$title%> homepage</A>
+%   }
+
+% } else {
+
+  <IMG SRC="<%$fsurl%>images/small-logo.png" BORDER="0"><BR>
+  <H3>version <% $FS::VERSION %></H3>
+
+% }
 </CENTER>
 
 <CENTER>
-<FONT SIZE="-1">&copy; 2012 Freeside Internet Services, Inc.<BR>
+% if ( $agentnum ) {
+  <BR><BR>
+  <FONT SIZE="-2">Based on Freeside version <% $FS::VERSION %><BR>
+% } else {
+  <FONT SIZE="-1">
+% }
+&copy; 2012 Freeside Internet Services, Inc.<BR>
 All rights reserved.<BR>
 Licensed under the terms of the<BR>
 GNU <b>Affero</b> General Public License.<BR>
@@ -17,6 +37,9 @@ GNU <b>Affero</b> General Public License.<BR>
 <BR>
 
 <CENTER>
+% if ( $agentnum ) {
+  <FONT SIZE="-2">
+% }
 <A HREF="credits.html">Credits</A>
  &nbsp;&nbsp;&nbsp;&nbsp;
 <A HREF="javascript:void(0)" onClick="openLicense()">License</A>
@@ -24,13 +47,18 @@ GNU <b>Affero</b> General Public License.<BR>
 
 <BR><BR>
 <A HREF="http://www.freeside.biz/freeside" TARGET="_blank">Freeside homepage</A>
+% if ( $agentnum ) {
+  </FONT>
+% }
 </CENTER>
 
 <BR>
 
-<CENTER>
-<FONT SIZE="-3">"I had to learn the hard way, to let her pass by" -R. Hunter</FONT>
-</CENTER>
+% unless ( $agentnum ) {
+  <CENTER>
+  <FONT SIZE="-3">"I had to learn the hard way, to let her pass by" -R. Hunter</FONT>
+  </CENTER>
+% }
 
 <SCRIPT TYPE="text/javascript">
 
@@ -51,3 +79,11 @@ function openLicense() {
 
 </BODY>
 </HTML>
+<%init>
+
+my $conf = new FS::Conf;
+my $agentnum = $conf->config('brand-agent');
+
+my $title = $agentnum ? $conf->config('company_name', $agentnum) : 'Freeside';
+
+</%init>

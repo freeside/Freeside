@@ -2835,6 +2835,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'company_url',
+    'section'     => 'UI',
+    'description' => 'Your company URL',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'company_address',
     'section'     => 'required',
     'description' => 'Your company address',
@@ -4829,6 +4837,14 @@ and customer address. Include units.',
     'description' => 'Track tower and sector for svc_acct (account) services.',
     'type'        => 'checkbox',
   },
+
+  {
+    'key'         => 'brand-agent',
+    'section'     => 'UI',
+    'description' => 'Brand the backoffice interface (currently Help->About) using the company_name, company_url and logo.png configuration settings of the selected agent.  Typically used when selling or bundling hosted access to the backoffice interface.  NOTE: The AGPL software license has specific requirements for source code availability in this situation.',
+    'type'        => 'select-agent',
+  },
+
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
