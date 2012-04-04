@@ -7,6 +7,7 @@ use Tie::IxHash;
 use FS::UID qw( dbh driver_name );
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch str2time_sql);
+use FS::upgrade_journal;
 
 use FS::svc_domain;
 $FS::svc_domain::whois_hack = 1;

@@ -630,3 +630,5 @@ FS/tower_sector.pm
 t/tower_sector.t
 FS/h_svc_cert.pm
 t/h_svc_cert.t
+FS/upgrade_journal.pm
+t/upgrade_journal.t

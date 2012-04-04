@@ -1572,6 +1572,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'disable_maxselect',
+    'section'     => 'UI',
+    'description' => 'Prevent changing the number of records per page.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'session-start',
     'section'     => 'session',
     'description' => 'If defined, the command which is executed on the Freeside machine when a session begins.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.',
@@ -2269,6 +2276,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'require_cash_deposit_info',
+    'section'     => 'billing',
+    'description' => 'When recording cash payments, display bank deposit information fields.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'paymentforcedtobatch',
     'section'     => 'deprecated',
     'description' => 'See batch-enable_payby and realtime-disable_payby.  Used to (for CHEK): Cause per customer payment entry to be forced to a batch processor rather than performed realtime.',
@@ -2911,7 +2925,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
   },
 
   {
@@ -2947,7 +2961,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
   },
 
   {

@@ -2005,6 +2005,36 @@ sub print_csv {
       '0',                        # 29 | Other Taxes & Fees***         NUM*   9
     );
 
+  } elsif ( lc($opt{'format'}) eq 'oneline' ) { #name?
+   
+    my ($previous_balance) = $self->previous; 
+    my $totaldue = sprintf('%.2f', $self->owed + $previous_balance);
+    my @items = map {
+      ($_->{pkgnum} || ''),
+      $_->{description},
+      $_->{amount}
+    } $self->_items_pkg;
+
+    $csv->combine(
+      $cust_main->agentnum,
+      $self->custnum,
+      $cust_main->first,
+      $cust_main->last,
+      $cust_main->address1,
+      $cust_main->address2,
+      $cust_main->city,
+      $cust_main->state,
+      $cust_main->zip,
+
+      # invoice fields
+      time2str("%x", $self->_date),
+      $self->invnum,
+      $self->charged,
+      $totaldue,
+
+      @items,
+    );
+
   } else {
   
     $csv->combine(
@@ -2043,6 +2073,10 @@ sub print_csv {
       $detail .= $csv->string. "\n";
 
     }
+
+  } elsif ( lc($opt{'format'}) eq 'oneline' ) {
+
+    #do nothing
 
   } else {
 

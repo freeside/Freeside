@@ -1332,12 +1332,17 @@ sub tables_hashref {
                                                  # index into payby table
                                                  # eventually
         'payinfo',  'varchar',   'NULL', 512, '', '', #see cust_main above
-	'paymask', 'varchar', 'NULL', $char_d, '', '', 
+        'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paydate',  'varchar', 'NULL', 10, '', '', 
         'paybatch', 'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'payunique', 'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
         'closed',    'char', 'NULL', 1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+        # cash/check deposit info fields
+        'bank',       'varchar', 'NULL', $char_d, '', '',
+        'depositor',  'varchar', 'NULL', $char_d, '', '',
+        'account',    'varchar', 'NULL', 20,      '', '',
+        'teller',     'varchar', 'NULL', 20,      '', '',
       ],
       'primary_key' => 'paynum',
       #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
@@ -3597,6 +3602,19 @@ sub tables_hashref {
       'primary_key' => 'areanum',
       'unique' => [ [ 'areanum' ] ],
       'index'  => [],
+    },
+
+    'upgrade_journal' => {
+      'columns' => [
+        'upgradenum', 'serial', '', '', '', '',
+        '_date', 'int', '', '', '', '',
+        'upgrade', 'varchar', '', $char_d, '', '',
+        'status', 'varchar', '', $char_d, '', '',
+        'statustext', 'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'upgradenum',
+      'unique' => [ [ 'upgradenum' ] ],
+      'index' => [ [ 'upgrade' ] ],
     },
 
     %{ tables_hashref_torrus() },

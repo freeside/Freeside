@@ -113,6 +113,22 @@ books closed flag, empty or `Y'
 
 Desired pkgnum when using experimental package balances.
 
+=item bank
+
+The bank where the payment was deposited.
+
+=item depositor
+
+The name of the depositor.
+
+=item account
+
+The deposit account number.
+
+=item teller
+
+The teller number.
+
 =back
 
 =head1 METHODS
@@ -493,8 +509,11 @@ sub check {
     || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_textn('bank')
+    || $self->ut_alphan('depositor')
+    || $self->ut_numbern('account')
+    || $self->ut_numbern('teller')
     || $self->payinfo_check()
-    || $self->ut_numbern('discount_term')
   ;
   return $error if $error;
 
@@ -508,6 +527,12 @@ sub check {
 
   return "invalid discount_term"
    if ($self->discount_term && $self->discount_term < 2);
+
+  if ( $self->payby eq 'CASH' and $conf->exists('require_cash_deposit_info') ) {
+    foreach (qw(bank depositor account teller)) {
+      return "$_ required" if $self->get($_) eq '';
+    }
+  }
 
 #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it
 #  # UNIQUE index should catch this too, without race conditions, but this

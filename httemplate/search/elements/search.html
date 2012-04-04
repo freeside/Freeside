@@ -170,7 +170,6 @@ Example:
 %
 <% include('search-csv.html',  header=>$header, rows=>$rows, opt=>\%opt ) %>
 %
-% #} elsif ( $type eq 'excel' ) {
 % } elsif ( $type =~ /\.xls$/ ) {
 %
 <% include('search-xls.html',  header=>$header, rows=>$rows, opt=>\%opt ) %>
@@ -179,7 +178,7 @@ Example:
 %
 <% include('search-xml.html',  rows=>$rows, opt=>\%opt ) %>
 %
-% } else { # regular HTML
+% } else {
 %
 <% include('search-html.html',
              type           => $type,
@@ -204,6 +203,11 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|xml|select|html(-print)?)$/
            ? $1 : 'html' ;
+
+if ( !$curuser->access_right('Download report data') ) {
+  $opt{'disable_download'} = 1;
+  $type = 'html';
+}
 
 my %align = (
   'l' => 'left',
@@ -362,6 +366,8 @@ unless ( $type =~ /^(csv|\w*.xls)$/) {
     } else {
       $maxrecords ||= $confmax;
     }
+
+    $opt{'disable_maxselect'} ||= $conf->exists('disable_maxselect');
 
     $limit = $maxrecords ? "LIMIT $maxrecords" : '';
 

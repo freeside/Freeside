@@ -253,6 +253,7 @@ tie my %rights, 'Tie::IxHash',
   ###
   'Reporting/listing rights' => [
     'List customers',
+    'List all customers',
     'List zip codes', #NEW
     'List invoices',
     'List packages',
@@ -266,6 +267,8 @@ tie my %rights, 'Tie::IxHash',
     'Financial reports',
     { rightname=> 'List inventory', global=>1 },
     { rightname=>'View email logs', global=>1 },
+
+    'Download report data',
 
     #{ rightname => 'List customers of all agents', global=>1 },
   ],
