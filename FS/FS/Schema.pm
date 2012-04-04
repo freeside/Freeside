@@ -3626,6 +3626,19 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'upgrade_journal' => {
+      'columns' => [
+        'upgradenum', 'serial', '', '', '', '',
+        '_date', 'int', '', '', '', '',
+        'upgrade', 'varchar', '', $char_d, '', '',
+        'status', 'varchar', '', $char_d, '', '',
+        'statustext', 'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'upgradenum',
+      'unique' => [ [ 'upgradenum' ] ],
+      'index' => [ [ 'upgrade' ] ],
+    },
+
     %{ tables_hashref_torrus() },
 
     # tables of ours for doing torrus virtual port combining
