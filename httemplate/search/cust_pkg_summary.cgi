@@ -25,7 +25,7 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('List packages');
+  unless $curuser->access_right('Summarize packages');
 
 my $title = 'Package Summary Report';
 my ($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
