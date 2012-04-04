@@ -256,6 +256,7 @@ tie my %rights, 'Tie::IxHash',
     'List zip codes', #NEW
     'List invoices',
     'List packages',
+    'Summarize packages',
     'List services',
     'List service passwords',
   
@@ -361,6 +362,7 @@ sub default_superuser_rights {
     'Delete payment',
     'Delete credit', #?
     'Delete refund', #?
+    'Edit customer package dates',
     'Time queue',
     'Redownload resolved batches',
     'Raw SQL',
