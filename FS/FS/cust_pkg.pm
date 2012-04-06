@@ -3300,7 +3300,7 @@ sub search {
       "NOT (".FS::cust_pkg->onetime_sql . ")";
   }
   else {
-    foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end cancel )) {
+    foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel )) {
 
       next unless exists($params->{$field});
 
