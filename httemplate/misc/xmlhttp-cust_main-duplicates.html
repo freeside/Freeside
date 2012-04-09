@@ -1,0 +1,68 @@
+% if ( @cust_main ) {
+<CENTER><BR><B>Duplicate customer</B><BR>
+Choose an existing customer
+<TABLE WIDTH="300px">
+<FORM name="DuplicateForm">
+% foreach (@cust_main) {
+%   my $custnum = $_->custnum;
+<TR>
+  <TD ALIGN="right" VALIGN="top"><B><% $custnum %>: </B></TD>
+  <TD ALIGN="left">
+    <% $_->name %>&mdash;<B><FONT COLOR="#<%$_->statuscolor%>"><%$_->ucfirst_cust_status%></FONT></B><BR>
+<% $_->address1 %><BR>
+<% $_->city %>,&nbsp;<% $_->state %>&nbsp;&nbsp;<% $_->zip %>
+  </TD>
+  <TD ALIGN="center">
+    <INPUT TYPE="radio" NAME="dup_custnum" VALUE="<%$custnum%>">
+  </TD>
+</TR>
+% } #foreach cust_main
+</FORM>
+</TABLE>
+<TABLE WIDTH="100%">
+<TR>
+  <TD ALIGN="center">
+    <BUTTON TYPE="button" onclick="submit_continue();">
+      <IMG SRC="<%$p%>images/error.png"> Create a new customer
+    </BUTTON>
+  </TD>
+  <TD ALIGN="center">
+    <BUTTON TYPE="button" onclick="<% $set_to_customer %>">
+      <IMG SRC="<%$p%>images/tick.png"> Use the selected customer
+    </BUTTON>
+  </TD>
+</TR>
+<TR>
+  <TD COLSPAN=2 ALIGN="center">
+    <BUTTON TYPE="button" onclick="submit_abort();">
+      <IMG SRC="<%$p%>images/cross.png"> Cancel submission
+    </BUTTON>
+  </TD>
+</TR>
+% }
+%# else return nothing
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List customers');
+
+my $conf = new FS::Conf;
+
+my $sub = $cgi->param('sub');
+my $hashref = decode_json($cgi->param('arg'));
+my @cust_main = qsearch('cust_main', $hashref);
+
+my $set_to_customer = <<EOF;
+  var custnum_array = document.getElementsByName('dup_custnum');
+  var custnum;
+  for(i=0; i<custnum_array.length; i++) {
+    if(custnum_array[i].checked) {
+      custnum = custnum_array[i].value;
+    }
+  }
+  //alert('Setting to customer '+custnum);
+  document.CustomerForm.elements['duplicate_of_custnum'].value = custnum;
+  submit_continue();
+EOF
+
+</%init>
