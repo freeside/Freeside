@@ -49,9 +49,8 @@ sub data {
   my $syear   = $self->{'start_year'};
   my $emonth  = $self->{'end_month'};
   my $eyear   = $self->{'end_year'};
-  # how far to extrapolate into the future
-  my $pmonth  = $self->{'project_month'};
-  my $pyear   = $self->{'project_year'};
+  # whether to extrapolate into the future
+  my $projecting = $self->{'projection'};
 
   # sanity checks
   if ( $eyear < $syear or
@@ -61,17 +60,14 @@ sub data {
 
   my $agentnum = $self->{'agentnum'};
 
-  if ( $pyear > $eyear or
-      ($pyear == $eyear and $pmonth > $emonth) ) {
+  if ( $projecting ) {
 
-    # create the entire projection set first to avoid timing problems
+    $self->init_projection;
 
-    $self->init_projection if $pmonth;
-
-    my $thisyear = $eyear;
-    my $thismonth = $emonth;
-    while ( $thisyear < $pyear || 
-      ( $thisyear == $pyear and $thismonth <= $pmonth )
+    my $thismonth = $smonth;
+    my $thisyear  = $syear;
+    while ( $thisyear < $eyear || 
+      ( $thisyear == $eyear and $thismonth <= $emonth )
     ) {
       my $speriod = timelocal(0,0,0,1,$thismonth-1,$thisyear);
       $thismonth++;
@@ -84,10 +80,8 @@ sub data {
 
   my %data;
 
-  my $max_year = $pyear || $eyear;
-  my $max_month = $pmonth || $emonth;
-
-  my $projecting = 0; # are we currently projecting?
+  my $max_year  = $eyear;
+  my $max_month = $emonth;
 
   while ( $syear < $max_year
      || ( $syear == $max_year && $smonth < $max_month+1 ) ) {
@@ -99,11 +93,6 @@ sub data {
     }
     else {
       push @{$data{label}}, "$smonth/$syear";
-    }
-
-    if ( $syear > $eyear || ( $syear == $eyear && $smonth >= $emonth + 1 ) ) {
-      # start getting data from the projection
-      $projecting = 1;
     }
 
     my $speriod = timelocal(0,0,0,1,$smonth-1,$syear);

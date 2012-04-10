@@ -7,10 +7,8 @@
 <% include('/elements/tr-select-from_to.html' ) %>
 
 <TR>
-  <TD ALIGN="right">Project to:</TD>
-  <TD><& /elements/select-month_year.html, 
-    prefix => 'project',
-    show_month_abbr => 1 &></TD>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="projection" VALUE="1"></TD>
+  <TD>Show projected data for future months</TD>
 </TR>
 
 <% include('/elements/tr-select-agent.html',
