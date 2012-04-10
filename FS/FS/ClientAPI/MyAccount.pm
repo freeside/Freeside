@@ -151,10 +151,23 @@ sub login_info {
     %{ skin_info($p) },
     'phone_login'  => $conf->exists('selfservice_server-phone_login'),
     'single_domain'=> scalar($conf->config('selfservice_server-single_domain')),
+    'banner_url'       => scalar($conf->config('selfservice-login_banner_url')),
+    'banner_image_md5' => 
+      md5_hex($conf->config_binary('selfservice-login_banner_image')),
   );
 
   return \%info;
 
+}
+
+sub login_banner_image {
+  my $p = shift;
+  my $conf = new FS::Conf;
+  my $image = $conf->config_binary('selfservice-login_banner_image');
+  return { 
+    'md5'   => md5_hex($image),
+    'image' => $image,
+  };
 }
 
 #false laziness w/FS::ClientAPI::passwd::passwd

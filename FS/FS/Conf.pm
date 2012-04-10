@@ -4152,6 +4152,20 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-login_banner_image',
+    'section'     => 'self-service',
+    'description' => 'Banner image shown on the login page, in PNG format.',
+    'type'        => 'image',
+  },
+
+  {
+    'key'         => 'selfservice-login_banner_url',
+    'section'     => 'self-service',
+    'description' => 'Link for the login banner.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'selfservice-bulk_format',
     'section'     => 'deprecated',
     'description' => 'Parameter arrangement for selfservice bulk features',

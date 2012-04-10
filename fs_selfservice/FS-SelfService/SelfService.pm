@@ -26,6 +26,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'chfn'                      => 'passwd/passwd',
   'chsh'                      => 'passwd/passwd',
   'login_info'                => 'MyAccount/login_info',
+  'login_banner_image'        => 'MyAccount/login_banner_image',
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'switch_acct'               => 'MyAccount/switch_acct',
