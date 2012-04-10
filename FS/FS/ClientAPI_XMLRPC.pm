@@ -37,17 +37,21 @@ $DEBUG = 0;
 $FS::ClientAPI::DEBUG = $DEBUG;
 
 #false laziness w/FS::SelfService/XMLRPC.pm, same problem as below but worse
+our %typefix_skin_info = (
+  'logo'              => 'base64',
+  'title_left_image'  => 'base64',
+  'title_right_image' => 'base64',
+  'menu_top_image'    => 'base64',
+  'menu_body_image'   => 'base64',
+  'menu_bottom_image' => 'base64',
+);
 our %typefix = (
   'invoice_pdf'        => { 'invoice_pdf' => 'base64', },
   'legacy_invoice_pdf' => { 'invoice_pdf' => 'base64', },
-  'skin_info'          => { 'logo'              => 'base64',
-                            'title_left_image'  => 'base64',
-                            'title_right_image' => 'base64',
-                            'menu_top_image'    => 'base64',
-                            'menu_body_image'   => 'base64',
-                            'menu_bottom_image' => 'base64',
-                          },
+  'skin_info'          => \%typefix_skin_info,
+  'login_info'         => \%typefix_skin_info,
   'invoice_logo'       => { 'logo' => 'base64', },
+  'login_banner_image' => { 'image' => 'base64', },
 );
 
 sub AUTOLOAD {
@@ -94,6 +98,7 @@ sub ss2clientapi {
   'chfn'                      => 'passwd/passwd',
   'chsh'                      => 'passwd/passwd',
   'login_info'                => 'MyAccount/login_info',
+  'login_banner_image'        => 'MyAccount/login_banner_image',
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'switch_acct'               => 'MyAccount/switch_acct',
