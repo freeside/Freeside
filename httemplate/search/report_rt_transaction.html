@@ -6,6 +6,17 @@
 
   <% include ( '/elements/tr-input-beginning_ending.html' ) %>
 
+  <& /elements/tr-td-label.html, label => 'Time category:' &>
+  <TD>
+  <& /elements/select-rt-customfield.html,
+      name        => 'cfname',
+      lookuptype  => 'RT::Transaction',
+      valuetype   => 'TimeValue',
+      empty_label => 'Worked',
+  &>
+  </TD></TR>
+
+
   <% include ( '/elements/tr-select-otaker.html' ) %>
 
   <% include ( '/elements/tr-input-text.html',
@@ -15,7 +26,7 @@
   %>
 
   <TR>
-    <TD>Account</TD>
+    <TD ALIGN="right">Account:</TD>
     <TD>
       <SELECT NAME="svcnum">
         <OPTION VALUE="">(all)

@@ -3,12 +3,13 @@
              'name_singular' => 'transaction',
              'query'         => $query,
              'count_query'   => $count_query,
-             'count_addl'    => [ $format_seconds_sub, $format_seconds_sub, ],
+             'count_addl'    => [ $format_seconds_sub, 
+                                  $applied_time ? $format_seconds_sub : () ],
              'header'        => [ 'Ticket #',
                                   'Ticket',
                                   'Date',
                                   'Time',
-                                  'Applied',
+                                  $applied_time ? 'Applied' : (),
                                 ],
              'fields'        => [ 'ticketid',
                                   sub { encode_entities(shift->get('subject')) },
@@ -16,9 +17,10 @@
                                   sub { my $seconds = shift->get('transaction_time');
                                         &{ $format_seconds_sub }( $seconds );
                                       },
-                                  sub { my $seconds = shift->get('support');
+                                  ($applied_time ? 
+                                    sub { my $seconds = shift->get('applied_time');
                                         &{ $format_seconds_sub }( $seconds );
-                                      },
+                                      } : () ),
                                 ],
              'links'         => [
                                   $link,
@@ -44,33 +46,99 @@ $seconds)%3600)/60)."m";
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
 
+local $FS::Record::nowarn_classload = 1;
 #some amount of false laziness w/timeworked.html...
 
-my $transactiontime = "
-  CASE transactions.type when 'Set'
-    THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60
-    ELSE timetaken*60
-  END
-";
+my @select = (
+  'Transactions.*',
+  'Tickets.Id AS ticketid',
+  'Tickets.Subject',
+  'Users.name AS otaker',
+);
+my @select_total = ( 'COUNT(*)' );
 
+my ($transaction_time, $applied_time);
 my $join = 'JOIN Tickets ON Transactions.ObjectId = Tickets.Id '.
            'JOIN Users   ON Transactions.Creator = Users.Id '; #.
-#           'LEFT JOIN acct_rt_transaction '.
-#                 '  ON Transactions.Id = acct_rt_transaction.transaction_id';
-my $where = "
-  WHERE objecttype='RT::Ticket'
+
+my $where = "WHERE Transactions.ObjectType = 'RT::Ticket'";
+
+my $cfname = '';
+if ( $cgi->param('cfname') =~ /^\w(\w|\s)*$/ ) {
+
+  # a TimeValue-type custom field
+  $cfname = $cgi->param('cfname');
+
+  $transaction_time = "(CASE Transactions.Type 
+    WHEN 'CustomField' THEN 
+      ( coalesce(to_number(ocfv_new.Content,'999999'),0) 
+      - coalesce(to_number(ocfv_old.Content,'999999'),0) )
+    ELSE ( to_number(ocfv_main.Content,'999999') )
+    END) * 60";
+
+  # complicated because we have to deal with the case of editing the
+  # ticket custom field directly (OldReference/NewReference) as well as 
+  # entering a transaction with a custom field value (ObjectId)
+  $join .= "
+    LEFT JOIN ObjectCustomFieldValues ocfv_new
+    ON ( ocfv_new.Id = Transactions.NewReference )
+    LEFT JOIN ObjectCustomFieldValues ocfv_old
+    ON ( ocfv_old.Id = Transactions.OldReference )
+    LEFT JOIN ObjectCustomFieldValues ocfv_main
+    ON ( ocfv_main.ObjectType = 'RT::Transaction'
+         AND ocfv_main.ObjectId = Transactions.Id )
+    JOIN CustomFields
+    ON ( ( CustomFields.LookupType = 'RT::Queue-RT::Ticket-RT::Transaction'
+           AND CustomFields.Id = ocfv_main.CustomField
+           AND ocfv_main.Id IS NOT NULL
+         )
+         OR
+         ( CustomFields.LookupType = 'RT::Queue-RT::Ticket'
+           AND (CustomFields.Id = ocfv_new.CustomField OR ocfv_new.Id IS NULL)
+           AND (CustomFields.Id = ocfv_old.CustomField OR ocfv_old.Id IS NULL)
+           AND ocfv_main.Id IS NULL
+         ) )
+  ";
+
+  $where .= " AND CustomFields.Name = '$cfname'
+  AND (ocfv_new.Id IS NOT NULL OR ocfv_old.Id IS NOT NULL OR ocfv_main.Id IS NOT NULL)";
+
+}
+else {
+
+  # the intrinsic TimeWorked/TimeTaken fields
+  $transaction_time = "CASE Transactions.Type when 'Set'
+      THEN (to_number(NewValue,'999999')-to_number(OldValue, '999999')) * 60
+      ELSE TimeTaken*60
+    END";
+ 
+  my $applied = ''; 
+  if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
+    $where .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
+    $applied = "AND svcnum = $1";
+  }
+
+  $applied_time = "( SELECT SUM(support) from acct_rt_transaction where transaction_id = Transactions.id $applied )";
+
+  $where .= "
     AND (    ( Transactions.Type = 'Set'
                AND Transactions.Field = 'TimeWorked'
                AND Transactions.NewValue != Transactions.OldValue )
-          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' )
+          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' OR Transactions.Type='Touch' )
                AND Transactions.TimeTaken > 0
              )
         )
-";
+  ";
+
+}
 #AND transaction_time != 0
 #AND $wheretimeleft
-
-my $support = '';
+push @select, "($transaction_time) AS transaction_time";
+push @select_total, "SUM($transaction_time)";
+if ( $applied_time ) {
+  push @select, "($applied_time) AS applied_time";
+  push @select_total, "SUM($applied_time)";
+}
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 # TIMESTAMP is Pg-specific... ?
@@ -91,22 +159,8 @@ if ( $cgi->param('ticketid') =~ /^\s*(\d+)\s*$/ ) {
   $where .= " AND Tickets.Id = $1";
 }
 
-if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
-  $where .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
-  $support = "AND svcnum = $1";
-}
-
-my $support_time = "( SELECT SUM(support) from acct_rt_transaction where transaction_id = Transactions.id $support )";
-
 my $query = {
-  'select'    => join(', ',
-                   'Transactions.*',
-                   'Tickets.Id AS ticketid',
-                   'Tickets.Subject',
-                   'Users.name AS otaker',
-                   "$transactiontime AS transaction_time",
-                   "$support_time    AS support",
-                 ),
+  'select'    => join(', ', @select),
   'table'     => 'transactions', #Pg-ism
   #'table'     => 'Transactions',
   'addl_from' => $join,
@@ -114,12 +168,7 @@ my $query = {
   'order by'  => 'ORDER BY Created',
 };
 
-my $count_query =
-  #"SELECT COUNT(*), SUM($transactiontime), SUM(acct_rt_transaction.support) FROM Transactions $join $where";
-  "SELECT COUNT(*),
-          SUM($transactiontime),
-          SUM($support_time)
-     FROM Transactions $join $where";
+my $count_query = 'SELECT '.join(', ', @select_total). " FROM Transactions $join $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->get('ticketid'); } ];
 

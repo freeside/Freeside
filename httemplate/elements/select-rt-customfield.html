@@ -1,0 +1,34 @@
+<SELECT NAME="<% $opt{name} %>">
+% while ( @fields ) {
+<OPTION VALUE="<% shift @fields %>"><% shift @fields %></OPTION>
+% }
+</SELECT>
+<%once>
+RT::Init();
+</%once>
+<%init>
+my %opt = @_;
+my $lookuptype = $opt{lookuptype};
+my $valuetype = $opt{valuetype};
+# get a list of TimeValue-type custom fields
+my $CurrentUser = RT::CurrentUser->new();
+$CurrentUser->LoadByName($FS::CurrentUser::CurrentUser->username);
+die "RT not configured" unless $CurrentUser->id;
+my $CFs = RT::CustomFields->new($CurrentUser);
+
+$CFs->Limit(FIELD => 'LookupType',
+            OPERATOR => 'ENDSWITH',
+            VALUE => $lookuptype)
+    if $lookuptype;
+
+$CFs->Limit(FIELD => 'Type',
+            VALUE => $valuetype)
+    if $valuetype;
+
+my @fields;
+push @fields, '', $opt{empty_label} if exists($opt{empty_label});
+
+while (my $CF = $CFs->Next) {
+  push @fields, $CF->Name, ($CF->Description || $CF->Name);
+}
+</%init>
