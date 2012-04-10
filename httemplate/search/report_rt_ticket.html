@@ -6,10 +6,20 @@
 
   <% include ( '/elements/tr-input-beginning_ending.html' ) %>
 
+  <& /elements/tr-td-label.html, label => 'Time category:' &>
+  <TD>
+  <& /elements/select-rt-customfield.html,
+      name        => 'cfname',
+      lookuptype  => 'RT::Transaction',
+      valuetype   => 'TimeValue',
+      empty_label => 'Worked',
+  &>
+  </TD></TR>
+
   <% include ( '/elements/tr-select-otaker.html' ) %>
 
   <TR>
-    <TD>Account</TD>
+    <TD ALIGN="right">Account:</TD>
     <TD>
       <SELECT NAME="svcnum">
         <OPTION VALUE="">(all)
@@ -47,5 +57,25 @@ if ( @pkgparts ) {
     'order_by'  => 'ORDER BY username',
   });
 }
+
+# get a list of TimeValue-type custom fields
+RT::Init();
+my $CurrentUser = RT::CurrentUser->new();
+$CurrentUser->LoadByName($FS::CurrentUser::CurrentUser->username);
+die "RT not configured" unless $CurrentUser->id;
+my $CFs = RT::CustomFields->new($CurrentUser);
+
+$CFs->Limit(FIELD => 'LookupType',
+            OPERATOR => 'ENDSWITH',
+            VALUE => 'RT::Transaction');
+
+$CFs->Limit(FIELD => 'Type',
+            VALUE => 'TimeValue');
+
+my @time_fields = ('', 'Worked');
+while (my $CF = $CFs->Next) {
+  push @time_fields, $CF->Name, ($CF->Description || $CF->Name);
+}
+
 
 </%init>
