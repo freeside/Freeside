@@ -28,8 +28,8 @@ use FS::cdr qw(_cdr_date_parser_maker);
     'dst',            # DNIS
     'src',            # ANI
     skip(2),          # Call Type, Toll Free, 
-    skip(1),          # Chair Conference Entry Code
-    'accountcode',    # Participant Conference Entry Code,
+    'accountcode',    # Chair Conference Entry Code
+    skip(1),          # Participant Conference Entry Code,
     ],
 
 );
