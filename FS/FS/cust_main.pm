@@ -3911,12 +3911,25 @@ cust_main-default_agent_custid is set and it has a value, custnum otherwise.
 
 sub display_custnum {
   my $self = shift;
+
+  my $prefix = $conf->config('cust_main-custnum-display_prefix') || '';
+  if ( my $special = $conf->config('cust_main-custnum-display_special') ) {
+    if ( $special eq 'CoStCl' ) {
+      $prefix = uc( join('',
+        $self->country,
+        ($self->state =~ /^(..)/),
+        ($self->classnum ? $self->cust_class->classname =~ /^(..)/ : '__')
+      ) );
+    }
+    # add any others here if needed
+  }
+
   my $length = $conf->config('cust_main-custnum-display_length');
   if ( $conf->exists('cust_main-default_agent_custid') && $self->agent_custid ){
     return $self->agent_custid;
-  } elsif ( $conf->config('cust_main-custnum-display_prefix') ) {
+  } elsif ( $prefix ) {
     $length = 8 if !defined($length);
-    return $conf->config('cust_main-custnum-display_prefix').
+    return $prefix . 
            sprintf('%0'.$length.'d', $self->custnum)
   } elsif ( $length ) {
     return sprintf('%0'.$length.'d', $self->custnum);

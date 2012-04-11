@@ -3888,6 +3888,15 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-custnum-display_special',
+    'section'     => 'UI',
+    'description' => 'Use this customer number prefix format',
+    'type'        => 'select',
+    'select_hash' => [ '' => '',
+                       'CoStCl' => 'CoStCl (country, state, class name)' ],
+  },
+
+  {
     'key'         => 'cust_main-custnum-display_length',
     'section'     => 'UI',
     'description' => 'Zero fill the customer number to this many digits for display purposes.',
