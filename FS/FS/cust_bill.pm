@@ -2006,7 +2006,7 @@ sub print_csv {
     );
 
   } elsif ( lc($opt{'format'}) eq 'oneline' ) { #name?
-   
+  
     my ($previous_balance) = $self->previous; 
     my $totaldue = sprintf('%.2f', $self->owed + $previous_balance);
     my @items = map {
@@ -2017,6 +2017,7 @@ sub print_csv {
 
     $csv->combine(
       $cust_main->agentnum,
+      $cust_main->agent->agent,
       $self->custnum,
       $cust_main->first,
       $cust_main->last,
