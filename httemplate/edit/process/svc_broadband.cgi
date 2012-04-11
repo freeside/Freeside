@@ -13,9 +13,9 @@ die "access denied"
 
 sub precheck {
   my $cgi = shift;
-  if ( !defined($cgi->param('ip_addr')) ) {
-    $cgi->param('ip_addr', $cgi->param('prev_ip_addr') || '');
-  }
+  my $ip_addr = $cgi->param('ip_addr');
+  $ip_addr =~ s/[^\d\.]//g; # converts '(automatic)' to null
+  $cgi->param('ip_addr', $ip_addr);
   $cgi->param("usergroup", [ $cgi->param('usergroup') ]);
   ''
 }
