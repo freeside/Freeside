@@ -428,7 +428,8 @@ sub check {
     }
     else {
       my $addr_block = $self->addr_block;
-      unless ( $addr_block and $addr_block->manual_flag ) {
+      if ( $self->ip_addr eq '' 
+           and not ( $addr_block and $addr_block->manual_flag ) ) {
         my $error = $self->assign_ip_addr;
         return $error if $error;
       }
@@ -525,6 +526,12 @@ sub _check_ip_addr {
   else {
     return 'Cannot parse address: '.$self->ip_addr unless $self->NetAddr;
   }
+
+  if ( $self->addr_block 
+      and not $self->addr_block->NetAddr->contains($self->NetAddr) ) {
+    return 'Address '.$self->ip_addr.' not in block '.$self->addr_block->cidr;
+  }
+
 #  if (my $dup = qsearchs('svc_broadband', {
 #        ip_addr => $self->ip_addr,
 #        svcnum  => {op=>'!=', value => $self->svcnum}

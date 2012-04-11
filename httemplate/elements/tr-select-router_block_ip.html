@@ -1,22 +1,33 @@
 <script type="text/javascript">
 var manual_addr_routernum = <% encode_json(\%manual_addr_routernum) %>;
 var ip_addr_curr_value = <% $opt{'ip_addr'} |js_string %>;
-function lock_ip_addr(obj, i) {
-  var routernum = obj.value;
-  var select_blocknum = document.getElementsByName('blocknum')[0];
+var blocknum_curr_value = <% $opt{'blocknum'} |js_string %>;
+function update_ip_addr(obj, i) {
+  var routernum = document.getElementById('router_select_0').value;
+  var select_blocknum = document.getElementById('router_select_1');
+  var blocknum = select_blocknum.value;
   var input_ip_addr = document.getElementById('input_ip_addr');
   if ( manual_addr_routernum[routernum] == 'Y' ) {
-%# enable ip_addr, default it to its previous value, and hide block selection
+%# hide block selection and default ip address to its previous value
     select_blocknum.style.display = 'none';
     input_ip_addr.value = ip_addr_curr_value;
-    input_ip_addr.disabled = false;
   }
   else {
 %# the reverse
     select_blocknum.style.display = '';
-    input_ip_addr.disabled = true;
-    input_ip_addr.value = '(automatic)';
+%# default ip address to null, unless the router/block are set to the 
+%# previous value, in which case default it to current value
+    if ( routernum == router_curr_values[0] &&
+         blocknum  == router_curr_values[1] ) {
+      input_ip_addr.value = ip_addr_curr_value;
+    } else {
+      input_ip_addr.value = <% mt('(automatic)') |js_string %>;
+    }
   }
+}
+function clearhint_ip_addr (what) {
+  if ( what.value == <% mt('(automatic)') |js_string %> )
+    what.value = '';
 }
 </script>
 <& /elements/tr-td-label.html, label => ($opt{'label'} || 'Router') &>
@@ -27,7 +38,7 @@ function lock_ip_addr(obj, i) {
     records   => \@routers,
     name_col  => 'routername',
     value_col => 'routernum',
-    onchange  => 'lock_ip_addr',
+    onchange  => 'update_ip_addr',
     curr_value=> $opt{'routernum'},
   },
   {
@@ -39,6 +50,7 @@ function lock_ip_addr(obj, i) {
     name_col  => 'cidr',
     link_col  => 'routernum',
     empty_label => '(any)',
+    onchange  => 'update_ip_addr',
     curr_value  => $opt{'blocknum'},
   },
 ]
@@ -52,12 +64,11 @@ function lock_ip_addr(obj, i) {
 % }
 % else {
   <input type="text" id="input_ip_addr" name="ip_addr" 
-  value="<% $opt{'ip_addr'} |h%>">
+  value="<% $opt{'ip_addr'} |h%>" onfocus="clearhint_ip_addr(this)">
 % }
 </td> </tr>
-<input type="hidden" name="prev_ip_addr" value="<% $opt{'ip_addr'} |h%>">
 <script type="text/javascript">
-lock_ip_addr(document.getElementsByName('routernum')[0],0);
+update_ip_addr();
 </script>
 <%init>
 
