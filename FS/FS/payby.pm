@@ -176,6 +176,11 @@ sub realtime {  # can use realtime payment facilities
   return $hash{$payby}->{realtime};
 }
 
+sub payby2shortname {
+  my $self = shift;
+  map { $_ => $hash{$_}->{shortname} } $self->payby;
+}
+
 sub payby2longname {
   my $self = shift;
   map { $_ => $hash{$_}->{longname} } $self->payby;
