@@ -3602,9 +3602,19 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Display format for line item date ranges on invoice line items.',
     'type'        => 'select',
-    'select_hash' => [ ''         => 'STARTDATE-ENDDATE',
-                       'month_of' => 'Month of MONTHNAME',
+    'select_hash' => [ ''           => 'STARTDATE-ENDDATE',
+                       'month_of'   => 'Month of MONTHNAME',
+                       'X_month'    => 'DATE_DESC MONTHNAME',
                      ],
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'cust_bill-line_item-date_description',
+    'section'     => 'billing',
+    'description' => 'Text to display for "DATE_DESC" when using cust_bill-line_item-date_style DATE_DESC MONTHNAME.',
+    'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {
