@@ -3912,9 +3912,16 @@ cust_main-default_agent_custid is set and it has a value, custnum otherwise.
 sub display_custnum {
   my $self = shift;
 
-  my $prefix = $conf->config('cust_main-custnum-display_prefix') || '';
+  my $prefix = $conf->config('cust_main-custnum-display_prefix', $self->agentnum) || '';
   if ( my $special = $conf->config('cust_main-custnum-display_special') ) {
-    if ( $special eq 'CoStCl' ) {
+    if ( $special eq 'CoStAg' ) {
+      $prefix = uc( join('',
+        $self->country,
+        ($self->state =~ /^(..)/),
+        $prefix || ($self->agent->agent =~ /^(..)/)
+      ) );
+    }
+    elsif ( $special eq 'CoStCl' ) {
       $prefix = uc( join('',
         $self->country,
         ($self->state =~ /^(..)/),
