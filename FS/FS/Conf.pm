@@ -3889,7 +3889,7 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Prefix the customer number with this string for display purposes.',
     'type'        => 'text',
-    #and then probably agent-virt this to merge these instances
+    'per_agent'   => 1,
   },
 
   {
@@ -3898,6 +3898,7 @@ and customer address. Include units.',
     'description' => 'Use this customer number prefix format',
     'type'        => 'select',
     'select_hash' => [ '' => '',
+                       'CoStAg' => 'CoStAg (country, state, agent name or display_prefix)',
                        'CoStCl' => 'CoStCl (country, state, class name)' ],
   },
 

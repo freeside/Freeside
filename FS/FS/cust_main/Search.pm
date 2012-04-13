@@ -127,6 +127,12 @@ sub smart_search {
          || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
               && $search =~ /^\s*(\w\w?\d+)\s*$/
             )
+         || ( $conf->config('cust_main-custnum-display_special')
+           # it's not currently possible for special prefixes to contain
+           # digits, so just strip off any alphabetic prefix and match 
+           # the rest to custnum
+              && $search =~ /^\s*[[:alpha:]]*(\d+)\s*$/
+            )
          || ( $conf->exists('address1-search' )
               && $search =~ /^\s*(\d+\-?\w*)\s*$/ #i.e. 1234A or 9432-D
             )
@@ -143,24 +149,22 @@ sub smart_search {
       } );
     }
 
-    #if this becomes agent-virt need to get a list of all prefixes the current
-    #user can see (via their agents)
-    my $prefix = $conf->config('cust_main-custnum-display_prefix');
-    if ( $prefix && $prefix eq substr($num, 0, length($prefix)) ) {
-      push @cust_main, qsearch( {
-        'table'     => 'cust_main',
-        'hashref'   => { 'custnum' => 0 + substr($num, length($prefix)),
-                         %options,
+    # for all agents this user can see, if any of them have custnum prefixes 
+    # that match the search string, include customers that match the rest 
+    # of the custnum and belong to that agent
+    foreach my $agentnum ( $FS::CurrentUser::CurrentUser->agentnums ) {
+      my $p = $conf->config('cust_main-custnum-display_prefix', $agentnum);
+      next if !$p;
+      if ( $p eq substr($num, 0, length($p)) ) {
+        push @cust_main, qsearch( {
+          'table'   => 'cust_main',
+          'hashref' => { 'custnum' => 0 + substr($num, length($p)),
+                         'agentnum' => $agentnum,
+                          %options,
                        },
-        'extra_sql' => " AND $agentnums_sql", #agent virtualization
-      } );
+        } );
+      }
     }
-
-    push @cust_main, qsearch( {
-      'table'     => 'cust_main',
-      'hashref'   => { 'agent_custid' => $num, %options },
-      'extra_sql' => " AND $agentnums_sql", #agent virtualization
-    } );
 
     if ( $conf->exists('address1-search') ) {
       my $len = length($num);
