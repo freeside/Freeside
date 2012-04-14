@@ -62,10 +62,10 @@ function select_discount_term(row, prefix) {
               name_singular => 'payment',
               header  => \@header,
               fields  => \@fields,
-              types   => \@types,
+              type    => \@types,
               align   => \@align,
-              sizes   => \@sizes,
-              colors  => \@colors,
+              size    => \@sizes,
+              color   => \@colors,
               param   => \%param,
               footer  => \@footer,
               footer_align => \@footer_align,
@@ -96,18 +96,19 @@ die "access denied"
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
-my @header  = ( '', 'Amount', 'Check #' );
-my @fields  = ( sub { "$money_char" }, 'paid', 'payinfo' );
-my @types   = ( 'immutable', '', '' );
-my @align   = ( 'c', 'r', 'r' );
-my @sizes   = ( 0, 8, 10 );
-my @colors  = ( '', '', '' );
+my @header  = ( 'Amount', 'Check #' );
+my @fields  = ( 'paid', 'payinfo' );
+my @types   = ( '', '' );
+my @align   = ( 'r', 'r' );
+my @sizes   = ( 8, 10 );
+my @colors  = ( '', '' );
 my %param   = ();
-my @footer  = ( "$money_char", '_TOTAL', '' );
-my @footer_align = ( 'c', 'r', 'r' );
+my @footer  = ( '_TOTAL', '' );
+my @footer_align = ( 'r', 'r' );
 my $custnum_update_callback = '';
 
 if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM part_pkg_discount') ) {
+  #push @header, 'Discount';
   push @header, '';
   push @fields, 'discount_term';
   push @types, 'immutable';
@@ -119,6 +120,7 @@ if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM part_pkg_discount') ) {
   $custnum_update_callback = 'select_discount_term';
 }
 
+#push @header, 'Error';
 push @header, '';
 push @fields, 'error';
 push @types, 'immutable';
