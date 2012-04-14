@@ -9,6 +9,7 @@ function updateTicketLink() {
     keys %new_param),'Queue=') %>" + selector.options[selector.selectedIndex].value;
 }
 </SCRIPT>
+<A NAME="tickets"><FONT CLASS="fsinnerbox-title">Tickets</FONT></A>
 <A id="CreateTicketLink" HREF="<% $new_link %>"><% mt('Create new ticket') |h %></A>
  <% mt('in queue') |h %> 
 %# fetch list of queues in which the user can create tickets
@@ -28,11 +29,11 @@ function updateTicketLink() {
 <SCRIPT DEFER TYPE="text/javascript">updateTicketLink();</SCRIPT>
 % }
 </FORM>
+ | 
+View 
+<A HREF="<% $open_link %>"><% mt($openlabel) |h %></A> | 
+<A HREF="<% $res_link  %>"><% mt('resolved') |h %></A>
 <BR>
-
-(<A HREF="<% $open_link %>"><% mt("View $openlabel tickets for this customer") |h %></A>)
-(<A HREF="<% $res_link  %>"><% mt('View resolved tickets for this customer') |h %></A>)
-<BR><BR>
 
 <& /elements/table-grid.html &>
 % my $bgcolor1 = '#eeeeee';

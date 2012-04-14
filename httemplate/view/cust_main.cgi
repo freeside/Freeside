@@ -232,9 +232,9 @@ function areyousure(href, message) {
 % }
 
 % if ( $view eq 'jumbo' ) {
-    <BR><BR>
-    <A NAME="tickets"><FONT SIZE="+2"><% mt('Tickets') |h %></FONT></A><BR>
+    <BR>
 % }
+<BR>
 
 % if ( $view eq 'tickets' || $view eq 'jumbo' ) {
 

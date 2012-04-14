@@ -250,3 +250,31 @@ div.fstabcontainer {
   background-color:#f8f8f8;
 }
 
+table.grid {
+  border: 1px solid #cccccc;  
+  -moz-box-shadow:  1px 1px 2px #666666;
+  -webkit-box-shadow:  1px 1px 2px #666666;
+  box-shadow: 1px 1px 2px #666666;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
+}
+
+th.grid {
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 2px;
+  border: none;
+  empty-cells: show;
+}
+
+td.grid {
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 2px;
+  border: none;
+  empty-cells: show;
+}
+
+table.inv { border: none }
+th.inv { border: none }
+td.inv { border: none }
+
