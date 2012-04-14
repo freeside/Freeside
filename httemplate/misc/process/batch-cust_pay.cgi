@@ -19,7 +19,7 @@
 %        'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 %      });
 %    }
-%    if ( !$cust_main ) { # not found, try agent_custid
+%    if ( length($custnum) and !$cust_main ) { # not found, try agent_custid
 %      $cust_main = qsearchs({ 
 %        'table'     => 'cust_main',
 %        'hashref'   => { 'agent_custid' => $custnum },

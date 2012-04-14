@@ -18,9 +18,13 @@
 % } elsif ( $sub eq 'invnum_search' ) {
 %
 %   my $string = $cgi->param('arg');
-%   my $inv = qsearchs('cust_bill', { 'invnum' => $string });
-%   my $return = $inv ? findbycustnum($inv->custnum,0) : [];
+%   if ( $string =~ /^(\d+)$/ ) {
+%     my $inv = qsearchs('cust_bill', { 'invnum' => $1 });
+%     my $return = $inv ? findbycustnum($inv->custnum,0) : [];
 <% objToJson($return) %>
+%   } else { #return nothing
+[]
+%   }
 % } 
 % elsif ( $sub eq 'exact_search' ) {
 %   # XXX possibly should query each element separately
