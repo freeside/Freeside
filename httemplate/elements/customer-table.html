@@ -67,7 +67,45 @@ Example:
       this.value = '';
 
   }
-  
+
+  function update_customer(searchrow, customerArray) {
+      
+      var custnum_obj = document.getElementById('custnum'+searchrow);
+      var customer = document.getElementById('customer'+searchrow);
+      var customer_select = document.getElementById('cust_select'+searchrow);
+
+      custnum_obj.disabled = false;
+      custnum_obj.style.backgroundColor = '#ffffff';
+      customer.disabled = false;
+      customer.style.backgroundColor = '#ffffff';
+
+      if ( customerArray.length == 0 ) {
+
+          custnum_obj.value = 'Not found';
+          customer.value = 'Not found';
+          custnum_obj.style.color = '#ff0000';
+          customer.style.color = '#ff0000';
+
+          customer.style.display = '';
+          customer_select.style.display = 'none';
+          return false;
+
+      } else if ( customerArray.length == 5 ) {
+
+          custnum_obj.value = customerArray[0];
+          custnum_obj.style.color = '#000000';
+          customer.value = customerArray[1];
+
+          update_balance_text(searchrow, customerArray[2]);
+          update_status_text( searchrow, customerArray[3]);
+          update_status_color(searchrow, '#'+customerArray[4]);
+
+          customer.style.display = '';
+          customer_select.style.display = 'none';
+          return true;
+      }
+  }
+
   function <% $opt{prefix} %>search_invnum() {
 
     this.style.color = '#000000'
@@ -99,54 +137,24 @@ Example:
     customer_select.style.display = 'none';
     
     var custnum_obj = document.getElementById('custnum'+searchrow);
-    var balance = document.getElementById('balance'+searchrow);
-    var status = document.getElementById('status'+searchrow);
-    balance.innerHTML = '';
-    status.innerHTML = '';
+    update_balance_text(searchrow, '');
+    update_status_text(searchrow, '');
+    update_status_color(searchrow, '#000000');
 
     function search_invnum_update(customers) {
       
       var customerArray = eval('(' + customers + ')');
-
-      custnum_obj.disabled = false;
-      custnum_obj.style.backgroundColor = '#ffffff';
-      customer.disabled = false;
-      customer.style.backgroundColor = '#ffffff';
-
-      if ( customerArray.length == 0 ) {
-
-        custnum_obj.value = 'Not found';
-	customer.value = 'Not found';
-        custnum_obj.style.color = '#ff0000';
-        customer.style.color = '#ff0000';
-
-        customer.style.display = '';
-        customer_select.style.display = 'none';
-
-      } else if ( customerArray.length == 5 ) {
-
-        custnum_obj.value = customerArray[0];
-        custnum_obj.style.color = '#000000';
-        customer.value = customerArray[1];
-        balance.innerHTML = '<% $money_char %>' + customerArray[2] + ' &nbsp; ';
-        status.innerHTML = customerArray[3]; 
-        status.style.color = '#'+customerArray[4];
-
-        customer.style.display = '';
-        customer_select.style.display = 'none';
+      update_customer(searchrow, customerArray);
 
 % if ( $opt{invnum_update_callback} ) {
         <% $opt{invnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
 % }
-
-      }
 
     }
 
     invnum_search( invnum, search_invnum_update );
 
   }
-
 
   function <% $opt{prefix} %>search_custnum() {
 
@@ -180,42 +188,19 @@ Example:
 
     var invnum = document.getElementById('invnum'+searchrow);
     invnum.value = '';
-    
-    var balance = document.getElementById('balance'+searchrow);
-    balance.innerHTML = '';
-    
-    var status = document.getElementById('status'+searchrow);
-    status.innerHTML = '';
+
+    update_balance_text(searchrow, '');
+    update_status_text( searchrow, '');
+    update_status_color(searchrow, '#000000');    
 
     function search_custnum_update(customers) {
 
-      var customerArray = eval('(' + customers + ')');
-
-      customer.disabled = false;
-      customer.style.backgroundColor = '#ffffff';
-      
-      if ( customerArray.length == 0 ) {
-
-	customer.value = 'Not found';
-        customer.style.color = '#ff0000';
-        custnum_obj.style.color = '#ff0000';
-
-      } else if ( customerArray.length == 5 ) {
-
-        custnum_obj.value = customerArray[0];
-        custnum_obj.style.color = '#000000';
-        customer.value = customerArray[1];
-        balance.innerHTML = '<% $money_char %>' + customerArray[2] + ' &nbsp; ';
-        status.innerHTML = customerArray[3]; 
-        status.style.color = '#'+customerArray[4];
-
-        customer.style.display = '';
-        customer_select.style.display = 'none';
+      var customerArray = eval('(' + customers + ')') || [];
+      update_customer(searchrow, customerArray);
 
 % if ( $opt{custnum_update_callback} ) {
         <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
 % }
-      }
     }
 
     custnum_search(custnum, search_custnum_update );
@@ -251,39 +236,16 @@ Example:
 
     var customer_select = document.getElementById('cust_select'+searchrow);
     
-    var balance = document.getElementById('balance'+searchrow);
-    balance.innerHTML = '';
-    
-    var status = document.getElementById('status'+searchrow);
-    status.innerHTML = '';
-
     function search_customer_update(customers) {
 
-      var customerArray = eval('(' + customers + ')');
+      var customerArrayArray = eval('(' + customers + ')') || [ [] ];
 
       custnum_obj.disabled = false;
       custnum_obj.style.backgroundColor = '#ffffff';
 
-      if ( customerArray.length == 0 ) {
+      if ( customerArrayArray.length == 1 ) {
 
-        custnum_obj.value = 'Not found';
-        custnum_obj.style.color = '#ff0000';
-        customer_obj.style.color = '#ff0000';
-
-        customer_obj.style.display = '';
-        customer_select.style.display = 'none';
-
-      } else if ( customerArray.length == 1 ) {
-
-        custnum_obj.value = customerArray[0][0];
-        customer_obj.value = customerArray[0][1];
-        balance.innerHTML = '<% $money_char %>' + customerArray[0][2] + ' &nbsp; ';
-        status.innerHTML = customerArray[0][3]; 
-        status.style.color = '#'+customerArray[0][4];
-
-        customer_obj.style.display = '';
-        customer_select.style.display = 'none';
-
+        update_customer(customerArrayArray[1]);
 % if ( $opt{custnum_update_callback} ) {
         <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
 % }
@@ -294,14 +256,16 @@ Example:
         custnum_obj.style.color = '#ff0000';
 
         //blank the current list
-        for ( var i = customer_select.length; i >= 0; i-- )
-          customer_select.options[i] = null;
+        customer_select.options.length = 0;
 
         opt(customer_select, '', 'Multiple customers match "' + customer + '" - select one', '#ff0000');
-
         //add the multiple customers
-        for ( var s = 0; s < customerArray.length; s++ )
-          opt(customer_select, customerArray[s][0] + '_' + customerArray[s][2] + '_' + customerArray[s][3] + '_' + customerArray[s][4], customerArray[s][1], '#000000');
+        for ( var s = 0; s < customerArrayArray.length; s++ ) {
+          opt(customer_select,
+              JSON.stringify(customerArrayArray[s]),
+              customerArrayArray[s][1],
+              '#000000');
+        }
 
         opt(customer_select, 'cancel', '(Edit search string)', '#000000');
 
@@ -341,27 +305,7 @@ Example:
 
     } else {
     
-      var pos_underscore1 = custnum_balance_status.indexOf('_'); 
-      var pos_underscore2 = custnum_balance_status.indexOf('_',pos_underscore1+1); 
-      var pos_underscore3 = custnum_balance_status.indexOf('_',pos_underscore2+1); 
-      var custnum = custnum_balance_status.substring(0,pos_underscore1);
-      var balance = custnum_balance_status.substring(pos_underscore1+1,pos_underscore2) + ' &nbsp; ';
-      var status = custnum_balance_status.substring(pos_underscore2+1,pos_underscore3);
-      var color = custnum_balance_status.substring(pos_underscore3+1);
-
-      custnum_obj.value = custnum;
-      custnum_obj.style.color = '#000000';
-
-      customer_obj.value = customer;
-      customer_obj.style.color = '#000000';
-
-      balance_obj.innerHTML = '<% $money_char %>' + balance;
-
-      status_obj.innerHTML = status;
-      status_obj.style.color = '#'+color;
-
-      this.style.display = 'none';
-      customer_obj.style.display = '';
+      update_customer(searchrow, JSON.parse(custnum_balance_status));
 
 % if ( $opt{custnum_update_callback} ) {
       <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
@@ -377,6 +321,23 @@ Example:
     var length = what.length;
     what.options[length] = optionName;
   }
+
+  function update_status_text(rownum, newval) {
+    document.getElementById('status'+rownum).value = newval;
+    document.getElementById('status'+rownum+'_text').innerHTML = newval;
+  }
+
+  function update_status_color(rownum, newval) {
+    document.getElementById('statuscolor'+rownum).value = newval;
+    document.getElementById('status'+rownum+'_text').style.color = newval;
+  }
+
+  function update_balance_text(rownum, newval) {
+    document.getElementById('balance'+rownum).value = newval;
+    document.getElementById('balance'+rownum+'_text').innerHTML = newval;
+  }
+
+
 
 </SCRIPT>
 
@@ -430,14 +391,26 @@ Example:
         </SCRIPT>
       </TD>
       
-      <TD>
-        <SPAN 
+      <TD STYLE="text-align: center">
+        <SPAN
+               ID        = "status<% $row %>_text"
+               rownum    = "<% $row %>"
+               STYLE     = "font-weight: bold;
+                            color: <%$param->{"statuscolor$row"} || '#000000'%>"
+
+        ><% $param->{"status$row"} %></SPAN>
+        <INPUT TYPE      = "hidden"
                NAME      = "status<% $row %>"
                ID        = "status<% $row %>"
+               VALUE     = "<% $param->{"status$row"} %>"
                rownum    = "<% $row %>"
-               STYLE     = "text-align:center; font-weight: bold"
         >
-        </SPAN>
+        <INPUT TYPE      = "hidden"
+               NAME      = "statuscolor<% $row %>"
+               ID        = "statuscolor<% $row %>"
+               VALUE     = "<% $param->{"statuscolor$row"} %>"
+               rownum    = "<% $row %>"
+        >
       </TD>
 
       <TD>
@@ -454,6 +427,21 @@ Example:
             var customer_select<% $row %> = document.getElementById("cust_select<% $row %>");
             customer_select<% $row %>.onchange = select_customer;
           </SCRIPT>
+      </TD>
+
+      <TD STYLE="text-align:right">
+        <% $money_char %>
+        <SPAN 
+               ID        = "balance<% $row %>_text"
+               rownum    = "<% $row %>"
+        ><% $param->{"balance$row"} %></SPAN>
+        &nbsp;
+        <INPUT TYPE      = "hidden"
+               NAME      = "balance<% $row %>"
+               ID        = "balance<% $row %>"
+               VALUE     = "<% $param->{"balance$row"} %>"
+               rownum    = "<% $row %>"
+        >
       </TD>
 
 %   my $col = 0;
@@ -494,15 +482,6 @@ Example:
       </TD>
 %     $col++;
 %   }
-      <TD STYLE="text-align:right;">
-        <SPAN 
-               NAME      = "balance<% $row %>"
-               ID        = "balance<% $row %>"
-               rownum    = "<% $row %>"
-        >
-        </SPAN>
-        &nbsp;
-      </TD>
     </TR>
 % } 
 
@@ -613,15 +592,28 @@ Example:
     row.appendChild(custnum_cell);
     
     var status_cell = document.createElement('TD');
+      status_cell.style.textAlign = 'center';
         
-        var status_span = document.createElement('SPAN');
-        status_span.setAttribute('name', 'status'+<% $opt{prefix} %>rownum);
-        status_span.setAttribute('id',   'status'+<% $opt{prefix} %>rownum);
-        status_span.style.textAlign = 'center';
-        status_span.style.fontWeight = 'bold';
-        status_span.setAttribute('rownum', <% $opt{prefix} %>rownum);
-        status_cell.appendChild(status_span);
+      var status_span = document.createElement('SPAN');
+      status_span.setAttribute('id', 'status'+<% $opt{prefix} %>rownum+'_text');
+      status_span.style.fontWeight = 'bold';
+      status_span.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      status_cell.appendChild(status_span);
         
+      var status_input = document.createElement('INPUT');
+      status_input.setAttribute('type', 'hidden');
+      status_input.setAttribute('name', 'status'+<% $opt{prefix} %>rownum);
+      status_input.setAttribute('id',   'status'+<% $opt{prefix} %>rownum);
+      status_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      status_cell.appendChild(status_input);
+
+      var statuscolor_input = document.createElement('INPUT');
+      statuscolor_input.setAttribute('type', 'hidden');
+      statuscolor_input.setAttribute('name', 'statuscolor'+<% $opt{prefix} %>rownum);
+      statuscolor_input.setAttribute('id',   'statuscolor'+<% $opt{prefix} %>rownum);
+      statuscolor_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      status_cell.appendChild(statuscolor_input);
+
     row.appendChild(status_cell);
 
     var customer_cell = document.createElement('TD');
@@ -649,13 +641,25 @@ Example:
     row.appendChild(customer_cell);
     
     var balance_cell = document.createElement('TD');
-        balance_cell.style.textAlign = 'right';
-        
-        var balance_span = document.createElement('SPAN');
-        balance_span.setAttribute('name', 'balance'+<% $opt{prefix} %>rownum);
-        balance_span.setAttribute('id',   'balance'+<% $opt{prefix} %>rownum);
-        balance_span.setAttribute('rownum', <% $opt{prefix} %>rownum);
-        balance_cell.appendChild(balance_span);
+
+      balance_cell.style.textAlign = 'right';
+      balance_cell.appendChild(document.createTextNode('<%$money_char%>'));
+
+      var balance_span = document.createElement('SPAN');
+      balance_span.setAttribute('id', 'balance'+<% $opt{prefix} %>rownum+'_text');
+      balance_span.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      balance_cell.appendChild(balance_span);
+
+      balance_cell.appendChild(
+        document.createTextNode(String.fromCharCode(160)) //&nbsp;
+      );
+
+      var balance_input = document.createElement('INPUT');
+      balance_input.setAttribute('type', 'hidden');
+      balance_input.setAttribute('name', 'balance'+<% $opt{prefix} %>rownum);
+      balance_input.setAttribute('id',   'balance'+<% $opt{prefix} %>rownum);
+      balance_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      balance_cell.appendChild(balance_input);
 
     row.appendChild(balance_cell);
 
@@ -676,9 +680,10 @@ Example:
         my_cell.appendChild(my_text);
 %     }
 
+%     my $name  = (ref($field) eq 'CODE') ? "column${col}_" : $field;
       var my_input = document.createElement('INPUT');
-      my_input.setAttribute('name', '<% $field %>'+<% $opt{prefix} %>rownum);
-      my_input.setAttribute('id',   '<% $field %>'+<% $opt{prefix} %>rownum);
+      my_input.setAttribute('name', '<% $name %>'+<% $opt{prefix} %>rownum);
+      my_input.setAttribute('id',   '<% $name %>'+<% $opt{prefix} %>rownum);
       my_input.style.textAlign = '<% $align{ $opt{align}->[$col] || 'l' } %>';
       my_input.setAttribute('size', <% $sizes->[$col] || 10 %>);
 %     if ($types->[$col] eq 'immutable') {
@@ -725,7 +730,7 @@ my $conf = new FS::Conf;
 $opt{prefix} = '' unless defined $opt{prefix};
 $opt{prefix} .= '_' if $opt{prefix};
 
-my $types = $opt{'types'} ? [ @{$opt{'types'}} ] : [];
+my $types = $opt{'type'} ? [ @{$opt{'type'}} ] : [];
 my $sizes = $opt{'size'} ? [ @{$opt{'size'}} ] : [];
 
 my $param = $opt{param};
@@ -742,5 +747,4 @@ my %align = (
 );
 
 my $money_char = $conf->config('money_char') || '$';
-
 </%init>
