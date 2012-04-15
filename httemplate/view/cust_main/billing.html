@@ -189,15 +189,19 @@
 % my $no = emt('no');
 
 % my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
-<TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
-</TR>
+
+% unless ( $conf->exists('cust_class-tax_exempt') ) {
+    <TR>
+      <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
+    </TR>
+% }
+
 % foreach my $exempt_group ( @exempt_groups ) {
-<TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->tax_exemption($exempt_group) ? $yes : $no %></TD>
-</TR>
+    <TR>
+      <TD ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main->tax_exemption($exempt_group) ? $yes : $no %></TD>
+    </TR>
 % }
 
 % if ( $conf->exists('enable_taxproducts') ) {

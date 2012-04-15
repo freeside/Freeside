@@ -1,5 +1,24 @@
 <% include( 'elements/class_Common.html',
-              'name'   => 'Customer Class',
-              'table'  => 'cust_class',
+              'name'        => 'Customer Class',
+              'table'       => 'cust_class',
+              'addl_fields' => \@addl_fields,
+              'addl_labels' => { 'tax' => 'Tax Exempt' },
           )
 %>
+<%init>
+
+my $conf = new FS::Conf;
+
+my @addl_fields = ();
+if ( $conf->exists('cust_class-tax_exempt') ) {
+  push @addl_fields, { 'field' => 'tax',
+                       'type'  => 'checkbox',
+                       'value' => 'Y',
+                     };
+} else {
+  push @addl_fields, { 'field' => 'tax',
+                       'type'  => 'hidden',
+                     };
+}
+
+</%init>

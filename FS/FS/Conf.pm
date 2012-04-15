@@ -4909,6 +4909,12 @@ and customer address. Include units.',
     'type'        => 'select-agent',
   },
 
+  {
+    'key'         => 'cust_class-tax_exempt',
+    'section'     => 'billing',
+    'description' => 'Control the tax exemption flag per customer class rather than per indivual customer.',
+    'type'        => 'checkbox',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

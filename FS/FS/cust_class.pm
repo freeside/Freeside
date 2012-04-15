@@ -44,6 +44,11 @@ Text name of this customer class
 
 Number of associated cust_category (see L<FS::cust_category>)
 
+=item tax
+
+Tax exempt flag, empty or 'Y'.  Used when the cust_class-tax_exempt
+configuration setting is turned on.
+
 =item disabled
 
 Disabled flag, empty or 'Y'
@@ -85,6 +90,16 @@ returns the error, otherwise returns false.
 Checks all fields to make sure this is a valid customer class.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
+
+=cut
+
+sub check {
+  my $self = shift;
+
+     $self->ut_enum('tax', [ '', 'Y' ])
+  || $self->SUPER::check;
+
+}
 
 =item cust_category
 

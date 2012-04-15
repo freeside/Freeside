@@ -1130,10 +1130,11 @@ sub tables_hashref {
 
     'cust_class' => {
       'columns' => [
-        'classnum',    'serial',   '',      '', '', '', 
-        'classname',   'varchar',  '', $char_d, '', '', 
-        'categorynum', 'int',  'NULL',      '', '', '', 
-        'disabled',    'char', 'NULL',       1, '', '', 
+        'classnum',     'serial',     '',      '', '', '', 
+        'classname',   'varchar',     '', $char_d, '', '', 
+        'categorynum',     'int', 'NULL',      '', '', '', 
+        'tax',            'char', 'NULL',       1, '', '', 
+        'disabled',       'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'classnum',
       'unique' => [],

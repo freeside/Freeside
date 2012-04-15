@@ -877,7 +877,7 @@ sub _make_lines {
 
   my $part_pkg = $params{part_pkg} or die "no part_pkg specified";
   my $cust_pkg = $params{cust_pkg} or die "no cust_pkg specified";
-  my $precommit_hooks = $params{precommit_hooks} or die "no package specified";
+  my $precommit_hooks = $params{precommit_hooks} or die "no precommit_hooks specified";
   my $cust_bill_pkgs = $params{line_items} or die "no line buffer specified";
   my $total_setup = $params{setup} or die "no setup accumulator specified";
   my $total_recur = $params{recur} or die "no recur accumulator specified";
@@ -1178,7 +1178,11 @@ sub _handle_taxes {
   push @classes, 'setup' if ($cust_bill_pkg->setup && !$options->{cancel});
   push @classes, 'recur' if ($cust_bill_pkg->recur && !$options->{cancel});
 
-  if ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
+  my $exempt = $conf->exists('cust_class-tax_exempt')
+                 ? ( $self->cust_class ? $self->cust_class->tax : '' )
+                 : $self->tax;
+
+  if ( $exempt !~ /Y/i && $self->payby ne 'COMP' ) {
 
     if ( $conf->exists('enable_taxproducts')
          && ( scalar($part_pkg->part_pkg_taxoverride)

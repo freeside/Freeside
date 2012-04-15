@@ -10,7 +10,7 @@ my $conf = new FS::Conf;
 
 my %opt = ();
 if($conf->exists('cust_main-require_censustract')) {
- $opt{'addl_fields'} = qw( fcc_ds0s );
+ $opt{'addl_fields'} = [ 'fcc_ds0s' ];
  $opt{'addl_labels'} = { 'fcc_ds0s' => 'FCC form 477 voice-grade equivalents' };
 }
 </%init>

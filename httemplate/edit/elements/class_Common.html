@@ -34,9 +34,9 @@ my $fields = [   'classname',
         ),
         { field=>'disabled', type=>'checkbox', value=>'Y', },
         ];
-push @$fields, $opt{'addl_fields'} if $opt{'addl_fields'};
+push @$fields, @{ $opt{'addl_fields'} } if $opt{'addl_fields'};
 
 my %addl_labels = ();
-%addl_labels = %{$opt{'addl_labels'}} if $opt{'addl_labels'};
+%addl_labels = %{ $opt{'addl_labels'} } if $opt{'addl_labels'};
 
 </%init>

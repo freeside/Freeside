@@ -437,9 +437,17 @@
 
 %   my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 
-    <TR>
-      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
-    </TR>
+%   if ( $conf->exists('cust_class-tax_exempt') ) {
+
+      <INPUT TYPE="hidden" NAME="tax" VALUE="<% $cust_main->tax eq 'Y' ? 'Y' : '' %>">
+
+%   } else {
+
+      <TR>
+        <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
+      </TR>
+
+%   }
 
 %   foreach my $exempt_group ( @exempt_groups ) {
 %     #escape $exempt_group for NAME
