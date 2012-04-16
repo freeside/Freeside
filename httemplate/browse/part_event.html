@@ -174,7 +174,7 @@ my $html_init =
   qq!<A HREF="${p}edit/part_event.html"><I>Add a new event</I></A>!.
   '&nbsp;or&nbsp;<SELECT NAME="clone"><OPTION></OPTION>';
 
-foreach my $part_event ( qsearch('part_event', {'diabled'=>''}) ) {
+foreach my $part_event ( qsearch('part_event', {'disabled'=>''}) ) {
   $html_init .=  '<OPTION VALUE="'. $part_event->eventpart. '">'.
                   $part_event->eventpart. ': '. $part_event->event. '</OPTION>';
 }
