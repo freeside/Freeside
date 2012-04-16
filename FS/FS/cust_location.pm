@@ -1,7 +1,8 @@
 package FS::cust_location;
+use base qw( FS::geocode_Mixin FS::Record );
 
 use strict;
-use base qw( FS::geocode_Mixin FS::Record );
+use vars qw( $import );
 use Locale::Country;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch ); #qsearchs );
@@ -9,6 +10,8 @@ use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
+
+$import = 0;
 
 =head1 NAME
 
@@ -195,7 +198,7 @@ sub check {
   return $error if $error;
 
   $self->set_coord
-    unless $self->latitude && $self->longitude;
+    unless $import || ($self->latitude && $self->longitude);
 
   return "No prospect or customer!" unless $self->prospectnum || $self->custnum;
   return "Prospect and customer!"       if $self->prospectnum && $self->custnum;
