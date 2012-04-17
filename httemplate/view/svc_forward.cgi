@@ -53,6 +53,10 @@
 
 <% include('elements/svc_export_settings.html', $svc_forward) %>
 
+% if ( $conf->config('ticket_system') ) {
+<& /elements/table-tickets.html, object => $cust_svc &>
+% }
+
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <% include('/elements/footer.html') %>

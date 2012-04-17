@@ -1,0 +1,159 @@
+<& /elements/form-create_ticket.html, object => $object &>
+ |
+View
+<A HREF="<% $open_link %>"><% mt($openlabel) |h %></A> |
+<A HREF="<% $res_link  %>"><% mt('resolved') |h %></A>
+ <BR>
+
+<& /elements/table-grid.html &>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+
+<TR>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('#') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Subject') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Queue') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Owner') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Due') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Estimated Time') |h %></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Priority') |h %></TH>
+% if ( $ss_priority ) {
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Customer Priority') |h %></TH>
+% }
+% if ( $object->isa('FS::cust_main') ) {
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Service') |h %></TH>
+% }
+</TR>
+
+% foreach my $ticket ( @tickets ) {
+%     my $href = FS::TicketSystem->href_ticket($ticket->{id});
+%     if ( $bgcolor eq $bgcolor1 ) {
+%       $bgcolor = $bgcolor2;
+%     } else {
+%       $bgcolor = $bgcolor1;
+%     }
+
+  <TR>
+  
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <A HREF=<%$href%>><% $ticket->{id} %></A>
+    </TD>
+  
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <A HREF=<%$href%>><% $ticket->{subject} %></A>
+    </TD>
+  
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{status} %>
+    </TD>
+  
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{queue} %>
+    </TD>
+  
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{owner} %>
+    </TD>
+
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $date_formatter->($ticket->{due}) %>
+    </TD>
+
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{timeestimated} %>
+    </TD>
+  
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{content}
+           ? $ticket->{content}.' ('.$ticket->{priority}.')'
+           : $ticket->{priority}
+      %>
+    </TD>
+
+%   if ( $ss_priority ) {
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $ticket->{"CF.{$ss_priority}"} %>
+    </TD>
+%   }
+%   if ( $object->isa('FS::cust_main') ) {
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><FONT SIZE=-1><B>
+%     foreach (@{ $ticket->{svcnums} }) {
+%       my $cust_svc = FS::cust_svc->by_key($_) or next;
+        <% FS::UI::Web::svc_label_link($m, $cust_svc->part_svc, $cust_svc) %>
+        <BR>
+%     }
+    </B></FONT></TD>
+%   }
+
+  </TR>
+
+% } 
+
+</TABLE>
+
+<%init>
+use Date::Parse qw(str2time);
+use Date::Format qw(time2str);
+
+my %opt = @_;
+my $conf = new FS::Conf;
+
+my $object = $opt{'object'};
+$object = $object->cust_svc if $object->isa('FS::svc_Common');
+my( @tickets )  = $object->tickets;
+
+my ($openlabel, $open_link, $res_link, $thing);
+$openlabel = join('/', FS::TicketSystem->statuses );
+
+# not the nicest way to do this--FS::has_tickets_Common?
+if ( $object->isa('FS::cust_main') ) {
+  $thing  = 'customer';
+  $open_link = FS::TicketSystem->href_customer_tickets($object->custnum);
+
+  $res_link  = FS::TicketSystem->href_customer_tickets(
+                    $object->custnum,
+                    { 'statuses' => [ 'resolved' ] }
+                  );
+}
+elsif ( $object->isa('FS::cust_svc') ) {
+  $thing = 'service';
+  $open_link = FS::TicketSystem->href_service_tickets($object->svcnum);
+
+  $res_link  = FS::TicketSystem->href_service_tickets(
+                    $object->svcnum,
+                    { 'statuses' => [ 'resolved' ] }
+                  );
+}
+
+my $ss_priority = FS::TicketSystem->selfservice_priority;
+if ( $ss_priority ) {
+  my $dir = $conf->exists('ticket_system-priority_reverse') ? -1 : 1;
+  use sort 'stable';
+  # sort in the following way:
+  @tickets = sort { 
+    # within a severity level...
+    ( $a->{'content'} eq $b->{'content'} ) ? (
+      # no-priority tickets sort last
+      (
+        ($a->{'_selfservice_priority'} eq '') <=> 
+        ($b->{'_selfservice_priority'} eq '')
+      ) ||
+      # otherwise obey ticket_system-priority_reverse
+      ( $dir * 
+        ($b->{'_selfservice_priority'} <=> $a->{'_selfservice_priority'})
+      )
+    ) : 0; # but don't rearrange between severity levels
+  } @tickets;
+}
+
+my $format = $conf->config('date_format') || '%Y-%m-%d';
+
+my $date_formatter = sub {
+  my $time = str2time($_[0], 'GMT');
+  # exclude times within 24 hours of zero
+  ($time > 86400) ? time2str($format, $time) : '';
+};
+
+</%init>

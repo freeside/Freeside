@@ -321,6 +321,7 @@ $COLUMN_MAP = {
     
     #freeside
     $m->comp('/Elements/CustomerFields', 'ColumnMap'),
+    $m->comp('/Elements/ServiceFields', 'ColumnMap'),
 };
 
 # if no GPG support, then KeyOwnerName and KeyRequestors fall back to the regular

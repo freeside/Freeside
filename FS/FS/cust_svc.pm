@@ -756,7 +756,93 @@ sub get_session_history {
 
 }
 
+=item tickets
+
+Returns an array of hashes representing the tickets linked to this service.
+
+=cut
+
+sub tickets {
+  my $self = shift;
+
+  my $conf = FS::Conf->new;
+  my $num = $conf->config('cust_main-max_tickets') || 10;
+  my @tickets = ();
+
+  if ( $conf->config('ticket_system') ) {
+    unless ( $conf->config('ticket_system-custom_priority_field') ) {
+
+      @tickets = @{ FS::TicketSystem->service_tickets($self->svcnum, $num) };
+
+    } else {
+
+      foreach my $priority (
+        $conf->config('ticket_system-custom_priority_field-values'), ''
+      ) {
+        last if scalar(@tickets) >= $num;
+        push @tickets,
+        @{ FS::TicketSystem->service_tickets( $self->svcnum,
+            $num - scalar(@tickets),
+            $priority,
+          )
+        };
+      }
+    }
+  }
+  (@tickets);
+}
+
+
 =back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item smart_search OPTION => VALUE ...
+
+Accepts the option I<search>, the string to search for.  The string will 
+be searched for as a username, email address, IP address, MAC address, 
+phone number, and hardware serial number.  Unlike the I<smart_search> on 
+customers, this always requires an exact match.
+
+=cut
+
+# though perhaps it should be fuzzy in some cases?
+sub smart_search {
+  my %opt = @_;
+  # some false laziness w/ search/cust_svc.html
+  my $string = $opt{'search'};
+  $string =~ s/(^\s+|\s+$)//; #trim leading & trailing whitespace
+
+  my @extra_sql = ' ( '. join(' OR ',
+    map { my $table = $_;
+      my $search_sql = "FS::$table"->search_sql($string);
+      " ( svcdb = '$table'
+      AND 0 < ( SELECT COUNT(*) FROM $table
+      WHERE $table.svcnum = cust_svc.svcnum
+      AND $search_sql
+      )
+      ) ";
+    }
+    FS::part_svc->svc_tables
+  ). ' ) ';
+  push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql(
+    'null_right' => 'View/link unlinked services'
+  );
+  my $extra_sql = ' WHERE '.join(' AND ', @extra_sql);
+  #for agentnum
+  my $addl_from = ' LEFT JOIN cust_pkg  USING ( pkgnum  )'.
+                  ' LEFT JOIN cust_main USING ( custnum )'.
+                  ' LEFT JOIN part_svc  USING ( svcpart )';
+
+  qsearch({
+      'table'     => 'cust_svc',
+      'addl_from' => $addl_from,
+      'hashref'   => {},
+      'extra_sql' => $extra_sql,
+  });
+}
 
 =head1 BUGS
 

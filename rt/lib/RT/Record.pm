@@ -1177,7 +1177,9 @@ sub DependsOn {
 
 =head2 Customers
 
-  This returns an RT::Links object which references all the customers that this object is a member of.
+  This returns an RT::Links object which references all the customers that 
+  this object is a member of.  This includes both explicitly linked customers
+  and links implied by services.
 
 =cut
 
@@ -1189,11 +1191,16 @@ sub Customers {
 
       $self->{'Customers'} = $self->MemberOf->Clone;
 
-      $self->{'Customers'}->Limit(
-                                   FIELD    => 'Target',
-                                   OPERATOR => 'STARTSWITH',
-                                   VALUE    => 'freeside://freeside/cust_main/',
-                                 );
+      for my $fstable (qw(cust_main cust_svc)) {
+
+        $self->{'Customers'}->Limit(
+                                     FIELD    => 'Target',
+                                     OPERATOR => 'STARTSWITH',
+                                     VALUE    => "freeside://freeside/$fstable",
+                                     ENTRYAGGREGATOR => 'OR',
+                                     SUBCLAUSE => 'customers',
+                                   );
+      }
     }
 
     warn "->Customers method called on $self; returning ".
@@ -1201,6 +1208,34 @@ sub Customers {
       if $Debug;
 
     return $self->{'Customers'};
+}
+
+# }}}
+
+# {{{ Services
+
+=head2 Services
+
+  This returns an RT::Links object which references all the services this 
+  object is a member of.
+
+=cut
+
+sub Services {
+    my( $self, %opt ) = @_;
+
+    unless ( $self->{'Services'} ) {
+
+      $self->{'Services'} = $self->MemberOf->Clone;
+
+      $self->{'Services'}->Limit(
+                                   FIELD    => 'Target',
+                                   OPERATOR => 'STARTSWITH',
+                                   VALUE    => "freeside://freeside/cust_svc",
+                                 );
+    }
+
+    return $self->{'Services'};
 }
 
 # }}}

@@ -1,0 +1,8 @@
+% if ( $RT::URI::freeside::IntegrationType eq 'Internal' ) {
+%     my @lines;
+%     push @lines, $m->comp('/Elements/CustomerFields', 'Criteria');
+%     push @lines, $m->comp('/Elements/ServiceFields',  'Criteria');
+%     foreach( @lines ) {
+<& ConditionRow, Condition => $_ &>
+%     }
+% }

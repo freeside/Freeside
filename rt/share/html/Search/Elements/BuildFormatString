@@ -76,6 +76,7 @@ my @fields = (
   ),
     
     $m->comp('/Elements/CustomerFields', 'Names'), #freeside
+    $m->comp('/Elements/ServiceFields', 'Names'), #freeside
 
   qw(
     Status ExtendedStatus UpdateStatus

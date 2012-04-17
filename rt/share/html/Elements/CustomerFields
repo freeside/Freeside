@@ -16,7 +16,6 @@ About the keys:
   name to sort by.
 </%doc>
 <%once>
-return unless $RT::URI::freeside::IntegrationType eq 'Internal';
 
 my @customer_fields = ( # ordered
   {
@@ -158,8 +157,12 @@ sub select_table {
 
 sub ticket_cust_resolvers {
     my $Ticket = shift;
-    my @Customers = @{ $Ticket->Customers->ItemsArrayRef };
-    return map $_->TargetURI->Resolver, @Customers;
+    my @Customers = map { $_->TargetURI->Resolver->CustomerResolver }
+                      @{ $Ticket->Customers->ItemsArrayRef };
+    # this can contain cust_svc links, careful
+    # uniq
+    my %seen = map { $_->URI => $_ } @Customers;
+    values %seen;
 }
 
 sub cust_info_attribute { # the simple case of $resolver->CustomerInfo->{foo}
@@ -177,7 +180,6 @@ sub cust_info_attribute { # the simple case of $resolver->CustomerInfo->{foo}
 
 </%once>
 <%init>
-return unless $RT::URI::freeside::IntegrationType eq 'Internal';
 
 my $arg = shift;
 if ( $arg eq 'Names' ) {
@@ -198,9 +200,11 @@ elsif ( $arg eq 'ColumnMap' ) {
   grep { exists $_->{Display} }
   @customer_fields;
 }
-elsif ( $arg eq 'PickBasics' ) {
+elsif ( $arg eq 'Criteria' ) {
   return map {
     my $f = $_;
+    # argument to Search/Elements/ConditionRow
+    $f->{Condition} ||
     {
       Name  => ($f->{QueryName} || $f->{Name}),
       Field => ($f->{QueryLabel} || $f->{Label}),
@@ -208,7 +212,7 @@ elsif ( $arg eq 'PickBasics' ) {
       Value => $f->{Value},
     }
   } #map
-  grep { exists $_->{Value} }
+  grep { exists $_->{Condition} || exists $_->{Value} }
   @customer_fields;
 }
 else { die "unknown CustomerFields mode '$arg'\n"; }

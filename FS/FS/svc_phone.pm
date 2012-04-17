@@ -218,13 +218,14 @@ Class method which returns an SQL fragment to search for the given string.
 sub search_sql {
   my( $class, $string ) = @_;
 
+  my $conf = new FS::Conf;
+
   if ( $conf->exists('svc_phone-allow_alpha_phonenum') ) {
     $string =~ s/\W//g;
   } else {
     $string =~ s/\D//g;
   }
 
-  my $conf = new FS::Conf;
   my $ccode = (    $conf->exists('default_phone_countrycode')
                 && $conf->config('default_phone_countrycode')
               )

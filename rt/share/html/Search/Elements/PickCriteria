@@ -52,6 +52,7 @@
 
 
 <& PickBasics &>
+<& PickCustomerFields &>
 <& PickCFs, cfqueues => \%cfqueues &>
 
 <tr class="separator"><td colspan="3"><hr /></td></tr>

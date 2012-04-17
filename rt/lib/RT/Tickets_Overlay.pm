@@ -146,11 +146,8 @@ our %FIELD_METADATA = (
     HasAttribute     => [ 'HASATTRIBUTE', 1 ],
     HasNoAttribute     => [ 'HASATTRIBUTE', 0 ],
     #freeside
-    Customer         => [ 'FREESIDEFIELD', ],
-#    Agentnum         => [ 'FREESIDEFIELD', ],
-#    Classnum         => [ 'FREESIDEFIELD', ],
-#    Refnum           => [ 'FREESIDEFIELD', ],
-#    Tagnum           => [ 'FREESIDEFIELD', 'cust_tag' ],
+    Customer         => [ 'FREESIDEFIELD' => 'Customer' ],
+    Service          => [ 'FREESIDEFIELD' => 'Service' ],
     WillResolve      => [ 'DATE'            => 'WillResolve', ], #loc_left_pair
 );
 
@@ -1823,6 +1820,15 @@ sub OrderByCols {
            }
            push @res, { %$row, ALIAS => $custalias, FIELD => $cust_field };
 
+      } elsif ( $field eq 'Service' ) {
+          
+          my $svcalias = $self->JoinToService;
+          my $svc_field = lc($subkey);
+          if ( !$svc_field or $svc_field eq 'number' ) {
+              $svc_field = 'svcnum';
+          }
+          push @res, { %$row, ALIAS => $svcalias, FIELD => $svc_field };
+
        } #Freeside
 
        else {
@@ -1842,7 +1848,7 @@ sub JoinToCustLinks {
     # and an sql expression to retrieve the custnum.
     my $self = shift;
     # only join once for each RT::Tickets object
-    my $linkalias = $self->{cust_linkalias};
+    my $linkalias = $self->{cust_main_linkalias};
     if (!$linkalias) {
         $linkalias = $self->Join(
             TYPE   => 'LEFT',
@@ -1864,7 +1870,7 @@ sub JoinToCustLinks {
             OPERATOR => 'STARTSWITH',
             VALUE    => 'freeside://freeside/cust_main/',
         );
-        $self->{cust_linkalias} = $linkalias;
+        $self->{cust_main_linkalias} = $linkalias;
     }
     my $custnum_sql = "CAST(SUBSTR($linkalias.Target,31) AS ";
     if ( RT->Config->Get('DatabaseType') eq 'mysql' ) {
@@ -1890,9 +1896,79 @@ sub JoinToCustomer {
     return $custalias;
 }
 
+sub JoinToSvcLinks {
+    my $self = shift;
+    my $linkalias = $self->{cust_svc_linkalias};
+    if (!$linkalias) {
+        $linkalias = $self->Join(
+            TYPE   => 'LEFT',
+            ALIAS1 => 'main',
+            FIELD1 => 'id',
+            TABLE2 => 'Links',
+            FIELD2 => 'LocalBase',
+        );
+
+        $self->SUPER::Limit(
+            LEFTJOIN => $linkalias,
+            FIELD    => 'Type',
+            OPERATOR => '=',
+            VALUE    => 'MemberOf',
+        );
+        $self->SUPER::Limit(
+            LEFTJOIN => $linkalias,
+            FIELD    => 'Target',
+            OPERATOR => 'STARTSWITH',
+            VALUE    => 'freeside://freeside/cust_svc/',
+        );
+        $self->{cust_svc_linkalias} = $linkalias;
+    }
+    my $svcnum_sql = "CAST(SUBSTR($linkalias.Target,30) AS ";
+    if ( RT->Config->Get('DatabaseType') eq 'mysql' ) {
+        $svcnum_sql .= 'SIGNED INTEGER)';
+    }
+    else {
+        $svcnum_sql .= 'INTEGER)';
+    }
+    return ($linkalias, $svcnum_sql);
+}
+
+sub JoinToService {
+    my $self = shift;
+    my ($linkalias, $svcnum_sql) = $self->JoinToSvcLinks;
+    $self->Join(
+        TYPE       => 'LEFT',
+        EXPRESSION => $svcnum_sql,
+        TABLE2     => 'cust_svc',
+        FIELD2     => 'svcnum',
+    );
+}
+
+# This creates an alternate left join path to cust_main via cust_svc.
+# _FreesideFieldLimit needs to add this as a separate, independent join
+# and include all tickets that have a matching cust_main record via 
+# either path.
+sub JoinToCustomerViaService {
+    my $self = shift;
+    my $svcalias = $self->JoinToService;
+    my $cust_pkg = $self->Join(
+        TYPE      => 'LEFT',
+        ALIAS1    => $svcalias,
+        FIELD1    => 'pkgnum',
+        TABLE2    => 'cust_pkg',
+        FIELD2    => 'pkgnum',
+    );
+    my $cust_main = $self->Join(
+        TYPE      => 'LEFT',
+        ALIAS1    => $cust_pkg,
+        FIELD1    => 'custnum',
+        TABLE2    => 'cust_main',
+        FIELD2    => 'custnum',
+    );
+    $cust_main;
+}
+
 sub _FreesideFieldLimit {
     my ( $self, $field, $op, $value, %rest ) = @_;
-    my $alias = $self->JoinToCustomer;
     my $is_negative = 0;
     if ( $op eq '!=' || $op =~ /\bNOT\b/i ) {
         # if the op is negative, do the join as though
@@ -1903,40 +1979,70 @@ sub _FreesideFieldLimit {
         $op =~ s/\bNOT\b//;
     }
 
-    my $cust_field = $rest{SUBKEY} || 'custnum';
+    my (@alias, $table2, $subfield, $pkey);
+    if ( $field eq 'Customer' ) {
+      push @alias, $self->JoinToCustomer;
+      push @alias, $self->JoinToCustomerViaService;
+      $pkey = 'custnum';
+    }
+    elsif ( $field eq 'Service' ) {
+      push @alias, $self->JoinToService;
+      $pkey = 'svcnum';
+    }
+    else {
+      die "malformed Freeside query: $field";
+    }
+
+    $subfield = $rest{SUBKEY} || $pkey;
     my $table2;
     # compound subkey: separate into table name and field in that table
     # (must be linked by custnum)
-    ($table2, $cust_field) = ($1, $2) if $cust_field =~ /^(\w+)?\.(\w+)$/;
+    $subfield = lc($subfield);
+    ($table2, $subfield) = ($1, $2) if $subfield =~ /^(\w+)?\.(\w+)$/;
+    $subfield = $pkey if $subfield eq 'number';
 
-    $cust_field = lc($cust_field);
-    $cust_field = 'custnum' if !$cust_field or $cust_field eq 'number';
+    # if it's compound, create a join from cust_main or cust_svc to that 
+    # table, using custnum or svcnum, and Limit on that table instead.
+    foreach my $a (@alias) {
+      if ( $table2 ) {
+          $a = $self->Join(
+              TYPE        => 'LEFT',
+              ALIAS1      => $a,
+              FIELD1      => $pkey,
+              TABLE2      => $table2,
+              FIELD2      => $pkey,
+          );
+      }
 
-    if ( $table2 ) {
-        $alias = $self->Join(
-            TYPE        => 'LEFT',
-            ALIAS1      => $alias,
-            FIELD1      => 'custnum',
-            TABLE2      => $table2,
-            FIELD2      => 'custnum',
-        );
+      # do the actual Limit
+      $self->SUPER::Limit(
+          LEFTJOIN        => $a,
+          FIELD           => $subfield,
+          OPERATOR        => $op,
+          VALUE           => $value,
+          ENTRYAGGREGATOR => 'AND',
+          # no SUBCLAUSE needed, limits on different aliases across left joins
+          # are inherently independent
+      );
+
+      # then, since it's a left join, exclude tickets for which there is now 
+      # no matching record in the table we just limited on.  (Or where there 
+      # is a matching record, if $is_negative.)
+      # For a cust_main query (where there are two different aliases), this 
+      # will produce a subclause: "cust_main_1.custnum IS NOT NULL OR 
+      # cust_main_2.custnum IS NOT NULL" (or "IS NULL AND..." for a negative
+      # query).
+      $self->_SQLLimit(
+          %rest,
+          ALIAS           => $a,
+          FIELD           => $pkey,
+          OPERATOR        => $is_negative ? 'IS' : 'IS NOT',
+          VALUE           => 'NULL',
+          QUOTEVALUE      => 0,
+          ENTRYAGGREGATOR => $is_negative ? 'AND' : 'OR',
+          SUBCLAUSE       => 'fs_limit',
+      );
     }
-
-    $self->SUPER::Limit(
-        LEFTJOIN        => $alias,
-        FIELD           => $cust_field,
-        OPERATOR        => $op,
-        VALUE           => $value,
-        ENTRYAGGREGATOR => 'AND',
-    );
-    $self->_SQLLimit(
-        %rest,
-        ALIAS           => $alias,
-        FIELD           => 'custnum',
-        OPERATOR        => $is_negative ? 'IS' : 'IS NOT',
-        VALUE           => 'NULL',
-        QUOTEVALUE      => 0,
-    );
 }
 
 #Freeside

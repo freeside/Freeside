@@ -13,15 +13,25 @@
 <BR>
 <%$msg%><br>
 
-% if (@Customers) {
+% if (@Customers or @Services) {
 
-<br><i>(Check box to link)<i>
+<br><i>(Check box to link)</i>
 <table>
 % foreach my $customer (@Customers) {
 <tr>
   <td>
     <input type="checkbox" name="Ticket-AddCustomer-<% $customer->{'custnum'} %>" VALUE="1" <% scalar(@Customers) == 1 ? 'CHECKED' : '' %>>
-    <A HREF="<%$freeside_url%>/view/cust_main.cgi?<% $customer->{'custnum'} %>"><% &RT::URI::freeside::small_custview($customer->{'custnum'}, &RT::URI::freeside::FreesideGetConfig('countrydefault'), 1) |n %>
+    <& .small_custview, $customer &>
+  </td>
+</tr>
+% }
+%
+% foreach my $service (@Services) {
+<tr>
+  <td>
+    <input type="checkbox" name="Ticket-AddService-<% $service->{'svcnum'} %>" VALUE="1" <% scalar(@Services) == 1 ? 'CHECKED' : '' %>>
+    <& .small_custview, $service &>
+    <& .small_svcview,  $service &>
   </td>
 </tr>
 % }
@@ -29,10 +39,20 @@
 
 % }
 
+<%once>
+my $freeside_url = &RT::URI::freeside::FreesideURL();
+
+</%once>
+<%def .small_custview>
+% my $cust = shift;
+<A HREF="<%$freeside_url%>/view/cust_main.cgi?<% $cust->{'custnum'}%>"><% &RT::URI::freeside::small_custview($cust->{'custnum'}, &RT::URI::freeside::FreesideGetConfig, 1) |n %></A>
+</%def>
+<%def .small_svcview>
+% my $svc = shift;
+<A HREF="<%$freeside_url%>/view/cust_svc.cgi?<% $svc->{'svcnum'}%>"><B><% $svc->{'label'} %></B></A>
+</%def>
 <%INIT>
 my ($msg);
-
-my $freeside_url = &RT::URI::freeside::FreesideURL();
 
 my @Customers = ();
 if ( $CustomerString ) {
@@ -43,8 +63,11 @@ if ( $CustomerString ) {
 }
 
 my @Services = ();
-if ($ServiceString) {
-    @Services = (); #service_search();
+if ( $ServiceString
+      and $RT::URI::freeside::IntegrationType eq 'Internal' ) {
+    @Services = RT::URI::freeside::service_search(
+        'search'  => $ServiceString,
+    );
 }
 
 </%INIT>

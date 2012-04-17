@@ -1,0 +1,38 @@
+<FORM METHOD="GET" NAME="CreateTicketForm" STYLE="display:inline">
+<SCRIPT TYPE="text/javascript">
+function updateTicketLink() {
+  var link = document.getElementById('CreateTicketLink');
+  var selector = document.getElementById('Queue')
+  link.href = "<% $new_base.'?'.
+    join(';', map(
+      { ($_ eq 'Queue') ? () : "$_=$new_param{$_}"}
+    keys %new_param),'Queue=') %>" + selector.options[selector.selectedIndex].value;
+}
+</SCRIPT>
+<A NAME="tickets"><FONT CLASS="fsinnerbox-title">Tickets</FONT></A>
+<A id="CreateTicketLink" HREF="<% $new_link %>"><% mt('Create new ticket') |h %></A>
+ <% mt('in queue') |h %>
+%# fetch list of queues in which the user can create tickets
+% my %queues = FS::TicketSystem->queues('', 'CreateTicket');
+% if( $conf->exists('ticket_system-force_default_queueid') ) {
+<B><% $queues{$new_param{'Queue'}} %></B>
+<INPUT TYPE="hidden" NAME="Queue" VALUE="<% $new_param{'Queue'} %>">
+% }
+% else {
+<SELECT NAME="Queue" id="Queue" onchange="updateTicketLink()">
+% foreach my $queueid ( sort { $queues{$a} cmp $queues{$b} } keys %queues ) {
+    <OPTION VALUE="<% $queueid %>"
+            <% $queueid == $new_param{'Queue'} ? 'SELECTED' : '' %>
+    ><% $queues{$queueid} |h %>
+% }
+</SELECT>
+<SCRIPT DEFER TYPE="text/javascript">updateTicketLink();</SCRIPT>
+% }
+</FORM>
+<%init>
+my %opt = @_;
+my $conf = new FS::Conf;
+my $object = $opt{'object'}; # must be a cust_main, cust_svc, or svc_...
+my ($new_base, %new_param) = FS::TicketSystem->href_params_new_ticket($object);
+my $new_link = FS::TicketSystem->href_new_ticket($object);
+</%init>
