@@ -106,7 +106,8 @@ my $widget = new HTML::Widgets::SelectLayers(
       }
       if ( $type eq 'select' ) {
         my $size = defined($optinfo->{size}) ? " SIZE=" . $optinfo->{size} : '';
-        my $multi = defined($optinfo->{multi}) ? ' MULTIPLE' : '';
+        my $multi = ($optinfo->{multi} || $optinfo->{multiple})
+                      ? ' MULTIPLE' : '';
         $html .= qq!<SELECT NAME="$option"$multi$size>!;
         my @values = split '\s+', $value if $multi;
         my @options;
