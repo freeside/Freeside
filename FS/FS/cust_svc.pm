@@ -98,6 +98,28 @@ Deletes this service from the database.  If there is an error, returns the
 error, otherwise returns false.  Note that this only removes the cust_svc
 record - you should probably use the B<cancel> method instead.
 
+=cut
+
+sub delete {
+  my $self = shift;
+  my $error = $self->SUPER::delete;
+  return $error if $error;
+
+  if ( FS::Conf->new->config('ticket_system') eq 'RT_Internal' ) {
+    FS::TicketSystem->init;
+    my $session = FS::TicketSystem->session;
+    my $links = RT::Links->new($session->{CurrentUser});
+    my $svcnum = $self->svcnum;
+    $links->Limit(FIELD => 'Target', 
+                  VALUE => 'freeside://freeside/cust_svc/'.$svcnum);
+    while ( my $l = $links->Next ) {
+      my ($val, $msg) = $l->Delete;
+      # can't do anything useful on error
+      warn "error unlinking ticket $svcnum: $msg\n" if !$val;
+    }
+  }
+}
+
 =item cancel
 
 Cancels the relevant service by calling the B<cancel> method of the associated
