@@ -166,6 +166,12 @@ sub smart_search {
       }
     }
 
+    push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => { 'agent_custid' => $num, %options },
+        'extra_sql' => " AND $agentnums_sql", #agent virtualization
+    } );
+
     if ( $conf->exists('address1-search') ) {
       my $len = length($num);
       $num = lc($num);
