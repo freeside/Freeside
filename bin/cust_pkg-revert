@@ -1,0 +1,118 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $opt_d $opt_u $opt_r );
+use Getopt::Std;
+use Date::Parse qw(str2time);
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_pkg;
+use FS::h_cust_pkg;
+
+getopts('d:u:r');
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+my $sdate = str2time($opt_d);
+my $edate = $sdate + 86399;
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $fuzz = 1;
+
+my $changed = 0;
+
+foreach my $h_cust_pkg (
+  qsearch({ table       => 'h_cust_pkg',
+            hashref     => { history_user   => $opt_u,
+                             history_action => 'replace_new',
+                           },
+            extra_sql   => ' AND history_date >= ? AND history_date <= ? ',
+            extra_param => [ [$sdate,'int'], [$edate,'int'] ],
+            #order_by    => 'ORDER BY history_date asc',
+         })
+) {
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $h_cust_pkg->pkgnum } );
+  next if $cust_pkg->get('cancel');
+
+  my($s, $e) = ($h_cust_pkg->history_date-$fuzz, $h_cust_pkg->history_date+$fuzz);
+
+  my $old = qsearchs({
+            table       => 'h_cust_pkg',
+            hashref     => { history_user   => $opt_u,
+                             history_action => 'replace_old',
+                             pkgnum         => $h_cust_pkg->pkgnum,
+                           },
+            extra_sql   => ' AND history_date >= ? AND history_date <= ? ',
+            extra_param => [ [$s,'int'], [$e,'int'] ],
+  });
+
+  my $diff = $h_cust_pkg->get('bill') - $old->get('bill');
+  if ( $diff < 0 ) {
+    warn "next bill date was decremented (not incremented) for pkgnum ". $cust_pkg->pkgnum. "; skipping\n";
+    next;
+  } elsif ( $diff == 0 ) {
+    warn "next bill date was not changed for pkgnum ". $cust_pkg->pkgnum. "; skipping\n";
+    next;
+  }
+
+  $changed++;
+
+  #if ( $opt_r ) {
+    my $days = ($diff / 86400);
+    print "decrementing next bill for pkgnum ". $cust_pkg->pkgnum.
+          " (custnum ". $cust_pkg->custnum. ") by $days days\n";
+  #}
+
+  $cust_pkg->set('bill', $cust_pkg->get('bill') - $diff );
+  my $error = $cust_pkg->replace;
+  die $error if $error;
+
+}
+
+if ( $opt_r ) {
+  $dbh->rollback or die $dbh->errstr; #if $oldAutoCommit;
+} else {
+  $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+}
+
+print "changed $changed packages\n";
+
+sub usage {
+  die "usage: cust_pkg-revert -d date -u history_username [ -r ] employee_username\n";
+}
+
+=head1 NAME
+
+cust_pkg-revert
+
+=head1 SYNOPSIS
+
+  cust_pkg-revert -d date -u history_username [ -r ] employee_username
+
+=head1 DESCRIPTION
+
+Command-line tool to revert customer package changes from a specific day and user.
+Currently only incrementing the next bill date (cust_pkg.bill) is reverted.
+
+-d: Date of the changes to revert
+
+-u: Username of the changes to revert
+
+-r: dRy run
+
+employee_username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::part_pkg>
+
+=cut
+
+1;
+
