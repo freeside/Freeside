@@ -546,11 +546,35 @@ Commercial support is available; see
 
 =head1 AUTHORS
 
-Primarily Ivan Kohler, with help from many kind folks, including core
-contributors Jeff Finucane, Kristian Hoffman, Jason Hall and Peter Bowen.
+=head2 CORE TEAM
 
-See the CREDITS file in the Freeside distribution for a (hopefully) complete
-list and the individal files for details.
+Jeremy Davis
+
+Ivan Kohler
+
+Mark Wells
+
+=head2 CORE EMERITUS
+
+Peter Bowen
+
+Jeff Finucane
+
+Jason Hall
+
+Kristian Hoffman
+
+Erik Levinson
+
+Brian McCane
+
+Richard Siddall
+
+Matt Simerson
+
+=head2 CONTRIBUTORS
+
+See httemplate/docs/credits.html
 
 =head1 SEE ALSO
 
