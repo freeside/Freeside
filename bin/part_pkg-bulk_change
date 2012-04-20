@@ -50,7 +50,7 @@ cust_main-bulk_change
 
 =head1 DESCRIPTION
 
-Command-line tool to change the payby field for a group of customers.
+Command-line tool to change a set of package definitions.
 
 -r: recurring package definitions only
 
