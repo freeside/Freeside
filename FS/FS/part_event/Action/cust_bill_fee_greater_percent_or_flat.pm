@@ -29,7 +29,7 @@ sub _calc_fee {
   my $num = $flat_fee - $percent;
   if ($num == 0) {
     return($percent);
-  } 
+  }
   elsif ($num > 0) {
     return($flat_fee);
   }
