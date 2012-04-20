@@ -45,6 +45,7 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+%# use Data::Dumper; warn Dumper \%ARGS; #DEBUG
 <& /Elements/Header,
     Title => $title,
     onload => "function () { hide(document.getElementById('Ticket-Create-details')) }" &>
@@ -71,7 +72,7 @@
   Default => $QueueObj->Name,
   ShowNullOption => 0,
   ShowAllQueues => 0,
-  OnChange => "document.getElementsByName('id')[0].value = ''; form.submit()" &>
+  OnChange => "document.getElementsByName('id')[0].value = 'refresh'; form.submit()" &>
 </td>
 <td class="label"><&|/l&>Status</&>:
 </td>
@@ -91,7 +92,7 @@
 <&|/l&>Requestors</&>:
 </td>
 <td class="value" colspan="5">
-<& /Elements/EmailInput, Name => 'Requestors', Size => '40', Default => $ARGS{Requestors} || $session{CurrentUser}->EmailAddress &>
+<& /Elements/EmailInput, Name => 'Requestors', Size => '40', Default => exists($ARGS{Requestors}) ? $ARGS{Requestors} : $session{CurrentUser}->EmailAddress &>
 % $m->callback( CallbackName => 'AfterRequestors', QueueObj => $QueueObj, ARGSRef => \%ARGS );
 </td>
 </tr>
@@ -390,7 +391,8 @@ if ($ARGS{'Attach'}) {			# attachment?
 # }}}
 
 # delete temporary storage entry to make WebUI clean
-unless (keys %{$session{'Attachments'}} and $ARGS{'id'} eq 'new') {
+unless (keys %{$session{'Attachments'}} and 
+        ($ARGS{'id'} eq 'new' or $ARGS{'id'} eq 'refresh')) {
     delete $session{'Attachments'};
 }
 
