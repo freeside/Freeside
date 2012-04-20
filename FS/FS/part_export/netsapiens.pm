@@ -245,7 +245,7 @@ sub ns_create_or_update {
   ###
   foreach $feature (split /\s+/, $self->option('features') ) {
 
-    my $nsf = $self->ns_command( 'PUT', $self->ns_feature($feature),
+    my $nsf = $self->ns_command( 'PUT', $self->ns_feature($svc_phone, $feature),
       'control'    => 'd', #User Control, disable
       'expires'    => 'never',
       #'ts'         => '', #?
