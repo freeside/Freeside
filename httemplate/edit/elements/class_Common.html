@@ -22,14 +22,15 @@ my %opt = @_;
 my $table = $opt{'table'};
 
 my @category;
+my $category_table;
 unless ( $opt{'nocat'} ) {
-    ( my $category_table = $table ) =~ s/class/category/ or die;
+    ( $category_table = $table ) =~ s/class/category/ or die;
     @category = qsearch($category_table, { 'disabled' => '' });
 }
 
 my $fields = [   'classname',
         (scalar(@category)
-          ? { field=>'categorynum', type=>'select-table', 'empty_label'=>'(none)', 'table'=>'pkg_category', 'name_col'=>'categoryname' }
+          ? { field=>'categorynum', type=>'select-table', 'empty_label'=>'(none)', 'table'=>$category_table, 'name_col'=>'categoryname' }
           : { field=>'categorynum', type=>'hidden' }
         ),
         { field=>'disabled', type=>'checkbox', value=>'Y', },
