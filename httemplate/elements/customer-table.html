@@ -356,7 +356,7 @@ Example:
 % my $row = 0;
 % for ( $row = 0; exists($param->{"custnum$row"}); $row++ ) { 
 
-    <TR>
+    <TR id="row<%$row%>" rownum="<%$row%>">
       <TD>
 	<INPUT TYPE      = "text"
                NAME      = "invnum<% $row %>"
@@ -458,19 +458,24 @@ Example:
 %     my $color = $opt{color}->[$col];
 %     my $font = $color ? qq(<FONT COLOR="$color">) : '';
 %     my $onchange = '';
-%     if ( $opt{footer}->[$col] eq '_TOTAL' ) {
+%     if ( $opt{onchange}->[$col] ) {
+%       $onchange = 'onchange="'.$opt{onchange}->[$col].'"';
+%     }
+%     elsif ( $opt{footer}->[$col] eq '_TOTAL' ) {
 %       $total[$col] += $value;
 %       $onchange = $opt{prefix}. "calc_total$col();";
 %       $onchange = qq(onchange="$onchange" onkeyup="$onchange");
 %     }
       <TD ALIGN="<% $align %>">
-%     if (! $types->[$col] || $types->[$col] eq 'text') {
-        <INPUT TYPE  = "text"
+%     my $type = $types->[$col] || 'text';
+%     if ($type eq 'text' or $type eq 'checkbox') {
+        <INPUT TYPE  = "<% $type %>"
                NAME  = "<% $name %>"
                ID    = "<% $name %>"
                SIZE  = "<% $size %>"
                STYLE = "text-align: <% $align %>;"
                VALUE = "<% $value %>"
+               rownum    = "<% $row %>"
                <% $onchange %>
         >
 %     } elsif ($types->[$col] eq 'immutable') {
@@ -485,7 +490,7 @@ Example:
     </TR>
 % } 
 
-<TR>
+<TR id="row_total">
   <TH COLSPAN=5 ID="<% $opt{'prefix'} %>_TOTAL_TOTAL">
     Total <% $row ? $row-1 : 0 %>
     <% PL($opt{name_singular} || 'customer', ( $row ? $row-1 : 0 ) ) %>
@@ -559,7 +564,8 @@ Example:
     var table = document.getElementById('<% $opt{prefix} %>OneTrueTable');
     var tablebody = table.getElementsByTagName('tbody').item(0);
 
-    var row = table.insertRow(rownum+1);
+    var row = table.insertRow(table.rows.length - 1);
+    row.setAttribute('id', 'row'+rownum);
     
     var invnum_cell = document.createElement('TD');
 
@@ -676,7 +682,7 @@ Example:
 %       } else {
 %         $value = $param->{"$field$row"}; 
 %       }
-        var my_text = document.createTextNode('<% $value %>');
+        var my_text = document.createTextNode(<% $value |js_string %>);
         my_cell.appendChild(my_text);
 %     }
 
@@ -686,10 +692,17 @@ Example:
       my_input.setAttribute('id',   '<% $name %>'+<% $opt{prefix} %>rownum);
       my_input.style.textAlign = '<% $align{ $opt{align}->[$col] || 'l' } %>';
       my_input.setAttribute('size', <% $sizes->[$col] || 10 %>);
-%     if ($types->[$col] eq 'immutable') {
+      my_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+%     if ( $types->[$col] eq 'immutable' ) {
         my_input.setAttribute('type', 'hidden');
 %     }
-%     if ( $opt{footer}->[$col] eq '_TOTAL' ) {
+%     elsif ( $types->[$col] eq 'checkbox' ) {
+        my_input.setAttribute('type', 'checkbox');
+%     }
+%     if ( $opt{onchange}->[$col] ) {
+        my_input.onchange   = <% $opt{onchange}->[$col] %>;
+%     }
+%     elsif ( $opt{footer}->[$col] eq '_TOTAL' ) {
         my_input.onchange   = <% $opt{prefix} %>calc_total<%$col%>;
         my_input.onkeyup    = <% $opt{prefix} %>calc_total<%$col%>;
 %     }
@@ -712,6 +725,11 @@ Example:
           + <% $opt{prefix} %>rownum
           + ' <% PL($opt{name_singular} || 'customer') %>';
     }
+
+% if ( $opt{add_row_callback} ) {
+    <% $opt{add_row_callback} %>(<% $opt{prefix} %>rownum,
+                                 '<% $opt{prefix} %>');
+% }
 
     <% $opt{prefix} %>rownum++;
 
