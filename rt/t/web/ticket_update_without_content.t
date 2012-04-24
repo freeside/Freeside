@@ -2,11 +2,11 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 10;
+use RT::Test tests => 12;
 my ( $url, $m ) = RT::Test->started_ok;
 
 # merged tickets still show up in search
-my $ticket = RT::Ticket->new($RT::SystemUser);
+my $ticket = RT::Ticket->new(RT->SystemUser);
 my ( $ret, $msg ) = $ticket->Create(
     Subject   => 'base ticket' . $$,
     Queue     => 'general',
@@ -30,10 +30,10 @@ $m->submit_form(
     fields      => { Priority => '1', }
 );
 
-$m->content_like(qr/priority changed/i);
-$m->content_unlike(qr/message recorded/i);
+$m->content_contains("Priority changed");
+$m->content_lacks("message recorded");
 
-my $root = RT::User->new( $RT::SystemUser );
+my $root = RT::User->new( RT->SystemUser );
 $root->Load('root');
 ( $ret, $msg ) = $root->SetSignature(<<EOF);
 best wishes
@@ -48,5 +48,5 @@ $m->submit_form(
     form_number => 3,
     fields      => { Priority => '2', }
 );
-$m->content_like(qr/priority changed/i);
-$m->content_unlike(qr/message recorded/i);
+$m->content_contains("Priority changed");
+$m->content_lacks("message recorded");

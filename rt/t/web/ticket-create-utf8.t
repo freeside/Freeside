@@ -3,9 +3,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 41;
-
-$RT::Test::SKIP_REQUEST_WORK_AROUND = 1;
+use RT::Test tests => 43;
 
 use Encode;
 
@@ -32,7 +30,7 @@ ok $m->login, 'logged in';
 # create a ticket with a subject only
 foreach my $test_str ( $ru_test, $l1_test ) {
     ok $m->goto_create_ticket( $q ), "go to create ticket";
-    $m->form_number(3);
+    $m->form_name('TicketCreate');
     $m->field( Subject => $test_str );
     $m->submit;
 
@@ -49,7 +47,7 @@ foreach my $test_str ( $ru_test, $l1_test ) {
 foreach my $test_str ( $ru_test, $l1_test ) {
     foreach my $support_str ( $ru_support, $l1_support ) {
         ok $m->goto_create_ticket( $q ), "go to create ticket";
-        $m->form_number(3);
+        $m->form_name('TicketCreate');
         $m->field( Subject => $test_str );
         $m->field( Content => $support_str );
         $m->submit;
@@ -58,8 +56,8 @@ foreach my $test_str ( $ru_test, $l1_test ) {
             qr{<td\s+class="message-header-value"[^>]*>\s*\Q$test_str\E\s*</td>}i,
             'header on the page'
         );
-        $m->content_like( 
-            qr{\Q$support_str\E}i,
+        $m->content_contains(
+            $support_str,
             'content on the page'
         );
 
@@ -72,7 +70,7 @@ foreach my $test_str ( $ru_test, $l1_test ) {
 foreach my $test_str ( $ru_test, $l1_test ) {
     foreach my $support_str ( $ru_support, $l1_support ) {
         ok $m->goto_create_ticket( $q ), "go to create ticket";
-        $m->form_number(3);
+        $m->form_name('TicketCreate');
         $m->field( Subject => $test_str );
         $m->field( Content => $support_str );
         $m->submit;
@@ -81,8 +79,8 @@ foreach my $test_str ( $ru_test, $l1_test ) {
             qr{<td\s+class="message-header-value"[^>]*>\s*\Q$test_str\E\s*</td>}i,
             'header on the page'
         );
-        $m->content_like( 
-            qr{\Q$support_str\E}i,
+        $m->content_contains(
+            $support_str,
             'content on the page'
         );
 

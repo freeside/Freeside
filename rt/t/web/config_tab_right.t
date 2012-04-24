@@ -2,11 +2,11 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 8;
+use RT::Test nodata => 1, tests => 10;
 
 my ($uname, $upass, $user) = ('tester', 'tester');
 {
-    $user = RT::User->new($RT::SystemUser);
+    $user = RT::User->new(RT->SystemUser);
     my ($status, $msg) = $user->Create(
         Name => $uname,
         Password => $upass,
@@ -20,7 +20,7 @@ my ($baseurl, $m) = RT::Test->started_ok;
 ok $m->login($uname, $upass), "logged in";
 
 {
-    $m->content_unlike(qr/Configuration/, 'no configuration');
+    $m->content_lacks('Configuration', 'no configuration tab');
     $m->get('/Admin/');
     is $m->status, 403, 'no access to /Admin/';
 }
@@ -33,7 +33,7 @@ RT::Test->set_rights(
 
 {
     $m->get('/');
-    $m->content_like(qr/Configuration/, 'configuration is there');
+    $m->content_contains('Configuration', 'configuration tab is there');
 
     $m->follow_link_ok({text => 'Configuration'});
     is $m->status, 200, 'user has access to /Admin/';

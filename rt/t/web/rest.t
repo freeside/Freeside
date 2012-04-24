@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use RT::Test tests => 16;
+use RT::Test tests => 18;
 
 my ($baseurl, $m) = RT::Test->started_ok;
 
@@ -46,7 +46,7 @@ $m->post("$baseurl/REST/1.0/ticket/edit", [
 my ($id) = $m->content =~ /Ticket (\d+) created/;
 ok($id, "got ticket #$id");
 
-my $ticket = RT::Ticket->new($RT::SystemUser);
+my $ticket = RT::Ticket->new(RT->SystemUser);
 $ticket->Load($id);
 is($ticket->Id, $id, "loaded the REST-created ticket");
 is($ticket->Subject, "REST interface", "subject successfully set");

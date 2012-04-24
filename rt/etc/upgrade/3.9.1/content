@@ -1,0 +1,68 @@
+@Initial = (
+    sub {
+        use strict;
+        $RT::Logger->debug('Make sure templates all have known types');
+
+        # We update all NULL rows, below.  We want to find non-NULL
+        # rows, which weren't created by the current codebase running
+        # through earlier initialdatas.  Type != 'Perl' enforces the
+        # non-NULL part, as well
+        my $templates = RT::Templates->new(RT->SystemUser);
+        $templates->Limit(
+            FIELD => 'Type',
+            OPERATOR => '!=',
+            VALUE => 'Perl',
+        );
+
+        if ($templates->Count) {
+            die "You have templates with Type already set. This will interfere with your upgrade because RT used to ignore the template Type field, but now uses it.";
+        }
+
+        $templates = RT::Templates->new(RT->SystemUser);
+        $templates->Limit(
+            FIELD => 'Type',
+            OPERATOR => 'IS',
+            VALUE => 'NULL',
+        );
+        while (my $template = $templates->Next) {
+            my ($status, $msg) = $template->SetType('Perl');
+            $RT::Logger->warning( "Couldn't change Type of Template #" . $template->Id . ": $msg" ) unless $status;
+        }
+    },
+    sub {
+        use strict;
+        $RT::Logger->debug('Adding ExecuteCode right to principals that currently have ModifyTemplate or ModifyScrips');
+
+        my $acl = RT::ACL->new(RT->SystemUser);
+        $acl->Limit(
+            FIELD           => 'RightName',
+            OPERATOR        => '=',
+            VALUE           => 'ModifyTemplate',
+            ENTRYAGGREGATOR => 'OR',
+        );
+        $acl->Limit(
+            FIELD           => 'RightName',
+            OPERATOR        => '=',
+            VALUE           => 'ModifyScrips',
+            ENTRYAGGREGATOR => 'OR',
+        );
+
+        while (my $ace = $acl->Next) {
+            my $principal = $ace->PrincipalObj;
+            next if $principal->HasRight(
+                Right  => 'ExecuteCode',
+                Object => $RT::System,
+            );
+
+            my ($ok, $msg) = $principal->GrantRight(
+                Right  => 'ExecuteCode',
+                Object => $RT::System,
+            );
+
+            if (!$ok) {
+                $RT::Logger->warn("Unable to grant ExecuteCode on principal " . $principal->id . ": $msg");
+            }
+        }
+    },
+);
+

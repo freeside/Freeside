@@ -3,12 +3,10 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 28;
+use RT::Test tests => 32;
 use Encode;
 my ( $baseurl, $m ) = RT::Test->started_ok;
 ok $m->login, 'logged in as root';
-
-$RT::Test::SKIP_REQUEST_WORK_AROUND = 1;
 
 use utf8;
 
@@ -19,7 +17,7 @@ diag 'test without attachments' if $ENV{TEST_VERBOSE};
 {
     $m->get_ok( $baseurl . '/Ticket/Create.html?Queue=1' );
 
-    $m->form_number(3);
+    $m->form_name('TicketModify');
     $m->submit_form(
         form_number => 3,
         fields      => { Subject => '标题', Content => '测试' },
@@ -47,7 +45,7 @@ diag 'test with attachemnts' if $ENV{TEST_VERBOSE};
 {
 
     my $file =
-      File::Spec->catfile( File::Spec->tmpdir, 'rt_attachemnt_abcde.txt' );
+      File::Spec->catfile( RT::Test->temp_directory, encode_utf8 '附件.txt' );
     open( my $fh, '>', $file ) or die $!;
     binmode $fh, ':utf8';
     print $fh '附件';
@@ -55,12 +53,14 @@ diag 'test with attachemnts' if $ENV{TEST_VERBOSE};
 
     $m->get_ok( $baseurl . '/Ticket/Create.html?Queue=1' );
 
-    $m->form_number(3);
+    $m->form_name('TicketModify');
     $m->submit_form(
         form_number => 3,
         fields => { Subject => '标题', Content => '测试', Attach => $file },
     );
     $m->content_like( qr/Ticket \d+ created/i, 'created the ticket' );
+    $m->content_contains( '附件.txt', 'attached filename' );
+    $m->content_lacks( encode_utf8 '附件.txt', 'no double encoded attached filename' );
     $m->follow_link_ok( { text => 'with headers' },
         '-> /Ticket/Attachment/WithHeaders/...' );
 
@@ -82,7 +82,7 @@ diag 'test with attachemnts' if $ENV{TEST_VERBOSE};
 
     $m->back;
     $m->back;
-    $m->follow_link_ok( { text_regex => qr/by Enoch Root/ },
+    $m->follow_link_ok( { text => 'Download 附件.txt' },
         '-> /Ticket/Attachment/...' );
     $m->content_contains( '附件', 'has content 附件' );
 
@@ -99,5 +99,4 @@ diag 'test with attachemnts' if $ENV{TEST_VERBOSE};
 
     unlink $file;
 }
-
 
