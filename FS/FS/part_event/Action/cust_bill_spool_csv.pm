@@ -15,9 +15,10 @@ sub option_fields {
   (
     'spoolformat'       => { label   => 'Format',
                              type    => 'select',
-                             options => ['default', 'billco'],
+                             options => ['default', 'billco', 'oneline'],
                              option_labels => { 'default' => 'Default',
                                                 'billco'  => 'Billco',
+                                                'oneline' => 'One line',
                                               },
                            },
     'spoolbalanceover'  => { label =>
