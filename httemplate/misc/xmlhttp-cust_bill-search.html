@@ -1,0 +1,18 @@
+<% encode_json(\@return) %>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die 'access denied' unless $curuser->access_right('View invoices');
+my @return;
+if ( $cgi->param('sub') eq 'custnum_search_open' ) { 
+  my $custnum = $cgi->param('arg');
+  #warn "searching invoices for $custnum\n";
+  my $cust_main = FS::cust_main->by_key($custnum);
+  @return = map { 
+    +{ $_->hash, 
+      'owed' => $_->owed }
+  } $cust_main->open_cust_bill
+    if $curuser->agentnums_href->{ $cust_main->agentnum };
+}
+
+</%init>
