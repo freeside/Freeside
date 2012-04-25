@@ -218,7 +218,7 @@ if ( $cgi->param('taxclass')
 
 }
 
-my @loc_param = qw( city county state country );
+my @loc_param = qw( district city county state country );
 
 if ( $cgi->param('out') ) {
 
@@ -266,7 +266,7 @@ if ( $cgi->param('out') ) {
 
           my %ph = ( 'county' => dbh->quote($_),
                      map { $_ => dbh->quote( $cgi->param($_) ) }
-                       qw( city state country )
+                       qw( district city state country )
                    );
 
           my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
@@ -330,7 +330,7 @@ if ( $cgi->param('out') ) {
 
   push @where, FS::tax_rate_location->location_sql(
                  map { $_ => (scalar($cgi->param($_)) || '') }
-                   qw( city county state locationtaxid )
+                   qw( district city county state locationtaxid )
                );
 
 } elsif ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {

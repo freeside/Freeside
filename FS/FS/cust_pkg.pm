@@ -3375,7 +3375,13 @@ sub location_sql {
 
   # '?' placeholders in _location_sql_where
   my $x = $ornull ? 3 : 2;
-  my @bill_param = ( ('city')x3, ('county')x$x, ('state')x$x, 'country' );
+  my @bill_param = ( 
+    ('district')x3,
+    ('city')x3, 
+    ('county')x$x,
+    ('state')x$x,
+    'country'
+  );
 
   my $main_where;
   my @main_param;
@@ -3434,16 +3440,17 @@ sub _location_sql_where {
 
   $ornull = $ornull ? ' OR ? IS NULL ' : '';
 
-  my $or_empty_city   = " OR ( ? = '' AND $table.${prefix}city   IS NULL ) ";
-  my $or_empty_county = " OR ( ? = '' AND $table.${prefix}county IS NULL ) ";
-  my $or_empty_state =  " OR ( ? = '' AND $table.${prefix}state  IS NULL ) ";
+  my $or_empty_city     = " OR ( ? = '' AND $table.${prefix}city     IS NULL )";
+  my $or_empty_county   = " OR ( ? = '' AND $table.${prefix}county   IS NULL )";
+  my $or_empty_state    = " OR ( ? = '' AND $table.${prefix}state    IS NULL )";
 
 #        ( $table.${prefix}city    = ? $or_empty_city   $ornull )
   "
-        ( $table.${prefix}city    = ? OR ? = '' OR CAST(? AS text) IS NULL )
-    AND ( $table.${prefix}county  = ? $or_empty_county $ornull )
-    AND ( $table.${prefix}state   = ? $or_empty_state  $ornull )
-    AND   $table.${prefix}country = ?
+        ( $table.${prefix}district = ? OR ? = '' OR CAST(? AS text) IS NULL )
+    AND ( $table.${prefix}city     = ? OR ? = '' OR CAST(? AS text) IS NULL )
+    AND ( $table.${prefix}county   = ? $or_empty_county $ornull )
+    AND ( $table.${prefix}state    = ? $or_empty_state  $ornull )
+    AND   $table.${prefix}country  = ?
   ";
 }
 
