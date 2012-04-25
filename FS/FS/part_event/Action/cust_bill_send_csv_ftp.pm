@@ -15,9 +15,10 @@ sub option_fields {
   (
     'ftpformat'   => { label   => 'Format',
                        type    =>'select',
-                       options => ['default', 'billco'],
+                       options => ['default', 'billco', 'oneline'],
                        option_labels => { 'default' => 'Default',
                                           'billco'  => 'Billco',
+                                          'oneline' => 'One line',
                                         },
                      },
     'ftpserver'   => 'FTP server',
