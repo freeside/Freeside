@@ -729,7 +729,7 @@ sub payment_info {
     $return{payinfo2} = $payinfo2;
     $return{paytype}  = $cust_main->paytype;
     $return{paystate} = $cust_main->paystate;
-
+    $return{payname}  = $cust_main->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
   }
 
   if ( $conf->config('prepayment_discounts-credit_type') ) {
