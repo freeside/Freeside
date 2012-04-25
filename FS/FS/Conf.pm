@@ -3952,6 +3952,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'unsuspend_email_admin',
+    'section'     => '',
+    'description' => 'Destination admin email address to enable unsuspension notices',
+    'type'        => 'text',
+  },
+  
+  {
     'key'         => 'email_report-subject',
     'section'     => '',
     'description' => 'Subject for reports emailed by freeside-fetch.  Defaults to "Freeside report".',
