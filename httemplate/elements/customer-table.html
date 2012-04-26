@@ -41,6 +41,8 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
+  var num_open_invoices = new Array;
+
   function clearhint_invnum() {
 
     if ( this.value == 'Not found' || this.value == 'Multiple' ) {
@@ -90,7 +92,7 @@ Example:
           customer_select.style.display = 'none';
           return false;
 
-      } else if ( customerArray.length == 5 ) {
+      } else if ( customerArray.length == 6 ) {
 
           custnum_obj.value = customerArray[0];
           custnum_obj.style.color = '#000000';
@@ -99,6 +101,7 @@ Example:
           update_balance_text(searchrow, customerArray[2]);
           update_status_text( searchrow, customerArray[3]);
           update_status_color(searchrow, '#'+customerArray[4]);
+          update_num_open(searchrow, customerArray[5]);
 
           customer.style.display = '';
           customer_select.style.display = 'none';
@@ -140,6 +143,7 @@ Example:
     update_balance_text(searchrow, '');
     update_status_text(searchrow, '');
     update_status_color(searchrow, '#000000');
+    update_num_open(searchrow, 0);
 
     function search_invnum_update(customers) {
       
@@ -192,6 +196,7 @@ Example:
     update_balance_text(searchrow, '');
     update_status_text( searchrow, '');
     update_status_color(searchrow, '#000000');    
+    update_num_open(searchrow, 0);
 
     function search_custnum_update(customers) {
 
@@ -337,6 +342,9 @@ Example:
     document.getElementById('balance'+rownum+'_text').innerHTML = newval;
   }
 
+  function update_num_open(rownum, newval) {
+    num_open_invoices[rownum] = newval;
+  }
 
 
 </SCRIPT>

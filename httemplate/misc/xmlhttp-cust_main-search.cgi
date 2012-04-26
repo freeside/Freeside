@@ -12,7 +12,7 @@
 %   my @cust_main = smart_search( 'search' => $string,
 %                                 'no_fuzzy_on_exact' => 1, #pref?
 %                               );
-%   my $return = [ map [ $_->custnum, $_->name, $_->balance, $_->ucfirst_status, $_->statuscolor ], @cust_main ];
+%   my $return = [ map [ $_->custnum, $_->name, $_->balance, $_->ucfirst_status, $_->statuscolor, scalar($_->open_cust_bill) ], @cust_main ];
 %     
 <% objToJson($return) %>
 % } elsif ( $sub eq 'invnum_search' ) {
@@ -57,7 +57,7 @@ sub findbycustnum{
        	'hashref' => $hashref,
        	'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
      		});
-   return [ $c->custnum, $c->name, $c->balance, $c->ucfirst_status, $c->statuscolor ] 
+   return [ $c->custnum, $c->name, $c->balance, $c->ucfirst_status, $c->statuscolor, scalar($c->open_cust_bill) ] 
 	if $c;
    [];
 }

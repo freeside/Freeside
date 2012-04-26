@@ -23,7 +23,10 @@ function add_row_callback(rownum, prefix) {
 
 function custnum_update_callback(rownum, prefix) {
   var custnum = document.getElementById('custnum'+rownum).value;
-  document.getElementById('enable_app'+rownum).disabled = (custnum == 0);
+  document.getElementById('enable_app'+rownum).disabled = (
+    custnum == 0 || 
+    num_open_invoices[rownum] < 2
+  );
 % if ( $use_discounts ) {
   select_discount_term(rownum, prefix);
 % }
