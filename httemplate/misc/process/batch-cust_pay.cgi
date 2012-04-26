@@ -1,5 +1,5 @@
 <%init>
-my $DEBUG = 1;
+my $DEBUG = 0;
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post payment batch');
 
