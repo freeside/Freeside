@@ -87,7 +87,7 @@ order taker (see L<FS::access_user>)
 
 =item payby
 
-Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
+Payment Type (See L<FS::payinfo_Mixin> for valid values)
 
 =item payinfo
 
