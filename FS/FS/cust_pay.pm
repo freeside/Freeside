@@ -760,6 +760,12 @@ objects.  Returns a list, each element representing the status of inserting the
 corresponding payment - empty.  If there is an error inserting any payment, the
 entire transaction is rolled back, i.e. all payments are inserted or none are.
 
+FS::cust_pay objects may have the pseudo-field 'apply_to', containing a 
+reference to an array of (uninserted) FS::cust_bill_pay objects.  If so,
+those objects will be inserted with the paynum of the payment, and for 
+each one, an error message or an empty string will be inserted into the 
+list of errors.
+
 For example:
 
   my @errors = FS::cust_pay->batch_insert(@cust_pay);
@@ -786,19 +792,35 @@ sub batch_insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $errors = 0;
+  my $num_errors = 0;
   
-  my @errors = map {
-    my $error = $_->insert( 'manual' => 1 );
-    if ( $error ) { 
-      $errors++;
-    } else {
-      $_->cust_main->apply_payments;
-    }
-    $error;
-  } @_;
+  my @errors;
+  foreach my $cust_pay (@_) {
+    my $error = $cust_pay->insert( 'manual' => 1 );
+    push @errors, $error;
+    $num_errors++ if $error;
 
-  if ( $errors ) {
+    if ( ref($cust_pay->get('apply_to')) eq 'ARRAY' ) {
+
+      foreach my $cust_bill_pay ( @{ $cust_pay->apply_to } ) {
+        if ( $error ) { # insert placeholders if cust_pay wasn't inserted
+          push @errors, '';
+        }
+        else {
+          $cust_bill_pay->set('paynum', $cust_pay->paynum);
+          my $apply_error = $cust_bill_pay->insert;
+          push @errors, $apply_error || '';
+          $num_errors++ if $apply_error;
+        }
+      }
+
+    } elsif ( !$error ) { #normal case: apply payments as usual
+      $cust_pay->cust_main->apply_payments;
+    }
+
+  }
+
+  if ( $num_errors ) {
     $dbh->rollback if $oldAutoCommit;
   } else {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;

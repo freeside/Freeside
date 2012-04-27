@@ -1,6 +1,9 @@
-<% include('/elements/header.html', 'Quick payment entry') %>
+<& /elements/header.html, {
+  title => 'Quick payment entry',
+  etc   => 'onload="preload()"'
+} &>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <SCRIPT TYPE="text/javascript">
 function warnUnload() {
@@ -13,6 +16,21 @@ function warnUnload() {
   }
 }
 window.onbeforeunload = warnUnload;
+
+function add_row_callback(rownum, prefix) {
+  document.getElementById('enable_app'+rownum).disabled = true;
+}
+
+function custnum_update_callback(rownum, prefix) {
+  var custnum = document.getElementById('custnum'+rownum).value;
+  document.getElementById('enable_app'+rownum).disabled = (
+    custnum == 0 || 
+    num_open_invoices[rownum] < 2
+  );
+% if ( $use_discounts ) {
+  select_discount_term(rownum, prefix);
+% }
+}
 
 function select_discount_term(row, prefix) {
   var custnum_obj = document.getElementById('custnum'+prefix+row);
@@ -46,6 +64,265 @@ function select_discount_term(row, prefix) {
   discount_terms(custnum_obj.value, select_discount_term_update);
 
 }
+
+var invoices_for_row = new Object;
+
+function update_invoices(rownum, invoices) {
+  invoices_for_row[rownum] = new Object;
+  // only called before create_application_row
+  for ( var i=0; i<invoices.length; i++ ) {
+    invoices_for_row[rownum][ invoices[i].invnum ] = invoices[i];
+  }
+}
+
+function toggle_application_row(ev, next) {
+  if (!next) next = function(){}; //optional continuation
+  var rownum = this.getAttribute('rownum');
+  if ( this.checked ) {
+    var custnum = document.getElementById('custnum'+rownum).value;
+    if (!custnum) return;
+    lock_payment_row(rownum, true);
+    custnum_search_open( custnum, 
+      function(returned) {
+        update_invoices(rownum, JSON.parse(returned));
+        create_application_row(rownum, 0);
+        next.call(this, rownum);
+      }
+    );
+  }
+}
+
+function lock_payment_row(rownum, flag) {
+% foreach (qw(invnum custnum customer)) {
+  obj = document.getElementById('<% $_ %>'+rownum);
+  obj.readOnly = flag;
+% }
+  document.getElementById('enable_app'+rownum).disabled = flag;
+}
+
+function delete_application_row() {
+  var rownum = this.getAttribute('rownum');
+  var appnum = this.getAttribute('appnum');
+  var tr_app = document.getElementById('row'+rownum+'.'+appnum);
+  var select_invnum = document.getElementById('invnum'+rownum+'.'+appnum);
+  if ( select_invnum.value ) {
+    invoices_for_row[rownum][ select_invnum.value ] = select_invnum.curr_invoice;
+  }
+    
+  tr_app.parentNode.removeChild(tr_app);
+  if ( appnum > 0 ) {
+    document.getElementById('delete'+rownum+'.'+(appnum-1)).style.display = '';
+  }
+  else {
+    lock_payment_row(rownum, false);
+    document.getElementById('enable_app'+rownum).checked = false;
+  }
+}
+
+function amount_unapplied(rownum) {
+  var appnum = 0;
+  var total = 0;
+  var payment_amount = parseFloat(document.getElementById('paid'+rownum).value)
+                       || 0;
+  while (true) {
+    var input_amount = document.getElementById('amount'+rownum+'.'+appnum);
+    if ( input_amount ) {
+      total += parseFloat(input_amount.value || 0);
+      appnum++;
+    }
+    else {
+      return payment_amount - total;
+    }
+  }
+}
+
+var change_app_amount;
+
+function choose_app_invnum() {
+  var rownum = this.getAttribute('rownum');
+  var appnum = this.getAttribute('appnum');
+  var last_invoice = this.curr_invoice;
+  if ( last_invoice ) {
+    invoices_for_row[rownum][ last_invoice['invnum'] ] = last_invoice;
+  }
+
+  if ( this.value ) {
+    var this_invoice = invoices_for_row[rownum][this.value];
+    this.curr_invoice = invoices_for_row[rownum][this.value];
+    var span_owed = document.getElementById('owed'+rownum+'.'+appnum);
+    span_owed.innerHTML = this_invoice['owed'] + '&nbsp;';
+    delete invoices_for_row[rownum][this.value];
+
+    var input_amount = document.getElementById('amount'+rownum+'.'+appnum);
+    if ( input_amount.value == '' ) {
+      input_amount.value = 
+        Math.max(
+          0, Math.min( amount_unapplied(rownum), this_invoice['owed'])
+        ).toFixed(2);
+      // trigger onchange
+      change_app_amount.call(input_amount);
+    }
+  }
+}
+
+function focus_app_invnum() {
+% # invoice numbers just display as invoice numbers
+  var rownum = this.getAttribute('rownum');
+  var add_opt = function(obj, value) {
+    var o = document.createElement('OPTION');
+    o.text = value;
+    o.value = value;
+    obj.add(o);
+  }
+  this.options.length = 0;
+  var this_invoice = this.curr_invoice;
+  if ( this_invoice ) {
+    add_opt(this, this_invoice.invnum);
+  } else {
+    add_opt(this, '');
+  }
+  for ( var x in invoices_for_row[rownum] ) {
+    add_opt(this, invoices_for_row[rownum][x].invnum);
+  }
+}
+
+function change_app_amount() {
+  var rownum = this.getAttribute('rownum');
+  var appnum = this.getAttribute('appnum');
+%# maybe some kind of warning if amount_unapplied < 0?
+%# only spawn a new application row if there are open invoices left,
+%# and this is the highest-numbered application row for the customer,
+%# and the sum of the applied amounts is < the amount of the payment,
+  if ( Object.keys(invoices_for_row[rownum]).length > 0
+       && !document.getElementById( 'row'+rownum+'.'+(parseInt(appnum) + 1) )
+       && amount_unapplied(rownum) > 0 ) {
+
+    create_application_row(rownum, parseInt(appnum) + 1);
+
+  }
+}
+
+function create_application_row(rownum, appnum) {
+  var payment_row = document.getElementById('row'+rownum);
+  var tr_app = document.createElement('TR');
+  tr_app.setAttribute('rownum', rownum);
+  tr_app.setAttribute('appnum', appnum);
+  tr_app.setAttribute('id', 'row'+rownum+'.'+appnum);
+  
+  var td_invnum = document.createElement('TD');
+  td_invnum.setAttribute('colspan', 4);
+  td_invnum.style.textAlign = 'right';
+  td_invnum.appendChild(
+    document.createTextNode('<% mt('Apply to Invoice ') %>')
+  );
+  var select_invnum = document.createElement('SELECT');
+  select_invnum.setAttribute('rownum', rownum);
+  select_invnum.setAttribute('appnum', appnum);
+  select_invnum.setAttribute('id', 'invnum'+rownum+'.'+appnum);
+  select_invnum.setAttribute('name', 'invnum'+rownum+'.'+appnum);
+  select_invnum.style.textAlign = 'right';
+  select_invnum.style.width = '50px';
+  select_invnum.onchange = choose_app_invnum;
+  select_invnum.onfocus  = focus_app_invnum;
+  
+  td_invnum.appendChild(select_invnum);
+  tr_app.appendChild(td_invnum);
+
+  var td_owed = document.createElement('TD');
+  td_owed.style.textAlign= 'right';
+  var span_owed = document.createElement('SPAN');
+  span_owed.setAttribute('rownum', rownum);
+  span_owed.setAttribute('appnum', appnum);
+  span_owed.setAttribute('id', 'owed'+rownum+'.'+appnum);
+  td_owed.appendChild(span_owed);
+  tr_app.appendChild(td_owed);
+
+  var td_amount = document.createElement('TD');
+  td_amount.style.textAlign = 'right';
+  var input_amount = document.createElement('INPUT');
+  input_amount.size = 6;
+  input_amount.setAttribute('rownum', rownum);
+  input_amount.setAttribute('appnum', appnum);
+  input_amount.setAttribute('name', 'amount'+rownum+'.'+appnum);
+  input_amount.setAttribute('id', 'amount'+rownum+'.'+appnum);
+  input_amount.style.textAlign = 'right';
+  input_amount.onchange = change_app_amount;
+  td_amount.appendChild(input_amount);
+  tr_app.appendChild(td_amount);
+
+  var td_delete = document.createElement('TD');
+  td_delete.setAttribute('colspan', <% scalar(@fields)-2 %>);
+  var button_delete = document.createElement('INPUT');
+  button_delete.setAttribute('rownum', rownum);
+  button_delete.setAttribute('appnum', appnum);
+  button_delete.setAttribute('id', 'delete'+rownum+'.'+appnum);
+  button_delete.setAttribute('type', 'button');
+  button_delete.setAttribute('value', 'X');
+  button_delete.onclick = delete_application_row;
+  button_delete.style.color = '#ff0000';
+  button_delete.style.fontWeight = 'bold';
+  button_delete.style.paddingLeft = '2px';
+  button_delete.style.paddingRight = '2px';
+  td_delete.appendChild(button_delete);
+  tr_app.appendChild(td_delete);
+
+  var td_error = document.createElement('TD');
+  var span_error = document.createElement('SPAN');
+  span_error.setAttribute('rownum', rownum);
+  span_error.setAttribute('appnum', appnum);
+  span_error.setAttribute('id', 'error'+rownum+'.'+appnum);
+  span_error.style.color = '#ff0000';
+  td_error.appendChild(span_error);
+  tr_app.appendChild(td_error);
+
+  if ( appnum > 0 ) {
+    //remove delete button on the previous row
+    document.getElementById('delete'+rownum+'.'+(appnum-1)).style.display = 'none';
+  }
+  rownum++;
+  var next_row = document.getElementById('row'+rownum); // always exists
+  payment_row.parentNode.insertBefore(tr_app, next_row);
+
+}
+
+%# for error handling--ugly, but the alternative is translating the whole 
+%# process of creating rows into Mason
+var row_array = <% encode_json(\@rows) %>;
+function preload() {
+  var rownum;
+  var appnum;
+  for (rownum=0; rownum < row_array.length; rownum++) {
+    if ( row_array[rownum].length ) {
+      var enable = document.getElementById('enable_app'+rownum);
+      enable.checked = true;
+      var preload_row = function(r) {//continuation from toggle_application_row
+        for (appnum=0; appnum < row_array[r].length; appnum++) {
+          this_app = row_array[r][appnum];
+          var x = r + '.' + appnum;
+          //set invnum
+          var select_invnum = document.getElementById('invnum'+x);
+          focus_app_invnum.call(select_invnum);
+          for (i=0; i<select_invnum.options.length; i++) {
+            if (select_invnum.options[i].value == this_app.invnum) {
+              select_invnum.selectedIndex = i;
+            }
+          }
+          choose_app_invnum.call(select_invnum);
+          //set amount
+          var input_amount = document.getElementById('amount'+x);
+          input_amount.value = this_app.amount;
+
+          //set error
+          var span_error = document.getElementById('error'+x);
+          span_error.innerHTML = this_app.error;
+          change_app_amount.call(input_amount); //creates next row
+        } //for appnum
+      }; //preload_row function
+      toggle_application_row.call(enable, null, preload_row);
+    } // if row_array[rownum].length
+  } //for rownum
+}
+
 </SCRIPT>
 
 <% include('/elements/xmlhttp.html',
@@ -57,21 +334,26 @@ function select_discount_term(row, prefix) {
 <FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.btnsubmit.disabled=true;window.onbeforeunload = null;">
 
 <!-- <B>Batch</B> <INPUT TYPE="text" NAME="paybatch"><BR><BR> -->
+<& /elements/xmlhttp.html,
+    url => $p.'misc/xmlhttp-cust_bill-search.html',
+    subs => ['custnum_search_open']
+&>
 
-<% include( "/elements/customer-table.html",
-              name_singular => 'payment',
-              header  => \@header,
-              fields  => \@fields,
-              type    => \@types,
-              align   => \@align,
-              size    => \@sizes,
-              color   => \@colors,
-              param   => \%param,
-              footer  => \@footer,
-              footer_align => \@footer_align,
-              custnum_update_callback => $custnum_update_callback,
-          )
-%>
+<& /elements/customer-table.html,
+    name_singular => 'payment',
+    header  => \@header,
+    fields  => \@fields,
+    type    => \@types,
+    align   => \@align,
+    size    => \@sizes,
+    color   => \@colors,
+    param   => \%param,
+    footer  => \@footer,
+    footer_align => \@footer_align,
+    onchange => \@onchange,
+    custnum_update_callback => 'custnum_update_callback',
+    add_row_callback => 'add_row_callback',
+&>
 
 <BR>
 <INPUT TYPE="button" VALUE="Post payment batch" name="btnsubmit" onclick="window.onbeforeunload = null; document.OneTrueForm.submit(); this.disabled = true;">
@@ -105,7 +387,8 @@ my @colors  = ( '', '' );
 my %param   = ();
 my @footer  = ( '_TOTAL', '' );
 my @footer_align = ( 'r', 'r' );
-my $custnum_update_callback = '';
+my @onchange = ( '', '' );;
+my $use_discounts = '';
 
 if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM part_pkg_discount') ) {
   #push @header, 'Discount';
@@ -117,8 +400,19 @@ if ( FS::Record->scalar_sql('SELECT COUNT(*) FROM part_pkg_discount') ) {
   push @colors, '';
   push @footer, '';
   push @footer_align, '';
-  $custnum_update_callback = 'select_discount_term';
+  push @onchange, '';
+  $use_discounts = 'Y';
 }
+
+push @header, 'Allocate';
+push @fields, 'enable_app';
+push @types, 'checkbox';
+push @align, 'c';
+push @sizes, '0';
+push @colors, '';
+push @footer, '';
+push @footer_align, '';
+push @onchange, 'toggle_application_row';
 
 #push @header, 'Error';
 push @header, '';
@@ -129,7 +423,34 @@ push @sizes, '0';
 push @colors, '#ff0000';
 push @footer, '';
 push @footer_align, '';
+push @onchange, '';
 
 $m->comp('/elements/handle_uri_query');
+
+# set up for preloading
+my @rows;
+my @row_errors;
+if ( $cgi->param('error') ) {
+  my $param = $cgi->Vars;
+  my $enum = 0; #errors numbered separately
+  for( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
+    $rows[$row] = [];
+    $row_errors[$row] = $param->{"error$enum"};
+    $enum++;
+    for( my $app = 0; exists($param->{"invnum$row.$app"}); $app++ ) {
+      next if !$param->{"invnum$row.$app"};
+      my %this_app = map { $_ => ($param->{$_.$row.'.'.$app} || '') } 
+        qw( invnum amount );
+      $this_app{'error'} = $param->{"error$enum"} || '';
+      $param->{"error$enum"} = ''; # don't pass this error through
+      $rows[$row][$app] = \%this_app;
+      $enum++;
+    }
+  }
+  for( my $row = 0; $row < @row_errors; $row++ ) {
+    $param->{"error$row"} = $row_errors[$row];
+  }
+}
+#warn Dumper {rows => \@rows, row_errors => \@row_errors };
 
 </%init>

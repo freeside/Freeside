@@ -1239,6 +1239,8 @@ sub unsuspend {
   
   } #if $date 
 
+  my @labels = ();
+
   foreach my $cust_svc (
     qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
   ) {
@@ -1258,6 +1260,8 @@ sub unsuspend {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+      my( $label, $value ) = $cust_svc->label;
+      push @labels, "$label: $value";
     }
 
   }
@@ -1286,6 +1290,29 @@ sub unsuspend {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  if ( $conf->config('unsuspend_email_admin') ) {
+ 
+    my $error = send_email(
+      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+                                 #invoice_from ??? well as good as any
+      'to'      => $conf->config('unsuspend_email_admin'),
+      'subject' => 'FREESIDE NOTIFICATION: Customer package unsuspended',       'body'    => [
+        "This is an automatic message from your Freeside installation\n",
+        "informing you that the following customer package has been unsuspended:\n",
+        "\n",
+        'Customer: #'. $self->custnum. ' '. $self->cust_main->name. "\n",
+        'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
+        ( map { "Service : $_\n" } @labels ),
+      ],
+    );
+
+    if ( $error ) {
+      warn "WARNING: can't send unsuspension admin email (unsuspending anyway): ".
+           "$error\n";
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -3445,7 +3472,13 @@ sub location_sql {
 
   # '?' placeholders in _location_sql_where
   my $x = $ornull ? 3 : 2;
-  my @bill_param = ( ('city')x3, ('county')x$x, ('state')x$x, 'country' );
+  my @bill_param = ( 
+    ('district')x3,
+    ('city')x3, 
+    ('county')x$x,
+    ('state')x$x,
+    'country'
+  );
 
   my $main_where;
   my @main_param;
@@ -3504,16 +3537,17 @@ sub _location_sql_where {
 
   $ornull = $ornull ? ' OR ? IS NULL ' : '';
 
-  my $or_empty_city   = " OR ( ? = '' AND $table.${prefix}city   IS NULL ) ";
-  my $or_empty_county = " OR ( ? = '' AND $table.${prefix}county IS NULL ) ";
-  my $or_empty_state =  " OR ( ? = '' AND $table.${prefix}state  IS NULL ) ";
+  my $or_empty_city     = " OR ( ? = '' AND $table.${prefix}city     IS NULL )";
+  my $or_empty_county   = " OR ( ? = '' AND $table.${prefix}county   IS NULL )";
+  my $or_empty_state    = " OR ( ? = '' AND $table.${prefix}state    IS NULL )";
 
 #        ( $table.${prefix}city    = ? $or_empty_city   $ornull )
   "
-        ( $table.${prefix}city    = ? OR ? = '' OR CAST(? AS text) IS NULL )
-    AND ( $table.${prefix}county  = ? $or_empty_county $ornull )
-    AND ( $table.${prefix}state   = ? $or_empty_state  $ornull )
-    AND   $table.${prefix}country = ?
+        ( $table.${prefix}district = ? OR ? = '' OR CAST(? AS text) IS NULL )
+    AND ( $table.${prefix}city     = ? OR ? = '' OR CAST(? AS text) IS NULL )
+    AND ( $table.${prefix}county   = ? $or_empty_county $ornull )
+    AND ( $table.${prefix}state    = ? $or_empty_state  $ornull )
+    AND   $table.${prefix}country  = ?
   ";
 }
 

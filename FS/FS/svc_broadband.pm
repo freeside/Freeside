@@ -543,9 +543,9 @@ sub _check_ip_addr {
 
 sub _check_duplicate {
   my $self = shift;
-
-  $self->lock_table;
-
+  # Not a reliable check because the table isn't locked, but 
+  # that's why we have a unique index.  This is just to give a
+  # friendlier error message.
   my @dup;
   @dup = $self->find_duplicates('global', 'ip_addr');
   if ( @dup ) {

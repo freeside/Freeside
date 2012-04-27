@@ -408,6 +408,42 @@ sub dealternize {
   '';
 }
 
+=item location_label
+
+Returns the label of the location object, with an optional site ID
+string (based on the cust_location-label_prefix config option).
+
+=cut
+
+sub location_label {
+  my $self = shift;
+  my %opt = @_;
+  my $conf = new FS::Conf;
+  my $prefix = '';
+  my $format = $conf->config('cust_location-label_prefix') || '';
+  if ( $format eq 'CoStAg' ) {
+    my $cust_or_prospect;
+    if ( $self->custnum ) {
+      $cust_or_prospect = FS::cust_main->by_key($self->custnum);
+    }
+    elsif ( $self->prospectnum )  {
+      $cust_or_prospect = FS::prospect_main->by_key($self->prospectnum);
+    }
+    my $agent = $conf->config('cust_location-agent_code', 
+                  $cust_or_prospect->agentnum)
+                || $cust_or_prospect->agent->agent;
+    # else this location is invalid
+    $prefix = uc( join('',
+        $self->country,
+        ($self->state =~ /^(..)/),
+        ($agent =~ /^(..)/),
+        sprintf('%05d', $self->locationnum)
+    ) );
+  }
+  $prefix .= ($opt{join_string} ||  ': ') if $prefix;
+  $prefix . $self->SUPER::location_label(%opt);
+}
+
 =back
 
 =head1 BUGS
