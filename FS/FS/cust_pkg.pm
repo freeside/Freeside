@@ -1176,6 +1176,8 @@ sub unsuspend {
   
   } #if $date 
 
+  my @labels = ();
+
   foreach my $cust_svc (
     qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
   ) {
@@ -1195,6 +1197,8 @@ sub unsuspend {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+      my( $label, $value ) = $cust_svc->label;
+      push @labels, "$label: $value";
     }
 
   }
@@ -1223,6 +1227,29 @@ sub unsuspend {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  if ( $conf->config('unsuspend_email_admin') ) {
+ 
+    my $error = send_email(
+      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+                                 #invoice_from ??? well as good as any
+      'to'      => $conf->config('unsuspend_email_admin'),
+      'subject' => 'FREESIDE NOTIFICATION: Customer package unsuspended',       'body'    => [
+        "This is an automatic message from your Freeside installation\n",
+        "informing you that the following customer package has been unsuspended:\n",
+        "\n",
+        'Customer: #'. $self->custnum. ' '. $self->cust_main->name. "\n",
+        'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
+        ( map { "Service : $_\n" } @labels ),
+      ],
+    );
+
+    if ( $error ) {
+      warn "WARNING: can't send unsuspension admin email (unsuspending anyway): ".
+           "$error\n";
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
