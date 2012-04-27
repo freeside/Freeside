@@ -1,4 +1,4 @@
-package FS::part_event::Condition::once_every;
+package FS::part_event::Condition::once_percust_every;
 
 use strict;
 use FS::Record qw( qsearch );
