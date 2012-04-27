@@ -1994,7 +1994,6 @@ sub _FreesideFieldLimit {
     }
 
     $subfield = $rest{SUBKEY} || $pkey;
-    my $table2;
     # compound subkey: separate into table name and field in that table
     # (must be linked by custnum)
     $subfield = lc($subfield);
