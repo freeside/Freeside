@@ -5,6 +5,7 @@ use MIME::Base64;
 use Tie::IxHash;
 use FS::part_export;
 use Date::Format qw( time2str );
+use Regexp::Common qw/URI/;
 
 @ISA = qw(FS::part_export);
 $me = '[FS::part_export::netsapiens]';
@@ -79,6 +80,22 @@ END
 # http://devguide.netsapiens.com/
 
 sub rebless { shift; }
+
+
+sub check_options {
+	my ($self, $options) = @_;
+	
+	my $rex = qr/$RE{URI}{HTTP}{-scheme => qr|https?|}/;			# match any "http:" or "https:" URL
+	
+	for my $key (qw/url device_url/) {
+		if ($$options{$key} && ($$options{$key} !~ $rex)) {
+				return "Invalid (URL): " . $$options{$key};
+		}
+	}
+	return '';
+}
+
+
 
 sub ns_command {
   my $self = shift;
