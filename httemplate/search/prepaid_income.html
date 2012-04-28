@@ -58,7 +58,9 @@
 <% $actual_label %><% $actual_label ? 'u' : 'U' %>nearned revenue
 is the amount of unearned revenue
 <% $actual_label ? 'Freeside has actually' : '' %>
-invoiced for packages with longer-than monthly terms.
+invoiced for packages with 
+<% $cgi->param('include_monthly') ? 'terms extending into the future.'
+                                  : 'longer-than monthly terms.' %>
 
 % if ( $legacy ) {
   <BR><BR>
@@ -82,13 +84,19 @@ my $actual_label = $legacy ? 'Actual ' : '';
 
 #doesn't yet deal with daily/weekly packages
 
+my $mode = $cgi->param('mode');
+
 my $time = time;
 
 my $now = $cgi->param('date') && parse_datetime($cgi->param('date')) || $time;
 $now =~ /^(\d+)$/ or die "unparsable date?";
 $now = $1;
 
-my $link = "cust_bill_pkg.cgi?nottax=1;unearned_now=$now";
+my $link = "cust_bill_pkg.cgi?nottax=1;unearned_now=$now;mode=$mode";
+
+if ( $cgi->param('include_monthly') ) {
+  $link .= ';include_monthly=1';
+}
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -108,6 +116,13 @@ my @where = ();
 #here is the agent virtualization
 push @where, $curuser->agentnums_sql( 'table'=>'cust_main' );
 
+my $status = '';
+if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
+  $status = $1;
+  $link .= ";status=$status";
+  push @where, FS::cust_main->cust_status_sql . " = '$status'";
+}
+
 my %total = ();
 my %total_legacy = ();
 foreach my $agentnum (@agentnums) {
@@ -116,38 +131,6 @@ foreach my $agentnum (@agentnums) {
   $where = "AND $where" if $where;
 
   my( $total, $total_legacy ) = ( 0, 0 );
-
-  # my @cust_bill_pkg =
-  #   grep { $_->cust_pkg && $_->cust_pkg->part_pkg->freq !~ /^([01]|\d+[hdw])$/ }
-  #     qsearch({
-  #       'select'    => 'cust_bill_pkg.*',
-  #       'table'     => 'cust_bill_pkg',
-  #       'addl_from' => ' LEFT JOIN cust_bill USING ( invnum  ) '.
-  #                      ' LEFT JOIN cust_main USING ( custnum ) ',
-  #       'hashref'   => {
-  #                        'recur' => { op=>'!=', value=>0    },
-  #                        'sdate' => { op=>'<',  value=>$now },
-  #                        'edate' => { op=>'>',  value=>$now },
-  #                      },
-  #       'extra_sql' => $where,
-  #     });
-  #
-  #    foreach my $cust_bill_pkg ( @cust_bill_pkg) { 
-  #      my $period = $cust_bill_pkg->edate - $cust_bill_pkg->sdate;
-  #   
-  #      my $elapsed = $now - $cust_bill_pkg->sdate;
-  #      $elapsed = 0 if $elapsed < 0;
-  #   
-  #      my $remaining = 1 - $elapsed/$period;
-  #   
-  #      my $unearned = $remaining * $cust_bill_pkg->recur;
-  #      $total += $unearned;
-  #   
-  #    }
-
-  #re-written in sql:
-
-  #false laziness w/cust_bill_pkg.cgi
 
   my $float = 'REAL'; #'DOUBLE PRECISION';
 
@@ -160,23 +143,46 @@ foreach my $agentnum (@agentnums) {
 
   my $remaining = "(1 - $elapsed/$period)";
 
-  my $select = "SUM($remaining * cust_bill_pkg.recur)";
+  my $base;
+  my $from = '';
+  if ( $mode eq 'billed' ) {
+    $base = 'cust_bill_pkg.recur';
+    $from = 'cust_bill_pkg';
+  }
+  elsif ( $mode eq 'paid' ) {
+    $base = 'cust_bill_pay_pkg.amount';
+    $from = 'cust_bill_pay_pkg 
+             LEFT JOIN cust_bill_pkg USING ( billpkgnum )
+             LEFT JOIN cust_bill_pay USING ( billpaynum )
+             LEFT JOIN cust_pay      USING ( paynum )';
+    $where .= ' AND ' if $where;
+    $where .= "cust_bill_pay_pkg.setuprecur = 'recur' 
+               AND cust_pay._date <= $now";
+  }
+  else {
+    die "invalid mode '$mode'";
+  }
+  my $select = "SUM($remaining * $base)";
 
-  #[...]
-
-  my $sql = "SELECT $select FROM cust_bill_pkg
-                            LEFT JOIN cust_pkg  USING ( pkgnum )
-                            LEFT JOIN part_pkg  USING ( pkgpart )
-                            LEFT JOIN cust_main USING ( custnum )
-               WHERE pkgpart > 0
-                 AND sdate < $now
-                 AND edate > $now
-                 AND cust_bill_pkg.recur != 0
-                 AND part_pkg.freq != '0'
+  if ( !$cgi->param('include_monthly') ) {
+    # all except freq != 0; one-time charges should never be included
+    $where .= "
                  AND part_pkg.freq != '1'
                  AND part_pkg.freq NOT LIKE '%h'
                  AND part_pkg.freq NOT LIKE '%d'
-                 AND part_pkg.freq NOT LIKE '%w'
+                 AND part_pkg.freq NOT LIKE '%w'";
+  }
+
+  my $sql = 
+  "SELECT $select FROM $from 
+                  LEFT JOIN cust_pkg  ON (cust_bill_pkg.pkgnum = cust_pkg.pkgnum)
+                  LEFT JOIN part_pkg  USING ( pkgpart )
+                  LEFT JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)
+               WHERE pkgpart > 0
+                 AND cust_bill_pkg.sdate < $now
+                 AND cust_bill_pkg.edate > $now
+                 AND cust_bill_pkg.recur != 0
+                 AND part_pkg.freq != '0'
                  $where
              ";
 

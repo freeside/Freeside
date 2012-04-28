@@ -570,6 +570,12 @@ sub edit_info {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $new = new FS::cust_main { $cust_main->hash };
+  # Avoid accidentally changing the service address.
+  if ( !$new->has_ship_address ) {
+    $new->set( $_ => $new->get($_) )
+      foreach $new->addr_fields;
+  }
+
   $new->set( $_ => $p->{$_} )
     foreach grep { exists $p->{$_} } @cust_main_editable_fields;
 
@@ -729,7 +735,7 @@ sub payment_info {
     $return{payinfo2} = $payinfo2;
     $return{paytype}  = $cust_main->paytype;
     $return{paystate} = $cust_main->paystate;
-
+    $return{payname}  = $cust_main->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
   }
 
   if ( $conf->config('prepayment_discounts-credit_type') ) {
@@ -927,9 +933,17 @@ sub do_process_payment {
     my $new = new FS::cust_main { $cust_main->hash };
     if ($payby eq 'CARD' || $payby eq 'DCRD') {
       $new->set( $_ => $validate->{$_} )
-        foreach qw( payname paystart_month paystart_year payissue payip
-                    address1 address2 city state zip country );
+        foreach qw( payname paystart_month paystart_year payissue payip );
       $new->set( 'payby' => $validate->{'auto'} ? 'CARD' : 'DCRD' );
+
+      # Avoid accidentally changing the service address.
+      if ( !$new->has_ship_address ) {
+        $new->set( "ship_$_" => $new->get($_) ) 
+          foreach $new->addr_fields;
+      }
+      $new->set( $_ => $validate->{$_} )
+        foreach qw(address1 address2 city state country zip);
+
     } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
       $new->set( $_ => $validate->{$_} )
         foreach qw( payname payip paytype paystate

@@ -23,7 +23,8 @@ the same name, and should be single-valued fields.
 sub Prepare {
     my $self = shift;
     my $cfname = $self->Argument or return 0;
-    $self->{'inc_by'} = $self->TransactionObj->FirstCustomFieldValue($cfname);
+    $self->{'inc_by'} = $self->TransactionObj->FirstCustomFieldValue($cfname) 
+                        || '';
     return ( $self->{'inc_by'} =~ /^(\d+)$/ );
 }
 

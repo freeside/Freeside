@@ -9,7 +9,9 @@
                  'header'      => [
                    emt('Description'),
                    ( $unearned
-                     ? ( emt('Unearned'), emt('Owed'), emt('Payment date') )
+                     ? ( emt('Unearned'), 
+                         emt('Owed'), # useful in 'paid' mode?
+                         emt('Payment date') )
                      : ( emt('Setup charge') )
                    ),
                    ( $use_usage eq 'usage'
@@ -39,9 +41,10 @@
                            $elapsed = 0 if $elapsed < 0;
 
                            my $remaining = 1 - $elapsed/$period;
+                           my $base = ($unearned_mode eq 'paid' ? 'total_paid' : 'recur');
 
                            sprintf($money_char. '%.2f',
-                             $remaining * $cust_bill_pkg->recur );
+                             $remaining * $cust_bill_pkg->$base );
 
                          } else {
                            sprintf($money_char.'%.2f', $cust_bill_pkg->setup );
@@ -137,6 +140,12 @@ die "access denied"
 my $conf = new FS::Conf;
 
 my $unearned = '';
+my $unearned_mode = '';
+my $unearned_base = '';
+
+my @select = ( 'cust_bill_pkg.*',
+               'cust_bill._date', );
+my ($join_cust, $join_pkg ) = ('', '');
 
 #here is the agent virtualization
 my $agentnums_sql =
@@ -146,14 +155,18 @@ my @where = ( $agentnums_sql );
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
+if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
+  push @where, FS::cust_main->cust_status_sql . " = '$1'";
+}
+
 if ( $cgi->param('distribute') == 1 ) {
   push @where, "sdate <= $ending",
                "edate >  $beginning",
   ;
 }
 else {
-  push @where, "_date >= $beginning",
-               "_date <= $ending";
+  push @where, "cust_bill._date >= $beginning",
+               "cust_bill._date <= $ending";
 }
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -218,7 +231,7 @@ if ( $cgi->param('taxclass')
 
 }
 
-my @loc_param = qw( city county state country );
+my @loc_param = qw( district city county state country );
 
 if ( $cgi->param('out') ) {
 
@@ -266,7 +279,7 @@ if ( $cgi->param('out') ) {
 
           my %ph = ( 'county' => dbh->quote($_),
                      map { $_ => dbh->quote( $cgi->param($_) ) }
-                       qw( city state country )
+                       qw( district city state country )
                    );
 
           my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
@@ -330,22 +343,46 @@ if ( $cgi->param('out') ) {
 
   push @where, FS::tax_rate_location->location_sql(
                  map { $_ => (scalar($cgi->param($_)) || '') }
-                   qw( city county state locationtaxid )
+                   qw( district city county state locationtaxid )
                );
 
 } elsif ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {
 
   $unearned = $1;
+  $unearned_mode = $cgi->param('mode');
 
   push @where, "cust_bill_pkg.sdate < $unearned",
                "cust_bill_pkg.edate > $unearned",
                "cust_bill_pkg.recur != 0",
-               "part_pkg.freq != '0'",
+               "part_pkg.freq != '0'";
+
+  if ( !$cgi->param('include_monthly') ) {
+    push @where,
                "part_pkg.freq != '1'",
                "part_pkg.freq NOT LIKE '%h'",
                "part_pkg.freq NOT LIKE '%d'",
                "part_pkg.freq NOT LIKE '%w'";
+  }
 
+  if ( !$unearned_mode or $unearned_mode eq 'billed' ) {
+    $unearned_base = 'cust_bill_pkg.recur';
+  }
+  elsif ( $unearned_mode eq 'paid' ) {
+    $join_pkg .= "JOIN (
+      SELECT billpkgnum, SUM(cust_bill_pay_pkg.amount) AS total_paid
+      FROM      cust_bill_pay_pkg
+           JOIN cust_bill_pay USING (billpaynum)
+           JOIN cust_pay      USING (paynum)
+      WHERE cust_bill_pay_pkg.setuprecur = 'recur'
+        AND cust_pay._date <= $unearned
+      GROUP BY billpkgnum
+    ) AS cust_bill_pkg_paid USING (billpkgnum)";
+    $unearned_base = 'total_paid';
+    push @select, 'total_paid';
+  }
+  else {
+    die "invalid mode '$unearned_mode'";
+  }
 }
 
 if ( $cgi->param('itemdesc') ) {
@@ -468,7 +505,7 @@ if ( $cgi->param('pkg_tax') ) {
   } elsif ( $use_usage eq 'usage' ) {
     $count_query .= "SUM(usage)";
   } elsif ( $unearned ) {
-    $count_query .= "SUM(cust_bill_pkg.recur)";
+    $count_query .= "SUM($unearned_base)";
   } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
     $count_query .= "SUM( COALESCE(cust_bill_pkg_tax_rate_location.amount, cust_bill_pkg.setup + cust_bill_pkg.recur))";
   } elsif ( $cgi->param('iscredit') eq 'rate') {
@@ -492,23 +529,21 @@ if ( $cgi->param('pkg_tax') ) {
 
     my $remaining = "(1 - $elapsed/$period)";
 
-    $count_query .= ", SUM($remaining * cust_bill_pkg.recur)";
+    $count_query .= ", SUM($remaining * $unearned_base)";
 
   }
 
 }
 
-my $join_cust =  '      JOIN cust_bill USING ( invnum ) 
-                   LEFT JOIN cust_main USING ( custnum ) ';
+$join_cust =  '      JOIN cust_bill USING ( invnum ) 
+                LEFT JOIN cust_main USING ( custnum ) ';
 
-
-my $join_pkg;
 if ( $cgi->param('nottax') ) {
 
-  $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
-                 LEFT JOIN part_pkg USING ( pkgpart )
-                 LEFT JOIN part_pkg AS override
-                   ON pkgpart_override = override.pkgpart ';
+  $join_pkg .=  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                  LEFT JOIN part_pkg USING ( pkgpart )
+                  LEFT JOIN part_pkg AS override
+                    ON pkgpart_override = override.pkgpart ';
   $join_pkg .= ' LEFT JOIN cust_location USING ( locationnum ) '
     if $conf->exists('tax-pkg_address');
 
@@ -567,9 +602,6 @@ if ($use_usage) {
   $count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
 }
 
-my @select = ( 'cust_bill_pkg.*',
-               'cust_bill._date', );
-
 push @select, 'part_pkg.pkg',
               'part_pkg.freq',
   unless $cgi->param('istax');
@@ -583,7 +615,7 @@ my $query = {
   'hashref'   => {},
   'select'    => join(', ', @select ),
   'extra_sql' => $where,
-  'order_by'  => 'ORDER BY _date, billpkgnum',
+  'order_by'  => 'ORDER BY cust_bill._date, billpkgnum',
 };
 
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
@@ -593,9 +625,8 @@ my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
 my $owed_sub = sub {
-  $money_char. shift->owed_recur; #_recur :/
+  $money_char . shift->owed_recur;
 };
-
 my $payment_date_sub = sub {
   #my $cust_bill_pkg = shift;
   my @cust_pay = sort { $a->_date <=> $b->_date }

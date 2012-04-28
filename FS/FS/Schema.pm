@@ -2544,7 +2544,7 @@ sub tables_hashref {
         'plan_id',             'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
-      'unique'      => [ [ 'mac_addr' ] ],
+      'unique'      => [ [ 'ip_addr' ], [ 'mac_addr' ] ],
       'index'       => [],
     },
 

@@ -176,7 +176,7 @@ with different tax classes.
 sub sql_taxclass_sameregion {
   my $self = shift;
 
-  my $same_query = 'SELECT taxclass FROM cust_main_county '.
+  my $same_query = 'SELECT DISTINCT taxclass FROM cust_main_county '.
                    ' WHERE taxnum != ? AND country = ?';
   my @same_param = ( 'taxnum', 'country' );
   foreach my $opt_field (qw( state county )) {
