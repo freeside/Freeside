@@ -508,6 +508,10 @@ tie my %config_agent, 'Tie::IxHash',
   'Agent payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors for agent overrides' ];
 ;
 
+tie my %config_sales, 'Tie::IxHash',
+  'Sales'      => [ $fsurl.'browse/sales.cgi', 'Sales bring in new business.' ],
+;
+
 tie my %config_billing_rates, 'Tie::IxHash',
   'Rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
   'Regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
@@ -580,6 +584,7 @@ if ( $curuser->access_right('Configuration' ) ) {
     'separator'     => '', #its a separator!
     'Employees'     => [ \%config_employees, '' ],
     'Resellers'     => [ \%config_agent, '' ],
+    'Sales People'  => [ \%config_sales, '' ],
     'separator2'    => '', #its a separator!
     'Customers'     => [ \%config_cust, '' ],
     #or this? 'Customers and Contacts' => [ \%config_cust, '' ],

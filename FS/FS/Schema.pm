@@ -473,6 +473,18 @@ sub tables_hashref {
       'index' => [ ['typenum'], ['disabled'], ['agent_custnum'] ],
     },
 
+    'sales' => {
+      'columns' => [
+        'salesnum',          'serial',    '',       '', '', '', 
+        'salesperson',      'varchar',    '',  $char_d, '', '', 
+        'agentnum',             'int', 'NULL',      '', '', '', 
+        'disabled',            'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'salesnum',
+      'unique' => [],
+      'index' => [ ['salesnum'], ['disabled'] ],
+    },
+
     'agent_type' => {
       'columns' => [
         'typenum',   'serial',  '', '', '', '', 
@@ -3232,6 +3244,17 @@ sub tables_hashref {
       ],
       'primary_key' => 'groupagentnum',
       'unique' => [ [ 'groupnum', 'agentnum' ] ],
+      'index'  => [ [ 'groupnum' ] ],
+    },
+
+    'access_groupsales' => {
+      'columns' => [
+        'groupsalesnum', 'serial', '', '', '', '',
+        'groupnum',         'int', '', '', '', '',
+        'salesnum',         'int', '', '', '', '',
+      ],
+      'primary_key' => 'groupsalesnum',
+      'unique' => [ [ 'groupnum', 'salesnum' ] ],
       'index'  => [ [ 'groupnum' ] ],
     },
 

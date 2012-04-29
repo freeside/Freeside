@@ -634,3 +634,7 @@ FS/contact_class.pm
 t/contact_class.t
 FS/upgrade_journal.pm
 t/upgrade_journal.t
+FS/sales.pm
+t/sales.t
+FS/access_groupsales.pm
+t/access_groupsales.t
