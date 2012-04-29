@@ -188,24 +188,33 @@ sub _upgrade_data { # class method
   );
 
   foreach my $old_acl ( keys %onetime ) {
-    my $new_acl = $onetime{$old_acl}; #support arrayref too?
-    ( my $journal = 'ACL_'.lc($new_acl) ) =~ s/ /_/g;
-    next if FS::upgrade_journal->is_done($journal);
 
-    # grant $new_acl to all groups who have $old_acl
-    for my $group (@all_groups) {
-      if ( $group->access_right($old_acl) ) {
-        my $access_right = FS::access_right->new( {
-            'righttype'   => 'FS::access_group',
-            'rightobjnum' => $group->groupnum,
-            'rightname'   => $new_acl,
-        } );
-        my $error = $access_right->insert;
-        die $error if $error;
+    my @new_acl = ref($onetime{$old_acl})
+                    ? @{ $onetime{$old_acl} }
+                    :  ( $onetime{$old_acl} );
+
+    foreach my $new_acl ( @new_acl ) {
+
+      ( my $journal = 'ACL_'.lc($new_acl) ) =~ s/ /_/g;
+      next if FS::upgrade_journal->is_done($journal);
+
+      # grant $new_acl to all groups who have $old_acl
+      for my $group (@all_groups) {
+        if ( $group->access_right($old_acl) ) {
+          my $access_right = FS::access_right->new( {
+              'righttype'   => 'FS::access_group',
+              'rightobjnum' => $group->groupnum,
+              'rightname'   => $new_acl,
+          } );
+          my $error = $access_right->insert;
+          die $error if $error;
+        }
       }
-    }
     
-    FS::upgrade_journal->set_done($journal);
+      FS::upgrade_journal->set_done($journal);
+
+    }
+
   }
 
   ### ACL_download_report_data
