@@ -1829,12 +1829,12 @@ sub tables_hashref {
 
     'part_svc_column' => {
       'columns' => [
-        'columnnum',   'serial',         '', '', '', '', 
-        'svcpart',     'int',         '', '', '', '', 
-        'columnname',  'varchar',     '', 64, '', '', 
+        'columnnum',   'serial',      '',      '', '', '', 
+        'svcpart',     'int',         '',      '', '', '', 
+        'columnname',  'varchar',     '',      64, '', '', 
         'columnlabel', 'varchar', 'NULL', $char_d, '', '',
-        'columnvalue', 'varchar', 'NULL', $char_d, '', '', 
-        'columnflag',  'char',    'NULL', 1, '', '', 
+        'columnvalue', 'varchar', 'NULL',     512, '', '', 
+        'columnflag',  'char',    'NULL',       1, '', '', 
       ],
       'primary_key' => 'columnnum',
       'unique' => [ [ 'svcpart', 'columnname' ] ],
