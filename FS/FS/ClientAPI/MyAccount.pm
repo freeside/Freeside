@@ -115,7 +115,7 @@ sub skin_info {
       ( map { $_ => scalar( $conf->config($_, $agentnum) ) }
         qw( company_name date_format ) ),
       ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
-        qw( body_bgcolor box_bgcolor
+        qw( body_bgcolor box_bgcolor stripe1_bgcolor stripe2_bgcolor
             text_color link_color vlink_color hlink_color alink_color
             font title_color title_align title_size menu_bgcolor menu_fontsize
           )
@@ -418,14 +418,20 @@ sub customer_info {
       $return{open_invoices} = \@open;
     }
 
+    $return{countrydefault} = scalar($conf->config('countrydefault'));
+
     $return{small_custview} =
       small_custview( $cust_main,
-                      scalar($conf->config('countrydefault')),
+                      $return{countrydefault},
                       ( $session->{'pkgnum'} ? 1 : 0 ), #nobalance
                     );
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
     $return{ship_name} = $cust_main->ship_first. ' '. $cust_main->get('ship_last');
+
+    $return{has_ship_address} = $cust_main->has_ship_address;
+    $return{status} = $cust_main->status;
+    $return{statuscolor} = $cust_main->statuscolor;
 
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
@@ -509,9 +515,11 @@ sub customer_info_short {
     my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
 
+    $return{countrydefault} = scalar($conf->config('countrydefault'));
+
     $return{small_custview} =
       small_custview( $cust_main,
-                      scalar($conf->config('countrydefault')),
+                      $return{countrydefault},
                       1, ##nobalance
                     );
 

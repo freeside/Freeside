@@ -1,0 +1,69 @@
+<DIV ID="fs_small_custview">
+  
+Customer #<B><%= $custnum %></B>
+ - <B><FONT COLOR="#<%= $statuscolor %>"><%= ucfirst($status)%></FONT></B>
+
+<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="<%= $box_bgcolor ||= '#c0c0c0' %>">
+  <TR>
+    <TD VALIGN="top">
+      <%= $has_ship_address
+            ? '<I><FONT SIZE="-1">Billing Address</FONT></I><BR>'
+            : ''
+      %>
+      <%= $first %> <%= $last %><BR>
+      <%= $company ? $company.'<BR>' : '' %>
+      <%= $address1 %><BR>
+      <%= $address2 ? $address2.'<BR>' : '' %>
+      <%= $city %>, <%= $state %> <%= $zip %><BR>
+      <%= $country && $country ne ($countrydefault||'US')
+            ? $country.'<BR>'
+            : ''
+      %>
+      <%= if ( $daytime && $night ) {
+            $OUT .= "<BR>Day Phone $daytime<BR>Night Phone $night";
+          } elsif ( $daytime || $night ) {
+            $OUT .= '<BR>'. ($daytime || $night);
+          }
+          '';
+      %>
+      <%= $fax ? "<BR>Fax $fax" : '' %>
+
+    </TD>
+
+<%= if ( $has_ship_address ) {
+
+  $OUT .= '<TD>&nbsp;</TD>'.
+          '<TD VALIGN="top">'.
+          '<I><FONT SIZE="-1">Service Address</FONT></I><BR>'.
+          "$ship_first $ship_last<BR>";
+  $OUT .= "$ship_company<BR>" if $ship_company;
+  $OUT .= "$ship_address1<BR>";
+  $OUT .= "$ship_address2<BR>" if $ship_address2;
+  $OUT .= "$ship_city, $ship_state  $ship_zip<BR>";
+  $OUT .= "$ship_country<BR>"
+    if $ship_country && $ship_country ne ($countrydefault||'US');
+
+
+  if ( $ship_daytime && $ship_night ) {
+    $OUT .= "<BR>Day Phone $ship_daytime<BR>Night Phone $ship_night";
+  } elsif ( $ship_daytime || $ship_night ) {
+    $OUT .= '<BR'. ($ship_daytime || $ship_night);
+  }
+
+  $OUT .= "<BR>Fax $ship_fax" if $ship_fax;
+
+  $OUT .= '</TD>';
+}
+'';
+%>
+
+</TR></TABLE>
+
+<%= unless ( $access_pkgnum ) {
+      $OUT .= '<BR>Balance: <B>$'. $balance. '</B><BR>';
+    }
+    '';
+%>
+
+</DIV>
+
