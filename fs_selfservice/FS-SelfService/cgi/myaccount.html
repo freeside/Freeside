@@ -2,7 +2,9 @@
 <%= include('header', 'My Account') %>
 
 Hello <%= $name %>!<BR><BR>
-<%= $small_custview %>
+
+<%= include('small_custview') %>
+
 <BR>
 <%= if ( $access_pkgnum ) {
       $OUT .= qq!Balance: <B>\$$balance</B><BR><BR>!;
@@ -34,17 +36,17 @@ Hello <%= $name %>!<BR><BR>
     $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
             '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Invoices</TH></TR>';
     my $link = qq!<A HREF="<%= $url %>myaccount!;
-    my $col1 = "ffffff";
-    my $col2 = "dddddd";
+    my $col1 = $stripe1_bgcolor || '#ffffff';
+    my $col2 = $stripe2_bgcolor || '#dddddd';
     my $col = $col1;
 
     foreach my $invoice ( @open_invoices ) {
-      my $td = qq!<TD BGCOLOR="#$col">!;
+      my $td = qq!<TD BGCOLOR="$col">!;
       my $a=qq!<A HREF="${url}view_invoice;invnum=!. $invoice->{'invnum'}. '">';
       $OUT .=
         "<TR>$td${a}Invoice #". $invoice->{'invnum'}. "</A></TD>$td</TD>".
         "$td$a". $invoice->{'date'}. "</A></TD>$td</TD>".
-        qq!<TD BGCOLOR="#$col" ALIGN="right">$a\$!. $invoice->{'owed'}.
+        qq!<TD BGCOLOR="$col" ALIGN="right">$a\$!. $invoice->{'owed'}.
           '</A></TD>'.
         '</TR>';
       $col = $col eq $col1 ? $col2 : $col1;
@@ -61,12 +63,12 @@ Hello <%= $name %>!<BR><BR>
             '<TR><TH BGCOLOR="#ff6666" COLSPAN="3">Support Time Remaining</TH>'.
             '</TR><TR><TH>Package</TH><TH></TH>'.
             '<TH>Time Remaining</TH></TR>';
-    my $col1 = "ffffff";
-    my $col2 = "dddddd";
+    my $col1 = $stripe1_bgcolor || '#ffffff';
+    my $col2 = $stripe2_bgcolor || '#dddddd';
     my $col = $col1;
 
     foreach my $support ( @support_services ) {
-      my $td = qq!<TD BGCOLOR="#$col">!;
+      my $td = qq!<TD BGCOLOR="$col">!;
       my $a = qq!<A HREF="${url}view_support_details;svcnum=!.
               $support->{'svcnum'}. '">';
       $OUT .=

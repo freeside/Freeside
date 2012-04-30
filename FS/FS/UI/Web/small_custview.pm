@@ -29,7 +29,7 @@ sub small_custview {
                   : qsearchs('cust_main', { 'custnum' => $arg } )
     or die "unknown custnum $arg";
 
-  my $html;
+  my $html = '<DIV ID="fs_small_custview">';
   
   $html = qq!View <A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
@@ -128,6 +128,8 @@ sub small_custview {
     unless $nobalance;
 
   # last payment might be good here too?
+
+  $html .= '</DIV>';
 
   $html;
 }

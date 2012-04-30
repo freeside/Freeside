@@ -4031,6 +4031,23 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-stripe1_bgcolor',
+    'section'     => 'self-service',
+    'description' => 'HTML color for self-service interface lists (primary stripe), for example, #FFFFFF',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-stripe2_bgcolor',
+    'section'     => 'self-service',
+    'description' => 'HTML color for self-service interface lists (alternate stripe), for example, #DDDDDD',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+
+  {
     'key'         => 'selfservice-text_color',
     'section'     => 'self-service',
     'description' => 'HTML text color for the self-service interface, for example, #000000',
