@@ -67,13 +67,8 @@ sub insert {
 
   my $error;
   
-  $error = $self->check_options($options);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-  
-  $error = $self->SUPER::insert;
+  $error = $self->check_options($options) 
+           || $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
