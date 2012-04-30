@@ -208,8 +208,8 @@ sub replace {
   my $error;
   
   if ($options_supplied) {
-  	$error = $self->check_options($options);
-  	if ( $error ) {
+    $error = $self->check_options($options);
+    if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
