@@ -83,16 +83,16 @@ sub rebless { shift; }
 
 
 sub check_options {
-	my ($self, $options) = @_;
+  my ($self, $options) = @_;
 	
-	my $rex = qr/$RE{URI}{HTTP}{-scheme => qr|https?|}/;			# match any "http:" or "https:" URL
+  my $rex = qr/$RE{URI}{HTTP}{-scheme => qr|https?|}/;			# match any "http:" or "https:" URL
 	
-	for my $key (qw/url device_url/) {
-		if ($$options{$key} && ($$options{$key} !~ $rex)) {
-				return "Invalid (URL): " . $$options{$key};
-		}
-	}
-	return '';
+  for my $key (qw/url device_url/) {
+    if ($$options{$key} && ($$options{$key} !~ $rex)) {
+      return "Invalid (URL): " . $$options{$key};
+    }
+  }
+  return '';
 }
 
 
