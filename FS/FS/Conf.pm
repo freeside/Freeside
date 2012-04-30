@@ -4041,7 +4041,6 @@ and customer address. Include units.',
     'per_agent'   => 1,
   },
 
-
   {
     'key'         => 'selfservice-text_color',
     'section'     => 'self-service',
