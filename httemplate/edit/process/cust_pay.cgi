@@ -39,7 +39,13 @@ $cgi->param('link') =~ /^(custnum|invnum|popup)$/
 my $field = my $link = $1;
 $field = 'custnum' if $field eq 'popup';
 
-my $_date = parse_datetime($cgi->param('_date'));
+my $_date;
+if ( $FS::CurrentUser::CurrentUser->access_right(['Backdate payment']) ) {
+  $_date = parse_datetime($cgi->param('_date'));
+}
+else {
+  $_date = time;
+}
 
 my $new = new FS::cust_pay ( {
   $field => $linknum,

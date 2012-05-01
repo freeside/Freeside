@@ -188,6 +188,7 @@ tie my %rights, 'Tie::IxHash',
   'Customer payment rights' => [
     'View payments',
     { rightname=>'Post payment', desc=>'Make check or cash payments.' },
+    { rightname=>'Backdate payment', desc=>'Enable payments to be posted for days other than today.' },
     'Post check payment',
     'Post cash payment',
     'Post payment batch',
