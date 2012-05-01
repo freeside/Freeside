@@ -185,6 +185,7 @@ sub _upgrade_data { # class method
   my %onetime = (
     'List customers' => 'List all customers',
     'List packages'  => 'Summarize packages',
+    'Post payment'   => 'Backdate payment',
   );
 
   foreach my $old_acl ( keys %onetime ) {
