@@ -288,7 +288,6 @@ tie my %rights, 'Tie::IxHash',
     'Usage: Call Detail Records (CDRs)',
     'Usage: Unrateable CDRs',
     'Usage: Time worked',
-    'Usage: Time worked summary',
 
     #{ rightname => 'List customers of all agents', global=>1 },
   ],

@@ -254,15 +254,17 @@ tie my %report_inventory, 'Tie::IxHash',
   'Inventory activity' => [ $fsurl.'search/report_h_inventory_item.html', '' ],
 ;
 
-my @report_rating = ();
-push(@report_rating, 'RADIUS sessions' => [ $fsurl.'search/sqlradius.html', '' ]) if $curuser->access_right("Usage: RADIUS sessions");
-push(@report_rating, 'Call Detail Records (CDRs)' => [ $fsurl.'search/report_cdr.html', '' ]) if $curuser->access_right("Usage: Call Detail Records (CDRs)");
-push(@report_rating, 'Unrateable CDRs' => [ $fsurl.'search/cdr.html?freesidestatus=failed'.
-    ';cdrbatchnum=_ALL_' ]) if $curuser->access_right("Usage: Unrateable CDRs");
-push(@report_rating, 'Time worked' => [ $fsurl.'search/report_rt_transaction.html', '' ]) if $curuser->access_right("Usage: Time worked");
-push(@report_rating, 'Time worked summary' => [ $fsurl.'search/report_rt_ticket.html', '' ]) if $curuser->access_right("Usage: Time worked summary");
-
-tie my %report_rating, 'Tie::IxHash', @report_rating;
+tie my %report_rating, 'Tie::IxHash';
+$report_rating{'RADIUS sessions'} = [ $fsurl.'search/sqlradius.html', '' ]
+  if $curuser->access_right("Usage: RADIUS sessions");
+$report_rating{'Call Detail Records (CDRs)'} = [ $fsurl.'search/report_cdr.html', '' ]
+  if $curuser->access_right("Usage: Call Detail Records (CDRs)");
+$report_rating{'Unrateable CDRs'} = [ $fsurl.'search/cdr.html?freesidestatus=failed;cdrbatchnum=_ALL_' ]
+  if $curuser->access_right("Usage: Unrateable CDRs");
+if ( $curuser->access_right("Usage: Time worked") ) {
+  $report_rating{'Time worked'} = [ $fsurl.'search/report_rt_transaction.html', '' ];
+  $report_rating{'Time worked summary'} = [ $fsurl.'search/report_rt_ticket.html', '' ];
+}
 
 tie my %report_ticketing_statistics, 'Tie::IxHash',
   'Tickets per day per Queue'         => [ $fsurl.'rt/RTx/Statistics/CallsQueueDay', 'View the number of tickets created, resolved or deleted in a specific Queue, over the requested period of days' ],
