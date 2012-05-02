@@ -40,12 +40,14 @@ Setting <b><% $key %></b>
 <table><tr><td>
 
 % my $n = 0;
+% my $submit = 0;
 % foreach my $type (@types) {
 %   if ( $type eq '' ) {
 
   <font color="#ff0000">no type</font>
 
 %   } elsif ( $type eq 'image' ) { 
+%     $submit++;
 
   <% $conf->exists($key, $agentnum)
        ? 'Current image<br>'.
@@ -59,24 +61,37 @@ Setting <b><% $key %></b>
   New image filename <input type="file" name="<% "$key$n" %>">
 
 %   } elsif ( $type eq 'binary' ) { 
+%     $submit++;
 
   Filename <input type="file" name="<% "$key$n" %>">
 
 %   } elsif ( $type eq 'textarea' ) { 
+%     $submit++;
 
   <textarea name="<% "$key$n" %>" rows=12 cols=78 wrap="off"><% join("\n", $conf->config($key, $agentnum)) |h %></textarea>
 
 %   } elsif ( $type eq 'checkbox' ) { 
+%
+%     if ( $agentnum && $conf->exists($key) && ! $agent_bool ) {
 
-  <input name="<% "$key$n" %>" type="checkbox" value="1"
-    <% $conf->exists($key, $agentnum) ? 'CHECKED' : '' %> >
+        <input name="<% "$key$n" %>" type="checkbox" value="1" CHECKED DISABLED>
+        <FONT SIZE="-1"><I>(global setting cannot yet be overridden)</I></FONT>
 
-%   } elsif ( $type eq 'text' )  { 
+%     } else {
+%       $submit++;
+
+        <input name="<% "$key$n" %>" type="checkbox" value="1"
+          <% $conf->config_bool($key, $agentnum) ? 'CHECKED' : '' %> >
+%     }
+
+%   } elsif ( $type eq 'text' )  {
+%     $submit++;
 
   <input name="<% "$key$n" %>" type="text" value="<% $conf->exists($key, $agentnum) ? $conf->config($key, $agentnum) : '' |h %>">
 
-%   } elsif ( $type eq 'select' || $type eq 'selectmultiple' )  { 
-
+%   } elsif ( $type eq 'select' || $type eq 'selectmultiple' )  {
+%     $submit++;
+ 
   <select name="<% "$key$n" %>" <% $type eq 'selectmultiple' ? 'MULTIPLE' : '' %>>
 
 %
@@ -131,7 +146,8 @@ Setting <b><% $key %></b>
 
   </select>
 
-%   } elsif ( $type eq 'select-sub' ) { 
+%   } elsif ( $type eq 'select-sub' ) {
+%     $submit++;
 
   <select name="<% "$key$n" %>" <% $config_item->multiple ? 'MULTIPLE' : '' %>>
 
@@ -167,8 +183,8 @@ Setting <b><% $key %></b>
 
   </select>
 
-%   } elsif ( $type eq 'editlist' ) { 
-%
+%   } elsif ( $type eq 'editlist' ) {
+%     $submit++;
   <script>
     function doremove<% "$key$n" %>() {
       fromObject = document.OneTrueForm.<% "$key$n" %>;
@@ -284,6 +300,7 @@ Setting <b><% $key %></b>
   </tr></table>
 
 %   } elsif ( $element_types{$type} ) {
+%     $submit++;
 %
 %     my %opt = ( 'element_name' => "$key$n",
 %                 'empty_label'  => ' ',
@@ -313,7 +330,10 @@ Setting <b><% $key %></b>
 % }
 </tr>
 </table>
-<INPUT TYPE="submit" VALUE="<% $title %>">
+
+% if ( $submit ) {
+  <INPUT TYPE="submit" VALUE="<% $title %>">
+% }
 </FORM>
 
 </BODY>
@@ -365,5 +385,6 @@ my $config_item = $confitems{$key};
 my $description = $config_item->description;
 my $config_type = $config_item->type;
 my @types = ref($config_type) ? @$config_type : ($config_type);
+my $agent_bool = $config_item->agent_bool;
 
 </%init>
