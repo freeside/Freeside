@@ -43,6 +43,11 @@ my %features = (
   'sim' => 'Simultaneous Ring',
 );
 
+my %feature_param = (
+  'dnd' => 'n/a',
+  'sim' => '$phonenum',
+);
+
 tie my %options, 'Tie::IxHash',
   'login'           => { label=>'NetSapiens tac2 User API username' },
   'password'        => { label=>'NetSapiens tac2 User API password' },
@@ -262,11 +267,14 @@ sub ns_create_or_update {
   ###
   foreach $feature (split /\s+/, $self->option('features') ) {
 
+    my $param= exists($feature_param{$feature}) ? $feature_param{$feature} : '';
+    $param = $phonenum if $param eq '$phonenum';
+
     my $nsf = $self->ns_command( 'PUT', $self->ns_feature($svc_phone, $feature),
       'control'    => 'd', #User Control, disable
       'expires'    => 'never',
       #'ts'         => '', #?
-      #'parameters' => '',
+      'parameters' => $param,
       'hour_match' => '*',
       'time_frame' => '*',
       'activation' => 'now',
