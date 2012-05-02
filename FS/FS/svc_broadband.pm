@@ -91,9 +91,9 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table_info {
   {
-    'name' => 'Broadband',
-    'name_plural' => 'Broadband services',
-    'longname_plural' => 'Fixed (username-less) broadband services',
+    'name' => 'Wireless broadband',
+    'name_plural' => 'Wireless broadband services',
+    'longname_plural' => 'Fixed wireless broadband services',
     'display_weight' => 50,
     'cancel_weight'  => 70,
     'ip_field' => 'ip_addr',
