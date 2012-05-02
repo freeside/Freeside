@@ -183,12 +183,60 @@ sub exists {
   my $self = shift;
   return $self->_usecompat('exists', @_) if use_confcompat;
 
-  my($name, $agentnum)=@_;
+  #my($name, $agentnum)=@_;
 
   carp "FS::Conf->exists(". join(', ', @_). ") called"
     if $DEBUG > 1;
 
   defined($self->_config(@_));
+}
+
+#maybe this should just be the new exists instead of getting a method of its
+#own, but i wanted to avoid possible fallout
+
+sub config_bool {
+  my $self = shift;
+  return $self->_usecompat('exists', @_) if use_confcompat;
+
+  my($name,$agentnum,$agentonly) = @_;
+
+  carp "FS::Conf->config_bool(". join(', ', @_). ") called"
+    if $DEBUG > 1;
+
+  #defined($self->_config(@_));
+
+  #false laziness w/_config
+  my $hashref = { 'name' => $name };
+  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
+  my $cv;
+  my @a = (
+    ($agentnum || ()),
+    ($agentonly && $agentnum ? () : '')
+  );
+  my @l = (
+    ($self->{locale} || ()),
+    ($self->{localeonly} && $self->{locale} ? () : '')
+  );
+  # try with the agentnum first, then fall back to no agentnum if allowed
+  foreach my $a (@a) {
+    $hashref->{agentnum} = $a;
+    foreach my $l (@l) {
+      $hashref->{locale} = $l;
+      $cv = FS::Record::qsearchs('conf', $hashref);
+      if ( $cv ) {
+        if ( $cv->value eq '0'
+               && ($hashref->{agentnum} || $hashref->{locale} )
+           ) 
+        {
+          return 0; #an explicit false override, don't continue looking
+        } else {
+          return 1;
+        }
+      }
+    }
+  }
+  return 0;
+
 }
 
 =item config_orbase KEY SUFFIX
@@ -269,8 +317,13 @@ sub touch {
   return $self->_usecompat('touch', @_) if use_confcompat;
 
   my($name, $agentnum) = @_;
-  unless ( $self->exists($name, $agentnum) ) {
-    $self->set($name, '', $agentnum);
+  #unless ( $self->exists($name, $agentnum) ) {
+  unless ( $self->config_bool($name, $agentnum) ) {
+    if ( $agentnum && $self->exists($name) && $self->config($name,$agentnum) eq '0' ) {
+      $self->delete($name, $agentnum);
+    } else {
+      $self->set($name, '', $agentnum);
+    }
   }
 }
 
@@ -355,6 +408,31 @@ sub delete {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   }
+}
+
+#maybe this should just be the new delete instead of getting a method of its
+#own, but i wanted to avoid possible fallout
+
+sub delete_bool {
+  my $self = shift;
+  return $self->_usecompat('delete', @_) if use_confcompat;
+
+  my($name, $agentnum) = @_;
+
+  warn "[FS::Conf] DELETE $name\n" if $DEBUG;
+
+  my $cv = FS::Record::qsearchs('conf', { name     => $name,
+                                          agentnum => $agentnum,
+                                          locale   => $self->{locale},
+                                        });
+
+  if ( $cv ) {
+    my $error = $cv->delete;
+    die $error if $error;
+  } elsif ( $agentnum ) {
+    $self->set($name, '0', $agentnum);
+  }
+
 }
 
 =item import_config_item CONFITEM DIR 
@@ -1420,6 +1498,7 @@ and customer address. Include units.',
     'description' => 'Send payment receipts.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
+    'agent_bool'  => 1,
   },
 
   {
