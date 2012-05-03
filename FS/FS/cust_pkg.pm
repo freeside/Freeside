@@ -889,7 +889,9 @@ sub cancel_if_expired {
 locationnum, (other fields?).  Attempts to re-provision cancelled services
 using history information (errors at this stage are not fatal).
 
-cust_pkg: pass a scalar reference, will be filled in with
+cust_pkg: pass a scalar reference, will be filled in with the new cust_pkg object
+
+svc_fatal: service provisioning errors are fatal
 
 svc_errors: pass an array reference, will be filled in with any provisioning errors
 
@@ -972,7 +974,7 @@ sub uncancel {
     }
 
     my $svc_error = $svc_x->insert;
-    if ( $svc_error ) { #&& $options{svc_fatal} ) {
+    if ( $svc_error && $options{svc_fatal} ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
