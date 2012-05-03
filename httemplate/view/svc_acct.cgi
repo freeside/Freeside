@@ -75,6 +75,7 @@
 
 <& elements/svc_export_settings.html, $svc_acct &>
 
+<BR>
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <& /elements/footer.html &>
