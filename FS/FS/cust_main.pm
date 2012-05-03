@@ -1537,6 +1537,10 @@ sub replace {
     $self->censusyear($conf->config('census_year')||'2012');
   }
 
+  return "Invoicing locale is required"
+    if $old->locale
+    && ! $self->locale
+    && $conf->exists('cust_main-require_locale');
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -2137,6 +2141,11 @@ sub check {
       or return gettext('illegal_name'). " payname: ". $self->payname;
     $self->payname($1);
   }
+
+  return "Please select an invoicing locale"
+    if ! $self->locale
+    && ! $self->custnum
+    && $conf->exists('cust_main-require_locale');
 
   foreach my $flag (qw( tax spool_cdr squelch_cdr archived email_csv_cdr )) {
     $self->$flag() =~ /^(Y?)$/ or return "Illegal $flag: ". $self->$flag();
