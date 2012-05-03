@@ -4977,6 +4977,13 @@ and customer address. Include units.',
     },
     'option_sub'  => sub { FS::Locales->description(shift) },
   },
+
+  {
+    'key'         => 'cust_main-require_locale',
+    'section'     => 'UI',
+    'description' => 'Require an explicit locale to be chosen for new customers.',
+    'type'        => 'checkbox',
+  },
   
   {
     'key'         => 'translate-auto-insert',
