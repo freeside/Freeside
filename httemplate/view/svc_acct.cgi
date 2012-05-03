@@ -79,6 +79,7 @@
 <& /elements/table-tickets.html, object => $cust_svc &>
 % }
 
+<BR>
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <& /elements/footer.html &>
