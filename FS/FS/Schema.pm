@@ -1488,6 +1488,8 @@ sub tables_hashref {
         'adjourn',        @date_type,             '', '', 
         'resume',         @date_type,             '', '', 
         'cancel',         @date_type,             '', '', 
+        'uncancel',       @date_type,             '', '', 
+        'uncancel_pkgnum',     'int', 'NULL', '', '', '',
         'expire',         @date_type,             '', '', 
         'contract_end',   @date_type,             '', '',
         'dundate',        @date_type,             '', '',

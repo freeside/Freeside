@@ -205,6 +205,7 @@ sub _upgrade_data { # class method
                             'Usage: Call Detail Records (CDRs)',
                             'Usage: Unrateable CDRs',
                           ],
+    'Cancel customer package immediately' => 'Un-cancel customer package',
   );
 
   foreach my $old_acl ( keys %onetime ) {

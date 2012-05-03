@@ -6,19 +6,21 @@
 </HTML>
 <%once>
 
-my %past = ( 'cancel'  => 'cancelled',
-             'expire'  => 'expired',
-             'suspend' => 'suspended',
-             'adjourn' => 'adjourned',
-             'resume'  => 'scheduled to resume',
+my %past = ( 'cancel'   => 'cancelled',
+             'expire'   => 'expired',
+             'suspend'  => 'suspended',
+             'adjourn'  => 'adjourned',
+             'resume'   => 'scheduled to resume',
+             'uncancel' => 'un-cancelled',
            );
 
 #i'm sure this is false laziness with somewhere, at least w/misc/cancel_pkg.html
-my %right = ( 'cancel'  => 'Cancel customer package immediately',
-              'expire'  => 'Cancel customer package later',
-              'suspend' => 'Suspend customer package',
-              'adjourn' => 'Suspend customer package later',
-              'resume'  => 'Unsuspend customer package', #later?
+my %right = ( 'cancel'   => 'Cancel customer package immediately',
+              'expire'   => 'Cancel customer package later',
+              'suspend'  => 'Suspend customer package',
+              'adjourn'  => 'Suspend customer package later',
+              'resume'   => 'Unsuspend customer package', #later?
+              'uncancel' => 'Un-cancel customer package',
             );
 
 </%once>
@@ -26,7 +28,8 @@ my %right = ( 'cancel'  => 'Cancel customer package immediately',
 
 #untaint method
 my $method = $cgi->param('method');
-$method =~ /^(cancel|expire|suspend|adjourn|resume)$/ or die "Illegal method";
+$method =~ /^(cancel|expire|suspend|adjourn|resume|uncancel)$/
+  or die "Illegal method";
 $method = $1;
 my $past_method = $past{$method};
 
@@ -39,7 +42,7 @@ $pkgnum =~ /^(\d+)$/ or die "Illegal pkgnum";
 $pkgnum = $1;
 
 my $date = time;
-if ($method eq 'expire' || $method eq 'adjourn' || $method eq 'resume'){
+if ($method eq 'expire' || $method eq 'adjourn' || $method eq 'resume') {
   #untaint date
   $date = $cgi->param('date'); #huh?
   parse_datetime($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
@@ -59,7 +62,7 @@ my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
 
 #untaint reasonnum
 my $reasonnum = $cgi->param('reasonnum');
-if ( $method ne 'unsuspend' ) { #i.e. 'resume'
+if ( $method !~ /^(unsuspend|uncancel)$/ ) {
   $reasonnum =~ /^(-?\d+)$/ or die "Illegal reasonnum";
   $reasonnum = $1;
 
@@ -71,9 +74,18 @@ if ( $method ne 'unsuspend' ) { #i.e. 'resume'
   }
 }
 
+#for uncancel
+my $last_bill =
+  $cgi->param('last_bill') ? parse_datetime($cgi->param('last_bill')) : '';
+my $bill =
+  $cgi->param('bill')      ? parse_datetime($cgi->param('bill'))      : '';
+
 my $error = $cust_pkg->$method( 'reason'      => $reasonnum,
                                 'date'        => $date,
-                                'resume_date' => $resume_date );
+                                'resume_date' => $resume_date,
+                                'last_bill'   => $last_bill,
+                                'bill'        => $bill,
+                              );
 
 if ($error) {
   $cgi->param('error', $error);
