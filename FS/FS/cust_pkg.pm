@@ -12,7 +12,7 @@ use Time::Local qw( timelocal timelocal_nocheck );
 use MIME::Entity;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs fields );
 use FS::CurrentUser;
 use FS::cust_svc;
 use FS::part_pkg;
@@ -876,6 +876,143 @@ sub cancel_if_expired {
     return "Error cancelling expired pkg ". $self->pkgnum. " for custnum ".
            $self->custnum. ": $error";
   }
+  '';
+}
+
+=item uncancel
+
+"Un-cancels" this package: Orders a new package with the same custnum, pkgpart,
+locationnum, (other fields?).  Attempts to re-provision cancelled services
+using history information (errors at this stage are not fatal).
+
+cust_pkg: pass a scalar reference, will be filled in with
+
+svc_errors: pass an array reference, will be filled in with any provisioning errors
+
+=cut
+
+sub uncancel {
+  my( $self, %options ) = @_;
+
+  #in case you try do do $uncancel-date = $cust_pkg->uncacel 
+  return '' unless $self->get('cancel');
+
+  ##
+  # Transaction-alize
+  ##
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE'; 
+  local $SIG{PIPE} = 'IGNORE'; 
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  ##
+  # insert the new package
+  ##
+
+  my $cust_pkg = new FS::cust_pkg {
+    last_bill       => ( $options{'last_bill'} || $self->get('last_bill') ),
+    bill            => ( $options{'bill'}      || $self->get('bill')      ),
+    uncancel        => time,
+    uncancel_pkgnum => $self->pkgnum,
+    map { $_ => $self->get($_) } qw(
+      custnum pkgpart locationnum
+      setup
+      susp adjourn resume expire start_date contract_end dundate
+      change_date change_pkgpart change_locationnum
+      manual_flag no_auto quantity agent_pkgid recur_show_zero setup_show_zero
+    ),
+  };
+
+  my $error = $cust_pkg->insert(
+    'change' => 1, #supresses any referral credit to a referring customer
+  );
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  ##
+  # insert services
+  ##
+
+  #find historical services within this timeframe before the package cancel
+  # (incompatible with "time" option to cust_pkg->cancel?)
+  my $fuzz = 2 * 60; #2 minutes?  too much?   (might catch separate unprovision)
+                     #            too little? (unprovisioing export delay?)
+  my($end, $start) = ( $self->get('cancel'), $self->get('cancel') - $fuzz );
+  my @h_cust_svc = $self->h_cust_svc( $end, $start );
+
+  my @svc_errors;
+  foreach my $h_cust_svc (@h_cust_svc) {
+    my $h_svc_x = $h_cust_svc->h_svc_x( $end, $start );
+    #next unless $h_svc_x; #should this happen?
+    (my $table = $h_svc_x->table) =~ s/^h_//;
+    require "FS/$table.pm";
+    my $class = "FS::$table";
+    my $svc_x = $class->new( {
+      'pkgnum'  => $cust_pkg->pkgnum,
+      'svcpart' => $h_cust_svc->svcpart,
+      map { $_ => $h_svc_x->get($_) } fields($table)
+    } );
+
+    # radius_usergroup
+    if ( $h_svc_x->isa('FS::h_svc_Radius_Mixin') ) {
+      $svc_x->usergroup( [ $h_svc_x->h_usergroup($end, $start) ] );
+    }
+
+    my $svc_error = $svc_x->insert;
+    if ( $svc_error ) { #&& $options{svc_fatal} ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    push @svc_errors, $svc_error if $svc_error;
+  }
+
+  #these are pretty rare, but should handle them
+  # - dsl_device (mac addresses)
+  # - phone_device (mac addresses)
+  # - dsl_note (ikano notes)
+  # - domain_record (i.e. restore DNS information w/domains)
+  # - inventory_item(?) (inventory w/un-cancelling service?)
+  # - nas (svc_broaband nas stuff)
+  #this stuff is unused in the wild afaik
+  # - mailinglistmember
+  # - router.svcnum?
+  # - svc_domain.parent_svcnum?
+  # - acct_snarf (ancient mail fetching config)
+  # - cgp_rule (communigate)
+  # - cust_svc_option (used by our Tron stuff)
+  # - acct_rt_transaction (used by our time worked stuff)
+
+  ##
+  # also move over any services that didn't unprovision at cancellation
+  ## 
+
+  foreach my $cust_svc ( qsearch('cust_svc', { pkgnum => $self->pkgnum } ) ) {
+    $cust_svc->pkgnum( $cust_pkg->pkgnum );
+    my $error = $cust_svc->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  ##
+  # Finish
+  ##
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ${ $options{cust_pkg} }   = $cust_pkg   if ref($options{cust_pkg});
+  @{ $options{svc_errors} } = @svc_errors if ref($options{svc_errors});
+
   '';
 }
 

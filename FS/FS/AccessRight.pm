@@ -138,6 +138,7 @@ tie my %rights, 'Tie::IxHash',
     'Unsuspend customer package',
     'Cancel customer package immediately',
     'Cancel customer package later',
+    'Un-cancel customer package',
     'Delay suspension events',
     'Add on-the-fly cancel reason', #NEW
     'Add on-the-fly suspend reason', #NEW
