@@ -108,13 +108,14 @@ my $ranges = $opt{'ranges'} ? delete($opt{'ranges'}) : [
 
 my $range_sub = delete($opt{'range_sub'}); #or die
 
-my $offset = 0;
+my $as_of;
 if($cgi->param('as_of')) {
-  $offset = int((time - parse_datetime($cgi->param('as_of'))) / 86400);
-  $opt{'title'} .= ' ('.$cgi->param('as_of').')' if $offset > 0;
+  $as_of = parse_datetime($cgi->param('as_of')) || '';
+  $opt{'title'} .= ' ('.$cgi->param('as_of').')' if $as_of;
 }
 
-my $range_cols = join(',', map call_range_sub($range_sub, @$_, 'offset' => $offset ), @$ranges );
+my $range_cols = join(',', 
+  map call_range_sub($range_sub, @$_, 'as_of' => $as_of ), @$ranges );
 
 my $select_count_pkgs = FS::cust_main->select_count_pkgs_sql;
 
@@ -144,7 +145,7 @@ unless ( $cgi->param('all_customers') ) {
   my $negative = $cgi->param('negative') || 0;
 
   push @where,
-    call_range_sub($range_sub, $days, 0, 'offset' => $offset, 'no_as'=>1). 
+    call_range_sub($range_sub, $days, 0, 'as_of' => $as_of, 'no_as'=>1). 
     ($negative ? ' != 0' : ' > 0');
 }
 
@@ -186,7 +187,9 @@ my $sql_query = {
 
 my $total_sql =
   "SELECT ".
-      join(',', map call_range_sub( $range_sub, @$_, 'offset' => $offset, 'sum'=>1 ), @$ranges).
+      join(',', 
+        map call_range_sub( $range_sub, @$_, 'as_of' => $as_of, 'sum'=>1 ), 
+        @$ranges).
     " FROM cust_main $where";
 
 my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
@@ -251,10 +254,11 @@ sub call_range_sub {
 
   my $as = $opt{'no_as'} ? '' : " AS rangecol_${startdays}_$enddays";
 
-  my $offset = $opt{'offset'} || 0;
-  # Always use $offset - 1day + 1sec = the last second of that day
-  my $cutoff = DateTime->now->set(hour => 23, minute => 59, second => 59);
-  $cutoff->subtract(days => $offset);
+  my $as_of = $opt{'as_of'} || time;
+  my $cutoff = DateTime->from_epoch(epoch => $as_of, time_zone => 'local');
+  $cutoff->truncate(to => 'day'); # local midnight on the report day
+  $cutoff->add(days => 1); # the day after that
+  $cutoff->subtract(seconds => 1); # the last second of the report day
 
   my $start = $cutoff->clone;
   $start->subtract(days => $startdays);
@@ -262,7 +266,7 @@ sub call_range_sub {
   my $end = $cutoff->clone;
   $end->subtract(days => $enddays);
 
-  #warn "offset $offset (".$cutoff->epoch."), range $startdays-$enddays (".$start->epoch . '-' . ($enddays ? $end->epoch : '').")\n";
+  #warn "cutoff ".$cutoff->epoch.", range $startdays-$enddays (".$start->epoch . '-' . ($enddays ? $end->epoch : '').")\n";
   my $sql = &{$range_sub}( $start->epoch, 
                            $enddays ? $end->epoch : '', 
                            $cutoff->epoch ); #%opt?
