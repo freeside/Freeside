@@ -47,6 +47,7 @@
 <& svc_acct/basics.html,
               'svc_acct' => $svc_acct,
               'part_svc' => $part_svc,
+              'cust_svc' => $cust_svc,
               %gopt,
 &>
 

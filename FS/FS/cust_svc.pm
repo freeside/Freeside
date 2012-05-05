@@ -69,6 +69,8 @@ The following fields are currently supported:
 
 =item svcpart - Service definition (see L<FS::part_svc>)
 
+=item agent_svcid - Optional legacy service ID
+
 =item overlimit - date the service exceeded its usage limit
 
 =back
@@ -319,6 +321,7 @@ sub check {
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('pkgnum')
     || $self->ut_number('svcpart')
+    || $self->ut_numbern('agent_svcid')
     || $self->ut_numbern('overlimit')
   ;
   return $error if $error;
@@ -446,9 +449,12 @@ sub svc_label_long { shift->_svc_label('label_long', @_); }
 sub _svc_label {
   my( $self, $method, $svc_x ) = ( shift, shift, shift );
 
+  my $identifier = $svc_x->$method(@_);
+  $identifier = '['.$self->agent_svcid.']'. $identifier if $self->agent_svcid;
+
   (
     $self->part_svc->svc,
-    $svc_x->$method(@_),
+    $identifier,
     $self->part_svc->svcdb,
     $self->svcnum
   );
@@ -831,24 +837,37 @@ customers, this always requires an exact match.
 =cut
 
 # though perhaps it should be fuzzy in some cases?
+
 sub smart_search {
+  my %param = __PACKAGE__->smart_search_param(@_);
+  qsearch(\%param);
+}
+
+sub smart_search_param {
+  my $class = shift;
   my %opt = @_;
-  # some false laziness w/ search/cust_svc.html
+
   my $string = $opt{'search'};
   $string =~ s/(^\s+|\s+$)//; #trim leading & trailing whitespace
 
-  my @extra_sql = ' ( '. join(' OR ',
-    map { my $table = $_;
-      my $search_sql = "FS::$table"->search_sql($string);
-      " ( svcdb = '$table'
-      AND 0 < ( SELECT COUNT(*) FROM $table
-      WHERE $table.svcnum = cust_svc.svcnum
-      AND $search_sql
-      )
-      ) ";
-    }
-    FS::part_svc->svc_tables
-  ). ' ) ';
+  my @or = 
+      map { my $table = $_;
+            my $search_sql = "FS::$table"->search_sql($string);
+            " ( svcdb = '$table'
+	        AND 0 < ( SELECT COUNT(*) FROM $table
+	                    WHERE $table.svcnum = cust_svc.svcnum
+		              AND $search_sql
+	                )
+	      ) ";
+          }
+      FS::part_svc->svc_tables;
+
+  if ( $string =~ /^(\d+)$/ ) {
+    unshift @or, " ( agent_svcid IS NOT NULL AND agent_svcid = $1 ) ";
+  }
+
+  my @extra_sql = ' ( '. join(' OR ', @or). ' ) ';
+
   push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql(
     'null_right' => 'View/link unlinked services'
   );
@@ -858,13 +877,15 @@ sub smart_search {
                   ' LEFT JOIN cust_main USING ( custnum )'.
                   ' LEFT JOIN part_svc  USING ( svcpart )';
 
-  qsearch({
-      'table'     => 'cust_svc',
-      'addl_from' => $addl_from,
-      'hashref'   => {},
-      'extra_sql' => $extra_sql,
-  });
+  (
+    'table'     => 'cust_svc',
+    'addl_from' => $addl_from,
+    'hashref'   => {},
+    'extra_sql' => $extra_sql,
+  );
 }
+
+=back
 
 =head1 BUGS
 

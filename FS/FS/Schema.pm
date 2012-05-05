@@ -1663,14 +1663,15 @@ sub tables_hashref {
 
     'cust_svc' => {
       'columns' => [
-        'svcnum',    'serial',    '',   '', '', '', 
-        'pkgnum',    'int',    'NULL',   '', '', '', 
-        'svcpart',   'int',    '',   '', '', '', 
-        'overlimit', @date_type, '', '', 
+        'svcnum',      'serial',     '', '', '', '', 
+        'pkgnum',         'int', 'NULL', '', '', '', 
+        'svcpart',        'int',     '', '', '', '', 
+        'agent_svcid',    'int', 'NULL', '', '', '',
+        'overlimit',           @date_type,   '', '', 
       ],
       'primary_key' => 'svcnum',
       'unique' => [],
-      'index' => [ ['svcnum'], ['pkgnum'], ['svcpart'] ],
+      'index' => [ ['svcnum'], ['pkgnum'], ['svcpart'], [ 'agent_svcid' ] ],
     },
 
     'cust_svc_option' => {

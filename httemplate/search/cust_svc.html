@@ -42,79 +42,75 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List services');
 
-my $addl_from = ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                ' LEFT JOIN cust_main USING ( custnum ) ';
+my $sql_query;
 
-my @extra_sql = ();
 my $orderby = 'ORDER BY svcnum'; #has to be ordered by something
                                  #for pagination to work
+
 if ( length( $cgi->param('search_svc') ) ) {
 
-  my $string = $cgi->param('search_svc');
-  $string =~ s/(^\s+|\s+$)//; #trim leading & trailing whitespace
-
-  # implement fuzzy searching in subclasses too at some point?
-  # service searching maybe shouldn't be fuzzy...
-
-  push @extra_sql,
-    ' ( '. join(' OR ',
-      map { my $table = $_;
-            my $search_sql = "FS::$table"->search_sql($string);
-            " ( svcdb = '$table'
-	        AND 0 < ( SELECT COUNT(*) FROM $table
-	                    WHERE $table.svcnum = cust_svc.svcnum
-		              AND $search_sql
-	                )
-	      ) ";
-          }
-      FS::part_svc->svc_tables
-    ). ' ) ';
-
-} elsif ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
-
-  $cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unknown svcdb";
-  push @extra_sql, "svcdb = '$1'";
-  $addl_from .= " LEFT JOIN $1 USING ( svcnum ) ";
-
-  push @extra_sql, 'pkgnum IS NULL'
-    if $cgi->param('magic') eq 'unlinked';
-
-  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
-    my $sortby = $1;
-    $orderby = "ORDER BY $sortby";
-  }
-
-} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-
-  push @extra_sql, "svcpart = $1";
+  $sql_query = {
+    FS::cust_svc->smart_search_param(
+     'search' => scalar($cgi->param('search_svc'))
+    )
+  };
 
 } else {
-  errorpage("No search term specified");
+
+  my $addl_from = ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                  ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                  ' LEFT JOIN cust_main USING ( custnum ) ';
+
+  my @extra_sql = ();
+
+  if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+
+    $cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unknown svcdb";
+    push @extra_sql, "svcdb = '$1'";
+    $addl_from .= " LEFT JOIN $1 USING ( svcnum ) ";
+
+    push @extra_sql, 'pkgnum IS NULL'
+      if $cgi->param('magic') eq 'unlinked';
+
+    if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+      my $sortby = $1;
+      $orderby = "ORDER BY $sortby";
+    }
+
+  } elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+
+    push @extra_sql, "svcpart = $1";
+
+  } else {
+    errorpage("No search term specified");
+  }
+
+  #here is the agent virtualization
+  push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
+                     'null_right' => 'View/link unlinked services'
+                   );
+
+  my $extra_sql = ' WHERE '. join(' AND ', @extra_sql );
+
+  $sql_query = {
+    'table'      => 'cust_svc',
+    'addl_from'  => $addl_from,
+    'hashref'    => {},
+    'extra_sql'  => $extra_sql,
+  };
+
 }
 
-#here is the agent virtualization
-push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
-                   'null_right' => 'View/link unlinked services'
-                 );
+$sql_query->{'select'} = join(', ',
+                                    'cust_svc.*',
+                                    'part_svc.*',
+                                    'cust_main.custnum',
+                                    FS::UI::Web::cust_sql_fields(),
+                             );
+$sql_query->{'order_by'} = $orderby;
 
-my $extra_sql = ' WHERE '. join(' AND ', @extra_sql );
-
-my $sql_query = {
-  'select'     => join(', ',
-                    'cust_svc.*',
-		    'part_svc.*',
-		    'cust_main.custnum',
-		    FS::UI::Web::cust_sql_fields(),
-                  ),
-  'table'      => 'cust_svc',
-  'addl_from'  => $addl_from,
-  'hashref'    => {},
-  'extra_sql'  => $extra_sql,
-  'order_by'   => $orderby,
-};
-
-my $count_query = "SELECT COUNT(*) FROM cust_svc $addl_from $extra_sql";
+my $count_query = "SELECT COUNT(*) FROM cust_svc ". $sql_query->{addl_from}.
+                                               ' '. $sql_query->{extra_sql};
 
 my $link = sub {
   my $cust_svc = shift;
