@@ -5086,6 +5086,16 @@ sub process_censustract_update {
   return;
 }
 
+#starting to take quite a while for big dbs
+# - seq scan of h_cust_main (yuck), but not going to index paycvv, so
+# - seq scan of cust_main on signupdate... index signupdate?  will that help?
+# - seq scan of cust_main on paydate... index on substrings?  maybe set an
+#    upgrade journal flag now that we have that, yyyy-m-dd paydates are ancient
+# - seq scan of cust_main on payinfo.. certainly not going toi ndex that...
+#    upgrade journal again?  this is also an ancient problem
+# - otaker upgrade?  journal and call it good?  (double check to make sure
+#    we're not still setting otaker here)
+
 sub _upgrade_data { #class method
   my ($class, %opts) = @_;
 
