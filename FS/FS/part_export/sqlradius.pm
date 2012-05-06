@@ -1154,8 +1154,13 @@ sub _upgrade_exporttype {
 
 sub import_attrs {
   my $self = shift;
-  my $dbh = sqlradius_connect( map $self->option($_),
+  my $dbh =  DBI->connect( map $self->option($_),
                                    qw( datasrc username password ) );
+  unless ( $dbh ) {
+    warn "Error connecting to RADIUS server: $DBI::errstr\n";
+    return;
+  }
+
   my $usergroup = $self->option('usergroup') || 'usergroup';
   my $error;
   warn "Importing RADIUS groups and attributes from ".$self->option('datasrc').
