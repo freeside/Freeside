@@ -5007,6 +5007,13 @@ and customer address. Include units.',
   },
 
 
+  {
+    'key'         => 'selfservice-billing_history-line_items',
+    'section'     => 'self-service',
+    'description' => 'Return line item billing detail for the self-service billing_history API call.',
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
