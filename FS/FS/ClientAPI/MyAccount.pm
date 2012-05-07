@@ -383,6 +383,8 @@ sub customer_info {
     my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
 
+    $return{display_custnum} = $cust_main->display_custnum;
+
     if ( $session->{'pkgnum'} ) { 
       $return{balance} = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
       #next_bill_date from cust_pkg?
@@ -422,6 +424,13 @@ sub customer_info {
                        };
                      } $cust_main->open_cust_bill;
       $return{open_invoices} = \@open;
+
+      my $sql = 'SELECT MAX(_date) FROM cust_bill WHERE custnum = ?';
+      my $sth = dbh->prepare($sql) or die  dbh->errstr;
+      $sth->execute($custnum)      or die $sth->errstr;
+      $return{'last_invoice_date'} = $sth->fetchrow_arrayref->[0];
+      $return{'last_invoice_date_pretty'} =
+        time2str('%m/%d/%Y', $return{'last_invoice_date'} );
     }
 
     $return{countrydefault} = scalar($conf->config('countrydefault'));
@@ -497,8 +506,8 @@ sub customer_info {
 
   }
 
-  return { 'error'          => '',
-           'custnum'        => $custnum,
+  return { 'error'   => '',
+           'custnum' => $custnum,
            %return,
          };
 
@@ -520,6 +529,8 @@ sub customer_info_short {
     $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
     my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
+
+    $return{display_custnum} = $cust_main->display_custnum;
 
     $return{countrydefault} = scalar($conf->config('countrydefault'));
 
