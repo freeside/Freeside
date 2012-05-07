@@ -3543,7 +3543,14 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-enable_birthdate',
     'section'     => 'UI',
-    'descritpion' => 'Enable tracking of a birth date with each customer record',
+    'description' => 'Enable tracking of a birth date with each customer record',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-enable_spouse_birthdate',
+    'section'     => 'UI',
+    'description' => 'Enable tracking of a spouse birth date with each customer record',
     'type'        => 'checkbox',
   },
 
@@ -4660,14 +4667,14 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-edit_signupdate',
     'section'     => 'UI',
-    'descritpion' => 'Enable manual editing of the signup date.',
+    'description' => 'Enable manual editing of the signup date.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-disable_access_number',
     'section'     => 'UI',
-    'descritpion' => 'Disable access number selection.',
+    'description' => 'Disable access number selection.',
     'type'        => 'checkbox',
   },
 

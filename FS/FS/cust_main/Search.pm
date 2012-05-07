@@ -467,6 +467,14 @@ bool
 
 listref of start date, end date
 
+=item birthdate
+
+listref of start date, end date
+
+=item spouse_birthdate
+
+listref of start date, end date
+
 =item payby
 
 listref
@@ -599,7 +607,7 @@ sub search {
   # dates
   ##
 
-  foreach my $field (qw( signupdate )) {
+  foreach my $field (qw( signupdate birthdate spouse_birthdate )) {
 
     next unless exists($params->{$field});
 
@@ -610,7 +618,7 @@ sub search {
       "cust_main.$field >= $beginning",
       "cust_main.$field <= $ending";
 
-    if(defined $hour) {
+    if($field eq 'signupdate' && defined $hour) {
       if ($dbh->{Driver}->{Name} =~ /Pg/i) {
         push @where, "extract(hour from to_timestamp(cust_main.$field)) = $hour";
       }
