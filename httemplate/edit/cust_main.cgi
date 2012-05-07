@@ -26,7 +26,10 @@
 <& cust_main/top_misc.html, $cust_main, 'custnum' => $custnum  &>
 
 %# birthdate
-% if ( $conf->exists('cust_main-enable_birthdate') ) {
+% if (    $conf->exists('cust_main-enable_birthdate')
+%      || $conf->exists('cust_main-enable_spouse_birthdate')
+%    )
+% {
   <BR>
   <& cust_main/birthdate.html, $cust_main &>
 % }

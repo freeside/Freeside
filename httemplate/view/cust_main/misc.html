@@ -116,6 +116,20 @@
 
 % }
 
+% if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
+%   my $dt = $cust_main->spouse_birthdate ne ''
+%              ? DateTime->from_epoch( 'epoch'  => $cust_main->spouse_birthdate,
+%                                      'time_zone' =>'floating',
+%                                    )
+%              : '';
+
+  <TR>
+    <TD ALIGN="right"><% mt('Spouse Date of Birth') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
+  </TR>
+
+% }
+
 % if ( $conf->exists('cust_main-require_censustract') ) {
 
   <TR>

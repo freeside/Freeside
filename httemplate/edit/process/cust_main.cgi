@@ -89,9 +89,11 @@ if ( $cgi->param('no_credit_limit') ) {
 
 $new->tagnum( [ $cgi->param('tagnum') ] );
 
-my %usedatetime = ( 'birthdate' => 1 );
+my %usedatetime = ( 'birthdate'        => 1,
+                    'spouse_birthdate' => 1,
+                  );
 
-foreach my $dfield (qw( birthdate signupdate )) {
+foreach my $dfield (qw( birthdate spouse_birthdate signupdate )) {
 
   if ( $cgi->param($dfield) && $cgi->param($dfield) =~ /^([ 0-9\-\/]{0,10})$/) {
 
