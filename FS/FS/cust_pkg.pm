@@ -3612,7 +3612,7 @@ sub _location_sql_where {
 
 #        ( $table.${prefix}city    = ? $or_empty_city   $ornull )
   "
-        ( $table.${prefix}district = ? OR ? = '' OR CAST(? AS text) IS NULL )
+        ( $table.district = ? OR ? = '' OR CAST(? AS text) IS NULL )
     AND ( $table.${prefix}city     = ? OR ? = '' OR CAST(? AS text) IS NULL )
     AND ( $table.${prefix}county   = ? $or_empty_county $ornull )
     AND ( $table.${prefix}state    = ? $or_empty_state  $ornull )

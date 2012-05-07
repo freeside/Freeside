@@ -275,7 +275,7 @@ sub gotcust {
   my $table = shift;
   my $prefix = @_ ? shift : '';
   "
-        ( $table.${prefix}district = cust_main_county.district
+        ( $table.district = cust_main_county.district
           OR cust_main_county.district = ''
           OR cust_main_county.district IS NULL )
     AND ( $table.${prefix}city  = cust_main_county.city
