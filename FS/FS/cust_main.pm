@@ -399,8 +399,9 @@ The I<noexport> option is deprecated.  If I<noexport> is set true, no
 provisioning jobs (exports) are scheduled.  (You can schedule them later with
 the B<reexport> method.)
 
-The I<tax_exemption> option can be set to an arrayref of tax names.
-FS::cust_main_exemption records will be created and inserted.
+The I<tax_exemption> option can be set to an arrayref of tax names or a hashref
+of tax names and exemption numbers.  FS::cust_main_exemption records will be
+created and inserted.
 
 If I<prospectnum> is set, moves contacts and locations from that prospect.
 
@@ -545,10 +546,15 @@ sub insert {
 
   my $tax_exemption = delete $options{'tax_exemption'};
   if ( $tax_exemption ) {
-    foreach my $taxname ( @$tax_exemption ) {
+
+    $tax_exemption = { map { $_ => '' } @$tax_exemption }
+      if ref($tax_exemption) eq 'ARRAY';
+
+    foreach my $taxname ( keys %$tax_exemption ) {
       my $cust_main_exemption = new FS::cust_main_exemption {
-        'custnum' => $self->custnum,
-        'taxname' => $taxname,
+        'custnum'       => $self->custnum,
+        'taxname'       => $taxname,
+        'exempt_number' => $tax_exemption->{$taxname},
       };
       my $error = $cust_main_exemption->insert;
       if ( $error ) {
@@ -1461,8 +1467,9 @@ check_invoicing_list first.  Here's an example:
 
 Currently available options are: I<tax_exemption>.
 
-The I<tax_exemption> option can be set to an arrayref of tax names.
-FS::cust_main_exemption records will be deleted and inserted as appropriate.
+The I<tax_exemption> option can be set to an arrayref of tax names or a hashref
+of tax names and exemption numbers.  FS::cust_main_exemption records will be
+deleted and inserted as appropriate.
 
 =cut
 
@@ -1598,17 +1605,27 @@ sub replace {
   my $tax_exemption = delete $options{'tax_exemption'};
   if ( $tax_exemption ) {
 
+    $tax_exemption = { map { $_ => '' } @$tax_exemption }
+      if ref($tax_exemption) eq 'ARRAY';
+
     my %cust_main_exemption =
       map { $_->taxname => $_ }
           qsearch('cust_main_exemption', { 'custnum' => $old->custnum } );
 
-    foreach my $taxname ( @$tax_exemption ) {
+    foreach my $taxname ( keys %$tax_exemption ) {
 
-      next if delete $cust_main_exemption{$taxname};
+      if ( $cust_main_exemption{$taxname} && 
+           $cust_main_exemption{$taxname}->exempt_number eq $tax_exemption->{$taxname}
+         )
+      {
+        delete $cust_main_exemption{$taxname};
+        next;
+      }
 
       my $cust_main_exemption = new FS::cust_main_exemption {
-        'custnum' => $self->custnum,
-        'taxname' => $taxname,
+        'custnum'       => $self->custnum,
+        'taxname'       => $taxname,
+        'exempt_number' => $tax_exemption->{$taxname},
       };
       my $error = $cust_main_exemption->insert;
       if ( $error ) {

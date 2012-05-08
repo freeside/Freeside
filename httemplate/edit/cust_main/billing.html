@@ -117,6 +117,15 @@
             //why? select.selectedIndex = 0;
         }
     }
+
+    function tax_changed(what) {
+      var num = document.getElementById(what.id + '_num'); 
+      if ( what.checked ) {
+        num.disabled = false;
+      } else {
+        num.disabled = true;
+      }
+    }
     
   </SCRIPT>
 
@@ -437,7 +446,10 @@
 
 %   my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 
-%   if ( $conf->exists('cust_class-tax_exempt') ) {
+%   if (    $conf->exists('cust_class-tax_exempt')
+%        || $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+%      )
+%   {
 
       <INPUT TYPE="hidden" NAME="tax" VALUE="<% $cust_main->tax eq 'Y' ? 'Y' : '' %>">
 
@@ -450,9 +462,12 @@
 %   }
 
 %   foreach my $exempt_group ( @exempt_groups ) {
-%     #escape $exempt_group for NAME
+%     my $cust_main_exemption = $cust_main->tax_exemption($exempt_group);
+%     #escape $exempt_group for NAME etc.
+%     my $checked = ($cust_main_exemption || $cgi->param("tax_$exempt_group"));
       <TR>
-        <TD WIDTH="608" COLSPAN="2">&nbsp;&nbsp;<INPUT TYPE="checkbox" NAME="tax_<% $exempt_group %>" VALUE="Y" <% $cust_main->tax_exemption($exempt_group) ? 'CHECKED' : '' %>> Tax Exempt (<% $exempt_group %> taxes)<TD>
+        <TD>&nbsp;&nbsp;<INPUT TYPE="checkbox" NAME="tax_<% $exempt_group %>" ID="tax_<% $exempt_group %>" VALUE="Y" <% $checked ? 'CHECKED' : '' %> onChange="tax_changed(this)"> Tax Exempt (<% $exempt_group %> taxes)</TD>
+        <TD> - Exemption number <INPUT TYPE="text" NAME="tax_<% $exempt_group %>_num" ID="tax_<% $exempt_group %>_num" VALUE="<% $cgi->param("tax_$exempt_group".'_num') || ( $cust_main_exemption ? $cust_main_exemption->exempt_number : '' ) |h %>" <% $checked ? '' : 'DISABLED' %>></TD>
       </TR>
 %   }
 

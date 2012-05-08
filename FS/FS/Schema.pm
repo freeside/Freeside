@@ -1180,9 +1180,10 @@ sub tables_hashref {
 
     'cust_main_exemption' => {
       'columns' => [
-        'exemptionnum', 'serial', '',      '', '', '',
-        'custnum',         'int', '',      '', '', '', 
-        'taxname',     'varchar', '', $char_d, '', '',
+        'exemptionnum',   'serial',     '',      '', '', '',
+        'custnum',           'int',     '',      '', '', '', 
+        'taxname',       'varchar',     '', $char_d, '', '',
+        'exempt_number', 'varchar', 'NULL', $char_d, '', '',
         #start/end dates?  for reporting?
       ],
       'primary_key' => 'exemptionnum',

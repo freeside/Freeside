@@ -190,7 +190,10 @@
 
 % my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 
-% unless ( $conf->exists('cust_class-tax_exempt') ) {
+% unless (    $conf->exists('cust_class-tax_exempt')
+%          || $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+%        )
+% {
     <TR>
       <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TD>
       <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
@@ -198,9 +201,12 @@
 % }
 
 % foreach my $exempt_group ( @exempt_groups ) {
+%   my $cust_main_exemption = $cust_main->tax_exemption($exempt_group);
     <TR>
       <TD ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TD>
-      <TD BGCOLOR="#ffffff"><% $cust_main->tax_exemption($exempt_group) ? $yes : $no %></TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main_exemption ? $yes : $no %>
+        <% $cust_main_exemption ? $cust_main_exemption->exempt_number : '' |h %>
+      </TD>
     </TR>
 % }
 
