@@ -3,6 +3,7 @@ package FS::cust_main_exemption;
 use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use FS::Conf;
 use FS::cust_main;
 
 =head1 NAME
@@ -44,6 +45,9 @@ Customer (see L<FS::cust_main>)
 
 taxname
 
+=item exempt_number
+
+Exemption number
 
 =back
 
@@ -108,8 +112,14 @@ sub check {
     $self->ut_numbern('exemptionnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_text('taxname')
+    || $self->ut_textn('exempt_number')
   ;
   return $error if $error;
+
+  my $conf = new FS::Conf;
+  if ( ! $self->exempt_number && $conf->exists('tax-cust_exempt-groups-require_individual_nums') ) {
+    return 'Tax exemption number required for '. $self->taxname. ' exemption';
+  }
 
   $self->SUPER::check;
 }

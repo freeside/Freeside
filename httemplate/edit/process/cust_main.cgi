@@ -132,6 +132,7 @@ $new->setfield('paid', $cgi->param('paid') )
 
 my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 my @tax_exempt = grep { $cgi->param("tax_$_") eq 'Y' } @exempt_groups;
+my %tax_exempt = map { $_ => scalar($cgi->param("tax_$_".'_num')) } @tax_exempt;
 
 #perhaps this stuff should go to cust_main.pm
 if ( $new->custnum eq '' or $duplicate_of ) {
@@ -239,7 +240,7 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   else {
     # create the customer
     $error ||= $new->insert( \%hash, \@invoicing_list,
-                           'tax_exemption'=> \@tax_exempt,
+                           'tax_exemption'=> \%tax_exempt,
                            'prospectnum'  => scalar($cgi->param('prospectnum')),
                            );
 
@@ -297,7 +298,7 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   local($FS::Record::DEBUG)    = $DEBUG if $DEBUG;
 
   $error ||= $new->replace( $old, \@invoicing_list,
-                            'tax_exemption' => \@tax_exempt,
+                            'tax_exemption' => \%tax_exempt,
                           );
 
   warn "$me returned from replace" if $DEBUG;

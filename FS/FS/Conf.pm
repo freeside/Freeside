@@ -4618,6 +4618,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'tax-cust_exempt-groups-require_individual_nums',
+    'section'     => '',
+    'description' => 'When using tax-cust_exempt-groups, require an individual tax exemption number for each exemption from different taxes.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-default_view',
     'section'     => 'UI',
     'description' => 'Default customer view, for users who have not selected a default view in their preferences.',
