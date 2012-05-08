@@ -322,6 +322,18 @@ sub check {
   $self->SUPER::check;
 }
 
+=item display_svcnum 
+
+Returns the displayed service number for this service: agent_svcid if it has a
+value, svcnum otherwise
+
+=cut
+
+sub display_svcnum {
+  my $self = shift;
+  $self->agent_svcid || $self->svcnum;
+}
+
 =item part_svc
 
 Returns the definition for this service, as a FS::part_svc object (see

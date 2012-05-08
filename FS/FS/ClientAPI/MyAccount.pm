@@ -1603,12 +1603,14 @@ sub list_svcs {
             my $part_pkg = $cust_pkg->part_pkg;
 
             my %hash = (
-              'svcnum'     => $_->svcnum,
-              'svcdb'      => $svcdb,
-              'label'      => $label,
-              'value'      => $value,
-              'pkg_status' => $cust_pkg->status,
-              'readonly'   => ( $part_svc->selfservice_access eq 'readonly' ),
+              'svcnum'         => $_->svcnum,
+              'display_svcnum' => $_->display_svcnum,
+              'svcdb'          => $svcdb,
+              'label'          => $label,
+              'value'          => $value,
+              'pkg_label'      => $cust_pkg->pkg_label,
+              'pkg_status'     => $cust_pkg->status,
+              'readonly'       => ($part_svc->selfservice_access eq 'readonly'),
             );
 
             if ( $svcdb eq 'svc_acct' ) {
