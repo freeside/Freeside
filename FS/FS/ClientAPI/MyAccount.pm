@@ -980,6 +980,8 @@ sub validate_payment {
     'card_type'      => $card_type,
     'paydate'        => $p->{'year'}. '-'. $p->{'month'}. '-01',
     'paydate_pretty' => $p->{'month'}. ' / '. $p->{'year'},
+    'month'          => $p->{'month'},
+    'year'           => $p->{'year'},
     'payname'        => $payname,
     'paybatch'       => $paybatch, #this doesn't actually do anything
     'paycvv'         => $paycvv,
@@ -1004,7 +1006,9 @@ sub store_payment {
   _cache->set( 'payment_'.$p->{'session_id'}, $validate, $timeout );
 
   +{ map { $_=>$validate->{$_} }
-      qw( card_type paymask payname paydate_pretty amount )
+      qw( card_type paymask payname paydate_pretty month year amount
+          address1 address2 city state zip country
+        )
   };
 
 }
@@ -1511,6 +1515,7 @@ sub list_pkgs {
                           my $primary_cust_svc = $_->primary_cust_svc;
                           +{ $_->hash,
                             $_->part_pkg->hash,
+                            pkg_label => $_->pkg_label,
                             status => $_->status,
                             part_svc =>
                               [ map $_->hashref, $_->available_part_svc ],
