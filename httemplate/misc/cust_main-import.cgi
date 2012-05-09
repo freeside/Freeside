@@ -35,6 +35,7 @@ Import a file containing customer records.
         <OPTION VALUE="extended-plus_company_and_options">Extended plus company and options
         <OPTION VALUE="svc_external">External service
         <OPTION VALUE="svc_external_svc_phone">External service and phone service
+        <OPTION VALUE="birthdates-acct_phone_hardware">Birthdates and account, phone and hardware services
       </SELECT>
     </TD>
   </TR>
@@ -104,6 +105,9 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <BR><BR>
 
 <b>External service and phone service</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, id, title, countrycode, phonenum, sip_password, pin</i>
+<BR><BR>
+
+<b>Birthdates and account, phone and hardware services</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, birthdate, spouse_birthdate, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, username, _password, countrycode, phonenum, sip_password, pin, typenum, ip_addr, hw_addr, serial</i>
 <BR><BR>
 
 <%$req%> Required fields
