@@ -212,7 +212,7 @@ sub batch_import {
                 );
    push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
    push @fields, map "svc_hardware.$_", qw(typenum ip_addr hw_addr serial);
-warn Dumper(@fields);
+
     $payby = 'BILL';
   } else {
     die "unknown format $format";
@@ -444,8 +444,6 @@ warn Dumper(@fields);
         }
 
       }
-
-warn Dumper(@svc_x);
 
       $hash{$cust_pkg} = \@svc_x;
     }
