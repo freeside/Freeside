@@ -163,10 +163,16 @@ simply using rather than editing advertising sources).
 
 sub all_part_referral {
   my $self = shift;
+  my $global = @_ ? shift : '';
+  my $disabled = @_ ? shift : '';
+
+  my $hashref = $disabled ? {} : { 'disabled' => '' };
+  my $and = $disabled ? ' WHERE ' : ' AND ';
 
   qsearch({
     'table'     => 'part_referral',
-    'extra_sql' => ' WHERE '. $self->acl_agentnum_sql(@_). ' ORDER BY refnum ',
+    'hashref'   => $hashref,
+    'extra_sql' => $and. $self->acl_agentnum_sql(@_). ' ORDER BY refnum ',
   });
 
 }

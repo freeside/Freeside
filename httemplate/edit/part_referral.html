@@ -3,9 +3,12 @@
                 'table'       => 'part_referral',
                 'fields'      => [ 'referral',
                                    { field=>'agentnum', type=>'select-agent', },
+                                   { field=>'disabled', type=>'checkbox', value=>'Y'  } ,
                                  ],
-                'labels'      => { 'referral' => 'Advertising source',
+                'labels'      => { 'refnum'   => 'Ad Source',
+                                   'referral' => 'Advertising source',
                                    'agentnum' => 'Agent',
+                                   'disabled' => 'Disabled',
                                  },
                 'viewall_dir' => 'browse',
            )
