@@ -293,7 +293,7 @@ Example:
 %   $include_common{$_} = $f->{$_} foreach grep exists($f->{$_}),
 %     qw( js_only html_only select_only layers_only cell_style ),#selectlayers,?
 %     qw( empty_label ),                                   # select-*
-%     qw( value_col ),                                     # select-table
+%     qw( value_col compare_sub ),                         # select-table
 %     qw( table name_col ),                           #(select,checkboxes)-table
 %     qw( target_table link_table ),                       #checkboxes-table
 %     qw( hashref agent_virt agent_null agent_null_right ),#*-table

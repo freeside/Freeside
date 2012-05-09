@@ -238,8 +238,6 @@ foreach my $value ( @values ) {
 
   }
 
-  $error ||= $new->check;
-
   my @args = ();
   if ( !$error && $opt{'args_callback'} ) {
     @args = &{ $opt{'args_callback'} }( $cgi, $new );

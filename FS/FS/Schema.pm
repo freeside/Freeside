@@ -3136,11 +3136,12 @@ sub tables_hashref {
 
     'inventory_item' => {
       'columns' => [
-        'itemnum',  'serial',      '',      '', '', '',
-        'classnum', 'int',         '',      '', '', '',
-        'agentnum', 'int',     'NULL',      '', '', '',
-        'item',     'varchar',     '', $char_d, '', '',
-        'svcnum',   'int',     'NULL',      '', '', '',
+        'itemnum',   'serial',      '',      '', '', '',
+        'classnum',  'int',         '',      '', '', '',
+        'agentnum',  'int',     'NULL',      '', '', '',
+        'item',      'varchar',     '', $char_d, '', '',
+        'svcnum',    'int',     'NULL',      '', '', '',
+        'svc_field', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'itemnum',
       'unique' => [ [ 'classnum', 'item' ] ],

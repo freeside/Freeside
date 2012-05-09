@@ -3,7 +3,7 @@
      'name'                 => 'broadband service',
      'table'                => 'svc_broadband',
      'fields'               => \@fields, 
-     'field_callback'       => $field_callback,
+     'svc_field_callback'   => $svc_field_callback,
      'svc_new_callback'     => $svc_edit_callback,
      'svc_edit_callback'    => $svc_edit_callback,
      'svc_error_callback'   => $svc_edit_callback,
@@ -161,20 +161,14 @@ my $svc_edit_callback = sub {
   }
 };
 
-my $field_callback = sub {
+my $svc_field_callback = sub {
   my ($cgi, $object, $fieldref) = @_;
 
   my $columndef = $part_svc->part_svc_column($fieldref->{'field'});
-  if ($columndef->columnflag eq 'F') {
-    $fieldref->{'type'} = length($columndef->columnvalue)
-                            ? 'fixed'
-                            : 'hidden';
-    $fieldref->{'value'} = $columndef->columnvalue;
+  if ($fieldref->{field} eq 'usergroup' && $columndef->columnflag eq 'F') {
     
-    if ( $fieldref->{field} eq 'usergroup' ) {
-      $fieldref->{'formatted_value'} = 
-        [ $object->radius_groups('long_description') ];
-    }
+    $fieldref->{'formatted_value'} = 
+      [ $object->radius_groups('long_description') ];
   }
 
 }; 

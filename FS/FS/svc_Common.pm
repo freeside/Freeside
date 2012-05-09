@@ -5,6 +5,7 @@ use vars qw( @ISA $noexport_hack $DEBUG $me
              $overlimit_missing_cust_svc_nonfatal_kludge );
 use Carp qw( cluck carp croak confess ); #specify cluck have to specify them all
 use Scalar::Util qw( blessed );
+use Lingua::EN::Inflect qw( PL_N );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
@@ -844,8 +845,7 @@ sub set_auto_inventory {
         qsearchs('inventory_class', { 'classnum' => $classnum } );
       return "Can't find inventory_class.classnum $classnum"
         unless $inventory_class;
-      return "Out of ". $inventory_class->classname. "s\n"; #Lingua:: BS
-                                                            #for pluralizing
+      return "Out of ". PL_N($inventory_class->classname);
     }
 
     next if $columnflag eq 'M' && $inventory_item->svcnum == $self->svcnum;
@@ -853,29 +853,36 @@ sub set_auto_inventory {
     $self->setfield( $field, $inventory_item->item );
       #if $columnflag eq 'A' && $self->$field() eq '';
 
-    $inventory_item->svcnum( $self->svcnum );
-    my $ierror = $inventory_item->replace();
-    if ( $ierror ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error provisioning inventory: $ierror";
-    }
-
     if ( $old && $old->$field() && $old->$field() ne $self->$field() ) {
       my $old_inv = qsearchs({
-        'table'   => 'inventory_item',
-        'hashref' => { 'classnum' => $classnum,
-                       'svcnum'   => $old->svcnum,
-                       'item'     => $old->$field(),
-                     },
+        'table'     => 'inventory_item',
+        'hashref'   => { 'classnum' => $classnum,
+                         'svcnum'   => $old->svcnum,
+                       },
+        'extra_sql' => ' AND '.
+          '( ( svc_field IS NOT NULL AND svc_field = '.$dbh->quote($field).' )'.
+          '  OR ( svc_field IS NULL AND item = '. dbh->quote($old->$field).' )'.
+          ')',
       });
       if ( $old_inv ) {
         $old_inv->svcnum('');
+        $old_inv->svc_field('');
         my $oerror = $old_inv->replace;
         if ( $oerror ) {
           $dbh->rollback if $oldAutoCommit;
           return "Error unprovisioning inventory: $oerror";
         }
+      } else {
+        warn "old inventory_item not found for $field ". $self->$field;
       }
+    }
+
+    $inventory_item->svcnum( $self->svcnum );
+    $inventory_item->svc_field( $field );
+    my $ierror = $inventory_item->replace();
+    if ( $ierror ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error provisioning inventory: $ierror";
     }
 
   }
@@ -906,6 +913,7 @@ sub return_inventory {
 
   foreach my $inventory_item ( $self->inventory_item ) {
     $inventory_item->svcnum('');
+    $inventory_item->svc_field('');
     my $error = $inventory_item->replace();
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
