@@ -13,7 +13,10 @@
 	                         sub { 
 				   #$_[0]->svc. ': '. $_[0]->label;
 				   my($label, $value, $svcdb) = $_[0]->label;
-				   "$label: $value";
+                                   my $id = $_[0]->agent_svcid
+                                              ? $_[0]->agent_svcid.': '
+                                              : '';
+				   "$label: $id$value";
 				 },
 				 # package?
 				 \&FS::UI::Web::cust_fields,

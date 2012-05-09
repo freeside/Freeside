@@ -439,12 +439,9 @@ sub svc_label_long { shift->_svc_label('label_long', @_); }
 sub _svc_label {
   my( $self, $method, $svc_x ) = ( shift, shift, shift );
 
-  my $identifier = $svc_x->$method(@_);
-  $identifier = '['.$self->agent_svcid.']'. $identifier if $self->agent_svcid;
-
   (
     $self->part_svc->svc,
-    $identifier,
+    $svc_x->$method(@_),
     $self->part_svc->svcdb,
     $self->svcnum
   );

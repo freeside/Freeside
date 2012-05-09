@@ -24,7 +24,7 @@ Usage:
   <TD ALIGN="right" VALIGN="top"><% 
 FS::UI::Web::svc_link($m, $part_svc, $cust_svc)
 %></TD>
-  <TD STYLE="padding-bottom:0px"><B><%
+  <TD STYLE="padding-bottom:0px"><B><% $cust_svc->agent_svcid ? $cust_svc->agent_svcid.': ' : '' %><%
 FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc)
 %></B></TD>
 <TD ALIGN="right"><% FS::UI::Web::svc_export_links($m, $part_svc, $cust_svc) %>
