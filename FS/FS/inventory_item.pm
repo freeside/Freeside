@@ -111,6 +111,7 @@ sub check {
                                            'Edit global inventory'] )
     || $self->ut_text('item')
     || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum' )
+    || $self->ut_alphan('svc_field')
   ;
   return $error if $error;
 

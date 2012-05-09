@@ -103,7 +103,15 @@
                      $f->{'extra_sql'}  .= ' OR svcnum = '. $object->svcnum
                        if $object->svcnum;
                      $f->{'extra_sql'}  .= ' ) ';
-                     $f->{'disable_empty'} = $object->svcnum ? 1 : 0,
+                     $f->{'disable_empty'} = $object->svcnum ? 1 : 0;
+                     if ( $f->{'field'} eq 'mac_addr' ) {
+                       $f->{'compare_sub'} = sub {
+                         my($a, $b) = @_;
+                         $a =~ s/[-: ]//g;
+                         $b =~ s/[-: ]//g;
+                         lc($a) eq lc($b);
+                       };
+                     }
                    } elsif ( $flag eq 'H' ) {
                      $f->{'type'}        = 'select-hardware_type';
                      $f->{'hashref'}     = {
@@ -125,6 +133,10 @@
                    if ( $f->{'field'} eq 'custnum' && $pkgnum ) {
                      my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
                      $object->set('custnum', $cust_pkg->custnum);
+                   }
+
+                   if ( my $cb = $opt{'svc_field_callback'} ) {
+                     &{ $cb }( $cgi, $object, $f);
                    }
 
                  },
