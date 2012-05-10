@@ -2983,7 +2983,6 @@ sub tables_hashref {
         ###
 
         'upstream_currency',      'char', 'NULL',       3, '', '',
-        'upstream_price',      'decimal', 'NULL',  '10,4', '', '', 
         'upstream_rateplanid',     'int', 'NULL',      '', '', '', #?
 
         # how it was rated internally...
@@ -3007,6 +3006,10 @@ sub tables_hashref {
         'cdrtypenum',              'int', 'NULL',      '', '', '',
 
         'charged_party',       'varchar', 'NULL', $char_d, '', '',
+
+        'upstream_price',      'decimal', 'NULL',  '10,4', '', '', 
+        'upstream_src_regionname', 'varchar', 'NULL', $char_d, '', '',
+        'upstream_dst_regionname', 'varchar', 'NULL', $char_d, '', '',
 
         # how it was rated internally...
         'rated_price',         'decimal', 'NULL',  '10,4', '', '',

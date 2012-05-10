@@ -7,7 +7,7 @@ use Time::Local;
 #use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
 %info = (
-  'name'          => 'Troop',
+  'name'          => 'Troop (old?)',
   'weight'        => 220,
   'header'        => 2,
   'type'          => 'xls',
