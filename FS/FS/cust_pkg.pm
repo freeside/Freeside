@@ -976,7 +976,16 @@ sub uncancel {
     my $svc_error = $svc_x->insert;
     if ( $svc_error && $options{svc_fatal} ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return $svc_error;
+    } else {
+      my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svc_x->svcnum });
+      if ( $cust_svc ) {
+        my $cs_error = $cust_svc->delete;
+        if ( $cs_error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $cs_error;
+        }
+      }
     }
     push @svc_errors, $svc_error if $svc_error;
   }

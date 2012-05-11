@@ -80,11 +80,14 @@ my $last_bill =
 my $bill =
   $cgi->param('bill')      ? parse_datetime($cgi->param('bill'))      : '';
 
+my $svc_fatal = ( $cgi->param('svc_not_fatal') ne 'Y' );
+
 my $error = $cust_pkg->$method( 'reason'      => $reasonnum,
                                 'date'        => $date,
                                 'resume_date' => $resume_date,
                                 'last_bill'   => $last_bill,
                                 'bill'        => $bill,
+                                'svc_fatal'   => $svc_fatal,
                               );
 
 if ($error) {

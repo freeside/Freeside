@@ -44,6 +44,12 @@
       'format'  => $date_format,
   } &>
 
+  <& /elements/tr-checkbox.html,
+       'label'  => mt("Uncancel even if a service can't be re-provisioned"),
+       'field'  => 'svc_not_fatal',
+       'value'  => 'Y',
+  &>
+
 %   $date_init = 1;
 % }
 
