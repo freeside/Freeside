@@ -1067,6 +1067,86 @@ sub _X_show_zero {
 
 =back
 
+=head1 CLASS METHODS
+
+=over 4
+
+=item owed_sql [ BEFORE, AFTER, OPTIONS ]
+
+Returns an SQL expression for the amount owed.  BEFORE and AFTER specify
+a date window.  OPTIONS may include 'no_usage' (excludes usage charges)
+and 'setuprecur' (set to "setup" or "recur" to limit to one or the other).
+
+=cut
+
+sub owed_sql {
+  my ($class, $start, $end, %opt) = @_;
+  my $charged = 
+    $opt{setuprecur} =~ /^s/ ? 'setup' :
+    $opt{setuprecur} =~ /^r/ ? 'recur' :
+    'setup + recur';
+
+  if ( $opt{no_usage} ) {
+    $charged .= ' - ' . $class->usage_sql;
+  }
+
+  '(' . $charged . 
+  ' - ' . $class->paid_sql($start, $end, %opt) .
+  ' - ' . $class->credited_sql($start, $end, %opt) . ')'
+}
+
+=item usage_sql
+
+Returns an SQL expression for the total usage charges in details on
+an item.
+
+=cut
+
+sub usage_sql {
+  my $class = shift;
+  "(SELECT COALESCE(SUM(cust_bill_pkg_detail.amount),0) 
+    FROM cust_bill_pkg_detail 
+    WHERE cust_bill_pkg_detail.billpkgnum = cust_bill_pkg.billpkgnum)"
+}
+
+=item paid_sql [ BEFORE, AFTER, OPTIONS ]
+
+Returns an SQL expression for the sum of payments applied to this item.
+
+=cut
+
+sub paid_sql {
+  my ($class, $start, $end, %opt) = @_;
+  $start = $start ? "AND cust_bill_pay._date <= $start" : '';
+  $end   = $end   ? "AND cust_bill_pay._date >  $end"   : '';
+  my $setuprecur = 
+    $opt{setuprecur} =~ /^s/ ? 'setup' :
+    $opt{setuprecur} =~ /^r/ ? 'recur' :
+    '';
+  $setuprecur &&= "AND setuprecur = '$setuprecur'";
+  "( SELECT COALESCE(SUM(cust_bill_pay_pkg.amount),0)
+     FROM cust_bill_pay_pkg JOIN cust_bill_pay USING (billpaynum)
+     WHERE cust_bill_pay_pkg.billpkgnum = cust_bill_pkg.billpkgnum
+           $start $end $setuprecur )";
+}
+
+sub credited_sql {
+  my ($class, $start, $end, %opt) = @_;
+  $start = $start ? "AND cust_credit_bill._date <= $start" : '';
+  $end   = $end   ? "AND cust_credit_bill._date >  $end"   : '';
+  my $setuprecur = 
+    $opt{setuprecur} =~ /^s/ ? 'setup' :
+    $opt{setuprecur} =~ /^r/ ? 'recur' :
+    '';
+  $setuprecur &&= "AND setuprecur = '$setuprecur'";
+  "( SELECT COALESCE(SUM(cust_credit_bill_pkg.amount),0)
+     FROM cust_credit_bill_pkg JOIN cust_credit_bill USING (creditbillnum)
+     WHERE cust_credit_bill_pkg.billpkgnum = cust_bill_pkg.billpkgnum
+           $start $end $setuprecur )";
+}
+
+=back
+
 =head1 BUGS
 
 setup and recur shouldn't be separate fields.  There should be one "amount"

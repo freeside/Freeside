@@ -35,16 +35,9 @@
                    # they're not applicable to pkg_tax search
                    sub { my $cust_bill_pkg = shift;
                          if ( $unearned ) {
-                           my $period =
-                             $cust_bill_pkg->edate - $cust_bill_pkg->sdate;
-                           my $elapsed = $unearned - $cust_bill_pkg->sdate;
-                           $elapsed = 0 if $elapsed < 0;
 
-                           my $remaining = 1 - $elapsed/$period;
-                           my $base = ($unearned_mode eq 'paid' ? 'total_paid' : 'recur');
-
-                           sprintf($money_char. '%.2f',
-                             $remaining * $cust_bill_pkg->$base );
+                           sprintf($money_char.'%.2f', 
+                             $cust_bill_pkg->unearned_revenue)
 
                          } else {
                            sprintf($money_char.'%.2f', $cust_bill_pkg->setup );
@@ -56,7 +49,7 @@
                    ),
                    sub { my $row = shift;
                          my $value = 0;
-                         if ( $use_usage eq 'recurring' ) {
+                         if ( $use_usage eq 'recurring' or $unearned ) {
                            $value = $row->recur - $row->usage;
                          } elsif ( $use_usage eq 'usage' ) {
                            $value = $row->usage;
@@ -67,7 +60,10 @@
                        },
                    ( $unearned
                      ? ( sub { time2str('%b %d %Y', shift->sdate ) },
-                         sub { time2str('%b %d %Y', shift->edate ) },
+                       # shift edate back a day
+                       # 82799 = 3600*23 - 1
+                       # (to avoid skipping a day during DST)
+                         sub { time2str('%b %d %Y', shift->edate - 82799 ) },
                        )
                      : ()
                    ),
@@ -79,9 +75,11 @@
                    '',
                    'setup', #broken in $unearned case i guess
                    ( $unearned ? ('', '') : () ),
-                   ( $use_usage eq 'recurring' ? 'recur - usage' :
-                     $use_usage eq 'usage'     ? 'usage'
-                                               : 'recur'
+                   ( $use_usage eq 'recurring' or $unearned
+                        ? 'recur - usage' :
+                     $use_usage eq 'usage' 
+                        ? 'usage'
+                        : 'recur'
                    ),
                    ( $unearned ? ('sdate', 'edate') : () ),
                    'invnum',
@@ -142,9 +140,9 @@ my $conf = new FS::Conf;
 my $unearned = '';
 my $unearned_mode = '';
 my $unearned_base = '';
+my $unearned_sql = '';
 
-my @select = ( 'cust_bill_pkg.*',
-               'cust_bill._date', );
+my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
 my ($join_cust, $join_pkg ) = ('', '');
 
 #here is the agent virtualization
@@ -346,7 +344,10 @@ if ( $cgi->param('out') ) {
                    qw( district city county state locationtaxid )
                );
 
-} elsif ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {
+}
+
+# unearned revenue mode
+if ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {
 
   $unearned = $1;
   $unearned_mode = $cgi->param('mode');
@@ -364,25 +365,32 @@ if ( $cgi->param('out') ) {
                "part_pkg.freq NOT LIKE '%w'";
   }
 
-  if ( !$unearned_mode or $unearned_mode eq 'billed' ) {
-    $unearned_base = 'cust_bill_pkg.recur';
+  my $usage_sql = FS::cust_bill_pkg->usage_sql;
+  push @select, "($usage_sql) AS usage"; # we need this
+  my $owed_sql = FS::cust_bill_pkg->owed_sql($unearned, '', 
+    setuprecur => 'recur', no_usage => 1);
+  push @select, "($owed_sql) AS owed"; # also this
+
+  $unearned_base = "(cust_bill_pkg.recur - $usage_sql)";
+  my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS REAL)";
+  my $elapsed = "GREATEST( $unearned - cust_bill_pkg.sdate, 0 )";
+  my $remaining = "(1 - $elapsed/$period)";
+
+  $unearned_sql = "CAST(
+  GREATEST( ( $unearned_base * $remaining ) - $owed_sql, 0 )
+    AS DECIMAL(10,2)
+  )";
+  push @select, "$unearned_sql AS unearned_revenue";
+
+  if ( $unearned_mode eq 'billed' ) {
+    # include only rows that have some unearned portion
+    push @where, "$unearned_base > 0";
   }
   elsif ( $unearned_mode eq 'paid' ) {
-    $join_pkg .= "JOIN (
-      SELECT billpkgnum, SUM(cust_bill_pay_pkg.amount) AS total_paid
-      FROM      cust_bill_pay_pkg
-           JOIN cust_bill_pay USING (billpaynum)
-           JOIN cust_pay      USING (paynum)
-      WHERE cust_bill_pay_pkg.setuprecur = 'recur'
-        AND cust_pay._date <= $unearned
-      GROUP BY billpkgnum
-    ) AS cust_bill_pkg_paid USING (billpkgnum)";
-    $unearned_base = 'total_paid';
-    push @select, 'total_paid';
+    # include only those that have some _paid_ unearned portion
+    push @where, "$unearned_sql > 0";
   }
-  else {
-    die "invalid mode '$unearned_mode'";
-  }
+
 }
 
 if ( $cgi->param('itemdesc') ) {
@@ -500,12 +508,12 @@ if ( $cgi->param('pkg_tax') ) {
     $count_query = "SELECT COUNT(DISTINCT billpkgnum), ";
   }
 
-  if ( $use_usage eq 'recurring' ) {
+  if ( $unearned ) {
+    $count_query .= "SUM( $unearned_base ), SUM( $unearned_sql )";
+  } elsif ( $use_usage eq 'recurring' ) {
     $count_query .= "SUM(setup + recur - usage)";
   } elsif ( $use_usage eq 'usage' ) {
     $count_query .= "SUM(usage)";
-  } elsif ( $unearned ) {
-    $count_query .= "SUM($unearned_base)";
   } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
     $count_query .= "SUM( COALESCE(cust_bill_pkg_tax_rate_location.amount, cust_bill_pkg.setup + cust_bill_pkg.recur))";
   } elsif ( $cgi->param('iscredit') eq 'rate') {
@@ -514,29 +522,10 @@ if ( $cgi->param('pkg_tax') ) {
     $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
   }
 
-  if ( $unearned ) {
-
-    #false laziness w/report_prepaid_income.cgi
-
-    my $float = 'REAL'; #'DOUBLE PRECISION';
-
-    my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS $float)";
-    my $elapsed = "(CASE WHEN cust_bill_pkg.sdate > $unearned
-                     THEN 0
-                     ELSE ($unearned - cust_bill_pkg.sdate)
-                   END)";
-    #my $elapsed = "CAST($unearned - cust_bill_pkg.sdate AS $float)";
-
-    my $remaining = "(1 - $elapsed/$period)";
-
-    $count_query .= ", SUM($remaining * $unearned_base)";
-
-  }
-
 }
 
-$join_cust =  '      JOIN cust_bill USING ( invnum ) 
-                LEFT JOIN cust_main USING ( custnum ) ';
+$join_cust =  '        JOIN cust_bill USING ( invnum )
+                  LEFT JOIN cust_main USING ( custnum ) ';
 
 if ( $cgi->param('nottax') ) {
 
@@ -613,7 +602,7 @@ my $query = {
   'table'     => 'cust_bill_pkg',
   'addl_from' => "$join_cust $join_pkg",
   'hashref'   => {},
-  'select'    => join(', ', @select ),
+  'select'    => join(",\n", @select ),
   'extra_sql' => $where,
   'order_by'  => 'ORDER BY cust_bill._date, billpkgnum',
 };
@@ -625,7 +614,7 @@ my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
 my $owed_sub = sub {
-  $money_char . shift->owed_recur;
+  $money_char . shift->get('owed') # owed_recur is not correct here
 };
 my $payment_date_sub = sub {
   #my $cust_bill_pkg = shift;
