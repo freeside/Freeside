@@ -1,0 +1,15 @@
+<TABLE CLASS="fsinnerbox">
+  <& /elements/tr-td-label.html, 'label' => mt('Spouse Date of Birth') &>
+  <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
+</TR>
+</TABLE>
+<%init>
+my($cust_main) = @_;
+my $conf = new FS::Conf;
+my $date_format = ($conf->config('date_format') || "%m/%d/%Y");
+my $dt = $cust_main->spouse_birthdate ne ''
+           ? DateTime->from_epoch( 'epoch'     => $cust_main->spouse_birthdate,
+                                   'time_zone' =>'floating',
+                                 )
+           : '';
+</%init>

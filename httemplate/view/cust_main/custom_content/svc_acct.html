@@ -1,0 +1,7 @@
+<& svc_Common.html, $cust_main,
+  'table' => 'svc_acct',
+  'fields' => [qw( username _password )],
+&>
+<%init>
+my($cust_main) = @_;
+</%init>
