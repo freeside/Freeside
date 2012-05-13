@@ -2070,7 +2070,7 @@ sub cust_svc {
   }
   if ( $opt{'svcdb'} ) {
     $search{addl_from} = ' LEFT JOIN part_svc USING ( svcpart ) ';
-    $search{hashref}->{svcdb} = $opt{'svcdb'};
+    $search{extra_sql} = ' AND svcdb = '. dbh->quote( $opt{'svcdb'} );
   }
 
   cluck "cust_pkg->cust_svc called" if $DEBUG > 2;

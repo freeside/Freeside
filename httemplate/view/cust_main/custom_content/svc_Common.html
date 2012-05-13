@@ -1,0 +1,40 @@
+% foreach my $cust_svc (@cust_svc) {
+%   my $svc_x = $cust_svc->svc_x;
+%   #warn $svc_x;
+<TABLE CLASS="fsinnerbox">
+%   foreach my $field ( grep $svc_x->$_(), @{ $opt{fields} } ) {
+      <& /elements/tr-td-label.html, 'label' => $labels{$field} &>
+      <TD BGCOLOR="#ffffff"><% $svc_x->$field() |h %></TD>
+    </TR>
+%   }
+</TABLE>
+% }
+<%init>
+my($cust_main, %opt) = @_;
+
+my $table = $opt{table};
+warn $table;
+my @cust_svc = ();
+foreach my $cust_pkg (
+  grep {warn $_->num_cust_svc( 'svcdb'=>$table ); $_->num_cust_svc( 'svcdb'=>$table ); }
+       $cust_main->all_pkgs
+) { 
+  my @wtf = $cust_pkg->cust_svc( 'svcdb'=>$table );
+  warn scalar(@wtf);
+  push @cust_svc, $cust_pkg->cust_svc( 'svcdb'=>$table );
+}
+
+my %labels;
+if ( UNIVERSAL::can("FS::$table", 'table_info') ) {
+#  $opt{'name'}   = "FS::$table"->table_info->{'name'};
+
+  my $fields = "FS::$table"->table_info->{'fields'};
+  %labels = map { $_ =>  ( ref($fields->{$_})
+                            ? $fields->{$_}{'label'}
+                            : $fields->{$_}
+                        );
+                }
+            keys %$fields;
+}
+
+</%init>

@@ -277,7 +277,13 @@ function areyousure(href, message) {
 % }
 
 % if ( $view eq 'custom' ) { 
+%   if ( $conf->config('cust_main-custom_link') ) {
 <& cust_main/custom.html, $cust_main &>
+%   } elsif ( $conf->config('cust_main-custom_content') ) {
+      <& cust_main/custom_content.html, $cust_main &>
+%   #} else {
+%   #  warn "custom view without cust_main-custom_link or -custom_content?";
+%   }
 % }
 
 </DIV>
@@ -326,7 +332,8 @@ $views{emt('Payment History')} =  'payment_history'
 $views{emt('Change History')}  =  'change_history'
   if $curuser->access_right('View customer history');
 $views{$conf->config('cust_main-custom_title') || emt('Custom')} =  'custom'
-  if $conf->config('cust_main-custom_link');
+  if $conf->config('cust_main-custom_link')
+  || $conf->config('cust_main-custom_content');
 $views{emt('Jumbo')}           =  'jumbo';
 
 my %viewname = reverse %views;

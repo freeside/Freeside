@@ -1,0 +1,7 @@
+<& svc_Common.html, $cust_main,
+  'table' => 'svc_phone',
+  'fields' => [qw( phonenum )],
+&>
+<%init>
+my($cust_main) = @_;
+</%init>

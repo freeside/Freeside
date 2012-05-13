@@ -4784,6 +4784,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-custom_content',
+    'section'     => 'UI',
+    'description' => 'As an alternative to cust_main-custom_link (leave it blank), the contant to display on this customer page, one item per line.  Available iems are: small_custview, birthdate, spouse_birthdate, svc_acct, svc_phone and svc_external.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'cust_main-custom_title',
     'section'     => 'UI',
     'description' => 'Title for the "Custom" tab in the View Customer page.',
