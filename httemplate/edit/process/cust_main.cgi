@@ -66,6 +66,8 @@ my $new = new FS::cust_main ( {
   } fields('cust_main')
 } );
 
+$new->invoice_noemail( ($cgi->param('invoice_email') eq 'Y') ? '' : 'Y' );
+
 $cgi->param('duplicate_of_custnum') =~ /^(\d+)$/;
 my $duplicate_of = $1;
 if ( $duplicate_of ) {

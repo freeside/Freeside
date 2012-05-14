@@ -217,20 +217,26 @@
 </TR>
 % }
 <TR>
-  <TD ALIGN="right"><% mt('Postal invoices') |h %></TD>
+  <TD ALIGN="right"><% mt('Postal mail invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% ( grep { $_ eq 'POST' } @invoicing_list ) ? $yes : $no %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right"><% mt('FAX invoices') |h %></TD>
+  <TD ALIGN="right"><% mt('Fax invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% ( grep { $_ eq 'FAX' } @invoicing_list ) ? $yes : $no %>
   </TD>
 </TR>
-% unless ( $conf->exists('cust-email-high-visibility')) {
 <TR>
   <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
+  <TD BGCOLOR="#ffffff">
+    <% $cust_main->invoice_noemail ? $no : $yes %>
+  </TD>
+</TR>
+% unless ( $conf->exists('cust-email-high-visibility')) {
+<TR>
+  <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
   </TD>

@@ -17,7 +17,7 @@ sub do_action {
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
 
-  $cust_bill->email;
+  $cust_bill->email unless $cust_main->invoice_noemail;
 }
 
 1;

@@ -20,7 +20,7 @@
 
 % if ( $conf->exists('cust-email-high-visibility') && $which eq '') {
   <TR>
-    <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
+    <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
     <TD BGCOLOR="#ffff00">
       <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
     </TD>
