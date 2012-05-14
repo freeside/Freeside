@@ -457,6 +457,7 @@ tie my %config_radius, 'Tie::IxHash',
 tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
+  $config_export_svc{'Service classes'} = [ $fsurl.'browse/part_svc_class.html', 'Services classes are user-defined, informational types for services' ];
   $config_export_svc{'Provisioning exports'} = [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ];
 }
 $config_export_svc{'Dialup'}  = [ \%config_dialup, ''    ]

@@ -1,0 +1,22 @@
+<% include( '/elements/select-table.html',
+                 'table'       => 'part_svc_class',
+                 'name_col'    => 'classname',
+                 'value'       => $classnum,
+                 'empty_label' => '(none)',
+                 'hashref'     => \%hash,
+                 %opt,
+             )
+%>
+<%init>
+
+my %opt = @_;
+my $classnum = $opt{'curr_value'} || $opt{'value'};
+
+my %hash = ();
+$hash{'disabled'} = '' unless $opt{'showdisabled'};
+
+
+$opt{'records'} = delete $opt{'part_svc_class'}
+  if $opt{'part_svc_class'};
+
+</%init>

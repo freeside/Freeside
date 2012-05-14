@@ -1850,6 +1850,7 @@ sub tables_hashref {
         'disabled',              'char', 'NULL',         1, '', '', 
         'preserve',              'char', 'NULL',         1, '', '',
         'selfservice_access', 'varchar', 'NULL',   $char_d, '', '',
+        'classnum',               'int', 'NULL',        '', '', '',
       ],
       'primary_key' => 'svcpart',
       'unique' => [],
@@ -1868,6 +1869,17 @@ sub tables_hashref {
       'primary_key' => 'columnnum',
       'unique' => [ [ 'svcpart', 'columnname' ] ],
       'index' => [ [ 'svcpart' ] ],
+    },
+
+    'part_svc_class' => {
+      'columns' => [
+        'classnum',    'serial',   '',      '', '', '', 
+        'classname',   'varchar',  '', $char_d, '', '', 
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [],
+      'index' => [ ['disabled'] ],
     },
 
     #(this should be renamed to part_pop)

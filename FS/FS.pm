@@ -214,6 +214,8 @@ L<FS::inventory_item> - Inventory items
 
 L<FS::part_svc> - Service definition class
 
+L<FS::part_svc_class> - Service class class
+
 L<FS::part_svc_column> - Column constraint class
 
 L<FS::export_svc> - Class linking service definitions (see L<FS::part_svc>)

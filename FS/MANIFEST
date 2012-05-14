@@ -638,3 +638,5 @@ FS/sales.pm
 t/sales.t
 FS/access_groupsales.pm
 t/access_groupsales.t
+FS/part_svc_class.pm
+t/part_svc_class.t

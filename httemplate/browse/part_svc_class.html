@@ -1,0 +1,34 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Service classes',
+                 'html_init'   => $html_init,
+                 'name'        => 'service classes',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 1,
+                 'query'       => { 'table'     => 'part_svc_class',
+                                    'hashref'   => {},
+                                    'order_by' => 'ORDER BY classnum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => $header,
+                 'fields'      => $fields,
+                 'links'       => $links,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  'Service classes are user-defined, informational types for services.<BR><BR>'.
+  qq!<A HREF="${p}edit/part_svc_class.html"><I>Add a service class</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM part_svc_class';
+
+my $link = [ $p.'edit/part_svc_class.html?', 'classnum' ];
+
+my $header = [ '#', 'Class' ];
+my $fields = [ 'classnum', 'classname' ];
+my $links  = [ $link, $link ];
+
+</%init>

@@ -1,17 +1,27 @@
-<% include('/elements/header.html', "$action Service Definition",
+<& /elements/header.html, "$action Service Definition",
            menubar('View all service definitions' => "${p}browse/part_svc.cgi"),
            #" onLoad=\"visualize()\""
-          )
-%>
+&>
+
+<& /elements/init_overlib.html &>
+
+<BR>
 
 <FORM NAME="dummy">
 
-      Service Part #<% $part_svc->svcpart ? $part_svc->svcpart : "(NEW)" %>
-<BR><BR>
-Service  <INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"><BR>
+<FONT CLASS="fsinnerbox-title">Service Part #<% $part_svc->svcpart ? $part_svc->svcpart : "(NEW)" %></FONT>
+<TABLE CLASS="fsinnerbox">
+<TR>
+  <TD ALIGN="right">Service</TD>
+  <TD><INPUT TYPE="text" NAME="svc" VALUE="<% $hashref->{svc} %>"></TD>
+<TR>
 
-Self-service access:
-<SELECT NAME="selfservice_access">
+<& /elements/tr-select-part_svc_class.html, curr_value=>$hashref->{classnum} &>
+
+<TR>
+  <TD ALIGN="right">Self-service access</TD>
+  <TD>
+    <SELECT NAME="selfservice_access">
 % tie my %selfservice_access, 'Tie::IxHash', #false laziness w/browse/part_svc
 %   ''         => 'Yes',
 %   'hidden'   => 'Hidden',
@@ -22,12 +32,22 @@ Self-service access:
           <% $_ eq $hashref->{'selfservice_access'} ? 'SELECTED' : '' %>
   ><% $selfservice_access{$_} %>
 % }
-</SELECT><BR>
+    </SELECT>
+  </TD>
+</TR>
 
-<INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;Disable new orders<BR>
 
-<INPUT TYPE="checkbox" NAME="preserve" VALUE="Y"<% $hashref->{'preserve'} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;Preserve this service on package cancellation<BR>
+<TR>
+  <TD ALIGN="right">Disable new orders</TD>
+  <TD><INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>></TD>
+</TR>
 
+<TR>
+  <TD ALIGN="right">Preserve this service on package cancellation</TD>
+  <TD><INPUT TYPE="checkbox" NAME="preserve" VALUE="Y"<% $hashref->{'preserve'} eq 'Y' ? ' CHECKED' : '' %>>&nbsp;</TD>
+</TR>
+
+</TABLE>
 
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $hashref->{svcpart} %>">
 
@@ -76,6 +96,18 @@ Self-service access:
 %             ? ( $hashref->{svcdb} )
 %             : FS::part_svc->svc_tables();
 %
+%  my $help = '';
+%  unless ( $hashref->{svcpart} ) {
+%    $help = '&nbsp;'.
+%            include('/elements/popup_link.html',
+%                      'action' => $p.'docs/part_svc-table.html',
+%                      'label'  => 'help',
+%                      'actionlabel' => 'Service table help',
+%                      'width'       => 763,
+%                      #'height'      => 400,
+%                    );
+%  }
+%
 %  tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } grep dbdef->table($_), @dbs;
 %  my $widget = new HTML::Widgets::SelectLayers(
 %    #'selected_layer' => $p_svcdb,
@@ -84,15 +116,16 @@ Self-service access:
 %    'form_name'      => 'dummy',
 %    #'form_action'    => 'process/part_svc.cgi',
 %    'form_action'    => 'part_svc.cgi', #self
-%    'form_text'      => [ qw( svc svcpart ) ],
-%    'form_select'    => [ 'selfservice_access' ],
-%    'form_checkbox'  => [ 'disabled', 'preserve' ],
+%    'form_elements'  => [qw( svc svcpart classnum selfservice_access
+%                             disabled preserve
+%                        )],
+%    'html_between'   => $help,
 %    'layer_callback' => sub {
 %      my $layer = shift;
 %      
 %      my $html = qq!<INPUT TYPE="hidden" NAME="svcdb" VALUE="$layer">!;
 %
-%      $html .= $svcdb_info;
+%      #$html .= $svcdb_info;
 %
 %      my $columns = 3;
 %      my $count = 0;
@@ -267,6 +300,7 @@ Self-service access:
 %
 %          $html .= include('/elements/select-table.html',
 %                             'element_name' => "${layer}__${field}_classnum",
+%                             'id'           => "${layer}__${field}_classnum",
 %                             'element_etc'  => ( $is_inv
 %                                                   ? $disabled
 %                                                   : $nodisplay
@@ -349,6 +383,7 @@ Self-service access:
 %          $html .= include('/elements/select-hardware_class.html',
 %                             'curr_value'    => $value,
 %                             'element_name'  => "${layer}__${field}_classnum",
+%                             'id'            => "${layer}__${field}_classnum",
 %                             'element_etc'   => $flag ne 'H' && $nodisplay,
 %                             'empty_label'   => 'Select hardware class',
 %                          );
@@ -382,7 +417,8 @@ Self-service access:
 %
 %      $html .= include('/elements/progress-init.html',
 %                         $layer, #form name
-%                         [ qw(svc svcpart selfservice_access disabled preserve
+%                         [ qw(svc svcpart classnum selfservice_access
+%                              disabled preserve
 %                              exportnum),
 %                           @fields ],
 %                         'process/part_svc.cgi',
@@ -401,9 +437,8 @@ Self-service access:
 %
 %    },
 %  );
-%
-%
 
+<BR>
 Table <% $widget->html %>
 
 <% include('/elements/footer.html') %>
@@ -450,66 +485,6 @@ my %communigate_fields = (
   #'svc_mailinglist' => { map { $_=>1 } qw( ) },
   #'svc_cert'        => { map { $_=>1 } qw( ) },
 );
-
-my $svcdb_info = '
-<TABLE>
-  <TR>
-    <TH ALIGN="left">Generic</TH>
-    <TH ALIGN="left">Access</TH>
-    <TH ALIGN="left">Telephony</TH>
-<!--    <TH>Hosting</TH>
-    <TH>Colocation</TH>
--->
-  </TR>
-  <TR>
-    <TD VALIGN="top">
-      <UL STYLE="margin:0">
-        <LI><B>svc_acct</B>: Accounts - anything with a username (mailbox, shell, RADIUS, etc.)
-        <LI><B>svc_hardware</B>: Equipment supplied to customers
-        <LI><B>svc_external</B>: Externally-tracked service
-      </UL>
-    </TD>
-    <TD VALIGN="top">
-      <UL STYLE="margin:0">
-        <LI><B>svc_dsl</B>: DSL
-        <LI><B>svc_broadband</B>: Wireless broadband
-        <LI><B>svc_dish</B>: DISH Network
-      </UL>
-    </TD>
-    <TD VALIGN="top">
-      <UL STYLE="margin:0">
-        <LI><B>svc_phone</B>: Customer phone number
-        <LI><B>svc_pbx</B>: Customer PBX
-      </UL>
-    </TD>
-  </TR>
-</TABLE>
-<BR>
-<TABLE>
-  <TR>
-    <TH ALIGN="left">Hosting</TH>
-    <TH ALIGN="left">Colocation</TH>
-  </TR>
-    <TD VALIGN="top">
-      <UL STYLE="margin:0">
-        <LI><B>svc_domain</B>: Domain
-        <LI><B>svc_cert</B>: Certificate
-        <LI><B>svc_forward</B>: Mail forwarding
-        <LI><B>svc_mailinglist</B>: Mailing list
-        <LI><B>svc_www</B>: Virtual domain website
-      </UL>
-    </TD>
-    <TD VALIGN="top">
-      <UL STYLE="margin:0">
-        <LI><B>svc_port</B>: Customer router/switch port
-      </UL>
-    </TD>
-  </TR>
-<TABLE>
-<!--   <LI>svc_charge - One-time charges (Partially unimplemented)
-       <LI>svc_wo - Work orders (Partially unimplemented)
--->
-';
 
 my $mod_info = '
 For the selected table, you can give fields default or fixed (unchangable)
