@@ -478,7 +478,7 @@
           ? 'CHECKED'
           : ''
 
-        %>> <% mt('Postal mail invoice') |h %> 
+        %>> <% mt('Postal mail invoices') |h %> 
 
       </TD>
     </TR>
@@ -490,15 +490,27 @@
           ? 'CHECKED'
           : ''
 
-        %>> <% mt('Fax invoice') |h %> 
+        %>> <% mt('Fax invoices') |h %> 
 
       </TD>
     </TR>
 
 % }
 
-% unless ( $conf->exists('cust-email-high-visibility')) {
     <TR>
+      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" <%
+
+        ( $cust_main->invoice_noemail eq 'Y' )
+          ? ''
+          : 'CHECKED'
+
+        %>> <% mt('Email invoices') |h %> 
+
+      </TD>
+    </TR>
+
+% unless ( $conf->exists('cust-email-high-visibility')) {
+   <TR>
       <TD ALIGN="right" WIDTH="200">
         <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum) 
             ? $r : '' %>Email address(es)

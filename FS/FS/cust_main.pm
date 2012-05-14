@@ -1799,6 +1799,7 @@ sub check {
     || $self->ut_numbern('billday')
     || $self->ut_enum('edit_subject', [ '', 'Y' ] )
     || $self->ut_enum('calling_list_exempt', [ '', 'Y' ] )
+    || $self->ut_enum('invoice_noemail', [ '', 'Y' ] )
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
 

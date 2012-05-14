@@ -1314,14 +1314,16 @@ sub send {
     $balance_over = shift if scalar(@_) && $_[0] !~ /^\s*$/;
   }
 
+  my $cust_main = $self->cust_main;
+
   return 'N/A' unless ! $agentnums
-                   or grep { $_ == $self->cust_main->agentnum } @$agentnums;
+                   or grep { $_ == $cust_main->agentnum } @$agentnums;
 
   return ''
-    unless $self->cust_main->total_owed_date($self->_date) > $balance_over;
+    unless $cust_main->total_owed_date($self->_date) > $balance_over;
 
   $invoice_from ||= $self->_agent_invoice_from ||    #XXX should go away
-                    $conf->config('invoice_from', $self->cust_main->agentnum );
+                    $conf->config('invoice_from', $cust_main->agentnum );
 
   my %opt = (
     'template'     => $template,
@@ -1329,11 +1331,12 @@ sub send {
     'notice_name'  => ( $notice_name || 'Invoice' ),
   );
 
-  my @invoicing_list = $self->cust_main->invoicing_list;
+  my @invoicing_list = $cust_main->invoicing_list;
 
   #$self->email_invoice(\%opt)
   $self->email(\%opt)
-    if grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list;
+    if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list )
+    && ! $self->invoice_noemail;
 
   #$self->print_invoice(\%opt)
   $self->print(\%opt)
