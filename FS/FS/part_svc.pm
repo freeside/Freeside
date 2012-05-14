@@ -716,7 +716,7 @@ sub process {
   my $job = shift;
 
   my $param = thaw(decode_base64(shift));
-  warn Dumper($param);# if $DEBUG;
+  warn Dumper($param) if $DEBUG;
 
   my $old = qsearchs('part_svc', { 'svcpart' => $param->{'svcpart'} }) 
     if $param->{'svcpart'};
