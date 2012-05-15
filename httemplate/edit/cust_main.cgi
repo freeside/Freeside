@@ -299,7 +299,7 @@ if ( $cgi->param('error') ) {
     $cust_main->paycvv($paycvv);
   }
   @invoicing_list = $cust_main->invoicing_list;
-  $ss = $cust_main->masked('ss');
+  $ss = $conf->exists('unmask_ss') ? $cust_main->ss : $cust_main->masked('ss');
   $stateid = $cust_main->masked('stateid');
   $payinfo = $cust_main->paymask;
 

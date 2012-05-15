@@ -14,7 +14,7 @@
   </TD>
 % if ( $which eq '' && $conf->exists('show_ss') ) { 
     <TD ALIGN="right"><% mt('SS#') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->masked('ss') || '&nbsp' %></TD>
+    <TD BGCOLOR="#ffffff"><% $conf->exists('unmask_ss') ? $cust_main->ss : $cust_main->masked('ss') || '&nbsp' %></TD>
 % } 
 </TR>
 

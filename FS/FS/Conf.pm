@@ -1925,6 +1925,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'unmask_ss',
+    'section'     => 'UI',
+    'description' => "Don't mask social security numbers in the web interface.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'show_stateid',
     'section'     => 'UI',
     'description' => "Turns on display/collection of driver's license/state issued id numbers in the web interface.  Sometimes required by electronic check (ACH) processors.",
