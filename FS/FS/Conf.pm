@@ -1903,6 +1903,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'unmask_ss',
+    'section'     => 'UI',
+    'description' => "Don't mask social security numbers in the web interface.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'show_stateid',
     'section'     => 'UI',
     'description' => "Turns on display/collection of driver's license/state issued id numbers in the web interface.  Sometimes required by electronic check (ACH) processors.",
@@ -4778,6 +4785,13 @@ and customer address. Include units.',
     'key'         => 'cust_main-custom_link',
     'section'     => 'UI',
     'description' => 'URL to use as source for the "Custom" tab in the View Customer page.  The customer number will be appended, or you can insert "$custnum" to have it inserted elsewhere.  "$agentnum" will be replaced with the agent number, and "$usernum" will be replaced with the employee number.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'cust_main-custom_content',
+    'section'     => 'UI',
+    'description' => 'As an alternative to cust_main-custom_link (leave it blank), the contant to display on this customer page, one item per line.  Available iems are: small_custview, birthdate, spouse_birthdate, svc_acct, svc_phone and svc_external.',
     'type'        => 'textarea',
   },
 
