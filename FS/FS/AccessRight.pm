@@ -330,6 +330,8 @@ tie my %rights, 'Tie::IxHash',
     'Edit billing events',
     { rightname=>'Edit global billing events', global=>1 },
 
+    'View templates',
+    { rightname=>'View global templates', global=>1 },
     'Edit templates',
     { rightname=>'Edit global templates', global=>1 },
 

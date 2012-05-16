@@ -22,7 +22,7 @@ Example:
   );
 
 </%doc>
-% if ( scalar(@agents) == 1 ) { 
+% if ( scalar(@agents) == 1 || $opt{'fixed'} ) { 
 
   <INPUT TYPE  = "hidden"
          NAME  = "<% $opt{'field'} || 'agentnum' %>"
@@ -30,9 +30,20 @@ Example:
          VALUE = "<% $agents[0]->agentnum %>"
   >
 
-%# YUCK.  empty row so we don't throw g_row in edit.html off :/
-  <TR>
-  </TR>
+%   if ( scalar(@agents) != 1 ) {
+      <TR>
+        <TD ALIGN="right"><% $opt{'label'} || emt('Agent') %></TD>
+        <TD BGCOLOR="#dddddd" <% $colspan %>>
+%         my $agent = qsearchs('agent', { 'agentnum' => $agentnum });
+          <% $agent ? $agent->agent : '(all)' |h %>
+        </TD>
+      </TR>
+
+%   } else { # YUCK.  empty row so we don't throw g_row in edit.html off :/
+      <TR>
+      </TR>
+%   }
+%
 % } else { 
 
   <TR>

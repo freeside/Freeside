@@ -292,6 +292,9 @@ Example:
 %     #& deprecated weird value hashref used only by reason.html
 %     'value'         => $f->{'value'},
 %
+%     #fixed
+%     'noescape'      => $f->{'noescape'},
+%
 %     #select(-*)
 %     'options'       => $f->{'options'},
 %     'labels'        => $f->{'labels'},
@@ -308,6 +311,7 @@ Example:
 %
 %     #umm.  for select-agent_types at least
 %     'disabled'      => $f->{'disabled'},
+%     'fixed'         => $f->{'fixed'},
 %
 %     #any?
 %     'colspan'       => $f->{'colspan'},
@@ -751,13 +755,15 @@ Example:
 
   <BR>
 
-  <INPUT TYPE     = "submit"
-         ID       = "submit"
-         VALUE    = "<% ( !$clone && $object->$pkey() )
-                          ? "Apply changes"
-                          : "Add ". ( $opt{'name'} || $opt{'name_singular'} )
-                     %>"
-  >
+%   unless ($opt{'no_submit'}) {
+      <INPUT TYPE     = "submit"
+             ID       = "submit"
+             VALUE    = "<% ( !$clone && $object->$pkey() )
+                              ? "Apply changes"
+                              : "Add ". ($opt{'name'} || $opt{'name_singular'})
+                         %>"
+      >
+%   }
 
   </FORM>
 

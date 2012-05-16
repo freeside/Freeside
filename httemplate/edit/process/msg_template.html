@@ -9,9 +9,7 @@
 %>
 <%init>
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
-  ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates')
-  ||     $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right(['Edit templates','Edit global templates']);
 
 sub precheck_callback {
   my $cgi = shift;

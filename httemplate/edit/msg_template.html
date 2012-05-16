@@ -1,14 +1,57 @@
-<% include( 'elements/edit.html',  
-    'html_init'     => '<TABLE id="outerTable"><TR><TD>',
-    'body_etc'      => $body_etc,
-    'name_singular' => 'template',
-    'table'         => 'msg_template',
-    'viewall_dir'   => 'browse',
-    'agent_virt'    => 1,
-    'agent_null'    => 1,
-    'agent_null_right' => ['Edit global templates', 'Configuration'],
+<& elements/edit.html,
+     'html_init'        => '<TABLE id="outerTable"><TR><TD>',
+     'body_etc'         => $body_etc,
+     'name_singular'    => 'template',
+     'table'            => 'msg_template',
+     'viewall_dir'      => 'browse',
+     'agent_virt'       => 1,
+     'agent_null'       => 1,
+     'agent_null_right' => [ 'View global templates', 'Edit global templates' ],
 
-    'fields' => [
+     'fields'           => \@fields,
+     'labels'           => { 
+                             'msgnum'    => 'Template',
+                             'agentnum'  => 'Agent',
+                             'msgname'   => 'Template name',
+                             'from_addr' => 'From: ',
+                             'bcc_addr'  => 'Bcc: ',
+                             'locale'    => 'Language',
+                             'subject'   => 'Subject: ',
+                             'body'      => 'Message body',
+                           },
+     'edit_callback'    => \&edit_callback,
+     'error_callback'   => \&edit_callback,
+     'html_bottom'      => '</DIV>',
+     'html_foot'        => ( $no_submit ? '' : "</TD>$sidebar</TR></TABLE>" ),
+     'no_submit'        => $no_submit,
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right([ 'View templates', 'View global templates',
+                                  'Edit templates', 'Edit global templates',
+                               ]);
+
+my $body_etc = '';
+$body_etc = q!onload="document.getElementById('locale').onchange()"!
+  if $cgi->param('locale') eq 'new';
+
+my $msgnum = $cgi->param('msgnum');
+my $msg_template = $msgnum ? qsearchs('msg_template', {msgnum=>$msgnum}) : '';
+
+my $no_submit = 0;
+my @fields = ();
+if ( $curuser->access_right('Edit global templates') 
+     || (    $curuser->access_right('Edit templates')
+          && $msg_template
+          && $msg_template->agentnum
+          && $curuser->agentnums_href->{$msg_template->agentnum}
+        )
+   )
+{
+  push @fields,
       { field => 'agentnum',
         type  => 'select-agent',
       },
@@ -25,33 +68,32 @@
         type  => 'htmlarea',
         width => 763
       },
-    ],
-    'labels' => { 
-      'msgnum'    => 'Template',
-      'agentnum'  => 'Agent',
-      'msgname'   => 'Template name',
-      'from_addr' => 'From: ',
-      'bcc_addr'  => 'Bcc: ',
-      'locale'    => 'Language',
-      'subject'   => 'Subject: ',
-      'body'      => 'Message body',
-    },
-    'edit_callback'   => \&edit_callback,
-    'error_callback'  => \&edit_callback,
-    'html_bottom' => '</DIV>',
-    'html_foot' => "</TD>$sidebar</TR></TABLE>",
-    )
-    %>
-<%init>
+  ;
+} else { #readonly
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
-  ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates')
-  ||     $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  $no_submit = 1;
 
-my $body_etc = '';
-$body_etc = q!onload="document.getElementById('locale').onchange()"!
-  if $cgi->param('locale') eq 'new';
+  push @fields,
+      { field => 'agentnum',
+        type  => 'select-agent',
+        fixed => 1,
+      },
+      { field => 'msgname',   type => 'fixed', },
+      { field => 'from_addr', type => 'fixed', },
+      { field => 'bcc_addr',  type => 'fixed', },
+      { type  => 'tablebreak-tabs',
+        include_opt_callback => \&menubar_opt_callback,
+      },
+      # template_content fields
+      { field => 'locale',  type => 'hidden' },
+      { field => 'subject', type => 'fixed', },
+      { field    => 'body',
+        type     => 'fixed',
+        noescape => 1,
+      },
+  ;
+
+}
 
 sub new_callback {
   my ($cgi, $object, $fields_listref, $opt_hashref) = @_;
