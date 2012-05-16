@@ -172,7 +172,7 @@ sub all_part_referral {
   qsearch({
     'table'     => 'part_referral',
     'hashref'   => $hashref,
-    'extra_sql' => $and. $self->acl_agentnum_sql(@_). ' ORDER BY refnum ',
+    'extra_sql' => $and. $self->acl_agentnum_sql($global). ' ORDER BY refnum ',
   });
 
 }
