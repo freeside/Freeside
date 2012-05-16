@@ -1075,9 +1075,9 @@ and 'setuprecur' (set to "setup" or "recur" to limit to one or the other).
 sub owed_sql {
   my ($class, $start, $end, %opt) = @_;
   my $charged = 
-    $opt{setuprecur} =~ /^s/ ? 'setup' :
-    $opt{setuprecur} =~ /^r/ ? 'recur' :
-    'setup + recur';
+    $opt{setuprecur} =~ /^s/ ? 'cust_bill_pkg.setup' :
+    $opt{setuprecur} =~ /^r/ ? 'cust_bill_pkg.recur' :
+    'cust_bill_pkg.setup + cust_bill_pkg.recur';
 
   if ( $opt{no_usage} ) {
     $charged .= ' - ' . $class->usage_sql;
