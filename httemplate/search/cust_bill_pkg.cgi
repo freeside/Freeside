@@ -511,7 +511,7 @@ if ( $cgi->param('pkg_tax') ) {
   if ( $unearned ) {
     $count_query .= "SUM( $unearned_base ), SUM( $unearned_sql )";
   } elsif ( $use_usage eq 'recurring' ) {
-    $count_query .= "SUM(setup + recur - usage)";
+    $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - usage)";
   } elsif ( $use_usage eq 'usage' ) {
     $count_query .= "SUM(usage)";
   } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
