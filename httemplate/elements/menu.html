@@ -495,7 +495,7 @@ $config_billing{'Billing events'} = [ $fsurl.'browse/part_event.html', 'Billing 
     || $curuser->access_right('Edit global billing events');
 if ( $curuser->access_right('Configuration') ) {
   #$config_billing{'Invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
-  $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
+#this doesn't work right#  $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
   $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
   $config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
 
@@ -543,9 +543,8 @@ tie my %config_nms, 'Tie::IxHash',
 
 tie my %config_misc, 'Tie::IxHash';
 $config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templates for customer notices' ]
-  if $curuser->access_right('Edit templates')
-  || $curuser->access_right('Edit global templates')
-  || $curuser->access_right('Configuration');
+  if $curuser->access_right(['View templates', 'View global templates',
+                             'Edit templates', 'Edit global templates', ]);
 $config_misc{'Tags'} = [ $fsurl.'browse/part_tag.html', '' ]
   if $curuser->access_right('Configuration');
 $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]

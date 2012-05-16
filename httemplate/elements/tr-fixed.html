@@ -13,13 +13,15 @@ my %opt = @_;
 my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
 
 my $value = $opt{'formatted_value'} || $opt{'curr_value'} || $opt{'value'};
-#compatibility with select-table and friends
-if ( $opt{'multiple'} ) {
-  $value = [ split(/\s*,\s*/, $value) ] if !ref $value;
-  $value = join('<BR>', map {encode_entities($_)} @$value);
-}
-else {
-  $value = encode_entities($value)
+
+unless ( $opt{'noescape'} ) {
+  #compatibility with select-table and friends
+  if ( $opt{'multiple'} ) {
+    $value = [ split(/\s*,\s*/, $value) ] if !ref $value;
+    $value = join('<BR>', map {encode_entities($_)} @$value);
+  } else {
+    $value = encode_entities($value)
+  }
 }
 
 </%init>
