@@ -1913,6 +1913,8 @@ sub list_support_usage {
 
 sub _list_cdr_usage {
   # XXX CDR type support...
+  # XXX any way to do a paged search on this?
+  # we have to return the results all at once...
   my($svc_phone, $begin, $end, %opt) = @_;
   map [ $_->downstream_csv(%opt, 'keeparray' => 1) ],
     $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, );

@@ -227,13 +227,15 @@ sub calc_usage {
   ) {
     my $svc_phone = $cust_svc->svc_x;
 
-    foreach my $cdr ( $svc_phone->get_cdrs(
+    my $cdr_search = $svc_phone->psearch_cdrs(
       'inbound'        => 1,
       'default_prefix' => $self->option('default_prefix'),
       'status'         => '', # unprocessed only
       'for_update'     => 1,
-      )
-    ) {
+    );
+    $cdr_search->limit(1000);
+    $cdr_search->increment(0);
+    while ( my $cdr = $cdr_search->fetch ) {
 
       my $reason = $self->check_chargable( $cdr,
                                            'option_cache' => \%opt_cache,
@@ -309,6 +311,8 @@ sub calc_usage {
       );
       die $error if $error;
       $formatter->append($cdr);
+
+      $cdr_search->adjust(1) if $cdr->freesidestatus eq '';
 
     } #$cdr
   } # $cust_svc

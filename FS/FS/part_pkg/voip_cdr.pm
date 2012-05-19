@@ -401,9 +401,10 @@ sub calc_usage {
     #my @invoice_details_sort;
 
     #first rate any outstanding CDRs not yet rated
-    foreach my $cdr (
-      $svc_x->get_cdrs( %options )
-    ) {
+    my $cdr_search = $svc_x->psearch_cdrs(%options);
+    $cdr_search->limit(1000);
+    $cdr_search->increment(0); # because we're changing their status as we go
+    while ( my $cdr = $cdr_search->fetch ) {
 
       my $error = $cdr->rate(
         'part_pkg'                          => $self,
@@ -414,14 +415,19 @@ sub calc_usage {
       );
       die $error if $error; #??
 
+      $cdr_search->adjust(1) if $cdr->freesidestatus eq '';
+      # it was skipped without changing status, so increment the 
+      # offset so that we don't re-fetch it on refill
+
     } # $cdr
 
     #then add details to invoices & get a total
     $options{'status'} = 'rated';
 
-    foreach my $cdr (
-      $svc_x->get_cdrs( %options ) 
-    ) {
+    $cdr_search = $svc_x->psearch_cdrs(%options);
+    $cdr_search->limit(1000);
+    $cdr_search->increment(0);
+    while ( my $cdr = $cdr_search->fetch ) {
       my $error;
       # at this point we officially Do Not Care about the rating method
       if ( $included_calls > 0 ) {
@@ -436,7 +442,9 @@ sub calc_usage {
       }
       die $error if $error;
       $formatter->append($cdr);
-    }
+
+      $cdr_search->adjust(1) if $cdr->freesidestatus eq 'rated';
+    } #$cdr
   }
 
   $formatter->finish; #writes into $details

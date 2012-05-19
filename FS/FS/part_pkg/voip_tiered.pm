@@ -132,9 +132,11 @@ sub calc_usage {
 
       $options{'inbound'} = ( $pass eq 'inbound' );
 
-      foreach my $cdr (
-        $svc_x->get_cdrs( %options )
-      ) {
+      my $cdr_search = $svc_x->psearch_cdrs(%options);
+      $cdr_search->limit(1000);
+      $cdr_search->increment(0);
+      while ( my $cdr = $cdr_search->fetch ) {
+
         if ( $DEBUG > 1 ) {
           warn "rating CDR $cdr\n".
                join('', map { "  $_ => ". $cdr->{$_}. "\n" } keys %$cdr );
@@ -172,6 +174,8 @@ sub calc_usage {
         die $error if $error;
 
         $total += $charge_min;
+
+        $cdr_search->adjust(1) if $cdr->freesidestatus eq '';
 
       } # $cdr
 
@@ -213,9 +217,10 @@ sub calc_usage {
       # tell the formatter what we're sending it
       $formatter->inbound($options{'inbound'});
 
-      foreach my $cdr (
-        $svc_x->get_cdrs( %options )
-      ) {
+      my $cdr_search = $svc_x->psearch_cdrs(%options);
+      $cdr_search->limit(1000);
+      $cdr_search->increment(0);
+      while ( my $cdr = $cdr_search->fetch ) {
 
         my $object = $options{'inbound'}
                        ? $cdr->cdr_termination( 1 ) #1: inbound
@@ -241,6 +246,8 @@ sub calc_usage {
         die $error if $error;
 
         $formatter->append($cdr);
+
+        $cdr_search->adjust(1) if $cdr->freesidestatus eq 'processing-tiered';
 
       } # $cdr
 
