@@ -3087,7 +3087,14 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
-  {
+    {
+    'key'         => 'cust_bill-ftp_spool',
+    'section'     => 'invoicing',
+    'description' => 'Enable FTP upload of the invoice spool during daily processing',
+    'type'        => 'checkbox',
+  },
+
+{
     'key'         => 'svc_acct-usage_suspend',
     'section'     => 'billing',
     'description' => 'Suspends the package an account belongs to when svc_acct.seconds or a bytecount is decremented to 0 or below (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
