@@ -23,7 +23,7 @@
 <% mt('Payment') |h %> 
 <% ntable("#cccccc", 2) %>
 
-% if ( $FS::CurrentUser::CurrentUser->access_right(['Backdate payment']) ) {
+% if ( $FS::CurrentUser::CurrentUser->access_right('Backdate payment') ) {
 <TR>
   <TD ALIGN="right"><% mt('Date') |h %></TD>
   <TD COLSPAN=2>
