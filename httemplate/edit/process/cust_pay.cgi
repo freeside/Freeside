@@ -40,7 +40,7 @@ my $field = my $link = $1;
 $field = 'custnum' if $field eq 'popup';
 
 my $_date;
-if ( $FS::CurrentUser::CurrentUser->access_right(['Backdate payment']) ) {
+if ( $FS::CurrentUser::CurrentUser->access_right('Backdate payment') ) {
   $_date = parse_datetime($cgi->param('_date'));
 }
 else {
