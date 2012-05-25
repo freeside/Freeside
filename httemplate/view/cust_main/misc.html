@@ -134,9 +134,9 @@
 
   <TR>
     <TD ALIGN="right">
-      <% mt('Census tract ([_1])', $cust_main->censusyear) |h %>
+      <% mt('Census tract ([_1])', $cust_main->ship_location->censusyear) |h %>
     </TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->censustract  %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->ship_location->censustract  %></TD>
   </TR>
 
 % }
@@ -145,7 +145,7 @@
 
   <TR>
     <TD ALIGN="right"><% mt('Tax district') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->district %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->ship_location->district %></TD>
   </TR>
 
 % }

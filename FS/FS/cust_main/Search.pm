@@ -85,8 +85,7 @@ sub smart_search {
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
                      ' ( '.
                          join(' OR ', map "$_ = '$phonen'",
-                                          qw( daytime night fax
-                                              ship_daytime ship_night ship_fax )
+                                          qw( daytime night fax )
                              ).
                      ' ) '.
                      " AND $agentnums_sql", #agent virtualization
@@ -101,8 +100,7 @@ sub smart_search {
         'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
                        ' ( '.
                            join(' OR ', map "$_ LIKE '$phonen\%'",
-                                            qw( daytime night
-                                                ship_daytime ship_night )
+                                            qw( daytime night )
                                ).
                        ' ) '.
                        " AND $agentnums_sql", #agent virtualization
@@ -175,16 +173,17 @@ sub smart_search {
     if ( $conf->exists('address1-search') ) {
       my $len = length($num);
       $num = lc($num);
-      foreach my $prefix ( '', 'ship_' ) {
-        push @cust_main, qsearch( {
-          'table'     => 'cust_main',
-          'hashref'   => { %options, },
-          'extra_sql' => 
-            ( keys(%options) ? ' AND ' : ' WHERE ' ).
-            " LOWER(SUBSTRING(${prefix}address1 FROM 1 FOR $len)) = '$num' ".
-            " AND $agentnums_sql",
-        } );
-      }
+      # probably the Right Thing: return customers that have any associated
+      # locations matching the string, not just bill/ship location
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'addl_from' => ' JOIN cust_location USING (custnum) ',
+        'hashref'   => { %options, },
+        'extra_sql' => 
+          ( keys(%options) ? ' AND ' : ' WHERE ' ).
+          " LOWER(SUBSTRING(cust_location.address1 FROM 1 FOR $len)) = '$num' ".
+          " AND $agentnums_sql",
+      } );
     }
 
   } elsif ( $search =~ /^\s*(\S.*\S)\s+\((.+), ([^,]+)\)\s*$/ ) {
@@ -196,20 +195,19 @@ sub smart_search {
     #so just do an exact search (but case-insensitive, so USPS standardization
     #doesn't throw a wrench in the works)
 
-    foreach my $prefix ( '', 'ship_' ) {
-      push @cust_main, qsearch( {
+    push @cust_main, qsearch( {
         'table'     => 'cust_main',
         'hashref'   => { %options },
         'extra_sql' => 
-          ( keys(%options) ? ' AND ' : ' WHERE ' ).
-          join(' AND ',
-            " LOWER(${prefix}first)   = ". dbh->quote(lc($first)),
-            " LOWER(${prefix}last)    = ". dbh->quote(lc($last)),
-            " LOWER(${prefix}company) = ". dbh->quote(lc($company)),
-            $agentnums_sql,
-          ),
-      } );
-    }
+        ( keys(%options) ? ' AND ' : ' WHERE ' ).
+        join(' AND ',
+          " LOWER(first)   = ". dbh->quote(lc($first)),
+          " LOWER(last)    = ". dbh->quote(lc($last)),
+          " LOWER(company) = ". dbh->quote(lc($company)),
+          $agentnums_sql,
+        ),
+      } ),
+    #contacts?
 
   } elsif ( $search =~ /^\s*(\S.*\S)\s*$/ ) { # value search
                                               # try (ship_){last,company}
@@ -247,16 +245,14 @@ sub smart_search {
 
       #exact
       my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
-      $sql .= "
-        (     ( LOWER(last) = $q_last AND LOWER(first) = $q_first )
-           OR ( LOWER(ship_last) = $q_last AND LOWER(ship_first) = $q_first )
-        )";
+      $sql .= "( LOWER(cust_main.last) = $q_last AND LOWER(cust_main.first) = $q_first )";
 
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
         'hashref'   => \%options,
         'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
       } );
+      #contacts?
 
       # or it just be something that was typed in... (try that in a sec)
 
@@ -268,11 +264,13 @@ sub smart_search {
     my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
     $sql .= " (    LOWER(last)          = $q_value
                 OR LOWER(company)       = $q_value
-                OR LOWER(ship_last)     = $q_value
-                OR LOWER(ship_company)  = $q_value
             ";
-    $sql .= "   OR LOWER(address1)      = $q_value
-                OR LOWER(ship_address1) = $q_value
+    #yes, it's a kludge
+    $sql .= "   OR EXISTS( 
+                SELECT 1 FROM cust_location 
+                WHERE LOWER(cust_location.address1) = $q_value
+                  AND cust_location.custnum = cust_main.custnum
+            )
             "
       if $conf->exists('address1-search');
     $sql .= " )";
@@ -294,17 +292,14 @@ sub smart_search {
 
       my @hashrefs = (
         { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
-        { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
       );
 
       if ( $first && $last ) {
+        #contacts? ship_first/ship_last are gone
 
         push @hashrefs,
           { 'first'        => { op=>'ILIKE', value=>"%$first%" },
             'last'         => { op=>'ILIKE', value=>"%$last%" },
-          },
-          { 'ship_first'   => { op=>'ILIKE', value=>"%$first%" },
-            'ship_last'    => { op=>'ILIKE', value=>"%$last%" },
           },
         ;
 
@@ -312,14 +307,6 @@ sub smart_search {
 
         push @hashrefs,
           { 'last'         => { op=>'ILIKE', value=>"%$value%" }, },
-          { 'ship_last'    => { op=>'ILIKE', value=>"%$value%" }, },
-        ;
-      }
-
-      if ( $conf->exists('address1-search') ) {
-        push @hashrefs,
-          { 'address1'      => { op=>'ILIKE', value=>"%$value%" }, },
-          { 'ship_address1' => { op=>'ILIKE', value=>"%$value%" }, },
         ;
       }
 
@@ -335,27 +322,38 @@ sub smart_search {
 
       }
 
+      if ( $conf->exists('address1-search') ) {
+
+        push @cust_main, qsearch( {
+          'table'     => 'cust_main',
+          'addl_from' => 'JOIN cust_location USING (custnum)',
+          'extra_sql' => 'WHERE cust_location.address1 ILIKE '.
+                          dbh->quote("%$value%"),
+        } );
+
+      }
+
       #fuzzy
-      my @fuzopts = (
-        \%options,                #hashref
-        '',                       #select
-        " AND $agentnums_sql",    #extra_sql  #agent virtualization
+      my %fuzopts = (
+        'hashref'   => \%options,
+        'select'    => '',
+        'extra_sql' => " AND $agentnums_sql",    #agent virtualization
       );
 
       if ( $first && $last ) {
         push @cust_main, FS::cust_main::Search->fuzzy_search(
           { 'last'   => $last,    #fuzzy hashref
             'first'  => $first }, #
-          @fuzopts
+          %fuzopts
         );
       }
       foreach my $field ( 'last', 'company' ) {
         push @cust_main,
-          FS::cust_main::Search->fuzzy_search( { $field => $value }, @fuzopts );
+          FS::cust_main::Search->fuzzy_search( { $field => $value }, %fuzopts );
       }
       if ( $conf->exists('address1-search') ) {
         push @cust_main,
-          FS::cust_main::Search->fuzzy_search( { 'address1' => $value }, @fuzopts );
+          FS::cust_main::Search->fuzzy_search( { 'address1' => $value }, %fuzopts );
       }
 
     }
@@ -566,11 +564,12 @@ sub search {
   ##
   if ( $params->{'address'} =~ /\S/ ) {
     my $address = dbh->quote('%'. lc($params->{'address'}). '%');
-    push @where, '('. join(' OR ',
-                             map "LOWER($_) LIKE $address",
-                               qw(address1 address2 ship_address1 ship_address2)
-                          ).
-                 ')';
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location 
+      WHERE cust_location.custnum = cust_main.custnum
+        AND (LOWER(cust_location.address1) LIKE $address OR
+             LOWER(cust_location.address2) LIKE $address)
+    )";
   }
 
   ###
@@ -839,20 +838,27 @@ sub search {
 
 }
 
-=item fuzzy_search FUZZY_HASHREF [ HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ ]
+=item fuzzy_search FUZZY_HASHREF [ OPTS ]
 
 Performs a fuzzy (approximate) search and returns the matching FS::cust_main
 records.  Currently, I<first>, I<last>, I<company> and/or I<address1> may be
-specified (the appropriate ship_ field is also searched).
+specified.
 
 Additional options are the same as FS::Record::qsearch
 
 =cut
 
 sub fuzzy_search {
-  my( $self, $fuzzy, $hash, @opt) = @_;
-  #$self
-  $hash ||= {};
+  my( $self, $fuzzy ) = @_;
+  # sensible defaults, then merge in any passed options
+  my %fuzopts = (
+    'table'     => 'cust_main',
+    'addl_from' => '',
+    'extra_sql' => '',
+    'hashref'   => {},
+    @_
+  );
+
   my @cust_main = ();
 
   check_and_rebuild_fuzzyfiles();
@@ -866,8 +872,25 @@ sub fuzzy_search {
 
     my @fcust = ();
     foreach ( keys %match ) {
-      push @fcust, qsearch('cust_main', { %$hash, $field=>$_}, @opt);
-      push @fcust, qsearch('cust_main', { %$hash, "ship_$field"=>$_}, @opt);
+      if ( $field eq 'address1' ) {
+        #because it lives outside the table
+        my $addl_from = $fuzopts{addl_from} .
+                        'JOIN cust_location USING (custnum)';
+        my $extra_sql = $fuzopts{extra_sql} .
+                        " AND cust_location.address1 = ".dbh->quote($_);
+        push @fcust, qsearch({
+            %fuzopts,
+            'addl_from' => $addl_from,
+            'extra_sql' => $extra_sql,
+        });
+      } else {
+        my $hash = $fuzopts{hashref};
+        $hash->{$field} = $_;
+        push @fcust, qsearch({
+            %fuzopts,
+            'hashref' => $hash
+        });
+      }
     }
     my %fsaw = ();
     push @cust_main, grep { ! $fsaw{$_->custnum}++ } @fcust;

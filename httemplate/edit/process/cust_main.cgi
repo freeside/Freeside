@@ -57,19 +57,40 @@ push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
 push @invoicing_list, 'FAX' if $cgi->param('invoicing_list_FAX');
 $cgi->param('invoicing_list', join(',', @invoicing_list) );
 
+# is this actually used?  if so, we need to clone locations...
+# but I can't find anything that sets this parameter to a non-empty value
+$cgi->param('duplicate_of_custnum') =~ /^(\d+)$/;
+my $duplicate_of = $1;
+
+my %locations;
+for my $pre (qw(bill ship)) {
+
+  my %hash;
+  foreach ( FS::cust_main->location_fields ) {
+    $hash{$_} = scalar($cgi->param($pre.'_'.$_));
+  }
+  $hash{'custnum'} = $cgi->param('custnum');
+  warn Dumper \%hash if $DEBUG;
+  # if we can qsearchs it, then it's unchanged, so use that
+  $locations{$pre} = qsearchs('cust_location', \%hash)
+                     || FS::cust_location->new( \%hash );
+
+}
+
+if ( ($cgi->param('same') || '') eq 'Y' ) {
+  $locations{ship} = $locations{bill};
+}
 
 #create new record object
+# but explicitly avoid setting ship_ fields
 
 my $new = new FS::cust_main ( {
-  map {
-    $_, scalar($cgi->param($_))
-  } fields('cust_main')
+  map { ( $_, scalar($cgi->param($_)) ) } (fields('cust_main')),
+  map { ( "ship_$_", '' ) } (FS::cust_main->location_fields)
 } );
 
 $new->invoice_noemail( ($cgi->param('invoice_email') eq 'Y') ? '' : 'Y' );
 
-$cgi->param('duplicate_of_custnum') =~ /^(\d+)$/;
-my $duplicate_of = $1;
 if ( $duplicate_of ) {
   # then negate all changes to the customer; the only change we should
   # make is to order a package, if requested
@@ -78,11 +99,9 @@ if ( $duplicate_of ) {
     or die "nonexistent existing customer (custnum $duplicate_of)";
 }
 
-if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
-  $new->setfield("ship_$_", '') foreach qw(
-    last first company address1 address2 city county state zip
-    country daytime night fax
-  );
+for my $pre (qw(bill ship)) {
+  $new->set($pre.'_location', $locations{$pre});
+  $new->set($pre.'_locationnum', $locations{$pre}->locationnum);
 }
 
 if ( $cgi->param('no_credit_limit') ) {
@@ -261,6 +280,7 @@ if ( $new->custnum eq '' or $duplicate_of ) {
 
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
   $error ||= "Old record not found!" unless $old;
+
   if ( length($old->paycvv) && $new->paycvv =~ /^\s*\*+\s*$/ ) {
     $new->paycvv($old->paycvv);
   }
@@ -298,6 +318,9 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   warn "$me calling $new -> replace( $old, \ @invoicing_list )" if $DEBUG;
   local($FS::cust_main::DEBUG) = $DEBUG if $DEBUG;
   local($FS::Record::DEBUG)    = $DEBUG if $DEBUG;
+
+  local($Data::Dumper::Sortkeys) = 1;
+  warn Dumper({ new => $new, old => $old }) if $DEBUG;
 
   $error ||= $new->replace( $old, \@invoicing_list,
                             'tax_exemption' => \%tax_exempt,

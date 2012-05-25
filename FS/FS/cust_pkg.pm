@@ -2616,6 +2616,39 @@ Returns the label of the location object (see L<FS::cust_location>).
 
 #end of subs in location_Mixin.pm now... unfortunately the POD doesn't mixin
 
+=item tax_locationnum
+
+Returns the foreign key to a L<FS::cust_location> object for calculating  
+tax on this package, as determined by the C<tax-pkg_address> and 
+C<tax-ship_address> configuration flags.
+
+=cut
+
+sub tax_locationnum {
+  my $self = shift;
+  my $conf = FS::Conf->new;
+  if ( $conf->exists('tax-pkg_address') ) {
+    return $self->locationnum;
+  }
+  elsif ( $conf->exists('tax-ship_address') ) {
+    return $self->cust_main->ship_locationnum;
+  }
+  else {
+    return $self->cust_main->bill_locationnum;
+  }
+}
+
+=item tax_location
+
+Returns the L<FS::cust_location> object for tax_locationnum.
+
+=cut
+
+sub tax_location {
+  my $self = shift;
+  FS::cust_location->by_key( $self->tax_locationnum )
+}
+
 =item seconds_since TIMESTAMP
 
 Returns the number of seconds all accounts (see L<FS::svc_acct>) in this
@@ -3602,6 +3635,25 @@ sub fcc_477_count {
 
 }
 
+=item tax_locationnum_sql
+
+Returns an SQL expression for the tax location for a package, based
+on the settings of 'tax-pkg_address' and 'tax-ship_address'.
+
+=cut
+
+sub tax_locationnum_sql {
+  my $conf = FS::Conf->new;
+  if ( $conf->exists('tax-pkg_address') ) {
+    'cust_pkg.locationnum';
+  }
+  elsif ( $conf->exists('tax-ship_address') ) {
+    'cust_main.ship_locationnum';
+  }
+  else {
+    'cust_main.bill_locationnum';
+  }
+}
 
 =item location_sql
 

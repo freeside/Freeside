@@ -1,122 +1,128 @@
-% my %which = (
-%   ''      => emt('Billing'),
-%   'ship_' => emt('Service'),
-% );
-% foreach my $which ( '', 'ship_' ) {
-%   my $pre = $cust_main->get("${which}last") ? $which : '';
+% my %addr_label = ('bill' => 'Billing address', 'ship' => 'Service address');
 
-<FONT CLASS="fsinnerbox-title"><% $which{$which} %> <% mt('address') |h %></FONT>
+%# Locations (possibly break this out)
+% my @which = ('bill');
+% push @which, 'ship' if $cust_main->has_ship_address;
+% while (@which) {
+%   my $this = shift @which;
+%   my $method = $this.'_location';
+%   my $location = $cust_main->$method;
+<FONT CLASS="fsinnerbox-title"><% mt( $addr_label{$this} ) |h %></FONT>
 <TABLE CLASS="fsinnerbox">
-<TR>
-  <TD ALIGN="right"><% mt('Contact name') |h %></TD>
-  <TD COLSPAN=5 BGCOLOR="#ffffff">
-    <% $cust_main->get("${pre}last"). ', '. $cust_main->get("${pre}first") |h %>
-  </TD>
-% if ( $which eq '' && $conf->exists('show_ss') ) { 
-    <TD ALIGN="right"><% mt('SS#') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $conf->exists('unmask_ss') ? $cust_main->ss : $cust_main->masked('ss') || '&nbsp' %></TD>
-% } 
-</TR>
 
-% if ( $conf->exists('cust-email-high-visibility') && $which eq '') {
+% if ( $this eq 'bill' ) {
+%   #billing contact fields
+  <TR>
+    <TD ALIGN="right"><% mt('Contact name') |h %></TD>
+    <TD COLSPAN=5 BGCOLOR="#ffffff"><% $cust_main->contact |h %></TD>
+%   if ( $conf->exists('show_ss') ) {
+    <TD ALIGN="right"><% mt('SS#') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $conf->exists('unmask_ss')
+                              ? $cust_main->ss
+                              : $cust_main->masked('ss') || '&nbsp;' %></TD>
+%   }
+  </TR>
+%   if ( $conf->exists('cust-email-high-visibility') ) {
   <TR>
     <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
     <TD BGCOLOR="#ffff00">
-      <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
+      <% $cust_main->invoicing_list_emailonly_scalar || $no %>
     </TD>
   </TR>
-% }
-
-% if ( $cust_main->get("${pre}company") ) {
+%   }
+%   if ( $cust_main->company ) {
   <TR>
     <TD ALIGN="right"><% mt('Company') |h %></TD>
-    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}company") |h %></TD>
+    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->company %></TD>
   </TR>
-% }
-
+%   }
+% } # if $this eq 'bill'
+% # now the actual address
 <TR>
   <TD ALIGN="right"><% mt('Address') |h %></TD>
-  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address1") |h %></TD>
+  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->address1 |h %></TD>
 </TR>
 
-% if ( $cust_main->get("${pre}address2") ) { 
-%   my $address2_label =
-%     ( $conf->exists('cust_main-require_address2')
-%       && ! ( $pre xor $cust_main->has_ship_address )
-%     )
-%       ? emt('Unit #')
-%       : ' ';
+% if ( $location->get('address2') ) {
+%   my $address2_label = $conf->exists('cust_main-require_address2') 
+%                        ? emt('Unit #')
+%                        : ' ';
 
-  <TR>
-    <TD ALIGN="right"><% $address2_label %></TD>
-    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address2") |h %></TD>
-  </TR>
+<TR>
+  <TD ALIGN="right"><% $address2_label %></TD>
+  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $location->address2 |h %></TD>
+</TR>
 
 % } 
 
 <TR>
   <TD ALIGN="right"><% mt('City') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}city") |h %></TD>
-% if ( $cust_main->get("${pre}county") ) {
+  <TD BGCOLOR="#ffffff"><% $location->city |h %></TD>
+% if ( $location->county ) {
     <TD ALIGN="right"><% mt('County') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}county") |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $location->county |h %></TD>
 % }
   <TD ALIGN="right"><% mt('State') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% state_label( $cust_main->get("${pre}state"), $cust_main->get("${pre}country") ) |h %></TD>
+  <TD BGCOLOR="#ffffff"><% state_label( $location->state, $location->country ) |h %></TD>
   <TD ALIGN="right"><% mt('Zip') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}zip") %></TD>
+  <TD BGCOLOR="#ffffff"><% $location->zip %></TD>
 </TR>
 <TR>
   <TD ALIGN="right"><% mt('Country') |h %></TD>
-  <TD BGCOLOR="#ffffff"><% code2country( $cust_main->get("${pre}country") ) %></TD>
+  <TD BGCOLOR="#ffffff"><% code2country( $location->country ) %></TD>
 </TR>
 
-% if ( $cust_main->get($pre.'latitude') && $cust_main->get($pre.'longitude') ) {
-  <& /elements/tr-coords.html, $cust_main->get($pre.'latitude'),
-                               $cust_main->get($pre.'longitude'),
+% if ( $location->latitude && $location->longitude ) {
+  <& /elements/tr-coords.html, $location->latitude,
+                               $location->longitude,
                                $cust_main->name_short,
                                $cust_main->agentnum,
   &>
 % }
+  
+% if ( $this eq 'bill' ) {
+%   # billing contact phone numbers
+%   foreach my $phone (qw(daytime night mobile)) {
+%     next if !$cust_main->get($phone);
+<TR>
+  <TD ALIGN="right"><% $phone_label{$phone} %></TD>
+  <TD COLSPAN=3 BGCOLOR="#ffffff">
+    <& /elements/phonenumber.html,
+        $cust_main->get($phone),
+        callable => 1,
+        calling_list_exempt => $cust_main->calling_list_exempt,
+    &>
+  </TD>
+</TR>
 
-% foreach my $phone (grep $cust_main->get($pre.$_), qw( daytime night mobile )){
+%   } #foreach $phone
+%   if ( $cust_main->get('fax') ) {
 
-  <TR>
-    <TD ALIGN="right"><% $phone_label{$phone} %></TD>
-    <TD COLSPAN=3 BGCOLOR="#ffffff">
-      <& /elements/phonenumber.html,
-                    $cust_main->get($pre.$phone),
-                    'callable'=>1,
-                    'calling_list_exempt'=>$cust_main->calling_list_exempt,
-      &>
-    </TD>
-  </TR>
-
-% }
-
-% if ( $cust_main->get("${pre}fax") ) {
   <TR>
     <TD ALIGN="right"><% mt('Fax') |h %></TD>
     <TD COLSPAN=3 BGCOLOR="#ffffff">
-      <% $cust_main->get("${pre}fax") || '&nbsp' %>
+      <% $cust_main->get('fax') || '&nbsp;' %>
     </TD>
   </TR>
-% }
 
-% if ( $which eq '' && $conf->exists('show_stateid') ) { 
-  <TR>
+%   }
+%
+%   if ( $conf->exists('show_stateid') ) { 
+
+<TR>
     <TD ALIGN="right"><% $stateid_label %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->masked('stateid') || '&nbsp' %></TD>
     <TD ALIGN="right"><% $stateid_state_label %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->stateid_state || '&nbsp' %></TD>
   </TR>
-% } 
 
+%   }
+% } #if $this eq 'bill'
 </TABLE>
-% if ( $which ne 'ship_' ) {
+% if ( @which ) {
 <BR>
 % }
-% } 
+% } #while @which
 <%once>
 
 my %phone_label = (
@@ -147,7 +153,7 @@ my $stateid_state_label = FS::Msgcat::_gettext('stateid_state') =~ /^(stateid_st
 </%once>
 <%init>
 
-my( $cust_main ) = @_;
+my $cust_main = shift;
 my $conf = new FS::Conf;
 my @invoicing_list = $cust_main->invoicing_list;
 my $no = emt('no');

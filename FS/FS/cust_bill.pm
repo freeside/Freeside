@@ -2780,10 +2780,12 @@ sub print_generic {
   $invoice_data{finance_section} ||= 'Finance Charges'; #avoid config confusion
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
-  my $prefix = $cust_main->has_ship_address ? 'ship_' : '';
-  foreach ( qw( contact company address1 address2 city state zip country fax) ){
-    my $method = $prefix.$_;
+  foreach ( qw( address1 address2 city state zip country fax) ){
+    my $method = 'ship_'.$_;
     $invoice_data{"ship_$_"} = _latex_escape($cust_main->$method);
+  }
+  foreach ( qw( contact company ) ) { #compatibility
+    $invoice_data{"ship_$_"} = _latex_escape($cust_main->$_);
   }
   $invoice_data{'ship_country'} = ''
     if ( $invoice_data{'ship_country'} eq $countrydefault );

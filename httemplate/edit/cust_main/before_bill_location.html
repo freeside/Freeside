@@ -1,0 +1,10 @@
+<& name.html, $cust_main &>
+% if ( ! $conf->exists('cust-edit-alt-field-order') ) {
+  <& company.html, $cust_main &>
+% } else {
+  <& phones.html, $cust_main &>
+% }
+<%init>
+my $cust_main = shift;
+my $conf = FS::Conf->new;
+</%init>

@@ -40,7 +40,8 @@ FS::cust_pkg object
 
 =item cust_location
 
-Optional FS::cust_location object
+Optional FS::cust_location object.  If not specified, the customer's 
+ship_location will be used.
 
 =item svcs
 
@@ -104,6 +105,9 @@ sub order_pkg {
       return "inserting cust_location (transaction rolled back): $error";
     }
     $cust_pkg->locationnum($opt->{'cust_location'}->locationnum);
+  }
+  else {
+    $cust_pkg->locationnum($self->ship_locationnum);
   }
 
   $cust_pkg->custnum( $self->custnum );

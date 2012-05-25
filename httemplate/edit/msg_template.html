@@ -227,6 +227,15 @@ my %substitutions = (
     '$mobile'         => 'Mobile phone',
     '$fax'            => 'Fax',
   ],
+  'service' => [
+    '$ship_address1'  => 'Address line 1',
+    '$ship_address2'  => 'Address line 2',
+    '$ship_city'      => 'City',
+    '$ship_county'    => 'County',
+    '$ship_state'     => 'State',
+    '$ship_zip'       => 'Zip',
+    '$ship_country'   => 'Country',
+  ],
   'cust_bill' => [
     '$invnum'         => 'Invoice#',
   ],
@@ -281,15 +290,10 @@ my %substitutions = (
     '$error'          => 'Decline reason',
   ],
 );
-my @c = @{ $substitutions{'contact'} };
-for (my $i=0; $i<scalar(@c); $i += 2) {
-  $c[$i] =~ s/\$(.*)/\$ship_$1/;
-}
-$substitutions{'shipping'} = \@c;
 
 tie my %sections, 'Tie::IxHash', (
 'contact'   => 'Name and contact info (billing)',
-'shipping'  => 'Name and contact info (shipping)',
+'service'   => 'Service address',
 'cust_main' => 'Customer status and payment info',
 'cust_pkg'  => 'Package fields',
 'cust_bill' => 'Invoice fields',

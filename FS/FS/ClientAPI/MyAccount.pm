@@ -46,18 +46,17 @@ use FS::msg_template;
 $DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
 
-use vars qw( @cust_main_editable_fields );
+use vars qw( @cust_main_editable_fields @location_editable_fields );
 @cust_main_editable_fields = qw(
-  first last company address1 address2 city
-    county state zip country
-    daytime night fax mobile
-  ship_first ship_last ship_company ship_address1 ship_address2 ship_city
-    ship_state ship_zip ship_country
-    ship_daytime ship_night ship_fax ship_mobile
+  first last daytime night fax mobile
   locale
   payby payinfo payname paystart_month paystart_year payissue payip
   ss paytype paystate stateid stateid_state
 );
+@location_editable_fields = qw(
+  address1 address2 city county state zip country
+);
+
 
 BEGIN { #preload to reduce time customer_info takes
   if ( $FS::TicketSystem::system ) {
@@ -442,7 +441,6 @@ sub customer_info {
                     );
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
-    $return{ship_name} = $cust_main->ship_first. ' '. $cust_main->get('ship_last');
 
     $return{has_ship_address} = $cust_main->has_ship_address;
     $return{status} = $cust_main->status;
@@ -450,6 +448,18 @@ sub customer_info {
 
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
+    }
+
+    for (@location_editable_fields) {
+      $return{$_} = $cust_main->bill_location->get($_);
+      $return{'ship_'.$_} = $cust_main->ship_location->get($_);
+    }
+    $return{has_ship_address} = $cust_main->has_ship_address;
+    # compatibility: some places in selfservice use this to determine
+    # if there's a ship address
+    if ( $return{has_ship_address} ) {
+      $return{ship_last}  = $cust_main->last;
+      $return{ship_first} = $cust_main->first;
     }
 
     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
@@ -465,7 +475,7 @@ sub customer_info {
     if (scalar($conf->config('support_packages'))) {
       my @support_services = ();
       foreach ($cust_main->support_services) {
-        my $seconds = $_->svc_x->seconds;
+        my $seconds = $_->svc_x->seconds || 0;
         my $time_remaining = (($seconds < 0) ? '-' : '' ).
                              int(abs($seconds)/3600)."h".
                              sprintf("%02d",(abs($seconds)%3600)/60)."m";
@@ -541,7 +551,6 @@ sub customer_info_short {
                     );
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
-    $return{ship_name} = $cust_main->ship_first. ' '. $cust_main->get('ship_last');
 
     $return{payby} = $cust_main->payby;
 
@@ -549,7 +558,12 @@ sub customer_info_short {
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
     }
-    
+    #maybe a little more expensive, but it should be cached by now
+    for (@location_editable_fields) {
+      $return{$_} = $cust_main->bill_location->get($_);
+      $return{'ship_'.$_} = $cust_main->ship_location->get($_);
+    }
+ 
     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
       $return{payinfo} = $cust_main->paymask;
       @return{'month', 'year'} = $cust_main->paydate_monthyear;
@@ -692,14 +706,31 @@ sub edit_info {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $new = new FS::cust_main { $cust_main->hash };
-  # Avoid accidentally changing the service address.
-  if ( !$new->has_ship_address ) {
-    $new->set( $_ => $new->get($_) )
-      foreach $new->addr_fields;
-  }
 
   $new->set( $_ => $p->{$_} )
     foreach grep { exists $p->{$_} } @cust_main_editable_fields;
+
+  if ( exists($p->{address1}) ) {
+    my $bill_location = FS::cust_location->new({
+        map { $_ => $p->{$_} } @location_editable_fields
+    });
+    # if this is unchanged from before, cust_main::replace will ignore it
+    $new->set('bill_location' => $bill_location);
+  }
+
+  if ( exists($p->{ship_address1}) ) {
+    my $ship_location = FS::cust_location->new({
+        map { $_ => $p->{"ship_$_"} } @location_editable_fields
+    });
+    if ( !grep { length($p->{"ship_$_"}) } @location_editable_fields ) {
+      # Selfservice unfortunately tries to indicate "same as billing 
+      # address" by sending all fields empty.  Did this ever work?
+      $ship_location = $cust_main->bill_location;
+    }
+    $new->set('ship_location' => $ship_location);
+  }
+  # but if it hasn't been passed in at all, leave ship_location alone--
+  # DON'T change it to match bill_location.
 
   my $payby = '';
   if (exists($p->{'payby'})) {
@@ -838,7 +869,8 @@ sub payment_info {
   $return{payname} = $cust_main->payname
                      || ( $cust_main->first. ' '. $cust_main->get('last') );
 
-  $return{$_} = $cust_main->get($_) for qw(address1 address2 city state zip);
+  $return{$_} = $cust_main->bill_location->get($_) 
+    for qw(address1 address2 city state zip);
 
   $return{payby} = $cust_main->payby;
   $return{stateid_state} = $cust_main->stateid_state;
@@ -1062,13 +1094,12 @@ sub do_process_payment {
         foreach qw( payname paystart_month paystart_year payissue payip );
       $new->set( 'payby' => $validate->{'auto'} ? 'CARD' : 'DCRD' );
 
-      # Avoid accidentally changing the service address.
-      if ( !$new->has_ship_address ) {
-        $new->set( "ship_$_" => $new->get($_) ) 
-          foreach $new->addr_fields;
-      }
-      $new->set( $_ => $validate->{$_} )
-        foreach qw(address1 address2 city state country zip);
+      my $bill_location = FS::cust_location->new({
+          map { $_ => $validate->{$_} } 
+          qw(address1 address2 city state country zip)
+      }); # county?
+      $new->set('bill_location' => $bill_location);
+      # but don't allow the service address to change this way.
 
     } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
       $new->set( $_ => $validate->{$_} )

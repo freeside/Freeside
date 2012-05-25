@@ -36,7 +36,7 @@ my %session_callbacks = (
     my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
       or return "unknown custnum $custnum";
     my %args = @$argsref;
-    $args{object} = $cust_main;
+    $args{object} = $cust_main->bill_location;
     @$argsref = ( %args );
     return ''; #no error
   },

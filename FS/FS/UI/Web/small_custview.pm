@@ -82,45 +82,23 @@ sub small_custview {
 
   $html .= '</TD></TR></TABLE></TD>';
 
-  if ( defined $cust_main->dbdef_table->column('ship_last') ) {
+  my $ship = $cust_main->ship_location;
 
-    my $pre = $cust_main->ship_last ? 'ship_' : '';
+  $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
+    '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">';
+  $html .= join('<BR>', 
+    grep $_,
+      $cust_main->contact,
+      $cust_main->company,
+      $ship->address1,
+      $ship->address2,
+      ($ship->city . ', ' . $ship->state . '  ' . $ship->zip),
+      ($ship->country eq $countrydefault ? '' : $ship->country ),
+  );
 
-    $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
-      '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">'.
-      $cust_main->get("${pre}last"). ', '.
-      $cust_main->get("${pre}first"). '<BR>';
-    $html .= $cust_main->get("${pre}company"). '<BR>'
-      if $cust_main->get("${pre}company");
-    $html .= $cust_main->get("${pre}address1"). '<BR>';
-    $html .= $cust_main->get("${pre}address2"). '<BR>'
-      if $cust_main->get("${pre}address2");
-    $html .= $cust_main->get("${pre}city"). ', '.
-             $cust_main->get("${pre}state"). '  '.
-             $cust_main->get("${pre}zip"). '<BR>';
-    $html .= $cust_main->get("${pre}country"). '<BR>'
-      if $cust_main->get("${pre}country")
-         && $cust_main->get("${pre}country") ne $countrydefault;
+  # ship phone numbers no longer exist...
 
-    $html .= '</TD></TR><TR><TD></TD><TD BGCOLOR="#ffffff">';
-
-    if ( $cust_main->get("${pre}daytime") && $cust_main->get("${pre}night") ) {
-      use FS::Msgcat;
-      $html .= ( FS::Msgcat::_gettext('daytime') || 'Day' ).
-               ' '. $cust_main->get("${pre}daytime").
-               '<BR>'. ( FS::Msgcat::_gettext('night') || 'Night' ).
-               ' '. $cust_main->get("${pre}night");
-    } elsif ( $cust_main->get("${pre}daytime")
-              || $cust_main->get("${pre}night") ) {
-      $html .= $cust_main->get("${pre}daytime")
-               || $cust_main->get("${pre}night");
-    }
-    if ( $cust_main->get("${pre}fax") ) {
-      $html .= '<BR>Fax '. $cust_main->get("${pre}fax");
-    }
-
-    $html .= '</TD></TR></TABLE></TD>';
-  }
+  $html .= '</TD></TR></TABLE></TD>';
 
   $html .= '</TR></TABLE>';
 

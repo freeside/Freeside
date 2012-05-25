@@ -485,6 +485,11 @@ sub substitutions {
       signupdate dundate
       packages recurdates
       ),
+      #compatibility: obsolete ship_ fields
+      map ( { [ "ship_$_"   => sub { shift->$_ } ] } 
+        qw( last first company name name_short contact contact_firstlast
+            daytime night fax )
+      ),
       [ expdate           => sub { shift->paydate_epoch } ], #compatibility
       [ signupdate_ymd    => sub { $ymd->(shift->signupdate) } ],
       [ dundate_ymd       => sub { $ymd->(shift->dundate) } ],

@@ -5,12 +5,17 @@ span.loclabel {
   background-color: #cccccc;
   border: 1px solid black
 }
+table.location {
+  width: 100%;
+  padding: 1px;
+  border-spacing: 0px;
+}
 </STYLE>
 % foreach my $locationnum (@sorted) {
 %   my $packages = $packages_in{$locationnum};
 %   my $loc = $locations{$locationnum};
 %   next if $loc->disabled and scalar(@$packages) == 0;
-<& /elements/table-grid.html &>
+<TABLE CLASS="grid location">
 <TR><TH COLSPAN=3 ALIGN="left" VALIGN="bottom" 
 STYLE="padding-bottom: 0px; 
   padding-left: 0px; 
@@ -18,10 +23,7 @@ STYLE="padding-bottom: 0px;
   border-bottom-color: black;
   border-bottom-width: 1px;">
 <SPAN CLASS="loclabel">
-%   if (! $locationnum) {
-<% mt('Default service location:') |h %> 
-%   }
-%   elsif ( $loc->disabled ) {
+%   if ( $loc->disabled ) {
 <FONT COLOR="#808080"><I>
 %   }
 <% $loc->location_label %></SPAN>
@@ -49,8 +51,7 @@ my %locations = map { $_->locationnum => $_ } qsearch({
     'order_by'  => 'ORDER BY country, state, city, address1, locationnum',
   });
 my @sections = keys %locations;
-$locations{''} = $cust_main;
-my %packages_in = map { $_ => [] } ('', @sections);
+my %packages_in = map { $_ => [] } (@sections);
 
 my %active = (); # groups with non-canceled packages
 foreach my $cust_pkg ( @$all_packages ) {
@@ -58,10 +59,13 @@ foreach my $cust_pkg ( @$all_packages ) {
   push @{ $packages_in{$key} }, $cust_pkg;
   $active{$key} = 1 if !$cust_pkg->getfield('cancel');
 }
+# prevent disabling these
+$active{$cust_main->ship_locationnum} = 1;
+$active{$cust_main->bill_locationnum} = 1;
 
 my @sorted = (
-  '',
-  grep ( { $active{$_} } @sections),
+  $cust_main->ship_locationnum,
+  grep ( { $active{$_} && $_ != $cust_main->ship_locationnum } @sections),
   grep ( { !$active{$_} } @sections),
 );
 

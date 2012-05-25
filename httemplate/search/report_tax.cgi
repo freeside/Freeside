@@ -239,6 +239,8 @@ as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel sprea
 
 <%init>
 
+my $DEBUG = $cgi->param('debug') || 0;
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
@@ -252,15 +254,19 @@ my $join_cust =     '     JOIN cust_bill      USING ( invnum  )
                       LEFT JOIN cust_main     USING ( custnum ) ';
 my $join_cust_pkg = $join_cust.
                     ' LEFT JOIN cust_pkg      USING ( pkgnum  )
-                      LEFT JOIN part_pkg      USING ( pkgpart ) ';
-$join_cust_pkg .=   ' LEFT JOIN cust_location USING ( locationnum )'
-  if $conf->exists('tax-pkg_address');
+                      LEFT JOIN part_pkg      USING ( pkgpart ) 
+                      LEFT JOIN cust_location 
+                        ON ( cust_location.locationnum = ' .
+                        FS::cust_pkg->tax_locationnum_sql . ' )';
 
 my $from_join_cust_pkg = " FROM cust_bill_pkg $join_cust_pkg "; 
 
 my $where = "WHERE _date >= $beginning AND _date <= $ending ";
 
-my( $location_sql, @base_param ) = FS::cust_pkg->location_sql;
+# this query will be run once per cust_main_county,
+# or maybe once per country/state/city tuple,
+# or maybe once per country/state...it's hard to say.
+my ($location_sql, @base_param) = FS::cust_location->in_county_sql(param => 1);
 $where .= " AND $location_sql ";
 
 my $agentname = '';
@@ -291,59 +297,27 @@ sub gotcust {
   ";
 }
 
-my $gotcust;
-if ( $conf->exists('tax-ship_address') ) {
-
-  $gotcust = "
-               (    cust_main_county.country = cust_main.country
-                 OR cust_main_county.country = cust_main.ship_country
-               )
-
-               AND
-
-               ( 
-                 (     ( ship_last IS NULL     OR  ship_last = '' )
-                   AND ". gotcust('cust_main'). "
-                 )
-                 OR
-                 (       ship_last IS NOT NULL AND ship_last != ''
-                   AND ". gotcust('cust_main', 'ship_'). "
-                 )
-               )
-  ";
-
-} else {
-
-  $gotcust = gotcust('cust_main');
-
-}
-if ( $conf->exists('tax-pkg_address') ) {
-  $gotcust = "
-       ( cust_pkg.locationnum IS     NULL AND $gotcust)
-    OR ( cust_pkg.locationnum IS NOT NULL AND ". gotcust('cust_location'). " )";
-  $gotcust =
-    "WHERE 0 < ( SELECT COUNT(*) FROM cust_pkg
-                                 LEFT JOIN cust_main USING ( custnum )
-                                 LEFT JOIN cust_location USING ( locationnum )
-                   WHERE $gotcust
-                   LIMIT 1
-               )
-    ";
-} else {
-  $gotcust =
-    "WHERE 0 < ( SELECT COUNT(*) FROM cust_main WHERE $gotcust LIMIT 1 )";
-}
+#non-parameterized form
+my $location_in_county = FS::cust_location->in_county_sql;
+my $gotcust = "WHERE EXISTS(
+  SELECT 1 FROM cust_location WHERE $location_in_county AND disabled IS NULL
+)";
 
 my $out = 'Out of taxable region(s)';
 # these are actually tax labels, not regions
 my %regions = ();
 
+# Phase 1: Taxable and exempt sales
+# Collect for each cust_main_county, and assign to a bin based on label.
+# Note that "label" includes city if show_cities is on, and taxclass if
+# show_taxclasses is on.
 foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
                           'extra_sql' => $gotcust,
+                          'debug' => $DEBUG,
                        })
               )
 {
-  #warn $r->county. ' '. $r->state. ' '. $r->country. "\n";
+  warn $r->county. ' '. $r->state. ' '. $r->country. "\n" if $DEBUG > 1;
 
   # set up a %regions entry for this region's tax label
   my $label = getlabel($r);
@@ -475,7 +449,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
     $regions{$label}->{'rate'} = $r->tax.'%';
   }
 }
-#warn Dumper(\%regions);
+warn Dumper(\%regions) if $DEBUG > 1;
 # $regions{$label} now contains 'total', 'exempt_cust', 'exempt_pkg', 
 # 'exempt_monthly', summed over each set of regions with the same label.
 
@@ -491,29 +465,27 @@ my $taxclass_distinct =
   )." AS taxclass";
 
 
+# Phase 2: invoiced/credited tax items
+# Collect this data for each country/state/city/district/taxname(/taxclass).
 my %qsearch = (
   'select'    => "DISTINCT $distinct, $taxclass_distinct",
   'table'     => 'cust_main_county',
   'hashref'   => {},
   'extra_sql' => $gotcust,
+  'debug' => $DEBUG,
 );
 
-my $taxfromwhere = " FROM cust_bill_pkg $join_cust ";
+# Join to cust_main the same as before (we need agentnum)
+# but not to cust_pkg (because tax line items don't have a package)
+# and then to cust_location via cust_bill_pkg_tax_location
+my $taxfromwhere = "FROM cust_bill_pkg $join_cust 
+                    LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
+                    LEFT JOIN cust_location USING ( locationnum )
+                    ";
 my $taxwhere = $where;
-if ( $conf->exists('tax-pkg_address') ) {
 
-  $taxfromwhere .= 'LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
-                    LEFT JOIN cust_location USING ( locationnum ) ';
-
-  #quelle kludge
-  $taxwhere =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g;
-
-}
 my $creditfromwhere = $taxfromwhere. 
-   " JOIN cust_credit_bill_pkg USING (billpkgnum";
-$creditfromwhere .= " ,billpkgtaxlocationnum"
-   if $conf->exists('tax-pkg_address');
-$creditfromwhere .= ")";
+   " JOIN cust_credit_bill_pkg USING (billpkgnum, billpkgtaxlocationnum)";
 
 $taxfromwhere .= " $taxwhere "; #AND payby != 'COMP' ";
 $creditfromwhere .= " $taxwhere AND billpkgtaxratelocationnum IS NULL"; #AND payby != 'COMP' ";
@@ -611,6 +583,10 @@ foreach my $r ( qsearch(\%qsearch) ) {
 
 }
 
+# Phase 3: Non-taxclassed totals for invoiced/credited tax
+# (If show_taxclasses is not in use, this was phase 2, but it 
+# displays somewhere different.)
+# Don't filter by report_groups.
 my %base_regions = ();
 if ( $cgi->param('show_taxclasses') ) {
 

@@ -1,0 +1,39 @@
+% if ( $conf->exists('show_stateid') ) {
+<TR>
+  <TD ALIGN="right"><% $stateid_label %></TD>
+  <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>" SIZE=12></TD>
+  <TD><& /elements/select-state.html,
+          state   => $cust_main->stateid_state,
+          country => $cust_main->country, # how does this work on new customer?
+          prefix  => 'stateid_',
+          disable_countyupdate => 1,
+      &></TD>
+</TR>
+% } else {
+<INPUT TYPE="hidden" NAME="stateid" VALUE="<% $stateid %>">
+<INPUT TYPE="hidden" NAME="stateid_state" VALUE="<% $cust_main->stateid_state %>">
+% }
+
+<%init>
+my $cust_main = shift;
+my $conf = FS::Conf->new;
+my $stateid;
+if ( $cgi->param('error') ) {
+  $stateid = $cust_main->stateid;
+} elsif ( $cust_main->custnum ) {
+  $stateid = $cust_main->masked('stateid');
+} else {
+  $stateid = '';
+}
+$cust_main->set('stateid_state' => $cust_main->state) 
+  unless $cust_main->stateid_state;
+
+my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
+                  ? 'Driver&rsquo;s License'
+                  : FS::Msgcat::_gettext('stateid') || 'Driver&rsquo;s License';
+
+my $stateid_state_label = 
+                  FS::Msgcat::_gettext('stateid_state') =~ /^(stateid_state)?$/
+                  ? 'Driver&rsquo;s License State'
+                  : FS::Msgcat::_gettext('stateid') || 'Driver&rsquo;s License State';
+</%init>

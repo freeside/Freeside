@@ -1,0 +1,7 @@
+% my $cust_main = shift;
+<TR ID="company_row" <% $cust_main->company ? '' : 'STYLE="display:none"' %>>
+  <TD ALIGN="right"><% mt('Company') |h %></TD>
+  <TD COLSPAN=6><INPUT TYPE="text" NAME="company" ID="company" SIZE=60
+             VALUE="<% $cust_main->company |h %>">
+  </TD>
+</TR>

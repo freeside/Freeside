@@ -10,16 +10,13 @@ function standardize_locations() {
     'onlyship', 1,
 % } else {
 %   if ( $withfirm ) {
-    'company',  cf.elements['<% $main_prefix %>company'].value,
+    'company',  cf.elements['company'].value,
 %   }
     'address1', cf.elements['<% $main_prefix %>address1'].value,
     'address2', cf.elements['<% $main_prefix %>address2'].value,
     'city',     cf.elements['<% $main_prefix %>city'].value,
     'state',    state_el.options[ state_el.selectedIndex ].value,
     'zip',      cf.elements['<% $main_prefix %>zip'].value,
-% }
-% if ( $withfirm ) {
-    'ship_company',  cf.elements['<% $ship_prefix %>company'].value,
 % }
     'ship_address1', cf.elements['<% $ship_prefix %>address1'].value,
     'ship_address2', cf.elements['<% $ship_prefix %>address2'].value,
