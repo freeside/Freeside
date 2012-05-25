@@ -3133,14 +3133,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_location-agent_code',
-    'section'     => 'UI',
-    'description' => 'Optional agent string for cust_location-label_prefix',
-    'type'        => 'text',
-    'per_agent'   => 1,
-  },
-
-  {
     'key'         => 'cust_pkg-display_times',
     'section'     => 'UI',
     'description' => 'Display full timestamps (not just dates) for customer packages.  Useful if you are doing real-time things like hourly prepaid.',

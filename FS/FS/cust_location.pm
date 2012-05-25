@@ -429,7 +429,7 @@ sub location_label {
     elsif ( $self->prospectnum )  {
       $cust_or_prospect = FS::prospect_main->by_key($self->prospectnum);
     }
-    my $agent = $conf->config('cust_location-agent_code', 
+    my $agent = $conf->config('cust_main-custnum-display_prefix',
                   $cust_or_prospect->agentnum)
                 || $cust_or_prospect->agent->agent;
     # else this location is invalid
