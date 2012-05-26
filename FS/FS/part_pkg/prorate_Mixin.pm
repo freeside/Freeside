@@ -4,6 +4,7 @@ use strict;
 use vars qw( %info );
 use Time::Local qw( timelocal timelocal_nocheck );
 use Date::Format qw( time2str );
+use List::Util qw( min );
 
 %info = ( 
   'disabled'  => 1,
@@ -76,8 +77,8 @@ day arrives.
 =cut
 
 sub calc_prorate {
-  my ($self, $cust_pkg, $sdate, $details, $param, $cutoff_day) = @_;
-  die "no cutoff_day" unless $cutoff_day;
+  my ($self, $cust_pkg, $sdate, $details, $param, @cutoff_days) = @_;
+  die "no cutoff_day" unless @cutoff_days;
   die "can't prorate non-monthly package\n" if $self->freq =~ /\D/;
 
   my $money_char = FS::Conf->new->config('money_char') || '$';
@@ -103,8 +104,19 @@ sub calc_prorate {
     $add_period = 1;
   }
 
+  # if the customer alreqady has a billing day-of-month established,
+  # and it's a valid cutoff day, try to respect it
+  my $next_bill_day;
+  if ( my $next_bill = $cust_pkg->cust_main->next_bill_date ) {
+    $next_bill_day = (localtime($next_bill))[3];
+    if ( grep {$_ == $next_bill_day} @cutoff_days ) {
+      # by removing all other cutoff days from the list
+      @cutoff_days = ($next_bill_day);
+    }
+  }
+
   my ($mend, $mstart);
-  ($mnow, $mend, $mstart) = $self->_endpoints($mnow, $cutoff_day);
+  ($mnow, $mend, $mstart) = $self->_endpoints($mnow, @cutoff_days);
 
   # next bill date will be figured as $$sdate + one period
   $$sdate = $mstart;
@@ -155,12 +167,12 @@ set, in which case it postpones the next bill to the cutoff day.
 sub prorate_setup {
   my $self = shift;
   my ($cust_pkg, $sdate) = @_;
-  my $cutoff_day = $self->cutoff_day($cust_pkg);
+  my @cutoff_days = $self->cutoff_day($cust_pkg);
   if ( ! $cust_pkg->bill
       and $self->option('prorate_defer_bill',1)
-      and $cutoff_day
+      and @cutoff_days
   ) {
-    my ($mnow, $mend, $mstart) = $self->_endpoints($sdate, $cutoff_day);
+    my ($mnow, $mend, $mstart) = $self->_endpoints($sdate, @cutoff_days);
     # If today is the cutoff day, set the next bill and setup both to 
     # midnight today, so that the customer will be billed normally for a 
     # month starting today.
@@ -186,7 +198,9 @@ before the end of the prorate interval.
 =cut
 
 sub _endpoints {
-  my ($self, $mnow, $cutoff_day) = @_;
+  my $self = shift;
+  my $mnow = shift;
+  my @cutoff_days = sort {$a <=> $b} @_;
 
   # only works for freq >= 1 month; probably can't be fixed
   my ($sec, $min, $hour, $mday, $mon, $year) = (localtime($mnow))[0..5];
@@ -202,12 +216,20 @@ sub _endpoints {
   }
   my $mend;
   my $mstart;
+  # select the first cutoff day that's on or after the current day
+  my $cutoff_day = min( grep { $_ >= $mday } @cutoff_days );
+  # if today is after the last cutoff, choose the first one
+  $cutoff_day ||= $cutoff_days[0];
+
+  # then, if today is on or after the selected day, set period to
+  # (cutoff day this month) - (cutoff day next month)
   if ( $mday >= $cutoff_day ) {
     $mend = 
       timelocal_nocheck(0,0,0,$cutoff_day,$mon == 11 ? 0 : $mon + 1,$year+($mon==11));
     $mstart =
       timelocal_nocheck(0,0,0,$cutoff_day,$mon,$year);
   }
+  # otherwise, set period to (cutoff day last month) - (cutoff day this month)
   else {
     $mend = 
       timelocal_nocheck(0,0,0,$cutoff_day,$mon,$year);
