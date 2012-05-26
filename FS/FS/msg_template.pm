@@ -468,11 +468,9 @@ sub substitutions {
       daytime night mobile fax
 
       has_ship_address
-      ship_last ship_first ship_company
       ship_name ship_name_short ship_contact ship_contact_firstlast
       ship_address1 ship_address2 ship_city ship_county ship_state ship_zip
       ship_country
-      ship_daytime ship_night ship_mobile ship_fax
 
       paymask payname paytype payip
       num_cancelled_pkgs num_ncancelled_pkgs num_pkgs
@@ -485,11 +483,15 @@ sub substitutions {
       signupdate dundate
       packages recurdates
       ),
-      #compatibility: obsolete ship_ fields
-      map ( { [ "ship_$_"   => sub { shift->$_ } ] } 
-        qw( last first company name name_short contact contact_firstlast
-            daytime night fax )
+      #compatibility: obsolete ship_ fields - use the non-ship versions
+      map (
+        { my $field = $_;
+          [ "ship_$field"   => sub { shift->$field } ]
+        }
+        qw( last first company daytime night fax )
       ),
+      # ship_name, ship_name_short, ship_contact, ship_contact_firstlast
+      # still work, though
       [ expdate           => sub { shift->paydate_epoch } ], #compatibility
       [ signupdate_ymd    => sub { $ymd->(shift->signupdate) } ],
       [ dundate_ymd       => sub { $ymd->(shift->dundate) } ],

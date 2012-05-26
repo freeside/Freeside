@@ -4001,7 +4001,7 @@ sub ship_name_short {
   my $self = shift;
   $self->service_contact 
     ? $self->ship_contact_firstlast 
-    : $self->name_company_or_firstlast;
+    : $self->name_short
 }
 
 =item contact
