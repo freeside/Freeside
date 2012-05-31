@@ -10,7 +10,7 @@ use List::Util qw(max);
 use Tie::IxHash;
 use Time::Local qw( timelocal timelocal_nocheck );
 use MIME::Entity;
-use FS::UID qw( getotaker dbh );
+use FS::UID qw( getotaker dbh driver_name );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs fields );
 use FS::CurrentUser;
@@ -2000,7 +2000,7 @@ sub cust_svc {
   }
   if ( $opt{'svcdb'} ) {
     $search{addl_from} = ' LEFT JOIN part_svc USING ( svcpart ) ';
-    $search{hashref}->{svcdb} = $opt{'svcdb'};
+    $search{extra_sql} = ' AND svcdb = '. dbh->quote( $opt{'svcdb'} );
   }
 
   cluck "cust_pkg->cust_svc called" if $DEBUG > 2;
@@ -3619,10 +3619,12 @@ sub _location_sql_where {
   my $or_empty_county   = " OR ( ? = '' AND $table.${prefix}county   IS NULL )";
   my $or_empty_state    = " OR ( ? = '' AND $table.${prefix}state    IS NULL )";
 
+  my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
+
 #        ( $table.${prefix}city    = ? $or_empty_city   $ornull )
   "
-        ( $table.district = ? OR ? = '' OR CAST(? AS text) IS NULL )
-    AND ( $table.${prefix}city     = ? OR ? = '' OR CAST(? AS text) IS NULL )
+        ( $table.district = ? OR ? = '' OR CAST(? AS $text) IS NULL )
+    AND ( $table.${prefix}city     = ? OR ? = '' OR CAST(? AS $text) IS NULL )
     AND ( $table.${prefix}county   = ? $or_empty_county $ornull )
     AND ( $table.${prefix}state    = ? $or_empty_state  $ornull )
     AND   $table.${prefix}country  = ?
