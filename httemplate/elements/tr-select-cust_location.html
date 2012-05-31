@@ -287,7 +287,7 @@ my $location_sort = sub {
   or lc($a->address2) cmp lc($b->address2)
 };
 
-my @cust_location = ();
+my @cust_location;
 push @cust_location, $cust_main->cust_location if $cust_main;
 push @cust_location, $prospect_main->cust_location if $prospect_main;
 push @cust_location, $cust_location

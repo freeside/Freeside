@@ -244,7 +244,8 @@ Returns the locations (see L<FS::cust_location>) associated with this prospect.
 
 sub cust_location {
   my $self = shift;
-  qsearch( 'cust_location', { 'prospectnum' => $self->prospectnum } );
+  qsearch( 'cust_location', { 'prospectnum' => $self->prospectnum,
+                              'custnum'     => '' } );
 }
 
 =item qual
