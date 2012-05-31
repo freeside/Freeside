@@ -400,6 +400,9 @@ sub insert {
   foreach my $l (qw(bill_location ship_location)) {
     my $loc = delete $self->hashref->{$l};
     # XXX if we're moving a prospect's locations, do that here
+    if ( !$loc ) {
+      return "$l not set";
+    }
     
     if ( !$loc->locationnum ) {
       # warn the location that we're going to insert it with no custnum
@@ -413,8 +416,8 @@ sub insert {
         return "$error (in $label location)";
       }
     }
-    elsif ( $loc->custnum != $self->custnum or $loc->prospectnum > 0 ) {
-      # this shouldn't happen
+    elsif ( ($loc->custnum || 0) > 0 or $loc->prospectnum ) {
+      # then it somehow belongs to another customer--shouldn't happen
       $dbh->rollback if $oldAutoCommit;
       return "$l belongs to customer ".$loc->custnum;
     }
@@ -1783,8 +1786,6 @@ sub check {
     || $self->ut_textn('stateid')
     || $self->ut_textn('stateid_state')
     || $self->ut_textn('invoice_terms')
-    || $self->ut_alphan('geocode')
-    || $self->ut_alphan('district')
     || $self->ut_floatn('cdr_termination_percentage')
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
@@ -2123,7 +2124,8 @@ Returns all locations (see L<FS::cust_location>) for this customer.
 
 sub cust_location {
   my $self = shift;
-  qsearch('cust_location', { 'custnum' => $self->custnum } );
+  qsearch('cust_location', { 'custnum' => $self->custnum,
+                             'prospectnum' => '' } );
 }
 
 =item cust_contact

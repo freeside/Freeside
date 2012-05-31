@@ -8,7 +8,7 @@ use FS::cust_location;
 
 use Carp qw(carp);
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::cust_main::Location]';
 
 my $init = 0;
@@ -146,7 +146,7 @@ sub _upgrade_data {
     # just in case someone still doesn't have these
     if ( !$phone_type{$_}->phonetypenum ) {
       $error = $phone_type{$_}->insert;
-      die "error creating phone type '$_': $error";
+      die "error creating phone type '$_': $error" if $error;
     }
   }
 
