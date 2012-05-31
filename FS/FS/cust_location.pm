@@ -4,7 +4,7 @@ use base qw( FS::geocode_Mixin FS::Record );
 use strict;
 use vars qw( $import );
 use Locale::Country;
-use FS::UID qw( dbh );
+use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch ); #qsearchs );
 use FS::Conf;
 use FS::prospect_main;
@@ -507,9 +507,11 @@ sub in_county_sql {
                 ('state') x $x,
                 'country');
 
+  my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
+
   my @where = (
-    "cust_location.district = ? OR ? = '' OR CAST(? AS text) IS NULL",
-    "cust_location.city     = ? OR ? = '' OR CAST(? AS text) IS NULL",
+    "cust_location.district = ? OR ? = '' OR CAST(? AS $text) IS NULL",
+    "cust_location.city     = ? OR ? = '' OR CAST(? AS $text) IS NULL",
     "cust_location.county   = ? OR (? = '' AND cust_location.county IS NULL) $ornull",
     "cust_location.state    = ? OR (? = '' AND cust_location.state IS NULL ) $ornull",
     "cust_location.country = ?"
