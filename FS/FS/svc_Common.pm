@@ -244,6 +244,7 @@ sub insert {
 
   my $svcnum = $self->svcnum;
   my $cust_svc = $svcnum ? qsearchs('cust_svc',{'svcnum'=>$self->svcnum}) : '';
+  my $inserted_cust_svc = 0;
   #unless ( $svcnum ) {
   if ( !$svcnum or !$cust_svc ) {
     $cust_svc = new FS::cust_svc ( {
@@ -257,6 +258,7 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+    $inserted_cust_svc  = 1;
     $svcnum = $self->svcnum($cust_svc->svcnum);
   } else {
     #$cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
@@ -275,6 +277,10 @@ sub insert {
               || $self->preinsert_hook
               || $self->SUPER::insert;
   if ( $error ) {
+    if ( $inserted_cust_svc ) {
+      my $derror = $cust_svc->delete;
+      die $derror if $derror;
+    }
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
