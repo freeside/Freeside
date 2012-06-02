@@ -4,6 +4,7 @@ use strict;
 use vars qw( $ignore_empty_action );
 use base qw( FS::otaker_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use FS::upgrade_journal;
 
 $ignore_empty_action = 0;
 
@@ -209,6 +210,25 @@ sub _upgrade_data { # class method
   }
 
   #remove nullability if scalar(@migrated) - $count == 0 && ->column('action');
+
+  unless ( FS::upgrade_journal->is_done('cust_pkg_reason__missing_reason') ) {
+    $class->_upgrade_missing_reason(%opts);
+    FS::upgrade_journal->set_done('cust_pkg_reason__missing_reason');
+  }
+
+  #still can't fill in an action?  don't abort the upgrade
+  local($ignore_empty_action) = 1;
+
+  $class->_upgrade_otaker(%opts);
+
+}
+
+sub _upgrade_missing_reason {
+  my ($class, %opts) = @_;
+
+  #false laziness w/above
+  my $action_replace =
+    " AND ( history_action = 'replace_old' OR history_action = 'replace_new' )";
   
   #seek expirations/adjourns without reason
   foreach my $field (qw( expire adjourn cancel susp )) {
@@ -309,10 +329,6 @@ sub _upgrade_data { # class method
     }
   }
 
-  #still can't fill in an action?  don't abort the upgrade
-  local($ignore_empty_action) = 1;
-
-  $class->_upgrade_otaker(%opts);
 }
 
 =back
