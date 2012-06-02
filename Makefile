@@ -115,8 +115,8 @@ RT_PATH = /opt/rt3
 FREESIDE_PATH = `pwd`
 PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.14.2/
 
-VERSION=2.3.3git
-TAG=freeside_2_3_3
+VERSION=`grep '^$VERSION' FS/FS.pm | cut -d\' -f2`
+TAG=freeside_`echo ${VERSION} | perl -pe 's/\./_/g'`
 
 DEBVERSION = `echo ${VERSION} | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
 
@@ -179,9 +179,6 @@ perl-modules:
 	cd FS; \
 	[ -e Makefile ] || perl Makefile.PL; \
 	make; \
-	perl -p -i -e "\
-	  s/%%%VERSION%%%/${VERSION}/g;\
-	" blib/lib/FS.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
