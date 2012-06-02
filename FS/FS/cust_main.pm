@@ -5057,9 +5057,12 @@ sub _upgrade_data { #class method
     #DCRD to be safe
     "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16 and payinfo ". regexp_sql. q( '^[0-9]*$' );
 
+  my $t = time;
   foreach my $sql ( @statements ) {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
+    warn (time - $t). " seconds\n";
+    $t = time;
   }
 
   local($ignore_expired_card) = 1;
