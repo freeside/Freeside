@@ -5044,6 +5044,7 @@ sub _upgrade_data { #class method
     'UPDATE h_cust_main SET paycvv = NULL WHERE paycvv IS NOT NULL',
   );
 
+  #this seems to be the only expensive one.. why does it take so long?
   unless ( FS::upgrade_journal->is_done('cust_main__signupdate') ) {
     push @statements,
       'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL';
