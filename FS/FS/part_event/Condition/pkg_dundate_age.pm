@@ -4,7 +4,7 @@ use base qw( FS::part_event::Condition );
 use strict;
 
 sub description {
-  "Skip until specified #days before package suspension delay date";
+  "Skip until specified # of days before package suspension delay date";
 }
 
 
