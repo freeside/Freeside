@@ -22,6 +22,7 @@ use FS::cust_pay_refund;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_pay_void;
+use FS::upgrade_journal;
 
 $DEBUG = 0;
 
@@ -853,93 +854,103 @@ sub _upgrade_data {  #class method
   # otaker/ivan upgrade
   ##
 
-  #not the most efficient, but hey, it only has to run once
+  unless ( FS::upgrade_journal->is_done('cust_pay__otaker_ivan') ) {
 
-  my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
-              "  AND usernum IS NULL ".
-              "  AND 0 < ( SELECT COUNT(*) FROM cust_main                 ".
-              "              WHERE cust_main.custnum = cust_pay.custnum ) ";
+    #not the most efficient, but hey, it only has to run once
 
-  my $count_sql = "SELECT COUNT(*) FROM cust_pay $where";
+    my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
+                "  AND usernum IS NULL ".
+                "  AND 0 < ( SELECT COUNT(*) FROM cust_main                 ".
+                "              WHERE cust_main.custnum = cust_pay.custnum ) ";
 
-  my $sth = dbh->prepare($count_sql) or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my $total = $sth->fetchrow_arrayref->[0];
-  #warn "$total cust_pay records to update\n"
-  #  if $DEBUG;
-  local($DEBUG) = 2 if $total > 1000; #could be a while, force progress info
+    my $count_sql = "SELECT COUNT(*) FROM cust_pay $where";
 
-  my $count = 0;
-  my $lastprog = 0;
+    my $sth = dbh->prepare($count_sql) or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+    my $total = $sth->fetchrow_arrayref->[0];
+    #warn "$total cust_pay records to update\n"
+    #  if $DEBUG;
+    local($DEBUG) = 2 if $total > 1000; #could be a while, force progress info
 
-  my @cust_pay = qsearch( {
-      'table'     => 'cust_pay',
-      'hashref'   => {},
-      'extra_sql' => $where,
-      'order_by'  => 'ORDER BY paynum',
-  } );
+    my $count = 0;
+    my $lastprog = 0;
 
-  foreach my $cust_pay (@cust_pay) {
+    my @cust_pay = qsearch( {
+        'table'     => 'cust_pay',
+        'hashref'   => {},
+        'extra_sql' => $where,
+        'order_by'  => 'ORDER BY paynum',
+    } );
 
-    my $h_cust_pay = $cust_pay->h_search('insert');
-    if ( $h_cust_pay ) {
-      next if $cust_pay->otaker eq $h_cust_pay->history_user;
-      #$cust_pay->otaker($h_cust_pay->history_user);
-      $cust_pay->set('otaker', $h_cust_pay->history_user);
-    } else {
-      $cust_pay->set('otaker', 'legacy');
+    foreach my $cust_pay (@cust_pay) {
+
+      my $h_cust_pay = $cust_pay->h_search('insert');
+      if ( $h_cust_pay ) {
+        next if $cust_pay->otaker eq $h_cust_pay->history_user;
+        #$cust_pay->otaker($h_cust_pay->history_user);
+        $cust_pay->set('otaker', $h_cust_pay->history_user);
+      } else {
+        $cust_pay->set('otaker', 'legacy');
+      }
+
+      delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
+      my $error = $cust_pay->replace;
+
+      if ( $error ) {
+        warn " *** WARNING: Error updating order taker for payment paynum ".
+             $cust_pay->paynun. ": $error\n";
+        next;
+      }
+
+      $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
+
+      $count++;
+      if ( $DEBUG > 1 && $lastprog + 30 < time ) {
+        warn "$me $count/$total (".sprintf('%.2f',100*$count/$total). '%)'."\n";
+        $lastprog = time;
+      }
+
     }
 
-    delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
-    my $error = $cust_pay->replace;
-
-    if ( $error ) {
-      warn " *** WARNING: Error updating order taker for payment paynum ".
-           $cust_pay->paynun. ": $error\n";
-      next;
-    }
-
-    $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
-
-    $count++;
-    if ( $DEBUG > 1 && $lastprog + 30 < time ) {
-      warn "$me $count/$total (". sprintf('%.2f',100*$count/$total). '%)'. "\n";
-      $lastprog = time;
-    }
-
+    FS::upgrade_journal->set_done('cust_pay__otaker_ivan');
   }
 
   ###
   # payinfo N/A upgrade
   ###
 
-  #XXX remove the 'N/A (tokenized)' part (or just this entire thing)
+  unless ( FS::upgrade_journal->is_done('cust_pay__payinfo_na') ) {
 
-  my @na_cust_pay = qsearch( {
-    'table'     => 'cust_pay',
-    'hashref'   => {}, #could be encrypted# { 'payinfo' => 'N/A' },
-    'extra_sql' => "WHERE ( payinfo = 'N/A' OR paymask = 'N/AA' OR paymask = 'N/A (tokenized)' ) AND payby IN ( 'CARD', 'CHEK' )",
-  } );
+    #XXX remove the 'N/A (tokenized)' part (or just this entire thing)
 
-  foreach my $na ( @na_cust_pay ) {
+    my @na_cust_pay = qsearch( {
+      'table'     => 'cust_pay',
+      'hashref'   => {}, #could be encrypted# { 'payinfo' => 'N/A' },
+      'extra_sql' => "WHERE ( payinfo = 'N/A' OR paymask = 'N/AA' OR paymask = 'N/A (tokenized)' ) AND payby IN ( 'CARD', 'CHEK' )",
+    } );
 
-    next unless $na->payinfo eq 'N/A';
+    foreach my $na ( @na_cust_pay ) {
 
-    my $cust_pay_pending =
-      qsearchs('cust_pay_pending', { 'paynum' => $na->paynum } );
-    unless ( $cust_pay_pending ) {
-      warn " *** WARNING: not-yet recoverable N/A card for payment ".
-           $na->paynum. " (no cust_pay_pending)\n";
-      next;
+      next unless $na->payinfo eq 'N/A';
+
+      my $cust_pay_pending =
+        qsearchs('cust_pay_pending', { 'paynum' => $na->paynum } );
+      unless ( $cust_pay_pending ) {
+        warn " *** WARNING: not-yet recoverable N/A card for payment ".
+             $na->paynum. " (no cust_pay_pending)\n";
+        next;
+      }
+      $na->$_($cust_pay_pending->$_) for qw( payinfo paymask );
+      my $error = $na->replace;
+      if ( $error ) {
+        warn " *** WARNING: Error updating payinfo for payment paynum ".
+             $na->paynun. ": $error\n";
+        next;
+      }
+
     }
-    $na->$_($cust_pay_pending->$_) for qw( payinfo paymask );
-    my $error = $na->replace;
-    if ( $error ) {
-      warn " *** WARNING: Error updating payinfo for payment paynum ".
-           $na->paynun. ": $error\n";
-      next;
-    }
 
+    FS::upgrade_journal->set_done('cust_pay__payinfo_na');
   }
 
   ###
