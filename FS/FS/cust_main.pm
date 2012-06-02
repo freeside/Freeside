@@ -5077,8 +5077,8 @@ sub _upgrade_data { #class method
   foreach my $sql ( @statements ) {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
-    warn ( (time - $t). " seconds\n" );
-    $t = time;
+    #warn ( (time - $t). " seconds\n" );
+    #$t = time;
   }
 
   local($ignore_expired_card) = 1;
