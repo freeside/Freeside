@@ -306,6 +306,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::sales;
   use FS::access_groupsales;
   use FS::contact_class;
+  use FS::part_svc_class;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
@@ -576,6 +577,8 @@ sub mason_interps {
                       [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
                     ],
     escape_flags => { 'h'         => \&RT::Interface::Web::EscapeUTF8,
+                      'u'         => \&RT::Interface::Web::EscapeURI,
+                      'j'         => \&RT::Interface::Web::EscapeJS,
                       'js_string' => $js_string_sub,
                     },
     compiler     => HTML::Mason::Compiler::ToObject->new(
