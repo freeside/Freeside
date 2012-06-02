@@ -55,7 +55,7 @@ binmode(STDOUT, ":utf8");
 # fix lib paths, some may be relative
 BEGIN {
     require File::Spec;
-    my @libs = ("lib", "local/lib");
+    my @libs = ("/opt/rt3/lib", "/opt/rt3/local/lib");
     my $bin_path;
 
     for my $lib (@libs) {
