@@ -70,6 +70,7 @@ use FS::cust_main_note;
 use FS::cust_attachment;
 use FS::contact;
 use FS::Locales;
+use FS::upgrade_journal;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -5058,21 +5059,36 @@ sub _upgrade_data { #class method
 
   my @statements = (
     'UPDATE h_cust_main SET paycvv = NULL WHERE paycvv IS NOT NULL',
-    'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL',
   );
-  # fix yyyy-m-dd formatted paydates
-  if ( driver_name =~ /^mysql/i ) {
+
+  unless ( FS::upgrade_journal->is_done('cust_main__signupdate') ) {
     push @statements,
-    "UPDATE cust_main SET paydate = CONCAT( SUBSTRING(paydate FROM 1 FOR 5), '0', SUBSTRING(paydate FROM 6) ) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
-  }
-  else { # the SQL standard
-    push @statements, 
-    "UPDATE cust_main SET paydate = SUBSTRING(paydate FROM 1 FOR 5) || '0' || SUBSTRING(paydate FROM 6) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+      'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL';
+    FS::upgrade_journal->set_done('cust_main__signupdate');
   }
 
-  push @statements, #fix the weird BILL with a cc# in payinfo problem
-    #DCRD to be safe
-    "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16 and payinfo ". regexp_sql. q( '^[0-9]*$' );
+  unless ( FS::upgrade_journal->is_done('cust_main__paydate') ) {
+
+    # fix yyyy-m-dd formatted paydates
+    if ( driver_name =~ /^mysql/i ) {
+      push @statements,
+      "UPDATE cust_main SET paydate = CONCAT( SUBSTRING(paydate FROM 1 FOR 5), '0', SUBSTRING(paydate FROM 6) ) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+    } else { # the SQL standard
+      push @statements, 
+      "UPDATE cust_main SET paydate = SUBSTRING(paydate FROM 1 FOR 5) || '0' || SUBSTRING(paydate FROM 6) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+    }
+    FS::upgrade_journal->set_done('cust_main__paydate');
+  }
+
+  unless ( FS::upgrade_journal->is_done('cust_main__payinfo') ) {
+
+    push @statements, #fix the weird BILL with a cc# in payinfo problem
+      #DCRD to be safe
+      "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16 and payinfo ". regexp_sql. q( '^[0-9]*$' );
+
+    FS::upgrade_journal->set_done('cust_main__payinfo');
+    
+  }
 
   my $t = time;
   foreach my $sql ( @statements ) {
