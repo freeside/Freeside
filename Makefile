@@ -116,7 +116,7 @@ FREESIDE_PATH = `pwd`
 PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.14.2/
 
 VERSION := `grep '^$$VERSION' FS/FS.pm | cut -d\' -f2`
-TAG := freeside_`echo ${VERSION} | perl -pe 's/\./_/g'`
+TAG = freeside_`echo ${VERSION} | perl -pe 's/\./_/g'`
 
 DEBVERSION := `echo ${VERSION} | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
 
