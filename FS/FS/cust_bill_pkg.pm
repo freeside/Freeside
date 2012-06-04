@@ -955,8 +955,6 @@ sub cust_bill_pkg_display {
   my $default =
     new FS::cust_bill_pkg_display { billpkgnum =>$self->billpkgnum };
 
-  return ( $default ) unless defined dbdef->table('cust_bill_pkg_display');#hmmm
-
   my $type = $opt{type} if exists $opt{type};
   my @result;
 
@@ -1043,19 +1041,8 @@ sub cust_bill_pkg_discount {
 
 =cut
 
-sub recur_show_zero {
-  #my $self = shift;
-  #   $self->recur == 0
-  #&& $self->pkgnum
-  #&& $self->cust_pkg->part_pkg->recur_show_zero;
-
-  shift->_X_show_zero('recur');
-
-}
-
-sub setup_show_zero {
-  shift->_X_show_zero('setup');
-}
+sub recur_show_zero { shift->_X_show_zero('recur'); }
+sub setup_show_zero { shift->_X_show_zero('setup'); }
 
 sub _X_show_zero {
   my( $self, $what ) = @_;
