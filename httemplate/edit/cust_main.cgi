@@ -37,7 +37,7 @@
 % }
 % my $has_ship_address = '';
 % if ( $cgi->param('error') ) {
-%   $has_ship_address = !$cgi->param('same');
+%   $has_ship_address = !$same;
 % } elsif ( $cust_main->custnum ) {
 %   $has_ship_address = $cust_main->has_ship_address;
 % }
@@ -198,16 +198,18 @@ my $conf = new FS::Conf;
 #get record
 
 my($custnum, $cust_main, $ss, $stateid, $payinfo, @invoicing_list);
-my $same = '';
 my $pkgpart_svcpart = ''; #first_pkg
 my($username, $password, $popnum, $saved_domsvc) = ( '', '', 0, 0 ); #svc_acct
 my %svc_phone = ();
 my %svc_dsl = ();
 my $prospectnum = '';
 my $locationnum = '';
+my $same = '';
+
 
 if ( $cgi->param('error') ) {
 
+  $same = ($cgi->param('same') || '') eq 'Y';
   # false laziness w/ edit/process/cust_main.cgi
   my %locations;
   for my $pre (qw(bill ship)) {
@@ -218,6 +220,9 @@ if ( $cgi->param('error') ) {
     $hash{'custnum'} = $cgi->param('custnum');
     $locations{$pre} = qsearchs('cust_location', \%hash)
                        || FS::cust_location->new( \%hash );
+  }
+  if ( $same ) {
+    $locations{ship} = $locations{bill};
   }
 
   $cust_main = new FS::cust_main ( {
@@ -236,7 +241,6 @@ if ( $cgi->param('error') ) {
     unless $curuser->access_right($custnum ? 'Edit customer' : 'New customer');
 
   @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
-  $same = $cgi->param('same');
   $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
   $ss = $cust_main->ss;           # don't mask an entered value on errors
   $stateid = $cust_main->stateid; # don't mask an entered value on errors
