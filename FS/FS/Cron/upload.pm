@@ -231,7 +231,7 @@ sub spool_upload {
 
       my($hostname, $path) = ($1, $2);
 
-      my $ftp = new Net::FTP($hostname)
+      my $ftp = new Net::FTP($hostname, Passive=>1)
         or die "can't connect to $hostname: $@\n";
       $ftp->login($username, $password)
         or die "can't login to $hostname: ". $ftp->message."\n";
