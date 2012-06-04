@@ -351,6 +351,7 @@ Returns all suspended packages (see L<FS::cust_pkg>) for this customer.
 
 sub suspended_pkgs {
   my $self = shift;
+  return $self->num_suspended_pkgs unless wantarray;
   grep { $_->susp } $self->ncancelled_pkgs;
 }
 
@@ -377,6 +378,7 @@ this customer.
 
 sub unsuspended_pkgs {
   my $self = shift;
+  return $self->num_unsuspended_pkgs unless wantarray;
   grep { ! $_->susp } $self->ncancelled_pkgs;
 }
 
@@ -436,6 +438,16 @@ sub num_cancelled_pkgs {
 
 sub num_ncancelled_pkgs {
   shift->num_pkgs("( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )");
+}
+
+sub num_suspended_pkgs {
+  shift->num_pkgs("     ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+                    AND cust_pkg.susp IS NOT NULL AND cust_pkg.susp != 0   ");
+}
+
+sub num_unsuspended_pkgs {
+  shift->num_pkgs("     ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+                    AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 ) ");
 }
 
 sub num_pkgs {

@@ -111,6 +111,8 @@ tie my %rights, 'Tie::IxHash',
     'Edit customer tags',
     'Edit referring customer',
     'View customer history',
+    'Suspend customer',
+    'Unsuspend customer',
     'Cancel customer',
     'Complimentary customer', #aka users-allow_comp 
     'Merge customer',

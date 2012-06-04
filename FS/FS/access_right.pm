@@ -3,6 +3,7 @@ package FS::access_right;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::upgrade_journal;
 
 @ISA = qw(FS::Record);
 
@@ -183,9 +184,13 @@ sub _upgrade_data { # class method
   my @all_groups = qsearch('access_group', {});
 
   my %onetime = (
-    'List customers'   => 'List all customers',
-    'List packages'    => 'Summarize packages',
-    'Post payment'     => 'Backdate payment',
+    'List customers'                      => 'List all customers',
+    'List packages'                       => 'Summarize packages',
+    'Post payment'                        => 'Backdate payment',
+    'Cancel customer package immediately' => 'Un-cancel customer package',
+    'Suspend customer package'            => 'Suspend customer',
+    'Unsuspend customer package'          => 'Unsuspend customer',
+
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',
                             'Services: Certificates',
@@ -205,7 +210,6 @@ sub _upgrade_data { # class method
                             'Usage: Call Detail Records (CDRs)',
                             'Usage: Unrateable CDRs',
                           ],
-    'Cancel customer package immediately' => 'Un-cancel customer package',
   );
 
   foreach my $old_acl ( keys %onetime ) {
