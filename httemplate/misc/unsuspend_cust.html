@@ -1,0 +1,68 @@
+<& /elements/header-popup.html, mt('Unsuspend customer')  &>
+
+<& /elements/error.html &>
+
+<FORM NAME="cust_unsuspend_popup" ACTION="<% popurl(1) %>cust_main-unsuspend.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+ <P ALIGN="center"><B><% mt('Unsuspend this customer?') |h %></B>
+
+<TABLE BORDER="0" CELLSPACING="2"
+STYLE="margin-left:auto; margin-right:auto">
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="radio" NAME="now_or_later" VALUE="0" onclick="toggle(false)" CHECKED />
+  </TD>
+  <TD ALIGN="left"><% mt('Unsuspend now') |h %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="radio" NAME="now_or_later" VALUE="1" onclick="toggle(true)" />
+  </TD>
+  <TD ALIGN="left"><% mt('Unsuspend on date: ') |h %> 
+  <& /elements/input-date-field.html, {
+              'name'    => 'resume',
+              'value'   => time,
+    }  &>
+  </TD>
+</TR>
+</TABLE>
+<SCRIPT type="text/javascript">
+function toggle(val) {
+  document.getElementById("resume_text").disabled = !val;
+  document.getElementById("resume_button").style.visibility = 
+    val ? 'visible' : 'hidden';
+}
+toggle(false);
+</SCRIPT> 
+
+<BR>
+<P ALIGN="CENTER">
+<INPUT TYPE="submit" NAME="submit" ID="confirm_unsuspend_cust_button" VALUE="<% mt('Unsuspend customer') |h %>"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<INPUT TYPE="BUTTON" VALUE="<% mt("Don't unsuspend") |h %>" onClick="parent.cClick();"> 
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+#false laziness w/cancel_cust.html
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Unsuspend customer');
+
+my $cust_main = qsearchs( {
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+} );
+die "No customer # $custnum" unless $cust_main;
+
+</%init>
+

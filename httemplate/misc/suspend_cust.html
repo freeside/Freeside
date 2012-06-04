@@ -1,0 +1,79 @@
+<& /elements/header-popup.html, mt('Suspend customer')  &>
+
+<& /elements/error.html &>
+
+<FORM NAME="cust_suspend_popup" ACTION="<% popurl(1) %>cust_main-suspend.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+ <P ALIGN="center"><B><% mt('Suspend this customer?') |h %></B>
+
+<TABLE BORDER="0" CELLSPACING="2"
+STYLE="margin-left:auto; margin-right:auto">
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="radio" NAME="now_or_later" VALUE="0" onclick="toggle(false)" CHECKED />
+  </TD>
+  <TD ALIGN="left"><% mt('Suspend now') |h %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="radio" NAME="now_or_later" VALUE="1" onclick="toggle(true)" />
+  </TD>
+  <TD ALIGN="left"><% mt('Suspend on date: ') |h %> 
+  <& /elements/input-date-field.html, {
+              'name'    => 'adjourn',
+              'value'   => time,
+    }  &>
+  </TD>
+</TR>
+</TABLE>
+<SCRIPT type="text/javascript">
+function toggle(val) {
+  document.getElementById("adjourn_text").disabled = !val;
+  document.getElementById("adjourn_button").style.visibility = 
+    val ? 'visible' : 'hidden';
+}
+toggle(false);
+</SCRIPT> 
+
+<TABLE BGCOLOR="#cccccc", BORDER="0" CELLSPACING="2"
+STYLE="margin-left:auto; margin-right:auto">
+<& /elements/tr-select-reason.html,
+             'field'          => 'reasonnum',
+             'reason_class'   => 'C',
+             'cgi'            => $cgi,
+             'control_button' => "document.getElementById('confirm_suspend_cust_button')",
+&>
+
+</TABLE>
+
+<BR>
+<P ALIGN="CENTER">
+<INPUT TYPE="submit" NAME="submit" ID="confirm_suspend_cust_button" VALUE="<% mt('Suspend customer') |h %>" DISABLED> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<INPUT TYPE="BUTTON" VALUE="<% mt("Don't suspend") |h %>" onClick="parent.cClick();"> 
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+#false laziness w/cancel_cust.html
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Suspend customer');
+
+my $cust_main = qsearchs( {
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+} );
+die "No customer # $custnum" unless $cust_main;
+
+</%init>
+
