@@ -3885,17 +3885,20 @@ sub _items_sections {
         if ( $display->post_total && !$summarypage ) {
           if (! $type || $type eq 'S') {
             $late_subtotal{$section} += $cust_bill_pkg->setup
-              if $cust_bill_pkg->setup != 0;
+              if $cust_bill_pkg->setup != 0
+              || $cust_bill_pkg->setup_show_zero;
           }
 
           if (! $type) {
             $late_subtotal{$section} += $cust_bill_pkg->recur
-              if $cust_bill_pkg->recur != 0;
+              if $cust_bill_pkg->recur != 0
+              || $cust_bill_pkg->recur_show_zero;
           }
 
           if ($type && $type eq 'R') {
             $late_subtotal{$section} += $cust_bill_pkg->recur - $usage
-              if $cust_bill_pkg->recur != 0;
+              if $cust_bill_pkg->recur != 0
+              || $cust_bill_pkg->recur_show_zero;
           }
           
           if ($type && $type eq 'U') {
@@ -3909,17 +3912,20 @@ sub _items_sections {
 
           if (! $type || $type eq 'S') {
             $subtotal{$section} += $cust_bill_pkg->setup
-              if $cust_bill_pkg->setup != 0;
+              if $cust_bill_pkg->setup != 0
+              || $cust_bill_pkg->setup_show_zero;
           }
 
           if (! $type) {
             $subtotal{$section} += $cust_bill_pkg->recur
-              if $cust_bill_pkg->recur != 0;
+              if $cust_bill_pkg->recur != 0
+              || $cust_bill_pkg->recur_show_zero;
           }
 
           if ($type && $type eq 'R') {
             $subtotal{$section} += $cust_bill_pkg->recur - $usage
-              if $cust_bill_pkg->recur != 0;
+              if $cust_bill_pkg->recur != 0
+              || $cust_bill_pkg->recur_show_zero;
           }
           
           if ($type && $type eq 'U') {
@@ -4912,6 +4918,8 @@ sub _items_cust_bill_pkg {
       }
     }
 
+    my @cust_bill_pkg_display = $cust_bill_pkg->cust_bill_pkg_display;
+
     warn "$me _items_cust_bill_pkg considering cust_bill_pkg ".
          $cust_bill_pkg->billpkgnum. ", pkgnum ". $cust_bill_pkg->pkgnum. "\n"
       if $DEBUG > 1;
@@ -4922,7 +4930,7 @@ sub _items_cust_bill_pkg {
                                }
                           #grep { !$_->summary || !$summary_page } # bunk!
                           grep { !$_->summary || $multisection }
-                          $cust_bill_pkg->cust_bill_pkg_display
+                          @cust_bill_pkg_display
                         )
     {
 
