@@ -1512,17 +1512,23 @@ sub retry_realtime {
     cust_bill_batch
   );
 
-  my $is_realtime_event = ' ( '. join(' OR ', map "part_event.action = '$_'",
-                                                  @realtime_events
-                                     ).
-                          ' ) ';
+  my $is_realtime_event =
+    ' part_event.action IN ( '.
+        join(',', map "'$_'", @realtime_events ).
+    ' ) ';
+
+  my $batch_or_statustext =
+    "( part_event.action = 'cust_bill_batch'
+       OR ( statustext IS NOT NULL AND statustext != '' )
+     )";
+
 
   my @cust_event = qsearch({
     'table'     => 'cust_event',
     'select'    => 'cust_event.*',
     'addl_from' => "LEFT JOIN part_event USING ( eventpart ) $join",
     'hashref'   => { 'status' => 'done' },
-    'extra_sql' => " AND statustext IS NOT NULL AND statustext != '' ".
+    'extra_sql' => " AND $batch_or_statustext ".
                    " AND $mine AND $is_realtime_event AND $agent_virt $order" # LIMIT 1"
   });
 
