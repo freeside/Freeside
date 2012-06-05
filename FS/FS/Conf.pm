@@ -5041,6 +5041,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'logout-timeout',
+    'section'     => 'UI',
+    'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
+    'type'       => 'text',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

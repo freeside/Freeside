@@ -42,6 +42,12 @@ Example:
     <% include('init_overlib.html') |n %>
     <% include('rs_init_object.html') |n %>
     <% include('logout.html') |n %>
+%   my $timeout =  $conf->config('logout-timeout');
+%   if ( $timeout && $timeout =~ /^\s*\d+\s*$/ ) {
+      <script type="text/javascript">
+        setTimeout('logout()', <% 60000 * $timeout %>);
+      </script>
+%   }
 
     <% $head |n %>
 
