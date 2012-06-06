@@ -71,7 +71,7 @@ sub finish {
       $prefix,
       map({ 
           $_->{count},
-          (int($_->{duration}/60) . ' min'),
+          sprintf('%.01f min',$_->{duration}/60),
         } @subtotals ),
       $self->money_char . sprintf('%.02f',$total_amount),
     );
