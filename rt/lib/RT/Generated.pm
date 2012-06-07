@@ -50,7 +50,7 @@ package RT;
 use warnings;
 use strict;
 
-our $VERSION = '4.0.5';
+our $VERSION = '4.0.6';
 
 
 

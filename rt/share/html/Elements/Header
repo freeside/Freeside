@@ -87,7 +87,8 @@ my $head = '';
 #XXX $head .= <& /Elements/Framekiller &>;
 
 if ($Refresh && $Refresh =~ /^(\d+)/ && $1 > 0) {
-  $head .= qq( <meta http-equiv="refresh" content="$Refresh" /> );
+  my $URL = $m->notes->{RefreshURL}; $URL = $URL ? ";URL=$URL" : "";
+  $head .= qq( <meta http-equiv="refresh" content="$1$URL" /> );
 }
 
 my $WebPath = RT->Config->Get('WebPath');

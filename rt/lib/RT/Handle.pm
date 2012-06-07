@@ -226,14 +226,12 @@ sub CheckIntegrity {
     my $self = shift;
     $self = new $self unless ref $self;
 
-    do {
+    unless ($RT::Handle and $RT::Handle->dbh) {
         local $@;
         unless ( eval { RT::ConnectToDatabase(); 1 } ) {
             return (0, 'no connection', "$@");
         }
-    };
-
-    RT::InitLogging();
+    }
 
     require RT::CurrentUser;
     my $test_user = RT::CurrentUser->new;
@@ -748,6 +746,10 @@ sub InsertData {
     my $self     = shift;
     my $datafile = shift;
     my $root_password = shift;
+    my %args     = (
+        disconnect_after => 1,
+        @_
+    );
 
     # Slurp in stuff to insert from the datafile. Possible things to go in here:-
     our (@Groups, @Users, @ACL, @Queues, @ScripActions, @ScripConditions,
@@ -1071,8 +1073,14 @@ sub InsertData {
         $RT::Logger->debug("done.");
     }
 
-    my $db_type = RT->Config->Get('DatabaseType');
-    $RT::Handle->Disconnect() unless $db_type eq 'SQLite';
+    # XXX: This disconnect doesn't really belong here; it's a relict from when
+    # this method was extracted from rt-setup-database.  However, too much
+    # depends on it to change without significant testing.  At the very least,
+    # we can provide a way to skip the side-effect.
+    if ( $args{disconnect_after} ) {
+        my $db_type = RT->Config->Get('DatabaseType');
+        $RT::Handle->Disconnect() unless $db_type eq 'SQLite';
+    }
 
     $RT::Logger->debug("Done setting up database content.");
 

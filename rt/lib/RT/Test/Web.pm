@@ -52,15 +52,19 @@ use strict;
 use warnings;
 
 use base qw(Test::WWW::Mechanize);
+use Scalar::Util qw(weaken);
 
-require RT::Test;
+BEGIN { require RT::Test; }
 require Test::More;
+
+my $instance;
 
 sub new {
     my ($class, @args) = @_;
 
     push @args, app => $RT::Test::TEST_APP if $RT::Test::TEST_APP;
-    my $self = $class->SUPER::new(@args);
+    my $self = $instance = $class->SUPER::new(@args);
+    weaken $instance;
     $self->cookie_jar(HTTP::Cookies->new);
 
     return $self;
@@ -100,6 +104,7 @@ sub login {
         Test::More::diag("error: page has no Logout");
         return 0;
     }
+    RT::Interface::Web::EscapeUTF8(\$user);
     unless ( $self->content =~ m{<span class="current-user">\Q$user\E</span>}i ) {
         Test::More::diag("Page has no user name");
         return 0;
@@ -368,6 +373,12 @@ sub DESTROY {
     if ( !$RT::Test::Web::DESTROY++ ) {
         $self->no_warnings_ok;
     }
+}
+
+END {
+    return unless $instance;
+    return if RT::Test->builder->{Original_Pid} != $$;
+    $instance->no_warnings_ok if !$RT::Test::Web::DESTROY++;
 }
 
 1;

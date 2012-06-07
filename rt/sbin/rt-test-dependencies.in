@@ -189,6 +189,8 @@ File::ShareDir
 File::Spec 0.8
 HTML::Quoted
 HTML::Scrubber 0.08
+HTML::TreeBuilder
+HTML::FormatText
 Log::Dispatch 2.23
 Sys::Syslog 0.16
 Locale::Maketext 1.06
@@ -245,8 +247,6 @@ CGI::Emulate::PSGI
 .
 
 $deps{'MAILGATE'} = [ text_to_hash( << '.') ];
-HTML::TreeBuilder
-HTML::FormatText
 Getopt::Long
 LWP::UserAgent
 Pod::Usage
@@ -288,7 +288,7 @@ Test::Builder 0.90 # needed for is_passing
 Test::MockTime
 Log::Dispatch::Perl
 Test::WWW::Mechanize::PSGI
-Plack::Middleware::Test::StashWarnings
+Plack::Middleware::Test::StashWarnings 0.06
 Test::LongString
 .
 
@@ -339,6 +339,7 @@ Net::SMTP
 $deps{'DASHBOARDS'} = [ text_to_hash( << '.') ];
 HTML::RewriteAttributes 0.04
 MIME::Types
+URI 1.59
 .
 
 $deps{'GRAPHVIZ'} = [ text_to_hash( << '.') ];
