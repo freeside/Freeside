@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -55,70 +55,27 @@ package RT;
 use File::Spec ();
 use Cwd ();
 
-use vars qw($Config $System $SystemUser $Nobody $Handle $Logger $_INSTALL_MODE);
+use vars qw($Config $System $SystemUser $Nobody $Handle $Logger $_Privileged $_Unprivileged $_INSTALL_MODE);
 
-our $VERSION = '3.8.11';
+use vars qw($BasePath
+ $EtcPath
+ $BinPath
+ $SbinPath
+ $VarPath
+ $LexiconPath
+ $PluginPath
+ $LocalPath
+ $LocalEtcPath
+ $LocalLibPath
+ $LocalLexiconPath
+ $LocalPluginPath
+ $MasonComponentRoot
+ $MasonLocalComponentRoot
+ $MasonDataDir
+ $MasonSessionDir);
 
 
-
-our $BasePath = '/opt/rt3';
-our $EtcPath = '/opt/rt3/etc';
-our $BinPath = '/opt/rt3/bin';
-our $SbinPath = '/opt/rt3/sbin';
-our $VarPath = '/opt/rt3/var';
-our $PluginPath = '';
-our $LocalPath = '/opt/rt3/local';
-our $LocalEtcPath = '/opt/rt3/local/etc';
-our $LocalLibPath        =    '/opt/rt3/local/lib';
-our $LocalLexiconPath = '/opt/rt3/local/po';
-our $LocalPluginPath = $LocalPath."/plugins";
-
-
-# $MasonComponentRoot is where your rt instance keeps its mason html files
-
-our $MasonComponentRoot = '/var/www/freeside/rt';
-
-# $MasonLocalComponentRoot is where your rt instance keeps its site-local
-# mason html files.
-
-our $MasonLocalComponentRoot = '/opt/rt3/local/html';
-
-# $MasonDataDir Where mason keeps its datafiles
-
-our $MasonDataDir = '/usr/local/etc/freeside/masondata';
-
-# RT needs to put session data (for preserving state between connections
-# via the web interface)
-our $MasonSessionDir = '/opt/rt3/var/session_data';
-
-unless (  File::Spec->file_name_is_absolute($EtcPath) ) {
-
-# if BasePath exists and is absolute, we won't infer it from $INC{'RT.pm'}.
-# otherwise RT.pm will make src dir(where we configure RT) be the BasePath 
-# instead of the --prefix one
-    unless ( -d $BasePath && File::Spec->file_name_is_absolute($BasePath) ) {
-        my $pm_path = ( File::Spec->splitpath( $INC{'RT.pm'} ) )[1];
-
-       # need rel2abs here is to make sure path is absolute, since $INC{'RT.pm'}
-       # is not always absolute
-        $BasePath =
-          File::Spec->rel2abs(
-            File::Spec->catdir( $pm_path, File::Spec->updir ) );
-    }
-
-    $BasePath = Cwd::realpath( $BasePath );
-
-    for my $path ( qw/EtcPath BinPath SbinPath VarPath LocalPath LocalEtcPath
-            LocalLibPath LocalLexiconPath PluginPath LocalPluginPath 
-            MasonComponentRoot MasonLocalComponentRoot MasonDataDir 
-            MasonSessionDir/ ) {
-        no strict 'refs';
-        # just change relative ones
-        $$path = File::Spec->catfile( $BasePath, $$path )
-          unless File::Spec->file_name_is_absolute( $$path );
-    }
-}
-
+RT->LoadGeneratedData();
 
 =head1 NAME
 
@@ -149,7 +106,7 @@ have not been set already.
 
 sub LoadConfig {
     require RT::Config;
-    $Config = new RT::Config;
+    $Config = RT::Config->new;
     $Config->LoadConfigs;
     require RT::I18N;
 
@@ -167,14 +124,15 @@ sub LoadConfig {
     unless ( File::Spec->file_name_is_absolute( $gpgopts->{homedir} ) ) {
         $gpgopts->{homedir} = File::Spec->catfile( $BasePath, $gpgopts->{homedir} );
     }
-    
-    RT::I18N->Init;
+
+    return $Config;
 }
 
 =head2 Init
 
-L<Connect to the database /ConnectToDatabase>, L<initilizes system objects /InitSystemObjects>,
-L<preloads classes /InitClasses> and L<set up logging /InitLogging>.
+L<Connects to the database|/ConnectToDatabase>, L<initilizes system
+objects|/InitSystemObjects>, L<preloads classes|/InitClasses>, L<sets
+up logging|/InitLogging>, and L<loads plugins|/InitPlugins>.
 
 =cut
 
@@ -190,21 +148,22 @@ sub Init {
     ConnectToDatabase();
     InitSystemObjects();
     InitClasses();
-    InitLogging(@arg); 
+    InitLogging(@arg);
     InitPlugins();
+    RT::I18N->Init;
     RT->Config->PostLoadCheck;
 
 }
 
 =head2 ConnectToDatabase
 
-Get a database connection. See also </Handle>.
+Get a database connection. See also L</Handle>.
 
 =cut
 
 sub ConnectToDatabase {
     require RT::Handle;
-    $Handle = new RT::Handle unless $Handle;
+    $Handle = RT::Handle->new unless $Handle;
     $Handle->Connect;
     return $Handle;
 }
@@ -233,7 +192,7 @@ sub InitLogging {
         warning   => 3,
         error     => 4, 'err' => 4,
         critical  => 5, crit  => 5,
-        alert     => 6, 
+        alert     => 6,
         emergency => 7, emerg => 7,
     );
 
@@ -290,7 +249,7 @@ sub InitLogging {
             no warnings;
             my %p = @_;
             return $p{'message'} unless $level_to_num{ $p{'level'} } >= $stack_from_level;
-            
+
             require Devel::StackTrace;
             my $trace = Devel::StackTrace->new( ignore_class => [ 'Log::Dispatch', 'Log::Dispatch::Base' ] );
             return $p{'message'} . $trace->as_string;
@@ -398,7 +357,7 @@ sub InitSignalHandlers {
 
 sub CheckPerlRequirements {
     if ($^V < 5.008003) {
-        die sprintf "RT requires Perl v5.8.3 or newer.  Your current Perl is v%vd\n", $^V; 
+        die sprintf "RT requires Perl v5.8.3 or newer.  Your current Perl is v%vd\n", $^V;
     }
 
     # use $error here so the following "die" can still affect the global $@
@@ -418,14 +377,14 @@ sub CheckPerlRequirements {
         die <<"EOF";
 
 RT requires the Scalar::Util module be built with support for  the 'weaken'
-function. 
+function.
 
-It is sometimes the case that operating system upgrades will replace 
+It is sometimes the case that operating system upgrades will replace
 a working Scalar::Util with a non-working one. If your system was working
 correctly up until now, this is likely the cause of the problem.
 
-Please reinstall Scalar::Util, being careful to let it build with your C 
-compiler. Ususally this is as simple as running the following command as
+Please reinstall Scalar::Util, being careful to let it build with your C
+compiler. Usually this is as simple as running the following command as
 root.
 
     perl -MCPAN -e'install Scalar::Util'
@@ -464,11 +423,26 @@ sub InitClasses {
     require RT::Attributes;
     require RT::Dashboard;
     require RT::Approval;
+    require RT::Lifecycle;
+    require RT::Link;
+    require RT::Article;
+    require RT::Articles;
+    require RT::Class;
+    require RT::Classes;
+    require RT::ObjectClass;
+    require RT::ObjectClasses;
+    require RT::ObjectTopic;
+    require RT::ObjectTopics;
+    require RT::Topic;
+    require RT::Topics;
 
     # on a cold server (just after restart) people could have an object
     # in the session, as we deserialize it so we never call constructor
     # of the class, so the list of accessible fields is empty and we die
     # with "Method xxx is not implemented in RT::SomeClass"
+
+    # without this, we also can never call _ClassAccessible, because we
+    # won't have filled RT::Record::_TABLE_ATTR
     $_->_BuildTableAttributes foreach qw(
         RT::Ticket
         RT::Transaction
@@ -487,11 +461,18 @@ sub InitClasses {
         RT::ObjectCustomField
         RT::ObjectCustomFieldValue
         RT::Attribute
+        RT::ACE
+        RT::Link
+        RT::Article
+        RT::Class
+        RT::ObjectClass
+        RT::ObjectTopic
+        RT::Topic
     );
 
     if ( $args{'Heavy'} ) {
         # load scrips' modules
-        my $scrips = RT::Scrips->new($RT::SystemUser);
+        my $scrips = RT::Scrips->new(RT->SystemUser);
         $scrips->Limit( FIELD => 'Stage', OPERATOR => '!=', VALUE => 'Disabled' );
         while ( my $scrip = $scrips->Next ) {
             local $@;
@@ -508,14 +489,13 @@ sub InitClasses {
             );
         }
 
-        RT::I18N->LoadLexicons;
     }
 }
 
 =head2 InitSystemObjects
 
-Initializes system objects: C<$RT::System>, C<$RT::SystemUser>
-and C<$RT::Nobody>.
+Initializes system objects: C<$RT::System>, C<< RT->SystemUser >>
+and C<< RT->Nobody >>.
 
 =cut
 
@@ -523,11 +503,11 @@ sub InitSystemObjects {
 
     #RT's system user is a genuine database user. its id lives here
     require RT::CurrentUser;
-    $SystemUser = new RT::CurrentUser;
+    $SystemUser = RT::CurrentUser->new;
     $SystemUser->LoadByName('RT_System');
 
     #RT's "nobody user" is a genuine database user. its ID lives here.
-    $Nobody = new RT::CurrentUser;
+    $Nobody = RT::CurrentUser->new;
     $Nobody->LoadByName('Nobody');
 
     require RT::System;
@@ -538,19 +518,19 @@ sub InitSystemObjects {
 
 =head2 Config
 
-Returns the current L<config object RT::Config>, but note that
-you must L<load config /LoadConfig> first otherwise this method
+Returns the current L<config object|RT::Config>, but note that
+you must L<load config|/LoadConfig> first otherwise this method
 returns undef.
 
 Method can be called as class method.
 
 =cut
 
-sub Config { return $Config }
+sub Config { return $Config || shift->LoadConfig(); }
 
 =head2 DatabaseHandle
 
-Returns the current L<database handle object RT::Handle>.
+Returns the current L<database handle object|RT::Handle>.
 
 See also L</ConnectToDatabase>.
 
@@ -568,7 +548,7 @@ sub Logger { return $Logger }
 
 =head2 System
 
-Returns the current L<system object RT::System>. See also
+Returns the current L<system object|RT::System>. See also
 L</InitSystemObjects>.
 
 =cut
@@ -595,6 +575,23 @@ also L</InitSystemObjects>.
 
 sub Nobody { return $Nobody }
 
+sub PrivilegedUsers {
+    if (!$_Privileged) {
+    $_Privileged = RT::Group->new(RT->SystemUser);
+    $_Privileged->LoadSystemInternalGroup('Privileged');
+    }
+    return $_Privileged;
+}
+
+sub UnprivilegedUsers {
+    if (!$_Unprivileged) {
+    $_Unprivileged = RT::Group->new(RT->SystemUser);
+    $_Unprivileged->LoadSystemInternalGroup('Unprivileged');
+    }
+    return $_Unprivileged;
+}
+
+
 =head2 Plugins
 
 Returns a listref of all Plugins currently configured for this RT instance.
@@ -614,10 +611,12 @@ sub Plugins {
 
 =head2 PluginDirs
 
-Takes optional subdir (e.g. po, lib, etc.) and return plugins' dirs that exist.
+Takes an optional subdir (e.g. po, lib, etc.) and returns a list of
+directories from plugins where that subdirectory exists.
 
-This code chacke plugins names or anything else and required when main config
-is loaded to load plugins' configs.
+This code does not check plugin names, plugin validitity, or load
+plugins (see L</InitPlugins>) in any way, and requires that RT's
+configuration have been already loaded.
 
 =cut
 
@@ -668,7 +667,8 @@ sub InitPluginPaths {
 
 =head2 InitPlugins
 
-Initialze all Plugins found in the RT configuration file, setting up their lib and HTML::Mason component roots.
+Initialize all Plugins found in the RT configuration file, setting up
+their lib and L<HTML::Mason> component roots.
 
 =cut
 
@@ -697,6 +697,106 @@ sub InstallMode {
     return $_INSTALL_MODE;
 }
 
+sub LoadGeneratedData {
+    my $class = shift;
+    my $pm_path = ( File::Spec->splitpath( $INC{'RT.pm'} ) )[1];
+
+    require "$pm_path/RT/Generated.pm" || die "Couldn't load RT::Generated: $@";
+    $class->CanonicalizeGeneratedPaths();
+}
+
+sub CanonicalizeGeneratedPaths {
+    my $class = shift;
+    unless ( File::Spec->file_name_is_absolute($EtcPath) ) {
+
+   # if BasePath exists and is absolute, we won't infer it from $INC{'RT.pm'}.
+   # otherwise RT.pm will make the source dir(where we configure RT) be the
+   # BasePath instead of the one specified by --prefix
+        unless ( -d $BasePath
+                 && File::Spec->file_name_is_absolute($BasePath) )
+        {
+            my $pm_path = ( File::Spec->splitpath( $INC{'RT.pm'} ) )[1];
+
+     # need rel2abs here is to make sure path is absolute, since $INC{'RT.pm'}
+     # is not always absolute
+            $BasePath = File::Spec->rel2abs(
+                          File::Spec->catdir( $pm_path, File::Spec->updir ) );
+        }
+
+        $BasePath = Cwd::realpath($BasePath);
+
+        for my $path (
+                    qw/EtcPath BinPath SbinPath VarPath LocalPath LocalEtcPath
+                    LocalLibPath LexiconPath LocalLexiconPath PluginPath
+                    LocalPluginPath MasonComponentRoot MasonLocalComponentRoot
+                    MasonDataDir MasonSessionDir/
+                     )
+        {
+            no strict 'refs';
+
+            # just change relative ones
+            $$path = File::Spec->catfile( $BasePath, $$path )
+                unless File::Spec->file_name_is_absolute($$path);
+        }
+    }
+
+}
+
+=head2 AddJavaScript
+
+helper method to add js files to C<JSFiles> config.
+to add extra css files, you can add the following line
+in the plugin's main file:
+
+    RT->AddJavaScript( 'foo.js', 'bar.js' ); 
+
+=cut
+
+sub AddJavaScript {
+    my $self = shift;
+
+    my @old = RT->Config->Get('JSFiles');
+    RT->Config->Set( 'JSFiles', @old, @_ );
+    return RT->Config->Get('JSFiles');
+}
+
+=head2 AddStyleSheets
+
+helper method to add css files to C<CSSFiles> config
+
+to add extra css files, you can add the following line
+in the plugin's main file:
+
+    RT->AddStyleSheets( 'foo.css', 'bar.css' ); 
+
+=cut
+
+sub AddStyleSheets {
+    my $self = shift;
+    my @old = RT->Config->Get('CSSFiles');
+    RT->Config->Set( 'CSSFiles', @old, @_ );
+    return RT->Config->Get('CSSFiles');
+}
+
+=head2 JavaScript
+
+helper method of RT->Config->Get('JSFiles')
+
+=cut
+
+sub JavaScript {
+    return RT->Config->Get('JSFiles');
+}
+
+=head2 StyleSheets
+
+helper method of RT->Config->Get('CSSFiles')
+
+=cut
+
+sub StyleSheets {
+    return RT->Config->Get('CSSFiles');
+}
 
 =head1 BUGS
 
@@ -709,7 +809,6 @@ If you're not sure what's going on, report them rt-devel@lists.bestpractical.com
 
 L<RT::StyleGuide>
 L<DBIx::SearchBuilder>
-
 
 =cut
 

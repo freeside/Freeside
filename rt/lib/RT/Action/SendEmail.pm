@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -80,13 +80,12 @@ RT::Action::SendEmail.
 
 =head2 CleanSlate
 
-Cleans class-wide options, like L</SquelchMailTo> or L</AttachTickets>.
+Cleans class-wide options, like L</AttachTickets>.
 
 =cut
 
 sub CleanSlate {
     my $self = shift;
-    $self->SquelchMailTo(undef);
     $self->AttachTickets(undef);
 }
 
@@ -166,14 +165,14 @@ sub Prepare {
     # Header
     $self->SetRTSpecialHeaders();
 
-    $self->RemoveInappropriateRecipients();
-
     my %seen;
     foreach my $type (@EMAIL_RECIPIENT_HEADERS) {
         @{ $self->{$type} }
             = grep defined && length && !$seen{ lc $_ }++,
             @{ $self->{$type} };
     }
+
+    $self->RemoveInappropriateRecipients();
 
     # Go add all the Tos, Ccs and Bccs that we need to to the message to
     # make it happy, but only if we actually have values in those arrays.
@@ -349,7 +348,7 @@ sub AddAttachments {
 
     $MIMEObj->head->delete('RT-Attach-Message');
 
-    my $attachments = RT::Attachments->new($RT::SystemUser);
+    my $attachments = RT::Attachments->new(RT->SystemUser);
     $attachments->Limit(
         FIELD => 'TransactionId',
         VALUE => $self->TransactionObj->Id
@@ -409,11 +408,16 @@ sub AddAttachment {
     my $attach  = shift;
     my $MIMEObj = shift || $self->TemplateObj->MIMEObj;
 
+    # ->attach expects just the disposition type; extract it if we have the header
+    my $disp = ($attach->GetHeader('Content-Disposition') || '')
+                    =~ /^\s*(inline|attachment)/i ? $1 : undef;
+
     $MIMEObj->attach(
-        Type     => $attach->ContentType,
-        Charset  => $attach->OriginalEncoding,
-        Data     => $attach->OriginalContent,
-        Filename => $self->MIMEEncodeString( $attach->Filename ),
+        Type        => $attach->ContentType,
+        Charset     => $attach->OriginalEncoding,
+        Data        => $attach->OriginalContent,
+        Disposition => $disp, # a false value defaults to inline in MIME::Entity
+        Filename    => $self->MIMEEncodeString( $attach->Filename ),
         'RT-Attachment:' => $self->TicketObj->Id . "/"
             . $self->TransactionObj->Id . "/"
             . $attach->id,
@@ -468,7 +472,7 @@ sub AddTicket {
     my $tid  = shift;
 
     # XXX: we need a current user here, but who is current user?
-    my $attachs   = RT::Attachments->new($RT::SystemUser);
+    my $attachs   = RT::Attachments->new(RT->SystemUser);
     my $txn_alias = $attachs->TransactionAlias;
     $attachs->Limit( ALIAS => $txn_alias, FIELD => 'Type', VALUE => 'Create' );
     $attachs->Limit(
@@ -660,7 +664,7 @@ sub DeferDigestRecipients {
         $RT::Logger->debug( $self->TemplateObj->MIMEObj->head->as_string );
         foreach my $rcpt ( map { $_->address } $self->AddressesFromHeader($mailfield) ) {
             next unless $rcpt;
-            my $user_obj = RT::User->new($RT::SystemUser);
+            my $user_obj = RT::User->new(RT->SystemUser);
             $user_obj->LoadByEmail($rcpt);
             if  ( ! $user_obj->id ) {
                 # If there's an email address in here without an associated
@@ -729,26 +733,15 @@ sub RecordDeferredRecipients {
     return ($ret,$msg);
 }
 
-=head2 SquelchMailTo [@ADDRESSES]
+=head2 SquelchMailTo
 
-Mark ADDRESSES to be removed from list of the recipients. Returns list of the addresses.
-To empty list pass undefined argument.
-
-B<Note> that this method can be called as class method and works globaly. Don't forget to
-clean this list when blocking is not required anymore, pass undef to do this.
+Returns list of the addresses to squelch on this transaction.
 
 =cut
 
-{
-    my $squelch = [];
-
-    sub SquelchMailTo {
-        my $self = shift;
-        if (@_) {
-            $squelch = [ grep defined, @_ ];
-        }
-        return @$squelch;
-    }
+sub SquelchMailTo {
+    my $self = shift;
+    return map $_->Content, $self->TransactionObj->SquelchMailTo;
 }
 
 =head2 RemoveInappropriateRecipients
@@ -789,9 +782,9 @@ sub RemoveInappropriateRecipients {
                 # Only send to "privileged" watchers.
                 foreach my $type (@EMAIL_RECIPIENT_HEADERS) {
                     foreach my $addr ( @{ $self->{$type} } ) {
-                        my $user = RT::User->new($RT::SystemUser);
+                        my $user = RT::User->new(RT->SystemUser);
                         $user->LoadByEmail($addr);
-                        push @blacklist, $addr if ( !$user->Privileged );
+                        push @blacklist, $addr unless $user->id && $user->Privileged;
                     }
                 }
                 $RT::Logger->info( $msgid
@@ -806,15 +799,15 @@ sub RemoveInappropriateRecipients {
         }
     }
 
-# Let's grab the SquelchMailTo attribue and push those entries into the @blacklist
-    push @blacklist, map $_->Content, $self->TicketObj->SquelchMailTo;
-    push @blacklist, $self->SquelchMailTo;
+    # Let's grab the SquelchMailTo attributes and push those entries into the @blacklisted
+    push @blacklist, map $_->Content, $self->TicketObj->SquelchMailTo, $self->TransactionObj->SquelchMailTo;
 
     # Cycle through the people we're sending to and pull out anyone on the
     # system blacklist
 
     # Trim leading and trailing spaces. 
-    @blacklist = map { RT::User->CanonicalizeEmailAddress( $_->address ) } Email::Address->parse(join(', ', grep {defined} @blacklist));
+    @blacklist = map { RT::User->CanonicalizeEmailAddress( $_->address ) }
+        Email::Address->parse( join ', ', grep defined, @blacklist );
 
     foreach my $type (@EMAIL_RECIPIENT_HEADERS) {
         my @addrs;
@@ -826,8 +819,16 @@ sub RemoveInappropriateRecipients {
                 $RT::Logger->info( $msgid . "$addr appears to point to this RT instance. Skipping" );
                 next;
             }
-            if ( grep /^\Q$addr\E$/, @blacklist ) {
+            if ( grep $addr eq $_, @blacklist ) {
                 $RT::Logger->info( $msgid . "$addr was blacklisted for outbound mail on this transaction. Skipping");
+                next;
+            }
+            push @addrs, $addr;
+        }
+        foreach my $addr ( @{ $self->{'NoSquelch'}{$type} || [] } ) {
+            # never send email to itself
+            if ( !RT::EmailParser->CullRTAddresses($addr) ) {
+                $RT::Logger->info( $msgid . "$addr appears to point to this RT instance. Skipping" );
                 next;
             }
             push @addrs, $addr;
@@ -864,35 +865,66 @@ sub SetReturnAddress {
     }
 
     unless ( $self->TemplateObj->MIMEObj->head->get('From') ) {
-        if ( RT->Config->Get('UseFriendlyFromLine') ) {
-            my $friendly_name = $args{friendly_name};
-
-            unless ( $friendly_name ) {
-                $friendly_name = $self->TransactionObj->CreatorObj->FriendlyName;
-                if ( $friendly_name =~ /^"(.*)"$/ ) {    # a quoted string
-                    $friendly_name = $1;
-                }
-            }
-
-            $friendly_name =~ s/"/\\"/g;
-            $self->SetHeader(
-                'From',
-                sprintf(
-                    RT->Config->Get('FriendlyFromLineFormat'),
-                    $self->MIMEEncodeString(
-                        $friendly_name, RT->Config->Get('EmailOutputEncoding')
-                    ),
-                    $replyto
-                ),
-            );
-        } else {
-            $self->SetHeader( 'From', $replyto );
-        }
+        $self->SetFrom( %args, From => $replyto );
     }
 
     unless ( $self->TemplateObj->MIMEObj->head->get('Reply-To') ) {
         $self->SetHeader( 'Reply-To', "$replyto" );
     }
+
+}
+
+=head2 SetFrom ( From => emailaddress )
+
+Set the From: address for outgoing email
+
+=cut
+
+sub SetFrom {
+    my $self = shift;
+    my %args = @_;
+
+    if ( RT->Config->Get('UseFriendlyFromLine') ) {
+        my $friendly_name = $self->GetFriendlyName(%args);
+        $self->SetHeader(
+            'From',
+            sprintf(
+                RT->Config->Get('FriendlyFromLineFormat'),
+                $self->MIMEEncodeString(
+                    $friendly_name, RT->Config->Get('EmailOutputEncoding')
+                ),
+                $args{From}
+            ),
+        );
+    } else {
+        $self->SetHeader( 'From', $args{From} );
+    }
+}
+
+=head2 GetFriendlyName
+
+Calculate the proper Friendly Name based on the creator of the transaction
+
+=cut
+
+sub GetFriendlyName {
+    my $self = shift;
+    my %args = (
+        is_comment => 0,
+        friendly_name => '',
+        @_
+    );
+    my $friendly_name = $args{friendly_name};
+
+    unless ( $friendly_name ) {
+        $friendly_name = $self->TransactionObj->CreatorObj->FriendlyName;
+        if ( $friendly_name =~ /^"(.*)"$/ ) {    # a quoted string
+            $friendly_name = $1;
+        }
+    }
+
+    $friendly_name =~ s/"/\\"/g;
+    return $friendly_name;
 
 }
 
@@ -982,15 +1014,16 @@ Set References and In-Reply-To headers for this message.
 
 sub SetReferencesHeaders {
     my $self = shift;
-    my ( @in_reply_to, @references, @msgid );
 
-    if ( my $top = $self->TransactionObj->Message->First ) {
-        @in_reply_to = split( /\s+/m, $top->GetHeader('In-Reply-To') || '' );
-        @references  = split( /\s+/m, $top->GetHeader('References')  || '' );
-        @msgid       = split( /\s+/m, $top->GetHeader('Message-ID')  || '' );
-    } else {
+    my $top = $self->TransactionObj->Message->First;
+    unless ( $top ) {
+        $self->SetHeader( References => $self->PseudoReference );
         return (undef);
     }
+
+    my @in_reply_to = split( /\s+/m, $top->GetHeader('In-Reply-To') || '' );
+    my @references  = split( /\s+/m, $top->GetHeader('References')  || '' );
+    my @msgid       = split( /\s+/m, $top->GetHeader('Message-ID')  || '' );
 
     # There are two main cases -- this transaction was created with
     # the RT Web UI, and hence we want to *not* append its Message-ID

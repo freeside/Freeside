@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,12 +47,10 @@
 %# END BPS TAGGED BLOCK }}}
 <%args>
 $PrimaryGroupBy => 'Queue'
-$SecondaryGroupBy => ''
 $ChartStyle => 'bars'
 $Description => undef
 </%args>
 <%init>
-$ARGS{SecondaryGroupBy} ||= '';
 $ARGS{Query} ||= 'id > 0';
 
 # FIXME: should be factored with RT::Report::Tickets::Label :(
@@ -74,25 +72,64 @@ my $title = loc( "Search results grouped by [_1]", $PrimaryGroupByLabel );
 
 my $saved_search = $m->comp( '/Widgets/SavedSearch:new',
     SearchType   => 'Chart',
-    SearchFields => [qw(Query PrimaryGroupBy SecondaryGroupBy ChartStyle)] );
+    SearchFields => [qw(Query PrimaryGroupBy ChartStyle)] );
 
 my @actions = $m->comp( '/Widgets/SavedSearch:process', args => \%ARGS, self => $saved_search );
 
+my %query;
+
+{
+    if ($saved_search->{'CurrentSearch'}->{'Object'}) {
+        foreach my $search_field (@{ $saved_search->{'SearchFields'} }) {
+            $query{$search_field} = $saved_search->{'CurrentSearch'}->{'Object'}->Content->{$search_field};
+        }
+    }
+
+    my $current = $session{'CurrentSearchHash'};
+
+    my @session_fields = qw(
+        Query
+        SavedChartSearchId
+        SavedSearchDescription
+        SavedSearchLoad
+        SavedSearchLoadButton
+        SavedSearchOwner
+    );
+
+    for(@session_fields) {
+        $query{$_} = $current->{$_} unless defined $query{$_};
+        $query{$_} = $m->request_args->{$_} unless defined $query{$_};
+    }
+
+    if ($m->request_args->{'SavedSearchLoadSubmit'}) {
+        $query{'SavedChartSearchId'} = $m->request_args->{'SavedSearchLoad'};
+    }
+
+    if ($m->request_args->{'SavedSearchSave'}) {
+        $query{'SavedChartSearchId'} = $saved_search->{'SearchId'};
+    }
+
+}
+
 </%init>
 <& /Elements/Header, Title => $title &>
-<& /Ticket/Elements/Tabs, Title => $title, Query => $ARGS{Query},
-    SavedChartSearchId => $saved_search->{SearchId} &>
+<& /Elements/Tabs, QueryArgs => \%query &>
 <& /Elements/ListActions, actions => \@actions &>
 <& /Search/Elements/Chart, %ARGS &>
 
-<br />
-<&| /Widgets/TitleBox, title => loc('Graph Properties')&>
+<div class="chart-meta">
+<div class="chart-type">
+<&| /Widgets/TitleBox, title => loc('Chart Properties')&>
 <form method="get" action="<%RT->Config->Get('WebPath')%>/Search/Chart.html">
 <input type="hidden" class="hidden" name="Query" value="<% $ARGS{Query} %>" />
 <input type="hidden" class="hidden" name="SavedChartSearchId" value="<% $saved_search->{SearchId} || 'new' %>" />
+
 <&|/l, $m->scomp('Elements/SelectChartType', Name => 'ChartStyle', Default => $ChartStyle), $m->scomp('Elements/SelectGroupBy', Name => 'PrimaryGroupBy', Query => $ARGS{Query}, Default => $PrimaryGroupBy) 
-&>[_1] chart by [_2]</&><input type="submit" class="button" value="<%loc('Update Graph')%>" />
+&>[_1] chart by [_2]</&><input type="submit" class="button" value="<%loc('Update Chart')%>" />
 </form>
 </&>
-
-<& /Widgets/SavedSearch:show, %ARGS, Action => 'Chart.html', self => $saved_search, Title => loc('Saved charts') &>
+</div>
+<div class="saved-search">
+    <& /Widgets/SavedSearch:show, %ARGS, Action => 'Chart.html', self => $saved_search, Title => loc('Saved charts') &>
+</div>
+</div>

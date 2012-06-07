@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,6 +51,9 @@ use warnings;
 
 use Locale::PO;
 use Getopt::Long;
+use File::Temp 'tempdir';
+
+use constant PO_DIR => 'share/po';
 
 my %commands = (
     stats   => { },
@@ -81,7 +84,7 @@ exit;
 
 sub stats {
     my %opt = %{ shift() };
-    my $dir = shift || 'lib/RT/I18N';
+    my $dir = shift || PO_DIR;
 
     my $max = 0;
     my %res = ();
@@ -125,7 +128,7 @@ sub stats {
 
 sub shrink {
     my %opt = %{ shift() };
-    my $dir = shift || 'lib/RT/I18N';
+    my $dir = shift || PO_DIR;
 
     my %keep = map { $_ => 1 } @{ $opt{'keep'} };
 
@@ -183,12 +186,11 @@ sub clean {
 
 sub rosetta {
     my %opt = %{ shift() };
-    my $url = shift or die 'must provide rosseta download url or directory with new po files';
+    my $url = shift or die 'must provide Rosetta download url or directory with new po files';
 
     my $dir;
-    if ( $url =~ m/^[a-z]+:\/\// ) {
-        require File::Temp;
-        $dir = File::Temp::tempdir();
+    if ( $url =~ m{^[a-z]+://} ) {
+        $dir = tempdir();
         my ($fname) = $url =~ m{([^/]+)$};
 
         print "Downloading $url\n";
@@ -207,7 +209,7 @@ sub rosetta {
         die "Is not URL or directory: '$url'";
     }
 
-    my @files = <$dir/rt/*.po>, <$dir/*.po>;
+    my @files = ( <$dir/rt/*.po>, <$dir/*.po> );
     unless ( @files ) {
         print STDERR "No files in $dir/rt/*.po and $dir/*.po\n";
         exit;
@@ -221,18 +223,17 @@ sub rosetta {
 
     for ( @files ) {
         my ($lang) = m/([\w_]+)\.po/;
-        my $fn_orig = "lib/RT/I18N/$lang.po";
+        my $fn_orig = PO_DIR . "/$lang.po";
 
         print "$_ -> $fn_orig\n";
 
         # retain the "NOT FOUND IN SOURCE" entries
-        require File::Temp;
         my $tmp = File::Temp->new;
         system("sed -e 's/^#~ //' $_ > $tmp");
         my $ext = Locale::Maketext::Extract->new;
         $ext->read_po($tmp);
 
-        my $po_orig = Locale::PO->load_file_ashash( -e $fn_orig? $fn_orig : 'lib/RT/I18N/rt.pot' );
+        my $po_orig = Locale::PO->load_file_ashash( -e $fn_orig? $fn_orig : PO_DIR . '/rt.pot' );
         # don't want empty vales to override ours.
         # don't want fuzzy flag as when uploading to rosetta again it's not accepted by rosetta.
         foreach my $msgid ($ext->msgids) {
@@ -264,6 +265,6 @@ sub rosetta {
 
 sub extract {
     shift;
-    system($^X, 'sbin/extract-message-catalog', @_);
+    system($^X, 'devel/tools/extract-message-catalog', @_);
 }
 

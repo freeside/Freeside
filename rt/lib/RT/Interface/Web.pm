@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -65,11 +65,52 @@ package RT::Interface::Web;
 
 use RT::SavedSearches;
 use URI qw();
+use RT::Interface::Web::Menu;
 use RT::Interface::Web::Session;
 use Digest::MD5 ();
 use Encode qw();
+use List::MoreUtils qw();
+use JSON qw();
 
-# {{{ EscapeUTF8
+=head2 SquishedCSS $style
+
+=cut
+
+my %SQUISHED_CSS;
+sub SquishedCSS {
+    my $style = shift or die "need name";
+    return $SQUISHED_CSS{$style} if $SQUISHED_CSS{$style};
+    require RT::Squish::CSS;
+    my $css = RT::Squish::CSS->new( Style => $style );
+    $SQUISHED_CSS{ $css->Style } = $css;
+    return $css;
+}
+
+=head2 SquishedJS
+
+=cut
+
+my $SQUISHED_JS;
+sub SquishedJS {
+    return $SQUISHED_JS if $SQUISHED_JS;
+
+    require RT::Squish::JS;
+    my $js = RT::Squish::JS->new();
+    $SQUISHED_JS = $js;
+    return $js;
+}
+
+=head2 ClearSquished
+
+Removes the cached CSS and JS entries, forcing them to be regenerated
+on next use.
+
+=cut
+
+sub ClearSquished {
+    undef $SQUISHED_JS;
+    %SQUISHED_CSS = ();
+}
 
 =head2 EscapeUTF8 SCALARREF
 
@@ -90,9 +131,7 @@ sub EscapeUTF8 {
     $$ref =~ s/'/&#39;/g;
 }
 
-# }}}
 
-# {{{ EscapeURI
 
 =head2 EscapeURI SCALARREF
 
@@ -108,9 +147,16 @@ sub EscapeURI {
     $$ref =~ s/([^a-zA-Z0-9_.!~*'()-])/uc sprintf("%%%02X", ord($1))/eg;
 }
 
-# }}}
+=head2 EncodeJSON SCALAR
 
-# {{{ WebCanonicalizeInfo
+Encodes the SCALAR to JSON and returns a JSON string.  SCALAR may be a simple
+value or a reference.
+
+=cut
+
+sub EncodeJSON {
+    JSON::to_json(shift, { utf8 => 1, allow_nonref => 1 });
+}
 
 =head2 WebCanonicalizeInfo();
 
@@ -124,9 +170,7 @@ sub WebCanonicalizeInfo {
     return $ENV{'REMOTE_USER'} ? lc $ENV{'REMOTE_USER'} : $ENV{'REMOTE_USER'};
 }
 
-# }}}
 
-# {{{ WebExternalAutoInfo
 
 =head2 WebExternalAutoInfo($user);
 
@@ -163,17 +207,21 @@ sub WebExternalAutoInfo {
     return {%user_info};
 }
 
-# }}}
 
 sub HandleRequest {
     my $ARGS = shift;
+
+    if (RT->Config->Get('DevelMode')) {
+        require Module::Refresh;
+        Module::Refresh->refresh;
+    }
 
     $HTML::Mason::Commands::r->content_type("text/html; charset=utf-8");
 
     $HTML::Mason::Commands::m->{'rt_base_time'} = [ Time::HiRes::gettimeofday() ];
 
     # Roll back any dangling transactions from a previous failed connection
-    $RT::Handle->ForceRollback() if $RT::Handle->TransactionDepth;
+    $RT::Handle->ForceRollback() if $RT::Handle and $RT::Handle->TransactionDepth;
 
     MaybeEnableSQLStatementLog();
 
@@ -182,6 +230,8 @@ sub HandleRequest {
 
     $HTML::Mason::Commands::m->autoflush( $HTML::Mason::Commands::m->request_comp->attr('AutoFlush') )
         if ( $HTML::Mason::Commands::m->request_comp->attr_exists('AutoFlush') );
+
+    ValidateWebConfig();
 
     DecodeARGS($ARGS);
     PreprocessTimeUpdates($ARGS);
@@ -243,10 +293,16 @@ sub HandleRequest {
     $HTML::Mason::Commands::m->callback( %$ARGS, CallbackName => 'Default', CallbackPage => '/autohandler' );
 
     ShowRequestedPage($ARGS);
-    LogRecordedSQLStatements();
+    LogRecordedSQLStatements(RequestData => {
+        Path => $HTML::Mason::Commands::m->request_comp->path,
+    });
 
     # Process per-page final cleanup callbacks
     $HTML::Mason::Commands::m->callback( %$ARGS, CallbackName => 'Final', CallbackPage => '/autohandler' );
+
+    $HTML::Mason::Commands::m->comp( '/Elements/Footer', %$ARGS )
+      unless $HTML::Mason::Commands::r->content_type
+               =~ qr<^(text|application)/(x-)?(css|javascript)>;
 }
 
 sub _ForceLogout {
@@ -449,6 +505,14 @@ sub MaybeRejectPrivateComponentRequest {
     return;
 }
 
+sub InitializeMenu {
+    $HTML::Mason::Commands::m->notes('menu', RT::Interface::Web::Menu->new());
+    $HTML::Mason::Commands::m->notes('page-menu', RT::Interface::Web::Menu->new());
+    $HTML::Mason::Commands::m->notes('page-widgets', RT::Interface::Web::Menu->new());
+
+}
+
+
 =head2 ShowRequestedPage  \%ARGS
 
 This function, called exclusively by RT's autohandler, dispatches
@@ -461,6 +525,11 @@ sub ShowRequestedPage {
     my $ARGS = shift;
 
     my $m = $HTML::Mason::Commands::m;
+
+    # precache all system level rights for the current user
+    $HTML::Mason::Commands::session{CurrentUser}->PrincipalObj->HasRights( Object => RT->System );
+
+    InitializeMenu();
 
     SendSessionCookie();
 
@@ -509,6 +578,7 @@ sub AttemptExternalAuth {
             $user =~ s/^\Q$NodeName\E\\//i;
         }
 
+        my $next = delete $HTML::Mason::Commands::session{'NextPage'}->{$ARGS->{'next'} || ''};
         InstantiateNewSession() unless _UserLoggedIn;
         $HTML::Mason::Commands::session{'CurrentUser'} = RT::CurrentUser->new();
         $HTML::Mason::Commands::session{'CurrentUser'}->$load_method($user);
@@ -516,7 +586,7 @@ sub AttemptExternalAuth {
         if ( RT->Config->Get('WebExternalAuto') and not _UserLoggedIn() ) {
 
             # Create users on-the-fly
-            my $UserObj = RT::User->new($RT::SystemUser);
+            my $UserObj = RT::User->new(RT->SystemUser);
             my ( $val, $msg ) = $UserObj->Create(
                 %{ ref RT->Config->Get('AutoCreate') ? RT->Config->Get('AutoCreate') : {} },
                 Name  => $user,
@@ -556,6 +626,15 @@ sub AttemptExternalAuth {
 
         if ( _UserLoggedIn() ) {
             $m->callback( %$ARGS, CallbackName => 'ExternalAuthSuccessfulLogin', CallbackPage => '/autohandler' );
+            # It is possible that we did a redirect to the login page,
+            # if the external auth allows lack of auth through with no
+            # REMOTE_USER set, instead of forcing a "permission
+            # denied" message.  Honor the $next.
+            Redirect($next) if $next;
+            # Unlike AttemptPasswordAuthentication below, we do not
+            # force a redirect to / if $next is not set -- otherwise,
+            # straight-up external auth would always redirect to /
+            # when you first hit it.
         } else {
             delete $HTML::Mason::Commands::session{'CurrentUser'};
             $user = $orig_user;
@@ -696,7 +775,7 @@ sub Redirect {
     # If the user is coming in via a non-canonical
     # hostname, don't redirect them to the canonical host,
     # it will just upset them (and invalidate their credentials)
-    # don't do this if $RT::CanoniaclRedirectURLs is true
+    # don't do this if $RT::CanonicalizeRedirectURLs is true
     if (   !RT->Config->Get('CanonicalizeRedirectURLs')
         && $uri->host eq $server_uri->host
         && $uri->port eq $server_uri->port )
@@ -708,7 +787,7 @@ sub Redirect {
         }
 
         # [rt3.fsck.com #12716] Apache recommends use of $SERVER_HOST
-        $uri->host( $ENV{'SERVER_HOST'} || $ENV{'HTTP_HOST'} );
+        $uri->host( $ENV{'SERVER_HOST'} || $ENV{'HTTP_HOST'} || $ENV{'SERVER_NAME'});
         $uri->port( $ENV{'SERVER_PORT'} );
     }
 
@@ -733,7 +812,7 @@ This routine could really use _accurate_ heuristics. (XXX TODO)
 =cut
 
 sub StaticFileHeaders {
-    my $date = RT::Date->new($RT::SystemUser);
+    my $date = RT::Date->new(RT->SystemUser);
 
     # make cache public
     $HTML::Mason::Commands::r->headers_out->{'Cache-Control'} = 'max-age=259200, public';
@@ -834,13 +913,6 @@ sub SendStaticFile {
         }
         $type ||= "application/octet-stream";
     }
-
-    # CGI.pm version 3.51 and 3.52 bang charset=iso-8859-1 onto our JS
-    # since we don't specify a charset
-    if ( $type =~ m{application/javascript} &&
-         $type !~ m{charset=([\w-]+)$} ) {
-         $type .= "; charset=utf-8";
-    }
     $HTML::Mason::Commands::r->content_type($type);
     open( my $fh, '<', $file ) or die "couldn't open file: $!";
     binmode($fh);
@@ -851,6 +923,21 @@ sub SendStaticFile {
     }
     close $fh;
 }
+
+
+
+sub MobileClient {
+    my $self = shift;
+
+
+if (($ENV{'HTTP_USER_AGENT'} || '') =~ /(?:hiptop|Blazer|Novarra|Vagabond|SonyEricsson|Symbian|NetFront|UP.Browser|UP.Link|Windows CE|MIDP|J2ME|DoCoMo|J-PHONE|PalmOS|PalmSource|iPhone|iPod|AvantGo|Nokia|Android|WebOS|S60)/io && !$HTML::Mason::Commands::session{'NotMobile'})  {
+    return 1;
+} else {
+    return undef;
+}
+
+}
+
 
 sub StripContent {
     my %args    = @_;
@@ -887,15 +974,14 @@ sub StripContent {
     return '' if not $html and $content =~ /^(--)?\Q$sig\E$/;
 
     # Check for html-formatted sig; we don't use EscapeUTF8 here
-    # because we want to precisely match the escaping that FCKEditor
-    # uses. see also 311223f5, which fixed this for 4.0
+    # because we want to precisely match the escapting that FCKEditor
+    # uses.
     $sig =~ s/&/&amp;/g;
     $sig =~ s/</&lt;/g;
     $sig =~ s/>/&gt;/g;
-
-    return ''
-      if $html
-          and $content =~ m{^(?:<p>)?(--)?\Q$sig\E(?:</p>)?$}s;
+    $sig =~ s/"/&quot;/g;
+    $sig =~ s/'/&#39;/g;
+    return '' if $html and $content =~ m{^(?:<p>)?(--)?\Q$sig\E(?:</p>)?$}s;
 
     # Pass it through
     return $return_content;
@@ -963,12 +1049,20 @@ sub MaybeEnableSQLStatementLog {
 }
 
 sub LogRecordedSQLStatements {
+    my %args = @_;
+
     my $log_sql_statements = RT->Config->Get('StatementLog');
 
     return unless ($log_sql_statements);
 
     my @log = $RT::Handle->SQLStatementLog;
     $RT::Handle->ClearSQLStatementLog;
+
+    $RT::Handle->AddRequestToHistory({
+        %{ $args{RequestData} },
+        Queries => \@log,
+    });
+
     for my $stmt (@log) {
         my ( $time, $sql, $bind, $duration ) = @{$stmt};
         my @bind;
@@ -984,17 +1078,77 @@ sub LogRecordedSQLStatements {
             message => "SQL("
                 . sprintf( "%.6f", $duration )
                 . "s): $sql;"
-                . ( @bind ? "  [ bound values: @{[map{qq|'$_'|} @bind]} ]" : "" )
+                . ( @bind ? "  [ bound values: @{[map{ defined $_ ? qq|'$_'| : 'undef'} @bind]} ]" : "" )
         );
     }
 
+}
+
+my $_has_validated_web_config = 0;
+sub ValidateWebConfig {
+    my $self = shift;
+
+    # do this once per server instance, not once per request
+    return if $_has_validated_web_config;
+    $_has_validated_web_config = 1;
+
+    if (!$ENV{'rt.explicit_port'} && $ENV{SERVER_PORT} != RT->Config->Get('WebPort')) {
+        $RT::Logger->warn("The actual SERVER_PORT ($ENV{SERVER_PORT}) does NOT match the configured WebPort ($RT::WebPort). Perhaps you should Set(\$WebPort, $ENV{SERVER_PORT}); in RT_SiteConfig.pm, otherwise your internal links may be broken.");
+    }
+
+    if ($ENV{HTTP_HOST}) {
+        # match "example.com" or "example.com:80"
+        my ($host) = $ENV{HTTP_HOST} =~ /^(.*?)(:\d+)?$/;
+
+        if ($host ne RT->Config->Get('WebDomain')) {
+            $RT::Logger->warn("The actual HTTP_HOST ($host) does NOT match the configured WebDomain ($RT::WebDomain). Perhaps you should Set(\$WebDomain, '$host'); in RT_SiteConfig.pm, otherwise your internal links may be broken.");
+        }
+    }
+    else {
+        if ($ENV{SERVER_NAME} ne RT->Config->Get('WebDomain')) {
+            $RT::Logger->warn("The actual SERVER_NAME ($ENV{SERVER_NAME}) does NOT match the configured WebDomain ($RT::WebDomain). Perhaps you should Set(\$WebDomain, '$ENV{SERVER_NAME}'); in RT_SiteConfig.pm, otherwise your internal links may be broken.");
+        }
+    }
+
+    if ($ENV{SCRIPT_NAME} ne RT->Config->Get('WebPath')) {
+        $RT::Logger->warn("The actual SCRIPT_NAME ($ENV{SCRIPT_NAME}) does NOT match the configured WebPath ($RT::WebPath). Perhaps you should Set(\$WebPath, '$ENV{SCRIPT_NAME}'); in RT_SiteConfig.pm, otherwise your internal links may be broken.");
+    }
+}
+
+sub ComponentRoots {
+    my $self = shift;
+    my %args = ( Names => 0, @_ );
+    my @roots;
+    if (defined $HTML::Mason::Commands::m) {
+        @roots = $HTML::Mason::Commands::m->interp->comp_root_array;
+    } else {
+        @roots = (
+            [ local    => $RT::MasonLocalComponentRoot ],
+            (map {[ "plugin-".$_->Name =>  $_->ComponentRoot ]} @{RT->Plugins}),
+            [ standard => $RT::MasonComponentRoot ]
+        );
+    }
+    @roots = map { $_->[1] } @roots unless $args{Names};
+    return @roots;
 }
 
 package HTML::Mason::Commands;
 
 use vars qw/$r $m %session/;
 
-# {{{ loc
+sub Menu {
+    return $HTML::Mason::Commands::m->notes('menu');
+}
+
+sub PageMenu {
+    return $HTML::Mason::Commands::m->notes('page-menu');
+}
+
+sub PageWidgets {
+    return $HTML::Mason::Commands::m->notes('page-widgets');
+}
+
+
 
 =head2 loc ARRAY
 
@@ -1025,9 +1179,7 @@ sub loc {
     }
 }
 
-# }}}
 
-# {{{ loc_fuzzy
 
 =head2 loc_fuzzy STRING
 
@@ -1047,14 +1199,12 @@ sub loc_fuzzy {
     {
         return ( $session{'CurrentUser'}->loc_fuzzy($msg) );
     } else {
-        my $u = RT::CurrentUser->new( $RT::SystemUser->Id );
+        my $u = RT::CurrentUser->new( RT->SystemUser->Id );
         return ( $u->loc_fuzzy($msg) );
     }
 }
 
-# }}}
 
-# {{{ sub Abort
 # Error - calls Error and aborts
 sub Abort {
     my $why  = shift;
@@ -1072,9 +1222,79 @@ sub Abort {
     }
 }
 
-# }}}
+sub MaybeRedirectForResults {
+    my %args = (
+        Path      => $HTML::Mason::Commands::m->request_comp->path,
+        Arguments => {},
+        Anchor    => undef,
+        Actions   => undef,
+        Force     => 0,
+        @_
+    );
+    my $has_actions = $args{'Actions'} && grep( defined, @{ $args{'Actions'} } );
+    return unless $has_actions || $args{'Force'};
 
-# {{{ sub CreateTicket
+    my %arguments = %{ $args{'Arguments'} };
+
+    if ( $has_actions ) {
+        my $key = Digest::MD5::md5_hex( rand(1024) );
+        push @{ $session{"Actions"}{ $key } ||= [] }, @{ $args{'Actions'} };
+        $session{'i'}++;
+        $arguments{'results'} = $key;
+    }
+
+    $args{'Path'} =~ s!^/+!!;
+    my $url = RT->Config->Get('WebURL') . $args{Path};
+
+    if ( keys %arguments ) {
+        $url .= '?'. $m->comp( '/Elements/QueryString', %arguments );
+    }
+    if ( $args{'Anchor'} ) {
+        $url .= "#". $args{'Anchor'};
+    }
+    return RT::Interface::Web::Redirect($url);
+}
+
+=head2 MaybeRedirectToApproval Path => 'path', Whitelist => REGEX, ARGSRef => HASHREF
+
+If the ticket specified by C<< $ARGSRef->{id} >> is an approval ticket,
+redirect to the approvals display page, preserving any arguments.
+
+C<Path>s matching C<Whitelist> are let through.
+
+This is a no-op if the C<ForceApprovalsView> option isn't enabled.
+
+=cut
+
+sub MaybeRedirectToApproval {
+    my %args = (
+        Path        => $HTML::Mason::Commands::m->request_comp->path,
+        ARGSRef     => {},
+        Whitelist   => undef,
+        @_
+    );
+
+    return unless $ENV{REQUEST_METHOD} eq 'GET';
+
+    my $id = $args{ARGSRef}->{id};
+
+    if (    $id
+        and RT->Config->Get('ForceApprovalsView')
+        and not $args{Path} =~ /$args{Whitelist}/)
+    {
+        my $ticket = RT::Ticket->new( $session{'CurrentUser'} );
+        $ticket->Load($id);
+
+        if ($ticket and $ticket->id and lc($ticket->Type) eq 'approval') {
+            MaybeRedirectForResults(
+                Path      => "/Approvals/Display.html",
+                Force     => 1,
+                Anchor    => $args{ARGSRef}->{Anchor},
+                Arguments => $args{ARGSRef},
+            );
+        }
+    }
+}
 
 =head2 CreateTicket ARGS
 
@@ -1087,9 +1307,9 @@ sub CreateTicket {
 
     my (@Actions);
 
-    my $Ticket = new RT::Ticket( $session{'CurrentUser'} );
+    my $Ticket = RT::Ticket->new( $session{'CurrentUser'} );
 
-    my $Queue = new RT::Queue( $session{'CurrentUser'} );
+    my $Queue = RT::Queue->new( $session{'CurrentUser'} );
     unless ( $Queue->Load( $ARGS{'Queue'} ) ) {
         Abort('Queue not found');
     }
@@ -1100,12 +1320,12 @@ sub CreateTicket {
 
     my $due;
     if ( defined $ARGS{'Due'} and $ARGS{'Due'} =~ /\S/ ) {
-        $due = new RT::Date( $session{'CurrentUser'} );
+        $due = RT::Date->new( $session{'CurrentUser'} );
         $due->Set( Format => 'unknown', Value => $ARGS{'Due'} );
     }
     my $starts;
     if ( defined $ARGS{'Starts'} and $ARGS{'Starts'} =~ /\S/ ) {
-        $starts = new RT::Date( $session{'CurrentUser'} );
+        $starts = RT::Date->new( $session{'CurrentUser'} );
         $starts->Set( Format => 'unknown', Value => $ARGS{'Starts'} );
     }
 
@@ -1139,9 +1359,8 @@ sub CreateTicket {
     }
 
     foreach my $argument (qw(Encrypt Sign)) {
-        $MIMEObj->head->add(
-            "X-RT-$argument" => Encode::encode_utf8( $ARGS{$argument} )
-        ) if defined $ARGS{$argument};
+        $MIMEObj->head->replace( "X-RT-$argument" => $ARGS{$argument} ? 1 : 0 )
+          if defined $ARGS{$argument};
     }
 
     my %create_args = (
@@ -1165,17 +1384,13 @@ sub CreateTicket {
         MIMEObj         => $MIMEObj
     );
 
-    my @temp_squelch;
+    my @txn_squelch;
     foreach my $type (qw(Requestor Cc AdminCc)) {
-        push @temp_squelch, map $_->address, Email::Address->parse( $create_args{$type} )
+        push @txn_squelch, map $_->address, Email::Address->parse( $create_args{$type} )
             if grep $_ eq $type || $_ eq ( $type . 's' ), @{ $ARGS{'SkipNotification'} || [] };
-
     }
-
-    if (@temp_squelch) {
-        require RT::Action::SendEmail;
-        RT::Action::SendEmail->SquelchMailTo( RT::Action::SendEmail->SquelchMailTo, @temp_squelch );
-    }
+    $create_args{TransSquelchMailTo} = \@txn_squelch
+        if @txn_squelch;
 
     if ( $ARGS{'AttachTickets'} ) {
         require RT::Action::SendEmail;
@@ -1259,9 +1474,7 @@ sub CreateTicket {
 
 }
 
-# }}}
 
-# {{{ sub LoadTicket - loads a ticket
 
 =head2  LoadTicket id
 
@@ -1291,9 +1504,7 @@ sub LoadTicket {
     return $Ticket;
 }
 
-# }}}
 
-# {{{ sub ProcessUpdateMessage
 
 =head2 ProcessUpdateMessage
 
@@ -1341,7 +1552,7 @@ sub ProcessUpdateMessage {
         return;
     }
 
-    if ( $args{ARGSRef}->{'UpdateSubject'} eq $args{'TicketObj'}->Subject ) {
+    if ( $args{ARGSRef}->{'UpdateSubject'} eq ($args{'TicketObj'}->Subject || '') ) {
         $args{ARGSRef}->{'UpdateSubject'} = undef;
     }
 
@@ -1351,7 +1562,7 @@ sub ProcessUpdateMessage {
         Type    => $args{ARGSRef}->{'UpdateContentType'},
     );
 
-    $Message->head->add( 'Message-ID' => Encode::encode_utf8(
+    $Message->head->replace( 'Message-ID' => Encode::encode_utf8(
         RT::Interface::Email::GenMessageId( Ticket => $args{'TicketObj'} )
     ) );
     my $old_txn = RT::Transaction->new( $session{'CurrentUser'} );
@@ -1381,9 +1592,6 @@ sub ProcessUpdateMessage {
             : ( $args{ARGSRef}->{'AttachTickets'} ) );
     }
 
-    my $bcc = $args{ARGSRef}->{'UpdateBcc'};
-    my $cc  = $args{ARGSRef}->{'UpdateCc'};
-
     my %txn_customfields;
 
     foreach my $key ( keys %{ $args{ARGSRef} } ) {
@@ -1393,59 +1601,27 @@ sub ProcessUpdateMessage {
     }
 
     my %message_args = (
-        CcMessageTo  => $cc,
-        BccMessageTo => $bcc,
-        Sign         => $args{ARGSRef}->{'Sign'},
-        Encrypt      => $args{ARGSRef}->{'Encrypt'},
+        Sign         => ( $args{ARGSRef}->{'Sign'} ? 1 : 0 ),
+        Encrypt      => ( $args{ARGSRef}->{'Encrypt'} ? 1 : 0 ),
         MIMEObj      => $Message,
         TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'},
         CustomFields => \%txn_customfields,
     );
 
-    my @temp_squelch;
-    foreach my $type (qw(Cc AdminCc)) {
-        if (grep $_ eq $type || $_ eq ( $type . 's' ), @{ $args{ARGSRef}->{'SkipNotification'} || [] }) {
-            push @temp_squelch, map $_->address, Email::Address->parse( $message_args{$type} );
-            push @temp_squelch, $args{TicketObj}->$type->MemberEmailAddresses;
-            push @temp_squelch, $args{TicketObj}->QueueObj->$type->MemberEmailAddresses;
-        }
-    }
-    if (grep $_ eq 'Requestor' || $_ eq 'Requestors', @{ $args{ARGSRef}->{'SkipNotification'} || [] }) {
-            push @temp_squelch, map $_->address, Email::Address->parse( $message_args{Requestor} );
-            push @temp_squelch, $args{TicketObj}->Requestors->MemberEmailAddresses;
-    }
-
-    if (@temp_squelch) {
-        require RT::Action::SendEmail;
-        RT::Action::SendEmail->SquelchMailTo( RT::Action::SendEmail->SquelchMailTo, @temp_squelch );
-    }
-
-    unless ( $args{'ARGSRef'}->{'UpdateIgnoreAddressCheckboxes'} ) {
-        foreach my $key ( keys %{ $args{ARGSRef} } ) {
-            next unless $key =~ /^Update(Cc|Bcc)-(.*)$/;
-
-            my $var   = ucfirst($1) . 'MessageTo';
-            my $value = $2;
-            if ( $message_args{$var} ) {
-                $message_args{$var} .= ", $value";
-            } else {
-                $message_args{$var} = $value;
-            }
-        }
-    }
+    _ProcessUpdateMessageRecipients(
+        MessageArgs => \%message_args,
+        %args,
+    );
 
     my @results;
-    # Do the update via the appropriate Ticket method
     if ( $args{ARGSRef}->{'UpdateType'} =~ /^(private|public)$/ ) {
-        my ( $Transaction, $Description, $Object ) = 
-            $args{TicketObj}->Comment(%message_args);
+        my ( $Transaction, $Description, $Object ) = $args{TicketObj}->Comment(%message_args);
         push( @results, $Description );
-        #$Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
+        $Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
     } elsif ( $args{ARGSRef}->{'UpdateType'} eq 'response' ) {
-        my ( $Transaction, $Description, $Object ) = 
-            $args{TicketObj}->Correspond(%message_args);
+        my ( $Transaction, $Description, $Object ) = $args{TicketObj}->Correspond(%message_args);
         push( @results, $Description );
-        #$Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
+        $Object->UpdateCustomFields( ARGSRef => $args{ARGSRef} ) if $Object;
     } else {
         push( @results,
             loc("Update type was neither correspondence nor comment.") . " " . loc("Update not recorded.") );
@@ -1453,9 +1629,54 @@ sub ProcessUpdateMessage {
     return @results;
 }
 
-# }}}
+sub _ProcessUpdateMessageRecipients {
+    my %args = (
+        ARGSRef           => undef,
+        TicketObj         => undef,
+        MessageArgs       => undef,
+        @_,
+    );
 
-# {{{ sub MakeMIMEEntity
+    my $bcc = $args{ARGSRef}->{'UpdateBcc'};
+    my $cc  = $args{ARGSRef}->{'UpdateCc'};
+
+    my $message_args = $args{MessageArgs};
+
+    $message_args->{CcMessageTo} = $cc;
+    $message_args->{BccMessageTo} = $bcc;
+
+    my @txn_squelch;
+    foreach my $type (qw(Cc AdminCc)) {
+        if (grep $_ eq $type || $_ eq ( $type . 's' ), @{ $args{ARGSRef}->{'SkipNotification'} || [] }) {
+            push @txn_squelch, map $_->address, Email::Address->parse( $message_args->{$type} );
+            push @txn_squelch, $args{TicketObj}->$type->MemberEmailAddresses;
+            push @txn_squelch, $args{TicketObj}->QueueObj->$type->MemberEmailAddresses;
+        }
+    }
+    if (grep $_ eq 'Requestor' || $_ eq 'Requestors', @{ $args{ARGSRef}->{'SkipNotification'} || [] }) {
+        push @txn_squelch, map $_->address, Email::Address->parse( $message_args->{Requestor} );
+        push @txn_squelch, $args{TicketObj}->Requestors->MemberEmailAddresses;
+
+    }
+
+    push @txn_squelch, @{$args{ARGSRef}{SquelchMailTo}} if $args{ARGSRef}{SquelchMailTo};
+    $message_args->{SquelchMailTo} = \@txn_squelch
+        if @txn_squelch;
+
+    unless ( $args{'ARGSRef'}->{'UpdateIgnoreAddressCheckboxes'} ) {
+        foreach my $key ( keys %{ $args{ARGSRef} } ) {
+            next unless $key =~ /^Update(Cc|Bcc)-(.*)$/;
+
+            my $var   = ucfirst($1) . 'MessageTo';
+            my $value = $2;
+            if ( $message_args->{$var} ) {
+                $message_args->{$var} .= ", $value";
+            } else {
+                $message_args->{$var} = $value;
+            }
+        }
+    }
+}
 
 =head2 MakeMIMEEntity PARAMHASH
 
@@ -1481,6 +1702,7 @@ sub MakeMIMEEntity {
     );
     my $Message = MIME::Entity->build(
         Type    => 'multipart/mixed',
+        "Message-Id" => RT::Interface::Email::GenMessageId,
         map { $_ => Encode::encode_utf8( $args{ $_} ) }
             grep defined $args{$_}, qw(Subject From Cc)
     );
@@ -1500,8 +1722,8 @@ sub MakeMIMEEntity {
     if ( $args{'AttachmentFieldName'} ) {
 
         my $cgi_object = $m->cgi_object;
-
-        if ( my $filehandle = $cgi_object->upload( $args{'AttachmentFieldName'} ) ) {
+        my $filehandle = $cgi_object->upload( $args{'AttachmentFieldName'} );
+        if ( defined $filehandle && length $filehandle ) {
 
             my ( @content, $buffer );
             while ( my $bytesread = read( $filehandle, $buffer, 4096 ) ) {
@@ -1510,10 +1732,7 @@ sub MakeMIMEEntity {
 
             my $uploadinfo = $cgi_object->uploadInfo($filehandle);
 
-            # Prefer the cached name first over CGI.pm stringification.
-            my $filename = $RT::Mason::CGI::Filename;
-            $filename = "$filehandle" unless defined $filename;
-            $filename = Encode::encode_utf8( $filename );
+            my $filename = "$filehandle";
             $filename =~ s{^.*[\\/]}{};
 
             $Message->attach(
@@ -1524,6 +1743,9 @@ sub MakeMIMEEntity {
             if ( !$args{'Subject'} && !( defined $args{'Body'} && length $args{'Body'} ) ) {
                 $Message->head->set( 'Subject' => $filename );
             }
+
+            # Attachment parts really shouldn't get a Message-ID
+            $Message->head->delete('Message-ID');
         }
     }
 
@@ -1535,9 +1757,7 @@ sub MakeMIMEEntity {
 
 }
 
-# }}}
 
-# {{{ sub ParseDateToISO
 
 =head2 ParseDateToISO
 
@@ -1557,9 +1777,7 @@ sub ParseDateToISO {
     return ( $date_obj->ISO );
 }
 
-# }}}
 
-# {{{ sub ProcessACLChanges
 
 sub ProcessACLChanges {
     my $ARGSref = shift;
@@ -1608,9 +1826,145 @@ sub ProcessACLChanges {
     return (@results);
 }
 
-# }}}
 
-# {{{ sub UpdateRecordObj
+=head2 ProcessACLs
+
+ProcessACLs expects values from a series of checkboxes that describe the full
+set of rights a principal should have on an object.
+
+It expects form inputs with names like SetRights-PrincipalId-ObjType-ObjId
+instead of with the prefixes Grant/RevokeRight.  Each input should be an array
+listing the rights the principal should have, and ProcessACLs will modify the
+current rights to match.  Additionally, the previously unused CheckACL input
+listing PrincipalId-ObjType-ObjId is now used to catch cases when all the
+rights are removed from a principal and as such no SetRights input is
+submitted.
+
+=cut
+
+sub ProcessACLs {
+    my $ARGSref = shift;
+    my (%state, @results);
+
+    my $CheckACL = $ARGSref->{'CheckACL'};
+    my @check = grep { defined } (ref $CheckACL eq 'ARRAY' ? @$CheckACL : $CheckACL);
+
+    # Check if we want to grant rights to a previously rights-less user
+    for my $type (qw(user group)) {
+        my $key = "AddPrincipalForRights-$type";
+
+        next unless $ARGSref->{$key};
+
+        my $principal;
+        if ( $type eq 'user' ) {
+            $principal = RT::User->new( $session{'CurrentUser'} );
+            $principal->LoadByCol( Name => $ARGSref->{$key} );
+        }
+        else {
+            $principal = RT::Group->new( $session{'CurrentUser'} );
+            $principal->LoadUserDefinedGroup( $ARGSref->{$key} );
+        }
+
+        unless ($principal->PrincipalId) {
+            push @results, loc("Couldn't load the specified principal");
+            next;
+        }
+
+        my $principal_id = $principal->PrincipalId;
+
+        # Turn our addprincipal rights spec into a real one
+        for my $arg (keys %$ARGSref) {
+            next unless $arg =~ /^SetRights-addprincipal-(.+?-\d+)$/;
+
+            my $tuple = "$principal_id-$1";
+            my $key   = "SetRights-$tuple";
+
+            # If we have it already, that's odd, but merge them
+            if (grep { $_ eq $tuple } @check) {
+                $ARGSref->{$key} = [
+                    (ref $ARGSref->{$key} eq 'ARRAY' ? @{$ARGSref->{$key}} : $ARGSref->{$key}),
+                    (ref $ARGSref->{$arg} eq 'ARRAY' ? @{$ARGSref->{$arg}} : $ARGSref->{$arg}),
+                ];
+            } else {
+                $ARGSref->{$key} = $ARGSref->{$arg};
+                push @check, $tuple;
+            }
+        }
+    }
+
+    # Build our rights state for each Principal-Object tuple
+    foreach my $arg ( keys %$ARGSref ) {
+        next unless $arg =~ /^SetRights-(\d+-.+?-\d+)$/;
+
+        my $tuple  = $1;
+        my $value  = $ARGSref->{$arg};
+        my @rights = grep { $_ } (ref $value eq 'ARRAY' ? @$value : $value);
+        next unless @rights;
+
+        $state{$tuple} = { map { $_ => 1 } @rights };
+    }
+
+    foreach my $tuple (List::MoreUtils::uniq @check) {
+        next unless $tuple =~ /^(\d+)-(.+?)-(\d+)$/;
+
+        my ( $principal_id, $object_type, $object_id ) = ( $1, $2, $3 );
+
+        my $principal = RT::Principal->new( $session{'CurrentUser'} );
+        $principal->Load($principal_id);
+
+        my $obj;
+        if ( $object_type eq 'RT::System' ) {
+            $obj = $RT::System;
+        } elsif ( $RT::ACE::OBJECT_TYPES{$object_type} ) {
+            $obj = $object_type->new( $session{'CurrentUser'} );
+            $obj->Load($object_id);
+            unless ( $obj->id ) {
+                $RT::Logger->error("couldn't load $object_type #$object_id");
+                next;
+            }
+        } else {
+            $RT::Logger->error("object type '$object_type' is incorrect");
+            push( @results, loc("System Error") . ': ' . loc( "Rights could not be granted for [_1]", $object_type ) );
+            next;
+        }
+
+        my $acls = RT::ACL->new($session{'CurrentUser'});
+        $acls->LimitToObject( $obj );
+        $acls->LimitToPrincipal( Id => $principal_id );
+
+        while ( my $ace = $acls->Next ) {
+            my $right = $ace->RightName;
+
+            # Has right and should have right
+            next if delete $state{$tuple}->{$right};
+
+            # Has right and shouldn't have right
+            my ($val, $msg) = $principal->RevokeRight( Object => $obj, Right => $right );
+            push @results, $msg;
+        }
+
+        # For everything left, they don't have the right but they should
+        for my $right (keys %{ $state{$tuple} || {} }) {
+            delete $state{$tuple}->{$right};
+            my ($val, $msg) = $principal->GrantRight( Object => $obj, Right => $right );
+            push @results, $msg;
+        }
+
+        # Check our state for leftovers
+        if ( keys %{ $state{$tuple} || {} } ) {
+            my $missed = join '|', %{$state{$tuple} || {}};
+            $RT::Logger->warn(
+               "Uh-oh, it looks like we somehow missed a right in "
+              ."ProcessACLs.  Here's what was leftover: $missed"
+            );
+        }
+    }
+
+    return (@results);
+}
+
+
+
 
 =head2 UpdateRecordObj ( ARGSRef => \%ARGS, Object => RT::Record, AttributesRef => \@attribs)
 
@@ -1639,9 +1993,7 @@ sub UpdateRecordObject {
     return (@results);
 }
 
-# }}}
 
-# {{{ Sub ProcessCustomFieldUpdates
 
 sub ProcessCustomFieldUpdates {
     my %args = (
@@ -1694,9 +2046,7 @@ sub ProcessCustomFieldUpdates {
     return (@results);
 }
 
-# }}}
 
-# {{{ sub ProcessTicketBasics
 
 =head2 ProcessTicketBasics ( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
@@ -1715,7 +2065,9 @@ sub ProcessTicketBasics {
     my $TicketObj = $args{'TicketObj'};
     my $ARGSRef   = $args{'ARGSRef'};
 
-    # {{{ Set basic fields
+    my $OrigOwner = $TicketObj->Owner;
+
+    # Set basic fields
     my @attribs = qw(
         Subject
         FinalPriority
@@ -1728,11 +2080,15 @@ sub ProcessTicketBasics {
         Queue
     );
 
-    if ( $ARGSRef->{'Queue'} and ( $ARGSRef->{'Queue'} !~ /^(\d+)$/ ) ) {
-        my $tempqueue = RT::Queue->new($RT::SystemUser);
-        $tempqueue->Load( $ARGSRef->{'Queue'} );
-        if ( $tempqueue->id ) {
-            $ARGSRef->{'Queue'} = $tempqueue->id;
+    # Canonicalize Queue and Owner to their IDs if they aren't numeric
+    for my $field (qw(Queue Owner)) {
+        if ( $ARGSRef->{$field} and ( $ARGSRef->{$field} !~ /^(\d+)$/ ) ) {
+            my $class = $field eq 'Owner' ? "RT::User" : "RT::$field";
+            my $temp = $class->new(RT->SystemUser);
+            $temp->Load( $ARGSRef->{$field} );
+            if ( $temp->id ) {
+                $ARGSRef->{$field} = $temp->id;
+            }
         }
     }
 
@@ -1747,12 +2103,15 @@ sub ProcessTicketBasics {
     );
 
     # We special case owner changing, so we can use ForceOwnerChange
-    if ( $ARGSRef->{'Owner'} && ( $TicketObj->Owner != $ARGSRef->{'Owner'} ) ) {
+    if ( $ARGSRef->{'Owner'}
+      && $ARGSRef->{'Owner'} !~ /\D/
+      && ( $OrigOwner != $ARGSRef->{'Owner'} ) ) {
         my ($ChownType);
         if ( $ARGSRef->{'ForceOwnerChange'} ) {
             $ChownType = "Force";
-        } else {
-            $ChownType = "Give";
+        }
+        else {
+            $ChownType = "Set";
         }
 
         my ( $val, $msg ) = $TicketObj->SetOwner( $ARGSRef->{'Owner'}, $ChownType );
@@ -1764,7 +2123,64 @@ sub ProcessTicketBasics {
     return (@results);
 }
 
-# }}}
+sub ProcessTicketReminders {
+    my %args = (
+        TicketObj => undef,
+        ARGSRef   => undef,
+        @_
+    );
+
+    my $Ticket = $args{'TicketObj'};
+    my $args   = $args{'ARGSRef'};
+    my @results;
+
+    my $reminder_collection = $Ticket->Reminders->Collection;
+
+    if ( $args->{'update-reminders'} ) {
+        while ( my $reminder = $reminder_collection->Next ) {
+            if (   $reminder->Status ne 'resolved' && $args->{ 'Complete-Reminder-' . $reminder->id } ) {
+                $Ticket->Reminders->Resolve($reminder);
+            }
+            elsif ( $reminder->Status eq 'resolved' && !$args->{ 'Complete-Reminder-' . $reminder->id } ) {
+                $Ticket->Reminders->Open($reminder);
+            }
+
+            if ( exists( $args->{ 'Reminder-Subject-' . $reminder->id } ) && ( $reminder->Subject ne $args->{ 'Reminder-Subject-' . $reminder->id } )) {
+                $reminder->SetSubject( $args->{ 'Reminder-Subject-' . $reminder->id } ) ;
+            }
+
+            if ( exists( $args->{ 'Reminder-Owner-' . $reminder->id } ) && ( $reminder->Owner != $args->{ 'Reminder-Owner-' . $reminder->id } )) {
+                $reminder->SetOwner( $args->{ 'Reminder-Owner-' . $reminder->id } , "Force" ) ;
+            }
+
+            if ( exists( $args->{ 'Reminder-Due-' . $reminder->id } ) && $args->{ 'Reminder-Due-' . $reminder->id } ne '' ) {
+                my $DateObj = RT::Date->new( $session{'CurrentUser'} );
+                $DateObj->Set(
+                    Format => 'unknown',
+                    Value  => $args->{ 'Reminder-Due-' . $reminder->id }
+                );
+                if ( defined $DateObj->Unix && $DateObj->Unix != $reminder->DueObj->Unix ) {
+                    $reminder->SetDue( $DateObj->ISO );
+                }
+            }
+        }
+    }
+
+    if ( $args->{'NewReminder-Subject'} ) {
+        my $due_obj = RT::Date->new( $session{'CurrentUser'} );
+        $due_obj->Set(
+          Format => 'unknown',
+          Value => $args->{'NewReminder-Due'}
+        );
+        my ( $add_id, $msg, $txnid ) = $Ticket->Reminders->Add(
+            Subject => $args->{'NewReminder-Subject'},
+            Owner   => $args->{'NewReminder-Owner'},
+            Due     => $due_obj->ISO
+        );
+        push @results, loc("Reminder '[_1]' added", $args->{'NewReminder-Subject'});
+    }
+    return @results;
+}
 
 sub ProcessTicketCustomFieldUpdates {
     my %args = @_;
@@ -1838,7 +2254,7 @@ sub ProcessObjectCustomFieldUpdates {
 sub _ProcessObjectCustomFieldUpdates {
     my %args    = @_;
     my $cf      = $args{'CustomField'};
-    my $cf_type = $cf->Type;
+    my $cf_type = $cf->Type || '';
 
     # Remove blank Values since the magic field will take care of this. Sometimes
     # the browser gives you a blank value which causes CFs to be processed twice
@@ -1939,6 +2355,9 @@ sub _ProcessObjectCustomFieldUpdates {
             # For Date Cfs, @values is empty when there is no changes (no datas in form input)
             return @results if ( $cf->Type eq 'Date' && ! @values );
 
+            # For Date Cfs, @values is empty when there is no changes (no datas in form input)
+            return @results if ( $cf->Type =~ /^Date(?:Time)?$/ && ! @values );
+
             $cf_values->RedoSearch;
             while ( my $cf_value = $cf_values->Next ) {
                 next if $values_hash{ $cf_value->id };
@@ -1985,7 +2404,6 @@ sub _ProcessObjectCustomFieldUpdates {
     return @results;
 }
 
-# {{{ sub ProcessTicketWatchers
 
 =head2 ProcessTicketWatchers ( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
@@ -2067,9 +2485,7 @@ sub ProcessTicketWatchers {
     return (@results);
 }
 
-# }}}
 
-# {{{ sub ProcessTicketDates
 
 =head2 ProcessTicketDates ( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
@@ -2089,7 +2505,7 @@ sub ProcessTicketDates {
 
     my (@results);
 
-    # {{{ Set date fields
+    # Set date fields
     my @date_fields = qw(
         Told
         Resolved
@@ -2125,9 +2541,7 @@ sub ProcessTicketDates {
     return (@results);
 }
 
-# }}}
 
-# {{{ sub ProcessTicketLinks
 
 =head2 ProcessTicketLinks ( TicketObj => $Ticket, ARGSRef => \%ARGS );
 
@@ -2157,7 +2571,6 @@ sub ProcessTicketLinks {
     return (@results);
 }
 
-# }}}
 
 sub ProcessRecordLinks {
     my %args = (
@@ -2291,6 +2704,99 @@ sub ProcessColumnMapValue {
     return $value;
 }
 
+=head2 GetPrincipalsMap OBJECT, CATEGORIES
+
+Returns an array suitable for passing to /Admin/Elements/EditRights with the
+principal collections mapped from the categories given.
+
+=cut
+
+sub GetPrincipalsMap {
+    my $object = shift;
+    my @map;
+    for (@_) {
+        if (/System/) {
+            my $system = RT::Groups->new($session{'CurrentUser'});
+            $system->LimitToSystemInternalGroups();
+            $system->OrderBy( FIELD => 'Type', ORDER => 'ASC' );
+            push @map, [
+                'System' => $system,    # loc_left_pair
+                'Type'   => 1,
+            ];
+        }
+        elsif (/Groups/) {
+            my $groups = RT::Groups->new($session{'CurrentUser'});
+            $groups->LimitToUserDefinedGroups();
+            $groups->OrderBy( FIELD => 'Name', ORDER => 'ASC' );
+
+            # Only show groups who have rights granted on this object
+            $groups->WithGroupRight(
+                Right   => '',
+                Object  => $object,
+                IncludeSystemRights => 0,
+                IncludeSubgroupMembers => 0,
+            );
+
+            push @map, [
+                'User Groups' => $groups,   # loc_left_pair
+                'Name'        => 0
+            ];
+        }
+        elsif (/Roles/) {
+            my $roles = RT::Groups->new($session{'CurrentUser'});
+
+            if ($object->isa('RT::System')) {
+                $roles->LimitToRolesForSystem();
+            }
+            elsif ($object->isa('RT::Queue')) {
+                $roles->LimitToRolesForQueue($object->Id);
+            }
+            else {
+                $RT::Logger->warn("Skipping unknown object type ($object) for Role principals");
+                next;
+            }
+            $roles->OrderBy( FIELD => 'Type', ORDER => 'ASC' );
+            push @map, [
+                'Roles' => $roles,  # loc_left_pair
+                'Type'  => 1
+            ];
+        }
+        elsif (/Users/) {
+            my $Users = RT->PrivilegedUsers->UserMembersObj();
+            $Users->OrderBy( FIELD => 'Name', ORDER => 'ASC' );
+
+            # Only show users who have rights granted on this object
+            my $group_members = $Users->WhoHaveGroupRight(
+                Right   => '',
+                Object  => $object,
+                IncludeSystemRights => 0,
+                IncludeSubgroupMembers => 0,
+            );
+
+            # Limit to UserEquiv groups
+            my $groups = $Users->NewAlias('Groups');
+            $Users->Join(
+                ALIAS1 => $groups,
+                FIELD1 => 'id',
+                ALIAS2 => $group_members,
+                FIELD2 => 'GroupId'
+            );
+            $Users->Limit( ALIAS => $groups, FIELD => 'Domain', VALUE => 'ACLEquivalence' );
+            $Users->Limit( ALIAS => $groups, FIELD => 'Type', VALUE => 'UserEquiv' );
+
+
+            my $display = sub {
+                $m->scomp('/Elements/ShowUser', User => $_[0], NoEscape => 1)
+            };
+            push @map, [
+                'Users' => $Users,  # loc_left_pair
+                $display => 0
+            ];
+        }
+    }
+    return @map;
+}
+
 =head2 _load_container_object ( $type, $id );
 
 Instantiate container object for saving searches.
@@ -2320,6 +2826,82 @@ sub _parse_saved_search {
     my $search_id = $3;
 
     return ( _load_container_object( $obj_type, $obj_id ), $search_id );
+}
+
+=head2 ScrubHTML content
+
+Removes unsafe and undesired HTML from the passed content
+
+=cut
+
+my $SCRUBBER;
+sub ScrubHTML {
+    my $Content = shift;
+    $SCRUBBER = _NewScrubber() unless $SCRUBBER;
+
+    $Content = '' if !defined($Content);
+    return $SCRUBBER->scrub($Content);
+}
+
+=head2 _NewScrubber
+
+Returns a new L<HTML::Scrubber> object.  Override this if you insist on
+letting more HTML through.
+
+=cut
+
+sub _NewScrubber {
+    require HTML::Scrubber;
+    my $scrubber = HTML::Scrubber->new();
+    $scrubber->default(
+        0,
+        {
+            '*'    => 0,
+            id     => 1,
+            class  => 1,
+            # Match http, ftp and relative urls
+            # XXX: we also scrub format strings with this module then allow simple config options
+            href   => qr{^(?:http:|ftp:|https:|/|__Web(?:Path|BaseURL|URL)__)}i,
+            face   => 1,
+            size   => 1,
+            target => 1,
+            style  => qr{
+                ^(?:\s*
+                    (?:(?:background-)?color: \s*
+                            (?:rgb\(\s* \d+, \s* \d+, \s* \d+ \s*\) |   # rgb(d,d,d)
+                               \#[a-f0-9]{3,6}                      |   # #fff or #ffffff
+                               [\w\-]+                                  # green, light-blue, etc.
+                               )                            |
+                       text-align: \s* \w+                  |
+                       font-size: \s* [\w.\-]+              |
+                       font-family: \s* [\w\s"',.\-]+       |
+                       font-weight: \s* [\w\-]+             |
+
+                       # MS Office styles, which are probably fine.  If we don't, then any
+                       # associated styles in the same attribute get stripped.
+                       mso-[\w\-]+?: \s* [\w\s"',.\-]+
+                    )\s* ;? \s*)
+                 +$ # one or more of these allowed properties from here 'till sunset
+            }ix,
+        }
+    );
+    $scrubber->deny(qw[*]);
+    $scrubber->allow(
+        qw[A B U P BR I HR BR SMALL EM FONT SPAN STRONG SUB SUP STRIKE H1 H2 H3 H4 H5 H6 DIV UL OL LI DL DT DD PRE BLOCKQUOTE]
+    );
+    $scrubber->comment(0);
+
+    return $scrubber;
+}
+
+=head2 JSON
+
+Redispatches to L<RT::Interface::Web/EncodeJSON>
+
+=cut
+
+sub JSON {
+    RT::Interface::Web::EncodeJSON(@_);
 }
 
 package RT::Interface::Web;

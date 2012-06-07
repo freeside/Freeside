@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -52,6 +52,7 @@ use strict;
 use warnings;
 
 
+
 =head1 NAME
 
 RT::Shredder - Permanently wipeout data from RT
@@ -61,8 +62,7 @@ RT::Shredder - Permanently wipeout data from RT
 
 =head2 CLI
 
-  rt-shredder --force --plugin 'Tickets=queue,general;status,deleted'
-
+  rt-shredder --force --plugin 'Tickets=query,Queue="General" and Status="deleted"'
 
 =head1 DESCRIPTION
 
@@ -138,28 +138,31 @@ shredding session when the file had been created.
 
 =head1 CONFIGURATION
 
-=head2 $RT::DependenciesLimit
+=head2 $DependenciesLimit
 
 Shredder stops with an error if the object has more than
-C<$RT::DependenciesLimit> dependencies. For example: a ticket has 1000
+C<$DependenciesLimit> dependencies. For example: a ticket has 1000
 transactions or a transaction has 1000 attachments. This is protection
 from bugs in shredder from wiping out your whole database, but
 sometimes when you have big mail loops you may hit it.
 
-Defaults to 1000.
+Defaults to 1000.  To change this (for example, to 10000) add the
+following to your F<RT_SiteConfig.pm>:
 
-You can change the default value, in F<RT_SiteConfig.pm> add C<Set(
-$DependenciesLimit, new_limit );>
+    Set( $DependenciesLimit, 10_000 );>
 
 
 =head2 $ShredderStoragePath
 
-Directory containing Shredder backup dumps.
+Directory containing Shredder backup dumps; defaults to
+F</opt/rt4/var/data/RT-Shredder> (assuming an /opt/rt4 installation).
 
-Defaults to F</path-to-RT-var-dir/data/RT-Shredder>.
+To change this (for example, to /some/backup/path) add the following to
+your F<RT_SiteConfig.pm>:
 
-You can change the default value, in F<RT_SiteConfig.pm> add C<Set(
-$ShredderStoragePath, new_path );>  Be sure to use an absolute path.
+    Set( $ShredderStoragePath, "/some/backup/path" );>
+
+Be sure to specify an absolute path.
 
 
 =head1 INFORMATION FOR DEVELOPERS
@@ -176,7 +179,7 @@ example from L</SYNOPSIS>:
 
   use RT::Shredder;
   RT::Shredder::Init( force => 1 );
-  my $deleted = RT::Tickets->new( $RT::SystemUser );
+  my $deleted = RT::Tickets->new( RT->SystemUser );
   $deleted->{'allow_deleted_search'} = 1;
   $deleted->LimitQueue( VALUE => 'general' );
   $deleted->LimitStatus( VALUE => 'deleted' );
@@ -202,7 +205,6 @@ BEGIN {
 # RT lib path
 
 ### after:     push @INC, qw(@RT_LIB_PATH@);
-    push @INC, qw(/opt/rt3/local/lib /opt/rt3/lib);
     use RT::Shredder::Constants;
     use RT::Shredder::Exceptions;
 
@@ -352,7 +354,7 @@ sub CastObjectsToRecords
         $class = 'RT::'. $class unless $class =~ /^RTx?::/i;
         eval "require $class";
         die "Couldn't load '$class' module" if $@;
-        my $obj = $class->new( $RT::SystemUser );
+        my $obj = $class->new( RT->SystemUser );
         die "Couldn't construct new '$class' object" unless $obj;
         $obj->Load( $id );
         unless ( $obj->id ) {
@@ -553,10 +555,11 @@ sub Wipeout
         die "Couldn't commit transaction" unless $RT::Handle->Commit;
     };
     if( $@ ) {
+        my $error = $@;
         $RT::Handle->Rollback('force');
         $self->RollbackDumpTo( Mark => $mark ) if $mark;
-        die $@ if RT::Shredder::Exception::Info->caught;
-        die "Couldn't wipeout object: $@";
+        die $error if RT::Shredder::Exception::Info->caught;
+        die "Couldn't wipeout object: $error";
     }
 }
 

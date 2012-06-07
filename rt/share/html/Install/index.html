@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -76,11 +76,12 @@
 <h2><% loc('Getting started') %></h2>
 <p>
 <b>
-<&|/l&>You're seeing this screen because you started up an RT server without a working database. Most likely, this is the first time you're running RT.  If you click <i>Let's go!</i> below, RT will guide you through setting up your RT server and database.</&>
+<&|/l, loc("Let's go!") &>You're seeing this screen because you started up an RT server without a working database. Most likely, this is the first time you're running RT.  If you click "[_1]" below, RT will guide you through setting up your RT server and database.</&>
 </b>
 </p>
 <p>
-<&|/l&>If you already have a working RT server and database, you should take this opportunity to make sure that your database server is running and that the RT server can connect to it. Once you've done that, stop and start the RT server.</p></&>
+<&|/l&>If you already have a working RT server and database, you should take this opportunity to make sure that your database server is running and that the RT server can connect to it. Once you've done that, stop and start the RT server.</&>
+</p>
 </div>
 
 <& /Elements/Submit, Label => loc( "Let's go!"), Name => 'Run' &>
@@ -110,7 +111,7 @@ elsif ( $Run ) {
     for my $field  (
             qw/DatabaseType DatabaseName DatabaseHost DatabasePort
             DatabaseUser DatabaseRequireSSL rtname
-            Organization Timezone CommentAddress CorrespondAddress 
+            Organization CommentAddress CorrespondAddress
             SendmailPath WebDomain WebPort/
     ) {
         $RT::Installer->{InstallConfig}{$field} ||= RT->Config->Get($field);
@@ -124,12 +125,12 @@ elsif ( $Run ) {
     RT::Interface::Web::Redirect(RT->Config->Get('WebURL') . 'Install/DatabaseType.html');
 } elsif ( $ChangeLang && $Lang ) {
     # hackish, but works
-    $session{'CurrentUser'} = new RT::CurrentUser;
+    $session{'CurrentUser'} = RT::CurrentUser->new;
     $session{'CurrentUser'}->LanguageHandle( $Lang );
 }
 my $lang_handle = do { local $@;
     eval {
-        ($session{'CurrentUser'} || RT::CurrentUser->new($RT::SystemUser->Id))
+        ($session{'CurrentUser'} || RT::CurrentUser->new(RT->SystemUser->Id))
             ->LanguageHandle
     }
 };

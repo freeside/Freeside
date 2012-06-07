@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,11 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 % $m->callback( %ARGS, CallbackName => 'Header' );
-<& /Elements/Header, Title => loc('Login'), Focus => 'user' &>
-
-
-%# End of div#quickbar from /Elements/Header
-</div>
+<& /Elements/Header, Title => loc('Login'), Focus => 'user', RichText => 0 &>
 
 <div id="body" class="login-body">
 
@@ -79,6 +75,15 @@
 </div>
 
 <input type="hidden" name="next" value="<% $next %>" />
+
+<script type="text/javascript">
+jQuery(function(){
+    if (window.location.hash) {
+        var form = jQuery("form[name=login]");
+        form.attr('action', form.attr('action') + '#' + window.location.hash.replace(/^#/, ''));
+    }
+});
+</script>
 
 <div class="button-row">
     <span class="input"><input type="submit" class="button" value="<&|/l&>Login</&>" /></span>

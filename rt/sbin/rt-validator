@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -52,7 +52,7 @@ use warnings;
 # fix lib paths, some may be relative
 BEGIN {
     require File::Spec;
-    my @libs = ("lib", "local/lib");
+    my @libs = ("/opt/rt3/lib", "/opt/rt3/local/lib");
     my $bin_path;
 
     for my $lib (@libs) {
@@ -82,35 +82,17 @@ GetOptions(
     'resolve',
     'force',
     'verbose|v',
+    'help|h',
 );
 
-usage() unless $opt{'check'};
+if ( $opt{help} || !$opt{check} ) {
+    require Pod::Usage;
+    print Pod::Usage::pod2usage( { verbose => 2 } );
+    exit;
+}
+
 usage_warning() if $opt{'resolve'} && !$opt{'force'};
 
-sub usage {
-    print STDERR <<END;
-Usage: $0 options
-
-Options:
-
-    $0 --check
-    $0 --check --verbose
-    $0 --check --verbose --resolve
-    $0 --check --verbose --resolve --force
-
---check   - is mandatory argument, you can use -c, as well.
---verbose - print additional info to STDOUT
---resolve - enable resolver that can delete or create some records
---force   - resolve without asking questions
-
-Description:
-
-This script checks integrity of records in RT's DB. May delete some invalid
-records or ressurect accidentally deleted.
-
-END
-    exit 1;
-}
 
 sub usage_warning {
     print <<END;
@@ -198,6 +180,9 @@ $redo_on{'Create'} = {
     GroupMembers => [ 'CGM vs. GM' ],
     CachedGroupMembers => [ 'CGM vs. GM' ],
 };
+$redo_on{'Update'} = {
+    Groups => ['User Defined Group Name uniqueness'],
+};
 
 my %describe_cb;
 %describe_cb = (
@@ -218,7 +203,7 @@ sub m2t($) {
     my $model = shift;
     return $cache{$model} if $cache{$model};
     my $class = "RT::$model";
-    my $object = $class->new( $RT::SystemUser );
+    my $object = $class->new( RT->SystemUser );
     return $cache{$model} = $object->Table;
 } }
 
@@ -227,9 +212,9 @@ my (@do_check, %redo_check);
 my @CHECKS;
 foreach my $table ( qw(Users Groups) ) {
     push @CHECKS, "$table -> Principals" => sub {
-        my $msg = "A record in $table refers not existing record in Principals."
-            ." The script can either create missing record in Principals"
-            ." or delete record in $table.";
+        my $msg = "A record in $table refers to a nonexistent record in Principals."
+            ." The script can either create the missing record in Principals"
+            ." or delete the record in $table.";
         my ($type) = ($table =~ /^(.*)s$/);
         check_integrity(
             $table, 'id' => 'Principals', 'id',
@@ -255,9 +240,9 @@ foreach my $table ( qw(Users Groups) ) {
     };
 
     push @CHECKS, "Principals -> $table" => sub {
-        my $msg = "A record in Principals refers not existing record in $table."
-            ." In some cases it's possible to resurrect manually such records,"
-            ." but this utility can only delete";
+        my $msg = "A record in Principals refers to a nonexistent record in $table."
+            ." In some cases it's possible to manually resurrect such records,"
+            ." but this utility can only delete records.";
 
         check_integrity(
             'Principals', 'id' => $table, 'id',
@@ -330,7 +315,7 @@ push @CHECKS, 'Queues <-> Role Groups' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found role group of not existant queue."
+                'Delete', "Found a role group of a nonexistent queue."
             );
 
             delete_record( 'Groups', $id );
@@ -355,7 +340,7 @@ push @CHECKS, 'Tickets <-> Role Groups' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found a role group of not existant ticket."
+                'Delete', "Found a role group of a nonexistent ticket."
             );
 
             delete_record( 'Groups', $id );
@@ -374,11 +359,41 @@ push @CHECKS, 'Role Groups (Instance, Type) uniqueness' => sub {
     );
 };
 
+push @CHECKS, 'System internal group uniqueness' => sub {
+    check_uniqueness(
+        'Groups',
+        columns     => ['Instance', 'Type'],
+        condition   => '.Domain = ?',
+        bind_values => [ 'SystemInternal' ],
+    );
+};
+
+# CHECK that user defined group names are unique
+push @CHECKS, 'User Defined Group Name uniqueness' => sub {
+    check_uniqueness(
+        'Groups',
+        columns         => ['Name'],
+        condition       => '.Domain = ?',
+        bind_values     => [ 'UserDefined' ],
+        extra_tables    => ['Principals sp', 'Principals tp'],
+        extra_condition => join(" and ", map { "$_.id = ${_}p.ObjectId and ${_}p.PrincipalType = ? and ${_}p.Disabled != 1" } qw(s t)),
+        extra_values    => ['Group', 'Group'],
+        action          => sub {
+            return unless prompt(
+                'Rename', "Found a user defined group with a non-unique Name."
+            );
+
+            my $id = shift;
+            my %cols = @_;
+            update_records('Groups', { id => $id }, { Name => join('-', $cols{'Name'}, $id) });
+        },
+    );
+};
 
 push @CHECKS, 'GMs -> Groups, Members' => sub {
     my $msg = "A record in GroupMembers references an object that doesn't exist."
-        ." May be you deleted a group or principal directly from DB?"
-        ." Usually it's ok to delete such records.";
+        ." Maybe you deleted a group or principal directly from the database?"
+        ." Usually it's OK to delete such records.";
     check_integrity(
         'GroupMembers', 'GroupId' => 'Groups', 'id',
         action => sub {
@@ -413,7 +428,7 @@ push @CHECKS, 'CGM vs. GM' => sub {
                 "Found a record in GroupMembers that has no direct duplicate in CachedGroupMembers table."
             );
 
-            my $gm = RT::GroupMember->new( $RT::SystemUser );
+            my $gm = RT::GroupMember->new( RT->SystemUser );
             $gm->Load( $id );
             die "Couldn't load GM record #$id" unless $gm->id;
             my $cgm = create_record( 'CachedGroupMembers',
@@ -434,7 +449,7 @@ push @CHECKS, 'CGM vs. GM' => sub {
             return unless prompt(
                 'Delete',
                 "Found a record in CachedGroupMembers for a (Group, Member) pair"
-                ." that doesn't exist in GroupMembers table."
+                ." that doesn't exist in the GroupMembers table."
             );
 
             delete_record( 'CachedGroupMembers', $id );
@@ -453,7 +468,7 @@ push @CHECKS, 'CGM vs. GM' => sub {
                 ." duplicate in CachedGroupMembers table."
             );
 
-            my $g = RT::Group->new( $RT::SystemUser );
+            my $g = RT::Group->new( RT->SystemUser );
             $g->Load( $id );
             die "Couldn't load group #$id" unless $g->id;
             die "Loaded group by $id has id ". $g->id  unless $g->id == $id;
@@ -490,7 +505,7 @@ push @CHECKS, 'CGM vs. GM' => sub {
             my $id = shift;
             return unless prompt(
                 'Delete',
-                "Found a record in CachedGroupMembers with Via referencing not existing record."
+                "Found a record in CachedGroupMembers with Via that references a nonexistent record."
             );
 
             delete_record( 'CachedGroupMembers', $id );
@@ -508,7 +523,7 @@ push @CHECKS, 'CGM vs. GM' => sub {
             my $id = shift;
             return unless prompt(
                 'Delete',
-                "Found a record in CachedGroupMembers that referencing not existant record in CachedGroupMembers table."
+                "Found a record in CachedGroupMembers that references a nonexistent record in CachedGroupMembers table."
             );
 
             delete_record( 'CachedGroupMembers', $id );
@@ -525,7 +540,7 @@ push @CHECKS, 'CGM vs. GM' => sub {
             my $id = shift;
             return unless prompt(
                 'Delete',
-                "Found a record in CachedGroupMembers that referencing not existant record in CachedGroupMembers table."
+                "Found a record in CachedGroupMembers that references a nonexistent record in CachedGroupMembers table."
             );
 
             delete_record( 'CachedGroupMembers', $id );
@@ -581,7 +596,7 @@ push @CHECKS, 'Tickets -> other' => sub {
             my $id = shift;
             return unless prompt(
                 'Delete',
-                "Found a ticket that's been merged into a ticket that don't exist anymore."
+                "Found a ticket that's been merged into a ticket that no longer exists."
             );
 
             delete_record( 'Tickets', $id );
@@ -627,8 +642,8 @@ push @CHECKS, 'Transactions -> other' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found a transaction regarding changes of Owner,"
-                ." but User with id stored in OldValue column doesn't exist anymore."
+                'Delete', "Found a transaction regarding Owner changes,"
+                ." but the User with id stored in OldValue column doesn't exist anymore."
             );
 
             delete_record( 'Transactions', $id );
@@ -641,8 +656,8 @@ push @CHECKS, 'Transactions -> other' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found a transaction regarding changes of Owner,"
-                ." but User with id stored in NewValue column doesn't exist anymore."
+                'Delete', "Found a transaction regarding Owner changes,"
+                ." but the User with id stored in NewValue column doesn't exist anymore."
             );
 
             delete_record( 'Transactions', $id );
@@ -656,8 +671,8 @@ push @CHECKS, 'Transactions -> other' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found a transaction describing watchers change,"
-                ." but User with id stored in OldValue column doesn't exist anymore."
+                'Delete', "Found a transaction describing watcher changes,"
+                ." but the User with id stored in OldValue column doesn't exist anymore."
             );
 
             delete_record( 'Transactions', $id );
@@ -671,8 +686,8 @@ push @CHECKS, 'Transactions -> other' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found a transaction describing watchers change,"
-                ." but User with id stored in NewValue column doesn't exist anymore."
+                'Delete', "Found a transaction describing watcher changes,"
+                ." but the User with id stored in NewValue column doesn't exist anymore."
             );
 
             delete_record( 'Transactions', $id );
@@ -701,8 +716,8 @@ push @CHECKS, 'Transactions -> other' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found a transaction describing queue change,"
-                ." but Queue with id stored in NewValue column doesn't exist anymore."
+                'Delete', "Found a transaction describing a queue change,"
+                ." but the Queue with id stored in the NewValue column doesn't exist anymore."
             );
 
             delete_record( 'Transactions', $id );
@@ -715,8 +730,8 @@ push @CHECKS, 'Transactions -> other' => sub {
         action => sub {
             my $id = shift;
             return unless prompt(
-                'Delete', "Found a transaction describing queue change,"
-                ." but Queue with id stored in OldValue column doesn't exist anymore."
+                'Delete', "Found a transaction describing a queue change,"
+                ." but the Queue with id stored in the OldValue column doesn't exist anymore."
             );
 
             delete_record( 'Transactions', $id );
@@ -814,7 +829,7 @@ push @CHECKS, 'FIX: LastUpdatedBy and Creator' => sub {
     my %fix = ();
     foreach my $model ( @models ) {
         my $class = "RT::$model";
-        my $object = $class->new( $RT::SystemUser );
+        my $object = $class->new( RT->SystemUser );
         foreach my $column ( qw(LastUpdatedBy Creator) ) {
             next unless $object->_Accessible( $column, 'auto' );
 
@@ -867,7 +882,7 @@ END
 push @CHECKS, 'LastUpdatedBy and Creator' => sub {
     foreach my $model ( @models ) {
         my $class = "RT::$model";
-        my $object = $class->new( $RT::SystemUser );
+        my $object = $class->new( RT->SystemUser );
         my $table = $object->Table;
         foreach my $column ( qw(LastUpdatedBy Creator) ) {
             next unless $object->_Accessible( $column, 'auto' );
@@ -941,7 +956,7 @@ sub check_integrity {
 
     my $sth = execute_query( $query, @binds );
     while ( my ($sid, @set) = $sth->fetchrow_array ) {
-        print STDERR "Record #$sid in $stable references not existent record in $ttable\n";
+        print STDERR "Record #$sid in $stable references a nonexistent record in $ttable\n";
         for ( my $i = 0; $i < @scols; $i++ ) {
             print STDERR "\t$scols[$i] => '$set[$i]' => $tcols[$i]\n";
         }
@@ -984,7 +999,7 @@ sub check_uniqueness {
     my @columns = @{ $args{'columns'} };
 
     print "Checking uniqueness of ( ", join(', ', map "'$_'", @columns )," ) in table '$on'\n"
-        if $opt{'versbose'};
+        if $opt{'verbose'};
 
     my ($scond, $tcond);
     if ( $scond = $tcond = $args{'condition'} ) {
@@ -996,19 +1011,23 @@ sub check_uniqueness {
         ." FROM $on s LEFT JOIN $on t "
         ." ON s.id != t.id AND ". join(' AND ', map "s.$_ = t.$_", @columns)
         . ($tcond? " AND ( $tcond )": "")
+        . ($args{'extra_tables'} ? join(", ", "", @{$args{'extra_tables'}}) : "")
         ." WHERE t.id IS NOT NULL "
         ." AND ". join(' AND ', map "s.$_ IS NOT NULL", @columns);
     $query .= " AND ( $scond )" if $scond;
+    $query .= " AND ( $args{'extra_condition'} )" if $args{'extra_condition'};
 
     my $sth = execute_query(
         $query,
-        $args{'bind_values'}? (@{ $args{'bind_values'} }, @{ $args{'bind_values'} }): ()
+        $args{'bind_values'}? (@{ $args{'bind_values'} }, @{ $args{'bind_values'} }): (),
+        $args{'extra_values'}? (@{ $args{'extra_values'} }): ()
     );
     while ( my ($sid, $tid, @set) = $sth->fetchrow_array ) {
         print STDERR "Record #$tid in $on has the same set of values as $sid\n";
         for ( my $i = 0; $i < @columns; $i++ ) {
             print STDERR "\t$columns[$i] => '$set[$i]'\n";
         }
+        $args{'action'}->( $tid, map { $columns[$_] => $set[$_] } (0 .. (@columns-1)) ) if $args{'action'};
     }
 }
 
@@ -1117,3 +1136,47 @@ sub prompt_integer {
 } }
 
 1;
+
+__END__
+
+=head1 NAME
+
+rt-validator - check and correct validity of records in RT's database
+
+=head1 SYNOPSIS
+
+    rt-validator --check 
+    rt-validator --check --verbose
+    rt-validator --check --verbose --resolve
+    rt-validator --check --verbose --resolve --force
+
+=head1 DESCRIPTION
+
+This script checks integrity of records in RT's DB. May delete some invalid
+records or ressurect accidentally deleted.
+
+=head1 OPTIONS
+
+=over
+
+=item check
+
+    mandatory.
+    
+    it's equall to -c
+
+=item verbose
+
+    print additional info to STDOUT
+    it's equall to -v
+
+=item resolve
+
+    enable resolver that can delete or create some records
+
+=item force
+
+    resolve without asking questions
+
+=back
+

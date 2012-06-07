@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -53,10 +53,7 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
 }
 </%init>
 <& /Admin/Elements/Header, Title => $title &>
-<& /Admin/Elements/ToolTabs, 
-    current_tab => 'Admin/Tools/Configuration.html',
-    current_subtab => 'Admin/Tools/Configuration.html', 
-    Title => $title &>
+<& /Elements/Tabs &>
 
 <&|/Widgets/TitleBox, title => loc("RT Configuration") &>
 <table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
@@ -68,7 +65,7 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
 <%PERL>
 my $index_conf;
 foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
-    my $val = RT->Config->Get( $key );
+    my $val = RT->Config->GetObfuscated( $key );
     next unless defined $val;
 
     my $meta = RT->Config->Meta( $key );
@@ -91,19 +88,13 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 <td class="collection-as-table"><% $key %></td>
 <td class="collection-as-table">
 % if ( $key =~ /Password(?!Length)/i ) { 
-<em>Password not printed</em>\
-% } elsif ( !ref $val ) {
-<% "$val" %>\
-% } elsif ( ref $val eq 'ARRAY' ) {
-<% join ', ', @$val %>\
-% } elsif ( ref $val eq 'HASH' ) {
-<% join ', ', %$val %>\
+<em><% loc('Password not printed' ) %></em>\
 % } else {
-<% ref $val %>\
+<% stringify($val) |n %>\
 % }
 </td>
 <td class="collection-as-table" style="white-space: nowrap">
-% if ( $description =~ /^.*site config$/ ) {
+% if ( $meta->{'Source'}{'SiteConfig'} ) {
 <span style="font-weight: bold"><% $description %></span>
 % } else {
 <% $description %>
@@ -134,7 +125,7 @@ foreach my $key ( sort keys %{*RT::} ) {
 <td class="collection-as-table">RT::<% $key %></td>
 <td class="collection-as-table">
 % if ( $key =~ /Password(?!Length)/i ) { 
-<em>Password not printed</em>
+<em><% loc('Password not printed' ) %></em>\
 % } else {
 <% ${'RT::'.$key} %>
 % }
@@ -157,7 +148,7 @@ for my $type (qw/Tickets Queues Transactions Groups PrivilegedUsers Unprivileged
     my $count;
     my $class = 'RT::' . $type;
     $class =~ s/Privileged|Unprivileged//;
-    my $collection = $class->new($RT::SystemUser);
+    my $collection = $class->new(RT->SystemUser);
     $collection->UnLimit;
     if ($type =~ /PrivilegedUsers/) {
         $user_count = $collection->CountAll;
@@ -182,7 +173,7 @@ for my $type (qw/Tickets Queues Transactions Groups PrivilegedUsers Unprivileged
 
 <&|/Widgets/TitleBox, title => loc("Mason template search order") &>
 <ol>
-% foreach my $path ( map { $_->[1] } $m->interp->comp_root_array ) {
+% foreach my $path ( RT::Interface::Web->ComponentRoots ) {
 <li><% $path %></li>
 % }
 </ol>
@@ -198,6 +189,30 @@ for my $type (qw/Tickets Queues Transactions Groups PrivilegedUsers Unprivileged
 
 </td>
 </table>
+
+<&|/Widgets/TitleBox, title => loc("Global Attributes") &>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table">
+<th class="collection-as-table"><&|/l&>Name</&></th>
+<th class="collection-as-table"><&|/l&>Value</&></th>
+</tr>
+% my $attrs = $RT::System->Attributes;
+% my $index_size = 0;
+% while ( my $attr = $attrs->Next ) {
+<tr class="<% $index_size%2 ? 'oddline' : 'evenline'%>">
+% if ($attr->Name eq 'UserLogo') {
+%   my $content = $attr->Content;
+%   $content->{data} = defined $content->{data} ? 'DATA' : 'undef'
+%       if exists $content->{data};
+<td><% $attr->Name %></td><td><% stringify($content) |n %></td>
+% } else {
+<td><% $attr->Name %></td><td><% stringify($attr->Content) |n %></td>
+% }
+</tr>
+% $index_size++;
+% }
+</table>
+</&>
 
 <&|/Widgets/TitleBox, title => loc("Loaded perl modules")&>
 <table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
@@ -227,7 +242,7 @@ if ($item =~ /^\s*(.*?)\s*v(\S+);/) {
         <%$ver%>
     </td>
     <td class="collection-as-table">
-        <% $INC{$distfile} %>
+        <% $INC{$distfile} || '' %>
     </td>
 </tr>
 % }
@@ -240,3 +255,18 @@ if ($item =~ /^\s*(.*?)\s*v(\S+);/) {
 <% Config::myconfig() %>
 </pre>
 </&>
+
+<%INIT>
+use Data::Dumper;
+local $Data::Dumper::Terse = 1;
+local $Data::Dumper::Indent = 2;
+
+sub stringify {
+    my $value = shift;
+    my $output = Dumper $value;
+    RT::Interface::Web::EscapeUTF8(\$output);
+    $output =~ s/ /&nbsp;/g;
+    $output =~ s!\n!<br />!g;
+    return $output;
+}
+</%INIT>

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -71,6 +71,7 @@ use RT::SavedSearch;
 
 use strict;
 use warnings;
+
 use base qw/RT::SharedSetting/;
 
 use RT::System;
@@ -88,6 +89,19 @@ RT::System::AddRights(
     DeleteOwnDashboard => 'Delete personal dashboards', #loc_pair
 );
 
+RT::System::AddRightCategories(
+    SubscribeDashboard => 'Staff',
+
+    SeeDashboard       => 'General',
+    CreateDashboard    => 'Admin',
+    ModifyDashboard    => 'Admin',
+    DeleteDashboard    => 'Admin',
+
+    SeeOwnDashboard    => 'Staff',
+    CreateOwnDashboard => 'Staff',
+    ModifyOwnDashboard => 'Staff',
+    DeleteOwnDashboard => 'Staff',
+);
 
 =head2 ObjectName
 
@@ -140,6 +154,19 @@ sub UpdateAttribute {
     }
 
     return ($status, $msg);
+}
+
+=head2 PostLoadValidate
+
+Ensure that the ID corresponds to an actual dashboard object, since it's all
+attributes under the hood.
+
+=cut
+
+sub PostLoadValidate {
+    my $self = shift;
+    return (0, "Invalid object type") unless $self->{'Attribute'}->Name eq 'Dashboard';
+    return 1;
 }
 
 =head2 Panes
@@ -230,44 +257,24 @@ sub PossibleHiddenSearches {
 }
 
 # _PrivacyObjects: returns a list of objects that can be used to load
-# dashboards from. If the Modify parameter is true, then check modify rights.
-# If the Create parameter is true, then check create rights. Otherwise, check
-# read rights.
+# dashboards from. You probably want to use the wrapper methods like
+# ObjectsForLoading, ObjectsForCreating, etc.
 
 sub _PrivacyObjects {
     my $self = shift;
-    my %args = @_;
 
-    my $CurrentUser = $self->CurrentUser;
     my @objects;
 
-    my $prefix = $args{Modify} ? "Modify"
-               : $args{Create} ? "Create"
-                               : "See";
-
-    push @objects, $CurrentUser->UserObj
-        if $self->CurrentUser->HasRight(
-            Right  => "${prefix}OwnDashboard",
-            Object => $RT::System,
-        );
+    my $CurrentUser = $self->CurrentUser;
+    push @objects, $CurrentUser->UserObj;
 
     my $groups = RT::Groups->new($CurrentUser);
     $groups->LimitToUserDefinedGroups;
     $groups->WithMember( PrincipalId => $CurrentUser->Id,
                          Recursively => 1 );
+    push @objects, @{ $groups->ItemsArrayRef };
 
-    push @objects, grep {
-        $self->CurrentUser->HasRight(
-            Right  => "${prefix}GroupDashboard",
-            Object => $_,
-        )
-    } @{ $groups->ItemsArrayRef };
-
-    push @objects, RT::System->new($CurrentUser)
-        if $CurrentUser->HasRight(
-            Right  => "${prefix}Dashboard",
-            Object => $RT::System,
-        );
+    push @objects, RT::System->new($CurrentUser);
 
     return @objects;
 }
@@ -348,6 +355,103 @@ sub CurrentUserCanSubscribe {
     my $privacy = shift;
 
     $self->_CurrentUserCan($privacy, FullRight => 'SubscribeDashboard');
+}
+
+=head2 Subscription
+
+Returns the L<RT::Attribute> representing the current user's subscription
+to this dashboard if there is one; otherwise, returns C<undef>.
+
+=cut
+
+sub Subscription {
+    my $self = shift;
+
+    # no subscription to unloaded dashboards
+    return unless $self->id;
+
+    for my $sub ($self->CurrentUser->UserObj->Attributes->Named('Subscription')) {
+        return $sub if $sub->SubValue('DashboardId') == $self->id;
+    }
+
+    return;
+}
+
+sub ObjectsForLoading {
+    my $self = shift;
+    my %args = (
+        IncludeSuperuserGroups => 1,
+        @_
+    );
+    my @objects;
+
+    # If you've been granted the SeeOwnDashboard global right (which you
+    # could have by way of global user right or global group right), you
+    # get to see your own dashboards
+    my $CurrentUser = $self->CurrentUser;
+    push @objects, $CurrentUser->UserObj
+        if $CurrentUser->HasRight(Object => $RT::System, Right => 'SeeOwnDashboard');
+
+    # Find groups for which: (a) you are a member of the group, and (b)
+    # you have been granted SeeGroupDashboard on (by any means), and (c)
+    # have at least one dashboard
+    my $groups = RT::Groups->new($CurrentUser);
+    $groups->LimitToUserDefinedGroups;
+    $groups->ForWhichCurrentUserHasRight(
+        Right             => 'SeeGroupDashboard',
+        IncludeSuperusers => $args{IncludeSuperuserGroups},
+    );
+    $groups->WithMember(
+        Recursively => 1,
+        PrincipalId => $CurrentUser->UserObj->PrincipalId
+    );
+    my $attrs = $groups->Join(
+        ALIAS1 => 'main',
+        FIELD1 => 'id',
+        TABLE2 => 'Attributes',
+        FIELD2 => 'ObjectId',
+    );
+    $groups->Limit(
+        ALIAS => $attrs,
+        FIELD => 'ObjectType',
+        VALUE => 'RT::Group',
+    );
+    $groups->Limit(
+        ALIAS => $attrs,
+        FIELD => 'Name',
+        VALUE => 'Dashboard',
+    );
+    push @objects, @{ $groups->ItemsArrayRef };
+
+    # Finally, if you have been granted the SeeDashboard right (which
+    # you could have by way of global user right or global group right),
+    # you can see system dashboards.
+    push @objects, RT::System->new($CurrentUser)
+        if $CurrentUser->HasRight(Object => $RT::System, Right => 'SeeDashboard');
+
+    return @objects;
+}
+
+sub CurrentUserCanCreateAny {
+    my $self = shift;
+    my @objects;
+
+    my $CurrentUser = $self->CurrentUser;
+    return 1
+        if $CurrentUser->HasRight(Object => $RT::System, Right => 'CreateOwnDashboard');
+
+    my $groups = RT::Groups->new($CurrentUser);
+    $groups->LimitToUserDefinedGroups;
+    $groups->ForWhichCurrentUserHasRight(
+        Right             => 'CreateGroupDashboard',
+        IncludeSuperusers => 1,
+    );
+    return 1 if $groups->Count;
+
+    return 1
+        if $CurrentUser->HasRight(Object => $RT::System, Right => 'CreateDashboard');
+
+    return 0;
 }
 
 RT::Base->_ImportOverlays();

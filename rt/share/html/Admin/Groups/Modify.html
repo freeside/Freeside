@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,15 +47,12 @@
 %# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => $title  &>
 
-<& /Admin/Elements/GroupTabs, 
-    GroupObj => $Group, 
-    current_tab => $current_tab, 
-    Title => $title &>
+<& /Elements/Tabs &>
 <& /Elements/ListActions, actions => \@results &>
 
 
 
-<form action="<%RT->Config->Get('WebPath')%>/Admin/Groups/Modify.html" method="post" enctype="multipart/form-data">
+<form action="<%RT->Config->Get('WebPath')%>/Admin/Groups/Modify.html" name="ModifyGroup" method="post" enctype="multipart/form-data">
 
 %unless ($Group->Id) {
 <input type="hidden" class="hidden" name="id" value="new" />
@@ -66,11 +63,11 @@
 <tr><td align="right">
 <&|/l&>Name</&>:
 </td>
-<td><input name="Name" value="<%$Group->Name||''%>" /></td>
+<td><input name="Name" value="<%$Group->Name||$Name||''%>" /></td>
 </tr>
 <tr>
 <td align="right">
-<&|/l&>Description</&>:</td><td colspan="3"><input name="Description" value="<%$Group->Description||''%>" size="60" /></td>
+<&|/l&>Description</&>:</td><td colspan="3"><input name="Description" value="<%$Group->Description||$Description||''%>" size="60" /></td>
 </tr>
 % my $CFs = $Group->CustomFields;
 % while (my $CF = $CFs->Next) {
@@ -99,66 +96,71 @@
 </form>
 <%INIT>
 
-my $current_tab;
-my  ($title, @results, $Disabled, $EnabledChecked);
+my  ($title, @results, @warnings, $Disabled, $EnabledChecked);
 
 my $Group = RT::Group->new($session{'CurrentUser'});
 
 if ($Create) {
-    $current_tab = 'Admin/Groups/Modify.html?Create=1';
     $title = loc("Create a new group");
-} 
-
-else {
-    $current_tab = 'Admin/Groups/Modify.html?id='.$id;
+} else {
     if ($id eq 'new' ) {
-	
-	my ($create_id, $create_msg) = $Group->CreateUserDefinedGroup(Name =>
-    "$Name");
-        unless ($create_id) {
-            Abort (loc("Group could not be created: [_1]", $create_msg));
-     }
-	$id = $Group->Id;
-    }
-    else {
+	my ($create_id, $create_msg) = $Group->CreateUserDefinedGroup(Name => $Name );
+        if ($create_id) {
+            $id = $Group->Id;
+            push @results, $create_msg;
+        } else {
+            push @results, loc("Group could not be created: [_1]", $create_msg);
+        }
+    } else {
 	$Group->Load($id) || Abort('Could not load group');
     }
 
-
-    if ($id) {
+    if ($Group->Id) {
 	$title = loc("Modify the group [_1]", $Group->Name);
-
-    }	
+    }
 
     # If the create failed
     else {
 	$title = loc("Create a new group");
 	$Create = 1;
-    }    
-    
+    }
 }
 
-if ($id) {
-    
+if ($Group->Id) {
     my @fields = qw(Description Name );
     my @fieldresults = UpdateRecordObject ( AttributesRef => \@fields,
 					    Object => $Group,
 					    ARGSRef => \%ARGS );
     push (@results,@fieldresults);
     push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $Group );
+
+    # Warn about duplicate groups
+    my $dupcheck = RT::Groups->new(RT->SystemUser);
+    $dupcheck->LimitToUserDefinedGroups();
+    $dupcheck->Limit( FIELD => 'Name', VALUE => $Group->Name );
+    if ($dupcheck->Count > 1) {
+        push @warnings, loc("There is more than one group with the name '[_1]'.  This may cause inconsistency in parts of the admin interface, and therefore it's recommended you rename the conflicting groups.", $Group->Name);
+    }
 }
 
 #we're asking about enabled on the web page but really care about disabled.
 if (defined $Enabled && $Enabled == 1) {
     $Disabled = 0;
-}	
-else {
+} else {
     $Disabled = 1;
 }
-if  ( ($SetEnabled) and ( $Disabled != $Group->Disabled) ) { 
+if  ( $Group->Id and ($SetEnabled) and ( $Disabled != $Group->Disabled) ) {
     my  ($code, $msg) = $Group->SetDisabled($Disabled);
     push @results, $msg;
 }
+
+# This code does automatic redirection if any updates happen.
+MaybeRedirectForResults(
+    Actions     => \@results,
+    Arguments   => { id => $Group->id },
+) if $Group->Id;
+
+push @results, @warnings;
 
 unless ($Group->Disabled()) {
     $EnabledChecked ='checked="checked"';

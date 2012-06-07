@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use RT::Test nodata => 1, tests => 34;
+use RT::Test nodb => 1, tests => 44;
 
 require_ok("RT");
 require_ok("RT::Test");
@@ -24,20 +24,30 @@ require_ok("RT::GroupMembers");
 require_ok("RT::ScripActions");
 require_ok("RT::Transactions");
 require_ok("RT::ScripCondition");
-require_ok("RT::Action::Generic");
+require_ok("RT::Action");
 require_ok("RT::ScripConditions");
-require_ok("RT::Search::Generic");
-require_ok("RT::Search::Generic");
-require_ok("RT::Search::Generic");
-require_ok("RT::Search::Generic");
+require_ok("RT::Search");
 require_ok("RT::Action::SendEmail");
 require_ok("RT::CachedGroupMembers");
-require_ok("RT::Condition::Generic");
+require_ok("RT::Condition");
 require_ok("RT::Interface::Web");
 require_ok("RT::SavedSearch");
 require_ok("RT::SavedSearches");
+require_ok("RT::Dashboard");
+require_ok("RT::Dashboard::Mailer");
+require_ok("RT::Dashboards");
 require_ok("RT::Installer");
 require_ok("RT::Util");
+require_ok("RT::Article");
+require_ok("RT::Articles");
+require_ok("RT::Class");
+require_ok("RT::Classes");
+require_ok("RT::ObjectClass");
+require_ok("RT::ObjectClasses");
+require_ok("RT::ObjectTopic");
+require_ok("RT::ObjectTopics");
+require_ok("RT::Topic");
+require_ok("RT::Topics");
 
 
 # no the following doesn't work yet
@@ -55,4 +65,3 @@ for (@files) {
     require_ok($_);
 }
 
-1;

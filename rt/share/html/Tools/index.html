@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,36 +46,5 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => loc("Tools") &>
-<& Elements/Tabs, 
-    current_tab => "Tools/index.html", 
-    Title => loc("Tools") &>
-<& /Elements/ListMenu, items => $tabs &>
-
-<%init>
-
-my $tabs = {
-    A => {
-        title       => loc('Dashboards'),
-        path        => '/Dashboards/index.html',
-        description => loc('Named, shared collection of portlets'),
-    },
-    B => {
-        title       => loc('Offline'),
-        path        => '/Tools/Offline.html',
-        description => loc('Create tickets offline'),
-    },
-    C => {
-        title       => loc('Reports'),
-        path        => '/Tools/Reports/index.html',
-        description => loc('Various RT reports'),
-    },
-    D => {
-        title       => loc('My Day'),
-        path        => '/Tools/MyDay.html',
-        description => loc('Easy updating of your open tickets'),
-    },
-};
-
-$m->callback( %ARGS, tabs => $tabs );
-
-</%init>
+<& /Elements/Tabs &>
+<& /Elements/ListMenu, menu => Menu()->child('tools') &>

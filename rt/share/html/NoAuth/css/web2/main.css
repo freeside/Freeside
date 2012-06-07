@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,22 +47,15 @@
 %# END BPS TAGGED BLOCK }}}
 % $m->callback(CallbackName => 'Begin');
 
-@import "yui-fonts.css";
-@import "base.css";
+@import "../base/main.css";
 
+@import "base.css";
 @import "layout.css";
 @import "nav.css";
-@import "forms.css";
 @import "boxes.css";
-
-@import "login.css";
 @import "ticket-lists.css";
 @import "ticket-search.css";
-@import "portlets.css";
 @import "ticket.css";
-@import "tools.css";
-@import "admin.css";
-@import "collection.css";
 @import "misc.css";
 
 % $m->callback(CallbackName => 'End');

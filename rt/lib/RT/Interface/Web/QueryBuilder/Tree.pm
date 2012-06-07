@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -260,20 +260,24 @@ sub ParseSQL {
 
         my $class;
         if ( exists $lcfield{ lc $main_key } ) {
-            $class = $field{ $main_key }->[0];
             $key =~ s/^[^.]+/ $lcfield{ lc $main_key } /e;
+            ($main_key) = split /[.]/, $key;  # make the case right
+            $class = $field{ $main_key }->[0];
         }
         unless( $class ) {
             push @results, [ $args{'CurrentUser'}->loc("Unknown field: [_1]", $key), -1 ]
         }
 
-        $value =~ s/'/\\'/g;
         if ( lc $op eq 'is' || lc $op eq 'is not' ) {
             $value = 'NULL'; # just fix possible mistakes here
         } elsif ( $value !~ /^[+-]?[0-9]+$/ ) {
+            $value =~ s/(['\\])/\\$1/g;
             $value = "'$value'";
         }
-        $key = "'$key'" if $key =~ /^CF./;
+
+        if ($key =~ s/(['\\])/\\$1/g or $key =~ /\s/) {
+            $key = "'$key'";
+        }
 
         my $clause = { Key => $key, Op => $op, Value => $value };
         $node->addChild( __PACKAGE__->new( $clause ) );

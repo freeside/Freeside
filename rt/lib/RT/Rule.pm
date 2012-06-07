@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -49,15 +49,24 @@
 package RT::Rule;
 use strict;
 use warnings;
+
 use base 'RT::Action';
 
 use constant _Stage => 'TransactionCreate';
 use constant _Queue => undef;
 
+
+
 sub Prepare {
     my $self = shift;
-    return (0) if $self->_Queue && $self->TicketObj->QueueObj->Name ne $self->_Queue;
-    return 1;
+    if ( $self->_Queue ) {
+        my $queue = RT::Queue->new( RT->SystemUser );
+        $queue->Load( $self->TicketObj->__Value('Queue') );
+        if ( $queue->Name ne $self->_Queue ) {
+            return (0);
+        }
+        return 1;
+    }
 }
 
 sub Commit  {

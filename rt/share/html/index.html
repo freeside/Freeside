@@ -1,9 +1,7 @@
-<!DOCTYPE html 
-     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html>
 <!--
 % $m->out('--'.'>');
-% $m->comp('/Elements/Header', Title=>loc("RT at a glance"), Refresh => $session{'home_refresh_interval'}||RT->Config->Get('HomePageRefreshInterval', $session{'CurrentUser'} ));
+% $m->comp('/Elements/Header', Title=>loc("RT at a glance"), Refresh => $session{'home_refresh_interval'}||RT->Config->Get('HomePageRefreshInterval', $session{'CurrentUser'}), SkipDoctype => 1 );
 % if (0) {
 %# -->
 <html><head>
@@ -20,7 +18,7 @@ You appear to have installed RT's web interface correctly, but haven't yet confi
 server to "run" the RT server which powers the web interface.
 
 The next step is to edit your webserver's configuration file to instruct it to use
-RT's <strong>mod_perl</strong>, <strong>FastCGI</strong> or <strong>SpeedyCGI</strong> handler.
+RT's <strong>mod_perl</strong> or <strong>FastCGI</strong> handler.
 
 If you need commercial support, please contact us at sales@bestpractical.com.
 
@@ -32,7 +30,7 @@ If you need commercial support, please contact us at sales@bestpractical.com.
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -75,16 +73,15 @@ If you need commercial support, please contact us at sales@bestpractical.com.
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<& /Elements/Tabs, 
-    Title          => loc("RT at a glance"),
-    current_tab    => 'index.html',
-    current_toptab => 'index.html',
-    tabs           => $tabs,
-    actions        => $actions,
-    &>
+<& /Elements/Tabs &>
 <& /Elements/ListActions, actions => \@results &>    
 <& /Elements/MyRT &>
 <%init>
+
+if ( RT::Interface::Web->MobileClient()) {
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL') ."m/");
+    $m->abort();
+}
 
 my @results;
 my $skip_create = 0;
@@ -93,7 +90,7 @@ $m->callback( ARGSRef => \%ARGS, results => \@results, CallbackName => 'Initial'
               skip_create => \$skip_create );
 
 if ( $ARGS{'QuickCreate'} ) {
-    my $QueueObj = new RT::Queue($session{'CurrentUser'});
+    my $QueueObj = RT::Queue->new($session{'CurrentUser'});
     $QueueObj->Load($ARGS{Queue}) or Abort(loc("Queue could not be loaded."));
     
     my $CFs = $QueueObj->TicketCustomFields();
@@ -132,16 +129,6 @@ if ( $ARGS{'q'} ) {
     RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Search/Simple.html?q=".$m->interp->apply_escapes($ARGS{q}));
 }
 
-my $actions;
-if ($session{'CurrentUser'}->HasRight(Right => 'ModifySelf', Object => $RT::System)) {
-    $actions = {
-        A => { title => loc('Edit'),
-               path  => 'Prefs/MyRT.html',
-             },
-    };
-}
-
-my $tabs = $m->comp("/Elements/DashboardTabs");
 </%init>
 
 %# --></body></html>

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -69,6 +69,7 @@ package RT::System;
 
 use strict;
 use warnings;
+
 use base qw/RT::Record/;
 
 use RT::ACL;
@@ -77,27 +78,33 @@ use RT::ACL;
 # XXX TODO Can't localize these outside of having an object around.
 our $RIGHTS = {
     SuperUser              => 'Do anything and everything',           # loc_pair
-    AdminAllPersonalGroups =>
-      "Create, delete and modify the members of any user's personal groups", # loc_pair
-    AdminOwnPersonalGroups =>
-      'Create, delete and modify the members of personal groups',     # loc_pair
-    AdminUsers     => 'Create, delete and modify users',              # loc_pair
+    AdminUsers     => 'Create, modify and delete users',              # loc_pair
     ModifySelf     => "Modify one's own RT account",                  # loc_pair
-    DelegateRights =>
-      "Delegate specific rights which have been granted to you.",     # loc_pair
-    ShowConfigTab => "show Configuration tab",     # loc_pair
-    ShowApprovalsTab => "show Approvals tab",     # loc_pair
-    LoadSavedSearch => "allow loading of saved searches",     # loc_pair
-    CreateSavedSearch => "allow creation of saved searches",      # loc_pair
+    ShowConfigTab => "Show Configuration tab",     # loc_pair
+    ShowApprovalsTab => "Show Approvals tab",     # loc_pair
+    ShowGlobalTemplates => "Show global templates",     # loc_pair
+    LoadSavedSearch => "Allow loading of saved searches",     # loc_pair
+    CreateSavedSearch => "Allow creation of saved searches",      # loc_pair
+    ExecuteCode => "Allow writing Perl code in templates, scrips, etc", # loc_pair
+};
+
+our $RIGHT_CATEGORIES = {
+    SuperUser              => 'Admin',
+    AdminUsers             => 'Admin',
+    ModifySelf             => 'Staff',
+    ShowConfigTab          => 'Admin',
+    ShowApprovalsTab       => 'Admin',
+    ShowGlobalTemplates    => 'Staff',
+    LoadSavedSearch        => 'General',
+    CreateSavedSearch      => 'General',
+    ExecuteCode            => 'Admin',
 };
 
 # Tell RT::ACE that this sort of object can get acls granted
 $RT::ACE::OBJECT_TYPES{'RT::System'} = 1;
 
-foreach my $right ( keys %{$RIGHTS} ) {
-    $RT::ACE::LOWERCASERIGHTNAMES{ lc $right } = $right;
-}
-
+__PACKAGE__->AddRights(%$RIGHTS);
+__PACKAGE__->AddRightCategories(%$RIGHT_CATEGORIES);
 
 =head2 AvailableRights
 
@@ -115,19 +122,49 @@ those rights globally.
 use RT::CustomField;
 use RT::Queue;
 use RT::Group; 
+use RT::Class;
 sub AvailableRights {
     my $self = shift;
 
-    my $queue = RT::Queue->new($RT::SystemUser);
-    my $group = RT::Group->new($RT::SystemUser);
-    my $cf    = RT::CustomField->new($RT::SystemUser);
+    my $queue = RT::Queue->new(RT->SystemUser);
+    my $group = RT::Group->new(RT->SystemUser);
+    my $cf    = RT::CustomField->new(RT->SystemUser);
+    my $class = RT::Class->new(RT->SystemUser);
 
     my $qr = $queue->AvailableRights();
     my $gr = $group->AvailableRights();
     my $cr = $cf->AvailableRights();
+    my $clr = $class->AvailableRights();
 
     # Build a merged list of all system wide rights, queue rights and group rights.
-    my %rights = (%{$RIGHTS}, %{$gr}, %{$qr}, %{$cr});
+    my %rights = (%{$RIGHTS}, %{$gr}, %{$qr}, %{$cr}, %{$clr});
+    delete $rights{ExecuteCode} if RT->Config->Get('DisallowExecuteCode');
+
+    return(\%rights);
+}
+
+=head2 RightCategories
+
+Returns a hashref where the keys are rights for this type of object and the
+values are the category (General, Staff, Admin) the right falls into.
+
+=cut
+
+sub RightCategories {
+    my $self = shift;
+
+    my $queue = RT::Queue->new(RT->SystemUser);
+    my $group = RT::Group->new(RT->SystemUser);
+    my $cf    = RT::CustomField->new(RT->SystemUser);
+    my $class = RT::Class->new(RT->SystemUser);
+
+    my $qr = $queue->RightCategories();
+    my $gr = $group->RightCategories();
+    my $cr = $cf->RightCategories();
+    my $clr = $class->RightCategories();
+
+    # Build a merged list of all system wide rights, queue rights and group rights.
+    my %rights = (%{$RIGHT_CATEGORIES}, %{$gr}, %{$qr}, %{$cr}, %{$clr});
 
     return(\%rights);
 }
@@ -145,6 +182,19 @@ sub AddRights {
     $RIGHTS = { %$RIGHTS, %new };
     %RT::ACE::LOWERCASERIGHTNAMES = ( %RT::ACE::LOWERCASERIGHTNAMES,
                                       map { lc($_) => $_ } keys %new);
+}
+
+=head2 AddRightCategories C<RIGHT>, C<CATEGORY> [, ...]
+
+Adds the given right and category pairs to the list of right categories.  This
+method should be called during server startup, not at runtime.
+
+=cut
+
+sub AddRightCategories {
+    my $self = shift if ref $_[0] or $_[0] eq __PACKAGE__;
+    my %new = @_;
+    $RIGHT_CATEGORIES = { %$RIGHT_CATEGORIES, %new };
 }
 
 sub _Init {
@@ -179,14 +229,36 @@ sub SubjectTag {
     my $self = shift;
     my $queue = shift;
 
-    my $map = $self->FirstAttribute('BrandedSubjectTag');
-    $map = $map->Content if $map;
-    return $queue ? undef : () unless $map;
+    use Carp;
+    confess "SubjectTag called on $self with $queue" if $queue;
 
-    return $map->{ $queue->id } if $queue;
+    return $queue->SubjectTag if $queue;
 
-    my %seen = ();
-    return grep !$seen{lc $_}++, values %$map;
+    my $queues = RT::Queues->new( $self->CurrentUser );
+    $queues->Limit( FIELD => 'SubjectTag', OPERATOR => 'IS NOT', VALUE => 'NULL' );
+    return $queues->DistinctFieldValues('SubjectTag');
+}
+
+=head2 QueueCacheNeedsUpdate ( 1 )
+
+Attribute to decide when SelectQueue needs to flush the list of queues
+and retrieve new ones.  Set when queues are created, enabled/disabled
+and on certain acl changes.  Should also better understand group management.
+
+If passed a true value, will update the attribute to be the current time.
+
+=cut
+
+sub QueueCacheNeedsUpdate {
+    my $self = shift;
+    my $update = shift;
+
+    if ($update) {
+        return $self->SetAttribute(Name => 'QueueCacheNeedsUpdate', Content => time);
+    } else {
+        my $cache = $self->FirstAttribute('QueueCacheNeedsUpdate');
+        return (defined $cache ? $cache->Content : 0 );
+    }
 }
 
 =head2 QueueCacheNeedsUpdate ( 1 )

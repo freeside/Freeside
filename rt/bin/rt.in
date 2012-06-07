@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -50,6 +50,12 @@
 # Abhijit Menon-Sen <ams@wiw.org>
 
 use strict;
+
+if ( $ARGV[0] && $ARGV[0] =~ /^(?:--help|-h)$/ ) {
+    require Pod::Usage;
+    print Pod::Usage::pod2usage( { verbose => 2 } );
+    exit;
+}
 
 # This program is intentionally written to have as few non-core module
 # dependencies as possible. It should stay that way.
@@ -98,7 +104,7 @@ my %config = (
     config_from_file($ENV{RTCONFIG} || ".rtrc"),
     config_from_env()
 );
-my $session = new Session("$HOME/.rt_sessions");
+my $session = Session->new("$HOME/.rt_sessions");
 my $REST = "$config{server}/REST/1.0";
 $no_strong_auth = 'switched off by externalauth=0'
     if defined $config{externalauth};
@@ -179,7 +185,7 @@ exit handler();
 
 sub shell {
     $|=1;
-    my $term = new Term::ReadLine 'RT CLI';
+    my $term = Term::ReadLine->new('RT CLI');
     while ( defined ($_ = $term->readline($prompt)) ) {
         next if /^#/ || /^\s*$/;
 
@@ -984,7 +990,7 @@ sub grant {
 sub submit {
     my ($uri, $content) = @_;
     my ($req, $data);
-    my $ua = new LWP::UserAgent(agent => "RT/3.0b", env_proxy => 1);
+    my $ua = LWP::UserAgent->new(agent => "RT/3.0b", env_proxy => 1);
     my $h = HTTP::Headers->new;
 
     # Did the caller specify any data to send with the request?
@@ -1164,44 +1170,40 @@ sub submit {
     sub load {
         my ($self, $file) = @_;
         $file ||= $self->{file};
-        local *F;
 
-        open(F, '<', $file) && do {
-            $self->{file} = $file;
-            my $sids = $self->{sids} = {};
-            while (<F>) {
-                chomp;
-                next if /^$/ || /^#/;
-                next unless m#^https?://[^ ]+ \w+ [^;,\s]+=[0-9A-Fa-f]+$#;
-                my ($server, $user, $cookie) = split / /, $_;
-                $sids->{$server}{$user} = $cookie;
-            }
-            return 1;
-        };
-        return 0;
+        open( my $handle, '<', $file ) or return 0;
+
+        $self->{file} = $file;
+        my $sids = $self->{sids} = {};
+        while (<$handle>) {
+            chomp;
+            next if /^$/ || /^#/;
+            next unless m#^https?://[^ ]+ \w+ [^;,\s]+=[0-9A-Fa-f]+$#;
+            my ($server, $user, $cookie) = split / /, $_;
+            $sids->{$server}{$user} = $cookie;
+        }
+        return 1;
     }
 
     # Writes the current session cache to the specified file.
     sub save {
         my ($self, $file) = shift;
         $file ||= $self->{file};
-        local *F;
 
-        open(F, '>', $file) && do {
-            my $sids = $self->{sids};
-            foreach my $server (keys %$sids) {
-                foreach my $user (keys %{ $sids->{$server} }) {
-                    my $sid = $sids->{$server}{$user};
-                    if (defined $sid) {
-                        print F "$server $user $sid\n";
-                    }
+        open( my $handle, '>', "$file" ) or return 0;
+
+        my $sids = $self->{sids};
+        foreach my $server (keys %$sids) {
+            foreach my $user (keys %{ $sids->{$server} }) {
+                my $sid = $sids->{$server}{$user};
+                if (defined $sid) {
+                    print $handle "$server $user $sid\n";
                 }
             }
-            close(F);
-            chmod 0600, $file;
-            return 1;
-        };
-        return 0;
+        }
+        close($handle);
+        chmod 0600, $file;
+        return 1;
     }
 
     sub DESTROY {
@@ -1429,19 +1431,19 @@ sub parse_config_file {
     my ($file) = @_;
     local $_; # $_ may be aliased to a constant, from line 1163
 
-    open(CFG, '<', $file) && do {
-        while (<CFG>) {
-            chomp;
-            next if (/^#/ || /^\s*$/);
+    open( my $handle, '<', $file ) or return;
 
-            if (/^(externalauth|user|passwd|server|query|orderby|queue)\s+(.*)\s?$/) {
-                $cfg{$1} = $2;
-            }
-            else {
-                die "rt: $file:$.: unknown configuration directive.\n";
-            }
+    while (<$handle>) {
+        chomp;
+        next if (/^#/ || /^\s*$/);
+
+        if (/^(externalauth|user|passwd|server|query|orderby|queue)\s+(.*)\s?$/) {
+            $cfg{$1} = $2;
         }
-    };
+        else {
+            die "rt: $file:$.: unknown configuration directive.\n";
+        }
+    }
 
     return %cfg;
 }
@@ -1476,12 +1478,18 @@ sub vi {
     my $file = "/tmp/rt.form.$$";
     my $editor = $ENV{EDITOR} || $ENV{VISUAL} || "vi";
 
-    local *F;
     local $/ = undef;
 
-    open(F, '>', $file) or die "$file: $!\n"; print F $text; close(F);
+    open( my $handle, '>', $file ) or die "$file: $!\n";
+    print $handle $text;
+    close($handle);
+
     system($editor, $file) && die "Couldn't run $editor.\n";
-    open(F, '<', $file) or die "$file: $!\n"; $text = <F>; close(F);
+
+    open( $handle, '<', $file ) or die "$file: $!\n";
+    $text = <$handle>;
+    close($handle);
+
     unlink($file);
 
     return $text;
@@ -2157,7 +2165,7 @@ Text:
     ("ls", "list", and "search" are synonyms.)
 
     Conditions are expressed in the SQL-like syntax used internally by
-    RT3. (For more information, see "rt help query".) The query string
+    RT. (For more information, see "rt help query".) The query string
     must be supplied as one argument.
 
     (Right now, the server doesn't support listing anything but tickets.
@@ -2390,7 +2398,7 @@ Text:
 Title: query
 Text:
 
-    RT3 uses an SQL-like syntax to specify object selection constraints.
+    RT uses an SQL-like syntax to specify object selection constraints.
     See the <RT:...> documentation for details.
     
     (XXX: I'm going to have to write it, aren't I?)
@@ -2585,3 +2593,24 @@ Text:
         $ rt shell
         rt> quit
         $
+
+__END__
+
+=head1 NAME
+
+rt - command-line interface to RT 3.0 or newer
+
+=head1 SYNOPSIS
+
+    rt help
+
+=head1 DESCRIPTION
+
+This script allows you to interact with an RT server over HTTP, and offers an
+interface to RT's functionality that is better-suited to automation and
+integration with other tools.
+
+In general, each invocation of this program should specify an action to
+perform on one or more objects, and any other arguments required to complete
+the desired action.
+

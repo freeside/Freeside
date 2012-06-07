@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,21 +47,11 @@
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => $title,
     Refresh => $session{'tickets_refresh_interval'} || RT->Config->Get('SearchResultsRefreshInterval', $session{'CurrentUser'} ),
-    RSSAutoDiscovery => $RSSFeedURL,
     LinkRel => \%link_rel &>
-<& /Ticket/Elements/Tabs, 
-    current_tab => "Search/Results.html".$QueryString, 
-    Title => $title,
-    Format => $Format,
-    Query => $Query,
-    Rows => $Rows,
-    OrderBy => $OrderBy,
-    Order => $Order,
-    SavedSearchId => $SavedSearchId,
-    SavedChartSearchId => $SavedChartSearchId,
-    &>
+<& /Elements/Tabs &>
 <& /Elements/CollectionList, 
     Query => $Query,
+    TotalFound => $ticketcount,
     AllowSorting => 1,
     OrderBy => $OrderBy,
     Order => $Order,
@@ -82,22 +72,9 @@
 <input type="submit" class="button" value="<&|/l&>Change</&>" />
 </form>
 </div>
-<div align="right" class="search-result-actions">
-<& Elements/ResultViews,
-    Collection => $session{'tickets'},
-    QueryString => $QueryString,
-    Query => $Query,
-    Format => $Format,
-    Rows => $Rows,
-    OrderBy => $OrderBy,
-    Order => $Order,
-    RSSFeedURL => $RSSFeedURL,
-    ShortQueryString => $ShortQueryString,
-&>
-
-% $m->callback( QueryString => $QueryString, CallbackName => 'SearchActions' );
-</div>
 <%INIT>
+$m->callback( ARGSRef => \%ARGS, CallbackName => 'Initial' );
+
 # Read from user preferences
 my $prefs = $session{'CurrentUser'}->UserObj->Preferences("SearchDisplay") || {};
 
@@ -124,7 +101,9 @@ $Page = 1 unless $Page && $Page > 0;
 my ($title, $ticketcount);
 $session{'i'}++;
 $session{'tickets'} = RT::Tickets->new($session{'CurrentUser'}) ;
-$session{'tickets'}->FromSQL($Query) if ($Query);
+my ($ok, $msg) = $Query ? $session{'tickets'}->FromSQL($Query) : (1, "Vacuously OK");
+# Provide an empty search if parsing failed
+$session{'tickets'}->FromSQL("id < 0") unless ($ok);
 
 if ($OrderBy =~ /\|/) {
     # Multiple Sorts
@@ -164,11 +143,6 @@ my $QueryString = "?".$m->comp('/Elements/QueryString',
                                Order => $Order,
                                Page => $Page);
 my $ShortQueryString = "?".$m->comp('/Elements/QueryString', Query => $Query);
-my $RSSQueryString = "?".$m->comp('/Elements/QueryString', Query => $Query, Order => $Order, OrderBy => $OrderBy);
-my $RSSPath  = join '/', map $m->interp->apply_escapes($_, 'u'),
-    $session{'CurrentUser'}->UserObj->Name,
-    $session{'CurrentUser'}->UserObj->GenerateAuthString( $Query.$Order.$OrderBy );
-my $RSSFeedURL = RT->Config->Get('WebPath')."/NoAuth/rss/$RSSPath/$RSSQueryString";
 
 if ($ARGS{'TicketsRefreshInterval'}) {
 	$session{'tickets_refresh_interval'} = $ARGS{'TicketsRefreshInterval'};
@@ -186,6 +160,15 @@ my $genpage = sub {
         Page    => shift(@_),
     );
 };
+
+if ( RT->Config->Get('SearchResultsAutoRedirect') && $ticketcount == 1 &&
+    $session{tickets}->First ) {
+# $ticketcount is not always precise unless $UseSQLForACLChecks is set to true,
+# check $session{tickets}->First here is to make sure the ticket is there.
+    RT::Interface::Web::Redirect( RT->Config->Get('WebURL')
+            ."Ticket/Display.html?id=". $session{tickets}->First->id );
+}
+
 my $BaseURL = RT->Config->Get('WebPath')."/Search/Results.html?";
 $link_rel{first} = $BaseURL . $genpage->(1)         if $Page > 1;
 $link_rel{prev}  = $BaseURL . $genpage->($Page - 1) if $Page > 1;

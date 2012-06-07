@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -46,25 +46,12 @@
 #
 # END BPS TAGGED BLOCK }}}
 
-use strict;
-
-use RT;
 package RT::Interface::CLI;
+use strict;
+use RT;
 
-
-
-BEGIN {
-    use base 'Exporter';
-    use vars qw ($VERSION  @EXPORT @EXPORT_OK %EXPORT_TAGS);
-    
-    # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
-
-    # your exported package globals go here,
-    # as well as any optionally exported functions
-    @EXPORT_OK   = qw(&CleanEnv 
-		      &GetCurrentUser &GetMessageContent &debug &loc);
-}
+use base 'Exporter';
+our @EXPORT_OK = qw(CleanEnv GetCurrentUser GetMessageContent debug loc);
 
 =head1 NAME
 
@@ -124,7 +111,6 @@ sub CleanEnv {
 
     my $CurrentUser; # shared betwen GetCurrentUser and loc
 
-# {{{ sub GetCurrentUser 
 
 =head2 GetCurrentUser
 
@@ -144,7 +130,7 @@ sub GetCurrentUser  {
     #If the current user is 0, then RT will assume that the User object
     #is that of the currentuser.
 
-    $CurrentUser = new RT::CurrentUser();
+    $CurrentUser = RT::CurrentUser->new();
     $CurrentUser->LoadByGecos($Gecos);
     
     unless ($CurrentUser->Id) {
@@ -153,10 +139,8 @@ sub GetCurrentUser  {
 
     return($CurrentUser);
 }
-# }}}
 
 
-# {{{ sub loc 
 
 =head2 loc
 
@@ -168,12 +152,10 @@ sub loc {
     die "No current user yet" unless $CurrentUser ||= RT::CurrentUser->new;
     return $CurrentUser->loc(@_);
 }
-# }}}
 
 }
 
 
-# {{{ sub GetMessageContent
 
 =head2 GetMessageContent
 
@@ -200,7 +182,7 @@ sub GetMessageContent {
     
     #Load the sourcefile, if it's been handed to us
     if ($source) {
-    open( SOURCE, '<', $source ) or die $!;
+	open( SOURCE, '<', $source ) or die $!;
 	@lines = (<SOURCE>) or die $!;
 	close (SOURCE) or die $!;
     }
@@ -235,9 +217,7 @@ sub GetMessageContent {
     
 }
 
-# }}}
 
-# {{{ sub debug
 
 sub debug {
     my $val = shift;
@@ -253,8 +233,20 @@ sub debug {
     }	
 }
 
-# }}}
-
+sub ShowHelp {
+    my $self = shift;
+    my %args = @_;
+    require Pod::Usage;
+    Pod::Usage::pod2usage(
+        -message => $args{'Message'},
+        -exitval => $args{'ExitValue'} || 0, 
+        -verbose => 99,
+        -sections => $args{'Sections'} || ($args{'ExitValue'}
+            ? 'NAME|USAGE'
+            : 'NAME|USAGE|OPTIONS|DESCRIPTION'
+        ),
+    );
+}
 
 RT::Base->_ImportOverlays();
 

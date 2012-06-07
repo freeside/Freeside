@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -56,7 +56,7 @@ $changes => {}
 my @comments;
 my ($c, $o, $k, $e) = ("", [], {}, 0);
 my %data = %$changes;
-my $user = new RT::User $session{CurrentUser};
+my $user = RT::User->new($session{CurrentUser});
 my @fields = qw(RealName NickName Gecos Organization Address1 Address2 City
                 State Zip Country HomePhone WorkPhone MobilePhone PagerPhone
                 FreeformContactInfo Comments Signature Lang EmailEncoding

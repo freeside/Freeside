@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -69,7 +69,7 @@ sub Groupings {
     }
 
 
-    for my $field (qw(Due Resolved Created LastUpdated Started Starts)) {
+    for my $field (qw(Due Resolved Created LastUpdated Started Starts Told)) {
         for my $frequency (qw(Hourly Daily Monthly Annually)) {
             my $item = $field.$frequency;
             push @fields,  $item,  $item;
@@ -296,7 +296,7 @@ sub Next {
 
 sub NewItem {
     my $self = shift;
-    return RT::Report::Tickets::Entry->new($RT::SystemUser); # $self->CurrentUser);
+    return RT::Report::Tickets::Entry->new(RT->SystemUser); # $self->CurrentUser);
 }
 
 

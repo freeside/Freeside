@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -58,10 +58,6 @@ RT::Graph::Tickets - view relations between tickets as graphs
 =cut
 
 unless ($RT::DisableGraphViz) {
-    require IPC::Run;
-    IPC::Run->import;
-    require IPC::Run::SafeHandles;
-    IPC::Run::SafeHandles->import;
     require GraphViz;
     GraphViz->import;
 }

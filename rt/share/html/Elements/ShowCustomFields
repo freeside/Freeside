@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -77,10 +77,15 @@
 % $m->callback( CallbackName => 'AfterCustomFields', Object => $Object );
 <%INIT>
 $m->callback(
+    %ARGS,
     CallbackName => 'MassageCustomFields',
     Object => $Object,
     CustomFields => $CustomFields,
 );
+
+# don't print anything if there is no custom fields
+return unless $CustomFields->First;
+$CustomFields->GotoFirstItem;
 
 my $print_value = sub {
     my ($cf, $value) = @_;
@@ -108,13 +113,13 @@ my $print_value = sub {
     if ( $cf->IncludeContentForValue ) {
        my $vid = $value->id;
        $m->out(   '<div class="object_cf_value_include" id="object_cf_value_'. $vid .'">' );
-       $m->print( loc("See also:") );
+       $m->out( loc("See also:") );
        $m->out(   '<a href="'. $value->IncludeContentForValue .'">' );
-       $m->print( $value->IncludeContentForValue );
+       $m->out( $value->IncludeContentForValue );
        $m->out(   qq{</a></div>\n} );
-       $m->out(   qq{<script><!--\nahah('} );
-       $m->print( $value->IncludeContentForValue );
-       $m->out(   qq{', 'object_cf_value_$vid');\n--></script>\n} );
+       $m->out(   qq{<script><!--\njQuery('#object_cf_value_$vid').load('} );
+       $m->out( $value->IncludeContentForValue );
+       $m->out(   qq{');\n--></script>\n} );
     }
 };
 

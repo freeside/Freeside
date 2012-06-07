@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,10 +45,8 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<& /Admin/Elements/Header, Title => loc('RT/Admin/Edit the group [_1]', $Group->Name) &>
-<& /Admin/Elements/GroupTabs, GroupObj => $Group, 
-    current_tab => 'Admin/Groups/Members.html?id='.$id, 
-    Title => "RT/Admin/Edit the group ". $Group->Name &>
+<& /Admin/Elements/Header, Title => $title &>
+<& /Elements/Tabs &>
 <& /Elements/ListActions, actions => \@results &>
 
 <form action="<% RT->Config->Get('WebPath') %>/Admin/Groups/Members.html" method="post">
@@ -113,8 +111,10 @@ my @users = sort { lc($a->[0]) cmp lc($b->[0]) }
 
 <%INIT>
 
-my $Group = new RT::Group($session{'CurrentUser'});
+my $Group = RT::Group->new($session{'CurrentUser'});
 $Group->Load($id) || Abort(loc('Could not load group'));
+
+my $title = loc("Modify the group [_1]", $Group->Name);
 
 my (%UsersSeen, %GroupsSeen);
 $GroupsSeen{ $Group->id } = 1; # can't be a member of ourself
@@ -129,25 +129,37 @@ foreach my $key (keys %ARGS) {
     push (@results, $msg);
 }
 
-foreach my $member (grep $_, @AddMembersUsers, @AddMembersGroups) {
+# Process new users
+foreach my $member (grep $_, @AddMembersUsers) {
+    my $principal = RT::User->new($session{'CurrentUser'});
 
-    my $principal;
-
-    if ($member =~ /^Group-(\d+)$/) {
-        $principal = RT::Group->new($session{'CurrentUser'});
-        $principal->Load($1);
-    } elsif ($member =~ /^User-(\d+)$/) {
-        $principal = RT::User->new($session{'CurrentUser'});
+    if ($member =~ /^User-(\d+)$/) {
+        # Old style, using id
         $principal->Load($1);
     } else {
-        next;
+        # New style, just a username
+        $principal->Load($member);
     }
-
 
     my ($val, $msg) = $Group->AddMember($principal->PrincipalId);
     push (@results, $msg);
 }
 
+# Process new groups
+foreach my $member (grep $_, @AddMembersGroups) {
+    my $principal = RT::Group->new($session{'CurrentUser'});
+
+    if ($member =~ /^Group-(\d+)$/) {
+        # Old style, using id
+        $principal->Load($1);
+    } else {
+        # New style, just a group name
+        $principal->LoadUserDefinedGroup($member);
+    }
+
+    my ($val, $msg) = $Group->AddMember($principal->PrincipalId);
+    push (@results, $msg);
+}
 </%INIT>
 
 <%ARGS>

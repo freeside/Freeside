@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # BEGIN BPS TAGGED BLOCK {{{
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -104,6 +104,10 @@ my @tables = qw(
     Tickets
     Transactions
     Users
+    FM_Articles
+    FM_Classes
+    FM_ObjectTopics
+    FM_Topics
 );
 
 my %charset = (
@@ -138,6 +142,23 @@ my %charset = (
     CustomFieldValues        => {
         Name  => 'utf8',
         Description  => 'utf8',
+    },
+    FM_Articles => {
+        Name => 'utf8',
+        Summary => 'utf8',
+        URI => 'ascii',
+    },
+    FM_Classes => {
+        Name => 'utf8',
+        Description => 'utf8',
+    },
+    FM_ObjectTopics => {
+        ObjectType => 'ascii',
+    },
+    FM_Topics => {
+        Name => 'utf8',
+        Description => 'utf8',
+        ObjectType => 'ascii',
     },
     Groups                   => {
         Name  => 'utf8',
@@ -265,7 +286,7 @@ $db_name =~ s/:.*$//;
 my $version = ($dbh->selectrow_array("show variables like 'version'"))[1];
 ($version) = $version =~ /^(\d+\.\d+)/;
 
-push @sql_commands, qq{ALTER DATABASE $db_name DEFAULT CHARACTER SET utf8};
+push @sql_commands, qq{ALTER DATABASE `$db_name` DEFAULT CHARACTER SET utf8};
 convert_table($_) foreach @tables;
 
 print join "\n", map(/;$/? $_ : "$_;", @sql_commands), "";
@@ -285,7 +306,9 @@ sub convert_table {
 
     my $sth = $dbh->column_info( undef, $db_name, $table, undef );
     $sth->execute;
-    while ( my $info = $sth->fetchrow_hashref ) {
+    my $columns = $sth->fetchall_arrayref({});
+    return unless @$columns;
+    foreach my $info (@$columns) {
         convert_column(%$info);
     }
     for my $conversiontype (qw(char_to_binary binary_to_char)) {
@@ -416,11 +439,15 @@ sub build_column_definition {
 sub column_byte_length {
     my ($table, $column) = @_;
     if ( $version >= 5.0 ) {
+        # information_schema searches can be case sensitive
+        # and users may use lower_case_table_names, use LOWER
+        # for everything just in case
+        # http://dev.mysql.com/doc/refman/5.1/en/charset-collation-information-schema.html
         my ($char, $octet) = @{ $dbh->selectrow_arrayref(
             "SELECT CHARACTER_MAXIMUM_LENGTH, CHARACTER_OCTET_LENGTH FROM information_schema.COLUMNS WHERE"
-            ."     TABLE_SCHEMA = ". $dbh->quote($db_name)
-            ." AND TABLE_NAME   = ". $dbh->quote($table)
-            ." AND COLUMN_NAME  = ". $dbh->quote($column)
+            ."     LOWER(TABLE_SCHEMA) = ". lc( $dbh->quote($db_name) )
+            ." AND LOWER(TABLE_NAME)   = ". lc( $dbh->quote($table) )
+            ." AND LOWER(COLUMN_NAME)  = ". lc( $dbh->quote($column) )
         ) };
         return $octet if $octet == $char;
     }

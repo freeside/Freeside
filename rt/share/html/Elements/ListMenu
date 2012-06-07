@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,13 +46,45 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <%args>
-$items
+$menu
 </%args>
 <ul class="list-menu">
-%    foreach my $key (sort keys %$items) {
-<li><span class="menu-item"><a href="<%RT->Config->Get('WebPath')%><%$items->{$key}->{'path'}|n %>"><%$items->{$key}->{'title'}%></a></span><br />
-<span class="description"><%$items->{$key}->{description} || $items->{$key}->{text} %></span>
-
+% for my $child ($menu->children) {
+<li><span class="menu-item"><% $show_link->( $child ) |n %></span><br />
+% if ( my $description = $child->description ) {
+<span class="description"><% $description %></span>\
+% }
 </li>
-%}
+% }
 </ul>
+
+<%INIT>
+my $web_path = RT->Config->Get('WebPath');
+my $interp = $m->interp;
+my $show_link = sub {
+    my $e = shift;
+    my $res = '';
+    if ( $e->path) {
+        $res .= '<a';
+        my $url = (not $e->path or $e->path =~ m{^\w+:/})
+            ? $e->path
+            : $web_path . $e->path;
+        $res .= ' href="'. $interp->apply_escapes($url, 'h') .'"'
+            if $url;
+
+        if ( $e->target ) {
+            $res .= ' target="'. $interp->apply_escapes( $e->target, 'h' ) .'"';
+        }
+        $res .= '>';
+    }
+
+    my $title = $e->title;
+    $title = $interp->apply_escapes( $title, 'h' );
+    $res .= $title;
+
+    if ( $e->path) {
+        $res .= '</a>';
+    }
+    return $res;
+};
+</%INIT>

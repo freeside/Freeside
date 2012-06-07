@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,19 +47,12 @@
 %# END BPS TAGGED BLOCK }}}
 <select name="<%$Name%>">
 <option value="" 
-<% defined($Default) && $Default eq 'none' && qq[ selected="selected"] |n %>
->-</option>
+<% defined($Default) && $Default eq 'none' && qq[ selected="selected"] |n %>>-</option>
 %while  (my $Template = $PrimaryTemplates->Next) {
-<option value="<%$Template->Id%>"
-<% ($Template->Id == $Default) && qq[ selected="selected"] |n %>
-><% loc($Template->Name) %>
-</option>
+<option value="<%$Template->Id%>" <% ($Template->Id == $Default) && qq[ selected="selected"] |n %>><% loc($Template->Name) %></option>
 %}
 %while  (my $Template = $OtherTemplates->Next) {
-<option value="<%$Template->Id%>"
-<% defined($Default) && ($Template->Id == $Default) && qq[ selected="selected"] |n %>
-><&|/l, loc($Template->Name) &>Global template: [_1]</&>
-</option>
+<option value="<%$Template->Id%>" <% defined($Default) && ($Template->Id == $Default) && qq[ selected="selected"] |n %>><&|/l, loc($Template->Name) &>Global template: [_1]</&></option>
 %}
 </select>
 
@@ -73,15 +66,12 @@ $PrimaryTemplates->OrderBy(FIELD => 'Name');
 }
 
 my $OtherTemplates = RT::Templates->new($session{'CurrentUser'});
-$OtherTemplates->LimitToGlobal($DefaultQueue);
+$OtherTemplates->LimitToGlobal;
 $OtherTemplates->OrderBy(FIELD => 'Name');
 
 </%INIT>
 <%ARGS>
-
 $Queue => undef
 $Default => 'none'
-$DefaultQueue => undef
 $Name => 'Template'
-
 </%ARGS>

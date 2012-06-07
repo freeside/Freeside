@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -48,13 +48,6 @@
 <&/Elements/Header, title => $Title &>
 <& /Elements/PageLayout,
     title => $Title,
-    toptabs => { a => { title => loc('Install RT'),
-                        path => 'Install/'
-                        },
-                b => { title => loc('Buy Support'),
-                        path => 'mailto:sales@bestpractical.com'}
-                },
-                        
     show_menu => 1
 &>
 <a name="skipnav" id="skipnav" accesskey="8"></a>

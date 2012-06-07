@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -130,14 +130,14 @@ A convoluted example
    # of which the creator of this ticket is a member
     my $name = "HR";
    
-    my $groups = RT::Groups->new($RT::SystemUser);
+    my $groups = RT::Groups->new(RT->SystemUser);
     $groups->LimitToUserDefinedGroups();
     $groups->Limit(FIELD => "Name", OPERATOR => "=", VALUE => "$name");
     $groups->WithMember($TransactionObj->CreatorObj->Id);
  
     my $groupid = $groups->First->Id;
  
-    my $adminccs = RT::Users->new($RT::SystemUser);
+    my $adminccs = RT::Users->new(RT->SystemUser);
     $adminccs->WhoHaveRight(
 	Right => "AdminGroup",
 	Object =>$groups->First,
@@ -196,6 +196,9 @@ A complete list of acceptable fields for this beastie:
    +   Requestor       => Email address
    +   Cc              => Email address 
    +   AdminCc         => Email address 
+   +   RequestorGroup  => Group name
+   +   CcGroup         => Group name
+   +   AdminCcGroup    => Group name
        TimeWorked      => 
        TimeEstimated   => 
        TimeLeft        => 
@@ -230,7 +233,7 @@ by repeating the fieldname on a new line with an additional value.
 Fields marked with a ! are postponed to be processed after all
 tickets in the same actions are created.  Except for 'Status', those
 field can also take a ticket name within the same action (i.e.
-the identifiers after ==Create-Ticket), instead of raw Ticket ID
+the identifiers after ===Create-Ticket), instead of raw Ticket ID
 numbers.
 
 When parsed, field names are converted to lowercase and have -s stripped.
@@ -290,9 +293,7 @@ my %LINKTYPEMAP = (
 
 );
 
-# {{{ Scrip methods (Commit, Prepare)
 
-# {{{ sub Commit
 #Do what we need to do and send it out.
 sub Commit {
     my $self = shift;
@@ -305,9 +306,7 @@ sub Commit {
     return (1);
 }
 
-# }}}
 
-# {{{ sub Prepare
 
 sub Prepare {
     my $self = shift;
@@ -334,9 +333,7 @@ sub Prepare {
 
 }
 
-# }}}
 
-# }}}
 
 sub CreateByTemplate {
     my $self = shift;
@@ -579,11 +576,15 @@ sub _ParseMultilineTemplate {
     my %args = (@_);
 
     my $template_id;
+    require Encode;
+    require utf8;
     my ( $queue, $requestor );
         $RT::Logger->debug("Line: ===");
         foreach my $line ( split( /\n/, $args{'Content'} ) ) {
             $line =~ s/\r$//;
-            $RT::Logger->debug("Line: $line");
+            $RT::Logger->debug( "Line: " . utf8::is_utf8($line)
+                ? Encode::encode_utf8($line)
+                : $line );
             if ( $line =~ /^===/ ) {
                 if ( $template_id && !$queue && $args{'Queue'} ) {
                     $self->{'templates'}->{$template_id}
@@ -716,7 +717,11 @@ sub ParseLines {
                     $args{$tag} =~ s/^\s+//g;
                     $args{$tag} =~ s/\s+$//g;
                 }
-                if (($tag =~ /^(requestor|cc|admincc)$/i or grep {lc $_ eq $tag} keys %LINKTYPEMAP) and $args{$tag} =~ /,/) {
+                if (
+                    ($tag =~ /^(requestor|cc|admincc)(group)?$/i
+                        or grep {lc $_ eq $tag} keys %LINKTYPEMAP)
+                    and $args{$tag} =~ /,/
+                ) {
                     $args{$tag} = [ split /,\s*/, $args{$tag} ];
                 }
             }
@@ -737,6 +742,21 @@ sub ParseLines {
             }
         }
         $args{$date} = $dateobj->ISO;
+    }
+
+    foreach my $role (qw(requestor cc admincc)) {
+        next unless my $value = $args{ $role . 'group' };
+
+        my $group = RT::Group->new( $self->CurrentUser );
+        $group->LoadUserDefinedGroup( $value );
+        unless ( $group->id ) {
+            $RT::Logger->error("Couldn't load group '$value'");
+            next;
+        }
+
+        $args{ $role } = $args{ $role } ? [$args{ $role }] : []
+            unless ref $args{ $role };
+        push @{ $args{ $role } }, $group->PrincipalObj->id;
     }
 
     $args{'requestor'} ||= $self->TicketObj->Requestors->MemberEmailAddresses
@@ -781,14 +801,17 @@ sub ParseLines {
         my $orig_tag = $original_tags{$tag} or next;
         if ( $orig_tag =~ /^customfield-?(\d+)$/i ) {
             $ticketargs{ "CustomField-" . $1 } = $args{$tag};
-        } elsif ( $orig_tag =~ /^(?:customfield|cf)-?(.*)$/i ) {
+        } elsif ( $orig_tag =~ /^(?:customfield|cf)-?(.+)$/i ) {
             my $cf = RT::CustomField->new( $self->CurrentUser );
             $cf->LoadByName( Name => $1, Queue => $ticketargs{Queue} );
+            $cf->LoadByName( Name => $1, Queue => 0 ) unless $cf->id;
+            next unless $cf->id;
             $ticketargs{ "CustomField-" . $cf->id } = $args{$tag};
         } elsif ($orig_tag) {
             my $cf = RT::CustomField->new( $self->CurrentUser );
             $cf->LoadByName( Name => $orig_tag, Queue => $ticketargs{Queue} );
-            next unless ($cf->id) ;
+            $cf->LoadByName( Name => $orig_tag, Queue => 0 ) unless $cf->id;
+            next unless $cf->id;
             $ticketargs{ "CustomField-" . $cf->id } = $args{$tag};
 
         }

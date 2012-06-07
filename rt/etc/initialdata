@@ -19,6 +19,7 @@
              CorrespondAddress => "",
              CommentAddress    => "", },
            { Name        => '___Approvals',
+             Lifecycle   => 'approvals',
              Description => 'A system-internal queue for the approvals system',
              Disabled    => 2, } );
 
@@ -145,6 +146,27 @@
 
     {
 
+      Name                 => 'On Forward',                                # loc
+      Description          => 'Whenever a ticket or transaction is forwarded', # loc
+      ApplicableTransTypes => 'Forward Transaction,Forward Ticket',
+      ExecModule           => 'AnyTransaction', },
+
+    {
+
+      Name                 => 'On Forward Ticket',                         # loc
+      Description          => 'Whenever a ticket is forwarded',            # loc
+      ApplicableTransTypes => 'Forward Ticket',
+      ExecModule           => 'AnyTransaction', },
+
+    {
+
+      Name                 => 'On Forward Transaction',                    # loc
+      Description          => 'Whenever a transaction is forwarded',       # loc
+      ApplicableTransTypes => 'Forward Transaction',
+      ExecModule           => 'AnyTransaction', },
+
+    {
+
       Name                 => 'On Comment',                                # loc
       Description          => 'Whenever comments come in',                 # loc
       ApplicableTransTypes => 'Comment',
@@ -245,11 +267,11 @@ creation of a trouble ticket regarding:
 a summary of which appears below.
 
 There is no need to reply to this message right now.  Your ticket has been
-assigned an ID of [{$Ticket->QueueObj->SubjectTag || $rtname} #{$Ticket->id()}].
+assigned an ID of { $Ticket->SubjectTag }.
 
 Please include the string:
 
-         [{$Ticket->QueueObj->SubjectTag || $rtname} #{$Ticket->id}]
+         { $Ticket->SubjectTag }
 
 in the subject line of all future correspondence about this issue. To do so, 
 you may reply to this message.
@@ -309,7 +331,7 @@ you may reply to this message.
        Name        => 'Admin Comment',                           # loc
        Description => 'Default admin comment template',          # loc
        Content     =>
-'Subject: [Comment] {my $s=($Transaction->Subject||$Ticket->Subject); $s =~ s/\\[Comment\\]\\s*//g; $s =~ s/^Re:\\s*//i; $s;}
+'Subject: [Comment] {my $s=($Transaction->Subject||$Ticket->Subject||""); $s =~ s/\\[Comment\\]\\s*//g; $s =~ s/^Re:\\s*//i; $s;}
 RT-Attach-Message: yes
 
 
@@ -537,7 +559,6 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
     },
 
 );
-# }}}
 
 @Scrips = (
     {  Description    => 'On Correspond Open Tickets',

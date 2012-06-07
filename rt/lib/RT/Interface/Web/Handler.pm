@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -47,6 +47,8 @@
 # END BPS TAGGED BLOCK }}}
 
 package RT::Interface::Web::Handler;
+use warnings;
+use strict;
 
 use CGI qw/-private_tempfiles/;
 use MIME::Entity;
@@ -54,19 +56,16 @@ use Text::Wrapper;
 use CGI::Cookie;
 use Time::ParseDate;
 use Time::HiRes;
-use HTML::Entities;
 use HTML::Scrubber;
-use RT::Interface::Web::Handler;
+use RT::Interface::Web;
 use RT::Interface::Web::Request;
 use File::Path qw( rmtree );
 use File::Glob qw( bsd_glob );
 use File::Spec::Unix;
 
 sub DefaultHandlerArgs  { (
-    comp_root => [
-        [ local    => $RT::MasonLocalComponentRoot ],
-        (map {[ "plugin-".$_->Name =>  $_->ComponentRoot ]} @{RT->Plugins}),
-        [ standard => $RT::MasonComponentRoot ]
+    comp_root            => [
+        RT::Interface::Web->ComponentRoots( Names => 1 ),
     ],
     default_escape_flags => 'h',
     data_dir             => "$RT::MasonDataDir",
@@ -79,27 +78,6 @@ sub DefaultHandlerArgs  { (
     request_class        => 'RT::Interface::Web::Request',
     named_component_subs => $INC{'Devel/Cover.pm'} ? 1 : 0,
 ) };
-
-# {{{ sub new 
-
-=head2 new
-
-  Constructs a web handler of the appropriate class.
-  Takes options to pass to the constructor.
-
-=cut
-
-sub new {
-    my $class = shift;
-    $class->InitSessionDir;
-
-    if ( ($mod_perl::VERSION && $mod_perl::VERSION >= 1.9908) || $CGI::MOD_PERL) {
-        goto &NewApacheHandler;
-    }
-    else {
-        goto &NewCGIHandler;
-    }
-}
 
 sub InitSessionDir {
     # Activate the following if running httpd as root (the normal case).
@@ -125,81 +103,14 @@ sub InitSessionDir {
 
 }
 
-# }}}
 
-# {{{ sub NewApacheHandler 
-
-=head2 NewApacheHandler
-
-  Takes extra options to pass to HTML::Mason::ApacheHandler->new
-  Returns a new Mason::ApacheHandler object
-
-=cut
-
-sub NewApacheHandler {
-    require HTML::Mason::ApacheHandler;
-    return NewHandler('HTML::Mason::ApacheHandler', args_method => "CGI", @_);
-}
-
-# }}}
-
-# {{{ sub NewCGIHandler 
-
-=head2 NewCGIHandler
-
-  Returns a new Mason::CGIHandler object
-
-=cut
-
-sub NewCGIHandler {
-    require HTML::Mason::CGIHandler;
-    return NewHandler(
-        'HTML::Mason::CGIHandler',
-        out_method => sub {
-            my $m = HTML::Mason::Request->instance;
-            my $r = $m->cgi_request;
-
-            # Send headers if they have not been sent by us or by user.
-            $r->send_http_header unless $r->http_header_sent;
-
-            # Set up a default
-            $r->content_type('text/html; charset=utf-8')
-                unless $r->content_type;
-
-            if ( $r->content_type =~ /charset=([\w-]+)$/ ) {
-                my $enc = $1;
-                if ( lc $enc !~ /utf-?8$/ ) {
-                    for my $str (@_) {
-                        next unless $str;
-
-                        # only encode perl internal strings
-                        next unless utf8::is_utf8($str);
-                        $str = Encode::encode( $enc, $str );
-                    }
-                }
-            }
-
-            # default to utf8 encoding
-            for my $str (@_) {
-                next unless $str;
-                next unless utf8::is_utf8($str);
-                $str = Encode::encode( 'utf8', $str );
-            }
-
-            # We could perhaps install a new, faster out_method here that
-            # wouldn't have to keep checking whether headers have been
-            # sent and what the $r->method is.  That would require
-            # additions to the Request interface, though.
-            print STDOUT grep {defined} @_;
-        },
-        @_
-    );
-}
-
+use UNIVERSAL::require;
 sub NewHandler {
     my $class = shift;
+    $class->require or die $!;
     my $handler = $class->new(
         DefaultHandlerArgs(),
+        RT->Config->Get('MasonParameters'),
         @_
     );
   
@@ -207,6 +118,23 @@ sub NewHandler {
     $handler->interp->set_escape( u => \&RT::Interface::Web::EscapeURI  );
     return($handler);
 }
+
+=head2 _mason_dir_index
+
+=cut
+
+sub _mason_dir_index {
+    my ($self, $interp, $path) = @_;
+    $path =~ s!/$!!;
+    if (   !$interp->comp_exists( $path )
+         && $interp->comp_exists( $path . "/index.html" ) )
+    {
+        return $path . "/index.html";
+    }
+
+    return $path;
+}
+
 
 =head2 CleanupRequest
 
@@ -266,9 +194,97 @@ sub CleanupRequest {
     delete $RT::System->{attributes};
 
     # Explicitly remove any tmpfiles that GPG opened, and close their
-    # filehandles.
-    File::Temp::cleanup;
+    # filehandles.  unless we are doing inline psgi testing, which kills all the tmp file created by tests.
+    File::Temp::cleanup()
+            unless $INC{'Test/WWW/Mechanize/PSGI.pm'};
+
+
 }
-# }}}
+
+
+# PSGI App
+
+use RT::Interface::Web::Handler;
+use CGI::Emulate::PSGI;
+use Plack::Request;
+use Plack::Response;
+use Plack::Util;
+use Encode qw(encode_utf8);
+
+sub PSGIApp {
+    my $self = shift;
+
+    # XXX: this is fucked
+    require HTML::Mason::CGIHandler;
+    require HTML::Mason::PSGIHandler::Streamy;
+    my $h = RT::Interface::Web::Handler::NewHandler('HTML::Mason::PSGIHandler::Streamy');
+
+    $self->InitSessionDir;
+
+    return sub {
+        my $env = shift;
+        RT::ConnectToDatabase() unless RT->InstallMode;
+
+        my $req = Plack::Request->new($env);
+
+        # CGI.pm normalizes .. out of paths so when you requested
+        # /NoAuth/../Ticket/Display.html we saw Ticket/Display.html
+        # PSGI doesn't normalize .. so we have to deal ourselves.
+        if ( $req->path_info =~ m{/\.} ) {
+            $RT::Logger->crit("Invalid request for ".$req->path_info." aborting");
+            my $res = Plack::Response->new(400);
+            return $self->_psgi_response_cb($res->finalize,sub { $self->CleanupRequest });
+        }
+        $env->{PATH_INFO} = $self->_mason_dir_index( $h->interp, $req->path_info);
+
+        my $ret;
+        {
+            # XXX: until we get rid of all $ENV stuff.
+            local %ENV = (%ENV, CGI::Emulate::PSGI->emulate_environment($env));
+
+            $ret = $h->handle_psgi($env);
+        }
+
+        $RT::Logger->crit($@) if $@ && $RT::Logger;
+        warn $@ if $@ && !$RT::Logger;
+        if (ref($ret) eq 'CODE') {
+            my $orig_ret = $ret;
+            $ret = sub {
+                my $respond = shift;
+                local %ENV = (%ENV, CGI::Emulate::PSGI->emulate_environment($env));
+                $orig_ret->($respond);
+            };
+        }
+
+        return $self->_psgi_response_cb($ret,
+                                        sub {
+                                            $self->CleanupRequest()
+                                        });
+};
+
+sub _psgi_response_cb {
+    my $self = shift;
+    my ($ret, $cleanup) = @_;
+    Plack::Util::response_cb
+            ($ret,
+             sub {
+                 my $res = shift;
+
+                 if ( RT->Config->Get('Framebusting') ) {
+                     # XXX TODO: Do we want to make the value of this header configurable?
+                     Plack::Util::header_set($res->[1], 'X-Frame-Options' => 'DENY');
+                 }
+
+                 return sub {
+                     if (!defined $_[0]) {
+                         $cleanup->();
+                         return '';
+                     }
+                     return utf8::is_utf8($_[0]) ? encode_utf8($_[0]) : $_[0];
+                     return $_[0];
+                 };
+             });
+    }
+}
 
 1;

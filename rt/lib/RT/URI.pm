@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -49,6 +49,7 @@
 package RT::URI;
 
 use strict;
+use warnings;
 use base 'RT::Base';
 
 use RT::URI::base;
@@ -92,11 +93,10 @@ sub new {
 
 
 
-# {{{ FromObject
 
 =head2 FromObject <Object>
 
-Given a local object, such as an RT::Ticket or an RT::FM::Article, this routine will return a URI for
+Given a local object, such as an RT::Ticket or an RT::Article, this routine will return a URI for
 the local object
 
 =cut
@@ -109,9 +109,7 @@ sub FromObject {
     return $self->FromURI($obj->URI);
 }
 
-# }}}
 
-# {{{ FromURI
 
 =head2 FromURI <URI>
 
@@ -136,6 +134,7 @@ sub FromURI {
 	$scheme = $1;
     }
     else {
+        $self->{resolver} = RT::URI::base->new( $self->CurrentUser ); # clear resolver
         $RT::Logger->warning("Could not determine a URI scheme for $uri");
         return (undef);
     }
@@ -156,9 +155,7 @@ sub FromURI {
 
 }
 
-# }}}
 
-# {{{ _GetResolver
 
 =head2 _GetResolver <scheme>
 
@@ -188,9 +185,7 @@ sub _GetResolver {
 
 }
 
-# }}}
 
-# {{{ Scheme
 
 =head2 Scheme
 
@@ -204,8 +199,6 @@ sub Scheme {
     return ($self->Resolver->Scheme);
 
 }
-# }}}
-# {{{ URI
 
 =head2 URI
 
@@ -219,9 +212,7 @@ sub URI {
     return ($self->Resolver->URI);
 
 }
-# }}}
 
-# {{{ Object
 
 =head2 Object
 
@@ -237,9 +228,7 @@ sub Object {
 }
 
 
-# }}}
 
-# {{{ IsLocal
 
 =head2 IsLocal
 
@@ -253,7 +242,6 @@ sub IsLocal {
 }
 
 
-# }}}
 
 =head2 AsHREF
 

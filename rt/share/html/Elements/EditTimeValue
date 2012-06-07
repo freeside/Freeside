@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -58,8 +58,8 @@ $InputUnits => 'minutes'
 $ValueName ||= $Name;
 $UnitName  ||= ($Name||$ValueName) . '-TimeUnits';
 
-if ($InputUnits eq 'minutes' && RT->Config->Get('DefaultTimeUnitsToHours')) {
-    $Default = sprintf '%.3g', $Default / 60
+if ($InputUnits eq 'minutes' && RT->Config->Get('DefaultTimeUnitsToHours', $session{'CurrentUser'})) {
+    $Default = sprintf '%.3f', $Default / 60
         unless $Default eq '';
 }
 </%INIT>

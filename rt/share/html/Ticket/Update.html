@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,11 +45,9 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<& /Elements/Header, Title => $title &>
-<& /Ticket/Elements/Tabs, 
-    Ticket => $TicketObj, 
-    Title=> $title &>
-    
+<& /Elements/Header, Title  => $title &>
+<& /Elements/Tabs &>
+
 % $m->callback(CallbackName => 'BeforeActionList', ARGSRef => \%ARGS, Ticket => $TicketObj);
 <& /Elements/ListActions, actions => \@results &>
 
@@ -62,11 +60,51 @@
 
 <& /Elements/GnuPG/SignEncryptWidget:ShowIssues, self => $gnupg_widget &>
 
+<div id="ticket-update-metadata">
+  <&|/Widgets/TitleBox, title => loc('Ticket and Transaction') &>
 <table width="100%" border="0">
 % $m->callback(CallbackName => 'AfterTableOpens', ARGSRef => \%ARGS, Ticket => $TicketObj);
 
-<tr><td valign="baseline" class="label"><&|/l&>Status</&>:</td>
-<td valign="baseline">
+<& /Ticket/Elements/EditTransactionCustomFields, 
+    %ARGS,
+    TicketObj   => $TicketObj,
+    UILocation  => 'TimeWorked',
+&>
+
+% my $skip;
+% $m->callback( %ARGS, CallbackName => 'BeforeUpdateType', skip => \$skip );
+% if (!$skip) {
+<input type="hidden" class="hidden" name="id" value="<%$TicketObj->Id%>" /><br />
+% }
+<tr><td class="label"><&|/l&>Update Type</&>:</td>
+<td><select name="UpdateType" id="UpdateType">
+% if ($CanComment) {
+<option value="private" <% ($ARGS{'UpdateType'} &&  $ARGS{'UpdateType'} eq "private") ? qq[ selected="selected"] : !$ARGS{'UpdateType'}&&$CommentDefault |n %>><&|/l&>Comments (Not sent to requestors)</&></option>
+% }
+% if ($CanRespond) {
+<option value="response" <% ($ARGS{'UpdateType'} && $ARGS{'UpdateType'} eq "response") ? qq[ selected="selected"] : !$ARGS{'UpdateType'}&&$ResponseDefault |n %>><&|/l&>Reply to requestors</&></option>
+% }
+</select> 
+
+<script type="text/javascript">
+    jQuery(function() {
+        jQuery("#UpdateType").change(function(ev) {
+            jQuery(".messagebox-container")
+                .removeClass("action-response action-private")
+                .addClass("action-"+ev.target.value);
+        });
+    });
+    jQuery(function() {
+        jQuery("input[name=TxnSendMailTo]").change(function(ev) {
+            jQuery("input[name=TxnSendMailTo][value="+ev.target.value+"]")
+                  .attr("checked",jQuery(ev.target).attr('checked'));
+        });
+    });
+</script>
+
+% $m->callback( %ARGS, CallbackName => 'AfterUpdateType' );
+</td></tr>
+
 <script type="text/javascript">
 function changeStatus() {
   var Status_select = document.getElementById('Status');
@@ -83,88 +121,69 @@ function changeStatus() {
   }
 }
 </script>
-<& /Elements/SelectStatus, 
-    Name=>"Status",
-    DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)),
-    Default => $ARGS{'Status'}
-              || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus,
-    onchange => 'changeStatus()'
-)&>
-<span class="label"><&|/l&>Resolve this Ticket on</&>:</span>
-<& /Elements/SelectDate, 
-    menu_prefix => 'WillResolve',
-    current => 0,
-    ShowTime => 0,
+
+<& /Ticket/Elements/EditBasics,
+    TicketObj => $TicketObj,
+    InTable   => 1,
+    fields    => [
+        {   name => 'Status',
+            comp => '/Elements/SelectStatus',
+            args => {
+                Name => 'Status',
+                DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)),
+                Default => $ARGS{'Status'} || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus),
+                TicketObj => $TicketObj,
+                QueueObj => $TicketObj->QueueObj,
+                onchange => 'changeStatus()'
+            },
+        },
+        {   name => 'Resolve this Ticket on',
+            comp => '/Elements/SelectDate',
+            args => {
+                menu_prefix => 'WillResolve',
+                current => 0,
+                ShowTime => 0,
+            },
+        },
+        {   name => 'Owner',
+            comp => '/Elements/SelectOwner',
+            args => {
+                Name         => "Owner",
+                TicketObj    => $TicketObj,
+                QueueObj     => $TicketObj->QueueObj,
+                DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $TicketObj->OwnerObj)),
+                Default      => $ARGS{'Owner'}
+            }
+        },
+        {   name => 'Worked',
+            comp => '/Elements/EditTimeValue',
+            args => {
+                Name => 'UpdateTimeWorked',
+                Default => $ARGS{UpdateTimeWorked}||'',
+                InUnits => $ARGS{'UpdateTimeWorked-TimeUnits'}||'minutes',
+            }
+        },
+    ]
 &>
-% if ( $TicketObj->WillResolve ) {
-<span class="label"> (<% $TicketObj->WillResolveObj->AsString %>)</span>
-% }
+
 <script type="text/javascript">
 changeStatus();
 </script>
-</td>
-<td rowspan=4 valign="top">
-<table style="float:right;">
-<tr>
-<td class="label"><&|/l&>Worked</&>:</td>
-<td><& /Elements/EditTimeValue,
-    Name => 'UpdateTimeWorked',
-    Default => $ARGS{UpdateTimeWorked}||'',
-    InUnits => $ARGS{'UpdateTimeWorked-TimeUnits'}||'minutes',
-&>
-</td></tr>
-<& /Ticket/Elements/EditTransactionCustomFields, 
-    %ARGS,
-    TicketObj   => $TicketObj,
-    UILocation  => 'TimeWorked',
-&>
-</table></td></tr>
-% my $skip;
-% $m->callback( %ARGS, CallbackName => 'BeforeUpdateType', skip => \$skip );
-% if (!$skip) {
-<input type="hidden" class="hidden" name="id" value="<%$TicketObj->Id%>" /><br />
-% }
-<tr><td class="label"><&|/l&>Owner</&>:</td>
-<td><& /Elements/SelectOwner,
-    Name         => "Owner",
-    TicketObj    => $TicketObj,
-    QueueObj     => $TicketObj->QueueObj,
-    DefaultLabel => loc("[_1] (Unchanged)", $m->scomp('/Elements/ShowUser', User => $TicketObj->OwnerObj)),
-    Default      => $ARGS{'Owner'}
-&></td>
-</tr>
-<tr><td class="label"><&|/l&>Update Type</&>:</td>
-<td><select name="UpdateType">
-% if ($CanComment) {
-<option value="private" <% ($ARGS{'UpdateType'} &&  $ARGS{'UpdateType'} eq "private") ? qq[ selected="selected"] : !$ARGS{'UpdateType'}&&$CommentDefault |n %>><&|/l&>Comments (Not sent to requestors)</&></option>
-% }
-% if ($CanRespond) {
-<option value="response" <% ($ARGS{'UpdateType'} && $ARGS{'UpdateType'} eq "response") ? qq[ selected="selected"] : !$ARGS{'UpdateType'}&&$ResponseDefault |n %>><&|/l&>Reply to requestors</&></option>
-% }
-</select> 
-% $m->callback( %ARGS, CallbackName => 'AfterUpdateType' );
-</td></tr>
-<tr><td class="label"><&|/l&>Subject</&>:</td><td> <input name="UpdateSubject" size="60" value="<% $ARGS{UpdateSubject} || $TicketObj->Subject()%>" />
-% $m->callback( %ARGS, CallbackName => 'AfterSubject' );
-</td></tr>
 
+% $m->callback( %ARGS, CallbackName => 'AfterWorked', Ticket => $TicketObj );
+
+<& /Ticket/Elements/EditTransactionCustomFields, %ARGS, TicketObj => $TicketObj, AsTable => 1 &>
+
+  <!--</table>-->
+  </&>
+</div>
+
+<div id="ticket-update-message">
+  <& /Ticket/Elements/ShowSimplifiedRecipients, TicketObj => $TicketObj, %ARGS &>
+
+  <&|/Widgets/TitleBox, title => loc('Message'), class => 'messagedetails' &>
+  <table width="100%" border="0">
 <& /Ticket/Elements/UpdateCc, %ARGS, TicketObj => $TicketObj &>
-
-<& /Ticket/Elements/EditTransactionCustomFields, %ARGS, TicketObj => $TicketObj &>
-
-% if (exists $session{'Attachments'}) {
-<tr><td><&|/l&>Attached file</&>:</td>
-<td>
-<&|/l&>Check box to delete</&><br />
-% foreach my $attach_name (keys %{$session{'Attachments'}}) {
-<input type="checkbox" class="checkbox" name="DeleteAttach-<%$attach_name%>" value="1" /><%$attach_name%><br />
-% } # end of foreach
-</td>
-</tr>
-% } # end of if
-
-<tr><td class="label"><&|/l&>Attach</&>:</td><td><input name="Attach" type="file" /><input type="submit" class="button" name="AddMoreAttach" value="<&|/l&>Add More Files</&>" /><input type="hidden" class="hidden" name="UpdateAttach" value="1" />
-</td></tr>
 
 % if ( $gnupg_widget ) {
 <tr><td>&nbsp;</td><td>
@@ -176,7 +195,13 @@ changeStatus();
 % }
 % $m->callback( %ARGS, CallbackName => 'AfterGnuPG' );
 
-<tr><td class="label" valign="top"><&|/l&>Message</&>:</td><td colspan=2>
+<tr><td class="label"><&|/l&>Subject</&>:</td><td> <input type="text" name="UpdateSubject" value="<% $ARGS{UpdateSubject} || $TicketObj->Subject || '' %>" />
+% $m->callback( %ARGS, CallbackName => 'AfterSubject' );
+</td></tr>
+
+<tr><td class="label" valign="top"><&|/l&>Message</&>:</td>
+<td class="messagebox-container action-<% $type %>">
+<& /Articles/Elements/BeforeMessageBox, %ARGS &>
 % $m->callback( %ARGS, CallbackName => 'BeforeMessageBox' );
 % if (exists $ARGS{UpdateContent}) {
 % # preserve QuoteTransaction so we can use it to set up sane references/in/reply to
@@ -189,25 +214,32 @@ changeStatus();
 % $IncludeSignature = 0 if $Action ne 'Respond' && !RT->Config->Get('MessageBoxIncludeSignatureOnComment');
 <& /Elements/MessageBox, Name=>"UpdateContent", IncludeSignature => $IncludeSignature, %ARGS &>
 % }
+% $m->callback( %ARGS, CallbackName => 'AfterMessageBox' );
 </td></tr>
-</table>
 
-
-
-
-<& /Elements/Submit, Label => loc('Update Ticket'), Name => 'SubmitTicket' &>
-% if ($TicketObj->CurrentUserHasRight('ShowOutgoingEmail')) {
-<&|/Widgets/TitleBox, title => loc('Scrips and Recipients') &>
-<& /Ticket/Elements/PreviewScrips, TicketObj => $TicketObj, %ARGS &>
+    <& /Ticket/Elements/AddAttachments, %ARGS, TicketObj => $TicketObj &>
+  </table>
 </&>
 
+  <& /Elements/Submit, Label => loc('Update Ticket'), Name => 'SubmitTicket', id => 'SubmitTicket' &>
+
+% if ($TicketObj->CurrentUserHasRight('ShowOutgoingEmail')) {
+  <&|/Widgets/TitleBox, title => loc('Scrips and Recipients'), id => 'previewscrips', rolledup => RT->Config->Get('SimplifiedRecipients', $session{'CurrentUser'}) &>
+    <& /Ticket/Elements/PreviewScrips, TicketObj => $TicketObj, %ARGS &>
+  </&>
 % }
+</div>
+
+% if (my $recips = $m->notes("DryRun-Recipients-".$TicketObj->Id)) {
+<input type="hidden" name="TxnRecipients" value="<% join ",",sort keys %{$recips} %>" />
+% }
+
 </form>
+<hr class="clear" />
 <%INIT>
 my $CanRespond = 0;
 my $CanComment = 0;
 my $checks_failure = 0;
-my $title;
 
 my $TicketObj = LoadTicket($id);
 
@@ -219,17 +251,7 @@ unless($DefaultStatus){
     $DefaultStatus=($ARGS{'Status'} ||$TicketObj->Status());
 }
 
-unless (RT->Config->Get('SuppressAutoOpenOnUpdate', $session{'CurrentUser'})) {
-    if ($DefaultStatus eq 'new') {
-        $DefaultStatus = 'open';
-    }
-}
-
-if ($DefaultStatus eq 'resolved') {
-    $title = loc("Resolve ticket #[_1] ([_2])", $TicketObj->id, $TicketObj->Subject);
-} else {
-    $title = loc("Update ticket #[_1] ([_2])", $TicketObj->id, $TicketObj->Subject);
-}
+my $title = loc("Update ticket #[_1] ([_2])", $TicketObj->id, $TicketObj->Subject||'');
 
 # Things needed in the template - we'll do the processing here, just
 # for the convenience:
@@ -243,6 +265,10 @@ if ($Action ne 'Respond') {
     $ResponseDefault = qq[ selected="selected"];
 }
 
+my $type =             $ARGS{'UpdateType'} ? $ARGS{'UpdateType'} :
+           lc $ARGS{'Action'} eq 'respond' ? 'response'          :
+           lc $ARGS{'Action'} eq 'comment' ? 'private'           :
+                                             'none'              ;
 
 
 $CanRespond = 1 if ( $TicketObj->CurrentUserHasRight('ReplyToTicket') or
@@ -252,17 +278,16 @@ $CanComment = 1 if ( $TicketObj->CurrentUserHasRight('CommentOnTicket') or
                      $TicketObj->CurrentUserHasRight('ModifyTicket') ); 
 
 
-# {{{ deal with deleting uploaded attachments
+# deal with deleting uploaded attachments
 foreach my $key (keys %ARGS) {
     if ($key =~ m/^DeleteAttach-(.+)$/) {
         delete $session{'Attachments'}{$1};
     }
     $session{'Attachments'} = { %{$session{'Attachments'} || {}} };
 }
-# }}}
 
-# {{{ store the uploaded attachment in session
-if ($ARGS{'Attach'}) {            # attachment?
+# store the uploaded attachment in session
+if ( defined $ARGS{'Attach'} && length $ARGS{'Attach'} ) { # attachment?
     my $attachment = MakeMIMEEntity(
         AttachmentFieldName => 'Attach'
     );
@@ -273,13 +298,11 @@ if ($ARGS{'Attach'}) {            # attachment?
         $file_path => $attachment,
     };
 }
-# }}}
 
 # delete temporary storage entry to make WebUI clean
 unless (keys %{$session{'Attachments'}} and $ARGS{'UpdateAttach'}) {
     delete $session{'Attachments'};
 }
-# }}}
 
 my $gnupg_widget = $m->comp('/Elements/GnuPG/SignEncryptWidget:new', Arguments => \%ARGS );
 $m->comp( '/Elements/GnuPG/SignEncryptWidget:Process',
@@ -288,6 +311,14 @@ $m->comp( '/Elements/GnuPG/SignEncryptWidget:Process',
 );
 
 if ( $ARGS{'SubmitTicket'} ) {
+
+    my %checked = map {$_ => 1} grep {defined}
+        (ref $ARGS{'TxnSendMailTo'} eq "ARRAY" ? @{$ARGS{'TxnSendMailTo'}}
+             : defined $ARGS{'TxnSendMailTo'} ? ($ARGS{'TxnSendMailTo'}) : ());
+
+    my @squelchlist = grep {not $checked{$_}} split /,/, ($ARGS{'TxnRecipients'}||'');
+    $ARGS{'SquelchMailTo'} = \@squelchlist if @squelchlist;
+
     my $CFs = $TicketObj->TransactionCustomFields;
     my $ValidCFs = $m->comp(
         '/Elements/ValidateCustomFields',

@@ -1,70 +1,76 @@
-<& /Elements/ListActions, actions => \@results &>
-<table width="100%"><tr>
-% foreach my $type ('Ticket', 'Chart') {
-<td width="50%">
-<&|/Widgets/TitleBox, title => loc('Saved '.$titles{$type}) &>
-%   foreach my $Object (@Objects) {
-%     $SavedSearches = RT::SavedSearches->new($session{CurrentUser});
-%     $SavedSearches->LimitToPrivacy(join('-',ref($Object),$Object->Id), $type);
-%     my $title = $titles{$type};
-%     if (ref $Object eq 'RT::User' && $Object->Id == $session{CurrentUser}->Id) {
-%         $title = loc("My saved ".lc($title));
-%     } else {
-%         $title = loc("[_1]'s saved ".lc($title),$Object->Name);
-%     }
-%     $title = $m->interp->apply_escapes($title, 'h');
-%
-%     my $oid = join('-', ref($Object), $Object->Id, 'SavedSearch', '__id__');
-%     my $resultpath = $paths{$type};
-%     my @cols = (
-%       qq{<a href="__WebPath__/$resultpath?__ResultsURL__">__Name__</a>/TITLE:$title},
-%       '__Query__',
-%       qq{<a href="__WebPath__/Search/Build.html?SavedSearchLoad=$oid">[Edit]</a>&nbsp;} . 
-%       qq{<a href="$uri?Delete=$oid">[Delete]</a>/TITLE:},
-%     );
-%     my $format = join(',', map { "'$_'" } @cols);
+%# BEGIN BPS TAGGED BLOCK {{{
+%#
+%# COPYRIGHT:
+%#
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%#                                          <sales@bestpractical.com>
+%#
+%# (Except where explicitly superseded by other copyright notices)
+%#
+%#
+%# LICENSE:
+%#
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%#
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%#
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+%#
+%#
+%# CONTRIBUTION SUBMISSION POLICY:
+%#
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%#
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%#
+%# END BPS TAGGED BLOCK }}}
+<&|/Widgets/TitleBox, title => loc('Saved Searches') &>
+% foreach my $Object (@Objects) {
+%   my $SavedSearches = RT::SavedSearches->new($session{CurrentUser});
+%   $SavedSearches->LimitToPrivacy(join('-',ref($Object),$Object->Id),'Ticket');
+%   my $title;
+%   if (ref $Object eq 'RT::User' && $Object->Id == $session{CurrentUser}->Id) {
+%       $title = loc("My saved searches");
+%   } else {
+%       $title = loc("[_1]'s saved searches",$Object->Name);
+%   }
+%   $title = $m->interp->apply_escapes($title, 'h');
 <& /Elements/CollectionList,
     %ARGS,
     Class => 'RT::SavedSearch',
-    Format => $format,
+    Format => qq{'<a href="__WebPath__/Search/Results.html?__ResultsURL__">__Name__</a>/TITLE:$title'},
     Collection => $SavedSearches,
     PassArguments => [qw(Format Name id)],
 &>
-%   } #foreach $Object
+% }
 </&>
-</td>
-% } #foreach $type
-</tr></table>
 <%init>
-my @Objects;
-my $SavedSearches = RT::SavedSearches->new($session{'CurrentUser'});
-push @Objects, $SavedSearches->_PrivacyObjects;
+my @Objects = RT::SavedSearch->new($session{CurrentUser})->ObjectsForLoading;
 push @Objects, RT::System->new( $session{'CurrentUser'} )
     if $session{'CurrentUser'}->HasRight( Object=> $RT::System,
                                           Right => 'SuperUser' );
-
-my $uri = '__WebPath__'.$m->request_path;
-
-my @results;
-if ( $Delete =~ /(.*)-SavedSearch-(\d+)/) {
-  my ($privacy, $id) = ($1, $2);
-  my $record = RT::SavedSearch->new($session{'CurrentUser'});
-  $record->Load($privacy, $id);
-  if ( $record->Id ) {
-    my ($status, $msg) = $record->Delete;
-    push @results, $msg;
-  }
-  else {
-    push @results, "Saved search #$Delete not found";
-  }
-}
-
-my %titles = ( 'Ticket' => 'Searches', 'Chart' => 'Charts' );
-my %paths = ( 'Ticket' => 'Search/Results.html',
-              'Chart' => 'Search/Chart.html',
-);
 </%init>
 <%ARGS>
 $user_attrs => undef
-$Delete => undef
 </%ARGS>

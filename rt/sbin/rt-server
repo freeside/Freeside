@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,8 +51,14 @@ use strict;
 
 # fix lib paths, some may be relative
 BEGIN {
+    die <<EOT if ${^TAINT};
+RT does not run under Perl's "taint mode".  Remove -T from the command
+line, or remove the PerlTaintCheck parameter from your mod_perl
+configuration.
+EOT
+
     require File::Spec;
-    my @libs = ("lib", "local/lib");
+    my @libs = ("/opt/rt3/lib", "/opt/rt3/local/lib");
     my $bin_path;
 
     for my $lib (@libs) {
@@ -74,16 +80,18 @@ BEGIN {
 
 }
 
-use RT;
-RT::LoadConfig();
-RT->InitLogging();
-if (RT->Config->Get('DevelMode')) { require Module::Refresh; }
+use Getopt::Long;
+no warnings 'once';
 
-RT::CheckPerlRequirements();
-RT->InitPluginPaths();
+if (grep { m/help/ } @ARGV) {
+    require Pod::Usage;
+    print Pod::Usage::pod2usage( { verbose => 2 } );
+    exit;
+}
 
-my $port = shift @ARGV || RT->Config->Get('WebPort') || '8080';
-
+require RT;
+RT->LoadConfig();
+require Module::Refresh if RT->Config->Get('DevelMode');
 
 require RT::Handle;
 my ($integrity, $state, $msg) = RT::Handle->CheckIntegrity;
@@ -107,7 +115,9 @@ EOF
     require RT::Installer;
     # don't enter install mode if the file exists but is unwritable
     if (-e RT::Installer->ConfigFile && !-w _) {
-        die "Since your configuration exists but is not writable, I'm refusing to do anything.\n";
+        die 'Since your configuration exists ('
+          . RT::Installer->ConfigFile
+          . ") but is not writable, I'm refusing to do anything.\n";
     }
 
     RT->Config->Set( 'LexiconLanguages' => '*' );
@@ -115,15 +125,158 @@ EOF
 
     RT->InstallMode(1);
 } else {
-    RT->ConnectToDatabase();
-    RT->InitSystemObjects();
-    RT->InitClasses();
-    RT->InitPlugins();
+    RT->Init();
+
+    my ($status, $msg) = RT::Handle->CheckCompatibility( $RT::Handle->dbh, 'post');
+    unless ( $status ) {
+        print STDERR $msg, "\n\n";
+        exit -1;
+    }
 }
 
-require RT::Interface::Web::Standalone;
-my $server = RT::Interface::Web::Standalone->new;
-$server->net_server('RT::Interface::Web::Standalone::PreFork');
-$server->port($port);
-$server->run();
+# we must disconnect DB before fork
+if ($RT::Handle) {
+    $RT::Handle->dbh(undef);
+    undef $RT::Handle;
+}
 
+require RT::Interface::Web::Handler;
+my $app = RT::Interface::Web::Handler->PSGIApp;
+
+if ($ENV{RT_TESTING}) {
+    my $screen_logger = $RT::Logger->remove('screen');
+    require Log::Dispatch::Perl;
+    $RT::Logger->add(
+        Log::Dispatch::Perl->new(
+            name      => 'rttest',
+            min_level => $screen_logger->min_level,
+            action    => {
+                error    => 'warn',
+                critical => 'warn'
+            }
+        )
+    );
+    require Plack::Middleware::Test::StashWarnings;
+    $app = Plack::Middleware::Test::StashWarnings->wrap($app);
+}
+
+# when used as a psgi file
+if (caller) {
+    return $app;
+}
+
+
+# load appropriate server
+
+require Plack::Runner;
+
+my $is_fastcgi = $0 =~ m/fcgi$/;
+my $r = Plack::Runner->new( $0 =~ 'standalone' ? ( server => 'Standalone' ) :
+                            $is_fastcgi        ? ( server => 'FCGI' )
+                                               : (),
+                            env => 'deployment' );
+
+# figure out the port
+my $port;
+
+# handle "rt-server 8888" for back-compat, but complain about it
+if ($ARGV[0] && $ARGV[0] =~ m/^\d+$/) {
+    warn "Deprecated: please run $0 --port $ARGV[0] instead\n";
+    unshift @ARGV, '--port';
+}
+
+my @args = @ARGV;
+
+use List::MoreUtils 'last_index';
+my $last_index = last_index { $_ eq '--port' } @args;
+
+my $explicit_port;
+
+if ( $last_index != -1 && $args[$last_index+1] =~ /^\d+$/ ) {
+    $explicit_port = $args[$last_index+1];
+    $port = $explicit_port;
+
+    # inform the rest of the system what port we manually chose
+    my $old_app = $app;
+    $app = sub {
+        my $env = shift;
+
+        $env->{'rt.explicit_port'} = $port;
+
+        $old_app->($env, @_);
+    };
+}
+else {
+    # default to the configured WebPort and inform Plack::Runner
+    $port = RT->Config->Get('WebPort') || '8080';
+    push @args, '--port', $port;
+}
+
+push @args, '--server', 'Standalone' if RT->InstallMode;
+push @args, '--server', 'Starlet' unless $r->{server} || grep { m/--server/ } @args;
+
+$r->parse_options(@args);
+
+delete $r->{options} if $is_fastcgi; ### mangle_host_port_socket ruins everything
+
+unless ($r->{env} eq 'development') {
+    push @{$r->{options}}, server_ready => sub {
+        my($args) = @_;
+        my $name  = $args->{server_software} || ref($args); # $args is $server
+        my $host  = $args->{host} || 0;
+        my $proto = $args->{proto} || 'http';
+        print STDERR "$name: Accepting connections at $proto://$host:$args->{port}/\n";
+    };
+}
+eval { $r->run($app) };
+if (my $err = $@) {
+    handle_startup_error($err);
+}
+
+exit 0;
+
+sub handle_startup_error {
+    my $err = shift;
+    if ( $err =~ /listen/ ) {
+        handle_bind_error();
+    } else {
+        die
+            "Something went wrong while trying to run RT's standalone web server:\n\t"
+            . $err;
+    }
+}
+
+
+sub handle_bind_error {
+
+    print STDERR <<EOF;
+WARNING: RT couldn't start up a web server on port @{[$port]}.
+This is often the case if the port is already in use or you're running @{[$0]} 
+as someone other than your system's "root" user.  You may also specify a
+temporary port with: $0 --port <port>
+EOF
+
+    if ($explicit_port) {
+        print STDERR
+            "Please check your system configuration or choose another port\n\n";
+    }
+}
+
+__END__
+
+=head1 NAME
+
+rt-server - RT standalone server
+
+=head1 SYNOPSIS
+
+    # runs prefork server listening on port 8080, requires Starlet
+    rt-server --port 8080
+
+    # runs server listening on port 8080
+    rt-server --server Standalone --port 8080
+    # or
+    standalone_httpd --port 8080
+
+    # runs other PSGI server on port 8080
+    rt-server --server Starman --port 8080

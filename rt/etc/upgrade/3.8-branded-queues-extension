@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -49,8 +49,8 @@
 use strict;
 use warnings;
 
-use lib "local/lib";
-use lib "lib";
+use lib "/opt/rt3/local/lib";
+use lib "/opt/rt3/lib";
 
 
 use RT;
@@ -59,7 +59,7 @@ RT::Init();
 
 use RT::Queues;
 
-my $queues = RT::Queues->new( $RT::SystemUser );
+my $queues = RT::Queues->new( RT->SystemUser );
 $queues->UnLimit();
 while ( my $queue = $queues->Next ) {
     print "Processing queue ". ($queue->Name || $queue->id) ."...\n";

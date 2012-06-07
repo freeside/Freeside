@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -52,7 +52,7 @@ use warnings;
 # fix lib paths, some may be relative
 BEGIN {
     require File::Spec;
-    my @libs = ("lib", "local/lib");
+    my @libs = ("/opt/rt3/lib", "/opt/rt3/local/lib");
     my $bin_path;
 
     for my $lib (@libs) {
@@ -75,14 +75,13 @@ BEGIN {
 
 use Getopt::Long;
 my %opt;
-GetOptions( \%opt, "older=s", "debug", "help", "skip-user");
+GetOptions( \%opt, "older=s", "debug", "help|h", "skip-user" );
 
 
 if ( $opt{help} ) {
     require Pod::Usage;
-    import Pod::Usage;
-    pod2usage({ -message => "RT Session cleanup tool\n", verbose => 1 });
-    exit 1;    
+    Pod::Usage::pod2usage({ verbose => 2 });
+    exit;    
 }
 
 
@@ -113,7 +112,8 @@ RT::InitLogging();
 
 require RT::Interface::Web::Session;
 
-if( $opt{'older'} or my $alogoff = int RT->Config->Get('AutoLogoff') ) {
+my $alogoff = int RT->Config->Get('AutoLogoff');
+if ( $opt{'older'} or $alogoff ) {
     my $min;
     foreach ($alogoff*60, $opt{'older'}) {
         next unless $_;
@@ -137,13 +137,13 @@ rt-clean-sessions - clean old and duplicate RT sessions
 
 =head1 SYNOPSIS
 
-    rt-clean-sessions [--debug] [--older <NUM>[H|D|M|Y]]
+     rt-clean-sessions [--debug] [--older <NUM>[H|D|M|Y]]
 
-    rt-clean-sessions
-    rt-clean-sessions --debug
-    rt-clean-sessions --older 10D
-    rt-clean-sessions --debug --older 1M
-    rt-clean-sessions --older 10D --skip-user
+     rt-clean-sessions
+     rt-clean-sessions --debug
+     rt-clean-sessions --older 10D
+     rt-clean-sessions --debug --older 1M
+     rt-clean-sessions --older 10D --skip-user
 
 =head1 DESCRIPTION
 

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -56,6 +56,16 @@ use base qw(Test::WWW::Mechanize);
 require RT::Test;
 require Test::More;
 
+sub new {
+    my ($class, @args) = @_;
+
+    push @args, app => $RT::Test::TEST_APP if $RT::Test::TEST_APP;
+    my $self = $class->SUPER::new(@args);
+    $self->cookie_jar(HTTP::Cookies->new);
+
+    return $self;
+}
+
 sub get_ok {
     my $self = shift;
     my $url = shift;
@@ -76,8 +86,9 @@ sub login {
     my $self = shift;
     my $user = shift || 'root';
     my $pass = shift || 'password';
+    my %args = @_;
     
-    $self->logout;
+    $self->logout if $args{logout};
 
     my $url = $self->rt_base_url;
     $self->get($url . "?user=$user;pass=$pass");
@@ -85,11 +96,11 @@ sub login {
         Test::More::diag( "error: status is ". $self->status );
         return 0;
     }
-    unless ( $self->content =~ qr/Logout/i ) {
+    unless ( $self->content =~ m/Logout/i ) {
         Test::More::diag("error: page has no Logout");
         return 0;
     }
-    unless ( $self->content =~ m{<span>\Q$user\E</span>}i ) {
+    unless ( $self->content =~ m{<span class="current-user">\Q$user\E</span>}i ) {
         Test::More::diag("Page has no user name");
         return 0;
     }
@@ -104,7 +115,7 @@ sub logout {
     Test::More::diag( "error: status is ". $self->status )
         unless $self->status == 200;
 
-    if ( $self->content =~ qr/Logout/i ) {
+    if ( $self->content =~ /Logout/i ) {
         $self->follow_link( text => 'Logout' );
         Test::More::diag( "error: status is ". $self->status ." when tried to logout" )
             unless $self->status == 200;
@@ -114,7 +125,7 @@ sub logout {
     }
 
     $self->get($url);
-    if ( $self->content =~ qr/Logout/i ) {
+    if ( $self->content =~ /Logout/i ) {
         Test::More::diag( "error: couldn't logout" );
         return 0;
     }
@@ -130,7 +141,7 @@ sub goto_ticket {
     }
 
     my $url = $self->rt_base_url;
-    $url .= "/Ticket/Display.html?id=$id";
+    $url .= "Ticket/Display.html?id=$id";
     $self->get($url);
     unless ( $self->status == 200 ) {
         Test::More::diag( "error: status is ". $self->status );
@@ -152,24 +163,26 @@ sub goto_create_ticket {
         die "not yet implemented";
     }
 
-    $self->get('/');
-    $self->form_name('CreateTicketInQueue');
-    $self->select( 'Queue', $id );
-    $self->submit;
+    $self->get($self->rt_base_url . 'Ticket/Create.html?Queue='.$id);
 
     return 1;
 }
 
 sub get_warnings {
     my $self = shift;
-    my $server_class = 'RT::Interface::Web::Standalone';
-
-    my $url = $server_class->test_warning_path;
-
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    return unless $self->get_ok($url);
 
-    my @warnings = $server_class->decode_warnings($self->content);
+    # We clone here so that when we fetch warnings, we don't disrupt the state
+    # of the test's mech. If we reuse the original mech then you can't
+    # test warnings immediately after fetching page XYZ, then fill out
+    # forms on XYZ. This is because the most recently fetched page has changed
+    # from XYZ to /__test_warnings, which has no form.
+    my $clone = $self->clone;
+    return unless $clone->get_ok('/__test_warnings');
+
+    use Storable 'thaw';
+
+    my @warnings = @{ thaw $clone->content };
     return @warnings;
 }
 
@@ -196,6 +209,26 @@ sub warning_like {
     return Test::More::like($warnings[0], $re, $name);
 }
 
+sub next_warning_like {
+    my $self = shift;
+    my $re   = shift;
+    my $name = shift;
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
+    if (@{ $self->{stashed_server_warnings} || [] } == 0) {
+        my @warnings = $self->get_warnings;
+        if (@warnings == 0) {
+            Test::More::fail("no warnings emitted; expected 1");
+            return 0;
+        }
+        $self->{stashed_server_warnings} = \@warnings;
+    }
+
+    my $warning = shift @{ $self->{stashed_server_warnings} };
+    return Test::More::like($warning, $re, $name);
+}
+
 sub no_warnings_ok {
     my $self = shift;
     my $name = shift || "no warnings emitted";
@@ -210,6 +243,131 @@ sub no_warnings_ok {
     }
 
     return @warnings == 0 ? 1 : 0;
+}
+
+sub no_leftover_warnings_ok {
+    my $self = shift;
+
+    my $name = shift || "no leftover warnings";
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
+    # we clear the warnings because we don't want to break later tests
+    # in case there *are* leftover warnings
+    my @warnings = splice @{ $self->{stashed_server_warnings} || [] };
+
+    Test::More::is(@warnings, 0, $name);
+    for (@warnings) {
+        Test::More::diag("leftover warning: $_");
+    }
+
+    return @warnings == 0 ? 1 : 0;
+}
+
+sub ticket_status {
+    my $self = shift;
+    my $id = shift;
+    
+    $self->display_ticket( $id);
+    my ($got) = ($self->content =~ m{Status:\s*</td>\s*<td[^>]*?class="value"[^>]*?>\s*([\w ]+?)\s*</td>}ism);
+    unless ( $got ) {
+        Test::More::diag("Error: couldn't find status value on the page, may be regexp problem");
+    }
+    return $got;
+}
+
+sub ticket_status_is {
+    my $self = shift;
+    my $id = shift;
+    my $status = shift;
+    my $desc = shift || "Status of the ticket #$id is '$status'";
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    return Test::More::is($self->ticket_status( $id), $status, $desc);
+}
+
+sub get_ticket_id {
+    my $self = shift;
+    my $content = $self->content;
+    my $id = 0;
+    if ($content =~ /.*Ticket (\d+) created.*/g) {
+        $id = $1;
+    }
+    elsif ($content =~ /.*No permission to view newly created ticket #(\d+).*/g) {
+        Test::More::diag("\nNo permissions to view the ticket.\n") if($ENV{'TEST_VERBOSE'});
+        $id = $1;
+    }
+    return $id;
+}
+
+sub set_custom_field {
+    my $self   = shift;
+    my $queue   = shift;
+    my $cf_name = shift;
+    my $val     = shift;
+    
+    my $field_name = $self->custom_field_input( $queue, $cf_name )
+        or return 0;
+
+    $self->field($field_name, $val);
+    return 1;
+}
+
+sub custom_field_input {
+    my $self   = shift;
+    my $queue   = shift;
+    my $cf_name = shift;
+
+    my $cf_obj = RT::CustomField->new( $RT::SystemUser );
+    $cf_obj->LoadByName( Queue => $queue, Name => $cf_name );
+    unless ( $cf_obj->id ) {
+        Test::More::diag("Can not load custom field '$cf_name' in queue '$queue'");
+        return undef;
+    }
+    my $cf_id = $cf_obj->id;
+    
+    my ($res) =
+        grep /^Object-RT::Ticket-\d*-CustomField-$cf_id-Values?$/,
+        map $_->name,
+        $self->current_form->inputs;
+    unless ( $res ) {
+        Test::More::diag("Can not find input for custom field '$cf_name' #$cf_id");
+        return undef;
+    }
+    return $res;
+}
+
+sub check_links {
+    my $self = shift;
+    my %args = @_;
+
+    my %has = map {$_ => 1} @{ $args{'has'} };
+    my %has_no = map {$_ => 1} @{ $args{'has_no'} };
+
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
+    my @found;
+
+    my @links = $self->followable_links;
+    foreach my $text ( grep defined && length, map $_->text, @links ) {
+        push @found, $text if $has_no{ $text };
+        delete $has{ $text };
+    }
+    if ( @found || keys %has ) {
+        Test::More::ok( 0, "expected links" );
+        Test::More::diag( "didn't expect, but found: ". join ', ', map "'$_'", @found )
+            if @found;
+        Test::More::diag( "didn't find, but expected: ". join ', ', map "'$_'", keys %has )
+            if keys %has;
+        return 0;
+    }
+    return Test::More::ok( 1, "expected links" );
+}
+
+sub DESTROY {
+    my $self = shift;
+    if ( !$RT::Test::Web::DESTROY++ ) {
+        $self->no_warnings_ok;
+    }
 }
 
 1;

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -52,10 +52,10 @@ id="<%$id%>"
 >
   <div class="extra-buttons">
 % if ($CheckAll) {
-  <input type="button" value="<%$CheckAllLabel%>" onclick="setCheckbox(this.form, '<% $CheckboxName %>', true);return false;" class="button" />
+  <input type="button" value="<%$CheckAllLabel%>" onclick="setCheckbox(this.form, <% length $CheckboxName ? qq{'$CheckboxName'} : length $CheckboxNameRegex ? $CheckboxNameRegex : q{''} %>, true);return false;" class="button" />
 % }
 % if ($ClearAll) {
-  <input type="button" value="<%$ClearAllLabel%>" onclick="setCheckbox(this.form, '<% $CheckboxName %>', false);return false;" class="button" />
+  <input type="button" value="<%$ClearAllLabel%>" onclick="setCheckbox(this.form, <% length $CheckboxName ? qq{'$CheckboxName'} : length $CheckboxNameRegex ? $CheckboxNameRegex : q{''} %>, false);return false;" class="button" />
 % }
 % if ($Reset) {
   <input type="reset" value="<%$ResetLabel%>" class="button" />
@@ -63,18 +63,30 @@ id="<%$id%>"
   </div>
   <div class="buttons">
 % if ( $Back ) {
-  <span class="caption"><%$BackCaption%></span>
-  <input type="submit" <% $BackOnClick ? qq[ onclick="$BackOnClick"] : '' | n %> <%
-      $BackName ? qq[ name="$BackName"] : '' | n %> value="<%$BackLabel%>" class="button" />
+  <div class="next">
 % }
 
 % if ($AlternateLabel) {
   <span class="caption"><%$AlternateCaption%></span>
-  <input type="submit" <% $OnClick ? qq[ onclick="$OnClick"] : '' | n %> <% $Name ? qq[ name="$Name"] : '' | n %> value="<%$AlternateLabel%>" class="button" />
+  <input type="submit" <% $OnClick ? qq[ onclick="$OnClick"] : '' | n %> <% $Name ? qq[ name="$Name"] : '' | n %> <% $SubmitId ? qq[ id="$SubmitId"] : '' | n %> value="<%$AlternateLabel%>" class="button" />
 % } else {
   <span class="caption"><%$Caption%></span>
-  <input type="submit" <% $OnClick ? qq[ onclick="$OnClick"] : '' | n %> <% $Name ? qq[ name="$Name"] : '' | n %> value="<%$Label%>" class="button" />
+  <input type="submit" <% $OnClick ? qq[ onclick="$OnClick"] : '' | n %> <% $Name ? qq[ name="$Name"] : '' | n %> <% $SubmitId ? qq[ id="$SubmitId"] : '' | n %> value="<%$Label%>" class="button" />
 % }
+
+% if ( $Back ) {
+  </div>
+% }
+
+
+% if ( $Back ) {
+  <div class="back">
+  <span class="caption"><%$BackCaption%></span>
+  <input type="submit" <% $BackOnClick ? qq[ onclick="$BackOnClick"] : '' | n %> <%
+      $BackName ? qq[ name="$BackName"] : '' | n %> value="<%$BackLabel%>" class="button" />
+  </div>
+% }
+
   </div>
   <div class="submit-clear"></div>
 </div>
@@ -91,6 +103,7 @@ $CheckAllLabel => loc('Check All')
 $ClearAll => undef
 $ClearAllLabel => loc('Clear All')
 $CheckboxName => ''
+$CheckboxNameRegex => ''
 $Back => undef
 $BackName => 'Back'
 $BackLabel => loc('Back')
@@ -99,5 +112,6 @@ $BackOnClick => undef
 $OnClick => undef
 $Reset => undef
 $ResetLabel => loc('Reset')
+$SubmitId => undef
 $id => undef
 </%ARGS>

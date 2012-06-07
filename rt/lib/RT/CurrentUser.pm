@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -55,7 +55,7 @@
     use RT::CurrentUser;
 
     # laod
-    my $current_user = new RT::CurrentUser;
+    my $current_user = RT::CurrentUser->new;
     $current_user->Load(...);
     # or
     my $current_user = RT::CurrentUser->new( $user_obj );
@@ -92,6 +92,7 @@ use RT::I18N;
 
 use strict;
 use warnings;
+
 
 use base qw/RT::User/;
 
@@ -160,9 +161,7 @@ sub UserObj {
 
     my $user = RT::User->new( $self );
     unless ( $user->LoadById( $self->Id ) ) {
-        $RT::Logger->error(
-            $self->loc("Couldn't load [_1] from the users database.\n", $self->Id)
-        );
+        $RT::Logger->error("Couldn't load " . $self->Id . " from the users database.");
     }
     return $user;
 }
@@ -219,7 +218,7 @@ sub LanguageHandle {
         if ( my $lang = $self->Lang ) {
             push @_, $lang;
         }
-        elsif ( $self->id && ($self->id == ($RT::SystemUser->id||0) || $self->id == ($RT::Nobody->id||0)) ) {
+        elsif ( $self->id && ($self->id == (RT->SystemUser->id||0) || $self->id == (RT->Nobody->id||0)) ) {
             # don't use ENV magic for system users
             push @_, 'en';
         }
@@ -266,9 +265,7 @@ Return the current currentuser object
 =cut
 
 sub CurrentUser {
-    my $self = shift;
-    return($self);
-
+    return shift;
 }
 
 =head2 Authenticate

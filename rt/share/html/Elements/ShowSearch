@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,7 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <&|/Widgets/TitleBox,
-    title => loc($search->Description, $ProcessedSearchArg->{'Rows'}),
+    title => loc($desc, $ProcessedSearchArg->{'Rows'}),
     title_href => $query_link_url.$QueryString,
     titleright => $customize ? loc('Edit') : '',
     titleright_href => $customize,
@@ -72,6 +72,7 @@ if ($SavedSearch) {
         $m->out(loc("Saved Search [_1] not found", $SavedSearch)) unless $IgnoreMissing;
         return;
     }
+    $SearchArg->{'SavedSearchId'} ||= $SavedSearch;
     $SearchArg->{'SearchType'} ||= 'Ticket';
     if ( $SearchArg->{SearchType} ne 'Ticket' ) {
 
@@ -119,6 +120,7 @@ $m->callback(
 
 foreach ( $SearchArg, $ProcessedSearchArg ) {
     $_->{'Format'} ||= '';
+    $_->{'Query'} ||= '';
 
     $_->{'Format'} =~ s/__(Web(?:Path|Base|BaseURL))__/scalar RT->Config->Get($1)/ge;
     # extract-message-catalog would "$1", so we avoid quotes for loc calls
@@ -139,6 +141,13 @@ foreach ( $SearchArg, $ProcessedSearchArg ) {
 }
 
 my $QueryString = '?' . $m->comp( '/Elements/QueryString', %$SearchArg );
+
+my $desc = $search->Description;
+
+# we only use [_1] here, let's escape other "[" and "]" unless they are
+# escaped already
+$desc =~ s/(?<!~)\[(?!_1\])/~[/g;
+$desc =~ s/(?<!~)(?<!\[_1)\]/~]/g;
 
 </%init>
 <%ARGS>

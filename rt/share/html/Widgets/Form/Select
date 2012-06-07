@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,17 +46,19 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <%DOC>
-see docs/using_forms_widgets.pod
+see docs/extending/using_forms_widgets.pod
 </%DOC>
 <div id="form-box-<% lc $Name %>" class="widget">
 % if ( $Description ) {
 <span class="label"><% $Description %></span>
 % }
 <span class="value"><& SELF:InputOnly, %ARGS &></span>
+<span class="hints"><% $Hints %></span>
 </div>
 <%ARGS>
 $Name
 $Description      => undef,
+$Hints            => ''
 </%ARGS>
 
 <%METHOD InputOnly>
