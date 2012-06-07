@@ -535,6 +535,9 @@ my $build_main_nav = sub {
 
             #}
 
+            #ACL?
+            $tabs->child( customers => title => loc('Customers'), path => "/Ticket/ModifyCustomers.html?id=" . $id );
+
             if ( $can->('ModifyTicket') || $can->('_ModifyOwner') || $can->('Watch') || $can->('WatchAsAdminCc') ) {
                 $tabs->child( people => title => loc('People'), path => "/Ticket/ModifyPeople.html?id=" . $id );
             }
