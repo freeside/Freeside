@@ -49,7 +49,7 @@
               'title' => $Title,
               'head'  => $head,
               'etc'   => $etc,
-              'nobr'  => 1,
+              #make space for RT menu for now# 'nobr'  => 1,
               'nocss' => 1,
           }
 &>
