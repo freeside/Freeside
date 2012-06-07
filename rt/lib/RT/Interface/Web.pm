@@ -1110,8 +1110,14 @@ sub ValidateWebConfig {
         }
     }
 
-    if ($ENV{SCRIPT_NAME} ne RT->Config->Get('WebPath')) {
-        $RT::Logger->warn("The actual SCRIPT_NAME ($ENV{SCRIPT_NAME}) does NOT match the configured WebPath ($RT::WebPath). Perhaps you should Set(\$WebPath, '$ENV{SCRIPT_NAME}'); in RT_SiteConfig.pm, otherwise your internal links may be broken.");
+    #i don't understand how this was ever expected to work
+    #  (even without our dum double // hack)??
+    #if ($ENV{SCRIPT_NAME} ne RT->Config->Get('WebPath')) {
+    ( my $WebPath = RT->Config->Get('WebPath') ) =~ s(/+)(/)g;
+    ( my $script_name = $ENV{SCRIPT_NAME} ) =~ s(/+)(/)g;
+    my $script_name_prefix = substr($script_name, 0, length($WebPath));
+    if ( $script_name_prefix ne $WebPath ) {
+        $RT::Logger->warn("The actual SCRIPT_NAME ($script_name) does NOT match the configured WebPath ($WebPath). Perhaps you should Set(\$WebPath, '$script_name_prefix'); in RT_SiteConfig.pm, otherwise your internal links may be broken.");
     }
 }
 
