@@ -574,6 +574,8 @@ sub mason_interps {
                       [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
                     ],
     escape_flags => { 'h'         => \&RT::Interface::Web::EscapeUTF8,
+                      'u'         => \&RT::Interface::Web::EscapeURI,
+                      'j'         => \&RT::Interface::Web::EscapeJS,
                       'js_string' => $js_string_sub,
                     },
     compiler     => HTML::Mason::Compiler::ToObject->new(
