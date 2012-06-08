@@ -66,6 +66,7 @@ div#body {
     padding-top: 1.8em;
     -moz-border-radius: 0.5em;
     -webkit-border-radius: 0.5em;
+    border-radius: 0.5em;
     /* margin-left: 10.5em; */
     /* margin-top: 5.2em; */
     margin-left: .5em;
@@ -152,8 +153,10 @@ div#footer {
 
  -moz-border-radius-topleft: 0.5em;
  -webkit-border-top-left-radius: 0.5em;
+ border-radius-topleft: 0.5em;
  -moz-border-radius-bottomleft: 0.5em;
  -webkit-border-bottom-left-radius: 0.5em;
+ border-radius-bottomleft: 0.5em;
 }
 
 div#footer #time {
