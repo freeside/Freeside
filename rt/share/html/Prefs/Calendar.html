@@ -92,7 +92,7 @@ href="<%$RT::WebPath . '/Search/Build.html'%>">the Query Builder</a>
 </&>
 
 <%INIT>
-use Digest::SHA1;
+use Digest::SHA 'sha1_base64';
 use RT::SavedSearches;
 
 my $title = loc("Calendar Prefs");
@@ -106,12 +106,12 @@ my $object;
 
 if ($HiddenField && $HiddenField eq 'Private') {
    $object = $session{CurrentUser}->UserObj;
-} elsif ($AllowSearch and $HiddenField my ($SearchId) = $HiddenField =~ m/SavedSearch\-(\d+)/) {
+} elsif ($AllowSearch and $HiddenField and my ($SearchId) = $HiddenField =~ m/SavedSearch\-(\d+)/) {
     $object = $session{CurrentUser}->Attributes->WithId($SearchId);
 }
 
 if (defined $ChangeURL) {
-  my @args = $object->SetAttribute(Name => 'ICalURL', Content => Digest::SHA1::sha1_base64(time));
+  my @args = $object->SetAttribute(Name => 'ICalURL', Content => sha1_base64(time));
 } elsif (defined $ResetURL) {
   my @args = $object->DeleteAttribute('ICalURL');
 }
