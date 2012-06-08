@@ -5,7 +5,10 @@ use base qw( Exporter );
 use DateTime;
 use DateTime::Set;
 
-our $VERSION = "0.07";
+our $VERSION = "0.14";
+
+RT->AddStyleSheets('calendar.css')
+    if RT->can('AddStyleSheets');
 
 our @EXPORT_OK = qw( FirstDay LastDay );
 
@@ -48,7 +51,7 @@ sub DatesClauses {
     my $clauses = "";
 
     my @DateClauses = map {
-	"($_ >= '" . $begin . "' AND $_ <= '" . $end . "')"
+	"($_ >= '" . $begin . " 00:00:00' AND $_ <= '" . $end . " 23:59:59')"
     } @$Dates;
     $clauses  .= " AND " . " ( " . join(" OR ", @DateClauses) . " ) "
 	if @DateClauses;
@@ -82,9 +85,9 @@ sub FindTickets {
     return %Tickets;
 }
 
-# 
+#
 # Take a user object and return the search with Description "calendar" if it exists
-# 
+#
 sub SearchDefaultCalendar {
     my $CurrentUser = shift;
     my $Description = "calendar";
@@ -104,6 +107,28 @@ sub SearchDefaultCalendar {
     }
 }
 
+package RT::Interface::Web::Menu;
+
+# we should get an add_after method in 4.0.6 (hopefully), but until then
+# shim this in so I don't copy the code.
+unless (RT::Interface::Web::Menu->can('add_after')) {
+        *RT::Interface::Web::Menu::add_after = sub {
+            my $self = shift;
+            my $parent = $self->parent;
+            my $sort_order;
+            for my $contemporary ($parent->children) {
+                if ( $contemporary->key eq $self->key ) {
+                    $sort_order = $contemporary->sort_order + 1;
+                    next;
+                }
+                if ( $sort_order ) {
+                    $contemporary->sort_order( $contemporary->sort_order + 1 );
+                }
+            }
+            $parent->child( @_, sort_order => $sort_order );
+        };
+}
+
 
 1;
 
@@ -112,10 +137,6 @@ __END__
 =head1 NAME
 
 RTx::Calendar - Calendar for RT due tasks
-
-=head1 VERSION
-
-This document describes version 0.07 of RTx::Calendar
 
 =head1 DESCRIPTION
 
@@ -128,9 +149,6 @@ There's a portlet to put on your home page (see Prefs/MyRT.html)
 You can also enable ics (ICal) feeds for your default calendar and all
 your private searches in Prefs/Calendar.html. Authentication is magic
 number based so that you can give those feeds to other people.
-
-You can find screenshots on
-http://gaspard.mine.nu/dotclear/index.php?tag/rtx-calendar
 
 =head1 INSTALLATION
 
@@ -206,16 +224,13 @@ RTx-Calendar may work without this but it's not very clean.
 
 =head1 BUGS
 
-=over
-
-=item *
-compatible only with RT 3.6 for the moment. If someone need
-compatibility with 3.4 I can work on this. And I will work on 3.7
-compatibility later.
-
-=back
-
+All bugs should be reported via
+L<http://rt.cpan.org/Public/Dist/Display.html?Name=RTx-Calendar>
+or L<bug-RTx-Calendar@rt.cpan.org>.
+ 
 =head1 AUTHORS
+
+Best Practical Solutions
 
 Nicolas Chuche E<lt>nchuche@barna.beE<gt>
 
@@ -223,9 +238,11 @@ Idea borrowed from redmine's calendar (Thanks Jean-Philippe).
 
 =head1 COPYRIGHT
 
-Copyright 2007 by Nicolas Chuche E<lt>nchuche@barna.beE<gt>
+Copyright 2007-2009 by Nicolas Chuche E<lt>nchuche@barna.beE<gt>
 
-This program is free software; you can redistribute it and/or 
+Copyright 2010-2012 by Best Practical Solutions.
+
+This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 See L<http://www.perl.com/perl/misc/Artistic.html>

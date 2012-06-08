@@ -6,10 +6,7 @@ $HiddenField => undef
 </%args>
 
 <& /Elements/Header, Title => $title &>
-<& /User/Elements/Tabs,
-    current_tab => 'Prefs/Calendar.html',
-    Title => $title
-&>
+<& /Elements/Tabs &>
 
 <&| /Widgets/TitleBox, title => loc('ICal Feeds (ics)') &>
 
@@ -50,7 +47,7 @@ Builder")%></a>.</p>
 
 <& /Prefs/Elements/CalendarFeed &>
 
-% # only allow this part if 
+% # only allow this part if
 % if ($AllowSearch) {
 
 % my $search_count;
@@ -107,9 +104,9 @@ $AllowSearch = 1
 
 my $object;
 
-if ($HiddenField eq 'Private') {
+if ($HiddenField && $HiddenField eq 'Private') {
    $object = $session{CurrentUser}->UserObj;
-} elsif ($AllowSearch and my ($SearchId) = $HiddenField =~ m/SavedSearch\-(\d+)/) {
+} elsif ($AllowSearch and $HiddenField my ($SearchId) = $HiddenField =~ m/SavedSearch\-(\d+)/) {
     $object = $session{CurrentUser}->Attributes->WithId($SearchId);
 }
 

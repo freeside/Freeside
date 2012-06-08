@@ -10,9 +10,8 @@ $NewQuery => 0
 </%args>
 
 <& /Elements/Header, Title => $title &>
-<& /Ticket/Elements/Tabs, 
-    current_tab => "Search/Calendar.html?$QueryString",
-    Title => $title &>
+<& /Elements/Tabs &>
+
 <&| /Widgets/TitleBox,
      title => loc('Calendar for ') . $rtdate->GetMonth($Month) . " $Year" ,
      title_class=> 'inverse',
@@ -195,7 +194,7 @@ my $set = DateTime::Set->from_recurrence(
     next => sub { $_[0]->truncate( to => 'day' )->add( days => 1 ) }
 );
 
-my $QueryString = 
+my $QueryString =
       $m->comp(
         '/Elements/QueryString',
         Query   => $Query,
@@ -212,7 +211,7 @@ $QueryString ||= 'NewQuery=1';
 my $TempFormat = "__Starts__ __Due__";
 my $TempQuery = "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
  AND ( Owner = '" . $session{CurrentUser}->Id ."' OR Owner = 'Nobody'  )
- AND ( Type = 'reminder' OR 'Type' = 'ticket' )"; 
+ AND ( Type = 'reminder' OR 'Type' = 'ticket' )";
 
 if ( my $Search = RTx::Calendar::SearchDefaultCalendar($session{CurrentUser}) ) {
   $TempFormat = $Search->SubValue('Format');
