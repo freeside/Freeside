@@ -367,28 +367,44 @@ if ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {
 
   my $usage_sql = FS::cust_bill_pkg->usage_sql;
   push @select, "($usage_sql) AS usage"; # we need this
-  my $owed_sql = FS::cust_bill_pkg->owed_sql($unearned, '', 
-    setuprecur => 'recur', no_usage => 1);
-  push @select, "($owed_sql) AS owed"; # also this
+  my $paid_sql = 'GREATEST(' .
+    FS::cust_bill_pkg->paid_sql($unearned, '', setuprecur => 'recur') .
+    " - $usage_sql, 0)";
 
-  $unearned_base = "(cust_bill_pkg.recur - $usage_sql)";
+  push @select, "$paid_sql AS paid_no_usage"; # need this either way
+
+  if ( $unearned_mode eq 'paid' ) {
+    # then use the amount paid, minus usage charges
+    $unearned_base = $paid_sql;
+  }
+  else {
+    # use the amount billed, minus usage charges and credits
+    $unearned_base = "GREATEST( cust_bill_pkg.recur - ".
+      FS::cust_bill_pkg->credited_sql($unearned, '', setuprecur => 'recur') .
+      " - $usage_sql, 0)";
+      # include only rows that have some non-usage, non-credited portion
+  }
+  # whatever we're using as the base, only show rows where it's positive
+  push @where, "$unearned_base > 0";
+
   my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS REAL)";
   my $elapsed = "GREATEST( $unearned - cust_bill_pkg.sdate, 0 )";
   my $remaining = "(1 - $elapsed/$period)";
 
-  $unearned_sql = "CAST(
-  GREATEST( ( $unearned_base * $remaining ) - $owed_sql, 0 )
-    AS DECIMAL(10,2)
-  )";
+  $unearned_sql = "CAST( $unearned_base * $remaining AS DECIMAL(10,2) )";
   push @select, "$unearned_sql AS unearned_revenue";
 
-  if ( $unearned_mode eq 'billed' ) {
-    # include only rows that have some unearned portion
-    push @where, "$unearned_base > 0";
-  }
-  elsif ( $unearned_mode eq 'paid' ) {
-    # include only those that have some _paid_ unearned portion
-    push @where, "$unearned_sql > 0";
+  # last payment/credit date
+  my %t = (pay => 'cust_bill_pay', credit => 'cust_credit_bill');
+  foreach my $x (qw(pay credit)) {
+    my $table = $t{$x};
+    my $link = $table.'_pkg';
+    my $pkey = dbdef->table($table)->primary_key;
+    my $last_date_sql = "SELECT MAX(_date) 
+    FROM $table JOIN $link USING ($pkey)
+    WHERE $link.billpkgnum = cust_bill_pkg.billpkgnum 
+    AND $table._date <= $unearned";
+    push @select, "($last_date_sql) AS last_$x";
   }
 
 }

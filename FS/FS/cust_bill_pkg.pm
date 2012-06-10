@@ -1064,6 +1064,36 @@ sub _X_show_zero {
 
 =over 4
 
+=item usage_sql
+
+Returns an SQL expression for the total usage charges in details on
+an item.
+
+=cut
+
+my $usage_sql =
+  '(SELECT COALESCE(SUM(cust_bill_pkg_detail.amount),0) 
+    FROM cust_bill_pkg_detail 
+    WHERE cust_bill_pkg_detail.billpkgnum = cust_bill_pkg.billpkgnum)';
+
+sub usage_sql { $usage_sql }
+
+# this makes owed_sql, etc. much more concise
+sub charged_sql {
+  my ($class, $start, $end, %opt) = @_;
+  my $charged = 
+    $opt{setuprecur} =~ /^s/ ? 'cust_bill_pkg.setup' :
+    $opt{setuprecur} =~ /^r/ ? 'cust_bill_pkg.recur' :
+    'cust_bill_pkg.setup + cust_bill_pkg.recur';
+
+  if ($opt{no_usage} and $charged =~ /recur/) { 
+    $charged = "$charged - $usage_sql"
+  }
+
+  $charged;
+}
+
+
 =item owed_sql [ BEFORE, AFTER, OPTIONS ]
 
 Returns an SQL expression for the amount owed.  BEFORE and AFTER specify
@@ -1073,33 +1103,10 @@ and 'setuprecur' (set to "setup" or "recur" to limit to one or the other).
 =cut
 
 sub owed_sql {
-  my ($class, $start, $end, %opt) = @_;
-  my $charged = 
-    $opt{setuprecur} =~ /^s/ ? 'cust_bill_pkg.setup' :
-    $opt{setuprecur} =~ /^r/ ? 'cust_bill_pkg.recur' :
-    'cust_bill_pkg.setup + cust_bill_pkg.recur';
-
-  if ( $opt{no_usage} ) {
-    $charged .= ' - ' . $class->usage_sql;
-  }
-
-  '(' . $charged . 
-  ' - ' . $class->paid_sql($start, $end, %opt) .
-  ' - ' . $class->credited_sql($start, $end, %opt) . ')'
-}
-
-=item usage_sql
-
-Returns an SQL expression for the total usage charges in details on
-an item.
-
-=cut
-
-sub usage_sql {
   my $class = shift;
-  "(SELECT COALESCE(SUM(cust_bill_pkg_detail.amount),0) 
-    FROM cust_bill_pkg_detail 
-    WHERE cust_bill_pkg_detail.billpkgnum = cust_bill_pkg.billpkgnum)"
+  '(' . $class->charged_sql(@_) . 
+  ' - ' . $class->paid_sql(@_) .
+  ' - ' . $class->credited_sql(@_) . ')'
 }
 
 =item paid_sql [ BEFORE, AFTER, OPTIONS ]
@@ -1110,32 +1117,55 @@ Returns an SQL expression for the sum of payments applied to this item.
 
 sub paid_sql {
   my ($class, $start, $end, %opt) = @_;
-  $start = $start ? "AND cust_bill_pay._date <= $start" : '';
-  $end   = $end   ? "AND cust_bill_pay._date >  $end"   : '';
+  my $s = $start ? "AND cust_bill_pay._date <= $start" : '';
+  my $e = $end   ? "AND cust_bill_pay._date >  $end"   : '';
   my $setuprecur = 
     $opt{setuprecur} =~ /^s/ ? 'setup' :
     $opt{setuprecur} =~ /^r/ ? 'recur' :
     '';
   $setuprecur &&= "AND setuprecur = '$setuprecur'";
-  "( SELECT COALESCE(SUM(cust_bill_pay_pkg.amount),0)
+
+  my $paid = "( SELECT COALESCE(SUM(cust_bill_pay_pkg.amount),0)
      FROM cust_bill_pay_pkg JOIN cust_bill_pay USING (billpaynum)
      WHERE cust_bill_pay_pkg.billpkgnum = cust_bill_pkg.billpkgnum
-           $start $end $setuprecur )";
+           $s $e$setuprecur )";
+
+  if ( $opt{no_usage} ) {
+    # cap the amount paid at the sum of non-usage charges, 
+    # minus the amount credited against non-usage charges
+    "LEAST($paid, ". 
+      $class->charged_sql($start, $end, %opt) . ' - ' .
+      $class->credited_sql($start, $end, %opt).')';
+  }
+  else {
+    $paid;
+  }
+
 }
 
 sub credited_sql {
   my ($class, $start, $end, %opt) = @_;
-  $start = $start ? "AND cust_credit_bill._date <= $start" : '';
-  $end   = $end   ? "AND cust_credit_bill._date >  $end"   : '';
+  my $s = $start ? "AND cust_credit_bill._date <= $start" : '';
+  my $e = $end   ? "AND cust_credit_bill._date >  $end"   : '';
   my $setuprecur = 
     $opt{setuprecur} =~ /^s/ ? 'setup' :
     $opt{setuprecur} =~ /^r/ ? 'recur' :
     '';
   $setuprecur &&= "AND setuprecur = '$setuprecur'";
-  "( SELECT COALESCE(SUM(cust_credit_bill_pkg.amount),0)
+
+  my $credited = "( SELECT COALESCE(SUM(cust_credit_bill_pkg.amount),0)
      FROM cust_credit_bill_pkg JOIN cust_credit_bill USING (creditbillnum)
      WHERE cust_credit_bill_pkg.billpkgnum = cust_bill_pkg.billpkgnum
-           $start $end $setuprecur )";
+           $s $e $setuprecur )";
+
+  if ( $opt{no_usage} ) {
+    # cap the amount credited at the sum of non-usage charges
+    "LEAST($credited, ". $class->charged_sql($start, $end, %opt).')';
+  }
+  else {
+    $credited;
+  }
+
 }
 
 =back
