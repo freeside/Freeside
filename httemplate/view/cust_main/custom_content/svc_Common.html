@@ -1,6 +1,9 @@
 % foreach my $cust_svc (@cust_svc) {
 %   my $svc_x = $cust_svc->svc_x;
 <TABLE CLASS="fsinnerbox">
+  <TR>
+    <TH COLSPAN=2><% $cust_svc->part_svc->svc |h %></TH>
+  </TR>
 %   foreach my $field ( grep $svc_x->$_(), @{ $opt{fields} } ) {
       <& /elements/tr-td-label.html, 'label' => $labels{$field} &>
       <TD BGCOLOR="#ffffff"><% $svc_x->$field() |h %></TD>
