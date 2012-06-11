@@ -250,7 +250,7 @@ Example:
 
       if ( customerArrayArray.length == 1 ) {
 
-        update_customer(customerArrayArray[1]);
+        update_customer(searchrow, customerArrayArray[0]);
 % if ( $opt{custnum_update_callback} ) {
         <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
 % }

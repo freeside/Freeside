@@ -98,7 +98,7 @@ $dt->add(days => 1); # the day after that
 $dt->subtract(seconds => 1); # the last second of the report day
 $now = $dt->epoch;
 
-my $link = "cust_bill_pkg.cgi?nottax=1;unearned_now=$now;mode=$mode";
+my $link = "unearned_detail.html?date=$now;mode=$mode";
 
 if ( $cgi->param('include_monthly') ) {
   $link .= ';include_monthly=1';
@@ -138,17 +138,22 @@ foreach my $agentnum (@agentnums) {
 
   my( $total, $total_legacy ) = ( 0, 0 );
 
-  # false laziness
-  my $usage_sql = FS::cust_bill_pkg->usage_sql;
-  my $owed_sql = FS::cust_bill_pkg->owed_sql($now, '', 
-    setuprecur => 'recur', no_usage => 1);
-  my $unearned_base = "(cust_bill_pkg.recur - $usage_sql)";
+  my @opt = ($now, '', setuprecur => 'recur', no_usage => 1);
+  # balance owed, recurring only, not including usage charges
+  my $unearned_base;
+  if ( $mode eq 'billed' ) {
+    $unearned_base = '( ' . 
+                     FS::cust_bill_pkg->charged_sql(@opt) . ' - ' .
+                     FS::cust_bill_pkg->credited_sql(@opt) . ' )';
+  } elsif ( $mode eq 'paid' ) {
+    $unearned_base = FS::cust_bill_pkg->paid_sql(@opt);
+  }
   my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS REAL)";
   my $elapsed  = "GREATEST( $now - cust_bill_pkg.sdate, 0 )";
   my $remaining = "(1 - $elapsed/$period)";
 
   my $unearned_sql = "CAST(
-  GREATEST( $unearned_base * $remaining - $owed_sql, 0 )
+  GREATEST( $unearned_base * $remaining, 0 )
     AS DECIMAL(10,2)
   )";
 
@@ -180,6 +185,8 @@ foreach my $agentnum (@agentnums) {
                  AND part_pkg.freq != '0'
                  $where
              ";
+
+             warn $sql;
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   my $total = $sth->fetchrow_arrayref->[0];
