@@ -153,10 +153,10 @@ div#footer {
 
  -moz-border-radius-topleft: 0.5em;
  -webkit-border-top-left-radius: 0.5em;
- border-radius-topleft: 0.5em;
+ border-top-left-radius: 0.5em;
  -moz-border-radius-bottomleft: 0.5em;
  -webkit-border-bottom-left-radius: 0.5em;
- border-radius-bottomleft: 0.5em;
+ border-bottom-left-radius: 0.5em;
 }
 
 div#footer #time {

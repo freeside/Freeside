@@ -145,12 +145,12 @@
  padding-top: 0.5em;
  -moz-border-radius-bottomleft: 0.25em;
  -webkit-border-bottom-left-radius: 0.25em;
- border-radius-bottomleft: 0.25em;
+ border-bottom-left-radius: 0.25em;
  
  
  -moz-border-radius-topright: 0.25em;
  -webkit-border-top-right-radius: 0.25em;
- border-radius-topright: 0.25em;
+ border-top-right-radius: 0.25em;
 
 }
 

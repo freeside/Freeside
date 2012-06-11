@@ -54,13 +54,13 @@ div#nav {
  background: #fff;
  -moz-border-radius-bottomright: 0.5em;
  -webkit-border-bottom-right-radius: 0.5em;
- border-radius-bottomright: 0.5em;
+ border-bottom-right-radius: 0.5em;
   border-left: 1px solid #999;  
 border-top: 1px solid #999;
 
  -moz-border-radius-topright: 0.5em;
  -webkit-border-top-right-radius: 0.5em;
- border-radius-topright: 0.5em;
+ border-top-right-radius: 0.5em;
  z-index: 99;
 
 
@@ -187,10 +187,10 @@ div#page-navigation ul#actions-menu {
  border-bottom: 2px solid #aaa;
  -moz-border-radius-bottomleft: 0.5em;
  -webkit-border-bottom-left-radius: 0.5em;
- border-radius-bottomleft: 0.5em;
+ border-bottom-left-radius: 0.5em;
  -moz-border-radius-topright: 0.25em;
  -webkit-border-top-right-radius: 0.25em;
- border-radius-topright: 0.25em;
+ border-top-right-radius: 0.25em;
 
 
 

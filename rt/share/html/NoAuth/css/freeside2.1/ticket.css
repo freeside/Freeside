@@ -76,7 +76,7 @@ div#ticket-history {
  color: #ccc;
  -moz-border-radius-bottomleft: 0.5em;
  -webkit-border-bottom-left-radius: 0.5em;
- border-radius-bottomleft: 0.5em;
+ border-bottom-left-radius: 0.5em;
  white-space: nowrap;
 }
 
