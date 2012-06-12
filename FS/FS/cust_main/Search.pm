@@ -781,7 +781,14 @@ sub search {
 
     if ($dbh->{Driver}->{Name} eq 'Pg') {
 
-      push @select, "array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
+      push @select, "
+        ARRAY_TO_STRING(
+          ARRAY(
+            SELECT pkg FROM cust_pkg LEFT JOIN part_pkg USING ( pkgpart )
+              WHERE cust_main.custnum = cust_pkg.custnum $pkgwhere
+          ), '|'
+        ) AS magic
+      ";
 
     } elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
       push @select, "GROUP_CONCAT(part_pkg.pkg SEPARATOR '|') as magic";
@@ -792,7 +799,11 @@ sub search {
            "omitting package information from report.";
     }
 
-    my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
+    my $header_query = "
+      SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count
+        FROM cust_main $addl_from $extra_sql $pkgwhere
+          GROUP BY cust_main.custnum ORDER BY count DESC LIMIT 1
+    ";
 
     my $sth = dbh->prepare($header_query) or die dbh->errstr;
     $sth->execute() or die $sth->errstr;
