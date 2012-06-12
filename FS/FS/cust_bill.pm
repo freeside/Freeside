@@ -388,8 +388,10 @@ sub previous {
   my $self = shift;
   my $total = 0;
   my @cust_bill = sort { $a->_date <=> $b->_date }
-    grep { $_->owed != 0 && $_->_date < $self->_date }
-      qsearch( 'cust_bill', { 'custnum' => $self->custnum } ) 
+    grep { $_->owed != 0 }
+      qsearch( 'cust_bill', { 'custnum' => $self->custnum,
+                              '_date'   => { op=>'<', value=>$self->_date },
+                            } ) 
   ;
   foreach ( @cust_bill ) { $total += $_->owed; }
   $total, @cust_bill;
