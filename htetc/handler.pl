@@ -84,7 +84,7 @@ sub handler
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
-      RT::Init();
+      my_rt_init();
 
       $ah->interp($rt_interp);
 
@@ -93,7 +93,7 @@ sub handler
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
-      RT::Init() if $RT::VERSION; #for lack of something else
+      my_rt_init();
 
       #we don't want the RT error handlers under FS
       {
@@ -126,6 +126,21 @@ sub handler
 #    }
 
     $status;
+}
+
+my $rt_initialized = 0;
+
+sub my_rt_init {
+  return unless $RT::VERSION;
+
+  if ( $rt_initialized ) {
+    RT::ConnectToDatabase();
+    RT::InitSignalHandlers();
+  } else {
+    RT::LoadConfig();
+    RT::Init();
+    $rt_initialized++;
+  }
 }
 
 1;
