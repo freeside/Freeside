@@ -2985,6 +2985,12 @@ sub print_generic {
   my $late_sections = [];
   my $extra_sections = [];
   my $extra_lines = ();
+
+  my $default_section = { 'description' => '',
+                          'subtotal'    => '', 
+                          'no_subtotal' => 1,
+                        };
+
   if ( $multisection ) {
     ($extra_sections, $extra_lines) =
       $self->_items_extra_usage_sections($escape_function_nonbsp, $format)
@@ -3016,8 +3022,7 @@ sub print_generic {
     }
   } else {# not multisection
     # make a default section
-    push @sections, { 'description' => '', 'subtotal' => '', 
-      'no_subtotal' => 1 };
+    push @sections, $default_section;
     # and calculate the finance charge total, since it won't get done otherwise.
     # XXX possibly other totals?
     # XXX possibly finance_pkgclass should not be used in this manner?
@@ -3050,7 +3055,8 @@ sub print_generic {
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
       $detail->{'quantity'} = 1;
-      $detail->{'section'} = $previous_section;
+      $detail->{'section'} = $multisection ? $previous_section
+                                           : $default_section;
       $detail->{'description'} = &$escape_function($line_item->{'description'});
       if ( exists $line_item->{'ext_description'} ) {
         @{$detail->{'ext_description'}} = map {
