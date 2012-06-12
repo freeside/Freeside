@@ -39,6 +39,7 @@ use Tie::IxHash;
 @EXPORT_OK = qw(
   dbh fields hfields qsearch qsearchs dbdef jsearch
   str2time_sql str2time_sql_closing regexp_sql not_regexp_sql concat_sql
+  midnight_sql
 );
 
 $DEBUG = 0;
@@ -3030,7 +3031,7 @@ sub not_regexp_sql {
 
 =item concat_sql [ DRIVER_NAME ] ITEMS_ARRAYREF
 
-Returns the items concatendated based on database type, using "CONCAT()" for
+Returns the items concatenated based on database type, using "CONCAT()" for
 mysql and " || " for Pg and other databases.
 
 You can pass an optional driver name such as "Pg", "mysql" or
@@ -3049,6 +3050,24 @@ sub concat_sql {
     join('||', @$items);
   }
 
+}
+
+=item midnight_sql DATE
+
+Returns an SQL expression to convert DATE (a unix timestamp) to midnight 
+on that day in the system timezone, using the default driver name.
+
+=cut
+
+sub midnight_sql {
+  my $driver = driver_name;
+  my $expr = shift;
+  if ( $driver =~ /^mysql/i ) {
+    "UNIX_TIMESTAMP(DATE(FROM_UNIXTIME($expr)))";
+  }
+  else {
+    "EXTRACT( EPOCH FROM DATE(TO_TIMESTAMP($expr)) )";
+  }
 }
 
 =back
