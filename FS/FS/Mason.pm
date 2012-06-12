@@ -122,6 +122,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::UID qw( getotaker dbh datasrc driver_name );
   use FS::Record qw( qsearch qsearchs fields dbdef
                     str2time_sql str2time_sql_closing
+                    midnight_sql
                    );
   use FS::Conf;
   use FS::CGI qw(header menubar table itable ntable idiot
