@@ -777,6 +777,7 @@ sub search {
   if ($params->{'flattened_pkgs'}) {
 
     #my $pkg_join = '';
+    $addl_from .= ' LEFT JOIN cust_pkg USING ( custnum ) ';
 
     if ($dbh->{Driver}->{Name} eq 'Pg') {
 
@@ -784,12 +785,11 @@ sub search {
 
     } elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
       push @select, "GROUP_CONCAT(part_pkg.pkg SEPARATOR '|') as magic";
-      $addl_from .= ' LEFT JOIN cust_pkg USING ( custnum ) '; #Pg too w/flatpkg?
       $addl_from .= ' LEFT JOIN part_pkg USING ( pkgpart ) ';
       #$pkg_join  .= ' LEFT JOIN part_pkg USING ( pkgpart ) ';
     } else {
       warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
-           "omitting packing information from report.";
+           "omitting package information from report.";
     }
 
     my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
