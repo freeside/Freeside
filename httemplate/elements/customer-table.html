@@ -179,15 +179,16 @@ Example:
     if ( ( <% $opt{prefix} %>rownum - searchrow ) == 1 ) {
       <% $opt{prefix} %>addRow();
     }
-    var customer = document.getElementById('customer'+searchrow);
-    customer.value = 'searching...';
-    customer.disabled = true;
-    customer.style.color = '#000000';
-    customer.style.backgroundColor = '#dddddd';
+
+    var customer_obj = document.getElementById('customer'+searchrow);
+    customer_obj.value = 'searching...';
+    customer_obj.disabled = true;
+    customer_obj.style.color = '#000000';
+    customer_obj.style.backgroundColor = '#dddddd';
 
     var customer_select = document.getElementById('cust_select'+searchrow);
 
-    customer.style.display = '';
+    customer_obj.style.display = '';
     customer_select.style.display = 'none';
 
     var invnum = document.getElementById('invnum'+searchrow);
@@ -200,12 +201,40 @@ Example:
 
     function search_custnum_update(customers) {
 
-      var customerArray = eval('(' + customers + ')') || [];
-      update_customer(searchrow, customerArray);
+      var customerArrayArray = eval('(' + customers + ')') || [];
 
+      if ( customerArrayArray.length == 1 ) {
+
+        update_customer(searchrow, customerArrayArray[0]);
 % if ( $opt{custnum_update_callback} ) {
-        <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+          <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
 % }
+
+      } else {
+
+        custnum_obj.value = 'Multiple'; // or something
+        custnum_obj.style.color = '#ff0000';
+
+        //blank the current list
+        customer_select.options.length = 0;
+
+        opt(customer_select, '', 'Multiple customers match "' + custnum + '" - select one', '#ff0000');
+        //add the multiple customers
+        for ( var s = 0; s < customerArrayArray.length; s++ ) {
+          opt(customer_select,
+              JSON.stringify(customerArrayArray[s]),
+              customerArrayArray[s][1],
+              '#000000');
+        }
+
+        opt(customer_select, 'cancel', '(Edit search string)', '#000000');
+
+        customer_obj.style.display = 'none';
+
+        customer_select.style.display = '';
+
+      }
+
     }
 
     custnum_search(custnum, search_custnum_update );

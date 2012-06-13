@@ -140,10 +140,12 @@ sub smart_search {
     my $num = $1;
 
     if ( $num =~ /^(\d+)$/ && $num <= 2147483647 ) { #need a bigint custnum? wow
+      my $agent_custid_null = $conf->exists('cust_main-default_agent_custid')
+                                ? ' AND agent_custid IS NULL ' : '';
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
         'hashref'   => { 'custnum' => $num, %options },
-        'extra_sql' => " AND $agentnums_sql", #agent virtualization
+        'extra_sql' => " AND $agentnums_sql $agent_custid_null",
       } );
     }
 
