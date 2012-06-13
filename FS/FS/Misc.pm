@@ -913,6 +913,16 @@ sub ocr_image {
   @lines;
 }
 
+=item spool_formats
+  
+Returns a list of the invoice spool formats.
+
+=cut
+
+sub spool_formats {
+  qw(default oneline billco bridgestone)
+}
+
 =back
 
 =head1 BUGS

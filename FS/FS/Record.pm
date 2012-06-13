@@ -2563,6 +2563,22 @@ sub ut_enumn {
     : '';
 }
 
+=item ut_flag COLUMN
+
+Check/untaint a column if it contains either an empty string or 'Y'.  This
+is the standard form for boolean flags in Freeside.
+
+=cut
+
+sub ut_flag {
+  my( $self, $field ) = @_;
+  my $value = uc($self->getfield($field));
+  if ( $value eq '' or $value eq 'Y' ) {
+    $self->setfield($field, $value);
+    return '';
+  }
+  return "Illegal (flag) field $field: $value";
+}
 
 =item ut_foreign_key COLUMN FOREIGN_TABLE FOREIGN_COLUMN
 

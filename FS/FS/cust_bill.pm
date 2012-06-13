@@ -1753,13 +1753,21 @@ Options are:
 
 =over 4
 
-=item format - 'default' or 'billco'
+=item format - any of FS::Misc::spool_formats
 
-=item dest - if set (to POST, EMAIL or FAX), only sends spools invoices if the customer has the corresponding invoice destinations set (see L<FS::cust_main_invoice>).
+=item dest - if set (to POST, EMAIL or FAX), only sends spools invoices if the
+customer has the corresponding invoice destinations set (see
+L<FS::cust_main_invoice>).
 
-=item agent_spools - if set to a true value, will spool to per-agent files rather than a single global file
+=item agent_spools - if set to a true value, will spool to per-agent files
+rather than a single global file
 
-=item balanceover - if set, only spools the invoice if the total amount owed on this invoice and all older invoices is greater than the specified amount.
+=item ftp_targetnum - if set to an FTP target (see L<FS::ftp_target>), will
+append to that spool.  L<FS::Cron::upload> will then send the spool file to
+that destination.
+
+=item balanceover - if set, only spools the invoice if the total amount owed on
+this invoice and all older invoices is greater than the specified amount.
 
 =back
 
@@ -1787,11 +1795,23 @@ sub spool_csv {
 
   my $tracctnum = $self->invnum. time2str('-%Y%m%d%H%M%S', time);
 
-  my $file =
-    "$spooldir/".
-    ( $opt{'agent_spools'} ? 'agentnum'.$cust_main->agentnum : 'spool' ).
-    ( lc($opt{'format'}) eq 'billco' ? '-header' : '' ) .
-    '.csv';
+  my $file;
+  if ( $opt{'agent_spools'} ) {
+    $file = 'agentnum'.$cust_main->agentnum;
+  } else {
+    $file = 'spool';
+  }
+
+  if ( $opt{'ftp_targetnum'} ) {
+    $spooldir .= '/target'.$opt{'ftp_targetnum'};
+    mkdir $spooldir, 0700 unless -d $spooldir;
+  } # otherwise it just goes into export.xxx/cust_bill
+
+  if ( lc($opt{'format'}) eq 'billco' ) {
+    $file .= '-header';
+  }
+
+  $file = "$spooldir/$file.csv";
   
   my ( $header, $detail ) = $self->print_csv(%opt, 'tracctnum' => $tracctnum );
 
@@ -1806,10 +1826,7 @@ sub spool_csv {
     flock(CSV, LOCK_UN);
     close CSV;
 
-    $file =
-      "$spooldir/".
-      ( $opt{'agent_spools'} ? 'agentnum'.$cust_main->agentnum : 'spool' ).
-      '-detail.csv';
+    $file =~ s/-header.csv$/-detail.csv/;
 
     open(CSV,">>$file") or die "can't open $file: $!";
     flock(CSV, LOCK_EX);
@@ -1831,7 +1848,7 @@ Returns CSV data for this invoice.
 
 Options are:
 
-format - 'default' or 'billco'
+format - 'default', 'billco', 'oneline', 'bridgestone'
 
 Returns a list consisting of two scalars.  The first is a single line of CSV
 header information for this invoice.  The second is one or more lines of CSV
@@ -1840,7 +1857,8 @@ detail information for this invoice.
 If I<format> is not specified or "default", the fields of the CSV file are as
 follows:
 
-record_type, invnum, custnum, _date, charged, first, last, company, address1, address2, city, state, zip, country, pkg, setup, recur, sdate, edate
+record_type, invnum, custnum, _date, charged, first, last, company, address1, 
+address2, city, state, zip, country, pkg, setup, recur, sdate, edate
 
 =over 4
 
@@ -1945,6 +1963,26 @@ If I<format> is "billco", the fields of the detail CSV file are as follows:
   9     | Grouping Code              | GROUP     | CHAR |     2
   10    | User Defined               | ACCT CODE | CHAR |    15
 
+If format is 'oneline', there is no detail file.  Each invoice has a 
+header line only, with the fields:
+
+Agent number, agent name, customer number, first name, last name, address
+line 1, address line 2, city, state, zip, invoice date, invoice number,
+amount charged, amount due,
+
+and then, for each line item, three columns containing the package number,
+description, and amount.
+
+If format is 'bridgestone', there is no detail file.  Each invoice has a 
+header line with the following fields in a fixed-width format:
+
+Customer number (in display format), date, name (first last), company,
+address 1, address 2, city, state, zip.
+
+This is a mailing list format, and has no per-invoice fields.  To avoid
+sending redundant notices, the spooling event should have a "once" or 
+"once_percust_every" condition.
+
 =cut
 
 sub print_csv {
@@ -2040,6 +2078,31 @@ sub print_csv {
 
       @items,
     );
+
+  } elsif ( lc($opt{'format'}) eq 'bridgestone' ) {
+
+    # bypass the CSV stuff and just return this
+    my $longdate = time2str('%B %d, %Y', time); #current time, right?
+    my $zip = $cust_main->zip;
+    $zip =~ s/\D//;
+    my $prefix = $self->conf->config('bridgestone-prefix', $cust_main->agentnum)
+      || '';
+    return (
+      sprintf(
+        "%-5s%-15s%-20s%-30s%-30s%-30s%-30s%-20s%-2s%-9s\n",
+        $prefix,
+        $cust_main->display_custnum,
+        $longdate,
+        uc(substr($cust_main->contact_firstlast,0,30)),
+        uc(substr($cust_main->company          ,0,30)),
+        uc(substr($cust_main->address1         ,0,30)),
+        uc(substr($cust_main->address2         ,0,30)),
+        uc(substr($cust_main->city             ,0,20)),
+        uc($cust_main->state),
+        $zip
+      ),
+      '' #detail
+      );
 
   } else {
   
@@ -5442,6 +5505,7 @@ sub process_re_X {
 }
 
 sub re_X {
+  # spool_invoice ftp_invoice fax_invoice print_invoice
   my($method, $job, %param ) = @_;
   if ( $DEBUG ) {
     warn "re_X $method for job $job with param:\n".

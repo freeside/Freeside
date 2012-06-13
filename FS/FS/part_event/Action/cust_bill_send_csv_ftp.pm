@@ -2,6 +2,7 @@ package FS::part_event::Action::cust_bill_send_csv_ftp;
 
 use strict;
 use base qw( FS::part_event::Action );
+use FS::Misc;
 
 sub description { 'Upload CSV invoice data to an FTP server'; }
 
@@ -15,11 +16,7 @@ sub option_fields {
   (
     'ftpformat'   => { label   => 'Format',
                        type    =>'select',
-                       options => ['default', 'billco', 'oneline'],
-                       option_labels => { 'default' => 'Default',
-                                          'billco'  => 'Billco',
-                                          'oneline' => 'One line',
-                                        },
+                       options => [ FS::Misc::spool_formats() ],
                      },
     'ftpserver'   => 'FTP server',
     'ftpusername' => 'FTP username',

@@ -13,6 +13,7 @@ use FS::payby;
 use FS::conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh datasrc use_confcompat);
+use FS::Misc;
 use FS::Misc::Geo;
 
 $base_dir = '%%%FREESIDE_CONF%%%';
@@ -3041,7 +3042,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
+    'options'     => [ FS::Misc::spool_formats() ],
   },
 
   {
@@ -3077,7 +3078,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'oneline', 'billco', ],
+    'options'     => [ FS::Misc::spool_formats() ],
   },
 
   {
@@ -3087,14 +3088,33 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
-    {
-    'key'         => 'cust_bill-ftp_spool',
-    'section'     => 'invoicing',
-    'description' => 'Enable FTP upload of the invoice spool during daily processing',
-    'type'        => 'checkbox',
+  {
+    'key'         => 'bridgestone-batch_counter',
+    'section'     => '',
+    'description' => 'Batch counter for spool files.  Increments every time a spool file is uploaded.',
+    'type'        => 'text',
+    'per_agent'   => 1,
   },
 
-{
+  {
+    'key'         => 'bridgestone-prefix',
+    'section'     => '',
+    'description' => 'Agent identifier for uploading to BABT printing service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'bridgestone-confirm_template',
+    'section'     => '',
+    'description' => 'Confirmation email template for uploading to BABT service.  Text::Template format, with variables "$zipfile" (name of the zipped file), "$seq" (sequence number), "$prefix" (user ID string), and "$rows" (number of records in the file).  Should include Subject: and To: headers, separated from the rest of the message by a blank line.',
+    # this could use a true message template, but it's hard to see how that
+    # would make the world a better place
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'svc_acct-usage_suspend',
     'section'     => 'billing',
     'description' => 'Suspends the package an account belongs to when svc_acct.seconds or a bytecount is decremented to 0 or below (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',

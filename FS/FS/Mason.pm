@@ -308,6 +308,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::access_groupsales;
   use FS::contact_class;
   use FS::part_svc_class;
+  use FS::ftp_target;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

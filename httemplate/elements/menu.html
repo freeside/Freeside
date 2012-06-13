@@ -579,6 +579,9 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
   || $curuser->access_right('Edit global inventory')
   || $curuser->access_right('Configuration');
 
+$config_misc{'FTP targets'} = [ $fsurl.'browse/ftp_target.html', 'FTP servers for billing and payment processing' ]
+  if $curuser->access_right('Configuration');
+
 tie my %config_menu, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration' ) ) {
   %config_menu = (

@@ -3680,6 +3680,23 @@ sub tables_hashref {
       'index' => [ [ 'upgrade' ] ],
     },
 
+    'ftp_target' => {
+      'columns' => [
+        'targetnum', 'serial', '', '', '', '',
+        'agentnum', 'int', 'NULL', '', '', '',
+        'hostname', 'varchar', '', $char_d, '', '',
+        'port', 'int', '', '', '', '',
+        'username', 'varchar', '', $char_d, '', '',
+        'password', 'varchar', '', $char_d, '', '',
+        'path', 'varchar', '', $char_d, '', '',
+        'secure', 'char', 'NULL', 1, '', '',
+        'handling', 'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'targetnum',
+      'unique' => [ [ 'targetnum' ] ],
+      'index' => [],
+    },
+
     %{ tables_hashref_torrus() },
 
     # tables of ours for doing torrus virtual port combining
