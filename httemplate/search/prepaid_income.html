@@ -56,7 +56,7 @@
 
 <BR>
 <% $actual_label %><% $actual_label ? 'u' : 'U' %>nearned revenue
-is the amount of unearned revenue
+is the as-yet-unearned portion of revenue
 <% $actual_label ? 'Freeside has actually' : '' %>
 invoiced for packages with 
 <% $cgi->param('include_monthly') ? 'terms extending into the future.'
@@ -148,17 +148,20 @@ foreach my $agentnum (@agentnums) {
   } elsif ( $mode eq 'paid' ) {
     $unearned_base = FS::cust_bill_pkg->paid_sql(@opt);
   }
-  my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS REAL)";
-  my $elapsed  = "GREATEST( $now - cust_bill_pkg.sdate, 0 )";
-  my $remaining = "(1 - $elapsed/$period)";
-
+  
+  my $edate_zero = midnight_sql('edate');
+  my $sdate_zero = midnight_sql('sdate');
+  my $period = "CAST( ($edate_zero - $sdate_zero) / 86400.0 AS DECIMAL(10,0) )";
+  my $remaining = "GREATEST(
+    CAST( ($edate_zero - $now) / 86400.0 AS DECIMAL(10,0) ),
+    0)";
+  my $fraction = "$remaining / $period";
+  
   my $unearned_sql = "CAST(
-  GREATEST( $unearned_base * $remaining, 0 )
+  GREATEST( $unearned_base * $fraction, 0 )
     AS DECIMAL(10,2)
   )";
 
-  my $float = 'REAL'; #'DOUBLE PRECISION';
-  
   my $select = "SUM( $unearned_sql )";
 
   if ( !$cgi->param('include_monthly') ) {
@@ -186,7 +189,6 @@ foreach my $agentnum (@agentnums) {
                  $where
              ";
 
-             warn $sql;
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   my $total = $sth->fetchrow_arrayref->[0];

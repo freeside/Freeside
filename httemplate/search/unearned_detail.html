@@ -1,5 +1,6 @@
 <& elements/search.html,
-  'title'       => emt("Unearned revenue - ".ucfirst($unearned_mode)),
+  'title'       => emt("Unearned revenue - ".ucfirst($unearned_mode)) . ' (' .
+                   time2str('%b %d %Y', $unearned) . ')',
   'name'        => emt('line items'),
   'query'       => $query,
   'count_query' => $count_query,
@@ -41,8 +42,8 @@
     date_sub('last_credit'),
     #Charge start
     date_sub('sdate'),
-    #Charge end
-    date_sub('edate'),
+    #Charge end, minus most of a day
+    date_sub('before_edate'),
     #Invoice
     'invnum',
     #Invoice date
@@ -167,11 +168,19 @@ else {
 # whatever we're using as the base, only show rows where it's positive
 push @where, "$unearned_base > 0";
 
-my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS REAL)";
-my $elapsed = "GREATEST( $unearned - cust_bill_pkg.sdate, 0 )";
-my $remaining = "(1 - $elapsed/$period)";
+my $edate_zero = midnight_sql('edate');
+my $sdate_zero = midnight_sql('sdate');
+# $unearned is one second before midnight on the date requested for the report.
 
-$unearned_sql = "CAST( $unearned_base * $remaining AS DECIMAL(10,2) )";
+# suppress partial days for more accounting-like behavior
+my $period = "CAST( ($edate_zero - $sdate_zero) / 86400.0 AS DECIMAL(10,0) )";
+
+my $remaining = "GREATEST( 
+  CAST( ($edate_zero - $unearned) / 86400.0 AS DECIMAL(10,0) ),
+  0)";
+my $fraction = "$remaining / $period";
+
+$unearned_sql = "CAST( $unearned_base * $fraction AS DECIMAL(10,2) )";
 push @select, "$unearned_sql AS unearned_revenue";
 
 # last payment/credit date
@@ -186,6 +195,8 @@ foreach my $x (qw(pay credit)) {
   AND $table._date <= $unearned";
   push @select, "($last_date_sql) AS last_$x";
 }
+
+push @select, '(edate - 82799) AS before_edate';
 
 #no itemdesc
 #no tax report group kludge
