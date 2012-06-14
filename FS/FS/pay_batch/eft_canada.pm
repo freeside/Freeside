@@ -17,7 +17,51 @@ $name = 'eft_canada';
 
 my ($trans_code, $process_date);
 
+#ref http://gocanada.about.com/od/canadatravelplanner/a/canada_holidays.htm
+my %holiday_yearly = (
+   1 => { map {$_=>1}  1 }, #new year's
+  11 => { map {$_=>1} 11 }, #remembrance day
+  12 => { map {$_=>1} 25 }, #christmas
+  12 => { map {$_=>1} 26 }, #boxing day
+);
+my %holiday = (
+  2012 => {
+             7 => { map {$_=>1}  2 }, #canada day
+             8 => { map {$_=>1}  6 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  3 }, #labour day
+            10 => { map {$_=>1}  8 }, #thanksgiving
+          },
+  2013 => {  2 => { map {$_=>1} 18 }, #family day
+             3 => { map {$_=>1} 29 }, #good friday
+             4 => { map {$_=>1}  1 }, #easter monday
+             5 => { map {$_=>1} 20 }, #victoria day
+             7 => { map {$_=>1}  1 }, #canada day
+             8 => { map {$_=>1}  5 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  2 }, #labour day
+            10 => { map {$_=>1} 14 }, #thanksgiving
+          },
+  2014 => {  2 => { map {$_=>1} 17 }, #family day
+             4 => { map {$_=>1} 18 }, #good friday
+             4 => { map {$_=>1} 21 }, #easter monday
+             5 => { map {$_=>1} 19 }, #victoria day
+             7 => { map {$_=>1}  1 }, #canada day
+             8 => { map {$_=>1}  4 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  1 }, #labour day
+            10 => { map {$_=>1} 13 }, #thanksgiving
+          },
+  2015 => {  2 => { map {$_=>1} 16 }, #family day
+             4 => { map {$_=>1}  3 }, #good friday
+             4 => { map {$_=>1}  6 }, #easter monday
+             5 => { map {$_=>1} 18 }, #victoria day
+             7 => { map {$_=>1}  1 }, #canada day
+             8 => { map {$_=>1}  3 }, #First Monday of August Civic Holiday
+             9 => { map {$_=>1}  7 }, #labour day
+            10 => { map {$_=>1} 12 }, #thanksgiving
+          },
+);
+
 %export_info = (
+
   init => sub {
     my $conf = shift;
     my @config = $conf->config('batchconfig-eft_canada'); 
@@ -25,9 +69,24 @@ my ($trans_code, $process_date);
     my $process_delay;
     ($trans_code, $process_delay) = @config[2,3];
     $process_delay ||= 1; # days
-    $process_date = time2str('%D', time + ($process_delay * 86400));
+
+    my $pt = time + ($process_delay * 86400);
+    my @lt = localtime($pt);
+    while (    $lt[6] == 0 #Sunday
+            || $lt[6] == 6 #Saturday
+            || $holiday_yearly{ $lt[4]+1 }{ $lt[3] }
+            || $holiday{ $lt[5]+1900 }{ $lt[4]+1 }{ $lt[3] }
+          )
+    {
+      $pt += 86400;
+      @lt = localtime($pt);
+    }
+
+    $process_date = time2str('%D', $pt);
   },
+
   delimiter => '', # avoid blank lines for header/footer
+
   # EFT Upload Specification for .CSV Files, Rev. 2.0
   # not a true CSV format--strings aren't quoted, so be careful
   row => sub {
