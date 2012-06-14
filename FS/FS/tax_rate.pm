@@ -993,7 +993,7 @@ sub _perform_batch_import {
     }
 
     push @insert_list,
-      'DETAIL', "$dir/".$files{detail}, \&FS::tax_rate::batch_import, $format
+      'DETAIL', "$dir/".$files{detailfile}, \&FS::tax_rate::batch_import, $format
       if $format =~ /update/;
 
     $error ||= _perform_cch_tax_import( $job,
