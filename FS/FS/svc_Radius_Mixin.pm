@@ -1,11 +1,14 @@
 package FS::svc_Radius_Mixin;
+use base qw( FS::m2m_Common FS::svc_Common );
 
 use strict;
-use base qw(FS::m2m_Common FS::svc_Common);
-use FS::Record qw(qsearch);
+use FS::Record qw( qsearch dbh );
 use FS::radius_group;
 use FS::radius_usergroup;
-use Carp qw(confess);
+use Carp qw( confess );
+
+# not really a mixin since it overrides insert/replace/delete and has svc_Common
+#  as a base class, should probably be renamed svc_Radius_Common
 
 =head1 NAME
 
@@ -17,15 +20,34 @@ FS::svc_Radius_Mixin - partial base class for services with RADIUS groups
 
 =cut
 
-
 sub insert {
   my $self = shift;
-  $self->SUPER::insert(@_)
-  || $self->process_m2m(
-    'link_table' => 'radius_usergroup',
-    'target_table' => 'radius_group',
-    'params' => $self->usergroup,
-  );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =  $self->SUPER::insert(@_)
+            || $self->process_m2m(
+                                   'link_table'   => 'radius_usergroup',
+                                   'target_table' => 'radius_group',
+                                   'params'       => $self->usergroup,
+                                 );
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 sub replace  {
@@ -33,22 +55,63 @@ sub replace  {
   my $old = shift;
   $old = $new->replace_old if !defined($old);
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   $old->usergroup; # make sure this is cached for exports
-  $new->process_m2m(
-    'link_table' => 'radius_usergroup',
-    'target_table' => 'radius_group',
-    'params' => $new->usergroup,
-  ) || $new->SUPER::replace($old, @_);
+
+  my $error =  $new->process_m2m(
+                                 'link_table'   => 'radius_usergroup',
+                                 'target_table' => 'radius_group',
+                                 'params'       => $new->usergroup,
+                               )
+            || $new->SUPER::replace($old, @_);
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 sub delete {
   my $self = shift;
-  $self->SUPER::delete(@_)
-  || $self->process_m2m(
-    'link_table' => 'radius_usergroup',
-    'target_table' => 'radius_group',
-    'params' => [],
-  );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =  $self->SUPER::delete(@_)
+            || $self->process_m2m(
+                                   'link_table'   => 'radius_usergroup',
+                                   'target_table' => 'radius_group',
+                                   'params'       => [],
+                                 );
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 sub usergroup {
