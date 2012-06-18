@@ -415,7 +415,7 @@ push @fields,
 
                       [ map { 
                               [
-                                { 'data'  => $_,
+                                { 'data'  => "$_: ",
                                   'align' => 'right',
                                 },
                                 { 'data'  => $part_pkg->format($_,$options{$_}),
