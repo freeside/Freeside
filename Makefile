@@ -340,7 +340,7 @@ configure-rt:
 	            --with-db-dba=${DB_USER} \
 	            --with-db-database=${RT_DB_DATABASE} \
 	            --with-db-rt-user=${DB_USER} \
-	            --with-db-rt-pass=${DB_PASSWORD} \
+	            --with-db-rt-pass="${DB_PASSWORD}" \
 	            --with-web-user=freeside \
 	            --with-web-group=freeside \
 	            --with-rt-group=freeside \
