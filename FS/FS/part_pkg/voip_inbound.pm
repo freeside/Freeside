@@ -242,6 +242,7 @@ sub calc_usage {
                                          );
       if ( $reason ) {
         warn "not charging for CDR ($reason)\n" if $DEBUG;
+        $cdr_search->adjust(1);
         next;
       }
 
