@@ -2,7 +2,7 @@ package FS::part_event::Action::cust_bill_spool_csv;
 
 use strict;
 use base qw( FS::part_event::Action );
-use FS::Misc;
+use FS::Misc::Invoicing qw( spool_formats );
 
 sub description { 'Spool CSV invoice data'; }
 
@@ -16,7 +16,7 @@ sub option_fields {
   (
     'spoolformat'       => { label   => 'Format',
                              type    => 'select',
-                             options => [ FS::Misc::spool_formats() ],
+                             options => [ spool_formats() ],
                            },
     'spoolbalanceover'  => { label =>
                                'If balance (this invoice and previous) over',

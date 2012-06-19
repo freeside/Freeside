@@ -2,7 +2,7 @@ package FS::part_event::Action::cust_bill_send_csv_ftp;
 
 use strict;
 use base qw( FS::part_event::Action );
-use FS::Misc;
+use FS::Misc::Invoicing qw( spool_formats );
 
 sub description { 'Upload CSV invoice data to an FTP server'; }
 
@@ -16,7 +16,7 @@ sub option_fields {
   (
     'ftpformat'   => { label   => 'Format',
                        type    =>'select',
-                       options => [ FS::Misc::spool_formats() ],
+                       options => [ spool_formats() ],
                      },
     'ftpserver'   => 'FTP server',
     'ftpusername' => 'FTP username',

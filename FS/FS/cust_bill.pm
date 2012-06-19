@@ -1753,7 +1753,7 @@ Options are:
 
 =over 4
 
-=item format - any of FS::Misc::spool_formats
+=item format - any of FS::Misc::::Invoicing::spool_formats
 
 =item dest - if set (to POST, EMAIL or FAX), only sends spools invoices if the
 customer has the corresponding invoice destinations set (see

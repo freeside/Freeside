@@ -13,7 +13,7 @@ use FS::payby;
 use FS::conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh datasrc use_confcompat);
-use FS::Misc;
+use FS::Misc::Invoicing qw( spool_formats );
 use FS::Misc::Geo;
 
 $base_dir = '%%%FREESIDE_CONF%%%';
@@ -3042,7 +3042,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
-    'options'     => [ FS::Misc::spool_formats() ],
+    'options'     => [ spool_formats() ],
   },
 
   {
@@ -3078,7 +3078,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
-    'options'     => [ FS::Misc::spool_formats() ],
+    'options'     => [ spool_formats() ],
   },
 
   {
