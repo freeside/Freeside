@@ -114,7 +114,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages'); #?
+  unless $FS::CurrentUser::CurrentUser->access_right('Services: Accounts: Advanced search'); #?
 
 my $title = emt('Account Report');
 
