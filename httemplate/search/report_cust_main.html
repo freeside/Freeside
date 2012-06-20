@@ -171,9 +171,7 @@
 <%init>
 
 die "access denied"
-  unless ( $FS::CurrentUser::CurrentUser->access_right('List customers') &&
-           $FS::CurrentUser::CurrentUser->access_right('List packages')
-         );
+  unless $FS::CurrentUser::CurrentUser->access_right('Advanced customer search');
 
 my $conf = new FS::Conf;
 

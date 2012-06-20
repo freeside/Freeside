@@ -2,6 +2,7 @@ package FS::access_right;
 
 use strict;
 use vars qw( @ISA );
+use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs );
 use FS::upgrade_journal;
 
@@ -183,8 +184,9 @@ sub _upgrade_data { # class method
 
   my @all_groups = qsearch('access_group', {});
 
-  my %onetime = (
+  tie my %onetime, 'Tie::IxHash',
     'List customers'                      => 'List all customers',
+    'List all customers'                  => 'Advanced customer search',
     'List packages'                       => 'Summarize packages',
     'Post payment'                        => 'Backdate payment',
     'Cancel customer package immediately' => 'Un-cancel customer package',
@@ -206,11 +208,16 @@ sub _upgrade_data { # class method
                             'Services: Mailing lists',
                             'Services: External services',
                           ],
+
+    'Services: Accounts' => 'Services: Accounts: Advanced search',
+    'Services: Wireless broadband services' => 'Services: Wireless broadband services: Advanced search',
+    'Services: Hardware' => 'Services: Hardware: Advanced search',
+
     'List rating data' => [ 'Usage: RADIUS sessions',
                             'Usage: Call Detail Records (CDRs)',
                             'Usage: Unrateable CDRs',
                           ],
-  );
+  ;
 
   foreach my $old_acl ( keys %onetime ) {
 
