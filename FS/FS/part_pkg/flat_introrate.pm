@@ -32,8 +32,8 @@ sub base_recur {
   warn "flat_introrate base_recur requires date!" if !$time;
   my $now = $time ? $$time : time;
 
-  my ($duration) = ($self->option('intro_duration') =~ /^(\d+)$/);
-  unless ($duration) {
+  my ($duration) = ($self->option('intro_duration') =~ /^\s*(\d+)\s*$/);
+  unless (length($duration)) {
     die "Invalid intro_duration: " . $self->option('intro_duration');
   }
   my $intro_end = $self->add_freq($cust_pkg->setup, $duration);
