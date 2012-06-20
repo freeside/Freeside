@@ -634,18 +634,18 @@ my $doc_link = $conf->config('support-key')
 eval "use RT;"
   if $conf->config('ticket_system') eq 'RT_Internal';
 
-tie my %help_menu, 'Tie::IxHash', 'Billing documentation' => [ $doc_link, 'Freeside documentation' ];
-$help_menu{'Ticketing documentation'} = [ 'http://wiki.bestpractical.com/', 'Request Tracker Wiki' ]
-  if $conf->config('ticket_system') eq 'RT_Internal';
-$help_menu{'Networking monitoring documentation'} = [ 'http://torrus.org/userguide.pod.html', 'Torrus User Guide' ]
-  if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
-$help_menu{'separator'} = '';
-
+tie my %help_menu, 'Tie::IxHash';
 my $agentnum = $conf->config('brand-agent');
 if ( $agentnum ) {
   my $company_name = $conf->config('company_name', $agentnum);
   $help_menu{"About $company_name"} = [ "javascript:about_freeside()", '' ];
 } else {
+  $help_menu{'Billing documentation'} = [ $doc_link, 'Freeside documentation' ];
+  $help_menu{'Ticketing documentation'} = [ 'http://wiki.bestpractical.com/', 'Request Tracker Wiki' ]
+    if $conf->config('ticket_system') eq 'RT_Internal';
+  $help_menu{'Networking monitoring documentation'} = [ 'http://torrus.org/userguide.pod.html', 'Torrus User Guide' ]
+    if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
+  $help_menu{'separator'} = '';
   $help_menu{"About Freeside v$FS::VERSION"} = [ "javascript:about_freeside()", '' ];
   $help_menu{"About RT v$RT::VERSION"} = [ 'http://www.bestpractical.com/rt', 'Request Tracker Homepage' ]
     if $conf->config('ticket_system') eq 'RT_Internal';
