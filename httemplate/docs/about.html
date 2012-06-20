@@ -10,7 +10,7 @@
 %   my $url = $conf->config('company_url', $agentnum);
 %   if ( $url ) {
       <BR><BR>
-      <A HREF="<% $conf->config('company_url', $agentnum) %>" TARGET="_blank"><%$title%> homepage</A>
+      <A HREF="<% $conf->config('company_url', $agentnum) %>" TARGET="_top"><%$title%> homepage</A>
 %   }
 
 % } else {
@@ -46,7 +46,7 @@ GNU <b>Affero</b> General Public License.<BR>
 
 
 <BR><BR>
-<A HREF="http://www.freeside.biz/freeside" TARGET="_blank">Freeside homepage</A>
+<A HREF="http://www.freeside.biz/freeside" TARGET="_top">Freeside homepage</A>
 % if ( $agentnum ) {
   </FONT>
 % }
@@ -56,7 +56,7 @@ GNU <b>Affero</b> General Public License.<BR>
 
 % unless ( $agentnum ) {
   <CENTER>
-  <FONT SIZE="-3">"A selfish heart is trouble, but a foolish heart is worse" -R. Hunter</FONT>
+<!--  <FONT SIZE="-3">"" -R. Hunter</FONT> -->
   </CENTER>
 % }
 
