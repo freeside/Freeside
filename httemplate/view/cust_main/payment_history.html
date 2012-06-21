@@ -491,7 +491,7 @@ foreach my $cust_credit ($cust_main->cust_credit) {
 foreach my $cust_refund ($cust_main->cust_refund) {
   push @history, {
     'date'   => $cust_refund->_date,
-    'desc'   => include('payment_history/refund.html', $cust_refund),
+    'desc'   => include('payment_history/refund.html', $cust_refund, %opt),
     'refund' => $cust_refund->refund,
   };
 
