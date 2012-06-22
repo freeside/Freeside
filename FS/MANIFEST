@@ -37,7 +37,6 @@ FS/ClientAPI/Bulk.pm
 FS/ClientAPI/MasonComponent.pm
 FS/ClientAPI/MyAccount.pm
 FS/ClientAPI/PrepaidPhone.pm
-FS/ClientAPI/SGNG.pm
 FS/ClientAPI/Signup.pm
 FS/Conf.pm
 FS/ConfItem.pm

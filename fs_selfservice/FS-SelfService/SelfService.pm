@@ -105,22 +105,6 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
-  #izoom
-  #'bulk_processrow'           => 'Bulk/processrow',
-  #conflicts w/Agent one# 'check_username'            => 'Bulk/check_username',
-  #sg
-  'ping'                      => 'SGNG/ping',
-  'decompify_pkgs'            => 'SGNG/decompify_pkgs',
-  'previous_payment_info'     => 'SGNG/previous_payment_info',
-  'previous_payment_info_renew_info'
-                              => 'SGNG/previous_payment_info_renew_info',
-  'previous_process_payment'  => 'SGNG/previous_process_payment',
-  'previous_process_payment_order_pkg'
-                              => 'SGNG/previous_process_payment_order_pkg',
-  'previous_process_payment_change_pkg'
-                              => 'SGNG/previous_process_payment_change_pkg',
-  'previous_process_payment_order_renew'
-                              => 'SGNG/previous_process_payment_order_renew',
 );
 @EXPORT_OK = (
   keys(%autoload),

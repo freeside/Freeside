@@ -16,7 +16,6 @@ use FS::cust_pay_pending;
 @ISA = qw( Exporter );
 @EXPORT_OK = qw(
   check_queued check_selfservice check_apache check_bop_failures
-  check_sg check_sg_login check_sgng
   alert error_msg
 );
 
@@ -46,79 +45,6 @@ sub check_selfservice {
     }
   }
   return 1;
-}
-
-sub check_sg {
-  my $conf = new FS::Conf;
-  #different trigger if they ever stop using multicustomer_hack ?
-  return 1 unless $conf->exists('sg-multicustomer_hack');
-
-  my $ua = new LWP::UserAgent;
-  $ua->agent("FreesideCronCheck/0.1 " . $ua->agent);
-
-  my $USER = $conf->config('sg-ping_username');
-  my $PASS = $conf->config('sg-ping_password');
-  my $req = new HTTP::Request GET=>"https://$USER:$PASS\@localhost/sg/ping.cgi";
-  my $res = $ua->request($req);
-
-  return 1 if $res->is_success
-           && $res->content =~ /OK/
-           && $res->content !~ /error/i; #doh, the error message includes "OK"
-
-  $error_msg = $res->is_success ? $res->content : $res->status_line;
-  return 0;
-}
-
-sub check_sg_login {
-  my $conf = new FS::Conf;
-  #different trigger if they ever stop using multicustomer_hack ?
-  return 1 unless $conf->exists('sg-multicustomer_hack');
-
-  my $ua = new LWP::UserAgent;
-  $ua->agent("FreesideCronCheck/0.1 " . $ua->agent);
-
-  my $USER = $conf->config('sg-ping_username');
-  my $PASS = $conf->config('sg-ping_password');
-  my $USERNAME = $conf->config('sg-login_username');
-  my $req = new HTTP::Request
-    GET=>"https://$USER:$PASS\@localhost/sg/start.cgi?".
-         'username='. uri_escape($USERNAME);
-  my $res = $ua->request($req);
-
-  return 1 if $res->is_success
-           && $res->content =~ /[\da-f]{32}/i #session_id
-           && $res->content !~ /error/i;
-
-  $error_msg = $res->is_success ? $res->content : $res->status_line;
-  return 0;
-}
-
-sub check_sgng {
-  my $conf = new FS::Conf;
-  #different trigger if they ever stop using multicustomer_hack ?
-  return 1 unless $conf->exists('sg-multicustomer_hack');
-
-  eval 'use RPC::XML; use RPC::XML::Client;';
-  if ($@) { $error_msg = $@; return 0; };
-
-  my $cli = RPC::XML::Client->new('https://localhost/selfservice/xmlrpc.cgi');
-  my $resp = $cli->send_request('FS.SelfService.XMLRPC.ping');
-
-  return 1 if ref($resp)
-           && ! $resp->is_fault
-           && ref($resp->value)
-           && $resp->value->{'pong'} == 1;
-
-  #hua
-  $error_msg = ref($resp)
-                 ? ( $resp->is_fault
-                       ? $resp->string
-                       : ( ref($resp->value) ? $resp->value->{'error'}
-                                             : $resp->value
-                         )
-                 )
-                 : $resp;
-  return 0;
 }
 
 sub _check_fsproc {

@@ -4514,34 +4514,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'sg-multicustomer_hack',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'sg-ping_username',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'sg-ping_password',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'sg-login_username',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'text',
-  },
-
-  {
     'key'         => 'mc-outbound_packages',
     'section'     => '',
     'description' => "Don't use this.",
