@@ -531,7 +531,7 @@ $config_billing{'Billing events'} = [ $fsurl.'browse/part_event.html', 'Billing 
     || $curuser->access_right('Edit global billing events');
 if ( $curuser->access_right('Configuration') ) {
   #$config_billing{'Invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
-#this doesn't work right#  $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
+  $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
   $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
   $config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
 
