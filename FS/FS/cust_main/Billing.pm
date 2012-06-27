@@ -963,7 +963,6 @@ sub _make_lines {
   # bill recurring fee
   ### 
 
-  #XXX unit stuff here too
   my $recur = 0;
   my $unitrecur = 0;
   my @recur_discounts = ();
@@ -1021,6 +1020,9 @@ sub _make_lines {
     $recur = eval { $cust_pkg->$method( \$sdate, \@details, \%param ) };
     return "$@ running $method for $cust_pkg\n"
       if ( $@ );
+
+    #base_cancel???
+    $unitrecur = $cust_pkg->part_pkg->base_recur || $recur; #XXX uuh
 
     if ( $increment_next_bill ) {
 

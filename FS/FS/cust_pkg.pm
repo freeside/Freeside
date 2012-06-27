@@ -2204,11 +2204,14 @@ field, I<num_avail>, which specifies the number of available services.
 
 sub available_part_svc {
   my $self = shift;
+
+  my $pkg_quantity = $self->quantity || 1;
+
   grep { $_->num_avail > 0 }
     map {
           my $part_svc = $_->part_svc;
           $part_svc->{'Hash'}{'num_avail'} = #evil encapsulation-breaking
-            $_->quantity - $self->num_cust_svc($_->svcpart);
+            $pkg_quantity * $_->quantity - $self->num_cust_svc($_->svcpart);
 
 	  # more evil encapsulation breakage
 	  if($part_svc->{'Hash'}{'num_avail'} > 0) {
@@ -2250,6 +2253,8 @@ sub part_svc {
   my $self = shift;
   my %opt = @_;
 
+  my $pkg_quantity = $self->quantity || 1;
+
   #XXX some sort of sort order besides numeric by svcpart...
   my @part_svc = sort { $a->svcpart <=> $b->svcpart } map {
     my $pkg_svc = $_;
@@ -2257,7 +2262,7 @@ sub part_svc {
     my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
     $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #more evil
     $part_svc->{'Hash'}{'num_avail'}    =
-      max( 0, $pkg_svc->quantity - $num_cust_svc );
+      max( 0, $pkg_quantity * $pkg_svc->quantity - $num_cust_svc );
     $part_svc->{'Hash'}{'cust_pkg_svc'} =
         $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : []
       unless exists($opt{summarize_size}) && $opt{summarize_size} > 0

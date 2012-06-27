@@ -161,6 +161,9 @@ sub calc_recur {
     $charge *= $param->{freq_override} if $param->{freq_override};
   }
 
+  my $quantity = $cust_pkg->quantity || 1;
+  $charge *= $quantity;
+
   my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
   return sprintf('%.2f', $charge - $discount);
 }

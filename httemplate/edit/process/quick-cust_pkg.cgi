@@ -48,6 +48,9 @@ die 'unknown custnum' unless $cust_main;
 $cgi->param('pkgpart') =~ /^(\d+)$/
   or die 'illegal pkgpart '. $cgi->param('pkgpart');
 my $pkgpart = $1;
+$cgi->param('quantity') =~ /^(\d+)$/
+  or die 'illegal quantity '. $cgi->param('quantity');
+my $quantity = $1;
 $cgi->param('refnum') =~ /^(\d*)$/
   or die 'illegal refnum '. $cgi->param('refnum');
 my $refnum = $1;
@@ -78,6 +81,7 @@ if ( $cgi->param('qualnum') ) {
 my $cust_pkg = new FS::cust_pkg {
   'custnum'              => $custnum,
   'pkgpart'              => $pkgpart,
+  'quantity'             => $quantity,
   'start_date'           => ( scalar($cgi->param('start_date'))
                                 ? parse_datetime($cgi->param('start_date'))
                                 : ''

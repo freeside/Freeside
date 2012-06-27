@@ -32,6 +32,15 @@
     &>
 % }
 
+% if ( $conf->exists('invoice-unitprice') ) {
+    <TR>
+      <TH ALIGN="right"><% mt('Quantity') |h %> </TD>
+      <TD>
+        <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $quantity %>">
+      </TD>
+    </TR>
+% }
+
 <TR>
   <TH ALIGN="right"><% mt('Start date') |h %> </TD>
   <TD COLSPAN=6>
@@ -162,6 +171,11 @@ if ( $cgi->param('lock_pkgpart') ) {
 }
 
 my $pkgpart = $part_pkg ? $part_pkg->pkgpart : scalar($cgi->param('pkgpart'));
+
+my $quantity = 1;
+if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
+  $quantity = $1;
+}
 
 my $format = $date_format. ' %T %z (%Z)'; #false laziness w/REAL_cust_pkg.cgi?
 my $start_date = '';
