@@ -1,9 +1,16 @@
 % for my $file (@files) {
   <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/<%$file%>.js"></SCRIPT>
 % }
+<%once>
+my $initialized = 0; #won't work if component is "preloaded"... so don't do that
+</%once>
 <%init>
 
-my @files = map "overlibmws$_", ( '', qw( _iframe _draggable _crossframe ) );
-push @files, map { "${_}contentmws" } qw( iframe ajax );
+my @files = ();
+if ( ! $initialized ) {
+  push @files, map "overlibmws$_", ( '', qw( _iframe _draggable _crossframe ) );
+  push @files, map { "${_}contentmws" } qw( iframe ajax );
+  $initialized++;
+}
 
 </%init>
