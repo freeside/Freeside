@@ -32,7 +32,7 @@ Interface
 
   <TR>
     <TH ALIGN="right">Locale: </TH>
-    <TD>
+    <TD COLSPAN=2>
       <SELECT NAME="locale">
 %       foreach my $locale ( FS::Locales->locales ) {
 %         my %info = FS::Locales->locale_info($locale);
@@ -80,6 +80,13 @@ Interface
     <TH ALIGN="right" COLSPAN=1>Disable HTML editor for customer notes: </TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="disable_html_editor" VALUE="1" <% $curuser->option('disable_html_editor') ? 'CHECKED' : '' %>>
+    </TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right" COLSPAN=1>Disable submission on [Enter] key - one-time charges: </TH>
+    <TD ALIGN="left" COLSPAN=2>
+      <INPUT TYPE="checkbox" NAME="disable_enter_submit_onetimecharge" VALUE="1" <% $curuser->option('disable_enter_submit_onetimecharge') ? 'CHECKED' : '' %>>
     </TD>
   </TR>
 
