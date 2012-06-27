@@ -45,7 +45,7 @@ sub cutoff_day {
   if ( $recur_method eq 'prorate' or $recur_method eq 'subscription' ) {
     return $self->option('cutoff_day',1) || 1;
   } else {
-    return 0;
+    return ();
   }
 }
 
@@ -58,26 +58,26 @@ sub calc_recur_Common {
   if ( $param->{'increment_next_bill'} ) {
 
     my $recur_method = $self->option('recur_method', 1) || 'anniversary';
-    my $cutoff_day = $self->cutoff_day($cust_pkg);
+    my @cutoff_day = $self->cutoff_day($cust_pkg);
 
     $charges = $self->base_recur($cust_pkg);
     $charges += $param->{'override_charges'} if $param->{'override_charges'};
 
     if ( $recur_method eq 'prorate' ) {
 
-      $charges = $self->calc_prorate(@_, $cutoff_day);
+      $charges = $self->calc_prorate(@_, @cutoff_day);
       $charges += $param->{'override_charges'} if $param->{'override_charges'};
 
     } elsif ( $recur_method eq 'subscription' ) {
 
       my ($day, $mon, $year) = ( localtime($$sdate) )[ 3..5 ];
 
-      if ( $day < $cutoff_day ) {
+      if ( $day < $cutoff_day[0] ) {
         if ( $mon == 0 ) { $mon=11; $year--; }
         else { $mon--; }
       }
 
-      $$sdate = timelocal(0, 0, 0, $cutoff_day, $mon, $year);
+      $$sdate = timelocal(0, 0, 0, $cutoff_day[0], $mon, $year);
 
     }#$recur_method
 
