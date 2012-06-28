@@ -25,6 +25,12 @@
                   'all_selected' => 1,
     &>
 
+    <& /elements/tr-select-part_referral.html,
+                  'label'        => emt('Advertising Source'),
+                  'multiple'     => 1,
+                  'all_selected' => 1,
+    &>
+
     <TR>
       <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
       <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
@@ -129,11 +135,6 @@
     &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Include cancelled packages') |h %></TD>
-        <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
-    </TR>
-
-    <TR>
       <TD ALIGN="right" VALIGN="center"><% mt('Without census tract') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="no_censustract"></TD>
     </TR>
@@ -160,6 +161,12 @@
       <TD ALIGN="right" VALIGN="center"><% mt('Add package columns') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="flattened_pkgs"></TD>
     </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Include cancelled packages') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
+    </TR>
+
   </TABLE>
 
 <BR>

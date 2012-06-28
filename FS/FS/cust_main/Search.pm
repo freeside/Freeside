@@ -577,8 +577,17 @@ sub search {
   ###
   # refnum
   ###
-  if ( $params->{'refnum'} =~ /^(\d+)$/ ) {
-    push @where, "refnum = $1";
+  if ( $params->{'refnum'}  ) {
+
+    my @refnum = ref( $params->{'refnum'} )
+                   ? @{ $params->{'refnum'} }
+                   :  ( $params->{'refnum'} );
+
+    @refnum = grep /^(\d*)$/, @refnum;
+
+    push @where, '( '. join(' OR ', map "cust_main.refnum = $_", @refnum ). ' )'
+      if @refnum;
+
   }
 
   ##
