@@ -54,10 +54,7 @@ sub process_whatever { #class method
            )
 %>
 
-% if (!$noinit) { 
 <& /elements/init_overlib.html &>
-%   $noinit = 1;
-% }
 
 <SCRIPT TYPE="text/javascript">
 
@@ -117,9 +114,6 @@ function <%$key%>myCallback( jobnum ) {
 
 </SCRIPT>
 
-<%once>
-my $noinit = 0;
-</%once>
 <%init>
 
 my( $formname, $fields, $action, $url_or_message, $key ) = @_;
