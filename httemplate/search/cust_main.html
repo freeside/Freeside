@@ -45,7 +45,6 @@ my @scalars = qw (
   no_censustract with_geocode custbatch usernum
   cancelled_pkgs
   cust_fields flattened_pkgs
-  refnum
 );
 
 for my $param ( @scalars ) {
@@ -54,7 +53,7 @@ for my $param ( @scalars ) {
 }
 
 #lists
-for my $param (qw( classnum payby tagnum )) {
+for my $param (qw( classnum refnum payby tagnum )) {
   $search_hash{$param} = [ $cgi->param($param) ];
 }
 
