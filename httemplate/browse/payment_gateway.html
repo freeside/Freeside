@@ -77,9 +77,9 @@ my $options_sub = sub {
 
   my $html = '<TABLE CELLSPACING=0 CELLPADDING=0>';
 
-  my %options = $payment_gateway->options;
+  tie my %options, 'Tie::IxHash', $payment_gateway->options;
   foreach my $option ( keys %options ) {
-    $html .= '<TR><TH>'. $option. ':</TH>'.
+    $html .= '<TR><TH ALIGN="right">'. $option. ':</TH>'.
              '<TD>'. $options{$option}. '</TD></TR>';
   }
   $html .= '</TABLE>';

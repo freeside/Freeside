@@ -140,5 +140,18 @@ my %paytype = (
   row => sub {},
 );
 
+# Including this means that there is a Business::BatchPayment module for
+# this gateway and we want to upgrade it.
+# Must return the name of the module, followed by a hash of options.
+
+sub _upgrade_gateway {
+  my $conf = FS::Conf->new;
+  my @batchconfig = $conf->config('batchconfig-paymentech');
+  my %options;
+  @options{ qw(bin terminalID merchantID login password ) } = @batchconfig;
+  $options{'industryType'} = 'EC';
+  ( 'Paymentech', %options );
+}
+
 1;
 

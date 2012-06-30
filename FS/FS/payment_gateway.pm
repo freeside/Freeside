@@ -39,7 +39,7 @@ currently supported:
 
 =item gatewaynum - primary key
 
-=item gateway_namespace - Business::OnlinePayment or Business::OnlineThirdPartyPayment
+=item gateway_namespace - Business::OnlinePayment, Business::OnlineThirdPartyPayment, or Business::BatchPayment
 
 =item gateway_module - Business::OnlinePayment:: module name
 
@@ -50,6 +50,13 @@ currently supported:
 =item gateway_action - optional action or actions (multiple actions are separated with `,': for example: `Authorization Only, Post Authorization').  Defaults to `Normal Authorization'.
 
 =item disabled - Disabled flag, empty or 'Y'
+
+=item auto_resolve_status - For BatchPayment only, set to 'approve' to 
+auto-approve unresolved payments after some number of days, 'reject' to 
+auto-decline them, or null to do nothing.
+
+=item auto_resolve_days - For BatchPayment, the number of days to wait before 
+auto-resolving the batch.
 
 =back
 
@@ -116,16 +123,21 @@ sub check {
     || $self->ut_alpha('gateway_module')
     || $self->ut_enum('gateway_namespace', ['Business::OnlinePayment',
                                             'Business::OnlineThirdPartyPayment',
+                                            'Business::BatchPayment',
                                            ] )
     || $self->ut_textn('gateway_username')
     || $self->ut_anything('gateway_password')
     || $self->ut_textn('gateway_callback_url')  # a bit too permissive
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_enum('auto_resolve_status', [ '', 'approve', 'reject' ])
+    || $self->ut_numbern('auto_resolve_days')
     #|| $self->ut_textn('gateway_action')
   ;
   return $error if $error;
 
-  if ( $self->gateway_action ) {
+  if ( $self->gateway_namespace eq 'Business::BatchPayment' ) {
+    $self->gateway_action('Payment');
+  } elsif ( $self->gateway_action ) {
     my @actions = split(/,\s*/, $self->gateway_action);
     $self->gateway_action(
       join( ',', map { /^(Normal Authorization|Authorization Only|Credit|Post Authorization)$/
@@ -198,6 +210,19 @@ sub disable {
 
 }
 
+=item label
+
+Returns a semi-friendly label for the gateway.
+
+=cut
+
+sub label {
+  my $self = shift;
+  $self->gatewaynum . ': ' . 
+  $self->gateway_username . '@' . 
+  $self->gateway_module
+}
+
 =item namespace_description
 
 returns a friendly name for the namespace
@@ -208,10 +233,56 @@ my %namespace2description = (
   '' => 'Direct',
   'Business::OnlinePayment' => 'Direct',
   'Business::OnlineThirdPartyPayment' => 'Hosted',
+  'Business::BatchPayment' => 'Batch',
 );
 
 sub namespace_description {
   $namespace2description{shift->gateway_namespace} || 'Unknown';
+}
+
+=item batch_processor OPTIONS
+
+For BatchPayment gateways only.  Returns a 
+L<Business::BatchPayment::Processor> object to communicate with the 
+gateway.
+
+OPTIONS will be passed to the constructor, along with any gateway 
+options in the database for this L<FS::payment_gateway>.  Useful things
+to include there may include 'input' and 'output' (to direct transport
+to files), 'debug', and 'test_mode'.
+
+If the global 'business-batchpayment-test_transaction' flag is set, 
+'test_mode' will be forced on, and gateways that don't support test
+mode will be disabled.
+
+=cut
+
+sub batch_processor {
+  local $@;
+  my $self = shift;
+  my %opt = @_;
+  my $batch = $opt{batch};
+  my $output = $opt{output};
+  die 'gateway '.$self->gatewaynum.' is not a Business::BatchPayment gateway'
+    unless $self->gateway_namespace eq 'Business::BatchPayment';
+  eval "use Business::BatchPayment;";
+  die "couldn't load Business::BatchPayment: $@" if $@;
+
+  my $conf = new FS::Conf;
+  my $test_mode = $conf->exists('business-batchpayment-test_transaction');
+  $opt{'test_mode'} = 1 if $test_mode;
+
+  my $module = $self->gateway_module;
+  my $processor = eval { 
+    Business::BatchPayment->create($module, $self->options, %opt)
+  };
+  die "failed to create Business::BatchPayment::$module object: $@"
+    if $@;
+
+  die "$module does not support test mode"
+    if $test_mode and not $processor->does('Business::BatchPayment::TestMode');
+
+  return $processor;
 }
 
 # _upgrade_data

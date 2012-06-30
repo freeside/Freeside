@@ -269,6 +269,9 @@ sub upgrade_data {
 
     #routernum/blocknum
     'svc_broadband' => [],
+
+    #set up payment gateways if needed
+    'pay_batch' => [],
   ;
 
   \%hash;

@@ -65,6 +65,11 @@ backup();
 use FS::Cron::rt_tasks qw(rt_daily);
 rt_daily(%opt);
 
+#does nothing unless batch-gateway-* configs are set
+use FS::Cron::pay_batch qw(batch_submit batch_receive);
+batch_submit(%opt);
+batch_receive(%opt);
+
 my $deldir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/";
 unlink <${deldir}.invoice*>;
 unlink <${deldir}.letter*>;
