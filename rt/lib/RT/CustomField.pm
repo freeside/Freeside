@@ -170,11 +170,15 @@ our %FieldTypes = (
                     'Select up to [_1] datetimes',                    # loc
                   ]
                 },
-    TimeValue => [
-        'Enter multiple time values (UNSUPPORTED)',
-        'Enter a time value',
-        'Enter [_1] time values (UNSUPPORTED)',
-    ],
+    TimeValue => {
+        sort_order => 105,
+        selection_type => 0,
+        labels         => [
+                     'Enter multiple time values (UNSUPPORTED)',
+                     'Enter a time value',
+                     'Enter [_1] time values (UNSUPPORTED)',
+                   ]
+                 },
 
     IPAddress => {
         sort_order => 110,
