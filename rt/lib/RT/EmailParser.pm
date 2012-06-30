@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -53,6 +53,7 @@ use base qw/RT::Base/;
 
 use strict;
 use warnings;
+
 
 use Email::Address;
 use MIME::Entity;
@@ -235,7 +236,7 @@ sub _DecodeBody {
 
     require MIME::Decoder;
     my $encoding = $entity->head->mime_encoding;
-    my $decoder = new MIME::Decoder $encoding;
+    my $decoder = MIME::Decoder->new($encoding);
     unless ( $decoder ) {
         $RT::Logger->error("Couldn't find decoder for '$encoding', switching to binary");
         $old->is_encoded(0);
@@ -244,7 +245,7 @@ sub _DecodeBody {
 
     require MIME::Body;
     # XXX: use InCore for now, but later must switch to files
-    my $new = new MIME::Body::InCore;
+    my $new = MIME::Body::InCore->new();
     $new->binmode(1);
     $new->is_encoded(0);
 
@@ -305,7 +306,7 @@ sub ParseCcAddressesFromHead {
 
     foreach my $AddrObj ( @ToObjs, @CcObjs ) {
         my $Address = $AddrObj->address;
-        my $user = RT::User->new($RT::SystemUser);
+        my $user = RT::User->new(RT->SystemUser);
         $Address = $user->CanonicalizeEmailAddress($Address);
         next if lc $args{'CurrentUser'}->EmailAddress eq lc $Address;
         next if $self->IsRTAddress($Address);
@@ -341,7 +342,7 @@ sub IsRTAddress {
         return 1 if lc $comment_address eq lc $address;
     }
 
-    my $queue = RT::Queue->new( $RT::SystemUser );
+    my $queue = RT::Queue->new( RT->SystemUser );
     $queue->LoadByCols( CorrespondAddress => $address );
     return 1 if $queue->id;
 
@@ -362,16 +363,9 @@ Returns the same array with any IsRTAddress()es weeded out.
 
 sub CullRTAddresses {
     my $self = shift;
-    my @addresses= (@_);
-    my @addrlist;
+    my @addresses = (@_);
 
-    foreach my $addr( @addresses ) {
-                                 # We use the class instead of the instance
-                                 # because sloppy code calls this method
-                                 # without a $self
-      push (@addrlist, $addr)    unless RT::EmailParser->IsRTAddress($addr);
-    }
-    return (@addrlist);
+    return grep { !$self->IsRTAddress($_) } @addresses;
 }
 
 
@@ -432,8 +426,6 @@ sub LookupExternalUserInfo {
   $params{'EmailAddress'} = $EmailAddress;
   $params{'RealName'} = $RealName;
 
-  # See RT's contributed code for examples.
-  # http://www.fsck.com/pub/rt/contrib/
   return ($FoundInExternalDatabase, %params);
 }
 
@@ -545,7 +537,7 @@ sub ParseEmailAddress {
     my @addresses;
     # if it looks like a username / local only email
     if ($address_string !~ /@/ && $address_string =~ /^\w+$/) {
-        my $user = RT::User->new( $RT::SystemUser );
+        my $user = RT::User->new( RT->SystemUser );
         my ($id, $msg) = $user->Load($address_string);
         if ($id) {
             push @addresses, Email::Address->new($user->Name,$user->EmailAddress);

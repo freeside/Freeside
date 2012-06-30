@@ -2,9 +2,7 @@
 # Test ticket creation with REST using non ascii subject
 use strict;
 use warnings;
-use RT::Test tests => 7;
-
-local $RT::Test::SKIP_REQUEST_WORK_AROUND = 1;
+use RT::Test tests => 9;
 
 use Encode;
 # \x{XX} where XX is less than 255 is not treated as unicode code point
@@ -42,7 +40,7 @@ $m->post("$baseurl/REST/1.0/ticket/new", [
 my ($id) = $m->content =~ /Ticket (\d+) created/;
 ok($id, "got ticket #$id");
 
-my $ticket = RT::Ticket->new($RT::SystemUser);
+my $ticket = RT::Ticket->new(RT->SystemUser);
 $ticket->Load($id);
 is($ticket->Id, $id, "loaded the REST-created ticket");
 is($ticket->Subject, $subject, "ticket subject successfully set");

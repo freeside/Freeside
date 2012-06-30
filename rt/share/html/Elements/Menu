@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,95 +45,40 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<ul<% !$level ? ' id="system-menu"' : ''|n %><% $menu_class ? qq[ class="$menu_class"] : ''|n %>>
-<div<% $menu_class ? qq[ class="$menu_class"] : ''|n %>><div class="wrapper">
-<%perl>
- my $sep         = 0;
- my $postsep     = 0;
- my $accesskey   = 1;
- 
- $count = 0;
- $class = {};
-
-my @tabs = sort keys %$toptabs;
- foreach $tab (@tabs) {
-     $count++;
-
-     my $current = $current_toptab || '';
-     my $path    = $toptabs->{$tab}->{'path'} || "";
-     
-     $path    =~ s#/index.html$##gi;
-     $current =~ s#/index.html$##gi;
-     
-     $sep     = $toptabs->{$tab}->{'separator'} ? 1 : 0;
-
-     my @aclass;
-     push @aclass, 'selected'
-            if $path eq $current;
-
-     push @aclass, 'odd'
-            if $level % 2;
-
-     $class->{a} = join ' ', @aclass;
-
-     my @li;
-     push @li, 'first'
-            if $count == 1;
-
-     push @li, 'pre-separator'
-            if $sep;
-
-     push @li, 'post-separator'
-            if $postsep;
-
-     push @li, 'last' if ( $tab eq $tabs[-1]);
-     $class->{li} = join ' ', @li;
-
-     my $url = ($toptabs->{$tab}->{'path'}||'') =~ /^(?:https?|mailto):/i
-         ? $toptabs->{$tab}->{'path'} || ''
-         : RT->Config->Get('WebPath') . "/" . $toptabs->{$tab}->{'path'};
-     
-</%perl>
-    <li<% $class->{'li'} ? qq[ class="$class->{li}"] : ''|n %> >
-    <% $count > 1 && !$postsep && qq[<span class="bullet">&#183; </span>]|n%>
-    <a href="<% $url %>"
-      <% $class->{a} && qq[ class="$class->{a}"] |n %>
-      <% !$level && " accesskey='".$accesskey++."'" |n %>>
-    <% $toptabs->{$tab}->{'title'}%></a>
-
-%# Second-level items
-%     if ($toptabs->{$tab}->{'subtabs'}
-%         and keys %{$toptabs->{$tab}->{'subtabs'}})
-%     {
-          <& /Elements/Menu, level => $level+1, 
-                             current_toptab => $toptabs->{$tab}->{'current_subtab'},
-                             toptabs => $toptabs->{$tab}->{'subtabs'},
-                             last_level => $toptabs->{$tab}->{last_system_menu_level} &>
-%     }
-  </li>
-%     if ($sep) {
-  <li class="separator">&#183;&#183;&#183;</li>
-%     }
-%
-%     $postsep = $sep;
+% return unless ($menu);
+<%" " x $depth%><ul<%$id ? ' id="'.$id.'"' : '' |n%><% $toplevel? ' class="toplevel"' : '' |n %>>
+% for my $child ($menu->children) {
+%   my $item_id = lc(($parent_id? $parent_id."-" : "") .$child->key);
+%   $item_id =~ s/\s/-/g;
+%   my @classes;
+%   push @classes, 'has-children' if $child->has_children;
+%   push @classes, 'active'       if $child->active;
+<%" " x ($depth+1)%><li id="li-<%$item_id%>"\
+% if (@classes) {
+ class="<% join ' ', @classes %>"\
 % }
-</div></div>
-</ul>
+>\
+% if ($child->raw_html) {
+<% $child->raw_html |n %>
+% } else {
+% my $url = (not $child->path or $child->path =~ m{^\w+:/}) ? $child->path : RT->Config->Get('WebPath').$child->path;
+<a id="<%$item_id%>" class="menu-item <% $child->class || '' %>"<% $child->path ? ' href="'.$url.'"' : '' |n%><% $child->target ? ' target="'.$child->target.'"' : '' |n %>>\
+<% $child->escape_title ? $m->interp->apply_escapes($child->title, 'h') : $child->title |n %>\
+</a>\
+% }
+% if ($child->has_children) {
 
-<%INIT>
-my ($tab, $class, $count);
-
-my @ul;
-push @ul, 'last-menu-level'
-    if $last_level;
-push @ul, 'odd'
-    if $level % 2;
-my $menu_class = join ' ', @ul;
-</%INIT>
-
+<& Menu, menu => $child, toplevel => 0, parent_id => ($parent_id? $parent_id."-": '').$child->key, depth=> ($depth+1) &>
+<%" " x ($depth+1)%></li>
+% } else {
+</li>
+% }
+% }
+<%" " x $depth%></ul>\
 <%ARGS>
-$toptabs => {}
-$current_toptab => ''
-$level => 0
-$last_level => 0
+$menu
+$id => undef
+$toplevel => 1
+$parent_id => ''
+$depth => 0
 </%ARGS>

@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 28;
+use RT::Test tests => 47;
 my ( $url, $m ) = RT::Test->started_ok;
 ok( $m->login, 'logged in' );
 
@@ -13,7 +13,7 @@ use RT::Ticket;
 
 my ( @link_tickets, @search_tickets );
 for ( 1 .. 3 ) {
-    my $link_ticket = RT::Ticket->new($RT::SystemUser);
+    my $link_ticket = RT::Ticket->new(RT->SystemUser);
     my ( $ret, $msg ) = $link_ticket->Create(
         Subject   => "link ticket $_",
         Queue     => 'general',
@@ -25,7 +25,7 @@ for ( 1 .. 3 ) {
 }
 
 for ( 1 .. 3 ) {
-    my $ticket = RT::Ticket->new($RT::SystemUser);
+    my $ticket = RT::Ticket->new(RT->SystemUser);
     my ( $ret, $msg ) = $ticket->Create(
         Subject   => "search ticket $_",
         Queue     => 'general',
@@ -41,7 +41,7 @@ $m->get_ok( $url . "/Search/Bulk.html?Query=id=$search_tickets[0]&Rows=10" );
 $m->content_contains( 'Current Links', 'has current links part' );
 $m->content_lacks( 'DeleteLink--', 'no delete link stuff' );
 $m->submit_form(
-    form_number => 3,
+    form_name => 'BulkUpdate',
     fields      => {
         'Ticket-DependsOn' => $link_tickets[0],
         'Ticket-MemberOf'  => $link_tickets[1],
@@ -77,9 +77,17 @@ $m->get_ok( $url . "/Search/Bulk.html?Query=$query&Rows=10" );
 $m->content_contains( 'Current Links', 'has current links part' );
 $m->content_lacks( 'DeleteLink--', 'no delete link stuff' );
 
+$m->form_name('BulkUpdate');
+my @fields = qw/Owner AddRequestor DeleteRequestor AddCc DeleteCc AddAdminCc
+DeleteAdminCc Subject Priority Queue Status Starts_Date Told_Date Due_Date
+Resolved_Date UpdateSubject UpdateContent/;
+for my $field ( @fields ) {
+    is( $m->value($field), '', "default $field is empty" );
+}
+
 # test DependsOn, MemberOf and RefersTo
 $m->submit_form(
-    form_number => 3,
+    form_name => 'BulkUpdate',
     fields      => {
         'Ticket-DependsOn' => $link_tickets[0],
         'Ticket-MemberOf'  => $link_tickets[1],
@@ -98,7 +106,7 @@ $m->content_contains(
     'found refers to link' );
 
 $m->submit_form(
-    form_number => 3,
+    form_name => 'BulkUpdate',
     fields      => {
         "DeleteLink--DependsOn-fsck.com-rt://$rtname/ticket/$link_tickets[0]" =>
           1,
@@ -114,7 +122,7 @@ $m->content_lacks( 'DeleteLink--', 'links are all deleted' );
 # test DependedOnBy, Members and ReferredToBy
 
 $m->submit_form(
-    form_number => 3,
+    form_name => 'BulkUpdate',
     fields      => {
         'DependsOn-Ticket' => $link_tickets[0],
         'MemberOf-Ticket'  => $link_tickets[1],
@@ -133,7 +141,7 @@ $m->content_contains(
     'found referrd to link' );
 
 $m->submit_form(
-    form_number => 3,
+    form_name => 'BulkUpdate',
     fields      => {
         "DeleteLink-fsck.com-rt://$rtname/ticket/$link_tickets[0]-DependsOn-" =>
           1,

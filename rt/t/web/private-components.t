@@ -1,6 +1,6 @@
 use strict;
 
-use RT::Test tests => 20;
+use RT::Test tests => 24;
 my ($baseurl, $agent) = RT::Test->started_ok;
 
 ok $agent->login, 'logged in';
@@ -15,6 +15,10 @@ is($agent->status, 403);
 $agent->content_lacks("42 min");
 
 $agent->get("/Widgets/TitleBox?title=private");
+is($agent->status, 403);
+$agent->content_lacks("private");
+
+$agent->get("/m/_elements/header?title=private");
 is($agent->status, 403);
 $agent->content_lacks("private");
 

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -113,11 +113,11 @@ sub __DependsOn
 
                 my $group_member = $args{'BaseObject'};
 
-                if( $group_member->MemberObj->id == $RT::Nobody->id ) {
+                if( $group_member->MemberObj->id == RT->Nobody->id ) {
                     RT::Shredder::Exception->throw( "Couldn't delete Nobody from owners role group" );
                 }
 
-                my( $status, $msg ) = $group->AddMember( $RT::Nobody->id );
+                my( $status, $msg ) = $group->AddMember( RT->Nobody->id );
                 RT::Shredder::Exception->throw( $msg ) unless $status;
 
                 my $ticket = RT::Ticket->new( $group->CurrentUser );
@@ -125,7 +125,7 @@ sub __DependsOn
                 RT::Shredder::Exception->throw( "Couldn't load ticket" ) unless $ticket->id;
 
                 ( $status, $msg ) = $ticket->_Set( Field => 'Owner',
-                                   Value => $RT::Nobody->id,
+                                   Value => RT->Nobody->id,
                                  );
                 RT::Shredder::Exception->throw( $msg ) unless $status;
 

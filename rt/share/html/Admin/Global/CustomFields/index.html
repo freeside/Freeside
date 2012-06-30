@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,7 +47,7 @@
 %# END BPS TAGGED BLOCK }}}
 % $m->callback( %ARGS, tabs => $tabs );
 <& /Admin/Elements/Header, Title => $title &>
-<& /Admin/Elements/GlobalCustomFieldTabs, Title => $title &>
+<& /Elements/Tabs &>
 
 <ul>
 % foreach my $key (sort keys %$tabs) {
@@ -91,7 +91,12 @@ my $tabs = {
           loc('Select custom fields for transactions on tickets in all queues'),
         path => 'Queue-Transactions.html',
     },
+    H => {
+        title => loc('Articles'),
+        text => loc('Select Custom Fields for Articles in all Classes'),
+        path => 'Class-Article.html'
 
+    },
 };
 
 

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -85,16 +85,8 @@ sub __DependsOn
         my $acl = RT::ACL->new( $self->CurrentUser );
         $acl->LimitToPrincipal( Id => $self->GroupId );
 
-        # look into all rights that have group
-        while( my $ace = $acl->Next ) {
-            my $delegations = RT::ACL->new( $self->CurrentUser );
-            $delegations->DelegatedFrom( Id => $ace->Id );
-            $delegations->DelegatedBy( Id => $self->MemberId );
-            push( @$list, $delegations );
-        }
     }
 
-# XXX: Do we need to delete records if user lost right 'DelegateRights'?
 
     $deps->_PushDependencies(
             BaseObject => $self,

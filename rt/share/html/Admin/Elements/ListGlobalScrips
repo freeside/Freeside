@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -56,15 +56,12 @@
     %ARGS,
     Format => $Format,
     Collection => $Scrips,
-    ShowHeader => 0,
 &>
 
 % }
 
 <%init>
-my $Format = q{'<a href="__WebPath__/Admin/Global/Scrip.html?id=__id__&Queue=0">__id__</a>/TITLE:#'}
-    .q{,'<a href="__WebPath__/Admin/Global/Scrip.html?id=__id__&Queue=0">__AutoDescription__</a>/TITLE:Condition, Action and Template'}
-    .q{__NEWLINE__,'','<small>__Description__</small>'};
+my $Format = RT->Config->Get('AdminSearchResultFormat')->{'GlobalScrips'};
 
 my $Scrips = RT::Scrips->new( $session{'CurrentUser'} );
 $Scrips->LimitToGlobal;

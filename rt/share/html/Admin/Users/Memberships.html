@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,11 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => $title  &>
-<& /Admin/Elements/UserTabs, 
-    id => $id, 
-    UserObj => $UserObj,
-    current_tab => $current_tab, 
-    Title => $title &>
+<& /Elements/Tabs &>
 
 <& /Elements/ListActions, actions => \@results &>
 
@@ -63,12 +59,12 @@
     OrderBy => 'Name',
     Order   => 'ASC',
     %ARGS,
-    Rows    => 0,
+    Rows    => 20,
     DisplayFormat => "__CheckBox.{Delete}__,$Format",
     Format => $Format,
     Collection => $is_member,
     AllowSorting => 1,
-    PassArguments => [qw(Format Rows Order OrderBy id)],
+    PassArguments => [qw(Format Rows Page Order OrderBy id)],
 &>
 
 <h2><&|/l&>Groups the user is not member of (check box to add)</&></h2>
@@ -76,7 +72,7 @@
 <& /Elements/CollectionList,
     OrderBy => 'Name',
     Order   => 'ASC',
-    Rows    => 100,
+    Rows    => 20,
     %ARGS,
     DisplayFormat => "__CheckBox.{Add}__,'__HasMemberRecursively.{$id}__/TITLE:Recursive',$Format",
     Format => $Format,
@@ -94,7 +90,6 @@ my $UserObj = RT::User->new($session{'CurrentUser'});
 $UserObj->Load( $id ) || Abort("Couldn't load user '$id'");
 
 my $title = loc("Memberships of the user [_1]", $UserObj->Name);
-my $current_tab = 'Admin/Users/Memberships.html?id='. $id;
 
 my @results;
 if ( $Update ) {

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -54,7 +54,7 @@ package RT::Crypt::GnuPG;
 use IO::Handle;
 use GnuPG::Interface;
 use RT::EmailParser ();
-use RT::Util 'safe_run_child';
+use RT::Util 'safe_run_child', 'mime_recommended_filename';
 
 =head1 NAME
 
@@ -168,7 +168,7 @@ quoted, otherwise you can see quite cryptic error 'gpg: Invalid option "--0"'.
 
 =item --homedir
 
-The GnuPG home directory, by default it is set to F</opt/rt3/var/data/gpg>.
+The GnuPG home directory, by default it is set to F</opt/rt4/var/data/gpg>.
 
 You can manage this data with the 'gpg' commandline utility 
 using the GNUPGHOME environment variable or --homedir option. 
@@ -354,13 +354,13 @@ my %supported_opt = map { $_ => 1 } qw(
 our $RE_FILE_EXTENSIONS = qr/pgp|asc/i;
 
 # DEV WARNING: always pass all STD* handles to GnuPG interface even if we don't
-# need them, just pass 'new IO::Handle' and then close it after safe_run_child.
+# need them, just pass 'IO::Handle->new()' and then close it after safe_run_child.
 # we don't want to leak anything into FCGI/Apache/MP handles, this break things.
 # So code should look like:
 #        my $handles = GnuPG::Handles->new(
-#            stdin  => ($handle{'stdin'}  = new IO::Handle),
-#            stdout => ($handle{'stdout'} = new IO::Handle),
-#            stderr => ($handle{'stderr'}  = new IO::Handle),
+#            stdin  => ($handle{'stdin'}  = IO::Handle->new()),
+#            stdout => ($handle{'stdout'} = IO::Handle->new()),
+#            stderr => ($handle{'stderr'}  = IO::Handle->new()),
 #            ...
 #        );
 
@@ -435,7 +435,7 @@ sub SignEncryptRFC3156 {
         @_
     );
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnuPGOptions
@@ -617,7 +617,7 @@ sub _SignEncryptTextInline {
     );
     return unless $args{'Sign'} || $args{'Encrypt'};
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnupGOptions
@@ -684,7 +684,7 @@ sub _SignEncryptTextInline {
         return %res;
     }
 
-    $entity->bodyhandle( new MIME::Body::File $tmp_fn );
+    $entity->bodyhandle( MIME::Body::File->new( $tmp_fn) );
     $entity->{'__store_tmp_handle_to_avoid_early_cleanup'} = $tmp_fh;
 
     return %res;
@@ -705,7 +705,7 @@ sub _SignEncryptAttachmentInline {
     );
     return unless $args{'Sign'} || $args{'Encrypt'};
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnupGOptions
@@ -771,7 +771,7 @@ sub _SignEncryptAttachmentInline {
         return %res;
     }
 
-    my $filename = $entity->head->recommended_filename || 'no_name';
+    my $filename = mime_recommended_filename( $entity ) || 'no_name';
     if ( $args{'Sign'} && !$args{'Encrypt'} ) {
         $entity->make_multipart;
         $entity->attach(
@@ -781,7 +781,7 @@ sub _SignEncryptAttachmentInline {
             Disposition => 'attachment',
         );
     } else {
-        $entity->bodyhandle( new MIME::Body::File $tmp_fn );
+        $entity->bodyhandle(MIME::Body::File->new( $tmp_fn) );
         $entity->effective_type('application/octet-stream');
         $entity->head->mime_attr( $_ => "$filename.pgp" )
             foreach (qw(Content-Type.name Content-Disposition.filename));
@@ -807,7 +807,7 @@ sub SignEncryptContent {
     );
     return unless $args{'Sign'} || $args{'Encrypt'};
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnupGOptions
@@ -1096,7 +1096,7 @@ sub VerifyInline { return DecryptInline( @_ ) }
 sub VerifyAttachment {
     my %args = ( Data => undef, Signature => undef, Top => undef, @_ );
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $opt{'digest-algo'} ||= 'SHA1';
     $gnupg->options->hash_init(
@@ -1150,7 +1150,7 @@ sub VerifyAttachment {
 sub VerifyRFC3156 {
     my %args = ( Data => undef, Signature => undef, Top => undef, @_ );
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $opt{'digest-algo'} ||= 'SHA1';
     $gnupg->options->hash_init(
@@ -1203,7 +1203,7 @@ sub DecryptRFC3156 {
         @_
     );
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnupGOptions
@@ -1265,7 +1265,7 @@ sub DecryptRFC3156 {
     }
 
     seek $tmp_fh, 0, 0;
-    my $parser = new RT::EmailParser;
+    my $parser = RT::EmailParser->new();
     my $decrypted = $parser->ParseMIMEEntityFromFileHandle( $tmp_fh, 0 );
     $decrypted->{'__store_link_to_object_to_avoid_early_cleanup'} = $parser;
     $args{'Top'}->parts( [] );
@@ -1281,7 +1281,7 @@ sub DecryptInline {
         @_
     );
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnuPGOptions
@@ -1377,7 +1377,7 @@ sub DecryptInline {
     }
 
     seek $tmp_fh, 0, 0;
-    $args{'Data'}->bodyhandle( new MIME::Body::File $tmp_fn );
+    $args{'Data'}->bodyhandle(MIME::Body::File->new( $tmp_fn ));
     $args{'Data'}->{'__store_tmp_handle_to_avoid_early_cleanup'} = $tmp_fh;
     return %res;
 }
@@ -1440,7 +1440,7 @@ sub DecryptAttachment {
         @_
     );
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnuPGOptions
@@ -1473,7 +1473,7 @@ sub DecryptAttachment {
     );
     return %res unless $res_fh;
 
-    $args{'Data'}->bodyhandle( new MIME::Body::File $res_fn );
+    $args{'Data'}->bodyhandle(MIME::Body::File->new($res_fn) );
     $args{'Data'}->{'__store_tmp_handle_to_avoid_early_cleanup'} = $res_fh;
 
     my $head = $args{'Data'}->head;
@@ -1498,7 +1498,7 @@ sub DecryptContent {
         @_
     );
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
 
     # handling passphrase in GnupGOptions
@@ -1608,8 +1608,7 @@ User friendly message.
 
 =back
 
-This parser is based on information from GnuPG distribution, see also
-F<docs/design_docs/gnupg_details_on_output_formats> in the RT distribution.
+This parser is based on information from GnuPG distribution.
 
 =cut
 
@@ -2011,7 +2010,7 @@ sub CheckRecipients {
             # good, one suitable and trusted key 
             next;
         }
-        my $user = RT::User->new( $RT::SystemUser );
+        my $user = RT::User->new( RT->SystemUser );
         $user->LoadByEmail( $address );
         # it's possible that we have no User record with the email
         $user = undef unless $user->id;
@@ -2087,7 +2086,7 @@ sub GetKeysInfo {
         return (exit_code => 0) unless $force;
     }
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $opt{'digest-algo'} ||= 'SHA1';
     $opt{'with-colons'} = undef; # parseable format
@@ -2273,7 +2272,7 @@ sub _ParseDate {
     return $value unless $value;
 
     require RT::Date;
-    my $obj = RT::Date->new( $RT::SystemUser );
+    my $obj = RT::Date->new( RT->SystemUser );
     # unix time
     if ( $value =~ /^\d+$/ ) {
         $obj->Set( Value => $value );
@@ -2286,7 +2285,7 @@ sub _ParseDate {
 sub DeleteKey {
     my $key = shift;
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $gnupg->options->hash_init(
         _PrepareGnuPGOptions( %opt ),
@@ -2298,7 +2297,6 @@ sub DeleteKey {
 
     eval {
         local $SIG{'CHLD'} = 'DEFAULT';
-        local @ENV{'LANG', 'LC_ALL'} = ('C', 'C');
         my $pid = safe_run_child { $gnupg->wrap_call(
             handles => $handles,
             commands => ['--delete-secret-and-public-key'],
@@ -2334,7 +2332,7 @@ sub DeleteKey {
 sub ImportKey {
     my $key = shift;
 
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $gnupg->options->hash_init(
         _PrepareGnuPGOptions( %opt ),
@@ -2346,7 +2344,6 @@ sub ImportKey {
 
     eval {
         local $SIG{'CHLD'} = 'DEFAULT';
-        local @ENV{'LANG', 'LC_ALL'} = ('C', 'C');
         my $pid = safe_run_child { $gnupg->wrap_call(
             handles => $handles,
             commands => ['--import'],
@@ -2417,7 +2414,7 @@ properly (and false otherwise).
 
 
 sub Probe {
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $gnupg->options->hash_init(
         _PrepareGnuPGOptions( %opt ),

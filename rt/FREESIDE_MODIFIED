@@ -8,10 +8,9 @@ config.layout.in
  etc/schema.mysql-4.1
 etc/initialdata
 
-lib/RT/Attribute_Overlay.pm #bugfix
+lib/RT/Attribute.pm #bugfix
  lib/RT/Config.pm
-lib/RT/CustomField.pm #reverted
-lib/RT/CustomField_Overlay.pm #customfield date patch #timeworked custom fields
+lib/RT/CustomField.pm #customfield date patch #timeworked custom fields
 lib/RT/CustomField_Vendor.pm #mandatory fields
 lib/RT/Interface/Web.pm #customfield date patch
                         #fix transaction custom fields
@@ -19,7 +18,7 @@ lib/RT/Interface/Web.pm #customfield date patch
                         #fix MaybeRejectPrivateComponentRequest for RTx::Statistics
 lib/RT/Action.pm #create ticket on custom field change
 lib/RT/Condition.pm #create ticket on custom field change
-lib/RT/Scrip_Overlay.pm #create ticket on custom field change
+lib/RT/Scrip.pm #create ticket on custom field change
 lib/RT/Action/Accumulate.pm #timeworked custom fields
 lib/RT/Action/CreateTickets.pm #create ticket on custom field change
 lib/RT/Action/EscalatePriority.pm #ticket escalation
@@ -35,12 +34,13 @@ lib/RT/Interface/Web_Vendor.pm #willresolve
 lib/RT/SavedSearches_Local.pm #saved searches
 lib/RT/Search/Googleish.pm #option to include resolved tickets
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
-lib/RT/Transaction_Overlay.pm #fix transaction custom fields
-lib/RT/Tickets_Overlay.pm #customfield date patch #SearchCustomerFields #this-month condition #willresolve
- lib/RT/Ticket_Overlay.pm #fix transaction custom fields
+lib/RT/Transaction.pm #fix transaction custom fields
+lib/RT/Tickets.pm #customfield date patch #SearchCustomerFields #this-month condition #willresolve
+ lib/RT/Ticket.pm #fix transaction custom fields
 lib/RT/Ticket_Vendor.pm #bulk increment priority #mandatory fields #willresolve
- lib/RT/Users_Overlay.pm
- lib/RT/Groups_Overlay.pm
+lib/RT/User.pm
+ lib/RT/Users.pm
+ lib/RT/Groups.pm
 lib/RT/Date.pm #this-month condition
 lib/RT/Queue_Local.pm #fix saved settings when renaming queues
 lib/RT/URI/freeside.pm
@@ -48,12 +48,11 @@ lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
 
 
+#(incorporated in 4, right?)
 # 3.9-fix-queue-caching bugfix branch
 # github.com/bestpractical/rt/commit/7e211c1199836d49f007d7f677105e5c73cc0348
 Makefile.in
 configure.ac
-lib/RT/Principal_Overlay.pm
-lib/RT/Queue_Overlay.pm
 lib/RT/System.pm
 lib/RT/Test.pm
 lib/RT/Interface/Web.pm
@@ -119,6 +118,7 @@ share/html/NoAuth/css/freeside2.1/freeside.css
 share/html/NoAuth/css/freeside2.1/nav.css
 share/html/NoAuth/css/freeside2.1/base.css
 share/html/NoAuth/css/freeside2.1/layout.css
+share/html/NoAuth/css/freeside3/ (based on aileron now)
 
 share/html/Elements/AddCustomers
 share/html/Elements/EditCustomers

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -159,7 +159,7 @@ sub __Relates
         $rec->{'Description'} = "Have no related ACL equivalence Group object";
     }
 
-    $obj = RT::Group->new( $RT::SystemUser );
+    $obj = RT::Group->new( RT->SystemUser );
     $obj->LoadACLEquivalenceGroup( $self->PrincipalObj );
     if( $obj && defined $obj->id ) {
         push( @$list, $obj );

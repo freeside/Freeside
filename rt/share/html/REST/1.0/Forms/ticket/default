@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -62,7 +62,7 @@ my $cf_spec = RT::Interface::REST->custom_field_spec(1);
 my @comments;
 my ($c, $o, $k, $e) = ("", [], {}, 0);
 my %data   = %$changes;
-my $ticket = new RT::Ticket $session{CurrentUser};
+my $ticket = RT::Ticket->new($session{CurrentUser});
 my @dates  = qw(Created Starts Started Due Resolved Told LastUpdated);
 my @people = qw(Requestors Cc AdminCc);
 my @create = qw(Queue Requestor Subject Cc AdminCc Owner Status Priority
@@ -81,20 +81,27 @@ if ($id ne 'new') {
     if (!$ticket->Id) {
         return [ "# Ticket $id does not exist.", [], {}, 1 ];
     }
-    elsif (!$ticket->CurrentUserHasRight('ShowTicket') ||
-           (%data && !$ticket->CurrentUserHasRight('ModifyTicket')))
-    {
-        my $act = %data ? "modify" : "display";
-        return [ "# You are not allowed to $act ticket $id.", [], {}, 1 ];
+    elsif ( %data ) {
+        if ( $data{status} && $data{status} eq 'deleted' && ! grep { $_ ne 'id' && $_ ne 'status' } keys %data ) {
+            if ( !$ticket->CurrentUserHasRight('DeleteTicket') ) {
+                return [ "# You are not allowed to delete ticket $id.", [], {}, 1 ];
+            }
+        }
+        elsif ( !$ticket->CurrentUserHasRight('ModifyTicket') ) {
+                return [ "# You are not allowed to modify ticket $id.", [], {}, 1 ];
+        }
+    }
+    elsif (!$ticket->CurrentUserHasRight('ShowTicket')) {
+        return [ "# You are not allowed to display ticket $id.", [], {}, 1 ];
     }
 }
 else {
     if (!keys(%data)) {
         # GET ticket/new: Return a suitable default form.
         # We get defaults from queue/1 (XXX: What if it isn't there?).
-        my $due = new RT::Date $session{CurrentUser};
-        my $queue = new RT::Queue $session{CurrentUser};
-        my $starts = new RT::Date $session{CurrentUser};
+        my $due = RT::Date->new($session{CurrentUser});
+        my $queue = RT::Queue->new($session{CurrentUser});
+        my $starts = RT::Date->new($session{CurrentUser});
         $queue->Load(1);
         $due->SetToNow;
         $due->AddDays($queue->DefaultDueIn) if $queue->DefaultDueIn;
@@ -132,7 +139,7 @@ else {
         foreach my $k (keys %data) {
             # flexibly parse any dates
             if ($dates{lc $k}) {
-                my $time = new RT::Date $session{CurrentUser};
+                my $time = RT::Date->new($session{CurrentUser});
                 $time->Set(Format => 'unknown', Value => $data{$k});
                 $data{$k} = $time->ISO;
             }
@@ -142,10 +149,16 @@ else {
             }
             # Set custom field
             elsif ($k =~ /^$cf_spec/) {
-                my $cf = RT::CustomField->new( $RT::SystemUser );
-                my $cfk = $1 || $2;
-                unless($cf->LoadByName( Name => $cfk )) {
-                    push @comments, "# Invalid custom field name ($cfk)";
+                my $key = $1 || $2;
+
+                my $cf = RT::CustomField->new( $session{CurrentUser} );
+                $cf->LoadByName( Name => $key, Queue => $data{Queue} || $v{Queue} );
+                unless ( $cf->id ) {
+                    $cf->LoadByName( Name => $key, Queue => 0 );
+                }
+
+                if (not $cf->id) {
+                    push @comments, "# Invalid custom field name ($key)";
                     delete $data{$k};
                     next;
                 }
@@ -205,14 +218,14 @@ if (!keys(%data)) {
         push @data, [ $key => [ $ticket->$key->MemberEmailAddresses ] ];
     }
 
-    $time = new RT::Date ($session{CurrentUser});
+    $time = RT::Date->new ($session{CurrentUser});
     foreach $key (@dates) {
 	next unless (!%$fields || (exists $fields->{lc $key}));
         $time->Set(Format => 'sql', Value => $ticket->$key);
         push @data, [ $key => $time->AsString ];
     }
 
-    $time = new RT::Date ($session{CurrentUser});
+    $time = RT::Date->new ($session{CurrentUser});
     foreach $key (qw(TimeEstimated TimeWorked TimeLeft)) {
 	next unless (!%$fields || (exists $fields->{lc $key}));
         $val = $ticket->$key || 0;
@@ -280,7 +293,7 @@ else {
             $key = $simple{$key};
             $set = "Set$key";
 
-            next if (($val eq $ticket->$key)|| ($ticket->$key =~ /^\d+$/ && $val == $ticket->$key));
+            next if (($val eq ($ticket->$key||''))|| ($ticket->$key =~ /^\d+$/ && $val =~ /^\d+$/ && $val == $ticket->$key));
             ($n, $s) = $ticket->$set("$val");
         }
         elsif (exists $dates{$key}) {
@@ -295,7 +308,7 @@ else {
 
             $set = "Set$key";
 
-            my $time = new RT::Date $session{CurrentUser};
+            my $time = RT::Date->new($session{CurrentUser});
             $time->Set(Format => 'sql', Value => $ticket->$key);
             next if ($val =~ /^not set$/i || $val eq $time->AsString);
 
@@ -341,9 +354,15 @@ else {
         }
         # Set custom field
         elsif ($key =~ /^$cf_spec/) {
-            my $cf = RT::CustomField->new( $RT::SystemUser );
             $key = $1 || $2;
-            if (not $cf->LoadByName( Name => $key )) {
+
+            my $cf = RT::CustomField->new( $session{CurrentUser} );
+            $cf->LoadByName( Name => $key, Queue => $ticket->Queue );
+            unless ( $cf->id ) {
+                $cf->LoadByName( Name => $key, Queue => 0 );
+            }
+
+            if (not $cf->id) {
                 $n = 0;
                 $s = "Unknown custom field.";
             }

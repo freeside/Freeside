@@ -2,12 +2,12 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 7;
+use RT::Test tests => 9;
 my ($baseurl, $m) = RT::Test->started_ok;
 my $url = $m->rt_base_url;
 
 # merged tickets still show up in search
-my $t1 = RT::Ticket->new($RT::SystemUser);
+my $t1 = RT::Ticket->new(RT->SystemUser);
 $t1->Create(
     Subject   => 'base ticket'.$$,
     Queue     => 'general',
@@ -22,7 +22,7 @@ $t1->Create(
 );
 ok(my $id1 = $t1->id, 'created ticket for custom search');
 
-my $t2 = RT::Ticket->new($RT::SystemUser);
+my $t2 = RT::Ticket->new(RT->SystemUser);
 $t2->Create(
     Subject   => 'merged away'.$$,
     Queue     => 'general',

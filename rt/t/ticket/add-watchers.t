@@ -45,11 +45,10 @@
 # 
 # END BPS TAGGED BLOCK }}}
 
-use RT::Test tests => 32;
+use RT::Test nodata => 1, tests => 32;
 
 use strict;
 use warnings;
-no warnings 'once';
 
 use RT::Queue;
 use RT::User;
@@ -59,20 +58,20 @@ use RT::CurrentUser;
 
 
 # clear all global right
-my $acl = RT::ACL->new($RT::SystemUser);
+my $acl = RT::ACL->new(RT->SystemUser);
 $acl->Limit( FIELD => 'RightName', OPERATOR => '!=', VALUE => 'SuperUser' );
-$acl->LimitToObject( $RT::System );
+$acl->LimitToObject( RT->System );
 while( my $ace = $acl->Next ) {
 	$ace->Delete;
 }
 
 # create new queue to be sure we do not mess with rights
-my $queue = RT::Queue->new($RT::SystemUser);
+my $queue = RT::Queue->new(RT->SystemUser);
 my ($queue_id) = $queue->Create( Name => 'watcher tests '.$$);
 ok( $queue_id, 'queue created for watcher tests' );
 
 # new privileged user to check rights
-my $user = RT::User->new( $RT::SystemUser );
+my $user = RT::User->new( RT->SystemUser );
 my ($user_id) = $user->Create( Name => 'watcher'.$$,
 			   EmailAddress => "watcher$$".'@localhost',
 			   Privileged => 1,
@@ -91,7 +90,7 @@ ok(  $user->HasRight( Right => 'ShowTicket',   Object => $queue ), "user can sho
 ok( !$user->HasRight( Right => 'ModifyTicket', Object => $queue ), "user can't modify queue tickets" );
 ok( !$user->HasRight( Right => 'Watch',        Object => $queue ), "user can't watch queue tickets" );
 
-my $ticket = RT::Ticket->new( $RT::SystemUser );
+my $ticket = RT::Ticket->new( RT->SystemUser );
 my ($rv, $msg) = $ticket->Create( Subject => 'watcher tests', Queue => $queue->Name );
 ok( $ticket->id, "ticket created" );
 

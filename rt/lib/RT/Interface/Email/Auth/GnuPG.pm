@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -58,7 +58,7 @@ To use the gnupg-secured mail gateway, you need to do the following:
 Set up a GnuPG key directory with a pubring containing only the keys
 you care about and specify the following in your SiteConfig.pm
 
-    Set(%GnuPGOptions, homedir => '/opt/rt3/var/data/GnuPG');
+    Set(%GnuPGOptions, homedir => '/opt/rt4/var/data/GnuPG');
     Set(@MailPlugins, 'Auth::MailFrom', 'Auth::GnuPG', ...other filter...);
 
 =cut
@@ -88,7 +88,7 @@ sub GetCurrentUser {
         Entity => $args{'Message'}, AddStatus => 1,
     );
     if ( $status && !@res ) {
-        $args{'Message'}->head->add(
+        $args{'Message'}->head->replace(
             'X-RT-Incoming-Encryption' => 'Not encrypted'
         );
 
@@ -112,7 +112,7 @@ sub GetCurrentUser {
         Data        => ${ $args{'RawMessageRef'} },
     );
 
-    $args{'Message'}->head->add( 'X-RT-Privacy' => 'PGP' );
+    $args{'Message'}->head->replace( 'X-RT-Privacy' => 'PGP' );
 
     foreach my $part ( $args{'Message'}->parts_DFS ) {
         my $decrypted;
@@ -124,14 +124,14 @@ sub GetCurrentUser {
                     $decrypted = 1;
                 }
                 if ( $_->{Operation} eq 'Verify' && $_->{Status} eq 'DONE' ) {
-                    $part->head->add(
+                    $part->head->replace(
                         'X-RT-Incoming-Signature' => $_->{UserString}
                     );
                 }
             }
         }
 
-        $part->head->add(
+        $part->head->replace(
             'X-RT-Incoming-Encryption' => 
                 $decrypted ? 'Success' : 'Not encrypted'
         );

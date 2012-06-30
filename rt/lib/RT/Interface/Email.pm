@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -57,6 +57,7 @@ use RT::EmailParser;
 use File::Temp;
 use UNIVERSAL::require;
 use Mail::Mailer ();
+use Text::ParseWords qw/shellwords/;
 
 BEGIN {
     use base 'Exporter';
@@ -387,7 +388,7 @@ sub SendEmail {
 
     unless ( $args{'Entity'}->head->get('Date') ) {
         require RT::Date;
-        my $date = RT::Date->new( $RT::SystemUser );
+        my $date = RT::Date->new( RT->SystemUser );
         $date->SetToNow;
         $args{'Entity'}->head->set( 'Date', $date->RFC2822( Timezone => 'server' ) );
     }
@@ -404,10 +405,12 @@ sub SendEmail {
 
     if ( $mail_command eq 'sendmailpipe' ) {
         my $path = RT->Config->Get('SendmailPath');
-        my $args = RT->Config->Get('SendmailArguments');
+        my @args = shellwords(RT->Config->Get('SendmailArguments'));
 
-        # SetOutgoingMailFrom
-        if ( RT->Config->Get('SetOutgoingMailFrom') ) {
+        # SetOutgoingMailFrom and bounces conflict, since they both want -f
+        if ( $args{'Bounce'} ) {
+            push @args, shellwords(RT->Config->Get('SendmailBounceArguments'));
+        } elsif ( RT->Config->Get('SetOutgoingMailFrom') ) {
             my $OutgoingMailAddress;
 
             if ($TicketObj) {
@@ -423,12 +426,9 @@ sub SendEmail {
 
             $OutgoingMailAddress ||= RT->Config->Get('OverrideOutgoingMailFrom')->{'Default'};
 
-            $args .= " -f $OutgoingMailAddress"
+            push @args, "-f", $OutgoingMailAddress
                 if $OutgoingMailAddress;
         }
-
-        # Set Bounce Arguments
-        $args .= ' '. RT->Config->Get('SendmailBounceArguments') if $args{'Bounce'};
 
         # VERP
         if ( $TransactionObj and
@@ -438,32 +438,36 @@ sub SendEmail {
             my $from = $TransactionObj->CreatorObj->EmailAddress;
             $from =~ s/@/=/g;
             $from =~ s/\s//g;
-            $args .= " -f $prefix$from\@$domain";
+            push @args, "-f", "$prefix$from\@$domain";
         }
 
         eval {
             # don't ignore CHLD signal to get proper exit code
             local $SIG{'CHLD'} = 'DEFAULT';
 
-            open( my $mail, '|-', "$path $args >/dev/null" )
-                or die "couldn't execute program: $!";
-
             # if something wrong with $mail->print we will get PIPE signal, handle it
             local $SIG{'PIPE'} = sub { die "program unexpectedly closed pipe" };
-            $args{'Entity'}->print($mail);
 
-            unless ( close $mail ) {
-                die "close pipe failed: $!" if $!; # system error
+            require IPC::Open2;
+            my ($mail, $stdout);
+            my $pid = IPC::Open2::open2( $stdout, $mail, $path, @args )
+                or die "couldn't execute program: $!";
+
+            $args{'Entity'}->print($mail);
+            close $mail or die "close pipe failed: $!";
+
+            waitpid($pid, 0);
+            if ($?) {
                 # sendmail exit statuses mostly errors with data not software
                 # TODO: status parsing: core dump, exit on signal or EX_*
-                my $msg = "$msgid: `$path $args` exitted with code ". ($?>>8);
+                my $msg = "$msgid: `$path @args` exited with code ". ($?>>8);
                 $msg = ", interrupted by signal ". ($?&127) if $?&127;
                 $RT::Logger->error( $msg );
                 die $msg;
             }
         };
         if ( $@ ) {
-            $RT::Logger->crit( "$msgid: Could not send mail with command `$path $args`: " . $@ );
+            $RT::Logger->crit( "$msgid: Could not send mail with command `$path @args`: " . $@ );
             if ( $TicketObj ) {
                 _RecordSendEmailFailure( $TicketObj );
             }
@@ -555,7 +559,7 @@ sub PrepareEmailUsingTemplate {
         @_
     );
 
-    my $template = RT::Template->new( $RT::SystemUser );
+    my $template = RT::Template->new( RT->SystemUser );
     $template->LoadGlobalTemplate( $args{'Template'} );
     unless ( $template->id ) {
         return (undef, "Couldn't load template '". $args{'Template'} ."'");
@@ -583,6 +587,7 @@ sub SendEmailUsingTemplate {
         Bcc => undef,
         From => RT->Config->Get('CorrespondAddress'),
         InReplyTo => undef,
+        ExtraHeaders => {},
         @_
     );
 
@@ -597,6 +602,9 @@ sub SendEmailUsingTemplate {
 
     $mail->head->set( $_ => Encode::encode_utf8( $args{ $_ } ) )
         foreach grep defined $args{$_}, qw(To Cc Bcc From);
+
+    $mail->head->set( $_ => $args{ExtraHeaders}{$_} )
+        foreach keys %{ $args{ExtraHeaders} };
 
     SetInReplyTo( Message => $mail, InReplyTo => $args{'InReplyTo'} );
 
@@ -615,7 +623,19 @@ sub ForwardTransaction {
 
     my $entity = $txn->ContentAsMIME;
 
-    return SendForward( %args, Entity => $entity, Transaction => $txn );
+    my ( $ret, $msg ) = SendForward( %args, Entity => $entity, Transaction => $txn );
+    if ($ret) {
+        my $ticket = $txn->TicketObj;
+        my ( $ret, $msg ) = $ticket->_NewTransaction(
+            Type  => 'Forward Transaction',
+            Field => $txn->id,
+            Data  => join ', ', grep { length } $args{To}, $args{Cc}, $args{Bcc},
+        );
+        unless ($ret) {
+            $RT::Logger->error("Failed to create transaction: $msg");
+        }
+    }
+    return ( $ret, $msg );
 }
 
 =head2 ForwardTicket TICKET, To => '', Cc => '', Bcc => ''
@@ -635,13 +655,33 @@ sub ForwardTicket {
     ) for qw(Create Correspond);
 
     my $entity = MIME::Entity->build(
-        Type => 'multipart/mixed',
+        Type        => 'multipart/mixed',
+        Description => 'forwarded ticket',
     );
     $entity->add_part( $_ ) foreach 
         map $_->ContentAsMIME,
         @{ $txns->ItemsArrayRef };
 
-    return SendForward( %args, Entity => $entity, Ticket => $ticket, Template => 'Forward Ticket' );
+    my ( $ret, $msg ) = SendForward(
+        %args,
+        Entity   => $entity,
+        Ticket   => $ticket,
+        Template => 'Forward Ticket',
+    );
+
+    if ($ret) {
+        my ( $ret, $msg ) = $ticket->_NewTransaction(
+            Type  => 'Forward Ticket',
+            Field => $ticket->id,
+            Data  => join ', ', grep { length } $args{To}, $args{Cc}, $args{Bcc},
+        );
+        unless ($ret) {
+            $RT::Logger->error("Failed to create transaction: $msg");
+        }
+    }
+
+    return ( $ret, $msg );
+
 }
 
 =head2 SendForward Entity => undef, Ticket => undef, Transaction => undef, Template => undef, To => '', Cc => '', Bcc => ''
@@ -704,34 +744,55 @@ sub SendForward {
     $mail->head->set( $_ => EncodeToMIME( String => $args{$_} ) )
         foreach grep defined $args{$_}, qw(To Cc Bcc);
 
-    $mail->attach(
-        Type => 'message/rfc822',
-        Disposition => 'attachment',
-        Description => 'forwarded message',
-        Data => $entity->as_string,
-    );
+    $mail->make_multipart unless $mail->is_multipart;
+    $mail->add_part( $entity );
 
     my $from;
-    my $subject = '';
-    $subject = $txn->Subject if $txn;
-    $subject ||= $ticket->Subject if $ticket;
-    if ( RT->Config->Get('ForwardFromUser') ) {
-        $from = ($txn || $ticket)->CurrentUser->UserObj->EmailAddress;
-    } else {
-        # XXX: what if want to forward txn of other object than ticket?
-        $subject = AddSubjectTag( $subject, $ticket );
-        $from = $ticket->QueueObj->CorrespondAddress
-            || RT->Config->Get('CorrespondAddress');
+    unless (defined $mail->head->get('Subject')) {
+        my $subject = '';
+        $subject = $txn->Subject if $txn;
+        $subject ||= $ticket->Subject if $ticket;
+
+        unless ( RT->Config->Get('ForwardFromUser') ) {
+            # XXX: what if want to forward txn of other object than ticket?
+            $subject = AddSubjectTag( $subject, $ticket );
+        }
+
+        $mail->head->set( Subject => EncodeToMIME( String => "Fwd: $subject" ) );
     }
-    $mail->head->set( Subject => EncodeToMIME( String => "Fwd: $subject" ) );
-    $mail->head->set( From    => EncodeToMIME( String => $from ) );
+
+    $mail->head->set(
+        From => EncodeToMIME(
+            String => GetForwardFrom( Transaction => $txn, Ticket => $ticket )
+        )
+    );
 
     my $status = RT->Config->Get('ForwardFromUser')
         # never sign if we forward from User
         ? SendEmail( %args, Entity => $mail, Sign => 0 )
         : SendEmail( %args, Entity => $mail );
     return (0, $ticket->loc("Couldn't send email")) unless $status;
-    return (1, $ticket->loc("Send email successfully"));
+    return (1, $ticket->loc("Sent email successfully"));
+}
+
+=head2 GetForwardFrom Ticket => undef, Transaction => undef
+
+Resolve the From field to use in forward mail
+
+=cut
+
+sub GetForwardFrom {
+    my %args   = ( Ticket => undef, Transaction => undef, @_ );
+    my $txn    = $args{Transaction};
+    my $ticket = $args{Ticket} || $txn->Object;
+
+    if ( RT->Config->Get('ForwardFromUser') ) {
+        return ( $txn || $ticket )->CurrentUser->UserObj->EmailAddress;
+    }
+    else {
+        return $ticket->QueueObj->CorrespondAddress
+          || RT->Config->Get('CorrespondAddress');
+    }
 }
 
 =head2 SignEncrypt Entity => undef, Sign => 0, Encrypt => 0
@@ -891,7 +952,7 @@ sub EncodeToMIME {
         return ($value);
     }
 
-    return ($value) unless $value =~ /[^\x20-\x7e]/;
+    return ($value) if $value =~ /^(?:[\t\x20-\x7e]|\x0D*\x0A[ \t])+$/s;
 
     $value =~ s/\s+$//;
 
@@ -920,7 +981,7 @@ sub EncodeToMIME {
 sub CreateUser {
     my ( $Username, $Address, $Name, $ErrorsTo, $entity ) = @_;
 
-    my $NewUser = RT::User->new( $RT::SystemUser );
+    my $NewUser = RT::User->new( RT->SystemUser );
 
     my ( $Val, $Message ) = $NewUser->Create(
         Name => ( $Username || $Address ),
@@ -955,7 +1016,7 @@ sub CreateUser {
     }
 
     #Load the new user object
-    my $CurrentUser = new RT::CurrentUser;
+    my $CurrentUser = RT::CurrentUser->new;
     $CurrentUser->LoadByEmail( $Address );
 
     unless ( $CurrentUser->id ) {
@@ -1087,12 +1148,7 @@ sub ParseAddressFromHeader {
         return ( undef, undef );
     }
 
-    my $Name = ( $AddrObj->name || $AddrObj->phrase || $AddrObj->comment || $AddrObj->address );
-
-    #Lets take the from and load a user object.
-    my $Address = $AddrObj->address;
-
-    return ( $Address, $Name );
+    return ( $AddrObj->address, $AddrObj->phrase );
 }
 
 =head2 DeleteRecipientsFromHead HEAD RECIPIENTS
@@ -1195,7 +1251,7 @@ sub AddSubjectTag {
     my $subject = shift;
     my $ticket  = shift;
     unless ( ref $ticket ) {
-        my $tmp = RT::Ticket->new( $RT::SystemUser );
+        my $tmp = RT::Ticket->new( RT->SystemUser );
         $tmp->Load( $ticket );
         $ticket = $tmp;
     }
@@ -1211,7 +1267,7 @@ sub AddSubjectTag {
     }
     return $subject if $subject =~ /\[$tag_re\s+#$id\]/;
 
-    $subject =~ s/(\r\n|\n|\s)/ /gi;
+    $subject =~ s/(\r\n|\n|\s)/ /g;
     chomp $subject;
     return "[". ($queue_tag || RT->Config->Get('rtname')) ." #$id] $subject";
 }
@@ -1263,7 +1319,7 @@ sub _LoadPlugins {
         } elsif ( !ref $plugin ) {
             my $Class = $plugin;
             $Class = "RT::Interface::Email::" . $Class
-                unless $Class =~ /^RT::Interface::Email::/;
+                unless $Class =~ /^RT::/;
             $Class->require or
                 do { $RT::Logger->error("Couldn't load $Class: $@"); next };
 
@@ -1375,7 +1431,7 @@ sub Gateway {
     my $Subject = $head->get('Subject') || '';
     chomp $Subject;
     
-    # {{{ Lets check for mail loops of various sorts.
+    # Lets check for mail loops of various sorts.
     my ($should_store_machine_generated_message, $IsALoop, $result);
     ( $should_store_machine_generated_message, $ErrorsTo, $result, $IsALoop ) =
       _HandleMachineGeneratedMail(
@@ -1394,7 +1450,7 @@ sub Gateway {
 
     $args{'ticket'} ||= ParseTicketId( $Subject );
 
-    $SystemTicket = RT::Ticket->new( $RT::SystemUser );
+    $SystemTicket = RT::Ticket->new( RT->SystemUser );
     $SystemTicket->Load( $args{'ticket'} ) if ( $args{'ticket'} ) ;
     if ( $SystemTicket->id ) {
         $Right = 'ReplyToTicket';
@@ -1403,7 +1459,7 @@ sub Gateway {
     }
 
     #Set up a queue object
-    my $SystemQueueObj = RT::Queue->new( $RT::SystemUser );
+    my $SystemQueueObj = RT::Queue->new( RT->SystemUser );
     $SystemQueueObj->Load( $args{'queue'} );
 
     # We can safely have no queue of we have a known-good ticket
@@ -1420,7 +1476,7 @@ sub Gateway {
         SystemQueue   => $SystemQueueObj,
     );
 
-    # {{{ If authentication fails and no new user was created, get out.
+    # If authentication fails and no new user was created, get out.
     if ( !$CurrentUser || !$CurrentUser->id || $AuthStat == -1 ) {
 
         # If the plugins refused to create one, they lose.
@@ -1772,7 +1828,7 @@ sub _HandleMachineGeneratedMail {
     # Squelch replies if necessary
     # Don't let the user stuff the RT-Squelch-Replies-To header.
     if ( $head->get('RT-Squelch-Replies-To') ) {
-        $head->add(
+        $head->replace(
             'RT-Relocated-Squelch-Replies-To',
             $head->get('RT-Squelch-Replies-To')
         );
@@ -1787,8 +1843,8 @@ sub _HandleMachineGeneratedMail {
         # to the scrip. We might want to notify nobody. Or just
         # the RT Owner. Or maybe all Privileged watchers.
         my ( $Sender, $junk ) = ParseSenderAddressFromHead($head);
-        $head->add( 'RT-Squelch-Replies-To',    $Sender );
-        $head->add( 'RT-DetectedAutoGenerated', 'true' );
+        $head->replace( 'RT-Squelch-Replies-To',    $Sender );
+        $head->replace( 'RT-DetectedAutoGenerated', 'true' );
     }
     return ( 1, $ErrorsTo, "Handled machine detection", $IsALoop );
 }

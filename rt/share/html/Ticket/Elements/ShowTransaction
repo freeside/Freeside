@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,37 +47,33 @@
 %# END BPS TAGGED BLOCK }}}
 <div class="ticket-transaction <% $type_class %> <%$type%> <% $RowNum % 2 ? 'odd' : 'even' %>">
 % $m->callback( titlebar_cmd => \$titlebar_commands, Transaction => $Transaction, %ARGS, CallbackName => 'ModifyDisplay' );
-
 <div class="ticket-transaction">
 % $m->callback( titlebar_cmd => \$titlebar_commands, Transaction => $Transaction, %ARGS, CallbackName => 'ModifyCommand' );
   <div class="metadata">
     <span class="type">
-      <a name="txn-<% $Transaction->Id %>" href="<% $DisplayPath %>#txn-<% $Transaction->Id %>">#</a>
+      <a name="txn-<% $Transaction->Id %>" href="<% $DisplayPath %>#txn-<% $Transaction->Id %>">#</a>\
       <% $LastTransaction ? '<a id="lasttrans" name="lasttrans"></a>' : ''|n %>
     </span>
 % $m->callback( Transaction => $Transaction, %ARGS, CallbackName => 'AfterAnchor' );
     <span class="date"><% $transdate|n %></span>
 % my $desc = $Transaction->BriefDescription;
 % $m->callback( text => \$desc, Transaction => $Transaction, %ARGS, CallbackName => 'ModifyDisplay' );
-    <span class="description">
-      <& /Elements/ShowUser, User => $Transaction->CreatorObj &> - <% $TicketString %> <% $desc %>
+    <span class="description">\
+<& /Elements/ShowUser, User => $Transaction->CreatorObj &> - <% $TicketString %> <% $desc %>\
 % $m->callback( Transaction => $Transaction, %ARGS, CallbackName => 'AfterDescription' );
-    </span>
+</span>
 % $m->callback( TimeTaken => \$TimeTaken, Transaction => $Transaction, %ARGS, CallbackName => 'ModifyTimeTaken' );
-    <span class="time-taken"><% $TimeTaken %></span>
+    <span class="time-taken"><% $TimeTaken %></span>\
     <span class="actions<% $titlebar_commands ? '': ' hidden'%>"><% $titlebar_commands |n %></span>
   </div>
-
     <div class="content">
-% if ( $Transaction->CustomFieldValues->Count ) {
+% if ( $type_class eq 'message' ) {
       <& /Elements/ShowCustomFields, Object => $Transaction &>
 % }
 % $m->comp('ShowTransactionAttachments', %ARGS, Parent => 0) unless ($Collapsed ||!$ShowBody);
     </div>
-
 </div>
 </div>
-
 <%ARGS>
 $Ticket => undef
 $Transaction => undef
@@ -100,7 +96,6 @@ $WarnUnsigned => undef
 <%ONCE>
 
 my %class = (
-    Create     => 'message',
     Correspond => 'message',
     Comment    => 'message',
 
@@ -124,6 +119,9 @@ $transdate =~ s/\s/&nbsp;/g;
 
 my ($type, $field) = ($Transaction->Type, $Transaction->Field || '');
 my $type_class = $class{ $type };
+if ( $type eq 'Create' && $Transaction->ObjectType eq 'RT::Ticket' ) {
+    $type_class = 'message';
+}
 
 unless ( $type_class ) {
     if ( $field eq 'Owner' ) {
@@ -194,28 +192,35 @@ else {
         my $can_modify = $ticket->CurrentUserHasRight('ModifyTicket');
         if ( $can_modify || $ticket->CurrentUserHasRight('ReplyToTicket') ) {
             $titlebar_commands .=
-                "[<a href=\"".$UpdatePath
+                "[<a href=\"" . $UpdatePath
               . "?id=" . $Transaction->Ticket
               . "&QuoteTransaction=" . $Transaction->Id
-              . "&Action=Respond\">"
+              . "&Action=Respond\" "
+              . "class=\"reply-link\""
+              . ">"
               . loc('Reply')
               . "</a>]&nbsp;";
         }
         if ( $can_modify || $ticket->CurrentUserHasRight('CommentOnTicket') ) {
             $titlebar_commands .=
-                "[<a href=\"".$UpdatePath."?id="
-              . $Transaction->Ticket
-              . "&QuoteTransaction="
-              . $Transaction->Id
-              . "&Action=Comment\">"
-              . loc('Comment') . "</a>]";
+                "[<a href=\"" . $UpdatePath
+              . "?id=" . $Transaction->Ticket
+              . "&QuoteTransaction=" . $Transaction->Id
+              . "&Action=Comment\" "
+              . "class=\"comment-link\""
+              . ">"
+              . loc('Comment')
+              . "</a>]";
         }
         if ( $ticket->CurrentUserHasRight('ForwardMessage') ) {
             $titlebar_commands .=
-                "[<a href=\"". $ForwardPath
-              . "?id=". $Transaction->Ticket
-              . "&QuoteTransaction=". $Transaction->Id
-              . "\">". loc('Forward') . "</a>]";
+                "[<a href=\"" . $ForwardPath
+              . "?id=" . $Transaction->Ticket
+              . "&QuoteTransaction=" . $Transaction->Id ."\" "
+              . "class=\"forward-link\""
+              . ">"
+              . loc('Forward')
+              . "</a>]";
         }
         if ( $can_modify
             && RT->Config->Get('GnuPG')->{'Enable'}
@@ -223,9 +228,12 @@ else {
             && $ticket->CurrentUserHasRight('ForwardMessage')
         ) {
             $titlebar_commands .=
-                "[<a href=\"". $EncryptionPath
-              . "?id=". $Transaction->Id
-              . "\">". loc('Encrypt/Decrypt') . "</a>]";
+                "[<a href=\"" . $EncryptionPath
+              . "?id=" . $Transaction->Id ."\" "
+              . "class=\"gpg-link\""
+              . ">"
+              . loc('Encrypt/Decrypt')
+              . "</a>]";
         }
     }
 }

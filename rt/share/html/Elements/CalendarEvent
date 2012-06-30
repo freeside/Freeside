@@ -13,11 +13,11 @@ $DateTypes => undef
 %           and RTx::Calendar::LocalDate($Object->ResolvedObj->Unix) eq $today) {
          <img src="<%$RT::WebImagesURL%>/resolved.png" />
 
-% } elsif ($DateTypes->{Starts} and $DateTypes->{Due} 
+% } elsif ($DateTypes->{Starts} and $DateTypes->{Due}
 %           and RTx::Calendar::LocalDate($Object->StartsObj->Unix) eq $today and RTx::Calendar::LocalDate($Object->DueObj->Unix) eq $today ) {
     <img src="<%$RT::WebImagesURL%>/starts_due.png" />
 
-% } elsif ($DateTypes->{Due} and $DateTypes->{Created} 
+% } elsif ($DateTypes->{Due} and $DateTypes->{Created}
 %           and RTx::Calendar::LocalDate($Object->DueObj->Unix) eq $today and RTx::Calendar::LocalDate($Object->CreatedObj->Unix) eq $today ) {
     <img src="<%$RT::WebImagesURL%>/created_due.png" />
 
@@ -25,7 +25,7 @@ $DateTypes => undef
 %           and RTx::Calendar::LocalDate($Object->StartsObj->Unix) eq $today) {
     <img src="<%$RT::WebImagesURL%>/starts.png" />
 
-% } elsif ($DateTypes->{Due} 
+% } elsif ($DateTypes->{Due}
 %           and RTx::Calendar::LocalDate($Object->DueObj->Unix) eq $today) {
     <img src="<%$RT::WebImagesURL%>/due.png" />
 
@@ -64,7 +64,7 @@ $DateTypes => undef
 %        my $method = '$Object->'.$attr.'()';
 %        $method =~ s/->ISO\(\)$/->ISO( Timezone => 'user' )/;
 %        $value = eval $method;
-%        if ($@) {die "<b>Check your CalendarPopupFields config in etc/RT_SiteConfig.pm</b>.<br /><br />Failed to find \"$attr\" - ". $@}; 
+%        if ($@) {die "<b>Check your CalendarPopupFields config in etc/RT_SiteConfig.pm</b>.<br /><br />Failed to find \"$attr\" - ". $@};
 %    }
 	<strong><&|/l&><% $label_of{$attr} %></&>:</strong> <% $value %><br />
 % }

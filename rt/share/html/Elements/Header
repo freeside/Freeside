@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -49,11 +49,14 @@
               'title' => $Title,
               'head'  => $head,
               'etc'   => $etc,
-              'nobr'  => 1,
+              #make space for RT menu for now# 'nobr'  => 1,
               'nocss' => 1,
           }
 &>
 <%INIT>
+#for "Site CSS from theme editor" below
+#use Scalar::Util qw(blessed);
+
 $r->headers_out->{'Pragma'} = 'no-cache';
 $r->headers_out->{'Cache-control'} = 'no-cache';
 
@@ -65,23 +68,38 @@ $id =~ s|index$||g
     if $id ne 'index';
 $id =~ s|-$||g;
 
+my $style = $session{'CurrentUser'}
+          ? $session{'CurrentUser'}->Stylesheet
+          : RT->Config->Get('WebDefaultStylesheet');
+
+my @css_files;
+if ( RT->Config->Get('DevelMode') ) {
+    @css_files = ( "$style/main.css", RT->Config->Get('CSSFiles' ) );
+}
+else {
+    my $key =
+      RT::Interface::Web::SquishedCSS( $style )->Key;
+    @css_files = "$style-squished-$key.css";
+}
+
 my $head = '';
 
+#XXX $head .= <& /Elements/Framekiller &>;
+
 if ($Refresh && $Refresh =~ /^(\d+)/ && $1 > 0) {
-  $head .= qq( <meta http-equiv="refresh" content="$Refresh" /> );
+  my $URL = $m->notes->{RefreshURL}; $URL = $URL ? ";URL=$URL" : "";
+  $head .= qq( <meta http-equiv="refresh" content="$1$URL" /> );
 }
 
 my $WebPath = RT->Config->Get('WebPath');
 my $WebImagesURL = RT->Config->Get('WebImagesURL');
-my $WebDefaultStylesheet =
-  RT->Config->Get('WebDefaultStylesheet', $session{'CurrentUser'});
 my $squished = RT->Config->Get('DevelMode') ? '' : '-squished';
 
-$head .= <<END;
-<link rel="shortcut icon" href="$WebImagesURL/favicon.png" type="image/png" />
-<link rel="stylesheet" href="$WebPath/NoAuth/css/$WebDefaultStylesheet/main$squished.css" type="text/css" media="all" />
-<link rel="stylesheet" href="$WebPath/NoAuth/css/print.css" type="text/css" media="print" />
-END
+$head .= qq(<link rel="shortcut icon" href="${WebImagesURL}favicon.png" type="image/png" />\n);
+for my $cssfile ( @css_files ) {
+  $head .= qq(<link rel="stylesheet" href="$WebPath/NoAuth/css/$cssfile" type="text/css" media="all" />\n);
+}
+$head .= qq(<link rel="stylesheet" href="$WebPath/NoAuth/css/print.css" type="text/css" media="print" />\n);
 
 for (keys %{$LinkRel || {}}) {
   $head .= qq(<link rel="$_" href="$WebPath) . $LinkRel->{$_} . '" />';
@@ -92,18 +110,27 @@ if ( $RSSAutoDiscovery ) {
 }
 
 if ($JavaScript) {
-    $head .= $m->scomp('HeaderJavascript', focus => $Focus, onload => $onload);
+    $head .= $m->scomp('HeaderJavascript', focus => $Focus, onload => $onload, RichText => $RichText );
 }
 
-my $stylesheet_plugin = "/NoAuth/css/$WebDefaultStylesheet/InHeader";
+my $stylesheet_plugin = "/NoAuth/css/$style/InHeader";
 if ($m->comp_exists($stylesheet_plugin) ) {
     $head .= $m->scomp($stylesheet_plugin);
 }
 
+#<!-- Site CSS from theme editor -->
+#<style type="text/css" media="all" id="sitecss">
+#%# Header is used when there isn't a database (such as in the Installer) which means there is no
+#%# RT::System object, nor are there attributes.
+#% if (blessed(RT->System) and my $attr = RT->System->FirstAttribute('UserCSS')) {
+#<% $attr->Content |n %>
+#% }
+#</style>
+
 # $m->callback( %ARGS, CallbackName => 'Head' );
 $head .= $m->scomp( '/Elements/Callback', _CallbackName => 'Head', %ARGS );
 
-my $etc = '';
+my $etc = qq[ class="\L$style" ];
 $etc .= qq[ id="comp-$id"] if $id;
 
 </%INIT>
@@ -121,4 +148,6 @@ $RSSAutoDiscovery => undef
 $onload => undef
 $LinkRel => undef
 $JavaScript => 1
+$SkipDoctype => 0
+$RichText => 1
 </%ARGS>

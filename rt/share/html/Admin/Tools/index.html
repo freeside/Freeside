@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,11 +45,6 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<%init>
-my $title = loc('System Tools');
-</%init>
-<& /Admin/Elements/Header, Title => $title &>
-<& /Admin/Elements/ToolTabs, 
-    current_tab => 'Admin/Tools/index.html',
-    current_subtab => 'Admin/Tools/Configuration.html', 
-    Title => $title &>
+<& /Admin/Elements/Header, Title => loc('System Tools') &>
+<& /Elements/Tabs &>
+<& /Elements/ListMenu, menu => Menu()->child('tools')->child('config')->child('tools') &>

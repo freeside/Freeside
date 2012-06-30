@@ -1,3 +1,21 @@
+<IfModule mpm_prefork_module>
+    StartServers          1
+    MinSpareServers       1
+    MaxSpareServers       1
+    MaxClients            1
+    MaxRequestsPerChild   0
+</IfModule>
+
+<IfModule mpm_worker_module>
+    StartServers          1
+    MinSpareThreads       1
+    MaxSpareThreads       1
+    ThreadLimit           1
+    ThreadsPerChild       1
+    MaxClients            1
+    MaxRequestsPerChild   0
+</IfModule>
+
 ServerRoot %%SERVER_ROOT%%
 PidFile %%PID_FILE%%
 LockFile %%LOCK_FILE%%
@@ -26,16 +44,23 @@ LogLevel debug
 
 AddDefaultCharset UTF-8
 PerlSetEnv RT_SITE_CONFIG %%RT_SITE_CONFIG%%
-PerlRequire %%RT_BIN_PATH%%/webmux.pl
-
-RedirectMatch permanent (.*)/$ $1/index.html
 
 DocumentRoot "%%DOCUMENT_ROOT%%"
-<Directory "%%DOCUMENT_ROOT%%">
+<Location />
     Order allow,deny
     Allow from all
 
-    SetHandler perl-script
-    PerlResponseHandler RT::Mason
-</Directory>
+%%BASIC_AUTH%%
+
+    SetHandler modperl
+
+    PerlResponseHandler Plack::Handler::Apache2
+    PerlSetVar psgi_app %%RT_SBIN_PATH%%/rt-server
+</Location>
+
+<Perl>
+    $ENV{RT_TESTING}=1;
+    use Plack::Handler::Apache2;
+    Plack::Handler::Apache2->preload("%%RT_SBIN_PATH%%/rt-server");
+</Perl>
 

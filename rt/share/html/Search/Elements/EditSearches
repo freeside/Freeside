@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,14 +45,15 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
+<div class="edit-saved-searches">
 <&| /Widgets/TitleBox, title => loc($Title)&>
 
 %# Hide all the save functionality if the user shouldn't see it.
 % if ( $can_modify ) {
-<&|/l&>Privacy:</&>
+<span class="label"><&|/l&>Privacy</&>:</span>
 <& SelectSearchObject, Name => 'SavedSearchOwner', Objects => \@Objects, Object => ( $Object && $Object->id ) ? $Object->Object : '' &>
 <br />
-<&|/l&>Description</&>:
+<span class="label"><&|/l&>Description</&>:</span>
 <input size="25" name="SavedSearchDescription" value="<% $Description || '' %>" />
 
 % if ($Id ne 'new') {
@@ -67,19 +68,19 @@
 </nobr>
 % }
 % if ( $Object && $Object->Id ) {
-<input type="submit" class="button" name="SavedSearchSave"   value="<%loc('Update')%>" />
+<input type="submit" class="button" id="SavedSearchSave" name="SavedSearchSave"   value="<%loc('Update')%>" />
 % } else {
-<input type="submit" class="button" name="SavedSearchSave"   value="<%loc('Save')%>" />
+<input type="submit" class="button" id="SavedSearchSave" name="SavedSearchSave"   value="<%loc('Save')%>" />
 %}
 % }
 <br />
 <hr />
-<&|/l&>Load saved search:</&>
+<span class="label"><&|/l&>Load saved search</&>:</span>
 <& SelectSearchesForObjects, Name => 'SavedSearchLoad', Objects => \@Objects, SearchType => $Type &>
-<input type="submit" value="<% loc('Load') %>" class="button" />
+<input type="submit" value="<% loc('Load') %>" id="SavedSearchLoadSubmit" name="SavedSearchLoadSubmit" class="button" />
 
 </&>
-
+</div>
 <%INIT>
 return unless $session{'CurrentUser'}->HasRight(
     Right  => 'LoadSavedSearch',
@@ -91,8 +92,8 @@ my $can_modify = $session{'CurrentUser'}->HasRight(
     Object => $RT::System,
 );
 
-use RT::SavedSearches;
-my @Objects = RT::SavedSearches->new($session{CurrentUser})->_PrivacyObjects;
+use RT::SavedSearch;
+my @Objects = RT::SavedSearch->new($session{CurrentUser})->_PrivacyObjects;
 push @Objects, RT::System->new( $session{'CurrentUser'} )
     if $session{'CurrentUser'}->HasRight( Object=> $RT::System,
                                           Right => 'SuperUser' );

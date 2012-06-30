@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -67,6 +67,9 @@ to final priority.
 In this way, priority is either increased or decreased toward the final priority
 as the ticket heads toward its due date.
 
+Alternately, if you don't set a due date, the Priority will be incremented by 1
+until it reaches the Final Priority.  If a ticket without a due date has a Priority
+greater than Final Priority, it will be decremented by 1.
 
 =cut
 
@@ -80,15 +83,12 @@ use strict;
 
 #What does this type of Action does
 
-# {{{ sub Describe 
 sub Describe  {
   my $self = shift;
   return (ref $self . " will move a ticket's priority toward its final priority.");
 }
-# }}}
 	
 
-# {{{ sub Prepare 
 sub Prepare  {
     my $self = shift;
     
@@ -152,7 +152,6 @@ sub Prepare  {
     }
     return 1;
 }
-# }}}
 
 sub Commit {
     my $self = shift;

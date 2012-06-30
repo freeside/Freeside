@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,14 +46,40 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => $title &>
-<& /Admin/Elements/GroupTabs, current_tab => 'Admin/Groups/',
-    current_subtab => 'Admin/Groups/', 
-    Title => $title &>
-<% $caption %>:<br />
+<& /Elements/Tabs &>
+<h1><% $caption %></h1>
+
+<form method="post" action="<% RT->Config->Get('WebPath') %>/Admin/Groups/index.html">
+<input type="hidden" name="GroupField" value="Name" />
+<input type="hidden" name="GroupOp" value="LIKE" />
+<&|/l&>Go to group</&>
+<input type="text" name="GroupString" value="" id="autocomplete-GroupString" />
+<script type="text/javascript">
+jQuery(function(){
+    jQuery("#autocomplete-GroupString").autocomplete({
+        source: <% RT->Config->Get('WebPath') |n,j%>+"/Helpers/Autocomplete/Groups",
+        // Auto-submit once a group is chosen
+        select: function( event, ui ) {
+            jQuery(event.target).val(ui.item.value);
+            var form = jQuery(event.target).closest('form');
+            form.find('input[name=GroupOp]').val('=');
+            form.submit();
+        }
+    });
+});
+</script>
+</form>
+
+<form method="post" action="<% RT->Config->Get('WebPath') %>/Admin/Groups/index.html">
+<&|/l&>Find groups whose</&> <& /Elements/SelectGroups &><br />
+<input type="checkbox" class="checkbox" name="FindDisabledGroups" value="1" <% $FindDisabledGroups? 'checked="checked"': '' |n %> /> <&|/l&>Include disabled groups in listing.</&><br />
+<div align="right"><input type="submit" class="button" value="<&|/l&>Go!</&>" /></div> 
+</form>
 
 % unless ( $Groups->Count ) {
 <em><&|/l&>No groups matching search criteria found.</&></em>
 % } else {
+<p><&|/l&>Select a group</&>:</p>
 
 <& /Elements/CollectionList,
     OrderBy => 'Name',
@@ -65,23 +91,8 @@
     AllowSorting => 1,
     PassArguments => [qw(Format Rows Page Order OrderBy GroupString GroupOp GroupField FindDisabledGroups)],
 &>
-
-% my $ids = join ',', map $_->id, @{ $Groups->ItemsArrayRef };
-% if ( $ids ) {
-<div align="right"><em>
-(<a href="<% RT->Config->Get('WebPath') %>/Download/Tabular/Group/<% $ids %>/Groups.tsv">
-<&|/l&>Download as a tab-delimited file</&>
-</a>)</em></div>
 % }
 
-<br /><br />
-% }
-
-<form method="post" action="<% RT->Config->Get('WebPath') %>/Admin/Groups/index.html">
-<input type="checkbox" class="checkbox" name="FindDisabledGroups" value="1" <% $FindDisabledGroups? 'checked="checked"': '' |n %> /> <&|/l&>Include disabled groups in listing.</&><br />
-<&|/l&>Find groups whose</&> <& /Elements/SelectGroups &><br />
-<div align="right"><input type="submit" class="button" value="<&|/l&>Go!</&>" /></div> 
-</form>
 <%INIT>
 my $Groups = RT::Groups->new($session{'CurrentUser'});
 $Groups->LimitToUserDefinedGroups();
@@ -108,6 +119,8 @@ if (length $GroupString) {
 	    VALUE => $GroupString,
 	); 
     }
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Admin/Groups/Modify.html?id=".$Groups->First->id)
+          if $Groups->Count == 1 and $Groups->First;
 }
 else {
     $caption = loc("User-defined groups");

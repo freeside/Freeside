@@ -3,7 +3,7 @@
 use strict;
 use File::Spec ();
 use Test::Expect;
-use RT::Test tests => 295;
+use RT::Test tests => 303, actual_server => 1;
 my ($baseurl, $m) = RT::Test->started_ok;
 
 use RT::User;
@@ -11,7 +11,6 @@ use RT::Queue;
 
 my $rt_tool_path = "$RT::BinPath/rt";
 
-# {{{  test configuration options
 
 # config directives:
 #    (in $CWD/.rtrc)
@@ -38,14 +37,13 @@ $ENV{'RTSERVER'} =RT->Config->Get('WebBaseURL') ;
 $ENV{'RTDEBUG'} = '1';
 #    - RTCONFIG      Specifies a name other than ".rtrc" for the
 #                    configuration file.
+$ENV{'RTCONFIG'} = '/dev/null';
 #
 #    - RTQUERY       Default RT Query for rt list
 #    - RTORDERBY     Default order for rt list
 
 
-# }}}
 
-# {{{ test ticket manipulation
 
 # create a ticket
 expect_run(
@@ -54,6 +52,7 @@ expect_run(
     quit => 'quit',
 );
 expect_send(q{create -t ticket set subject='new ticket' add cc=foo@example.com}, "Creating a ticket...");
+
 expect_like(qr/Ticket \d+ created/, "Created the ticket");
 expect_handle->before() =~ /Ticket (\d+) created/;
 my $ticket_id = $1;
@@ -65,7 +64,6 @@ expect_like(qr/Ticket \d+ created/, "Created the ticket");
 expect_send(q{rt create -t ticket set subject='rt ticket'}, "Creating a ticket with 'rt create'...");
 expect_like(qr/Ticket \d+ created/, "Created the ticket");
 
-# {{{ test queue manipulation
 
 # creating queues
 expect_send("create -t queue set Name='NewQueue$$'", 'Creating a queue...');
@@ -85,19 +83,18 @@ TODO: {
     expect_like(qr/$queue_id: EditedQueue$$/, 'Found the queue');
 }
 
-# }}}
 
 
 # Set up a custom field for editing tests
-my $cf = RT::CustomField->new($RT::SystemUser);
+my $cf = RT::CustomField->new(RT->SystemUser);
 my ($val,$msg) = $cf->Create(Name => 'MyCF'.$$, Type => 'FreeformSingle', Queue => $queue_id);
 ok($val,$msg);
 
-my $othercf = RT::CustomField->new($RT::SystemUser);
+my $othercf = RT::CustomField->new(RT->SystemUser);
 ($val,$msg) = $othercf->Create(Name => 'My CF'.$$, Type => 'FreeformSingle', Queue => $queue_id);
 ok($val,$msg);
 
-my $multiple_cf = RT::CustomField->new($RT::SystemUser);
+my $multiple_cf = RT::CustomField->new(RT->SystemUser);
 ($val,$msg) = $multiple_cf->Create(Name => 'MultipleCF'.$$, Type =>
         'FreeformMultiple', Queue => $queue_id);
 ok($val,$msg);
@@ -118,7 +115,7 @@ ok($val,$msg);
     # text attachment
     check_attachment($test_email);
     # binary attachment
-    check_attachment($RT::MasonComponentRoot.'/NoAuth/images/bplogo.gif');
+    check_attachment($RT::MasonComponentRoot.'/NoAuth/images/bpslogo.png');
 
 # change a ticket's Owner
 expect_send("edit ticket/$ticket_id set owner=root", 'Changing owner...');
@@ -130,6 +127,11 @@ expect_send("edit ticket/$ticket_id set requestors=foo\@example.com", 'Changing 
 expect_like(qr/Ticket $ticket_id updated/, 'Changed Requestor');
 expect_send("show ticket/$ticket_id -f requestors", 'Verifying change...');
 expect_like(qr/Requestors: foo\@example.com/, 'Verified change');
+# set multiple Requestors
+expect_send("edit ticket/$ticket_id set requestors=foo\@example.com,bar\@example.com", 'Changing Requestor...');
+expect_like(qr/Ticket $ticket_id updated/, 'Changed Requestor');
+expect_send("show ticket/$ticket_id -f requestors", 'Verifying change...');
+expect_like(qr/Requestors: bar\@example.com, foo\@example.com/, 'Verified change');
 # change a ticket's Cc
 expect_send("edit ticket/$ticket_id set cc=bar\@example.com", 'Changing Cc...');
 expect_like(qr/Ticket $ticket_id updated/, 'Changed Cc');
@@ -269,17 +271,19 @@ expect_send("show ticket/$ticket_id -f status", 'Verifying change...');
 expect_like(qr/Status: resolved/, 'Verified change');
 # try to set status to an illegal value
 expect_send("edit ticket/$ticket_id set status=quux", 'Changing status to an illegal value...');
-expect_like(qr/illegal value/i, 'Errored out');
+expect_like(qr/isn't a valid status/i, 'Errored out');
 expect_send("show ticket/$ticket_id -f status", 'Verifying lack of change...');
 expect_like(qr/Status: resolved/, 'Verified change');
 
-# }}}
 
-# {{{ display
 
 # show ticket list
 expect_send("ls -s -t ticket -o +id \"Status='resolved'\"", 'Listing resolved tickets...');
 expect_like(qr/$ticket_id: new ticket/, 'Found our ticket');
+
+expect_send("ls -s -t ticket -f Requestors $ticket_id", 'getting Requestors');
+expect_like(qr/$ticket_id\s+bar\@example.com,\s+foo\@example.com/, 'got Requestors');
+
 # show ticket list verbosely
 expect_send("ls -l -t ticket -o +id \"Status='resolved'\"", 'Listing resolved tickets verbosely...');
 expect_like(qr/id: ticket\/$ticket_id/, 'Found our ticket');
@@ -307,9 +311,7 @@ ok($attachment_id, "Got attachment id=$attachment_id $attachment_type");
 expect_send("show -s ticket/$ticket_id/attachments/$attachment_id", "Showing attachment $attachment_id...");
 expect_like(qr/ContentType: $attachment_type/, 'Got the attachment');
 
-# }}}
 
-# {{{ test user manipulation
 
 # creating users
 expect_send("create -t user set Name='NewUser$$' EmailAddress='fbar$$\@example.com'", 'Creating a user...');
@@ -329,9 +331,7 @@ TODO: {
     expect_like(qr/$user_id: EditedUser$$/, 'Found the user');
 }
 
-# }}}
 
-# {{{ test group manipulation
 
 TODO: {
 todo_skip "Group manipulation doesn't work right now", 8;
@@ -354,11 +354,9 @@ TODO: {
 }
 }
 
-# }}}
 
 TODO: {
 todo_skip "Custom field manipulation not yet implemented", 8;
-# {{{ test custom field manipulation
 
 # creating custom fields
 expect_send("create -t custom_field set Name='NewCF$$'", 'Creating a custom field...');
@@ -379,9 +377,7 @@ TODO: {
 }
 }
 
-# }}}
 
-# {{{ test merging tickets
 expect_send("create -t ticket set subject='CLIMergeTest1-$$'", 'Creating first ticket to merge...');
 expect_like(qr/Ticket \d+ created/, 'Created first ticket');
 expect_handle->before() =~ /Ticket (\d+) created/;
@@ -395,30 +391,23 @@ ok($merge_ticket_B, "Got second ticket to merge id=$merge_ticket_B");
 expect_send("merge $merge_ticket_B $merge_ticket_A", 'Merging the tickets...');
 expect_like(qr/Merge completed/, 'Merged the tickets');
 
-TODO: {
-    local $TODO = "we generate a spurious warning here";
-    $m->no_warnings_ok;
-}
-
 expect_send("show ticket/$merge_ticket_A/history", 'Checking merge on first ticket');
 expect_like(qr/Merged into ticket #$merge_ticket_A by root/, 'Merge recorded in first ticket');
 expect_send("show ticket/$merge_ticket_B/history", 'Checking merge on second ticket');
 expect_like(qr/Merged into ticket #$merge_ticket_A by root/, 'Merge recorded in second ticket');
-# }}}
 
-# {{{ test taking/stealing tickets
 {
     # create a user; give them privileges to take and steal
     ### TODO: implement 'grant' in the CLI tool; use that here instead.
     ###       this breaks the abstraction barrier, like, a lot.
-    my $steal_user = RT::User->new($RT::SystemUser);
+    my $steal_user = RT::User->new(RT->SystemUser);
     my ($steal_user_id, $msg) = $steal_user->Create( Name => "fooser$$",
                                           EmailAddress => "fooser$$\@localhost",
                                           Privileged => 1,
                                           Password => 'foobar',
                                         );
     ok($steal_user_id, "Created the user? $msg");
-    my $steal_queue = RT::Queue->new($RT::SystemUser);
+    my $steal_queue = RT::Queue->new(RT->SystemUser);
     my $steal_queue_id;
     ($steal_queue_id, $msg) = $steal_queue->Create( Name => "Steal$$" );
     ok($steal_queue_id, "Got the queue? $msg");
@@ -476,9 +465,7 @@ expect_like(qr/Merged into ticket #$merge_ticket_A by root/, 'Merge recorded in 
     expect_send("steal $steal_ticket_id", 'root steals the ticket back...');
     expect_like(qr/Owner changed from fooser$$ to root/, '...and succeeds.');
 }
-# }}}
 
-# {{{ test ticket linking
     my @link_relns = ( 'DependsOn', 'DependedOnBy', 'RefersTo', 'ReferredToBy',
                        'MemberOf', 'HasMember', );
     my %display_relns = map { $_ => $_ } @link_relns;
@@ -502,7 +489,6 @@ expect_like(qr/Merged into ticket #$merge_ticket_A by root/, 'Merge recorded in 
         #expect_unlike(qr/\Q$reln: \E[\w\d\.]+\Q://\E[w\d\.]+\/ticket\/$link2_id/, "Removed link $reln");
 
     }
-# }}}
 
 expect_quit(); # We need to do this ourselves, so that we quit
                # *before* we tear down the webserver.
@@ -536,9 +522,16 @@ sub check_attachment {
     my $attachment_content = do { local($/); <$fh> };
     close $fh;
     chomp $attachment_content;
-    expect_is($attachment_content,"Attachment contains original text");
+    TODO: {
+        local $TODO = "Binary PNG content is getting mangled somewhere along the way"
+            if $attachment_path =~ /\.png$/;
+        expect_is($attachment_content,"Attachment contains original text");
+    }
 }
 
+# you may encounter warning like Use of uninitialized value $ampm
+# ... in Time::ParseDate
+my @warnings = grep { $_ !~ /\$ampm/ } $m->get_warnings;
+is( scalar @warnings, 0, 'no extra warnings' );
 
-
-1;
+1; # needed to avoid a weird exit value from expect_quit

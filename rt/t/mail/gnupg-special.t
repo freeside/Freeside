@@ -2,31 +2,9 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 23;
-
-plan skip_all => 'GnuPG required.'
-    unless eval 'use GnuPG::Interface; 1';
-plan skip_all => 'gpg executable is required.'
-    unless RT::Test->find_executable('gpg');
+use RT::Test::GnuPG tests => 25, gnupg_options => { passphrase => 'rt-test' };
 
 use Digest::MD5 qw(md5_hex);
-
-use File::Temp qw(tempdir);
-my $homedir = tempdir( CLEANUP => 1 );
-
-# catch any outgoing emails
-RT::Test->set_mail_catcher;
-
-RT->Config->Set( 'GnuPG',
-                 Enable => 1,
-                 OutgoingMessagesFormat => 'RFC' );
-
-RT->Config->Set( 'GnuPGOptions',
-                 homedir => $homedir,
-                 'passphrase' => 'rt-test',
-                 'no-permission-warning' => undef);
-
-RT->Config->Set( 'MailPlugins' => 'Auth::MailFrom', 'Auth::GnuPG' );
 
 RT::Test->import_gnupg_key('rt-recipient@example.com');
 RT::Test->import_gnupg_key('rt-test@example.com', 'public');
@@ -46,19 +24,14 @@ ok( $m->login, 'we did log in' );
     $m->content_like(qr/rt-recipient\@example.com.* - never/, 'has key info.');
 }
 
-ok(my $user = RT::User->new($RT::SystemUser));
+ok(my $user = RT::User->new(RT->SystemUser));
 ok($user->Load('root'), "Loaded user 'root'");
 $user->SetEmailAddress('recipient@example.com');
-
-RT::Test->set_rights(
-    Principal => 'Everyone',
-    Right => ['CreateTicket'],
-);
 
 {
     my $id = send_via_mailgate('quoted_inline_signature.txt');
 
-    my $tick = RT::Ticket->new( $RT::SystemUser );
+    my $tick = RT::Ticket->new( RT->SystemUser );
     $tick->Load( $id );
     ok ($tick->id, "loaded ticket #$id");
 

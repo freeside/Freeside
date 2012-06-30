@@ -1,8 +1,8 @@
-.tooltip{position:relative;z-index:1;}
-.tooltip:hover{z-index:5;color:#000;}
-.tooltip span.tip{display: none; text-align:left;}
+.rtxcalendar .tooltip{position:relative;z-index:1;}
+.rtxcalendar .tooltip:hover{z-index:5;color:#000;}
+.rtxcalendar .tooltip span.tip{display: none; text-align:left;}
 
-div.tooltip:hover span.tip{
+.rtxcalendar div.tooltip:hover span.tip{
 display:block;
 position:absolute;
 top:12px; left:24px; width:350px;
@@ -13,7 +13,7 @@ font-size: 0.8em;
 color:#505050;
 }
 
-.calendardate {
+.rtxcalendar .date {
   text-align: right;
   background-color: #f8f8ff;
   width:100%;

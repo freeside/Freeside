@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -50,5 +50,12 @@
 </label>
 <%INIT>
 my $queue = RT->Config->Get("DefaultQueue", $session{'CurrentUser'});
+
+if (RT->Config->Get("RememberDefaultQueue", $session{'CurrentUser'})) {
+    if (my $session_default = $session{'DefaultQueue'}) {
+        $queue = $session_default;
+    }
+}
+
 $m->callback(Queue => \$queue, CallbackName => 'DefaultQueue');
 </%INIT>

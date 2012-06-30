@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -52,9 +52,10 @@
     $args{'Description'} = loc( $args{'Description'} ) if $args{'Description'};
     $args{'Hints'} = loc( $args{'Hints'} ) if $args{'Hints'};
     if ( $args{'ValuesLabel'} ) {
-        while (my ($k, $v) = each %{ $args{'ValuesLabel'} } ) {
-            $args{'ValuesLabel'}->{$k} = loc( $args{'ValuesLabel'}->{$k} );
-        }
+        my %labels;
+        $labels{$_} = loc( $args{'ValuesLabel'}->{$_} )
+            for keys %{$args{'ValuesLabel'}};
+        $args{'ValuesLabel'} = \%labels;
     }
     return \%args;
 </%init>

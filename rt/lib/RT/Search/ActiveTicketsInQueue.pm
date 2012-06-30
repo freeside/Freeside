@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -69,14 +69,11 @@ use strict;
 use base qw(RT::Search);
 
 
-# {{{ sub Describe 
 sub Describe  {
   my $self = shift;
   return ($self->loc("No description for [_1]", ref $self));
 }
-# }}}
 
-# {{{ sub Prepare
 sub Prepare  {
   my $self = shift;
 
@@ -88,7 +85,6 @@ sub Prepare  {
 
   return(1);
 }
-# }}}
 
 RT::Base->_ImportOverlays();
 

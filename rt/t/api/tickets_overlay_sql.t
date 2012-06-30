@@ -1,13 +1,9 @@
-
-use RT;
-use RT::Test tests => 19;
-
-{
-
-use RT::Tickets;
 use strict;
+use warnings;
+use RT::Test tests => 20, config => 'Set( %FullTextSearch, Enable => 1 );';
+use Test::Warn;
 
-my $tix = RT::Tickets->new($RT::SystemUser);
+my $tix = RT::Tickets->new(RT->SystemUser);
 {
     my $query = "Status = 'open'";
     my ($status, $msg)  = $tix->FromSQL($query);
@@ -18,7 +14,7 @@ my $tix = RT::Tickets->new($RT::SystemUser);
 my (@created,%created);
 my $string = 'subject/content SQL test';
 {
-    my $t = RT::Ticket->new($RT::SystemUser);
+    my $t = RT::Ticket->new(RT->SystemUser);
     ok( $t->Create(Queue => 'General', Subject => $string), "Ticket Created");
     $created{ $t->Id }++; push @created, $t->Id;
 }
@@ -30,7 +26,7 @@ my $string = 'subject/content SQL test';
                      Data        => [ $string ],
             );
 
-    my $t = RT::Ticket->new($RT::SystemUser);
+    my $t = RT::Ticket->new(RT->SystemUser);
     ok( $t->Create( Queue => 'General',
                     Requestor => 'jesse@example.com',
                     Subject => 'another ticket',
@@ -74,7 +70,7 @@ diag "Make sure we don't barf on invalid input for IS / IS NOT";
     unlike $tix->BuildSelectQuery, qr/foobar/, "didn't find foobar in the select";
     like $tix->BuildSelectQuery, qr/Subject IS NULL/, "found right clause";
     
-    my ($status, $msg) = $tix->FromSQL("Subject IS NOT 'foobar'");
+    ($status, $msg) = $tix->FromSQL("Subject IS NOT 'foobar'");
     ok ($status, "valid query") or diag("error: $msg");
     is $tix->Count, 2, "found two tickets";
     unlike $tix->BuildSelectQuery, qr/foobar/, "didn't find foobar in the select";
@@ -82,15 +78,16 @@ diag "Make sure we don't barf on invalid input for IS / IS NOT";
 }
 
 {
-    my ($status, $msg) = $tix->FromSQL("Requestor.Signature LIKE 'foo'");
-    ok (!$status, "invalid query - Signature not valid") or diag("error: $msg");
+    my ($status, $msg);
 
-    my ($status, $msg) = $tix->FromSQL("Requestor.EmailAddress LIKE 'jesse'");
+    warning_like {
+        ($status, $msg) = $tix->FromSQL("Requestor.Signature LIKE 'foo'");
+    } qr/Invalid watcher subfield: 'Signature'/;
+    ok(!$status, "invalid query - Signature not valid") or diag("error: $msg");
+
+    ($status, $msg) = $tix->FromSQL("Requestor.EmailAddress LIKE 'jesse'");
     ok ($status, "valid query") or diag("error: $msg");
     is $tix->Count, 1, "found one ticket";
     like $tix->First->Subject, qr/another ticket/, "found the right ticket";
 }
 
-}
-
-1;

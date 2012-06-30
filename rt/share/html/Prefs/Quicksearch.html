@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,10 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => $title &>
-<& /Prefs/Elements/Tabs,
-    current_tab => 'Prefs/MyRT.html',
-    current_subtab => 'Prefs/Quicksearch.html',
-    Title => $title
+<& /Elements/Tabs
 &>
 <& /Elements/ListActions, actions => \@actions &>
 <h1><&|/l&>Select queues to be displayed on the "RT at a glance" page</&></h1>
@@ -60,7 +57,7 @@
 % unless ($unwanted->{$queue->Name}) {
 checked="checked"
 % }
-/><%$queue->Name%>: <%$queue->Description%></li>
+/><%$queue->Name%><% $queue->Description ? ': '.$queue->Description : '' %></li>
 % }
 </ul>
 <& /Elements/Submit, Caption => loc("Save Changes"), Label => loc('Save'), Name => 'Save'&>
@@ -70,7 +67,6 @@ checked="checked"
 <%INIT>
 my @actions;
 my $title = loc("Customize").' '.loc("Quick search");
-# The queue list is not loaded from cache, so it might be a bit inconsistent
 my $user = $session{'CurrentUser'}->UserObj;
 my $unwanted = $user->Preferences('QuickSearch', {});
 my $Queues = RT::Queues->new($session{'CurrentUser'});
@@ -89,9 +85,6 @@ if ($ARGS{'Save'}) {
 
     my ($ok, $msg) = $user->SetPreferences('QuickSearch', $unwanted);
     push @actions, $ok ? loc('Preferences saved.') : $msg;
-
-    # Let QueueSummary rebuild the cache
-    delete $session{'quick_search_queues'};
 }
 
 </%INIT>
