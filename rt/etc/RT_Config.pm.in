@@ -508,7 +508,8 @@ so you can extract mail from it afterward.
 
 =cut
 
-Set($MailCommand, "sendmailpipe");
+#Set($MailCommand, "sendmailpipe");
+Set($MailCommand, "sendmail");
 
 =item C<$SetOutgoingMailFrom>
 
@@ -729,7 +730,8 @@ C<Set($SendmailArguments,"-oi -t -ODeliveryMode=b -OErrorMode=m");>
 
 =cut
 
-Set($SendmailArguments, "-oi -t");
+#Set($SendmailArguments, "-oi -t");
+Set($SendmailArguments, "-oi");
 
 
 =item C<$SendmailBounceArguments>
