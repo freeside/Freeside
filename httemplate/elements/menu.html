@@ -272,10 +272,11 @@ tie my %report_ticketing_statistics, 'Tie::IxHash',
 ;
 
 tie my %report_ticketing, 'Tie::IxHash',
-  'Resolved by owner'       => [ $fsurl.'rt/Tools/Reports/ResolvedByOwner.html', '' ],
-  'Resolved in date range'  => [ $fsurl.'rt/Tools/Reports/ResolvedByDates.html', '' ],
-  'Created in date range'   => [ $fsurl.'rt/Tools/Reports/CreatedByDates.html', '' ],
-  'separator'               => '',
+# fix TimeToResolve extension?  or redo in a more modern way?
+#  'Resolved by owner'       => [ $fsurl.'rt/Tools/Reports/ResolvedByOwner.html', '' ],
+#  'Resolved in date range'  => [ $fsurl.'rt/Tools/Reports/ResolvedByDates.html', '' ],
+#  'Created in date range'   => [ $fsurl.'rt/Tools/Reports/CreatedByDates.html', '' ],
+#  'separator'               => '',
   'Statistics'              => [ \%report_ticketing_statistics, '' ],
   'separator2'              => '',
   'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html', 'List tickets by any criteria' ],
@@ -387,10 +388,18 @@ tie my %tools_exporting, 'Tie::IxHash',
   'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],
 ;
 
+tie my %tools_ticketing_articles, 'Tie::IxHash',
+  'Overview' => [ $fsurl.'rt/Articles/index.html', '' ],
+  'Search'   => [ $fsurl.'rt/Articles/Article/Search.html', '' ],
+  'Topics'   => [ $fsurl.'rt/Articles/Topics.html', '' ],
+;
+
 tie my %tools_ticketing, 'Tie::IxHash',
-  'Offline'      => [ $fsurl.'rt/Tools/Offline.html', '' ],
+  'Articles'     => [ \%tools_ticketing_articles, '' ],
   'My Day'       => [ $fsurl.'rt/Tools/MyDay.html', '' ],
-  'My Approvals' => [ $fsurl.'rt/Approvals/', '' ],
+  'My Reminders' => [ $fsurl.'rt/Tools/MyReminders.html', '' ],
+  'Offline'      => [ $fsurl.'rt/Tools/Offline.html', '' ],
+  'Approval'     => [ $fsurl.'rt/Approvals/', '' ],
 ;
 $tools_ticketing{'Cron Tool'} = [ $fsurl.'rt/Developer/CronTool/', '' ]
   if $conf->exists('rt-crontool');
@@ -541,12 +550,44 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons.' ];
 }
 
+#XXX also to be unified
+tie my %config_ticketing_groups, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/Groups', '' ],
+  'Create' => [ $fsurl.'rt/Admin/Groups/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_queues, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/Queues', '' ],
+  'Create' => [ $fsurl.'rt/Admin/Queues/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_customfields, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/CustomFields', '' ],
+  'Create' => [ $fsurl.'rt/Admin/CustomFields/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_articles_classes, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/Articles/Classes/', '' ],
+  'Create' => [ $fsurl.'rt/Admin/Articles/Classes/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_articles_customfields, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/CustomFields/index.html?type=RT%3A%3AClass-RT%3A%3AArticle', '' ],
+  'Create' => [ $fsurl.'rt/Admin/CustomFields/Modify.html?Create=1&LookupType=RT%3A%3AClass-RT%3A%3AArticle', '' ],
+;
+
+tie my %config_ticketing_articles, 'Tie::IxHash',
+  'Classes'       => [ \%config_ticketing_articles_classes, '' ],
+  'Custom Fields' => [ \%config_ticketing_articles_customfields, '' ],
+;
+
 tie my %config_ticketing, 'Tie::IxHash',
-  'Ticketing Users'      => [ $fsurl.'rt/Admin/Users', 'View/Edit ticketing users' ], #XXX to be unified
-  'Ticketing Groups'     => [ $fsurl.'rt/Admin/Groups', 'View/Edit ticketing groups and group membership' ], #XXX to be unified
-  'Ticketing Queues'     => [ $fsurl.'rt/Admin/Queues', 'View/Edit ticketing queues and queue-specific properties' ], 
-  'Ticket Custom Fields' => [ $fsurl.'rt/Admin/CustomFields', 'View/Edit ticketing custom fields' ], 
-  'Ticketing Global'     => [ $fsurl.'rt/Admin/Global', 'View/Edit ticketing configuration applicable to all queues' ], 
+  'Ticketing Users'      => [ $fsurl.'rt/Admin/Users', 'Edit ticketing users' ], #XXX to be unified
+  'Ticketing Groups'     => [ \%config_ticketing_groups, 'View/Edit ticketing groups and group membership' ], #XXX to be unified
+  'Ticketing Queues'     => [ \%config_ticketing_queues, 'View/Edit ticketing queues and queue-specific properties' ], 
+  'Ticket Custom Fields' => [ \%config_ticketing_customfields, 'View/Edit ticketing custom fields' ], 
+  'Ticketing Global'     => [ $fsurl.'rt/Admin/Global', 'View/Edit ticketing configuration applicable to all queues' ], #XXX the individual items
+  'Ticketing Articles'   => [ \%config_ticketing_articles, '' ],
   #"System Configuraiton"?  useless, just makes people report errors about missing Module::Versions::Report #'Ticketing Tools'     => [ $fsurl.'rt/Admin/Tools', '' ], 
 ;
 
