@@ -1251,8 +1251,9 @@ to handle common problems such as localhost vs 127.0.0.1
 =cut
 
 sub _NormalizeHost {
-
-    my $uri= URI->new(shift);
+    my $s = shift;
+    $s = "http://$s" unless $s =~ /^http/i;
+    my $uri= URI->new($s);
     $uri->host('127.0.0.1') if $uri->host eq 'localhost';
 
     return $uri;
