@@ -46,7 +46,7 @@ foreach my $pay_batch (@batches) {
   my $batchnum = $pay_batch->batchnum;
   my $filename = time2str('%Y%m%d', time) . '-' . sprintf('%06d.csv',$batchnum);
   print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
-  my $text = $pay_batch->export_batch('eft_canada');
+  my $text = $pay_batch->export_batch(format => 'eft_canada');
   open OUT, ">$tmpdir/$filename";
   print OUT $text;
   close OUT;

@@ -690,12 +690,6 @@ my %msg_template_options = (
   'per_agent' => 1,
 );
 
-my $_gateway_name = sub {
-  my $g = shift;
-  return '' if !$g;
-  ($g->gateway_username . '@' . $g->gateway_module);
-};
-
 my %payment_gateway_options = (
   'type'        => 'select-sub',
   'options_sub' => sub {
@@ -703,11 +697,24 @@ my %payment_gateway_options = (
         'table' => 'payment_gateway',
         'hashref' => { 'disabled' => '' },
       });
-    map { $_->gatewaynum, $_gateway_name->($_) } @gateways;
+    map { $_->gatewaynum, $_->label } @gateways;
   },
   'option_sub'  => sub {
     my $gateway = FS::payment_gateway->by_key(shift);
-    $_gateway_name->($gateway);
+    $gateway ? $gateway->label : ''
+  },
+);
+
+my %batch_gateway_options = (
+  %payment_gateway_options,
+  'options_sub' => sub {
+    my @gateways = qsearch('payment_gateway',
+      {
+        'disabled'          => '',
+        'gateway_namespace' => 'Business::BatchPayment',
+      }
+    );
+    map { $_->gatewaynum, $_->label } @gateways;
   },
 );
 
@@ -960,6 +967,13 @@ sub reason_type_options {
     'description' => 'Currency parameter for Business::OnlinePayment transactions.',
     'type'        => 'select',
     'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD ) ],
+  },
+
+  {
+    'key'         => 'business-batchpayment-test_transaction',
+    'section'     => 'billing',
+    'description' => 'Turns on the Business::BatchPayment test_mode flag.  Note that not all gateway modules support this flag; if yours does not, using the batch gateway will fail.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -3401,6 +3415,40 @@ and customer address. Include units.',
                        'csv-chase_canada-E-xactBatch', 'BoM', 'PAP',
                        'paymentech', 'ach-spiritone', 'RBC'
                     ]
+  },
+
+  { 'key'         => 'batch-gateway-CARD',
+    'section'     => 'billing',
+    'description' => 'Business::BatchPayment gateway for credit card batches.',
+    %batch_gateway_options,
+  },
+
+  { 'key'         => 'batch-gateway-CHEK',
+    'section'     => 'billing', 
+    'description' => 'Business::BatchPayment gateway for check batches.',
+    %batch_gateway_options,
+  },
+
+  {
+    'key'         => 'batch-reconsider',
+    'section'     => 'billing',
+    'description' => 'Allow imported batch results to change the status of payments from previous imports.  Enable this only if your gateway is known to send both positive and negative results for the same batch.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'batch-auto_resolve_days',
+    'section'     => 'billing',
+    'description' => 'Automatically resolve payment batches this many days after they were first downloaded.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batch-auto_resolve_status',
+    'section'     => 'billing',
+    'description' => 'When automatically resolving payment batches, take this action for payments of unknown status.',
+    'type'        => 'select',
+    'select_enum' => [ 'approve', 'decline' ],
   },
 
   #lists could be auto-generated from pay_batch info

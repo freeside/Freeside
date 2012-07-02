@@ -14,7 +14,8 @@
 		                      'Type',
 		                      'First Download',
 				      'Last Upload',
-				      'Item Count',
+				      'Items',
+                                      'Unresolved',
 				      'Amount',
 				      'Status',
                                     ],
@@ -46,13 +47,16 @@
 					}
 				      },
 				      sub {
-                                        my $st = "SELECT COUNT(*) from cust_pay_batch WHERE batchnum=" . shift->batchnum;
-                                        my $sth = dbh->prepare($st)
-                                          or die dbh->errstr. "doing $st";
-                                        $sth->execute
-				          or die "Error executing \"$st\": ". $sth->errstr;
-                                        $sth->fetchrow_arrayref->[0];
-				      },
+                                        FS::cust_pay_batch->count(
+                                          'batchnum = '.$_[0]->batchnum
+                                        )
+                                      },
+                                      sub {
+                                        FS::cust_pay_batch->count(
+                                          'status is null and batchnum = '.
+                                            $_[0]->batchnum
+                                        )
+                                      },
 				      sub {
                                         my $st = "SELECT SUM(amount) from cust_pay_batch WHERE batchnum=" . shift->batchnum;
                                         my $sth = dbh->prepare($st)
