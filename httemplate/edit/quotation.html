@@ -1,0 +1,15 @@
+<% include( 'elements/edit.html',
+                 'name'   => 'Quotation',
+                 'table'  => 'quotation',
+                 'labels' => { 
+                               'quotationnum' => 'Quotation number',
+                             },
+                 #XXX some way to disable the "view all"
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Generate quotation');
+
+</%init>

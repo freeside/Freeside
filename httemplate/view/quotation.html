@@ -1,0 +1,81 @@
+<& /elements/header.html, mt('Quotation View'), $menubar &>
+
+%#XXX link to order...
+
+<%doc>
+
+XXX resending quotations
+
+% if ( $curuser->access_right('Resend invoices') ) {
+
+    <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>"><% mt('Re-print this invoice') |h %></A>
+
+%   if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=email;<% $link %>"><% mt('Re-email this invoice') |h %></A>
+%   } 
+
+%   if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>"><% mt('Re-fax this invoice') |h %></A>
+%   } 
+
+    <BR><BR>
+
+% } 
+
+XXX view typset quotation
+
+% if ( $conf->exists('invoice_latex') ) { 
+
+  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>"><% mt('View typeset invoice PDF') |h %></A>
+  <BR><BR>
+% } 
+
+XXX actually show the quotation
+
+% if ( $conf->exists('invoice_html') ) { 
+  <% join('', $cust_bill->print_html(\%opt) ) %>
+% } else { 
+  <PRE><% join('', $cust_bill->print_text(\%opt) ) %></PRE>
+% } 
+
+</%doc>
+
+<& /elements/footer.html &>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+#die "access denied"
+#  unless $curuser->access_right('View quotations');
+
+my $quotationnum;
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) {
+  $quotationnum = $1;
+} else {
+  $quotationnum = $cgi->param('quotationnum');
+}
+
+#my $conf = new FS::Conf;
+
+my $quotation = qsearchs({
+  'select'    => 'quotation.*',
+  'table'     => 'quotation',
+  #'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'quotationnum' => $quotationnum },
+  #'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die "Quotation #$quotationnum not found!" unless $quotation;
+
+if ( my $custnum = $quotation->custnum ) {
+  my $display_custnum = $quotation->cust_main->display_custnum;
+  $menubar = menubar(
+    emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
+  );
+} elsif ( my $prospectnum = $quotation->prospectnum ) {
+  $menubar = menubar(
+    emt("View this prospect (#[_1])",$prospectnum) => "${p}view/prospect_main.html?$prospectnum",
+  );
+}
+
+</%init>
