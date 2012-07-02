@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -47,7 +47,11 @@
 %# END BPS TAGGED BLOCK }}}
 <div class="quick-create">
 <&| /Widgets/TitleBox, title => loc('Quick ticket creation') &>
-<form method="post" action="<%RT->Config->Get('WebPath')%>/index.html">
+<form
+    method="post"
+    action="<%RT->Config->Get('WebPath')%>/index.html"
+% $m->callback(CallbackName => 'InFormElement');
+>
 <input type="hidden" class="hidden" name="QuickCreate" value="1" />
 <table>
 <tr class="input-row"><td class="label"><&|/l&>Subject</&>:</td>
@@ -58,7 +62,7 @@
 <td class="label"><&|/l&>Owner</&>:</td><td class="value">
 <select type="select" name="Owner">  
 <option value="<%$session{'CurrentUser'}->id%>" selected="selected"><&|/l&>Me</&></option>
-<option value="<%$RT::Nobody->id%>"><%loc('Nobody')%></option>
+<option value="<%RT->Nobody->id%>"><%loc('Nobody')%></option>
 </select>
 </td>
 </tr>

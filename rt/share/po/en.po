@@ -1,0 +1,23 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: RT 4.0.x\n"
+"Report-Msgid-Bugs-To: rt-devel <rt-devel@lists.bestpractical.com>\n"
+"POT-Creation-Date: 2011-08-05 23:32+0000\n"
+"PO-Revision-Date: 2011-08-05 21:42+0000\n"
+"Last-Translator: Alex Vandiver <alexmv@bestpractical.com>\n"
+"Language-Team: rt-devel <rt-devel@lists.bestpractical.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Launchpad-Export-Date: 2011-08-06 01:12+0000\n"
+"X-Generator: Launchpad (build 13613)\n"
+
+#: share/html/Elements/Tabs:380 share/html/m/_elements/header:67
+msgid "Homepage"
+msgstr "Home"
+
+#: share/html/Admin/Users/Modify.html:167 share/html/User/Prefs.html:88
+msgid "Residence"
+msgstr "Home"
+

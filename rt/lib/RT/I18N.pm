@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -57,13 +57,15 @@ package RT::I18N;
 use strict;
 use warnings;
 
+
 use Locale::Maketext 1.04;
 use Locale::Maketext::Lexicon 0.25;
-use base ('Locale::Maketext::Fuzzy');
+use base 'Locale::Maketext::Fuzzy';
 
 use Encode;
 use MIME::Entity;
 use MIME::Head;
+use File::Glob;
 
 # I decree that this project's first language is English.
 
@@ -91,7 +93,6 @@ Initializes the lexicons used for localization.
 =cut
 
 sub Init {
-    require File::Glob;
 
     my @lang = RT->Config->Get('LexiconLanguages');
     @lang = ('*') unless @lang;
@@ -115,11 +116,11 @@ sub Init {
     my %import;
     foreach my $l ( @lang ) {
         $import{$l} = [
-            Gettext => (substr(__FILE__, 0, -3) . "/$l.po"),
-            Gettext => "$RT::LocalLexiconPath/*/$l.po",
-            Gettext => "$RT::LocalLexiconPath/$l.po",
+            Gettext => $RT::LexiconPath."/$l.po",
         ];
         push @{ $import{$l} }, map {(Gettext => "$_/$l.po")} RT->PluginDirs('po');
+        push @{ $import{$l} }, (Gettext => $RT::LocalLexiconPath."/*/$l.po",
+                                Gettext => $RT::LocalLexiconPath."/$l.po");
     }
 
     # Acquire all .po files and iterate them into lexicons
@@ -158,7 +159,6 @@ If it can't find anything, it returns 'ISO-8859-1'
 
 sub encoding { 'utf-8' }
 
-# {{{ SetMIMEEntityToUTF8
 
 =head2 SetMIMEEntityToUTF8 $entity
 
@@ -171,9 +171,7 @@ sub SetMIMEEntityToUTF8 {
     RT::I18N::SetMIMEEntityToEncoding(shift, 'utf-8');
 }
 
-# }}}
 
-# {{{ IsTextualContentType
 
 =head2 IsTextualContentType $type
 
@@ -185,7 +183,6 @@ Currently, it returns true iff $type matches this regular expression
 
     ^(?:text/(?:plain|html)|message/rfc822)\b
 
-# }}}
 
 =cut
 
@@ -194,7 +191,6 @@ sub IsTextualContentType {
     ($type =~ m{^(?:text/(?:plain|html)|message/rfc822)\b}i) ? 1 : 0;
 }
 
-# {{{ SetMIMEEntityToEncoding
 
 =head2 SetMIMEEntityToEncoding $entity, $encoding
 
@@ -214,9 +210,6 @@ sub SetMIMEEntityToEncoding {
     SetMIMEEntityToEncoding( $_, $enc, $preserve_words ) foreach $entity->parts;
 
     my $charset = _FindOrGuessCharset($entity) or return;
-    # one and only normalization
-    $charset = 'utf-8' if $charset =~ /^utf-?8$/i;
-    $enc     = 'utf-8' if $enc     =~ /^utf-?8$/i;
 
     SetMIMEHeadToEncoding(
 	$entity->head,
@@ -225,13 +218,6 @@ sub SetMIMEEntityToEncoding {
     );
 
     my $head = $entity->head;
-
-    # convert at least MIME word encoded attachment filename
-    foreach my $attr (qw(content-type.name content-disposition.filename)) {
-	if ( my $name = $head->mime_attr($attr) and !$preserve_words ) {
-	    $head->mime_attr( $attr => DecodeMIMEWordsToUTF8($name) );
-	}
-    }
 
     # If this is a textual entity, we'd need to preserve its original encoding
     $head->replace( "X-RT-Original-Encoding" => $charset )
@@ -244,20 +230,19 @@ sub SetMIMEEntityToEncoding {
     if ( $enc ne $charset && $body ) {
         my $string = $body->as_string or return;
 
-        # {{{ Convert the body
-        $RT::Logger->debug( "Converting '$charset' to '$enc' for " . $head->mime_type . " - " . ( $head->get('subject') || 'Subjectless message' ) );
+        $RT::Logger->debug( "Converting '$charset' to '$enc' for "
+              . $head->mime_type . " - "
+              . ( $head->get('subject') || 'Subjectless message' ) );
 
         # NOTE:: see the comments at the end of the sub.
-        Encode::_utf8_off( $string);
+        Encode::_utf8_off($string);
         Encode::from_to( $string, $charset => $enc );
 
-        # }}}
-
-        my $new_body = MIME::Body::InCore->new( $string);
+        my $new_body = MIME::Body::InCore->new($string);
 
         # set up the new entity
         $head->mime_attr( "content-type" => 'text/plain' )
-            unless ( $head->mime_attr("content-type") );
+          unless ( $head->mime_attr("content-type") );
         $head->mime_attr( "content-type.charset" => $enc );
         $entity->bodyhandle($new_body);
     }
@@ -274,9 +259,7 @@ sub SetMIMEEntityToEncoding {
 # Not turning off the UTF-8 flag in the string will prevent the string
 # from conversion.
 
-# }}}
 
-# {{{ DecodeMIMEWordsToUTF8
 
 =head2 DecodeMIMEWordsToUTF8 $raw
 
@@ -299,63 +282,86 @@ sub DecodeMIMEWordsToUTF8 {
 
 sub DecodeMIMEWordsToEncoding {
     my $str = shift;
-    my $to_charset = shift;
+    my $to_charset = _CanonicalizeCharset(shift);
     my $field = shift || '';
 
-    my @list = $str =~ m/(.*?)=\?([^?]+)\?([QqBb])\?([^?]+)\?=([^=]*)/gcs;
-    return ($str) unless (@list);
+    # handle filename*=ISO-8859-1''%74%E9%73%74%2E%74%78%74, parameter value
+    # continuations, and similar syntax from RFC 2231
+    if ($field =~ /^Content-(Type|Disposition)/i) {
+        # This concatenates continued parameters and normalizes encoded params
+        # to QB encoded-words which we handle below
+        $str = MIME::Field::ParamVal->parse($str)->stringify;
+    }
 
-    # add everything that hasn't matched to the end of the latest
-    # string in array this happen when we have 'key="=?encoded?="; key="plain"'
-    $list[-1] .= substr($str, pos $str);
+    # XXX TODO: use decode('MIME-Header', ...) and Encode::Alias to replace our
+    # custom MIME word decoding and charset canonicalization.  We can't do this
+    # until we parse before decode, instead of the other way around.
+    my @list = $str =~ m/(.*?)          # prefix
+                         =\?            # =?
+                         ([^?]+?)       # charset
+                         (?:\*[^?]+)?   # optional '*language'
+                         \?             # ?
+                         ([QqBb])       # encoding
+                         \?             # ?
+                         ([^?]+)        # encoded string
+                         \?=            # ?=
+                         ([^=]*)        # trailing
+                        /xgcs;
 
-    $str = "";
-    while (@list) {
-	my ($prefix, $charset, $encoding, $enc_str, $trailing) =
-            splice @list, 0, 5;
-        $encoding = lc $encoding;
+    if ( @list ) {
+        # add everything that hasn't matched to the end of the latest
+        # string in array this happen when we have 'key="=?encoded?="; key="plain"'
+        $list[-1] .= substr($str, pos $str);
 
-        $trailing =~ s/\s?\t?$//;               # Observed from Outlook Express
+        $str = "";
+        while (@list) {
+            my ($prefix, $charset, $encoding, $enc_str, $trailing) =
+                    splice @list, 0, 5;
+            $charset  = _CanonicalizeCharset($charset);
+            $encoding = lc $encoding;
 
-	if ( $encoding eq 'q' ) {
-	    use MIME::QuotedPrint;
-	    $enc_str =~ tr/_/ /;		# Observed from Outlook Express
-	    $enc_str = decode_qp($enc_str);
-	} elsif ( $encoding eq 'b' ) {
-	    use MIME::Base64;
-	    $enc_str = decode_base64($enc_str);
-	} else {
-	    $RT::Logger->warning("Incorrect encoding '$encoding' in '$str', "
-            ."only Q(uoted-printable) and B(ase64) are supported");
-	}
+            $trailing =~ s/\s?\t?$//;               # Observed from Outlook Express
 
-        # now we have got a decoded subject, try to convert into the encoding
-        unless ( $charset eq $to_charset ) {
-            Encode::from_to( $enc_str, $charset, $to_charset );
+            if ( $encoding eq 'q' ) {
+                use MIME::QuotedPrint;
+                $enc_str =~ tr/_/ /;		# Observed from Outlook Express
+                $enc_str = decode_qp($enc_str);
+            } elsif ( $encoding eq 'b' ) {
+                use MIME::Base64;
+                $enc_str = decode_base64($enc_str);
+            } else {
+                $RT::Logger->warning("Incorrect encoding '$encoding' in '$str', "
+                    ."only Q(uoted-printable) and B(ase64) are supported");
+            }
+
+            # now we have got a decoded subject, try to convert into the encoding
+            unless ( $charset eq $to_charset ) {
+                Encode::from_to( $enc_str, $charset, $to_charset );
+            }
+
+            # XXX TODO: RT doesn't currently do the right thing with mime-encoded headers
+            # We _should_ be preserving them encoded until after parsing is completed and
+            # THEN undo the mime-encoding.
+            #
+            # This routine should be translating the existing mimeencoding to utf8 but leaving
+            # things encoded.
+            #
+            # It's legal for headers to contain mime-encoded commas and semicolons which
+            # should not be treated as address separators. (Encoding == quoting here)
+            #
+            # until this is fixed, we must escape any string containing a comma or semicolon
+            # this is only a bandaid
+
+            # Some _other_ MUAs encode quotes _already_, and double quotes
+            # confuse us a lot, so only quote it if it isn't quoted
+            # already.
+            $enc_str = qq{"$enc_str"}
+                if $enc_str =~ /[,;]/
+                and $enc_str !~ /^".*"$/
+                and (!$field || $field =~ /^(?:To$|From$|B?Cc$|Content-)/i);
+
+            $str .= $prefix . $enc_str . $trailing;
         }
-
-        # XXX TODO: RT doesn't currently do the right thing with mime-encoded headers
-        # We _should_ be preserving them encoded until after parsing is completed and
-        # THEN undo the mime-encoding.
-        #
-        # This routine should be translating the existing mimeencoding to utf8 but leaving
-        # things encoded.
-        #
-        # It's legal for headers to contain mime-encoded commas and semicolons which
-        # should not be treated as address separators. (Encoding == quoting here)
-        #
-        # until this is fixed, we must escape any string containing a comma or semicolon
-        # this is only a bandaid
-
-        # Some _other_ MUAs encode quotes _already_, and double quotes
-        # confuse us a lot, so only quote it if it isn't quoted
-        # already.
-        $enc_str = qq{"$enc_str"}
-            if $enc_str =~ /[,;]/
-            and $enc_str !~ /^".*"$/
-            and (!$field || $field =~ /^(?:To$|From$|B?Cc$|Content-)/i);
-
-	$str .= $prefix . $enc_str . $trailing;
     }
 
     # We might have \n without trailing whitespace, which will result in
@@ -365,9 +371,7 @@ sub DecodeMIMEWordsToEncoding {
     return ($str)
 }
 
-# }}}
 
-# {{{ _FindOrGuessCharset
 
 =head2 _FindOrGuessCharset MIME::Entity, $head_only
 
@@ -383,22 +387,21 @@ sub _FindOrGuessCharset {
     my $head = $entity->head;
 
     if ( my $charset = $head->mime_attr("content-type.charset") ) {
-        return $charset;
+        return _CanonicalizeCharset($charset);
     }
 
-    if ( !$head_only and $head->mime_type =~ m{^text/}) {
-	my $body = $entity->bodyhandle or return;
-	return _GuessCharset( $body->as_string );
+    if ( !$head_only and $head->mime_type =~ m{^text/} ) {
+        my $body = $entity->bodyhandle or return;
+        return _GuessCharset( $body->as_string );
     }
     else {
-	# potentially binary data -- don't guess the body
-	return _GuessCharset( $head->as_string );
+
+        # potentially binary data -- don't guess the body
+        return _GuessCharset( $head->as_string );
     }
 }
 
-# }}}
 
-# {{{ _GuessCharset
 
 =head2 _GuessCharset STRING
 
@@ -406,55 +409,111 @@ use Encode::Guess to try to figure it out the string's encoding.
 
 =cut
 
+use constant HAS_ENCODE_GUESS => do { local $@; eval { require Encode::Guess; 1 } };
+use constant HAS_ENCODE_DETECT => do { local $@; eval { require Encode::Detect::Detector; 1 } };
+
 sub _GuessCharset {
-    my $fallback = 'iso-8859-1';
+    my $fallback = _CanonicalizeCharset('iso-8859-1');
 
     # if $_[0] is null/empty, we don't guess its encoding
-    return $fallback unless defined $_[0] && length $_[0];
+    return $fallback
+        unless defined $_[0] && length $_[0];
 
-    my $charset;
     my @encodings = RT->Config->Get('EmailInputEncodings');
-    if ( @encodings and eval { require Encode::Guess; 1 } ) {
-	Encode::Guess->set_suspects( @encodings );
-	my $decoder = Encode::Guess->guess( $_[0] );
-
-      if ( defined($decoder) ) {
-	if ( ref $decoder ) {
-	    $charset = $decoder->name;
-	    $RT::Logger->debug("Guessed encoding: $charset");
-	    return $charset;
-	}
-	elsif ($decoder =~ /(\S+ or .+)/) {
-	    my %matched = map { $_ => 1 } split(/ or /, $1);
-	    return 'utf-8' if $matched{'utf8'}; # one and only normalization
-
-	    foreach my $suspect (RT->Config->Get('EmailInputEncodings')) {
-		next unless $matched{$suspect};
-		$RT::Logger->debug("Encode::Guess ambiguous ($decoder); using $suspect");
-		$charset = $suspect;
-		last;
-	    }
-	}
-	else {
-	    $RT::Logger->warning("Encode::Guess failed: $decoder; fallback to $fallback");
-	}
-      }
-      else {
-	  $RT::Logger->warning("Encode::Guess failed: decoder is undefined; fallback to $fallback");
-      }
-    }
-    elsif ( @encodings && $@ ) {
-        $RT::Logger->error("You have set EmailInputEncodings, but we couldn't load Encode::Guess: $@");
-    } else {
+    unless ( @encodings ) {
         $RT::Logger->warning("No EmailInputEncodings set, fallback to $fallback");
+        return $fallback;
     }
 
-    return ($charset || $fallback);
+    if ( $encodings[0] eq '*' ) {
+        shift @encodings;
+        if ( HAS_ENCODE_DETECT ) {
+            my $charset = Encode::Detect::Detector::detect( $_[0] );
+            if ( $charset ) {
+                $RT::Logger->debug("Encode::Detect::Detector guessed encoding: $charset");
+                return _CanonicalizeCharset( Encode::resolve_alias( $charset ) );
+            }
+            else {
+                $RT::Logger->debug("Encode::Detect::Detector failed to guess encoding");
+            }
+        }
+        else {
+	    $RT::Logger->error(
+                "You requested to guess encoding, but we couldn't"
+                ." load Encode::Detect::Detector module"
+            );
+        }
+    }
+
+    unless ( @encodings ) {
+        $RT::Logger->warning("No EmailInputEncodings set except '*', fallback to $fallback");
+        return $fallback;
+    }
+
+    unless ( HAS_ENCODE_GUESS ) {
+        $RT::Logger->error("We couldn't load Encode::Guess module, fallback to $fallback");
+        return $fallback;
+    }
+
+    Encode::Guess->set_suspects( @encodings );
+    my $decoder = Encode::Guess->guess( $_[0] );
+    unless ( defined $decoder ) {
+        $RT::Logger->warning("Encode::Guess failed: decoder is undefined; fallback to $fallback");
+        return $fallback;
+    }
+
+    if ( ref $decoder ) {
+        my $charset = $decoder->name;
+        $RT::Logger->debug("Encode::Guess guessed encoding: $charset");
+        return _CanonicalizeCharset( $charset );
+    }
+    elsif ($decoder =~ /(\S+ or .+)/) {
+        my %matched = map { $_ => 1 } split(/ or /, $1);
+        return 'utf-8' if $matched{'utf8'}; # one and only normalization
+
+        foreach my $suspect (RT->Config->Get('EmailInputEncodings')) {
+            next unless $matched{$suspect};
+            $RT::Logger->debug("Encode::Guess ambiguous ($decoder); using $suspect");
+            return _CanonicalizeCharset( $suspect );
+        }
+    }
+    else {
+        $RT::Logger->warning("Encode::Guess failed: $decoder; fallback to $fallback");
+    }
+
+    return $fallback;
 }
 
-# }}}
+=head2 _CanonicalizeCharset NAME
 
-# {{{ SetMIMEHeadToEncoding
+canonicalize charset, return lowercase version.
+special cases are: gb2312 => gbk, utf8 => utf-8
+
+=cut
+
+sub _CanonicalizeCharset {
+    my $charset = lc shift;
+    return $charset unless $charset;
+
+    # Canonicalize aliases if they're known
+    if (my $canonical = Encode::resolve_alias($charset)) {
+        $charset = $canonical;
+    }
+
+    if ( $charset eq 'utf8' || $charset eq 'utf-8-strict' ) {
+        return 'utf-8';
+    }
+    elsif ( $charset eq 'euc-cn' ) {
+        # gbk is superset of gb2312/euc-cn so it's safe
+        return 'gbk';
+        # XXX TODO: gb18030 is an even larger, more permissive superset of gbk,
+        # but needs Encode::HanExtra installed
+    }
+    else {
+        return $charset;
+    }
+}
+
 
 =head2 SetMIMEHeadToEncoding HEAD OLD_CHARSET NEW_CHARSET
 
@@ -468,8 +527,8 @@ all the time
 sub SetMIMEHeadToEncoding {
     my ( $head, $charset, $enc, $preserve_words ) = ( shift, shift, shift, shift );
 
-    $charset = 'utf-8' if $charset eq 'utf8';
-    $enc     = 'utf-8' if $enc     eq 'utf8';
+    $charset = _CanonicalizeCharset($charset);
+    $enc     = _CanonicalizeCharset($enc);
 
     return if $charset eq $enc and $preserve_words;
 
@@ -479,18 +538,22 @@ sub SetMIMEHeadToEncoding {
         $head->delete($tag);
         foreach my $value (@values) {
             if ( $charset ne $enc ) {
-
                 Encode::_utf8_off($value);
                 Encode::from_to( $value, $charset => $enc );
             }
             $value = DecodeMIMEWordsToEncoding( $value, $enc, $tag )
                 unless $preserve_words;
-            $head->add( $tag, $value );
+
+            # We intentionally add a leading space when re-adding the
+            # header; Mail::Header strips it before storing, but it
+            # serves to prevent it from "helpfully" canonicalizing
+            # $head->add("Subject", "Subject: foo") into the same as
+            # $head->add("Subject", "foo");
+            $head->add( $tag, " " . $value );
         }
     }
 
 }
-# }}}
 
 RT::Base->_ImportOverlays();
 

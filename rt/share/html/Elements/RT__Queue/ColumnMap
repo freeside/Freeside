@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -83,6 +83,11 @@ my $COLUMN_MAP = {
     Encrypt => {
         title => 'Encrypt', # loc
         value => sub { return $_[0]->Encrypt? $_[0]->loc('yes') : $_[0]->loc('no') },
+    },
+    Lifecycle => {
+        title => 'Lifecycle',
+        attribute => 'Lifecycle',
+        value => sub { return $_[0]->Lifecycle->Name },
     },
 };
 

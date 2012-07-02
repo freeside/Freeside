@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -51,7 +51,7 @@ if (!$Collection && $Class eq 'RT::Tickets') {
     $Collection->FromSQL($Query);
 }
 
-my $TotalFound = $Collection->CountAll();
+$TotalFound = $Collection->CountAll() unless defined $TotalFound;
 return '' if !$TotalFound && !$ShowEmpty;
 
 if ( $Rows ) {
@@ -68,7 +68,7 @@ if ( $Rows ) {
 # collection is ordered or not
 if ( @OrderBy && ($AllowSorting || !$Collection->{'order_by'}) ) {
     if ( $OrderBy[0] =~ /\|/ ) {
-        @OrderBy = split /\|/, $OrderBy[0];
+        @OrderBy = grep length($_), split /\|/, $OrderBy[0];
         @Order = split /\|/,$Order[0];
     }
     $Collection->OrderByCols(
@@ -105,13 +105,14 @@ foreach my $col (@Format) {
     }
 }
 
-$Class ||= ref $Collection;
-$Class =~ s/s$//;
-$Class =~ s/:/_/g;
+$Class ||= $Collection->ColumnMapClassName;
+if ($Class =~ /::/) { # older passed in value
+    $Class =~ s/s$//;
+    $Class =~ s/:/_/g;
+}
 
-$m->out('<table border="0" cellspacing="0" cellpadding="1"' . 
-	' width="100%" class="' . 
-	($Collection->isa('RT::Tickets') ? 'ticket-list' : 'collection') . '">');
+$m->out('<table class="' .
+	($Collection->isa('RT::Tickets') ? 'ticket-list' : 'collection') . ' collection-as-table">');
 
 if ( $ShowHeader ) {
   $m->comp('/Elements/CollectionAsTable/Header',
@@ -184,6 +185,7 @@ if ( $Rows && $ShowNavigation && $TotalFound > $Rows ) {
 <%ARGS>
 $Class         => ''
 $Collection    => undef
+$TotalFound    => undef
 $Format        => undef
 $DisplayFormat => undef
 @Order         => ()

@@ -59,7 +59,7 @@ foreach my $pay_batch (@batches) {
   my $batchnum = $pay_batch->batchnum;
   my $filename = sprintf('%06d',$batchnum) . '-' .time2str('%Y%m%d%H%M%S', time);
   print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
-  my $text = $pay_batch->export_batch('paymentech');
+  my $text = $pay_batch->export_batch(format => 'paymentech');
   $text =~ s!<fileID>FILEID</fileID>!<fileID>$filename</fileID>! 
     or die "couldn't find FILEID tag\n";
   open OUT, ">$tmpdir/$filename.xml";

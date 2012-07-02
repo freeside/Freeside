@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,30 +46,36 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 % $m->callback( CallbackName => 'BeforeTransactionCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj, NamePrefix => $NamePrefix );
+% if ( $WRAP ) {
+<<% $WRAP %> class="edit-transaction-custom-fields">
+% }
 % if ($CustomFields->Count) {
 % while (my $CF = $CustomFields->Next()) {
 % $CF->SetContextObject($TicketObj || $QueueObj);
 % next unless $CF->CurrentUserHasRight('ModifyCustomField');
 % next unless $CF->UILocation eq $UILocation;
-<tr>
-<td class="label">
-<% loc($CF->Name) %>:
-</td>
-<td>
+<<% $FIELD %>>
+<<% $CELL %> class="label cflabel">
+  <span class="name"><% loc($CF->Name) %>:</span><br />
+% if ( $CF->Type ne 'TimeValue' ) {
+  <span class="type"><% $CF->FriendlyType %></span>
+% }
+</<% $CELL %>>
+<<% $CELL %>>
 <& /Elements/EditCustomField,
     CustomField => $CF,
     NamePrefix => $NamePrefix
 &>
-% if ( $CF->Type ne 'TimeValue' ) {
-<em><% $CF->FriendlyType %></em>
-% }
-% if (my $msg = $m->notes('InvalidField-' . $CF->Id)) {
+%  if (my $msg = $m->notes('InvalidField-' . $CF->Id)) {
         <br />
         <span class="cfinvalidfield"><% $msg %></span>
+%  }
+</<% $CELL %>>
+</<% $FIELD %>>
 % }
-</td>
-</td></tr>
 % }
+% if ( $WRAP ) {
+</<% $WRAP %>>
 % }
 % $m->callback( CallbackName => 'AfterTransactionCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj, NamePrefix => $NamePrefix );
 
@@ -84,11 +90,23 @@ if ($TicketObj) {
 
 $m->callback( CallbackName => 'MassageTransactionCustomFields', CustomFields => $CustomFields );
 
+$AsTable ||= $InTable;
+my $FIELD = $AsTable ? 'tr' : 'div';
+my $CELL  = $AsTable ? 'td' : 'div';
+my $WRAP  = '';
+if ( $AsTable ) {
+    $WRAP = 'table' unless $InTable;
+} else {
+    $WRAP = 'div';
+}
+
 </%INIT>
 <%ARGS>
 $NamePrefix => "Object-RT::Transaction--CustomField-"
 $TicketObj => undef
 $QueueObj => undef
+$AsTable => 0
+$InTable => 0
 $UILocation => ''
 </%ARGS>
 

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,8 +46,10 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 %# in PageLayout instead, once <% include('/elements/init_calendar.html') |n %>
-<input type="text" id="<% $Name %>" name="<% $Name %>" value="<% $Value %>" size="<% $Size %>" />
+% $m->callback( %ARGS, Name => $Name, CallbackName => 'BeforeDateInput' );
+<input type="text" class="ui-datepicker<% $ShowTime ? ' withtime' : '' %>" id="<% $Name %>" name="<% $Name %>" value="<% $Value %>" size="<% $Size %>" />
 <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $Name %>_date_button" STYLE="cursor: pointer" TITLE="Select date">
+% $m->callback( %ARGS, Name => $Name, CallbackName => 'AfterDateInput' );
 <script type="text/javascript">
 Calendar.setup({
     inputField: <% $Name |n,js_string %>,

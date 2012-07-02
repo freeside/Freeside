@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -60,21 +60,19 @@ foreach my $message ( grep $_->__Value('Parent') == $Parent, @$Attachments ) {
             );
 
     my $size = $message->ContentLength;
+    my $name = defined $message->Filename && length $message->Filename ?  $message->Filename : '';
     if ( $size ) {
 </%PERL>
 <div class="downloadattachment">
-<a href="<% $AttachPath %>/<% $Transaction->Id %>/<% $message->Id %>/<% ($message->Filename ||'')| u%>"><&|/l&>Download</&> <% $message->Filename || loc('(untitled)') %></a>
-% if ( $DownloadableHeaders && !$message->Filename && $message->ContentType =~ /text/  ) {
+<a href="<% $AttachPath %>/<% $Transaction->Id %>/<% $message->Id %>/<% $name | u%>"><&|/l&>Download</&> <% length $name ? $name : loc('(untitled)') %></a>\
+% if ( $DownloadableHeaders && ! length $name && $message->ContentType =~ /text/  ) {
  / <a href="<% $AttachPath %>/WithHeaders/<% $message->Id %>"><% loc('with headers') %></a>
 % }
-
 % $m->callback(CallbackName => 'AfterDownloadLinks', ARGSRef => \%ARGS, Ticket => $Ticket, Transaction => $Transaction, Attachment => $message);
-
 <br />
 <span class="downloadcontenttype"><% $message->ContentType %> <% $size_to_str->( $size ) %></span>
 </div>
 %   }
-
 %# If there is sub-messages, open a dedicated div
 % if ( scalar ( grep $_->__Value('Parent') == $message->id, @$Attachments ) ) {
 <div class="messageattachments">
@@ -125,6 +123,8 @@ elsif (!$ShowHeaders)  {
     push @DisplayHeaders, 'RT-Send-Bcc' if RT->Config->Get('ShowBccHeader');
 }
 
+$m->callback(CallbackName => 'MassageDisplayHeaders', DisplayHeaders => \@DisplayHeaders, Transaction => $Transaction);
+
 my $size_to_str = sub {
     my $size = shift;
     # show a download link
@@ -142,11 +142,13 @@ my $size_to_str = sub {
 
 my $render_attachment = sub {
     my $message = shift;
+    my $name = defined $message->Filename && length $message->Filename ?  $message->Filename : '';
 
     # if it has a content-disposition: attachment, don't show inline
     my $disposition = $message->GetHeader('Content-Disposition');
-    if ( $disposition && $disposition =~ /attachment/i && $disposition !~ /^\s*inline/ ) {
-        $disposition = 'attachemnt';
+
+    if ( $disposition && $disposition =~ /^\s*attachment/i ) {
+        $disposition = 'attachment';
     } else {
         $disposition = 'inline';
     }
@@ -154,16 +156,16 @@ my $render_attachment = sub {
     # If it's text
     if ( $message->ContentType =~ m{^(text|message)}i ) {
         my $max_size = RT->Config->Get( 'MaxInlineBody', $session{'CurrentUser'} );
-        if ( $message->Filename && RT->Config->Get('SuppressInlineTextFiles', $session{'CurrentUser'} ) ) {
+        if ( $disposition ne 'inline' ) {
+            $m->out('<p>'. loc( 'Message body is not shown because sender requested not to inline it.' ) .'</p>');
+            return;
+        }
+        elsif ( length $name && RT->Config->Get('SuppressInlineTextFiles', $session{'CurrentUser'} ) ) {
             $m->out('<p>'. loc( 'Text file is not shown because it is disabled in preferences.' ) .'</p>');
             return;
         }
         elsif ( $max_size && $message->ContentLength > $max_size ) {
-            $m->out('<p>'. loc( 'Message body not shown because it is too large.' ) .'</p>');
-            return;
-        }
-        elsif ( $disposition ne 'inline' ) {
-            $m->out('<p>'. loc( 'Message body is not shown because sender requested not to inline it.' ) .'</p>');
+            $m->out('<p>'. loc( 'Message body is not shown because it is too large.' ) .'</p>');
             return;
         }
 
@@ -185,45 +187,63 @@ my $render_attachment = sub {
                     && ( $message->ContentType !~ m{^text/(?:html|enriched)$} )
                 )
             )
-          )
-        {
+        ) {
 
             my $content;
-            if ( $AttachmentContent->{ $message->id } ) {
-                $content = $AttachmentContent->{ $message->id }->Content;
+            # If we've cached the content, use it from there
+            if (my $x = $AttachmentContent->{ $Transaction->id }->{$message->id}) {
+                $content = $x->Content;
             }
             else {
                 $content = $message->Content;
             }
 
+            my $content_type = lc $message->ContentType;
+            $RT::Logger->debug(
+                "Rendering attachment #". $message->id
+                ." of '$content_type' type"
+            );
+
             # if it's a text/html clean the body and show it
-            if ( $message->ContentType =~ m{^text/(?:html|enriched)$}i ) {
+            if ( $content_type eq 'text/html' ) {
                 $content = $m->comp( '/Elements/ScrubHTML', Content => $content );
-                if ( $message->ContentType eq 'text/html' ) {
-                    $m->comp('/Elements/MakeClicky', 
-                            content => \$content, html => 1,
-                            ticket => $Ticket );
-                }
+
+                $m->comp(
+                    '/Elements/MakeClicky',
+                    content => \$content,
+                    html    => 1,
+                    ticket  => $Ticket,
+                );
+
+                require HTML::Quoted;
+                $content = HTML::Quoted->extract($content) unless length $name;
+
+                $m->comp(
+                    'ShowMessageStanza',
+                    Message     => $content,
+                    Transaction => $Transaction,
+                    ContentType => 'text/html',
+                );
+            }
+
+            elsif ( $content_type eq 'text/enriched' ) {
+                $content = $m->comp( '/Elements/ScrubHTML', Content => $content );
                 $m->out( $content );
             }
 
             # if it's a text/plain show the body
             elsif ( $message->ContentType =~ m{^(text|message)}i ) {
 
-                #don't want to use this even if it is installed, its
-                #segfaulting on weird characters and silently truncating the
-                #ticket history output
-                #see:
-                # r44838@pinglin: jesse | 2006-11-14 15:53:18 -0500
-                # * Move Text::Quoted back to being a run-time require. So that it's possible to turn off the feature if it causes your perl to segfault. (Text::Tabs is...not robust in the face of perl bugs)
-                #eval { require Text::Quoted;  $content = Text::Quoted::extract($content); };
-                #if ($@) { $RT::Logger->warning( "Text::Quoted failed: $@" ) }
+                unless ( length $name ) {
+                    eval { require Text::Quoted;  $content = Text::Quoted::extract($content); };
+                    if ($@) { $RT::Logger->warning( "Text::Quoted failed: $@" ) }
+                }
 
                 $m->comp(
                     'ShowMessageStanza',
-                    Depth       => 0,
                     Message     => $content,
-                    Transaction => $Transaction
+                    Transaction => $Transaction,
+                    ContentType => 'text/plain',
                 );
             }
         }
@@ -236,7 +256,7 @@ my $render_attachment = sub {
             return;
         }
 
-        my $filename =  $message->Filename || loc('(untitled)');
+        my $filename =  length $name ? $name : loc('(untitled)');
         $m->out('<img'
               . ' alt="'
               . $filename

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -55,7 +55,7 @@
     else {
         Abort("Corrupted attachment URL.");
     }
-     my $AttachmentObj = new RT::Attachment($session{'CurrentUser'});
+     my $AttachmentObj = RT::Attachment->new($session{'CurrentUser'});
      $AttachmentObj->Load($attach) || Abort("Attachment '$attach' could not be loaded");
 
 
@@ -80,10 +80,6 @@
      my $iana = Encode::find_encoding( $enc );
      $iana = $iana? $iana->mime_name : $enc;
 	 $content_type .= ";charset=$iana";
-
-     # unless (RT->Config->Get('TrustMIMEAttachments')) {
-     #     $content_type = 'application/octet-stream';
-     # }
 
      $r->subprocess_env('no-gzip' => 1); # disable mod_deflate
      $r->content_type( $content_type );

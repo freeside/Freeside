@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -49,81 +49,58 @@
 <tr>
   <td valign="top" class="boxcontainer">
 % $m->callback( %ARGS, CallbackName => 'LeftColumnTop' );
-
     <&| /Widgets/TitleBox, title => loc('The Basics'),
-        title_href => RT->Config->Get('WebPath')."/Ticket/Modify.html?id=".$Ticket->Id,
+        (($can_modify || $can_modify_cf) ? (title_href => RT->Config->Get('WebPath')."/Ticket/Modify.html?id=".$Ticket->Id) : ()),
         class => 'ticket-info-basics',
-    &>
-        <& /Ticket/Elements/ShowBasics, Ticket => $Ticket &>
-    </&>
-
-% if ($Ticket->CustomFields->First) {
+    &><& /Ticket/Elements/ShowBasics, Ticket => $Ticket &></&>
     <&| /Widgets/TitleBox, title => loc('Custom Fields'),
-        title_href => RT->Config->Get('WebPath')."/Ticket/Modify.html?id=".$Ticket->Id,
+        (($can_modify || $can_modify_cf) ? (title_href => RT->Config->Get('WebPath')."/Ticket/Modify.html?id=".$Ticket->Id) : ()),
         class => 'ticket-info-cfs',
-    &>
-        <& /Ticket/Elements/ShowCustomFields, Ticket => $Ticket &>
-    </&>
-% }
+        hide_empty => 1,
+    &><& /Ticket/Elements/ShowCustomFields, Ticket => $Ticket &></&>
 
-    <&| /Widgets/TitleBox, title => loc('Customers'), 
-        title_href => RT->Config->Get('WebPath')."/Ticket/ModifyCustomers.html?id=".$Ticket->Id, 
-        class => 'ticket-info-customers'
-    &>
-        <& /Ticket/Elements/ShowCustomers, Ticket => $Ticket &>
-    </&>
+    <&| /Widgets/TitleBox, title => loc('Customers'),
+        #$can_modify_customers?
+        ($can_modify ? (title_href => RT->Config->Get('WebPath')."/Ticket/ModifyCustomers.html?id=".$Ticket->Id) : ()),
+        class => 'ticket-info-customers',
+    &><& /Ticket/Elements/ShowCustomers, Ticket => $Ticket &></&>
 
     <&| /Widgets/TitleBox, title => loc('People'),
-        title_href => RT->Config->Get('WebPath')."/Ticket/ModifyPeople.html?id=".$Ticket->Id,
+        (($can_modify || $can_modify_owner) ? (title_href => RT->Config->Get('WebPath')."/Ticket/ModifyPeople.html?id=".$Ticket->Id) : ()),
         class => 'ticket-info-people',
-    &>
-        <& /Ticket/Elements/ShowPeople, Ticket => $Ticket &>
-    </&>
-
+    &><& /Ticket/Elements/ShowPeople, Ticket => $Ticket &></&>
     <& /Ticket/Elements/ShowAttachments, Ticket => $Ticket, Attachments => $Attachments &>
-
     <& /Ticket/Elements/ShowRequestor, Ticket => $Ticket &>
-
 % $m->callback( %ARGS, CallbackName => 'LeftColumn' );
-
   </td>
   <td valign="top" class="boxcontainer">
-
 % $m->callback( %ARGS, CallbackName => 'RightColumnTop' );
-
 % if ( RT->Config->Get('EnableReminders') ) {
     <&|/Widgets/TitleBox, title => loc("Reminders"),
         title_href => RT->Config->Get('WebPath')."/Ticket/Reminders.html?id=".$Ticket->Id,
         class => 'ticket-info-reminders',
     &>
         <table><tr><td>
-            <form action="<%RT->Config->Get('WebPath')%>/Ticket/Display.html" method="post">
+            <form action="<%RT->Config->Get('WebPath')%>/Ticket/Display.html" name="UpdateReminders" id="UpdateReminders" method="post">
                 <& /Ticket/Elements/Reminders, Ticket => $Ticket, ShowCompleted => 0 &>
                 <div align="right"><input type="submit" class="button" value="<&|/l&>Save</&>" /></div>
             </form>
         </td></tr></table>
     </&>
 % }
-
     <&| /Widgets/TitleBox, title => loc("Dates"),
-        title_href => RT->Config->Get('WebPath')."/Ticket/ModifyDates.html?id=".$Ticket->Id,
+        ($can_modify ? (title_href => RT->Config->Get('WebPath')."/Ticket/ModifyDates.html?id=".$Ticket->Id) : ()),
         class => 'ticket-info-dates',
-    &>
-        <& /Ticket/Elements/ShowDates, Ticket => $Ticket &>
-    </&>
-
+    &><& /Ticket/Elements/ShowDates, Ticket => $Ticket &></&>
 % my (@extra);
 % push @extra, titleright_raw => '<a href="'. RT->Config->Get('WebPath'). '/Ticket/Graphs/index.html?id='.$Ticket->id.'">'.loc('Graph').'</a>' unless RT->Config->Get('DisableGraphViz');
+% $m->callback( %ARGS, CallbackName => 'LinksExtra', extra => \@extra );
     <&| /Widgets/TitleBox, title => loc('Links'),
-        title_href => RT->Config->Get('WebPath')."/Ticket/ModifyLinks.html?id=".$Ticket->Id,
+        ($can_modify ? (title_href => RT->Config->Get('WebPath')."/Ticket/ModifyLinks.html?id=".$Ticket->Id) : ()),
         class => 'ticket-info-links',
         @extra,
-    &>
-        <& /Elements/ShowLinks, Ticket => $Ticket &>
-    </&>
-
+    &><& /Elements/ShowLinks, Ticket => $Ticket &></&>
 % $m->callback( %ARGS, CallbackName => 'RightColumn' );
-
   </td>
 </tr>
 </table>
@@ -131,3 +108,10 @@
 $Ticket => undef
 $Attachments => undef
 </%ARGS>
+<%INIT>
+my $can_modify = $Ticket->CurrentUserHasRight('ModifyTicket');
+my $can_modify_cf = $Ticket->CurrentUserHasRight('ModifyCustomField');
+my $can_modify_owner = $Ticket->CurrentUserHasRight('OwnTicket')
+                    || $Ticket->CurrentUserHasRight('TakeTicket')
+                    || $Ticket->CurrentUserHasRight('StealTicket');
+</%INIT>

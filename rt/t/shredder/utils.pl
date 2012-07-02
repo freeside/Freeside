@@ -3,20 +3,14 @@
 use strict;
 use warnings;
 
-use File::Spec;
-use File::Temp 0.19 ();
-require File::Path;
 require File::Copy;
 require Cwd;
+require RT::Test;
 
 BEGIN {
 ### after:     push @INC, qw(@RT_LIB_PATH@);
-    push @INC, qw(/opt/rt3/local/lib /opt/rt3/lib);
 }
 use RT::Shredder;
-
-# where to keep temporary generated test data
-my $tmpdir = '';
 
 =head1 DESCRIPTION
 
@@ -95,8 +89,9 @@ sub rewrite_rtconfig
     config_set( '$LogStackTraces' , 'crit' );
     # logging to standalone file
     config_set( '$LogToFile'      , 'debug' );
-    my $fname = File::Spec->catfile(create_tmpdir(), test_name() .".log");
+    my $fname = File::Spec->catfile(RT::Test->temp_directory(), test_name() .".log");
     config_set( '$LogToFileNamed' , $fname );
+    config_set('@LexiconLanguages', qw(en));
 }
 
 =head3 config_set
@@ -127,7 +122,7 @@ in most situations.
 
 sub init_db
 {
-    create_tmpdir();
+    RT::Test->bootstrap_tempdir() unless RT::Test->temp_directory();
     RT::LoadConfig();
     rewrite_rtconfig();
     RT::InitLogging();
@@ -161,13 +156,13 @@ sub _init_db
 =head3 db_name
 
 Returns the absolute file path to the current DB.
-It is <$tmpdir . test_name() .'.db'>.
+It is <<RT::Test->temp_directory . test_name() .'.db'>>.
 
 See also the C<test_name> function.
 
 =cut
 
-sub db_name { return File::Spec->catfile(create_tmpdir(), test_name() .".db") }
+sub db_name { return File::Spec->catfile(RT::Test->temp_directory(), test_name() .".db") }
 
 =head3 connect_sqlite
 
@@ -192,9 +187,9 @@ Creates and returns a new RT::Shredder object.
 
 sub shredder_new
 {
-    my $obj = new RT::Shredder;
+    my $obj = RT::Shredder->new;
 
-    my $file = File::Spec->catfile( create_tmpdir(), test_name() .'.XXXX.sql' );
+    my $file = File::Spec->catfile( RT::Test->temp_directory, test_name() .'.XXXX.sql' );
     $obj->AddDumpPlugin( Arguments => {
         file_name    => $file,
         from_storage => 0,
@@ -223,44 +218,6 @@ sub test_name
     return $name;
 }
 
-=head2 TEMPORARY DIRECTORY
-
-=head3 tmpdir
-
-Returns the absolute path to a tmp dir used in tests.
-
-=cut
-
-sub tmpdir {
-    if (-d $tmpdir) {
-        return $tmpdir;
-    } else {
-        $tmpdir = File::Temp->newdir(TEMPLATE => 'shredderXXXXX', CLEANUP => 0);
-        return $tmpdir;
-    }
-}
-
-=head2 create_tmpdir
-
-Creates a tmp dir if one doesn't exist already. Returns tmpdir path.
-
-=cut
-
-sub create_tmpdir { my $n = tmpdir(); File::Path::mkpath( [$n] ); return $n }
-
-=head3 cleanup_tmp
-
-Deletes all the tmp dir used in the tests.
-See also the C<test_name> function.
-
-=cut
-
-sub cleanup_tmp
-{
-    my $dir = File::Spec->catdir(tmpdir(), test_name());
-    return File::Path::rmtree( File::Spec->catdir( tmpdir(), test_name() ));
-}
-
 =head2 SAVEPOINTS
 
 =head3 savepoint_name
@@ -273,7 +230,7 @@ Takes one argument - savepoint name, by default C<sp>.
 sub savepoint_name
 {
     my $name = shift || 'sp';
-    return File::Spec->catfile( create_tmpdir(), test_name() .".$name.db" );
+    return File::Spec->catfile( RT::Test->temp_directory, test_name() .".$name.db" );
 }
 
 =head3 create_savepoint
@@ -293,14 +250,9 @@ sub restore_savepoint { return __cp_db( savepoint_name( shift ) => db_name() ) }
 sub __cp_db
 {
     my( $orig, $dest ) = @_;
-    $RT::Handle->dbh->disconnect;
-    # DIRTY HACK: undef Handles to force reconnect
-    $RT::Handle = undef;
-    %DBIx::SearchBuilder::DBIHandle = ();
-    $DBIx::SearchBuilder::PrevHandle = undef;
-
+    RT::Test::__disconnect_rt();
     File::Copy::copy( $orig, $dest ) or die "Couldn't copy '$orig' => '$dest': $!";
-    RT::ConnectToDatabase();
+    RT::Test::__reconnect_rt();
     return;
 }
 
@@ -337,13 +289,34 @@ sub dump_sqlite
     my $res = {};
     foreach my $t( @tables ) {
         next if lc($t) eq 'sessions';
-        $res->{$t} = $dbh->selectall_hashref("SELECT * FROM $t", 'id');
+        $res->{$t} = $dbh->selectall_hashref("SELECT * FROM $t".dump_sqlite_exceptions($t), 'id');
         clean_dates( $res->{$t} ) if $args{'CleanDates'};
         die $DBI::err if $DBI::err;
     }
 
     $dbh->{'FetchHashKeyName'} = $old_fhkn;
     return $res;
+}
+
+=head3 dump_sqlite_exceptions
+
+If there are parts of the DB which can change from creating and deleting
+a queue, skip them when doing the comparison.  One example is the global
+queue cache attribute on RT::System which will be updated on Queue creation
+and can't be rolled back by the shredder.  It may actually make sense for
+Shredder to be updating this at some point in the future.
+
+=cut
+
+sub dump_sqlite_exceptions {
+    my $table = shift;
+
+    my $special_wheres = {
+        attributes => " WHERE Name != 'QueueCacheNeedsUpdate'"
+    };
+
+    return $special_wheres->{lc $table}||'';
+
 }
 
 =head3 dump_current_and_savepoint
@@ -396,7 +369,7 @@ Returns a note about debug info that you can display if tests fail.
 sub note_on_fail
 {
     my $name = test_name();
-    my $tmpdir = tmpdir();
+    my $tmpdir = RT::Test->temp_directory();
     return <<END;
 Some tests in '$0' file failed.
 You can find debug info in '$tmpdir' dir.
@@ -408,27 +381,9 @@ See also perldoc t/shredder/utils.pl for how to use this info.
 END
 }
 
-=head2 OTHER
-
-=head3 all_were_successful
-
-Returns true if all tests that have already run were successful.
-
-=cut
-
-sub all_were_successful
-{
-    use Test::Builder;
-    my $Test = Test::Builder->new;
-    return grep( !$_, $Test->summary )? 0: 1;
-}
-
 END {
-    return unless -e tmpdir();
-    if ( all_were_successful() ) {
-            cleanup_tmp();
-    } else {
-            diag( note_on_fail() );
+    if ( ! RT::Test->builder->is_passing ) {
+        diag( note_on_fail() );
     }
 }
 

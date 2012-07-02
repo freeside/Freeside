@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,15 +46,12 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => loc("Link ticket #[_1]", $Ticket->Id) &>
-<& /Ticket/Elements/Tabs, 
-    Ticket => $Ticket, 
-    current_tab => "Ticket/ModifyLinks.html?id=".$Ticket->Id, 
-    Title => loc("Link ticket #[_1]", $Ticket->Id) &>
+<& /Elements/Tabs &>
 
 % $m->callback(CallbackName => 'BeforeActionList', Actions => \@results, ARGSRef => \%ARGS, Ticket => $Ticket);
 <& /Elements/ListActions, actions => \@results &>
 
-<form action="ModifyLinks.html" method="post">
+<form action="ModifyLinks.html" name="ModifyLinks" method="post">
 <input type="hidden" class="hidden" name="id" value="<%$Ticket->id%>" />
 % $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS );
 % my (@extra);

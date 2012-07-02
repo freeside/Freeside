@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,9 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => loc("Admin queues") &>
-<& /Admin/Elements/QueueTabs, current_tab => 'Admin/Queues/', 
-    current_subtab => 'Admin/Queues/', 
-    Title => loc("Admin queues") &>
+<& /Elements/Tabs &>
 
 
 
@@ -91,7 +89,7 @@
 </form>
 
 <%INIT>
-my $queues = new RT::Queues($session{'CurrentUser'});
+my $queues = RT::Queues->new($session{'CurrentUser'});
 $queues->FindAllRows if $FindDisabledQueues;
 
 my ($caption);
@@ -104,6 +102,8 @@ if ( defined $QueueString && length $QueueString ) {
         OPERATOR => $QueueOp,
         VALUE    => $QueueString,
     );
+    RT::Interface::Web::Redirect(RT->Config->Get('WebURL')."Admin/Queues/Modify.html?id=".$queues->First->id)
+          if $queues->Count == 1;
 } else {
     $queues->UnLimit;
     $caption = $FindDisabledQueues

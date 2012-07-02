@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -51,7 +51,7 @@
 # $Address is Email::Address object
 
 my $comp = '/Elements/ShowUser'. ucfirst lc $style;
-unless ( $m->comp_exists( $comp ) ) {
+unless ( RT::Interface::Web->ComponentPathIsSafe($comp) and $m->comp_exists( $comp ) ) {
     $RT::Logger->error(
         'Either system config or user #'
         . $session{'CurrentUser'}->id
@@ -59,13 +59,14 @@ unless ( $m->comp_exists( $comp ) ) {
         . ', but '. $comp . "doesn't exist"
     );
     return $m->comp('/Elements/ShowUserConcise',
-        User => $User, Address => $Address,
+        User => $User, Address => $Address, NoEscape => $NoEscape
     );
 }
-return $m->comp( $comp, User => $User, Address => $Address );
+return $m->comp( $comp, User => $User, Address => $Address, NoEscape => $NoEscape );
 </%INIT>
 <%ARGS>
 $User => undef
 $Address => undef
+$NoEscape => 0
 $style => RT->Config->Get('UsernameFormat', $session{'CurrentUser'})
 </%ARGS>

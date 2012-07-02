@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,10 +46,15 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <table><tr>
-<td><% loc('Sign')%></td>
-<td><& /Widgets/Form/Boolean:InputOnly, Name => 'Sign', CurrentValue => $self->{'Sign'} &>
-using <& SelectKeyForSigning, User => $session{'CurrentUser'}->UserObj &>
-</td>
+% my $columnsplit = "</td><td>";
+<td><% loc( 'Sign[_1][_2] using [_3]',
+    $columnsplit,
+    $m->scomp('/Widgets/Form/Boolean:InputOnly',
+        Name => 'Sign', CurrentValue => $self->{'Sign'}
+    ),
+    $m->scomp('SelectKeyForSigning', User => $session{'CurrentUser'}->UserObj ),
+) |n %></td>
+
 <td><% loc('Encrypt')%></td>
 <td><& /Widgets/Form/Boolean:InputOnly, Name => 'Encrypt', CurrentValue => $self->{'Encrypt'} &></td>
 </tr></table>
@@ -143,23 +148,11 @@ if ( $self->{'Encrypt'} ) {
     my @recipients;
 
     if ( $Operation eq 'Update' ) {
-        # skip any email addresses that we won't be sending mail to
-        my %squelch = $m->comp(
-            '/Ticket/Elements/PreviewScrips:SquelchRecipients',
-            %$self,
-            TicketObj => $TicketObj
-        );
-
-        @recipients = $m->comp(
-            '/Ticket/Elements/PreviewScrips:GetRecipients',
-            %$self, TicketObj => $TicketObj
-        );
+        @recipients = $TicketObj->DryRun(%$self)->Recipients;
     }
     elsif ( $Operation eq 'Create' ) {
-        @recipients = $m->comp(
-            '/Ticket/Elements/PreviewScrips:GetRecipientsOnCreate',
-            %$self,
-        );
+        $TicketObj = RT::Ticket->new( $session{'CurrentUser'} );
+        @recipients = $TicketObj->DryRunCreate(%$self)->Recipients;
     }
     else {
         $RT::Logger->crit('Incorrect operation: '. $Operation );

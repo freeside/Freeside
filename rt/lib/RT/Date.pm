@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -68,13 +68,16 @@ The fact that it assumes that a time of 0 means "never" is probably a bug.
 
 package RT::Date;
 
-use Time::Local;
-use POSIX qw(tzset);
 
 use strict;
 use warnings;
+
 use base qw/RT::Base/;
 
+use DateTime;
+
+use Time::Local;
+use POSIX qw(tzset);
 use vars qw($MINUTE $HOUR $DAY $WEEK $MONTH $YEAR);
 
 $MINUTE = 60;
@@ -110,17 +113,14 @@ our @DAYS_OF_WEEK = (
 );
 
 our @FORMATTERS = (
-    'DefaultFormat', # loc
-    'ISO',           # loc
-    'W3CDTF',        # loc
-    'RFC2822',       # loc
-    'RFC2616',       # loc
-    'iCal',          # loc
+    'DefaultFormat',     # loc
+    'ISO',               # loc
+    'W3CDTF',            # loc
+    'RFC2822',           # loc
+    'RFC2616',           # loc
+    'iCal',              # loc
+    'LocalizedDateTime', # loc
 );
-if ( eval 'use DateTime qw(); 1;' && eval 'use DateTime::Locale qw(); 1;' && 
-     DateTime->can('format_cldr') && DateTime::Locale::root->can('date_format_full') ) {
-    push @FORMATTERS, 'LocalizedDateTime'; # loc
-}
 
 =head2 new
 
@@ -164,7 +164,7 @@ sub Set {
         @_
     );
 
-    return $self->Unix(0) unless $args{'Value'};
+    return $self->Unix(0) unless $args{'Value'} && $args{'Value'} =~ /\S/;
 
     if ( $args{'Format'} =~ /^unix$/i ) {
         return $self->Unix( $args{'Value'} );
@@ -604,6 +604,10 @@ sub Get
     my $self = shift;
     my %args = (Format => 'ISO', @_);
     my $formatter = $args{'Format'};
+    unless ( $self->ValidFormatter($formatter) ) {
+        RT->Logger->warning("Invalid date formatter '$formatter', falling back to ISO");
+        $formatter = 'ISO';
+    }
     $formatter = 'ISO' unless $self->can($formatter);
     return $self->$formatter( %args );
 }
@@ -640,6 +644,20 @@ sub Formatters
     my $self = shift;
 
     return @FORMATTERS;
+}
+
+=head3 ValidFormatter FORMAT
+
+Returns a true value if C<FORMAT> is a known formatter.  Otherwise returns
+false.
+
+=cut
+
+sub ValidFormatter {
+    my $self   = shift;
+    my $format = shift;
+    return (grep { $_ eq $format } $self->Formatters and $self->can($format))
+                ? 1 : 0;
 }
 
 =head3 DefaultFormat
@@ -685,16 +703,32 @@ sub DefaultFormat
     }
 }
 
+=head2 LocaleObj
+
+Returns the L<DateTime::Locale> object representing the current user's locale.
+
+=cut
+
+sub LocaleObj {
+    my $self = shift;
+
+    my $lang = $self->CurrentUser->UserObj->Lang;
+    unless ($lang) {
+        require I18N::LangTags::Detect;
+        $lang = ( I18N::LangTags::Detect::detect(), 'en' )[0];
+    }
+
+    return DateTime::Locale->load($lang);
+}
+
 =head3 LocalizedDateTime
 
 Returns date and time as string, with user localization.
 
 Supports arguments: C<DateFormat> and C<TimeFormat> which may contains date and
-time format as specified in DateTime::Locale (default to full_date_format and
+time format as specified in L<DateTime::Locale> (default to full_date_format and
 medium_time_format), C<AbbrDay> and C<AbbrMonth> which may be set to 0 if
 you want full Day/Month names instead of abbreviated ones.
-
-Require optionnal DateTime::Locale module.
 
 =cut
 
@@ -704,32 +738,21 @@ sub LocalizedDateTime
     my %args = ( Date => 1,
                  Time => 1,
                  Timezone => '',
-                 DateFormat => 'date_format_full',
-                 TimeFormat => 'time_format_medium',
+                 DateFormat => '',
+                 TimeFormat => '',
                  AbbrDay => 1,
                  AbbrMonth => 1,
                  @_,
                );
 
-    return $self->loc("DateTime module missing") unless ( eval 'use DateTime qw(); 1;' );
-    return $self->loc("DateTime::Locale module missing") unless ( eval 'use DateTime::Locale qw(); 1;' );
-    return $self->loc("DateTime doesn't support format_cldr, you must upgrade to use this feature") 
-        unless can DateTime::('format_cldr');
+    # Require valid names for the format methods
+    my $date_format = $args{DateFormat} =~ /^\w+$/
+                    ? $args{DateFormat} : 'date_format_full';
 
+    my $time_format = $args{TimeFormat} =~ /^\w+$/
+                    ? $args{TimeFormat} : 'time_format_medium';
 
-    my $date_format = $args{'DateFormat'};
-    my $time_format = $args{'TimeFormat'};
-
-    my $lang = $self->CurrentUser->UserObj->Lang;
-    unless ($lang) {
-        require I18N::LangTags::Detect;
-        $lang = ( I18N::LangTags::Detect::detect(), 'en' )[0];
-    }
-    
-
-    my $formatter = DateTime::Locale->load($lang);
-    return $self->loc("DateTime::Locale doesn't support date_format_full, you must upgrade to use this feature") 
-        unless $formatter->can('date_format_full');
+    my $formatter = $self->LocaleObj;
     $date_format = $formatter->$date_format;
     $time_format = $formatter->$time_format;
     $date_format =~ s/EEEE/EEE/g if ( $args{'AbbrDay'} );
@@ -742,7 +765,7 @@ sub LocalizedDateTime
 
     # FIXME : another way to call this module without conflict with local
     # DateTime method?
-    my $dt = new DateTime::( locale => $lang,
+    my $dt = DateTime::->new( locale => $formatter,
                             time_zone => $tz,
                             year => $year,
                             month => $mon,
@@ -1081,6 +1104,12 @@ If both server's and user's timezone names are undefined returns 'UTC'.
 
 sub Timezone {
     my $self = shift;
+
+    if (@_ == 0) {
+        Carp::carp "RT::Date->Timezone is a setter only";
+        return undef;
+    }
+
     my $context = lc(shift);
 
     $context = 'utc' unless $context =~ /^(?:utc|server|user)$/i;

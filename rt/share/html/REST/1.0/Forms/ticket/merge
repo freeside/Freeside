@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -56,8 +56,8 @@ use RT::Interface::REST;
 
 my $into = $args;
 
-my $ticket = new RT::Ticket $session{CurrentUser};
-my $ticket_into = new RT::Ticket $session{CurrentUser};
+my $ticket = RT::Ticket->new($session{CurrentUser});
+my $ticket_into = RT::Ticket->new($session{CurrentUser});
 my ($c, $o, $k, $e) = ("", [], {}, 0);
 
 # http://.../REST/1.0/ticket/1/merge/6  (merges ticket 1 into ticket 6)

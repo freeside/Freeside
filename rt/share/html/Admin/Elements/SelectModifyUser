@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -50,9 +50,9 @@
 %}
 <%INIT>
 my ($user);
-my $users = new RT::Users($session{'CurrentUser'});
+my $users = RT::Users->new($session{'CurrentUser'});
 $users->Limit(FIELD => 'id',
-              VALUE => $RT::SystemUser->id,
+              VALUE => RT->SystemUser->id,
               OPERATOR => '!=' );
 
 if (defined $IdLike) {

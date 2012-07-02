@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,29 +46,39 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => $title &>
-<& /Admin/Elements/CustomFieldTabs,
-    id => $CustomFieldObj->Id ,
-    current_tab => $current_tab,
-    Title => $title &>
+<& /Elements/Tabs &>
 <& /Elements/ListActions, actions => \@results &>
 
 
-<form method="post" action="Modify.html" name="ModifyCustomField">
+<form method="post" action="Modify.html" name="ModifyCustomField" id="ModifyCustomField">
 <input type="hidden" class="hidden" name="id" value="<% $id %>" />
 
 <table>
 
 <tr><td class="label"><&|/l&>Name</&></td>
-<td><input name="Name" value="<% $CustomFieldObj->Name || '' %>" size="20" /></td></tr>
+<td><input name="Name" value="<% $CustomFieldObj->Name || $Name || '' %>" size="20" /></td></tr>
 
 <tr><td class="label"><&|/l&>Description</&></td>
-<td><input name="Description" value="<% $CustomFieldObj->Description || '' %>" size="80" /></td></tr>
+<td><input name="Description" value="<% $CustomFieldObj->Description || $Description || '' %>" size="80" /></td></tr>
 
 <tr><td class="label"><&|/l&>Type</&></td>
 <td><& /Admin/Elements/SelectCustomFieldType, 
         Name => "TypeComposite", 
         Default => $CustomFieldObj->TypeComposite, &>
 </td></tr>
+
+% if ( $CustomFieldObj->Id and $CustomFieldObj->HasRenderTypes ) {
+<tr>
+  <td class="label"><&|/l&>Render Type</&></td>
+  <td>
+    <& /Admin/Elements/SelectCustomFieldRenderType,
+        Name            => "RenderType",
+        TypeComposite   => $CustomFieldObj->TypeComposite,
+        Default         => $CustomFieldObj->RenderType, 
+        BasedOn         => $CustomFieldObj->BasedOnObj->id, &>
+  </td>
+</tr>
+% }
 
 % if ( $CustomFieldObj->Id and $CustomFieldObj->IsSelectionType and RT->Config->Get('CustomFieldValuesSources') and ( scalar(@{RT->Config->Get('CustomFieldValuesSources')}) > 0 ) ) {
 <tr><td class="label"><&|/l&>Field values source:</&></td><td>
@@ -79,7 +89,7 @@
 <tr><td class="label"><&|/l&>Applies to</&></td>
 <td><& /Admin/Elements/SelectCustomFieldLookupType, 
         Name => "LookupType", 
-        Default => $CustomFieldObj->LookupType, &>
+        Default => $CustomFieldObj->LookupType || $LookupType, &>
 </td></tr>
 
 % if ( $CustomFieldObj->Id 
@@ -90,41 +100,43 @@
 </td></tr>
 % }
 
-<tr><td class="label"><&|/l&>Validation</&></td>
+<tr class="edit_validation"><td class="label"><&|/l&>Validation</&></td>
 <td><& /Widgets/ComboBox,
     Name    => 'Pattern',
-    Default => $CustomFieldObj->Pattern,
+    Default => $CustomFieldObj->Pattern || $Pattern,
     Size    => 20,
     Values  => \@CFvalidations,
 &></td></tr>
 
 <tr><td class="label"><&|/l&>Link values to</&></td><td>
-<input size="60" name="LinkValueTo"  value="<% $CustomFieldObj->LinkValueTo || '' %>" />
+<input size="60" name="LinkValueTo"  value="<% $CustomFieldObj->LinkValueTo || $LinkValueTo || '' %>" />
 <div class="hints">
 <&|/l&>RT can make this custom field's values into hyperlinks to another service.</&>
 <&|/l&>Fill in this field with a URL.</&>
-<&|/l&>RT will replace <tt>__id__</tt> and <tt>__CustomField__</tt> with the record id and custom field value, respectively</&>
+<&|/l_unsafe, '<tt>__id__</tt>', '<tt>__CustomField__</tt>' &>RT will replace [_1] and [_2] with the record's id and the custom field's value, respectively.</&>
 </div></td></tr>
 
 <tr><td class="label"><&|/l&>Include page</&></td><td>
-<input size="60" name="IncludeContentForValue" value="<% $CustomFieldObj->IncludeContentForValue || '' %>" />
+<input size="60" name="IncludeContentForValue" value="<% $CustomFieldObj->IncludeContentForValue || $IncludeContentForValue || '' %>" />
 <div class="hints">
 <&|/l&>RT can include content from another web service when showing this custom field.</&>
 <&|/l&>Fill in this field with a URL.</&>
-<&|/l&>RT will replace <tt>__id__</tt> and <tt>__CustomField__</tt> with the record id and custom field value, respectively</&>
+<&|/l_unsafe, '<tt>__id__</tt>', '<tt>__CustomField__</tt>' &>RT will replace [_1] and [_2] with the record's id and the custom field's value, respectively.</&>
 <i><&|/l&>Some browsers may only load content from the same domain as your RT server.</&></i>
 </div></td></tr>
 
 % if ( $CustomFieldObj->Id && $CustomFieldObj->IsSelectionType && !$CustomFieldObj->IsExternalValues ) {
-<tr><td class="label"><&|/l&>Categories are based on</&></td><td>
+<tr class="categoriesbasedon"><td class="label"><&|/l&>Categories are based on</&></td><td>
 <& /Admin/Elements/SelectCustomField,
     Name => "BasedOn",
     LookupType => $CustomFieldObj->LookupType,
-    Default => $CustomFieldObj->BasedOnObj,
+    Default => $CustomFieldObj->BasedOnObj || $BasedOn,
     Not => $CustomFieldObj->id,
 &>
 </td></tr>
 % }
+
+% $m->callback(CallbackName => 'BeforeEnabled', CustomField => $CustomFieldObj, CFvalidations => \@CFvalidations);
 
 <tr><td class="label">&nbsp;</td><td>
 <input type="checkbox" class="checkbox" name="Required" value="1" <% $RequiredChecked |n%> />
@@ -136,6 +148,8 @@
 <input type="checkbox" class="checkbox" name="Enabled" value="1" <% $EnabledChecked |n%> />
 <&|/l&>Enabled (Unchecking this box disables this custom field)</&>
 </td></tr>
+
+% $m->callback(CallbackName => 'EndOfTable', CustomField => $CustomFieldObj, CFvalidations => \@CFvalidations);
 
 </table>
 
@@ -151,15 +165,15 @@
 
 </form>
 <%INIT>
-my ($title, @results, $Disabled);
+my ($title, @results);
 
 my $CustomFieldObj = RT::CustomField->new( $session{'CurrentUser'} );
-my $current_tab = 'Admin/CustomFields/Modify.html';
+
+$m->callback(CallbackName => 'Initial', Pattern => \$Pattern, ARGSRef => \%ARGS);
 
 unless ( $id ) {
     $title = loc("Create a CustomField");
     $id    = 'new';
-    $current_tab .= '?Create=1';
 }
 else {
     if ( $id eq 'new' ) {
@@ -172,20 +186,27 @@ else {
             LinkValueTo   => $LinkValueTo,
             IncludeContentForValue => $IncludeContentForValue,
             BasedOn       => $BasedOn,
+            Disabled      => !$Enabled,
         );
-        $m->comp( "/Elements/Error", Why => loc( "Could not create CustomField", $msg ) ) unless $val;
-        push @results, $msg;
-        $title = loc( 'Created CustomField [_1]', $CustomFieldObj->Name );
+        if (!$val) {
+            push @results, loc("Could not create CustomField: [_1]", $msg);
+            $title = loc( 'Create a CustomField');
+        }
+        else {
+            push @results, loc("Object created");
+            $title = loc( 'Created CustomField [_1]', $CustomFieldObj->Name );
+        }
     } else {
-        $CustomFieldObj->Load( $id ) || $m->comp("/Elements/Error", Why => loc('No CustomField') );
+        push @results, loc('No CustomField')
+            unless  $CustomFieldObj->Load( $id );
+
         $title = loc( 'Editing CustomField [_1]', $CustomFieldObj->Name );
     }
-    $current_tab .= "?id=$id";
 }
 
 if ( $ARGS{'Update'} && $id ne 'new' ) {
     #we're asking about enabled on the web page but really care about disabled.
-    $ARGS{'Disabled'} = $Disabled = $Enabled? 0 : 1;
+    $ARGS{'Disabled'} = $Enabled? 0 : 1;
    
     $ARGS{'Required'} ||= 0;
 
@@ -197,7 +218,32 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
     );
     $CustomFieldObj->SetValuesClass( $ValuesClass );
 
-    $CustomFieldObj->SetBasedOn( $BasedOn );
+    # Set the render type if we have it, but unset it if the new type doesn't
+    # support render types
+    if ( $CustomFieldObj->HasRenderTypes($TypeComposite) ) {
+        my $original = $CustomFieldObj->RenderType;
+
+        if ( defined $RenderType and $RenderType ne $original ) {
+            # It's changed!  Let's update it.
+            my ($good, $msg) = $CustomFieldObj->SetRenderType( $RenderType );
+
+            if ( $good ) {
+                $msg = loc("[_1] changed from '[_2]' to '[_3]'",
+                            loc("Render Type"), $original, $RenderType );
+            }
+
+            push @results, $msg;
+        }
+    }
+    else {
+        # Delete it if we no longer support render types
+        $CustomFieldObj->SetRenderType( undef );
+    }
+
+    if (($CustomFieldObj->BasedOn||'') ne ($BasedOn||'')) {
+        my ($good, $msg) = $CustomFieldObj->SetBasedOn( $BasedOn );
+        push @results, $msg;
+    }
 
     $CustomFieldObj->SetUILocation( $UILocation );
 
@@ -227,10 +273,12 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
             $ARGS{$param} =~ s/^\s+//;
             $ARGS{$param} =~ s/\s+$//;
             next if ($value->$attr()||'') eq ($ARGS{$param}||'');
+
             my $mutator = "Set$attr";
             my ($id, $msg) = $value->$mutator( $ARGS{$param} );
             push (@results, $msg);
         }
+        $m->callback(CallbackName => 'AfterUpdateCustomFieldValue', CustomFieldObj => $CustomFieldObj, CustomFieldValueObj => $value, ARGSRef => \%ARGS );
     }
 
     # Add any new values
@@ -242,10 +290,22 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
                 $_ => $ARGS{ $paramtag ."-new-$_" } } qw/ Name Description SortOrder Category/
         );
         push (@results, $msg);
+
+        my $cfv = RT::CustomFieldValue->new( $session{CurrentUser} );
+        $cfv->Load($id);
+        $m->callback(CallbackName => 'AfterCreateCustomFieldValue',
+CustomFieldObj => $CustomFieldObj, CustomFieldValueObj => $cfv, ARGSRef => \%ARGS );
     }
 }
 
 $id = $CustomFieldObj->id if $CustomFieldObj->id;
+
+# This code does automatic redirection if any updates happen.
+MaybeRedirectForResults(
+    Actions     => \@results,
+    Arguments   => { id => $id },
+) if $CustomFieldObj->id;
+
 
 my $EnabledChecked = qq[checked="checked"];
 $EnabledChecked = '' if $CustomFieldObj->Disabled;
@@ -274,6 +334,7 @@ $Name => undef
 $SetEnabled => undef
 $Enabled => 0
 $ValuesClass => 'RT::CustomFieldValues'
+$RenderType => undef
 $LinkValueTo => undef
 $IncludeContentForValue => undef
 $BasedOn => undef

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -47,6 +47,10 @@
 # END BPS TAGGED BLOCK }}}
 
 package RT::Report::Tickets::Entry;
+
+use warnings;
+use strict;
+
 use base qw/RT::Record/;
 
 # XXX TODO: how the heck do we acl a report?
@@ -77,6 +81,10 @@ sub LabelValue {
     }
 
     return $value;
+}
+
+sub ObjectType {
+    return 'RT::Ticket';
 }
 
 RT::Base->_ImportOverlays();

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,12 +45,18 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-<div id="logo">
+<div id="<% $id %>">
+% if ($user_logo) {
+<a href="<%$ARGS{'LogoLinkURL'}||RT->Config->Get('LogoLinkURL')%>"><img
+    src="<% RT->Config->Get('WebPath') %>/NoAuth/Helpers/CustomLogo/<% $user_logo->Content->{'hash'} %>"
+    alt="<%loc($ARGS{'LogoAltText'}||RT->Config->Get('LogoAltText'))%>" /></a>
+% } else {
 <a href="<%$ARGS{'LogoLinkURL'}||RT->Config->Get('LogoLinkURL')%>"><img
     src="<%$ARGS{'LogoURL'}||RT->Config->Get('LogoURL')%>"
     alt="<%loc($ARGS{'LogoAltText'}||RT->Config->Get('LogoAltText'))%>"
     width="<%$ARGS{'LogoImageWidth'}||RT->Config->Get('LogoImageWidth')%>"
     height="<%$ARGS{'LogoImageHeight'}||RT->Config->Get('LogoImageHeight')%>" /></a>
+% }
 % if ( $ShowName ) {
     <span class="rtname"><% $Name || loc("RT for [_1]", RT->Config->Get('rtname')) %></span>
 % }
@@ -60,8 +66,28 @@ if ( exists $ARGS{'show_name'} ) {
     $RT::Logger->warning('show_name argument was renamed, use ShowName');
     $ShowName = delete $ARGS{'show_name'};
 }
+
+use Scalar::Util qw(blessed);
+my $user_logo = blessed $RT::System ? $RT::System->FirstAttribute('UserLogo') : undef;
+
+# If we have the attribute, but no content, we don't really have a user logo
+if ($user_logo) {
+    my $content = $user_logo->Content;
+    undef $user_logo
+        unless ref $content eq 'HASH'
+           and defined $content->{'data'};
+}
+
+if ($OnlyCustom
+    and not $user_logo
+    and ($ARGS{LogoURL}||RT->Config->Get('LogoURL')) =~ /bpslogo\.png$/)
+{
+    return;
+}
 </%INIT>
 <%ARGS>
 $ShowName => 1
+$OnlyCustom => 0
 $Name => undef
+$id => 'logo'
 </%ARGS>

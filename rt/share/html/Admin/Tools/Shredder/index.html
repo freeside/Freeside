@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -52,11 +52,7 @@ $Wipeout => ''
 @WipeoutObject => ()
 </%ARGS>
 <& /Admin/Elements/Header, Title => $title &>
-<& /Admin/Elements/ToolTabs,
-    current_tab => 'Admin/Tools/Shredder',
-    current_subtab => 'Admin/Tools/Shredder',
-    Title => $title,
-&>
+<& /Elements/Tabs &>
 <form id="shredder-search-form" action="<% RT->Config->Get('WebPath') %>/Admin/Tools/Shredder/" method="GET">
 <div id="shredder-select-plugin">
 <& /Elements/ListActions, actions => $messages{'Errors'} &>
@@ -96,7 +92,7 @@ my $catch_non_fatals = sub {
 
 if( $Plugin ) { { # use additional block({}) to effectively exit block on errors
     use RT::Shredder::Plugin;
-    $plugin_obj = new RT::Shredder::Plugin;
+    $plugin_obj = RT::Shredder::Plugin->new;
     my( $status, $msg ) = $plugin_obj->LoadByName( $Plugin );
     unless( $status ) {
         push @{ $messages{Errors} }, $msg;
@@ -128,8 +124,8 @@ if( $Plugin ) { { # use additional block({}) to effectively exit block on errors
 my $dump_file = '';
 
 if( $Plugin && $Wipeout ) { { # use additional block({}) to effectively exit block on errors
-    my $shredder = new RT::Shredder( force => 1 );
-    my $backup_plugin = new RT::Shredder::Plugin;
+    my $shredder = RT::Shredder->new( force => 1 );
+    my $backup_plugin = RT::Shredder::Plugin->new;
     my ($status, $msg) = $backup_plugin->LoadByName('SQLDump');
     unless( $status ) {
         push @{ $messages{Errors} }, $msg;
@@ -172,7 +168,7 @@ if( $Plugin && ( $Search || $Wipeout ) ) { { # use additional block({}) to effec
     }
     push @{ $messages{Success} }, loc('executed plugin successfuly');
 
-    my $shredder = new RT::Shredder;
+    my $shredder = RT::Shredder->new;
     foreach my $o( grep defined, splice @objs ) {
         eval { push @objs, $shredder->CastObjectsToRecords( Objects => $o ) };
         $catch_non_fatals->() && last if $@;

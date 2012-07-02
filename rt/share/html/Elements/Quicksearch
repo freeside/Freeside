@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,21 +46,21 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <div class="ticket-overview">
-<&|/Widgets/TitleBox, title => loc("Quick search"), bodyclass => "",
-   titleright => loc("Edit"), titleright_href => RT->Config->Get('WebPath').'/Prefs/Quicksearch.html' &>
-<& /Elements/QueueSummary,
-   cache => 'quick_search_queues',
+<&|/Widgets/TitleBox,
+    title => loc("Quick search"),
+    bodyclass => "",
+    titleright => loc("Edit"),
+    titleright_href => RT->Config->Get('WebPath').'/Prefs/Quicksearch.html',
+&>
+<& $comp,
    queue_filter => sub { $_->CurrentUserHasRight('ShowTicket') && !exists $unwanted->{$_->Name} },
-   conditions => \@conditions,
 &>
 </&>
 </div>
 <%INIT>
 my $unwanted = $session{'CurrentUser'}->UserObj->Preferences('QuickSearch', {});
-
-my @conditions = ();
-foreach ( RT::Queue->ActiveStatusArray ) {
-    push @conditions, { cond => "Status = '$_'", name => loc($_) };
-}
-$m->callback( CallbackName => 'Conditions', conditions => \@conditions );
+my $comp = $SplitByLifecycle? '/Elements/QueueSummaryByLifecycle' : '/Elements/QueueSummaryByStatus';
 </%INIT>
+<%ARGS>
+$SplitByLifecycle => 1
+</%ARGS>

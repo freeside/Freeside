@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,6 +51,7 @@ package RT::Test;
 use strict;
 use warnings;
 
+
 use base 'Test::More';
 
 use Socket;
@@ -58,26 +59,7 @@ use File::Temp qw(tempfile);
 use File::Path qw(mkpath);
 use File::Spec;
 
-our $SKIP_REQUEST_WORK_AROUND = 0;
-
-use HTTP::Request::Common ();
-use Hook::LexWrap;
-wrap 'HTTP::Request::Common::form_data',
-   post => sub {
-       return if $SKIP_REQUEST_WORK_AROUND;
-       my $data = $_[-1];
-       if (ref $data) {
-       $data->[0] = Encode::encode_utf8($data->[0]);
-       }
-       else {
-       $_[-1] = Encode::encode_utf8($_[-1]);
-       }
-   };
-
-
-our @EXPORT = qw(is_empty parse_mail);
-our ($port, $dbname);
-our @SERVERS;
+our @EXPORT = qw(is_empty diag parse_mail works fails);
 
 my %tmp = (
     directory => undef,
@@ -87,6 +69,8 @@ my %tmp = (
     },
     mailbox   => undef,
 );
+
+my %rttest_opt;
 
 =head1 NAME
 
@@ -107,41 +91,38 @@ problem in Perl that hides the top-level optree from L<Devel::Cover>.
 
 =cut
 
-sub generate_port {
-    my $self = shift;
-    my $port = 1024 + int rand(10000) + $$ % 1024;
-
-    my $paddr = sockaddr_in( $port, inet_aton('localhost') );
-    socket( SOCK, PF_INET, SOCK_STREAM, getprotobyname('tcp') )
-      or die "socket: $!";
-    if ( connect( SOCK, $paddr ) ) {
-        close(SOCK);
-        return generate_port();
-    }
-    close(SOCK);
-
-    return $port;
-}
-
-BEGIN {
-    $port   = generate_port();
-    $dbname = $ENV{RT_TEST_PARALLEL}? "rt3test_$port" : "rt3test";
-};
+our $port;
+our @SERVERS;
 
 sub import {
     my $class = shift;
-    my %args = @_;
+    my %args = %rttest_opt = @_;
 
     # Spit out a plan (if we got one) *before* we load modules
     if ( $args{'tests'} ) {
         $class->builder->plan( tests => $args{'tests'} )
           unless $args{'tests'} eq 'no_declare';
     }
+    elsif ( exists $args{'tests'} ) {
+        # do nothing if they say "tests => undef" - let them make the plan
+    }
+    elsif ( $args{'skip_all'} ) {
+        $class->builder->plan(skip_all => $args{'skip_all'});
+    }
     else {
         $class->builder->no_plan unless $class->builder->has_plan;
     }
 
+    push @{ $args{'plugins'} ||= [] }, @{ $args{'requires'} }
+        if $args{'requires'};
+    push @{ $args{'plugins'} ||= [] }, $args{'testing'}
+        if $args{'testing'};
+
     $class->bootstrap_tempdir;
+
+    $class->bootstrap_port;
+
+    $class->bootstrap_plugins_paths( %args );
 
     $class->bootstrap_config( %args );
 
@@ -152,9 +133,18 @@ sub import {
 
     $class->bootstrap_db( %args );
 
-    RT->Init;
+    RT::InitPluginPaths();
 
-    $class->bootstrap_plugins( %args );
+    __reconnect_rt()
+        unless $args{nodb};
+
+    RT::InitClasses();
+    RT::InitLogging();
+
+    RT->Plugins;
+
+    RT::I18N->Init();
+    RT->Config->PostLoadCheck;
 
     $class->set_config_wrapper;
 
@@ -178,6 +168,12 @@ sub import {
     }
 
     Test::More->export_to_level($level);
+
+    # blow away their diag so we can redefine it without warning
+    # better than "no warnings 'redefine'" because we might accidentally
+    # suppress a mistaken redefinition
+    no strict 'refs';
+    delete ${ caller($level) . '::' }{diag};
     __PACKAGE__->export_to_level($level);
 }
 
@@ -197,15 +193,64 @@ sub db_requires_no_dba {
     return 1 if $db_type eq 'SQLite';
 }
 
+sub bootstrap_port {
+    my $class = shift;
+
+    my %ports;
+
+    # Determine which ports are in use
+    use Fcntl qw(:DEFAULT :flock);
+    my $portfile = "$tmp{'directory'}/../ports";
+    sysopen(PORTS, $portfile, O_RDWR|O_CREAT)
+        or die "Can't write to ports file $portfile: $!";
+    flock(PORTS, LOCK_EX)
+        or die "Can't write-lock ports file $portfile: $!";
+    $ports{$_}++ for split ' ', join("",<PORTS>);
+
+    # Pick a random port, checking that the port isn't in our in-use
+    # list, and that something isn't already listening there.
+    {
+        $port = 1024 + int rand(10_000) + $$ % 1024;
+        redo if $ports{$port};
+
+        # There is a race condition in here, where some non-RT::Test
+        # process claims the port after we check here but before our
+        # server binds.  However, since we mostly care about race
+        # conditions with ourselves under high concurrency, this is
+        # generally good enough.
+        my $paddr = sockaddr_in( $port, inet_aton('localhost') );
+        socket( SOCK, PF_INET, SOCK_STREAM, getprotobyname('tcp') )
+            or die "socket: $!";
+        if ( connect( SOCK, $paddr ) ) {
+            close(SOCK);
+            redo;
+        }
+        close(SOCK);
+    }
+
+    $ports{$port}++;
+
+    # Write back out the in-use ports
+    seek(PORTS, 0, 0);
+    truncate(PORTS, 0);
+    print PORTS "$_\n" for sort {$a <=> $b} keys %ports;
+    close(PORTS) or die "Can't close ports file: $!";
+}
+
 sub bootstrap_tempdir {
     my $self = shift;
-    my $test_file = (
-        File::Spec->rel2abs((caller)[1])
-            =~ m{(?:^|[\\/])t[/\\](.*)}
-    );
-    my $dir_name = File::Spec->rel2abs('t/tmp/'. $test_file);
+    my ($test_dir, $test_file) = ('t', '');
+
+    if (File::Spec->rel2abs($0) =~ m{(?:^|[\\/])(x?t)[/\\](.*)}) {
+        $test_dir  = $1;
+        $test_file = "$2-";
+        $test_file =~ s{[/\\]}{-}g;
+    }
+
+    my $dir_name = File::Spec->rel2abs("$test_dir/tmp");
     mkpath( $dir_name );
     return $tmp{'directory'} = File::Temp->newdir(
+        "${test_file}XXXXXXXX",
         DIR => $dir_name
     );
 }
@@ -220,11 +265,13 @@ sub bootstrap_config {
     open( my $config, '>', $tmp{'config'}{'RT'} )
         or die "Couldn't open $tmp{'config'}{'RT'}: $!";
 
+    my $dbname = $ENV{RT_TEST_PARALLEL}? "rt4test_$port" : "rt4test";
     print $config qq{
 Set( \$WebDomain, "localhost");
 Set( \$WebPort,   $port);
 Set( \$WebPath,   "");
-Set( \$RTAddressRegexp , qr/^bad_re_that_doesnt_match\$/);
+Set( \@LexiconLanguages, qw(en zh_TW fr ja));
+Set( \$RTAddressRegexp , qr/^bad_re_that_doesnt_match\$/i);
 };
     if ( $ENV{'RT_TEST_DB_SID'} ) { # oracle case
         print $config "Set( \$DatabaseName , '$ENV{'RT_TEST_DB_SID'}' );\n";
@@ -233,8 +280,20 @@ Set( \$RTAddressRegexp , qr/^bad_re_that_doesnt_match\$/);
         print $config "Set( \$DatabaseName , '$dbname');\n";
         print $config "Set( \$DatabaseUser , 'u${dbname}');\n";
     }
-    print $config "Set( \$DevelMode, 0 );\n"
-        if $INC{'Devel/Cover.pm'};
+
+    if ( $args{'plugins'} ) {
+        print $config "Set( \@Plugins, qw(". join( ' ', @{ $args{'plugins'} } ) .") );\n";
+    }
+
+    if ( $INC{'Devel/Cover.pm'} ) {
+        print $config "Set( \$DevelMode, 0 );\n";
+    }
+    elsif ( $ENV{RT_TEST_DEVEL} ) {
+        print $config "Set( \$DevelMode, 1 );\n";
+    }
+    else {
+        print $config "Set( \$DevelMode, 0 );\n";
+    }
 
     $self->bootstrap_logging( $config );
 
@@ -254,7 +313,9 @@ Set( \$MailCommand, sub {
     close \$handle;
 } );
 END
-    
+
+    $self->bootstrap_more_config($config, \%args);
+
     print $config $args{'config'} if $args{'config'};
 
     print $config "\n1;\n";
@@ -263,6 +324,8 @@ END
 
     return $config;
 }
+
+sub bootstrap_more_config { }
 
 sub bootstrap_logging {
     my $self = shift;
@@ -293,8 +356,15 @@ sub set_config_wrapper {
     my $old_sub = \&RT::Config::Set;
     no warnings 'redefine';
     *RT::Config::Set = sub {
-        my @caller = caller;
-        if ( ($caller[1]||'') =~ /\.t$/ ) {
+        # Determine if the caller is either from a test script, or
+        # from helper functions called by test script to alter
+        # configuration that should be written.  This is necessary
+        # because some extensions (RTIR, for example) temporarily swap
+        # configuration values out and back in Mason during requests.
+        my @caller = caller(1); # preserve list context
+        @caller = caller(0) unless @caller;
+
+        if ( ($caller[1]||'') =~ /\.t$/) {
             my ($self, $name) = @_;
             my $type = $RT::Config::META{$name}->{'Type'} || 'SCALAR';
             my %sigils = (
@@ -306,10 +376,11 @@ sub set_config_wrapper {
             open( my $fh, '>>', $tmp{'config'}{'RT'} )
                 or die "Couldn't open config file: $!";
             require Data::Dumper;
+            local $Data::Dumper::Terse = 1;
             my $dump = Data::Dumper::Dumper([@_[2 .. $#_]]);
             $dump =~ s/;\s+$//;
             print $fh
-                "\nSet(${sigil}${name}, \@{". $dump ."}); 1;\n";
+                "\nSet(${sigil}${name}, \@{". $dump ."});\n1;\n";
             close $fh;
 
             if ( @SERVERS ) {
@@ -333,67 +404,49 @@ sub bootstrap_db {
     }
 
     require RT::Handle;
-    # bootstrap with dba cred
-    my $dbh = _get_dbh(RT::Handle->SystemDSN,
-               $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD});
-
-    unless ( $ENV{RT_TEST_PARALLEL} ) {
-        # already dropped db in parallel tests, need to do so for other cases.
-        RT::Handle->DropDatabase( $dbh, Force => 1 );
+    if (my $forceopt = $ENV{RT_TEST_FORCE_OPT}) {
+        Test::More::diag "forcing $forceopt";
+        $args{$forceopt}=1;
     }
 
-    RT::Handle->CreateDatabase( $dbh );
-    $dbh->disconnect;
-    $created_new_db++;
-
-    $dbh = _get_dbh(RT::Handle->DSN,
-            $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD});
-
-    $RT::Handle = new RT::Handle;
-    $RT::Handle->dbh( $dbh );
-    $RT::Handle->InsertSchema( $dbh );
+    # Short-circuit the rest of ourselves if we don't want a db
+    if ($args{nodb}) {
+        __drop_database();
+        return;
+    }
 
     my $db_type = RT->Config->Get('DatabaseType');
-    $RT::Handle->InsertACL( $dbh ) unless $db_type eq 'Oracle';
+    __create_database();
+    __reconnect_rt('as dba');
+    $RT::Handle->InsertSchema;
+    $RT::Handle->InsertACL unless $db_type eq 'Oracle';
 
-    $RT::Handle = new RT::Handle;
-    $RT::Handle->dbh( undef );
-    RT->ConnectToDatabase;
     RT->InitLogging;
-    RT->InitSystemObjects;
-    $RT::Handle->InsertInitialData;
+    __reconnect_rt();
 
-    DBIx::SearchBuilder::Record::Cachable->FlushCache;
-    $RT::Handle = new RT::Handle;
-    $RT::Handle->dbh( undef );
-    RT->Init;
+    $RT::Handle->InsertInitialData
+        unless $args{noinitialdata};
 
-    $RT::Handle->PrintError;
-    $RT::Handle->dbh->{PrintError} = 1;
+    $RT::Handle->InsertData( $RT::EtcPath . "/initialdata" )
+        unless $args{noinitialdata} or $args{nodata};
 
-    unless ( $args{'nodata'} ) {
-        $RT::Handle->InsertData( $RT::EtcPath . "/initialdata" );
-    }
-    DBIx::SearchBuilder::Record::Cachable->FlushCache;
+    $self->bootstrap_plugins_db( %args );
 }
 
-sub bootstrap_plugins {
+sub bootstrap_plugins_paths {
     my $self = shift;
     my %args = @_;
 
-    return unless $args{'requires'};
+    return unless $args{'plugins'};
+    my @plugins = @{ $args{'plugins'} };
 
-    my @plugins = @{ $args{'requires'} };
-    push @plugins, $args{'testing'}
-        if $args{'testing'};
-
-    require RT::Plugin;
     my $cwd;
     if ( $args{'testing'} ) {
         require Cwd;
         $cwd = Cwd::getcwd();
     }
 
+    require RT::Plugin;
     my $old_func = \&RT::Plugin::_BasePath;
     no warnings 'redefine';
     *RT::Plugin::_BasePath = sub {
@@ -408,17 +461,17 @@ sub bootstrap_plugins {
         }
         return $old_func->(@_);
     };
+}
 
-    RT->Config->Set( Plugins => @plugins );
-    RT->InitPluginPaths;
+sub bootstrap_plugins_db {
+    my $self = shift;
+    my %args = @_;
 
-    my $dba_dbh;
-    $dba_dbh = _get_dbh(
-        RT::Handle->DSN,
-        $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD},
-    ) if @plugins;
+    return unless $args{'plugins'};
 
     require File::Spec;
+
+    my @plugins = @{ $args{'plugins'} };
     foreach my $name ( @plugins ) {
         my $plugin = RT::Plugin->new( name => $name );
         Test::More::diag( "Initializing DB for the $name plugin" )
@@ -428,31 +481,37 @@ sub bootstrap_plugins {
         Test::More::diag( "etc path of the plugin is '$etc_path'" )
             if $ENV{'TEST_VERBOSE'};
 
-        if ( -e $etc_path ) {
-            my ($ret, $msg) = $RT::Handle->InsertSchema( $dba_dbh, $etc_path );
-            Test::More::ok($ret || $msg =~ /^Couldn't find schema/, "Created schema: ".($msg||''));
-
-            ($ret, $msg) = $RT::Handle->InsertACL( $dba_dbh, $etc_path );
-            Test::More::ok($ret || $msg =~ /^Couldn't find ACLs/, "Created ACL: ".($msg||''));
-
-            my $data_file = File::Spec->catfile( $etc_path, 'initialdata' );
-            if ( -e $data_file ) {
-                ($ret, $msg) = $RT::Handle->InsertData( $data_file );;
-                Test::More::ok($ret, "Inserted data".($msg||''));
-            } else {
-                Test::More::ok(1, "There is no data file" );
-            }
-        }
-        else {
-# we can not say if plugin has no data or we screwed with etc path
+        unless ( -e $etc_path ) {
+            # We can't tell if the plugin has no data, or we screwed up the etc/ path
             Test::More::ok(1, "There is no etc dir: no schema" );
             Test::More::ok(1, "There is no etc dir: no ACLs" );
             Test::More::ok(1, "There is no etc dir: no data" );
+            next;
         }
 
-        $RT::Handle->Connect; # XXX: strange but mysql can loose connection
+        __reconnect_rt('as dba');
+
+        { # schema
+            my ($ret, $msg) = $RT::Handle->InsertSchema( undef, $etc_path );
+            Test::More::ok($ret || $msg =~ /^Couldn't find schema/, "Created schema: ".($msg||''));
+        }
+
+        { # ACLs
+            my ($ret, $msg) = $RT::Handle->InsertACL( undef, $etc_path );
+            Test::More::ok($ret || $msg =~ /^Couldn't find ACLs/, "Created ACL: ".($msg||''));
+        }
+
+        # data
+        my $data_file = File::Spec->catfile( $etc_path, 'initialdata' );
+        if ( -e $data_file ) {
+            __reconnect_rt();
+            my ($ret, $msg) = $RT::Handle->InsertData( $data_file );;
+            Test::More::ok($ret, "Inserted data".($msg||''));
+        } else {
+            Test::More::ok(1, "There is no data file" );
+        }
     }
-    $dba_dbh->disconnect if $dba_dbh;
+    __reconnect_rt();
 }
 
 sub _get_dbh {
@@ -472,6 +531,79 @@ sub _get_dbh {
     return $dbh;
 }
 
+sub __create_database {
+    # bootstrap with dba cred
+    my $dbh = _get_dbh(
+        RT::Handle->SystemDSN,
+        $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD}
+    );
+
+    unless ( $ENV{RT_TEST_PARALLEL} ) {
+        # already dropped db in parallel tests, need to do so for other cases.
+        __drop_database( $dbh );
+
+    }
+    RT::Handle->CreateDatabase( $dbh );
+    $dbh->disconnect;
+    $created_new_db++;
+}
+
+sub __drop_database {
+    my $dbh = shift;
+
+    # Pg doesn't like if you issue a DROP DATABASE while still connected
+    # it's still may fail if web-server is out there and holding a connection
+    __disconnect_rt();
+
+    my $my_dbh = $dbh? 0 : 1;
+    $dbh ||= _get_dbh(
+        RT::Handle->SystemDSN,
+        $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD}
+    );
+
+    # We ignore errors intentionally by not checking the return value of
+    # DropDatabase below, so let's also suppress DBI's printing of errors when
+    # we overzealously drop.
+    local $dbh->{PrintError} = 0;
+    local $dbh->{PrintWarn} = 0;
+
+    RT::Handle->DropDatabase( $dbh );
+    $dbh->disconnect if $my_dbh;
+}
+
+sub __reconnect_rt {
+    my $as_dba = shift;
+    __disconnect_rt();
+
+    # look at %DBIHandle and $PrevHandle in DBIx::SB::Handle for explanation
+    $RT::Handle = RT::Handle->new;
+    $RT::Handle->dbh( undef );
+    $RT::Handle->Connect(
+        $as_dba
+        ? (User => $ENV{RT_DBA_USER}, Password => $ENV{RT_DBA_PASSWORD})
+        : ()
+    );
+    $RT::Handle->PrintError;
+    $RT::Handle->dbh->{PrintError} = 1;
+    return $RT::Handle->dbh;
+}
+
+sub __disconnect_rt {
+    # look at %DBIHandle and $PrevHandle in DBIx::SB::Handle for explanation
+    $RT::Handle->dbh->disconnect if $RT::Handle and $RT::Handle->dbh;
+
+    %DBIx::SearchBuilder::Handle::DBIHandle = ();
+    $DBIx::SearchBuilder::Handle::PrevHandle = undef;
+
+    $RT::Handle = undef;
+
+    delete $RT::System->{attributes};
+
+    DBIx::SearchBuilder::Record::Cachable->FlushCache
+          if DBIx::SearchBuilder::Record::Cachable->can("FlushCache");
+}
+
+
 =head1 UTILITIES
 
 =head2 load_or_create_user
@@ -486,7 +618,7 @@ sub load_or_create_user {
     $MemberOf = [ $MemberOf ] if defined $MemberOf && !ref $MemberOf;
     $MemberOf ||= [];
 
-    my $obj = RT::User->new( $RT::SystemUser );
+    my $obj = RT::User->new( RT->SystemUser );
     if ( $args{'Name'} ) {
         $obj->LoadByCols( Name => $args{'Name'} );
     } elsif ( $args{'EmailAddress'} ) {
@@ -508,7 +640,7 @@ sub load_or_create_user {
     # clean group membership
     {
         require RT::GroupMembers;
-        my $gms = RT::GroupMembers->new( $RT::SystemUser );
+        my $gms = RT::GroupMembers->new( RT->SystemUser );
         my $groups_alias = $gms->Join(
             FIELD1 => 'GroupId', TABLE2 => 'Groups', FIELD2 => 'id',
         );
@@ -537,7 +669,7 @@ sub load_or_create_user {
 sub load_or_create_queue {
     my $self = shift;
     my %args = ( Disabled => 0, @_ );
-    my $obj = RT::Queue->new( $RT::SystemUser );
+    my $obj = RT::Queue->new( RT->SystemUser );
     if ( $args{'Name'} ) {
         $obj->LoadByCols( Name => $args{'Name'} );
     } else {
@@ -550,7 +682,7 @@ sub load_or_create_queue {
         my @fields = qw(CorrespondAddress CommentAddress);
         foreach my $field ( @fields ) {
             next unless exists $args{ $field };
-            next if $args{ $field } eq $obj->$field;
+            next if $args{ $field } eq ($obj->$field || '');
             
             no warnings 'uninitialized';
             my $method = 'Set'. $field;
@@ -562,6 +694,111 @@ sub load_or_create_queue {
     return $obj;
 }
 
+sub delete_queue_watchers {
+    my $self = shift;
+    my @queues = @_;
+
+    foreach my $q ( @queues ) {
+        foreach my $t (qw(Cc AdminCc) ) {
+            $q->DeleteWatcher( Type => $t, PrincipalId => $_->MemberId )
+                foreach @{ $q->$t()->MembersObj->ItemsArrayRef };
+        }
+    }
+}
+
+sub create_tickets {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
+    my $self = shift;
+    my $defaults = shift;
+    my @data = @_;
+    @data = sort { rand(100) <=> rand(100) } @data
+        if delete $defaults->{'RandomOrder'};
+
+    $defaults->{'Queue'} ||= 'General';
+
+    my @res = ();
+    while ( @data ) {
+        my %args = %{ shift @data };
+        $args{$_} = $res[ $args{$_} ]->id foreach
+            grep $args{ $_ }, keys %RT::Ticket::LINKTYPEMAP;
+        push @res, $self->create_ticket( %$defaults, %args );
+    }
+    return @res;
+}
+
+sub create_ticket {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{Queue} && $args{Queue} =~ /\D/) {
+        my $queue = RT::Queue->new(RT->SystemUser);
+        if (my $id = $queue->Load($args{Queue}) ) {
+            $args{Queue} = $id;
+        } else {
+            die ("Error: Invalid queue $args{Queue}");
+        }
+    }
+
+    if ( my $content = delete $args{'Content'} ) {
+        $args{'MIMEObj'} = MIME::Entity->build(
+            From    => $args{'Requestor'},
+            Subject => $args{'Subject'},
+            Data    => $content,
+        );
+    }
+
+    my $ticket = RT::Ticket->new( RT->SystemUser );
+    my ( $id, undef, $msg ) = $ticket->Create( %args );
+    Test::More::ok( $id, "ticket created" )
+        or Test::More::diag("error: $msg");
+
+    # hackish, but simpler
+    if ( $args{'LastUpdatedBy'} ) {
+        $ticket->__Set( Field => 'LastUpdatedBy', Value => $args{'LastUpdatedBy'} );
+    }
+
+
+    for my $field ( keys %args ) {
+        #TODO check links and watchers
+
+        if ( $field =~ /CustomField-(\d+)/ ) {
+            my $cf = $1;
+            my $got = join ',', sort map $_->Content,
+                @{ $ticket->CustomFieldValues($cf)->ItemsArrayRef };
+            my $expected = ref $args{$field}
+                ? join( ',', sort @{ $args{$field} } )
+                : $args{$field};
+            Test::More::is( $got, $expected, 'correct CF values' );
+        }
+        else {
+            next if ref $args{$field};
+            next unless $ticket->can($field) or $ticket->_Accessible($field,"read");
+            next if ref $ticket->$field();
+            Test::More::is( $ticket->$field(), $args{$field}, "$field is correct" );
+        }
+    }
+
+    return $ticket;
+}
+
+sub delete_tickets {
+    my $self = shift;
+    my $query = shift;
+    my $tickets = RT::Tickets->new( RT->SystemUser );
+    if ( $query ) {
+        $tickets->FromSQL( $query );
+    }
+    else {
+        $tickets->UnLimit;
+    }
+    while ( my $ticket = $tickets->Next ) {
+        $ticket->Delete;
+    }
+}
+
 =head2 load_or_create_custom_field
 
 =cut
@@ -569,7 +806,7 @@ sub load_or_create_queue {
 sub load_or_create_custom_field {
     my $self = shift;
     my %args = ( Disabled => 0, @_ );
-    my $obj = RT::CustomField->new( $RT::SystemUser );
+    my $obj = RT::CustomField->new( RT->SystemUser );
     if ( $args{'Name'} ) {
         $obj->LoadByName( Name => $args{'Name'}, Queue => $args{'Queue'} );
     } else {
@@ -586,7 +823,7 @@ sub load_or_create_custom_field {
 sub last_ticket {
     my $self = shift;
     my $current = shift;
-    $current = $current ? RT::CurrentUser->new($current) : $RT::SystemUser;
+    $current = $current ? RT::CurrentUser->new($current) : RT->SystemUser;
     my $tickets = RT::Tickets->new( $current );
     $tickets->OrderBy( FIELD => 'id', ORDER => 'DESC' );
     $tickets->Limit( FIELD => 'id', OPERATOR => '>', VALUE => '0' );
@@ -599,17 +836,17 @@ sub store_rights {
 
     require RT::ACE;
     # fake construction
-    RT::ACE->new( $RT::SystemUser );
+    RT::ACE->new( RT->SystemUser );
     my @fields = keys %{ RT::ACE->_ClassAccessible };
 
     require RT::ACL;
-    my $acl = RT::ACL->new( $RT::SystemUser );
+    my $acl = RT::ACL->new( RT->SystemUser );
     $acl->Limit( FIELD => 'RightName', OPERATOR => '!=', VALUE => 'SuperUser' );
 
     my @res;
     while ( my $ace = $acl->Next ) {
         my $obj = $ace->PrincipalObj->Object;
-        if ( $obj->isa('RT::Group') && $obj->Type eq 'UserEquiv' && $obj->Instance == $RT::Nobody->id ) {
+        if ( $obj->isa('RT::Group') && $obj->Type eq 'UserEquiv' && $obj->Instance == RT->Nobody->id ) {
             next;
         }
 
@@ -626,7 +863,7 @@ sub restore_rights {
     my $self = shift;
     my @entries = @_;
     foreach my $entry ( @entries ) {
-        my $ace = RT::ACE->new( $RT::SystemUser );
+        my $ace = RT::ACE->new( RT->SystemUser );
         my ($status, $msg) = $ace->RT::Record::Create( %$entry );
         unless ( $status ) {
             Test::More::diag "couldn't create a record: $msg";
@@ -638,11 +875,11 @@ sub set_rights {
     my $self = shift;
 
     require RT::ACL;
-    my $acl = RT::ACL->new( $RT::SystemUser );
+    my $acl = RT::ACL->new( RT->SystemUser );
     $acl->Limit( FIELD => 'RightName', OPERATOR => '!=', VALUE => 'SuperUser' );
     while ( my $ace = $acl->Next ) {
         my $obj = $ace->PrincipalObj->Object;
-        if ( $obj->isa('RT::Group') && $obj->Type eq 'UserEquiv' && $obj->Instance == $RT::Nobody->id ) {
+        if ( $obj->isa('RT::Group') && $obj->Type eq 'UserEquiv' && $obj->Instance == RT->Nobody->id ) {
             next;
         }
         $ace->Delete;
@@ -659,10 +896,10 @@ sub add_rights {
         my $principal = delete $e->{'Principal'};
         unless ( ref $principal ) {
             if ( $principal =~ /^(everyone|(?:un)?privileged)$/i ) {
-                $principal = RT::Group->new( $RT::SystemUser );
+                $principal = RT::Group->new( RT->SystemUser );
                 $principal->LoadSystemInternalGroup($1);
             } elsif ( $principal =~ /^(Owner|Requestor|(?:Admin)?Cc)$/i ) {
-                $principal = RT::Group->new( $RT::SystemUser );
+                $principal = RT::Group->new( RT->SystemUser );
                 $principal->LoadByCols(
                     Domain => (ref($e->{'Object'})||'RT::System').'-Role',
                     Type => $1,
@@ -746,7 +983,7 @@ sub run_and_capture {
     return ($?, $result);
 }
 
-sub send_via_mailgate {
+sub send_via_mailgate_and_http {
     my $self = shift;
     my $message = shift;
     my %args = (@_);
@@ -768,6 +1005,26 @@ sub send_via_mailgate {
     }
     return ($status, $id);
 }
+
+
+sub send_via_mailgate {
+    my $self    = shift;
+    my $message = shift;
+    my %args = ( action => 'correspond',
+                 queue  => 'General',
+                 @_
+               );
+
+    if ( UNIVERSAL::isa( $message, 'MIME::Entity' ) ) {
+        $message = $message->as_string;
+    }
+
+    my ( $status, $error_message, $ticket )
+        = RT::Interface::Email::Gateway( {%args, message => $message} );
+    return ( $status, $ticket ? $ticket->id : 0 );
+
+}
+
 
 sub open_mailgate_ok {
     my $class   = shift;
@@ -801,11 +1058,6 @@ sub mailsent_ok {
         $mailsent, $expected,
         "The number of mail sent ($expected) matches. yay"
     );
-}
-
-sub set_mail_catcher {
-    my $self = shift;
-    return 1;
 }
 
 sub fetch_caught_mails {
@@ -864,6 +1116,14 @@ sub get_abs_relocatable_dir {
     }
 }
 
+sub gnupg_homedir {
+    my $self = shift;
+    File::Temp->newdir(
+        DIR => $tmp{directory},
+        CLEANUP => 0,
+    );
+}
+
 sub import_gnupg_key {
     my $self = shift;
     my $key  = shift;
@@ -902,7 +1162,7 @@ sub lsign_gnupg_key {
     my $key = shift;
 
     require RT::Crypt::GnuPG; require GnuPG::Interface;
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $gnupg->options->hash_init(
         RT::Crypt::GnuPG::_PrepareGnuPGOptions( %opt ),
@@ -911,12 +1171,12 @@ sub lsign_gnupg_key {
 
     my %handle; 
     my $handles = GnuPG::Handles->new(
-        stdin   => ($handle{'input'}   = new IO::Handle),
-        stdout  => ($handle{'output'}  = new IO::Handle),
-        stderr  => ($handle{'error'}   = new IO::Handle),
-        logger  => ($handle{'logger'}  = new IO::Handle),
-        status  => ($handle{'status'}  = new IO::Handle),
-        command => ($handle{'command'} = new IO::Handle),
+        stdin   => ($handle{'input'}   = IO::Handle->new()),
+        stdout  => ($handle{'output'}  = IO::Handle->new()),
+        stderr  => ($handle{'error'}   = IO::Handle->new()),
+        logger  => ($handle{'logger'}  = IO::Handle->new()),
+        status  => ($handle{'status'}  = IO::Handle->new()),
+        command => ($handle{'command'} = IO::Handle->new()),
     );
 
     eval {
@@ -959,7 +1219,7 @@ sub trust_gnupg_key {
     my $key = shift;
 
     require RT::Crypt::GnuPG; require GnuPG::Interface;
-    my $gnupg = new GnuPG::Interface;
+    my $gnupg = GnuPG::Interface->new();
     my %opt = RT->Config->Get('GnuPGOptions');
     $gnupg->options->hash_init(
         RT::Crypt::GnuPG::_PrepareGnuPGOptions( %opt ),
@@ -968,12 +1228,12 @@ sub trust_gnupg_key {
 
     my %handle; 
     my $handles = GnuPG::Handles->new(
-        stdin   => ($handle{'input'}   = new IO::Handle),
-        stdout  => ($handle{'output'}  = new IO::Handle),
-        stderr  => ($handle{'error'}   = new IO::Handle),
-        logger  => ($handle{'logger'}  = new IO::Handle),
-        status  => ($handle{'status'}  = new IO::Handle),
-        command => ($handle{'command'} = new IO::Handle),
+        stdin   => ($handle{'input'}   = IO::Handle->new()),
+        stdout  => ($handle{'output'}  = IO::Handle->new()),
+        stderr  => ($handle{'error'}   = IO::Handle->new()),
+        logger  => ($handle{'logger'}  = IO::Handle->new()),
+        status  => ($handle{'status'}  = IO::Handle->new()),
+        command => ($handle{'command'} = IO::Handle->new()),
     );
 
     eval {
@@ -1027,198 +1287,178 @@ sub started_ok {
 
     require RT::Test::Web;
 
-    my $which = $ENV{'RT_TEST_WEB_HANDLER'} || 'standalone';
+    if ($rttest_opt{nodb} and not $rttest_opt{server_ok}) {
+        die "You are trying to use a test web server without a database. "
+           ."You may want noinitialdata => 1 instead. "
+           ."Pass server_ok => 1 if you know what you're doing.";
+    }
+
+
+    $ENV{'RT_TEST_WEB_HANDLER'} = undef
+        if $rttest_opt{actual_server} && ($ENV{'RT_TEST_WEB_HANDLER'}||'') eq 'inline';
+    $ENV{'RT_TEST_WEB_HANDLER'} ||= 'plack';
+    my $which = $ENV{'RT_TEST_WEB_HANDLER'};
     my ($server, $variant) = split /\+/, $which, 2;
 
     my $function = 'start_'. $server .'_server';
     unless ( $self->can($function) ) {
         die "Don't know how to start server '$server'";
     }
-    return $self->$function( $variant, @_ );
+    return $self->$function( variant => $variant, @_ );
 }
 
-sub start_standalone_server {
+sub test_app {
+    my $self = shift;
+    my %server_opt = @_;
+
+    my $app;
+
+    my $warnings = "";
+    open( my $warn_fh, ">", \$warnings );
+    local *STDERR = $warn_fh;
+
+    if ($server_opt{variant} and $server_opt{variant} eq 'rt-server') {
+        $app = do {
+            my $file = "$RT::SbinPath/rt-server";
+            my $psgi = do $file;
+            unless ($psgi) {
+                die "Couldn't parse $file: $@" if $@;
+                die "Couldn't do $file: $!"    unless defined $psgi;
+                die "Couldn't run $file"       unless $psgi;
+            }
+            $psgi;
+        };
+    } else {
+        require RT::Interface::Web::Handler;
+        $app = RT::Interface::Web::Handler->PSGIApp;
+    }
+
+    require Plack::Middleware::Test::StashWarnings;
+    my $stashwarnings = Plack::Middleware::Test::StashWarnings->new;
+    $app = $stashwarnings->wrap($app);
+
+    if ($server_opt{basic_auth}) {
+        require Plack::Middleware::Auth::Basic;
+        $app = Plack::Middleware::Auth::Basic->wrap(
+            $app,
+            authenticator => sub {
+                my ($username, $password) = @_;
+                return $username eq 'root' && $password eq 'password';
+            }
+        );
+    }
+
+    close $warn_fh;
+    $stashwarnings->add_warning( $warnings ) if $warnings;
+
+    return $app;
+}
+
+sub start_plack_server {
     my $self = shift;
 
+    require Plack::Loader;
+    my $plack_server = Plack::Loader->load
+        ('Standalone',
+         port => $port,
+         server_ready => sub {
+             kill 'USR1' => getppid();
+         });
 
-    require RT::Interface::Web::Standalone;
+    # We are expecting a USR1 from the child process after it's ready
+    # to listen.  We set this up _before_ we fork to avoid race
+    # conditions.
+    my $handled;
+    local $SIG{USR1} = sub { $handled = 1};
 
-    require Test::HTTP::Server::Simple::StashWarnings;
-    unshift @RT::Interface::Web::Standalone::ISA,
-        'Test::HTTP::Server::Simple::StashWarnings';
-    *RT::Interface::Web::Standalone::test_warning_path = sub {
-        "/__test_warnings";
+    __disconnect_rt();
+    my $pid = fork();
+    die "failed to fork" unless defined $pid;
+
+    if ($pid) {
+        sleep 15 unless $handled;
+        Test::More::diag "did not get expected USR1 for test server readiness"
+            unless $handled;
+        push @SERVERS, $pid;
+        my $Tester = Test::Builder->new;
+        $Tester->ok(1, "started plack server ok");
+
+        __reconnect_rt()
+            unless $rttest_opt{nodb};
+        return ("http://localhost:$port", RT::Test::Web->new);
+    }
+
+    require POSIX;
+    if ( $^O !~ /MSWin32/ ) {
+        POSIX::setsid()
+            or die "Can't start a new session: $!";
+    }
+
+    # stick this in a scope so that when $app is garbage collected,
+    # StashWarnings can complain about unhandled warnings
+    do {
+        $plack_server->run($self->test_app(@_));
     };
 
-    my $s = RT::Interface::Web::Standalone->new($port);
+    exit;
+}
 
-    my $ret = $s->started_ok;
-    push @SERVERS, $s->pids;
+our $TEST_APP;
+sub start_inline_server {
+    my $self = shift;
 
-    $RT::Handle = new RT::Handle;
-    $RT::Handle->dbh( undef );
-    RT->ConnectToDatabase;
+    require Test::WWW::Mechanize::PSGI;
+    unshift @RT::Test::Web::ISA, 'Test::WWW::Mechanize::PSGI';
 
-    # the attribute cache holds on to a stale dbh
-    delete $RT::System->{attributes};
+    # Clear out squished CSS and JS cache, since it's retained across
+    # servers, since it's in-process
+    RT::Interface::Web->ClearSquished;
 
-    return ($ret, RT::Test::Web->new);
+    Test::More::ok(1, "psgi test server ok");
+    $TEST_APP = $self->test_app(@_);
+    return ("http://localhost:$port", RT::Test::Web->new);
 }
 
 sub start_apache_server {
     my $self = shift;
-    my $variant = shift || 'mod_perl';
+    my %server_opt = @_;
+    $server_opt{variant} ||= 'mod_perl';
+    $ENV{RT_TEST_WEB_HANDLER} = "apache+$server_opt{variant}";
 
-    my %info = $self->apache_server_info( variant => $variant );
-
-    Test::More::diag(do {
-        open( my $fh, '<', $tmp{'config'}{'RT'} ) or die $!;
-        local $/;
-        <$fh>
-    });
-
-    my $tmpl = File::Spec->rel2abs( File::Spec->catfile(
-        't', 'data', 'configs',
-        'apache'. $info{'version'} .'+'. $variant .'.conf'
-    ) );
-    my %opt = (
-        listen         => $port,
-        server_root    => $info{'HTTPD_ROOT'} || $ENV{'HTTPD_ROOT'}
-            || Test::More::BAIL_OUT("Couldn't figure out server root"),
-        document_root  => $RT::MasonComponentRoot,
-        tmp_dir        => "$tmp{'directory'}",
-        rt_bin_path    => $RT::BinPath,
-        rt_site_config => $ENV{'RT_SITE_CONFIG'},
+    require RT::Test::Apache;
+    my $pid = RT::Test::Apache->start_server(
+        %server_opt,
+        port => $port,
+        tmp => \%tmp
     );
-    foreach (qw(log pid lock)) {
-        $opt{$_ .'_file'} = File::Spec->catfile(
-            "$tmp{'directory'}", "apache.$_"
-        );
-    }
-    {
-        my $method = 'apache_'.$variant.'_server_options';
-        $self->$method( \%info, \%opt );
-    }
-    $tmp{'config'}{'apache'} = File::Spec->catfile(
-        "$tmp{'directory'}", "apache.conf"
-    );
-    $self->process_in_file(
-        in      => $tmpl, 
-        out     => $tmp{'config'}{'apache'},
-        options => \%opt,
-    );
-
-    $self->fork_exec($info{'executable'}, '-f', $tmp{'config'}{'apache'});
-    my $pid = do {
-        my $tries = 10;
-        while ( !-e $opt{'pid_file'} ) {
-            $tries--;
-            last unless $tries;
-            sleep 1;
-        }
-        Test::More::BAIL_OUT("Couldn't start apache server, no pid file")
-            unless -e $opt{'pid_file'};
-        open( my $pid_fh, '<', $opt{'pid_file'} )
-            or Test::More::BAIL_OUT("Couldn't open pid file: $!");
-        my $pid = <$pid_fh>;
-        chomp $pid;
-        $pid;
-    };
-
-    Test::More::ok($pid, "Started apache server #$pid");
-
     push @SERVERS, $pid;
 
-    return (RT->Config->Get('WebURL'), RT::Test::Web->new);
-}
-
-sub apache_server_info {
-    my $self = shift;
-    my %res = @_;
-
-    my $bin = $res{'executable'} = $ENV{'RT_TEST_APACHE'}
-        || $self->find_apache_server
-        || Test::More::BAIL_OUT("Couldn't find apache server, use RT_TEST_APACHE");
-
-    Test::More::diag("Using '$bin' apache executable for testing")
-        if $ENV{'TEST_VERBOSE'};
-
-    my $info = `$bin -V`;
-    ($res{'version'}) = ($info =~ m{Server\s+version:\s+Apache/(\d+\.\d+)\.});
-    Test::More::BAIL_OUT(
-        "Couldn't figure out version of the server"
-    ) unless $res{'version'};
-
-    my %opts = ($info =~ m/^\s*-D\s+([A-Z_]+?)(?:="(.*)")$/mg);
-    %res = (%res, %opts);
-
-    $res{'modules'} = [
-        map {s/^\s+//; s/\s+$//; $_}
-        grep $_ !~ /Compiled in modules/i,
-        split /\r*\n/, `$bin -l`
-    ];
-
-    return %res;
-}
-
-sub apache_mod_perl_server_options {
-    my $self = shift;
-    my %info = %{ shift() };
-    my $current = shift;
-
-    my %required_modules = (
-        '2.2' => [qw(authz_host log_config env alias perl)],
-    );
-    my @mlist = @{ $required_modules{ $info{'version'} } };
-
-    $current->{'load_modules'} = '';
-    foreach my $mod ( @mlist ) {
-        next if grep $_ =~ /^(mod_|)$mod\.c$/, @{ $info{'modules'} };
-
-        $current->{'load_modules'} .=
-            "LoadModule ${mod}_module modules/mod_${mod}.so\n";
-    }
-    return;
-}
-
-sub apache_fastcgi_server_options {
-    my $self = shift;
-    my %info = %{ shift() };
-    my $current = shift;
-
-    my %required_modules = (
-        '2.2' => [qw(authz_host log_config env alias mime fastcgi)],
-    );
-    my @mlist = @{ $required_modules{ $info{'version'} } };
-
-    $current->{'load_modules'} = '';
-    foreach my $mod ( @mlist ) {
-        next if grep $_ =~ /^(mod_|)$mod\.c$/, @{ $info{'modules'} };
-
-        $current->{'load_modules'} .=
-            "LoadModule ${mod}_module modules/mod_${mod}.so\n";
-    }
-    return;
-}
-
-sub find_apache_server {
-    my $self = shift;
-    return $_ foreach grep defined,
-        map $self->find_executable($_),
-        qw(httpd apache apache2 apache1);
-    return undef;
+    my $url = RT->Config->Get('WebURL');
+    $url =~ s!/$!!;
+    return ($url, RT::Test::Web->new);
 }
 
 sub stop_server {
     my $self = shift;
+    my $in_end = shift;
+    return unless @SERVERS;
 
     my $sig = 'TERM';
-    $sig = 'INT' if !$ENV{'RT_TEST_WEB_HANDLER'}
-                    || $ENV{'RT_TEST_WEB_HANDLER'} =~/^standalone(?:\+|\z)/;
+    $sig = 'INT' if $ENV{'RT_TEST_WEB_HANDLER'} eq "plack";
     kill $sig, @SERVERS;
     foreach my $pid (@SERVERS) {
-        waitpid $pid, 0;
+        if ($ENV{RT_TEST_WEB_HANDLER} =~ /^apache/) {
+            sleep 1 while kill 0, $pid;
+        } else {
+            waitpid $pid, 0;
+        }
     }
+
+    @SERVERS = ();
+}
+
+sub temp_directory {
+    return $tmp{'directory'};
 }
 
 sub file_content {
@@ -1258,44 +1498,9 @@ sub find_executable {
     return undef;
 }
 
-sub fork_exec {
-    my $self = shift;
-
-    my $pid = fork;
-    unless ( defined $pid ) {
-        die "cannot fork: $!";
-    } elsif ( !$pid ) {
-        exec @_;
-        die "can't exec `". join(' ', @_) ."` program: $!";
-    } else {
-        return $pid;
-    }
-}
-
-sub process_in_file {
-    my $self = shift;
-    my %args = ( in => undef, options => undef, @_ );
-
-    my $text = $self->file_content( $args{'in'} );
-    while ( my ($opt) = ($text =~ /\%\%(.+?)\%\%/) ) {
-        my $value = $args{'options'}{ lc $opt };
-        die "no value for $opt" unless defined $value;
-
-        $text =~ s/\%\%\Q$opt\E\%\%/$value/g;
-    }
-
-    my ($out_fh, $out_conf);
-    unless ( $args{'out'} ) {
-        ($out_fh, $out_conf) = tempfile();
-    } else {
-        $out_conf = $args{'out'};
-        open( $out_fh, '>', $out_conf )
-            or die "couldn't open '$out_conf': $!";
-    }
-    print $out_fh $text;
-    seek $out_fh, 0, 0;
-
-    return ($out_fh, $out_conf);
+sub diag {
+    return unless $ENV{RT_TEST_VERBOSE} || $ENV{TEST_VERBOSE};
+    goto \&Test::More::diag;
 }
 
 sub parse_mail {
@@ -1304,6 +1509,14 @@ sub parse_mail {
     my $parser = RT::EmailParser->new;
     $parser->ParseMIMEEntityFromScalar( $mail );
     return $parser->Entity;
+}
+
+sub works {
+    Test::More::ok($_[0], $_[1] || 'This works');
+}
+
+sub fails {
+    Test::More::ok(!$_[0], $_[1] || 'This should fail');
 }
 
 END {
@@ -1315,10 +1528,10 @@ END {
     # so calls below may call system or kill that clobbers $?
     local $?;
 
-    RT::Test->stop_server;
+    RT::Test->stop_server(1);
 
     # not success
-    if ( !$Test->summary || grep !$_, $Test->summary ) {
+    if ( !$Test->is_passing ) {
         $tmp{'directory'}->unlink_on_destroy(0);
 
         Test::More::diag(
@@ -1328,15 +1541,33 @@ END {
     }
 
     if ( $ENV{RT_TEST_PARALLEL} && $created_new_db ) {
-
-        # Pg doesn't like if you issue a DROP DATABASE while still connected
-        my $dbh = $RT::Handle->dbh;
-        $dbh->disconnect if $dbh;
-
-        $dbh = _get_dbh( RT::Handle->SystemDSN, $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD} );
-        RT::Handle->DropDatabase( $dbh, Force => 1 );
-        $dbh->disconnect;
+        __drop_database();
     }
+
+    # Drop our port from t/tmp/ports; do this after dropping the
+    # database, as our port lock is also a lock on the database name.
+    if ($port) {
+        my %ports;
+        my $portfile = "$tmp{'directory'}/../ports";
+        sysopen(PORTS, $portfile, O_RDWR|O_CREAT)
+            or die "Can't write to ports file $portfile: $!";
+        flock(PORTS, LOCK_EX)
+            or die "Can't write-lock ports file $portfile: $!";
+        $ports{$_}++ for split ' ', join("",<PORTS>);
+        delete $ports{$port};
+        seek(PORTS, 0, 0);
+        truncate(PORTS, 0);
+        print PORTS "$_\n" for sort {$a <=> $b} keys %ports;
+        close(PORTS) or die "Can't close ports file: $!";
+    }
+}
+
+{ 
+    # ease the used only once warning
+    no warnings;
+    no strict 'refs';
+    %{'RT::I18N::en_us::Lexicon'};
+    %{'Win32::Locale::Lexicon'};
 }
 
 1;

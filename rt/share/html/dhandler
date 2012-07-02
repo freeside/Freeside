@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,7 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title=>loc("Page not found")&>
-<& /Elements/Tabs, Title=>loc("Page not found"), &>
+<& /Elements/Tabs &>
 <h1><&|/l&>The page you requested could not be found</&></h1>
 <&|/l&>Please check the URL and try again.</&>
 <%init>

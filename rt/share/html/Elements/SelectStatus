@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,24 +46,67 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 % my $onchange_attr = $onchange ? " onchange=\"$onchange\"" : '';
-<select id="<%$Name%>" name="<%$Name%>"<% $onchange_attr |n%>>
-%if ($DefaultValue) {
-<option value=""<% !$Default && qq[ selected="selected"] |n %>><%$DefaultLabel%></option>
-%}
-%foreach my $status (@status) {
-%next if ($SkipDeleted && $status eq 'deleted');
-<option value="<%$status%>"<% (defined $Default && $status eq $Default) && qq[ selected="selected"] |n %>><%loc($status)%></option>
+<select id="<%$Name%>" name="<%$Name%>" <% $Multiple ? qq{multiple="multiple" size="$Size"} : '' |n %> <% $onchange_attr |n%>>
+% if ( $DefaultValue ) {
+<option value=""<% !$Default && qq[ selected="selected"] |n %>><% $DefaultLabel %></option>
+% }
+% foreach my $status (@status) {
+% next if ($SkipDeleted && $status eq 'deleted');
+% my $selected = defined $Default && $status eq $Default ? 'selected="selected"' : '';
+<option value="<% $status %>" <% $selected |n %>><% loc($status) %></option>
 % }
 </select>
-<%ONCE>
-my $queue = new RT::Queue($session{'CurrentUser'});
-my @status = $queue->StatusArray();
-</%ONCE>
+<%INIT>
+### XXX: no cover for Tools/MyDay.html
+
+
+my @status;
+if ( @Statuses ) {
+    @status = @Statuses;
+}
+elsif ( $TicketObj ) {
+    my $current = $TicketObj->Status;
+    push @status, $current;
+
+    my $lifecycle = $TicketObj->QueueObj->Lifecycle;
+
+    my %has = ();
+    foreach my $next ( $lifecycle->Transitions( $current ) ) {
+        my $check = $lifecycle->CheckRight( $current => $next );
+        $has{ $check } = $TicketObj->CurrentUserHasRight( $check )
+            unless exists $has{ $check };
+        push @status, $next if $has{ $check };
+    }
+}
+elsif ( $QueueObj ) {
+    @status = $QueueObj->Lifecycle->Transitions('');
+} elsif ( %Queues ) {
+    for my $id (keys %Queues) {
+        my $queue = RT::Queue->new($session{'CurrentUser'});
+        $queue->Load($id);
+        push @status, $queue->Lifecycle->Valid if $queue->id;
+    }
+    my %seen;
+    @status = grep { not $seen{$_}++ } @status;
+} else {
+    @status = RT::Queue->Lifecycle->Valid;
+}
+</%INIT>
 <%ARGS>
 $Name => undef
+
+@Statuses => ()
+$TicketObj => undef
+$QueueObj => undef
+%Queues => ()
+
 $Default => ''
 $SkipDeleted => 0
 $DefaultValue => 1
 $DefaultLabel => "-"
+
+$Multiple => 0
+$Size => 6
+
 $onchange => ''
 </%ARGS>

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -53,18 +53,14 @@
 &>
 
 % if ($Preview) {
-<& /Dashboards/Elements/Tabs,
-    current_subtab => $current_subtab,
-    Title => $title,
-    DashboardObj => $DashboardObj &>
+<& /Elements/Tabs &>
 % }
 
-% $m->callback(CallbackName => 'BeforeTable', Dashboard => $DashboardObj, show_cb => $show_cb);
+% $m->callback(CallbackName => 'BeforeTable', Dashboard => $Dashboard, show_cb => $show_cb);
 
-<table class="dashboard">
-<!-- Dashboard #<%$id%> -->
+<table class="dashboard" id="dashboard-<%$id%>">
 
-% $m->callback(CallbackName => 'BeforePanes', Dashboard => $DashboardObj, show_cb => $show_cb);
+% $m->callback(CallbackName => 'BeforePanes', Dashboard => $Dashboard, show_cb => $show_cb);
 
 <tr valign="top">
 
@@ -78,26 +74,29 @@
 
 </tr>
 
-% $m->callback(CallbackName => 'AfterPanes', Dashboard => $DashboardObj, show_cb => $show_cb);
+% $m->callback(CallbackName => 'AfterPanes', Dashboard => $Dashboard, show_cb => $show_cb);
 
 </table>
 
-% $m->callback(CallbackName => 'AfterTable', Dashboard => $DashboardObj, show_cb => $show_cb);
+% $m->callback(CallbackName => 'AfterTable', Dashboard => $Dashboard, show_cb => $show_cb);
 
-</td>
+% if (!$Preview) {
+% my $edit = RT->Config->Get('WebPath') . '/Dashboards/Modify.html?id='.$id;
+% my $subscription = RT->Config->Get('WebPath') . '/Dashboards/Subscription.html?id='.$id;
+<p><&|/l, $edit, $subscription &>You <a href="[_1]">may edit this dashboard</a> and <a href="[_2]">your subscription</a> to it in RT.</&></p>
+% }
 
-
-</tr>
-</table>
+%# Matches the closing div in /Elements/Footer that it expects
+%# from PageLayout (which we don't use here)
+<div>
 
 <%INIT>
 
-my $current_subtab = 'Dashboards/Render.html?id=' . $id;
 
 use RT::Dashboard;
-my $DashboardObj = RT::Dashboard->new($session{'CurrentUser'});
-my ($ok, $msg) = $DashboardObj->LoadById($id);
-Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg)) if !$ok;
+my $Dashboard = RT::Dashboard->new($session{'CurrentUser'});
+my ($ok, $msg) = $Dashboard->LoadById($id);
+$ok || Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg));
 
 my $SubscriptionObj = RT::Attribute->new($session{'CurrentUser'});
 my $rows;
@@ -117,15 +116,15 @@ unless (defined($rows)) {
     $rows = defined($prefs->{'RowsPerPage'}) ? $prefs->{'RowsPerPage'} : 50;
 }
 
-my $title = loc 'Dashboard [_1]', $DashboardObj->Name;
+my $title = loc '[_1] Dashboard', $Dashboard->Name;
 
 my $show_cb = sub {
     my $pane = shift;
     $m->comp('Elements/ShowPortlet/dashboard',
-        Portlet   => $DashboardObj,
+        Portlet   => $Dashboard,
         Rows      => $rows,
         Preview   => $Preview,
-        Dashboard => $DashboardObj,
+        Dashboard => $Dashboard,
         Pane      => $pane,
         Depth     => 0,
     );

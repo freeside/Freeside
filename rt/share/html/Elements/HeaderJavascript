@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -49,75 +49,39 @@
 $focus => undef
 $onload => undef
 </%args>
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/js/util.js"></script>
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/js/titlebox-state.js"></script>
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/js/ahah.js"></script>
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/js/prototype/prototype.js"></script>
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/js/scriptaculous/scriptaculous.js?load=effects,controls"></script>
-% if ( RT->Config->Get('MessageBoxRichText',  $session{'CurrentUser'}) ) {
-<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/RichText/fckeditor.js"></script>
+
+% for my $jsfile ( @js_files ) {
+<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/js/<% $jsfile %>"></script>
+% }
+
+% if ( $RichText and RT->Config->Get('MessageBoxRichText',  $session{'CurrentUser'}) ) {
+<script type="text/javascript" src="<%RT->Config->Get('WebPath')%>/NoAuth/RichText/ckeditor.js"></script>
 % }
 <script type="text/javascript"><!--
-    doOnLoad(loadTitleBoxStates);
+	jQuery( loadTitleBoxStates );
 % if ( $focus ) {
-    doOnLoad(function () { focusElementById('<% $focus %>') });
+    jQuery(function () { focusElementById(<% $focus |n,j%>) });
 % }
-
 % if ( $onload ) {
-    doOnLoad(<% $onload |n %>);
+    jQuery( <% $onload |n %> );
 % }
 
-% if ( RT->Config->Get('MessageBoxRichText',  $session{'CurrentUser'})) {
-    function ReplaceAllTextareas() {
-        var sAgent = navigator.userAgent.toLowerCase();
-        if (!FCKeditor_IsCompatibleBrowser() ||
-            sAgent.indexOf('iphone') != -1 ||
-            sAgent.indexOf('ipad') != -1 ||
-            sAgent.indexOf('android') != -1 )
-            return false;
-
-        // replace all content and signature message boxes
-        var allTextAreas = document.getElementsByTagName("textarea");
-
-        for (var i=0; i < allTextAreas.length; i++) {
-            var textArea = allTextAreas[i];
-            if ( (textArea.getAttribute('class') == 'messagebox')
-              || (textArea.getAttribute('className') == 'messagebox')) {
-                // Turn the original plain text content into HTML 
-
-%# Special case - when we re-edit a textarea, don't re-encode it
-% if (!$m->request_args->{'FCKeditorEncoded'}) {
-                textArea.value = textArea.value.replace(
-                    /&/g, "&amp;"
-                ).replace(
-                    /</g, "&lt;"
-                ).replace(
-                    />/g, "&gt;"
-                ).replace(
-                    /\n/g, "\n<br />"
-                );
-% }
-
-%# for this template..
-                var FCKeditorEncoded = document.createElement('input');
-                FCKeditorEncoded.setAttribute('type', 'hidden');
-                FCKeditorEncoded.setAttribute('name', 'FCKeditorEncoded');
-                FCKeditorEncoded.setAttribute('value', '1');
-                textArea.parentNode.appendChild(FCKeditorEncoded);
-
-%# for FCKeditor..
-                var typeField = document.createElement('input');
-                typeField.setAttribute('type', 'hidden');
-                typeField.setAttribute('name', textArea.name + 'Type');
-                typeField.setAttribute('value', 'text/html');
-                textArea.parentNode.appendChild(typeField);
-
-                var oFCKeditor = new FCKeditor( textArea.name, '100%', <% RT->Config->Get('MessageBoxRichTextHeight', $session{CurrentUser} ) %> );
-                oFCKeditor.BasePath = "<%RT->Config->Get('WebPath')%>/NoAuth/RichText/";
-                oFCKeditor.ReplaceTextarea();
-            }
-        }
-    }
-    doOnLoad(ReplaceAllTextareas);
+% if ( $RichText and RT->Config->Get('MessageBoxRichText',  $session{'CurrentUser'})) {
+    jQuery().ready(function ()  { ReplaceAllTextareas(<%$m->request_args->{'CKeditorEncoded'} || 0 |n,j%>) });
 % }
 --></script>
+<%ARGS>
+$RichText => 1
+</%ARGS>
+<%INIT>
+
+my @js_files;
+if ( RT->Config->Get('DevelMode') ) {
+    @js_files = RT->Config->Get('JSFiles' );
+}
+else {
+    my $key = RT::Interface::Web::SquishedJS()->Key;
+    @js_files = "squished-$key.js";
+}
+
+</%INIT>

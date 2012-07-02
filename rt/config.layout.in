@@ -10,23 +10,26 @@
 ##
 ##  The following variables must _all_ be set:
 ##	prefix exec_prefix bindir sbindir sysconfdir mandir libdir
-##	datadir htmldir localstatedir logfiledir masonstatedir
+##	datadir htmldir localstatedir logfiledir masonstatedir fontdir
 ##	sessionstatedir customdir customhtmldir customlexdir
 ##  (This can be seen in m4/rt_layout.m4.)
 ##
 
 #   Default RT3 path layout.
 <Layout RT3>
-  prefix:		/opt/rt3
+  prefix:		/opt/rt4
   exec_prefix:		${prefix}
   bindir:		${exec_prefix}/bin
   sbindir:		${exec_prefix}/sbin
   sysconfdir:		${prefix}/etc
   mandir:		${prefix}/man
+  plugindir:		${prefix}/plugins
   libdir:		${prefix}/lib
   datadir:		${prefix}/share
   htmldir:		${datadir}/html
-  manualdir:		${datadir}/doc
+  fontdir:		${datadir}/fonts
+  lexdir:		${datadir}/po
+  manualdir:		${prefix}/docs
   localstatedir:	${prefix}/var
   logfiledir:		${localstatedir}/log
   masonstatedir:	${localstatedir}/mason_data
@@ -36,18 +39,22 @@
   customhtmldir:	${customdir}/html
   customlexdir:		${customdir}/po
   customlibdir:		${customdir}/lib
+  customplugindir:  ${customdir}/plugins
 </Layout>
 <Layout inplace>
-  prefix:		`pwd`
+  prefix:		.
   exec_prefix:		${prefix}
   bindir:		${exec_prefix}/bin
   sbindir:		${exec_prefix}/sbin
   sysconfdir:		${prefix}/etc
   mandir:		${prefix}/man
+  plugindir:		${prefix}/plugins
   libdir:		${prefix}/lib
   datadir:		${prefix}/share
-  htmldir:		${prefix}/html
-  manualdir:		${datadir}/doc
+  htmldir:		${datadir}/html
+  lexdir:		${datadir}/po
+  fontdir:		${datadir}/fonts
+  manualdir:		${prefix}/docs
   localstatedir:	${prefix}/var
   logfiledir:		${localstatedir}/log
   masonstatedir:	${localstatedir}/mason_data
@@ -57,6 +64,36 @@
   customhtmldir:	${customdir}/html
   customlexdir:		${customdir}/po
   customlibdir:		${customdir}/lib
+  customplugindir:  ${customdir}/plugins
+</Layout>
+
+<Layout FHS>
+  prefix:		/usr/local
+  exec_prefix:		${prefix}
+  bindir:		${prefix}/bin
+  sbindir:		${prefix}/sbin
+  sysconfdir:		/etc+
+  datadir:		${prefix}/share
+# FIXME: missing support for lib64
+  libdir:		${prefix}/lib
+  mandir:		${datadir}/man
+# FIXME: no such directory in FHS; shouldn't go to somewhere in "${datadir}/rt/"?
+  plugindir:		${datadir}/plugins
+  htmldir:		${datadir}/html
+  lexdir:		${datadir}/po
+  fontdir:		${datadir}/fonts
+  manualdir:		${datadir}/doc
+  localstatedir:	/var
+  logfiledir:		${localstatedir}/log
+# XXX: "/var/cache/mason/*"?
+  masonstatedir:	${localstatedir}/cache/mason_data
+  sessionstatedir:	${localstatedir}/cache/session_data
+  customdir:		${prefix}/local
+  custometcdir:		${customdir}/etc
+  customhtmldir:	${customdir}/html
+  customlexdir:		${customdir}/po
+  customlibdir:		${customdir}/lib
+  customplugindir:  ${customdir}/plugins
 </Layout>
 
 <Layout FreeBSD>
@@ -66,9 +103,12 @@
   sbindir:		${exec_prefix}/sbin
   sysconfdir:		${prefix}/etc+
   mandir:		${prefix}/man
+  plugindir:		${prefix}/plugins
   libdir:		${prefix}/lib+
   datadir:		${prefix}/share+
   htmldir:		${datadir}/html
+  lexdir:		${datadir}/po
+  fontdir:		${datadir}/fonts
   manualdir:		${prefix}/share/doc+
   logfiledir:		/var/log
   localstatedir:	/var/run+
@@ -79,6 +119,7 @@
   customhtmldir:	${customdir}/local/html
   customlexdir:		${customdir}/local/po
   customlibdir:		${customdir}/local/lib
+  customplugindir:  ${customdir}/local/plugins
 </Layout>
 
 <Layout Win32>
@@ -88,9 +129,12 @@
   sbindir:		${exec_prefix}/sbin
   sysconfdir:		${prefix}/etc
   mandir:		${prefix}/man
+  plugindir:		${prefix}/plugins
   libdir:		${prefix}/lib
   datadir:		${prefix}
   htmldir:		${datadir}/html
+  fontdir:		${datadir}/fonts
+  lexdir:		${datadir}/po
   manualdir:		${datadir}/doc
   localstatedir:	${prefix}/var
   logfiledir:		${localstatedir}/log
@@ -101,6 +145,86 @@
   customhtmldir:	${customdir}/html
   customlexdir:		${customdir}/po
   customlibdir:		${customdir}/lib
+  customplugindir:  ${customdir}/plugins
+</Layout>
+
+#   RH path layout.
+<Layout RH>
+  prefix:		/usr
+  exec_prefix:		${prefix}
+  bindir:		${exec_prefix}/bin
+  sbindir:		${exec_prefix}/sbin
+  sysconfdir:           /etc/rt3
+  mandir:		${prefix}/man
+  libdir:               ${prefix}/lib/rt3
+  datadir:              /var/rt3
+  htmldir:		${datadir}/html
+  fontdir:		${datadir}/fonts
+  lexdir:		${datadir}/po
+  manualdir:		${datadir}/doc
+  plugindir:		${datadir}/plugins
+  localstatedir:	/var
+  logfiledir:           ${localstatedir}/log/rt3
+  masonstatedir:        ${localstatedir}/rt3/mason_data
+  sessionstatedir:      ${localstatedir}/rt3/session_data
+  customdir:            ${prefix}/local/rt3
+  custometcdir:		${customdir}/etc
+  customhtmldir:	${customdir}/html
+  customlexdir:		${customdir}/po
+  customlibdir:		${customdir}/lib
+  customplugindir:  ${customdir}/plugins
+</Layout>
+
+
+<Layout relative>
+  prefix:		/opt/rt4
+  exec_prefix:		${prefix}
+  bindir:		bin
+  sbindir:		sbin
+  sysconfdir:	etc
+  mandir:		man
+  plugindir:		plugins
+  libdir:		lib
+  datadir:		share
+  htmldir:		${datadir}/html
+  fontdir:		${datadir}/fonts
+  lexdir:		${datadir}/po
+  manualdir:	docs
+  localstatedir:	var
+  logfiledir:		${localstatedir}/log
+  masonstatedir:	${localstatedir}/mason_data
+  sessionstatedir:	${localstatedir}/session_data
+  customdir:		local
+  custometcdir:		${customdir}/etc
+  customhtmldir:	${customdir}/html
+  customlexdir:		${customdir}/po
+  customlibdir:		${customdir}/lib
+  customplugindir:  ${customdir}/plugins
+</Layout>
+<Layout vessel>
+  prefix:		/opt/rt4
+  exec_prefix:		${prefix}
+  bindir:		bin
+  sbindir:		sbin
+  sysconfdir:	etc/rt/
+  mandir:		man
+  libdir:		lib/rt
+  datadir:		share/rt
+  plugindir:	${datadir}/plugins
+  htmldir:		${datadir}/html
+  fontdir:		${datadir}/fonts
+  lexdir:		${datadir}/po
+  manualdir:	docs/rt
+  localstatedir:	var/rt/
+  logfiledir:		${localstatedir}/log
+  masonstatedir:	${localstatedir}/mason_data
+  sessionstatedir:	${localstatedir}/session_data
+  customdir:		local/rt/
+  custometcdir:		${customdir}/etc
+  customhtmldir:	${customdir}/html
+  customlexdir:		${customdir}/po
+  customlibdir:		${customdir}/lib
+  customplugindir:  ${customdir}/plugins
 </Layout>
 
 <Layout Freeside>
@@ -110,10 +234,13 @@
   sbindir:		${exec_prefix}/sbin
   sysconfdir:		${prefix}/etc
   mandir:		${prefix}/man
+  plugindir:            ${prefix}/plugins
   libdir:		${prefix}/lib
   datadir:		${prefix}/share
   htmldir:		%%%FREESIDE_DOCUMENT_ROOT%%%/rt
-  manualdir:		${datadir}/doc
+  fontdir:              ${datadir}/fonts
+  lexdir:               ${datadir}/po
+  manualdir:		${prefix}/docs
   localstatedir:	${prefix}/var
   logfiledir:		${localstatedir}/log
   masonstatedir:	%%%MASONDATA%%%
@@ -123,6 +250,6 @@
   customhtmldir:	${customdir}/html
   customlexdir:		${customdir}/po
   customlibdir:		${customdir}/lib
-  fontdir:              ${datadir}/fonts
+  customplugindir:  ${customdir}/plugins
 </Layout>
 

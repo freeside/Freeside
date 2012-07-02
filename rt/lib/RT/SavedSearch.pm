@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -66,6 +66,7 @@ package RT::SavedSearch;
 
 use strict;
 use warnings;
+
 use base qw/RT::SharedSetting/;
 
 =head1 METHODS
@@ -124,6 +125,48 @@ saved searches that are relevant to a particular search page.
 sub Type {
     my $self = shift;
     return $self->{'Type'};
+}
+
+### Internal methods
+
+# _PrivacyObjects: returns a list of objects that can be used to load, create,
+# etc. saved searches from. You probably want to use the wrapper methods like
+# ObjectsForLoading, ObjectsForCreating, etc.
+
+sub _PrivacyObjects {
+    my $self        = shift;
+    my ($has_attr) = @_;
+    my $CurrentUser = $self->CurrentUser;
+
+    my $groups = RT::Groups->new($CurrentUser);
+    $groups->LimitToUserDefinedGroups;
+    $groups->WithMember( PrincipalId => $CurrentUser->Id,
+                         Recursively => 1 );
+    if ($has_attr) {
+        my $attrs = $groups->Join(
+            ALIAS1 => 'main',
+            FIELD1 => 'id',
+            TABLE2 => 'Attributes',
+            FIELD2 => 'ObjectId',
+        );
+        $groups->Limit(
+            ALIAS => $attrs,
+            FIELD => 'ObjectType',
+            VALUE => 'RT::Group',
+        );
+        $groups->Limit(
+            ALIAS => $attrs,
+            FIELD => 'Name',
+            VALUE => $has_attr,
+        );
+    }
+
+    return ( $CurrentUser->UserObj, @{ $groups->ItemsArrayRef() } );
+}
+
+sub ObjectsForLoading {
+    my $self = shift;
+    return grep { $self->CurrentUserCanSee($_) } $self->_PrivacyObjects( "SavedSearch" );
 }
 
 RT::Base->_ImportOverlays();

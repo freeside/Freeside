@@ -588,7 +588,7 @@ sub mason_interps {
                     },
     compiler     => HTML::Mason::Compiler::ToObject->new(
                       default_escape_flags => 'h',
-                      allow_globals        => [qw(%session)],
+                      allow_globals        => [qw(%session $DECODED_ARGS)],
                     ),
   );
 

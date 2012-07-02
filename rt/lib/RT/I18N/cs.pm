@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -46,7 +46,14 @@
 #
 # END BPS TAGGED BLOCK }}}
 
+use strict;
+use warnings;
+
 package RT::I18N::cs;
+use base 'RT::I18N';
+
+use strict;
+use warnings;
 
 # # CZECH TRANSLATORS COMMENTS see Locale::Maketext::TPJ13
 # Obecne parametry musi byt docela slozite (v pripade Slavistickych jazyku)
@@ -112,5 +119,7 @@ sub numf {
    # This is just a lame hack instead of using Number::Format
   return $num;
 }
+
+RT::Base->_ImportOverlays();
 
 1;

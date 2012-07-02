@@ -101,14 +101,14 @@ my $cal = $calendar->as_string;
 $r->content_type('text/calendar;charset=utf-8');
 $m->clear_buffer();
 $m->out($cal);
-$m->abort; 
+$m->abort;
 
 sub add_event {
     my ($Reminder, $uid) = @_;
 
     return unless defined $Reminder->RefersTo->First;
     my $Ticket  = $Reminder->RefersTo->First->TargetObj;
-    
+
     my %event = (
 	summary => $Reminder->Subject ? $Reminder->Subject : '',
 	url        => "${RT::WebURL}/Ticket/Display.html?id=" . $Ticket->id,
@@ -142,7 +142,7 @@ sub add_todo {
 	$vtodo{attendee} = "MAILTO:" . $Ticket->OwnerObj->EmailAddress;
     } elsif ($Ticket->QueueObj->CommentAddress) {
 	$vtodo{organizer} = "MAILTO:" . $Ticket->QueueObj->CommentAddress;
-	$vtodo{attendee} = "MAILTO:" . $Ticket->QueueObj->CommentAddress; 
+	$vtodo{attendee} = "MAILTO:" . $Ticket->QueueObj->CommentAddress;
     }
 
     $vtodo{priority} = $Ticket->Priority

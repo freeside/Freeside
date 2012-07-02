@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,22 +46,18 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 % $m->callback( %ARGS, CallbackName => 'BeforeCustomFields' );
-<table>
-% my $i = 0;
+% if ( $WRAP ) {
+<<% $WRAP %> class="edit-custom-fields">
+% }
 % while ( my $CustomField = $CustomFields->Next ) {
 % next unless $CustomField->CurrentUserHasRight('ModifyCustomField');
-% my $escaped_name = lc $CustomField->Name;
-% $escaped_name =~ s/[^a-z0-9_-]/_/g;
-% my $type = $CustomField->Type || 'Unknown';
-% $i++;
-% if ( $single_column || $i % 2 ) {
-<tr class="edit-custom-field">
-% }
-    <td class="cflabel cftype-<% $type %> cfname-<% $escaped_name %>" id="<% $CFIDPrefix %>cflabel-<% $CustomField->Id %>" >
-      <b><% loc($CustomField->Name) %></b><br />
-      <i><% $CustomField->FriendlyType %></i>
-    </td>
-    <td class="entry cftype-<% $type %> cfname-<% $escaped_name %>" id="<% $CFIDPrefix %>cfentry-<% $CustomField->Id %>">
+% my $Type = $CustomField->Type || 'Unknown';
+  <<% $FIELD %> class="edit-custom-field cftype-<% $Type %>">
+    <<% $CELL %> class="cflabel">
+      <span class="name"><% loc($CustomField->Name) %></span><br />
+      <span class="type"><% $CustomField->FriendlyType %></span>
+    </<% $CELL %>>
+    <<% $CELL %> class="entry">
 % my $default = $m->notes('Field-' . $CustomField->Id);
 % $default ||= $ARGS{"CustomField-". $CustomField->Id };
       <& /Elements/EditCustomField, 
@@ -73,22 +69,15 @@
       &>
 %  if (my $msg = $m->notes('InvalidField-' . $CustomField->Id)) {
         <br />
-        <span class="cfinvalidfield cftype-<% $type %> cfname-<% $escaped_name %>"><% $msg %></span>
+        <span class="cfinvalidfield"><% $msg %></span>
 %  }
-    </td>
-
-% if ($single_column || not $i % 2 ) {
-</tr>
+    </<% $CELL %>>
+  </<% $FIELD %>>
 % }
 
+% if ( $WRAP ) {
+</<% $WRAP %>>
 % }
-
-%# close row if required
-% if ( !$single_column || $i % 2 ) {
-</tr>
-% }
-
-</table>
 % $m->callback( %ARGS, CallbackName => 'AfterCustomFields', TicketObj => $TicketObj, QueueObj => $QueueObj );
 <%INIT>
 my $CustomFields;
@@ -103,7 +92,15 @@ if ($TicketObj && !$OnCreate) {
 
 $m->callback( %ARGS, CallbackName => 'MassageCustomFields', CustomFields => $CustomFields );
 
-my $single_column = RT->Config->Get('EditCustomFieldsSingleColumn');
+$AsTable ||= $InTable;
+my $FIELD = $AsTable ? 'tr' : 'div';
+my $CELL  = $AsTable ? 'td' : 'div';
+my $WRAP  = '';
+if ( $AsTable ) {
+    $WRAP = 'table' unless $InTable;
+} else {
+    $WRAP = 'div';
+}
 
 # show hints for missing required fields
 if ( $TicketObj ) {
@@ -119,5 +116,6 @@ $TicketObj => undef
 $QueueObj => undef
 $OnCreate => undef
 $DefaultsFromTopArguments => 1
-$CFIDPrefix => ''
+$AsTable => 0
+$InTable => 0
 </%ARGS>

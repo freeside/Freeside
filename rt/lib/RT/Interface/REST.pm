@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -46,22 +46,13 @@
 #
 # END BPS TAGGED BLOCK }}}
 
-# lib/RT/Interface/REST.pm
-#
-
 package RT::Interface::REST;
 use strict;
 use warnings;
 use RT;
 
-BEGIN {
-    use base 'Exporter';
-    use vars qw($VERSION @EXPORT);
-
-    $VERSION = do { my @r = (q$Revision: 1.1.1.10 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
-
-    @EXPORT = qw(expand_list form_parse form_compose vpush vsplit);
-}
+use base 'Exporter';
+our @EXPORT = qw(expand_list form_parse form_compose vpush vsplit);
 
 sub custom_field_spec {
     my $self    = shift;
@@ -200,7 +191,7 @@ sub form_parse {
 # Returns text representing a set of forms.
 sub form_compose {
     my ($forms) = @_;
-    my (@text, $form);
+    my (@text);
 
     foreach my $form (@$forms) {
         my ($c, $o, $k, $e) = @$form;
@@ -214,10 +205,10 @@ sub form_compose {
             $text .= $e;
         }
         elsif ($o) {
-            my (@lines, $key);
+            my (@lines);
 
             foreach my $key (@$o) {
-                my ($line, $sp, $v);
+                my ($line, $sp);
                 my @values = (ref $k->{$key} eq 'ARRAY') ?
                                @{ $k->{$key} } :
                                   $k->{$key};

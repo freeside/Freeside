@@ -6,10 +6,7 @@ $HiddenField => undef
 </%args>
 
 <& /Elements/Header, Title => $title &>
-<& /User/Elements/Tabs,
-    current_tab => 'Prefs/Calendar.html',
-    Title => $title
-&>
+<& /Elements/Tabs &>
 
 <&| /Widgets/TitleBox, title => loc('ICal Feeds (ics)') &>
 
@@ -50,7 +47,7 @@ Builder")%></a>.</p>
 
 <& /Prefs/Elements/CalendarFeed &>
 
-% # only allow this part if 
+% # only allow this part if
 % if ($AllowSearch) {
 
 % my $search_count;
@@ -95,7 +92,7 @@ href="<%$RT::WebPath . '/Search/Build.html'%>">the Query Builder</a>
 </&>
 
 <%INIT>
-use Digest::SHA1;
+use Digest::SHA 'sha1_base64';
 use RT::SavedSearches;
 
 my $title = loc("Calendar Prefs");
@@ -107,14 +104,14 @@ $AllowSearch = 1
 
 my $object;
 
-if ($HiddenField eq 'Private') {
+if ($HiddenField && $HiddenField eq 'Private') {
    $object = $session{CurrentUser}->UserObj;
-} elsif ($AllowSearch and my ($SearchId) = $HiddenField =~ m/SavedSearch\-(\d+)/) {
+} elsif ($AllowSearch and $HiddenField and my ($SearchId) = $HiddenField =~ m/SavedSearch\-(\d+)/) {
     $object = $session{CurrentUser}->Attributes->WithId($SearchId);
 }
 
 if (defined $ChangeURL) {
-  my @args = $object->SetAttribute(Name => 'ICalURL', Content => Digest::SHA1::sha1_base64(time));
+  my @args = $object->SetAttribute(Name => 'ICalURL', Content => sha1_base64(time));
 } elsif (defined $ResetURL) {
   my @args = $object->DeleteAttribute('ICalURL');
 }

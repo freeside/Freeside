@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -52,7 +52,7 @@
 
 =head1 SYNOPSIS
 
-  use RT::SavedSearch
+  use RT::SavedSearches
 
 =head1 DESCRIPTION
 
@@ -70,17 +70,10 @@ package RT::SavedSearches;
 use RT::SavedSearch;
 
 use strict;
-use base 'RT::Base';
+use base 'RT::SharedSettings';
 
-sub new  {
-    my $proto = shift;
-    my $class = ref($proto) || $proto;
-    my $self  = {};
-    bless ($self, $class);
-    $self->CurrentUser(@_);
-    $self->{'idx'} = 0;
-    $self->{'objects'} = [];
-    return $self;
+sub RecordClass {
+    return 'RT::SavedSearch';
 }
 
 =head2 LimitToPrivacy
@@ -102,76 +95,26 @@ sub LimitToPrivacy {
     my $object = $self->_GetObject($privacy);
 
     if ($object) {
-	$self->{'objects'} = [];
-	my @search_atts = $object->Attributes->Named('SavedSearch');
-	foreach my $att (@search_atts) {
-	    my $search = RT::SavedSearch->new($self->CurrentUser);
-	    $search->Load($privacy, $att->Id);
-	    next if $type && $search->Type ne $type;
-	    push(@{$self->{'objects'}}, $search);
-	}
+        $self->{'objects'} = [];
+        my @search_atts = $object->Attributes->Named('SavedSearch');
+        foreach my $att (@search_atts) {
+            my $search = RT::SavedSearch->new($self->CurrentUser);
+            $search->Load($privacy, $att->Id);
+            next if $type && $search->Type && $search->Type ne $type;
+            push(@{$self->{'objects'}}, $search);
+        }
     } else {
-	$RT::Logger->error("Could not load object $privacy");
+        $RT::Logger->error("Could not load object $privacy");
     }
 }
 
-### Accessor methods
-
-=head2 Next
-
-Returns the next object in the collection.
-
-=cut
-
-sub Next {
-    my $self = shift;
-    my $search = $self->{'objects'}->[$self->{'idx'}];
-    if ($search) {
-	$self->{'idx'}++;
-    } else {
-	# We have run out of objects; reset the counter.
-	$self->{'idx'} = 0;
-    }
-    return $search;
-}
-
-=head2 Count
-
-Returns the number of search objects found.
-
-=cut
-
-sub Count {
-    my $self = shift;
-    return scalar @{$self->{'objects'}};
-}
-
 ### Internal methods
-
-# _GetObject: helper routine to load the correct object whose parameters
-#  have been passed.
-
-sub _GetObject {
-    my $self = shift;
-    my $privacy = shift;
-
-    return RT::SavedSearch->new($self->CurrentUser)->_GetObject($privacy);
-}
-
-### Internal methods
-
-# _PrivacyObjects: returns a list of objects that can be used to load saved searches from.
 
 sub _PrivacyObjects {
-    my $self        = shift;
-    my $CurrentUser = $self->CurrentUser;
-
-    my $groups = RT::Groups->new($CurrentUser);
-    $groups->LimitToUserDefinedGroups;
-    $groups->WithMember( PrincipalId => $CurrentUser->Id,
-                         Recursively => 1 );
-
-    return ( $CurrentUser->UserObj, @{ $groups->ItemsArrayRef() } );
+    my $self = shift;
+    Carp::carp("RT::SavedSearches->_PrivacyObjects is deprecated. Please use RT::SavedSearch->_PrivacyObjects");
+    my $search = RT::SavedSearch->new($self->CurrentUser);
+    return $search->_PrivacyObjects(@_);
 }
 
 RT::Base->_ImportOverlays();

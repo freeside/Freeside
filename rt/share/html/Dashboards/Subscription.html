@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,15 +46,12 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => $title &>
-<& /Dashboards/Elements/Tabs,
-    current_subtab => $current_subtab,
-    Title => $title,
-    DashboardObj => $DashboardObj &>
+<& /Elements/Tabs &>
 
 <& /Elements/ListActions, actions => \@results &>
 
 <form action="<%RT->Config->Get('WebPath')%>/Dashboards/Subscription.html" method="post" enctype="multipart/form-data" name="SubscribeDashboard">
-<input type="hidden" class="hidden" name="DashboardId" value="<% $fields{'DashboardId'} %>" />
+<input type="hidden" class="hidden" name="id" value="<% $fields{'DashboardId'} %>" />
 <table width="100%" border="0">
 <tr>
 
@@ -65,13 +62,13 @@
 <tr><td class="label">
 <&|/l&>Dashboard</&>:
 </td><td class="value">
-<% $DashboardObj->Name %>
+<% $Dashboard->Name %>
 </td></tr>
 
 <tr><td class="label">
 <&|/l&>Queries</&>:
 </td><td class="value">
-% my @portlets = grep { defined } $DashboardObj->Portlets;
+% my @portlets = grep { defined } $Dashboard->Portlets;
 % if (!@portlets) {
 (<&|/l&>none</&>)
 % } else {
@@ -95,44 +92,44 @@
 <&|/l&>Frequency</&>:
 </td><td class="value">
 
-<input type="radio" name="Frequency" value="daily" <% $fields{'Frequency'} eq 'daily' ? 'checked="checked"' : "" %>>
+<input type="radio" name="Frequency" value="daily" <% $fields{'Frequency'} eq 'daily' ? 'checked="checked"' : "" |n %>>
     <&|/l&>daily</&>
 </input><br />
 
-<input type="radio" name="Frequency" value="m-f" <% $fields{'Frequency'} eq 'm-f' ? 'checked="checked"' : "" %>>
+<input type="radio" name="Frequency" value="m-f" <% $fields{'Frequency'} eq 'm-f' ? 'checked="checked"' : "" |n %>>
     <&|/l&>Monday through Friday</&>
 </input><br />
 
-<input type="radio" name="Frequency" value="weekly"<% $fields{'Frequency'} eq 'weekly' ? 'checked="checked"' : "" %>>
+<input type="radio" name="Frequency" value="weekly"<% $fields{'Frequency'} eq 'weekly' ? 'checked="checked"' : "" |n %>>
 <&|/l&>weekly</&></input>, <&|/l&>on</&>
 <select name="Dow">
-    <option value="Monday" <% $fields{'Dow'} eq 'Monday' ? 'selected="selected"' : '' %>><&|/l&>Monday</&></option>
-    <option value="Tuesday" <% $fields{'Dow'} eq 'Tuesday' ? 'selected="selected"' : '' %>><&|/l&>Tuesday</&></option>
-    <option value="Wednesday" <% $fields{'Dow'} eq 'Wednesday' ? 'selected="selected"' : '' %>><&|/l&>Wednesday</&></option>
-    <option value="Thursday" <% $fields{'Dow'} eq 'Thursday' ? 'selected="selected"' : '' %>><&|/l&>Thursday</&></option>
-    <option value="Friday" <% $fields{'Dow'} eq 'Friday' ? 'selected="selected"' : '' %>><&|/l&>Friday</&></option>
-    <option value="Saturday" <% $fields{'Dow'} eq 'Saturday' ? 'selected="selected"' : '' %>><&|/l&>Saturday</&></option>
-    <option value="Sunday" <% $fields{'Dow'} eq 'Sunday' ? 'selected="selected"' : '' %>><&|/l&>Sunday</&></option>
+    <option value="Monday" <% $fields{'Dow'} eq 'Monday' ? 'selected="selected"' : '' |n %>><&|/l&>Monday</&></option>
+    <option value="Tuesday" <% $fields{'Dow'} eq 'Tuesday' ? 'selected="selected"' : '' |n %>><&|/l&>Tuesday</&></option>
+    <option value="Wednesday" <% $fields{'Dow'} eq 'Wednesday' ? 'selected="selected"' : '' |n %>><&|/l&>Wednesday</&></option>
+    <option value="Thursday" <% $fields{'Dow'} eq 'Thursday' ? 'selected="selected"' : '' |n %>><&|/l&>Thursday</&></option>
+    <option value="Friday" <% $fields{'Dow'} eq 'Friday' ? 'selected="selected"' : '' |n %>><&|/l&>Friday</&></option>
+    <option value="Saturday" <% $fields{'Dow'} eq 'Saturday' ? 'selected="selected"' : '' |n %>><&|/l&>Saturday</&></option>
+    <option value="Sunday" <% $fields{'Dow'} eq 'Sunday' ? 'selected="selected"' : '' |n %>><&|/l&>Sunday</&></option>
 </select>
 <&|/l&>every</&>
 <select name="Fow">
 % for my $f ( qw/1 2 3 4/ ) {
-    <option value="<%$f%>" <% $fields{'Fow'} == $f ? 'selected="selected"' : '' %>><% $f %></option>
+    <option value="<%$f%>" <% $fields{'Fow'} == $f ? 'selected="selected"' : '' |n %>><% $f %></option>
 % }
 </select>
 <&|/l&>weeks</&>
 <br />
 
-<input type="radio" name="Frequency" value="monthly"<% $fields{'Frequency'} eq 'monthly' ? 'checked="checked"' : "" %>>
+<input type="radio" name="Frequency" value="monthly"<% $fields{'Frequency'} eq 'monthly' ? 'checked="checked"' : "" |n %>>
 <&|/l&>monthly</&></input> , <&|/l&>on day</&>
 <select name="Dom">
 %   for my $dom (1..31) {
-    <option value="<% $dom %>" <% $fields{'Dom'} == $dom ? 'selected="selected"' : '' %>><% loc($dom) %></option>
+    <option value="<% $dom %>" <% $fields{'Dom'} == $dom ? 'selected="selected"' : '' |n %>><% loc($dom) %></option>
 %   }
 </select>
 <br />
 
-<input type="radio" name="Frequency" value="never" <% $fields{'Frequency'} eq 'never' ? 'checked="checked"' : "" %>>
+<input type="radio" name="Frequency" value="never" <% $fields{'Frequency'} eq 'never' ? 'checked="checked"' : "" |n %>>
     <&|/l&>never</&>
 </input>
 
@@ -141,13 +138,21 @@
 <&|/l&>Hour</&>:
 </td><td class="value">
 <select name="Hour">
+% my $formatter = RT::Date->new($session{CurrentUser})->LocaleObj;
+% my $dt = DateTime->now;
+% $dt->set_minute(0);
+% $dt->set_second(0);
+
 % for my $hour (0..23) {
-%     my $formatted = sprintf '%02d:00', $hour;
-%     my $selected = $formatted eq $fields{'Hour'}
+%     $dt->set_hour($hour);
+%     my $formatted = $dt->format_cldr($formatter->time_format_short);
+
+%     my $value = sprintf '%02d:00', $hour;
+%     my $selected = $value eq $fields{'Hour'}
 %                  ? 'selected="selected"'
 %                  : '';
 
-    <option value="<% $formatted %>" <%$selected%>><% $formatted %></option>
+    <option value="<% $value %>" <%$selected|n %>><% $formatted %></option>
 % }
 </select>
 (<%$timezone%>)
@@ -157,7 +162,7 @@
 </td><td class="value">
 <select name="Rows">
 %   for my $rows (1, 2, 5, 10, 15, 20, 25, 50, 75, 100, 0) {
-    <option value="<% $rows %>" <% $fields{'Rows'} eq $rows ? 'selected="selected"' : '' %>><% loc($rows || 'Unlimited') %></option>
+    <option value="<% $rows %>" <% $fields{'Rows'} eq $rows ? 'selected="selected"' : '' |n %>><% loc($rows || 'Unlimited') %></option>
 %   }
 </select>
 </td></tr>
@@ -174,7 +179,7 @@
 </tr>
 </table>
 
-% if ($SubscriptionObj->Id) {
+% if ($SubscriptionObj) {
     <& /Elements/Submit, Name => "Save", Label => loc('Save Changes') &>
 % } else {
     <& /Elements/Submit, Name => "Save", Label => loc('Subscribe') &>
@@ -183,34 +188,21 @@
 
 <%INIT>
 
-my $current_subtab = 'Dashboards/Subscription.html?DashboardId=' . $DashboardId;
-
 my ($title, @results);
-my ($val, $msg);
 my $Loaded = 0;
 my $timezone = $session{'CurrentUser'}->UserObj->Timezone || RT->Config->Get('Timezone');
 
 use RT::Dashboard;
-my $DashboardObj = RT::Dashboard->new($session{'CurrentUser'});
+my $Dashboard = RT::Dashboard->new($session{'CurrentUser'});
+my ($ok, $msg) = $Dashboard->LoadById($id);
+$ok || Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg));
 
-my $SubscriptionObj = RT::Attribute->new($session{'CurrentUser'});
+my $SubscriptionObj = $Dashboard->Subscription;
 
-# first let's see if we already have a subscription to this DashboardId
-for my $sub ($session{'CurrentUser'}->UserObj->Attributes->Named('Subscription')) {
-    next unless $sub->SubValue('DashboardId') == $DashboardId;
-    $SubscriptionObj = $sub;
-    last;
-}
-
-$DashboardId = $SubscriptionObj->Id
-             ? $SubscriptionObj->SubValue('DashboardId')
-             : $ARGS{'DashboardId'};
-
-($val, $msg) = $DashboardObj->LoadById($DashboardId);
-$val || Abort(loc("Couldn't load dashboard [_1]: [_2].", $DashboardId, $msg));
+$id = $SubscriptionObj ? $SubscriptionObj->SubValue('DashboardId') : $ARGS{'id'};
 
 my %fields = (
-    DashboardId => $DashboardId,
+    DashboardId => $id,
     Frequency   => 'daily',
     Hour        => '06:00',
     Dow         => 'Monday',
@@ -222,7 +214,7 @@ my %fields = (
 );
 
 # update any fields with the values from the subscription object
-if ($SubscriptionObj->Id) {
+if ($SubscriptionObj) {
     for my $field (keys %fields) {
         $fields{$field} = $SubscriptionObj->SubValue($field);
     }
@@ -234,54 +226,70 @@ for my $field (keys %fields) {
     $fields{$field} = $ARGS{$field}
         if defined($ARGS{$field});
 }
+
+
 # this'll be defined on submit
 if (defined $ARGS{Save}) {
-    # update
-    if ($SubscriptionObj->Id) {
-        $DashboardId = delete $fields{'DashboardId'}; # immutable
-        ($val, $msg) = $SubscriptionObj->SetSubValues(%fields);
-        $fields{'DashboardId'} = $DashboardId;
+    my $ok = 1;
 
-        # not so good to spew base64-encoded data at the user :)
-        if ($msg =~ /^Content changed from/) {
-            $msg = "Subscription updated.";
+    # validation
+    if ($fields{Recipient}) {
+        my @addresses = Email::Address->parse($fields{Recipient});
+        if (@addresses == 0) {
+            push @results, loc('Recipient must be an email address');
+            $ok = 0;
         }
-
-        push @results, $msg;
     }
-    # create
-    else {
-        Abort(loc("Unable to subscribe to dashboard [_1]: Permission denied", $DashboardId))
-            unless $DashboardObj->CurrentUserCanSubscribe;
 
-        my ($val, $msg) = $SubscriptionObj->Create(
-            Name        => 'Subscription',
-            Description => 'Subscription to dashboard ' . $DashboardId,
-            ContentType => 'storable',
-            Object      => $session{'CurrentUser'}->UserObj,
-            Content     => \%fields,
-        );
-        if ($val) {
-            push @results, loc("Subscribed to dashboard [_1]", $DashboardObj->Name);
-            push @results, loc("Warning: you have no email address set, so you will not receive this dashboard until you have it set")
-                unless $session{'CurrentUser'}->EmailAddress || $fields{Recipient};
+    if ($ok) {
+        # update
+        if ($SubscriptionObj) {
+            $id = delete $fields{'DashboardId'}; # immutable
+            ($ok, $msg) = $SubscriptionObj->SetSubValues(%fields);
+            $fields{'DashboardId'} = $id;
+
+            # not so good to spew base64-encoded data at the user :)
+            if ($msg =~ /^Content changed from/) {
+                $msg = "Subscription updated.";
+            }
+
+            push @results, $msg;
         }
+        # create
         else {
-            push @results, loc('Subscription could not be created: [_1]', $msg);
+            Abort(loc("Unable to subscribe to dashboard [_1]: Permission denied", $id))
+                unless $Dashboard->CurrentUserCanSubscribe;
+
+            $SubscriptionObj = RT::Attribute->new($session{CurrentUser});
+            ($ok, $msg) = $SubscriptionObj->Create(
+                Name        => 'Subscription',
+                Description => 'Subscription to dashboard ' . $id,
+                ContentType => 'storable',
+                Object      => $session{'CurrentUser'}->UserObj,
+                Content     => \%fields,
+            );
+            if ($ok) {
+                push @results, loc("Subscribed to dashboard [_1]", $Dashboard->Name);
+                push @results, loc("Warning: you have no email address set, so you will not receive this dashboard until you have it set")
+                    unless $session{'CurrentUser'}->EmailAddress || $fields{Recipient};
+            }
+            else {
+                push @results, loc('Subscription could not be created: [_1]', $msg);
+            }
         }
     }
 }
 
-if ($SubscriptionObj->Id) {
-    $title = loc("Modify the subscription to dashboard [_1]", $DashboardObj->Name);
+if ($SubscriptionObj) {
+    $title = loc("Modify the subscription to dashboard [_1]", $Dashboard->Name);
 }
 else {
-    $title = loc("Subscribe to dashboard [_1]", $DashboardObj->Name);
+    $title = loc("Subscribe to dashboard [_1]", $Dashboard->Name);
 }
 
 </%INIT>
 <%ARGS>
-$DashboardId => undef
+$id => undef
 $Frequency   => undef
 $Hour        => undef
 $Dow         => undef
