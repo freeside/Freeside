@@ -783,7 +783,7 @@ sub Redirect {
     my $redir_to = shift;
     untie $HTML::Mason::Commands::session;
     my $uri        = URI->new($redir_to);
-    my $server_uri = URI->new( RT->Config->Get('WebURL') );
+    my $server_uri = URI->new( _NormalizeHost(RT->Config->Get('WebURL')) );
     
     # Make relative URIs absolute from the server host and scheme
     $uri->scheme($server_uri->scheme) if not defined $uri->scheme;
