@@ -282,7 +282,7 @@ tie my %report_ticketing, 'Tie::IxHash',
 #  'separator'               => '',
   'Statistics'              => [ \%report_ticketing_statistics, '' ],
   'separator2'              => '',
-  'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html', 'List tickets by any criteria' ],
+  'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html?NewQuery=1', 'List tickets by any criteria' ],
 ;
 
 tie my %report_bill_event, 'Tie::IxHash',
