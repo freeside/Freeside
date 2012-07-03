@@ -2229,6 +2229,7 @@ sub _FreesideFieldLimit {
 
     # if it's compound, create a join from cust_main or cust_svc to that 
     # table, using custnum or svcnum, and Limit on that table instead.
+    my @_SQLLimit = ();
     foreach my $a (@alias) {
       if ( $table2 ) {
           $a = $self->Join(
@@ -2258,7 +2259,8 @@ sub _FreesideFieldLimit {
       # will produce a subclause: "cust_main_1.custnum IS NOT NULL OR 
       # cust_main_2.custnum IS NOT NULL" (or "IS NULL AND..." for a negative
       # query).
-      $self->_SQLLimit(
+      #$self->_SQLLimit(
+      push @_SQLLimit, {
           %rest,
           ALIAS           => $a,
           FIELD           => $pkey,
@@ -2267,8 +2269,15 @@ sub _FreesideFieldLimit {
           QUOTEVALUE      => 0,
           ENTRYAGGREGATOR => $is_negative ? 'AND' : 'OR',
           SUBCLAUSE       => 'fs_limit',
-      );
+      };
     }
+
+    $self->_OpenParen;
+    foreach my $_SQLLimit (@_SQLLimit) {
+      $self->_SQLLimit( %$_SQLLimit);
+    }
+    $self->_CloseParen;
+
 }
 
 #Freeside
