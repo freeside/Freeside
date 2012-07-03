@@ -30,6 +30,19 @@ elsif ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   die "agentnum $agentnum not found!" unless $sel_agent;
 }
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
+
+my ($refnum,$sel_part_referral);
+#if ( $cgi->param('refnum') eq 'all' ) {
+#  $refnum = 0;
+#} els
+if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
+  $refnum = $1;
+  $sel_part_referral = qsearchs('part_referral', { 'refnum' => $refnum } );
+  die "refnum $refnum not found!" unless $sel_part_referral;
+}
+$title .=  $sel_part_referral->referral.' '
+  if $sel_part_referral;
+
 $title .= 'Customer Accounting Summary Report';
 
 my @custs = ();
@@ -45,6 +58,7 @@ die "invalid status" unless $status =~ /^\w+|$/;
 foreach my $cust_main ( @custs ) {
   next unless ($status eq '' || $status eq $cust_main->status); 
   next unless ($agentnum == 0 || $cust_main->agentnum eq $agentnum);
+  next unless ($refnum   == 0 || $cust_main->refnum eq $refnum);
 
   push @items, 'netsales', 'cashflow';
 
