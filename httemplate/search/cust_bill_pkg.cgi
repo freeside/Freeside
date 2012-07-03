@@ -171,6 +171,10 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }
 
+if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.refnum = $1";
+}
+
 #classnum
 # not specified: all classes
 # 0: empty class

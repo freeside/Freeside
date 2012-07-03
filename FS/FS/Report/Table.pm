@@ -416,6 +416,8 @@ sub cust_bill_pkg_setup {
     $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
   );
 
+  push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
+
   my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg.setup),0)
   FROM cust_bill_pkg
   $cust_bill_pkg_join
@@ -435,6 +437,8 @@ sub cust_bill_pkg_recur {
     'pkgnum != 0',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
   );
+
+  push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
 
   # subtract all usage from the line item regardless of date
   my $item_usage;
@@ -488,6 +492,8 @@ sub cust_bill_pkg_detail {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
   my @where = ( "cust_bill_pkg.pkgnum != 0" );
+
+  push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
 
   $agentnum ||= $opt{'agentnum'};
 
