@@ -11,6 +11,14 @@
              )
     %>
 
+    <% include( '/elements/tr-select-part_referral.html',
+                 'curr_value'    => scalar( $cgi->param('refnum') ),
+                 'label'         => 'Advertising source ',
+                 'disable_empty' => 0,
+                 'empty_label'   => 'all',
+             )
+    %>
+
     <% include('/elements/tr-select-from_to.html' ) %>
     
     <% include( '/elements/tr-select-cust_main-status.html',
