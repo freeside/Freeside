@@ -264,7 +264,7 @@ sub href_search_tickets {
   uri_escape($href);
   #eventually should unescape all of it...
 
-  $href .= '&Rows=100'.
+  $href .= '&RowsPerPage=50'.
            '&OrderBy=id&Page=1'.
            '&Format=%27%20%20%20%3Cb%3E%3Ca%20href%3D%22'.
 	   $self->baseurl.
