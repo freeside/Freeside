@@ -72,8 +72,8 @@ sub invoiced { #invoiced
     SELECT SUM(charged)
       FROM cust_bill
         LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
-      . (%opt ? $self->for_custnum(%opt) : '')
+      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum).
+               $self->for_opts(%opt)
   );
   
 }
@@ -85,8 +85,8 @@ sub invoiced { #invoiced
 sub netsales { #net sales
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
-    $self->invoiced($speriod,$eperiod,$agentnum,%opt)
-  - $self->netcredits($speriod,$eperiod,$agentnum,%opt);
+    $self->invoiced(  $speriod, $eperiod, $agentnum, %opt)
+  - $self->netcredits($speriod, $eperiod, $agentnum, %opt);
 }
 
 =item cashflow: payments - refunds
@@ -105,10 +105,10 @@ sub cashflow {
 =cut
 
 sub netcashflow {
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
-    $self->receipts($speriod, $eperiod, $agentnum)
-  - $self->netrefunds( $speriod, $eperiod, $agentnum);
+    $self->receipts(   $speriod, $eperiod, $agentnum, %opt)
+  - $self->netrefunds( $speriod, $eperiod, $agentnum, %opt);
 }
 
 =item payments: The sum of payments received in the period.
@@ -121,8 +121,8 @@ sub payments {
     SELECT SUM(paid)
       FROM cust_pay
         LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
-      . (%opt ? $self->for_custnum(%opt) : '')
+      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum).
+               $self->for_opts(%opt)
   );
 }
 
@@ -131,12 +131,13 @@ sub payments {
 =cut
 
 sub credits {
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   $self->scalar_sql("
     SELECT SUM(amount)
       FROM cust_credit
         LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
+      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum).
+               $self->for_opts(%opt)
   );
 }
 
@@ -150,8 +151,8 @@ sub refunds {
     SELECT SUM(refund)
       FROM cust_refund
         LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
-      . (%opt ? $self->for_custnum(%opt) : '')
+      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum).
+               $self->for_opts(%opt)
   );
 }
 
@@ -170,8 +171,8 @@ sub netcredits {
                                                 $eperiod,
                                                 $agentnum,
                                                 'cust_bill._date'
-                                              )
-      . (%opt ? $self->for_custnum(%opt) : '')
+                                              ).
+               $self->for_opts(%opt)
   );
 }
 
@@ -180,7 +181,7 @@ sub netcredits {
 =cut
 
 sub receipts { #net payments
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   $self->scalar_sql("
     SELECT SUM(cust_bill_pay.amount)
       FROM cust_bill_pay
@@ -190,7 +191,8 @@ sub receipts { #net payments
                                                 $eperiod,
                                                 $agentnum,
                                                 'cust_bill._date'
-                                              )
+                                              ).
+               $self->for_opts(%opt)
   );
 }
 
@@ -199,7 +201,7 @@ sub receipts { #net payments
 =cut
 
 sub netrefunds {
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   $self->scalar_sql("
     SELECT SUM(cust_credit_refund.amount)
       FROM cust_credit_refund
@@ -209,7 +211,8 @@ sub netrefunds {
                                                 $eperiod,
                                                 $agentnum,
                                                 'cust_credit._date'
-                                              )
+                                              ).
+               $self->for_opts(%opt)
   );
 }
 
@@ -625,10 +628,16 @@ sub in_time_period_and_agent {
   $sql;
 }
 
-sub for_custnum {
+sub for_opts {
     my ( $self, %opt ) = @_;
-    return '' unless $opt{'custnum'};
-    $opt{'custnum'} =~ /^\d+$/ ? " and custnum = $opt{custnum} " : '';
+    my $sql = '';
+    if ( $opt{'custnum'} =~ /^(\d+)$/ ) {
+      $sql .= " and custnum = $1 ";
+    }
+    if ( $opt{'refnum'} =~ /^(\d+)$/ ) {
+      $sql .= " and refnum = $1 ";
+    }
+    $sql;
 }
 
 sub with_classnum {

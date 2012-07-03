@@ -96,6 +96,13 @@ if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $title = $agent->agent. " $title";
 }
 
+if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
+  push @search, "refnum = $1";
+  my $part_referral = qsearchs('part_referral', { 'refnum' => $1 } );
+  die "unknown refnum $1" unless $part_referral;
+  $title = $part_referral->referral. " $title";
+}
+
 if ( $unapplied ) {
   push @search, FS::cust_credit->unapplied_sql . ' > 0';
 }

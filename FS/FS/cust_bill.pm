@@ -5625,7 +5625,12 @@ sub search_sql_where {
     push @search, "cust_main.agentnum = $1";
   }
 
-  #agentnum
+  #refnum
+  if ( $param->{'refnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_main.refnum = $1";
+  }
+
+  #custnum
   if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
     push @search, "cust_bill.custnum = $1";
   }

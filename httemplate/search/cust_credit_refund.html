@@ -78,6 +78,13 @@ if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $title = $agent->agent. " $title";
 }
 
+if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
+  push @search, "refnum = $1";
+  my $part_referral = qsearchs('part_referral', { 'refnum' => $1 } );
+  die "unknown refnum $1" unless $part_referral;
+  $title = $part_referral->referral. " $title";
+}
+
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 push @search, "cust_credit._date >= $beginning ",
               "cust_credit._date <= $ending";
