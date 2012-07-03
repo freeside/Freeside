@@ -151,7 +151,7 @@ sub _tickets_search {
 sub href_customer_tickets {
   my ($self, $custnum) = (shift, shift);
   if ($custnum =~ /^(\d+)$/) {
-    return $self->href_search_tickets("Customer.number = $custnum");
+    return $self->href_search_tickets("Customer.number = $custnum", @_);
   }
   warn "bad custnum $custnum"; '';
 }
@@ -159,7 +159,7 @@ sub href_customer_tickets {
 sub href_service_tickets {
   my ($self, $svcnum) = (shift, shift);
   if ($svcnum =~ /^(\d+)$/ ) {
-    return $self->href_search_tickets("Service.number = $svcnum");
+    return $self->href_search_tickets("Service.number = $svcnum", @_);
   }
   warn "bad svcnum $svcnum"; '';
 }
