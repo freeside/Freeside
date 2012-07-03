@@ -2084,7 +2084,12 @@ sub JoinToCustLinks {
             TABLE2 => 'Links',
             FIELD2 => 'LocalBase',
         );
-
+       $self->SUPER::Limit(
+         LEFTJOIN => $linkalias,
+         FIELD    => 'Base',
+         OPERATOR => 'LIKE',
+         VALUE    => 'fsck.com-rt://%/ticket/%',
+       );
         $self->SUPER::Limit(
             LEFTJOIN => $linkalias,
             FIELD    => 'Type',
@@ -2134,6 +2139,12 @@ sub JoinToSvcLinks {
             TABLE2 => 'Links',
             FIELD2 => 'LocalBase',
         );
+       $self->SUPER::Limit(
+         LEFTJOIN => $linkalias,
+         FIELD    => 'Base',
+         OPERATOR => 'LIKE',
+         VALUE    => 'fsck.com-rt://%/ticket/%',
+       );
 
         $self->SUPER::Limit(
             LEFTJOIN => $linkalias,
