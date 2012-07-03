@@ -66,7 +66,6 @@
 
 <div id="ticket-create-metadata">
     <&| /Widgets/TitleBox, title => loc("Basics"), class=>'ticket-info-basics' &>
-    <input type="hidden" class="hidden" name="Queue" value="<% $QueueObj->Id %>" />
     <table width="100%" border="0">
     <& /Ticket/Elements/EditBasics,
         InTable => 1,
