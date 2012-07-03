@@ -1,5 +1,5 @@
 <% include('elements/monthly.html',
-                'title'        => $agentname.
+                'title'        => $agentname. $referralname.
                                   'Sales, Credits and Receipts Summary',
                 'items'        => \@items,
                 'labels'       => \%label,
@@ -7,6 +7,7 @@
                 'colors'       => \%color,
                 'links'        => \%link,
                 'agentnum'     => $agentnum,
+                'refnum'       => $refnum,
                 'nototal'      => scalar($cgi->param('12mo')),
              )
 %>
@@ -22,8 +23,16 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
   die "agentnum $agentnum not found!" unless $agent;
 }
-
 my $agentname = $agent ? $agent->agent.' ' : '';
+
+my( $refnum, $part_referral ) = ('', '');
+if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
+  $refnum = $1;
+  $part_referral = qsearchs('part_referral', { 'refnum' => $refnum } );
+  die "refnum $refnum not found!" unless $part_referral;
+}
+my $referralname = $part_referral ? $part_referral->referral.' ' : '';
+
 
 my @items = qw( invoiced netsales
                 credits  netcredits
@@ -83,15 +92,17 @@ my %color = (
 $color{$_.'_12mo'} = $color{$_}
   foreach keys %color;
 
+my $ar = "agentnum=$agentnum;refnum=$refnum";
+
 my %link = (
-  'invoiced'   => "${p}search/cust_bill.html?agentnum=$agentnum;",
-  'netsales'   => "${p}search/cust_bill.html?agentnum=$agentnum;net=1;",
-  'credits'    => "${p}search/cust_credit.html?agentnum=$agentnum;",
-  'netcredits' => "${p}search/cust_credit_bill.html?agentnum=$agentnum;",
-  'payments'   => "${p}search/cust_pay.html?magic=_date;agentnum=$agentnum;",
-  'receipts'   => "${p}search/cust_bill_pay.html?agentnum=$agentnum;",
-  'refunds'    => "${p}search/cust_refund.html?magic=_date;agentnum=$agentnum;",
-  'netrefunds' => "${p}search/cust_credit_refund.html?agentnum=$agentnum;",
+  'invoiced'   => "${p}search/cust_bill.html?$ar;",
+  'netsales'   => "${p}search/cust_bill.html?$ar;net=1;",
+  'credits'    => "${p}search/cust_credit.html?$ar;",
+  'netcredits' => "${p}search/cust_credit_bill.html?$ar;",
+  'payments'   => "${p}search/cust_pay.html?magic=_date;$ar;",
+  'receipts'   => "${p}search/cust_bill_pay.html?$ar;",
+  'refunds'    => "${p}search/cust_refund.html?magic=_date;$ar;",
+  'netrefunds' => "${p}search/cust_credit_refund.html?$ar;",
 );
 # XXX link 12mo?
 

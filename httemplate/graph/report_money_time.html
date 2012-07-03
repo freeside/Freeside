@@ -24,6 +24,13 @@
           )
 %>
 
+<% include('/elements/tr-select-part_referral.html',
+             'label'         => 'Advertising source ',
+             'disable_empty' => 0,
+             'empty_label'   => 'all',
+          )
+%>
+
 <TR>
   <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="12mo" VALUE="1"></TD>
   <TD>Show 12 month totals instead of monthly values</TD>

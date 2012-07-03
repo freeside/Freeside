@@ -24,6 +24,7 @@ FS::Report::Table::Monthly - Tables of report data, indexed monthly
     'end_year'    => 2020,
     #opt
     'agentnum'    => 54
+    'refnum'      => 54
     'params'      => [ [ 'paramsfor', 'item_one' ], [ 'item', 'two' ] ], # ...
     'remove_empty' => 1, #collapse empty rows, default 0
     'item_labels' => [ ], #useful with remove_empty
@@ -59,6 +60,7 @@ sub data {
   }
 
   my $agentnum = $self->{'agentnum'};
+  my $refnum = $self->{'refnum'};
 
   if ( $projecting ) {
 
@@ -110,11 +112,13 @@ sub data {
         my $item = $items[$i]; 
         my @param = $self->{'params'} ? @{ $self->{'params'}[$i] }: ();
         push @param, 'project', $projecting;
+        push @param, 'refnum' => $refnum if $refnum;
         my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
         push @{$data{data}->[$col]}, $value;
         $item = $items[$i+1]; 
         @param = $self->{'params'} ? @{ $self->{'params'}[++$i] }: ();
         push @param, 'project', $projecting;
+        push @param, 'refnum' => $refnum if $refnum;
         $value = $self->$item($speriod, $eperiod, $agentnum, @param);
         push @{$data{data}->[$col++]}, $value;
       }
@@ -122,6 +126,7 @@ sub data {
         my $item = $items[$i];
         my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
         push @param, 'project', $projecting;
+        push @param, 'refnum' => $refnum if $refnum;
         my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
         push @{$data{data}->[$col++]}, $value;
       }
