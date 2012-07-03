@@ -49,6 +49,21 @@ elsif ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   die "agentnum $agentnum not found!" unless $sel_agent;
 }
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
+
+my( $refnum, $sel_part_referral, $all_part_referral ) = ('', '', '');
+if ( $cgi->param('refnum') eq 'all' ) {
+  $refnum = 0;
+  $all_part_referral = 'ALL';
+}
+elsif ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
+  $refnum = $1;
+  $bottom_link .= "refnum=$refnum;";
+  $sel_part_referral = qsearchs('part_referral', { 'refnum' => $refnum } );
+  die "part_referral $refnum not found!" unless $sel_part_referral;
+}
+$title .= $sel_part_referral->referral.' '
+  if $sel_part_referral;
+
 $title .= 'Sales Report (Gross)';
 $title .= ', average per customer package'  if $average_per_cust_pkg;
 
@@ -130,42 +145,49 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
 
   ### fixup the color handling for package classes...
   ### and usage
-  my $n = 0;
 
-  foreach my $pkg_class ( @pkg_class ) {
-    foreach my $component ( @components ) {
+  foreach my $part_referral ( $all_part_referral || $sel_part_referral || qsearch('part_referral', { 'disabled' => '' } ) ) {
 
-      push @items, 'cust_bill_pkg';
+    foreach my $pkg_class ( @pkg_class ) {
+      foreach my $component ( @components ) {
 
-      push @labels,
-        ( $all_agent || $sel_agent ? '' : $agent->agent.' ' ).
-        ( $classnum eq '0'
-            ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
-            : ''
-        ).
-        ' '.$charge_labels{$component};
+        push @items, 'cust_bill_pkg';
 
-      my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
-      my $row_agentnum = $all_agent || $agent->agentnum;
-      push @params, [ ($all_class ? () : ('classnum' => $row_classnum) ),
-                      ($all_agent ? () : ('agentnum' => $row_agentnum) ),
-                      'use_override'         => $use_override,
-                      'charges'              => $component,
-                      'average_per_cust_pkg' => $average_per_cust_pkg,
-                      'distribute'           => $distribute,
-                    ];
+        push @labels,
+          ( $all_agent || $sel_agent ? '' : $agent->agent.' ' ).
+          ( $all_part_referral || $sel_part_referral ? '' : $part_referral->referral.' ' ).
+          ( $classnum eq '0'
+              ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
+              : ''
+          ).
+          ' '.$charge_labels{$component};
 
-      push @links, "$link;".($all_agent ? '' : "agentnum=$row_agentnum;").
-                   ($all_class ? '' : "classnum=$row_classnum;").
-                   "distribute=$distribute;".
-                   "use_override=$use_override;charges=$component;";
+        my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
+        my $row_agentnum = $all_agent || $agent->agentnum;
+        my $row_refnum = $all_part_referral || $part_referral->refnum;
+        push @params, [ ($all_class ? () : ('classnum' => $row_classnum) ),
+                        ($all_agent ? () : ('agentnum' => $row_agentnum) ),
+                        ($all_part_referral ? () : ('refnum' => $row_refnum) ),
+                        'use_override'         => $use_override,
+                        'charges'              => $component,
+                        'average_per_cust_pkg' => $average_per_cust_pkg,
+                        'distribute'           => $distribute,
+                      ];
 
-      @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
-        unless @recur_colors;
-      @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
-        unless @onetime_colors;
-      push @colors, shift @recur_colors;
+        push @links, "$link;".
+                     ($all_agent ? '' : "agentnum=$row_agentnum;").
+                     ($all_part_referral ? '' : "refnum=$row_refnum;").
+                     ($all_class ? '' : "classnum=$row_classnum;").
+                     "distribute=$distribute;".
+                     "use_override=$use_override;charges=$component;";
 
+        @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
+          unless @recur_colors;
+        @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
+          unless @onetime_colors;
+        push @colors, shift @recur_colors;
+
+      }
     }
   }
 

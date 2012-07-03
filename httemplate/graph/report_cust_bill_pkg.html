@@ -12,7 +12,15 @@
 </TR>
 
 <% include('/elements/tr-select-agent.html',
-             'label'         => 'For agent: ',
+             'label'         => 'Agent ',
+             'disable_empty' => 0,
+             'pre_options'   => [ 'all' => 'all (aggregate)' ],
+             'empty_label'   => 'all (breakdown)',
+          )
+%>
+
+<% include('/elements/tr-select-part_referral.html',
+             'label'         => 'Advertising source ',
              'disable_empty' => 0,
              'pre_options'   => [ 'all' => 'all (aggregate)' ],
              'empty_label'   => 'all (breakdown)',
