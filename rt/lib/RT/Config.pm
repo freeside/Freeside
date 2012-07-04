@@ -209,10 +209,11 @@ our %META = (
 
             $RT::Logger->warning(
                 "The default stylesheet ($value) does not exist in this instance of RT. "
-              . "Defaulting to aileron."
+              . "Defaulting to freeside3."
             );
 
-            $self->Set('WebDefaultStylesheet', 'aileron');
+            #$self->Set('WebDefaultStylesheet', 'aileron');
+            $self->Set('WebDefaultStylesheet', 'freeside3');
         },
     },
     UseSideBySideLayout => {
