@@ -22,21 +22,20 @@ XXX resending quotations
 
 % } 
 
-XXX view typset quotation
+</%doc>
 
-% if ( $conf->exists('invoice_latex') ) { 
+% if ( $conf->exists('quotation_latex') ) { 
 
-  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>"><% mt('View typeset invoice PDF') |h %></A>
+  <A HREF="<% $p %>view/quotation-pdf.cgi?<% $link %>"><% mt('View typeset quotation PDF') |h %></A>
   <BR><BR>
 % } 
 
-XXX actually show the quotation
-
-% if ( $conf->exists('invoice_html') ) { 
-  <% join('', $cust_bill->print_html(\%opt) ) %>
+% if ( $conf->exists('quotation_html') ) { 
+    <% join('', $quotation->print_html() ) %>
 % } else { 
-  <PRE><% join('', $cust_bill->print_text(\%opt) ) %></PRE>
-% } 
+%   die "quotation_html config missing";
+% }
+% #plaintext quotations? <PRE><% join('', $quotation->print_text() ) %></PRE>
 
 </%doc>
 
@@ -56,7 +55,7 @@ if ( $query =~ /^(\d+)$/ ) {
   $quotationnum = $cgi->param('quotationnum');
 }
 
-#my $conf = new FS::Conf;
+my $conf = new FS::Conf;
 
 my $quotation = qsearchs({
   'select'    => 'quotation.*',
@@ -67,6 +66,7 @@ my $quotation = qsearchs({
 });
 die "Quotation #$quotationnum not found!" unless $quotation;
 
+my $menubar;
 if ( my $custnum = $quotation->custnum ) {
   my $display_custnum = $quotation->cust_main->display_custnum;
   $menubar = menubar(
@@ -77,5 +77,10 @@ if ( my $custnum = $quotation->custnum ) {
     emt("View this prospect (#[_1])",$prospectnum) => "${p}view/prospect_main.html?$prospectnum",
   );
 }
+
+my $link = "quotationnum=$quotationnum";
+#$link .= ';template='. uri_escape($template) if $template;
+#$link .= ';notice_name='. $notice_name if $notice_name;
+
 
 </%init>

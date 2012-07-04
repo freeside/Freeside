@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG );
 use Exporter;
 use Tie::IxHash;
+use File::Slurp;
 use FS::UID qw( dbh driver_name );
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch str2time_sql);
@@ -63,7 +64,12 @@ sub upgrade_config {
 
   upgrade_overlimit_groups($conf);
   map { upgrade_overlimit_groups($conf,$_->agentnum) } qsearch('agent', {});
-  
+
+  my $DIST_CONF = '/usr/local/etc/freeside/default_conf/';#DIST_CONF in Makefile
+  $conf->set($_, scalar(read_file( "$DIST_CONF/$_" )) )
+    foreach grep { ! $conf->exists($_) && -s "$DIST_CONF/$_" }
+      qw( quotation_html quotation_latex quotation_latexnotes );
+
 }
 
 sub upgrade_overlimit_groups {

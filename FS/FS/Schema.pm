@@ -1054,8 +1054,50 @@ sub tables_hashref {
       'index'       => [ [ 'company' ], [ 'agentnum' ], [ 'disabled' ] ],
     },
 
-    #eventually use for billing & ship from cust_main too
-    #for now, just cust_pkg locations
+    'quotation' => {
+      'columns' => [
+        #regular fields
+        'quotationnum',   'serial',     '', '', '', '', 
+        'prospectnum',       'int', 'NULL', '', '', '',
+        'custnum',           'int', 'NULL', '', '', '',
+        '_date',        @date_type,             '', '', 
+        'disabled',         'char', 'NULL',  1, '', '', 
+        'usernum',           'int', 'NULL', '', '', '',
+        #'total',      @money_type,       '', '', 
+        #'quotation_term', 'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'quotationnum',
+      'unique' => [],
+      'index' => [ [ 'prospectnum' ], ['custnum'], ],
+    },
+
+    'quotation_pkg' => {
+      'columns' => [
+        'quotationpkgnum',   'serial',     '', '', '', '', 
+        'pkgpart',              'int',     '', '', '', '', 
+        'locationnum',          'int', 'NULL', '', '', '',
+        'start_date',      @date_type,             '', '', 
+        'contract_end',    @date_type,             '', '',
+        'quantity',             'int', 'NULL', '', '', '',
+        'waive_setup',         'char', 'NULL',  1, '', '', 
+      ],
+      'primary_key' => 'quotationpkgnum',
+      'unique' => [],
+      'index' => [ ['pkgpart'], ],
+    },
+
+    'quotation_pkg_discount' => {
+      'columns' => [
+        'quotationpkgdiscountnum', 'serial', '', '', '', '',
+        'quotationpkgnum',            'int', '', '', '', '', 
+        'discountnum',                'int', '', '', '', '',
+        #'end_date',              @date_type,         '', '',
+      ],
+      'primary_key' => 'quotationpkgdiscountnum',
+      'unique' => [],
+      'index'  => [ [ 'quotationpkgnum' ], ], #[ 'discountnum' ] ],
+    },
+
     'cust_location' => { #'location' now that its prospects too, but...
       'columns' => [
         'locationnum',      'serial',     '',      '', '', '',

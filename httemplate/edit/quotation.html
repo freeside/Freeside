@@ -3,8 +3,23 @@
                  'table'  => 'quotation',
                  'labels' => { 
                                'quotationnum' => 'Quotation number',
+                               'prospectnum'  => 'Prospect',
+                               'custnum'      => 'Customer',
+                               '_date'        => 'Date',
+                               'disabled'     => 'Disabled',
                              },
+                 'fields' => [
+                   { field=>'prospectnum', type=>'fixed-prospect_main' },
+                   { field=>'custnum',     type=>'fixed-cust_main' },
+                   { field=>'_date',       type=>'fixed-date' },
+                   { field=>'disabled',    type=>'checkbox', value=>'Y'},
+                             ],
                  #XXX some way to disable the "view all"
+                 'new_callback' => sub { my( $cgi, $quotation) = @_;
+                                         $quotation->$_( $cgi->param($_) )
+                                           foreach qw( prospectnum custnum );
+                                         $quotation->_date(time);
+                                       },
            )
 %>
 <%init>

@@ -64,6 +64,31 @@
 
 <BR>
 
+% if ( $curuser->access_right('Generate quotation') ) { 
+  <FONT CLASS="fsinnerbox-title"><% mt( 'Quotations' ) |h %></FONT>
+  <A HREF="<%$p%>edit/quotation.html?prospectnum=<% $prospectnum %>">New quotation</A>
+% my @quotations = $prospect_main->quotation;
+% if ( @quotations ) {
+    <& /elements/table-grid.html &>
+%     my $bgcolor1 = '#eeeeee';
+%     my $bgcolor2 = '#ffffff';
+%     my $bgcolor = '';
+      <TR>
+        <TH CLASS="grid" BGCOLOR="#cccccc">#</TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
+      </TR>
+%     foreach my $quotation (@quotations) {
+        <TR>
+          <TD CLASS="grid" BGCOLOR="#cccccc"><% $quotation->quotationnum %></TD>
+          <TD CLASS="grid" BGCOLOR="#cccccc"><% time2str($date_format, $quotation->_date) |h %></TD>
+        </TR>
+%     }
+    </TABLE>
+% }
+    <BR><BR>
+% }
+
+
 % if ( $curuser->access_right('Qualify service') ) { 
 <% include( '/elements/popup_link-prospect_main.html',
               'action'        => $p. 'misc/qual.html',
@@ -80,6 +105,7 @@
     <BR><BR>
 % }
 
+<!--
 <% ntable("#cccccc") %>
 
 <TR>
@@ -87,6 +113,7 @@
 </TR>
 
 </TABLE>
+-->
 
 <%init>
 
@@ -94,6 +121,10 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
   unless $curuser->access_right('View prospect');
+
+my $conf = new FS::Conf;
+
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $prospectnum;
 if ( $cgi->param('prospectnum') =~ /^(\d+)$/ ) {

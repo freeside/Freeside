@@ -1197,7 +1197,15 @@ sub reason_type_options {
   {
     'key'         => 'invoice_html',
     'section'     => 'invoicing',
-    'description' => 'Optional HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
+    'description' => 'HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
+
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'quotation_html',
+    'section'     => '',
+    'description' => 'HTML template for quotations.',
 
     'type'        => 'textarea',
   },
@@ -1241,6 +1249,13 @@ sub reason_type_options {
     'key'         => 'invoice_latex',
     'section'     => 'invoicing',
     'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'quotation_latex',
+    'section'     => '',
+    'description' => 'LaTeX template for typeset PostScript quotations.',
     'type'        => 'textarea',
   },
 
@@ -1297,6 +1312,15 @@ and customer address. Include units.',
     'key'         => 'invoice_latexnotes',
     'section'     => 'invoicing',
     'description' => 'Notes section for LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+    'per_locale'  => 1,
+  },
+
+  {
+    'key'         => 'quotation_latexnotes',
+    'section'     => '',
+    'description' => 'Notes section for LaTeX typeset PostScript quotations.',
     'type'        => 'textarea',
     'per_agent'   => 1,
     'per_locale'  => 1,

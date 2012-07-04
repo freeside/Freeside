@@ -1,10 +1,12 @@
 package FS::quotation;
+use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record );
 
 use strict;
-use base qw( FS::otaker_Mixin FS::Record );
-use FS::Record; # qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs );
+use FS::CurrentUser;
 use FS::cust_main;
 use FS::prospect_main;
+use FS::quotation_pkg;
 
 =head1 NAME
 
@@ -73,6 +75,8 @@ points to.  You can ask the object for a copy with the I<hash> method.
 =cut
 
 sub table { 'quotation'; }
+sub notice_name { 'Quotation'; }
+sub template_conf { 'quotation_'; }
 
 =item insert
 
@@ -111,7 +115,7 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  #XXX set usernum
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   $self->SUPER::check;
 }
@@ -132,6 +136,16 @@ sub prospect_main {
 sub cust_main {
   my $self = shift;
   qsearchs('cust_main', { 'custnum' => $self->custnum } );
+}
+
+=item cust_bill_pkg
+
+=cut
+
+sub cust_bill_pkg {
+  my $self = shift;
+  #actually quotation_pkg objects
+  qsearch('quotation_pkg', { quotationnum=>$self->quotationnum });
 }
 
 =back

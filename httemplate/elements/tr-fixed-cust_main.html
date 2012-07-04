@@ -1,0 +1,15 @@
+% if ( $cust_main ) {
+  <% include('tr-fixed.html', %opt ) %>
+% }
+<%init>
+
+my %opt = @_;
+
+my $value = $opt{'curr_value'} || $opt{'value'};
+
+my $cust_main = $value ? qsearchs('cust_main', {custnum=>$value} )
+                       : '';
+
+$opt{'formatted_value'} = $cust_main->name if $cust_main;
+
+</%init>

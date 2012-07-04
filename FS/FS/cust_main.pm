@@ -8,7 +8,7 @@ use base qw( FS::cust_main::Packages FS::cust_main::Status
              FS::cust_main::Billing_Discount
              FS::cust_main::Location
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
-             FS::geocode_Mixin
+             FS::geocode_Mixin FS::Quotable_Mixin
              FS::o2m_Common
              FS::Record
            );

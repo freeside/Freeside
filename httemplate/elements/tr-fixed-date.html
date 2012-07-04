@@ -1,0 +1,13 @@
+<% include('tr-fixed.html', %opt ) %>
+<%init>
+
+my %opt = @_;
+
+my $value = $opt{'curr_value'} || $opt{'value'};
+
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+$opt{'formatted_value'} = time2str($date_format, $value);
+
+</%init>
