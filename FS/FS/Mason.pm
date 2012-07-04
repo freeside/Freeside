@@ -514,28 +514,7 @@ sub mason_interps {
     RT::LoadConfig();
   }
 
-  # A hook supporting strange legacy ways people (well, SG) have added stuff on
-
-  my @addl_comp_root = ();
-  my $addl_comp_root_file = '%%%FREESIDE_CONF%%%/addl_comp_root.pl';
-  if ( -e $addl_comp_root_file ) {
-    warn "reading $addl_comp_root_file\n";
-    my $text = slurp( $addl_comp_root_file );
-    my @addl = eval $text;
-    if ( @addl && ! $@ ) {
-      @addl_comp_root = @addl;
-    } elsif ($@) {
-      warn "error parsing $addl_comp_root_file: $@\n";
-    }
-  }
-
-  my $fs_comp_root =
-    scalar(@addl_comp_root)
-      ? [
-          [ 'freeside'=>'%%%FREESIDE_DOCUMENT_ROOT%%%' ],
-          @addl_comp_root,
-        ]
-      : '%%%FREESIDE_DOCUMENT_ROOT%%%';
+  my $fs_comp_root = '%%%FREESIDE_DOCUMENT_ROOT%%%';
 
   my %interp = (
     request_class        => $request_class,
