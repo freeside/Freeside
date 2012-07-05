@@ -33,7 +33,7 @@
 %   if ( $cust_main->company ) {
   <TR>
     <TD ALIGN="right"><% mt('Company') |h %></TD>
-    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->company %></TD>
+    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->company |h %></TD>
   </TR>
 %   }
 % } # if $this eq 'bill'
