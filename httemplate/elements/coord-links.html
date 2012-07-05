@@ -3,7 +3,7 @@
 <& /elements/popup_link.html,
      'action'      => $p. 'view/map.html?'. $query,
      'label'       => mt('map'),
-     'actionlabel' => $name,
+     'actionlabel' => uri_escape_utf8($name),
      'width'       => 763,
      'height'      => 575,
      #'color'
@@ -13,7 +13,7 @@
   <& /elements/popup_link.html,
       'action'      => $p. "view/directions.html?origin=$origin;". $query,
       'label'       => mt('directions'),
-      'actionlabel' => $name,
+      'actionlabel' => uri_escape_utf8($name),
       'width'       => 763,
       'height'      => 575,
   &>
