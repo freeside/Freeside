@@ -69,7 +69,7 @@ if ( -e $addl_handler_use_file ) {
   Lingua::EN::Inflect::classical names=>0; #Categorys
   use Tie::IxHash;
   use URI;
-  use URI::Escape;
+  use URI::Escape 3.31;
   use HTML::Entities;
   use HTML::TreeBuilder;
   use HTML::TableExtract qw(tree);
