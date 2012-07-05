@@ -2152,7 +2152,9 @@ sub _items_cust_bill_pkg {
       }
     }
 
-    my @cust_bill_pkg_display = $cust_bill_pkg->cust_bill_pkg_display;
+    my @cust_bill_pkg_display = $cust_bill_pkg->can('cust_bill_pkg_display')
+                                  ? $cust_bill_pkg->cust_bill_pkg_display
+                                  : ( $cust_bill_pkg );
 
     warn "$me _items_cust_bill_pkg considering cust_bill_pkg ".
          $cust_bill_pkg->billpkgnum. ", pkgnum ". $cust_bill_pkg->pkgnum. "\n"
