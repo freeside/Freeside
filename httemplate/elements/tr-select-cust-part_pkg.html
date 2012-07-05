@@ -51,8 +51,11 @@
 
       }
 
-      get_part_pkg( <% $cust_main->custnum %>, classnum, update_part_pkg );
-    
+      get_part_pkg( <% $cust_main     ? $cust_main->custnum         : '0' %>,
+                    <% $prospect_main ? $prospect_main->prospectnum : '0' %>,
+                    classnum,
+                    update_part_pkg
+                  );
     }
 
   </SCRIPT>
@@ -74,10 +77,11 @@
   <TH ALIGN="right"><% mt('Package') |h %></TH>
   <TD COLSPAN=7>
     <& /elements/select-cust-part_pkg.html,
-                 'curr_value' => $opt{'curr_value'}, #$pkgpart
-                 'classnum'   => $opt{'classnum'},
-                 'cust_main'  => $opt{'cust_main'},  #$cust_main
-                 'onchange'   => 'pkg_changed',
+                 'curr_value'    => $opt{'curr_value'}, #$pkgpart
+                 'classnum'      => $opt{'classnum'},
+                 'cust_main'     => $opt{'cust_main'},  #$cust_main
+                 'prospect_main' => $opt{'prospect_main'},  #$prospect_main
+                 'onchange'      => 'pkg_changed',
     &>
   </TD>
 </TR>
@@ -91,8 +95,13 @@ my %opt = @_;
 my $pre_label = $opt{'pre_label'} || '';
 $pre_label .= ' ' if length($pre_label) && $pre_label =~ /\S$/;
 
-my $cust_main = $opt{'cust_main'}
-  or die "cust_main not specified";
+my $cust_main = $opt{'cust_main'};
+my $prospect_main = $opt{'prospect_main'};
+
+die "neither cust_main nor prospect_main specified"
+  unless $cust_main || $prospect_main;
+
+my $agent = $cust_main ? $cust_main->agent : $prospect_main->agent;
 
 #"normal" part_pkg agent virtualization (agentnum or type)
 my @part_pkg = qsearch({
@@ -101,7 +110,7 @@ my @part_pkg = qsearch({
   'hashref'   => { 'disabled' => '' },
   'extra_sql' =>
     ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql( 'null'=>1 ).
-    ' AND '. FS::part_pkg->agent_pkgs_sql( $opt{'cust_main'}->agent ),
+    ' AND '. FS::part_pkg->agent_pkgs_sql( $agent ),
 });
 
 my @pkg_class =

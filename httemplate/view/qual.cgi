@@ -59,8 +59,10 @@
 %               $opt{'svcpart'} = $pkg_svc->svcpart if $pkg_svc;
 %             }
 
-              <% include('/view/cust_main/order_pkg_link.html',
-                           $cust_or_prospect, %opt) %>
+              <& /elements/order_pkg_link.html,
+                   'cust_main' => $cust_or_prospect,
+                   %opt
+              &>
 
 %           } elsif ($cust_or_prospect->prospectnum) {
 

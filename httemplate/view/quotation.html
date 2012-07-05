@@ -24,9 +24,16 @@ XXX resending quotations
 
 </%doc>
 
-% if ( $conf->exists('quotation_latex') ) { 
+% if ( $curuser->access_right('Order customer package') ) {
+  <& /elements/order_pkg_link.html,
+       'label'       => emt('Add package'),
+       'actionlabel' => emt('Add package'),
+       map { $_ => $quotation->$_ } qw( quotationnum custnum prospectnum )
+  &>
+% }
 
-  <A HREF="<% $p %>view/quotation-pdf.cgi?<% $link %>"><% mt('View typeset quotation PDF') |h %></A>
+% if ( $conf->exists('quotation_latex') ) { 
+  | <A HREF="<% $p %>view/quotation-pdf.cgi?<% $link %>"><% mt('View typeset quotation PDF') |h %></A>
   <BR><BR>
 % } 
 

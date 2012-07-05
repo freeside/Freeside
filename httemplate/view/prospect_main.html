@@ -78,9 +78,16 @@
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Date') |h %></TH>
       </TR>
 %     foreach my $quotation (@quotations) {
+%       if ( $bgcolor eq $bgcolor1 ) {
+%         $bgcolor = $bgcolor2;
+%       } else {
+%         $bgcolor = $bgcolor1;
+%       }
+%       my $a = qq(<A HREF="$p/view/quotation.html?quotationnum=). #"
+%               $quotation->quotationnum. '">';
         <TR>
-          <TD CLASS="grid" BGCOLOR="#cccccc"><% $quotation->quotationnum %></TD>
-          <TD CLASS="grid" BGCOLOR="#cccccc"><% time2str($date_format, $quotation->_date) |h %></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% $quotation->quotationnum %></A></TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $a %><% time2str($date_format, $quotation->_date) |h %></A></TD>
         </TR>
 %     }
     </TABLE>
