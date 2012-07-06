@@ -884,7 +884,7 @@ sub BriefDescription {
         }
 
         # Write the date/time change at local time:
-        elsif ($self->Field =~  /Due|Starts|Started|Told/) {
+        elsif ($self->Field =~  /Due|Starts|Started|Told|WillResolve/) {
             my $t1 = RT::Date->new($self->CurrentUser);
             $t1->Set(Format => 'ISO', Value => $self->NewValue);
             my $t2 = RT::Date->new($self->CurrentUser);
