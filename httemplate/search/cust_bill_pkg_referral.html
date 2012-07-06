@@ -190,7 +190,7 @@ my @orwhere;
 push @orwhere, "(cust_bill_pkg.setup > 0)" if $setup;
 push @orwhere, "($recur_sql > 0)"          if $recur;
 push @orwhere, "($usage_sql > 0)"          if $usage;
-push @where, join(' OR ', @orwhere);
+push @where, '('.join(' OR ', @orwhere).')' if @orwhere;
 
 $join_cust =  '        JOIN cust_bill     USING ( invnum )
                   LEFT JOIN cust_main     USING ( custnum )

@@ -49,7 +49,7 @@ my $writer = sub {
   # Wrapper for $worksheet->write.
   # Do any massaging of the value/format here.
   my ($r, $c, $value, $format) = @_;
-  if ( $value =~ /^\Q$money_char\E(\d+\.?\d*)$/ ) {
+  if ( $value =~ /^\Q$money_char\E(-?\d+\.?\d*)$/ ) {
     # Currency: strip the symbol, clone the requested format,
     # and format it for currency
     $value = $1;
