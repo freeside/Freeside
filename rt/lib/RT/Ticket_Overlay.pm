@@ -2326,16 +2326,18 @@ sub _Links {
     }
 
     # Maybe this ticket is a merge ticket
-    my $limit_on = 'Local'. $field;
+    #my $limit_on = 'Local'. $field;
     # at least to myself
     $links->Limit(
-        FIELD           => $limit_on,
-        VALUE           => $self->id,
+        FIELD           => $field, #$limit_on,
+        OPERATOR        => 'LIKE',
+        VALUE           => 'fsck.com-rt://%/ticket/'. $self->id,
         ENTRYAGGREGATOR => 'OR',
     );
     $links->Limit(
-        FIELD           => $limit_on,
-        VALUE           => $_,
+        FIELD           => $field, #$limit_on,
+        OPERATOR        => 'LIKE',
+        VALUE           => 'fsck.com-rt://%/ticket/'. $_,
         ENTRYAGGREGATOR => 'OR',
     ) foreach $self->Merged;
     $links->Limit(
