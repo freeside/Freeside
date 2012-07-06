@@ -42,6 +42,9 @@ my $default_format = $workbook->add_format(locked => 0);
 my %money_format;
 my $money_char = FS::Conf->new->config('money_char') || '$';
 
+my %date_format;
+xl_parse_date_init();
+
 my $writer = sub {
   # Wrapper for $worksheet->write.
   # Do any massaging of the value/format here.
@@ -50,12 +53,29 @@ my $writer = sub {
     # Currency: strip the symbol, clone the requested format,
     # and format it for currency
     $value = $1;
+#    warn "formatting $value as money\n";
     if ( !exists($money_format{$format}) ) {
       $money_format{$format} = $workbook->add_format();
       $money_format{$format}->copy($format);
       $money_format{$format}->set_num_format($money_char.'#0.00#');
     }
     $format = $money_format{$format};
+  }
+  elsif ( $value =~ /^([A-Z][a-z]{2}) (\d{2}) (\d{4})$/ ) {
+    # Date: convert the value to an Excel date number and set 
+    # the format
+    $value = xl_parse_date($value);
+#    warn "formatting $value as date\n";
+    if ( !exists($date_format{$format}) ) {
+      $date_format{$format} = $workbook->add_format();
+      $date_format{$format}->copy($format);
+      $date_format{$format}->set_num_format('mmm dd yyyy');
+    }
+    $format = $date_format{$format};
+  }
+  else {
+    # String: replace line breaks with newlines
+    $value =~ s/<BR>/\n/gi;
   }
   $worksheet->write($r, $c, $value, $format);
 };
