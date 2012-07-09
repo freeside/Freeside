@@ -3,16 +3,16 @@
 Example:
 
   include( '/elements/location.html',
-             'object'         => $cust_main,  # or $cust_location
-             'prefix'         => $pre,        #only for cust_main objects
+             'object'         => $cust_location
+             'prefix'         => $pre, # prefixed to form field names
              'onchange'       => $javascript,
-             'disabled'       => $disabled,
-             'same_checked'   => $same_checked,
              'geocode'        => $geocode, #passed through
              'censustract'    => $censustract, #passed through
              'no_asterisks'   => 0, #set true to disable the red asterisks next
                                     #to required fields
              'address1_label' => 'Address', #label for address
+             'enable_district' => 1, #show tax district field
+             'enable_censustract' => 1, #show censustract field
          )
 
 </%doc>
@@ -40,12 +40,12 @@ Example:
 % } 
 
 <TR>
-  <<%$th%> ALIGN="right"><%$r%><% $opt{'address1_label'} || emt('Address') %></<%$th%>>
+  <<%$th%> STYLE="width:16ex" ALIGN="right"><%$r%><% $opt{'address1_label'} || emt('Address') %></<%$th%>>
   <TD COLSPAN=7>
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>address1"
            ID       = "<%$pre%>address1"
-           VALUE    = "<% $object->get($pre.'address1') |h %>"
+           VALUE    = "<% $object->get('address1') |h %>"
            SIZE     = 54
            onChange = "<% $onchange %>"
            <% $disabled %>
@@ -62,7 +62,7 @@ Example:
         <INPUT TYPE     = "text"
                NAME     = "<%$pre%>address2"
                ID       = "<%$pre%>address2"
-               VALUE    = "<% $object->get($pre.'address2') |h %>"
+               VALUE    = "<% $object->get('address2') |h %>"
                SIZE     = 54
                onChange = "<% $onchange %>"
                <% $disabled %>
@@ -75,7 +75,7 @@ Example:
 
       <INPUT TYPE  = "hidden"
              NAME  = "<%$pre%>address2"
-             VALUE = "<% $object->get($pre.'address2') |h %>"
+             VALUE = "<% $object->get('address2') |h %>"
       >
 
 <TR>
@@ -83,7 +83,7 @@ Example:
     <TD COLSPAN=7>
 
 %     my $location_type = scalar($cgi->param('location_type'))
-%                           || $object->get($pre.'location_type');
+%                           || $object->get('location_type');
 %     #my $location_number = scalar($cgi->param('location_number'))
 %     #                        || $object->get($pre.'location_number');
 %
@@ -130,7 +130,7 @@ Example:
     <INPUT TYPE="text" 
                NAME  = "location_number"
                ID    = "location_number"
-               VALUE = "<% scalar($cgi->param('location_number')) || $object->get($pre.'location_number') |h %>"
+               VALUE = "<% scalar($cgi->param('location_number')) || $object->get('location_number') |h %>"
                SIZE  = "5"
                <% $disabled || ($location_type ? '' : 'DISABLED') %>
                <% $style %>
@@ -161,7 +161,7 @@ Example:
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>zip"
            ID       = "<%$pre%>zip"
-           VALUE    = "<% $object->get($pre.'zip') |h %>"
+           VALUE    = "<% $object->get('zip') |h %>"
            SIZE     = 10
            onChange = "<% $onchange %>"
            <% $disabled %>
@@ -181,7 +181,7 @@ Example:
     <INPUT TYPE  = "text"
            NAME  = "<%$pre%>latitude"
            ID    = "<%$pre%>latitude"
-           VALUE = "<% $object->get($pre.'latitude') |h %>"
+           VALUE = "<% $object->get('latitude') |h %>"
            <% $disabled %>
            <% $style %>
     >
@@ -189,36 +189,44 @@ Example:
     <INPUT TYPE  = "text"
            NAME  = "<%$pre%>longitude"
            ID    = "<%$pre%>longitude"
-           VALUE = "<% $object->get($pre.'longitude') |h %>"
+           VALUE = "<% $object->get('longitude') |h %>"
            <% $disabled %>
            <% $style %>
     >
   </TD>
 </TR>
-<INPUT TYPE="hidden" NAME="<%$pre%>coord_auto" VALUE="<% $object->get($pre.'coord_auto') %>">
+<INPUT TYPE="hidden" NAME="<%$pre%>coord_auto" VALUE="<% $object->coord_auto %>">
 
-% if ( !$pre ) { 
-  <INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>">
+<INPUT TYPE="hidden" NAME="<%$pre%>geocode" VALUE="<% $object->geocode %>">
+<INPUT TYPE="hidden" NAME="<%$pre%>censusyear" VALUE="<% $object->censusyear %>">
+<TR>
+% if ( $opt{enable_censustract} ) {
+  <TD ALIGN="right">Census&nbsp;tract</TD>
+  <TD COLSPAN=8>
+    <INPUT TYPE="text" SIZE=15
+           NAME="<%$pre%>censustract" 
+           VALUE="<% $object->censustract %>">
+    <% '(automatic)' %>
+  </TD>
 % } else {
-%   if ( $pre eq 'ship_' && $conf->exists('cust_main-require_censustract') ) {
-      <TR><<%$th%> ALIGN="right">Census tract<BR>(automatic)</<%$th%>>
-        <TD>
-          <INPUT TYPE="text" NAME="censustract" VALUE="<% $opt{censustract} %>">
-          <INPUT TYPE="hidden" NAME="censusyear" VALUE="<% $object->get('censusyear') %>">
-        </TD>
-      </TR>
-%   } else {
-      <INPUT TYPE="hidden" NAME="censustract" VALUE="<% $opt{censustract} %>">
-%   } 
-%   if ( $conf->config('tax_district_method') or $object->get('district') ) {
-    <TR>
-      <<%$th%> ALIGN="right">Tax district<BR>(automatic)</<%$th%>>
-      <TD>
-        <INPUT TYPE="text" NAME="district" VALUE="<%$object->get('district')%>">
-      </TD>
-    </TR>
-%   }
+  <INPUT TYPE="hidden" NAME="<%$pre%>censustract" VALUE="<% $object->censustract %>">
 % } 
+</TR>
+% if ( $conf->config('tax_district_method') ) {
+  <TR>
+%   if ( $opt{enable_district} ) {
+    <TD ALIGN="right">Tax&nbsp;district</TD>
+    <TD COLSPAN=8>
+      <INPUT TYPE="text" SIZE=15
+             NAME="<%$pre%>district" 
+             VALUE="<% $object->district %>">
+    <% '(automatic)' %>
+    </TD>
+%   } else {
+    <INPUT TYPE="hidden" NAME="<%$pre%>district" VALUE="<% $object->district %>">
+%   }
+  </TR>
+% }
 
 <%init>
 
@@ -233,16 +241,13 @@ my $conf = new FS::Conf;
 
 my $r = $opt{'no_asterisks'} ? '' : qq!<font color="#ff0000">*</font>&nbsp;!;
 
-#false laziness with ship state
 my $countrydefault = $conf->config('countrydefault') || 'US';
-$object->set($pre.'country', $countrydefault )
-  unless $object->get($pre.'country');
-
-my $statedefault = $conf->config('statedefault')
+my $statedefault = $conf->config('statedefault') 
                    || ($countrydefault eq 'US' ? 'CA' : '');
-$object->set($pre.'state', $statedefault )
-  unless $object->get($pre.'state')
-         || $object->get($pre.'country') ne $countrydefault;
+$object ||= FS::cust_location->new({
+  'country' => $countrydefault,
+  'state'   => $statedefault,
+});
 
 my $alt_err = ($opt{'alt_format'} && !$disabled) ? $object->alternize : '';
 
@@ -255,8 +260,8 @@ push @address2_label_style, 'visibility:hidden'
   || ! $conf->exists('cust_main-require_address2')
   || ( !$pre && !$opt{'same_checked'} );
 
-my @counties = counties( $object->get($pre.'state'),
-                         $object->get($pre.'country'),
+my @counties = counties( $object->get('state'),
+                         $object->get('country'),
                        );
 my @county_style = ();
 push @county_style, 'display:none' # 'visibility:hidden'
@@ -276,10 +281,10 @@ my $county_style =
     : '';
 
 my %select_hash = (
-  'city'     => $object->get($pre.'city'),
-  'county'   => $object->get($pre.'county'),
-  'state'    => $object->get($pre.'state'),
-  'country'  => $object->get($pre.'country'),
+  'city'     => $object->get('city'),
+  'county'   => $object->get('county'),
+  'state'    => $object->get('state'),
+  'country'  => $object->get('country'),
   'prefix'   => $pre,
   'onchange' => $onchange,
   'disabled' => $disabled,

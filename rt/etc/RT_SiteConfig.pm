@@ -32,7 +32,7 @@ Set($WebExternalAuto, 1);
 $RT::URI::freeside::IntegrationType = 'Internal';
 $RT::URI::freeside::URL = '%%%FREESIDE_URL%%%';
 
-$RT::URI::freeside::URL =~ m(^(https?://[^/]+)(/.*)$)i;
+$RT::URI::freeside::URL =~ m(^(https?://[^/]+)(/.*)?$)i;
 Set($WebBaseURL, $1);
 Set($WebPath, "$2/rt");
 
@@ -40,7 +40,6 @@ Set($DatabaseHost   , '');
 
 # These settings are user-editable.
 
-Set($WebDefaultStylesheet, 'freeside2.1');
 Set($UsernameFormat, 'verbose'); #back to concise to hide email addresses
 
 #uncomment to use

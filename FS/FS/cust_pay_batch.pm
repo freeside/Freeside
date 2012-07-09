@@ -204,6 +204,35 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+=item expmmyy
+
+Returns the credit card expiration date in MMYY format.  If this is a 
+CHEK payment, returns an empty string.
+
+=cut
+
+sub expmmyy {
+  my $self = shift;
+  if ( $self->payby eq 'CARD' ) {
+    $self->get('exp') =~ /^(\d{4})-(\d{2})-(\d{2})$/;
+    return sprintf('%02u%02u', $2, ($1 % 100));
+  }
+  else {
+    return '';
+  }
+}
+
+=item pay_batch
+
+Returns the payment batch this payment belongs to (L<FS::pay_batch).
+
+=cut
+
+sub pay_batch {
+  my $self = shift;
+  FS::pay_batch->by_key($self->batchnum);
+}
+
 #you know what, screw this in the new world of events.  we should be able to
 #get the event defs to retry (remove once.pm condition, add every.pm) without
 #mucking about with statuses of previous cust_event records.  right?
@@ -276,6 +305,8 @@ sub approve {
   my $paybatchnum = $new->paybatchnum;
   my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
     or return "paybatchnum $paybatchnum not found";
+  # leave these restrictions in place until TD EFT is converted over
+  # to B::BP
   return "paybatchnum $paybatchnum already resolved ('".$old->status."')" 
     if $old->status;
   $new->status('Approved');
@@ -362,6 +393,62 @@ sub decline {
     }
   }
   return;
+}
+
+=item request_item [ OPTIONS ]
+
+Returns a L<Business::BatchPayment::Item> object for this batch payment
+entry.  This can be submitted to a processor.
+
+OPTIONS can be a list of key/values to append to the attributes.  The most
+useful case of this is "process_date" to set a processing date based on the
+date the batch is being submitted.
+
+=cut
+
+sub request_item {
+  local $@;
+  my $self = shift;
+
+  eval "use Business::BatchPayment;";
+  die "couldn't load Business::BatchPayment: $@" if $@;
+
+  my $cust_main = $self->cust_main;
+  my $location = $cust_main->bill_location;
+  my $pay_batch = $self->pay_batch;
+
+  my %payment;
+  $payment{payment_type} = FS::payby->payby2bop( $pay_batch->payby );
+  if ( $payment{payment_type} eq 'CC' ) {
+    $payment{card_number} = $self->payinfo,
+    $payment{expiration}  = $self->expmmyy,
+  } elsif ( $payment{payment_type} eq 'ECHECK' ) {
+    $self->payinfo =~ /(\d+)@(\d+)/; # or else what?
+    $payment{account_number} = $1;
+    $payment{routing_code} = $2;
+    $payment{account_type} = $cust_main->paytype;
+    # XXX what if this isn't their regular payment method?
+  } else {
+    die "unsupported BatchPayment method: ".$pay_batch->payby;
+  }
+
+  Business::BatchPayment->create(Item =>
+    # required
+    action      => 'payment',
+    tid         => $self->paybatchnum,
+    amount      => $self->amount,
+
+    # customer info
+    customer_id => $self->custnum,
+    first_name  => $cust_main->first,
+    last_name   => $cust_main->last,
+    company     => $cust_main->company,
+    address     => $location->address1,
+    ( map { $_ => $location->$_ } qw(address2 city state country zip) ),
+    
+    invoice_number  => $self->invnum,
+    %payment,
+  );
 }
 
 =back

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -64,7 +64,7 @@ RT::Shredder::Plugin - interface to access shredder plugins
   my %plugins = RT::Shredder::Plugin->List;
 
   # load plugin by name
-  my $plugin = new RT::Shredder::Plugin;
+  my $plugin = RT::Shredder::Plugin->new;
   my( $status, $msg ) = $plugin->LoadByName( 'Tickets' );
   unless( $status ) {
       print STDERR "Couldn't load plugin 'Tickets': $msg\n";
@@ -72,7 +72,7 @@ RT::Shredder::Plugin - interface to access shredder plugins
   }
 
   # load plugin by preformatted string
-  my $plugin = new RT::Shredder::Plugin;
+  my $plugin = RT::Shredder::Plugin->new;
   my( $status, $msg ) = $plugin->LoadByString( 'Tickets=status,deleted' );
   unless( $status ) {
       print STDERR "Couldn't load plugin: $msg\n";
@@ -167,6 +167,7 @@ sub LoadByName
 {
     my $self = shift;
     my $name = shift or return (0, "Name not specified");
+    $name =~ /^\w+(::\w+)*$/ or return (0, "Invalid plugin name");
 
     local $@;
     my $plugin = "RT::Shredder::Plugin::$name";

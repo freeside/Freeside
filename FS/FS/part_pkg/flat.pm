@@ -151,8 +151,9 @@ sub calc_recur {
     if $self->recur_temporality eq 'preceding' && !$last_bill;
 
   my $charge = $self->base_recur($cust_pkg, $sdate);
-  if ( my $cutoff_day = $self->cutoff_day($cust_pkg) ) {
-    $charge = $self->calc_prorate(@_, $cutoff_day);
+  # always treat cutoff_day as a list
+  if ( my @cutoff_day = $self->cutoff_day($cust_pkg) ) {
+    $charge = $self->calc_prorate(@_, @cutoff_day);
   }
   elsif ( $param->{freq_override} ) {
     # XXX not sure if this should be mutually exclusive with sync_bill_date.
@@ -160,6 +161,9 @@ sub calc_recur {
     # it probably should.
     $charge *= $param->{freq_override} if $param->{freq_override};
   }
+
+  my $quantity = $cust_pkg->quantity || 1;
+  $charge *= $quantity;
 
   my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
   return sprintf('%.2f', $charge - $discount);
@@ -174,7 +178,7 @@ sub cutoff_day {
       return (localtime($next_bill))[3];
     }
   }
-  return 0;
+  return ();
 }
 
 sub base_recur {

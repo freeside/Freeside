@@ -12,7 +12,7 @@
 %# General Public License for more details.
 <TABLE width=100%>
   <TR>
-    <TD VALIGN=TOP WIDTH=50%>
+    <TD VALIGN=TOP WIDTH=50% ROWSPAN=3>
       <h3><&|/l&>Current Customers</&></h3>
 
 <table>
@@ -25,33 +25,40 @@
 
       <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
 %#        <& ShowLink, URI => $link->TargetURI &><br>
-        <A HREF="<% $link->TargetURI->Resolver->HREF %>"><% $link->TargetURI->Resolver->AsStringLong |n %></A>
-      <BR>
+        <% $link->TargetURI->Resolver->AsStringLong |n %></A>
+      <BR><BR>
 % }
     </td>
   </tr>
 </table>
-			    
+
 </TD>
 
-<TD VALIGN=TOP>
+<TD VALIGN=TOP WIDTH=50% COLSPAN=2>
 <h3><&|/l&>New Customer Links</&></h3>
-<&|/l&>Find customer</&><BR>
-<input name="CustomerString">
-<input type=submit name="OnlySearchForCustomers" value="<&|/l&>Go!</&>">
-<br><i>cust #, name, company or phone</i>
-<BR>
-%#<BR>
-%#<&|/l&>Find service</&><BR>
-%#<input name="ServiceString">
-%#<input type=submit name="OnlySearchForServices" value="<&|/l&>Go!</&>">
-%#<br><i>username, username@domain, domain, or IP address</i>
-%#<BR>
-
+</TD>
+</TR>
+<TR VALIGN="top">
+%# rowspan
+  <td width=25%>
+    <&|/l&>Find customer</&><br>
+    <input name="CustomerString">
+    <input type=submit name="OnlySearchForCustomers" value="<&|/l&>Go!</&>">
+    <br><i>cust #, name, company or phone</i>
+  </td>
+  <td width=25%>
+    <&|/l&>Find service</&><br>
+    <input name="ServiceString">
+    <input type=submit name="OnlySearchForServices" value="<&|/l&>Go!</&>">
+    <br><i>user, email, ip, mac, phone</i>
+  </td>
+</TR>
+<TR>
+%#rowspan...
+<TD COLSPAN=2>
 <& AddCustomers, Ticket         => $Ticket,
                  CustomerString => $CustomerString,
-                 ServiceString  => $ServiceString,  &>
-
+                 ServiceString  => $ServiceString &>
 </TD>
 </TR>
 </TABLE>

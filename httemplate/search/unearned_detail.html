@@ -1,0 +1,257 @@
+<& elements/search.html,
+  'title'       => emt("Unearned revenue - ".ucfirst($unearned_mode)) . ' (' .
+                   time2str('%b %d %Y', $unearned) . ')',
+  'name'        => emt('line items'),
+  'query'       => $query,
+  'count_query' => $count_query,
+  'count_addl'  => [ $money_char. '%.2f total',
+                     $money_char. '%.2f unearned revenue' 
+                   ],
+  'header'      => [ map( {emt $_} 
+    'Description',
+    'Unearned', # depends on mode
+    'Recurring charge', #recur - usage
+    'Owed', #recur - usage - credits - payments
+    'Paid', #payments
+    'Payment date', #of last payment
+    'Credit date', #of last credit
+    'Charge start',
+    'Charge end',
+    'Invoice',
+    'Date'
+    ),
+    FS::UI::Web::cust_header(),
+  ],
+  'fields'      => [
+    #Description
+    sub { $_[0]->pkgnum > 0
+      ? $_[0]->get('pkg')      # possibly use override.pkg
+      : $_[0]->get('itemdesc') # but i think this correct
+    },
+    #Unearned
+    money_sub('unearned_revenue'),
+    #Recurring charge
+    money_sub('recur_no_usage'),
+    #Owed
+    money_sub('owed_no_usage'),
+    #Paid
+    money_sub('paid_no_usage'),
+    #Payment date
+    date_sub('last_pay'),
+    #Credit date
+    date_sub('last_credit'),
+    #Charge start
+    date_sub('sdate'),
+    #Charge end, minus most of a day
+    date_sub('before_edate'),
+    #Invoice
+    'invnum',
+    #Invoice date
+    date_sub('_date'),
+    \&FS::UI::Web::cust_fields,
+  ],
+  'sort_fields' => [
+    'pkg',
+    # SQL expressions work as sort keys...
+    'unearned_revenue',
+    'recur_no_usage',
+    'owed_no_usage',
+    'paid_no_usage',
+    'last_pay',
+    'last_credit',
+    'sdate',
+    'edate',
+    'invnum',
+    '_date',
+  ],
+  'links'       => [
+    ('' x 9),
+    $ilink,
+    $ilink,
+    ( map { $_ ne 'Cust. Status' ? $clink : '' }
+      FS::UI::Web::cust_header()
+    ),
+  ],
+  'align' => 'lrrcrccrc'.  FS::UI::Web::cust_aligns(),
+  'color' => [ 
+    ('' x 11),
+    FS::UI::Web::cust_colors(),
+  ],
+  'style' => [ 
+    ('' x 11),
+    FS::UI::Web::cust_styles(),
+  ],
+&>
+<%init>
+
+# Separated from cust_bill_pkg.cgi to simplify things.
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
+
+my $unearned = '';
+my $unearned_mode = '';
+my $unearned_base = '';
+my $unearned_sql = '';
+
+my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
+my ($join_cust, $join_pkg ) = ('', '');
+
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my @where = ( $agentnums_sql );
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+
+if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
+  push @where, FS::cust_main->cust_status_sql . " = '$1'";
+}
+
+push @where, "cust_bill._date >= $beginning",
+             "cust_bill._date <= $ending";
+
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.agentnum = $1";
+}
+
+# no pkgclass, no taxclass, no tax location...
+
+# unearned revenue mode
+$cgi->param('date') =~ /^(\d+)$/
+  or die "date required";
+
+$unearned = $1;
+$unearned_mode = $cgi->param('mode');
+
+push @where, "cust_bill_pkg.sdate < $unearned",
+             "cust_bill_pkg.edate > $unearned",
+             "cust_bill_pkg.recur != 0",
+             "part_pkg.freq != '0'";
+
+if ( !$cgi->param('include_monthly') ) {
+  push @where,
+             "part_pkg.freq != '1'",
+             "part_pkg.freq NOT LIKE '%h'",
+             "part_pkg.freq NOT LIKE '%d'",
+             "part_pkg.freq NOT LIKE '%w'";
+}
+
+my @opt = (
+  $unearned, #before this date
+  '',        #after this date
+  setuprecur => 'recur',
+  no_usage => 1
+);
+
+my $charged = FS::cust_bill_pkg->charged_sql(@opt);
+push @select, "($charged) AS recur_no_usage";
+
+my $owed_sql = FS::cust_bill_pkg->owed_sql(@opt);
+push @select, "($owed_sql) AS owed_no_usage";
+
+my $paid_sql = FS::cust_bill_pkg->paid_sql(@opt);
+push @select, "$paid_sql AS paid_no_usage";
+
+if ( $unearned_mode eq 'paid' ) {
+  # then use the amount paid, minus usage charges
+  $unearned_base = $paid_sql;
+}
+else {
+  # use the amount billed, minus usage charges and credits
+  $unearned_base = "( $charged - " . 
+                    FS::cust_bill_pkg->credited_sql(@opt) . ' )';
+}
+# whatever we're using as the base, only show rows where it's positive
+push @where, "$unearned_base > 0";
+
+my $edate_zero = midnight_sql('edate');
+my $sdate_zero = midnight_sql('sdate');
+# $unearned is one second before midnight on the date requested for the report.
+
+# suppress partial days for more accounting-like behavior
+my $period = "CAST( ($edate_zero - $sdate_zero) / 86400.0 AS DECIMAL(10,0) )";
+
+my $remaining = "GREATEST( 
+  CAST( ($edate_zero - $unearned) / 86400.0 AS DECIMAL(10,0) ),
+  0)";
+my $fraction = "$remaining / $period";
+
+$unearned_sql = "CAST( $unearned_base * $fraction AS DECIMAL(10,2) )";
+push @select, "$unearned_sql AS unearned_revenue";
+
+# last payment/credit date
+my %t = (pay => 'cust_bill_pay', credit => 'cust_credit_bill');
+foreach my $x (qw(pay credit)) {
+  my $table = $t{$x};
+  my $link = $table.'_pkg';
+  my $pkey = dbdef->table($table)->primary_key;
+  my $last_date_sql = "SELECT MAX(_date) 
+  FROM $table JOIN $link USING ($pkey)
+  WHERE $link.billpkgnum = cust_bill_pkg.billpkgnum 
+  AND $table._date <= $unearned";
+  push @select, "($last_date_sql) AS last_$x";
+}
+
+push @select, '(edate - 82799) AS before_edate';
+
+#no itemdesc
+#no tax report group kludge
+#no tax exemption
+#usage always excluded
+
+# always 'nottax', not 'istax'
+$join_cust =  '        JOIN cust_bill USING ( invnum )
+                  LEFT JOIN cust_main USING ( custnum ) ';
+
+$join_pkg .=  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                LEFT JOIN part_pkg USING ( pkgpart )
+                LEFT JOIN part_pkg AS override
+                  ON pkgpart_override = override.pkgpart ';
+
+my $where = ' WHERE '. join(' AND ', @where);
+
+my $count_query = "SELECT COUNT(DISTINCT billpkgnum), 
+  SUM( $unearned_base ), SUM( $unearned_sql )
+  FROM cust_bill_pkg $join_cust $join_pkg $where";
+
+push @select, 'part_pkg.pkg',
+              'part_pkg.freq',
+              'cust_main.custnum',
+              FS::UI::Web::cust_sql_fields();
+
+my $query = {
+  'table'     => 'cust_bill_pkg',
+  'addl_from' => "$join_cust $join_pkg",
+  'hashref'   => {},
+  'select'    => join(",\n", @select ),
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY cust_bill._date, billpkgnum',
+};
+
+my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
+my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my $money_char;
+
+sub money_sub {
+  $conf ||= new FS::Conf;
+  $money_char ||= $conf->config('money_char') || '$';
+  my $field = shift;
+  sub {
+    $money_char . sprintf('%.2f', $_[0]->get($field));
+  };
+}
+
+sub date_sub {
+  my $field = shift;
+  sub {
+    my $value = $_[0]->get($field);
+    $value ? time2str('%b %d %Y', $value) : '';
+  };
+};
+
+</%init>

@@ -13,6 +13,7 @@
                'cust_main'   => $cust_main,
                'actionlabel' => emt('Enter check payment'),
                'width'       => 392,
+               'height'      => 392,
   &>
 % } 
 
@@ -24,6 +25,7 @@
                'cust_main'   => $cust_main,
                'actionlabel' => emt('Enter cash payment'),
                'width'       => 392,
+               'height'      => 392,
   &>
 % } 
 
@@ -489,7 +491,7 @@ foreach my $cust_credit ($cust_main->cust_credit) {
 foreach my $cust_refund ($cust_main->cust_refund) {
   push @history, {
     'date'   => $cust_refund->_date,
-    'desc'   => include('payment_history/refund.html', $cust_refund),
+    'desc'   => include('payment_history/refund.html', $cust_refund, %opt),
     'refund' => $cust_refund->refund,
   };
 
@@ -498,14 +500,15 @@ foreach my $cust_refund ($cust_main->cust_refund) {
 sub translate_payby {
     my ($payby,$payinfo) = (shift,shift);
     my %payby = (
+        FS::payby->payby2shortname,
         BILL    => $payinfo ? emt('Check #') : '',
         CHEK    => emt('Electronic check '),
         PREP    => emt('Prepaid card '),
         CARD    => emt('Credit card #'),
         COMP    => emt('Complimentary by '),
-        CASH    => emt('Cash'),
-        WEST    => emt('Western Union'),
-        MCRD    => emt('Manual credit card'),
+        #CASH    => emt('Cash'),
+        #WEST    => emt('Western Union'),
+        #MCRD    => emt('Manual credit card'),
     );
     $payby = (exists $payby{$payby}) ? $payby{$payby} : $payby; 
     $payby;
@@ -514,6 +517,7 @@ sub translate_payby {
 sub translate_payby_refund {
     my ($payby,$payinfo) = (shift,shift);
     my %payby = (
+        FS::payby->payby2shortname,
         BILL    => $payinfo ? emt('Check #') : emt('Check'),
         CHEK    => emt('Electronic check '),
         CARD    => emt('Credit card #'),

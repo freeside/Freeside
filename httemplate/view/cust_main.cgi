@@ -46,10 +46,39 @@ function areyousure(href, message) {
   <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>"><% mt('Edit this customer') |h %></A> | 
 % } 
 
-% if ( $curuser->access_right('Cancel customer')
-%        && $cust_main->ncancelled_pkgs
+% if ( $curuser->access_right('Suspend customer')
+%        && scalar($cust_main->unsuspended_pkgs)
 %      ) {
+  <& /elements/popup_link-cust_main.html,
+              { 'action'      => $p. 'misc/suspend_cust.html',
+                'label'       => emt('Suspend this customer'),
+                'actionlabel' => emt('Confirm Suspension'),
+                'color'       => '#ff9900',
+                'cust_main'   => $cust_main,
+                'width'       => 616, #make room for reasons
+                'height'      => 366,
+              }
+  &> | 
+% }
 
+% if ( $curuser->access_right('Unsuspend customer')
+%        && scalar($cust_main->suspended_pkgs)
+%      ) {
+  <& /elements/popup_link-cust_main.html,
+              { 'action'      => $p. 'misc/unsuspend_cust.html',
+                'label'       => emt('Unsuspend this customer'),
+                'actionlabel' => emt('Confirm Unsuspension'),
+                #'color'       => '#ff9900',
+                'cust_main'   => $cust_main,
+                #'width'       => 616, #make room for reasons
+                #'height'      => 366,
+              }
+  &> | 
+% }
+
+% if ( $curuser->access_right('Cancel customer')
+%        && scalar($cust_main->ncancelled_pkgs)
+%      ) {
   <& /elements/popup_link-cust_main.html,
               { 'action'      => $p. 'misc/cancel_cust.html',
                 'label'       => emt('Cancel this customer'),
@@ -60,11 +89,9 @@ function areyousure(href, message) {
                 'height'      => 366,
               }
   &> | 
-
 % }
 
 % if ( $curuser->access_right('Merge customer') ) {
-
   <& /elements/popup_link-cust_main.html,
               { 'action'      => $p. 'misc/merge_cust.html',
                 'label'       => emt('Merge this customer'),
@@ -74,7 +101,6 @@ function areyousure(href, message) {
                 'height'      => 192,
               }
   &> | 
-
 % } 
 
 % if ( $conf->exists('deletecustomers')
@@ -232,9 +258,9 @@ function areyousure(href, message) {
 % }
 
 % if ( $view eq 'jumbo' ) {
-    <BR><BR>
-    <A NAME="tickets"><FONT SIZE="+2"><% mt('Tickets') |h %></FONT></A><BR>
+    <BR>
 % }
+<BR>
 
 % if ( $view eq 'tickets' || $view eq 'jumbo' ) {
 
@@ -277,7 +303,13 @@ function areyousure(href, message) {
 % }
 
 % if ( $view eq 'custom' ) { 
+%   if ( $conf->config('cust_main-custom_link') ) {
 <& cust_main/custom.html, $cust_main &>
+%   } elsif ( $conf->config('cust_main-custom_content') ) {
+      <& cust_main/custom_content.html, $cust_main &>
+%   #} else {
+%   #  warn "custom view without cust_main-custom_link or -custom_content?";
+%   }
 % }
 
 </DIV>
@@ -326,7 +358,8 @@ $views{emt('Payment History')} =  'payment_history'
 $views{emt('Change History')}  =  'change_history'
   if $curuser->access_right('View customer history');
 $views{$conf->config('cust_main-custom_title') || emt('Custom')} =  'custom'
-  if $conf->config('cust_main-custom_link');
+  if $conf->config('cust_main-custom_link')
+  || $conf->config('cust_main-custom_content');
 $views{emt('Jumbo')}           =  'jumbo';
 
 my %viewname = reverse %views;

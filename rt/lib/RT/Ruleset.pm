@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -50,6 +50,7 @@ package RT::Ruleset;
 use strict;
 use warnings;
 
+
 use base 'Class::Accessor::Fast';
 use UNIVERSAL::require;
 
@@ -61,7 +62,7 @@ sub FindAllRules {
     my ($class, %args) = @_;
     return [
         grep { $_->Prepare }
-        map { $_->new(CurrentUser => $RT::SystemUser, %args) }
+        map { $_->new(CurrentUser => RT->SystemUser, %args) }
         grep { $_->_Stage eq $args{Stage} }
         map { @{$_->Rules} } @RULE_SETS
     ];

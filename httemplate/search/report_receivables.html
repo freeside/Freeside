@@ -52,7 +52,7 @@ function toggle(obj) {
   <& /elements/tr-input-date-field.html, {
                 'name'      => 'as_of',
                 'value'     => time,
-                'label'     => emt('As of date '),
+                'label'     => emt('At the end of date '),
                 'format'    => FS::Conf->new->config('date_format') || '%m/%d/%Y',
                 } 
   &>

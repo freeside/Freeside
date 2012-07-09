@@ -38,7 +38,13 @@ use FS::Conf;
 use FS::Record qw(qsearchs qsearch dbdef);
 use FS::cust_main;
 use FS::cust_svc;
+use FS::part_svc;
 use FS::payby;
+
+#can I do this?
+FS::UID->install_callback(
+  sub { @RT::URI::freeside::svc_tables = FS::part_svc->svc_tables() }
+);
 
 =head1 NAME
 
@@ -105,7 +111,23 @@ sub FreesideGetConfig {
 
 sub smart_search { #Subroutine
 
-  return map { { $_->hash } } &FS::cust_main::Search::smart_search(@_);
+    return map { { $_->hash } } &FS::cust_main::Search::smart_search(@_);
+
+}
+
+sub service_search {
+
+    return map {
+      my $cust_pkg = $_->cust_pkg;
+      my $custnum = $cust_pkg->custnum if $cust_pkg;
+      my $label = join(': ',($_->label)[0, 1]);
+      my %hash = (
+        $_->hash,
+        'label' => $label,
+        'custnum' => $custnum, # so that it's smart_searchable...
+      );
+      \%hash
+    } &FS::cust_svc::smart_search(@_);
 
 }
 
@@ -130,10 +152,22 @@ sub _FreesideURILabelLong {
   if ( $table eq 'cust_main' ) {
 
     my $rec = $self->_FreesideGetRecord();
-    return small_custview( $rec->{'_object'},
+    return '<A HREF="' . $self->HREF . '">' .
+                        small_custview( $rec->{'_object'},
                            scalar(FS::Conf->new->config('countrydefault')),
-                           1 #nobalance
-                         );
+                           1, #nobalance
+                        ) . '</A>';
+
+  } elsif ( $table eq 'cust_svc' ) {
+
+    my $string = '';
+    my $cust = $self->CustomerResolver;
+    if ( $cust ) {
+      $string = $cust->AsStringLong;
+    }
+    $string .= '<B><A HREF="' . $self->HREF . '">' . 
+        $self->AsString . '</A></B>';
+    return $string;
 
   } else {
 
@@ -143,18 +177,36 @@ sub _FreesideURILabelLong {
 
 }
 
-# no need to have a separate wrapper method for every one of these things
+sub CustomerResolver {
+  my $self = shift;
+  if ( $self->{fstable} eq 'cust_main' ) {
+    return $self;
+  }
+  elsif ( $self->{fstable} eq 'cust_svc' ) {
+    my $rec = $self->_FreesideGetRecord();
+    return if !$rec;
+    my $cust_pkg = $rec->{'_object'}->cust_pkg;
+    if ( $cust_pkg ) {
+      my $URI = RT::URI->new($self->CurrentUser);
+      $URI->FromURI('freeside://freeside/cust_main/'.$cust_pkg->custnum);
+      return $URI->Resolver;
+    }
+  }
+  return;
+}
+
 sub CustomerInfo {
   my $self = shift;
+  $self = $self->CustomerResolver or return;
   my $rec = $self->_FreesideGetRecord() or return;
-  my $cust_main = $rec->{'_object'};
+  my $cust_main = delete $rec->{_object};
   my $agent = $cust_main->agent;
   my $class = $cust_main->cust_class;
   my $referral = qsearchs('part_referral', { refnum => $cust_main->refnum });
   my @part_tags = $cust_main->part_tag;
 
   return $self->{CustomerInfo} ||= {
-    $cust_main->hash,
+    %$rec,
 
     AgentName     => ($agent ? ($agent->agentnum.': '.$agent->agent) : ''),
     CustomerClass => ($class ? $class->classname : ''),
@@ -167,6 +219,21 @@ sub CustomerInfo {
     Referral      => ($referral ? $referral->referral : ''),
     InvoiceEmail  => $cust_main->invoicing_list_emailonly_scalar,
     BillingType   => FS::payby->longname($cust_main->payby),
+  }
+}
+
+sub ServiceInfo {
+  my $self = shift;
+  $self->{fstable} eq 'cust_svc' or return;
+  my $rec = $self->_FreesideGetRecord() or return;
+  my $cust_svc = $rec->{'_object'};
+  my $svc_x = $cust_svc->svc_x;
+  my $part_svc = $cust_svc->part_svc;
+  return $self->{ServiceInfo} ||= {
+    $cust_svc->hash,
+    $svc_x->hash,
+    ServiceType => $part_svc->svc,
+    Label => $self->AsString,
   }
 }
 

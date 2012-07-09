@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -55,8 +55,6 @@ use Test::Email;
 use Email::Abstract;
 use base 'Exporter';
 our @EXPORT = qw(mail_ok);
-
-RT::Test->set_mail_catcher;
 
 =head1 NAME
 
@@ -122,7 +120,8 @@ END {
     if (scalar @mail) {
         diag ((scalar @mail)." uncaught notification email at end of test: ");
         diag "From: @{[ $_->header('From' ) ]}, Subject: @{[ $_->header('Subject') ]}"
-            for @mail;
+            for map { Email::Abstract->new($_)->cast('Email::Simple') } @mail;
+
         die;
     }
 }

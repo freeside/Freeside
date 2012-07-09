@@ -11,13 +11,30 @@
 
 <SCRIPT TYPE="text/javascript">
 
-function enable_quick_charge () {
+function enable_quick_charge (e) {
+
   if (    document.QuickChargeForm.amount.value
        && document.QuickChargeForm.pkg.value    ) {
     document.QuickChargeForm.submit.disabled = false;
   } else {
     document.QuickChargeForm.submit.disabled = true;
   }
+
+% if ( $curuser->option('disable_enter_submit_onetimecharge') ) {
+
+    var key;
+    if (window.event)
+          key = window.event.keyCode; //IE
+    else
+
+          key = e.which; //firefox, others
+
+    return (key != 13);
+
+% } else {
+    return true;
+% }
+
 }
 
 function validate_quick_charge () {
@@ -76,7 +93,12 @@ function bill_now_changed (what) {
 
 </SCRIPT>
 
-<FORM ACTION="process/quick-charge.cgi" NAME="QuickChargeForm" ID="QuickChargeForm" METHOD="POST" onsubmit="document.QuickChargeForm.submit.disabled=true;return validate_quick_charge();">
+<FORM ACTION   = "process/quick-charge.cgi"
+      NAME     = "QuickChargeForm"
+      ID       = "QuickChargeForm"
+      METHOD   = "POST"
+      onSubmit = "document.QuickChargeForm.submit.disabled=true; return validate_quick_charge();"
+>
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
@@ -85,7 +107,13 @@ function bill_now_changed (what) {
 <TR>
   <TD ALIGN="right"><% mt('Amount') |h %> </TD>
   <TD>
-    <% $money_char %><INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
+    <% $money_char %><INPUT TYPE       = "text"
+                            NAME       = "amount"
+                            SIZE       = 6
+                            VALUE      = "<% $amount %>"
+                            onChange   = "return enable_quick_charge(event)"
+                            onKeyPress = "return enable_quick_charge(event)"
+                     >
   </TD>
 </TR>
 
@@ -93,7 +121,11 @@ function bill_now_changed (what) {
     <TR>
       <TD ALIGN="right"><% mt('Quantity') |h %> </TD>
       <TD>
-        <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $quantity %>">
+        <INPUT TYPE       = "text"
+               NAME       = "quantity"
+               SIZE       = 4
+               VALUE      = "<% $quantity %>"
+               onKeyPress = "return enable_quick_charge(event)">
       </TD>
     </TR>
 % }
@@ -107,6 +139,7 @@ function bill_now_changed (what) {
            NAME  = "bill_now"
            VALUE = "1"
            <% $cgi->param('bill_now') ? 'CHECKED' : '' %>
+           onClick  = "bill_now_changed(this);"
            onChange = "bill_now_changed(this);"
     >
     <% mt('with terms') |h %> 
@@ -127,7 +160,11 @@ function bill_now_changed (what) {
            SIZE  = 32
            ID    = "start_date_text"
            VALUE = "<% $start_date %>"
-           <% $cgi->param('bill_now') ? 'STYLE = "background-color:#dddddd" DISABLED' : '' %>
+           onKeyPress="return enable_quick_charge(event)"
+           <% $cgi->param('bill_now')
+                ? 'STYLE = "background-color:#dddddd" DISABLED'
+                : ''
+           %>
     >
     <IMG SRC   = "<%$fsurl%>images/calendar.png"
          ID    = "start_date_button"
@@ -173,7 +210,14 @@ function bill_now_changed (what) {
 <TR>
   <TD ALIGN="right"><% mt('Description') |h %> </TD>
   <TD>
-    <INPUT TYPE="text" NAME="pkg" SIZE="50" MAXLENGTH="50" VALUE="<% $pkg %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
+    <INPUT TYPE       = "text"
+           NAME       = "pkg"
+           SIZE       = "50"
+           MAXLENGTH  = "50"
+           VALUE      = "<% $pkg %>"
+           onChange   = "return enable_quick_charge(event)"
+           onKeyPress = "return enable_quick_charge(event)"
+    >
   </TD>
 </TR>
 
@@ -191,7 +235,15 @@ function bill_now_changed (what) {
     <TR>
       <TD></TD>
       <TD>
-        <INPUT TYPE="text" NAME="description<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $param->{"description$row"} |h %>" rownum="<% $row %>" onkeyup = "possiblyAddRow;" >
+        <INPUT TYPE       = "text"
+               NAME       = "description<% $row %>"
+               SIZE       = "60"
+               MAXLENGTH  = "65"
+               VALUE      = "<% $param->{"description$row"} |h %>"
+               rownum     = "<% $row %>"
+               onKeyPress = "return enable_quick_charge(event)"
+               onKeyUp    = "return possiblyAddRow(event)"
+        >
       </TD>
     </TR>
 % } 
@@ -210,10 +262,26 @@ function bill_now_changed (what) {
 
   var rownum = <% $row %>;
 
-  function possiblyAddRow() {
+  function possiblyAddRow(e) {
+
     if ( ( rownum - this.getAttribute('rownum') ) == 1 ) {
       addRow();
     }
+
+%   if ( $curuser->option('disable_enter_submit_onetimecharge') ) {
+
+      var key;
+      if (window.event)
+            key = window.event.keyCode; //IE
+      else
+            key = e.which; //firefox, others
+
+      return (key != 13);
+
+%   } else {
+      return true;
+%   }
+
   }
 
   function addRow() {
@@ -228,14 +296,16 @@ function bill_now_changed (what) {
 
     var description_cell = document.createElement('TD');
 
-      var description_input = document.createElement('INPUT');
-      description_input.setAttribute('name', 'description'+rownum);
-      description_input.setAttribute('id',   'description'+rownum);
-      description_input.setAttribute('size', 60);
-      description_input.setAttribute('maxLength', 65);
-      description_input.setAttribute('rownum',   rownum);
-      description_input.onkeyup = possiblyAddRow;
-      description_cell.appendChild(description_input);
+      //var description_input = document.createElement('INPUT');
+      var di = document.createElement('INPUT');
+      di.setAttribute('name', 'description'+rownum);
+      di.setAttribute('id',   'description'+rownum);
+      di.setAttribute('size', 60);
+      di.setAttribute('maxLength', 65);
+      di.setAttribute('rownum',   rownum);
+      di.onkeyup = possiblyAddRow;
+      di.onkeypress = enable_quick_charge;
+      description_cell.appendChild(di);
 
     row.appendChild(description_cell);
 
@@ -251,8 +321,10 @@ function bill_now_changed (what) {
 </HTML>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('One-time charge');
+  unless $curuser->access_right('One-time charge');
 
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';

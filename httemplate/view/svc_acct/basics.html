@@ -1,6 +1,9 @@
 <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
 <& /view/elements/tr.html, label=>mt('Service'),  value=>$part_svc->svc &>
+% if ( $opt{cust_svc}->agent_svcid ) {
+  <& /view/elements/tr.html, label=>mt('Legacy ID'),  value=>$opt{cust_svc}->agent_svcid &>
+% }
 <& /view/elements/tr.html, label=>mt('Username'), value=>$svc_acct->username &>
 <& /view/elements/tr.html, label=>mt('Domain'),   value=>$domain &>
 

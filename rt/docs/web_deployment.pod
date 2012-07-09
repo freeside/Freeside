@@ -1,0 +1,246 @@
+=head1 Setting up the web interface
+
+As of RT 3.9, RT's web interface speaks PSGI
+(L<http://plackperl.org>) which lets you use RT with any PSGI-supported web
+server (which includes Apache, nginx, lighttpd, etc).
+
+=head2 Standalone
+
+The standalone RT web server is backed by a pure-Perl server engine
+(L<HTTP::Server::PSGI>). This standalone server is appropriate for development
+and testing, but is not appropriate for production use.
+
+You should not run this server against port 80 (which is the default port)
+because that requires root-level privileges and may conflict with any existing
+listeners. So choose a high port (for example 8080) and start the standalone
+server with:
+
+    /opt/rt4/sbin/rt-server --port 8080
+
+You can also run C<rt-server> with any other PSGI server, for example,
+to use L<Starman>, a high performance preforking server:
+
+    /opt/rt4/sbin/rt-server --server Starman --port 8080
+
+B<NOTICE>: After you run the standalone server as root, you will need to
+remove your C<var/mason> directory, or the non-standalone servers
+(Apache, etc), which run as a non-privileged user, will not be able to
+write to it and will not work.
+
+
+=head2 Apache
+
+B<WARNING>: Both C<mod_speling> and C<mod_cache> are known to break RT.
+C<mod_speling> will cause RT's CSS and JS to not be loaded, making RT
+appear unstyled. C<mod_cache> will cache cookies, making users be
+spontaneously logged in as other users in the system.
+
+=head3 mod_fastcgi
+
+    # Tell FastCGI to put its temporary files somewhere sane; this may
+    # be necessary if your distribution doesn't already set it
+    #FastCgiIpcDir /tmp
+
+    FastCgiServer /opt/rt4/sbin/rt-server.fcgi -processes 5 -idle-timeout 300
+
+    <VirtualHost rt.example.com>
+        ### Optional apache logs for RT
+        # Ensure that your log rotation scripts know about these files
+        # ErrorLog /opt/rt4/var/log/apache2.error
+        # TransferLog /opt/rt4/var/log/apache2.access
+        # LogLevel debug
+
+        AddDefaultCharset UTF-8
+
+        Alias /NoAuth/images/ /opt/rt4/share/html/NoAuth/images/
+        ScriptAlias / /opt/rt4/sbin/rt-server.fcgi/
+
+        DocumentRoot "/opt/rt4/share/html"
+        <Location />
+            Order allow,deny
+            Allow from all
+
+            Options +ExecCGI
+            AddHandler fastcgi-script fcgi
+        </Location>
+    </VirtualHost>
+
+=head3 mod_fcgid
+
+B<WARNING>: Before mod_fcgid 2.3.6, the maximum request size was 1GB.
+Starting in 2.3.6, this is now 128Kb.  This is unlikely to be large
+enough for any RT install that handles attachments.  You can read more
+about FcgidMaxRequestLen at
+L<http://httpd.apache.org/mod_fcgid/mod/mod_fcgid.html#fcgidmaxrequestlen>
+
+Most distributions will have a mod_fcgid.conf or similar file with
+mod_fcgid configurations and you should add:
+
+    FcgidMaxRequestLen 1073741824
+
+to return to the old default.
+
+    <VirtualHost rt.example.com>
+        ### Optional apache logs for RT
+        # Ensure that your log rotation scripts know about these files
+        # ErrorLog /opt/rt4/var/log/apache2.error
+        # TransferLog /opt/rt4/var/log/apache2.access
+        # LogLevel debug
+
+        AddDefaultCharset UTF-8
+
+        Alias /NoAuth/images/ /opt/rt4/share/html/NoAuth/images/
+        ScriptAlias / /opt/rt4/sbin/rt-server.fcgi/
+
+        DocumentRoot "/opt/rt4/share/html"
+        <Location />
+            Order allow,deny
+            Allow from all
+
+            Options +ExecCGI
+            AddHandler fcgid-script fcgi
+        </Location>
+    </VirtualHost>
+
+=head3 mod_perl 2.xx
+
+B<WARNING: mod_perl 1.99_xx is not supported.>
+
+B<WARNING>: Due to thread-safety limitations, all timestamps will be
+presented in the webserver's default time zone when using the C<worker>
+and C<event> MPMs; the C<$Timezone> setting and the user's timezone
+preference are ignored.  We suggest the C<prefork> MPM or FastCGI
+deployment if your privileged users are in a different timezone than the
+one the server is configured for.
+
+    <VirtualHost rt.example.com>
+        ### Optional apache logs for RT
+        # ErrorLog /opt/rt4/var/log/apache2.error
+        # TransferLog /opt/rt4/var/log/apache2.access
+        # LogLevel debug
+
+        AddDefaultCharset UTF-8
+
+        DocumentRoot "/opt/rt4/share/html"
+        <Location />
+            Order allow,deny
+            Allow from all
+
+            SetHandler modperl
+            PerlResponseHandler Plack::Handler::Apache2
+            PerlSetVar psgi_app /opt/rt4/sbin/rt-server
+        </Location>
+        <Perl>
+            use Plack::Handler::Apache2;
+            Plack::Handler::Apache2->preload("/opt/rt4/sbin/rt-server");
+        </Perl>
+    </VirtualHost>
+
+=head3 mod_perl 1.xx
+
+B<WARNING: mod_perl 1.99_xx is not supported.>
+
+To run RT using mod_perl 1.xx please see L<Plack::Handler::Apache1> for
+configuration examples.
+
+
+=head2 nginx
+
+C<nginx> requires that you start RT's fastcgi process externally, for
+example using C<spawn-fcgi>:
+
+    spawn-fcgi -u www-data -g www-data -a 127.0.0.1 -p 9000 \
+        -- /opt/rt4/sbin/rt-server.fcgi
+
+With the nginx configuration:
+
+    server {
+        listen 80;
+        server_name rt.example.com;
+        access_log  /var/log/nginx/access.log;
+
+        location / {
+            fastcgi_param  QUERY_STRING       $query_string;
+            fastcgi_param  REQUEST_METHOD     $request_method;
+            fastcgi_param  CONTENT_TYPE       $content_type;
+            fastcgi_param  CONTENT_LENGTH     $content_length;
+
+            fastcgi_param  SCRIPT_NAME        "";
+            fastcgi_param  PATH_INFO          $uri;
+            fastcgi_param  REQUEST_URI        $request_uri;
+            fastcgi_param  DOCUMENT_URI       $document_uri;
+            fastcgi_param  DOCUMENT_ROOT      $document_root;
+            fastcgi_param  SERVER_PROTOCOL    $server_protocol;
+
+            fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;
+            fastcgi_param  SERVER_SOFTWARE    nginx/$nginx_version;
+
+            fastcgi_param  REMOTE_ADDR        $remote_addr;
+            fastcgi_param  REMOTE_PORT        $remote_port;
+            fastcgi_param  SERVER_ADDR        $server_addr;
+            fastcgi_param  SERVER_PORT        $server_port;
+            fastcgi_param  SERVER_NAME        $server_name;
+            fastcgi_pass 127.0.0.1:9000;
+        }
+
+        location /NoAuth/images {
+            root /opt/rt4/share/html;
+        }
+    }
+
+
+=head2 lighttpd
+
+    server.modules += ( "mod_fastcgi" )
+    $HTTP["host"] =~ "^rt.example.com" {
+        alias.url = (
+            "/NoAuth/images/" => "/opt/rt4/share/html/NoAuth/images/",
+        )
+        $HTTP["url"] !~ "^/NoAuth/images/" {
+            fastcgi.server = (
+                "/" => (
+                    "rt" => (
+                        "port"        => "9000",
+                        "bin-path"    => "/opt/rt4/sbin/rt-server.fcgi",
+                        "check-local" => "disable",
+                        "fix-root-scriptname" => "enable",
+                    )
+                )
+            )
+        }
+    }
+
+
+=head1 Running RT at /rt rather than /
+
+First you need to tell RT where it's located by setting C<$WebPath> in your
+F<RT_SiteConfig.pm>:
+
+    # Important: don't include a trailing slash here.  Read `perldoc
+    # etc/RT_Config.pm` for more information.
+    Set($WebPath, "/rt");
+
+Then you need to update your Apache configuration to match.  Prefix any RT
+related C<Alias>, C<ScriptAlias> and C<Location> directives with C</rt>.  You
+should also make sure C<DocumentRoot> is B<not> set to
+C</opt/rt4/share/html/>, otherwise RT's source will be served from C</>.
+
+For example: if you're using the sample FastCGI config above, you might change
+the relevant directives to:
+
+    Alias /rt/NoAuth/images/ /opt/rt4/share/html/NoAuth/images/
+    ScriptAlias /rt /opt/rt4/sbin/rt-server.fcgi/
+
+    # Set DocumentRoot as appropriate for the other content you want to serve
+    DocumentRoot /var/www
+
+    <Location /rt>
+        ...
+    </Location>
+
+If you're using the sample mod_perl configuration, you only need to change the
+C<Location> directive.
+
+If you're not using Apache, please see L<Plack::Handler::FCGI> or the web
+server's own documentation for configuration examples.
+

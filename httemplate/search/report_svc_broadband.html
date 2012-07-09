@@ -76,7 +76,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages'); #?
+  unless $FS::CurrentUser::CurrentUser->access_right('Services: Wireless broadband services: Advanced search');
 
 my $title = 'Broadband Service Report';
 my $routernum = [ $cgi->param('routernum') || '' ];

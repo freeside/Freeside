@@ -116,13 +116,27 @@
 
 % }
 
+% if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
+%   my $dt = $cust_main->spouse_birthdate ne ''
+%              ? DateTime->from_epoch( 'epoch'  => $cust_main->spouse_birthdate,
+%                                      'time_zone' =>'floating',
+%                                    )
+%              : '';
+
+  <TR>
+    <TD ALIGN="right"><% mt('Spouse Date of Birth') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
+  </TR>
+
+% }
+
 % if ( $conf->exists('cust_main-require_censustract') ) {
 
   <TR>
     <TD ALIGN="right">
-      <% mt('Census tract ([_1])', $cust_main->censusyear) |h %>
+      <% mt('Census tract ([_1])', $cust_main->ship_location->censusyear) |h %>
     </TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->censustract  %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->ship_location->censustract  %></TD>
   </TR>
 
 % }
@@ -131,7 +145,7 @@
 
   <TR>
     <TD ALIGN="right"><% mt('Tax district') |h %></TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->district %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->ship_location->district %></TD>
   </TR>
 
 % }

@@ -7,6 +7,7 @@ use Data::Dumper;
 use Scalar::Util qw( blessed );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::PagedSearch qw( psearch );
 use FS::Msgcat qw(gettext);
 use FS::part_svc;
 use FS::phone_device;
@@ -218,13 +219,14 @@ Class method which returns an SQL fragment to search for the given string.
 sub search_sql {
   my( $class, $string ) = @_;
 
+  my $conf = new FS::Conf;
+
   if ( $conf->exists('svc_phone-allow_alpha_phonenum') ) {
     $string =~ s/\W//g;
   } else {
     $string =~ s/\D//g;
   }
 
-  my $conf = new FS::Conf;
   my $ccode = (    $conf->exists('default_phone_countrycode')
                 && $conf->config('default_phone_countrycode')
               )
@@ -647,11 +649,13 @@ sub cust_location_or_main {
   $cust_pkg ? $cust_pkg->cust_location_or_main : '';
 }
 
-=item get_cdrs
+=item psearch_cdrs OPTIONS
 
-Returns a set of Call Detail Records (see L<FS::cdr>) associated with this 
-service.  By default, "associated with" means that either the "src" or the 
-"charged_party" field of the CDR matches the "phonenum" field of the service.
+Returns a paged search (L<FS::PagedSearch>) for Call Detail Records 
+associated with this service.  By default, "associated with" means that 
+either the "src" or the "charged_party" field of the CDR matches the 
+"phonenum" field of the service.  To access the CDRs themselves, call
+"->fetch" on the resulting object.
 
 =over 2
 
@@ -675,11 +679,16 @@ with the chosen prefix.
 
 =item by_svcnum: not supported for svc_phone
 
+=item billsec_sum: Instead of returning all of the CDRs, return a single
+record (as an L<FS::cdr> object) with the sum of the 'billsec' field over 
+the entire result set.
+
 =back
 
 =cut
 
-sub get_cdrs {
+sub psearch_cdrs {
+
   my($self, %options) = @_;
   my @fields;
   my %hash;
@@ -738,17 +747,29 @@ sub get_cdrs {
 
   my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
 
-  my @cdrs =
-    qsearch( {
+  psearch( {
       'table'      => 'cdr',
       'hashref'    => \%hash,
       'extra_sql'  => $extra_sql,
       'order_by'   => $options{'billsec_sum'} ? '' : "ORDER BY startdate $for_update",
       'select'     => $options{'billsec_sum'} ? 'sum(billsec) as billsec_sum' : '*',
-    } );
-
-  @cdrs;
+  } );
 }
+
+=item get_cdrs (DEPRECATED)
+
+Like psearch_cdrs, but returns all the L<FS::cdr> objects at once, in a 
+single list.  Arguments are the same as for psearch_cdrs.  This can take 
+an unreasonably large amount of memory and is best avoided.
+
+=cut
+
+sub get_cdrs {
+  my $self = shift;
+  my $psearch = $self->psearch_cdrs(@_);
+  qsearch ( $psearch->{query} )
+}
+
 
 =back
 

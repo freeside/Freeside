@@ -1,14 +1,17 @@
 package FS::cust_location;
+use base qw( FS::geocode_Mixin FS::Record );
 
 use strict;
-use base qw( FS::geocode_Mixin FS::Record );
+use vars qw( $import );
 use Locale::Country;
-use FS::UID qw( dbh );
+use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch ); #qsearchs );
 use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
+
+$import = 0;
 
 =head1 NAME
 
@@ -110,11 +113,16 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
+  my $conf = new FS::Conf;
+
+  if ( $self->censustract ) {
+    $self->set('censusyear' => $conf->config('census_year') || 2012);
+  }
+
   my $error = $self->SUPER::insert(@_);
 
   #false laziness with cust_main, will go away eventually
-  my $conf = new FS::Conf;
-  if ( !$error and $conf->config('tax_district_method') ) {
+  if ( !$import and !$error and $conf->config('tax_district_method') ) {
 
     my $queue = new FS::queue {
       'job' => 'FS::geocode_Mixin::process_district_update'
@@ -141,21 +149,14 @@ sub replace {
   my $self = shift;
   my $old = shift;
   $old ||= $self->replace_old;
-  my $error = $self->SUPER::replace($old);
-
-  #false laziness with cust_main, will go away eventually
-  my $conf = new FS::Conf;
-  if ( !$error and $conf->config('tax_district_method') 
-    and $self->get('address1') ne $old->get('address1') ) {
-
-    my $queue = new FS::queue {
-      'job' => 'FS::geocode_Mixin::process_district_update'
-    };
-    $error = $queue->insert( ref($self), $self->locationnum );
-
+  # the following fields are immutable
+  foreach (qw(address1 address2 city state zip country)) {
+    if ( $self->$_ ne $old->$_ ) {
+      return "can't change cust_location field $_";
+    }
   }
 
-  $error || '';
+  $self->SUPER::replace($old);
 }
 
 
@@ -171,6 +172,7 @@ and replace methods.
 #fields anyway...
 sub check {
   my $self = shift;
+  my $conf = new FS::Conf;
 
   my $error = 
     $self->ut_numbern('locationnum')
@@ -182,7 +184,7 @@ sub check {
     || $self->ut_textn('county')
     || $self->ut_textn('state')
     || $self->ut_country('country')
-    || $self->ut_zip('zip', $self->country)
+    || (!$import && $self->ut_zip('zip', $self->country))
     || $self->ut_coordn('latitude')
     || $self->ut_coordn('longitude')
     || $self->ut_enum('coord_auto', [ '', 'Y' ])
@@ -191,22 +193,36 @@ sub check {
     || $self->ut_enum('location_kind', [ '', 'R', 'B' ] )
     || $self->ut_alphan('geocode')
     || $self->ut_alphan('district')
+    || $self->ut_numbern('censusyear')
   ;
   return $error if $error;
+  if ( $self->censustract ne '' ) {
+    $self->censustract =~ /^\s*(\d{9})\.?(\d{2})\s*$/
+      or return "Illegal census tract: ". $self->censustract;
+
+    $self->censustract("$1.$2");
+  }
+
+  if ( $conf->exists('cust_main-require_address2') and 
+       !$self->ship_address2 =~ /\S/ ) {
+    return "Unit # is required";
+  }
 
   $self->set_coord
-    unless $self->latitude && $self->longitude;
+    unless $import || ($self->latitude && $self->longitude);
 
-  return "No prospect or customer!" unless $self->prospectnum || $self->custnum;
+  # tricky...we have to allow for the customer to not be inserted yet
+  return "No prospect or customer!" unless $self->prospectnum 
+                                        || $self->custnum
+                                        || $self->get('custnum_pending');
   return "Prospect and customer!"       if $self->prospectnum && $self->custnum;
 
-  my $conf = new FS::Conf;
   return 'Location kind is required'
     if $self->prospectnum
     && $conf->exists('prospect_main-alt_address_format')
     && ! $self->location_kind;
 
-  unless ( qsearch('cust_main_county', {
+  unless ( $import or qsearch('cust_main_county', {
     'country' => $self->country,
     'state'   => '',
    } ) ) {
@@ -263,19 +279,40 @@ location_kind.
 
 =cut
 
-=item move_to HASHREF
+=item disable_if_unused
 
-Takes a hashref with one or more cust_location fields.  Creates a duplicate 
-of the existing location with all fields set to the values in the hashref.  
-Moves all packages that use the existing location to the new one, then sets 
-the "disabled" flag on the old location.  Returns nothing on success, an 
-error message on error.
+Sets the "disabled" flag on the location if it is no longer in use as a 
+prospect location, package location, or a customer's billing or default
+service address.
+
+=cut
+
+sub disable_if_unused {
+
+  my $self = shift;
+  my $locationnum = $self->locationnum;
+  return '' if FS::cust_main->count('bill_locationnum = '.$locationnum)
+            or FS::cust_main->count('ship_locationnum = '.$locationnum)
+            or FS::contact->count(      'locationnum  = '.$locationnum)
+            or FS::cust_pkg->count('cancel IS NULL AND 
+                                         locationnum  = '.$locationnum)
+          ;
+  $self->disabled('Y');
+  $self->replace;
+
+}
+
+=item move_to
+
+Takes a new L<FS::cust_location> object.  Moves all packages that use the 
+existing location to the new one, then sets the "disabled" flag on the old
+location.  Returns nothing on success, an error message on error.
 
 =cut
 
 sub move_to {
   my $old = shift;
-  my $hashref = shift;
+  my $new = shift;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -289,16 +326,12 @@ sub move_to {
   my $dbh = dbh;
   my $error = '';
 
-  my $new = FS::cust_location->new({
-      $old->location_hash,
-      'custnum'     => $old->custnum,
-      'prospectnum' => $old->prospectnum,
-      %$hashref
-    });
-  $error = $new->insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Error creating location: $error";
+  if ( !$new->locationnum ) {
+    $error = $new->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error creating location: $error";
+    }
   }
 
   my @pkgs = qsearch('cust_pkg', { 
@@ -316,15 +349,14 @@ sub move_to {
     }
   }
 
-  $old->disabled('Y');
-  $error = $old->replace;
+  $error = $old->disable_if_unused;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "Error disabling old location: $error";
   }
 
   $dbh->commit if $oldAutoCommit;
-  return;
+  '';
 }
 
 =item alternize
@@ -405,11 +437,100 @@ sub dealternize {
   '';
 }
 
+=item location_label
+
+Returns the label of the location object, with an optional site ID
+string (based on the cust_location-label_prefix config option).
+
+=cut
+
+sub location_label {
+  my $self = shift;
+  my %opt = @_;
+  my $conf = new FS::Conf;
+  my $prefix = '';
+  my $format = $conf->config('cust_location-label_prefix') || '';
+  my $cust_or_prospect;
+  if ( $self->custnum ) {
+    $cust_or_prospect = FS::cust_main->by_key($self->custnum);
+  }
+  elsif ( $self->prospectnum ) {
+    $cust_or_prospect = FS::prospect_main->by_key($self->prospectnum);
+  }
+
+  if ( $format eq 'CoStAg' ) {
+    my $agent = $conf->config('cust_main-custnum-display_prefix',
+                  $cust_or_prospect->agentnum)
+                || $cust_or_prospect->agent->agent;
+    # else this location is invalid
+    $prefix = uc( join('',
+        $self->country,
+        ($self->state =~ /^(..)/),
+        ($agent =~ /^(..)/),
+        sprintf('%05d', $self->locationnum)
+    ) );
+  }
+  elsif ( $self->custnum and 
+          $self->locationnum == $cust_or_prospect->ship_locationnum ) {
+    $prefix = 'Default service location';
+  }
+  $prefix .= ($opt{join_string} ||  ': ') if $prefix;
+  $prefix . $self->SUPER::location_label(%opt);
+}
+
 =back
 
-=head1 BUGS
+=head1 CLASS METHODS
 
-Not yet used for cust_main billing and shipping addresses.
+=item in_county_sql OPTIONS
+
+Returns an SQL expression to test membership in a cust_main_county 
+geographic area.  By default, this requires district, city, county,
+state, and country to match exactly.  Pass "ornull => 1" to allow 
+partial matches where some fields are NULL in the cust_main_county 
+record but not in the location.
+
+Pass "param => 1" to receive a parameterized expression (rather than
+one that requires a join to cust_main_county) and a list of parameter
+names in order.
+
+=cut
+
+sub in_county_sql {
+  # replaces FS::cust_pkg::location_sql
+  my ($class, %opt) = @_;
+  my $ornull = $opt{ornull} ? ' OR ? IS NULL' : '';
+  my $x = $ornull ? 3 : 2;
+  my @fields = (('district') x 3,
+                ('city') x 3,
+                ('county') x $x,
+                ('state') x $x,
+                'country');
+
+  my $text = (driver_name =~ /^mysql/i) ? 'char' : 'text';
+
+  my @where = (
+    "cust_location.district = ? OR ? = '' OR CAST(? AS $text) IS NULL",
+    "cust_location.city     = ? OR ? = '' OR CAST(? AS $text) IS NULL",
+    "cust_location.county   = ? OR (? = '' AND cust_location.county IS NULL) $ornull",
+    "cust_location.state    = ? OR (? = '' AND cust_location.state IS NULL ) $ornull",
+    "cust_location.country = ?"
+  );
+  my $sql = join(' AND ', map "($_)\n", @where);
+  if ( $opt{param} ) {
+    return $sql, @fields;
+  }
+  else {
+    # do the substitution here
+    foreach (@fields) {
+      $sql =~ s/\?/cust_main_county.$_/;
+      $sql =~ s/cust_main_county.$_ = ''/cust_main_county.$_ IS NULL/;
+    }
+    return $sql;
+  }
+}
+
+=head1 BUGS
 
 =head1 SEE ALSO
 

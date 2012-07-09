@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -57,7 +57,7 @@ $fields => undef
 use RT::Interface::REST;
 my $output = "";
 my $status = "200 Ok";
-my $tickets = new RT::Tickets $session{CurrentUser};
+my $tickets = RT::Tickets->new($session{CurrentUser});
 
 # Parse and validate any field specifications.
 my $field  = RT::Interface::REST->field_spec;
@@ -88,24 +88,29 @@ my ($n, $s);
 eval {
     ($n, $s) = $tickets->FromSQL($query);
 };
-my $sortstring = "";
+
 if ($orderby) {
-    $sortstring = 'FIELD => ';
+    my %args;
+
     my $order = substr($orderby, 0, 1);
     if ($order eq '+' || $order eq '-') {
-	$sortstring .= 'substr($orderby, 1)';
-	if ($order eq '+') {
-	    $sortstring .= ", ORDER => 'ASC'";
-	} elsif ($order eq '-') {
-	    $sortstring .= ", ORDER => 'DESC'";
-	}
-    } else {
-	$sortstring .= '$orderby';
+        # remove the +/- sorting sigil
+        substr($orderby, 0, 1, '');
+
+        if ($order eq '+') {
+            $args{ORDER} = 'ASC';
+        }
+        elsif ($order eq '-') {
+            $args{ORDER} = 'DESC';
+        }
     }
-    my $foo = 'FIELD => ';
-    $foo .= '$orderby';
-    $tickets->OrderBy(eval $sortstring);
+
+    $tickets->OrderBy(
+        FIELD => $orderby,
+        %args,
+    );
 }
+
 if ($@ || $n == 0) {
     $s ||= $@;
     $status = "400 Bad request";
@@ -132,10 +137,11 @@ while (my $ticket = $tickets->Next) {
 		}
 		# Cut off the annoying ticket/ before the id;
 		$key_values->{'id'} = $id;
-		$output .= join("\t", map {$key_values->{$_}} @$order)."\n";
-	
+		$output .= join("\t", map { ref $key_values->{$_} eq 'ARRAY' ?
+join( ', ', @{$key_values->{$_}} ) : $key_values->{$_} } @$order)."\n";
 
-	} else {	
+
+	} else {
         	$output .= $ticket->Id . ": ". $ticket->Subject . "\n";
 	}
     }

@@ -1,0 +1,46 @@
+<& elements/edit.html,
+  'post_url'    => popurl(1).'process/ftp_target.html',
+  'name'        => 'FTP target',
+  'table'       => 'ftp_target',
+  'viewall_url' => "${p}browse/ftp_target.html",
+  'labels'      => { targetnum => 'Target',
+                     hostname  => 'Server',
+                     username  => 'Username',
+                     password  => 'Password',
+                     path      => 'Directory',
+                     port      => 'Port',
+                     secure    => 'Use SFTP',
+                     handling  => 'Special handling',
+                   },
+  'fields'      => [
+                     { field => 'hostname', size => 40 },
+                     { field => 'port', size => 8 },
+                     { field => 'secure', type => 'checkbox', value => 'Y' },
+                     'username',
+                     'password',
+                     { field => 'path', size => 40 },
+                     { field => 'handling', 
+                       type => 'select',
+                       options => [ FS::ftp_target->handling_types ],
+                     },
+                   ],
+  'menubar'     => \@menubar,
+  'edit_callback' => $edit_callback,
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+my @menubar = ('View all FTP targets' => $p.'browse/ftp_target.html');
+my $edit_callback = sub {
+  my ($cgi, $object) = @_;
+  if ( $object->targetnum ) {
+    push @menubar, 'Delete this target', 
+                   $p.'misc/delete-ftp_target.html?'.$object->targetnum;
+  }
+};
+
+</%init>

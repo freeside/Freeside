@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -87,17 +87,6 @@ sub SetRecipients {
     my ( @To, @PseudoTo, @Cc, @Bcc );
 
 
-    if ( $arg =~ /\bOtherRecipients\b/ ) {
-        if ( my $attachment = $self->TransactionObj->Attachments->First ) {
-            push @Cc, map { $_->address } Email::Address->parse(
-                $attachment->GetHeader('RT-Send-Cc')
-            );
-            push @Bcc, map { $_->address } Email::Address->parse(
-                $attachment->GetHeader('RT-Send-Bcc')
-            );
-        }
-    }
-
     if ( $arg =~ /\bRequestor\b/ ) {
         push @To, $ticket->Requestors->MemberEmailAddresses;
     }
@@ -115,7 +104,10 @@ sub SetRecipients {
         }
     }
 
-    if ( $arg =~ /\bOwner\b/ && $ticket->OwnerObj->id != $RT::Nobody->id ) {
+    if (   $arg =~ /\bOwner\b/
+        && $ticket->OwnerObj->id != RT->Nobody->id
+        && $ticket->OwnerObj->EmailAddress
+    ) {
         # If we're not sending to Ccs or requestors,
         # then the Owner can be the To.
         if (@To) {
@@ -140,7 +132,7 @@ sub SetRecipients {
     }
 
     my $creatorObj = $self->TransactionObj->CreatorObj;
-    my $creator = $creatorObj->EmailAddress();
+    my $creator = $creatorObj->EmailAddress() || '';
 
     #Strip the sender out of the To, Cc and AdminCc and set the 
     # recipients fields used to build the message by the superclass.
@@ -159,7 +151,14 @@ sub SetRecipients {
     }
     @{ $self->{'PseudoTo'} } = @PseudoTo;
 
-
+    if ( $arg =~ /\bOtherRecipients\b/ ) {
+        if ( my $attachment = $self->TransactionObj->Attachments->First ) {
+            push @{ $self->{'NoSquelch'}{'Cc'} ||= [] }, map $_->address,
+                Email::Address->parse( $attachment->GetHeader('RT-Send-Cc') );
+            push @{ $self->{'NoSquelch'}{'Bcc'} ||= [] }, map $_->address,
+                Email::Address->parse( $attachment->GetHeader('RT-Send-Bcc') );
+        }
+    }
 }
 
 RT::Base->_ImportOverlays();

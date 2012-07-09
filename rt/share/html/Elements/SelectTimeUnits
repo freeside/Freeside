@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -55,7 +55,7 @@
 </select>
 <%INIT>
 $Name .= '-TimeUnits' unless $Name =~ /-TimeUnits$/io;
-my $HoursDefault = RT->Config->Get('DefaultTimeUnitsToHours');
+my $HoursDefault = RT->Config->Get('DefaultTimeUnitsToHours', $session{'CurrentUser'});
 </%INIT>
 <%ARGS>
 $Name => ''

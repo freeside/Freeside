@@ -211,7 +211,7 @@ invoice language options:
 %   } elsif ( $type eq 'checkbox' ) {
 
             <tr>
-              <td id="<% $agentnum.$i->key.$n %>" bgcolor="#<% $conf->exists($i->key, $agentnum) ? '00ff00">YES' : 'ff0000">NO' %></td>
+              <td id="<% $agentnum.$i->key.$n %>" bgcolor="#<% $conf->config_bool($i->key, $agentnum) ? '00ff00">YES' : 'ff0000">NO' %></td>
             </tr>
 
 %   } elsif ( $type eq 'select' && $i->select_hash ) {

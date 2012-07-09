@@ -111,6 +111,7 @@ END
   'options'  => \%options,
   'nodomain' => 'Y',
   'nas'      => 'Y', # show export_nas selection in UI
+  'default_svc_class' => 'Internet',
   'notes'    => $notes1.
                 'This export does not export RADIUS realms (see also '.
                 'sqlradius_withdomain).  '.
@@ -250,6 +251,7 @@ sub _export_replace {
   '';
 }
 
+#false laziness w/broadband_sqlradius.pm
 sub _export_suspend {
   my( $self, $svc_acct ) = (shift, shift);
 
@@ -297,7 +299,7 @@ sub _export_suspend {
 }
 
 sub _export_unsuspend {
-  my( $self, $svc_acct ) = (shift, shift);
+  my( $self, $svc_x ) = (shift, shift);
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -310,21 +312,21 @@ sub _export_unsuspend {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $err_or_queue = $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
-    'check', $self->export_username($svc_acct), $svc_acct->radius_check );
+  my $err_or_queue = $self->sqlradius_queue( $svc_x->svcnum, 'insert',
+    'check', $self->export_username($svc_x), $self->radius_check($svc_x) );
   unless ( ref($err_or_queue) ) {
     $dbh->rollback if $oldAutoCommit;
     return $err_or_queue;
   }
 
   my $error;
-  my (@oldgroups) = $self->suspended_usergroups($svc_acct);
+  my (@oldgroups) = $self->suspended_usergroups($svc_x);
   $error = $self->sqlreplace_usergroups(
-    $svc_acct->svcnum,
-    $self->export_username($svc_acct),
+    $svc_x->svcnum,
+    $self->export_username($svc_x),
     '',
     \@oldgroups,
-    [ $svc_acct->radius_groups('hashref') ],
+    [ $svc_x->radius_groups('hashref') ],
   );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -358,14 +360,16 @@ sub sqlradius_queue {
 }
 
 sub suspended_usergroups {
-  my ($self, $svc_acct) = (shift, shift);
+  my ($self, $svc_x) = (shift, shift);
 
-  return () unless $svc_acct;
+  return () unless $svc_x;
+
+  my $svc_table = $svc_x->table;
 
   #false laziness with FS::part_export::shellcommands
   #subclass part_export?
 
-  my $r = $svc_acct->cust_svc->cust_pkg->last_reason('susp');
+  my $r = $svc_x->cust_svc->cust_pkg->last_reason('susp');
   my %reasonmap = $self->_groups_susp_reason_map;
   my $userspec = '';
   if ($r) {
@@ -374,19 +378,19 @@ sub suspended_usergroups {
     $userspec = $reasonmap{$r->reason}
       if (!$userspec && exists($reasonmap{$r->reason}));
   }
-  my $suspend_user;
-  if ($userspec =~ /^\d+$/ ){
-    $suspend_user = qsearchs( 'svc_acct', { 'svcnum' => $userspec } );
-  }elsif ($userspec =~ /^\S+\@\S+$/){
+  my $suspend_svc;
+  if ( $userspec =~ /^\d+$/ ){
+    $suspend_svc = qsearchs( $svc_table, { 'svcnum' => $userspec } );
+  } elsif ( $userspec =~ /^\S+\@\S+$/ && $svc_table eq 'svc_acct' ){
     my ($username,$domain) = split(/\@/, $userspec);
     for my $user (qsearch( 'svc_acct', { 'username' => $username } )){
-      $suspend_user = $user if $userspec eq $user->email;
+      $suspend_svc = $user if $userspec eq $user->email;
     }
-  }elsif ($userspec){
-    $suspend_user = qsearchs( 'svc_acct', { 'username' => $userspec } );
+  }elsif ( $userspec && $svc_table eq 'svc_acct'  ){
+    $suspend_svc = qsearchs( 'svc_acct', { 'username' => $userspec } );
   }
   #esalf
-  return $suspend_user->radius_groups('hashref') if $suspend_user;
+  return $suspend_svc->radius_groups('hashref') if $suspend_svc;
   ();
 }
 
@@ -756,7 +760,7 @@ sub usage_sessions {
 
 }
 
-=item update_svc_acct
+=item update_svc
 
 =cut
 
@@ -1154,8 +1158,13 @@ sub _upgrade_exporttype {
 
 sub import_attrs {
   my $self = shift;
-  my $dbh = sqlradius_connect( map $self->option($_),
+  my $dbh =  DBI->connect( map $self->option($_),
                                    qw( datasrc username password ) );
+  unless ( $dbh ) {
+    warn "Error connecting to RADIUS server: $DBI::errstr\n";
+    return;
+  }
+
   my $usergroup = $self->option('usergroup') || 'usergroup';
   my $error;
   warn "Importing RADIUS groups and attributes from ".$self->option('datasrc').

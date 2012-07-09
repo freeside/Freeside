@@ -1,0 +1,161 @@
+<%doc>
+Accessible Freeside svc_x fields go in here.  RT::URI::freeside::Internal
+pulls all fields from cust_svc and the svc_x tables into ServiceInfo().
+RT::Tickets_Overlay resolves "Service.foo" as "cust_svc.foo", and 
+"Service.svc_acct.bar" as "JOIN svc_acct USING (svcnum) ... svc_acct.bar".
+
+See /Elements/CustomerFields for notes on this data structure.
+</%doc>
+<%once>
+
+my @service_fields = ( # ordered
+  {
+    # svcnum
+    Name    => 'Service',
+    Label   => 'Service',
+    Display => sub {
+                my $Ticket = shift;
+                my @return = ();
+                foreach my $s (ticket_svc_resolvers($Ticket)) {
+                    push @return, \'<A HREF="', $s->HREF, \'">',
+                                  $s->AsString,
+                                  \'</A>',
+                                  \'<BR>';
+                }
+                pop @return;
+                @return;
+              },
+    OrderBy => 'Service.Number',
+  },
+  {
+    #Column name (format string)
+    Name    => 'ServiceType',
+    # Column heading/query builder name
+    Label   => 'Service Type',
+    # Column value (coderef, cust_svc/svc_x field, or ServiceInfo key)
+    Display => 'ServiceType',
+    # Query builder options
+    # RT-SQL field, defaults to Name
+    QueryName => 'Service.svcpart',
+    Op      => equals_notequals,
+    Value   => select_table('part_svc', 'svcpart', 'svc'),
+    # RT-SQL sort key (if any)
+    OrderBy => 'Service.svcpart',
+  },
+  {
+    Name    => 'ServiceKey', # loosely corresponds to smartsearch/label field
+    Label   => '',
+    # not displayable
+    QueryLabel  => {
+      Type      => 'select',
+      Options   => [
+        'Service.svc_acct.username'       => loc('Username'),
+        'Service.svc_phone.phonenum'      => loc('Phone Number'),
+        'Service.svc_broadband.ip_addr'   => loc('IP Address'),
+        'Service.svc_broadband.mac_addr'  => loc('MAC Address'),
+      ],
+    },
+    Op      => matches_notmatches,
+    Value   => { Type => 'text', Size => 20 },
+  },
+  {
+    Name    => 'Router',
+    Label   => 'Router',
+    QueryName => 'Service.svc_broadband.routernum',
+    # not displayable
+    Op      => equals_notequals,
+    Value   => select_table('router', 'routernum', 'routername'),
+    OrderBy => 'Service.svc_broadband.routernum',
+  },
+
+);
+#helper subs
+#Op      
+sub equals_notequals {
+  {
+      Type => 'component',
+      Path => '/Elements/SelectBoolean',
+      Arguments => { TrueVal=> '=', FalseVal=> '!=' },
+  }
+}
+sub matches_notmatches {
+    {
+        Type => 'component',
+        Path => '/Elements/SelectMatch',
+    },
+}
+
+#Value
+sub select_table {
+  my ($table, $value_col, $name_col, $hashref) = @_;
+  $hashref ||= { disabled => '' }; # common case
+  return {
+    Type => 'select',
+    Options => [
+      '' => '-',
+      map { $_->$value_col, $_->$name_col }
+      qsearch($table, $hashref)
+    ],
+  }
+}
+
+sub ticket_svc_resolvers {
+    my $Ticket = shift;
+    my @Services = @{ $Ticket->Services->ItemsArrayRef };
+    return map $_->TargetURI->Resolver, @Services;
+}
+
+sub svc_info_attribute {
+    my $attribute = shift;
+    sub {
+        my $Ticket = shift;
+        my @return;
+        foreach my $s (ticket_svc_resolvers($Ticket)) {
+            push @return, $s->ServiceInfo->{$attribute}, '<BR>';
+        }
+        pop @return; #trailing <BR>
+        @return;
+    };
+}
+
+</%once>
+<%init>
+use Data::Dumper;
+#warn Dumper(\@service_fields);
+
+my $arg = shift;
+if ( $arg eq 'Names' ) {
+  return map { $_->{Name} } 
+  grep { exists $_->{Display} }
+  @service_fields;
+}
+elsif ( $arg eq 'ColumnMap' ) {
+  return map {
+    my $f = $_;
+    $f->{Name} => {
+        title     => $f->{Label},
+        attribute => $f->{OrderBy} || '',
+        value     => ref($f->{Display}) eq 'CODE' ? 
+                      $f->{Display} : 
+                      svc_info_attribute($f->{Display})
+    }
+  } #map
+  grep { exists $_->{Display} }
+  @service_fields;
+}
+elsif ( $arg eq 'Criteria' ) {
+  return map {
+    my $f = $_;
+    # argument to Search/Elements/ConditionRow
+    {
+      Name  => ($f->{QueryName} || $f->{Name}),
+      Field => ($f->{QueryLabel} || $f->{Label}),
+      Op    => $f->{Op},
+      Value => $f->{Value},
+    }
+  } #map
+  grep { exists($_->{Value}) }
+  @service_fields;
+}
+else { die "unknown ServiceFields mode '$arg'\n"; }
+</%init>

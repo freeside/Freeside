@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -64,7 +64,9 @@ It consists of an ID, a name, and some arbitrary data.
 package RT::SharedSetting;
 use strict;
 use warnings;
+
 use RT::Attribute;
+use Scalar::Util 'blessed';
 use base qw/RT::Base/;
 
 =head1 METHODS
@@ -110,6 +112,9 @@ sub Load {
             return (0, $self->loc("Permission denied"))
                 unless $self->CurrentUserCanSee;
 
+            my ($ok, $msg) = $self->PostLoadValidate;
+            return ($ok, $msg) if !$ok;
+
             return (1, $self->loc("Loaded [_1] [_2]", $self->ObjectName, $self->Name));
         } else {
             $RT::Logger->error("Could not load attribute " . $id
@@ -150,11 +155,23 @@ sub LoadById {
 
 =head2 PostLoad
 
-Called after after successful L</Load>.
+Called after a successful L</Load>.
 
 =cut
 
 sub PostLoad { }
+
+=head2 PostLoadValidate
+
+Called just before returning success from L</Load>; may be used to validate
+that the record is correct. This method is expected to return a (ok, msg)
+pair.
+
+=cut
+
+sub PostLoadValidate {
+    return 1;
+}
 
 =head2 Save
 
@@ -257,11 +274,11 @@ where status is true upon success.
 
 sub Delete {
     my $self = shift;
-
     return (0, $self->loc("Permission denied"))
         unless $self->CurrentUserCanDelete;
 
     my ($status, $msg) = $self->{'Attribute'}->Delete;
+    $self->CurrentUser->ClearAttributes; # force the current user's attribute cache to be cleaned up
     if ($status) {
         return (1, $self->loc("Deleted [_1]", $self->ObjectName));
     } else {
@@ -293,6 +310,9 @@ sub Id {
     my $self = shift;
     return $self->{'Id'};
 }
+
+*id = \&Id;
+
 
 =head2 Privacy
 
@@ -329,7 +349,7 @@ This does not deal with ACLs, this only looks at membership.
 sub IsVisibleTo {
     my $self    = shift;
     my $to      = shift;
-    my $privacy = $self->Privacy;
+    my $privacy = $self->Privacy || '';
 
     # if the privacies are the same, then they can be seen. this handles
     # a personal setting being visible to that user.
@@ -372,6 +392,11 @@ sub _GetObject {
     my $self = shift;
     my $privacy = shift;
 
+    # short circuit: if they pass the object we want anyway, just return it
+    if (blessed($privacy) && $privacy->isa('RT::Record')) {
+        return $privacy;
+    }
+
     my ($obj_type, $obj_id) = split(/\-/, ($privacy || ''));
 
     unless ($obj_type && $obj_id) {
@@ -395,7 +420,9 @@ sub _GetObject {
         return undef;
     }
 
-    if ($obj_type eq 'RT::Group' && !$object->HasMemberRecursively($self->CurrentUser->PrincipalObj)) {
+    if (   $obj_type eq 'RT::Group'
+        && !$object->HasMemberRecursively($self->CurrentUser->PrincipalObj)
+        && !$self->CurrentUser->HasRight( Object => $RT::System, Right => 'SuperUser' ) ) {
         $RT::Logger->debug("Permission denied, ".$self->CurrentUser->Name.
                            " is not a member of group");
         return undef;
@@ -448,6 +475,42 @@ sub _build_privacy {
          : $obj_type eq 'RT::Group'  ? "$obj_type-$obj_id"
          : $obj_type eq 'RT::System' ? "$obj_type-$obj_id"
          : undef;
+}
+
+=head2 ObjectsForLoading
+
+Returns a list of objects that can be used to load this shared setting. It
+is ACL checked.
+
+=cut
+
+sub ObjectsForLoading {
+    my $self = shift;
+    return grep { $self->CurrentUserCanSee($_) } $self->_PrivacyObjects;
+}
+
+=head2 ObjectsForCreating
+
+Returns a list of objects that can be used to create this shared setting. It
+is ACL checked.
+
+=cut
+
+sub ObjectsForCreating {
+    my $self = shift;
+    return grep { $self->CurrentUserCanCreate($_) } $self->_PrivacyObjects;
+}
+
+=head2 ObjectsForModifying
+
+Returns a list of objects that can be used to modify this shared setting. It
+is ACL checked.
+
+=cut
+
+sub ObjectsForModifying {
+    my $self = shift;
+    return grep { $self->CurrentUserCanModify($_) } $self->_PrivacyObjects;
 }
 
 RT::Base->_ImportOverlays();

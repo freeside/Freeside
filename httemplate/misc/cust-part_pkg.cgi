@@ -1,11 +1,19 @@
 <% objToJson( \@return ) %>
 <%init>
 
-my( $custnum, $classnum ) = $cgi->param('arg');
+my( $custnum, $prospectnum, $classnum ) = $cgi->param('arg');
 
-#XXX i guess i should be agent-virtualized.  cause "packages a customer can
-#order" is such a huge deal
-my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+
+my $agent;
+if ( $custnum ) {
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or die 'unknown custnum';
+  $agent = $cust_main->agent;
+} else {
+  my $prospect_main = qsearchs('prospect_main', {'prospectnum'=>$prospectnum} )
+    or die 'unknown prospectnum';
+  $agent = $prospect_main->agent;
+}
 
 my %hash = ( 'disabled' => '' );
 if ( $classnum > 0 ) {
@@ -19,7 +27,7 @@ my @part_pkg = qsearch({
   'hashref'   => \%hash,
   'extra_sql' =>
     ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql( 'null'=>1 ).
-    ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_main->agent ),
+    ' AND '. FS::part_pkg->agent_pkgs_sql( $agent ),
   'order_by'  => 'ORDER BY pkg',
 });
 

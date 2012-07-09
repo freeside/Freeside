@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -55,7 +55,7 @@ $changes => {}
 <%perl>
 my @comments;
 my ($c, $o, $k, $e) = ("", [], {}, 0);
-my $queue = new RT::Queue $session{CurrentUser};
+my $queue = RT::Queue->new($session{CurrentUser});
 
 $queue->Load($id);
 if (!$queue->Id) {

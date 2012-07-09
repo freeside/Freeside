@@ -88,23 +88,35 @@
     %>
 
 %   }
-
+    <TR>
+      <TD COLSPAN=2>
+        <TABLE>
+          <TR>
+            <TD></TD>
+            <TD>From date <i>(m/d/y)</i></TD>
+            <TD>To date <i>(m/d/y)</i></TD>
+          </TR>
+%   my $noinit = 0;
 %   foreach my $field (@date_fields) {
 
-      <TR>
-        <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
-        <TD>
-          <TABLE>
-            <% include( '/elements/tr-input-beginning_ending.html',
-                          prefix   => $field,
-                          layout   => 'horiz',
-                      )
-            %>
-          </TABLE>
-        </TD>
-      </TR>
-
-%   }
+          <TR>
+            <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
+%     foreach (qw(beginning ending)) {
+            <TD>
+              <& /elements/input-date-field.html, {
+                'name'    => $field.'_'.$_,
+                'value'   => '',
+                'noinit'  => $noinit,
+                'format'  => '%m/%d/%Y',
+              } &>
+            </TD>
+%     $noinit = 1;
+%     }
+          </TR>
+%   } #foreach $field
+        </TABLE>
+      </TD>
+    </TR>
     
     <SCRIPT TYPE="text/javascript">
   
@@ -186,6 +198,7 @@ tie my %label, 'Tie::IxHash',
   'dundate'      => 'Suspension delayed until',
   'expire'       => 'Expires',
   'contract_end' => 'Contract ends',
+  'change_date'  => 'Changed from other package',
   'cancel'       => 'Cancelled',
 ;
 my @date_fields = keys %label;

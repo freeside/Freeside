@@ -36,6 +36,9 @@
          'empty_label'   => 'No address',
          'disable_empty' => $conf->exists('prospect_main-location_required'),
          'alt_format'    => $conf->exists('prospect_main-alt_address_format'),
+         'include_opt_callback' => sub { 
+            'prospect_main' => shift
+          },
        },
      ],
      'new_callback'    => $new_callback,

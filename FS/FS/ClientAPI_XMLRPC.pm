@@ -37,17 +37,21 @@ $DEBUG = 0;
 $FS::ClientAPI::DEBUG = $DEBUG;
 
 #false laziness w/FS::SelfService/XMLRPC.pm, same problem as below but worse
+our %typefix_skin_info = (
+  'logo'              => 'base64',
+  'title_left_image'  => 'base64',
+  'title_right_image' => 'base64',
+  'menu_top_image'    => 'base64',
+  'menu_body_image'   => 'base64',
+  'menu_bottom_image' => 'base64',
+);
 our %typefix = (
   'invoice_pdf'        => { 'invoice_pdf' => 'base64', },
   'legacy_invoice_pdf' => { 'invoice_pdf' => 'base64', },
-  'skin_info'          => { 'logo'              => 'base64',
-                            'title_left_image'  => 'base64',
-                            'title_right_image' => 'base64',
-                            'menu_top_image'    => 'base64',
-                            'menu_body_image'   => 'base64',
-                            'menu_bottom_image' => 'base64',
-                          },
+  'skin_info'          => \%typefix_skin_info,
+  'login_info'         => \%typefix_skin_info,
   'invoice_logo'       => { 'logo' => 'base64', },
+  'login_banner_image' => { 'image' => 'base64', },
 );
 
 sub AUTOLOAD {
@@ -94,11 +98,13 @@ sub ss2clientapi {
   'chfn'                      => 'passwd/passwd',
   'chsh'                      => 'passwd/passwd',
   'login_info'                => 'MyAccount/login_info',
+  'login_banner_image'        => 'MyAccount/login_banner_image',
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'switch_acct'               => 'MyAccount/switch_acct',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
+  'billing_history'           => 'MyAccount/billing_history',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'                   => 'MyAccount/invoice',
   'invoice_pdf'               => 'MyAccount/invoice_pdf',
@@ -171,22 +177,6 @@ sub ss2clientapi {
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
-  #izoom
-  #'bulk_processrow'           => 'Bulk/processrow',
-  #conflicts w/Agentone# 'check_username'            => 'Bulk/check_username',
-  #sg
-  'ping'                      => 'SGNG/ping',
-  'decompify_pkgs'            => 'SGNG/decompify_pkgs',
-  'previous_payment_info'     => 'SGNG/previous_payment_info',
-  'previous_payment_info_renew_info'
-                              => 'SGNG/previous_payment_info_renew_info',
-  'previous_process_payment'  => 'SGNG/previous_process_payment',
-  'previous_process_payment_order_pkg'
-                              => 'SGNG/previous_process_payment_order_pkg',
-  'previous_process_payment_change_pkg'
-                              => 'SGNG/previous_process_payment_change_pkg',
-  'previous_process_payment_order_renew'
-                              => 'SGNG/previous_process_payment_order_renew',
   };
 }
 

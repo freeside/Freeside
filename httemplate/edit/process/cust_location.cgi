@@ -28,10 +28,12 @@ my $cust_location = qsearchs({
 });
 die "unknown locationnum $locationnum" unless $cust_location;
 
-my $new = {
+my $new = FS::cust_location->new({
+  custnum     => $cust_location->custnum,
+  prospectnum => $cust_location->prospectnum,
   map { $_ => scalar($cgi->param($_)) }
     qw( address1 address2 city county state zip country )
-};
+});
 
 my $error = $cust_location->move_to($new);
 

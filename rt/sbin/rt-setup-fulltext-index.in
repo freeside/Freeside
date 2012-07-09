@@ -1,0 +1,714 @@
+#!@PERL@
+# BEGIN BPS TAGGED BLOCK {{{
+#
+# COPYRIGHT:
+#
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+#                                          <sales@bestpractical.com>
+#
+# (Except where explicitly superseded by other copyright notices)
+#
+#
+# LICENSE:
+#
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+#
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+#
+#
+# CONTRIBUTION SUBMISSION POLICY:
+#
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+#
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+#
+# END BPS TAGGED BLOCK }}}
+use strict;
+use warnings;
+no warnings 'once';
+
+# fix lib paths, some may be relative
+BEGIN {
+    require File::Spec;
+    my @libs = ("@RT_LIB_PATH@", "@LOCAL_LIB_PATH@");
+    my $bin_path;
+
+    for my $lib (@libs) {
+        unless ( File::Spec->file_name_is_absolute($lib) ) {
+            unless ($bin_path) {
+                if ( File::Spec->file_name_is_absolute(__FILE__) ) {
+                    $bin_path = ( File::Spec->splitpath(__FILE__) )[1];
+                }
+                else {
+                    require FindBin;
+                    no warnings "once";
+                    $bin_path = $FindBin::Bin;
+                }
+            }
+            $lib = File::Spec->catfile( $bin_path, File::Spec->updir, $lib );
+        }
+        unshift @INC, $lib;
+    }
+}
+
+BEGIN {
+    use RT;
+    RT::LoadConfig();
+    RT::Init();
+};
+use RT::Interface::CLI ();
+
+my %DB = (
+    type           => scalar RT->Config->Get('DatabaseType'),
+    user           => scalar RT->Config->Get('DatabaseUser'),
+    admin          => '@DB_DBA@',
+    admin_password => undef,
+);
+
+my %OPT = (
+    help        => 0,
+    ask         => 1,
+    dryrun      => 0,
+    attachments => 1,
+);
+
+my %DEFAULT;
+if ( $DB{'type'} eq 'Pg' ) {
+    %DEFAULT = (
+        table  => 'Attachments',
+        column => 'ContentIndex',
+    );
+}
+elsif ( $DB{'type'} eq 'mysql' ) {
+    %DEFAULT = (
+        table => 'AttachmentsIndex',
+    );
+}
+elsif ( $DB{'type'} eq 'Oracle' ) {
+    %DEFAULT = (
+        prefix => 'rt_fts_',
+    );
+}
+
+use Getopt::Long qw(GetOptions);
+GetOptions(
+    'h|help!'        => \$OPT{'help'},
+    'ask!'           => \$OPT{'ask'},
+    'dry-run!'       => \$OPT{'dryrun'},
+    'attachments!'   => \$OPT{'attachments'},
+
+    'table=s'        => \$OPT{'table'},
+    'column=s'       => \$OPT{'column'},
+    'url=s'          => \$OPT{'url'},
+    'maxmatches=i'   => \$OPT{'maxmatches'},
+    'index-type=s'   => \$OPT{'index-type'},
+
+    'dba=s'          => \$DB{'admin'},
+    'dba-password=s' => \$DB{'admin_password'},
+) or show_help();
+
+if ( $OPT{'help'} || (!$DB{'admin'} && $DB{'type'} eq 'Oracle' ) ) {
+    show_help( !$OPT{'help'} );
+}
+
+my $dbh = $RT::Handle->dbh;
+$dbh->{'RaiseError'} = 1;
+$dbh->{'PrintError'} = 1;
+
+if ( $DB{'type'} eq 'mysql' ) {
+    check_sphinx();
+    my $table = $OPT{'table'} || prompt(
+        message => "Enter name of a new MySQL table that will be used to connect to the\n"
+                 . "Sphinx server:",
+        default => $DEFAULT{'table'},
+        silent  => !$OPT{'ask'},
+    );
+    my $url = $OPT{'url'} || prompt(
+        message => "Enter URL of the sphinx search server; this should be of the form\n"
+                 . "sphinx://<server>:<port>/<index name>",
+        default => 'sphinx://localhost:3312/rt',
+        silent  => !$OPT{'ask'},
+    );
+    my $maxmatches = $OPT{'maxmatches'} || prompt(
+        message => "Maximum number of matches to return; this is the maximum number of\n"
+                 . "attachment records returned by the search, not the maximum number\n"
+                 . "of tickets.  Both your RT_SiteConfig.pm and your sphinx.conf must\n"
+                 . "agree on this value.  Larger values cause your Sphinx server to\n"
+                 . "consume more memory and CPU time per query.",
+        default => 10000,
+        silent  => !$OPT{'ask'},
+    );
+
+    my $schema = <<END;
+CREATE TABLE $table (
+    id     INTEGER UNSIGNED NOT NULL,
+    weight INTEGER NOT NULL,
+    query  VARCHAR(3072) NOT NULL,
+    INDEX(query)
+) ENGINE=SPHINX CONNECTION="$url" CHARACTER SET utf8
+END
+
+    do_error_is_ok( dba_handle() => "DROP TABLE $table" )
+        unless $OPT{'dryrun'};
+    insert_schema( $schema );
+
+    print_rt_config( Table => $table, MaxMatches => $maxmatches );
+
+    require URI;
+    my $urlo = URI->new( $url );
+    my ($host, $port)  = split /:/, $urlo->authority;
+    my $index = $urlo->path;
+    $index =~ s{^/+}{};
+
+    my $var_path = $RT::VarPath;
+
+    my %sphinx_conf = ();
+    $sphinx_conf{'host'} = RT->Config->Get('DatabaseHost');
+    $sphinx_conf{'db'}   = RT->Config->Get('DatabaseName');
+    $sphinx_conf{'user'} = RT->Config->Get('DatabaseUser');
+    $sphinx_conf{'pass'} = RT->Config->Get('DatabasePassword');
+
+    print <<END
+
+Below is a simple Sphinx configuration which can be used to index all
+text/plain attachments in your database.  This configuration is not
+ideal; you should read the Sphinx documentation to understand how to
+configure it to better suit your needs.
+
+source rt {
+    type            = mysql
+
+    sql_host        = $sphinx_conf{'host'}
+    sql_db          = $sphinx_conf{'db'}
+    sql_user        = $sphinx_conf{'user'}
+    sql_pass        = $sphinx_conf{'pass'}
+
+    sql_query_pre   = SET NAMES utf8
+    sql_query       = \\
+        SELECT a.id, a.content FROM Attachments a \\
+        JOIN Transactions txn ON a.TransactionId = txn.id AND txn.ObjectType = 'RT::Ticket' \\
+        JOIN Tickets t ON txn.ObjectId = t.id \\
+        WHERE a.ContentType = 'text/plain' AND t.Status != 'deleted'
+
+    sql_query_info  = SELECT * FROM Attachments WHERE id=\$id
+}
+
+index $index {
+    source                  = rt
+    path                    = $var_path/sphinx/index
+    docinfo                 = extern
+    charset_type            = utf-8
+}
+
+indexer {
+    mem_limit               = 32M
+}
+
+searchd {
+    port                    = $port
+    log                     = $var_path/sphinx/searchd.log
+    query_log               = $var_path/sphinx/query.log
+    read_timeout            = 5
+    max_children            = 30
+    pid_file                = $var_path/sphinx/searchd.pid
+    max_matches             = $maxmatches
+    seamless_rotate         = 1
+    preopen_indexes         = 0
+    unlink_old              = 1
+}
+
+END
+
+}
+elsif ( $DB{'type'} eq 'Pg' ) {
+    check_tsvalue();
+    my $table = $OPT{'table'} || prompt(
+        message => "Enter the name of a DB table that will be used to store the Pg tsvector.\n"
+                 . "You may either use the existing Attachments table, or create a new\n"
+                 . "table.",
+        default => $DEFAULT{'table'},
+        silent  => !$OPT{'ask'},
+    );
+    my $column = $OPT{'column'} || prompt(
+        message => 'Enter the name of a column that will be used to store the Pg tsvector:',
+        default => $DEFAULT{'column'},
+        silent  => !$OPT{'ask'},
+    );
+
+    my $schema;
+    my $drop;
+    if ( lc($table) eq 'attachments' ) {
+        $drop = "ALTER TABLE $table DROP COLUMN $column";
+        $schema = "ALTER TABLE $table ADD COLUMN $column tsvector";
+    } else {
+        $drop = "DROP TABLE $table";
+        $schema = "CREATE TABLE $table ( "
+            ."id INTEGER NOT NULL,"
+            ."$column tsvector )";
+    }
+
+    my $index_type = lc($OPT{'index-type'} || '');
+    while ( $index_type ne 'gist' and $index_type ne 'gin' ) {
+        $index_type = lc prompt(
+            message => "You may choose between GiST or GIN indexes; the former is several times\n"
+                     . "slower to search, but takes less space on disk and is faster to update.",
+            default => 'GiST',
+            silent  => !$OPT{'ask'},
+        );
+    }
+
+    do_error_is_ok( dba_handle() => $drop )
+        unless $OPT{'dryrun'};
+    insert_schema( $schema );
+    insert_schema("CREATE INDEX ${column}_idx ON $table USING $index_type($column)");
+
+    print_rt_config( Table => $table, Column => $column );
+}
+elsif ( $DB{'type'} eq 'Oracle' ) {
+    {
+        my $dbah = dba_handle();
+        do_print_error( $dbah => 'GRANT CTXAPP TO '. $DB{'user'} );
+        do_print_error( $dbah => 'GRANT EXECUTE ON CTXSYS.CTX_DDL TO '. $DB{'user'} );
+    }
+
+    my %PREFERENCES = (
+        datastore => {
+            type => 'DIRECT_DATASTORE',
+        },
+        filter => {
+            type => 'AUTO_FILTER',
+#        attributes => {
+#            timeout => 120, # seconds
+#            timeout_type => 'HEURISTIC', # or 'FIXED'
+#        },
+        },
+        lexer => {
+            type => 'WORLD_LEXER',
+        },
+        word_list => {
+            type => 'BASIC_WORDLIST',
+            attributes => {
+                stemmer => 'AUTO',
+                fuzzy_match => 'AUTO',
+#            fuzzy_score => undef,
+#            fuzzy_numresults => undef,
+#            substring_index => undef,
+#            prefix_index => undef,
+#            prefix_length_min => undef,
+#            prefix_length_max => undef,
+#            wlidcard_maxterms => undef,
+            },
+        },
+        'section_group' => {
+            type => 'NULL_SECTION_GROUP',
+        },
+
+        storage => {
+            type => 'BASIC_STORAGE',
+            attributes => {
+                R_TABLE_CLAUSE => 'lob (data) store as (cache)',
+                I_INDEX_CLAUSE => 'compress 2',
+            },
+        },
+    );
+
+    my @params = ();
+    push @params, ora_create_datastore( %{ $PREFERENCES{'datastore'} } );
+    push @params, ora_create_filter( %{ $PREFERENCES{'filter'} } );
+    push @params, ora_create_lexer( %{ $PREFERENCES{'lexer'} } );
+    push @params, ora_create_word_list( %{ $PREFERENCES{'word_list'} } );
+    push @params, ora_create_stop_list();
+    push @params, ora_create_section_group( %{ $PREFERENCES{'section_group'} } );
+    push @params, ora_create_storage( %{ $PREFERENCES{'storage'} } );
+
+    my $index_params = join "\n", @params;
+    my $index_name = $DEFAULT{prefix} .'index';
+    do_error_is_ok( $dbh => "DROP INDEX $index_name" )
+        unless $OPT{'dryrun'};
+    $dbh->do(
+        "CREATE INDEX $index_name ON Attachments(Content)
+        indextype is ctxsys.context parameters('
+            $index_params
+        ')",
+    ) unless $OPT{'dryrun'};
+
+    print_rt_config( IndexName => $index_name );
+}
+else {
+    die "Full-text indexes on $DB{type} are not yet supported";
+}
+
+sub check_tsvalue {
+    my $dbh = $RT::Handle->dbh;
+    my $fts = ($dbh->selectrow_array(<<EOQ))[0];
+SELECT 1 FROM information_schema.routines WHERE routine_name = 'plainto_tsquery'
+EOQ
+    unless ($fts) {
+        print STDERR <<EOT;
+
+Your PostgreSQL server does not include full-text support.  You will
+need to upgrade to PostgreSQL version 8.3 or higher to use full-text
+indexing.
+
+EOT
+        exit 1;
+    }
+}
+
+sub check_sphinx {
+    return if $RT::Handle->CheckSphinxSE;
+
+    print STDERR <<EOT;
+
+Your MySQL server has not been compiled with the Sphinx storage engine
+(sphinxse).  You will need to recompile MySQL according to the
+instructions in Sphinx's documentation at
+http://sphinxsearch.com/docs/current.html#sphinxse-installing
+
+EOT
+    exit 1;
+}
+
+sub ora_create_datastore {
+    return sprintf 'datastore %s', ora_create_preference(
+        @_,
+        name => 'datastore',
+    );
+}
+
+sub ora_create_filter {
+    my $res = '';
+    $res .= sprintf "format column %s\n", ora_create_format_column();
+    $res .= sprintf 'filter %s', ora_create_preference(
+        @_,
+        name => 'filter',
+    );
+    return $res;
+}
+
+sub ora_create_lexer {
+    return sprintf 'lexer %s', ora_create_preference(
+        @_,
+        name => 'lexer',
+    );
+}
+
+sub ora_create_word_list {
+    return sprintf 'wordlist %s', ora_create_preference(
+        @_,
+        name => 'word_list',
+    );
+}
+
+sub ora_create_stop_list {
+    my $file = shift || 'etc/stopwords/en.txt';
+    return '' unless -e $file;
+
+    my $name = $DEFAULT{'prefix'} .'stop_list';
+    unless ($OPT{'dryrun'}) {
+        do_error_is_ok( $dbh => 'begin ctx_ddl.drop_stoplist(?); end;', $name );
+
+        $dbh->do(
+            'begin ctx_ddl.create_stoplist(?, ?);  end;',
+            undef, $name, 'BASIC_STOPLIST'
+        );
+
+        open( my $fh, '<:utf8', $file )
+            or die "couldn't open file '$file': $!";
+        while ( my $word = <$fh> ) {
+            chomp $word;
+            $dbh->do(
+                'begin ctx_ddl.add_stopword(?, ?); end;',
+                undef, $name, $word
+            );
+        }
+        close $fh;
+    }
+    return sprintf 'stoplist %s', $name;
+}
+
+sub ora_create_section_group {
+    my %args = @_;
+    my $name = $DEFAULT{'prefix'} .'section_group';
+    unless ($OPT{'dryrun'}) {
+        do_error_is_ok( $dbh => 'begin ctx_ddl.drop_section_group(?); end;', $name );
+        $dbh->do(
+            'begin ctx_ddl.create_section_group(?, ?);  end;',
+            undef, $name, $args{'type'}
+        );
+    }
+    return sprintf 'section group %s', $name;
+}
+
+sub ora_create_storage {
+    return sprintf 'storage %s', ora_create_preference(
+        @_,
+        name => 'storage',
+    );
+}
+
+sub ora_create_format_column {
+    my $column_name = 'ContentOracleFormat';
+    return $column_name if $OPT{'dryrun'};
+    unless (
+        $dbh->column_info(
+            undef, undef, uc('Attachments'), uc( $column_name )
+        )->fetchrow_array
+    ) {
+        $dbh->do(qq{
+            ALTER TABLE Attachments ADD $column_name VARCHAR2(10)
+        });
+    }
+
+    my $detect_format = qq{
+        CREATE OR REPLACE FUNCTION $DEFAULT{prefix}detect_format_simple(
+            parent IN NUMBER,
+            type IN VARCHAR2,
+            encoding IN VARCHAR2,
+            fname IN VARCHAR2
+        )
+        RETURN VARCHAR2
+        AS
+            format VARCHAR2(10);
+        BEGIN
+            format := CASE
+    };
+    unless ( $OPT{'attachments'} ) {
+        $detect_format .= qq{
+                WHEN fname IS NOT NULL THEN 'ignore'
+        };
+    }
+    $detect_format .= qq{
+                WHEN type = 'text' THEN 'text'
+                WHEN type = 'text/rtf' THEN 'ignore'
+                WHEN type LIKE 'text/%' THEN 'text'
+                WHEN type LIKE 'message/%' THEN 'text'
+                ELSE 'ignore'
+            END;
+            RETURN format;
+        END;
+    };
+    ora_create_procedure( $detect_format );
+
+    $dbh->do(qq{
+        UPDATE Attachments
+        SET $column_name = $DEFAULT{prefix}detect_format_simple(
+            Parent,
+            ContentType, ContentEncoding,
+            Filename
+        )
+        WHERE $column_name IS NULL
+    });
+    $dbh->do(qq{
+        CREATE OR REPLACE TRIGGER $DEFAULT{prefix}set_format
+        BEFORE INSERT
+        ON Attachments
+        FOR EACH ROW
+        BEGIN
+            :new.$column_name := $DEFAULT{prefix}detect_format_simple(
+                :new.Parent,
+                :new.ContentType, :new.ContentEncoding,
+                :new.Filename
+            );
+        END;
+    });
+    return $column_name;
+}
+
+sub ora_create_preference {
+    my %info = @_;
+    my $name = $DEFAULT{'prefix'} . $info{'name'};
+    return $name if $OPT{'dryrun'};
+    do_error_is_ok( $dbh => 'begin ctx_ddl.drop_preference(?); end;', $name );
+    $dbh->do(
+        'begin ctx_ddl.create_preference(?, ?);  end;',
+        undef, $name, $info{'type'}
+    );
+    return $name unless $info{'attributes'};
+
+    while ( my ($attr, $value) = each %{ $info{'attributes'} } ) {
+        $dbh->do(
+            'begin ctx_ddl.set_attribute(?, ?, ?);  end;',
+            undef, $name, $attr, $value
+        );
+    }
+
+    return $name;
+}
+
+sub ora_create_procedure {
+    my $text = shift;
+
+    return if $OPT{'dryrun'};
+    my $status = $dbh->do($text, { RaiseError => 0 });
+
+    # Statement succeeded
+    return if $status;
+
+    if ( 6550 != $dbh->err ) {
+        # Utter failure
+        die $dbh->errstr;
+    }
+    else {
+        my $msg = $dbh->func( 'plsql_errstr' );
+        die $dbh->errstr if !defined $msg;
+        die $msg if $msg;
+    }
+}
+
+sub dba_handle {
+    if ( $DB{'type'} eq 'Oracle' ) {
+        $ENV{'NLS_LANG'} = "AMERICAN_AMERICA.AL32UTF8";
+        $ENV{'NLS_NCHAR'} = "AL32UTF8";
+    }
+    my $dsn = do { my $h = new RT::Handle; $h->BuildDSN; $h->DSN };
+    my $dbh = DBI->connect(
+        $dsn, $DB{admin}, $DB{admin_password},
+        { RaiseError => 1, PrintError => 1 },
+    );
+    unless ( $dbh ) {
+        die "Failed to connect to $dsn as user '$DB{admin}': ". $DBI::errstr;
+    }
+    return $dbh;
+}
+
+sub do_error_is_ok {
+    my $dbh = shift;
+    local $dbh->{'RaiseError'} = 0;
+    local $dbh->{'PrintError'} = 0;
+    return $dbh->do(shift, undef, @_);
+}
+
+sub do_print_error {
+    my $dbh = shift;
+    local $dbh->{'RaiseError'} = 0;
+    local $dbh->{'PrintError'} = 1;
+    return $dbh->do(shift, undef, @_);
+}
+
+sub prompt {
+    my %args = ( @_ );
+    return $args{'default'} if $args{'silent'};
+
+    local $| = 1;
+    print $args{'message'};
+    if ( $args{'default'} ) {
+        print "\n[". $args{'default'} .']: ';
+    } else {
+        print ":\n";
+    }
+
+    my $res = <STDIN>;
+    chomp $res;
+    print "\n";
+    return $args{'default'} if !$res && $args{'default'};
+    return $res;
+}
+
+sub verbose  { print @_, "\n" if $OPT{verbose} || $OPT{verbose}; 1 }
+sub debug    { print @_, "\n" if $OPT{debug}; 1 }
+sub error    { $RT::Logger->error( @_ ); verbose(@_); 1 }
+sub warning  { $RT::Logger->warning( @_ ); verbose(@_); 1 }
+
+sub show_help {
+    my $error = shift;
+    RT::Interface::CLI->ShowHelp(
+        ExitValue => $error,
+        Sections => 'NAME|DESCRIPTION',
+    );
+}
+
+sub print_rt_config {
+    my %args = @_;
+    my $config = <<END;
+
+You can now configure RT to use the newly-created full-text index by
+adding the following to your RT_SiteConfig.pm:
+
+Set( %FullTextSearch,
+    Enable     => 1,
+    Indexed    => 1,
+END
+
+    $config .= sprintf("    %-10s => '$args{$_}',\n",$_)
+        foreach grep defined $args{$_}, keys %args;
+    $config .= ");\n";
+
+    print $config;
+}
+
+sub insert_schema {
+    my $dbh = dba_handle();
+    my $message = "Going to run the following in the DB:";
+    my $schema = shift;
+    print "$message\n";
+    my $disp = $schema;
+    $disp =~ s/^/    /mg;
+    print "$disp\n\n";
+    return if $OPT{'dryrun'};
+
+    my $res = $dbh->do( $schema );
+    unless ( $res ) {
+        die "Couldn't run DDL query: ". $dbh->errstr;
+    }
+}
+
+=head1 NAME
+
+rt-setup-fulltext-index - Create indexes for full text search
+
+=head1 DESCRIPTION
+
+This script creates the appropriate tables, columns, functions, and / or
+views necessary for full-text searching for your database type.  It will
+drop any existing indexes in the process.
+
+Please read F<docs/full_text_indexing.pod> for complete documentation on
+full-text indexing for your database type.
+
+If you have a non-standard database administrator user or password, you
+may use the C<--dba> and C<--dba-password> parameters to set them
+explicitly:
+
+    rt-setup-fulltext-index --dba sysdba --dba-password 'secret'
+
+To test what will happen without running any DDL, pass the C<--dryrun>
+flag.
+
+The Oracle index determines which content-types it will index at
+creation time. By default, textual message bodies and textual uploaded
+attachments (attachments with filenames) are indexed; to ignore textual
+attachments, pass the C<--no-attachments> flag when the index is
+created.
+
+
+=head1 AUTHOR
+
+Ruslan Zakirov E<lt>ruz@bestpractical.comE<gt>,
+Alex Vandiver E<lt>alexmv@bestpractical.comE<gt>
+
+=cut
+

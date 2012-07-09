@@ -146,7 +146,7 @@
 % if ( $cust_main->payinfo ) { 
 
 <TR>
-  <TD ALIGN="right"<% mt('P.O.') |h %></TD>
+  <TD ALIGN="right"><% mt('P.O.') |h %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payinfo %></TD>
 </TR>
 % } 
@@ -189,15 +189,25 @@
 % my $no = emt('no');
 
 % my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
-<TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
-</TR>
+
+% unless (    $conf->exists('cust_class-tax_exempt')
+%          || $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+%        )
+% {
+    <TR>
+      <TD ALIGN="right"><% mt('Tax exempt') |h %><% @exempt_groups ? ' ('.emt('all taxes').')' : '' %></TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main->tax ? $yes : $no %></TD>
+    </TR>
+% }
+
 % foreach my $exempt_group ( @exempt_groups ) {
-<TR>
-  <TD ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->tax_exemption($exempt_group) ? $yes : $no %></TD>
-</TR>
+%   my $cust_main_exemption = $cust_main->tax_exemption($exempt_group);
+    <TR>
+      <TD ALIGN="right"><% mt('Tax exempt') |h %> (<% $exempt_group %> taxes)</TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main_exemption ? $yes : $no %>
+        <% $cust_main_exemption ? $cust_main_exemption->exempt_number : '' |h %>
+      </TD>
+    </TR>
 % }
 
 % if ( $conf->exists('enable_taxproducts') ) {
@@ -207,20 +217,26 @@
 </TR>
 % }
 <TR>
-  <TD ALIGN="right"><% mt('Postal invoices') |h %></TD>
+  <TD ALIGN="right"><% mt('Postal mail invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% ( grep { $_ eq 'POST' } @invoicing_list ) ? $yes : $no %>
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right"><% mt('FAX invoices') |h %></TD>
+  <TD ALIGN="right"><% mt('Fax invoices') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% ( grep { $_ eq 'FAX' } @invoicing_list ) ? $yes : $no %>
   </TD>
 </TR>
-% unless ( $conf->exists('cust-email-high-visibility')) {
 <TR>
   <TD ALIGN="right"><% mt('Email invoices') |h %></TD>
+  <TD BGCOLOR="#ffffff">
+    <% $cust_main->invoice_noemail ? $no : $yes %>
+  </TD>
+</TR>
+% unless ( $conf->exists('cust-email-high-visibility')) {
+<TR>
+  <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
   </TD>

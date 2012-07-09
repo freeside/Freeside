@@ -5,6 +5,7 @@ use MIME::Base64;
 use Tie::IxHash;
 use FS::part_export;
 use Date::Format qw( time2str );
+use Regexp::Common qw/URI/;
 
 @ISA = qw(FS::part_export);
 $me = '[FS::part_export::netsapiens]';
@@ -33,6 +34,20 @@ tie my %dialplan_fields, 'Tie::IxHash',
   'from_user'       => { label=>'Source User Translation' },
 ;
 
+my %features = (
+  'for' => 'Forward',
+  'fnr' => 'Forward Not Registered',
+  'fna' => 'Forward No Answer',
+  'fbu' => 'Forward Busy',
+  'dnd' => 'Do-Not-Disturb',
+  'sim' => 'Simultaneous Ring',
+);
+
+my %feature_param = (
+  'dnd' => 'n/a',
+  'sim' => '$phonenum',
+);
+
 tie my %options, 'Tie::IxHash',
   'login'           => { label=>'NetSapiens tac2 User API username' },
   'password'        => { label=>'NetSapiens tac2 User API password' },
@@ -44,6 +59,12 @@ tie my %options, 'Tie::IxHash',
   'domain_no_tld'   => { label=>'Omit TLD from domains', type=>'checkbox' },
   'debug'           => { label=>'Enable debugging', type=>'checkbox' },
   %subscriber_fields,
+  'features'        => { label        => 'Default features',
+                         type         => 'select',
+                         multiple     => 1,
+                         options      => [ keys %features ],
+                         option_label => sub { $features{$_[0]}; },
+                       },
   %registrar_fields,
   %dialplan_fields,
   'did_countrycode' => { label=>'Use country code in DID destination',
@@ -61,7 +82,25 @@ from CPAN.
 END
 );
 
+# http://devguide.netsapiens.com/
+
 sub rebless { shift; }
+
+
+sub check_options {
+  my ($self, $options) = @_;
+	
+  my $rex = qr/$RE{URI}{HTTP}{-scheme => qr|https?|}/;			# match any "http:" or "https:" URL
+	
+  for my $key (qw/url device_url/) {
+    if ($$options{$key} && ($$options{$key} !~ $rex)) {
+      return "Invalid (URL): " . $$options{$key};
+    }
+  }
+  return '';
+}
+
+
 
 sub ns_command {
   my $self = shift;
@@ -130,6 +169,14 @@ sub ns_registrar {
     '/registrar_config/'. $self->ns_devicename($svc_phone);
 }
 
+sub ns_feature {
+  my($self, $svc_phone, $feature) = (shift, shift, shift);
+
+  $self->ns_subscriber($svc_phone).
+    "/feature_config/$feature,*,*,*,*";
+
+}
+
 sub ns_devicename {
   my( $self, $svc_phone ) = (shift, shift);
 
@@ -186,7 +233,9 @@ sub ns_create_or_update {
   my ($email) = ($cust_main->invoicing_list_emailonly, '');
   my $custnum = $cust_main->custnum;
 
+  ###
   # Piece 1 (already done) - User creation
+  ###
   
   $phonenum =~ /^(\d{3})/;
   my $area_code = $1;
@@ -213,7 +262,34 @@ sub ns_create_or_update {
             join(', ', $self->ns_parse_response( $ns->responseContent ) );
   }
 
-  #Piece 2 - sip device creation 
+  ###
+  # Piece 1.5 - feature creation
+  ###
+  foreach $feature (split /\s+/, $self->option('features') ) {
+
+    my $param= exists($feature_param{$feature}) ? $feature_param{$feature} : '';
+    $param = $phonenum if $param eq '$phonenum';
+
+    my $nsf = $self->ns_command( 'PUT', $self->ns_feature($svc_phone, $feature),
+      'control'    => 'd', #User Control, disable
+      'expires'    => 'never',
+      #'ts'         => '', #?
+      'parameters' => $param,
+      'hour_match' => '*',
+      'time_frame' => '*',
+      'activation' => 'now',
+    );
+
+    if ( $nsf->responseCode !~ /^2/ ) {
+       return $nsf->responseCode. ' '.
+              join(', ', $self->ns_parse_response( $ns->responseContent ) );
+    }
+
+  }
+
+  ###
+  # Piece 2 - sip device creation 
+  ###
 
   my $ns2 = $self->ns_command( 'PUT', $self->ns_registrar($svc_phone),
     'termination_match' => $self->ns_devicename($svc_phone),
@@ -227,7 +303,9 @@ sub ns_create_or_update {
             join(', ', $self->ns_parse_response( $ns2->responseContent ) );
   }
 
-  #Piece 3 - DID mapping to user
+  ###
+  # Piece 3 - DID mapping to user
+  ###
 
   my $ns3 = $self->ns_command( 'PUT', $self->ns_dialplan($svc_phone),
     'to_user' => $phonenum,

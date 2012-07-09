@@ -1,9 +1,9 @@
 % if ( $sub eq 'custnum_search' ) { 
 %   my $custnum = $cgi->param('arg');
 %   my $return = [];
-%   if ( $custnum =~ /^(\d+)$/ ) {
-%	$return = findbycustnum($1,0);
-%   	$return = findbycustnum($1,1) if(!scalar(@$return));
+%   if ( $custnum =~ /^(\d+)$/ ) { #should also handle
+%                                  # cust_main-agent_custid-format') eq 'ww?d+'
+%	$return = findbycustnum_or_agent_custid($1);
 %   }
 <% objToJson($return) %>
 % } elsif ( $sub eq 'smart_search' ) {
@@ -12,15 +12,27 @@
 %   my @cust_main = smart_search( 'search' => $string,
 %                                 'no_fuzzy_on_exact' => 1, #pref?
 %                               );
-%   my $return = [ map [ $_->custnum, $_->name, $_->balance, $_->ucfirst_status, $_->statuscolor ], @cust_main ];
+%   my $return = [ map [ $_->custnum,
+%                        $_->name,
+%                        $_->balance,
+%                        $_->ucfirst_status,
+%                        $_->statuscolor,
+%                        scalar($_->open_cust_bill)
+%                      ],
+%                    @cust_main
+%                ];
 %     
 <% objToJson($return) %>
 % } elsif ( $sub eq 'invnum_search' ) {
 %
 %   my $string = $cgi->param('arg');
-%   my $inv = qsearchs('cust_bill', { 'invnum' => $string });
-%   my $return = $inv ? findbycustnum($inv->custnum,0) : [];
+%   if ( $string =~ /^(\d+)$/ ) {
+%     my $inv = qsearchs('cust_bill', { 'invnum' => $1 });
+%     my $return = $inv ? findbycustnum($inv->custnum) : [];
 <% objToJson($return) %>
+%   } else { #return nothing
+[]
+%   }
 % } 
 % elsif ( $sub eq 'exact_search' ) {
 %   # XXX possibly should query each element separately
@@ -39,22 +51,58 @@
 % }
 <%init>
 
-my $conf = new FS::Conf;
-
 my $sub = $cgi->param('sub');
 
-sub findbycustnum{
-    my $custnum = shift;
-    my $agent = shift;
-    my $hashref = { 'custnum' => $custnum };
-    $hashref = { 'agent_custid' => $custnum } if $agent;
-    my $c = qsearchs({
-       	'table'   => 'cust_main',
-       	'hashref' => $hashref,
-       	'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
-     		});
-   return [ $c->custnum, $c->name, $c->balance, $c->ucfirst_status, $c->statuscolor ] 
-	if $c;
-   [];
+sub findbycustnum {
+
+  my $c = qsearchs({
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => shift },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or return [];
+
+  [ $c->custnum,
+    $c->name,
+    $c->balance,
+    $c->ucfirst_status,
+    $c->statuscolor,
+    scalar($c->open_cust_bill)
+  ];
 }
+
+sub findbycustnum_or_agent_custid {
+  my $num = shift;
+
+  my @or = ( 'agent_custid = ?' );
+  my @param = ( $num );
+
+  if ( $num =~ /^\d+$/ && $num <= 2147483647 ) { #need a bigint custnum? wow
+    my $conf = new FS::Conf;
+    if ( $conf->exists('cust_main-default_agent_custid') ) {
+      push @or, "( agent_custid IS NULL AND custnum = $num )";
+    } else {
+      push @or, "custnum = $num";
+    }
+  }
+
+  my $extra_sql = ' WHERE '. $FS::CurrentUser::CurrentUser->agentnums_sql.
+                  ' AND ( '. join(' OR ', @or). ' )';
+                      
+  [ map [ $_->custnum,
+          $_->name,
+          $_->balance,
+          $_->ucfirst_status,
+          $_->statuscolor,
+          scalar($_->open_cust_bill),
+        ],
+
+      qsearch({
+        'table'       => 'cust_main',
+        'hashref'     => {},
+        'extra_sql'   => $extra_sql,
+        'extra_param' => \@param,
+      })
+  ];
+}
+
 </%init>

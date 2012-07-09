@@ -23,120 +23,89 @@
 % } 
 
 %# agent, agent_custid, refnum (advertising source), referral_custnum
+%# better section title for this?
+<FONT CLASS="fsinnerbox-title"><% mt('Basics') |h %></FONT>
 <& cust_main/top_misc.html, $cust_main, 'custnum' => $custnum  &>
 
 %# birthdate
-% if ( $conf->exists('cust_main-enable_birthdate') ) {
+% if (    $conf->exists('cust_main-enable_birthdate')
+%      || $conf->exists('cust_main-enable_spouse_birthdate')
+%    )
+% {
   <BR>
   <& cust_main/birthdate.html, $cust_main &>
 % }
-
-%# contact info
-
-%  my $same_checked = '';
-%  my $ship_disabled = '';
-%  my @ship_style = ();
-%  unless ( $cust_main->ship_last && $same ne 'Y' ) {
-%    $same_checked = 'CHECKED';
-%    $ship_disabled = 'DISABLED';
-%    push @ship_style, 'background-color:#dddddd';
-%    foreach (
-%      qw( last first company address1 address2 city county state zip country
-%          latitude longitude coord_auto
-%          daytime night fax mobile )
-%    ) {
-%      $cust_main->set("ship_$_", $cust_main->get($_) );
-%    }
-%  }
-
+% my $has_ship_address = '';
+% if ( $cgi->param('error') ) {
+%   $has_ship_address = !$same;
+% } elsif ( $cust_main->custnum ) {
+%   $has_ship_address = $cust_main->has_ship_address;
+% }
 <BR>
-<FONT CLASS="fsinnerbox-title"><% mt('Billing address') |h %></FONT>
-
-<& cust_main/contact.html,
-             'cust_main'    => $cust_main,
-             'pre'          => '',
-             'onchange'     => 'bill_changed(this)',
-             'disabled'     => '',
-             'ss'           => $ss,
-             'stateid'      => $stateid,
-             'same_checked' => $same_checked, #for address2 "Unit #" labeling
-&>
+<TABLE> <TR>
+  <TD STYLE="width:650px">
+%#; padding-right:2px; vertical-align:top">
+    <FONT CLASS="fsinnerbox-title"><% mt('Billing address') |h %></FONT>
+    <TABLE CLASS="fsinnerbox">
+    <& cust_main/before_bill_location.html, $cust_main &>
+    <& /elements/location.html,
+        object => $cust_main->bill_location,
+        prefix => 'bill_',
+    &>
+    <& cust_main/after_bill_location.html, $cust_main &>
+    </TABLE>
+  </TD>
+</TR>
+<TR><TD STYLE="height:40px"></TD></TR>
+<TR>
+  <TD STYLE="width:650px">
+%#; padding-left:2px; vertical-align:top">
+    <FONT CLASS="fsinnerbox-title"><% mt('Service address') |h %></FONT>
+    <INPUT TYPE="checkbox" 
+           NAME="same"
+           ID="same"
+           onclick="samechanged(this)"
+           onkeyup="samechanged(this)"
+           VALUE="Y"
+           <% $has_ship_address ? '' : 'CHECKED' %>
+    ><% mt('same as billing address') |h %>
+    <TABLE CLASS="fsinnerbox" ID="table_ship_location">
+    <& /elements/location.html,
+        object => $cust_main->ship_location,
+        prefix => 'ship_',
+        enable_censustract => 1,
+        enable_district => 1,
+    &>
+    </TABLE>
+    <TABLE CLASS="fsinnerbox" ID="table_ship_location_blank"
+    STYLE="display:none">
+    <TR><TD></TD></TR>
+    </TABLE>
+  </TD>
+</TR></TABLE>
 
 <SCRIPT>
-function bill_changed(what) {
-  if ( what.form.same.checked ) {
-% for (qw( last first company address1 address2 city zip latitude longitude coord_auto daytime night fax mobile )) { 
-    what.form.ship_<%$_%>.value = what.form.<%$_%>.value;
-% } 
-
-    what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
-
-    function fix_ship_city() {
-      what.form.ship_city_select.selectedIndex = what.form.city_select.selectedIndex;
-      what.form.ship_city.style.display = what.form.city.style.display;
-      what.form.ship_city_select.style.display = what.form.city_select.style.display;
-    }
-
-    function fix_ship_county() {
-      what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
-      ship_county_changed(what.form.ship_county, fix_ship_city );
-    }
-
-    function fix_ship_state() {
-      what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
-      ship_state_changed(what.form.ship_state, fix_ship_county );
-    }
-
-    ship_country_changed(what.form.ship_country, fix_ship_state );
-
-  }
-}
 function samechanged(what) {
+%# not display = 'none', because we still want it to take up space
+%#  document.getElementById('table_ship_location').style.visibility = 
+%#    what.checked ? 'hidden' : 'visible';
+  var t1 = document.getElementById('table_ship_location');
+  var t2 = document.getElementById('table_ship_location_blank');
   if ( what.checked ) {
-    bill_changed(what);
-
-%   my @fields = qw( last first company address1 address2 city city_select county state zip country latitude longitude daytime night fax mobile );
-%   for (@fields) { 
-      what.form.ship_<%$_%>.disabled = true;
-      what.form.ship_<%$_%>.style.backgroundColor = '#dddddd';
-%   } 
-
-%   if ( $conf->exists('cust_main-require_address2') ) {
-      document.getElementById('address2_required').style.visibility = '';
-      document.getElementById('address2_label').style.visibility = '';
-      document.getElementById('ship_address2_required').style.visibility = 'hidden';
-      document.getElementById('ship_address2_label').style.visibility = 'hidden';
-%   }
-
-  } else {
-
-%   for (@fields) { 
-      what.form.ship_<%$_%>.disabled = false;
-      what.form.ship_<%$_%>.style.backgroundColor = '#ffffff';
-%   } 
-
-%   if ( $conf->exists('cust_main-require_address2') ) {
-      document.getElementById('address2_required').style.visibility = 'hidden';
-      document.getElementById('address2_label').style.visibility = 'hidden';
-      document.getElementById('ship_address2_required').style.visibility = '';
-      document.getElementById('ship_address2_label').style.visibility = '';
-%   }
-
+    t2.style.width  = t1.clientWidth  + 'px';
+    t2.style.height = t1.clientHeight + 'px';
+    t1.style.display = 'none';
+    t2.style.display = '';
+  }
+  else {
+    t2.style.display = 'none';
+    t1.style.display = '';
   }
 }
+samechanged(document.getElementById('same'));
 </SCRIPT>
 
 <BR>
-<FONT CLASS="fsinnerbox-title"><% mt('Service address') |h %></FONT>
-
-<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>><% mt('same as billing address') |h %>
-<& cust_main/contact.html,
-             'cust_main' => $cust_main,
-             'pre'       => 'ship_',
-             'onchange'  => '',
-             'disabled'  => $ship_disabled,
-             'style'     => \@ship_style
-&>
 
 <& cust_main/contacts_new.html,
              'cust_main' => $cust_main,
@@ -229,19 +198,42 @@ my $conf = new FS::Conf;
 #get record
 
 my($custnum, $cust_main, $ss, $stateid, $payinfo, @invoicing_list);
-my $same = '';
 my $pkgpart_svcpart = ''; #first_pkg
 my($username, $password, $popnum, $saved_domsvc) = ( '', '', 0, 0 ); #svc_acct
 my %svc_phone = ();
 my %svc_dsl = ();
 my $prospectnum = '';
 my $locationnum = '';
+my $same = '';
+
 
 if ( $cgi->param('error') ) {
 
+  $same = ($cgi->param('same') || '') eq 'Y';
+  # false laziness w/ edit/process/cust_main.cgi
+  my %locations;
+  for my $pre (qw(bill ship)) {
+    my %hash;
+    foreach ( FS::cust_main->location_fields ) {
+      $hash{$_} = scalar($cgi->param($pre.'_'.$_));
+    }
+    $hash{'custnum'} = $cgi->param('custnum');
+    $locations{$pre} = qsearchs('cust_location', \%hash)
+                       || FS::cust_location->new( \%hash );
+  }
+  if ( $same ) {
+    $locations{ship} = $locations{bill};
+  }
+
   $cust_main = new FS::cust_main ( {
-    map { $_, scalar($cgi->param($_)) } fields('cust_main')
+    map { ( $_, scalar($cgi->param($_)) ) } (fields('cust_main')),
+    map { ( "ship_$_", '' ) } (FS::cust_main->location_fields)
   } );
+
+  for my $pre (qw(bill ship)) {
+    $cust_main->set($pre.'_location', $locations{$pre});
+    $cust_main->set($pre.'_locationnum', $locations{$pre}->locationnum);
+  }
 
   $custnum = $cust_main->custnum;
 
@@ -249,7 +241,6 @@ if ( $cgi->param('error') ) {
     unless $curuser->access_right($custnum ? 'Edit customer' : 'New customer');
 
   @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
-  $same = $cgi->param('same');
   $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
   $ss = $cust_main->ss;           # don't mask an entered value on errors
   $stateid = $cust_main->stateid; # don't mask an entered value on errors
@@ -296,7 +287,7 @@ if ( $cgi->param('error') ) {
     $cust_main->paycvv($paycvv);
   }
   @invoicing_list = $cust_main->invoicing_list;
-  $ss = $cust_main->masked('ss');
+  $ss = $conf->exists('unmask_ss') ? $cust_main->ss : $cust_main->masked('ss');
   $stateid = $cust_main->masked('stateid');
   $payinfo = $cust_main->paymask;
 
@@ -352,6 +343,20 @@ if ( $cgi->param('error') ) {
     $svc_dsl{$_} = $qual->$_
       foreach qw( phonenum vendor_qual_id );
   }
+  else {
+    my $countrydefault = $conf->config('countrydefault') || 'US';
+    my $statedefault = $conf->config('statedefault') || 'CA';
+    $cust_main->set('bill_location', 
+      FS::cust_location->new(
+        { country => $countrydefault, state => $statedefault }
+      )
+    );
+    $cust_main->set('ship_location',
+      FS::cust_location->new(
+        { country => $countrydefault, state => $statedefault }
+      )
+    );
+  }
 
   if ( $cgi->param('lock_pkgpart') =~ /^(\d+)$/ ) {
     my $pkgpart = $1;
@@ -364,7 +369,7 @@ if ( $cgi->param('error') ) {
 }
 
 my %keep = map { $_=>1 } qw( error tagnum lock_agentnum lock_pkgpart );
-$cgi->delete( grep !$keep{$_}, $cgi->param );
+$cgi->delete( grep { !$keep{$_} && $_ !~ /^tax_/ } $cgi->param );
 
 my $title = $custnum ? 'Edit Customer' : 'Add Customer';
 $title = mt($title);

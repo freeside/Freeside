@@ -3,6 +3,7 @@ package FS::svc_pbx;
 use strict;
 use base qw( FS::svc_External_Common );
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::PagedSearch qw( psearch );
 use FS::Conf;
 use FS::cust_svc;
 use FS::svc_phone;
@@ -259,11 +260,13 @@ sub _check_duplicate {
   return '';
 }
 
-=item get_cdrs
+=item psearch_cdrs OPTIONS
 
-Returns a set of Call Detail Records (see L<FS::cdr>) associated with this 
-service.  By default, "associated with" means that the "charged_party" field of
-the CDR matches the "title" field of the service.
+Returns a paged search (L<FS::PagedSearch>) for Call Detail Records 
+associated with this service.  By default, "associated with" means that 
+the "charged_party" field of the CDR matches the "title" field of the 
+service.  To access the CDRs themselves, call "->fetch" on the resulting
+object.
 
 =over 2
 
@@ -295,7 +298,7 @@ to allow title to indicate a range of IP addresses.
 
 =cut
 
-sub get_cdrs {
+sub psearch_cdrs {
   my($self, %options) = @_;
   my %hash = ();
   my @where = ();
@@ -343,15 +346,26 @@ sub get_cdrs {
   my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where )
     if @where;
 
-  my @cdrs =
-    qsearch( {
+  psearch( {
       'table'      => 'cdr',
       'hashref'    => \%hash,
       'extra_sql'  => $extra_sql,
       'order_by'   => "ORDER BY startdate $for_update",
-    } );
+  } );
+}
 
-  @cdrs;
+=item get_cdrs (DEPRECATED)
+
+Like psearch_cdrs, but returns all the L<FS::cdr> objects at once, in a 
+single list.  Arguments are the same as for psearch_cdrs.  This can take
+an unreasonably large amount of memory and is best avoided.
+
+=cut
+
+sub get_cdrs {
+  my $self = shift;
+  my $psearch = $self->psearch_cdrs($_);
+  qsearch ( $psearch->{query} )
 }
 
 =back

@@ -31,10 +31,29 @@ my $ah = new HTML::Mason::ApacheHandler (
 #
 #chown (Apache->server->uid, Apache->server->gid, $interp->files_written);
 
+my $protect_fds;
+
 sub handler
 {
     #($r) = @_;
     my $r = shift;
+
+    #from rt/bin/webmux.pl(.in)
+    if ( !$protect_fds && $ENV{'MOD_PERL'} && exists $ENV{'MOD_PERL_API_VERSION'}
+        && $ENV{'MOD_PERL_API_VERSION'} >= 2
+    ) {
+        # under mod_perl2, STDIN and STDOUT get closed and re-opened,
+        # however they are not on FD 0 and 1.  In this case, the next
+        # socket that gets opened will occupy one of these FDs, and make
+        # all system() and open "|-" calls dangerous; for example, the
+        # DBI handle can get this FD, which later system() calls will
+        # close by putting garbage into the socket.
+        $protect_fds = [];
+        push @{$protect_fds}, IO::Handle->new_from_fd(0, "r")
+            if fileno(STDIN) != 0;
+        push @{$protect_fds}, IO::Handle->new_from_fd(1, "w")
+            if fileno(STDOUT) != 1;
+    }
 
     # If you plan to intermix images in the same directory as
     # components, activate the following to prevent Mason from
@@ -65,7 +84,7 @@ sub handler
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
-      RT::Init();
+      my_rt_init();
 
       $ah->interp($rt_interp);
 
@@ -74,7 +93,7 @@ sub handler
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
-      RT::Init() if $RT::VERSION; #for lack of something else
+      my_rt_init();
 
       #we don't want the RT error handlers under FS
       {
@@ -107,6 +126,21 @@ sub handler
 #    }
 
     $status;
+}
+
+my $rt_initialized = 0;
+
+sub my_rt_init {
+  return unless $RT::VERSION;
+
+  if ( $rt_initialized ) {
+    RT::ConnectToDatabase();
+    RT::InitSignalHandlers();
+  } else {
+    RT::LoadConfig();
+    RT::Init();
+    $rt_initialized++;
+  }
 }
 
 1;

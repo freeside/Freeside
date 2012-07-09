@@ -14,7 +14,8 @@ Download batch in format <SELECT NAME="format">
 %     foreach ( keys %download_formats ) {
 <OPTION VALUE="<%$_%>"><% $download_formats{$_} %></OPTION>
 %     }
-</SELECT>
+</SELECT> 
+<& .select_gateway &>
 %   }
 <INPUT TYPE="submit" VALUE="Download"></FORM><BR><BR></TR>
 % } # end of download
@@ -31,7 +32,7 @@ Download batch in format <SELECT NAME="format">
               'name'      => 'FileUpload',
               'action'    => "${p}misc/upload-batch.cgi",
               'num_files' => 1,
-              'fields'    => [ 'batchnum', 'format' ],
+              'fields'    => [ 'batchnum', 'format', 'gatewaynum' ],
               'message'   => 'Batch results uploaded.',
 ) %>
 Upload results<BR></TR>
@@ -45,20 +46,22 @@ Upload results<BR></TR>
 <BR></TR>
 %   if ( $fixed ) {
 %     if ( $fixed eq 'td_eft1464' ) { # special case
-<TR>Format <SELECT NAME="format">
+<TR>Upload in format <SELECT NAME="format">
 <OPTION VALUE="td_eftack264">TD EFT Acknowledgement</OPTION>
 <OPTION VALUE="td_eftret80">TD EFT Returned Items</OPTION>
-</SELECT></TR>
+</SELECT> </TR>
 %     }
 %     else {
 <INPUT TYPE="hidden" NAME="format" VALUE="<% $fixed %>">
 %     }
 %   }
 %   else {
-<TR>Format <SELECT NAME="format">
+<TR>Upload in format <SELECT NAME="format">
 %     foreach ( keys(%upload_formats) ) {
 <OPTION VALUE="<%$_%>"><% $upload_formats{$_} %></OPTION>
 %     }
+</SELECT>
+<& .select_gateway &>
 %   } # if $fixed
 <TR><INPUT TYPE="submit" VALUE="Upload"></TR>
 </FORM><BR>
@@ -82,6 +85,26 @@ Batch is <% $statustext{$status} %><BR>
 <%$count%> payments batched<BR>
 <%$money_char%><%$total%> total in batch<BR>
 
+<%def .select_gateway>
+% if ( $show_gateways ) {
+ or from gateway
+<& /elements/select-table.html,
+  empty_label => ' ',
+  field     => 'gatewaynum',
+  table     => 'payment_gateway',
+  name_col  => 'label',
+  value_col => 'gatewaynum',
+  order_by  => 'ORDER BY gatewaynum',
+  hashref   => { 
+    'gateway_namespace' => 'Business::BatchPayment',
+    'disabled'          => '',
+  }
+&>
+% }
+</%def>
+<%shared>
+my $show_gateways = FS::payment_gateway->count("gateway_namespace = 'Business::BatchPayment'");
+</%shared>
 <%init>
 my %opt = @_;
 my $pay_batch = $opt{'pay_batch'} or return;
@@ -91,7 +114,7 @@ my $payby = $pay_batch->payby;
 my $status = $pay_batch->status;
 my $curuser = $FS::CurrentUser::CurrentUser;
 my $batchnum = $pay_batch->batchnum;
- 
+
 my $fixed = $conf->config("batch-fixed_format-$payby");
 
 tie my %download_formats, 'Tie::IxHash', (

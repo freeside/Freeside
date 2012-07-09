@@ -20,6 +20,7 @@
                                      emt('Susp. delay'),
                                      emt('Expire'),
                                      emt('Contract end'),
+                                     emt('Changed'),
                                      emt('Cancel'),
                                      emt('Reason'),
                                      FS::UI::Web::cust_header(
@@ -45,7 +46,7 @@
                     sub { FS::part_pkg::freq_pretty(shift); },
 
                     ( map { time_or_blank($_) }
-          qw( setup last_bill bill adjourn susp dundate expire contract_end cancel ) ),
+          qw( setup last_bill bill adjourn susp dundate expire contract_end change_date cancel ) ),
 
                     sub { my $self = shift;
                           my $return = '';
@@ -94,13 +95,14 @@
                     '',
                     '',
                     '',
+                    '',
                     FS::UI::Web::cust_colors(),
                     '',
                   ],
-                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '', '', '', '', '',
+                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
                                FS::UI::Web::cust_styles() ],
                   'size'  => [ '', '', '', '', '-1' ],
-                  'align' => 'rrlccrrlrrrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
+                  'align' => 'rrlccrrlrrrrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
                   'links' => [
                     $link,
                     $link,
@@ -117,6 +119,7 @@
                     '',
                     '',
                     '',
+                    '', # link to changed-from package?
                     '',
                     '',
                     '',
@@ -182,7 +185,7 @@ my %disable = (
   ''                => {},
 );
 
-foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end cancel active )) {
+foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel active )) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 

@@ -18,11 +18,12 @@
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch %>">
 
-<BR><BR>
+<BR>
 
 <% mt('Payment') |h %> 
 <% ntable("#cccccc", 2) %>
 
+% if ( $FS::CurrentUser::CurrentUser->access_right('Backdate payment') ) {
 <TR>
   <TD ALIGN="right"><% mt('Date') |h %></TD>
   <TD COLSPAN=2>
@@ -39,6 +40,15 @@
     align:      "BR"
   });
 </SCRIPT>
+% }
+% else {
+<TR>
+  <TD ALIGN="right"><% mt('Date') |h %></TD>
+  <TD COLSPAN=2>
+    <% time2str($date_format.' %r',$_date) %>
+  </TD>
+</TR>
+% }
 
 <TR>
   <TD ALIGN="right"><% mt('Amount') |h %></TD>
@@ -56,7 +66,29 @@
     <TD ALIGN="right"><% mt('Check #') |h %></TD>
     <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
   </TR>
-% } 
+% }
+% elsif ( $payby eq 'CASH' and $conf->exists('require_cash_deposit_info') ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Bank') |h %></TD>
+    <TD COLSPAN=3><INPUT TYPE="text" NAME="bank" VALUE="<% $cgi->param('bank') %>"></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Check #') |h %></TD>
+    <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Teller #') |h %></TD>
+    <TD COLSPAN=2><INPUT TYPE="text" NAME="teller" VALUE="<% $cgi->param('teller') %>" SIZE=10></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Depositor') |h %></TD>
+    <TD COLSPAN=3><INPUT TYPE="text" NAME="depositor" VALUE="<% $cgi->param('depositor') %>"></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Account #') |h %></TD>
+    <TD COLSPAN=2><INPUT TYPE="text" NAME="account" VALUE="<% $cgi->param('account') %>" SIZE=18></TD>
+  </TR>
+% }
 
 <TR>
 % if ( $link eq 'custnum' || $link eq 'popup' ) { 

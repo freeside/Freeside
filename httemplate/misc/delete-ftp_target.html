@@ -1,0 +1,18 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect("${p}browse/ftp_target.html") %>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal targetnum";
+my $targetnum = $1;
+
+my $target = qsearchs('ftp_target',{'targetnum'=>$targetnum});
+my $error = $target->delete;
+
+</%init>

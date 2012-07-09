@@ -13,6 +13,7 @@ use FS::payby;
 use FS::conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh datasrc use_confcompat);
+use FS::Misc::Invoicing qw( spool_formats );
 use FS::Misc::Geo;
 
 $base_dir = '%%%FREESIDE_CONF%%%';
@@ -183,12 +184,60 @@ sub exists {
   my $self = shift;
   return $self->_usecompat('exists', @_) if use_confcompat;
 
-  my($name, $agentnum)=@_;
+  #my($name, $agentnum)=@_;
 
   carp "FS::Conf->exists(". join(', ', @_). ") called"
     if $DEBUG > 1;
 
   defined($self->_config(@_));
+}
+
+#maybe this should just be the new exists instead of getting a method of its
+#own, but i wanted to avoid possible fallout
+
+sub config_bool {
+  my $self = shift;
+  return $self->_usecompat('exists', @_) if use_confcompat;
+
+  my($name,$agentnum,$agentonly) = @_;
+
+  carp "FS::Conf->config_bool(". join(', ', @_). ") called"
+    if $DEBUG > 1;
+
+  #defined($self->_config(@_));
+
+  #false laziness w/_config
+  my $hashref = { 'name' => $name };
+  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
+  my $cv;
+  my @a = (
+    ($agentnum || ()),
+    ($agentonly && $agentnum ? () : '')
+  );
+  my @l = (
+    ($self->{locale} || ()),
+    ($self->{localeonly} && $self->{locale} ? () : '')
+  );
+  # try with the agentnum first, then fall back to no agentnum if allowed
+  foreach my $a (@a) {
+    $hashref->{agentnum} = $a;
+    foreach my $l (@l) {
+      $hashref->{locale} = $l;
+      $cv = FS::Record::qsearchs('conf', $hashref);
+      if ( $cv ) {
+        if ( $cv->value eq '0'
+               && ($hashref->{agentnum} || $hashref->{locale} )
+           ) 
+        {
+          return 0; #an explicit false override, don't continue looking
+        } else {
+          return 1;
+        }
+      }
+    }
+  }
+  return 0;
+
 }
 
 =item config_orbase KEY SUFFIX
@@ -269,8 +318,13 @@ sub touch {
   return $self->_usecompat('touch', @_) if use_confcompat;
 
   my($name, $agentnum) = @_;
-  unless ( $self->exists($name, $agentnum) ) {
-    $self->set($name, '', $agentnum);
+  #unless ( $self->exists($name, $agentnum) ) {
+  unless ( $self->config_bool($name, $agentnum) ) {
+    if ( $agentnum && $self->exists($name) && $self->config($name,$agentnum) eq '0' ) {
+      $self->delete($name, $agentnum);
+    } else {
+      $self->set($name, '', $agentnum);
+    }
   }
 }
 
@@ -355,6 +409,31 @@ sub delete {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   }
+}
+
+#maybe this should just be the new delete instead of getting a method of its
+#own, but i wanted to avoid possible fallout
+
+sub delete_bool {
+  my $self = shift;
+  return $self->_usecompat('delete', @_) if use_confcompat;
+
+  my($name, $agentnum) = @_;
+
+  warn "[FS::Conf] DELETE $name\n" if $DEBUG;
+
+  my $cv = FS::Record::qsearchs('conf', { name     => $name,
+                                          agentnum => $agentnum,
+                                          locale   => $self->{locale},
+                                        });
+
+  if ( $cv ) {
+    my $error = $cv->delete;
+    die $error if $error;
+  } elsif ( $agentnum ) {
+    $self->set($name, '0', $agentnum);
+  }
+
 }
 
 =item import_config_item CONFITEM DIR 
@@ -611,12 +690,6 @@ my %msg_template_options = (
   'per_agent' => 1,
 );
 
-my $_gateway_name = sub {
-  my $g = shift;
-  return '' if !$g;
-  ($g->gateway_username . '@' . $g->gateway_module);
-};
-
 my %payment_gateway_options = (
   'type'        => 'select-sub',
   'options_sub' => sub {
@@ -624,11 +697,24 @@ my %payment_gateway_options = (
         'table' => 'payment_gateway',
         'hashref' => { 'disabled' => '' },
       });
-    map { $_->gatewaynum, $_gateway_name->($_) } @gateways;
+    map { $_->gatewaynum, $_->label } @gateways;
   },
   'option_sub'  => sub {
     my $gateway = FS::payment_gateway->by_key(shift);
-    $_gateway_name->($gateway);
+    $gateway ? $gateway->label : ''
+  },
+);
+
+my %batch_gateway_options = (
+  %payment_gateway_options,
+  'options_sub' => sub {
+    my @gateways = qsearch('payment_gateway',
+      {
+        'disabled'          => '',
+        'gateway_namespace' => 'Business::BatchPayment',
+      }
+    );
+    map { $_->gatewaynum, $_->label } @gateways;
   },
 );
 
@@ -884,6 +970,13 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'business-batchpayment-test_transaction',
+    'section'     => 'billing',
+    'description' => 'Turns on the Business::BatchPayment test_mode flag.  Note that not all gateway modules support this flag; if yours does not, using the batch gateway will fail.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'countrydefault',
     'section'     => 'UI',
     'description' => 'Default two-letter country code (if not supplied, the default is `US\')',
@@ -1104,7 +1197,15 @@ sub reason_type_options {
   {
     'key'         => 'invoice_html',
     'section'     => 'invoicing',
-    'description' => 'Optional HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
+    'description' => 'HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
+
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'quotation_html',
+    'section'     => '',
+    'description' => 'HTML template for quotations.',
 
     'type'        => 'textarea',
   },
@@ -1148,6 +1249,13 @@ sub reason_type_options {
     'key'         => 'invoice_latex',
     'section'     => 'invoicing',
     'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:2.1:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'quotation_latex',
+    'section'     => '',
+    'description' => 'LaTeX template for typeset PostScript quotations.',
     'type'        => 'textarea',
   },
 
@@ -1204,6 +1312,15 @@ and customer address. Include units.',
     'key'         => 'invoice_latexnotes',
     'section'     => 'invoicing',
     'description' => 'Notes section for LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+    'per_locale'  => 1,
+  },
+
+  {
+    'key'         => 'quotation_latexnotes',
+    'section'     => '',
+    'description' => 'Notes section for LaTeX typeset PostScript quotations.',
     'type'        => 'textarea',
     'per_agent'   => 1,
     'per_locale'  => 1,
@@ -1420,6 +1537,7 @@ and customer address. Include units.',
     'description' => 'Send payment receipts.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
+    'agent_bool'  => 1,
   },
 
   {
@@ -1591,6 +1709,13 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'If set, number of search records to return per page.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'disable_maxselect',
+    'section'     => 'UI',
+    'description' => 'Prevent changing the number of records per page.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -1835,6 +1960,13 @@ and customer address. Include units.',
     'key'         => 'show_ss',
     'section'     => 'UI',
     'description' => 'Turns on display/collection of social security numbers in the web interface.  Sometimes required by electronic check (ACH) processors.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'unmask_ss',
+    'section'     => 'UI',
+    'description' => "Don't mask social security numbers in the web interface.",
     'type'        => 'checkbox',
   },
 
@@ -2288,6 +2420,13 @@ and customer address. Include units.',
     'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
     'type'        => 'select',
     'select_enum' => [ '', qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD COMP HIDE) ],
+  },
+
+  {
+    'key'         => 'require_cash_deposit_info',
+    'section'     => 'billing',
+    'description' => 'When recording cash payments, display bank deposit information fields.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -2843,6 +2982,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'company_url',
+    'section'     => 'UI',
+    'description' => 'Your company URL',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'company_address',
     'section'     => 'required',
     'description' => 'Your company address',
@@ -2933,7 +3080,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'options'     => [ spool_formats() ],
   },
 
   {
@@ -2969,7 +3116,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
-    'select_enum' => [ '', 'default', 'billco', ],
+    'options'     => [ spool_formats() ],
   },
 
   {
@@ -2977,6 +3124,32 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Enable per-agent spooling of raw invoice data.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'bridgestone-batch_counter',
+    'section'     => '',
+    'description' => 'Batch counter for spool files.  Increments every time a spool file is uploaded.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'bridgestone-prefix',
+    'section'     => '',
+    'description' => 'Agent identifier for uploading to BABT printing service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'bridgestone-confirm_template',
+    'section'     => '',
+    'description' => 'Confirmation email template for uploading to BABT service.  Text::Template format, with variables "$zipfile" (name of the zipped file), "$seq" (sequence number), "$prefix" (user ID string), and "$rows" (number of records in the file).  Should include Subject: and To: headers, separated from the rest of the message by a blank line.',
+    # this could use a true message template, but it's hard to see how that
+    # would make the world a better place
+    'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -3027,6 +3200,16 @@ and customer address. Include units.',
     'description' => 'Which customer fields to display on reports by default',
     'type'        => 'select',
     'select_hash' => [ FS::ConfDefaults->cust_fields_avail() ],
+  },
+
+  {
+    'key'         => 'cust_location-label_prefix',
+    'section'     => 'UI',
+    'description' => 'Optional "site ID" to show in the location label',
+    'type'        => 'select',
+    'select_hash' => [ '' => '',
+                       'CoStAg' => 'CoStAgXXXXX (country, state, agent name, locationnum)',
+                      ],
   },
 
   {
@@ -3258,6 +3441,40 @@ and customer address. Include units.',
                     ]
   },
 
+  { 'key'         => 'batch-gateway-CARD',
+    'section'     => 'billing',
+    'description' => 'Business::BatchPayment gateway for credit card batches.',
+    %batch_gateway_options,
+  },
+
+  { 'key'         => 'batch-gateway-CHEK',
+    'section'     => 'billing', 
+    'description' => 'Business::BatchPayment gateway for check batches.',
+    %batch_gateway_options,
+  },
+
+  {
+    'key'         => 'batch-reconsider',
+    'section'     => 'billing',
+    'description' => 'Allow imported batch results to change the status of payments from previous imports.  Enable this only if your gateway is known to send both positive and negative results for the same batch.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'batch-auto_resolve_days',
+    'section'     => 'billing',
+    'description' => 'Automatically resolve payment batches this many days after they were first downloaded.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batch-auto_resolve_status',
+    'section'     => 'billing',
+    'description' => 'When automatically resolving payment batches, take this action for payments of unknown status.',
+    'type'        => 'select',
+    'select_enum' => [ 'approve', 'decline' ],
+  },
+
   #lists could be auto-generated from pay_batch info
   {
     'key'         => 'batch-fixed_format-CARD',
@@ -3424,7 +3641,14 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-enable_birthdate',
     'section'     => 'UI',
-    'descritpion' => 'Enable tracking of a birth date with each customer record',
+    'description' => 'Enable tracking of a birth date with each customer record',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-enable_spouse_birthdate',
+    'section'     => 'UI',
+    'description' => 'Enable tracking of a spouse birth date with each customer record',
     'type'        => 'checkbox',
   },
 
@@ -3580,9 +3804,19 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Display format for line item date ranges on invoice line items.',
     'type'        => 'select',
-    'select_hash' => [ ''         => 'STARTDATE-ENDDATE',
-                       'month_of' => 'Month of MONTHNAME',
+    'select_hash' => [ ''           => 'STARTDATE-ENDDATE',
+                       'month_of'   => 'Month of MONTHNAME',
+                       'X_month'    => 'DATE_DESC MONTHNAME',
                      ],
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'cust_bill-line_item-date_description',
+    'section'     => 'billing',
+    'description' => 'Text to display for "DATE_DESC" when using cust_bill-line_item-date_style DATE_DESC MONTHNAME.',
+    'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {
@@ -3857,7 +4091,17 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Prefix the customer number with this string for display purposes.',
     'type'        => 'text',
-    #and then probably agent-virt this to merge these instances
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'cust_main-custnum-display_special',
+    'section'     => 'UI',
+    'description' => 'Use this customer number prefix format',
+    'type'        => 'select',
+    'select_hash' => [ '' => '',
+                       'CoStAg' => 'CoStAg (country, state, agent name or display_prefix)',
+                       'CoStCl' => 'CoStCl (country, state, class name)' ],
   },
 
   {
@@ -3910,6 +4154,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'unsuspend_email_admin',
+    'section'     => '',
+    'description' => 'Destination admin email address to enable unsuspension notices',
+    'type'        => 'text',
+  },
+  
+  {
     'key'         => 'email_report-subject',
     'section'     => '',
     'description' => 'Subject for reports emailed by freeside-fetch.  Defaults to "Freeside report".',
@@ -3954,6 +4205,22 @@ and customer address. Include units.',
     'key'         => 'selfservice-box_bgcolor',
     'section'     => 'self-service',
     'description' => 'HTML color for self-service interface input boxes, for example, #C0C0C0',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-stripe1_bgcolor',
+    'section'     => 'self-service',
+    'description' => 'HTML color for self-service interface lists (primary stripe), for example, #FFFFFF',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-stripe2_bgcolor',
+    'section'     => 'self-service',
+    'description' => 'HTML color for self-service interface lists (alternate stripe), for example, #DDDDDD',
     'type'        => 'text',
     'per_agent'   => 1,
   },
@@ -4122,6 +4389,20 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Show usernames without their domains in "View my usage" in the self-service interface.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-login_banner_image',
+    'section'     => 'self-service',
+    'description' => 'Banner image shown on the login page, in PNG format.',
+    'type'        => 'image',
+  },
+
+  {
+    'key'         => 'selfservice-login_banner_url',
+    'section'     => 'self-service',
+    'description' => 'Link for the login banner.',
+    'type'        => 'text',
   },
 
   {
@@ -4305,34 +4586,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'sg-multicustomer_hack',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'sg-ping_username',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'sg-ping_password',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'sg-login_username',
-    'section'     => '',
-    'description' => "Don't use this.",
-    'type'        => 'text',
-  },
-
-  {
     'key'         => 'mc-outbound_packages',
     'section'     => '',
     'description' => "Don't use this.",
@@ -4437,6 +4690,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'tax-cust_exempt-groups-require_individual_nums',
+    'section'     => '',
+    'description' => 'When using tax-cust_exempt-groups, require an individual tax exemption number for each exemption from different taxes.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-default_view',
     'section'     => 'UI',
     'description' => 'Default customer view, for users who have not selected a default view in their preferences.',
@@ -4484,14 +4744,14 @@ and customer address. Include units.',
   {
     'key'         => 'cust_main-edit_signupdate',
     'section'     => 'UI',
-    'descritpion' => 'Enable manual editing of the signup date.',
+    'description' => 'Enable manual editing of the signup date.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-disable_access_number',
     'section'     => 'UI',
-    'descritpion' => 'Disable access number selection.',
+    'description' => 'Disable access number selection.',
     'type'        => 'checkbox',
   },
 
@@ -4590,6 +4850,13 @@ and customer address. Include units.',
     'key'         => 'cust_main-custom_link',
     'section'     => 'UI',
     'description' => 'URL to use as source for the "Custom" tab in the View Customer page.  The customer number will be appended, or you can insert "$custnum" to have it inserted elsewhere.  "$agentnum" will be replaced with the agent number, and "$usernum" will be replaced with the employee number.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'cust_main-custom_content',
+    'section'     => 'UI',
+    'description' => 'As an alternative to cust_main-custom_link (leave it blank), the contant to display on this customer page, one item per line.  Available iems are: small_custview, birthdate, spouse_birthdate, svc_acct, svc_phone and svc_external.',
     'type'        => 'textarea',
   },
 
@@ -4801,6 +5068,13 @@ and customer address. Include units.',
     },
     'option_sub'  => sub { FS::Locales->description(shift) },
   },
+
+  {
+    'key'         => 'cust_main-require_locale',
+    'section'     => 'UI',
+    'description' => 'Require an explicit locale to be chosen for new customers.',
+    'type'        => 'checkbox',
+  },
   
   {
     'key'         => 'translate-auto-insert',
@@ -4846,7 +5120,34 @@ and customer address. Include units.',
 			 },
   },
   
-  
+  {
+    'key'         => 'brand-agent',
+    'section'     => 'UI',
+    'description' => 'Brand the backoffice interface (currently Help->About) using the company_name, company_url and logo.png configuration settings of the selected agent.  Typically used when selling or bundling hosted access to the backoffice interface.  NOTE: The AGPL software license has specific requirements for source code availability in this situation.',
+    'type'        => 'select-agent',
+  },
+
+  {
+    'key'         => 'cust_class-tax_exempt',
+    'section'     => 'billing',
+    'description' => 'Control the tax exemption flag per customer class rather than per indivual customer.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-billing_history-line_items',
+    'section'     => 'self-service',
+    'description' => 'Return line item billing detail for the self-service billing_history API call.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'logout-timeout',
+    'section'     => 'UI',
+    'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
+    'type'       => 'text',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

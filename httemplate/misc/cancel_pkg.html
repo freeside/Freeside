@@ -13,22 +13,53 @@
 % my $date_init = 0;
 % if ($method eq 'expire' || $method eq 'adjourn' || $method eq 'resume') {
 %   $submit =~ /^(\w*)\s/;
-<& /elements/tr-input-date-field.html, {
-    'name'    => 'date',
-    'value'   => $date,
-    'label'   => mt("$1 package on"),
-    'format'  => $date_format,
-} &>
+  <& /elements/tr-input-date-field.html, {
+      'name'    => 'date',
+      'value'   => $date,
+      'label'   => mt("$1 package on"),
+      'format'  => $date_format,
+  } &>
 %   $date_init = 1;
 % }
 
-% unless ( $method eq 'resume' ) { #the only one that doesn't need a reason
-<& /elements/tr-select-reason.html,
-     'field'          => 'reasonnum',
-     'reason_class'   => $class,
-     'curr_value'     => $reasonnum,
-     'control_button' => "document.getElementById('confirm_cancel_pkg_button')",
-&>
+% if ($method eq 'uncancel' ) {
+%
+% #XXX customer also requested setup
+% # setup: what usefulness is changing or blanking this?  re-charge setup fee?
+% #        an option that says that would be better if that's what we want to do
+
+% # last_bill: isn't this informational?  what good would editing it do?
+% #            something about invoice display?
+  <& /elements/tr-input-date-field.html, {
+      'name'    => 'last_bill',
+      'value'   => ( $cgi->param('last_bill') || $cust_pkg->get('last_bill') ),
+      'label'   => mt("Last bill date"),
+      'format'  => $date_format,
+  } &>
+
+  <& /elements/tr-input-date-field.html, {
+      'name'    => 'bill',
+      'value'   => ( $cgi->param('bill') || $cust_pkg->get('bill') ),
+      'label'   => mt("Next bill date"),
+      'format'  => $date_format,
+  } &>
+
+  <& /elements/tr-checkbox.html,
+       'label'  => mt("Uncancel even if a service can't be re-provisioned"),
+       'field'  => 'svc_not_fatal',
+       'value'  => 'Y',
+  &>
+
+%   $date_init = 1;
+% }
+
+% unless ( $method eq 'resume' || $method eq 'uncancel' ) {
+  <& /elements/tr-select-reason.html,
+       field          => 'reasonnum',
+       reason_class   => $class,
+       curr_value     => $reasonnum,
+       control_button => "document.getElementById('confirm_cancel_pkg_button')",
+  &>
 % }
 
 % if ( $method eq 'adjourn' || $method eq 'suspend' ) {
@@ -49,26 +80,27 @@
 %                     ? str2time($cgi->param('resume_date'))
 %                     : $cust_pkg->get('resume');
 
-<& /elements/tr-input-date-field.html, {
-    'name'    => 'resume_date',
-    'value'   => $resume_date,
-    'label'   => mt('Unsuspend on'),
-    'format'  => $date_format,
-    'noinit'  => $date_init,
-} &>
+  <& /elements/tr-input-date-field.html, {
+      'name'    => 'resume_date',
+      'value'   => $resume_date,
+      'label'   => mt('Unsuspend on'),
+      'format'  => $date_format,
+      'noinit'  => $date_init,
+  } &>
 % }
 </TABLE>
 
 <BR>
 <INPUT TYPE="submit" NAME="submit" ID="confirm_cancel_pkg_button" 
   VALUE="<% mt($submit) |h %>"
-  <% $method ne 'resume' ? 'DISABLED' : '' %>>
+  <% $method !~ /^(resume|uncancel)$/ ? 'DISABLED' : '' %>>
 
 </FORM>
 </BODY>
 </HTML>
 
 <%init>
+use Date::Parse qw(str2time);
 
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
@@ -111,6 +143,10 @@ if ($method eq 'cancel') {
   $class  = '';
   $submit = 'Unsuspend Later';
   $right  = 'Unsuspend customer package'; #later?
+} elsif ( $method eq 'uncancel') {
+  $class  = '';
+  $submit = 'Un-Cancel';
+  $right  = 'Un-cancel customer package'; #later?
 } else {
   die 'illegal query (unknown method param)';
 }
@@ -119,6 +155,7 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied" unless $curuser->access_right($right);
 
 my $title = ucfirst($method) . ' Package';
+$title =~ s/Uncancel/Un-cancel/;
 
 my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
   or die "Unknown pkgnum: $pkgnum";

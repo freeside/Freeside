@@ -27,9 +27,9 @@ Example:
 
 my( %opt ) = @_;
 
-my $cust_main = $opt{'cust_main'}
-  or die "cust_main not specified";
+my $cust_or_prospect_main = $opt{'cust_main'} || $opt{'prospect_main'}
+  or die "neither cust_main nor prospect_main specified";
 
-$opt{'extra_sql'} .= ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_main->agent );
+$opt{'extra_sql'} .= ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_or_prospect_main->agent );
 
 </%init>

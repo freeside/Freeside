@@ -117,6 +117,15 @@
             //why? select.selectedIndex = 0;
         }
     }
+
+    function tax_changed(what) {
+      var num = document.getElementById(what.id + '_num'); 
+      if ( what.checked ) {
+        num.disabled = false;
+      } else {
+        num.disabled = true;
+      }
+    }
     
   </SCRIPT>
 
@@ -437,14 +446,28 @@
 
 %   my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 
-    <TR>
-      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
-    </TR>
+%   if (    $conf->exists('cust_class-tax_exempt')
+%        || $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+%      )
+%   {
+
+      <INPUT TYPE="hidden" NAME="tax" VALUE="<% $cust_main->tax eq 'Y' ? 'Y' : '' %>">
+
+%   } else {
+
+      <TR>
+        <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
+      </TR>
+
+%   }
 
 %   foreach my $exempt_group ( @exempt_groups ) {
-%     #escape $exempt_group for NAME
+%     my $cust_main_exemption = $cust_main->tax_exemption($exempt_group);
+%     #escape $exempt_group for NAME etc.
+%     my $checked = ($cust_main_exemption || $cgi->param("tax_$exempt_group"));
       <TR>
-        <TD WIDTH="608" COLSPAN="2">&nbsp;&nbsp;<INPUT TYPE="checkbox" NAME="tax_<% $exempt_group %>" VALUE="Y" <% $cust_main->tax_exemption($exempt_group) ? 'CHECKED' : '' %>> Tax Exempt (<% $exempt_group %> taxes)<TD>
+        <TD>&nbsp;&nbsp;<INPUT TYPE="checkbox" NAME="tax_<% $exempt_group %>" ID="tax_<% $exempt_group %>" VALUE="Y" <% $checked ? 'CHECKED' : '' %> onChange="tax_changed(this)"> Tax Exempt (<% $exempt_group %> taxes)</TD>
+        <TD> - Exemption number <INPUT TYPE="text" NAME="tax_<% $exempt_group %>_num" ID="tax_<% $exempt_group %>_num" VALUE="<% $cgi->param("tax_$exempt_group".'_num') || ( $cust_main_exemption ? $cust_main_exemption->exempt_number : '' ) |h %>" <% $checked ? '' : 'DISABLED' %>></TD>
       </TR>
 %   }
 
@@ -458,7 +481,7 @@
           ? 'CHECKED'
           : ''
 
-        %>> <% mt('Postal mail invoice') |h %> 
+        %>> <% mt('Postal mail invoices') |h %> 
 
       </TD>
     </TR>
@@ -470,15 +493,27 @@
           ? 'CHECKED'
           : ''
 
-        %>> <% mt('Fax invoice') |h %> 
+        %>> <% mt('Fax invoices') |h %> 
 
       </TD>
     </TR>
 
 % }
 
-% unless ( $conf->exists('cust-email-high-visibility')) {
     <TR>
+      <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoice_email" VALUE="Y" <%
+
+        ( $cust_main->invoice_noemail eq 'Y' )
+          ? ''
+          : 'CHECKED'
+
+        %>> <% mt('Email invoices') |h %> 
+
+      </TD>
+    </TR>
+
+% unless ( $conf->exists('cust-email-high-visibility')) {
+   <TR>
       <TD ALIGN="right" WIDTH="200">
         <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum) 
             ? $r : '' %>Email address(es)
@@ -562,20 +597,25 @@ function toggle(obj) {
 
 %my @available_locales = $conf->config('available-locales');
 %if ( scalar(@available_locales) ) {
-%   push @available_locales, '';
-%    my %locale_labels = map { 
-%        my %ll;
-%        my %info = FS::Locales->locale_info($_);
-%        $ll{$_} = $info{name} . " (" . $info{country} . ")";
-%        %ll;
-%    } FS::Locales->locales;
-  <& /elements/tr-select.html, 
-        'label'         => emt('Invoicing locale'),
-        'field'         => 'locale',
-        'options'       => \@available_locales,
-        'labels'        => \%locale_labels,
-        'curr_value'    => $cust_main->locale,
-  &>
+%  push @available_locales, ''
+%    unless $cust_main->locale && $conf->exists('cust_main-require_locale');
+%  my %locale_labels = map { 
+%    my %ll;
+%    my %info = FS::Locales->locale_info($_);
+%    $ll{$_} = $info{name} . " (" . $info{country} . ")";
+%    %ll;
+%  } FS::Locales->locales;
+%    
+%  my $label = ( $conf->exists('cust_main-require_locale') ? $r : '' ).
+%              emt('Invoicing locale');
+
+    <& /elements/tr-select.html, 
+         'label'         => $label,
+         'field'         => 'locale',
+         'options'       => \@available_locales,
+         'labels'        => \%locale_labels,
+         'curr_value'    => $cust_main->locale,
+    &>
 % }
 
   </TABLE>

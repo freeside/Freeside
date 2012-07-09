@@ -10,20 +10,19 @@
 %# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %# General Public License for more details.
 <table>
-% my $cust = 0;
-% foreach my $custResolver ( map { $_->TargetURI->Resolver }
-%                                @{ $Ticket->Customers->ItemsArrayRef }
-%                          )
-% {
-%   $cust++;
-%   my $cust_main = '';
+% my @cust = map { $_->TargetURI->Resolver } 
+%                   @{ $Ticket->Customers->ItemsArrayRef };
+%
+% foreach my $custResolver ( @cust ) {
   <tr>
     <td class="value">
-      <A HREF="<% $custResolver->HREF %>"><% $custResolver->AsStringLong |n %></A>
+      <% $custResolver->AsStringLong |n %>
+%# includes service label and view/svc_ link for cust_svc links
     </td>
   </tr>
 % }
-% unless ( $cust ) {
+
+% unless ( @cust ) {
   <tr>
     <td class="labeltop">
       <i>(none)<i>

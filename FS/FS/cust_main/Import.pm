@@ -13,6 +13,7 @@ use FS::cust_main;
 use FS::svc_acct;
 use FS::svc_external;
 use FS::svc_phone;
+use FS::svc_hardware;
 use FS::part_referral;
 
 $DEBUG = 0;
@@ -197,6 +198,22 @@ sub batch_import {
     push @fields, map "svc_phone.$_", qw( countrycode phonenum sip_password pin)
       if $format eq 'svc_external_svc_phone';
     $payby = 'BILL';
+  } elsif ( $format eq 'birthdates-acct_phone_hardware') {
+    @fields = qw( agent_custid refnum
+                  last first company address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  birthdate spouse_birthdate
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart cust_pkg.bill
+                  svc_acct.username svc_acct._password 
+                );
+   push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
+   push @fields, map "svc_hardware.$_", qw(typenum ip_addr hw_addr serial);
+
+    $payby = 'BILL';
   } else {
     die "unknown format $format";
   }
@@ -314,7 +331,11 @@ sub batch_import {
 
       } elsif ( $field =~ /^svc_phone\.(countrycode|phonenum|sip_password|pin)$/ ) {
         $svc_x{$1} = shift @columns;
-       
+      
+      } elsif ( $field =~ /^svc_hardware\.(typenum|ip_addr|hw_addr|serial)$/ ) {
+
+        $svc_x{$1} = shift @columns;
+
       } else {
 
         #refnum interception
@@ -353,6 +374,9 @@ sub batch_import {
       }
     }
 
+    $cust_main{$_} = parse_datetime($cust_main{$_})
+      foreach grep $cust_main{$_}, qw( birthdate spouse_birthdate );
+
     my $invoicing_list = $cust_main{'invoicing_list'}
                            ? [ delete $cust_main{'invoicing_list'} ]
                            : [];
@@ -387,11 +411,19 @@ sub batch_import {
       if ( $svc_x{'countrycode'} || $svc_x{'phonenum'} ) {
         $svc_phone = FS::svc_phone->new( {
           map { $_ => delete($svc_x{$_}) }
-              qw( countrycode phonenum sip_password pin)
+              qw( countrycode phonenum sip_password pin )
         } );
       }
 
-      if ( $svcdb || $svc_phone ) {
+      my $svc_hardware = '';
+      if ( $svc_x{'typenum'} ) {
+        $svc_hardware = FS::svc_hardware->new( {
+          map { $_ => delete($svc_x{$_}) }
+            qw( typenum ip_addr hw_addr serial )
+        } );
+      }
+
+      if ( $svcdb || $svc_phone || $svc_hardware ) {
         my $part_pkg = $cust_pkg->part_pkg;
 	unless ( $part_pkg ) {
 	  $dbh->rollback if $oldAutoCommit;
@@ -406,6 +438,11 @@ sub batch_import {
           $svc_phone->svcpart( $part_pkg->svcpart_unique_svcdb('svc_phone') );
           push @svc_x, $svc_phone;
         }
+        if ( $svc_hardware ) {
+          $svc_hardware->svcpart( $part_pkg->svcpart_unique_svcdb('svc_hardware') );
+          push @svc_x, $svc_hardware;
+        }
+
       }
 
       $hash{$cust_pkg} = \@svc_x;

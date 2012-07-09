@@ -47,7 +47,7 @@
           '</pre></font>';
 
 %     } elsif ( $type eq 'checkbox' ) {
-%       if ( $conf->exists($i->key, $agentnum) ) {
+%       if ( $conf->config_bool($i->key, $agentnum) ) {
           configCell.style.backgroundColor = '#00ff00';
           configCell.innerHTML = 'YES';
 %       } else {
@@ -184,7 +184,7 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
 }
 # warn @touch;
 $conf->touch($_, $agentnum) foreach @touch;
-$conf->delete($_, $agentnum) foreach @delete;
+$conf->delete_bool($_, $agentnum) foreach @delete;
 
 if (scalar(@error)) {
   $cgi->param('error', join(' ', @error));

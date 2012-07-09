@@ -9,7 +9,7 @@
   'agentnum'        => $agentnum,
   'sprintf'         => '%u',
   'disable_money'   => 1,
-  'bottom_total'    => (scalar @items > 1 ? 1 : 0),
+  'bottom_total'    => (scalar @items > 1 && !$indirect ? 1 : 0),
   'bottom_link'     => $bottom_link,
   'link_fromparam'  => 'signupdate_begin',
   'link_toparam'    => 'signupdate_end',
@@ -59,25 +59,34 @@ elsif ( $cgi->param('refnum') =~ /^(\d*)$/ ) {
   }
 }
 
+my $indirect = ($cgi->param('indirect') eq 'Y' ? 1 : 0);
+
 my (@items, @labels, @colors, @params, @links);
 
 my $hue = 0;
-my $hue_increment = 125;
+my $hue_increment = 75;
 my @signup_colors;
 
 foreach my $referral (@referral) {
+  my %params = ('refnum' => $referral->refnum) unless $all_referral;
+
   push @items, 'signups';
   push @labels, ( $all_referral ? 'Signups' : $referral->referral );
-  push @params, ( $all_referral ? [] : [ 'refnum' => $referral->refnum ] );
+  push @params, [ %params ];
   push @links, $link . ($all_referral ? '' : "refnum=".$referral->refnum.';');
-  if ( !@signup_colors ) {
-    @signup_colors = Color::Scheme->new
-                        ->from_hue($hue)
-                        ->scheme('analogic')
-                        ->colors;
-    $hue += $hue_increment;
+  # rotate hue for each referral type
+  @signup_colors = Color::Scheme->new->from_hue($hue)->colors;
+  $hue += $hue_increment;
+  push @colors, $signup_colors[0];
+  if ( $indirect ) {
+    push @items, 'signups';
+    push @labels, $all_referral ?
+                  'Referrals' : 
+                  $referral->referral . ' referrals';
+    push @params, [ %params, 'indirect' => 1 ];
+    push @links, '';
+    push @colors, $signup_colors[1];
   }
-  push @colors, shift @signup_colors;
 }
 
 </%init>

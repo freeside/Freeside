@@ -61,7 +61,7 @@ OR (SELECT COUNT(*) FROM svc_hardware
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages'); #?
+  unless $FS::CurrentUser::CurrentUser->access_right('Services: Hardware: Advanced search');
 
 my $title = 'Hardware Service Report';
 

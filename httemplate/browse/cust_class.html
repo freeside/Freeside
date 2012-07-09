@@ -42,4 +42,11 @@ if ($sth->fetchrow_arrayref->[0]) {
   push @$links,  $link;
 }
 
+my $conf = new FS::Conf;
+if ( $conf->exists('cust_class-tax_exempt') ) {
+  push @$header, 'Tax exempt';
+  push @$fields, 'tax';
+  push @$links,  '';
+}
+
 </%init>

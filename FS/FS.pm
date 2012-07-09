@@ -3,7 +3,7 @@ package FS;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '%%%VERSION%%%';
+$VERSION = '3.0git';
 
 #find missing entries in this file with:
 # for a in `ls *pm | cut -d. -f1`; do grep 'L<FS::'$a'>' ../FS.pm >/dev/null || echo "missing $a" ; done
@@ -94,6 +94,8 @@ L<FS::access_group> - Employee groups
 L<FS::access_usergroup> - Employee group membership
 
 L<FS::access_groupagent> - Group reseller access
+
+L<FS::access_groupsales> - Group sales access
 
 L<FS::access_right> - Access rights
 
@@ -212,6 +214,8 @@ L<FS::inventory_item> - Inventory items
 
 L<FS::part_svc> - Service definition class
 
+L<FS::part_svc_class> - Service class class
+
 L<FS::part_svc_column> - Column constraint class
 
 L<FS::export_svc> - Class linking service definitions (see L<FS::part_svc>)
@@ -261,6 +265,8 @@ L<FS::rate_tier> - Rate tiers for call billing
 L<FS::rate_tier_details> - Rater tier details for call billing
 
 L<FS::usage_class> - Usage class class
+
+L<FS::sales> - Sales person class
 
 L<FS::agent> - Agent (reseller) class
 
@@ -546,11 +552,35 @@ Commercial support is available; see
 
 =head1 AUTHORS
 
-Primarily Ivan Kohler, with help from many kind folks, including core
-contributors Jeff Finucane, Kristian Hoffman, Jason Hall and Peter Bowen.
+=head2 CORE TEAM
 
-See the CREDITS file in the Freeside distribution for a (hopefully) complete
-list and the individal files for details.
+Jeremy Davis
+
+Ivan Kohler
+
+Mark Wells
+
+=head2 CORE EMERITUS
+
+Peter Bowen
+
+Jeff Finucane
+
+Jason Hall
+
+Kristian Hoffman
+
+Erik Levinson
+
+Brian McCane
+
+Richard Siddall
+
+Matt Simerson
+
+=head2 CONTRIBUTORS
+
+See httemplate/docs/credits.html
 
 =head1 SEE ALSO
 

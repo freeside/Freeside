@@ -85,7 +85,7 @@ while (1) {
   }
 
   die "exiting" if sigterm() || sigint();
-  sleep 5;
+  sleep 60;
 
 }
 

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -70,6 +70,7 @@ use DBIx::SearchBuilder "1.50";
 use strict;
 use warnings;
 
+
 use base qw(DBIx::SearchBuilder RT::Base);
 
 sub _Init  {
@@ -85,6 +86,40 @@ sub _Init  {
     $self->SUPER::_Init( 'Handle' => $RT::Handle);
 }
 
+sub CleanSlate {
+    my $self = shift;
+    $self->{'_sql_aliases'} = {};
+    return $self->SUPER::CleanSlate(@_);
+}
+
+sub JoinTransactions {
+    my $self = shift;
+    my %args = ( New => 0, @_ );
+
+    return $self->{'_sql_aliases'}{'transactions'}
+        if !$args{'New'} && $self->{'_sql_aliases'}{'transactions'};
+
+    my $alias = $self->Join(
+        ALIAS1 => 'main',
+        FIELD1 => 'id',
+        TABLE2 => 'Transactions',
+        FIELD2 => 'ObjectId',
+    );
+
+    my $item = $self->NewItem;
+    my $object_type = $item->can('ObjectType') ? $item->ObjectType : ref $item;
+
+    $self->RT::SearchBuilder::Limit(
+        LEFTJOIN => $alias,
+        FIELD    => 'ObjectType',
+        VALUE    => $object_type,
+    );
+    $self->{'_sql_aliases'}{'transactions'} = $alias
+        unless $args{'New'};
+
+    return $alias;
+}
+
 sub OrderByCols {
     my $self = shift;
     my @sort;
@@ -94,6 +129,19 @@ sub OrderByCols {
         push @sort, $s;
     }
     return $self->SUPER::OrderByCols( @sort );
+}
+
+# If we're setting RowsPerPage or FirstRow, ensure we get a natural number or undef.
+sub RowsPerPage {
+    my $self = shift;
+    return if @_ and defined $_[0] and $_[0] =~ /\D/;
+    return $self->SUPER::RowsPerPage(@_);
+}
+
+sub FirstRow {
+    my $self = shift;
+    return if @_ and defined $_[0] and $_[0] =~ /\D/;
+    return $self->SUPER::FirstRow(@_);
 }
 
 =head2 LimitToEnabled
@@ -130,96 +178,6 @@ Find all matching rows, regardless of whether they are disabled or not
 
 sub FindAllRows {
     shift->{'find_disabled_rows'} = 1;
-}
-
-=head2 LimitAttribute PARAMHASH
-
-Takes NAME, OPERATOR and VALUE to find records that has the
-matching Attribute.
-
-If EMPTY is set, also select rows with an empty string as
-Attribute's Content.
-
-If NULL is set, also select rows without the named Attribute.
-
-=cut
-
-my %Negate = (
-    '='        => '!=',
-    '!='       => '=',
-    '>'        => '<=',
-    '<'        => '>=',
-    '>='       => '<',
-    '<='       => '>',
-    'LIKE'     => 'NOT LIKE',
-    'NOT LIKE' => 'LIKE',
-    'IS'       => 'IS NOT',
-    'IS NOT'   => 'IS',
-);
-
-sub LimitAttribute {
-    my ($self, %args) = @_;
-    my $clause = 'ALIAS';
-    my $operator = ($args{OPERATOR} || '=');
-    
-    if ($args{NULL} and exists $args{VALUE}) {
-	$clause = 'LEFTJOIN';
-	$operator = $Negate{$operator};
-    }
-    elsif ($args{NEGATE}) {
-	$operator = $Negate{$operator};
-    }
-    
-    my $alias = $self->Join(
-	TYPE   => 'left',
-	ALIAS1 => $args{ALIAS} || 'main',
-	FIELD1 => 'id',
-	TABLE2 => 'Attributes',
-	FIELD2 => 'ObjectId'
-    );
-
-    my $type = ref($self);
-    $type =~ s/(?:s|Collection)$//; # XXX - Hack!
-
-    $self->Limit(
-	$clause	   => $alias,
-	FIELD      => 'ObjectType',
-	OPERATOR   => '=',
-	VALUE      => $type,
-    );
-    $self->Limit(
-	$clause	   => $alias,
-	FIELD      => 'Name',
-	OPERATOR   => '=',
-	VALUE      => $args{NAME},
-    ) if exists $args{NAME};
-
-    return unless exists $args{VALUE};
-
-    $self->Limit(
-	$clause	   => $alias,
-	FIELD      => 'Content',
-	OPERATOR   => $operator,
-	VALUE      => $args{VALUE},
-    );
-
-    # Capture rows with the attribute defined as an empty string.
-    $self->Limit(
-	$clause    => $alias,
-	FIELD      => 'Content',
-	OPERATOR   => '=',
-	VALUE      => '',
-	ENTRYAGGREGATOR => $args{NULL} ? 'AND' : 'OR',
-    ) if $args{EMPTY};
-
-    # Capture rows without the attribute defined
-    $self->Limit(
-	%args,
-	ALIAS      => $alias,
-	FIELD	   => 'id',
-	OPERATOR   => ($args{NEGATE} ? 'IS NOT' : 'IS'),
-	VALUE      => 'NULL',
-    ) if $args{NULL};
 }
 
 =head2 LimitCustomField
@@ -315,7 +273,8 @@ sub Limit {
                                   |(NOT\s*)?(STARTS|ENDS)WITH
                                   |(NOT\s*)?MATCHES
                                   |IS(\s*NOT)?
-                                  |IN)$/ix) {
+                                  |IN
+                                  |\@\@)$/ix) {
         $RT::Logger->crit("Possible SQL injection attack: $ARGS{FIELD} $ARGS{OPERATOR}");
         $self->SUPER::Limit(
             %ARGS,
@@ -387,6 +346,22 @@ sub _DoCount {
         $self->LimitToEnabled;
     }
     return $self->SUPER::_DoCount(@_);
+}
+
+=head2 ColumnMapClassName
+
+ColumnMap needs a Collection name to load the correct list display.
+Depluralization is hard, so provide an easy way to correct the naive
+algorithm that this code uses.
+
+=cut
+
+sub ColumnMapClassName {
+    my $self = shift;
+    my $Class = ref $self;
+    $Class =~ s/s$//;
+    $Class =~ s/:/_/g;
+    return $Class;
 }
 
 RT::Base->_ImportOverlays();

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -48,7 +48,7 @@
 <%INIT>
 use File::Basename;
 my $arg = $m->dhandler_arg;
-my $file = dirname($m->current_comp->source_file) . '/FCKeditor/' . $arg;
+my $file = dirname($m->current_comp->source_file) . '/ckeditor/' . $arg;
 return $m->decline unless -f $file && -r _;
 
 my $suffix = $1 if $file =~ /([^.]+)$/;

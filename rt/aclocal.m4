@@ -91,9 +91,9 @@ AC_DEFUN([RT_LAYOUT],[
 			changequote({,})
 			for var in prefix exec_prefix bindir sbindir \
 				 sysconfdir mandir libdir datadir htmldir fontdir\
-				 localstatedir logfiledir masonstatedir \
+				 lexdir localstatedir logfiledir masonstatedir \
 				 sessionstatedir customdir custometcdir customhtmldir \
-				 customlexdir customlibdir manualdir; do
+				 customlexdir customplugindir customlibdir manualdir; do
 				eval "val=\"\$$var\""
 				val=`echo $val | sed -e 's:\(.\)/*$:\1:'`
 				val=`echo $val | 
@@ -113,6 +113,7 @@ AC_DEFUN([RT_LAYOUT],[
 	RT_SUBST_EXPANDED_ARG(sysconfdir)
 	RT_SUBST_EXPANDED_ARG(mandir)
 	RT_SUBST_EXPANDED_ARG(libdir)
+	RT_SUBST_EXPANDED_ARG(lexdir)
 	RT_SUBST_EXPANDED_ARG(datadir)
 	RT_SUBST_EXPANDED_ARG(htmldir)
 	RT_SUBST_EXPANDED_ARG(fontdir)
@@ -124,6 +125,7 @@ AC_DEFUN([RT_LAYOUT],[
 	RT_SUBST_EXPANDED_ARG(sessionstatedir)
 	RT_SUBST_EXPANDED_ARG(customdir)
 	RT_SUBST_EXPANDED_ARG(custometcdir)
+	RT_SUBST_EXPANDED_ARG(customplugindir)
 	RT_SUBST_EXPANDED_ARG(customhtmldir)
 	RT_SUBST_EXPANDED_ARG(customlexdir)
 	RT_SUBST_EXPANDED_ARG(customlibdir)

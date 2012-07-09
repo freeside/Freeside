@@ -69,7 +69,7 @@ if ( -e $addl_handler_use_file ) {
   Lingua::EN::Inflect::classical names=>0; #Categorys
   use Tie::IxHash;
   use URI;
-  use URI::Escape;
+  use URI::Escape 3.31;
   use HTML::Entities;
   use HTML::TreeBuilder;
   use HTML::TableExtract qw(tree);
@@ -122,6 +122,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::UID qw( getotaker dbh datasrc driver_name );
   use FS::Record qw( qsearch qsearchs fields dbdef
                     str2time_sql str2time_sql_closing
+                    midnight_sql
                    );
   use FS::Conf;
   use FS::CGI qw(header menubar table itable ntable idiot
@@ -303,7 +304,14 @@ if ( -e $addl_handler_use_file ) {
   use FS::discount_plan;
   use FS::tower;
   use FS::tower_sector;
+  use FS::sales;
+  use FS::access_groupsales;
   use FS::contact_class;
+  use FS::part_svc_class;
+  use FS::ftp_target;
+  use FS::quotation;
+  use FS::quotation_pkg;
+  use FS::quotation_pkg_discount;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
@@ -506,28 +514,7 @@ sub mason_interps {
     RT::LoadConfig();
   }
 
-  # A hook supporting strange legacy ways people (well, SG) have added stuff on
-
-  my @addl_comp_root = ();
-  my $addl_comp_root_file = '%%%FREESIDE_CONF%%%/addl_comp_root.pl';
-  if ( -e $addl_comp_root_file ) {
-    warn "reading $addl_comp_root_file\n";
-    my $text = slurp( $addl_comp_root_file );
-    my @addl = eval $text;
-    if ( @addl && ! $@ ) {
-      @addl_comp_root = @addl;
-    } elsif ($@) {
-      warn "error parsing $addl_comp_root_file: $@\n";
-    }
-  }
-
-  my $fs_comp_root =
-    scalar(@addl_comp_root)
-      ? [
-          [ 'freeside'=>'%%%FREESIDE_DOCUMENT_ROOT%%%' ],
-          @addl_comp_root,
-        ]
-      : '%%%FREESIDE_DOCUMENT_ROOT%%%';
+  my $fs_comp_root = '%%%FREESIDE_DOCUMENT_ROOT%%%';
 
   my %interp = (
     request_class        => $request_class,
@@ -574,11 +561,13 @@ sub mason_interps {
                       [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
                     ],
     escape_flags => { 'h'         => \&RT::Interface::Web::EscapeUTF8,
+                      'u'         => \&RT::Interface::Web::EscapeURI,
+                      'j'         => \&RT::Interface::Web::EscapeJS,
                       'js_string' => $js_string_sub,
                     },
     compiler     => HTML::Mason::Compiler::ToObject->new(
                       default_escape_flags => 'h',
-                      allow_globals        => [qw(%session)],
+                      allow_globals        => [qw(%session $DECODED_ARGS)],
                     ),
   );
 

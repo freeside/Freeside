@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -49,6 +49,8 @@
 package RT::Installer;
 use strict;
 use warnings;
+
+use DateTime;
 
 require UNIVERSAL::require;
 my %Meta = (
@@ -184,6 +186,26 @@ my %Meta = (
             Description => 'Path to sendmail', #loc
         },
     },
+    Timezone => {
+        Widget          => '/Widgets/Form/Select',
+        WidgetArguments => {
+            Description => 'Timezone',                              #loc
+            Callback    => sub {
+                my $ret;
+                $ret->{Values} = ['', DateTime::TimeZone->all_names];
+
+                my $dt = DateTime->now;
+                for my $tz ( DateTime::TimeZone->all_names ) {
+                    $dt->set_time_zone( $tz );
+                    $ret->{ValuesLabel}{$tz} =
+                        $tz . ' ' . $dt->strftime('%z');
+                }
+                $ret->{ValuesLabel}{''} = 'System Default'; #loc
+
+                return $ret;
+            },
+        },
+    },
     WebDomain => {
         Widget          => '/Widgets/Form/String',
         WidgetArguments => {
@@ -200,42 +222,6 @@ my %Meta = (
     },
 
 );
-
-my $HAS_DATETIME_TZ = eval { require DateTime::TimeZone };
-
-if ($HAS_DATETIME_TZ) {
-    $Meta{Timezone} = {
-        Widget          => '/Widgets/Form/Select',
-        WidgetArguments => {
-            Description => 'Timezone',                              #loc
-            Callback    => sub {
-                my $ret;
-                $ret->{Values} = ['', DateTime::TimeZone->all_names];
-
-                my $has_datetime = eval { require DateTime };
-                if ( $has_datetime ) {
-                    my $dt = DateTime->now;
-                    for my $tz ( DateTime::TimeZone->all_names ) {
-                        $dt->set_time_zone( $tz );
-                        $ret->{ValuesLabel}{$tz} =
-                            $tz . ' ' . $dt->strftime('%z');
-                    }
-                }
-                $ret->{ValuesLabel}{''} = 'System Default'; #loc
-
-                return $ret;
-            },
-        },
-    };
-}
-else {
-    $Meta{Timezone} = {
-        Widget          => '/Widgets/Form/String',
-        WidgetArguments => {
-            Description => 'Timezone',                              #loc
-        },
-    };
-}
 
 sub Meta {
     my $class = shift;
@@ -266,7 +252,7 @@ sub CurrentValues {
 
 sub ConfigFile {
     require File::Spec;
-    return File::Spec->catfile( $RT::EtcPath, 'RT_SiteConfig.pm' );
+    return $ENV{RT_SITE_CONFIG} || File::Spec->catfile( $RT::EtcPath, 'RT_SiteConfig.pm' );
 }
 
 sub SaveConfig {

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,10 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => loc("Ticketing Search Preferences") &>
-<& /User/Elements/Tabs, 
-    current_tab => "Prefs/SearchOptions.html",
-    Title => loc("Search Preferences")
-&>
+<& /Elements/Tabs &>
 <& /Elements/ListActions, actions => \@actions &>
 
 <form method="post" action="SearchOptions.html">
@@ -67,7 +64,7 @@
 <%INIT>
 my @actions;
 
-# {{{ If we're saving search preferences, do that now
+# If we're saving search preferences, do that now
 $Order = join '|', grep defined && /\S/, (ref $Order)? @{$Order}: $Order;
 $OrderBy = join '|', grep defined && /\S/, (ref $OrderBy)? @{$OrderBy}: $OrderBy;
 
@@ -84,7 +81,6 @@ if ($ARGS{'SavePreferences'}) {
     push @actions, $ok ? loc("Preferences saved.") : $msg;
 }
 
-# }}}
 
 # Read from user preferences
 my $prefs = $session{'CurrentUser'}->UserObj->Preferences("SearchDisplay") || {};

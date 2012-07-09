@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -50,14 +50,8 @@ $Prefs => '/Prefs/Other.html'
 </%ARGS>
 <div id="quick-personal">
     <span class="hide"><a href="#skipnav"><&|/l&>Skip Menu</&></a> | </span>
-% if ($session{'CurrentUser'}->Name) {
-    <&|/l, "<span>".$session{'CurrentUser'}->Name."</span>" &>Logged in as [_1]</&>
-%     if ( $session{'CurrentUser'}->HasRight( Right => 'ModifySelf', Object => $RT::System ) ) {
-    | <a href="<%RT->Config->Get('WebPath')%><%$Prefs%>"><&|/l&>Preferences</&></a>
-%     }
-% } else {
-    <&|/l&>Not logged in.</&>
+% unless ($session{'CurrentUser'}->Id) {
+    <span id="not-logged-in"><&|/l&>Not logged in.</&></span>
 % }
 % $m->callback( %ARGS );
-<& Logout, %ARGS &>
 </div>

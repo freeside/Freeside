@@ -68,9 +68,7 @@ order taker (see L<FS::access_user>)
 
 =item payby
 
-`CARD' (credit cards), `CHEK' (electronic check/ACH),
-`LECB' (phone bill billing), `BILL' (billing), `CASH' (cash),
-`WEST' (Western Union), `MCRD' (Manual credit card), or `COMP' (free)
+Payment Type (See L<FS::payinfo_Mixin> for valid values)
 
 =item payinfo
 
@@ -186,6 +184,7 @@ sub check {
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_numbern('void_date')
     || $self->ut_textn('reason')
+    || $self->payinfo_check
   ;
   return $error if $error;
 
@@ -196,31 +195,6 @@ sub check {
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->void_date(time) unless $self->void_date;
-
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREP|CASH|WEST|MCRD)$/
-    or return "Illegal payby";
-  $self->payby($1);
-
-  #false laziness with cust_refund::check
-  if ( $self->payby eq 'CARD' ) {
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $self->payinfo($payinfo);
-    if ( $self->payinfo ) {
-      $self->payinfo =~ /^(\d{13,16}|\d{8,9})$/
-        or return "Illegal (mistyped?) credit card number (payinfo)";
-      $self->payinfo($1);
-      validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
-                                 && cardtype($self->payinfo) eq "Unknown";
-    } else {
-      $self->payinfo('N/A');
-    }
-
-  } else {
-    $error = $self->ut_textn('payinfo');
-    return $error if $error;
-  }
 
   $self->void_usernum($FS::CurrentUser::CurrentUser->usernum)
     unless $self->void_usernum;

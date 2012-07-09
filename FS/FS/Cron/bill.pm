@@ -200,15 +200,15 @@ sub bill_where {
   # select * from cust_main where
   my $where_pkg = <<"END";
     EXISTS(
-      SELECT 1 FROM cust_pkg
+      SELECT 1 FROM cust_pkg LEFT JOIN part_pkg USING ( pkgpart )
         WHERE cust_main.custnum = cust_pkg.custnum
           AND ( cancel IS NULL OR cancel = 0 )
-          AND (    ( ( setup IS NULL OR setup =  0 )
+          AND (    ( ( cust_pkg.setup IS NULL OR cust_pkg.setup =  0 )
                      AND ( start_date IS NULL OR start_date = 0
                            OR ( start_date IS NOT NULL AND start_date <= $^T )
                          )
                    )
-                OR bill  IS NULL OR bill  <= $billtime 
+                OR ( freq != '0' AND ( bill IS NULL OR bill  <= $billtime ) )
                 OR ( expire  IS NOT NULL AND expire  <= $^T )
                 OR ( adjourn IS NOT NULL AND adjourn <= $^T )
                 OR ( resume  IS NOT NULL AND resume  <= $^T )

@@ -25,6 +25,12 @@
                   'all_selected' => 1,
     &>
 
+    <& /elements/tr-select-part_referral.html,
+                  'label'        => emt('Advertising Source'),
+                  'multiple'     => 1,
+                  'all_selected' => 1,
+    &>
+
     <TR>
       <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
       <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
@@ -41,6 +47,34 @@
         </TABLE>
         </TD>
     </TR>
+
+%    if ( $conf->exists('cust_main-enable_birthdate') ) {
+      <TR>
+          <TD ALIGN="right" VALIGN="center"><% mt('Date of Birth') |h %></TD>
+          <TD>
+          <TABLE>
+              <& /elements/tr-input-beginning_ending.html,
+                        prefix   => 'birthdate',
+                        layout   => 'horiz',
+              &>
+          </TABLE>
+          </TD>
+      </TR>
+%   }
+
+%    if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
+      <TR>
+          <TD ALIGN="right" VALIGN="center"><% mt('Spouse Date of Birth') |h %></TD>
+          <TD>
+          <TABLE>
+              <& /elements/tr-input-beginning_ending.html,
+                        prefix   => 'spouse_birthdate',
+                        layout   => 'horiz',
+              &>
+          </TABLE>
+          </TD>
+      </TR>
+%   }
 
     <& /elements/tr-select-cust_tag.html,
                   'cgi'		 => $cgi,
@@ -101,11 +135,6 @@
     &>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Include cancelled packages') |h %></TD>
-        <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
-    </TR>
-
-    <TR>
       <TD ALIGN="right" VALIGN="center"><% mt('Without census tract') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="no_censustract"></TD>
     </TR>
@@ -132,6 +161,12 @@
       <TD ALIGN="right" VALIGN="center"><% mt('Add package columns') |h %></TD>
         <TD><INPUT TYPE="checkbox" NAME="flattened_pkgs"></TD>
     </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Include cancelled packages') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
+    </TR>
+
   </TABLE>
 
 <BR>
@@ -143,9 +178,7 @@
 <%init>
 
 die "access denied"
-  unless ( $FS::CurrentUser::CurrentUser->access_right('List customers') &&
-           $FS::CurrentUser::CurrentUser->access_right('List packages')
-         );
+  unless $FS::CurrentUser::CurrentUser->access_right('Advanced customer search');
 
 my $conf = new FS::Conf;
 

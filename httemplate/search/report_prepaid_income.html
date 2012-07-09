@@ -2,7 +2,7 @@
 
 <% include('/elements/init_calendar.html') %>
 
-<FORM ACTION="report_prepaid_income.cgi" METHOD="GET">
+<FORM ACTION="prepaid_income.html" METHOD="GET">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
@@ -13,7 +13,7 @@
   </TR>
 
   <TR>
-    <TD>As of </TD>
+    <TD ALIGN="right">As of </TD>
     <TD>
       <INPUT TYPE="text" NAME="date" ID="date_text" VALUE="now">
       <IMG SRC="../images/calendar.png" ID="date_button" STYLE="cursor: pointer" TITLE="Select date">
@@ -30,7 +30,20 @@
   </TR>
 
   <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
-
+  
+  <& /elements/tr-select-cust_main-status.html,
+      label => mt('Customer Status') &>
+  <& /elements/tr-select.html,
+      label => 'Invoice Status',
+      field => 'mode',
+      options => [ qw(billed paid) ] &>
+  <TR>
+    <TD ALIGN="right">
+      <INPUT TYPE="checkbox" NAME="include_monthly" VALUE=1>
+    </TD>
+    <TD ALIGN="left"><% mt('Include packages with period &le; 1 month') %>
+    </TD>
+  </TR>
   <TR>
     <TD COLSPAN=2>&nbsp;</TD>
   </TR>

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use RT::Test tests => 264;
+use RT::Test nodata => 1, tests => 264;
 
 use strict;
 use warnings;
@@ -228,7 +228,7 @@ sub create_tickets_set{
     my @res;
     foreach my $q ($queue_a, $queue_b) {
         foreach my $n (1 .. 2) {
-            my $ticket = RT::Ticket->new( $RT::SystemUser );
+            my $ticket = RT::Ticket->new( RT->SystemUser );
             my ($tid) = $ticket->Create(
                 Queue => $q->id, Subject => $q->Name .' - '. $n
             );
@@ -239,24 +239,8 @@ sub create_tickets_set{
     return @res;
 }
 
-sub cleanup { delete_tickets(); delete_watchers() }; 
-
-sub delete_tickets {
-    my $tickets = RT::Tickets->new( $RT::SystemUser );
-    $tickets->FromSQL( "Queue = $qa_id OR Queue = $qb_id" );
-    while ( my $ticket = $tickets->Next ) {
-        $ticket->Delete;
-    }
-}
-
-sub delete_watchers {
-    foreach my $q ($queue_a, $queue_b) {
-        foreach my $u ($user_a, $user_b) {
-            foreach my $t (qw(Cc AdminCc) ) {
-                $q->DeleteWatcher( Type => $t, PrincipalId => $u->id )
-                    if $q->IsWatcher( Type => $t, PrincipalId => $u->id );
-            }
-        }
-    }
-}
+sub cleanup {
+    RT::Test->delete_tickets( "Queue = $qa_id OR Queue = $qb_id" );
+    RT::Test->delete_queue_watchers( $queue_a, $queue_b );
+}; 
 

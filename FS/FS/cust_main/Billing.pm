@@ -721,6 +721,11 @@ jurisdictions (i.e. Texas) have tax exemptions which are date sensitive.
 sub calculate_taxes {
   my ($self, $cust_bill_pkg, $taxlisthash, $invoice_time) = @_;
 
+  # $taxlisthash is a hashref
+  # keys are identifiers, values are arrayrefs
+  # each arrayref starts with a tax object (cust_main_county or tax_rate)
+  # then any cust_bill_pkg objects the tax applies to
+
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me calculate_taxes\n"
@@ -746,9 +751,15 @@ sub calculate_taxes {
   my %tax_rate_location = ();
 
   foreach my $tax ( keys %$taxlisthash ) {
+    # $tax is a tax identifier
     my $tax_object = shift @{ $taxlisthash->{$tax} };
+    # $tax_object is a cust_main_county or tax_rate 
+    # (with pkgnum and locationnum set)
+    # the rest of @{ $taxlisthash->{$tax} } is cust_bill_pkg objects
     warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
     warn " ". join('/', @{ $taxlisthash->{$tax} } ). "\n" if $DEBUG > 2;
+    # taxline calculates the tax on all cust_bill_pkgs in the 
+    # first (arrayref) argument
     my $hashref_or_error =
       $tax_object->taxline( $taxlisthash->{$tax},
                             'custnum'      => $self->custnum,
@@ -767,8 +778,10 @@ sub calculate_taxes {
 
     $tax{ $tax } += $amount;
 
+    # link records between cust_main_county/tax_rate and cust_location
     $tax_location{ $tax } ||= [];
-    if ( $tax_object->get('pkgnum') || $tax_object->get('locationnum') ) {
+    $tax_rate_location{ $tax } ||= [];
+    if ( ref($tax_object) eq 'FS::cust_main_county' ) {
       push @{ $tax_location{ $tax }  },
         {
           'taxnum'      => $tax_object->taxnum, 
@@ -778,9 +791,7 @@ sub calculate_taxes {
           'amount'      => sprintf('%.2f', $amount ),
         };
     }
-
-    $tax_rate_location{ $tax } ||= [];
-    if ( ref($tax_object) eq 'FS::tax_rate' ) {
+    elsif ( ref($tax_object) eq 'FS::tax_rate' ) {
       my $taxratelocationnum =
         $tax_object->tax_rate_location->taxratelocationnum;
       push @{ $tax_rate_location{ $tax }  },
@@ -877,7 +888,7 @@ sub _make_lines {
 
   my $part_pkg = $params{part_pkg} or die "no part_pkg specified";
   my $cust_pkg = $params{cust_pkg} or die "no cust_pkg specified";
-  my $precommit_hooks = $params{precommit_hooks} or die "no package specified";
+  my $precommit_hooks = $params{precommit_hooks} or die "no precommit_hooks specified";
   my $cust_bill_pkgs = $params{line_items} or die "no line buffer specified";
   my $total_setup = $params{setup} or die "no setup accumulator specified";
   my $total_recur = $params{recur} or die "no recur accumulator specified";
@@ -952,7 +963,6 @@ sub _make_lines {
   # bill recurring fee
   ### 
 
-  #XXX unit stuff here too
   my $recur = 0;
   my $unitrecur = 0;
   my @recur_discounts = ();
@@ -1013,6 +1023,9 @@ sub _make_lines {
     $recur = eval { $cust_pkg->$method( \$sdate, \@details, \%param ) };
     return "$@ running $method for $cust_pkg\n"
       if ( $@ );
+
+    #base_cancel???
+    $unitrecur = $cust_pkg->part_pkg->base_recur || $recur; #XXX uuh
 
     if ( $increment_next_bill ) {
 
@@ -1181,7 +1194,11 @@ sub _handle_taxes {
   push @classes, 'setup' if ($cust_bill_pkg->setup && !$options->{cancel});
   push @classes, 'recur' if ($cust_bill_pkg->recur && !$options->{cancel});
 
-  if ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
+  my $exempt = $conf->exists('cust_class-tax_exempt')
+                 ? ( $self->cust_class ? $self->cust_class->tax : '' )
+                 : $self->tax;
+
+  if ( $exempt !~ /Y/i && $self->payby ne 'COMP' ) {
 
     if ( $conf->exists('enable_taxproducts')
          && ( scalar($part_pkg->part_pkg_taxoverride)
@@ -1205,21 +1222,12 @@ sub _handle_taxes {
     } else {
 
       my @loc_keys = qw( district city county state country );
-      my %taxhash;
-      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
-        my $cust_location = $cust_pkg->cust_location;
-        %taxhash = map { $_ => $cust_location->$_()    } @loc_keys;
-      } else {
-        my $prefix = 
-          ( $conf->exists('tax-ship_address') && length($self->ship_last) )
-          ? 'ship_'
-          : '';
-        %taxhash = map { $_ => $self->get("$prefix$_") } @loc_keys;
-      }
+      my $location = $cust_pkg->tax_location;
+      my %taxhash = map { $_ => $location->$_ } @loc_keys;
 
       $taxhash{'taxclass'} = $part_pkg->taxclass;
 
-      my @taxes = ();
+      my @taxes = (); # entries are cust_main_county objects
       my %taxhash_elim = %taxhash;
       my @elim = qw( district city county state );
       do { 
@@ -1242,11 +1250,13 @@ sub _handle_taxes {
                     @taxes
         if $self->cust_main_exemption; #just to be safe
 
-      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
-        foreach (@taxes) {
-          $_->set('pkgnum',      $cust_pkg->pkgnum );
-          $_->set('locationnum', $cust_pkg->locationnum );
-        }
+      # all packages now have a locationnum and should get a 
+      # cust_bill_pkg_tax_location record.  The tax_locationnum
+      # may be the package's locationnum, or the customer's bill 
+      # or service location.
+      foreach (@taxes) {
+        $_->set('pkgnum',      $cust_pkg->pkgnum);
+        $_->set('locationnum', $cust_pkg->tax_locationnum);
       }
 
       $taxes{''} = [ @taxes ];
@@ -1273,17 +1283,27 @@ sub _handle_taxes {
 
   my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
   foreach my $key (keys %tax_cust_bill_pkg) {
+    # $key is "setup", "recur", or a usage class name. ('' is a usage class.)
+    # $tax_cust_bill_pkg{$key} is a cust_bill_pkg for that component of 
+    # the line item.
+    # $taxes{$key} is an arrayref of cust_main_county or tax_rate objects that
+    # apply to $key-class charges.
     my @taxes = @{ $taxes{$key} || [] };
     my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
 
     my %localtaxlisthash = ();
     foreach my $tax ( @taxes ) {
 
+      # this is the tax identifier, not the taxname
       my $taxname = ref( $tax ). ' '. $tax->taxnum;
 #      $taxname .= ' pkgnum'. $cust_pkg->pkgnum.
 #                  ' locationnum'. $cust_pkg->locationnum
 #        if $conf->exists('tax-pkg_address') && $cust_pkg->locationnum;
 
+      # $taxlisthash: keys are "setup", "recur", and usage classes
+      # values are arrayrefs, first the tax object (cust_main_county
+      # or tax_rate) and then any cust_bill_pkg objects that the 
+      # tax applies to
       $taxlisthash->{ $taxname } ||= [ $tax ];
       push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
 
@@ -1524,17 +1544,23 @@ sub retry_realtime {
     cust_bill_batch
   );
 
-  my $is_realtime_event = ' ( '. join(' OR ', map "part_event.action = '$_'",
-                                                  @realtime_events
-                                     ).
-                          ' ) ';
+  my $is_realtime_event =
+    ' part_event.action IN ( '.
+        join(',', map "'$_'", @realtime_events ).
+    ' ) ';
+
+  my $batch_or_statustext =
+    "( part_event.action = 'cust_bill_batch'
+       OR ( statustext IS NOT NULL AND statustext != '' )
+     )";
+
 
   my @cust_event = qsearch({
     'table'     => 'cust_event',
     'select'    => 'cust_event.*',
     'addl_from' => "LEFT JOIN part_event USING ( eventpart ) $join",
     'hashref'   => { 'status' => 'done' },
-    'extra_sql' => " AND statustext IS NOT NULL AND statustext != '' ".
+    'extra_sql' => " AND $batch_or_statustext ".
                    " AND $mine AND $is_realtime_event AND $agent_virt $order" # LIMIT 1"
   });
 

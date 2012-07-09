@@ -22,7 +22,7 @@ Example:
   )
 
 </%doc>
-% if ( $params->{'cust_main'} ) {
+% if ( $custnum || $prospectnum ) {
 <% include('/elements/popup_link.html', $params ) %>\
 % }
 <%init>
@@ -34,13 +34,26 @@ if (ref($_[0]) eq 'HASH') {
 } else {
   $params = { %$params, @_ };
 }
+
+my $custnum = $params->{'cust_main'}
+                ? $params->{'cust_main'}->custnum
+                : $params->{'custnum'};
+
+$params->{'action'} .= ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
+                       "custnum=$custnum"
+  if $custnum;
+
+#(maybe i should be called popup_link-cust_or_prospect_main.html now)
+my $prospectnum = $params->{'prospect_main'}
+                    ? $params->{'prospect_main'}->prospectnum
+                    : $params->{'prospectnum'};
  
-$params->{'action'} .=
-  ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
-  'custnum='. $params->{'cust_main'}->custnum;
+$params->{'action'} .= ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
+                       "prospectnum=$prospectnum"
+  if $prospectnum;
 
 $params->{'action'} .= ";$_=".$params->{$_}
   foreach grep $params->{$_},
-    qw( lock_pkgpart lock_locationnum qualnum svcpart );
+    qw( lock_pkgpart lock_locationnum qualnum quotationnum svcpart );
 
 </%init>

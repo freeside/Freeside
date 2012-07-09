@@ -20,27 +20,16 @@
        <% $cust_main->residential_commercial eq 'Commercial' ? 'CHECKED' : '' %>
   ></TD>
 </TR>
-
 <SCRIPT TYPE="text/javascript">
-  function rescom_changed() {
-    var f = document.CustomerForm;
-
-    if        ( f.residential_commercial_Residential.checked ) {
-      document.getElementById('contacts_div').style.display = 'none';
-    } else { // if ( f.residential_commercial_Commercial.checked ) {
-      document.getElementById('contacts_div').style.display = '';
-    }
-
-    if        ( f.residential_commercial_Residential.checked && ! f.company.value.length ) {
-      document.getElementById('company_row').style.display = 'none'
-    } else { // if ( f.residential_commercial_Commercial.checked ) {
+  function rescom_changed(what) {
+    if ( what.checked == (what.value == 'Commercial' ) ) {
       document.getElementById('company_row').style.display = '';
-    }
-
-    if        ( f.residential_commercial_Residential.checked && ! f.ship_company.value.length ) {
-      document.getElementById('ship_company_row').style.display = 'none'
-    } else { // if ( f.residential_commercial_Commercial.checked ) {
-      document.getElementById('ship_company_row').style.display = '';
+      document.getElementById('contacts_div').style.display = '';
+    } else {
+      if ( document.getElementById('company').value.length == 0 ) {
+        document.getElementById('company_row').style.display = 'none';
+      }
+      document.getElementById('contacts_div').style.display = 'none';
     }
   }
 </SCRIPT>

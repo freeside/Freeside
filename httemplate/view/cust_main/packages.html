@@ -7,7 +7,7 @@
 
 % if ( $curuser->access_right('Order customer package') ) { 
   <% $s++ ? ' | ' : '' %>
-  <& order_pkg_link.html, $cust_main &>
+  <& /elements/order_pkg_link.html, 'cust_main'=>$cust_main &>
 % } 
 
 % if ( $curuser->access_right('One-time charge')

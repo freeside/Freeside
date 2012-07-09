@@ -1,4 +1,4 @@
-<%init>         
+<%init>
 my $args;
 $args= "?" . $m->comp(
     '/Elements/QueryString',

@@ -1,0 +1,72 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $opt_r $opt_o $opt_v );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::part_pkg;
+use FS::part_pkg_option;
+
+getopts('ro:v:');
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+foreach my $part_pkg ( qsearch('part_pkg', {}) ) {
+  next if ! $part_pkg->freq && $opt_r;
+
+  my %hash = (
+    'pkgpart'    => $part_pkg->pkgpart,
+    'optionname' => $opt_o,
+  );
+
+  my $part_pkg_option = qsearchs('part_pkg_option', \%hash);
+
+  if ( $part_pkg_option ) {
+    next if $part_pkg_option->optionvalue eq $opt_v;
+    $part_pkg_option->optionvalue($opt_v);
+    my $error = $part_pkg_option->replace;
+    die $error if $error;
+  } else {
+    $part_pkg_option = new FS::part_pkg_option { %hash, 'optionvalue'=>$opt_v };
+    my $error = $part_pkg_option->insert;
+    die $error if $error;
+  }
+
+}
+
+sub usage {
+  die "usage: part_pkg-bulk_change [ -r ] -o option_name -v option_value employee_username\n";
+}
+
+=head1 NAME
+
+cust_main-bulk_change
+
+=head1 SYNOPSIS
+
+  part_pkg-bulk_change [ -r ] -o option_name -v option_value employee_username
+
+=head1 DESCRIPTION
+
+Command-line tool to change a set of package definitions.
+
+-r: recurring package definitions only
+
+-o: part_pkg_option optionname
+
+-v: part_pkg_option optionvalue
+
+employee_username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::part_pkg>
+
+=cut
+
+1;
+

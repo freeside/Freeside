@@ -93,10 +93,17 @@ Example:
 %                    )
 % {
 %   my $recvalue = $record->$key();
+%   my $selected;
+%   if ( $opt{'all_selected'} ) {
+%     $selected = 1;
+%   } elsif ( $opt{'compare_sub'} && !ref($value) ) {
+%     $selected = &{ $opt{'compare_sub'} }( $value, $recvalue );
+%   } else {
+%     $selected =    ( ref($value) && $value->{$recvalue} )
+%                 || ( $value && $value eq $recvalue ); #not == because of value_col
+%   }
     <OPTION VALUE="<% $recvalue %>"
-            <% $opt{'all_selected'} || ref($value) && $value->{$recvalue} || $value && $value eq $recvalue # not == because of value_col
-               ? ' SELECTED' : ''
-            %>
+            <% $selected ? ' SELECTED' : '' %>
 %           foreach my $att ( @{ $opt{'extra_option_attributes'} } ) {
               data-<% $att %>="<% $record->$att() |h %>"
 %           }

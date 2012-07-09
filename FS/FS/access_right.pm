@@ -2,7 +2,9 @@ package FS::access_right;
 
 use strict;
 use vars qw( @ISA );
+use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs );
+use FS::upgrade_journal;
 
 @ISA = qw(FS::Record);
 
@@ -178,6 +180,91 @@ sub _upgrade_data { # class method
 
     }
 
+  }
+
+  my @all_groups = qsearch('access_group', {});
+
+  tie my %onetime, 'Tie::IxHash',
+    'List customers'                      => 'List all customers',
+    'List all customers'                  => 'Advanced customer search',
+    'List packages'                       => 'Summarize packages',
+    'Post payment'                        => 'Backdate payment',
+    'Cancel customer package immediately' => 'Un-cancel customer package',
+    'Suspend customer package'            => 'Suspend customer',
+    'Unsuspend customer package'          => 'Unsuspend customer',
+    'New prospect'                        => 'Generate quotation',
+
+    'List services'    => [ 'Services: Accounts',
+                            'Services: Domains',
+                            'Services: Certificates',
+                            'Services: Mail forwards',
+                            'Services: Virtual hosting services',
+                            'Services: Wireless broadband services',
+                            'Services: DSLs',
+                            'Services: Dish services',
+                            'Services: Hardware',
+                            'Services: Phone numbers',
+                            'Services: PBXs',
+                            'Services: Ports',
+                            'Services: Mailing lists',
+                            'Services: External services',
+                          ],
+
+    'Services: Accounts' => 'Services: Accounts: Advanced search',
+    'Services: Wireless broadband services' => 'Services: Wireless broadband services: Advanced search',
+    'Services: Hardware' => 'Services: Hardware: Advanced search',
+
+    'List rating data' => [ 'Usage: RADIUS sessions',
+                            'Usage: Call Detail Records (CDRs)',
+                            'Usage: Unrateable CDRs',
+                          ],
+  ;
+
+  foreach my $old_acl ( keys %onetime ) {
+
+    my @new_acl = ref($onetime{$old_acl})
+                    ? @{ $onetime{$old_acl} }
+                    :  ( $onetime{$old_acl} );
+
+    foreach my $new_acl ( @new_acl ) {
+
+      ( my $journal = 'ACL_'.lc($new_acl) ) =~ s/\W/_/g;
+      next if FS::upgrade_journal->is_done($journal);
+
+      # grant $new_acl to all groups who have $old_acl
+      for my $group (@all_groups) {
+        next unless $group->access_right($old_acl);
+        next if     $group->access_right($new_acl);
+        my $access_right = FS::access_right->new( {
+            'righttype'   => 'FS::access_group',
+            'rightobjnum' => $group->groupnum,
+            'rightname'   => $new_acl,
+        } );
+        my $error = $access_right->insert;
+        die $error if $error;
+      }
+    
+      FS::upgrade_journal->set_done($journal);
+
+    }
+
+  }
+
+  ### ACL_download_report_data
+  if ( !FS::upgrade_journal->is_done('ACL_download_report_data') ) {
+
+    # grant to everyone
+    for my $group (@all_groups) {
+      my $access_right = FS::access_right->new( {
+          'righttype'   => 'FS::access_group',
+          'rightobjnum' => $group->groupnum,
+          'rightname'   => 'Download report data',
+      } );
+      my $error = $access_right->insert;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('ACL_download_report_data');
   }
 
   '';

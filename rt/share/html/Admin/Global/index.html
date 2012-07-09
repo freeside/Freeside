@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,42 +45,6 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-% $m->callback( %ARGS, tabs => $tabs );
 <& /Admin/Elements/Header, Title => loc('Admin/Global configuration') &>
-<& /Admin/Elements/SystemTabs, 
-    Title => loc('Admin/Global configuration') &>
-    <& /Elements/ListMenu, items => $tabs &>
-<%INIT>
-  my $tabs = {
-                
-               A => { title => loc('Scrips'),
-                           text => loc('Modify scrips which apply to all queues'),
-                           path => '/Admin/Global/Scrips.html',
-                         },
-               B => { title => loc('Templates'),
-                        text => loc('Edit system templates'),
-                        path => '/Admin/Global/Templates.html',
-                      },
-              
-                F => { title => loc('Custom Fields'),
-                text => loc('Modify global custom fields'),
-                        path => '/Admin/Global/CustomFields/index.html',
-                        },
-
-                G => { title => loc('Group Rights'),
-                                text => loc('Modify global group rights'),
-                                path => '/Admin/Global/GroupRights.html',
-                      },
-                H => { title => loc('User Rights'),
-                                text => loc('Modify global user rights'),
-                                path => '/Admin/Global/UserRights.html',
-                      },
-                I => { title => loc('RT at a glance'),
-                                text => loc('Modify the default "RT at a glance" view'),
-                                path => '/Admin/Global/MyRT.html',
-                      },
-
-
-
-};
-</%INIT>
+<& /Elements/Tabs &>
+<& /Elements/ListMenu, menu => Menu()->child('tools')->child('config')->child('global') &>

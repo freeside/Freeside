@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -92,8 +92,8 @@ sub TraversePrePost {
 
 =head2 GetReferencedQueues
 
-Returns a hash reference with keys each queue name referenced in a clause in
-the key (even if it's "Queue != 'Foo'"), and values all 1.
+Returns a hash reference; each queue referenced with an '=' operation
+will appear as a key whose value is 1.
 
 =cut
 
@@ -110,10 +110,12 @@ sub GetReferencedQueues {
             return unless $node->isLeaf;
 
             my $clause = $node->getNodeValue();
+            return unless $clause->{Key} eq 'Queue';
+            return unless $clause->{Op} eq '=';
 
-            if ( $clause->{Key} eq 'Queue' ) {
-                $queues->{ $clause->{Value} } = 1;
-            };
+            my $value = $clause->{Value};
+            $value =~ s/\\(.)/$1/g if $value =~ s/^'(.*)'$/$1/;
+            $queues->{ $value } = 1;
         }
     );
 
@@ -260,20 +262,24 @@ sub ParseSQL {
 
         my $class;
         if ( exists $lcfield{ lc $main_key } ) {
-            $class = $field{ $main_key }->[0];
             $key =~ s/^[^.]+/ $lcfield{ lc $main_key } /e;
+            ($main_key) = split /[.]/, $key;  # make the case right
+            $class = $field{ $main_key }->[0];
         }
         unless( $class ) {
             push @results, [ $args{'CurrentUser'}->loc("Unknown field: [_1]", $key), -1 ]
         }
 
-        $value =~ s/'/\\'/g;
         if ( lc $op eq 'is' || lc $op eq 'is not' ) {
             $value = 'NULL'; # just fix possible mistakes here
         } elsif ( $value !~ /^[+-]?[0-9]+$/ ) {
+            $value =~ s/(['\\])/\\$1/g;
             $value = "'$value'";
         }
-        $key = "'$key'" if $key =~ /^CF./;
+
+        if ($key =~ s/(['\\])/\\$1/g or $key =~ /[^{}\w\.]/) {
+            $key = "'$key'";
+        }
 
         my $clause = { Key => $key, Op => $op, Value => $value };
         $node->addChild( __PACKAGE__->new( $clause ) );

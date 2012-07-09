@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,10 +46,7 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => $title &>
-<& /Dashboards/Elements/Tabs,
-    current_subtab => $current_subtab,
-    Title => $title,
-    DashboardObj => $Dashboard &>
+<& /Elements/Tabs &>
 
 <& /Widgets/SelectionBox:header, nojs => 1 &>
 
@@ -78,14 +75,13 @@
 
 <%INIT>
 
-my $current_subtab = 'Dashboards/Queries.html?id=' . $id;
 my @results;
 
 use RT::Dashboard;
-my $Dashboard = new RT::Dashboard($session{'CurrentUser'});
+my $Dashboard = RT::Dashboard->new($session{'CurrentUser'});
 my ($ok, $msg) = $Dashboard->LoadById($id);
 $ok || Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg));
-my $title = loc("Modify the queries of dashboard [_1]", $Dashboard->Name);
+my $title = loc("Modify the content of dashboard [_1]", $Dashboard->Name);
 
 my %desc_of;
 my @items;
@@ -103,8 +99,8 @@ for my $desc (@components) {
 }
 
 # add dashboards
-my $dashboards = $m->comp("/Dashboards/Elements/DashboardsForObjects", flatten => 1);
-for my $dashboard (@{ $dashboards || [] }) {
+my @dashboards = $m->comp("/Dashboards/Elements/ListOfDashboards");
+for my $dashboard (@dashboards) {
     # Users *can* set up mutually recursive dashboards, but don't make it THIS
     # easy for them to shoot themselves in the foot.
     next if $dashboard->Id == $Dashboard->Id;
@@ -119,7 +115,7 @@ for my $dashboard (@{ $dashboards || [] }) {
 # add saved searches
 my @objs = RT::System->new($session{'CurrentUser'});
 
-push @objs, RT::SavedSearches->new( $session{CurrentUser} )->_PrivacyObjects
+push @objs, RT::SavedSearch->new( $session{CurrentUser} )->ObjectsForLoading
     if $session{'CurrentUser'}->HasRight( Right  => 'LoadSavedSearch',
                                           Object => $RT::System );
 
@@ -137,7 +133,7 @@ for my $object (@objs) {
     }
 }
 
-# Get the list of queries already in use
+# Get the list of portlets already in use
 my @deleted;
 do {
     my $panes = $Dashboard->Panes;
@@ -177,7 +173,7 @@ $m->callback(
     selected     => \%selected,
 );
 
-# Create selectionbox widgets for those queries
+# Create selectionbox widgets for those portlets
 
 my %pane_name = (
     'body'    => loc('Body'),

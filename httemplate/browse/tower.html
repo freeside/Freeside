@@ -8,9 +8,10 @@
                  'count_query' => 'SELECT COUNT(*) FROM tower',
                  'disableable' => 1,
                  'disabled_statuspos' => 1,
-                 'header'      => [ 'Name', 'Sectors', ],
+                 'header'      => [ 'Name', 'Sectors', 'Coordinates'],
                  'fields'      => [ $tower_sub,
                                     $sector_sub,
+                                    $coord_sub,
                                   ],
                  'links'       => [ ],
              )
@@ -47,6 +48,19 @@ my $num_svc_links = sub {
     'align'=> 'right',
     'colspan'=> 2,
   },
+};
+
+my $coord_sub = sub {
+  my $tower = shift;
+
+  my $coords = $m->scomp("/elements/coord-links.html", $tower->latitude, $tower->longitude, $tower->towername);
+
+  [
+    [
+      { 'data' => "Latitude: " . $tower->latitude . "<br>Longitude: " . $tower->longitude, },
+      { 'data' => $coords, 'link' => "Coordinates", },
+    ],
+  ]
 };
 
 my $tower_sub = sub {

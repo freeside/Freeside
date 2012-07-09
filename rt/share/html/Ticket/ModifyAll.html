@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -46,15 +46,12 @@
 %#
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => loc("Ticket #[_1] Jumbo update: [_2]", $Ticket->Id, $Ticket->Subject) &>
-<& /Ticket/Elements/Tabs, 
-    Ticket => $Ticket, 
-    current_tab => "Ticket/ModifyAll.html?id=".$Ticket->Id, 
-    Title => loc("Ticket #[_1] Jumbo update: [_2]", $Ticket->Id, $Ticket->Subject) &>
+<& /Elements/Tabs &>
 
 % $m->callback(CallbackName => 'BeforeActionList', Actions => \@results, ARGSRef => \%ARGS, Ticket => $Ticket);
 <& /Elements/ListActions, actions => \@results &>
 
-<form method="post" action="ModifyAll.html" enctype="multipart/form-data">
+<form method="post" action="ModifyAll.html" name="TicketModifyAll" enctype="multipart/form-data">
 % $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS );
 <input type="hidden" class="hidden" name="id" value="<%$Ticket->Id%>" />
 
@@ -63,6 +60,7 @@
 <& Elements/EditCustomFields, TicketObj => $Ticket &>
 </&>
 
+% $m->callback(CallbackName => 'AfterBasics', Ticket => $Ticket);
 <br />
 
 <&| /Widgets/TitleBox, title => loc('Dates'), class=>'ticket-info-dates'&>
@@ -106,40 +104,15 @@
 % $m->callback( %ARGS, CallbackName => 'AfterSubject' );
     </td>
   </tr>
-% if (my $TxnCFs = $Ticket->TransactionCustomFields) {
-%    while (my $CF = $TxnCFs->Next()) {
-<tr>
-<td class="label"><% loc($CF->Name) %>:</td>
-<td class="entry"><& /Elements/EditCustomField, 
-    CustomField => $CF, 
-    NamePrefix => "Object-RT::Transaction--CustomField-"
-    &><em><% $CF->FriendlyType %></em>
-</td></tr>
-%    } # end if while
-% } # end of if
-% if (exists $session{'Attachments'}) {
-<tr><td><&|/l&>Attached file</&>:</td>
-<td>
-<&|/l&>Check box to delete</&><br />
-% foreach my $attach_name (keys %{$session{'Attachments'}}) {
-<input type="checkbox" class="checkbox" name="DeleteAttach-<%$attach_name%>" value="1" /><%$attach_name%><br />
-% } # end of foreach
-</td>
-</tr>
-% } # end of if
 
-  <tr>
-    <td class="label"><&|/l&>Attach</&>:</td>
-    <td class="entry"><input name="Attach" type="file" />
-    <input type="submit" class="button" name="AddMoreAttach" value="<&|/l&>Add More Files</&>" />
-    <input type="hidden" class="hidden" name="UpdateAttach" value="1" />
-% $m->callback( %ARGS, CallbackName => 'AfterAttach' );
-    </td>
-  </tr>
+  <tr><td colspan="2"><& /Ticket/Elements/EditTransactionCustomFields, %ARGS, TicketObj => $Ticket &></td></tr>
+
+<& /Ticket/Elements/AddAttachments, %ARGS, TicketObj => $Ticket &>
+
   <tr>
     <td class="labeltop"><&|/l&>Content</&>:</td>
     <td class="entry">
-% if (defined $ARGS{UpdateContent} && length($ARGS{UpdateContent})) {
+% if (defined $ARGS{UpdateContent} && length($ARGS{UpdateContent} && !grep { /Message recorded/ } @results )) {
     <& /Elements/MessageBox, Name=>"UpdateContent", Default=>$ARGS{UpdateContent}, IncludeSignature => 0 &>
 % } else {
     <& /Elements/MessageBox, Name=>"UpdateContent", QuoteTransaction=>$ARGS{QuoteTransaction} &>
@@ -179,17 +152,16 @@ $CanRespond = 1 if ( $Ticket->CurrentUserHasRight('ReplyToTicket') or
 $CanComment = 1 if ( $Ticket->CurrentUserHasRight('CommentOnTicket') or
                      $Ticket->CurrentUserHasRight('ModifyTicket') );
 
-# {{{ deal with deleting uploaded attachments
+# deal with deleting uploaded attachments
 foreach my $key (keys %ARGS) {
     if ($key =~ m/^DeleteAttach-(.+)$/) {
         delete $session{'Attachments'}{$1};
     }
     $session{'Attachments'} = { %{$session{'Attachments'} || {}} };
 }
-# }}}
 
-# {{{ store the uploaded attachment in session
-if ($ARGS{'Attach'}) {            # attachment?
+# store the uploaded attachment in session
+if ( defined $ARGS{'Attach'} && length $ARGS{'Attach'} ) { # attachment?
     my $attachment = MakeMIMEEntity(
         AttachmentFieldName => 'Attach'
     );
@@ -200,13 +172,11 @@ if ($ARGS{'Attach'}) {            # attachment?
         $file_path => $attachment,
     };
 }
-# }}}
 
 # delete temporary storage entry to make WebUI clean
 unless (keys %{$session{'Attachments'}} and $ARGS{'UpdateAttach'}) {
     delete $session{'Attachments'};
 }
-# }}}
 
 
 $m->callback( TicketObj => $Ticket, ARGSRef => \%ARGS );
@@ -218,7 +188,12 @@ unless ($OnlySearchForPeople or $OnlySearchForGroup or $ARGS{'AddMoreAttach'} ) 
         my @owners =@{$ARGS{'Owner'}};
         delete $ARGS{'Owner'};
         foreach my $owner(@owners){
-            $ARGS{'Owner'} = $owner unless ($Ticket->OwnerObj->id == $owner);
+            if (defined($owner) && $owner =~ /\D/) {
+                $ARGS{'Owner'} = $owner unless ($Ticket->OwnerObj->Name eq $owner);
+            }
+            elsif (length $owner) {
+                $ARGS{'Owner'} = $owner unless ($Ticket->OwnerObj->id == $owner);
+            }
         }
 
     }

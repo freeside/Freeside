@@ -46,18 +46,17 @@ use FS::msg_template;
 $DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
 
-use vars qw( @cust_main_editable_fields );
+use vars qw( @cust_main_editable_fields @location_editable_fields );
 @cust_main_editable_fields = qw(
-  first last company address1 address2 city
-    county state zip country
-    daytime night fax mobile
-  ship_first ship_last ship_company ship_address1 ship_address2 ship_city
-    ship_state ship_zip ship_country
-    ship_daytime ship_night ship_fax ship_mobile
+  first last daytime night fax mobile
   locale
   payby payinfo payname paystart_month paystart_year payissue payip
   ss paytype paystate stateid stateid_state
 );
+@location_editable_fields = qw(
+  address1 address2 city county state zip country
+);
+
 
 BEGIN { #preload to reduce time customer_info takes
   if ( $FS::TicketSystem::system ) {
@@ -115,7 +114,7 @@ sub skin_info {
       ( map { $_ => scalar( $conf->config($_, $agentnum) ) }
         qw( company_name date_format ) ),
       ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
-        qw( body_bgcolor box_bgcolor
+        qw( body_bgcolor box_bgcolor stripe1_bgcolor stripe2_bgcolor
             text_color link_color vlink_color hlink_color alink_color
             font title_color title_align title_size menu_bgcolor menu_fontsize
           )
@@ -151,10 +150,23 @@ sub login_info {
     %{ skin_info($p) },
     'phone_login'  => $conf->exists('selfservice_server-phone_login'),
     'single_domain'=> scalar($conf->config('selfservice_server-single_domain')),
+    'banner_url'       => scalar($conf->config('selfservice-login_banner_url')),
+    'banner_image_md5' => 
+      md5_hex($conf->config_binary('selfservice-login_banner_image')),
   );
 
   return \%info;
 
+}
+
+sub login_banner_image {
+  my $p = shift;
+  my $conf = new FS::Conf;
+  my $image = $conf->config_binary('selfservice-login_banner_image');
+  return { 
+    'md5'   => md5_hex($image),
+    'image' => $image,
+  };
 }
 
 #false laziness w/FS::ClientAPI::passwd::passwd
@@ -182,6 +194,8 @@ sub login {
     $svc_x = $svc_phone;
 
   } else {
+
+warn Dumper($p);
 
     my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
       or return { error => 'Domain '. $p->{'domain'}. ' not found' };
@@ -368,10 +382,16 @@ sub customer_info {
     my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
 
+    $return{display_custnum} = $cust_main->display_custnum;
+
     if ( $session->{'pkgnum'} ) { 
       $return{balance} = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
+      #next_bill_date from cust_pkg?
     } else {
       $return{balance} = $cust_main->balance;
+      $return{next_bill_date} = $cust_main->next_bill_date;
+      $return{next_bill_date_pretty} =
+        time2str('%m/%d/%Y', $return{next_bill_date} );
     }
 
     my @tickets = $cust_main->tickets;
@@ -403,19 +423,43 @@ sub customer_info {
                        };
                      } $cust_main->open_cust_bill;
       $return{open_invoices} = \@open;
+
+      my $sql = 'SELECT MAX(_date) FROM cust_bill WHERE custnum = ?';
+      my $sth = dbh->prepare($sql) or die  dbh->errstr;
+      $sth->execute($custnum)      or die $sth->errstr;
+      $return{'last_invoice_date'} = $sth->fetchrow_arrayref->[0];
+      $return{'last_invoice_date_pretty'} =
+        time2str('%m/%d/%Y', $return{'last_invoice_date'} );
     }
+
+    $return{countrydefault} = scalar($conf->config('countrydefault'));
 
     $return{small_custview} =
       small_custview( $cust_main,
-                      scalar($conf->config('countrydefault')),
+                      $return{countrydefault},
                       ( $session->{'pkgnum'} ? 1 : 0 ), #nobalance
                     );
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
-    $return{ship_name} = $cust_main->ship_first. ' '. $cust_main->get('ship_last');
+
+    $return{has_ship_address} = $cust_main->has_ship_address;
+    $return{status} = $cust_main->status;
+    $return{statuscolor} = $cust_main->statuscolor;
 
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
+    }
+
+    for (@location_editable_fields) {
+      $return{$_} = $cust_main->bill_location->get($_);
+      $return{'ship_'.$_} = $cust_main->ship_location->get($_);
+    }
+    $return{has_ship_address} = $cust_main->has_ship_address;
+    # compatibility: some places in selfservice use this to determine
+    # if there's a ship address
+    if ( $return{has_ship_address} ) {
+      $return{ship_last}  = $cust_main->last;
+      $return{ship_first} = $cust_main->first;
     }
 
     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
@@ -431,7 +475,7 @@ sub customer_info {
     if (scalar($conf->config('support_packages'))) {
       my @support_services = ();
       foreach ($cust_main->support_services) {
-        my $seconds = $_->svc_x->seconds;
+        my $seconds = $_->svc_x->seconds || 0;
         my $time_remaining = (($seconds < 0) ? '-' : '' ).
                              int(abs($seconds)/3600)."h".
                              sprintf("%02d",(abs($seconds)%3600)/60)."m";
@@ -472,8 +516,8 @@ sub customer_info {
 
   }
 
-  return { 'error'          => '',
-           'custnum'        => $custnum,
+  return { 'error'   => '',
+           'custnum' => $custnum,
            %return,
          };
 
@@ -496,14 +540,17 @@ sub customer_info_short {
     my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
 
+    $return{display_custnum} = $cust_main->display_custnum;
+
+    $return{countrydefault} = scalar($conf->config('countrydefault'));
+
     $return{small_custview} =
       small_custview( $cust_main,
-                      scalar($conf->config('countrydefault')),
+                      $return{countrydefault},
                       1, ##nobalance
                     );
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
-    $return{ship_name} = $cust_main->ship_first. ' '. $cust_main->get('ship_last');
 
     $return{payby} = $cust_main->payby;
 
@@ -511,7 +558,12 @@ sub customer_info_short {
     for (@cust_main_editable_fields) {
       $return{$_} = $cust_main->get($_);
     }
-    
+    #maybe a little more expensive, but it should be cached by now
+    for (@location_editable_fields) {
+      $return{$_} = $cust_main->bill_location->get($_);
+      $return{'ship_'.$_} = $cust_main->ship_location->get($_);
+    }
+ 
     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
       $return{payinfo} = $cust_main->paymask;
       @return{'month', 'year'} = $cust_main->paydate_monthyear;
@@ -545,6 +597,103 @@ sub customer_info_short {
          };
 }
 
+sub billing_history {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  return { 'error' => 'No customer' } unless $custnum;
+
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my %return = ();
+
+  if ( $session->{'pkgnum'} ) { 
+    #$return{balance} = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
+    #next_bill_date from cust_pkg?
+    return { 'error' => 'No history for package' };
+  }
+
+  $return{balance} = $cust_main->balance;
+  $return{next_bill_date} = $cust_main->next_bill_date;
+  $return{next_bill_date_pretty} =
+    time2str('%m/%d/%Y', $return{next_bill_date} );
+
+  my @history = ();
+
+  my $conf = new FS::Conf;
+
+  if ( $conf->exists('selfservice-billing_history-line_items') ) {
+
+    foreach my $cust_bill ( $cust_main->cust_bill ) {
+
+      push @history, {
+        'type'        => 'Line item',
+        'description' => $_->desc. ( $_->sdate && $_->edate
+                                       ? ' '. time2str('%d-%b-%Y', $_->sdate).
+                                         ' To '. time2str('%d-%b-%Y', $_->edate)
+                                       : ''
+                                   ),
+        'amount'      => sprintf('%.2f', $_->setup + $_->recur ),
+        'date'        => $cust_bill->_date,
+        'date_pretty' =>  time2str('%m/%d/%Y', $cust_bill->_date ),
+      }
+        foreach $cust_bill->cust_bill_pkg;
+
+    }
+
+  } else {
+
+    push @history, {
+                     'type'        => 'Invoice',
+                     'description' => 'Invoice #'. $_->display_invnum,
+                     'amount'      => sprintf('%.2f', $_->charged ),
+                     'date'        => $_->_date,
+                     'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                   }
+      foreach $cust_main->cust_bill;
+
+  }
+
+  push @history, {
+                   'type'        => 'Payment',
+                   'description' => 'Payment', #XXX type
+                   'amount'      => sprintf('%.2f', 0 - $_->paid ),
+                   'date'        => $_->_date,
+                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                 }
+    foreach $cust_main->cust_pay;
+
+  push @history, {
+                   'type'        => 'Credit',
+                   'description' => 'Credit', #more info?
+                   'amount'      => sprintf('%.2f', 0 -$_->amount ),
+                   'date'        => $_->_date,
+                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                 }
+    foreach $cust_main->cust_credit;
+
+  push @history, {
+                   'type'        => 'Refund',
+                   'description' => 'Refund', #more info?  type, like payment?
+                   'amount'      => $_->refund,
+                   'date'        => $_->_date,
+                   'date_pretty' =>  time2str('%m/%d/%Y', $_->_date ),
+                 }
+    foreach $cust_main->cust_refund;
+
+  @history = sort { $b->{'date'} <=> $a->{'date'} } @history;
+
+  $return{'history'} = \@history;
+
+  return \%return;
+
+}
+
 sub edit_info {
   my $p = shift;
   my $session = _cache->get($p->{'session_id'})
@@ -557,8 +706,31 @@ sub edit_info {
     or return { 'error' => "unknown custnum $custnum" };
 
   my $new = new FS::cust_main { $cust_main->hash };
+
   $new->set( $_ => $p->{$_} )
     foreach grep { exists $p->{$_} } @cust_main_editable_fields;
+
+  if ( exists($p->{address1}) ) {
+    my $bill_location = FS::cust_location->new({
+        map { $_ => $p->{$_} } @location_editable_fields
+    });
+    # if this is unchanged from before, cust_main::replace will ignore it
+    $new->set('bill_location' => $bill_location);
+  }
+
+  if ( exists($p->{ship_address1}) ) {
+    my $ship_location = FS::cust_location->new({
+        map { $_ => $p->{"ship_$_"} } @location_editable_fields
+    });
+    if ( !grep { length($p->{"ship_$_"}) } @location_editable_fields ) {
+      # Selfservice unfortunately tries to indicate "same as billing 
+      # address" by sending all fields empty.  Did this ever work?
+      $ship_location = $cust_main->bill_location;
+    }
+    $new->set('ship_location' => $ship_location);
+  }
+  # but if it hasn't been passed in at all, leave ship_location alone--
+  # DON'T change it to match bill_location.
 
   my $payby = '';
   if (exists($p->{'payby'})) {
@@ -697,7 +869,8 @@ sub payment_info {
   $return{payname} = $cust_main->payname
                      || ( $cust_main->first. ' '. $cust_main->get('last') );
 
-  $return{$_} = $cust_main->get($_) for qw(address1 address2 city state zip);
+  $return{$_} = $cust_main->bill_location->get($_) 
+    for qw(address1 address2 city state zip);
 
   $return{payby} = $cust_main->payby;
   $return{stateid_state} = $cust_main->stateid_state;
@@ -716,7 +889,7 @@ sub payment_info {
     $return{payinfo2} = $payinfo2;
     $return{paytype}  = $cust_main->paytype;
     $return{paystate} = $cust_main->paystate;
-
+    $return{payname}  = $cust_main->payname;	# override 'first/last name' default from above, if any.  Is instution-name here.  (#15819)
   }
 
   if ( $conf->config('prepayment_discounts-credit_type') ) {
@@ -839,6 +1012,8 @@ sub validate_payment {
     'card_type'      => $card_type,
     'paydate'        => $p->{'year'}. '-'. $p->{'month'}. '-01',
     'paydate_pretty' => $p->{'month'}. ' / '. $p->{'year'},
+    'month'          => $p->{'month'},
+    'year'           => $p->{'year'},
     'payname'        => $payname,
     'paybatch'       => $paybatch, #this doesn't actually do anything
     'paycvv'         => $paycvv,
@@ -863,7 +1038,9 @@ sub store_payment {
   _cache->set( 'payment_'.$p->{'session_id'}, $validate, $timeout );
 
   +{ map { $_=>$validate->{$_} }
-      qw( card_type paymask payname paydate_pretty amount )
+      qw( card_type paymask payname paydate_pretty month year amount
+          address1 address2 city state zip country
+        )
   };
 
 }
@@ -914,9 +1091,16 @@ sub do_process_payment {
     my $new = new FS::cust_main { $cust_main->hash };
     if ($payby eq 'CARD' || $payby eq 'DCRD') {
       $new->set( $_ => $validate->{$_} )
-        foreach qw( payname paystart_month paystart_year payissue payip
-                    address1 address2 city state zip country );
+        foreach qw( payname paystart_month paystart_year payissue payip );
       $new->set( 'payby' => $validate->{'auto'} ? 'CARD' : 'DCRD' );
+
+      my $bill_location = FS::cust_location->new({
+          map { $_ => $validate->{$_} } 
+          qw(address1 address2 city state country zip)
+      }); # county?
+      $new->set('bill_location' => $bill_location);
+      # but don't allow the service address to change this way.
+
     } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
       $new->set( $_ => $validate->{$_} )
         foreach qw( payname payip paytype paystate
@@ -1362,6 +1546,7 @@ sub list_pkgs {
                           my $primary_cust_svc = $_->primary_cust_svc;
                           +{ $_->hash,
                             $_->part_pkg->hash,
+                            pkg_label => $_->pkg_label,
                             status => $_->status,
                             part_svc =>
                               [ map $_->hashref, $_->available_part_svc ],
@@ -1454,12 +1639,14 @@ sub list_svcs {
             my $part_pkg = $cust_pkg->part_pkg;
 
             my %hash = (
-              'svcnum'     => $_->svcnum,
-              'svcdb'      => $svcdb,
-              'label'      => $label,
-              'value'      => $value,
-              'pkg_status' => $cust_pkg->status,
-              'readonly'   => ( $part_svc->selfservice_access eq 'readonly' ),
+              'svcnum'         => $_->svcnum,
+              'display_svcnum' => $_->display_svcnum,
+              'svcdb'          => $svcdb,
+              'label'          => $label,
+              'value'          => $value,
+              'pkg_label'      => $cust_pkg->pkg_label,
+              'pkg_status'     => $cust_pkg->status,
+              'readonly'       => ($part_svc->selfservice_access eq 'readonly'),
             );
 
             if ( $svcdb eq 'svc_acct' ) {
@@ -1757,6 +1944,8 @@ sub list_support_usage {
 
 sub _list_cdr_usage {
   # XXX CDR type support...
+  # XXX any way to do a paged search on this?
+  # we have to return the results all at once...
   my($svc_phone, $begin, $end, %opt) = @_;
   map [ $_->downstream_csv(%opt, 'keeparray' => 1) ],
     $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, );

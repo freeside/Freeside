@@ -9,6 +9,7 @@ use FS::part_svc_column;
 use FS::part_export;
 use FS::export_svc;
 use FS::cust_svc;
+use FS::part_svc_class;
 
 @ISA = qw(FS::Record);
 
@@ -50,6 +51,8 @@ FS::Record.  The following fields are currently supported:
 
 =item svcdb - table used for this service.  See L<FS::svc_acct>,
 L<FS::svc_domain>, and L<FS::svc_forward>, among others.
+
+=item classnum - Optional service class (see L<FS::svc_class>)
 
 =item disabled - Disabled flag, empty or `Y'
 
@@ -387,6 +390,7 @@ sub check {
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_enum('preserve', [ '', 'Y' ] )
     || $self->ut_enum('selfservice_access', [ '', 'hidden', 'readonly' ] )
+    || $self->ut_foreign_keyn('classnum', 'part_svc_class', 'classnum' )
   ;
   return $error if $error;
 

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -56,7 +56,7 @@ use LWP::MediaTypes;
 use RT::Interface::REST;
 use File::Temp qw(tempfile);
 
-my $ticket = new RT::Ticket $session{CurrentUser};
+my $ticket = RT::Ticket->new($session{CurrentUser});
 my $object = $r->path_info;
 my $status = "200 Ok";
 my $output;

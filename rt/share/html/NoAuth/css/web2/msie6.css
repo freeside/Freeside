@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -49,8 +49,8 @@
     margin-top: 0;
 }
 
-div#page-navigation ul#page-menu {
-    margin-top: -3.2em;
+div#page-navigation {
+    width: 100%;
 }
 
 .titlebox-title .widget {
@@ -84,5 +84,13 @@ div#page-navigation ul#page-menu {
 .ticket-transaction .messagebody img {
     /* ie6 does not support max-width */
     width: expression(this.width > 401 ? 400 : true);
+}
+
+#prefs-menu .sf-sub-indicator {
+    background-image: url(<%RT->Config->Get('WebPath')%>/NoAuth/css/images/arrows-grey.gif);
+}
+
+#app-nav .sf-sub-indicator {
+    background-image: url(<%RT->Config->Get('WebPath')%>/NoAuth/css/images/arrows-grey.gif);
 }
 

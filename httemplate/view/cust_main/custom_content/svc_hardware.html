@@ -1,0 +1,7 @@
+<& svc_Common.html, $cust_main,
+  'table' => 'svc_hardware',
+  'fields' => [qw( ip_addr hw_addr serial )],
+&>
+<%init>
+my($cust_main) = @_;
+</%init>

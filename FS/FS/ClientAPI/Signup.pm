@@ -405,8 +405,8 @@ sub signup_info {
            && $agent->agent_cust_main ) {
 
         my $cust_main = $agent->agent_cust_main;
-        my $prefix = length($cust_main->ship_last) ? 'ship_' : '';
-        $signup_info_cache_agent->{"ship_$_"} = $cust_main->get("$prefix$_")
+        my $location = $cust_main->ship_location;
+        $signup_info_cache_agent->{"ship_$_"} = $location->get($_)
           foreach qw( address1 city county state zip country );
 
       }
@@ -509,6 +509,13 @@ sub new_customer {
                 || $conf->config('signup_server-default_agentnum');
   }
 
+  my ($bill_hash, $ship_hash);
+  foreach my $f (FS::cust_main->location_fields) {
+    # avoid having to change this in front-end code
+    $bill_hash->{$f} = $packet->{"bill_$f"} || $packet->{$f};
+    $ship_hash->{$f} = $packet->{"ship_$f"};
+  }
+
   #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
   # common that are still here and library them.
   my $template_custnum = $conf->config('signup_server-prepaid-template-custnum');
@@ -517,6 +524,7 @@ sub new_customer {
 
     my $template_cust = qsearchs('cust_main', { 'custnum' => $template_custnum } );
     return { 'error' => 'Configuration error' } unless $template_cust;
+    #XXX Copy template customer's locations
     $cust_main = new FS::cust_main ( {
       'agentnum'      => $agentnum,
       'refnum'        => $packet->{refnum}
@@ -556,41 +564,48 @@ sub new_customer {
                          || $conf->config('signup_server-default_refnum'),
 
       map { $_ => $packet->{$_} } qw(
-
-        last first ss company address1 address2
-        city county state zip country
+        last first ss company 
         daytime night fax stateid stateid_state
-
-        ship_last ship_first ship_ss ship_company ship_address1 ship_address2
-        ship_city ship_county ship_state ship_zip ship_country
-        ship_daytime ship_night ship_fax
-
         payby
         payinfo paycvv paydate payname paystate paytype
         paystart_month paystart_year payissue
         payip
         override_ban_warn
-
         referral_custnum comments
-      )
+      ),
 
     } );
   }
 
+  my $bill_location = FS::cust_location->new($bill_hash);
+  my $ship_location;
   my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
   if ( $conf->exists('agent-ship_address', $agentnum) 
     && $agent->agent_custnum ) {
 
     my $agent_cust_main = $agent->agent_cust_main;
     my $prefix = length($agent_cust_main->ship_last) ? 'ship_' : '';
-    $cust_main->set("ship_$_", $agent_cust_main->get("$prefix$_") )
-      foreach qw( address1 city county state zip country );
-
-    $cust_main->set("ship_$_", $cust_main->get($_))
-      foreach qw( last first );
+    $ship_location = FS::cust_location->new({ 
+        $agent_cust_main->ship_location->location_hash
+    });
 
   }
+  # we don't have an equivalent of the "same" checkbox in selfservice
+  # so is there a ship address, and if so, is it different from the billing 
+  # address?
+  elsif ( length($ship_hash->{address1}) > 0 and
+          grep { $bill_hash->{$_} ne $ship_hash->{$_} } keys(%$ship_hash)
+         ) {
 
+    $ship_location = FS::cust_location->new( $ship_hash );
+  
+  }
+  else {
+    $ship_location = $bill_location;
+  }
+
+  $cust_main->set('bill_location' => $bill_location);
+  $cust_main->set('ship_location' => $ship_location);
 
   return { 'error' => "Illegal payment type" }
     unless grep { $_ eq $packet->{'payby'} }

@@ -2,6 +2,7 @@ package FS::part_event::Action::cust_bill_spool_csv;
 
 use strict;
 use base qw( FS::part_event::Action );
+use FS::Misc::Invoicing qw( spool_formats );
 
 sub description { 'Spool CSV invoice data'; }
 
@@ -15,10 +16,7 @@ sub option_fields {
   (
     'spoolformat'       => { label   => 'Format',
                              type    => 'select',
-                             options => ['default', 'billco'],
-                             option_labels => { 'default' => 'Default',
-                                                'billco'  => 'Billco',
-                                              },
+                             options => [ spool_formats() ],
                            },
     'spoolbalanceover'  => { label =>
                                'If balance (this invoice and previous) over',
@@ -27,6 +25,13 @@ sub option_fields {
     'spoolagent_spools' => { label => 'Individual per-agent spools',
                              type  => 'checkbox',
                              value => '1',
+                           },
+    'ftp_targetnum'     => { label    => 'Upload spool to FTP target',
+                             type     => 'select-table',
+                             table    => 'ftp_target',
+                             name_col => 'label',
+                             empty_label => '(do not upload)',
+                             order_by => 'targetnum',
                            },
   );
 }
@@ -43,6 +48,7 @@ sub do_action {
     'format'       => $self->option('spoolformat'),
     'balanceover'  => $self->option('spoolbalanceover'),
     'agent_spools' => $self->option('spoolagent_spools'),
+    'ftp_targetnum'=> $self->option('ftp_targetnum'),
   );
 }
 

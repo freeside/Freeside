@@ -76,12 +76,32 @@ sub ProcessTicketCustomers {
     ###
 
     ###
+    #find new services
+    ###
+    
+    my @svcnums = map  { /^Ticket-AddService-(\d+)$/; $1 }
+                  grep { /^Ticket-AddService-(\d+)$/ && $ARGSRef->{$_} }
+                  keys %$ARGSRef;
+
+    my @custnums;
+    foreach my $svcnum (@svcnums) {
+        my @link = ( 'Type'   => 'MemberOf',
+                     'Target' => "freeside://freeside/cust_svc/$svcnum",
+                   );
+
+        my( $val, $msg ) = $Ticket->AddLink(@link);
+        push @results, $msg;
+        next if !$val;
+
+    }
+
+    ###
     #find new customers
     ###
 
-    my @custnums = map  { /^Ticket-AddCustomer-(\d+)$/; $1 }
-                   grep { /^Ticket-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
-                   keys %$ARGSRef;
+    push @custnums, map  { /^Ticket-AddCustomer-(\d+)$/; $1 }
+                    grep { /^Ticket-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
+                    keys %$ARGSRef;
 
     #my @delete_custnums =
     #  map  { /^Ticket-AddCustomer-(\d+)$/; $1 }

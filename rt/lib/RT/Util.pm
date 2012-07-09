@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -50,8 +50,9 @@ package RT::Util;
 use strict;
 use warnings;
 
+
 use base 'Exporter';
-our @EXPORT = qw/safe_run_child/;
+our @EXPORT = qw/safe_run_child mime_recommended_filename/;
 
 sub safe_run_child (&) {
     my $our_pid = $$;
@@ -68,52 +69,65 @@ sub safe_run_child (&) {
     $dbh->{'InactiveDestroy'} = 1 if $dbh;
     $RT::Handle->{'DisconnectHandleOnDestroy'} = 0;
 
+    my ($reader, $writer);
+    pipe( $reader, $writer );
+
     my @res;
     my $want = wantarray;
     eval {
+        my $code = shift;
+        local @ENV{ 'LANG', 'LC_ALL' } = ( 'C', 'C' );
         unless ( defined $want ) {
-            _safe_run_child( @_ );
+            $code->();
         } elsif ( $want ) {
-            @res = _safe_run_child( @_ );
+            @res = $code->();
         } else {
-            @res = ( scalar _safe_run_child( @_ ) );
+            @res = ( scalar $code->() );
         }
+        exit 0 if $our_pid != $$;
         1;
     } or do {
         my $err = $@;
+        $err =~ s/^Stack:.*$//ms;
         if ( $our_pid == $$ ) {
-            $RT::Logger->error( $err );
             $dbh->{'InactiveDestroy'} = 0 if $dbh;
             $RT::Handle->{'DisconnectHandleOnDestroy'} = 1;
+            die "System Error: $err";
+        } else {
+            print $writer "System Error: $err";
+            exit 1;
         }
-        $err =~ s/^Stack:.*$//ms;
-        #TODO we need to localize this
-        die 'System Error: ' . $err;
     };
+
+    close($writer);
+    $reader->blocking(0);
+    my ($response) = $reader->getline;
+    warn $response if $response;
+
+    $dbh->{'InactiveDestroy'} = 0 if $dbh;
+    $RT::Handle->{'DisconnectHandleOnDestroy'} = 1;
     return $want? (@res) : $res[0];
 }
 
-sub _safe_run_child {
-    local @ENV{ 'LANG', 'LC_ALL' } = ( 'C', 'C' );
+=head2 mime_recommended_filename( MIME::Head|MIME::Entity )
 
-    return shift->() if $ENV{'MOD_PERL'} || $CGI::SpeedyCGI::i_am_speedy;
+# mimic our own recommended_filename
+# since MIME-tools 5.501, head->recommended_filename requires the head are
+# mime encoded, we don't meet this yet.
 
-    # We need to reopen stdout temporarily, because in FCGI
-    # environment, stdout is tied to FCGI::Stream, and the child
-    # of the run3 wouldn't be able to reopen STDOUT properly.
-    my $stdin = IO::Handle->new;
-    $stdin->fdopen( 0, 'r' );
-    local *STDIN = $stdin;
+=cut
 
-    my $stdout = IO::Handle->new;
-    $stdout->fdopen( 1, 'w' );
-    local *STDOUT = $stdout;
+sub mime_recommended_filename {
+    my $head = shift;
+    $head = $head->head if $head->isa('MIME::Entity');
 
-    my $stderr = IO::Handle->new;
-    $stderr->fdopen( 2, 'w' );
-    local *STDERR = $stderr;
-
-    return shift->();
+    for my $attr_name (qw( content-disposition.filename content-type.name )) {
+        my $value = $head->mime_attr($attr_name);
+        if ( defined $value && $value =~ /\S/ ) {
+            return $value;
+        }
+    }
+    return;
 }
 
 RT::Base->_ImportOverlays();

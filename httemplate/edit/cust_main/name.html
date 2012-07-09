@@ -1,0 +1,53 @@
+<%def .namepart>
+% my ($field, $value, $label, $extra) = @_;
+<TD>
+  <INPUT TYPE="text" NAME="<% $field %>" VALUE="<% $value |h %>" <%$extra%>>
+  <BR><FONT SIZE=-1><% mt($label) %></FONT>
+</TD>
+</%def>
+
+<TR>
+  <TH VALIGN="top" ALIGN="right"><%$r%><% mt('Contact name') |h %></TH>
+  <TD COLSPAN=6>
+    <TABLE CELLSPACING=0 CELLPADDING=0>
+      <TR>
+        <& .namepart, 'last', $cust_main->last, 'Last' &>
+        <TD VALIGN="top"> , </TD>
+        <& .namepart, 'first', $cust_main->first, 'First' &>
+% if ( $conf->exists('show_ss') ) {
+        <TD>&nbsp;</TD>
+        <& .namepart, 'ss', $ss, 'SS#', "SIZE=11" &>
+% } else  {
+        <INPUT TYPE="hidden" NAME="ss" VALUE="<% $ss %>">
+% }
+      </TR>
+    </TABLE>
+  </TD>
+</TR>
+
+% if ( $conf->exists('cust-email-high-visibility') ) {
+<TR>
+  <TD ALIGN="right">
+    <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum)
+        ? $r
+        : '' %>Email address(es)
+  </TD>
+  <TD BGCOLOR="#FFFF00">
+    <INPUT TYPE="text" NAME="invoicing_list" 
+           VALUE=<% $cust_main->invoicing_list_emailonly_scalar %>>
+  </TD>
+</TR>
+% }
+<%init>
+my $cust_main = shift;
+my $agentnum = $cust_main->agentnum if $cust_main->custnum;
+my $conf = FS::Conf->new;
+my $r = '<font color="#ff0000">*</font>&nbsp;';
+my $ss;
+
+if ( $cgi->param('error') or $conf->exists('unmask_ss') ) {
+  $ss = $cust_main->ss;
+} else {
+  $ss = $cust_main->masked('ss');
+}
+</%init>

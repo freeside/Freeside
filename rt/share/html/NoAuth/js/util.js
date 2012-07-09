@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -45,28 +45,6 @@
 %# those contributions and any derivatives thereof.
 %#
 %# END BPS TAGGED BLOCK }}}
-/* $(...)
-    Returns DOM node or array of nodes (if more then one argument passed).
-    If argument is node object allready then do nothing.
-    // Stolen from Prototype
-*/
-function $() {
-    var elements = new Array();
-
-    for (var i = 0; i < arguments.length; i++) {
-        var element = arguments[i];
-        if (typeof element == 'string')
-            element = document.getElementById(element);
-
-        if (arguments.length == 1)
-            return element;
-
-        elements.push(element);
-    }
-
-    return elements;
-}
-
 /* Visibility */
 
 function show(id) { delClass( id, 'hidden' ) }
@@ -74,12 +52,14 @@ function hide(id) { addClass( id, 'hidden' ) }
 
 function hideshow(id) { return toggleVisibility( id ) }
 function toggleVisibility(id) {
-    var e = $(id);
+    var e = jQuery('#' + id);
 
-    if ( e.className.match( /\bhidden\b/ ) )
-        show(e);
-    else
-        hide(e);
+    if ( e.hasClass('hidden') ) {
+        e.removeClass('hidden');
+    }
+    else {
+        e.addClass('hidden');
+    }
 
     return false;
 }
@@ -98,26 +78,25 @@ function switchVisibility(id1, id2) {
 }
 
 /* Classes */
+function jQueryWrap( id ) {
+    return typeof id == 'object' ? jQuery(id) : jQuery('#'+id);
+}
 
 function addClass(id, value) {
-    var e = $(id);
-    if ( e.className.match( new RegExp('\b'+ value +'\b') ) )
-        return;
-    e.className += e.className? ' '+value : value;
+    jQueryWrap(id).addClass(value);
 }
 
 function delClass(id, value) {
-    var e = $(id);
-    e.className = e.className.replace( new RegExp('\\s?\\b'+ value +'\\b', 'g'), '' );
+    jQueryWrap(id).removeClass(value);
 }
 
 /* Rollups */
 
 function rollup(id) {
-    var e   = $(id);
-    var e2  = e.parentNode;
+    var e = jQueryWrap(id);
+    var e2  = e.parent();
     
-    if (e.className.match(/\bhidden\b/)) {
+    if (e.hasClass('hidden')) {
         set_rollup_state(e,e2,'shown');
         createCookie(id,1,365);
     }
@@ -141,103 +120,26 @@ function set_rollup_state(e,e2,state) {
     }
 }
 
-
-/* onload handlers */
-/* New code should be using doOnLoad which makes use of prototype
-   instead. See HeaderJavascript.  It works better than clobbering
-   window.onload.  Left around in case other code is using them */
-
-var onLoadStack     = new Array();
-var onLoadLastStack = new Array();
-var onLoadExecuted  = 0;
-
-function onLoadHook(commandStr) {
-    if(typeof(commandStr) == "string") {
-        onLoadStack[ onLoadStack.length ] = commandStr;
-        return true;
-    }
-    return false;
-}
-
-// some things *really* need to be done after everything else
-function onLoadLastHook(commandStr) {
-    if(typeof(commandStr) == "string"){
-        onLoadLastStack[onLoadLastStack.length] = commandStr;
-        return true;
-    }
-    return false;
-}
-
-function doOnLoadHooks() {
-    if(onLoadExecuted) return;
-
-    var i;
-    for ( i in onLoadStack ) { 
-        eval( onLoadStack[i] );
-    }
-    for ( i in onLoadLastStack ) { 
-        eval( onLoadLastStack[i] );
-    }
-    onLoadExecuted = 1;
-}
-
-window.onload = doOnLoadHooks;
-
-/* new onLoad code */
-
-function doOnLoad(handler) {
-    Event.observe(window, 'load', handler);
-}
-
-/* calendar functions */
-
-function openCalWindow(field) {
-    var objWindow = window.open('<%RT->Config->Get('WebPath')%>/Helpers/CalPopup.html?field='+field, 
-                                'RT_Calendar', 
-                                'height=235,width=285,scrollbars=1');
-    objWindow.focus();
-}
-
-function createCalendarLink(input) {
-    var e = $(input);
-    if (e) {
-        var link = document.createElement('a');
-        link.setAttribute('href', '#');
-        $(link).observe('click', function(ev) { openCalWindow(input); ev.stop(); });
-        //link.setAttribute('onclick', "openCalWindow('"+input+"'); return false;");
-
-        var text = document.createTextNode('<% loc("Calendar") %>');
-        link.appendChild(text);
-
-        var space = document.createTextNode(' ');
-        
-        e.parentNode.insertBefore(link, e.nextSibling);
-        e.parentNode.insertBefore(space, e.nextSibling);
-
-        return true;
-    }
-    return false;
-}
-
 /* other utils */
 
 function focusElementById(id) {
-    var e = $(id);
+    var e = jQuery('#'+id);
     if (e) e.focus();
-}
-
-function updateParentField(field, value) {
-    if (window.opener) {
-        window.opener.$(field).value = value;
-        window.close();
-    }
 }
 
 function setCheckbox(form, name, val) {
     var myfield = form.getElementsByTagName('input');
     for ( var i = 0; i < myfield.length; i++ ) {
-        if ( name && myfield[i].name != name ) continue;
         if ( myfield[i].type != 'checkbox' ) continue;
+        if ( name ) {
+            if ( name instanceof RegExp ) {
+                if ( ! myfield[i].name.match( name ) ) continue;
+            }
+            else {
+                if ( myfield[i].name != name ) continue;
+            }
+
+        }
 
         myfield[i].checked = val;
     }
@@ -247,84 +149,213 @@ function setCheckbox(form, name, val) {
 
 function walkChildNodes(parent, callback)
 {
-	if( !parent || !parent.childNodes ) return;
-	var list = parent.childNodes;
-	for( var i = 0; i < list.length; i++ ) {
-		callback( list[i] );
-	}
+    if( !parent || !parent.childNodes ) return;
+    var list = parent.childNodes;
+    for( var i = 0; i < list.length; i++ ) {
+        callback( list[i] );
+    }
 }
 
 function walkChildElements(parent, callback)
 {
-	walkChildNodes( parent, function(node) {
-		if( node.nodeType != 1 ) return;
-		return callback( node );
-	} );
+    walkChildNodes( parent, function(node) {
+        if( node.nodeType != 1 ) return;
+        return callback( node );
+    } );
 }
 
 /* shredder things */
 
 function showShredderPluginTab( plugin )
 {
-	var plugin_tab_id = 'shredder-plugin-'+ plugin +'-tab';
-	var root = $('shredder-plugin-tabs');
-	walkChildElements( root, function(node) {
-		if( node.id == plugin_tab_id ) {
-			show( node );
-		} else {
-			hide( node );
-		}
-	} );
-	if( plugin ) {
-		show('shredder-submit-button');
-	} else {
-		hide('shredder-submit-button');
-	}
+    var plugin_tab_id = 'shredder-plugin-'+ plugin +'-tab';
+    var root = jQuery('#shredder-plugin-tabs');
+    
+    root.children(':not(.hidden)').addClass('hidden');
+    root.children('#' + plugin_tab_id).removeClass('hidden');
+
+    if( plugin ) {
+        show('shredder-submit-button');
+    } else {
+        hide('shredder-submit-button');
+    }
 }
 
 function checkAllObjects()
 {
-	var check = $('shredder-select-all-objects-checkbox').checked;
-	var elements = $('shredder-search-form').elements;
-	for( var i = 0; i < elements.length; i++ ) {
-		if( elements[i].name != 'WipeoutObject' ) {
-			continue;
-		}
-		if( elements[i].type != 'checkbox' ) {
-			continue;
-		}
-		if( check ) {
-			elements[i].checked = true;
-		} else {
-			elements[i].checked = false;
-		}
-	}
+    var check = jQuery('#shredder-select-all-objects-checkbox').attr('checked');
+    var elements = jQuery('#shredder-search-form :checkbox[name=WipeoutObject]');
+
+    if( check ) {
+        elements.attr('checked', true);
+    } else {
+        elements.attr('checked', false);
+    }
 }
 
 function checkboxToInput(target,checkbox,val){    
-    var tar=$(target);
-    var box = $(checkbox);
-    if(box.checked){
-        if (tar.value==''){
-            tar.value=val;
-        }else{
-            tar.value=val+', '+tar.value;        }
-    }else{
-        tar.value=tar.value.replace(val+', ','');
-        tar.value=tar.value.replace(val,'');
+    var tar = jQuery('#' + escapeCssSelector(target));
+    var box = jQuery('#' + escapeCssSelector(checkbox));
+    if(box.attr('checked')){
+        if (tar.val()==''){
+            tar.val(val);
+        }
+        else{
+            tar.val( val+', '+ tar.val() );        
+        }
+    }
+    else{
+        tar.val(tar.val().replace(val+', ',''));
+        tar.val(tar.val().replace(val,''));
+    }
+    jQuery('#UpdateIgnoreAddressCheckboxes').val(true);
+}
+
+// ahah for back compatibility as plugins may still use it
+function ahah( url, id ) {
+    jQuery('#'+id).load(url);
+}
+
+// only for back compatibility, please JQuery() instead
+function doOnLoad( js ) {
+    jQuery(js);
+}
+
+jQuery(function() {
+    jQuery(".ui-datepicker:not(.withtime)").datepicker( {
+        dateFormat: 'yy-mm-dd',
+        constrainInput: false
+    } );
+
+    jQuery(".ui-datepicker.withtime").datepicker( {
+        dateFormat: 'yy-mm-dd',
+        constrainInput: false,
+        onSelect: function( dateText, inst ) {
+            // trigger timepicker to get time
+            var button = document.createElement('input');
+            button.setAttribute('type',  'button');
+            jQuery(button).width('5em');
+            jQuery(button).insertAfter(this);
+            jQuery(button).timepickr({val: '00:00'});
+            var date_input = this;
+
+            jQuery(button).blur( function() {
+                var time = jQuery(button).val();
+                if ( ! time.match(/\d\d:\d\d/) ) {
+                    time = '00:00';
+                }
+                jQuery(date_input).val(  dateText + ' ' + time + ':00' );
+                jQuery(button).remove();
+            } );
+
+            jQuery(button).focus();
+        }
+    } );
+});
+
+function textToHTML(value) {
+    return value.replace(/&/g,    "&amp;")
+                .replace(/</g,    "&lt;")
+                .replace(/>/g,    "&gt;")
+                .replace(/-- \n/g,"--&nbsp;\n")
+                .replace(/\n/g,   "\n<br />");
+};
+
+function ReplaceAllTextareas(encoded) {
+    var sAgent = navigator.userAgent.toLowerCase();
+    if (!CKEDITOR.env.isCompatible ||
+        sAgent.indexOf('iphone') != -1 ||
+        sAgent.indexOf('ipad') != -1 ||
+        sAgent.indexOf('android') != -1 )
+        return false;
+
+    // replace all content and signature message boxes
+    var allTextAreas = document.getElementsByTagName("textarea");
+
+    for (var i=0; i < allTextAreas.length; i++) {
+        var textArea = allTextAreas[i];
+        if (jQuery(textArea).hasClass("messagebox")) {
+            // Turn the original plain text content into HTML
+            if (encoded == 0) {
+                textArea.value = textToHTML(textArea.value);
+            }
+            // For this javascript
+            var CKeditorEncoded = document.createElement('input');
+            CKeditorEncoded.setAttribute('type', 'hidden');
+            CKeditorEncoded.setAttribute('name', 'CKeditorEncoded');
+            CKeditorEncoded.setAttribute('value', '1');
+            textArea.parentNode.appendChild(CKeditorEncoded);
+
+            // For fckeditor
+            var typeField = document.createElement('input');
+            typeField.setAttribute('type', 'hidden');
+            typeField.setAttribute('name', textArea.name + 'Type');
+            typeField.setAttribute('value', 'text/html');
+            textArea.parentNode.appendChild(typeField);
+
+
+            CKEDITOR.replace(textArea.name,{width:'100%',height:<% RT->Config->Get('MessageBoxRichTextHeight') |n,j%>});
+            CKEDITOR.basePath = <%RT->Config->Get('WebPath')|n,j%>+"/NoAuth/RichText/";
+
+            jQuery("#" + textArea.name + "___Frame").addClass("richtext-editor");
+        }
+    }
+};
+
+function toggle_addprincipal_validity(input, good, title) {
+    if (good) {
+        jQuery(input).nextAll(".warning").hide();
+        jQuery("#acl-AddPrincipal input[type=checkbox]").removeAttr("disabled");
+    } else {
+        jQuery(input).nextAll(".warning").css("display", "block");
+        jQuery("#acl-AddPrincipal input[type=checkbox]").attr("disabled", "disabled");
+    }
+
+    if (title == null)
+        title = jQuery(input).val();
+
+    update_addprincipal_title( title );
+}
+
+function update_addprincipal_title(title) {
+    var h3 = jQuery("#acl-AddPrincipal h3");
+    h3.html( h3.text().replace(/: .*$/,'') + ": " + title );
+}
+
+// when a value is selected from the autocompleter
+function addprincipal_onselect(ev, ui) {
+    // pass the item's value along as the title since the input's value
+    // isn't actually updated yet
+    toggle_addprincipal_validity(this, true, ui.item.value);
+}
+
+// when the input is actually changed, through typing or autocomplete
+function addprincipal_onchange(ev, ui) {
+    // if we have a ui.item, then they selected from autocomplete and it's good
+    if (!ui.item) {
+        var input = jQuery(this);
+        // Check using the same autocomplete source if the value typed would
+        // have been autocompleted and is therefore valid
+        jQuery.ajax({
+            url: input.autocomplete("option", "source"),
+            data: {
+                op: "=",
+                term: input.val()
+            },
+            dataType: "json",
+            success: function(data) {
+                if (data)
+                    toggle_addprincipal_validity(input, data.length ? true : false );
+                else
+                    toggle_addprincipal_validity(input, true);
+            }
+        });
+    } else {
+        toggle_addprincipal_validity(this, true);
     }
 }
 
-function toggleTicketBookmark( id, url ) {
-    var elements = $$("span.toggle-"+id);
-    if ( elements.length ) {
-        new Ajax.Request(url, {
-            method: 'get',
-            onSuccess: function(response) {
-                elements.each( function( item ) {
-                    item.replace(response.responseText);
-                })
-            }
-        });
-    }
+
+function escapeCssSelector(str) {
+    return str.replace(/([^A-Za-z0-9_-])/g,'\\$1');
 }

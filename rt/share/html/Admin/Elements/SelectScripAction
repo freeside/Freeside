@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -62,10 +62,19 @@ form.submit()">
 
 <%INIT>
 my $ScripActions = RT::ScripActions->new($session{'CurrentUser'});
-$ScripActions->UnLimit;
+
+# hide user-defined if the user can't execute code
+if ($session{CurrentUser}->HasRight(Object => $RT::System, Right => 'ExecuteCode')) {
+    $ScripActions->UnLimit;
+} else {
+    $ScripActions->Limit(
+        FIELD    => 'ExecModule',
+        OPERATOR => '!=',
+        VALUE    => 'UserDefined',
+    );
+}
+
 $ScripActions->OrderBy(FIELD => 'Name');
-
-
 
 </%INIT>
 <%ARGS>

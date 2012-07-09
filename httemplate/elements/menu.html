@@ -28,7 +28,7 @@
 %                           'width'       => 300,
 %                           'height'      => 375,
 %                           'color'       => '#7e0079',
-%                           'scrolling'   => 'no',
+%                           #'scrolling'   => 'no',
 %                       );
 % $fs_popup =~ s/return false;//;
   function about_freeside() {
@@ -106,12 +106,11 @@ $report_customers_lists{'with USPS-unvalidated addresses'} = [ $fsurl. 'search/c
 
 tie my %report_customers, 'Tie::IxHash';
 $report_customers{'List customers'} = [ \%report_customers_lists, 'List customers' ]
-  if $curuser->access_right('List customers');
+  if $curuser->access_right('List all customers');
 $report_customers{'Zip code distribution'}     = [ $fsurl. 'search/report_cust_main-zip.html', 'Zip codes by number of customers' ];
 $report_customers{'Customer signup report'}       = [ $fsurl. 'graph/report_cust_signup.html', 'New customer signups by date' ],
 $report_customers{'Advanced customer reports'} = [ $fsurl. 'search/report_cust_main.html', 'by status, signup date, agent, etc.' ]
-  if    $curuser->access_right('List customers')
-     && $curuser->access_right('List packages');
+  if $curuser->access_right('Advanced customer search');
 
 tie my %report_invoices_open, 'Tie::IxHash',
   'All open invoices' => [ $fsurl.'search/cust_bill.html?OPEN_date', 'All invoices with an unpaid balance' ],
@@ -201,10 +200,10 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       ];
   }
 
-  if ( $svcdb =~ /^svc_(acct|broadband|hardware)$/ ) {
     $report_svc{"Advanced $lcsname reports"} = 
-      [ $fsurl."search/report_$svcdb.html", '' ];
-  }
+        [ $fsurl."search/report_$svcdb.html", '' ]
+      if $svcdb =~ /^svc_(acct|broadband|hardware)$/
+      && $curuser->access_right("Services: $name: Advanced search");
 
   if ( $svcdb eq 'svc_phone' ) {
 
@@ -221,7 +220,8 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
 
   }
 
-  $report_services{$name} = [ \%report_svc, $longname ];
+  $report_services{$name} = [ \%report_svc, $longname ]
+    if $curuser->access_right("Services: $name");
 
 }
 
@@ -238,9 +238,11 @@ if ( $curuser->access_right('Financial reports') ) {
   $report_packages{'separator2'} =  '';
 }
 $report_packages{'All customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ];
-$report_packages{'Package summary'} = [ $fsurl.'search/cust_pkg_summary.html', 'Show package sales summary', ];
+$report_packages{'Package summary'} = [ $fsurl.'search/cust_pkg_summary.html', 'Show package sales summary', ]
+  if $curuser->access_right('Summarize packages');
 $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ];
-$report_packages{'Suspension summary'} = [ $fsurl.'search/cust_pkg_susp.html', 'Show suspension activity', ];
+$report_packages{'Suspension summary'} = [ $fsurl.'search/cust_pkg_susp.html', 'Show suspension activity', ]
+  if $curuser->access_right('Summarize packages');
 $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
 $report_packages{'FCC Form 477 packages'} =  [ $fsurl.'search/report_477.html', 'Summarize packages by census tract for particular types' ]
   if $conf->exists('cust_main-require_censustract');
@@ -251,14 +253,17 @@ tie my %report_inventory, 'Tie::IxHash',
   'Inventory activity' => [ $fsurl.'search/report_h_inventory_item.html', '' ],
 ;
 
-tie my %report_rating, 'Tie::IxHash',
-  'RADIUS sessions' => [ $fsurl.'search/sqlradius.html', '' ],
-  'Call Detail Records (CDRs)' => [ $fsurl.'search/report_cdr.html', '' ],
-  'Unrateable CDRs' => [ $fsurl.'search/cdr.html?freesidestatus=failed'.
-                                               ';cdrbatchnum=_ALL_' ],
-  'Time worked' => [ $fsurl.'search/report_rt_transaction.html', '' ],
-  'Time worked summary' => [ $fsurl.'search/report_rt_ticket.html', '' ],
-;
+tie my %report_rating, 'Tie::IxHash';
+$report_rating{'RADIUS sessions'} = [ $fsurl.'search/sqlradius.html', '' ]
+  if $curuser->access_right("Usage: RADIUS sessions");
+$report_rating{'Call Detail Records (CDRs)'} = [ $fsurl.'search/report_cdr.html', '' ]
+  if $curuser->access_right("Usage: Call Detail Records (CDRs)");
+$report_rating{'Unrateable CDRs'} = [ $fsurl.'search/cdr.html?freesidestatus=failed;cdrbatchnum=_ALL_' ]
+  if $curuser->access_right("Usage: Unrateable CDRs");
+if ( $curuser->access_right("Usage: Time worked") ) {
+  $report_rating{'Time worked'} = [ $fsurl.'search/report_rt_transaction.html', '' ];
+  $report_rating{'Time worked summary'} = [ $fsurl.'search/report_rt_ticket.html', '' ];
+}
 
 tie my %report_ticketing_statistics, 'Tie::IxHash',
   'Tickets per day per Queue'         => [ $fsurl.'rt/RTx/Statistics/CallsQueueDay', 'View the number of tickets created, resolved or deleted in a specific Queue, over the requested period of days' ],
@@ -270,13 +275,14 @@ tie my %report_ticketing_statistics, 'Tie::IxHash',
 ;
 
 tie my %report_ticketing, 'Tie::IxHash',
-  'Resolved by owner'       => [ $fsurl.'rt/Tools/Reports/ResolvedByOwner.html', '' ],
-  'Resolved in date range'  => [ $fsurl.'rt/Tools/Reports/ResolvedByDates.html', '' ],
-  'Created in date range'   => [ $fsurl.'rt/Tools/Reports/CreatedByDates.html', '' ],
-  'separator'               => '',
+# fix TimeToResolve extension?  or redo in a more modern way?
+#  'Resolved by owner'       => [ $fsurl.'rt/Tools/Reports/ResolvedByOwner.html', '' ],
+#  'Resolved in date range'  => [ $fsurl.'rt/Tools/Reports/ResolvedByDates.html', '' ],
+#  'Created in date range'   => [ $fsurl.'rt/Tools/Reports/CreatedByDates.html', '' ],
+#  'separator'               => '',
   'Statistics'              => [ \%report_ticketing_statistics, '' ],
   'separator2'              => '',
-  'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html', 'List tickets by any criteria' ],
+  'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html?NewQuery=1', 'List tickets by any criteria' ],
 ;
 
 tie my %report_bill_event, 'Tie::IxHash',
@@ -308,6 +314,7 @@ if($curuser->access_right('Financial reports')) {
     'Daily Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time_daily.html', 'Sales, credits and receipts (broken down by day) summary graph' ],
     'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
     'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
+    'Sales With Advertising Source' => [ $fsurl.'search/report_cust_bill_pkg_referral.html' ],
     'Employee Commission Report' => [ $fsurl.'search/report_employee_commission.html', '' ],
     'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
     'Unapplied Credits' => [ $fsurl.'search/report_cust_credit.html?unapplied=1', 'Unapplied credit report (by type and/or date range)' ],
@@ -385,10 +392,18 @@ tie my %tools_exporting, 'Tie::IxHash',
   'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],
 ;
 
+tie my %tools_ticketing_articles, 'Tie::IxHash',
+  'Overview' => [ $fsurl.'rt/Articles/index.html', '' ],
+  'Search'   => [ $fsurl.'rt/Articles/Article/Search.html', '' ],
+  'Topics'   => [ $fsurl.'rt/Articles/Topics.html', '' ],
+;
+
 tie my %tools_ticketing, 'Tie::IxHash',
-  'Offline'      => [ $fsurl.'rt/Tools/Offline.html', '' ],
+  'Articles'     => [ \%tools_ticketing_articles, '' ],
   'My Day'       => [ $fsurl.'rt/Tools/MyDay.html', '' ],
-  'My Approvals' => [ $fsurl.'rt/Approvals/', '' ],
+  'My Reminders' => [ $fsurl.'rt/Tools/MyReminders.html', '' ],
+  'Offline'      => [ $fsurl.'rt/Tools/Offline.html', '' ],
+  'Approval'     => [ $fsurl.'rt/Approvals/', '' ],
 ;
 $tools_ticketing{'Cron Tool'} = [ $fsurl.'rt/Developer/CronTool/', '' ]
   if $conf->exists('rt-crontool');
@@ -451,6 +466,7 @@ tie my %config_radius, 'Tie::IxHash',
 tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
+  $config_export_svc{'Service classes'} = [ $fsurl.'browse/part_svc_class.html', 'Services classes are user-defined, informational types for services' ];
   $config_export_svc{'Provisioning exports'} = [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ];
 }
 $config_export_svc{'Dialup'}  = [ \%config_dialup, ''    ]
@@ -504,6 +520,10 @@ tie my %config_agent, 'Tie::IxHash',
   'Agent payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors for agent overrides' ];
 ;
 
+tie my %config_sales, 'Tie::IxHash',
+  'Sales'      => [ $fsurl.'browse/sales.cgi', 'Sales bring in new business.' ],
+;
+
 tie my %config_billing_rates, 'Tie::IxHash',
   'Rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
   'Regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
@@ -539,12 +559,44 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons.' ];
 }
 
+#XXX also to be unified
+tie my %config_ticketing_groups, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/Groups', '' ],
+  'Create' => [ $fsurl.'rt/Admin/Groups/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_queues, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/Queues', '' ],
+  'Create' => [ $fsurl.'rt/Admin/Queues/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_customfields, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/CustomFields', '' ],
+  'Create' => [ $fsurl.'rt/Admin/CustomFields/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_articles_classes, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/Articles/Classes/', '' ],
+  'Create' => [ $fsurl.'rt/Admin/Articles/Classes/Modify.html?Create=1', '' ],
+;
+
+tie my %config_ticketing_articles_customfields, 'Tie::IxHash',
+  'Select' => [ $fsurl.'rt/Admin/CustomFields/index.html?type=RT%3A%3AClass-RT%3A%3AArticle', '' ],
+  'Create' => [ $fsurl.'rt/Admin/CustomFields/Modify.html?Create=1&LookupType=RT%3A%3AClass-RT%3A%3AArticle', '' ],
+;
+
+tie my %config_ticketing_articles, 'Tie::IxHash',
+  'Classes'       => [ \%config_ticketing_articles_classes, '' ],
+  'Custom Fields' => [ \%config_ticketing_articles_customfields, '' ],
+;
+
 tie my %config_ticketing, 'Tie::IxHash',
-  'Ticketing Users'      => [ $fsurl.'rt/Admin/Users', 'View/Edit ticketing users' ], #XXX to be unified
-  'Ticketing Groups'     => [ $fsurl.'rt/Admin/Groups', 'View/Edit ticketing groups and group membership' ], #XXX to be unified
-  'Ticketing Queues'     => [ $fsurl.'rt/Admin/Queues', 'View/Edit ticketing queues and queue-specific properties' ], 
-  'Ticket Custom Fields' => [ $fsurl.'rt/Admin/CustomFields', 'View/Edit ticketing custom fields' ], 
-  'Ticketing Global'     => [ $fsurl.'rt/Admin/Global', 'View/Edit ticketing configuration applicable to all queues' ], 
+  'Ticketing Users'      => [ $fsurl.'rt/Admin/Users', 'Edit ticketing users' ], #XXX to be unified
+  'Ticketing Groups'     => [ \%config_ticketing_groups, 'View/Edit ticketing groups and group membership' ], #XXX to be unified
+  'Ticketing Queues'     => [ \%config_ticketing_queues, 'View/Edit ticketing queues and queue-specific properties' ], 
+  'Ticket Custom Fields' => [ \%config_ticketing_customfields, 'View/Edit ticketing custom fields' ], 
+  'Ticketing Global'     => [ $fsurl.'rt/Admin/Global', 'View/Edit ticketing configuration applicable to all queues' ], #XXX the individual items
+  'Ticketing Articles'   => [ \%config_ticketing_articles, '' ],
   #"System Configuraiton"?  useless, just makes people report errors about missing Module::Versions::Report #'Ticketing Tools'     => [ $fsurl.'rt/Admin/Tools', '' ], 
 ;
 
@@ -554,9 +606,8 @@ tie my %config_nms, 'Tie::IxHash',
 
 tie my %config_misc, 'Tie::IxHash';
 $config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templates for customer notices' ]
-  if $curuser->access_right('Edit templates')
-  || $curuser->access_right('Edit global templates')
-  || $curuser->access_right('Configuration');
+  if $curuser->access_right(['View templates', 'View global templates',
+                             'Edit templates', 'Edit global templates', ]);
 $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
@@ -569,6 +620,9 @@ $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_cla
   || $curuser->access_right('Edit global inventory')
   || $curuser->access_right('Configuration');
 
+$config_misc{'FTP targets'} = [ $fsurl.'browse/ftp_target.html', 'FTP servers for billing and payment processing' ]
+  if $curuser->access_right('Configuration');
+
 tie my %config_menu, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration' ) ) {
   %config_menu = (
@@ -576,6 +630,7 @@ if ( $curuser->access_right('Configuration' ) ) {
     'separator'     => '', #its a separator!
     'Employees'     => [ \%config_employees, '' ],
     'Resellers'     => [ \%config_agent, '' ],
+    'Sales People'  => [ \%config_sales, '' ],
     'separator2'    => '', #its a separator!
     'Customers'     => [ \%config_cust, '' ],
     #or this? 'Customers and Contacts' => [ \%config_cust, '' ],
@@ -620,17 +675,24 @@ my $doc_link = $conf->config('support-key')
 eval "use RT;"
   if $conf->config('ticket_system') eq 'RT_Internal';
 
-tie my %help_menu, 'Tie::IxHash', 'Billing documentation' => [ $doc_link, 'Freeside documentation' ];
-$help_menu{'Ticketing documentation'} = [ 'http://wiki.bestpractical.com/', 'Request Tracker Wiki' ]
-  if $conf->config('ticket_system') eq 'RT_Internal';
-$help_menu{'Networking monitoring documentation'} = [ 'http://torrus.org/userguide.pod.html', 'Torrus User Guide' ]
-  if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
-$help_menu{'separator'} = '';
-$help_menu{"About Freeside v$FS::VERSION"} = [ "javascript:about_freeside()", '' ];
-$help_menu{"About RT v$RT::VERSION"} = [ 'http://www.bestpractical.com/rt', 'Request Tracker Homepage' ]
-  if $conf->config('ticket_system') eq 'RT_Internal';
-$help_menu{"About Torrus v1.0.9"} = [ 'http://www.torrus.org/', 'Torrus Homepage' ] #XXX manual version
-  if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
+tie my %help_menu, 'Tie::IxHash';
+my $agentnum = $conf->config('brand-agent');
+if ( $agentnum ) {
+  my $company_name = $conf->config('company_name', $agentnum);
+  $help_menu{"About $company_name"} = [ "javascript:about_freeside()", '' ];
+} else {
+  $help_menu{'Billing documentation'} = [ $doc_link, 'Freeside documentation' ];
+  $help_menu{'Ticketing documentation'} = [ 'http://wiki.bestpractical.com/', 'Request Tracker Wiki' ]
+    if $conf->config('ticket_system') eq 'RT_Internal';
+  $help_menu{'Networking monitoring documentation'} = [ 'http://torrus.org/userguide.pod.html', 'Torrus User Guide' ]
+    if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
+  $help_menu{'separator'} = '';
+  $help_menu{"About Freeside v$FS::VERSION"} = [ "javascript:about_freeside()", '' ];
+  $help_menu{"About RT v$RT::VERSION"} = [ 'http://www.bestpractical.com/rt', 'Request Tracker Homepage' ]
+    if $conf->config('ticket_system') eq 'RT_Internal';
+  $help_menu{"About Torrus v1.0.9"} = [ 'http://www.torrus.org/', 'Torrus Homepage' ] #XXX manual version
+    if $conf->config('network_monitoring_system') eq 'Torrus_Internal';
+}
 
 
 tie my %menu, 'Tie::IxHash';

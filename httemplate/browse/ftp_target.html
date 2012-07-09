@@ -1,0 +1,56 @@
+<& elements/browse.html,
+  'title'       => 'FTP targets',
+  'menubar'     => [ 'Add a target' => $p.'edit/ftp_target.html', ],
+  'name'        => 'FTP targets',
+  'query'       => { 'table'   => 'ftp_target',
+                     'hashref' => {},
+                   },
+  'count_query' => $count_query,
+  'header'      => [ '#',
+                     'Server',
+                     'Username',
+                     'Password',
+                     'Path',
+                     'Protocol',
+                     '', #handling
+                   ],
+  'fields'      => [ 'targetnum',
+                     'hostname',
+                     'username',
+                     'password',
+                     'path',
+                     sub { 
+                       my $ftp_target = shift;
+                       my $label;
+                       if ($ftp_target->secure) {
+                         $label = 'SFTP';
+                         $label .= ' (port '.$ftp_target->port.')'
+                           if $ftp_target->port != 22;
+                       }
+                       else {
+                         $label = 'FTP';
+                         $label .= ' (port '.$ftp_target->port.')'
+                           if $ftp_target->port != 21;
+                       }
+                       $label;
+                     },
+                     'handling',
+                   ],
+  'links'       => [ $link, $link ],
+&>
+</TABLE>
+
+<% include('/elements/footer.html') %>
+
+<%once>
+
+my $count_query = 'SELECT COUNT(*) FROM ftp_target';
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ $p.'edit/ftp_target.html?', 'targetnum' ];
+</%init>

@@ -1,11 +1,8 @@
 package FS::h_svc_broadband;
+use base qw( FS::h_svc_Radius_Mixin FS::h_Common FS::svc_broadband );
 
 use strict;
 use vars qw( @ISA );
-use FS::h_Common;
-use FS::svc_broadband;
-
-@ISA = qw( FS::h_Common FS::svc_broadband );
 
 sub table { 'h_svc_broadband' };
 

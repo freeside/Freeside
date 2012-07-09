@@ -65,7 +65,10 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::insert;
+  my $error;
+  
+  $error = $self->check_options($options) 
+           || $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -197,7 +200,17 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::replace($old);
+  my $error;
+  
+  if ($options_supplied) {
+    $error = $self->check_options($options);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+  
+  $error = $self->SUPER::replace($old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -272,6 +285,21 @@ sub replace {
 
   '';
 
+}
+
+=item check_options HASHREF
+
+This method is called by 'insert' and 'replace' to check the options that were supplied.
+
+Return error-message, or false.
+
+(In this class, this is a do-nothing routine that always returns false.  Override as necessary.  No need to call superclass.)
+
+=cut
+
+sub check_options {
+	my ($self, $options) = @_;
+	'';
 }
 
 =item option_objects

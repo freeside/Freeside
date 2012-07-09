@@ -7,7 +7,7 @@ use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common qw( GET POST );
 use HTML::TokeParser;
-use URI::Escape;
+use URI::Escape 3.31;
 use Data::Dumper;
 
 $DEBUG = 0;

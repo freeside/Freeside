@@ -6,6 +6,13 @@ Where a customer heard about your service. Tracked for informational purposes.
 <A HREF="<% $p %>edit/part_referral.html"><I>Add a new advertising source</I></A>
 <BR><BR>
 
+<% $cgi->param('showdisabled')
+    ? do { $cgi->param('showdisabled', 0);
+           '( <a href="'. $cgi->self_url. '">hide disabled advertising sources</a> )'; }
+    : do { $cgi->param('showdisabled', 1);
+           '( <a href="'. $cgi->self_url. '">show disabled advertising sources</a> )'; }
+%>
+
 <% include('/elements/table-grid.html') %>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
@@ -13,8 +20,12 @@ Where a customer heard about your service. Tracked for informational purposes.
 
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=2 ROWSPAN=2>Advertising source</TH>
-% if ( $show_agentnums ) { 
 
+%       if ( ! $cgi->param('showdisabled') ) { 
+          <TH CLASS="grid" BGCOLOR="#cccccc" ALIGN="center" ROWSPAN=2></TH>
+%       }
+
+% if ( $show_agentnums ) { 
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Agent</TH>
 % } 
 
@@ -27,7 +38,7 @@ Where a customer heard about your service. Tracked for informational purposes.
 
 </TR>
 
-%foreach my $part_referral ( FS::part_referral->all_part_referral(1) ) {
+%foreach my $part_referral ( FS::part_referral->all_part_referral(1,!scalar($cgi->param('showdisabled'))) ) {
 %
 %  if ( $bgcolor eq $bgcolor1 ) {
 %    $bgcolor = $bgcolor2;
@@ -55,6 +66,16 @@ Where a customer heard about your service. Tracked for informational purposes.
 % } 
 
           <% $part_referral->referral %><% $a ? '</A>' : '' %></TD>
+
+%       if ( ! $cgi->param('showdisabled') ) { 
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="center">
+            <% $part_referral->disabled
+                 ? '<FONT COLOR="#FF0000"><B>DISABLED</B></FONT>'
+                 : '<FONT COLOR="#00CC00"><B>Active</B></FONT>'
+            %>
+          </TD>
+%       }
+
 % if ( $show_agentnums ) { 
 
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $part_referral->agentnum ? $part_referral->agent->agent : '(global)' %></TD>
@@ -73,11 +94,11 @@ Where a customer heard about your service. Tracked for informational purposes.
             <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
               <TR>
                 <TD ALIGN="right"><B><% $num_cust %></B></TD>
-                <TD ALIGN="left">customers</TD>
+                <TD ALIGN="left">&nbsp;customers&nbsp;</TD>
               </TR>
               <TR>
                 <TD ALIGN="right"><B><% $num_pkg %></B></TD>
-                <TD ALIGN="left">packages</TD>
+                <TD ALIGN="left">&nbsp;packages&nbsp;</TD>
               </TR>
             </TABLE>
           </TD>
@@ -94,7 +115,7 @@ Where a customer heard about your service. Tracked for informational purposes.
 %    or die dbh->errstr;
 
       <TR>
-        <TD BGCOLOR="#dddddd" ALIGN="center" COLSPAN=3><B>Total</B></TD>
+        <TD BGCOLOR="#dddddd" ALIGN="center" COLSPAN=<% 2 + $show_agentnums + ! $cgi->param('showdisabled') %><B>Total</B></TD>
 % for my $period ( keys %after ) {
 %          my @param = ( $today-$after{$period},
 %                        $today+$before{$period},
@@ -108,11 +129,11 @@ Where a customer heard about your service. Tracked for informational purposes.
             <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
               <TR>
                 <TD ALIGN="right"><B><% $num_cust %></B></TD>
-                <TD ALIGN="left">customers</TD>
+                <TD ALIGN="left">&nbsp;customers&nbsp;</TD>
               </TR>
               <TR>
                 <TD ALIGN="right"><B><% $num_pkg %></B></TD>
-                <TD ALIGN="left">packages</TD>
+                <TD ALIGN="left">&nbsp;packages&nbsp;</TD>
               </TR>
             </TABLE>
           </TD>

@@ -97,6 +97,11 @@ sub customer_tickets {
 
 }
 
+sub service_tickets {
+  warn "service_tickets not available with RT_External.\n";
+  return;
+}
+
 sub comments_on_tickets {
   my ($self, $custnum, $limit, $time ) = @_;
   $limit ||= 0;
@@ -206,7 +211,20 @@ sub statuses {
 }
 
 sub href_customer_tickets {
-  my( $self, $custnum ) = ( shift, shift );
+  my($self, $custnum) = (shift, shift);
+  if ( $custnum =~ /^(\d+)$/ ) {
+    return $self->href_search_tickets("MemberOf = 'freeside://freeside/cust_main/$1'");
+  }
+  warn "bad custnum $custnum"; return '';
+}
+
+sub href_service_tickets {
+  warn "service_tickets not available with RT_External.\n";
+  '';
+}
+
+sub href_search_tickets {
+  my( $self, $where ) = ( shift, shift );
   my( $priority, @statuses);
   if ( ref($_[0]) ) {
     my $opt = shift;
@@ -225,8 +243,8 @@ sub href_customer_tickets {
   #$href .= 
   my $href = 
     "Search/Results.html?Order=ASC&".
-    "Query= MemberOf = 'freeside://freeside/cust_main/$custnum' ".
-    #" AND ( Status = 'open'  OR Status = 'new'  OR Status = 'stalled' )"
+    "Query= $where" .
+    #MemberOf = 'freeside://freeside/cust_main/$custnum' ".
     " AND ( ". join(' OR ', map "Status = '$_'", @statuses ). " ) "
   ;
 
@@ -246,7 +264,7 @@ sub href_customer_tickets {
   uri_escape($href);
   #eventually should unescape all of it...
 
-  $href .= '&Rows=100'.
+  $href .= '&RowsPerPage=50'.
            '&OrderBy=id&Page=1'.
            '&Format=%27%20%20%20%3Cb%3E%3Ca%20href%3D%22'.
 	   $self->baseurl.
@@ -274,15 +292,19 @@ sub href_customer_tickets {
 }
 
 sub href_params_new_ticket {
-  my( $self, $custnum_or_cust_main, $requestors ) = @_;
-
-  my( $custnum, $cust_main );
-  if ( ref($custnum_or_cust_main) ) {
-    $cust_main = $custnum_or_cust_main;
-    $custnum = $cust_main->custnum;
-  } else {
-    $custnum = $custnum_or_cust_main;
-    $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  # my( $self, $custnum_or_cust_main, $requestors ) = @_;
+  # no longer takes $custnum--it must be an object
+  my ( $self, $object, $requestors ) = @_;
+  my $cust_main; # for default requestors
+  if ( $object->isa('FS::cust_main') ) {
+    $cust_main = $object;
+  }
+  elsif ( $object->isa('FS::svc_Common') ) {
+    $object = $object->cust_svc;
+    $cust_main = $object->cust_pkg->cust_main if ( $object->cust_pkg );
+  }
+  elsif ( $object->isa('FS::cust_svc') ) {
+    $cust_main = $object->cust_pkg->cust_main if ( $object->cust_pkg );
   }
 
   # explicit $requestors > config option > invoicing_list
@@ -291,9 +313,12 @@ sub href_params_new_ticket {
   $requestors = $cust_main->invoicing_list_emailonly_scalar
       if (!$requestors) and defined($cust_main);
 
+  my $subtype = $object->table;
+  my $pkey = $object->get($object->primary_key);
+
   my %param = (
     'Queue'       => ($cust_main->agent->ticketing_queueid || $default_queueid),
-    'new-MemberOf'=> "freeside://freeside/cust_main/$custnum",
+    'new-MemberOf'=> "freeside://freeside/$subtype/$pkey",
     'Requestors'  => $requestors,
   );
 

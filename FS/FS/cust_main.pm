@@ -6,15 +6,16 @@ use strict;
 use base qw( FS::cust_main::Packages FS::cust_main::Status
              FS::cust_main::Billing FS::cust_main::Billing_Realtime
              FS::cust_main::Billing_Discount
+             FS::cust_main::Location
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
-             FS::geocode_Mixin
+             FS::geocode_Mixin FS::Quotable_Mixin
              FS::o2m_Common
              FS::Record
            );
 use vars qw( $DEBUG $me $conf
              @encrypted_fields
              $import
-             $ignore_expired_card $ignore_illegal_zip $ignore_banned_card
+             $ignore_expired_card $ignore_banned_card $ignore_illegal_zip
              $skip_fuzzyfiles
              @paytypes
            );
@@ -71,6 +72,7 @@ use FS::cust_main_note;
 use FS::cust_attachment;
 use FS::contact;
 use FS::Locales;
+use FS::upgrade_journal;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -80,7 +82,6 @@ $me = '[FS::cust_main]';
 
 $import = 0;
 $ignore_expired_card = 0;
-$ignore_illegal_zip = 0;
 $ignore_banned_card = 0;
 
 $skip_fuzzyfiles = 0;
@@ -178,28 +179,6 @@ Cocial security number (optional)
 
 (optional)
 
-=item address1
-
-=item address2
-
-(optional)
-
-=item city
-
-=item county
-
-(optional, see L<FS::cust_main_county>)
-
-=item state
-
-(see L<FS::cust_main_county>)
-
-=item zip
-
-=item country
-
-(see L<FS::cust_main_county>)
-
 =item daytime
 
 phone (optional)
@@ -213,56 +192,6 @@ phone (optional)
 phone (optional)
 
 =item mobile
-
-phone (optional)
-
-=item ship_first
-
-Shipping first name
-
-=item ship_last
-
-Shipping last name
-
-=item ship_company
-
-(optional)
-
-=item ship_address1
-
-=item ship_address2
-
-(optional)
-
-=item ship_city
-
-=item ship_county
-
-(optional, see L<FS::cust_main_county>)
-
-=item ship_state
-
-(see L<FS::cust_main_county>)
-
-=item ship_zip
-
-=item ship_country
-
-(see L<FS::cust_main_county>)
-
-=item ship_daytime
-
-phone (optional)
-
-=item ship_night
-
-phone (optional)
-
-=item ship_fax
-
-phone (optional)
-
-=item ship_mobile
 
 phone (optional)
 
@@ -364,6 +293,12 @@ sub table { 'cust_main'; }
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+Usually the customer's location will not yet exist in the database, and
+the C<bill_location> and C<ship_location> pseudo-fields must be set to 
+uninserted L<FS::cust_location> objects.  These will be inserted and linked
+(in both directions) to the new customer record.  If they're references 
+to the same object, they will become the same location.
+
 CUST_PKG_HASHREF: If you pass a Tie::RefHash data structure to the insert
 method containing FS::cust_pkg and FS::svc_I<tablename> objects, all records
 are inserted atomicly, or the transaction is rolled back.  Passing an empty
@@ -399,8 +334,9 @@ The I<noexport> option is deprecated.  If I<noexport> is set true, no
 provisioning jobs (exports) are scheduled.  (You can schedule them later with
 the B<reexport> method.)
 
-The I<tax_exemption> option can be set to an arrayref of tax names.
-FS::cust_main_exemption records will be created and inserted.
+The I<tax_exemption> option can be set to an arrayref of tax names or a hashref
+of tax names and exemption numbers.  FS::cust_main_exemption records will be
+created and inserted.
 
 If I<prospectnum> is set, moves contacts and locations from that prospect.
 
@@ -461,12 +397,46 @@ sub insert {
 
   }
 
+  # insert locations
+  foreach my $l (qw(bill_location ship_location)) {
+    my $loc = delete $self->hashref->{$l};
+    # XXX if we're moving a prospect's locations, do that here
+    if ( !$loc ) {
+      return "$l not set";
+    }
+    
+    if ( !$loc->locationnum ) {
+      # warn the location that we're going to insert it with no custnum
+      $loc->set(custnum_pending => 1);
+      warn "  inserting $l\n"
+        if $DEBUG > 1;
+      my $error = $loc->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        my $label = $l eq 'ship_location' ? 'service' : 'billing';
+        return "$error (in $label location)";
+      }
+    }
+    elsif ( ($loc->custnum || 0) > 0 or $loc->prospectnum ) {
+      # then it somehow belongs to another customer--shouldn't happen
+      $dbh->rollback if $oldAutoCommit;
+      return "$l belongs to customer ".$loc->custnum;
+    }
+    # else it already belongs to this customer 
+    # (happens when ship_location is identical to bill_location)
+
+    $self->set($l.'num', $loc->locationnum);
+
+    if ( $self->get($l.'num') eq '' ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "$l not set";
+    }
+  }
+
   warn "  inserting $self\n"
     if $DEBUG > 1;
 
   $self->signupdate(time) unless $self->signupdate;
-
-  $self->censusyear($conf->config('census_year')||'2012') if $self->censustract;
 
   $self->auto_agent_custid()
     if $conf->config('cust_main-auto_agent_custid') && ! $self->agent_custid;
@@ -476,6 +446,20 @@ sub insert {
     $dbh->rollback if $oldAutoCommit;
     #return "inserting cust_main record (transaction rolled back): $error";
     return $error;
+  }
+
+  # now set cust_location.custnum
+  foreach my $l (qw(bill_location ship_location)) {
+    warn "  setting $l.custnum\n"
+      if $DEBUG > 1;
+    my $loc = $self->$l;
+    $loc->set(custnum => $self->custnum);
+    $error ||= $loc->replace;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error setting $l custnum: $error";
+    }
   }
 
   warn "  setting invoicing list\n"
@@ -545,10 +529,15 @@ sub insert {
 
   my $tax_exemption = delete $options{'tax_exemption'};
   if ( $tax_exemption ) {
-    foreach my $taxname ( @$tax_exemption ) {
+
+    $tax_exemption = { map { $_ => '' } @$tax_exemption }
+      if ref($tax_exemption) eq 'ARRAY';
+
+    foreach my $taxname ( keys %$tax_exemption ) {
       my $cust_main_exemption = new FS::cust_main_exemption {
-        'custnum' => $self->custnum,
-        'taxname' => $taxname,
+        'custnum'       => $self->custnum,
+        'taxname'       => $taxname,
+        'exempt_number' => $tax_exemption->{$taxname},
       };
       my $error = $cust_main_exemption->insert;
       if ( $error ) {
@@ -1312,7 +1301,7 @@ sub merge {
 
   }
 
-  my $name = $self->ship_name;
+  my $name = $self->ship_name; #?
 
   my $locationnum = '';
   foreach my $cust_pkg ( $self->all_pkgs ) {
@@ -1448,9 +1437,12 @@ sub merge {
 
 =item replace [ OLD_RECORD ] [ INVOICING_LIST_ARYREF ] [ , OPTION => VALUE ... ] ]
 
-
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+
+To change the customer's address, set the pseudo-fields C<bill_location> and
+C<ship_location>.  The address will still only change if at least one of the
+address fields differs from the existing values.
 
 INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
 be set as the invoicing list (see L<"invoicing_list">).  Errors return as
@@ -1461,8 +1453,9 @@ check_invoicing_list first.  Here's an example:
 
 Currently available options are: I<tax_exemption>.
 
-The I<tax_exemption> option can be set to an arrayref of tax names.
-FS::cust_main_exemption records will be deleted and inserted as appropriate.
+The I<tax_exemption> option can be set to an arrayref of tax names or a hashref
+of tax names and exemption numbers.  FS::cust_main_exemption records will be
+deleted and inserted as appropriate.
 
 =cut
 
@@ -1487,41 +1480,19 @@ sub replace {
     return "You are not permitted to create complimentary accounts.";
   }
 
-  if ( $old->get('geocode') && $old->get('geocode') eq $self->get('geocode')
-       && $conf->exists('enable_taxproducts')
-     )
-  {
-    my $pre = ($conf->exists('tax-ship_address') && $self->ship_zip)
-                ? 'ship_' : '';
-    $self->set('geocode', '')
-      if $old->get($pre.'zip') ne $self->get($pre.'zip')
-      && length($self->get($pre.'zip')) >= 10;
-  }
+  # should be unnecessary--geocode will default to null on new locations
+  #if ( $old->get('geocode') && $old->get('geocode') eq $self->get('geocode')
+  #     && $conf->exists('enable_taxproducts')
+  #   )
+  #{
+  #  my $pre = ($conf->exists('tax-ship_address') && $self->ship_zip)
+  #              ? 'ship_' : '';
+  #  $self->set('geocode', '')
+  #    if $old->get($pre.'zip') ne $self->get($pre.'zip')
+  #    && length($self->get($pre.'zip')) >= 10;
+  #}
 
-  for my $pre ( grep $old->get($_.'coord_auto'), ( '', 'ship_' ) ) {
-
-    $self->set($pre.'coord_auto', '') && next
-      if $self->get($pre.'latitude') && $self->get($pre.'longitude')
-      && (    $self->get($pre.'latitude')  != $old->get($pre.'latitude')
-           || $self->get($pre.'longitude') != $old->get($pre.'longitude')
-         );
-
-    $self->set_coord($pre)
-      if $old->get($pre.'address1') ne $self->get($pre.'address1')
-      || $old->get($pre.'city')     ne $self->get($pre.'city')
-      || $old->get($pre.'state')    ne $self->get($pre.'state')
-      || $old->get($pre.'country')  ne $self->get($pre.'country');
-
-  }
-
-  unless ( $import ) {
-    $self->set_coord
-      if ! $self->coord_auto && ! $self->latitude && ! $self->longitude;
-
-    $self->set_coord('ship_')
-      if $self->has_ship_address && ! $self->ship_coord_auto
-      && ! $self->ship_latitude && ! $self->ship_longitude;
-  }
+  # set_coord/coord_auto stuff is now handled by cust_location
 
   local($ignore_expired_card) = 1
     if $old->payby  =~ /^(CARD|DCRD)$/
@@ -1533,11 +1504,10 @@ sub replace {
          || $old->payby  =~ /^(CHEK|DCHK)$/ && $self->payby =~ /^(CHEK|DCHK)$/ )
     && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
 
-  if ( $self->censustract ne '' and $self->censustract ne $old->censustract ) {
-    # update censusyear whenever tract code changes
-    $self->censusyear($conf->config('census_year')||'2012');
-  }
-
+  return "Invoicing locale is required"
+    if $old->locale
+    && ! $self->locale
+    && $conf->exists('cust_main-require_locale');
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1550,11 +1520,73 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  for my $l (qw(bill_location ship_location)) {
+    my $old_loc = $old->$l;
+    my $new_loc = $self->$l;
+
+    if ( !$new_loc->locationnum ) {
+      # changing location
+      # If the new location is all empty fields, or if it's identical to 
+      # the old location in all fields, don't replace.
+      my @nonempty = grep { $new_loc->$_ } $self->location_fields;
+      next if !@nonempty;
+      my @unlike = grep { $new_loc->$_ ne $old_loc->$_ } $self->location_fields;
+
+      if ( @unlike or $old_loc->disabled ) {
+        warn "  changed $l fields: ".join(',',@unlike)."\n"
+          if $DEBUG;
+        $new_loc->set(custnum => $self->custnum);
+
+        # insert it--the old location will be disabled later
+        my $error = $new_loc->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+
+      } else {
+      # no fields have changed and $old_loc isn't disabled, so don't change it
+        next;
+      }
+
+    }
+    elsif ( $new_loc->custnum ne $self->custnum or $new_loc->prospectnum ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "$l belongs to customer ".$new_loc->custnum;
+    }
+    # else the new location belongs to this customer so we're good
+
+    # set the foo_locationnum now that we have one.
+    $self->set($l.'num', $new_loc->locationnum);
+
+  } #for $l
+
   my $error = $self->SUPER::replace($old);
 
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  # now move packages to the new service location
+  $self->set('ship_location', ''); #flush cache
+  if ( $old->ship_locationnum and # should only be null during upgrade...
+       $old->ship_locationnum != $self->ship_locationnum ) {
+    $error = $old->ship_location->move_to($self->ship_location);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+  # don't move packages based on the billing location, but 
+  # disable it if it's no longer in use
+  if ( $old->bill_locationnum and
+       $old->bill_locationnum != $self->bill_locationnum ) {
+    $error = $old->bill_location->disable_if_unused;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   if ( @param && ref($param[0]) eq 'ARRAY' ) { # INVOICING_LIST_ARYREF
@@ -1594,17 +1626,27 @@ sub replace {
   my $tax_exemption = delete $options{'tax_exemption'};
   if ( $tax_exemption ) {
 
+    $tax_exemption = { map { $_ => '' } @$tax_exemption }
+      if ref($tax_exemption) eq 'ARRAY';
+
     my %cust_main_exemption =
       map { $_->taxname => $_ }
           qsearch('cust_main_exemption', { 'custnum' => $old->custnum } );
 
-    foreach my $taxname ( @$tax_exemption ) {
+    foreach my $taxname ( keys %$tax_exemption ) {
 
-      next if delete $cust_main_exemption{$taxname};
+      if ( $cust_main_exemption{$taxname} && 
+           $cust_main_exemption{$taxname}->exempt_number eq $tax_exemption->{$taxname}
+         )
+      {
+        delete $cust_main_exemption{$taxname};
+        next;
+      }
 
       my $cust_main_exemption = new FS::cust_main_exemption {
-        'custnum' => $self->custnum,
-        'taxname' => $taxname,
+        'custnum'       => $self->custnum,
+        'taxname'       => $taxname,
+        'exempt_number' => $tax_exemption->{$taxname},
       };
       my $error = $cust_main_exemption->insert;
       if ( $error ) {
@@ -1648,24 +1690,7 @@ sub replace {
     }
   }
 
-  # FS::geocode_Mixin::after_replace ?
-  # though this will go away anyway once we move customer bill/service 
-  # locations into cust_location
-  # We can trigger this on any address change--just have to make sure 
-  # not to trigger it on itself.
-  if ( $conf->config('tax_district_method') and !$import 
-      and ( $self->get('ship_address1') ne $old->get('ship_address1')
-        or  $self->get('address1')      ne $old->get('address1') ) ) {
-    my $queue = new FS::queue {
-      'job'     => 'FS::geocode_Mixin::process_district_update',
-      'custnum' => $self->custnum,
-    };
-    my $error = $queue->insert( ref($self), $self->custnum );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing tax district update: $error";
-    }
-  }
+  # tax district update in cust_location
 
   # cust_main exports!
 
@@ -1710,16 +1735,14 @@ sub queue_fuzzyfiles_update {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $queue = new FS::queue { 'job' => 'FS::cust_main::Search::append_fuzzyfiles' };
-  my $error = $queue->insert( map $self->getfield($_), @FS::cust_main::Search::fuzzyfields );
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "queueing job (transaction rolled back): $error";
-  }
-
-  if ( $self->ship_last ) {
-    $queue = new FS::queue { 'job' => 'FS::cust_main::Search::append_fuzzyfiles' };
-    $error = $queue->insert( map $self->getfield("ship_$_"), @FS::cust_main::Search::fuzzyfields );
+  my @locations = $self->bill_location;
+  push @locations, $self->ship_location if $self->has_ship_address;
+  foreach my $location (@locations) {
+    my $queue = new FS::queue { 
+      'job' => 'FS::cust_main::Search::append_fuzzyfiles'
+    };
+    my @args = map $location->get($_), @FS::cust_main::Search::fuzzyfields;
+    my $error = $queue->insert( @args );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
@@ -1750,6 +1773,8 @@ sub check {
     || $self->ut_number('agentnum')
     || $self->ut_textn('agent_custid')
     || $self->ut_number('refnum')
+    || $self->ut_foreign_key('bill_locationnum', 'cust_location','locationnum')
+    || $self->ut_foreign_key('ship_locationnum', 'cust_location','locationnum')
     || $self->ut_foreign_keyn('classnum', 'cust_class', 'classnum')
     || $self->ut_textn('custbatch')
     || $self->ut_name('last')
@@ -1757,33 +1782,19 @@ sub check {
     || $self->ut_snumbern('birthdate')
     || $self->ut_snumbern('signupdate')
     || $self->ut_textn('company')
-    || $self->ut_text('address1')
-    || $self->ut_textn('address2')
-    || $self->ut_text('city')
-    || $self->ut_textn('county')
-    || $self->ut_textn('state')
-    || $self->ut_country('country')
-    || $self->ut_coordn('latitude')
-    || $self->ut_coordn('longitude')
-    || $self->ut_enum('coord_auto', [ '', 'Y' ])
-    || $self->ut_numbern('censusyear')
     || $self->ut_anything('comments')
     || $self->ut_numbern('referral_custnum')
     || $self->ut_textn('stateid')
     || $self->ut_textn('stateid_state')
     || $self->ut_textn('invoice_terms')
-    || $self->ut_alphan('geocode')
-    || $self->ut_alphan('district')
     || $self->ut_floatn('cdr_termination_percentage')
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
     || $self->ut_enum('edit_subject', [ '', 'Y' ] )
     || $self->ut_enum('calling_list_exempt', [ '', 'Y' ] )
+    || $self->ut_enum('invoice_noemail', [ '', 'Y' ] )
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
-
-  $self->set_coord
-    unless $import || ($self->latitude && $self->longitude);
 
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
@@ -1800,13 +1811,6 @@ sub check {
     unless ! $self->referral_custnum 
            || qsearchs( 'cust_main', { 'custnum' => $self->referral_custnum } );
 
-  if ( $self->censustract ne '' ) {
-    $self->censustract =~ /^\s*(\d{9})\.?(\d{2})\s*$/
-      or return "Illegal census tract: ". $self->censustract;
-    
-    $self->censustract("$1.$2");
-  }
-
   if ( $self->ss eq '' ) {
     $self->ss('');
   } else {
@@ -1817,23 +1821,7 @@ sub check {
     $self->ss("$1-$2-$3");
   }
 
-
-# bad idea to disable, causes billing to fail because of no tax rates later
-# except we don't fail any more
-  unless ( $import ) {
-    unless ( qsearch('cust_main_county', {
-      'country' => $self->country,
-      'state'   => '',
-     } ) ) {
-      return "Unknown state/county/country: ".
-        $self->state. "/". $self->county. "/". $self->country
-        unless qsearch('cust_main_county',{
-          'state'   => $self->state,
-          'county'  => $self->county,
-          'country' => $self->country,
-        } );
-    }
-  }
+  # cust_main_county verification now handled by cust_location check
 
   $error =
        $self->ut_phonen('daytime', $self->country)
@@ -1843,12 +1831,8 @@ sub check {
   ;
   return $error if $error;
 
-  unless ( $ignore_illegal_zip ) {
-    $error = $self->ut_zip('zip', $self->country);
-    return $error if $error;
-  }
-
   if ( $conf->exists('cust_main-require_phone', $self->agentnum)
+       && ! $import
        && ! length($self->daytime) && ! length($self->night) && ! length($self->mobile)
      ) {
 
@@ -1867,71 +1851,7 @@ sub check {
   
   }
 
-  if ( $self->has_ship_address
-       && scalar ( grep { $self->getfield($_) ne $self->getfield("ship_$_") }
-                        $self->addr_fields )
-     )
-  {
-    my $error =
-      $self->ut_name('ship_last')
-      || $self->ut_name('ship_first')
-      || $self->ut_textn('ship_company')
-      || $self->ut_text('ship_address1')
-      || $self->ut_textn('ship_address2')
-      || $self->ut_text('ship_city')
-      || $self->ut_textn('ship_county')
-      || $self->ut_textn('ship_state')
-      || $self->ut_country('ship_country')
-      || $self->ut_coordn('ship_latitude')
-      || $self->ut_coordn('ship_longitude')
-      || $self->ut_enum('ship_coord_auto', [ '', 'Y' ] )
-    ;
-    return $error if $error;
-
-    $self->set_coord('ship_')
-      unless $import || ($self->ship_latitude && $self->ship_longitude);
-
-    #false laziness with above
-    unless ( qsearchs('cust_main_county', {
-      'country' => $self->ship_country,
-      'state'   => '',
-     } ) ) {
-      return "Unknown ship_state/ship_county/ship_country: ".
-        $self->ship_state. "/". $self->ship_county. "/". $self->ship_country
-        unless qsearch('cust_main_county',{
-          'state'   => $self->ship_state,
-          'county'  => $self->ship_county,
-          'country' => $self->ship_country,
-        } );
-    }
-    #eofalse
-
-    $error =
-         $self->ut_phonen('ship_daytime', $self->ship_country)
-      || $self->ut_phonen('ship_night',   $self->ship_country)
-      || $self->ut_phonen('ship_fax',     $self->ship_country)
-      || $self->ut_phonen('ship_mobile',  $self->ship_country)
-    ;
-    return $error if $error;
-
-    unless ( $ignore_illegal_zip ) {
-      $error = $self->ut_zip('ship_zip', $self->ship_country);
-      return $error if $error;
-    }
-    return "Unit # is required."
-      if $self->ship_address2 =~ /^\s*$/
-      && $conf->exists('cust_main-require_address2');
-
-  } else { # ship_ info eq billing info, so don't store dup info in database
-
-    $self->setfield("ship_$_", '')
-      foreach $self->addr_fields;
-
-    return "Unit # is required."
-      if $self->address2 =~ /^\s*$/
-      && $conf->exists('cust_main-require_address2');
-
-  }
+  #ship_ fields are gone
 
   #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
   #  or return "Illegal payby: ". $self->payby;
@@ -1957,7 +1877,9 @@ sub check {
   # check the credit card.
   my $check_payinfo = ! $self->is_encrypted($self->payinfo);
 
-  if ( $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
+  # Need some kind of global flag to accept invalid cards, for testing
+  # on scrubbed data.
+  if ( !$import && $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
@@ -2139,6 +2061,11 @@ sub check {
     $self->payname($1);
   }
 
+  return "Please select an invoicing locale"
+    if ! $self->locale
+    && ! $self->custnum
+    && $conf->exists('cust_main-require_locale');
+
   foreach my $flag (qw( tax spool_cdr squelch_cdr archived email_csv_cdr )) {
     $self->$flag() =~ /^(Y?)$/ or return "Illegal $flag: ". $self->$flag();
     $self->$flag($1);
@@ -2174,7 +2101,7 @@ Returns true if this customer record has a separate shipping address.
 
 sub has_ship_address {
   my $self = shift;
-  scalar( grep { $self->getfield("ship_$_") ne '' } $self->addr_fields );
+  $self->bill_locationnum != $self->ship_locationnum;
 }
 
 =item location_hash
@@ -2185,6 +2112,11 @@ shipping address is used if present.
 
 =cut
 
+sub location_hash {
+  my $self = shift;
+  $self->ship_location->location_hash;
+}
+
 =item cust_location
 
 Returns all locations (see L<FS::cust_location>) for this customer.
@@ -2193,7 +2125,8 @@ Returns all locations (see L<FS::cust_location>) for this customer.
 
 sub cust_location {
   my $self = shift;
-  qsearch('cust_location', { 'custnum' => $self->custnum } );
+  qsearch('cust_location', { 'custnum' => $self->custnum,
+                             'prospectnum' => '' } );
 }
 
 =item cust_contact
@@ -2590,6 +2523,8 @@ sub batch_card {
     $options{$_} = '' unless exists($options{$_});
   }
 
+  my $loc = $self->bill_location;
+
   my $cust_pay_batch = new FS::cust_pay_batch ( {
     'batchnum' => $pay_batch->batchnum,
     'invnum'   => $invnum || 0,                    # is there a better value?
@@ -2599,16 +2534,16 @@ sub batch_card {
     'custnum'  => $self->custnum,
     'last'     => $self->getfield('last'),
     'first'    => $self->getfield('first'),
-    'address1' => $options{address1} || $self->address1,
-    'address2' => $options{address2} || $self->address2,
-    'city'     => $options{city}     || $self->city,
-    'state'    => $options{state}    || $self->state,
-    'zip'      => $options{zip}      || $self->zip,
-    'country'  => $options{country}  || $self->country,
-    'payby'    => $options{payby}    || $self->payby,
-    'payinfo'  => $options{payinfo}  || $self->payinfo,
-    'exp'      => $options{paydate}  || $self->paydate,
-    'payname'  => $options{payname}  || $self->payname,
+    'address1' => $options{address1} || $loc->address1,
+    'address2' => $options{address2} || $loc->address2,
+    'city'     => $options{city}     || $loc->city,
+    'state'    => $options{state}    || $loc->state,
+    'zip'      => $options{zip}      || $loc->zip,
+    'country'  => $options{country}  || $loc->country,
+    'payby'    => $options{payby}    || $loc->payby,
+    'payinfo'  => $options{payinfo}  || $loc->payinfo,
+    'exp'      => $options{paydate}  || $loc->paydate,
+    'payname'  => $options{payname}  || $loc->payname,
     'amount'   => $amount,                         # consolidating
   } );
   
@@ -3000,7 +2935,8 @@ sub payment_info {
   $return{payname} = $self->payname
                      || ( $self->first. ' '. $self->get('last') );
 
-  $return{$_} = $self->get($_) for qw(address1 address2 city state zip);
+  $return{$_} = $self->bill_location->$_
+    for qw(address1 address2 city state zip);
 
   $return{payby} = $self->payby;
   $return{stateid_state} = $self->stateid_state;
@@ -3962,12 +3898,32 @@ cust_main-default_agent_custid is set and it has a value, custnum otherwise.
 
 sub display_custnum {
   my $self = shift;
+
+  my $prefix = $conf->config('cust_main-custnum-display_prefix', $self->agentnum) || '';
+  if ( my $special = $conf->config('cust_main-custnum-display_special') ) {
+    if ( $special eq 'CoStAg' ) {
+      $prefix = uc( join('',
+        $self->country,
+        ($self->state =~ /^(..)/),
+        $prefix || ($self->agent->agent =~ /^(..)/)
+      ) );
+    }
+    elsif ( $special eq 'CoStCl' ) {
+      $prefix = uc( join('',
+        $self->country,
+        ($self->state =~ /^(..)/),
+        ($self->classnum ? $self->cust_class->classname =~ /^(..)/ : '__')
+      ) );
+    }
+    # add any others here if needed
+  }
+
   my $length = $conf->config('cust_main-custnum-display_length');
   if ( $conf->exists('cust_main-default_agent_custid') && $self->agent_custid ){
     return $self->agent_custid;
-  } elsif ( $conf->config('cust_main-custnum-display_prefix') ) {
+  } elsif ( $prefix ) {
     $length = 8 if !defined($length);
-    return $conf->config('cust_main-custnum-display_prefix').
+    return $prefix . 
            sprintf('%0'.$length.'d', $self->custnum)
   } elsif ( $length ) {
     return sprintf('%0'.$length.'d', $self->custnum);
@@ -3990,6 +3946,27 @@ sub name {
   $name;
 }
 
+=item service_contact
+
+Returns the L<FS::contact> object for this customer that has the 'Service'
+contact class, or undef if there is no such contact.  Deprecated; don't use
+this in new code.
+
+=cut
+
+sub service_contact {
+  my $self = shift;
+  if ( !exists($self->{service_contact}) ) {
+    my $classnum = $self->scalar_sql(
+      'SELECT classnum FROM contact_class WHERE classname = \'Service\''
+    ) || 0; #if it's zero, qsearchs will return nothing
+    $self->{service_contact} = qsearchs('contact', { 
+        'classnum' => $classnum, 'custnum' => $self->custnum
+      }) || undef;
+  }
+  $self->{service_contact};
+}
+
 =item ship_name
 
 Returns a name string for this (service/shipping) contact, either
@@ -3999,13 +3976,10 @@ Returns a name string for this (service/shipping) contact, either
 
 sub ship_name {
   my $self = shift;
-  if ( $self->get('ship_last') ) { 
-    my $name = $self->ship_contact;
-    $name = $self->ship_company. " ($name)" if $self->ship_company;
-    $name;
-  } else {
-    $self->name;
-  }
+
+  my $name = $self->ship_contact;
+  $name = $self->company. " ($name)" if $self->company;
+  $name;
 }
 
 =item name_short
@@ -4028,13 +4002,9 @@ or "First Last".
 
 sub ship_name_short {
   my $self = shift;
-  if ( $self->get('ship_last') ) { 
-    $self->ship_company !~ /^\s*$/
-      ? $self->ship_company
-      : $self->ship_contact_firstlast;
-  } else {
-    $self->name_company_or_firstlast;
-  }
+  $self->service_contact 
+    ? $self->ship_contact_firstlast 
+    : $self->name_short
 }
 
 =item contact
@@ -4056,9 +4026,8 @@ Returns this customer's full (shipping) contact name only, "Last, First"
 
 sub ship_contact {
   my $self = shift;
-  $self->get('ship_last')
-    ? $self->get('ship_last'). ', '. $self->ship_first
-    : $self->contact;
+  my $contact = $self->service_contact || $self;
+  $contact->get('last') . ', ' . $contact->get('first');
 }
 
 =item contact_firstlast
@@ -4080,9 +4049,8 @@ Returns this customer's full (shipping) contact name only, "First Last".
 
 sub ship_contact_firstlast {
   my $self = shift;
-  $self->get('ship_last')
-    ? $self->first. ' '. $self->get('ship_last')
-    : $self->contact_firstlast;
+  my $contact = $self->service_contact || $self;
+  $contact->get('first') . ' '. $contact->get('last');
 }
 
 =item country_full
@@ -5057,38 +5025,70 @@ sub process_censustract_update {
   return;
 }
 
+#starting to take quite a while for big dbs
+# - seq scan of h_cust_main (yuck), but not going to index paycvv, so
+# - seq scan of cust_main on signupdate... index signupdate?  will that help?
+# - seq scan of cust_main on paydate... index on substrings?  maybe set an
+#    upgrade journal flag now that we have that, yyyy-m-dd paydates are ancient
+# - seq scan of cust_main on payinfo.. certainly not going toi ndex that...
+#    upgrade journal again?  this is also an ancient problem
+# - otaker upgrade?  journal and call it good?  (double check to make sure
+#    we're not still setting otaker here)
+#
+#only going to get worse with new location stuff...
+
 sub _upgrade_data { #class method
   my ($class, %opts) = @_;
 
   my @statements = (
     'UPDATE h_cust_main SET paycvv = NULL WHERE paycvv IS NOT NULL',
-    'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL',
   );
-  # fix yyyy-m-dd formatted paydates
-  if ( driver_name =~ /^mysql/i ) {
+
+  #this seems to be the only expensive one.. why does it take so long?
+  unless ( FS::upgrade_journal->is_done('cust_main__signupdate') ) {
     push @statements,
-    "UPDATE cust_main SET paydate = CONCAT( SUBSTRING(paydate FROM 1 FOR 5), '0', SUBSTRING(paydate FROM 6) ) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
-  }
-  else { # the SQL standard
-    push @statements, 
-    "UPDATE cust_main SET paydate = SUBSTRING(paydate FROM 1 FOR 5) || '0' || SUBSTRING(paydate FROM 6) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+      'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL';
+    FS::upgrade_journal->set_done('cust_main__signupdate');
   }
 
-  push @statements, #fix the weird BILL with a cc# in payinfo problem
-    #DCRD to be safe
-    "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16 and payinfo ". regexp_sql. q( '^[0-9]*$' );
+  unless ( FS::upgrade_journal->is_done('cust_main__paydate') ) {
 
+    # fix yyyy-m-dd formatted paydates
+    if ( driver_name =~ /^mysql/i ) {
+      push @statements,
+      "UPDATE cust_main SET paydate = CONCAT( SUBSTRING(paydate FROM 1 FOR 5), '0', SUBSTRING(paydate FROM 6) ) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+    } else { # the SQL standard
+      push @statements, 
+      "UPDATE cust_main SET paydate = SUBSTRING(paydate FROM 1 FOR 5) || '0' || SUBSTRING(paydate FROM 6) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+    }
+    FS::upgrade_journal->set_done('cust_main__paydate');
+  }
+
+  unless ( FS::upgrade_journal->is_done('cust_main__payinfo') ) {
+
+    push @statements, #fix the weird BILL with a cc# in payinfo problem
+      #DCRD to be safe
+      "UPDATE cust_main SET payby = 'DCRD' WHERE payby = 'BILL' and length(payinfo) = 16 and payinfo ". regexp_sql. q( '^[0-9]*$' );
+
+    FS::upgrade_journal->set_done('cust_main__payinfo');
+    
+  }
+
+  my $t = time;
   foreach my $sql ( @statements ) {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
+    #warn ( (time - $t). " seconds\n" );
+    #$t = time;
   }
 
   local($ignore_expired_card) = 1;
-  local($ignore_illegal_zip) = 1;
   local($ignore_banned_card) = 1;
   local($skip_fuzzyfiles) = 1;
   local($import) = 1; #prevent automatic geocoding (need its own variable?)
   $class->_upgrade_otaker(%opts);
+
+  FS::cust_main::Location->_upgrade_data(%opts);
 
 }
 

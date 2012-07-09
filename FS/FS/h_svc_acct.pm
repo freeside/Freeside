@@ -1,15 +1,12 @@
 package FS::h_svc_acct;
+use base qw( FS::h_svc_Radius_Mixin FS::h_Common FS::svc_acct );
 
 use strict;
 use vars qw( @ISA $DEBUG );
 use Carp qw(carp);
 use FS::Record qw(qsearchs);
-use FS::h_Common;
-use FS::svc_acct;
 use FS::svc_domain;
 use FS::h_svc_domain;
-
-@ISA = qw( FS::h_Common FS::svc_acct );
 
 $DEBUG = 0;
 

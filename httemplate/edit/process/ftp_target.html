@@ -1,0 +1,12 @@
+<& elements/process.html,
+           'table'            => 'ftp_target',
+           'viewall_dir'      => 'browse',
+           'agent_null'       => 1,
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+</%init>

@@ -108,8 +108,8 @@ a.fstab {
          -moz-border-radius-topright:8px;
          -webkit-border-radius-topleft:8px;
          -webkit-border-radius-topright:8px;
-         border-radius-topleft:8px;
-         border-radius-topright:8px;
+         border-top-left-radius:8px;
+         border-top-right-radius:8px;
          /*font-weight:bold;*/
          /*padding-left:12px;
          padding-right:12px;*/
@@ -141,8 +141,8 @@ a.fstabselected {
          -moz-border-radius-topright:8px;
          -webkit-border-radius-topleft:8px;
          -webkit-border-radius-topright:8px;
-         border-radius-topleft:8px;
-         border-radius-topright:8px;
+         border-top-left-radius:8px;
+         border-top-right-radius:8px;
          /*font-weight:bold;*/
          /*padding-left:12px;
          padding-right:12px;*/
@@ -175,8 +175,8 @@ div.fstabcontainer {
          -moz-border-radius-bottomright:8px;
          -webkit-border-radius-bottomleft:8px;
          -webkit-border-radius-bottomright:8px;
-         border-radius-bottomleft:8px;
-         border-radius-bottomright:8px;
+         border-bottom-left-radius:8px;
+         border-bottom-right-radius:8px;
   -moz-box-shadow: #666666 1px 1px 2px;
   -webkit-box-shadow: #666666 1px 1px 2px;
   box-shadow: #666666 1px 1px 2px;
@@ -206,8 +206,8 @@ div.fstabcontainer {
          -moz-border-radius-bottomright:8px;
          -webkit-border-radius-bottomleft:8px;
          -webkit-border-radius-bottomright:8px;
-         border-radius-bottomleft:8px;
-         border-radius-bottomright:8px;
+         border-bottom-left-radius:8px;
+         border-bottom-right-radius:8px;
   -moz-box-shadow: #666666 1px 1px 2px;
   -webkit-box-shadow: #666666 1px 1px 2px;
   box-shadow: #666666 1px 1px 2px;
@@ -238,8 +238,8 @@ div.fstabcontainer {
          -moz-border-radius-topright:8px;
          -webkit-border-radius-topleft:8px;
          -webkit-border-radius-topright:8px;
-         border-radius-topleft:8px;
-         border-radius-topright:8px;
+         border-top-left-radius:8px;
+         border-top-right-radius:8px;
   -moz-box-shadow:  1px 0px 1px #999999;
   -webkit-box-shadow:  1px 0px 1px #999999;
   box-shadow: 1px 0px 1px #999999;
@@ -249,4 +249,32 @@ div.fstabcontainer {
 .background {
   background-color:#f8f8f8;
 }
+
+table.grid {
+  border: 1px solid #cccccc;  
+  -moz-box-shadow:  1px 1px 2px #666666;
+  -webkit-box-shadow:  1px 1px 2px #666666;
+  box-shadow: 1px 1px 2px #666666;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
+}
+
+th.grid {
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 2px;
+  border: none;
+  empty-cells: show;
+}
+
+td.grid {
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 2px;
+  border: none;
+  empty-cells: show;
+}
+
+table.inv { border: none }
+th.inv { border: none }
+td.inv { border: none }
 

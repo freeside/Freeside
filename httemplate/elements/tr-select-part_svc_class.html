@@ -1,0 +1,27 @@
+% if ( scalar(@{ $opt{'part_svc_class'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'classnum' %>" VALUE="">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Service class' %></TD>
+    <TD>
+      <% include( '/elements/select-part_svc_class.html',
+                    'curr_value' => $classnum,
+                    %opt
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my %opt = @_;
+my $classnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'part_svc_class'} ||= [ qsearch( 'part_svc_class', { disabled=>'' } ) ];
+
+</%init>

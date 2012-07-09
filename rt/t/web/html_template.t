@@ -8,22 +8,17 @@ use Encode;
 my ( $baseurl, $m ) = RT::Test->started_ok;
 ok $m->login, 'logged in as root';
 
-$RT::Test::SKIP_REQUEST_WORK_AROUND = 1;
-RT::Test->set_mail_catcher;
-
 use utf8;
 
 diag('make Autoreply template a html one and add utf8 chars')
   if $ENV{TEST_VERBOSE};
 
 {
-    $m->follow_link_ok( { text => 'Configuration' }, '-> Configuration' );
-    $m->follow_link_ok( { text => 'Global' },        '-> Global' );
-    $m->follow_link_ok( { text => 'Templates' },     '-> Templates' );
+    $m->follow_link_ok( { id => 'tools-config-global-templates' },     '-> Templates' );
     $m->follow_link_ok( { text => 'Autoreply' },     '-> Autoreply' );
 
-    $m->form_number(3);
     $m->submit_form(
+        form_name => 'ModifyTemplate',
         fields => {
             Content => <<'EOF',
 Subject: AutoReply: {$Ticket->Subject}
@@ -46,9 +41,8 @@ diag('create a ticket to see the autoreply mail') if $ENV{TEST_VERBOSE};
 {
     $m->get_ok( $baseurl . '/Ticket/Create.html?Queue=1' );
 
-    $m->form_number(3);
     $m->submit_form(
-        form_number => 3,
+        form_name => 'TicketCreate',
         fields      => { Subject => '标题', Content => '<h1>测试</h1>',
         ContentType => 'text/html' },
     );

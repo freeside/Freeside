@@ -116,15 +116,18 @@ sub Commit {
     if ( my $due_in = $new_queue->DefaultDueIn ) {
         $Due->SetToNow;
         $Due->AddDays( $due_in );
-    }
-    ( $val, $msg ) = $ticket->_Set(
-      Field => 'Due',
-      Value => $Due->ISO,
-      RecordTransaction => 0,
-    );
-    if (! $val) {
-        $RT::Logger->error( "Couldn't set new due date: $msg" );
-        return (0, $msg);
+        
+        if ( $Due->ISO ne $ticket->Due ) {
+            ( $val, $msg ) = $ticket->_Set(
+              Field => 'Due',
+              Value => $Due->ISO,
+              RecordTransaction => 0,
+            );
+            if (! $val) {
+                $RT::Logger->error( "Couldn't set new due date: $msg" );
+                return (0, $msg);
+            }
+        }
     }
     return 1;
 }

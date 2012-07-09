@@ -66,21 +66,25 @@ function copy_payby_fields() {
 %# call submit_continue() on completion...
 %# otherwise not touching standardize_locations for now
 <% include( '/elements/standardize_locations.js',
-            'callback' => 'submit_continue();'
+            'callback' => 'submit_continue();',
+            'main_prefix' => 'bill_',
+            'no_company' => 1,
           )
 %>
 
+var prefix;
 function fetch_censustract() {
 
   //alert('fetch census tract data');
+  prefix = document.getElementById('same').checked ? 'bill_' : 'ship_';
   var cf = document.CustomerForm;
-  var state_el = cf.elements['ship_state'];
+  var state_el = cf.elements[prefix + 'state'];
   var census_data = new Array(
     'year',     <% $conf->config('census_year') || '2012' %>,
-    'address1', cf.elements['ship_address1'].value,
-    'city',     cf.elements['ship_city'].value,
+    'address1', cf.elements[prefix + 'address1'].value,
+    'city',     cf.elements[prefix + 'city'].value,
     'state',    state_el.options[ state_el.selectedIndex ].value,
-    'zip',      cf.elements['ship_zip'].value
+    'zip',      cf.elements[prefix + 'zip'].value
   );
 
   censustract( census_data, update_censustract );
@@ -109,19 +113,21 @@ function update_censustract(arg) {
 
   set_censustract = function () {
 
-    cf.elements['censustract'].value = newcensus;
+    cf.elements[prefix + 'censustract'].value = newcensus;
     submit_continue();
 
   }
 
-  if (error || cf.elements['censustract'].value != newcensus) {
+  if (error || cf.elements[prefix + 'censustract'].value != newcensus) {
     // popup an entry dialog
 
     if (error) { newcensus = error; }
     newcensus.replace(/.*ndefined.*/, 'Not found');
 
-    var latitude = cf.elements['latitude' ].value || '<% $company_latitude %>';
-    var longitude= cf.elements['longitude'].value || '<% $company_longitude %>';
+    var latitude = cf.elements[prefix + 'latitude'].value 
+                   || '<% $company_latitude %>';
+    var longitude= cf.elements[prefix + 'longitude'].value 
+                   || '<% $company_longitude %>';
 
     var choose_censustract =
       '<CENTER><BR><B>Confirm censustract</B><BR>' +
@@ -132,14 +138,14 @@ function update_censustract(arg) {
       '" target="_blank">Map service module location</A><BR>' +
       '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
       'census_year=<% $conf->config('census_year') || '2012' %>' +
-      '&zip_code=' + cf.elements['ship_zip'].value +
+      '&zip_code=' + cf.elements[prefix + 'zip'].value +
       '" target="_blank">Map zip code center</A><BR><BR>' +
       '<TABLE>';
     
     choose_censustract = choose_censustract + 
       '<TR><TH style="width:50%">Entered census tract</TH>' +
         '<TH style="width:50%">Calculated census tract</TH></TR>' +
-      '<TR><TD>' + cf.elements['censustract'].value +
+      '<TR><TD>' + cf.elements[prefix + 'censustract'].value +
         '</TD><TD>' + newcensus + '</TD></TR>' +
         '<TR><TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
 

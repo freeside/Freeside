@@ -22,6 +22,7 @@ use FS::cust_pay_refund;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_pay_void;
+use FS::upgrade_journal;
 
 $DEBUG = 0;
 
@@ -87,7 +88,7 @@ order taker (see L<FS::access_user>)
 
 =item payby
 
-Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
+Payment Type (See L<FS::payinfo_Mixin> for valid values)
 
 =item payinfo
 
@@ -112,6 +113,22 @@ books closed flag, empty or `Y'
 =item pkgnum
 
 Desired pkgnum when using experimental package balances.
+
+=item bank
+
+The bank where the payment was deposited.
+
+=item depositor
+
+The name of the depositor.
+
+=item account
+
+The deposit account number.
+
+=item teller
+
+The teller number.
 
 =back
 
@@ -493,8 +510,11 @@ sub check {
     || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_textn('bank')
+    || $self->ut_alphan('depositor')
+    || $self->ut_numbern('account')
+    || $self->ut_numbern('teller')
     || $self->payinfo_check()
-    || $self->ut_numbern('discount_term')
   ;
   return $error if $error;
 
@@ -508,6 +528,12 @@ sub check {
 
   return "invalid discount_term"
    if ($self->discount_term && $self->discount_term < 2);
+
+  if ( $self->payby eq 'CASH' and $conf->exists('require_cash_deposit_info') ) {
+    foreach (qw(bank depositor account teller)) {
+      return "$_ required" if $self->get($_) eq '';
+    }
+  }
 
 #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it
 #  # UNIQUE index should catch this too, without race conditions, but this
@@ -557,7 +583,7 @@ sub send_receipt {
 
   my $conf = new FS::Conf;
 
-  return '' unless $conf->exists('payment_receipt', $cust_main->agentnum);
+  return '' unless $conf->config_bool('payment_receipt', $cust_main->agentnum);
 
   my @invoicing_list = $cust_main->invoicing_list_emailonly;
   return '' unless @invoicing_list;
@@ -735,6 +761,12 @@ objects.  Returns a list, each element representing the status of inserting the
 corresponding payment - empty.  If there is an error inserting any payment, the
 entire transaction is rolled back, i.e. all payments are inserted or none are.
 
+FS::cust_pay objects may have the pseudo-field 'apply_to', containing a 
+reference to an array of (uninserted) FS::cust_bill_pay objects.  If so,
+those objects will be inserted with the paynum of the payment, and for 
+each one, an error message or an empty string will be inserted into the 
+list of errors.
+
 For example:
 
   my @errors = FS::cust_pay->batch_insert(@cust_pay);
@@ -761,19 +793,35 @@ sub batch_insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $errors = 0;
+  my $num_errors = 0;
   
-  my @errors = map {
-    my $error = $_->insert( 'manual' => 1 );
-    if ( $error ) { 
-      $errors++;
-    } else {
-      $_->cust_main->apply_payments;
-    }
-    $error;
-  } @_;
+  my @errors;
+  foreach my $cust_pay (@_) {
+    my $error = $cust_pay->insert( 'manual' => 1 );
+    push @errors, $error;
+    $num_errors++ if $error;
 
-  if ( $errors ) {
+    if ( ref($cust_pay->get('apply_to')) eq 'ARRAY' ) {
+
+      foreach my $cust_bill_pay ( @{ $cust_pay->apply_to } ) {
+        if ( $error ) { # insert placeholders if cust_pay wasn't inserted
+          push @errors, '';
+        }
+        else {
+          $cust_bill_pay->set('paynum', $cust_pay->paynum);
+          my $apply_error = $cust_bill_pay->insert;
+          push @errors, $apply_error || '';
+          $num_errors++ if $apply_error;
+        }
+      }
+
+    } elsif ( !$error ) { #normal case: apply payments as usual
+      $cust_pay->cust_main->apply_payments;
+    }
+
+  }
+
+  if ( $num_errors ) {
     $dbh->rollback if $oldAutoCommit;
   } else {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -828,93 +876,103 @@ sub _upgrade_data {  #class method
   # otaker/ivan upgrade
   ##
 
-  #not the most efficient, but hey, it only has to run once
+  unless ( FS::upgrade_journal->is_done('cust_pay__otaker_ivan') ) {
 
-  my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
-              "  AND usernum IS NULL ".
-              "  AND 0 < ( SELECT COUNT(*) FROM cust_main                 ".
-              "              WHERE cust_main.custnum = cust_pay.custnum ) ";
+    #not the most efficient, but hey, it only has to run once
 
-  my $count_sql = "SELECT COUNT(*) FROM cust_pay $where";
+    my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
+                "  AND usernum IS NULL ".
+                "  AND 0 < ( SELECT COUNT(*) FROM cust_main                 ".
+                "              WHERE cust_main.custnum = cust_pay.custnum ) ";
 
-  my $sth = dbh->prepare($count_sql) or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my $total = $sth->fetchrow_arrayref->[0];
-  #warn "$total cust_pay records to update\n"
-  #  if $DEBUG;
-  local($DEBUG) = 2 if $total > 1000; #could be a while, force progress info
+    my $count_sql = "SELECT COUNT(*) FROM cust_pay $where";
 
-  my $count = 0;
-  my $lastprog = 0;
+    my $sth = dbh->prepare($count_sql) or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+    my $total = $sth->fetchrow_arrayref->[0];
+    #warn "$total cust_pay records to update\n"
+    #  if $DEBUG;
+    local($DEBUG) = 2 if $total > 1000; #could be a while, force progress info
 
-  my @cust_pay = qsearch( {
-      'table'     => 'cust_pay',
-      'hashref'   => {},
-      'extra_sql' => $where,
-      'order_by'  => 'ORDER BY paynum',
-  } );
+    my $count = 0;
+    my $lastprog = 0;
 
-  foreach my $cust_pay (@cust_pay) {
+    my @cust_pay = qsearch( {
+        'table'     => 'cust_pay',
+        'hashref'   => {},
+        'extra_sql' => $where,
+        'order_by'  => 'ORDER BY paynum',
+    } );
 
-    my $h_cust_pay = $cust_pay->h_search('insert');
-    if ( $h_cust_pay ) {
-      next if $cust_pay->otaker eq $h_cust_pay->history_user;
-      #$cust_pay->otaker($h_cust_pay->history_user);
-      $cust_pay->set('otaker', $h_cust_pay->history_user);
-    } else {
-      $cust_pay->set('otaker', 'legacy');
+    foreach my $cust_pay (@cust_pay) {
+
+      my $h_cust_pay = $cust_pay->h_search('insert');
+      if ( $h_cust_pay ) {
+        next if $cust_pay->otaker eq $h_cust_pay->history_user;
+        #$cust_pay->otaker($h_cust_pay->history_user);
+        $cust_pay->set('otaker', $h_cust_pay->history_user);
+      } else {
+        $cust_pay->set('otaker', 'legacy');
+      }
+
+      delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
+      my $error = $cust_pay->replace;
+
+      if ( $error ) {
+        warn " *** WARNING: Error updating order taker for payment paynum ".
+             $cust_pay->paynun. ": $error\n";
+        next;
+      }
+
+      $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
+
+      $count++;
+      if ( $DEBUG > 1 && $lastprog + 30 < time ) {
+        warn "$me $count/$total (".sprintf('%.2f',100*$count/$total). '%)'."\n";
+        $lastprog = time;
+      }
+
     }
 
-    delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
-    my $error = $cust_pay->replace;
-
-    if ( $error ) {
-      warn " *** WARNING: Error updating order taker for payment paynum ".
-           $cust_pay->paynun. ": $error\n";
-      next;
-    }
-
-    $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
-
-    $count++;
-    if ( $DEBUG > 1 && $lastprog + 30 < time ) {
-      warn "$me $count/$total (". sprintf('%.2f',100*$count/$total). '%)'. "\n";
-      $lastprog = time;
-    }
-
+    FS::upgrade_journal->set_done('cust_pay__otaker_ivan');
   }
 
   ###
   # payinfo N/A upgrade
   ###
 
-  #XXX remove the 'N/A (tokenized)' part (or just this entire thing)
+  unless ( FS::upgrade_journal->is_done('cust_pay__payinfo_na') ) {
 
-  my @na_cust_pay = qsearch( {
-    'table'     => 'cust_pay',
-    'hashref'   => {}, #could be encrypted# { 'payinfo' => 'N/A' },
-    'extra_sql' => "WHERE ( payinfo = 'N/A' OR paymask = 'N/AA' OR paymask = 'N/A (tokenized)' ) AND payby IN ( 'CARD', 'CHEK' )",
-  } );
+    #XXX remove the 'N/A (tokenized)' part (or just this entire thing)
 
-  foreach my $na ( @na_cust_pay ) {
+    my @na_cust_pay = qsearch( {
+      'table'     => 'cust_pay',
+      'hashref'   => {}, #could be encrypted# { 'payinfo' => 'N/A' },
+      'extra_sql' => "WHERE ( payinfo = 'N/A' OR paymask = 'N/AA' OR paymask = 'N/A (tokenized)' ) AND payby IN ( 'CARD', 'CHEK' )",
+    } );
 
-    next unless $na->payinfo eq 'N/A';
+    foreach my $na ( @na_cust_pay ) {
 
-    my $cust_pay_pending =
-      qsearchs('cust_pay_pending', { 'paynum' => $na->paynum } );
-    unless ( $cust_pay_pending ) {
-      warn " *** WARNING: not-yet recoverable N/A card for payment ".
-           $na->paynum. " (no cust_pay_pending)\n";
-      next;
+      next unless $na->payinfo eq 'N/A';
+
+      my $cust_pay_pending =
+        qsearchs('cust_pay_pending', { 'paynum' => $na->paynum } );
+      unless ( $cust_pay_pending ) {
+        warn " *** WARNING: not-yet recoverable N/A card for payment ".
+             $na->paynum. " (no cust_pay_pending)\n";
+        next;
+      }
+      $na->$_($cust_pay_pending->$_) for qw( payinfo paymask );
+      my $error = $na->replace;
+      if ( $error ) {
+        warn " *** WARNING: Error updating payinfo for payment paynum ".
+             $na->paynun. ": $error\n";
+        next;
+      }
+
     }
-    $na->$_($cust_pay_pending->$_) for qw( payinfo paymask );
-    my $error = $na->replace;
-    if ( $error ) {
-      warn " *** WARNING: Error updating payinfo for payment paynum ".
-           $na->paynun. ": $error\n";
-      next;
-    }
 
+    FS::upgrade_journal->set_done('cust_pay__payinfo_na');
   }
 
   ###

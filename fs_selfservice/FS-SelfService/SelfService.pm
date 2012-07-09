@@ -26,11 +26,13 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'chfn'                      => 'passwd/passwd',
   'chsh'                      => 'passwd/passwd',
   'login_info'                => 'MyAccount/login_info',
+  'login_banner_image'        => 'MyAccount/login_banner_image',
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'switch_acct'               => 'MyAccount/switch_acct',
   'customer_info'             => 'MyAccount/customer_info',
   'customer_info_short'       => 'MyAccount/customer_info_short',
+  'billing_history'           => 'MyAccount/billing_history',
   'edit_info'                 => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'                   => 'MyAccount/invoice',
   'invoice_pdf'               => 'MyAccount/invoice_pdf',
@@ -103,22 +105,6 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
-  #izoom
-  #'bulk_processrow'           => 'Bulk/processrow',
-  #conflicts w/Agent one# 'check_username'            => 'Bulk/check_username',
-  #sg
-  'ping'                      => 'SGNG/ping',
-  'decompify_pkgs'            => 'SGNG/decompify_pkgs',
-  'previous_payment_info'     => 'SGNG/previous_payment_info',
-  'previous_payment_info_renew_info'
-                              => 'SGNG/previous_payment_info_renew_info',
-  'previous_process_payment'  => 'SGNG/previous_process_payment',
-  'previous_process_payment_order_pkg'
-                              => 'SGNG/previous_process_payment_order_pkg',
-  'previous_process_payment_change_pkg'
-                              => 'SGNG/previous_process_payment_change_pkg',
-  'previous_process_payment_order_renew'
-                              => 'SGNG/previous_process_payment_order_renew',
 );
 @EXPORT_OK = (
   keys(%autoload),

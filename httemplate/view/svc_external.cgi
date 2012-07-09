@@ -23,6 +23,11 @@
 
 
 </TABLE></TD></TR></TABLE>
+
+% if ( $conf->config('ticket_system') ) {
+<& /elements/table-tickets.html, object => $cust_svc &>
+% }
+
 <BR><% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <% include('/elements/footer.html') %>

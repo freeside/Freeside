@@ -47,6 +47,7 @@
 <& svc_acct/basics.html,
               'svc_acct' => $svc_acct,
               'part_svc' => $part_svc,
+              'cust_svc' => $cust_svc,
               %gopt,
 &>
 
@@ -75,6 +76,11 @@
 
 <& elements/svc_export_settings.html, $svc_acct &>
 
+% if ( $conf->config('ticket_system') ) {
+<& /elements/table-tickets.html, object => $cust_svc &>
+% }
+
+<BR>
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <& /elements/footer.html &>

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -85,7 +85,7 @@ if ($MaxValues == 1 && $Values) {
 }
 # The "Magic" hidden input causes RT to know that we were trying to edit the field, even if 
 # we don't see a value later, since browsers aren't compelled to submit empty form fields
-$m->out("\n".'<input type="hidden" class="hidden" name="'.$NamePrefix.$CustomField->Id.'-Values-Magic" value="1" />'."\n");
+$m->out("\n".'<input type="hidden" class="hidden" name="'.$m->interp->apply_escapes($NamePrefix, 'h').$CustomField->Id.'-Values-Magic" value="1" />'."\n");
 
 my $EditComponent = "EditCustomField$Type";
 $m->callback( %ARGS, CallbackName => 'EditComponentName', Name => \$EditComponent, CustomField => $CustomField, Object => $Object );

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -245,7 +245,7 @@ sub ValidateRelations
             @_
            );
     unless( $args{'Shredder'} ) {
-        $args{'Shredder'} = new RT::Shredder();
+        $args{'Shredder'} = RT::Shredder->new();
     }
 
     my $rec = $args{'Shredder'}->PutObject( Object => $self );

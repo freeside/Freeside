@@ -1,0 +1,55 @@
+<% include('/elements/header.html', 'Sales Report with Advertising Source' ) %>
+
+<FORM ACTION="cust_bill_pkg_referral.html" METHOD="GET">
+
+<TABLE>
+
+<& /elements/tr-input-beginning_ending.html &>
+
+<& /elements/tr-select-agent.html,
+  'label'         => 'For agent: ',
+  'disable_empty' => 0,
+  'empty_label'   => 'all',
+&>
+
+<& /elements/tr-select-pkg_class.html,
+  'pre_options' => [ '' => 'all', '0' => '(empty class)' ],
+  'disable_empty' => 1,
+&>
+
+<& /elements/tr-select-table.html,
+  'label'         => 'Report classes',
+  'table'         => 'part_pkg_report_option',
+  'name_col'      => 'name',
+  'hashref'       => { disabled => '' },
+  'element_name'  => 'report_option',
+  'multiple'      => 1,
+&>
+
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="setup" VALUE="1" CHECKED></TD>
+  <TD>Show setup/one-time fees</TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="recur" VALUE="1" CHECKED></TD>
+  <TD>Show recurring fees</TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="usage" VALUE="1" CHECKED></TD>
+  <TD>Show usage charges</TD>
+</TR>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Display">
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

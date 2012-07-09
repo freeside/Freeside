@@ -209,6 +209,14 @@ sub populate_initial_data {
 sub initial_data {
   my %opt = @_;
 
+  my $cust_location = FS::cust_location->new({
+      'address1'  => '1234 System Lane',
+      'city'      => 'Systemtown',
+      'state'     => 'CA',
+      'zip'       => '54321',
+      'country'   => 'US',
+  });
+
   #tie my %hash, 'Tie::DxHash', 
   tie my %hash, 'Tie::IxHash', 
 
@@ -351,14 +359,11 @@ sub initial_data {
         'refnum'    => 1, #XXX
         'first'     => 'System',
         'last'      => 'Accounts',
-        'address1'  => '1234 System Lane',
-        'city'      => 'Systemtown',
-        'state'     => 'CA',
-        'zip'       => '54321',
-        'country'   => 'US',
         'payby'     => 'COMP',
         'payinfo'   => 'system', #or something
         'paydate'   => '1/2037',
+        'bill_location' => $cust_location,
+        'ship_location' => $cust_location,
       },
     ],
 

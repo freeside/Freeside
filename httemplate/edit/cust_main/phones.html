@@ -1,0 +1,29 @@
+<TR>
+  <TD VALIGN="top" ALIGN="right"><% mt('Phones') |h %></TD>
+  <TD COLSPAN=6>
+    <TABLE CELLSPACING=0 CELLPADDING=0>
+      <TR>
+% foreach my $phone (qw(daytime night mobile)) {
+        <TD>
+          <INPUT TYPE="text"
+                 NAME="<% $phone %>"
+                 VALUE="<% $cust_main->get($phone) %>"
+                 SIZE=18
+          >
+          <BR><FONT SIZE=-1><% mt($phone_label{$phone}) |h %></FONT>
+        </TD>
+        <TD>&nbsp;</TD>
+% }
+      </TR>
+    </TABLE>
+  </TD>
+</TR>
+<%init>
+my $cust_main = shift;
+my $conf = FS::Conf->new;
+my %phone_label = (
+  daytime => 'Day Phone',
+  night   => 'Night Phone',
+  mobile  => 'Mobile',
+);
+</%init>

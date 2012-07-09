@@ -1,0 +1,31 @@
+% foreach my $item (@content) {
+%
+%   if ( $item =~ /^\s*$/ ) {
+      <BR>
+%     next;
+%   }
+%
+%   if ( $items{$item} ) {
+      <& "custom_content/$item.html", $cust_main &>
+%   } else {
+      Unknown item <% $item |h %><BR>
+%   }
+% }
+<%init>
+
+my($cust_main) = @_;
+
+my $conf = new FS::Conf;
+
+my @content = $conf->config('cust_main-custom_content');
+
+my %items = map { $_=>1 } qw(
+  small_custview
+  birthdate
+  spouse_birthdate
+  svc_acct
+  svc_phone
+  svc_hardware
+);
+
+</%init>

@@ -1,0 +1,134 @@
+%# BEGIN BPS TAGGED BLOCK {{{
+%#
+%# COPYRIGHT:
+%#
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%#                                          <sales@bestpractical.com>
+%#
+%# (Except where explicitly superseded by other copyright notices)
+%#
+%#
+%# LICENSE:
+%#
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%#
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%#
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+%#
+%#
+%# CONTRIBUTION SUBMISSION POLICY:
+%#
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%#
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%#
+%# END BPS TAGGED BLOCK }}}
+<%ARGS>
+$Name
+$Attr => undef
+</%ARGS>
+<%ONCE>
+my $COLUMN_MAP = {
+    id => {
+        title     => '#', # loc
+        attribute => 'id',
+        align     => 'right',
+        value     => sub { return $_[0]->Id },
+    },
+    Name => {
+        title     => 'Name', # loc
+        attribute => 'Name',
+        value     => sub { return $_[0]->Name()||loc("Unnamed dashboard") },
+    },
+    Subscription => {
+        title     => 'Subscription', # loc
+        attribute => 'Subscription',
+        value     => sub {
+            my $Dashboard = shift;
+            my $Subscription = $Dashboard->Subscription;
+
+            my $url = sprintf '%s/Dashboards/Subscription.html?id=%d',
+                    RT->Config->Get('WebPath'),
+                    $Dashboard->Id;
+
+            my $frequency = loc("None");
+
+            if (defined $Subscription) {
+                my $freq = $Subscription->SubValue('Frequency');
+                my $hour = $Subscription->SubValue('Hour');
+
+                if (my ($integer_hour) = $hour =~ /^(\d\d):00$/) {
+                    my $formatter = RT::Date->new($session{CurrentUser})->LocaleObj;
+                    my $dt = DateTime->now;
+                    $dt->set_minute(0);
+                    $dt->set_second(0);
+                    $dt->set_hour($integer_hour);
+
+                    # use the formatted hour instead
+                    $hour = $dt->format_cldr($formatter->time_format_short);
+                }
+
+                if ($freq eq 'weekly') {
+                    my $day = $Subscription->SubValue('Dow');
+                    $frequency = loc("weekly (on [_1]) at [_2]", loc($day), $hour);
+                }
+                elsif ($freq eq 'monthly') {
+                    $frequency = loc("monthly (day [_1]) at [_2]", $Subscription->SubValue('Dom'), $hour);
+                }
+                elsif ($freq eq 'daily') {
+                    $frequency = loc("daily at [_1]", $hour);
+                }
+                elsif ($freq eq 'm-f') {
+                    $frequency = loc("M-F at [_1]", $hour);
+                }
+                elsif ($freq eq 'never') {
+                    $frequency = loc("Never");
+                }
+                else {
+                    $frequency = loc($freq);
+                }
+            }
+
+            return \'<a href="', $url, \'">', $frequency, \'</a>';
+        },
+    },
+    ShowURL => {
+        title     => '',
+        attribute => 'ShowURL',
+        value     => sub {
+            my $dashboard = shift;
+            my $id = $dashboard->Id;
+            my $name = $dashboard->Name;
+
+            return "Dashboards/$id/$name";
+        },
+    }
+};
+
+</%ONCE>
+<%INIT>
+$m->callback( COLUMN_MAP => $COLUMN_MAP, CallbackName => 'ColumnMap', CallbackOnce => 1 );
+return GetColumnMapEntry( Map => $COLUMN_MAP, Name => $Name, Attribute => $Attr );
+</%INIT>

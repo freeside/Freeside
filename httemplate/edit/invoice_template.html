@@ -8,7 +8,8 @@
 <FORM ACTION="process/invoice_template.html" METHOD="POST">
 <INPUT TYPE="hidden" NAME="confname" VALUE="<% $confname %>">
 
-% if ( $type eq 'html' ) {
+% #if ( $type eq 'html' ) {
+% if ( 0 ) { #this seems to broken, using a text editor for everything for now
 
   <% include('/elements/htmlarea.html',
                'field'      => 'value',

@@ -69,6 +69,8 @@ The following fields are currently supported:
 
 =item svcpart - Service definition (see L<FS::part_svc>)
 
+=item agent_svcid - Optional legacy service ID
+
 =item overlimit - date the service exceeded its usage limit
 
 =back
@@ -97,6 +99,28 @@ otherwise returns false.
 Deletes this service from the database.  If there is an error, returns the
 error, otherwise returns false.  Note that this only removes the cust_svc
 record - you should probably use the B<cancel> method instead.
+
+=cut
+
+sub delete {
+  my $self = shift;
+  my $error = $self->SUPER::delete;
+  return $error if $error;
+
+  if ( FS::Conf->new->config('ticket_system') eq 'RT_Internal' ) {
+    FS::TicketSystem->init;
+    my $session = FS::TicketSystem->session;
+    my $links = RT::Links->new($session->{CurrentUser});
+    my $svcnum = $self->svcnum;
+    $links->Limit(FIELD => 'Target', 
+                  VALUE => 'freeside://freeside/cust_svc/'.$svcnum);
+    while ( my $l = $links->Next ) {
+      my ($val, $msg) = $l->Delete;
+      # can't do anything useful on error
+      warn "error unlinking ticket $svcnum: $msg\n" if !$val;
+    }
+  }
+}
 
 =item cancel
 
@@ -297,6 +321,7 @@ sub check {
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('pkgnum')
     || $self->ut_number('svcpart')
+    || $self->ut_numbern('agent_svcid')
     || $self->ut_numbern('overlimit')
   ;
   return $error if $error;
@@ -317,6 +342,18 @@ sub check {
   }
 
   $self->SUPER::check;
+}
+
+=item display_svcnum 
+
+Returns the displayed service number for this service: agent_svcid if it has a
+value, svcnum otherwise
+
+=cut
+
+sub display_svcnum {
+  my $self = shift;
+  $self->agent_svcid || $self->svcnum;
 }
 
 =item part_svc
@@ -754,6 +791,107 @@ sub get_session_history {
 
   @sessions;
 
+}
+
+=item tickets
+
+Returns an array of hashes representing the tickets linked to this service.
+
+=cut
+
+sub tickets {
+  my $self = shift;
+
+  my $conf = FS::Conf->new;
+  my $num = $conf->config('cust_main-max_tickets') || 10;
+  my @tickets = ();
+
+  if ( $conf->config('ticket_system') ) {
+    unless ( $conf->config('ticket_system-custom_priority_field') ) {
+
+      @tickets = @{ FS::TicketSystem->service_tickets($self->svcnum, $num) };
+
+    } else {
+
+      foreach my $priority (
+        $conf->config('ticket_system-custom_priority_field-values'), ''
+      ) {
+        last if scalar(@tickets) >= $num;
+        push @tickets,
+        @{ FS::TicketSystem->service_tickets( $self->svcnum,
+            $num - scalar(@tickets),
+            $priority,
+          )
+        };
+      }
+    }
+  }
+  (@tickets);
+}
+
+
+=back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item smart_search OPTION => VALUE ...
+
+Accepts the option I<search>, the string to search for.  The string will 
+be searched for as a username, email address, IP address, MAC address, 
+phone number, and hardware serial number.  Unlike the I<smart_search> on 
+customers, this always requires an exact match.
+
+=cut
+
+# though perhaps it should be fuzzy in some cases?
+
+sub smart_search {
+  my %param = __PACKAGE__->smart_search_param(@_);
+  qsearch(\%param);
+}
+
+sub smart_search_param {
+  my $class = shift;
+  my %opt = @_;
+
+  my $string = $opt{'search'};
+  $string =~ s/(^\s+|\s+$)//; #trim leading & trailing whitespace
+
+  my @or = 
+      map { my $table = $_;
+            my $search_sql = "FS::$table"->search_sql($string);
+            " ( svcdb = '$table'
+	        AND 0 < ( SELECT COUNT(*) FROM $table
+	                    WHERE $table.svcnum = cust_svc.svcnum
+		              AND $search_sql
+	                )
+	      ) ";
+          }
+      FS::part_svc->svc_tables;
+
+  if ( $string =~ /^(\d+)$/ ) {
+    unshift @or, " ( agent_svcid IS NOT NULL AND agent_svcid = $1 ) ";
+  }
+
+  my @extra_sql = ' ( '. join(' OR ', @or). ' ) ';
+
+  push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql(
+    'null_right' => 'View/link unlinked services'
+  );
+  my $extra_sql = ' WHERE '.join(' AND ', @extra_sql);
+  #for agentnum
+  my $addl_from = ' LEFT JOIN cust_pkg  USING ( pkgnum  )'.
+                  ' LEFT JOIN cust_main USING ( custnum )'.
+                  ' LEFT JOIN part_svc  USING ( svcpart )';
+
+  (
+    'table'     => 'cust_svc',
+    'addl_from' => $addl_from,
+    'hashref'   => {},
+    'extra_sql' => $extra_sql,
+  );
 }
 
 =back

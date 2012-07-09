@@ -42,9 +42,7 @@ sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
   my $servicenums =
-    $class->condition_sql_option_option_integer( 'has_service',
-                                                 $opt{'driver_name'},
-                                               );
+    $class->condition_sql_option_option_integer('has_service');
 
   my $sql = qq| 0 < ( SELECT COUNT(cs.svcpart)
      FROM cust_bill_pkg cbp, cust_svc cs

@@ -20,16 +20,17 @@ use FS::cdr qw(_cdr_date_parser_maker);
     skip(2),          # Conference Start Time, Conference End Time
     _cdr_date_parser_maker('startdate'),  # Connect Time
     _cdr_date_parser_maker('enddate'),    # Disconnect Time
+    skip(1),          # Duration
     sub { my($cdr, $data, $conf, $param) = @_;
           $cdr->duration($data);
           $cdr->billsec( $data);
-    },                # Duration
-    skip(2),          # Roundup Duration, User Name
+    },                # Roundup Duration
+    skip(1),          # User Name
     'dst',            # DNIS
     'src',            # ANI
     skip(2),          # Call Type, Toll Free, 
-    skip(1),          # Chair Conference Entry Code
-    'accountcode',    # Participant Conference Entry Code,
+    'accountcode',    # Chair Conference Entry Code
+    skip(1),          # Participant Conference Entry Code,
     ],
 
 );

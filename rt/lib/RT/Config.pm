@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -51,6 +51,7 @@ package RT::Config;
 use strict;
 use warnings;
 
+
 use File::Spec ();
 
 =head1 NAME
@@ -61,7 +62,7 @@ use File::Spec ();
 
     # get config object
     use RT::Config;
-    my $config = new RT::Config;
+    my $config = RT::Config->new;
     $config->LoadConfigs;
 
     # get or set option
@@ -126,6 +127,9 @@ can be set for each config optin:
                  (such as seeing if a library is installed) and then change
                  the setting of this or other options in the Config using 
                  the RT::Config option.
+   Obfuscate   - subref passed the RT::Config object, current setting of the config option
+                 and a user object, can return obfuscated value. it's called in
+                 RT->Config->GetObfuscated() 
 
 =cut
 
@@ -140,7 +144,7 @@ our %META = (
             Description => 'Default queue',    #loc
             Callback    => sub {
                 my $ret = { Values => [], ValuesLabel => {}};
-                my $q = new RT::Queues($HTML::Mason::Commands::session{'CurrentUser'});
+                my $q = RT::Queues->new($HTML::Mason::Commands::session{'CurrentUser'});
                 $q->UnLimit;
                 while (my $queue = $q->Next) {
                     next unless $queue->CurrentUserHasRight("CreateTicket");
@@ -151,71 +155,137 @@ our %META = (
             },
         }
     },
+    RememberDefaultQueue => {
+        Section     => 'General',
+        Overridable => 1,
+        SortOrder   => 2,
+        Widget      => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Remember default queue' # loc
+        }
+    },
     UsernameFormat => {
         Section         => 'General',
         Overridable     => 1,
-        SortOrder       => 2,
+        SortOrder       => 3,
         Widget          => '/Widgets/Form/Select',
         WidgetArguments => {
             Description => 'Username format', # loc
             Values      => [qw(concise verbose)],
             ValuesLabel => {
-                concise => 'Short usernames', # loc_left_pair
-                verbose => 'Name and email address', # loc_left_pair
+                concise => 'Short usernames', # loc
+                verbose => 'Name and email address', # loc
             },
         },
+    },
+    AutocompleteOwners => {
+        Section     => 'General',
+        Overridable => 1,
+        SortOrder   => 3.1,
+        Widget      => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Use autocomplete to find owners?', # loc
+            Hints       => 'Replaces the owner dropdowns with textboxes' #loc
+        }
     },
     WebDefaultStylesheet => {
         Section         => 'General',                #loc
         Overridable     => 1,
-        SortOrder       => 3,
+        SortOrder       => 4,
         Widget          => '/Widgets/Form/Select',
         WidgetArguments => {
             Description => 'Theme',                  #loc
             # XXX: we need support for 'get values callback'
-            Values => [qw(3.5-default 3.4-compat web2 freeside2.1)],
+            Values => [qw(web2 freeside2.1 freeside3 aileron ballard)],
+        },
+        PostLoadCheck => sub {
+            my $self = shift;
+            my $value = $self->Get('WebDefaultStylesheet');
+
+            my @comp_roots = RT::Interface::Web->ComponentRoots;
+            for my $comp_root (@comp_roots) {
+                return if -d $comp_root.'/NoAuth/css/'.$value;
+            }
+
+            $RT::Logger->warning(
+                "The default stylesheet ($value) does not exist in this instance of RT. "
+              . "Defaulting to freeside3."
+            );
+
+            #$self->Set('WebDefaultStylesheet', 'aileron');
+            $self->Set('WebDefaultStylesheet', 'freeside3');
         },
     },
-    MessageBoxRichText => {
-        Section => 'General',
+    UseSideBySideLayout => {
+        Section => 'Ticket composition',
         Overridable => 1,
-        SortOrder => 4,
+        SortOrder => 5,
+        Widget => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Use a two column layout for create and update forms?' # loc
+        }
+    },
+    MessageBoxRichText => {
+        Section => 'Ticket composition',
+        Overridable => 1,
+        SortOrder => 5.1,
         Widget => '/Widgets/Form/Boolean',
         WidgetArguments => {
             Description => 'WYSIWYG message composer' # loc
         }
     },
     MessageBoxRichTextHeight => {
-        Section => 'General',
+        Section => 'Ticket composition',
         Overridable => 1,
-        SortOrder => 5,
+        SortOrder => 6,
         Widget => '/Widgets/Form/Integer',
         WidgetArguments => {
             Description => 'WYSIWYG composer height', # loc
         }
     },
     MessageBoxWidth => {
-        Section         => 'General',
+        Section         => 'Ticket composition',
         Overridable     => 1,
-        SortOrder       => 6,
+        SortOrder       => 7,
         Widget          => '/Widgets/Form/Integer',
         WidgetArguments => {
             Description => 'Message box width',           #loc
         },
     },
     MessageBoxHeight => {
-        Section         => 'General',
+        Section         => 'Ticket composition',
         Overridable     => 1,
-        SortOrder       => 7,
+        SortOrder       => 8,
         Widget          => '/Widgets/Form/Integer',
         WidgetArguments => {
             Description => 'Message box height',          #loc
         },
     },
+    MessageBoxWrap => {
+        Section         => 'Ticket composition',                #loc
+        Overridable     => 1,
+        SortOrder       => 8.1,
+        Widget          => '/Widgets/Form/Select',
+        WidgetArguments => {
+            Description => 'Message box wrapping',   #loc
+            Values => [qw(SOFT HARD)],
+            Hints => "When the WYSIWYG editor is not enabled, this setting determines whether automatic line wraps in the ticket message box are sent to RT or not.",              # loc
+        },
+    },
+    DefaultTimeUnitsToHours => {
+        Section         => 'Ticket composition', #loc
+        Overridable     => 1,
+        SortOrder       => 9,
+        Widget          => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Enter time in hours by default', #loc
+            Hints       => 'Only for entry, not display', #loc
+        },
+    },
     SearchResultsRefreshInterval => {
         Section         => 'General',                       #loc
         Overridable     => 1,
-        SortOrder       => 8,
+        SortOrder       => 9,
         Widget          => '/Widgets/Form/Select',
         WidgetArguments => {
             Description => 'Search results refresh interval',                            #loc
@@ -230,29 +300,6 @@ our %META = (
                 7200 => "Refresh search results every 120 minutes.",       #loc
             },  
         },  
-    },
-    ResolveDefaultUpdateType => {
-        Section         => 'General',                                      #loc
-        Overridable     => 1,
-        SortOrder       => 9,
-        Widget          => '/Widgets/Form/Select',
-        WidgetArguments => {
-            Description => 'Default Update Type when Resolving',           #loc
-            Values      => [qw(Comment Respond)],
-            ValuesLabel => {
-                Comment => "Comments (Not sent to requestors)",            #loc
-                Respond => "Reply to requestors",                          #loc
-            },
-        },
-    },
-    SuppressAutoOpenOnUpdate => {
-        Section => 'General',
-        Overridable => 1,
-        SortOrder => 10,
-        Widget => '/Widgets/Form/Boolean',
-        WidgetArguments => {
-            Description => 'Suppress automatic new to open status change on ticket update' # loc
-        }
     },
 
     # User overridable options for RT at a glance
@@ -306,10 +353,19 @@ our %META = (
             Description => 'Show oldest history first',    #loc
         },
     },
-    ShowUnreadMessageNotifications => { 
+    DeferTransactionLoading => {
         Section         => 'Ticket display',
         Overridable     => 1,
         SortOrder       => 3,
+        Widget          => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Hide ticket history by default',    #loc
+        },
+    },
+    ShowUnreadMessageNotifications => { 
+        Section         => 'Ticket display',
+        Overridable     => 1,
+        SortOrder       => 4,
         Widget          => '/Widgets/Form/Boolean',
         WidgetArguments => {
             Description => 'Notify me of unread messages',    #loc
@@ -319,7 +375,7 @@ our %META = (
     PlainTextPre => {
         Section         => 'Ticket display',
         Overridable     => 1,
-        SortOrder       => 4,
+        SortOrder       => 5,
         Widget          => '/Widgets/Form/Boolean',
         WidgetArguments => {
             Description => 'add <pre> tag around plain text attachments', #loc
@@ -346,6 +402,40 @@ our %META = (
             #Hints => '', #loc
         },
     },
+    MoreAboutRequestorTicketList => {
+        Section         => 'Ticket display',                       #loc
+        Overridable     => 1,
+        SortOrder       => 6,
+        Widget          => '/Widgets/Form/Select',
+        WidgetArguments => {
+            Description => q|What tickets to display in the 'More about requestor' box|,                #loc
+            Values      => [qw(Active Inactive All None)],
+            ValuesLabel => {
+                Active   => "Show the Requestor's 10 highest priority open tickets",                  #loc
+                Inactive => "Show the Requestor's 10 highest priority closed tickets",      #loc
+                All      => "Show the Requestor's 10 highest priority tickets",      #loc
+                None     => "Show no tickets for the Requestor", #loc
+            },
+        },
+    },
+    SimplifiedRecipients => {
+        Section         => 'Ticket display',                       #loc
+        Overridable     => 1,
+        SortOrder       => 7,
+        Widget          => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => q|Show simplified recipient list on ticket update|,                #loc
+        },
+    },
+    DisplayTicketAfterQuickCreate => {
+        Section         => 'Ticket display',
+        Overridable     => 1,
+        SortOrder       => 8,
+        Widget          => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => q{Display ticket after "Quick Create"}, #loc
+        },
+    },
 
     # User overridable locale options
     DateTimeFormat => {
@@ -355,7 +445,7 @@ our %META = (
         WidgetArguments => {
             Description => 'Date format',                            #loc
             Callback => sub { my $ret = { Values => [], ValuesLabel => {}};
-                              my $date = new RT::Date($HTML::Mason::Commands::session{'CurrentUser'});
+                              my $date = RT::Date->new($HTML::Mason::Commands::session{'CurrentUser'});
                               $date->Set;
                               foreach my $value ($date->Formatters) {
                                  push @{$ret->{Values}}, $value;
@@ -371,15 +461,24 @@ our %META = (
         PostLoadCheck => sub {
             my $self = shift;
             my $value = $self->Get('RTAddressRegexp');
-            return if $value;
-
-            $RT::Logger->debug(
-                'The RTAddressRegexp option is not set in the config.'
-                .' Not setting this option results in additional SQL queries to'
-                .' check whether each address belongs to RT or not.'
-                .' It is especially important to set this option if RT recieves'
-                .' emails on addresses that are not in the database or config.'
-            );
+            if (not $value) {
+                $RT::Logger->debug(
+                    'The RTAddressRegexp option is not set in the config.'
+                    .' Not setting this option results in additional SQL queries to'
+                    .' check whether each address belongs to RT or not.'
+                    .' It is especially important to set this option if RT recieves'
+                    .' emails on addresses that are not in the database or config.'
+                );
+            } elsif (ref $value and ref $value eq "Regexp") {
+                # Ensure that the regex is case-insensitive; while the
+                # local part of email addresses is _technically_
+                # case-sensitive, most MTAs don't treat it as such.
+                $RT::Logger->warning(
+                    'RTAddressRegexp is set to a case-sensitive regular expression.'
+                    .' This may lead to mail loops with MTAs which treat the'
+                    .' local part as case-insensitive -- which is most of them.'
+                ) if "$value" =~ /^\(\?[a-z]*-([a-z]*):/ and "$1" =~ /i/;
+            }
         },
     },
     # User overridable mail options
@@ -420,6 +519,45 @@ our %META = (
     },
 
     # Internal config options
+    FullTextSearch => {
+        Type => 'HASH',
+        PostLoadCheck => sub {
+            my $self = shift;
+            my $v = $self->Get('FullTextSearch');
+            return unless $v->{Enable} and $v->{Indexed};
+            my $dbtype = $self->Get('DatabaseType');
+            if ($dbtype eq 'Oracle') {
+                if (not $v->{IndexName}) {
+                    $RT::Logger->error("No IndexName set for full-text index; disabling");
+                    $v->{Enable} = $v->{Indexed} = 0;
+                }
+            } elsif ($dbtype eq 'Pg') {
+                my $bad = 0;
+                if (not $v->{'Column'}) {
+                    $RT::Logger->error("No Column set for full-text index; disabling");
+                    $v->{Enable} = $v->{Indexed} = 0;
+                } elsif ($v->{'Column'} eq "Content"
+                             and (not $v->{'Table'} or $v->{'Table'} eq "Attachments")) {
+                    $RT::Logger->error("Column for full-text index is set to Content, not tsvector column; disabling");
+                    $v->{Enable} = $v->{Indexed} = 0;
+                }
+            } elsif ($dbtype eq 'mysql') {
+                if (not $v->{'Table'}) {
+                    $RT::Logger->error("No Table set for full-text index; disabling");
+                    $v->{Enable} = $v->{Indexed} = 0;
+                } elsif ($v->{'Table'} eq "Attachments") {
+                    $RT::Logger->error("Table for full-text index is set to Attachments, not SphinxSE table; disabling");
+                    $v->{Enable} = $v->{Indexed} = 0;
+                } elsif (not $v->{'MaxMatches'}) {
+                    $RT::Logger->warn("No MaxMatches set for full-text index; defaulting to 10000");
+                    $v->{MaxMatches} = 10_000;
+                }
+            } else {
+                $RT::Logger->error("Indexed full-text-search not supported for $dbtype");
+                $v->{Indexed} = 0;
+            }
+        },
+    },
     DisableGraphViz => {
         Type            => 'SCALAR',
         PostLoadCheck   => sub {
@@ -447,7 +585,16 @@ our %META = (
         },
     },
     MailPlugins  => { Type => 'ARRAY' },
-    Plugins      => { Type => 'ARRAY' },
+    Plugins      => {
+        Type => 'ARRAY',
+        PostLoadCheck => sub {
+            my $self = shift;
+            my $value = $self->Get('Plugins');
+            # XXX Remove in RT 4.2
+            return unless $value and grep {$_ eq "RT::FM"} @{$value};
+            warn 'RTFM has been integrated into core RT, and must be removed from your @Plugins';
+        },
+    },
     GnuPG        => { Type => 'HASH' },
     GnuPGOptions => { Type => 'HASH',
         PostLoadCheck => sub {
@@ -473,6 +620,180 @@ our %META = (
                 $gpg->{'Enable'} = 0;
             }
         }
+    },
+    ReferrerWhitelist => { Type => 'ARRAY' },
+    ResolveDefaultUpdateType => {
+        PostLoadCheck => sub {
+            my $self  = shift;
+            my $value = shift;
+            return unless $value;
+            $RT::Logger->info('The ResolveDefaultUpdateType config option has been deprecated.  '.
+                              'You can change the site default in your %Lifecycles config.');
+        }
+    },
+    WebPath => {
+        PostLoadCheck => sub {
+            my $self  = shift;
+            my $value = shift;
+
+            # "In most cases, you should leave $WebPath set to '' (an empty value)."
+            return unless $value;
+
+            # try to catch someone who assumes that you shouldn't leave this empty
+            if ($value eq '/') {
+                $RT::Logger->error("For the WebPath config option, use the empty string instead of /");
+                return;
+            }
+
+            # $WebPath requires a leading / but no trailing /, or it can be blank.
+            return if $value =~ m{^/.+[^/]$};
+
+            if ($value =~ m{/$}) {
+                $RT::Logger->error("The WebPath config option requires no trailing slash");
+            }
+
+            if ($value !~ m{^/}) {
+                $RT::Logger->error("The WebPath config option requires a leading slash");
+            }
+        },
+    },
+    WebDomain => {
+        PostLoadCheck => sub {
+            my $self  = shift;
+            my $value = shift;
+
+            if (!$value) {
+                $RT::Logger->error("You must set the WebDomain config option");
+                return;
+            }
+
+            if ($value =~ m{^(\w+://)}) {
+                $RT::Logger->error("The WebDomain config option must not contain a scheme ($1)");
+                return;
+            }
+
+            if ($value =~ m{(/.*)}) {
+                $RT::Logger->error("The WebDomain config option must not contain a path ($1)");
+                return;
+            }
+
+            if ($value =~ m{:(\d*)}) {
+                $RT::Logger->error("The WebDomain config option must not contain a port ($1)");
+                return;
+            }
+        },
+    },
+    WebPort => {
+        PostLoadCheck => sub {
+            my $self  = shift;
+            my $value = shift;
+
+            if (!$value) {
+                $RT::Logger->error("You must set the WebPort config option");
+                return;
+            }
+
+            if ($value !~ m{^\d+$}) {
+                $RT::Logger->error("The WebPort config option must be an integer");
+            }
+        },
+    },
+    WebBaseURL => {
+        PostLoadCheck => sub {
+            my $self  = shift;
+            my $value = shift;
+
+            if (!$value) {
+                $RT::Logger->error("You must set the WebBaseURL config option");
+                return;
+            }
+
+            if ($value !~ m{^https?://}i) {
+                $RT::Logger->error("The WebBaseURL config option must contain a scheme (http or https)");
+            }
+
+            if ($value =~ m{/$}) {
+                $RT::Logger->error("The WebBaseURL config option requires no trailing slash");
+            }
+
+            if ($value =~ m{^https?://.+?(/[^/].*)}i) {
+                $RT::Logger->error("The WebBaseURL config option must not contain a path ($1)");
+            }
+        },
+    },
+    WebURL => {
+        PostLoadCheck => sub {
+            my $self  = shift;
+            my $value = shift;
+
+            if (!$value) {
+                $RT::Logger->error("You must set the WebURL config option");
+                return;
+            }
+
+            if ($value !~ m{^https?://}i) {
+                $RT::Logger->error("The WebURL config option must contain a scheme (http or https)");
+            }
+
+            if ($value !~ m{/$}) {
+                $RT::Logger->error("The WebURL config option requires a trailing slash");
+            }
+        },
+    },
+    EmailInputEncodings => {
+        Type => 'ARRAY',
+        PostLoadCheck => sub {
+            my $self  = shift;
+            my $value = $self->Get('EmailInputEncodings');
+            return unless $value && @$value;
+
+            my %seen;
+            foreach my $encoding ( grep defined && length, splice @$value ) {
+                next if $seen{ $encoding }++;
+                if ( $encoding eq '*' ) {
+                    unshift @$value, '*';
+                    next;
+                }
+
+                my $canonic = Encode::resolve_alias( $encoding );
+                unless ( $canonic ) {
+                    warn "Unknown encoding '$encoding' in \@EmailInputEncodings option";
+                }
+                elsif ( $seen{ $canonic }++ ) {
+                    next;
+                }
+                else {
+                    push @$value, $canonic;
+                }
+            }
+        },
+    },
+
+    ActiveStatus => {
+        Type => 'ARRAY',
+        PostLoadCheck => sub {
+            my $self  = shift;
+            return unless shift;
+            # XXX Remove in RT 4.2
+            warn <<EOT;
+The ActiveStatus configuration has been replaced by the new Lifecycles
+functionality. You should set the 'active' property of the 'default'
+lifecycle and add transition rules; see RT_Config.pm for documentation.
+EOT
+        },
+    },
+    InactiveStatus => {
+        Type => 'ARRAY',
+        PostLoadCheck => sub {
+            my $self  = shift;
+            return unless shift;
+            # XXX Remove in RT 4.2
+            warn <<EOT;
+The InactiveStatus configuration has been replaced by the new Lifecycles
+functionality. You should set the 'inactive' property of the 'default'
+lifecycle and add transition rules; see RT_Config.pm for documentation.
+EOT
+        },
     },
 );
 my %OPTIONS = ();
@@ -595,8 +916,8 @@ sub _LoadConfig {
         require $args{'File'};
     };
     if ($@) {
-        return 1 if $is_site && $@ =~ qr{^Can't locate \Q$args{File}};
-        if ( $is_site || $@ !~ qr{^Can't locate \Q$args{File}} ) {
+        return 1 if $is_site && $@ =~ /^Can't locate \Q$args{File}/;
+        if ( $is_site || $@ !~ /^Can't locate \Q$args{File}/ ) {
             die qq{Couldn't load RT config file $args{'File'}:\n\n$@};
         }
 
@@ -718,6 +1039,27 @@ sub Get {
     return $self->_ReturnValue( $res, $META{$name}->{'Type'} || 'SCALAR' );
 }
 
+=head2 GetObfuscated
+
+the same as Get, except it returns Obfuscated value via Obfuscate sub
+
+=cut
+
+sub GetObfuscated {
+    my $self = shift;
+    my ( $name, $user ) = @_;
+    my $obfuscate = $META{$name}->{Obfuscate};
+
+    # we use two Get here is to simplify the logic of the return value
+    # configs need obfuscation are supposed to be less, so won't be too heavy
+
+    return $self->Get(@_) unless $obfuscate;
+
+    my $res = $self->Get(@_);
+    $res = $obfuscate->( $self, $res, $user );
+    return $self->_ReturnValue( $res, $META{$name}->{'Type'} || 'SCALAR' );
+}
+
 =head2 Set
 
 Set option's value to new value. Takes name of the option and new value.
@@ -792,7 +1134,13 @@ sub SetFromConfig {
     # if option is already set we have to check where
     # it comes from and may be ignore it
     if ( exists $OPTIONS{$name} ) {
-        if ( $args{'SiteConfig'} && $args{'Extension'} ) {
+        if ( $type eq 'HASH' ) {
+            $args{'Value'} = [
+                @{ $args{'Value'} },
+                @{ $args{'Value'} }%2? (undef) : (),
+                $self->Get( $name ),
+            ];
+        } elsif ( $args{'SiteConfig'} && $args{'Extension'} ) {
             # if it's site config of an extension then it can only
             # override options that came from its main config
             if ( $args{'Extension'} ne $META{$name}->{'Source'}{'Extension'} ) {
@@ -813,7 +1161,7 @@ sub SetFromConfig {
             if ( $source{'Extension'} ne $args{'Extension'} ) {
                 # as a site config is loaded earlier then its base config
                 # then we warn only on different extensions, for example
-                # RTIR's options is set in main site config or RTFM's
+                # RTIR's options is set in main site config
                 warn
                     "Change of config option '$name' at $args{'File'} line $args{'Line'} has been ignored."
                     ." It may be ok, but we want you to be aware."
@@ -834,6 +1182,13 @@ sub SetFromConfig {
     return 1;
 }
 
+    our %REF_SYMBOLS = (
+            SCALAR => '$',
+            ARRAY  => '@',
+            HASH   => '%',
+            CODE   => '&',
+        );
+
 {
     my $last_pack = '';
 
@@ -848,24 +1203,18 @@ sub SetFromConfig {
         $pack ||= 'main::';
         $pack .= '::' unless substr( $pack, -2 ) eq '::';
 
-        my %ref_sym = (
-            SCALAR => '$',
-            ARRAY  => '@',
-            HASH   => '%',
-            CODE   => '&',
-        );
         no strict 'refs';
         my $name = undef;
 
         # scan $pack's nametable(hash)
         foreach my $k ( keys %{$pack} ) {
 
-            # hash for main:: has reference on itself
+            # The hash for main:: has a reference to itself
             next if $k eq 'main::';
 
-            # if entry has trailing '::' then
-            # it is link to other name space
-            if ( $k =~ /::$/ ) {
+            # if the entry has a trailing '::' then
+            # it is a link to another name space
+            if ( substr( $k, -2 ) eq '::') {
                 $name = $self->__GetNameByRef( $ref, $k );
                 return $name if $name;
             }
@@ -887,7 +1236,7 @@ sub SetFromConfig {
             # if references are equal then we've found
             if ( $entry_ref == $ref ) {
                 $last_pack = $pack;
-                return ( $ref_sym{ ref($ref) } || '*' ) . $pack . $k;
+                return ( $REF_SYMBOLS{ ref($ref) } || '*' ) . $pack . $k;
             }
         }
         return '';
@@ -939,6 +1288,89 @@ sub Options {
         @res = sort { $a cmp $b } @res;
     }
     return @res;
+}
+
+=head2 AddOption( Name => '', Section => '', ... )
+
+=cut
+
+sub AddOption {
+    my $self = shift;
+    my %args = (
+        Name            => undef,
+        Section         => undef,
+        Overridable     => 0,
+        SortOrder       => undef,
+        Widget          => '/Widgets/Form/String',
+        WidgetArguments => {},
+        @_
+    );
+
+    unless ( $args{Name} ) {
+        $RT::Logger->error("Need Name to add a new config");
+        return;
+    }
+
+    unless ( $args{Section} ) {
+        $RT::Logger->error("Need Section to add a new config option");
+        return;
+    }
+
+    $META{ delete $args{Name} } = \%args;
+}
+
+=head2 DeleteOption( Name => '' )
+
+=cut
+
+sub DeleteOption {
+    my $self = shift;
+    my %args = (
+        Name            => undef,
+        @_
+        );
+    if ( $args{Name} ) {
+        delete $META{$args{Name}};
+    }
+    else {
+        $RT::Logger->error("Need Name to remove a config option");
+        return;
+    }
+}
+
+=head2 UpdateOption( Name => '' ), Section => '', ... )
+
+=cut
+
+sub UpdateOption {
+    my $self = shift;
+    my %args = (
+        Name            => undef,
+        Section         => undef,
+        Overridable     => undef,
+        SortOrder       => undef,
+        Widget          => undef,
+        WidgetArguments => undef,
+        @_
+    );
+
+    my $name = delete $args{Name};
+
+    unless ( $name ) {
+        $RT::Logger->error("Need Name to update a new config");
+        return;
+    }
+
+    unless ( exists $META{$name} ) {
+        $RT::Logger->error("Config $name doesn't exist");
+        return;
+    }
+
+    for my $type ( keys %args ) {
+        next unless defined $args{$type};
+        $META{$name}{$type} = $args{$type};
+    }
+    return 1;
 }
 
 RT::Base->_ImportOverlays();

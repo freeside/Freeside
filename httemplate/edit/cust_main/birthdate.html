@@ -1,16 +1,33 @@
 <% ntable("#cccccc", 2) %>
-  <% include( '/elements/tr-input-date-field.html',
-                'birthdate',
-                $cust_main->birthdate,
-                'Date of Birth',
-                ( $conf->config('date_format') || "%m/%d/%Y" ),
-                1
-            )
+% # maybe put after the contact names?
+% if ( $conf->exists('cust_main-enable_birthdate') ) {
+  <% include( '/elements/tr-input-date-field.html', {
+                'name'        => 'birthdate',
+                'value'       => $cust_main->birthdate,
+                'label'       => 'Date of Birth',
+                'format'      => ( $conf->config('date_format') || "%m/%d/%Y" ),
+                'usedatetime' => 1,
+                'noinit'      => $noinit++,
+            })
   %>
+% }
+% if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
+  <% include( '/elements/tr-input-date-field.html', {
+                'name'        => 'spouse_birthdate',
+                'value'       => $cust_main->spouse_birthdate,
+                'label'       => 'Spouse Date of Birth',
+                'format'      => ( $conf->config('date_format') || "%m/%d/%Y" ),
+                'usedatetime' => 1,
+                'noinit'      => $noinit++,
+            })
+  %>
+% }
 </TABLE>
 <%init>
 
 my( $cust_main, %opt ) = @_;
 my $conf = new FS::Conf;
+
+my $noinit = 0;
 
 </%init>

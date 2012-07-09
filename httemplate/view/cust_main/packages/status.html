@@ -32,7 +32,20 @@
 
 %   } 
 %
-% } else { 
+%   if ( $part_pkg->freq ) { #?
+
+      <TR>
+        <TD COLSPAN=<%$colspan%>>
+          <FONT SIZE=-1>
+%           if ( $curuser->access_right('Un-cancel customer package') ) { 
+              (&nbsp;<% pkg_uncancel_link($cust_pkg) %>&nbsp;)
+%           } 
+          <FONT>
+        </TD>
+      </TR>
+%   }
+%
+% } else {
 %
 %   if ( $cust_pkg->get('susp') ) { #status: suspended
 %     my $cpr = $cust_pkg->last_cust_pkg_reason('susp');
@@ -55,6 +68,8 @@
 %   } else { 
       <% pkg_status_row($cust_pkg, emt('Setup'), 'setup', %opt ) %>
 %   } 
+
+    <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
     <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
     <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
@@ -104,6 +119,8 @@
              )
           %>
 
+          <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
+
           <TR>
             <TD COLSPAN=<%$colspan%>>
               <FONT SIZE=-1>
@@ -123,6 +140,7 @@
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_if($cust_pkg, emt('Start billing'), 'start_date', %opt) %>
+          <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
 %       } 
 %
@@ -137,6 +155,8 @@
           <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+
+          <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
 %       } else { 
 %
@@ -170,6 +190,8 @@
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row($cust_pkg, emt('Setup'), 'setup', %opt) %>
+
+          <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
 %       } 
 %
@@ -468,6 +490,16 @@ sub pkg_cancel_link {
              'label'       => emt('Cancel now'),
              'actionlabel' => emt('Cancel'),
              'color'       => '#ff0000',
+             'cust_pkg'    => shift,
+         )
+}
+
+sub pkg_uncancel_link {
+  include( '/elements/popup_link-cust_pkg.html',
+             'action'      => $p. 'misc/cancel_pkg.html?method=uncancel',
+             'label'       => emt('Un-cancel'),
+             'actionlabel' => emt('Un-cancel'),
+             #'color'       =>  #?
              'cust_pkg'    => shift,
          )
 }

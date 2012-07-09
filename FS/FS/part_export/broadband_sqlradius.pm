@@ -1,7 +1,7 @@
 package FS::part_export::broadband_sqlradius;
 
 use strict;
-use vars qw($DEBUG @ISA %options %info $conf);
+use vars qw($DEBUG @ISA @pw_set %options %info $conf);
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( dbh str2time_sql ); #qsearch qsearchs );
@@ -12,6 +12,8 @@ FS::UID->install_callback(sub { $conf = new FS::Conf });
 @ISA = qw(FS::part_export::sqlradius);
 
 $DEBUG = 0;
+
+@pw_set = ( 'a'..'z', 'A'..'Z', '0'..'9', '(', ')', '#', '.', ',' );
 
 tie %options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
@@ -106,8 +108,65 @@ sub radius_check {
   %check;
 }
 
-sub _export_suspend {}
-sub _export_unsuspend {}
+sub radius_check_suspended {
+  my($self, $svc_broadband) = (shift, shift);
+
+  return () unless $self->option('mac_as_password')
+                || length( $self->option('radius_password',1));
+
+  my $password_attrib = $conf->config('radius-password') || 'Password';
+  (
+    $password_attrib => join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) )
+  );
+}
+
+#false laziness w/sqlradius.pm
+sub _export_suspend {
+  my( $self, $svc_broadband ) = (shift, shift);
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my @newgroups = $self->suspended_usergroups($svc_broadband);
+
+  unless (@newgroups) { #don't change password if assigning to a suspended group
+
+    my $err_or_queue = $self->sqlradius_queue(
+       $svc_broadband->svcnum, 'insert',
+      'check', $self->export_username($svc_broadband),
+      $self->radius_check_suspended($svc_broadband)
+    );
+    unless ( ref($err_or_queue) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+
+  }
+
+  my $error =
+    $self->sqlreplace_usergroups(
+      $svc_broadband->svcnum,
+      $self->export_username($svc_broadband),
+      '',
+      [ $svc_broadband->radius_groups('hashref') ],
+      \@newgroups,
+    );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+}
 
 sub update_svc {} #do nothing
 

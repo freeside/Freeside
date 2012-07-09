@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -47,9 +47,11 @@
 # END BPS TAGGED BLOCK }}}
 
 package RT::Interface::Email::Auth::MailFrom;
-use RT::Interface::Email qw(ParseSenderAddressFromHead CreateUser);
+
 use strict;
 use warnings;
+
+use RT::Interface::Email qw(ParseSenderAddressFromHead CreateUser);
 
 # This is what the ordinary, non-enhanced gateway does at the moment.
 
@@ -70,7 +72,7 @@ sub GetCurrentUser {
         return ( $args{'CurrentUser'}, -1 );
     }
 
-    my $CurrentUser = new RT::CurrentUser;
+    my $CurrentUser = RT::CurrentUser->new;
     $CurrentUser->LoadByEmail( $Address );
     $CurrentUser->LoadByName( $Address ) unless $CurrentUser->Id;
     if ( $CurrentUser->Id ) {
@@ -79,14 +81,13 @@ sub GetCurrentUser {
     }
 
     # If the user can't be loaded, we may need to create one. Figure out the acl situation.
-    my $unpriv = RT::Group->new( $RT::SystemUser );
-    $unpriv->LoadSystemInternalGroup('Unprivileged');
+    my $unpriv = RT->UnprivilegedUsers();
     unless ( $unpriv->Id ) {
         $RT::Logger->crit("Couldn't find the 'Unprivileged' internal group");
         return ( $args{'CurrentUser'}, -1 );
     }
 
-    my $everyone = RT::Group->new( $RT::SystemUser );
+    my $everyone = RT::Group->new( RT->SystemUser );
     $everyone->LoadSystemInternalGroup('Everyone');
     unless ( $everyone->Id ) {
         $RT::Logger->crit("Couldn't find the 'Everyone' internal group");

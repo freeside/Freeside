@@ -25,7 +25,7 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('List packages');
+  unless $curuser->access_right('Summarize packages');
 
 my $money_char = FS::Conf->new()->config('money_char') || '$';
 

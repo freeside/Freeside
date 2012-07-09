@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -82,7 +82,7 @@ C<sortorder>.
 
 =head1 SEE ALSO
 
-L<docs/creating_external_custom_fields.pod>
+L<docs/extending/external_custom_fields.pod>
 
 =cut
 
@@ -137,7 +137,7 @@ sub __BuildLimitCheck {
             return 0 unless $value ne $condition;
         } elsif (uc($op) eq "LIKE") {
             return 0 unless $value =~ /\Q$condition\E/i;
-        } elsif (rc($op) eq "NOT LIKE") {
+        } elsif (uc($op) eq "NOT LIKE") {
             return 0 unless $value !~ /\Q$condition\E/i;
         } else {
             return 0;
@@ -179,9 +179,9 @@ sub _DoSearch {
             customfield => $self->{'__external_cf'},
             sortorder => 0,
             description => '',
-            creator => $RT::SystemUser->id,
+            creator => RT->SystemUser->id,
             created => undef,
-            lastupdatedby => $RT::SystemUser->id,
+            lastupdatedby => RT->SystemUser->id,
             lastupdated => undef,
     );
 

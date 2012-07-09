@@ -115,12 +115,18 @@ RT_PATH = /opt/rt3
 FREESIDE_PATH = `pwd`
 PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.14.2/
 
-VERSION=3.0git
-TAG=freeside_3_0
+VERSION := `grep '^$$VERSION' FS/FS.pm | cut -d\' -f2`
+TAG := freeside_`grep '^$$VERSION' FS/FS.pm | cut -d\' -f2 | perl -pe 's/\./_/g'`
 
-DEBVERSION = `echo ${VERSION} | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
+#DEBVERSION = `echo ${VERSION} | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
 
 TEXMFHOME := "\$$TEXMFHOME"
+
+ver:
+	@echo "${VERSION}"
+
+tag:
+	@echo "${TAG}"
 
 help:
 	@echo "supported targets:"
@@ -179,9 +185,6 @@ perl-modules:
 	cd FS; \
 	[ -e Makefile ] || perl Makefile.PL; \
 	make; \
-	perl -p -i -e "\
-	  s/%%%VERSION%%%/${VERSION}/g;\
-	" blib/lib/FS.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
@@ -337,7 +340,7 @@ configure-rt:
 	            --with-db-dba=${DB_USER} \
 	            --with-db-database=${RT_DB_DATABASE} \
 	            --with-db-rt-user=${DB_USER} \
-	            --with-db-rt-pass=${DB_PASSWORD} \
+	            --with-db-rt-pass="${DB_PASSWORD}" \
 	            --with-web-user=freeside \
 	            --with-web-group=freeside \
 	            --with-rt-group=freeside \

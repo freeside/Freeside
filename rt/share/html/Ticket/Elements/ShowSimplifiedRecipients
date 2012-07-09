@@ -1,0 +1,100 @@
+%# BEGIN BPS TAGGED BLOCK {{{
+%#
+%# COPYRIGHT:
+%#
+%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%#                                          <sales@bestpractical.com>
+%#
+%# (Except where explicitly superseded by other copyright notices)
+%#
+%#
+%# LICENSE:
+%#
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%#
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%#
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+%#
+%#
+%# CONTRIBUTION SUBMISSION POLICY:
+%#
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%#
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%#
+%# END BPS TAGGED BLOCK }}}
+<%args>
+$TicketObj
+</%args>
+<%init>
+return unless RT->Config->Get('SimplifiedRecipients', $session{'CurrentUser'});
+
+my $Object = $m->notes("DryRun-".$TicketObj->Id) || $TicketObj->DryRun(%ARGS);
+$m->notes("DryRun-".$TicketObj->Id, $Object);
+return unless $Object;
+
+my %headers = (To => {}, Cc => {}, Bcc => {});
+if ($Object->Scrips) {
+    for my $scrip (grep $_->ActionObj->Action->isa('RT::Action::SendEmail'), @{$Object->Scrips->Prepared}) {
+        for my $type (qw(To Cc Bcc)) {
+            $headers{$type}{$_->address} = $_
+                for $scrip->ActionObj->Action->$type();
+        }
+    }
+}
+if ($Object->Rules) {
+    for my $rule (grep {$_->{hints} and $_->{hints}{class} eq "SendEmail"} @{$Object->Rules}) {
+        for my $type (qw(To Cc Bcc)) {
+            $headers{$type}{$_} ||= @{[Email::Address->parse($_)]}[0] # Hate list context
+                for @{$rule->{hints}{recipients}{$type}};
+        }
+    }
+}
+my %recips;
+</%init>
+<&|/Widgets/TitleBox, title => loc('Recipients'), id => 'recipients' &>
+<table>
+<tr>
+% for my $type (qw(To Cc Bcc)) {
+%     next unless keys %{$headers{$type}};
+<td valign="top"><% $type %>:</td>
+<td valign="top">
+%     for my $addr (sort {$a->address cmp $b->address} values %{$headers{$type}}) {
+%         my $checked = 1;
+%         $m->callback(CallbackName => 'BeforeAddress', Ticket => $TicketObj, Address => $addr, Type => $type, Checked => \$checked);
+%         $recips{$addr->address}++;
+<input type="checkbox" class="checkbox" name="TxnSendMailTo" <% $checked ? 'checked="checked"' : '' |n%> value="<%$addr->address%>" id="TxnSendMailTo-<% $addr->address %>-<% $recips{$addr->address} %>" />
+<label for="TxnSendMailTo-<% $addr->address %>-<% $recips{$addr->address} %>"><& /Elements/ShowUser, Address => $addr &></label>
+%         $m->callback(CallbackName => 'AfterAddress', Ticket => $TicketObj, Address => $addr, Type => $type);
+<br />
+%     }
+</td></tr>
+% }
+</table>
+<i>(Uncheck boxes to disable notifications to the listed
+recipients. Does <b>not</b> change who will receive future
+updates.)</i>
+</&>
+% $m->notes("DryRun-Recipients-".$TicketObj->Id, \%recips);
