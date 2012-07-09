@@ -1041,8 +1041,13 @@ sub suspend {
     $hash{'resume'} = $resume_date;
   }
 
+  $options{options} ||= {};
+
   my $new = new FS::cust_pkg ( \%hash );
-  $error = $new->replace( $self, options => { $self->options } );
+  $error = $new->replace( $self, options => { $self->options,
+                                              %{ $options{options} },
+                                            }
+                        );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

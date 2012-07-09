@@ -58,7 +58,12 @@
 
     <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
     <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
-%   if ( $part_pkg->option('suspend_bill', 1) ) {
+%   if ( $cust_pkg->option('suspend_bill', 1)
+%        || ( $part_pkg->option('suspend_bill', 1)
+%               && ! $cust_pkg->option('no_suspend_bill',1)
+%           )
+%      )
+%   {
       <% pkg_status_row_if( $cust_pkg, emt('Next bill'), 'bill', %opt, curuser=>$curuser ) %>
 %   }
     <% pkg_status_row_if( $cust_pkg, emt('Will resume'), 'resume', %opt, curuser=>$curuser ) %>

@@ -31,7 +31,19 @@
 &>
 % }
 
-% if ( ( $method eq 'adjourn' or $method eq 'suspend' ) and 
+% if ( $method eq 'adjourn' || $method eq 'suspend' ) {
+    <TR><TD COLSPAN=2>
+%   if ( $part_pkg->option('suspend_bill', 1) ) {
+      <& /elements/checkbox.html, name=>'no_suspend_bill', value=>'Y' &>
+      Disable recurring billing while suspended
+%   } else {
+      <& /elements/checkbox.html, name=>'suspend_bill', value=>'Y' &>
+      Continue recurring billing while suspended
+%   }
+    </TD></TR>
+% }
+
+% if ( ( $method eq 'adjourn' || $method eq 'suspend' ) and 
 %      $curuser->access_right('Unsuspend customer package') )  { #later?
 %   my $resume_date = $cgi->param('error') 
 %                     ? str2time($cgi->param('resume_date'))

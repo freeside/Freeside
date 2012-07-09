@@ -406,7 +406,11 @@ sub billing_pkgs {
   my $self = shift;
   grep { my $part_pkg = $_->part_pkg;
          $part_pkg->freq ne '' && $part_pkg->freq ne '0'
-           && ( ! $_->susp || $part_pkg->option('suspend_bill', 1) );
+           && ( ! $_->susp || $_->option('suspend_bill',1)
+                           || ( $part_pkg->option('suspend_bill', 1)
+                                  && ! $_->option('no_suspend_bill',1)
+                              )
+              );
        }
        $self->ncancelled_pkgs;
 }

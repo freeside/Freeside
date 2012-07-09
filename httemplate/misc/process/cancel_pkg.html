@@ -49,10 +49,15 @@ if ($method eq 'expire' || $method eq 'adjourn' || $method eq 'resume'){
   $method = 'unsuspend' if $method eq 'resume';
 }
 
-my $resume_date;
+my $resume_date = '';
+my $options = '';
 if ( $method eq 'suspend' ) { #or 'adjourn'
   $resume_date = parse_datetime($cgi->param('resume_date'))
     if $cgi->param('resume_date');
+
+  $options = { map scalar($cgi->param($_)),
+                 suspend_bill no_suspend_bill
+             };
 }
 
 my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
@@ -73,7 +78,9 @@ if ( $method ne 'unsuspend' ) { #i.e. 'resume'
 
 my $error = $cust_pkg->$method( 'reason'      => $reasonnum,
                                 'date'        => $date,
-                                'resume_date' => $resume_date );
+                                'resume_date' => $resume_date,
+                                'options'     => $options,
+                              );
 
 if ($error) {
   $cgi->param('error', $error);
