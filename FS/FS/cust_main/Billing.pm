@@ -953,7 +953,10 @@ sub _make_lines {
   my @recur_discounts = ();
   my $sdate;
   if (     ! $cust_pkg->start_date
-       and ( ! $cust_pkg->susp || $part_pkg->option('suspend_bill', 1) )
+       and ( ! $cust_pkg->susp || $cust_pkg->option('suspend_bill',1)
+                               || ( $part_pkg->option('suspend_bill', 1) )
+                                     && ! $cust_pkg->option('no_suspend_bill',1)
+                                  )
        and
             ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= day_end($time) )
          || ( $part_pkg->plan eq 'voip_cdr'
