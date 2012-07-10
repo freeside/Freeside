@@ -576,7 +576,7 @@ sub RescueOutlook {
         my $text_part;
         if ( $mime->head->get('Content-Type') =~ m{multipart/mixed} ) {
             my $first = $mime->parts(0);
-            if ( $first->head->get('Content-Type') =~ m{multipart/alternative} )
+            if ( $first && $first->head->get('Content-Type') =~ m{multipart/alternative} )
             {
                 my $inner_first = $first->parts(0);
                 if ( $inner_first->head->get('Content-Type') =~ m{text/plain} )
@@ -587,7 +587,7 @@ sub RescueOutlook {
         }
         elsif ( $mime->head->get('Content-Type') =~ m{multipart/alternative} ) {
             my $first = $mime->parts(0);
-            if ( $first->head->get('Content-Type') =~ m{text/plain} ) {
+            if ( $first && $first->head->get('Content-Type') =~ m{text/plain} ) {
                 $text_part = $first;
             }
         }
