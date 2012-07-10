@@ -654,10 +654,20 @@ sub _upgrade_data {
     if ( $msg_template->subject || $msg_template->body ) {
       # create new default content
       my %content;
-      foreach ('subject','body') {
-        $content{$_} = $msg_template->$_;
-        $msg_template->setfield($_, '');
+      $content{subject} = $msg_template->subject;
+      $msg_template->set('subject', '');
+
+      # work around obscure Pg/DBD bug
+      # https://rt.cpan.org/Public/Bug/Display.html?id=60200
+      # (though the right fix is to upgrade DBD)
+      my $body = $msg_template->body;
+      if ( $body =~ /^x([0-9a-f]+)$/ ) {
+        # there should be no real message templates that look like that
+        warn "converting template body to TEXT\n";
+        $body = pack('H*', $1);
       }
+      $content{body} = $body;
+      $msg_template->set('body', '');
 
       my $error = $msg_template->replace(%content);
       die $error if $error;
