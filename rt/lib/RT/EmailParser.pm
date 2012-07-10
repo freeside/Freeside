@@ -579,7 +579,7 @@ sub RescueOutlook {
             if ( $first && $first->head->get('Content-Type') =~ m{multipart/alternative} )
             {
                 my $inner_first = $first->parts(0);
-                if ( $inner_first->head->get('Content-Type') =~ m{text/plain} )
+                if ( $inner_first && $inner_first->head->get('Content-Type') =~ m{text/plain} )
                 {
                     $text_part = $inner_first;
                 }
