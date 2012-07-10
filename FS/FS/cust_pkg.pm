@@ -970,21 +970,25 @@ sub uncancel {
     }
 
     my $svc_error = $svc_x->insert;
-    if ( $svc_error && $options{svc_fatal} ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $svc_error;
-    } else {
-      my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svc_x->svcnum });
-      if ( $cust_svc ) {
-        my $cs_error = $cust_svc->delete;
-        if ( $cs_error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return $cs_error;
+    if ( $svc_error ) {
+      if ( $options{svc_fatal} ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $svc_error;
+      } else {
+        push @svc_errors, $svc_error;
+        # is this necessary? svc_Common::insert already deletes the 
+        # cust_svc if inserting svc_x fails.
+        my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svc_x->svcnum });
+        if ( $cust_svc ) {
+          my $cs_error = $cust_svc->delete;
+          if ( $cs_error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $cs_error;
+          }
         }
-      }
-    }
-    push @svc_errors, $svc_error if $svc_error;
-  }
+      } # svc_fatal
+    } # svc_error
+  } #foreach $h_cust_svc
 
   #these are pretty rare, but should handle them
   # - dsl_device (mac addresses)
