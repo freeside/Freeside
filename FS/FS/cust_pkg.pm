@@ -2709,7 +2709,7 @@ sub seconds_since_sqlradacct {
     grep {
       my $part_svc = $_->part_svc;
       $part_svc->svcdb eq 'svc_acct'
-        && scalar($part_svc->part_export('sqlradius'));
+        && scalar($part_svc->part_export_usage);
     } $self->cust_svc
   ) {
     $seconds += $cust_svc->seconds_since_sqlradacct($start, $end);
@@ -2741,7 +2741,7 @@ sub attribute_since_sqlradacct {
     grep {
       my $part_svc = $_->part_svc;
       $part_svc->svcdb eq 'svc_acct'
-        && scalar($part_svc->part_export('sqlradius'));
+        && scalar($part_svc->part_export_usage);
     } $self->cust_svc
   ) {
     $sum += $cust_svc->attribute_since_sqlradacct($start, $end, $attrib);
