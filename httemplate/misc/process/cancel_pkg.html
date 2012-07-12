@@ -58,8 +58,8 @@ if ( $method eq 'suspend' ) { #or 'adjourn'
   $resume_date = parse_datetime($cgi->param('resume_date'))
     if $cgi->param('resume_date');
 
-  $options = { map scalar($cgi->param($_)),
-                 suspend_bill no_suspend_bill
+  $options = { map { $_ => scalar($cgi->param($_)) }
+                 qw( suspend_bill no_suspend_bill )
              };
 }
 
