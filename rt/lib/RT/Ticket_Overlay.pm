@@ -2315,16 +2315,6 @@ sub _Links {
         return $links;
     }
 
-    # without this you will also get RT::User(s) instead of tickets!
-    if ($field == 'Base' and $type == 'MemberOf') {
-        my $rtname = RT->Config->Get('rtname');
-        $links->Limit(
-                       FIELD    => 'Base',
-                       OPERATOR => 'STARTSWITH',
-                       VALUE    => "fsck.com-rt://$rtname/ticket/",
-                     );
-    }
-
     # Maybe this ticket is a merge ticket
     #my $limit_on = 'Local'. $field;
     # at least to myself
