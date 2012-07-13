@@ -5097,6 +5097,17 @@ and customer address. Include units.',
     'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
     'type'       => 'text',
   },
+  
+  {
+    'key'         => 'spreadsheet_format',
+    'section'     => 'UI',
+    'description' => 'Default format for spreadsheet download.',
+    'type'        => 'select',
+    'select_hash' => [
+      'XLS' => 'XLS (Excel 97/2000/XP)',
+      'XLSX' => 'XLSX (Excel 2007+)',
+    ],
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

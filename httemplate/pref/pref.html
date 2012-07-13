@@ -75,6 +75,21 @@ Interface
       </SELECT>
     </TD>
   </TR>
+  
+  <TR>
+    <TH ALIGN="right">Spreadsheet download format: </TH>
+    <TD COLSPAN=2>
+      <SELECT NAME="spreadsheet_format">
+%       my $xls =  $curuser->option('spreadsheet_format') eq 'XLS';
+%       my $xlsx = $curuser->option('spreadsheet_format') eq 'XLSX';
+        <OPTION VALUE=""></OPTION>
+        <OPTION VALUE="XLS"<%  $xls ? 'SELECTED' : '' %>>XLS (Excel 97/2000/XP)
+        </OPTION>
+        <OPTION VALUE="XLSX"<% $xlsx ? 'SELECTED' : ''%>>XLSX (Excel 2007+)
+        </OPTION>
+      </SELECT>
+    </TD>
+  </TR>
  
   <TR>
     <TH ALIGN="right" COLSPAN=1>Disable HTML editor for customer notes: </TH>
