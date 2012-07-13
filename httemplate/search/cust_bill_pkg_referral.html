@@ -135,8 +135,15 @@ my @where = ( $agentnums_sql,
               "cust_bill._date <= $ending",
             );
 
-if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
-  push @where, FS::cust_pkg->cust_status_sql . " = '$1'";
+my @status_where;
+foreach my $status ($cgi->param('status')) {
+  if ( $status =~ /^([- a-z]+)$/ ) { #"one-time charge"
+    push @status_where, "'$status'";
+  }
+}
+if ( @status_where ) {
+  push @where, '('. FS::cust_pkg->status_sql.
+    ') IN (' . join(',', @status_where) .')';
 }
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {

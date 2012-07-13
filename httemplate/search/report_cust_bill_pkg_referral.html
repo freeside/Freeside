@@ -12,6 +12,12 @@
   'empty_label'   => 'all',
 &>
 
+<& /elements/tr-select-cust_pkg-status.html,
+  'label'         => 'Package status',
+  'multiple'      => 1,
+  'disable_empty' => 1,
+&>
+
 <& /elements/tr-select-pkg_class.html,
   'pre_options' => [ '' => 'all', '0' => '(empty class)' ],
   'disable_empty' => 1,

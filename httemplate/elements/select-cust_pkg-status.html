@@ -3,7 +3,9 @@
         <% $onchange %>
 >
 
+% if ( !$opt{'disable_empty'} ) {
   <OPTION VALUE="">all
+% }
 
 % foreach my $option ( @{ $opt{'statuses'} } ) { 
 
