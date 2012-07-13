@@ -3525,6 +3525,13 @@ and customer address. Include units.',
     'select_enum' => [ 'approve', 'decline' ],
   },
 
+  {
+    'key'         => 'batch-errors_to',
+    'section'     => 'billing',
+    'description' => 'Email errors when processing batches to this address.  If unspecified, batch processing will stop immediately on error.',
+    'type'        => 'text',
+  },
+
   #lists could be auto-generated from pay_batch info
   {
     'key'         => 'batch-fixed_format-CARD',

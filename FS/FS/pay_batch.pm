@@ -12,6 +12,8 @@ use Date::Parse qw(str2time);
 use Business::CreditCard qw(cardtype);
 use Scalar::Util 'blessed';
 use IO::Scalar;
+use FS::Misc qw(send_email); # for error notification
+use List::Util qw(sum);
 
 @ISA = qw(FS::Record);
 
@@ -49,10 +51,14 @@ from FS::Record.  The following fields are currently supported:
 
 =item status - O (Open), I (In-transit), or R (Resolved)
 
-=item download - 
+=item download - time when the batch was first downloaded
 
-=item upload - 
+=item upload - time when the batch was first uploaded
 
+=item title - unique batch identifier
+
+For incoming batches, the combination of 'title', 'payby', and 'agentnum'
+must be unique.
 
 =back
 
@@ -118,8 +124,21 @@ sub check {
     || $self->ut_enum('payby', [ 'CARD', 'CHEK' ])
     || $self->ut_enum('status', [ 'O', 'I', 'R' ])
     || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
+    || $self->ut_alphan('title')
   ;
   return $error if $error;
+
+  if ( $self->title ) {
+    my @existing = 
+      grep { !$self->batchnum or $_->batchnum != $self->batchnum } 
+      qsearch('pay_batch', {
+          payby     => $self->payby,
+          agentnum  => $self->agentnum,
+          title     => $self->title,
+      });
+    return "Batch already exists as batchnum ".$existing[0]->batchnum
+      if @existing;
+  }
 
   $self->SUPER::check;
 }
@@ -224,11 +243,6 @@ sub import_results {
   my $fh = $param->{'filehandle'};
   my $job = $param->{'job'};
   $job->update_statustext(0) if $job;
-
-  my $gateway = $param->{'gateway'};
-  if ( $gateway ) {
-    return $self->import_from_gateway($gateway, 'file' => $fh, 'job' => $job);
-  }
 
   my $format = $param->{'format'};
   my $info = $import_info{$format}
@@ -444,9 +458,6 @@ sub process_import_results {
   my $param = thaw(decode_base64(shift));
   $param->{'job'} = $job;
   warn Dumper($param) if $DEBUG;
-  my $batchnum = delete $param->{'batchnum'} or die "no batchnum specified\n";
-  my $batch = FS::pay_batch->by_key($batchnum) or die "batchnum '$batchnum' not found\n";
-
   my $gatewaynum = delete $param->{'gatewaynum'};
   if ( $gatewaynum ) {
     $param->{'gateway'} = FS::payment_gateway->by_key($gatewaynum)
@@ -461,12 +472,20 @@ sub process_import_results {
         '<',
         "$dir/$file" )
       or die "unable to open '$file'.\n";
-  my $error = $batch->import_results($param);
+  
+  my $error;
+  if ( $param->{gateway} ) {
+    $error = FS::pay_batch->import_from_gateway(%$param);
+  } else {
+    my $batchnum = delete $param->{'batchnum'} or die "no batchnum specified\n";
+    my $batch = FS::pay_batch->by_key($batchnum) or die "batchnum '$batchnum' not found\n";
+    $error = $batch->import_results($param);
+  }
   unlink $file;
   die $error if $error;
 }
 
-=item import_from_gateway GATEWAY [ OPTIONS ]
+=item import_from_gateway [ OPTIONS ]
 
 Import results from a L<FS::payment_gateway>, using Business::BatchPayment,
 and apply them.  GATEWAY must use the Business::BatchPayment namespace.
@@ -477,15 +496,16 @@ or declined payment can have its status changed by a later import.
 
 OPTIONS may include:
 
-- file: a file name or handle to use as a data source.
+- gateway: the L<FS::payment_gateway>, required
+- filehandle: a file name or handle to use as a data source.
 - job: an L<FS::queue> object to update with progress messages.
 
 =cut
 
 sub import_from_gateway {
   my $class = shift;
-  my $gateway = shift;
   my %opt = @_;
+  my $gateway = $opt{'gateway'};
   my $conf = FS::Conf->new;
 
   # unavoidable duplication with import_batch, for now
@@ -508,15 +528,27 @@ sub import_from_gateway {
     unless eval { $gateway->isa('FS::payment_gateway') };
 
   my %proc_opt = (
-    'input' => $opt{'file'}, # will do nothing if it's empty
+    'input' => $opt{'filehandle'}, # will do nothing if it's empty
     # any other constructor options go here
   );
+
+  my @item_errors;
+  my $mail_on_error = $conf->config('batch-errors_to');
+  if ( $mail_on_error ) {
+    # construct error trap
+    $proc_opt{'on_parse_error'} = sub {
+      my ($self, $line, $error) = @_;
+      push @item_errors, "  '$line'\n$error";
+    };
+  }
 
   my $processor = $gateway->batch_processor(%proc_opt);
 
   my @batches = $processor->receive;
-  my $error;
+
   my $num = 0;
+
+  my $total_items = sum( map{$_->count} @batches);
 
   # whether to allow items to change status
   my $reconsider = $conf->exists('batch-reconsider');
@@ -524,105 +556,222 @@ sub import_from_gateway {
   # mutex all affected batches
   my %pay_batch_for_update;
 
+  my %bop2payby = (CC => 'CARD', ECHECK => 'CHEK');
+
   BATCH: foreach my $batch (@batches) {
+
+    my %incoming_batch = (
+      'CARD' => {},
+      'CHEK' => {},
+    );
+
     ITEM: foreach my $item ($batch->elements) {
-      # cust_pay_batch.paybatchnum should be in the 'tid' attribute
-      my $paybatchnum = $item->tid;
-      my $cust_pay_batch = FS::cust_pay_batch->by_key($paybatchnum);
-      if (!$cust_pay_batch) {
-        # XXX for one-way batch protocol this needs to create new payments
-        $error = "unknown paybatchnum $paybatchnum";
-        last ITEM;
-      }
 
-      my $batchnum = $cust_pay_batch->batchnum;
-      if ( $batch->batch_id and $batch->batch_id != $batchnum ) {
-        warn "batch ID ".$batch->batch_id.
-              " does not match batchnum ".$cust_pay_batch->batchnum."\n";
-      }
+      my $cust_pay_batch; # the new batch entry (with status)
+      my $pay_batch; # the freeside batch it belongs to
+      my $payby; # CARD or CHEK
+      my $error;
 
-      # lock the batch and check its status
-      my $pay_batch = FS::pay_batch->by_key($batchnum);
-      $pay_batch_for_update{$batchnum} ||= $pay_batch->select_for_update;
-      if ( $pay_batch->status ne 'I' and !$reconsider ) {
-        $error = "batch $batchnum no longer in transit";
-        last ITEM;
-      }
+      # follow realtime gateway practice here
+      # though eventually this stuff should go into separate fields...
+      my $paybatch = $gateway->gatewaynum .  '-' .  $gateway->gateway_module .
+        ':' . $item->authorization .  ':' . $item->order_number;
 
-      if ( $cust_pay_batch->status ) {
-        my $new_status = $item->approved ? 'approved' : 'declined';
-        if ( lc( $cust_pay_batch->status ) eq $new_status ) {
-          # already imported with this status, so don't touch
+      if ( $batch->incoming ) {
+        # This is a one-way batch.
+        # Locate the customer, find an open batch correct for them,
+        # create a payment.  Don't bother creating a cust_pay_batch
+        # entry.
+        my $cust_main;
+        if ( defined($item->customer_id) 
+             and $item->customer_id =~ /^\d+$/ 
+             and $item->customer_id > 0 ) {
+
+          $cust_main = FS::cust_main->by_key($item->customer_id)
+                       || qsearchs('cust_main', 
+                         { 'agent_custid' => $item->customer_id }
+                       );
+          if ( !$cust_main ) {
+            push @item_errors, "Unknown customer_id ".$item->customer_id;
+            next ITEM;
+          }
+        }
+        else {
+          push @item_errors, "Illegal customer_id '".$item->customer_id."'";
           next ITEM;
         }
-        elsif ( !$reconsider ) {
-          # then we're not allowed to change its status, so bail out
-          $error = "paybatchnum ".$item->tid.
-            " already resolved with status '". $cust_pay_batch->status . "'";
-          last ITEM;
+        # it may also make sense to allow selecting the customer by 
+        # invoice_number, but no modules currently work that way
+
+        $payby = $bop2payby{ $item->payment_type };
+        my $agentnum = '';
+        $agentnum = $cust_main->agentnum if $conf->exists('batch-spoolagent');
+
+        # create a batch if necessary
+        $pay_batch = $incoming_batch{$payby}->{$agentnum} ||= 
+          FS::pay_batch->new({
+              status    => 'R', # pre-resolve it
+              payby     => $payby,
+              agentnum  => $agentnum,
+              upload    => time,
+              title     => $batch->batch_id,
+          });
+        if ( !$pay_batch->batchnum ) {
+          $error = $pay_batch->insert;
+          die $error if $error; # can't do anything if this fails
         }
-      }
 
-      # create a new cust_pay_batch with whatever information we got back
-      my $new_cust_pay_batch = new FS::cust_pay_batch { $cust_pay_batch->hash };
-      my $new_payinfo;
-      # update payinfo, if needed
-      if ( $item->assigned_token ) {
-        $new_payinfo = $item->assigned_token;
-      } elsif ( $cust_pay_batch->payby eq 'CARD' ) {
-        $new_payinfo = $item->card_number if $item->card_number;
-      } else { #$cust_pay_batch->payby eq 'CHEK'
-        $new_payinfo = $item->account_number . '@' . $item->routing_code
-          if $item->account_number;
-      }
-      $new_cust_pay_batch->payinfo($new_payinfo) if $new_payinfo;
+        if ( !$item->approved ) {
+          $error ||= "payment rejected - ".$item->error_message;
+        }
+        if ( !defined($item->amount) or $item->amount <= 0 ) {
+          $error ||= "no amount in item $num";
+        }
 
-      # set "paid" pseudo-field (transfers to cust_pay) to the actual amount
-      # paid, if the batch says it's different from the amount requested
-      if ( defined $item->amount ) {
-        $new_cust_pay_batch->paid($item->amount);
+        my $payinfo;
+        if ( $item->check_number ) {
+          $payby = 'BILL'; # right?
+          $payinfo = $item->check_number;
+        } elsif ( $item->assigned_token ) {
+          $payinfo = $item->assigned_token;
+        }
+        # create the payment
+        my $cust_pay = FS::cust_pay->new(
+          {
+            custnum     => $cust_main->custnum,
+            _date       => $item->payment_date->epoch,
+            paid        => sprintf('%.2f',$item->amount),
+            payby       => $payby,
+            invnum      => $item->invoice_number,
+            batchnum    => $pay_batch->batchnum,
+            paybatch    => $paybatch,
+            payinfo     => $payinfo,
+          }
+        );
+        $error ||= $cust_pay->insert;
+        eval { $cust_main->apply_payments };
+        $error ||= $@;
+
+        if ( $error ) {
+          push @item_errors, 'Payment for customer '.$item->customer_id."\n$error";
+        }
+
       } else {
-        $new_cust_pay_batch->paid($cust_pay_batch->amount);
-      }
+        # This is a request/reply batch.
+        # Locate the request (the 'tid' attribute is the paybatchnum).
+        my $paybatchnum = $item->tid;
+        $cust_pay_batch = FS::cust_pay_batch->by_key($paybatchnum);
+        if (!$cust_pay_batch) {
+          push @item_errors, "paybatchnum $paybatchnum not found";
+          next ITEM;
+        }
+        $payby = $cust_pay_batch->payby;
 
-      # set payment date to when it was processed
-      $new_cust_pay_batch->_date($item->payment_date->epoch)
-        if $item->payment_date;
+        my $batchnum = $cust_pay_batch->batchnum;
+        if ( $batch->batch_id and $batch->batch_id != $batchnum ) {
+          warn "batch ID ".$batch->batch_id.
+                " does not match batchnum ".$cust_pay_batch->batchnum."\n";
+        }
 
-      # approval status
-      if ( $item->approved ) {
-        # follow Billing_Realtime format for paybatch
-        my $paybatch = $gateway->gatewaynum .
-          '-' .
-          $gateway->gateway_module .
-          ':' .
-          $item->authorization .
-          ':' .
-          $item->order_number;
+        # lock the batch and check its status
+        $pay_batch = FS::pay_batch->by_key($batchnum);
+        $pay_batch_for_update{$batchnum} ||= $pay_batch->select_for_update;
+        if ( $pay_batch->status ne 'I' and !$reconsider ) {
+          $error = "batch $batchnum no longer in transit";
+        }
 
-        $error = $new_cust_pay_batch->approve($paybatch);
-        $total += $new_cust_pay_batch->paid;
-      }
-      else {
-        $error = $new_cust_pay_batch->decline($item->error_message);
-      }
-      last ITEM if $error;
+        if ( $cust_pay_batch->status ) {
+          my $new_status = $item->approved ? 'approved' : 'declined';
+          if ( lc( $cust_pay_batch->status ) eq $new_status ) {
+            # already imported with this status, so don't touch
+            next ITEM;
+          }
+          elsif ( !$reconsider ) {
+            # then we're not allowed to change its status, so bail out
+            $error = "paybatchnum ".$item->tid.
+            " already resolved with status '". $cust_pay_batch->status . "'";
+          }
+        }
+
+        if ( $error ) {        
+          push @item_errors, "Payment for customer ".$cust_pay_batch->custnum."\n$error";
+          next ITEM;
+        }
+
+        my $new_payinfo;
+        # update payinfo, if needed
+        if ( $item->assigned_token ) {
+          $new_payinfo = $item->assigned_token;
+        } elsif ( $payby eq 'CARD' ) {
+          $new_payinfo = $item->card_number if $item->card_number;
+        } else { #$payby eq 'CHEK'
+          $new_payinfo = $item->account_number . '@' . $item->routing_code
+            if $item->account_number;
+        }
+        $cust_pay_batch->set('payinfo', $new_payinfo) if $new_payinfo;
+
+        # set "paid" pseudo-field (transfers to cust_pay) to the actual amount
+        # paid, if the batch says it's different from the amount requested
+        if ( defined $item->amount ) {
+          $cust_pay_batch->set('paid', $item->amount);
+        } else {
+          $cust_pay_batch->set('paid', $cust_pay_batch->amount);
+        }
+
+        # set payment date to when it was processed
+        $cust_pay_batch->_date($item->payment_date->epoch)
+          if $item->payment_date;
+
+        # approval status
+        if ( $item->approved ) {
+          # follow Billing_Realtime format for paybatch
+          $error = $cust_pay_batch->approve($paybatch);
+          $total += $cust_pay_batch->paid;
+        }
+        else {
+          $error = $cust_pay_batch->decline($item->error_message);
+        }
+
+        if ( $error ) {        
+          push @item_errors, "Payment for customer ".$cust_pay_batch->custnum."\n$error";
+          next ITEM;
+        }
+      } # $batch->incoming
+
       $num++;
-      $job->update_statustext(int(100 * $num/( $batch->count + 1 ) ),
+      $job->update_statustext(int(100 * $num/( $total_items ) ),
         'Importing batch items')
-        if $job;
-    } #foreach $item
+      if $job;
 
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
+    } #foreach $item
 
   } #foreach $batch (input batch, not pay_batch)
 
-  # Auto-resolve
+  # Format an error message
+  if ( @item_errors ) {
+    my $error_text = join("\n\n", 
+      "Errors during batch import: ".scalar(@item_errors),
+      @item_errors
+    );
+    if ( $mail_on_error ) {
+      my $subject = "Batch import errors"; #?
+      my $body = "Import from gateway ".$gateway->label."\n".$error_text;
+      send_email(
+        to      => $mail_on_error,
+        from    => $conf->config('invoice_from'),
+        subject => $subject,
+        body    => $body,
+      );
+    } else {
+      # Bail out.
+      $dbh->rollback if $oldAutoCommit;
+      die $error_text;
+    }
+  }
+
+  # Auto-resolve (with brute-force error handling)
   foreach my $pay_batch (values %pay_batch_for_update) {
-    $error = $pay_batch->try_to_resolve;
+    my $error = $pay_batch->try_to_resolve;
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -637,7 +786,7 @@ sub import_from_gateway {
 =item try_to_resolve
 
 Resolve this batch if possible.  A batch can be resolved if all of its
-entries have a status.  If the system options 'batch-auto_resolve_days'
+entries have status.  If the system options 'batch-auto_resolve_days'
 and 'batch-auto_resolve_status' are set, and the batch's download date is
 at least (batch-auto_resolve_days) before the current time, then it can
 be auto-resolved; entries with no status will be approved or declined 

@@ -14,12 +14,13 @@
 		                      'Type',
 		                      'First Download',
 				      'Last Upload',
-				      'Items',
-                                      'Unresolved',
-				      'Amount',
+                                      '', # requests
+                                      '', # req amt
+                                      '', # payments
+                                      '', # pay amt
 				      'Status',
                                     ],
-		 'align'         => 'rcllrrc',
+		 'align'         => 'rcllrrrrc',
 		 'fields'        => [ 'batchnum',
 		                      sub { 
 				        FS::payby->shortname(shift->payby);
@@ -47,33 +48,44 @@
 					}
 				      },
 				      sub {
-                                        FS::cust_pay_batch->count(
-                                          'batchnum = '.$_[0]->batchnum
-                                        )
+                                        my $c = FS::cust_pay_batch->count('batchnum = '.$_[0]->batchnum);
+                                        $c ? "$c requested" : ''
                                       },
                                       sub {
-                                        FS::cust_pay_batch->count(
-                                          'status is null and batchnum = '.
-                                            $_[0]->batchnum
-                                        )
-                                      },
-				      sub {
                                         my $st = "SELECT SUM(amount) from cust_pay_batch WHERE batchnum=" . shift->batchnum;
                                         my $sth = dbh->prepare($st)
-				          or die dbh->errstr. "doing $st";
+                                          or die dbh->errstr. "doing $st";
                                         $sth->execute
-				          or die "Error executing \"$st\": ". $sth->errstr;
-                                        $sth->fetchrow_arrayref->[0];
-				      },
+                                          or die "Error executing \"$st\": ". $sth->errstr;
+                                        my $total = $sth->fetchrow_arrayref->[0];
+                                        $total ? $money_char.sprintf('%.2f',$total) : '';
+                                      },
+                                      sub {
+                                        my $c = FS::cust_pay->count('batchnum = '.$_[0]->batchnum);
+                                        $c ? "$c paid" : ''
+                                      },
+                                      sub {
+                                        my $st = "SELECT SUM(paid) from cust_pay WHERE batchnum=" . shift->batchnum;
+                                        my $sth = dbh->prepare($st)
+                                          or die dbh->errstr. "doing $st";
+                                        $sth->execute
+                                          or die "Error executing \"$st\": ". $sth->errstr;
+                                        my $total = $sth->fetchrow_arrayref->[0];
+                                        $total ? $money_char.sprintf('%.2f',$total) : '';
+                                      },
                                       sub {
 				        $statusmap{shift->status};
 				      },
 				    ],
 		 'links'         => [
-		                      $link,
+		                      '',
 				      '',
-				      sub { shift->status eq 'O' ? $link : '' },
-				      sub { shift->status eq 'I' ? $link : '' },
+                                      sub { shift->status eq 'O' ? $cpb_link : '' },
+                                      sub { shift->status eq 'I' ? $cpb_link : '' },
+                                      $cpb_link,
+                                      $cpb_link,
+                                      $pay_link,
+                                      $pay_link,
 				    ],
 		 'size'         => [
 		                      '',
@@ -88,9 +100,42 @@
 				      sub { shift->status eq 'I' ? "b" : '' },
 				    ],
                  'html_init'     => $html_init,
+                 'html_foot'     => include('.upload_incoming'),
       )
-
 %>
+<%def .upload_incoming>
+% if ( FS::payment_gateway->count("gateway_namespace = 'Business::BatchPayment' AND disabled IS NULL") > 0 ) { 
+<& /elements/form-file_upload.html,
+    name      => 'FileUpload',
+    action    => $p.'misc/upload-batch.cgi',
+    num_files => 1,
+    fields    => [ 'gatewaynum' ],
+    message   => 'Incoming batch uploaded.',
+&>
+<BR>
+<BR>
+Upload incoming batch from gateway 
+<& /elements/select-table.html,
+    table       => 'payment_gateway',
+    field       => 'gatewaynum',
+    name_col    => 'label',
+    value_col   => 'gatewaynum',
+    order_by    => 'ORDER BY gatewaynum',
+    empty_label => ' ',
+    hashref     =>
+      { 'gateway_namespace' => 'Business::BatchPayment',
+        'disabled' => '' },
+&>
+<BR>
+<& '/elements/file-upload.html',
+    field     => 'file',
+    label     => 'Filename',
+    no_table  => 1,
+&>
+<INPUT TYPE="submit" VALUE="Upload">
+</FORM>
+% }
+</%def>
 <%init>
 
 die "access denied"
@@ -134,11 +179,14 @@ push @where,
 
 my $extra_sql = scalar(@where) ? 'WHERE ' . join(' AND ', @where) : ''; 
 
-my $link = [ "${p}search/cust_pay_batch.cgi?dcln=1;batchnum=", 'batchnum' ];
+my $cpb_link = [ "${p}search/cust_pay_batch.cgi?dcln=1;batchnum=", 'batchnum' ];
+my $pay_link = [ "${p}search/cust_pay.html?magic=batchnum;batchnum=", 'batchnum' ];
 
 my $resolved = $cgi->param('resolved') || 0;
 $cgi->param('resolved' => !$resolved);
 my $html_init = '<A HREF="' . $cgi->self_url . '"><I>'.
     ($resolved ? 'Hide' : 'Show') . ' resolved batches</I></A><BR>';
+
+my $money_char = FS::Conf->new->config('money_char') || '$';
 
 </%init>

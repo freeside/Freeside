@@ -357,6 +357,15 @@ if ( $cgi->param('magic') ) {
 
     $orderby = "LOWER(company || ' ' || last || ' ' || first )";
 
+  } elsif ( $cgi->param('magic') eq 'batchnum' ) {
+
+    $cgi->param('batchnum') =~ /^(\d+)$/
+      or die "illegal batchnum: ".$cgi->param('batchnum');
+
+    push @search, "batchnum = $1";
+
+    $orderby = "LOWER(company || ' ' || last || ' ' || first )";
+
   } else {
     die "unknown search magic: ". $cgi->param('magic');
   }

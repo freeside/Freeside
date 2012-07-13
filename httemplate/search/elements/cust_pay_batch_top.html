@@ -103,7 +103,7 @@ Batch is <% $statustext{$status} %><BR>
 % }
 </%def>
 <%shared>
-my $show_gateways = FS::payment_gateway->count("gateway_namespace = 'Business::BatchPayment'");
+my $show_gateways = FS::payment_gateway->count("gateway_namespace = 'Business::BatchPayment' AND disabled IS NULL");
 </%shared>
 <%init>
 my %opt = @_;

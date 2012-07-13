@@ -322,6 +322,7 @@ sub approve {
       'paid'      => $new->paid,
       '_date'     => $new->_date,
       'usernum'   => $new->usernum,
+      'batchnum'  => $new->batchnum,
     } );
   $error = $cust_pay->insert;
   if ( $error ) {

@@ -19,8 +19,7 @@
 
 
 <SCRIPT TYPE="text/javascript">
-% my $json = JSON->new->canonical;
-  var modulesForNamespace = <% $json->encode(\%modules_for_namespace) %>;
+  var modulesForNamespace = <% to_json(\%modules_for_namespace, {canonical=>1}) %>;
   function changeNamespace(what) {
     var ns = what.value;
     var select_module = document.getElementById('gateway_module');
@@ -68,7 +67,6 @@ my %modules =  (
   'OpenECHO'              => 'Business::OnlinePayment',
   'PayConnect'            => 'Business::OnlinePayment',
   'PayflowPro'            => 'Business::OnlinePayment',
-  'Paymentech'            => 'Business::BatchPayment',
   'PaymenTech'            => 'Business::OnlinePayment',
   'PaymentsGateway'       => 'Business::OnlinePayment',
   'PayPal'                => 'Business::OnlinePayment',
@@ -90,6 +88,9 @@ my %modules =  (
   'VirtualNet'            => 'Business::OnlinePayment',
   'WesternACH'            => 'Business::OnlinePayment',
   'WorldPay'              => 'Business::OnlinePayment',
+
+  'KeyBank'               => 'Business::BatchPayment',
+  'Paymentech'            => 'Business::BatchPayment',
 );
 
 my %modules_for_namespace;

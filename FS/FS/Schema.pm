@@ -1407,6 +1407,7 @@ sub tables_hashref {
         'depositor',  'varchar', 'NULL', $char_d, '', '',
         'account',    'varchar', 'NULL', 20,      '', '',
         'teller',     'varchar', 'NULL', 20,      '', '',
+        'batchnum',       'int', 'NULL', '', '', '', #pay_batch foreign key
       ],
       'primary_key' => 'paynum',
       #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
@@ -1486,10 +1487,11 @@ sub tables_hashref {
       'columns' => [
         'batchnum', 'serial',     '', '', '', '', 
         'agentnum',    'int', 'NULL', '', '', '', 
-	'payby',      'char',     '',  4, '', '', # CARD/CHEK
+        'payby',      'char',     '',  4, '', '', # CARD/CHEK
         'status',     'char', 'NULL',  1, '', '', 
         'download',       @date_type,     '', '', 
         'upload',         @date_type,     '', '', 
+        'title',   'varchar', 'NULL',255, '', '',
       ],
       'primary_key' => 'batchnum',
       'unique' => [],
