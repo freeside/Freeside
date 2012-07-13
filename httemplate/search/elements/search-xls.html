@@ -7,7 +7,10 @@ my $header = $args{'header'};
 my $rows   = $args{'rows'};
 my %opt    = %{ $args{'opt'} };    
 
-my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format;
+my $override = scalar(@$rows) >= 65536 ? 'XLSX' : '';
+
+my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format($override);
+
 my $filename = $opt{'name'} || PL($opt{'name_singular'});
 $filename .= $format->{extension};
 

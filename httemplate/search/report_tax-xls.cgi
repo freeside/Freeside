@@ -1,9 +1,25 @@
 <% $data %>
 <%init>
+my $htmldoc = include('report_tax.cgi');
+
+my ($title) = ($htmldoc =~ /<title>\s*(.*)\s*<\/title>/i);
+
+# do this first so we can override the format if it's too many rows
+# attribs option: how to locate the table?  It's the only one with class="grid".
+my $te = HTML::TableExtract->new(attribs => {class => 'grid'});
+$te->parse($htmldoc);
+my $table = $te->first_table_found;
+
+my $override = ($table->row_count >= 65536 ? 'XLSX' : '');
+my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format($override);
+my $filename = 'report_tax'.$format->{extension};
+
+http_header('Content-Type' => $format->{mime_type});
+http_header('Content-Disposition' => qq!attachment;filename="$filename"! );
 
 my $data = '';
 my $XLS = new IO::Scalar \$data;
-my $workbook = Spreadsheet::WriteExcel->new($XLS)
+my $workbook = $format->{class}->new($XLS)
   or die "Error opening .xls file: $!";
 
 # hardcoded formats, this could be handled better
@@ -65,15 +81,6 @@ foreach (keys(%format)) {
   $format{"t_$_"} = $workbook->add_format(%f, bg_color => 'yellow'); # totals
 }
 my $ws = $workbook->add_worksheet('taxreport');
-
-my $htmldoc = include('report_tax.cgi');
-
-my ($title) = ($htmldoc =~ /<title>\s*(.*)\s*<\/title>/i);
-
-# attribs option: how to locate the table?  It's the only one with class="grid".
-my $te = HTML::TableExtract->new(attribs => {class => 'grid'});
-$te->parse($htmldoc);
-my $table = $te->first_table_found;
 
 my @sheet;
 $sheet[0][0] = {
@@ -148,6 +155,4 @@ for my $x (0..scalar(@widths)-1) {
 
 $workbook->close;
 
-http_header('Content-Type' => 'application/vnd.ms-excel');
-http_header('Content-Disposition' => 'attachment;filename="report_tax.xls"');
 </%init>
