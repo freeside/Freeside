@@ -77,15 +77,16 @@ any delimiter and linked from the elements in @data.
 %   } 
 %   
 % } elsif ( $cgi->param('_type') =~ /(xls)$/ ) {
-%
-%   #http_header('Content-Type' => 'application/excel' ); #eww
-%   http_header('Content-Type' => 'application/vnd.ms-excel' );
-%   #http_header('Content-Type' => 'application/msexcel' ); #alas
-%   http_header('Content-Disposition' => "attachment;filename=$filename.xls");
+%   #false laziness w/  search/elements/search-xls
+%   my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format;
+%   $filename .= $format->{extension};
+%   
+%   http_header('Content-Type' => $format->{mime_type} );
+%   http_header('Content-Disposition' => qq!attachment;filename="$filename"! );
 %
 %   my $output = '';
 %   my $XLS = new IO::Scalar \$output;
-%   my $workbook = Spreadsheet::WriteExcel->new($XLS)
+%   my $workbook = $format->{class}->new($XLS)
 %     or die "Error opening .xls file: $!";
 %
 %   my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
@@ -304,9 +305,6 @@ td.cell {
 
 <% include('/elements/footer.html') %>
 % } 
-<%once>
-
-</%once>
 <%init>
 
 my(%opt) = @_;
