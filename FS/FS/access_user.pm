@@ -511,6 +511,38 @@ sub default_customer_view {
 
 }
 
+=item spreadsheet_format
+
+Returns a hashref of this user's Excel spreadsheet download settings:
+'extension' (xls or xlsx), 'class' (Spreadsheet::WriteExcel or
+Excel::Writer::XLSX), and 'mime_type'.
+
+=cut
+
+my %formats = (
+  XLS => {
+    extension => '.xls',
+    class => 'Spreadsheet::WriteExcel',
+    mime_type => 'application/vnd.ms-excel',
+  },
+  XLSX => {
+    extension => '.xlsx',
+    class => 'Excel::Writer::XLSX',
+    mime_type => # it's on wikipedia, it must be true
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  }
+);
+
+sub spreadsheet_format {
+  my $self = shift;
+
+  my $f = $self->option('spreadsheet_format') 
+       || $conf->config('spreadsheet_format')
+       || 'XLS';
+
+  $formats{$f};
+}
+
 =item is_system_user
 
 Returns true if this user has the name of a known system account.  These 

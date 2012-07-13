@@ -7,14 +7,17 @@ my $header = $args{'header'};
 my $rows   = $args{'rows'};
 my %opt    = %{ $args{'opt'} };    
 
+my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format;
+my $filename = $opt{'name'} || PL($opt{'name_singular'});
+$filename .= $format->{extension};
+
 #http_header('Content-Type' => 'application/excel' ); #eww
 #http_header('Content-Type' => 'application/msexcel' ); #alas
 #http_header('Content-Type' => 'application/x-msexcel' ); #?
 
 #http://support.microsoft.com/kb/199841
-http_header('Content-Type' => 'application/vnd.ms-excel' );
-http_header('Content-Disposition' => 
-  'attachment;filename="'.($opt{'name'} || PL($opt{'name_singular'}) ).'.xls"');
+http_header('Content-Type' => $format->{mime_type} );
+http_header('Content-Disposition' => qq!attachment;filename="$filename"! );
  
 #http://support.microsoft.com/kb/812935
 #http://support.microsoft.com/kb/323308
@@ -22,8 +25,8 @@ $HTML::Mason::Commands::r->headers_out->{'Cache-control'} = 'max-age=0';
 
 my $data = '';
 my $XLS = new IO::Scalar \$data;
-my $workbook = Spreadsheet::WriteExcel->new($XLS)
-  or die "Error opening .xls file: $!";
+my $workbook = $format->{class}->new($XLS)
+  or die "Error opening Excel file: $!";
 
 my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
 

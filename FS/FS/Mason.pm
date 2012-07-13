@@ -91,6 +91,9 @@ if ( -e $addl_handler_use_file ) {
   use Text::CSV_XS;
   use Spreadsheet::WriteExcel;
   use Spreadsheet::WriteExcel::Utility;
+  use Excel::Writer::XLSX;
+  use Excel::Writer::XLSX::Utility;
+
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
   use Net::Ping;
