@@ -9,67 +9,20 @@
 <& /elements/init_overlib.html &>
 
 <% ntable('#cccccc') %>
-  <TR>
-    <TH ALIGN="right"><% mt('Payment amount') |h %></TH>
-    <TD COLSPAN=7>
-      <TABLE><TR><TD BGCOLOR="#ffffff">
-        <% $money_char %><INPUT NAME     = "amount"
-                                ID       = "amount"
-                                TYPE     = "text"
-                                VALUE    = "<% $amount %>"
-                                SIZE     = 8
-                                STYLE    = "text-align:right;"
-%                               if ( $fee ) {
-                                  onChange   = "amount_changed(this)"
-                                  onKeyDown  = "amount_changed(this)"
-                                  onKeyUp    = "amount_changed(this)"
-                                  onKeyPress = "amount_changed(this)"
-%                               }
-                         >
-      </TD><TD BGCOLOR="#cccccc">
-%        if ( $fee ) {
-           <INPUT TYPE="hidden" NAME="fee_pkgpart" VALUE="<% $fee_pkg->pkgpart %>">
-           <INPUT TYPE="hidden" NAME="fee" VALUE="<% $fee_display eq 'add' ? $fee : '' %>">
-           <B><FONT SIZE='+1'><% $fee_op %></FONT>
-              <% $money_char . $fee %>
-           </B>
-           <% $fee_pkg->pkg |h %>
-           <B><FONT SIZE='+1'>=</FONT></B>
-      </TD><TD ID="ajax_total_cell" BGCOLOR="#dddddd" STYLE="border:1px solid blue">
-           <FONT SIZE="+1"><% length($amount) ? $money_char. sprintf('%.2f', ($fee_display eq 'add') ? $amount + $fee : $amount - $fee ) : '' %> <% $fee_display eq 'add' ? 'TOTAL' : 'AVAILABLE' %></FONT>
-  
-%        }
-      </TD></TR></TABLE>
-    </TD>
-  </TR>
 
-% if ( $fee ) {
+  <& /elements/tr-amount_fee.html,
+       'amount'             => $amount,
+       'process-pkgpart'    => scalar($conf->config('manual_process-pkgpart')),
+       'process-display'    => scalar($conf->config('manual_process-display')),
+       'process-skip-first' => $conf->exists('manual_process-skip_first'),
+       'num_payments'       => scalar($cust_main->cust_pay), 
+       'post_fee_callback'  => $post_fee_callback,
+  &>
 
-    <SCRIPT TYPE="text/javascript">
-
-      function amount_changed(what) {
-
-
-        var total = '';
-        if ( what.value.length ) {
-          total = parseFloat(what.value) <% $fee_op %> <% $fee %>;
-          /* total = Math.round(total*100)/100; */
-          total = '<% $money_char %>' + total.toFixed(2);
-        }
-
-        var total_cell = document.getElementById('ajax_total_cell');
-        total_cell.innerHTML = '<FONT SIZE="+1">' + total + ' <% $fee_display eq 'add' ? 'TOTAL' : 'AVAILABLE' %></FONT>';
-
-      }
-
-    </SCRIPT>
-
-% }
-
-<& /elements/tr-select-discount_term.html,
-             'custnum' => $custnum,
-             'amount_id' => 'amount',
-&>
+  <& /elements/tr-select-discount_term.html,
+       'custnum'   => $custnum,
+       'amount_id' => 'amount',
+  &>
 
 % if ( $payby eq 'CARD' ) {
 %
@@ -304,8 +257,6 @@ my $payinfo = '';
 
 my $conf = new FS::Conf;
 
-my $money_char = $conf->config('money_char') || '$';
-
 #false laziness w/selfservice make_payment.html shortcut for one-country
 my %states = map { $_->state => 1 }
                qsearch('cust_main_county', {
@@ -313,43 +264,23 @@ my %states = map { $_->state => 1 }
                } );
 my @states = sort { $a cmp $b } keys %states;
 
-my $fee = '';
-my $fee_pkg = '';
-my $fee_display = '';
-my $fee_op = '';
-my $num_payments = scalar($cust_main->cust_pay);
-#handle old cust_main.pm (remove...)
-$num_payments = scalar( @{ [ $cust_main->cust_pay ] } )
-  unless defined $num_payments;
-if ( $conf->config('manual_process-pkgpart')
-     and ! $conf->exists('manual_process-skip_first') || $num_payments
-   )
-{
-
-  $fee_display = $conf->config('manual_process-display') || 'add';
-  $fee_op = $fee_display eq 'add' ? '+' : '-';
-
-  $fee_pkg =
-    qsearchs('part_pkg', { pkgpart=>$conf->config('manual_process-pkgpart') } );
-
-  #well ->unit_setup or ->calc_setup both call for a $cust_pkg
-  # (though ->unit_setup doesn't use it...)
-  $fee = $fee_pkg->option('setup_fee')
-    if $fee_pkg; #in case.. better than dying with a perl traceback
-
-}
-
 my $amount = '';
 if ( $balance > 0 ) {
   $amount = $balance;
-  $amount += $fee
-    if $fee && $fee_display eq 'subtract';
+}
+
+my $post_fee_callback = sub {
+  my( $amountref ) = @_;
+
+  return unless $$amountref > 0;
+
+  my $conf = new FS::Conf;
 
   my $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage');
-  $amount += $amount * $cc_surcharge_pct/100 if $cc_surcharge_pct > 0;
+  $$amountref += $$amountref * $cc_surcharge_pct/100 if $cc_surcharge_pct > 0;
 
-  $amount = sprintf("%.2f", $amount);
-}
+  $$amountref = sprintf("%.2f", $$amountref);
+};
 
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
 
