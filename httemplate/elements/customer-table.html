@@ -198,7 +198,11 @@ Example:
 
       var customerArrayArray = eval('(' + customers + ')') || [];
 
-      if ( customerArrayArray.length == 1 ) {
+      if ( customerArrayArray.length == 0 ) {
+
+        update_customer(searchrow, []);
+
+      } else if ( customerArrayArray.length == 1 ) {
 
         update_customer(searchrow, customerArrayArray[0]);
 % if ( $opt{custnum_update_callback} ) {
@@ -272,7 +276,11 @@ Example:
       custnum_obj.disabled = false;
       custnum_obj.style.backgroundColor = '#ffffff';
 
-      if ( customerArrayArray.length == 1 ) {
+      if ( customerArrayArray.length == 0 ) {
+
+        update_customer(searchrow, []);
+
+      } else if ( customerArrayArray.length == 1 ) {
 
         update_customer(searchrow, customerArrayArray[0]);
 % if ( $opt{custnum_update_callback} ) {
