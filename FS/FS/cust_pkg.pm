@@ -3491,20 +3491,34 @@ sub search {
                   'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
                   'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) ';
 
-  my $count_query = "SELECT COUNT(*) FROM cust_pkg $addl_from $extra_sql";
+  my $select;
+  my $count_query;
+  if ( $params->{'select_zip5'} ) {
+    my $zip = 'COALESCE(cust_location.zip, cust_main.ship_zip, cust_main.zip)';
+
+    $select = "DISTINCT substr($zip,1,5) as zip";
+    $orderby = "ORDER BY substr($zip,1,5)";
+    $addl_from .= 'LEFT JOIN cust_location ON ( locationnum )';
+    $count_query = "SELECT COUNT( DISTINCT substr($zip,1,5) )";
+  } else {
+    $select = join(', ',
+                         'cust_pkg.*',
+                         ( map "part_pkg.$_", qw( pkg freq ) ),
+                         'pkg_class.classname',
+                         'cust_main.custnum AS cust_main_custnum',
+                         FS::UI::Web::cust_sql_fields(
+                           $params->{'cust_fields'}
+                         ),
+                  );
+    $count_query = 'SELECT COUNT(*)';
+  }
+
+  $count_query .= " FROM cust_pkg $addl_from $extra_sql";
 
   my $sql_query = {
     'table'       => 'cust_pkg',
     'hashref'     => {},
-    'select'      => join(', ',
-                                'cust_pkg.*',
-                                ( map "part_pkg.$_", qw( pkg freq ) ),
-                                'pkg_class.classname',
-                                'cust_main.custnum AS cust_main_custnum',
-                                FS::UI::Web::cust_sql_fields(
-                                  $params->{'cust_fields'}
-                                ),
-                     ),
+    'select'      => $select,
     'extra_sql'   => $extra_sql,
     'order_by'    => $orderby,
     'addl_from'   => $addl_from,
