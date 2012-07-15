@@ -2447,13 +2447,13 @@ sub _Links {
     # at least to myself
     $links->Limit(
         FIELD           => $field, #$limit_on,
-        OPERATOR        => 'LIKE',
+        OPERATOR        => 'MATCHES',
         VALUE           => 'fsck.com-rt://%/ticket/'. $self->id,
         ENTRYAGGREGATOR => 'OR',
     );
     $links->Limit(
         FIELD           => $field, #$limit_on,
-        OPERATOR        => 'LIKE',
+        OPERATOR        => 'MATCHES',
         VALUE           => 'fsck.com-rt://%/ticket/'. $_,
         ENTRYAGGREGATOR => 'OR',
     ) foreach $self->Merged;
