@@ -387,6 +387,19 @@ sub previous {
   $total, @cust_bill;
 }
 
+=item enable_previous
+
+Whether to show the 'Previous Charges' section when printing this invoice.
+The negation of the 'disable_previous_balance' config setting.
+
+=cut
+
+sub enable_previous {
+  my $self = shift;
+  my $agentnum = $self->cust_main->agentnum;
+  !$self->conf->exists('disable_previous_balance', $agentnum);
+}
+
 =item cust_bill_pkg
 
 Returns the line items (see L<FS::cust_bill_pkg>) for this invoice.

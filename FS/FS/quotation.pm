@@ -150,6 +150,12 @@ sub cust_bill_pkg {
 
 =back
 
+=item enable_previous
+
+=cut
+
+sub enable_previous { 0 }
+
 =head1 BUGS
 
 =head1 SEE ALSO
