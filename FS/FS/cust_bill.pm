@@ -395,6 +395,19 @@ sub previous {
   $total, @cust_bill;
 }
 
+=item enable_previous
+
+Whether to show the 'Previous Charges' section when printing this invoice.
+The negation of the 'disable_previous_balance' config setting.
+
+=cut
+
+sub enable_previous {
+  my $self = shift;
+  my $agentnum = $self->cust_main->agentnum;
+  !$self->conf->exists('disable_previous_balance', $agentnum);
+}
+
 =item cust_bill_pkg
 
 Returns the line items (see L<FS::cust_bill_pkg>) for this invoice.
@@ -3036,10 +3049,11 @@ sub print_generic {
     }
   }
 
-  unless (    $conf->exists('disable_previous_balance', $agentnum)
-           || $conf->exists('previous_balance-summary_only')
-         )
-  {
+  # previous invoice balances in the Previous Charges section if there
+  # is one, otherwise in the main detail section
+  if ( $self->can('_items_previous') &&
+       $self->enable_previous &&
+       ! $conf->exists('previous_balance-summary_only') ) {
 
     warn "$me adding previous balances\n"
       if $DEBUG > 1;
@@ -3070,9 +3084,8 @@ sub print_generic {
     }
 
   }
-  
-  if ( @pr_cust_bill && !$conf->exists('disable_previous_balance', $agentnum) ) 
-    {
+
+  if ( @pr_cust_bill && $self->enable_previous ) {
     push @buf, ['','-----------'];
     push @buf, [ $self->mt('Total Previous Balance'),
                  $money_char. sprintf("%10.2f", $pr_total) ];
@@ -3188,7 +3201,9 @@ sub print_generic {
   $invoice_data{current_less_finance} =
     sprintf('%.2f', $self->charged - $invoice_data{finance_amount} );
 
-  if ( $multisection && !$conf->exists('disable_previous_balance', $agentnum)
+  # create a major section for previous balance if we have major sections,
+  # or if previous_section is in summary form
+  if ( ( $multisection && $self->enable_previous )
     || $conf->exists('previous_balance-summary_only') )
   {
     unshift @sections, $previous_section if $pr_total;
@@ -3252,25 +3267,26 @@ sub print_generic {
 
   push @buf,['','-----------'];
   push @buf,[$self->mt( 
-              $conf->exists('disable_previous_balance', $agentnum) 
+              (!$self->enable_previous)
                ? 'Total Charges'
                : 'Total New Charges'
              ),
              $money_char. sprintf("%10.2f",$self->charged) ];
   push @buf,['',''];
 
+  # calculate total, possibly including total owed on previous
+  # invoices
   {
     my $total = {};
     my $item = 'Total';
     $item = $conf->config('previous_balance-exclude_from_total')
          || 'Total New Charges'
       if $conf->exists('previous_balance-exclude_from_total');
-    my $amount = $self->charged +
-                   ( $conf->exists('disable_previous_balance', $agentnum) ||
-                     $conf->exists('previous_balance-exclude_from_total')
-                     ? 0
-                     : $pr_total
-                   );
+    my $amount = $self->charged;
+    if ( $self->enable_previous and !$conf->exists('previous_balance-exclude_from_total') ) {
+      $amount += $pr_total;
+    }
+
     $total->{'total_item'} = &$embolden_function($self->mt($item));
     $total->{'total_amount'} =
       &$embolden_function( $other_money_char.  sprintf( '%.2f', $amount ) );
@@ -3292,8 +3308,13 @@ sub print_generic {
               ];
     push @buf,['',''];
   }
-  
-  unless ( $conf->exists('disable_previous_balance', $agentnum) ) {
+
+  # if we're showing previous invoices, also show previous
+  # credits and payments 
+  if ( $self->enable_previous 
+        and $self->can('_items_credits')
+        and $self->can('_items_payments') )
+    {
     #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
   
     # credits
@@ -4898,6 +4919,7 @@ sub _items_cust_bill_pkg {
   my $summary_page = $opt{summary_page} || ''; #unused
   my $multilocation = $opt{multilocation} || '';
   my $multisection = $opt{multisection} || '';
+  my $enable_previous = $self->enable_previous;
   my $discount_show_always = 0;
 
   my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 50;

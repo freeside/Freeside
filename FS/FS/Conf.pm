@@ -3906,7 +3906,7 @@ and customer address. Include units.',
   {
     'key'         => 'disable_previous_balance',
     'section'     => 'invoicing',
-    'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices',
+    'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
@@ -3929,6 +3929,13 @@ and customer address. Include units.',
     'key'         => 'previous_balance-show_credit',
     'section'     => 'invoicing',
     'description' => 'Show the customer\'s credit balance on invoices when applicable.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'previous_balance-show_on_statements',
+    'section'     => 'invoicing',
+    'description' => 'Show previous invoices on statements, without itemized charges.',
     'type'        => 'checkbox',
   },
 
