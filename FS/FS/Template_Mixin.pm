@@ -12,6 +12,7 @@ use Text::Template 1.20;
 use File::Temp 0.14;
 use HTML::Entities;
 use Locale::Country;
+use Cwd;
 use FS::UID;
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( generate_ps generate_pdf );
@@ -133,7 +134,9 @@ sub print_latex {
   close $lh;
   $params{'logo_file'} = $lh->filename;
 
-  if( $conf->exists('invoice-barcode') && $self->can('invoice_barcode') ) {
+  if( $conf->exists('invoice-barcode') 
+        && $self->can('invoice_barcode')
+        && $self->invnum ) { # don't try to barcode statements
       my $png_file = $self->invoice_barcode($dir);
       my $eps_file = $png_file;
       $eps_file =~ s/\.png$/.eps/g;
@@ -699,6 +702,8 @@ sub print_generic {
   warn "$me generating sections\n"
     if $DEBUG > 1;
 
+  # Previous Charges section
+  # subtotal is the first return value from $self->previous
   my $previous_section = { 'description' => $self->mt('Previous Charges'),
                            'subtotal'    => $other_money_char.
                                             sprintf('%.2f', $pr_total),
@@ -923,8 +928,10 @@ sub print_generic {
       }
       $detail->{'amount'} = ( $old_latex ? '' : $money_char ).
                               $line_item->{'amount'};
-      $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
-                                 $line_item->{'unit_amount'};
+      if ( exists $line_item->{'unit_amount'} ) {
+        $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
+                                   $line_item->{'unit_amount'};
+      }
       $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
 
       $detail->{'sdate'} = $line_item->{'sdate'};
