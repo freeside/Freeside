@@ -4919,7 +4919,6 @@ sub _items_cust_bill_pkg {
   my $summary_page = $opt{summary_page} || ''; #unused
   my $multilocation = $opt{multilocation} || '';
   my $multisection = $opt{multisection} || '';
-  my $enable_previous = $self->enable_previous;
   my $discount_show_always = 0;
 
   my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 50;
