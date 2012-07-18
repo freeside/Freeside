@@ -18,13 +18,11 @@ prepaid cards of
 
 characters each
 
-<BR>for <SELECT NAME="agentnum"><OPTION>(any agent)
-% foreach my $opt_agent ( qsearch('agent', { 'disabled' => '' } ) ) { 
+<BR>for 
 
-  <OPTION VALUE="<% $opt_agent->agentnum %>"<% $opt_agent->agentnum == $agentnum ? ' SELECTED' : '' %>><% $opt_agent->agent %>
-% } 
-
-</SELECT>
+<& /elements/select-agent.html,
+     'empty_label' => '(any agent)',
+&>
 
 <TABLE>
 <TR><TD>Value: 
