@@ -1,4 +1,6 @@
-<& /elements/header-popup.html, mt('Order new package') &>
+<& /elements/header-popup.html, $quotationnum ? mt('Add package to quotation')
+                                              : mt('Order new package')
+&>
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
@@ -11,8 +13,10 @@
 
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
 
-<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main ? $cust_main->custnum : '' %>">
+<INPUT TYPE="hidden" NAME="prospectnum" VALUE="<% $prospect_main ? $prospect_main->prospectnum : '' %>">
 <INPUT TYPE="hidden" NAME="qualnum" VALUE="<% scalar($cgi->param('qualnum')) |h %>">
+<INPUT TYPE="hidden" NAME="quotationnum" VALUE="<% $quotationnum %>">
 % if ( $svcpart ) {
     <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
 % }
@@ -26,9 +30,10 @@
     </TR>
 % } else {
     <& /elements/tr-select-cust-part_pkg.html,
-                 'curr_value' => $pkgpart,
-                 'classnum'   => -1,
-                 'cust_main'  => $cust_main,
+                 'curr_value'    => $pkgpart,
+                 'classnum'      => -1,
+                 'cust_main'     => $cust_main,
+                 'prospect_main' => $prospect_main,
     &>
 % }
 
@@ -54,7 +59,7 @@
   </TD>
 </TR>
 
-% if ( $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
+% if ( $cust_main && $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
 %   my $what = lc(FS::payby->shortname($cust_main->payby));
     <TR>
       <TH ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TH>
@@ -97,8 +102,9 @@
 % } else {
 
     <& /elements/tr-select-cust_location.html,
-                 'cgi'       => $cgi,
-                 'cust_main' => $cust_main,
+                 'cgi'           => $cgi,
+                 'cust_main'     => $cust_main,
+                 'prospect_main' => $prospect_main,
     &>
 
 % }
@@ -152,20 +158,42 @@ die "access denied"
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-$cgi->param('custnum') =~ /^(\d+)$/ or die "no custnum";
-my $custnum = $1;
-my $cust_main = qsearchs({
-  'table'     => 'cust_main',
-  'hashref'   => { 'custnum' => $custnum },
-  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
-});
+my $cust_main = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  my $custnum = $1;
+  $cust_main = qsearchs({
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  });
+}
+
+my $prospect_main = '';
+if ( $cgi->param('prospectnum') =~ /^(\d+)$/ ) {
+  my $prospectnum = $1;
+  $prospect_main = qsearchs({
+    'table'     => 'prospect_main',
+    'hashref'   => { 'prospectnum' => $prospectnum },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  });
+}
+
+my $quotationnum = '';
+if ( $cgi->param('quotationnum') =~ /^(\d+)$/ ) {
+  $quotationnum = $1;
+}
+
+die 'no custnum or prospectnum' unless $cust_main || $prospect_main;
 
 my $part_pkg = '';
 if ( $cgi->param('lock_pkgpart') ) {
   $part_pkg = qsearchs({
     'table'     => 'part_pkg',
     'hashref'   => { 'pkgpart' => scalar($cgi->param('lock_pkgpart')) },
-    'extra_sql' => ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_main->agent ),
+    'extra_sql' => ' AND '. FS::part_pkg->agent_pkgs_sql(
+                              $cust_main ? $cust_main->agent
+                                         : $prospect_main->agent
+                            ),
   })
     or die "unknown pkgpart ". $cgi->param('lock_pkgpart');
 }
@@ -179,7 +207,7 @@ if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
 
 my $format = $date_format. ' %T %z (%Z)'; #false laziness w/REAL_cust_pkg.cgi?
 my $start_date = '';
-if( ! $conf->exists('order_pkg-no_start_date') ) {
+if( ! $conf->exists('order_pkg-no_start_date') && $cust_main ) {
   $start_date = $cust_main->next_bill_date;
   $start_date = $start_date ? time2str($format, $start_date) : '';
 }
