@@ -130,6 +130,11 @@ The deposit account number.
 
 The teller number.
 
+=item pay_batch
+
+The number of the batch this payment came from (see L<FS::pay_batch>), 
+or null if it was processed through a realtime gateway or entered manually.
+
 =back
 
 =head1 METHODS
@@ -514,6 +519,7 @@ sub check {
     || $self->ut_alphan('depositor')
     || $self->ut_numbern('account')
     || $self->ut_numbern('teller')
+    || $self->ut_foreign_keyn('batchnum', 'pay_batch', 'batchnum')
     || $self->payinfo_check()
   ;
   return $error if $error;
@@ -982,6 +988,21 @@ sub _upgrade_data {  #class method
   delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
   $class->_upgrade_otaker(%opts);
   $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
+
+  ###
+  # migrate batchnums from the misused 'paybatch' field to 'batchnum'
+  ###
+  my @cust_pay = qsearch( {
+      'table'     => 'cust_pay',
+      'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
+  } );
+  foreach my $cust_pay (@cust_pay) {
+    $cust_pay->set('batchnum' => $cust_pay->paybatch);
+    $cust_pay->set('paybatch' => '');
+    my $error = $cust_pay->replace;
+    warn "error setting batchnum on cust_pay #".$cust_pay->paynum.":\n  $error"
+    if $error;
+  }
 
 }
 

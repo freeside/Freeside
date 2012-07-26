@@ -44,6 +44,8 @@
         <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $quantity %>">
       </TD>
     </TR>
+% } else {
+    <INPUT TYPE="hidden" NAME="quantity" VALUE="1">
 % }
 
 <TR>

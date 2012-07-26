@@ -52,12 +52,24 @@ my $edit_cb = sub {
         elsif($export->exporttype eq 'ikano') {
             @fields = ( 'password', 'monitored', );
 
-            foreach my $hf ( keys %$ti_fields ) {
-                push @fields, {
-                    field => $hf,
-                    type => 'hidden',
-                    value => $svc_x->$hf,
-                } unless ( $hf eq 'password' || $hf eq 'monitored' );
+            if ( $svc_x->vendor_qual_id ) {
+              push @fields, { field => 'vendor_qual_id',
+                              type  => 'hidden',
+                              value => $svc_x->vendor_qual_id,
+                            };
+            } else {
+              push @fields, 'vendor_qual_id';
+            }
+
+            foreach my $hf (
+              grep { $_ !~ /^(password|monitored|vendor_qual_id)$/ }
+                keys %$ti_fields
+            ) {
+              push @fields, {
+                field => $hf,
+                type  => 'hidden',
+                value => $svc_x->$hf,
+              };
             }
         }
         # else add any other export-specific stuff here

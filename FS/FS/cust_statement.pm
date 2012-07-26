@@ -6,6 +6,8 @@ use FS::Record qw( dbh qsearch ); #qsearchs );
 use FS::cust_main;
 use FS::cust_bill;
 
+use List::Util qw( sum );
+
 =head1 NAME
 
 FS::cust_statement - Object methods for cust_statement records
@@ -61,8 +63,13 @@ Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
 
 Pass "statementnum => 'ALL'" to create a temporary statement that includes 
-all of the customer's invoices.  This statement can't be inserted and won't
-set the statementnum field on any invoices.
+all of the customer's open invoices.  This statement can't be inserted and 
+won't set the statementnum field on any invoices.
+
+Pass "invnum => number" to create a temporary statement including only 
+the specified invoice.  This is functionally the same as the invoice itself,
+but will be rendered using the statement template and other 
+statement-specific options.
 
 =cut
 
@@ -170,13 +177,23 @@ Returns the associated invoices (cust_bill records) for this statement.
 sub cust_bill {
   my $self = shift;
   # we use it about a thousand times, let's cache it
-  $self->{Hash}->{cust_bill} ||= [
-    qsearch('cust_bill', { 
-        $self->statementnum eq 'ALL' ?
-          ('custnum' => $self->custnum) :
-          ('statementnum' => $self->statementnum)
-    } )
-  ];
+  if ( !exists($self->{Hash}->{cust_bill}) ) {
+    my @cust_bill;
+    if ( $self->invnum && $self->invnum =~ /^\d+$/ ) {
+      # one specific invoice
+      @cust_bill = FS::cust_bill->by_key($self->invnum)
+        or die "unknown invnum '".$self->invnum."'";
+      $self->set('custnum' => $cust_bill[0]->custnum);
+    } elsif ( $self->statementnum eq 'ALL' ) {
+      # all open invoices
+      @cust_bill = $self->cust_main->open_cust_bill;
+    } else {
+      @cust_bill = qsearch('cust_bill',
+        { statementnum => $self->statementnum }
+      );
+    }
+    $self->{Hash}->{cust_bill} = \@cust_bill;
+  }
 
   @{ $self->{Hash}->{cust_bill} }
 }
@@ -266,9 +283,20 @@ sub tax     { shift->_total('tax',     @_); }
 sub charged { shift->_total('charged', @_); }
 sub owed    { shift->_total('owed',    @_); }
 
-#don't show previous info
+sub enable_previous {
+  my $self = shift;
+  $self->conf->exists('previous_balance-show_on_statements');
+}
+
 sub previous {
-  ( 0 ); # 0, empty list
+  my $self = shift;
+  if ( $self->enable_previous ) {
+    my @previous = grep { $_->_date < ($self->cust_bill)[0]->_date }
+      $self->cust_main->open_cust_bill;
+    return(sum(map {$_->owed} @previous), @previous);
+  } else {
+    return 0;
+  }
 }
 
 =back

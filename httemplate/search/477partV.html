@@ -34,9 +34,11 @@ $search_hash{'classnum'} = [ $cgi->param('classnum') ];
 $search_hash{report_option} = $cgi->param('partv_report_option')
   if $cgi->param('partv_report_option');
 
-my $sql_query = FS::cust_pkg->search( { %search_hash, 'fcc_line' => 1 });
-$sql_query->{select} = 'DISTINCT substr(zip,1,5) as zip';
-$sql_query->{order_by} = 'ORDER BY substr(zip,1,5)';
+my $sql_query = FS::cust_pkg->search( { %search_hash,
+                                        'fcc_line'    => 1,
+                                        'select_zip5' => 1,
+                                      }
+                                    );
 my $count_query = delete($sql_query->{'count_query'});
 $count_query =~ s/COUNT\(\*\)/count(DISTINCT substr(zip,1,5))/;
 $count_query =~ s/ORDER BY [.\w]+//;

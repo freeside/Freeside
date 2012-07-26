@@ -219,7 +219,7 @@ Returns a semi-friendly label for the gateway.
 sub label {
   my $self = shift;
   $self->gatewaynum . ': ' . 
-  $self->gateway_username . '@' . 
+  ($self->gateway_username ? $self->gateway_username . '@' : '') . 
   $self->gateway_module
 }
 

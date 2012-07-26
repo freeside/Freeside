@@ -2538,7 +2538,7 @@ and customer address. Include units.',
   {
     'key'         => 'manual_process-pkgpart',
     'section'     => 'billing',
-    'description' => 'Package to add to each manual credit card and ACH payments entered from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option.',
+    'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
     'type'        => 'select-part_pkg',
   },
 
@@ -2557,6 +2557,56 @@ and customer address. Include units.',
     'key'         => 'manual_process-skip_first',
     'section'     => 'billing',
     'description' => "When using manual_process-pkgpart, omit the fee if it is the customer's first payment.",
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice_process-pkgpart',
+    'section'     => 'billing',
+    'description' => 'Package to add to each manual credit card and ACH payment entered by the customer themselves in the self-service interface.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
+    'type'        => 'select-part_pkg',
+  },
+
+  {
+    'key'         => 'selfservice_process-display',
+    'section'     => 'billing',
+    'description' => 'When using selfservice_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
+    'type'        => 'select',
+    'select_hash' => [
+                       'add'      => 'Add fee to amount entered',
+                       'subtract' => 'Subtract fee from amount entered',
+                     ],
+  },
+
+  {
+    'key'         => 'selfservice_process-skip_first',
+    'section'     => 'billing',
+    'description' => "When using selfservice_process-pkgpart, omit the fee if it is the customer's first payment.",
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'suto_process-pkgpart',
+    'section'     => 'billing',
+    'description' => 'Package to add to each automatic credit card and ACH payment processed by billing events.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option.',
+    'type'        => 'select-part_pkg',
+  },
+
+#  {
+#    'key'         => 'auto_process-display',
+#    'section'     => 'billing',
+#    'description' => 'When using auto_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
+#    'type'        => 'select',
+#    'select_hash' => [
+#                       'add'      => 'Add fee to amount entered',
+#                       'subtract' => 'Subtract fee from amount entered',
+#                     ],
+#  },
+
+  {
+    'key'         => 'auto_process-skip_first',
+    'section'     => 'billing',
+    'description' => "When using auto_process-pkgpart, omit the fee if it is the customer's first payment.",
     'type'        => 'checkbox',
   },
 
@@ -3475,6 +3525,13 @@ and customer address. Include units.',
     'select_enum' => [ 'approve', 'decline' ],
   },
 
+  {
+    'key'         => 'batch-errors_to',
+    'section'     => 'billing',
+    'description' => 'Email errors when processing batches to this address.  If unspecified, batch processing will stop immediately on error.',
+    'type'        => 'text',
+  },
+
   #lists could be auto-generated from pay_batch info
   {
     'key'         => 'batch-fixed_format-CARD',
@@ -3935,7 +3992,7 @@ and customer address. Include units.',
   {
     'key'         => 'disable_previous_balance',
     'section'     => 'invoicing',
-    'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices',
+    'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
@@ -3958,6 +4015,13 @@ and customer address. Include units.',
     'key'         => 'previous_balance-show_credit',
     'section'     => 'invoicing',
     'description' => 'Show the customer\'s credit balance on invoices when applicable.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'previous_balance-show_on_statements',
+    'section'     => 'invoicing',
+    'description' => 'Show previous invoices on statements, without itemized charges.',
     'type'        => 'checkbox',
   },
 
@@ -5153,6 +5217,17 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'If set, automatically log users out of the backoffice after this many minutes.',
     'type'       => 'text',
+  },
+  
+  {
+    'key'         => 'spreadsheet_format',
+    'section'     => 'UI',
+    'description' => 'Default format for spreadsheet download.',
+    'type'        => 'select',
+    'select_hash' => [
+      'XLS' => 'XLS (Excel 97/2000/XP)',
+      'XLSX' => 'XLSX (Excel 2007+)',
+    ],
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

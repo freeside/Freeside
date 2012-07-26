@@ -6,7 +6,7 @@ Hello <%= $name %>!<BR><BR>
 <%= include('small_custview') %>
 
 <BR>
-<%= if ( $access_pkgnum ) {
+<%= unless ( $access_pkgnum ) {
       $OUT .= qq!Balance: <B>\$$balance</B><BR><BR>!;
     }
     '';

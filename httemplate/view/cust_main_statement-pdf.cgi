@@ -23,12 +23,16 @@ my $cust_main = qsearchs({
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
 die "Customer #$custnum not found!" unless $cust_main;
+my $cust_bill = ($cust_main->cust_bill)[-1]
+  or die "Customer #$custnum has no invoices!";
 
 my $cust_statement = FS::cust_statement->new({
   'custnum'       => $custnum,
-  'statementnum'  => 'ALL', #magic
+#  'statementnum'  => 'ALL', #magic
+  'invnum'        => $cust_bill->invnum,
   '_date'         => time,
 });
+
 
 my $pdf = $cust_statement->print_pdf( '', $templatename );
 

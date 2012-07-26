@@ -10,7 +10,6 @@ foreach my $pkg (
          } @cust_pkg
     ) {
   my $susp = $pkg->{'susp'} || '';
-  warn $pkg->{'pkg'}. ' '.$susp."\n";
   my @pkg_actions = ( [ 'customer_change_pkg' => 'change' ] );
   push @pkg_actions, [ 'process_suspend_pkg' => 'suspend' ] 
     if $self_suspend_reason and !$susp;

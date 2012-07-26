@@ -2465,6 +2465,25 @@ Adds a payment for this invoice to the pending credit card batch (see
 L<FS::cust_pay_batch>), or, if the B<realtime> option is set to a true value,
 runs the payment using a realtime gateway.
 
+Options may include:
+
+B<amount>: the amount to be paid; defaults to the customer's balance minus
+any payments in transit.
+
+B<payby>: the payment method; defaults to cust_main.payby
+
+B<realtime>: runs this as a realtime payment instead of adding it to a 
+batch.  Deprecated.
+
+B<invnum>: sets cust_pay_batch.invnum.
+
+B<address1>, B<address2>, B<city>, B<state>, B<zip>, B<country>: sets 
+the billing address for the payment; defaults to the customer's billing
+location.
+
+B<payinfo>, B<paydate>, B<payname>: sets the payment account, expiration
+date, and name; defaults to those fields in cust_main.
+
 =cut
 
 sub batch_card {
@@ -2542,10 +2561,10 @@ sub batch_card {
     'state'    => $options{state}    || $loc->state,
     'zip'      => $options{zip}      || $loc->zip,
     'country'  => $options{country}  || $loc->country,
-    'payby'    => $options{payby}    || $loc->payby,
-    'payinfo'  => $options{payinfo}  || $loc->payinfo,
-    'exp'      => $options{paydate}  || $loc->paydate,
-    'payname'  => $options{payname}  || $loc->payname,
+    'payby'    => $options{payby}    || $self->payby,
+    'payinfo'  => $options{payinfo}  || $self->payinfo,
+    'exp'      => $options{paydate}  || $self->paydate,
+    'payname'  => $options{payname}  || $self->payname,
     'amount'   => $amount,                         # consolidating
   } );
   

@@ -3,8 +3,7 @@ package FS::domain_record;
 use strict;
 use vars qw( @ISA $noserial_hack $DEBUG $me );
 use FS::Conf;
-#use FS::Record qw( qsearch qsearchs );
-use FS::Record qw( qsearchs dbh );
+use FS::Record qw( qsearchs dbh ); #qsearch
 use FS::svc_domain;
 use FS::svc_www;
 

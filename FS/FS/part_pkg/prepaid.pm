@@ -23,7 +23,7 @@ tie my %overlimit_action, 'Tie::IxHash',
   'shortname' => 'Prepaid, no automatic cycle',
   'inherit_fields' => [ 'usage_Mixin', 'global_Mixin' ],
   'fields' => {
-    'recur_action' => { 'name' => 'Action to take upon reaching end of prepaid preiod',
+    'recur_action' => { 'name' => 'Action to take upon reaching end of prepaid period',
                         'type' => 'select',
 			'select_options' => \%recur_action,
 	              },

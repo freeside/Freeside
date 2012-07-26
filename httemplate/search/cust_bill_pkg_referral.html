@@ -1,0 +1,294 @@
+<& elements/search.html,
+  'title'       => emt('Sales with advertising source'),
+  'name'        => emt('line items'),
+  'query'       => $query,
+  'count_query' => $count_query,
+  'count_addl'  => [ 
+                     ($setup ? $money_char. '%.2f setup' : ()),
+                     ($recur ? $money_char. '%.2f recurring' : ()),
+                     ($usage ? $money_char. '%.2f usage' : ()),
+                   ],
+  'header'      => [
+    emt('Description'),
+    ($setup ? emt('Setup') : ()),
+    ($recur ? emt('Recurring') : ()),
+    ($usage ? emt('Usage') : ()),
+    emt('Invoice'),
+    emt('Invoice date'),
+    emt('Paid'),
+    emt('Payment date'),
+    emt('Pkg. status'),
+    emt('Pkg. class'),
+    '', #report class
+    emt('Cust#'),
+    emt('Customer'),
+    emt('Ad source'),
+    emt('Agent'),
+  ],
+  'fields'      => [
+    'pkg',
+    ($setup ? money_sub('setup') : ()),
+    ($recur ? money_sub('recur_no_usage') : ()),
+    ($usage ? money_sub('recur_usage') : ()),
+    'invnum',
+    date_sub('_date'),
+    money_sub('paid'),
+    date_sub('last_pay'),
+    sub {
+      my $cust_pkg = shift->cust_pkg;
+      $cust_pkg ? ucfirst($cust_pkg->status) : '';
+    },
+    'classname',
+    sub { # report_option
+      my $cust_bill_pkg = shift;
+      my $pkgpart = $cust_bill_pkg->pkgpart_override
+                 || $cust_bill_pkg->cust_pkg->pkgpart;
+      if ( !exists($report_classes{$pkgpart}) ) {
+        my $part_pkg = FS::part_pkg->by_key($pkgpart);
+        my %opts = $part_pkg->options;
+        $report_classes{$pkgpart} = [
+          map { /^report_option_(\d+)/ ? 
+                $report_option_name{$1} :
+                () }
+          keys %opts
+        ];
+      }
+      join( '<BR>', @{ $report_classes{$pkgpart} });
+    },
+    'custnum',
+    'name',
+    'referral', # from query
+    'agent',
+  ],
+  'sort_fields' => [
+    '',
+    ($setup ? 'setup' : ()),
+    ($recur ? 'recur_no_usage' : ()),
+    ($usage ? 'recur_usage' : ()),
+    'invnum',
+    '_date',
+    'paid',
+    'last_pay',
+    '', #package status
+    'classname',
+    '', #report_option
+    'custnum',
+    '',
+    'referral',
+    'agent',
+  ],
+  'links'       => [
+    '', #package/item desc
+    ('') x $x, #setup/recur/usage
+    $ilink, #invnum
+    $ilink, #invoice date
+    '', #paid amt
+    '', #payment date
+    '', #pkg status
+    '', #classnum
+    '', #report class
+    $clink, #custnum
+    $clink, #customer name
+    '', #referral
+    '', #agent
+  ],
+  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
+  'align' => 'l' . ('r' x $x) . 'rcrccccrlll',
+  'color' => [ ('') x (5 + $x),
+                sub {
+                  my $cust_pkg = shift->cust_pkg;
+                  $cust_pkg ? ucfirst($cust_pkg->statuscolor) : '';
+                },
+               ('') x 6,
+             ],
+  'style' => [
+               ('') x (5 + $x),
+               'b',
+               ('') x 6
+             ],
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
+
+my $setup = $cgi->param('setup') ? 1 : 0;
+my $recur = $cgi->param('recur') ? 1 : 0;
+my $usage = $cgi->param('usage') ? 1 : 0;
+
+my $x = $setup + $recur + $usage;
+
+my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
+my ($join_cust, $join_pkg ) = ('', '');
+
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+
+my @where = ( $agentnums_sql,
+              'cust_bill_pkg.pkgnum != 0', # exclude taxes
+              "cust_bill._date >= $beginning",
+              "cust_bill._date <= $ending",
+            );
+
+my @status_where;
+foreach my $status ($cgi->param('status')) {
+  if ( $status =~ /^([- a-z]+)$/ ) { #"one-time charge"
+    push @status_where, "'$status'";
+  }
+}
+if ( @status_where ) {
+  push @where, '('. FS::cust_pkg->status_sql.
+    ') IN (' . join(',', @status_where) .')';
+}
+
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.agentnum = $1";
+}
+
+#classnum
+# not specified: all classes
+# 0: empty class
+# N: classnum
+my $use_override = 1; #$cgi->param('use_override');
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  my $comparison = '';
+  if ( $1 == 0 ) {
+    $comparison = "IS NULL";
+  } else {
+    $comparison = "= $1";
+  }
+
+  if ( $use_override ) {
+    push @where, "(
+      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+      override.classnum $comparison AND pkgpart_override IS NOT NULL
+    )";
+  } else {
+    push @where, "part_pkg.classnum $comparison";
+  }
+}
+
+# report option
+my @report_option = grep /^\d+$/, ( $cgi->param('report_option') );
+if ( @report_option ) {
+  @report_option = map { "'report_option_$_'" } @report_option;
+  push @where, "EXISTS( 
+    SELECT 1 FROM part_pkg_option WHERE optionname IN (".
+    join(',', @report_option).") AND (
+      part_pkg_option.pkgpart = cust_pkg.pkgpart AND pkgpart_override IS NULL
+      OR part_pkg_option.pkgpart = pkgpart_override
+    )
+  )";
+}
+
+my $setup_sql =
+  FS::cust_bill_pkg->charged_sql('', '', setuprecur => 'setup');
+my $recur_sql =
+  FS::cust_bill_pkg->charged_sql('', '', setuprecur => 'recur', no_usage => 1);
+my $usage_sql = FS::cust_bill_pkg->usage_sql;
+
+# exclude zero-amount items
+my @orwhere;
+push @orwhere, "(cust_bill_pkg.setup > 0)" if $setup;
+push @orwhere, "($recur_sql > 0)"          if $recur;
+push @orwhere, "($usage_sql > 0)"          if $usage;
+push @where, '('.join(' OR ', @orwhere).')' if @orwhere;
+
+$join_cust =  '        JOIN cust_bill     USING ( invnum )
+                  LEFT JOIN cust_main     USING ( custnum )
+                  LEFT JOIN part_referral USING ( refnum )
+                  LEFT JOIN agent ON cust_main.agentnum = agent.agentnum
+              ';
+
+$join_pkg .=  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                LEFT JOIN part_pkg USING ( pkgpart )
+                LEFT JOIN part_pkg AS override
+                  ON pkgpart_override = override.pkgpart 
+                LEFT JOIN pkg_class ON '; #...
+
+if ( $use_override ) {
+  # join to whichever pkgpart is appropriate
+  $join_pkg .= '
+      ( pkgpart_override IS NULL     AND part_pkg.classnum = pkg_class.classnum )
+   OR ( pkgpart_override IS NOT NULL AND override.classnum = pkg_class.classnum )';
+} else {
+  $join_pkg .= 'part_pkg.classnum = pkg_class.classnum';
+}
+
+my $where = ' WHERE '. join(' AND ', @where);
+
+# setup and recurring only
+my $count_query = "SELECT 
+  COUNT(billpkgnum)".
+  ($setup ? ", SUM($setup_sql)" : '').
+  ($recur ? ", SUM($recur_sql)" : '').
+  ($usage ? ", SUM($usage_sql)" : '').
+  " FROM cust_bill_pkg
+  $join_cust
+  $join_pkg
+  $where
+  ";
+
+my $paid_sql = FS::cust_bill_pkg->paid_sql('', '');
+my $last_pay_sql = "SELECT MAX(_date)
+  FROM cust_bill_pay JOIN cust_bill_pay_pkg USING (billpaynum)
+  WHERE cust_bill_pay_pkg.billpkgnum = cust_bill_pkg.billpkgnum";
+
+push @select, 'part_pkg.pkg',
+              'part_pkg.freq',
+              'cust_main.custnum',
+              'cust_main.first',
+              'cust_main.last',
+              'cust_main.company',
+              'part_referral.referral',
+              "($paid_sql) AS paid",
+              "($last_pay_sql) AS last_pay",
+              "($recur_sql) AS recur_no_usage",
+              "($usage_sql) AS recur_usage",
+              'pkg_class.classname',
+              'agent.agent',
+              ;
+
+my $query = {
+  'table'     => 'cust_bill_pkg',
+  'addl_from' => "$join_cust $join_pkg",
+  'hashref'   => {},
+  'select'    => join(",\n", @select ),
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY cust_bill._date, billpkgnum',
+};
+
+my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
+my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my %report_classes; #cache
+my %report_option_name = 
+  map { $_->num => $_->name } qsearch('part_pkg_report_option', {});
+
+# should this be in Mason.pm or something?
+sub money_sub {
+  $conf ||= new FS::Conf;
+  $money_char ||= $conf->config('money_char') || '$';
+  my $field = shift;
+  sub {
+    $money_char . sprintf('%.2f', $_[0]->get($field));
+  };
+}
+
+sub date_sub {
+  my $field = shift;
+  sub {
+    my $value = $_[0]->get($field);
+    $value ? time2str('%b %d %Y', $value) : '';
+  };
+}
+
+</%init>

@@ -970,21 +970,25 @@ sub uncancel {
     }
 
     my $svc_error = $svc_x->insert;
-    if ( $svc_error && $options{svc_fatal} ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $svc_error;
-    } else {
-      my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svc_x->svcnum });
-      if ( $cust_svc ) {
-        my $cs_error = $cust_svc->delete;
-        if ( $cs_error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return $cs_error;
+    if ( $svc_error ) {
+      if ( $options{svc_fatal} ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $svc_error;
+      } else {
+        push @svc_errors, $svc_error;
+        # is this necessary? svc_Common::insert already deletes the 
+        # cust_svc if inserting svc_x fails.
+        my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svc_x->svcnum });
+        if ( $cust_svc ) {
+          my $cs_error = $cust_svc->delete;
+          if ( $cs_error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $cs_error;
+          }
         }
-      }
-    }
-    push @svc_errors, $svc_error if $svc_error;
-  }
+      } # svc_fatal
+    } # svc_error
+  } #foreach $h_cust_svc
 
   #these are pretty rare, but should handle them
   # - dsl_device (mac addresses)
@@ -1189,8 +1193,13 @@ sub suspend {
     $hash{'resume'} = $resume_date;
   }
 
+  $options{options} ||= {};
+
   my $new = new FS::cust_pkg ( \%hash );
-  $error = $new->replace( $self, options => { $self->options } );
+  $error = $new->replace( $self, options => { $self->options,
+                                              %{ $options{options} },
+                                            }
+                        );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -2700,7 +2709,7 @@ sub seconds_since_sqlradacct {
     grep {
       my $part_svc = $_->part_svc;
       $part_svc->svcdb eq 'svc_acct'
-        && scalar($part_svc->part_export('sqlradius'));
+        && scalar($part_svc->part_export_usage);
     } $self->cust_svc
   ) {
     $seconds += $cust_svc->seconds_since_sqlradacct($start, $end);
@@ -2732,7 +2741,7 @@ sub attribute_since_sqlradacct {
     grep {
       my $part_svc = $_->part_svc;
       $part_svc->svcdb eq 'svc_acct'
-        && scalar($part_svc->part_export('sqlradius'));
+        && scalar($part_svc->part_export_usage);
     } $self->cust_svc
   ) {
     $sum += $cust_svc->attribute_since_sqlradacct($start, $end, $attrib);
@@ -3590,20 +3599,40 @@ sub search {
                   'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
                   'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) ';
 
-  my $count_query = "SELECT COUNT(*) FROM cust_pkg $addl_from $extra_sql";
+  my $select;
+  my $count_query;
+  if ( $params->{'select_zip5'} ) {
+    my $zip = 'cust_location.zip';
+
+    $select = "DISTINCT substr($zip,1,5) as zip";
+    $orderby = "ORDER BY substr($zip,1,5)";
+    $addl_from .= 'LEFT JOIN cust_location ON (
+                     cust_location.locationnum = COALESCE(
+                                                   cust_pkg.locationnum,
+                                                   cust_main.ship_locationnum,
+                                                   cust_main.bill_locationnum
+                                                 )
+                                              )';
+    $count_query = "SELECT COUNT( DISTINCT substr($zip,1,5) )";
+  } else {
+    $select = join(', ',
+                         'cust_pkg.*',
+                         ( map "part_pkg.$_", qw( pkg freq ) ),
+                         'pkg_class.classname',
+                         'cust_main.custnum AS cust_main_custnum',
+                         FS::UI::Web::cust_sql_fields(
+                           $params->{'cust_fields'}
+                         ),
+                  );
+    $count_query = 'SELECT COUNT(*)';
+  }
+
+  $count_query .= " FROM cust_pkg $addl_from $extra_sql";
 
   my $sql_query = {
     'table'       => 'cust_pkg',
     'hashref'     => {},
-    'select'      => join(', ',
-                                'cust_pkg.*',
-                                ( map "part_pkg.$_", qw( pkg freq ) ),
-                                'pkg_class.classname',
-                                'cust_main.custnum AS cust_main_custnum',
-                                FS::UI::Web::cust_sql_fields(
-                                  $params->{'cust_fields'}
-                                ),
-                     ),
+    'select'      => $select,
     'extra_sql'   => $extra_sql,
     'order_by'    => $orderby,
     'addl_from'   => $addl_from,
