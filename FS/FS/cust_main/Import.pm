@@ -375,7 +375,8 @@ sub batch_import {
     }
 
     $cust_main{$_} = parse_datetime($cust_main{$_})
-      foreach grep $cust_main{$_}, qw( birthdate spouse_birthdate );
+      foreach grep $cust_main{$_},
+        qw( birthdate spouse_birthdate anniversary_date );
 
     my $invoicing_list = $cust_main{'invoicing_list'}
                            ? [ delete $cust_main{'invoicing_list'} ]

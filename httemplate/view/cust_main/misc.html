@@ -130,6 +130,20 @@
 
 % }
 
+% if ( $conf->exists('cust_main-enable_anniversary_date') ) {
+%   my $dt = $cust_main->anniversary_date ne ''
+%              ? DateTime->from_epoch( 'epoch'  => $cust_main->anniversary_date,
+%                                      'time_zone' =>'floating',
+%                                    )
+%              : '';
+
+  <TR>
+    <TD ALIGN="right"><% mt('Anniversary Date') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
+  </TR>
+
+% }
+
 % if ( $conf->exists('cust_main-require_censustract') ) {
 
   <TR>

@@ -3653,6 +3653,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-enable_anniversary_date',
+    'section'     => 'UI',
+    'description' => 'Enable tracking of an anniversary date with each customer record',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-edit_calling_list_exempt',
     'section'     => 'UI',
     'description' => 'Display the "calling_list_exempt" checkbox on customer edit.',

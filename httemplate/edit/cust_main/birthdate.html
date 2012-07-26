@@ -1,5 +1,7 @@
 <% ntable("#cccccc", 2) %>
+
 % # maybe put after the contact names?
+
 % if ( $conf->exists('cust_main-enable_birthdate') ) {
   <% include( '/elements/tr-input-date-field.html', {
                 'name'        => 'birthdate',
@@ -11,6 +13,7 @@
             })
   %>
 % }
+
 % if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
   <% include( '/elements/tr-input-date-field.html', {
                 'name'        => 'spouse_birthdate',
@@ -22,6 +25,19 @@
             })
   %>
 % }
+
+% if ( $conf->exists('cust_main-enable_anniversary_date') ) {
+  <% include( '/elements/tr-input-date-field.html', {
+                'name'        => 'anniversary_date',
+                'value'       => $cust_main->anniversary_date,
+                'label'       => 'Anniversary Date',
+                'format'      => ( $conf->config('date_format') || "%m/%d/%Y" ),
+                'usedatetime' => 1,
+                'noinit'      => $noinit++,
+            })
+  %>
+% }
+
 </TABLE>
 <%init>
 

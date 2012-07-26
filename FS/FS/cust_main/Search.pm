@@ -475,6 +475,10 @@ listref of start date, end date
 
 listref of start date, end date
 
+=item anniversary_date
+
+listref of start date, end date
+
 =item payby
 
 listref
@@ -617,7 +621,7 @@ sub search {
   # dates
   ##
 
-  foreach my $field (qw( signupdate birthdate spouse_birthdate )) {
+  foreach my $field (qw( signupdate birthdate spouse_birthdate anniversary_date )) {
 
     next unless exists($params->{$field});
 

@@ -76,6 +76,20 @@
       </TR>
 %   }
 
+%    if ( $conf->exists('cust_main-enable_anniversary_date') ) {
+      <TR>
+          <TD ALIGN="right" VALIGN="center"><% mt('Anniversary Date') |h %></TD>
+          <TD>
+          <TABLE>
+              <& /elements/tr-input-beginning_ending.html,
+                        prefix   => 'anniversary_date',
+                        layout   => 'horiz',
+              &>
+          </TABLE>
+          </TD>
+      </TR>
+%   }
+
     <& /elements/tr-select-cust_tag.html,
                   'cgi'		 => $cgi,
                   'is_report'    => 1,
