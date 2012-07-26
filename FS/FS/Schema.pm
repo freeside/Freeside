@@ -846,6 +846,7 @@ sub tables_hashref {
         'stateid_state', 'varchar', 'NULL', $char_d, '', '', 
         'birthdate' ,@date_type, '', '', 
         'spouse_birthdate' ,@date_type, '', '', 
+        'anniversary_date' ,@date_type, '', '', 
         'signupdate',@date_type, '', '', 
         'dundate',   @date_type, '', '', 
         'company',  'varchar', 'NULL', $char_d, '', '', 

@@ -28,6 +28,7 @@
 %# birthdate
 % if (    $conf->exists('cust_main-enable_birthdate')
 %      || $conf->exists('cust_main-enable_spouse_birthdate')
+%      || $conf->exists('cust_main-enable_anniversary_date')
 %    )
 % {
   <BR>

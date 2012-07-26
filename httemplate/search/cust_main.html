@@ -61,7 +61,7 @@ for my $param (qw( classnum refnum payby tagnum )) {
 # parse dates
 ###
 
-foreach my $field (qw( signupdate birthdate spouse_birthdate )) {
+foreach my $field (qw( signupdate birthdate spouse_birthdate anniversary_date )) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 
