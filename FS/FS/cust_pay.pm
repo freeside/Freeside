@@ -656,7 +656,7 @@ sub send_receipt {
 
     }
 
-  } else { #not manual
+  } elsif ( ! $cust_main->invoice_noemail ) { #not manual
 
     my $queue = new FS::queue {
        'paynum' => $self->paynum,
