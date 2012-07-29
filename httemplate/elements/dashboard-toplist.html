@@ -32,18 +32,21 @@
             </FONT>
 	  </TD>
 
-%         foreach my $priority ( @custom_priorities, '' ) {
-%           my $num =
-%             FS::TicketSystem->num_customer_tickets($custnum,$priority);
-%           my $ahref = '';
-%           $ahref= '<A HREF="'.
-%                   FS::TicketSystem->href_customer_tickets($custnum,$priority).
-%                   '">'
-%             if $num;
-
+%         foreach my $priority ( @custom_priorities ) {
             <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-	      <% $ahref.$num %></A>
-	    </TD>
+%           my $num = $num_tickets_by_priority{$priority}->{$custnum};
+%           if ( $num ) {
+              <A HREF="<%
+                   FS::TicketSystem->href_customer_tickets($custnum,$priority)
+                   %>"><% $num %></A>
+%             if ( $priority &&
+%                 exists($num_tickets_by_priority{''}{$custnum}) ) {
+%                   # decrement the customer's total by the number in 
+%                   # this priority bin
+%                   $num_tickets_by_priority{''}{$custnum} -= $num;
+%             }
+%           }
+          </TD>
 %         }
         </TR>
 
@@ -77,7 +80,7 @@
         <TH CLASS="grid" BGCOLOR="#cccccc"><% $line %></TH>
 	<TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Lint') |h %></TH>
 	<TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-%       foreach my $priority ( @custom_priorities, '' ) {
+%       foreach my $priority ( @custom_priorities ) {
           <TH CLASS="grid" BGCOLOR="#cccccc">
 	    <% $priority || '<i>(none)</i>'%>
 	  </TH>
@@ -105,11 +108,61 @@ my $conf = new FS::Conf;
 
 #false laziness w/httemplate/search/cust_main.cgi... care if 
 # custom_priority_field becomes anything but a local hack...
+
 my @custom_priorities = ();
-if ( $conf->config('ticket_system-custom_priority_field')
+my $custom_priority_field = $conf->config('ticket_system-custom_priority_field');
+if ( $custom_priority_field 
      && @{[ $conf->config('ticket_system-custom_priority_field-values') ]} ) {
   @custom_priorities =
     $conf->config('ticket_system-custom_priority_field-values');
 }
+push @custom_priorities, '';
 
+my %num_tickets_by_priority = map { $_ => {} } @custom_priorities;
+# "optimization" (i.e. "terrible hack") to avoid constructing 
+# (@custom_priorities) x (cust_main) queries with a bazillion 
+# joins each just to count tickets
+if ( $FS::TicketSystem::system eq 'RT_Internal' ) {
+  my $text = (driver_name =~ /^Pg/) ? 'text' : 'char';
+  # The RT API does not play nicely with aggregate queries,
+  # so we're going to go around it.
+  my $sql = 
+  "SELECT cust_main.custnum AS custnum,
+          ObjectCustomFieldValues.Content as priority,
+          COUNT(DISTINCT Tickets.Id) AS num_tickets
+   FROM cust_main 
+      LEFT JOIN cust_pkg USING (custnum)
+      LEFT JOIN cust_svc USING (pkgnum)
+      JOIN Links ON (
+        ( Links.Target = 'freeside://freeside/cust_main/' || CAST(cust_main.custnum AS $text) OR
+          Links.Target = 'freeside://freeside/cust_svc/'  || CAST(cust_svc.svcnum AS $text)
+        ) AND 
+        Links.Base LIKE '%rt://%/ticket/%' AND 
+        Links.Type = 'MemberOf'
+      )
+      JOIN Tickets ON (Links.LocalBase = Tickets.Id)
+      LEFT JOIN ObjectCustomFields ON (
+        ObjectCustomFields.ObjectId = '0' OR 
+        ObjectCustomFields.ObjectId = Tickets.Queue
+      )
+      LEFT JOIN CustomFields ON (
+        ObjectCustomFields.CustomField = CustomFields.Id AND
+        CustomFields.Name = '$custom_priority_field'
+      )
+      LEFT JOIN ObjectCustomFieldValues ON (
+        ObjectCustomFieldValues.CustomField = CustomFields.Id AND
+        ObjectCustomFieldValues.ObjectType = 'RT::Ticket' AND
+        ObjectCustomFieldValues.Disabled = '0' AND
+        ObjectCustomFieldValues.ObjectId = Tickets.Id
+      )
+    GROUP BY cust_main.custnum, ObjectCustomFieldValues.Content";
+    #warn $sql."\n";
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  while ( my $row = $sth->fetchrow_hashref ) {
+  #warn to_json($row)."\n";
+    $num_tickets_by_priority{ $row->{priority} }->{ $row->{custnum} } =
+      $row->{num_tickets};
+  }
+}
 </%init>
