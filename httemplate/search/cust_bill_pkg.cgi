@@ -3,24 +3,13 @@
                  'name'        => emt('line items'),
                  'query'       => $query,
                  'count_query' => $count_query,
-                 'count_addl'  => [ $money_char. '%.2f total',
-                                    $unearned ? ( $money_char. '%.2f unearned revenue' ) : (),
-                                  ],
+                 'count_addl'  => [ $money_char. '%.2f total', ],
                  'header'      => [
                    emt('Description'),
-                   ( $unearned
-                     ? ( emt('Unearned'), 
-                         emt('Owed'), # useful in 'paid' mode?
-                         emt('Payment date') )
-                     : ( emt('Setup charge') )
-                   ),
+                   emt('Setup charge'),
                    ( $use_usage eq 'usage'
                      ? emt('Usage charge')
                      : emt('Recurring charge')
-                   ),
-                   ( $unearned
-                     ? ( emt('Charge start'), emt('Charge end') )
-                     : ()
                    ),
                    emt('Invoice'),
                    emt('Date'),
@@ -34,22 +23,11 @@
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
                    sub { my $cust_bill_pkg = shift;
-                         if ( $unearned ) {
-
-                           sprintf($money_char.'%.2f', 
-                             $cust_bill_pkg->unearned_revenue)
-
-                         } else {
-                           sprintf($money_char.'%.2f', $cust_bill_pkg->setup );
-                         }
+                         sprintf($money_char.'%.2f', $cust_bill_pkg->setup );
                        },
-                   ( $unearned
-                     ? ( $owed_sub, $payment_date_sub, )
-                     : ()
-                   ),
                    sub { my $row = shift;
                          my $value = 0;
-                         if ( $use_usage eq 'recurring' or $unearned ) {
+                         if ( $use_usage eq 'recurring' ) {
                            $value = $row->recur - $row->usage;
                          } elsif ( $use_usage eq 'usage' ) {
                            $value = $row->usage;
@@ -58,30 +36,19 @@
                          }
                          sprintf($money_char.'%.2f', $value );
                        },
-                   ( $unearned
-                     ? ( sub { time2str('%b %d %Y', shift->sdate ) },
-                       # shift edate back a day
-                       # 82799 = 3600*23 - 1
-                       # (to avoid skipping a day during DST)
-                         sub { time2str('%b %d %Y', shift->edate - 82799 ) },
-                       )
-                     : ()
-                   ),
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields' => [
                    '',
-                   'setup', #broken in $unearned case i guess
-                   ( $unearned ? ('', '') : () ),
-                   ( $use_usage eq 'recurring' or $unearned
+                   'setup',
+                   ( $use_usage eq 'recurring'
                         ? 'recur - usage' :
                      $use_usage eq 'usage' 
                         ? 'usage'
                         : 'recur'
                    ),
-                   ( $unearned ? ('sdate', 'edate') : () ),
                    'invnum',
                    '_date',
                  ],
@@ -89,9 +56,7 @@
                    #'',
                    '',
                    '',
-                   ( $unearned ? ( '', '' ) : () ),
                    '',
-                   ( $unearned ? ( '', '' ) : () ),
                    $ilink,
                    $ilink,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
@@ -100,18 +65,14 @@
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
                  'align' => 'lr'.
-                            ( $unearned ? 'rc' : '' ).
                             'r'.
-                            ( $unearned ? 'cc' : '' ).
                             'rc'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
                               #'',
                               '',
                               '',
-                              ( $unearned ? ( '', '' ) : () ),
                               '',
-                              ( $unearned ? ( '', '' ) : () ),
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
@@ -120,9 +81,7 @@
                               #'',
                               '',
                               '',
-                              ( $unearned ? ( '', '' ) : () ),
                               '',
-                              ( $unearned ? ( '', '' ) : () ),
                               '',
                               '',
                               FS::UI::Web::cust_styles(),
@@ -136,11 +95,6 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
-
-my $unearned = '';
-my $unearned_mode = '';
-my $unearned_base = '';
-my $unearned_sql = '';
 
 my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
 my ($join_cust, $join_pkg ) = ('', '');
@@ -207,29 +161,10 @@ if ( $cgi->param('taxclass')
 {
 
   #override taxclass when use_override is specified?  probably
-  #if ( $use_override ) {
-  #
-  #  push @where,
-  #    ' ( '. join(' OR ',
-  #                  map {
-  #                        ' (    part_pkg.taxclass = '. dbh->quote($_).
-  #                        '      AND pkgpart_override IS NULL '.
-  #                        '   OR '.
-  #                        '      override.taxclass = '. dbh->quote($_).
-  #                        '      AND pkgpart_override IS NOT NULL '.
-  #                        ' ) '
-  #                      }
-  #                      $cgi->param('taxclass')
-  #               ).
-  #    ' ) ';
-  #
-  #} else {
 
     push @where, ' part_pkg.taxclass IN ( '.
                    join(', ', map dbh->quote($_), $cgi->param('taxclass') ).
                  ' ) ';
-
-  #}
 
 }
 
@@ -237,14 +172,12 @@ my @loc_param = qw( district city county state country );
 
 if ( $cgi->param('out') ) {
 
-  my ( $loc_sql, @param ) = FS::cust_pkg->location_sql( 'ornull' => 1 );
-  while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
-    $loc_sql =~ s/\?/'cust_main_county.'.shift(@param)/e;
-  }
+  my ( $loc_sql, @param ) = FS::cust_location->in_county_sql( 'ornull' => 1 );
+#  while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+#    $loc_sql =~ s/\?/'cust_main_county.'.shift(@param)/e;
+#  }
 
-  $loc_sql =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g
-    if $cgi->param('istax');
-
+    warn "\nLOC_SQL:\n$loc_sql\n";
   push @where, "
     0 = (
           SELECT COUNT(*) FROM cust_main_county
@@ -258,16 +191,17 @@ if ( $cgi->param('out') ) {
 
     my %ph = map { $_ => dbh->quote( scalar($cgi->param($_)) ) } @loc_param;
 
-    my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+    my ( $loc_sql, @param ) = FS::cust_location->in_county_sql(param => 1);
     while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
       $loc_sql =~ s/\?/$ph{shift(@param)}/e;
     }
 
+    warn "\nLOC_SQL:\n$loc_sql\n";
     push @where, $loc_sql;
 
   }
 
-} elsif ( $cgi->param('country') ) {
+} elsif ( $cgi->param('country') ) { # and not $cgi->param('out')
 
   my @counties = $cgi->param('county');
    
@@ -284,7 +218,7 @@ if ( $cgi->param('out') ) {
                        qw( district city state country )
                    );
 
-          my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+          my ( $loc_sql, @param ) = FS::cust_location->in_county_sql(param => 1);
           while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
             $loc_sql =~ s/\?/$ph{shift(@param)}/e;
           }
@@ -295,17 +229,20 @@ if ( $cgi->param('out') ) {
 
       ). ' ) ';
 
+    warn "\nLOC_SQL:\n$locs_sql\n";
     push @where, $locs_sql;
 
-  } else {
+  } else { #scalar(@counties) <= 1
 
     my %ph = map { $_ => dbh->quote( scalar($cgi->param($_)) ) } @loc_param;
 
-    my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+    
+    my ( $loc_sql, @param ) = FS::cust_location->in_county_sql(param => 1);
     while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
       $loc_sql =~ s/\?/$ph{shift(@param)}/e;
     }
 
+    warn "\nLOC_SQL:\n$loc_sql\n";
     push @where, $loc_sql;
 
   }
@@ -342,74 +279,12 @@ if ( $cgi->param('out') ) {
   }
 
 } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+# and not $cgi->param('out' or 'country')
 
   push @where, FS::tax_rate_location->location_sql(
                  map { $_ => (scalar($cgi->param($_)) || '') }
                    qw( district city county state locationtaxid )
                );
-
-}
-
-# unearned revenue mode
-if ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {
-
-  $unearned = $1;
-  $unearned_mode = $cgi->param('mode');
-
-  push @where, "cust_bill_pkg.sdate < $unearned",
-               "cust_bill_pkg.edate > $unearned",
-               "cust_bill_pkg.recur != 0",
-               "part_pkg.freq != '0'";
-
-  if ( !$cgi->param('include_monthly') ) {
-    push @where,
-               "part_pkg.freq != '1'",
-               "part_pkg.freq NOT LIKE '%h'",
-               "part_pkg.freq NOT LIKE '%d'",
-               "part_pkg.freq NOT LIKE '%w'";
-  }
-
-  my $usage_sql = FS::cust_bill_pkg->usage_sql;
-  push @select, "($usage_sql) AS usage"; # we need this
-  my $paid_sql = 'GREATEST(' .
-    FS::cust_bill_pkg->paid_sql($unearned, '', setuprecur => 'recur') .
-    " - $usage_sql, 0)";
-
-  push @select, "$paid_sql AS paid_no_usage"; # need this either way
-
-  if ( $unearned_mode eq 'paid' ) {
-    # then use the amount paid, minus usage charges
-    $unearned_base = $paid_sql;
-  }
-  else {
-    # use the amount billed, minus usage charges and credits
-    $unearned_base = "GREATEST( cust_bill_pkg.recur - ".
-      FS::cust_bill_pkg->credited_sql($unearned, '', setuprecur => 'recur') .
-      " - $usage_sql, 0)";
-      # include only rows that have some non-usage, non-credited portion
-  }
-  # whatever we're using as the base, only show rows where it's positive
-  push @where, "$unearned_base > 0";
-
-  my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS REAL)";
-  my $elapsed = "GREATEST( $unearned - cust_bill_pkg.sdate, 0 )";
-  my $remaining = "(1 - $elapsed/$period)";
-
-  $unearned_sql = "CAST( $unearned_base * $remaining AS DECIMAL(10,2) )";
-  push @select, "$unearned_sql AS unearned_revenue";
-
-  # last payment/credit date
-  my %t = (pay => 'cust_bill_pay', credit => 'cust_credit_bill');
-  foreach my $x (qw(pay credit)) {
-    my $table = $t{$x};
-    my $link = $table.'_pkg';
-    my $pkey = dbdef->table($table)->primary_key;
-    my $last_date_sql = "SELECT MAX(_date) 
-    FROM $table JOIN $link USING ($pkey)
-    WHERE $link.billpkgnum = cust_bill_pkg.billpkgnum 
-    AND $table._date <= $unearned";
-    push @select, "($last_date_sql) AS last_$x";
-  }
 
 }
 
@@ -516,9 +391,9 @@ if ( $cgi->param('pkg_tax') ) {
             AND cust_bill_pkg.recur > 0 )
     )",
     #not a tax_exempt customer
-    "( tax != 'Y' OR tax IS NULL )";
+    "( tax != 'Y' OR tax IS NULL )", # assume this was intended?
     #not covered in full by a monthly tax exemption (texas tax)
-    "0 < ( $setup_taxable + $recur_taxable - $exempt )",
+    "0 < ( $setup_taxable + $recur_taxable - $exempt )";
 
 } else {
 
@@ -528,9 +403,7 @@ if ( $cgi->param('pkg_tax') ) {
     $count_query = "SELECT COUNT(DISTINCT billpkgnum), ";
   }
 
-  if ( $unearned ) {
-    $count_query .= "SUM( $unearned_base ), SUM( $unearned_sql )";
-  } elsif ( $use_usage eq 'recurring' ) {
+  if ( $use_usage eq 'recurring' ) {
     $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - usage)";
   } elsif ( $use_usage eq 'usage' ) {
     $count_query .= "SUM(usage)";
@@ -552,9 +425,10 @@ if ( $cgi->param('nottax') ) {
   $join_pkg .=  ' LEFT JOIN cust_pkg USING ( pkgnum )
                   LEFT JOIN part_pkg USING ( pkgpart )
                   LEFT JOIN part_pkg AS override
-                    ON pkgpart_override = override.pkgpart ';
-  $join_pkg .= ' LEFT JOIN cust_location USING ( locationnum ) '
-    if $conf->exists('tax-pkg_address');
+                    ON pkgpart_override = override.pkgpart
+                  LEFT JOIN cust_location
+                    ON cust_location.locationnum = '.
+                    FS::cust_pkg->tax_locationnum_sql;
 
 } elsif ( $cgi->param('istax') ) {
 
@@ -562,17 +436,26 @@ if ( $cgi->param('nottax') ) {
   if ( scalar( grep( /locationtaxid/, $cgi->param ) ) ||
             $cgi->param('iscredit') eq 'rate') {
 
+    # using tax_rate_location and friends
     $join_pkg .=
       ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
       ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
 
-  } elsif ( $conf->exists('tax-pkg_address') ) {
+  #} elsif ( $conf->exists('tax-pkg_address') ) {
+  } else {
 
-    $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
-                   LEFT JOIN cust_location              USING ( locationnum ) ';
+    # using cust_bill_pkg_tax_location to relate tax items to locations
+    # ...but for consolidated taxes we don't want to duplicate this
+    my $tax_item_location = '(SELECT DISTINCT billpkgnum, locationnum
+      FROM cust_bill_pkg_tax_location) AS tax_item_location';
+
+    $join_pkg .= " LEFT JOIN $tax_item_location USING ( billpkgnum )
+                   LEFT JOIN cust_location
+                    ON tax_item_location.locationnum =
+                       cust_location.locationnum ";
 
     #quelle kludge, somewhat false laziness w/report_tax.cgi
-    s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g for @where;
+    s/cust_pkg\.locationnum/tax_item_location.locationnum/g for @where;
   }
 
   if ( $cgi->param('iscredit') ) {
@@ -591,7 +474,7 @@ if ( $cgi->param('nottax') ) {
 } else { 
 
   #die?
-  warn "neiether nottax nor istax parameters specified";
+  warn "neither nottax nor istax parameters specified";
   #same as before?
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
                  LEFT JOIN part_pkg USING ( pkgpart ) ';
@@ -644,5 +527,5 @@ my $payment_date_sub = sub {
     or return '';
   time2str('%b %d %Y', $cust_pay[-1]->_date );
 };
-
+warn $count_query;
 </%init>
