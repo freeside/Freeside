@@ -337,6 +337,11 @@
 %                       map {
 %                             if ( ref($_) eq 'CODE' ) {
 %                               &{$_}($row);
+%                             } elsif ( ref($row) eq 'ARRAY' and 
+%                                       $_ =~ /^\d+$/ ) {
+%                             # for the 'straight SQL' case: specify fields
+%                             # by position
+%                               $row->[$_];
 %                             } else {
 %                               $row->$_();
 %                             }

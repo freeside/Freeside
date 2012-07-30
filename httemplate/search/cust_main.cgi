@@ -81,13 +81,8 @@
       <TR>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('#') |h %></TH>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
-        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('(bill) name') |h %></TH>
-        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('company') |h %></TH>
-
-%if ( defined dbdef->table('cust_main')->column('ship_last') ) {
-      <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('(service) name') |h %></TH>
-      <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('company') |h %></TH>
-%}
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Name') |h %></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Company') |h %></TH>
 
 %foreach my $addl_header ( @addl_headers ) {
     <TH CLASS="grid" BGCOLOR="#cccccc"><% $addl_header %></TH>
@@ -172,25 +167,6 @@
         <% $pcompany %>
       </TD>
 
-%    if ( defined dbdef->table('cust_main')->column('ship_last') ) {
-%      my($ship_last,$ship_first,$ship_company)=(
-%        $cust_main->ship_last || $cust_main->getfield('last'),
-%        $cust_main->ship_last ? $cust_main->ship_first : $cust_main->first,
-%        $cust_main->ship_last ? $cust_main->ship_company : $cust_main->company,
-%      );
-%      my $pship_company = $ship_company
-%        ? qq!<A HREF="$view"><FONT SIZE=-1>$ship_company</FONT></A>!
-%        : '<FONT SIZE=-1>&nbsp;</FONT>';
-%      
-
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
-        <A HREF="<% $view %>"><FONT SIZE=-1><% "$ship_last, $ship_first" %></FONT></A>
-      </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
-        <% $pship_company %></A>
-      </TD>
-% }
-%
 %    foreach my $addl_col ( @addl_cols ) { 
 % if ( $addl_col eq 'tickets' ) { 
 % if ( @custom_priorities ) { 

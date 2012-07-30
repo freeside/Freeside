@@ -457,6 +457,8 @@ HASHREF.  Valid parameters are
 
 =item address
 
+=item zip
+
 =item refnum
 
 =item cancelled_pkgs
@@ -516,6 +518,7 @@ sub search {
     'usernum'       => '',
     'status'        => '',
     'address'       => '',
+    'zip'           => '',
     'paydate_year'  => '',
     'invoice_terms' => '',
     'custbatch'     => '',
@@ -575,6 +578,18 @@ sub search {
       WHERE cust_location.custnum = cust_main.custnum
         AND (LOWER(cust_location.address1) LIKE $address OR
              LOWER(cust_location.address2) LIKE $address)
+    )";
+  }
+
+  ##
+  # zipcode
+  ##
+  if ( $params->{'zip'} =~ /\S/ ) {
+    my $zip = dbh->quote($params->{'zip'} . '%');
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.zip LIKE $zip
     )";
   }
 
