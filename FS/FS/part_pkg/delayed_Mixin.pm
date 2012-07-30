@@ -2,6 +2,7 @@ package FS::part_pkg::delayed_Mixin;
 
 use strict;
 use vars qw(%info);
+use NEXT;
 
 %info = (
   'disabled' => 1,
@@ -45,7 +46,7 @@ sub calc_remain {
                 && $last_bill == $cust_pkg->setup;
   }
 
-  return $self->SUPER::calc_remain($cust_pkg, %options);
+  return $self->NEXT::calc_remain($cust_pkg, %options);
 }
 
 sub can_start_date { ! shift->option('delay_setup', 1) }
