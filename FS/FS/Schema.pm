@@ -2518,8 +2518,8 @@ sub tables_hashref {
         'op',          'char', '', 2, '', '',
       ],
       'primary_key' => 'attrnum',
-      'unique'      => [ ['groupnum','attrname'] ], #?
-      'index'       => [],
+      'unique'      => [],
+      'index'       => [ ['groupnum'], ],
     },
 
     'msgcat' => {
