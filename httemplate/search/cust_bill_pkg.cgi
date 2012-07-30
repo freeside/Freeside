@@ -177,7 +177,6 @@ if ( $cgi->param('out') ) {
 #    $loc_sql =~ s/\?/'cust_main_county.'.shift(@param)/e;
 #  }
 
-    warn "\nLOC_SQL:\n$loc_sql\n";
   push @where, "
     0 = (
           SELECT COUNT(*) FROM cust_main_county
@@ -196,7 +195,6 @@ if ( $cgi->param('out') ) {
       $loc_sql =~ s/\?/$ph{shift(@param)}/e;
     }
 
-    warn "\nLOC_SQL:\n$loc_sql\n";
     push @where, $loc_sql;
 
   }
@@ -229,7 +227,6 @@ if ( $cgi->param('out') ) {
 
       ). ' ) ';
 
-    warn "\nLOC_SQL:\n$locs_sql\n";
     push @where, $locs_sql;
 
   } else { #scalar(@counties) <= 1
@@ -242,7 +239,6 @@ if ( $cgi->param('out') ) {
       $loc_sql =~ s/\?/$ph{shift(@param)}/e;
     }
 
-    warn "\nLOC_SQL:\n$loc_sql\n";
     push @where, $loc_sql;
 
   }
