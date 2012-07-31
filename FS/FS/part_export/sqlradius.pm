@@ -347,6 +347,7 @@ sub _export_delete {
 
 sub sqlradius_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
+  my %args = @_;
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
     'job'    => "FS::part_export::sqlradius::sqlradius_$method",
@@ -966,8 +967,7 @@ are identified by the combination of group name and attribute name.
 
 In the special case where attributes are being replaced because a group 
 name (L<FS::radius_group>->groupname) is changing, the pseudo-field 
-'groupname' must be set in OLD_RADIUS_ATTR.  It's probably best to do this
-
+'groupname' must be set in OLD_RADIUS_ATTR.
 
 =cut
 
@@ -982,41 +982,43 @@ sub export_attr_replace { shift->export_attr_action('replace', @_); }
 sub export_attr_action {
   my $self = shift;
   my ($action, $new, $old) = @_;
-  my ($attrname, $attrtype, $groupname) = 
-    ($new->attrname, $new->attrtype, $new->radius_group->groupname);
-  if ( $action eq 'replace' ) {
+  my $err_or_queue;
 
-    if ( $new->attrtype ne $old->attrtype ) {
-      # they're in separate tables in the target
-      return $self->export_attr_action('delete', $old) 
-          || $self->export_attr_action('insert', $new)
-      ;
-    }
-
-    # otherwise, just make sure we know the old attribute/group names 
-    # so we can find the existing record
-    $attrname = $old->attrname;
-    $groupname = $old->groupname || $old->radius_group->groupname;
-    # maybe this should be enforced more strictly
-    warn "WARNING: attribute replace without 'groupname' set; assuming '$groupname'\n"
-      if !defined($old->groupname);
+  if ( $action eq 'delete' ) {
+    $old = $new;
   }
-
-  my $err_or_queue = $self->sqlradius_queue('', "attr_$action",
-    attrnum => $new->attrnum,
-    attrname => $attrname,
-    attrtype => $attrtype,
-    groupname => $groupname,
-  );
-  return $err_or_queue unless ref $err_or_queue;
+  if ( $action eq 'delete' or $action eq 'replace' ) {
+    # delete based on an exact match
+    my %opt = (
+      attrname  => $old->attrname,
+      attrtype  => $old->attrtype,
+      groupname => $old->groupname || $old->radius_group->groupname,
+      op        => $old->op,
+      value     => $old->value,
+    );
+    $err_or_queue = $self->sqlradius_queue('', 'attr_delete', %opt);
+    return $err_or_queue unless ref $err_or_queue;
+  }
+  # this probably doesn't matter, but just to be safe...
+  my $jobnum = $err_or_queue->jobnum if $action eq 'replace';
+  if ( $action eq 'replace' or $action eq 'insert' ) {
+    my %opt = (
+      attrname  => $new->attrname,
+      attrtype  => $new->attrtype,
+      groupname => $new->radius_group->groupname,
+      op        => $new->op,
+      value     => $new->value,
+    );
+    $err_or_queue = $self->sqlradius_queue('', 'attr_insert', %opt);
+    $err_or_queue->depend_insert($jobnum) if $jobnum;
+    return $err_or_queue unless ref $err_or_queue;
+  }
   '';
 }
 
 sub sqlradius_attr_insert {
   my $dbh = sqlradius_connect(shift, shift, shift);
   my %opt = @_;
-  my $radius_attr = qsearchs('radius_attr', { attrnum => $opt{'attrnum'} })
-    or die 'attrnum '.$opt{'attrnum'}.' not found';
 
   my $table;
   # make sure $table is completely safe
@@ -1027,12 +1029,10 @@ sub sqlradius_attr_insert {
     $table = 'radgroupreply';
   }
   else {
-    die "unknown attribute type '".$radius_attr->attrtype."'";
+    die "unknown attribute type '$opt{attrtype}'";
   }
 
-  my @values = ( 
-    $opt{'groupname'}, map { $radius_attr->$_ } qw(attrname op value)
-  );
+  my @values = @opt{ qw(groupname attrname op value) };
   my $sth = $dbh->prepare(
     'INSERT INTO '.$table.' (groupname, attribute, op, value) VALUES (?,?,?,?)'
   );
@@ -1054,41 +1054,16 @@ sub sqlradius_attr_delete {
     die "unknown attribute type '".$opt{'attrtype'}."'";
   }
 
+  my @values = @opt{ qw(groupname attrname op value) };
   my $sth = $dbh->prepare(
-    'DELETE FROM '.$table.' WHERE groupname = ? AND attribute = ?'
+    'DELETE FROM '.$table.
+    ' WHERE groupname = ? AND attribute = ? AND op = ? AND value = ?'.
+    ' LIMIT 1'
   );
-  $sth->execute( @opt{'groupname', 'attrname'} ) or die $dbh->errstr;
+  $sth->execute(@values) or die $dbh->errstr;
 }
 
-sub sqlradius_attr_replace {
-  my $dbh = sqlradius_connect(shift, shift, shift);
-  my %opt = @_;
-  my $radius_attr = qsearchs('radius_attr', { attrnum => $opt{'attrnum'} })
-    or die 'attrnum '.$opt{'attrnum'}.' not found';
-
-  my $table;
-  if ( $opt{'attrtype'} eq 'C' ) {
-    $table = 'radgroupcheck';
-  }
-  elsif ( $opt{'attrtype'} eq 'R' ) {
-    $table = 'radgroupreply';
-  }
-  else {
-    die "unknown attribute type '".$opt{'attrtype'}."'";
-  }
-
-  my $sth = $dbh->prepare(
-    'UPDATE '.$table.' SET groupname = ?, attribute = ?, op = ?, value = ?
-     WHERE groupname = ? AND attribute = ?'
-  );
-
-  my $new_groupname = $radius_attr->radius_group->groupname;
-  my @new_values = ( 
-    $new_groupname, map { $radius_attr->$_ } qw(attrname op value) 
-  );
-  $sth->execute( @new_values, @opt{'groupname', 'attrname'} )
-    or die $dbh->errstr;
-}
+#sub sqlradius_attr_replace { no longer needed
 
 =item export_group_replace NEW OLD
 
