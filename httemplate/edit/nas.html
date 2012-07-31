@@ -49,7 +49,7 @@ sub html_bottom {
             'link_table'    => 'export_nas',
             'target_table'  => 'part_export',
             'hashref'       => { 'exporttype' => 
-                                  { op => 'LIKE', value => '%sqlradius' }
+                                  { op => 'LIKE', value => '%sqlradius%' }
                                 },
             'name_callback' => sub { $_[0]->label },
             'default'       => 'yes',
