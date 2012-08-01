@@ -1,4 +1,4 @@
-<% $link %><% $invoice %><% $link ? '</A>' : '' %><% $delete %><% $under %>
+<% $link %><% $invoice %><% $link ? '</A>' : '' %><% "$void$delete$under" %>
 <%init>
 
 my( $cust_bill, %opt ) = @_;
@@ -25,6 +25,18 @@ my $invnum = $cust_bill->invnum;
 my $link = $curuser->access_right('View invoices')
              ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
              : '';
+
+my $void = '';
+if ( $cust_bill->closed !~ /^Y/i && $curuser->access_right('Void invoices') ) {
+  $void =
+    ' ('. include('/elements/popup_link.html',
+                    'label'     => emt('void'),
+                    'action'    => "${p}misc/void-cust_bill.html?;invnum=".
+                                    $cust_bill->invnum,
+                    'actionlabel' => emt('Void Invoice'),
+                 ).
+     ')';
+}
 
 my $delete = '';
 $delete = areyousure_link("${p}misc/delete-cust_bill.html?$invnum",

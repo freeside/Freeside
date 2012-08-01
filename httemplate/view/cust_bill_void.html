@@ -1,0 +1,56 @@
+<& /elements/header.html, mt('Voided Invoice'),  menubar(
+  emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
+) &>
+
+%#XXX something very big and obvious showing its voided...
+
+% #voided PDFs?
+% #if ( $conf->exists('invoice_latex') ) {
+%#
+%#  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>"><% mt('View typeset invoice PDF') |h %></A>
+%#  <BR><BR>
+% #} 
+
+% if ( $conf->exists('invoice_html') ) { 
+  <% join('', $cust_bill_void->print_html(\%opt) ) %>
+% } else { 
+  <PRE><% join('', $cust_bill_void->print_text(\%opt) ) %></PRE>
+% } 
+
+<& /elements/footer.html &>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('View invoices');
+
+my $invnum;
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) {
+  $invnum = $1;
+} else {
+  $invnum = $cgi->param('invnum');
+}
+
+my $conf = new FS::Conf;
+
+my %opt = (
+  'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
+);
+
+my $cust_bill_void = qsearchs({
+  'select'    => 'cust_bill_void.*',
+  'table'     => 'cust_bill_void',
+  #'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'quotationnum' => $quotationnum },
+  #'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die "Quotation #$quotationnum not found!" unless $quotation;
+
+my $custnum = $cust_bill->custnum;
+my $display_custnum = $cust_bill->cust_main->display_custnum;
+
+#my $link = "invnum=$invnum";
+
+</%init>

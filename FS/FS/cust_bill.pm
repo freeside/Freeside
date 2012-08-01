@@ -38,6 +38,7 @@ use FS::cust_bill_batch;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 use FS::discount_plan;
+use FS::cust_bill_void;
 use FS::L10N;
 
 $DEBUG = 0;
@@ -203,10 +204,63 @@ sub insert {
 
 }
 
+=item void
+
+Voids this invoice: deletes the invoice and adds a record of the voided invoice
+to the FS::cust_bill_void table (and related tables starting from
+FS::cust_bill_pkg_void).
+
+=cut
+
+sub void {
+  my $self = shift;
+  my $reason = scalar(@_) ? shift : '';
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_bill_void = new FS::cust_bill_void ( {
+    map { $_ => $self->get($_) } $self->fields
+  } );
+  $cust_bill_void->reason($reason);
+  my $error = $cust_bill_void->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+    my $error = $cust_bill_pkg->void($reason);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
 =item delete
 
 This method now works but you probably shouldn't use it.  Instead, apply a
-credit against the invoice.
+credit against the invoice, or use the new void method.
 
 Using this method to delete invoices outright is really, really bad.  There
 would be no record you ever posted this invoice, and there are no check to
@@ -236,11 +290,10 @@ sub delete {
     cust_event
     cust_credit_bill
     cust_bill_pay
-    cust_credit_bill
     cust_pay_batch
     cust_bill_pay_batch
-    cust_bill_pkg
     cust_bill_batch
+    cust_bill_pkg
   )) {
 
     foreach my $linked ( $self->$table() ) {

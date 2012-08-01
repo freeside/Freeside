@@ -551,6 +551,35 @@ sub tables_hashref {
       'index' => [ ['custnum'], ['_date'], ['statementnum'], ['agent_invid'] ],
     },
 
+    'cust_bill_void' => {
+      'columns' => [
+        #regular fields
+        'invnum',       'int',     '', '', '', '', 
+        'custnum',      'int',     '', '', '', '', 
+        '_date',        @date_type,        '', '', 
+        'charged',      @money_type,       '', '', 
+        'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
+
+        #customer balance info at invoice generation time
+        'previous_balance',   @money_typen, '', '',  #eventually not nullable
+        'billing_balance',    @money_typen, '', '',  #eventually not nullable
+
+        #specific use cases
+        'closed',      'char', 'NULL',  1, '', '', #not yet used much
+        'statementnum', 'int', 'NULL', '', '', '', #invoice aggregate statements
+        'agent_invid',  'int', 'NULL', '', '', '', #(varchar?) importing legacy
+        'promised_date', @date_type,       '', '',
+
+        #void fields
+        'void_date', @date_type, '', '', 
+        'reason',    'varchar',   'NULL', $char_d, '', '', 
+        'void_usernum',   'int', 'NULL', '', '', '',
+      ],
+      'primary_key' => 'invnum',
+      'unique' => [ [ 'custnum', 'agent_invid' ] ], #agentnum?  huh
+      'index' => [ ['custnum'], ['_date'], ['statementnum'], ['agent_invid'], [ 'void_usernum' ] ],
+    },
+
     #for importing invoices from a legacy system for display purposes only
     # no effect upon balance
     'legacy_cust_bill' => {
@@ -775,6 +804,101 @@ sub tables_hashref {
     'cust_bill_pkg_tax_rate_location' => {
       'columns' => [
         'billpkgtaxratelocationnum', 'serial',      '', '', '', '',
+        'billpkgnum',                   'int',      '', '', '', '',
+        'taxnum',                       'int',      '', '', '', '',
+        'taxtype',                  'varchar',      '', $char_d, '', '',
+        'locationtaxid',            'varchar',  'NULL', $char_d, '', '',
+        'taxratelocationnum',           'int',      '', '', '', '',
+        'amount',                       @money_type,        '', '',
+      ],
+      'primary_key' => 'billpkgtaxratelocationnum',
+      'unique' => [],
+      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'taxratelocationnum' ] ],
+    },
+
+    'cust_bill_pkg_void' => {
+      'columns' => [
+        'billpkgnum',           'int',     '',      '', '', '', 
+        'invnum',               'int',     '',      '', '', '', 
+        'pkgnum',               'int',     '',      '', '', '', 
+        'pkgpart_override',     'int', 'NULL',      '', '', '', 
+        'setup',               @money_type,             '', '', 
+        'recur',               @money_type,             '', '', 
+        'sdate',               @date_type,              '', '', 
+        'edate',               @date_type,              '', '', 
+        'itemdesc',         'varchar', 'NULL', $char_d, '', '', 
+        'itemcomment',      'varchar', 'NULL', $char_d, '', '', 
+        'section',          'varchar', 'NULL', $char_d, '', '', 
+        'freq',             'varchar', 'NULL', $char_d, '', '',
+        'quantity',             'int', 'NULL',      '', '', '',
+        'unitsetup',           @money_typen,            '', '', 
+        'unitrecur',           @money_typen,            '', '', 
+        'hidden',              'char', 'NULL',       1, '', '',
+        #void fields
+        'void_date', @date_type, '', '', 
+        'reason',    'varchar',   'NULL', $char_d, '', '', 
+        'void_usernum',   'int', 'NULL', '', '', '',
+      ],
+      'primary_key' => 'billpkgnum',
+      'unique' => [],
+      'index' => [ ['invnum'], [ 'pkgnum' ], [ 'itemdesc' ], [ 'void_usernum' ], ],
+    },
+
+    'cust_bill_pkg_detail_void' => {
+      'columns' => [
+        'detailnum',  'int', '', '', '', '', 
+        'billpkgnum', 'int', 'NULL', '', '', '',        # should not be nullable
+        'pkgnum',  'int', 'NULL', '', '', '',           # deprecated
+        'invnum',  'int', 'NULL', '', '', '',           # deprecated
+        'amount',  'decimal', 'NULL', '10,4', '', '',
+        'format',  'char', 'NULL', 1, '', '',
+        'classnum', 'int', 'NULL', '', '', '',
+        'duration', 'int', 'NULL', '',  0, '',
+        'phonenum', 'varchar', 'NULL', 15, '', '',
+        'accountcode', 'varchar',  'NULL',      20, '', '',
+        'startdate',  @date_type, '', '', 
+        'regionname', 'varchar', 'NULL', $char_d, '', '',
+        'detail',  'varchar', '', 255, '', '', 
+      ],
+      'primary_key' => 'detailnum',
+      'unique' => [],
+      'index' => [ [ 'billpkgnum' ], [ 'classnum' ], [ 'pkgnum', 'invnum' ] ],
+    },
+
+    'cust_bill_pkg_display_void' => {
+      'columns' => [
+        'billpkgdisplaynum',    'int', '', '', '', '', 
+        'billpkgnum', 'int', '', '', '', '', 
+        'section',  'varchar', 'NULL', $char_d, '', '', 
+        #'unitsetup', @money_typen, '', '',     #override the linked real one?
+        #'unitrecur', @money_typen, '', '',     #this too?
+        'post_total', 'char', 'NULL', 1, '', '',
+        'type',       'char', 'NULL', 1, '', '',
+        'summary',    'char', 'NULL', 1, '', '',
+      ],
+      'primary_key' => 'billpkgdisplaynum',
+      'unique' => [],
+      'index' => [ ['billpkgnum'], ],
+    },
+
+    'cust_bill_pkg_tax_location_void' => {
+      'columns' => [
+        'billpkgtaxlocationnum',    'int',      '', '', '', '',
+        'billpkgnum',               'int',      '', '', '', '',
+        'taxnum',                   'int',      '', '', '', '',
+        'taxtype',              'varchar',      '', $char_d, '', '',
+        'pkgnum',                   'int',      '', '', '', '',
+        'locationnum',              'int',      '', '', '', '', #redundant?
+        'amount',                   @money_type,        '', '',
+      ],
+      'primary_key' => 'billpkgtaxlocationnum',
+      'unique' => [],
+      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'pkgnum' ], [ 'locationnum' ] ],
+    },
+
+    'cust_bill_pkg_tax_rate_location_void' => {
+      'columns' => [
+        'billpkgtaxratelocationnum',    'int',      '', '', '', '',
         'billpkgnum',                   'int',      '', '', '', '',
         'taxnum',                       'int',      '', '', '', '',
         'taxtype',                  'varchar',      '', $char_d, '', '',
@@ -1419,20 +1543,29 @@ sub tables_hashref {
       'columns' => [
         'paynum',    'int',    '',   '', '', '', 
         'custnum',   'int',    '',   '', '', '', 
-        'paid',      @money_type, '', '', 
         '_date',     @date_type, '', '', 
+        'paid',      @money_type, '', '', 
+        'otaker',   'varchar', 'NULL', 32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
         'payby',     'char',   '',     4, '', '', # CARD/BILL/COMP, should be
                                                   # index into payby table
                                                   # eventually
         'payinfo',   'varchar',   'NULL', 512, '', '', #see cust_main above
 	'paymask', 'varchar', 'NULL', $char_d, '', '', 
+        #'paydate' ?
         'paybatch',  'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'closed',    'char', 'NULL', 1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+        # cash/check deposit info fields
+        'bank',       'varchar', 'NULL', $char_d, '', '',
+        'depositor',  'varchar', 'NULL', $char_d, '', '',
+        'account',    'varchar', 'NULL', 20,      '', '',
+        'teller',     'varchar', 'NULL', 20,      '', '',
+        'batchnum',       'int', 'NULL', '', '', '', #pay_batch foreign key
+
+        #void fields
         'void_date', @date_type, '', '', 
         'reason',    'varchar',   'NULL', $char_d, '', '', 
-        'otaker',   'varchar', 'NULL', 32, '', '', 
-        'usernum',   'int', 'NULL', '', '', '',
         'void_usernum',   'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'paynum',
@@ -2551,6 +2684,26 @@ sub tables_hashref {
     'cust_tax_exempt_pkg' => {
       'columns' => [
         'exemptpkgnum',  'serial', '', '', '', '', 
+        #'custnum',      'int', '', '', '', ''
+        'billpkgnum',   'int', '', '', '', '', 
+        'taxnum',       'int', '', '', '', '', 
+        'year',         'int', '', '', '', '', 
+        'month',        'int', '', '', '', '', 
+        'creditbillpkgnum', 'int', 'NULL', '', '', '',
+        'amount',       @money_type, '', '', 
+      ],
+      'primary_key' => 'exemptpkgnum',
+      'unique' => [],
+      'index'  => [ [ 'taxnum', 'year', 'month' ],
+                    [ 'billpkgnum' ],
+                    [ 'taxnum' ],
+                    [ 'creditbillpkgnum' ],
+                  ],
+    },
+
+    'cust_tax_exempt_pkg_void' => {
+      'columns' => [
+        'exemptpkgnum',  'int', '', '', '', '', 
         #'custnum',      'int', '', '', '', ''
         'billpkgnum',   'int', '', '', '', '', 
         'taxnum',       'int', '', '', '', '', 

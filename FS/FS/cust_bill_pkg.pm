@@ -3,6 +3,7 @@ package FS::cust_bill_pkg;
 use strict;
 use vars qw( @ISA $DEBUG $me );
 use Carp;
+use List::Util qw( sum );
 use Text::CSV_XS;
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_main_Mixin;
@@ -18,8 +19,12 @@ use FS::cust_tax_exempt_pkg;
 use FS::cust_bill_pkg_tax_location;
 use FS::cust_bill_pkg_tax_rate_location;
 use FS::cust_tax_adjustment;
-
-use List::Util qw(sum);
+use FS::cust_bill_pkg_void;
+use FS::cust_bill_pkg_detail_void;
+use FS::cust_bill_pkg_display_void;
+use FS::cust_bill_pkg_tax_location_void;
+use FS::cust_bill_pkg_tax_rate_location_void;
+use FS::cust_tax_exempt_pkg_void;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -226,6 +231,74 @@ sub insert {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item void
+
+Voids this line item: deletes the line item and adds a record of the voided
+line item to the FS::cust_bill_pkg_void table (and related tables).
+
+=cut
+
+sub void {
+  my $self = shift;
+  my $reason = scalar(@_) ? shift : '';
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_bill_pkg_void = new FS::cust_bill_pkg_void ( {
+    map { $_ => $self->get($_) } $self->fields
+  } );
+  $cust_bill_pkg_void->reason($reason);
+  my $error = $cust_bill_pkg_void->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $table (qw(
+    cust_bill_pkg_detail
+    cust_bill_pkg_display
+    cust_bill_pkg_tax_location
+    cust_bill_pkg_tax_rate_location
+    cust_tax_exempt_pkg
+  )) {
+
+    foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
+
+      my $vclass = 'FS::'.$table.'_void';
+      my $void = $vclass->new( {
+        map { $_ => $linked->get($_) } $linked->fields
+      });
+      my $error = $void->insert || $linked->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    }
+
+  }
+
+  $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
   '';
 
 }

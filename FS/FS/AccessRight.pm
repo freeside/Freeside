@@ -177,7 +177,8 @@ tie my %rights, 'Tie::IxHash',
   'Customer invoice / financial info rights' => [
     'View invoices',
     'Resend invoices', #NEWNEW
-    'Delete invoices', #new, but no need to phase in
+    'Void invoices',
+    'Delete invoices',
     'View customer tax exemptions', #yow
     'Add customer tax adjustment', #new, but no need to phase in
     'View customer batched payments', #NEW

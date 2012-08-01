@@ -1,0 +1,22 @@
+%if ( $error ) {
+%  $cgi->param('error', $error);
+<% $cgi->redirect(popurl(1). "void-cust_bill.html?". $cgi->query_string ) %>
+%} else {
+<% $cgi->redirect(popurl(3). "view/cust_main.cgi?". $custnum) %>
+%}
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Void invoices');
+
+#untaint invnum
+$cgi->param('invnum') =~ /^(\d+)$/ || die "Illegal invnum";
+my $invnum = $1;
+
+my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
+
+my $custnum = $cust_bill->custnum;
+
+my $error = $cust_bill->void( $cgi->param('reason') );
+
+</%init>

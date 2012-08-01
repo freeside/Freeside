@@ -1,0 +1,52 @@
+<DEL><% $link %><% $invoice %><% $link ? '</A>' : '' %></DEL>
+<I><% mt("voided [_1]", time2str($date_format, $cust_bill_void->void_date) ) |h %> 
+% my $void_user = $cust_bill_void->void_access_user;
+% if ($void_user) {
+    by <% $void_user->username %></I>
+% }
+<% "$unvoid$delete$under" %>
+<%init>
+
+my( $cust_bill_void, %opt ) = @_;
+
+my $date_format = $opt{'date_format'} || '%m/%d/%Y';
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $invoice = emt("Invoice #[_1] (Balance [_2])",$cust_bill_void->display_invnum, $cust_bill_void->charged);
+
+my $under = '';
+
+my $invnum = $cust_bill_void->invnum;
+
+#XXX use cust_bill.cgi or?
+my $link = $curuser->access_right('View invoices')
+             ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
+             : '';
+
+my $unvoid = ''; #XXX unvoid
+
+my $delete = '';
+$delete = areyousure_link("${p}misc/delete-cust_bill.html?$invnum",
+                            emt('Are you sure you want to delete this invoice?'),
+                            emt('Delete this invoice from the database completely'),
+                            emt('delete')
+                        )
+    if ( $opt{'deleteinvoices'} && $curuser->access_right('Delete invoices') );
+
+my $events = '';
+#1.9
+if ( $cust_bill_void->num_cust_event
+     && (    $curuser->access_right('Billing event reports')
+          || $curuser->access_right('View customer billing events')
+        )
+   ) {
+  $under .=
+    qq!<BR><A HREF="${p}search/cust_event.html?invnum=$invnum">( !.
+      emt('View invoice events').' )</A>';
+}
+$under = '<FONT SIZE="-1">'.$under.'</FONT>' if length($under);
+
+</%init>

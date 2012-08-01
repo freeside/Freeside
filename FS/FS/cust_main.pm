@@ -42,6 +42,7 @@ use FS::payby;
 use FS::cust_pkg;
 use FS::cust_svc;
 use FS::cust_bill;
+use FS::cust_bill_void;
 use FS::legacy_cust_bill;
 use FS::cust_pay;
 use FS::cust_pay_pending;
@@ -1279,6 +1280,7 @@ sub merge {
 
   tie my %financial_tables, 'Tie::IxHash',
     'cust_bill'      => 'invoices',
+    'cust_bill_void' => 'voided invoices',
     'cust_statement' => 'statements',
     'cust_credit'    => 'credits',
     'cust_pay'       => 'payments',
@@ -3646,6 +3648,20 @@ be passed.
 
 =cut
 
+=item cust_bill_void
+
+Returns all the voided invoices (see L<FS::cust_bill_void>) for this customer.
+
+=cut
+
+sub cust_bill_void {
+  my $self = shift;
+
+  map { $_ } #return $self->num_cust_bill_void unless wantarray;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_bill_void', { 'custnum' => $self->custnum } )
+}
+
 sub cust_statement {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
@@ -3802,7 +3818,7 @@ sub cust_pay_void {
 
 =item cust_pay_batch [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
-Returns all batched payments (see L<FS::cust_pay_void>) for this customer.
+Returns all batched payments (see L<FS::cust_pay_batch>) for this customer.
 
 Optionally, a list or hashref of additional arguments to the qsearch call can
 be passed.
