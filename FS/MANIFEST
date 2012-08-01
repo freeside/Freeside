@@ -649,3 +649,17 @@ FS/quotation_pkg_discount.pm
 t/quotation_pkg_discount.t
 FS/Quotable_Mixin.pm
 t/Quotable_Mixin.t
+FS/cust_bill_void.pm
+t/cust_bill_void.t
+FS/cust_bill_pkg_void.pm
+t/cust_bill_pkg_void.t
+FS/cust_bill_pkg_detail_void.pm
+t/cust_bill_pkg_detail_void.t
+FS/cust_bill_pkg_display_void.pm
+t/cust_bill_pkg_display_void.t
+FS/cust_bill_pkg_tax_location_void.pm
+t/cust_bill_pkg_tax_location_void.t
+FS/cust_bill_pkg_tax_rate_location_void.pm
+t/cust_bill_pkg_tax_rate_location_void.t
+FS/cust_tax_exempt_pkg_void.pm
+t/cust_tax_exempt_pkg_void.t

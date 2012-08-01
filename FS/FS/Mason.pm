@@ -315,6 +315,13 @@ if ( -e $addl_handler_use_file ) {
   use FS::quotation;
   use FS::quotation_pkg;
   use FS::quotation_pkg_discount;
+  use FS::cust_bill_void;
+  use FS::cust_bill_pkg_void;
+  use FS::cust_bill_pkg_detail_void;
+  use FS::cust_bill_pkg_display_void;
+  use FS::cust_bill_pkg_tax_location_void;
+  use FS::cust_bill_pkg_tax_rate_location_void;
+  use FS::cust_tax_exempt_pkg_void;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
