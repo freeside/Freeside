@@ -142,9 +142,8 @@ sub cust_main {
 
 =cut
 
-sub cust_bill_pkg {
+sub cust_bill_pkg { #actually quotation_pkg objects
   my $self = shift;
-  #actually quotation_pkg objects
   qsearch('quotation_pkg', { quotationnum=>$self->quotationnum });
 }
 

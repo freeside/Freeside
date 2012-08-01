@@ -1784,6 +1784,19 @@ sub tables_hashref {
       'index' => [ [ 'billpkgnum' ], [ 'pkgdiscountnum' ] ],
     },
 
+    'cust_bill_pkg_discount_void' => {
+      'columns' => [
+        'billpkgdiscountnum',    'int',        '', '', '', '',
+        'billpkgnum',            'int',        '', '', '', '', 
+        'pkgdiscountnum',        'int',        '', '', '', '', 
+        'amount',          @money_type,                '', '', 
+        'months',            'decimal', 'NULL', '7,4', '', '',
+      ],
+      'primary_key' => 'billpkgdiscountnum',
+      'unique' => [],
+      'index' => [ [ 'billpkgnum' ], [ 'pkgdiscountnum' ] ],
+    },
+
     'discount' => {
       'columns' => [
         'discountnum', 'serial',     '',      '', '', '',

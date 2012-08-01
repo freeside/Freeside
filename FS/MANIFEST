@@ -663,3 +663,5 @@ FS/cust_bill_pkg_tax_rate_location_void.pm
 t/cust_bill_pkg_tax_rate_location_void.t
 FS/cust_tax_exempt_pkg_void.pm
 t/cust_tax_exempt_pkg_void.t
+FS/cust_bill_pkg_discount_void.pm
+t/cust_bill_pkg_discount_void.t

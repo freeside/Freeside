@@ -2,7 +2,19 @@
   emt("View this customer (#[_1])",$display_custnum) => "${p}view/cust_main.cgi?$custnum",
 ) &>
 
-%#XXX something very big and obvious showing its voided...
+<SCRIPT TYPE="text/javascript">
+function areyousure(href, message) {
+  if (confirm(message) == true)
+    window.location.href = href;
+}
+</SCRIPT>
+<% areyousure_link("${p}misc/unvoid-cust_bill_void.html?invnum=". $cust_bill_void->invnum,
+                     emt('Are you sure you want to unvoid this invoice?'),
+                     emt('Unvoid this invoice'), #tooltip
+                     emt('Unvoid this invoice') #link
+                  )
+%>
+<BR><BR>
 
 % #voided PDFs?
 % #if ( $conf->exists('invoice_latex') ) {
@@ -11,6 +23,7 @@
 %#  <BR><BR>
 % #} 
 
+%#something very big and obvious showing its voided...
 <DIV STYLE="color:#FF0000; font-size:1000%; font-weight:bold; z-index:100;
             position: absolute; top: 300px; left: 130px;
             zoom: 1; filter: alpha(opacity=25); opacity: 0.25;
@@ -57,5 +70,10 @@ my $custnum = $cust_bill_void->custnum;
 my $display_custnum = $cust_bill_void->cust_main->display_custnum;
 
 #my $link = "invnum=$invnum";
+
+sub areyousure_link {
+    my ($url,$msg,$title,$label) = (shift,shift,shift,shift);
+    '<A HREF="javascript:areyousure(\''.$url.'\',\''.$msg.'\')" TITLE="'.$title.'">'.$label.'</A>';
+}
 
 </%init>
