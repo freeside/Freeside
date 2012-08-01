@@ -2,11 +2,12 @@ package FS::cust_bill_pkg_void;
 use base qw( FS::TemplateItem_Mixin FS::Record );
 
 use strict;
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::cust_bill_void;
 use FS::cust_bill_pkg_detail_void;
 use FS::cust_bill_pkg_display_void;
 use FS::cust_bill_pkg_discount_void;
+use FS::cust_bill_pkg;
 
 =head1 NAME
 
@@ -129,20 +130,83 @@ sub discount_table          { 'cust_bill_pkg_discount_void'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+=item unvoid 
+
+"Un-void"s this line item: Deletes the voided line item from the database and
+adds back a normal line item (and related tables).
+
 =cut
+
+sub unvoid {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_bill_pkg = new FS::cust_bill_pkg ( {
+    map { $_ => $self->get($_) } fields('cust_bill_pkg')
+  } );
+  my $error = $cust_bill_pkg->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $table (qw(
+    cust_bill_pkg_detail
+    cust_bill_pkg_display
+    cust_bill_pkg_discount
+    cust_bill_pkg_tax_location
+    cust_bill_pkg_tax_rate_location
+    cust_tax_exempt_pkg
+  )) {
+
+    foreach my $voided (
+      qsearch($table.'_void', { billpkgnum=>$self->billpkgnum })
+    ) {
+
+      my $class = 'FS::'.$table;
+      my $unvoid = $class->new( {
+        map { $_ => $voided->get($_) } fields($table)
+      });
+      my $error = $unvoid->insert || $voided->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    }
+
+  }
+
+  $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
 
 =item delete
 
 Delete this record from the database.
 
-=cut
-
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
 
 =item check
 

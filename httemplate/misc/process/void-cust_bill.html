@@ -2,7 +2,11 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(1). "void-cust_bill.html?". $cgi->query_string ) %>
 %} else {
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?". $custnum) %>
+<& /elements/header-popup.html, 'Invoice voided' &>
+<SCRIPT TYPE="text/javascript">
+  window.top.location.reload();
+</SCRIPT>
+</BODY></HTML>
 %}
 <%init>
 

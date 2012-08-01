@@ -6,7 +6,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Unvoid');
+  unless $FS::CurrentUser::CurrentUser->access_right('Unvoid payments');
 
 #untaint paynum
 my($query) = $cgi->keywords;

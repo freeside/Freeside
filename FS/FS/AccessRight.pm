@@ -178,6 +178,7 @@ tie my %rights, 'Tie::IxHash',
     'View invoices',
     'Resend invoices', #NEWNEW
     'Void invoices',
+    'Unvoid invoices',
     'Delete invoices',
     'View customer tax exemptions', #yow
     'Add customer tax adjustment', #new, but no need to phase in
@@ -228,11 +229,11 @@ tie my %rights, 'Tie::IxHash',
   ###
   # customer voiding rights..
   ###
-  'Customer void rights' => [
+  'Customer payment void rights' => [
     { rightname=>'Credit card void', desc=>'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway.' }, #aka. cc-void 
     { rightname=>'Echeck void', desc=>'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway.' }, #aka. echeck-void
-    'Regular void',
-    { rightname=>'Unvoid', desc=>'Enable unvoiding of voided payments' }, #aka. unvoid 
+    'Void payments',
+    { rightname=>'Unvoid payments', desc=>'Enable unvoiding of voided payments' }, #aka. unvoid 
     
   
   ],

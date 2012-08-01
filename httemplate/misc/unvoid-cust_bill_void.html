@@ -1,0 +1,25 @@
+%if ( $error ) {
+%  errorpage($error);
+%} else {
+%   my $show = $curuser->default_customer_view =~ /^(jumbo|payment_history)$/
+%                ? ''
+%                : ';show=payment_history';
+<% $cgi->redirect($p. "view/cust_main.cgi?custnum=$custnum$show" ) %>
+%}
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Unvoid invoices');
+
+#untaint invnum
+$cgi->param('invnum') =~ /^(\d+)$/ || die "Illegal invnum";
+my $invnum = $1;
+
+my $cust_bill_void = qsearchs('cust_bill_void', { 'invnum' => $invnum } );
+my $custnum = $cust_bill_void->custnum;
+
+my $error = $cust_bill_void->unvoid;
+
+</%init>

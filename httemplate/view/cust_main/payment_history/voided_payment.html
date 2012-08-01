@@ -31,6 +31,6 @@ $unvoid = areyousure_link("${p}misc/unvoid-cust_pay_void.cgi?".$cust_pay_void->p
                             emt('Unvoid this payment from the database') . $unvoidmsg,
                             emt('unvoid')
                          )
-    if ( $cust_pay_void->closed !~ /^Y/i && $curuser->access_right('Unvoid') );
+    if ( $cust_pay_void->closed !~ /^Y/i && $curuser->access_right('Unvoid payments') );
 
 </%init>

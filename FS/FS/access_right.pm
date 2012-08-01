@@ -152,6 +152,8 @@ sub _upgrade_data { # class method
     'Process payment' => [ 'Process credit card payment', 'Process Echeck payment' ],
     'Post refund'     => [ 'Post check refund', 'Post cash refund' ],
     'Refund payment'  => [ 'Refund credit card payment', 'Refund Echeck payment' ],
+    'Regular void'    => [ 'Void payments' ],
+    'Unvoid'          => [ 'Unvoid payments', 'Unvoid invoices' ],
   );
 
   foreach my $oldright (keys %migrate) {
@@ -174,9 +176,10 @@ sub _upgrade_data { # class method
         die $error if $error;
       }
 
-      #after the WEST stuff is sorted, etc.
-      #my $error = $old->delete;
-      #die $error if $error;
+      unless ( $oldright =~ / (payment|refund)$/ ) { #after the WEST stuff is sorted
+        my $error = $old->delete;
+        die $error if $error;
+      }
 
     }
 

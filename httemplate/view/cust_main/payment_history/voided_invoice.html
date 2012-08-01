@@ -25,7 +25,13 @@ my $link = $curuser->access_right('View invoices')
              ? qq!<A HREF="${p}view/cust_bill_void.html?$invnum">!
              : '';
 
-my $unvoid = ''; #XXX unvoid
+my $unvoid = '';
+$unvoid = areyousure_link("${p}misc/unvoid-cust_bill_void.html?invnum=". $cust_bill_void->invnum,
+                            emt('Are you sure you want to unvoid this invoice?'),
+                            emt('Unvoid this invoice'),
+                            emt('unvoid')
+                         )
+  if $cust_bill_void->closed !~ /^Y/ && $curuser->access_right('Unvoid invoices');
 
 my $delete = '';
 $delete = areyousure_link("${p}misc/delete-cust_bill.html?$invnum",
