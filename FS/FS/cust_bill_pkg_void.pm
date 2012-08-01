@@ -1,8 +1,12 @@
 package FS::cust_bill_pkg_void;
+use base qw( FS::TemplateItem_Mixin FS::Record );
 
 use strict;
-use base qw( FS::Record );
-use FS::Record; # qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_bill_void;
+use FS::cust_bill_pkg_detail_void;
+use FS::cust_bill_pkg_display_void;
+use FS::cust_bill_pkg_discount_void;
 
 =head1 NAME
 
@@ -113,6 +117,13 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cust_bill_pkg_void'; }
 
+sub detail_table            { 'cust_bill_pkg_detail_void'; }
+sub display_table           { 'cust_bill_pkg_display_void'; }
+sub discount_table          { 'cust_bill_pkg_discount_void'; }
+#sub tax_location_table      { 'cust_bill_pkg_tax_location'; }
+#sub tax_rate_location_table { 'cust_bill_pkg_tax_rate_location'; }
+#sub tax_exempt_pkg_table    { 'cust_tax_exempt_pkg'; }
+
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
@@ -147,7 +158,7 @@ sub check {
   my $error = 
     $self->ut_number('billpkgnum')
     || $self->ut_snumber('pkgnum')
-    || $self->ut_number('invnum') #cust_bill or cust_bill_void ?
+    || $self->ut_number('invnum') #cust_bill or cust_bill_void, if we ever support line item voiding
     || $self->ut_numbern('pkgpart_override')
     || $self->ut_money('setup')
     || $self->ut_money('recur')
@@ -165,6 +176,19 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item cust_bill
+
+Returns the voided invoice (see L<FS::cust_bill_void>) for this voided line
+item.
+
+=cut
+
+sub cust_bill {
+  my $self = shift;
+  #cust_bill or cust_bill_void, if we ever support line item voiding
+  qsearchs( 'cust_bill_void', { 'invnum' => $self->invnum } );
 }
 
 =back

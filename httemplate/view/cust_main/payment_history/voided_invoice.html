@@ -21,9 +21,8 @@ my $under = '';
 
 my $invnum = $cust_bill_void->invnum;
 
-#XXX use cust_bill.cgi or?
 my $link = $curuser->access_right('View invoices')
-             ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
+             ? qq!<A HREF="${p}view/cust_bill_void.html?$invnum">!
              : '';
 
 my $unvoid = ''; #XXX unvoid

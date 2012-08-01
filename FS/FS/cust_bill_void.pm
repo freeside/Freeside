@@ -2,10 +2,11 @@ package FS::cust_bill_void;
 use base qw( FS::Template_Mixin FS::cust_main_Mixin FS::otaker_Mixin FS::Record );
 
 use strict;
-use FS::Record qw( qsearchs ); #qsearch );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_statement;
 use FS::access_user;
+use FS::cust_bill_pkg_void;
 
 =head1 NAME
 
@@ -202,6 +203,33 @@ sub void_access_user {
   my $self = shift;
   qsearchs('access_user', { 'usernum' => $self->void_usernum } );
 }
+
+=item cust_main
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs('cust_main', { 'custnum' => $self->custnum } );
+}
+
+=item cust_bill_pkg
+
+=cut
+
+sub cust_bill_pkg { #actually cust_bill_pkg_void objects
+  my $self = shift;
+  qsearch('cust_bill_pkg_void', { invnum=>$self->invnum });
+}
+
+=back
+
+=item enable_previous
+
+=cut
+
+sub enable_previous { 0 }
+
 
 =back
 

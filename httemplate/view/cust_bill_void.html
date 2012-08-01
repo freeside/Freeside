@@ -11,6 +11,11 @@
 %#  <BR><BR>
 % #} 
 
+<DIV STYLE="color:#FF0000; font-size:1000%; font-weight:bold; z-index:100;
+            position: absolute; top: 300px; left: 130px;
+            zoom: 1; filter: alpha(opacity=25); opacity: 0.25;
+">VOID</DIV>
+
 % if ( $conf->exists('invoice_html') ) { 
   <% join('', $cust_bill_void->print_html(\%opt) ) %>
 % } else { 
@@ -43,13 +48,13 @@ my $cust_bill_void = qsearchs({
   'select'    => 'cust_bill_void.*',
   'table'     => 'cust_bill_void',
   #'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
-  'hashref'   => { 'quotationnum' => $quotationnum },
+  'hashref'   => { 'invnum' => $invnum },
   #'extra_sql' => ' AND '. $curuser->agentnums_sql,
 });
-die "Quotation #$quotationnum not found!" unless $quotation;
+die "Voided invoice #$invnum not found!" unless $cust_bill_void;
 
-my $custnum = $cust_bill->custnum;
-my $display_custnum = $cust_bill->cust_main->display_custnum;
+my $custnum = $cust_bill_void->custnum;
+my $display_custnum = $cust_bill_void->cust_main->display_custnum;
 
 #my $link = "invnum=$invnum";
 
