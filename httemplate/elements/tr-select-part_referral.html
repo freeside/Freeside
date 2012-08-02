@@ -14,13 +14,7 @@
      <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'refnum' %>" VALUE="<% $opt{'part_referrals'}->[0]->refnum %>">
 
 % } else { 
-
-     <TR>
-%      if ( $opt{'label'} ) {
-         <TD ALIGN="right"><% $opt{'label'} %></TD>
-%      } else {
-         <TH ALIGN="right"><%$r%><% mt('Advertising source') |h %></TH>
-%      }
+     <& /elements/tr-td-label.html, label => 'Advertising source', %opt &>
        <TD COLSPAN="<% $colspan %>">
          <& /elements/select-part_referral.html,
                        'curr_value' => $refnum,

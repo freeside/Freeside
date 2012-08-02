@@ -146,6 +146,16 @@ if ( @status_where ) {
     ') IN (' . join(',', @status_where) .')';
 }
 
+my @refnum;
+foreach my $refnum ($cgi->param('refnum')) {
+  if ( $refnum =~ /^\d+$/ ) {
+    push @refnum, $refnum;
+  }
+}
+if ( @refnum ) {
+  push @where, 'cust_main.refnum IN ('.join(',', @refnum).')';
+}
+
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }
