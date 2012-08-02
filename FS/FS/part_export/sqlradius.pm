@@ -1160,6 +1160,7 @@ sub import_attrs {
 SELECT groupname, attribute, op, value, \'C\' FROM radgroupcheck
 UNION
 SELECT groupname, attribute, op, value, \'R\' FROM radgroupreply';
+  my @fixes; # things that need to be changed on the radius db
   foreach my $row ( @{ $dbh->selectall_arrayref($sql) } ) {
     my ($groupname, $attrname, $op, $value, $attrtype) = @$row;
     warn "$groupname.$attrname\n";
@@ -1180,6 +1181,20 @@ SELECT groupname, attribute, op, value, \'R\' FROM radgroupreply';
     my $a = $attrs_of{$groupname};
     my $old = $a->{$attrname};
     my $new;
+
+    if ( $attrtype eq 'R' ) {
+      # Freeradius tolerates illegal operators in reply attributes.  We don't.
+      if ( !grep ($_ eq $op, FS::radius_attr->ops('R')) ) {
+        warn "$groupname.$attrname: changing $op to +=\n";
+        # Make a note to change it in the db
+        push @fixes, [
+          'UPDATE radgroupreply SET op = \'+=\' WHERE groupname = ? AND attribute = ? AND op = ? AND VALUE = ?',
+          $groupname, $attrname, $op, $value
+        ];
+        # and import it correctly.
+        $op = '+=';
+      }
+    }
 
     if ( defined $old ) {
       # replace
@@ -1210,6 +1225,13 @@ SELECT groupname, attribute, op, value, \'R\' FROM radgroupreply';
     }
     $attrs_of{$groupname}->{$attrname} = $new;
   } #foreach $row
+
+  foreach (@fixes) {
+    my ($sql, @args) = @$_;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute(@args) or warn $sth->errstr;
+  }
+    
   return;
 }
 
