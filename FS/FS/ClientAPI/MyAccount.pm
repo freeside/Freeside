@@ -197,8 +197,6 @@ sub login {
 
   } else {
 
-warn Dumper($p);
-
     my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
       or return { error => 'Domain '. $p->{'domain'}. ' not found' };
 
