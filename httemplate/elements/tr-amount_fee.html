@@ -90,7 +90,9 @@ if ( $amount > 0 ) {
   $amount += $fee
     if $fee && $fee_display eq 'subtract';
 
-  &{ $opt{post_fee_callback} }( \$amount ) if $opt{post_fee_callback};
+  #&{ $opt{post_fee_callback} }( \$amount ) if $opt{post_fee_callback};
+  $amount += $amount * $opt{'surcharge_percentage'}/100
+    if $opt{'surcharge_percentage'} > 0;
 
   $amount = sprintf("%.2f", $amount);
 }

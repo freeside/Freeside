@@ -26,6 +26,7 @@ my %allowed_comps = map { $_=>1 } qw(
 
 my %session_comps = map { $_=>1 } qw(
   /elements/location.html
+  /elements/tr-amount_fee.html
   /edit/cust_main/first_pkg/select-part_pkg.html
 );
 
@@ -38,6 +39,28 @@ my %session_callbacks = (
     my %args = @$argsref;
     $args{object} = $cust_main;
     @$argsref = ( %args );
+    return ''; #no error
+  },
+
+  '/elements/tr-amount_fee.html' => sub {
+    my( $custnum, $argsref ) = @_;
+
+    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+      or return "unknown custnum $custnum";
+
+    my $conf = new FS::Conf;
+
+    my %args = @$argsref;
+    %args = (
+      %args,
+      'process-pkgpart'    => scalar($conf->config('selfservice_process-pkgpart')),
+      'process-display'    => scalar($conf->config('selfservice_process-display')),
+      'process-skip-first' => $conf->exists('selfservice_process-skip_first'),
+      'num_payments'       => scalar($cust_main->cust_pay), 
+      'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
+    );
+    @$argsref = ( %args );
+
     return ''; #no error
   },
 

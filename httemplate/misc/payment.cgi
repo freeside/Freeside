@@ -16,7 +16,7 @@
        'process-display'    => scalar($conf->config('manual_process-display')),
        'process-skip-first' => $conf->exists('manual_process-skip_first'),
        'num_payments'       => scalar($cust_main->cust_pay), 
-       'post_fee_callback'  => $post_fee_callback,
+       'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
   &>
 
   <& /elements/tr-select-discount_term.html,
@@ -268,19 +268,6 @@ my $amount = '';
 if ( $balance > 0 ) {
   $amount = $balance;
 }
-
-my $post_fee_callback = sub {
-  my( $amountref ) = @_;
-
-  return unless $$amountref > 0;
-
-  my $conf = new FS::Conf;
-
-  my $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage');
-  $$amountref += $$amountref * $cc_surcharge_pct/100 if $cc_surcharge_pct > 0;
-
-  $$amountref = sprintf("%.2f", $$amountref);
-};
 
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
 
