@@ -44,12 +44,16 @@ use FS::part_pkg::flat;
 
 sub calc_recur {
   my $self = shift;
-  return $self->calc_prorate(@_, $self->cutoff_day) - $self->calc_discount(@_);
+  my $cust_pkg = $_[0];
+  $self->calc_prorate(@_, $self->cutoff_day($cust_pkg))
+    - $self->calc_discount(@_);
 }
 
 sub cutoff_day {
-  my $self = shift;
-  split(/\s*,\s*/, $self->option('cutoff_day', 1) || '1');
+  my( $self, $cust_pkg ) = @_;
+  my $prorate_day = $cust_pkg->cust_main->prorate_day;
+  $prorate_day ? ( $prorate_day )
+               : split(/\s*,\s*/, $self->option('cutoff_day', 1) || '1');
 }
 
 1;

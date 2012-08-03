@@ -519,6 +519,17 @@
     </TR>
 % }
 
+% if ( $conf->exists('cust_main-select-prorate_day') ) {
+    <TR>
+      <TD ALIGN="right" WIDTH="200"><% mt('Prorate day (1-28)') |h %> </TD>
+      <TD>
+        <INPUT TYPE="text" NAME="prorate_day" VALUE="<% $cust_main->prorate_day %>" SIZE=3 MAXLENGTH=2>
+      </TD>
+    </TR>
+% } else {
+    <INPUT TYPE="hidden" NAME="prorate_day" VALUE="<% $cust_main->prorate_day %>">
+% }
+
     <TR>
       <TD ALIGN="right" WIDTH="200"><% mt('Invoice terms') |h %> </TD>
       <TD WIDTH="408">

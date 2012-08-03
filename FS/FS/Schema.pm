@@ -914,6 +914,7 @@ sub tables_hashref {
         'email_csv_cdr', 'char', 'NULL', 1, '', '',
         'accountcode_cdr', 'char', 'NULL', 1, '', '',
         'billday',   'int', 'NULL', '', '', '',
+        'prorate_day',   'int', 'NULL', '', '', '',
         'edit_subject', 'char', 'NULL', 1, '', '',
         'locale', 'varchar', 'NULL', 16, '', '', 
         'calling_list_exempt', 'char', 'NULL', 1, '', '',
