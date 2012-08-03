@@ -21,6 +21,7 @@ use FS::cust_tax_adjustment;
 use FS::cust_bill_pkg_void;
 use FS::cust_bill_pkg_detail_void;
 use FS::cust_bill_pkg_display_void;
+use FS::cust_bill_pkg_discount_void;
 use FS::cust_bill_pkg_tax_location_void;
 use FS::cust_bill_pkg_tax_rate_location_void;
 use FS::cust_tax_exempt_pkg_void;
