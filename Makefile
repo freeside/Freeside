@@ -168,6 +168,11 @@ install-docs: check-conflicts docs
 	cp -r masondocs ${FREESIDE_DOCUMENT_ROOT}
 	chown -R freeside:freeside ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
+	perl -p -i -e "\
+	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
+	" ${MASON_HANDLER} || true
+	mkdir -p ${FREESIDE_EXPORT}/profile
+	chown freeside ${FREESIDE_EXPORT}/profile
 	cp htetc/htpasswd.logout ${FREESIDE_CONF}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}

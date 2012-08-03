@@ -5,6 +5,7 @@ package HTML::Mason;
 use strict;
 use warnings;
 use FS::Mason qw( mason_interps );
+use FS::Trace;
 
 #use vars qw($r);
 
@@ -38,6 +39,8 @@ sub handler
     #($r) = @_;
     my $r = shift;
 
+    FS::Trace->log('protecting fds');
+
     #from rt/bin/webmux.pl(.in)
     if ( !$protect_fds && $ENV{'MOD_PERL'} && exists $ENV{'MOD_PERL_API_VERSION'}
         && $ENV{'MOD_PERL_API_VERSION'} >= 2
@@ -63,6 +66,8 @@ sub handler
 
     ###Module::Refresh->refresh;###
 
+    FS::Trace->log('setting content_type / headers');
+
     $r->content_type('text/html; charset=utf-8');
     #$r->content_type('text/html; charset=iso-8859-1');
     #eorar
@@ -76,6 +81,8 @@ sub handler
 
     if ( $r->filename =~ /\/rt\// ) { #RT
 
+      FS::Trace->log('handling RT file');
+
       # We don't need to handle non-text, non-xml items
       return -1 if defined( $r->content_type )
                 && $r->content_type !~ m!(^text/|\bxml\b)!io;
@@ -84,15 +91,20 @@ sub handler
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
+      FS::Trace->log('initializing RT');
       my_rt_init();
 
+      FS::Trace->log('setting RT interpreter');
       $ah->interp($rt_interp);
 
     } else {
 
+      FS::Trace->log('handling Freeside file');
+
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
+      FS::Trace->log('initializing RT');
       my_rt_init();
 
       #we don't want the RT error handlers under FS
@@ -102,10 +114,12 @@ sub handler
         undef($SIG{__DIE__})  if defined($SIG{__DIE__} );
       }
 
+      FS::Trace->log('setting Freeside interpreter');
       $ah->interp($fs_interp);
 
     }
 
+    FS::Trace->log('handling request');
     my %session;
     my $status;
     eval { $status = $ah->handle_request($r); };
@@ -124,6 +138,13 @@ sub handler
 #"Transaction not committed. Usually indicates a software fault. Data loss may have occurred"
 #       );
 #    }
+
+    FS::Trace->log('done');
+
+    FS::Trace->dumpfile("%%%FREESIDE_EXPORT%%%/profile/$$.".time, $r->filename)
+      if FS::Trace->total > 5; #10?
+
+    FS::Trace->reset;
 
     $status;
 }
