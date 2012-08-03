@@ -839,6 +839,13 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'cust_main-select-prorate_day',
+    'section'     => 'billing',
+    'description' => 'When used with prorate or anniversary packages, allows the selection of the prorate day of month, on a per-customer basis',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'encryption',
     'section'     => 'billing',
     'description' => 'Enable encryption of credit cards and echeck numbers',

@@ -1794,6 +1794,7 @@ sub check {
     || $self->ut_floatn('cdr_termination_percentage')
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
+    || $self->ut_numbern('prorate_day')
     || $self->ut_enum('edit_subject', [ '', 'Y' ] )
     || $self->ut_enum('calling_list_exempt', [ '', 'Y' ] )
     || $self->ut_enum('invoice_noemail', [ '', 'Y' ] )
