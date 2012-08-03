@@ -2592,30 +2592,30 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
-  {
-    'key'         => 'suto_process-pkgpart',
-    'section'     => 'billing',
-    'description' => 'Package to add to each automatic credit card and ACH payment processed by billing events.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option.',
-    'type'        => 'select-part_pkg',
-  },
-
 #  {
-#    'key'         => 'auto_process-display',
+#    'key'         => 'auto_process-pkgpart',
 #    'section'     => 'billing',
-#    'description' => 'When using auto_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
-#    'type'        => 'select',
-#    'select_hash' => [
-#                       'add'      => 'Add fee to amount entered',
-#                       'subtract' => 'Subtract fee from amount entered',
-#                     ],
+#    'description' => 'Package to add to each automatic credit card and ACH payment processed by billing events.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option.',
+#    'type'        => 'select-part_pkg',
 #  },
-
-  {
-    'key'         => 'auto_process-skip_first',
-    'section'     => 'billing',
-    'description' => "When using auto_process-pkgpart, omit the fee if it is the customer's first payment.",
-    'type'        => 'checkbox',
-  },
+#
+##  {
+##    'key'         => 'auto_process-display',
+##    'section'     => 'billing',
+##    'description' => 'When using auto_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
+##    'type'        => 'select',
+##    'select_hash' => [
+##                       'add'      => 'Add fee to amount entered',
+##                       'subtract' => 'Subtract fee from amount entered',
+##                     ],
+##  },
+#
+#  {
+#    'key'         => 'auto_process-skip_first',
+#    'section'     => 'billing',
+#    'description' => "When using auto_process-pkgpart, omit the fee if it is the customer's first payment.",
+#    'type'        => 'checkbox',
+#  },
 
   {
     'key'         => 'allow_negative_charges',

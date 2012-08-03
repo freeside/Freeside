@@ -38,6 +38,7 @@ use FS::cust_main;
 use FS::cust_bill;
 use FS::legacy_cust_bill;
 use FS::cust_main_county;
+use FS::part_pkg;
 use FS::cust_pkg;
 use FS::payby;
 use FS::acct_rt_transaction;
@@ -926,6 +927,16 @@ sub validate_payment {
   my $amount = $1;
   return { error => 'Amount must be greater than 0' } unless $amount > 0;
 
+  #false laziness w/tr-amount_fee.html, but we don't want selfservice users
+  #changing the hidden form values
+  my $conf = new FS::Conf;
+  my $fee_display = $conf->config('selfservice_process-display') || 'add';
+  my $fee_pkgpart = $conf->config('selfservice_process-pkgpart');
+  if ( $fee_display eq 'add' && $fee_pkgpart ) {
+    my $fee_pkg = qsearchs('part_pkg', { pkgpart=>$fee_pkgpart } );
+    $amount = sprintf('%.2f', $amount + $fee_pkg->option('setup_fee') );
+  }
+
   $p->{'discount_term'} =~ /^\s*(\d*)\s*$/
     or return { 'error' => gettext('illegal_discount_term'). ': '. $p->{'discount_term'} };
   my $discount_term = $1;
@@ -1084,6 +1095,24 @@ sub do_process_payment {
     %$validate,
   );
   return { 'error' => $error } if $error;
+
+  #no error, so order the fee package if applicable...
+  my $conf = new FS::Conf;
+  my $fee_pkgpart = $conf->config('selfservice_process-pkgpart');
+  if ( $fee_pkgpart ) {
+
+    my $cust_pkg = new FS::cust_pkg { 'pkgpart' => $fee_pkgpart };
+
+    $error = $cust_main->order_pkg( 'cust_pkg' => $cust_pkg );
+    return { 'error' => "payment processed successfully, but error ordering fee: $error" }
+      if $error;
+
+    #and generate an invoice for it now too
+    $error = $cust_main->bill( 'pkg_list' => [ $cust_pkg ] );
+    return { 'error' => "payment processed and fee ordered sucessfully, but error billing fee: $error" }
+      if $error;
+
+  }
 
   $cust_main->apply_payments;
 

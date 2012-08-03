@@ -9,29 +9,15 @@
   <TH ALIGN="right">Amount&nbsp;Due</TH>
   <TD COLSPAN=7>
     <TABLE><TR><TD BGCOLOR="#ffffff">
-      $<%=sprintf("%.2f",$balance)%>
+      <FONT COLOR="#000000">$<%=sprintf("%.2f",$balance)%></FONT>
     </TD></TR></TABLE>
   </TD>
 </TR>
-<TR>
-  <TH ALIGN="right">Payment&nbsp;amount</TH>
-  <TD COLSPAN=7>
-    <TABLE><TR><TD BGCOLOR="#ffffff">
-<%=
-    $amt = '';
-    if ( $balance > 0 ) {
-        $amt = $balance;
-        $amt += $amt * $credit_card_surcharge_percentage/100
-                                    if $credit_card_surcharge_percentage > 0;
-        $amt = sprintf("%.2f",$amt);
-    }
-    '';
-%>
-      $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=$amt%>">
-    </TD></TR></TABLE>
-  </TD>
-</TR>
+
+<%= $tr_amount_fee %>
+
 <%= include('discount_term') %>
+
 <TR>
   <TH ALIGN="right">Card&nbsp;type</TH>
   <TD COLSPAN=7>
