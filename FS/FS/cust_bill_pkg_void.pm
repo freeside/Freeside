@@ -4,10 +4,13 @@ use base qw( FS::TemplateItem_Mixin FS::Record );
 use strict;
 use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::cust_bill_void;
-use FS::cust_bill_pkg_detail_void;
-use FS::cust_bill_pkg_display_void;
-use FS::cust_bill_pkg_discount_void;
+use FS::cust_bill_pkg_detail;
+use FS::cust_bill_pkg_display;
+use FS::cust_bill_pkg_discount;
 use FS::cust_bill_pkg;
+use FS::cust_bill_pkg_tax_location;
+use FS::cust_bill_pkg_tax_rate_location;
+use FS::cust_tax_exempt_pkg;
 
 =head1 NAME
 
