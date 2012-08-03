@@ -5,7 +5,6 @@
                 'name_verb'     => 'pending',
                 'disable_link'  => 1,
                 'disable_by'    => 1, #add otaker to cust_pay_pending?
-                'html_init'     => include('/elements/init_overlib.html'),
                 'addl_header'   => [ 'Time', 'Payment Status', ],
                 'addl_fields'   => [ sub { time2str('%r', shift->_date ) },
                                      $status_sub,
