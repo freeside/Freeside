@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use vars qw( $FSURL $QUERY_STRING );
 use base 'HTML::Mason::Request';
+use FS::Trace;
 
 $FSURL = 'http://Set/FS_Mason_Request_FSURL/in_standalone_mode/';
 $QUERY_STRING = '';
@@ -11,21 +12,27 @@ $QUERY_STRING = '';
 sub new {
     my $class = shift;
 
+    FS::Trace->log('creating new FS::Mason::Request object');
+
     my $superclass = $HTML::Mason::ApacheHandler::VERSION ?
                      'HTML::Mason::Request::ApacheHandler' :
                      $HTML::Mason::CGIHandler::VERSION ?
                      'HTML::Mason::Request::CGI' :
                      'HTML::Mason::Request';
 
+    FS::Trace->log('  altering superclass');
     $class->alter_superclass( $superclass );
 
+    FS::Trace->log('  setting valid params');
     #huh... shouldn't alter_superclass take care of this for us?
     __PACKAGE__->valid_params( %{ $superclass->valid_params() } );
 
+    FS::Trace->log('  freeside_setup');
     my %opt = @_;
     my $mode = $superclass =~ /Apache/i ? 'apache' : 'standalone';
     $class->freeside_setup($opt{'comp'}, $mode);
 
+    FS::Trace->log('  SUPER::new');
     $class->SUPER::new(@_);
 
 }
@@ -37,6 +44,8 @@ my $protect_fds;
 
 sub freeside_setup {
     my( $class, $filename, $mode ) = @_;
+
+    FS::Trace->log('    protecting fds');
 
     #from rt/bin/webmux.pl(.in)
     if ( !$protect_fds && $ENV{'MOD_PERL'} && exists $ENV{'MOD_PERL_API_VERSION'}
@@ -57,6 +66,8 @@ sub freeside_setup {
 
     if ( $filename =~ qr(/REST/\d+\.\d+/NoAuth/) ) {
 
+      FS::Trace->log('    handling RT REST/NoAuth file');
+
       package HTML::Mason::Commands; #?
       use FS::UID qw( adminsuidsetup );
 
@@ -65,9 +76,12 @@ sub freeside_setup {
       ##old installs w/fs_selfs or selfserv??
       #&adminsuidsetup('fs_selfservice');
 
+      FS::Trace->log('    adminsuidsetup fs_queue');
       &adminsuidsetup('fs_queue');
 
     } else {
+
+      FS::Trace->log('    handling regular file');
 
       package HTML::Mason::Commands;
       use vars qw( $cgi $p $fsurl ); # $lh ); #not using /mt
@@ -77,6 +91,7 @@ sub freeside_setup {
 
       if ( $mode eq 'apache' ) {
         $cgi = new CGI;
+        FS::Trace->log('    cgisuidsetup');
         &cgisuidsetup($cgi);
         #&cgisuidsetup($r);
         $fsurl = rooturl();
@@ -91,6 +106,7 @@ sub freeside_setup {
         die "unknown mode $mode";
       }
 
+    FS::Trace->log('    UTF-8-decoding form data');
     #
     foreach my $param ( $cgi->param ) {
       my @values = $cgi->param($param);
@@ -101,6 +117,8 @@ sub freeside_setup {
     }
     
   }
+
+  FS::Trace->log('    done');
 
 }
 
