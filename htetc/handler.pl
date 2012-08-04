@@ -141,7 +141,9 @@ sub handler
 
     FS::Trace->log('done');
 
-    FS::Trace->dumpfile("%%%FREESIDE_EXPORT%%%/profile/$$.".time, $r->filename)
+    FS::Trace->dumpfile( "%%%FREESIDE_EXPORT%%%/profile/$$.".time,
+                         FS::Trace->total. ' '. $r->filename
+                       )
       if FS::Trace->total > 5; #10?
 
     FS::Trace->reset;
