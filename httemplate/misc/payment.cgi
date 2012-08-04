@@ -14,7 +14,7 @@
        'amount'             => $amount,
        'process-pkgpart'    => scalar($conf->config('manual_process-pkgpart')),
        'process-display'    => scalar($conf->config('manual_process-display')),
-       'process-skip-first' => $conf->exists('manual_process-skip_first'),
+       'process-skip_first' => $conf->exists('manual_process-skip_first'),
        'num_payments'       => scalar($cust_main->cust_pay), 
        'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
   &>
