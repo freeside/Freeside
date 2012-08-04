@@ -898,7 +898,12 @@ sub validate_payment {
   my $conf = new FS::Conf;
   my $fee_display = $conf->config('selfservice_process-display') || 'add';
   my $fee_pkgpart = $conf->config('selfservice_process-pkgpart');
-  if ( $fee_display eq 'add' && $fee_pkgpart ) {
+  my $fee_skip_first = $conf->exists('selfservice_process-skip_first');
+  if ( $fee_display eq 'add'
+         and $fee_pkgpart
+         and ! $fee_skip_first || scalar($cust_main->cust_pay)
+     )
+  {
     my $fee_pkg = qsearchs('part_pkg', { pkgpart=>$fee_pkgpart } );
     $amount = sprintf('%.2f', $amount + $fee_pkg->option('setup_fee') );
   }
@@ -1065,7 +1070,9 @@ sub do_process_payment {
   #no error, so order the fee package if applicable...
   my $conf = new FS::Conf;
   my $fee_pkgpart = $conf->config('selfservice_process-pkgpart');
-  if ( $fee_pkgpart ) {
+  my $fee_skip_first = $conf->exists('selfservice_process-skip_first');
+  
+  if ( $fee_pkgpart and ! $fee_skip_first || scalar($cust_main->cust_pay) ) {
 
     my $cust_pkg = new FS::cust_pkg { 'pkgpart' => $fee_pkgpart };
 

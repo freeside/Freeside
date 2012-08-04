@@ -55,7 +55,7 @@ my %session_callbacks = (
       %args,
       'process-pkgpart'    => scalar($conf->config('selfservice_process-pkgpart')),
       'process-display'    => scalar($conf->config('selfservice_process-display')),
-      'process-skip-first' => $conf->exists('selfservice_process-skip_first'),
+      'process-skip_first' => $conf->exists('selfservice_process-skip_first'),
       'num_payments'       => scalar($cust_main->cust_pay), 
       'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
     );
