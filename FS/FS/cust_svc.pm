@@ -338,7 +338,7 @@ sub check {
       unless $part_svc || $ignore_quantity;
     return "Already ". $part_svc->get('num_cust_svc'). " ". $part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if $part_svc->get('num_avail') <= 0 and !$ignore_quantity;
+      if !$ignore_quantity && $part_svc->get('num_avail') <= 0 ;
   }
 
   $self->SUPER::check;
