@@ -335,10 +335,10 @@ sub check {
     ($part_svc) = grep { $_->svcpart == $self->svcpart } $cust_pkg->part_svc;
     return "No svcpart ". $self->svcpart.
            " services in pkgpart ". $cust_pkg->pkgpart
-      unless $part_svc;
+      unless $part_svc || $ignore_quantity;
     return "Already ". $part_svc->get('num_cust_svc'). " ". $part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if $part_svc->get('num_avail') == 0 and !$ignore_quantity;
+      if $part_svc->get('num_avail') <= 0 and !$ignore_quantity;
   }
 
   $self->SUPER::check;
