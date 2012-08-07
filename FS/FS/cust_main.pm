@@ -454,8 +454,10 @@ sub insert {
     warn "  setting $l.custnum\n"
       if $DEBUG > 1;
     my $loc = $self->$l;
-    $loc->set(custnum => $self->custnum);
-    $error ||= $loc->replace;
+    unless ( $loc->custnum ) {
+      $loc->set(custnum => $self->custnum);
+      $error ||= $loc->replace;
+    }
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
