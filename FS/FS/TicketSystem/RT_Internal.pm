@@ -92,7 +92,7 @@ sub init {
   # this needs to be done on each fork
   warn "$me init: initializing RT\n" if $DEBUG;
   {
-    local $SIG{__WARN};
+    local $SIG{__WARN__};
     local $SIG{__DIE__};
     eval 'RT::Init("NoSignalHandlers"=>1);';
   }
