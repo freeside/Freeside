@@ -807,8 +807,8 @@ sub try_to_resolve {
     }
   );
 
-  if ( @unresolved ) {
-    my $days = $conf->config('batch-auto_resolve_days') || '';
+  if ( @unresolved and $conf->exists('batch-auto_resolve_days') ) {
+    my $days = $conf->config('batch-auto_resolve_days'); # can be zero
     # either 'approve' or 'decline'
     my $action = $conf->config('batch-auto_resolve_status') || '';
     return unless 
@@ -860,6 +860,9 @@ sub prepare_for_export {
     my $error = $self->set_status('I');
     return "error updating pay_batch status: $error\n" if $error;
   } elsif ($status eq 'I' && $curuser->access_right('Reprocess batches')) {
+    $first_download = 0;
+  } elsif ($status eq 'R' && 
+           $curuser->access_right('Redownload resolved batches')) {
     $first_download = 0;
   } else {
     die "No pending batch.\n";
@@ -1080,7 +1083,7 @@ sub _upgrade_data {
   for my $format (keys %export_info) {
     my $mod = "FS::pay_batch::$format";
     if ( $mod->can('_upgrade_gateway') 
-        and length( $conf->config("batchconfig-$format") ) ) {
+        and exists( $conf->config("batchconfig-$format") ) ) {
 
       local $@;
       my ($module, %gw_options) = $mod->_upgrade_gateway;
@@ -1109,7 +1112,7 @@ sub _upgrade_data {
 
         # and if appropriate, make it the system default
         for my $payby (qw(CARD CHEK)) {
-          if ( $conf->config("batch-fixed_format-$payby") eq $format ) {
+          if ( ($conf->config("batch-fixed_format-$payby") || '') eq $format ) {
             warn "Setting as default for $payby.\n";
             $conf->set("batch-gateway-$payby", $gateway->gatewaynum);
             $conf->delete("batch-fixed_format-$payby");

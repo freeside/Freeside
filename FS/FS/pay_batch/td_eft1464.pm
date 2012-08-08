@@ -154,5 +154,14 @@ $name = 'td_eft1464';
   },
 );
 
+sub _upgrade_gateway {
+  my $conf = FS::Conf->new;
+  my @batchconfig = $conf->config('batchconfig-td_eft1464');
+  my %options;
+  @options{ qw(originator datacentre short_name long_name return_branch 
+               return_account cpa_code) } = @batchconfig;
+  ( 'TD_EFT', %options );
+}
+
 1;
 

@@ -103,7 +103,7 @@ sub batch_receive {
     if ( $gateway->batch_processor->can('default_transport') ) {
       warn "Importing results from '".$gateway->label."'\n" if $DEBUG;
       $error = eval { 
-        FS::pay_batch->import_from_gateway( $gateway, debug => $DEBUG ) 
+        FS::pay_batch->import_from_gateway( gateway =>$gateway, debug => $DEBUG ) 
       } || $@;
       if ( $error ) {
         # this we can roll back
