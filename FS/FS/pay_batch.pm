@@ -1083,7 +1083,7 @@ sub _upgrade_data {
   for my $format (keys %export_info) {
     my $mod = "FS::pay_batch::$format";
     if ( $mod->can('_upgrade_gateway') 
-        and exists( $conf->config("batchconfig-$format") ) ) {
+        and $conf->exists("batchconfig-$format") ) {
 
       local $@;
       my ($module, %gw_options) = $mod->_upgrade_gateway;
