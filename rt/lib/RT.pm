@@ -174,6 +174,8 @@ Create the Logger object and set up signal handlers.
 
 sub InitLogging {
 
+    my %arg = @_;
+
     # We have to set the record separator ($, man perlvar)
     # or Log::Dispatch starts getting
     # really pissy, as some other module we use unsets it.
@@ -309,10 +311,13 @@ sub InitLogging {
                          ));
         }
     }
-    InitSignalHandlers();
+    InitSignalHandlers(%arg);
 }
 
 sub InitSignalHandlers {
+
+    my %arg = @_;
+    return if $arg{'NoSignalHandlers'};
 
 # Signal handlers
 ## This is the default handling of warnings and die'ings in the code
