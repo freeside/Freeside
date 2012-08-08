@@ -10,6 +10,7 @@ use DateTime::Format::Strptime;
 use Storable qw( thaw nfreeze );
 use IO::File;
 use File::Temp;
+use Text::CSV_XS;
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Response;
@@ -637,6 +638,7 @@ sub batch_import {
   $count *=2;
 
   if ( $format eq 'cch' || $format eq 'cch-update' ) {
+    #false laziness w/below (sub _perform_cch_diff)
     @fields = qw( geocode inoutcity inoutlocal tax location taxbase taxmax
                   excessrate effective_date taxauth taxtype taxcat taxname
                   usetax useexcessrate fee unittype feemax maxtype passflag
@@ -715,9 +717,6 @@ sub batch_import {
     die "unknown format $format";
   }
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
-
   my $csv = new Text::CSV_XS;
 
   my $imported = 0;
@@ -759,12 +758,10 @@ sub batch_import {
       $tax_rate{$field} = shift @columns; 
     }
 
-    #ignoring extra columns (bad data from last update?) and seeing if that
-    # allows the upgrade to proceed
-    #if ( scalar( @columns ) ) {
-    #  $dbh->rollback if $oldAutoCommit;
-    #  return "Unexpected trailing columns in line (wrong format?) importing tax_rate: $line";
-    #}
+    if ( scalar( @columns ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Unexpected trailing columns in line (wrong format?) importing tax_rate: $line";
+    }
 
     my $error = &{$hook}(\%tax_rate);
     if ( $error ) {
@@ -1118,8 +1115,26 @@ sub _perform_cch_diff {
   }
   close $newcsvfh;
 
-  for (keys %oldlines) {
-    print $dfh $_, ',"D"', "\n" if $oldlines{$_};
+  #false laziness w/above (sub batch_import)
+  my @fields = qw( geocode inoutcity inoutlocal tax location taxbase taxmax
+                   excessrate effective_date taxauth taxtype taxcat taxname
+                   usetax useexcessrate fee unittype feemax maxtype passflag
+                   passtype basetype );
+  my $numfields = scalar(@fields);
+
+  my $csv = new Text::CSV_XS { 'always_quote' => 1 };
+
+  for my $line (grep $oldlines{$_}, keys %oldlines) {
+
+    $csv->parse($line) or do {
+      #$dbh->rollback if $oldAutoCommit;
+      die "can't parse: ". $csv->error_input();
+    };
+    my @columns = $csv->fields();
+    
+    $csv->combine( splice(@columns, 0, $numfields) );
+
+    print $dfh $csv->string, ',"D"', "\n";
   }
 
   close $dfh;
@@ -1172,9 +1187,6 @@ sub _cch_fetch_and_unzip {
  
 sub _cch_extract_csv_from_dbf {
   my ( $job, $dir, $name ) = @_;
-
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
 
   eval "use XBase;";
   die $@ if $@;
