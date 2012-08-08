@@ -826,6 +826,9 @@ sub batch_import {
       }
     }
 
+    #remove even if the rate doesn't match,
+    # geocode/taxclassnum/taxname/etc. should be enough
+    delete $delete{$_}->{tax};
     my $old = qsearchs( 'tax_rate', $delete{$_} );
     unless ($old) {
       $dbh->rollback if $oldAutoCommit;
