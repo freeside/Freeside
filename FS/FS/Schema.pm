@@ -445,7 +445,7 @@ sub tables_hashref {
   my @taxrate_type  = ( 'decimal',   '',     '14,8' ); # requires pg 8 for 
   my @taxrate_typen = ( 'decimal',   'NULL', '14,8' ); # fs-upgrade to work
 
-  my $username_len = 32; #usernamemax config file
+  my $username_len = 64; #usernamemax config file
 
     # name type nullability length default local
 
