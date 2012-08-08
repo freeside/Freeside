@@ -758,10 +758,13 @@ sub batch_import {
     foreach my $field ( @fields ) {
       $tax_rate{$field} = shift @columns; 
     }
-    if ( scalar( @columns ) ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Unexpected trailing columns in line (wrong format?) importing tax_rate: $line";
-    }
+
+    #ignoring extra columns (bad data from last update?) and seeing if that
+    # allows the upgrade to proceed
+    #if ( scalar( @columns ) ) {
+    #  $dbh->rollback if $oldAutoCommit;
+    #  return "Unexpected trailing columns in line (wrong format?) importing tax_rate: $line";
+    #}
 
     my $error = &{$hook}(\%tax_rate);
     if ( $error ) {
@@ -1635,16 +1638,16 @@ sub process_download_and_update {
 
     if (-d $dir) {
 
-      if (-d "$dir.4") {
-        opendir(my $dirh, "$dir.4") or die "failed to open $dir.4: $!\n";
+      if (-d "$dir.9") {
+        opendir(my $dirh, "$dir.9") or die "failed to open $dir.9: $!\n";
         foreach my $file (readdir($dirh)) {
-          unlink "$dir.4/$file" if (-f "$dir.4/$file");
+          unlink "$dir.9/$file" if (-f "$dir.9/$file");
         }
         closedir($dirh);
-        rmdir "$dir.4";
+        rmdir "$dir.9";
       }
 
-      for (3, 2, 1) {
+      for (8, 7, 6, 5, 4, 3, 2, 1) {
         if ( -e "$dir.$_" ) {
           rename "$dir.$_", "$dir.". ($_+1) or die "can't rename $dir.$_: $!\n";
         }
