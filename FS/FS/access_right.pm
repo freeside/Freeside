@@ -265,7 +265,7 @@ sub _upgrade_data { # class method
           'rightname'   => 'Download report data',
       } );
       my $error = $access_right->insert;
-      die $error if $error;
+      warn $error if $error;
     }
 
     FS::upgrade_journal->set_done('ACL_download_report_data');
