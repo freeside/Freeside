@@ -384,7 +384,7 @@ sub batch_import {
     }
     if ( scalar( @columns ) ) {
       $dbh->rollback if $oldAutoCommit;
-      return "Unexpected trailing columns in line (wrong format?): $line";
+      return "Unexpected trailing columns in line (wrong format?) importing part_pkg_taxrate: $line";
     }
 
     my $error = &{$hook}(\%part_pkg_taxrate);
