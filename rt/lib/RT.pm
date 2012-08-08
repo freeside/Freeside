@@ -138,6 +138,8 @@ up logging|/InitLogging>, and L<loads plugins|/InitPlugins>.
 
 sub Init {
 
+    my @arg = @_;
+
     CheckPerlRequirements();
 
     InitPluginPaths();
@@ -146,7 +148,7 @@ sub Init {
     ConnectToDatabase();
     InitSystemObjects();
     InitClasses();
-    InitLogging();
+    InitLogging(@arg);
     InitPlugins();
     RT::I18N->Init;
     RT->Config->PostLoadCheck;
