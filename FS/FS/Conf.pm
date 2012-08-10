@@ -1924,6 +1924,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'national_id-country',
+    'section'     => 'UI',
+    'description' => 'Track a national identification number, for specific countries.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'MY' ],
+  },
+
+  {
     'key'         => 'show_bankstate',
     'section'     => 'UI',
     'description' => "Turns on display/collection of state for bank accounts in the web interface.  Sometimes required by electronic check (ACH) processors.",

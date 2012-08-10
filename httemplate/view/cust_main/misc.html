@@ -102,6 +102,26 @@
     <TD BGCOLOR="#ffffff"><% $cust_main->signupdate ? time2str($date_format, $cust_main->signupdate) : '' %></TD>
   </TR>
 
+% my $id_country = $conf->config('national_id-country');
+%  if ( $id_country ) {
+%   if ( $id_country eq 'MY' ) {
+      <TR>
+%     my($old, $nric) = ( '', '');
+%     if ( $cust_main->national_id =~ /^\w\d{9}$/ ) {
+          <TD ALIGN="right"><% mt('Old IC/Passport') |h %></TD>
+%     } elsif ( $cust_main->national_id =~ /^\d{6}\-\d{2}\-\d{4}$/ ) {
+          <TD ALIGN="right"><% mt('NRIC') |h %></TD>
+%     } else {
+%       warn "unknown national_id format";
+          <TD ALIGN="right"></TD>
+%     }
+        <TD BGCOLOR="#ffffff"><% $cust_main->national_id |h %></TD>
+      </TR>
+%   } else {
+%     warn "unknown national_id-country $id_country";
+%   }
+% }
+
 % if ( $conf->exists('cust_main-enable_birthdate') ) {
 %   my $dt = $cust_main->birthdate ne ''
 %              ? DateTime->from_epoch( 'epoch'     => $cust_main->birthdate,
