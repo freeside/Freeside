@@ -134,9 +134,9 @@
 %                 and !$opt{'disable_download'}
 %                 and $type ne 'html-print' ) { 
 
-              <TD ALIGN="right">
+              <TD ALIGN="right" CLASS="noprint">
 
-                Download full results<BR>
+                <% $opt{'download_label'} || 'Download full results' %><BR>
 
 %               $cgi->param('_type', "$xlsname.xls" ); 
                 as <A HREF="<% "$self_url?". $cgi->query_string %>">Excel spreadsheet</A><BR>

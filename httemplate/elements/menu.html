@@ -256,6 +256,8 @@ tie my %report_inventory, 'Tie::IxHash',
 tie my %report_rating, 'Tie::IxHash';
 $report_rating{'RADIUS sessions'} = [ $fsurl.'search/sqlradius.html', '' ]
   if $curuser->access_right("Usage: RADIUS sessions");
+$report_rating{'RADIUS data usage'} = [ $fsurl.'search/report_sqlradius_usage.html', '' ]
+  if $curuser->access_right("Usage: RADIUS sessions");
 $report_rating{'Call Detail Records (CDRs)'} = [ $fsurl.'search/report_cdr.html', '' ]
   if $curuser->access_right("Usage: Call Detail Records (CDRs)");
 $report_rating{'Unrateable CDRs'} = [ $fsurl.'search/cdr.html?freesidestatus=failed;cdrbatchnum=_ALL_' ]
