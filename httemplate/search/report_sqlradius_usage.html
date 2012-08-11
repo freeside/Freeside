@@ -1,0 +1,40 @@
+<& /elements/header.html, mt($title) &>
+
+<FORM ACTION="sqlradius_usage.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0
+
+<& /elements/tr-select-agent.html,
+  'empty_label'   => 'all',
+&>
+
+% my @exporttypes = map { "'$_'" } qw(sqlradius broadband_sqlradius);
+<& /elements/tr-select-table.html,
+  'label'         => 'Export',
+  'table'         => 'part_export',
+  'name_col'      => 'label',
+  'hashref'       => {},
+  'extra_sql'     => ' WHERE exporttype IN('.join(',', @exporttypes).')',
+  'disable_empty' => 1,
+  'order_by'      => 'ORDER BY exportnum',
+&>
+
+<& /elements/tr-input-beginning_ending.html &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Usage: RADIUS sessions');
+  # yes?
+
+my $title = 'Data Usage Report';
+
+</%init>
