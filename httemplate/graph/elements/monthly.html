@@ -20,6 +20,7 @@ Example:
     'link_fromparam'  => 'param_from', #defaults to 'begin'
     'link_toparam'    => 'param_to',   #defaults to 'end'
     'daily'           => 1, # omit for monthly granularity
+    'no_graph'        => \@no_graph, # items to leave off the graph (subtotals)
 
     #optional, pulled from CGI params if not specified
     'start_month'     => $smonth,
@@ -48,18 +49,19 @@ Example:
             'items'         => $data->{'items'},
             'data'          => $data->{'data'},
             'row_labels'    => $data->{'item_labels'},
-            'graph_labels'  => $opt{'graph_labels'} || $data->{'item_labels'},
+            'graph_labels'  => \@graph_labels,
             'col_labels'    => $col_labels,
             'axis_labels'   => $data->{label},
-            'colors'        => $data->{colors},
+            'colors'        => \@colors,
             'links'         => \@links,
+            'no_graph'      => \@no_graph,
             'bottom_link'   => \@bottom_link,
             'transpose'     => $opt{'daily'},
-            map { $_, $opt{$_} } (qw(title 
-                                    nototal 
-                                    graph_type 
-                                    bottom_total 
-                                    sprintf 
+            map { $_, $opt{$_} } (qw(title
+                                    nototal
+                                    graph_type
+                                    bottom_total
+                                    sprintf
                                     disable_money
                                     chart_options)),
           ) %>
@@ -102,7 +104,7 @@ if ( $opt{'daily'} ) { # daily granularity
 my %reportopts = (
       'items'        => \@items,
       'params'       => $opt{'params'},
-      'item_labels'  => ( $cgi->param('_type') =~ /^(png)$/
+      'item_labels'  => ( $cgi->param('_type') =~ /^(png)$/ 
                             ? $opt{'graph_labels'}
                             : $opt{'labels'}
                         ),
@@ -138,12 +140,20 @@ my $col_labels = [ map { my $m = $_; $m =~ s/^(\d+)\//$mon[$1-1] / ; $m }
                              @{$data->{label}} ];
 $col_labels = $data->{label} if $opt{'daily'};
 
+my @colors;
+my @graph_labels;
+my @no_graph;
 if ( $opt{'remove_empty'} ) {
-  # need to filter out series labels for collapsed rows
-  $opt{'graph_labels'} = [ 
-    map { $opt{'graph_labels'}[$_] } 
-    @{ $data->{indices} }
-  ];
+  # then filter out per-item things for collapsed rows
+  foreach my $i (@{ $data->{'indices'} }) {
+    push @colors,       $opt{'colors'}[$i];
+    push @graph_labels, $opt{'graph_labels'}[$i];
+    push @no_graph,     $opt{'no_graph'}[$i];
+  }
+} else {
+  @colors       = @{ $opt{'colors'} };
+  @graph_labels = @{ $opt{'graph_labels'} };
+  @no_graph     = @{ $opt{'no_graph'} || [] };
 }
 
 my @links;

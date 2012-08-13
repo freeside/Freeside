@@ -8,6 +8,7 @@
                 'graph_labels' => \@labels,
                 'colors'       => \@colors,
                 'links'        => \@links,
+                'no_graph'     => \@no_graph,
                 'remove_empty' => 1,
                 'bottom_total' => 1,
                 'bottom_link'  => $bottom_link,
@@ -118,6 +119,7 @@ my @params = ();
 my @labels = ();
 my @colors = ();
 my @links  = ();
+my @no_graph;
 
 my @components = ( 'SRU' );
 # split/omit components as appropriate
@@ -134,6 +136,11 @@ elsif ( $use_usage == 2 ) {
   $components[-1] =~ s/U//;
 }
 
+# Categorization of line items goes
+# Agent -> Referral -> Package class -> Component (setup/recur/usage)
+# If per-agent totals are enabled, they go under the Agent level.
+# There aren't any other kinds of subtotals.
+
 foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
   my $col_scheme = Color::Scheme->new
@@ -146,7 +153,11 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
   ### fixup the color handling for package classes...
   ### and usage
 
-  foreach my $part_referral ( $all_part_referral || $sel_part_referral || qsearch('part_referral', { 'disabled' => '' } ) ) {
+  foreach my $part_referral (
+    $all_part_referral ||
+    $sel_part_referral ||
+    qsearch('part_referral', { 'disabled' => '' } ) 
+  ) {
 
     foreach my $pkg_class ( @pkg_class ) {
       foreach my $component ( @components ) {
@@ -186,9 +197,46 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
         @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
           unless @onetime_colors;
         push @colors, shift @recur_colors;
+        push @no_graph, 0;
 
-      }
+      } #foreach $component
+    } #foreach $pkg_class
+  } #foreach $part_referral
+
+  if ( $cgi->param('agent_totals') and !$all_agent ) {
+    my $row_agentnum = $agent->agentnum;
+    # Include all components that are anywhere on this report
+    my $component = join('', @components);
+
+    my @row_params = (  'agentnum'              => $row_agentnum,
+                        'use_override'          => $use_override,
+                        'average_per_cust_pkg'  => $average_per_cust_pkg,
+                        'distribute'            => $distribute,
+                        'charges'               => $component,
+                     );
+    my $row_link = "$link;".
+                   "agentnum=$row_agentnum;".
+                   "distribute=$distribute;".
+                   "charges=$component";
+    
+    # Also apply any refnum/classnum filters
+    if ( !$all_class and scalar(@pkg_class) == 1 ) {
+      # then a specific class has been chosen, but it may be the empty class
+      my $row_classnum = ref($pkg_class[0]) ? $pkg_class[0]->classnum : 0;
+      push @row_params, 'classnum' => $row_classnum;
+      $row_link .= ";classnum=$row_classnum";
     }
+    if ( $sel_part_referral ) {
+      push @row_params, 'refnum' => $sel_part_referral->refnum;
+      $row_link .= ";refnum=".$sel_part_referral->refnum;
+    }
+
+    push @items, 'cust_bill_pkg';
+    push @labels, mt('[_1] - Subtotal', $agent->agent);
+    push @params, \@row_params;
+    push @links, $row_link;
+    push @colors, '000000'; # better idea?
+    push @no_graph, 1;
   }
 
   $hue += $hue_increment;
