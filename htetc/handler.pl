@@ -7,6 +7,14 @@ use warnings;
 use FS::Mason qw( mason_interps );
 use FS::Trace;
 
+if ( %%%RT_ENABLED%%% ) {
+  require RT;
+  $> = scalar(getpwnam('freeside'));
+  RT::LoadConfig();
+  RT::Init();
+  $> = $<;
+}
+
 #use vars qw($r);
 
 # Bring in ApacheHandler, necessary for mod_perl integration.
@@ -151,19 +159,10 @@ sub handler
     $status;
 }
 
-my $rt_initialized = 0;
-
 sub my_rt_init {
   return unless $RT::VERSION;
-
-  if ( $rt_initialized ) {
-    RT::ConnectToDatabase();
-    RT::InitSignalHandlers();
-  } else {
-    RT::LoadConfig();
-    RT::Init();
-    $rt_initialized++;
-  }
+  RT::ConnectToDatabase();
+  RT::InitSignalHandlers();
 }
 
 1;

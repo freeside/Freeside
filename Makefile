@@ -170,6 +170,7 @@ install-docs: check-conflicts docs
 	cp htetc/handler.pl ${MASON_HANDLER}
 	perl -p -i -e "\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
+	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
 	" ${MASON_HANDLER} || true
 	mkdir -p ${FREESIDE_EXPORT}/profile
 	chown freeside ${FREESIDE_EXPORT}/profile
