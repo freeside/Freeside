@@ -26,7 +26,8 @@
 <& cust_main/top_misc.html, $cust_main, 'custnum' => $custnum  &>
 
 %# birthdate
-% if (    $conf->exists('cust_main-enable_birthdate')
+% if (    $conf->config('national_id-country')
+%      || $conf->exists('cust_main-enable_birthdate')
 %      || $conf->exists('cust_main-enable_spouse_birthdate')
 %      || $conf->exists('cust_main-enable_anniversary_date')
 %    )
