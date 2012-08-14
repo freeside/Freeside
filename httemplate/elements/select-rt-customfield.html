@@ -3,9 +3,6 @@
 <OPTION VALUE="<% shift @fields %>"><% shift @fields %></OPTION>
 % }
 </SELECT>
-<%once>
-RT::Init();
-</%once>
 <%init>
 my %opt = @_;
 my $lookuptype = $opt{lookuptype};
