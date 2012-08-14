@@ -99,8 +99,6 @@ my(%ticketmap, %ticket, %customers);
 my $title = 'Assign Time Worked';
 tie %ticketmap, 'Tie::IxHash';
 
-RT::Init();
-
 my $CurrentUser = RT::CurrentUser->new();
 $CurrentUser->LoadByName($FS::CurrentUser::CurrentUser->username);
 
