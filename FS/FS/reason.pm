@@ -46,6 +46,15 @@ FS::Record.  The following fields are currently supported:
 
 =item disabled - 'Y' or ''
 
+=item unsuspend_pkgpart - for suspension reasons only, the pkgpart (see
+L<FS::part_pkg>) of a package to be ordered when the package is unsuspended.
+Typically this will be some kind of reactivation fee.  Attaching it to 
+a suspension reason allows the reactivation fee to be charged for some
+suspensions but not others.
+
+=item unsuspend_hold - 'Y' or ''.  If unsuspend_pkgpart is set, this tells
+whether to bill the unsuspend package immediately ('') or to wait until 
+the customer's next invoice ('Y').
 
 =back
 
@@ -97,16 +106,30 @@ sub check {
 
   my $error = 
     $self->ut_numbern('reasonnum')
+    || $self->ut_number('reason_type')
+    || $self->ut_foreign_key('reason_type', 'reason_type', 'typenum')
     || $self->ut_text('reason')
+    || $self->ut_enum('disabled', [ '', 'Y' ])
   ;
   return $error if $error;
+
+  if ( $self->reasontype->class eq 'S' ) {
+    $error = $self->ut_numbern('unsuspend_pkgpart')
+          || $self->ut_foreign_keyn('unsuspend_pkgpart', 'part_pkg', 'pkgpart')
+          || $self->ut_enum('unsuspend_hold', [ '', 'Y' ])
+    ;
+    return $error if $error;
+  } else {
+    $self->set('unsuspend_pkgpart' => '');
+    $self->set('unsuspend_hold'    => '');
+  }
 
   $self->SUPER::check;
 }
 
 =item reasontype
 
-Returns the reason_type (see <I>FS::reason_type</I>) associated with this reason.
+Returns the reason_type (see L<FS::reason_type>) associated with this reason.
 
 =cut
 
@@ -118,7 +141,7 @@ sub reasontype {
 
 =head1 BUGS
 
-Here be termintes.  Don't use on wooden computers.
+Here by termintes.  Don't use on wooden computers.
 
 =head1 SEE ALSO
 

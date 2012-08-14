@@ -1,50 +1,78 @@
-%
-% $cgi->param('class') =~ /^(\w)$/ or die "illegal class";
-% my $class=$1;
-%
-% my $classname = $FS::reason_type::class_name{$class};
-%
-% my (@types) = qsearch( 'reason_type', { 'class' => $class } );
-%
-% unless (scalar(@types)) {
-%   print $cgi->redirect( "reason_type.html?class=$class" );
-% }
-<% include( 'elements/edit.html',
-                 'name'   => ucfirst($classname) . ' Reason',
-                 'table'  => 'reason',
-                 'labels' => { 
-                               'reasonnum'   => ucfirst($classname) .  ' Reason',
-                               'reason_type' => ucfirst($classname) . ' Reason type',
-                               'reason'      => ucfirst($classname) . ' Reason',
-			       'disabled'    => 'Disabled',
-                               'class'       => '',
-                             },
-		 'fields' => [
-			       { 'field' => 'reason_type',
-			         'type'  => 'select',
-                                 #XXX use something more sane than a hashref
-                                 #then fix tr-select.html
-				 'value' => { 'vcolumn' => 'typenum',
-				              'ccolumn' => 'type',
-					      'values'  => \@types,
-					    },
-			       },
-			       'reason',
-			       { 'field' => 'class',
-			         'type'  => 'hidden',
-				 'value' => $class,
-			       },
-			       { 'field' => 'disabled',
-			         'type'  => 'checkbox',
-				 'value' => 'Y'
-			       },
-		             ],
-                 'viewall_url' => $p . "browse/reason.html?class=$class",
-           )
-%>
+<& elements/edit.html,
+  'menubar'=> [ "View all $classname Reasons" => 
+                  $p.'browse/reason.html?class='.$class,
+                "View $classname Reason Types" =>
+                  $p.'browse/reason_type.html?class='.$class,
+              ],
+  'name'   => ucfirst($classname) . ' Reason',
+  
+  'table'  => 'reason',
+  'labels' => { 
+                'reasonnum'   => $classname .  ' Reason',
+                'reason_type' => $classname . ' Reason type',
+                'reason'      => $classname . ' Reason',
+ 	        'disabled'    => 'Disabled',
+                'class'       => '',
+                'unsuspend_pkgpart' => 'Unsuspension fee',
+                'unsuspend_hold'    => 'Delay until next bill',
+              },
+  'fields' => \@fields,
+&>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('class') =~ /^(\w)$/ or die "illegal class";
+my $class=$1;
+
+my $classname = ucfirst($FS::reason_type::class_name{$class});
+
+my (@types) = qsearch( 'reason_type', { 'class' => $class } );
+
+unless (scalar(@types)) {
+  print $cgi->redirect( "reason_type.html?class=$class" );
+}
+
+my @fields = (
+  { 'field' => 'reason_type',
+    'type'  => 'select-table',
+    'table' => 'reason_type',
+    'name_col'  => 'type',
+    'value_col' => 'typenum',
+    'hashref'   => { 'class' => $class },
+    'disable_empty' => 1,
+#     #then fix tr-select.html
+#
+#    'value' => { 'vcolumn' => 'typenum',
+#                 'ccolumn' => 'type',
+#   	      'values'  => \@types,
+#   	    },
+#     # that wasn't so hard...did this do something else that I'm missing?
+  },
+  'reason',
+  { 'field' => 'class',
+    'type'  => 'hidden',
+    'value' => $class,
+  },
+  { 'field' => 'disabled',
+    'type'  => 'checkbox',
+    'value' => 'Y'
+  },
+);
+
+push @fields,
+  { 'field'     => 'unsuspend_pkgpart',
+    'type'      => 'select-part_pkg',
+    'hashref'   => { 'disabled' => '',
+                     'freq'     => 0 }, # one-time charges only
+  },
+  { 'field'     => 'unsuspend_hold',
+    'type'      => 'checkbox',
+    'value'     => 'Y',
+  },
+  if ( $class eq 'S' );
+  
+
 
 </%init>
