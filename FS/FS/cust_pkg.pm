@@ -1399,7 +1399,7 @@ sub unsuspend {
       if $reason->unsuspend_hold;
 
     if ( $part_pkg ) {
-      my $unsusp_pkg = FS::cust_pkg->new({
+      $unsusp_pkg = FS::cust_pkg->new({
           'custnum'     => $self->custnum,
           'pkgpart'     => $reason->unsuspend_pkgpart,
           'start_date'  => $start_date,
@@ -1429,8 +1429,9 @@ sub unsuspend {
         'Customer: #'. $self->custnum. ' '. $self->cust_main->name. "\n",
         'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
         ( map { "Service : $_\n" } @labels ),
-        ($unsusp_pkg ? 
-          "An unsuspension fee was charged: Package #".$unsusp_pkg->pkgnum.".\n"
+        ($unsusp_pkg ?
+          "An unsuspension fee was charged: ".
+            $unsusp_pkg->part_pkg->pkg_comment."\n"
           : ''
         ),
       ],
