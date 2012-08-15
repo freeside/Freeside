@@ -338,6 +338,9 @@ sub insert {
 
   if ( $conf->config('ticket_system') && $options{ticket_subject} ) {
 
+    #this init stuff is still inefficient, but at least its limited to 
+    # the small number (any?) folks using ticket emailing on pkg order
+
     #eval '
     #  use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
     #  use RT;
