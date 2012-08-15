@@ -17,14 +17,17 @@
                  'header'      => [ '#',
                                     ucfirst($classname) . ' Reason Type',
                                     ucfirst($classname) . ' Reason',
+                                    ($class eq 'S' ?  'Unsuspension Fee' : ()),
                                   ],
                  'fields'      => [ 'reasonnum',
                                     sub { shift->reasontype->type },
                                     'reason',
+                                    $unsuspend_pkg_comment,
                                   ],
                  'links'       => [ $link,
                                     $link,
                                     '',
+                                    $unsuspend_pkg_link,
                                   ],
              )
 %>
@@ -49,5 +52,19 @@ my $count_query = 'SELECT COUNT(*) FROM reason LEFT JOIN reason_type on ' .
                 'reason_type.typenum = reason.reason_type ' . $where_clause;
 
 my $link = [ $p."edit/reason.html?class=$class&reasonnum=", 'reasonnum' ];
+
+my ($unsuspend_pkg_comment, $unsuspend_pkg_link);
+if ( $class eq 'S' ) {
+  $unsuspend_pkg_comment = sub {
+    my $pkgpart = shift->unsuspend_pkgpart or return '';
+    my $part_pkg = FS::part_pkg->by_key($pkgpart) or return '';
+    $part_pkg->pkg_comment;
+  };
+
+  my $unsuspend_pkg_link = sub {
+    my $pkgpart = shift->unsuspend_pkgpart or return '';
+    [ $p."edit/part_pkg.cgi?", $pkgpart ];
+  };
+}
 
 </%init>

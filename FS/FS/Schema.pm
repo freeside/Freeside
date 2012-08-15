@@ -3671,6 +3671,8 @@ sub tables_hashref {
         'reason_type',   'int',  '', '', '', '', 
         'reason',        'text', '', '', '', '', 
         'disabled',      'char',    'NULL', 1, '', '', 
+        'unsuspend_pkgpart', 'int',  'NULL', '', '', '',
+        'unsuspend_hold','char',    'NULL', 1, '', '',
       ],
       'primary_key' => 'reasonnum',
       'unique' => [],
