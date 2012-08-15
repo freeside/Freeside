@@ -1322,7 +1322,8 @@ sub credit_remaining {
 
 Unsuspends all services (see L<FS::cust_svc> and L<FS::part_svc>) in this
 package, then unsuspends the package itself (clears the susp field and the
-adjourn field if it is in the past).
+adjourn field if it is in the past).  If the suspend reason includes an 
+unsuspension package, that package will be ordered.
 
 Available options are:
 
@@ -1426,6 +1427,8 @@ sub unsuspend {
 
   }
 
+  my $reason = $self->last_cust_pkg_reason('susp')->reason;
+
   my %hash = $self->hash;
   my $inactive = time - $hash{'susp'};
 
@@ -1452,6 +1455,33 @@ sub unsuspend {
     return $error;
   }
 
+  my $unsusp_pkg;
+
+  if ( $reason->unsuspend_pkgpart ) {
+    my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart)
+      or $error = "Unsuspend package definition ".$reason->unsuspend_pkgpart.
+                  " not found.";
+    my $start_date = $self->cust_main->next_bill_date 
+      if $reason->unsuspend_hold;
+
+    if ( $part_pkg ) {
+      $unsusp_pkg = FS::cust_pkg->new({
+          'custnum'     => $self->custnum,
+          'pkgpart'     => $reason->unsuspend_pkgpart,
+          'start_date'  => $start_date,
+          'locationnum' => $self->locationnum,
+          # discount? probably not...
+      });
+      
+      $error ||= $self->cust_main->order_pkg( 'cust_pkg' => $unsusp_pkg );
+    }
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   if ( $conf->config('unsuspend_email_admin') ) {
  
     my $error = send_email(
@@ -1465,6 +1495,11 @@ sub unsuspend {
         'Customer: #'. $self->custnum. ' '. $self->cust_main->name. "\n",
         'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
         ( map { "Service : $_\n" } @labels ),
+        ($unsusp_pkg ?
+          "An unsuspension fee was charged: ".
+            $unsusp_pkg->part_pkg->pkg_comment."\n"
+          : ''
+        ),
       ],
     );
 

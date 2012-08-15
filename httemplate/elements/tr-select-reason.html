@@ -32,8 +32,15 @@ Example:
 <SCRIPT TYPE="text/javascript">
   function sh_add<% $func_suffix %>()
   {
+    var hints = <% encode_json(\@hints) %>;
+    var select_reason = document.getElementById('<% $id %>');
 
-    if (document.getElementById('<% $id %>').selectedIndex == 0){
+% if ( $class eq 'S' ) {    
+    document.getElementById('<% $id %>_hint').innerHTML =
+      hints[select_reason.selectedIndex];
+% }
+
+    if (select_reason.selectedIndex == 0){
       <% $controlledbutton ? $controlledbutton.'.disabled = true;' : ';' %>
     }else{
       <% $controlledbutton ? $controlledbutton.'.disabled = false;' : ';' %>
@@ -41,8 +48,8 @@ Example:
 
 %if ($curuser->access_right($add_access_right)){
 
-    if (document.getElementById('<% $id %>').selectedIndex == 
-         (document.getElementById('<% $id %>').length - 1)) {
+    if (select_reason.selectedIndex == 
+         (select_reason.length - 1)) {
       document.getElementById('new<% $id %>').disabled = false;
       document.getElementById('new<% $id %>').style.display = 'inline';
       document.getElementById('new<% $id %>Label').style.display = 'inline';
@@ -112,6 +119,13 @@ Example:
   </TD>
 </TR>
 %   }
+
+% if ( $class eq 'S' ) {
+<TR>
+  <TD COLSPAN=2 ALIGN="center" id="<% $id %>_hint">
+  </TD>
+</TR>
+% }
 
 <TR>
   <TD ALIGN="right">
@@ -183,6 +197,43 @@ my @reasons = qsearch({
                ' ON reason_type.typenum = reason.reason_type',
   order_by  => 'ORDER BY reason_type.type ASC, reason.reason ASC',
 });
+
+my @hints;
+if ( $class eq 'S' ) {
+  my $conf = FS::Conf->new;
+  @hints = ( '' );
+  foreach my $reason (@reasons) {
+    if ( $reason->unsuspend_pkgpart ) {
+      my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart);
+      if ( $part_pkg ) {
+        if ( $part_pkg->option('setup_fee',1) > 0 and 
+             $part_pkg->option('recur_fee',1) == 0 ) {
+          # the usual case
+          push @hints,
+            mt('A [_1] unsuspension fee will apply.', 
+               ($conf->config('money_char') || '$') .
+               sprintf('%.2f', $part_pkg->option('setup_fee'))
+               );
+        } else {
+          # oddball cases--not really supported
+          push @hints,
+            mt('An unsuspension package will apply: [_1]',
+              $part_pkg->price_info
+              );
+        }
+      } else { #no $part_pkg
+        push @hints,
+          '<FONT COLOR="#ff0000">Unsuspend pkg #'.$reason->unsuspend_pkgpart.
+          ' not found.</FONT>';
+      }
+    } else { #no unsuspend_pkgpart
+      push @hints, '';
+    }
+  }
+  push @hints, ''; # for the "new reason" case
+  @hints = map {'<FONT SIZE="-1">'.$_.'</FONT>'} @hints;
+}
+
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
