@@ -1493,8 +1493,8 @@ sub unsuspend {
         'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
         ( map { "Service : $_\n" } @labels ),
         ($unsusp_pkg ?
-          "An unsuspension fee was charged: Package #".$unsusp_pkg->pkgnum.
-            " (.".$unsusp_pkg->pkg_comment.")\n"
+          "An unsuspension fee was charged: ".
+            $unsusp_pkg->part_pkg->pkg_comment."\n"
           : ''
         ),
       ],
