@@ -14,6 +14,7 @@ use Business::CreditCard;
 use HTML::Entities;
 use Text::CSV_XS;
 use Spreadsheet::WriteExcel;
+use OLE::Storage_Lite;
 use FS::UI::Web::small_custview qw(small_custview); #less doh
 use FS::UI::Web;
 use FS::UI::bytecount qw( display_bytecount );

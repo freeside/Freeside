@@ -54,6 +54,7 @@ $Format => undef
 <%INIT>
 
 use Spreadsheet::WriteExcel;
+use OLE::Storage_Lite;
 use List::Util qw( max );
 use Date::Format qw( time2str );
 

@@ -91,6 +91,7 @@ if ( -e $addl_handler_use_file ) {
   use Text::CSV_XS;
   use Spreadsheet::WriteExcel;
   use Spreadsheet::WriteExcel::Utility;
+  use OLE::Storage_Lite;
   use Excel::Writer::XLSX;
   use Excel::Writer::XLSX::Utility;
 
@@ -350,7 +351,7 @@ if ( -e $addl_handler_use_file ) {
 
       use RT::Interface::Web::Request;
 
-      #nother undeclared web UI dep (for ticket links graph)
+      #another undeclared web UI dep (for ticket links graph)
       use IPC::Run::SafeHandles;
 
       #slow, unreliable, segfaults and is optional
