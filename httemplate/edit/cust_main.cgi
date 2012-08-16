@@ -248,6 +248,8 @@ if ( $cgi->param('error') ) {
   $stateid = $cust_main->stateid; # don't mask an entered value on errors
   $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
 
+  $cust_main->national_id( $cgi->param('national_id1') || $cgi->param('national_id2') );
+
   $prospectnum = $cgi->param('prospectnum') || '';
 
   $pkgpart_svcpart = $cgi->param('pkgpart_svcpart') || '';
