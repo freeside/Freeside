@@ -2411,6 +2411,10 @@ sub _items_cust_bill_pkg {
             $amount = $cust_bill_pkg->usage;
           }
   
+          my $unit_amount =
+            ( $cust_bill_pkg->unitrecur > 0 ) ? $cust_bill_pkg->unitrecur
+                                              : $amount;
+
           if ( !$type || $type eq 'R' ) {
 
             warn "$me _items_cust_bill_pkg adding recur\n"
@@ -2418,7 +2422,7 @@ sub _items_cust_bill_pkg {
 
             if ( $cust_bill_pkg->hidden ) {
               $r->{amount}      += $amount;
-              $r->{unit_amount} += $cust_bill_pkg->unitrecur;
+              $r->{unit_amount} += $unit_amount;
               push @{ $r->{ext_description} }, @d;
             } else {
               $r = {
@@ -2427,7 +2431,7 @@ sub _items_cust_bill_pkg {
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
-                unit_amount     => $cust_bill_pkg->unitrecur,
+                unit_amount     => $unit_amount,
                 quantity        => $cust_bill_pkg->quantity,
                 %item_dates,
                 ext_description => \@d,
@@ -2442,7 +2446,7 @@ sub _items_cust_bill_pkg {
 
             if ( $cust_bill_pkg->hidden ) {
               $u->{amount}      += $amount;
-              $u->{unit_amount} += $cust_bill_pkg->unitrecur;
+              $u->{unit_amount} += $unit_amount,
               push @{ $u->{ext_description} }, @d;
             } else {
               $u = {
@@ -2451,7 +2455,7 @@ sub _items_cust_bill_pkg {
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
-                unit_amount     => $cust_bill_pkg->unitrecur,
+                unit_amount     => $unit_amount,
                 quantity        => $cust_bill_pkg->quantity,
                 %item_dates,
                 ext_description => \@d,
