@@ -22,6 +22,7 @@ characters each
 
 <& /elements/select-agent.html,
      'empty_label' => '(any agent)',
+     'curr_value'  => $agentnum,
 &>
 
 <TABLE>
