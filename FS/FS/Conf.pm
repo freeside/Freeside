@@ -3438,7 +3438,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice-unitprice',
     'section'     => 'invoicing',
-    'description' => 'Enable unit pricing on invoices.',
+    'description' => 'Enable unit pricing on invoices and quantities on packages.',
     'type'        => 'checkbox',
   },
 
