@@ -1259,9 +1259,12 @@ sub merge {
 
   return "Can't merge a customer into self" if $self->custnum == $new_custnum;
 
-  unless ( qsearchs( 'cust_main', { 'custnum' => $new_custnum } ) ) {
-    return "Invalid new customer number: $new_custnum";
-  }
+  my $new_cust_main = qsearchs( 'cust_main', { 'custnum' => $new_custnum } )
+    or return "Invalid new customer number: $new_custnum";
+
+  return 'Access denied: "Merge customer across agents" access right required to merge into a customer of a different agent'
+    if $self->agentnum != $new_cust_main->agentnum 
+    && ! $FS::CurrentUser::CurrentUser->access_right('Merge customer across agents');
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
