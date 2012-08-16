@@ -91,35 +91,7 @@ if ( $cgi->param('no_credit_limit') ) {
 
 $new->tagnum( [ $cgi->param('tagnum') ] );
 
-if ( my $id_country = $conf->config('national_id-country') ) {
-  if ( $id_country eq 'MY' ) {
-
-    if ( $cgi->param('national_id1') =~ /\S/ ) {
-      my $nric = $cgi->param('national_id1');
-      $nric =~ s/\s//g;
-      if ( $nric =~ /^(\d{6})\-?(\d{2})\-?(\d{4})$/ ) {
-        $new->national_id( "$1-$2-$3" );
-      } else {
-        $error ||= "Illegal NRIC: ". $cgi->param('national_id1');
-      }
-    } elsif ( $cgi->param('national_id2') =~ /\S/ ) {
-      my $oldic = $cgi->param('national_id2');
-      $oldic =~ s/\s//g;
-      if ( $oldic =~ /^\w\d{9}$/ ) {
-        $new->national_id($oldic);
-      } else {
-        $error ||= "Illegal Old IC/Passport: ". $cgi->param('national_id2');
-      }
-    } else {
-      $error ||= 'Either NRIC or Old IC/Passport is required';
-    }
-    
-  } else {
-    warn "unknown national_id-country $id_country";
-  }
-} elsif ( $cgi->param('national_id0') ) {
-  $new->national_id( $cgi->param('national_id0') );
-}
+$error ||= $new->set_national_id_from_cgi( $cgi );
 
 my %usedatetime = ( 'birthdate'        => 1,
                     'spouse_birthdate' => 1,
