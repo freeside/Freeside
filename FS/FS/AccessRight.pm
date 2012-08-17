@@ -407,6 +407,7 @@ sub default_superuser_rights {
     'Edit usage',
     'Credit card void',
     'Echeck void',
+    'Edit customer package dates',
   );
 
   no warnings 'uninitialized';
