@@ -197,6 +197,7 @@ sub _upgrade_data { # class method
     'Unsuspend customer package'          => 'Unsuspend customer',
     'New prospect'                        => 'Generate quotation',
     'Delete invoices'                     => 'Void invoices',
+    'List invoices'                       => 'List quotations',
 
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',

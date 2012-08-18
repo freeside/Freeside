@@ -1,0 +1,75 @@
+<& /elements/header.html, mt($title, @title_arg) &>
+
+<FORM ACTION="quotation.html" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+<INPUT TYPE="hidden" NAME="prospectnum" VALUE="<% $prospectnum %>">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0
+
+% unless ( $custnum ) {
+  <& /elements/tr-select-agent.html,
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => emt('Quotations for agent: '),
+                 'disable_empty' => 0,
+  &>
+% }
+
+  <& /elements/tr-input-beginning_ending.html &>
+
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                label   => emt('Setup'),
+                field   => 'total_setup',
+  &>
+
+  <& /elements/tr-input-lessthan_greaterthan.html,
+                label   => emt('Recurring'),
+                field   => 'total_recur',
+  &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List quotations');
+
+my $conf = new FS::Conf;
+
+my $title = 'Quotation Report';
+#false laziness w/report_cust_pkg.html
+my @title_arg = ();
+
+my $prospectnum = '';
+my $prospect_main = '';
+if ( $cgi->param('prospectnum') =~ /^(\d+)$/ ) {
+  $prospectnum = $1;
+  $prospect_main = qsearchs({
+    'table'     => 'prospect_main', 
+    'hashref'   => { 'prospectnum' => $prospectnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown prospectnum $prospectnum";
+  $title .= ': [_1]';
+  push @title_arg, $prospect_main->name;
+}
+
+my $custnum = '';
+my $cust_main = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+  $cust_main = qsearchs({
+    'table'     => 'cust_main', 
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown custnum $custnum";
+  $title .= ': [_1]';
+  push @title_arg, $cust_main->name;
+}
+
+</%init>

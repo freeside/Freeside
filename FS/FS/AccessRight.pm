@@ -264,6 +264,7 @@ tie my %rights, 'Tie::IxHash',
     'List all customers',
     'Advanced customer search',
     'List zip codes', #NEW
+    'List quotations',
     'List invoices',
     'List packages',
     'Summarize packages',
