@@ -400,6 +400,7 @@ sub default_superuser_rights {
     'Delete refund', #?
     'Edit customer package dates',
     'Time queue',
+    'Usage: Time worked',
     'Redownload resolved batches',
     'Raw SQL',
     'Configuration download',
