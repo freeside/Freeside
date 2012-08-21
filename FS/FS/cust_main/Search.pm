@@ -85,8 +85,8 @@ sub smart_search {
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
                      ' ( '.
                          join(' OR ', map "$_ = '$phonen'",
-                                          qw( daytime night fax
-                                              ship_daytime ship_night ship_fax )
+                                          qw( daytime night mobile fax
+                                              ship_daytime ship_night ship_mobile ship_fax )
                              ).
                      ' ) '.
                      " AND $agentnums_sql", #agent virtualization
