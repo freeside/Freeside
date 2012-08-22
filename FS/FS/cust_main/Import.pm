@@ -210,8 +210,23 @@ sub batch_import {
                   cust_pkg.pkgpart cust_pkg.bill
                   svc_acct.username svc_acct._password 
                 );
-   push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
-   push @fields, map "svc_hardware.$_", qw(typenum ip_addr hw_addr serial);
+    push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
+    push @fields, map "svc_hardware.$_", qw(typenum ip_addr hw_addr serial);
+
+    $payby = 'BILL';
+  } elsif ( $format eq 'national_id-acct_phone') {
+    @fields = qw( agent_custid refnum
+                  last first company address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  national_id
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart cust_pkg.bill
+                  svc_acct.username svc_acct._password 
+                );
+    push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
 
     $payby = 'BILL';
   } else {
