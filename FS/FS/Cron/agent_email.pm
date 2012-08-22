@@ -12,7 +12,7 @@ use FS::Record qw(qsearch);# qsearchs);
 use FS::agent;
 
 @EXPORT_OK = qw ( agent_email );
-$DEBUG = 1;
+$DEBUG = 0;
 
 sub agent_email {
   my %opt = @_;
