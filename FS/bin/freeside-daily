@@ -7,7 +7,7 @@ use FS::Conf;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vl:sy:nmrkg:uo", \%opt);
+getopts("p:a:d:vl:sy:nmrkg:o", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -51,24 +51,23 @@ unless ( $opt{k} ) {
   notify_flat_delay(%opt);
 }
 
-#debian Pg 8.1+ auto-vaccums, 7.4 w/postgresql-contrib
-if ( $opt{u} ) {
-  use FS::Cron::vacuum qw(vacuum);
-  vacuum();
-}
-
-#you can skip this just by not having the config
-use FS::Cron::backup qw(backup);
-backup();
-
 #same
 use FS::Cron::rt_tasks qw(rt_daily);
 rt_daily(%opt);
+
+#you can skip this by not having the config
+use FS::Cron::agent_email qw(agent_email);
+agent_email(%opt);
 
 my $deldir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/";
 unlink <${deldir}.invoice*>;
 unlink <${deldir}.letter*>;
 unlink <${deldir}.CGItemp*>;
+
+#backup should be last
+#you can skip this just by not having the config
+use FS::Cron::backup qw(backup);
+backup();
 
 ###
 # subroutines
@@ -139,8 +138,6 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
   -r: Multi-process mode dry run option
 
   -k: skip notify_flat_delay
-
-  -u: Do a vacuum (starting with version 1.9, this is not run by default).
 
 user: From the mapsecrets file - see config.html from the base documentation
 
