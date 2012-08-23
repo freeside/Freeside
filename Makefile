@@ -67,6 +67,7 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 #(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
 #deb (3.1+), apache2
 APACHE_CONF = /etc/apache2/conf.d
+INSSERV_OVERRIDE = /etc/insserv/overrides
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
@@ -272,6 +273,7 @@ install-apache:
 	      s'%%%MASON_HANDLER%%%'${MASON_HANDLER}'g; \
 	    " ${APACHE_CONF}/freeside-*.conf \
 	  ) || true
+	[ -d ${INSSERV_OVERRIDE} ] && [ -x /sbin/insserv ] && ( install -o root -m 755 init.d/insserv-override-apache2 ${INSSERV_OVERRIDE}/apache2 && insserv -d ) || true
 
 install-selfservice:
 	[ -e ~freeside ] || cp -pr /etc/skel ~freeside && chown -R freeside ~freeside
