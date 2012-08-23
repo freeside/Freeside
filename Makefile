@@ -185,6 +185,8 @@ dev-docs:
 	perl -p -i -e "\
 	  s'###use Module::Refresh;###'use Module::Refresh;'; \
 	  s'###Module::Refresh->refresh;###'Module::Refresh->refresh;'; \
+	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
+	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
 	" ${MASON_HANDLER} || true
 
 perl-modules:
