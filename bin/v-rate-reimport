@@ -1,0 +1,172 @@
+#!/usr/bin/perl
+
+use strict;
+use DBI;
+use FS::UID qw(adminsuidsetup);
+use FS::rate_prefix;
+use FS::rate_region;
+use FS::rate_detail;
+use FS::Record qw(qsearch qsearchs dbh);
+
+# #delete from rate;
+# Create interstate and intrastate rate plans
+#
+# #delete from rate_detail;
+# #delete from rate_region;
+# #delete from rate_prefix;
+
+# Assumption: 1-to-1 relationship between rate_region and rate_prefix, with
+# two rate_detail per rate_region: one for interstate; one for intrastate
+#
+# run the script, setting the appropriate values below.
+
+####### SET THESE! ####################
+
+my $DRY_RUN = 0;
+
+my $intra_ratenum = 5;
+my $inter_ratenum = 6;
+my $intra_class = 1;
+my $inter_class = 2;
+#my $file = "/home/levinse/domestic_interstate.xls";
+#my $file = "/home/ivan/vnes/New VNES Rate Table.xlsx";
+my $file = "/home/ivan/New VNES Rate Table.csv";
+#my $sheet_name = 'Sheet1';
+#######################################
+
+my $user = shift or die "no user specified";
+adminsuidsetup $user;
+
+local $SIG{HUP} = 'IGNORE';
+local $SIG{INT} = 'IGNORE';
+local $SIG{QUIT} = 'IGNORE';
+local $SIG{TERM} = 'IGNORE';
+local $SIG{TSTP} = 'IGNORE';
+local $SIG{PIPE} = 'IGNORE';
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbhfs = dbh;
+
+#my $dbh = DBI->connect("DBI:Excel:file=$file")
+#  or die "can't connect: $DBI::errstr";
+
+#my $sth = $dbh->prepare("select * from $sheet_name")
+#  or die "can't prepare: ". $dbh->errstr;
+#$sth->execute
+#  or die "can't execute: ". $sth->errstr;
+
+use Text::CSV_XS;
+my $csv = Text::CSV_XS->new or die Text::CSV->error_diag;
+
+open(my $fh, "<$file") or die $!;
+my $header = scalar(<$fh>); #NPA, NXX, LATA, State, Intrastate, Interstate
+
+my @rp_cache = qsearch('rate_prefix', {} );# or die "can't cache rate_prefix";
+my %rp_cache = map { $_->npa => $_ } @rp_cache;
+
+sub fatal {
+    my $msg = shift;
+    $dbhfs->rollback; # if $oldAutoCommit;
+    die $msg;
+}
+
+while ( my $row = $csv->getline($fh) ) {
+
+  #my $lata = $row->{'lata'};
+  #my $ocn = $row->{'ocn'};
+  #my $state = $row->{'state'};
+  #my $rate = $row->{'rate'};
+  #my $npanxx = $row->{'lrn'};
+
+  #NPA, NXX, LATA, State, Intrastate, Interstate
+  my $npa        = $row->[0];
+  my $nxx        = $row->[1];
+  my $lata       = $row->[2];
+  my $state      = $row->[3];
+  ( my $intra_rate = $row->[4] ) =~ s/^\s*\$//;
+  ( my $inter_rate = $row->[5] ) =~ s/^\s*\$//;
+
+  #in the new data, instead of being "$-", these are all identical to the
+  #rate from the immediatelly preceeding cell/NPANXX... probably an artifact
+  #rather than real rates then?  so also skipping this import
+  #import
+  next if $lata == '99999';
+
+  my $error = '';
+
+  my $rp;
+  if ( $rp_cache{$npa.$nxx} ) {
+      $rp = $rp_cache{$npa.$nxx};
+  } 
+  else {
+
+     #warn "inserting new rate_region / rate_prefix for $npa-$nxx\n";
+     die "new rate_region / rate_prefix $npa-$nxx\n";
+
+     my $rr = new FS::rate_region { 'regionname' => $state };
+     $error = $rr->insert;
+     fatal("can't insert rr") if $error;
+
+     $rp = new FS::rate_prefix {   'countrycode'   => '1',
+                                   'npa'           => $npa.$nxx, #$npanxx
+                                   #'ocn'           => $ocn,
+                                   'state'         => $state,
+                                   'latanum'       => $lata,
+                                   'regionnum'     => $rr->regionnum,
+                               }; 
+     $error = $rp->insert;
+     fatal("can't insert rp") if $error;
+     $rp_cache{$npa.$nxx} = $rp;
+  }
+
+  #use Data::Dumper;
+  #warn Dumper($rp);
+
+  my %hash = ( 'dest_regionnum'  => $rp->regionnum, );
+
+  my %intra_hash = ( 'ratenum'     => $intra_ratenum,
+                     'intra_class' => $intra_class,
+                     %hash,
+                   );
+
+  my $intra_rd = qsearchs( 'rate_detail', \%intra_hash )
+                 || die; #new FS::rate_detail   \%intra_hash;
+ 
+  $intra_rd->min_included( 0 );
+  $intra_rd->sec_granularity( 6 ); #60
+  die if $intra_rd->min_charge > 0;
+  $intra_rd->min_charge( $intra_rate );
+
+  #$error = $intra_rd->ratedetailnum ? $intra_rd->replace : $intra_rd->insert;
+  $error = $intra_rd->replace;
+  fatal("can't insert/replace (intra) rd: $error") if $error;
+
+  my %inter_hash = ( 'ratenum'     => $inter_ratenum,
+                     'inter_class' => $inter_class,
+                     %hash,
+                   );
+
+  my $inter_rd = qsearchs( 'rate_detail', \%inter_hash )
+                 || die; #new FS::rate_detail \%inter_hash;
+
+  $inter_rd->min_included( 0 );
+  $inter_rd->sec_granularity( 6 ); #60
+  die if $inter_rd->min_charge > 0;
+  $inter_rd->min_charge( $inter_rate );
+
+  #$error = $inter_rd->ratedetailnum ? $inter_rd->replace : $inter_rd->insert;
+  $error = $inter_rd->replace;
+  fatal("can't insert/replace (inter) rd: $error") if $error;
+}
+$csv->eof or $csv->error_diag ();
+close $fh;
+
+if ( $DRY_RUN ) {
+  $dbhfs->rollback or die $dbhfs->errstr; # if $oldAutoCommit;
+} else {
+  $dbhfs->commit or die $dbhfs->errstr; # if $oldAutoCommit;
+}
+
+1;
+
