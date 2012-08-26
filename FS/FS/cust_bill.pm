@@ -433,7 +433,8 @@ sub previous {
   my @cust_bill = sort { $a->_date <=> $b->_date }
     grep { $_->owed != 0 }
       qsearch( 'cust_bill', { 'custnum' => $self->custnum,
-                              '_date'   => { op=>'<', value=>$self->_date },
+                              #'_date'   => { op=>'<', value=>$self->_date },
+                              'invnum'   => { op=>'<', value=>$self->invnum },
                             } ) 
   ;
   foreach ( @cust_bill ) { $total += $_->owed; }
