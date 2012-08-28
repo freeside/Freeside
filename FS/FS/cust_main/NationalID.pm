@@ -36,11 +36,15 @@ sub set_national_id_from_cgi {
       } elsif ( $cgi->param('national_id2') =~ /\S/ ) {
         my $oldic = $cgi->param('national_id2');
         $oldic =~ s/\s//g;
-        if ( $oldic =~ /^\w\d{9}$/ ) {
+
+        # can you please remove validation for "Old IC/Passport:" field, customer
+        # will have other field format like, RF/123456, I/5234234 ...
+        #if ( $oldic =~ /^\w\d{9}$/ ) {
           $self->national_id($oldic);
-        } else {
-          $error ||= "Illegal Old IC/Passport: ". $cgi->param('national_id2');
-        }
+        #} else {
+        #  $error ||= "Illegal Old IC/Passport: ". $cgi->param('national_id2');
+        #}
+
       } else {
         $error ||= 'Either NRIC or Old IC/Passport is required';
       }
