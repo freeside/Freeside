@@ -8,10 +8,19 @@ use FS::Mason qw( mason_interps );
 use FS::Trace;
 
 if ( %%%RT_ENABLED%%% ) {
+
   require RT;
+
   $> = scalar(getpwnam('freeside'));
+
   RT::LoadConfig();
   RT::Init();
+
+  # disconnect DB before fork:
+  #   (avoid 'prepared statement "dbdpg_p\d+_\d+" already exists' errors?)
+  $RT::Handle->dbh(undef);
+  undef $RT::Handle;
+
   $> = $<;
 }
 
