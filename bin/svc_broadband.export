@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV_XS;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::svc_broadband;
+
+my @fields = (
+  { 'header'   => 'pkgnum',
+    'callback' => sub { shift->cust_svc->pkgnum; },
+  },
+  { 'header'   => 'svcpart',
+    'callback' => sub { shift->cust_svc->svcpart; },
+  },
+  { 'header'   => 'Service',
+    'callback' => sub { shift->cust_svc->part_svc->svc; },
+  },
+  qw(
+    description
+    speed_up
+    speed_down
+    ip_addr
+    mac_addr
+    latitude
+    longitude
+  )
+);
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $agentnum = shift or die &usage;
+
+my $csv = new Text::CSV_XS;
+
+$csv->combine( map { ref($_) ? $_->{'header'} : $_ } @fields ) or die;
+print $csv->string."\n";
+
+my @svc_broadband = qsearch({
+  'select'    => 'svc_broadband.*',
+  'table'     => 'svc_broadband',
+  'addl_from' => 'LEFT JOIN cust_svc USING (svcnum)
+                  LEFT JOIN cust_pkg USING (pkgnum)
+                  LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => {},
+  'extra_sql' => "WHERE cust_main.agentnum = $agentnum",
+});
+
+foreach my $svc_broadband ( @svc_broadband ) {
+  $csv->combine( map { ref($_) ? &{$_->{'callback'}}($svc_broadband)
+                               : $svc_broadband->$_()
+                     } 
+                   @fields
+               ) or die;
+  print $csv->string."\n";
+}
+
+1;

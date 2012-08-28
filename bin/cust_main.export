@@ -1,0 +1,109 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV_XS;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_main;
+
+my @fields = qw(
+  custnum
+  status
+  last
+  first
+  company
+  address1
+  address2
+  city
+  county
+  state
+  zip
+  country
+  daytime
+  night
+  mobile
+  fax
+  ship_address1
+  ship_address2
+  ship_city
+  ship_county
+  ship_state
+  ship_zip
+  ship_country
+  ship_daytime
+  ship_night
+  ship_mobile
+  ship_fax
+  invoicing_list_emailonly_scalar
+  payby
+  balance
+);
+
+push @fields,
+  #Billing Type: Credit Card
+  { 'header'   => 'Credit Card number',
+    'callback' => sub { my $c_m = shift;
+                        $c_m->payby =~ /^(CARD|DCRD)$/ ? $c_m->payinfo : '' ;
+                      },
+  },
+  { 'header'   => 'Expiration on card',
+    'callback' => sub { my $c_m = shift;
+                        return '' unless $c_m->payby =~ /^(CARD|DCRD)$/;
+                        $c_m->paydate =~ /^(\d{4})-(\d{2})-\d{2}$/ or die;
+                        return "$2/$1";
+                      },
+  },
+  { 'header'   => 'Name on card',
+    'callback' => sub { my $c_m = shift;
+                        $c_m->payby =~ /^(CARD|DCRD)$/ ? $c_m->paydname : '' ;
+                      },
+  },
+
+  #Billing Type: Electronic check
+  { 'header'   => 'ABA/Routing number',
+    'callback' => sub { my $c_m = shift;
+                        return '' unless $c_m->payby =~ /^(CHEK|DCHK)$/;
+                        (split('@', $c_m->payinfo))[1];
+                      },
+  },
+  { 'header'   => 'Account number',
+    'callback' => sub { my $c_m = shift;
+                        return '' unless $c_m->payby =~ /^(CHEK|DCHK)$/;
+                        (split('@', $c_m->payinfo))[0];
+                      },
+  },
+  { 'header'   => 'Account type',
+    'callback' => sub { my $c_m = shift;
+                        $c_m->payby =~ /^(CHEK|DCHK)$/ ? $c_m->paytype : '';
+                      },
+  },
+  { 'header'   => 'Bank Name',
+    'callback' => sub { my $c_m = shift;
+                        $c_m->payby =~ /^(CHEK|DCHK)$/ ? $c_m->payname : '';
+                      },
+  },
+
+;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $agentnum = shift or die &usage;
+
+my $csv = new Text::CSV_XS;
+
+$csv->combine( map { ref($_) ? $_->{'header'} : $_ } @fields ) or die;
+print $csv->string."\n";
+
+my @cust_main = qsearch('cust_main', { 'agentnum'=>$agentnum });
+
+foreach my $cust_main( @cust_main ) {
+  $csv->combine( map { ref($_) ? &{$_->{'callback'}}($cust_main)
+                               : $cust_main->$_()
+                     } 
+                   @fields
+               ) or die;
+  print $csv->string."\n";
+}
+
+1;
