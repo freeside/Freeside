@@ -224,7 +224,7 @@ sub batch_import {
                   payinfo paycvv paydate
                   invoicing_list
                   cust_pkg.pkgpart cust_pkg.bill
-                  svc_acct.username svc_acct._password 
+                  svc_acct.username svc_acct._password svc_acct.slipip
                 );
     push @fields, map "svc_phone.$_", qw(countrycode phonenum sip_password pin);
 
@@ -336,7 +336,7 @@ sub batch_import {
           $cust_pkg{$1} = parse_datetime( shift @columns );
         } 
 
-      } elsif ( $field =~ /^svc_acct\.(username|_password)$/ ) {
+      } elsif ( $field =~ /^svc_acct\.(username|_password|slipip)$/ ) {
 
         $svc_x{$1} = shift @columns;
 
