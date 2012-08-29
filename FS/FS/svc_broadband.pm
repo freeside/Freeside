@@ -246,6 +246,12 @@ sub search {
     push @where, "svcpart = $1";
   }
 
+  #exportnum
+  if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
+    push @from, 'LEFT JOIN export_svc USING ( svcpart )';
+    push @where, "exportnum = $1";
+  }
+
   #ip_addr
   if ( $params->{'ip_addr'} =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
     push @where, "ip_addr = '$1'";
