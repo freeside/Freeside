@@ -28,7 +28,8 @@
     <& /elements/tr-select-part_referral.html,
                   'label'        => emt('Advertising Source'),
                   'multiple'     => 1,
-                  'all_selected' => 1,
+                  #no, causes customers with disabled ones to disappear
+                  #'all_selected' => 1,
     &>
 
     <TR>
