@@ -27,9 +27,9 @@
                      'Customer',
                      'Package',
                      @svc_header,
-                     'Upload',
-                     'Download',
-                     'Total',
+                     'Upload (GB)',
+                     'Download (GB)',
+                     'Total (GB)',
                    ],
   'footer'      => \@footer,
   'fields'      => [ #\&FS::UI::Web::cust_fields,
@@ -139,7 +139,8 @@ my @svc_usage = map {
     return '' if !exists($usage_by_username{$username});
     my $value = $usage_by_username{ $username }->[$i];
     $total_usage[$i] += $value;
-    FS::UI::bytecount::display_bytecount($value);
+    # for now, always show in GB, rounded to 3 digits
+    bytes_to_gb($value);
   }
 } (0,1,2);
 
@@ -167,7 +168,8 @@ my @svc_header = @{ $svc_header{$svcdb} };
 my @svc_fields = @{ $svc_fields{$svcdb} };
 
 # svc_x search params
-my %search_hash = ( 'agentnum' => $agentnum );
+my %search_hash = ( 'agentnum' => $agentnum,
+                    'exportnum' => $export->exportnum );
 
 my $sql_query = $class->search(\%search_hash);
 $sql_query->{'select'}    .= ', part_pkg.pkg';
@@ -183,12 +185,17 @@ my $skip_cols = 1 + scalar(@svc_header);
 my @footer = (
   '',
   FS::Record->scalar_sql($sql_query->{count_query}) . ' services',
-  ('&nbsp;') x $skip_cols,
-  map { 
+  ('') x $skip_cols,
+  map {
+    my $i = $_;
     sub { # defer this until the rows have been processed
-        FS::UI::bytecount::display_bytecount($total_usage[$_])
+      bytes_to_gb($total_usage[$i])
     }
   } (0,1,2)
 );
+
+sub bytes_to_gb {
+  $_[0] ?  sprintf('%.3f', $_[0] / (1024*1024*1024.0)) : '';
+}
 
 </%init>

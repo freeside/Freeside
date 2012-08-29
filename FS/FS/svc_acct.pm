@@ -2808,6 +2808,13 @@ Arrayref of additional WHERE clauses, will be ANDed together.
 sub search {
   my ($class, $params) = @_;
 
+  my @from = (
+    ' LEFT JOIN cust_svc  USING ( svcnum  ) ',
+    ' LEFT JOIN part_svc  USING ( svcpart ) ',
+    ' LEFT JOIN cust_pkg  USING ( pkgnum  ) ',
+    ' LEFT JOIN cust_main USING ( custnum ) ',
+  );
+
   my @where = ();
 
   # domain
@@ -2852,9 +2859,17 @@ sub search {
     push @where, "svcpart = $1";
   }
 
+  if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
+    push @from, ' LEFT JOIN export_svc USING ( svcpart )';
+    push @where, "exportnum = $1";
+  }
+
   # sector and tower
   my @where_sector = $class->tower_sector_sql($params);
-  push @where, @where_sector if @where_sector;
+  if ( @where_sector ) {
+    push @where, @where_sector;
+    push @from, ' LEFT JOIN tower_sector USING ( sectornum )';
+  }
 
   # here is the agent virtualization
   #if ($params->{CurrentUser}) {
@@ -2875,15 +2890,8 @@ sub search {
 
   push @where, @{ $params->{'where'} } if $params->{'where'};
 
+  my $addl_from = join(' ', @from);
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
-
-  my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                  ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                  ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                  ' LEFT JOIN cust_main USING ( custnum ) ';
-
-  $addl_from .= ' LEFT JOIN tower_sector USING ( sectornum )'
-    if @where_sector;
 
   my $count_query = "SELECT COUNT(*) FROM svc_acct $addl_from $extra_sql";
   #if ( keys %svc_acct ) {
