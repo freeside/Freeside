@@ -27,9 +27,20 @@
 %     $csv->combine(@$row); #or die $csv->status;
 %   }
 %
-%      
 <% $csv->string %>\
 %
+% }
+% 
+% if ( $opt{'footer'} and !$opt{'no_csv_header'} ) {
+%   my @footer;
+%   foreach my $item (@{ $opt{'footer'} }) {
+%     if ( ref($item) eq 'CODE' ) {
+%       $item = &{$item}();
+%     }
+%     push @footer, $item;
+%   }
+%   $csv->combine(@footer);
+<% $csv->string %>\
 % }
 <%init>
 
