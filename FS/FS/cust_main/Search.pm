@@ -798,6 +798,9 @@ sub search {
 
   my @select = (
                  'cust_main.custnum',
+                 # there's a good chance that we'll need these
+                 'cust_main.bill_locationnum',
+                 'cust_main.ship_locationnum',
                  FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
                );
 

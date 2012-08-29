@@ -53,6 +53,7 @@
     <& /elements/location.html,
         object => $cust_main->bill_location,
         prefix => 'bill_',
+        enable_coords => 1,
     &>
     <& cust_main/after_bill_location.html, $cust_main &>
     </TABLE>
@@ -77,6 +78,7 @@
         prefix => 'ship_',
         enable_censustract => 1,
         enable_district => 1,
+        enable_coords => 1,
     &>
     </TABLE>
     <TABLE CLASS="fsinnerbox" ID="table_ship_location_blank"

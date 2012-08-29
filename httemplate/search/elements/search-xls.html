@@ -55,6 +55,10 @@ my $writer = sub {
   # Wrapper for $worksheet->write.
   # Do any massaging of the value/format here.
   my ($r, $c, $value, $format) = @_;
+  # convert HTML entities
+  # both Spreadsheet::WriteExcel and Excel::Writer::XLSX accept UTF-8 strings
+  $value = decode_entities($value);
+
   if ( $value =~ /^\Q$money_char\E(-?\d+\.?\d*)$/ ) {
     # Currency: strip the symbol, clone the requested format,
     # and format it for currency
@@ -128,6 +132,17 @@ foreach my $row ( @$rows ) {
     $writer->( $r, $c++, $_, $default_format ) foreach @$row;
   }
 
+}
+
+if ( $opt{'footer'} ) {
+  $r++;
+  $c = 0;
+  foreach my $item (@{ $opt{'footer'} }) {
+    if ( ref($item) eq 'CODE' ) {
+      $item = &{$item}();
+    }
+    $writer->( $r, $c++, $item, $header_format );
+  }
 }
 
 $workbook->close();# or die "Error creating .xls file: $!";

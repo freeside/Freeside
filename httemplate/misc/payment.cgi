@@ -78,7 +78,7 @@
     </TR>
 
     <& /elements/location.html,
-                  'object'         => $cust_main, #XXX errors???
+                  'object'         => $cust_main->bill_location,
                   'no_asterisks'   => 1,
                   'address1_label' => emt('Card billing address'),
     &>
@@ -250,6 +250,10 @@ my $custnum = $1;
 
 my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
 die "unknown custnum $custnum" unless $cust_main;
+
+my $location = $cust_main->bill_location;
+# no proper error handling on this anyway, but when we have it,
+# remember to repopulate fields in $location
 
 my $balance = $cust_main->balance;
 
