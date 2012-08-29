@@ -306,8 +306,8 @@ sub targets {
   });
   my @tested_objects;
   foreach my $object ( @objects ) {
-    my $cust_event = $self->new_cust_event($object);
-    next unless $cust_event->test_conditions('time' => $time);
+    my $cust_event = $self->new_cust_event($object, 'time' => $time);
+    next unless $cust_event->test_conditions;
 
     $object->set('cust_event', $cust_event);
     push @tested_objects, $object;
