@@ -14,7 +14,10 @@ sub description { "After running another event" }
 
 sub option_fields {
   (
-    'eventpart' => { label=>'Event', type=>'select-part_event', },
+    'eventpart' => { label=>'Event', type=>'select-part_event',
+                     disable_empty => 1,
+                     hashref => { disabled => '' },
+                   },
     'run_delay' => { label=>'Delay', type=>'freq', value=>'1',  },
   );
 }
