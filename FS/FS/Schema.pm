@@ -473,16 +473,16 @@ sub tables_hashref {
       'index' => [ ['typenum'], ['disabled'], ['agent_custnum'] ],
     },
 
-    'sales' => {
+    'agent_pkg_class' => {
       'columns' => [
-        'salesnum',          'serial',    '',       '', '', '', 
-        'salesperson',      'varchar',    '',  $char_d, '', '', 
-        'agentnum',             'int', 'NULL',      '', '', '', 
-        'disabled',            'char', 'NULL',       1, '', '', 
+        'agentpkgclassnum',    'serial',     '',    '', '', '',
+        'agentnum',               'int',     '',    '', '', '',
+        'classnum',               'int', 'NULL',    '', '', '',
+        'commission_percent', 'decimal',     '', '7,4', '', '',
       ],
-      'primary_key' => 'salesnum',
-      'unique' => [],
-      'index' => [ ['salesnum'], ['disabled'] ],
+      'primary_key' => 'agentpkgclassnum',
+      'unique'      => [ [ 'agentnum', 'classnum' ], ],
+      'index'       => [ [ 'agentnum' ], [ 'classnum' ] ],
     },
 
     'agent_type' => {
@@ -504,6 +504,18 @@ sub tables_hashref {
       'primary_key' => 'typepkgnum',
       'unique' => [ ['typenum', 'pkgpart'] ],
       'index' => [ ['typenum'] ],
+    },
+
+    'sales' => {
+      'columns' => [
+        'salesnum',          'serial',    '',       '', '', '', 
+        'salesperson',      'varchar',    '',  $char_d, '', '', 
+        'agentnum',             'int', 'NULL',      '', '', '', 
+        'disabled',            'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'salesnum',
+      'unique' => [],
+      'index' => [ ['salesnum'], ['disabled'] ],
     },
 
     'cust_attachment' => {

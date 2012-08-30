@@ -51,13 +51,18 @@ sub _calc_credit {
     }
   }
 
-  my $percent = $self->option('percent');
+  my $percent = $self->_calc_credit_percent($cust_pkg);
 
   #my @arg = $no_cust_pkg{$what} ? () : ($cust_pkg);
   my @arg = ($what eq 'setup_cost') ? () : ($cust_pkg);
 
   sprintf('%.2f', $part_pkg->$what(@arg) * $percent / 100 );
 
+}
+
+sub _calc_credit_percent {
+  my( $self, $cust_pkg ) = @_;
+  $self->option('percent');
 }
 
 1;
