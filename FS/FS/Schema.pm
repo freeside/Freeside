@@ -482,7 +482,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'agentpkgclassnum',
       'unique'      => [ [ 'agentnum', 'classnum' ], ],
-      'index'       => [ [ 'agentnum' ], [ 'classnum' ] ],
+      'index'       => [],
     },
 
     'agent_type' => {
