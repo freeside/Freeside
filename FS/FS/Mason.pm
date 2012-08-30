@@ -91,6 +91,7 @@ if ( -e $addl_handler_use_file ) {
   use Text::CSV_XS;
   use Spreadsheet::WriteExcel;
   use Spreadsheet::WriteExcel::Utility;
+  use OLE::Storage_Lite;
   use Excel::Writer::XLSX;
   use Excel::Writer::XLSX::Utility;
 
@@ -323,6 +324,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_bill_pkg_tax_rate_location_void;
   use FS::cust_tax_exempt_pkg_void;
   use FS::cust_bill_pkg_discount_void;
+  use FS::agent_pkg_class;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
@@ -366,7 +368,7 @@ if ( -e $addl_handler_use_file ) {
 
       use RT::Interface::Web::Request;
 
-      #nother undeclared web UI dep (for ticket links graph)
+      #another undeclared web UI dep (for ticket links graph)
       use IPC::Run::SafeHandles;
 
       #slow, unreliable, segfaults and is optional
