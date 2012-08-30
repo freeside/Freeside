@@ -633,3 +633,5 @@ t/h_svc_cert.t
 FS/upgrade_journal.pm
 t/upgrade_journal.t
 FS/Trace.pm
+FS/agent_pkg_class.pm
+t/agent_pkg_class.t
