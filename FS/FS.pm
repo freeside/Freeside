@@ -264,6 +264,8 @@ L<FS::usage_class> - Usage class class
 
 L<FS::agent> - Agent (reseller) class
 
+L<FS::agent_pkg_class> - Agent (reseller) package class commission class
+
 L<FS::agent_type> - Agent type class
 
 L<FS::type_pkgs> - Class linking agent types (see L<FS::agent_type>) with package definitions (see L<FS::part_pkg>)

@@ -25,6 +25,7 @@ full offerings (via their type).<BR><BR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Master Customer</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Commissions</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Access Groups</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Invoice<BR>Template</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Customers</TH>
@@ -90,6 +91,33 @@ full offerings (via their type).<BR><BR>
                       )
             %>
 %         }
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+
+          <TABLE>
+
+%           #surprising amount of false laziness w/ edit/process/agent.cgi
+%           my @pkg_class = qsearch('pkg_class', { 'disabled'=>'' });
+%           foreach my $pkg_class ( '', @pkg_class ) {
+%             my %agent_pkg_class = ( 'agentnum' => $agent->agentnum,
+%                                     'classnum' => $pkg_class ? $pkg_class->classnum : ''
+%                                   );
+%             my $agent_pkg_class =
+%               qsearchs( 'agent_pkg_class', \%agent_pkg_class )
+%               || new FS::agent_pkg_class   \%agent_pkg_class;
+%             my $param = 'classnum'. $agent_pkg_class{classnum};
+
+              <TR>
+                <TD><% $agent_pkg_class->commission_percent || 0 %>%</TD>
+                <TD><% $pkg_class ? $pkg_class->classname : mt('(no package class)') |h %>
+                </TD>
+              </TR>
+
+%           }
+
+          </TABLE>
+
         </TD>
 
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">

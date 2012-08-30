@@ -19,9 +19,12 @@
 </SCRIPT>
 
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agent->agentnum %>">
-Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
 
-<% &ntable("#cccccc", 2, '') %>
+<FONT CLASS="fsinnerbox-title">
+  Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
+</FONT>
+
+<TABLE CLASS="fsinnerbox">
 
   <TR>
     <TH ALIGN="right">Agent</TH>
@@ -117,8 +120,13 @@ Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
     </TR>
 % } 
 
+</TABLE>
+<BR>
+
+<FONT CLASS="fsinnerbox-title"><% mt('Access Groups') |h %></FONT>
+<TABLE CLASS="fsinnerbox">
+
   <TR>
-    <TD ALIGN="right">Access Groups</TD>
     <TD><% include('/elements/checkboxes-table.html',
                      'source_obj'   => $agent,
                      'link_table'   => 'access_groupagent',
@@ -131,6 +139,38 @@ Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
   </TR>
 
 </TABLE>
+<BR>
+
+<FONT CLASS="fsinnerbox-title"><% mt('Commissions') |h %></FONT>
+<TABLE CLASS="fsinnerbox">
+
+% #surprising amount of false laziness w/ edit/process/agent.cgi
+% my @pkg_class = qsearch('pkg_class', { 'disabled'=>'' });
+% foreach my $pkg_class ( '', @pkg_class ) {
+%   my %agent_pkg_class = ( 'agentnum' => $agent->agentnum,
+%                           'classnum' => $pkg_class ? $pkg_class->classnum : ''
+%                         );
+%   my $agent_pkg_class =
+%     qsearchs( 'agent_pkg_class', \%agent_pkg_class )
+%     || new FS::agent_pkg_class   \%agent_pkg_class;
+%   my $param = 'classnum'. $agent_pkg_class{classnum};
+
+    <TR>
+      <TD><INPUT TYPE      = "text"
+                 NAME      = "<% $param %>"
+                 VALUE     = "<% $cgi->param($param) || $agent_pkg_class->commission_percent |h %>"
+                 SIZE      = 6
+                 MAXLENGTH = 7
+          >%
+      </TD>
+      <TD><% $pkg_class ? $pkg_class->classname : mt('(no package class)') |h %>
+      </TD>
+    </TR>
+
+% }
+
+</TABLE>
+
 
 <BR>
 <INPUT TYPE="submit" VALUE="<% $agent->agentnum ? "Apply changes" : "Add agent" %>">
