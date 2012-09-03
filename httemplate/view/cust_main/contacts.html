@@ -1,13 +1,18 @@
 % my %addr_label = ('bill' => 'Billing address', 'ship' => 'Service address');
 
 %# Locations (possibly break this out)
-% my @which = ('bill');
-% push @which, 'ship' if $cust_main->has_ship_address;
+% my @which = ('bill', 'ship');
 % while (@which) {
 %   my $this = shift @which;
 %   my $method = $this.'_location';
 %   my $location = $cust_main->$method;
-<FONT CLASS="fsinnerbox-title"><% mt( $addr_label{$this} ) |h %></FONT>
+<FONT CLASS="fsinnerbox-title"><% mt( $addr_label{$this} ) |h %>
+%   if ( $this eq 'ship' and 
+%       $cust_main->bill_locationnum == $cust_main->ship_locationnum )
+%   {
+ (<% mt('same as billing') %>)
+%   }
+</FONT>
 <TABLE CLASS="fsinnerbox">
 
 % if ( $this eq 'bill' ) {
