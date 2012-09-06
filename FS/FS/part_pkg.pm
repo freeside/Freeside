@@ -103,6 +103,9 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item fcc_ds0s - Optional DS0 equivalency number for FCC form 477
 
+=item fcc_voip_class - Which column of FCC form 477 part II.B this package 
+belongs in.
+
 =item successor - Foreign key for the part_pkg that replaced this record.
 If this record is not obsolete, will be null.
 
@@ -622,6 +625,7 @@ sub check {
            : $self->ut_agentnum_acl('agentnum', \@null_agentnum_right)
        )
     || $self->ut_numbern('fcc_ds0s')
+    || $self->ut_numbern('fcc_voip_class')
     || $self->ut_foreign_keyn('successor', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_keyn('family_pkgpart', 'part_pkg', 'pkgpart')
     || $self->SUPER::check
@@ -1590,6 +1594,22 @@ sub _upgrade_data { # class method
               die $error if $error;
               $newopts{$pkgpart} = $new_opt;
         }
+  }
+
+  # set any package with FCC voice lines to the "VoIP with broadband" category
+  # for backward compatibility
+  my $journal = 'part_pkg_fcc_voip_class';
+  if (!FS::upgrade_journal->is_done($journal)) {
+    @part_pkg = qsearch('part_pkg', { 
+        fcc_ds0s        => { op => '>', value => 0 },
+        fcc_voip_class  => ''
+    });
+    foreach my $part_pkg (@part_pkg) {
+      $part_pkg->set(fcc_voip_class => 2);
+      my $error = $part_pkg->replace;
+      die $error if $error;
+    }
+    FS::upgrade_journal->set_done($journal);
   }
 
 }
