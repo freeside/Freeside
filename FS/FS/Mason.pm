@@ -93,7 +93,7 @@ if ( -e $addl_handler_use_file ) {
   use Spreadsheet::WriteExcel::Utility;
   use OLE::Storage_Lite;
   use Excel::Writer::XLSX;
-  use Excel::Writer::XLSX::Utility;
+  #use Excel::Writer::XLSX::Utility; #redundant with above
 
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
