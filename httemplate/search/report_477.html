@@ -17,6 +17,15 @@
                )
     %>
 
+    <& /elements/tr-td-label.html, 'label' => 'State' &>
+    <TD>
+      <SELECT NAME="state">
+%   foreach (@states) {
+        <OPTION VALUE="<% $_ %>"><% $_ %></OPTION>
+%   }
+      </SELECT>
+    </TD></TR>
+
     <% include( '/elements/tr-select-pkg_class.html',
                    'multiple'       => 1,
                    'empty_label' => '(empty class)',
@@ -251,5 +260,28 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+
+my @states = (
+  qsearch({
+    'table'   => 'cust_main',
+    'select'  => 'DISTINCT(state)',
+    'hashref' => { 'country' => 'US' }, # 477 report isn't relevant elsewhere
+  }),
+  qsearch({
+    'table'   => 'cust_main',
+    'select'  => 'DISTINCT(ship_state) AS state',
+    'hashref' => { 'country' => 'US' },
+  }),
+  qsearch({
+    'table'   => 'cust_location',
+    'select'  => 'DISTINCT(state)',
+    'hashref' => { 'country' => 'US' },
+  }),
+);
+
+{
+  my %seen = map {$_->get('state') => 1} @states;
+  @states = grep $_, sort keys(%seen);
+}
 
 </%init>

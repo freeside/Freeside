@@ -81,9 +81,10 @@ push @fields,
 my %search_hash = ();
 my @sql_query = ();
   
-for ( qw(agentnum magic) ) {
+for ( qw(agentnum magic state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+$search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ]
   if grep { $_ eq 'classnum' } $cgi->param;
 
@@ -132,7 +133,8 @@ my $count_query = 'SELECT count(*) FROM ( ('.
       map { my $addl_from = $_->{addl_from};
             my $extra_sql = $_->{extra_sql};
             my $order_by  = $_->{order_by};
-            "SELECT censustract from cust_pkg $addl_from $extra_sql $order_by";
+            "SELECT censustract from cust_pkg $addl_from 
+            $extra_sql $order_by";
           }
       @sql_query
    ). ') ) AS foo';

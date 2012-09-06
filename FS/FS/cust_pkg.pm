@@ -3206,7 +3206,14 @@ specifies the user for agent virtualization
 
 =item fcc_line
 
- boolean selects packages containing fcc form 477 telco lines
+boolean; if true, returns only packages with more than 0 FCC phone lines
+
+=item state, country
+
+Limit to packages whose customer is located in the specified state and 
+country.  For FCC 477 reporting.  This will use the customer's service 
+address if there is one, but isn't yet smart enough to use the package 
+address.
 
 =back
 
@@ -3401,6 +3408,20 @@ sub search {
   }
 
   ###
+  # parse country/state
+  ###
+
+  for (qw(state country)) {
+    if ( exists($params->{$_})
+      && uc($params->{$_}) =~ /^([A-Z]{2})$/ )
+    {
+      push @where, 
+        "COALESCE(cust_location.$_, cust_main.ship_$_, cust_main.$_) = '$1'";
+    }
+  }
+
+
+  ###
   # parse part_pkg
   ###
 
@@ -3524,7 +3545,8 @@ sub search {
 
   my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
                   'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
-                  'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) ';
+                  'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) '.
+                  'LEFT JOIN cust_location USING ( locationnum ) ';
 
   my $select;
   my $count_query;
@@ -3533,7 +3555,6 @@ sub search {
 
     $select = "DISTINCT substr($zip,1,5) as zip";
     $orderby = "ORDER BY substr($zip,1,5)";
-    $addl_from .= 'LEFT JOIN cust_location ON ( locationnum )';
     $count_query = "SELECT COUNT( DISTINCT substr($zip,1,5) )";
   } else {
     $select = join(', ',

@@ -23,9 +23,10 @@ die "access denied"
 my %opt = @_;
 my %search_hash = ();
   
-for ( qw(agentnum magic) ) {
+for ( qw(agentnum magic state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+$search_hash{'country'} = 'US';
 
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
 
