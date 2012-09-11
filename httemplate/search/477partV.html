@@ -27,9 +27,10 @@ my %search_hash = ();
 my @sql_query = ();
 my @count_query = ();
   
-for ( qw(agentnum magic) ) {
+for ( qw(agentnum magic state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+$search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
 $search_hash{report_option} = $cgi->param('partv_report_option')
   if $cgi->param('partv_report_option');

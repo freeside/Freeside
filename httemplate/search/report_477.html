@@ -17,6 +17,18 @@
                )
     %>
 
+%   # not tr-select-state, we only want to choose from among those that 
+%   # have customers
+    <& /elements/tr-select-table.html,
+        'label'         => 'State',
+        'field'         => 'state',
+        'table'         => 'cust_location',
+        'name_col'      => 'state',
+        'value_col'     => 'state',
+        'disable_empty' => 1,
+        'records'       => \@states,
+    &>
+
     <% include( '/elements/tr-select-pkg_class.html',
                    'multiple'       => 1,
                    'empty_label' => '(empty class)',
@@ -251,5 +263,11 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+
+my @states = qsearch({
+  'table'   => 'cust_location',
+  'select'  => 'DISTINCT(state)',
+  'hashref' => { 'country' => 'US' }, # 477 report isn't relevant elsewhere
+});
 
 </%init>

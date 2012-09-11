@@ -1,0 +1,24 @@
+<& tr-td-label.html, label => 'Category', @_ &>
+<TD>
+<SELECT NAME="<% $opt{'field'} %>">
+% while(@options) {
+%   my $value = shift @options;
+%   my $selected = ($value eq $opt{'curr_value'}) ? 'SELECTED' : '';
+  <OPTION VALUE="<% $value %>" <% $selected %>><% shift @options %></OPTION>
+% }
+</SELECT>
+</TD></TR>
+<%init>
+my %opt = (
+  field => 'fcc_voip_class',
+  label => 'Category',
+  @_
+);
+my @options = (
+  '' => '',
+   1 => 'VoIP without Broadband',
+   2 => 'VoIP with Broadband',
+   3 => 'Wholesale VoIP'
+);
+
+</%init>

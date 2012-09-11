@@ -3317,7 +3317,12 @@ specifies the user for agent virtualization
 
 =item fcc_line
 
- boolean selects packages containing fcc form 477 telco lines
+boolean; if true, returns only packages with more than 0 FCC phone lines.
+
+=item state, country
+
+Limit to packages with a service location in the specified state and country.
+For FCC 477 reporting, mostly.
 
 =back
 
@@ -3491,8 +3496,8 @@ sub search {
 
   if ( exists($params->{'censustract'}) ) {
     $params->{'censustract'} =~ /^([.\d]*)$/;
-    my $censustract = "cust_main.censustract = '$1'";
-    $censustract .= ' OR cust_main.censustract is NULL' unless $1;
+    my $censustract = "cust_location.censustract = '$1'";
+    $censustract .= ' OR cust_location.censustract is NULL' unless $1;
     push @where,  "( $censustract )";
   }
 
@@ -3504,10 +3509,22 @@ sub search {
      )
   {
     if ($1) {
-      push @where, "cust_main.censustract LIKE '$1%'";
+      push @where, "cust_location.censustract LIKE '$1%'";
     } else {
       push @where,
-        "( cust_main.censustract = '' OR cust_main.censustract IS NULL )";
+        "( cust_location.censustract = '' OR cust_location.censustract IS NULL )";
+    }
+  }
+
+  ###
+  # parse country/state
+  ###
+  for (qw(state country)) { # parsing rules are the same for these
+  if ( exists($params->{$_}) 
+    && uc($params->{$_}) =~ /^([A-Z]{2})$/ )
+    {
+      # XXX post-2.3 only--before that, state/country may be in cust_main
+      push @where, "cust_location.$_ = '$1'";
     }
   }
 
@@ -3635,7 +3652,8 @@ sub search {
 
   my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
                   'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
-                  'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) ';
+                  'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) '.
+                  'LEFT JOIN cust_location USING ( locationnum ) ';
 
   my $select;
   my $count_query;
@@ -3644,13 +3662,6 @@ sub search {
 
     $select = "DISTINCT substr($zip,1,5) as zip";
     $orderby = "ORDER BY substr($zip,1,5)";
-    $addl_from .= 'LEFT JOIN cust_location ON (
-                     cust_location.locationnum = COALESCE(
-                                                   cust_pkg.locationnum,
-                                                   cust_main.ship_locationnum,
-                                                   cust_main.bill_locationnum
-                                                 )
-                                              )';
     $count_query = "SELECT COUNT( DISTINCT substr($zip,1,5) )";
   } else {
     $select = join(', ',

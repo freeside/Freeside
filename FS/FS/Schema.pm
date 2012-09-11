@@ -1912,6 +1912,7 @@ sub tables_hashref {
         'credit_weight', 'real',    'NULL', '', '', '',
         'agentnum',      'int',     'NULL', '', '', '', 
         'fcc_ds0s',      'int',     'NULL', '', '', '', 
+        'fcc_voip_class','char',    'NULL',  1, '', '',
         'no_auto',          'char', 'NULL',  1, '', '', 
         'recur_show_zero',  'char', 'NULL',  1, '', '',
         'setup_show_zero',  'char', 'NULL',  1, '', '',

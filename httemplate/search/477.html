@@ -1,33 +1,24 @@
-% unless ( $type eq 'xml' ) {
-<% include( '/elements/header.html', 'FCC Form 477 Results') %>
-%}else{
+% if ( $type eq 'xml' ) {
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <Form_477_submission xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://specialreports.fcc.gov/wcb/Form477/XMLSchema-instance/form_477_upload_Schema.xsd" >
-%}
-% if ( $type eq 'html' || $type eq 'html-print' ) {
+% } else { #html
+<& /elements/header.html, "FCC Form 477 Results - $state" &>
 <TABLE WIDTH="100%">
-  <TR><TD></TD>
-%}elsif ( $type eq 'xml' ) {
-%}
-%           unless ( $type eq 'html-print' || $type eq 'xml' ) {
+  <TR>
+    <TD></TD>
+    <TD ALIGN="right" CLASS="noprint">
+      Download full results<BR>
+%   $cgi->param('_type', 'xml');
+      as <A HREF="<% $cgi->self_url %>">XML file</A><BR>
 
-              <TD ALIGN="right">
+%   $cgi->param('_type', 'html-print');
+      as <A HREF="<% $cgi->self_url %>">printable copy</A>
 
-                Download full results<BR>
-%               $cgi->param('_type', 'xml');
-                as <A HREF="<% $cgi->self_url %>">XML file</A><BR>
-
-%               $cgi->param('_type', 'html-print');
-                as <A HREF="<% $cgi->self_url %>">printable copy</A>
-
-              </TD>
-%             $cgi->param('_type', $type );
-%           }
-% if ( $type eq 'html' || $type eq 'html-print' ) {
+    </TD>
+%   $cgi->param('_type', $type );
   </TR>
 </TABLE>
-%}elsif ( $type eq 'xml' ) {
-%}
+% } #html
 % foreach my $part ( @parts ) {
 %   if ( $part{$part} ) {
 %
@@ -47,8 +38,8 @@
 %         if ( $type eq 'xml' ) {
 <<% 'Part_IA_'. chr(65 + $tech) %>>
 %         }
-<% include( "477part${part}_summary.html", 'tech_code' => $tech, 'url' => $url ) %>
-<% include( "477part${part}_detail.html", 'tech_code' => $tech, 'url' => $url ) %>
+<& "477part${part}_summary.html", 'tech_code' => $tech, 'url' => $url &>
+<& "477part${part}_detail.html", 'tech_code' => $tech, 'url' => $url &>
 %         if ( $type eq 'xml' ) {
 </<% 'Part_IA_'. chr(65 + $tech) %>>
 %         }
@@ -58,7 +49,7 @@
 <<% 'Part_'. $part %>>
 %       }
 %       my $url = &{$url_mangler}($part);
-<% include( "477part${part}.html", 'url' => $url ) %>
+<& "477part${part}.html", 'url' => $url &>
 %       if ( $type eq 'xml' ) {
 </<% 'Part_'. $part %>>
 %       }
@@ -66,17 +57,20 @@
 %   }
 % }
 %
-% if ( $type eq 'html' || $type eq 'html-print' ) {
-<% include( '/elements/footer.html') %>
-%}elsif ( $type eq 'xml' ) {
+% if ( $type eq 'xml' ) {
 </Form_477_submission>
-%}
+% } else {
+<& /elements/footer.html &>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
   unless $curuser->access_right('List packages');
+
+my $state = uc($cgi->param('state'));
+$state =~ /^[A-Z]{2}$/ or die "illegal state: $state";
 
 my %part = map { $_ => 1 } grep { /^\w+$/ } $cgi->param('part');
 my $type = $cgi->param('_type') || 'html';
