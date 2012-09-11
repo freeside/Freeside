@@ -12,7 +12,8 @@
 
   <& /elements/tr-amount_fee.html,
        'amount'             => $amount,
-       'process-pkgpart'    => scalar($conf->config('manual_process-pkgpart')),
+       'process-pkgpart'    => 
+          scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),
        'process-display'    => scalar($conf->config('manual_process-display')),
        'process-skip_first' => $conf->exists('manual_process-skip_first'),
        'num_payments'       => scalar($cust_main->cust_pay), 

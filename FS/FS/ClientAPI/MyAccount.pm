@@ -14,6 +14,7 @@ use Business::CreditCard;
 use HTML::Entities;
 use Text::CSV_XS;
 use Spreadsheet::WriteExcel;
+use OLE::Storage_Lite;
 use FS::UI::Web::small_custview qw(small_custview); #less doh
 use FS::UI::Web;
 use FS::UI::bytecount qw( display_bytecount );
@@ -929,7 +930,7 @@ sub validate_payment {
   #changing the hidden form values
   my $conf = new FS::Conf;
   my $fee_display = $conf->config('selfservice_process-display') || 'add';
-  my $fee_pkgpart = $conf->config('selfservice_process-pkgpart');
+  my $fee_pkgpart = $conf->config('selfservice_process-pkgpart', $cust_main->agentnum);
   my $fee_skip_first = $conf->exists('selfservice_process-skip_first');
   if ( $fee_display eq 'add'
          and $fee_pkgpart
@@ -1101,7 +1102,7 @@ sub do_process_payment {
 
   #no error, so order the fee package if applicable...
   my $conf = new FS::Conf;
-  my $fee_pkgpart = $conf->config('selfservice_process-pkgpart');
+  my $fee_pkgpart = $conf->config('selfservice_process-pkgpart', $cust_main->agentnum);
   my $fee_skip_first = $conf->exists('selfservice_process-skip_first');
   
   if ( $fee_pkgpart and ! $fee_skip_first || scalar($cust_main->cust_pay) ) {

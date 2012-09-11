@@ -1363,7 +1363,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexextracouponspace',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon. Include units.',
+    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon.  Include units.  Default is 3.6cm',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -2555,6 +2555,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
     'type'        => 'select-part_pkg',
+    'per_agent'   => 1,
   },
 
   {
@@ -2580,6 +2581,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Package to add to each manual credit card and ACH payment entered by the customer themselves in the self-service interface.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
     'type'        => 'select-part_pkg',
+    'per_agent'   => 1,
   },
 
   {
