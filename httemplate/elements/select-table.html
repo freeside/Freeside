@@ -181,24 +181,29 @@ if ( $opt{'records'} ) {
   });
 }
 
-unless (    $value < 1 # !$value #ignore negatives too
-         or ref($value)
-         or ! exists( $opt{hashref}->{disabled} ) #??
-         or grep { $value == $_->$key() } @records
-       ) {
-  delete $opt{hashref}->{disabled};
-  $opt{hashref}->{$key} = $value;
-  my $record = qsearchs( {
-    'table'     => $opt{table},
-    'addl_from' => $opt{'addl_from'},
-    'hashref'   => $hashref,
-    'extra_sql' => $extra_sql,
-  });
-  push @records, $record if $record;
-}
-
 if ( ref( $value ) eq 'ARRAY' ) {
   $value = { map { $_ => 1 } @$value };
+}
+
+unless (    !ref($value) && $value < 1 # !$value #ignore negatives too
+         or ! exists( $opt{hashref}->{disabled} ) #??
+         #or grep { $value == $_->$key() } @records
+       ) {
+  delete $opt{hashref}->{disabled};
+
+  foreach my $v ( ref($value) ? keys %$value : ($value) ) {
+    next if grep { $v == $_->$key() } @records;
+
+    $opt{hashref}->{$key} = $v;
+    my $record = qsearchs( {
+      'table'     => $opt{table},
+      'addl_from' => $opt{'addl_from'},
+      'hashref'   => $hashref,
+      'extra_sql' => $extra_sql,
+    });
+    push @records, $record if $record;
+
+  }
 }
 
 my @pre_options  = $opt{pre_options}  ? @{ $opt{pre_options} } : ();

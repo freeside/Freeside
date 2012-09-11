@@ -304,7 +304,6 @@ Setting <b><% $key %></b>
 %
 %     my %opt = ( 'element_name' => "$key$n",
 %                 'empty_label'  => ' ',
-%                 'showdisabled' => 1,
 %               );
 %     if ( $config_item->multiple ) {
 %       $opt{'multiple'} = 1 if $config_item->multiple;
