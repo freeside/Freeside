@@ -53,7 +53,8 @@ my %session_callbacks = (
     my %args = @$argsref;
     %args = (
       %args,
-      'process-pkgpart'    => scalar($conf->config('selfservice_process-pkgpart')),
+      'process-pkgpart'    =>
+        scalar($conf->config('selfservice_process-pkgpart', $cust_main->agentnum)),
       'process-display'    => scalar($conf->config('selfservice_process-display')),
       'process-skip_first' => $conf->exists('selfservice_process-skip_first'),
       'num_payments'       => scalar($cust_main->cust_pay), 
