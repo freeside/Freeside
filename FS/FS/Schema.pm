@@ -2672,12 +2672,12 @@ sub tables_hashref {
 
     'radius_attr' => {
       'columns' => [
-        'attrnum',   'serial', '', '', '', '',
-        'groupnum',     'int', '', '', '', '',
+        'attrnum',   'serial', '',      '', '', '',
+        'groupnum',     'int', '',      '', '', '',
         'attrname', 'varchar', '', $char_d, '', '',
-        'value',    'varchar', '', $char_d, '', '',
-        'attrtype',    'char', '', 1, '', '',
-        'op',          'char', '', 2, '', '',
+        'value',    'varchar', '',     255, '', '',
+        'attrtype',    'char', '',       1, '', '',
+        'op',          'char', '',       2, '', '',
       ],
       'primary_key' => 'attrnum',
       'unique'      => [],
