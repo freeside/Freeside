@@ -60,11 +60,13 @@ my $postfix_native_mailbox_map =
                  keys %postfix_native_mailbox_map      );
 
 %info = (
-  'svc'      => 'svc_acct',
-  'desc'     => 'Real-time export of accounts to SQL databases '.
-                '(vpopmail, Postfix+Courier IMAP, others?)',
-  'options'  => \%options,
-  'nodomain' => '',
+  'svc'        => 'svc_acct',
+  'desc'       => 'Real-time export of accounts to SQL databases '.
+                  '(vpopmail, Postfix+Courier IMAP, others?)',
+  'options'    => \%options,
+  'nodomain'   => '',
+  'no_machine' => 1,
+  'default_svc_class' => 'Email',
   'notes'    => <<END
 Export accounts (svc_acct records) to SQL databases.  Currently has default
 configurations for vpopmail and Postfix+Courier IMAP but intended to be

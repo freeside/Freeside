@@ -87,6 +87,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_broadband',
   'desc'    => 'Send a command to a router.',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => 'Installation of Net::Telnet from CPAN is required for telnet connections.  This export will execute if the following virtual fields are set on the router: admin_user, admin_password, admin_address, admin_timeout, admin_prompt.  Option virtual fields are: admin_cmd_insert, admin_cmd_replace, admin_cmd_delete, admin_cmd_suspend, admin_cmd_unsuspend.  See the module documentation for a full list of required/supported router virtual fields.',
 );
 

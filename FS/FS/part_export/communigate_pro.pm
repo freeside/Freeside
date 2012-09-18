@@ -36,6 +36,7 @@ tie %options, 'Tie::IxHash',
   'svc'     => [qw( svc_acct svc_domain svc_forward svc_mailinglist )],
   'desc'    => 'Real-time export of accounts, domains, mail forwards and mailing lists to a CommuniGate Pro mail server',
   'options' => \%options,
+  'default_svc_class' => 'Email',
   'notes'   => <<'END'
 Real time export of accounts, domains, mail forwards and mailing lists to a
 <a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a>

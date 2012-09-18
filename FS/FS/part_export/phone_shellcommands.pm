@@ -138,3 +138,4 @@ sub ssh_cmd { #subroutine, not method
   &Net::SSH::ssh_cmd( { @_ } );
 }
 
+1;

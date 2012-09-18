@@ -41,6 +41,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_acct',
   'desc'    => 'Real-time export to LDAP',
   'options' => \%options,
+  'default_svc_class' => 'Email',
   'notes'   => <<'END'
 Real-time export to arbitrary LDAP attributes.  Requires installation of
 <a href="http://search.cpan.org/dist/Net-LDAP">Net::LDAP</a> from CPAN.

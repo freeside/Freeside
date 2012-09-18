@@ -18,6 +18,7 @@ tie my %options, 'Tie::IxHash',
   'svc'    => 'svc_acct',
   'desc'   => 'Real-time export to Critical Path Account Provisioning Protocol',
   'options'=> \%options,
+  'default_svc_class' => 'Email',
   'notes'  => <<'END'
 Real-time export to
 <a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>.

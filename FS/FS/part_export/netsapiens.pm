@@ -72,10 +72,11 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'      => [ 'svc_phone', ], # 'part_device',
-  'desc'     => 'Provision phone numbers to NetSapiens',
-  'options'  => \%options,
-  'notes'    => <<'END'
+  'svc'        => [ 'svc_phone', ], # 'part_device',
+  'desc'       => 'Provision phone numbers to NetSapiens',
+  'options'    => \%options,
+  'no_machine' => 1,
+  'notes'      => <<'END'
 Requires installation of
 <a href="http://search.cpan.org/dist/REST-Client">REST::Client</a>
 from CPAN.

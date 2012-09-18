@@ -22,6 +22,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_forward',
   'desc'    => 'Postfix text files',
   'options' => \%options,
+  'default_svc_class' => 'Email',
   'notes'   => <<'END'
 Batch export of Postfix aliases and virtual files.
 <a href="http://search.cpan.org/dist/File-Rsync">File::Rsync</a>

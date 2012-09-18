@@ -16,6 +16,7 @@ tie my %options, 'Tie::IxHash', %FS::part_export::communigate_pro::options,
     'Real-time export to a CommuniGate Pro mail server, one domain only',
   'options'  => \%options,
   'nodomain' => 'Y',
+  'default_svc_class' => 'Email',
   'notes'    => <<'END'
 Real time export to a
 <a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a>

@@ -19,6 +19,7 @@ tie my %options, 'Tie::IxHash',
   'desc'     => 'Real-time export to InfoStreet streetSmartAPI',
   'options'  => \%options,
   'nodomain' => 'Y',
+  'no_machine' => 1,
   'notes'    => <<'END'
 Real-time export to
 <a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.

@@ -17,6 +17,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_dsl',
   'desc'    => 'Retrieve status information via HTTP or HTTPS',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END'
 Fields from the service can be substituted in the URL as $field.
 END

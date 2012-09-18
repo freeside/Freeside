@@ -18,6 +18,7 @@ tie my %options, 'Tie::IxHash',
   'desc'    =>
     'Real-time export to a text /etc/raddb/users file (Livingston, Cistron)',
   'options' => \%options,
+  'default_svc_class' => 'Internet',
   'notes'   => <<'END'
 This will edit a text RADIUS users file in place on a remote server.
 Requires installation of

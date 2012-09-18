@@ -18,6 +18,8 @@ tie my %options, 'Tie::IxHash',
   'svc'    => 'svc_acct',
   'desc'   => 'Real-time export to Everyone.net outsourced mail service',
   'options'=> \%options,
+  'no_machine' => 1,
+  'default_svc_class' => 'Email',
   'notes'  => <<'END'
 Real-time export to
 <a href="http://www.everyone.net/">Everyone.net</a> via the XRC Remote API.

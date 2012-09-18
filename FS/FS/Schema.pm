@@ -1890,6 +1890,29 @@ sub tables_hashref {
       'index'       => [ [ 'svcnum' ], [ 'optionname' ] ],
     },
 
+    'svc_export_machine' => {
+      'columns' => [
+        'svcexportmachinenum', 'serial', '', '', '', '',
+        'svcnum',                 'int', '', '', '', '', 
+        'machinenum',             'int', '', '', '', '',
+      ],
+      'primary_key' => 'svcexportmachinenum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'part_export_machine' => {
+      'columns' => [
+        'machinenum', 'serial', '', '', '', '',
+        'exportnum',     'int', '', '', '', '',
+        'machine',    'varchar', 'NULL', $char_d, '', '', 
+        'disabled',      'char', 'NULL',       1, '', '',
+      ],
+      'primary_key' => 'machinenum',
+      'unique'      => [ [ 'exportnum', 'machine' ] ],
+      'index'       => [ [ 'exportnum' ] ],
+    },
+
    'part_pkg' => {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 
@@ -2623,11 +2646,11 @@ sub tables_hashref {
 
     'part_export' => {
       'columns' => [
-        'exportnum', 'serial', '', '', '', '', 
+        'exportnum',   'serial',     '',      '', '', '', 
         'exportname', 'varchar', 'NULL', $char_d, '', '',
-        'machine', 'varchar', '', $char_d, '', '', 
-        'exporttype', 'varchar', '', $char_d, '', '', 
-        'nodomain',     'char', 'NULL', 1, '', '', 
+        'machine',    'varchar', 'NULL', $char_d, '', '', 
+        'exporttype', 'varchar',     '', $char_d, '', '', 
+        'nodomain',      'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'exportnum',
       'unique'      => [],

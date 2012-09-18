@@ -45,6 +45,7 @@ tie %options, 'Tie::IxHash',
   'svc'     => 'svc_broadband',
   'desc'    => 'Send an HTTP or HTTPS GET or POST request, for accounts.',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END'
 <p>Send an HTTP or HTTPS GET or POST to the specified URL on account addition,
 modification and deletion.  For HTTPS support,

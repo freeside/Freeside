@@ -23,6 +23,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_acct',
   'desc'    => 'Real-time export to vpopmail text files',
   'options' => \%options,
+  'default_svc_class' => 'Email',
   'notes'   => <<'END'
 This export is currently unmaintained.  See shellcommands_withdomain for an
 export that uses vpopmail CLI commands instead.<BR>

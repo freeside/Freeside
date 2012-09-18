@@ -284,6 +284,10 @@ L<FS::agent_payment_gateway> - Agent payment gateway class
 
 L<FS::cust_svc> - Service class
 
+L<FS::part_export_machine> - Export hostname choice class
+
+L<FS::svc_export_machine> - Customer export hostname class
+
 L<FS::cust_pkg> - Customer package class
 
 L<FS::cust_pkg_option> - Customer package option class

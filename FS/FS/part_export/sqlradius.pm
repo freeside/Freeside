@@ -110,6 +110,7 @@ END
   'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS)',
   'options'  => \%options,
   'nodomain' => 'Y',
+  'no_machine' => 1,
   'nas'      => 'Y', # show export_nas selection in UI
   'default_svc_class' => 'Internet',
   'notes'    => $notes1.

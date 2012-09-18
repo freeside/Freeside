@@ -85,6 +85,7 @@ tie my %options, 'Tie::IxHash', (
   'Send an email message',
   'options'  => \%options,
   'nodomain' => '',
+  'no_machine' => 1,
   'notes'    => ' 
   Send an email message.  The subject and body of the message
   will be generated from a message template.'

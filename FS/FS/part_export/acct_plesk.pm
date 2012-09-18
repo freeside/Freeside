@@ -15,9 +15,11 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'    => 'svc_acct',
-  'desc'   => 'Real-time export to Plesk managed mail service',
-  'options'=> \%options,
+  'svc'        => 'svc_acct',
+  'desc'       => 'Real-time export to Plesk managed mail service',
+  'options'    => \%options,
+  'no_machine' => 1,
+  'default_svc_class' => 'Email',
   'notes'  => <<'END'
 Real-time export to
 <a href="http://www.swsoft.com/">Plesk</a> managed server.

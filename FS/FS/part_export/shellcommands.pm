@@ -97,12 +97,13 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'      => 'svc_acct',
-  'desc'     =>
+  'svc'         => 'svc_acct',
+  'desc'        =>
     'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
-  'options'  => \%options,
-  'nodomain' => 'Y',
-  'notes' => <<'END'
+  'options'     => \%options,
+  'nodomain'    => 'Y',
+  'svc_machine' => 1,
+  'notes'       => <<'END'
 Run remote commands via SSH.  Usernames are considered unique (also see
 shellcommands_withdomain).  You probably want this if the commands you are
 running will not accept a domain as a parameter.  You will need to
@@ -124,24 +125,7 @@ running will not accept a domain as a parameter.  You will need to
       this.form.unsuspend_stdin.value="";
     '>
   <LI>
-    <INPUT TYPE="button" VALUE="FreeBSD before 4.10 / 5.3" onClick='
-      this.form.useradd.value = "lockf /etc/passwd.lock pw useradd $username -d $dir -m -s $shell -u $uid -c $finger -h 0";
-      this.form.useradd_stdin.value = "$_password\n";
-      this.form.userdel.value = "lockf /etc/passwd.lock pw userdel $username -r"; this.form.userdel_stdin.value="";
-      this.form.usermod.value = "lockf /etc/passwd.lock pw usermod $old_username -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -g $new_gid -c $new_finger -h 0";
-      this.form.usermod_stdin.value = "$new__password\n"; this.form.suspend.value = "lockf /etc/passwd.lock pw lock $username";
-      this.form.suspend_stdin.value="";
-      this.form.unsuspend.value = "lockf /etc/passwd.lock pw unlock $username"; this.form.unsuspend_stdin.value="";
-    '>
-    Note: On FreeBSD versions before 5.3 and 4.10 (4.10 is after 4.9, not
-    4.1!), due to deficient locking in pw(1), you must disable the chpass(1),
-    chsh(1), chfn(1), passwd(1), and vipw(1) commands, or replace them with
-    wrappers that prepend "lockf /etc/passwd.lock".  Alternatively, apply the
-    patch in
-    <A HREF="http://www.freebsd.org/cgi/query-pr.cgi?pr=23501">FreeBSD PR#23501</A>
-    and use the "FreeBSD 4.10 / 5.3 or later" button below.
-  <LI>
-    <INPUT TYPE="button" VALUE="FreeBSD 4.10 / 5.3 or later" onClick='
+    <INPUT TYPE="button" VALUE="FreeBSD" onClick='
       this.form.useradd.value = "pw useradd $username -d $dir -m -s $shell -u $uid -g $gid -c $finger -h 0";
       this.form.useradd_stdin.value = "$_password\n";
       this.form.userdel.value = "pw userdel $username -r";

@@ -668,3 +668,7 @@ t/cust_bill_pkg_discount_void.t
 FS/Trace.pm
 FS/agent_pkg_class.pm
 t/agent_pkg_class.t
+FS/part_export_machine.pm
+t/part_export_machine.t
+FS/svc_export_machine.pm
+t/svc_export_machine.t

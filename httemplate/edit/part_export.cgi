@@ -13,12 +13,6 @@
   </TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Export host</TD>
-  <TD>
-    <INPUT TYPE="text" NAME="machine" VALUE="<% $part_export->machine %>">
-  </TD>
-</TR>
-<TR>
   <TD ALIGN="right">Export</TD>
   <TD><% $widget->html %>
 
@@ -63,7 +57,7 @@ my $widget = new HTML::Widgets::SelectLayers(
   'options'        => \%layers,
   'form_name'      => 'dummy',
   'form_action'    => 'process/part_export.cgi',
-  'form_text'      => [qw( exportnum exportname machine )],
+  'form_text'      => [qw( exportnum exportname )],
 #  'form_checkbox'  => [qw()],
   'html_between'    => "</TD></TR></TABLE>\n",
   'layer_callback'  => sub {
@@ -71,9 +65,69 @@ my $widget = new HTML::Widgets::SelectLayers(
     my $html = qq!<INPUT TYPE="hidden" NAME="exporttype" VALUE="$layer">!.
                ntable("#cccccc",2);
 
-    $html .= '<TR><TD ALIGN="right">Description</TD><TD BGCOLOR=#ffffff>'.
-             $exports->{$layer}{notes}. '</TD></TR>'
-      if $layer;
+    if ( $layer ) {
+      $html .= '<TR><TD ALIGN="right">Description</TD><TD BGCOLOR=#ffffff>'.
+               $exports->{$layer}{notes}. '</TD></TR>';
+
+      if ( $exports->{$layer}{no_machine} ) {
+        $html .= '<INPUT TYPE="hidden" NAME="machine" VALUE="">'.
+                 '<INPUT TYPE="hidden" NAME="svc_machine" VALUE=N">';
+      } else {
+        $html .= '<TR><TD ALIGN="right">Hostname or IP</TD><TD>';
+        my $machine = $part_export->machine;
+        if ( $exports->{$layer}{svc_machine} ) {
+          my( $N_CHK, $Y_CHK) = ( 'CHECKED', '' );
+          my( $machine_DISABLED, $pem_DISABLED) = ( '', 'DISABLED' );
+          my $part_export_machine = '';
+          if ( $cgi->param('svc_machine') eq 'Y'
+                 || $machine eq '_SVC_MACHINE'
+             )
+          {
+            $Y_CHK = 'CHECKED';
+            $N_CHK = 'CHECKED';
+            $machine_DISABLED = 'DISABLED';
+            $pem_DISABLED = '';
+            $machine = '';
+            $part_export_machine =
+              $cgi->param('part_export_machine')
+              || join "\n",
+                   map $_->machine,
+                     grep ! $_->disabled,
+                       $part_export->part_export_machine;
+          }
+          my $oc = qq(onChange="${layer}_svc_machine_changed(this)");
+          $html .= qq[
+            <INPUT TYPE="radio" NAME="svc_machine" VALUE="N" $N_CHK $oc>
+            <INPUT TYPE="text" NAME="machine" ID="${layer}_machine" VALUE="$machine" $machine_DISABLED>
+            <BR>
+            <INPUT TYPE="radio" NAME="svc_machine" VALUE="Y" $Y_CHK $oc>
+            Selected in each customer service from these choices
+            <TEXTAREA NAME="part_export_machine" ID="${layer}_part_export_machine" $pem_DISABLED>$part_export_machine</TEXTAREA>
+
+            <SCRIPT TYPE="text/javascript">
+              function ${layer}_svc_machine_changed (what) {
+                if ( what.checked ) {
+                  var machine = document.getElementById("${layer}_machine");
+                  var part_export_machine = document.getElementById("${layer}_part_export_machine");
+                  if ( what.value == 'Y' ) {
+                    machine.disabled = true;
+                    part_export_machine.disabled = false;
+                  } else if ( what.value == 'N' ) {
+                    machine.disabled = false;
+                    part_export_machine.disabled = true;
+                  }
+                }
+              }
+            </SCRIPT>
+          ];
+        } else {
+          $html .= qq(<INPUT TYPE="text" NAME="machine" VALUE="$machine">).
+                     '<INPUT TYPE="hidden" NAME="svc_machine" VALUE=N">';
+        }
+        $html .= "</TD></TR>";
+      }
+
+    }
 
     foreach my $option ( keys %{$exports->{$layer}{options}} ) {
       my $optinfo = $exports->{$layer}{options}{$option};

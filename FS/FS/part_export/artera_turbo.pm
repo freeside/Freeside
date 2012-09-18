@@ -37,6 +37,7 @@ tie my %options, 'Tie::IxHash',
     'Real-time export to Artera Turbo Reseller API',
   'options'  => \%options,
   #'nodomain' => 'Y',
+  'no_machine' => 1,
   'notes'    => <<'END'
 Real-time export to <a href="http://www.arteraturbo.com/">Artera Turbo</a>
 Reseller API.  Requires installation of

@@ -43,6 +43,7 @@ FS::UID->install_callback(
   'svc'     => 'svc_broadband',
   'desc'    => 'Create a NAS entry in Freeside',
   'options' => \%options,
+  'no_machine' => 1,
   'weight'  => 10,
   'notes'   => <<'END'
 <p>Create an entry in the NAS (RADIUS client) table, inheriting the IP 

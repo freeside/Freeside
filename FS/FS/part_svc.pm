@@ -591,7 +591,7 @@ sub _svc_defs {
       };
       my $mod = $1;
 
-      if ( $mod =~ /^svc_[A-Z]/ or $mod =~ /^svc_acct_pop$/ ) {
+      if ( $mod =~ /^svc_[A-Z]/ or $mod =~ /^(svc_acct_pop|svc_export_machine)$/ ) {
         warn "skipping FS::$mod" if $DEBUG;
 	next;
       }

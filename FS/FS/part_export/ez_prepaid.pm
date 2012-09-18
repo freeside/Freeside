@@ -34,6 +34,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_external',
   'desc'    => 'Purchase EZ-Prepaid PIN',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END'
 <P>Export to the EZ-Prepaid PIN purchase service.  If the purchase is allowed,
 the PIN will be stored as svc_external.id.</P>

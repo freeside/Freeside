@@ -55,6 +55,7 @@ tie %options, 'Tie::IxHash',
   'svc'      => 'svc_broadband',
   'desc'     => 'Real-time export to SQL-backed RADIUS (such as FreeRadius) for broadband services',
   'options'  => \%options,
+  'no_machine' => 1,
   'nas'      => 'Y',
   'notes'    => <<END,
 Real-time export of <b>radcheck</b>, <b>radreply</b>, and <b>usergroup</b> 

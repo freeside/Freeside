@@ -17,6 +17,8 @@ tie my %options, 'Tie::IxHash',
   'desc'     => 'Real-time export to Cyrus IMAP server',
   'options'  => \%options,
   'nodomain' => 'Y',
+  'no_machine' => 1, #de facto... but "server" option should move to it
+  'default_svc_class' => 'Email',
   'notes'    => <<'END'
 Integration with
 <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>.

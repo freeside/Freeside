@@ -34,6 +34,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_acct',
   'desc'    => 'Configurable provisioning of accounts via the XML-RPC protocol',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END',
 Configurable, real-time export of accounts via the XML-RPC protocol.<BR>
 <BR>

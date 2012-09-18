@@ -20,6 +20,7 @@ tie my %options, 'Tie::IxHash',
   'desc'     =>
     'Export to Amazon EC2',
   'options'  => \%options,
+  'no_machine' => 1,
   'notes'    => <<'END'
 Create instances in the Amazon EC2 (Elastic compute cloud).  Install
 Net::Amazon::EC2 perl module.  Advisable to set svc_external-skip_manual config

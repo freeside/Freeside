@@ -2421,10 +2421,9 @@ sub ut_coordn {
 
 }
 
-
 =item ut_domain COLUMN
 
-Check/untaint host and domain names.
+Check/untaint host and domain names.  May not be null.
 
 =cut
 
@@ -2432,9 +2431,25 @@ sub ut_domain {
   my( $self, $field ) = @_;
   #$self->getfield($field) =~/^(\w+\.)*\w+$/
   $self->getfield($field) =~/^(([\w\-]+\.)*\w+)$/
-    or return "Illegal (domain) $field: ". $self->getfield($field);
+    or return "Illegal (hostname) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
+}
+
+=item ut_domainn COLUMN
+
+Check/untaint host and domain names.  May be null.
+
+=cut
+
+sub ut_domainn {
+  my( $self, $field ) = @_;
+  if ( $self->getfield($field) =~ /^()$/ ) {
+    $self->setfield($field,'');
+    '';
+  } else {
+    $self->ut_domain($field);
+  }
 }
 
 =item ut_name COLUMN

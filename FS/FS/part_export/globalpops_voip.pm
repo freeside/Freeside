@@ -19,6 +19,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_phone',
   'desc'    => 'Provision phone numbers to VoIP Innovations (formerly GlobalPOPs VoIP)',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END'
 Requires installation of
 <a href="http://search.cpan.org/dist/Net-GlobalPOPs-MediaServicesAPI">Net::GlobalPOPs::MediaServicesAPI</a>

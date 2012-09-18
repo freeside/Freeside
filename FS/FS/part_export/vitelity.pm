@@ -26,6 +26,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_phone',
   'desc'    => 'Provision phone numbers to Vitelity',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END'
 Requires installation of
 <a href="http://search.cpan.org/dist/Net-Vitelity">Net::Vitelity</a>
