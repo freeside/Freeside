@@ -1516,7 +1516,7 @@ sub _upgrade_data { # class method
     );
     if ( $bad_upgrade ) {
       my $where = 'WHERE history_date <= '.$bad_upgrade->_date.
-                  ' AND  history_date >  '.($bad_upgrade->_date - 600);
+                  ' AND  history_date >  '.($bad_upgrade->_date - 3600);
       my @h_part_pkg_option = map { FS::part_pkg_option->new($_->hashref) }
         qsearch({
           'select'    => '*',
