@@ -7,7 +7,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
 @ISA = qw(FS::cdr);
 
 %info = (
-  'name'          => 'Taqua',
+  'name'          => 'Taqua v6.0',
   'weight'        => 130,
   'header'        => 1,
   'import_fields' => [  #some of these are kind arbitrary...
