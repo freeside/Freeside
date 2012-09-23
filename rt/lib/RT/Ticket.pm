@@ -1124,7 +1124,7 @@ sub AddWatcher {
         return (0, $self->loc("Couldn't parse address from '[_1]' string", $args{'Email'} ))
             unless $addr;
 
-        if ( lc $self->CurrentUser->UserObj->EmailAddress
+        if ( lc $self->CurrentUser->EmailAddress
             eq lc RT::User->CanonicalizeEmailAddress( $addr->address ) )
         {
             $args{'PrincipalId'} = $self->CurrentUser->id;
@@ -1305,7 +1305,7 @@ sub DeleteWatcher {
             }
         }
         else {
-            $RT::Logger->warn("$self -> DeleteWatcher got passed a bogus type");
+            $RT::Logger->warning("$self -> DeleteWatcher got passed a bogus type");
             return ( 0,
                      $self->loc('Error in parameters to Ticket->DeleteWatcher') );
         }
@@ -1989,6 +1989,31 @@ sub FirstActiveStatus {
     return $next;
 }
 
+=head2 FirstInactiveStatus
+
+Returns the first inactive status that the ticket could transition to,
+according to its current Queue's lifecycle.  May return undef if there
+is no such possible status to transition to, or we are already in it.
+This is used in resolve action in UnsafeEmailCommands, for instance.
+
+=cut
+
+sub FirstInactiveStatus {
+    my $self = shift;
+
+    my $lifecycle = $self->QueueObj->Lifecycle;
+    my $status = $self->Status;
+    my @inactive = $lifecycle->Inactive;
+    # no change if no inactive statuses in the lifecycle
+    return undef unless @inactive;
+
+    # no change if the ticket is already has first status from the list of inactive
+    return undef if lc $status eq lc $inactive[0];
+
+    my ($next) = grep $lifecycle->IsInactive($_), $lifecycle->Transitions($status);
+    return $next;
+}
+
 =head2 SetStarted
 
 Takes a date in ISO format or undef
@@ -2315,7 +2340,9 @@ sub _RecordNote {
     my $msgid = $args{'MIMEObj'}->head->get('Message-ID');
     unless (defined $msgid && $msgid =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@\Q$org\E>/) {
         $args{'MIMEObj'}->head->set(
-            'RT-Message-ID' => RT::Interface::Email::GenMessageId( Ticket => $self )
+            'RT-Message-ID' => Encode::encode_utf8(
+                RT::Interface::Email::GenMessageId( Ticket => $self )
+            )
         );
     }
 
@@ -3340,6 +3367,28 @@ sub SeenUpTo {
     return $txns->First;
 }
 
+=head2 RanTransactionBatch
+
+Acts as a guard around running TransactionBatch scrips.
+
+Should be false until you enter the code that runs TransactionBatch scrips
+
+Accepts an optional argument to indicate that TransactionBatch Scrips should no longer be run on this object.
+
+=cut
+
+sub RanTransactionBatch {
+    my $self = shift;
+    my $val = shift;
+
+    if ( defined $val ) {
+        return $self->{_RanTransactionBatch} = $val;
+    } else {
+        return $self->{_RanTransactionBatch};
+    }
+
+}
+
 
 =head2 TransactionBatch
 
@@ -3376,6 +3425,22 @@ sub ApplyTransactionBatch {
 
 sub _ApplyTransactionBatch {
     my $self = shift;
+
+    return if $self->RanTransactionBatch;
+    $self->RanTransactionBatch(1);
+
+    my $still_exists = RT::Ticket->new( RT->SystemUser );
+    $still_exists->Load( $self->Id );
+    if (not $still_exists->Id) {
+        # The ticket has been removed from the database, but we still
+        # have pending TransactionBatch txns for it.  Unfortunately,
+        # because it isn't in the DB anymore, attempting to run scrips
+        # on it may produce unpredictable results; simply drop the
+        # batched transactions.
+        $RT::Logger->warning("TransactionBatch was fired on a ticket that no longer exists; unable to run scrips!  Call ->ApplyTransactionBatch before shredding the ticket, for consistent results.");
+        return;
+    }
+
     my $batch = $self->TransactionBatch;
 
     my %seen;
@@ -3423,10 +3488,7 @@ sub DESTROY {
         return;
     }
 
-    my $batch = $self->TransactionBatch;
-    return unless $batch && @$batch;
-
-    return $self->_ApplyTransactionBatch;
+    return $self->ApplyTransactionBatch;
 }
 
 

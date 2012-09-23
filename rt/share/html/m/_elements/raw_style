@@ -33,6 +33,7 @@ div.buttons {
     background-color: #ccc;
     -moz-border-radius: 0.25em;
     -webkit-border-radius: 0.25em;
+    border-radius: 0.25em;
     -webkit-box-shadow: #333 0px 0px 5px;
     -moz-box-shadow: #333 0px 0px 5px;
     box-shadow: #333 0px 0px 5px;
@@ -85,6 +86,7 @@ ul.menu li#active a
 div.titlebox, #bpscredits, .ticket_menu{
     -moz-border-radius: 1em;
     -webkit-border-radius: 1em;
+    border-radius: 1em;
     margin: 0.5em;
     background-color: #fff;
     padding-top: 1em;
@@ -336,6 +338,7 @@ input[type=submit], input[type=button], button, #paging a {
     padding-right: 0.6em;
     -moz-border-radius: 0.5em;
     -webkit-border-radius: 0.5em;
+    border-radius: 0.5em;
     background-color: #006699;
     color: #fff;
 }
@@ -353,6 +356,7 @@ form {
     border-bottom: 1px solid black;
     -moz-border-radius-bottomleft: 1em;
     -webkit-border-bottom-left-radius: 1em;
+    border-bottom-left-radius: 1em;
     padding: 0.5em;
     background-color: #fff;
 }

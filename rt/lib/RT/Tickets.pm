@@ -436,6 +436,10 @@ sub _LinkLimit {
     my $is_null = 0;
     $is_null = 1 if !$value || $value =~ /^null$/io;
 
+    unless ($is_null) {
+        $value = RT::URI->new( $sb->CurrentUser )->CanonicalizeURI( $value );
+    }
+
     my $direction = $meta->[1] || '';
     my ($matchfield, $linkfield) = ('', '');
     if ( $direction eq 'To' ) {
@@ -1651,6 +1655,7 @@ sub _CustomFieldLimit {
                 FIELD      => $column,
                 OPERATOR   => $op,
                 VALUE      => $value,
+                CASESENSITIVE => 0,
                 %rest
             ) );
             $self->_CloseParen;
@@ -1713,6 +1718,7 @@ sub _CustomFieldLimit {
                         FIELD    => 'Content',
                         OPERATOR => $op,
                         VALUE    => $value,
+                        CASESENSITIVE => 0,
                         %rest
                     );
                 }
@@ -1739,6 +1745,7 @@ sub _CustomFieldLimit {
                         OPERATOR        => $op,
                         VALUE           => $value,
                         ENTRYAGGREGATOR => 'AND',
+                        CASESENSITIVE => 0,
                     ) );
                 }
             }
@@ -1748,6 +1755,7 @@ sub _CustomFieldLimit {
                     FIELD    => 'Content',
                     OPERATOR => $op,
                     VALUE    => $value,
+                    CASESENSITIVE => 0,
                     %rest
                 );
 
@@ -1774,6 +1782,7 @@ sub _CustomFieldLimit {
                     OPERATOR        => $op,
                     VALUE           => $value,
                     ENTRYAGGREGATOR => 'AND',
+                    CASESENSITIVE => 0,
                 ) );
                 $self->_CloseParen;
             }
@@ -1830,6 +1839,7 @@ sub _CustomFieldLimit {
                 FIELD      => $column,
                 OPERATOR   => $op,
                 VALUE      => $value,
+                CASESENSITIVE => 0,
             ) );
         }
         else {
@@ -1839,6 +1849,7 @@ sub _CustomFieldLimit {
                 FIELD      => 'Content',
                 OPERATOR   => $op,
                 VALUE      => $value,
+                CASESENSITIVE => 0,
             );
         }
         $self->_SQLLimit(
