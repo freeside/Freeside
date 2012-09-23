@@ -560,8 +560,8 @@ MAKEFLAGS=
 # Identity of this package.
 PACKAGE_NAME='RT'
 PACKAGE_TARNAME='rt'
-PACKAGE_VERSION='3.8.13'
-PACKAGE_STRING='RT 3.8.13'
+PACKAGE_VERSION='3.8.14'
+PACKAGE_STRING='RT 3.8.14'
 PACKAGE_BUGREPORT='rt-bugs@bestpractical.com'
 PACKAGE_URL=''
 
@@ -1302,7 +1302,7 @@ if test "$ac_init_help" = "long"; then
   # Omit some internal or obsolete options to make the list less imposing.
   # This message is too long to be a string in the A/UX 3.1 sh.
   cat <<_ACEOF
-\`configure' configures RT 3.8.13 to adapt to many kinds of systems.
+\`configure' configures RT 3.8.14 to adapt to many kinds of systems.
 
 Usage: $0 [OPTION]... [VAR=VALUE]...
 
@@ -1363,7 +1363,7 @@ fi
 
 if test -n "$ac_init_help"; then
   case $ac_init_help in
-     short | recursive ) echo "Configuration of RT 3.8.13:";;
+     short | recursive ) echo "Configuration of RT 3.8.14:";;
    esac
   cat <<\_ACEOF
 
@@ -1943,7 +1943,7 @@ rt_version_major=3
 
 rt_version_minor=8
 
-rt_version_patch=13
+rt_version_patch=14
 
 test "x$rt_version_major" = 'x' && rt_version_major=0
 test "x$rt_version_minor" = 'x' && rt_version_minor=0
