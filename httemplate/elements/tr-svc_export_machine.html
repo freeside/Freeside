@@ -1,0 +1,37 @@
+% foreach my $part_export (@part_export) {
+%   my $label = ( $part_export->exportname
+%                   ? $part_export->exportname
+%                   : $part_export->label
+%               ).
+%               ' hostname';
+%
+%   my $element = 'exportnum'. $part_export->exportnum. 'machinenum';
+%   my $machinenum = $opt{cgi}->param($element);
+%   if ( ! $machinenum && $opt{svc}->svcnum ) {
+%     my $svc_export_machine = qsearchs('svc_export_machine', {
+%       'svcnum'    => $opt{svc}->svcnum,
+%       'exportnum' => $part_export->exportnum,
+%     });
+%     $machinenum = $svc_export_machine->machinenum if $svc_export_machine;
+%   }
+
+    <& /elements/tr-select-table.html,
+         'label'        => $label,
+         'element_name' => 'exportnum'. $part_export->exportnum. 'machinenum',
+         'table'        => 'part_export_machine',
+         'name_col'     => 'machine',
+         'hashref'      => { 'exportnum' => $part_export->exportnum,
+                             'disabled'  => '',
+                           },
+         'curr_value'   => $machinenum,
+         'empty_label'  => 'Select export hostname',
+    &>
+% }
+<%init>
+
+my %opt = @_;
+
+my @part_export = grep { $_->machine eq '_SVC_MACHINE' }
+                    $opt{part_svc}->part_export;
+
+</%init>

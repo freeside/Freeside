@@ -2,9 +2,12 @@ package FS::svc_export_machine;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record; # qw( qsearch qsearchs );
+use FS::Record qw( qsearchs ); #qsearch );
 use FS::cust_svc;
+use FS::part_export;
 use FS::part_export_machine;
+
+sub _svc_child_partfields { ('exportnum') };
 
 =head1 NAME
 
@@ -89,12 +92,22 @@ sub check {
 
   my $error = 
     $self->ut_numbern('svcexportmachinenum')
-    || $self->ut_foreign_key('svcnum', 'cust_svc', 'svcnum')
-    || $self->ut_foreign_key('machinenum', 'part_export_machine', 'machinenum' )
+    || $self->ut_foreign_key('svcnum',     'cust_svc',            'svcnum'    )
+    || $self->ut_foreign_key('exportnum',  'part_export',         'exportnum' )
+    || $self->ut_foreign_key('machinenum', 'part_export_machine', 'machinenum')
   ;
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item part_export_machine
+
+=cut
+
+sub part_export_machine {
+  my $self = shift;
+  qsearchs('part_export_machine', { 'machinenum' => $self->machinenum } );
 }
 
 =back

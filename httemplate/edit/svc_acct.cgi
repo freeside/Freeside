@@ -173,6 +173,12 @@ function randomPass() {
     <INPUT TYPE="hidden" NAME="sectornum" VALUE="<% $svc_acct->sectornum %>">
 %}
 
+<& /elements/tr-svc_export_machine.html,
+     'svc'      => $svc_acct,
+     'part_svc' => $part_svc,
+     'cgi'      => $cgi,
+&>
+
 % #uid/gid 
 % foreach my $xid (qw( uid gid )) { 
 %

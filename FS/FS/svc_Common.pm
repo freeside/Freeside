@@ -200,12 +200,13 @@ I<depend_jobnum>.
 If I<jobnum> is set to an array reference, the jobnums of any export jobs will
 be added to the referenced array.
 
-If I<child_objects> is set to an array reference of FS::tablename objects (for
-example, FS::acct_snarf objects), they will have their svcnum field set and
-will be inserted after this record, but before any exports are run.  Each
-element of the array can also optionally be a two-element array reference
-containing the child object and the name of an alternate field to be filled in
-with the newly-inserted svcnum, for example C<[ $svc_forward, 'srcsvc' ]>
+If I<child_objects> is set to an array reference of FS::tablename objects
+(for example, FS::svc_export_machine or FS::acct_snarf objects), they
+will have their svcnum field set and will be inserted after this record,
+but before any exports are run.  Each element of the array can also
+optionally be a two-element array reference containing the child object
+and the name of an alternate field to be filled in with the newly-inserted
+svcnum, for example C<[ $svc_forward, 'srcsvc' ]>
 
 If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
 jobnums), all provisioning jobs will have a dependancy on the supplied
@@ -439,7 +440,16 @@ sub expire {
 Replaces OLD_RECORD with this one.  If there is an error, returns the error,
 otherwise returns false.
 
-Currently available options are: I<export_args> and I<depend_jobnum>.
+Currently available options are: I<child_objects>, I<export_args> and
+I<depend_jobnum>.
+
+If I<child_objects> is set to an array reference of FS::tablename objects
+(for example, FS::svc_export_machine or FS::acct_snarf objects), they
+will have their svcnum field set and will be inserted or replaced after
+this record, but before any exports are run.  Each element of the array
+can also optionally be a two-element array reference containing the
+child object and the name of an alternate field to be filled in with
+the newly-inserted svcnum, for example C<[ $svc_forward, 'srcsvc' ]>
 
 If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
 jobnums), all provisioning jobs will have a dependancy on the supplied
@@ -461,6 +471,8 @@ sub replace {
     ( ref($_[0]) eq 'HASH' )
       ? shift
       : { @_ };
+
+  my $objects = $options->{'child_objects'} || [];
 
   my @jobnums = ();
   local $FS::queue::jobnums = \@jobnums;
@@ -509,6 +521,34 @@ sub replace {
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  foreach my $object ( @$objects ) {
+    my($field, $obj);
+    if ( ref($object) eq 'ARRAY' ) {
+      ($obj, $field) = @$object;
+    } else {
+      $obj = $object;
+      $field = 'svcnum';
+    }
+    $obj->$field($new->svcnum);
+
+    my $oldobj = qsearchs( $obj->table, {
+                             $field => $new->svcnum,
+                             map { $_ => $obj->$_ } $obj->_svc_child_partfields,
+                         });
+
+    if ( $oldobj ) {
+      my $pkey = $oldobj->primary_key;
+      $obj->$pkey($oldobj->$pkey);
+      $obj->replace($oldobj);
+    } else {
+      $error = $obj->insert;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   #new-style exports!

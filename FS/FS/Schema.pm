@@ -1894,10 +1894,11 @@ sub tables_hashref {
       'columns' => [
         'svcexportmachinenum', 'serial', '', '', '', '',
         'svcnum',                 'int', '', '', '', '', 
+        'exportnum',              'int', '', '', '', '', 
         'machinenum',             'int', '', '', '', '',
       ],
       'primary_key' => 'svcexportmachinenum',
-      'unique'      => [],
+      'unique'      => [ ['svcnum', 'exportnum'] ],
       'index'       => [],
     },
 

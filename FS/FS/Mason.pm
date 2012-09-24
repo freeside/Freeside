@@ -325,6 +325,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_tax_exempt_pkg_void;
   use FS::cust_bill_pkg_discount_void;
   use FS::agent_pkg_class;
+  use FS::svc_export_machine;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

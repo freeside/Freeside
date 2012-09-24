@@ -1,0 +1,27 @@
+% foreach my $part_export (@part_export) {
+%   my $label = ( $part_export->exportname
+%                   ? $part_export->exportname
+%                   : $part_export->label
+%               ).
+%               ' hostname';
+%
+%   my $svc_export_machine = qsearchs('svc_export_machine', {
+%     'svcnum'    => $opt{svc}->svcnum,
+%     'exportnum' => $part_export->exportnum,
+%   });
+
+    <& tr.html,
+         'label' => $label,
+         'value' => $svc_export_machine
+                      ? $svc_export_machine->part_export_machine->machine
+                      : '',
+    &>
+% }
+<%init>
+
+my %opt = @_;
+
+my @part_export = grep { $_->machine eq '_SVC_MACHINE' }
+                    $opt{part_svc}->part_export;
+
+</%init>
