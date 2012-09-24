@@ -80,10 +80,11 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'     => 'svc_acct',
-  'desc'    => 'Real-time export via remote SSH (vpopmail, ISPMan)',
-  'options' => \%options,
-  'notes'   => <<'END'
+  'svc'         => 'svc_acct',
+  'desc'        => 'Real-time export via remote SSH (vpopmail, ISPMan, MagicMail)',
+  'options'     => \%options,
+  'svc_machine' => 1,
+  'notes'       => <<'END'
 Run remote commands via SSH.  username@domain (rather than just usernames) are
 considered unique (also see shellcommands).  You probably want this if the
 commands you are running will accept a domain as a parameter, and will allow

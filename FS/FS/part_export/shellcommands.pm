@@ -98,8 +98,7 @@ tie my %options, 'Tie::IxHash',
 
 %info = (
   'svc'         => 'svc_acct',
-  'desc'        =>
-    'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
+  'desc'        => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
   'options'     => \%options,
   'nodomain'    => 'Y',
   'svc_machine' => 1,
@@ -344,7 +343,7 @@ sub _export_command {
 
   my @ssh_cmd_args = (
     user          => $self->option('user') || 'root',
-    host          => $self->machine,
+    host          => $self->svc_machine($svc_acct),
     command       => $command_string,
     stdin_string  => $stdin_string,
     ignored_errors    => $self->option('ignored_errors') || '',
@@ -357,7 +356,7 @@ sub _export_command {
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
     $error = $error->full_message if ref $error; # Exception::Class::Base
-    return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+    return $error. ' ('. $self->exporttype. ' to '. $self->svc_machine($svc_acct). ')'
       if $error;
   }
   else {
@@ -417,7 +416,7 @@ sub _export_replace {
     #  $error ||= "can't change RADIUS groups";
     #}
   }
-  return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+  return $error. ' ('. $self->exporttype. ' to '. $self->svc_machine($new). ')'
     if $error;
 
   $new_agent_custid = $new_cust_main ? $new_cust_main->agent_custid : '';
@@ -441,7 +440,7 @@ sub _export_replace {
 
   my @ssh_cmd_args = (
     user          => $self->option('user') || 'root',
-    host          => $self->machine,
+    host          => $self->svc_machine($new),
     command       => $command_string,
     stdin_string  => $stdin_string,
     ignored_errors    => $self->option('ignored_errors') || '',
@@ -454,7 +453,7 @@ sub _export_replace {
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
     $error = $error->full_message if ref $error; # Exception::Class::Base
-    return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+    return $error. ' ('. $self->exporttype. ' to '. $self->svc_machine($new). ')'
       if $error;
   }
   else {

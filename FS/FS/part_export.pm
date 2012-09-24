@@ -9,6 +9,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_svc;
 use FS::part_export_option;
 use FS::part_export_machine;
+use FS::svc_export_machine;
 use FS::export_svc;
 
 #for export modules, though they should probably just use it themselves
@@ -468,6 +469,26 @@ sub _rebless {
   #die $@ if $@;
   bless($self, $class) unless $@;
   $self;
+}
+
+=item svc_machine
+
+=cut
+
+sub svc_machine {
+  my( $self, $svc_x ) = @_;
+
+  return $self->machine unless $self->machine eq '_SVC_MACHINE';
+
+  my $svc_export_machine = qsearchs('svc_export_machine', {
+    'svcnum'    => $svc_x->svcnum,
+    'exportnum' => $self->exportnum,
+  })
+    #would only happen if you add this export to existing services without a
+    #machine set then try to run exports without setting it... right?
+    or die "No hostname selected for ".($self->exportname || $self->exporttype);
+
+  return $svc_export_machine->part_export_machine->machine;
 }
 
 #these should probably all go away, just let the subclasses define em
