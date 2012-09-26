@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA @EXPORT_OK $conf
              @cust_main_county %cust_main_county $countyflag ); # $cityflag );
 use Exporter;
-use FS::Record qw( qsearch dbh );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_bill_pkg;
 use FS::cust_bill;
 use FS::cust_pkg;
@@ -164,6 +164,57 @@ sub recurtax {
   return '';
 }
 
+=item label OPTIONS
+
+Returns a label looking like "Anytown, Alameda County, CA, US".
+
+If the taxname field is set, it will look like
+"CA Sales Tax (Anytown, Alameda County, CA, US)".
+
+If the taxclass is set, then it will be
+"Anytown, Alameda County, CA, US (International)".
+
+Currently it will not contain the district, even if the city+county+state
+is not unique.
+
+OPTIONS may contain "no_taxclass" (hides taxclass) and/or "no_city"
+(hides city).  It may also contain "out", in which case, if this 
+region (district+city+county+state+country) contains no non-zero 
+taxes, the label will read "Out of taxable region(s)".
+
+=cut
+
+sub label {
+  my ($self, %opt) = @_;
+  if ( $opt{'out'} 
+       and $self->tax == 0
+       and !defined(qsearchs('cust_main_county', {
+           'district' => $self->district,
+           'city'     => $self->city,
+           'county'   => $self->county,
+           'state'    => $self->state,
+           'country'  => $self->country,
+           'tax'  => { op => '>', value => 0 },
+        })) )
+  {
+    return 'Out of taxable region(s)';
+  }
+  my $label = $self->country;
+  $label = $self->state.", $label" if $self->state;
+  $label = $self->county." County, $label" if $self->county;
+  if (!$opt{no_city}) {
+    $label = $self->city.", $label" if $self->city;
+  }
+  # ugly labels when taxclass and taxname are both non-null...
+  # but this is how the tax report does it
+  if (!$opt{no_taxclass}) {
+    $label = "$label (".$self->taxclass.')' if $self->taxclass;
+  }
+  $label = $self->taxname." ($label)" if $self->taxname;
+
+  $label;
+}
+
 =item sql_taxclass_sameregion
 
 Returns an SQL WHERE fragment or the empty string to search for entries
@@ -207,21 +258,30 @@ sub _list_sql {
 
 =item taxline TAXABLES_ARRAYREF, [ OPTION => VALUE ... ]
 
-Returns a listref of a name and an amount of tax calculated for the list of
-packages or amounts referenced by TAXABLES_ARRAYREF.  Returns a scalar error
-message on error.  
+Returns an hashref of a name and an amount of tax calculated for the 
+line items (L<FS::cust_bill_pkg> objects) in TAXABLES_ARRAYREF.  The line 
+items must come from the same invoice.  Returns a scalar error message 
+on error.
 
-Options include custnum and invoice_date and are hints to this method
+In addition to calculating the tax for the line items, this will calculate
+any appropriate tax exemptions and attach them to the line items.
+
+Options may include 'custnum' and 'invoice_date' in case the cust_bill_pkg
+objects belong to an invoice that hasn't been inserted yet.
+
+Options may include 'exemptions', an arrayref of L<FS::cust_tax_exempt_pkg>
+objects belonging to the same customer, to be counted against the monthly 
+tax exemption limit if there is one.
 
 =cut
 
+# XXX this should just return a cust_bill_pkg object for the tax,
+# but that requires changing stuff in tax_rate.pm also.
+
 sub taxline {
   my( $self, $taxables, %opt ) = @_;
+  return 'taxline called with no line items' unless @$taxables;
 
-  my @exemptions = ();
-  push @exemptions, @{ $_->_cust_tax_exempt_pkg }
-    for grep { ref($_) } @$taxables;
-    
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -236,29 +296,92 @@ sub taxline {
   my $name = $self->taxname || 'Tax';
   my $amount = 0;
 
+  my $cust_bill = $taxables->[0]->cust_bill;
+  my $custnum   = $cust_bill ? $cust_bill->custnum : $opt{'custnum'};
+  my $invoice_date = $cust_bill ? $cust_bill->_date : $opt{'invoice_date'};
+  my $cust_main = FS::cust_main->by_key($custnum) if $custnum > 0;
+  if (!$cust_main) {
+    # better way to handle this?  should we just assume that it's taxable?
+    die "unable to calculate taxes for an unknown customer\n";
+  }
+
+  # set a flag if the customer is tax-exempt
+  my $exempt_cust;
+  my $conf = FS::Conf->new;
+  if ( $conf->exists('cust_class-tax_exempt') ) {
+    my $cust_class = $cust_main->cust_class;
+    $exempt_cust = $cust_class->tax if $cust_class;
+  } else {
+    $exempt_cust = $cust_main->tax;
+  }
+
+  # set a flag if the customer is exempt from this tax here
+  my $exempt_cust_taxname = $cust_main->tax_exemption($self->taxname)
+    if $self->taxname;
+
+  # Gather any exemptions that are already attached to these cust_bill_pkgs
+  # so that we can deduct them from the customer's monthly limit.
+  my @existing_exemptions = @{ $opt{'exemptions'} };
+  push @existing_exemptions, @{ $_->cust_tax_exempt_pkg }
+    for @$taxables;
+
   foreach my $cust_bill_pkg (@$taxables) {
 
     my $cust_pkg  = $cust_bill_pkg->cust_pkg;
-    my $cust_bill = $cust_pkg->cust_bill if $cust_pkg;
-    my $custnum   = $cust_pkg ? $cust_pkg->custnum : $opt{custnum};
     my $part_pkg  = $cust_bill_pkg->part_pkg;
-    my $invoice_date = $cust_bill ? $cust_bill->_date : $opt{invoice_date};
-  
-    my $taxable_charged = 0;
-    $taxable_charged += $cust_bill_pkg->setup
-      unless $part_pkg->setuptax =~ /^Y$/i
-          || $self->setuptax =~ /^Y$/i;
-    $taxable_charged += $cust_bill_pkg->recur
-      unless $part_pkg->recurtax =~ /^Y$/i
-          || $self->recurtax =~ /^Y$/i;
 
-    next unless $taxable_charged;
+    my @new_exemptions;
+    my $taxable_charged = $cust_bill_pkg->setup + $cust_bill_pkg->recur
+      or next; # don't create zero-amount exemptions
+
+    # XXX the following procedure should probably be in cust_bill_pkg
+
+    if ( $exempt_cust ) {
+
+      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+          amount => $taxable_charged,
+          exempt_cust => 'Y',
+        });
+      $taxable_charged = 0;
+
+    } elsif ( $exempt_cust_taxname ) {
+
+      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+          amount => $taxable_charged,
+          exempt_cust_taxname => 'Y',
+        });
+      $taxable_charged = 0;
+
+    }
+
+    if ( ($part_pkg->setuptax eq 'Y' or $self->setuptax eq 'Y')
+        and $cust_bill_pkg->setup > 0 and $taxable_charged > 0 ) {
+
+      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+          amount => $cust_bill_pkg->setup,
+          exempt_setup => 'Y'
+      });
+      $taxable_charged -= $cust_bill_pkg->setup;
+
+    }
+    if ( ($part_pkg->recurtax eq 'Y' or $self->recurtax eq 'Y')
+        and $cust_bill_pkg->recur > 0 and $taxable_charged > 0 ) {
+
+      push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+          amount => $cust_bill_pkg->recur,
+          exempt_recur => 'Y'
+      });
+      $taxable_charged -= $cust_bill_pkg->recur;
+    
+    }
   
-    if ( $self->exempt_amount && $self->exempt_amount > 0 ) {
+    if ( $self->exempt_amount && $self->exempt_amount > 0 
+      and $taxable_charged > 0 ) {
       #my ($mon,$year) = (localtime($cust_bill_pkg->sdate) )[4,5];
       my ($mon,$year) =
         (localtime( $cust_bill_pkg->sdate || $invoice_date ) )[4,5];
       $mon++;
+      $year += 1900;
       my $freq = $cust_bill_pkg->freq;
       unless ($freq) {
         $freq = $part_pkg->freq || 1;  # less trustworthy fallback
@@ -294,6 +417,7 @@ sub taxline {
               AND taxnum  = ?
               AND year    = ?
               AND month   = ?
+              AND exempt_monthly = 'Y'
         ";
         my $sth = dbh->prepare($sql) or do {
           $dbh->rollback if $oldAutoCommit;
@@ -302,7 +426,7 @@ sub taxline {
         $sth->execute(
           $custnum,
           $self->taxnum,
-          1900+$year,
+          $year,
           $mon,
         ) or do {
           $dbh->rollback if $oldAutoCommit;
@@ -311,9 +435,10 @@ sub taxline {
         my $existing_exemption = $sth->fetchrow_arrayref->[0] || 0;
 
         foreach ( grep { $_->taxnum == $self->taxnum &&
+                         $_->exempt_monthly eq 'Y'   &&
                          $_->month  == $mon          &&
-                         $_->year   == 1900+$year
-                       } @exemptions
+                         $_->year   == $year 
+                       } @existing_exemptions
                 )
         {
           $existing_exemption += $_->amount;
@@ -325,42 +450,50 @@ sub taxline {
           my $addl = $remaining_exemption > $taxable_per_month
             ? $taxable_per_month
             : $remaining_exemption;
+          push @new_exemptions, FS::cust_tax_exempt_pkg->new({
+              amount          => sprintf('%.2f', $addl),
+              exempt_monthly  => 'Y',
+              year            => $year,
+              month           => $mon,
+            });
           $taxable_charged -= $addl;
-
-          my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg ( {
-            'taxnum'     => $self->taxnum,
-            'year'       => 1900+$year,
-            'month'      => $mon,
-            'amount'     => sprintf('%.2f', $addl ),
-          } );
-          if ($cust_bill_pkg->billpkgnum) {
-            $cust_tax_exempt_pkg->billpkgnum($cust_bill_pkg->billpkgnum);
-            my $error = $cust_tax_exempt_pkg->insert;
-            if ( $error ) {
-              $dbh->rollback if $oldAutoCommit;
-              return "fatal: can't insert cust_tax_exempt_pkg: $error";
-            }
-          }else{
-            push @exemptions, $cust_tax_exempt_pkg;
-            push @{ $cust_bill_pkg->_cust_tax_exempt_pkg }, $cust_tax_exempt_pkg;
-          } # if $cust_bill_pkg->billpkgnum
-        } # if $remaining_exemption > 0
-
-        #++
+        }
+        last if $taxable_charged < 0.005;
+        # if they're using multiple months of exemption for a multi-month
+        # package, then record the exemptions in separate months
         $mon++;
-        #until ( $mon < 12 ) { $mon -= 12; $year++; }
-        until ( $mon < 13 ) { $mon -= 12; $year++; }
+        if ( $mon > 12 ) {
+          $mon -= 12;
+          $year++;
+        }
 
       } #foreach $which_month
+    } # if exempt_amount
 
-    } #if $tax->exempt_amount
+    $_->taxnum($self->taxnum) foreach @new_exemptions;
 
+    if ( $cust_bill_pkg->billpkgnum ) {
+      die "tried to calculate tax exemptions on a previously billed line item\n";
+      # this is unnecessary
+#      foreach my $cust_tax_exempt_pkg (@new_exemptions) {
+#        my $error = $cust_tax_exempt_pkg->insert;
+#        if ( $error ) {
+#          $dbh->rollback if $oldAutoCommit;
+#          return "can't insert cust_tax_exempt_pkg: $error";
+#        }
+#      }
+    }
+
+    # attach them to the line item
+    push @{ $cust_bill_pkg->cust_tax_exempt_pkg }, @new_exemptions;
+    push @existing_exemptions, @new_exemptions;
+
+    # If we were smart, we'd also generate a cust_bill_pkg_tax_location 
+    # record at this point, but that would require redesigning more stuff.
     $taxable_charged = sprintf( "%.2f", $taxable_charged);
 
-    $amount += $taxable_charged * $self->tax / 100
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    $amount += $taxable_charged * $self->tax / 100;
+  } #foreach $cust_bill_pkg
 
   return {
     'name'   => $name,

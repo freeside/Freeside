@@ -278,6 +278,9 @@ sub upgrade_data {
 
     #set up payment gateways if needed
     'pay_batch' => [],
+
+    #flag monthly tax exemptions
+    'cust_tax_exempt_pkg' => [],
   ;
 
   \%hash;

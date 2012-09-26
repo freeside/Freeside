@@ -114,10 +114,15 @@ sub check {
     $self->ut_number('exemptpkgnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg_void', 'billpkgnum' )
     || $self->ut_foreign_key('taxnum', 'cust_main_county', 'taxnum')
-    || $self->ut_number('year')
-    || $self->ut_number('month')
+    || $self->ut_numbern('year')
+    || $self->ut_numbern('month')
     || $self->ut_numbern('creditbillpkgnum') #no FK check, will have been del'ed
     || $self->ut_money('amount')
+    || $self->ut_flag('exempt_cust')
+    || $self->ut_flag('exempt_setup')
+    || $self->ut_flag('exempt_recur')
+    || $self->ut_flag('exempt_cust_taxname')
+    || $self->ut_flag('exempt_monthly')
   ;
   return $error if $error;
 
