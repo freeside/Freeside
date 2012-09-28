@@ -2688,6 +2688,8 @@ sub tables_hashref {
         'groupname',    'varchar', '', $char_d, '', '', 
         'description',  'varchar', 'NULL', $char_d, '', '', 
         'priority', 'int', '', '', '1', '',
+        'speed_up', 'int', 'NULL', '', '', '',
+        'speed_down', 'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'groupnum',
       'unique'      => [ ['groupname'] ],
