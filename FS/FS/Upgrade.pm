@@ -290,6 +290,9 @@ sub upgrade_data {
 
     #flag monthly tax exemptions
     'cust_tax_exempt_pkg' => [],
+
+    #kick off tax location history upgrade
+    'cust_bill_pkg' => [],
   ;
 
   \%hash;

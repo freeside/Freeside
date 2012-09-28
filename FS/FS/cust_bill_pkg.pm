@@ -940,15 +940,14 @@ sub upgrade_tax_location {
   # they were calculated on a package-location basis.  Create them here, 
   # along with any necessary cust_location records and any tax exemption 
   # records.
-  #
-  # This probably shouldn't run from freeside-upgrade.
 
   my ($class, %opt) = @_;
   # %opt may include 's' and 'e': start and end date ranges
   # and 'X': abort on any error, instead of just rolling back changes to 
   # that invoice
   my $dbh = dbh;
-  $FS::UID::AutoCommit = 0;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
 
   eval {
     use FS::h_cust_main;
@@ -1108,7 +1107,8 @@ sub upgrade_tax_location {
         push @{ $nontax_items{$taxclass} }, $item;
       }
     }
-    printf("%d tax items: \$%.2f\n", scalar(@tax_items), map {$_->setup} @tax_items);
+    printf("%d tax items: \$%.2f\n", scalar(@tax_items), map {$_->setup} @tax_items)
+      if @tax_items;
 
     # Use a variation on the procedure in 
     # FS::cust_main::Billing::_handle_taxes to identify taxes that apply 
@@ -1378,19 +1378,39 @@ sub upgrade_tax_location {
       } #foreach (@tax_links)
     } #foreach $tax_item
 
-    $dbh->commit if $commit_each_invoice;
+    $dbh->commit if $commit_each_invoice and $oldAutoCommit;
     $committed = 1;
 
   } #foreach $invnum
   continue {
     if (!$committed) {
-      $dbh->rollback;
+      $dbh->rollback if $oldAutoCommit;
       die "Upgrade halted.\n" unless $commit_each_invoice;
     }
   }
 
-  $dbh->commit unless $commit_each_invoice;
+  $dbh->commit if $oldAutoCommit and !$commit_each_invoice;
   '';
+}
+
+sub _upgrade_data {
+  # Create a queue job to run upgrade_tax_location from January 1, 2012 to 
+  # the present date.
+  eval {
+    use FS::queue;
+    use Date::Parse 'str2time';
+  };
+  my $class = shift;
+  my $upgrade = 'tax_location_2012';
+  return if FS::upgrade_journal->is_done($upgrade);
+  my $job = FS::queue->new({
+      'job' => 'FS::cust_bill_pkg::upgrade_tax_location'
+  });
+  # call it kind of like a class method, not that it matters much
+  $job->insert($class, 's' => str2time('2012-01-01'));
+  # Then mark the upgrade as done, so that we don't queue the job twice
+  # and somehow run two of them concurrently.
+  FS::upgrade_journal->set_done($upgrade);
 }
 
 =back
