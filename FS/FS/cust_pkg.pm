@@ -1427,7 +1427,8 @@ sub unsuspend {
 
   }
 
-  my $reason = $self->last_cust_pkg_reason('susp')->reason;
+  my $cust_pkg_reason = $self->last_cust_pkg_reason('susp');
+  my $reason = $cust_pkg_reason ? $cust_pkg_reason->reason : '';
 
   my %hash = $self->hash;
   my $inactive = time - $hash{'susp'};
@@ -1457,7 +1458,7 @@ sub unsuspend {
 
   my $unsusp_pkg;
 
-  if ( $reason->unsuspend_pkgpart ) {
+  if ( $reason && $reason->unsuspend_pkgpart ) {
     my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart)
       or $error = "Unsuspend package definition ".$reason->unsuspend_pkgpart.
                   " not found.";
