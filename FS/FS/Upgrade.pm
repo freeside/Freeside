@@ -70,6 +70,15 @@ sub upgrade_config {
     foreach grep { ! $conf->exists($_) && -s "$DIST_CONF/$_" }
       qw( quotation_html quotation_latex quotation_latexnotes );
 
+  # change 'fslongtable' to 'longtable'
+  foreach my $name (qw(invoice_latex quotation_latex)) {
+    my $value = join("\n",$conf->config($name));
+    if (length($value)) {
+      $value =~ s/fslongtable/longtable/g;
+      $conf->set($name, $value);
+    }
+  }
+
 }
 
 sub upgrade_overlimit_groups {

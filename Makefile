@@ -247,9 +247,9 @@ dev-perl-modules: perl-modules
 	ln -sf ${FREESIDE_PATH}/FS/blib/lib/FS ${PERL_INC_DEV_KLUDGE}/FS
 
 install-texmf:	
-	install -D -o freeside -m 444 etc/fslongtable.sty \
-          `kpsewhich -expand-var \\\$$TEXMFLOCAL`/tex/generic/fslongtable.sty
-	texhash `kpsewhich -expand-var \\\$$TEXMFLOCAL`
+	install -D -o freeside -m 444 etc/longtable.sty \
+	  ~freeside/texmf/tex/longtable.sty
+	texhash ~freeside
 
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
