@@ -1227,6 +1227,8 @@ sub _handle_taxes {
 
       $taxhash{'taxclass'} = $part_pkg->taxclass;
 
+      warn "taxhash:\n". Dumper(\%taxhash) if $DEBUG > 2;
+
       my @taxes = (); # entries are cust_main_county objects
       my %taxhash_elim = %taxhash;
       my @elim = qw( district city county state );
@@ -1246,9 +1248,11 @@ sub _handle_taxes {
 
       } while ( !scalar(@taxes) && scalar(@elim) );
 
-      @taxes = grep { ! $_->taxname or ! $self->tax_exemption($_->taxname) }
+      @taxes = grep { ! $_->taxname || ! $self->tax_exemption($_->taxname) }
                     @taxes
         if $self->cust_main_exemption; #just to be safe
+
+      warn "using taxes:\n". Dumper(@taxes) if $DEBUG > 2;
 
       # all packages now have a locationnum and should get a 
       # cust_bill_pkg_tax_location record.  The tax_locationnum
