@@ -122,41 +122,62 @@ my %num_tickets_by_priority = map { $_ => {} } @custom_priorities;
 # "optimization" (i.e. "terrible hack") to avoid constructing 
 # (@custom_priorities) x (cust_main) queries with a bazillion 
 # joins each just to count tickets
-if ( $FS::TicketSystem::system eq 'RT_Internal' ) {
+if ( $FS::TicketSystem::system eq 'RT_Internal' 
+  and $conf->config('dashboard-toplist') )
+{
   my $text = (driver_name =~ /^Pg/) ? 'text' : 'char';
   # The RT API does not play nicely with aggregate queries,
   # so we're going to go around it.
-  my $sql = 
-  "SELECT cust_main.custnum AS custnum,
-          ObjectCustomFieldValues.Content as priority,
-          COUNT(DISTINCT Tickets.Id) AS num_tickets
-   FROM cust_main 
-      LEFT JOIN cust_pkg USING (custnum)
-      LEFT JOIN cust_svc USING (pkgnum)
-      JOIN Links ON (
-        ( Links.Target = 'freeside://freeside/cust_main/' || CAST(cust_main.custnum AS $text) OR
-          Links.Target = 'freeside://freeside/cust_svc/'  || CAST(cust_svc.svcnum AS $text)
-        ) AND 
-        Links.Base LIKE '%rt://%/ticket/%' AND 
-        Links.Type = 'MemberOf'
-      )
-      JOIN Tickets ON (Links.LocalBase = Tickets.Id)
-      LEFT JOIN ObjectCustomFields ON (
-        ObjectCustomFields.ObjectId = '0' OR 
-        ObjectCustomFields.ObjectId = Tickets.Queue
-      )
-      LEFT JOIN CustomFields ON (
-        ObjectCustomFields.CustomField = CustomFields.Id AND
-        CustomFields.Name = '$custom_priority_field'
-      )
-      LEFT JOIN ObjectCustomFieldValues ON (
-        ObjectCustomFieldValues.CustomField = CustomFields.Id AND
-        ObjectCustomFieldValues.ObjectType = 'RT::Ticket' AND
-        ObjectCustomFieldValues.Disabled = '0' AND
-        ObjectCustomFieldValues.ObjectId = Tickets.Id
-      )
-    GROUP BY cust_main.custnum, ObjectCustomFieldValues.Content";
-    #warn $sql."\n";
+  my $sql;
+  # optimization to keep this from taking a million years
+  my $cust_tickets =
+  "SELECT custnum, Tickets.Id, Tickets.Queue
+  FROM cust_main
+  JOIN Links ON (
+    Links.Target = 'freeside://freeside/cust_main/' || CAST(cust_main.custnum AS $text)
+    AND Links.Base LIKE '%rt://%/ticket/%'
+    AND Links.Type = 'MemberOf'
+  ) JOIN Tickets ON (Links.LocalBase = Tickets.Id)
+  UNION
+  SELECT custnum, Tickets.Id, Tickets.Queue
+  FROM cust_pkg JOIN cust_svc USING (pkgnum)
+  JOIN Links ON (
+    Links.Target = 'freeside://freeside/cust_svc/' || CAST(cust_svc.svcnum AS $text)
+    AND Links.Base LIKE '%rt://%/ticket/%'
+    AND Links.Type = 'MemberOf'
+  ) JOIN Tickets ON (Links.LocalBase = Tickets.Id)
+  ";
+
+  if ( $custom_priority_field )  {
+    $sql = 
+    "SELECT cust_tickets.custnum AS custnum,
+            ObjectCustomFieldValues.Content as priority,
+            COUNT(DISTINCT cust_tickets.Id) AS num_tickets
+     FROM ($cust_tickets) AS cust_tickets
+        LEFT JOIN ObjectCustomFields ON (
+          ObjectCustomFields.ObjectId = '0' OR 
+          ObjectCustomFields.ObjectId = cust_tickets.Queue
+        )
+        LEFT JOIN CustomFields ON (
+          ObjectCustomFields.CustomField = CustomFields.Id AND
+          CustomFields.Name = '$custom_priority_field'
+        )
+        LEFT JOIN ObjectCustomFieldValues ON (
+          ObjectCustomFieldValues.CustomField = CustomFields.Id AND
+          ObjectCustomFieldValues.ObjectType = 'RT::Ticket' AND
+          ObjectCustomFieldValues.Disabled = '0' AND
+          ObjectCustomFieldValues.ObjectId = cust_tickets.Id
+        )
+      GROUP BY cust_tickets.custnum, ObjectCustomFieldValues.Content";
+      #warn $sql."\n";
+  } else { # no custom_priority_field
+    $sql =
+    "SELECT cust_tickets.custnum,
+            '' as priority,
+            COUNT(DISTINCT cust_tickets.Id) AS num_tickets
+     FROM ($cust_tickets) AS cust_tickets
+      GROUP BY cust_tickets.custnum";
+  }
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   while ( my $row = $sth->fetchrow_hashref ) {
@@ -165,4 +186,5 @@ if ( $FS::TicketSystem::system eq 'RT_Internal' ) {
       $row->{num_tickets};
   }
 }
+#warn Dumper \%num_tickets_by_priority;
 </%init>
