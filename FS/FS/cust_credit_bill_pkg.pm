@@ -103,18 +103,22 @@ sub insert {
     return $error;
   }
 
-  my $payable = $self->cust_bill_pkg->payable($self->setuprecur);
-  my $taxable = $self->_is_taxable ? $payable : 0;
-  my $part_pkg = $self->cust_bill_pkg->part_pkg;
-  my $freq = $self->cust_bill_pkg->freq;
+  my $cust_bill_pkg = $self->cust_bill_pkg;
+  #'payable' is the amount charged (either setup or recur)
+  # minus any credit applications, including this one
+  my $payable = $cust_bill_pkg->payable($self->setuprecur);
+  my $part_pkg = $cust_bill_pkg->part_pkg;
+  my $freq = $cust_bill_pkg->freq;
   unless ($freq) {
     $freq = $part_pkg ? ($part_pkg->freq || 1) : 1;#fallback.. assumes unchanged
   }
-  my $taxable_per_month = sprintf("%.2f", $taxable / $freq );
+  my $taxable_per_month = sprintf("%.2f", $payable / $freq );
   my $credit_per_month = sprintf("%.2f", $self->amount / $freq ); #pennies?
 
   if ($taxable_per_month >= 0) {  #panic if its subzero?
-    my $groupby = 'taxnum,year,month';
+    my $groupby = join(',',
+      qw(taxnum year month exempt_monthly exempt_cust 
+         exempt_cust_taxname exempt_setup exempt_recur));
     my $sum = 'SUM(amount)';
     my @exemptions = qsearch(
       {
@@ -124,25 +128,55 @@ sub insert {
         'extra_sql' => "GROUP BY $groupby HAVING $sum > 0",
       }
     ); 
+    # each $exemption is now the sum of all monthly exemptions applied to 
+    # this line item for a particular taxnum and month.
     foreach my $exemption ( @exemptions ) {
-      next if $taxable_per_month >= $exemption->amount;
-      my $amount = $exemption->amount - $taxable_per_month;
-      if ($amount > $credit_per_month) {
-             "cust_bill_pkg ". $self->billpkgnum. "  Reducing.\n";
-        $amount = $credit_per_month;
+      my $amount = 0;
+      if ( $exemption->exempt_monthly ) {
+        # finite exemptions
+        # $taxable_per_month is AFTER inserting the credit application, so 
+        # if it's still larger than the exemption, we don't need to adjust
+        next if $taxable_per_month >= $exemption->amount;
+        # the amount of 'excess' exemption already in place (above the 
+        # remaining charged amount).  We'll de-exempt that much, or the 
+        # amount of the new credit, whichever is smaller.
+        $amount = $exemption->amount - $taxable_per_month;
+        # $amount is the amount of 'excess' exemption already existing 
+        # (above the remaining taxable charge amount).  We'll "de-exempt"
+        # that much, or the amount of the new credit, whichever is smaller.
+        if ($amount > $credit_per_month) {
+               "cust_bill_pkg ". $self->billpkgnum. "  Reducing.\n";
+          $amount = $credit_per_month;
+        }
+      } elsif ( $exemption->exempt_setup or $exemption->exempt_recur ) {
+        # package defined exemptions: may be setup only, recur only, or both
+        my $method = 'exempt_'.$self->setuprecur;
+        if ( $exemption->$method ) {
+          # then it's exempt from the portion of the charge that this 
+          # credit is being applied to
+          $amount = $self->amount;
+        }
+      } else {
+        # other types of exemptions: always equal to the amount of
+        # the charge
+        $amount = $self->amount;
       }
+      next if $amount == 0;
+
+      # create a negative exemption
       my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg {
+         $exemption->hash, # for exempt_ flags, taxnum, month/year
         'billpkgnum'       => $self->billpkgnum,
         'creditbillpkgnum' => $self->creditbillpkgnum,
         'amount'           => sprintf('%.2f', 0-$amount),
-        map { $_ => $exemption->$_ } split(',', $groupby)
       };
+
       my $error = $cust_tax_exempt_pkg->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting cust_tax_exempt_pkg: $error";
       }
-    }
+    } #foreach $exemption
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -233,7 +267,7 @@ sub delete {
       return "error calculating taxes: $hashref_or_error";
     }
 
-    push @generated_exemptions, @{ $cust_bill_pkg->_cust_tax_exempt_pkg || [] };
+    push @generated_exemptions, @{ $cust_bill_pkg->cust_tax_exempt_pkg };
   }
                           
   foreach my $taxnum ( keys %seen ) {

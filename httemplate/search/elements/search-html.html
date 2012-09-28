@@ -350,7 +350,8 @@
 %
 %                     ) {
 %
-%                       my $class = ( $field =~ /^<TABLE/i ) ? 'inv' : 'grid';
+%#                       my $class = ( $field =~ /^<TABLE/i ) ? 'inv' : 'grid';
+%                       my $class = 'grid';
 %
 %                       my $align = $aligns ? shift @$aligns : '';
 %                       $align = " ALIGN=$align" if $align;

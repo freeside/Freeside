@@ -47,6 +47,8 @@ description
 
 priority - for export
 
+=item speed_up, speed_down - connection speeds in bits per second.  Some 
+exports may use this to generate appropriate RADIUS attributes.
 
 =back
 
@@ -176,6 +178,8 @@ sub check {
     || $self->ut_text('groupname')
     || $self->ut_textn('description')
     || $self->ut_numbern('priority')
+    || $self->ut_numbern('speed_up')
+    || $self->ut_numbern('speed_down')
   ;
   return $error if $error;
 

@@ -7,12 +7,15 @@ chomp( my $mw_password = `cat .mw-password` );
 
 my $site_perl = "./FS";
 #my $html = "Freeside:1.7:Documentation:Developer";
-my $html = "Freeside:1.9:Documentation:Developer";
+#my $html = "Freeside:1.9:Documentation:Developer";
+my $html = "Freeside:3:Documentation:Developer";
 
 foreach my $dir (
   $html,
-  map "$html/$_", qw( bin FS FS/UI FS/part_export FS/part_pkg
+  map "$html/$_", qw( bin FS
+                      FS/cdr FS/cust_main FS/cust_pkg FS/detail_format
                       FS/part_event FS/part_event/Condition FS/part_event/Action
+                      FS/part_export FS/part_pkg FS/pay_batch
                       FS/ClientAPI FS/Cron FS/Misc FS/Report FS/Report/Table
                       FS/TicketSystem FS/UI
                       FS/SelfService
@@ -43,6 +46,7 @@ foreach my $file (
 use WWW::Mediawiki::Client;
 my $mvs = WWW::Mediawiki::Client->new(
             'host'           => 'www.freeside.biz',
+            'protocol'       => 'https',
             'wiki_path'      => 'mediawiki/index.php',
             'username'       => $mw_username,
             'password'       => $mw_password,

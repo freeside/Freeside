@@ -52,5 +52,4 @@ sub tower_sector_sql {
   @where;
 }
 
-
 1;

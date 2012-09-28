@@ -490,7 +490,7 @@ sub ssh_cmd { #subroutine, not method
   my ($output, $errput) = $ssh->capture2($ssh_opt, $opt->{'command'});
 
   return if $opt->{'ignore_all_errors'};
-  die "Error running SSH command: ". $ssh->error if $ssh->error;
+  #die "Error running SSH command: ". $ssh->error if $ssh->error;
 
   if ( ($output || $errput)
        && $opt->{'ignored_errors'} && length($opt->{'ignored_errors'})
@@ -504,7 +504,9 @@ sub ssh_cmd { #subroutine, not method
     $errput =~ s/[\s\n]//g;
   }
 
-  die "$errput\n" if $errput;
+  die (($errput || $ssh->error). "\n") if $errput || $ssh->error; 
+  #die "$errput\n" if $errput;
+
   die "$output\n" if $output and $opt->{'fail_on_output'};
   '';
 }

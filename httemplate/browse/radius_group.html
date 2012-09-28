@@ -5,15 +5,26 @@
   'query'       => { 'table' => 'radius_group' },
   'count_query' => 'SELECT COUNT(*) FROM radius_group',
   'header'      => [ '#', 'RADIUS Group', 'Description', 'Priority',
-                     'Check', 'Reply' ],
+                     'Check', 'Reply', 'Speed' ],
   'fields'      => [ 'groupnum',
                      'groupname',
                      'description',
                      'priority',
-                     $check_attr, $reply_attr
+                     $check_attr, $reply_attr,
+                     sub { 
+                      my $group = shift;
+                      if ($group->speed_down and $group->speed_up) {
+                        return join (' / ', $group->speed_down, $group->speed_up);
+                      } elsif ( $group->speed_down ) {
+                        return $group->speed_down . ' down';
+                      } elsif ( $group->speed_up ) {
+                        return $group->speed_up . ' up';
+                      }
+                      '';
+                     },
                    ],
-  'align'       => 'lllcll',
-  'links'       => [ $link, $link, '', '', '', '',
+  'align'       => 'lllcllc',
+  'links'       => [ $link, $link, '', '', '', '', ''
                    ],
 &>
 <%init>

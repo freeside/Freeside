@@ -3,7 +3,8 @@
 my $file = shift;
 
 chomp(my $dir = `pwd`);
-$dir =~ s/freeside\//freeside2.3\//;
+$dir =~ s/freeside(\/?)/freeside2.3$1/;
+warn $dir;
 
 #$cmd = "diff -u $file $dir/$file";
 $cmd = "diff -u $dir/$file $file";
