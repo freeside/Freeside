@@ -71,11 +71,16 @@ sub upgrade_config {
       qw( quotation_html quotation_latex quotation_latexnotes );
 
   # change 'fslongtable' to 'longtable'
-  foreach my $name (qw(invoice_latex quotation_latex)) {
-    my $value = join("\n",$conf->config($name));
-    if (length($value)) {
+  # in invoice and quotation main templates, and also in all secondary 
+  # invoice templates
+  my @latex_confs =
+    qsearch('conf', { 'name' => {op=>'LIKE', value=>'%latex%'} });
+
+  foreach my $c (@latex_confs) {
+    my $value = $c->value;
+    if (length($value) and $value =~ /fslongtable/) {
       $value =~ s/fslongtable/longtable/g;
-      $conf->set($name, $value);
+      $conf->set($c->name, $value, $c->agentnum);
     }
   }
 
