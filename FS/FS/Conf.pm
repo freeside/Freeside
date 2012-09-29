@@ -3469,7 +3469,7 @@ and customer address. Include units.',
   {
     'key'         => 'postal_invoice-recurring_only',
     'section'     => 'billing',
-    'description' => 'The postal invoice fee is omitted on invoices without reucrring charges when this is set.',
+    'description' => 'The postal invoice fee is omitted on invoices without recurring charges when this is set.',
     'type'        => 'checkbox',
   },
 
