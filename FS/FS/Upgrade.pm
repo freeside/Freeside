@@ -65,11 +65,15 @@ sub upgrade_config {
   map { upgrade_overlimit_groups($conf,$_->agentnum) } qsearch('agent', {});
   
   # change 'fslongtable' to 'longtable'
-  foreach my $name (qw(invoice_latex)) {
-    my $value = join("\n",$conf->config($name));
-    if (length($value)) {
+  # in invoice main template, and also in all secondary invoice templates
+  my @latex_confs =
+  qsearch('conf', { 'name' => {op=>'LIKE', value=>'%latex%'} });
+
+  foreach my $c (@latex_confs) {
+    my $value = $c->value;
+    if (length($value) and $value =~ /fslongtable/) {
       $value =~ s/fslongtable/longtable/g;
-      $conf->set($name, $value);
+      $conf->set($c->name, $value, $c->agentnum);
     }
   }
 
