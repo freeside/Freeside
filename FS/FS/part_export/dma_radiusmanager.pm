@@ -9,6 +9,10 @@ use FS::radius_group;
 use Tie::IxHash;
 use Digest::MD5 'md5_hex';
 
+use Locale::Country qw(code2country);
+use Locale::SubCountry;
+use Date::Format 'time2str';
+
 tie %options, 'Tie::IxHash',
   'dbname'    => { label=>'Database name', default=>'radius' },
   'username'  => { label=>'Database username' },
@@ -57,6 +61,12 @@ sub dma_rm_queue {
   my $cust_main = $cust_pkg->cust_main;
   my $location = $cust_pkg->cust_location;
 
+  my $address = $location->address1;
+  $address .= ' '.$location->address2 if $location->address2;
+  my $country = code2country($location->country);
+  my $lsc = Locale::SubCountry->new($location->country);
+  my $state = $lsc->full_name($location->state) if defined($lsc);
+
   my %params = (
     # for the remote side
     username    => $svc_acct->username,
@@ -70,9 +80,9 @@ sub dma_rm_queue {
     mobile      => $cust_main->mobile,
     address     => $location->address1, # address2?
     city        => $location->city,
-    state       => $location->state,
+    state       => $state, #full name
     zip         => $location->zip,
-    country     => $location->country,
+    country     => $country, #full name
     gpslat      => $location->latitude,
     gpslong     => $location->longitude,
     comment     => 'svcnum'.$svcnum,
@@ -118,6 +128,8 @@ sub dma_rm_action {
   $params{srvid} = $srvid;
 
   if ( $action eq 'insert' ) {
+    $params{'createdon'} = time2str('%Y-%m-%d', time);
+    $params{'expiration'} = time2str('%Y-%m-%d', time);
     warn "rm_users: inserting svcnum$svcnum\n" if $DEBUG;
     my $sth = $dbh->prepare( 'INSERT INTO rm_users ( '.
       join(', ', keys(%params)).
@@ -323,12 +335,14 @@ sub nas_ids {
   # pass these through unchanged
   my @ids = grep { /^\d+$/ } @nasnames;
   @nasnames = grep { not /^\d+$/ } @nasnames;
-  my $in_nasnames = join(',', map {$dbh->quote($_)} @nasnames);
+  if ( @nasnames ) {
+    my $in_nasnames = join(',', map {$dbh->quote($_)} @nasnames);
 
-  my $sth = $dbh->prepare("SELECT id FROM nas WHERE nasname IN ($in_nasnames)");
-  $sth->execute or die $dbh->errstr;
-  my $rows = $sth->fetchall_arrayref;
-  push @ids, $_->[0] foreach @$rows;
+    my $sth = $dbh->prepare("SELECT id FROM nas WHERE nasname IN ($in_nasnames)");
+    $sth->execute or die $dbh->errstr;
+    my $rows = $sth->fetchall_arrayref;
+    push @ids, $_->[0] foreach @$rows;
+  }
 
   return @ids;
 }
