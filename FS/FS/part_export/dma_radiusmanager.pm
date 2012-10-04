@@ -59,13 +59,12 @@ sub dma_rm_queue {
 
   my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
   my $cust_main = $cust_pkg->cust_main;
-  my $location = $cust_pkg->cust_location;
 
-  my $address = $location->address1;
-  $address .= ' '.$location->address2 if $location->address2;
-  my $country = code2country($location->country);
-  my $lsc = Locale::SubCountry->new($location->country);
-  my $state = $lsc->full_name($location->state) if defined($lsc);
+  my $address = $cust_main->address1;
+  $address .= ' '.$cust_main->address2 if $cust_main->address2;
+  my $country = code2country($cust_main->country);
+  my $lsc = Locale::SubCountry->new($cust_main->country);
+  my $state = $lsc->full_name($cust_main->state) if defined($lsc);
 
   my %params = (
     # for the remote side
@@ -78,13 +77,12 @@ sub dma_rm_queue {
     company     => $cust_main->company,
     phone       => ($cust_main->daytime || $cust_main->night),
     mobile      => $cust_main->mobile,
-    address     => $location->address1, # address2?
-    city        => $location->city,
+    city        => $cust_main->city,
     state       => $state, #full name
-    zip         => $location->zip,
+    zip         => $cust_main->zip,
     country     => $country, #full name
-    gpslat      => $location->latitude,
-    gpslong     => $location->longitude,
+    gpslat      => $cust_main->latitude,
+    gpslong     => $cust_main->longitude,
     comment     => 'svcnum'.$svcnum,
     createdby   => $self->option('manager'),
     owner       => $self->option('manager'),
