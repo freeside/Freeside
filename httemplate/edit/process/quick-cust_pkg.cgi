@@ -48,9 +48,9 @@ die 'unknown custnum' unless $cust_main;
 $cgi->param('pkgpart') =~ /^(\d+)$/
   or die 'illegal pkgpart '. $cgi->param('pkgpart');
 my $pkgpart = $1;
-$cgi->param('quantity') =~ /^(\d+)$/
+$cgi->param('quantity') =~ /^(\d*)$/
   or die 'illegal quantity '. $cgi->param('quantity');
-my $quantity = $1;
+my $quantity = $1 || 1;
 $cgi->param('refnum') =~ /^(\d*)$/
   or die 'illegal refnum '. $cgi->param('refnum');
 my $refnum = $1;
