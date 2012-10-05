@@ -76,9 +76,7 @@
 
 <& elements/svc_export_settings.html, $svc_acct &>
 
-% if ( $conf->config('ticket_system') ) {
 <& /elements/table-tickets.html, object => $cust_svc &>
-% }
 
 <BR>
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
