@@ -166,8 +166,6 @@ die "Invoice #$invnum not found!" unless $cust_bill;
 my $custnum = $cust_bill->custnum;
 my $display_custnum = $cust_bill->cust_main->display_custnum;
 
-#my $printed = $cust_bill->printed;
-
 my $link = "invnum=$invnum";
 $link .= ';template='. uri_escape($template) if $template;
 $link .= ';notice_name='. $notice_name if $notice_name;

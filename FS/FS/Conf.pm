@@ -839,6 +839,13 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'cust_main-select-prorate_day',
+    'section'     => 'billing',
+    'description' => 'When used with prorate or anniversary packages, allows the selection of the prorate day of month, on a per-customer basis',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'encryption',
     'section'     => 'billing',
     'description' => 'Enable encryption of credit cards and echeck numbers',
@@ -1356,7 +1363,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice_latexextracouponspace',
     'section'     => 'invoicing',
-    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon. Include units.',
+    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon.  Include units.  Default is 3.6cm',
     'type'        => 'text',
     'per_agent'   => 1,
     'validate'    => sub { shift =~
@@ -1978,6 +1985,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'national_id-country',
+    'section'     => 'UI',
+    'description' => 'Track a national identification number, for specific countries.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'MY' ],
+  },
+
+  {
     'key'         => 'show_bankstate',
     'section'     => 'UI',
     'description' => "Turns on display/collection of state for bank accounts in the web interface.  Sometimes required by electronic check (ACH) processors.",
@@ -2540,6 +2555,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Package to add to each manual credit card and ACH payment entered by employees from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
     'type'        => 'select-part_pkg',
+    'per_agent'   => 1,
   },
 
   {
@@ -2565,6 +2581,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Package to add to each manual credit card and ACH payment entered by the customer themselves in the self-service interface.  Enabling this option may be in violation of your merchant agreement(s), so please check it(/them) carefully before enabling this option.',
     'type'        => 'select-part_pkg',
+    'per_agent'   => 1,
   },
 
   {
@@ -2585,30 +2602,30 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
-  {
-    'key'         => 'suto_process-pkgpart',
-    'section'     => 'billing',
-    'description' => 'Package to add to each automatic credit card and ACH payment processed by billing events.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option.',
-    'type'        => 'select-part_pkg',
-  },
-
 #  {
-#    'key'         => 'auto_process-display',
+#    'key'         => 'auto_process-pkgpart',
 #    'section'     => 'billing',
-#    'description' => 'When using auto_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
-#    'type'        => 'select',
-#    'select_hash' => [
-#                       'add'      => 'Add fee to amount entered',
-#                       'subtract' => 'Subtract fee from amount entered',
-#                     ],
+#    'description' => 'Package to add to each automatic credit card and ACH payment processed by billing events.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option.',
+#    'type'        => 'select-part_pkg',
 #  },
-
-  {
-    'key'         => 'auto_process-skip_first',
-    'section'     => 'billing',
-    'description' => "When using auto_process-pkgpart, omit the fee if it is the customer's first payment.",
-    'type'        => 'checkbox',
-  },
+#
+##  {
+##    'key'         => 'auto_process-display',
+##    'section'     => 'billing',
+##    'description' => 'When using auto_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
+##    'type'        => 'select',
+##    'select_hash' => [
+##                       'add'      => 'Add fee to amount entered',
+##                       'subtract' => 'Subtract fee from amount entered',
+##                     ],
+##  },
+#
+#  {
+#    'key'         => 'auto_process-skip_first',
+#    'section'     => 'billing',
+#    'description' => "When using auto_process-pkgpart, omit the fee if it is the customer's first payment.",
+#    'type'        => 'checkbox',
+#  },
 
   {
     'key'         => 'allow_negative_charges',
@@ -3286,7 +3303,7 @@ and customer address. Include units.',
   {
     'key'         => 'cust_pkg-show_fcc_voice_grade_equivalent',
     'section'     => 'UI',
-    'description' => "Show a field on package definitions for assigning a DS0 equivalency number suitable for use on FCC form 477.",
+    'description' => "Show fields on package definitions for FCC Form 477 classification",
     'type'        => 'checkbox',
   },
 
@@ -3423,7 +3440,7 @@ and customer address. Include units.',
   {
     'key'         => 'invoice-unitprice',
     'section'     => 'invoicing',
-    'description' => 'Enable unit pricing on invoices.',
+    'description' => 'Enable unit pricing on invoices and quantities on packages.',
     'type'        => 'checkbox',
   },
 
@@ -3452,7 +3469,7 @@ and customer address. Include units.',
   {
     'key'         => 'postal_invoice-recurring_only',
     'section'     => 'billing',
-    'description' => 'The postal invoice fee is omitted on invoices without reucrring charges when this is set.',
+    'description' => 'The postal invoice fee is omitted on invoices without recurring charges when this is set.',
     'type'        => 'checkbox',
   },
 
@@ -3706,6 +3723,13 @@ and customer address. Include units.',
     'key'         => 'cust_main-enable_spouse_birthdate',
     'section'     => 'UI',
     'description' => 'Enable tracking of a spouse birth date with each customer record',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-enable_anniversary_date',
+    'section'     => 'UI',
+    'description' => 'Enable tracking of an anniversary date with each customer record',
     'type'        => 'checkbox',
   },
 
@@ -5221,6 +5245,13 @@ and customer address. Include units.',
       'XLS' => 'XLS (Excel 97/2000/XP)',
       'XLSX' => 'XLSX (Excel 2007+)',
     ],
+  },
+
+  {
+    'key'         => 'agent-email_day',
+    'section'     => '',
+    'description' => 'On this day of each month, agents with master customer records containing email addresses will be emailed a list of their customers and balances.',
+    'type'        => 'text',
   },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

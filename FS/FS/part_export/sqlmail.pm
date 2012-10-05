@@ -37,6 +37,7 @@ tie my %options, 'Tie::IxHash',
   'desc'     => 'Real-time export to SQL-backed mail server',
   'options'  => \%options,
   'nodomain' => '',
+  'default_svc_class' => 'Email',
   'notes'    => <<'END'
 Database schema can be made to work with Courier IMAP, Exim and Dovecot.
 Others could work but are untested.  (more detailed description from

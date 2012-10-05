@@ -10,6 +10,7 @@ use FS::Record;
   'desc'     => 'Real-time export of forwards to SQL databases ',
                 #.' (vpopmail, Postfix+Courier IMAP, others?)',
   'options'  => __PACKAGE__->sql_options,
+  'no_machine' => 1,
   'notes'    => <<END
 Export mail forwards (svc_forward records) to SQL databases.
 

@@ -28,8 +28,10 @@
 <& cust_main/top_misc.html, $cust_main, 'custnum' => $custnum  &>
 
 %# birthdate
-% if (    $conf->exists('cust_main-enable_birthdate')
+% if (    $conf->config('national_id-country')
+%      || $conf->exists('cust_main-enable_birthdate')
 %      || $conf->exists('cust_main-enable_spouse_birthdate')
+%      || $conf->exists('cust_main-enable_anniversary_date')
 %    )
 % {
   <BR>
@@ -51,6 +53,7 @@
     <& /elements/location.html,
         object => $cust_main->bill_location,
         prefix => 'bill_',
+        enable_coords => 1,
     &>
     <& cust_main/after_bill_location.html, $cust_main &>
     </TABLE>
@@ -75,6 +78,7 @@
         prefix => 'ship_',
         enable_censustract => 1,
         enable_district => 1,
+        enable_coords => 1,
     &>
     </TABLE>
     <TABLE CLASS="fsinnerbox" ID="table_ship_location_blank"
@@ -245,6 +249,8 @@ if ( $cgi->param('error') ) {
   $ss = $cust_main->ss;           # don't mask an entered value on errors
   $stateid = $cust_main->stateid; # don't mask an entered value on errors
   $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
+
+  $cust_main->national_id( $cgi->param('national_id1') || $cgi->param('national_id2') );
 
   $prospectnum = $cgi->param('prospectnum') || '';
 

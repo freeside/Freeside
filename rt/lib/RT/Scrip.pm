@@ -545,7 +545,7 @@ sub _Set {
         }
     }
 
-    return $self->__Set(@_);
+    return $self->SUPER::_Set(@_);
 }
 
 

@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record;
+use FS::cust_bill_pkg;
+use Date::Parse qw(str2time);
+use Getopt::Std;
+getopts('s:e:');
+my $username = shift @ARGV;
+
+if (!$username) {
+  print
+"Usage: tax_location.upgrade [ -s START ] [ -e END ] username
+
+This script creates cust_bill_pkg_tax_location and cust_tax_exempt_pkg records
+for existing sales tax records prior to the 3.0 cust_location changes.  Changes
+will be committed immediately; back up your data and run 'make
+install-perl-modules' and 'freeside-upgrade' before running this script.  
+START and END specify an optional range of invoice dates to upgrade.
+
+";
+  exit(1);
+}
+
+my %opt;
+$opt{s} = str2time($opt_s) if $opt_s;
+$opt{e} = str2time($opt_e) if $opt_e;
+
+adminsuidsetup($username);
+FS::cust_bill_pkg->upgrade_tax_location(%opt);
+1;

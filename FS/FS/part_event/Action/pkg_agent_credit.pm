@@ -18,7 +18,7 @@ sub do_action {
   my $agent_cust_main = $agent->agent_cust_main;
     #? or return "No customer record for agent ". $agent->agent;
 
-  my $amount    = $self->_calc_credit($cust_pkg);
+  my $amount = $self->_calc_credit($cust_pkg);
   return '' unless $amount > 0;
 
   my $reasonnum = $self->option('reasonnum');
@@ -29,6 +29,7 @@ sub do_action {
     'eventnum' => $cust_event->eventnum,
     'addlinfo' => 'for customer #'. $cust_main->display_custnum.
                                ': '.$cust_main->name,
+    #'commission_agentnum' => $agent->agentnum,
   );
   die "Error crediting customer ". $agent_cust_main->custnum.
       " for agent commission: $error"

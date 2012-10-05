@@ -167,6 +167,17 @@ else {
             elsif (lc $k eq 'text') {
                 $text = delete $data{$k};
             }
+            elsif ( lc $k ne 'id' ) {
+                $e = 1;
+                push @$o, $k;
+                push(@comments, "# $k: Unknown field");
+            }
+        }
+
+        if ( $e ) {
+            unshift @comments, "# Could not create ticket.";
+            $k = \%data;
+            goto DONE;
         }
 
         # people fields allow multiple values
@@ -292,8 +303,10 @@ else {
         elsif (exists $simple{$key}) {
             $key = $simple{$key};
             $set = "Set$key";
+            my $current = $ticket->$key;
+            $current = '' unless defined $current;
 
-            next if (($val eq ($ticket->$key||''))|| ($ticket->$key =~ /^\d+$/ && $val =~ /^\d+$/ && $val == $ticket->$key));
+            next if ($val eq $current) or ($current =~ /^\d+$/ && $val =~ /^\d+$/ && $val == $current);
             ($n, $s) = $ticket->$set("$val");
         }
         elsif (exists $dates{$key}) {
@@ -331,13 +344,6 @@ else {
                 }
             }
             foreach $p (keys %new) {
-                # XXX: This is a stupid test.
-                unless ($p =~ /^[\w.+-]+\@([\w.-]+\.)*\w+.?$/) {
-                    $s = 0;
-                    $n = "$p is not a valid email address.";
-                    push @msgs, [ $s, $n ];
-                    next;
-                }
                 unless ($ticket->IsWatcher(Type => $type, Email => $p)) {
                     ($s, $n) = $ticket->AddWatcher(Type => $type,
                                                    Email => $p);

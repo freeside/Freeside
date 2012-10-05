@@ -52,6 +52,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_broadband',
   'desc'    => 'Send SNMP requests to the service IP address',
   'options' => \%options,
+  'no_machine' => 1,
   'weight'  => 10,
   'notes'   => <<'END'
 Send one or more SNMP SET requests to the IP address registered to the service.

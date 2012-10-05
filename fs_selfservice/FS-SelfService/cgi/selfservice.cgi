@@ -476,7 +476,21 @@ sub process_order_recharge {
 }
 
 sub make_payment {
-  payment_info( 'session_id' => $session_id );
+
+  my $payment_info = payment_info( 'session_id' => $session_id );
+
+  my $tr_amount_fee = mason_comp(
+    'session_id' => $session_id,
+    'comp'       => '/elements/tr-amount_fee.html',
+    'args'       => [ 'amount' => $payment_info->{'balance'},
+                    ],
+  );
+
+  $tr_amount_fee = $tr_amount_fee->{'error'} || $tr_amount_fee->{'output'};
+
+  $payment_info->{'tr_amount_fee'} = $tr_amount_fee;
+
+  $payment_info;
 }
 
 sub payment_results {

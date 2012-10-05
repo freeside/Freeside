@@ -337,6 +337,7 @@ sub calculate_applications {
   # could expand @open above, instead, for a slightly different magic effect
   my @result = ();
   foreach my $apply ( @apply ) {
+    # $apply = [ FS::cust_bill_pkg_tax_location record, amount ]
     my @sub_lines = $apply->[0]->cust_bill_pkg_tax_Xlocation;
     my $amount = $apply->[1];
     warn "applying ". $apply->[1]. " to ". $apply->[0]->desc
@@ -346,6 +347,10 @@ sub calculate_applications {
       my $owed = $subline->owed;
       push @result, [ $apply->[0],
                       sprintf('%.2f', min($amount, $owed) ),
+                      # $subline->primary_key is "billpkgtaxlocationnum"
+                      # or "billpkgtaxratelocationnum"
+                      # This is the ONLY place either of those fields will 
+                      # be set.
                       { $subline->primary_key => $subline->get($subline->primary_key) },
                     ];
       $amount -= $owed;

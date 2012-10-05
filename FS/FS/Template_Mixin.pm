@@ -894,7 +894,6 @@ sub print_generic {
     warn "$me   setting options\n"
       if $DEBUG > 1;
 
-    my $multilocation = scalar($cust_main->cust_location); #too expensive?
     my %options = ();
     $options{'section'} = $section if $multisection;
     $options{'format'} = $format;
@@ -904,7 +903,6 @@ sub print_generic {
     $options{'summary_page'} = $summarypage;
     $options{'skip_usage'} =
       scalar(@$extra_sections) && !grep{$section == $_} @$extra_sections;
-    $options{'multilocation'} = $multilocation;
     $options{'multisection'} = $multisection;
 
     warn "$me   searching for line items\n"
@@ -2111,8 +2109,6 @@ ignored.
 multisection: a flag indicating that this is a multisection invoice,
 which does something complicated.
 
-multilocation: a flag to display the location label for the package.
-
 Returns a list of hashrefs, each of which may contain:
 
 pkgnum, description, amount, unit_amount, quantity, _is_setup, and 
@@ -2134,13 +2130,13 @@ sub _items_cust_bill_pkg {
   my $unsquelched = $opt{unsquelched} || ''; #unused
   my $section = $opt{section}->{description} if $opt{section};
   my $summary_page = $opt{summary_page} || ''; #unused
-  my $multilocation = $opt{multilocation} || '';
   my $multisection = $opt{multisection} || '';
   my $discount_show_always = 0;
 
   my $maxlength = $conf->config('cust_bill-latex_lineitem_maxlength') || 50;
 
   my $cust_main = $self->cust_main;#for per-agent cust_bill-line_item-ate_style
+                                   # and location labels
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
@@ -2255,7 +2251,7 @@ sub _items_cust_bill_pkg {
                          $cust_pkg->h_labels_short($self->_date, undef, 'I')
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
 
-            if ( $multilocation ) {
+            if ( $cust_pkg->locationnum != $cust_main->ship_locationnum  ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
@@ -2357,7 +2353,7 @@ sub _items_cust_bill_pkg {
             warn "$me _items_cust_bill_pkg done adding service details\n"
               if $DEBUG > 1;
 
-            if ( $multilocation ) {
+            if ( $cust_pkg->locationnum != $cust_main->ship_locationnum ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
@@ -2411,6 +2407,10 @@ sub _items_cust_bill_pkg {
             $amount = $cust_bill_pkg->usage;
           }
   
+          my $unit_amount =
+            ( $cust_bill_pkg->unitrecur > 0 ) ? $cust_bill_pkg->unitrecur
+                                              : $amount;
+
           if ( !$type || $type eq 'R' ) {
 
             warn "$me _items_cust_bill_pkg adding recur\n"
@@ -2418,7 +2418,7 @@ sub _items_cust_bill_pkg {
 
             if ( $cust_bill_pkg->hidden ) {
               $r->{amount}      += $amount;
-              $r->{unit_amount} += $cust_bill_pkg->unitrecur;
+              $r->{unit_amount} += $unit_amount;
               push @{ $r->{ext_description} }, @d;
             } else {
               $r = {
@@ -2427,7 +2427,7 @@ sub _items_cust_bill_pkg {
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
-                unit_amount     => $cust_bill_pkg->unitrecur,
+                unit_amount     => $unit_amount,
                 quantity        => $cust_bill_pkg->quantity,
                 %item_dates,
                 ext_description => \@d,
@@ -2442,7 +2442,7 @@ sub _items_cust_bill_pkg {
 
             if ( $cust_bill_pkg->hidden ) {
               $u->{amount}      += $amount;
-              $u->{unit_amount} += $cust_bill_pkg->unitrecur;
+              $u->{unit_amount} += $unit_amount,
               push @{ $u->{ext_description} }, @d;
             } else {
               $u = {
@@ -2451,7 +2451,7 @@ sub _items_cust_bill_pkg {
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
-                unit_amount     => $cust_bill_pkg->unitrecur,
+                unit_amount     => $unit_amount,
                 quantity        => $cust_bill_pkg->quantity,
                 %item_dates,
                 ext_description => \@d,

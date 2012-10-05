@@ -67,6 +67,7 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 #(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
 #deb (3.1+), apache2
 APACHE_CONF = /etc/apache2/conf.d
+INSSERV_OVERRIDE = /etc/insserv/overrides
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
@@ -168,6 +169,12 @@ install-docs: check-conflicts docs
 	cp -r masondocs ${FREESIDE_DOCUMENT_ROOT}
 	chown -R freeside:freeside ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
+	perl -p -i -e "\
+	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
+	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
+	" ${MASON_HANDLER} || true
+	mkdir -p ${FREESIDE_EXPORT}/profile
+	chown freeside ${FREESIDE_EXPORT}/profile
 	cp htetc/htpasswd.logout ${FREESIDE_CONF}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}
@@ -179,6 +186,8 @@ dev-docs:
 	perl -p -i -e "\
 	  s'###use Module::Refresh;###'use Module::Refresh;'; \
 	  s'###Module::Refresh->refresh;###'Module::Refresh->refresh;'; \
+	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
+	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
 	" ${MASON_HANDLER} || true
 
 perl-modules:
@@ -238,9 +247,9 @@ dev-perl-modules: perl-modules
 	ln -sf ${FREESIDE_PATH}/FS/blib/lib/FS ${PERL_INC_DEV_KLUDGE}/FS
 
 install-texmf:	
-	install -D -o freeside -m 444 etc/fslongtable.sty \
-          `kpsewhich -expand-var \\\$$TEXMFLOCAL`/tex/generic/fslongtable.sty
-	texhash `kpsewhich -expand-var \\\$$TEXMFLOCAL`
+	install -D -o freeside -m 444 etc/longtable.sty \
+	  ~freeside/texmf/tex/longtable.sty
+	texhash ~freeside
 
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
@@ -264,6 +273,7 @@ install-apache:
 	      s'%%%MASON_HANDLER%%%'${MASON_HANDLER}'g; \
 	    " ${APACHE_CONF}/freeside-*.conf \
 	  ) || true
+	[ -d ${INSSERV_OVERRIDE} ] && [ -x /sbin/insserv ] && ( install -o root -m 755 init.d/insserv-override-apache2 ${INSSERV_OVERRIDE}/apache2 && insserv -d ) || true
 
 install-selfservice:
 	[ -e ~freeside ] || cp -pr /etc/skel ~freeside && chown -R freeside ~freeside

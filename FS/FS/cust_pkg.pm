@@ -338,6 +338,9 @@ sub insert {
 
   if ( $conf->config('ticket_system') && $options{ticket_subject} ) {
 
+    #this init stuff is still inefficient, but at least its limited to 
+    # the small number (any?) folks using ticket emailing on pkg order
+
     #eval '
     #  use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
     #  use RT;
@@ -1319,7 +1322,8 @@ sub credit_remaining {
 
 Unsuspends all services (see L<FS::cust_svc> and L<FS::part_svc>) in this
 package, then unsuspends the package itself (clears the susp field and the
-adjourn field if it is in the past).
+adjourn field if it is in the past).  If the suspend reason includes an 
+unsuspension package, that package will be ordered.
 
 Available options are:
 
@@ -1423,6 +1427,9 @@ sub unsuspend {
 
   }
 
+  my $cust_pkg_reason = $self->last_cust_pkg_reason('susp');
+  my $reason = $cust_pkg_reason ? $cust_pkg_reason->reason : '';
+
   my %hash = $self->hash;
   my $inactive = time - $hash{'susp'};
 
@@ -1449,6 +1456,33 @@ sub unsuspend {
     return $error;
   }
 
+  my $unsusp_pkg;
+
+  if ( $reason && $reason->unsuspend_pkgpart ) {
+    my $part_pkg = FS::part_pkg->by_key($reason->unsuspend_pkgpart)
+      or $error = "Unsuspend package definition ".$reason->unsuspend_pkgpart.
+                  " not found.";
+    my $start_date = $self->cust_main->next_bill_date 
+      if $reason->unsuspend_hold;
+
+    if ( $part_pkg ) {
+      $unsusp_pkg = FS::cust_pkg->new({
+          'custnum'     => $self->custnum,
+          'pkgpart'     => $reason->unsuspend_pkgpart,
+          'start_date'  => $start_date,
+          'locationnum' => $self->locationnum,
+          # discount? probably not...
+      });
+      
+      $error ||= $self->cust_main->order_pkg( 'cust_pkg' => $unsusp_pkg );
+    }
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   if ( $conf->config('unsuspend_email_admin') ) {
  
     my $error = send_email(
@@ -1462,6 +1496,11 @@ sub unsuspend {
         'Customer: #'. $self->custnum. ' '. $self->cust_main->name. "\n",
         'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
         ( map { "Service : $_\n" } @labels ),
+        ($unsusp_pkg ?
+          "An unsuspension fee was charged: ".
+            $unsusp_pkg->part_pkg->pkg_comment."\n"
+          : ''
+        ),
       ],
     );
 
@@ -3279,7 +3318,12 @@ specifies the user for agent virtualization
 
 =item fcc_line
 
- boolean selects packages containing fcc form 477 telco lines
+boolean; if true, returns only packages with more than 0 FCC phone lines.
+
+=item state, country
+
+Limit to packages with a service location in the specified state and country.
+For FCC 477 reporting, mostly.
 
 =back
 
@@ -3453,8 +3497,8 @@ sub search {
 
   if ( exists($params->{'censustract'}) ) {
     $params->{'censustract'} =~ /^([.\d]*)$/;
-    my $censustract = "cust_main.censustract = '$1'";
-    $censustract .= ' OR cust_main.censustract is NULL' unless $1;
+    my $censustract = "cust_location.censustract = '$1'";
+    $censustract .= ' OR cust_location.censustract is NULL' unless $1;
     push @where,  "( $censustract )";
   }
 
@@ -3466,10 +3510,22 @@ sub search {
      )
   {
     if ($1) {
-      push @where, "cust_main.censustract LIKE '$1%'";
+      push @where, "cust_location.censustract LIKE '$1%'";
     } else {
       push @where,
-        "( cust_main.censustract = '' OR cust_main.censustract IS NULL )";
+        "( cust_location.censustract = '' OR cust_location.censustract IS NULL )";
+    }
+  }
+
+  ###
+  # parse country/state
+  ###
+  for (qw(state country)) { # parsing rules are the same for these
+  if ( exists($params->{$_}) 
+    && uc($params->{$_}) =~ /^([A-Z]{2})$/ )
+    {
+      # XXX post-2.3 only--before that, state/country may be in cust_main
+      push @where, "cust_location.$_ = '$1'";
     }
   }
 
@@ -3597,7 +3653,8 @@ sub search {
 
   my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
                   'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
-                  'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) ';
+                  'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) '.
+                  'LEFT JOIN cust_location USING ( locationnum ) ';
 
   my $select;
   my $count_query;
@@ -3606,13 +3663,6 @@ sub search {
 
     $select = "DISTINCT substr($zip,1,5) as zip";
     $orderby = "ORDER BY substr($zip,1,5)";
-    $addl_from .= 'LEFT JOIN cust_location ON (
-                     cust_location.locationnum = COALESCE(
-                                                   cust_pkg.locationnum,
-                                                   cust_main.ship_locationnum,
-                                                   cust_main.bill_locationnum
-                                                 )
-                                              )';
     $count_query = "SELECT COUNT( DISTINCT substr($zip,1,5) )";
   } else {
     $select = join(', ',

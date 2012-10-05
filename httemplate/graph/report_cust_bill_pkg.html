@@ -11,28 +11,45 @@
   <TD>Show projected data for future months</TD>
 </TR>
 
-<% include('/elements/tr-select-agent.html',
-             'label'         => 'Agent ',
-             'disable_empty' => 0,
-             'pre_options'   => [ 'all' => 'all (aggregate)' ],
-             'empty_label'   => 'all (breakdown)',
-          )
-%>
+<SCRIPT TYPE="text/javascript">
+function enable_agent_totals(obj) {
+%# enable it iff we are breaking down by agent AND something else
+  obj.form.agent_totals.disabled = !(
+    obj.form.agentnum.value == '' && (
+      obj.form.refnum.value == ''   ||
+      obj.form.classnum.value == 0  ||
+      obj.form.use_setup.value == 1 ||
+      obj.form.use_usage.value == 1
+    )
+  );
+}
+</SCRIPT>
 
-<% include('/elements/tr-select-part_referral.html',
-             'label'         => 'Advertising source ',
-             'disable_empty' => 0,
-             'pre_options'   => [ 'all' => 'all (aggregate)' ],
-             'empty_label'   => 'all (breakdown)',
-          )
-%>
+<& /elements/tr-select-agent.html,
+  'field'         => 'agentnum',
+  'label'         => 'Agent ',
+  'disable_empty' => 0,
+  'pre_options'   => [ 'all' => 'all (aggregate)' ],
+  'empty_label'   => 'all (breakdown)',
+  'onchange'      => 'enable_agent_totals',
+&>
 
-<% include('/elements/tr-select-pkg_class.html',
-              'pre_options' => [ 'all'  => 'all (aggregate)',
-                                 '0' => 'all (breakdown)' ],
-              'empty_label' => '(empty class)',
-           )
-%>
+<& /elements/tr-select-part_referral.html,
+  'field'         => 'refnum',
+  'label'         => 'Advertising source ',
+  'disable_empty' => 0,
+  'pre_options'   => [ 'all' => 'all (aggregate)' ],
+  'empty_label'   => 'all (breakdown)',
+  'onchange'      => 'enable_agent_totals'
+&>
+
+<& /elements/tr-select-pkg_class.html,
+  'field'       => 'classnum',
+  'pre_options' => [ 'all'  => 'all (aggregate)',
+                        '0' => 'all (breakdown)' ],
+  'empty_label' => '(empty class)',
+  'onchange'    => 'enable_agent_totals',
+&>
 
 <!--
 <TR>
@@ -47,8 +64,14 @@
     'field'   => 'use_'.lc($_),
     'options' => [ 0, 1, 2 ],
     'labels'  => { 0 => 'Combine', 1 => 'Separate', 2 => 'Do not show' },
+    'onchange'=> 'enable_agent_totals',
 &>
 % }
+
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="agent_totals" VALUE="1" DISABLED="1"></TD>
+  <TD>Show per-agent subtotals</TD>
+</TR>
 
 <TR>
   <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="use_override" VALUE="1"></TD>

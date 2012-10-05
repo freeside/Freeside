@@ -14,6 +14,7 @@ delete $options{$_} for qw( table schema static primary_key );
   'desc'     => 'Mailbox status information from SQL',
   'options'  => \%options,
   'nodomain' => '',
+  'no_machine' => 1,
   'notes'    => <<END
 Read mailbox status information (vacation and spam settings) from an SQL
 database, tables "vacation" and "users" respectively.

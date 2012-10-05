@@ -1,9 +1,18 @@
+<%init>my $debug = $cgi->param('debug');</%init>
+% warn time.": header.html\n" if $debug;
+%
 <& /elements/header.html, mt('Billing Main') &>
 
+% warn time.": dashboard-install_welcome.html\n" if $debug;
+%
 <& /elements/dashboard-install_welcome.html &>
 
+% warn time.": dashboard-toplist.html\n" if $debug;
+%
 <& /elements/dashboard-toplist.html &>
 
+% warn time.": fetching recently changed customers\n" if $debug;
+%
 %  my $sth = dbh->prepare(
 %    #"SELECT DISTINCT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
 %    "SELECT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
@@ -20,6 +29,7 @@
 %  @custnums = splice(@custnums, 0, 10);
 %
 %  if ( @custnums ) {
+%    warn time.": displaying recently changed customers\n" if $debug;
 
   <& /elements/table-grid.html &>
 

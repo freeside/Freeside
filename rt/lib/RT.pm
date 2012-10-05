@@ -138,6 +138,8 @@ up logging|/InitLogging>, and L<loads plugins|/InitPlugins>.
 
 sub Init {
 
+    my @arg = @_;
+
     CheckPerlRequirements();
 
     InitPluginPaths();
@@ -146,7 +148,7 @@ sub Init {
     ConnectToDatabase();
     InitSystemObjects();
     InitClasses();
-    InitLogging();
+    InitLogging(@arg);
     InitPlugins();
     RT::I18N->Init;
     RT->Config->PostLoadCheck;
@@ -173,6 +175,8 @@ Create the Logger object and set up signal handlers.
 =cut
 
 sub InitLogging {
+
+    my %arg = @_;
 
     # We have to set the record separator ($, man perlvar)
     # or Log::Dispatch starts getting
@@ -309,10 +313,13 @@ sub InitLogging {
                          ));
         }
     }
-    InitSignalHandlers();
+    InitSignalHandlers(%arg);
 }
 
 sub InitSignalHandlers {
+
+    my %arg = @_;
+    return if $arg{'NoSignalHandlers'};
 
 # Signal handlers
 ## This is the default handling of warnings and die'ings in the code

@@ -20,6 +20,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_phone',
   'desc'    => 'Provision e911 services via Dash Carrier Services',
   'notes'   => 'Provision e911 services via Dash Carrier Services',
+  'no_machine' => 1,
   'options' => \%options,
 );
 

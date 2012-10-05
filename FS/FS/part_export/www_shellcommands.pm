@@ -188,3 +188,4 @@ sub ssh_cmd { #subroutine, not method
   '';
 }
 
+1;

@@ -110,11 +110,16 @@ if ( $cgi->param('no_credit_limit') ) {
 
 $new->tagnum( [ $cgi->param('tagnum') ] );
 
+$error ||= $new->set_national_id_from_cgi( $cgi );
+
 my %usedatetime = ( 'birthdate'        => 1,
                     'spouse_birthdate' => 1,
+                    'anniversary_date' => 1,
                   );
 
-foreach my $dfield (qw( birthdate spouse_birthdate signupdate )) {
+foreach my $dfield (qw(
+  signupdate birthdate spouse_birthdate anniversary_date
+)) {
 
   if ( $cgi->param($dfield) && $cgi->param($dfield) =~ /^([ 0-9\-\/]{0,10})$/) {
 

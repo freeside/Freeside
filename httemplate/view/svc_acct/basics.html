@@ -56,6 +56,11 @@
     &>
 % }
 
+<& /view/elements/tr-svc_export_machine.html,
+     'svc'      => $svc_acct,
+     'part_svc' => $part_svc,
+&>
+
 % if ($svc_acct->uid ne '') { 
   <& /view/elements/tr.html, label=>mt('UID'), value=>$svc_acct->uid &>
 % } 

@@ -387,7 +387,7 @@ sub rate_detail {
 
 =item process
 
-Experimental job-queue processor for web interface adds/edits
+Job-queue processor for web interface adds/edits
 
 =cut
 

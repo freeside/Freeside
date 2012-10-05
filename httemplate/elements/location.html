@@ -11,8 +11,10 @@ Example:
              'no_asterisks'   => 0, #set true to disable the red asterisks next
                                     #to required fields
              'address1_label' => 'Address', #label for address
+             'enable_coords'  => 1, #show latitude/longitude fields
              'enable_district' => 1, #show tax district field
              'enable_censustract' => 1, #show censustract field
+             
          )
 
 </%doc>
@@ -175,6 +177,7 @@ Example:
   <TD COLSPAN=6><% include('/elements/select-country.html', %select_hash ) %></TD>
 </TR>
 
+% if ( $opt{enable_coords} ) {
 <TR>
   <TD ALIGN="right"><% mt('Latitude') |h %></TH>
   <TD COLSPAN=7>
@@ -195,6 +198,11 @@ Example:
     >
   </TD>
 </TR>
+% } else {
+%   foreach (qw(latitude longitude)) {
+<INPUT TYPE="hidden" NAME="<% $_ %>" VALUE="<% $object->get($_) |h%>">
+%   }
+% }
 <INPUT TYPE="hidden" NAME="<%$pre%>coord_auto" VALUE="<% $object->coord_auto %>">
 
 <INPUT TYPE="hidden" NAME="<%$pre%>geocode" VALUE="<% $object->geocode %>">

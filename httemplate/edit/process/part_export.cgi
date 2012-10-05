@@ -28,6 +28,11 @@ my $new = new FS::part_export ( {
   } fields('part_export')
 } );
 
+if ( $cgi->param('svc_machine') eq 'Y' ) {
+  $new->machine('_SVC_MACHINE');
+  $new->part_export_machine_textarea( $cgi->param('part_export_machine') );
+}
+
 my $error;
 if ( $exportnum ) {
   #warn $old;

@@ -56,13 +56,14 @@ my $new = new FS::svc_acct ( \%hash );
 
 my $error = '';
 
+my $part_svc = $svcnum ? 
+                $old->part_svc : 
+                qsearchs( 'part_svc', 
+                  { 'svcpart' => $cgi->param('svcpart') }
+                );
+
 # google captcha auth
 if ( $cgi->param('captcha_response') ) {
-  my $part_svc = $svcnum ? 
-                  $old->part_svc : 
-                  qsearchs( 'part_svc', 
-                    { 'svcpart' => $cgi->param('svcpart') }
-                  );
   my ($export) = $part_svc->part_export('acct_google');
   if ( $export and
       ! $export->captcha_auth($cgi->param('captcha_response')) ) { 
@@ -79,6 +80,18 @@ if (     $cgi->param('clear_password') eq '*HIDDEN*'
 }
 
 if ( ! $error ) {
+
+  my $export_info = FS::part_export::export_info();
+
+  my @svc_export_machine =
+    map FS::svc_export_machine->new({
+          'svcnum'     => $svcnum,
+          'exportnum'  => $_->exportnum,
+          'machinenum' => scalar($cgi->param('exportnum'.$_->exportnum.'machinenum')),
+        }),
+      grep { $_->machine eq '_SVC_MACHINE' }
+        $part_svc->part_export;
+
   if ( $svcnum ) {
     foreach ( grep { $old->$_ != $new->$_ }
                    qw( seconds upbytes downbytes totalbytes )
@@ -92,9 +105,9 @@ if ( ! $error ) {
       $error ||= $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
       last;                                #once is enough
     }
-    $error ||= $new->replace($old);
+    $error ||= $new->replace($old, 'child_objects'=>\@svc_export_machine);
   } else {
-    $error ||= $new->insert;
+    $error ||= $new->insert('child_objects'=>\@svc_export_machine);
     $svcnum = $new->svcnum;
   }
 }

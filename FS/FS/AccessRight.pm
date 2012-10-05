@@ -117,6 +117,7 @@ tie my %rights, 'Tie::IxHash',
     'Cancel customer',
     'Complimentary customer', #aka users-allow_comp 
     'Merge customer',
+    'Merge customer across agents',
     { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers
     'Bill customer now', #NEW
     'Bulk send customer notices', #NEW
@@ -177,7 +178,9 @@ tie my %rights, 'Tie::IxHash',
   'Customer invoice / financial info rights' => [
     'View invoices',
     'Resend invoices', #NEWNEW
-    'Delete invoices', #new, but no need to phase in
+    'Void invoices',
+    'Unvoid invoices',
+    'Delete invoices',
     'View customer tax exemptions', #yow
     'Add customer tax adjustment', #new, but no need to phase in
     'View customer batched payments', #NEW
@@ -227,11 +230,11 @@ tie my %rights, 'Tie::IxHash',
   ###
   # customer voiding rights..
   ###
-  'Customer void rights' => [
+  'Customer payment void rights' => [
     { rightname=>'Credit card void', desc=>'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway.' }, #aka. cc-void 
     { rightname=>'Echeck void', desc=>'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway.' }, #aka. echeck-void
-    'Regular void',
-    { rightname=>'Unvoid', desc=>'Enable unvoiding of voided payments' }, #aka. unvoid 
+    'Void payments',
+    { rightname=>'Unvoid payments', desc=>'Enable unvoiding of voided payments' }, #aka. unvoid 
     
   
   ],
@@ -261,6 +264,7 @@ tie my %rights, 'Tie::IxHash',
     'List all customers',
     'Advanced customer search',
     'List zip codes', #NEW
+    'List quotations',
     'List invoices',
     'List packages',
     'Summarize packages',
@@ -396,6 +400,7 @@ sub default_superuser_rights {
     'Delete refund', #?
     'Edit customer package dates',
     'Time queue',
+    'Usage: Time worked',
     'Redownload resolved batches',
     'Raw SQL',
     'Configuration download',
@@ -404,6 +409,7 @@ sub default_superuser_rights {
     'Edit usage',
     'Credit card void',
     'Echeck void',
+    'Edit customer package dates',
   );
 
   no warnings 'uninitialized';

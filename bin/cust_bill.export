@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV_XS;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_bill;
+use Date::Format;
+
+my @fields = qw(
+  invnum
+  custnum
+);
+
+push @fields,
+  { 'header'   => 'Date',
+    'callback' => sub { time2str('%x', shift->_date); },
+  },
+;
+
+push @fields, qw( charged owed );
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $agentnum = shift or die &usage;
+
+my $csv = new Text::CSV_XS;
+
+$csv->combine( map { ref($_) ? $_->{'header'} : $_ } @fields ) or die;
+print $csv->string."\n";
+
+my @cust_bill = qsearch({
+  'table'     => 'cust_bill',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => {},
+  'extra_sql' => "WHERE cust_main.agentnum = $agentnum",
+});
+
+foreach my $cust_bill ( @cust_bill ) {
+  $csv->combine( map { ref($_) ? &{$_->{'callback'}}($cust_bill)
+                               : $cust_bill->$_()
+                     } 
+                   @fields
+               ) or die;
+  print $csv->string."\n";
+}
+
+1;

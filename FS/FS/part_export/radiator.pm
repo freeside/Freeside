@@ -11,6 +11,8 @@ tie my %options, 'Tie::IxHash', %FS::part_export::sqlradius::options;
   'desc'     => 'Real-time export to RADIATOR',
   'options'  => \%options,
   'nodomain' => '',
+  'no_machine' => 1,
+  'default_svc_class' => 'Internet',
   'notes' => <<'END',
 Real-time export of the <b>radusers</b> table to any SQL database in
 <a href="http://www.open.com.au/radiator/">Radiator</a>-native format.

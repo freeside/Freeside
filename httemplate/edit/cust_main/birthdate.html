@@ -1,5 +1,38 @@
 <% ntable("#cccccc", 2) %>
+
 % # maybe put after the contact names?
+
+% my $id_country = $conf->config('national_id-country');
+%  if ( $id_country ) {
+%   if ( $id_country eq 'MY' ) {
+%     my($old, $nric) = ( '', '');
+%     if ( $cust_main->national_id =~ /^\d{6}\-\d{2}\-\d{4}$/ ) {
+%       $nric = $cust_main->national_id;
+%     } else { # elsif ( $cust_main->national_id =~ /^\w\d{9}$/ ) {
+%       $old = $cust_main->national_id;
+%     #} else {
+%     #  warn "unknown national_id format";
+%#       <INPUT TYPE="hidden" NAME="national_id0" VALUE="<% $cust_main->national_id |h %>">
+%     }
+
+      <% include( '/elements/tr-input-text.html',
+                    'field' => 'national_id1',
+                    'value' => $nric,
+                    'label' => 'NRIC',
+                )
+      %>
+      <% include( '/elements/tr-input-text.html',
+                    'field' => 'national_id2',
+                    'value' => $old,
+                    'label' => 'Old IC/Passport',
+                )
+      %>
+
+%   } else {
+%     warn "unknown national_id-country $id_country";
+%   }
+% }
+
 % if ( $conf->exists('cust_main-enable_birthdate') ) {
   <% include( '/elements/tr-input-date-field.html', {
                 'name'        => 'birthdate',
@@ -11,6 +44,7 @@
             })
   %>
 % }
+
 % if ( $conf->exists('cust_main-enable_spouse_birthdate') ) {
   <% include( '/elements/tr-input-date-field.html', {
                 'name'        => 'spouse_birthdate',
@@ -22,6 +56,19 @@
             })
   %>
 % }
+
+% if ( $conf->exists('cust_main-enable_anniversary_date') ) {
+  <% include( '/elements/tr-input-date-field.html', {
+                'name'        => 'anniversary_date',
+                'value'       => $cust_main->anniversary_date,
+                'label'       => 'Anniversary Date',
+                'format'      => ( $conf->config('date_format') || "%m/%d/%Y" ),
+                'usedatetime' => 1,
+                'noinit'      => $noinit++,
+            })
+  %>
+% }
+
 </TABLE>
 <%init>
 

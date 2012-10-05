@@ -103,7 +103,7 @@ my $join = "
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View customer tax exemptions');
 
-my @where = ();
+my @where = ("exempt_monthly = 'Y'");
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 if ( $beginning || $ending ) {
@@ -121,6 +121,7 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
 }
 
 if ( $cgi->param('out') ) {
+  # wtf? how would you ever get exemptions on a non-taxable package location?
 
   push @where, "
     0 = (
@@ -150,6 +151,11 @@ if ( $cgi->param('out') ) {
                "  country = $country";
   push @where, 'taxclass = '. dbh->quote( $cgi->param('taxclass') )
     if $cgi->param('taxclass');
+
+} elsif ( $cgi->param('taxnum') ) {
+
+  my $taxnum_in = join(',', grep /^\d+$/, $cgi->param('taxnum') );
+  push @where, "taxnum IN ($taxnum_in)" if $taxnum_in;
 
 }
 

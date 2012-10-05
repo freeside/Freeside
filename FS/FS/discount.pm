@@ -136,6 +136,7 @@ sub check {
     || $self->ut_floatn('months') #actually decimal, but this will do
     || $self->ut_enum('disabled', [ '', 'Y' ])
     || $self->ut_enum('setup', [ '', 'Y' ])
+    #|| $self->ut_enum('linked', [ '', 'Y' ])
   ;
   return $error if $error;
 

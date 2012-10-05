@@ -91,8 +91,9 @@ if ( -e $addl_handler_use_file ) {
   use Text::CSV_XS;
   use Spreadsheet::WriteExcel;
   use Spreadsheet::WriteExcel::Utility;
+  use OLE::Storage_Lite;
   use Excel::Writer::XLSX;
-  use Excel::Writer::XLSX::Utility;
+  #use Excel::Writer::XLSX::Utility; #redundant with above
 
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
@@ -315,6 +316,16 @@ if ( -e $addl_handler_use_file ) {
   use FS::quotation;
   use FS::quotation_pkg;
   use FS::quotation_pkg_discount;
+  use FS::cust_bill_void;
+  use FS::cust_bill_pkg_void;
+  use FS::cust_bill_pkg_detail_void;
+  use FS::cust_bill_pkg_display_void;
+  use FS::cust_bill_pkg_tax_location_void;
+  use FS::cust_bill_pkg_tax_rate_location_void;
+  use FS::cust_tax_exempt_pkg_void;
+  use FS::cust_bill_pkg_discount_void;
+  use FS::agent_pkg_class;
+  use FS::svc_export_machine;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
@@ -358,7 +369,7 @@ if ( -e $addl_handler_use_file ) {
 
       use RT::Interface::Web::Request;
 
-      #nother undeclared web UI dep (for ticket links graph)
+      #another undeclared web UI dep (for ticket links graph)
       use IPC::Run::SafeHandles;
 
       #slow, unreliable, segfaults and is optional

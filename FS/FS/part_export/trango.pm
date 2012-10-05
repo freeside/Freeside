@@ -68,6 +68,7 @@ tie my %options, 'Tie::IxHash', (
   'svc'     => 'svc_broadband',
   'desc'    => 'Sends SNMP SETs to a Trango AP.',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => 'Requires Net::SNMP.  See the documentation for FS::part_export::trango for required virtual fields and usage information.',
 );
 

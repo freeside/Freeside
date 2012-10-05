@@ -23,6 +23,14 @@
   <TD BGCOLOR="#ffffff"><B><% $balance %></B></TD>
 </TR>
 
+% if ( $conf->exists('cust_main-select-prorate_day') ) {
+<TR>
+  <TD ALIGN="right"><% mt('Prorate day of month') |h %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->prorate_day %>
+  </TD>
+</TR>
+% }
+
 % if ( $conf->exists('cust_main-select-billday') 
 %    && ($cust_main->payby eq 'CARD' || $cust_main->payby eq 'CHEK') ) {
 <TR>

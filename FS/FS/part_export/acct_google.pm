@@ -16,10 +16,12 @@ tie my %options, 'Tie::IxHash',
 # admin logins.
 
 %info = (
-  'svc'       => 'svc_acct',
-  'desc'      => 'Google hosted mail',
-  'options'   => \%options,
-  'nodomain'  => 'Y',
+  'svc'        => 'svc_acct',
+  'desc'       => 'Google hosted mail',
+  'options'    => \%options,
+  'nodomain'   => 'Y',
+  'no_machine' => 1,
+  'default_svc_class' => 'Email',
   'notes'    => <<'END'
 Export accounts to the Google Provisioning API.  Requires 
 REST::Google::Apps::Provisioning from CPAN.

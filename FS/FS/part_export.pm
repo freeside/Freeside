@@ -4,10 +4,12 @@ use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG %exports );
 use Exporter;
 use Tie::IxHash;
-use base qw( FS::option_Common FS::m2m_Common ); # m2m for 'export_nas'
+use base qw( FS::option_Common FS::m2m_Common );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_svc;
 use FS::part_export_option;
+use FS::part_export_machine;
+use FS::svc_export_machine;
 use FS::export_svc;
 
 #for export modules, though they should probably just use it themselves
@@ -108,6 +110,50 @@ otherwise returns false.
 If a hash reference of options is supplied, part_export_option records are
 created (see L<FS::part_export_option>).
 
+=cut
+
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  #kinda false laziness with process_m2name
+  my @machines = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ }
+                   grep /\S/,
+                     split /[\n\r]{1,2}/,
+                       $self->part_export_machine_textarea;
+
+  foreach my $machine ( @machines ) {
+
+    my $part_export_machine = new FS::part_export_machine {
+      'exportnum' => $self->exportnum,
+      'machine'   => $machine,
+    };
+    $error = $part_export_machine->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
+
 =item delete
 
 Delete this record from the database.
@@ -117,13 +163,13 @@ Delete this record from the database.
 #foreign keys would make this much less tedious... grr dumb mysql
 sub delete {
   my $self = shift;
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -147,10 +193,103 @@ sub delete {
     }
   }
 
+  foreach my $part_export_machine ( $self->part_export_machine ) {
+    my $error = $part_export_machine->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
   '';
+}
 
+=item replace [ OLD_RECORD ] [ HASHREF | OPTION => VALUE ... ]
+
+Replaces the OLD_RECORD with this one in the database.  If there is an error,
+returns the error, otherwise returns false.
+
+If a list or hash reference of options is supplied, option records are created
+or modified.
+
+=cut
+
+sub replace {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( $self->part_export_machine_textarea ) {
+
+    my %part_export_machine = map { $_->machine => $_ }
+                                $self->part_export_machine;
+
+    my @machines = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ }
+                     grep /\S/,
+                       split /[\n\r]{1,2}/,
+                         $self->part_export_machine_textarea;
+
+    foreach my $machine ( @machines ) {
+
+      if ( $part_export_machine{$machine} ) {
+
+        if ( $part_export_machine{$machine}->disabled eq 'Y' ) {
+          $part_export_machine{$machine}->disabled('');
+          $error = $part_export_machine{$machine}->replace;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
+        }
+
+        delete $part_export_machine{$machine}; #so we don't disable it below
+
+      } else {
+
+        my $part_export_machine = new FS::part_export_machine {
+                                        'exportnum' => $self->exportnum,
+                                        'machine'   => $machine
+                                      };
+        $error = $part_export_machine->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+  
+      }
+
+    }
+
+
+    foreach my $part_export_machine ( values %part_export_machine ) {
+      $part_export_machine->disabled('Y');
+      $error = $part_export_machine->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 =item check
@@ -166,7 +305,7 @@ sub check {
   my $error = 
     $self->ut_numbern('exportnum')
     || $self->ut_textn('exportname')
-    || $self->ut_domain('machine')
+    || $self->ut_domainn('machine')
     || $self->ut_alpha('exporttype')
   ;
   return $error if $error;
@@ -190,6 +329,31 @@ Returns a label for this export, "exportname||exportype (machine)".
 sub label {
   my $self = shift;
   ($self->exportname || $self->exporttype ). ' ('. $self->machine. ')';
+}
+
+=item label_html
+
+Returns a label for this export, "exportname: exporttype to machine".
+
+=cut
+
+sub label_html {
+  my $self = shift;
+
+  my $label = $self->exportname
+                ? '<B>'. $self->exportname. '</B>: ' #<BR>'.
+                : '';
+
+  $label .= $self->exporttype;
+
+  $label .= ' to '. ( $self->machine eq '_SVC_MACHINE'
+                        ? 'per-service hostname'
+                        : $self->machine
+                    )
+    if $self->machine;
+
+  $label;
+
 }
 
 #=item part_svc
@@ -231,6 +395,20 @@ sub cust_svc {
   map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
     grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
       $self->export_svc;
+}
+
+=item part_export_machine
+
+Returns all machines as FS::part_export_machine objects (see
+L<FS::part_export_machine>).
+
+=cut
+
+sub part_export_machine {
+  my $self = shift;
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->machine cmp $b->machine }
+      qsearch('part_export_machine', { 'exportnum' => $self->exportnum } );
 }
 
 =item export_svc
@@ -291,6 +469,26 @@ sub _rebless {
   #die $@ if $@;
   bless($self, $class) unless $@;
   $self;
+}
+
+=item svc_machine
+
+=cut
+
+sub svc_machine {
+  my( $self, $svc_x ) = @_;
+
+  return $self->machine unless $self->machine eq '_SVC_MACHINE';
+
+  my $svc_export_machine = qsearchs('svc_export_machine', {
+    'svcnum'    => $svc_x->svcnum,
+    'exportnum' => $self->exportnum,
+  })
+    #would only happen if you add this export to existing services without a
+    #machine set then try to run exports without setting it... right?
+    or die "No hostname selected for ".($self->exportname || $self->exporttype);
+
+  return $svc_export_machine->part_export_machine->machine;
 }
 
 #these should probably all go away, just let the subclasses define em

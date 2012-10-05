@@ -34,10 +34,11 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_acct',
   'desc'    => 'Configurable provisioning of accounts via the XML-RPC protocol',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END',
 Configurable, real-time export of accounts via the XML-RPC protocol.<BR>
 <BR>
-If using "Individual values" parameter style, specfify one parameter per line.<BR>
+If using "Individual values" parameter style, specify one parameter per line.<BR>
 <BR>
 If using "Struct of name/value pairs" parameter style, specify one name and
 value on each line, separated by whitespace.<BR>

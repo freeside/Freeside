@@ -49,7 +49,7 @@ Set($MessageBoxWidth, 80);
 Set($MessageBoxRichTextHeight, 368);
 
 #redirects to ticket display on quick create
-#Set($QuickCreateRedirect, 1);
+#Set($DisplayTicketAfterQuickCreate, 1);
 
 #Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
 

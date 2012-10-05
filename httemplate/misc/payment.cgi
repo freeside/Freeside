@@ -12,11 +12,12 @@
 
   <& /elements/tr-amount_fee.html,
        'amount'             => $amount,
-       'process-pkgpart'    => scalar($conf->config('manual_process-pkgpart')),
+       'process-pkgpart'    => 
+          scalar($conf->config('manual_process-pkgpart', $cust_main->agentnum)),
        'process-display'    => scalar($conf->config('manual_process-display')),
-       'process-skip-first' => $conf->exists('manual_process-skip_first'),
+       'process-skip_first' => $conf->exists('manual_process-skip_first'),
        'num_payments'       => scalar($cust_main->cust_pay), 
-       'post_fee_callback'  => $post_fee_callback,
+       'surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
   &>
 
   <& /elements/tr-select-discount_term.html,
@@ -78,7 +79,7 @@
     </TR>
 
     <& /elements/location.html,
-                  'object'         => $cust_main, #XXX errors???
+                  'object'         => $cust_main->bill_location,
                   'no_asterisks'   => 1,
                   'address1_label' => emt('Card billing address'),
     &>
@@ -251,6 +252,10 @@ my $custnum = $1;
 my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
 die "unknown custnum $custnum" unless $cust_main;
 
+my $location = $cust_main->bill_location;
+# no proper error handling on this anyway, but when we have it,
+# remember to repopulate fields in $location
+
 my $balance = $cust_main->balance;
 
 my $payinfo = '';
@@ -268,19 +273,6 @@ my $amount = '';
 if ( $balance > 0 ) {
   $amount = $balance;
 }
-
-my $post_fee_callback = sub {
-  my( $amountref ) = @_;
-
-  return unless $$amountref > 0;
-
-  my $conf = new FS::Conf;
-
-  my $cc_surcharge_pct = $conf->config('credit-card-surcharge-percentage');
-  $$amountref += $$amountref * $cc_surcharge_pct/100 if $cc_surcharge_pct > 0;
-
-  $$amountref = sprintf("%.2f", $$amountref);
-};
 
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
 

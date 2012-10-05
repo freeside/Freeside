@@ -91,6 +91,7 @@ my %modules =  (
 
   'KeyBank'               => 'Business::BatchPayment',
   'Paymentech'            => 'Business::BatchPayment',
+  'TD_EFT'                => 'Business::BatchPayment',
 );
 
 my %modules_for_namespace;
@@ -141,7 +142,7 @@ my $fields = [
                {
                  field               => 'gateway_options',
                  type                => 'textarea',
-                 rows                => '8',
+                 rows                => '12',
                  cols                => '40', 
                  curr_value_callback => sub { my($cgi, $object, $fref) = @_;
                                               join("\r", $object->options );

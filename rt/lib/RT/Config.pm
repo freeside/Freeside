@@ -411,8 +411,8 @@ our %META = (
             Description => q|What tickets to display in the 'More about requestor' box|,                #loc
             Values      => [qw(Active Inactive All None)],
             ValuesLabel => {
-                Active   => "Show the Requestor's 10 highest priority open tickets",                  #loc
-                Inactive => "Show the Requestor's 10 highest priority closed tickets",      #loc
+                Active   => "Show the Requestor's 10 highest priority active tickets",                  #loc
+                Inactive => "Show the Requestor's 10 highest priority inactive tickets",      #loc
                 All      => "Show the Requestor's 10 highest priority tickets",      #loc
                 None     => "Show no tickets for the Requestor", #loc
             },
@@ -749,7 +749,7 @@ our %META = (
 
             my %seen;
             foreach my $encoding ( grep defined && length, splice @$value ) {
-                next if $seen{ $encoding }++;
+                next if $seen{ $encoding };
                 if ( $encoding eq '*' ) {
                     unshift @$value, '*';
                     next;

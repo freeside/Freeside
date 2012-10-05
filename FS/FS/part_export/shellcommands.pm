@@ -97,12 +97,12 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'      => 'svc_acct',
-  'desc'     =>
-    'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
-  'options'  => \%options,
-  'nodomain' => 'Y',
-  'notes' => <<'END'
+  'svc'         => 'svc_acct',
+  'desc'        => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
+  'options'     => \%options,
+  'nodomain'    => 'Y',
+  'svc_machine' => 1,
+  'notes'       => <<'END'
 Run remote commands via SSH.  Usernames are considered unique (also see
 shellcommands_withdomain).  You probably want this if the commands you are
 running will not accept a domain as a parameter.  You will need to
@@ -124,24 +124,7 @@ running will not accept a domain as a parameter.  You will need to
       this.form.unsuspend_stdin.value="";
     '>
   <LI>
-    <INPUT TYPE="button" VALUE="FreeBSD before 4.10 / 5.3" onClick='
-      this.form.useradd.value = "lockf /etc/passwd.lock pw useradd $username -d $dir -m -s $shell -u $uid -c $finger -h 0";
-      this.form.useradd_stdin.value = "$_password\n";
-      this.form.userdel.value = "lockf /etc/passwd.lock pw userdel $username -r"; this.form.userdel_stdin.value="";
-      this.form.usermod.value = "lockf /etc/passwd.lock pw usermod $old_username -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -g $new_gid -c $new_finger -h 0";
-      this.form.usermod_stdin.value = "$new__password\n"; this.form.suspend.value = "lockf /etc/passwd.lock pw lock $username";
-      this.form.suspend_stdin.value="";
-      this.form.unsuspend.value = "lockf /etc/passwd.lock pw unlock $username"; this.form.unsuspend_stdin.value="";
-    '>
-    Note: On FreeBSD versions before 5.3 and 4.10 (4.10 is after 4.9, not
-    4.1!), due to deficient locking in pw(1), you must disable the chpass(1),
-    chsh(1), chfn(1), passwd(1), and vipw(1) commands, or replace them with
-    wrappers that prepend "lockf /etc/passwd.lock".  Alternatively, apply the
-    patch in
-    <A HREF="http://www.freebsd.org/cgi/query-pr.cgi?pr=23501">FreeBSD PR#23501</A>
-    and use the "FreeBSD 4.10 / 5.3 or later" button below.
-  <LI>
-    <INPUT TYPE="button" VALUE="FreeBSD 4.10 / 5.3 or later" onClick='
+    <INPUT TYPE="button" VALUE="FreeBSD" onClick='
       this.form.useradd.value = "pw useradd $username -d $dir -m -s $shell -u $uid -g $gid -c $finger -h 0";
       this.form.useradd_stdin.value = "$_password\n";
       this.form.userdel.value = "pw userdel $username -r";
@@ -360,7 +343,7 @@ sub _export_command {
 
   my @ssh_cmd_args = (
     user          => $self->option('user') || 'root',
-    host          => $self->machine,
+    host          => $self->svc_machine($svc_acct),
     command       => $command_string,
     stdin_string  => $stdin_string,
     ignored_errors    => $self->option('ignored_errors') || '',
@@ -373,7 +356,7 @@ sub _export_command {
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
     $error = $error->full_message if ref $error; # Exception::Class::Base
-    return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+    return $error. ' ('. $self->exporttype. ' to '. $self->svc_machine($svc_acct). ')'
       if $error;
   }
   else {
@@ -433,7 +416,7 @@ sub _export_replace {
     #  $error ||= "can't change RADIUS groups";
     #}
   }
-  return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+  return $error. ' ('. $self->exporttype. ' to '. $self->svc_machine($new). ')'
     if $error;
 
   $new_agent_custid = $new_cust_main ? $new_cust_main->agent_custid : '';
@@ -457,7 +440,7 @@ sub _export_replace {
 
   my @ssh_cmd_args = (
     user          => $self->option('user') || 'root',
-    host          => $self->machine,
+    host          => $self->svc_machine($new),
     command       => $command_string,
     stdin_string  => $stdin_string,
     ignored_errors    => $self->option('ignored_errors') || '',
@@ -470,7 +453,7 @@ sub _export_replace {
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
     $error = $error->full_message if ref $error; # Exception::Class::Base
-    return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+    return $error. ' ('. $self->exporttype. ' to '. $self->svc_machine($new). ')'
       if $error;
   }
   else {
@@ -507,7 +490,7 @@ sub ssh_cmd { #subroutine, not method
   my ($output, $errput) = $ssh->capture2($ssh_opt, $opt->{'command'});
 
   return if $opt->{'ignore_all_errors'};
-  die "Error running SSH command: ". $ssh->error if $ssh->error;
+  #die "Error running SSH command: ". $ssh->error if $ssh->error;
 
   if ( ($output || $errput)
        && $opt->{'ignored_errors'} && length($opt->{'ignored_errors'})
@@ -521,7 +504,9 @@ sub ssh_cmd { #subroutine, not method
     $errput =~ s/[\s\n]//g;
   }
 
-  die "$errput\n" if $errput;
+  die (($errput || $ssh->error). "\n") if $errput || $ssh->error; 
+  #die "$errput\n" if $errput;
+
   die "$output\n" if $output and $opt->{'fail_on_output'};
   '';
 }

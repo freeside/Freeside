@@ -18,10 +18,11 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'    => 'svc_www',
-  'desc'   => 'Real-time export to Plesk managed hosting service',
-  'options'=> \%options,
-  'notes'  => <<'END'
+  'svc'        => 'svc_www',
+  'desc'       => 'Real-time export to Plesk managed hosting service',
+  'options'    => \%options,
+  'no_machine' => 1,
+  'notes'      => <<'END'
 Real-time export to
 <a href="http://www.swsoft.com/">Plesk</a> managed server.
 Requires installation of

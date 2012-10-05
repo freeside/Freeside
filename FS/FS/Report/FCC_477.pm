@@ -45,8 +45,8 @@ Documentation.
 );
 
 @technology = (
-  'Asymetric xDSL',
-  'Symetric xDSL',
+  'Asymmetric xDSL',
+  'Symmetric xDSL',
   'Other Wireline',
   'Cable Modem',
   'Optical Carrier',

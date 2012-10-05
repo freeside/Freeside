@@ -55,6 +55,7 @@ tie %options, 'Tie::IxHash',
   'svc'     => 'cust_main',
   'desc'    => 'Send an HTTP or HTTPS GET or POST request, for customers.',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END'
 Send an HTTP or HTTPS GET or POST to the specified URL on customer addition,
 modification and deletion.  For HTTPS support,

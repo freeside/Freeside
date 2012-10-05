@@ -55,6 +55,7 @@
                             'svc_dst_pkgpart'  => 'Include services of package',
                             'report_option'    => 'Report classes',
                             'fcc_ds0s'         => 'Voice-grade equivalents',
+                            'fcc_voip_class'   => 'Category',
                           },
 
               'fields' => [
@@ -195,6 +196,9 @@
                                 ? ( 
                                     { type  => 'tablebreak-tr-title',
                                       value => 'FCC Form 477 information',
+                                    },
+                                    { field=>'fcc_voip_class',
+                                      type=>'select-voip_class',
                                     },
                                     { field=>'fcc_ds0s', type=>'text', size=>6 },
                                   )

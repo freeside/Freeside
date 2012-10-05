@@ -50,7 +50,7 @@ sub access_right {
 sub session {
   my( $self, $session ) = @_;
 
-  if ( $session && $session->{'Current_User'} ) { # does this even work?
+  if ( $session && $session->{'CurrentUser'} ) { # does this even work?
     warn "$me session: using existing session and CurrentUser: \n".
          Dumper($session->{'CurrentUser'})
       if $DEBUG;
@@ -92,6 +92,7 @@ sub init {
   # this needs to be done on each fork
   warn "$me init: initializing RT\n" if $DEBUG;
   {
+    local $SIG{__WARN__};
     local $SIG{__DIE__};
     eval 'RT::Init("NoSignalHandlers"=>1);';
   }

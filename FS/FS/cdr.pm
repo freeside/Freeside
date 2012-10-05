@@ -478,6 +478,80 @@ sub set_status_and_rated_price {
   }
 }
 
+=item parse_number [ OPTION => VALUE ... ]
+
+Returns two scalars, the countrycode and the rest of the number.
+
+Options are passed as name-value pairs.  Currently available options are:
+
+=over 4
+
+=item column
+
+The column containing the number to be parsed.  Defaults to dst.
+
+=item international_prefix
+
+The digits for international dialing.  Defaults to '011'  The value '+' is
+always recognized.
+
+=item domestic_prefix
+
+The digits for domestic long distance dialing.  Defaults to '1'
+
+=back
+
+=cut
+
+sub parse_number {
+  my ($self, %options) = @_;
+
+  my $field = $options{column} || 'dst';
+  my $intl = $options{international_prefix} || '011';
+  my $countrycode = '';
+  my $number = $self->$field();
+
+  my $to_or_from = 'concerning';
+  $to_or_from = 'from' if $field eq 'src';
+  $to_or_from = 'to' if $field eq 'dst';
+  warn "parsing call $to_or_from $number\n" if $DEBUG;
+
+  #remove non-phone# stuff and whitespace
+  $number =~ s/\s//g;
+#          my $proto = '';
+#          $dest =~ s/^(\w+):// and $proto = $1; #sip:
+#          my $siphost = '';
+#          $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
+
+  if (    $number =~ /^$intl(((\d)(\d))(\d))(\d+)$/
+       || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
+     )
+  {
+
+    my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
+    #first look for 1 digit country code
+    if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
+      $countrycode = $one;
+      $number = $u1.$u2.$rest;
+    } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
+      $countrycode = $two;
+      $number = $u2.$rest;
+    } else { #3 digit country code
+      $countrycode = $three;
+      $number = $rest;
+    }
+
+  } else {
+    my $domestic_prefix =
+      exists($options{domestic_prefix}) ? $options{domestic_prefix} : '';
+    $countrycode = length($domestic_prefix) ? $domestic_prefix : '1';
+    $number =~ s/^$countrycode//;# if length($number) > 10;
+  }
+
+  return($countrycode, $number);
+
+}
+
 =item rate [ OPTION => VALUE ... ]
 
 Rates this CDR according and sets the status to 'rated'.
@@ -557,51 +631,22 @@ sub rate_prefix {
   # (or calling station id for toll free calls)
   ###
 
-  my( $to_or_from, $number );
+  my( $to_or_from, $column );
   if ( $self->is_tollfree && ! $part_pkg->option_cacheable('disable_tollfree') )
   { #tollfree call
     $to_or_from = 'from';
-    $number = $self->src;
+    $column = 'src';
   } else { #regular call
     $to_or_from = 'to';
-    $number = $self->dst;
+    $column = 'dst';
   }
-
-  warn "parsing call $to_or_from $number\n" if $DEBUG;
-
-  #remove non-phone# stuff and whitespace
-  $number =~ s/\s//g;
-#          my $proto = '';
-#          $dest =~ s/^(\w+):// and $proto = $1; #sip:
-#          my $siphost = '';
-#          $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
 
   #determine the country code
-  my $intl = $part_pkg->option_cacheable('international_prefix') || '011';
-  my $countrycode = '';
-  if (    $number =~ /^$intl(((\d)(\d))(\d))(\d+)$/
-       || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
-     )
-  {
-
-    my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
-    #first look for 1 digit country code
-    if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
-      $countrycode = $one;
-      $number = $u1.$u2.$rest;
-    } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
-      $countrycode = $two;
-      $number = $u2.$rest;
-    } else { #3 digit country code
-      $countrycode = $three;
-      $number = $rest;
-    }
-
-  } else {
-    my $domestic_prefix = $part_pkg->option_cacheable('domestic_prefix');
-    $countrycode = length($domestic_prefix) ? $domestic_prefix : '1';
-    $number =~ s/^$countrycode//;# if length($number) > 10;
-  }
+  my ($countrycode, $number) = $self->parse_number(
+    column => $column,
+    international_prefix => $part_pkg->option_cacheable('international_prefix'),
+    domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
+  );
 
   warn "rating call $to_or_from +$countrycode $number\n" if $DEBUG;
   my $pretty_dst = "+$countrycode $number";
@@ -622,12 +667,20 @@ sub rate_prefix {
     # -disregard private or unknown numbers
     # -there is exactly one record in rate_prefix for a given NPANXX
     # -default to interstate if we can't find one or both of the prefixes
-    my $dstprefix = $self->dst;
+    my (undef, $dstprefix) = $self->parse_number(
+      column => 'dst',
+      international_prefix => $part_pkg->option_cacheable('international_prefix'),
+      domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
+    );
     $dstprefix =~ /^(\d{6})/;
     $dstprefix = qsearchs('rate_prefix', {   'countrycode' => '1', 
                                                 'npa' => $1, 
                                          }) || '';
-    my $srcprefix = $self->src;
+    my (undef, $srcprefix) = $self->parse_number(
+      column => 'src',
+      international_prefix => $part_pkg->option_cacheable('international_prefix'),
+      domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
+    );
     $srcprefix =~ /^(\d{6})/;
     $srcprefix = qsearchs('rate_prefix', {   'countrycode' => '1',
                                              'npa' => $1, 

@@ -21,10 +21,11 @@ tie %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'      => 'svc_phone',
-  'desc'     => 'Export DIDs to OpenSIPs dr_rules table',
-  'options'  => \%options,
-  'notes'    => 'Export DIDs to OpenSIPs dr_rules table',
+  'svc'        => 'svc_phone',
+  'desc'       => 'Export DIDs to OpenSIPs dr_rules table',
+  'options'    => \%options,
+  'no_machine' => 1,
+  'notes'      => 'Export DIDs to OpenSIPs dr_rules table',
 );
 
 sub rebless { shift; }
@@ -93,3 +94,4 @@ sub dr_reload {
     '';
 }
 
+1;

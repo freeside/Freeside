@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+
+&untaint_argv;	#what it sounds like  (eww)
+use vars qw(%opt);
+getopts("a:", \%opt);
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+use FS::Cron::agent_email qw(agent_email);
+agent_email(%opt);
+
+###
+# subroutines
+###
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+1;

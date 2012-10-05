@@ -270,6 +270,8 @@ L<FS::sales> - Sales person class
 
 L<FS::agent> - Agent (reseller) class
 
+L<FS::agent_pkg_class> - Agent (reseller) package class commission class
+
 L<FS::agent_type> - Agent type class
 
 L<FS::type_pkgs> - Class linking agent types (see L<FS::agent_type>) with package definitions (see L<FS::part_pkg>)
@@ -281,6 +283,10 @@ L<FS::payment_gateway_option> - Payment gateway option class
 L<FS::agent_payment_gateway> - Agent payment gateway class
 
 L<FS::cust_svc> - Service class
+
+L<FS::part_export_machine> - Export hostname choice class
+
+L<FS::svc_export_machine> - Customer export hostname class
 
 L<FS::cust_pkg> - Customer package class
 

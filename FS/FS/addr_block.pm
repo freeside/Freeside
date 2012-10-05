@@ -223,43 +223,45 @@ sub cidr {
   $self->NetAddr->cidr;
 }
 
-=item free_addrs
+=item next_free_addr
 
 Returns a NetAddr::IP object corresponding to the first unassigned address 
 in the block (other than the network, broadcast, or gateway address).  If 
 there are no free addresses, returns nothing.  There are never free addresses
 when manual_flag is true.
 
-=item next_free_addr
-
-Returns a NetAddr::IP object for the first unassigned address in the block,
-or '' if there are none.
+There is no longer a method to return all free addresses in a block.
 
 =cut
 
-sub free_addrs {
+sub next_free_addr {
   my $self = shift;
+  my $selfaddr = $self->NetAddr;
 
   return if $self->manual_flag;
 
   my $conf = new FS::Conf;
   my @excludeaddr = $conf->config('exclude_ip_addr');
-  
+
   my %used = map { $_ => 1 }
   (
+    @excludeaddr,
+    $selfaddr->addr,
+    $selfaddr->network->addr,
+    $selfaddr->broadcast->addr,
     (map { $_->NetAddr->addr }
-      ($self,
-       qsearch('svc_broadband', { blocknum => $self->blocknum }))
+       qsearch('svc_broadband', { blocknum => $self->blocknum })
     ), @excludeaddr
   );
 
-  grep { !$used{$_->addr} } $self->NetAddr->hostenum;
+  # just do a linear search of the block
+  my $freeaddr = $selfaddr->network + 1;
+  while ( $freeaddr < $selfaddr->broadcast ) {
+    return $freeaddr unless $used{ $freeaddr->addr };
+    $freeaddr++;
+  }
+  return;
 
-}
-
-sub next_free_addr {
-  my $self = shift;
-  ($self->free_addrs, '')[0]
 }
 
 =item allocate -- deprecated

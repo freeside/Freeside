@@ -1,13 +1,13 @@
 package FS::cust_bill_pkg;
+use base qw( FS::TemplateItem_Mixin FS::cust_main_Mixin FS::Record );
 
 use strict;
 use vars qw( @ISA $DEBUG $me );
 use Carp;
+use List::Util qw( sum min );
 use Text::CSV_XS;
-use FS::Record qw( qsearch qsearchs dbdef dbh );
-use FS::cust_main_Mixin;
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
-use FS::part_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pkg_display;
@@ -18,10 +18,13 @@ use FS::cust_tax_exempt_pkg;
 use FS::cust_bill_pkg_tax_location;
 use FS::cust_bill_pkg_tax_rate_location;
 use FS::cust_tax_adjustment;
-
-use List::Util qw(sum);
-
-@ISA = qw( FS::cust_main_Mixin FS::Record );
+use FS::cust_bill_pkg_void;
+use FS::cust_bill_pkg_detail_void;
+use FS::cust_bill_pkg_display_void;
+use FS::cust_bill_pkg_discount_void;
+use FS::cust_bill_pkg_tax_location_void;
+use FS::cust_bill_pkg_tax_rate_location_void;
+use FS::cust_tax_exempt_pkg_void;
 
 $DEBUG = 0;
 $me = '[FS::cust_bill_pkg]';
@@ -120,6 +123,13 @@ customer object (see L<FS::cust_main>).
 
 sub table { 'cust_bill_pkg'; }
 
+sub detail_table            { 'cust_bill_pkg_detail'; }
+sub display_table           { 'cust_bill_pkg_display'; }
+sub discount_table          { 'cust_bill_pkg_discount'; }
+#sub tax_location_table      { 'cust_bill_pkg_tax_location'; }
+#sub tax_rate_location_table { 'cust_bill_pkg_tax_rate_location'; }
+#sub tax_exempt_pkg_table    { 'cust_tax_exempt_pkg'; }
+
 =item insert
 
 Adds this line item to the database.  If there is an error, returns the error,
@@ -180,14 +190,12 @@ sub insert {
     }
   }
 
-  if ( $self->_cust_tax_exempt_pkg ) {
-    foreach my $cust_tax_exempt_pkg ( @{$self->_cust_tax_exempt_pkg} ) {
-      $cust_tax_exempt_pkg->billpkgnum($self->billpkgnum);
-      $error = $cust_tax_exempt_pkg->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error inserting cust_tax_exempt_pkg: $error";
-      }
+  foreach my $cust_tax_exempt_pkg ( @{$self->cust_tax_exempt_pkg} ) {
+    $cust_tax_exempt_pkg->billpkgnum($self->billpkgnum);
+    $error = $cust_tax_exempt_pkg->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error inserting cust_tax_exempt_pkg: $error";
     }
   }
 
@@ -230,6 +238,75 @@ sub insert {
 
 }
 
+=item void
+
+Voids this line item: deletes the line item and adds a record of the voided
+line item to the FS::cust_bill_pkg_void table (and related tables).
+
+=cut
+
+sub void {
+  my $self = shift;
+  my $reason = scalar(@_) ? shift : '';
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_bill_pkg_void = new FS::cust_bill_pkg_void ( {
+    map { $_ => $self->get($_) } $self->fields
+  } );
+  $cust_bill_pkg_void->reason($reason);
+  my $error = $cust_bill_pkg_void->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $table (qw(
+    cust_bill_pkg_detail
+    cust_bill_pkg_display
+    cust_bill_pkg_discount
+    cust_bill_pkg_tax_location
+    cust_bill_pkg_tax_rate_location
+    cust_tax_exempt_pkg
+  )) {
+
+    foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
+
+      my $vclass = 'FS::'.$table.'_void';
+      my $void = $vclass->new( {
+        map { $_ => $linked->get($_) } $linked->fields
+      });
+      my $error = $void->insert || $linked->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    }
+
+  }
+
+  $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
 =item delete
 
 Not recommended.
@@ -253,6 +330,7 @@ sub delete {
   foreach my $table (qw(
     cust_bill_pkg_detail
     cust_bill_pkg_display
+    cust_bill_pkg_discount
     cust_bill_pkg_tax_location
     cust_bill_pkg_tax_rate_location
     cust_tax_exempt_pkg
@@ -389,36 +467,6 @@ sub regularize_details {
   return;
 }
 
-=item cust_pkg
-
-Returns the package (see L<FS::cust_pkg>) for this invoice line item.
-
-=cut
-
-sub cust_pkg {
-  my $self = shift;
-  carp "$me $self -> cust_pkg" if $DEBUG;
-  qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
-}
-
-=item part_pkg
-
-Returns the package definition for this invoice line item.
-
-=cut
-
-sub part_pkg {
-  my $self = shift;
-  if ( $self->pkgpart_override ) {
-    qsearchs('part_pkg', { 'pkgpart' => $self->pkgpart_override } );
-  } else {
-    my $part_pkg;
-    my $cust_pkg = $self->cust_pkg;
-    $part_pkg = $cust_pkg->part_pkg if $cust_pkg;
-    $part_pkg;
-  }
-}
-
 =item cust_bill
 
 Returns the invoice (see L<FS::cust_bill>) for this invoice line item.
@@ -446,173 +494,6 @@ sub previous_cust_bill_pkg {
                   },
     'order_by' => 'ORDER BY sdate DESC LIMIT 1',
   });
-}
-
-=item details [ OPTION => VALUE ... ]
-
-Returns an array of detail information for the invoice line item.
-
-Currently available options are: I<format>, I<escape_function> and
-I<format_function>.
-
-If I<format> is set to html or latex then the array members are improved
-for tabular appearance in those environments if possible.
-
-If I<escape_function> is set then the array members are processed by this
-function before being returned.
-
-I<format_function> overrides the normal HTML or LaTeX function for returning
-formatted CDRs.  It can be set to a subroutine which returns an empty list
-to skip usage detail:
-
-  'format_function' => sub { () },
-
-=cut
-
-sub details {
-  my ( $self, %opt ) = @_;
-  my $escape_function = $opt{escape_function} || sub { shift };
-
-  my $csv = new Text::CSV_XS;
-
-  if ( $opt{format_function} ) {
-
-    #this still expects to be passed a cust_bill_pkg_detail object as the
-    #second argument, which is expensive
-    carp "deprecated format_function passed to cust_bill_pkg->details";
-    my $format_sub = $opt{format_function} if $opt{format_function};
-
-    map { ( $_->format eq 'C'
-              ? &{$format_sub}( $_->detail, $_ )
-              : &{$escape_function}( $_->detail )
-          )
-        }
-      qsearch ({ 'table'    => 'cust_bill_pkg_detail',
-                 'hashref'  => { 'billpkgnum' => $self->billpkgnum },
-                 'order_by' => 'ORDER BY detailnum',
-              });
-
-  } elsif ( $opt{'no_usage'} ) {
-
-    my $sql = "SELECT detail FROM cust_bill_pkg_detail ".
-              "  WHERE billpkgnum = ". $self->billpkgnum.
-              "    AND ( format IS NULL OR format != 'C' ) ".
-              "  ORDER BY detailnum";
-    my $sth = dbh->prepare($sql) or die dbh->errstr;
-    $sth->execute or die $sth->errstr;
-
-    map &{$escape_function}( $_->[0] ), @{ $sth->fetchall_arrayref };
-
-  } else {
-
-    my $format_sub;
-    my $format = $opt{format} || '';
-    if ( $format eq 'html' ) {
-
-      $format_sub = sub { my $detail = shift;
-                          $csv->parse($detail) or return "can't parse $detail";
-                          join('</TD><TD>', map { &$escape_function($_) }
-                                            $csv->fields
-                              );
-                        };
-
-    } elsif ( $format eq 'latex' ) {
-
-      $format_sub = sub {
-        my $detail = shift;
-        $csv->parse($detail) or return "can't parse $detail";
-        #join(' & ', map { '\small{'. &$escape_function($_). '}' }
-        #            $csv->fields );
-        my $result = '';
-        my $column = 1;
-        foreach ($csv->fields) {
-          $result .= ' & ' if $column > 1;
-          if ($column > 6) {                     # KLUDGE ALERT!
-            $result .= '\multicolumn{1}{l}{\scriptsize{'.
-                       &$escape_function($_). '}}';
-          }else{
-            $result .= '\scriptsize{'.  &$escape_function($_). '}';
-          }
-          $column++;
-        }
-        $result;
-      };
-
-    } else {
-
-      $format_sub = sub { my $detail = shift;
-                          $csv->parse($detail) or return "can't parse $detail";
-                          join(' - ', map { &$escape_function($_) }
-                                      $csv->fields
-                              );
-                        };
-
-    }
-
-    my $sql = "SELECT format, detail FROM cust_bill_pkg_detail ".
-              "  WHERE billpkgnum = ". $self->billpkgnum.
-              "  ORDER BY detailnum";
-    my $sth = dbh->prepare($sql) or die dbh->errstr;
-    $sth->execute or die $sth->errstr;
-
-    #avoid the fetchall_arrayref and loop for less memory usage?
-
-    map { (defined($_->[0]) && $_->[0] eq 'C')
-            ? &{$format_sub}(      $_->[1] )
-            : &{$escape_function}( $_->[1] );
-        }
-      @{ $sth->fetchall_arrayref };
-
-  }
-
-}
-
-=item details_header [ OPTION => VALUE ... ]
-
-Returns a list representing an invoice line item detail header, if any.
-This relies on the behavior of voip_cdr in that it expects the header
-to be the first CSV formatted detail (as is expected by invoice generation
-routines).  Returns the empty list otherwise.
-
-=cut
-
-sub details_header {
-  my $self = shift;
-  return '' unless defined dbdef->table('cust_bill_pkg_detail');
-
-  my $csv = new Text::CSV_XS;
-
-  my @detail = 
-    qsearch ({ 'table'    => 'cust_bill_pkg_detail',
-               'hashref'  => { 'billpkgnum' => $self->billpkgnum,
-                               'format'     => 'C',
-                             },
-               'order_by' => 'ORDER BY detailnum LIMIT 1',
-            });
-  return() unless scalar(@detail);
-  $csv->parse($detail[0]->detail) or return ();
-  $csv->fields;
-}
-
-=item desc
-
-Returns a description for this line item.  For typical line items, this is the
-I<pkg> field of the corresponding B<FS::part_pkg> object (see L<FS::part_pkg>).
-For one-shot line items and named taxes, it is the I<itemdesc> field of this
-line item, and for generic taxes, simply returns "Tax".
-
-=cut
-
-sub desc {
-  my $self = shift;
-
-  if ( $self->pkgnum > 0 ) {
-    $self->itemdesc || $self->part_pkg->pkg;
-  } else {
-    my $desc = $self->itemdesc || 'Tax';
-    $desc .= ' '. $self->itemcomment if $self->itemcomment =~ /\S/;
-    $desc;
-  }
 }
 
 =item owed_setup
@@ -692,45 +573,6 @@ sub units {
   $self->pkgnum ? $self->part_pkg->calc_units($self->cust_pkg) : 0; # 1?
 }
 
-=item quantity
-
-=cut
-
-sub quantity {
-  my( $self, $value ) = @_;
-  if ( defined($value) ) {
-    $self->setfield('quantity', $value);
-  }
-  $self->getfield('quantity') || 1;
-}
-
-=item unitsetup
-
-=cut
-
-sub unitsetup {
-  my( $self, $value ) = @_;
-  if ( defined($value) ) {
-    $self->setfield('unitsetup', $value);
-  }
-  $self->getfield('unitsetup') eq ''
-    ? $self->getfield('setup')
-    : $self->getfield('unitsetup');
-}
-
-=item unitrecur
-
-=cut
-
-sub unitrecur {
-  my( $self, $value ) = @_;
-  if ( defined($value) ) {
-    $self->setfield('unitrecur', $value);
-  }
-  $self->getfield('unitrecur') eq ''
-    ? $self->getfield('recur')
-    : $self->getfield('unitrecur');
-}
 
 =item set_display OPTION => VALUE ...
 
@@ -942,50 +784,10 @@ sub usage_classes {
 
 }
 
-=item cust_bill_pkg_display [ type => TYPE ]
-
-Returns an array of display information for the invoice line item optionally
-limited to 'TYPE'.
-
-=cut
-
-sub cust_bill_pkg_display {
-  my ( $self, %opt ) = @_;
-
-  my $default =
-    new FS::cust_bill_pkg_display { billpkgnum =>$self->billpkgnum };
-
-  my $type = $opt{type} if exists $opt{type};
-  my @result;
-
-  if ( $self->get('display') ) {
-    @result = grep { defined($type) ? ($type eq $_->type) : 1 }
-              @{ $self->get('display') };
-  } else {
-    my $hashref = { 'billpkgnum' => $self->billpkgnum };
-    $hashref->{type} = $type if defined($type);
-    
-    @result = qsearch ({ 'table'    => 'cust_bill_pkg_display',
-                         'hashref'  => { 'billpkgnum' => $self->billpkgnum },
-                         'order_by' => 'ORDER BY billpkgdisplaynum',
-                      });
-  }
-
-  push @result, $default unless ( scalar(@result) || $type );
-
-  @result;
-
-}
-
-# reserving this name for my friends FS::{tax_rate|cust_main_county}::taxline
-# and FS::cust_main::bill
-
-sub _cust_tax_exempt_pkg {
+sub cust_tax_exempt_pkg {
   my ( $self ) = @_;
 
-  $self->{Hash}->{_cust_tax_exempt_pkg} or
-  $self->{Hash}->{_cust_tax_exempt_pkg} = [];
-
+  $self->{Hash}->{cust_tax_exempt_pkg} ||= [];
 }
 
 =item cust_bill_pkg_tax_Xlocation
@@ -1005,36 +807,6 @@ sub cust_bill_pkg_tax_Xlocation {
     qsearch ( 'cust_bill_pkg_tax_rate_location', { %hash } )
   );
 
-}
-
-=item cust_bill_pkg_detail [ CLASSNUM ]
-
-Returns the list of associated cust_bill_pkg_detail objects
-The optional CLASSNUM argument will limit the details to the specified usage
-class.
-
-=cut
-
-sub cust_bill_pkg_detail {
-  my $self = shift;
-  my $classnum = shift || '';
-
-  my %hash = ( 'billpkgnum' => $self->billpkgnum );
-  $hash{classnum} = $classnum if $classnum;
-
-  qsearch( 'cust_bill_pkg_detail', \%hash ),
-
-}
-
-=item cust_bill_pkg_discount 
-
-Returns the list of associated cust_bill_pkg_discount objects.
-
-=cut
-
-sub cust_bill_pkg_discount {
-  my $self = shift;
-  qsearch( 'cust_bill_pkg_discount', { 'billpkgnum' => $self->billpkgnum } );
 }
 
 =item recur_show_zero
@@ -1162,6 +934,485 @@ sub credited_sql {
 
 }
 
+sub upgrade_tax_location {
+  # For taxes that were calculated/invoiced before cust_location refactoring
+  # (May-June 2012), there are no cust_bill_pkg_tax_location records unless
+  # they were calculated on a package-location basis.  Create them here, 
+  # along with any necessary cust_location records and any tax exemption 
+  # records.
+
+  my ($class, %opt) = @_;
+  # %opt may include 's' and 'e': start and end date ranges
+  # and 'X': abort on any error, instead of just rolling back changes to 
+  # that invoice
+  my $dbh = dbh;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  eval {
+    use FS::h_cust_main;
+    use FS::h_cust_bill;
+    use FS::h_part_pkg;
+    use FS::h_cust_main_exemption;
+  };
+
+  local $FS::cust_location::import = 1;
+
+  my $conf = FS::Conf->new; # h_conf?
+  return if $conf->exists('enable_taxproducts'); #don't touch this case
+  my $use_ship = $conf->exists('tax-ship_address');
+
+  my $date_where = '';
+  if ($opt{s}) {
+    $date_where .= " AND cust_bill._date >= $opt{s}";
+  }
+  if ($opt{e}) {
+    $date_where .= " AND cust_bill._date < $opt{e}";
+  }
+
+  my $commit_each_invoice = 1 unless $opt{X};
+
+  # if an invoice has either of these kinds of objects, then it doesn't
+  # need to be upgraded...probably
+  my $sub_has_tax_link = 'SELECT 1 FROM cust_bill_pkg_tax_location'.
+  ' JOIN cust_bill_pkg USING (billpkgnum)'.
+  ' WHERE cust_bill_pkg.invnum = cust_bill.invnum';
+  my $sub_has_exempt = 'SELECT 1 FROM cust_tax_exempt_pkg'.
+  ' JOIN cust_bill_pkg USING (billpkgnum)'.
+  ' WHERE cust_bill_pkg.invnum = cust_bill.invnum'.
+  ' AND exempt_monthly IS NULL';
+
+  my @invnums = map { $_->invnum } qsearch({
+      select => 'cust_bill.invnum',
+      table => 'cust_bill',
+      hashref => {},
+      extra_sql => "WHERE NOT EXISTS($sub_has_tax_link) ".
+                   "AND NOT EXISTS($sub_has_exempt) ".
+                    $date_where,
+  });
+
+  print "Processing ".scalar(@invnums)." invoices...\n";
+
+  my $committed;
+  INVOICE:
+  foreach my $invnum (@invnums) {
+    $committed = 0;
+    print STDERR "Invoice #$invnum\n";
+    my $pre = '';
+    my %pkgpart_taxclass; # pkgpart => taxclass
+    my %pkgpart_exempt_setup;
+    my %pkgpart_exempt_recur;
+    my $h_cust_bill = qsearchs('h_cust_bill',
+      { invnum => $invnum,
+        history_action => 'insert' });
+    if (!$h_cust_bill) {
+      warn "no insert record for invoice $invnum; skipped\n";
+      #$date = $cust_bill->_date as a fallback?
+      # We're trying to avoid using non-real dates (-d/-y invoice dates)
+      # when looking up history records in other tables.
+      next INVOICE;
+    }
+    my $custnum = $h_cust_bill->custnum;
+
+    # Determine the address corresponding to this tax region.
+    # It's either the bill or ship address of the customer as of the
+    # invoice date-of-insertion.  (Not necessarily the invoice date.)
+    my $date = $h_cust_bill->history_date;
+    my $h_cust_main = qsearchs('h_cust_main',
+        { custnum => $custnum },
+        FS::h_cust_main->sql_h_searchs($date)
+      );
+    if (!$h_cust_main ) {
+      warn "no historical address for cust#".$h_cust_bill->custnum."; skipped\n";
+      next INVOICE;
+      # fallback to current $cust_main?  sounds dangerous.
+    }
+
+    # This is a historical customer record, so it has a historical address.
+    # If there's no cust_location matching this custnum and address (there 
+    # probably isn't), create one.
+    $pre = 'ship_' if $use_ship and length($h_cust_main->get('ship_last'));
+    my %hash = map { $_ => $h_cust_main->get($pre.$_) }
+                  FS::cust_main->location_fields;
+    # not really needed for this, and often result in duplicate locations
+    delete @hash{qw(censustract censusyear latitude longitude coord_auto)};
+
+    $hash{custnum} = $h_cust_main->custnum;
+    my $tax_loc = qsearchs('cust_location', \%hash) # unlikely
+                  || FS::cust_location->new({ %hash });
+    if ( !$tax_loc->locationnum ) {
+      $tax_loc->disabled('Y');
+      my $error = $tax_loc->insert;
+      if ( $error ) {
+        warn "couldn't create historical location record for cust#".
+        $h_cust_main->custnum.": $error\n";
+        next INVOICE;
+      }
+    }
+    my $exempt_cust = 1 if $h_cust_main->tax;
+
+    # Get any per-customer taxname exemptions that were in effect.
+    my %exempt_cust_taxname = map {
+      $_->taxname => 1
+    } qsearch('h_cust_main_exemption', { 'custnum' => $custnum },
+      FS::h_cust_main_exemption->sql_h_searchs($date)
+    );
+
+    # classify line items
+    my @tax_items;
+    my %nontax_items; # taxclass => array of cust_bill_pkg
+    foreach my $item ($h_cust_bill->cust_bill_pkg) {
+      my $pkgnum = $item->pkgnum;
+
+      if ( $pkgnum == 0 ) {
+
+        push @tax_items, $item;
+
+      } else {
+        # (pkgparts really shouldn't change, right?)
+        my $h_cust_pkg = qsearchs('h_cust_pkg', { pkgnum => $pkgnum },
+          FS::h_cust_pkg->sql_h_searchs($date)
+        );
+        if ( !$h_cust_pkg ) {
+          warn "no historical package #".$item->pkgpart."; skipped\n";
+          next INVOICE;
+        }
+        my $pkgpart = $h_cust_pkg->pkgpart;
+
+        if (!exists $pkgpart_taxclass{$pkgpart}) {
+          my $h_part_pkg = qsearchs('h_part_pkg', { pkgpart => $pkgpart },
+            FS::h_part_pkg->sql_h_searchs($date)
+          );
+          if ( !$h_part_pkg ) {
+            warn "no historical package def #$pkgpart; skipped\n";
+            next INVOICE;
+          }
+          $pkgpart_taxclass{$pkgpart} = $h_part_pkg->taxclass || '';
+          $pkgpart_exempt_setup{$pkgpart} = 1 if $h_part_pkg->setuptax;
+          $pkgpart_exempt_recur{$pkgpart} = 1 if $h_part_pkg->recurtax;
+        }
+        
+        # mark any exemptions that apply
+        if ( $pkgpart_exempt_setup{$pkgpart} ) {
+          $item->set('exempt_setup' => 1);
+        }
+
+        if ( $pkgpart_exempt_recur{$pkgpart} ) {
+          $item->set('exempt_recur' => 1);
+        }
+
+        my $taxclass = $pkgpart_taxclass{ $pkgpart };
+
+        $nontax_items{$taxclass} ||= [];
+        push @{ $nontax_items{$taxclass} }, $item;
+      }
+    }
+    printf("%d tax items: \$%.2f\n", scalar(@tax_items), map {$_->setup} @tax_items)
+      if @tax_items;
+
+    # Use a variation on the procedure in 
+    # FS::cust_main::Billing::_handle_taxes to identify taxes that apply 
+    # to this bill.
+    my @loc_keys = qw( district city county state country );
+    my %taxhash = map { $_ => $h_cust_main->get($pre.$_) } @loc_keys;
+    my %taxdef_by_name; # by name, and then by taxclass
+    my %est_tax; # by name, and then by taxclass
+    my %taxable_items; # by taxnum, and then an array
+
+    foreach my $taxclass (keys %nontax_items) {
+      my %myhash = %taxhash;
+      my @elim = qw( district city county state );
+      my @taxdefs; # because there may be several with different taxnames
+      do {
+        $myhash{taxclass} = $taxclass;
+        @taxdefs = qsearch('cust_main_county', \%myhash);
+        if ( !@taxdefs ) {
+          $myhash{taxclass} = '';
+          @taxdefs = qsearch('cust_main_county', \%myhash);
+        }
+        $myhash{ shift @elim } = '';
+      } while scalar(@elim) and !@taxdefs;
+
+      print "Class '$taxclass': ". scalar(@{ $nontax_items{$taxclass} }).
+            " items, ". scalar(@taxdefs)." tax defs found.\n";
+      foreach my $taxdef (@taxdefs) {
+        next if $taxdef->tax == 0;
+        $taxdef_by_name{$taxdef->taxname}{$taxdef->taxclass} = $taxdef;
+
+        $taxable_items{$taxdef->taxnum} ||= [];
+        foreach my $orig_item (@{ $nontax_items{$taxclass} }) {
+          # clone the item so that taxdef-dependent changes don't
+          # change it for other taxdefs
+          my $item = FS::cust_bill_pkg->new({ $orig_item->hash });
+
+          # these flags are already set if the part_pkg declares itself exempt
+          $item->set('exempt_setup' => 1) if $taxdef->setuptax;
+          $item->set('exempt_recur' => 1) if $taxdef->recurtax;
+
+          my @new_exempt;
+          my $taxable = $item->setup + $item->recur;
+          # credits
+          # h_cust_credit_bill_pkg?
+          # NO.  Because if these exemptions HAD been created at the time of 
+          # billing, and then a credit applied later, the exemption would 
+          # have been adjusted by the amount of the credit.  So we adjust
+          # the taxable amount before creating the exemption.
+          # But don't deduct the credit from taxable, because the tax was 
+          # calculated before the credit was applied.
+          foreach my $f (qw(setup recur)) {
+            my $credited = FS::Record->scalar_sql(
+              "SELECT SUM(amount) FROM cust_credit_bill_pkg ".
+              "WHERE billpkgnum = ? AND setuprecur = ?",
+              $item->billpkgnum,
+              $f
+            );
+            $item->set($f, $item->get($f) - $credited) if $credited;
+          }
+          my $existing_exempt = FS::Record->scalar_sql(
+            "SELECT SUM(amount) FROM cust_tax_exempt_pkg WHERE ".
+            "billpkgnum = ? AND taxnum = ?",
+            $item->billpkgnum, $taxdef->taxnum
+          ) || 0;
+          $taxable -= $existing_exempt;
+
+          if ( $taxable and $exempt_cust ) {
+            push @new_exempt, { exempt_cust => 'Y',  amount => $taxable };
+            $taxable = 0;
+          }
+          if ( $taxable and $exempt_cust_taxname{$taxdef->taxname} ){
+            push @new_exempt, { exempt_cust_taxname => 'Y', amount => $taxable };
+            $taxable = 0;
+          }
+          if ( $taxable and $item->exempt_setup ) {
+            push @new_exempt, { exempt_setup => 'Y', amount => $item->setup };
+            $taxable -= $item->setup;
+          }
+          if ( $taxable and $item->exempt_recur ) {
+            push @new_exempt, { exempt_recur => 'Y', amount => $item->recur };
+            $taxable -= $item->recur;
+          }
+
+          $item->set('taxable' => $taxable);
+          push @{ $taxable_items{$taxdef->taxnum} }, $item
+            if $taxable > 0;
+
+          # estimate the amount of tax (this is necessary because different
+          # taxdefs with the same taxname may have different tax rates) 
+          # and sum that for each taxname/taxclass combination
+          # (in cents)
+          $est_tax{$taxdef->taxname} ||= {};
+          $est_tax{$taxdef->taxname}{$taxdef->taxclass} ||= 0;
+          $est_tax{$taxdef->taxname}{$taxdef->taxclass} += 
+            $taxable * $taxdef->tax;
+
+          foreach (@new_exempt) {
+            next if $_->{amount} == 0;
+            my $cust_tax_exempt_pkg = FS::cust_tax_exempt_pkg->new({
+                %$_,
+                billpkgnum  => $item->billpkgnum,
+                taxnum      => $taxdef->taxnum,
+              });
+            my $error = $cust_tax_exempt_pkg->insert;
+            if ($error) {
+              my $pkgnum = $item->pkgnum;
+              warn "error creating tax exemption for inv$invnum pkg$pkgnum:".
+                "\n$error\n\n";
+              next INVOICE;
+            }
+          } #foreach @new_exempt
+        } #foreach $item
+      } #foreach $taxdef
+    } #foreach $taxclass
+
+    # Now go through the billed taxes and match them up with the line items.
+    TAX_ITEM: foreach my $tax_item ( @tax_items )
+    {
+      my $taxname = $tax_item->itemdesc;
+      $taxname = '' if $taxname eq 'Tax';
+
+      if ( !exists( $taxdef_by_name{$taxname} ) ) {
+        # then we didn't find any applicable taxes with this name
+        warn "no definition found for tax item '$taxname'.\n".
+          '('.join(' ', @hash{qw(country state county city district)}).")\n";
+        # possibly all of these should be "next TAX_ITEM", but whole invoices
+        # are transaction protected and we can go back and retry them.
+        next INVOICE;
+      }
+      # classname => cust_main_county
+      my %taxdef_by_class = %{ $taxdef_by_name{$taxname} };
+
+      # Divide the tax item among taxclasses, if necessary
+      # classname => estimated tax amount
+      my $this_est_tax = $est_tax{$taxname};
+      if (!defined $this_est_tax) {
+        warn "no taxable sales found for inv#$invnum, tax item '$taxname'.\n";
+        next INVOICE;
+      }
+      my $est_total = sum(values %$this_est_tax);
+      if ( $est_total == 0 ) {
+        # shouldn't happen
+        warn "estimated tax on invoice #$invnum is zero.\n";
+        next INVOICE;
+      }
+
+      my $real_tax = $tax_item->setup;
+      printf ("Distributing \$%.2f tax:\n", $real_tax);
+      my $cents_remaining = $real_tax * 100; # for rounding error
+      my @tax_links; # partial CBPTL hashrefs
+      foreach my $taxclass (keys %taxdef_by_class) {
+        my $taxdef = $taxdef_by_class{$taxclass};
+        # these items already have "taxable" set to their charge amount
+        # after applying any credits or exemptions
+        my @items = @{ $taxable_items{$taxdef->taxnum} };
+        my $subtotal = sum(map {$_->get('taxable')} @items);
+        printf("\t$taxclass: %.2f\n", $this_est_tax->{$taxclass}/$est_total);
+
+        foreach my $nontax (@items) {
+          my $part = int($real_tax
+                            # class allocation
+                         * ($this_est_tax->{$taxclass}/$est_total) 
+                            # item allocation
+                         * ($nontax->get('taxable'))/$subtotal
+                            # convert to cents
+                         * 100
+                       );
+          $cents_remaining -= $part;
+          push @tax_links, {
+            taxnum => $taxdef->taxnum,
+            pkgnum => $nontax->pkgnum,
+            cents  => $part,
+          };
+        } #foreach $nontax
+      } #foreach $taxclass
+      # Distribute any leftover tax round-robin style, one cent at a time.
+      my $i = 0;
+      my $nlinks = scalar(@tax_links);
+      if ( $nlinks ) {
+        while (int($cents_remaining) > 0) {
+          $tax_links[$i % $nlinks]->{cents} += 1;
+          $cents_remaining--;
+          $i++;
+        }
+      } else {
+        warn "Can't create tax links--no taxable items found.\n";
+        next INVOICE;
+      }
+
+      # Gather credit/payment applications so that we can link them
+      # appropriately.
+      my @unlinked = (
+        qsearch( 'cust_credit_bill_pkg',
+          { billpkgnum => $tax_item->billpkgnum, billpkgtaxlocationnum => '' }
+        ),
+        qsearch( 'cust_bill_pay_pkg',
+          { billpkgnum => $tax_item->billpkgnum, billpkgtaxlocationnum => '' }
+        )
+      );
+
+      # grab the first one
+      my $this_unlinked = shift @unlinked;
+      my $unlinked_cents = int($this_unlinked->amount * 100) if $this_unlinked;
+
+      # Create tax links (yay!)
+      printf("Creating %d tax links.\n",scalar(@tax_links));
+      foreach (@tax_links) {
+        my $link = FS::cust_bill_pkg_tax_location->new({
+            billpkgnum  => $tax_item->billpkgnum,
+            taxtype     => 'FS::cust_main_county',
+            locationnum => $tax_loc->locationnum,
+            taxnum      => $_->{taxnum},
+            pkgnum      => $_->{pkgnum},
+            amount      => sprintf('%.2f', $_->{cents} / 100),
+        });
+        my $error = $link->insert;
+        if ( $error ) {
+          warn "Can't create tax link for inv#$invnum: $error\n";
+          next INVOICE;
+        }
+
+        my $link_cents = $_->{cents};
+        # update/create subitem links
+        #
+        # If $this_unlinked is undef, then we've allocated all of the
+        # credit/payment applications to the tax item.  If $link_cents is 0,
+        # then we've applied credits/payments to all of this package fraction,
+        # so go on to the next.
+        while ($this_unlinked and $link_cents) {
+          # apply as much as possible of $link_amount to this credit/payment
+          # link
+          my $apply_cents = min($link_cents, $unlinked_cents);
+          $link_cents -= $apply_cents;
+          $unlinked_cents -= $apply_cents;
+          # $link_cents or $unlinked_cents or both are now zero
+          $this_unlinked->set('amount' => sprintf('%.2f',$apply_cents/100));
+          $this_unlinked->set('billpkgtaxlocationnum' => $link->billpkgtaxlocationnum);
+          my $pkey = $this_unlinked->primary_key; #creditbillpkgnum or billpaypkgnum
+          if ( $this_unlinked->$pkey ) {
+            # then it's an existing link--replace it
+            $error = $this_unlinked->replace;
+          } else {
+            $this_unlinked->insert;
+          }
+          # what do we do with errors at this stage?
+          if ( $error ) {
+            warn "Error creating tax application link: $error\n";
+            next INVOICE; # for lack of a better idea
+          }
+          
+          if ( $unlinked_cents == 0 ) {
+            # then we've allocated all of this payment/credit application, 
+            # so grab the next one
+            $this_unlinked = shift @unlinked;
+            $unlinked_cents = int($this_unlinked->amount * 100) if $this_unlinked;
+          } elsif ( $link_cents == 0 ) {
+            # then we've covered all of this package tax fraction, so split
+            # off a new application from this one
+            $this_unlinked = $this_unlinked->new({
+                $this_unlinked->hash,
+                $pkey     => '',
+            });
+            # $unlinked_cents is still what it is
+          }
+
+        } #while $this_unlinked and $link_cents
+      } #foreach (@tax_links)
+    } #foreach $tax_item
+
+    $dbh->commit if $commit_each_invoice and $oldAutoCommit;
+    $committed = 1;
+
+  } #foreach $invnum
+  continue {
+    if (!$committed) {
+      $dbh->rollback if $oldAutoCommit;
+      die "Upgrade halted.\n" unless $commit_each_invoice;
+    }
+  }
+
+  $dbh->commit if $oldAutoCommit and !$commit_each_invoice;
+  '';
+}
+
+sub _upgrade_data {
+  # Create a queue job to run upgrade_tax_location from January 1, 2012 to 
+  # the present date.
+  eval {
+    use FS::queue;
+    use Date::Parse 'str2time';
+  };
+  my $class = shift;
+  my $upgrade = 'tax_location_2012';
+  return if FS::upgrade_journal->is_done($upgrade);
+  my $job = FS::queue->new({
+      'job' => 'FS::cust_bill_pkg::upgrade_tax_location'
+  });
+  # call it kind of like a class method, not that it matters much
+  $job->insert($class, 's' => str2time('2012-01-01'));
+  # Then mark the upgrade as done, so that we don't queue the job twice
+  # and somehow run two of them concurrently.
+  FS::upgrade_journal->set_done($upgrade);
+}
+
 =back
 
 =head1 BUGS
@@ -1178,6 +1429,8 @@ be valuable later).  Invoice generation (cust_main::bill), invoice printing
 owed_setup and owed_recur could then be repaced by just owed, and
 cust_bill::open_cust_bill_pkg and
 cust_bill_ApplicationCommon::apply_to_lineitems could be simplified.
+
+The upgrade procedure is pretty sketchy.
 
 =head1 SEE ALSO
 

@@ -28,8 +28,8 @@ FS::cust_bill_pkg_discount - Object methods for cust_bill_pkg_discount records
 =head1 DESCRIPTION
 
 An FS::cust_bill_pkg_discount object represents the slice of a customer
-applied to a line item.  FS::cust_bill_pkg_discount inherits from
-FS::Record.  The following fields are currently supported:
+discount applied to a specific line item.  FS::cust_bill_pkg_discount inherits
+from FS::Record.  The following fields are currently supported:
 
 =over 4
 

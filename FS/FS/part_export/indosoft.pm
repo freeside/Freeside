@@ -17,6 +17,7 @@ tie my %options, 'Tie::IxHash',
   'desc'     =>
     'Export conferences to the Indosoft Conference Bridge',
   'options'  => \%options,
+  'no_machine' => 1,
   'notes'    => <<'END'
 Export conferences to the Indosoft conference bridge.
 Net::Indosoft::Voicebridge is required.

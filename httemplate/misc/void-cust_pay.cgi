@@ -12,7 +12,7 @@ my $paynum = $1;
 
 my $cust_pay = qsearchs('cust_pay',{'paynum'=>$paynum});
 
-my $right = 'Regular void';
+my $right = 'Void payments';
 $right = 'Credit card void' if $cust_pay->payby eq 'CARD';
 $right = 'Echeck void'      if $cust_pay->payby eq 'CHEK';
 

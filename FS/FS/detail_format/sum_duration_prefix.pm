@@ -25,7 +25,10 @@ sub append {
   my $self = shift;
   my $prefixes = ($self->{prefixes} ||= {});
   foreach my $cdr (@_) {
-    my $phonenum = $self->{inbound} ? $cdr->src : $cdr->dst;
+    my (undef, $phonenum) = $cdr->parse_number(
+      column => ( $self->{inbound} ? 'src' : 'dst' ),
+    );
+
     $phonenum =~ /^(\d{$prefix_length})/;
     my $prefix = $1 || 'other';
     warn "$me appending ".$cdr->dst." to $prefix\n" if $DEBUG;

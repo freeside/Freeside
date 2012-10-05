@@ -79,11 +79,12 @@ possibly harmful.
 EOT
 
 %info = (
-  'svc'      => 'svc_broadband',
-  'desc'     => 'Real-time export to Northbound Interface',
-  'options'  => \%options,
-  'nodomain' => 'Y',
-  'notes'    => $notes,
+  'svc'        => 'svc_broadband',
+  'desc'       => 'Real-time export to Northbound Interface',
+  'options'    => \%options,
+  'nodomain'   => 'Y',
+  'no_machine' => 1,
+  'notes'      => $notes,
 );
 
 sub prizm_command {

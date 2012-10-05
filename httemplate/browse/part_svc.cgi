@@ -141,16 +141,7 @@ function part_export_areyousure(href) {
 %
 
         <TR>
-          <TD><A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>">
-<% $part_export->exportnum %>:&nbsp;
-% if ($part_export->exportname) {
-<B><% $part_export->exportname %></B> (
-% }
-<% $part_export->exporttype %>&nbsp;to&nbsp;<% $part_export->machine %>
-% if ($part_export->exportname) {
-)
-% }
-</A></TD>
+          <TD><A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>"><% $part_export->label_html %></A></TD>
 	</TR>
 %  } 
 

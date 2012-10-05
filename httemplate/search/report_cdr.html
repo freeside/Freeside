@@ -24,9 +24,12 @@
       <SELECT NAME="freesidestatus">
         <OPTION VALUE="">(all)</OPTION>
         <OPTION VALUE="NULL">unprocessed</OPTION>
+%# <OPTION VALUE="processing-tiered">processing</OPTION>
         <OPTION VALUE="rated">prerated
-        <OPTION VALUE="done">processed</OPTION>
-        <OPTION VALUE="failed">skipped</OPTION>
+        <OPTION VALUE="no-charge">processed (included)</OPTION>
+        <OPTION VALUE="done">processed (billed)</OPTION>
+        <OPTION VALUE="skipped">skipped</OPTION>
+        <OPTION VALUE="failed">failed</OPTION>
       </SELECT>
     </TD>
   </TR>

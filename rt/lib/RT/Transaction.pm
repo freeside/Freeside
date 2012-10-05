@@ -133,12 +133,6 @@ sub Create {
         return ( 0, $self->loc( "Transaction->Create couldn't, as you didn't specify an object type and id"));
     }
 
-
-    # Set up any custom fields passed at creation.  Has to happen 
-    # before scrips.
-    
-    $self->UpdateCustomFields(%{ $args{'CustomFields'} });
-
     #lets create our transaction
     my %params = (
         Type      => $args{'Type'},
@@ -168,6 +162,11 @@ sub Create {
             return ( 0, $self->loc("Couldn't add attachment") );
         }
     }
+
+    # Set up any custom fields passed at creation.  Has to happen 
+    # before scrips.
+    
+    $self->UpdateCustomFields(%{ $args{'CustomFields'} });
 
     $self->AddAttribute(
         Name    => 'SquelchMailTo',

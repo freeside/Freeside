@@ -28,12 +28,18 @@
     <& /elements/tr-select-part_referral.html,
                   'label'        => emt('Advertising Source'),
                   'multiple'     => 1,
-                  'all_selected' => 1,
+                  #no, causes customers with disabled ones to disappear
+                  #'all_selected' => 1,
     &>
 
     <TR>
       <TD ALIGN="right" VALIGN="center"><% mt('Address') |h %></TD>
       <TD><INPUT TYPE="text" NAME="address" SIZE=54></TD>
+    </TR>
+    
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Zip') |h %></TD>
+      <TD><INPUT TYPE="text" NAME="zip" SIZE=12></TD>
     </TR>
 
     <TR>
@@ -69,6 +75,20 @@
           <TABLE>
               <& /elements/tr-input-beginning_ending.html,
                         prefix   => 'spouse_birthdate',
+                        layout   => 'horiz',
+              &>
+          </TABLE>
+          </TD>
+      </TR>
+%   }
+
+%    if ( $conf->exists('cust_main-enable_anniversary_date') ) {
+      <TR>
+          <TD ALIGN="right" VALIGN="center"><% mt('Anniversary Date') |h %></TD>
+          <TD>
+          <TABLE>
+              <& /elements/tr-input-beginning_ending.html,
+                        prefix   => 'anniversary_date',
                         layout   => 'horiz',
               &>
           </TABLE>

@@ -787,7 +787,7 @@ sub GetForwardFrom {
     my $ticket = $args{Ticket} || $txn->Object;
 
     if ( RT->Config->Get('ForwardFromUser') ) {
-        return ( $txn || $ticket )->CurrentUser->UserObj->EmailAddress;
+        return ( $txn || $ticket )->CurrentUser->EmailAddress;
     }
     else {
         return $ticket->QueueObj->CorrespondAddress
@@ -1221,8 +1221,16 @@ sub SetInReplyTo {
         if @references > 10;
 
     my $mail = $args{'Message'};
-    $mail->head->set( 'In-Reply-To' => join ' ', @rtid? (@rtid) : (@id) ) if @id || @rtid;
-    $mail->head->set( 'References' => join ' ', @references );
+    $mail->head->set( 'In-Reply-To' => Encode::encode_utf8(join ' ', @rtid? (@rtid) : (@id)) ) if @id || @rtid;
+    $mail->head->set( 'References' => Encode::encode_utf8(join ' ', @references) );
+}
+
+sub ExtractTicketId {
+    my $entity = shift;
+
+    my $subject = $entity->head->get('Subject') || '';
+    chomp $subject;
+    return ParseTicketId( $subject );
 }
 
 sub ParseTicketId {
@@ -1448,7 +1456,7 @@ sub Gateway {
     }
     # }}}
 
-    $args{'ticket'} ||= ParseTicketId( $Subject );
+    $args{'ticket'} ||= ExtractTicketId( $Message );
 
     $SystemTicket = RT::Ticket->new( RT->SystemUser );
     $SystemTicket->Load( $args{'ticket'} ) if ( $args{'ticket'} ) ;
@@ -1704,17 +1712,20 @@ sub _RunUnsafeAction {
             return ( 0, "Ticket not taken" );
         }
     } elsif ( $args{'Action'} =~ /^resolve$/i ) {
-        my ( $status, $msg ) = $args{'Ticket'}->SetStatus('resolved');
-        unless ($status) {
+        my $new_status = $args{'Ticket'}->FirstInactiveStatus;
+        if ($new_status) {
+            my ( $status, $msg ) = $args{'Ticket'}->SetStatus($new_status);
+            unless ($status) {
 
-            #Warn the sender that we couldn't actually submit the comment.
-            MailError(
-                To          => $args{'ErrorsTo'},
-                Subject     => "Ticket not resolved",
-                Explanation => $msg,
-                MIMEObj     => $args{'Message'}
-            );
-            return ( 0, "Ticket not resolved" );
+                #Warn the sender that we couldn't actually submit the comment.
+                MailError(
+                    To          => $args{'ErrorsTo'},
+                    Subject     => "Ticket not resolved",
+                    Explanation => $msg,
+                    MIMEObj     => $args{'Message'}
+                );
+                return ( 0, "Ticket not resolved" );
+            }
         }
     } else {
         return ( 0, "Not supported unsafe action $args{'Action'}", $args{'Ticket'} );

@@ -85,7 +85,7 @@ sub smart_search {
       'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
                      ' ( '.
                          join(' OR ', map "$_ = '$phonen'",
-                                          qw( daytime night fax )
+                                          qw( daytime night mobile fax )
                              ).
                      ' ) '.
                      " AND $agentnums_sql", #agent virtualization
@@ -457,6 +457,8 @@ HASHREF.  Valid parameters are
 
 =item address
 
+=item zip
+
 =item refnum
 
 =item cancelled_pkgs
@@ -472,6 +474,10 @@ listref of start date, end date
 listref of start date, end date
 
 =item spouse_birthdate
+
+listref of start date, end date
+
+=item anniversary_date
 
 listref of start date, end date
 
@@ -512,6 +518,7 @@ sub search {
     'usernum'       => '',
     'status'        => '',
     'address'       => '',
+    'zip'           => '',
     'paydate_year'  => '',
     'invoice_terms' => '',
     'custbatch'     => '',
@@ -574,6 +581,18 @@ sub search {
     )";
   }
 
+  ##
+  # zipcode
+  ##
+  if ( $params->{'zip'} =~ /\S/ ) {
+    my $zip = dbh->quote($params->{'zip'} . '%');
+    push @where, "EXISTS(
+      SELECT 1 FROM cust_location
+      WHERE cust_location.custnum = cust_main.custnum
+        AND cust_location.zip LIKE $zip
+    )";
+  }
+
   ###
   # refnum
   ###
@@ -617,7 +636,7 @@ sub search {
   # dates
   ##
 
-  foreach my $field (qw( signupdate birthdate spouse_birthdate )) {
+  foreach my $field (qw( signupdate birthdate spouse_birthdate anniversary_date )) {
 
     next unless exists($params->{$field});
 
@@ -779,6 +798,9 @@ sub search {
 
   my @select = (
                  'cust_main.custnum',
+                 # there's a good chance that we'll need these
+                 'cust_main.bill_locationnum',
+                 'cust_main.ship_locationnum',
                  FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
                );
 

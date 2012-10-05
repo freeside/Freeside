@@ -14,6 +14,7 @@ Example:
     'graph_labels'    => \@graph_labels,  #defaults to row_labels
 
     'links'           => \@links,         #optional
+    'no_graph'        => \@no_graph,      #optional
 
     #these run parallel to the elements of each @item
     'col_labels'      => \@col_labels,    #required
@@ -128,7 +129,19 @@ any delimiter and linked from the elements in @data.
 %   
 <% $output %>
 % } elsif ( $cgi->param('_type') eq 'png' ) {
-%
+%   # delete any items that shouldn't be on the graph
+%   if ( my $no_graph = $opt{'no_graph'} ) {
+%     my $i = 0;
+%     while (@$no_graph) {
+%       if ( shift @$no_graph ) {
+%         splice @data, $i, 1;
+%         splice @{$opt{'graph_labels'}}, $i, 1;
+%         splice @{$opt{'colors'}}, $i, 1;
+%         $i--; # because everything is shifted down
+%       }
+%       $i++;
+%     }
+%   }
 %   my $graph_type = 'LinesPoints';
 %   if ( $opt{'graph_type'} =~ /^(LinesPoints|Mountain|Bars)$/ ) {
 %     $graph_type = $1;

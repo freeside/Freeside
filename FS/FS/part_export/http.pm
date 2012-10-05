@@ -43,6 +43,7 @@ tie %options, 'Tie::IxHash',
   'svc'     => 'svc_domain',
   'desc'    => 'Send an HTTP or HTTPS GET or POST request',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<'END'
 Send an HTTP or HTTPS GET or POST to the specified URL.  For HTTPS support,
 <a href="http://search.cpan.org/dist/Crypt-SSLeay">Crypt::SSLeay</a>

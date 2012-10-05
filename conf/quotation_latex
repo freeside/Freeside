@@ -19,7 +19,7 @@
 
 \documentclass[letterpaper]{article}
 
-\usepackage{fancyhdr,lastpage,ifthen,array,fslongtable,afterpage,caption,multirow,bigstrut}
+\usepackage{fancyhdr,lastpage,ifthen,array,longtable,afterpage,caption,multirow,bigstrut}
 \usepackage{graphicx}			% required for logo graphic
 \usepackage[utf8]{inputenc}             % multilanguage support
 \usepackage[T1]{fontenc}

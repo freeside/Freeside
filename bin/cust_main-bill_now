@@ -13,7 +13,9 @@ my $custnum = shift or die &usage;
 my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
   or die "unknown custnum $custnum\n";
 
-$cust_main->bill_and_collect( debug=>2, check_freq=>'1d' );
+$FS::cust_main::DEBUG = 3;
+
+$cust_main->bill_and_collect( debug=>3, check_freq=>'1d' );
 
 sub usage {
   die "Usage:\n  cust_main-bill_now user custnum\n";

@@ -4,8 +4,8 @@
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
                  'header'      => [ 'Zip code', 'Customers', ],
-                 #'fields'      => [ 'zip', 'num_cust', ],
-                 #'links'       => [ '', sub { 'somewhere'; }  ],
+                 'fields'      => [ 0, 1 ],
+                 'links'       => [ '', $link  ],
              )
 %>
 <%init>
@@ -63,48 +63,36 @@ sub strip_plus4 {
   END";
 }
 
-my( $zip, $czip);
-if ( $cgi->param('column') eq 'ship_zip' ) {
+$cgi->param('column') =~ /^(bill|ship)$/;
+my $location = $1 || 'bill';
+$location .= '_locationnum';
 
-  my $casewhen_noship =
-    "CASE WHEN ( ship_last IS NULL OR ship_last = '' ) THEN ";
-
-  $czip = "$casewhen_noship zip ELSE ship_zip END";
-
-  if ( $cgi->param('ignore_plus4') ) {
-    $zip = $casewhen_noship. strip_plus4('zip').
-                   " ELSE ". strip_plus4('ship_zip'). ' END';
-
-  } else {
-    $zip = $casewhen_noship. fieldorempty('zip').
-                   " ELSE ". fieldorempty('ship_zip'). ' END';
-  }
-
+my $zip;
+if ( $cgi->param('ignore_plus4') ) {
+  $zip = strip_plus4('cust_location.zip');
 } else {
-
-  $czip = 'zip';
-
-  if ( $cgi->param('ignore_plus4') ) {
-    $zip = strip_plus4('zip');
-  } else {
-    $zip = fieldorempty('zip');
-  }
-
+  $zip = fieldorempty('cust_location.zip');
 }
 
 # construct the queries and send 'em off
+
+my $join = "JOIN cust_location ON (cust_main.$location = cust_location.locationnum)";
 
 my $sql_query = 
   "SELECT $zip AS zipcode,
           COUNT(*) AS num_cust
      FROM cust_main
+     $join
      $where
      GROUP BY zipcode
-     ORDER BY num_cust DESC
+     ORDER BY num_cust DESC, $zip ASC
   ";
 
-my $count_sql = "select count(distinct $czip) from cust_main $where";
+my $count_sql = 
+  "SELECT COUNT(DISTINCT cust_location.zip)
+    FROM cust_main $join $where";
 
-# XXX should link...
+my $link = [ $p.'search/cust_main.html?zip=', 
+             sub { $_[0]->[0] } ];
 
 </%init>

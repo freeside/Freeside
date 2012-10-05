@@ -24,6 +24,7 @@ tie my %options, 'Tie::IxHash',
   'desc'     => 'Real-time export of broadband services to SQL databases ',
   'options'  => \%options,
   'nodomain' => '',
+  'no_machine' => 1,
   'notes'    => <<END
 END
 );

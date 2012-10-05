@@ -26,6 +26,7 @@ my $postfix_transport_static =
   'desc'    => 'Real time export of domains to SQL databases '.
                '(postfix, others?)',
   'options' => \%options,
+  'no_machine' => 1,
   'notes'   => <<END
 Export domains (svc_domain records) to SQL databases.  Currently this is a
 simple export with a default for Postfix, but it can be extended for other

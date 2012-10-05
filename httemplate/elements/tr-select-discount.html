@@ -6,7 +6,7 @@
 % } else { 
 
   <TR>
-    <TD ALIGN="right" WIDTH="176"><% $opt{'label'} || '<B>'.emt('Discount').'</B>' %></TD>
+    <TD ALIGN="right" WIDTH="275"><% $opt{'label'} || '<B>'.emt('Discount').'</B>' %></TD>
     <TD <% $colspan %>>
       <% include( '/elements/select-discount.html',
                     'curr_value' => $discountnum,
@@ -74,6 +74,16 @@
             )
   %>
 
+%#  <% include( '/elements/tr-checkbox.html',
+%#                'label'     => '<B>Apply discount to add-on packages</B>',
+%#                'field'     => $name.'_linked',
+%#                'id'        => $name.'_linked',
+%#                'curr_value' => scalar($cgi->param($name.'_linked')),
+%#                'value'     => 'Y',
+%#                'colspan'    => $opt{'colspan'},
+%#            )
+%#  %>
+
   <SCRIPT TYPE="text/javascript">
 
 %   my $ge = 'document.getElementById';
@@ -136,6 +146,10 @@
         <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
         <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
+//        <% $ge %>('<% $name %>_linked_label0').style.display = 'none';
+//        <% $ge %>('<% $name %>_linked_label0').style.visibility = 'hidden';
+//        <% $ge %>('<% $name %>_linked').style.display = 'none';
+//        <% $ge %>('<% $name %>_linked').style.visibility = 'hidden';
       } else if ( <% $name %>__type == 'Amount' ) {
         <% $ge %>('<% $name %>_amount_label0').style.display = '';
         <% $ge %>('<% $name %>_amount_label0').style.visibility = '';
@@ -145,6 +159,11 @@
         <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
         <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
+//        <% $ge %>('<% $name %>_linked_label0').style.display = 'none';
+//        <% $ge %>('<% $name %>_linked_label0').style.visibility = 'hidden';
+//        <% $ge %>('<% $name %>_linked').style.display = 'none';
+//        <% $ge %>('<% $name %>_linked').style.visibility = 'hidden';
       } else if ( <% $name %>__type == 'Percentage' ) {
         <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
         <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
@@ -154,6 +173,11 @@
         <% $ge %>('<% $name %>_percent_label0').style.visibility = '';
         <% $ge %>('<% $name %>_percent_input0').style.display = '';
         <% $ge %>('<% $name %>_percent_input0').style.visibility = '';
+        <% $ge %>('<% $name %>_percent_input0').style.visibility = '';
+//        <% $ge %>('<% $name %>_linked_label0').style.display = '';
+//        <% $ge %>('<% $name %>_linked_label0').style.visibility = '';
+//        <% $ge %>('<% $name %>_linked').style.display = '';
+//        <% $ge %>('<% $name %>_linked').style.visibility = '';
      }
 
     }

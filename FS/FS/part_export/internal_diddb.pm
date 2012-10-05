@@ -17,6 +17,7 @@ tie my %options, 'Tie::IxHash',
   'desc'    => 'Provision phone numbers from the internal DID database',
   'notes'   => 'After adding the export, DIDs may be imported under Tools -> Importing -> Import phone numbers (DIDs)',
   'options' => \%options,
+  'no_machine' => 1,
 );
 
 sub rebless { shift; }

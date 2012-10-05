@@ -39,10 +39,11 @@ tie %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'      => 'svc_phone',
-  'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS) for phone provisioning and rating',
-  'options'  => \%options,
-  'notes'    => <<END,
+  'svc'        => 'svc_phone',
+  'desc'       => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS) for phone provisioning and rating',
+  'options'    => \%options,
+  'no_machine' => 1,
+  'notes'      => <<END,
 Real-time export of <b>radcheck</b> table
 to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a>
 or <a href="http://radius.innercite.com/">ICRADIUS</a>.

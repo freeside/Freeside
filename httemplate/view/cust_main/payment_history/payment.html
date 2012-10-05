@@ -181,7 +181,7 @@ $void = areyousure_link("${p}misc/void-cust_pay.cgi?".$cust_pay->paynum,
                && $curuser->access_right('Echeck void')
              )
           || ( $cust_pay->payby !~ /^(CARD|CHEK)$/
-               && $curuser->access_right('Regular void')
+               && $curuser->access_right('Void payments')
              )
         )
    );

@@ -36,6 +36,7 @@ Import a file containing customer records.
         <OPTION VALUE="svc_external">External service
         <OPTION VALUE="svc_external_svc_phone">External service and phone service
         <OPTION VALUE="birthdates-acct_phone_hardware">Birthdates and account, phone and hardware services
+        <OPTION VALUE="national_id-acct_phone">National ID, plus account and phone services
       </SELECT>
     </TD>
   </TR>
@@ -110,6 +111,9 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <b>Birthdates and account, phone and hardware services</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, birthdate, spouse_birthdate, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, username, _password, countrycode, phonenum, sip_password, pin, typenum, ip_addr, hw_addr, serial</i>
 <BR><BR>
 
+<b>National ID, plus account and phone services</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, national_id, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, username, _password, slipip, countrycode, phonenum, sip_password, pin</i>
+<BR><BR>
+
 <%$req%> Required fields
 <BR><BR>
 
@@ -134,6 +138,8 @@ advertising source table.
   <li><i>pkgpart</i>: Package definition.  Configuration -&gt; Packages -&gt; Package definitions
 
   <li><i>username</i> and <i>_password</i> are required if <i>pkgpart</i> is specified. (Extended and Extended plus company formats)
+
+  <li><i>slipip</i>: IP address
 
   <li><i>id</i>: External service id, integer
 

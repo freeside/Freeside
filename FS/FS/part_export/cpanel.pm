@@ -190,3 +190,5 @@ sub cpanel_connect {
 
   $whm;
 }
+
+1;

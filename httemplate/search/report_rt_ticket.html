@@ -59,7 +59,6 @@ if ( @pkgparts ) {
 }
 
 # get a list of TimeValue-type custom fields
-RT::Init();
 my $CurrentUser = RT::CurrentUser->new();
 $CurrentUser->LoadByName($FS::CurrentUser::CurrentUser->username);
 die "RT not configured" unless $CurrentUser->id;

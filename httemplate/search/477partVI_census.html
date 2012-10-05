@@ -23,6 +23,7 @@
                   'links'           => \@links,
                   'url'             => $opt{url} || '',
                   'xml_row_element' => 'Datarow',
+                  'really_disable_download' => 1,
               )
 %>
 <%init>
@@ -80,9 +81,10 @@ push @fields,
 my %search_hash = ();
 my @sql_query = ();
   
-for ( qw(agentnum magic) ) {
+for ( qw(agentnum magic state) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
+$search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ]
   if grep { $_ eq 'classnum' } $cgi->param;
 
@@ -115,10 +117,10 @@ foreach my $row ( @row_option ) {
       );
       my $extracolumns = "$rowcount AS upload, $columncount AS download, $tech_code as technology_code";
       my $percent = "CASE WHEN count(*) > 0 THEN 100-100*cast(count(cust_main.company) as numeric)/cast(count(*) as numeric) ELSE cast(0 as numeric) END AS residential";
-      $sql_query->{select} = "count(*) AS quantity, $extracolumns, censustract, $percent";
+      $sql_query->{select} = "count(*) AS quantity, $extracolumns, cust_location.censustract, $percent";
       $sql_query->{order_by} =~ /^(.*)(ORDER BY pkgnum)(.*)$/s
         or die "couldn't parse order_by";
-      $sql_query->{order_by} = "$1 GROUP BY censustract $3";
+      $sql_query->{order_by} = "$1 GROUP BY cust_location.censustract $3";
       push @sql_query, $sql_query;
     }
     $columncount++;
@@ -131,7 +133,8 @@ my $count_query = 'SELECT count(*) FROM ( ('.
       map { my $addl_from = $_->{addl_from};
             my $extra_sql = $_->{extra_sql};
             my $order_by  = $_->{order_by};
-            "SELECT censustract from cust_pkg $addl_from $extra_sql $order_by";
+            "SELECT cust_location.censustract from cust_pkg $addl_from 
+            $extra_sql $order_by";
           }
       @sql_query
    ). ') ) AS foo';

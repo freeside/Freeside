@@ -70,6 +70,20 @@ sub upgrade_config {
     foreach grep { ! $conf->exists($_) && -s "$DIST_CONF/$_" }
       qw( quotation_html quotation_latex quotation_latexnotes );
 
+  # change 'fslongtable' to 'longtable'
+  # in invoice and quotation main templates, and also in all secondary 
+  # invoice templates
+  my @latex_confs =
+    qsearch('conf', { 'name' => {op=>'LIKE', value=>'%latex%'} });
+
+  foreach my $c (@latex_confs) {
+    my $value = $c->value;
+    if (length($value) and $value =~ /fslongtable/) {
+      $value =~ s/fslongtable/longtable/g;
+      $conf->set($c->name, $value, $c->agentnum);
+    }
+  }
+
 }
 
 sub upgrade_overlimit_groups {
@@ -278,6 +292,12 @@ sub upgrade_data {
 
     #set up payment gateways if needed
     'pay_batch' => [],
+
+    #flag monthly tax exemptions
+    'cust_tax_exempt_pkg' => [],
+
+    #kick off tax location history upgrade
+    'cust_bill_pkg' => [],
   ;
 
   \%hash;

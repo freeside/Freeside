@@ -127,6 +127,7 @@ tie my %options, 'Tie::IxHash', (
   'Create an RT ticket',
   'options'  => \%options,
   'nodomain' => '',
+  'no_machine' => 1,
   'notes'    => ' 
   Create a ticket in RT.  The subject and body of the ticket 
   will be generated from a message template.'

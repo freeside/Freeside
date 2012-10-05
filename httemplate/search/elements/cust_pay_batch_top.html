@@ -33,6 +33,7 @@ Download batch in format <SELECT NAME="format">
               'action'    => "${p}misc/upload-batch.cgi",
               'num_files' => 1,
               'fields'    => [ 'batchnum', 'format', 'gatewaynum' ],
+              'url'       => $cgi->self_url,
               'message'   => 'Batch results uploaded.',
 ) %>
 Upload results<BR></TR>
@@ -87,7 +88,7 @@ Batch is <% $statustext{$status} %><BR>
 
 <%def .select_gateway>
 % if ( $show_gateways ) {
- or from gateway
+ or for gateway
 <& /elements/select-table.html,
   empty_label => ' ',
   field     => 'gatewaynum',

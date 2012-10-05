@@ -142,19 +142,169 @@ sub cust_main {
 
 =cut
 
-sub cust_bill_pkg {
+sub cust_bill_pkg { #actually quotation_pkg objects
   my $self = shift;
-  #actually quotation_pkg objects
   qsearch('quotation_pkg', { quotationnum=>$self->quotationnum });
 }
 
-=back
+=item total_setup
+
+=cut
+
+sub total_setup {
+  my $self = shift;
+  $self->_total('setup');
+}
+
+=item total_recur [ FREQ ]
+
+=cut
+
+sub total_recur {
+  my $self = shift;
+#=item total_recur [ FREQ ]
+  #my $freq = @_ ? shift : '';
+  $self->_total('recur');
+}
+
+sub _total {
+  my( $self, $method ) = @_;
+
+  my $total = 0;
+  $total += $_->$method() for $self->cust_bill_pkg;
+  sprintf('%.2f', $total);
+
+}
 
 =item enable_previous
 
 =cut
 
 sub enable_previous { 0 }
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+
+=item search_sql_where HASHREF
+
+Class method which returns an SQL WHERE fragment to search for parameters
+specified in HASHREF.  Valid parameters are
+
+=over 4
+
+=item _date
+
+List reference of start date, end date, as UNIX timestamps.
+
+=item invnum_min
+
+=item invnum_max
+
+=item agentnum
+
+=item charged
+
+List reference of charged limits (exclusive).
+
+=item owed
+
+List reference of charged limits (exclusive).
+
+=item open
+
+flag, return open invoices only
+
+=item net
+
+flag, return net invoices only
+
+=item days
+
+=item newest_percust
+
+=back
+
+Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
+
+=cut
+
+sub search_sql_where {
+  my($class, $param) = @_;
+  #if ( $DEBUG ) {
+  #  warn "$me search_sql_where called with params: \n".
+  #       join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
+  #}
+
+  my @search = ();
+
+  #agentnum
+  if ( $param->{'agentnum'} =~ /^(\d+)$/ ) {
+    push @search, "( prospect_main.agentnum = $1 OR cust_main.agentnum = $1 )";
+  }
+
+#  #refnum
+#  if ( $param->{'refnum'} =~ /^(\d+)$/ ) {
+#    push @search, "cust_main.refnum = $1";
+#  }
+
+  #prospectnum
+  if ( $param->{'prospectnum'} =~ /^(\d+)$/ ) {
+    push @search, "quotation.prospectnum = $1";
+  }
+
+  #custnum
+  if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_bill.custnum = $1";
+  }
+
+  #_date
+  if ( $param->{_date} ) {
+    my($beginning, $ending) = @{$param->{_date}};
+
+    push @search, "quotation._date >= $beginning",
+                  "quotation._date <  $ending";
+  }
+
+  #quotationnum
+  if ( $param->{'quotationnum_min'} =~ /^(\d+)$/ ) {
+    push @search, "quotation.quotationnum >= $1";
+  }
+  if ( $param->{'quotationnum_max'} =~ /^(\d+)$/ ) {
+    push @search, "quotation.quotationnum <= $1";
+  }
+
+#  #charged
+#  if ( $param->{charged} ) {
+#    my @charged = ref($param->{charged})
+#                    ? @{ $param->{charged} }
+#                    : ($param->{charged});
+#
+#    push @search, map { s/^charged/cust_bill.charged/; $_; }
+#                      @charged;
+#  }
+
+  my $owed_sql = FS::cust_bill->owed_sql;
+
+  #days
+  push @search, "quotation._date < ". (time-86400*$param->{'days'})
+    if $param->{'days'};
+
+  #agent virtualization
+  my $curuser = $FS::CurrentUser::CurrentUser;
+  #false laziness w/search/quotation.html
+  push @search,' (    '. $curuser->agentnums_sql( table=>'prospect_main' ).
+               '   OR '. $curuser->agentnums_sql( table=>'cust_main' ).
+               ' )    ';
+
+  join(' AND ', @search );
+
+}
+
+=back
 
 =head1 BUGS
 

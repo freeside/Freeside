@@ -103,6 +103,9 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item fcc_ds0s - Optional DS0 equivalency number for FCC form 477
 
+=item fcc_voip_class - Which column of FCC form 477 part II.B this package 
+belongs in.
+
 =item successor - Foreign key for the part_pkg that replaced this record.
 If this record is not obsolete, will be null.
 
@@ -622,6 +625,7 @@ sub check {
            : $self->ut_agentnum_acl('agentnum', \@null_agentnum_right)
        )
     || $self->ut_numbern('fcc_ds0s')
+    || $self->ut_numbern('fcc_voip_class')
     || $self->ut_foreign_keyn('successor', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_keyn('family_pkgpart', 'part_pkg', 'pkgpart')
     || $self->SUPER::check
@@ -1590,6 +1594,83 @@ sub _upgrade_data { # class method
               die $error if $error;
               $newopts{$pkgpart} = $new_opt;
         }
+  }
+
+  # set any package with FCC voice lines to the "VoIP with broadband" category
+  # for backward compatibility
+  #
+  # recover from a bad upgrade bug
+  my $upgrade = 'part_pkg_fcc_voip_class_FIX';
+  if (!FS::upgrade_journal->is_done($upgrade)) {
+    my $bad_upgrade = qsearchs('upgrade_journal', 
+      { upgrade => 'part_pkg_fcc_voip_class' }
+    );
+    if ( $bad_upgrade ) {
+      my $where = 'WHERE history_date <= '.$bad_upgrade->_date.
+                  ' AND  history_date >  '.($bad_upgrade->_date - 3600);
+      my @h_part_pkg_option = map { FS::part_pkg_option->new($_->hashref) }
+        qsearch({
+          'select'    => '*',
+          'table'     => 'h_part_pkg_option',
+          'hashref'   => {},
+          'extra_sql' => "$where AND history_action = 'delete'",
+          'order_by'  => 'ORDER BY history_date ASC',
+        });
+      my @h_pkg_svc = map { FS::pkg_svc->new($_->hashref) }
+        qsearch({
+          'select'    => '*',
+          'table'     => 'h_pkg_svc',
+          'hashref'   => {},
+          'extra_sql' => "$where AND history_action = 'replace_old'",
+          'order_by'  => 'ORDER BY history_date ASC',
+        });
+      my %opt;
+      foreach my $deleted (@h_part_pkg_option, @h_pkg_svc) {
+        my $pkgpart ||= $deleted->pkgpart;
+        $opt{$pkgpart} ||= {
+          options => {},
+          pkg_svc => {},
+          primary_svc => '',
+          hidden_svc => {},
+        };
+        if ( $deleted->isa('FS::part_pkg_option') ) {
+          $opt{$pkgpart}{options}{ $deleted->optionname } = $deleted->optionvalue;
+        } else { # pkg_svc
+          my $svcpart = $deleted->svcpart;
+          $opt{$pkgpart}{pkg_svc}{$svcpart} = $deleted->quantity;
+          $opt{$pkgpart}{hidden_svc}{$svcpart} ||= $deleted->hidden;
+          $opt{$pkgpart}{primary_svc} = $svcpart if $deleted->primary_svc;
+        }
+      }
+      foreach my $pkgpart (keys %opt) {
+        my $part_pkg = FS::part_pkg->by_key($pkgpart);
+        my $error = $part_pkg->replace( $part_pkg->replace_old, $opt{$pkgpart} );
+        if ( $error ) {
+          die "error recovering damaged pkgpart $pkgpart:\n$error\n";
+        }
+      }
+    } # $bad_upgrade exists
+    else { # do the original upgrade, but correctly this time
+      @part_pkg = qsearch('part_pkg', {
+          fcc_ds0s        => { op => '>', value => 0 },
+          fcc_voip_class  => ''
+      });
+      foreach my $part_pkg (@part_pkg) {
+        $part_pkg->set(fcc_voip_class => 2);
+        my @pkg_svc = $part_pkg->pkg_svc;
+        my %quantity = map {$_->svcpart, $_->quantity} @pkg_svc;
+        my %hidden   = map {$_->svcpart, $_->hidden  } @pkg_svc;
+        my $error = $part_pkg->replace(
+          $part_pkg->replace_old,
+          options     => { $part_pkg->options },
+          pkg_svc     => \%quantity,
+          hidden_svc  => \%hidden,
+          primary_svc => ($part_pkg->svcpart || ''),
+        );
+        die $error if $error;
+      }
+    }
+    FS::upgrade_journal->set_done($upgrade);
   }
 
 }

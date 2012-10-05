@@ -7,6 +7,10 @@ use FS::cust_main_Mixin;
 use FS::cust_bill_pkg;
 use FS::cust_main_county;
 use FS::cust_credit_bill_pkg;
+use FS::UID qw(dbh);
+use FS::upgrade_journal;
+
+# some kind of common ancestor with cust_bill_pkg_tax_location would make sense
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -32,22 +36,45 @@ FS::cust_tax_exempt_pkg - Object methods for cust_tax_exempt_pkg records
 =head1 DESCRIPTION
 
 An FS::cust_tax_exempt_pkg object represents a record of a customer tax
-exemption.  Currently this is only used for "texas tax".  FS::cust_tax_exempt
-inherits from FS::Record.  The following fields are currently supported:
+exemption.  Whenever a package would be taxed (based on its location and
+taxclass), but some or all of it is exempt from taxation, an 
+FS::cust_tax_exempt_pkg record is created.
+
+FS::cust_tax_exempt inherits from FS::Record.  The following fields are 
+currently supported:
 
 =over 4
 
 =item exemptpkgnum - primary key
 
-=item billpkgnum - invoice line item (see L<FS::cust_bill_pkg>)
+=item billpkgnum - invoice line item (see L<FS::cust_bill_pkg>) that 
+was exempted from tax.
 
 =item taxnum - tax rate (see L<FS::cust_main_county>)
 
-=item year
+=item year - the year in which the exemption occurred.  NULL if this 
+is a customer or package exemption rather than a monthly exemption.
 
-=item month
+=item month - the month in which the exemption occurred.  NULL if this
+is a customer or package exemption.
 
-=item amount
+=item amount - the amount of revenue exempted.  For monthly exemptions
+this may be anything up to the monthly exemption limit defined in 
+L<FS::cust_main_county> for this tax.  For customer exemptions it is 
+always the full price of the line item.  For package exemptions it 
+may be the setup fee, the recurring fee, or the sum of those.
+
+=item exempt_cust - flag indicating that the customer is tax-exempt
+(cust_main.tax = 'Y').
+
+=item exempt_cust_taxname - flag indicating that the customer is exempt 
+from the tax with this name (see L<FS::cust_main_exemption).
+
+=item exempt_setup, exempt_recur: flag indicating that the package's setup
+or recurring fee is not taxable (part_pkg.setuptax and part_pkg.recurtax).
+
+=item exempt_monthly: flag indicating that this is a monthly per-customer
+exemption (Texas tax).
 
 =back
 
@@ -109,18 +136,44 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  $self->ut_numbern('exemptnum')
-#    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
+  my $error = $self->ut_numbern('exemptnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
     || $self->ut_foreign_key('taxnum', 'cust_main_county', 'taxnum')
     || $self->ut_foreign_keyn('creditbillpkgnum',
                               'cust_credit_bill_pkg',
                               'creditbillpkgnum')
-    || $self->ut_number('year') #check better
-    || $self->ut_number('month') #check better
+    || $self->ut_numbern('year') #check better
+    || $self->ut_numbern('month') #check better
     || $self->ut_money('amount')
+    || $self->ut_flag('exempt_cust')
+    || $self->ut_flag('exempt_setup')
+    || $self->ut_flag('exempt_recur')
+    || $self->ut_flag('exempt_cust_taxname')
     || $self->SUPER::check
   ;
+
+  return $error if $error;
+
+  if ( $self->get('exempt_cust') ) {
+    $self->set($_ => '') for qw(
+      exempt_cust_taxname exempt_setup exempt_recur exempt_monthly month year
+    );
+  } elsif ( $self->get('exempt_cust_taxname')  ) {
+    $self->set($_ => '') for qw(
+      exempt_setup exempt_recur exempt_monthly month year
+    );
+  } elsif ( $self->get('exempt_setup') || $self->get('exempt_recur') ) {
+    $self->set($_ => '') for qw(exempt_monthly month year);
+  } elsif ( $self->get('exempt_monthly') ) {
+    $self->year =~ /^\d{4}$/
+        or return "illegal exemption year: '".$self->year."'";
+    $self->month >= 1 && $self->month <= 12
+        or return "illegal exemption month: '".$self->month."'";
+  } else {
+    return "no exemption type selected";
+  }
+
+  '';
 }
 
 =item cust_main_county
@@ -133,6 +186,18 @@ Otherwise returns false.
 sub cust_main_county {
   my $self = shift;
   qsearchs( 'cust_main_county', { 'taxnum', $self->taxnum } );
+}
+
+sub _upgrade_data {
+  my $class = shift;
+
+  my $journal = 'cust_tax_exempt_pkg_flags';
+  if ( !FS::upgrade_journal->is_done($journal) ) {
+    my $sql = "UPDATE cust_tax_exempt_pkg SET exempt_monthly = 'Y' ".
+              "WHERE month IS NOT NULL";
+    dbh->do($sql) or die dbh->errstr;
+    FS::upgrade_journal->set_done($journal);
+  }
 }
 
 =back

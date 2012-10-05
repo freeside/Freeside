@@ -4,6 +4,7 @@ require 5.006;
 use strict;
              #FS::cust_main:_Marketgear when they're ready to move to 2.1
 use base qw( FS::cust_main::Packages FS::cust_main::Status
+             FS::cust_main::NationalID
              FS::cust_main::Billing FS::cust_main::Billing_Realtime
              FS::cust_main::Billing_Discount
              FS::cust_main::Location
@@ -42,6 +43,7 @@ use FS::payby;
 use FS::cust_pkg;
 use FS::cust_svc;
 use FS::cust_bill;
+use FS::cust_bill_void;
 use FS::legacy_cust_bill;
 use FS::cust_pay;
 use FS::cust_pay_pending;
@@ -453,8 +455,10 @@ sub insert {
     warn "  setting $l.custnum\n"
       if $DEBUG > 1;
     my $loc = $self->$l;
-    $loc->set(custnum => $self->custnum);
-    $error ||= $loc->replace;
+    unless ( $loc->custnum ) {
+      $loc->set(custnum => $self->custnum);
+      $error ||= $loc->replace;
+    }
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -1242,9 +1246,12 @@ sub merge {
 
   return "Can't merge a customer into self" if $self->custnum == $new_custnum;
 
-  unless ( qsearchs( 'cust_main', { 'custnum' => $new_custnum } ) ) {
-    return "Invalid new customer number: $new_custnum";
-  }
+  my $new_cust_main = qsearchs( 'cust_main', { 'custnum' => $new_custnum } )
+    or return "Invalid new customer number: $new_custnum";
+
+  return 'Access denied: "Merge customer across agents" access right required to merge into a customer of a different agent'
+    if $self->agentnum != $new_cust_main->agentnum 
+    && ! $FS::CurrentUser::CurrentUser->access_right('Merge customer across agents');
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1279,6 +1286,7 @@ sub merge {
 
   tie my %financial_tables, 'Tie::IxHash',
     'cust_bill'      => 'invoices',
+    'cust_bill_void' => 'voided invoices',
     'cust_statement' => 'statements',
     'cust_credit'    => 'credits',
     'cust_pay'       => 'payments',
@@ -1779,8 +1787,10 @@ sub check {
     || $self->ut_textn('custbatch')
     || $self->ut_name('last')
     || $self->ut_name('first')
-    || $self->ut_snumbern('birthdate')
     || $self->ut_snumbern('signupdate')
+    || $self->ut_snumbern('birthdate')
+    || $self->ut_snumbern('spouse_birthdate')
+    || $self->ut_snumbern('anniversary_date')
     || $self->ut_textn('company')
     || $self->ut_anything('comments')
     || $self->ut_numbern('referral_custnum')
@@ -1790,6 +1800,7 @@ sub check {
     || $self->ut_floatn('cdr_termination_percentage')
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
+    || $self->ut_numbern('prorate_day')
     || $self->ut_enum('edit_subject', [ '', 'Y' ] )
     || $self->ut_enum('calling_list_exempt', [ '', 'Y' ] )
     || $self->ut_enum('invoice_noemail', [ '', 'Y' ] )
@@ -3644,6 +3655,20 @@ be passed.
 
 =cut
 
+=item cust_bill_void
+
+Returns all the voided invoices (see L<FS::cust_bill_void>) for this customer.
+
+=cut
+
+sub cust_bill_void {
+  my $self = shift;
+
+  map { $_ } #return $self->num_cust_bill_void unless wantarray;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_bill_void', { 'custnum' => $self->custnum } )
+}
+
 sub cust_statement {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
@@ -3800,7 +3825,7 @@ sub cust_pay_void {
 
 =item cust_pay_batch [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
-Returns all batched payments (see L<FS::cust_pay_void>) for this customer.
+Returns all batched payments (see L<FS::cust_pay_batch>) for this customer.
 
 Optionally, a list or hashref of additional arguments to the qsearch call can
 be passed.
