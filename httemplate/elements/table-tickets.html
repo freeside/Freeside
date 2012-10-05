@@ -94,11 +94,11 @@ View
 </TABLE>
 
 <%init>
-use Date::Parse qw(str2time);
-use Date::Format qw(time2str);
 
 my %opt = @_;
 my $conf = new FS::Conf;
+
+return '' unless $conf->config('ticket_system');
 
 my $object = $opt{'object'};
 $object = $object->cust_svc if $object->isa('FS::svc_Common');
@@ -116,8 +116,10 @@ if ( $object->isa('FS::cust_main') ) {
                     $object->custnum,
                     { 'statuses' => [ 'resolved' ] }
                   );
-}
-elsif ( $object->isa('FS::cust_svc') ) {
+} elsif ( $object->isa('FS::cust_svc') ) {
+
+  return '' unless $object->pkgnum;
+
   $thing = 'service';
   $open_link = FS::TicketSystem->href_service_tickets($object->svcnum);
 
