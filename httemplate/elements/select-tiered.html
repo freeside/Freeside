@@ -59,7 +59,11 @@ main argument list, and will be applied to the last tier.
   >
 %   if ( $i == 0 ) {
 %     my $options = $tiers_by_key->[0]->{''};
-%     foreach ( sort keys %$options ) {
+%     #foreach ( sort keys %$options ) {
+%     foreach ( sort { lc($options->{$a}) cmp lc($options->{$b}) }
+%                 keys %$options
+%             )
+%     {
   <OPTION VALUE="<%$_ |h%>" <% $curr_values->[$i] eq $_ ? 'SELECTED' : ''%>>
   <% $options->{$_} |h%></OPTION>
 %     }
