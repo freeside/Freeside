@@ -2251,7 +2251,8 @@ sub _items_cust_bill_pkg {
                          $cust_pkg->h_labels_short($self->_date, undef, 'I')
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
 
-            if ( $cust_pkg->locationnum != $cust_main->ship_locationnum  ) {
+            if ( ! $cust_pkg->locationnum or
+                   $cust_pkg->locationnum != $cust_main->ship_locationnum  ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
