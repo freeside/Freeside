@@ -29,6 +29,8 @@ sub args_callback {
   # no validation of these; they can contain just about anything
   $content{'subject'} = $cgi->param('subject') || '';
   $content{'body'} = $cgi->param('body') || '';
+  $object->subject('');
+  $object->body('');
   return %content;
 }
 

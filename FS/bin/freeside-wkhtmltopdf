@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ $DISPLAY ] ; then
+  wkhtmltopdf $@
+else
+  xvfb-run -- wkhtmltopdf $@
+fi

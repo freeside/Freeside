@@ -30,22 +30,17 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item tagnum
+=item tagnum - primary key
 
-primary key
+=item tagname - tag name
 
-=item tagname
+=item tagdesc - description (can be longer than name)
 
-tagname
+=item tagcolor - HTML-style color to display this tag
 
-=item tagdesc
+=item by_default - 'Y' to enable this tag on new customers
 
-tagdesc
-
-=item tagcolor
-
-tagcolor
-
+=item disabled
 
 =back
 
@@ -111,6 +106,7 @@ sub check {
     || $self->ut_text('tagname')
     || $self->ut_textn('tagdesc')
     || $self->ut_textn('tagcolor')
+    || $self->ut_enum('by_default', [ '', 'Y' ] )
     || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
@@ -119,6 +115,21 @@ sub check {
 }
 
 =back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item default_tags
+
+Returns the tagnums of all tags that have 'by_default' enabled.
+
+=cut
+
+sub default_tags {
+  my $class = shift;
+  map { $_->tagnum } qsearch('part_tag', { disabled => '', by_default => 'Y' });
+}
 
 =head1 BUGS
 

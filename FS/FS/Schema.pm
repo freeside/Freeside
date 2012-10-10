@@ -1349,6 +1349,7 @@ sub tables_hashref {
         'tagname',  'varchar',     '', $char_d, '', '',
         'tagdesc',  'varchar', 'NULL', $char_d, '', '',
         'tagcolor', 'varchar', 'NULL',       6, '', '',
+        'by_default',  'char', 'NULL',       1, '', '',
         'disabled',    'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'tagnum',
