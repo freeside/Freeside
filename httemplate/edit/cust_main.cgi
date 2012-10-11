@@ -318,6 +318,8 @@ if ( $cgi->param('error') ) {
   $stateid = '';
   $payinfo = '';
 
+  $cgi->param('tagnum', FS::part_tag->default_tags);
+
   if ( $cgi->param('qualnum') =~ /^(\d+)$/ ) {
     my $qualnum = $1;
     my $qual = qsearchs('qual', { 'qualnum' => $qualnum } )

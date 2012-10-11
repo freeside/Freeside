@@ -16,6 +16,9 @@ use Date::Format qw( time2str );
 use HTML::Entities qw( decode_entities encode_entities ) ;
 use HTML::FormatText;
 use HTML::TreeBuilder;
+
+use File::Temp;
+use IPC::Run qw(run);
 use vars qw( $DEBUG $conf );
 
 FS::UID->install_callback( sub { $conf = new FS::Conf; } );
@@ -273,8 +276,8 @@ A hash reference of additional substitutions
 sub prepare {
   my( $self, %opt ) = @_;
 
-  my $cust_main = $opt{'cust_main'};
-  my $object = $opt{'object'};
+  my $cust_main = $opt{'cust_main'} or die 'cust_main required';
+  my $object = $opt{'object'} or die 'object required';
 
   # localization
   my $locale = $cust_main->locale || '';
@@ -435,8 +438,64 @@ sub send {
   send_email(generate_email($self->prepare(@_)));
 }
 
+=item render OPTION => VALUE ...
+
+Fills in the template and renders it to a PDF document.  Returns the 
+name of the PDF file.
+
+Options are as for 'prepare', but 'from' and 'to' are meaningless.
+
+=cut
+
+# will also have options to set paper size, margins, etc.
+
+sub render {
+  my $self = shift;
+  eval "use PDF::WebKit";
+  die $@ if $@;
+  my %opt = @_;
+  my %hash = $self->prepare(%opt);
+  my $html = $hash{'html_body'};
+
+  my $tmp = 'msg'.$self->msgnum.'-'.time2str('%Y%m%d', time).'-XXXXXXXX';
+  my $dir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc";
+
+  # Graphics/stylesheets should probably go in /var/www on the Freeside 
+  # machine.
+  my $kit = PDF::WebKit->new(\$html); #%options
+  # hack to use our wrapper script
+  $kit->configure(sub { shift->wkhtmltopdf('freeside-wkhtmltopdf') });
+  my $fh = File::Temp->new(
+    TEMPLATE  => $tmp,
+    DIR       => $dir,
+    UNLINK    => 0,
+    SUFFIX    => '.pdf'
+  );
+
+  print $fh $kit->to_pdf;
+  close $fh;
+  return $fh->filename;
+}
+
+=item print OPTIONS
+
+Render a PDF and send it to the printer.  OPTIONS are as for 'render'.
+
+=cut
+
+sub print {
+  my $file = render(@_);
+  my @lpr = $conf->config('lpr');
+  run ([@lpr, '-r'], '<', $file)
+    or die "lpr error:\n$?\n";
+}
+
+
 # helper sub for package dates
 my $ymd = sub { $_[0] ? time2str('%Y-%m-%d', $_[0]) : '' };
+
+# helper sub for money amounts
+my $money = sub { ($conf->money_char || '$') . sprintf('%.2f', $_[0] || 0) };
 
 #my $conf = new FS::Conf;
 
@@ -484,6 +543,7 @@ sub substitutions {
       [ company_address   => sub {
           $conf->config('company_address', shift->agentnum)
         } ],
+      [ invoicing_email => sub { shift->invoicing_list_emailonly_scalar } ],
       [ company_phonenum  => sub {
           $conf->config('company_phonenum', shift->agentnum)
         } ],
@@ -499,6 +559,8 @@ sub substitutions {
       labels_short
       ),
       [ pkg               => sub { shift->part_pkg->pkg } ],
+      [ pkg_category      => sub { shift->part_pkg->categoryname } ],
+      [ pkg_class         => sub { shift->part_pkg->classname } ],
       [ cancel            => sub { shift->getfield('cancel') } ], # grrr...
       [ start_ymd         => sub { $ymd->(shift->getfield('start_date')) } ],
       [ setup_ymd         => sub { $ymd->(shift->getfield('setup')) } ],
@@ -508,6 +570,13 @@ sub substitutions {
       [ susp_ymd          => sub { $ymd->(shift->getfield('susp')) } ],
       [ expire_ymd        => sub { $ymd->(shift->getfield('expire')) } ],
       [ cancel_ymd        => sub { $ymd->(shift->getfield('cancel')) } ],
+
+      # not necessarily correct for non-flat packages
+      [ setup_fee         => sub { shift->part_pkg->option('setup_fee') } ],
+      [ recur_fee         => sub { shift->part_pkg->option('recur_fee') } ],
+
+      [ freq_pretty       => sub { shift->part_pkg->freq_pretty } ],
+
     ],
     'cust_bill' => [qw(
       invnum

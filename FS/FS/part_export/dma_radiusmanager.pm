@@ -18,9 +18,8 @@ tie %options, 'Tie::IxHash',
   'username'  => { label=>'Database username' },
   'password'  => { label=>'Database password' },
   'manager'   => { label=>'Manager name' },
-  'groupid'   => { label=>'Group ID', default=>'1' },
-  'service_prefix' => { label=>'Service name prefix' },
-  'nasnames'  => { label=>'NAS IDs/addresses' },
+  'template_name'   => { label=>'Template service name' },
+  'service_prefix'  => { label=>'Service name prefix' },
   'debug'     => { label=>'Enable debugging', type=>'checkbox' },
 ;
 
@@ -59,13 +58,12 @@ sub dma_rm_queue {
 
   my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
   my $cust_main = $cust_pkg->cust_main;
-  my $location = $cust_pkg->cust_location;
 
-  my $address = $location->address1;
-  $address .= ' '.$location->address2 if $location->address2;
-  my $country = code2country($location->country);
-  my $lsc = Locale::SubCountry->new($location->country);
-  my $state = $lsc->full_name($location->state) if defined($lsc);
+  my $address = $cust_main->address1;
+  $address .= ' '.$cust_main->address2 if $cust_main->address2;
+  my $country = code2country($cust_main->country);
+  my $lsc = Locale::SubCountry->new($cust_main->country);
+  my $state = $lsc->full_name($cust_main->state) if defined($lsc);
 
   my %params = (
     # for the remote side
@@ -78,13 +76,12 @@ sub dma_rm_queue {
     company     => $cust_main->company,
     phone       => ($cust_main->daytime || $cust_main->night),
     mobile      => $cust_main->mobile,
-    address     => $location->address1, # address2?
-    city        => $location->city,
+    city        => $cust_main->city,
     state       => $state, #full name
-    zip         => $location->zip,
+    zip         => $cust_main->zip,
     country     => $country, #full name
-    gpslat      => $location->latitude,
-    gpslong     => $location->longitude,
+    gpslat      => $cust_main->latitude,
+    gpslong     => $cust_main->longitude,
     comment     => 'svcnum'.$svcnum,
     createdby   => $self->option('manager'),
     owner       => $self->option('manager'),
@@ -235,6 +232,14 @@ not, create one.  Then return its srvid.
 sub export_part_svc {
   my ($self, $part_svc, $dbh) = @_;
 
+  # if $dbh exists, use the existing transaction
+  # otherwise create our own and commit when finished
+  my $commit = 0;
+  if (!$dbh) {
+    $dbh = $self->connect;
+    $commit = 1;
+  }
+
   my $name = $self->option('service_prefix').$part_svc->svc;
 
   my %params = (
@@ -242,19 +247,22 @@ sub export_part_svc {
     'enableservice'   => 1,
     'nextsrvid'       => -1,
     'dailynextsrvid'  => -1,
+    # force price-related fields to zero
+    'unitprice'       => 0,
+    'unitpriceadd'    => 0,
+    'unitpricetax'    => 0,
+    'unitpriceaddtax' => 0,
   );
   my @fixed_groups;
   # use speed settings from fixed usergroups configured on this part_svc
   if ( my $psc = $part_svc->part_svc_column('usergroup') ) {
-    if ( $psc->columnflag eq 'F' )  {
-      # each part_svc really should only have one fixed group with non-null 
-      # speed settings, but go by priority order for consistency
-      @fixed_groups = 
-        sort { $a->priority <=> $b->priority }
-        grep { $_ }
-        map { FS::radius_group->by_key($_) }
-        split(/\s*,\s*/, $psc->columnvalue);
-    }
+    # each part_svc really should only have one fixed group with non-null 
+    # speed settings, but go by priority order for consistency
+    @fixed_groups = 
+      sort { $a->priority <=> $b->priority }
+      grep { $_ }
+      map { FS::radius_group->by_key($_) }
+      split(/\s*,\s*/, $psc->columnvalue);
   } # otherwise there are no fixed groups, so leave speed empty
 
   foreach (qw(down up)) {
@@ -275,7 +283,58 @@ sub export_part_svc {
   $sth->execute($name) or die $dbh->errstr;
   if ( $sth->rows > 1 ) {
     die "Multiple services with name '$name' found in Radius Manager.\n";
-  } elsif ( $sth->rows == 1 ) {
+
+  } elsif ( $sth->rows == 0 ) {
+    # leave this blank to disable creating new service defs
+    my $template_name = $self->option('template_name');
+
+    die "Can't create a new service profile--no template service specified.\n"
+      unless $template_name;
+
+    warn "rm_services: fetching template '$template_name'\n" if $DEBUG;
+    $sth = $dbh->prepare('SELECT * FROM rm_services WHERE srvname = ? LIMIT 1');
+    $sth->execute($template_name);
+    die "Can't create a new service profile--template service ".
+      "'$template_name' not found.\n" unless $sth->rows == 1;
+    my $template = $sth->fetchrow_hashref;
+    %params = (%$template, %params);
+
+    # get the next available srvid
+    $sth = $dbh->prepare('SELECT MAX(srvid) FROM rm_services');
+    $sth->execute or die $dbh->errstr;
+    my $srvid;
+    if ( $sth->rows ) {
+      $srvid = $sth->fetchrow_arrayref->[0] + 1;
+    }
+    $params{'srvid'} = $srvid;
+
+    # create a new one based on the template
+    warn "rm_services: inserting '$name' as srvid#$srvid\n" if $DEBUG;
+    $sth = $dbh->prepare(
+      'INSERT INTO rm_services ('.join(', ', keys %params).
+      ') VALUES ('.join(', ', map {'?'} keys %params).')'
+    );
+    $sth->execute(values(%params)) or die $dbh->errstr;
+    # also link it to all the managers allowed on the template service
+    warn "rm_services: linking to manager\n" if $DEBUG;
+    $sth = $dbh->prepare(
+      'INSERT INTO rm_allowedmanagers (srvid, managername) '.
+      'SELECT ?, managername FROM rm_allowedmanagers WHERE srvid = ?'
+    );
+    $sth->execute($srvid, $template->{srvid}) or die $dbh->errstr;
+    # and the same for NASes
+    warn "rm_services: linking to nas\n" if $DEBUG;
+    $sth = $dbh->prepare(
+      'INSERT INTO rm_allowednases (srvid, nasid) '.
+      'SELECT ?, nasid FROM rm_allowednases WHERE srvid = ?'
+    );
+    $sth->execute($srvid, $template->{srvid}) or die $dbh->errstr;
+
+    $dbh->commit if $commit;
+    return $srvid;
+
+  } else { # $sth->rows == 1, it already exists
+
     my $row = $sth->fetchrow_arrayref;
     my $srvid = $row->[0];
     warn "rm_services: updating srvid#$srvid\n" if $DEBUG;
@@ -284,67 +343,11 @@ sub export_part_svc {
       ' WHERE srvid = ?'
     );
     $sth->execute(values(%params), $srvid) or die $dbh->errstr;
+
+    $dbh->commit if $commit;
     return $srvid;
-  } else { # $sth->rows == 0
-    # create a new one
-    # but first... get the next available srvid
-    $sth = $dbh->prepare('SELECT MAX(srvid) FROM rm_services');
-    $sth->execute or die $dbh->errstr;
-    my $srvid = 1; # just in case you somehow have nothing in your database
-    if ( $sth->rows ) {
-      $srvid = $sth->fetchrow_arrayref->[0] + 1;
-    }
-    $params{'srvid'} = $srvid;
-    # NOW create a new one
-    warn "rm_services: inserting '$name' as srvid#$srvid\n" if $DEBUG;
-    $sth = $dbh->prepare(
-      'INSERT INTO rm_services ('.join(', ', keys %params).
-      ') VALUES ('.join(', ', map {'?'} keys %params).')'
-    );
-    $sth->execute(values(%params)) or die $dbh->errstr;
-    # also link it to our manager name
-    warn "rm_services: linking to manager\n" if $DEBUG;
-    $sth = $dbh->prepare(
-      'INSERT INTO rm_allowedmanagers (srvid, managername) VALUES (?, ?)'
-    );
-    $sth->execute($srvid, $self->option('manager')) or die $dbh->errstr;
-    # and allow it on our NAS
-    $sth = $dbh->prepare(
-      'INSERT INTO rm_allowednases (srvid, nasid) VALUES (?, ?)'
-    );
-    foreach my $nasid ($self->nas_ids($dbh)) {
-      warn "rm_services: linking to nasid#$nasid\n" if $DEBUG;
-      $sth->execute($srvid, $nasid) or die $dbh->errstr;
-    }
-    return $srvid;
+
   }
-}
-
-=item nas_ids DBH
-
-Convert the 'nasnames  option into a list of real NAS ids.
-
-=cut
-
-sub nas_ids {
-  my $self = shift;
-  my $dbh = shift;
-
-  my @nasnames = split(/\s*,\s*/, $self->option('nasnames'));
-  return unless @nasnames;
-  # pass these through unchanged
-  my @ids = grep { /^\d+$/ } @nasnames;
-  @nasnames = grep { not /^\d+$/ } @nasnames;
-  if ( @nasnames ) {
-    my $in_nasnames = join(',', map {$dbh->quote($_)} @nasnames);
-
-    my $sth = $dbh->prepare("SELECT id FROM nas WHERE nasname IN ($in_nasnames)");
-    $sth->execute or die $dbh->errstr;
-    my $rows = $sth->fetchall_arrayref;
-    push @ids, $_->[0] foreach @$rows;
-  }
-
-  return @ids;
 }
 
 1;
