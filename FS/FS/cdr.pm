@@ -773,11 +773,16 @@ sub rate_prefix {
   my $seconds_left = $part_pkg->option_cacheable('use_duration')
                        ? $self->duration
                        : $self->billsec;
-  # charge for the first (conn_sec) seconds
-  my $seconds = min($seconds_left, $rate_detail->conn_sec);
-  $seconds_left -= $seconds; 
-  $weektime     += $seconds;
-  my $charge = $rate_detail->conn_charge; 
+
+  #no, do this later so it respects (group) included minutes
+  #  # charge for the first (conn_sec) seconds
+  #  my $seconds = min($seconds_left, $rate_detail->conn_sec);
+  #  $seconds_left -= $seconds; 
+  #  $weektime     += $seconds;
+  #  my $charge = $rate_detail->conn_charge; 
+  my $seconds = 0;
+  my $charge = 0;
+  my $connection_charged = 0;
 
   my $etime;
   while($seconds_left) {
@@ -840,6 +845,7 @@ sub rate_prefix {
 
     $seconds += $charge_sec;
 
+
     my $region_group = ($part_pkg->option_cacheable('min_included') || 0) > 0;
 
     ${$opt{region_group_included_min}} -= $minutes 
@@ -853,10 +859,21 @@ sub rate_prefix {
             )
        )
     {
+
+      #NOW do connection charges here... right?
+      #my $conn_seconds = min($seconds_left, $rate_detail->conn_sec);
+      my $conn_seconds = 0;
+      unless ( $connection_charged++ ) { #only one connection charge
+        $conn_seconds = min($charge_sec, $rate_detail->conn_sec);
+        $seconds_left -= $conn_seconds; 
+        $weektime     += $conn_seconds;
+        $charge += $rate_detail->conn_charge; 
+      }
+
                            #should preserve (display?) this
-      my $charge_min = 0 - $included_min->{$regionnum}{$ratetimenum};
+      my $charge_min = 0 - $included_min->{$regionnum}{$ratetimenum} - ( $conn_seconds / 60 );
       $included_min->{$regionnum}{$ratetimenum} = 0;
-      $charge += ($rate_detail->min_charge * $charge_min); #still not rounded
+      $charge += ($rate_detail->min_charge * $charge_min) if $charge_min > 0; #still not rounded
 
     } elsif ( ${$opt{region_group_included_min}} > 0
               && $region_group

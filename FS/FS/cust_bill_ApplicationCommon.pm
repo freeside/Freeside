@@ -1,9 +1,11 @@
 package FS::cust_bill_ApplicationCommon;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $skip_apply_to_lineitems_hack );
+use vars qw( @ISA $DEBUG $me $skip_apply_to_lineitems_hack $date_format );
 use List::Util qw(min);
+use Date::Format;
 use FS::Schema qw( dbdef );
+use FS::UID;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
 use FS::cust_svc;
@@ -17,6 +19,11 @@ $DEBUG = 0;
 $me = '[FS::cust_bill_ApplicationCommon]';
 
 $skip_apply_to_lineitems_hack = 0;
+
+FS::UID->install_callback( sub { 
+  my $conf = new FS::Conf;
+  $date_format = $conf->config('date_format') || '%x'; #/YY
+} );
 
 =head1 NAME
 
@@ -500,7 +507,34 @@ Returns a string representing the invoice (see L<FS::cust_bill>), for example:
 
 sub applied_to_invoice {
   my $self = shift;
-  'applied to '. $self->cust_bill->invnum_date_pretty;
+  my $string = 'applied to '. $self->cust_bill->invnum_date_pretty;
+
+  #show application date if over 24 hours after (or before) payment/credit date
+  $string .= ' on '. $self->_date_pretty
+    if abs( $self->_date - $self->_app_source_object->_date ) > 86400;
+
+  $string;
+}
+
+=item _app_source_object 
+
+=cut
+
+sub _app_source_object {
+  my $self = shift;
+  my $source_table = $self->_app_source_table;
+  $self->$source_table();
+}
+
+=item _date_pretty
+
+Returns a string with the application date, for example: "3/20/2008"
+
+=cut
+
+sub _date_pretty {
+  my $self = shift;
+  time2str($date_format, $self->_date);
 }
 
 =item lineitem_breakdown_table 

@@ -799,7 +799,7 @@ sub _pslatex {
 
 }
 
-=item print ARRAYREF
+=item do_print ARRAYREF
 
 Sends the lines in ARRAYREF to the printer.
 
