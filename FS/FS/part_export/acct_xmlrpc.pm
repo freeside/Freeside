@@ -5,6 +5,7 @@ use vars qw( %info ); # $DEBUG );
 #use Data::Dumper;
 use Tie::IxHash;
 use Frontier::Client; #to avoid adding a dependency on RPC::XML just now
+use Frontier::RPC2;
 #use FS::Record qw( qsearch qsearchs );
 use FS::Schema qw( dbdef );
 
@@ -188,18 +189,18 @@ sub _export_value {
   if ( $fields{$value} ) {
     my $type = dbdef->table('svc_acct')->column($value)->type;
     if ( $type =~ /^(int|serial)/i ) {
-      return Frontier::Client->new->int( $svc_acct->$value() );
+      return Frontier::RPC2::Integer->new( $svc_acct->$value() );
     } elsif ( $value =~ /^last_log/ ) {
-      return Frontier::Client->new->date_time( $svc_acct->$value() ); #conversion?
+      return Frontier::RPC2::DateTime::ISO8601->new( $svc_acct->$value() ); #conversion?
     } else {
-      return Frontier::Client->new->string( $svc_acct->$value() );
+      return Frontier::RPC2::String->new( $svc_acct->$value() );
     }
   } elsif ( $value eq 'domain' ) {
-    return Frontier::Client->new->string( $svc_acct->domain );
+    return Frontier::RPC2::String->new( $svc_acct->domain );
   } elsif ( $value eq 'crypt_password' ) {
-    return Frontier::Client->new->string( $svc_acct->crypt_password( $self->option('crypt') ) );
+    return Frontier::RPC2::String->new( $svc_acct->crypt_password( $self->option('crypt') ) );
   } elsif ( $value eq 'ldap_password' ) {
-    return Frontier::Client->new->string( $svc_acct->ldap_password($self->option('crypt') ) );
+    return Frontier::RPC2::String->new( $svc_acct->ldap_password($self->option('crypt') ) );
   } elsif ( $value eq 'radius_groups' ) {
     my @radius_groups = $svc_acct->radius_groups;
     #XXX
