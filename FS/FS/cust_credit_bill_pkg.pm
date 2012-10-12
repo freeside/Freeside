@@ -243,7 +243,7 @@ sub delete {
     $sum = sprintf("%.2f", $sum);
     unless ($sum eq '0.00' || $sum eq '-0.00') {
       $dbh->rollback if $oldAutoCommit;
-      return "Can't unapply credit without charging tax";
+      return "Can't unapply credit without charging tax of $sum";
     }
   }
    
