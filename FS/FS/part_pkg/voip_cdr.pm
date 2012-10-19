@@ -229,6 +229,10 @@ tie my %unrateable_opts, 'Tie::IxHash',
                        },
     #eofalse
 
+    'usage_nozero' => { 'name' => 'Omit details for included / no-charge calls.',
+                        'type' => 'checkbox',
+                      },
+
     'bill_every_call' => { 'name' => 'Generate an invoice immediately for every call (as well any setup fee, upon first payment).  Useful for prepaid.',
                            'type' => 'checkbox',
                          },
@@ -358,6 +362,8 @@ sub calc_usage {
                                  : 'default'
                              );
 
+  my $usage_nozero      = $self->option->('usage_nozero', 1);
+
   my $formatter = FS::detail_format->new($output_format, buffer => $details);
 
   my $use_duration = $self->option('use_duration');
@@ -441,7 +447,7 @@ sub calc_usage {
         $error = $cdr->set_status('done');
       }
       die $error if $error;
-      $formatter->append($cdr);
+      $formatter->append($cdr) unless $usage_nozero && $cdr->rated_price == 0;
 
       $cdr_search->adjust(1) if $cdr->freesidestatus eq 'rated';
     } #$cdr
