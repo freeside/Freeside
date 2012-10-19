@@ -1128,7 +1128,7 @@ sub paid_sql {
   my $paid = "( SELECT COALESCE(SUM(cust_bill_pay_pkg.amount),0)
      FROM cust_bill_pay_pkg JOIN cust_bill_pay USING (billpaynum)
      WHERE cust_bill_pay_pkg.billpkgnum = cust_bill_pkg.billpkgnum
-           $s $e$setuprecur )";
+           $s $e $setuprecur )";
 
   if ( $opt{no_usage} ) {
     # cap the amount paid at the sum of non-usage charges, 
