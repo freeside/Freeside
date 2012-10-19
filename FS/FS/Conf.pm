@@ -3601,7 +3601,7 @@ and customer address. Include units.',
   {
     'key'         => 'batchconfig-paymentech',
     'section'     => 'billing',
-    'description' => 'Configuration for Chase Paymentech batching, five lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password (for batch uploads)',
+    'description' => 'Configuration for Chase Paymentech batching, six lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password (for batch uploads), 6. Flag to send recurring indicator.',
     'type'        => 'textarea',
   },
 

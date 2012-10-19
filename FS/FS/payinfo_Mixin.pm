@@ -3,6 +3,7 @@ package FS::payinfo_Mixin;
 use strict;
 use Business::CreditCard;
 use FS::payby;
+use FS::Record qw(qsearch);
 
 =head1 NAME
 
@@ -265,6 +266,30 @@ sub payby_payinfo_pretty {
   } else {
     $self->payby. ' '. $self->payinfo;
   }
+}
+
+=item payinfo_used [ PAYINFO ]
+
+Returns 1 if there's an existing payment using this payinfo.  This can be 
+used to set the 'recurring payment' flag required by some processors.
+
+=cut
+
+sub payinfo_used {
+  my $self = shift;
+  my $payinfo = shift || $self->payinfo;
+  my %hash = (
+    'custnum' => $self->custnum,
+    'payby'   => 'CARD',
+  );
+
+  return 1
+  if qsearch('cust_pay', { %hash, 'payinfo' => $payinfo } )
+  || qsearch('cust_pay', 
+    { %hash, 'paymask' => $self->mask_payinfo('CARD', $payinfo) }  )
+  ;
+
+  return 0;
 }
 
 =back
