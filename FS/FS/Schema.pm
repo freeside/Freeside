@@ -3249,7 +3249,7 @@ sub tables_hashref {
         'channel',     'varchar',  '', $char_d, \"''", '', 
         'dstchannel',  'varchar',  '', $char_d, \"''", '', 
         'lastapp',     'varchar',  '', $char_d, \"''", '', 
-        'lastdata',    'varchar',  '', $char_d, \"''", '', 
+        'lastdata',    'varchar',  '',     255, \"''", '', 
 
         #currently only opensips
         'src_ip_addr', 'varchar',  'NULL',  15,    '', '',
