@@ -10,7 +10,7 @@ use Tie::IxHash;
 use FS::Conf;
 
 my $conf;
-my ($bin, $merchantID, $terminalID, $username);
+my ($bin, $merchantID, $terminalID, $username, $password, $with_recurringInd);
 $name = 'paymentech';
 
 my $gateway;
@@ -80,7 +80,7 @@ my %paytype = (
     eval "use XML::Writer";
     die $@ if $@;
     my $conf = shift;
-    ($bin, $terminalID, $merchantID, $username) =
+    ($bin, $terminalID, $merchantID, $username, $password, $with_recurringInd) =
        $conf->config('batchconfig-paymentech');
     },
 # Here we do all the work in the header function.
@@ -99,6 +99,7 @@ my %paytype = (
 
     foreach (@cust_pay_batch) {
       $xml->startTag('newOrder', BatchRequestNo => $count++);
+      my $status = $_->cust_main->status;
       tie my %order, 'Tie::IxHash', (
         industryType => 'EC',
         transType    => 'AC',
@@ -124,6 +125,13 @@ my %paytype = (
         orderID        => $_->paybatchnum,
         amount         => $_->amount * 100,
         );
+      # only do this if recurringInd is enabled in config, 
+      # and the customer has at least one non-canceled recurring package
+      if ( $with_recurringInd and $status =~ /^active|suspended|ordered$/ ) {
+        # then send RF if this is the first payment on this payinfo,
+        # RS otherwise.
+        $order{'recurringInd'} = $_->payinfo_used ? 'RS' : 'RF';
+      }
       foreach my $key (keys %order) {
         $xml->dataElement($key, $order{$key})
       }
