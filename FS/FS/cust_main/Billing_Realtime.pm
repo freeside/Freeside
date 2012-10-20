@@ -1444,6 +1444,10 @@ sub realtime_refund_bop {
     if length($auth); #echeck/ACH transactions have an order # but no auth
                       #(at least with authorize.net)
 
+  my $currency =    $conf->exists('business-onlinepayment-currency')
+                 && $conf->config('business-onlinepayment-currency');
+  $content{currency} = $currency if $currency;
+
   my $disable_void_after;
   if ($conf->exists('disable_void_after')
       && $conf->config('disable_void_after') =~ /^(\d+)$/) {
