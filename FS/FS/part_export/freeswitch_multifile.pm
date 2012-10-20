@@ -1,67 +1,46 @@
-package FS::part_export::freeswitch;
+package FS::part_export::freeswitch_multifile;
 use base qw( FS::part_export );
 
 use vars qw( %info ); # $DEBUG );
 #use Data::Dumper;
 use Tie::IxHash;
 use Text::Template;
-use FS::Record qw( qsearch ); #qsearchs );
-use FS::svc_phone;
+#use FS::Record qw( qsearch qsearchs );
 #use FS::Schema qw( dbdef );
 
 #$DEBUG = 1;
 
 tie my %options, 'Tie::IxHash',
   'user'  => { label => 'SSH username', default=>'root', },
-  'directory' => { label   => 'Directory to store FreeSWITCH account XML files (one file per domain)',
+  'directory' => { label   => 'Directory to store FreeSWITCH account XML files',
                    default => '/usr/local/freeswitch/conf/directory/',
                  },
-  #'domain'    => { label => 'Optional fixed SIP domain to use, overrides svc_phone domain', },
+  'domain'    => { label => 'Optional fixed SIP domain to use, overrides svc_phone domain', },
   'reload'    => { label   => 'Reload command',
                    default => '/usr/local/freeswitch/bin/fs_cli -x reloadxml',
                  },
-  'header_template' => { label   => 'Domain XML configuration header',
-                         type    => 'textarea',
-                         default => <<'END',
-<?xml version="1.0"?>
-<include>
-  <domain name="<% $domain %>">
-    <groups>
-      <group name="default">
-        <users>
+  'user_template' => { label   => 'User XML configuration template',
+                       type    => 'textarea',
+                       default => <<'END',
+<domain name="<% $domain %>">
+  <user id="<% $phonenum %>">
+    <params>
+      <param name="password" value="<% $sip_password %>"/>
+    </params>
+  </user>
+</domain>
 END
-                       },
-  'user_template'   => { label   => 'User XML configuration template',
-                         type    => 'textarea',
-                         default => <<'END',
-          <user id="<% $phonenum %>">
-            <params>
-              <param name="password" value="<% $sip_password %>"/>
-            </params>
-          </user>
-
-END
-                       },
-  'footer_template' => { label   => 'Domain XML configuration footer',
-                         type    => 'textarea',
-                         default => <<'END',
-        </users>
-      </group>
-    </groups>
-  </domain>
-</include>
-END
-                       },
+                     },
 ;
 
 %info = (
   'svc'     => 'svc_phone',
-  'desc'    => 'Provision phone services to FreeSWITCH XML configuration files',
+  'desc'    => 'Provision phone services to FreeSWITCH XML configuration files (one file per user)',
   'options' => \%options,
   'notes'   => <<'END',
-Export XML account configuration files to FreeSWITCH, one per domain.
+Export XML account configuration files to FreeSWITCH, one per phone services.
 <br><br>
-You will need to enable the svc_phone-domain configuration setting and
+You will need to
 <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation:Administration:SSH_Keys">setup SSH for unattended operation</a>.
 END
 );
@@ -71,33 +50,6 @@ sub rebless { shift; }
 sub _export_insert {
   my( $self, $svc_phone ) = ( shift, shift );
 
-  $self->_export_rebuild_domain($svc_phone);
-
-}
-
-sub _export_replace {
-  my( $self, $new, $old ) = ( shift, shift, shift );
-
-  my $error = $self->_export_rebuild_domain($new);
-  return $error if $error;
-
-  if ( $new->domsvc ne $old->domsvc && $old->domsvc ) {
-    $error = $self->_export_rebuild_domain($old);
-    return $error if $error;
-  }
-
-  '';
-}
-
-sub _export_delete {
-  my( $self, $svc_phone ) = ( shift, shift );
-
-  $self->_export_rebuild_domain($svc_phone);
-}
-
-sub _export_rebuild_domain {
-  my($self, $svc_phone) = ( shift, shift );
-
   eval "use Net::SCP;";
   die $@ if $@;
 
@@ -105,37 +57,24 @@ sub _export_rebuild_domain {
 
   my $tempdir = '%%%FREESIDE_CONF%%%/cache.'. $FS::UID::datasrc;
 
-  my $domain = $svc_phone->domain or return "domain required";
+  my $svcnum = $svc_phone->svcnum;
 
   my $fh = new File::Temp(
-    TEMPLATE => "$tempdir/freeswitch.$domain.XXXXXXXX",
-    DIR      => $dir,
+    TEMPLATE => "$tempdir/freeswitch.$svcnum.XXXXXXXX",
+    DIR      => $tempdir,
     #UNLINK   => 0,
   );
 
-  print $fh $self->freeswitch_template_fillin( $domain, 'header' )
+  print $fh $self->freeswitch_template_fillin( $svc_phone, 'user' )
     or die "print to freeswitch template failed: $!";
-
-  my @dom_svc_phone = qsearch( 'svc_phone', { 'domsvc'=>$svc_phone->domsvc } );
-
-  foreach my $dom_svc_phone (@dom_svc_phone) {
-
-    print $fh $self->freeswitch_template_fillin( $dom_svc_phone, 'user' )
-      or die "print to freeswitch template failed: $!";
-
-  }
-
-  print $fh $self->freeswitch_template_fillin( $domain, 'footer' )
-    or die "print to freeswitch template failed: $!";
-
-  $fh->flush;
+  close $fh;
 
   my $scp = new Net::SCP;
   my $user = $self->option('user')||'root';
   my $host = $self->machine;
   my $dir = $self->option('directory');
 
-  $scp->scp( $fh->filename, "$user\@$host:$dir/$domain.xml" )
+  $scp->scp( $fh->filename, "$user\@$host:$dir/$svcnum.xml" )
     or return $scp->{errstr};
 
   #signal freeswitch to reload config
@@ -145,8 +84,29 @@ sub _export_rebuild_domain {
 
 }
 
+sub _export_replace {
+  my( $self, $new, $old ) = ( shift, shift, shift );
+
+  $self->_export_insert($new, @_);
+}
+
+sub _export_delete {
+  my( $self, $svc_phone ) = ( shift, shift );
+
+  my $dir  = $self->option('directory');
+  my $svcnum = $svc_phone->svcnum;
+
+  #delete file
+  $self->freeswitch_ssh( command => "rm $dir/$svcnum.xml" );
+
+  #signal freeswitch to reload config
+  $self->freeswitch_ssh( command => $self->option('reload') );
+
+  '';
+}
+
 sub freeswitch_template_fillin {
-  my( $self, $svc_phone_or_dom, $template ) = (shift, shift, shift);
+  my( $self, $svc_phone, $template ) = (shift, shift, shift);
 
   $template ||= 'user'; #?
 
@@ -157,10 +117,15 @@ sub freeswitch_template_fillin {
     DELIMITERS => [ '<%', '%>' ],
   );
 
+  my $domain =  $self->option('domain')
+             || $svc_phone->domain
+             || '$${sip_profile}';
+
   #false lazinessish w/phone_shellcommands::_export_command
-  my %hash = ref($svc_phone_or_dom)
-   ? ( map { $_ => $svc_phone_or_dom->getfield($_) } $svc_phone_or_dom->fields )
-   : ( 'domain' => $svc_phone_or_dom );
+  my %hash = (
+    'domain' => $domain,
+    map { $_ => $svc_phone->getfield($_) } $svc_phone->fields
+  );
 
   #might as well do em all, they're all going in an XML file as attribs
   foreach ( keys %hash ) {
