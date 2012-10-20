@@ -170,15 +170,8 @@ sub _bop_recurring_billing {
 
   } else {
 
-    my %hash = ( 'custnum' => $self->custnum,
-                 'payby'   => 'CARD',
-               );
-
-    return 1 
-      if qsearch('cust_pay', { %hash, 'payinfo' => $opt{'payinfo'} } )
-      || qsearch('cust_pay', { %hash, 'paymask' => $self->mask_payinfo('CARD',
-                                                               $opt{'payinfo'} )
-                             } );
+    # return 1 if the payinfo has been used for another payment
+    return $self->payinfo_used($opt{'payinfo'}); # in payinfo_Mixin
 
   }
 
