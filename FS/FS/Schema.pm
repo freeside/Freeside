@@ -3948,16 +3948,17 @@ sub tables_hashref {
       'index' => [ [ 'upgrade' ] ],
     },
 
-    'ftp_target' => {
+    'upload_target' => {
       'columns' => [
         'targetnum', 'serial', '', '', '', '',
         'agentnum', 'int', 'NULL', '', '', '',
+        'protocol', 'varchar', '', 10, '', '',
         'hostname', 'varchar', '', $char_d, '', '',
-        'port', 'int', '', '', '', '',
+        'port', 'int', 'NULL', '', '', '',
         'username', 'varchar', '', $char_d, '', '',
-        'password', 'varchar', '', $char_d, '', '',
-        'path', 'varchar', '', $char_d, '', '',
-        'secure', 'char', 'NULL', 1, '', '',
+        'password', 'varchar', 'NULL', $char_d, '', '',
+        'path', 'varchar', 'NULL', $char_d, '', '',
+        'subject', 'varchar', 'NULL', '255', '', '',
         'handling', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'targetnum',

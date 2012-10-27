@@ -19,7 +19,7 @@ Returns a list of the invoice spool formats.
 =cut
 
 sub spool_formats {
-  qw(default oneline billco bridgestone)
+  qw(default oneline billco bridgestone ics)
 }
 
 1;

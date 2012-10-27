@@ -10,12 +10,13 @@ use FS::Conf;
 use FS::queue;
 use FS::agent;
 use FS::Misc qw( send_email ); #for bridgestone
-use FS::ftp_target;
+use FS::upload_target;
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common;
 use HTTP::Response;
 use Net::FTP;
+use List::Util qw( sum );
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw ( upload );
@@ -58,7 +59,7 @@ sub upload {
 
   my @agentnums = ('', map {$_->agentnum} @agents);
 
-  foreach my $target (qsearch('ftp_target', {})) {
+  foreach my $target (qsearch('upload_target', {})) {
     # We don't know here if it's spooled on a per-agent basis or not.
     # (It could even be both, via different events.)  So queue up an 
     # upload for each agent, plus one with null agentnum, and we'll 
@@ -241,7 +242,7 @@ sub spool_upload {
   else { #not billco
 
     my $targetnum = $opt{targetnum};
-    my $ftp_target = FS::ftp_target->by_key($targetnum)
+    my $upload_target = FS::upload_target->by_key($targetnum)
       or die "FTP target $targetnum not found\n";
 
     $dir .= "/target$targetnum";
@@ -316,49 +317,82 @@ sub spool_upload {
       warn "compressing to $zipfile\n$command\n" if $DEBUG;
       system($command) and die "$command failed\n";
 
-      my $connection = $ftp_target->connect; # dies on error
-      $connection->put($zipfile);
+      my $error = $upload_target->put($zipfile);
+      die $error if $error;
 
-      my $template = join("\n",$conf->config('bridgestone-confirm_template'));
-      if ( $template ) {
-        my $tmpl_obj = Text::Template->new(
-          TYPE => 'STRING', SOURCE => $template
-        );
-        my $content = $tmpl_obj->fill_in( HASH =>
-          {
-            zipfile => $zipfile,
-            prefix  => $prefix,
-            seq     => $seq,
-            rows    => $rows,
-          }
-        );
-        my ($head, $body) = split("\n\n", $content, 2);
-        $head =~ /^subject:\s*(.*)$/im;
-        my $subject = $1;
-
-        $head =~ /^to:\s*(.*)$/im;
-        my $to = $1;
-
-        send_email(
-          to      => $to,
-          from    => $conf->config('invoice_from', $agentnum),
-          subject => $subject,
-          body    => $body,
-        );
-      } else { #!$template
-        warn "$me agent $agentnum has no bridgestone-confirm_template, no email sent\n";
-      }
+      send_report('bridgestone-confirm_template',
+        {
+          agentnum=> $agentnum,
+          zipfile => $zipfile,
+          prefix  => $prefix,
+          seq     => $seq,
+          rows    => $rows,
+        }
+      );
 
       $seq++;
       warn "setting batch counter to $seq\n" if $DEBUG;
       $conf->set('bridgestone-batch_counter', $seq, $agentnum);
 
-    } else { # not bridgestone
+    } elsif ( $opt{'handling'} eq 'ics' ) {
+
+      my ($basename, $regfile, $bigfile);
+      $basename = sprintf('c%sc1', time2str('%m%d', time));
+      $regfile = $basename . 'i.txt'; # for "regular" (short) invoices
+      $bigfile = $basename . 'b.txt'; # for "big" invoices
+
+      warn "copying spool to $regfile, $bigfile\n" if $DEBUG;
+
+      my ($in, $reg, $big); #filehandles
+      my %count = (B => 0, 1 => 0, 2 => 0); # number of invoices
+      my %sum = (B => 0, R => 0); # total of charges field
+      open $in, '<', "$dir/$file-$date.csv" 
+        or die "unable to read $file-$date.csv\n";
+
+      open $reg, '>', "$dir/$regfile" or die "unable to write $regfile\n";
+      open $big, '>', "$dir/$bigfile" or die "unable to write $bigfile\n";
+
+      while (my $line = <$in>) {
+        chomp($line);
+        my $tag = substr($line, -1, 1, '');
+        my $charge = substr($line, 252, 10);
+        if ( $tag eq 'B' ) {
+          print $big $line, "\n";
+          $count{B}++;
+          $sum{B} += $charge;
+        } else {
+          print $reg $line, "\n";
+          $count{$tag}++;
+          $sum{R} += $charge;
+        }
+      }
+      close $in;
+      close $reg;
+      close $big;
+
+      my $zipfile = "$basename" . '.zip';
+      my $command = "cd $dir; zip $zipfile $regfile $bigfile";
+      system($command) and die "'$command' failed\n";
+      $upload_target->put("$dir/$zipfile");
+
+      for (values %sum) {
+        $_ = sprintf('%.2f', $_);
+      }
+
+      send_report('ics-confirm_template',
+        {
+          agentnum  => $agentnum,
+          count     => \%count,
+          sum       => \%sum,
+        }
+      );
+ 
+      } else { # not bridgestone or ics
 
       # this is the usual case
 
-      my $connection = $ftp_target->connect; # dies on error
-      $connection->put("$file-$date.csv");
+      my $error = $upload_target->put("$file-$date.csv");
+      die $error if $error;
 
     }
 
@@ -366,6 +400,49 @@ sub spool_upload {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+
+}
+
+=item send_report CONFIG PARAMS
+
+Retrieves the config value named CONFIG, parses it as a Text::Template,
+extracts "to" and "subject" headers, and sends it by email.
+
+PARAMS is a hashref to be passed to C<fill_in>.  It must contain 
+'agentnum' to look up the per-agent config.
+
+=cut
+
+# we used it twice, so it's now a subroutine
+sub send_report {
+
+  my ($config, $params) = @_;
+  my $agentnum = $params->{agentnum};
+  my $conf = FS::Conf->new;
+
+  my $template = join("\n", $conf->config($config, $agentnum));
+  if (!$template) {
+    warn "$me agent $agentnum has no $config, no email report sent\n";
+    return;
+  }
+
+  my $tmpl_obj = Text::Template->new(
+    TYPE => 'STRING', SOURCE => $template
+  );
+  my $content = $tmpl_obj->fill_in( HASH => $params );
+  my ($head, $body) = split("\n\n", $content, 2);
+  $head =~ /^subject:\s*(.*)$/im;
+  my $subject = $1;
+
+  $head =~ /^to:\s*(.*)$/im;
+  my $to = $1;
+
+  send_email(
+    to      => $to,
+    from    => $conf->config('invoice_from', $agentnum),
+    subject => $subject,
+    body    => $body,
+  );
 
 }
 

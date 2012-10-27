@@ -312,7 +312,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::access_groupsales;
   use FS::contact_class;
   use FS::part_svc_class;
-  use FS::ftp_target;
+  use FS::upload_target;
   use FS::quotation;
   use FS::quotation_pkg;
   use FS::quotation_pkg_discount;

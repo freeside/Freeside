@@ -3220,6 +3220,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'ics-confirm_template',
+    'section'     => '',
+    'description' => 'Confirmation email template for uploading to ICS invoice printing.  Text::Template format, with variables "%count" and "%sum".',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'svc_acct-usage_suspend',
     'section'     => 'billing',
     'description' => 'Suspends the package an account belongs to when svc_acct.seconds or a bytecount is decremented to 0 or below (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',

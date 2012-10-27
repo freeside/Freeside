@@ -1,0 +1,49 @@
+<& elements/browse.html,
+  'title'       => 'Upload targets',
+  'menubar'     => [ 'Add a target' => $p.'edit/upload_target.html', ],
+  'name'        => 'targets',
+  'query'       => { 'table'   => 'upload_target',
+                     'hashref' => {},
+                   },
+  'count_query' => $count_query,
+  'header'      => [ '#',
+                     'Protocol',
+                     'Username',
+                     'Server/Domain',
+                     'Password',
+                     'Path',
+                     '', #handling
+                   ],
+  'fields'      => [ 'targetnum',
+                     sub { 
+                       my $target = shift;
+                       $label{$target->protocol}
+                      },
+                     'username',
+                     'hostname',
+                     'password',
+                     'path',
+                     'handling',
+                   ],
+  'links'       => [ $link, $link, $link, $link, ],
+&>
+</TABLE>
+
+<% include('/elements/footer.html') %>
+
+<%once>
+
+my $count_query = 'SELECT COUNT(*) FROM upload_target';
+my %label = (
+  email => 'Email',
+  ftp => 'FTP',
+  sftp => 'SFTP',
+);
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ $p.'edit/upload_target.html?', 'targetnum' ];
+</%init>
