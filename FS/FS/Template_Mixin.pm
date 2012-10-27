@@ -821,6 +821,7 @@ sub print_generic {
         ext_description => [],
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
       $detail->{'quantity'} = 1;
       $detail->{'section'} = $multisection ? $previous_section
                                            : $default_section;
@@ -917,6 +918,7 @@ sub print_generic {
         ext_description => [],
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
       $detail->{'quantity'} = $line_item->{'quantity'};
       $detail->{'section'} = $section;
       $detail->{'description'} = &$escape_function($line_item->{'description'});
@@ -1223,6 +1225,10 @@ sub print_generic {
         'ext_description' => [ &$escape_function($_->{ext_description}) || () ],
     } } @discounts_avail;
   }
+
+  # debugging hook: call this with 'diag' => 1 to just get a hash of 
+  # the invoice variables
+  return \%invoice_data if ( $params{'diag'} );
 
   # All sections and items are built; now fill in templates.
   my @includelist = ();
@@ -1662,6 +1668,13 @@ sub _items_sections {
         $not_tax{$section} = 1
           unless $cust_bill_pkg->pkgnum == 0;
 
+        # there's actually a very important piece of logic buried in here:
+        # incrementing $late_subtotal{$section} CREATES 
+        # $late_subtotal{$section}.  keys(%late_subtotal) is later used 
+        # to define the list of late sections, and likewise keys(%subtotal).
+        # When _items_cust_bill_pkg is called to generate line items for 
+        # real, it will be called with 'section' => $section for each 
+        # of these.
         if ( $display->post_total && !$summarypage ) {
           if (! $type || $type eq 'S') {
             $late_subtotal{$section} += $cust_bill_pkg->setup
@@ -2111,7 +2124,7 @@ which does something complicated.
 
 Returns a list of hashrefs, each of which may contain:
 
-pkgnum, description, amount, unit_amount, quantity, _is_setup, and 
+pkgnum, description, amount, unit_amount, quantity, pkgpart, _is_setup, and 
 ext_description, which is an arrayref of detail lines to show below 
 the package line.
 
@@ -2167,14 +2180,13 @@ sub _items_cust_bill_pkg {
       if $DEBUG > 1;
 
     foreach my $display ( grep { defined($section)
-                                 ? $_->section eq $section
-                                 : 1
-                               }
-                          #grep { !$_->summary || !$summary_page } # bunk!
+                            ? $_->section eq $section
+                            : 1
+                          }
                           grep { !$_->summary || $multisection }
                           @cust_bill_pkg_display
                         )
-    {
+      {
 
       warn "$me _items_cust_bill_pkg considering cust_bill_pkg_display ".
            $display->billpkgdisplaynum. "\n"
@@ -2221,6 +2233,9 @@ sub _items_cust_bill_pkg {
           if $DEBUG > 1;
  
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
+
+        # which pkgpart to show for display purposes?
+        my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;
 
         # start/end dates for invoice formats that do nonstandard 
         # things with them
@@ -2272,7 +2287,7 @@ sub _items_cust_bill_pkg {
             $s = {
               _is_setup       => 1,
               description     => $description,
-              #pkgpart         => $part_pkg->pkgpart,
+              pkgpart         => $pkgpart,
               pkgnum          => $cust_bill_pkg->pkgnum,
               amount          => $cust_bill_pkg->setup,
               setup_show_zero => $cust_bill_pkg->setup_show_zero,
@@ -2339,7 +2354,8 @@ sub _items_cust_bill_pkg {
           unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->itemdesc
                 || $cust_bill_pkg->hidden
-                || $is_summary && $type && $type eq 'U' )
+                || $is_summary && $type && $type eq 'U'
+              )
           {
 
             warn "$me _items_cust_bill_pkg adding service details\n"
@@ -2424,7 +2440,7 @@ sub _items_cust_bill_pkg {
             } else {
               $r = {
                 description     => $description,
-                #pkgpart         => $part_pkg->pkgpart,
+                pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
@@ -2448,7 +2464,7 @@ sub _items_cust_bill_pkg {
             } else {
               $u = {
                 description     => $description,
-                #pkgpart         => $part_pkg->pkgpart,
+                pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,

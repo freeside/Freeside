@@ -581,9 +581,10 @@ appropriate FS::cust_bill_pkg_display objects.
 
 Options are passed as a list of name/value pairs.  Options are:
 
-part_pkg: FS::part_pkg object from the 
+part_pkg: FS::part_pkg object from this line item's package.
 
-real_pkgpart: if this line item comes from a bundled package, the pkgpart of the owning package.  Otherwise the same as the part_pkg's pkgpart above.
+real_pkgpart: if this line item comes from a bundled package, the pkgpart 
+of the owning package.  Otherwise the same as the part_pkg's pkgpart above.
 
 =cut
 
@@ -594,13 +595,19 @@ sub set_display {
 
   my $conf = new FS::Conf;
 
+  # whether to break this down into setup/recur/usage
   my $separate = $conf->exists('separate_usage');
+
   my $usage_mandate =            $part_pkg->option('usage_mandate', 'Hush!')
                     || $cust_pkg->part_pkg->option('usage_mandate', 'Hush!');
 
   # or use the category from $opt{'part_pkg'} if its not bundled?
   my $categoryname = $cust_pkg->part_pkg->categoryname;
 
+  # if we don't have to separate setup/recur/usage, or put this in a 
+  # package-specific section, or display a usage summary, then don't 
+  # even create one of these.  The item will just display in the unnamed
+  # section as a single line plus details.
   return $self->set('display', [])
     unless $separate || $categoryname || $usage_mandate;
   
@@ -608,34 +615,46 @@ sub set_display {
 
   my %hash = ( 'section' => $categoryname );
 
+  # whether to put usage details in a separate section, and if so, which one
   my $usage_section =            $part_pkg->option('usage_section', 'Hush!')
                     || $cust_pkg->part_pkg->option('usage_section', 'Hush!');
 
+  # whether to show a usage summary line (total usage charges, no details)
   my $summary =            $part_pkg->option('summarize_usage', 'Hush!')
               || $cust_pkg->part_pkg->option('summarize_usage', 'Hush!');
 
   if ( $separate ) {
+    # create lines for setup and (non-usage) recur, in the main section
     push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
     push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
   } else {
+    # display everything in a single line
     push @display, new FS::cust_bill_pkg_display
                      { type => '',
                        %hash,
+                       # and if usage_mandate is enabled, hide details
+                       # (this only works on multisection invoices...)
                        ( ( $usage_mandate ) ? ( 'summary' => 'Y' ) : () ),
                      };
   }
 
   if ($separate && $usage_section && $summary) {
+    # create a line for the usage summary in the main section
     push @display, new FS::cust_bill_pkg_display { type    => 'U',
                                                    summary => 'Y',
                                                    %hash,
                                                  };
   }
+
   if ($usage_mandate || ($usage_section && $summary) ) {
     $hash{post_total} = 'Y';
   }
 
   if ($separate || $usage_mandate) {
+    # show call details for this line item in the usage section.
+    # if usage_mandate is on, this will display below the section subtotal.
+    # this also happens if usage is in a separate section and there's a 
+    # summary in the main section, though I'm not sure why.
     $hash{section} = $usage_section if $usage_section;
     push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
   }

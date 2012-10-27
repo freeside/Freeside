@@ -27,26 +27,26 @@ FS::cust_bill_pkg_display - Object methods for cust_bill_pkg_display records
 
 =head1 DESCRIPTION
 
-An FS::cust_bill_pkg_display object represents line item display information.
-FS::cust_bill_pkg_display inherits from FS::Record.  The following fields are
-currently supported:
+An FS::cust_bill_pkg_display object represents an instruction to display a 
+line item in a specific invoice section.  FS::cust_bill_pkg_display inherits
+from FS::Record and is many-to-one with FS::cust_bill_pkg (invoice line 
+items).
+
+The following fields are currently supported:
 
 =over 4
 
-=item billpkgdisplaynum
+=item billpkgdisplaynum - primary key
 
-primary key
+=item billpkgnum - the line item number (L<FS::cust_bill_pkg> foreign key)
 
-=item billpkgnum
-
-billpkgnum
-
-=item section
-
-section
+=item section - the section name where this item should be shown.  Defaults
+to the package category name, if there is one.
 
 =cut
 
+# actually it defaults to null, but then calling ->section will return the 
+# category name.
 sub section {
   my ( $self, $value ) = @_;
   if ( defined($value) ) {
@@ -64,17 +64,19 @@ sub section {
   }
 }
 
-=item post_total
+=item post_total - 'Y' to have this item shown in a "late" section (below
+the invoice totals).
 
-post_total
+=item type - Which portion of the item's charges to show in the specified
+position.  'S' to show setup fees (including tax and one-time charge),
+'R' to show the non-usage recurring charge, 'U' to show the usage charge,
+null to show all three as a single amount.
 
-=item type
-
-type
-
-=item summary
-
-summary
+=item summary - 'Y' to show a usage summary of this line item.  This has
+the following effects if type = 'U':
+- The description will always be "Usage charges" rather than the package name.
+- Service labels and usage details (CDRs) are hidden.
+- It will only display on multisection invoices.
 
 =back
 
@@ -84,7 +86,8 @@ summary
 
 =item new HASHREF
 
-Creates a new line item display object.  To add the record to the database, see L<"insert">.
+Creates a new line item display object.  To add the record to the database, 
+see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -153,7 +156,6 @@ sub cust_bill_pkg {
 =back
 
 =head1 BUGS
-
 
 
 =head1 SEE ALSO
