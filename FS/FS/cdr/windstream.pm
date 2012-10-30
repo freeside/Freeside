@@ -1,4 +1,4 @@
-package FS::cdr::simple;
+package FS::cdr::windstream;
 
 use strict;
 use vars qw( @ISA %info %calltypes );
