@@ -32,13 +32,14 @@ the date as an integer UNIX timestamp.
 sub parse_datetime {
   my $string = shift;
   return '' unless $string =~ /\S/;
+  my $tz = shift || 'local';
 
   my $conf = new FS::Conf;
   my $format = $conf->config('date_format') || '%m/%d/%Y';
 
   if ( $format eq '%d/%m/%Y' ) { #  =~ /\%d.*\%m/ ) {
     #$format =~ s/\%//g;
-    my $parser = DateTime::Format::Natural->new( 'time_zone' => 'local',
+    my $parser = DateTime::Format::Natural->new( 'time_zone' => $tz,
                                                  #'format'=>'d/m/y',#lc($format)
                                                );
     $dt = $parser->parse_datetime($string);
@@ -51,7 +52,7 @@ sub parse_datetime {
       $dt->epoch;
     }
   } else {
-    return str2time($string);
+    return str2time($string, $tz);
   }
   
 }
