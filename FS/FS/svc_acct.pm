@@ -6,6 +6,7 @@ use base qw( FS::svc_Domain_Mixin
              FS::svc_CGPRule_Mixin
              FS::svc_Radius_Mixin
              FS::svc_Tower_Mixin
+             FS::svc_IP_Mixin
              FS::svc_Common );
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
@@ -1126,6 +1127,8 @@ sub check {
               || $self->ut_foreign_key( 'domsvc', 'svc_domain', 'svcnum' )
               || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
               || $self->ut_foreign_keyn('sectornum','tower_sector','sectornum')
+              || $self->ut_foreign_keyn('routernum','router','routernum')
+              || $self->ut_foreign_keyn('blocknum','addr_block','blocknum')
               || $self->ut_textn('sec_phrase')
               || $self->ut_snumbern('seconds')
               || $self->ut_snumbern('upbytes')
@@ -1160,6 +1163,15 @@ sub check {
               || $self->ut_alphan('cgp_sendmdnmode')
   ;
   return $error if $error;
+
+  # assign IP address, etc.
+  if ( $conf->exists('svc_acct-ip_addr') ) {
+    my $error = $self->svc_ip_check;
+    return $error if $error;
+  } else { # I think this is correct
+    $self->routernum('');
+    $self->blocknum('');
+  }
 
   my $cust_pkg;
   local $username_letter = $username_letter;
@@ -1314,7 +1326,7 @@ sub check {
 
   unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
     if ( $recref->{slipip} eq '' ) {
-      $recref->{slipip} = '';
+      $recref->{slipip} = ''; # eh?
     } elsif ( $recref->{slipip} eq '0e0' ) {
       $recref->{slipip} = '0e0';
     } else {
@@ -1322,7 +1334,6 @@ sub check {
         or return "Illegal slipip: ". $self->slipip;
       $recref->{slipip} = $1;
     }
-
   }
 
   #arbitrary RADIUS stuff; allow ut_textn for now
@@ -1384,6 +1395,7 @@ sub check {
   else {
     return "invalid password encoding ('".$recref->{_password_encoding}."'";
   }
+
   $self->SUPER::check;
 
 }

@@ -58,12 +58,13 @@ function clearhint_ip_addr (what) {
 </td></tr>
 <& /elements/tr-td-label.html, label => 'IP address' &>
 <td>
-% if ( $fixed{'ip_addr'} ) {
-  <input type="hidden" id="input_ip_addr" name="ip_addr" 
+% warn Dumper \%fixed;
+% if ( exists $fixed{$ip_field} ) {
+  <input type="hidden" id="input_ip_addr" name="<% $ip_field %>" 
     value="<% $opt{'ip_addr'} |h%>"><% $opt{'ip_addr'} || '' %>
 % }
 % else {
-  <input type="text" id="input_ip_addr" name="ip_addr" 
+  <input type="text" id="input_ip_addr" name="<% $ip_field %>" 
   value="<% $opt{'ip_addr'} |h%>" onfocus="clearhint_ip_addr(this)">
 % }
 </td> </tr>
@@ -78,6 +79,7 @@ my $conf = FS::Conf->new;
 
 my $svc_x = $opt{'object'};
 if ( $svc_x ) {
+  # $svc_x->ip_addr does work, even for non-svc_broadband.
   $opt{$_} = $svc_x->$_
     foreach qw(routernum blocknum ip_addr svcpart);
   if ( $svc_x->svcnum ) {
@@ -86,6 +88,8 @@ if ( $svc_x ) {
 }
 
 my $svcpart = $opt{'svcpart'} || '';
+my $ip_field = $opt{'ip_field'} || 'ip_addr';
+
 my %fixed; #  which fields are fixed
 $svcpart =~ /^\d*$/ or die "invalid svcpart '$svcpart'";
 if ( $svcpart ) {
@@ -93,13 +97,13 @@ if ( $svcpart ) {
   # Traditionally, columnflag 'F' on IP address means that it MUST 
   # be auto-assigned (or, if null IP addresses are allowed, that 
   # it must be null).
-  foreach (qw(routernum blocknum ip_addr)) {
+  foreach (qw(routernum blocknum), $ip_field) {
     my $psc = $part_svc->part_svc_column($_);
     if ( $psc and $psc->columnflag eq 'F' ) {
       $fixed{$_} = $psc->columnvalue;
     }
   }
-  if ( $fixed{'routernum'} ) {
+  if ( exists $fixed{'routernum'} ) {
     @routers = (FS::router->by_key($fixed{'routernum'}))
   }
   else {

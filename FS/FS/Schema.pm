@@ -2184,6 +2184,9 @@ sub tables_hashref {
         'shell',     'varchar',   'NULL',   $char_d, '', '', 
         'quota',     'varchar',   'NULL',   $char_d, '', '', 
         'slipip',    'varchar',   'NULL',   15, '', '', #four TINYINTs, bah.
+        # IP address mgmt
+        'routernum', 'int', 'NULL',      '', '', '',
+        'blocknum',  'int', 'NULL',      '', '', '', 
         'seconds',   'int', 'NULL',   '', '', '', #uhhhh
         'seconds_threshold',   'int', 'NULL',   '', '', '',
         'upbytes',   'bigint', 'NULL',   '', '', '', 

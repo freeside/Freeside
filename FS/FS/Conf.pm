@@ -1136,6 +1136,13 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'svc_acct-ip_addr',
+    'section'     => '',
+    'description' => 'Enable IP address management on login services like for broadband services.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'exclude_ip_addr',
     'section'     => '',
     'description' => 'Exclude these from the list of available broadband service IP addresses. (One per line)',

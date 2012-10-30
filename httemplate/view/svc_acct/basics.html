@@ -91,15 +91,29 @@
 
 % }
 
+<%perl>
+# minor false laziness w/ view/svc_broadband.cgi
+sub slipip {
+  my $svc_acct = shift;
+  my $out = $svc_acct->slipip or return '';
+  if ( $out eq '0.0.0.0' or $out eq '0e0' ) {
+    return '<I>('.mt('Dynamic').'</I>';
+  }
+  $out .= ' ('.
+          include('/elements/popup_link-ping.html', ip => $svc_acct->slipip).
+          ')';
+  if ( my $addr_block = $svc_acct->addr_block ) {
+    $out .= '<br>Netmask: ' . $addr_block->NetAddr->mask .
+            '<br>Gateway: ' . $addr_block->ip_gateway;
+  }
+  $out;
+}
+</%perl>
+
 % if ($svc_acct->slipip) { 
   <& /view/elements/tr.html,
        label=>mt('IP address'),
-       value=> ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
-                 ? "<I>(".mt('Dynamic').")</I>"
-                 : $svc_acct->slipip. ' '.
-                   include('/elements/popup_link-ping.html',
-                             'ip'=>$svc_acct->slipip,
-                          )
+       value=> slipip($svc_acct)
   &>
 % } 
 

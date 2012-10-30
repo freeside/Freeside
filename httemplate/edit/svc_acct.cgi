@@ -276,14 +276,26 @@ function randomPass() {
              'communigate' => $communigate,
 &>
 
-% if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { 
-  <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">
-% } else { 
-  <TR>
-    <TD ALIGN="right"><% mt('IP') |h %></TD>
-    <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
-  </TR>
-% } 
+% if ( $conf->exists('svc_acct-ip_addr') ) {
+%   # router/block selection UI
+%   # (should we show this if slipip is fixed?)
+<& /elements/tr-select-router_block_ip.html, 
+  'object' => $svc_acct,
+  'ip_field' => 'slipip'
+&>
+% } else {
+%   # don't expose these to the user--they're only useful in the other case
+  <INPUT TYPE="hidden" NAME="routernum" VALUE="<% $svc_acct->routernum %>">
+  <INPUT TYPE="hidden" NAME="blocknum"  VALUE="<% $svc_acct->blocknum  %>">
+%   if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { 
+    <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">
+%   } else { 
+    <TR>
+      <TD ALIGN="right"><% mt('IP') |h %></TD>
+      <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
+    </TR>
+%   }
+% }
 
 % my %label = ( seconds => 'Time',
 %               upbytes => 'Upload bytes',

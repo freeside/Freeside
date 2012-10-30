@@ -1,5 +1,10 @@
 package FS::svc_broadband;
-use base qw(FS::svc_Radius_Mixin FS::svc_Tower_Mixin FS::svc_Common);
+use base qw(
+  FS::svc_Radius_Mixin
+  FS::svc_Tower_Mixin
+  FS::svc_IP_Mixin 
+  FS::svc_Common
+  );
 
 use strict;
 use vars qw($conf);
@@ -412,38 +417,13 @@ sub check {
   }
   my $agentnum = $cust_pkg->cust_main->agentnum if $cust_pkg;
 
-  if ( $conf->exists('auto_router') and $self->ip_addr and !$self->routernum ) {
-    # assign_router is guaranteed to provide a router that's legal
-    # for this agent and svcpart
-    my $error = $self->_check_ip_addr || $self->assign_router;
-    return $error if $error;
+  # assign IP address / router / block
+  $error = $self->svc_ip_check;
+  return $error if $error;
+  if ( !$self->ip_addr 
+       and !$conf->exists('svc_broadband-allow_null_ip_addr') ) {
+    return 'IP address is required';
   }
-  elsif ($self->routernum) {
-    return "Router ".$self->routernum." does not provide this service"
-      unless qsearchs('part_svc_router', { 
-        svcpart => $svcpart,
-        routernum => $self->routernum
-    });
-  
-    my $router = $self->router;
-    return "Router ".$self->routernum." does not serve this customer"
-      if $router->agentnum and $agentnum and $router->agentnum != $agentnum;
-
-    if ( $router->manual_addr ) {
-      $self->blocknum('');
-    }
-    else {
-      my $addr_block = $self->addr_block;
-      if ( $self->ip_addr eq '' 
-           and not ( $addr_block and $addr_block->manual_flag ) ) {
-        my $error = $self->assign_ip_addr;
-        return $error if $error;
-      }
-    }
- 
-    my $error = $self->_check_ip_addr;
-    return $error if $error;
-  } # if $self->routernum
 
   if ( $cust_pkg && ! $self->latitude && ! $self->longitude ) {
     my $l = $cust_pkg->cust_location_or_main;
@@ -459,104 +439,12 @@ sub check {
   $self->SUPER::check;
 }
 
-=item assign_ip_addr
-
-Assign an IP address matching the selected router, and the selected block
-if there is one.
-
-=cut
-
-sub assign_ip_addr {
-  my $self = shift;
-  my @blocks;
-  my $ip_addr;
-
-  if ( $self->addr_block and $self->addr_block->routernum == $self->routernum ) {
-    # simple case: user chose a block, find an address in that block
-    # (this overrides an existing IP address if it's not in the block)
-    @blocks = ($self->addr_block);
-  }
-  elsif ( $self->routernum ) {
-    @blocks = $self->router->auto_addr_block;
-  }
-  else { 
-    return '';
-  }
-#warn "assigning ip address in blocks\n".join("\n",map{$_->cidr} @blocks)."\n";
-
-  foreach my $block ( @blocks ) {
-    if ( $self->ip_addr and $block->NetAddr->contains($self->NetAddr) ) {
-      # don't change anything
-      return '';
-    }
-    $ip_addr = $block->next_free_addr;
-    if ( $ip_addr ) {
-      $self->set(ip_addr => $ip_addr->addr);
-      $self->set(blocknum => $block->blocknum);
-      return '';
-    }
-  }
-  return 'No IP address available on this router';
-}
-
-=item assign_router
-
-Assign an address block and router matching the selected IP address.
-Does nothing if IP address is null.
-
-=cut
-
-sub assign_router {
-  my $self = shift;
-  return '' if !$self->ip_addr;
-  #warn "assigning router/block for ".$self->ip_addr."\n";
-  foreach my $router ($self->allowed_routers) {
-    foreach my $block ($router->addr_block) {
-      if ( $block->NetAddr->contains($self->NetAddr) ) {
-        $self->blocknum($block->blocknum);
-        $self->routernum($block->routernum);
-        return '';
-      }
-    }
-  }
-  return $self->ip_addr.' is not in an allowed block.';
-}
-
-sub _check_ip_addr {
-  my $self = shift;
-
-  if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
-    return '' if $conf->exists('svc_broadband-allow_null_ip_addr'); 
-    return 'IP address required';
-  }
-  else {
-    return 'Cannot parse address: '.$self->ip_addr unless $self->NetAddr;
-  }
-
-  if ( $self->addr_block 
-      and not $self->addr_block->NetAddr->contains($self->NetAddr) ) {
-    return 'Address '.$self->ip_addr.' not in block '.$self->addr_block->cidr;
-  }
-
-#  if (my $dup = qsearchs('svc_broadband', {
-#        ip_addr => $self->ip_addr,
-#        svcnum  => {op=>'!=', value => $self->svcnum}
-#      }) ) {
-#    return 'IP address conflicts with svcnum '.$dup->svcnum;
-#  }
-  '';
-}
-
 sub _check_duplicate {
   my $self = shift;
   # Not a reliable check because the table isn't locked, but 
   # that's why we have a unique index.  This is just to give a
   # friendlier error message.
   my @dup;
-  @dup = $self->find_duplicates('global', 'ip_addr');
-  if ( @dup ) {
-    return "IP address in use (svcnum ".$dup[0]->svcnum.")";
-  }
   @dup = $self->find_duplicates('global', 'mac_addr');
   if ( @dup ) {
     return "MAC address in use (svcnum ".$dup[0]->svcnum.")";
@@ -564,64 +452,6 @@ sub _check_duplicate {
 
   '';
 }
-
-
-=item NetAddr
-
-Returns a NetAddr::IP object containing the IP address of this service.  The netmask 
-is /32.
-
-=cut
-
-sub NetAddr {
-  my $self = shift;
-  new NetAddr::IP ($self->ip_addr);
-}
-
-=item addr_block
-
-Returns the FS::addr_block record (i.e. the address block) for this broadband service.
-
-=cut
-
-sub addr_block {
-  my $self = shift;
-  qsearchs('addr_block', { blocknum => $self->blocknum });
-}
-
-=item router
-
-Returns the FS::router record for this service.
-
-=cut
-
-sub router {
-  my $self = shift;
-  qsearchs('router', { routernum => $self->routernum });
-}
-
-=item allowed_routers
-
-Returns a list of allowed FS::router objects.
-
-=cut
-
-sub allowed_routers {
-  my $self = shift;
-  my $svcpart = $self->svcnum ? $self->cust_svc->svcpart : $self->svcpart;
-  my @r = map { $_->router } qsearch('part_svc_router', 
-    { svcpart => $svcpart });
-  if ( $self->cust_main ) {
-    my $agentnum = $self->cust_main->agentnum;
-    return grep { !$_->agentnum or $_->agentnum == $agentnum } @r;
-  }
-  else {
-    return @r;
-  }
-}
-
-=back
-
 
 =item mac_addr_formatted CASE DELIMITER
 

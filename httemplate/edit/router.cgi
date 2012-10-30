@@ -29,8 +29,15 @@ die "access denied"
   unless $curuser->access_right('Broadband configuration')
     || $curuser->access_right('Broadband global configuration');
 
+my @svc_x = 'svc_broadband';
+if ( FS::Conf->new->exists('svc_acct-ip_addr') ) {
+  push @svc_x, 'svc_acct';
+}
+
 my $callback = sub {
   my ($cgi, $object, $fields) = (shift, shift, shift);
+
+  my $extra_sql = ' AND svcdb IN(' . join(',', map { "'$_'" } @svc_x) . ')';
   unless ($object->svcnum) {
     push @{$fields},
       { 'type'          => 'tablebreak-tr-title',
@@ -41,7 +48,8 @@ my $callback = sub {
         'target_table'  => 'part_svc',
         'link_table'    => 'part_svc_router',
         'name_col'      => 'svc',
-        'hashref'       => { 'svcdb' => 'svc_broadband', 'disabled' => '' },
+        'hashref'       => { 'disabled' => '' },
+        'extra_sql'     => $extra_sql,
       };
   }
 };
