@@ -82,7 +82,7 @@ foreach my $agent (@agents) {
 
   $sftp->setcwd('/Returns');
 
-  my $files = $sftp->ls('.', wanted => qr/^ReturnFile/, names_only => 1);
+  my $files = $sftp->ls('.', wanted => qr/\.txt$/, names_only => 1);
   die "no response files found\n" if !@$files;
 
   FILE: foreach my $filename (@$files) {
