@@ -2,10 +2,11 @@ package FS::cdr::troop2;
 
 use strict;
 use base qw( FS::cdr );
-use vars qw( %info $tmp_date $tmp_src_city $tmp_dst_city );
-use Date::Parse;
-#use Time::Local;
+use vars qw( %info $tmp_mon $tmp_mday $tmp_year $tmp_src_city $tmp_dst_city );
+use Time::Local;
 ##use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
+
+use Data::Dumper;
 
 %info = (
   'name' => 'Troop',
@@ -17,16 +18,27 @@ use Date::Parse;
 
     'userfield', #account_num  (userfield?)
 
+    # XXX false laziness w/bell_west.pm
     #call_date
     sub { my($cdr, $date) = @_;
-          #is this an excel date?  or just text?
-          $tmp_date = $date;
+
+          my $datetime = DateTime::Format::Excel->parse_datetime( $date );
+          $tmp_mon  = $datetime->mon_0;
+          $tmp_mday = $datetime->mday;
+          $tmp_year = $datetime->year;
         },
 
     #call_time
     sub { my($cdr, $time) = @_;
-          #is this an excel time?  or just text?
-          $cdr->startdate( str2time("$tmp_date $time") );
+          #my($sec, $min, $hour, $mday, $mon, $year)= localtime($cdr->startdate);
+
+          #$sec = $time * 86400;
+          my $sec = int( $time * 86400 + .5);
+
+          #$cdr->startdate( timelocal($3, $2, $1 ,$mday, $mon, $year) );
+          $cdr->startdate(
+            timelocal(0, 0, 0, $tmp_mday, $tmp_mon, $tmp_year) + $sec
+          );
         },
 
     'src', #orig_tn
