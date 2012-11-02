@@ -1,9 +1,10 @@
-package FS::part_pkg::sqlradacct_hour;
+package FS::part_pkg::sqlradacct_daily;
 use base qw( FS::part_pkg::flat );
 
 use strict;
 use vars qw(%info);
 use Time::Local qw( timelocal timelocal_nocheck );
+use Date::Format;
 #use FS::Record qw(qsearch qsearchs);
 
 %info = (
