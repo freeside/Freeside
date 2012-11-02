@@ -8,7 +8,7 @@ use FS::part_pkg::flat;
 @ISA = qw(FS::part_pkg::flat);
 
 %info = (
-  'name' => 'Base charge plus per-hour (and for data) from an SQL RADIUS radacct table',
+  'name' => 'Time and data charges from an SQL RADIUS radacct table',
   'shortname' => 'Usage charges from RADIUS',
   'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {
@@ -68,8 +68,6 @@ use FS::part_pkg::flat;
 
   },
   'fieldorder' => [qw( recur_included_hours recur_hourly_charge recur_hourly_cap recur_included_input recur_input_charge recur_input_cap recur_included_output recur_output_charge recur_output_cap recur_included_total recur_total_charge recur_total_cap global_cap )],
-  #'setup' => 'what.setup_fee.value',
-  #'recur' => '\'my $last_bill = $cust_pkg->last_bill; my $hours = $cust_pkg->seconds_since_sqlradacct($last_bill, $sdate ) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; my $input = $cust_pkg->attribute_since_sqlradacct($last_bill, $sdate, \"AcctInputOctets\" ) / 1048576; my $output = $cust_pkg->attribute_since_sqlradacct($last_bill, $sdate, \"AcctOutputOctets\" ) / 1048576; my $total = $input + $output - \' + what.recur_included_total.value + \'; $total = 0 if $total < 0; my $input = $input - \' + what.recur_included_input.value + \'; $input = 0 if $input < 0; my $output = $output - \' + what.recur_included_output.value + \'; $output = 0 if $output < 0; my $totalcharge = sprintf(\"%.2f\", \' + what.recur_total_charge.value + \' * $total); my $inputcharge = sprintf(\"%.2f\", \' + what.recur_input_charge.value + \' * $input); my $outputcharge = sprintf(\"%.2f\", \' + what.recur_output_charge.value + \' * $output); my $hourscharge = sprintf(\"%.2f\", \' + what.recur_hourly_charge.value + \' * $hours); if ( \' + what.recur_total_charge.value + \' > 0 ) { push @details, \"Last month\\\'s data \". sprintf(\"%.1f\", $total). \" megs: \\\$$totalcharge\" } if ( \' + what.recur_input_charge.value + \' > 0 ) { push @details, \"Last month\\\'s download \". sprintf(\"%.1f\", $input). \" megs: \\\$$inputcharge\" } if ( \' + what.recur_output_charge.value + \' > 0 ) { push @details, \"Last month\\\'s upload \". sprintf(\"%.1f\", $output). \" megs: \\\$$outputcharge\" } if ( \' + what.recur_hourly_charge.value + \' > 0 ) { push @details, \"Last month\\\'s time \". sprintf(\"%.1f\", $hours). \" hours: \\\$$hourscharge\"; } \' + what.recur_fee.value + \' + $hourscharge + $inputcharge + $outputcharge + $totalcharge ;\'',
   'weight' => 40,
 );
 
