@@ -1,0 +1,29 @@
+% if ( scalar(@{ $opt{'reason_type'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'typenum' %>" VALUE="">
+
+% } else { 
+
+   <& /elements/tr-td-label.html, label => $opt{'label'} || 'Reason type', %opt &>
+
+    <TD COLSPAN="<% $colspan %>">
+      <% include( '/elements/select-reason_type.html',
+                    'curr_value' => $typenum,
+                    %opt
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my %opt = @_;
+my $typenum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'reason_type'} ||= [ qsearch( 'reason_type', { disabled=>'' } ) ];
+
+my $colspan = delete($opt{'colspan'}) || 1;
+
+</%init>

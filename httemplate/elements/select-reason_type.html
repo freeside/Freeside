@@ -1,0 +1,21 @@
+<% include( '/elements/select-table.html',
+                 'table'       => 'reason_type',
+                 'name_col'    => 'type',
+                 'value'       => $typenum,
+                 #XXX? 'empty_label' => '(none)',
+                 #XXX? 'hashref'     => { 'disabled' => '' },
+                 %opt,
+             )
+%>
+<%init>
+
+my %opt = @_;
+my $typenum = $opt{'curr_value'} || $opt{'value'};
+
+#my %hash = ();
+#$hash{'disabled'} = '' unless $opt{'showdisabled'};
+
+#$opt{'records'} = delete $opt{'reason_type'}
+#  if $opt{'reason_type'};
+
+</%init>
