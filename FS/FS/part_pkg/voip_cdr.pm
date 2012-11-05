@@ -362,7 +362,7 @@ sub calc_usage {
                                  : 'default'
                              );
 
-  my $usage_nozero      = $self->option->('usage_nozero', 1);
+  my $usage_nozero      = $self->option('usage_nozero', 1);
 
   my $formatter = FS::detail_format->new($output_format, buffer => $details);
 
