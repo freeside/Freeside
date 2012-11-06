@@ -34,6 +34,7 @@
             'form'       => "OrderPkgForm",
             'onlyship'   => 1,
             'no_company' => 1,
+            'no_census'  => 1,
             'callback'   => 'document.OrderPkgForm.submit();',
 &>
 

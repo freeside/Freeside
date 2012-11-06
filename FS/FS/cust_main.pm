@@ -1488,20 +1488,6 @@ sub replace {
     return "You are not permitted to create complimentary accounts.";
   }
 
-  # should be unnecessary--geocode will default to null on new locations
-  #if ( $old->get('geocode') && $old->get('geocode') eq $self->get('geocode')
-  #     && $conf->exists('enable_taxproducts')
-  #   )
-  #{
-  #  my $pre = ($conf->exists('tax-ship_address') && $self->ship_zip)
-  #              ? 'ship_' : '';
-  #  $self->set('geocode', '')
-  #    if $old->get($pre.'zip') ne $self->get($pre.'zip')
-  #    && length($self->get($pre.'zip')) >= 10;
-  #}
-
-  # set_coord/coord_auto stuff is now handled by cust_location
-
   local($ignore_expired_card) = 1
     if $old->payby  =~ /^(CARD|DCRD)$/
     && $self->payby =~ /^(CARD|DCRD)$/
@@ -1861,8 +1847,6 @@ sub check {
     return "$daytime_label, $night_label or $mobile_label is required"
   
   }
-
-  #ship_ fields are gone
 
   #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
   #  or return "Illegal payby: ". $self->payby;

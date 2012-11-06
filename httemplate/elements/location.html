@@ -33,7 +33,7 @@ Example:
                  'options'    => \@location_kind_options,
                  'labels'     => $location_kind_labels,
                  'curr_value' => scalar($cgi->param('location_kind'))
-                                   || $object->get($pre.'location_kind'),
+                                   || $object->get('location_kind'),
               )
     %>
     </TD>
@@ -164,7 +164,7 @@ Example:
            NAME     = "<%$pre%>zip"
            ID       = "<%$pre%>zip"
            VALUE    = "<% $object->get('zip') |h %>"
-           SIZE     = 10
+           SIZE     = 11
            onChange = "<% $onchange %>"
            <% $disabled %>
            <% $style %>
@@ -206,23 +206,22 @@ Example:
 <INPUT TYPE="hidden" NAME="<%$pre%>coord_auto" VALUE="<% $object->coord_auto %>">
 
 <INPUT TYPE="hidden" NAME="<%$pre%>geocode" VALUE="<% $object->geocode %>">
+<INPUT TYPE="hidden" NAME="<%$pre%>censustract" VALUE="<% $object->censustract %>">
 <INPUT TYPE="hidden" NAME="<%$pre%>censusyear" VALUE="<% $object->censusyear %>">
-<TR>
 % if ( $opt{enable_censustract} ) {
+<TR>
   <TD ALIGN="right">Census&nbsp;tract</TD>
   <TD COLSPAN=8>
     <INPUT TYPE="text" SIZE=15
-           NAME="<%$pre%>censustract" 
+           NAME="enter_censustract" 
            VALUE="<% $object->censustract %>">
     <% '(automatic)' %>
   </TD>
-% } else {
-  <INPUT TYPE="hidden" NAME="<%$pre%>censustract" VALUE="<% $object->censustract %>">
-% } 
 </TR>
+% }
 % if ( $conf->config('tax_district_method') ) {
-  <TR>
 %   if ( $opt{enable_district} ) {
+  <TR>
     <TD ALIGN="right">Tax&nbsp;district</TD>
     <TD COLSPAN=8>
       <INPUT TYPE="text" SIZE=15
@@ -230,12 +229,22 @@ Example:
              VALUE="<% $object->district %>">
     <% '(automatic)' %>
     </TD>
+  </TR>
 %   } else {
     <INPUT TYPE="hidden" NAME="<%$pre%>district" VALUE="<% $object->district %>">
 %   }
-  </TR>
 % }
 
+%# For address standardization:
+%# keep a clean copy of the address so we know if we need
+%# to re-standardize
+% foreach (qw(address1 city state country zip latitude
+%             longitude censustract addr_clean) ) {
+<INPUT TYPE="hidden" NAME="old_<%$pre.$_%>" ID="old_<%$pre.$_%>" VALUE="<% $object->get($_) |h%>">
+% }
+%# Placeholders
+<INPUT TYPE="hidden" NAME="<%$pre%>cachenum" VALUE="">
+<INPUT TYPE="hidden" NAME="<%$pre%>addr_clean" VALUE="">
 <%init>
 
 my %opt = @_;

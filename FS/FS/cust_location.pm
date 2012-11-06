@@ -188,6 +188,7 @@ sub check {
     || $self->ut_coordn('latitude')
     || $self->ut_coordn('longitude')
     || $self->ut_enum('coord_auto', [ '', 'Y' ])
+    || $self->ut_enum('addr_clean', [ '', 'Y' ])
     || $self->ut_alphan('location_type')
     || $self->ut_textn('location_number')
     || $self->ut_enum('location_kind', [ '', 'R', 'B' ] )
@@ -207,9 +208,6 @@ sub check {
        !$self->ship_address2 =~ /\S/ ) {
     return "Unit # is required";
   }
-
-  $self->set_coord
-    unless $import || ($self->latitude && $self->longitude);
 
   # tricky...we have to allow for the customer to not be inserted yet
   return "No prospect or customer!" unless $self->prospectnum 

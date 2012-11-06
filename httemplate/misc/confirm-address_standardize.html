@@ -1,0 +1,123 @@
+<STYLE type="text/css">
+th { line-height: 150% }
+</STYLE>
+<CENTER><BR><B>
+% if ( $new{error} or $new{ship_error} ) {
+Address standardization error
+% }
+% else {
+Confirm address standardization
+% }
+
+</B><BR><BR>
+<TABLE WIDTH="100%">
+% for my $pre ('', 'ship_') {
+%   next if !$pre and $old{onlyship};
+%   my $name = $pre eq 'ship_' ? 'service' : 'billing';
+%   if ( $new{$pre.'addr_clean'} ) {
+  <TR>
+    <TH>Entered <%$name%> address</TH>
+    <TH>Standardized <%$name%> address</TH>
+  </TR>
+  <TR>
+%     if ( $old{$pre.'company'} ) {
+  <TR>
+    <TD><% $old{$pre.'company'} %></TD>
+    <TD><% $new{$pre.'company'} %></TD>
+  </TR>
+%     }
+  <TR>
+    <TD><% $old{$pre.'address1'} %></TD>
+    <TD><% $new{$pre.'address1'} %></TD>
+  </TR>
+  <TR>
+    <TD><% $old{$pre.'address2'} %></TD>
+    <TD><% $new{$pre.'address2'} %></TD>
+  </TR>
+  <TR>
+    <TD><% $old{$pre.'city'} %>, <% $old{$pre.'state'} %>  <% $old{$pre.'zip'} %></TD>
+    <TD><% $new{$pre.'city'} %>, <% $new{$pre.'state'} %>  <% $new{$pre.'zip'} %></TD>
+  </TR>
+
+%   } # if addr_clean
+%     elsif ( $new{$pre.'error'} ) {
+  <TR>
+    <TH>Entered <%$name%> address</TH>
+  </TR>
+%     if ( $old{$pre.'company'} ) {
+  <TR>
+    <TD><% $old{$pre.'company'} %></TD>
+  </TR>
+%     }
+  <TR>
+    <TD><% $old{$pre.'address1'} %></TD>
+    <TD ROWSPAN=3><FONT COLOR="#ff0000"><B><% $new{$pre.'error'} %></B></FONT></TD>
+  </TR>
+  <TR>
+    <TD><% $old{$pre.'address2'} %></TD>
+  </TR>
+  <TR>
+    <TD><% $old{$pre.'city'} %>, <% $old{$pre.'state'} %>  <% $old{$pre.'zip'} %></TD>
+  </TR>
+%   } #if error
+% } # for $pre
+
+%# only do this part if address standardization provided a censustract
+% if ( $new{'ship_censustract'} ) {
+  <TR>
+    <TH>Entered census tract</TH>
+    <TH>Calculated census tract</TH>
+  </TR>
+  <TR>
+    <TD><% $old{'ship_censustract'} %></TD>
+    <TD>
+%     if ( $new{'ship_census_error'} ) {
+      <FONT COLOR="#ff0000"><% $new{'ship_census_error'} %></FONT>
+%     } else {
+      <% $new{'ship_censustract'} %>
+%     }
+    </TD>
+  </TR>
+% } #if censustract
+
+% if ( $new{error} or $new{ship_error} ) {
+  <TR>
+    <TD ALIGN="center">
+    <BUTTON TYPE="button" STYLE="width:205px" onclick="confirm_manual_address();">
+      <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered <%$addresses%>
+    </BUTTON></TD>
+    <TD ALIGN="center">
+    <BUTTON TYPE="button" STYLE="width:205px" onclick="submit_abort();">
+      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
+    </BUTTON></TD>
+  </TR>
+% }
+% else {
+  <TR>
+    <TD ALIGN="center">
+    <BUTTON TYPE="button" STYLE="width:205px" onclick="confirm_manual_address()();">
+      <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered <%$addresses%>
+    </BUTTON></TD>
+    <TD ALIGN="center">
+    <BUTTON TYPE="button" STYLE="width:205px" onclick="replace_address();">
+      <IMG SRC="<%$p%>images/tick.png" ALT=""> Use standardized <%$addresses%>
+    </BUTTON></TD>
+  </TR>
+  <TR ALIGN="center"><TD COLSPAN=2>
+    <BUTTON TYPE="button" STYLE="width:205px" onclick="submit_abort();">
+      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
+    </BUTTON>
+  </TD></TR>
+</TABLE>
+% } # !error
+<%init>
+
+# slightly weird interface...
+my $q = decode_json($cgi->param('q'));
+#warn Dumper($q);
+my %old = %{ $q->{old} };
+my %new = %{ $q->{new} };
+
+my $addresses = $old{onlyship} ? 'address' : 'addresses';
+
+</%init>

@@ -316,6 +316,8 @@ if ( $cgi->param('error') ) {
   $payinfo = '';
 
   $cgi->param('tagnum', FS::part_tag->default_tags);
+  $cust_main->coord_auto('Y');
+  $cust_main->ship_coord_auto('Y');
 
   if ( $cgi->param('qualnum') =~ /^(\d+)$/ ) {
     my $qualnum = $1;

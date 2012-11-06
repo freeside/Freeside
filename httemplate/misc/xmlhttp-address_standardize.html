@@ -1,0 +1,38 @@
+<% encode_json($return) %>
+<%init>
+
+local $SIG{__DIE__}; #disable Mason error trap
+
+my $DEBUG = 0;
+
+my $conf = new FS::Conf;
+
+my $sub = $cgi->param('sub');
+
+warn $cgi->param('arg') if $DEBUG;
+
+my %old = %{ decode_json($cgi->param('arg')) }
+  or die "bad argument '".$cgi->param('arg')."'";
+
+my %new;
+
+foreach my $pre ( '', 'ship_' ) {
+  next unless ($pre || !$old{onlyship});
+
+  my $location = {
+    map { $_ => $old{$pre.$_} }
+      qw( company address1 address2 city state zip country )
+  };
+
+  my $cache = eval { FS::GeocodeCache->standardize($location) };
+  $cache->set_coord;
+  # don't do set_censustract here, though censustract may be set by now
+
+  foreach ( keys(%$cache) ) {
+    $new{$pre.$_} = $cache->get($_);
+  }
+}
+
+my $return = { old => \%old, new => \%new };
+warn "result:\n".encode_json($return) if $DEBUG;
+</%init>

@@ -95,7 +95,7 @@ close TEST;
 # add them to MANIFEST
 ###
 
-system('cvs edit FS/MANIFEST');
+#system('cvs edit FS/MANIFEST');
 
 open(MANIFEST,">>FS/MANIFEST") or die $!;
 print MANIFEST "FS/$table.pm\n",

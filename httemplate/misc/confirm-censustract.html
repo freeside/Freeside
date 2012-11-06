@@ -1,0 +1,78 @@
+<CENTER><BR><B>
+% if ( $error ) {
+Census tract error
+% }
+% else {
+Confirm census tract
+% }
+</B><BR>
+% my $querystring = "census_year=$year&latitude=".$cache->get('latitude').'&longitude='.$cache->get('longitude');
+<A HREF="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?<% $querystring %>"
+   TARGET="_blank">Map service module location</A><BR>
+% $querystring = "census_year=$year&zip_code=".$cache->get('zip');
+<A HREF="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?<% $querystring %>"
+   TARGET="_blank">Map zip code center</A><BR>
+<BR>
+<TABLE>
+  <TR>
+    <TH style="width:50%">Entered census tract</TH>
+    <TH style="width:50%">Calculated census tract</TH>
+  </TR>
+  <TR>
+    <TD><% $old_tract %></TD>
+% if ( $error ) {
+    <TD><FONT COLOR="#ff0000"><% $error %></FONT></TD>
+% } else {
+    <TD><% $new_tract %></TD>
+% }
+  </TR>
+  <TR>
+    <TD ALIGN="center">
+      <BUTTON TYPE="button"
+              onclick="set_censustract('<% $old_tract %>', '<% $year %>')">
+      <IMG SRC="<%$p%>images/error.png" ALT=""> Use entered census tract
+      </BUTTON>
+    </TD>
+    <TD ALIGN="center">
+      <BUTTON TYPE="button"
+              onclick="set_censustract('<% $new_tract %>', '<% $year %>')">
+      <IMG SRC="<%$p%>images/tick.png" ALT=""> Use calculated census tract
+      </BUTTON>
+    </TD>
+  </TR>
+  <TR>
+    <TD COLSPAN=2 ALIGN="center">
+      <BUTTON TYPE="button" onclick="submit_abort()">
+      <IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission
+      </BUTTON>
+    </TD>
+  </TR>
+</TABLE></CENTER>
+<%init>
+
+local $SIG{__DIE__}; #disable Mason error trap
+
+my $DEBUG = 0;
+
+my $conf = new FS::Conf;
+
+warn $cgi->param('q') if $DEBUG;
+
+my $q = decode_json($cgi->param('q'))
+  or die "bad argument '".$cgi->param('q')."'";
+
+my %location = (
+  map { $_ => $q->{'ship_'.$_} }
+    qw( company address1 address2 city state zip country latitude longitude )
+);
+
+my $old_tract = $q->{'ship_censustract'};
+my $cache = eval { FS::GeocodeCache->new(%location) };
+$cache->set_censustract;
+my $year = FS::Conf->new->config('census_year');
+my $new_tract = $cache->get('censustract');
+my $error = $cache->get('censustract_error');
+
+warn Dumper($cache) if $DEBUG;
+
+</%init>
