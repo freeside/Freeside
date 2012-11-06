@@ -2249,12 +2249,11 @@ sub print_csv {
                                    '';
           }
 
-          my $svc_x = $cust_svc->svc_x or 
-            warn "missing svc_x record for svc#".$cust_svc->svcnum."\n";
+          my @h_label = $cust_svc->label(@dates, 'I');
           push @details, sprintf('01%-9s%-20s%-47s',
             $cust_svc->svcnum,
             $svc_class{$svcpart},
-            ($svc_x ? $svc_x->label : ''),
+            $h_label[1],
           );
         } #foreach $cust_svc
       } #if $cust_pkg
