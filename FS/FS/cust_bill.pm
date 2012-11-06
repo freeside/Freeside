@@ -2029,7 +2029,7 @@ header line only, with the fields:
 
 Agent number, agent name, customer number, first name, last name, address
 line 1, address line 2, city, state, zip, invoice date, invoice number,
-amount charged, amount due,
+amount charged, amount due, previous balance, due date.
 
 and then, for each line item, three columns containing the package number,
 description, and amount.
@@ -2115,6 +2115,7 @@ sub print_csv {
   } elsif ( $format eq 'oneline' ) { #name
   
     my ($previous_balance) = $self->previous; 
+    $previous_balance = sprintf('%.2f', $previous_balance);
     my $totaldue = sprintf('%.2f', $self->owed + $previous_balance);
     my @items = map {
       ($_->{pkgnum} || ''),
@@ -2139,6 +2140,8 @@ sub print_csv {
       $self->invnum,
       $self->charged,
       $totaldue,
+      $previous_balance,
+      $self->due_date2str("%x"),
 
       @items,
     );
