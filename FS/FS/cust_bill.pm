@@ -2027,6 +2027,7 @@ sub print_csv {
   } elsif ( lc($opt{'format'}) eq 'oneline' ) { #name?
   
     my ($previous_balance) = $self->previous; 
+    $previous_balance = sprintf('%.2f', $previous_balance);
     my $totaldue = sprintf('%.2f', $self->owed + $previous_balance);
     my @items = map {
       ($_->{pkgnum} || ''),
@@ -2051,6 +2052,8 @@ sub print_csv {
       $self->invnum,
       $self->charged,
       $totaldue,
+      $previous_balance,
+      $self->due_date2str("%x"),
 
       @items,
     );
