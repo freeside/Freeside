@@ -11,8 +11,15 @@ Confirm address standardization
 
 </B><BR><BR>
 <TABLE WIDTH="100%">
+% my @prefixes;
+% if ( $old{onlyship} ) {
+%   @prefixes = ('ship_');
+% } elsif ( $old{same} ) {
+%   @prefixes = ('');
+% } else {
+%   @prefixes = ('', 'ship_');
+% }
 % for my $pre ('', 'ship_') {
-%   next if !$pre and $old{onlyship};
 %   my $name = $pre eq 'ship_' ? 'service' : 'billing';
 %   if ( $new{$pre.'addr_clean'} ) {
   <TR>

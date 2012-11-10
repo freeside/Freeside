@@ -96,11 +96,11 @@ function copyelement(from, to) {
   //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
 }
 
-% # the value in 'censustract' is the confirmed censustract; if it's set,
+% # the value in 'ship_censustract' is the confirmed censustract; if it's set,
 % # do nothing here
 function confirm_censustract() {
   var cf = document.CustomerForm;
-  if ( cf.elements['censustract'].value == '' ) {
+  if ( cf.elements['ship_censustract'].value == '' ) {
     var address_info = form_address_info();
     address_info['ship_latitude']  = cf.elements['ship_latitude'].value;
     address_info['ship_longitude'] = cf.elements['ship_longitude'].value;
@@ -120,8 +120,8 @@ function confirm_censustract() {
 %# called from confirm-censustract.html
 function set_censustract(tract, year) {
   var cf = document.CustomerForm;
-  cf.elements['censustract'].value = tract;
-  cf.elements['censusyear'].value = year;
+  cf.elements['ship_censustract'].value = tract;
+  cf.elements['ship_censusyear'].value = year;
   submit_continue();
 }
 

@@ -16,8 +16,15 @@ my %old = %{ decode_json($cgi->param('arg')) }
 
 my %new;
 
-foreach my $pre ( '', 'ship_' ) {
-  next unless ($pre || !$old{onlyship});
+my @prefixes;
+if ($old{onlyship}) {
+  @prefixes = ('ship_');
+} elsif ( $old{same} ) {
+  @prefixes = ('');
+} else {
+  @prefixes = ('', 'ship_');
+}
+foreach my $pre ( @prefixes ) {
 
   my $location = {
     map { $_ => $old{$pre.$_} }

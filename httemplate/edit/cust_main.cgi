@@ -316,8 +316,6 @@ if ( $cgi->param('error') ) {
   $payinfo = '';
 
   $cgi->param('tagnum', FS::part_tag->default_tags);
-  $cust_main->coord_auto('Y');
-  $cust_main->ship_coord_auto('Y');
 
   if ( $cgi->param('qualnum') =~ /^(\d+)$/ ) {
     my $qualnum = $1;
@@ -357,14 +355,18 @@ if ( $cgi->param('error') ) {
     my $countrydefault = $conf->config('countrydefault') || 'US';
     my $statedefault = $conf->config('statedefault') || 'CA';
     $cust_main->set('bill_location', 
-      FS::cust_location->new(
-        { country => $countrydefault, state => $statedefault }
-      )
+      FS::cust_location->new( {
+          country => $countrydefault,
+          state => $statedefault,
+          coord_auto => 'Y',
+      } )
     );
     $cust_main->set('ship_location',
-      FS::cust_location->new(
-        { country => $countrydefault, state => $statedefault }
-      )
+      FS::cust_location->new( {
+          country => $countrydefault,
+          state => $statedefault,
+          coord_auto => 'Y',
+      } )
     );
   }
 

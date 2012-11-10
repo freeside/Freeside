@@ -25,6 +25,9 @@ function form_address_info() {
     'ship_state':    ship_state_el.options[ ship_state_el.selectedIndex ].value,
     'ship_zip':      cf.elements['<% $ship_prefix %>zip'].value,
     'ship_country':  cf.elements['<% $ship_prefix %>country'].value,
+% if ( !$onlyship ) {
+    'same':     cf.elements['same'].checked
+% }
   };
 }
 
@@ -86,9 +89,9 @@ function standardize_locations() {
     address_standardize(JSON.stringify(address_info), confirm_standardize);
   }
   else {
-    cf.elements['ship_addr_clean'].value = 'Y';
+    cf.elements['<% $ship_prefix %>addr_clean'].value = 'Y';
 %   if ( !$onlyship ) {
-    cf.elements['addr_clean'].value = 'Y';
+    cf.elements['<% $main_prefix %>addr_clean'].value = 'Y';
 %   }
     post_standardization();
   }
@@ -194,7 +197,7 @@ function confirm_manual_address() {
 % if ( $withcensus ) {
   var cf = document.<% $formname %>;
   cf.elements['<% $main_prefix %>censustract'].value =
-  cf.elements['<% $main_prefix %>enter_censustract'].value;
+  cf.elements['enter_censustract'].value;
 % }
   post_standardization();
 }
