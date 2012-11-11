@@ -9,6 +9,7 @@ use HTTP::Request::Common qw( GET POST );
 use HTML::TokeParser;
 use URI::Escape 3.31;
 use Data::Dumper;
+use FS::Conf;
 
 FS::UID->install_callback( sub {
   $conf = new FS::Conf;
@@ -137,10 +138,10 @@ sub get_censustract_ffiec {
   $return->{'statecode'} .  $return->{'countycode'} .  $return->{'tractcode'};
 }
 
-sub get_district_methods {
-  ''         => '',
-  'wa_sales' => 'Washington sales tax',
-};
+#sub get_district_methods {
+#  ''         => '',
+#  'wa_sales' => 'Washington sales tax',
+#};
 
 =item get_district LOCATION METHOD
 

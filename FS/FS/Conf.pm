@@ -14,7 +14,6 @@ use FS::conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh datasrc use_confcompat);
 use FS::Misc::Invoicing qw( spool_formats );
-use FS::Misc::Geo;
 
 $base_dir = '%%%FREESIDE_CONF%%%';
 
@@ -4130,7 +4129,12 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'The method to use to look up tax district codes.',
     'type'        => 'select',
-    'select_hash' => [ FS::Misc::Geo::get_district_methods() ],
+    #'select_hash' => [ FS::Misc::Geo::get_district_methods() ],
+    #after RT#13763, using FS::Misc::Geo here now causes a dependancy loop :/
+    'select_hash' => [
+                       ''         => '',
+                       'wa_sales' => 'Washington sales tax',
+                     ],
   },
 
   {
