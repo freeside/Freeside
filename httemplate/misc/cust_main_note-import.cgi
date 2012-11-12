@@ -164,7 +164,7 @@
              <OPTION VALUE="">---</OPTION>
 %      my $i=0;
 %      foreach (@cust_main) {
-             <OPTION <% $i ? '' : 'SELECTED' %> VALUE="<% $_->custnum %>"><% $_->name %></OPTION>
+             <OPTION <% $i ? '' : 'SELECTED' %> VALUE="<% $_->custnum %>"><% $_->name |h %></OPTION>
 %        $i++;
 %      }
            </SELECT>
@@ -172,15 +172,15 @@
                var customer_select<% $row %> = document.getElementById("cust_select<% $row %>");
                customer_select<% $row %>.onchange = select_customer;
              </SCRIPT>
-           <INPUT TYPE="hidden" NAME="name<% $row %>" ID="name<% $row %>" VALUE="<% $i ? $cust_main[0]->name : '' %>">
+           <INPUT TYPE="hidden" NAME="name<% $row %>" ID="name<% $row %>" VALUE="<% $i ? $cust_main[0]->name : '' |h %>">
          </TD>
          <TD>
-           <% $first %>
-           <INPUT TYPE="hidden" NAME="first<% $row %>" VALUE="<% $first %>">
+           <% $first |h %>
+           <INPUT TYPE="hidden" NAME="first<% $row %>" VALUE="<% $first |h %>">
          </TD>
          <TD>
-           <% $last %>
-           <INPUT TYPE="hidden" NAME="last<% $row %>" VALUE="<% $last %>">
+           <% $last |h %>
+           <INPUT TYPE="hidden" NAME="last<% $row %>" VALUE="<% $last |h %>">
          </TD>
          <TD>
            <% $note %>
