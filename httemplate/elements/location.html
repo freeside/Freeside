@@ -214,7 +214,7 @@ Example:
   <TD COLSPAN=8>
     <INPUT TYPE="text" SIZE=15
            NAME="enter_censustract" 
-           VALUE="<% $object->censustract %>">
+           VALUE="<% $object->censustract |h %>">
     <% '(automatic)' %>
   </TD>
 </TR>
@@ -226,7 +226,7 @@ Example:
     <TD COLSPAN=8>
       <INPUT TYPE="text" SIZE=15
              NAME="<%$pre%>district" 
-             VALUE="<% $object->district %>">
+             VALUE="<% $object->district |h %>">
     <% '(automatic)' %>
     </TD>
   </TR>

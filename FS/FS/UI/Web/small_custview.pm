@@ -88,7 +88,7 @@ sub small_custview {
   $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
     '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">';
   $html .= join('<BR>', 
-    grep $_,
+    map encode_entities($_), grep $_,
       $cust_main->contact,
       $cust_main->company,
       $ship->address1,
