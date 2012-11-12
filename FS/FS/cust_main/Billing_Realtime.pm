@@ -300,7 +300,10 @@ sub _bop_content {
                         ? $options->{country}
                         : $self->country;
 
-  $content{referer} = 'http://cleanwhisker.420.am/'; #XXX fix referer :/
+  #3.0 is a good a time as any to get rid of this... add a config to pass it
+  # if anyone still needs it
+  #$content{referer} = 'http://cleanwhisker.420.am/';
+
   $content{phone} = $self->daytime || $self->night;
 
   my $currency =    $conf->exists('business-onlinepayment-currency')
@@ -1233,7 +1236,11 @@ sub realtime_botpp_capture {
     'amount'         => $cust_pay_pending->paid,
     #'invoice_number' => $options{'invnum'},
     'customer_id'    => $self->custnum,
-    'referer'        => 'http://cleanwhisker.420.am/',
+
+    #3.0 is a good a time as any to get rid of this... add a config to pass it
+    # if anyone still needs it
+    #'referer'        => 'http://cleanwhisker.420.am/',
+
     'reference'      => $cust_pay_pending->paypendingnum,
     'email'          => $email,
     'phone'          => $self->daytime || $self->night,
@@ -1431,7 +1438,10 @@ sub realtime_refund_bop {
     'password'       => $password,
     'order_number'   => $order_number,
     'amount'         => $amount,
-    'referer'        => 'http://cleanwhisker.420.am/', #XXX fix referer :/
+
+    #3.0 is a good a time as any to get rid of this... add a config to pass it
+    # if anyone still needs it
+    #'referer'        => 'http://cleanwhisker.420.am/',
   );
   $content{authorization} = $auth
     if length($auth); #echeck/ACH transactions have an order # but no auth
