@@ -54,7 +54,7 @@
 %   my $refcustlabel = "$referral_custnum: " .
 %         ( $cust_main->company || $cust_main->last. ', '. $cust_main->first );
         referrals of
-        <A HREF="<% popurl(2)."view/cust_main.cgi?$referral_custnum" %>"><% $refcustlabel %></A>
+        <A HREF="<% popurl(2)."view/cust_main.cgi?$referral_custnum" %>"><% $refcustlabel |h %></A>
         <SELECT NAME="referral_depth" SIZE="1" onChange="changed(this)">';
 
 %    my $max = 8;
@@ -152,7 +152,7 @@
 %      $view = $p. 'view/cust_main.cgi?'. $custnum;
 %    }
 %    my $pcompany = $company
-%      ? qq!<A HREF="$view"><FONT SIZE=-1>$company</FONT></A>!
+%      ? qq!<A HREF="$view"><FONT SIZE=-1>!. encode_entities($company). '</FONT></A>'
 %      : '<FONT SIZE=-1>&nbsp;</FONT>';
 %    
 %    my $status = $cust_main->status;
@@ -166,7 +166,7 @@
         <FONT SIZE="-1" COLOR="#<% $statuscol %>"><B><% ucfirst($status) %></B></FONT>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
-        <A HREF="<% $view %>"><FONT SIZE=-1><% "$last, $first" %></FONT></A>
+        <A HREF="<% $view %>"><FONT SIZE=-1><% "$last, $first" |h %></FONT></A>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan %>>
         <% $pcompany %>

@@ -5,7 +5,7 @@
     <TD>
       <INPUT TYPE      = "text"
              NAME      = "username"
-             VALUE     = "<% $opt{'username'} %>"
+             VALUE     = "<% $opt{'username'} |h %>"
              SIZE      = <% $ulen2 %>
              MAXLENGTH = <% $ulen %>
       >
@@ -26,7 +26,7 @@
     <TD>
       <INPUT TYPE      = "text"
              NAME      = "_password"
-             VALUE     = "<% $opt{'password'} %>"
+             VALUE     = "<% $opt{'password'} |h %>"
              SIZE      = <% $pmax2 %>
              MAXLENGTH = <% $passwordmax %>>
 %     unless ( $opt{'password_verify'} ) {
@@ -41,7 +41,7 @@
       <TD>
         <INPUT TYPE      = "text"
                NAME      = "_password2"
-               VALUE     = "<% $opt{'password2'} %>"
+               VALUE     = "<% $opt{'password2'} |h %>"
                SIZE      = <% $pmax2 %>
                MAXLENGTH = <% $passwordmax %>>
       </TD>
@@ -51,7 +51,7 @@
 % if ( $conf->exists('security_phrase') ) {
     <TR>
       <TD ALIGN="right"><% mt('Security Phrase') |h %></TD>
-      <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="<% $opt{'sec_phrase'} %>">
+      <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="<% $opt{'sec_phrase'} |h %>">
       </TD>
     </TR>
 % } else {

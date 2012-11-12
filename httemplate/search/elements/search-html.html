@@ -338,7 +338,7 @@
 %                             if ( ref($_) eq 'CODE' ) {
 %                               &{$_}($row);
 %                             } else {
-%                               $row->$_();
+%                               encode_entities($row->$_());
 %                             }
 %                           }
 %                       @{$opt{'fields'}}
