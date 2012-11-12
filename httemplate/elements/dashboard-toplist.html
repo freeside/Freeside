@@ -21,7 +21,7 @@
      
         <TR>
 	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-	    <A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->name %></A>
+	    <A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->name |h %></A>
 	  </TD>
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
             <& /elements/mcp_lint.html, 'cust_main'=>$cust_main &>

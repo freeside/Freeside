@@ -114,7 +114,7 @@
   <TR>
     <TD ALIGN="right"><% mt('Referring customer') |h %></TD>
     <TD>
-      <A HREF="<% popurl(1) %>/cust_main.cgi?<% $cust_main->referral_custnum %>"><% $cust_main->referral_custnum %>: <% $referring_cust_main->name %></A>
+      <A HREF="<% popurl(1) %>/cust_main.cgi?<% $cust_main->referral_custnum %>"><% $cust_main->referral_custnum %>: <% $referring_cust_main->name |h %></A>
     </TD>
   </TR>
   <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<% $cust_main->referral_custnum %>">

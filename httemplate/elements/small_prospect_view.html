@@ -1,5 +1,5 @@
 % my $link = "${p}view/prospect_main.html?". $prospect_main->prospectnum;
-Prospect: <A HREF="<%$link%>"><% $prospect_main->name %></A>
+Prospect: <A HREF="<%$link%>"><% $prospect_main->name |h %></A>
 <%init>
 
 my($prospect_main, %opt) = @_;

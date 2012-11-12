@@ -21,7 +21,7 @@
 %  my $avail = keys(%$cust_pkg_phone);
 %  $anyavail = 1 if $avail;
     <TR>    
-        <TD><% $cust_main->name %></TD>
+        <TD><% $cust_main->name |h %></TD>
         <TD>
 %           if ( !$avail ) {
                 No suitable packages exist for this customer.
