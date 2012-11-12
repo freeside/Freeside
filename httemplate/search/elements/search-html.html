@@ -341,9 +341,9 @@
 %                                       $_ =~ /^\d+$/ ) {
 %                             # for the 'straight SQL' case: specify fields
 %                             # by position
-%                               $row->[$_];
+%                               encode_entities($row->[$_]);
 %                             } else {
-%                               $row->$_();
+%                               encode_entities($row->$_());
 %                             }
 %                           }
 %                       @{$opt{'fields'}}

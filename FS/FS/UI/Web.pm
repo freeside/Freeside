@@ -3,7 +3,8 @@ package FS::UI::Web;
 use strict;
 use vars qw($DEBUG @ISA @EXPORT_OK $me);
 use Exporter;
-use Carp qw( confess );;
+use Carp qw( confess );
+use HTML::Entities;
 use FS::Conf;
 use FS::Misc::DateTime qw( parse_datetime );
 use FS::Record qw(dbdef);
@@ -383,7 +384,7 @@ sub cust_fields {
   map { 
     if ( $record->custnum ) {
       warn "  $record -> $_" if $DEBUG > 1;
-      $record->$_(@_);
+      encode_entities( $record->$_(@_) );
     } else {
       warn "  ($record unlinked)" if $DEBUG > 1;
       $seen_unlinked++ ? '' : '(unlinked)';
