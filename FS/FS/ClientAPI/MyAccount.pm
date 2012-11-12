@@ -2004,8 +2004,8 @@ sub _usage_details {
     $p->{ending}    = $end;
   }
 
-  die "illegal beginning" if $beginning !~ /^\d*$/;
-  die "illegal ending"    if $ending    !~ /^\d*$/;
+  die "illegal beginning" if $p->{beginning} !~ /^\d*$/;
+  die "illegal ending"    if $p->{ending}    !~ /^\d*$/;
 
   my (@usage) = &$callback($svc_x, $p->{beginning}, $p->{ending}, 
     %callback_opt
