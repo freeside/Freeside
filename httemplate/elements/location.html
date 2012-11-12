@@ -214,7 +214,7 @@ Example:
     <TR>
       <<%$th%> ALIGN="right">Tax district<BR>(automatic)</<%$th%>>
       <TD>
-        <INPUT TYPE="text" NAME="district" VALUE="<%$object->get('district')%>">
+        <INPUT TYPE="text" NAME="district" VALUE="<% $object->get('district') |h %>">
       </TD>
     </TR>
 %   }

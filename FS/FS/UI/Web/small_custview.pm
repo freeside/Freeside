@@ -89,14 +89,14 @@ sub small_custview {
 
     $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
       '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">'.
-      $cust_main->get("${pre}last"). ', '.
-      $cust_main->get("${pre}first"). '<BR>';
-    $html .= $cust_main->get("${pre}company"). '<BR>'
+      encode_entities($cust_main->get("${pre}last")). ', '.
+      encode_entities($cust_main->get("${pre}first")). '<BR>';
+    $html .= encode_entities($cust_main->get("${pre}company")). '<BR>'
       if $cust_main->get("${pre}company");
-    $html .= $cust_main->get("${pre}address1"). '<BR>';
-    $html .= $cust_main->get("${pre}address2"). '<BR>'
+    $html .= encode_entities($cust_main->get("${pre}address1")). '<BR>';
+    $html .= encode_entities($cust_main->get("${pre}address2")). '<BR>'
       if $cust_main->get("${pre}address2");
-    $html .= $cust_main->get("${pre}city"). ', '.
+    $html .= encode_entities($cust_main->get("${pre}city")). ', '.
              $cust_main->get("${pre}state"). '  '.
              $cust_main->get("${pre}zip"). '<BR>';
     $html .= $cust_main->get("${pre}country"). '<BR>'
