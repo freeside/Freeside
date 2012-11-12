@@ -896,6 +896,19 @@ sub FindProtectedParts {
             $RT::Logger->warning( "Entity of type ". $entity->effective_type ." has no body" );
             return ();
         }
+
+        # Deal with "partitioned" PGP mail, which (contrary to common
+        # sense) unnecessarily applies a base64 transfer encoding to PGP
+        # mail (whose content is already base64-encoded).
+        if ( $entity->bodyhandle->is_encoded and $entity->head->mime_encoding ) {
+            pipe( my ($read_decoded, $write_decoded) );
+            my $decoder = MIME::Decoder->new( $entity->head->mime_encoding );
+            if ($decoder) {
+                eval { $decoder->decode($io, $write_decoded) };
+                $io = $read_decoded;
+            }
+        }
+
         while ( defined($_ = $io->getline) ) {
             next unless /^-----BEGIN PGP (SIGNED )?MESSAGE-----/;
             my $type = $1? 'signed': 'encrypted';
@@ -1060,9 +1073,13 @@ sub VerifyDecrypt {
         }
         if ( $args{'SetStatus'} || $args{'AddStatus'} ) {
             my $method = $args{'AddStatus'} ? 'add' : 'set';
+            # Let the header be modified so continuations are handled
+            my $modify = $status_on->head->modify;
+            $status_on->head->modify(1);
             $status_on->head->$method(
                 'X-RT-GnuPG-Status' => $res[-1]->{'status'}
             );
+            $status_on->head->modify($modify);
         }
     }
     foreach my $item( grep $_->{'Type'} eq 'encrypted', @protected ) {
@@ -1079,9 +1096,13 @@ sub VerifyDecrypt {
         }
         if ( $args{'SetStatus'} || $args{'AddStatus'} ) {
             my $method = $args{'AddStatus'} ? 'add' : 'set';
+            # Let the header be modified so continuations are handled
+            my $modify = $status_on->head->modify;
+            $status_on->head->modify(1);
             $status_on->head->$method(
                 'X-RT-GnuPG-Status' => $res[-1]->{'status'}
             );
+            $status_on->head->modify($modify);
         }
     }
     return @res;
@@ -1673,6 +1694,7 @@ my %ignore_keyword = map { $_ => 1 } qw(
     BEGIN_ENCRYPTION SIG_ID VALIDSIG
     ENC_TO BEGIN_DECRYPTION END_DECRYPTION GOODMDC
     TRUST_UNDEFINED TRUST_NEVER TRUST_MARGINAL TRUST_FULLY TRUST_ULTIMATE
+    DECRYPTION_INFO
 );
 
 sub ParseStatus {
@@ -2096,7 +2118,9 @@ sub GetKeysInfo {
     eval {
         local $SIG{'CHLD'} = 'DEFAULT';
         my $method = $type eq 'private'? 'list_secret_keys': 'list_public_keys';
-        my $pid = safe_run_child { $gnupg->$method( handles => $handles, $email? (command_args => $email) : () ) };
+        my $pid = safe_run_child { $gnupg->$method( handles => $handles, $email
+                                                        ? (command_args => [ "--", $email])
+                                                        : () ) };
         close $handle{'stdin'};
         waitpid $pid, 0;
     };
@@ -2291,7 +2315,7 @@ sub DeleteKey {
         my $pid = safe_run_child { $gnupg->wrap_call(
             handles => $handles,
             commands => ['--delete-secret-and-public-key'],
-            command_args => [$key],
+            command_args => ["--", $key],
         ) };
         close $handle{'stdin'};
         while ( my $str = readline $handle{'status'} ) {
