@@ -84,6 +84,13 @@ sub upgrade_config {
     }
   }
 
+  # if there's a USPS tools login, assume that's the standardization method
+  # you want to use
+  if ( length($conf->config('usps_webtools-userid')) > 0 and
+       !$conf->exists('address_standardize_method') ) {
+    $conf->set('address_standardize_method', 'usps');
+  }
+
 }
 
 sub upgrade_overlimit_groups {

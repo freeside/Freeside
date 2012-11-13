@@ -18,7 +18,8 @@ BEGIN {
     no strict 'refs';
     @location_fields = 
       qw( address1 address2 city county state zip country district
-        latitude longitude coord_auto censustract censusyear geocode );
+        latitude longitude coord_auto censustract censusyear geocode
+        addr_clean );
 
     foreach my $f (@location_fields) {
       *{"FS::cust_main::Location::$f"} = sub {

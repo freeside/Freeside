@@ -7,7 +7,8 @@ my $company_longitude = $conf->config('company_longitude');
 
 my @fixups = ('copy_payby_fields', 'standardize_locations');
 
-push @fixups, 'confirm_censustract';
+push @fixups, 'confirm_censustract'
+    if $conf->exists('cust_main-require_censustract');
 
 push @fixups, 'check_unique'
     if $conf->exists('cust_main-check_unique') and !$opt{'custnum'};
@@ -67,12 +68,11 @@ function copy_payby_fields() {
   submit_continue();
 }
 
-<% include( '/elements/standardize_locations.js',
-            'callback' => 'submit_continue();',
-            'main_prefix' => 'bill_',
-            'no_company' => 1,
-          )
-%>
+<& /elements/standardize_locations.js,
+  'callback' => 'submit_continue();',
+  'main_prefix' => 'bill_',
+  'no_company' => 1,
+&>
 
 function copyelement(from, to) {
   if ( from == undefined ) {
@@ -96,14 +96,15 @@ function copyelement(from, to) {
   //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
 }
 
-% # the value in 'ship_censustract' is the confirmed censustract; if it's set,
+% # the value in pre+'censustract' is the confirmed censustract; if it's set,
 % # do nothing here
 function confirm_censustract() {
   var cf = document.CustomerForm;
-  if ( cf.elements['ship_censustract'].value == '' ) {
+  var pre = cf.elements['same'].checked ? 'bill_' : 'ship_';
+  if ( cf.elements[pre+'censustract'].value == '' ) {
     var address_info = form_address_info();
-    address_info['ship_latitude']  = cf.elements['ship_latitude'].value;
-    address_info['ship_longitude'] = cf.elements['ship_longitude'].value;
+    address_info[pre+'latitude']  = cf.elements[pre+'latitude'].value;
+    address_info[pre+'longitude'] = cf.elements[pre+'longitude'].value;
     OLpostAJAX(
         '<%$p%>/misc/confirm-censustract.html',
         'q=' + encodeURIComponent(JSON.stringify(address_info)),
@@ -120,8 +121,12 @@ function confirm_censustract() {
 %# called from confirm-censustract.html
 function set_censustract(tract, year) {
   var cf = document.CustomerForm;
-  cf.elements['ship_censustract'].value = tract;
-  cf.elements['ship_censusyear'].value = year;
+  var pre = 'ship_';
+  if ( cf.elements['same'].checked ) {
+    pre = 'bill_';
+  }
+  cf.elements[pre + 'censustract'].value = tract;
+  cf.elements[pre + 'censusyear'].value = year;
   submit_continue();
 }
 

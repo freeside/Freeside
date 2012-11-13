@@ -2,7 +2,7 @@
 th { line-height: 150% }
 </STYLE>
 <CENTER><BR><B>
-% if ( $new{error} or $new{ship_error} ) {
+% if ( $new{bill_error} or $new{ship_error} ) {
 Address standardization error
 % }
 % else {
@@ -15,11 +15,11 @@ Confirm address standardization
 % if ( $old{onlyship} ) {
 %   @prefixes = ('ship_');
 % } elsif ( $old{same} ) {
-%   @prefixes = ('');
+%   @prefixes = ('bill_');
 % } else {
-%   @prefixes = ('', 'ship_');
+%   @prefixes = ('bill_', 'ship_');
 % }
-% for my $pre ('', 'ship_') {
+% for my $pre (@prefixes) {
 %   my $name = $pre eq 'ship_' ? 'service' : 'billing';
 %   if ( $new{$pre.'addr_clean'} ) {
   <TR>
@@ -70,24 +70,27 @@ Confirm address standardization
 % } # for $pre
 
 %# only do this part if address standardization provided a censustract
-% if ( $new{'ship_censustract'} ) {
+% my $pre = $old{same} ? 'bill_' : 'ship_';
+% my $censustract = $new{$pre.'censustract'};
+% my $census_error = $new{$pre.'census_error'};
+% if ( $censustract ) {
   <TR>
     <TH>Entered census tract</TH>
     <TH>Calculated census tract</TH>
   </TR>
   <TR>
-    <TD><% $old{'ship_censustract'} %></TD>
+    <TD><% $old{$pre.'censustract'} %></TD>
     <TD>
-%     if ( $new{'ship_census_error'} ) {
-      <FONT COLOR="#ff0000"><% $new{'ship_census_error'} %></FONT>
+%     if ( $census_error ) {
+      <FONT COLOR="#ff0000"><% $census_error %></FONT>
 %     } else {
-      <% $new{'ship_censustract'} %>
+      <% $censustract %>
 %     }
     </TD>
   </TR>
 % } #if censustract
 
-% if ( $new{error} or $new{ship_error} ) {
+% if ( $new{bill_error} or $new{ship_error} ) {
   <TR>
     <TD ALIGN="center">
     <BUTTON TYPE="button" STYLE="width:205px" onclick="confirm_manual_address();">

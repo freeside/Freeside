@@ -61,12 +61,13 @@ warn $cgi->param('q') if $DEBUG;
 my $q = decode_json($cgi->param('q'))
   or die "bad argument '".$cgi->param('q')."'";
 
+my $pre = $q->{'same'} ? 'bill_' : 'ship_';
 my %location = (
-  map { $_ => $q->{'ship_'.$_} }
+  map { $_ => $q->{$pre.$_} }
     qw( company address1 address2 city state zip country latitude longitude )
 );
 
-my $old_tract = $q->{'ship_censustract'};
+my $old_tract = $q->{$pre.'censustract'};
 my $cache = eval { FS::GeocodeCache->new(%location) };
 $cache->set_censustract;
 my $year = FS::Conf->new->config('census_year');

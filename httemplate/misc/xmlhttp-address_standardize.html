@@ -20,9 +20,9 @@ my @prefixes;
 if ($old{onlyship}) {
   @prefixes = ('ship_');
 } elsif ( $old{same} ) {
-  @prefixes = ('');
+  @prefixes = ('bill_');
 } else {
-  @prefixes = ('', 'ship_');
+  @prefixes = ('bill_', 'ship_');
 }
 foreach my $pre ( @prefixes ) {
 

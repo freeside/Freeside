@@ -1,54 +1,51 @@
 function form_address_info() {
   var cf = document.<% $formname %>;
-  var state_el      = cf.elements['<% $main_prefix %>state'];
-  var ship_state_el = cf.elements['<% $ship_prefix %>state'];
-  return {
-% if ( $onlyship ) {
-    'onlyship': 1,
-% } else {
-%   if ( $withfirm ) {
-    'company',  cf.elements['company'].value,
-%   }
-    'address1': cf.elements['<% $main_prefix %>address1'].value,
-    'address2': cf.elements['<% $main_prefix %>address2'].value,
-    'city':     cf.elements['<% $main_prefix %>city'].value,
-    'state':    state_el.options[ state_el.selectedIndex ].value,
-    'zip':      cf.elements['<% $main_prefix %>zip'].value,
-    'country':  cf.elements['<% $main_prefix %>country'].value,
+
+  var returnobj = { onlyship: <% $onlyship ? 1 : 0 %> };
+% if ( !$onlyship ) {
+  returnobj['same'] = cf.elements['same'].checked;
+% }
+% if ( $withfirm ) {
+% # not part of either address, really
+  returnobj['company'] = cf.elements['company'].value;
 % }
 % if ( $withcensus ) {
-    'ship_censustract': cf.elements['enter_censustract'].value,
+% # "entered" censustract always goes with the ship_ address if there is one
+  returnobj['ship_censustract'] = cf.elements['enter_censustract'].value;
 % }
-    'ship_address1': cf.elements['<% $ship_prefix %>address1'].value,
-    'ship_address2': cf.elements['<% $ship_prefix %>address2'].value,
-    'ship_city':     cf.elements['<% $ship_prefix %>city'].value,
-    'ship_state':    ship_state_el.options[ ship_state_el.selectedIndex ].value,
-    'ship_zip':      cf.elements['<% $ship_prefix %>zip'].value,
-    'ship_country':  cf.elements['<% $ship_prefix %>country'].value,
-% if ( !$onlyship ) {
-    'same':     cf.elements['same'].checked
-% }
-  };
+% for my $pre (@prefixes) {
+  if ( <% $pre eq 'ship_' ? 1 : 0 %> && returnobj['same'] ) {
+%   # special case: don't include any ship_ fields, and move the entered
+%   # censustract over to bill_.
+    returnobj['bill_censustract'] = returnobj['ship_censustract'];
+    delete returnobj['ship_censustract'];
+  } else {
+%   # normal case
+%   for my $field (qw(address1 address2 city state zip country)) {
+    returnobj['<% $pre %><% $field %>'] = cf.elements['<% $pre %><% $field %>'].value;
+%   } #for $field
+  } // if returnobj['same']
+% } #foreach $pre
+
+  return returnobj;
 }
 
 function standardize_locations() {
 
-  var startup_msg = '<P STYLE="position:absolute; top:50%; margin-top:-1em; width:100%; text-align:center"><B><FONT SIZE="+1">Verifying address...</FONT></B></P>';
-  overlib(startup_msg, WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSECLICK, MIDX, 0, MIDY, 0);
   var cf = document.<% $formname %>;
   var address_info = form_address_info();
 
   var changed = false; // have any of the address fields been changed?
 
 // clear coord_auto fields if the user has changed the coordinates
-% for my $pre ($ship_prefix, $onlyship ? () : $main_prefix) {
+% for my $pre (@prefixes) {
 %   for my $field ($pre.'latitude', $pre.'longitude') {
 
   if ( cf.elements['<% $field %>'].value != cf.elements['old_<% $field %>'].value ) {
     cf.elements['<% $pre %>coord_auto'].value = '';
   }
 
-%   }
+%   } #foreach $field
   // but if the coordinates have been set to null, turn coord_auto on 
   // and standardize
   if ( cf.elements['<% $pre %>latitude'].value == '' &&
@@ -57,12 +54,11 @@ function standardize_locations() {
     changed = true;
   }
 
-% }
+% } #foreach $pre
 
   // standardize if the old address wasn't clean
-  if ( cf.elements['old_<% $ship_prefix %>addr_clean'].value == '' ||
-      ( <% !$onlyship || 0 %> && 
-        cf.elements['old_<% $main_prefix %>addr_clean'].value == '' ) ) {
+  if ( cf.elements['old_ship_addr_clean'].value == '' ||
+       cf.elements['old_bill_addr_clean'].value == '' ) {
 
     changed = true;
 
@@ -80,18 +76,24 @@ function standardize_locations() {
 % # censustract so that we don't ask the user to confirm it again.
 
   if ( !changed ) {
-    cf.elements['<% $main_prefix %>censustract'].value =
-      address_info['ship_censustract'];
+    if ( address_info['same'] ) {
+      cf.elements['bill_censustract'].value =
+        address_info['bill_censustract'];
+    } else {
+      cf.elements['ship_censustract'].value =
+        address_info['ship_censustract'];
+    }
   }
 
 % if ( $conf->config('address_standardize_method') ) {
   if ( changed ) {
+    var startup_msg = '<P STYLE="position:absolute; top:50%; margin-top:-1em; width:100%; text-align:center"><B><FONT SIZE="+1">Verifying address...</FONT></B></P>';
+    overlib(startup_msg, WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSECLICK, MIDX, 0, MIDY, 0);
     address_standardize(JSON.stringify(address_info), confirm_standardize);
   }
   else {
-    cf.elements['<% $ship_prefix %>addr_clean'].value = 'Y';
-%   if ( !$onlyship ) {
-    cf.elements['<% $main_prefix %>addr_clean'].value = 'Y';
+%   foreach my $pre (@prefixes) {
+    cf.elements['<% $pre %>addr_clean'].value = 'Y';
 %   }
     post_standardization();
   }
@@ -138,55 +140,26 @@ function replace_address() {
 
   var newaddr = returned['new'];
 
-  var clean = newaddr['addr_clean'] == 'Y';
-  var ship_clean = newaddr['ship_addr_clean'] == 'Y';
-  var error = newaddr['error'];
-  var ship_error = newaddr['ship_error'];
-
   var cf = document.<% $formname %>;
-  var state_el      = cf.elements['<% $main_prefix %>state'];
-  var ship_state_el = cf.elements['<% $ship_prefix %>state'];
-
-% if ( !$onlyship ) {
+%  foreach my $pre (@prefixes) {
+  var clean = newaddr['<% $pre %>addr_clean'] == 'Y';
+  var error = newaddr['<% $pre %>error'];
   if ( clean ) {
-%   if ( $withfirm ) {
-        cf.elements['<% $main_prefix %>company'].value  = newaddr['company'];
-%   }
-        cf.elements['<% $main_prefix %>address1'].value = newaddr['address1'];
-        cf.elements['<% $main_prefix %>address2'].value = newaddr['address2'];
-        cf.elements['<% $main_prefix %>city'].value     = newaddr['city'];
-        setselect(cf.elements['<% $main_prefix %>state'], newaddr['state']);
-        cf.elements['<% $main_prefix %>zip'].value      = newaddr['zip'];
-        cf.elements['<% $main_prefix %>addr_clean'].value = 'Y';
+%   foreach my $field (qw(address1 address2 city state zip addr_clean censustract)) {
+    cf.elements['<% $pre %><% $field %>'].value = newaddr['<% $pre %><% $field %>'];
+%   } #foreach $field
 
-        if ( cf.elements['<% $main_prefix %>coord_auto'].value ) {
-          cf.elements['<% $main_prefix %>latitude'].value = newaddr['latitude'];
-          cf.elements['<% $main_prefix %>longitude'].value = newaddr['longitude'];
-        }
-  }
-% }
-
-  if ( ship_clean ) {
-% if ( $withfirm ) {
-      cf.elements['<% $ship_prefix %>company'].value  = newaddr['ship_company'];
-% }
-      cf.elements['<% $ship_prefix %>address1'].value = newaddr['ship_address1'];
-      cf.elements['<% $ship_prefix %>address2'].value = newaddr['ship_address2'];
-      cf.elements['<% $ship_prefix %>city'].value     = newaddr['ship_city'];
-      setselect(cf.elements['<% $ship_prefix %>state'], newaddr['ship_state']);
-      cf.elements['<% $ship_prefix %>zip'].value      = newaddr['ship_zip'];
-      cf.elements['<% $ship_prefix %>addr_clean'].value = 'Y';
-      if ( cf.elements['<% $ship_prefix %>coord_auto'].value ) {
-        cf.elements['<% $ship_prefix %>latitude'].value = newaddr['latitude'];
-        cf.elements['<% $ship_prefix %>longitude'].value = newaddr['longitude'];
-      }
-  }
-% if ( $withcensus ) {
-% # then set the censustract if address_standardize provided one.
-  if ( ship_clean && newaddr['ship_censustract'] ) {
-      cf.elements['<% $main_prefix %>censustract'].value = newaddr['ship_censustract'];
-  }
-% }
+    if ( cf.elements['<% $pre %>coord_auto'].value ) {
+      cf.elements['<% $pre %>latitude'].value  = newaddr['<% $pre %>latitude'];
+      cf.elements['<% $pre %>longitude'].value = newaddr['<% $pre %>longitude'];
+    }
+%   if ( $withcensus ) {
+    if ( clean && newaddr['<% $pre %>censustract'] ) {
+      cf.elements['<% $pre %>censustract'].value = newaddr['<% $pre %>censustract'];
+    }
+%   } #if $withcensus
+  } // if clean
+% } #foreach $pre
 
   post_standardization();
 
@@ -196,8 +169,13 @@ function confirm_manual_address() {
 %# not much to do in this case, just confirm the censustract
 % if ( $withcensus ) {
   var cf = document.<% $formname %>;
-  cf.elements['<% $main_prefix %>censustract'].value =
-  cf.elements['enter_censustract'].value;
+  if ( cf.elements['same'] && cf.elements['same'].checked ) {
+    cf.elements['bill_censustract'].value =
+      cf.elements['enter_censustract'].value;
+  } else {
+    cf.elements['ship_censustract'].value =
+      cf.elements['enter_censustract'].value;
+  }
 % }
   post_standardization();
 }
@@ -295,12 +273,16 @@ my $withcensus = 1;
 
 my $formname =  $opt{form} || 'CustomerForm';
 my $onlyship =  $opt{onlyship} || '';
-my $main_prefix =  $opt{main_prefix} || '';
-my $ship_prefix =  $opt{ship_prefix} || ($onlyship ? '' : 'ship_');
-my $taxpre = $main_prefix;
-$taxpre = $ship_prefix if ( $conf->exists('tax-ship_address') || $onlyship );
+#my $main_prefix =  $opt{main_prefix} || '';
+#my $ship_prefix =  $opt{ship_prefix} || ($onlyship ? '' : 'ship_');
+# The prefixes are now 'ship_' and 'bill_'.
+my $taxpre = 'bill_';
+$taxpre = 'ship_' if ( $conf->exists('tax-ship_address') || $onlyship );
 my $post_geocode = $opt{callback} || 'post_geocode();';
 $withfirm = 0 if $opt{no_company};
 $withcensus = 0 if $opt{no_census};
+
+my @prefixes = ('ship_');
+unshift @prefixes, 'bill_' unless $onlyship;
 
 </%init>
