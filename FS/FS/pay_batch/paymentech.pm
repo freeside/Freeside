@@ -72,7 +72,9 @@ my %paytype = (
   'personal savings'  => 'S',
   'business checking' => 'X',
   'business savings'  => 'X',
-  );
+);
+
+my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
 
 %export_info = (
   init  => sub {
@@ -121,7 +123,10 @@ my %paytype = (
         avsCity         => substr($_->city, 0, 20),
         avsState        => $_->state,
         avsName        => substr($_->first . ' ' . $_->last, 0, 30),
-        avsCountryCode => $_->country,
+        avsCountryCode => ( $paymentech_countries{ $_->country }
+                              ? $_->country
+                              : ''
+                          ),
         orderID        => $_->paybatchnum,
         amount         => $_->amount * 100,
         );
