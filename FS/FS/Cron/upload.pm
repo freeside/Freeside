@@ -318,7 +318,13 @@ sub spool_upload {
       system($command) and die "$command failed\n";
 
       my $error = $upload_target->put($zipfile);
-      die $error if $error;
+      if ( $error ) {
+        foreach ( qw ( header detail ) ) {
+          rename "$dir/$file-$date-$_.csv",
+                 "$dir/$file-$_.csv";
+          die $error;
+        }
+      }
 
       send_report('bridgestone-confirm_template',
         {
@@ -373,7 +379,7 @@ sub spool_upload {
       my $zipfile = "$basename" . '.zip';
       my $command = "cd $dir; zip $zipfile $regfile $bigfile";
       system($command) and die "'$command' failed\n";
-      $upload_target->put("$dir/$zipfile");
+      my $error = $upload_target->put("$dir/$zipfile");
 
       for (values %sum) {
         $_ = sprintf('%.2f', $_);
@@ -384,15 +390,24 @@ sub spool_upload {
           agentnum  => $agentnum,
           count     => \%count,
           sum       => \%sum,
+          error     => $error,
         }
       );
+
+      if ( $error ) {
+        rename "$dir/$file-$date.csv", "$dir/$file.csv";
+        die $error;
+      }
  
-      } else { # not bridgestone or ics
+    } else { # not bridgestone or ics
 
       # this is the usual case
 
       my $error = $upload_target->put("$file-$date.csv");
-      die $error if $error;
+      if ( $error ) {
+        rename "$dir/$file-$date.csv", "$dir/$file.csv";
+        die $error;
+      }
 
     }
 

@@ -274,6 +274,7 @@ sub send_email {
     });
     $cust_msg->insert; # ignore errors
   }
+  $error;
    
 }
 

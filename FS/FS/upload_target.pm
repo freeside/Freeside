@@ -182,13 +182,6 @@ sub put {
   }
 }
 
-
-
-
-
-
-
-
 =item connect
 
 Creates a Net::FTP or Net::SFTP::Foreign object (according to the setting
