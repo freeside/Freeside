@@ -3070,6 +3070,7 @@ sub print_generic {
         ext_description => [],
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
       $detail->{'quantity'} = 1;
       $detail->{'section'} = $multisection ? $previous_section
                                            : $default_section;
@@ -3168,6 +3169,7 @@ sub print_generic {
         ext_description => [],
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
       $detail->{'quantity'} = $line_item->{'quantity'};
       $detail->{'section'} = $section;
       $detail->{'description'} = &$escape_function($line_item->{'description'});
@@ -4990,6 +4992,9 @@ sub _items_cust_bill_pkg {
  
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
 
+        # which pkgpart to show for display purposes?
+        my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;
+
         # start/end dates for invoice formats that do nonstandard 
         # things with them
         my %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate');
@@ -5039,7 +5044,7 @@ sub _items_cust_bill_pkg {
             $s = {
               _is_setup       => 1,
               description     => $description,
-              #pkgpart         => $part_pkg->pkgpart,
+              pkgpart         => $pkgpart,
               pkgnum          => $cust_bill_pkg->pkgnum,
               amount          => $cust_bill_pkg->setup,
               setup_show_zero => $cust_bill_pkg->setup_show_zero,
@@ -5187,7 +5192,7 @@ sub _items_cust_bill_pkg {
             } else {
               $r = {
                 description     => $description,
-                #pkgpart         => $part_pkg->pkgpart,
+                pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
@@ -5211,7 +5216,7 @@ sub _items_cust_bill_pkg {
             } else {
               $u = {
                 description     => $description,
-                #pkgpart         => $part_pkg->pkgpart,
+                pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
