@@ -1,24 +1,123 @@
-<% include('/graph/elements/monthly.html',
-   #Dumper(
-                'title'        => $title,
-                'graph_type'   => 'none',
-                'items'        => \@items,
-                'params'       => \@params,
-                'labels'       => \@labels,
-                'graph_labels' => \@labels,
-                'remove_empty' => 1,
-                'bottom_total' => 1,
-                'agentnum'     => $agentnum,
-		'doublemonths' => \@doublemonths,
-		'nototal'	=> 1,
-             )
-%>
+% if ( $cgi->param('_type') =~ /(xls)$/ ) {
+<%perl>
+  # egregious false laziness w/ search/report_tax-xls.cgi
+  my $format = $FS::CurrentUser::CurrentUser->spreadsheet_format;
+  my $filename = $cgi->url(-relative => 1);
+  $filename =~ s/\.html$//;
+  $filename .= $format->{extension};
+  http_header('Content-Type' => $format->{mime_type});
+  http_header('Content-Disposition' => qq!attachment;filename="$filename"!);
+
+  my $output = '';
+  use IO::String;
+  my $XLS = IO::String->new($output);;
+  my $workbook = $format->{class}->new($XLS)
+    or die "Error opening .xls file: $!";
+
+  my $worksheet = $workbook->add_worksheet('Summary');
+
+  my %format = (
+    header => {
+      size      => 11,
+      bold      => 1,
+      align     => 'center',
+      valign    => 'vcenter',
+      text_wrap => 1,
+    },
+    money => {
+      size      => 11,
+      align     => 'right',
+      valign    => 'bottom',
+      num_format=> 8,
+    },
+    '' => {},
+  );
+  my %default = (
+      font      => 'Calibri',
+      border    => 1,
+  );
+  foreach (keys %format) {
+    my %f = (%default, %{$format{$_}});
+    $format{$_} = $workbook->add_format(%f);
+    $format{"m_$_"} = $workbook->add_format(%f);
+  }
+
+  my ($r, $c) = (0, 0);
+  for my $row (@rows) {
+    $c = 0;
+    my $thisrow = shift @cells;
+    for my $cell (@$thisrow) {
+      if (!ref($cell)) {
+        # placeholder, so increment $c so that we write to the correct place
+        $c++;
+        next;
+      }
+      # format name
+      my $f = '';
+      $f = 'header' if $row->{header} or $cell->{header};
+      $f = 'money' if $cell->{format} eq 'money';
+      if ( $cell->{rowspan} > 1 or $cell->{colspan} > 1 ) {
+        my $range = xl_range_formula(
+          'Summary',
+          $r, $r - 1 + ($cell->{rowspan} || 1),
+          $c, $c - 1 + ($cell->{colspan} || 1)
+        );
+        #warn "merging $range\n";
+        $worksheet->merge_range($range, $cell->{value}, $format{"m_$f"});
+      } else {
+      #warn "writing ".xl_rowcol_to_cell($r, $c)."\n";
+        $worksheet->write( $r, $c, $cell->{value}, $format{$f} );
+      }
+      $c++;
+    } #$cell
+  $r++;
+  } #$row
+  $workbook->close;
+</%perl>
+<% $output %>
+% } else { 
+<& /elements/header.html, $title &>
+% my $myself = $cgi->self_url;
+<P ALIGN="right" CLASS="noprint">
+Download full reports<BR>
+as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
+% # as <A HREF="<% "$myself;_type=csv" %>">CSV file</A> # is this still needed?
+</P>
+<style type="text/css">
+.report * {
+  background-color: #f8f8f8;
+  border: 1px solid black;
+  padding: 2px;
+}
+.report td {
+  text-align: right;
+}
+.total * { background-color: #f5f6be; }
+.shaded * { background-color: #c8c8c8; }
+.totalshaded * { background-color: #bfc094; }
+</style>
+<table class="report" width="100%" cellspacing=0>
+% foreach my $rowinfo (@rows) {
+  <tr<% $rowinfo->{class} ? ' class="'.$rowinfo->{class}.'"' : ''%>>
+%   my $thisrow = shift @cells;
+%   foreach my $cell (@$thisrow) {
+%     next if !ref($cell); # placeholders
+%     my $td = $cell->{header} ? 'th' : 'td';
+%     my $style = '';
+%     $style .= " rowspan=".$cell->{rowspan} if $cell->{rowspan} > 1;
+%     $style .= " colspan=".$cell->{colspan} if $cell->{colspan} > 1;
+      <<%$td%><%$style%>><% $cell->{value} %></<%$td%>>
+%   }
+  </tr>
+% }
+</table>
+
+<& /elements/footer.html &>
+% }
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
-
-my @doublemonths = ( 'Billed', 'Paid' );
 
 my ($agentnum,$sel_agent);
 if ( $cgi->param('agentnum') eq 'all' ) {
@@ -32,9 +131,6 @@ elsif ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
 
 my ($refnum,$sel_part_referral);
-#if ( $cgi->param('refnum') eq 'all' ) {
-#  $refnum = 0;
-#} els
 if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
   $refnum = $1;
   $sel_part_referral = qsearchs('part_referral', { 'refnum' => $refnum } );
@@ -46,28 +142,158 @@ $title .=  $sel_part_referral->referral.' '
 $title .= 'Customer Accounting Summary Report';
 
 my @custs = ();
-@custs = qsearch('cust_main', {} ); 
+@custs = qsearch('cust_main', {} );
 
-my @items  = ();
-my @params = ();
+my @items  = ('netsales', 'cashflow');
+my @params = ( [], [] );
+my $setuprecur = '';
+if ( $cgi->param('setuprecur') ) {
+  $setuprecur = 1;
+  # instead of 'cashflow' (payments - refunds), use 'receipts'
+  # (applied payments), because it's divisible into setup and recur.
+  @items = ('netsales', 'receipts', 'netsales', 'receipts');
+  @params = ( 
+    [ setuprecur => 'setup' ],
+    [ setuprecur => 'setup' ],
+    [ setuprecur => 'recur' ],
+    [ setuprecur => 'recur' ],
+  );
+}
 my @labels = ();
+my @cross_params = ();
+my @custnames = ();
 
 my $status = $cgi->param('status');
 die "invalid status" unless $status =~ /^\w+|$/;
 
 foreach my $cust_main ( @custs ) {
+  # XXX should do this in the qsearch
   next unless ($status eq '' || $status eq $cust_main->status); 
   next unless ($agentnum == 0 || $cust_main->agentnum eq $agentnum);
   next unless ($refnum   == 0 || $cust_main->refnum eq $refnum);
 
-  push @items, 'netsales', 'cashflow';
+  push @custnames, $cust_main->name;
 
-  push @labels, $cust_main->name;
-
-  push @params, [ ('custnum' => $cust_main->custnum),
-		],
-		[ ('custnum' => $cust_main->custnum),
-		];
+  push @cross_params, [ ('custnum' => $cust_main->custnum) ];
 }
 
+my %opt = (
+  items         => \@items,
+  params        => \@params,
+  cross_params  => \@cross_params,
+  agentnum      => $agentnum,
+  refnum        => $refnum,
+);
+for ( qw(start_month start_year end_month end_year) ) {
+  if ( $cgi->param($_) =~ /^(\d+)$/ ) {
+    $opt{$_} = $1;
+  }
+}
+
+warn Dumper(OPTIONS => \%opt) if $cgi->param('debug');
+my $report = FS::Report::Table::Monthly->new(%opt);
+my $data = $report->data;
+warn Dumper(DATA => $data) if $cgi->param('debug') >= 2;
+
+my @total;
+
+my @rows; # hashes of row info
+my @cells; # arrayrefs of cell info
+# We use Excel currency format, but not Excel dates, because
+# these are whole months and there's no nice way to express that.
+# This is the historical behavior for monthly reports.
+
+# header row
+$rows[0] = {};
+$cells[0] = [
+  { header => 1, rowspan => 2, colspan => ($setuprecur ? 2 : 1) },
+  ($setuprecur ? '' : ()),
+  map {
+    { header => 1, colspan => 2, value => time2str('%b %Y', $_) },
+    ''
+  } @{ $data->{speriod} }
+];
+my $ncols = scalar(@{ $data->{speriod} });
+
+$rows[1] = {};
+$cells[1] = [ '',
+  ($setuprecur ? '' : ()),
+  map { 
+  ( { header => 1, value => mt('Billed') },
+    { header => 1, value => mt('Paid') }
+  ) } (1..$ncols)
+];
+
+# use PDL; # ha ha, I just might.
+my $row = 0;
+foreach my $name (@custnames) { # correspond to cross_params
+  my $skip = 1; # skip the customer iff ALL of their values are zero
+  for my $subrow (0..($setuprecur ? 1 : 0)) { # the setup/recur axis
+    push @rows, { class => $subrow ? 'shaded' : '' };
+    my @thisrow;
+    if ( $subrow == 0 ) {
+      # customer name
+      push @thisrow,
+        { value => $name,
+          header => 1,
+          rowspan => ($setuprecur ? 2 : 1) };
+    } else {
+      push @thisrow, '';
+    }
+    if ( $setuprecur ) {
+      # subheading
+      push @thisrow,
+        { value => $subrow ? mt('recurring') : mt('setup'),
+          header => 1 };
+    }
+    for my $col (0..$ncols-1) { # the month
+      for my $subcol (0..1) { # the billed/paid axis
+        my $item = $subrow * 2 + $subcol;
+        my $value = $data->{data}[$item][$col][$row];
+        $skip = 0 if abs($value) > 0.005;
+        push @thisrow, { value => sprintf('%0.2f', $value), format => 'money' };
+        $total[( ($ncols * $subrow) + $col ) * 2 + $subcol] += $value;
+      } #subcol
+    } #col
+    push @cells, \@thisrow;
+  } #subrow
+  if ( $skip ) {
+    # all values are zero--remove the rows we just added
+    pop @rows;
+    pop @cells;
+    if ( $setuprecur ) {
+      pop @rows;
+      pop @cells;
+    }
+  }
+  $row++;
+}
+for my $subrow (0..($setuprecur ? 1 : 0)) {
+  push @rows, { class => ($subrow ? 'totalshaded' : 'total') };
+  my @thisrow;
+  if ( $subrow == 0 ) {
+    push @thisrow,
+      { value => mt('Total'),
+        header => 1,
+        rowspan => ($setuprecur ? 2 : 1), };
+  } else {
+    push @thisrow, '';
+  }
+  if ( $setuprecur ) {
+    push @thisrow,
+      { value => $subrow ? mt('recurring') : mt('setup'),
+        header => 1 };
+  }
+  for my $col (0..($ncols * 2)-1) { # month and billed/paid axis
+    my $value = $total[($subrow * $ncols * 2) + $col];
+    push @thisrow, { value => sprintf('%0.2f', $value), format => 'money' };
+  }
+  push @cells, \@thisrow;
+} #subrow
+
+if ( $cgi->param('debug') >= 3 ) {
+  warn Dumper(\@rows, \@cells);
+}
+
+my $title = 'Customer Accounting Summary';
 </%init>
