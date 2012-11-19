@@ -24,6 +24,13 @@
     <% include( '/elements/tr-select-cust_main-status.html',
 		'label' => 'Customer Status'
     ) %>
+
+    <& /elements/tr-checkbox.html,
+        'label' => 'Separate setup fees',
+        'field' => 'setuprecur',
+        'value' => 1,
+    &>
+
     
   </TABLE>
 

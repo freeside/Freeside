@@ -68,9 +68,15 @@ sub signups {
 sub invoiced { #invoiced
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
+  my $sql = 'SELECT SUM(cust_bill.charged) FROM cust_bill';
+  if ( $opt{'setuprecur'} ) {
+    $sql = 'SELECT SUM('.
+            FS::cust_bill_pkg->charged_sql($speriod, $eperiod, %opt).
+           ') FROM cust_bill_pkg JOIN cust_bill USING (invnum)';
+  }
+
   $self->scalar_sql("
-    SELECT SUM(charged)
-      FROM cust_bill
+      $sql
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum).
                $self->for_opts(%opt)
@@ -162,9 +168,16 @@ sub refunds {
 
 sub netcredits {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+
+  my $sql = 'SELECT SUM(cust_credit_bill.amount) FROM cust_credit_bill';
+  if ( $opt{'setuprecur'} ) {
+    $sql = 'SELECT SUM('.
+            FS::cust_bill_pkg->credited_sql($speriod, $eperiod, %opt).
+           ') FROM cust_bill_pkg';
+  }
+
   $self->scalar_sql("
-    SELECT SUM(cust_credit_bill.amount)
-      FROM cust_credit_bill
+    $sql
         LEFT JOIN cust_bill USING ( invnum  )
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent( $speriod,
@@ -182,9 +195,16 @@ sub netcredits {
 
 sub receipts { #net payments
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+
+  my $sql = 'SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay';
+  if ( $opt{'setuprecur'} ) {
+    $sql = 'SELECT SUM('.
+            FS::cust_bill_pkg->paid_sql($speriod, $eperiod, %opt).
+           ') FROM cust_bill_pkg';
+  }
+
   $self->scalar_sql("
-    SELECT SUM(cust_bill_pay.amount)
-      FROM cust_bill_pay
+    $sql
         LEFT JOIN cust_bill USING ( invnum  )
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent( $speriod,
@@ -419,7 +439,7 @@ sub cust_bill_pkg_setup {
     $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
   );
 
-  push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
+  push @where, "cust_main.refnum = ". $opt{'refnum'} if $opt{'refnum'};
 
   my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg.setup),0)
   FROM cust_bill_pkg
