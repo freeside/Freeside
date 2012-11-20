@@ -5,7 +5,7 @@
     <A NOTYET="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #cccccc; font-size:11px"><% mt('Advanced') |h %></A>
     <INPUT TYPE="submit" VALUE="<% mt('Search services') |h %>" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
   </FORM>
-  <% $menu_position eq 'left' ? '<BR>' : '' %>
+  <% $menu_position eq 'left' ? '<BR>' : '' |n %>
 
 % }
 
