@@ -24,6 +24,7 @@ if ($old{onlyship}) {
 } else {
   @prefixes = ('bill_', 'ship_');
 }
+my $all_same = 1;
 foreach my $pre ( @prefixes ) {
 
   my $location = {
@@ -38,8 +39,13 @@ foreach my $pre ( @prefixes ) {
   foreach ( keys(%$cache) ) {
     $new{$pre.$_} = $cache->get($_);
   }
+
+  foreach ( qw(address1 address2 city state zip country) ) {
+    $all_same = 0 if ( $new{$pre.$_} ne $old{$pre.$_} );
+    last if !$all_same;
+  }
 }
 
-my $return = { old => \%old, new => \%new };
+my $return = { old => \%old, new => \%new, all_same => $all_same };
 warn "result:\n".encode_json($return) if $DEBUG;
 </%init>

@@ -1,3 +1,9 @@
+function status_message(text, caption) {
+  text = '<P STYLE="position:absolute; top:50%; margin-top:-1em; width:100%; text-align:center"><B><FONT SIZE="+1">' + text + '</FONT></B></P>';
+  caption = caption || 'Please wait...';
+  overlib(text, WIDTH, 444, HEIGHT, 168, CAPTION, caption, STICKY, AUTOSTATUSCAP, CLOSECLICK, MIDX, 0, MIDY, 0);
+}
+
 function form_address_info() {
   var cf = document.<% $formname %>;
 
@@ -87,8 +93,7 @@ function standardize_locations() {
 
 % if ( $conf->config('address_standardize_method') ) {
   if ( changed ) {
-    var startup_msg = '<P STYLE="position:absolute; top:50%; margin-top:-1em; width:100%; text-align:center"><B><FONT SIZE="+1">Verifying address...</FONT></B></P>';
-    overlib(startup_msg, WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSECLICK, MIDX, 0, MIDY, 0);
+    status_message('Verifying address...');
     address_standardize(JSON.stringify(address_info), confirm_standardize);
   }
   else {
@@ -116,8 +121,14 @@ function confirm_standardize(arg) {
 
     replace_address(); // with the contents of returned['new']
   
-  }
-  else {
+  } else if ( returned['all_same'] ) {
+
+    // then all entered address fields are correct
+    // but we still need to set the lat/long fields and addr_clean
+    status_message('Verified');
+    replace_address();
+
+  } else {
 
     var querystring = encodeURIComponent( JSON.stringify(returned) );
     // confirmation popup: knows to call replace_address(), 
