@@ -58,7 +58,7 @@ action completes (such as running the customer's credit card successfully).
 
 Optional subject for a ticket created and attached to this customer
 
-=item ticket_subject
+=item ticket_queue
 
 Optional queue name for ticket additions
 
