@@ -1,0 +1,198 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Format qw(time2str);
+use File::Temp qw(tempdir);
+use Net::SFTP::Foreign;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_main;
+use FS::Conf;
+use Text::CSV;
+
+my %opt;
+getopts('va:', \%opt);
+
+#$Net::SFTP::Foreign::debug = -1;
+sub HELP_MESSAGE { '
+  Usage:
+      freeside-ipifony-download 
+        [ -v ]
+        [ -a archivedir ]
+        freesideuser sftpuser@hostname[:path]
+' }
+
+my @fields = (
+  'custnum',
+  'date_desc',
+  'quantity',
+  'amount',
+  'classname',
+);
+
+my $user = shift or die &HELP_MESSAGE;
+adminsuidsetup $user;
+
+# for statistics
+my $num_charges = 0;
+my $num_errors = 0;
+my $sum_charges = 0;
+# cache classnums
+my %classnum_of;
+
+if ( $opt{a} ) {
+  die "no such directory: $opt{a}\n"
+    unless -d $opt{a};
+  die "archive directory $opt{a} is not writable by the freeside user\n"
+    unless -w $opt{a};
+}
+
+#my $tmpdir = File::Temp->newdir();
+my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
+
+my $host = shift
+  or die &HELP_MESSAGE;
+my ($sftpuser, $path);
+$host =~ s/^(.+)\@//;
+$sftpuser = $1 || $ENV{USER};
+$host =~ s/:(.*)//;
+$path = $1;
+
+# for now assume SFTP download as the only method
+print STDERR "Connecting to $sftpuser\@$host...\n" if $opt{v};
+
+my $sftp = Net::SFTP::Foreign->new(
+  host      => $host,
+  user      => $sftpuser,
+  # for now we don't support passwords. use authorized_keys.
+  timeout   => 30,
+  more      => ($opt{v} ? '-v' : ''),
+);
+die "failed to connect to '$sftpuser\@$host'\n(".$sftp->error.")\n"
+  if $sftp->error;
+
+$sftp->setcwd($path) if $path;
+
+my $files = $sftp->ls('.', wanted => qr/\.csv$/, names_only => 1);
+if (!@$files) {
+  print STDERR "No charge files found.\n" if $opt{v};
+  exit(-1);
+}
+FILE: foreach my $filename (@$files) {
+  print STDERR "Retrieving $filename\n" if $opt{v};
+  $sftp->get("$filename", "$tmpdir/$filename");
+  if($sftp->error) {
+    warn "failed to download $filename\n";
+    next FILE;
+  }
+
+  #move to server archive dir
+  $sftp->rename("$filename", "Archive/$filename");
+  if($sftp->error) {
+    warn "failed to archive $filename on server\n";
+  } # process it anyway though
+
+  #copy to local archive dir
+  if ( $opt{a} ) {
+    print STDERR "Copying $tmpdir/$filename to archive dir $opt{a}\n"
+      if $opt{v};
+    copy("$tmpdir/$filename", $opt{a});
+    warn "failed to copy $tmpdir/$filename to $opt{a}: $!" if $!;
+  }
+
+  open my $fh, "<$tmpdir/$filename";
+  my $header = <$fh>;
+  if ($header !~ /^cust_id/) {
+    warn "warning: $filename has incorrect header row:\n$header\n";
+    # but try anyway
+  }
+  my $csv = Text::CSV->new; # orthodox CSV
+  my %hash;
+  while (my $line = <$fh>) {
+    $csv->parse($line) or do {
+      warn "can't parse $filename: ".$csv->error_input."\n";
+      next FILE;
+    };
+    @hash{@fields} = $csv->fields();
+    my $cust_main = FS::cust_main->by_key($hash{custnum});
+    if (!$cust_main) {
+      warn "customer #$hash{custnum} not found\n";
+      next;
+    }
+    print STDERR "Found customer #$hash{custnum}: ".$cust_main->name."\n"
+      if $opt{v};
+
+    # construct arguments for $cust_main->charge
+    my %opt = (
+      amount      => $hash{amount},
+      quantity    => $hash{quantity},
+      start_date  => $cust_main->next_bill_date,
+      pkg         => $hash{date_desc},
+    );
+    if (my $classname = $hash{classname}) {
+      if (!exists($classnum_of{$classname}) ) {
+        # then look it up
+        my $pkg_class = qsearch('pkg_class', { classname => $classname });
+        $classnum_of{$classname} = $pkg_class ? $pkg_class->classnum : '';
+      }
+      $opt{classnum} = $classnum_of{$classname};
+    }
+    # XXX what's the tax status of these charges?
+    print STDERR "  Charging $hash{amount}\n"
+      if $opt{v};
+    my $error = $cust_main->charge(\%opt);
+    if ($error) {
+      warn "Error creating charge: $error" if $error;
+      $num_errors++;
+    } else {
+      $num_charges++;
+      $sum_charges += $hash{amount};
+    }
+  } #while $line
+  close $fh;
+} #FILE
+
+if ($opt{v}) {
+  print STDERR "
+Finished!
+  Processed files: @$files
+  Created charges: $num_charges
+  Sum of charges: \$".sprintf('%0.2f', $sum_charges)."
+  Errors: $num_errors
+";
+}
+
+=head1 NAME
+
+freeside-eftca-download - Retrieve payment batch responses from EFT Canada.
+
+=head1 SYNOPSIS
+
+  freeside-eftca-download [ -v ] [ -a archivedir ] user
+
+=head1 DESCRIPTION
+
+Command line tool to download returned payment reports from the EFT Canada 
+gateway and void the returned payments.  Uses the login and password from 
+'batchconfig-eft_canada'.
+
+-v: Be verbose.
+
+-a directory: Archive response files in the provided directory.
+
+user: freeside username
+
+=head1 BUGS
+
+You need to manually SFTP to ftp.eftcanada.com from the freeside account 
+and accept their key before running this script.
+
+=head1 SEE ALSO
+
+L<FS::pay_batch>
+
+=cut
+
+1;
+
