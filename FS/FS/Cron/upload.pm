@@ -326,14 +326,16 @@ sub spool_upload {
         }
       }
 
-      send_report('bridgestone-confirm_template',
-        {
-          agentnum=> $agentnum,
-          zipfile => $zipfile,
-          prefix  => $prefix,
-          seq     => $seq,
-          rows    => $rows,
-        }
+      send_email(
+        prepare_report('bridgestone-confirm_template',
+          {
+            agentnum=> $agentnum,
+            zipfile => $zipfile,
+            prefix  => $prefix,
+            seq     => $seq,
+            rows    => $rows,
+          }
+        )
       );
 
       $seq++;
@@ -376,16 +378,26 @@ sub spool_upload {
       close $reg;
       close $big;
 
+      # zip up all three files for transport
       my $zipfile = "$basename" . '.zip';
       my $command = "cd $dir; zip $zipfile $regfile $bigfile";
       system($command) and die "'$command' failed\n";
-      my $error = $upload_target->put("$dir/$zipfile");
 
+      # upload them, unless we're using email, in which case 
+      # the zip file will ride along with the report.  yes, this 
+      # kind of defeats the purpose of the upload_target interface,
+      # but at least we have a place to store the configuration.
+      my $error = '';
+      if ( $upload_target->protocol ne 'email' ) {
+        $error = $upload_target->put("$dir/$zipfile");
+      }
+
+      # create the report
       for (values %sum) {
         $_ = sprintf('%.2f', $_);
       }
 
-      send_report('ics-confirm_template',
+      my %report = prepare_report('ics-confirm_template',
         {
           agentnum  => $agentnum,
           count     => \%count,
@@ -393,8 +405,23 @@ sub spool_upload {
           error     => $error,
         }
       );
+      if ( $upload_target->protocol eq 'email' ) {
+        $report{'to'} =
+          join('@', $upload_target->username, $upload_target->hostname);
+        $report{'subject'} = $upload_target->subject;
+        $report{'mimeparts'} = [
+          { Path        => "$dir/$zipfile",
+            Type        => 'application/zip',
+            Encoding    => 'base64',
+            Filename    => $zipfile,
+            Disposition => 'attachment',
+          }
+        ];
+      }
+      $error = send_email(%report);
 
       if ( $error ) {
+        # put the original spool file back
         rename "$dir/$file-$date.csv", "$dir/$file.csv";
         die $error;
       }
@@ -421,7 +448,8 @@ sub spool_upload {
 =item send_report CONFIG PARAMS
 
 Retrieves the config value named CONFIG, parses it as a Text::Template,
-extracts "to" and "subject" headers, and sends it by email.
+extracts "to" and "subject" headers, and returns a hash that can be passed
+to L<FS::Misc::send_email>.
 
 PARAMS is a hashref to be passed to C<fill_in>.  It must contain 
 'agentnum' to look up the per-agent config.
@@ -429,7 +457,8 @@ PARAMS is a hashref to be passed to C<fill_in>.  It must contain
 =cut
 
 # we used it twice, so it's now a subroutine
-sub send_report {
+
+sub prepare_report {
 
   my ($config, $params) = @_;
   my $agentnum = $params->{agentnum};
@@ -452,7 +481,7 @@ sub send_report {
   $head =~ /^to:\s*(.*)$/im;
   my $to = $1;
 
-  send_email(
+  (
     to      => $to,
     from    => $conf->config('invoice_from', $agentnum),
     subject => $subject,
