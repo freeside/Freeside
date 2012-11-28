@@ -1,4 +1,3 @@
-<% $data %>
 <%init>
 my $htmldoc = include('report_tax.cgi');
 
@@ -155,4 +154,6 @@ for my $x (0..scalar(@widths)-1) {
 
 $workbook->close;
 
+http_header('Content-Length' => length($data));
+$m->print($data);
 </%init>

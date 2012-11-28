@@ -1,4 +1,3 @@
-<% $data %>
 <%init>
 
 my %args = @_;
@@ -148,5 +147,6 @@ if ( $opt{'footer'} ) {
 $workbook->close();# or die "Error creating .xls file: $!";
 
 http_header('Content-Length' => length($data) );
+$m->print($data);
 
 </%init>

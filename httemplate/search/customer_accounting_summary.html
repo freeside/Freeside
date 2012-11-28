@@ -73,9 +73,11 @@
   $r++;
   } #$row
   $workbook->close;
+
+  http_header('Content-Length' => length($output));
+  $m->print($output);
 </%perl>
-<% $output %>
-% } else { 
+% } else {
 <& /elements/header.html, $title &>
 % my $myself = $cgi->self_url;
 <P ALIGN="right" CLASS="noprint">
