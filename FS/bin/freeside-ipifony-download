@@ -12,7 +12,7 @@ use FS::Conf;
 use Text::CSV;
 
 my %opt;
-getopts('va:', \%opt);
+getopts('va:P:', \%opt);
 
 #$Net::SFTP::Foreign::debug = -1;
 sub HELP_MESSAGE { '
@@ -20,6 +20,7 @@ sub HELP_MESSAGE { '
       freeside-ipifony-download 
         [ -v ]
         [ -a archivedir ]
+        [ -P port ]
         freesideuser sftpuser@hostname[:path]
 ' }
 
@@ -59,12 +60,18 @@ $sftpuser = $1 || $ENV{USER};
 $host =~ s/:(.*)//;
 $path = $1;
 
+my $port = 22;
+if ( $opt{P} =~ /^(\d+)$/ ) {
+  $port = $1;
+}
+
 # for now assume SFTP download as the only method
 print STDERR "Connecting to $sftpuser\@$host...\n" if $opt{v};
 
 my $sftp = Net::SFTP::Foreign->new(
   host      => $host,
   user      => $sftpuser,
+  port      => $port,
   # for now we don't support passwords. use authorized_keys.
   timeout   => 30,
   more      => ($opt{v} ? '-v' : ''),
@@ -87,11 +94,20 @@ FILE: foreach my $filename (@$files) {
     next FILE;
   }
 
+  # make sure server archive dir exists
+  if ( !$sftp->stat('Archive') ) {
+    print STDERR "Creating $path/Archive\n" if $opt{v};
+    $sftp->mkdir('Archive');
+    if($sftp->error) {
+      # something is seriously wrong
+      die "failed to create archive directory on server:\n".$sftp->error."\n";
+    }
+  }
   #move to server archive dir
   $sftp->rename("$filename", "Archive/$filename");
   if($sftp->error) {
-    warn "failed to archive $filename on server\n";
-  } # process it anyway though
+    warn "failed to archive $filename on server:\n".$sftp->error."\n";
+  } # process it anyway, I guess/
 
   #copy to local archive dir
   if ( $opt{a} ) {
