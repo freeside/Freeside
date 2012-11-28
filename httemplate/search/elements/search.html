@@ -176,7 +176,9 @@ Example:
 %
 % } elsif ( $type =~ /\.xls$/ ) {
 %
-<% include('search-xls.html',  header=>$header, rows=>$rows, opt=>\%opt ) %>
+<& 'search-xls.html',  header=>$header, rows=>$rows, opt=>\%opt &>\
+% # prevent the caller from polluting our output stream
+% $m->abort;
 %
 % } elsif ( $type eq 'xml' ) {
 %
