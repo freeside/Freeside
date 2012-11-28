@@ -3099,21 +3099,21 @@ and customer address. Include units.',
   {
     'key'         => 'cust_bill-ftpusername',
     'section'     => 'invoicing',
-    'description' => 'Enable FTP of raw invoice data - server.',
+    'description' => 'Enable FTP of raw invoice data - login.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftppassword',
     'section'     => 'invoicing',
-    'description' => 'Enable FTP of raw invoice data - server.',
+    'description' => 'Enable FTP of raw invoice data - password.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftpdir',
     'section'     => 'invoicing',
-    'description' => 'Enable FTP of raw invoice data - server.',
+    'description' => 'Enable FTP of raw invoice data - path.',
     'type'        => 'text',
   },
 

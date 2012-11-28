@@ -146,7 +146,7 @@ sub spool_upload {
   my $conf = new FS::Conf;
   my $dir = '%%%FREESIDE_EXPORT%%%/export.'. $FS::UID::datasrc. '/cust_bill';
 
-  my $agentnum = $opt{agentnum} or die "no agentnum provided\n";
+  my $agentnum = $opt{agentnum} || '';
   my $url      = $opt{url} or die "no url for agent $agentnum\n";
   $url =~ s/^\s+//; $url =~ s/\s+$//;
 
@@ -166,11 +166,30 @@ sub spool_upload {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $agent = qsearchs( 'agent', { agentnum => $agentnum } )
-    or die "no such agent: $agentnum";
-  $agent->select_for_update; #mutex 
+  # wait for any ongoing billing jobs to complete
+  # (should this exclude status='failed')?
+  if ($opt{m}) {
+    my $sql = "SELECT count(*) FROM queue LEFT JOIN cust_main USING(custnum) ".
+    "WHERE queue.job='FS::cust_main::queued_bill'";
+    $sql .= " AND cust_main.agentnum = $agentnum" if $agentnum =~ /^\d+$/;
+    my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+    while (1) {
+      $sth->execute()
+        or die "Unexpected error executing statement $sql: ". $sth->errstr;
+      last if $sth->fetchrow_arrayref->[0] == 0;
+      sleep 300;
+    }
+  }
+
+  if ( $agentnum ) {
+    my $agent = qsearchs( 'agent', { agentnum => $agentnum } )
+      or die "no such agent: $agentnum";
+    $agent->select_for_update; #mutex 
+  }
 
   if ( $opt{'format'} eq 'billco' ) {
+
+    die "no agentnum provided\n" unless $agentnum;
 
     my $zipfile  = "$dir/agentnum$agentnum-$opt{date}.zip";
 
@@ -181,19 +200,6 @@ sub spool_upload {
            "$dir/agentnum$agentnum-detail.csv found\n" if $DEBUG;
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
       return;
-    }
-
-    # a better way?
-    if ($opt{m}) {
-      my $sql = "SELECT count(*) FROM queue LEFT JOIN cust_main USING(custnum) ".
-        "WHERE queue.job='FS::cust_main::queued_bill' AND cust_main.agentnum = ?";
-      my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-      while (1) {
-        $sth->execute( $agentnum )
-          or die "Unexpected error executing statement $sql: ". $sth->errstr;
-        last if $sth->fetchrow_arrayref->[0];
-        sleep 300;
-      }
     }
 
     foreach ( qw ( header detail ) ) {
