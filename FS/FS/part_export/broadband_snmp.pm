@@ -3,7 +3,7 @@ package FS::part_export::broadband_snmp;
 use strict;
 use vars qw(%info $DEBUG);
 use base 'FS::part_export';
-use Net::SNMP qw(:asn1 :snmp);
+use SNMP;
 use Tie::IxHash;
 
 $DEBUG = 0;
@@ -11,21 +11,21 @@ $DEBUG = 0;
 my $me = '['.__PACKAGE__.']';
 
 tie my %snmp_version, 'Tie::IxHash',
-  v1  => 'snmpv1',
-  v2c => 'snmpv2c',
-  # 3 => 'v3' not implemented
+  v1  => '1',
+  v2c => '2c',
+  # v3 unimplemented
 ;
 
-tie my %snmp_type, 'Tie::IxHash',
-  i => INTEGER,
-  u => UNSIGNED32,
-  s => OCTET_STRING,
-  n => NULL,
-  o => OBJECT_IDENTIFIER,
-  t => TIMETICKS,
-  a => IPADDRESS,
-  # others not implemented yet
-;
+#tie my %snmp_type, 'Tie::IxHash',
+#  i => INTEGER,
+#  u => UNSIGNED32,
+#  s => OCTET_STRING,
+#  n => NULL,
+#  o => OBJECT_IDENTIFIER,
+#  t => TIMETICKS,
+#  a => IPADDRESS,
+#  # others not implemented yet
+#;
 
 tie my %options, 'Tie::IxHash',
   'version' => { label=>'SNMP version', 
@@ -33,14 +33,11 @@ tie my %options, 'Tie::IxHash',
     options => [ keys %snmp_version ],
    },
   'community' => { label=>'Community', default=>'public' },
-  (
-    map { $_.'_command', 
-          { label => ucfirst($_) . ' commands',
-            type  => 'textarea',
-            default => '',
-          }
-    } qw( insert delete replace suspend unsuspend )
-  ),
+
+  'action' => { multiple=>1 },
+  'oid'    => { multiple=>1 },
+  'value'  => { multiple=>1 },
+
   'ip_addr_change_to_new' => { 
     label=>'Send IP address changes to new address',
     type=>'checkbox'
@@ -51,28 +48,14 @@ tie my %options, 'Tie::IxHash',
 %info = (
   'svc'     => 'svc_broadband',
   'desc'    => 'Send SNMP requests to the service IP address',
+  'config_element' => '/edit/elements/part_export/broadband_snmp.html',
   'options' => \%options,
   'no_machine' => 1,
   'weight'  => 10,
   'notes'   => <<'END'
 Send one or more SNMP SET requests to the IP address registered to the service.
-Enter one command per line.  Each command is a target OID, data type flag,
-and value, separated by spaces.
-The data type flag is one of the following:
-<font size="-1"><ul>
-<li><i>i</i> = INTEGER</li>
-<li><i>u</i> = UNSIGNED32</li>
-<li><i>s</i> = OCTET-STRING (as ASCII)</li>
-<li><i>a</i> = IPADDRESS</li>
-<li><i>n</i> = NULL</li></ul>
 The value may interpolate fields from svc_broadband by prefixing the field 
 name with <b>$</b>, or <b>$new_</b> and <b>$old_</b> for replace operations.
-The value may contain whitespace; quotes are not necessary.<br>
-<br>
-For example, to set the SNMPv2-MIB "sysName.0" object to the string 
-"svc_broadband" followed by the service number, use the following 
-command:<br>
-<pre>1.3.6.1.2.1.1.5.0 s svc_broadband$svcnum</pre><br>
 END
 );
 
@@ -105,19 +88,18 @@ sub export_command {
   my $self = shift;
   my ($action, $svc_new, $svc_old) = @_;
 
-  my $command_text = $self->option($action.'_command');
-  return if !length($command_text);
-
-  warn "$me parsing ${action}_command:\n" if $DEBUG;
+  my @a = split("\n", $self->option('action'));
+  my @o = split("\n", $self->option('oid'));
+  my @v = split("\n", $self->option('value'));
   my @commands;
-  foreach (split /\n/, $command_text) {
-    my ($oid, $type, $value) = split /\s/, $_, 3;
-    $oid =~ /^(\d+\.)*\d+$/ or die "invalid OID '$oid'\n";
-    my $typenum = $snmp_type{$type} or die "unknown data type '$type'\n";
-    $value = '' if !defined($value); # allow sending an empty string
+  warn "$me parsing $action commands:\n" if $DEBUG;
+  while (@a) {
+    my $oid = shift @o;
+    my $value = shift @v;
+    next unless shift(@a) eq $action; # ignore commands for other actions
     $value = $self->substitute($value, $svc_new, $svc_old);
-    warn "$me     $oid $type $value\n" if $DEBUG;
-    push @commands, $oid, $typenum, $value;
+    warn "$me     $oid :=$value\n" if $DEBUG;
+    push @commands, $oid, $value;
   }
 
   my $ip_addr = $svc_new->ip_addr;
@@ -128,13 +110,13 @@ sub export_command {
   warn "$me opening session to $ip_addr\n" if $DEBUG;
 
   my %opt = (
-    -hostname => $ip_addr,
-    -community => $self->option('community'),
-    -timeout => $self->option('timeout') || 20,
+    DestHost  => $ip_addr,
+    Community => $self->option('community'),
+    Timeout   => ($self->option('timeout') || 20) * 1000,
   );
   my $version = $self->option('version');
-  $opt{-version} = $snmp_version{$version} or die 'invalid version';
-  $opt{-varbindlist} = \@commands; # just for now
+  $opt{Version} = $snmp_version{$version} or die 'invalid version';
+  $opt{VarList} = \@commands; # for now
 
   $self->snmp_queue( $svc_new->svcnum, %opt );
 }
@@ -151,16 +133,22 @@ sub snmp_queue {
 
 sub snmp_request {
   my %opt = @_;
-  my $varbindlist = delete $opt{-varbindlist};
-  my ($session, $error) = Net::SNMP->session(%opt);
-  die "Couldn't create SNMP session: $error" if !$session;
+  my $flatvarlist = delete $opt{VarList};
+  my $session = SNMP::Session->new(%opt);
 
   warn "$me sending SET request\n" if $DEBUG;
-  my $result = $session->set_request( -varbindlist => $varbindlist );
-  $error = $session->error();
-  $session->close();
 
-  if (!defined $result) {
+  my @varlist;
+  while (@$flatvarlist) {
+    my @this = splice(@$flatvarlist, 0, 2);
+    push @varlist, [ $this[0], 0, $this[1], undef ];
+    # XXX new option to choose the IID (array index) of the object?
+  }
+
+  $session->set(\@varlist);
+  my $error = $session->{ErrorStr};
+
+  if ( $session->{ErrorNum} ) {
     die "SNMP request failed: $error\n";
   }
 }
@@ -179,6 +167,48 @@ sub substitute {
     }
   }
   $value;
+}
+
+sub _upgrade_exporttype {
+  eval 'use FS::Record qw(qsearch qsearchs)';
+  # change from old style with numeric oid, data type flag, and value
+  # on consecutive lines
+  foreach my $export (qsearch('part_export',
+                      { exporttype => 'broadband_snmp' } ))
+  {
+    # for the new options
+    my %new_options = (
+      'action' => [],
+      'oid'    => [],
+      'value'  => [],
+    );
+    foreach my $action (qw(insert replace delete suspend unsuspend)) {
+      my $old_option = qsearchs('part_export_option',
+                      { exportnum   => $export->exportnum,
+                        optionname  => $action.'_command' } );
+      next if !$old_option;
+      my $text = $old_option->optionvalue;
+      my @commands = split("\n", $text);
+      foreach (@commands) {
+        my ($oid, $type, $value) = split /\s/, $_, 3;
+        push @{$new_options{action}}, $action;
+        push @{$new_options{oid}},    $oid;
+        push @{$new_options{value}},   $value;
+      }
+      my $error = $old_option->delete;
+      warn "error migrating ${action}_command option: $error\n" if $error;
+    }
+    foreach (keys(%new_options)) {
+      my $new_option = FS::part_export_option->new({
+          exportnum   => $export->exportnum,
+          optionname  => $_,
+          optionvalue => join("\n", @{ $new_options{$_} })
+      });
+      my $error = $new_option->insert;
+      warn "error inserting '$_' option: $error\n" if $error;
+    }
+  } #foreach $export
+  '';
 }
 
 1;

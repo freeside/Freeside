@@ -1,0 +1,19 @@
+% if ( $export_info->{no_machine} ) {
+<INPUT TYPE="hidden" NAME="machine" VALUE="">
+<INPUT TYPE="hidden" NAME="svc_machine" VALUE="N">
+% } else {
+% # clone this from edit/part_export.cgi if this case ever gets used
+% }
+<INPUT TYPE="hidden" NAME="exporttype" VALUE="<%$layer |h%>">
+<% ntable('cccccc', 2) %>
+<TR>
+  <TD ALIGN="right" ><% emt('Description') %></TD>
+  <TD BGCOLOR="#ffffff" WIDTH="600"><% $notes %></TD>
+</TR>
+<%init>
+my %opt = @_;
+my $layer = $opt{layer};
+my $part_export = $opt{part_export};
+my $export_info = $opt{export_info};
+my $notes = $opt{notes} || $export_info->{notes};
+</%init>

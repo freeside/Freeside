@@ -1,0 +1,170 @@
+<& /elements/header-popup.html &>
+<TABLE WIDTH="100%">
+<TR>
+  <TD ALIGN="right">Module:</TD>
+  <TD><SELECT ID="select_module"></SELECT></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Object:</TD>
+  <TD><INPUT TYPE="text" NAME="path" ID="input_path"></TD>
+</TR>
+<TR>
+  <TD COLSPAN=2>
+    <SELECT STYLE="width:100%" SIZE=12 ID="select_path"></SELECT>
+  </TD>
+</TR>
+<TR>
+  <TH COLSPAN=2 ID="mib_objectID"></TH>
+</TR>
+<TR>
+  <TD ALIGN="right">Module: </TD><TD ID="mib_moduleID"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Data type: </TD><TD ID="mib_type"></TD>
+</TR>
+<TR>
+  <TH COLSPAN=2>
+    <BUTTON ID="submit_button" onclick="submit()" DISABLED=1>Continue</BUTTON>
+  </TH>
+</TR>
+</TABLE>
+<& /elements/xmlhttp.html,
+  url   => $p.'misc/xmlhttp-mib-browse.html',
+  subs  => [qw( search get_module_list )],
+&>
+<SCRIPT TYPE="text/javascript">
+
+var selected_mib;
+
+function show_info(state) {
+  document.getElementById('mib_objectID').style.display = 
+    document.getElementById('mib_moduleID').style.display = 
+    document.getElementById('mib_type').style.display = 
+    state ? 'block' : 'none';
+}
+
+function clear_list() {
+  var select_path = document.getElementById('select_path');
+  select_path.options.length = 0;
+}
+
+function add_item(value) {
+  var select_path = document.getElementById('select_path');
+  var input_path = document.getElementById('input_path');
+  var opt = document.createElement('option');
+  var v = value;
+  if ( v.match(/-$/) ) {
+    opt.className = 'leaf';
+    v = v.substring(0, v.length - 1);
+  }
+  opt.value = opt.text = v;
+  opt.selected = (input_path.value == v);
+  select_path.add(opt, null);
+}
+
+var timerID = 0;
+
+function populate(json_result) {
+  var result = JSON.parse(json_result);
+  clear_list();
+  for (var x in result['choices']) {
+    opt = document.createElement('option');
+    add_item(result['choices'][x]);
+  }
+  if ( result['objectID'] ) {
+    selected_mib = result;
+    show_info(true);
+    // show details on the selected node
+    document.getElementById('mib_objectID').innerHTML = result.objectID;
+    document.getElementById('mib_moduleID').innerHTML = result.moduleID;
+    document.getElementById('mib_type').innerHTML = result.type;
+    document.getElementById('submit_button').disabled = !result.type;
+  } else {
+    selected_mib = undefined;
+    show_info(false);
+  }
+}
+
+function populate_modules(json_result) {
+  var result = JSON.parse(json_result);
+  var select_module = document.getElementById('select_module');
+  var opt = document.createElement('option');
+  opt.value = 'ANY';
+  opt.text  = '(any)';
+  select_module.add(opt, null);
+  for (var x in result['modules']) {
+    opt = document.createElement('option');
+    opt.value = opt.text = result['modules'][x];
+    select_module.add(opt, null);
+  }
+}
+
+function dispatch_search() {
+  // called from the interval timer
+  var search_string = document.getElementById('select_module').value + ':' +
+                      document.getElementById('input_path').value;
+
+  search(search_string, populate);
+}
+
+function delayed_search() {
+  // onkeyup handler for the text input
+  // 500ms after the user stops typing, send the search request
+  if (timerID != 0) {
+    clearTimeout(timerID);
+  }
+  timerID = setTimeout(dispatch_search, 500);
+}
+
+function handle_choose_object() {
+  // onchange handler for the selector
+  // when the user picks an option, set the text input to that, and then
+  // search for it as though it was entered
+  var input_path = document.getElementById('input_path');
+  input_path.value = this.value;
+  dispatch_search();
+}
+
+function handle_choose_module() {
+  input_path.value = ''; // just to avoid confusion
+  delayed_search();
+}
+
+function submit() {
+% if ( $callback ) {
+  <% $callback %>;
+  parent.nd(1); // close popup
+% } else {
+  alert(document.getElementById('input_path').value);
+% }
+}
+
+var input_path = document.getElementById('input_path');
+input_path.onkeyup = delayed_search;
+var select_path = document.getElementById('select_path');
+select_path.onchange = handle_choose_object;
+var select_module = document.getElementById('select_module');
+select_module.onchange = handle_choose_module;
+% if ( $cgi->param('curr_value') ) {
+input_path.value = <% $cgi->param('curr_value') |js_string %>;
+% }
+dispatch_search();
+get_module_list('', populate_modules);
+
+</SCRIPT>
+<& /elements/footer.html &>
+<%init>
+my $callback = 'alert("(no callback defined)" + selected_mib.stringify)';
+$cgi->param('callback') =~ /^(\w+)$/;
+if ( $1 ) {
+  # construct the JS function call expresssion
+  $callback = 'window.parent.' . $1 . '(selected_mib';
+  foreach ($cgi->param('arg')) {
+    # pass-through arguments
+    /^(\w+)$/ or next;
+    $callback .= ",'$1'";
+  }
+  $callback .= ')';
+}
+
+</%init>
