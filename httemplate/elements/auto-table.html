@@ -168,7 +168,6 @@ $pre = $opt{'table'} . '_' if $opt{'table'};
 my $template_row = $opt{'template_row'}
   or die "auto-table requires template_row\n"; # a DOM id
 
-my %vars  = $cgi->Vars;
 # rows that we will preload, as hashrefs of name => value
 my @rows = @{ $opt{'data'} || [] };
 foreach (@rows) {

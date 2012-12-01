@@ -46,7 +46,7 @@ function receive_mib(obj, rownum) {
   //console.log(JSON.stringify(obj));
   // we don't really need the numeric OID or any of the other properties
   document.getElementById('oid'+rownum).value = obj.fullname;
-  document.getElementById('datatype'+rownum).innerHTML = obj.type;
+  document.getElementById('datatype'+rownum).value = obj.type;
 }
 </script>
 
@@ -69,7 +69,7 @@ function receive_mib(obj, rownum) {
     <INPUT NAME="oid" ID="oid" SIZE="60" onclick="open_select_mib(this)">
   </TD>
   <TD>
-    <SPAN ID="datatype"></SPAN>
+    <INPUT TYPE="text" NAME="datatype" ID="datatype" READONLY=1>
   </TD>
   <TD>
     <INPUT NAME="value" ID="value">
@@ -77,10 +77,10 @@ function receive_mib(obj, rownum) {
 </TR>
 <& /elements/auto-table.html,
   template_row  => 'mytemplate',
-  fieldorder    => ['action', 'oid', 'value'],
+  fieldorder    => ['action', 'oid', 'datatype', 'value'],
   data          => \@data,
 &>
-<INPUT TYPE="hidden" NAME="multi_options" VALUE="action,oid,value">
+<INPUT TYPE="hidden" NAME="multi_options" VALUE="action,oid,datatype,value">
 <& foot.html, %opt &>
 <%init>
 my %opt = @_;
@@ -88,11 +88,12 @@ my $part_export = $opt{part_export} || FS::part_export->new;
 
 my @actions = split("\n", $part_export->option('action'));
 my @oids    = split("\n", $part_export->option('oid'));
+my @types   = split("\n", $part_export->option('datatype'));
 my @values  = split("\n", $part_export->option('value'));
 
 my @data;
 while (@actions or @oids or @values) {
-  my @thisrow = (shift(@actions), shift(@oids), shift(@values));
+  my @thisrow = (shift(@actions), shift(@oids), shift(@types), shift(@values));
   push @data, \@thisrow if grep length($_), @thisrow;
 }
 

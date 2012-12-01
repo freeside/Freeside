@@ -1,12 +1,13 @@
 <& /elements/header-popup.html &>
+<DIV STYLE="visibility: hidden; position: absolute" ID="measurebox"></DIV>
 <TABLE WIDTH="100%">
 <TR>
-  <TD ALIGN="right">Module:</TD>
+  <TD WIDTH="30%" ALIGN="right">Module:</TD>
   <TD><SELECT ID="select_module"></SELECT></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Object:</TD>
-  <TD><INPUT TYPE="text" NAME="path" ID="input_path"></TD>
+  <TD><INPUT TYPE="text" NAME="path" ID="input_path" WIDTH="100%"></TD>
 </TR>
 <TR>
   <TD COLSPAN=2>
@@ -14,7 +15,7 @@
   </TD>
 </TR>
 <TR>
-  <TH COLSPAN=2 ID="mib_objectID"></TH>
+  <TH ALIGN="center" COLSPAN=2 ID="mib_objectID"></TH>
 </TR>
 <TR>
   <TD ALIGN="right">Module: </TD><TD ID="mib_moduleID"></TD>
@@ -40,7 +41,7 @@ function show_info(state) {
   document.getElementById('mib_objectID').style.display = 
     document.getElementById('mib_moduleID').style.display = 
     document.getElementById('mib_type').style.display = 
-    state ? 'block' : 'none';
+    state ? '' : 'none';
 }
 
 function clear_list() {
@@ -48,6 +49,7 @@ function clear_list() {
   select_path.options.length = 0;
 }
 
+var measurebox = document.getElementById('measurebox');
 function add_item(value) {
   var select_path = document.getElementById('select_path');
   var input_path = document.getElementById('input_path');
@@ -57,7 +59,21 @@ function add_item(value) {
     opt.className = 'leaf';
     v = v.substring(0, v.length - 1);
   }
-  opt.value = opt.text = v;
+  var optvalue = v; // may not be the name we display
+  // shorten these if they don't fit in the box
+  if ( v.length > 30 ) { // unless they're already really short
+    measurebox.innerHTML = v;
+    while ( measurebox.clientWidth > select_path.clientWidth - 10
+            && v.match(/^\..*\./) ) {
+      v = v.replace(/^\.[^\.]+/, '');
+      measurebox.innerHTML = v;
+    }
+    if ( optvalue != v ) {
+      v = '...' + v;
+    }
+  }
+  opt.value = optvalue;
+  opt.text = v;
   opt.selected = (input_path.value == v);
   select_path.add(opt, null);
 }
