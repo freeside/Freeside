@@ -7,7 +7,7 @@ use FS::UID qw(adminsuidsetup);
 &untaint_argv;	#what it sounds like  (eww)
 #use vars qw($opt_d $opt_v $opt_p $opt_a $opt_s $opt_y);
 use vars qw(%opt);
-getopts("p:a:d:vsy:", \%opt);
+getopts("p:a:d:vsy:m", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -71,6 +71,8 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
   -s: re-charge setup fees
 
   -v: enable debugging
+
+  -m: Experimental multi-process mode (delay upload jobs until billing jobs complete)
 
 user: From the mapsecrets file - see config.html from the base documentation
 
