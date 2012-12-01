@@ -68,6 +68,15 @@ my $widget = new HTML::Widgets::SelectLayers(
   'html_between'    => "</TD></TR></TABLE>\n",
   'layer_callback'  => sub {
     my $layer = shift;
+    # create 'config_element' to generate the whole layer with a Mason component
+    if ( my $include = $exports->{$layer}{config_element} ) {
+      # might need to adjust the scope of  this at some point
+      return $m->scomp($include, 
+        part_export => $part_export,
+        layer       => $layer,
+        export_info => $exports->{$layer}
+      );
+    }
     my $html = qq!<INPUT TYPE="hidden" NAME="exporttype" VALUE="$layer">!.
                ntable("#cccccc",2);
 

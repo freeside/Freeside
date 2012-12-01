@@ -417,6 +417,19 @@ sub weight {
   export_info()->{$self->exporttype}->{'weight'} || 0;
 }
 
+=item info
+
+Returns a reference to (a copy of) the export's %info hash.
+
+=cut
+
+sub info {
+  my $self = shift;
+  $self->{_info} ||= { 
+    %{ export_info()->{$self->exporttype} }
+  };
+}
+
 =back
 
 =head1 SUBROUTINES

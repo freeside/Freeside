@@ -14,14 +14,15 @@ Example:
   );
 
 </%doc>
-<% include( '/elements/rs_init_object.html' ) %>
+<& /elements/rs_init_object.html &>
+<& /elements/init_overlib.html &>
 <SCRIPT TYPE="text/javascript">
 
 % foreach my $func ( @{$opt{'subs'}} ) { 
 %
 %       my $furl = $url;
 %       $furl =~ s/\"/\\\\\"/; #javascript escape
-%
+%#"
 %  
 
 
@@ -66,15 +67,26 @@ Example:
             } else {
               var data = xmlhttp.responseText;
               //alert('received response: ' + data);
-              a[a.length-1](data);
               if ( data.indexOf("<b>System error</b>") > -1 ) {
-                var w;
-                if ( w = window.open("about:blank") ) {
-                  w.document.write(data);
-                } else {
-                  // popup blocking?  should use an overlib popup instead 
-                  alert("Error popup disabled; try disabling popup blocking to see");
-                }
+                // trim this a little
+                var end = data.indexOf('<a href="#raw">') - 1;
+                data = data.substring(0, end);
+
+                overlib(data,
+                  WIDTH, 480, MIDX, 0, MIDY, 0,
+                  CAPTION, 'Error', STICKY, AUTOSTATUSCAP, DRAGGABLE,
+                  CLOSECLICK, BGCOLOR, '#f00', CGCOLOR, '#f00'
+                );
+                //var w;
+                //if ( w = window.open("about:blank") ) {
+                //  w.document.write(data);
+                //} else {
+                //  // popup blocking?  should use an overlib popup instead 
+                //  alert("Error popup disabled; try disabling popup blocking to see");
+                //}
+              } else {
+                // invoke the callback
+                a[a.length-1](data);
               }
             }
         }

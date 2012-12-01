@@ -15,12 +15,34 @@
     <TD><INPUT TYPE="text" NAME="ratetimename" VALUE="<% $rate_time ? $rate_time->ratetimename : '' %>"></TD>
   </TR>
 </TABLE>
-<% include('/elements/auto-table.html', 
-                      'header' => [ '', 'Start','','', '','End','','' ],
-                      'fields' => [ qw(sd sh sm sa ed eh em ea) ],
-                      'select' => [ ($day, $hour, $min, $ampm) x 2 ],
-                      'data'   => \@data,
-   ) %>
+<TABLE>
+  <TR>
+    <TH COLSPAN=4 ALIGN="center">Start</TH>
+    <TH COLSPAN=4 ALIGN="center">End</TH>
+  </TR>
+  <TR id="mytemplate">
+%   for my $pre (qw(s e)) {
+%     for my $f (qw(d h m a)) { # day, hour, minute, am/pm
+        <TD>
+          <SELECT NAME="<%$pre.$f%>">
+%       my $i = 0;
+%       while ($i < @{ $choices{$f} }) {
+            <OPTION VALUE="<%$choices{$f}[$i]%>">
+%         $i++;
+            <%$choices{$f}[$i]%></OPTION>
+%         $i++;
+%       }
+          </SELECT>
+        </TD>
+%     } #$f
+%   } #$pre
+  </TR>
+<& /elements/auto-table.html, 
+    'template_row' => 'mytemplate',
+    'data'   => \@data,
+    'fieldorder' => [qw(sd sh sm sa ed eh em ea)],
+&>
+</TABLE>
 <INPUT TYPE="submit" VALUE="<% $rate_time ? 'Apply changes' : 'Add period'%>">
 </FORM>
 <BR>
@@ -42,7 +64,12 @@ my $day = [ 0 => 'Sun',
 my $hour = [ map( {$_, sprintf('%02d',$_) } 12, 1..11 )];
 my $min  = [ map( {$_, sprintf('%02d',$_) } 0,30  )];
 my $ampm = [ 0 => 'AM', 1 => 'PM' ];
-
+my %choices = (
+  'd' => $day,
+  'h' => $hour,
+  'm' => $min,
+  'a' => $ampm,
+);
 if($ratetimenum) {
   $action = 'Edit';
   $rate_time = qsearchs('rate_time', {ratetimenum => $ratetimenum})
