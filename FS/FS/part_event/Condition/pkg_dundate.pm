@@ -19,7 +19,7 @@ sub condition {
 
   #my $cust_main = $self->cust_main($cust_pkg);
 
-  $cust_pkg->dundate <= $opt{time};
+  ( $cust_pkg->dundate || 0 ) <= $opt{time};
 
 }
 
