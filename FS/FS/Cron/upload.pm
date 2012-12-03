@@ -95,6 +95,29 @@ sub upload {
     }
   } # foreach @agents
 
+  # if there's nothing to do, don't hold up the rest of the process
+  return '' if !@tasks;
+
+  # wait for any ongoing billing jobs to complete
+  if ($opt{m}) {
+    my $dbh = dbh;
+    my $sql = "SELECT count(*) FROM queue LEFT JOIN cust_main USING(custnum) ".
+    "WHERE queue.job='FS::cust_main::queued_bill' AND status != 'failed'";
+    if (@agents) {
+      $sql .= ' AND cust_main.agentnum IN('.
+        join(',', map {$_->agentnum} @agents).
+        ')';
+    }
+    my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+    while (1) {
+      $sth->execute()
+        or die "Unexpected error executing statement $sql: ". $sth->errstr;
+      last if $sth->fetchrow_arrayref->[0] == 0;
+      warn "Waiting 5min for billing to complete...\n" if $DEBUG;
+      sleep 300;
+    }
+  }
+
   foreach (@tasks) {
 
     my $agentnum = $_->{agentnum};
@@ -143,21 +166,6 @@ sub spool_upload {
   my $dbh = dbh;
 
   my $agentnum = $opt{agentnum};
-
-  # wait for any ongoing billing jobs to complete
-  # (should this exclude status='failed')?
-  if ($opt{m}) {
-    my $sql = "SELECT count(*) FROM queue LEFT JOIN cust_main USING(custnum) ".
-    "WHERE queue.job='FS::cust_main::queued_bill'";
-    $sql .= " AND cust_main.agentnum = $agentnum" if $agentnum =~ /^\d+$/;
-    my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-    while (1) {
-      $sth->execute()
-        or die "Unexpected error executing statement $sql: ". $sth->errstr;
-      last if $sth->fetchrow_arrayref->[0] == 0;
-      sleep 300;
-    }
-  }
 
   my $agent;
   if ( $agentnum ) {
