@@ -9,8 +9,7 @@
   http_header('Content-Disposition' => qq!attachment;filename="$filename"!);
 
   my $output = '';
-  use IO::String;
-  my $XLS = IO::String->new($output);;
+  my $XLS = IO::String->new($output);
   my $workbook = $format->{class}->new($XLS)
     or die "Error opening .xls file: $!";
 
