@@ -83,6 +83,7 @@ if ( -e $addl_handler_use_file ) {
   use IO::Handle;
   use IO::File;
   use IO::Scalar;
+  use IO::String;
   #not actually using this yet anyway...# use IPC::Run3 0.036;
   use Net::Whois::Raw qw(whois);
   if ( $] < 5.006 ) {
