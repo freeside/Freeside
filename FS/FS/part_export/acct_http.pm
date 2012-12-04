@@ -41,6 +41,18 @@ tie %options, 'Tie::IxHash',
       "password \$new->_password",
     ),
   },
+  'suspend_data' => {
+    label   => 'Suspend data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
+  'unsuspend_data' => {
+    label   => 'Unsuspend data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
   'success_regexp' => {
     label  => 'Success Regexp',
     default => '',

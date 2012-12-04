@@ -33,6 +33,18 @@ tie %options, 'Tie::IxHash',
     default => join("\n",
     ),
   },
+  'suspend_data' => {
+    label   => 'Suspend data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
+  'unsuspend_data' => {
+    label   => 'Unsuspend data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
   'success_regexp' => {
     label  => 'Success Regexp',
     default => '',
@@ -61,6 +73,16 @@ sub _export_insert {
 sub _export_delete {
   my $self = shift;
   $self->_export_command('delete', @_);
+}
+
+sub _export_suspend {
+  my $self = shift;
+  $self->_export_command('suspend', @_);
+}
+
+sub _export_unsuspend {
+  my $self = shift;
+  $self->_export_command('unsuspend', @_);
 }
 
 sub _export_command {
