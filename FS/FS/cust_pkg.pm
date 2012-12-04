@@ -2650,6 +2650,18 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+=item balance
+
+Returns the balance for this specific package, when using
+experimental package balance.
+
+=cut
+
+sub balance {
+  my $self = shift;
+  $self->cust_main->balance_pkgnum( $self->pkgnum );
+}
+
 #these subs are in location_Mixin.pm now... unfortunately the POD doesn't mixin
 
 =item cust_location
