@@ -47,6 +47,8 @@ The following variables are available for interpolation (prefixed with new_ or
 old_ for replace operations):
 <UL>
   <LI><code>$username</code>
+  <LI><code>$domain</code>
+  <LI><code>$email</code> - username@domain
   <LI><code>$_password</code>
   <LI><code>$crypt_password</code> - encrypted password
   <LI><code>$ldap_password</code> - Password in LDAP/RFC2307 format (for example, "{PLAIN}himom", "{CRYPT}94pAVyK/4oIBk" or "{MD5}5426824942db4253f87a1009fd5d2d4")
@@ -195,8 +197,8 @@ sub _export_value {
     } else {
       return Frontier::RPC2::String->new( $svc_acct->$value() );
     }
-  } elsif ( $value eq 'domain' ) {
-    return Frontier::RPC2::String->new( $svc_acct->domain );
+  } elsif ( $value =~ /^(domain|email)$/ ) {
+    return Frontier::RPC2::String->new( $svc_acct->$value() );
   } elsif ( $value eq 'crypt_password' ) {
     return Frontier::RPC2::String->new( $svc_acct->crypt_password( $self->option('crypt') ) );
   } elsif ( $value eq 'ldap_password' ) {
@@ -206,6 +208,7 @@ sub _export_value {
     #XXX
   }
 
+#this is the "cust_main" email, not svc_acct->email
 #  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
 #  if ( $cust_pkg ) {
 #    no strict 'vars';
