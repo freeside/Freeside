@@ -200,6 +200,11 @@ if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.refnum = $1";
 }
 
+# custnum
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.custnum = $1";
+}
+
 # the non-tax case
 if ( $cgi->param('nottax') ) {
 
