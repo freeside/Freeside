@@ -23,6 +23,6 @@
 <%init>
 
 die "access denied"
-  unless $curuser->access_right('Summarize packages');
+  unless $FS::CurrentUser::CurrentUser->access_right('Summarize packages');
 
 </%init>
