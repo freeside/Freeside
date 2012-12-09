@@ -70,6 +70,16 @@
                'actionlabel' => emt('Enter credit'),
                'width'       => 616, #make room for reasons #540 default
   &>
+  |
+  <& /elements/popup_link-cust_main.html,
+               'label'       => emt('Credit line items'),
+               #'action'      => "${p}search/cust_bill_pkg.cgi?nottax=1;type=select",
+               'action'      => "${p}edit/credit-cust_bill_pkg.html",
+               'cust_main'   => $cust_main,
+               'actionlabel' => emt('Credit line items'),
+               'width'       => 884, #763,
+               'height'      => 575,
+  &>
   <BR>
 % } 
 

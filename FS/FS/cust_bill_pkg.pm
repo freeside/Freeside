@@ -797,8 +797,9 @@ sub set_display {
 
 =item disintegrate
 
-Returns a list of cust_bill_pkg objects each with no more than a single class
-(including setup or recur) of charge.
+Returns a hash: keys are "setup", "recur" or usage classnum, values are
+FS::cust_bill_pkg objects, each with no more than a single class (setup or
+recur) of charge.
 
 =cut
 
@@ -1075,6 +1076,18 @@ sub _X_show_zero {
   return 0 unless $self->$what() == 0 && $self->pkgnum;
 
   $self->cust_pkg->_X_show_zero($what);
+}
+
+=item credited [ BEFORE, AFTER, OPTIONS ]
+
+Returns the sum of credits applied to this item.  Arguments are the same as
+owed_sql/paid_sql/credited_sql.
+
+=cut
+
+sub credited {
+  my $self = shift;
+  $self->scalar_sql('SELECT '. $self->credited_sql(@_).' FROM cust_bill_pkg WHERE billpkgnum = ?', $self->billpkgnum);
 }
 
 =back
