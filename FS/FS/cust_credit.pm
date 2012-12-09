@@ -869,8 +869,6 @@ sub credit_lineitems {
 
   }
 
-  #$return->{taxlines} = \@taxlines;
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
