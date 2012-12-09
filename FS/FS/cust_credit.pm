@@ -623,14 +623,19 @@ sub credited_sql {
 Example:
 
   my $error = FS::cust_credit->credit_lineitems(
-    #the lineitems
+
+    #the lineitems to credit
     'billpkgnums'       => \@billpkgnums,
+    'setuprecurs'       => \@setuprecurs,
+    'amounts'           => \@amounts,
 
     #the credit
     'newreasonnum'      => scalar($cgi->param('newreasonnum')),
     'newreasonnum_type' => scalar($cgi->param('newreasonnumT')),
     map { $_ => scalar($cgi->param($_)) }
-      fields('cust_credit')  
+      #fields('cust_credit')  
+      qw( custnum _date amount reason reasonnum addlinfo ), #pkgnum eventnum
+
   );
 
 =cut
