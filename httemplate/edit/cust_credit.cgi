@@ -34,6 +34,7 @@
     <TD>
       <INPUT TYPE="text" NAME="addlinfo" VALUE="<% $cgi->param('addlinfo') |h %>">
     </TD>
+  </TR>
 
 % if ( $conf->exists('credits-auto-apply-disable') ) {
         <INPUT TYPE="HIDDEN" NAME="apply" VALUE="no">

@@ -172,7 +172,7 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  #false laziness w/ cust_credit::insert
+  #false laziness w/ cust_pay::insert
   if ( $unsuspendauto && $old_balance && $cust_main->balance <= 0 ) {
     my @errors = $cust_main->unsuspend;
     #return 
@@ -616,6 +616,259 @@ sub credited_sql {
 
   #$class->unapplied_sql(@_);
   unapplied_sql();
+}
+
+=item credit_lineitems
+
+Example:
+
+  my $error = FS::cust_credit->credit_lineitems(
+    #the lineitems
+    'billpkgnums'       => \@billpkgnums,
+
+    #the credit
+    'newreasonnum'      => scalar($cgi->param('newreasonnum')),
+    'newreasonnum_type' => scalar($cgi->param('newreasonnumT')),
+    map { $_ => scalar($cgi->param($_)) }
+      fields('cust_credit')  
+  );
+
+=cut
+
+#maybe i should just be an insert with extra args instead of a class method
+use FS::cust_bill_pkg;
+sub credit_lineitems {
+  my( $class, %arg ) = @_;
+
+  my $curuser = $FS::CurrentUser::CurrentUser;
+
+  #some false laziness w/misc/xmlhttp-cust_bill_pkg-calculate_taxes.html
+
+  my $cust_main = qsearchs({
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => $arg{custnum} },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  }) or return 'unknown customer';
+
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #my @cust_bill_pkg = qsearch({
+  #  'select'    => 'cust_bill_pkg.*',
+  #  'table'     => 'cust_bill_pkg',
+  #  'addl_from' => ' LEFT JOIN cust_bill USING (invnum)  '.
+  #                 ' LEFT JOIN cust_main USING (custnum) ',
+  #  'extra_sql' => ' WHERE custnum = $custnum AND billpkgnum IN ('.
+  #                     join( ',', @{$arg{billpkgnums}} ). ')',
+  #  'order_by'  => 'ORDER BY invnum ASC, billpkgnum ASC',
+  #});
+
+  my $error = '';
+  if ($arg{reasonnum} == -1) {
+
+    $error = 'Enter a new reason (or select an existing one)'
+      unless $arg{newreasonnum} !~ /^\s*$/;
+    my $reason = new FS::reason {
+                   'reason'      => $arg{newreasonnum},
+                   'reason_type' => $arg{newreasonnum_type},
+                 };
+    $error ||= $reason->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error inserting reason: $error";
+    }
+    $arg{reasonnum} = $reason->reasonnum;
+  }
+
+  my $cust_credit = new FS::cust_credit ( {
+    map { $_ => $arg{$_} }
+      #fields('cust_credit')
+      qw( custnum _date amount reason reasonnum addlinfo ), #pkgnum eventnum
+  } );
+  $error = $cust_credit->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Error inserting credit: $error";
+  }
+
+  #my $subtotal = 0;
+  my $taxlisthash = {};
+  my %cust_credit_bill = ();
+  my %cust_bill_pkg = ();
+  my %cust_credit_bill_pkg = ();
+  foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
+    my $setuprecur = shift @{$arg{setuprecurs}};
+    my $amount = shift @{$arg{amounts}};
+
+    my $cust_bill_pkg = qsearchs({
+      'table'     => 'cust_bill_pkg',
+      'hashref'   => { 'billpkgnum' => $billpkgnum },
+      'addl_from' => 'LEFT JOIN cust_bill USING (invnum)',
+      'extra_sql' => 'AND custnum = '. $cust_main->custnum,
+    }) or die "unknown billpkgnum $billpkgnum";
+
+    if ( $setuprecur eq 'setup' ) {
+      $cust_bill_pkg->setup($amount);
+      $cust_bill_pkg->recur(0);
+      $cust_bill_pkg->unitrecur(0);
+      $cust_bill_pkg->type('');
+    } else {
+      $setuprecur = 'recur'; #in case its a usage classnum?
+      $cust_bill_pkg->recur($amount);
+      $cust_bill_pkg->setup(0);
+      $cust_bill_pkg->unitsetup(0);
+    }
+
+    push @{$cust_bill_pkg{$cust_bill_pkg->invnum}}, $cust_bill_pkg;
+
+    #unapply any payments applied to this line item (other credits too?)
+    foreach my $cust_bill_pay_pkg ( $cust_bill_pkg->cust_bill_pay_pkg($setuprecur) ) {
+      $error = $cust_bill_pay_pkg->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error unapplying payment: $error";
+      }
+    }
+
+    #$subtotal += $amount;
+    $cust_credit_bill{$cust_bill_pkg->invnum} += $amount;
+    push @{ $cust_credit_bill_pkg{$cust_bill_pkg->invnum} },
+      new FS::cust_credit_bill_pkg {
+        'billpkgnum' => $cust_bill_pkg->billpkgnum,
+        'amount'     => $amount,
+        'setuprecur' => $setuprecur,
+        'sdate'      => $cust_bill_pkg->sdate,
+        'edate'      => $cust_bill_pkg->edate,
+      };
+
+    my $part_pkg = $cust_bill_pkg->part_pkg;
+    $cust_main->_handle_taxes( $part_pkg,
+                               $taxlisthash,
+                               $cust_bill_pkg,
+                               $cust_bill_pkg->cust_pkg,
+                               $cust_bill_pkg->cust_bill->_date,
+                               $cust_bill_pkg->cust_pkg->pkgpart,
+                             );
+  }
+
+  ###
+  # now loop through %cust_credit_bill and insert those
+  ###
+
+  # (hack to prevent cust_credit_bill_pkg insertion)
+  local($FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack) = 1;
+
+  foreach my $invnum ( sort { $a <=> $b } keys %cust_credit_bill ) {
+
+    #taxes
+
+    if ( @{ $cust_bill_pkg{$invnum} } ) {
+
+      my $listref_or_error = 
+        $cust_main->calculate_taxes( $cust_bill_pkg{$invnum}, $taxlisthash, $cust_bill_pkg{$invnum}->[0]->cust_bill->_date );
+
+      unless ( ref( $listref_or_error ) ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error calculating taxes: $listref_or_error";
+      }
+
+      # so, loop through the taxlines, apply just that amount to the tax line
+      #  item (save for later insert) & add to $
+
+      #my @taxlines = ();
+      #my $taxtotal = 0;
+      foreach my $taxline ( @$listref_or_error ) {
+
+        #find equivalent tax line items on the existing invoice
+        # (XXX need a more specific/deterministic way to find these than itemdesc..)
+        my $tax_cust_bill_pkg = qsearchs('cust_bill_pkg', {
+          'invnum'   => $invnum,
+          'pkgnum'   => 0, #$taxline->invnum
+          'itemdesc' => $taxline->desc,
+        });
+
+        my $amount = $taxline->setup;
+        my $desc = $taxline->desc;
+
+        foreach my $location ( $tax_cust_bill_pkg->cust_bill_pkg_tax_Xlocation ) {
+
+          $location->cust_bill_pkg_desc($taxline->desc); #ugh @ that kludge
+
+          #$taxtotal += $location->amount;
+          $amount -= $location->amount;
+
+          #push @taxlines,
+          #  #[ $location->desc, $taxline->setup, $taxlocnum, $taxratelocnum ];
+          #  [ $location->desc, $location->amount, $taxlocnum, $taxratelocnum ];
+          $cust_credit_bill{$invnum} += $location->amount;
+          push @{ $cust_credit_bill_pkg{$invnum} },
+            new FS::cust_credit_bill_pkg {
+              'billpkgnum'                => $tax_cust_bill_pkg->billpkgnum,
+              'amount'                    => $location->amount,
+              'setuprecur'                => 'setup',
+              'billpkgtaxlocationnum'     => $location->billpkgtaxlocationnum,
+              'billpkgtaxratelocationnum' => $location->billpkgtaxratelocationnum,
+            };
+
+        }
+        if ($amount > 0) {
+          #$taxtotal += $amount;
+          #push @taxlines,
+          #  [ $taxline->itemdesc. ' (default)', sprintf('%.2f', $amount), '', '' ];
+
+          $cust_credit_bill{$invnum} += $amount;
+          push @{ $cust_credit_bill_pkg{$invnum} },
+            new FS::cust_credit_bill_pkg {
+              'billpkgnum' => $tax_cust_bill_pkg->billpkgnum,
+              'amount'     => $amount,
+              'setuprecur' => 'setup',
+            };
+
+        }
+      }
+
+    }
+
+    #insert cust_credit_bill
+
+    my $cust_credit_bill = new FS::cust_credit_bill {
+      'crednum' => $cust_credit->crednum,
+      'invnum'  => $invnum,
+      'amount'  => $cust_credit_bill{$invnum},
+    };
+    $error = $cust_credit_bill->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error applying credit of $cust_credit_bill{$invnum} ".
+             " to invoice $invnum: $error";
+    }
+
+    #and then insert cust_credit_bill_pkg for each cust_bill_pkg
+    foreach my $cust_credit_bill_pkg ( @{$cust_credit_bill_pkg{$invnum}} ) {
+      $cust_credit_bill_pkg->creditbillnum( $cust_credit_bill->creditbillnum );
+      $error = $cust_credit_bill_pkg->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error applying credit to line item: $error";
+      }
+    }
+
+  }
+
+  #$return->{taxlines} = \@taxlines;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =back
