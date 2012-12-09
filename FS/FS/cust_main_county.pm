@@ -472,8 +472,11 @@ sub taxline {
 
     $_->taxnum($self->taxnum) foreach @new_exemptions;
 
-    if ( $cust_bill_pkg->billpkgnum ) {
-      die "tried to calculate tax exemptions on a previously billed line item\n";
+    #if ( $cust_bill_pkg->billpkgnum ) {
+
+      #no, need to do this to e.g. calculate tax credit amounts
+      #die "tried to calculate tax exemptions on a previously billed line item\n";
+
       # this is unnecessary
 #      foreach my $cust_tax_exempt_pkg (@new_exemptions) {
 #        my $error = $cust_tax_exempt_pkg->insert;
@@ -482,7 +485,7 @@ sub taxline {
 #          return "can't insert cust_tax_exempt_pkg: $error";
 #        }
 #      }
-    }
+    #}
 
     # attach them to the line item
     push @{ $cust_bill_pkg->cust_tax_exempt_pkg }, @new_exemptions;
