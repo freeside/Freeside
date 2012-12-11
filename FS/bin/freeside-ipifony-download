@@ -12,7 +12,7 @@ use FS::Conf;
 use Text::CSV;
 
 my %opt;
-getopts('va:P:', \%opt);
+getopts('va:P:C:', \%opt);
 
 #$Net::SFTP::Foreign::debug = -1;
 sub HELP_MESSAGE { '
@@ -21,6 +21,7 @@ sub HELP_MESSAGE { '
         [ -v ]
         [ -a archivedir ]
         [ -P port ]
+        [ -C category ]
         freesideuser sftpuser@hostname[:path]
 ' }
 
@@ -47,6 +48,16 @@ if ( $opt{a} ) {
     unless -d $opt{a};
   die "archive directory $opt{a} is not writable by the freeside user\n"
     unless -w $opt{a};
+}
+
+my $categorynum = '';
+if ( $opt{C} ) {
+  # find this category (don't auto-create it, it should exist already)
+  my $category = qsearchs('pkg_category', { categoryname => $opt{C} });
+  if (!defined($category)) {
+    die "Package category '$opt{C}' does not exist.\n";
+  }
+  $categorynum = $category->categorynum;
 }
 
 #my $tmpdir = File::Temp->newdir();
@@ -149,8 +160,23 @@ FILE: foreach my $filename (@$files) {
     if (my $classname = $hash{classname}) {
       if (!exists($classnum_of{$classname}) ) {
         # then look it up
-        my $pkg_class = qsearch('pkg_class', { classname => $classname });
-        $classnum_of{$classname} = $pkg_class ? $pkg_class->classnum : '';
+        my $pkg_class = qsearchs('pkg_class', {
+            classname   => $classname,
+            categorynum => $categorynum,
+        });
+        if (!defined($pkg_class)) {
+          # then create it
+          $pkg_class = FS::pkg_class->new({
+              classname   => $classname,
+              categorynum => $categorynum,
+          });
+          my $error = $pkg_class->insert;
+          die "Error creating package class for product code '$classname':\n".
+            "$error\n"
+            if $error;
+        }
+
+        $classnum_of{$classname} = $pkg_class->classnum;
       }
       $opt{classnum} = $classnum_of{$classname};
     }
