@@ -21,6 +21,7 @@ use FS::cust_bill_pkg_tax_rate_location;
 use FS::part_event;
 use FS::part_event_condition;
 use FS::pkg_category;
+use FS::Log;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -104,6 +105,9 @@ options of those methods are also available.
 sub bill_and_collect {
   my( $self, %options ) = @_;
 
+  my $log = FS::Log->new('bill_and_collect');
+  $log->debug('start', object => $self, agentnum => $self->agentnum);
+
   my $error;
 
   #$options{actual_time} not $options{time} because freeside-daily -d is for
@@ -168,6 +172,7 @@ sub bill_and_collect {
     }
   }
   $job->update_statustext('100,finished') if $job;
+  $log->debug('finish', object => $self, agentnum => $self->agentnum);
 
   '';
 

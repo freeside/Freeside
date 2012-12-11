@@ -635,3 +635,7 @@ t/upgrade_journal.t
 FS/Trace.pm
 FS/agent_pkg_class.pm
 t/agent_pkg_class.t
+FS/log.pm
+t/log.t
+FS/log_context.pm
+t/log_context.t

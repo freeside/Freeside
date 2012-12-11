@@ -259,6 +259,7 @@
 %
 %                     my $links    = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
 %                     my $onclicks = $opt{'link_onclicks'} ? [ @{$opt{'link_onclicks'}} ] : [];
+%                     my $tooltips = $opt{'tooltips'} ? [ @{$opt{'tooltips'}} ] : [];
 %                     my $aligns   = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
 %                     my $colors   = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
 %                     my $sizes    = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
@@ -354,6 +355,7 @@
 %                       if ( $links ) {
 %                         my $link = shift @$links;
 %                         my $onclick = shift @$onclicks;
+%                         my $tooltip = shift @$tooltips;
 %
 %                         if (    ! $opt{'agent_virt'}
 %                              || ( $null_link && ! $row->agentnum )
@@ -368,6 +370,14 @@
 %                             if ref($onclick) eq 'CODE';
 %                           $onclick = qq( onClick="$onclick") if $onclick;
 %
+%                           $tooltip = &{$tooltip}($row)
+%                             if ref($tooltip) eq 'CODE';
+%                           $tooltip = qq! id="a$id" !.
+%                             qq! onmouseover="return overlib(!.
+%                             $m->interp->apply_escapes($tooltip, 'h', 'js_string').
+%                             qq!, FGCLASS, 'tooltip', REF, 'a$id', !.
+%                             qq!REFC, 'LL', REFP, 'UL')"! if $tooltip;
+%
 %                           if ( $link ) {
 %                             my( $url, $method ) = @{$link};
 %                             if ( ref($method) eq 'CODE' ) {
@@ -375,11 +385,16 @@
 %                             } else {
 %                               $a = $url. $row->$method();
 %                             }
-%                             $a = qq(<A HREF="$a"$onclick>);
+%                             $a = qq(<A HREF="$a"$onclick$tooltip>);
 %                           }
 %                           elsif ( $onclick ) {
 %                             $a = qq(<A HREF="javascript:void(0);"$onclick>);
 %                           }
+%                           elsif ( $tooltip ) {
+%                             $a = qq(<A $tooltip>);
+%                           }
+%                           $id++;
+
 %                         }
 %
 %                       }
@@ -493,4 +508,5 @@ $count_sth->execute
 my $count_arrayref = $count_sth->fetchrow_arrayref;
 my $total = $count_arrayref->[0];
 
+my $id = 0;
 </%init>

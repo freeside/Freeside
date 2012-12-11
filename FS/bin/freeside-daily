@@ -4,6 +4,7 @@ use strict;
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Conf;
+use FS::Log;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
@@ -11,6 +12,8 @@ getopts("p:a:d:vl:sy:nmrkg:o", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
+my $log = FS::Log->new('daily');
+$log->info('start');
 
 #you can skip this by not having a NetworkMonitoringSystem configured
 use FS::Cron::nms_report qw(nms_report);
@@ -68,6 +71,8 @@ unlink <${deldir}.CGItemp*>;
 #you can skip this just by not having the config
 use FS::Cron::backup qw(backup);
 backup();
+
+$log->info('finish');
 
 ###
 # subroutines

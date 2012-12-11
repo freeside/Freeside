@@ -276,6 +276,7 @@ tie my %rights, 'Tie::IxHash',
     'Financial reports',
     { rightname=> 'List inventory', global=>1 },
     { rightname=>'View email logs', global=>1 },
+    { rightname=>'View system logs' },
 
     'Download report data',
     'Services: Accounts',

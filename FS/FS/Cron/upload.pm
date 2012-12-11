@@ -9,6 +9,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
 use FS::queue;
 use FS::agent;
+use FS::Log;
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common;
@@ -30,6 +31,8 @@ $me = '[FS::Cron::upload]';
 
 sub upload {
   my %opt = @_;
+  my $log = FS::Log->new('Cron::upload');
+  $log->info('start');
 
   my $debug = 0;
   $debug = 1 if $opt{'v'};
@@ -113,7 +116,10 @@ sub upload {
   } #!if cust_bill-ftp_spool
 
   # if there's nothing to do, don't hold up the rest of the process
-  return '' if !@tasks;
+  if (!@tasks) {
+    $log->info('finish (nothing to upload)');
+    return '';
+  }
 
   # wait for any ongoing billing jobs to complete
   if ($opt{m}) {
@@ -159,17 +165,21 @@ sub upload {
     }
 
   }
+  $log->info('finish');
 
 }
 
 sub spool_upload {
   my %opt = @_;
+  my $log = FS::Log->new('spool_upload');
 
   warn "$me spool_upload called\n" if $DEBUG;
   my $conf = new FS::Conf;
   my $dir = '%%%FREESIDE_EXPORT%%%/export.'. $FS::UID::datasrc. '/cust_bill';
 
   my $agentnum = $opt{agentnum} || '';
+  $log->debug('start', agentnum => $agentnum);
+
   my $url      = $opt{url} or die "no url for agent $agentnum\n";
   $url =~ s/^\s+//; $url =~ s/\s+$//;
 
@@ -206,6 +216,8 @@ sub spool_upload {
     {
       warn "$me neither $dir/agentnum$agentnum-header.csv nor ".
            "$dir/agentnum$agentnum-detail.csv found\n" if $DEBUG;
+      $log->debug("finish (neither agentnum$agentnum-header.csv nor ".
+                  "agentnum$agentnum-detail.csv found)");
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
       return;
     }
@@ -271,6 +283,7 @@ sub spool_upload {
     my $file = $opt{agentnum} ? "agentnum$opt{agentnum}" : 'spool'; #.csv
     unless ( -f "$dir/$file.csv" ) {
       warn "$me $dir/$file.csv not found\n" if $DEBUG;
+      $log->debug("finish ($dir/$file.csv not found)");
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
       return;
     }
@@ -297,6 +310,8 @@ sub spool_upload {
       die "malformed FTP URL $url\n";
     }
   } #opt{format}
+  
+  $log->debug('finish', agentnum => $agentnum);
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
