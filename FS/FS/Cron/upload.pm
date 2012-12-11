@@ -9,6 +9,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
 use FS::queue;
 use FS::agent;
+use FS::Log;
 use FS::Misc qw( send_email ); #for bridgestone
 use FS::upload_target;
 use LWP::UserAgent;
@@ -33,6 +34,8 @@ $me = '[FS::Cron::upload]';
 
 sub upload {
   my %opt = @_;
+  my $log = FS::Log->new('Cron::upload');
+  $log->info('start');
 
   my $debug = 0;
   $debug = 1 if $opt{'v'};
@@ -96,7 +99,10 @@ sub upload {
   } # foreach @agents
 
   # if there's nothing to do, don't hold up the rest of the process
-  return '' if !@tasks;
+  if (!@tasks) {
+    $log->info('finish (nothing to upload)');
+    return '';
+  }
 
   # wait for any ongoing billing jobs to complete
   if ($opt{m}) {
@@ -142,11 +148,13 @@ sub upload {
     }
 
   }
+  $log->info('finish');
 
 }
 
 sub spool_upload {
   my %opt = @_;
+  my $log = FS::Log->new('spool_upload');
 
   warn "$me spool_upload called\n" if $DEBUG;
   my $conf = new FS::Conf;
@@ -166,6 +174,7 @@ sub spool_upload {
   my $dbh = dbh;
 
   my $agentnum = $opt{agentnum};
+  $log->debug('start', agentnum => $agentnum);
 
   my $agent;
   if ( $agentnum ) {
@@ -184,6 +193,8 @@ sub spool_upload {
     {
       warn "$me neither $dir/$file-header.csv nor ".
            "$dir/$file-detail.csv found\n" if $DEBUG > 1;
+      $log->debug("finish (neither $file-header.csv nor ".
+           "$file-detail.csv found)");
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
       return;
     }
@@ -263,6 +274,7 @@ sub spool_upload {
 
     unless ( -f "$dir/$file.csv" ) {
       warn "$me $dir/$file.csv not found\n" if $DEBUG > 1;
+      $log->debug("finish ($dir/$file.csv not found)");
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
       return;
     }
@@ -450,6 +462,8 @@ sub spool_upload {
     }
 
   } #opt{handling}
+
+  $log->debug('finish', agentnum => $agentnum);
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';

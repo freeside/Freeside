@@ -13,6 +13,8 @@ use FS::cust_main;
 use FS::part_event;
 use FS::part_event_condition;
 
+use FS::Log;
+
 @ISA = qw( Exporter );
 @EXPORT_OK = qw ( bill bill_where );
 
@@ -26,6 +28,9 @@ use FS::part_event_condition;
 
 sub bill {
   my %opt = @_;
+
+  my $log = FS::Log->new('Cron::bill');
+  $log->info('start');
 
   my $check_freq = $opt{'check_freq'} || '1d';
 
@@ -134,6 +139,7 @@ sub bill {
 
   $cursor_dbh->commit or die $cursor_dbh->errstr;
 
+  $log->info('finish');
 }
 
 # freeside-daily %opt:

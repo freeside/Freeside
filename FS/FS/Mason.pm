@@ -56,6 +56,7 @@ if ( -e $addl_handler_use_file ) {
   #use CGI::Carp qw(fatalsToBrowser);
   use CGI::Cookie;
   use List::Util qw( max min sum );
+  use List::MoreUtils qw( first_index uniq );
   use Scalar::Util qw( blessed );
   use Data::Dumper;
   use Date::Format;
@@ -329,6 +330,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::agent_pkg_class;
   use FS::svc_export_machine;
   use FS::GeocodeCache;
+  use FS::log;
+  use FS::log_context;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

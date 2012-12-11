@@ -675,3 +675,7 @@ FS/svc_export_machine.pm
 t/svc_export_machine.t
 FS/GeocodeCache.pm
 t/GeocodeCache.t
+FS/log.pm
+t/log.t
+FS/log_context.pm
+t/log_context.t

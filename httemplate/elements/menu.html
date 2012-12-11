@@ -346,6 +346,14 @@ if($curuser->access_right('Financial reports')) {
 
 } # else $report_financial contains nothing.
 
+tie my %report_logs, 'Tie::IxHash';
+  $report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
+  if $curuser->access_right('View system logs')
+  || $curuser->access_right('Configuration');
+  $report_logs{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgoing message log' ]
+  if $curuser->access_right('View email logs')
+  || $curuser->access_right('Configuration');
+
 tie my %report_menu, 'Tie::IxHash';
 $report_menu{'Prospects'}   = [ \%report_prospects, 'Prospect reports' ]
   if $curuser->access_right('List prospects');
@@ -375,6 +383,8 @@ $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
 $report_menu{'Financial'}  = [ \%report_financial, 'Financial reports' ]
   if $curuser->access_right('Financial reports') 
   or $curuser->access_right('Receivables report');
+$report_menu{'Logs'} = [ \%report_logs, 'System and email logs' ]
+  if (keys %report_logs); # empty if the user has no rights to it
 $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
   if $curuser->access_right('Raw SQL');
 
@@ -440,8 +450,6 @@ $tools_menu{'Time Queue'} =  [ $fsurl.'search/report_timeworked.html', 'View pen
   if $curuser->access_right('Time queue');
 $tools_menu{'Attachments'} = [ $fsurl.'browse/cust_attachment.html', 'View customer attachments' ]
   if !$conf->config('disable_cust_attachment') and $curuser->access_right('View attachments') and $curuser->access_right('Browse attachments');
-$tools_menu{'Outgoing messages'} = [ $fsurl.'search/cust_msg.html', 'View outgoing message log' ] #shouldn't this be in the reports menu?
-  if $curuser->access_right('View email logs');
 $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
   if $curuser->access_right('Import');
 $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]

@@ -191,6 +191,7 @@ sub dbdef_dist {
   foreach my $table (
     grep {    ! /^clientapi_session/
            && ! /^h_/
+           && ! /^log(_context)?$/
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables
@@ -3969,6 +3970,32 @@ sub tables_hashref {
       ],
       'primary_key' => 'targetnum',
       'unique' => [ [ 'targetnum' ] ],
+      'index' => [],
+    },
+
+    'log' => {
+      'columns' => [
+        'lognum',     'serial', '', '', '', '',
+        '_date',      'int', '', '', '', '',
+        'agentnum',   'int', 'NULL', '', '', '',
+        'tablename',  'varchar', 'NULL', $char_d, '', '',
+        'tablenum',   'int',  'NULL', '', '', '', 
+        'level',      'int',  '', '', '', '',
+        'message',    'text', '', '', '', '',
+      ],
+      'primary_key' => 'lognum',
+      'unique'      => [],
+      'index'       => [ ['_date'], ['level'] ],
+    },
+
+    'log_context' => {
+      'columns' => [
+        'logcontextnum', 'serial', '', '', '', '',
+        'lognum', 'int', '', '', '', '',
+        'context', 'varchar', '', 32, '', '',
+      ],
+      'primary_key' => 'logcontextnum',
+      'unique' => [ [ 'lognum', 'context' ] ],
       'index' => [],
     },
 

@@ -11,6 +11,7 @@ use FS::Conf;
 use FS::Record qw(qsearch);
 use FS::queue;
 use FS::queue_depend;
+use FS::Log;
 
 # no autoloading for non-FS classes...
 use Net::SSH 0.07;
@@ -45,6 +46,7 @@ while ( $@ ) {
   }
 }
 
+my $log = FS::Log->new('queue');
 logfile( "%%%FREESIDE_LOG%%%/queuelog.". $FS::UID::datasrc );
 
 warn "completing daemonization (detaching))\n" if $DEBUG;
@@ -135,6 +137,8 @@ while (1) {
 
   foreach my $job ( @jobs ) {
 
+    $log->debug('locking queue job', object => $job);
+
     my %hash = $job->hash;
     $hash{'status'} = 'locked';
     my $ljob = new FS::queue ( \%hash );
@@ -205,6 +209,8 @@ while (1) {
       }
 
       my $eval = "&". $ljob->job. '(@args);';
+      # don't put @args in the log, may expose passwords
+      $log->info('starting job ('.$ljob->job.')');
       warn 'running "&'. $ljob->job. '('. join(', ', @args). ")\n" if $DEBUG;
       eval $eval; #throw away return value?  suppose so
       if ( $@ ) {

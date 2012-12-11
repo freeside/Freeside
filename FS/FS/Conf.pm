@@ -749,6 +749,15 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'event_log_level',
+    'section'     => 'notification',
+    'description' => 'Store events in the internal log if they are at least this severe.  "info" is the default, "debug" is very detailed and noisy.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'debug', 'info', 'notice', 'warning', 'error', ],
+    # don't bother with higher levels
+  },
+
+  {
     'key'         => 'log_sent_mail',
     'section'     => 'notification',
     'description' => 'Enable logging of template-generated email.',
