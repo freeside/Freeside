@@ -348,7 +348,7 @@ sub _export_delete {
 
 sub sqlradius_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
-  my %args = @_;
+  #my %args = @_;
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
     'job'    => "FS::part_export::sqlradius::sqlradius_$method",
