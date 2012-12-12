@@ -150,10 +150,12 @@ treated as relative to it's parent's path, and made absolute.
 sub path {
     my $self = shift;
     if (@_) {
-        $self->{path} = shift;
-        $self->{path} = URI->new_abs($self->{path}, $self->parent->path . "/")->as_string
-            if defined $self->{path} and $self->parent and $self->parent->path;
-        $self->{path} =~ s!///!/! if $self->{path};
+        if (defined($self->{path} = shift)) {
+            my $base  = ($self->parent and $self->parent->path) ? $self->parent->path : "";
+               $base .= "/" unless $base =~ m{/$};
+            my $uri = URI->new_abs($self->{path}, $base);
+            $self->{path} = $uri->as_string;
+        }
     }
     return $self->{path};
 }
@@ -230,6 +232,7 @@ sub child {
         if ( defined $path and length $path ) {
             my $base_path = $HTML::Mason::Commands::r->path_info;
             my $query     = $HTML::Mason::Commands::m->cgi_object->query_string;
+            $base_path =~ s!/+!/!g;
             $base_path .= "?$query" if defined $query and length $query;
 
             $base_path =~ s/index\.html$//;
