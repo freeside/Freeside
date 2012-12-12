@@ -843,7 +843,7 @@ sub real_port_graph {
 	    'session_id'  => $session_id,
 	    'svcnum'      => $svcnum,
 	    'beginning'	  => str2time($cgi->param('start')." 00:00:00"),
-	    'ending'	=> str2time($cgi->param('end')." 23:59:59"),
+	    'ending'	  => str2time($cgi->param('end')  ." 23:59:59"),
 	    );
     my @usage = @{$res->{'usage'}};
     my $png = $usage[0]->{'png'};
