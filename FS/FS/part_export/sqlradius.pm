@@ -212,6 +212,7 @@ sub _export_replace {
           return $error;
         }
       }
+      $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
     }
 
     my @del = grep { !exists $new{$_} } keys %old;
@@ -229,6 +230,7 @@ sub _export_replace {
           return $error;
         }
       }
+      $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
     }
   }
 
@@ -347,7 +349,7 @@ sub _export_delete {
 
 sub sqlradius_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
-  my %args = @_;
+  #my %args = @_;
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
     'job'    => "FS::part_export::sqlradius::sqlradius_$method",
@@ -560,6 +562,7 @@ sub sqlreplace_usergroups {
       my $error = $err_or_queue->depend_insert( $jobnum );
       return $error if $error;
     }
+    $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
   }
 
   if ( @newgroups ) {
