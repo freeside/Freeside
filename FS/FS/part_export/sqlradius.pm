@@ -213,6 +213,7 @@ sub _export_replace {
           return $error;
         }
       }
+      $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
     }
 
     my @del = grep { !exists $new{$_} } keys %old;
@@ -230,6 +231,7 @@ sub _export_replace {
           return $error;
         }
       }
+      $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
     }
   }
 
@@ -561,6 +563,7 @@ sub sqlreplace_usergroups {
       my $error = $err_or_queue->depend_insert( $jobnum );
       return $error if $error;
     }
+    $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
   }
 
   if ( @newgroups ) {
