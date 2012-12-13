@@ -479,7 +479,7 @@ Returns a listref of html elements associated with this service's exports.
 sub export_links {
   my $self = shift;
   my $svc_x = $self->svc_x
-    or return "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
+    or return [ "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum ];
 
   $svc_x->export_links;
 }
