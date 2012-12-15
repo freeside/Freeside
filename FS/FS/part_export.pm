@@ -628,6 +628,10 @@ sub info {
   };
 }
 
+#default fallbacks... FS::part_export::DID_Common ?
+sub get_dids_can_tollfree { 0; }
+sub get_dids_npa_select   { 1; }
+
 =back
 
 =head1 SUBROUTINES
