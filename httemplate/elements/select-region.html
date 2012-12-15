@@ -1,0 +1,88 @@
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/regions.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_regions' ],
+          )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  function <% $opt{'state_prefix'} %>state_changed(what, callback) {
+
+    what.form.<% $opt{'prefix'} %>region.disabled = 'disabled';
+    what.form.<% $opt{'prefix'} %>region.style.display = 'none';
+    var regionwait = document.getElementById('<% $opt{'prefix'} %>regionwait');
+    regionwait.style.display = '';
+    var regionerror = document.getElementById('<% $opt{'prefix'} %>regionerror');
+    regionerror.style.display = 'none';
+
+    what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
+
+    state = what.options[what.selectedIndex].value;
+
+    function <% $opt{'prefix'} %>update_regions(regions) {
+
+      // blank the current region
+      for ( var i = what.form.<% $opt{'prefix'} %>region.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>region.options[i] = null;
+      // blank the current phonenum too
+      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+      if ( what.form.<% $opt{'prefix'} %>phonenum.type != 'select-multiple' ) {
+        opt(what.form.<% $opt{'prefix'} %>phonenum, '', 'Select phone number');
+      }
+
+%     if ($opt{empty}) {
+        opt(what.form.<% $opt{'prefix'} %>region, '', '<% $opt{empty} %>');
+%     }
+
+      // add the new regions
+      var regionArray = eval('(' + regions + ')' );
+      for ( var s = 0; s < regionArray.length; s++ ) {
+          var regionLabel = regionArray[s];
+          if ( regionLabel == "" )
+              regionLabel = '(n/a)';
+          opt(what.form.<% $opt{'prefix'} %>region, regionArray[s], regionLabel);
+      }
+
+      regionwait.style.display = 'none';
+      if ( regionArray.length >= 1 ) {
+        what.form.<% $opt{'prefix'} %>region.disabled = '';
+        what.form.<% $opt{'prefix'} %>region.style.display = '';
+      } else {
+        var regionerror = document.getElementById('<% $opt{'prefix'} %>regionerror');
+        regionerror.style.display = '';
+      }
+
+      //run the callback
+      if ( callback != null ) 
+        callback();
+    }
+
+    // go get the new regions
+    <% $opt{'prefix'} %>get_regions( state, <% $opt{'svcpart'} %>, <% $opt{'prefix'} %>update_regions );
+
+  }
+
+</SCRIPT>
+
+<DIV ID="<% $opt{'prefix'} %>regionwait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding regions</B></DIV>
+
+<DIV ID="<% $opt{'prefix'} %>regionerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different state</B></DIV>
+
+<SELECT NAME="<% $opt{'prefix'} %>region" onChange="<% $opt{'prefix'} %>region_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+  <OPTION VALUE="">Select region</OPTION>
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+$opt{disabled} = 'disabled' unless exists $opt{disabled};
+
+</%init>

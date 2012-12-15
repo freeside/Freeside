@@ -16,8 +16,10 @@ Example:
 %   if ( $export->option('restrict_selection') eq 'non-tollfree'
 %		    || !$export->option('restrict_selection') ) {
     <TABLE>
-
       <TR>
+
+%       if ( $export->get_dids_npa_select ) {
+
         <TD VALIGN="top">
           <% include('/elements/select-state.html',
                        'prefix'        => 'phonenum_', #$field.'_',
@@ -29,40 +31,73 @@ Example:
           %>
           <BR><FONT SIZE="-1">State</FONT>
         </TD>
+
+          <TD VALIGN="top">
+            <% include('/elements/select-areacode.html',
+                         'state_prefix' => 'phonenum_', #$field.'_',
+                         'svcpart'      => $svcpart,
+                         'empty'        => 'Select area code',
+                      )
+            %>
+            <BR><FONT SIZE="-1">Area code</FONT>
+          </TD>
+
+          <TD VALIGN="top">
+            <% include('/elements/select-exchange.html',
+                         'svcpart' => $svcpart,
+                         'empty'   => 'Select exchange',
+                      )
+            %>
+            <BR><FONT SIZE="-1">City / Exchange</FONT>
+          </TD>
+
+%       } else {
+
         <TD VALIGN="top">
-          <% include('/elements/select-areacode.html',
-                       'state_prefix' => 'phonenum_', #$field.'_',
-                       'svcpart'      => $svcpart,
-                       'empty'        => 'Select area code',
+          <% include('/elements/select.html',
+                       'field'    => 'phonenum_state',
+                       'id'       => 'phonenum_state',
+                       'options'  => [ '', @{ $export->get_dids } ],
+                       'labels'   => { '' => 'Select province' },
+                       'onchange' => 'phonenum_state_changed(this);',
                     )
           %>
-          <BR><FONT SIZE="-1">Area code</FONT>
+          <BR><FONT SIZE="-1">Province</FONT>
         </TD>
-        <TD VALIGN="top">
-          <% include('/elements/select-exchange.html',
-                       'svcpart' => $svcpart,
-                       'empty'   => 'Select exchange',
-                    )
-          %>
-          <BR><FONT SIZE="-1">City / Exchange</FONT>
-        </TD>
+
+          <TD VALIGN="top">
+            <% include('/elements/select-region.html',
+                         'state_prefix'  => 'phonenum_', #$field.'_',
+                         'svcpart'       => $svcpart,
+                         'empty'         => 'Select region',
+                      )
+            %>
+            <BR><FONT SIZE="-1">Region</FONT>
+          </TD>
+
+%       }
+
         <TD VALIGN="top">
           <% include('/elements/select-phonenum.html',
                        'svcpart'  => $svcpart,
                        'empty'    => 'Select phone number',
 		       'bulknum'  => $bulknum,
                        'multiple' => $multiple,
+                       'region'   => ! $export->get_dids_npa_select,
                     )
           %>
           <BR><FONT SIZE="-1">Phone number</FONT>
         </TD>
-      </TR>
 
+      </TR>
     </TABLE>
 
 % } 
-%   if ( $export->option('restrict_selection') eq 'tollfree'
-%		    || !$export->option('restrict_selection') ) {
+%   if (     ( $export->option('restrict_selection') eq 'tollfree'
+%                || !$export->option('restrict_selection')
+%            )
+%        and $export->get_dids_can_tollfree
+%      ) {
 	    <font size="-1">Toll-free</font>
 	    <% include('/elements/select-phonenum.html',
                        'svcpart' => $svcpart,

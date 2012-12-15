@@ -38,6 +38,8 @@ END
 
 sub rebless { shift; }
 
+sub get_dids_can_tollfree { 1; };
+
 sub get_dids {
   my $self = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
