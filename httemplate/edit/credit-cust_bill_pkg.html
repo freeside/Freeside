@@ -69,6 +69,7 @@
               'field'          => 'reasonnum',
               'reason_class'   => 'R',
               #XXX reconcile both this and show_taxes wanteding to enable this
+              'id'             => 'select_reason',
               'control_button' => "document.getElementById('credit_button')",
               'cgi'            => $cgi,
 &>
@@ -94,6 +95,8 @@
 %>
 <SCRIPT TYPE="text/javascript">
 
+document.getElementById('select_reason').disabled = true;
+  // start it disabled because no line items are selected yet
 function show_taxes(arg) {
   var argsHash = eval('(' + arg + ')');
 
@@ -166,14 +169,16 @@ function show_taxes(arg) {
 
   //XXX reconcile both this and the reason selector wanteding to enable this
   if ( total > 0 ) {
-    document.getElementById('credit_button').disabled = false;
+    //document.getElementById('credit_button').disabled = false;
+    document.getElementById('select_reason').disabled = false;
   }
     
 }
 
 function calc_total(what) {
 
-  document.getElementById('credit_button').disabled = true;
+  //document.getElementById('credit_button').disabled = true;
+  document.getElementById('select_reason').disabled = true;
 
   var subtotal = 0;
   // bah, a pain, just using an attribute var re = /^billpkgnum(\d+)$/;

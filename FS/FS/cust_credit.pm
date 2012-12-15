@@ -644,7 +644,6 @@ Example:
 use FS::cust_bill_pkg;
 sub credit_lineitems {
   my( $class, %arg ) = @_;
-
   my $curuser = $FS::CurrentUser::CurrentUser;
 
   #some false laziness w/misc/xmlhttp-cust_bill_pkg-calculate_taxes.html
@@ -706,7 +705,8 @@ sub credit_lineitems {
   }
 
   #my $subtotal = 0;
-  my $taxlisthash = {};
+  # keys in all of these are invoice numbers
+  my %taxlisthash = ();
   my %cust_credit_bill = ();
   my %cust_bill_pkg = ();
   my %cust_credit_bill_pkg = ();
@@ -721,6 +721,8 @@ sub credit_lineitems {
       'extra_sql' => 'AND custnum = '. $cust_main->custnum,
     }) or die "unknown billpkgnum $billpkgnum";
 
+    my $invnum = $cust_bill_pkg->invnum;
+
     if ( $setuprecur eq 'setup' ) {
       $cust_bill_pkg->setup($amount);
       $cust_bill_pkg->recur(0);
@@ -733,8 +735,9 @@ sub credit_lineitems {
       $cust_bill_pkg->unitsetup(0);
     }
 
-    push @{$cust_bill_pkg{$cust_bill_pkg->invnum}}, $cust_bill_pkg;
+    push @{$cust_bill_pkg{$invnum}}, $cust_bill_pkg;
 
+    my %unapplied_payments; # billpaynum => amount
     #unapply any payments applied to this line item (other credits too?)
     foreach my $cust_bill_pay_pkg ( $cust_bill_pkg->cust_bill_pay_pkg($setuprecur) ) {
       $error = $cust_bill_pay_pkg->delete;
@@ -742,22 +745,44 @@ sub credit_lineitems {
         $dbh->rollback if $oldAutoCommit;
         return "Error unapplying payment: $error";
       }
+      $unapplied_payments{$cust_bill_pay_pkg->billpaynum}
+        += $cust_bill_pay_pkg->amount;
+    }
+    # also unapply that amount from the invoice so it doesn't screw up 
+    # application of the credit
+    foreach my $billpaynum (keys %unapplied_payments) {
+      my $cust_bill_pay = FS::cust_bill_pay->by_key($billpaynum)
+        or die "broken payment application $billpaynum";
+      $cust_bill_pay->set('amount',
+        sprintf('%.2f',
+          $cust_bill_pay->get('amount') - $unapplied_payments{$billpaynum})
+      );
+      if ( $cust_bill_pay->amount >= 0.005 ) {
+        $error = $cust_bill_pay->replace;
+      } else {
+        $error = $cust_bill_pay->delete;
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error unapplying payment: $error";
+      }
     }
 
     #$subtotal += $amount;
-    $cust_credit_bill{$cust_bill_pkg->invnum} += $amount;
-    push @{ $cust_credit_bill_pkg{$cust_bill_pkg->invnum} },
+    $cust_credit_bill{$invnum} += $amount;
+    push @{ $cust_credit_bill_pkg{$invnum} },
       new FS::cust_credit_bill_pkg {
         'billpkgnum' => $cust_bill_pkg->billpkgnum,
-        'amount'     => $amount,
+        'amount'     => sprintf('%.2f',$amount),
         'setuprecur' => $setuprecur,
         'sdate'      => $cust_bill_pkg->sdate,
         'edate'      => $cust_bill_pkg->edate,
       };
 
+    $taxlisthash{$invnum} ||= {};
     my $part_pkg = $cust_bill_pkg->part_pkg;
     $cust_main->_handle_taxes( $part_pkg,
-                               $taxlisthash,
+                               $taxlisthash{$invnum},
                                $cust_bill_pkg,
                                $cust_bill_pkg->cust_pkg,
                                $cust_bill_pkg->cust_bill->_date,
@@ -779,7 +804,11 @@ sub credit_lineitems {
     if ( @{ $cust_bill_pkg{$invnum} } ) {
 
       my $listref_or_error = 
-        $cust_main->calculate_taxes( $cust_bill_pkg{$invnum}, $taxlisthash, $cust_bill_pkg{$invnum}->[0]->cust_bill->_date );
+        $cust_main->calculate_taxes(
+          $cust_bill_pkg{$invnum},
+          $taxlisthash{$invnum},
+          $cust_bill_pkg{$invnum}->[0]->cust_bill->_date
+        );
 
       unless ( ref( $listref_or_error ) ) {
         $dbh->rollback if $oldAutoCommit;
@@ -793,38 +822,78 @@ sub credit_lineitems {
       #my $taxtotal = 0;
       foreach my $taxline ( @$listref_or_error ) {
 
+        my $amount = $taxline->setup;
+
         #find equivalent tax line items on the existing invoice
-        # (XXX need a more specific/deterministic way to find these than itemdesc..)
         my $tax_cust_bill_pkg = qsearchs('cust_bill_pkg', {
           'invnum'   => $invnum,
           'pkgnum'   => 0, #$taxline->invnum
           'itemdesc' => $taxline->desc,
         });
-
-        my $amount = $taxline->setup;
-        my $desc = $taxline->desc;
-
-        foreach my $location ( $tax_cust_bill_pkg->cust_bill_pkg_tax_Xlocation ) {
-
-          $location->cust_bill_pkg_desc($taxline->desc); #ugh @ that kludge
-
-          #$taxtotal += $location->amount;
-          $amount -= $location->amount;
-
-          #push @taxlines,
-          #  #[ $location->desc, $taxline->setup, $taxlocnum, $taxratelocnum ];
-          #  [ $location->desc, $location->amount, $taxlocnum, $taxratelocnum ];
-          $cust_credit_bill{$invnum} += $location->amount;
-          push @{ $cust_credit_bill_pkg{$invnum} },
-            new FS::cust_credit_bill_pkg {
-              'billpkgnum'                => $tax_cust_bill_pkg->billpkgnum,
-              'amount'                    => $location->amount,
-              'setuprecur'                => 'setup',
-              'billpkgtaxlocationnum'     => $location->billpkgtaxlocationnum,
-              'billpkgtaxratelocationnum' => $location->billpkgtaxratelocationnum,
-            };
-
+        if (!$tax_cust_bill_pkg) {
+          # Very debatable.  We expected the credit to include tax and 
+          # the tax is not on the invoice.  Perhaps we should just bail 
+          # out in this case.
+          #die "missing tax line item for invnum $invnum, description ".
+          #    $taxline->desc."\n";
+          $cust_credit->set('amount', 
+                            sprintf('%.2f', 
+                              $cust_credit->get('amount') - $amount)
+                            );
+          my $error = $cust_credit->replace;
+          die "error correcting credit for missing tax line: $error\n"
+            if $error;
+          next; #$taxline
         }
+
+        # Tricky business:
+        # The existing tax_Xlocation records may not have the same pkgnum as 
+        # the line item we're crediting.  If there's another line item on 
+        # this invoice with the same taxnum (tax table line) as this tax,
+        # then they may have its pkgnum instead.  Under 2.3 there is no 
+        # way to exactly find the taxes associated with a taxable item.
+        # Even if the record DOES have the same pkgnum, it may include taxes 
+        # from _other_ line items, and we only want to credit the amount 
+        # that's due to the selected line item.
+        #
+        # Index the tax_Xlocation records by calculate_taxes "tax identifier".
+        my %xlocation_map;
+        foreach my $old_loc
+          ( $tax_cust_bill_pkg->cust_bill_pkg_tax_Xlocation )
+        {
+          my $taxid = $old_loc->taxtype . ' ' . $old_loc->taxnum;
+          warn "DUPLICATE TAX BREAKDOWN RECORD inv#$invnum $taxid\n"
+            if defined($xlocation_map{$taxid});
+
+          $xlocation_map{$taxid} = $old_loc;
+        }
+
+        #now loop over the calculated taxes
+        foreach my $new_loc
+          ( @{ $taxline->get('cust_bill_pkg_tax_location') },
+            @{ $taxline->get('cust_bill_pkg_tax_rate_location') } )
+        {
+          my $taxid = $new_loc->taxtype . ' ' . $new_loc->taxnum;
+          # $taxid MUST match
+          my $old_loc = $xlocation_map{$taxid};
+          if ( $old_loc ) {
+            # then apply the amount of $new_loc to it
+            $amount -= $new_loc->amount;
+
+            $cust_credit_bill{$invnum} += $new_loc->amount;
+            push @{ $cust_credit_bill_pkg{$invnum} },
+              new FS::cust_credit_bill_pkg {
+                'billpkgnum'                => $tax_cust_bill_pkg->billpkgnum,
+                'amount'                    => $new_loc->amount,
+                'setuprecur'                => 'setup',
+                'billpkgtaxlocationnum'     => $old_loc->billpkgtaxlocationnum,
+                'billpkgtaxratelocationnum' => $old_loc->billpkgtaxratelocationnum,
+              };
+          } else {
+            # do nothing, and apply the leftover amount nonspecifically
+          }
+        } #foreach my $new_loc
+
         if ($amount > 0) {
           #$taxtotal += $amount;
           #push @taxlines,
@@ -838,17 +907,17 @@ sub credit_lineitems {
               'setuprecur' => 'setup',
             };
 
-        }
-      }
+        } # if $amount > 0
+      } #foreach $taxline
 
-    }
+    } # if @{ $cust_bill_pkg{$invnum} }
 
     #insert cust_credit_bill
 
     my $cust_credit_bill = new FS::cust_credit_bill {
       'crednum' => $cust_credit->crednum,
       'invnum'  => $invnum,
-      'amount'  => $cust_credit_bill{$invnum},
+      'amount'  => sprintf('%.2f', $cust_credit_bill{$invnum}),
     };
     $error = $cust_credit_bill->insert;
     if ( $error ) {
