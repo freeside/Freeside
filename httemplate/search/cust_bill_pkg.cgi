@@ -205,26 +205,26 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.custnum = $1";
 }
 
+# then we want the package and its definition
+$join_pkg = 
+' LEFT JOIN cust_pkg      USING (pkgnum) 
+  LEFT JOIN part_pkg      USING (pkgpart)';
+
+my $part_pkg = 'part_pkg';
+if ( $cgi->param('use_override') ) {
+  # still need the real part_pkg for tax applicability, 
+  # so alias this one
+  $join_pkg .= " LEFT JOIN part_pkg AS override ON (
+  COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = part_pkg.pkgpart
+  )";
+  $part_pkg = 'override';
+}
+push @select, 'part_pkg.pkg'; # or should this use override?
+
 # the non-tax case
 if ( $cgi->param('nottax') ) {
 
   push @where, 'cust_bill_pkg.pkgnum > 0';
-
-  # then we want the package and its definition
-  $join_pkg = 
-' LEFT JOIN cust_pkg      USING (pkgnum) 
-  LEFT JOIN part_pkg      USING (pkgpart)';
-
-  my $part_pkg = 'part_pkg';
-  if ( $cgi->param('use_override') ) {
-    # still need the real part_pkg for tax applicability, 
-    # so alias this one
-    $join_pkg .= " LEFT JOIN part_pkg AS override ON (
-    COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = part_pkg.pkgpart
-    )";
-    $part_pkg = 'override';
-  }
-  push @select, 'part_pkg.pkg'; # or should this use override?
 
   my @tax_where; # will go into a subquery
   my @exempt_where; # will also go into a subquery
