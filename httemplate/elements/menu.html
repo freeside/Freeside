@@ -125,6 +125,8 @@ tie my %report_invoices, 'Tie::IxHash',
   'Open invoices' => [ \%report_invoices_open, 'Open invoices' ],
   'All invoices'  => [ $fsurl. 'search/cust_bill.html?date', 'List all invoices' ],
   'Advanced invoice reports' => [ $fsurl.'search/report_cust_bill.html', 'by agent, date range, etc.' ],
+  'separator'     => '',
+  'Line items'    => [ $fsurl. 'search/report_cust_bill_pkg.html', 'Individual line item detail' ],
 ;
 
 tie my %report_discounts, 'Tie::IxHash',
