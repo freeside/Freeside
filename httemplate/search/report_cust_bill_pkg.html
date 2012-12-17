@@ -1,0 +1,118 @@
+<& /elements/header.html, mt('Line item report') &>
+
+<FORM ACTION="cust_bill_pkg.cgi" METHOD="GET">
+<!--<INPUT TYPE="hidden" NAME="magic" VALUE="_date">-->
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0
+
+<& /elements/tr-select-agent.html,
+     curr_value    => scalar( $cgi->param('agentnum') ),
+     #label         => emt('Line items for agent: '),
+     disable_empty => 0,
+&>
+
+<& /elements/tr-select-cust_main-status.html,
+     label => emt('Customer status'),
+&>
+
+<!-- customer
+<& /elements/tr-select-cust_class.html,
+     'label'        => emt('Class'),
+     'multiple'     => 1,
+     'pre_options'  => [ '' => emt('(none)') ],
+     'all_selected' => 1,
+&>
+-->
+
+<& /elements/tr-input-beginning_ending.html &>
+
+<!-- needs support in cust_bill_pkg.cgi
+<& /elements/tr-input-lessthan_greaterthan.html,
+     label   => emt('Amount'),
+     field   => 'amount',
+&>
+-->
+
+<!-- customer payment method i guess
+  <& /elements/tr-select-payby.html,
+                label   => emt('Payment method:'),
+                payby_type   => 'cust',
+                multiple     => 1,
+                all_selected => 1,
+  &>
+-->
+
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="nottax" VALUE="Y" onClick="nottax_changed(this)" onChange="nottax_change(thid)"></TD>
+  <TD><% mt('Omit taxes') |h %></TD>
+</TD>
+
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="istax" VALUE="Y" onClick="istax_changed(this)" onChange="istax_change(thid)"></TD>
+  <TD><% mt('Taxes only') |h %></TD>
+</TD>
+
+<!--
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="credit" VALUE="Y"></TD>
+  <TD><% mt("Credit (what's this do?)") |h %></TD>
+</TD>
+-->
+
+</TABLE>
+
+<SCRIPT TYPE="text/javascript">
+  function nottax_changed (what) {
+    if (what.checked && what.form.istax.checked) {
+      what.form.istax.checked = false;
+    }
+  }
+  function istax_changed (what) {
+    if (what.checked && what.form.nottax.checked) {
+      what.form.nottax.checked = false;
+    }
+  }
+</SCRIPT>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+#Financial reports?
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List invoices');
+
+my $conf = new FS::Conf;
+
+#other available params (cust_bill_pkg.cgi):
+#
+#distribute = 1
+#
+#(when nottax)
+#  use_override something about part_pkg
+#  classnum package class
+#  taxclass / taxclassNULL
+#  exempt_cust
+#  exempt_pkg
+#  region (country:state:county:city:district)
+#  taxable
+#  out (of taxable region)
+#  usage
+#(when istax)
+#  locationtaxid (& district/city/ciounty/state)
+#  out (of taxable region)
+#  taxclassNULL
+#  report_group (itemdesc)
+#  itemdesc
+#
+#taxname/taxnameNULL cust_main_county
+#taxnum cust_main_county
+#credit (hmm need to look more at what this does)
+
+
+</%init>
+
