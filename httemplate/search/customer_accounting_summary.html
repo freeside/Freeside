@@ -107,7 +107,7 @@ as <A HREF="<% "$myself;_type=xls" %>">Excel spreadsheet</A><BR>
 %     my $style = '';
 %     $style .= " rowspan=".$cell->{rowspan} if $cell->{rowspan} > 1;
 %     $style .= " colspan=".$cell->{colspan} if $cell->{colspan} > 1;
-      <<%$td%><%$style%>><% $cell->{value} %></<%$td%>>
+      <<%$td%><%$style%>><% $cell->{value} |h %></<%$td%>>
 %   }
   </tr>
 % }
