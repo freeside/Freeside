@@ -552,12 +552,23 @@ if ( $cgi->param('pkg_tax') ) {
 $join_cust =  '        JOIN cust_bill USING ( invnum )
                   LEFT JOIN cust_main USING ( custnum ) ';
 
+# then we want the package and its definition
+$join_pkg = 
+' LEFT JOIN cust_pkg      USING (pkgnum) 
+  LEFT JOIN part_pkg      USING (pkgpart)';
+
+#my $part_pkg = 'part_pkg';
+#if ( $cgi->param('use_override') ) {
+  # still need the real part_pkg for tax applicability, 
+  # so alias this one
+  $join_pkg .= " LEFT JOIN part_pkg AS override ON (
+  COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = part_pkg.pkgpart
+  )";
+#  $part_pkg = 'override';
+#}
+
 if ( $cgi->param('nottax') ) {
 
-  $join_pkg .=  ' LEFT JOIN cust_pkg USING ( pkgnum )
-                  LEFT JOIN part_pkg USING ( pkgpart )
-                  LEFT JOIN part_pkg AS override
-                    ON pkgpart_override = override.pkgpart ';
   $join_pkg .= ' LEFT JOIN cust_location USING ( locationnum ) '
     if $conf->exists('tax-pkg_address');
 
