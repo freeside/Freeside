@@ -16,6 +16,7 @@
 
                    # line item
                    'Description',
+                   @post_desc_header,
 
                    #invoice
                    'Invoice',
@@ -34,6 +35,7 @@
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
                        },
+                   @post_desc,
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
@@ -44,6 +46,7 @@
                    '', #'otaker',
                    '', #reason
                    '', #line item description
+                   @post_desc_null,
                    'invnum',
                    '_date',
                    #cust fields
@@ -54,19 +57,24 @@
                    '',
                    '',
                    '',
+                   @post_desc_null,
                    $ilink,
                    $ilink,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
                ],
-               'align' => 'rrlllrr'.FS::UI::Web::cust_aligns(),
+               'align' => 'rrlll'.
+                          $post_desc_align.
+                          'rr'.
+                          FS::UI::Web::cust_aligns(),
                'color' => [ 
                               '',
                               '',
                               '',
                               '',
                               '',
+                              @post_desc_null,
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
@@ -77,6 +85,7 @@
                               '',
                               '',
                               '',
+                              @post_desc_null,
                               '',
                               '',
                               FS::UI::Web::cust_styles(),
@@ -86,6 +95,7 @@
 <%init>
 
 #LOTS of false laziness below w/cust_bill_pkg.cgi
+# and a little w/cust_credit.html
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
@@ -98,9 +108,22 @@ my $agentnums_sql =
 
 my @where = ( $agentnums_sql );
 
+if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+  push @where, "cust_credit.usernum = $1";
+}
+
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 push @where, "cust_bill._date >= $beginning",
              "cust_bill._date <= $ending";
+
+my($cr_begin, $cr_end) = FS::UI::Web::parse_beginning_ending($cgi, 'credit');
+push @where, "cust_credit._date >= $cr_begin",
+             "cust_credit._date <= $cr_end";
+
+#credit amount?  seems more what is expected than the applied amount
+my @lt_gt = FS::UI::Web::parse_lt_gt($cgi, 'amount' );
+s/amount/cust_credit.amount/g foreach (@lt_gt);
+push @where, @lt_gt;
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
@@ -431,6 +454,18 @@ my @select = ( 'cust_credit_bill_pkg.*',
 push @select, 'part_pkg.pkg' unless $cgi->param('istax');
 push @select, 'cust_main.custnum',
               FS::UI::Web::cust_sql_fields();
+
+my @post_desc_header = ();
+my @post_desc = ();
+my @post_desc_null = ();
+my $post_desc_align = '';
+if ( $conf->exists('enable_taxclasses') ) {
+  push @post_desc_header, 'Tax class';
+  push @post_desc, 'taxclass';
+  push @post_desc_null, '';
+  $post_desc_align .= 'l';
+  push @select, 'part_pkg.taxclass'; # or should this use override?
+}
 
 my $query = {
   'table'     => 'cust_credit_bill_pkg',
