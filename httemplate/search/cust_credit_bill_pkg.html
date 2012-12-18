@@ -1,10 +1,10 @@
 <% include( 'elements/search.html',
-              'title'       => 'Tax credits', #well, actually application of
-              'name'        => 'tax credits', # credit to line item
-              'query'       => $query,
-              'count_query' => $count_query,
-                 'count_addl'  => [ $money_char. '%.2f total', ],
-                 'header'      => [
+              'title'         => 'Credit application detail', #to line item
+              'name_singular' => 'credit application',
+              'query'         => $query,
+              'count_query'   => $count_query,
+               'count_addl'   => [ $money_char. '%.2f total', ],
+               'header'       => [
                    #'#',
 
                    'Amount',
@@ -21,8 +21,8 @@
                    'Invoice',
                    'Date',
                    FS::UI::Web::cust_header(),
-                 ],
-                 'fields'      => [
+               ],
+               'fields'       => [
                    #'creditbillpkgnum',
                    sub { sprintf($money_char.'%.2f', shift->amount ) },
 
@@ -37,8 +37,8 @@
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
-                 ],
-                 'sort_fields' => [
+               ],
+               'sort_fields'  => [
                    'amount',
                    'cust_credit_date',
                    '', #'otaker',
@@ -47,8 +47,8 @@
                    'invnum',
                    '_date',
                    #cust fields
-                 ],
-                 'links'       => [
+               ],
+               'links' => [
                    '',
                    '',
                    '',
@@ -59,9 +59,9 @@
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
-                 ],
-                 'align' => 'rrlllrr'.FS::UI::Web::cust_aligns(),
-                 'color' => [ 
+               ],
+               'align' => 'rrlllrr'.FS::UI::Web::cust_aligns(),
+               'color' => [ 
                               '',
                               '',
                               '',
@@ -71,7 +71,7 @@
                               '',
                               FS::UI::Web::cust_colors(),
                             ],
-                 'style' => [ 
+               'style' => [ 
                               '',
                               '',
                               '',
@@ -80,7 +80,7 @@
                               '',
                               '',
                               FS::UI::Web::cust_styles(),
-                            ],
+                          ],
            )
 %>
 <%init>
@@ -104,6 +104,10 @@ push @where, "cust_bill._date >= $beginning",
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
+}
+
+if ( $cgi->param('billpkgnum') =~ /^(\d+)$/ ) {
+  push @where, "billpkgnum = $1";
 }
 
 #classnum
@@ -346,7 +350,7 @@ if ( $cgi->param('cust_tax') ) {
   push @where, $cust_exempt;
 }
 
-my $count_query = "SELECT COUNT(DISTINCT billpkgnum),
+my $count_query = "SELECT COUNT(DISTINCT creditbillpkgnum),
                           SUM(cust_credit_bill_pkg.amount)";
 
 my $join_cust =
@@ -412,8 +416,8 @@ my $join_credit = ' LEFT JOIN cust_credit_bill USING ( creditbillnum )
                     LEFT JOIN cust_credit      USING ( crednum ) ';
 
 $count_query .= " FROM cust_credit_bill_pkg
-                         $join_pkg
                          $join_cust_bill_pkg
+                         $join_pkg
                          $join_credit
                          $join_cust
                        $where";
@@ -430,8 +434,8 @@ push @select, 'cust_main.custnum',
 
 my $query = {
   'table'     => 'cust_credit_bill_pkg',
-  'addl_from' => "$join_pkg
-                  $join_cust_bill_pkg
+  'addl_from' => "$join_cust_bill_pkg
+                  $join_pkg
                   $join_credit
                   $join_cust",
   'hashref'   => {},
