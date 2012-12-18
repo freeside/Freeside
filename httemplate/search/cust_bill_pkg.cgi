@@ -8,6 +8,7 @@
                                   ],
                  'header'      => [
                    emt('Description'),
+                   @post_desc_header,
                    ( $unearned
                      ? ( emt('Unearned'), 
                          emt('Owed'), # useful in 'paid' mode?
@@ -24,6 +25,8 @@
                    ),
                    emt('Invoice'),
                    emt('Date'),
+                   emt('Paid'),
+                   emt('Credited'),
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
@@ -31,6 +34,7 @@
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
                        },
+                   @post_desc,
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
                    sub { my $cust_bill_pkg = shift;
@@ -69,10 +73,13 @@
                    ),
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
+                   sub { sprintf($money_char.'%.2f', shift->get('pay_amount')) },
+                   sub { sprintf($money_char.'%.2f', shift->get('credit_amount')) },
                    \&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields' => [
                    '',
+                   @post_desc_null,
                    'setup', #broken in $unearned case i guess
                    ( $unearned ? ('', '') : () ),
                    ( $use_usage eq 'recurring' or $unearned
@@ -84,34 +91,44 @@
                    ( $unearned ? ('sdate', 'edate') : () ),
                    'invnum',
                    '_date',
+                   #'pay_amount',
+                   #'credit_amount',
                  ],
                  'links'       => [
                    #'',
                    '',
+                   @post_desc_null,
                    '',
                    ( $unearned ? ( '', '' ) : () ),
                    '',
                    ( $unearned ? ( '', '' ) : () ),
                    $ilink,
                    $ilink,
+                   $pay_link,
+                   $credit_link,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'lr'.
+                 'align' => 'l'.
+                            $post_desc_align.
+                            'r'.
                             ( $unearned ? 'rc' : '' ).
                             'r'.
                             ( $unearned ? 'cc' : '' ).
-                            'rc'.
+                            'rcrr'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
                               #'',
                               '',
+                              @post_desc_null,
                               '',
                               ( $unearned ? ( '', '' ) : () ),
                               '',
                               ( $unearned ? ( '', '' ) : () ),
+                              '',
+                              '',
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
@@ -119,10 +136,13 @@
                  'style' => [ 
                               #'',
                               '',
+                              @post_desc_null,
                               '',
                               ( $unearned ? ( '', '' ) : () ),
                               '',
                               ( $unearned ? ( '', '' ) : () ),
+                              '',
+                              '',
                               '',
                               '',
                               FS::UI::Web::cust_styles(),
@@ -143,7 +163,18 @@ my $unearned_base = '';
 my $unearned_sql = '';
 
 my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
-my ($join_cust, $join_pkg ) = ('', '');
+
+my @post_desc_header = ();
+my @post_desc = ();
+my @post_desc_null = ();
+my $post_desc_align = '';
+if ( $conf->exists('enable_taxclasses') ) {
+  push @post_desc_header, 'Tax class';
+  push @post_desc, 'taxclass';
+  push @post_desc_null, '';
+  $post_desc_align .= 'l';
+  push @select, 'part_pkg.taxclass'; # or should this use override?
+}
 
 #here is the agent virtualization
 my $agentnums_sql =
@@ -549,11 +580,11 @@ if ( $cgi->param('pkg_tax') ) {
 
 }
 
-$join_cust =  '        JOIN cust_bill USING ( invnum )
-                  LEFT JOIN cust_main USING ( custnum ) ';
+my $join_cust =  '        JOIN cust_bill USING ( invnum )
+                     LEFT JOIN cust_main USING ( custnum ) ';
 
-# then we want the package and its definition
-$join_pkg = 
+# we want the package and its definition if available
+my $join_pkg = 
 ' LEFT JOIN cust_pkg      USING (pkgnum) 
   LEFT JOIN part_pkg      USING (pkgpart)';
 
@@ -614,6 +645,22 @@ if ( $cgi->param('nottax') ) {
 
 }
 
+#total payments
+my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount) AS pay_amount,
+    billpkgnum
+  FROM cust_bill_pay_pkg
+  GROUP BY billpkgnum";
+$join_pkg .= " LEFT JOIN ($pay_sub) AS item_pay USING (billpkgnum)";
+push @select, 'item_pay.pay_amount';
+
+#total credits
+my $credit_sub = "SELECT SUM(cust_credit_bill_pkg.amount) AS credit_amount,
+    billpkgnum
+  FROM cust_credit_bill_pkg
+  GROUP BY billpkgnum";
+$join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit USING (billpkgnum)";
+push @select,   'item_credit.credit_amount';
+
 my $where = ' WHERE '. join(' AND ', @where);
 
 if ($use_usage) {
@@ -645,6 +692,8 @@ my $query = {
 
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+my $pay_link    = ''; #[, 'billpkgnum', ];
+my $credit_link = [ "${p}search/cust_credit_bill_pkg.html?billpkgnum=", 'billpkgnum', ];
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
