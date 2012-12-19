@@ -324,6 +324,9 @@ sub move_to {
   my $dbh = dbh;
   my $error = '';
 
+  # prevent this from failing because of pkg_svc quantity limits
+  local( $FS::cust_svc::ignore_quantity ) = 1;
+
   if ( !$new->locationnum ) {
     $error = $new->insert;
     if ( $error ) {

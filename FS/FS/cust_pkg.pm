@@ -2889,7 +2889,8 @@ sub transfer {
   }
 
   foreach my $cust_svc ($self->cust_svc) {
-    if($target{$cust_svc->svcpart} > 0) {
+    if($target{$cust_svc->svcpart} > 0
+       or $FS::cust_svc::ignore_quantity) { # maybe should be a 'force' option
       $target{$cust_svc->svcpart}--;
       my $new = new FS::cust_svc { $cust_svc->hash };
       $new->pkgnum($dest_pkgnum);
