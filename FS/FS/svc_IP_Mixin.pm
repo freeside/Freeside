@@ -93,7 +93,7 @@ sub _used_addresses {
   # in use, yes? 
 
   my %hash = ( $ip_field => { op => '!=', value => '' } );
-  $hash{'blocknum'} = $block->blocknum if $block;
+  #$hash{'blocknum'} = $block->blocknum if $block;
   $hash{'svcnum'} = { op => '!=', value => $exclude->svcnum } if ref $exclude;
   map { $_->NetAddr->addr } qsearch($class->table, \%hash);
 }
