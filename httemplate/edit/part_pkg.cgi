@@ -622,23 +622,23 @@ END
 my $warning =
   'Changing the setup or recurring fee will create a new package definition. '.
   'Continue?';
-              
+
+$javascript .= "function confirm_submit(f) {";
 if ( $conf->exists('part_pkg-lineage') ) {
   $javascript .= "
-    function confirm_submit(f) {
-    
-      var fields = Array('setup_fee','recur_fee');
-      for(var i=0; i < fields.length; i++) {
-          if ( f[fields[i]].value != f[fields[i]].defaultValue ) {
-              return confirm('$warning');
-          }
-      }
-      return true;
+
+    var fields = Array('setup_fee','recur_fee');
+    for(var i=0; i < fields.length; i++) {
+        if ( f[fields[i]].value != f[fields[i]].defaultValue ) {
+            return confirm('$warning');
+        }
     }
 ";
 }
-
-$javascript .= '</SCRIPT>';
+$javascript .= "
+  return true;
+}
+</SCRIPT>";
 
 tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 
