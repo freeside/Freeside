@@ -144,7 +144,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
                         'type' => 'checkbox',
                       },
 
-    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to: ',
+    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to any of these (comma-separated) values: ',
                          },
 
     'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to: ',
@@ -923,9 +923,9 @@ sub check_chargable {
     if length($_) && substr($cdr->dst,0,length($_)) eq $_;
   }
 
-  return "carrierid != $opt{'use_carrierid'}"
-    if length($opt{'use_carrierid'})
-    && $cdr->carrierid ne $opt{'use_carrierid'} #ne otherwise 0 matches ''
+  return "carrierid NOT IN ( $opt{'use_carrierid'} )"
+    if $opt{'use_carrierid'} =~ /\S/
+    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $opt{'use_carrierid'}) #eq otherwise 0 matches ''
     && ! $flags{'da_rewrote'};
 
   # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
