@@ -112,7 +112,7 @@ my %holiday = (
     }
     push @fields, sprintf('%05s', $branch),
                   sprintf('%03s', $bankno),
-                  sprintf('%012s', $account),
+                  $account,
                   sprintf('%.02f', $cust_pay_batch->amount);
     # DB = debit
     push @fields, 'DB', $trans_code, $process_date;
