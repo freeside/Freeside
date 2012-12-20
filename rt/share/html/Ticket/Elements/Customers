@@ -1,0 +1,62 @@
+%# Copyright (c) 2004 Ivan Kohler <ivan-rt@420.am>
+%#
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+<%doc>
+Provides resolver objects (RT::URI::freeside) for customer/service links 
+to a specified ticket.
+
+Do this:
+%hash = $m->comp('Customers', Ticket => $ticket);
+
+%hash contains four elements:
+- "custnums", an arrayref of customer numbers that are linked to the ticket,
+  in order.
+- "cust_main", a hashref of custnum => customer object, for each custnum.
+- "cust_linked", a hashref of custnum => boolean flag.  If the flag is true,
+  then the customer is _explicitly_ linked (i.e. there is a 
+  'freeside://freeside/cust_main/' record in the Links table).  Otherwise,
+  the customer link is implied by a service link but doesn't exist in its
+  own right.
+- "cust_svc", a hashref of custnum => an arrayref of service objects that 
+  are linked to the ticket and belong to that customer.
+</%doc>
+<%init>
+my @custnums;
+my %cust_main;
+my %cust_svc;
+my %cust_linked;
+my $customers = $Ticket->Customers;
+# ensure each customer is displayed only once
+while (my $link = $customers->Next) {
+  my $uri = $link->Target;
+  if ( $uri =~ /cust_main\/(\d+)/ ) {
+    $cust_main{$1} = $link->TargetURI->Resolver;
+    $cust_linked{$1} = 1;
+  } elsif ( $uri =~ /cust_svc\/(\d+)/ ) {
+    my $svc = $link->TargetURI->Resolver;
+    my $cust = $svc->CustomerResolver;
+    my $custnum = $cust->{fspkey};
+    $cust_main{$custnum} ||= $cust;
+    $cust_svc{$custnum} ||= [];
+    push @{$cust_svc{$custnum}}, $svc;
+  }
+}
+@custnums = sort { $a <=> $b } keys %cust_main;
+return (
+  'custnums'    => \@custnums,
+  'cust_main'   => \%cust_main,
+  'cust_svc'    => \%cust_svc,
+  'cust_linked' => \%cust_linked,
+);
+</%init>
+<%ARGS>
+$Ticket => undef
+</%ARGS>

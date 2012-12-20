@@ -21,6 +21,8 @@
 <tr>
   <td>
     <input type="checkbox" name="Ticket-AddCustomer-<% $customer->{'custnum'} %>" VALUE="1" <% scalar(@Customers) == 1 ? 'CHECKED' : '' %>>
+  </td>
+  <td>
     <& .small_custview, $customer &>
   </td>
 </tr>
@@ -30,6 +32,8 @@
 <tr>
   <td>
     <input type="checkbox" name="Ticket-AddService-<% $service->{'svcnum'} %>" VALUE="1" <% scalar(@Services) == 1 ? 'CHECKED' : '' %>>
+  </td>
+  <td>
     <& .small_custview, $service &>
     <& .small_svcview,  $service &>
   </td>

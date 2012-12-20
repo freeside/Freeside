@@ -15,22 +15,36 @@
     <TD VALIGN=TOP WIDTH=50% ROWSPAN=3>
       <h3><&|/l&>Current Customers</&></h3>
 
+% my %data = $m->comp('Customers', Ticket => $Ticket);
+% if ( @{ $data{custnums} } ) {
+<style>
+.small_custview {
+  padding-top: 1em;
+}
+</style>
 <table>
   <tr>
-    <td><i><&|/l&>(Check box to disassociate)</&></i></td>
+    <td colspan=2><i><&|/l&>(Check box to disassociate)</&></i></td>
   </tr>
+%   foreach my $custnum ( @{ $data{custnums} } ) {
+%     foreach my $resolver
+%       ( $data{cust_main}{$custnum}, @{ $data{cust_svc}{$custnum} } )
+%     {
   <tr>
     <td class="value">
-% foreach my $link ( @{ $Ticket->Customers->ItemsArrayRef } ) {
-
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
-%#        <& ShowLink, URI => $link->TargetURI &><br>
-        <% $link->TargetURI->Resolver->AsStringLong |n %></A>
-      <BR><BR>
-% }
+%       if ( $resolver->URI !~ /cust_main/ or $data{cust_linked}{$custnum} ) {
+%   # don't show a checkbox for implicit cust_main links
+      <input type="checkbox" name="DeleteLink--MemberOf-<% $resolver->URI %>">
+%       }
+    </td>
+    <td>
+      <% $resolver->AsStringLong |n %>
     </td>
   </tr>
+%     }
+%   }
 </table>
+% }
 
 </TD>
 
@@ -38,15 +52,15 @@
 <h3><&|/l&>New Customer Links</&></h3>
 </TD>
 </TR>
-<TR VALIGN="top">
+<TR>
 %# rowspan
-  <td width=25%>
+  <td width=25% style="vertical-align:top">
     <&|/l&>Find customer</&><br>
     <input name="CustomerString">
     <input type=submit name="OnlySearchForCustomers" value="<&|/l&>Go!</&>">
     <br><i>cust #, name, company or phone</i>
   </td>
-  <td width=25%>
+  <td width=25% style="vertical-align:top">
     <&|/l&>Find service</&><br>
     <input name="ServiceString">
     <input type=submit name="OnlySearchForServices" value="<&|/l&>Go!</&>">

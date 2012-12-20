@@ -29,7 +29,7 @@ sub small_custview {
                   : qsearchs('cust_main', { 'custnum' => $arg } )
     or die "unknown custnum $arg";
 
-  my $html = '<DIV ID="fs_small_custview">';
+  my $html = '<DIV ID="fs_small_custview" CLASS="small_custview">';
   
   $html = qq!View <A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
