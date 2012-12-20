@@ -149,7 +149,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
                         'type' => 'checkbox',
                       },
 
-    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to: ',
+    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to any of these (comma-separated) values: ',
                          },
 
     'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to: ',
@@ -466,11 +466,11 @@ sub check_chargable {
   return 'amaflags != 2'
     if $self->option_cacheable('use_amaflags') && $cdr->amaflags != 2;
 
-  return "disposition NOT IN ( $self->option_cacheable('disposition_in') )"
+  return "disposition NOT IN ( ". $self->option_cacheable('disposition_in')." )"
     if $self->option_cacheable('disposition_in') =~ /\S/
     && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('disposition_in'));
   
-  return "disposition IN ( $self->option_cacheable('ignore_disposition') )"
+  return "disposition IN ( ". $self->option_cacheable('ignore_disposition')." )"
     if $self->option_cacheable('ignore_disposition') =~ /\S/
     && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('ignore_disposition'));
 
@@ -479,26 +479,26 @@ sub check_chargable {
     if length($_) && substr($cdr->dst,0,length($_)) eq $_;
   }
 
-  return "carrierid != $self->option_cacheable('use_carrierid')"
-    if length($self->option_cacheable('use_carrierid'))
-    && $cdr->carrierid ne $self->option_cacheable('use_carrierid') #ne otherwise 0 matches ''
+  return "carrierid NOT IN ( ". $self->option_cacheable('use_carrierid'). " )"
+    if $self->option_cacheable('use_carrierid') =~ /\S/
+    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $self->option_cacheable('use_carrierid')) #eq otherwise 0 matches ''
     && ! $flags{'da_rewrote'};
 
   # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
-  return "cdrtypenum != $self->option_cacheable('use_cdrtypenum')"
+  return "cdrtypenum != ". $self->option_cacheable('use_cdrtypenum')
     if length($self->option_cacheable('use_cdrtypenum'))
     && $cdr->cdrtypenum ne $self->option_cacheable('use_cdrtypenum'); #ne otherwise 0 matches ''
   
-  return "cdrtypenum == $self->option_cacheable('ignore_cdrtypenum')"
+  return "cdrtypenum == ". $self->option_cacheable('ignore_cdrtypenum')
     if length($self->option_cacheable('ignore_cdrtypenum'))
     && $cdr->cdrtypenum eq $self->option_cacheable('ignore_cdrtypenum'); #eq otherwise 0 matches ''
 
-  return "dcontext IN ( $self->option_cacheable('skip_dcontext') )"
+  return "dcontext IN ( ". $self->option_cacheable('skip_dcontext'). " )"
     if $self->option_cacheable('skip_dcontext') =~ /\S/
     && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'));
 
   my $len_prefix = length($self->option_cacheable('skip_dstchannel_prefix'));
-  return "dstchannel starts with $self->option_cacheable('skip_dstchannel_prefix')"
+  return "dstchannel starts with ". $self->option_cacheable('skip_dstchannel_prefix')
     if $len_prefix
     && substr($cdr->dstchannel,0,$len_prefix) eq $self->option_cacheable('skip_dstchannel_prefix');
 
@@ -509,7 +509,7 @@ sub check_chargable {
             && $cdr->is_tollfree('accountcode')
          );
 
-  return "lastapp is $self->option_cacheable('skip_lastapp')"
+  return "lastapp is ". $self->option_cacheable('skip_lastapp')
     if length($self->option_cacheable('skip_lastapp')) && $cdr->lastapp eq $self->option_cacheable('skip_lastapp');
 
   my $src_length = $self->option_cacheable('skip_src_length_more');
