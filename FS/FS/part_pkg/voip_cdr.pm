@@ -925,8 +925,8 @@ sub check_chargable {
 
   return "carrierid NOT IN ( $opt{'use_carrierid'} )"
     if $opt{'use_carrierid'} =~ /\S/
-    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $opt{'use_carrierid'}) #eq otherwise 0 matches ''
-    && ! $flags{'da_rewrote'};
+    && ! $flags{'da_rewrote'} #why?
+    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $opt{'use_carrierid'}); #eq otherwise 0 matches ''
 
   # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
