@@ -161,12 +161,12 @@ sub _FreesideURILabelLong {
   } elsif ( $table eq 'cust_svc' ) {
 
     my $string = '';
-    my $cust = $self->CustomerResolver;
-    if ( $cust ) {
-      $string = $cust->AsStringLong;
-    }
-    $string .= '<B><A HREF="' . $self->HREF . '">' . 
-        $self->AsString . '</A></B>';
+    # we now do this within the UI
+    #my $cust = $self->CustomerResolver;
+    #if ( $cust ) {
+    #  $string = $cust->AsStringLong;
+    #}
+    $string .= $self->AsString;
     return $string;
 
   } else {
@@ -175,6 +175,16 @@ sub _FreesideURILabelLong {
 
   }
 
+}
+
+sub AsString {
+  my $self = shift;
+  if ( $self->{'fstable'} eq 'cust_svc' ) {
+    return '<B><A HREF="' . $self->HREF . '">' . 
+          $self->_FreesideURILabel . '</A></B>';
+  } else {
+    $self->SUPER::AsString;
+  }
 }
 
 sub CustomerResolver {
