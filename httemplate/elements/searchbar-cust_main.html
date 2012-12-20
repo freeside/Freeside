@@ -5,7 +5,7 @@
     <A HREF="<%$fsurl%>search/report_cust_main.html" CLASS="fslink" STYLE="font-size: 11px"><% mt('Advanced') |h %></A>
     <INPUT TYPE="submit" VALUE="<% mt('Search customers') |h %>" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
   </FORM>
-  <% $menu_position eq 'left' ? '<BR>' : '' %>
+  <% $menu_position eq 'left' ? '<BR>' : '' |n %>
 
 % }
 
