@@ -481,8 +481,8 @@ sub check_chargable {
 
   return "carrierid NOT IN ( ". $self->option_cacheable('use_carrierid'). " )"
     if $self->option_cacheable('use_carrierid') =~ /\S/
-    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $self->option_cacheable('use_carrierid')) #eq otherwise 0 matches ''
-    && ! $flags{'da_rewrote'};
+    && ! $flags{'da_rewrote'} #why?
+    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $self->option_cacheable('use_carrierid')); #eq otherwise 0 matches ''
 
   # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
   return "cdrtypenum != ". $self->option_cacheable('use_cdrtypenum')
