@@ -32,6 +32,7 @@ my $error = FS::cust_credit->credit_lineitems(
   'billpkgnums'       => \@billpkgnums,
   'setuprecurs'       => \@setuprecurs,
   'amounts'           => \@amounts,
+  'apply'             => ( $cgi->param('apply') eq 'yes' ),
 
   #the credit
   'newreasonnum'      => scalar($cgi->param('newreasonnum')),

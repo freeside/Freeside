@@ -629,6 +629,7 @@ Example:
     'billpkgnums'       => \@billpkgnums,
     'setuprecurs'       => \@setuprecurs,
     'amounts'           => \@amounts,
+    'apply'             => 1, #0 leaves the credit unapplied
 
     #the credit
     'newreasonnum'      => scalar($cgi->param('newreasonnum')),
@@ -704,6 +705,11 @@ sub credit_lineitems {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "Error inserting credit: $error";
+  }
+
+  unless ( $arg{'apply'} ) {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
   }
 
   #my $subtotal = 0;
