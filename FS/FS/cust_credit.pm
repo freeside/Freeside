@@ -812,7 +812,6 @@ sub credit_lineitems {
           #  do so evenly...)
           my $loc_amount = min( $amount, $location->amount);
 
-          #$taxtotal += $loc_amount
           $amount -= $loc_amount;
 
           #push @taxlines,
