@@ -452,7 +452,7 @@ if ( $cgi->param('nottax') ) {
 
   } elsif ( $cgi->param('out') ) {
 
-    $join_pkg = '
+    $join_pkg .= '
       LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)
     ';
     push @where, 'cust_bill_pkg_tax_location.billpkgnum IS NULL';
@@ -463,7 +463,7 @@ if ( $cgi->param('nottax') ) {
 
   } else { # not locationtaxid or 'out'--the normal case
 
-    $join_pkg = '
+    $join_pkg .= '
       LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)
       JOIN cust_main_county           USING (taxnum)
     ';
