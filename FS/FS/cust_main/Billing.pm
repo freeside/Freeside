@@ -831,7 +831,7 @@ sub calculate_taxes {
     my $taxables = $taxlisthash->{$tax};
     my $tax_object = shift @$taxables; # the rest are line items
     foreach my $cust_bill_pkg ( @$taxables ) {
-      next unless ref($cust_bill_pkg) eq 'FS::cust_bill_pkg';
+      next unless ref($cust_bill_pkg) eq 'FS::cust_bill_pkg'; #IS needed for CCH tax-on-tax
 
       my @cust_tax_exempt_pkg = splice @{ $cust_bill_pkg->cust_tax_exempt_pkg };
 
