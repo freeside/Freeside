@@ -92,6 +92,15 @@
   </TD>
 </TR>
 
+% if ( $conf->exists('credits-auto-apply-disable') ) {
+        <INPUT TYPE="HIDDEN" NAME="apply" VALUE="no">
+% } else {
+  <TR>
+    <TD ALIGN="right"><% mt('Apply to selected line items') |h %></TD>
+    <TD><SELECT NAME="apply"><OPTION VALUE="yes" SELECTED><% mt('yes') |h %><OPTION><% mt('no') |h %></SELECT></TD>
+  </TR>
+% }
+
 </table>
 
 <BR>
