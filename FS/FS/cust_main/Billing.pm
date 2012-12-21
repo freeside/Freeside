@@ -799,7 +799,7 @@ sub calculate_taxes {
   my %packagemap = map { $_->pkgnum => $_ } @$cust_bill_pkg;
   foreach my $tax ( keys %$taxlisthash ) {
     foreach ( @{ $taxlisthash->{$tax} }[1 .. scalar(@{ $taxlisthash->{$tax}}) - 1] ) {
-      #next unless ref($_) eq 'FS::cust_bill_pkg'; #no longer needed
+      next unless ref($_) eq 'FS::cust_bill_pkg';
 
       my @cust_tax_exempt_pkg = splice( @{ $_->_cust_tax_exempt_pkg } );
 
