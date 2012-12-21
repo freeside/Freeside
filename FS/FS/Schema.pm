@@ -805,13 +805,19 @@ sub tables_hashref {
         'billpkgnum',               'int',      '', '', '', '',
         'taxnum',                   'int',      '', '', '', '',
         'taxtype',              'varchar',      '', $char_d, '', '',
-        'pkgnum',                   'int',      '', '', '', '',
-        'locationnum',              'int',      '', '', '', '', #redundant?
+        'pkgnum',                   'int',      '', '', '', '', #redundant
+        'locationnum',              'int',      '', '', '', '', #redundant
         'amount',                   @money_type,        '', '',
+        'taxable_billpkgnum',       'int',  'NULL', '', '', '',
       ],
       'primary_key' => 'billpkgtaxlocationnum',
       'unique' => [],
-      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'pkgnum' ], [ 'locationnum' ] ],
+      'index'  => [ [ 'billpkgnum' ], 
+                    [ 'taxnum' ],
+                    [ 'pkgnum' ],
+                    [ 'locationnum' ],
+                    [ 'taxable_billpkgnum' ],
+                  ],
     },
 
     'cust_bill_pkg_tax_rate_location' => {
@@ -823,10 +829,12 @@ sub tables_hashref {
         'locationtaxid',            'varchar',  'NULL', $char_d, '', '',
         'taxratelocationnum',           'int',      '', '', '', '',
         'amount',                       @money_type,        '', '',
+        'taxable_billpkgnum',       'int',  'NULL', '', '', '',
       ],
       'primary_key' => 'billpkgtaxratelocationnum',
       'unique' => [],
-      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'taxratelocationnum' ] ],
+      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'taxratelocationnum' ],
+                    [ 'taxable_billpkgnum' ], ],
     },
 
     'cust_bill_pkg_void' => {

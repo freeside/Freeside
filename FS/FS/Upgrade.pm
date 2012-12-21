@@ -305,6 +305,9 @@ sub upgrade_data {
 
     #kick off tax location history upgrade
     'cust_bill_pkg' => [],
+
+    #fix taxable line item links
+    'cust_bill_pkg_tax_location' => [],
   ;
 
   \%hash;

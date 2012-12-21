@@ -1310,9 +1310,10 @@ sub upgrade_tax_location {
                        );
           $cents_remaining -= $part;
           push @tax_links, {
-            taxnum => $taxdef->taxnum,
-            pkgnum => $nontax->pkgnum,
-            cents  => $part,
+            taxnum      => $taxdef->taxnum,
+            pkgnum      => $nontax->pkgnum,
+            billpkgnum  => $nontax->billpkgnum,
+            cents       => $part,
           };
         } #foreach $nontax
       } #foreach $taxclass
@@ -1355,6 +1356,7 @@ sub upgrade_tax_location {
             taxnum      => $_->{taxnum},
             pkgnum      => $_->{pkgnum},
             amount      => sprintf('%.2f', $_->{cents} / 100),
+            taxable_billpkgnum => $_->{billpkgnum},
         });
         my $error = $link->insert;
         if ( $error ) {
@@ -1443,6 +1445,9 @@ sub _upgrade_data {
   # Then mark the upgrade as done, so that we don't queue the job twice
   # and somehow run two of them concurrently.
   FS::upgrade_journal->set_done($upgrade);
+  # This upgrade now does the job of assigning taxable_billpkgnums to 
+  # cust_bill_pkg_tax_location, so set that task done also.
+  FS::upgrade_journal->set_done('tax_location_taxable_billpkgnum');
 }
 
 =back
