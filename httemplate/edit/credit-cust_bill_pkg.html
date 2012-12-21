@@ -20,18 +20,18 @@
 %   next unless $amount > 0;
 
 %   if ( $cust_bill_pkg->invnum ne $old_invnum ) {
-      <TR><TD COLSPAN=3 BGCOLOR="#f8f8f8">&nbsp;</TD></TR>
-      <TR><TH COLSPAN=3 BGCOLOR="#f8f8f8" ALIGN="left">Invoice #<% $cust_bill_pkg->invnum %> - <% time2str($date_format, $cust_bill_pkg->cust_bill->_date) %></TD></TR>
+      <TR><TD COLSPAN=4 BGCOLOR="#f8f8f8">&nbsp;</TD></TR>
+      <TR><TH COLSPAN=4 BGCOLOR="#f8f8f8" ALIGN="left">Invoice #<% $cust_bill_pkg->invnum %> - <% time2str($date_format, $cust_bill_pkg->cust_bill->_date) %></TD></TR>
 %     $old_invnum = $cust_bill_pkg->invnum;
 %   }
 
+%   my $el_name = 'billpkgnum'. $cust_bill_pkg->billpkgnum. '-'. $setuprecur;
     <TR>
       <TD>
         <INPUT TYPE            = "checkbox"
-               NAME            = "billpkgnum<% $cust_bill_pkg->billpkgnum.'-'. $setuprecur %>"
-               VALUE           = "<% $amount %>"
+               NAME            = "<% $el_name %>"
+               ID              = "<% $el_name %>"
                onClick         = "calc_total(this)"
-               data-amount     = "<% $amount %>"
                data-billpkgnum = "<% $cust_bill_pkg->billpkgnum %>"
                data-setuprecur = "<% $setuprecur %>"
         >
@@ -39,24 +39,35 @@
       <TD BGCOLOR="#ffffff"><% $cust_bill_pkg->desc |h %></TD>
 %#    show one-time/setup vs recur vs usage?
       <TD BGCOLOR="#ffffff" ALIGN="right"><% $money_char. $amount %></TD>
+      <TD ALIGN="right">
+        <% $money_char %><INPUT TYPE     = "text"
+                                NAME     = "<% $el_name %>-amount"
+                                ID       = "<% $el_name %>-amount"
+                                VALUE    = "<% $amount %>"
+                                SIZE     = 6
+                                onChange = "calc_total(this)"
+                                STYLE    = "text-align:right;"
+                                DISABLED
+                         >
+      </TD>
     </TR>
 
 % }
 
-<TR><TD COLSPAN=3 BGCOLOR="#f8f8f8">&nbsp;</TD></TR>
+<TR><TD COLSPAN=4 BGCOLOR="#f8f8f8">&nbsp;</TD></TR>
 <TR>
   <TD></TD>
-  <TD ALIGN="right">Subtotal: </TD>
+  <TD ALIGN="right" COLSPAN=2>Subtotal: </TD>
   <TD ALIGN="right" ID="subtotal_td"><% $money_char %><% sprintf('%.2f', 0) %></TD>
 </TR>
 <TR>
   <TD></TD>
-  <TD ALIGN="right">Taxes: </TD>
+  <TD ALIGN="right" COLSPAN=2>Taxes: </TD>
   <TD ALIGN="right" ID="taxtotal_td"><% $money_char %><% sprintf('%.2f', 0) %></TD>
 </TR>
 <TR>
   <TD></TD>
-  <TH ALIGN="right">Total credit amount: </TD>
+  <TH ALIGN="right" COLSPAN=2>Total credit amount: </TD>
   <TH ALIGN="right" ID="total_td"><% $money_char %><% sprintf('%.2f', 0) %></TD>
 </TR>
 <INPUT TYPE="hidden" NAME="amount" ID="total_el" VALUE="0.00">
@@ -188,12 +199,21 @@ function calc_total(what) {
   var setuprecurs = [];
   var amounts = [];
   for (var i=0; i<el.length; i++) {
-    if ( el[i].type == 'checkbox' && el[i].checked ) {
-      subtotal += parseFloat( el[i].getAttribute('data-amount') );
-      amounts.push(     el[i].getAttribute('data-amount') );
-      billpkgnums.push( el[i].getAttribute('data-billpkgnum') );
-      setuprecurs.push( el[i].getAttribute('data-setuprecur') );
+
+    if ( el[i].type == 'checkbox' ) {
+      var amount_el = document.getElementById( el[i].id + '-amount' );
+      if ( el[i].checked ) {
+        amount_el.disabled = false;
+        var amount = amount_el.value;
+        subtotal += parseFloat( amount );
+        amounts.push( amount );
+        billpkgnums.push( el[i].getAttribute('data-billpkgnum') );
+        setuprecurs.push( el[i].getAttribute('data-setuprecur') );
+      } else {
+        amount_el.disabled = true;
+      }
     }
+
   }
 
   document.getElementById('subtotal_td').innerHTML =

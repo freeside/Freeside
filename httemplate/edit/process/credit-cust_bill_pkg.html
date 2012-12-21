@@ -20,7 +20,7 @@ my @billpkgnums = ();
 my @setuprecurs = ();
 my @amounts = ();
 foreach my $billpkgnum_setuprecur (@billpkgnum_setuprecurs) {
-  my $amount = $cgi->param("billpkgnum$billpkgnum_setuprecur");
+  my $amount = $cgi->param("billpkgnum$billpkgnum_setuprecur-amount");
   my( $billpkgnum, $setuprecur ) = split('-', $billpkgnum_setuprecur);
   push @billpkgnums, $billpkgnum;
   push @setuprecurs, $setuprecur;
