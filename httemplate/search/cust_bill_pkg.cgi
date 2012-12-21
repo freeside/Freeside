@@ -7,6 +7,8 @@
                                     $unearned ? ( $money_char. '%.2f unearned revenue' ) : (),
                                   ],
                  'header'      => [
+                   @pkgnum_header,
+                   emt('Pkg Def'),
                    emt('Description'),
                    @post_desc_header,
                    ( $unearned
@@ -30,9 +32,16 @@
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
+                   @pkgnum,
                    sub { $_[0]->pkgnum > 0
-                           ? $_[0]->get('pkg')      # possibly use override.pkg
-                           : $_[0]->get('itemdesc') # but i think this correct
+                           # possibly use override.pkg but i think this correct
+                           ? $_[0]->get('pkgpart')
+                           : ''
+                       },
+                   sub { $_[0]->pkgnum > 0
+                           # possibly use override.pkg but i think this correct
+                           ? $_[0]->get('pkg')     
+                           : $_[0]->get('itemdesc')
                        },
                    @post_desc,
                    #strikethrough or "N/A ($amount)" or something these when
@@ -78,6 +87,8 @@
                    \&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields' => [
+                   @pkgnum_null,
+                   '',
                    '',
                    @post_desc_null,
                    'setup', #broken in $unearned case i guess
@@ -95,7 +106,8 @@
                    #'credit_amount',
                  ],
                  'links'       => [
-                   #'',
+                   @pkgnum_null,
+                   '',
                    '',
                    @post_desc_null,
                    '',
@@ -111,7 +123,8 @@
                    ),
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'l'.
+                 'align' => $pkgnum_align.
+                            'rl'.
                             $post_desc_align.
                             'r'.
                             ( $unearned ? 'rc' : '' ).
@@ -120,7 +133,8 @@
                             'rcrr'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
-                              #'',
+                              @pkgnum_null,
+                              '',
                               '',
                               @post_desc_null,
                               '',
@@ -134,7 +148,8 @@
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
-                              #'',
+                              @pkgnum_null,
+                              '',
                               '',
                               @post_desc_null,
                               '',
@@ -152,8 +167,9 @@
 
 #LOTS of false laziness below w/cust_credit_bill_pkg.cgi
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
 
@@ -163,6 +179,18 @@ my $unearned_base = '';
 my $unearned_sql = '';
 
 my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
+
+my @pkgnum_header = ();
+my @pkgnum = ();
+my @pkgnum_null;
+my $pkgnum_align = '';
+if ( $curuser->option('show_pkgnum') ) {
+  push @select, 'cust_bill_pkg.pkgnum';
+  push @pkgnum_header, 'Pkg Num';
+  push @pkgnum, sub { $_[0]->pkgnum > 0 ? $_[0]->pkgnum : '' };
+  push @pkgnum_null, '';
+  $pkgnum_align .= 'r';
+}
 
 my @post_desc_header = ();
 my @post_desc = ();
@@ -588,15 +616,15 @@ my $join_pkg =
 ' LEFT JOIN cust_pkg      USING (pkgnum) 
   LEFT JOIN part_pkg      USING (pkgpart)';
 
-#my $part_pkg = 'part_pkg';
-#if ( $cgi->param('use_override') ) {
+my $part_pkg = 'part_pkg';
+if ( $cgi->param('use_override') ) {
   # still need the real part_pkg for tax applicability, 
   # so alias this one
   $join_pkg .= " LEFT JOIN part_pkg AS override ON (
   COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = part_pkg.pkgpart
   )";
-#  $part_pkg = 'override';
-#}
+  $part_pkg = 'override';
+}
 
 if ( $cgi->param('nottax') ) {
 
@@ -667,9 +695,9 @@ if ($use_usage) {
   $count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
 }
 
-push @select, 'part_pkg.pkg',
-              'part_pkg.freq',
-  unless $cgi->param('istax');
+push @select, 'part_pkg.pkgpart',
+              'part_pkg.pkg',
+              'part_pkg.freq';
 
 push @select, 'cust_main.custnum',
               FS::UI::Web::cust_sql_fields();
@@ -702,5 +730,8 @@ my $payment_date_sub = sub {
     or return '';
   time2str('%b %d %Y', $cust_pay[-1]->_date );
 };
+
+warn "\n\nQUERY:\n".Dumper($query)."\n\nCOUNT_QUERY:\n$count_query\n\n"
+  if $cgi->param('debug');
 
 </%init>
