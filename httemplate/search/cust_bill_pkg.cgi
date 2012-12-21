@@ -5,6 +5,8 @@
                  'count_query' => $count_query,
                  'count_addl'  => \@total_desc,
                  'header'      => [
+                   @pkgnum_header,
+                   emt('Pkg Def'),
                    emt('Description'),
                    @post_desc_header,
                    @peritem_desc,
@@ -15,9 +17,16 @@
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
+                   @pkgnum,
                    sub { $_[0]->pkgnum > 0
-                           ? $_[0]->get('pkg')      # possibly use override.pkg
-                           : $_[0]->get('itemdesc') # but i think this correct
+                           # possibly use override.pkg but i think this correct
+                           ? $_[0]->get('pkgpart')
+                           : ''
+                       },
+                   sub { $_[0]->pkgnum > 0
+                           # possibly use override.pkg but i think this correct
+                           ? $_[0]->get('pkg')     
+                           : $_[0]->get('itemdesc')
                        },
                    @post_desc,
                    #strikethrough or "N/A ($amount)" or something these when
@@ -30,6 +39,8 @@
                    \&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields' => [
+                   @pkgnum_null,
+                   '',
                    '',
                    @post_desc_null,
                    @peritem,
@@ -39,7 +50,8 @@
                    #'credit_amount',
                  ],
                  'links'       => [
-                   #'',
+                   @pkgnum_null,
+                   '',
                    '',
                    @post_desc_null,
                    @peritem_null,
@@ -52,13 +64,15 @@
                    ),
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'l'.
+                 'align' => $pkgnum_align.
+                            'rl'.
                             $post_desc_align.
                             $peritem_align.
                             'rcrr'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
-                              #'',
+                              @pkgnum_null,
+                              '',
                               '',
                               @post_desc_null,
                               @peritem_null,
@@ -69,7 +83,8 @@
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
-                              #'',
+                              @pkgnum_null,
+                              '',
                               '',
                               @post_desc_null,
                               @peritem_null,
@@ -165,8 +180,9 @@ Filtering parameters:
 </%doc>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
@@ -177,6 +193,18 @@ my @total_desc = ( '%d line items', $money_char.'%.2f total' ); # sprintf string
 
 my @peritem = ( 'setup', 'recur' );
 my @peritem_desc = ( 'Setup charge', 'Recurring charge' );
+
+my @pkgnum_header = ();
+my @pkgnum = ();
+my @pkgnum_null;
+my $pkgnum_align = '';
+if ( $curuser->option('show_pkgnum') ) {
+  push @select, 'cust_bill_pkg.pkgnum';
+  push @pkgnum_header, 'Pkg Num';
+  push @pkgnum, sub { $_[0]->pkgnum > 0 ? $_[0]->pkgnum : '' };
+  push @pkgnum_null, '';
+  $pkgnum_align .= 'r';
+}
 
 my @post_desc_header = ();
 my @post_desc = ();
@@ -249,7 +277,7 @@ if ( $cgi->param('use_override') ) {
   )";
   $part_pkg = 'override';
 }
-push @select, 'part_pkg.pkg'; # or should this use override?
+push @select, 'part_pkg.pkgpart', 'part_pkg.pkg'; # or should this use override?
 
 # the non-tax case
 if ( $cgi->param('nottax') ) {
@@ -644,4 +672,5 @@ my $credit_link = [ "${p}search/cust_credit_bill_pkg.html?billpkgnum=", 'billpkg
 
 warn "\n\nQUERY:\n".Dumper($query)."\n\nCOUNT_QUERY:\n$count_query\n\n"
   if $cgi->param('debug');
+
 </%init>
