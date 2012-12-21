@@ -5,6 +5,7 @@ use Tie::IxHash;
 use FS::Record qw(qsearch dbh);
 use FS::part_export;
 use FS::phone_avail;
+use Data::Dumper;
 
 @ISA = qw(FS::part_export);
 
@@ -73,8 +74,13 @@ sub get_dids {
   if ( $search->{'statuscode'} == 302200 ) {
     return [];
   } elsif ( $search->{'statuscode'} != 100 ) {
-    my $error = "Error running VoIP Innovations getDIDs: ".
-                 $search->{'statuscode'}. ': '. $search->{'status'}. "\n";
+
+    my $error = "Error running VoIP Innovations getDIDs: ";
+    if ( $search->{'statuscode'} || $search->{'status'} ) {
+      $error .= $search->{'statuscode'}. ': '. $search->{'status'}. "\n";
+    } else {
+      $error .= Dumper($search);
+    }
     warn $error;
     die $error;
   }

@@ -66,14 +66,19 @@ tie my %states, 'Tie::IxHash', states_hash( $opt{'country'} );
 
 if ( $opt{'svcpart'} ) {
 
-  my $sth = dbh->prepare(
-    'SELECT DISTINCT state FROM phone_avail WHERE svcnum IS NULL'
-  ) or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my %avail_states = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref };
+  my $part_svc = qsearchs('part_svc', { 'svcpart' => $opt{'svcpart'} } );
+  if ( $part_svc && $part_svc->exporttype eq 'internal_diddb' ) {
 
-  if ( %avail_states ) {
-    delete $states{$_} foreach grep ! $avail_states{$_}, keys %states;
+    my $sth = dbh->prepare(
+      'SELECT DISTINCT state FROM phone_avail WHERE svcnum IS NULL'
+    ) or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+    my %avail_states = map { $_->[0] => 1 } @{ $sth->fetchall_arrayref };
+
+    if ( %avail_states ) {
+      delete $states{$_} foreach grep ! $avail_states{$_}, keys %states;
+    }
+
   }
 }
 
