@@ -12,7 +12,7 @@ use FS::Conf;
 use Text::CSV;
 
 my %opt;
-getopts('va:P:C:', \%opt);
+getopts('va:P:C:T:', \%opt);
 
 #$Net::SFTP::Foreign::debug = -1;
 sub HELP_MESSAGE { '
@@ -22,6 +22,7 @@ sub HELP_MESSAGE { '
         [ -a archivedir ]
         [ -P port ]
         [ -C category ]
+        [ -T taxclass ]
         freesideuser sftpuser@hostname[:path]
 ' }
 
@@ -59,6 +60,8 @@ if ( $opt{C} ) {
   }
   $categorynum = $category->categorynum;
 }
+
+my $taxclass = $opt{T} || '';
 
 #my $tmpdir = File::Temp->newdir();
 my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
@@ -156,6 +159,7 @@ FILE: foreach my $filename (@$files) {
       quantity    => $hash{quantity},
       start_date  => $cust_main->next_bill_date,
       pkg         => $hash{date_desc},
+      taxclass    => $taxclass,
     );
     if (my $classname = $hash{classname}) {
       if (!exists($classnum_of{$classname}) ) {
@@ -180,7 +184,6 @@ FILE: foreach my $filename (@$files) {
       }
       $opt{classnum} = $classnum_of{$classname};
     }
-    # XXX what's the tax status of these charges?
     print STDERR "  Charging $hash{amount}\n"
       if $opt{v};
     my $error = $cust_main->charge(\%opt);
