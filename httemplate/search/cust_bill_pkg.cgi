@@ -635,15 +635,8 @@ if ( $cgi->param('nottax') ) {
     }
   }
 
-} else { 
+} # nottax / istax
 
-  #die?
-  warn "neiether nottax nor istax parameters specified";
-  #same as before?
-  $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
-                 LEFT JOIN part_pkg USING ( pkgpart ) ';
-
-}
 
 #total payments
 my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount) AS pay_amount,
