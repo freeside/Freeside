@@ -5,6 +5,7 @@ use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
 use vars qw( $conf $unsuspendauto $me $DEBUG
              $otaker_upgrade_kludge $ignore_empty_reasonnum
            );
+use List::Util qw( min );
 use Date::Format;
 use FS::UID qw( dbh getotaker );
 use FS::Misc qw(send_email);
@@ -806,19 +807,22 @@ sub credit_lineitems {
 
         foreach my $location ( $tax_cust_bill_pkg->cust_bill_pkg_tax_Xlocation ) {
 
-          $location->cust_bill_pkg_desc($taxline->desc); #ugh @ that kludge
+          #support partial credits: use $amount if smaller
+          # (so just distribute to the first location?   perhaps should
+          #  do so evenly...)
+          my $loc_amount = min( $amount, $location->amount);
 
-          #$taxtotal += $location->amount;
-          $amount -= $location->amount;
+          #$taxtotal += $loc_amount
+          $amount -= $loc_amount;
 
           #push @taxlines,
           #  #[ $location->desc, $taxline->setup, $taxlocnum, $taxratelocnum ];
           #  [ $location->desc, $location->amount, $taxlocnum, $taxratelocnum ];
-          $cust_credit_bill{$invnum} += $location->amount;
+          $cust_credit_bill{$invnum} += $loc_amount;
           push @{ $cust_credit_bill_pkg{$invnum} },
             new FS::cust_credit_bill_pkg {
               'billpkgnum'                => $tax_cust_bill_pkg->billpkgnum,
-              'amount'                    => $location->amount,
+              'amount'                    => $loc_amount,
               'setuprecur'                => 'setup',
               'billpkgtaxlocationnum'     => $location->billpkgtaxlocationnum,
               'billpkgtaxratelocationnum' => $location->billpkgtaxratelocationnum,
