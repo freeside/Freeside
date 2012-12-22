@@ -717,6 +717,8 @@ sub credit_lineitems {
   my %cust_credit_bill = ();
   my %cust_bill_pkg = ();
   my %cust_credit_bill_pkg = ();
+  # except here they're billpaynums
+  my %unapplied_payments;
   foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
     my $setuprecur = shift @{$arg{setuprecurs}};
     my $amount = shift @{$arg{amounts}};
@@ -744,7 +746,6 @@ sub credit_lineitems {
 
     push @{$cust_bill_pkg{$invnum}}, $cust_bill_pkg;
 
-    my %unapplied_payments; # billpaynum => amount
     #unapply any payments applied to this line item (other credits too?)
     foreach my $cust_bill_pay_pkg ( $cust_bill_pkg->cust_bill_pay_pkg($setuprecur) ) {
       $error = $cust_bill_pay_pkg->delete;
@@ -754,25 +755,6 @@ sub credit_lineitems {
       }
       $unapplied_payments{$cust_bill_pay_pkg->billpaynum}
         += $cust_bill_pay_pkg->amount;
-    }
-    # also unapply that amount from the invoice so it doesn't screw up 
-    # application of the credit
-    foreach my $billpaynum (keys %unapplied_payments) {
-      my $cust_bill_pay = FS::cust_bill_pay->by_key($billpaynum)
-        or die "broken payment application $billpaynum";
-      $cust_bill_pay->set('amount',
-        sprintf('%.2f',
-          $cust_bill_pay->get('amount') - $unapplied_payments{$billpaynum})
-      );
-      if ( $cust_bill_pay->amount >= 0.005 ) {
-        $error = $cust_bill_pay->replace;
-      } else {
-        $error = $cust_bill_pay->delete;
-      }
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error unapplying payment: $error";
-      }
     }
 
     #$subtotal += $amount;
@@ -921,11 +903,47 @@ sub credit_lineitems {
             };
 
         } # if $amount > 0
+
+        #unapply any payments applied to the tax
+        foreach my $cust_bill_pay_pkg 
+          ( $tax_cust_bill_pkg->cust_bill_pay_pkg('setup') )
+        {
+          $error = $cust_bill_pay_pkg->delete;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return "Error unapplying payment: $error";
+          }
+          $unapplied_payments{$cust_bill_pay_pkg->billpaynum}
+            += $cust_bill_pay_pkg->amount;
+        }
       } #foreach $taxline
 
     } # if @{ $cust_bill_pkg{$invnum} }
 
-    #insert cust_credit_bill
+    # if we unapplied any payments from line items, also unapply that
+    # amount from the invoice
+    foreach my $billpaynum (keys %unapplied_payments) {
+      my $cust_bill_pay = FS::cust_bill_pay->by_key($billpaynum)
+        or die "broken payment application $billpaynum";
+      $error = $cust_bill_pay->delete; # can't replace
+
+      my $new_cust_bill_pay = FS::cust_bill_pay->new({
+          $cust_bill_pay->hash,
+          billpaynum => '',
+          amount => sprintf('%.2f',
+              $cust_bill_pay->get('amount') - $unapplied_payments{$billpaynum})
+      });
+
+      if ( $new_cust_bill_pay->amount > 0 ) {
+        $error ||= $new_cust_bill_pay->insert;
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error unapplying payment: $error";
+      }
+    }
+
+    #NOW insert cust_credit_bill
 
     my $cust_credit_bill = new FS::cust_credit_bill {
       'crednum' => $cust_credit->crednum,
