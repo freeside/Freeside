@@ -136,7 +136,7 @@ my $html_init;
     One or more service definitions are grouped together into a package 
     definition and given pricing information.  Customers purchase packages
     rather than purchase services directly.<BR><BR>
-    <FORM METHOD="POST" ACTION="${p}edit/part_pkg.cgi">
+    <FORM METHOD="GET" ACTION="${p}edit/part_pkg.cgi">
     <A HREF="${p}edit/part_pkg.cgi"><I>Add a new package definition</I></A>
     or
     !.include('/elements/select-part_pkg.html', 'element_name' => 'clone' ). qq!
