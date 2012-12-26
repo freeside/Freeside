@@ -409,20 +409,8 @@ my $new_object_callback = sub {
 
 };
 
-my $edit_callback = sub {
-  my( $cgi, $object, $fields, $opt ) = @_;
-
-  $setup_show_zero_disabled = ($object->option('setup_fee') > 0) ? 1 : 0;
-
-  $recur_disabled = $object->freq ? 0 : 1;
-
-  $recur_show_zero_disabled =
-    $object->freq
-      ? $object->option('recur_fee') > 0 ? 1 : 0
-      : 1;
-
-  (@agent_type) =
-    map {$_->typenum} qsearch('type_pkgs', { 'pkgpart' => $object->pkgpart } );
+sub set_report_option {
+  my($cgi, $object, $fields ) = @_; #, $opt
 
   my @report_option = ();
   foreach ($object->options) {
@@ -444,6 +432,25 @@ my $edit_callback = sub {
     #$field->{curr_value} = join(',', @report_option);
     $field->{value} = join(',', @report_option);
   }
+
+}
+
+my $edit_callback = sub {
+  my( $cgi, $object, $fields, $opt ) = @_;
+
+  $setup_show_zero_disabled = ($object->option('setup_fee') > 0) ? 1 : 0;
+
+  $recur_disabled = $object->freq ? 0 : 1;
+
+  $recur_show_zero_disabled =
+    $object->freq
+      ? $object->option('recur_fee') > 0 ? 1 : 0
+      : 1;
+
+  (@agent_type) =
+    map {$_->typenum} qsearch('type_pkgs', { 'pkgpart' => $object->pkgpart } );
+
+  set_report_option( $cgi, $object, $fields);
 
   %options = $object->options;
 
@@ -484,12 +491,14 @@ my $clone_callback = sub {
 
     $object->disabled('Y');
 
-  } else { #not when cloning...
+  } else { #when explicitly cloning, not customizing
 
     (@agent_type) =
       map {$_->typenum} qsearch('type_pkgs',{ 'pkgpart' => $object->pkgpart } );
 
   }
+
+  set_report_option( $cgi, $object, $fields);
 
   %options = $object->options;
 
