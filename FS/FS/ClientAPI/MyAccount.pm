@@ -392,7 +392,8 @@ sub customer_info {
       $return{balance} = $cust_main->balance;
       $return{next_bill_date} = $cust_main->next_bill_date;
       $return{next_bill_date_pretty} =
-        time2str('%m/%d/%Y', $return{next_bill_date} );
+        $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
+                                : '(none)';
     }
 
     my @tickets = $cust_main->tickets;
@@ -607,7 +608,8 @@ sub billing_history {
   $return{balance} = $cust_main->balance;
   $return{next_bill_date} = $cust_main->next_bill_date;
   $return{next_bill_date_pretty} =
-    time2str('%m/%d/%Y', $return{next_bill_date} );
+    $return{next_bill_date} ? time2str('%m/%d/%Y', $return{next_bill_date} )
+                            : '(none)';
 
   my @history = ();
 
