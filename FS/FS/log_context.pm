@@ -12,6 +12,8 @@ my @contexts = ( qw(
   spool_upload
   daily
   queue
+  upgrade
+  upgrade_taxable_billpkgnum
 ) );
 
 =head1 NAME

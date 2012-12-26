@@ -760,11 +760,13 @@ sub calculate_taxes {
   my %tax_exemption;
 
   foreach my $tax ( keys %$taxlisthash ) {
-    # $tax is a tax identifier
+    # $tax is a tax identifier (intersection of a tax definition record
+    # and a cust_bill_pkg record)
     my $tax_object = shift @{ $taxlisthash->{$tax} };
     # $tax_object is a cust_main_county or tax_rate 
-    # (with pkgnum and locationnum set)
-    # the rest of @{ $taxlisthash->{$tax} } is cust_bill_pkg objects
+    # (with billpkgnum, pkgnum, locationnum set)
+    # the rest of @{ $taxlisthash->{$tax} } is cust_bill_pkg component objects
+    # (setup, recurring, usage classes)
     warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
     warn " ". join('/', @{ $taxlisthash->{$tax} } ). "\n" if $DEBUG > 2;
     # taxline calculates the tax on all cust_bill_pkgs in the 
@@ -808,6 +810,7 @@ sub calculate_taxes {
           'pkgnum'      => $tax_object->get('pkgnum'),
           'locationnum' => $tax_object->get('locationnum'),
           'amount'      => sprintf('%.2f', $amount ),
+          'taxable_billpkgnum' => $tax_object->get('billpkgnum'),
         };
     }
     elsif ( ref($tax_object) eq 'FS::tax_rate' ) {
@@ -820,6 +823,7 @@ sub calculate_taxes {
           'amount'             => sprintf('%.2f', $amount ),
           'locationtaxid'      => $tax_object->location,
           'taxratelocationnum' => $taxratelocationnum,
+          'taxable_billpkgnum' => $tax_object->get('billpkgnum'),
         };
     }
 
@@ -1284,6 +1288,10 @@ sub _handle_taxes {
       foreach (@taxes) {
         # These could become cust_bill_pkg_tax_location records,
         # or cust_tax_exempt_pkg.  We'll decide later.
+        #
+        # The most important thing here: record which charge is being taxed.
+        $_->set('billpkgnum',   $cust_bill_pkg->billpkgnum);
+        # also these, for historical reasons
         $_->set('pkgnum',       $cust_pkg->pkgnum);
         $_->set('locationnum',  $cust_pkg->tax_locationnum);
       }
@@ -1325,8 +1333,8 @@ sub _handle_taxes {
 
       # this is the tax identifier, not the taxname
       my $taxname = ref( $tax ). ' '. $tax->taxnum;
-      $taxname .= ' pkgnum'. $cust_pkg->pkgnum;
-      # We need to create a separate $taxlisthash entry for each pkgnum
+      $taxname .= ' billpkgnum'. $cust_bill_pkg->billpkgnum;
+      # We need to create a separate $taxlisthash entry for each billpkgnum
       # on the invoice, so that cust_bill_pkg_tax_location records will
       # be linked correctly.
 

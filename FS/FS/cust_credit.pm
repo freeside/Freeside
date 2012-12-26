@@ -646,7 +646,6 @@ Example:
 use FS::cust_bill_pkg;
 sub credit_lineitems {
   my( $class, %arg ) = @_;
-
   my $curuser = $FS::CurrentUser::CurrentUser;
 
   #some false laziness w/misc/xmlhttp-cust_bill_pkg-calculate_taxes.html
@@ -713,10 +712,13 @@ sub credit_lineitems {
   }
 
   #my $subtotal = 0;
-  my $taxlisthash = {};
+  # keys in all of these are invoice numbers
   my %cust_credit_bill = ();
   my %cust_bill_pkg = ();
   my %cust_credit_bill_pkg = ();
+  my %taxlisthash = ();
+  # except here they're billpaynums
+  my %unapplied_payments;
   foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
     my $setuprecur = shift @{$arg{setuprecurs}};
     my $amount = shift @{$arg{amounts}};
@@ -727,6 +729,8 @@ sub credit_lineitems {
       'addl_from' => 'LEFT JOIN cust_bill USING (invnum)',
       'extra_sql' => 'AND custnum = '. $cust_main->custnum,
     }) or die "unknown billpkgnum $billpkgnum";
+  
+    my $invnum = $cust_bill_pkg->invnum;
 
     if ( $setuprecur eq 'setup' ) {
       $cust_bill_pkg->setup($amount);
@@ -740,7 +744,7 @@ sub credit_lineitems {
       $cust_bill_pkg->unitsetup(0);
     }
 
-    push @{$cust_bill_pkg{$cust_bill_pkg->invnum}}, $cust_bill_pkg;
+    push @{$cust_bill_pkg{$invnum}}, $cust_bill_pkg;
 
     #unapply any payments applied to this line item (other credits too?)
     foreach my $cust_bill_pay_pkg ( $cust_bill_pkg->cust_bill_pay_pkg($setuprecur) ) {
@@ -749,25 +753,29 @@ sub credit_lineitems {
         $dbh->rollback if $oldAutoCommit;
         return "Error unapplying payment: $error";
       }
+      $unapplied_payments{$cust_bill_pay_pkg->billpaynum}
+        += $cust_bill_pay_pkg->amount;
     }
 
     #$subtotal += $amount;
-    $cust_credit_bill{$cust_bill_pkg->invnum} += $amount;
-    push @{ $cust_credit_bill_pkg{$cust_bill_pkg->invnum} },
+    $cust_credit_bill{$invnum} += $amount;
+    push @{ $cust_credit_bill_pkg{$invnum} },
       new FS::cust_credit_bill_pkg {
         'billpkgnum' => $cust_bill_pkg->billpkgnum,
-        'amount'     => $amount,
+        'amount'     => sprintf('%.2f',$amount),
         'setuprecur' => $setuprecur,
         'sdate'      => $cust_bill_pkg->sdate,
         'edate'      => $cust_bill_pkg->edate,
       };
 
+    # recalculate taxes with new amounts
+    $taxlisthash{$invnum} ||= {};
     my $part_pkg = $cust_bill_pkg->part_pkg;
     $cust_main->_handle_taxes( $part_pkg,
-                               $taxlisthash,
+                               $taxlisthash{$invnum},
                                $cust_bill_pkg,
                                $cust_bill_pkg->cust_pkg,
-                               $cust_bill_pkg->cust_bill->_date,
+                               $cust_bill_pkg->cust_bill->_date, #invoice time
                                $cust_bill_pkg->cust_pkg->pkgpart,
                              );
   }
@@ -781,83 +789,143 @@ sub credit_lineitems {
 
   foreach my $invnum ( sort { $a <=> $b } keys %cust_credit_bill ) {
 
+    my $arrayref_or_error =
+      $cust_main->calculate_taxes(
+        $cust_bill_pkg{$invnum}, # list of taxable items that we're crediting
+        $taxlisthash{$invnum},   # list of tax-item bindings
+        $cust_bill_pkg{$invnum}->[0]->cust_bill->_date, # invoice time
+      );
+
+    unless ( ref( $arrayref_or_error ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error calculating taxes: $arrayref_or_error";
+    }
+    
+    my %tax_links; # {tax billpkgnum}{nontax billpkgnum}
+
     #taxes
+    foreach my $cust_bill_pkg ( @{ $cust_bill_pkg{$invnum} } ) {
+      my $billpkgnum = $cust_bill_pkg->billpkgnum;
+      my %hash = ( 'taxable_billpkgnum' => $billpkgnum );
+      # gather up existing tax links (we need their billpkgtaxlocationnums)
+      my @tax_links = qsearch('cust_bill_pkg_tax_location', \%hash),
+                      qsearch('cust_bill_pkg_tax_rate_location', \%hash);
 
-    if ( @{ $cust_bill_pkg{$invnum} } ) {
-
-      my $listref_or_error = 
-        $cust_main->calculate_taxes( $cust_bill_pkg{$invnum}, $taxlisthash, $cust_bill_pkg{$invnum}->[0]->cust_bill->_date );
-
-      unless ( ref( $listref_or_error ) ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error calculating taxes: $listref_or_error";
+      foreach ( @tax_links ) {
+        $tax_links{$_->billpkgnum} ||= {};
+        $tax_links{$_->billpkgnum}{$_->taxable_billpkgnum} = $_;
       }
-
-      # so, loop through the taxlines, apply just that amount to the tax line
-      #  item (save for later insert) & add to $
-
-      #my @taxlines = ();
-      #my $taxtotal = 0;
-      foreach my $taxline ( @$listref_or_error ) {
-
-        #find equivalent tax line items on the existing invoice
-        # (XXX need a more specific/deterministic way to find these than itemdesc..)
-        my $tax_cust_bill_pkg = qsearchs('cust_bill_pkg', {
-          'invnum'   => $invnum,
-          'pkgnum'   => 0, #$taxline->invnum
-          'itemdesc' => $taxline->desc,
-        });
-
-        my $amount = $taxline->setup;
-        my $desc = $taxline->desc;
-
-        foreach my $location ( $tax_cust_bill_pkg->cust_bill_pkg_tax_Xlocation ) {
-
-          #support partial credits: use $amount if smaller
-          # (so just distribute to the first location?   perhaps should
-          #  do so evenly...)
-          my $loc_amount = min( $amount, $location->amount);
-
-          $amount -= $loc_amount;
-
-          #push @taxlines,
-          #  #[ $location->desc, $taxline->setup, $taxlocnum, $taxratelocnum ];
-          #  [ $location->desc, $location->amount, $taxlocnum, $taxratelocnum ];
-          $cust_credit_bill{$invnum} += $loc_amount;
-          push @{ $cust_credit_bill_pkg{$invnum} },
-            new FS::cust_credit_bill_pkg {
-              'billpkgnum'                => $tax_cust_bill_pkg->billpkgnum,
-              'amount'                    => $loc_amount,
-              'setuprecur'                => 'setup',
-              'billpkgtaxlocationnum'     => $location->billpkgtaxlocationnum,
-              'billpkgtaxratelocationnum' => $location->billpkgtaxratelocationnum,
-            };
-
-        }
-        if ($amount > 0) {
-          #$taxtotal += $amount;
-          #push @taxlines,
-          #  [ $taxline->itemdesc. ' (default)', sprintf('%.2f', $amount), '', '' ];
-
-          $cust_credit_bill{$invnum} += $amount;
-          push @{ $cust_credit_bill_pkg{$invnum} },
-            new FS::cust_credit_bill_pkg {
-              'billpkgnum' => $tax_cust_bill_pkg->billpkgnum,
-              'amount'     => $amount,
-              'setuprecur' => 'setup',
-            };
-
-        }
-      }
-
     }
 
+    foreach my $taxline ( @$arrayref_or_error ) {
+
+      my $amount = $taxline->setup;
+
+      # find equivalent tax line item on the existing invoice
+      my $tax_item = qsearchs('cust_bill_pkg', {
+          'invnum'    => $invnum,
+          'pkgnum'    => 0,
+          'itemdesc'  => $taxline->desc,
+      });
+      if (!$tax_item) {
+        # or should we just exit if this happens?
+        $cust_credit->set('amount', 
+          sprintf('%.2f', $cust_credit->get('amount') - $amount)
+        );
+        my $error = $cust_credit->replace;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "error correcting credit for missing tax line: $error";
+        }
+      }
+
+      # but in the new era, we no longer have the problem of uniquely
+      # identifying the tax_Xlocation record.  The billpkgnums of the 
+      # tax and the taxed item are known.
+      foreach my $new_loc
+        ( @{ $taxline->get('cust_bill_pkg_tax_location') },
+          @{ $taxline->get('cust_bill_pkg_tax_rate_location') } )
+      {
+        # the existing tax_Xlocation object
+        my $old_loc =
+          $tax_links{$tax_item->billpkgnum}{$new_loc->taxable_billpkgnum};
+
+        next if !$old_loc; # apply the leftover amount nonspecifically
+
+        #support partial credits: use $amount if smaller
+        # (so just distribute to the first location?   perhaps should
+        #  do so evenly...)
+        my $loc_amount = min( $amount, $new_loc->amount);
+
+        $amount -= $loc_amount;
+
+        $cust_credit_bill{$invnum} += $loc_amount;
+        push @{ $cust_credit_bill_pkg{$invnum} },
+          new FS::cust_credit_bill_pkg {
+            'billpkgnum'                => $tax_item->billpkgnum,
+            'amount'                    => $loc_amount,
+            'setuprecur'                => 'setup',
+            'billpkgtaxlocationnum'     => $old_loc->billpkgtaxlocationnum,
+            'billpkgtaxratelocationnum' => $old_loc->billpkgtaxratelocationnum,
+          };
+
+      } #foreach my $new_loc
+
+      # we still have to deal with the possibility that the tax links don't
+      # cover the whole amount of tax because of an incomplete upgrade...
+      if ($amount > 0) {
+        $cust_credit_bill{$invnum} += $amount;
+        push @{ $cust_credit_bill_pkg{$invnum} },
+          new FS::cust_credit_bill_pkg {
+            'billpkgnum' => $tax_item->billpkgnum,
+            'amount'     => $amount,
+            'setuprecur' => 'setup',
+          };
+
+      } # if $amount > 0
+
+      #unapply any payments applied to the tax
+      foreach my $cust_bill_pay_pkg
+        ( $tax_item->cust_bill_pay_pkg('setup') )
+      {
+        $error = $cust_bill_pay_pkg->delete;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "Error unapplying payment: $error";
+        }
+        $unapplied_payments{$cust_bill_pay_pkg->billpaynum}
+          += $cust_bill_pay_pkg->amount;
+      }
+    } #foreach $taxline
+
+    # if we unapplied any payments from line items, also unapply that 
+    # amount from the invoice
+    foreach my $billpaynum (keys %unapplied_payments) {
+      my $cust_bill_pay = FS::cust_bill_pay->by_key($billpaynum)
+        or die "broken payment application $billpaynum";
+      $error = $cust_bill_pay->delete; # can't replace
+
+      my $new_cust_bill_pay = FS::cust_bill_pay->new({
+          $cust_bill_pay->hash,
+          billpaynum => '',
+          amount => sprintf('%.2f', 
+              $cust_bill_pay->amount - $unapplied_payments{$billpaynum}),
+      });
+
+      if ( $new_cust_bill_pay->amount > 0 ) {
+        $error ||= $new_cust_bill_pay->insert;
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error unapplying payment: $error";
+      }
+    }
     #insert cust_credit_bill
 
     my $cust_credit_bill = new FS::cust_credit_bill {
       'crednum' => $cust_credit->crednum,
       'invnum'  => $invnum,
-      'amount'  => $cust_credit_bill{$invnum},
+      'amount'  => sprintf('%.2f', $cust_credit_bill{$invnum}),
     };
     $error = $cust_credit_bill->insert;
     if ( $error ) {
