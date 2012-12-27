@@ -2239,7 +2239,9 @@ sub _items_cust_bill_pkg {
 
         # start/end dates for invoice formats that do nonstandard 
         # things with them
-        my %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate');
+        my %item_dates = ();
+        %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate')
+          unless $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1);
 
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
