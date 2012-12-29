@@ -87,6 +87,8 @@ sub _upgrade_data {
   # bypass RT ACLs--we're going to do lots of things
   my $CurrentUser = $RT::SystemUser;
 
+  my $dbh = dbh;
+
   # selfservice and cron users
   foreach my $username ('%%%SELFSERVICE_USER%%%', 'fs_daily') {
     my $User = RT::User->new($CurrentUser);
@@ -251,6 +253,71 @@ sub _upgrade_data {
     my ($val, $msg) = $Scrip->Create(%new_param);
     die $msg if !$val;
   } #foreach (@Scrips)
+
+  # one-time fix: accumulator fields (support time, etc.) that had values 
+  # entered on ticket creation need OCFV records attached to their Create
+  # transactions
+  my $sql = 'SELECT first_ocfv.ObjectId, first_ocfv.Created, Content '.
+    'FROM ObjectCustomFieldValues as first_ocfv '.
+    'JOIN ('.
+      # subquery to get the first OCFV with a certain name for each ticket
+      'SELECT min(ObjectCustomFieldValues.Id) AS Id '.
+      'FROM ObjectCustomFieldValues '.
+      'JOIN CustomFields '.
+      'ON (ObjectCustomFieldValues.CustomField = CustomFields.Id) '.
+      'WHERE ObjectType = \'RT::Ticket\' '.
+      'AND CustomFields.Name = ? '.
+      'GROUP BY ObjectId'.
+    ') AS first_ocfv_id USING (Id) '.
+    'JOIN ('.
+      # subquery to get the first transaction date for each ticket
+      # other than the Create
+      'SELECT ObjectId, min(Created) AS Created FROM Transactions '.
+      'WHERE ObjectType = \'RT::Ticket\' '.
+      'AND Type != \'Create\' '.
+      'GROUP BY ObjectId'.
+    ') AS first_txn ON (first_ocfv.ObjectId = first_txn.ObjectId) '.
+    # where the ticket custom field acquired a value before any transactions
+    # on the ticket (i.e. it was set on ticket creation)
+    'WHERE first_ocfv.Created < first_txn.Created '.
+    # and we haven't already fixed the ticket
+    'AND NOT EXISTS('.
+      'SELECT 1 FROM Transactions JOIN ObjectCustomFieldValues '.
+      'ON (Transactions.Id = ObjectCustomFieldValues.ObjectId) '.
+      'JOIN CustomFields '.
+      'ON (ObjectCustomFieldValues.CustomField = CustomFields.Id) '.
+      'WHERE ObjectCustomFieldValues.ObjectType = \'RT::Transaction\' '.
+      'AND CustomFields.Name = ? '.
+      'AND Transactions.Type = \'Create\''.
+      'AND Transactions.ObjectType = \'RT::Ticket\''.
+      'AND Transactions.ObjectId = first_ocfv.ObjectId'.
+    ')';
+    #whew
+
+  # prior to this fix, the only name an accumulate field could possibly have 
+  # was "Support time".
+  my $sth = $dbh->prepare($sql);
+  $sth->execute('Support time', 'Support time');
+  my $rows = $sth->rows;
+  warn "Fixing support time on $rows rows...\n" if $rows > 0;
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    my ($tid, $created, $content) = @$row;
+    my $Txns = RT::Transactions->new($CurrentUser);
+    $Txns->Limit(FIELD => 'ObjectId', VALUE => $tid);
+    $Txns->Limit(FIELD => 'ObjectType', VALUE => 'RT::Ticket');
+    $Txns->Limit(FIELD => 'Type', VALUE => 'Create');
+    my $CreateTxn = $Txns->First;
+    if ($CreateTxn) {
+      my ($val, $msg) = $CreateTxn->AddCustomFieldValue(
+        Field => 'Support time',
+        Value => $content,
+        RecordTransaction => 0,
+      );
+      warn "Error setting transaction support time: $msg\n" unless $val;
+    } else {
+      warn "Create transaction not found for ticket $tid.\n";
+    }
+  }
 
   return;
 }
