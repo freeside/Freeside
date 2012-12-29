@@ -23,8 +23,8 @@ the same name, and should be single-valued fields.
 sub Prepare {
     my $self = shift;
     my $cfname = $self->Argument or return 0;
-    RT::Logger->info('Accumulate::Prepare called on transaction '.
-                       $self->TransactionObj->Id." field $cfname");
+    #RT::Logger->info('Accumulate::Prepare called on transaction '.
+    #                   $self->TransactionObj->Id." field $cfname");
     my $TransObj = $self->TransactionObj;
     my $TicketObj = $self->TicketObj;
     if ( $TransObj->Type eq 'Create' and
@@ -49,8 +49,8 @@ sub Commit {
     my $obj = $self->{'obj'};
     my $newval = $self->{'inc_by'} + 
       ($obj->FirstCustomFieldValue($cfname) || 0);
-    RT::Logger->info('Accumulate::Commit called on '.ref($obj).' '.
-                       $obj->Id." field $cfname");
+      #RT::Logger->info('Accumulate::Commit called on '.ref($obj).' '.
+      #                 $obj->Id." field $cfname");
     my ($val) = $obj->AddCustomFieldValue(
         Field => $cfname,
         Value => $newval,
