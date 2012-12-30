@@ -3403,6 +3403,8 @@ New-style, with a hashref of options:
 
                                     'setuptax'   => '', # or 'Y' for tax exempt
 
+                                    'locationnum'=> 1234, # optional
+
                                     #internal taxation
                                     'taxclass'   => 'Tax class',
 
@@ -3434,6 +3436,7 @@ sub charge {
   my $no_auto = '';
   my $cust_pkg_ref = '';
   my ( $bill_now, $invoice_terms ) = ( 0, '' );
+  my $locationnum;
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
@@ -3451,6 +3454,7 @@ sub charge {
     $cust_pkg_ref = exists($_[0]->{cust_pkg_ref}) ? $_[0]->{cust_pkg_ref} : '';
     $bill_now = exists($_[0]->{bill_now}) ? $_[0]->{bill_now} : '';
     $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
+    $locationnum = $_[0]->{locationnum} || $self->ship_locationnum;
   } else {
     $amount     = shift;
     $quantity   = 1;
@@ -3517,6 +3521,7 @@ sub charge {
     'quantity'   => $quantity,
     'start_date' => $start_date,
     'no_auto'    => $no_auto,
+    'locationnum'=> $locationnum,
   } );
 
   $error = $cust_pkg->insert;
