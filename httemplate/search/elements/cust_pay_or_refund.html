@@ -239,6 +239,12 @@ if ( $cgi->param('magic') ) {
       $title = $part_referral->referral. " $title";
     }
 
+    if ( $cgi->param('cust_classnum') ) {
+      my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+      push @search, 'cust_main.classnum IN('.join(',',@classnums).')'
+        if @classnums;
+    }
+
     if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
       push @search, "custnum = $1";
     }

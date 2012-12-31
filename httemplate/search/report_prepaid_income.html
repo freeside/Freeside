@@ -33,6 +33,8 @@
   
   <& /elements/tr-select-cust_main-status.html,
       label => mt('Customer Status') &>
+  <& /elements/tr-select-cust_class.html,
+      label => mt('Customer Class'), field => 'cust_classnum', multiple => 1 &>
   <& /elements/tr-select.html,
       label => 'Invoice Status',
       field => 'mode',

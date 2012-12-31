@@ -15,14 +15,13 @@
      label => emt('Customer status'),
 &>
 
-<!-- customer
 <& /elements/tr-select-cust_class.html,
-     'label'        => emt('Class'),
+     'label'        => emt('Customer class'),
+     'field'        => 'cust_classnum',
      'multiple'     => 1,
      'pre_options'  => [ '' => emt('(none)') ],
      'all_selected' => 1,
 &>
--->
 
 <& /elements/tr-input-beginning_ending.html &>
 

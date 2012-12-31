@@ -120,6 +120,8 @@ Filtering parameters:
 
 - refnum: Filter on customer reference source.
 
+- cust_classnum: Filter on customer class.
+
 - classnum: Filter on package class.
 
 - use_override: Apply "classnum" and "taxclass" filtering based on the 
@@ -256,6 +258,13 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 # refnum
 if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.refnum = $1";
+}
+
+# cust_classnum
+if ( $cgi->param('cust_classnum') ) {
+  my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+  push @where, 'cust_main.classnum IN('.join(',',@classnums).')'
+    if @classnums;
 }
 
 # custnum
