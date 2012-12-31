@@ -36,6 +36,7 @@ Example:
 
     #optional
     'agentnum'        => $agentnum,
+    'cust_classnum'   => \@classnums,
     'nototal'         => 1,
     'graph_type'      => 'LinesPoints',
     'remove_empty'    => 1,
@@ -119,6 +120,7 @@ my %reportopts = (
       'end_year'     => $opt{'end_year'},
       'projection'   => $opt{'projection'},
       'agentnum'     => $opt{'agentnum'},
+      'cust_classnum'=> $opt{'cust_classnum'},
       'remove_empty' => $opt{'remove_empty'},
       'doublemonths' => $opt{'doublemonths'},
 );

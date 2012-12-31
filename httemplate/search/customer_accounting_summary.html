@@ -142,8 +142,7 @@ $title .=  $sel_part_referral->referral.' '
 
 $title .= 'Customer Accounting Summary Report';
 
-my @custs = ();
-@custs = qsearch('cust_main', {} );
+my @cust_classnums = grep /^\d+$/, $cgi->param('cust_classnum');
 
 my @items  = ('netsales', 'cashflow');
 my @params = ( [], [] );
@@ -166,6 +165,18 @@ my @custnames = ();
 
 my $status = $cgi->param('status');
 die "invalid status" unless $status =~ /^\w+|$/;
+
+my %search_hash;
+foreach (qw(agentnum refnum status)) {
+  if ( defined $cgi->param($_) ) {
+    $search_hash{$_} = $cgi->param($_);
+  }
+}
+$search_hash{'classnum'} = [ $cgi->param('cust_classnum') ] 
+  if $cgi->param('cust_classnum');
+
+my $query = FS::cust_main::Search->search(\%search_hash);
+my @custs = qsearch($query);
 
 foreach my $cust_main ( @custs ) {
   # XXX should do this in the qsearch

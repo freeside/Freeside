@@ -129,6 +129,13 @@ if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
   push @where, FS::cust_main->cust_status_sql . " = '$status'";
 }
 
+if ( $cgi->param('cust_classnum') ) {
+  my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+  $link .= ";cust_classnum=$_" foreach @classnums;
+  push @where, 'cust_main.classnum IN('.join(',',@classnums).')'
+    if @classnums;
+}
+
 my %total = ();
 my %total_legacy = ();
 foreach my $agentnum (@agentnums) {

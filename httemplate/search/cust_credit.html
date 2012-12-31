@@ -103,6 +103,12 @@ if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
   $title = $part_referral->referral. " $title";
 }
 
+if ( $cgi->param('cust_classnum') ) {
+  my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+  push @search, 'cust_main.classnum IN('.join(',',@classnums).')'
+    if @classnums;
+}
+
 if ( $unapplied ) {
   push @search, FS::cust_credit->unapplied_sql . ' > 0';
 }

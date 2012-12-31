@@ -118,6 +118,12 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }
 
+if ( $cgi->param('cust_classnum') ) {
+  my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+  push @where, 'cust_main.classnum IN('.join(',',@classnums).')'
+    if @classnums;
+}
+
 # no pkgclass, no taxclass, no tax location...
 
 # unearned revenue mode
@@ -235,7 +241,8 @@ my $query = {
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
-my $money_char;
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
 
 sub money_sub {
   $conf ||= new FS::Conf;
