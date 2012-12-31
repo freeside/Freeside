@@ -201,16 +201,50 @@ sub insert {
 
   my $tax_location = $self->get('cust_bill_pkg_tax_location');
   if ( $tax_location ) {
-    foreach my $cust_bill_pkg_tax_location ( @$tax_location ) {
-      $cust_bill_pkg_tax_location->billpkgnum($self->billpkgnum);
-      $error = $cust_bill_pkg_tax_location->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error inserting cust_bill_pkg_tax_location: $error";
+    foreach my $link ( @$tax_location ) {
+      next if $link->billpkgtaxlocationnum; # don't try to double-insert
+      # This cust_bill_pkg can be linked on either side (i.e. it can be the
+      # tax or the taxed item).  If the other side is already inserted, 
+      # then set billpkgnum to ours, and insert the link.  Otherwise,
+      # set billpkgnum to ours and pass the link off to the cust_bill_pkg
+      # on the other side, to be inserted later.
+
+      my $tax_cust_bill_pkg = $link->get('tax_cust_bill_pkg');
+      if ( $tax_cust_bill_pkg && $tax_cust_bill_pkg->billpkgnum ) {
+        $link->set('billpkgnum', $tax_cust_bill_pkg->billpkgnum);
+        # break circular links when doing this
+        $link->set('tax_cust_bill_pkg', '');
       }
-    }
+      my $taxable_cust_bill_pkg = $link->get('taxable_cust_bill_pkg');
+      if ( $taxable_cust_bill_pkg && $taxable_cust_bill_pkg->billpkgnum ) {
+        $link->set('taxable_billpkgnum', $taxable_cust_bill_pkg->billpkgnum);
+        # XXX if we ever do tax-on-tax for these, this will have to change
+        # since pkgnum will be zero
+        $link->set('pkgnum', $taxable_cust_bill_pkg->pkgnum);
+        $link->set('locationnum', 
+          $taxable_cust_bill_pkg->cust_pkg->tax_locationnum);
+        $link->set('taxable_cust_bill_pkg', '');
+      }
+
+      if ( $link->billpkgnum and $link->taxable_billpkgnum ) {
+        $error = $link->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "error inserting cust_bill_pkg_tax_location: $error";
+        }
+      } else { # handoff
+        my $other;
+        $other = $link->billpkgnum ? $link->get('taxable_cust_bill_pkg')
+                                   : $link->get('tax_cust_bill_pkg');
+        my $link_array = $other->get('cust_bill_pkg_tax_location') || [];
+        push @$link_array, $link;
+        $other->set('cust_bill_pkg_tax_location' => $link_array);
+      }
+    } #foreach my $link
   }
 
+  # someday you will be as awesome as cust_bill_pkg_tax_location...
+  # but not today
   my $tax_rate_location = $self->get('cust_bill_pkg_tax_rate_location');
   if ( $tax_rate_location ) {
     foreach my $cust_bill_pkg_tax_rate_location ( @$tax_rate_location ) {
