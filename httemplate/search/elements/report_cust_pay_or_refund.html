@@ -53,7 +53,7 @@ Examples:
       if ( what.value == 'BILL' ) {
         show('payinfo');
         hide('ccpay');
-      } else if ( what.value.match(/^CARD/) ) {
+      } else if ( what.value.match(/^CARD|CHEK/) ) {
         hide('payinfo');
         show('ccpay');
       } else {
