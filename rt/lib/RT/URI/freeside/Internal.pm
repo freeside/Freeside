@@ -143,7 +143,7 @@ sub small_custview {
 
 }
 
-sub _FreesideURILabelLong {
+sub AsStringLong {
 
   my $self = shift;
 
@@ -161,30 +161,28 @@ sub _FreesideURILabelLong {
   } elsif ( $table eq 'cust_svc' ) {
 
     my $string = '';
-    # we now do this within the UI
-    #my $cust = $self->CustomerResolver;
-    #if ( $cust ) {
-    #  $string = $cust->AsStringLong;
-    #}
-    $string .= $self->AsString;
+    my $cust = $self->CustomerResolver;
+    if ( $cust ) {
+      # the customer's small_custview
+      $string = $cust->AsStringLong();
+    }
+    # + the service label and link
+    $string .= $self->ShortLink;
     return $string;
 
   } else {
 
-    return $self->_FreesideURILabel();
+    return $self->SUPER::AsStringLong;
 
   }
 
 }
 
-sub AsString {
+sub ShortLink {
+  # because I don't want AsString to sometimes return a hunk of HTML, but
+  # on the other hand AsStringLong does something specific.
   my $self = shift;
-  if ( $self->{'fstable'} eq 'cust_svc' ) {
-    return '<B><A HREF="' . $self->HREF . '">' . 
-          $self->_FreesideURILabel . '</A></B>';
-  } else {
-    $self->SUPER::AsString;
-  }
+  '<B><A HREF="'.$self->HREF.'">' . $self->_FreesideURILabel . '</A></B>';
 }
 
 sub CustomerResolver {

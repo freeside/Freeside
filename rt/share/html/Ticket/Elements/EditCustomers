@@ -38,7 +38,11 @@
 %       }
     </td>
     <td>
+%       if ( $resolver->URI =~ /cust_main/ ) {
       <% $resolver->AsStringLong |n %>
+%       } elsif ( $resolver->URI =~ /cust_svc/ ) {
+      <% $resolver->ShortLink |n %>
+%       }
     </td>
   </tr>
 %     }

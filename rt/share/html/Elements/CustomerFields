@@ -27,7 +27,7 @@ my @customer_fields = ( # ordered
                 my @return = ();
                 foreach my $c (ticket_cust_resolvers($Ticket)) {
                     push @return, \'<A HREF="', $c->HREF, \'">',
-                                  $c->_FreesideURILabel,
+                                  $c->AsString,
                                   \'</A>',
                                   \'<BR>';
                 }
