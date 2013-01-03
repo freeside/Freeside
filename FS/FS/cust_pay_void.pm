@@ -1,7 +1,7 @@
 package FS::cust_pay_void; 
 
 use strict;
-use base qw( FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
+use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
              FS::Record );
 use vars qw( @encrypted_fields $otaker_upgrade_kludge );
 use Business::CreditCard;

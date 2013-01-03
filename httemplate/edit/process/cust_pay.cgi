@@ -57,6 +57,8 @@ my $new = new FS::cust_pay ( {
         bank depositor account teller
       )
   #} fields('cust_pay')
+  # gatewaynum, processor, auth, order_number
+  # are for realtime payments only, and can't be entered manually
 } );
 
 my @rights = ('Post payment');

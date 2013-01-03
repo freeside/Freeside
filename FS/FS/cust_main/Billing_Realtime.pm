@@ -757,19 +757,6 @@ sub fake_bop {
      return "Error: No error; test failure requested with fake_failure";
   }
 
-  #my $paybatch = '';
-  #if ( $payment_gateway->gatewaynum ) { # agent override
-  #  $paybatch = $payment_gateway->gatewaynum. '-';
-  #}
-  #
-  #$paybatch .= "$processor:". $transaction->authorization;
-  #
-  #$paybatch .= ':'. $transaction->order_number
-  #  if $transaction->can('order_number')
-  #  && length($transaction->order_number);
-
-  my $paybatch = 'FakeProcessor:54:32';
-
   my $cust_pay = new FS::cust_pay ( {
      'custnum'  => $self->custnum,
      'invnum'   => $options{'invnum'},
@@ -778,9 +765,11 @@ sub fake_bop {
      'payby'    => $bop_method2payby{$options{method}},
      #'payinfo'  => $payinfo,
      'payinfo'  => '4111111111111111',
-     'paybatch' => $paybatch,
      #'paydate'  => $paydate,
      'paydate'  => '2012-05-01',
+     'processor'      => 'FakeProcessor',
+     'auth'           => '54',
+     'order_number'   => '32',
   } );
   $cust_pay->payunique( $options{payunique} ) if length($options{payunique});
 
@@ -841,17 +830,8 @@ sub _realtime_bop_result {
 
   if ( $transaction->is_success() ) {
 
-    my $paybatch = '';
-    if ( $payment_gateway->gatewaynum ) { # agent override
-      $paybatch = $payment_gateway->gatewaynum. '-';
-    }
-
-    $paybatch .= $payment_gateway->gateway_module. ":".
-      $transaction->authorization;
-
-    $paybatch .= ':'. $transaction->order_number
-      if $transaction->can('order_number')
-      && length($transaction->order_number);
+    my $order_number = $transaction->order_number
+      if $transaction->can('order_number');
 
     my $cust_pay = new FS::cust_pay ( {
        'custnum'  => $self->custnum,
@@ -860,10 +840,14 @@ sub _realtime_bop_result {
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
        'payinfo'  => $options{'payinfo'},
-       'paybatch' => $paybatch,
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
-       'discount_term' => $options{'discount_term'},
+       'discount_term'  => $options{'discount_term'},
+       'gatewaynum'     => ($payment_gateway->gatewaynum || ''),
+       'processor'      => $payment_gateway->gateway_module,
+       'auth'           => $transaction->authorization,
+       'order_number'   => $order_number || '',
+
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} )
@@ -1363,6 +1347,7 @@ sub realtime_refund_bop {
 
   my( $processor, $login, $password, @bop_options, $namespace ) ;
   my( $auth, $order_number ) = ( '', '', '' );
+  my $gatewaynum = '';
 
   if ( $options{'paynum'} ) {
 
@@ -1371,11 +1356,22 @@ sub realtime_refund_bop {
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
 
-    $cust_pay->paybatch =~ /^((\d+)\-)?(\w+):\s*([\w\-\/ ]*)(:([\w\-]+))?$/
-      or return "Can't parse paybatch for paynum $options{'paynum'}: ".
-                $cust_pay->paybatch;
-    my $gatewaynum = '';
-    ( $gatewaynum, $processor, $auth, $order_number ) = ( $2, $3, $4, $6 );
+    if ( $cust_pay->get('processor') ) {
+      ($gatewaynum, $processor, $auth, $order_number) =
+      (
+        $cust_pay->gatewaynum,
+        $cust_pay->processor,
+        $cust_pay->auth,
+        $cust_pay->order_number,
+      );
+    } else {
+      # this payment wasn't upgraded, which probably means this won't work,
+      # but try it anyway
+      $cust_pay->paybatch =~ /^((\d+)\-)?(\w+):\s*([\w\-\/ ]*)(:([\w\-]+))?$/
+        or return "Can't parse paybatch for paynum $options{'paynum'}: ".
+                  $cust_pay->paybatch;
+      ( $gatewaynum, $processor, $auth, $order_number ) = ( $2, $3, $4, $6 );
+    }
 
     if ( $gatewaynum ) { #gateway for the payment to be refunded
 
@@ -1605,9 +1601,7 @@ sub realtime_refund_bop {
   return "$processor error: ". $refund->error_message
     unless $refund->is_success();
 
-  my $paybatch = "$processor:". $refund->authorization;
-  $paybatch .= ':'. $refund->order_number
-    if $refund->can('order_number') && $refund->order_number;
+  $order_number = $refund->order_number if $refund->can('order_number');
 
   while ( $cust_pay && $cust_pay->unapplied < $amount ) {
     my @cust_bill_pay = $cust_pay->cust_bill_pay;
@@ -1624,8 +1618,11 @@ sub realtime_refund_bop {
     '_date'    => '',
     'payby'    => $bop_method2payby{$options{method}},
     'payinfo'  => $payinfo,
-    'paybatch' => $paybatch,
     'reason'   => $options{'reason'} || 'card or ACH refund',
+    'gatewaynum'    => $gatewaynum, # may be null
+    'processor'     => $processor,
+    'auth'          => $refund->authorization,
+    'order_number'  => $order_number,
   } );
   my $error = $cust_refund->insert;
   if ( $error ) {

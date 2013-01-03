@@ -87,6 +87,11 @@ order taker (see L<FS::access_user>
 
 books closed flag, empty or `Y'
 
+=item gatewaynum, processor, auth, order_number
+
+Same as for L<FS::cust_pay>, but specifically the result of realtime 
+authorization of the refund.
+
 =back
 
 =head1 METHODS

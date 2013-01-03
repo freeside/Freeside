@@ -60,29 +60,25 @@
   </TR>
 % } 
 
-%
-%  #false laziness w/FS/FS/cust_main::realtime_refund_bop
-%  if ( $cust_pay->paybatch =~ /^(\w+):(\w+)(:(\w+))?$/ ) {
-%    my ( $processor, $auth, $order_number ) = ( $1, $2, $4 );
-%  
-
-
     <TR>
-      <TD ALIGN="right">Processor</TD><TD BGCOLOR="#ffffff"><% $processor %></TD>
+      <TD ALIGN="right">Processor</TD>
+      <TD BGCOLOR="#ffffff"><% $cust_pay->processor %></TD>
     </TR>
 % if ( length($auth) ) { 
 
       <TR>
-        <TD ALIGN="right">Authorization</TD><TD BGCOLOR="#ffffff"><% $auth %></TD>
+        <TD ALIGN="right">Authorization</TD>
+        <TD BGCOLOR="#ffffff"><% $cust_pay->auth %></TD>
       </TR>
 % } 
-% if ( length($order_number) ) { 
+% if ( length($cust_pay->order_number) ) { 
 
       <TR>
-        <TD ALIGN="right">Order number</TD><TD BGCOLOR="#ffffff"><% $order_number %></TD>
+        <TD ALIGN="right">Order number</TD>
+        <TD BGCOLOR="#ffffff"><% $cust_pay->order_number %></TD>
       </TR>
 % } 
-% } 
+% }  #if $cust_pay
 
   </TABLE>
 % } 
