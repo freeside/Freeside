@@ -189,7 +189,7 @@ my $money_char = $conf->config('money_char') || '$';
 
 my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
 my @total = ( 'COUNT(*)', 'SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)');
-my @total_desc = ( '%d line items', $money_char.'%.2f total' ); # sprintf strings
+my @total_desc = ( $money_char.'%.2f total' ); # sprintf strings
 
 my @peritem = ( 'setup', 'recur' );
 my @peritem_desc = ( 'Setup charge', 'Recurring charge' );
@@ -443,7 +443,7 @@ if ( $cgi->param('nottax') ) {
     push @select, "($recur_no_usage) AS recur_no_usage";
     $peritem[1] = 'recur_no_usage';
     $total[1] = "SUM(cust_bill_pkg.setup + $recur_no_usage)";
-    $total_desc[1] .= ' (excluding usage)';
+    $total_desc[0] .= ' (excluding usage)';
 
   } elsif ( $cgi->param('usage') eq 'usage' ) {
 
@@ -453,7 +453,7 @@ if ( $cgi->param('nottax') ) {
     $peritem[1] = '_usage';
     $peritem_desc[1] = 'Usage charge';
     $total[1] = "SUM($usage)";
-    $total_desc[1] .= ' usage charges';
+    $total_desc[0] .= ' usage charges';
   }
 
 } elsif ( $cgi->param('istax') ) {
@@ -649,8 +649,6 @@ my $count_query =
   'SELECT ' . join(',', @total) .
   " FROM cust_bill_pkg $join_cust $join_pkg
   $where";
-
-shift @total_desc; #the first one is implicit
 
 @peritem_desc = map {emt($_)} @peritem_desc;
 my @peritem_sub = map {
