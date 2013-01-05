@@ -248,8 +248,8 @@ dev-perl-modules: perl-modules
 
 install-texmf:	
 	install -D -o freeside -m 444 etc/longtable.sty \
-	  ~freeside/texmf/tex/longtable.sty
-	texhash ~freeside
+	  /usr/local/share/texmf/tex/latex/longtable.sty
+	texhash /usr/local/share/texmf
 
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}

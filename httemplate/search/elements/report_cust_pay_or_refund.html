@@ -50,23 +50,48 @@ Examples:
   <SCRIPT TYPE="text/javascript">
   
     function payby_changed(what) {
-      if ( what.options[what.selectedIndex].value == 'BILL' ) {
-	document.getElementById('checkno_caption').style.color = '#000000';
-        what.form.payinfo.disabled = false;
-	what.form.payinfo.style.backgroundColor = '#ffffff';
+      if ( what.value == 'BILL' ) {
+        show('payinfo');
+        hide('ccpay');
+      } else if ( what.value.match(/^CARD|CHEK/) ) {
+        hide('payinfo');
+        show('ccpay');
       } else {
-	document.getElementById('checkno_caption').style.color = '#bbbbbb';
-        what.form.payinfo.disabled = true;
-	what.form.payinfo.style.backgroundColor = '#dddddd';
+        hide('payinfo');
+        hide('ccpay');
       }
     }
+
+    function show(what) {
+      document.getElementById(what+'_caption').style.color = '#000000';
+      document.getElementById(what).disabled = false;
+      document.getElementById(what).style.backgroundColor = '#ffffff';
+    }
+
+    function hide(what) {
+      document.getElementById(what+'_caption').style.color = '#bbbbbb';
+      document.getElementById(what).disabled = true;
+      document.getElementById(what).style.backgroundColor = '#dddddd';
+    }
+
+
 
   </SCRIPT>
 
   <TR>
-    <TD ALIGN="right"><FONT ID="checkno_caption" COLOR="#bbbbbb"><% mt('Check #:') |h %> </FONT></TD>
+    <TD ALIGN="right"><FONT ID="payinfo_caption" COLOR="#bbbbbb"><% mt('Check #:') |h %> </FONT></TD>
     <TD>
-      <INPUT TYPE="text" NAME="payinfo" DISABLED STYLE="background-color: #dddddd">
+      <INPUT TYPE="text" ID="payinfo" NAME="payinfo" DISABLED STYLE="background-color: #dddddd">
+    </TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">
+      <FONT ID="ccpay_caption" COLOR="#bbbbbb">
+        <% mt('Transaction #') |h %>
+      </FONT>
+    </TD>
+    <TD>
+      <INPUT TYPE="text" ID="ccpay" NAME="ccpay" DISABLED STYLE="background-color: #dddddd">
     </TD>
   </TR>
 

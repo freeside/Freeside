@@ -25,6 +25,7 @@ FS::Report::Table::Monthly - Tables of report data, indexed monthly
     #opt
     'agentnum'    => 54
     'refnum'      => 54
+    'cust_classnum' => [ 1,2,4 ],
     'params'      => [ [ 'paramsfor', 'item_one' ], [ 'item', 'two' ] ], # ...
     'remove_empty' => 1, #collapse empty rows, default 0
     'item_labels' => [ ], #useful with remove_empty
@@ -68,6 +69,9 @@ corresponding to this arrayref.
 =item agentnum: Limit to customers with this agent.
 
 =item refnum: Limit to customers with this advertising source.
+
+=item cust_classnum: Limit to customers with this classnum; can be an 
+arrayref.
 
 =item remove_empty: Set this to a true value to hide rows that contain 
 only zeroes.  The C<indices> array in the returned data will list the item
@@ -139,6 +143,8 @@ sub data {
 
   my $agentnum = $self->{'agentnum'};
   my $refnum = $self->{'refnum'};
+  my $cust_classnum = $self->{'cust_classnum'} || [];
+  $cust_classnum = [ $cust_classnum ] if !ref($cust_classnum);
 
   if ( $projecting ) {
 
@@ -183,6 +189,7 @@ sub data {
       my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
       push @param, 'project', $projecting;
       push @param, 'refnum' => $refnum if $refnum;
+      push @param, 'cust_classnum' => $cust_classnum if @$cust_classnum;
 
       if ( $self->{'cross_params'} ) {
         my @xdata;

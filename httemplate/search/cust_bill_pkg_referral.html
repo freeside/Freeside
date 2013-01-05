@@ -156,6 +156,11 @@ if ( @refnum ) {
   push @where, 'cust_main.refnum IN ('.join(',', @refnum).')';
 }
 
+my @cust_classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+if ( @cust_classnums ) {
+  push @where, 'cust_main.classnum IN ('.join(',', @cust_classnums).')';
+}
+
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }

@@ -85,6 +85,13 @@ if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
   $title = $part_referral->referral. " $title";
 }
 
+if ( $cgi->param('cust_classnum') ) {
+  my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+  push @search, 'cust_main.classnum IN('.join(',',@classnums).')'
+    if @classnums;
+}
+
+
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 push @search, "cust_credit._date >= $beginning ",
               "cust_credit._date <= $ending";

@@ -100,7 +100,7 @@ Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
 =item paybatch
 
-text field for tracking card processing or other batch grouping
+obsolete text field for tracking card processing or other batch grouping
 
 =item payunique
 
@@ -130,10 +130,31 @@ The deposit account number.
 
 The teller number.
 
-=item pay_batch
+=item batchnum
 
 The number of the batch this payment came from (see L<FS::pay_batch>), 
 or null if it was processed through a realtime gateway or entered manually.
+
+=item gatewaynum
+
+The number of the realtime or batch gateway L<FS::payment_gateway>) this 
+payment was processed through.  Null if it was entered manually or processed
+by the "system default" gateway, which doesn't have a number.
+
+=item processor
+
+The name of the processor module (Business::OnlinePayment, ::BatchPayment, 
+or ::OnlineThirdPartyPayment subclass) used for this payment.  Slightly
+redundant with C<gatewaynum>.
+
+=item auth
+
+The authorization number returned by the credit card network.
+
+=item order_number
+
+The transaction ID returned by the gateway, if any.  This is usually what 
+you would use to initiate a void or refund of the payment.
 
 =back
 
@@ -878,6 +899,8 @@ sub _upgrade_data {  #class method
 
   warn "$me upgrading $class\n" if $DEBUG;
 
+  local $FS::payinfo_Mixin::ignore_masked_payinfo = 1;
+
   ##
   # otaker/ivan upgrade
   ##
@@ -1004,6 +1027,33 @@ sub _upgrade_data {  #class method
     if $error;
   }
 
+  ###
+  # migrate gateway info from the misused 'paybatch' field
+  ###
+
+  # not only cust_pay, but also voided and refunded payments
+  if (!FS::upgrade_journal->is_done('cust_pay__parse_paybatch')) {
+    # really inefficient, but again, only has to run once
+    foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
+      foreach my $object ( qsearch({
+            table     => $table,
+            extra_sql => "WHERE payby IN('CARD','CHEK') ".
+                         "AND paybatch IS NOT NULL",
+          }) )
+      {
+        my $parsed = $object->_parse_paybatch;
+        if (keys %$parsed) {
+          $object->set($_ => $parsed->{$_}) foreach keys %$parsed;
+          $object->set('paybatch', '');
+          my $error = $object->replace;
+          warn "error parsing CARD/CHEK paybatch fields on $object #".
+            $object->get($object->primary_key).":\n  $error\n"
+            if $error;
+        }
+      } #$object
+    } #$table
+    FS::upgrade_journal->set_done('cust_pay__parse_paybatch');
+  }
 }
 
 =back

@@ -589,7 +589,7 @@ sub _web_external_auth {
          # we failed to successfully create the user. abort abort abort.
           delete $session->{'CurrentUser'};
 
-          die "can't auto-create RT user"; #an error message would be nice :/
+          die "can't auto-create RT user: $msg"; #an error message would be nice :/
           #$m->abort() unless $RT::WebFallbackToInternalAuth;
           #$m->comp( '/Elements/Login', %ARGS,
           #    Error => loc( 'Cannot create user: [_1]', $msg ) );

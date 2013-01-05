@@ -5,6 +5,8 @@ use Business::CreditCard;
 use FS::payby;
 use FS::Record qw(qsearch);
 
+use vars qw($ignore_masked_payinfo);
+
 =head1 NAME
 
 FS::payinfo_Mixin - Mixin class for records in tables that contain payinfo.  
@@ -207,17 +209,21 @@ sub payinfo_check {
 
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
     my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $self->payinfo($payinfo);
-    if ( $self->payinfo ) {
-      $self->payinfo =~ /^(\d{13,16}|\d{8,9})$/
-        or return "Illegal (mistyped?) credit card number (payinfo)";
-      $self->payinfo($1);
-      validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
-                                 && cardtype($self->payinfo) eq "Unknown";
+    if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
+      # allow it
     } else {
-      $self->payinfo('N/A'); #???
+      $payinfo =~ s/\D//g;
+      $self->payinfo($payinfo);
+      if ( $self->payinfo ) {
+        $self->payinfo =~ /^(\d{13,16}|\d{8,9})$/
+          or return "Illegal (mistyped?) credit card number (payinfo)";
+        $self->payinfo($1);
+        validate($self->payinfo) or return "Illegal credit card number";
+        return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
+                                   && cardtype($self->payinfo) eq "Unknown";
+      } else {
+        $self->payinfo('N/A'); #???
+      }
     }
   } else {
     if ( $self->is_encrypted($self->payinfo) ) {
@@ -229,8 +235,6 @@ sub payinfo_check {
       return $error if $error;
     }
   }
-
-  '';
 
 }
 

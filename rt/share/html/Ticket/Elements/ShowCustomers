@@ -24,7 +24,7 @@ my %data = $m->comp('Customers', Ticket => $Ticket);
     <td class="value">
       <% $cust->AsStringLong |n %>
 %   foreach my $svc ( @{ $data{cust_svc}{$custnum} || [] } ) {
-      <% $svc->AsString |n %>
+      <% $svc->ShortLink |n %>
       <br>
 %   }
     </td>

@@ -7,6 +7,7 @@
                 'colors'       => \%color,
                 'links'        => \%link,
                 'agentnum'     => $agentnum,
+                'cust_classnum'=> \@classnums,
                 'nototal'      => scalar($cgi->param('12mo')),
                 'daily'        => 1,
                 'start_day'    => $smday,
@@ -31,6 +32,11 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 }
 
 my $agentname = $agent ? $agent->agent.' ' : '';
+
+my @classnums;
+if ( $cgi->param('cust_classnum') ) {
+  @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+}
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 my ($ssec,$smin,$shour,$smday,$smon,$syear,$swday,$syday,$sisdst) 

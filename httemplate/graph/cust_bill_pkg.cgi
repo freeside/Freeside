@@ -13,6 +13,7 @@
                 'bottom_total' => 1,
                 'bottom_link'  => $bottom_link,
                 'agentnum'     => $agentnum,
+                'cust_classnum'=> \@cust_classnums,
              )
 %>
 <%init>
@@ -67,6 +68,9 @@ $title .= $sel_part_referral->referral.' '
 
 $title .= 'Sales Report (Gross)';
 $title .= ', average per customer package'  if $average_per_cust_pkg;
+
+my @cust_classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+$bottom_link .= "cust_classnum=$_;" foreach @cust_classnums;
 
 #classnum (here)
 # 0: all classes
@@ -188,6 +192,7 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
         push @links, "$link;".
                      ($all_agent ? '' : "agentnum=$row_agentnum;").
                      ($all_part_referral ? '' : "refnum=$row_refnum;").
+                     (join('',map {"cust_classnum=$_;"} @cust_classnums)).
                      ($all_class ? '' : "classnum=$row_classnum;").
                      "distribute=$distribute;".
                      "use_override=$use_override;charges=$component;";
@@ -209,6 +214,7 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
     my $component = join('', @components);
 
     my @row_params = (  'agentnum'              => $row_agentnum,
+                        'cust_classnum'         => \@cust_classnums,
                         'use_override'          => $use_override,
                         'average_per_cust_pkg'  => $average_per_cust_pkg,
                         'distribute'            => $distribute,
@@ -230,6 +236,8 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
       push @row_params, 'refnum' => $sel_part_referral->refnum;
       $row_link .= ";refnum=".$sel_part_referral->refnum;
     }
+
+    $row_link .= ";cust_classnum=$_" foreach @cust_classnums;
 
     push @items, 'cust_bill_pkg';
     push @labels, mt('[_1] - Subtotal', $agent->agent);

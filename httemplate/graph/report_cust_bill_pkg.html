@@ -34,6 +34,12 @@ function enable_agent_totals(obj) {
   'onchange'      => 'enable_agent_totals',
 &>
 
+<& /elements/tr-select-cust_class.html,
+  'field'         => 'cust_classnum',
+  'label'         => 'Customer class',
+  'multiple'      => 1,
+&>
+
 <& /elements/tr-select-part_referral.html,
   'field'         => 'refnum',
   'label'         => 'Advertising source ',

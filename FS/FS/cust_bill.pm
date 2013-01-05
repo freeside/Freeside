@@ -3429,6 +3429,15 @@ sub search_sql_where {
     push @search, "cust_bill.custnum = $1";
   }
 
+  #customer classnum
+  if ( $param->{'cust_classnum'} ) {
+    my $classnums = $param->{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    $classnums = [ grep /^\d+$/, @$classnums ];
+    push @search, 'cust_main.classnum in ('.join(',',@$classnums).')'
+      if @$classnums;
+  }
+
   #_date
   if ( $param->{_date} ) {
     my($beginning, $ending) = @{$param->{_date}};

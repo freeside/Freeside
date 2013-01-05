@@ -258,10 +258,15 @@ sub _list_sql {
 
 =item taxline TAXABLES_ARRAYREF, [ OPTION => VALUE ... ]
 
-Returns an hashref of a name and an amount of tax calculated for the 
-line items (L<FS::cust_bill_pkg> objects) in TAXABLES_ARRAYREF.  The line 
-items must come from the same invoice.  Returns a scalar error message 
-on error.
+Takes an arrayref of L<FS::cust_bill_pkg> objects representing taxable
+line items, and returns a new L<FS::cust_bill_pkg> object representing
+the tax on them under this tax rate.
+
+This will have a pseudo-field, "cust_bill_pkg_tax_location", containing 
+an arrayref of L<FS::cust_bill_pkg_tax_location> objects.  Each of these 
+will in turn have a "taxable_cust_bill_pkg" pseudo-field linking it to one
+of the taxable items.  All of these links must be resolved as the objects
+are inserted.
 
 In addition to calculating the tax for the line items, this will calculate
 any appropriate tax exemptions and attach them to the line items.
@@ -275,8 +280,7 @@ tax exemption limit if there is one.
 
 =cut
 
-# XXX this should just return a cust_bill_pkg object for the tax,
-# but that requires changing stuff in tax_rate.pm also.
+# XXX change tax_rate.pm to work like this
 
 sub taxline {
   my( $self, $taxables, %opt ) = @_;
@@ -294,7 +298,8 @@ sub taxline {
   my $dbh = dbh;
 
   my $name = $self->taxname || 'Tax';
-  my $amount = 0;
+  my $taxable_cents = 0;
+  my $tax_cents = 0;
 
   my $cust_bill = $taxables->[0]->cust_bill;
   my $custnum   = $cust_bill ? $cust_bill->custnum : $opt{'custnum'};
@@ -324,6 +329,15 @@ sub taxline {
   my @existing_exemptions = @{ $opt{'exemptions'} };
   push @existing_exemptions, @{ $_->cust_tax_exempt_pkg }
     for @$taxables;
+
+  my $tax_item = FS::cust_bill_pkg->new({
+      'pkgnum'    => 0,
+      'recur'     => 0,
+      'sdate'     => '',
+      'edate'     => '',
+      'itemdesc'  => $name,
+  });
+  my @tax_location;
 
   foreach my $cust_bill_pkg (@$taxables) {
 
@@ -472,37 +486,47 @@ sub taxline {
 
     $_->taxnum($self->taxnum) foreach @new_exemptions;
 
-    #if ( $cust_bill_pkg->billpkgnum ) {
-
-      #no, need to do this to e.g. calculate tax credit amounts
-      #die "tried to calculate tax exemptions on a previously billed line item\n";
-
-      # this is unnecessary
-#      foreach my $cust_tax_exempt_pkg (@new_exemptions) {
-#        my $error = $cust_tax_exempt_pkg->insert;
-#        if ( $error ) {
-#          $dbh->rollback if $oldAutoCommit;
-#          return "can't insert cust_tax_exempt_pkg: $error";
-#        }
-#      }
-    #}
-
     # attach them to the line item
     push @{ $cust_bill_pkg->cust_tax_exempt_pkg }, @new_exemptions;
     push @existing_exemptions, @new_exemptions;
 
-    # If we were smart, we'd also generate a cust_bill_pkg_tax_location 
-    # record at this point, but that would require redesigning more stuff.
     $taxable_charged = sprintf( "%.2f", $taxable_charged);
+    next if $taxable_charged == 0;
 
-    $amount += $taxable_charged * $self->tax / 100;
+    my $this_tax_cents = int($taxable_charged * $self->tax);
+    my $location = FS::cust_bill_pkg_tax_location->new({
+        'taxnum'      => $self->taxnum,
+        'taxtype'     => ref($self),
+        'cents'       => $this_tax_cents,
+        'taxable_cust_bill_pkg' => $cust_bill_pkg,
+        'tax_cust_bill_pkg'     => $tax_item,
+    });
+    push @tax_location, $location;
+
+    $taxable_cents += $taxable_charged;
+    $tax_cents += $this_tax_cents;
   } #foreach $cust_bill_pkg
-
-  return {
-    'name'   => $name,
-    'amount' => $amount,
-  };
-
+  
+  # now round and distribute
+  my $extra_cents = sprintf('%.2f', $taxable_cents * $self->tax / 100) * 100
+                    - $tax_cents;
+  if ( $extra_cents < 0 ) {
+    die "nonsense extra_cents value $extra_cents"; # because seriously, wtf
+  }
+  $tax_cents += $extra_cents;
+  my $i = 0;
+  foreach (@tax_location) { # can never require more than a single pass, yes?
+    my $cents = $_->get('cents');
+    if ( $extra_cents > 0 ) {
+      $cents++;
+      $extra_cents--;
+    }
+    $_->set('amount', sprintf('%.2f', $cents/100));
+  }
+  $tax_item->set('setup' => sprintf('%.2f', $tax_cents / 100));
+  $tax_item->set('cust_bill_pkg_tax_location', \@tax_location);
+  
+  return $tax_item;
 }
 
 =back
