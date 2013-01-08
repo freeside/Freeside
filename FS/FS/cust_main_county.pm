@@ -498,6 +498,8 @@ sub taxline {
         'taxnum'      => $self->taxnum,
         'taxtype'     => ref($self),
         'cents'       => $this_tax_cents,
+        'pkgnum'      => $cust_bill_pkg->pkgnum,
+        'locationnum' => $cust_bill_pkg->cust_pkg->tax_locationnum,
         'taxable_cust_bill_pkg' => $cust_bill_pkg,
         'tax_cust_bill_pkg'     => $tax_item,
     });
