@@ -646,7 +646,6 @@ Example:
 use FS::cust_bill_pkg;
 sub credit_lineitems {
   my( $class, %arg ) = @_;
-  warn Data::Dumper::Dumper \%arg;
   my $curuser = $FS::CurrentUser::CurrentUser;
 
   #some false laziness w/misc/xmlhttp-cust_bill_pkg-calculate_taxes.html
