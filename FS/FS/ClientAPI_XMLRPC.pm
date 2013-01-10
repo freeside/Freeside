@@ -129,6 +129,8 @@ sub ss2clientapi {
   'svc_status_html'           => 'MyAccount/svc_status_html',
   'svc_status_hash'           => 'MyAccount/svc_status_hash',
   'set_svc_status_hash'       => 'MyAccount/set_svc_status_hash',
+  'set_svc_status_listadd'    => 'MyAccount/set_svc_status_listadd',
+  'set_svc_status_listdel'    => 'MyAccount/set_svc_status_listdel',
   'acct_forward_info'         => 'MyAccount/acct_forward_info',
   'process_acct_forward'      => 'MyAccount/process_acct_forward',
   'list_dsl_devices'          => 'MyAccount/list_dsl_devices',   

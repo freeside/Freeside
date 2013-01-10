@@ -7,7 +7,15 @@
 %     foreach my $key ( sort {$a cmp $b} keys %$hashref ) {
         <TR>
           <TD ALIGN="right"><% $key |h %></TD>
-          <TD BGCOLOR="#ffffff"><% $hashref->{$key} |h %></TD>
+          <TD BGCOLOR="#ffffff">
+%           if ( ref($hashref->{$key}) eq 'ARRAY' ) {
+%             foreach (@{ $hashref->{$key} }) {
+                <% $_ |h %><BR>
+%             }
+%           } else {
+              <% $hashref->{$key} |h %>
+%           }
+          </TD>
         </TR>
 %     }
 
