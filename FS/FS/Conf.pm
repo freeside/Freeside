@@ -3916,6 +3916,19 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_bill-line_item-date_style-non_monthly',
+    'section'     => 'billing',
+    'description' => 'If set, override cust_bill-line_item-date_style for non-monthly charges.',
+    'type'        => 'select',
+    'select_hash' => [ ''           => 'Default',
+                       'start_end'  => 'STARTDATE-ENDDATE',
+                       'month_of'   => 'Month of MONTHNAME',
+                       'X_month'    => 'DATE_DESC MONTHNAME',
+                     ],
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'cust_bill-line_item-date_description',
     'section'     => 'billing',
     'description' => 'Text to display for "DATE_DESC" when using cust_bill-line_item-date_style DATE_DESC MONTHNAME.',
