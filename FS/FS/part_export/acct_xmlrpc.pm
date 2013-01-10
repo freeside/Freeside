@@ -130,10 +130,10 @@ sub _export_command {
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
 
-  my $method = $self->option($action.'_method');
+  my $method = $self->option('replace_method');
   return '' if $method =~ /^\s*$/;
 
-  my @params = split("\n", $self->option($action.'_params') );
+  my @params = split("\n", $self->option('replace_params') );
 
   my( @x_param ) = ();
   my( %x_struct ) = ();
