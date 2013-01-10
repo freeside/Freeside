@@ -1052,6 +1052,25 @@ sub export_setstatus {
   '';
 }
 
+sub export_setstatus_listadd {
+  my( $self, @args ) = @_;
+  my $error = $self->export('setstatus_listadd', @args);
+  if ( $error ) {
+    warn "error running export_setstatus: $error";
+    return $error;
+  }
+  '';
+}
+
+sub export_setstatus_listdel {
+  my( $self, @args ) = @_;
+  my $error = $self->export('setstatus_listdel', @args);
+  if ( $error ) {
+    warn "error running export_setstatus: $error";
+    return $error;
+  }
+  '';
+}
 
 =item export HOOK [ EXPORT_ARGS ]
 

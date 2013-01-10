@@ -1770,6 +1770,44 @@ sub set_svc_status_hash {
 
 }
 
+sub set_svc_status_listadd {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  #XXX only svc_acct for now
+  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
+    or return { 'error' => "Service not found" };
+
+  warn "set_svc_status_listadd ". join(' / ', map "$_=>".$p->{$_}, keys %$p )
+    if $DEBUG;
+  my $error = $svc_x->export_setstatus_listadd($p); #$p? returns error?
+  return { 'error' => $error } if $error;
+
+  return {}; #? { 'error' => '' }
+
+}
+
+sub set_svc_status_listdel {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  #XXX only svc_acct for now
+  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
+    or return { 'error' => "Service not found" };
+
+  warn "set_svc_status_listdel ". join(' / ', map "$_=>".$p->{$_}, keys %$p )
+    if $DEBUG;
+  my $error = $svc_x->export_setstatus_listdel($p); #$p? returns error?
+  return { 'error' => $error } if $error;
+
+  return {}; #? { 'error' => '' }
+
+}
+
 
 sub acct_forward_info {
   my $p = shift;
