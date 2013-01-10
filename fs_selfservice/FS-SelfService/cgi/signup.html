@@ -23,7 +23,6 @@
     mywindow = -1
   }
 </script>
-
 <%= $OUT .= $body_header
       || '<FONT SIZE=7>'.
          ( $agent || ( $signup_service eq 'svc_phone' ? 'ITSP' : 'ISP' ) ).
@@ -32,31 +31,31 @@
 
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 
-<FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
-<INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= $prepaid_shortform %>">
-<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
-<INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
-<INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
-<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $referral_custnum %>">
-<INPUT TYPE="hidden" NAME="ss" VALUE="">
-<input type="hidden" name="payby">
+<FORM id="form_OneTrueForm" NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
+<INPUT TYPE="hidden" id="field_prepaid_shortform" NAME="prepaid_shortform" VALUE="<%= $prepaid_shortform %>">
+<INPUT TYPE="hidden" id="field_session" NAME="session" VALUE="<%= $session_id %>">
+<INPUT TYPE="hidden" id="field_action" NAME="action" VALUE="process_signup">
+<INPUT TYPE="hidden" id="field_agentnum" NAME="agentnum" VALUE="<%= $agentnum %>">
+<INPUT TYPE="hidden" id="field_referral_custnum" NAME="referral_custnum" VALUE="<%= $referral_custnum %>">
+<INPUT TYPE="hidden" id="field_ss" NAME="ss" VALUE="">
+<input type="hidden" id="field_payby" name="payby">
 <%=
-  $OUT = join("\n",map { my $method = $_ ; map { qq|<input type="hidden" name="${method}_$_" />| } qw / payinfo payinfo1 payinfo2 payname paystate paytype paycvv month year type  /  } @payby);
+  $OUT = join("\n",map { my $method = $_ ; map { qq|<input type="hidden" id="field_${method}_$_" class="field_${method}" name="${method}_$_" />| } qw / payinfo payinfo1 payinfo2 payname paystate paytype paycvv month year type  /  } @payby);
 %>
 
 <%=
-  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum mac_addr countrycode phonenum sip_password pin / );
+  $OUT = join("\n", map { qq|<input type="hidden" id="field_$_" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum mac_addr countrycode phonenum sip_password pin / );
 %>
 
 <%=
   if ($override_ban_warn) {
-    $OUT .= 'Are you sure you want to sign up again? <SELECT NAME="override_ban_warn"><OPTION VALUE="0">No<OPTION VALUE="1">Yes</SELECT><BR><BR>';
+    $OUT .= 'Are you sure you want to sign up again? <SELECT id="field_override_ban_warn" NAME="override_ban_warn"><OPTION VALUE="0">No<OPTION VALUE="1">Yes</SELECT><BR><BR>';
   } else {
     $OUT .= '';
   }
 %>
 
-Where did you hear about our service? <SELECT NAME="refnum">
+Where did you hear about our service? <SELECT id="field_refnum" NAME="refnum">
 <%=
   $OUT .= '<OPTION VALUE="">' unless $refnum;
   foreach my $part_referral ( @part_referral ) {
@@ -72,27 +71,27 @@ Where did you hear about our service? <SELECT NAME="refnum">
 my $bgcolor = $box_bgcolor || '#c0c0c0';
 $OUT .= qq!
 Contact Information
-<TABLE BGCOLOR="$bgcolor" BORDER=0 CELLSPACING=0 WIDTH="100%">
-<TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="$last">,
-                <INPUT TYPE="text" NAME="first" VALUE="$first"></TD>
+<TABLE BGCOLOR="$bgcolor" BORDER=0 CELLSPACING=0 WIDTH="50%" id="table_contactinformation" class="table_form_container">
+<TR class="form_field_row">
+  <TH ALIGN="right" class="label" id="label_contact_name"><font class="required" color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" id="field_last" NAME="last" VALUE="$last">,
+                <INPUT TYPE="text" id="field_first" NAME="first" VALUE="$first"></TD>
 </TR>
-<TR>
-  <TD ALIGN="right">Company</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="$company"></TD>
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_company">Company</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" id="field_company" NAME="company" SIZE=70 VALUE="$company"></TD>
 </TR>
-<TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>Address</TH>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="$address1"></TD>
+<TR class="form_field_row">
+  <TH ALIGN="right" class="label" id="label_address1"><font class="required" color="#ff0000">*</font>Address</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" id="field_address1" NAME="address1" SIZE=70 VALUE="$address1"></TD>
 </TR>
-<TR>
-  <TD ALIGN="right">&nbsp;</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="$address2"></TD>
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_address2">&nbsp;</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" id="field_address2" NAME="address2" SIZE=70 VALUE="$address2"></TD>
 </TR>
-<TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
-  <TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD> !;
+<TR class="form_field_row">
+  <TH ALIGN="right" class="label" id="label_city"><font class="required" color="#ff0000">*</font>City</TH>
+  <TD><INPUT TYPE="text" id="field_city" NAME="city" VALUE="$city"></TD> !;
 
         my ($county_html, $state_html, $country_html) =
           regionselector( {
@@ -105,27 +104,28 @@ Contact Information
           } );
  
 $county_out = ($county_html =~ /SELECT/) ? 'County/State' : 'State';
-$OUT .= qq!<TH ALIGN="right"><font color="#ff0000">*</font> $county_out </TH>
+$OUT .= qq!<TH ALIGN="right" class="label" id="label_countystate"><font class="required" color="#ff0000">*</font> $county_out </TH>
   <TD>
     $county_html $state_html
   </TD>
-  <TH><font color="#ff0000">*</font>Zip</TH>
-  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="$zip"></TD>
+  <TH class="label" id="label_zip"><font class="required" color="#ff0000">*</font>Zip</TH>
+  <TD><INPUT TYPE="text" id="field_zip" NAME="zip" SIZE=10 VALUE="$zip"></TD>
 </TR>
-<TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>Country</TH>
+<TR class="form_field_row">
+  <TH ALIGN="right" class="label" id="label_country"><font class="required" color="#ff0000">*</font>Country</TH>
   <TD>$country_html</TD>
-<TR>
-  <TD ALIGN="right">Day Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD>
+</TR>
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_daytime">Day Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" id="field_daytime" NAME="daytime" VALUE="$daytime" SIZE=18></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Night Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD>
+  <TD ALIGN="right" class="label" id="label_night">Night Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" id="field_night" NAME="night" VALUE="$night" SIZE=18></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Fax</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD>
+  <TD ALIGN="right" class="label" id="label_fax">Fax</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" id="field_fax" NAME="fax" VALUE="$fax" SIZE=12></TD>
 </TR>
 !;
   if ( $stateid_enabled ) {
@@ -136,13 +136,14 @@ $OUT .= qq!<TH ALIGN="right"><font color="#ff0000">*</font> $county_out </TH>
         default_country  => $countrydefault,
         locales          => \@cust_main_county,
       } );
-    $OUT .= qq!<TR><TD ALIGN="right">!. $label{stateid}.'</TD>';
-    $OUT .= qq!<TD><INPUT TYPE="text" NAME="stateid" VALUE="$stateid" SIZE=12></TD>!;
-    $OUT .= qq!<TD ALIGN="right">!. $label{stateid_state} .'</TD>';
+    $OUT .= qq!<TR class="form_field_row">!;
+    $OUT .= qq!<TD ALIGN="right" class="label" id="label_stateid">!. $label{stateid}.'</TD>';
+    $OUT .= qq!<TD><INPUT TYPE="text" id="field_stateid" NAME="stateid" VALUE="$stateid" SIZE=12></TD>!;
+    $OUT .= qq!<TD ALIGN="right" class="label" id="label_stateid_state">!. $label{stateid_state} .'</TD>';
     $OUT .="<TD COLSPAN=3>$county_html $state_html</TD></TR>";
   }
 $OUT .= qq!
-</TABLE><font color="#ff0000">*</font> required fields<BR>
+</TABLE><font class="required" color="#ff0000">*</font> required fields<BR>
 !;
 
 }
@@ -151,31 +152,38 @@ else {
 }
 %>
 
-<BR>Billing information<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
-<TR><TD>
+<BR>Billing information<TABLE class="table_billinginformation" BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="40%">
+<TR class="form_field_row"><TD>
 
   <%=
     $OUT ='';
     unless ( $emailinvoiceonly ) { 
-    $OUT .= '<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"';
+    $OUT .= '<INPUT TYPE="checkbox" id="field_invoicing_list_POST" NAME="invoicing_list_POST" VALUE="POST"';
     my @invoicing_list = split(', ', $invoicing_list );
     $OUT .= ' CHECKED'
       if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
-    $OUT .= '>   Postal mail invoice'; } 
+    $OUT .= '>   <span class="label" id="label_invoicing_list_POST">Postal mail invoice</span>'; } 
   %>
 
 
 </TD></TR>
-<TR><TD><%= $OUT = ( $emailinvoiceonly ? q|<font color="#ff0000">*</font>| : q|| ) %> Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
+<TR class="form_field_row"><TD>
+
+    <%=
+        $OUT = ( $emailinvoiceonly ?
+            q|<font class="required" color="#ff0000">*</font>| :
+            q|| );
+    %> <span class="label" id"label_invoicing_list">Email invoice</span>
+    <INPUT TYPE="text" id="field_invoicing_list" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
 </TD></TR>
-<%= ( scalar(@payby) > 1 or 1 ) ? '<TR><TD>Billing type ' : '' %>
+<%= ( scalar(@payby) > 1 or 1 ) ? '<TR class="form_field_row"><TD class="label" id="label_billing_type">Billing type ' : '' %>
 <!--</TABLE>
-<TABLE BGCOLOR="#c0c0c0" BORDER=1 WIDTH="100%">
+<TABLE BGCOLOR="#c0c0c0" BORDER=1 WIDTH="40%">
 <TR>-->
 
   <%=
 
-    my $cardselect = '<SELECT NAME="CARD_type"><OPTION></OPTION>';
+    my $cardselect = '<SELECT id="field_card_type" NAME="CARD_type"><OPTION></OPTION>';
     foreach ( keys %card_types ) {
       $selected = $CARD_type eq $card_types{$_} ? 'SELECTED' : '';
       $cardselect .= qq!<OPTION $selected VALUE="$card_types{$_}">$_</OPTION>!;
@@ -183,19 +191,20 @@ else {
     $cardselect .= '</SELECT>';
   
     my %payby = (
-      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
-      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
-      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>{$r}Bank State <INPUT TYPE="text" NAME="CHEK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
-      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><BR>{$r}Bank State <INPUT TYPE="text" NAME="DCHK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
-      'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
-      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
-      'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("COMP"),
-      'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
+      'CARD' => qq!Credit card<BR><font class="required"
+      color="#ff0000">*</font>$cardselect<INPUT TYPE="text" id="field_card_payinfo" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font class="required" color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font class="required" color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" id="field_card_payname" NAME="CARD_payname" VALUE="">!,
+      'DCRD' => qq!Credit card<BR><font class="required" color="#ff0000">*</font>$cardselect<INPUT TYPE="text" d="field_dcrd_payinfo" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR><font class="required" color="#ff0000">*</font>Exp !. expselect("DCRD"). qq!<BR><font class="required" color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" id="field_dcrd_payname" NAME="DCRD_payname" VALUE="">!,
+      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" id="field_chek_payinfo1" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" id="field_chek_payinfo2" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> Type <SELECT id="field_chek_paytype" NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>{$r}Bank State <INPUT TYPE="text" id="field_chek_paystate" NAME="CHEK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" id="field_chek_month" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" id="field_chek_year" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" id="field_chek_payname" NAME="CHEK_payname" VALUE="">!,
+      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" id="field_dchk_payinfo1" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10> Type <SELECT id="field_dchk_paytype" NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" id="field_dchk_payinfo2" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><BR>{$r}Bank State <INPUT TYPE="text" id="field_dchk_paystate" NAME="DCHK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" id="field_dchk_month" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" id="field_dchk_year" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" id="field_dchk_payname"  NAME="DCHK_payname" VALUE="">!,
+      'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" id="field_lecb_payinfo" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" id="field_lecb_month" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" id="field_lecb_year" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" id="field_lecb_payname" NAME="LECB_payname" VALUE="">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" id="field_bill_payinfo" NAME="BILL_payinfo" VALUE=""><BR><INPUT TYPE="hidden" id="field_bill_month" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" id="field_bill_year" NAME="BILL_year" VALUE="2037">Attention<INPUT TYPE="text" id="field_bill_payname" NAME="BILL_payname" VALUE="Accounts Payable">!,
+      'COMP' => qq!Complimentary<BR><font class="required" color="#ff0000">*</font>Approved by<INPUT TYPE="text" id="field_comp_payinfo" NAME="COMP_payinfo" VALUE=""><BR><font class="required" color="#ff0000">*</font>Exp !. expselect("COMP"),
+      'PREPAY' => qq!Prepaid card<BR><font class="required" color="#ff0000">*</font><INPUT TYPE="text" id="field_prepay_info" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
     );
 
     if ( $cvv_enabled ) {
       foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
-        $payby{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4></TD></TR>!;
+        $payby{$payby} .= qq!<TR class="form_field_row"><TD class="label" id="label_${payby}_paycvv" ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" id="field_${payby}_paycvv" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
     if ( $paystate_enabled ) {
@@ -213,19 +222,19 @@ else {
 
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
-      'CARD' => '<TABLE BGCOLOR="'. ( $box_bgcolor || '#c0c0c0' ). qq!" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
-      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
-      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
-      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
-      'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
-      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
-      'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
-      'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
+      'CARD' => '<TABLE BGCOLOR="'. ( $box_bgcolor || '#c0c0c0' ). qq!" BORDER=0 CELLSPACING=0 WIDTH="50%"><TR class="form_field_row"><TD class="label" id="label_card_select" ALIGN="right"><font class="required" color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR class="form_field_row"><TD class="label" id="label_card_payinfo" ALIGN="right"><font class="required" color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" id="field_card_payinfo" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR class="form_field_row"><TD class="label" id="label_card_paydate" ALIGN="right"><font class="required" color="#ff0000">*</font> Expration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR class="form_field_row"><TD class="label" id="label_card_payname" ALIGN="right"><font class="required" color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" id="field_card_payname" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
+      'DCRD' => qq!Credit card<BR><font class="required" color="#ff0000">*</font>$cardselect<INPUT TYPE="text" id="field_dcrd_payinfo" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font class="required" color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font class="required" color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" id="field_dcrd_payname" NAME="DCRD_payname" VALUE="$payname">!,
+      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" id="field_chek_payinfo1" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT id="field_chek_paytype" NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" id="field_chek_payinfo2" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" id="field_chek_month" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" id="field_chek_year" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" id="field_chek_payname" NAME="CHEK_payname" VALUE="$payname">!,
+      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" id="field_dchk_payinfo1" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT id="field_dchk_paytype" NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" id="field_dchk_payinfo2" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" id="field_dchk_month" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" id="field_dchk_year" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" id="field_dchk_payname" NAME="DCHK_payname" VALUE="">!,
+      'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" id="field_lecb_payinfo" NAME="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" id="field_lecb_month" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" id="field_lecb_year" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" id="field_lecb_payname" NAME="LECB_payname" VALUE="">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" id="field_bill_payinfo" NAME="BILL_payinfo" VALUE="$payinfo"><BR><INPUT TYPE="hidden" id="field_bill_month" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" id="field_bill_year" NAME="BILL_year" VALUE="2037">Attention<INPUT TYPE="text" id="field_bill_payname" NAME="BILL_payname" VALUE="$payname">!,
+      'COMP' => qq!Complimentary<BR><font class="required" color="#ff0000">*</font>Approved by<INPUT TYPE="text" id="field_comp_payinfo" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font class="required" color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
+      'PREPAY' => qq!Prepaid card<BR><font class="required" color="#ff0000">*</font><INPUT TYPE="text" id="field_prepay_payinfo" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
     );
 
     if ( $cvv_enabled ) {
       foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
-        $paybychecked{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4></TD></TR>!;
+        $paybychecked{$payby} .= qq!<TR class="form_field_row"><TD ALIGN="right" class="label" id="label_${payby}_paycvv">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" id="field_${payby}_payycvv" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
     if ( $paystate_enabled ) {
@@ -275,13 +284,13 @@ HTML::Widgets::SelectLayers->new(
 
   %>
 
-</TR></TABLE><font color="#ff0000">*</font> required fields
-<FORM name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><BR>First package
-<INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $promo_code %>">
-<INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= $reg_code %>">
-<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
+</TR></TABLE><font class="required" color="#ff0000">*</font> required fields
+<FORM id="form_signup" name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><BR><span class="label" id="label_first_package">First package</span>
+<INPUT TYPE="hidden" id="field_promo_code"  NAME="promo_code" VALUE="<%= $promo_code %>">
+<INPUT TYPE="hidden" id="field_reg_code" NAME="reg_code" VALUE="<%= $reg_code %>">
+<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="50%">
 <TR>
-  <TD COLSPAN=2><SELECT NAME="pkgpart">
+  <TD COLSPAN=2><SELECT id="field_pkgpart" NAME="pkgpart">
 
   <%=
     $OUT .= '<OPTION VALUE="">(none)'
@@ -298,46 +307,46 @@ HTML::Widgets::SelectLayers->new(
 <%=
   if ( $signup_service eq 'svc_phone' ) {
 
-    $OUT .= '<TR><TD ALIGN="right">Phone number</TD><TD>'.
+    $OUT .= '<TR class="form_field_row"><TD ALIGN="right" class="label" id="label_phonenum">Phone number</TD><TD>'.
             didselector( 'field'   => 'phonenum',
                          'svcpart' => $default_svcpart,
                        ).
             '</TD></TR>';
 
     $OUT .= <<ENDOUT;
-<TR>
-  <TD ALIGN="right">Voicemail PIN</TD>
-  <TD><INPUT TYPE="pin" NAME="pin" VALUE="$pin"></TD>
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_pin">Voicemail PIN</TD>
+  <TD><INPUT TYPE="pin" id="field_pin" NAME="pin" VALUE="$pin"></TD>
 </TR>
 ENDOUT
 
   } else {
 
     $OUT .= <<ENDOUT;
-<TR>
-  <TD ALIGN="right">Username</TD>
-  <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_username">Username</TD>
+  <TD><INPUT TYPE="text" id="field_username" NAME="username" VALUE="$username"></TD>
 </TR>
-<TR>
-  <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="$_password"></TD>
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_password">Password</TD>
+  <TD><INPUT TYPE="password" id="field_password" NAME="_password" VALUE="$_password"></TD>
 </TR>
-<TR>
-  <TD ALIGN="right">Re-enter Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password2" VALUE="$_password2"></TD>
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_password2">Re-enter Password</TD>
+  <TD><INPUT TYPE="password" id="field_password2" NAME="_password2" VALUE="$_password2"></TD>
 </TR>
 ENDOUT
 
     if ( $security_phrase ) {
       $OUT .= <<SECPHRASE;
-<TR>
-  <TD ALIGN="right">Security Phrase</TD>
-  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase">
+<TR class="form_field_row">
+  <TD ALIGN="right" class="label" id="label_sec_phrase">Security Phrase</TD>
+  <TD><INPUT TYPE="text" id="field_sec_phrase" NAME="sec_phrase" VALUE="$sec_phrase">
   </TD>
 </TR>
 SECPHRASE
     } else {
-      $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
+      $OUT .= '<INPUT TYPE="hidden" id="field_sec_phrase" NAME="sec_phrase" VALUE="">';
     }
 
     if ( $nomadix ) {
@@ -347,7 +356,7 @@ SECPHRASE
       warn $mac_addr;
 
       $OUT .= <<NOMADIX;
-        <INPUT TYPE="hidden" NAME="mac_addr" VALUE="$mac_addr">
+        <INPUT TYPE="hidden" id="field_mac_addr" NAME="mac_addr" VALUE="$mac_addr">
 NOMADIX
 
     }
@@ -355,7 +364,7 @@ NOMADIX
   }
 
   if ( @svc_acct_pop ) {
-    $OUT .= '<TR><TD ALIGN="right">Access number</TD><TD>'.
+    $OUT .= '<TR class="form_field_row"><TD ALIGN="right" class="label" id="label_access_number">Access number</TD><TD>'.
             popselector( 'popnum'        => $popnum,
                          'pops'          => \@svc_acct_pop,
                          'init_popstate' => $init_popstate,
@@ -379,7 +388,7 @@ if ( @optional_packages ) {
   if ($optional_packages[$ii]) {
     push @html, qq|<BR>Optional Package #$friendly_index <br />|,'<table bgcolor="#c0c0c0"><tr><td>';
 
-    push @html, qq|<select name="optional_package${ii}">|;
+    push @html, qq|<select id="field_optional_package${ii}" name="optional_package${ii}">|;
     push @html, qq|<option value="none"></option>|;
     push @html, map { qq|<option value="$_->{pkgpart}">$_->{pkg}</option>| } @{$optional_packages[$ii]};
     push @html, q|</select>|;
@@ -410,8 +419,8 @@ function show_terms () {
     CLOSECLICK, CLOSETEXT, 'Close' );
 }
 </SCRIPT>
-<INPUT TYPE="checkbox" onchange="agree_to_terms(this.checked)">&nbsp;
-I agree to the <a href="javascript:void(0);" onclick="show_terms();">Terms of Service</a>.
+<INPUT TYPE="checkbox" id="field_agree_to_terms" onchange="agree_to_terms(this.checked)">&nbsp;
+<span class="label" id="label_agree_to_terms">I agree to the <a href="javascript:void(0);" onclick="show_terms();">Terms of Service</a>.</span>
 ];
   }
 %>
