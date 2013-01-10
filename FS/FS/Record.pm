@@ -1451,6 +1451,7 @@ sub process_batch_import {
     format_sep_chars           => $opt->{format_sep_chars},
     format_fixedlength_formats => $opt->{format_fixedlength_formats},
     format_xml_formats         => $opt->{format_xml_formats},
+    format_asn_formats         => $opt->{format_asn_formats},
     format_row_callbacks       => $opt->{format_row_callbacks},
     #per-import
     job                        => $job,
@@ -1533,8 +1534,9 @@ sub batch_import {
   my $file    = $param->{file};
   my $params  = $param->{params} || {};
 
-  my( $type, $header, $sep_char, $fixedlength_format, 
-      $xml_format, $row_callback, @fields );
+  my( $type, $header, $sep_char,
+      $fixedlength_format, $xml_format, $asn_format,
+      $row_callback, @fields );
 
   my $postinsert_callback = '';
   $postinsert_callback = $param->{'postinsert_callback'}
@@ -1570,6 +1572,11 @@ sub batch_import {
     $xml_format =
       $param->{'format_xml_formats'}
         ? $param->{'format_xml_formats'}{ $param->{'format'} }
+        : '';
+
+    $asn_format =
+      $param->{'format_asn_formats'}
+        ? $param->{'format_asn_formats'}{ $param->{'format'} }
         : '';
 
     $row_callback =
@@ -1652,7 +1659,9 @@ sub batch_import {
     $count++;
 
     $row = $header || 0;
+
   } elsif ( $type eq 'xml' ) {
+
     # FS::pay_batch
     eval "use XML::Simple;";
     die $@ if $@;
@@ -1668,6 +1677,24 @@ sub batch_import {
     $rows = $rows->{$_} foreach @$xmlrow;
     $rows = [ $rows ] if ref($rows) ne 'ARRAY';
     $count = @buffer = @$rows;
+
+  } elsif ( $type eq 'asn.1' ) {
+
+    eval "use Convert::ASN1";
+    die $@ if $@;
+
+    my $asn = Convert::ASN1->new;
+    $asn->prepare( $asn_format->{'spec'} ) or die $asn->error;
+
+    $parser = $asn->find( $asn_format->{'macro'} ) or die $asn->error;
+
+    my $data = slurp($file);
+    my $asn_output = $parser->decode( $data )
+      or die "No ". $asn_format->{'macro'}. " found\n";
+
+    my $rows = &{ $asn_format->{'arrayref'} }( $asn_output );
+    $count = @buffer = @$rows;
+
   } else {
     die "Unknown file type $type\n";
   }
@@ -1711,6 +1738,7 @@ sub batch_import {
   while (1) {
 
     my @columns = ();
+    my %hash = %$params;
     if ( $type eq 'csv' ) {
 
       last unless scalar(@buffer);
@@ -1747,16 +1775,25 @@ sub batch_import {
       #warn $z++. ": $_\n" for @columns;
 
     } elsif ( $type eq 'xml' ) {
+
       # $parser = [ 'Column0Key', 'Column1Key' ... ]
       last unless scalar(@buffer);
       my $row = shift @buffer;
       @columns = @{ $row }{ @$parser };
+
+    } elsif ( $type eq 'asn.1' ) {
+
+      last unless scalar(@buffer);
+      my $row = shift @buffer;
+      foreach my $key ( keys %{ $asn_format->{map} } ) {
+        $hash{$key} = &{ $asn_format->{map}{$key} }( $row );
+      }
+
     } else {
       die "Unknown file type $type\n";
     }
 
     my @later = ();
-    my %hash = %$params;
 
     foreach my $field ( @fields ) {
 

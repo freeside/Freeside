@@ -11,6 +11,7 @@ use Date::Parse;
 use Date::Format;
 use Time::Local;
 use List::Util qw( first min );
+use Text::CSV_XS;
 use FS::UID qw( dbh );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
@@ -324,6 +325,10 @@ sub check {
   if ( $self->billsec eq '' && $self->enddate && $self->answerdate ) {
     $self->billsec(  $self->enddate - $self->answerdate );
   } 
+
+  if ( ! $self->enddate && $self->startdate && $self->duration ) {
+    $self->enddate( $self->startdate + $self->duration );
+  }
 
   $self->set_charged_party;
 
@@ -1286,8 +1291,6 @@ sub downstream_csv {
   #$opt{'money_char'} ||= $conf->config('money_char') || '$';
   $opt{'money_char'} ||= FS::Conf->new->config('money_char') || '$';
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
   my $csv = new Text::CSV_XS;
 
   my @columns =
@@ -1575,6 +1578,11 @@ my %import_options = (
 
   'format_xml_formats' =>
     { map { $_ => $cdr_info{$_}->{'xml_format'}; }
+          keys %cdr_info
+    },
+
+  'format_asn_formats' =>
+    { map { $_ => $cdr_info{$_}->{'asn_format'}; }
           keys %cdr_info
     },
 

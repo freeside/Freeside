@@ -3333,6 +3333,12 @@ sub tables_hashref {
         'quantity',                'int', 'NULL',      '', '', '', 
 
         'upstream_rateid',         'int', 'NULL',      '', '', '',
+
+        ###
+        # more fields, for GSM imports
+        ###
+        'servicecode',             'int', 'NULL',      '', '', '',
+        'quantity_able',           'int', 'NULL',      '', '', '', 
         
         ###
         #and now for our own fields
@@ -3341,8 +3347,9 @@ sub tables_hashref {
         'cdrtypenum',              'int', 'NULL',      '', '', '',
 
         'charged_party',       'varchar', 'NULL', $char_d, '', '',
+        'charged_party_imsi',  'varchar', 'NULL', $char_d, '', '',
 
-        'upstream_price',      'decimal', 'NULL',  '10,4', '', '', 
+        'upstream_price',      'decimal', 'NULL',  '10,5', '', '', 
         'upstream_src_regionname', 'varchar', 'NULL', $char_d, '', '',
         'upstream_dst_regionname', 'varchar', 'NULL', $char_d, '', '',
 
