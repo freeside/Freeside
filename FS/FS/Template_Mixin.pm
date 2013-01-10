@@ -2318,16 +2318,23 @@ sub _items_cust_bill_pkg {
           my $description = ($is_summary && $type && $type eq 'U')
                             ? "Usage charges" : $desc;
 
+          my $part_pkg = $cust_pkg->part_pkg;
+
           #pry be a bit more efficient to look some of this conf stuff up
           # outside the loop
           unless (
             $conf->exists('disable_line_item_date_ranges')
-              || $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1)
+              || $part_pkg->option('disable_line_item_date_ranges',1)
           ) {
             my $time_period;
-            my $date_style = $conf->config( 'cust_bill-line_item-date_style',
+            my $date_style = '';
+            $date_style = $conf->config( 'cust_bill-line_item-date_style-non_monhtly',
+                                         $cust_main->agentnum
+                                       )
+              if $part_pkg && $part_pkg->freq !~ /^1m?$/;
+            $date_style ||= $conf->config( 'cust_bill-line_item-date_style',
                                             $cust_main->agentnum
-                                          );
+                                         );
             if ( defined($date_style) && $date_style eq 'month_of' ) {
               $time_period = time2str('The month of %B', $cust_bill_pkg->sdate);
             } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
@@ -2353,7 +2360,7 @@ sub _items_cust_bill_pkg {
           push @dates, $prev->sdate if $prev;
           push @dates, undef if !$prev;
 
-          unless ( $cust_pkg->part_pkg->hide_svc_detail
+          unless ( $part_pkg->hide_svc_detail
                 || $cust_bill_pkg->itemdesc
                 || $cust_bill_pkg->hidden
                 || $is_summary && $type && $type eq 'U'
