@@ -1436,7 +1436,7 @@ END
 
   my $county_html = $script_html;
   if ( $countyflag ) {
-    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$param->{'onchange'}">!;
+    $county_html .= qq!<SELECT id="field_${prefix}county" NAME="${prefix}county" onChange="$param->{'onchange'}">!;
     foreach my $county ( 
       sort keys %{ $cust_main_county{$param->{'selected_country'}}{$param->{'selected_state'}} }
     ) {
@@ -1455,7 +1455,7 @@ END
       qq!<INPUT TYPE="hidden" NAME="${prefix}county" VALUE="$param->{'selected_county'}">!;
   }
 
-  my $state_html = qq!<SELECT NAME="${prefix}state" !.
+  my $state_html = qq!<SELECT id="field_${prefix}state" NAME="${prefix}state" !.
                    qq!onChange="${prefix}state_changed(this); $param->{'onchange'}">!;
   foreach my $state ( sort keys %{ $cust_main_county{$param->{'selected_country'}} } ) {
     my $text = $state || '(n/a)';
@@ -1467,7 +1467,7 @@ END
   my $country_html = '';
   if ( scalar( keys %cust_main_county ) > 1 )  {
 
-    $country_html = qq(<SELECT NAME="${prefix}country" ).
+    $country_html = qq(<SELECT id="field_${prefix}country" NAME="${prefix}country" ).
                     qq(onChange="${prefix}country_changed(this); ).
                                  $param->{'onchange'}.
                                '"'.
@@ -1588,13 +1588,13 @@ sub expselect {
   } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
     ( $m, $y ) = ( $1, $3 );
   }
-  my $return = qq!<SELECT NAME="$prefix!. qq!_month" SIZE="1">!;
+  my $return = qq!<SELECT id="field_$prefix! . qq!_month" NAME="$prefix!. qq!_month" SIZE="1">!;
   for ( 1 .. 12 ) {
     $return .= qq!<OPTION VALUE="$_"!;
     $return .= " SELECTED" if $_ == $m;
     $return .= ">$_";
   }
-  $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
+  $return .= qq!</SELECT>/<SELECT id="field_$prefix! . qq!_year" NAME="$prefix!. qq!_year" SIZE="1">!;
   my @t = localtime;
   my $thisYear = $t[5] + 1900;
   for ( ($thisYear > $y && $y > 0 ? $y : $thisYear) .. ($thisYear+10) ) {
@@ -1726,10 +1726,10 @@ END
   $text .= '</SELECT>'; #callback? return 3 html pieces?  #'</TD>';
 
   $text .=
-    qq!<SELECT NAME="popac" SIZE=1 onChange="popac_changed(this)">!.
+    qq!<SELECT id="field_popac" NAME="popac" SIZE=1 onChange="popac_changed(this)">!.
     qq!<OPTION>Area code</SELECT></TR><TR VALIGN="top">!;
 
-  $text .= qq!<TR><TD><SELECT NAME="popnum" SIZE=1 STYLE="width: 20em"><OPTION>City!;
+  $text .= qq!<TR><TD><SELECT id="field_popnum" NAME="popnum" SIZE=1 STYLE="width: 20em"><OPTION>City!;
 
 
   #comment this block to disable initial list polulation
