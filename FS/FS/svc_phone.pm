@@ -22,10 +22,11 @@ $DEBUG = 0;
 @pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::svc_acct'} = sub { 
+FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $phone_name_max = $conf->config('svc_phone-phone_name-max_length');
-};
+}
+);
 
 =head1 NAME
 
@@ -66,6 +67,10 @@ primary key
 =item countrycode
 
 =item phonenum
+
+=item sim_imsi
+
+SIM IMSI (http://en.wikipedia.org/wiki/International_mobile_subscriber_identity)
 
 =item sip_password
 
@@ -146,6 +151,7 @@ sub table_info {
                             disable_select => 1,
                           },
         'phonenum'     => 'Phone number',
+        'sim_imsi'     => 'IMSI', #http://en.wikipedia.org/wiki/International_mobile_subscriber_identity
         'pin'          => { label => 'Voicemail PIN', #'Personal Identification Number',
                             type  => 'text',
                             disable_inventory => 1,
@@ -464,6 +470,7 @@ sub check {
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('countrycode')
     || $self->$phonenum_check_method('phonenum')
+    || $self->ut_numbern('sim_imsi')
     || $self->ut_anything('sip_password')
     || $self->ut_numbern('pin')
     || $self->ut_textn('phone_name')
@@ -483,6 +490,10 @@ sub check {
     || $self->ut_textn('lnp_reject_reason')
   ;
   return $error if $error;
+
+  return 'Illegal IMSI (not 14-15 digits)' #shorter?
+    if length($self->sim_imsi)
+    && ( length($self->sim_imsi) < 14 || length($self->sim_imsi) > 15 );
 
     # LNP data validation
     return 'Cannot set LNP fields: no LNP in progress'

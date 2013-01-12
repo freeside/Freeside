@@ -3271,6 +3271,7 @@ sub tables_hashref {
         'svcnum',       'int',         '',      '', '', '', 
         'countrycode',  'varchar',     '',       3, '', '', 
         'phonenum',     'varchar',     '',      15, '', '',  #12 ?
+        'sim_imsi',     'varchar', 'NULL',      15, '', '',
         'pin',          'varchar', 'NULL', $char_d, '', '',
         'sip_password', 'varchar', 'NULL', $char_d, '', '',
         'phone_name',   'varchar', 'NULL', $char_d, '', '',
