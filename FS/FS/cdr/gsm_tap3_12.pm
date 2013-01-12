@@ -4,7 +4,7 @@ use base qw( FS::cdr );
 use strict;
 use vars qw( %info );
 use Time::Local;
-#use Data::Dumper;
+use Data::Dumper;
 
 %info = (
   'name'          => 'GSM TAP3 release 12',
@@ -39,6 +39,233 @@ use Time::Local;
                   },
   },
 );
+
+#accepts qsearch parameters as a hash or list of name/value pairs, but not
+#old-style qsearch('cdr', { field=>'value' })
+
+use Date::Format;
+sub tap3_12_export {
+  my %qsearch = ();
+  if ( ref($_[0]) eq 'HASH' ) {
+    %qsearch = %{ $_[0] };
+  } else {
+    %qsearch = @_;
+  }
+
+  #if these get huge we might need to get a count and do a paged search
+  my @cdrs = qsearch({ 'table'=>'cdr', %qsearch, 'order_by'=>'calldate ASC' });
+
+  eval "use Convert::ASN1";
+  die $@ if $@;
+
+  my $asn = Convert::ASN1->new;
+  $asn->prepare( _asn_spec() ) or die $asn->error;
+
+  my $TransferBatch = $asn->find('TransferBatch') or die $asn->error;
+
+  my %hash = _TransferBatch(); #static information etc.
+
+  my $utcTimeOffset = '+0300'; #XXX local timezone at least
+
+  my $now = time;
+
+  ###
+  # accountingInfo
+  ###
+
+  ###
+  # batchControlInfo
+  ###
+
+  $hash{batchControlInfo}->{fileCreationTimeStamp}   = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $now),
+                                                         'utcTimeOffset'  => $utcTimeOffset,
+                                                       };
+  #XXX what do these do?  do they need to be different from fileCreationTimeStamp?
+  $hash{batchControlInfo}->{transferCutOffTimeStamp} = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $now),
+                                                         'utcTimeOffset'  => $utcTimeOffset,
+                                                       };
+
+  $hash{batchControlInfo}->{fileAvailableTimeStamp}  = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $now),
+                                                          'utcTimeOffset'  => $utcTimeOffset,
+                                                        };
+
+  #XXX
+  $hash{batchControlInfo}->{sender} = 'MDGTM';
+  $hash{batchControlInfo}->{recipient} = 'GNQHT';
+  $hash{batchControlInfo}->{fileSequenceNumber} = '00178'; #XXX global?  per recipient?
+
+  ###
+  # networkInfo
+  ###
+
+  $hash{networkInfo}->{utcTimeOffsetInfo}[0]{utcTimeOffset} = $utcTimeOffset;
+
+  #XXX receiver entity IDs?  why two?
+  #$hash->{networkInfo}->{recEntityInfo}[0]{recEntityId} = '340010100';
+  #$hash->{networkInfo}->{recEntityInfo}[1]{recEntityId} = '240556000000';
+
+  ###
+  # auditControlInfo
+  ###
+
+  $hash{auditControlInfo}->{callEventDetailsCount} = scalar(@cdrs);
+  $hash{auditControlInfo}->{earliestCallTimeStamp} = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $cdrs[0]->calldate_unix),
+                                                       'utcTimeOffset'  => $utcTimeOffset,
+                                                     };
+  $hash{auditControlInfo}->{latestCallTimeStamp}   = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $cdrs[-1]->calldate_unix),
+                                                       'utcTimeOffset'  => $utcTimeOffset,
+                                                     };
+
+  my $totalCharge = 0;
+  $totalCharge += $_->rated_price foreach @cdrs;
+  $hash{totalCharge} = sprintf('%.5f', $totalCharge);
+
+  ###
+  # callEventDetails
+  ###
+
+  $hash{callEventDetails} = [
+    map {
+          {
+            'mobileOriginatedCall' => {
+              'locationInformation' => {
+                                         'networkLocation' => {
+                                                                'recEntityCode' => $_->carrierid, #XXX 1
+                                                              }
+                                       },
+              'operatorSpecInformation' => [
+                                             $_->userfield, ##'|Seq: 178 Loc: 1|'
+                                           ],
+              'basicServiceUsedList' => [
+                                          {
+                                            'basicService' => {
+                                                                'serviceCode' => {
+                                                                                   'teleServiceCode' => $_->servicecode, #'11'
+                                                                                 }
+                                                              },
+                                            'chargeInformationList' => [
+                                                                         {
+                                                                           'callTypeGroup' => {
+                                                                                                'callTypeLevel1' => $_->calltypenum,
+                                                                                                'callTypeLevel3' => 0,
+                                                                                                'callTypeLevel2' => 0
+                                                                                              },
+                                                                           'chargeDetailList' => [
+                                                                                                   {
+                                                                                                     'charge'          => $_->rated_price * 100000, #XXX numberOfDecimalPlaces 
+                                                                                                     'chargeType'      => '00',
+                                                                                                     'chargeableUnits' => $_->quantity_able,
+                                                                                                     'chargedUnits'    => $_->quantity,
+                                                                                                   }
+                                                                                                 ],
+                                                                           'chargedItem' => 'D', #XXX or E?  what's this do?
+                                                                           'exchangeRateCode' => 1
+                                                                         }
+                                                                       ]
+                                          }
+                                        ],
+              'basicCallInformation' => {
+                                          'totalCallEventDuration' => $_->duration,
+                                          'destination' => {
+                                                             'calledNumber' => $_->dst,
+                                                             #XXX 'dialledDigits' => '322221350'
+                                                           },
+                                          'callEventStartTimeStamp' => {
+                                                                         'localTimeStamp' => time2str('%Y%m%d%H%M%S', $_->startdate),
+                                                                         'utcTimeOffsetCode' => 1
+                                                                       },
+                                          'chargeableSubscriber' => {
+                                                                      'simChargeableSubscriber' => {
+                                                                                                     'msisdn' => $_->charged_pary, #src
+                                                                                                     'imsi'   => $_->charged_party_imsi,
+                                                                                                   }
+                                                                    }
+                                        }
+            }
+          };
+        }
+      @cdrs
+  ];
+
+
+  ###
+
+
+  my $pdu = $TransferBatch->encode( \%hash );
+
+  return $pdu;
+
+}
+
+sub _TransferBatch {
+          'accountingInfo' => {
+                                'currencyConversionInfo' => [
+                                                              {
+                                                                'numberOfDecimalPlaces' => 5,
+                                                                'exchangeRate' => 152549, #???
+                                                                'exchangeRateCode' => 1
+                                                              }
+                                                            ],
+                                'tapDecimalPlaces' => 5,
+                                'localCurrency' => 'USD'
+                              },
+          'batchControlInfo' => {
+                                  'specificationVersionNumber' => 3,
+                                  'releaseVersionNumber' => 12, #11?
+                                  #'transferCutOffTimeStamp' => {
+                                  #                               'localTimeStamp' => '20121230050222',
+                                  #                               'utcTimeOffset' => '+0300'
+                                  #                             },
+                                  'operatorSpecInformation' => [
+                                                                 '', # XXX '|File proc MTH LUXMA: 1285348027|'
+                                                               ],
+                                  #'recipient' => 'GNQHT',
+                                  #'fileCreationTimeStamp' => {
+                                  #                             'localTimeStamp' => '20121230050222',
+                                  #                             'utcTimeOffset' => '+0300'
+                                  #                           },
+                                  #'sender' => 'MDGTM',
+                                  #'fileSequenceNumber' => '00178',
+                                  #'fileAvailableTimeStamp' => {
+                                  #                              'localTimeStamp' => '20121230035052',
+                                  #                              'utcTimeOffset' => '+0100'
+                                  #                            }
+                                },
+          'networkInfo' => {
+                             'recEntityInfo' => [
+                                                  {
+                                                    'recEntityType' => 1,
+                                                    #'recEntityId' => '340010100',
+                                                    'recEntityCode' => 1
+                                                  },
+                                                  {
+                                                    'recEntityType' => 2,
+                                                    #'recEntityId' => '240556000000',
+                                                    'recEntityCode' => 2
+                                                  }
+                                                ],
+                             'utcTimeOffsetInfo' => [
+                                                      {
+                                                        'utcTimeOffset' => '+0300',
+                                                        'utcTimeOffsetCode' => 1
+                                                      }
+                                                    ]
+                           },
+          'auditControlInfo' => {
+                                  #'callEventDetailsCount' => 4,
+                                  'totalTaxValue' => 0,
+                                  #'earliestCallTimeStamp' => {
+                                  #                             'localTimeStamp' => '20121229102501',
+                                  #                             'utcTimeOffset' => '+0300'
+                                  #                           },
+                                  'totalDiscountValue' => 0,
+                                  #'totalCharge' => 50474,
+                                  #'latestCallTimeStamp' => {
+                                  #                           'localTimeStamp' => '20121229102807',
+                                  #                           'utcTimeOffset' => '+0300'
+                                  #                         }
+                                },
+}
 
 sub _asn_spec {
   <<'END';
