@@ -28,6 +28,11 @@ my $begin_callback = sub {
                 type     => 'select-did',
                 label    => 'Phone number',
                 multiple => $bulk,
+              },
+              { field     => 'sim_imsi',
+                type      => 'text',
+                size      => 15,
+                maxlength => 15,
               };
 
   push @$fields, { field => 'domsvc',
