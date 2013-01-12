@@ -3,7 +3,9 @@
 
 %#this should use cust_pkg->status and cust_pkg->statuscolor eventually
 
-% if ( $cust_pkg->order_date ) {
+% if ( $supplemental ) {
+    <% pkg_status_row_colspan($cust_pkg, emt('Supplemental'), '', 'color' => '7777FF', %opt) %>
+% } elsif ( $cust_pkg->order_date ) {
     <% pkg_status_row($cust_pkg, emt('Ordered'), 'order_date', %opt ) %>
 % }
 
@@ -12,30 +14,25 @@
 
     <% pkg_status_row($cust_pkg, emt('Cancelled'), 'cancel', 'color'=>'FF0000', %opt ) %>
 
-    <% pkg_status_row_colspan( $cust_pkg,
-         ( $cpr ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
-         'align'=>'right', 'color'=>'ff0000', 'size'=>'-2', 'colspan'=>$colspan,
-         %opt
-       )
-    %>
+    <% pkg_reason_row($cust_pkg, $cpr, color => 'ff0000', %opt) %>
 
 %   unless ( $cust_pkg->get('setup') ) { 
 
-        <% pkg_status_row_colspan( $cust_pkg, emt('Never billed'), '', 'colspan'=>$colspan, %opt, ) %>
+        <% pkg_status_row_colspan( $cust_pkg, emt('Never billed'), '', %opt, ) %>
 
 %   } else { 
 
        <% pkg_status_row( $cust_pkg, emt('Setup'), 'setup', %opt ) %>
-       <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+       <% pkg_status_row_changed( $cust_pkg, %opt ) %>
        <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
        <% pkg_status_row_if( $cust_pkg, emt('Suspended'), 'susp', %opt, curuser=>$curuser ) %>
 
 %   } 
 %
-%   if ( $part_pkg->freq ) { #?
+%   if ( $part_pkg->freq and !$supplemental ) { #?
 
       <TR>
-        <TD COLSPAN=<%$colspan%>>
+        <TD COLSPAN=<%$opt{colspan}%>>
           <FONT SIZE=-1>
 %           if ( $curuser->access_right('Un-cancel customer package') ) { 
               (&nbsp;<% pkg_uncancel_link($cust_pkg) %>&nbsp;)
@@ -52,26 +49,21 @@
 
     <% pkg_status_row( $cust_pkg, emt('Suspended'), 'susp', 'color'=>'FF9900', %opt ) %>
 
-    <% pkg_status_row_colspan( $cust_pkg,
-         ( $cpr ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
-         'align'=>'right', 'color'=>'FF9900', 'size'=>'-2', 'colspan'=>$colspan,
-         %opt,
-       )
-    %>
+    <% pkg_reason_row( $cust_pkg, $cpr, 'color' => 'FF9900', %opt ) %>
 
-    <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+    <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
-    <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+    <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
 %   unless ( $cust_pkg->get('setup') ) { 
-      <% pkg_status_row_colspan( $cust_pkg, emt('Never billed'), '', 'colspan'=>$colspan, %opt ) %>
+      <% pkg_status_row_colspan( $cust_pkg, emt('Never billed'), '', %opt ) %>
 %   } else { 
       <% pkg_status_row($cust_pkg, emt('Setup'), 'setup', %opt ) %>
 %   } 
 
     <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
-    <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+    <% pkg_status_row_changed( $cust_pkg, %opt ) %>
     <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
 %   if ( $cust_pkg->option('suspend_bill', 1)
 %        || ( $part_pkg->option('suspend_bill', 1)
@@ -85,31 +77,33 @@
     <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
     <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
-    <TR>
-      <TD COLSPAN=<%$colspan%>>
-        <FONT SIZE=-1>
-%         if ( $curuser->access_right('Unsuspend customer package') ) { 
-            (&nbsp;<% pkg_unsuspend_link($cust_pkg) %>&nbsp;)
-            (&nbsp;<% pkg_resume_link($cust_pkg) %>&nbsp;)
-%         }
-%         if ( $curuser->access_right('Cancel customer package immediately') ) {
-            (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
-%         } 
-        </FONT>
-      </TD>
-    </TR>
-
+% if ( !$supplemental ) {
+      <TR>
+        <TD COLSPAN=<%$opt{colspan}%>>
+          <FONT SIZE=-1>
+%           if ( $curuser->access_right('Unsuspend customer package') ) { 
+              (&nbsp;<% pkg_unsuspend_link($cust_pkg) %>&nbsp;)
+              (&nbsp;<% pkg_resume_link($cust_pkg) %>&nbsp;)
+%           }
+%           if ( $curuser->access_right('Cancel customer package immediately') ) {
+              (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
+%           } 
+          </FONT>
+        </TD>
+      </TR>
+%     }
+%
 %   } else { #status: active
 %
 %     unless ( $cust_pkg->get('setup') ) { #not setup
 %
 %       unless ( $part_pkg->freq ) {
 
-          <% pkg_status_row_colspan( $cust_pkg, emt('Not yet billed (one-time charge)'), '', 'colspan'=>$colspan, %opt ) %>
+          <% pkg_status_row_colspan( $cust_pkg, emt('Not yet billed (one-time charge)'), '', %opt ) %>
 
-          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
-          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
           <% pkg_status_row_if(
                $cust_pkg,
@@ -121,8 +115,9 @@
 
           <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
+%         if (!$supplemental) {
           <TR>
-            <TD COLSPAN=<%$colspan%>>
+            <TD COLSPAN=<%$opt{colspan}%>>
               <FONT SIZE=-1>
 %               if ( $curuser->access_right('Cancel customer package immediately') ) { 
                   (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
@@ -130,14 +125,15 @@
               </FONT>
             </TD>
           </TR>
+%         }
 
 %       } else { 
 
-          <% pkg_status_row_colspan($cust_pkg, emt("Not yet billed ($billed_or_prepaid [_1])", myfreq($part_pkg) ), '', 'colspan'=>$colspan, %opt ) %>
+          <% pkg_status_row_colspan($cust_pkg, emt("Not yet billed ($billed_or_prepaid [_1])", myfreq($part_pkg) ), '', %opt ) %>
 
-          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
-          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
           <% pkg_status_row_if($cust_pkg, emt('Start billing'), 'start_date', %opt) %>
           <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
@@ -148,13 +144,13 @@
 %
 %       unless ( $part_pkg->freq ) { 
 
-          <% pkg_status_row_colspan($cust_pkg, emt('One-time charge'), '', 'colspan'=>$colspan, %opt ) %>
+          <% pkg_status_row_colspan($cust_pkg, emt('One-time charge'), '', %opt ) %>
 
           <% pkg_status_row($cust_pkg, emt('Billed'), 'setup', %opt) %>
 
-          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
-          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
           <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
@@ -170,7 +166,7 @@
             <% pkg_status_row_colspan( $cust_pkg,
                  emt('Overlimit'),
                  $billed_or_prepaid. '&nbsp;'. myfreq($part_pkg),
-                 'color'=>'FFD000', 'colspan'=>$colspan,
+                 'color'=>'FFD000',
                  %opt
                )
             %>
@@ -179,15 +175,15 @@
             <% pkg_status_row_colspan( $cust_pkg,
                  emt('Active'),
                  $billed_or_prepaid. '&nbsp;'. myfreq($part_pkg),
-                 'color'=>'00CC00', 'colspan'=>$colspan,
+                 'color'=>'00CC00',
                  %opt
                )
             %>
 %         } 
 
-          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_noauto( $cust_pkg, %opt ) %>
 
-          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_discount( $cust_pkg, %opt ) %>
 
           <% pkg_status_row($cust_pkg, emt('Setup'), 'setup', %opt) %>
 
@@ -202,7 +198,7 @@
 %       $cust_pkg->set('autosuspend', $autosuspend) if $autosuspend;
 %     }
 
-      <% pkg_status_row_changed( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+      <% pkg_status_row_changed( $cust_pkg, %opt ) %>
       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if($cust_pkg, emt('Will automatically suspend by'), 'autosuspend', %opt) %>
@@ -212,10 +208,10 @@
       <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
-%     if ( $part_pkg->freq ) { 
+%     if ( $part_pkg->freq and !$supplemental ) { 
 
         <TR>
-          <TD COLSPAN=<%$colspan%>>
+          <TD COLSPAN=<%$opt{colspan}%>>
             <FONT SIZE=-1>
 %             if ( $curuser->access_right('Suspend customer package') ) { 
                 (&nbsp;<% pkg_suspend_link($cust_pkg) %>&nbsp;)
@@ -251,8 +247,10 @@ my $bgcolor  = $opt{'bgcolor'};
 my $cust_pkg = $opt{'cust_pkg'};
 my $part_pkg = $opt{'part_pkg'};
 my $curuser  = $FS::CurrentUser::CurrentUser;
-my $colspan  = $opt{'cust_pkg-display_times'} ? 8 : 4;
 my $width    = $opt{'cust_pkg-display_times'} ? '38%' : '56%';
+my $supplemental = $opt{'supplemental'};
+
+$opt{colspan}  = $opt{'cust_pkg-display_times'} ? 8 : 4;
 
 #false laziness w/edit/REAL_cust_pkg.cgi
 my( $billed_or_prepaid, $last_bill_or_renewed, $next_bill_or_prepaid_until );
@@ -285,9 +283,27 @@ sub pkg_link {
 sub pkg_status_row {
   my( $cust_pkg, $title, $field, %opt ) = @_;
 
+  if ( $field and $cust_pkg->main_pkgnum ) {
+    # for supplemental packages, we mostly only show these if they're 
+    # different from the main package
+    my $main_pkg = $cust_pkg-> main_pkg;
+    if (    $main_pkg->get($field) ne $cust_pkg->get($field)
+        # with some exceptions
+        or  $field eq 'bill'
+        or  $field eq 'last_bill'
+        or  $field eq 'setup'
+        or  $field eq 'susp'
+        or  $field eq 'cancel'
+      ) {
+      # handle it normally
+    } else {
+      return '';
+    }
+  }
+
   my $color = $opt{'color'};
 
-  my $html = qq(<TR><TD WIDTH="<%$width%>" ALIGN="right">);
+  my $html = qq(<TR><TD WIDTH="$width" ALIGN="right">);
   $html   .= qq(<FONT COLOR="#$color"><B>) if length($color);
   $html   .= qq($title&nbsp;);
   $html   .= qq(</B></FONT>) if length($color);
@@ -338,7 +354,6 @@ sub pkg_status_row_changed {
                                      '',
                                      'size'    => '-1',
                                      'align'   => 'right',
-                                     'colspan' => $opt{'colspan'},
                                    );
   }
 
@@ -356,9 +371,7 @@ sub pkg_status_row_noauto {
   return '' unless $cust_main->payby =~ /^(CARD|CHEK)$/;
   my $what = lc(FS::payby->shortname($cust_main->payby));
 
-  pkg_status_row_colspan( $cust_pkg, emt("No automatic $what charge"), '',
-                          'colspan' => $opt{'colspan'},
-                        );
+  pkg_status_row_colspan( $cust_pkg, emt("No automatic $what charge"), '');
 }
 
 sub pkg_status_row_discount {
@@ -382,13 +395,22 @@ sub pkg_status_row_discount {
                   $cust_pkg_discount->pkgdiscountnum.
                 '">'.emt('remove discount').'</A>)</FONT>';
 
-    $html .= pkg_status_row_colspan( $cust_pkg, $label, '',
-                                     'colspan' => $opt{'colspan'},
-                                   );
+    $html .= pkg_status_row_colspan( $cust_pkg, $label, '', %opt );
 
   }
 
   $html;
+}
+
+sub pkg_reason_row {
+  my ($cust_pkg, $cpr, %opt) = @_;
+  return '' if $cust_pkg->main_pkgnum;
+
+  my $reasontext = '';
+  $reasontext = $cpr->reasontext . ' by ' . $cpr->otaker if $cpr;
+  pkg_status_row_colspan( $cust_pkg, $reasontext, '',
+    'align'=>'right', 'size'=>'-2', %opt
+  );
 }
 
 sub pkg_status_row_colspan {

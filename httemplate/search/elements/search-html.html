@@ -253,7 +253,17 @@
 %                   $bgcolor = $bgcolor1;
 %                 }
 
-                  <TR>
+%                 my $trid = '';
+%                   if ( $opt{'link_field' } ) {
+%                     my $link_field = $opt{'link_field'};
+%                     if ( ref($link_field) eq 'CODE' ) {
+%                       $trid = &{$link_field}($row);
+%                     } else {
+%                       $trid = $row->$link_field();
+%                     }
+%                   }
+                  <TR ID="<%$trid |h%>">
+                      
 
 %                   if ( $opt{'fields'} ) {
 %

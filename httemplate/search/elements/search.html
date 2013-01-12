@@ -167,6 +167,11 @@ Example:
     # miscellany
    'download_label' => 'Download this report',
                         # defaults to 'Download full results' 
+   'link_field'     => 'pkgpart'
+                        # will create internal links for each row,
+                        # with the value of this field as the NAME attribute
+                        # If this is a coderef, will evaluate it, passing the
+                        # row as an argument, and use the result as the NAME.
   &>
 
 </%doc>

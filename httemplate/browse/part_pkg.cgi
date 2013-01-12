@@ -20,6 +20,7 @@
                  'fields'                => \@fields,
                  'links'                 => \@links,
                  'align'                 => $align,
+                 'link_field'            => 'pkgpart',
              )
 %>
 <%init>
@@ -274,6 +275,18 @@ push @fields, sub {
         : ()
       ),
     ],
+    ( map { my $dst_pkg = $_->dst_pkg;
+            [
+              { data => 'Supplemental: &nbsp;'.
+                        '<A HREF="#'. $dst_pkg->pkgpart . '">' .
+                        $dst_pkg->pkg . '</A>',
+                align=> 'center',
+                colspan => 2,
+              }
+            ]
+          }
+      $part_pkg->supp_part_pkg_link
+    ),
     ( map { 
             my $dst_pkg = $_->dst_pkg;
             [ 

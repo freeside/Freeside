@@ -49,12 +49,13 @@ Destination package (see L<FS::part_pkg>)
 =item link_type
 
 Link type - currently, "bill" (source package bills a line item from target
-package), or "svc" (source package includes services from target package).
+package), or "svc" (source package includes services from target package), 
+or "supp" (ordering source package creates a target package).
 
 =item hidden
 
 Flag indicating that this subpackage should be felt, but not seen as an invoice
-line item when set to 'Y'
+line item when set to 'Y'.  Not allowed for "supp" links.
 
 =back
 
@@ -119,10 +120,25 @@ sub check {
     $self->ut_numbern('pkglinknum')
     || $self->ut_foreign_key('src_pkgpart', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_key('dst_pkgpart', 'part_pkg', 'pkgpart')
-    || $self->ut_enum('link_type', [ 'bill', 'svc' ] )
+    || $self->ut_enum('link_type', [ 'bill', 'svc', 'supp' ] )
     || $self->ut_enum('hidden', [ '', 'Y' ] )
   ;
   return $error if $error;
+
+  if ( $self->link_type eq 'supp' ) {
+    # some sanity checking
+    my $src_pkg = $self->src_pkg;
+    my $dst_pkg = $self->dst_pkg;
+    if ( $src_pkg->freq eq '0' and $dst_pkg->freq ne '0' ) {
+      return "One-time charges can't have supplemental packages."
+    } elsif ( $dst_pkg->freq ne '0' ) {
+      my $ratio = $dst_pkg->freq / $src_pkg->freq;
+      if ($ratio != int($ratio)) {
+        return "Supplemental package period (pkgpart ".$dst_pkg->pkgpart.
+               ") must be an integer multiple of main package period.";
+      }
+    }
+  }
 
   $self->SUPER::check;
 }

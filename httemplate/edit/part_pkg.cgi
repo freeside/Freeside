@@ -53,6 +53,7 @@
                             'discountnum'      => 'Offer discounts for longer terms',
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
                             'svc_dst_pkgpart'  => 'Include services of package',
+                            'supp_dst_pkgpart' => 'Include complete package',
                             'report_option'    => 'Report classes',
                             'fcc_ds0s'         => 'Voice-grade equivalents',
                             'fcc_voip_class'   => 'Category',
@@ -236,6 +237,19 @@
                               'm2m_method' => 'part_pkg_discount',
                               'm2m_dstcol' => 'discountnum',
                               'm2_error_callback' => $discount_error_callback,
+                            },
+
+                            { 'type'    => 'tablebreak-tr-title',
+                              'value'   => 'Supplemental packages',
+                              'colspan' => '4',
+                            },
+                            { 'field'       => 'supp_dst_pkgpart',
+                              'type'        => 'select-part_pkg',
+                              'm2_label'    => 'Include complete package',
+                              'm2m_method'  => 'supp_part_pkg_link',
+                              'm2m_dstcol'  => 'dst_pkgpart',
+                              'm2_error_callback' =>
+                                &{$m2_error_callback_maker}('supp'),
                             },
 
                             { 'type'    => 'tablebreak-tr-title',

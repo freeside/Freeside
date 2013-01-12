@@ -1175,6 +1175,17 @@ sub svc_part_pkg_link {
   shift->_part_pkg_link('svc', @_);
 }
 
+=item supp_part_pkg_link
+
+Returns the associated part_pkg_link records of type 'supp' (supplemental
+packages).
+
+=cut
+
+sub supp_part_pkg_link {
+  shift->_part_pkg_link('supp', @_);
+}
+
 sub _part_pkg_link {
   my( $self, $type ) = @_;
   qsearch({ table    => 'part_pkg_link',
