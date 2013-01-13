@@ -37,7 +37,6 @@
 % # include supplemental packages if any
 % $iopt{'supplemental'} = ($iopt{'supplemental'} || 0) + 1;
 % foreach my $supp_pkg ($cust_pkg->supplemental_pkgs) {
-% warn $supp_pkg->pkgnum;
     <& .packagerow, $supp_pkg, %iopt &>
 % }
 </%def>
