@@ -11,16 +11,14 @@ Confirm address standardization
 
 </B><BR><BR>
 <TABLE WIDTH="100%">
-% my @prefixes;
-% if ( $old{onlyship} ) {
-%   @prefixes = ('ship_');
-% } elsif ( $old{same} ) {
+% my @prefixes = ('');
+% if ( $old{same} ) {
 %   @prefixes = ('bill_');
-% } else {
+% } elsif ( $old{billship} ) {
 %   @prefixes = ('bill_', 'ship_');
 % }
 % for my $pre (@prefixes) {
-%   my $name = $pre eq 'ship_' ? 'service' : 'billing';
+%   my $name = $pre eq 'bill_' ? 'billing' : 'service';
 %   if ( $new{$pre.'addr_clean'} ) {
   <TR>
     <TH>Entered <%$name%> address</TH>
@@ -128,6 +126,6 @@ my $q = decode_json($cgi->param('q'));
 my %old = %{ $q->{old} };
 my %new = %{ $q->{new} };
 
-my $addresses = $old{onlyship} ? 'address' : 'addresses';
+my $addresses = $old{billship} ? 'addresses' : 'address';
 
 </%init>
