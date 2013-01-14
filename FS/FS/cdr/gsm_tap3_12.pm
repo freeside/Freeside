@@ -4,7 +4,7 @@ use base qw( FS::cdr );
 use strict;
 use vars qw( %info %TZ );
 use Time::Local;
-use Data::Dumper;
+#use Data::Dumper;
 
 %TZ = (
   '+0000' => 'XXX-0',
@@ -104,6 +104,7 @@ use Data::Dumper;
 #old-style qsearch('cdr', { field=>'value' })
 
 use Date::Format;
+use FS::Conf;
 sub tap3_12_export {
   my %qsearch = ();
   if ( ref($_[0]) eq 'HASH' ) {
@@ -115,6 +116,8 @@ sub tap3_12_export {
   #if these get huge we might need to get a count and do a paged search
   my @cdrs = qsearch({ 'table'=>'cdr', %qsearch, 'order_by'=>'calldate ASC' });
 
+  my $conf = new FS::Conf;
+
   eval "use Convert::ASN1";
   die $@ if $@;
 
@@ -125,13 +128,15 @@ sub tap3_12_export {
 
   my %hash = _TransferBatch(); #static information etc.
 
-  my $utcTimeOffset = '+0300'; #XXX local timezone at least
-
   my $now = time;
+  my $utcTimeOffset = time2str('%z', $now);
 
   ###
   # accountingInfo
   ###
+
+  #mandatory
+  $hash{localCurrency} = $conf->config('currency') || 'USD';
 
   ###
   # batchControlInfo
@@ -141,19 +146,36 @@ sub tap3_12_export {
   $hash{batchControlInfo}->{fileCreationTimeStamp}   = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $now),
                                                          'utcTimeOffset'  => $utcTimeOffset,
                                                        };
-  #XXX what do these do?  do they need to be different from fileCreationTimeStamp?
-  $hash{batchControlInfo}->{transferCutOffTimeStamp} = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $now),
+
+  #The timestamp used to select calls for transfer.  All call records available prior to the timestamp are transferred.
+  # This gives an indication to the HPMN as to how ‘up-to-date’ the information is.
+  $hash{batchControlInfo}->{transferCutOffTimeStamp} = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $cdrs[-1]->calldate_unix ),
                                                          'utcTimeOffset'  => $utcTimeOffset,
                                                        };
 
+  #The date and time at which the file was made available to the Recipient PMN.
+  # Physically this will normally be the timestamp when the file transfer
+  # commenced to the Recipient PMN, i.e. start of push, however on some systems
+  # this will be the timestamp when the file was made available to be pulled.
   $hash{batchControlInfo}->{fileAvailableTimeStamp}  = { 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $now),
                                                           'utcTimeOffset'  => $utcTimeOffset,
                                                         };
 
-  #XXX
-  $hash{batchControlInfo}->{sender} = 'MDGTM';
+  # A unique identifier used to determine the network which is the Sender of the data.
+  # The full list of codes in use is given in TADIG PRD TD.13: PMN Naming Conventions.
+  $hash{batchControlInfo}->{sender} = $conf->config('cdr-gsm_tap3-sender') || 'ZZZZZ'; #reserved: Y*, ZO-ZZ
+
+  #XXX customer or agent field of some sort
+  # A unique identifier used to determine which network the data is being sent to,
+  #  i.e. the Recipient.
+  # Derivation: GSM Association PRD TD.13: PMN Naming Conventions.
   $hash{batchControlInfo}->{recipient} = 'GNQHT';
-  $hash{batchControlInfo}->{fileSequenceNumber} = '00178'; #XXX global?  per recipient?
+
+  #XXX
+  #A unique reference which identifies each TAP Data Interchange sent by one PMN to another, specific, PMN.
+  # The sequence commences at 1 and is incremented by one for each subsequent TAP Data Interchange sent by the Sender PMN to a particular Recipient PMN.
+  # Separate sequence numbering must be used for Test Data and Chargeable Data.  Having reached the maximum value (99999) the number must recycle to 1.
+  $hash{batchControlInfo}->{fileSequenceNumber} = '00178';
 
   ###
   # networkInfo
@@ -189,339 +211,348 @@ sub tap3_12_export {
   # callEventDetails
   ###
 
-  #one of Mobile Originated Call, Mobile Terminated Call, Mobile Session, Messaging Event, Supplementary Service Event, Service Centre Usage, GPRS Call, Content Transaction or Location Service
-  # Each occurrence must have no more than one of these present
-
-  $hash{callEventDetails} = [
-    map {
-          { #either tele or bearer service usage originated by the mobile subscription (others?)
-            'mobileOriginatedCall' => {
-
-              #identifies the Network Location, which includes the MSC responsible for handling
-              # the call and, where appropriate, the Geographical Location of the mobile
-              'locationInformation' => {
-                                         'networkLocation' => {
-                                                                'recEntityCode' => $_->carrierid, #XXX Recording Entity (per 2.5, from "Reference Tables")
-                                                              }
-                                       },
-
-              #Operator Specific Information: beyond the scope of TAP and has been bilaterally agreed
-              'operatorSpecInformation' => [
-                                             $_->userfield, ##'|Seq: 178 Loc: 1|'
-                                           ],
-
-              #The type of service used together with all related charging information
-              'basicServiceUsedList' => [
-                                          {
-                                            #identifies the actual Basic Service used
-                                            'basicService' => {
-                                                                #one of Teleservice Code or Bearer Service Code as determined by the service type used
-                                                                'serviceCode' => {
-                                                                                   #XXX
-                                                                                   #00 All teleservices
-                                                                                   #10 All Speech transmission services
-                                                                                   #11 Telephony
-                                                                                   #12 Emergency calls
-                                                                                   #20 All SMS Services
-                                                                                   #21 Short Message MT/PP
-                                                                                   #22 Short Message MO/PP
-                                                                                   #60 All Fax Services
-                                                                                   #61 Facsimile Group 3 & alternative speech
-                                                                                   #62 Automatic Facsimile Group 3
-                                                                                   #63 Automatic Facsimile Group 4
-                                                                                   #70 All data teleservices (compound)
-                                                                                   #80 All teleservices except SMS (compound)
-                                                                                   #90 All voice group call services
-                                                                                   #91 Voice group call
-                                                                                   #92 Voice broadcast call
-                                                                                   'teleServiceCode' => $_->servicecode, #'11'
-
-                                                                                   #Bearer Service Code
-                                                                                   # Must be present within group Service Code where the type of service used
-                                                                                   #  was a bearer service. Must not be present when the type of service used
-                                                                                   #  was a tele service and, therefore, Teleservice Code is present.
-                                                                                   # Group Bearer Codes, identifiable by the description ‘All’, should only
-                                                                                   #  be used where details of the specific services affected are not
-                                                                                   #  available from the network.
-                                                                                   #00 All Bearer Services
-                                                                                   #20 All Data Circuit Asynchronous Services
-                                                                                   #21 Duplex Asynch. 300bps data circuit
-                                                                                   #22 Duplex Asynch. 1200bps data circuit
-                                                                                   #23 Duplex Asynch. 1200/75bps data circuit
-                                                                                   #24 Duplex Asynch. 2400bps data circuit
-                                                                                   #25 Duplex Asynch. 4800bps data circuit
-                                                                                   #26 Duplex Asynch. 9600bps data circuit
-                                                                                   #27 General Data Circuit Asynchronous Service
-                                                                                   #30 All Data Circuit Synchronous Services
-                                                                                   #32 Duplex Synch. 1200bps data circuit
-                                                                                   #34 Duplex Synch. 2400bps data circuit
-                                                                                   #35 Duplex Synch. 4800bps data circuit
-                                                                                   #36 Duplex Synch. 9600bps data circuit
-                                                                                   #37 General Data Circuit Synchronous Service
-                                                                                   #40 All Dedicated PAD Access Services
-                                                                                   #41 Duplex Asynch. 300bps PAD access
-                                                                                   #42 Duplex Asynch. 1200bps PAD access
-                                                                                   #43 Duplex Asynch. 1200/75bps PAD access
-                                                                                   #44 Duplex Asynch. 2400bps PAD access
-                                                                                   #45 Duplex Asynch. 4800bps PAD access
-                                                                                   #46 Duplex Asynch. 9600bps PAD access
-                                                                                   #47 General PAD Access Service
-                                                                                   #50 All Dedicated Packet Access Services
-                                                                                   #54 Duplex Synch. 2400bps PAD access
-                                                                                   #55 Duplex Synch. 4800bps PAD access
-                                                                                   #56 Duplex Synch. 9600bps PAD access
-                                                                                   #57 General Packet Access Service
-                                                                                   #60 All Alternat Speech/Asynchronous Services
-                                                                                   #70 All Alternate Speech/Synchronous Services
-                                                                                   #80 All Speech followed by Data Asynchronous Services
-                                                                                   #90 All Speech followed by Data Synchronous Services
-                                                                                   #A0 All Data Circuit Asynchronous Services (compound)
-                                                                                   #B0 All Data Circuit Synchronous Services (compound)
-                                                                                   #C0 All Asynchronous Services (compound)
-                                                                                 }
-                                                                #conditionally also contain the following for UMTS: Transparency Indicator, Fixed Network User
-                                                                # Rate, User Protocol Indicator, Guaranteed Bit Rate and Maximum Bit Rate
-                                                              },
-
-                                            #Charge information is provided for all chargeable elements except within Messaging Event and Mobile Session call events
-                                            # must contain Charged Item and at least one occurrence of Charge Detail
-                                            'chargeInformationList' => [
-                                                                         {
-                                                                           #XXX
-                                                                           #mandatory
-                                                                           # the charging principle applied and the unitisation of Chargeable Units.  It
-                                                                           #  is not intended to identify the service used.
-                                                                           #A: Call set up attempt
-                                                                           #C: Content
-                                                                           #D: Duration based charge
-                                                                           #E: Event based charge
-                                                                           #F: Fixed (one-off) charge
-                                                                           #L: Calendar (for example daily usage charge)
-                                                                           #V: Volume (outgoing) based charge
-                                                                           #W: Volume (incoming) based charge
-                                                                           #X: Volume (total volume) based charge
-                                                                           #(?? fields to be used as a basis for the calculation of the correct Charge
-                                                                           #  A: Chargeable Units (if present)
-                                                                           #  D,V,W,X: Chargeable Units
-                                                                           #  C: Depends on the content
-                                                                           #  E: Not Applicable
-                                                                           #  F: Not Applicable
-                                                                           #  L: Call Event Start Timestamp)
-                                                                           'chargedItem' => 'D',
-
-                                                                           # the IOT used by the VPMN to price the call
-                                                                           'callTypeGroup' => {
-
-                                                                                                #The highest category call type in respect of the destination of the call
-                                                                                                #0: Unknown/Not Applicable
-                                                                                                #1: National
-                                                                                                #2: International
-                                                                                                #10: HGGSN/HP-GW
-                                                                                                #11: VGGSN/VP-GW
-                                                                                                #12: Other GGSN/Other P-GW
-                                                                                                #100: WLAN
-                                                                                                'callTypeLevel1' => $_->calltypenum,
-
-                                                                                                #the sub category of Call Type Level 1
-                                                                                                #0: Unknown/Not Applicable
-                                                                                                #1: Mobile
-                                                                                                #2: PSTN
-                                                                                                #3: Non Geographic
-                                                                                                #4: Premium Rate
-                                                                                                #5: Satellite destination
-                                                                                                #6: Forwarded call
-                                                                                                #7: Non forwarded call
-                                                                                                #10: Broadband
-                                                                                                #11: Narrowband
-                                                                                                #12: Conversational
-                                                                                                #13: Streaming
-                                                                                                #14: Interactive
-                                                                                                #15: Background
-                                                                                                'callTypeLevel2' => 0,
-
-                                                                                                #the sub category of Call Type Level 2
-                                                                                                'callTypeLevel3' => 0,
-                                                                                              },
-
-                                                                           #mandatory, at least one occurence must be present
-                                                                           #A repeating group detailing the Charge and/or charge element
-                                                                           # Note that, where a Charge has been levied, even where that Charge is zero,
-                                                                           #  there must be one occurance, and only one, with a Charge Type of '00'
-                                                                           'chargeDetailList' => [
-                                                                                                   {
-                                                                                                     #mandatory
-                                                                                                     # after discounts have been deducted but before any tax is added
-                                                                                                     'charge'          => $_->rated_price * 100000, #XXX numberOfDecimalPlaces 
-
-                                                                                                     #mandatory
-                                                                                                     # the type of charge represented
-                                                                                                     #00: Total charge for Charge Information (the invoiceable value)
-                                                                                                     #01: Airtime charge
-                                                                                                     #02: reserved
-                                                                                                     #03: Toll charge
-                                                                                                     #04: Directory assistance
-                                                                                                     #05–20: reserved
-                                                                                                     #21: VPMN surcharge
-                                                                                                     #50: Total charge for Charge Information according to the published IOT
-                                                                                                     #  Note that the use of value 50 is only for use by bilateral agreement, use without
-                                                                                                     #   bilateral agreement can be treated as per reserved values, that is ‘out of range’
-                                                                                                     #69–99: reserved
-                                                                                                     'chargeType'      => '00',
-
-                                                                                                     #conditional
-                                                                                                     # the number of units which are chargeable within the Charge Detail, this may not
-                                                                                                     # correspond to the number of rounded units charged.
-                                                                                                     # The item Charged Item defines what the units represent.
-                                                                                                     'chargeableUnits' => $_->quantity_able,
-
-                                                                                                     #optional
-                                                                                                     # the rounded number of units which are actually charged for
-                                                                                                     'chargedUnits'    => $_->quantity,
-                                                                                                   }
-                                                                                                 ],
-                                                                           'exchangeRateCode' => 1, #from header
-                                                                         }
-                                                                       ]
-                                          }
-                                        ],
-
-              #MO Basic Call Information provides the basic detail of who made the call and where to in respect of mobile originated traffic.
-              'basicCallInformation' => {
-                                          #mandatory
-                                          # the identification of the chargeable subscriber.
-                                          #  The group must contain either the IMSI or the MIN of the Chargeable Subscriber, but not both.
-                                          'chargeableSubscriber' => {
-                                                                      'simChargeableSubscriber' => {
-                                                                                                     'msisdn' => $_->charged_party, #src
-                                                                                                     'imsi'   => $_->charged_party_imsi,
-                                                                                                   }
-                                                                    },
-                                          # the start of the call event
-                                          'callEventStartTimeStamp' => {
-                                                                         'localTimeStamp' => time2str('%Y%m%d%H%M%S', $_->startdate),
-                                                                         'utcTimeOffsetCode' => 1
-                                                                       },
-
-                                          # the actual total duration of a call event as a number of seconds
-                                          'totalCallEventDuration' => $_->duration,
-
-                                          #conditional
-                                          # the number dialled by the subscriber (Called Number)
-                                          #  or the SMSC Address in case of SMS usage or in cases involving supplementary services
-                                          #   such as call forwarding or transfer etc., the number to which the call is routed
-                                          'destination' => {
-                                                             #the international representation of the destination
-                                                             'calledNumber' => $_->dst,
-
-                                                             #the actual digits as dialled by the subscriber, i.e. unmodified, in establishing a call
-                                                             # This will contain ‘+’ and ‘#’ where appropriate.
-                                                             #'dialledDigits' => '322221350'
-                                                           },
-                                        }
-            }
-          };
-        }
-      @cdrs
-  ];
-
+  $hash{callEventDetails} = [ map tap3_12_export_cdr($_), @cdrs ];
 
   ###
 
-
-  my $pdu = $TransferBatch->encode( \%hash );
-
-  return $pdu;
+  $TransferBatch->encode( \%hash );
 
 }
 
 sub _TransferBatch {
-          'accountingInfo' => {
-                                #mandatory
-                                'localCurrency' => 'USD',
-                                'currencyConversionInfo' => [
-                                                              {
-                                                                'numberOfDecimalPlaces' => 5,
-                                                                'exchangeRate' => 152549, #???
-                                                                'exchangeRateCode' => 1
-                                                              }
-                                                            ],
-                                'tapDecimalPlaces' => 5,
-                                #optional: may conditionally include taxation and discounting tables, and, optionally, TAP currency
-                              },
-          'batchControlInfo' => {
-                                  #mandatory
-                                  'specificationVersionNumber' => 3,
-                                  'releaseVersionNumber' => 12, #11?
 
-                                  #'sender' => 'MDGTM',
-                                  #'recipient' => 'GNQHT',
-                                  #'fileSequenceNumber' => '00178',
+  #accounting related information
+  'accountingInfo'   => {
+                          #mandatory
+                          #'localCurrency'          => 'USD',
+                          'tapDecimalPlaces'       => 5,
+                          'currencyConversionInfo' => [
+                                                        {
+                                                          'numberOfDecimalPlaces' => 5,
+                                                          'exchangeRate'          => 152549, #XXX ??? "exchange rate +VAT" ?
+                                                          'exchangeRateCode'      => 1
+                                                        }
+                                                      ],
+                          #optional: may conditionally include taxation and discounting tables, and, optionally, TAP currency
+                        },
 
-                                  #'transferCutOffTimeStamp' => {
-                                  #                               'localTimeStamp' => '20121230050222',
-                                  #                               'utcTimeOffset' => '+0300'
-                                  #                             },
-                                  #'fileAvailableTimeStamp' => {
-                                  #                              'localTimeStamp' => '20121230035052',
-                                  #                              'utcTimeOffset' => '+0100'
-                                  #                            }
+  'batchControlInfo' => {
+                          #mandatory
+                          'specificationVersionNumber' => 3,
+                          'releaseVersionNumber'       => 12,
 
-                                  #optional
-                                  #'fileCreationTimeStamp' => {
-                                  #                             'localTimeStamp' => '20121230050222',
-                                  #                             'utcTimeOffset' => '+0300'
-                                  #                           },
+                          #'sender' => 'MDGTM',
+                          #'recipient' => 'GNQHT',
+                          #'fileSequenceNumber' => '00178',
 
-                                  #optional: file type indicator which will only be present where the file represents test data
-                                  #optional: RAP File Sequence Number (used where the batch has previously been returned with a fatal error and is now being resubmitted) (not fileSequenceNumber?)
+                          #'transferCutOffTimeStamp' => {
+                          #                               'localTimeStamp' => '20121230050222',
+                          #                               'utcTimeOffset' => '+0300'
+                          #                             },
+                          #'fileAvailableTimeStamp' => {
+                          #                              'localTimeStamp' => '20121230035052',
+                          #                              'utcTimeOffset' => '+0100'
+                          #                            }
 
-                                  #optional: beyond the scope of TAP and has been bilaterally agreed
-                                  'operatorSpecInformation' => [
-                                                                 '', # XXX '|File proc MTH LUXMA: 1285348027|' Operator Specific Information
-                                                               ],
-             
+                          #optional
+                          #'fileCreationTimeStamp' => {
+                          #                             'localTimeStamp' => '20121230050222',
+                          #                             'utcTimeOffset' => '+0300'
+                          #                           },
 
-                                },
+                          #optional: file type indicator which will only be present where the file represents test data
+                          #optional: RAP File Sequence Number (used where the batch has previously been returned with a fatal error and is now being resubmitted) (not fileSequenceNumber?)
 
-          #Network Information is a group of related information which pertains to the Sender PMN
-          'networkInfo' => {
-                             #must be present where Recording Entity Codes are present within the TAP file
-                             'recEntityInfo' => [
-                                                  {
-                                                    'recEntityType' => 1, #MSC
-                                                    #'recEntityId' => '340010100',
-                                                    'recEntityCode' => 1
-                                                  },
-                                                  {
-                                                    'recEntityType' => 2, #SMSC
-                                                    #'recEntityId' => '240556000000',
-                                                    'recEntityCode' => 2
-                                                  },
-                                                ],
-                             #mandatory
-                             'utcTimeOffsetInfo' => [
-                                                      {
-                                                        'utcTimeOffset' => '+0300',
-                                                        'utcTimeOffsetCode' => 1
+                          #optional: beyond the scope of TAP and has been bilaterally agreed
+                          #'operatorSpecInformation' => [
+                          #                               '', # '|File proc MTH LUXMA: 1285348027|' Operator Specific Information
+                          #                                   # probably just leave out
+                          #                             ],
+     
+
+                        },
+
+  #Network Information is a group of related information which pertains to the Sender PMN
+  'networkInfo'      => {
+                          #must be present where Recording Entity Codes are present within the TAP file
+                          'recEntityInfo'     => [
+                                                   {
+                                                     'recEntityCode' => 1,
+                                                     'recEntityType' => 1, #MSC
+                                                     #'recEntityId'   => '340010100',
+                                                   },
+                                                   {
+                                                     'recEntityCode' => 2,
+                                                     'recEntityType' => 2, #SMSC
+                                                     #'recEntityId'   => '240556000000',
+                                                   },
+                                                 ],
+                          #mandatory
+                          'utcTimeOffsetInfo' => [
+                                                   {
+                                                     'utcTimeOffsetCode' => 1,
+                                                     #'utcTimeOffset'     => '+0300',
+                                                   }
+                                                 ]
+                        },
+
+  #identifies the end of the Transfer Batch
+  'auditControlInfo' => {
+                          #mandatory
+                          #'callEventDetailsCount' => 4,
+                          'totalTaxValue'         => 0,
+                          'totalDiscountValue'    => 0,
+                          #'totalCharge'           => 50474,
+
+                          #these two are optional
+                          #'earliestCallTimeStamp' => {
+                          #                             'localTimeStamp' => '20121229102501',
+                          #                             'utcTimeOffset' => '+0300'
+                          #                           },
+                          #'latestCallTimeStamp'   => {
+                          #                             'localTimeStamp' => '20121229102807',
+                          #                             'utcTimeOffset' => '+0300'
+                          #                           }
+                          #optional: beyond the scope of TAP and has been bilaterally agreed
+                          #'operatorSpecInformation' => [
+                          #                               '',
+                          #                             ],
+                        },
+}
+
+sub tap3_12_export_cdr {
+  my $self = shift;
+
+  #one of Mobile Originated Call, Mobile Terminated Call, Mobile Session, Messaging Event, Supplementary Service Event, Service Centre Usage, GPRS Call, Content Transaction or Location Service
+  # Each occurrence must have no more than one of these present
+
+  { #either tele or bearer service usage originated by the mobile subscription (others?)
+    'mobileOriginatedCall' => {
+
+      #identifies the Network Location, which includes the MSC responsible for handling
+      # the call and, where appropriate, the Geographical Location of the mobile
+      'locationInformation' => {
+                                 'networkLocation' => {
+                                                        'recEntityCode' => $self->carrierid, #XXX Recording Entity (per 2.5, from "Reference Tables")
                                                       }
-                                                    ]
-                           },
-          'auditControlInfo' => {
-                                  #'callEventDetailsCount' => 4, #mandatory
-                                  'totalTaxValue'         => 0, #mandatory
-                                  'totalDiscountValue'    => 0, #mandatory
-                                  #'totalCharge'           => 50474, #mandatory
+                               },
 
-                                  #these two are optional
-                                  #'earliestCallTimeStamp' => {
-                                  #                             'localTimeStamp' => '20121229102501',
-                                  #                             'utcTimeOffset' => '+0300'
-                                  #                           },
-                                  #'latestCallTimeStamp'   => {
-                                  #                             'localTimeStamp' => '20121229102807',
-                                  #                             'utcTimeOffset' => '+0300'
-                                  #                           }
-                                },
+      #Operator Specific Information: beyond the scope of TAP and has been bilaterally agreed
+      'operatorSpecInformation' => [
+                                     $self->userfield, ##'|Seq: 178 Loc: 1|'
+                                   ],
+
+      #The type of service used together with all related charging information
+      'basicServiceUsedList' => [
+                                  {
+                                    #identifies the actual Basic Service used
+                                    'basicService' => {
+                                                        #one of Teleservice Code or Bearer Service Code as determined by the service type used
+                                                        'serviceCode' => {
+                                                                           #XXX
+                                                                           #00 All teleservices
+                                                                           #10 All Speech transmission services
+                                                                           #11 Telephony
+                                                                           #12 Emergency calls
+                                                                           #20 All SMS Services
+                                                                           #21 Short Message MT/PP
+                                                                           #22 Short Message MO/PP
+                                                                           #60 All Fax Services
+                                                                           #61 Facsimile Group 3 & alternative speech
+                                                                           #62 Automatic Facsimile Group 3
+                                                                           #63 Automatic Facsimile Group 4
+                                                                           #70 All data teleservices (compound)
+                                                                           #80 All teleservices except SMS (compound)
+                                                                           #90 All voice group call services
+                                                                           #91 Voice group call
+                                                                           #92 Voice broadcast call
+                                                                           'teleServiceCode' => $self->servicecode, #'11'
+
+                                                                           #Bearer Service Code
+                                                                           # Must be present within group Service Code where the type of service used
+                                                                           #  was a bearer service. Must not be present when the type of service used
+                                                                           #  was a tele service and, therefore, Teleservice Code is present.
+                                                                           # Group Bearer Codes, identifiable by the description ‘All’, should only
+                                                                           #  be used where details of the specific services affected are not
+                                                                           #  available from the network.
+                                                                           #00 All Bearer Services
+                                                                           #20 All Data Circuit Asynchronous Services
+                                                                           #21 Duplex Asynch. 300bps data circuit
+                                                                           #22 Duplex Asynch. 1200bps data circuit
+                                                                           #23 Duplex Asynch. 1200/75bps data circuit
+                                                                           #24 Duplex Asynch. 2400bps data circuit
+                                                                           #25 Duplex Asynch. 4800bps data circuit
+                                                                           #26 Duplex Asynch. 9600bps data circuit
+                                                                           #27 General Data Circuit Asynchronous Service
+                                                                           #30 All Data Circuit Synchronous Services
+                                                                           #32 Duplex Synch. 1200bps data circuit
+                                                                           #34 Duplex Synch. 2400bps data circuit
+                                                                           #35 Duplex Synch. 4800bps data circuit
+                                                                           #36 Duplex Synch. 9600bps data circuit
+                                                                           #37 General Data Circuit Synchronous Service
+                                                                           #40 All Dedicated PAD Access Services
+                                                                           #41 Duplex Asynch. 300bps PAD access
+                                                                           #42 Duplex Asynch. 1200bps PAD access
+                                                                           #43 Duplex Asynch. 1200/75bps PAD access
+                                                                           #44 Duplex Asynch. 2400bps PAD access
+                                                                           #45 Duplex Asynch. 4800bps PAD access
+                                                                           #46 Duplex Asynch. 9600bps PAD access
+                                                                           #47 General PAD Access Service
+                                                                           #50 All Dedicated Packet Access Services
+                                                                           #54 Duplex Synch. 2400bps PAD access
+                                                                           #55 Duplex Synch. 4800bps PAD access
+                                                                           #56 Duplex Synch. 9600bps PAD access
+                                                                           #57 General Packet Access Service
+                                                                           #60 All Alternat Speech/Asynchronous Services
+                                                                           #70 All Alternate Speech/Synchronous Services
+                                                                           #80 All Speech followed by Data Asynchronous Services
+                                                                           #90 All Speech followed by Data Synchronous Services
+                                                                           #A0 All Data Circuit Asynchronous Services (compound)
+                                                                           #B0 All Data Circuit Synchronous Services (compound)
+                                                                           #C0 All Asynchronous Services (compound)
+                                                                         }
+                                                        #conditionally also contain the following for UMTS: Transparency Indicator, Fixed Network User
+                                                        # Rate, User Protocol Indicator, Guaranteed Bit Rate and Maximum Bit Rate
+                                                      },
+
+                                    #Charge information is provided for all chargeable elements except within Messaging Event and Mobile Session call events
+                                    # must contain Charged Item and at least one occurrence of Charge Detail
+                                    'chargeInformationList' => [
+                                                                 {
+                                                                   #XXX
+                                                                   #mandatory
+                                                                   # the charging principle applied and the unitisation of Chargeable Units.  It
+                                                                   #  is not intended to identify the service used.
+                                                                   #A: Call set up attempt
+                                                                   #C: Content
+                                                                   #D: Duration based charge
+                                                                   #E: Event based charge
+                                                                   #F: Fixed (one-off) charge
+                                                                   #L: Calendar (for example daily usage charge)
+                                                                   #V: Volume (outgoing) based charge
+                                                                   #W: Volume (incoming) based charge
+                                                                   #X: Volume (total volume) based charge
+                                                                   #(?? fields to be used as a basis for the calculation of the correct Charge
+                                                                   #  A: Chargeable Units (if present)
+                                                                   #  D,V,W,X: Chargeable Units
+                                                                   #  C: Depends on the content
+                                                                   #  E: Not Applicable
+                                                                   #  F: Not Applicable
+                                                                   #  L: Call Event Start Timestamp)
+                                                                   'chargedItem' => 'D',
+
+                                                                   # the IOT used by the VPMN to price the call
+                                                                   'callTypeGroup' => {
+
+                                                                                        #The highest category call type in respect of the destination of the call
+                                                                                        #0: Unknown/Not Applicable
+                                                                                        #1: National
+                                                                                        #2: International
+                                                                                        #10: HGGSN/HP-GW
+                                                                                        #11: VGGSN/VP-GW
+                                                                                        #12: Other GGSN/Other P-GW
+                                                                                        #100: WLAN
+                                                                                        'callTypeLevel1' => $self->calltypenum,
+
+                                                                                        #the sub category of Call Type Level 1
+                                                                                        #0: Unknown/Not Applicable
+                                                                                        #1: Mobile
+                                                                                        #2: PSTN
+                                                                                        #3: Non Geographic
+                                                                                        #4: Premium Rate
+                                                                                        #5: Satellite destination
+                                                                                        #6: Forwarded call
+                                                                                        #7: Non forwarded call
+                                                                                        #10: Broadband
+                                                                                        #11: Narrowband
+                                                                                        #12: Conversational
+                                                                                        #13: Streaming
+                                                                                        #14: Interactive
+                                                                                        #15: Background
+                                                                                        'callTypeLevel2' => 0,
+
+                                                                                        #the sub category of Call Type Level 2
+                                                                                        'callTypeLevel3' => 0,
+                                                                                      },
+
+                                                                   #mandatory, at least one occurence must be present
+                                                                   #A repeating group detailing the Charge and/or charge element
+                                                                   # Note that, where a Charge has been levied, even where that Charge is zero,
+                                                                   #  there must be one occurance, and only one, with a Charge Type of '00'
+                                                                   'chargeDetailList' => [
+                                                                                           {
+                                                                                             #mandatory
+                                                                                             # after discounts have been deducted but before any tax is added
+                                                                                             'charge'          => $self->rated_price * 100000, #XXX numberOfDecimalPlaces 
+
+                                                                                             #mandatory
+                                                                                             # the type of charge represented
+                                                                                             #00: Total charge for Charge Information (the invoiceable value)
+                                                                                             #01: Airtime charge
+                                                                                             #02: reserved
+                                                                                             #03: Toll charge
+                                                                                             #04: Directory assistance
+                                                                                             #05–20: reserved
+                                                                                             #21: VPMN surcharge
+                                                                                             #50: Total charge for Charge Information according to the published IOT
+                                                                                             #  Note that the use of value 50 is only for use by bilateral agreement, use without
+                                                                                             #   bilateral agreement can be treated as per reserved values, that is ‘out of range’
+                                                                                             #69–99: reserved
+                                                                                             'chargeType'      => '00',
+
+                                                                                             #conditional
+                                                                                             # the number of units which are chargeable within the Charge Detail, this may not
+                                                                                             # correspond to the number of rounded units charged.
+                                                                                             # The item Charged Item defines what the units represent.
+                                                                                             'chargeableUnits' => $self->quantity_able,
+
+                                                                                             #optional
+                                                                                             # the rounded number of units which are actually charged for
+                                                                                             'chargedUnits'    => $self->quantity,
+                                                                                           }
+                                                                                         ],
+                                                                   'exchangeRateCode' => 1, #from header
+                                                                 }
+                                                               ]
+                                  }
+                                ],
+
+      #MO Basic Call Information provides the basic detail of who made the call and where to in respect of mobile originated traffic.
+      'basicCallInformation' => {
+                                  #mandatory
+                                  # the identification of the chargeable subscriber.
+                                  #  The group must contain either the IMSI or the MIN of the Chargeable Subscriber, but not both.
+                                  'chargeableSubscriber' => {
+                                                              'simChargeableSubscriber' => {
+                                                                                             'msisdn' => $self->charged_party, #src
+                                                                                             'imsi'   => $self->charged_party_imsi,
+                                                                                           }
+                                                            },
+                                  # the start of the call event
+                                  'callEventStartTimeStamp' => {
+                                                                 'localTimeStamp' => time2str('%Y%m%d%H%M%S', $self->startdate),
+                                                                 'utcTimeOffsetCode' => 1
+                                                               },
+
+                                  # the actual total duration of a call event as a number of seconds
+                                  'totalCallEventDuration' => $self->duration,
+
+                                  #conditional
+                                  # the number dialled by the subscriber (Called Number)
+                                  #  or the SMSC Address in case of SMS usage or in cases involving supplementary services
+                                  #   such as call forwarding or transfer etc., the number to which the call is routed
+                                  'destination' => {
+                                                     #the international representation of the destination
+                                                     'calledNumber' => $self->dst,
+
+                                                     #the actual digits as dialled by the subscriber, i.e. unmodified, in establishing a call
+                                                     # This will contain ‘+’ and ‘#’ where appropriate.
+                                                     #'dialledDigits' => '322221350'
+                                                   },
+                                }
+    }
+  };
+
 }
 
 sub _asn_spec {

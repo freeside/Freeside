@@ -985,6 +985,14 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'currency',
+    'section'     => 'billing',
+    'description' => 'Currency',
+    'type'        => 'select',
+    'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD XAF ) ],
+  },
+
+  {
     'key'         => 'business-batchpayment-test_transaction',
     'section'     => 'billing',
     'description' => 'Turns on the Business::BatchPayment test_mode flag.  Note that not all gateway modules support this flag; if yours does not, using the batch gateway will fail.',
@@ -4723,6 +4731,13 @@ and customer address. Include units.',
     'section'     => 'telephony',
     'description' => 'For Asterisk CDRs, assign CDR type numbers based on Australian conventions.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cdr-gsm_tap3-sender',
+    'section'     => 'telephony',
+    'description' => 'GSM TAP3 Sender network (5 letter code)',
+    'type'        => 'text',
   },
 
   {
