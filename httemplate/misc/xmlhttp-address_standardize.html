@@ -16,12 +16,10 @@ my %old = %{ decode_json($cgi->param('arg')) }
 
 my %new;
 
-my @prefixes;
-if ($old{onlyship}) {
-  @prefixes = ('ship_');
-} elsif ( $old{same} ) {
+my @prefixes = ('');
+if ( $old{same} ) {
   @prefixes = ('bill_');
-} else {
+} elsif ( $old{billship} ) {
   @prefixes = ('bill_', 'ship_');
 }
 my $all_same = 1;
@@ -44,6 +42,8 @@ foreach my $pre ( @prefixes ) {
     $all_same = 0 if ( $new{$pre.$_} ne $old{$pre.$_} );
     last if !$all_same;
   }
+
+  $all_same = 0 if $new{$pre.'error'};
 }
 
 my $return = { old => \%old, new => \%new, all_same => $all_same };

@@ -70,8 +70,8 @@ function copy_payby_fields() {
 
 <& /elements/standardize_locations.js,
   'callback' => 'submit_continue();',
-  'main_prefix' => 'bill_',
-  'no_company' => 1,
+  'billship' => 1,
+  'with_census' => 1, # no with_firm, apparently
 &>
 
 function copyelement(from, to) {

@@ -1,8 +1,4 @@
 % if ( @$packages ) { 
-%   my $bgcolor1 = '#eeeeee';
-%   my $bgcolor2 = '#ffffff';
-%   my $bgcolor = '';
-
 <TR>
 % #my $width = $show_location ? 'WIDTH="25%"' : 'WIDTH="33%"';
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Package') |h %></TH>
@@ -15,39 +11,38 @@
 
 % #$FS::cust_pkg::DEBUG = 2;
 %   foreach my $cust_pkg (@$packages) {
+    <& .packagerow, $cust_pkg,
+        'cust_main' => $opt{'cust_main'},
+        %conf_opt
+    &>
+%   }
+% } else { # there are no packages
+<BR>
+% }
+<%def .packagerow>
 %
-%     if ( $bgcolor eq $bgcolor1 ) {
-%       $bgcolor = $bgcolor2;
-%     } else {
-%       $bgcolor = $bgcolor1;
-%     }
-%
-%     my %iopt = (
-%       'bgcolor'   => $bgcolor,
-%       'cust_pkg'  => $cust_pkg,
-%       'part_pkg'  => $cust_pkg->part_pkg,
-%       'cust_main' => $opt{'cust_main'},
-%       %conf_opt,
-%     );
-%
-
+% my ($cust_pkg, %iopt) = @_;
+% $iopt{'cust_pkg'} = $cust_pkg;
+% $iopt{'part_pkg'} = $cust_pkg->part_pkg;
   <!--pkgnum: <% $cust_pkg->pkgnum %>-->
-  <TR>
+  <TR CLASS="row<%$row % 2%>">
     <& package.html, %iopt &>
     <& status.html, %iopt &>
-%     if ( $show_location ) {
+%     if ( $iopt{'show_location'} ) {
     <& location.html, %iopt &>
 %     }
     <& services.html, %iopt &>
   </TR>
-
-%   } #foreach $cust_pkg
-%# </TABLE>
-% } #if @$packages
-% else {
-<BR>
+% $row++;
+% # include supplemental packages if any
+% $iopt{'supplemental'} = ($iopt{'supplemental'} || 0) + 1;
+% foreach my $supp_pkg ($cust_pkg->supplemental_pkgs) {
+    <& .packagerow, $supp_pkg, %iopt &>
 % }
-
+</%def>
+<%shared>
+my $row = 0;
+</%shared>
 <%init>
 
 my %opt = @_;

@@ -185,6 +185,15 @@ my @process_m2m = (
                         grep /^svc_dst_pkgpart/, $cgi->param
                       ],
   },
+  { 'link_table'   => 'part_pkg_link',
+    'target_table' => 'part_pkg',
+    'base_field'   => 'src_pkgpart',
+    'target_field' => 'dst_pkgpart',
+    'hashref'      => { 'link_type' => 'supp', 'hidden' => '' },
+    'params'       => [ map $cgi->param($_),
+                        grep /^supp_dst_pkgpart/, $cgi->param
+                      ],
+  },
   map { 
     my $hidden = $_;
     { 'link_table'   => 'part_pkg_link',

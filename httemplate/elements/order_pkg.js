@@ -44,4 +44,5 @@ function standardize_new_location() {
 
 function submit_abort() {
   document.OrderPkgForm.submitButton.disabled = false;
+  nd(1);
 }

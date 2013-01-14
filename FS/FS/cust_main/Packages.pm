@@ -29,6 +29,9 @@ These methods are available on FS::cust_main objects;
 
 Orders a single package.
 
+Note that if the package definition has supplemental packages, those will
+be ordered as well.
+
 Options may be passed as a list of key/value pairs or as a hash reference.
 Options are:
 
@@ -138,6 +141,34 @@ sub order_pkg {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting svc_ (transaction rolled back): $error";
+    }
+  }
+
+  # add supplemental packages, if any are needed
+  my $part_pkg = FS::part_pkg->by_key($cust_pkg->pkgpart);
+  foreach my $link ($part_pkg->supp_part_pkg_link) {
+    warn "inserting supplemental package ".$link->dst_pkgpart;
+    my $pkg = FS::cust_pkg->new({
+        'pkgpart'       => $link->dst_pkgpart,
+        'pkglinknum'    => $link->pkglinknum,
+        'custnum'       => $self->custnum,
+        'main_pkgnum'   => $cust_pkg->pkgnum,
+        'locationnum'   => $cust_pkg->locationnum,
+        # try to prevent as many surprises as possible
+        'pkgbatch'      => $cust_pkg->pkgbatch,
+        'start_date'    => $cust_pkg->start_date,
+        'order_date'    => $cust_pkg->order_date,
+        'expire'        => $cust_pkg->expire,
+        'adjourn'       => $cust_pkg->adjourn,
+        'contract_end'  => $cust_pkg->contract_end,
+        'refnum'        => $cust_pkg->refnum,
+        'discountnum'   => $cust_pkg->discountnum,
+        'waive_setup'   => $cust_pkg->waive_setup,
+    });
+    $error = $self->order_pkg('cust_pkg' => $pkg);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting supplemental package: $error";
     }
   }
 

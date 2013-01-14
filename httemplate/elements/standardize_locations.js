@@ -7,8 +7,8 @@ function status_message(text, caption) {
 function form_address_info() {
   var cf = document.<% $formname %>;
 
-  var returnobj = { onlyship: <% $onlyship ? 1 : 0 %> };
-% if ( !$onlyship ) {
+  var returnobj = { billship: <% $billship %> };
+% if ( $billship ) {
   returnobj['same'] = cf.elements['same'].checked;
 % }
 % if ( $withfirm ) {
@@ -59,16 +59,12 @@ function standardize_locations() {
     cf.elements['<% $pre %>coord_auto'].value = 'Y';
     changed = true;
   }
-
+  // standardize if the old address wasn't clean
+  if ( cf.elements['<% $pre %>addr_clean'].value == '' ) {
+    changed = true;
+  }
 % } #foreach $pre
 
-  // standardize if the old address wasn't clean
-  if ( cf.elements['old_ship_addr_clean'].value == '' ||
-       cf.elements['old_bill_addr_clean'].value == '' ) {
-
-    changed = true;
-
-  }
   // or if it was clean but has been changed
   for (var key in address_info) {
     var old_el = cf.elements['old_'+key];
@@ -81,7 +77,7 @@ function standardize_locations() {
 % # If address hasn't been changed, auto-confirm the existing value of 
 % # censustract so that we don't ask the user to confirm it again.
 
-  if ( !changed ) {
+  if ( !changed && <% $withcensus %> ) {
     if ( address_info['same'] ) {
       cf.elements['bill_censustract'].value =
         address_info['bill_censustract'];
@@ -279,21 +275,18 @@ function setselect(el, value) {
 my %opt = @_;
 my $conf = new FS::Conf;
 
-my $withfirm = 1;
-my $withcensus = 1;
+my $withfirm = $opt{'with_firm'} ? 1 : 0;
+my $withcensus = $opt{'with_census'} ? 1 : 0;
+
+my @prefixes = '';
+my $billship = $opt{'billship'} ? 1 : 0; # whether to have bill_ and ship_ prefixes
+my $taxpre = '';
+if ($billship) {
+  @prefixes = qw(bill_ ship_);
+  $taxpre = $conf->exists('tax-ship_address') ? 'ship_' : 'bill_';
+}
 
 my $formname =  $opt{form} || 'CustomerForm';
-my $onlyship =  $opt{onlyship} || '';
-#my $main_prefix =  $opt{main_prefix} || '';
-#my $ship_prefix =  $opt{ship_prefix} || ($onlyship ? '' : 'ship_');
-# The prefixes are now 'ship_' and 'bill_'.
-my $taxpre = 'bill_';
-$taxpre = 'ship_' if ( $conf->exists('tax-ship_address') || $onlyship );
 my $post_geocode = $opt{callback} || 'post_geocode();';
-$withfirm = 0 if $opt{no_company};
-$withcensus = 0 if $opt{no_census};
-
-my @prefixes = ('ship_');
-unshift @prefixes, 'bill_' unless $onlyship;
 
 </%init>

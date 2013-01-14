@@ -197,6 +197,15 @@ Previous locationnum
 
 =item waive_setup
 
+=item main_pkgnum
+
+The pkgnum of the package that this package is supplemental to, if any.
+
+=item pkglinknum
+
+The package link (L<FS::part_pkg_link>) that defines this supplemental
+package, if it is one.
+
 =back
 
 Note: setup, last_bill, bill, adjourn, susp, expire, cancel and change_date
@@ -616,6 +625,8 @@ sub check {
     || $self->ut_numbern('agent_pkgid')
     || $self->ut_enum('recur_show_zero', [ '', 'Y', 'N', ])
     || $self->ut_enum('setup_show_zero', [ '', 'Y', 'N', ])
+    || $self->ut_foreign_keyn('main_pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_foreign_keyn('pkglinknum', 'part_pkg_link', 'pkglinknum')
   ;
   return $error if $error;
 
@@ -730,6 +741,11 @@ sub cancel {
   my( $self, %options ) = @_;
   my $error;
 
+  # pass all suspend/cancel actions to the main package
+  if ( $self->main_pkgnum and !$options{'from_main'} ) {
+    return $self->main_pkg->cancel(%options);
+  }
+
   my $conf = new FS::Conf;
 
   warn "cust_pkg::cancel called with options".
@@ -835,6 +851,14 @@ sub cancel {
     return $error;
   }
 
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->cancel(%options, 'from_main' => 1);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "canceling supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   return '' if $date; #no errors
 
@@ -894,6 +918,9 @@ svc_fatal: service provisioning errors are fatal
 
 svc_errors: pass an array reference, will be filled in with any provisioning errors
 
+main_pkgnum: link the package as a supplemental package of this one.  For 
+internal use only.
+
 =cut
 
 sub uncancel {
@@ -901,6 +928,10 @@ sub uncancel {
 
   #in case you try do do $uncancel-date = $cust_pkg->uncacel 
   return '' unless $self->get('cancel');
+
+  if ( $self->main_pkgnum and !$options{'main_pkgnum'} ) {
+    return $self->main_pkg->uncancel(%options);
+  }
 
   ##
   # Transaction-alize
@@ -926,6 +957,7 @@ sub uncancel {
     bill            => ( $options{'bill'}      || $self->get('bill')      ),
     uncancel        => time,
     uncancel_pkgnum => $self->pkgnum,
+    main_pkgnum     => ($options{'main_pkgnum'} || ''),
     map { $_ => $self->get($_) } qw(
       custnum pkgpart locationnum
       setup
@@ -1023,6 +1055,20 @@ sub uncancel {
   }
 
   ##
+  # Uncancel any supplemental packages, and make them supplemental to the 
+  # new one.
+  ##
+
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    my $new_pkg;
+    $error = $supp_pkg->uncancel(%options, 'main_pkgnum' => $cust_pkg->pkgnum);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "canceling supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
+  }
+
+  ##
   # Finish
   ##
 
@@ -1111,6 +1157,9 @@ of final invoices or unused-time credits
 unsuspended.  This may be more convenient than calling C<unsuspend()>
 separately.
 
+=item from_main - allows a supplemental package to be suspended, rather
+than redirecting the method call to its main package.  For internal use.
+
 =back
 
 If there is an error, returns the error, otherwise returns false.
@@ -1120,6 +1169,11 @@ If there is an error, returns the error, otherwise returns false.
 sub suspend {
   my( $self, %options ) = @_;
   my $error;
+
+  # pass all suspend/cancel actions to the main package
+  if ( $self->main_pkgnum and !$options{'from_main'} ) {
+    return $self->main_pkg->suspend(%options);
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1271,6 +1325,14 @@ sub suspend {
 
   }
 
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->suspend(%options, 'from_main' => 1);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "suspending supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
@@ -1352,6 +1414,11 @@ If there is an error, returns the error, otherwise returns false.
 sub unsuspend {
   my( $self, %opt ) = @_;
   my $error;
+
+  # pass all suspend/cancel actions to the main package
+  if ( $self->main_pkgnum and !$opt{'from_main'} ) {
+    return $self->main_pkg->unsuspend(%opt);
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1509,6 +1576,14 @@ sub unsuspend {
            "$error\n";
     }
 
+  }
+
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->unsuspend(%opt, 'from_main' => 1);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "unsuspending supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -1700,7 +1775,6 @@ sub change {
     locationnum  => ( $opt->{'locationnum'}                        ),
     %hash,
   };
-
   $error = $cust_pkg->insert( 'change' => 1 );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
@@ -1749,11 +1823,63 @@ sub change {
     }
   }
 
+  # Order any supplemental packages.
+  my $part_pkg = $cust_pkg->part_pkg;
+  my @old_supp_pkgs = $self->supplemental_pkgs;
+  my @new_supp_pkgs;
+  foreach my $link ($part_pkg->supp_part_pkg_link) {
+    my $old;
+    foreach (@old_supp_pkgs) {
+      if ($_->pkgpart == $link->dst_pkgpart) {
+        $old = $_;
+        $_->pkgpart(0); # so that it can't match more than once
+      }
+      last if $old;
+    }
+    # false laziness with FS::cust_main::Packages::order_pkg
+    my $new = FS::cust_pkg->new({
+        pkgpart       => $link->dst_pkgpart,
+        pkglinknum    => $link->pkglinknum,
+        custnum       => $self->custnum,
+        main_pkgnum   => $cust_pkg->pkgnum,
+        locationnum   => $cust_pkg->locationnum,
+        start_date    => $cust_pkg->start_date,
+        order_date    => $cust_pkg->order_date,
+        expire        => $cust_pkg->expire,
+        adjourn       => $cust_pkg->adjourn,
+        contract_end  => $cust_pkg->contract_end,
+        refnum        => $cust_pkg->refnum,
+        discountnum   => $cust_pkg->discountnum,
+        waive_setup   => $cust_pkg->waive_setup
+    });
+    if ( $old and $opt->{'keep_dates'} ) {
+      foreach (qw(setup bill last_bill)) {
+        $new->set($_, $old->get($_));
+      }
+    }
+    $error = $new->insert;
+    # transfer services
+    if ( $old ) {
+      $error ||= $old->transfer($new);
+    }
+    if ( $error and $error > 0 ) {
+      # no reason why this should ever fail, but still...
+      $error = "Unable to transfer all services from supplemental package ".
+        $old->pkgnum;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    push @new_supp_pkgs, $new;
+  }
+
   #Good to go, cancel old package.  Notify 'cancel' of whether to credit 
   #remaining time.
   #Don't allow billing the package (preceding period packages and/or 
   #outstanding usage) if we are keeping dates (i.e. location changing), 
   #because the new package will be billed for the same date range.
+  #Supplemental packages are also canceled here.
   $error = $self->cancel(
     quiet         => 1, 
     unused_credit => $unused_credit,
@@ -1766,7 +1892,9 @@ sub change {
 
   if ( $conf->exists('cust_pkg-change_pkgpart-bill_now') ) {
     #$self->cust_main
-    my $error = $cust_pkg->cust_main->bill( 'pkg_list' => [ $cust_pkg ] );
+    my $error = $cust_pkg->cust_main->bill( 
+      'pkg_list' => [ $cust_pkg, @new_supp_pkgs ]
+    );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -3139,6 +3267,31 @@ sub cust_pkg_discount_active {
 
 =back
 
+=item supplemental_pkgs
+
+Returns a list of all packages supplemental to this one.
+
+=cut
+
+sub supplemental_pkgs {
+  my $self = shift;
+  qsearch('cust_pkg', { 'main_pkgnum' => $self->pkgnum });
+}
+
+=item main_pkg
+
+Returns the package that this one is supplemental to, if any.
+
+=cut
+
+sub main_pkg {
+  my $self = shift;
+  if ( $self->main_pkgnum ) {
+    return FS::cust_pkg->by_key($self->main_pkgnum);
+  }
+  return;
+}
+
 =head1 CLASS METHODS
 
 =over 4
@@ -3951,11 +4104,25 @@ sub order {
                                       %hash,
                                     };
     $error = $cust_pkg->insert( 'change' => $change );
+    push @$return_cust_pkg, $cust_pkg;
+
+    foreach my $link ($cust_pkg->part_pkg->supp_part_pkg_link) {
+      my $supp_pkg = FS::cust_pkg->new({
+          custnum => $custnum,
+          pkgpart => $link->dst_pkgpart,
+          refnum  => $refnum,
+          main_pkgnum => $cust_pkg->pkgnum,
+          %hash,
+      });
+      $error ||= $supp_pkg->insert( 'change' => $change );
+      push @$return_cust_pkg, $supp_pkg;
+    }
+
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-    push @$return_cust_pkg, $cust_pkg;
+
   }
   # $return_cust_pkg now contains refs to all of the newly 
   # created packages.

@@ -9,6 +9,29 @@
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
 
+<SCRIPT TYPE="text/javascript">
+var submit_fields = [];
+function confirm_changes() {
+  var i;
+  var querystring = 'pkgnum=<%$pkgnum%>';
+  var f = document.forms.formname;
+  for(i = 0; i < submit_fields.length; i++) {
+    querystring += ';'
+                + submit_fields[i]
+                + '='
+                + encodeURIComponent(f.elements[submit_fields[i] + '_text'].value);
+  }
+  overlib(
+    OLiframeContent(
+      '<%$p%>/misc/confirm-cust_pkg-edit_dates.html?' + querystring,
+      576, 576, 'confirm_popup'
+    ),
+    CAPTION, 'Package date changes', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', 
+    MIDX, 0, MIDY, 0, DRAGGABLE, BGCOLOR, '#333399', CGCOLOR, '#333399', 
+    TEXTSIZE, 3
+  );
+}
+</SCRIPT>
 <FORM NAME="formname" ACTION="process/REAL_cust_pkg.cgi" METHOD="POST">
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 
@@ -31,6 +54,15 @@
     <TD BGCOLOR="#ffffff"><% $part_pkg->pkg %></TD>
   </TR>
 
+% if ( $cust_pkg->main_pkgnum ) {
+%   my $main_pkg = $cust_pkg->main_pkg;
+  <TR>
+    <TD ALIGN="right">Supplemental to</TD>
+    <TD BGCOLOR="#ffffff">Package #<% $cust_pkg->main_pkgnum%>:&nbsp;\
+    <% $main_pkg->part_pkg->pkg %></TD>
+  </TR>
+
+% }
   <TR>
     <TD ALIGN="right">Custom</TD>
     <TD BGCOLOR="#ffffff"><% $part_pkg->custom %></TD>
@@ -50,14 +82,14 @@
 % if ( $cust_pkg->setup && ! $cust_pkg->start_date ) {
   <& .row_display, cust_pkg=>$cust_pkg, column=>'start_date',   label=>'Start' &>
 % } else {
-  <& .row_edit, cust_pkg=>$cust_pkg, column=>'start_date', label=>'Start' &>
+  <& .row_edit, cust_pkg=>$cust_pkg, column=>'start_date', label=>'Start', if_primary=>1 &>
 % }
 
-  <& .row_edit, cust_pkg=>$cust_pkg, column=>'setup',     label=>'Setup' &>
+  <& .row_edit, cust_pkg=>$cust_pkg, column=>'setup',     label=>'Setup', if_primary=>1 &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'last_bill', label=>$last_bill_or_renewed &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'bill',      label=>$next_bill_or_prepaid_until &>
 %#if ( $cust_pkg->contract_end or $part_pkg->option('contract_end_months',1) ) {
-    <& .row_edit, cust_pkg=>$cust_pkg, column=>'contract_end',label=>'Contract end' &>
+    <& .row_edit, cust_pkg=>$cust_pkg, column=>'contract_end',label=>'Contract end', if_primary=>1 &>
 %#}
   <& .row_display, cust_pkg=>$cust_pkg, column=>'adjourn',  label=>'Adjournment', note=>'(will <b>suspend</b> this package when the date is reached)' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'susp',     label=>'Suspension' &>
@@ -73,10 +105,17 @@
   $column
   $label
   $note => ''
+  $if_primary => 0
 </%args>
 % my $value = $cust_pkg->get($column);
 % $value = $value ? time2str($format, $value) : "";
-
+%
+% # if_primary for the dates that can't be edited on supplemental packages
+% if ($if_primary and $cust_pkg->main_pkgnum) {
+  <INPUT TYPE="hidden" ID="<%$column%>_text" VALUE="<% $cust_pkg->get($column) %>">
+  <SCRIPT>submit_fields.push('<%$column%>');</SCRIPT>
+  <& .row_display, %ARGS &>
+% } else {
   <TR>
     <TD ALIGN="right"><% $label %> date</TD>
     <TD>
@@ -104,8 +143,11 @@
       button:     "<% $column %>_button",
       align:      "BR"
     });
-  </SCRIPT>
 
+    submit_fields.push('<%$column%>');
+
+  </SCRIPT>
+% }
 </%def>
 
 <%def .row_display>
@@ -114,6 +156,7 @@
   $column
   $label
   $note => ''
+  $is_primary => 0 #ignored
 </%args>
 % if ( $cust_pkg->get($column) ) { 
     <TR>
@@ -130,7 +173,7 @@
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="<% mt('Apply changes') |h %>">
+<INPUT TYPE="button" VALUE="<% mt('Apply changes') |h %>" onclick="confirm_changes()">
 </FORM>
 
 <% include('/elements/footer.html') %>
@@ -160,38 +203,6 @@ if ( $cgi->param('error') ) {
     my @errors = ();
     my %errors = map { $_=>1 } split(',', $cgi->param('error'));
     $cgi->param('error', '');
-
-    if ( $errors{'_bill_areyousure'} ) {
-      if ( $cgi->param('bill') =~ /^([\s\d\/\:\-\(\w\)]*)$/ ) {
-        my $bill = $1;
-        push @errors,
-          "You are attempting to set the next bill date to $bill, which is
-           in the past.  This will charge the customer for the interval
-           from $bill until now.  Are you sure you want to do this? ".
-          '<INPUT TYPE="checkbox" NAME="bill_areyousure" VALUE="1">';
-      }
-    }
-
-    if ( $errors{'_setup_areyousure'} ) {
-      push @errors,
-        "You are attempting to remove the setup date.  This will re-charge the
-         customer for the setup fee.  Are you sure you want to do this? ".
-        '<INPUT TYPE="checkbox" NAME="setup_areyousure" VALUE="1">';
-    }
-
-    if ( $errors{'_setupadd_areyousure'} ) {
-      push @errors,
-        "You are attempting to add a setup date.  This will prevent charging the
-         customer for the setup fee.  Are you sure you want to do this? ".
-        '<INPUT TYPE="checkbox" NAME="setupadd_areyousure" VALUE="1">';
-    }
-
-    if ( $errors{'_start'} ) {
-      push @errors,
-        "You are attempting to add a start date to a package that has already
-         started billing.";
-    }
-
     $error = join('<BR><BR>', @errors );
 
   }

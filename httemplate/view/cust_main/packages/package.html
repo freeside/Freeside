@@ -1,5 +1,6 @@
-<TD CLASS="inv" BGCOLOR="<% $bgcolor %>" VALIGN="top">
-  <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+<TD CLASS="inv package" BGCOLOR="<% $bgcolor %>" VALIGN="top"
+  STYLE="border-left-width: <% $supplemental * 30 %>px">
+  <TABLE CLASS="inv package"> 
     <TR>
       <TD COLSPAN=2>
         <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
@@ -17,7 +18,7 @@
         <B><% $cust_pkg->quantity %></B>
       </TD>
     </TR>
-%  }
+% }
 
     <TR>
       <TD COLSPAN=2>
@@ -25,42 +26,51 @@
 
 %         unless ( $cust_pkg->get('cancel') ) { 
 %
-%           my $br = 0;
-%           if ( $curuser->access_right('Change customer package') ) {
-%             $br=1;
-              (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
+%           if ( $supplemental ) {
+%             # then only show "Edit dates", "Add invoice details", and "Add
+%             # comments".
+%             if ( $curuser->access_right('Edit customer package dates') ) {
+                (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
+%             }
+%           } else {
+%             # the usual case
+%             my $br = 0;
+%             if ( $curuser->access_right('Change customer package') ) {
+%               $br=1;
+                (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
+%             } 
+%
+%             if ( $curuser->access_right('Edit customer package dates') ) {
+%               $br=1;
+                (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
+%             } 
+%
+%             if ( $curuser->access_right('Discount customer package')
+%                  && $part_pkg->can_discount
+%                  && ! scalar($cust_pkg->cust_pkg_discount_active)
+%                  && ! scalar($cust_pkg->part_pkg->part_pkg_discount)
+%                )
+%             {
+%               $br=1;
+                (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
+%             }
+%
+%             if ( $curuser->access_right('Customize customer package') ) {
+%               $br=1;
+                (&nbsp;<%pkg_customize_link($cust_pkg,$part_pkg)%>&nbsp;)
+%             } 
+%
+              <% $br ? '<BR>' : '' %>
 %           } 
-%
-%           if ( $curuser->access_right('Edit customer package dates') ) {
-%             $br=1;
-              (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
-%           } 
-%
-%           if ( $curuser->access_right('Discount customer package')
-%                && $part_pkg->can_discount
-%                && ! scalar($cust_pkg->cust_pkg_discount_active)
-%                && ! scalar($cust_pkg->part_pkg->part_pkg_discount)
-%              )
-%           {
-%             $br=1;
-              (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
-%           }
-%
-%           if ( $curuser->access_right('Customize customer package') ) {
-%             $br=1;
-              (&nbsp;<%pkg_customize_link($cust_pkg,$part_pkg)%>&nbsp;)
-%           } 
-%
-            <% $br ? '<BR>' : '' %>
-%         } 
 
-%         if ( $cust_pkg->num_cust_event
-%              && (    $curuser->access_right('Billing event reports')
-%                   || $curuser->access_right('View customer billing events')
-%                 )
-%            ) {
-            (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
-%         }
+%           if ( $cust_pkg->num_cust_event
+%                && (    $curuser->access_right('Billing event reports')
+%                     || $curuser->access_right('View customer billing events')
+%                   )
+%              ) {
+              (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
+%           }
+%         } #!$supplemental
 
         </FONT>
       </TD>
@@ -170,6 +180,7 @@
       </TR>
 %     if ( $curuser->access_right('Change customer package') and 
 %           !$cust_pkg->get('cancel') and
+%           !$supplemental and
 %           !$opt{'show_location'}) {
       <TR>
         <TD><FONT SIZE="-1">
@@ -196,6 +207,7 @@ my $countrydefault = $opt{'countrydefault'} || 'US';
 my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
 
+my $supplemental = $opt{'supplemental'} || 0;
 #subroutines
 
 #false laziness w/status.html

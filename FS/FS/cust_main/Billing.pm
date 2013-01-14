@@ -410,6 +410,7 @@ sub bill {
   my @precommit_hooks = ();
 
   $options{'pkg_list'} ||= [ $self->ncancelled_pkgs ];  #param checks?
+
   foreach my $cust_pkg ( @{ $options{'pkg_list'} } ) {
 
     next if $options{'not_pkgpart'}->{$cust_pkg->pkgpart};
@@ -1031,9 +1032,31 @@ sub _make_lines {
 
     if ( $increment_next_bill ) {
 
-      my $next_bill = $part_pkg->add_freq($sdate, $options{freq_override} || 0);
+      my $next_bill;
+
+      if ( my $main_pkg = $cust_pkg->main_pkg ) {
+        # supplemental package
+        # to keep in sync with the main package, simulate billing at 
+        # its frequency
+        my $main_pkg_freq = $main_pkg->part_pkg->freq;
+        my $supp_pkg_freq = $part_pkg->freq;
+        my $ratio = $supp_pkg_freq / $main_pkg_freq;
+        if ( $ratio != int($ratio) ) {
+          # the UI should prevent setting up packages like this, but just
+          # in case
+          return "supplemental package period is not an integer multiple of main  package period";
+        }
+        $next_bill = $sdate;
+        for (1..$ratio) {
+          $next_bill = $part_pkg->add_freq( $next_bill, $main_pkg_freq );
+        }
+
+      } else {
+        # the normal case
+      $next_bill = $part_pkg->add_freq($sdate, $options{freq_override} || 0);
       return "unparsable frequency: ". $part_pkg->freq
         if $next_bill == -1;
+      }  
   
       #pro-rating magic - if $recur_prog fiddled $sdate, want to use that
       # only for figuring next bill date, nothing else, so, reset $sdate again
