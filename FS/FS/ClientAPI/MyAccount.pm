@@ -1586,7 +1586,10 @@ sub list_pkgs {
                             pkg_label => $_->pkg_label,
                             status => $_->status,
                             part_svc =>
-                              [ map $_->hashref, $_->available_part_svc ],
+                              [ map { $_->hashref }
+                                  grep { $_->selfservice_access ne 'hidden' }
+                                    $_->available_part_svc
+                              ],
                             cust_svc => 
                               [ map { my $ref = { $_->hash,
                                                   label => [ $_->label ],
@@ -1600,7 +1603,9 @@ sub list_pkgs {
                                       $ref->{svchash}->{svcpart} =  $_->part_svc->svcpart
                                         if $_->part_svc->svcdb eq 'svc_phone'; # hack
                                       $ref;
-                                    } $_->cust_svc
+                                    }
+                                  grep { $_->part_svc->selfservice_access ne 'hidden' }
+                                    $_->cust_svc
                               ],
                             primary_cust_svc =>
                               $primary_cust_svc
