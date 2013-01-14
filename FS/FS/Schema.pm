@@ -3364,7 +3364,7 @@ sub tables_hashref {
         'rated_classnum',             'int', 'NULL',      '', '', '', 
         'rated_ratename',         'varchar', 'NULL', $char_d, '', '', 
 
-        'carrierid',               'int', 'NULL',      '', '', '',
+        'carrierid',               'bigint', 'NULL',      '', '', '',
 
         # service it was matched to
         'svcnum',             'int',   'NULL',     '',   '', '', 

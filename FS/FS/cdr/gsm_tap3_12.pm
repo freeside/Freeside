@@ -2,9 +2,38 @@ package FS::cdr::gsm_tap3_12;
 use base qw( FS::cdr );
 
 use strict;
-use vars qw( %info );
+use vars qw( %info %TZ );
 use Time::Local;
 use Data::Dumper;
+
+%TZ = (
+  '+0000' => 'XXX-0',
+  '+0100' => 'XXX-1',
+  '+0200' => 'XXX-2',
+  '+0300' => 'XXX-3',
+  '+0400' => 'XXX-4',
+  '+0500' => 'XXX-5',
+  '+0600' => 'XXX-6',
+  '+0700' => 'XXX-7',
+  '+0800' => 'XXX-8',
+  '+0900' => 'XXX-9',
+  '+1000' => 'XXX-10',
+  '+1100' => 'XXX-11',
+  '+1200' => 'XXX-12',
+  '-0000' => 'XXX+0',
+  '-0100' => 'XXX+1',
+  '-0200' => 'XXX+2',
+  '-0300' => 'XXX+3',
+  '-0400' => 'XXX+4',
+  '-0500' => 'XXX+5',
+  '-0600' => 'XXX+6',
+  '-0700' => 'XXX+7',
+  '-0800' => 'XXX+8',
+  '-0900' => 'XXX+9',
+  '-1000' => 'XXX+10',
+  '-1100' => 'XXX+11',
+  '-1200' => 'XXX+12',
+);
 
 %info = (
   'name'          => 'GSM TAP3 release 12',
@@ -14,29 +43,60 @@ use Data::Dumper;
   'asn_format'    => {
     'spec'     => _asn_spec(),
     'macro'    => 'TransferBatch', #XXX & skip the Notification ones?
+    'header_buffer' => sub {
+      my $TransferBatch = shift;
+
+      my $networkInfo = $TransferBatch->{networkInfo};
+
+      my $recEntityInfo = $networkInfo->{recEntityInfo};
+      my %recEntity = map { $_->{recEntityCode} => $_->{recEntityId} } @$recEntityInfo;
+
+      my $utcTimeOffsetInfo = $networkInfo->{utcTimeOffsetInfo};
+      my %utcTimeOffset = map { $_->{utcTimeOffsetCode} => $_->{utcTimeOffset} } @$utcTimeOffsetInfo;
+
+      { recEntity        => \%recEntity,
+        utcTimeOffset    => \%utcTimeOffset,
+        tapDecimalPlaces => $TransferBatch->{accountingInfo}{tapDecimalPlaces},
+      };
+    },
     'arrayref' => sub { shift->{'callEventDetails'}; },
     'map'      => {
-                    'startdate'          => sub { my $callinfo = shift->{mobileOriginatedCall}{basicCallInformation};
-                                                  my $timestamp = $callinfo->{callEventStartTimeStamp};
-                                                  my $localTimeStamp = $timestamp->{localTimeStamp};
-                                                  my $utcTimeOffsetCode = $timestamp->{utcTimeOffsetCode}; #XXX not handled, utcTimeOffsetInfo in header
-                                                  $localTimeStamp =~ /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/ or die "unparsable timestamp: $localTimeStamp\n"; #. Dumper($callinfo);
-                                                  my($year, $mon, $day, $hour, $min, $sec) = ($1, $2, $3, $4, $5, $6);
-                                                  timelocal($sec, $min, $hour, $day, $mon-1, $year);
-                                                },
-                    'duration'           => sub { shift->{mobileOriginatedCall}{basicCallInformation}{totalCallEventDuration} },
-                    'billsec'            => sub { shift->{mobileOriginatedCall}{basicCallInformation}{totalCallEventDuration} }, #same..
-                    'src'                => sub { shift->{mobileOriginatedCall}{basicCallInformation}{chargeableSubscriber}{simChargeableSubscriber}{msisdn} },
-                    'charged_party_imsi' => sub { shift->{mobileOriginatedCall}{basicCallInformation}{chargeableSubscriber}{simChargeableSubscriber}{imsi} },
-                    'dst'                => sub { shift->{mobileOriginatedCall}{basicCallInformation}{destination}{calledNumber} }, #dialledDigits?
-                    'carrierid'          => sub { shift->{mobileOriginatedCall}{locationInformation}{networkLocation}{recEntityCode} }, #XXX translate to recEntityId via info in header
-                    'userfield'          => sub { shift->{mobileOriginatedCall}{operatorSpecInformation}[0] },
-                    'servicecode'        => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{basicService}{serviceCode}{teleServiceCode} },
-                    'upstream_price'     => sub { sprintf('%.5f', shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{chargeDetailList}[0]{charge} / 100000 ) }, #XXX numberOfDecimalPlaces in header
-                    'calltypenum'        => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{callTypeGroup}{callTypelevel1} },
-                    'quantity'           => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{chargedUnits} },
-                    'quantity_able'      => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{chargeableUnits} },
-                  },
+      'startdate'          => sub { my($row, $buffer) = @_;
+                                    my $callinfo = $row->{mobileOriginatedCall}{basicCallInformation};
+                                    my $timestamp = $callinfo->{callEventStartTimeStamp};
+
+                                    my $localTimeStamp = $timestamp->{localTimeStamp};
+                                    $localTimeStamp =~ /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/
+                                      or die "unparsable timestamp: $localTimeStamp\n"; #. Dumper($callinfo);
+                                    my($year, $mon, $day, $hour, $min, $sec) = ($1, $2, $3, $4, $5, $6);
+
+                                    my $utcTimeOffsetCode = $timestamp->{utcTimeOffsetCode};
+                                    my $utcTimeOffset = $buffer->{utcTimeOffset}{ $utcTimeOffsetCode };
+                                    local($ENV{TZ}) = $TZ{ $utcTimeOffset };
+
+                                    timelocal($sec, $min, $hour, $day, $mon-1, $year);
+                                  },
+      'duration'           => sub { shift->{mobileOriginatedCall}{basicCallInformation}{totalCallEventDuration} },
+      'billsec'            => sub { shift->{mobileOriginatedCall}{basicCallInformation}{totalCallEventDuration} }, #same..
+      'src'                => sub { shift->{mobileOriginatedCall}{basicCallInformation}{chargeableSubscriber}{simChargeableSubscriber}{msisdn} },
+      'charged_party_imsi' => sub { shift->{mobileOriginatedCall}{basicCallInformation}{chargeableSubscriber}{simChargeableSubscriber}{imsi} },
+      'dst'                => sub { shift->{mobileOriginatedCall}{basicCallInformation}{destination}{calledNumber} }, #dialledDigits?
+      'carrierid'          => sub { my( $row, $buffer ) = @_;
+                                    my $recEntityCode = $row->{mobileOriginatedCall}{locationInformation}{networkLocation}{recEntityCode};
+                                    $buffer->{recEntity}{ $recEntityCode };
+                                  },
+      'userfield'          => sub { shift->{mobileOriginatedCall}{operatorSpecInformation}[0] },
+      'servicecode'        => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{basicService}{serviceCode}{teleServiceCode} },
+      'upstream_price'     => sub { my($row, $buffer) = @_;
+                                    sprintf('%.'.$buffer->{tapDecimalPlaces}.'f',
+                                      $row->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{chargeDetailList}[0]{charge}
+                                      / ( 10 ** $buffer->{tapDecimalPlaces} )
+                                    )
+                                  },
+      'calltypenum'        => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{callTypeGroup}{callTypelevel1} },
+      'quantity'           => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{chargedUnits} },
+      'quantity_able'      => sub { shift->{mobileOriginatedCall}{basicServiceUsedList}[0]{chargeInformationList}[0]{chargeableUnits} },
+    },
   },
 );
 
@@ -137,7 +197,8 @@ sub tap3_12_export {
           { #either tele or bearer service usage originated by the mobile subscription (others?)
             'mobileOriginatedCall' => {
 
-              #identifies the Network Location, which includes the MSC responsible for handling the call and, where appropriate, the Geographical Location of the mobile
+              #identifies the Network Location, which includes the MSC responsible for handling
+              # the call and, where appropriate, the Geographical Location of the mobile
               'locationInformation' => {
                                          'networkLocation' => {
                                                                 'recEntityCode' => $_->carrierid, #XXX Recording Entity (per 2.5, from "Reference Tables")

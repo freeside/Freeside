@@ -1618,6 +1618,7 @@ sub batch_import {
   my $count;
   my $parser;
   my @buffer = ();
+  my $asn_header_buffer;
   if ( $type eq 'csv' || $type eq 'fixedlength' ) {
 
     if ( $type eq 'csv' ) {
@@ -1691,6 +1692,8 @@ sub batch_import {
     my $data = slurp($file);
     my $asn_output = $parser->decode( $data )
       or die "No ". $asn_format->{'macro'}. " found\n";
+
+    $asn_header_buffer = &{ $asn_format->{'header_buffer'} }( $asn_output );
 
     my $rows = &{ $asn_format->{'arrayref'} }( $asn_output );
     $count = @buffer = @$rows;
@@ -1786,7 +1789,7 @@ sub batch_import {
       last unless scalar(@buffer);
       my $row = shift @buffer;
       foreach my $key ( keys %{ $asn_format->{map} } ) {
-        $hash{$key} = &{ $asn_format->{map}{$key} }( $row );
+        $hash{$key} = &{ $asn_format->{map}{$key} }( $row, $asn_header_buffer );
       }
 
     } else {
