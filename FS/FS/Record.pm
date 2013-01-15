@@ -1783,7 +1783,7 @@ sub batch_import {
 
     if ( $type eq 'csv' ) {
 
-      my %attr = ();
+      my %attr = ( 'binary' => 1, );
       $attr{sep_char} = $sep_char if $sep_char;
       $parser = new Text::CSV_XS \%attr;
 
