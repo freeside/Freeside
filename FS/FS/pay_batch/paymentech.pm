@@ -103,32 +103,32 @@ my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
       $xml->startTag('newOrder', BatchRequestNo => $count++);
       my $status = $_->cust_main->status;
       tie my %order, 'Tie::IxHash', (
-        industryType => 'EC',
-        transType    => 'AC',
-        bin          => $bin,
-        merchantID   => $merchantID,
-        terminalID   => $terminalID,
+        industryType    => 'EC',
+        transType       => 'AC',
+        bin             => $bin,
+        merchantID      => $merchantID,
+        terminalID      => $terminalID,
         ($_->payby eq 'CARD') ? (
-          ccAccountNum => $_->payinfo,
-          ccExp        => $_->expmmyy,
+          ccAccountNum    => $_->payinfo,
+          ccExp           => $_->expmmyy,
         ) : (
           ecpCheckRT      => ($_->payinfo =~ /@(\d+)/),
           ecpCheckDDA     => ($_->payinfo =~ /(\d+)@/),
           ecpBankAcctType => $paytype{lc($_->cust_main->paytype)},
           ecpDelvMethod   => 'A',
         ),
-        avsZip          => substr($_->zip, 0, 10),
+        avsZip          => substr($_->zip,      0, 10),
         avsAddress1     => substr($_->address1, 0, 30),
         avsAddress2     => substr($_->address2, 0, 30),
-        avsCity         => substr($_->city, 0, 20),
-        avsState        => $_->state,
-        avsName        => substr($_->first . ' ' . $_->last, 0, 30),
-        avsCountryCode => ( $paymentech_countries{ $_->country }
-                              ? $_->country
-                              : ''
-                          ),
-        orderID        => $_->paybatchnum,
-        amount         => $_->amount * 100,
+        avsCity         => substr($_->city,     0, 20),
+        avsState        => substr($_->state,    0, 2),
+        avsName         => substr($_->first. ' '. $_->last, 0, 30),
+        avsCountryCode  => ( $paymentech_countries{ $_->country }
+                                 ? $_->country
+                                 : ''
+                             ),
+        orderID           => $_->paybatchnum,
+        amount            => $_->amount * 100,
         );
       # only do this if recurringInd is enabled in config, 
       # and the customer has at least one non-canceled recurring package
