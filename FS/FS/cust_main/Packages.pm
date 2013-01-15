@@ -147,7 +147,7 @@ sub order_pkg {
   # add supplemental packages, if any are needed
   my $part_pkg = FS::part_pkg->by_key($cust_pkg->pkgpart);
   foreach my $link ($part_pkg->supp_part_pkg_link) {
-    warn "inserting supplemental package ".$link->dst_pkgpart;
+    #warn "inserting supplemental package ".$link->dst_pkgpart;
     my $pkg = FS::cust_pkg->new({
         'pkgpart'       => $link->dst_pkgpart,
         'pkglinknum'    => $link->pkglinknum,
