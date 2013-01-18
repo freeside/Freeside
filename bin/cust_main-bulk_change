@@ -1,13 +1,14 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw( $opt_p );
+use vars qw( $opt_p $opt_t );
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
+use FS::cust_tag;
 
-getopts('p:');
+getopts('p:t:');
 
 my $user = shift or &usage;
 adminsuidsetup $user;
@@ -31,17 +32,24 @@ while (<STDIN>) {
     next;
   }
 
-  if ( $opt_p ) {
-    $cust_main->payby($opt_p);
+  my %cust_tag = ( custnum=>$custnum, tagnum=>$opt_t );
+  if ( $opt_t && ! qsearchs('cust_tag', \%cust_tag) ) {
+    my $cust_tag = new FS::cust_tag \%cust_tag;
+    my $error = $cust_tag->insert;
+    die "$error\n" if $error;
   }
 
-  my $error = $cust_main->replace;
-  die "$error\n" if $error;
+  if ( $opt_p ) {
+    $cust_main->payby($opt_p);
+
+    my $error = $cust_main->replace;
+    die "$error\n" if $error;
+  }
 
 }
 
 sub usage {
-  die "usage: cust_main-bulk_change -p NEW_PAYBY employee_username <custnums.txt\n";
+  die "usage: cust_main-bulk_change [ -p NEW_PAYBY ] [ -t tagnum ] employee_username <custnums.txt\n";
 }
 
 =head1 NAME
@@ -50,13 +58,15 @@ cust_main-bulk_change
 
 =head1 SYNOPSIS
 
-  cust_main-bulk_change -p NEW_PAYBY username <custnums.txt
+  cust_main-bulk_change [ -p NEW_PAYBY ] [ -t tagnum ] username <custnums.txt
 
 =head1 DESCRIPTION
 
-Command-line tool to change the payby field for a group of customers.
+Command-line tool to make bulk changes to a group of customers.
 
--p: new payby, for example, I<CARD> or I<DCRD>.
+-p: new payby, for example, I<CARD> or I<DCRD>
+
+-t: tagnum to add if not present
 
 user: Employee username
 
