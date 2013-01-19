@@ -30,7 +30,7 @@
          ' Signup form</FONT><BR><BR>';
 %>
 
-<FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
+<FONT SIZE="+1" COLOR="#ff0000"><%= encode_entities($error) %></FONT>
 
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= $prepaid_shortform %>">
