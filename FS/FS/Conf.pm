@@ -3651,18 +3651,39 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'batch-manual_approval',
-    'section'     => 'billing',
-    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised, but is needed for payment processors that provide a report of rejected rather than approved payments.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'batchconfig-eft_canada',
     'section'     => 'billing',
     'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.',
     'type'        => 'textarea',
     'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'batchconfig-nacha-destination',
+    'section'     => 'billing',
+    'description' => 'Configuration for NACHA batching, Destination (9 digit transit routing number).',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batchconfig-nacha-destination_name',
+    'section'     => 'billing',
+    'description' => 'Configuration for NACHA batching, Destination (Bank Name, up to 23 characters).',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batchconfig-nacha-origin',
+    'section'     => 'billing',
+    'description' => 'Configuration for NACHA batching, Origin (your 10-digit company number, IRS tax ID recommended).',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batch-manual_approval',
+    'section'     => 'billing',
+    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised unless needed for specific payment processors that provide a report of rejected rather than approved payments.',
+    'type'        => 'checkbox',
   },
 
   {
