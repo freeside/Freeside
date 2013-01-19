@@ -160,3 +160,8 @@ share/html/Ticket/Elements/ShowDates
 share/html/Elements/CustomerFields
 share/html/Search/Elements/ConditionRow # bugfix for select options list
 share/html/Search/Elements/PickBasics
+
+#avoid cloning TimeWorked and related fields
+lib/RT/CustomField.pm
+share/html/Admin/CustomFields/Modify.html
+share/html/Ticket/Create.html

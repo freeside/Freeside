@@ -293,8 +293,8 @@ if ($CloneTicket) {
     };
 
     $clone->{$_} = $CloneTicketObj->$_()
-        for qw/Owner Subject FinalPriority TimeEstimated TimeWorked
-        Status TimeLeft/;
+        for qw/Owner Subject FinalPriority Status/;
+        # not TimeWorked, TimeEstimated, or TimeLeft
 
     $clone->{$_} = $CloneTicketObj->$_->AsString
         for grep { $CloneTicketObj->$_->Unix }
@@ -330,6 +330,7 @@ if ($CloneTicket) {
 
     my $cfs = $CloneTicketObj->QueueObj->TicketCustomFields();
     while ( my $cf = $cfs->Next ) {
+        next if $cf->FirstAttribute('NoClone');
         my $cf_id     = $cf->id;
         my $cf_values = $CloneTicketObj->CustomFieldValues( $cf->id );
         my @cf_values;

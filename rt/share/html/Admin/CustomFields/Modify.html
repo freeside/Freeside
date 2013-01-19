@@ -144,6 +144,11 @@
 </td></tr>
 
 <tr><td class="label">&nbsp;</td><td>
+<input type="checkbox" class="checkbox" name="YesClone" value="1" <% $YesCloneChecked |n%> />
+<&|/l&>Copy this field to new tickets</&>
+</td></tr>
+
+<tr><td class="label">&nbsp;</td><td>
 <input type="hidden" class="hidden" name="SetEnabled" value="1" />
 <input type="checkbox" class="checkbox" name="Enabled" value="1" <% $EnabledChecked |n%> />
 <&|/l&>Enabled (Unchecking this box disables this custom field)</&>
@@ -187,6 +192,7 @@ else {
             IncludeContentForValue => $IncludeContentForValue,
             BasedOn       => $BasedOn,
             Disabled      => !$Enabled,
+            NoClone       => !$YesClone,
         );
         if (!$val) {
             push @results, loc("Could not create CustomField: [_1]", $msg);
@@ -207,10 +213,12 @@ else {
 if ( $ARGS{'Update'} && $id ne 'new' ) {
     #we're asking about enabled on the web page but really care about disabled.
     $ARGS{'Disabled'} = $Enabled? 0 : 1;
+    #  likewise
+    $ARGS{'NoClone'} = $YesClone ? 0 : 1;
    
     $ARGS{'Required'} ||= 0;
 
-    my @attribs = qw(Disabled Required Pattern Name TypeComposite LookupType Description LinkValueTo IncludeContentForValue);
+    my @attribs = qw(Disabled Required Pattern Name TypeComposite LookupType Description LinkValueTo IncludeContentForValue NoClone);
     push @results, UpdateRecordObject(
         AttributesRef => \@attribs,
         Object        => $CustomFieldObj,
@@ -313,6 +321,10 @@ $EnabledChecked = '' if $CustomFieldObj->Disabled;
 my $RequiredChecked = '';
 $RequiredChecked = qq[checked="checked"] if $CustomFieldObj->Required;
 
+my $YesCloneChecked = qq[checked="checked"];
+$YesCloneChecked = '' if $CustomFieldObj->NoClone;
+
+
 my @CFvalidations = (
     '(?#Mandatory).',
     '(?#Digits)^[\d.]+$',
@@ -339,4 +351,5 @@ $LinkValueTo => undef
 $IncludeContentForValue => undef
 $BasedOn => undef
 $UILocation => undef
+$YesClone => undef
 </%ARGS>
