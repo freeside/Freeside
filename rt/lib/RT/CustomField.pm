@@ -410,6 +410,10 @@ sub Create {
             $self->SetUILocation( $args{'UILocation'} );
         }
 
+        if ( exists $args{'NoClone'} ) {
+            $self->SetNoClone( $args{'NoClone'} );
+        }
+
         return ($rv, $msg) unless exists $args{'Queue'};
 
         # Compat code -- create a new ObjectCustomField mapping
@@ -1822,9 +1826,20 @@ sub SetUILocation {
     }
 }
 
+sub NoClone {
+    my $self = shift;
+    $self->FirstAttribute('NoClone') ? 1 : '';
+}
 
-
-
+sub SetNoClone {
+    my $self = shift;
+    my $value = shift;
+    if ( $value ) {
+        return $self->SetAttribute( Name => 'NoClone', Content => 1 );
+    } else {
+        return $self->DeleteAttribute('NoClone');
+    }
+}
 
 
 =head2 id
