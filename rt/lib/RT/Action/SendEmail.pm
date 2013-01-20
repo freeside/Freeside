@@ -871,21 +871,25 @@ sub SetFrom {
     my $self = shift;
     my %args = @_;
 
+    my $from = $args{From};
+
     if ( RT->Config->Get('UseFriendlyFromLine') ) {
         my $friendly_name = $self->GetFriendlyName(%args);
-        $self->SetHeader(
-            'From',
+        $from = 
             sprintf(
                 RT->Config->Get('FriendlyFromLineFormat'),
                 $self->MIMEEncodeString(
                     $friendly_name, RT->Config->Get('EmailOutputEncoding')
                 ),
                 $args{From}
-            ),
-        );
-    } else {
-        $self->SetHeader( 'From', $args{From} );
+            );
     }
+
+    $self->SetHeader( 'From', $from );
+
+    #also set Sender:, otherwise MTAs add a nonsensical value like rt@machine,
+    #and then Outlook prepends "rt@machine on behalf of" to the From: header
+    $self->SetHeader( 'Sender', $from );
 }
 
 =head2 GetFriendlyName
