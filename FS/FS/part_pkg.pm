@@ -1450,6 +1450,29 @@ sub recur_cost_permonth {
   sprintf('%.2f', $self->recur_cost / $self->freq );
 }
 
+=item cust_bill_pkg_recur CUST_PKG
+
+Actual recurring charge for the specified customer package from customer's most
+recent invoice
+
+=cut
+
+sub cust_bill_pkg_recur {
+  my($self, $cust_pkg) = @_;
+  my $cust_bill_pkg = qsearchs({
+    'table'     => 'cust_bill_pkg',
+    'addl_from' => 'LEFT JOIN cust_bill USING ( invnum )',
+    'hashref'   => { 'pkgnum' => $cust_pkg->pkgnum,
+                     'recur'  => { op=>'>', value=>'0' },
+                   },
+    'order_by'  => 'ORDER BY cust_bill._date     DESC,
+                             cust_bill_pkg.sdate DESC
+                     LIMIT 1
+                   ',
+  }) or return 0; #die "use cust_bill_pkg_recur credits with once_perinv condition";
+  $cust_bill_pkg->recur;
+}
+
 =item format OPTION DATA
 
 Returns data formatted according to the function 'format' described

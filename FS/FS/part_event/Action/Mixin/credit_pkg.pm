@@ -16,18 +16,24 @@ sub option_fields {
                      'type'    => 'input-percentage',
                      'default' => '100',
                    },
-    'what' => { 'label'   => 'Of',
-                'type'    => 'select',
-                #add additional ways to specify in the package def
-                'options' => [ qw( base_recur_permonth unit_setup recur_cost_permonth setup_cost ) ],
-                'labels'  => { 'base_recur_permonth' => 'Base monthly fee',
-                               'unit_setup'          => 'Setup fee',
-                               'recur_cost_permonth' => 'Monthly cost',
-                               'setup_cost'          => 'Setup cost',
-                             },
-              },
+    'what' => {
+      'label'   => 'Of',
+      'type'    => 'select',
+      #add additional ways to specify in the package def
+      'options' => [qw(
+        base_recur_permonth cust_bill_pkg_recur recur_cost_permonth
+        unit_setup setup_cost
+      )],
+      'labels'  => {
+        'base_recur_permonth' => 'Base monthly fee',
+        'cust_bill_pkg_recur' => 'Actual invoiced amount of most recent'.
+                                 ' recurring charge',
+        'recur_cost_permonth' => 'Monthly cost',
+        'unit_setup'          => 'Setup fee',
+        'setup_cost'          => 'Setup cost',
+      },
+    },
   );
-
 }
 
 #my %no_cust_pkg = ( 'setup_cost' => 1 );
