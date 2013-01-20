@@ -851,6 +851,9 @@ sub SetReturnAddress {
     }
 
     unless ( $self->TemplateObj->MIMEObj->head->get('From') ) {
+
+        my $from = $replyto;
+
         if ( RT->Config->Get('UseFriendlyFromLine') ) {
             my $friendly_name = $args{friendly_name};
 
@@ -862,19 +865,22 @@ sub SetReturnAddress {
             }
 
             $friendly_name =~ s/"/\\"/g;
-            $self->SetHeader(
-                'From',
+            $from =
                 sprintf(
                     RT->Config->Get('FriendlyFromLineFormat'),
                     $self->MIMEEncodeString(
                         $friendly_name, RT->Config->Get('EmailOutputEncoding')
                     ),
                     $replyto
-                ),
-            );
-        } else {
-            $self->SetHeader( 'From', $replyto );
+                );
         }
+
+        $self->SetHeader( 'From', $from );
+
+        #also set Sender:, otherwise MTAs add a nonsensical value like
+        # rt@machine, and then Outlook prepends "rt@machine on behalf of" to
+        # the From: header
+        $self->SetHeader( 'Sender', $from );
     }
 
     unless ( $self->TemplateObj->MIMEObj->head->get('Reply-To') ) {
