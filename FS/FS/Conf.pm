@@ -3431,7 +3431,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Default format for batches.',
     'type'        => 'select',
-    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch',
+    'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch',
                        'csv-chase_canada-E-xactBatch', 'BoM', 'PAP',
                        'paymentech', 'ach-spiritone', 'RBC'
                     ]
@@ -3452,9 +3452,9 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Fixed (unchangeable) format for electronic check batches.',
     'type'        => 'select',
-    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone', 'RBC', 'td_eft1464',
-                       'eft_canada'
+    'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch', 'BoM',
+                       'PAP', 'paymentech', 'ach-spiritone', 'RBC',
+                       'td_eft1464', 'eft_canada'
                      ]
   },
 

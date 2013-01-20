@@ -1479,13 +1479,13 @@ sub tables_hashref {
         'zip',      'varchar', 'NULL', 10, '', '', 
         'country',  'char', '',     2, '', '', 
         #        'trancode', 'int', '', '', '', ''
-        'payby',    'char',   '',     4, '', '', # CARD/BILL/COMP, should be
-        'payinfo',  'varchar', '',     512, '', '', 
+        'payby',    'char',        '',       4, '', '',
+        'payinfo',  'varchar', 'NULL',     512, '', '', 
         #'exp',      @date_type, '', ''
-        'exp',      'varchar', 'NULL',     11, '', '', 
+        'exp',      'varchar', 'NULL',      11, '', '', 
         'payname',  'varchar', 'NULL', $char_d, '', '', 
         'amount',   @money_type, '', '', 
-        'status',   'varchar', 'NULL',     $char_d, '', '', 
+        'status',   'varchar', 'NULL', $char_d, '', '', 
       ],
       'primary_key' => 'paybatchnum',
       'unique' => [],

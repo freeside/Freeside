@@ -96,6 +96,7 @@ my $fixed = $conf->config("batch-fixed_format-$payby");
 
 tie my %download_formats, 'Tie::IxHash', (
 '' => 'Default batch mode',
+'NACHA' => '94 byte NACHA',
 'csv-td_canada_trust-merchant_pc_batch' => 
               'CSV file for TD Canada Trust Merchant PC Batch',
 'csv-chase_canada-E-xactBatch' =>
