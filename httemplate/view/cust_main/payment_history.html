@@ -34,7 +34,7 @@
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;custnum=<% $custnum %>"><% mt('Enter Western Union payment') |h %></A>
 % } 
 
-<BR>
+<% $s ? '<BR>' : '' %>
 % $s=0;
 
 % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
@@ -58,11 +58,13 @@
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline/POS) credit card payment') |h %></A>
 % } 
 
-<BR>
+<% $s ? '<BR>' : '' %>
 
-%# credit link
+%# credit links
 
+% $s=0;
 % if ( $curuser->access_right('Post credit') ) { 
+  <% $s++ ? ' | ' : '' %>
   <& /elements/popup_link-cust_main.html,
                'label'       => emt('Enter credit'),
                'action'      => "${p}edit/cust_credit.cgi",
@@ -70,7 +72,9 @@
                'actionlabel' => emt('Enter credit'),
                'width'       => 616, #make room for reasons #540 default
   &>
-  |
+% }
+% if ( $curuser->access_right('Credit line items') ) { 
+  <% $s++ ? ' | ' : '' %>
   <& /elements/popup_link-cust_main.html,
                'label'       => emt('Credit line items'),
                #'action'      => "${p}search/cust_bill_pkg.cgi?nottax=1;type=select",
@@ -80,8 +84,8 @@
                'width'       => 968, #763,
                'height'      => 575,
   &>
-  <BR>
 % } 
+<% $s ? '<BR>' : '' %>
 
 %# refund links
 

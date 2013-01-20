@@ -244,7 +244,7 @@ function calc_total(what) {
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-die "access denied" unless $curuser->access_right('Post credit');
+die "access denied" unless $curuser->access_right('Credit line items');
 
 #a tiny bit of false laziness w/search/cust_bill_pkg.cgi, but we're pretty
 # specialized and a piece of UI, not a report

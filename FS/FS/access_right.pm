@@ -192,6 +192,7 @@ sub _upgrade_data { # class method
     'Cancel customer package immediately' => 'Un-cancel customer package',
     'Suspend customer package'            => 'Suspend customer',
     'Unsuspend customer package'          => 'Unsuspend customer',
+    'Post credit'                         => 'Credit line items',
 
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',
