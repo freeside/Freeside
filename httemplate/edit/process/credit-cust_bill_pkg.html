@@ -10,7 +10,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Post credit');
+  unless $FS::CurrentUser::CurrentUser->access_right('Credit line items');
 
 my @billpkgnum_setuprecurs =
   map { $_ =~ /^billpkgnum(\d+\-\w*)$/ or die 'gm#23'; $1; } 

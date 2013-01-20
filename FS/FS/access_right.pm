@@ -198,6 +198,7 @@ sub _upgrade_data { # class method
     'New prospect'                        => 'Generate quotation',
     'Delete invoices'                     => 'Void invoices',
     'List invoices'                       => 'List quotations',
+    'Post credit'                         => 'Credit line items',
 
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',

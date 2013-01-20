@@ -2,7 +2,7 @@
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-die "access denied" unless $curuser->access_right('Post credit');
+die "access denied" unless $curuser->access_right('Credit line items');
 
 my $DEBUG = 0;
 
