@@ -8,7 +8,7 @@ use Date::Format;
 
 $name = 'NACHA';
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 %import_info = (
   #XXX stub finish me
@@ -168,7 +168,7 @@ $DEBUG = 1;
 
     my $batchnum = substr( ('0'x7). $pay_batch->batchnum, -7);
 
-    warn "building Batch and File Control Records\n" if $DEBUG;
+    warn "building Batch & File Control Records\n" if $DEBUG;
 
     ###
     # Batch Control Record
