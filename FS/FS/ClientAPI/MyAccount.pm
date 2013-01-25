@@ -45,7 +45,7 @@ use FS::payby;
 use FS::acct_rt_transaction;
 use FS::msg_template;
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::ClientAPI::MyAccount]';
 
 use vars qw( @cust_main_editable_fields @location_editable_fields );
@@ -1787,8 +1787,14 @@ sub svc_status_hash {
 
 }
 
-sub set_svc_status_hash {
-  my $p = shift;
+sub set_svc_status_hash    { _svc_method_X(shift, 'export_setstatus') }
+sub set_svc_status_listadd { _svc_method_X(shift, 'export_setstatus_listadd') }
+sub set_svc_status_listdel { _svc_method_X(shift, 'export_setstatus_listdel') }
+sub set_svc_status_vacationadd { _svc_method_X(shift, 'export_setstatus_vacationadd') }
+sub set_svc_status_vacationdel { _svc_method_X(shift, 'export_setstatus_vacationdel') }
+
+sub _svc_method_X {
+  my( $p, $method ) = @_;
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
@@ -1797,53 +1803,14 @@ sub set_svc_status_hash {
   my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
     or return { 'error' => "Service not found" };
 
-  warn "set_svc_status_hash ". join(' / ', map "$_=>".$p->{$_}, keys %$p )
+  warn "$method ". join(' / ', map "$_=>".$p->{$_}, keys %$p )
     if $DEBUG;
-  my $error = $svc_x->export_setstatus($p); #$p? returns error?
+  my $error = $svc_x->$method($p); #$p? returns error?
   return { 'error' => $error } if $error;
 
   return {}; #? { 'error' => '' }
 
 }
-
-sub set_svc_status_listadd {
-  my $p = shift;
-
-  my($context, $session, $custnum) = _custoragent_session_custnum($p);
-  return { 'error' => $session } if $context eq 'error';
-
-  #XXX only svc_acct for now
-  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
-    or return { 'error' => "Service not found" };
-
-  warn "set_svc_status_listadd ". join(' / ', map "$_=>".$p->{$_}, keys %$p )
-    if $DEBUG;
-  my $error = $svc_x->export_setstatus_listadd($p); #$p? returns error?
-  return { 'error' => $error } if $error;
-
-  return {}; #? { 'error' => '' }
-
-}
-
-sub set_svc_status_listdel {
-  my $p = shift;
-
-  my($context, $session, $custnum) = _custoragent_session_custnum($p);
-  return { 'error' => $session } if $context eq 'error';
-
-  #XXX only svc_acct for now
-  my $svc_x = _customer_svc_x( $custnum, $p->{'svcnum'}, 'svc_acct')
-    or return { 'error' => "Service not found" };
-
-  warn "set_svc_status_listdel ". join(' / ', map "$_=>".$p->{$_}, keys %$p )
-    if $DEBUG;
-  my $error = $svc_x->export_setstatus_listdel($p); #$p? returns error?
-  return { 'error' => $error } if $error;
-
-  return {}; #? { 'error' => '' }
-
-}
-
 
 sub acct_forward_info {
   my $p = shift;
