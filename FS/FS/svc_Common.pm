@@ -1042,31 +1042,17 @@ otherwise returns false.
 
 =cut
 
-sub export_setstatus {
-  my( $self, @args ) = @_;
-  my $error = $self->export('setstatus', @args);
-  if ( $error ) {
-    warn "error running export_setstatus: $error";
-    return $error;
-  }
-  '';
-}
+sub export_setstatus { shift->_export_setstatus_X('setstatus', @_) }
+sub export_setstatus_listadd { shift->_export_setstatus_X('setstatus_listadd', @_) }
+sub export_setstatus_listdel { shift->_export_setstatus_X('setstatus_listdel', @_) }
+sub export_setstatus_vacationadd { shift->_export_setstatus_X('setstatus_vacationadd', @_) }
+sub export_setstatus_vacationdel { shift->_export_setstatus_X('setstatus_vacationdel', @_) }
 
-sub export_setstatus_listadd {
-  my( $self, @args ) = @_;
-  my $error = $self->export('setstatus_listadd', @args);
+sub _export_setstatus_X {
+  my( $self, $method, @args ) = @_;
+  my $error = $self->export($method, @args);
   if ( $error ) {
-    warn "error running export_setstatus: $error";
-    return $error;
-  }
-  '';
-}
-
-sub export_setstatus_listdel {
-  my( $self, @args ) = @_;
-  my $error = $self->export('setstatus_listdel', @args);
-  if ( $error ) {
-    warn "error running export_setstatus: $error";
+    warn "error running export_$method: $error";
     return $error;
   }
   '';
