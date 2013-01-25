@@ -512,8 +512,10 @@ sub taxline {
   # now round and distribute
   my $extra_cents = sprintf('%.2f', $taxable_cents * $self->tax / 100) * 100
                     - $tax_cents;
+  # make sure we have an integer
+  $extra_cents = sprintf('%.0f', $extra_cents);
   if ( $extra_cents < 0 ) {
-    die "nonsense extra_cents value $extra_cents"; # because seriously, wtf
+    die "nonsense extra_cents value $extra_cents";
   }
   $tax_cents += $extra_cents;
   my $i = 0;
