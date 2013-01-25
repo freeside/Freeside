@@ -2219,11 +2219,18 @@ is an error, returns the error, otherwise returns false.
 
 sub ut_money {
   my($self,$field)=@_;
-  $self->setfield($field, 0) if $self->getfield($field) eq '';
-  $self->getfield($field) =~ /^\s*(\-)?\s*(\d*)(\.\d{2})?\s*$/
-    or return "Illegal (money) $field: ". $self->getfield($field);
-  #$self->setfield($field, "$1$2$3" || 0);
-  $self->setfield($field, ( ($1||''). ($2||''). ($3||'') ) || 0);
+
+  if ( $self->getfield($field) eq '' ) {
+    $self->setfield($field, 0);
+  } elsif ( $self->getfield($field) =~ /^\s*(\-)?\s*(\d*)(\.\d{1})\s*$/ ) {
+    #handle one decimal place without barfing out
+    $self->setfield($field, ( ($1||''). ($2||''). ($3.'0') ) || 0);
+  } elsif ( $self->getfield($field) =~ /^\s*(\-)?\s*(\d*)(\.\d{2})?\s*$/ ) {
+    $self->setfield($field, ( ($1||''). ($2||''). ($3||'') ) || 0);
+  } else {
+    return "Illegal (money) $field: ". $self->getfield($field);
+  }
+
   '';
 }
 
