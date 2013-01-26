@@ -43,6 +43,10 @@ sub _export_unsuspend {}
 sub export_setstatus {
   my($self, $svc_acct, $hashref) = @_;
 
+  for (qw( spam_tag2_level spam_kill_level )) {
+    $hashref->{$_} =~ /^\d+(\.\d+)?$/ or return "illegal $_";
+  }
+
   my @shellargs = (
     $svc_acct->svcnum,
     user          => $self->option('user') || 'root',
