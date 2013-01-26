@@ -201,7 +201,7 @@ foreach my $INC (@INC) {
              \\%FS::pay_batch::$mod\::export_info,
              \$FS::pay_batch::$mod\::name)";
     $name ||= $mod; # in case it's not defined
-    if( $@) {
+    if ($@) {
       # in FS::cdr this is a die, not a warn.  That's probably a bug.
       warn "error using FS::pay_batch::$mod (skipping): $@\n";
       next;
