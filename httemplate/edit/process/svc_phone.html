@@ -28,6 +28,9 @@ my $right = $opt{'bulk'} ? 'Bulk provision customer service'
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right($right);
 
+$cgi->param('phonenum', $cgi->param('phonenum_manual') )
+  if $cgi->param('phonenum_which') eq 'phonenum_manual';
+
 my $tollfreephonenum = $cgi->param('tollfreephonenum');
 $cgi->param('phonenum',$tollfreephonenum) if $tollfreephonenum =~ /^\d+$/;
 
