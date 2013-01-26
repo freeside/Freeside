@@ -4,7 +4,7 @@ use strict;
 
 use base qw( FS::part_event::Condition );
 
-sub description { 'Customer has uncancelled package of specified definitions'; }
+sub description { 'Customer has uncancelled specific package(s)'; }
 
 sub eventtable_hashref {
     { 'cust_main' => 1,
@@ -27,7 +27,6 @@ sub condition {
 
   my $cust_main = $self->cust_main($object);
 
-  #XXX test
   my $if_pkgpart = $self->option('if_pkgpart') || {};
   grep $if_pkgpart->{ $_->pkgpart }, $cust_main->ncancelled_pkgs;
 
