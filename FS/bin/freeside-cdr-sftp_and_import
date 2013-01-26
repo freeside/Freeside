@@ -218,6 +218,8 @@ or FTP and then import them into the database.
 
 -c: cdrtypenum to set, defaults to none
 
+-g: File is gzipped
+
 user: freeside username
 
 format: CDR format name
