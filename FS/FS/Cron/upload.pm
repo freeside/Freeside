@@ -470,7 +470,7 @@ sub spool_upload {
 
 }
 
-=item send_report CONFIG PARAMS
+=item prepare_report CONFIG PARAMS
 
 Retrieves the config value named CONFIG, parses it as a Text::Template,
 extracts "to" and "subject" headers, and returns a hash that can be passed
