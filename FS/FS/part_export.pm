@@ -432,6 +432,10 @@ sub info {
 
 #default fallbacks... FS::part_export::DID_Common ?
 sub get_dids_can_tollfree { 0; }
+sub get_dids_can_manual   { 0; }
+sub get_dids_can_edit     { 0; } #don't use without can_manual, otherwise the
+                                 # DID selector provisions a new number from
+                                 # inventory each edit
 sub get_dids_npa_select   { 1; }
 
 =back

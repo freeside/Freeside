@@ -17,7 +17,7 @@
     what.form.<% $opt{'prefix'} %>areacode.disabled = 'disabled';
     what.form.<% $opt{'prefix'} %>areacode.style.display = 'none';
     var areacodewait = document.getElementById('<% $opt{'prefix'} %>areacodewait');
-    areacodewait.style.display = '';
+    areacodewait.style.display = 'inline';
     var areacodeerror = document.getElementById('<% $opt{'prefix'} %>areacodeerror');
     areacodeerror.style.display = 'none';
 
@@ -61,7 +61,7 @@
         what.form.<% $opt{'prefix'} %>areacode.style.display = '';
       } else {
         var areacodeerror = document.getElementById('<% $opt{'prefix'} %>areacodeerror');
-        areacodeerror.style.display = '';
+        areacodeerror.style.display = 'inline';
       }
 
       //run the callback

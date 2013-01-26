@@ -18,6 +18,27 @@ Example:
     <TABLE>
       <TR>
 
+%       my( $phonenum_checked, $manual_checked ) = ( '', '' );
+%       if ( $export->get_dids_can_manual ) {
+%         #not 100% perfect UI on error handling, but it'll do
+%         if ( $opt{'curr_value'} ) {
+%           $phonenum_checked = '';
+%           $manual_checked   = 'CHECKED';
+%         } else {
+%           $phonenum_checked = 'CHECKED';
+%           $manual_checked   = '';
+%         }
+
+        <TD VALIGN="top">
+          <INPUT TYPE     = "radio"
+                 NAME     = "phonenum_which"
+                 VALUE    = "phonenum"
+                 onChange = "phonenum_which_changed(this)"
+                 <% $phonenum_checked %>
+          > Inventory
+        </TD>
+%       }
+
 %       if ( $export->get_dids_npa_select ) {
 
         <TD VALIGN="top">
@@ -27,9 +48,10 @@ Example:
                        'svcpart'       => $svcpart,
                        'disable_empty' => 0,
                        'empty_label'   => 'Select state',
+                       'disabled'      => ( $manual_checked ? 1 : 0 ),
                     )
           %>
-          <BR><FONT SIZE="-1">State</FONT>
+          <BR><FONT SIZE="-1" ID="phonenum_state_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>State</FONT>
         </TD>
 
           <TD VALIGN="top">
@@ -39,19 +61,24 @@ Example:
                          'empty'        => 'Select area code',
                       )
             %>
-            <BR><FONT SIZE="-1">Area code</FONT>
+            <BR><FONT SIZE="-1" ID="areacode_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>Area code</FONT>
           </TD>
 
           <TD VALIGN="top">
             <% include('/elements/select-exchange.html',
-                         'svcpart' => $svcpart,
-                         'empty'   => 'Select exchange',
+                         'svcpart'  => $svcpart,
+                         'empty'    => 'Select exchange',
                       )
             %>
-            <BR><FONT SIZE="-1">City / Exchange</FONT>
+            <BR><FONT SIZE="-1" ID="exchange_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>City / Exchange</FONT>
           </TD>
 
 %       } else {
+%
+%       #this code path currently only being used by fibernetics
+%       # should change "Province" label to "State" or make it configurable
+%       # if/when other folks need an areacode-less DID selector that goes
+%       # directly from state to region
 
         <TD VALIGN="top">
           <% include('/elements/select.html',
@@ -60,9 +87,10 @@ Example:
                        'options'  => [ '', @{ $export->get_dids } ],
                        'labels'   => { '' => 'Select province' },
                        'onchange' => 'phonenum_state_changed(this);',
+                       'disabled' => ( $manual_checked ? 1 : 0 ),
                     )
           %>
-          <BR><FONT SIZE="-1">Province</FONT>
+          <BR><FONT SIZE="-1" ID="phonenum_state_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>Province</FONT>
         </TD>
 
           <TD VALIGN="top">
@@ -72,7 +100,7 @@ Example:
                          'empty'         => 'Select region',
                       )
             %>
-            <BR><FONT SIZE="-1">Region</FONT>
+            <BR><FONT SIZE="-1" ID="region_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>Region</FONT>
           </TD>
 
 %       }
@@ -86,10 +114,131 @@ Example:
                        'region'   => ! $export->get_dids_npa_select,
                     )
           %>
-          <BR><FONT SIZE="-1">Phone number</FONT>
+          <BR><FONT SIZE="-1" ID="phonenum_phonenum_label" <% $manual_checked ? 'STYLE="color:#999999"' : '' %>>Phone number</FONT>
         </TD>
 
       </TR>
+
+%       if ( $export->get_dids_can_manual ) {
+          <TR>
+
+            <TD VALIGN="top">
+              <INPUT TYPE     = "radio"
+                     NAME     = "phonenum_which"
+                     VALUE    = "phonenum_manual"
+                     onChange = "phonenum_which_changed(this)"
+                     <% $manual_checked %>
+              > Manual entry
+            </TD>
+
+            <TD VALIGN="top">
+              <& /elements/input-text.html,
+                   %opt,
+                   field    => 'phonenum_manual',
+                   id       => 'phonenum_manual',
+                   type     => 'text',
+                   disabled => ( $phonenum_checked ? 1 : 0 ),
+              &>
+            </TD>
+          </TR>
+
+          <SCRIPT TYPE="text/javascript">
+            function phonenum_which_changed(what) {
+
+              if ( what.value == 'phonenum' && what.checked ) {
+
+                what.form.phonenum_manual.disabled = true;
+                what.form.phonenum_manual.style.backgroundColor = '#dddddd';
+
+                what.form.phonenum_state.disabled = false;
+
+                document.getElementById('phonenum_state_label').style.color = '#000000';
+                if ( document.getElementById('areacode_label') ) {
+                  document.getElementById('areacode_label').style.color = '#000000';
+                }
+                if ( document.getElementById('exchange_label') ) {
+                  document.getElementById('exchange_label').style.color = '#000000';
+                }
+                if ( document.getElementById('region_label') ) {
+                  document.getElementById('region_label').style.color = '#000000';
+                }
+                document.getElementById('phonenum_phonenum_label').style.color = '#000000';
+
+                var value = what.form.phonenum_state.options[ what.form.phonenum_state.selectedIndex].value;
+
+                if ( value != '' ) {
+
+                  if ( what.form.areacode ) {
+                    what.form.areacode.disabled = false;
+
+                    var areacode_value = what.form.areacode.options[ what.form.areacode.selectedIndex].value;
+
+                    if ( areacode_value != '' ) {
+                      what.form.exchange.disabled = false;
+
+                      var exchange_value = what.form.exchange.options[ what.form.exchange.selectedIndex].value;
+
+                      if ( exchange_value != '' ) {
+                        what.form.phonenum.disabled = false;
+                      }
+
+                    }
+
+                  }
+                  if ( what.form.region ) {
+                    what.form.region.disabled = false;
+                    
+                    var region_value = what.form.region.options[ what.form.region.selectedIndex].value;
+
+                    if ( region_value != '' ) {
+                      what.form.phonenum.disabled = false;
+                    }
+
+                  }
+
+                }
+
+              }
+
+              if ( what.value == 'phonenum_manual' && what.checked ) {
+
+                what.form.phonenum_manual.disabled = false;
+                what.form.phonenum_manual.style.backgroundColor = '#ffffff';
+
+                what.form.phonenum_state.disabled = true;
+
+                document.getElementById('phonenum_state_label').style.color = '#999999';
+                if ( document.getElementById('areacode_label') ) {
+                  document.getElementById('areacode_label').style.color = '#999999';
+                }
+                if ( document.getElementById('exchange_label') ) {
+                  document.getElementById('exchange_label').style.color = '#999999';
+                }
+                if ( document.getElementById('region_label') ) {
+                  document.getElementById('region_label').style.color = '#999999';
+                }
+                document.getElementById('phonenum_phonenum_label').style.color = '#999999';
+
+                if ( what.form.areacode ) {
+                  what.form.areacode.disabled = true;
+                }
+
+                if ( what.form.exchange ) {
+                  what.form.exchange.disabled = true;
+                }
+
+                if ( what.form.region ) {
+                  what.form.region.disabled = true;
+                }
+
+                what.form.phonenum.disabled = true;
+              }
+
+            }
+          </SCRIPT>
+
+%       }
+
     </TABLE>
 
 % } 

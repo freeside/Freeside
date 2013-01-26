@@ -17,7 +17,7 @@
     what.form.<% $opt{'prefix'} %>region.disabled = 'disabled';
     what.form.<% $opt{'prefix'} %>region.style.display = 'none';
     var regionwait = document.getElementById('<% $opt{'prefix'} %>regionwait');
-    regionwait.style.display = '';
+    regionwait.style.display = 'inline';
     var regionerror = document.getElementById('<% $opt{'prefix'} %>regionerror');
     regionerror.style.display = 'none';
 
@@ -56,7 +56,7 @@
         what.form.<% $opt{'prefix'} %>region.style.display = '';
       } else {
         var regionerror = document.getElementById('<% $opt{'prefix'} %>regionerror');
-        regionerror.style.display = '';
+        regionerror.style.display = 'inline';
       }
 
       //run the callback

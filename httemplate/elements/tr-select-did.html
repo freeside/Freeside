@@ -1,6 +1,6 @@
 <% include('tr-td-label.html', @_ ) %>
 
-% if ( $opt{'curr_value'} ne '' && $use_selector ) {
+% if ( $use_selector && $opt{'curr_value'} ne '' && ! $can_edit ) {
 
     <TD BGCOLOR="#dddddd" <% $cell_style %>><% $opt{'formatted_value'} || $opt{'curr_value'} || $opt{'value'} |h %></TD>
     
@@ -37,5 +37,7 @@ if ( scalar(@exports) > 1 ) {
 }
 
 my $use_selector = scalar(@exports) ? 1 : 0;
+
+my $can_edit = scalar(@exports) && $exports[0]->get_dids_can_edit;
 
 </%init>

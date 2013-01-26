@@ -28,6 +28,8 @@ tie my %options, 'Tie::IxHash',
 sub rebless { shift; }
 
 sub get_dids_can_tollfree { 0; };
+sub get_dids_can_manual   { 1; };
+sub get_dids_can_edit     { 1; };
 sub get_dids_npa_select   { 0; };
 
 # i guess we could get em from the API, but since its returning states without

@@ -17,7 +17,7 @@
     what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
     what.form.<% $opt{'prefix'} %>phonenum.style.display = 'none';
     var phonenumwait = document.getElementById('<% $opt{'prefix'} %>phonenumwait');
-    phonenumwait.style.display = '';
+    phonenumwait.style.display = 'inline';
     var phonenumerror = document.getElementById('<% $opt{'prefix'} %>phonenumerror');
     phonenumerror.style.display = 'none';
 
@@ -54,7 +54,7 @@
         what.form.<% $opt{'prefix'} %>phonenum.style.display = '';
       } else {
         var phonenumerror = document.getElementById('<% $opt{'prefix'} %>phonenumerror');
-        phonenumerror.style.display = '';
+        phonenumerror.style.display = 'inline';
       }
 
       //run the callback
