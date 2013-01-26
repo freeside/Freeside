@@ -81,7 +81,7 @@ sub get_censustract_ffiec {
 
       my($zip5, $zip4) = split('-',$location->{zip});
 
-      $year ||= '2011'; #2012 per http://transition.fcc.gov/form477/techfaqs.html soon/now?
+      $year ||= '2012';
       my @ffiec_args = (
         __VIEWSTATE => $viewstate,
         __EVENTVALIDATION => $eventvalidation,
