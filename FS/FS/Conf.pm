@@ -5063,6 +5063,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'username-exclamation',
+    'section'     => 'username',
+    'description' => 'Allow the exclamation character (!) in usernames.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'ie-compatibility_mode',
     'section'     => 'UI',

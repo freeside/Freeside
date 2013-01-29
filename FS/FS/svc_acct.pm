@@ -14,6 +14,7 @@ use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase $username_percent $username_colon
              $username_slash $username_equals $username_pound
+             $username_exclamation
              $password_noampersand $password_noexclamation
              $warning_template $warning_from $warning_subject $warning_mimetype
              $warning_cc
@@ -84,6 +85,7 @@ FS::UID->install_callback( sub {
   $username_slash = $conf->exists('username-slash');
   $username_equals = $conf->exists('username-equals');
   $username_pound = $conf->exists('username-pound');
+  $username_exclamation = $conf->exists('username-exclamation');
   $password_noampersand = $conf->exists('password-noexclamation');
   $password_noexclamation = $conf->exists('password-noexclamation');
   $dirhash = $conf->config('dirhash') || 0;
@@ -1181,7 +1183,7 @@ sub check {
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
 
-  $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=\#]{$usernamemin,$ulen})$/i
+  $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=\#\!]{$usernamemin,$ulen})$/i
     or return gettext('illegal_username'). " ($usernamemin-$ulen): ". $recref->{username};
   $recref->{username} = $1;
 
@@ -1221,6 +1223,9 @@ sub check {
   }
   unless ( $username_pound ) {
     $recref->{username} =~ /\#/ and return $uerror;
+  }
+  unless ( $username_exclamation ) {
+    $recref->{username} =~ /\!/ and return $uerror;
   }
 
 
