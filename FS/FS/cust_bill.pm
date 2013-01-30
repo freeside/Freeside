@@ -1330,6 +1330,8 @@ invoice and all older invoices is greater than the specified amount.
 
 I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
+I<lpr>, if specified, is passed to 
+
 =cut
 
 sub queueable_send {
@@ -1354,6 +1356,7 @@ sub send {
   my( $template, $invoice_from, $notice_name );
   my $agentnums = '';
   my $balance_over = 0;
+  my $lpr = '';
 
   if ( ref($_[0]) ) {
     my $opt = shift;
@@ -1364,6 +1367,7 @@ sub send {
     $invoice_from = $opt->{'invoice_from'};
     $balance_over = $opt->{'balance_over'} if $opt->{'balance_over'};
     $notice_name = $opt->{'notice_name'};
+    $lpr = $opt->{'lpr'}
   } else {
     $template = scalar(@_) ? shift : '';
     if ( scalar(@_) && $_[0]  ) {
@@ -1397,10 +1401,12 @@ sub send {
     if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list )
     && ! $self->invoice_noemail;
 
+  $opt{'lpr'} = $lpr;
   #$self->print_invoice(\%opt)
   $self->print(\%opt)
     if grep { $_ eq 'POST' } @invoicing_list; #postal
 
+  #this has never been used post-$ORIGINAL_ISP afaik
   $self->fax_invoice(\%opt)
     if grep { $_ eq 'FAX' } @invoicing_list; #fax
 
@@ -1564,14 +1570,16 @@ sub print {
   return if $self->hide;
   my $conf = $self->conf;
 
-  my( $template, $notice_name );
+  my( $template, $notice_name, $lpr );
   if ( ref($_[0]) ) {
     my $opt = shift;
     $template = $opt->{'template'} || '';
     $notice_name = $opt->{'notice_name'} || 'Invoice';
+    $lpr = $opt->{'lpr'}
   } else {
     $template = scalar(@_) ? shift : '';
     $notice_name = 'Invoice';
+    $lpr = '';
   }
 
   my %opt = (
@@ -1587,6 +1595,7 @@ sub print {
     do_print(
       $self->lpr_data(\%opt),
       'agentnum' => $self->cust_main->agentnum,
+      'lpr'      => $lpr,
     );
   }
 }
