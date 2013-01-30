@@ -401,12 +401,12 @@ sub import_results {
       foreach ('paid', '_date', 'payinfo') {
         $new_cust_pay_batch->$_($hash{$_}) if $hash{$_};
       }
-      $error = $new_cust_pay_batch->approve($hash{'paybatch'} || $self->batchnum);
+      $error = $new_cust_pay_batch->approve(%hash);
       $total += $hash{'paid'};
 
     } elsif ( &{$declined_condition}(\%hash) ) {
 
-      $error = $new_cust_pay_batch->decline;
+      $error = $new_cust_pay_batch->decline($hash{'error_message'});;
 
     }
 
@@ -572,8 +572,6 @@ sub import_from_gateway {
       my $payby; # CARD or CHEK
       my $error;
 
-      # follow realtime gateway practice here
-      # though eventually this stuff should go into separate fields...
       my $paybatch = $gateway->gatewaynum .  '-' .  $gateway->gateway_module .
         ':' . $item->authorization .  ':' . $item->order_number;
 
@@ -644,8 +642,11 @@ sub import_from_gateway {
             payby       => $payby,
             invnum      => $item->invoice_number,
             batchnum    => $pay_batch->batchnum,
-            paybatch    => $paybatch,
             payinfo     => $payinfo,
+            gatewaynum  => $gateway->gatewaynum,
+            processor   => $gateway->gateway_module,
+            auth        => $item->authorization,
+            order_number => $item->order_number,
           }
         );
         $error ||= $cust_pay->insert;
@@ -725,7 +726,12 @@ sub import_from_gateway {
         # approval status
         if ( $item->approved ) {
           # follow Billing_Realtime format for paybatch
-          $error = $cust_pay_batch->approve($paybatch);
+          $error = $cust_pay_batch->approve(
+            'gatewaynum'    => $gateway->gatewaynum,
+            'processor'     => $gateway->gateway_module,
+            'auth'          => $item->authorization,
+            'order_number'  => $item->order_number,
+          );
           $total += $cust_pay_batch->paid;
         }
         else {
@@ -829,6 +835,9 @@ sub try_to_resolve {
       }
       return $error if $error;
     }
+  } elsif ( @unresolved ) {
+    # auto resolve is not enabled, and we're not ready to resolve
+    return;
   }
 
   $self->set_status('R');
@@ -1028,7 +1037,6 @@ sub manual_approve {
   my $self = shift;
   my $date = time;
   my %opt = @_;
-  my $paybatch = $opt{'paybatch'} || $self->batchnum;
   my $usernum = $opt{'usernum'} || die "manual approval requires a usernum";
   my $conf = FS::Conf->new;
   return 'manual batch approval disabled' 
@@ -1058,7 +1066,9 @@ sub manual_approve {
       '_date'   => $date,
       'usernum' => $usernum,
     };
-    my $error = $new_cust_pay_batch->approve($paybatch);
+    my $error = $new_cust_pay_batch->approve();
+    # there are no approval options here (authorization, order_number, etc.)
+    # because the transaction wasn't really approved
     if ( $error ) {
       $dbh->rollback;
       return 'paybatchnum '.$cust_pay_batch->paybatchnum.": $error";
