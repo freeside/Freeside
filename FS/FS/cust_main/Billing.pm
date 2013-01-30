@@ -1751,8 +1751,9 @@ sub due_cust_event {
 
   #???
   #my $DEBUG = $opt{'debug'}
+  $opt{'debug'} ||= 0; # silence some warnings
   local($DEBUG) = $opt{'debug'}
-    if defined($opt{'debug'}) && $opt{'debug'} > $DEBUG;
+    if $opt{'debug'} > $DEBUG;
   $DEBUG = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me due_cust_event called with options ".
