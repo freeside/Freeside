@@ -23,7 +23,10 @@ my $gateway;
     '_date',
     'approvalStatus',
     'order_number',
-    'authorization',
+    'auth',
+    'procStatus',
+    'procStatusMessage',
+    'respCodeMessage',
     ],
   xmlkeys     => [
     'orderID',
@@ -31,6 +34,9 @@ my $gateway;
     'approvalStatus',
     'txRefNum',
     'authorizationCode',
+    'procStatus',
+    'procStatusMessage',
+    'respCodeMessage',
     ],
   'hook'        => sub {
       if ( !$gateway ) {
@@ -38,7 +44,7 @@ my $gateway;
         # as the batch config, if there is one.  If not, leave 
         # gateway out entirely.
         my $merchant = (FS::Conf->new->config('batchconfig-paymentech'))[2];
-        my $g = qsearchs({
+        $gateway = qsearchs({
               'table'     => 'payment_gateway',
               'addl_from' => ' JOIN payment_gateway_option USING (gatewaynum) ',
               'hashref'   => {  disabled    => '',
@@ -46,18 +52,24 @@ my $gateway;
                                 optionvalue => $merchant,
                               },
               });
-        $gateway = ($g ? $g->gatewaynum . '-' : '') . 'PaymenTech';
       }
       my ($hash, $oldhash) = @_;
+      $hash->{'gatewaynum'} = $gateway->gatewaynum if $gateway;
+      $hash->{'processor'} = 'PaymenTech';
       my ($mon, $day, $year, $hour, $min, $sec) = 
         $hash->{'_date'} =~ /^(..)(..)(....)(..)(..)(..)$/;
       $hash->{'_date'} = timelocal($sec, $min, $hour, $day, $mon-1, $year);
       $hash->{'paid'} = $oldhash->{'amount'};
-      $hash->{'paybatch'} = join(':', 
-        $gateway,
-        $hash->{'authorization'},
+      $hash->{'paybatch'} = join(':',
+        $gateway->gatewaynum . '-PaymenTech',
+        $hash->{'auth'},
         $hash->{'order_number'},
       );
+      if ( $hash->{'procStatus'} == 0 ) {
+        $hash->{'error_message'} = $hash->{'respCodeMessage'};
+      } else {
+        $hash->{'error_message'} = $hash->{'procStatusMessage'};
+      }
     },
   'approved'    => sub { my $hash = shift;
                             $hash->{'approvalStatus'} 

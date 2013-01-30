@@ -371,12 +371,12 @@ sub import_results {
       foreach ('paid', '_date', 'payinfo') {
         $new_cust_pay_batch->$_($hash{$_}) if $hash{$_};
       }
-      $error = $new_cust_pay_batch->approve($hash{'paybatch'} || $self->batchnum);
+      $error = $new_cust_pay_batch->approve($hash{'paybatch'});
       $total += $hash{'paid'};
 
     } elsif ( &{$declined_condition}(\%hash) ) {
 
-      $error = $new_cust_pay_batch->decline;
+      $error = $new_cust_pay_batch->decline($hash{'error_message'});;
 
     }
 
@@ -561,7 +561,6 @@ sub manual_approve {
   my $self = shift;
   my $date = time;
   my %opt = @_;
-  my $paybatch = $opt{'paybatch'} || $self->batchnum;
   my $usernum = $opt{'usernum'} || die "manual approval requires a usernum";
   my $conf = FS::Conf->new;
   return 'manual batch approval disabled' 
@@ -591,7 +590,9 @@ sub manual_approve {
       '_date'   => $date,
       'usernum' => $usernum,
     };
-    my $error = $new_cust_pay_batch->approve($paybatch);
+    my $error = $new_cust_pay_batch->approve();
+    # there are no approval options here (authorization, order_number, etc.)
+    # because the transaction wasn't really approved
     if ( $error ) {
       $dbh->rollback;
       return 'paybatchnum '.$cust_pay_batch->paybatchnum.": $error";

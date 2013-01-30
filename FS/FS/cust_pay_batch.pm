@@ -9,7 +9,7 @@ use FS::payinfo_Mixin;
 use FS::cust_main;
 use FS::cust_bill;
 
-@ISA = qw( FS::payinfo_Mixin FS::Record );
+@ISA = qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -80,7 +80,9 @@ following fields are currently supported:
 
 =item country 
 
-=item status
+=item status - 'Approved' or 'Declined'
+
+=item error_message - the error returned by the gateway if any
 
 =back
 
@@ -291,6 +293,7 @@ sub approve {
       'paid'      => $new->paid,
       '_date'     => $new->_date,
       'usernum'   => $new->usernum,
+      'batchnum'  => $new->batchnum,
     } );
   $error = $cust_pay->insert;
   if ( $error ) {
@@ -343,6 +346,7 @@ sub decline {
     }
   } # !$old->status
   $new->status('Declined');
+  $new->error_message($reason);
   my $error = $new->replace($old);
   if ( $error ) {
     return "error updating status of paybatchnum $paybatchnum: $error\n";

@@ -51,6 +51,7 @@ Examples:
                 'sort_fields'    => \@sort_fields,
                 'align'          => $align,
                 'links'          => \@links,
+                'link_onclicks'  => \@link_onclicks,
                 'color'          => \@color,
                 'style'          => \@style,
 &>
@@ -134,11 +135,12 @@ if ( $cgi->param('tax_names') ) {
   }
 }
 
-my @header = ();
-my @fields = ();
-my @sort_fields = ();
+my @header;
+my @fields;
+my @sort_fields;
 my $align = '';
-my @links = ();
+my @links;
+my @link_onclicks;
 if ( $opt{'pre_header'} ) {
   push @header, @{ $opt{'pre_header'} };
   $align .= 'c' x scalar(@{ $opt{'pre_header'} });
@@ -146,6 +148,16 @@ if ( $opt{'pre_header'} ) {
   push @fields, @{ $opt{'pre_fields'} };
   push @sort_fields, @{ $opt{'pre_fields'} };
 }
+
+my $sub_receipt = sub {
+  my $obj = shift;
+  my $objnum = $obj->primary_key . '=' . $obj->get($obj->primary_key);
+
+  include('/elements/popup_link_onclick.html',
+    'action'  => $p.'view/cust_pay.html?link=popup;'.$objnum,
+    'actionlabel' => emt('Payment Receipt'),
+  );
+};
 
 push @header, "\u$name_singular",
               'Amount',
@@ -155,6 +167,7 @@ push @links, '', '';
 push @fields, 'payby_payinfo_pretty',
               sub { sprintf('$%.2f', shift->$amount_field() ) },
 ;
+push @link_onclicks, $sub_receipt, '',
 push @sort_fields, '', $amount_field;
 
 if ( $unapplied ) {
