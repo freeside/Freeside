@@ -1541,6 +1541,7 @@ and customer address. Include units.',
     'section'     => 'required',
     'description' => 'Print command for paper invoices, for example `lpr -h\'',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {

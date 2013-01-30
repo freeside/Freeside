@@ -801,16 +801,32 @@ sub _pslatex {
 
 }
 
-=item do_print ARRAYREF
+=item do_print ARRAYREF [, OPTION => VALUE ... ]
 
 Sends the lines in ARRAYREF to the printer.
+
+Options available are:
+
+=over 4
+
+=item agentnum
+
+Uses this agent's 'lpr' configuration setting override instead of the global
+value.
+
+=item lpr
+
+Uses this command instead of the configured lpr command (overrides both the
+global value and agentnum).
 
 =cut
 
 sub do_print {
-  my $data = shift;
+  my( $data, %opt ) = @_;
 
-  my $lpr = $conf->config('lpr');
+  my $lpr = ( exists($opt{'lpr'}) && $opt{'lpr'} )
+              ? $opt{'lpr'}
+              : $conf->config('lpr', $opt{'agentnum'} );
 
   my $outerr = '';
   run3 $lpr, $data, \$outerr, \$outerr;

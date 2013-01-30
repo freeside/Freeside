@@ -1541,7 +1541,10 @@ sub print {
     $self->batch_invoice(\%opt);
   }
   else {
-    do_print $self->lpr_data(\%opt);
+    do_print(
+      $self->lpr_data(\%opt),
+      'agentnum' => $self->cust_main->agentnum,
+    );
   }
 }
 
