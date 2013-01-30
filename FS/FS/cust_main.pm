@@ -4917,7 +4917,10 @@ sub queueable_print {
 
 sub print {
   my ($self, $template) = (shift, shift);
-  do_print [ $self->print_ps($template) ];
+  do_print(
+    [ $self->print_ps($template) ],
+    'agentnum' => $self->agentnum,
+  );
 }
 
 #these three subs should just go away once agent stuff is all config overrides

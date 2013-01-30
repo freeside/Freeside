@@ -484,12 +484,14 @@ Render a PDF and send it to the printer.  OPTIONS are as for 'render'.
 =cut
 
 sub print {
-  my $file = render(@_);
-  my @lpr = $conf->config('lpr');
-  run ([@lpr, '-r'], '<', $file)
+  my( $self, %opt ) = @_;
+  my $file = $self->render(%opt);
+
+  my $lpr = $conf->config('lpr', $opt{'cust_main'}->agentnum );
+
+  run ( $lpr, '<', $file)
     or die "lpr error:\n$?\n";
 }
-
 
 # helper sub for package dates
 my $ymd = sub { $_[0] ? time2str('%Y-%m-%d', $_[0]) : '' };
