@@ -206,6 +206,17 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+=item pay_batch
+
+Returns the payment batch this payment belongs to (L<FS::pay_batch).
+
+=cut
+
+sub pay_batch {
+  my $self = shift;
+  FS::pay_batch->by_key($self->batchnum);
+}
+
 #you know what, screw this in the new world of events.  we should be able to
 #get the event defs to retry (remove once.pm condition, add every.pm) without
 #mucking about with statuses of previous cust_event records.  right?
