@@ -9,7 +9,7 @@
                                           'Country code',
                                           'Phone number',
                                           @header,
-                                          FS::UI::Web::cust_header(),
+                                          FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                         ],
                  'fields'            => [ 'svcnum',
                                           'svc',
@@ -24,7 +24,7 @@
                                           $link,
                                           ( map '', @header ),
                                           ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
-                                                FS::UI::Web::cust_header()
+                                                FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                           ),
                                         ],
                  'align' => 'rlrr'.
@@ -117,6 +117,24 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     }
                  
 
+  }
+
+} elsif ( $cgi->param('magic') =~ /^advanced$/ ) {
+
+  if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+    push @extra_sql, "agentnum = $1";
+  }
+
+  my $pkgpart = [ grep /^(\d+)$/, $cgi->param('pkgpart') ];
+  if ( @$pkgpart ) {
+    push @extra_sql,
+      'cust_pkg.pkgpart IN ('. join(',', @$pkgpart ). ')';
+  }
+  
+  my $svcpart = [ grep /^(\d+)$/, $cgi->param('svcpart') ];
+  if ( @$svcpart ) {
+    push @extra_sql,
+      'svcpart IN ('. join(',', @$svcpart ). ')';
   }
 
 } elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {

@@ -21,6 +21,9 @@
 
 my( %opt ) = @_;
 
-$opt{'part_svc'} ||= [ qsearch( 'part_svc', {} ) ]; # { disabled=>'' } )
+my %hash = ();
+$hash{'svcdb'} = $opt{'svcdb'} if $opt{'svcdb'};
+
+$opt{'part_svc'} ||= [ qsearch( 'part_svc', \%hash ) ]; # { disabled=>'' } )
 
 </%init>
