@@ -116,7 +116,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Services: Accounts: Advanced search'); #?
 
-my $title = emt('Account Report');
+my $title = mt('Account Report');
 
 #false laziness w/report_cust_pkg.html
 my $custnum = '';
@@ -127,7 +127,7 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
     'hashref'   => { 'custnum' => $custnum },
     'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
   }) or die "unknown custnum $custnum";
-  $title = emt("Account Report: [_1]", $cust_main->name);
+  $title = mt("Account Report: [_1]", $cust_main->name);
 }
 
 </%init>
