@@ -501,6 +501,17 @@ foreach my $cust_pay_pending ($cust_main->cust_pay_pending_attempt) {
     #'target'  => $target, #XXX
   };
 }
+#declined batch payments
+foreach my $cust_pay_batch (
+  $cust_main->cust_pay_batch(hashref => {status => 'Declined'})
+) {
+  my $pay_batch = $cust_pay_batch->pay_batch;
+  push @history, {
+    'date'    => $pay_batch->upload,
+    'desc'    => include('payment_history/attempted_batch_payment.html', $cust_pay_batch, %opt),
+    'void_payment' => $cust_pay_batch->amount,
+  };
+}
 
 #credits (some false laziness w/payments)
 foreach my $cust_credit ($cust_main->cust_credit) {
