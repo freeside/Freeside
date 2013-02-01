@@ -213,6 +213,7 @@ sub _upgrade_data { # class method
     'Services: Accounts' => 'Services: Accounts: Advanced search',
     'Services: Wireless broadband services' => 'Services: Wireless broadband services: Advanced search',
     'Services: Hardware' => 'Services: Hardware: Advanced search',
+    'Services: Phone numbers' => 'Services: Phone numbers: Advanced search',
 
     'List rating data' => [ 'Usage: RADIUS sessions',
                             'Usage: Call Detail Records (CDRs)',
