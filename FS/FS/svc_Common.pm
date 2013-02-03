@@ -1360,7 +1360,7 @@ sub search {
   }
 
   #customer balance
-  if ( $params->{'balance'} =~ /^\s*(\d*(\.\d{1,2})?)\s*$/ && length($1) ) {
+  if ( $params->{'balance'} =~ /^\s*(\-?\d*(\.\d{1,2})?)\s*$/ && length($1) ) {
     my $balance = $1;
 
     my $age = '';
