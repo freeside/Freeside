@@ -43,27 +43,6 @@ inherit from, i.e. FS::svc_acct.  FS::svc_Common inherits from FS::Record.
 
 =over 4
 
-=item search_sql_field FIELD STRING
-
-Class method which returns an SQL fragment to search for STRING in FIELD.
-
-It is now case-insensitive by default.
-
-=cut
-
-sub search_sql_field {
-  my( $class, $field, $string ) = @_;
-  my $table = $class->table;
-  my $q_string = dbh->quote($string);
-  "LOWER($table.$field) = LOWER($q_string)";
-}
-
-#fallback for services that don't provide a search... 
-sub search_sql {
-  #my( $class, $string ) = @_;
-  '1 = 0'; #false
-}
-
 =item new
 
 =cut
@@ -1240,6 +1219,195 @@ sub nms_ip_insert {
 
 sub nms_ip_delete {
 #XXX not yet implemented
+}
+
+=item search_sql_field FIELD STRING
+
+Class method which returns an SQL fragment to search for STRING in FIELD.
+
+It is now case-insensitive by default.
+
+=cut
+
+sub search_sql_field {
+  my( $class, $field, $string ) = @_;
+  my $table = $class->table;
+  my $q_string = dbh->quote($string);
+  "LOWER($table.$field) = LOWER($q_string)";
+}
+
+#fallback for services that don't provide a search... 
+sub search_sql {
+  #my( $class, $string ) = @_;
+  '1 = 0'; #false
+}
+
+=item search HASHREF
+
+Class method which returns a qsearch hash expression to search for parameters
+specified in HASHREF.
+
+Parameters:
+
+=over 4
+
+=item unlinked - set to search for all unlinked services.  Overrides all other options.
+
+=item agentnum
+
+=item custnum
+
+=item svcpart
+
+=item ip_addr
+
+=item pkgpart - arrayref
+
+=item routernum - arrayref
+
+=item sectornum - arrayref
+
+=item towernum - arrayref
+
+=item order_by
+
+=back
+
+=cut
+
+# based on FS::svc_acct::search, both that and svc_broadband::search should
+#  eventually use this instead
+sub search {
+  my ($class, $params) = @_;
+
+  my @from = (
+    'LEFT JOIN cust_svc  USING ( svcnum  )',
+    'LEFT JOIN part_svc  USING ( svcpart )',
+    'LEFT JOIN cust_pkg  USING ( pkgnum  )',
+    'LEFT JOIN cust_main USING ( custnum )',
+  );
+
+  my @where = ();
+
+#  # domain
+#  if ( $params->{'domain'} ) { 
+#    my $svc_domain = qsearchs('svc_domain', { 'domain'=>$params->{'domain'} } );
+#    #preserve previous behavior & bubble up an error if $svc_domain not found?
+#    push @where, 'domsvc = '. $svc_domain->svcnum if $svc_domain;
+#  }
+#
+#  # domsvc
+#  if ( $params->{'domsvc'} =~ /^(\d+)$/ ) { 
+#    push @where, "domsvc = $1";
+#  }
+
+  #unlinked
+  push @where, 'pkgnum IS NULL' if $params->{'unlinked'};
+
+  #agentnum
+  if ( $params->{'agentnum'} =~ /^(\d+)$/ && $1 ) {
+    push @where, "cust_main.agentnum = $1";
+  }
+
+  #custnum
+  if ( $params->{'custnum'} =~ /^(\d+)$/ && $1 ) {
+    push @where, "custnum = $1";
+  }
+
+  #customer status
+  if ( $params->{'cust_status'} =~ /^([a-z]+)$/ ) {
+    push @where, FS::cust_main->cust_status_sql . " = '$1'";
+  }
+
+  #customer balance
+  if ( $params->{'balance'} =~ /^\s*(\d*(\.\d{1,2})?)\s*$/ && length($1) ) {
+    my $balance = $1;
+
+    my $age = '';
+    if ( $params->{'balance_days'} =~ /^\s*(\d*(\.\d{1,3})?)\s*$/ && length($1) ) {
+      $age = time - 86400 * $1;
+    }
+    push @where, FS::cust_main->balance_date_sql($age) . " > $balance";
+  }
+
+  #payby
+  if ( $params->{'payby'} && scalar(@{ $params->{'payby'} }) ) {
+    my @payby = map "'$_'", grep /^(\w+)$/, @{ $params->{'payby'} };
+    push @where, 'payby IN ('. join(',', @payby ). ')';
+  }
+
+  #pkgpart
+  if ( $params->{'pkgpart'} && scalar(@{ $params->{'pkgpart'} }) ) {
+    my @pkgpart = grep /^(\d+)$/, @{ $params->{'pkgpart'} };
+    push @where, 'cust_pkg.pkgpart IN ('. join(',', @pkgpart ). ')';
+  }
+
+  # svcpart
+  if ( $params->{'svcpart'} && scalar(@{ $params->{'svcpart'} }) ) {
+    my @svcpart = grep /^(\d+)$/, @{ $params->{'svcpart'} };
+    push @where, 'svcpart IN ('. join(',', @svcpart ). ')';
+  }
+
+  if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
+    push @from, ' LEFT JOIN export_svc USING ( svcpart )';
+    push @where, "exportnum = $1";
+  }
+
+#  # sector and tower
+#  my @where_sector = $class->tower_sector_sql($params);
+#  if ( @where_sector ) {
+#    push @where, @where_sector;
+#    push @from, ' LEFT JOIN tower_sector USING ( sectornum )';
+#  }
+
+  # here is the agent virtualization
+  #if ($params->{CurrentUser}) {
+  #  my $access_user =
+  #    qsearchs('access_user', { username => $params->{CurrentUser} });
+  #
+  #  if ($access_user) {
+  #    push @where, $access_user->agentnums_sql('table'=>'cust_main');
+  #  }else{
+  #    push @where, "1=0";
+  #  }
+  #} else {
+    push @where, $FS::CurrentUser::CurrentUser->agentnums_sql(
+                   'table'      => 'cust_main',
+                   'null_right' => 'View/link unlinked services',
+                 );
+  #}
+
+  push @where, @{ $params->{'where'} } if $params->{'where'};
+
+  my $addl_from = join(' ', @from);
+  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
+
+  my $table = $class->table;
+
+  my $count_query = "SELECT COUNT(*) FROM $table $addl_from $extra_sql";
+  #if ( keys %svc_X ) {
+  #  $count_query .= ' WHERE '.
+  #                    join(' AND ', map "$_ = ". dbh->quote($svc_X{$_}),
+  #                                      keys %svc_X
+  #                        );
+  #}
+
+  {
+    'table'       => $table,
+    'hashref'     => {},
+    'select'      => join(', ',
+                       "$table.*",
+                       'part_svc.svc',
+                       'cust_main.custnum',
+                       @{ $params->{'addl_select'} || [] },
+                       FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
+                     ),
+    'addl_from'   => $addl_from,
+    'extra_sql'   => $extra_sql,
+    'order_by'    => $params->{'order_by'},
+    'count_query' => $count_query,
+  };
+
 }
 
 =back

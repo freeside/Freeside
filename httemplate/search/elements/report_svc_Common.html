@@ -27,10 +27,36 @@ Example:
     </TR>
 
 % unless ( $custnum ) {
+
     <& /elements/tr-select-agent.html,
-                   'curr_value'    => scalar( $cgi->param('agentnum') ),
-                   'disable_empty' => 0,
+         curr_value    => scalar( $cgi->param('agentnum') ),
+         disable_empty => 0,
     &>
+
+    <& /elements/tr-select-cust_main-status.html,
+         label         => 'Customer Status',
+         field         => 'cust_status',
+    &>
+
+    <& /elements/tr-select-payby.html,
+         label         => emt('Payment method:'),
+         payby_type    => 'cust',
+         multiple      => 1,
+         all_selected  => 1,
+    &>
+
+    <& /elements/tr-input-money.html,
+         label         => 'Balance over',
+         field         => 'balance',
+    &>
+
+    <& /elements/tr-input-text.html,
+         label         => 'Balance age (days)',
+         field         => 'balance_days',
+         size          => 4,
+    &>
+
+% }
 
 %   # just this customer's domains?
 %#    <& /elements/tr-select-domain.html,
@@ -38,11 +64,13 @@ Example:
 %#                   'curr_value'    => scalar( $cgi->param('domsvc') ),
 %#                   'disable_empty' => 0,
 %#    &>
-% }
 
     <& /elements/tr-selectmultiple-part_pkg.html &> 
 
-    <& /elements/tr-select-part_svc.html, 'svcdb'=>$svcdb &> 
+    <& /elements/tr-select-part_svc.html,
+         'svcdb' => $svcdb,
+         'label' => 'Services',
+    &> 
 
     <TR>
       <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
@@ -80,7 +108,7 @@ die "access denied"
 my $title = $opt{'title'};
 
 #false laziness w/report_cust_pkg.html
-my $custnum = '';
+my( $custnum, $cust_main) = ('', '');
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   $custnum = $1;
   my $cust_main = qsearchs({
