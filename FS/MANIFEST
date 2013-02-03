@@ -13,6 +13,7 @@ bin/freeside-deloutsource
 bin/freeside-deloutsourceuser
 bin/freeside-deluser
 bin/freeside-email
+bin/freeside-phonenum_list
 bin/freeside-queued
 bin/freeside-radgroup
 bin/freeside-reexport

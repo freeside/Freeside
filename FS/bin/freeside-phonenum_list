@@ -1,0 +1,68 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $opt_c $opt_p $opt_b $opt_d $opt_s $opt_t );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::svc_phone;
+
+getopts('cp:b:d:s:t:');
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+my %search = ();
+
+$search{payby}        = [ split(/\s*,\s*/, $opt_p) ] if $opt_p;
+$search{balance}      = $opt_b                       if $opt_b;
+$search{balance_days} = $opt_d                       if $opt_d;
+$search{svcpart}      = [ split(/\s*,\s*/, $opt_s) ] if $opt_s;
+$search{cust_status}  = lc($opt_t)                   if $opt_t;
+
+my @svc_phone = qsearch( FS::svc_phone->search(\%search) );
+
+foreach my $svc_phone (@svc_phone) {
+  print $svc_phone->countrycode if $opt_c;
+  print $svc_phone->phonenum. "\n";  
+}
+
+sub usage {
+  die "usage: freeside-phonenum_list [ -c ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username \n";
+}
+
+=head1 NAME
+
+freeside-phonenum_list
+
+=head1 SYNOPSIS
+  freeside-phonenum_list [ -c ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username
+
+=head1 DESCRIPTION
+
+Command-line tool to list phone numbers.
+
+-c: Include country code in results
+
+-p: Customer payby (CARD, BILL, etc.).  Separate multiple values with commas.
+
+-b: Customer balance over (or equal to) this amount
+
+-d: Customer balance age over this many days 
+
+-s: Service definition (svcpart).  Separate multiple values with commas.
+
+-t: Customer status: prospect, active, ordered, inactive, suspended or cancelled
+
+username: Employee username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::svc_phone>, L<FS::cust_main>
+
+=cut
+
+1;
+
