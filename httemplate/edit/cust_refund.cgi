@@ -59,12 +59,12 @@
     </TD>
   </TR>
 % } 
-
+% if ( $cust_pay->processor ) {
     <TR>
       <TD ALIGN="right">Processor</TD>
       <TD BGCOLOR="#ffffff"><% $cust_pay->processor %></TD>
     </TR>
-% if ( length($auth) ) { 
+% if ( length($cust_pay->auth) ) { 
 
       <TR>
         <TD ALIGN="right">Authorization</TD>
@@ -78,10 +78,10 @@
         <TD BGCOLOR="#ffffff"><% $cust_pay->order_number %></TD>
       </TR>
 % } 
-% }  #if $cust_pay
+% } # if ($cust_pay->processor)
 
   </TABLE>
-% } 
+% }  #if $cust_pay
 
 
 <BR>Refund
