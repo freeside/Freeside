@@ -4100,6 +4100,23 @@ sub country_full {
   code2country($self->country);
 }
 
+=item county_state_county [ PREFIX ]
+
+Returns a string consisting of just the county, state and country.
+
+=cut
+
+sub county_state_country {
+  my $self = shift;
+  my $prefix = (@_ && $_[0]) ? shift : '';
+  my $label = $self->get($prefix.'country');
+  $label = $self->get($prefix.'state'). ", $label"
+    if $self->get($prefix.'state');
+  $label = $self->get($prefix.'county')." County, $label"
+    if $self->get($prefix.'county');
+  $label;
+}
+
 =item geocode DATA_VENDOR
 
 Returns a value for the customer location as encoded by DATA_VENDOR.
