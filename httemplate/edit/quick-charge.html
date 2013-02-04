@@ -145,7 +145,6 @@ function bill_now_changed (what) {
     <% mt('with terms') |h %> 
     <& /elements/select-terms.html,
                  'curr_value'  => scalar($cgi->param('invoice_terms')),
-                 'empty_value' => $default_terms,
                  'disabled'    => ( $cgi->param('bill_now') ? 0 : 1 ),
     &>
   </TD>
