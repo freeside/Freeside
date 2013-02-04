@@ -215,10 +215,8 @@ sub cust_credit_bill_pkg {
 
 sub cust_main_county {
   my $self = shift;
-  my $result;
-  if ( $self->taxtype eq 'FS::cust_main_county' ) {
-    $result = qsearchs( 'cust_main_county', { 'taxnum' => $self->taxnum } );
-  }
+  return '' unless $self->taxtype eq 'FS::cust_main_county';
+  qsearchs( 'cust_main_county', { 'taxnum' => $self->taxnum } );
 }
 
 sub _upgrade_data {

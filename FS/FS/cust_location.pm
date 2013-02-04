@@ -479,6 +479,20 @@ sub location_label {
   $prefix . $self->SUPER::location_label(%opt);
 }
 
+=item county_state_county
+
+Returns a string consisting of just the county, state and country.
+
+=cut
+
+sub county_state_country {
+  my $self = shift;
+  my $label = $self->country;
+  $label = $self->state.", $label" if $self->state;
+  $label = $self->county." County, $label" if $self->county;
+  $label;
+}
+
 =back
 
 =head1 CLASS METHODS
