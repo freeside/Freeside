@@ -584,16 +584,20 @@ sub print_generic {
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
 
-  # the customer's current balance as shown on the invoice before this one
-  $invoice_data{'true_previous_balance'} = sprintf("%.2f", ($self->previous_balance || 0) );
+  #these are used on the summary page only
 
-  # the change in balance from that invoice to this one
-  $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
+    # the customer's current balance as shown on the invoice before this one
+    $invoice_data{'true_previous_balance'} = sprintf("%.2f", ($self->previous_balance || 0) );
 
-  # the sum of amount owed on all previous invoices
-  $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
+    # the change in balance from that invoice to this one
+    $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
+
+    # the sum of amount owed on all previous invoices
+    # ($pr_total is used elsewhere but not as $previous_balance)
+    $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
 
   # the sum of amount owed on all invoices
+  # (this is used in the summary & on the payment coupon)
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
   # info from customer's last invoice before this one, for some 
@@ -727,10 +731,11 @@ sub print_generic {
 
 
   my $adjusttotal = 0;
-  my $adjust_section = { 'description' => 
-    $self->mt('Credits, Payments, and Adjustments'),
-                         'subtotal'    => 0,   # adjusted below
-                       };
+  my $adjust_section = {
+    'description'    => $self->mt('Credits, Payments, and Adjustments'),
+    'adjust_section' => 1,
+    'subtotal'       => 0,   # adjusted below
+  };
   my $adjust_weight = _pkg_category($adjust_section->{description})
                         ? _pkg_category($adjust_section->{description})->weight
                         : 0;
@@ -1149,10 +1154,11 @@ sub print_generic {
       $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
       $total->{'total_amount'} =
         &$embolden_function(
-          $other_money_char. sprintf('%.2f', $summarypage 
-                                               ? $self->charged +
-                                                 $self->billing_balance
-                                               : $self->owed + $pr_total
+          $other_money_char. sprintf('%.2f', #why? $summarypage 
+                                             #  ? $self->charged +
+                                             #    $self->billing_balance
+                                             #  :
+                                                 $self->owed + $pr_total
                                     )
         );
       if ( $multisection && !$adjust_section->{sort_weight} ) {
