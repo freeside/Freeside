@@ -4085,15 +4085,34 @@ sub ship_contact_firstlast {
   $contact->get('first') . ' '. $contact->get('last');
 }
 
-=item country_full
+#XXX this doesn't work in 3.x+
+#=item country_full
+#
+#Returns this customer's full country name
+#
+#=cut
+#
+#sub country_full {
+#  my $self = shift;
+#  code2country($self->country);
+#}
 
-Returns this customer's full country name
+=item county_state_county [ PREFIX ]
+
+Returns a string consisting of just the county, state and country.
 
 =cut
 
-sub country_full {
+sub county_state_country {
   my $self = shift;
-  code2country($self->country);
+  my $locationnum;
+  if ( @_ && $_[0] && $self->has_ship_address ) {
+    $locationnum = $self->ship_locationnum;
+  } else {
+    $locationnum = $self->bill_locationnum;
+  }
+  my $cust_location = qsearchs('cust_location', { locationnum=>$locationnum });
+  $cust_location->county_state_country;
 }
 
 =item geocode DATA_VENDOR
