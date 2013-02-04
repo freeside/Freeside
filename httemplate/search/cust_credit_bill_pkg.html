@@ -16,6 +16,7 @@
 
                    # line item
                    'Description',
+                   'Location',
                    @post_desc_header,
 
                    #invoice
@@ -35,6 +36,7 @@
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
                        },
+                   $location_sub,
                    @post_desc,
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
@@ -46,12 +48,14 @@
                    '', #'otaker',
                    '', #reason
                    '', #line item description
+                   '', #location
                    @post_desc_null,
                    'invnum',
                    '_date',
                    #cust fields
                ],
                'links' => [
+                   '',
                    '',
                    '',
                    '',
@@ -64,11 +68,12 @@
                          FS::UI::Web::cust_header()
                    ),
                ],
-               'align' => 'rrlll'.
+               'align' => 'rrllll'.
                           $post_desc_align.
                           'rr'.
                           FS::UI::Web::cust_aligns(),
                'color' => [ 
+                              '',
                               '',
                               '',
                               '',
@@ -80,6 +85,7 @@
                               FS::UI::Web::cust_colors(),
                             ],
                'style' => [ 
+                              '',
                               '',
                               '',
                               '',
@@ -425,8 +431,7 @@ if ( $cgi->param('nottax') ) {
 
 } else { 
 
-  #die?
-  warn "neiether nottax nor istax parameters specified";
+  #warn "neither nottax nor istax parameters specified";
   #same as before?
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
                  LEFT JOIN part_pkg USING ( pkgpart ) ';
@@ -484,5 +489,58 @@ my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
+
+my $tax_pkg_address = $conf->exists('tax-pkg_address');
+my $tax_ship_address = $conf->exists('tax-ship_address');
+
+my $location_sub = sub {
+  #my $cust_credit_bill_pkg = shift;
+  my $self = shift;
+  my $tax_Xlocation = $self->cust_bill_pkg_tax_Xlocation;
+  if ( defined($tax_Xlocation) && $tax_Xlocation ) {
+
+    if ( ref($tax_Xlocation) eq 'FS::cust_bill_pkg_tax_location' ) {
+
+      if ( $tax_Xlocation->taxtype eq 'FS::cust_main_county' ) {
+        my $cust_main_county = $tax_Xlocation->cust_main_county;
+        if ( $cust_main_county ) {
+          $cust_main_county->label;
+        } else {
+          ''; #cust_main_county record is gone... history?  yuck.
+        }
+      } else {
+        '(CCH tax_rate)'; #XXX FS::tax_rate.. vendor taxes not yet handled here
+      }
+
+    } elsif ( ref($tax_Xlocation) eq 'FS::cust_bill_pkg_tax_rate_location' ) {
+      '(CCH)'; #XXX vendor taxes not yet handled here
+    } else {
+      'unknown tax_Xlocation '. ref($tax_Xlocation);
+    }
+
+  } else {
+
+    my $cust_bill_pkg = $self->cust_bill_pkg;
+    if ( $cust_bill_pkg->pkgnum > 0 ) {
+      my $cust_pkg = $cust_bill_pkg->cust_pkg;
+      if ( $tax_pkg_address && (my $cust_location = $cust_pkg->cust_location) ){
+        $cust_location->county_state_country;
+      } else {
+        my $cust_main = $cust_pkg->cust_main;
+        if ( $tax_ship_address && $cust_main->has_ship_address ) {
+          $cust_main->county_state_country('ship_');
+        } else {
+          $cust_main->county_state_country;
+        }
+      }
+
+    } else {
+      #tax?  we shouldn't have wound up here then...
+      ''; #return customer ship or bill address? (depending on tax-ship_address)
+    }
+
+  }
+
+};
 
 </%init>
