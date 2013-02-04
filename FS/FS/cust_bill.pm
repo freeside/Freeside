@@ -2987,10 +2987,11 @@ sub print_generic {
 
 
   my $adjusttotal = 0;
-  my $adjust_section = { 'description' => 
-    $self->mt('Credits, Payments, and Adjustments'),
-                         'subtotal'    => 0,   # adjusted below
-                       };
+  my $adjust_section = {
+    'description'    => $self->mt('Credits, Payments, and Adjustments'),
+    'adjust_section' => 1,
+    'subtotal'       => 0,   # adjusted below
+  };
   my $adjust_weight = _pkg_category($adjust_section->{description})
                         ? _pkg_category($adjust_section->{description})->weight
                         : 0;
@@ -3401,10 +3402,11 @@ sub print_generic {
       $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
       $total->{'total_amount'} =
         &$embolden_function(
-          $other_money_char. sprintf('%.2f', $summarypage 
-                                               ? $self->charged +
-                                                 $self->billing_balance
-                                               : $self->owed + $pr_total
+          $other_money_char. sprintf('%.2f', #why? $summarypage 
+                                             #  ? $self->charged +
+                                             #    $self->billing_balance
+                                             #  :
+                                                 $self->owed + $pr_total
                                     )
         );
       if ( $multisection && !$adjust_section->{sort_weight} ) {
