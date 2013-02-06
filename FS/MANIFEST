@@ -149,7 +149,6 @@ FS/part_pkg/sqlradacct_hour.pm
 FS/part_pkg/subscription.pm
 FS/part_pkg/voip_sqlradacct.pm
 FS/part_pkg/voip_cdr.pm
-FS/part_pkg/base_rate.pm
 FS/part_pkg/base_delayed.pm
 FS/part_pop_local.pm
 FS/part_referral.pm
