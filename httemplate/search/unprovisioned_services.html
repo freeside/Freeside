@@ -74,7 +74,8 @@ my $search = " where cust_pkg.cancel is null and pkg_svc.quantity > 0 and "
 	    . " cust_svc.pkgnum = cust_pkg.pkgnum and "
 	    . " cust_svc.svcpart = pkg_svc.svcpart) $svcpart_limit";
 
-my $addl_from = " join pkg_svc using (pkgpart) join cust_main using (custnum) ";
+my $addl_from = " join pkg_svc using (pkgpart) ".
+            FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
 # this was very painful to derive but it appears correct
 #select cust_pkg.custnum,cust_pkg.pkgpart,cust_pkg.pkgnum, pkg_svc.svcpart from cust_pkg join

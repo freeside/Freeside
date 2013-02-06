@@ -50,9 +50,7 @@
 %>
 <%init>
 
-my $join_cust = "
-    LEFT JOIN cust_main USING ( custnum )
-";
+my $join_cust = FS::UI::Web::join_cust_main('cust_tax_exempt');
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View customer tax exemptions');

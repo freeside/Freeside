@@ -72,7 +72,7 @@ die "access denied"
   unless $curuser->access_right('List quotations');
 
 my $join_prospect_main = 'LEFT JOIN prospect_main USING ( prospectnum )';
-my $join_cust_main = 'LEFT JOIN cust_main ON ( quotation.custnum = cust_main.custnum )';
+my $join_cust_main = FS::UI::Web::join_cust_main('quotation');
 
 #here is the agent virtualization
 my $agentnums_sql = ' (    '. $curuser->agentnums_sql( table=>'prospect_main' ).

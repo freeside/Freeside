@@ -182,7 +182,7 @@ sub search {
     'LEFT JOIN cust_svc  USING ( svcnum  )',
     'LEFT JOIN part_svc  USING ( svcpart )',
     'LEFT JOIN cust_pkg  USING ( pkgnum  )',
-    'LEFT JOIN cust_main USING ( custnum )',
+    FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg'),
   );
 
   # based on FS::svc_acct::search, probably the most mature of the bunch

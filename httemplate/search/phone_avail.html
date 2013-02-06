@@ -125,9 +125,11 @@ my $search = scalar(@search)
 my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
                 #' LEFT JOIN part_svc  USING ( svcpart ) '.
                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                ' LEFT JOIN cust_main USING ( custnum ) ';
+                FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
 my $count_query = "SELECT COUNT(*) FROM phone_avail $search"; #$addl_from?
+# All of these relationships are left joined in the many-to-one direction,
+# so including $addl_from won't affect the count.  Logic!
 
 my $hashref = {};
 $hashref->{'ordernum'} = $1 if $cgi->param('ordernum') =~ /^(\d+)$/;

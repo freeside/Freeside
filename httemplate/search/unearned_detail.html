@@ -210,8 +210,8 @@ push @select, '(edate - 82799) AS before_edate';
 #usage always excluded
 
 # always 'nottax', not 'istax'
-$join_cust =  '        JOIN cust_bill USING ( invnum )
-                  LEFT JOIN cust_main USING ( custnum ) ';
+$join_cust =  '        JOIN cust_bill USING ( invnum ) '.
+                  FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
 $join_pkg .=  ' LEFT JOIN cust_pkg USING ( pkgnum )
                 LEFT JOIN part_pkg USING ( pkgpart )
@@ -222,7 +222,7 @@ my $where = ' WHERE '. join(' AND ', @where);
 
 my $count_query = "SELECT COUNT(DISTINCT billpkgnum), 
   SUM( $unearned_base ), SUM( $unearned_sql )
-  FROM cust_bill_pkg $join_cust $join_pkg $where";
+  FROM cust_bill_pkg $join_pkg $join_cust $where";
 
 push @select, 'part_pkg.pkg',
               'part_pkg.freq',
@@ -231,7 +231,7 @@ push @select, 'part_pkg.pkg',
 
 my $query = {
   'table'     => 'cust_bill_pkg',
-  'addl_from' => "$join_cust $join_pkg",
+  'addl_from' => "$join_pkg $join_cust",
   'hashref'   => {},
   'select'    => join(",\n", @select ),
   'extra_sql' => $where,

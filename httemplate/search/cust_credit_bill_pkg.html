@@ -383,8 +383,8 @@ my $count_query = "SELECT COUNT(DISTINCT creditbillpkgnum),
                           SUM(cust_credit_bill_pkg.amount)";
 
 my $join_cust =
-  '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum ) 
-    LEFT JOIN cust_main ON ( cust_bill.custnum = cust_main.custnum ) ';
+  '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum )'.
+  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
 
 my $join_pkg;

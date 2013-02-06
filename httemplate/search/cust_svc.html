@@ -62,7 +62,7 @@ if ( length( $cgi->param('search_svc') ) ) {
 
   my $addl_from = ' LEFT JOIN part_svc  USING ( svcpart ) '.
                   ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                  ' LEFT JOIN cust_main USING ( custnum ) ';
+                  FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
   my @extra_sql = ();
 

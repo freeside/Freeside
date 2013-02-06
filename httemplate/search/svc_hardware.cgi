@@ -44,8 +44,8 @@ die "access denied"
 my $addl_from = '
  LEFT JOIN cust_svc  USING ( svcnum  )
  LEFT JOIN part_svc  USING ( svcpart )
- LEFT JOIN cust_pkg  USING ( pkgnum  )
- LEFT JOIN cust_main USING ( custnum )
+ LEFT JOIN cust_pkg  USING ( pkgnum  )'.
+ FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg').'
  LEFT JOIN hardware_type USING ( typenum )';
 
 my @extra_sql;

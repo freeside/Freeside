@@ -100,7 +100,7 @@ my $where = 'WHERE '. FS::cust_bill_event->search_sql_where( \%search );
 
 my $join = 'LEFT JOIN part_bill_event USING ( eventpart ) '.
            'LEFT JOIN cust_bill       USING ( invnum    ) '.
-           'LEFT JOIN cust_main       USING ( custnum   ) ';
+           FS::UI::Web::join_cust_main('cust_bill');
 
 my $sql_query = {
   'table'     => 'cust_bill_event',
