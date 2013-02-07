@@ -364,7 +364,7 @@ sub replace {
       ? shift
       : { @_ };
 
-  $options->{options} = {} unless defined($options->{options});
+  $options->{options} = { $old->options } unless defined($options->{options});
 
   warn "FS::part_pkg::replace called on $new to replace $old with options".
        join(', ', map "$_ => ". $options->{$_}, keys %$options)
@@ -446,53 +446,55 @@ sub replace {
   }
 
   warn "  replacing pkg_svc records" if $DEBUG;
-  my $pkg_svc = $options->{'pkg_svc'} || {};
+  my $pkg_svc = $options->{'pkg_svc'};
   my $hidden_svc = $options->{'hidden_svc'} || {};
-  foreach my $part_svc ( qsearch('part_svc', {} ) ) {
-    my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
-    my $hidden = $hidden_svc->{$part_svc->svcpart} || '';
-    my $primary_svc =
-      ( defined($options->{'primary_svc'}) && $options->{'primary_svc'}
-        && $options->{'primary_svc'} == $part_svc->svcpart
-      )
-        ? 'Y'
-        : '';
+  if ( $pkg_svc ) { # if it wasn't passed, don't change existing pkg_svcs
+    foreach my $part_svc ( qsearch('part_svc', {} ) ) {
+      my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
+      my $hidden = $hidden_svc->{$part_svc->svcpart} || '';
+      my $primary_svc =
+        ( defined($options->{'primary_svc'}) && $options->{'primary_svc'}
+          && $options->{'primary_svc'} == $part_svc->svcpart
+        )
+          ? 'Y'
+          : '';
 
-    my $old_pkg_svc = qsearchs('pkg_svc', {
-        'pkgpart' => $old->pkgpart,
-        'svcpart' => $part_svc->svcpart,
+      my $old_pkg_svc = qsearchs('pkg_svc', {
+          'pkgpart' => $old->pkgpart,
+          'svcpart' => $part_svc->svcpart,
+        }
+      );
+      my $old_quantity = 0;
+      my $old_primary_svc = '';
+      my $old_hidden = '';
+      if ( $old_pkg_svc ) {
+        $old_quantity = $old_pkg_svc->quantity;
+        $old_primary_svc = $old_pkg_svc->primary_svc 
+          if $old_pkg_svc->dbdef_table->column('primary_svc'); # is this needed?
+        $old_hidden = $old_pkg_svc->hidden;
       }
-    );
-    my $old_quantity = 0;
-    my $old_primary_svc = '';
-    my $old_hidden = '';
-    if ( $old_pkg_svc ) {
-      $old_quantity = $old_pkg_svc->quantity;
-      $old_primary_svc = $old_pkg_svc->primary_svc 
-        if $old_pkg_svc->dbdef_table->column('primary_svc'); # is this needed?
-      $old_hidden = $old_pkg_svc->hidden;
-    }
- 
-    next unless $old_quantity != $quantity || 
-                $old_primary_svc ne $primary_svc ||
-                $old_hidden ne $hidden;
-  
-    my $new_pkg_svc = new FS::pkg_svc( {
-      'pkgsvcnum'   => ( $old_pkg_svc ? $old_pkg_svc->pkgsvcnum : '' ),
-      'pkgpart'     => $new->pkgpart,
-      'svcpart'     => $part_svc->svcpart,
-      'quantity'    => $quantity, 
-      'primary_svc' => $primary_svc,
-      'hidden'      => $hidden,
-    } );
-    my $error = $old_pkg_svc
-                  ? $new_pkg_svc->replace($old_pkg_svc)
-                  : $new_pkg_svc->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
+   
+      next unless $old_quantity != $quantity || 
+                  $old_primary_svc ne $primary_svc ||
+                  $old_hidden ne $hidden;
+    
+      my $new_pkg_svc = new FS::pkg_svc( {
+        'pkgsvcnum'   => ( $old_pkg_svc ? $old_pkg_svc->pkgsvcnum : '' ),
+        'pkgpart'     => $new->pkgpart,
+        'svcpart'     => $part_svc->svcpart,
+        'quantity'    => $quantity, 
+        'primary_svc' => $primary_svc,
+        'hidden'      => $hidden,
+      } );
+      my $error = $old_pkg_svc
+                    ? $new_pkg_svc->replace($old_pkg_svc)
+                    : $new_pkg_svc->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    } #foreach $part_svc
+  } #if $options->{pkg_svc}
   
   my @part_pkg_vendor = $old->part_pkg_vendor;
   my @current_exportnum = ();
