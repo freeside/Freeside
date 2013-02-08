@@ -208,6 +208,12 @@ sub check {
   ;
   return $error if $error;
 
+  my $company = $self->company;
+  $company =~ s/^\s+//; 
+  $company =~ s/\s+$//; 
+  $company =~ s/\s+/ /g;
+  $self->company($company);
+
   $self->SUPER::check;
 }
 

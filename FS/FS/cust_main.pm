@@ -1792,6 +1792,12 @@ sub check {
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
 
+  my $company = $self->company;
+  $company =~ s/^\s+//; 
+  $company =~ s/\s+$//; 
+  $company =~ s/\s+/ /g;
+  $self->company($company);
+
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
     if $error =~ /^Illegal or empty \(numeric\) refnum: /;
@@ -5080,12 +5086,12 @@ sub process_censustract_update {
 }
 
 #starting to take quite a while for big dbs
+#   (JRNL: journaled so it only happens once per database)
 # - seq scan of h_cust_main (yuck), but not going to index paycvv, so
-# - seq scan of cust_main on signupdate... index signupdate?  will that help?
-# - seq scan of cust_main on paydate... index on substrings?  maybe set an
-#    upgrade journal flag now that we have that, yyyy-m-dd paydates are ancient
-# - seq scan of cust_main on payinfo.. certainly not going toi ndex that...
-#    upgrade journal again?  this is also an ancient problem
+# JRNL seq scan of cust_main on signupdate... index signupdate?  will that help?
+# JRNL seq scan of cust_main on paydate... index on substrings?  maybe set an
+# JRNL seq scan of cust_main on payinfo.. certainly not going toi ndex that...
+# JRNL leading/trailing spaces in first, last, company
 # - otaker upgrade?  journal and call it good?  (double check to make sure
 #    we're not still setting otaker here)
 #
@@ -5140,6 +5146,26 @@ sub _upgrade_data { #class method
   local($ignore_banned_card) = 1;
   local($skip_fuzzyfiles) = 1;
   local($import) = 1; #prevent automatic geocoding (need its own variable?)
+
+  unless ( FS::upgrade_journal->is_done('cust_main__trimspaces') ) {
+
+    foreach my $cust_main ( qsearch({
+      'table'     => 'cust_main', 
+      'hashref'   => {},
+      'extra_sql' => 'WHERE '.
+                       join(' OR ',
+                         map "$_ LIKE ' %' OR $_ LIKE '% ' OR $_ LIKE '%  %'",
+                           qw( first last company )
+                       ),
+    }) ) {
+      my $error = $cust_main->replace;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('cust_main__trimspaces');
+
+  }
+
   $class->_upgrade_otaker(%opts);
 
   FS::cust_main::Location->_upgrade_data(%opts);
