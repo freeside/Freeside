@@ -2626,8 +2626,27 @@ sub ut_name {
 #  warn "ut_name allowed alphanumerics: +(sort grep /\w/, map { chr() } 0..255), "\n";
   $self->getfield($field) =~ /^([\w \,\.\-\']+)$/
     or return gettext('illegal_name'). " $field: ". $self->getfield($field);
-  $self->setfield($field,$1);
+  my $name = $1;
+  $name =~ s/^\s+//; 
+  $name =~ s/\s+$//; 
+  $name =~ s/\s+/ /g;
+  $self->setfield($field, $name);
   '';
+}
+
+=item ut_namen COLUMN
+
+Check/untaint proper names; allows alphanumerics, spaces and the following
+punctuation: , . - '
+
+May not be null.
+
+=cut
+
+sub ut_namen {
+  my( $self, $field ) = @_;
+  return $self->setfield($field, '') if $self->getfield($field) =~ /^$/;
+  $self->ut_name($field);
 }
 
 =item ut_zip COLUMN

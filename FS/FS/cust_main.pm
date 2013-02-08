@@ -1814,6 +1814,12 @@ sub check {
   $self->set_coord
     unless $import || ($self->latitude && $self->longitude);
 
+  my $company = $self->company;
+  $company =~ s/^\s+//; 
+  $company =~ s/\s+$//; 
+  $company =~ s/\s+/ /g;
+  $self->company($company);
+
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
     if $error =~ /^Illegal or empty \(numeric\) refnum: /;
@@ -5131,6 +5137,26 @@ sub _upgrade_data { #class method
   local($ignore_banned_card) = 1;
   local($skip_fuzzyfiles) = 1;
   local($import) = 1; #prevent automatic geocoding (need its own variable?)
+
+  unless ( FS::upgrade_journal->is_done('cust_main__trimspaces') ) {
+
+    foreach my $cust_main ( qsearch({
+      'table'     => 'cust_main', 
+      'hashref'   => {},
+      'extra_sql' => 'WHERE '.
+                       join(' OR ',
+                         map "$_ LIKE ' %' OR $_ LIKE '% ' OR $_ LIKE '%  %'",
+                           qw( first last company )
+                       ),
+    }) ) {
+      my $error = $cust_main->replace;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('cust_main__trimspaces');
+
+  }
+
   $class->_upgrade_otaker(%opts);
 
 }
