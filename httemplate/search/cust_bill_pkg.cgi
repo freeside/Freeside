@@ -222,9 +222,9 @@ if ( $conf->exists('enable_taxclasses') ) {
 
 # valid in both the tax and non-tax cases
 my $join_cust = 
-  " LEFT JOIN cust_bill USING (invnum)
-    LEFT JOIN cust_main USING (custnum)
-  ";
+  " LEFT JOIN cust_bill USING (invnum)".
+  # use cust_pkg.locationnum if it exists
+  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
 #agent virtualization
 my $agentnums_sql =
@@ -647,7 +647,7 @@ $where &&= "WHERE $where";
 
 my $query = {
   'table'     => 'cust_bill_pkg',
-  'addl_from' => "$join_cust $join_pkg",
+  'addl_from' => "$join_pkg $join_cust",
   'hashref'   => {},
   'select'    => join(",\n", @select ),
   'extra_sql' => $where,
@@ -656,7 +656,7 @@ my $query = {
 
 my $count_query =
   'SELECT ' . join(',', @total) .
-  " FROM cust_bill_pkg $join_cust $join_pkg
+  " FROM cust_bill_pkg $join_pkg $join_cust
   $where";
 
 @peritem_desc = map {emt($_)} @peritem_desc;

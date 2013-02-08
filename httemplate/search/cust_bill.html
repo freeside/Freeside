@@ -62,7 +62,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List invoices');
 
-my $join_cust_main = 'LEFT JOIN cust_main USING ( custnum )';
+my $join_cust_main = FS::UI::Web::join_cust_main('cust_bill');
 #here is the agent virtualization
 my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 
@@ -198,7 +198,6 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   };
 
 }
-
 my $link  = [ "${p}view/cust_bill.cgi?", 'invnum', ];
 my $clink = sub {
   my $cust_bill = shift;

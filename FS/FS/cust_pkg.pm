@@ -603,7 +603,9 @@ replace methods.
 sub check {
   my $self = shift;
 
-  $self->locationnum('') if !$self->locationnum || $self->locationnum == -1;
+  if ( !$self->locationnum or $self->locationnum == -1 ) {
+    $self->set('locationnum', $self->cust_main->ship_locationnum);
+  }
 
   my $error = 
     $self->ut_numbern('pkgnum')
@@ -3817,10 +3819,10 @@ sub search {
 
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
-  my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
-                  'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
+  my $addl_from = 'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
                   'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) '.
-                  'LEFT JOIN cust_location USING ( locationnum ) ';
+                  'LEFT JOIN cust_location USING ( locationnum ) '.
+                  FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
   my $select;
   my $count_query;

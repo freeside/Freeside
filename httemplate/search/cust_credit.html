@@ -137,7 +137,7 @@ my $where = 'WHERE '. join(' AND ', @search);
 
 my $count_query = 'SELECT COUNT(*), SUM(amount) ';
 $count_query .= ', SUM(' . FS::cust_credit->unapplied_sql . ') ' if $unapplied;
-$count_query .= 'FROM cust_credit LEFT JOIN cust_main USING ( custnum ) '.
+$count_query .= 'FROM cust_credit'. FS::UI::Web::join_cust_main('cust_credit').
                   $where;
 
 my @count_addl = ( $money_char.'%.2f total credited (gross)' );
@@ -148,7 +148,7 @@ my $sql_query   = {
   'select'    => join(', ',@select),
   'hashref'   => {},
   'extra_sql' => $where,
-  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'addl_from' => FS::UI::Web::join_cust_main('cust_credit')
 };
 
 </%init>

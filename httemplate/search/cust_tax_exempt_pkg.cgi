@@ -82,9 +82,8 @@
 <%once>
 
 my $join_cust = "
-    JOIN cust_bill USING ( invnum )
-    LEFT JOIN cust_main USING ( custnum )
-";
+    JOIN cust_bill USING ( invnum )" .
+    FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
 my $join_pkg = "
     LEFT JOIN cust_pkg USING ( pkgnum )
@@ -93,8 +92,8 @@ my $join_pkg = "
 
 my $join = "
     JOIN cust_bill_pkg USING ( billpkgnum )
-    $join_cust
     $join_pkg
+    $join_cust
 ";
 
 </%once>

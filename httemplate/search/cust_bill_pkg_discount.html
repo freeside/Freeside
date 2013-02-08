@@ -127,12 +127,12 @@ my $join_cust_pkg_discount =
   'LEFT JOIN cust_pkg_discount USING (pkgdiscountnum)';
 
 my $join_cust =
-  '      JOIN cust_bill_pkg USING ( billpkgnum )
-         JOIN cust_bill USING ( invnum ) 
-    LEFT JOIN cust_main USING ( custnum ) ';
+  '         JOIN cust_bill USING ( invnum ) '.
+  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
 my $join_pkg =
-  ' LEFT JOIN cust_pkg ON ( cust_bill_pkg.pkgnum = cust_pkg.pkgnum )
+  '    JOIN cust_bill_pkg USING ( billpkgnum )
+  LEFT JOIN cust_pkg ON ( cust_bill_pkg.pkgnum = cust_pkg.pkgnum )
   LEFT JOIN part_pkg USING ( pkgpart ) ';
   #LEFT JOIN part_pkg AS override
   #  ON pkgpart_override = override.pkgpart ';
@@ -140,7 +140,7 @@ my $join_pkg =
 my $where = ' WHERE '. join(' AND ', @where);
 
 $count_query .=
-  " FROM cust_bill_pkg_discount $join_cust_pkg_discount $join_cust $join_pkg ".
+  " FROM cust_bill_pkg_discount $join_cust_pkg_discount $join_pkg $join_cust ".
   $where;
 
 my @select = (
@@ -155,7 +155,7 @@ push @select, 'cust_main.custnum',
 
 my $query = {
   'table'     => 'cust_bill_pkg_discount',
-  'addl_from' => "$join_cust_pkg_discount $join_cust $join_pkg",
+  'addl_from' => "$join_cust_pkg_discount $join_pkg $join_cust",
   'hashref'   => {},
   'select'    => join(', ', @select ),
   'extra_sql' => $where,

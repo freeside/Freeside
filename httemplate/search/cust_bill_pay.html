@@ -117,8 +117,8 @@ my $where = 'WHERE '. join(' AND ', @search);
 #
 my $count_query = 'SELECT COUNT(*), SUM(amount)
                    FROM cust_bill_pay
-                     LEFT JOIN cust_bill USING ( invnum  )
-                     LEFT JOIN cust_main USING ( custnum ) '.
+                     LEFT JOIN cust_bill USING ( invnum  ) '.
+                     FS::UI::Web::join_cust_main('cust_bill') .
                   $where;
 
 my $sql_query   = {
@@ -137,8 +137,8 @@ my $sql_query   = {
   'hashref'   => {},
   'extra_sql' => $where,
   'addl_from' => 'LEFT JOIN cust_bill   USING ( invnum  )
-                  LEFT JOIN cust_pay    USING ( paynum )
-                  LEFT JOIN cust_main ON ( cust_bill.custnum = cust_main.custnum )',
+                  LEFT JOIN cust_pay    USING ( paynum ) '.
+                  FS::UI::Web::join_cust_main('cust_bill')
 };
 
 my $cust_bill_link = sub {

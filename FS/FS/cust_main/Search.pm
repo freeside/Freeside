@@ -814,6 +814,12 @@ sub search {
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
   my $addl_from = '';
+  # always make address fields available in results
+  for my $pre ('bill_', 'ship_') {
+    $addl_from .= 
+      'LEFT JOIN cust_location AS '.$pre.'location '.
+      'ON (cust_main.'.$pre.'locationnum = '.$pre.'location.locationnum) ';
+  }
 
   my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
 
