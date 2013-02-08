@@ -9,6 +9,7 @@ use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 use FS::Conf;
+use File::Copy qw(copy);
 use Text::CSV;
 
 my %opt;
@@ -159,11 +160,6 @@ FILE: foreach my $filename (@$files) {
   }
 
   open my $fh, "<$tmpdir/$filename";
-  my $header = <$fh>;
-  if ($header !~ /^"cust_id"/) {
-    warn "warning: $filename has incorrect header row:\n$header\n";
-    # but try anyway
-  }
   my $csv = Text::CSV->new; # orthodox CSV
   my %hash;
   while (my $line = <$fh>) {
@@ -172,6 +168,11 @@ FILE: foreach my $filename (@$files) {
       next FILE;
     };
     @hash{@fields} = $csv->fields();
+    if ( $hash{custnum} =~ /^cust/ ) {
+      # there appears to be a header row
+      print STDERR "skipping header row\n" if $opt{v};
+      next;
+    }
     my $cust_main = 
       $cust_main{$hash{custnum}} ||= FS::cust_main->by_key($hash{custnum});
     if (!$cust_main) {
