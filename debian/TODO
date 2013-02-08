@@ -1,20 +1,57 @@
+--- High ---
+
+web stuff going to /var/www/freeside/masondocs oops
+
+apache configs going to
+./etc/freeside/apache2/freeside-rt.conf
+??  oh there's links etc.  check
+
+file
+./and..?/
+in freeside-lib?  oops wtf
+also
+./default_conf/
+and
+/#for/
+
+test actually installing!
+- FS files
+- /var/www/ files
+- what else should package install?
+  - init script
+  - apache config
+  - /usr/local/etc/freeside/default_conf for new installs
+
+test RT was missing, but we're cheating more now by ignoring a huge remap
+to deb policy-comliant paths.  get it working
+
+init.d/freeside-init
+htetc/handler.pl
+
+#copied to /usr/local/etc/freeside by make install-docs
+htetc/htpasswd.logout
+
+init.d/insserv-override-apache2
+
+etc/longtable.sty
+
+--- Medium --- 
 
 test) freeside-webui /etc/apache/conf.d/freeside.conf
   AuthUserFile is wrong (just fucked)
 
-test its working) somes sort of Alias /freeside /usr/share/freeside/www is needed
-
 test in postinst) freeside package var/cache/freeside/cache.<datasrc is missing>
 
-test RT is missing.  doh.  get it working.
+--- Low ---
 
-test actually installing!
-
---- rc2... right? ---
+bin/* ?  Anything here needed in a live customer install should be moved to FS/bin so it installs as part of the packaging.
 
 freeside-selfservice-client doesn't install at all
 
-start freeside-sqlradius-radacctd from /etc/default/freeside too
+--- Debian ---
+
+redo & test its working) somes sort of Alias /freeside /usr/share/freeside/www is needed
+/var/www/freeside -> /usr/lib/freeside and Alias in apache
 
 Added to README.Debian... do something else?
 Ensure apache is set to run as User freeside.
@@ -24,15 +61,9 @@ init.d.ex or init.d.lsb.ex
 
 finish 
 
-RT install locations (or for now: disable for unstable, enable for
-experiemental.  but try to get it finished off in time for lenny)
+RT install locations (?  maybe our RT libraries shouldn't conflict with
+upstream ones?)
 
 debian/copyright administrivia
 
-AGPL drama
-
 upload
-
-AGPL drama or silent waiting for days or years
-
-profit!  err

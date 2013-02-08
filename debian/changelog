@@ -1,3 +1,9 @@
+freeside (3.0~20130205-1) UNRELEASED; urgency=low
+
+  * Another stab at packaging.
+
+ -- Ivan Kohler <ivan-debian@420.am>  Tue, 05 Feb 2013 17:00:36 -0800
+
 freeside (2.1.1-1) UNRELEASED; urgency=low
 
   * New upstream release
