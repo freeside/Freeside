@@ -309,7 +309,12 @@ Returns the IP address.
 
 sub label {
   my $self = shift;
-  $self->ip_addr;
+  my $label = 'IP:'. ($self->ip_addr || 'Unknown');
+  $label .= '", MAC:'. $self->mac_addr
+    if $self->mac_addr;
+  $label .= ' ('. $self->description. ')'
+    if $self->description;
+  return $label;
 }
 
 =item insert [ , OPTION => VALUE ... ]
