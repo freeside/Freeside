@@ -154,7 +154,10 @@ sub calc_prorate {
                                                   #so 1.005 rounds to 1.01
   $charge = sprintf('%.2f', $permonth * $months + 0.00000001 );
 
-  return $charge;
+  my $quantity = $cust_pkg->quantity || 1;
+  $charge *= $quantity;
+
+  return sprintf('%.2f', $charge);
 }
 
 =item prorate_setup CUST_PKG SDATE
