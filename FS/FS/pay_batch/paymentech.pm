@@ -60,8 +60,12 @@ my $gateway;
         $hash->{'_date'} =~ /^(..)(..)(....)(..)(..)(..)$/;
       $hash->{'_date'} = timelocal($sec, $min, $hour, $day, $mon-1, $year);
       $hash->{'paid'} = $oldhash->{'amount'};
+
+      my $gateway_label = $hash->{'processor'};
+      $gateway_label = $hash->{'gatewaynum'} . '-' . $gateway_label
+        if $hash->{'gatewaynum'};
       $hash->{'paybatch'} = join(':',
-        $gateway->gatewaynum . '-PaymenTech',
+        $gateway_label,
         $hash->{'auth'},
         $hash->{'order_number'},
       );
