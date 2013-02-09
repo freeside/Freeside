@@ -1753,9 +1753,11 @@ sub change {
   # going to be credited for remaining time, don't keep setup, bill, 
   # or last_bill dates, and DO pass the flag to cancel() to credit 
   # the customer.
-  if ( $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart ) {
+  if ( $opt->{'pkgpart'} 
+       and $opt->{'pkgpart'} != $self->pkgpart
+       and $self->part_pkg->option('unused_credit_change', 1) ) {
+    $unused_credit = 1;
     $keep_dates = 0;
-    $unused_credit = 1 if $self->part_pkg->option('unused_credit_change', 1);
     $hash{$_} = '' foreach qw(setup bill last_bill);
   }
 
