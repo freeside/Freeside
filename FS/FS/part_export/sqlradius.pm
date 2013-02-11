@@ -726,17 +726,21 @@ sub usage_sessions {
     push @where, " CalledStationID LIKE 'sip:$prefix\%'";
   }
 
-  if ( $start ) {
-    push @where, "$str2time AcctStopTime ) >= ?";
-    push @param, $start;
-  }
-  if ( $end ) {
-    push @where, "$str2time AcctStopTime ) <= ?";
-    push @param, $end;
-  }
   if ( $opt->{open_sessions} ) {
     push @where, 'AcctStopTime IS NULL';
+  } else {
+
+    if ( $start ) {
+      push @where, "$str2time AcctStopTime ) >= ?";
+      push @param, $start;
+    }
+    if ( $end ) {
+      push @where, "$str2time AcctStopTime ) <= ?";
+      push @param, $end;
+    }
+
   }
+
   if ( $opt->{starttime_start} ) {
     push @where, "$str2time AcctStartTime ) >= ?";
     push @param, $opt->{starttime_start};
@@ -755,10 +759,14 @@ sub usage_sessions {
   my $orderby = 'ORDER BY AcctStartTime DESC';
   $orderby = '' if $summarize;
 
-  my $sth = $dbh->prepare('SELECT '. join(', ', @fields).
-                          "  FROM radacct $where $groupby $orderby
-                        ") or die $dbh->errstr;                                 
-  $sth->execute(@param) or die $sth->errstr;
+  my $sql = 'SELECT '. join(', ', @fields).
+            "  FROM radacct $where $groupby $orderby";
+  if ( $DEBUG ) {
+    warn $sql;
+    warn join(',', @param);
+  }
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+  $sth->execute(@param)         or die $sth->errstr;
 
   [ map { { %$_ } } @{ $sth->fetchall_arrayref({}) } ];
 
