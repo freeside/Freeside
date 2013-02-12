@@ -3,7 +3,7 @@ package FS::msg_template;
 use strict;
 use base qw( FS::Record );
 use Text::Template;
-use FS::Misc qw( generate_email send_email );
+use FS::Misc qw( generate_email send_email do_print );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::UID qw( dbh );
@@ -457,24 +457,13 @@ sub render {
   my %hash = $self->prepare(%opt);
   my $html = $hash{'html_body'};
 
-  my $tmp = 'msg'.$self->msgnum.'-'.time2str('%Y%m%d', time).'-XXXXXXXX';
-  my $dir = "$FS::UID::cache_dir/cache.$FS::UID::datasrc";
-
   # Graphics/stylesheets should probably go in /var/www on the Freeside 
   # machine.
   my $kit = PDF::WebKit->new(\$html); #%options
   # hack to use our wrapper script
   $kit->configure(sub { shift->wkhtmltopdf('freeside-wkhtmltopdf') });
-  my $fh = File::Temp->new(
-    TEMPLATE  => $tmp,
-    DIR       => $dir,
-    UNLINK    => 0,
-    SUFFIX    => '.pdf'
-  );
 
-  print $fh $kit->to_pdf;
-  close $fh;
-  return $fh->filename;
+  $kit->to_pdf;
 }
 
 =item print OPTIONS
@@ -485,12 +474,7 @@ Render a PDF and send it to the printer.  OPTIONS are as for 'render'.
 
 sub print {
   my( $self, %opt ) = @_;
-  my $file = $self->render(%opt);
-
-  my $lpr = $conf->config('lpr', $opt{'cust_main'}->agentnum );
-
-  run ( $lpr, '<', $file)
-    or die "lpr error:\n$?\n";
+  do_print( [ $self->render(%opt) ], agentnum=>$opt{cust_main}->agentnum );
 }
 
 # helper sub for package dates
