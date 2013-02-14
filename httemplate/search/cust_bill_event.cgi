@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => $title,
                  'html_init'   => $html_init,
                  'menubar'     => $menubar,
@@ -60,8 +60,8 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-             )
-%>
+             
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

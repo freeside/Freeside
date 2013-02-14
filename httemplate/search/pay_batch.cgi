@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'         => 'Payment Batches',
 		 'name_singular' => 'batch',
 		 'query'         => { 'table'     => 'pay_batch',
@@ -84,9 +84,8 @@
 				      sub { shift->status eq 'I' ? "b" : '' },
 				    ],
                  'html_init'     => $html_init,
-      )
-
-%>
+      
+&>
 <%init>
 
 die "access denied"

@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'             => 'External service search results',
                  'name'              => 'external services',
                  'query'             => $sql_query,
@@ -40,9 +40,8 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-          )
-%>
-
+          
+&>
 <%init>
 
 die "access denied"

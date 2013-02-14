@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
               'title'         => 'Credit application detail', #to line item
               'name_singular' => 'credit application',
               'query'         => $query,
@@ -96,8 +96,8 @@
                               '',
                               FS::UI::Web::cust_styles(),
                           ],
-           )
-%>
+           
+&>
 <%init>
 
 #LOTS of false laziness below w/cust_bill_pkg.cgi

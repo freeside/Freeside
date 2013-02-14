@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                   'html_init'         => $html_init,
                   'name'              => 'zip code',
                   'query'             => $sql_query,
@@ -12,8 +12,8 @@
                   'url'               => $opt{url} || '',
                   'really_disable_download'  => 1,
 
-              )
-%>
+              
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

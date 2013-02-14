@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => 'Job Queue',
                  'name'        => 'jobs',
 		 'html_form'   => qq!<FORM NAME="jobForm" ACTION="$p/misc/queue.cgi" METHOD="POST">!,
@@ -120,9 +120,8 @@
                                     '';
                                   }
                                 },
-             )
-
-%>
+             
+&>
 <%init>
 
 die "access denied"

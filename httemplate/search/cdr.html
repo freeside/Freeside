@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                'title' => $title,
                'name'  => 'call detail records',
                'query' => $query,
@@ -28,8 +28,8 @@
                                   '';
                                 }
                               },
-             )
-%>
+             
+&>
 <%init>
 
 die "access denied"

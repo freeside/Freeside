@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => 'Tax exemptions',
                  'name'        => 'tax exemptions',
                  'query'       => $query,
@@ -77,8 +77,7 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-           )
-%>
+&>
 <%once>
 
 my $join_cust = "

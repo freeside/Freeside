@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => 'Zip code Search Results',
                  'name'        => 'zip codes',
                  'query'       => $sql_query,
@@ -6,8 +6,8 @@
                  'header'      => [ 'Zip code', 'Customers', ],
                  #'fields'      => [ 'zip', 'num_cust', ],
                  #'links'       => [ '', sub { 'somewhere'; }  ],
-             )
-%>
+             
+&>
 <%init>
 
 die "access denied"

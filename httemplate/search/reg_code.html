@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => 'Unused Registration Codes for '.
                                   $agent->agent,
                  'name'        => 'registration codes',
@@ -23,8 +23,8 @@
                    #$plink,
                    '',
                  ],
-      )
-%>
+      
+&>
 <%init>
 
 die "access denied"

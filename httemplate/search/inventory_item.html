@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => $title,
 
                  'menubar'     => [ 'View inventory classes' =>
@@ -87,8 +87,8 @@
 <INPUT TYPE="hidden" NAME="classnum" VALUE="$classnum">
 <INPUT TYPE="hidden" NAME="avail"    VALUE="! .$cgi->param('avail') . '">', #'
                   'html_foot' => $sub_foot,
-             )
-%>
+             
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

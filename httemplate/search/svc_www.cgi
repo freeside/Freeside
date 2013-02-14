@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => 'Virtual Host Search Results',
                  'name'        => 'virtual hosts',
                  'query'       => $sql_query,
@@ -45,8 +45,8 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-             )
-%>
+             
+&>
 <%init>
 
 die "access denied"

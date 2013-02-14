@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/search.html,
               'title'       => 'Batch payment details',
               'name'        => 'batch details',
 	      'query'       => $sql_query,
@@ -41,8 +41,7 @@
               'link_onclicks' => [ ('') x 8,
                                    $sub_receipt
                                  ],
-      )
-%>
+&>
 <%init>
 
 my $conf = new FS::Conf;

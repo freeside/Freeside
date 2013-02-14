@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
               'title'       => 'Broadband Search Results',
               'name'        => 'broadband services',
               'html_init'   => $html_init,
@@ -49,8 +49,8 @@
                                  '',
                                  FS::UI::Web::cust_styles(),
                                ],
-          )
-%>
+          
+&>
 <%init>
 
 die "access denied" unless
