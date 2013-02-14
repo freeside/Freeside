@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
               'title'         => $title,
               'name_singular' => 'tax adjustment',
               'query'         => $query,
@@ -12,9 +12,8 @@
                                        },
                                  ],
               'links'         => [ '', '', '', $ilink ],
-          )
-%>
-
+          
+&>
 <%init>
 
 die "access denied"

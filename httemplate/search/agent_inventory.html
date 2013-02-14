@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/search.html,
      'title'         => 'Inventory summary per agent',
      'name_singular' => 'agent',
      'query'         => { 'table'     => 'agent',
@@ -10,8 +10,7 @@
                         " AND $agentnums_sql",
      'header'        => \@header,
      'fields'        => \@fields,
-   )
-%>
+&>
 <%init>
 
 die "access denied"

@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                   'html_init'       => '<H2>Part VI</H2>',
                   'html_foot'       => $html_foot,
                   'name'            => 'regions',
@@ -24,8 +24,8 @@
                   'url'             => $opt{url} || '',
                   'xml_row_element' => 'Datarow',
                   'really_disable_download' => 1,
-              )
-%>
+              
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

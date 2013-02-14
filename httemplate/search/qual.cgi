@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'         => 'Qualifications',
 		 'name_singular' => 'qualification',
 		 'query'         => { 'table'     => 'qual',
@@ -51,8 +51,8 @@
 				      '',
 				      '',
 				    ],
-      )
-%>
+      
+&>
 <%init>
 
 die "access denied"

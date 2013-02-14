@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                   'html_init'        => $html_init,
                   'name'             => 'lines',
                   'query'            => 'SELECT 1',
@@ -28,8 +28,8 @@
                                           sub { $total_percentage },
                                           sub { $above_200_percentage },
                                         ],
-              )
-%>
+              
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

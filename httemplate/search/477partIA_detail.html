@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                   'html_init'        => $html_init,
                   'name'             => 'lines',
                   'query'            => $query,
@@ -11,8 +11,8 @@
                   'xml_elements'     => [ @xml_elements ],
                   'xml_omit_empty'   => 1,
                   'fields'           => [  @fields ],
-              )
-%>
+              
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
               'title'        => $title,
               'name_singular' => $name,
               'header'       => \@header,
@@ -14,8 +14,8 @@
               'links'        => \@links,
               'align'        => $align,
               'sort_fields'  => [],
-          )
-%>
+          
+&>
 <%init>
 
 #this is about reports about packages definitions (starting w/commission ones)

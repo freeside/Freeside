@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'             => "Phone number search results",
                  'name'              => 'phone numbers',
                  'query'             => $sql_query,
@@ -46,8 +46,8 @@
                               ( map '', @header ),
                               FS::UI::Web::cust_styles(),
                             ],
-              )
-%>
+              
+&>
 <%init>
 
 die "access denied"

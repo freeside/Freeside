@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/search.html,
             'title'             => 'Hardware service search results',
             'name'              => 'installations',
             'query'             => $sql_query,
@@ -34,8 +34,7 @@
                                       FS::UI::Web::cust_colors() ],
             'style'             => [ $svc_cancel_style, ('') x 7,
                                       FS::UI::Web::cust_styles() ],
-            )
-%>
+&>
 <%init>
 
 die "access denied"
