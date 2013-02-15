@@ -32,8 +32,8 @@ for ( qw(agentnum magic state) ) {
 }
 $search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
-$search_hash{report_option} = $cgi->param('partv_report_option')
-  if $cgi->param('partv_report_option');
+$search_hash{report_option} = $cgi->param('part5_report_option')
+  if $cgi->param('part5_report_option');
 
 my $sql_query = FS::cust_pkg->search( { %search_hash,
                                         'fcc_line'    => 1,
