@@ -1,0 +1,78 @@
+<%doc>
+A tristate checkbox (with three values: true, false, and null).
+Internally, this creates a checkbox, coupled via javascript to a hidden
+field that actually contains the value.  For now, the only values these
+can have are 1, 0, and empty.  Clicking the checkbox cycles between them.
+</%doc>
+<%shared>
+my $init = 0;
+</%shared>
+% if ( !$init ) {
+%   $init = 1;
+<SCRIPT TYPE="text/javascript">
+function tristate_onclick() {
+  var checkbox = this;
+  var input = checkbox.input;
+  if ( input.value == "" ) {
+    input.value = "0";
+    checkbox.checked = false;
+    checkbox.indeterminate = false;
+  } else if ( input.value == "0" ) {
+    input.value = "1";
+    checkbox.checked = true;
+    checkbox.indeterminate = false;
+  } else if ( input.value == "1" ) {
+    input.value = "";
+    checkbox.checked = true;
+    checkbox.indeterminate = true
+  }
+}
+
+var tristates = [];
+var tristate_boxes = [];
+window.onload = function() { // don't do this until all of the checkboxes exist
+%#  tristates = document.getElementsByClassName('tristate'); # curse you, IE8
+  var all_inputs = document.getElementsByTagName('input');
+  for (var i=0; i < all_inputs.length; i++) {
+    if ( all_inputs[i].className == 'tristate' ) {
+      tristates.push(all_inputs[i]);
+    }
+  }
+  for (var i=0; i < tristates.length; i++) {
+    tristate_boxes[i] =
+      document.getElementById('checkbox_' + tristates[i].name);
+    // make sure they can find each other
+    tristate_boxes[i].input = tristates[i];
+    tristates[i].checkbox = tristate_boxes[i];
+    // set event handler
+    tristate_boxes[i].onclick = tristate_onclick;
+    // set initial value
+    if ( tristates[i].value == "" ) {
+      tristate_boxes[i].indeterminate = true
+    }
+    if ( tristates[i].value != "0" ) {
+      tristate_boxes[i].checked = true;
+    }
+  }
+};
+</SCRIPT>
+% } # end of $init
+<INPUT TYPE="hidden" NAME="<% $opt{field} %>"
+                     ID="<% $opt{id} %>"
+                     VALUE="<% $curr_value %>"
+                     CLASS="tristate">
+<INPUT TYPE="checkbox" ID="checkbox_<%$opt{field}%>" CLASS="partial">
+<%init>
+
+my %opt = @_;
+
+# might be useful but I'm not implementing it yet
+#my $onchange = $opt{'onchange'}
+#                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+#                 : '';
+
+$opt{'id'} ||= 'hidden_'.$opt{'field'};
+my $curr_value = $opt{curr_value};
+$curr_value = undef
+  unless $curr_value eq '0' or $curr_value eq '1';
+</%init>

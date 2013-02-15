@@ -1,0 +1,74 @@
+<& /elements/header.html, 'Edit package report classes' &>
+%# change that title if we add any other editing controls
+
+%# this should be centralized somewhere
+<STYLE TYPE="text/css">
+.row0 { background-color: #eeeeee; }
+.row1 { background-color: #ffffff; }
+</STYLE>
+
+<FORM ACTION="process/bulk-part_pkg.html" METHOD="POST">
+<DIV>
+The following packages will be changed:<BR>
+% foreach my $pkgpart (sort keys(%part_pkg)) {
+<INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $pkgpart %>">
+<% $part_pkg{$pkgpart}->pkg_comment %><BR>
+% }
+</DIV>
+<BR>
+<& /elements/table-grid.html &>\
+<& /elements/tr-justtitle.html, value => mt('Report classes') &>
+% my $row = 0;
+% foreach my $num (sort keys %report_class) {
+  <TR CLASS="row<%$row % 2%>">
+    <TD>
+%   if ( defined $initial_state{$num} ) {
+      <& /elements/checkbox.html,
+            field => 'report_option_'.$num,
+            value => 1,
+            curr_value => $initial_state{$num}
+      &>
+%   } else {
+%     # needs to be a tristate so that you can say "don't change it"
+      <& /elements/checkbox-tristate.html, field => 'report_option_'.$num &>
+%   }
+    </TD>
+    <TD><% $report_class{$num}->name %></TD>
+  </TR>
+%   $row++;
+% }
+</TABLE>
+<BR>
+<INPUT TYPE="submit">
+</FORM>
+<& /elements/footer.html &>
+<%init>
+die "access denied" unless $FS::CurrentUser::CurrentUser->access_right('Bulk edit package definitions');
+my @pkgparts = $cgi->param('pkgpart')
+  or die "no package definitions selected";
+
+my %part_pkg = map { $_ => FS::part_pkg->by_key($_) } @pkgparts;
+my %part_pkg_option = map { $_ => { $part_pkg{$_}->options } } @pkgparts;
+my %report_class = map { $_->num => $_ }
+  qsearch('part_pkg_report_option', { disabled => '' });
+
+my %initial_state;
+foreach my $num (keys %report_class) {
+  my $yes = 0;
+  my $no = 0;
+  foreach my $option (values %part_pkg_option) {
+    if ( $option->{"report_option_$num"} ) {
+      $yes = 1;
+    } else {
+      $no = 1;
+    }
+  }
+  if ( $yes and $no ) {
+    $initial_state{$num} = undef;
+  } elsif ( $yes ) {
+    $initial_state{$num} = 1;
+  } elsif ( $no ) {
+    $initial_state{$num} = 0;
+  } # else, uh, you didn't provide any pkgparts
+}
+</%init>

@@ -1,0 +1,30 @@
+% if ( $error ) {
+%  $cgi->param('error', $error);
+<% $cgi->redirect(popurl(3).'/edit/bulk-part_pkg.cgi?', $cgi->query_string) %>
+% } else {
+<% $cgi->redirect(popurl(3).'/browse/part_pkg.cgi') %>
+% }
+<%init>
+die "access denied" unless $FS::CurrentUser::CurrentUser->access_right('Bulk edit package definitions');
+
+my @pkgparts = $cgi->param('pkgpart')
+  or die "no package definitions selected";
+
+my %changes;
+foreach my $param (grep { /^report_option_\d+$/ } $cgi->param) {
+  if ( length($cgi->param($param)) ) {
+    if ( $cgi->param($param) == 1 ) {
+      $changes{$param} = 1;
+    } else {
+      $changes{$param} = '';
+    }
+  }
+}
+
+my $error;
+foreach my $pkgpart (@pkgparts) {
+  my $part_pkg = FS::part_pkg->by_key($pkgpart);
+  my %options = ( $part_pkg->options, %changes );
+  $error ||= $part_pkg->replace( options => \%options );
+}
+</%init>
