@@ -550,14 +550,6 @@ sub insert {
     }
   }
 
-  if ( $self->can('start_copy_skel') ) {
-    my $error = $self->start_copy_skel;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
   warn "  ordering packages\n"
     if $DEBUG > 1;
 
