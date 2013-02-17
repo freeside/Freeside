@@ -97,6 +97,11 @@ for(my $i=0; $i < scalar(@part2b_row_option); $i++) {
     &FS::Report::FCC_477::save_fcc477map("part2b_row_option_$i",$part2b_row_option[$i]);
 }
 
+my $part5_report_option = $cgi->param('part5_report_option');
+if ( $part5_report_option ) {
+  FS::Report::FCC_477::save_fcc477map('part5_report_option', $part5_report_option);
+}
+
 my $url_mangler = sub {
   my $part = shift;
   my $url = $cgi->url('-path_info' => 1, '-full' => 1);

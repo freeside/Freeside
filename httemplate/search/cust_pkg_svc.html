@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
               'title'       => $part_svc->svc.' services in package #'.$pkgnum,
 	      'name'        => 'services',
               'html_form'   => $html_form,
@@ -30,8 +30,8 @@
                            ('')x4,
                          ],
               'html_foot' => sub { $areboxes ? $html_foot : '' }
-          )
-%>
+          
+&>
 <%init>
 
 die "access denied"

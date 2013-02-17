@@ -342,6 +342,8 @@ tie my %rights, 'Tie::IxHash',
     'Edit package definitions',
     { rightname=>'Edit global package definitions', global=>1 },
   
+    'Bulk edit package definitions',
+
     'Edit billing events',
     { rightname=>'Edit global billing events', global=>1 },
 

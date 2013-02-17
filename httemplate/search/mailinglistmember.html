@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/search.html,
              'title'         => $title,
              'name_singular' => 'member',
              'query'         => $query,
@@ -6,8 +6,7 @@
              'header'        => [ 'Email address' ],
              'fields'        => [ $email_sub, ], #just this one for now
              'html_init'     => $html_init,
-          )
-%>
+&>
 <%init>
 
 #XXX ACL:

@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/search.html,
              'title'         => 'Time worked summary',
              'name_singular' => 'ticket',
              'query'         => $query,
@@ -31,8 +31,7 @@
                                   '',
                                   '',
                                 ],
-          )
-%>
+&>
 <%once>
 
 my $format_seconds_sub = sub {

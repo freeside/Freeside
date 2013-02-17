@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'             => "Domain Search Results",
                  'name'              => 'domains',
                  'query'             => $sql_query,
@@ -34,8 +34,8 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-              )
-%>
+              
+&>
 <%init>
 
 die "access denied"

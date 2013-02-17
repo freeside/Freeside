@@ -26,7 +26,7 @@ function start() {
 %     -expires => '-1d',
 %   );
 %   $r->headers_out->add( 'Set-Cookie' => $cookie->as_string );
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'         => 'Invoice Batches',
 		 'name_singular' => 'batch',
 		 'query'         => { 'table'     => 'bill_batch',
@@ -67,9 +67,7 @@ function start() {
                  'agent_pos' => 1,
                  'html_foot' => include('.foot'),
 
-      )
-
-%>
+&>
 %}
 <%def .foot>
 <SCRIPT type="text/javascript">

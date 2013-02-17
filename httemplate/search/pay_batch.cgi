@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'         => 'Payment Batches',
 		 'name_singular' => 'batch',
 		 'query'         => { 'table'     => 'pay_batch',
@@ -101,8 +101,7 @@
 				    ],
                  'html_init'     => $html_init,
                  'html_foot'     => include('.upload_incoming'),
-      )
-%>
+&>
 <%def .upload_incoming>
 % if ( FS::payment_gateway->count("gateway_namespace = 'Business::BatchPayment' AND disabled IS NULL") > 0 ) { 
 <& /elements/form-file_upload.html,

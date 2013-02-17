@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'             => "Mail forward Search Results",
                  'name'              => 'mail forwards',
                  'query'             => $sql_query,
@@ -39,8 +39,8 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-             )
-%>
+             
+&>
 <%init>
 
 die "access denied"

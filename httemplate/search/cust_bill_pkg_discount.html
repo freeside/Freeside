@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => 'Discounts',
                  'name'        => 'discounts',
                  'query'       => $query,
@@ -68,8 +68,8 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-           )
-%>
+           
+&>
 <%init>
 
 #a little false laziness below w/cust_bill_pkg.cgi

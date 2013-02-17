@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
               'title'         => 'Phone Number (DID) Search Results',
               'name_singular' => 'phone number',
               'query'         => {
@@ -81,8 +81,8 @@
                            FS::UI::Web::cust_styles(),
 			   '',
                          ],
-      )
-%>
+      
+&>
 <%init>
 
 die "access denied"

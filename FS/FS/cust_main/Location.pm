@@ -167,15 +167,29 @@ sub _upgrade_data {
     $cust_main->set(bill_locationnum => $bill_location->locationnum);
 
     if ( $cust_main->get('ship_address1') ) {
-      my $ship_location = FS::cust_location->new(
-        {
-          custnum => $custnum,
-          map { $_ => $cust_main->get("ship_$_") } location_fields()
+      # detect duplicates
+      my $same = 1;
+      my $ship_location;
+      foreach (location_fields()) {
+        if ( length($cust_main->get("ship_$_")) and
+             $cust_main->get($_) ne $cust_main->get("ship_$_") ) {
+          $same = 0;
         }
-      );
-      $error = $ship_location->insert;
-      die "error migrating service address for customer $custnum: $error"
-        if $error;
+      }
+
+      if ( $same ) {
+        $ship_location = $bill_location;
+      } else {
+        $ship_location = FS::cust_location->new(
+          {
+            custnum => $custnum,
+            map { $_ => $cust_main->get("ship_$_") } location_fields()
+          }
+        );
+        $error = $ship_location->insert;
+        die "error migrating service address for customer $custnum: $error"
+          if $error;
+      }
 
       $cust_main->set(ship_locationnum => $ship_location->locationnum);
 
