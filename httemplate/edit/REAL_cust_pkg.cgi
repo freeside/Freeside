@@ -38,7 +38,7 @@
 
   <TR>
     <TD ALIGN="right">Comment</TD>
-    <TD BGCOLOR="#ffffff"><% $part_pkg->comment %></TD>
+    <TD BGCOLOR="#ffffff"><% $part_pkg->comment |h %></TD>
   </TR>
 
   <TR>
