@@ -130,10 +130,10 @@ my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
         avsCity         => substr($_->city,     0, 20),
         avsState        => substr($_->state,    0, 2),
         avsName         => substr($_->first. ' '. $_->last, 0, 30),
-        avsCountryCode  => ( $paymentech_countries{ $_->country }
-                                 ? $_->country
-                                 : ''
-                             ),
+        ( $paymentech_countries{ $_->country }
+          ? ( avsCountryCode  => $_->country )
+          : ()
+        ),
         orderID           => $_->paybatchnum,
         amount            => $_->amount * 100,
         );
