@@ -182,6 +182,7 @@ tie my %rights, 'Tie::IxHash',
     'Resend invoices', #NEWNEW
     'Delete invoices', #new, but no need to phase in
     'View customer tax exemptions', #yow
+    'Edit customer tax exemptions', #NEWNEW
     'Add customer tax adjustment', #new, but no need to phase in
     'View customer batched payments', #NEW
     'View customer pending payments', #NEW

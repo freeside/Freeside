@@ -193,6 +193,8 @@ sub _upgrade_data { # class method
     'Suspend customer package'            => 'Suspend customer',
     'Unsuspend customer package'          => 'Unsuspend customer',
     'Post credit'                         => 'Credit line items',
+    #'View customer tax exemptions'        => 'Edit customer tax exemptions',
+    'Edit customer'                       => 'Edit customer tax exemptions',
 
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',
