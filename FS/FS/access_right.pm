@@ -199,6 +199,8 @@ sub _upgrade_data { # class method
     'Delete invoices'                     => 'Void invoices',
     'List invoices'                       => 'List quotations',
     'Post credit'                         => 'Credit line items',
+    #'View customer tax exemptions'        => 'Edit customer tax exemptions',
+    'Edit customer'                       => 'Edit customer tax exemptions',
 
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',

@@ -16,8 +16,8 @@ my $DEBUG = 0;
 </%once>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('Edit customer');
 
 my $conf = new FS::Conf;
 
@@ -156,9 +156,14 @@ foreach my $dfield (qw(
 $new->setfield('paid', $cgi->param('paid') )
   if $cgi->param('paid');
 
-my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
-my @tax_exempt = grep { $cgi->param("tax_$_") eq 'Y' } @exempt_groups;
-my %tax_exempt = map { $_ => scalar($cgi->param("tax_$_".'_num')) } @tax_exempt;
+my %options = ();
+if ( $curuser->access_right('Edit customer tax exemptions') ) { 
+  my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
+  my @tax_exempt = grep { $cgi->param("tax_$_") eq 'Y' } @exempt_groups;
+  $options{'tax_exemption'} = {
+    map { $_ => scalar($cgi->param("tax_$_".'_num')) } @tax_exempt
+  };
+}
 
 #perhaps this stuff should go to cust_main.pm
 if ( $new->custnum eq '' or $duplicate_of ) {
@@ -266,8 +271,8 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   else {
     # create the customer
     $error ||= $new->insert( \%hash, \@invoicing_list,
-                           'tax_exemption'=> \%tax_exempt,
-                           'prospectnum'  => scalar($cgi->param('prospectnum')),
+                             %options,
+                             prospectnum => scalar($cgi->param('prospectnum')),
                            );
 
     my $conf = new FS::Conf;
@@ -328,7 +333,7 @@ if ( $new->custnum eq '' or $duplicate_of ) {
   warn Dumper({ new => $new, old => $old }) if $DEBUG;
 
   $error ||= $new->replace( $old, \@invoicing_list,
-                            'tax_exemption' => \%tax_exempt,
+                            %options,
                           );
 
   warn "$me returned from replace" if $DEBUG;
