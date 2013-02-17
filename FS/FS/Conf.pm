@@ -3752,20 +3752,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_main-skeleton_tables',
-    'section'     => '',
-    'description' => 'Tables which will have skeleton records inserted into them for each customer.  Syntax for specifying tables is unfortunately a tricky perl data structure for now.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'cust_main-skeleton_custnum',
-    'section'     => '',
-    'description' => 'Customer number specifying the source data to copy into skeleton tables for new customers.',
-    'type'        => 'text',
-  },
-
-  {
     'key'         => 'cust_main-enable_birthdate',
     'section'     => 'UI',
     'description' => 'Enable tracking of a birth date with each customer record',
