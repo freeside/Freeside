@@ -650,8 +650,11 @@ if ( $cgi->param('nottax') ) {
 
   } elsif ( $conf->exists('tax-pkg_address') ) {
 
-    $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
-                   LEFT JOIN cust_location              USING ( locationnum ) ';
+    $join_pkg .= '
+      LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
+      LEFT JOIN cust_location ON cust_bill_pkg_tax_location.locationnum
+                                 = cust_location.locationnum
+    ';
 
     #quelle kludge, somewhat false laziness w/report_tax.cgi
     s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g for @where;
