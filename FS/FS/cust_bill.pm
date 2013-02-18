@@ -5087,6 +5087,8 @@ sub _items_cust_bill_pkg {
           unless (
             $conf->exists('disable_line_item_date_ranges')
               || $part_pkg->option('disable_line_item_date_ranges',1)
+              || ! $cust_bill_pkg->sdate
+              || ! $cust_bill_pkg->edate
           ) {
             my $time_period;
             my $date_style = '';                                               
