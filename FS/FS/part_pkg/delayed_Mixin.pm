@@ -23,7 +23,8 @@ use NEXT;
 );
 
 sub calc_setup {
-  my($self, $cust_pkg, $time ) = @_;
+  my $self = shift;
+  my( $cust_pkg, $time ) = @_;
 
   unless ( $self->option('delay_setup', 1) ) {
     my $d = $cust_pkg->bill || $time;
@@ -31,7 +32,7 @@ sub calc_setup {
     $cust_pkg->bill($d);
   }
   
-  $self->option('setup_fee');
+  $self->NEXT::calc_setup(@_);
 }
 
 sub calc_remain {
