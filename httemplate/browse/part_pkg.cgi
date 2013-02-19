@@ -1,6 +1,7 @@
 <% include( 'elements/browse.html',
                  'title'                 => 'Package Definitions',
                  'html_init'             => $html_init,
+                 'html_form'             => $html_form,
                  'html_posttotal'        => $html_posttotal,
                  'name'                  => 'package definitions',
                  'disableable'           => 1,
@@ -20,6 +21,8 @@
                  'fields'                => \@fields,
                  'links'                 => \@links,
                  'align'                 => $align,
+                 'html_init'             => $html_init,
+                 'html_foot'             => $html_foot,
              )
 %>
 <%init>
@@ -33,6 +36,7 @@ my $acl_edit_global = $curuser->access_right($edit_global);
 my $acl_config      = $curuser->access_right('Configuration'); #to edit services
                                                                #and agent types
                                                                #and bulk change
+my $acl_edit_bulk   = $curuser->access_right('Bulk edit package definitions');
 
 die "access denied"
   unless $acl_edit || $acl_edit_global;
@@ -119,9 +123,7 @@ $select = "
 
 ";
 
-my $html_init;
-#unless ( $cgi->param('active') ) {
-  $html_init = qq!
+my $html_init = qq!
     One or more service definitions are grouped together into a package 
     definition and given pricing information.  Customers purchase packages
     rather than purchase services directly.<BR><BR>
@@ -133,7 +135,6 @@ my $html_init;
     </FORM>
     <BR><BR>
   !;
-#}
 
 $cgi->param('dummy', 1);
 
@@ -402,6 +403,10 @@ if ( $taxclasses ) {
   $align .= 'l';
 }
 
+# make a table of report class optionnames =>  the actual 
+my %report_optionname_name = map { 'report_option_'.$_->num, $_->name }
+  qsearch('part_pkg_report_option', { disabled => '' });
+
 push @header, 'Plan options',
               'Services';
               #'Service', 'Quan', 'Primary';
@@ -412,8 +417,18 @@ push @fields,
                     if ( $part_pkg->plan ) {
 
                       my %options = $part_pkg->options;
+                      # gather any options that are really report options,
+                      # convert them to their user-friendly names,
+                      # and sort them (I think?)
+                      my @report_options =
+                        sort { $a cmp $b }
+                        map { $report_optionname_name{$_} }
+                        grep { $options{$_}
+                               and exists($report_optionname_name{$_}) }
+                        keys %options;
 
-                      [ map { 
+                      my @rows = (
+                        map { 
                               [
                                 { 'data'  => "$_: ",
                                   'align' => 'right',
@@ -424,11 +439,30 @@ push @fields,
                               ];
                             }
                         grep { $options{$_} =~ /\S/ } 
-                        grep { $_ !~ /^(setup|recur)_fee$/ }
+                        grep { $_ !~ /^(setup|recur)_fee$/ 
+                               and $_ !~ /^report_option_\d+$/ }
                         keys %options
-                      ];
+                      );
+                      if ( @report_options ) {
+                        push @rows,
+                          [ { 'data'  => 'Report classes',
+                              'align' => 'center',
+                              'style' => 'font-weight: bold',
+                              'colspan' => 2
+                            } ];
+                        foreach (@report_options) {
+                          push @rows, [
+                            { 'data'  => $_,
+                              'align' => 'center',
+                              'colspan' => 2
+                            }
+                          ];
+                        } # foreach @report_options
+                      } # if @report_options
 
-                    } else {
+                      return \@rows;
+
+                    } else { # should never happen...
 
                       [ map { [
                                 { 'data'  => uc($_),
@@ -505,5 +539,21 @@ $count_extra_sql =~ s/^\s*AND /WHERE /i;
 $extra_count = ( $count_extra_sql ? ' AND ' : ' WHERE ' ). $extra_count
   if $extra_count;
 my $count_query = "SELECT COUNT(*) FROM part_pkg $count_extra_sql $extra_count";
+
+my $html_form = '';
+my $html_foot = '';
+if ( $acl_edit_bulk ) {
+  # insert a checkbox column
+  push @header, '';
+  push @fields, sub {
+    '<INPUT TYPE="checkbox" NAME="pkgpart" VALUE=' . $_[0]->pkgpart .'>';
+  };
+  push @links, '';
+  $align .= 'c';
+  $html_form = qq!<FORM ACTION="${p}edit/bulk-part_pkg.html" METHOD="POST">!;
+  $html_foot = include('/search/elements/checkbox-foot.html',
+      submit  => 'edit report classes', # for now it's only report classes
+  ) . '</FORM>';
+}
 
 </%init>
