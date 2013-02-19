@@ -87,7 +87,7 @@ if ( $cgi->param('payby') ) {
 }
 
 if ( not $cgi->param('dcln') ) {
-  push @search, "cpb.status IS DISTINCT FROM 'Approved'";
+  push @search, "cust_pay_batch.status IS DISTINCT FROM 'Approved'";
 }
 
 my ($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
@@ -101,7 +101,7 @@ push @search, $curuser->agentnums_sql({ table=>'cust_main' });
 
 my $search = ' WHERE ' . join(' AND ', @search);
 
-$count_query = 'SELECT COUNT(*) FROM cust_pay_batch AS cpb ' .
+$count_query = 'SELECT COUNT(*) FROM cust_pay_batch ' .
                   'LEFT JOIN cust_main USING ( custnum ) ' .
                   'LEFT JOIN pay_batch USING ( batchnum )' .
 		  $search;
