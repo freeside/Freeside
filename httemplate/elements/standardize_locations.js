@@ -191,12 +191,14 @@ function post_standardization() {
 
 % if ( $conf->exists('enable_taxproducts') ) {
 
+  var cf = document.<% $formname %>;
+
   if ( new String(cf.elements['<% $taxpre %>zip'].value).length < 10 )
   {
 
     var country_el = cf.elements['<% $taxpre %>country'];
     var country = country_el.options[ country_el.selectedIndex ].value;
-    var geocode = cf.elements['geocode'].value;
+    var geocode = cf.elements['bill_geocode'].value;
 
     if ( country == 'CA' || country == 'US' ) {
 
@@ -218,14 +220,14 @@ function post_standardization() {
 
     } else {
 
-      cf.elements['geocode'].value = 'DEFAULT';
+      cf.elements['bill_geocode'].value = 'DEFAULT';
       <% $post_geocode %>;
 
     }
 
   } else {
 
-    cf.elements['geocode'].value = '';
+    cf.elements['bill_geocode'].value = '';
     <% $post_geocode %>;
 
   }
@@ -250,7 +252,7 @@ function update_geocode() {
     cf.elements['<% $taxpre %>city'].value     = argsHash['city'];
     setselect(cf.elements['<% $taxpre %>state'], argsHash['state']);
     cf.elements['<% $taxpre %>zip'].value      = argsHash['zip'];
-    cf.elements['geocode'].value  = argsHash['geocode'];
+    cf.elements['bill_geocode'].value  = argsHash['geocode'];
     <% $post_geocode %>;
 
   }
