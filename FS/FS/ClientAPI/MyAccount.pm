@@ -122,6 +122,7 @@ sub skin_info {
             font title_color title_align title_size menu_bgcolor menu_fontsize
           )
       ),
+      'menu_disable' => [ $conf->config('selfservice-menu_disable',$agentnum) ],
       ( map { $_ => $conf->exists("selfservice-$_", $agentnum ) }
         qw( menu_skipblanks menu_skipheadings menu_nounderline no_logo )
       ),

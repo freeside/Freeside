@@ -88,11 +88,13 @@ push @menu,
   { title=>'Logout',   url=>'logout', size=>'+1', },
 ;
 
+my %menu_disable = map { $_=>1 } @menu_disable;
 foreach my $item ( @menu ) {
 
-  next if $menu_skipblanks && $item->{'title'} =~ /^\s*$/;
-  next if $menu_skipheadings && ! $item->{'url'};
-
+  next if ( $menu_skipblanks && $item->{'title'} =~ /^\s*$/ )
+       || ( $menu_skipheadings && ! $item->{'url'} )
+       || $menu_disable{$item->{'title'}};
+  
   $OUT .= '<TR><TD'; 
   if ( $menu_body_image ) {
     if ( exists $item->{'url'} && $action eq $item->{'url'} ) {
