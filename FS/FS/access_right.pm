@@ -201,6 +201,7 @@ sub _upgrade_data { # class method
     'Post credit'                         => 'Credit line items',
     #'View customer tax exemptions'        => 'Edit customer tax exemptions',
     'Edit customer'                       => 'Edit customer tax exemptions',
+    'Edit package definitions'            => 'Bulk edit package definitions',
 
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',
