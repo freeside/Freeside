@@ -13,7 +13,7 @@ sub option_fields {
                   'type'  => 'checkbox',
                   'value' => 'Y',
                 },
-    'check_bal' => { 'label' => 'Check referring custoemr balance',
+    'check_bal' => { 'label' => 'Check referring customer balance',
                      'type'  => 'checkbox',
                      'value' => 'Y',
                    },
