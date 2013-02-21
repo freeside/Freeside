@@ -772,7 +772,7 @@ sub tables_hashref {
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'duration', 'int', 'NULL', '',  0, '',
-        'phonenum', 'varchar', 'NULL', 15, '', '',
+        'phonenum', 'varchar', 'NULL', 25, '', '',
         'accountcode', 'varchar',  'NULL',      20, '', '',
         'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
@@ -875,7 +875,7 @@ sub tables_hashref {
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'duration', 'int', 'NULL', '',  0, '',
-        'phonenum', 'varchar', 'NULL', 15, '', '',
+        'phonenum', 'varchar', 'NULL', 25, '', '',
         'accountcode', 'varchar',  'NULL',      20, '', '',
         'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
@@ -3600,7 +3600,7 @@ sub tables_hashref {
       'columns' => [
         'svcnum',       'int',         '',      '', '', '', 
         'countrycode',  'varchar',     '',       3, '', '', 
-        'phonenum',     'varchar',     '',      15, '', '',  #12 ?
+        'phonenum',     'varchar',     '',      25, '', '',  #12 ?
         'sim_imsi',     'varchar', 'NULL',      15, '', '',
         'pin',          'varchar', 'NULL', $char_d, '', '',
         'sip_password', 'varchar', 'NULL', $char_d, '', '',
