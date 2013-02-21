@@ -4,18 +4,18 @@
              'query'         => $query,
              'count_query'   => $count_query,
              'count_addl'    => [ $format_seconds_sub,
-                                  $applied_time ? $format_seconds_sub : () ],
+                                  $applied ? $format_seconds_sub : () ],
              'header'        => [ 'Ticket #',
                                   'Ticket',
                                   'Time',
-                                  $applied_time ? 'Applied' : (),
+                                  $applied ? 'Applied' : (),
                                 ],
              'fields'        => [ 'ticketid',
                                   sub { encode_entities(shift->get('subject')) },
                                   sub { my $seconds = shift->get('ticket_time');
                                         &{ $format_seconds_sub }( $seconds );
                                       },
-                                  ($applied_time ?
+                                  ($applied ?
                                     sub { my $seconds = shift->get('applied_time');
                                         &{ $format_seconds_sub }( $seconds );
                                       } : () ),
@@ -23,7 +23,7 @@
              'sort_fields'   => [ 'ticketid',
                                   'subject',
                                   'transaction_time',
-                                  $applied_time ? 'applied_time' : (),
+                                  $applied ? 'applied_time' : (),
                                 ],
              'links'         => [
                                   $link,
@@ -59,7 +59,6 @@ my @select = (
 );
 my @select_total = ( 'COUNT(*)' );
 
-my ($transaction_time, $applied_time);
 my $join = 'JOIN Users   ON Transactions.Creator = Users.Id '; #.
 
 my $twhere = "
@@ -67,6 +66,8 @@ my $twhere = "
     AND Transactions.ObjectId = Tickets.Id
 ";
 
+my $transaction_time;
+my $applied = '';
 my $cfname = '';
 if ( $cgi->param('cfname') =~ /^\w(\w|\s)*$/ ) {
 
@@ -103,15 +104,14 @@ if ( $cgi->param('cfname') =~ /^\w(\w|\s)*$/ ) {
   $twhere .= " AND CustomFields.Name = '$cfname'
     AND (ocfv_new.Id IS NOT NULL OR ocfv_old.Id IS NOT NULL OR ocfv_main.Id IS NOT NULL)";
 
-}
-else {
+} else {
+
   $transaction_time = "
   CASE transactions.type when 'Set'
     THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60
     ELSE timetaken*60
   END";
  
-  my $applied = '';
   if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
     $twhere .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
     $applied = "AND svcnum = $1";
@@ -121,12 +121,10 @@ else {
     AND (    ( Transactions.Type = 'Set'
                AND Transactions.Field = 'TimeWorked'
                AND Transactions.NewValue != Transactions.OldValue )
-          OR ( ( Transactions.Type='Create' OR Transactions.Type='Comment' OR Transactions.Type='Correspond' OR Transactions.Type='Touch' )
+          OR ( Transactions.Type IN ( 'Create', 'Comment', 'Correspond', 'Touch' )
                AND Transactions.TimeTaken > 0
              )
         )";
-
-  $applied_time = "( SELECT SUM(support) FROM acct_rt_transaction LEFT JOIN Transactions ON ( transaction_id = Id ) $twhere $applied )";
 
 }
 
@@ -154,9 +152,13 @@ my $ticket_time = "( SELECT SUM($transaction_time) $transactions )";
 push @select, "$ticket_time AS ticket_time";
 push @select_total, "SUM($ticket_time)";
 
-if ( $applied_time) {
+if ( $applied ) {
+
+  my $applied_time = "( SELECT SUM(support) FROM acct_rt_transaction LEFT JOIN Transactions ON ( transaction_id = Id ) $twhere $applied )";
+
   push @select, "$applied_time AS applied_time";
   push @select_total, "SUM($applied_time)";
+
 }
 
 my $query = {
