@@ -37,6 +37,7 @@ do {
   my $ns = $part_export->ns_command( 'GET', '/cdr/',
                                        'time_release' => "$time_release,",
                                        '_sort'        => '+time_release',
+				       '_limit'      => '500', 
                                    );
 
   #loop over them, double check duplicates, insert the rest
