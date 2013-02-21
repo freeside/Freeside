@@ -24,7 +24,9 @@ function change_discount_term(what) {
         id      => 'discount_term',
         options => [ '', @discount_term ],
         labels  => { '' => mt('1 month'), 
-                     map { $_ => mt('[_1] months', $_) } @discount_term },
+                     map { $_ => mt('[_1] months', sprintf('%.0f', $_)) }
+                      @discount_term
+                   },
         curr_value => '',
         onchange => $amount_id ? 'change_discount_term(this)' : '',
       &>

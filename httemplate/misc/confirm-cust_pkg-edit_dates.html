@@ -63,7 +63,7 @@ if ( $hash{'setup'} != $cust_pkg->get('setup') ) {
     } else {
       push @confirm, '';
     }
-  } elsif ( $cust_pkg->get('setup') ) {
+  } elsif ( $hash{'setup'} and !$cust_pkg->get('setup') ) {
     my $text = 'Add a setup date of [_1]';
     $text .= ' to this and all its supplemental packages' if @supp_pkgs;
     $text .= '.';
@@ -110,7 +110,7 @@ if ( $hash{'last_bill'} != $cust_pkg->get('last_bill') ) {
 # Bill date change
 if ( $hash{'bill'} != $cust_pkg->get('bill') ) {
   my $bill = time2str($date_format, $hash{'bill'});
-  $bill = 'the current day' if !$hash{'bill'}; # or 'the end of today'?...
+  $bill = 'today' if !$hash{'bill'}; # or 'the end of today'?...
   my $name = 'next bill date';
   $name = 'end of the prepaid period' if $part_pkg->is_prepaid;
   push @changes, mt('Set the [_1] to [_2].', $name, $bill);
@@ -119,6 +119,12 @@ if ( $hash{'bill'} != $cust_pkg->get('bill') ) {
     push @confirm, 
       mt('The customer will be charged for the interval from [_1] until now.',
          $bill);
+  } elsif ( !$hash{'bill'} and ($hash{'last_bill'} or $hash{'setup'}) ) {
+    my $last_bill = 
+      time2str($date_format, $hash{'last_bill'} || $hash{'setup'});
+    push @confirm,
+      mt('The customer will be charged for the interval from [_1] until now.',
+        $last_bill);
   } else {
     push @confirm, '';
   }
