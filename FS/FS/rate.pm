@@ -308,17 +308,28 @@ sub dest_detail {
     #find a rate prefix, first look at most specific, then fewer digits,
     # finally trying the country code only
     my $rate_prefix = '';
-    for my $len ( reverse(1..10) ) {
-      $rate_prefix = qsearchs('rate_prefix', {
-        'countrycode' => $countrycode,
-        #'npa'         => { op=> 'LIKE', value=> substr($number, 0, $len) }
-        'npa'         => substr($phonenum, 0, $len),
-      } ) and last;
-    }
-    $rate_prefix ||= qsearchs('rate_prefix', {
-      'countrycode' => $countrycode,
-      'npa'         => '',
+    $rate_prefix = qsearchs({
+        'table'     => 'rate_prefix',
+        'addl_from' => ' JOIN rate_region USING (regionnum)',
+        'hashref'   => {
+          'countrycode' => $countrycode,
+          'npa'         => $phonenum,
+        },
+        'extra_sql' => ' AND exact_match = \'Y\''
     });
+    if (!$rate_prefix) {
+      for my $len ( reverse(1..10) ) {
+        $rate_prefix = qsearchs('rate_prefix', {
+          'countrycode' => $countrycode,
+          #'npa'         => { op=> 'LIKE', value=> substr($number, 0, $len) }
+          'npa'         => substr($phonenum, 0, $len),
+        } ) and last;
+      }
+      $rate_prefix ||= qsearchs('rate_prefix', {
+        'countrycode' => $countrycode,
+        'npa'         => '',
+      });
+    }
 
     return '' unless $rate_prefix;
 

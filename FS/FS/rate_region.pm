@@ -36,7 +36,10 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item regionnum - primary key
 
-=item regionname
+=item regionname - name of the region
+
+=item exact_match - 'Y' if "prefixes" in this region really represent 
+complete phone numbers.  Null if they represent prefixes (the usual case).
 
 =back
 
@@ -233,6 +236,7 @@ sub check {
   my $error =
        $self->ut_numbern('regionnum')
     || $self->ut_text('regionname')
+    || $self->ut_flag('exact_match')
   ;
   return $error if $error;
 
