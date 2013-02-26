@@ -1,16 +1,20 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw( $opt_c $opt_p $opt_b $opt_d $opt_s $opt_t );
+use vars qw( $opt_c $opt_o $opt_l $opt_p $opt_b $opt_d $opt_s $opt_t );
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
+use FS::Conf;
 use FS::Record qw(qsearch);
 use FS::svc_phone;
 
-getopts('cp:b:d:s:t:');
+getopts('colp:b:d:s:t:');
 
 my $user = shift or &usage;
 adminsuidsetup $user;
+
+my $conf = new FS::Conf;
+my $default_locale = $conf->config('locale') || 'en_US';
 
 my %search = ();
 
@@ -24,11 +28,17 @@ my @svc_phone = qsearch( FS::svc_phone->search(\%search) );
 
 foreach my $svc_phone (@svc_phone) {
   print $svc_phone->countrycode if $opt_c;
-  print $svc_phone->phonenum. "\n";  
+  print $svc_phone->phonenum;
+  print ','. $svc_phone->domain if $opt_o;
+  if ( $opt_l ) {
+    my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+    print ','. ($cust_pkg && $cust_pkg->cust_main->locale || $default_locale);
+  }
+  print "\n";  
 }
 
 sub usage {
-  die "usage: freeside-phonenum_list [ -c ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username \n";
+  die "usage: freeside-phonenum_list [ -c ] [ -o ] [ -l ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username \n";
 }
 
 =head1 NAME
@@ -42,7 +52,15 @@ freeside-phonenum_list
 
 Command-line tool to list phone numbers.
 
--c: Include country code in results
+Display options:
+
+-c: Include country code
+
+-o: Include domain
+
+-l: Include customer locale
+
+Selection options:
 
 -p: Customer payby (CARD, BILL, etc.).  Separate multiple values with commas.
 
