@@ -429,7 +429,7 @@ if ( $cgi->param('nottax') ) {
     s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g for @where;
   }
 
-} else { 
+} else {
 
   #warn "neither nottax nor istax parameters specified";
   #same as before?
@@ -464,7 +464,7 @@ my @post_desc_header = ();
 my @post_desc = ();
 my @post_desc_null = ();
 my $post_desc_align = '';
-if ( $conf->exists('enable_taxclasses') ) {
+if ( $conf->exists('enable_taxclasses') && ! $cgi->param('istax') ) {
   push @post_desc_header, 'Tax class';
   push @post_desc, 'taxclass';
   push @post_desc_null, '';
