@@ -1987,7 +1987,7 @@ and customer address. Include units.',
     'key'         => 'locale',
     'section'     => 'UI',
     'description' => 'Default locale',
-    'type'        => 'select',
+    'type'        => 'select-sub',
     'options_sub' => sub {
       map { $_ => FS::Locales->description($_) } FS::Locales->locales;
     },
