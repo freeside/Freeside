@@ -29,7 +29,7 @@ my @svc_phone = qsearch( FS::svc_phone->search(\%search) );
 foreach my $svc_phone (@svc_phone) {
   print $svc_phone->countrycode if $opt_c;
   print $svc_phone->phonenum;
-  print ','. $svc_phone->domain if $opt_o;
+  print '@'. $svc_phone->domain if $opt_o;
   if ( $opt_l ) {
     my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
     print ','. ($cust_pkg && $cust_pkg->cust_main->locale || $default_locale);
