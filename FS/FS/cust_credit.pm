@@ -717,8 +717,7 @@ sub credit_lineitems {
   my %cust_credit_bill = ();
   my %cust_bill_pkg = ();
   my %cust_credit_bill_pkg = ();
-  # except here they're billpaynums
-  my %unapplied_payments;
+  my %unapplied_payments = (); # except here they're billpaynums
   foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
     my $setuprecur = shift @{$arg{setuprecurs}};
     my $amount = shift @{$arg{amounts}};
