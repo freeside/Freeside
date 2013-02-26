@@ -31,13 +31,13 @@ $name = 'BoM';
   },
   header => sub { 
     my $pay_batch = shift;
-    sprintf( "A%10s%04u%06u%05u%54s\n",  #80
+    sprintf( "A%10s%04u%06u%05u%53s\n",  #80
       $origid,
       $pay_batch->batchnum,
       jdate($pay_batch->download),
       $datacenter,
       "") .
-    sprintf( "XD%03u%06u%-15s%-30s%09u%-12s   \n", #80
+    sprintf( "XD%03u%06u%-15s%-30s%09u%-12s ", #80
       $typecode,
       jdate($pay_batch->download),
       $shortname,
@@ -48,7 +48,7 @@ $name = 'BoM';
   row => sub {
     my ($cust_pay_batch, $pay_batch) = @_;
     my ($account, $aba) = split('@', $cust_pay_batch->payinfo);
-    sprintf( "D%010.0f%09u%-12s%-29s%-19s\n", #80
+    sprintf( "D%010.0f%09u%-12s%-29s%-18s ", #80
       $cust_pay_batch->amount * 100,
       $aba,
       $account,
@@ -58,8 +58,8 @@ $name = 'BoM';
   },
   footer => sub {
     my ($pay_batch, $batchcount, $batchtotal) = @_;
-    sprintf( "YD%08u%014.0f%56s\n", $batchcount, $batchtotal*100, ""). #80
-    sprintf( "Z%014u%04u%014u%05u%42s\n",  #80 now
+    sprintf( "YD%08u%014.0f%55s\n", $batchcount, $batchtotal*100, ""). #80
+    sprintf( "Z%014u%05u%014u%05u%40s",  #80 now
       $batchtotal*100, $batchcount, "0", "0", "");
   },
 );

@@ -3056,6 +3056,7 @@ sub tables_hashref {
       'columns' => [
         'regionnum',   'serial',      '', '', '', '', 
         'regionname',  'varchar',     '', $char_d, '', '', 
+        'exact_match', 'char',    'NULL',  1, '', '',
       ],
       'primary_key' => 'regionnum',
       'unique'      => [],

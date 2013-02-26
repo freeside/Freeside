@@ -18,6 +18,7 @@ tie my %options, 'Tie::IxHash',
   'pwd'       => { label=>'Operator password' },
   'tplid'     => { label=>'Template number' },
   'hlrsn'     => { label=>'HLR serial number' },
+  'timeout'   => { label=>'Timeout (seconds)', default => 120 },
   'debug'     => { label=>'Enable debugging', type=>'checkbox' },
 ;
 
@@ -36,13 +37,13 @@ sub _export_insert {
   my( $self, $svc_phone ) = (shift, shift);
   # svc_phone::check should ensure phonenum and sim_imsi are numeric
   my @command = (
-    'ADD TPLSUB',
     IMSI   => '"'.$svc_phone->sim_imsi.'"',
-    ISDN   => '"'.$svc_phone->phonenum.'"',
+    ISDN   => '"'.$svc_phone->countrycode.$svc_phone->phonenum.'"',
     TPLID  => $self->option('tplid'),
   );
   unshift @command, 'HLRSN', $self->option('hlrsn')
     if $self->option('hlrsn');
+  unshift @command, 'ADD TPLSUB';
   my $err_or_queue = $self->queue_command($svc_phone->svcnum, @command);
   ref($err_or_queue) ? '' : $err_or_queue;
 }
@@ -53,7 +54,7 @@ sub _export_replace  {
   if ( $new->sim_imsi ne $old->sim_imsi ) {
     my @command = (
       'MOD IMSI',
-      ISDN    => '"'.$old->phonenum.'"',
+      ISDN    => '"'.$old->countrycode.$old->phonenum.'"',
       IMSI    => '"'.$old->sim_imsi.'"',
       NEWIMSI => '"'.$new->sim_imsi.'"',
     );
@@ -61,11 +62,12 @@ sub _export_replace  {
     return $err_or_queue unless ref $err_or_queue;
     $depend_jobnum = $err_or_queue->jobnum;
   }
-  if ( $new->phonenum ne $old->phonenum ) {
+  if ( $new->countrycode ne $old->countrycode or 
+       $new->phonenum ne $old->phonenum ) {
     my @command = (
       'MOD ISDN',
-      ISDN    => '"'.$old->phonenum.'"',
-      NEWISDN => '"'.$new->phonenum.'"',
+      ISDN    => '"'.$old->countrycode.$old->phonenum.'"',
+      NEWISDN => '"'.$new->countrycode.$new->phonenum.'"',
     );
     my $err_or_queue = $self->queue_command($new->svcnum, @command);
     return $err_or_queue unless ref $err_or_queue;
@@ -94,7 +96,7 @@ sub _export_lock {
   my @command = (
     'MOD LCK',
     IMSI    => '"'.$svc_phone->sim_imsi.'"',
-    ISDN    => '"'.$svc_phone->phonenum.'"',
+    ISDN    => '"'.$svc_phone->countrycode.$svc_phone->phonenum.'"',
     IC      => $lockstate,
     OC      => $lockstate,
     GPRSLOCK=> $lockstate,
@@ -107,8 +109,8 @@ sub _export_delete {
   my( $self, $svc_phone ) = (shift, shift);
   my @command = (
     'RMV SUB',
-    IMSI    => '"'.$svc_phone->sim_imsi.'"',
-    ISDN    => '"'.$svc_phone->phonenum.'"',
+    #IMSI    => '"'.$svc_phone->sim_imsi.'"',
+    ISDN    => '"'.$svc_phone->countrycode.$svc_phone->phonenum.'"',
   );
   my $err_or_queue = $self->queue_command($svc_phone->svcnum, @command);
   ref($err_or_queue) ? '' : $err_or_queue;
@@ -179,15 +181,16 @@ sub command {
     $string .= shift(@param) . '=' . shift(@param);
     $string .= ',' if @param;
   }
-  $string .= "\n";
+  $string .= "\n;";
   my @result;
   eval { # timeout
     local $SIG{ALRM} = sub { die "timeout\n" };
-    alarm ($self->option('timeout') || 30);
+    alarm ($self->option('timeout') || 120);
     warn "Sending to server:\n$string\n\n" if $DEBUG;
     $socket->print($string);
     warn "Received:\n";
     my $line;
+    local $/ = "\r\n";
     do {
       $line = $socket->getline();
       warn $line if $DEBUG;
@@ -203,11 +206,10 @@ sub command {
     return { error => $@ };
   } else {
     #+++    HLR9820        <date> <time>\n
-    # skip empty lines
     my $header = shift(@result);
-    return { error => 'malformed response: '.$header }
-      unless $header =~ /^\+\+\+/;
-    $return{header} = $header;
+    $header =~ /(\+\+\+.*)/
+      or return { error => 'malformed response: '.$header };
+    $return{header} = $1;
     #SMU    #<serial number>\n
     $return{smu} = shift(@result);
     #%%<command string>%%\n 

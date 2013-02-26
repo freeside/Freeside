@@ -62,8 +62,14 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+my $sub_prefixes = sub {
+  my $region = shift;
+  $region->prefixes .
+  ($region->exact_match ? ' <I>(exact match only)</I>' : '');
+};
+
 my @header     = ( '#',         'Region',  'Country code', 'Prefixes' );
-my @fields     = ( 'regionnum', 'regionname',   'ccode',   'prefixes' );
+my @fields     = ( 'regionnum', 'regionname',   'ccode',   $sub_prefixes );
 my @links      = ( ($link) x 4 );
 my @align      = ( 'right', 'left', 'right', 'left' );
 my @xls_format = ( ({ locked=>1, bg_color=>22 }) x 4 );
