@@ -1,5 +1,6 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header', 'Call usage for '.
+<%= include('header', ($inbound ? 'Dialed calls ' : 'Received calls ') . 
+                       ' for '.
                        Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $beginning).
                        ' - '.
                        Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $ending)

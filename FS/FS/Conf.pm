@@ -717,6 +717,18 @@ my %batch_gateway_options = (
   },
 );
 
+my @cdr_formats = (
+  '' => '',
+  'default' => 'Default',
+  'source_default' => 'Default with source',
+  'accountcode_default' => 'Default plus accountcode',
+  'description_default' => 'Default with description field as destination',
+  'basic' => 'Basic',
+  'simple' => 'Simple',
+  'simple2' => 'Simple with source',
+  'accountcode_simple' => 'Simple with accountcode',
+);
+
 # takes the reason class (C, R, S) as an argument
 sub reason_type_options {
   my $reason_class = shift;
@@ -4760,6 +4772,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-taqua-callerid_rewrite',
+    'section'     => 'telephony',
+    'description' => 'For the Taqua CDR format, pull Caller ID blocking information from secondary CDRs.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cdr-asterisk_australia_rewrite',
     'section'     => 'telephony',
     'description' => 'For Asterisk CDRs, assign CDR type numbers based on Australian conventions.',
@@ -5348,6 +5367,22 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Return line item billing detail for the self-service billing_history API call.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-default_cdr_format',
+    'section'     => 'self-service',
+    'description' => 'Format for showing outbound CDRs in self-service.  The per-package option overrides this.',
+    'type'        => 'select',
+    'select_hash' => \@cdr_formats,
+  },
+
+  {
+    'key'         => 'selfservice-default_inbound_cdr_format',
+    'section'     => 'self-service',
+    'description' => 'Format for showing inbound CDRs in self-service.  The per-package option overrides this.  Leave blank to avoid showing these CDRs.',
+    'type'        => 'select',
+    'select_hash' => \@cdr_formats,
   },
 
   {

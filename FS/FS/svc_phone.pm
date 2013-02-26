@@ -688,6 +688,8 @@ with the chosen prefix.
 
 =item disable_src => 1: Only match on "charged_party", not "src".
 
+=item nonzero: Only return CDRs where duration > 0.
+
 =item by_svcnum: not supported for svc_phone
 
 =item billsec_sum: Instead of returning all of the CDRs, return a single
@@ -755,6 +757,9 @@ sub psearch_cdrs {
   if ( $options{'end'} ) {
     push @where, 'startdate < '.  $options{'end'};
   }
+  if ( $options{'nonzero'} ) {
+    push @where, 'duration > 0';
+  }
 
   my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
 
@@ -781,6 +786,30 @@ sub get_cdrs {
   qsearch ( $psearch->{query} )
 }
 
+=item sum_cdrs
+
+Takes the same options as psearch_cdrs, but returns a single row containing
+"count" (the number of CDRs) and the sums of the following fields: duration,
+billsec, rated_price, rated_seconds, rated_minutes.
+
+Note that if any calls are not rated, their rated_* fields will be null.
+If you want to use those fields, pass the 'status' option to limit to 
+calls that have been rated.  This is intentional; please don't "fix" it.
+
+=cut
+
+sub sum_cdrs {
+  my $self = shift;
+  my $psearch = $self->psearch_cdrs(@_);
+  $psearch->{query}->{'select'} = join(',',
+    'COUNT(*) AS count',
+    map { "SUM($_) AS $_" }
+      qw(duration billsec rated_price rated_seconds rated_minutes)
+  );
+  # hack
+  $psearch->{query}->{'extra_sql'} =~ s/ ORDER BY.*$//;
+  qsearchs ( $psearch->{query} );
+}
 
 =back
 

@@ -873,6 +873,7 @@ sub view_cdr_details {
     'svcnum'      => $cgi->param('svcnum'),
     'beginning'   => $cgi->param('beginning') || '',
     'ending'      => $cgi->param('ending') || '',
+    'inbound'     => $cgi->param('inbound') || 0,
   );
 }
 

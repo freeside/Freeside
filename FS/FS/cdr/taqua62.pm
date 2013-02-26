@@ -20,7 +20,9 @@ use FS::cdr qw(_cdr_date_parser_maker);
       my($cdr, $field, $conf, $hashref) = @_;
       $hashref->{skiprow} = 1
         unless ($field == 0 && $cdr->disposition == 100       )  #regular CDR
-            || ($field == 1 && $cdr->lastapp     eq 'acctcode'); #accountcode
+            || ($field == 1 && $cdr->lastapp     eq 'acctcode')  #accountcode
+            || ($field == 1 && $cdr->lastapp     eq 'CallerId')  #CID blocking
+            ;
       $cdr->cdrtypenum($field);
     },
 

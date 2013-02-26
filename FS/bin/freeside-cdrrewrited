@@ -30,9 +30,9 @@ die "not running; cdr-asterisk_forward_rewrite, cdr-charged_party_rewrite ".
 
 #--
 
-my %accountcode_unmatch = ();
-my $accountcode_retry = 4 * 60 * 60; # 4 hours
-my $accountcode_giveup = 4 * 24 * 60 * 60; # 4 days
+my %sessionnum_unmatch = ();
+my $sessionnum_retry = 4 * 60 * 60; # 4 hours
+my $sessionnum_giveup = 4 * 24 * 60 * 60; # 4 days
 
 my %cdr_type = map { lc($_->cdrtypename) => $_->cdrtypenum } 
   qsearch('cdr_type',{});
@@ -45,8 +45,8 @@ while (1) {
   # instead of just doing this search like normal CDRs
 
   #hmm :/
-  my @recent = grep { ($accountcode_unmatch{$_} + $accountcode_retry) > time }
-                 keys %accountcode_unmatch;
+  my @recent = grep { ($sessionnum_unmatch{$_} + $sessionnum_retry) > time }
+                 keys %sessionnum_unmatch;
   my $extra_sql = scalar(@recent)
                     ? ' AND acctid NOT IN ('. join(',', @recent). ') '
                     : '';
@@ -136,45 +136,62 @@ while (1) {
 
     }
 
-    if ( $conf->exists('cdr-taqua-accountcode_rewrite')
-         && $cdr->lastapp eq 'acctcode' && $cdr->cdrtypenum == 1
+    if (     $cdr->cdrtypenum == 1
+         and $cdr->lastapp
+         and (
+            $conf->exists('cdr-taqua-accountcode_rewrite') or
+            $conf->exists('cdr-taqua-callerid_rewrite') )
        )
     {
 
       #find the matching CDR
-      my $primary = qsearchs('cdr', {
-        'sessionnum'  => $cdr->sessionnum,
-        'src'         => $cdr->subscriber,
-        #'accountcode' => '',
-      });
+      my %search = ( 'sessionnum' => $cdr->sessionnum );
+      if ( $cdr->lastapp eq 'acctcode' ) {
+        $search{'src'} = $cdr->subscriber;
+      } elsif ( $cdr->lastapp eq 'CallerId' ) {
+        $search{'dst'} = $cdr->subscriber;
+      }
+      my $primary = qsearchs('cdr', \%search);
 
       unless ( $primary ) {
 
         my $cantfind = "can't find primary CDR with session ". $cdr->sessionnum.
                        ", src ". $cdr->subscriber;
-        if ( $cdr->calldate_unix + $accountcode_giveup < time ) {
+        if ( $cdr->calldate_unix + $sessionnum_giveup < time ) {
           warn "ERROR: $cantfind; giving up\n";
-          push @status, 'taqua-accountcode-NOTFOUND';
+          push @status, 'taqua-sessionnum-NOTFOUND';
           $cdr->status('done'); #so it doesn't try to rate
-          delete $accountcode_unmatch{$cdr->acctid}; #so it doesn't suck mem
+          delete $sessionnum_unmatch{$cdr->acctid}; #so it doesn't suck mem
         } else {
           warn "WARNING: $cantfind; will keep trying\n";
-          $accountcode_unmatch{$cdr->acctid} = time;
+          $sessionnum_unmatch{$cdr->acctid} = time;
           next;
         }
 
       } else {
 
-        $primary->accountcode( $cdr->lastdata );
+        if ( $cdr->lastapp eq 'acctcode' ) {
+          # lastdata contains the dialed account code
+          $primary->accountcode( $cdr->lastdata );
+          push @status, 'taqua-accountcode';
+        } elsif ( $cdr->lastapp eq 'CallerId' ) {
+          # lastdata contains "allowed" or "restricted"
+          # or case variants thereof
+          if ( lc($cdr->lastdata) eq 'restricted' ) {
+            $primary->clid( 'PRIVATE' );
+          }
+          push @status, 'taqua-callerid';
+        } else {
+          warn "unknown Taqua service name: ".$cdr->lastapp."\n";
+        }
         #$primary->freesiderewritestatus( 'taqua-accountcode-primary' );
-        my $error = $primary->replace;
+        my $error = $primary->replace if $primary->modified;
         if ( $error ) {
           warn "WARNING: error rewriting primary CDR (will retry): $error\n";
           next;
         }
         $skip{$primary->acctid} = 1;
 
-        push @status, 'taqua-accountcode';
         $cdr->status('done'); #so it doesn't try to rate
 
       }
@@ -214,7 +231,10 @@ sub _shouldrun {
      $conf->exists('cdr-asterisk_forward_rewrite')
   || $conf->exists('cdr-asterisk_australia_rewrite')
   || $conf->exists('cdr-charged_party_rewrite')
-  || $conf->exists('cdr-taqua-accountcode_rewrite');
+  || $conf->exists('cdr-taqua-accountcode_rewrite')
+  || $conf->exists('cdr-taqua-callerid_rewrite')
+  || 0
+  ;
 }
 
 sub usage { 
