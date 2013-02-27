@@ -382,7 +382,7 @@ sub check {
 
   # remove delimiters
   my $mac_addr = uc($self->get('mac_addr'));
-  $mac_addr =~ s/[-: ]//g;
+  $mac_addr =~ s/[\W_]//g;
   $self->set('mac_addr', $mac_addr);
 
   my $error =
