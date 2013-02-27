@@ -1315,8 +1315,7 @@ Parameters:
 
 =cut
 
-# based on FS::svc_acct::search, both that and svc_broadband::search should
-#  eventually use this instead
+# svc_broadband::search should eventually use this instead
 sub search {
   my ($class, $params) = @_;
 
@@ -1328,6 +1327,8 @@ sub search {
   );
 
   my @where = ();
+
+  $class->_search_svc($params, \@from, \@where) if $class->can('_search_svc');
 
 #  # domain
 #  if ( $params->{'domain'} ) { 
@@ -1377,15 +1378,40 @@ sub search {
   }
 
   #pkgpart
-  if ( $params->{'pkgpart'} && scalar(@{ $params->{'pkgpart'} }) ) {
-    my @pkgpart = grep /^(\d+)$/, @{ $params->{'pkgpart'} };
-    push @where, 'cust_pkg.pkgpart IN ('. join(',', @pkgpart ). ')';
+  ##pkgpart, now properly untainted, can be arrayref
+  #for my $pkgpart ( $params->{'pkgpart'} ) {
+  #  if ( ref $pkgpart ) {
+  #    my $where = join(',', map { /^(\d+)$/ ? $1 : () } @$pkgpart );
+  #    push @where, "cust_pkg.pkgpart IN ($where)" if $where;
+  #  }
+  #  elsif ( $pkgpart =~ /^(\d+)$/ ) {
+  #    push @where, "cust_pkg.pkgpart = $1";
+  #  }
+  #}
+  if ( $params->{'pkgpart'} ) {
+    my @pkgpart = ref( $params->{'pkgpart'} )
+                    ? @{ $params->{'pkgpart'} }
+                    : $params->{'pkgpart'}
+                      ? ( $params->{'pkgpart'} )
+                      : ();
+    @pkgpart = grep /^(\d+)$/, @pkgpart;
+    push @where, 'cust_pkg.pkgpart IN ('. join(',', @pkgpart ). ')' if @pkgpart;
+  }
+
+  #svcnum
+  if ( $params->{'svcnum'} =~ /^(\d+)$/ ) {
+    push @where, "svcnum = $1";
   }
 
   # svcpart
-  if ( $params->{'svcpart'} && scalar(@{ $params->{'svcpart'} }) ) {
-    my @svcpart = grep /^(\d+)$/, @{ $params->{'svcpart'} };
-    push @where, 'svcpart IN ('. join(',', @svcpart ). ')';
+  if ( $params->{'svcpart'} ) {
+    my @svcpart = ref( $params->{'svcpart'} )
+                    ? @{ $params->{'svcpart'} }
+                    : $params->{'svcpart'}
+                      ? ( $params->{'svcpart'} )
+                      : ();
+    @svcpart = grep /^(\d+)$/, @svcpart;
+    push @where, 'svcpart IN ('. join(',', @svcpart ). ')' if @svcpart;
   }
 
   if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {

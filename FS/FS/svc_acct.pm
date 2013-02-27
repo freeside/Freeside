@@ -2822,116 +2822,39 @@ Arrayref of additional WHERE clauses, will be ANDed together.
 
 =cut
 
-sub search {
-  my ($class, $params) = @_;
+sub _search_svc {
+  my( $class, $params, $from, $where ) = @_;
 
-  my @from = (
-    ' LEFT JOIN cust_svc  USING ( svcnum  ) ',
-    ' LEFT JOIN part_svc  USING ( svcpart ) ',
-    ' LEFT JOIN cust_pkg  USING ( pkgnum  ) ',
-    FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg')
-  );
-
-  my @where = ();
+  #these two should probably move to svc_Domain_Mixin ?
 
   # domain
   if ( $params->{'domain'} ) { 
     my $svc_domain = qsearchs('svc_domain', { 'domain'=>$params->{'domain'} } );
     #preserve previous behavior & bubble up an error if $svc_domain not found?
-    push @where, 'domsvc = '. $svc_domain->svcnum if $svc_domain;
+    push @$where, 'domsvc = '. $svc_domain->svcnum if $svc_domain;
   }
 
   # domsvc
   if ( $params->{'domsvc'} =~ /^(\d+)$/ ) { 
-    push @where, "domsvc = $1";
+    push @$where, "domsvc = $1";
   }
 
-  #unlinked
-  push @where, 'pkgnum IS NULL' if $params->{'unlinked'};
-
-  #agentnum
-  if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
-    push @where, "cust_main.agentnum = $1";
-  }
-
-  #custnum
-  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1 ) {
-    push @where, "custnum = $1";
-  }
-
-  #pkgpart
-  if ( $params->{'pkgpart'} && scalar(@{ $params->{'pkgpart'} }) ) {
-    #XXX untaint or sql quote
-    push @where,
-      'cust_pkg.pkgpart IN ('. join(',', @{ $params->{'pkgpart'} } ). ')';
-  }
 
   # popnum
   if ( $params->{'popnum'} =~ /^(\d+)$/ ) { 
-    push @where, "popnum = $1";
+    push @$where, "popnum = $1";
   }
 
-  # svcpart
-  if ( $params->{'svcpart'} =~ /^(\d+)$/ ) { 
-    push @where, "svcpart = $1";
-  }
 
-  if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
-    push @from, ' LEFT JOIN export_svc USING ( svcpart )';
-    push @where, "exportnum = $1";
-  }
+  #and these in svc_Tower_Mixin, or maybe we never should have done svc_acct
+  # towers (or, as mark thought, never should have done svc_broadband)
 
   # sector and tower
   my @where_sector = $class->tower_sector_sql($params);
   if ( @where_sector ) {
-    push @where, @where_sector;
-    push @from, ' LEFT JOIN tower_sector USING ( sectornum )';
+    push @$where, @where_sector;
+    push @$from, ' LEFT JOIN tower_sector USING ( sectornum )';
   }
-
-  # here is the agent virtualization
-  #if ($params->{CurrentUser}) {
-  #  my $access_user =
-  #    qsearchs('access_user', { username => $params->{CurrentUser} });
-  #
-  #  if ($access_user) {
-  #    push @where, $access_user->agentnums_sql('table'=>'cust_main');
-  #  }else{
-  #    push @where, "1=0";
-  #  }
-  #} else {
-    push @where, $FS::CurrentUser::CurrentUser->agentnums_sql(
-                   'table'      => 'cust_main',
-                   'null_right' => 'View/link unlinked services',
-                 );
-  #}
-
-  push @where, @{ $params->{'where'} } if $params->{'where'};
-
-  my $addl_from = join(' ', @from);
-  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
-
-  my $count_query = "SELECT COUNT(*) FROM svc_acct $addl_from $extra_sql";
-  #if ( keys %svc_acct ) {
-  #  $count_query .= ' WHERE '.
-  #                    join(' AND ', map "$_ = ". dbh->quote($svc_acct{$_}),
-  #                                      keys %svc_acct
-  #                        );
-  #}
-
-  my $sql_query = {
-    'table'       => 'svc_acct',
-    'hashref'     => {}, # \%svc_acct,
-    'select'      => join(', ',
-                       'svc_acct.*',
-                       'part_svc.svc',
-                       'cust_main.custnum',
-                       FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
-                     ),
-    'addl_from'   => $addl_from,
-    'extra_sql'   => $extra_sql,
-    'order_by'    => $params->{'order_by'},
-    'count_query' => $count_query,
-  };
 
 }
 

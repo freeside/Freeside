@@ -175,115 +175,44 @@ Parameters:
 
 =cut
 
-sub search {
-  my ($class, $params) = @_;
-  my @where = ();
-  my @from = (
-    'LEFT JOIN cust_svc  USING ( svcnum  )',
-    'LEFT JOIN part_svc  USING ( svcpart )',
-    'LEFT JOIN cust_pkg  USING ( pkgnum  )',
-    FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg'),
-  );
-
-  # based on FS::svc_acct::search, probably the most mature of the bunch
-  #unlinked
-  push @where, 'pkgnum IS NULL' if $params->{'unlinked'};
-  
-  #agentnum
-  if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
-    push @where, "cust_main.agentnum = $1";
-  }
-  push @where, $FS::CurrentUser::CurrentUser->agentnums_sql(
-    'null_right' => 'View/link unlinked services',
-    'table' => 'cust_main'
-  );
-
-  #custnum
-  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1 ) {
-    push @where, "custnum = $1";
-  }
-
-  #pkgpart, now properly untainted, can be arrayref
-  for my $pkgpart ( $params->{'pkgpart'} ) {
-    if ( ref $pkgpart ) {
-      my $where = join(',', map { /^(\d+)$/ ? $1 : () } @$pkgpart );
-      push @where, "cust_pkg.pkgpart IN ($where)" if $where;
-    }
-    elsif ( $pkgpart =~ /^(\d+)$/ ) {
-      push @where, "cust_pkg.pkgpart = $1";
-    }
-  }
+sub _search_svc {
+  my( $class, $params, $from, $where ) = @_;
 
   #routernum, can be arrayref
   for my $routernum ( $params->{'routernum'} ) {
     # this no longer uses addr_block
     if ( ref $routernum and grep { $_ } @$routernum ) {
       my $in = join(',', map { /^(\d+)$/ ? $1 : () } @$routernum );
-      my @orwhere;
+      my @orwhere = ();
       push @orwhere, "svc_broadband.routernum IN ($in)" if $in;
       push @orwhere, "svc_broadband.routernum IS NULL" 
         if grep /^none$/, @$routernum;
-      push @where, '( '.join(' OR ', @orwhere).' )';
+      push @$where, '( '.join(' OR ', @orwhere).' )';
     }
     elsif ( $routernum =~ /^(\d+)$/ ) {
-      push @where, "svc_broadband.routernum = $1";
+      push @$where, "svc_broadband.routernum = $1";
     }
     elsif ( $routernum eq 'none' ) {
-      push @where, "svc_broadband.routernum IS NULL";
+      push @$where, "svc_broadband.routernum IS NULL";
     }
   }
+
+  #this should probably move to svc_Tower_Mixin, or maybe we never should have
+  # done svc_acct # towers (or, as mark thought, never should have done
+  # svc_broadband)
 
   #sector and tower, as above
   my @where_sector = $class->tower_sector_sql($params);
   if ( @where_sector ) {
-    push @where, @where_sector;
-    push @from, 'LEFT JOIN tower_sector USING ( sectornum )';
+    push @$where, @where_sector;
+    push @$from, 'LEFT JOIN tower_sector USING ( sectornum )';
   }
  
-  #svcnum
-  if ( $params->{'svcnum'} =~ /^(\d+)$/ ) {
-    push @where, "svcnum = $1";
-  }
-
-  #svcpart
-  if ( $params->{'svcpart'} =~ /^(\d+)$/ ) {
-    push @where, "svcpart = $1";
-  }
-
-  #exportnum
-  if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
-    push @from, 'LEFT JOIN export_svc USING ( svcpart )';
-    push @where, "exportnum = $1";
-  }
-
   #ip_addr
   if ( $params->{'ip_addr'} =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
-    push @where, "ip_addr = '$1'";
+    push @$where, "ip_addr = '$1'";
   }
 
-  #custnum
-  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1) {
-    push @where, "custnum = $1";
-  }
-  
-  my $addl_from = join(' ', @from);
-  my $extra_sql = '';
-  $extra_sql = 'WHERE '.join(' AND ', @where) if @where;
-  my $count_query = "SELECT COUNT(*) FROM svc_broadband $addl_from $extra_sql";
-  return( {
-      'table'   => 'svc_broadband',
-      'hashref' => {},
-      'select'  => join(', ',
-        'svc_broadband.*',
-        'part_svc.svc',
-        'cust_main.custnum',
-        FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
-      ),
-      'extra_sql' => $extra_sql,
-      'addl_from' => $addl_from,
-      'order_by'  => "ORDER BY ".($params->{'order_by'} || 'svcnum'),
-      'count_query' => $count_query,
-    } );
 }
 
 =item search_sql STRING
