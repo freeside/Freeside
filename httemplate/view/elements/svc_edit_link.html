@@ -7,8 +7,12 @@ function areyousure_delete() {
     window.location.href = '<% $cancel_url %>';
 }
 </SCRIPT>
-<A HREF="<% $edit_url %>"><% mt("Edit this [_1]", $label) |h %></A> | 
-<A HREF="javascript:areyousure_delete()"><% mt('Unprovision this Service') |h %></A>
+%   if ( $curuser->access_right('Provision customer service') ) {
+| <A HREF="<% $edit_url %>"><% mt("Edit this [_1]", $label) |h %></A>
+%   }
+%   if ( $curuser->access_right('Unprovision customer service') ) {
+| <A HREF="javascript:areyousure_delete()"><% mt('Unprovision this Service') |h %></A>
+%   }
 % }
 <%init>
 my %opt = @_;
@@ -20,4 +24,5 @@ my $cancel_url = $p . 'misc/unprovision.cgi?' . $svc_x->svcnum;
 my $cust_svc = $svc_x->cust_svc; # always exists
 my $cancel_date = $cust_svc->pkg_cancel_date;
 my ($label) = $cust_svc->label;
+my $curuser = $FS::CurrentUser::CurrentUser;
 </%init>

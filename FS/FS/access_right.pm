@@ -228,6 +228,8 @@ sub _upgrade_data { # class method
                          'Edit customer contacts',
                        ],
 
+    'Provision customer service' => [ 'Edit password' ],
+
   ;
 
   foreach my $old_acl ( keys %onetime ) {

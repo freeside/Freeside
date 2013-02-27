@@ -55,6 +55,13 @@ L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
 =item preserve - Preserve after cancellation, empty or 'Y'
 
+=item selfservice_access - Access allowed to the service via self-service:
+empty for full access, "readonly" for read-only, "hidden" to hide it entirely
+
+=item restrict_edit_password - Require the "Provision customer service" access
+right to change the password field, rather than just "Edit password".  Only
+relevant to svc_acct for now.
+
 =back
 
 =head1 METHODS
@@ -387,6 +394,7 @@ sub check {
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_enum('preserve', [ '', 'Y' ] )
     || $self->ut_enum('selfservice_access', [ '', 'hidden', 'readonly' ] )
+    || $self->ut_enum('restrict_edit_password', [ '', 'Y' ] )
   ;
   return $error if $error;
 
