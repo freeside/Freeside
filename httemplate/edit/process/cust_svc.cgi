@@ -6,7 +6,7 @@
 %}
 <%init>
 
-die 'access deined'
+die 'access denied'
  unless $FS::CurrentUser::CurrentUser->access_right('Change customer service');
 
 my $svcnum = $cgi->param('svcnum');

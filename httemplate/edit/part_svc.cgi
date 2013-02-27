@@ -407,6 +407,20 @@
 %
 %      } #foreach my $field (@fields) {
 %
+%      if ( $layer eq 'svc_acct' ) {
+%        # eww, more ugly special-caseyness
+%        $html .= 
+%          '<TR><TD COLSPAN=3 ALIGN="right">'.
+%          emt('Require "Provision" access right to edit password').
+%          '</TD><TD>'.
+%          '<INPUT TYPE="checkbox" NAME="restrict_edit_password" VALUE="Y"'.
+%          ($part_svc->restrict_edit_password ? ' CHECKED' : '').
+%          '></TD></TR>';
+%      } else {
+%        $html .= 
+%          '<INPUT TYPE="hidden" NAME="restrict_edit_password" VALUE="">';
+%      }
+%
 %      $part_svc->svcpart('') if $clone; #undone
 %      $html .= "</TABLE>";
 %
@@ -414,7 +428,7 @@
 %                         $layer, #form name
 %                         [ qw(svc svcpart classnum selfservice_access
 %                              disabled preserve
-%                              exportnum),
+%                              exportnum restrict_edit_password),
 %                           @fields ],
 %                         'process/part_svc.cgi',
 %                         $p.'browse/part_svc.cgi',

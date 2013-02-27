@@ -2112,7 +2112,8 @@ sub tables_hashref {
         'preserve',              'char', 'NULL',         1, '', '',
         'selfservice_access', 'varchar', 'NULL',   $char_d, '', '',
         'classnum',               'int', 'NULL',        '', '', '',
-      ],
+        'restrict_edit_password','char', 'NULL',         1, '', '',
+],
       'primary_key' => 'svcpart',
       'unique' => [],
       'index' => [ [ 'disabled' ] ],
@@ -2260,6 +2261,7 @@ sub tables_hashref {
         'cgp_sendmdnmode',    'varchar', 'NULL', $char_d, '', '',#SendMDNMode
         #mail
         #XXX RPOP settings
+        #
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],

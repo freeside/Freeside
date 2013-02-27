@@ -82,6 +82,7 @@ function part_export_areyousure(href) {
 %            }
 %            @dfields ;
 %     my $rowspan = scalar(@fields) || 1;
+%     $rowspan++ if $part_svc->restrict_edit_password;
 %     my $url = "${p}edit/part_svc.cgi?". $part_svc->svcpart;
 %
 %     if ( $bgcolor eq $bgcolor1 ) {
@@ -183,15 +184,21 @@ function part_export_areyousure(href) {
 % } else { 
 
             <% $value %>
-% } 
+% }
 
      </TD>
 %     $n1="</TR><TR>";
-%     }
-%
+%     } #foreach $field
+%   if ( $part_svc->restrict_edit_password ) {
+   <TR>
+     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" COLSPAN=4 ALIGN="left">
+      <B><% emt('Password editing restricted.') %></B>
+     </TD>
+   </TR>
+%   }
 
   </TR>
-% } 
+% }  #foreach $part_svc
 
 </TABLE>
 </BODY>

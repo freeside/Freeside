@@ -228,7 +228,9 @@ sub _upgrade_data { # class method
                             'Usage: Call Detail Records (CDRs)',
                             'Usage: Unrateable CDRs',
                           ],
-  ;
+    'Provision customer service' => [ 'Edit password' ],
+
+;
 
   foreach my $old_acl ( keys %onetime ) {
 
