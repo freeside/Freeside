@@ -20,7 +20,7 @@
 % if ( $password =~ /^\*\w+\* (.*)$/ ) {
 %   $password = $1;
 %   $show_pw .= '<I>('. mt('login disabled') .')</I> ';
-% } 
+% }
 % if ( ! $password
 %      && $svc_acct->_password_encryption ne 'plain'
 %      && $svc_acct->_password
@@ -28,13 +28,27 @@
 % {
 %   $show_pw .= '<I>('. uc($svc_acct->_password_encryption). ' '.mt('encrypted').')</I>';
 % } elsif ( $conf->exists('showpasswords') ) { 
-%   $show_pw .= '<PRE>'. encode_entities($password). '</PRE>';
+%   $show_pw .= '<SPAN >'. encode_entities($password). '</PRE>';
 % } else { 
+%   $password = '';
 %   $show_pw .= '<I>('. mt('hidden') .')</I>';
-% } 
-% $password = ''; 
-<& /view/elements/tr.html, label=>mt('Password'), value=>$show_pw &>
-
+% }
+<TR>
+  <TD ALIGN="right"><% mt('Password') %></TD>
+  <TD STYLE="background-color: #ffffff; white-space: nowrap">
+  <% $show_pw %>
+% my $curuser = $FS::CurrentUser::CurrentUser;
+% if ( $curuser->access_right('Provision customer service') or
+%     ($curuser->access_right('Edit password') and
+%      ! $part_svc->restrict_edit_password) )
+% {
+  <& /elements/change_password.html,
+      'svc_acct'    => $svc_acct,
+      'curr_value'  => $password,
+  &>
+% }
+  </TD>
+</TR>
 
 % if ( $conf->exists('security_phrase') ) {
   <& /view/elements/tr.html, label=>mt('Security phrase'), value=>$svc_acct->sec_phrase &>

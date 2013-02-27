@@ -162,6 +162,7 @@ tie my %rights, 'Tie::IxHash',
     'Recharge customer service', #NEW
     'Unprovision customer service',
     'Change customer service', #NEWNEW
+    'Edit password',
     'Edit usage', #NEW
     'Edit home dir', #NEW
     'Edit www config', #NEW
