@@ -310,7 +310,7 @@ Returns the IP address.
 sub label {
   my $self = shift;
   my $label = 'IP:'. ($self->ip_addr || 'Unknown');
-  $label .= '", MAC:'. $self->mac_addr
+  $label .= ', MAC:'. $self->mac_addr
     if $self->mac_addr;
   $label .= ' ('. $self->description. ')'
     if $self->description;
