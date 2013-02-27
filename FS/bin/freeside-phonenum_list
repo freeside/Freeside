@@ -46,7 +46,7 @@ sub usage {
 freeside-phonenum_list
 
 =head1 SYNOPSIS
-  freeside-phonenum_list [ -c ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username
+  freeside-phonenum_list [ -c ] [ -o ] [ -l ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username
 
 =head1 DESCRIPTION
 
