@@ -2847,6 +2847,28 @@ sub search {
     push @where, "custnum = $1";
   }
 
+  #customer status
+  if ( $params->{'cust_status'} =~ /^([a-z]+)$/ ) {
+    push @where, FS::cust_main->cust_status_sql . " = '$1'";
+  }
+
+  #customer balance
+  if ( $params->{'balance'} =~ /^\s*(\-?\d*(\.\d{1,2})?)\s*$/ && length($1) ) {
+    my $balance = $1;
+
+    my $age = '';
+    if ( $params->{'balance_days'} =~ /^\s*(\d*(\.\d{1,3})?)\s*$/ && length($1) ) {
+      $age = time - 86400 * $1;
+    }
+    push @where, FS::cust_main->balance_date_sql($age) . " > $balance";
+  }
+
+  #payby
+  if ( $params->{'payby'} && scalar(@{ $params->{'payby'} }) ) {
+    my @payby = map "'$_'", grep /^(\w+)$/, @{ $params->{'payby'} };
+    push @where, 'payby IN ('. join(',', @payby ). ')';
+  }
+
   #pkgpart
   if ( $params->{'pkgpart'} && scalar(@{ $params->{'pkgpart'} }) ) {
     #XXX untaint or sql quote

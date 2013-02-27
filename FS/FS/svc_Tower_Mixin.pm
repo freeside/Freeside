@@ -27,12 +27,10 @@ towernum or sectornum can also contain 'none' to allow null values.
 =cut
 
 sub tower_sector_sql {
-  my $class = shift;
-  my $params = shift;
-  return '' unless keys %$params;
-  my $where = '';
+  my( $class, $params ) = @_;
+  return () unless keys %$params;
 
-  my @where;
+  my @where = ();
   for my $field (qw(towernum sectornum)) {
     my $value = $params->{$field} or next;
     if ( ref $value and grep { $_ } @$value ) {
