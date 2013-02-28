@@ -1643,15 +1643,26 @@ sub list_svcs {
   }
 
   my @cust_svc = ();
+  my @cust_pkg_usage = ();
   #foreach my $cust_pkg ( $cust_main->ncancelled_pkgs ) {
   foreach my $cust_pkg ( $p->{'ncancelled'} 
                          ? $cust_main->ncancelled_pkgs
                          : $cust_main->unsuspended_pkgs ) {
     next if $pkgnum && $cust_pkg->pkgnum != $pkgnum;
     push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
+    push @cust_pkg_usage, $cust_pkg->cust_pkg_usage;
   }
 
   @cust_svc = grep { $_->part_svc->selfservice_access ne 'hidden' } @cust_svc;
+  my %usage_pools;
+  foreach (@cust_pkg_usage) {
+    my $part = $_->part_pkg_usage;
+    my $tag = $part->description . ($part->shared ? 1 : 0);
+    my $row = $usage_pools{$tag} 
+          ||= [ $part->description, 0, 0, $part->shared ? 1 : 0 ];
+    $row->[1] += $_->minutes; # minutes remaining
+    $row->[2] += $part->minutes; # minutes total
+  }
 
   if ( $p->{'svcdb'} ) {
     my $svcdb = ref($p->{'svcdb'}) eq 'HASH'
@@ -1760,6 +1771,11 @@ sub list_svcs {
             \%hash;
           }
           @cust_svc
+    ],
+    'usage_pools' => [
+      map { $usage_pools{$_} }
+      sort { $a cmp $b }
+      keys %usage_pools
     ],
   };
 

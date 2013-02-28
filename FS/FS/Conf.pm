@@ -5347,6 +5347,19 @@ and customer address. Include units.',
                            $cdr_type ? $cdr_type->cdrtypename : '';
 			 },
   },
+
+  {
+    'key'         => 'cdr-minutes_priority',
+    'section'     => 'telephony',
+    'description' => 'Priority rule for assigning included minutes to CDRs.',
+    'type'        => 'select',
+    'select_hash' => [
+      ''          => 'No specific order',
+      'time'      => 'Chronological',
+      'rate_high' => 'Highest rate first',
+      'rate_low'  => 'Lowest rate first',
+    ],
+  },
   
   {
     'key'         => 'brand-agent',

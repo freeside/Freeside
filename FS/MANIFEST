@@ -677,3 +677,13 @@ FS/log.pm
 t/log.t
 FS/log_context.pm
 t/log_context.t
+FS/part_pkg_usage_class.pm
+t/part_pkg_usage_class.t
+FS/cust_pkg_usage.pm
+t/cust_pkg_usage.t
+FS/part_pkg_usage_class.pm
+t/part_pkg_usage_class.t
+FS/part_pkg_usage.pm
+t/part_pkg_usage.t
+FS/cdr_cust_pkg_usage.pm
+t/cdr_cust_pkg_usage.t

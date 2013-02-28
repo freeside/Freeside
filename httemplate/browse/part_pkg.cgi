@@ -1,5 +1,6 @@
 <% include( 'elements/browse.html',
                  'title'                 => 'Package Definitions',
+                 'menubar'               => \@menubar,
                  'html_init'             => $html_init,
                  'html_form'             => $html_form,
                  'html_posttotal'        => $html_posttotal,
@@ -517,6 +518,8 @@ push @fields,
 
               sub {
                     my $part_pkg = shift;
+                    my @part_pkg_usage = sort { $a->priority <=> $b->priority }
+                                         $part_pkg->part_pkg_usage;
 
                     [ 
                       (map {
@@ -559,7 +562,27 @@ push @fields,
                               ]
                             }
                         $part_pkg->svc_part_pkg_link
-                      )
+                      ),
+                      ( scalar(@part_pkg_usage) ? 
+                          [ { data  => 'Usage minutes',
+                              align => 'center',
+                              colspan    => 2,
+                              data_style => 'b',
+                              link  => $p.'browse/part_pkg_usage.html#pkgpart'.
+                                       $part_pkg->pkgpart 
+                            } ]
+                          : ()
+                      ),
+                      ( map {
+                              [ { data  => $_->minutes,
+                                  align => 'right'
+                                },
+                                { data  => $_->description,
+                                  align => 'left'
+                                },
+                              ]
+                            } @part_pkg_usage
+                      ),
                     ];
 
                   };
@@ -590,4 +613,9 @@ if ( $acl_edit_bulk ) {
   ) . '</FORM>';
 }
 
+my @menubar;
+# show this if there are any voip_cdr packages defined
+if ( FS::part_pkg->count("plan = 'voip_cdr'") ) {
+  push @menubar, 'Per-package usage minutes' => $p.'browse/part_pkg_usage.html';
+}
 </%init>

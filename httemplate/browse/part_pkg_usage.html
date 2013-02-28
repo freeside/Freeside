@@ -1,0 +1,112 @@
+<& /elements/header.html, 'Package usage minutes' &>
+<& /elements/menubar.html, 'Package definitions', $p.'browse/part_pkg.cgi' &>
+<STYLE TYPE="text/css">
+.pkg_head {
+  background-color: #dddddd;
+  font-style: italic;
+}
+.pkg_head > td {
+  border-style: solid;
+  border-radius: 3px;
+  border-color: #555555;
+  border-width: 1px;
+}
+.usage > td {
+  text-align: center;
+}
+.error {
+  color: #ff0000;
+}
+</STYLE>
+<FORM METHOD="POST" ACTION="<%$fsurl%>edit/process/part_pkg_usage.html">
+  <TABLE STYLE="margin-top: 1em">
+    <TR>
+      <TH>Minutes</TH>
+      <TH>Shared</TH>
+      <TH>Rollover</TH>
+      <TH>Description</TH>
+      <TH>Priority</TH>
+%   foreach my $class (@usage_class) {
+      <TH><% $class->classname %></TH>
+%   }
+    </TR>
+
+% my $error = $cgi->param('error');
+% foreach my $part_pkg (@part_pkg) {
+%   my $pkgpart = $part_pkg->pkgpart;
+%   my @part_pkg_usage;
+%   if ( $error ) {
+%     @part_pkg_usage = @{ $error->{$pkgpart} };
+%   } else {
+%     @part_pkg_usage = $part_pkg->part_pkg_usage;
+%     foreach my $usage (@part_pkg_usage) {
+%       foreach ($usage->classnums) {
+%         $usage->set("class$_".'_', 'Y');
+%       }
+%     }
+%   }
+    <TR CLASS="pkg_head" ID="pkgpart<%$pkgpart%>">
+      <TD COLSPAN=<%$n_cols%>><% $part_pkg->pkg_comment %></TD>
+%   # make it easy to enumerate the pkgparts later
+      <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $pkgpart %>">
+    </TR>
+%   # template row
+    <TR id="pkgpart<%$pkgpart%>_template" CLASS="usage">
+      <TD>
+        <INPUT TYPE="hidden" NAME="pkgusagepart">
+        <INPUT TYPE="text" NAME="minutes" ID="minutes" SIZE=7>
+      </TD>
+%     foreach (qw(shared rollover)) {
+      <TD>
+        <INPUT TYPE="checkbox" NAME="<% $_ %>" ID="<% $_ %>" VALUE="Y">
+      </TD>
+%     }
+      <TD>
+        <INPUT TYPE="text" NAME="description" ID="description" SIZE=20>
+      </TD>
+      <TD>
+        <INPUT TYPE="text" NAME="priority" ID="priority" SIZE=3>
+      </TD>
+%     foreach (@usage_class) {
+%       my $classnum = 'class' . $_->classnum . '_';
+      <TD>
+        <INPUT TYPE="checkbox" NAME="<% $classnum %>" ID="<% $classnum %>" VALUE="Y">
+      </TD>
+%     }
+    </TR>
+    <& /elements/auto-table.html,
+      table         => "pkgpart$pkgpart",
+      template_row  => "pkgpart$pkgpart".'_template',
+      data          => \@part_pkg_usage,
+    &>
+%   }
+  </TABLE>
+  <BR>
+  <INPUT TYPE="submit">
+</FORM>
+<& /elements/footer.html &>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right(
+    ['Edit package definitions', 'Edit global package definitions']
+  );
+
+my @where = ("(plan = 'voip_cdr' OR plan = 'voip_inbound')",
+             "freq != '0'",
+             "disabled IS NULL");
+push @where, FS::part_pkg->curuser_pkgs_sql
+  unless $curuser->access_right('Edit global package definitions');
+my $extra_sql = ' WHERE '.join(' AND ', @where);
+my @part_pkg = qsearch({
+  'table'     => 'part_pkg',
+  'extra_sql' => $extra_sql,
+  'order_by'  => ' ORDER BY pkgpart',
+});
+
+my @usage_class = sort { $a->weight <=> $b->weight } 
+  qsearch('usage_class', { disabled => '' });
+
+my $n_usage_classes = scalar(@usage_class);
+my $n_cols = $n_usage_classes + 5; # minutes, shared, rollover, desc, prio
+</%init>
