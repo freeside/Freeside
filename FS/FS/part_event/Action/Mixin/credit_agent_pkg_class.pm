@@ -2,6 +2,7 @@ package FS::part_event::Action::Mixin::credit_agent_pkg_class;
 use base qw( FS::part_event::Action::Mixin::credit_pkg );
 
 use strict;
+use FS::Record qw(qsearchs);
 
 sub option_fields {
   my $class = shift;
