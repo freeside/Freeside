@@ -3436,7 +3436,7 @@ sub apply_usage {
         $cust_pkg_usage->set('minutes', $cust_pkg_usage->minutes + $delta);
         $error = $cust_pkg_usage->replace;
       }
-      warn 'CDR '.$cdr->acctid . ' stealing allocation '.$cdr_cust_pkg_usage->cdrusagenum.' from CDR '.$old_cdr->acctid."\n";
+      #warn 'CDR '.$cdr->acctid . ' stealing allocation '.$cdr_cust_pkg_usage->cdrusagenum.' from CDR '.$old_cdr->acctid."\n";
       $error ||= $cdr_cust_pkg_usage->replace;
       # deduct the stolen minutes
       $minutes -= $cdr_cust_pkg_usage->minutes;
