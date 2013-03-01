@@ -62,6 +62,18 @@ $cgi->param('invoicing_list', join(',', @invoicing_list) );
 $cgi->param('duplicate_of_custnum') =~ /^(\d+)$/;
 my $duplicate_of = $1;
 
+# if this is enabled, enforce it
+if ( $conf->exists('agent-ship_address', $cgi->param('agentnum')) ) {
+  my $agent = FS::agent->by_key($cgi->param('agentnum'));
+  my $agent_cust_main = $agent->agent_cust_main;
+  if ( $agent_cust_main ) {
+    my $agent_location = $agent_cust_main->ship_location;
+    foreach (qw(address1 city state zip country latitude longitude district)) {
+      $cgi->param("ship_$_", $agent_location->get($_));
+    }
+  }
+}
+
 my %locations;
 for my $pre (qw(bill ship)) {
 
