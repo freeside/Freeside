@@ -78,6 +78,23 @@ if ( $duplicate_of ) {
     or die "nonexistent existing customer (custnum $duplicate_of)";
 }
 
+# if this is enabled, enforce it
+if ( $conf->exists('agent-ship_address', $cgi->param('agentnum')) ) {
+  my $agent = FS::agent->by_key($cgi->param('agentnum'));
+  my $agent_cust_main = $agent->agent_cust_main;
+  if ( $agent_cust_main ) {
+    my $pre = '';
+    $pre = 'ship_' if $agent_cust_main->has_ship_address;
+    foreach (qw(address1 city state zip country latitude longitude)) {
+      $new->set("ship_$_", $agent_cust_main->get($pre.$_));
+    }
+    foreach (qw(first last company)) {
+      $new->set("ship_$_", $cgi->param($_));
+    }
+    $cgi->param('same', '');
+  }
+}
+
 if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
   $new->setfield("ship_$_", '') foreach qw(
     last first company address1 address2 city county state zip

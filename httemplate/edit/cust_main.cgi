@@ -79,7 +79,9 @@ function bill_changed(what) {
     function fix_ship_city() {
       what.form.ship_city_select.selectedIndex = what.form.city_select.selectedIndex;
       what.form.ship_city.style.display = what.form.city.style.display;
-      what.form.ship_city_select.style.display = what.form.city_select.style.display;
+      if ( what.form.ship_city_select ) {
+        what.form.ship_city_select.style.display = what.form.city_select.style.display;
+      }
     }
 
     function fix_ship_county() {
@@ -100,11 +102,15 @@ function samechanged(what) {
   if ( what.checked ) {
     bill_changed(what);
 
-%   my @fields = qw( last first company address1 address2 city city_select county state zip country latitude longitude daytime night fax mobile );
+%   my @fields = qw( last first company address1 address2 city county state zip country latitude longitude daytime night fax mobile );
 %   for (@fields) { 
       what.form.ship_<%$_%>.disabled = true;
       what.form.ship_<%$_%>.style.backgroundColor = '#dddddd';
-%   } 
+%   }
+    if ( what.form.ship_city_select ) {
+      what.form.ship_city_select.disabled = true;
+      what.form.ship_city_select.style.backgroundColor = '#dddddd';
+    }
 
 %   if ( $conf->exists('cust_main-require_address2') ) {
       document.getElementById('address2_required').style.visibility = '';
@@ -134,7 +140,7 @@ function samechanged(what) {
 <BR>
 <FONT SIZE="+1"><B><% mt('Service address') |h %></B></FONT>
 
-(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>><% mt('same as billing address') |h %>)
+(<INPUT TYPE="checkbox" ID="same" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>><% mt('same as billing address') |h %>)
 <& cust_main/contact.html,
              'cust_main' => $cust_main,
              'pre'       => 'ship_',
