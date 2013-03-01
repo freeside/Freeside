@@ -699,7 +699,8 @@ sub generate_ps {
   open(POSTSCRIPT, "<$file.ps")
     or die "can't open $file.ps: $! (error in LaTeX template?)\n";
 
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex")
+    unless $FS::CurrentUser::CurrentUser->option('save_tmp_typesetting');
 
   my $ps = '';
 
@@ -757,7 +758,8 @@ sub generate_pdf {
   open(PDF, "<$file.pdf")
     or die "can't open $file.pdf: $! (error in LaTeX template?)\n";
 
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex")
+    unless $FS::CurrentUser::CurrentUser->option('save_tmp_typesetting');
 
   my $pdf = '';
   while (<PDF>) {
