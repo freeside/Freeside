@@ -70,8 +70,8 @@ function <%$pre%>set_rownum(obj, rownum) {
   if ( obj.id ) {
     obj.id = obj.id + rownum;
   }
-  if ( obj.name ) {
-    obj.name = obj.name + rownum;
+  if ( obj.getAttribute('name') ) {
+    obj.setAttribute('name', obj.getAttribute('name') + rownum);
     // also, in this case it's a form field that will be part of the record
     // so set up an onchange handler
     obj.onchange = <%$pre%>possiblyAddRow_factory(obj);
@@ -96,17 +96,32 @@ function <%$pre%>addRow(data) {
   <%$pre%>set_rownum(row, this_rownum);
   if(data instanceof Array) {
     for (i = 0; i < data.length && i < <%$pre%>fieldorder.length; i++) {
-      var el = document.getElementsByName(<%$pre%>fieldorder[i] + this_rownum)[0];
+      var el = document.getElementsByName(<%$pre |js_string%> +
+                                          <%$pre%>fieldorder[i] +
+                                          this_rownum)[0];
       if (el) {
-        el.value = data[i];
+        if ( el.tagName.toLowerCase() == 'span' ) {
+          el.innerHTML = data[i];
+        } else if ( el.type == 'checkbox' ) {
+          el.checked = (el.value == data[i]);
+        } else {
+          el.value = data[i];
+        }
       }
     }
   } else if (data instanceof Object) {
     for (var field in data) {
-      var el = document.getElementsByName(field + this_rownum)[0];
+      var el = document.getElementsByName(<%$pre |js_string%> +
+                                          field +
+                                          this_rownum)[0];
       if (el) {
-        el.value = data[field];
-%       # doesn't work for checkbox
+        if ( el.tagName.toLowerCase() == 'span' ) {
+          el.innerHTML = data[field];
+        } else if ( el.type == 'checkbox' ) {
+          el.checked = (el.value == data[field]);
+        } else {
+          el.value = data[field];
+        }
       }
     }
   } // else nothing
@@ -123,6 +138,20 @@ function <%$pre%>deleteRow(rownum) {
   <%$pre%>tbody.removeChild(r);
 }
 
+function <%$pre%>set_prefix(obj) {
+  if ( obj.id ) {
+    obj.id = <%$pre |js_string%> + obj.id;
+  }
+  if ( obj.getAttribute('name') ) {
+    obj.setAttribute('name', <%$pre |js_string%> + obj.getAttribute('name'));
+  }
+  for (var i = 0; i < obj.children.length; i++) {
+    if ( obj.children[i] instanceof Node ) {
+      <%$pre%>set_prefix(obj.children[i]);
+    }
+  }
+}
+
 function <%$pre%>init() {
   <%$pre%>template = document.getElementById(<% $template_row |js_string%>);
   <%$pre%>tbody = document.getElementById('<%$pre%>autotable');
@@ -131,8 +160,10 @@ function <%$pre%>init() {
   var table = <%$pre%>template.parentNode;
   table.removeChild(<%$pre%>template);
   // give it an id
-  <%$pre%>template.id = <%$pre |js_string%> + 'row';
-  // and a magic identifier so we know it's been submitted
+  <%$pre%>template.id = 'row';
+  // prefix the ids and names of the TR object and all its descendants
+  <%$pre%>set_prefix(<%$pre%>template);
+  // add a magic identifier so we know it's been submitted
   var magic = document.createElement('INPUT');
   magic.setAttribute('type', 'hidden');
   magic.setAttribute('name', '<%$pre%>magic');
@@ -140,14 +171,22 @@ function <%$pre%>init() {
   // and a delete button
 %# should this be enclosed in an actual <button> for aesthetics?
   var delete_button = document.createElement('IMG');
-  delete_button.id = 'delete_button';
+  delete_button.id = '<%$pre%>delete_button';
   delete_button.src = '<%$fsurl%>images/cross.png';
   delete_button.alt = 'X';
   // use an inline string for this so that it will be cloned properly
   delete_button.setAttribute('onclick', "<%$pre%>deleteRow(this.rownum);");
+  // and an error display
+  var error_span = document.createElement('SPAN');
+  error_span.className = 'error';
+  error_span.style.color = '#FF0000';
+  error_span.setAttribute('name', '<%$pre%>error');
+  error_span.style.padding = '5px';
   var delete_cell = document.createElement('TD');
+  delete_cell.style.textAlign = 'left';
   delete_cell.appendChild(delete_button);
   delete_cell.appendChild(magic); // it has to go somewhere
+  delete_cell.appendChild(error_span);
   <%$pre%>template.appendChild(delete_cell);
 
   // preload rows

@@ -426,12 +426,25 @@ sub set_charged_party {
 Sets the status to the provided string.  If there is an error, returns the
 error, otherwise returns false.
 
+If status is being changed from 'rated' to some other status, also removes
+any usage allocations to this CDR.
+
 =cut
 
 sub set_status {
   my($self, $status) = @_;
+  my $old_status = $self->freesidestatus;
   $self->freesidestatus($status);
-  $self->replace;
+  my $error = $self->replace;
+  if ( $old_status eq 'rated' and $status ne 'done' ) {
+    # deallocate any usage
+    foreach (qsearch('cdr_cust_pkg_usage', {acctid => $self->acctid})) {
+      my $cust_pkg_usage = $_->cust_pkg_usage;
+      $cust_pkg_usage->set('minutes', $cust_pkg_usage->minutes + $_->minutes);
+      $error ||= $cust_pkg_usage->replace || $_->delete;
+    }
+  }
+  $error;
 }
 
 =item set_status_and_rated_price STATUS RATED_PRICE [ SVCNUM [ OPTION => VALUE ... ] ]
@@ -578,7 +591,7 @@ reference of the number of included minutes and will be decremented by the
 rated minutes of this CDR.
 
 region_group_included_minutes_hashref is required for prefix price plans which
-have included minues (otehrwise unused/ignored).  It should be set to an empty
+have included minues (otherwise unused/ignored).  It should be set to an empty
 hashref at the start of a month's rating and then preserved across CDRs.
 
 =cut
@@ -603,6 +616,7 @@ our %interval_cache = (); # for timed rates
 sub rate_prefix {
   my( $self, %opt ) = @_;
   my $part_pkg = $opt{'part_pkg'} or return "No part_pkg specified";
+  my $cust_pkg = $opt{'cust_pkg'};
 
   my $da_rewrote = 0;
   # this will result in those CDRs being marked as done... is that 
@@ -828,11 +842,6 @@ sub rate_prefix {
 
     $seconds_left -= $charge_sec;
 
-    my $included_min = $opt{'region_group_included_min_hashref'} || {};
-
-    $included_min->{$regionnum}{$ratetimenum} = $rate_detail->min_included
-      unless exists $included_min->{$regionnum}{$ratetimenum};
-
     my $granularity = $rate_detail->sec_granularity;
 
     my $minutes;
@@ -850,20 +859,40 @@ sub rate_prefix {
 
     $seconds += $charge_sec;
 
+    if ( $rate_detail->min_included ) {
+      # the old, kind of deprecated way to do this
+      my $included_min = $opt{'region_group_included_min_hashref'} || {};
 
-    my $region_group = ($part_pkg->option_cacheable('min_included') || 0) > 0;
+      # by default, set the included minutes for this region/time to
+      # what's in the rate_detail
+      $included_min->{$regionnum}{$ratetimenum} = $rate_detail->min_included
+        unless exists $included_min->{$regionnum}{$ratetimenum};
 
-    ${$opt{region_group_included_min}} -= $minutes 
-        if $region_group && $rate_detail->region_group;
+      # the way that doesn't work
+      #my $region_group = ($part_pkg->option_cacheable('min_included') || 0) > 0;
 
-    $included_min->{$regionnum}{$ratetimenum} -= $minutes;
-    if (
-         $included_min->{$regionnum}{$ratetimenum} <= 0
-         && ( ${$opt{region_group_included_min}} <= 0
-              || ! $rate_detail->region_group
-            )
-       )
-    {
+      #${$opt{region_group_included_min}} -= $minutes 
+      #    if $region_group && $rate_detail->region_group;
+
+      if ( $included_min->{$regionnum}{$ratetimenum} > $minutes ) {
+        $charge_sec = 0;
+        $included_min->{$regionnum}{$ratetimenum} -= $minutes;
+      } else {
+        $charge_sec -= ($included_min->{$regionnum}{$ratetimenum} * 60);
+        $included_min->{$regionnum}{$ratetimenum} = 0;
+      }
+    } else {
+      # the new way!
+      my $applied_min = $cust_pkg->apply_usage(
+        'cdr'         => $self,
+        'rate_detail' => $rate_detail,
+        'minutes'     => $minutes
+      );
+      # for now, usage pools deal only in whole minutes
+      $charge_sec -= $applied_min * 60;
+    }
+
+    if ( $charge_sec > 0 ) {
 
       #NOW do connection charges here... right?
       #my $conn_seconds = min($seconds_left, $rate_detail->conn_sec);
@@ -876,16 +905,9 @@ sub rate_prefix {
       }
 
                            #should preserve (display?) this
-      my $charge_min = 0 - $included_min->{$regionnum}{$ratetimenum} - ( $conn_seconds / 60 );
-      $included_min->{$regionnum}{$ratetimenum} = 0;
+      my $charge_min = ( $charge_sec - $conn_seconds ) / 60;
       $charge += ($rate_detail->min_charge * $charge_min) if $charge_min > 0; #still not rounded
 
-    } elsif ( ${$opt{region_group_included_min}} > 0
-              && $region_group
-              && $rate_detail->region_group 
-           )
-    {
-        $included_min->{$regionnum}{$ratetimenum} = 0 
     }
 
     # choose next rate_detail

@@ -21,6 +21,7 @@ use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
 use FS::part_pkg_link;
 use FS::part_pkg_discount;
+use FS::part_pkg_usage;
 use FS::part_pkg_vendor;
 
 @ISA = qw( FS::m2m_Common FS::option_Common );
@@ -1395,6 +1396,18 @@ for this package.
 sub part_pkg_discount {
   my $self = shift;
   qsearch('part_pkg_discount', { 'pkgpart' => $self->pkgpart });
+}
+
+=item part_pkg_usage
+
+Returns the voice usage pools (see L<FS::part_pkg_usage>) defined for 
+this package.
+
+=cut
+
+sub part_pkg_usage {
+  my $self = shift;
+  qsearch('part_pkg_usage', { 'pkgpart' => $self->pkgpart });
 }
 
 =item _rebless

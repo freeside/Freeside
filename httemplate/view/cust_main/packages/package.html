@@ -190,6 +190,28 @@
 %     }
 %   }
   </TABLE>
+% if ( @cust_pkg_usage ) {
+  <TABLE CLASS="usage inv">
+    <TR><TH COLSPAN=4><% mt('Included usage') %></TH></TR>
+%   foreach my $usage (@cust_pkg_usage) {
+%     my $part = $usage->part_pkg_usage;
+%     my $ratio = 255 * ($usage->minutes / $part->minutes);
+%     $ratio = 255 if $ratio > 255; # because rollover
+%     my $color = sprintf('STYLE="font-weight: bold; color: #%02x%02x00"', 255 - $ratio, $ratio);
+%     my $trstyle = '';
+%     $trstyle = ' CLASS="shared"' if $part->shared;
+    <TR<%$trstyle%>>
+      <TD ALIGN="right"><% $part->description %>: </TD>
+      <TD <%$color%> ALIGN="right"><% $usage->minutes %></TD>
+      <TD <%$color%>> / </TD>
+      <TD <%$color%>><% $part->minutes %></TD>
+%     if ( $part->shared ) {
+      <TD><I>(shared)</I></TD>
+%     }
+    </TR>
+%   }
+  </TABLE>
+% }
 
 </TD>
 
@@ -208,6 +230,17 @@ my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
 
 my $supplemental = $opt{'supplemental'} || 0;
+
+$cust_pkg->pkgnum =~ /^(\d+)$/;
+my $pkgnum = $1;
+my @cust_pkg_usage = qsearch({
+  'select'    => 'cust_pkg_usage.*',
+  'table'     => 'cust_pkg_usage',
+  'addl_from' => ' JOIN part_pkg_usage USING (pkgusagepart)',
+  'extra_sql' => " WHERE pkgnum = $1",
+  'order_by'  => ' ORDER BY priority ASC, description ASC',
+});
+
 #subroutines
 
 #false laziness w/status.html

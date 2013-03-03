@@ -200,7 +200,7 @@ Example:
 </TR>
 % } else {
 %   foreach (qw(latitude longitude)) {
-<INPUT TYPE="hidden" NAME="<% $_ %>" VALUE="<% $object->get($_) |h%>">
+<INPUT TYPE="hidden" NAME="<% $_ %>" ID="<% $_ %>" VALUE="<% $object->get($_) |h%>">
 %   }
 % }
 <INPUT TYPE="hidden" NAME="<%$pre%>coord_auto" VALUE="<% $object->coord_auto %>">
@@ -226,12 +226,13 @@ Example:
     <TD COLSPAN=8>
       <INPUT TYPE="text" SIZE=15
              NAME="<%$pre%>district" 
+             ID="<%$pre%>district"
              VALUE="<% $object->district |h %>">
     <% '(automatic)' %>
     </TD>
   </TR>
 %   } else {
-    <INPUT TYPE="hidden" NAME="<%$pre%>district" VALUE="<% $object->district %>">
+    <INPUT TYPE="hidden" ID="<%$pre%>" NAME="<%$pre%>district" VALUE="<% $object->district %>">
 %   }
 % }
 

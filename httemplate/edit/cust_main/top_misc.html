@@ -32,6 +32,35 @@
       document.getElementById('contacts_div').style.display = 'none';
     }
   }
+
+  var ship_locked_agents = <% encode_json(\%ship_locked_agents) %>;
+  var ship_fields = ['address1', 'city', 'state', 'zip', 'country', 
+    'latitude', 'longitude', 'district'];
+  function agent_changed(what) {
+    var agentnum = what.value;
+    var f = what.form;
+    if ( ship_locked_agents[agentnum] ) {
+      for(var x in ship_locked_agents[agentnum]) {
+        f['ship_'+x].value = ship_locked_agents[agentnum][x];
+        f['ship_'+x].disabled = true;
+      }
+      f['same'].checked = false;
+      f['same'].disabled = true;
+    } else {
+      for(var i=0; i<ship_fields.length; i++) {
+        x = ship_fields[i];
+        f['ship_'+x].value = '';
+        f['ship_'+x].disabled = false;
+      }
+      f['same'].checked = true;
+      f['same'].disabled = false;
+    }
+    samechanged(f['same']);
+  }
+  window.onload = function() {
+    agent_changed(document.getElementById('agentnum'));
+  }
+ 
 </SCRIPT>
 
 % foreach my $field ($cust_main->virtual_fields) {
@@ -51,12 +80,13 @@
 %   $cust_main->agentnum($agentnum);
 
     <INPUT TYPE="hidden" NAME="lock_agentnum" VALUE="<% $agentnum %>">
-    <INPUT TYPE="hidden" NAME="agentnum"      VALUE="<% $agentnum %>">
+    <INPUT TYPE="hidden" NAME="agentnum"      ID="agentnum" 
+      VALUE="<% $agentnum %>">
     <TR>
       <TD ALIGN="right"><% mt('Agent') |h %></TD>
       <TD CLASS="fsdisabled"><% $cust_main->agent->agent |h %></TD>
     </TR>
- 
+
 % } else {
 
   <& /elements/tr-select-agent.html, 
@@ -65,6 +95,7 @@
                 'empty_label'   => emt('Select agent'),
                 'disable_empty' => ( $cust_main->agentnum ? 1 : 0 ),
                 'viewall_right' => emt('None'), 
+                'onchange'      => 'agent_changed(this)',
   &>
 
 % }
@@ -200,5 +231,18 @@ my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+
+# which agents lock the service address, if any
+my %ship_locked_agents;
+foreach (qsearch('agent',{})) {
+  my $agentnum = $_->agentnum;
+  next unless $conf->exists('agent-ship_address', $_->agentnum);
+  my $cust_main = $_->agent_cust_main or next;
+  my $agent_ship_location = $cust_main->ship_location;
+  $ship_locked_agents{$agentnum} = +{
+    map { $_ => $agent_ship_location->$_ }
+    qw(address1 city state zip country latitude longitude district)
+  };
+}
 
 </%init>

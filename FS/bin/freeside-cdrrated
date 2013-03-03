@@ -33,9 +33,11 @@ if ( @cdrtypenums ) {
   $extra_sql .= ' AND cdrtypenum IN ('. join(',', @cdrtypenums ). ')';
 }
 
-our %svcnum = ();
-our %pkgpart = ();
-our %part_pkg = ();
+our %svcnum = ();   # phonenum => svcnum
+our %pkgnum = ();   # phonenum => pkgnum
+our %cust_pkg = (); # pkgnum   => cust_pkg (NOT phonenum => cust_pkg!)
+our %pkgpart = ();  # phonenum => pkgpart
+our %part_pkg = (); # phonenum => part_pkg
 
 #some false laziness w/freeside-cdrrewrited
 
@@ -91,6 +93,9 @@ while (1) {
         next;
       }
 
+      $pkgnum{$number} = $cust_pkg->pkgnum;
+      $cust_pkg{$cust_pkg->pkgnum} ||= $cust_pkg;
+
       #get the package, search through the part_pkg and linked for a voip_cdr def w/matching cdrtypenum (or no use_cdrtypenum)
       my @part_pkg =
         grep { $_->plan eq 'voip_cdr'
@@ -126,10 +131,11 @@ while (1) {
     #}
 
     #XXX if $part_pkg->option('min_included') then we can't prerate this CDR
-      
+    
     my $error = $cdr->rate(
       'part_pkg' => $part_pkg{ $pkgpart{$number} },
-      'svcnum'   => $svcnum{ $number },
+      'cust_pkg' => $cust_pkg{ $pkgnum{$number} },
+      'svcnum'   => $svcnum{$number},
     );
     if ( $error ) {
       #XXX ???

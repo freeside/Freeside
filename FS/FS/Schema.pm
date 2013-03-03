@@ -1815,6 +1815,30 @@ sub tables_hashref {
       'index'  => [ [ 'pkgnum' ], [ 'discountnum' ], [ 'usernum' ], ],
     },
 
+    'cust_pkg_usage' => {
+      'columns' => [
+        'pkgusagenum', 'serial', '', '', '', '',
+        'pkgnum',         'int', '', '', '', '',
+        'minutes',        'int', '', '', '', '',
+        'pkgusagepart',   'int', '', '', '', '',
+      ],
+      'primary_key' => 'pkgusagenum',
+      'unique' => [],
+      'index'  => [ [ 'pkgnum' ], [ 'pkgusagepart' ] ],
+    },
+
+    'cdr_cust_pkg_usage' => {
+      'columns' => [
+        'cdrusagenum', 'bigserial', '', '', '', '',
+        'acctid',      'bigint',    '', '', '', '',
+        'pkgusagenum', 'int',       '', '', '', '',
+        'minutes',     'int',       '', '', '', '',
+      ],
+      'primary_key' => 'cdrusagenum',
+      'unique' => [],
+      'index'  => [ [ 'pkgusagenum' ], [ 'acctid' ] ],
+    },
+
     'cust_bill_pkg_discount' => {
       'columns' => [
         'billpkgdiscountnum', 'serial',        '', '', '', '',
@@ -3019,6 +3043,32 @@ sub tables_hashref {
       'primary_key' => 'num',
       'unique' => [ [ 'name' ] ],
       'index' => [ [ 'disabled' ] ],
+    },
+
+    'part_pkg_usage' => {
+      'columns' => [
+        'pkgusagepart', 'serial',   '', '', '', '',
+        'pkgpart',  'int',      '', '', '', '',
+        'minutes',  'int',      '', '', '', '',
+        'priority', 'int',  'NULL', '', '', '',
+        'shared',   'char', 'NULL',  1, '', '',
+        'rollover', 'char', 'NULL',  1, '', '',
+        'description',  'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'pkgusagepart',
+      'unique'      => [],
+      'index'       => [ [ 'pkgpart' ] ],
+    },
+
+    'part_pkg_usage_class' => {
+      'columns' => [
+        'num',       'serial',  '', '', '', '',
+        'pkgusagepart', 'int',  '', '', '', '',
+        'classnum',     'int','NULL', '', '', '',
+      ],
+      'primary_key' => 'num',
+      'unique'      => [ [ 'pkgusagepart', 'classnum' ] ],
+      'index'       => [],
     },
 
     'rate' => {

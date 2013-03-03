@@ -1,0 +1,67 @@
+% if ( $is_error ) {
+%   $cgi->param('error' => \%part_pkg_usage);
+% # internal redirect, because it's a lot of state to pass through
+<& /browse/part_pkg_usage.html &>
+% } else {
+% # uh, not quite sure...
+<%  $cgi->redirect($fsurl.'browse/part_pkg.cgi') %>
+% }
+<%init>
+my %vars = $cgi->Vars;
+my %part_pkg_usage;
+my $is_error;
+foreach my $pkgpart ($cgi->param('pkgpart')) {
+  next unless $pkgpart =~ /^\d+$/;
+  my $part_pkg = FS::part_pkg->by_key($pkgpart)
+    or die "unknown pkgpart $pkgpart";
+  my %old = map { $_->pkgusagepart => $_ } $part_pkg->part_pkg_usage;
+  $part_pkg_usage{$pkgpart} ||= [];
+  my @rows;
+  foreach (grep /^pkgpart$pkgpart/, keys %vars) {
+    /^pkgpart\d+_(\w+\D)(\d+)$/ or die "misspelled field name '$_'";
+    my $value = delete $vars{$_};
+    my $field = $1;
+    my $row = $2;
+    $rows[$row] ||= {};
+    $rows[$row]->{$field} = $value;
+  }
+
+  foreach my $row (@rows) {
+    next if !defined($row);
+    my $error;
+    my %classes;
+    foreach my $class (grep /^class/, keys %$row) {
+      $class =~ /^class(\d+)_$/;
+      my $classnum = $1;
+      $classes{$classnum} = delete $row->{$class};
+    }
+    my $usage = FS::part_pkg_usage->new($row);
+    $usage->set('pkgpart', $pkgpart);
+    if ( $usage->pkgusagepart and $row->{minutes} > 0 ) {
+      $error = $usage->replace(\%classes);
+      # and don't delete the existing one
+      delete($old{$usage->pkgusagepart});
+    } elsif ( $row->{minutes} > 0 ) {
+      $error = $usage->insert(\%classes);
+    } else {
+      next;
+    }
+    if ( $error ) {
+      $usage->set('error', $error);
+      $is_error = 1;
+    }
+    push @{ $part_pkg_usage{$pkgpart} }, $usage;
+  }
+
+  foreach my $usage (values %old) {
+    # all of these were not sent back by the client, so delete them
+    my $error = $usage->delete;
+    if ( $error ) {
+      $usage->set('error', $error);
+      $is_error = 1;
+      unshift @{ $part_pkg_usage{$pkgpart} }, $usage;
+    }
+  }
+
+}
+</%init>

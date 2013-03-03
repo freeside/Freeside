@@ -332,6 +332,11 @@ if ( -e $addl_handler_use_file ) {
   use FS::GeocodeCache;
   use FS::log;
   use FS::log_context;
+  use FS::part_pkg_usage_class;
+  use FS::cust_pkg_usage;
+  use FS::part_pkg_usage_class;
+  use FS::part_pkg_usage;
+  use FS::cdr_cust_pkg_usage;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

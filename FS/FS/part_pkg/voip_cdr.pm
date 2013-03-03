@@ -434,6 +434,7 @@ sub calc_usage {
 
       my $error = $cdr->rate(
         'part_pkg'                          => $self,
+        'cust_pkg'                          => $cust_pkg,
         'svcnum'                            => $svc_x->svcnum,
         'single_price_included_min'         => \$included_min,
         'region_group_included_min'         => \$region_group_included_min,
@@ -579,6 +580,41 @@ sub calc_units {
       scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
   }
   $count;
+}
+
+sub reset_usage {
+  my ($self, $cust_pkg, %opt) = @_;
+  my @part_pkg_usage = $self->part_pkg_usage or return '';
+  warn "  resetting usage minutes\n" if $opt{debug};
+  my %cust_pkg_usage = map { $_->pkgusagepart, $_ } $cust_pkg->cust_pkg_usage;
+  foreach my $part_pkg_usage (@part_pkg_usage) {
+    my $part = $part_pkg_usage->pkgusagepart;
+    my $usage = $cust_pkg_usage{$part} ||
+                FS::cust_pkg_usage->new({
+                    'pkgnum'        => $cust_pkg->pkgnum,
+                    'pkgusagepart'  => $part,
+                    'minutes'       => $part_pkg_usage->minutes,
+                });
+    foreach my $cdr_usage (
+      qsearch('cdr_cust_pkg_usage', {'cdrusagenum' => $usage->cdrusagenum})
+    ) {
+      my $error = $cdr_usage->delete;
+      warn "  error resetting CDR usage: $error\n";
+    }
+
+    if ( $usage->pkgusagenum ) {
+      if ( $part_pkg_usage->rollover ) {
+        $usage->set('minutes', $part_pkg_usage->minutes + $usage->minutes);
+      } else {
+        $usage->set('minutes', $part_pkg_usage->minutes);
+      }
+      my $error = $usage->replace;
+      warn "  error resetting usage minutes: $error\n" if $error;
+    } else {
+      my $error = $usage->insert;
+      warn "  error resetting usage minutes: $error\n" if $error;
+    }
+  } #foreach $part_pkg_usage
 }
 
 # tells whether cust_bill_pkg_detail should return a single line for 

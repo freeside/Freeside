@@ -1,7 +1,20 @@
 <%= $url = "$selfurl?session=$session_id;action=";
-    @svc_acct  = grep { $_->{svcdb} eq 'svc_acct'  } @svcs;
-    @svc_phone = grep { $_->{svcdb} eq 'svc_phone' } @svcs;
-    @svc_port = grep { $_->{svcdb} eq 'svc_port' } @svcs;
+    %by_pkg_label = (); # not used yet, but I'm sure it will be...
+    @svc_acct = ();
+    @svc_phone = ();
+    @svc_port = ();
+
+    foreach (@svcs) {
+      $by_pkg_label{ $_->{pkg_label} } ||= [];
+      push @{ $by_pkg_label{ $_->{pkg_label} } }, $_;
+      if ( $_->{svcdb} eq 'svc_acct' ) {
+        push @svc_acct, $_;
+      } elsif ( $_->{svcdb} eq 'svc_phone' ) {
+        push @svc_phone, $_;
+      } elsif ( $_->{svcdb} eq 'svc_port' ) {
+        push @svc_port, $_;
+      }
+    }
     '';
 %>
 <%= include('header', 'Account usage') %>
@@ -67,7 +80,7 @@
         $any{$dir} = grep { $_->{$dir} } @svc_phone;
       }
       $OUT.= '<FONT SIZE="4">Call usage</FONT><BR><BR>
-              <TABLE BGCOLOR="#cccccc">
+              <TABLE BGCOLOR="#cccccc" STYLE="display:inline-block">
                 <TR>
                   <TH ALIGN="left">Number</TH>';
       if ( $any{outbound} ) {
@@ -110,7 +123,42 @@
 '';
 %>
 
-<%= scalar(@svc_phone) ? '</TABLE><BR><BR>' : '' %>
+<%= if ( @usage_pools ) {
+  $OUT .= '</TABLE>
+  <TABLE BGCOLOR="#cccccc" STYLE="display: inline-block">
+    <TR><TH COLSPAN=4>Remaining minutes</TH></TR>
+    ';
+  my $any_shared = 0;
+  foreach my $usage (@usage_pools) {
+    # false laziness with the back office side
+    my ($description, $remain, $total, $shared) = @$usage;
+    if ( $shared ) {
+      $any_shared = 1;
+      $description .= '*';
+    }
+    my $ratio = 255 * ($remain/$total);
+    $ratio = 255 if $color > 255;
+    my $color = 
+      sprintf('STYLE="font-weight: bold; color: #%02x%02x00"',
+        255 - $ratio, $ratio);
+    $OUT .=
+    qq!<TR>
+      <TD ALIGN="right">$description</TD>
+      <TD $color ALIGN="right">$remain</TD>
+      <TD $color> / </TD>
+      <TD $color>$total</TD>
+    </TR>!;
+  }
+  if ( $any_shared ) {
+    $OUT .= '<TR STYLE="font-size: 80%; font-style: italic">'.
+            '<TD COLSPAN=4>* shared among all your phone plans</TD></TR>';
+  }
+}
+if ( scalar(@svc_phone) or scalar(@usage_pools) ) {
+  $OUT .= '</TABLE><BR><BR>';
+}
+'';
+%>
 
 <%= if ( @svc_port ) {
       $OUT.= '<FONT SIZE="4">Bandwidth Graphs</FONT><BR><BR>

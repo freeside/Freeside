@@ -6,7 +6,7 @@ use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::location_Mixin
 use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
-use List::Util qw(max);
+use List::Util qw(min max);
 use Tie::IxHash;
 use Time::Local qw( timelocal timelocal_nocheck );
 use MIME::Entity;
@@ -21,6 +21,8 @@ use FS::cust_location;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
 use FS::cust_pkg_detail;
+use FS::cust_pkg_usage;
+use FS::cdr_cust_pkg_usage;
 use FS::cust_event;
 use FS::h_cust_svc;
 use FS::reg_code;
@@ -858,6 +860,14 @@ sub cancel {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "canceling supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
+  }
+
+  foreach my $usage ( $self->cust_pkg_usage ) {
+    $error = $usage->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "deleting usage pools: $error";
     }
   }
 
@@ -1824,6 +1834,16 @@ sub change {
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
       return "Error setting usage values: $error";
+    }
+  } else {
+    # if NOT changing pkgpart, transfer any usage pools over
+    foreach my $usage ($self->cust_pkg_usage) {
+      $usage->set('pkgnum', $cust_pkg->pkgnum);
+      $error = $usage->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error transferring usage pools: $error";
+      }
     }
   }
 
@@ -3269,7 +3289,175 @@ sub cust_pkg_discount_active {
   grep { $_->status eq 'active' } $self->cust_pkg_discount;
 }
 
-=back
+=item cust_pkg_usage
+
+Returns a list of all voice usage counters attached to this package.
+
+=cut
+
+sub cust_pkg_usage {
+  my $self = shift;
+  qsearch('cust_pkg_usage', { pkgnum => $self->pkgnum });
+}
+
+=item apply_usage OPTIONS
+
+Takes the following options:
+- cdr: a call detail record (L<FS::cdr>)
+- rate_detail: the rate determined for this call (L<FS::rate_detail>)
+- minutes: the maximum number of minutes to be charged
+
+Finds available usage minutes for a call of this class, and subtracts
+up to that many minutes from the usage pool.  If the usage pool is empty,
+and the C<cdr-minutes_priority> global config option is set, minutes may
+be taken from other calls as well.  Either way, an allocation record will
+be created (L<FS::cdr_cust_pkg_usage>) and this method will return the 
+number of minutes of usage applied to the call.
+
+=cut
+
+sub apply_usage {
+  my ($self, %opt) = @_;
+  my $cdr = $opt{cdr};
+  my $rate_detail = $opt{rate_detail};
+  my $minutes = $opt{minutes};
+  my $classnum = $rate_detail->classnum;
+  my $pkgnum = $self->pkgnum;
+  my $custnum = $self->custnum;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE'; 
+  local $SIG{PIPE} = 'IGNORE'; 
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  my $order = FS::Conf->new->config('cdr-minutes_priority');
+
+  my @usage_recs = qsearch({
+      'table'     => 'cust_pkg_usage',
+      'addl_from' => ' JOIN part_pkg_usage       USING (pkgusagepart)'.
+                     ' JOIN cust_pkg             USING (pkgnum)'.
+                     ' JOIN part_pkg_usage_class USING (pkgusagepart)',
+      'select'    => 'cust_pkg_usage.*',
+      'extra_sql' => " WHERE ( cust_pkg.pkgnum = $pkgnum OR ".
+                     " ( cust_pkg.custnum = $custnum AND ".
+                     " part_pkg_usage.shared IS NOT NULL ) ) AND ".
+                     " part_pkg_usage_class.classnum = $classnum AND ".
+                     " cust_pkg_usage.minutes > 0",
+      'order_by'  => " ORDER BY priority ASC",
+  });
+
+  my $orig_minutes = $minutes;
+  my $error;
+  while (!$error and $minutes > 0 and @usage_recs) {
+    my $cust_pkg_usage = shift @usage_recs;
+    $cust_pkg_usage->select_for_update;
+    my $cdr_cust_pkg_usage = FS::cdr_cust_pkg_usage->new({
+        pkgusagenum => $cust_pkg_usage->pkgusagenum,
+        acctid      => $cdr->acctid,
+        minutes     => min($cust_pkg_usage->minutes, $minutes),
+    });
+    $cust_pkg_usage->set('minutes',
+      sprintf('%.0f', $cust_pkg_usage->minutes - $cdr_cust_pkg_usage->minutes)
+    );
+    $error = $cust_pkg_usage->replace || $cdr_cust_pkg_usage->insert;
+    $minutes -= $cdr_cust_pkg_usage->minutes;
+  }
+  if ( $order and $minutes > 0 and !$error ) {
+    # then try to steal minutes from another call
+    my %search = (
+        'table'     => 'cdr_cust_pkg_usage',
+        'addl_from' => ' JOIN cust_pkg_usage        USING (pkgusagenum)'.
+                       ' JOIN part_pkg_usage        USING (pkgusagepart)'.
+                       ' JOIN cust_pkg              USING (pkgnum)'.
+                       ' JOIN part_pkg_usage_class  USING (pkgusagepart)'.
+                       ' JOIN cdr                   USING (acctid)',
+        'select'    => 'cdr_cust_pkg_usage.*',
+        'extra_sql' => " WHERE cdr.freesidestatus = 'rated' AND ".
+                       " ( cust_pkg.pkgnum = $pkgnum OR ".
+                       " ( cust_pkg.custnum = $custnum AND ".
+                       " part_pkg_usage.shared IS NOT NULL ) ) AND ".
+                       " part_pkg_usage_class.classnum = $classnum",
+        'order_by'  => ' ORDER BY part_pkg_usage.priority ASC',
+    );
+    if ( $order eq 'time' ) {
+      # find CDRs that are using minutes, but have a later startdate
+      # than this call
+      my $startdate = $cdr->startdate;
+      if ($startdate !~ /^\d+$/) {
+        die "bad cdr startdate '$startdate'";
+      }
+      $search{'extra_sql'} .= " AND cdr.startdate > $startdate";
+      # minimize needless reshuffling
+      $search{'order_by'} .= ', cdr.startdate DESC';
+    } else {
+      # XXX may not work correctly with rate_time schedules.  Could 
+      # fix this by storing ratedetailnum in cdr_cust_pkg_usage, I 
+      # think...
+      $search{'addl_from'} .=
+        ' JOIN rate_detail'.
+        ' ON (cdr.rated_ratedetailnum = rate_detail.ratedetailnum)';
+      if ( $order eq 'rate_high' ) {
+        $search{'extra_sql'} .= ' AND rate_detail.min_charge < '.
+                                $rate_detail->min_charge;
+        $search{'order_by'} .= ', rate_detail.min_charge ASC';
+      } elsif ( $order eq 'rate_low' ) {
+        $search{'extra_sql'} .= ' AND rate_detail.min_charge > '.
+                                $rate_detail->min_charge;
+        $search{'order_by'} .= ', rate_detail.min_charge DESC';
+      } else {
+        #  this should really never happen
+        die "invalid cdr-minutes_priority value '$order'\n";
+      }
+    }
+    my @cdr_usage_recs = qsearch(\%search);
+    my %reproc_cdrs;
+    while (!$error and @cdr_usage_recs and $minutes > 0) {
+      my $cdr_cust_pkg_usage = shift @cdr_usage_recs;
+      my $cust_pkg_usage = $cdr_cust_pkg_usage->cust_pkg_usage;
+      my $old_cdr = $cdr_cust_pkg_usage->cdr;
+      $reproc_cdrs{$old_cdr->acctid} = $old_cdr;
+      $cdr_cust_pkg_usage->select_for_update;
+      $old_cdr->select_for_update;
+      $cust_pkg_usage->select_for_update;
+      # in case someone else stole the usage from this CDR
+      # while waiting for the lock...
+      next if $old_cdr->acctid != $cdr_cust_pkg_usage->acctid;
+      # steal the usage allocation and flag the old CDR for reprocessing
+      $cdr_cust_pkg_usage->set('acctid', $cdr->acctid);
+      # if the allocation is more minutes than we need, adjust it...
+      my $delta = $cdr_cust_pkg_usage->minutes - $minutes;
+      if ( $delta > 0 ) {
+        $cdr_cust_pkg_usage->set('minutes', $minutes);
+        $cust_pkg_usage->set('minutes', $cust_pkg_usage->minutes + $delta);
+        $error = $cust_pkg_usage->replace;
+      }
+      #warn 'CDR '.$cdr->acctid . ' stealing allocation '.$cdr_cust_pkg_usage->cdrusagenum.' from CDR '.$old_cdr->acctid."\n";
+      $error ||= $cdr_cust_pkg_usage->replace;
+      # deduct the stolen minutes
+      $minutes -= $cdr_cust_pkg_usage->minutes;
+    }
+    # after all minute-stealing is done, reset the affected CDRs
+    foreach (values %reproc_cdrs) {
+      $error ||= $_->set_status('');
+      # XXX or should we just call $cdr->rate right here?
+      # it's not like we can create a loop this way, since the min_charge
+      # or call time has to go monotonically in one direction.
+      # we COULD get some very deep recursions going, though...
+    }
+  } # if $order and $minutes
+  if ( $error ) {
+    $dbh->rollback;
+    die "error applying included minutes\npkgnum ".$self->pkgnum.", class $classnum, acctid ".$cdr->acctid."\n$error\n"
+  } else {
+    $dbh->commit if $oldAutoCommit;
+    return $orig_minutes - $minutes;
+  }
+}
 
 =item supplemental_pkgs
 
@@ -3295,6 +3483,8 @@ sub main_pkg {
   }
   return;
 }
+
+=back
 
 =head1 CLASS METHODS
 
