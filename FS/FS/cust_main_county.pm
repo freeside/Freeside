@@ -137,33 +137,6 @@ sub check {
 
 }
 
-sub taxname {
-  my $self = shift;
-  if ( $self->dbdef_table->column('taxname') ) {
-    return $self->setfield('taxname', $_[0]) if @_;
-    return $self->getfield('taxname');
-  }  
-  return '';
-}
-
-sub setuptax {
-  my $self = shift;
-  if ( $self->dbdef_table->column('setuptax') ) {
-    return $self->setfield('setuptax', $_[0]) if @_;
-    return $self->getfield('setuptax');
-  }  
-  return '';
-}
-
-sub recurtax {
-  my $self = shift;
-  if ( $self->dbdef_table->column('recurtax') ) {
-    return $self->setfield('recurtax', $_[0]) if @_;
-    return $self->getfield('recurtax');
-  }  
-  return '';
-}
-
 =item label OPTIONS
 
 Returns a label looking like "Anytown, Alameda County, CA, US".
