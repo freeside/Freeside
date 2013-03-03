@@ -164,7 +164,7 @@ sub check {
     $self->ut_numbern('pkgdiscountnum')
     || $self->ut_foreign_key('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_foreign_key('discountnum', 'discount', 'discountnum' )
-    || $self->ut_float('months_used') #actually decimal, but this will do
+    || $self->ut_sfloat('months_used') #actually decimal, but this will do
     || $self->ut_numbern('end_date')
     || $self->ut_alphan('otaker')
     || $self->ut_numbern('usernum')
@@ -202,7 +202,7 @@ sub discount {
   qsearchs('discount', { 'discountnum' => $self->discountnum } );
 }
 
-=item increment_months_used
+=item increment_months_used MONTHS
 
 Increments months_used by the given parameter
 
@@ -213,6 +213,31 @@ sub increment_months_used {
   #UPDATE cust_pkg_discount SET months_used = months_used + ?
   #leaves no history, and billing is mutexed per-customer, so the dum way is ok
   $self->months_used( $self->months_used + $used );
+  $self->replace();
+}
+
+=item decrement_months_used MONTHS
+
+Decrement months_used by the given parameter
+
+(Note: as in, extending the length of the discount.  Typically only used to
+stack/extend a discount when the customer package has one active already.)
+
+=cut
+
+sub decrement_months_used {
+  my( $self, $recharged ) = @_;
+  #UPDATE cust_pkg_discount SET months_used = months_used - ?
+  #leaves no history, and billing is mutexed per-customer
+
+  #we're run from part_event/Action/referral_pkg_discount on behalf of a
+  # different customer, so we need to grab this customer's mutex.
+  #   incidentally, that's some inelegant encapsulation breaking shit, and a
+  #   great argument in favor of native-DB trigger history so we can trust
+  #   in normal ACID like the SQL above instead of this
+  $self->cust_pkg->cust_main->select_for_update;
+
+  $self->months_used( $self->months_used - $recharged );
   $self->replace();
 }
 

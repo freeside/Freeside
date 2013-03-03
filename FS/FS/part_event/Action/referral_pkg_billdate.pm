@@ -21,6 +21,8 @@ sub option_fields {
   );
 }
 
+#false laziness w/referral_pkg_discount, probably should make
+# Mixin/referral_pkg.pm if we need changes or anything else in this vein
 sub do_action {
   my( $self, $cust_object, $cust_event ) = @_;
 
@@ -38,6 +40,8 @@ sub do_action {
   return 'No qualifying billing package definition' unless @cust_pkg;
 
   my $cust_pkg = $cust_pkg[0]; #only one
+
+  #end of false laziness
 
   my $bill = $cust_pkg->bill || $cust_pkg->setup || time;
 
