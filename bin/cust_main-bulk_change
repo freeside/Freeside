@@ -1,14 +1,15 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw( $opt_p $opt_t );
+use vars qw( $opt_a $opt_p $opt_t $opt_k );
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 use FS::cust_tag;
+use FS::cust_pkg;
 
-getopts('p:t:');
+getopts('a:p:t:k:');
 
 my $user = shift or &usage;
 adminsuidsetup $user;
@@ -37,17 +38,34 @@ while (<STDIN>) {
     die "$error\n" if $error;
   }
 
-  if ( $opt_p ) {
-    $cust_main->payby($opt_p);
+  if ( $opt_p || $opt_a ) {
+    $cust_main->agentnum($opt_a) if $opt_a;
+    $cust_main->payby($opt_p)    if $opt_p;
 
     my $error = $cust_main->replace;
     die "$error\n" if $error;
   }
 
+  if ( $opt_k ) {
+    foreach my $k (split(/\s*,\s*/, $opt_k)) {
+      my($old, $new) = split(/\s*:\s*/, $k);
+      foreach my $cust_pkg ( qsearch('cust_pkg', {
+                                       'custnum' => $cust_main->custnum,
+                                       'pkgpart' => $old,
+                                    })
+                           )
+      {
+        $cust_pkg->pkgpart($new);
+        my $error = $cust_pkg->replace;
+        die "$error\n" if $error;
+      }
+    }
+  }
+
 }
 
 sub usage {
-  die "usage: cust_main-bulk_change [ -p NEW_PAYBY ] [ -t tagnum ] employee_username <custnums.txt\n";
+  die "usage: cust_main-bulk_change [ -a agentnum ] [ -p NEW_PAYBY ] [ -t tagnum ] [ -k old_pkgpart:new_pkgpart,... ] employee_username <custnums.txt\n";
 }
 
 =head1 NAME
@@ -56,15 +74,19 @@ cust_main-bulk_change
 
 =head1 SYNOPSIS
 
-  cust_main-bulk_change [ -p NEW_PAYBY ] [ -t tagnum ] username <custnums.txt
+  cust_main-bulk_change [ -a agentnum ] [ -p NEW_PAYBY ] [ -t tagnum ] [ -k old_pkgpart:new_pkgpart,... ] username <custnums.txt
 
 =head1 DESCRIPTION
 
 Command-line tool to make bulk changes to a group of customers.
 
+-a: new agentnum
+
 -p: new payby, for example, I<CARD> or I<DCRD>
 
 -t: tagnum to add if not present
+
+-k: old_pkgpart:new_pkgpart, for example, I<5:4>.  Multiple entries can be comma-separated.
 
 user: Employee username
 
