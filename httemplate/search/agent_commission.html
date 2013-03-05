@@ -1,0 +1,109 @@
+%# still not a good way to do rows grouped by some field in a search.html 
+%# report
+<& /elements/header.html, $title &>
+<BR>
+<STYLE TYPE="text/css">
+td.cust_head {
+  border-left: none;
+  border-right: none;
+  padding-top: 0.5em;
+  font-weight: bold;
+  background-color: #ffffff;
+}
+td.money { text-align: right; }
+td.money:before { content: '<% $money_char %>'; }
+.row0 { background-color: #eeeeee; }
+.row1 { background-color: #ffffff; }
+</STYLE>
+<& /elements/table-grid.html &>
+  <TR STYLE="background-color: #cccccc">
+    <TH CLASS="grid">Package</TH>
+    <TH CLASS="grid">Sales</TH>
+    <TH CLASS="grid">Percentage</TH>
+    <TH CLASS="grid">Commission</TH>
+  </TR>
+% my ($custnum, $sales, $commission, $row, $bgcolor) = (0, 0, 0, 0);
+% foreach my $cust_pkg ( @cust_pkg ) {
+%   if ( $custnum ne $cust_pkg->custnum ) {
+%     # start of a new customer section
+%     my $cust_main = $cust_pkg->cust_main;
+%     my $label = $cust_main->custnum . ': '. $cust_main->name;
+%     $bgcolor = 0;
+  <TR>
+    <TD COLSPAN=4 CLASS="cust_head">
+      <A HREF="<%$p%>view/cust_main.cgi?<%$cust_main->custnum%>"><% $label %></A>
+    </TD>
+  </TR>
+%   }
+  <TR CLASS="row<% $bgcolor %>">
+    <TD CLASS="grid"><% $cust_pkg->pkg_label %></TD>
+    <TD CLASS="money"><% sprintf('%.2f', $cust_pkg->sum_charged) %></TD>
+    <TD ALIGN="right"><% $cust_pkg->percent %>%</TD>
+    <TD CLASS="money"><% sprintf('%.2f',
+                      $cust_pkg->sum_charged * $cust_pkg->percent / 100) %></TD>
+  </TR>
+%   $sales += $cust_pkg->sum_charged;
+%   $commission += $cust_pkg->sum_charged * $cust_pkg->percent / 100;
+%   $row++;
+%   $bgcolor = 1-$bgcolor;
+%   $custnum = $cust_pkg->custnum;
+% }
+  <TR STYLE="background-color: #f5f6be">
+    <TD CLASS="grid">
+      <% emt('[quant,_1,package] with commission', $row) %>
+    </TD>
+    <TD CLASS="money"><% sprintf('%.2f', $sales) %></TD>
+    <TD></TD>
+    <TD CLASS="money"><% sprintf('%.2f', $commission) %></TD>
+  </TR>
+</TABLE>
+<& /elements/footer.html &>
+<%init>
+die "access denied" 
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my ($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
+$cgi->param('agentnum') =~ /^(\d+)$/ or die "bad agentnum";
+my $agentnum = $1;
+my $agent = FS::agent->by_key($agentnum);
+
+my $title = $agent->agent . ' commissions';
+
+my $sum_charged =
+  '(SELECT SUM(setup + recur) FROM cust_bill_pkg JOIN cust_bill USING (invnum)'.
+    'WHERE cust_bill_pkg.pkgnum = cust_pkg.pkgnum AND '.
+    "cust_bill._date >= $begin AND cust_bill._date < $end)";
+
+my @select = (
+  'cust_pkg.*',
+  'agent_pkg_class.commission_percent AS percent',
+  "$sum_charged AS sum_charged",
+);
+
+my $query = {
+  'table'       => 'cust_pkg',
+  'select'      => join(',', @select),
+  'addl_from'   => 'JOIN cust_main  USING (custnum) '.
+                   'JOIN part_pkg   USING (pkgpart) '.
+                   'JOIN agent_pkg_class ON (  '.
+                     'cust_main.agentnum = agent_pkg_class.agentnum AND '.
+                     '( agent_pkg_class.classnum = part_pkg.classnum OR '.
+                     '(agent_pkg_class IS NULL AND part_pkg.classnum IS NULL)'.
+                     ' )  ) ',
+  'extra_sql'   => "WHERE cust_main.agentnum = $agentnum AND ".
+                   'agent_pkg_class.commission_percent > 0 AND '.
+                   "$sum_charged > 0",
+  'order_by'    => 'ORDER BY cust_pkg.custnum ASC',
+};
+
+my @cust_pkg = qsearch($query);
+
+my $money_char = FS::Conf->new->config('money_char') || '$';
+
+#my $count_query = 
+#  'SELECT COUNT(*) FROM cust_pkg '.$query->{'addl_from'}.$query->{'extra_sql'}.
+#  ' AND EXISTS(SELECT 1 FROM cust_bill_pkg JOIN cust_bill USING (invnum) '.
+#    ' WHERE cust_bill_pkg.pkgnum = cust_pkg.pkgnum AND '.
+#    "cust_bill._date >= $begin AND cust_bill._date < $end".
+#  ')';
+</%init>
