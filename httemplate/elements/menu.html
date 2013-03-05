@@ -336,7 +336,8 @@ tie my %report_sales, 'Tie::IxHash',
   'Daily Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time_daily.html', 'Sales, credits and receipts (broken down by day) summary graph' ],
   'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
   'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
-  'Sales With Advertising Source' => [ $fsurl.'search/report_cust_bill_pkg_referral.html' ],
+  'Sales with Advertising Source' => [ $fsurl.'search/report_cust_bill_pkg_referral.html' ],
+  'Sales with Agent Commissions' => [ $fsurl.'search/report_agent_commission.html' ],
 ;
 
 tie my %report_financial, 'Tie::IxHash';
