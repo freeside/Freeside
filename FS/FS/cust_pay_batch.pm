@@ -343,6 +343,11 @@ sub decline {
       # Void the payment
       my $cust_pay = qsearchs('cust_pay', { 
           custnum  => $new->custnum,
+          batchnum => $new->batchnum
+        });
+      # pre-3.0 style
+      $cust_pay ||= qsearchs('cust_pay', { 
+          custnum  => $new->custnum,
           paybatch => $new->batchnum
         });
       if ( !$cust_pay ) {
