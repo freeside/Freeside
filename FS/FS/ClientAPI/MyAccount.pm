@@ -2142,6 +2142,7 @@ sub _usage_details {
     'svcnum'    => $p->{svcnum},
     'beginning' => $p->{beginning},
     'ending'    => $p->{ending},
+    'inbound'   => $p->{inbound},
     'previous'  => ($previous > $start) ? $previous : $start,
     'next'      => ($next < $end) ? $next : $end,
     'header'    => $header,
