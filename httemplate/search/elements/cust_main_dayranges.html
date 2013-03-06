@@ -172,10 +172,11 @@ my $count_sql = "select count(*) from cust_main $where";
 
 my $sql_query = {
   'table'     => 'cust_main',
+  'addl_from' => FS::UI::Web::join_cust_main('cust_main'),
   'hashref'   => {},
   'select'    => join(',',
                    #'cust_main.*',
-                   'custnum',
+                   'cust_main.custnum',
                    $range_cols,
                    $packages_cols,
                    FS::UI::Web::cust_sql_fields(),

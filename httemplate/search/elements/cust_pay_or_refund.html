@@ -424,7 +424,7 @@ if ( $cgi->param('magic') ) {
   #here is the agent virtualization
   push @search, $curuser->agentnums_sql;
 
-  my $addl_from = ' LEFT JOIN cust_main USING ( custnum ) ';
+  my $addl_from = FS::UI::Web::join_cust_main('cust_pay');
   my $group_by = '';
 
   if ( $cgi->param('tax_names') ) {

@@ -378,6 +378,9 @@ Otherwise, this function will assume the field is named "custnum".  If the
 argument isn't present at all, the join will just say "USING (custnum)", 
 which might work.
 
+As a special case, if TABLE is 'cust_main', only the joins to cust_location
+will be returned.
+
 LOCATION_TABLE is an optional table name to use for joining ship_location,
 in case your query also includes package information and you want the 
 "service address" columns to reflect package addresses.
@@ -392,11 +395,12 @@ sub join_cust_main {
   ($location_table, $locationnum) = split(/\./, $location_table);
   $locationnum ||= 'locationnum';
 
-  my $sql = ' LEFT JOIN cust_main ';
+  my $sql = '';
   if ( $cust_table ) {
-    $sql .= "ON (cust_main.custnum = $cust_table.$custnum)";
+    $sql = " LEFT JOIN cust_main ON (cust_main.custnum = $cust_table.$custnum)"
+      unless $cust_table eq 'cust_main';
   } else {
-    $sql .= "USING (custnum)";
+    $sql = " LEFT JOIN cust_main USING (custnum)";
   }
 
   if ( !@cust_fields or grep /^bill_/, @cust_fields ) {
