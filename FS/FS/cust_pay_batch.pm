@@ -369,6 +369,12 @@ sub decline {
       # Void the payment
       my $cust_pay = qsearchs('cust_pay', { 
           custnum  => $new->custnum,
+          batchnum => $new->batchnum
+        });
+      # these should all be migrated over, but if it's not found, look for
+      # batchnum in the 'paybatch' field also
+      $cust_pay ||= qsearchs('cust_pay', { 
+          custnum  => $new->custnum,
           paybatch => $new->batchnum
         });
       if ( !$cust_pay ) {
