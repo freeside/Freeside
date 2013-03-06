@@ -630,6 +630,8 @@ sub export_formats {
     length($price) ? ($opt{money_char} . $price) : '';
   };
 
+  my $src_sub = sub { $_[0]->clid || $_[0]->src };
+
   %export_formats = (
     'simple' => [
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
@@ -644,7 +646,7 @@ sub export_formats {
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
       sub { time2str('%r', shift->calldate_unix ) },   #TIME
       #'userfield',                                     #USER
-      'src',                                           #called from
+      $src_sub,                                           #called from
       'dst',                                           #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
@@ -653,7 +655,7 @@ sub export_formats {
     'accountcode_simple' => [
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
       sub { time2str('%r', shift->calldate_unix ) },   #TIME
-      'src',                                           #called from
+      $src_sub,                                           #called from
       'accountcode',                                   #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       $price_sub,
@@ -661,14 +663,14 @@ sub export_formats {
     'sum_duration' => [ 
       # for summary formats, the CDR is a fictitious object containing the 
       # total billsec and the phone number of the service
-      'src',
+      $src_sub,
       sub { my($cdr, %opt) = @_; $opt{ratename} },
       sub { my($cdr, %opt) = @_; $opt{count} },
       sub { my($cdr, %opt) = @_; int($opt{seconds}/60).'m' },
       $price_sub,
     ],
     'sum_count' => [
-      'src',
+      $src_sub,
       sub { my($cdr, %opt) = @_; $opt{ratename} },
       sub { my($cdr, %opt) = @_; $opt{count} },
       $price_sub,
@@ -702,7 +704,7 @@ sub export_formats {
       $price_sub,
     ],
   );
-  $export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} }, ];
+  $export_formats{'source_default'} = [ $src_sub, @{ $export_formats{'default'} }, ];
   $export_formats{'accountcode_default'} =
     [ @{ $export_formats{'default'} }[0,1],
       'accountcode',
@@ -710,7 +712,7 @@ sub export_formats {
     ];
   my @default = @{ $export_formats{'default'} };
   $export_formats{'description_default'} = 
-    [ 'src', @default[0..2], 
+    [ $src_sub, @default[0..2], 
       sub { my($cdr, %opt) = @_; $cdr->description },
       @default[4,5] ];
 

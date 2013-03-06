@@ -673,13 +673,15 @@ with the chosen prefix.
 
 =item disable_src => 1: Only match on "charged_party", not "src".
 
+=item nonzero: Only return CDRs where duration > 0.
+
 =item by_svcnum: not supported for svc_phone
 
 =back
 
 =cut
 
-sub get_cdrs {
+sub _search_cdrs { # transitional; replaced with psearch_cdrs in 3.0
   my($self, %options) = @_;
   my @fields;
   my %hash;
@@ -735,19 +737,48 @@ sub get_cdrs {
   if ( $options{'end'} ) {
     push @where, 'startdate < '.  $options{'end'};
   }
+  if ( $options{'nonzero'} ) {
+    push @where, 'duration > 0';
+  }
 
   my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
 
-  my @cdrs =
-    qsearch( {
+
+  return {
       'table'      => 'cdr',
       'hashref'    => \%hash,
       'extra_sql'  => $extra_sql,
       'order_by'   => $options{'billsec_sum'} ? '' : "ORDER BY startdate $for_update",
       'select'     => $options{'billsec_sum'} ? 'sum(billsec) as billsec_sum' : '*',
-    } );
+  };
+}
 
-  @cdrs;
+sub get_cdrs {
+  qsearch(_search_cdrs(@_));
+}
+
+=item sum_cdrs
+
+Takes the same options as psearch_cdrs, but returns a single row containing
+"count" (the number of CDRs) and the sums of the following fields: duration,
+billsec, rated_price, rated_seconds, rated_minutes.
+
+Note that if any calls are not rated, their rated_* fields will be null.
+If you want to use those fields, pass the 'status' option to limit to 
+calls that have been rated.  This is intentional; please don't "fix" it.
+
+=cut
+
+sub sum_cdrs {
+  my $self = shift;
+  my $search = $self->_search_cdrs(@_);
+  $search->{'select'} = join(',',
+    'COUNT(*) AS count',
+    map { "SUM($_) AS $_" }
+      qw(duration billsec rated_price rated_seconds rated_minutes)
+  );
+  $search->{'order_by'} = '';
+  qsearchs ( $search );
 }
 
 =back

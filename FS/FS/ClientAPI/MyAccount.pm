@@ -1692,7 +1692,34 @@ sub list_svcs {
               } else {
                 $hash{'name'} = $cust_main->name;
               }
+            } elsif ( $svcdb eq 'svc_phone' ) {
+              # could potentially show lots of things...
+              $hash{'outbound'} = 1;
+              $hash{'inbound'}  = 0;
+              if ( $part_pkg->plan eq 'voip_inbound' ) {
+                $hash{'outbound'} = 0;
+                $hash{'inbound'}  = 1;
+              } elsif ( $part_pkg->option('selfservice_inbound_format')
+                    or  $conf->config('selfservice-default_inbound_cdr_format')
+              ) {
+                $hash{'inbound'}  = 1;
+              }
+              foreach (qw(inbound outbound)) {
+                # hmm...we can't filter by status here, because there might
+                # not be cdr_terminations at all.  have to go by date.
+                # find all since the last bill date.
+                # XXX cdr types?  we are going to need them.
+                if ( $hash{$_} ) {
+                  my $sum_cdr = $svc_x->sum_cdrs(
+                    'inbound' => ( $_ eq 'inbound' ? 1 : 0 ),
+                    'begin'   => ($cust_pkg->last_bill || 0),
+                    'nonzero' => 1,
+                  );
+                  $hash{$_} = $sum_cdr->hashref;
+                }
+              }
             }
+
             # elsif ( $svcdb eq 'svc_phone' || $svcdb eq 'svc_port' ) {
             #  %hash = (
             #    %hash,
@@ -1963,7 +1990,7 @@ sub _list_cdr_usage {
   # XXX CDR type support...
   my($svc_phone, $begin, $end, %opt) = @_;
   map [ $_->downstream_csv(%opt, 'keeparray' => 1) ],
-    $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, );
+    $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, %opt );
 }
 
 sub list_cdr_usage {
@@ -1993,18 +2020,21 @@ sub _usage_details {
   my %callback_opt;
   my $header = [];
   if ( $svcdb eq 'svc_phone' ) {
-    my $format   = $cust_pkg->part_pkg->option('output_format') || '';
-    $format = '' if $format =~ /^sum_/;
-    # sensible default if there is no format or it's a summary format
-    if ( $cust_pkg->part_pkg->plan eq 'voip_inbound' ) {
-      $format ||= 'source_default';
+    my $conf = FS::Conf->new;
+    my $format = '';
+    if ( $p->{inbound} ) {
+      $format = $cust_pkg->part_pkg->option('selfservice_inbound_format') 
+                || $conf->config('selfservice-default_inbound_cdr_format')
+                || 'source_default';
       $callback_opt{inbound} = 1;
+    } else {
+      $format = $cust_pkg->part_pkg->option('selfservice_format')
+                || $conf->config('selfservice-default_cdr_format')
+                || 'default';
     }
-    else {
-      $format ||= 'default';
-    }
-    
+
     $callback_opt{format} = $format;
+    $callback_opt{use_clid} = 1;
     $header = [ split(',', FS::cdr::invoice_header($format) ) ];
   }
 
@@ -2063,6 +2093,7 @@ sub _usage_details {
     'svcnum'    => $p->{svcnum},
     'beginning' => $p->{beginning},
     'ending'    => $p->{ending},
+    'inbound'   => $p->{inbound},
     'previous'  => ($previous > $start) ? $previous : $start,
     'next'      => ($next < $end) ? $next : $end,
     'header'    => $header,

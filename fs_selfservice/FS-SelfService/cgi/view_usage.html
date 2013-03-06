@@ -62,11 +62,22 @@
 <%= scalar(@svc_acct) ? '</TABLE><BR><BR>' : '' %>
 
 <%= if ( @svc_phone ) {
+      %any = ();
+      for my $dir (qw(outbound inbound)) {
+        $any{$dir} = grep { $_->{$dir} } @svc_phone;
+      }
       $OUT.= '<FONT SIZE="4">Call usage</FONT><BR><BR>
               <TABLE BGCOLOR="#cccccc">
                 <TR>
-                  <TH ALIGN="left">Number</TH>'; #"Account" ?
-                                                 #what else?
+                  <TH ALIGN="left">Number</TH>';
+      if ( $any{outbound} ) {
+        $OUT .= '
+                  <TH>Dialed</TH>';
+      }
+      if ( $any{inbound} ) {
+        $OUT .= '
+                  <TH>Received</TH>';
+      }
       $OUT .= '</TR>';
     } else {
       $OUT .= '';
@@ -76,10 +87,27 @@
 <%= foreach my $svc_phone ( @svc_phone ) {
       my $link = "${url}view_cdr_details;".
         "svcnum=$svc_phone->{'svcnum'};beginning=0;ending=0";
-  $OUT .= '<TR><TD>';
-    $OUT .= qq!<A HREF="$link">!. $svc_phone->{'label'}. ': '. $svc_phone->{'value'}.'</A>';
-  $OUT .= '</TD></TR>';
+  $OUT .= '<TR><TD>'. $svc_phone->{'label'}. ': '. $svc_phone->{'value'};
+  $OUT .= '</TD>';
+  # usage summary w/ links
+  for my $dir (qw(outbound inbound)) {
+    if ( $dir eq 'inbound' ) {
+      $link .= ';inbound=1';
+    }
+    if ( $svc_phone->{$dir} ) {
+      $OUT .= '<TD ALIGN="right">'.qq!<A HREF="$link">! .
+        sprintf('%d calls (%.0f minutes)',
+          $svc_phone->{$dir}->{'count'},
+          $svc_phone->{$dir}->{'duration'} / 60
+        ) .
+        '</A></TD>';
+    } elsif ( $any{$dir} )  {
+      $OUT .= '<TD></TD>';
+    }
   }
+  $OUT .= '</TR>';
+}
+'';
 %>
 
 <%= scalar(@svc_phone) ? '</TABLE><BR><BR>' : '' %>

@@ -710,6 +710,18 @@ my %payment_gateway_options = (
   },
 );
 
+my @cdr_formats = (
+  '' => '',
+  'default' => 'Default',
+  'source_default' => 'Default with source',
+  'accountcode_default' => 'Default plus accountcode',
+  'description_default' => 'Default with description field as destination',
+  'basic' => 'Basic',
+  'simple' => 'Simple',
+  'simple2' => 'Simple with source',
+  'accountcode_simple' => 'Simple with accountcode',
+);
+
 #Billing (81 items)
 #Invoicing (50 items)
 #UI (69 items)
@@ -4628,6 +4640,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-taqua-callerid_rewrite',
+    'section'     => 'telephony',
+    'description' => 'For the Taqua CDR format, pull Caller ID blocking information from secondary CDRs.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_pkg-show_autosuspend',
     'section'     => 'UI',
     'description' => 'Show package auto-suspend dates.  Use with caution for now; can slow down customer view for large insallations.',
@@ -5196,6 +5215,22 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Return line item billing detail for the self-service billing_history API call.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-default_cdr_format',
+    'section'     => 'self-service',
+    'description' => 'Format for showing outbound CDRs in self-service.  The per-package option overrides this.',
+    'type'        => 'select',
+    'select_hash' => \@cdr_formats,
+  },
+
+  {
+    'key'         => 'selfservice-default_inbound_cdr_format',
+    'section'     => 'self-service',
+    'description' => 'Format for showing inbound CDRs in self-service.  The per-package option overrides this.  Leave blank to avoid showing these CDRs.',
+    'type'        => 'select',
+    'select_hash' => \@cdr_formats,
   },
 
   {

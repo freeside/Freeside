@@ -49,6 +49,11 @@ tie my %unrateable_opts, 'Tie::IxHash',
   2  => 'Flag for later review',
 ;
 
+tie my %detail_formats, 'Tie::IxHash',
+  '' => '',
+  FS::cdr::invoice_formats()
+;
+
 %info = (
   'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
   'shortname' => 'VoIP/telco CDR rating (standard)',
@@ -206,11 +211,24 @@ tie my %unrateable_opts, 'Tie::IxHash',
                       },
 
     #false laziness w/cdr_termination.pm
-    'output_format' => { 'name' => 'CDR invoice display format',
+    'output_format' => { 'name' => 'CDR display format for invoices',
                          'type' => 'select',
-                         'select_options' => { FS::cdr::invoice_formats() },
+                         'select_options' => \%detail_formats,
                          'default'        => 'default', #XXX test
                        },
+
+    'selfservice_format' => 
+      { 'name' => 'CDR display format for selfservice',
+        'type' => 'select',
+        'select_options' => \%detail_formats,
+        'default' => 'default'
+      },
+    'selfservice_inbound_format' =>
+      { 'name' => 'Inbound CDR display format for selfservice',
+        'type' => 'select',
+        'select_options' => \%detail_formats,
+        'default' => ''
+      },
 
     'usage_section' => { 'name' => 'Section in which to place usage charges (whether separated or not): ',
                        },
@@ -287,7 +305,9 @@ tie my %unrateable_opts, 'Tie::IxHash',
                        skip_max_callers
                        use_duration
                        411_rewrite
-                       output_format usage_mandate summarize_usage usage_section
+                       output_format 
+                       selfservice_format selfservice_inbound_format
+                       usage_mandate summarize_usage usage_section
                        bill_every_call bill_inactive_svcs
                        count_available_phones suspend_bill 
                      )
