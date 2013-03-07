@@ -32,12 +32,11 @@
 %>
 <%init>
 
-my @deviceparts_with_inventory;
-my @part_device = qsearch('part_device', {} );
-foreach my $part_device ( @part_device ) {
-    push @deviceparts_with_inventory, $part_device->devicepart
-	if $part_device->inventory_classnum;
-}
+my @deviceparts_with_inventory =
+  map $_->devicepart,
+    qsearch({ 'table'     => 'part_device',
+              'extra_sql' => 'WHERE inventory_classnum IS NOT NULL',
+           });
 
 my $html_foot = sub {
     my $js = "
@@ -72,9 +71,9 @@ my $html_foot = sub {
 
 	var devicepart = what.options[what.selectedIndex].value;
 
-	var deviceparts_with_inventory = new Array(\"";
-$js .= join("\",\"",@deviceparts_with_inventory);
-$js .= "\");
+	var deviceparts_with_inventory = new Array(";
+$js .= join(',', map qq("$_"), @deviceparts_with_inventory);
+$js .= ");
 
 	var hasInventory = false;
 	for ( i = 0; i < deviceparts_with_inventory.length; i++ ) {
