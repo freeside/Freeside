@@ -717,7 +717,7 @@ sub credit_lineitems {
   my %cust_credit_bill = ();
   my %cust_bill_pkg = ();
   my %cust_credit_bill_pkg = ();
-  my %unapplied_payments = (); # except here they're billpaynums
+  my %unapplied_payments = (); #invoice numbers, and then billpaynums
   foreach my $billpkgnum ( @{$arg{billpkgnums}} ) {
     my $setuprecur = shift @{$arg{setuprecurs}};
     my $amount = shift @{$arg{amounts}};
@@ -752,7 +752,7 @@ sub credit_lineitems {
         $dbh->rollback if $oldAutoCommit;
         return "Error unapplying payment: $error";
       }
-      $unapplied_payments{$cust_bill_pay_pkg->billpaynum}
+      $unapplied_payments{$invnum}{$cust_bill_pay_pkg->billpaynum}
         += $cust_bill_pay_pkg->amount;
     }
 
@@ -912,7 +912,7 @@ sub credit_lineitems {
             $dbh->rollback if $oldAutoCommit;
             return "Error unapplying payment: $error";
           }
-          $unapplied_payments{$cust_bill_pay_pkg->billpaynum}
+          $unapplied_payments{$invnum}{$cust_bill_pay_pkg->billpaynum}
             += $cust_bill_pay_pkg->amount;
         }
       } #foreach $taxline
@@ -921,20 +921,30 @@ sub credit_lineitems {
 
     # if we unapplied any payments from line items, also unapply that
     # amount from the invoice
-    foreach my $billpaynum (keys %unapplied_payments) {
+    foreach my $billpaynum (keys %{$unapplied_payments{$invnum}}) {
       my $cust_bill_pay = FS::cust_bill_pay->by_key($billpaynum)
         or die "broken payment application $billpaynum";
+      my @subapps = $cust_bill_pay->lineitem_applications;
       $error = $cust_bill_pay->delete; # can't replace
 
       my $new_cust_bill_pay = FS::cust_bill_pay->new({
           $cust_bill_pay->hash,
           billpaynum => '',
           amount => sprintf('%.2f',
-              $cust_bill_pay->get('amount') - $unapplied_payments{$billpaynum})
+              $cust_bill_pay->get('amount')
+              - $unapplied_payments{$invnum}{$billpaynum})
       });
 
       if ( $new_cust_bill_pay->amount > 0 ) {
         $error ||= $new_cust_bill_pay->insert;
+        # Also reapply it to everything it was applied to before.
+        # Note that we've already deleted cust_bill_pay_pkg records for the
+        # items we're crediting, so they aren't on this list.
+        foreach my $cust_bill_pay_pkg (@subapps) {
+          $cust_bill_pay_pkg->billpaypkgnum('');
+          $cust_bill_pay_pkg->billpaynum($new_cust_bill_pay->billpaynum);
+          $error ||= $cust_bill_pay_pkg->insert;
+        }
       }
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
