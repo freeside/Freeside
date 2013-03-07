@@ -111,6 +111,7 @@ Example:
      <% $opt{'label_callback'}
           ? &{ $opt{'label_callback'} }( $record )
           : $record->$name_col()
+        |h
      %>
 % } 
 
