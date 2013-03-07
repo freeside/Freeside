@@ -13,13 +13,8 @@ die "unknown devicepart $devicepart" unless $part_device;
 my $inventory_class = $part_device->inventory_class;
 die "devicepart $devicepart has no inventory" unless $inventory_class;
 
-my @inventory_item =
+my @macs =
+  map $_->item,
     qsearch('inventory_item', { 'classnum' => $inventory_class->classnum } );
-
-my @macs;
-
-foreach my $inventory_item ( @inventory_item ) {
-    push @macs, $inventory_item->item;
-}
 
 </%init>
