@@ -3189,6 +3189,7 @@ sub print_generic {
       $detail->{'sdate'} = $line_item->{'sdate'};
       $detail->{'edate'} = $line_item->{'edate'};
       $detail->{'seconds'} = $line_item->{'seconds'};
+      $detail->{'svc_label'} = $line_item->{'svc_label'};
   
       push @detail_items, $detail;
       push @buf, ( [ $detail->{'description'},
@@ -5023,13 +5024,16 @@ sub _items_cust_bill_pkg {
             || $cust_bill_pkg->recur_show_zero;
 
           my @d = ();
+          my $svc_label;
           unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->hidden )
           {
 
-            push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short($self->_date, undef, 'I')
+            my @svc_labels = map &{$escape_function}($_),
+                        $cust_pkg->h_labels_short($self->_date, undef, 'I');
+            push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
+            $svc_label = $svc_labels[0];
 
             if ( $multilocation ) {
               my $loc = $cust_pkg->location_label;
@@ -5058,6 +5062,7 @@ sub _items_cust_bill_pkg {
               unit_amount     => $cust_bill_pkg->unitsetup,
               quantity        => $cust_bill_pkg->quantity,
               ext_description => \@d,
+              svc_label       => ($svc_label || ''),
             };
           };
 
@@ -5116,6 +5121,7 @@ sub _items_cust_bill_pkg {
 
           my @d = ();
           my @seconds = (); # for display of usage info
+          my $svc_label = '';
 
           #at least until cust_bill_pkg has "past" ranges in addition to
           #the "future" sdate/edate ones... see #3032
@@ -5133,11 +5139,11 @@ sub _items_cust_bill_pkg {
             warn "$me _items_cust_bill_pkg adding service details\n"
               if $DEBUG > 1;
 
-            push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short(@dates, 'I')
-                                                   #$cust_bill_pkg->edate,
-                                                   #$cust_bill_pkg->sdate)
+            my @svc_labels = map &{$escape_function}($_),
+                        $cust_pkg->h_labels_short($self->_date, undef, 'I');
+            push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
+            $svc_label = $svc_labels[0];
 
             warn "$me _items_cust_bill_pkg done adding service details\n"
               if $DEBUG > 1;
@@ -5216,6 +5222,7 @@ sub _items_cust_bill_pkg {
                 quantity        => $cust_bill_pkg->quantity,
                 %item_dates,
                 ext_description => \@d,
+                svc_label       => ($svc_label || ''),
               };
               $r->{'seconds'} = \@seconds if grep {defined $_} @seconds;
             }
