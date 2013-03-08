@@ -117,7 +117,7 @@ die "failed to connect to '$sftpuser\@$host'\n(".$sftp->error.")\n"
 
 $sftp->setcwd($path) if $path;
 
-my $files = $sftp->ls('.', wanted => qr/\.csv$/, names_only => 1);
+my $files = $sftp->ls('ready', wanted => qr/\.csv$/, names_only => 1);
 if (!@$files) {
   print STDERR "No charge files found.\n" if $opt{v};
   exit(-1);
@@ -130,23 +130,23 @@ my %is_e911 = map {$_ => 1} @E911_CODES;
 
 FILE: foreach my $filename (@$files) {
   print STDERR "Retrieving $filename\n" if $opt{v};
-  $sftp->get("$filename", "$tmpdir/$filename");
+  $sftp->get("ready/$filename", "$tmpdir/$filename");
   if($sftp->error) {
     warn "failed to download $filename\n";
     next FILE;
   }
 
   # make sure server archive dir exists
-  if ( !$sftp->stat('Archive') ) {
-    print STDERR "Creating $path/Archive\n" if $opt{v};
-    $sftp->mkdir('Archive');
+  if ( !$sftp->stat('done') ) {
+    print STDERR "Creating $path/done\n" if $opt{v};
+    $sftp->mkdir('done');
     if($sftp->error) {
       # something is seriously wrong
       die "failed to create archive directory on server:\n".$sftp->error."\n";
     }
   }
   #move to server archive dir
-  $sftp->rename("$filename", "Archive/$filename");
+  $sftp->rename("ready/$filename", "done/$filename");
   if($sftp->error) {
     warn "failed to archive $filename on server:\n".$sftp->error."\n";
   } # process it anyway, I guess/
