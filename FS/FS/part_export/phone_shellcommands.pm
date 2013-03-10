@@ -13,16 +13,18 @@ use FS::part_export;
 #- suspension/unsuspension
 
 tie my %options, 'Tie::IxHash',
-  'user'      => { label=>'Remote username', default=>'root', },
-  'useradd'   => { label=>'Insert command', }, 
-  'userdel'   => { label=>'Delete command', }, 
-  'usermod'   => { label=>'Modify command', }, 
-  'suspend'   => { label=>'Suspension command', }, 
-  'unsuspend' => { label=>'Unsuspension command', }, 
+  'user'       => { label=>'Remote username', default=>'root', },
+  'useradd'    => { label=>'Insert command', }, 
+  'userdel'    => { label=>'Delete command', }, 
+  'usermod'    => { label=>'Modify command', }, 
+  'suspend'    => { label=>'Suspension command', }, 
+  'unsuspend'  => { label=>'Unsuspension command', }, 
+  'mac_insert' => { label=>'Device MAC address insert command', },
+  'mac_delete' => { label=>'Device MAC address delete command', },
 ;
 
 %info = (
-  'svc'     => 'svc_phone',
+  'svc'     => [qw( svc_phone part_device )],
   'desc'    => 'Run remote commands via SSH, for phone numbers',
   'options' => \%options,
   'notes'   => <<'END'
@@ -50,6 +52,7 @@ old_ for replace operations):
   <LI><code>$pin</code> - Personal identification number
   <LI><code>$cust_name</code> - Customer name (quoted for the shell)
   <LI><code>$pkgnum</code> - Internal package number
+  <LI><code>$mac_addr</code> - MAC address (Device MAC address insert and delete commands only)
 </UL>
 END
 );
@@ -57,27 +60,41 @@ END
 sub rebless { shift; }
 
 sub _export_insert {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command('useradd', @_);
 }
 
 sub _export_delete {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command('userdel', @_);
 }
 
 sub _export_suspend {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command('suspend', @_);
 }
 
 sub _export_unsuspend {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command('unsuspend', @_);
 }
 
+sub export_device_insert {
+  my( $self, $svc_phone, $phone_device ) = @_;
+  $self->_export_command('mac_insert', $svc_phone,
+                           'mac_addr'=>$phone_device->mac_addr
+                        );
+}
+
+sub export_device_delete {
+  my( $self, $svc_phone, $phone_device ) = @_;
+  $self->_export_command('mac_delete', $svc_phone,
+                           'mac_addr'=>$phone_device->mac_addr
+                        );
+}
+
 sub _export_command {
-  my ( $self, $action, $svc_phone) = (shift, shift, shift);
+  my ( $self, $action, $svc_phone, %addl_vars) = @_;
   my $command = $self->option($action);
   return '' if $command =~ /^\s*$/;
 
@@ -86,6 +103,7 @@ sub _export_command {
   {
     no strict 'refs';
     ${$_} = $svc_phone->getfield($_) foreach $svc_phone->fields;
+    ${$_} = $addl_vars{$_} foreach keys %addl_vars;
   }
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
   my $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
