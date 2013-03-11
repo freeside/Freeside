@@ -1,10 +1,11 @@
 package FS::quotation_pkg;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::TemplateItem_Mixin FS::Record );
 use FS::Record qw( qsearchs ); #qsearch
 use FS::part_pkg;
 use FS::cust_location;
+use FS::quotation_pkg_discount; #so its loaded when TemplateItem_Mixin needs it
 
 =head1 NAME
 
@@ -79,6 +80,11 @@ points to.  You can ask the object for a copy with the I<hash> method.
 =cut
 
 sub table { 'quotation_pkg'; }
+
+sub display_table         { 'quotation_pkg'; }
+sub display_table_orderby { 'quotationpkgnum'; } # something else?
+                                                 #  (for invoice display order)
+sub discount_table        { 'quotation_pkg_discount'; }
 
 =item insert
 

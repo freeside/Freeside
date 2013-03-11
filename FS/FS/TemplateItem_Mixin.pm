@@ -271,10 +271,12 @@ sub cust_bill_pkg_display {
   } else {
     my $hashref = { 'billpkgnum' => $self->billpkgnum };
     $hashref->{type} = $type if defined($type);
+
+    my $order_by = $self->display_table_orderby || 'billpkgdisplaynum';
     
     @result = qsearch ({ 'table'    => $self->display_table,
                          'hashref'  => { 'billpkgnum' => $self->billpkgnum },
-                         'order_by' => 'ORDER BY billpkgdisplaynum',
+                         'order_by' => "ORDER BY $order_by",
                       });
   }
 
