@@ -263,6 +263,9 @@ foreach my $value ( @values ) {
 
     if ( !$error ) {
       if ( $old_pkey ) {
+
+        &{ $opt{'edit_callback'} }( $new, $old ) if $opt{'edit_callback'};
+
         $error = $new->replace($old, @args);
       } else {
         $error = $new->insert(@args);

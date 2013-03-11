@@ -18,7 +18,18 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
 
 my @fields = qw( countrycode phonenum sim_imsi );
 push @fields, 'domain' if $conf->exists('svc_phone-domain');
-push @fields, qw( pbx_title sip_password pin phone_name forwarddst email );
+push @fields, qw( pbx_title );
+
+if ( $conf->exists('showpasswords') ) {
+  push @fields, qw( sip_password );
+} else {
+  push @fields, { 'field' => 'sip_password', #'_HIDDEN_sip_password',
+                  'type'  => 'fixed',
+                  'value' => '<I>('. mt('hidden') .')</I>',
+                };
+}
+
+push @fields, qw( pin phone_name forwarddst email );
 
 if ( $conf->exists('svc_phone-lnp') ) {
 push @fields, 'lnp_status',

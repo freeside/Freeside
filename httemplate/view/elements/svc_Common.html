@@ -59,16 +59,20 @@ function areyousure(href) {
 
 % foreach my $f ( @$fields ) {
 %
-%   my($field, $type, $value, $hack_strict_refs);
+%   my($field, $type, $value);
 %   if ( ref($f) ) {
 %     $field = $f->{'field'};
-%     $hack_strict_refs = \&{ $f->{'value'} } if $f->{'value'};
-%     $value = $f->{'value'} ? &$hack_strict_refs($svc_x) : $svc_x->$field;
 %     $type  = $f->{'type'} || 'text';
+%     if ( $f->{'value_callback'} ) {
+%       my $hack_strict_refs = \&{ $f->{'value_callback'} };
+%       $value = &$hack_strict_refs($svc_x);
+%     } else {
+%       $value = exists($f->{'value'}) ? $f->{'value'} : $svc_x->$field;
+%     }
 %   } else {
 %     $field = $f;
-%     $value = $svc_x->$field;
 %     $type = 'text';
+%     $value = $svc_x->$field;
 %   }
 %
 %   my $columndef = $part_svc->part_svc_column($field);

@@ -17,7 +17,7 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
 
 my @fields = (
   { field=>'privatekey',
-    value=> sub {
+    value_callback=> sub {
       my $svc_cert = shift;
       if ( $svc_cert->privatekey && $svc_cert->check_privatekey ) {
         '<FONT COLOR="#33ff33">Verification OK</FONT>';
@@ -31,7 +31,7 @@ my @fields = (
   qw( common_name organization organization_unit city state country cert_contact
     ),
   { 'field'=>'csr',
-    'value'=> sub {
+    'value_callback'=> sub {
       my $svc_cert = shift;
       if ( $svc_cert->csr ) {
 
@@ -67,7 +67,7 @@ my @fields = (
     },
   },
   { 'field'=>'certificate',
-    'value'=> sub {
+    'value_callback'=> sub {
       my $svc_cert = shift;
       if ( $svc_cert->certificate ) {
 
@@ -137,7 +137,7 @@ my @fields = (
     },
   },
   { 'field'=>'cacert',
-    'value'=> sub {
+    'value_callback'=> sub {
       my $svc_cert = shift;
       if ( $svc_cert->cacert ) {
 

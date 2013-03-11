@@ -2,6 +2,7 @@
                'table'          => 'svc_phone',
                'args_callback'  => $args_callback,
 	       'value_callback' => $value_callback,
+               'edit_callback'  => $edit_callback,
                %opt,
 &>
 <%init>
@@ -51,8 +52,13 @@ my $args_callback = sub {
 };
 
 my $value_callback = sub {
-     my ($field, $value) = @_;
-     ($field =~ /_date$/) ? parse_datetime($value) : $value;
+  my ($field, $value) = @_;
+  ($field =~ /_date$/) ? parse_datetime($value) : $value;
+};
+
+my $edit_callback = sub {
+  my( $new, $old ) = @_;
+  $new->sip_password( $old->sip_password ) if $new->sip_password eq '*HIDDEN*';
 };
 
 </%init>

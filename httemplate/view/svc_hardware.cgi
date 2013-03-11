@@ -15,15 +15,15 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                  } keys %$fields;
 my $model =  { field => 'typenum',
                type  => 'text',
-               value => sub { $_[0]->hardware_type->description }
+               value_callback => sub { $_[0]->hardware_type->description }
              };
 my $status = { field => 'statusnum',
                type  => 'text',
-               value => sub { $_[0]->status_label }
+               value_callback => sub { $_[0]->status_label }
              };
 my $note =   { field => 'note',
                type  => 'text',
-               value => sub { encode_entities($_[0]->note) }
+               value_callback => sub { encode_entities($_[0]->note) }
              };
 
 my @fields = (

@@ -6,6 +6,11 @@
        my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt ) = @_;
        $svc_x->locationnum($cust_pkg->locationnum) if $cust_pkg;
      },
+     'svc_edit_callback' => sub {
+       my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt) = @_;
+       my $conf = new FS::Conf;
+       $svc_x->sip_password('*HIDDEN*') unless $conf->exists('showpasswords');
+     },
 &>
 <%init>
 
