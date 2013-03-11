@@ -2049,6 +2049,11 @@ separate quantities, for some reason).
 
 =cut
 
+sub _items_nontax {
+  my $self = shift;
+  grep { $_->pkgnum } $self->cust_bill_pkg;
+}
+
 sub _items_pkg {
   my $self = shift;
   my %options = @_;
@@ -2056,7 +2061,7 @@ sub _items_pkg {
   warn "$me _items_pkg searching for all package line items\n"
     if $DEBUG > 1;
 
-  my @cust_bill_pkg = grep { $_->pkgnum } $self->cust_bill_pkg;
+  my @cust_bill_pkg = $self->_items_nontax;
 
   warn "$me _items_pkg filtering line items\n"
     if $DEBUG > 1;

@@ -1225,6 +1225,8 @@ sub tables_hashref {
     'quotation_pkg' => {
       'columns' => [
         'quotationpkgnum',   'serial',     '', '', '', '', 
+        'quotationnum',         'int', 'NULL', '', '', '', #shouldn't be null,
+                                                           # but history...
         'pkgpart',              'int',     '', '', '', '', 
         'locationnum',          'int', 'NULL', '', '', '',
         'start_date',      @date_type,             '', '', 

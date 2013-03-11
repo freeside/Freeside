@@ -176,6 +176,15 @@ sub _total {
 
 }
 
+#prevent things from falsely showing up as taxes, at least until we support
+# quoting tax amounts..
+sub _items_tax {
+  return ();
+}
+sub _items_nontax {
+  shift->cust_bill_pkg;
+}
+
 =item enable_previous
 
 =cut
