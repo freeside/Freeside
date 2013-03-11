@@ -34,7 +34,6 @@ FS/ClientAPI_SessionCache.pm
 FS/ClientAPI_XMLRPC.pm
 FS/ClientAPI/passwd.pm
 FS/ClientAPI/Agent.pm
-FS/ClientAPI/Bulk.pm
 FS/ClientAPI/MasonComponent.pm
 FS/ClientAPI/MyAccount.pm
 FS/ClientAPI/PrepaidPhone.pm
