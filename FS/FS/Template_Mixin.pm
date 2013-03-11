@@ -122,7 +122,9 @@ sub print_latex {
     UNLINK   => 0,
   ) or die "can't open temp file: $!\n";
 
-  my $agentnum = $self->cust_main->agentnum;
+  my $cust_main = $self->cust_main;
+  my $prospect_main = $self->prospect_main;
+  my $agentnum = $cust_main ? $cust_main->agentnum : $prospect_main->agentnum;
 
   if ( $template && $conf->exists("logo_${template}.eps", $agentnum) ) {
     print $lh $conf->config_binary("logo_${template}.eps", $agentnum)
