@@ -275,7 +275,7 @@ sub cust_bill_pkg_display {
     my $order_by = $self->display_table_orderby || 'billpkgdisplaynum';
     
     @result = qsearch ({ 'table'    => $self->display_table,
-                         'hashref'  => { 'billpkgnum' => $self->billpkgnum },
+                         'hashref'  => $hashref,
                          'order_by' => "ORDER BY $order_by",
                       });
   }
