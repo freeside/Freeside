@@ -4613,23 +4613,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'selfservice-bulk_format',
-    'section'     => 'deprecated',
-    'description' => 'Parameter arrangement for selfservice bulk features',
-    'type'        => 'select',
-    'select_enum' => [ '', 'izoom-soap', 'izoom-ftp' ],
-    'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'selfservice-bulk_ftp_dir',
-    'section'     => 'deprecated',
-    'description' => 'Enable bulk ftp provisioning in this folder',
-    'type'        => 'text',
-    'per_agent'   => 1,
-  },
-
-  {
     'key'         => 'signup-no_company',
     'section'     => 'self-service',
     'description' => "Don't display a field for company name on signup.",
