@@ -13,6 +13,7 @@ use FS::pkg_svc;
 use FS::domain_record;
 use FS::part_export;
 use FS::cdr;
+use FS::UI::Web;
 
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
@@ -883,7 +884,7 @@ sub smart_search_param {
   my $extra_sql = ' WHERE '.join(' AND ', @extra_sql);
   #for agentnum
   my $addl_from = ' LEFT JOIN cust_pkg  USING ( pkgnum  )'.
-                  ' LEFT JOIN cust_main USING ( custnum )'.
+                  FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg').
                   ' LEFT JOIN part_svc  USING ( svcpart )';
 
   (
