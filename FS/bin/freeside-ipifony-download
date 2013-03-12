@@ -188,7 +188,8 @@ FILE: foreach my $filename (@$files) {
       amount      => $amount,
       quantity    => $hash{quantity},
       start_date  => $cust_main->next_bill_date,
-      pkg         => $hash{date_desc},
+      pkg         => $hash{date_desc} .
+                   ' (' . $hash{quantity} . ' @ $' . $hash{unit_price} . ' ea)',
       taxclass    => $TAXCLASSES{ $hash{taxclass} },
     );
     if (my $classname = $hash{classname}) {
