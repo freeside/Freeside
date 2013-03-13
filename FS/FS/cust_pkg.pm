@@ -3337,6 +3337,12 @@ sub apply_usage {
   my $dbh = dbh;
   my $order = FS::Conf->new->config('cdr-minutes_priority');
 
+  my $is_classnum;
+  if ( $classnum ) {
+    $is_classnum = ' part_pkg_usage_class.classnum = '.$classnum;
+  } else {
+    $is_classnum = ' part_pkg_usage_class.classnum IS NULL';
+  }
   my @usage_recs = qsearch({
       'table'     => 'cust_pkg_usage',
       'addl_from' => ' JOIN part_pkg_usage       USING (pkgusagepart)'.
@@ -3346,7 +3352,7 @@ sub apply_usage {
       'extra_sql' => " WHERE ( cust_pkg.pkgnum = $pkgnum OR ".
                      " ( cust_pkg.custnum = $custnum AND ".
                      " part_pkg_usage.shared IS NOT NULL ) ) AND ".
-                     " part_pkg_usage_class.classnum = $classnum AND ".
+                     $is_classnum . ' AND '.
                      " cust_pkg_usage.minutes > 0",
       'order_by'  => " ORDER BY priority ASC",
   });
