@@ -684,12 +684,12 @@ my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount)
 push @select, "($pay_sub) AS pay_amount";
 
 #total credits
-my $credit_sub = "SELECT SUM(cust_credit_bill_pkg.amount) AS credit_amount,
-    billpkgnum
-  FROM cust_credit_bill_pkg
-  GROUP BY billpkgnum";
-$join_pkg .= " LEFT JOIN ($credit_sub) AS item_credit USING (billpkgnum)";
-push @select,   'item_credit.credit_amount';
+my $credit_sub = "
+  SELECT SUM(cust_credit_bill_pkg.amount)
+    FROM cust_credit_bill_pkg
+      WHERE cust_bill_pkg.billpkgnum = cust_credit_bill_pkg.billpkgnum
+";
+push @select, "($credit_sub) AS credit_amount";
 
 my $where = ' WHERE '. join(' AND ', @where);
 
