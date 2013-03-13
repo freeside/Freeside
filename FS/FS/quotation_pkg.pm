@@ -193,7 +193,8 @@ sub cust_bill_pkg_display {
     } elsif ( $type eq 'R' ) {
       return ($recur);
     } else {
-      return ($setup, $recur);
+      #return ($setup, $recur);
+      return ($self);
     }
 
   }

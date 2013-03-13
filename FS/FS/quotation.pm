@@ -185,6 +185,27 @@ sub _items_nontax {
   shift->cust_bill_pkg;
 }
 
+sub _items_total {
+  my( $self, $total_items ) = @_;
+
+  if ( $self->total_setup > 0 ) {
+    push @$total_items, {
+      'total_item'   => $self->mt( $self->total_recur > 0 ? 'Total Setup' : 'Total' ),
+      'total_amount' => $self->total_setup,
+    };
+  }
+
+  #could/should add up the different recurring frequencies on lines of their own
+  # but this will cover the 95% cases for now
+  if ( $self->total_recur > 0 ) {
+    push @$total_items, {
+      'total_item'   => $self->mt('Total Recurring'),
+      'total_amount' => $self->total_recur,
+    };
+  }
+
+}
+
 =item enable_previous
 
 =cut
