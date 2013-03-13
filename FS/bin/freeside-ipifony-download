@@ -185,7 +185,7 @@ FILE: foreach my $filename (@$files) {
     my $amount = sprintf('%.2f',$hash{quantity} * $hash{unit_price});
     # construct arguments for $cust_main->charge
     my %charge_opt = (
-      amount      => $amount,
+      amount      => $hash{unit_price},
       quantity    => $hash{quantity},
       start_date  => $cust_main->next_bill_date,
       pkg         => $hash{date_desc} .
@@ -223,7 +223,7 @@ FILE: foreach my $filename (@$files) {
       $num_errors++;
     } else {
       $num_charges++;
-      $sum_charges += $hash{amount};
+      $sum_charges += $amount;
     }
 
     if ( $opt{e} and $is_e911{$hash{classname}} ) {
