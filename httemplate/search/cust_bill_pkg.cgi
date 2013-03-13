@@ -559,12 +559,11 @@ if ( $cgi->param('nottax') ) {
 
 
 #total payments
-my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount) AS pay_amount,
-    billpkgnum
-  FROM cust_bill_pay_pkg
-  GROUP BY billpkgnum";
-$join_pkg .= " LEFT JOIN ($pay_sub) AS item_pay USING (billpkgnum)";
-push @select, 'item_pay.pay_amount';
+my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount)
+                 FROM cust_bill_pay_pkg
+                   WHERE cust_bill_pkg.billpkgnum = cust_bill_pay_pkg.billpkgnum
+              ";
+push @select, "($pay_sub) AS pay_amount";
 
 
 # credit
