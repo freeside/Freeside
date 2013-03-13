@@ -278,11 +278,11 @@ my $join_pkg =
   LEFT JOIN part_pkg      USING (pkgpart)';
 
 my $part_pkg = 'part_pkg';
-if ( $cgi->param('use_override') ) {
+if ( $cgi->param('use_override') ) { #"Separate sub-packages from parents"
   # still need the real part_pkg for tax applicability, 
   # so alias this one
   $join_pkg .= " LEFT JOIN part_pkg AS override ON (
-  COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = part_pkg.pkgpart
+  COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = override.pkgpart
   )";
   $part_pkg = 'override';
 }
