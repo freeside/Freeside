@@ -365,14 +365,6 @@ sub print_generic {
 
   my $date_format = $date_formats{$format};
 
-  my %embolden_functions = ( 'latex'    => sub { return '\textbf{'. shift(). '}'
-                                               },
-                             'html'     => sub { return '<b>'. shift(). '</b>'
-                                               },
-                             'template' => sub { shift },
-                           );
-  my $embolden_function = $embolden_functions{$format};
-
   my %newline_tokens = (  'latex'     => '\\\\',
                           'html'      => '<br>',
                           'template'  => "\n",
@@ -1041,9 +1033,33 @@ sub print_generic {
              $money_char. sprintf("%10.2f",$self->charged) ];
   push @buf,['',''];
 
-  # calculate total, possibly including total owed on previous
-  # invoices
-  {
+
+  ###
+  # Totals
+  ###
+
+  my %embolden_functions = (
+    'latex'    => sub { return '\textbf{'. shift(). '}' },
+    'html'     => sub { return '<b>'. shift(). '</b>' },
+    'template' => sub { shift },
+  );
+  my $embolden_function = $embolden_functions{$format};
+
+  if ( $self->can('_items_total') ) { # quotations
+
+    $self->_items_total(\@total_items);
+
+    foreach ( @total_items ) {
+      $_->{'total_item'}   = &$embolden_function( $_->{'total_item'} );
+      $_->{'total_amount'} = &$embolden_function( $other_money_char.
+                                                   $_->{'total_amount'}
+                                                );
+    }
+
+  } else { #normal invoice case
+
+    # calculate total, possibly including total owed on previous
+    # invoices
     my $total = {};
     my $item = 'Total';
     $item = $conf->config('previous_balance-exclude_from_total')
@@ -1074,127 +1090,128 @@ sub print_generic {
                sprintf( '%10.2f', $amount )
               ];
     push @buf,['',''];
-  }
 
-  # if we're showing previous invoices, also show previous
-  # credits and payments 
-  if ( $self->enable_previous 
-        and $self->can('_items_credits')
-        and $self->can('_items_payments') )
-    {
-    #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
-  
-    # credits
-    my $credittotal = 0;
-    foreach my $credit ( $self->_items_credits('trim_len'=>60) ) {
+    # if we're showing previous invoices, also show previous
+    # credits and payments 
+    if ( $self->enable_previous 
+          and $self->can('_items_credits')
+          and $self->can('_items_payments') )
+      {
+      #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+    
+      # credits
+      my $credittotal = 0;
+      foreach my $credit ( $self->_items_credits('trim_len'=>60) ) {
 
-      my $total;
-      $total->{'total_item'} = &$escape_function($credit->{'description'});
-      $credittotal += $credit->{'amount'};
-      $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
-      $adjusttotal += $credit->{'amount'};
+        my $total;
+        $total->{'total_item'} = &$escape_function($credit->{'description'});
+        $credittotal += $credit->{'amount'};
+        $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
+        $adjusttotal += $credit->{'amount'};
+        if ( $multisection ) {
+          my $money = $old_latex ? '' : $money_char;
+          push @detail_items, {
+            ext_description => [],
+            ref          => '',
+            quantity     => '',
+            description  => &$escape_function($credit->{'description'}),
+            amount       => $money. $credit->{'amount'},
+            product_code => '',
+            section      => $adjust_section,
+          };
+        } else {
+          push @total_items, $total;
+        }
+
+      }
+      $invoice_data{'credittotal'} = sprintf('%.2f', $credittotal);
+
+      #credits (again)
+      foreach my $credit ( $self->_items_credits('trim_len'=>32) ) {
+        push @buf, [ $credit->{'description'}, $money_char.$credit->{'amount'} ];
+      }
+
+      # payments
+      my $paymenttotal = 0;
+      foreach my $payment ( $self->_items_payments ) {
+        my $total = {};
+        $total->{'total_item'} = &$escape_function($payment->{'description'});
+        $paymenttotal += $payment->{'amount'};
+        $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
+        $adjusttotal += $payment->{'amount'};
+        if ( $multisection ) {
+          my $money = $old_latex ? '' : $money_char;
+          push @detail_items, {
+            ext_description => [],
+            ref          => '',
+            quantity     => '',
+            description  => &$escape_function($payment->{'description'}),
+            amount       => $money. $payment->{'amount'},
+            product_code => '',
+            section      => $adjust_section,
+          };
+        }else{
+          push @total_items, $total;
+        }
+        push @buf, [ $payment->{'description'},
+                     $money_char. sprintf("%10.2f", $payment->{'amount'}),
+                   ];
+      }
+      $invoice_data{'paymenttotal'} = sprintf('%.2f', $paymenttotal);
+    
       if ( $multisection ) {
-        my $money = $old_latex ? '' : $money_char;
-        push @detail_items, {
-          ext_description => [],
-          ref          => '',
-          quantity     => '',
-          description  => &$escape_function($credit->{'description'}),
-          amount       => $money. $credit->{'amount'},
-          product_code => '',
-          section      => $adjust_section,
+        $adjust_section->{'subtotal'} = $other_money_char.
+                                        sprintf('%.2f', $adjusttotal);
+        push @sections, $adjust_section
+          unless $adjust_section->{sort_weight};
+      }
+
+      # create Balance Due message
+      { 
+        my $total;
+        $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
+        $total->{'total_amount'} =
+          &$embolden_function(
+            $other_money_char. sprintf('%.2f', #why? $summarypage 
+                                               #  ? $self->charged +
+                                               #    $self->billing_balance
+                                               #  :
+                                                   $self->owed + $pr_total
+                                      )
+          );
+        if ( $multisection && !$adjust_section->{sort_weight} ) {
+          $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
+                                           $total->{'total_amount'};
+        }else{
+          push @total_items, $total;
+        }
+        push @buf,['','-----------'];
+        push @buf,[$self->balance_due_msg, $money_char. 
+          sprintf("%10.2f", $balance_due ) ];
+      }
+
+      if ( $conf->exists('previous_balance-show_credit')
+          and $cust_main->balance < 0 ) {
+        my $credit_total = {
+          'total_item'    => &$embolden_function($self->credit_balance_msg),
+          'total_amount'  => &$embolden_function(
+            $other_money_char. sprintf('%.2f', -$cust_main->balance)
+          ),
         };
-      } else {
-        push @total_items, $total;
+        if ( $multisection ) {
+          $adjust_section->{'posttotal'} .= $newline_token .
+            $credit_total->{'total_item'} . ' ' . $credit_total->{'total_amount'};
+        }
+        else {
+          push @total_items, $credit_total;
+        }
+        push @buf,['','-----------'];
+        push @buf,[$self->credit_balance_msg, $money_char. 
+          sprintf("%10.2f", -$cust_main->balance ) ];
       }
-
-    }
-    $invoice_data{'credittotal'} = sprintf('%.2f', $credittotal);
-
-    #credits (again)
-    foreach my $credit ( $self->_items_credits('trim_len'=>32) ) {
-      push @buf, [ $credit->{'description'}, $money_char.$credit->{'amount'} ];
-    }
-
-    # payments
-    my $paymenttotal = 0;
-    foreach my $payment ( $self->_items_payments ) {
-      my $total = {};
-      $total->{'total_item'} = &$escape_function($payment->{'description'});
-      $paymenttotal += $payment->{'amount'};
-      $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
-      $adjusttotal += $payment->{'amount'};
-      if ( $multisection ) {
-        my $money = $old_latex ? '' : $money_char;
-        push @detail_items, {
-          ext_description => [],
-          ref          => '',
-          quantity     => '',
-          description  => &$escape_function($payment->{'description'}),
-          amount       => $money. $payment->{'amount'},
-          product_code => '',
-          section      => $adjust_section,
-        };
-      }else{
-        push @total_items, $total;
-      }
-      push @buf, [ $payment->{'description'},
-                   $money_char. sprintf("%10.2f", $payment->{'amount'}),
-                 ];
-    }
-    $invoice_data{'paymenttotal'} = sprintf('%.2f', $paymenttotal);
-  
-    if ( $multisection ) {
-      $adjust_section->{'subtotal'} = $other_money_char.
-                                      sprintf('%.2f', $adjusttotal);
-      push @sections, $adjust_section
-        unless $adjust_section->{sort_weight};
     }
 
-    # create Balance Due message
-    { 
-      my $total;
-      $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
-      $total->{'total_amount'} =
-        &$embolden_function(
-          $other_money_char. sprintf('%.2f', #why? $summarypage 
-                                             #  ? $self->charged +
-                                             #    $self->billing_balance
-                                             #  :
-                                                 $self->owed + $pr_total
-                                    )
-        );
-      if ( $multisection && !$adjust_section->{sort_weight} ) {
-        $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
-                                         $total->{'total_amount'};
-      }else{
-        push @total_items, $total;
-      }
-      push @buf,['','-----------'];
-      push @buf,[$self->balance_due_msg, $money_char. 
-        sprintf("%10.2f", $balance_due ) ];
-    }
-
-    if ( $conf->exists('previous_balance-show_credit')
-        and $cust_main->balance < 0 ) {
-      my $credit_total = {
-        'total_item'    => &$embolden_function($self->credit_balance_msg),
-        'total_amount'  => &$embolden_function(
-          $other_money_char. sprintf('%.2f', -$cust_main->balance)
-        ),
-      };
-      if ( $multisection ) {
-        $adjust_section->{'posttotal'} .= $newline_token .
-          $credit_total->{'total_item'} . ' ' . $credit_total->{'total_amount'};
-      }
-      else {
-        push @total_items, $credit_total;
-      }
-      push @buf,['','-----------'];
-      push @buf,[$self->credit_balance_msg, $money_char. 
-        sprintf("%10.2f", -$cust_main->balance ) ];
-    }
-  }
+  } #end of default total adding ! can('_items_total')
 
   if ( $multisection ) {
     if (    $conf->exists('svc_phone_sections')
