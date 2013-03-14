@@ -5139,6 +5139,8 @@ sub _upgrade_data { #class method
   local($skip_fuzzyfiles) = 1;
   local($import) = 1; #prevent automatic geocoding (need its own variable?)
 
+  FS::cust_main::Location->_upgrade_data(%opts);
+
   unless ( FS::upgrade_journal->is_done('cust_main__trimspaces') ) {
 
     foreach my $cust_main ( qsearch({
@@ -5159,8 +5161,6 @@ sub _upgrade_data { #class method
   }
 
   $class->_upgrade_otaker(%opts);
-
-  FS::cust_main::Location->_upgrade_data(%opts);
 
 }
 
