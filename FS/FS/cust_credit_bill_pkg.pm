@@ -348,13 +348,13 @@ sub cust_bill_pkg {
 
 sub cust_bill_pkg_tax_Xlocation {
   my $self = shift;
-  if ($self->billpkg_tax_locationnum) {
+  if ($self->billpkgtaxlocationnum) {
     return qsearchs(
       'cust_bill_pkg_tax_location',
       { 'billpkgtaxlocationnum' => $self->billpkgtaxlocationnum },
     );
  
-  } elsif ($self->billpkg_tax_rate_locationnum) {
+  } elsif ($self->billpkgtaxratelocationnum) {
     return qsearchs(
       'cust_bill_pkg_tax_rate_location',
       { 'billpkgtaxratelocationnum' => $self->billpkgtaxratelocationnum },
