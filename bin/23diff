@@ -7,7 +7,7 @@ $dir =~ s/freeside(\/?)/freeside2.3$1/;
 warn $dir;
 
 #$cmd = "diff -u $file $dir/$file";
-$cmd = "diff -u $dir/$file $file";
+$cmd = "diff -ubBw $dir/$file $file";
 print "$cmd\n";
 system($cmd);
 
