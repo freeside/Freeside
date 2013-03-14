@@ -2882,8 +2882,14 @@ sub search {
   }
 
   # svcpart
-  if ( $params->{'svcpart'} =~ /^(\d+)$/ ) { 
-    push @where, "svcpart = $1";
+  if ( $params->{'svcpart'} ) {
+    my @svcpart = ref( $params->{'svcpart'} )
+                    ? @{ $params->{'svcpart'} }
+                    : $params->{'svcpart'}
+                      ? ( $params->{'svcpart'} )
+                      : ();
+    @svcpart = grep /^(\d+)$/, @svcpart;
+    push @where, 'svcpart IN ('. join(',', @svcpart ). ')' if @svcpart;
   }
 
   if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
