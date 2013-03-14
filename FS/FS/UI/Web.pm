@@ -32,15 +32,19 @@ sub parse_beginning_ending {
   my $beginning = 0;
   if ( $cgi->param($prefix.'begin') =~ /^(\d+)$/ ) {
     $beginning = $1;
-  } elsif ( $cgi->param($prefix.'beginning') =~ /^([ 0-9\-\/]{1,64})$/ ) {
+  } elsif ( $cgi->param($prefix.'beginning') =~ /^([ 0-9\-\/\:]{1,64})$/ ) {
     $beginning = parse_datetime($1) || 0;
   }
 
   my $ending = 4294967295; #2^32-1
   if ( $cgi->param($prefix.'end') =~ /^(\d+)$/ ) {
     $ending = $1 - 1;
-  } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/]{1,64})$/ ) {
+  } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/\:]{1,64})$/ ) {
     #probably need an option to turn off the + 86399
+
+    #no, this should be add one day minus one second...
+    #  86399 is wrong twice a year when daylight savings time changes
+    #        and leap seconds too but only a second rather than an hour..
     $ending = parse_datetime($1) + 86399;
   }
 
