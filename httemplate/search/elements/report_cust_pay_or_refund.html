@@ -30,68 +30,33 @@ Examples:
   <TR>
     <TD ALIGN="right"><% ucfirst(PL($name_singular)) %> of type: </TD>
     <TD>
-      <SELECT NAME="payby" onChange="payby_changed(this)">
-        <OPTION VALUE=""><% mt('all') |h %></OPTION>
-        <OPTION VALUE="CARD"><% mt('credit card (all)') |h %></OPTION>
-        <OPTION VALUE="CARD-VisaMC"><% mt('credit card (Visa/MasterCard)') |h %></OPTION>
-        <OPTION VALUE="CARD-Amex"><% mt('credit card (American Express)') |h %></OPTION>
-        <OPTION VALUE="CARD-Discover"><% mt('credit card (Discover)') |h %></OPTION>
-        <OPTION VALUE="CARD-Maestro"><% mt('credit card (Maestro/Switch/Solo)') |h %></OPTION>
-        <OPTION VALUE="CHEK"><% mt('electronic check / ACH') |h %></OPTION>
-        <OPTION VALUE="BILL"><% mt('check') |h %></OPTION>
-        <OPTION VALUE="PREP"><% mt('prepaid card') |h %></OPTION>
-        <OPTION VALUE="CASH"><% mt('cash') |h %></OPTION>
-        <OPTION VALUE="WEST"><% mt('Western Union') |h %></OPTION>
-        <OPTION VALUE="MCRD"><% mt('manual credit card') |h %></OPTION>
+      <SELECT NAME="payby" SIZE=10 MULTIPLE>
+%#        <OPTION VALUE=""><% mt('all') |h %></OPTION>
+%#        <OPTION VALUE="CARD"><% mt('credit card (all)') |h %></OPTION>
+        <OPTION VALUE="CARD-VisaMC" SELECTED><% mt('credit card (Visa/MasterCard)') |h %></OPTION>
+        <OPTION VALUE="CARD-Amex" SELECTED><% mt('credit card (American Express)') |h %></OPTION>
+        <OPTION VALUE="CARD-Discover" SELECTED><% mt('credit card (Discover)') |h %></OPTION>
+        <OPTION VALUE="CARD-Maestro" SELECTED><% mt('credit card (Maestro/Switch/Solo)') |h %></OPTION>
+        <OPTION VALUE="CHEK" SELECTED><% mt('electronic check / ACH') |h %></OPTION>
+        <OPTION VALUE="BILL" SELECTED><% mt('check') |h %></OPTION>
+        <OPTION VALUE="PREP" SELECTED><% mt('prepaid card') |h %></OPTION>
+        <OPTION VALUE="CASH" SELECTED><% mt('cash') |h %></OPTION>
+        <OPTION VALUE="WEST" SELECTED><% mt('Western Union') |h %></OPTION>
+        <OPTION VALUE="MCRD" SELECTED><% mt('manual credit card') |h %></OPTION>
       </SELECT>
     </TD>
   </TR>
 
-  <SCRIPT TYPE="text/javascript">
-  
-    function payby_changed(what) {
-      if ( what.value == 'BILL' ) {
-        show('payinfo');
-        hide('ccpay');
-      } else if ( what.value.match(/^CARD|CHEK/) ) {
-        hide('payinfo');
-        show('ccpay');
-      } else {
-        hide('payinfo');
-        hide('ccpay');
-      }
-    }
-
-    function show(what) {
-      document.getElementById(what+'_caption').style.color = '#000000';
-      document.getElementById(what).disabled = false;
-      document.getElementById(what).style.backgroundColor = '#ffffff';
-    }
-
-    function hide(what) {
-      document.getElementById(what+'_caption').style.color = '#bbbbbb';
-      document.getElementById(what).disabled = true;
-      document.getElementById(what).style.backgroundColor = '#dddddd';
-    }
-
-
-
-  </SCRIPT>
-
   <TR>
-    <TD ALIGN="right"><FONT ID="payinfo_caption" COLOR="#bbbbbb"><% mt('Check #:') |h %> </FONT></TD>
+    <TD ALIGN="right"><% mt('Check #:') |h %> </TD>
     <TD>
-      <INPUT TYPE="text" ID="payinfo" NAME="payinfo" DISABLED STYLE="background-color: #dddddd">
+      <INPUT TYPE="text" ID="payinfo" NAME="payinfo">
     </TD>
   </TR>
   <TR>
-    <TD ALIGN="right">
-      <FONT ID="ccpay_caption" COLOR="#bbbbbb">
-        <% mt('Transaction #') |h %>
-      </FONT>
-    </TD>
+    <TD ALIGN="right"><% mt('Transaction #:') |h %> </TD>
     <TD>
-      <INPUT TYPE="text" ID="ccpay" NAME="ccpay" DISABLED STYLE="background-color: #dddddd">
+      <INPUT TYPE="text" ID="ccpay" NAME="ccpay">
     </TD>
   </TR>
 
