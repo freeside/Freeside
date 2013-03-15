@@ -240,7 +240,7 @@ Example:
 %# keep a clean copy of the address so we know if we need
 %# to re-standardize
 % foreach (qw(address1 city state country zip latitude
-%             longitude censustract addr_clean) ) {
+%             longitude censustract district addr_clean) ) {
 <INPUT TYPE="hidden" NAME="old_<%$pre.$_%>" ID="old_<%$pre.$_%>" VALUE="<% $object->get($_) |h%>">
 % }
 %# Placeholders

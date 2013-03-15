@@ -40,6 +40,10 @@
     var agentnum = what.value;
     var f = what.form;
     if ( ship_locked_agents[agentnum] ) {
+%     # For this agent, the service location (except address2)
+%     # should be locked to the agent's location.
+%     # Set the ship_ fields to those values (just for display) and
+%     # then disable them.
       for(var x in ship_locked_agents[agentnum]) {
         f['ship_'+x].value = ship_locked_agents[agentnum][x];
         f['ship_'+x].disabled = true;
@@ -47,12 +51,17 @@
       f['same'].checked = false;
       f['same'].disabled = true;
     } else {
+%     # Unlock the ship_ location fields.  If they were previously
+%     # disabled, then they contain some agent's address, which is 
+%     # no longer meaningful.  So set them back to the customer's 
+%     # current location.
       for(var i=0; i<ship_fields.length; i++) {
         x = ship_fields[i];
-        f['ship_'+x].value = '';
+        if ( f['ship_'+x].disabled )  {
+          f['ship_'+x].value  = f['old_ship_'+x].value;
+        }
         f['ship_'+x].disabled = false;
       }
-      f['same'].checked = true;
       f['same'].disabled = false;
     }
     samechanged(f['same']);

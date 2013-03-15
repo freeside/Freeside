@@ -106,7 +106,7 @@ function samechanged(what) {
     t1.style.display = '';
   }
 }
-samechanged(document.getElementById('same'));
+//samechanged(document.getElementById('same'));
 </SCRIPT>
 
 <BR>
