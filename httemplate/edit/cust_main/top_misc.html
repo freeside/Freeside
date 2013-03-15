@@ -27,12 +27,12 @@ function agent_changed(what) {
   } else {
     for(var i=0; i<ship_fields.length; i++) {
       x = ship_fields[i];
-      f['ship_'+x].value = '';
+      if ( f['ship_'+x].disabled ) {
+        f['ship_'+x].value = '';
+      }
       f['ship_'+x].disabled = false;
     }
-    f['same'].checked = true;
     f['same'].disabled = false;
-    samechanged(f['same']);
   }
 }
 window.onload = function() {
