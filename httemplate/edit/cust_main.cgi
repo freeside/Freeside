@@ -285,7 +285,8 @@ if ( $cgi->param('error') ) {
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $custnum=$1;
-  $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or die "custnum $custnum not found";
   if ( $cust_main->dbdef_table->column('paycvv')
        && length($cust_main->paycvv)             ) {
     my $paycvv = $cust_main->paycvv;
