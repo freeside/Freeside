@@ -84,7 +84,7 @@ Examples:
       <TABLE>
         <& /elements/tr-input-beginning_ending.html,
                       layout     => 'horiz',
-                      input_time => 1,
+                      input_time => $conf->exists('report-cust_pay-select_time'),
         &>
       </TABLE>
     </TD>
@@ -133,6 +133,8 @@ my $name_singular = $opt{'name_singular'};
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
 
 my $void = $cgi->param('void') ? 1 : 0;
 my $unapplied = $cgi->param('unapplied') ? 1 : 0;
