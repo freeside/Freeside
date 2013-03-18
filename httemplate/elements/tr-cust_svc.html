@@ -96,7 +96,8 @@ my $svc_unprovision_link =
 my $manage_link = $opt{'manage_link'};
 my $manage_target = '';
 if ( $part_svc->svcdb eq 'svc_broadband' and $manage_link ) {
-  my $ip_addr = $svc_x->ip_addr; #substitution for $manage_link
+  my $ip_addr  = $svc_x->ip_addr;  #substitution for $manage_link
+  my $mac_addr = $svc_x->mac_addr; # ditto
   $manage_link = eval(qq("$manage_link"));
   $opt{'manage_link_text'} ||= mt('Manage Device');
   $opt{'manage_link_loc'}  ||= 'bottom';

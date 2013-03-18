@@ -4734,7 +4734,7 @@ and customer address. Include units.',
   {
     'key'         => 'svc_broadband-manage_link',
     'section'     => 'UI',
-    'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr.',
+    'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr and $mac_addr.',
     'type'        => 'text',
   },
 
