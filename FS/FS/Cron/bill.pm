@@ -192,7 +192,8 @@ sub bill_where {
   # generate where_pkg/where_event search clause
   ###
 
-  my $billtime = day_end($time);
+  my $conf = new FS::Conf;
+  my $billtime = $conf->exists('next-bill-ignore-time') ? day_end($time) : $time;
 
   # select * from cust_main where
   my $where_pkg = <<"END";

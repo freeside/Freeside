@@ -6,7 +6,7 @@ use Exporter;
 use Carp qw( confess );
 use HTML::Entities;
 use FS::Conf;
-use FS::Misc::DateTime qw( parse_datetime );
+use FS::Misc::DateTime qw( parse_datetime day_end );
 use FS::Record qw(dbdef);
 use FS::cust_main;  # are sql_balance and sql_date_balance in the right module?
 
@@ -40,12 +40,7 @@ sub parse_beginning_ending {
   if ( $cgi->param($prefix.'end') =~ /^(\d+)$/ ) {
     $ending = $1 - 1;
   } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/\:]{1,64})$/ ) {
-    #probably need an option to turn off the + 86399
-
-    #no, this should be add one day minus one second...
-    #  86399 is wrong twice a year when daylight savings time changes
-    #        and leap seconds too but only a second rather than an hour..
-    $ending = parse_datetime($1) + 86399;
+    $ending = day_end( parse_datetime($1) );
   }
 
   ( $beginning, $ending );

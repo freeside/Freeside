@@ -116,8 +116,13 @@ sub bill_and_collect {
   $options{'actual_time'} ||= time;
   my $job = $options{'job'};
 
+  my $actual_time = ( $conf->exists('next-bill-ignore-time')
+                        ? day_end( $options{actual_time} )
+                        : $options{actual_time}
+                    );
+
   $job->update_statustext('0,cleaning expired packages') if $job;
-  $error = $self->cancel_expired_pkgs( day_end( $options{actual_time} ) );
+  $error = $self->cancel_expired_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -125,7 +130,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
-  $error = $self->suspend_adjourned_pkgs( day_end( $options{actual_time} ) );
+  $error = $self->suspend_adjourned_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error adjourning custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -133,7 +138,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
-  $error = $self->unsuspend_resumed_pkgs( day_end( $options{actual_time} ) );
+  $error = $self->unsuspend_resumed_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error resuming custnum ".$self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -901,6 +906,11 @@ sub _make_lines {
 
   $cust_pkg->pkgpart($part_pkg->pkgpart);
 
+  my $cmp_time = ( $conf->exists('next-bill-ignore-time')
+                     ? day_end( $time )
+                     : $time
+                 );
+
   ###
   # bill setup
   ###
@@ -914,7 +924,7 @@ sub _make_lines {
        and ( $options{'resetup'}
              || ( ! $cust_pkg->setup
                   && ( ! $cust_pkg->start_date
-                       || $cust_pkg->start_date <= day_end($time)
+                       || $cust_pkg->start_date <= $cmp_time
                      )
                   && ( ! $conf->exists('disable_setup_suspended_pkgs')
                        || ( $conf->exists('disable_setup_suspended_pkgs') &&
@@ -963,7 +973,7 @@ sub _make_lines {
                                      && ! $cust_pkg->option('no_suspend_bill',1)
                                   )
        and
-            ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= day_end($time) )
+            ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= $cmp_time )
          || ( $part_pkg->plan eq 'voip_cdr'
                && $part_pkg->option('bill_every_call')
             )
@@ -987,7 +997,7 @@ sub _make_lines {
 
     #over two params!  lets at least switch to a hashref for the rest...
     my $increment_next_bill = ( $part_pkg->freq ne '0'
-                                && ( $cust_pkg->getfield('bill') || 0 ) <= day_end($time)
+                                && ( $cust_pkg->getfield('bill') || 0 ) <= $cmp_time
                                 && !$options{cancel}
                               );
     my %param = ( %setup_param,
