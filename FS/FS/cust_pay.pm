@@ -1032,18 +1032,42 @@ sub _upgrade_data {  #class method
   ###
 
   # not only cust_pay, but also voided and refunded payments
-  if (!FS::upgrade_journal->is_done('cust_pay__parse_paybatch')) {
+  if (!FS::upgrade_journal->is_done('cust_pay__parse_paybatch_1')) {
     # really inefficient, but again, only has to run once
     foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
       foreach my $object ( qsearch({
             table     => $table,
             extra_sql => "WHERE payby IN('CARD','CHEK') ".
-                         "AND paybatch IS NOT NULL",
+                         "AND (paybatch IS NOT NULL ".
+                         "OR (paybatch IS NULL AND auth IS NULL) )",
           }) )
       {
+        if ( $object->paybatch eq '' ) {
+          # repair for a previous upgrade that didn't save 'auth'
+          my $pkey = $object->primary_key;
+          # find the last history record that had a paybatch value
+          my $h = qsearchs({
+              table   => "h_$table",
+              hashref => {
+                $pkey     => $object->$pkey,
+                paybatch  => { op=>'!=', value=>''},
+                history_action => 'replace_old',
+              },
+              order_by => 'ORDER BY history_date DESC LIMIT 1',
+          });
+          if (!$h) {
+            warn "couldn't find paybatch history record for $table ".$object->$pkey."\n";
+            next;
+          }
+          # set paybatch to what it was in that record
+          $object->set('paybatch', $h->paybatch)
+          # and then upgrade it like the old records
+        }
+
         my $parsed = $object->_parse_paybatch;
         if (keys %$parsed) {
           $object->set($_ => $parsed->{$_}) foreach keys %$parsed;
+          $object->set('auth' => $parsed->{authorization});
           $object->set('paybatch', '');
           my $error = $object->replace;
           warn "error parsing CARD/CHEK paybatch fields on $object #".
