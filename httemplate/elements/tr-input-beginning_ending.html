@@ -74,7 +74,7 @@ my( $input_time, $time_format, $time_hint ) = ( '', '', '' );
 my( $size, $maxlength ) = ( 11, 10 );
 if ( $opt{'input_time'} ) {
   $input_time  = ', showsTime: true, timeFormat: "12"'; # http://www.dynarch.com/demos/jscalendar/doc/html/reference.html#node_sec_2.3
-  $time_format = ' %k:%M:%S'; # http://www.dynarch.com/demos/jscalendar/doc/html/reference.html#node_sec_5.3.5
+  $time_format = ' %H:%M:%S'; # http://www.dynarch.com/demos/jscalendar/doc/html/reference.html#node_sec_5.3.5
   $time_hint   = ' h:m:s';
   $size = 21;
   $maxlength = 27;
