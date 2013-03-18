@@ -148,16 +148,10 @@ my $count_query = 'SELECT COUNT(*) FROM pay_batch';
 my($begin, $end) = ( '', '' );
 
 my @where;
-if ( $cgi->param('beginning')
-     && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-  $begin = parse_datetime($1);
-  push @where, "download >= $begin";
-}
-if ( $cgi->param('ending')
-      && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-  $end = parse_datetime($1) + 86399;
-  push @where, "download < $end";
-}
+
+my($beginning,$ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @where, "download >= $beginning",
+             "download <= $ending";
 
 my @status;
 if ( $cgi->param('open') ) {
