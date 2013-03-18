@@ -72,7 +72,7 @@ else {
 }
 
 if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
-  $search_hash{'order_by'} = $1;
+  $search_hash{'order_by'} = "ORDER BY $1";
 }
 
 my $sql_query = FS::svc_broadband->search(\%search_hash);
