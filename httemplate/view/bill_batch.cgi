@@ -13,7 +13,7 @@
                                'hashref' => { },
                                'addl_from' => 
                                  'LEFT JOIN cust_bill USING ( invnum ) '.
-                                 'LEFT JOIN cust_main USING ( custnum )',
+                                 FS::UI::Web::join_cust_main('cust_bill'),
                                'extra_sql' => " WHERE batchnum = $batchnum",
                              },
               'count_query' => "SELECT COUNT(*) FROM cust_bill_batch WHERE batchnum = $batchnum",
