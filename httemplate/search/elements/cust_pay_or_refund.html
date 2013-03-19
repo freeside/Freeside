@@ -406,7 +406,7 @@ if ( $cgi->param('magic') ) {
     }
 
     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-warn $beginning;
+
     push @search, "_date >= $beginning ",
                   "_date <= $ending";
 
