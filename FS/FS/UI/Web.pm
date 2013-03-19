@@ -40,7 +40,8 @@ sub parse_beginning_ending {
   if ( $cgi->param($prefix.'end') =~ /^(\d+)$/ ) {
     $ending = $1 - 1;
   } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/\:]{1,64})$/ ) {
-    $ending = day_end( parse_datetime($1) );
+    $ending = parse_datetime($1);
+    $ending = day_end($ending) unless $ending =~ /:/;
   }
 
   ( $beginning, $ending );
