@@ -468,7 +468,7 @@ warn $beginning;
   #here is the agent virtualization
   push @search, $curuser->agentnums_sql;
 
-  my $addl_from = FS::UI::Web::join_cust_main('cust_pay');
+  my $addl_from = FS::UI::Web::join_cust_main($table);
   my $group_by = '';
 
   if ( $cgi->param('tax_names') ) {
