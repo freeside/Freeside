@@ -1,4 +1,4 @@
-<& elements/search.html,
+<& elements/svc_Common.html,
             'title'             => 'Hardware service search results',
             'name'              => 'installations',
             'query'             => $sql_query,

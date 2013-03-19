@@ -842,13 +842,20 @@ sub set_auto_inventory {
     next if $columnflag eq 'A' && $self->$field() ne '';
 
     my $classnum = $part_svc_column->columnvalue;
-    my %hash = ( 'classnum' => $classnum );
+    my %hash;
 
     if ( $columnflag eq 'A' && $self->$field() eq '' ) {
       $hash{'svcnum'} = '';
     } elsif ( $columnflag eq 'M' ) {
       return "Select inventory item for $field" unless $self->getfield($field);
       $hash{'item'} = $self->getfield($field);
+      my $chosen_classnum = $self->getfield($field.'_classnum');
+      if ( grep {$_ == $chosen_classnum} split(',', $classnum) ) {
+        $classnum = $chosen_classnum;
+      }
+      # otherwise the chosen classnum is either (all), or somehow not on 
+      # the list, so ignore it and choose the first item that's in any
+      # class on the list
     }
 
     my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql(
@@ -859,18 +866,30 @@ sub set_auto_inventory {
     my $inventory_item = qsearchs({
       'table'     => 'inventory_item',
       'hashref'   => \%hash,
-      'extra_sql' => "AND $agentnums_sql",
+      'extra_sql' => "AND classnum IN ($classnum) AND $agentnums_sql",
       'order_by'  => 'ORDER BY ( agentnum IS NULL ) '. #agent inventory first
                      ' LIMIT 1 FOR UPDATE',
     });
 
     unless ( $inventory_item ) {
+      # should really only be shown if columnflag eq 'A'...
       $dbh->rollback if $oldAutoCommit;
-      my $inventory_class =
-        qsearchs('inventory_class', { 'classnum' => $classnum } );
-      return "Can't find inventory_class.classnum $classnum"
-        unless $inventory_class;
-      return "Out of ". PL_N($inventory_class->classname);
+      my $message = 'Out of ';
+      my @classnums = split(',', $classnum);
+      foreach ( @classnums ) {
+        my $class = FS::inventory_class->by_key($_)
+          or return "Can't find inventory_class.classnum $_";
+        $message .= PL_N($class->classname);
+        if ( scalar(@classnums) > 2 ) { # english is hard
+          if ( $_ != $classnums[-1] ) {
+            $message .= ', ';
+          }
+        }
+        if ( scalar(@classnums) > 1 and $_ == $classnums[-2] ) {
+          $message .= 'and ';
+        }
+      }
+      return $message;
     }
 
     next if $columnflag eq 'M' && $inventory_item->svcnum == $self->svcnum;
@@ -878,13 +897,14 @@ sub set_auto_inventory {
     $self->setfield( $field, $inventory_item->item );
       #if $columnflag eq 'A' && $self->$field() eq '';
 
+    # release the old inventory item, if there was one
     if ( $old && $old->$field() && $old->$field() ne $self->$field() ) {
       my $old_inv = qsearchs({
         'table'     => 'inventory_item',
-        'hashref'   => { 'classnum' => $classnum,
+        'hashref'   => { 
                          'svcnum'   => $old->svcnum,
                        },
-        'extra_sql' => ' AND '.
+        'extra_sql' => "AND classnum IN ($classnum) AND ".
           '( ( svc_field IS NOT NULL AND svc_field = '.$dbh->quote($field).' )'.
           '  OR ( svc_field IS NULL AND item = '. dbh->quote($old->$field).' )'.
           ')',
@@ -919,6 +939,9 @@ sub set_auto_inventory {
 }
 
 =item return_inventory
+
+Release all inventory items attached to this service's fields.  Call
+when unprovisioning the service.
 
 =cut
 

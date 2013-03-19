@@ -88,30 +88,13 @@
                    } elsif ( $flag eq 'A' ) {
                      $f->{'type'} = 'hidden';
                    } elsif ( $flag eq 'M' ) {
+                     $f->{'type'} = 'select-inventory_item';
                      $f->{'empty_label'} = 'Select inventory item';
-                     $f->{'type'}        = 'select-table';
-                     $f->{'table'}       = 'inventory_item';
-                     $f->{'name_col'}    = 'item'; 
-                     $f->{'value_col'}   = 'item'; 
-                     $f->{'agent_virt'}  = 1;
-                     $f->{'agent_null'}  = 1;
-                     $f->{'hashref'}     = {
-                                            'classnum'=>$columndef->columnvalue,
-                                            #'svcnum'  => '',
-                                           };
-                     $f->{'extra_sql'}   = 'AND ( svcnum IS NULL ';
-                     $f->{'extra_sql'}  .= ' OR svcnum = '. $object->svcnum
-                       if $object->svcnum;
-                     $f->{'extra_sql'}  .= ' ) ';
+                     $f->{'extra_sql'} = 'WHERE ( svcnum IS NULL ' .
+                        ($object->svcnum && ' OR svcnum = '.$object->svcnum) .
+                        ')';
+                     $f->{'classnum'} = $columndef->columnvalue;
                      $f->{'disable_empty'} = $object->svcnum ? 1 : 0;
-                     if ( $f->{'field'} eq 'mac_addr' ) {
-                       $f->{'compare_sub'} = sub {
-                         my($a, $b) = @_;
-                         $a =~ s/[-: ]//g;
-                         $b =~ s/[-: ]//g;
-                         lc($a) eq lc($b);
-                       };
-                     }
                    } elsif ( $flag eq 'H' ) {
                      $f->{'type'}        = 'select-hardware_type';
                      $f->{'hashref'}     = {

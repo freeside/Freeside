@@ -1,4 +1,4 @@
-<& elements/search.html,
+<& elements/svc_Common.html,
               'title'       => 'Broadband Search Results',
               'name'        => 'broadband services',
               'html_init'   => $html_init,

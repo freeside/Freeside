@@ -1,4 +1,4 @@
-<& elements/search.html,
+<& elements/svc_Common.html,
                  'title'       => 'Dish Network Search Results',
                  'name'        => 'services',
                  'query'       => $sql_query,

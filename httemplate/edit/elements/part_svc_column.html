@@ -1,0 +1,303 @@
+<%doc>
+To be called from part_svc.cgi.
+<& elements/part_svc_column.html, 
+    'svc_acct',
+    # options...
+    'part_svc'  => $part_svc, # the existing part_svc to edit
+    'clone'     => 0,         # or a svcpart to clone from
+&>
+
+</%doc>
+<%once>
+# the semantics of this could be better
+
+# all of these conditions are when NOT to allow that flag choice
+# don't allow the 'inventory' flags (M, A) to be chosen for 
+# fields that aren't free-text
+my $inv_sub = sub { $_[0]->{disable_inventory} || $_[0]->{type} ne 'text' };
+tie my %flag, 'Tie::IxHash',
+  ''  => { 'desc' => 'No default', 'condition' => sub { 0 } },
+  'D' => { 'desc' => 'Default', 
+           'condition' =>
+             sub { $_[0]->{disable_default } }
+         },
+  'F' => { 'desc' => 'Fixed (unchangeable)',
+           'condition' =>
+             sub { $_[0]->{disable_fixed} },
+         },
+  'S' => { 'desc' => 'Selectable Choice',
+           'condition' =>
+             sub { $_[0]->{disable_select} },
+         },
+  'M' => { 'desc' => 'Manual selection from inventory',
+           'condition' => $inv_sub,
+         },
+  'A' => { 'desc' => 'Automatically fill in from inventory',
+           'condition' => $inv_sub,
+         },
+  'H' => { 'desc' => 'Select from hardware class',
+           'condition' => sub { $_[0]->{type} ne 'select-hardware' },
+         },
+  'X' => { 'desc' => 'Excluded',
+           'condition' => sub { 1 }, # obsolete
+         },
+;
+
+# the semantics of this could be much better
+sub flag_condition {
+  my $f = shift;
+  not &{ $flag{$f}->{'condition'} }(@_);
+}
+
+my %communigate_fields = (
+  'svc_acct'        => { map { $_=>1 }
+                            qw( file_quota file_maxnum file_maxsize
+                                password_selfchange password_recover
+                              ),
+                            grep /^cgp_/, fields('svc_acct')
+  },
+  'svc_domain'      => { map { $_=>1 }
+                            qw( max_accounts trailer parent_svcnum ),
+                            grep /^(cgp|acct_def)_/, fields('svc_domain')
+  },
+);
+</%once>
+<INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $svcdb %>">
+<BR><BR>
+<& /elements/table.html &>
+  <TR><TH COLSPAN=<% $columns %>>Exports</TH></TR>
+  <TR>
+% # exports
+% foreach my $part_export (@part_export) {
+    <TD>
+      <INPUT TYPE="checkbox" \
+             NAME="exportnum<% $part_export->exportnum %>" \
+             VALUE=1 \
+             <% $has_export_svc{$part_export->exportnum} ? 'CHECKED' : '' %>>
+      <% $part_export->label_html %>
+    </TD>
+%   $count++;
+%   if ( $count % $columns == 0 ) {
+  </TR>
+  <TR>
+%   }
+% }
+  </TR>
+</TABLE><BR><BR>
+For the selected table, you can give fields default or fixed (unchangeable)
+values, or select an inventory class to manually or automatically fill in 
+that field.
+<& /elements/table-grid.html, cellpadding => 4 &>
+  <TR>
+    <TH BGCOLOR="#cccccc">Field</TH>
+    <TH BGCOLOR="#cccccc">Label</TH>
+    <TH BGCOLOR="#cccccc" COLSPAN=2>Modifier</TH>
+  </TR>
+% $part_svc->set('svcpart' => $opt{'clone'}) if $opt{'clone'}; # for now
+% my $i = 0;
+% foreach my $field (@fields) {
+%   my $def = shift @defs;
+%   my $part_svc_column = $part_svc->part_svc_column($field);
+%   my $flag = $part_svc_column->columnflag;
+%   my $formatter = $def->{'format'} || sub { shift };
+%   my $value = &{$formatter}($part_svc_column->columnvalue);
+  <TR CLASS="row<%$i%>">
+    <TD ROWSPAN=2 CLASS="grid" ALIGN="right">
+      <% $def->{'label'} || $field %>
+    </TD>
+    <TD ROWSPAN=2 CLASS="grid">
+      <INPUT NAME="<% $svcdb %>__<% $field %>_label"
+             STYLE="text-align: right"
+             VALUE="<% $part_svc_column->columnlabel || $def->{'label'} |h %>">
+    </TD>
+
+    <TD ROWSPAN=1 CLASS="grid">
+%   # flag selection
+%   if ( $def->{'type'} eq 'disabled' ) {
+%     $flag = '';
+      No default
+%   } else {
+%     my $name = $svcdb.'__'.$field.'_flag';
+      <SELECT NAME="<%$name%>"
+              ID="<%$name%>"
+              STYLE="width:100%"
+              onchange="flag_changed(this)">
+%     foreach my $f (keys %flag) {
+%       if ( flag_condition($f, $def, $svcdb, $field) ) {
+          <OPTION VALUE="<%$f%>"<% $flag eq $f ? ' SELECTED' : ''%>>
+            <% $flag{$f}->{desc} %>
+          </OPTION>
+%       }
+%     }
+      </SELECT>
+%   } # if $def->{'type'} eq 'disabled'
+    </TD>
+    <TD CLASS="grid">
+%   # value entry/selection
+%   my $name = $svcdb.'__'.$field;
+%   # These are all MANDATORY SELECT types.  Regardless of the flag value,
+%   # there will never be a text input (either in svc_* or in part_svc) for
+%   # these fields.
+%   if ( $def->{'type'} eq 'checkbox' ) {
+      <& /elements/checkbox.html,
+          'field'       => $name,
+          'curr_value'  => $value,
+          'value'       => 'Y' &>
+%
+%   } elsif ( $def->{'type'} eq 'select' ) {
+%
+%     if ( $def->{'select_table'} ) {
+      <& /elements/select-table.html,
+          'field'       => $name,
+          'id'          => $name.'_select',
+          'table'       => $def->{'select_table'},
+          'name_col'    => $def->{'select_label'},
+          'value_col'   => $def->{'select_key'},
+          'order_by'    => dbdef->table($def->{'select_table'})->primary_key,
+          'multiple'    => $def->{'multiple'},
+          'disable_empty' => 1,
+          'curr_value'  => $value,
+      &>
+%     } else {
+%       my (@options, %labels);
+%       if ( $def->{'select_list'} ) {
+%         @options = @{ $def->{'select_list'} };
+%         @labels{@options} = @options;
+%       } elsif ( $def->{'select_hash'} ) {
+%         if ( ref($def->{'select_hash'}) eq 'ARRAY' ) {
+%           tie my %hash, 'Tie::IxHash', @{ $def->{'select_hash'} };
+%           $def->{'select_hash'} = \%hash;
+%         }
+%         @options = keys( %{ $def->{'select_hash'} } );
+%         %labels = %{ $def->{'select_hash'} };
+%       }
+      <& /elements/select.html,
+          'field'       => $name,
+          'id'          => $name.'_select',
+          'options'     => \@options,
+          'labels'      => \%labels,
+          'multiple'    => $def->{'multiple'},
+          'curr_value'  => $value,
+      &>
+%     }
+%   } elsif ( $def->{'type'} =~ /select-(.*?).html/ ) {
+      <& '/elements/'.$def->{'type'},
+          'field'       => $name,
+          'id'          => $name.'_select',
+          'multiple'    => $def->{'multiple'},
+          'curr_value'  => $value,
+      &>
+%   } elsif ( $def->{'type'} eq 'communigate_pro-accessmodes' ) {
+      <& /elements/communigate_pro-accessmodes.html,
+          'element_name_prefix' => $name.'_',
+          'curr_value'  => $value,
+      &>
+%   } elsif ( $def->{'type'} eq 'textarea' ) {
+%   # special cases
+      <TEXTAREA NAME="<%$name%>"><% $value |h %></TEXTAREA>
+%   } elsif ( $def->{'type'} eq 'disabled' ) {
+      <INPUT TYPE="hidden" NAME="<%$name%>" VALUE="">
+%   } else {
+%     # the normal case: a text input, and a _select which is an inventory
+%     # or hardware class
+      <INPUT TYPE="text"
+             NAME="<%$name%>"
+             ID="<%$name%>" 
+             VALUE="<%$value%>">
+%     # inventory class selection
+      <& /elements/select-table.html,
+          'field'       => $name.'_classnum',
+          'id'          => $name.'_select',
+          'table'       => 'inventory_class',
+          'name_col'    => 'classname',
+          'curr_value'  => $value,
+          'empty_label' => 'Select inventory class',
+          'multiple'    => 1,
+      &>
+%   }
+    </TD>
+  </TR>
+  <TR CLASS="row<%$i%>">
+    <TD COLSPAN=2 CLASS="def_info">
+%   if ( $def->{def_info} ) {
+      (<% $def->{def_info} %>)
+    </TD>
+  </TR>
+%   }
+% $i = 1-$i;
+% } # foreach my $field
+%
+% # special case: svc_acct password edit ACL
+% if ( $svcdb eq 'svc_acct' ) {
+%   push @fields, 'restrict_edit_password';
+  <TR>
+    <TD COLSPAN=3 ALIGN="right">
+      <% emt('Require "Provision" access right to edit password') %>
+    </TD>
+    <TD>
+      <INPUT TYPE="checkbox" NAME="restrict_edit_password" VALUE="Y" \
+      <% $part_svc->restrict_edit_password ? 'CHECKED' : '' %>>
+    </TD>
+  </TR>
+% }
+</TABLE>
+<& /elements/progress-init.html,
+  $svcdb, #form name
+  [ # form fields to send
+    qw(svc svcpart classnum selfservice_access disabled preserve exportnum),
+    @fields
+  ],
+  'process/part_svc.cgi',   # target
+  $p.'browse/part_svc.cgi', # redirect landing
+  $svcdb, #key
+&>
+% $svcpart = '' if $opt{clone};
+<BR>
+<INPUT NAME="submit"
+       TYPE="button"
+       VALUE="<% emt($svcpart ? 'Apply changes' : 'Add service') %>"
+       onclick="fixup_submit('<%$svcdb%>')"
+>
+<%init>
+my $svcdb = shift;
+my %opt = @_;
+my $columns = 3;
+my $count = 0;
+my $communigate = 0;
+my $conf = FS::Conf->new;
+
+my $part_svc = $opt{'part_svc'} || FS::part_svc->new;
+
+my @part_export;
+my $export_info = FS::part_export::export_info($svcdb);
+foreach (keys %{ $export_info }) {
+  push @part_export, qsearch('part_export', { exporttype => $_ });
+}
+$communigate = scalar(grep {$_->exporttype =~ /^communigate/} @part_export);
+
+my $svcpart = $opt{'clone'} || $part_svc->svcpart;
+my %has_export_svc;
+if ( $svcpart ) {
+  foreach (qsearch('export_svc', { svcpart => $svcpart })) {
+    $has_export_svc{$_->exportnum} = 1;
+  }
+}
+
+my @fields;
+if ( defined( dbdef->table($svcdb) ) ) { # when is it ever not defined?
+  @fields = grep {
+    $_ ne 'svcnum'
+      and ( $communigate || ! $communigate_fields{$svcdb}->{$_} )
+      and ( !FS::part_svc->svc_table_fields($svcdb)->{$_}->{disable_part_svc_column}
+            || $part_svc->part_svc_column($_)->columnflag )
+  } fields($svcdb);
+}
+if ( $svcdb eq 'svc_acct'
+      or ( $svcdb eq 'svc_broadband' and $conf->exists('svc_broadband-radius') )
+   )
+{
+  push @fields, 'usergroup';
+}
+
+my @defs = map { FS::part_svc->svc_table_fields($svcdb)->{$_} } @fields;
+</%init>

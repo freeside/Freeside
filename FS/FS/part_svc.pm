@@ -757,11 +757,9 @@ sub process {
                     if ( $flag =~ /^[MAH]$/ ) {
                       $param->{ $f } = delete( $param->{ $f.'_classnum' } );
                     }
-		    if ( $flag =~ /^S$/ 
-                          or $_ eq 'usergroup' ) {
-                      $param->{ $f } = ref($param->{ $f })
-                                         ? join(',', @{$param->{ $f }} )
-                                         : $param->{ $f };
+		    if ( ( $flag =~ /^[MAHS]$/ or $_ eq 'usergroup' )
+                         and ref($param->{ $f }) ) {
+                      $param->{ $f } = join(',', @{ $param->{ $f } });
 		    }
                     ( $f, $f.'_flag', $f.'_label' );
                   }
