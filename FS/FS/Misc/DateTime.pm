@@ -2,8 +2,8 @@ package FS::Misc::DateTime;
 
 use base qw( Exporter );
 use vars qw( @EXPORT_OK );
-use POSIX;
 use Carp;
+use Time::Local;
 use Date::Parse;
 use DateTime::Format::Natural;
 use FS::Conf;
@@ -48,7 +48,7 @@ sub parse_datetime {
       #carp "WARNING: can't parse date: ". $parser->error;
       #return '';
       #huh, very common, we still need the "partially" (fully enough for our purposes) parsed date.
-      $dt->epoch;
+      return $dt->epoch;
     }
   } else {
     return str2time($string);
@@ -68,7 +68,7 @@ sub day_end {
 
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
         localtime($time);
-    mktime(59,59,23,$mday,$mon,$year,$wday,$yday,$isdst);
+    timelocal(59,59,23,$mday,$mon,$year);
 }
 
 =back
