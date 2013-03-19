@@ -1,4 +1,4 @@
-<& elements/search.html,
+<& elements/svc_Common.html,
                  'title'             => 'External service search results',
                  'name'              => 'external services',
                  'query'             => $sql_query,

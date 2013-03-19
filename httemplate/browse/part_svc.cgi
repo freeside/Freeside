@@ -175,12 +175,14 @@ function part_export_areyousure(href) {
 % my $value = &$formatter($part_svc->part_svc_column($field)->columnvalue);
 % if ( $flag =~ /^[MAH]$/ ) { 
 %   my $select_table = ($flag eq 'H') ? 'hardware_class' : 'inventory_class';
-%   $select_class{$value} ||= 
-%       qsearchs($select_table, { 'classnum' => $value } );
+%   foreach my $classnum ( split(',', $value) ) {
+%     $select_class{$classnum} =
+%       qsearchs($select_table, { 'classnum' => $classnum } );
 % 
-            <% $select_class{$value}
-                  ? $select_class{$value}->classname
-                  : "WARNING: $select_table.classnum $value not found" %>
+      <% $select_class{$classnum}
+            ? $select_class{$classnum}->classname
+            : "WARNING: $select_table.classnum $classnum not found" %><BR>
+%   }
 % } else { 
 
             <% $value %>

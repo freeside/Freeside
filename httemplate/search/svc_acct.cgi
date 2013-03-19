@@ -1,4 +1,4 @@
-<& elements/search.html,
+<& elements/svc_Common.html,
                  'title'       => emt('Account Search Results'),
                  'name'        => emt('accounts'),
                  'query'       => $sql_query,

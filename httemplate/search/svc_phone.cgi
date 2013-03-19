@@ -1,4 +1,4 @@
-<& elements/search.html,
+<& elements/svc_Common.html,
                  'title'             => "Phone number search results",
                  'name'              => 'phone numbers',
                  'query'             => $sql_query,

@@ -57,6 +57,7 @@ function areyousure(href) {
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
 
+% my @inventory_items = $svc_x->inventory_item;
 % foreach my $f ( @$fields ) {
 %
 %   my($field, $type, $value);
@@ -76,6 +77,14 @@ function areyousure(href) {
 %   }
 %
 %   my $columndef = $part_svc->part_svc_column($field);
+%   if ( $columndef->columnflag =~ /^[MA]$/ && $columndef->columnvalue =~ /,/ )
+%   {
+%     # inventory-select field with multiple classes
+%     # show the class name to disambiguate
+%     my ($item) = grep { $_->svc_field eq $field } @inventory_items;
+%     my $class = qsearchs('inventory_class', { classnum => $item->classnum });
+%     $value .= ' <i>('. $class->classname . ')</i>' if $class;
+%   }
 %   unless ($columndef->columnflag eq 'F' && !length($columndef->columnvalue)) {
 
       <TR>

@@ -1,4 +1,4 @@
-<& elements/search.html,
+<& elements/svc_Common.html,
                  'title'       => 'Virtual Host Search Results',
                  'name'        => 'virtual hosts',
                  'query'       => $sql_query,

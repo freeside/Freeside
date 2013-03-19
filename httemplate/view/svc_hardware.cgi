@@ -13,6 +13,9 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                              : $fields->{$_}
                          );
                  } keys %$fields;
+
+$labels{'display_hw_addr'} = 'Hardware address';
+
 my $model =  { field => 'typenum',
                type  => 'text',
                value_callback => sub { $_[0]->hardware_type->description }
