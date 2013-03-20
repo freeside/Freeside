@@ -1529,7 +1529,17 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
+
+  #quotations seem broken-ish with sections ATM?
+  #{ 
+  #  'key'         => 'quotation_sections',
+  #  'section'     => 'invoicing',
+  #  'description' => 'Split quotations into sections and label according to package category when enabled.',
+  #  'type'        => 'checkbox',
+  #  'per_agent'   => 1,
+  #},
 
   { 
     'key'         => 'usage_class_as_a_section',

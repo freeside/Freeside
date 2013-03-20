@@ -737,7 +737,7 @@ sub print_generic {
   $adjust_section->{'sort_weight'} = $adjust_weight;
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
-  my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
+  my $multisection = $conf->exists($tc.'_sections', $cust_main->agentnum);
   $invoice_data{'multisection'} = $multisection;
   my $late_sections = [];
   my $extra_sections = [];
