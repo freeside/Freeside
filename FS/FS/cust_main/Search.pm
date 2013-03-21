@@ -18,7 +18,8 @@ use FS::svc_acct;
 $DEBUG = 0;
 $me = '[FS::cust_main::Search]';
 
-@fuzzyfields = ( 'first', 'last', 'company', 'address1' );
+@fuzzyfields = ( 'cust_main.first', 'cust_main.last', 'cust_main.company', 
+  'cust_location.address1' );
 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
@@ -339,7 +340,7 @@ sub smart_search {
       my %fuzopts = (
         'hashref'   => \%options,
         'select'    => '',
-        'extra_sql' => " AND $agentnums_sql",    #agent virtualization
+        'extra_sql' => "WHERE $agentnums_sql",    #agent virtualization
       );
 
       if ( $first && $last ) {
@@ -355,7 +356,8 @@ sub smart_search {
       }
       if ( $conf->exists('address1-search') ) {
         push @cust_main,
-          FS::cust_main::Search->fuzzy_search( { 'address1' => $value }, %fuzopts );
+          FS::cust_main::Search->fuzzy_search(
+            { 'cust_location.address1' => $value }, %fuzopts );
       }
 
     }
@@ -920,7 +922,8 @@ Additional options are the same as FS::Record::qsearch
 =cut
 
 sub fuzzy_search {
-  my( $self, $fuzzy ) = @_;
+  my $self = shift;
+  my $fuzzy = shift;
   # sensible defaults, then merge in any passed options
   my %fuzopts = (
     'table'     => 'cust_main',
@@ -940,31 +943,30 @@ sub fuzzy_search {
 
     my %match = ();
     $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, ['i'], @$all ) );
+    next if !keys(%match);
 
-    my @fcust = ();
-    foreach ( keys %match ) {
-      if ( $field eq 'address1' ) {
-        #because it lives outside the table
-        my $addl_from = $fuzopts{addl_from} .
-                        'JOIN cust_location USING (custnum)';
-        my $extra_sql = $fuzopts{extra_sql} .
-                        " AND cust_location.address1 = ".dbh->quote($_);
-        push @fcust, qsearch({
-            %fuzopts,
-            'addl_from' => $addl_from,
-            'extra_sql' => $extra_sql,
-        });
-      } else {
-        my $hash = $fuzopts{hashref};
-        $hash->{$field} = $_;
-        push @fcust, qsearch({
-            %fuzopts,
-            'hashref' => $hash
-        });
-      }
+    my $in_matches = 'IN (' .
+                     join(',', map { dbh->quote($_) } keys %match) .
+                     ')';
+
+    my $extra_sql = $fuzopts{extra_sql};
+    if ($extra_sql =~ /^\s*where /i or keys %{ $fuzopts{hashref} }) {
+      $extra_sql .= ' AND ';
+    } else {
+      $extra_sql .= 'WHERE ';
     }
-    my %fsaw = ();
-    push @cust_main, grep { ! $fsaw{$_->custnum}++ } @fcust;
+    $extra_sql .= "$field $in_matches";
+
+    my $addl_from = $fuzopts{addl_from};
+    if ( $field =~ /^cust_location/ ) {
+      $addl_from .= ' JOIN cust_location USING (custnum)';
+    }
+
+    push @cust_main, qsearch({
+      %fuzopts,
+      'addl_from' => $addl_from,
+      'extra_sql' => $extra_sql,
+    });
   }
 
   # we want the components of $fuzzy ANDed, not ORed, but still don't want dupes
@@ -1003,28 +1005,29 @@ sub rebuild_fuzzyfiles {
 
   foreach my $fuzzy ( @fuzzyfields ) {
 
-    open(LOCK,">>$dir/cust_main.$fuzzy")
-      or die "can't open $dir/cust_main.$fuzzy: $!";
+    my ($field, $table) = reverse split('\.', $fuzzy);
+    $table ||= 'cust_main';
+
+    open(LOCK,">>$dir/$table.$field")
+      or die "can't open $dir/$table.$field: $!";
     flock(LOCK,LOCK_EX)
-      or die "can't lock $dir/cust_main.$fuzzy: $!";
+      or die "can't lock $dir/$table.$field: $!";
 
-    open (CACHE, '>:encoding(UTF-8)', "$dir/cust_main.$fuzzy.tmp")
-      or die "can't open $dir/cust_main.$fuzzy.tmp: $!";
+    open (CACHE, '>:encoding(UTF-8)', "$dir/$table.$field.tmp")
+      or die "can't open $dir/$table.$field.tmp: $!";
 
-    foreach my $field ( $fuzzy, "ship_$fuzzy" ) {
-      my $sth = dbh->prepare("SELECT $field FROM cust_main".
-                             " WHERE $field != '' AND $field IS NOT NULL");
-      $sth->execute or die $sth->errstr;
+    my $sth = dbh->prepare(
+      "SELECT $field FROM $table WHERE $field IS NOT NULL AND $field != ''"
+    );
+    $sth->execute or die $sth->errstr;
 
-      while ( my $row = $sth->fetchrow_arrayref ) {
-        print CACHE $row->[0]. "\n";
-      }
+    while ( my $row = $sth->fetchrow_arrayref ) {
+      print CACHE $row->[0]. "\n";
+    }
 
-    } 
-
-    close CACHE or die "can't close $dir/cust_main.$fuzzy.tmp: $!";
+    close CACHE or die "can't close $dir/$table.$field.tmp: $!";
   
-    rename "$dir/cust_main.$fuzzy.tmp", "$dir/cust_main.$fuzzy";
+    rename "$dir/$table.$field.tmp", "$dir/$table.$field";
     close LOCK;
   }
 
@@ -1043,20 +1046,24 @@ sub append_fuzzyfiles {
 
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
 
-  foreach my $field (@fuzzyfields) {
+  foreach my $fuzzy (@fuzzyfields) {
+
+    my ($field, $table) = reverse split('\.', $fuzzy);
+    $table ||= 'cust_main';
+
     my $value = shift;
 
     if ( $value ) {
 
-      open(CACHE, '>>:encoding(UTF-8)', "$dir/cust_main.$field" )
-        or die "can't open $dir/cust_main.$field: $!";
+      open(CACHE, '>>:encoding(UTF-8)', "$dir/$table.$field" )
+        or die "can't open $dir/$table.$field: $!";
       flock(CACHE,LOCK_EX)
-        or die "can't lock $dir/cust_main.$field: $!";
+        or die "can't lock $dir/$table.$field: $!";
 
       print CACHE "$value\n";
 
       flock(CACHE,LOCK_UN)
-        or die "can't unlock $dir/cust_main.$field: $!";
+        or die "can't unlock $dir/$table.$field: $!";
       close CACHE;
     }
 
@@ -1070,10 +1077,13 @@ sub append_fuzzyfiles {
 =cut
 
 sub all_X {
-  my( $self, $field ) = @_;
+  my( $self, $fuzzy ) = @_;
+  my ($field, $table) = reverse split('\.', $fuzzy);
+  $table ||= 'cust_main';
+
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
-  open(CACHE, '<:encoding(UTF-8)', "$dir/cust_main.$field")
-    or die "can't open $dir/cust_main.$field: $!";
+  open(CACHE, '<:encoding(UTF-8)', "$dir/$table.$field")
+    or die "can't open $dir/$table.$field: $!";
   my @array = map { chomp; $_; } <CACHE>;
   close CACHE;
   \@array;
