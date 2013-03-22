@@ -1033,13 +1033,17 @@ sub _upgrade_data {  #class method
 
   # not only cust_pay, but also voided and refunded payments
   if (!FS::upgrade_journal->is_done('cust_pay__parse_paybatch_1')) {
+    local $FS::Record::nowarn_classload=1;
     # really inefficient, but again, only has to run once
     foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
+      my $and_batchnum_is_null =
+        ( $table =~ /^cust_pay/ ? ' AND batchnum IS NULL' : '' );
       foreach my $object ( qsearch({
             table     => $table,
             extra_sql => "WHERE payby IN('CARD','CHEK') ".
                          "AND (paybatch IS NOT NULL ".
-                         "OR (paybatch IS NULL AND auth IS NULL) )",
+                         "OR (paybatch IS NULL AND auth IS NULL
+                         $and_batchnum_is_null ) )",
           }) )
       {
         if ( $object->paybatch eq '' ) {
