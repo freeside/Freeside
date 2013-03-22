@@ -601,6 +601,17 @@ DEFAULTSREF is a hashref with the same keys where true values indicate the
 setting is a default (and thus can be displayed in the UI with less emphasis,
 or hidden by default).
 
+=item actions
+
+Adds one or more "action" links to the export's display in 
+browse/part_export.cgi.  Should return pairs of values.  The first is 
+the link label; the second is the Mason path to a document to load.
+The document will show in a popup.
+
+=cut
+
+sub actions { }
+
 =cut
 
 =item weight

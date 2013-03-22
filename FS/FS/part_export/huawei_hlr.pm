@@ -5,8 +5,12 @@ use Tie::IxHash;
 use FS::Record qw(qsearch qsearchs dbh);
 use FS::part_export;
 use FS::svc_phone;
+use FS::inventory_class;
+use FS::inventory_item;
 use IO::Socket::INET;
 use Data::Dumper;
+use MIME::Base64 qw(decode_base64);
+use Storable qw(thaw);
 
 use strict;
 
@@ -18,6 +22,20 @@ tie my %options, 'Tie::IxHash',
   'pwd'       => { label=>'Operator password' },
   'tplid'     => { label=>'Template number' },
   'hlrsn'     => { label=>'HLR serial number' },
+  'k4sno'     => { label=>'K4 serial number' },
+  'cardtype'  => { label  => 'Card type',
+                   type   => 'select', 
+                   options=> ['SIM', 'USIM']
+                 },
+  'alg'       => { label  => 'Authentication algorithm',
+                   type   => 'select',
+                   options=> ['COMP128_1',
+                              'COMP128_2',
+                              'COMP128_3',
+                              'MILENAGE' ],
+                 },
+  'opcvalue'  => { label=>'OPC value (for MILENAGE only)' },
+  'opsno'     => { label=>'OP serial number (for MILENAGE only)' },
   'timeout'   => { label=>'Timeout (seconds)', default => 120 },
   'debug'     => { label=>'Enable debugging', type=>'checkbox' },
 ;
@@ -32,6 +50,10 @@ phone services according to a template.  The <i>sim_imsi</i> field must be
 set on the service, and the template must exist.
 END
 );
+
+sub actions {
+  'Import SIMs' => 'misc/part_export/huawei_hlr-import_sim.html'
+}
 
 sub _export_insert {
   my( $self, $svc_phone ) = (shift, shift);
@@ -225,6 +247,94 @@ sub command {
     $return{details} = join("\n",@result,'');
   }
   \%return;
+}
+
+sub process_import_sim {
+  my $job = shift;
+  my $param = thaw(decode_base64(shift));
+  $param->{'job'} = $job;
+  my $exportnum = delete $param->{'exportnum'};
+  my $export = __PACKAGE__->by_key($exportnum);
+  my $file = delete $param->{'uploaded_files'};
+  $file =~ s/^file://;
+  my $dir = $FS::UID::cache_dir .'/cache.'. $FS::UID::datasrc;
+  open( $param->{'filehandle'}, '<', "$dir/$file" )
+    or die "unable to open '$file'.\n";
+  my $error = $export->import_sim($param);
+}
+
+sub import_sim {
+  # import a SIM list
+  local $FS::UID::AutoCommit = 1; # yes, 1
+  my $self = shift;
+  my $param = shift;
+  my $job = $param->{'job'};
+  my $fh = $param->{'filehandle'};
+  my @lines = $fh->getlines;
+
+  my @command = 'ADD KI';
+  push @command, ('HLRSN', $self->option('hlrsn')) if $self->option('hlrsn');
+
+  my @args = ('OPERTYPE', 'ADD');
+  push @args, ('K4SNO', $self->option('k4sno')) if $self->option('k4sno');
+  push @args, ('CARDTYPE', $self->option('cardtype'),
+               'ALG',      $self->option('alg'));
+  push @args, ('OPCVALUE', $self->option('opcvalue'),
+               'OPSNO',    $self->option('opsno'))
+    if $self->option('alg') eq 'MILENAGE';
+
+  my $agentnum = $param->{'agentnum'};
+  my $classnum = $param->{'classnum'};
+  my $class = FS::inventory_class->by_key($classnum)
+    or die "bad inventory class $classnum\n";
+  my %existing = map { $_->item, 1 } 
+    qsearch('inventory_item', { 'classnum' => $classnum });
+
+  my $socket = $self->login;
+  my $num=0;
+  my $total = scalar(@lines);
+  foreach my $line (@lines) {
+    $num++;
+    $job->update_statustext(int(100*$num/$total).',Provisioning IMSIs...')
+      if $job;
+
+    chomp $line;
+    my ($imsi, $iccid, $pin1, $puk1, $pin2, $puk2, $acc, $ki) = 
+      split(' ', $line);
+    # the only fields we really care about are the IMSI and KI.
+    if ($imsi !~ /^\d{15}$/ or $ki !~ /^[0-9A-Z]{32}$/) {
+      warn "misspelled line in SIM file: $line\n";
+      next;
+    }
+    if ($existing{$imsi}) {
+      warn "IMSI $imsi already in inventory, skipped\n";
+      next;
+    }
+
+    # push IMSI/KI to the HLR
+    my $return = $self->command($socket,
+      @command,
+      'IMSI', $imsi,
+      'KIVALUE', $ki,
+      @args
+    );
+    if ( $return->{success} ) {
+      # add to inventory
+      my $item = FS::inventory_item->new({
+          'classnum'  => $classnum,
+          'agentnum'  => $agentnum,
+          'item'      => $imsi,
+      });
+      my $error = $item->insert;
+      if ( $error ) {
+        die "IMSI $imsi added to HLR, but not to inventory:\n$error\n";
+      }
+    } else {
+      die "IMSI $imsi could not be added to HLR:\n".$return->{error}."\n";
+    }
+  } #foreach $line
+  $self->logout($socket);
+  return;
 }
 
 1;

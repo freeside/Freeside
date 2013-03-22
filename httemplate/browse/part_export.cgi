@@ -38,6 +38,21 @@ function part_export_areyousure(href) {
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
         <% $part_export->label_html %>
         (<A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>">edit</A>&nbsp;|&nbsp;<A HREF="javascript:part_export_areyousure('<% $p %>misc/delete-part_export.cgi?<% $part_export->exportnum %>')">delete</A>)
+%       if ( my @actions = $part_export->actions ) {
+        <P STYLE="position: absolute">
+        Management:
+%         while (@actions) {
+%           my $label = shift @actions;
+%           my $path = shift @actions;
+            <& /elements/popup_link.html,
+              'label'       => $label,
+              'action'      => $fsurl.$path.'?'.$part_export->exportnum,
+              'actionlabel' => $label,
+            &><% @actions ? '&nbsp;|&nbsp;' : '' %>
+%         }
+        </P>
+%       } #if @actions
+
       </TD>
 
       <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
