@@ -1038,7 +1038,7 @@ sub _make_lines {
       if ( $@ );
 
     #base_cancel???
-    $unitrecur = $cust_pkg->part_pkg->base_recur || $recur; #XXX uuh
+    $unitrecur = $cust_pkg->base_recur( \$sdate ) || $recur; #XXX uuh, better
 
     if ( $increment_next_bill ) {
 
