@@ -27,9 +27,6 @@ function agent_changed(what) {
   } else {
     for(var i=0; i<ship_fields.length; i++) {
       x = ship_fields[i];
-      if ( f['ship_'+x].disabled ) {
-        f['ship_'+x].value = '';
-      }
       f['ship_'+x].disabled = false;
     }
     f['same'].disabled = false;
