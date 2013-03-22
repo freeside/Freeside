@@ -524,20 +524,13 @@ sub new_customer {
 
     my $template_cust = qsearchs('cust_main', { 'custnum' => $template_custnum } );
     return { 'error' => 'Configuration error' } unless $template_cust;
-    #XXX Copy template customer's locations
     $cust_main = new FS::cust_main ( {
       'agentnum'      => $agentnum,
       'refnum'        => $packet->{refnum}
                          || $conf->config('signup_server-default_refnum'),
 
       ( map { $_ => $template_cust->$_ } qw( 
-              last first company address1 address2 
-              city county state zip country
-              daytime night fax 
-
-              ship_last ship_first ship_company ship_address1 ship_address2
-              ship_city ship_county ship_state ship_zip ship_country
-              ship_daytime ship_night ship_fax
+              last first company daytime night fax 
             )
       ),
 
@@ -554,6 +547,9 @@ sub new_customer {
       ),
 
     } );
+
+    $bill_hash = { $template_cust->bill_location->location_hash };
+    $ship_hash = { $template_cust->ship_location->location_hash };
 
   } else {
 
