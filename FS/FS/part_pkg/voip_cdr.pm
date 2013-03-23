@@ -208,6 +208,11 @@ tie my %detail_formats, 'Tie::IxHash',
     'skip_max_callers' => { 'name' => 'Do not charge for CDRs where max_callers is less than or equal to this value: ',
                           },
 
+    'skip_same_customer' => {
+      'name' => 'Do not charge for calls between numbers belonging to the same customer',
+      'type' => 'checkbox',
+    },
+
     'use_duration'   => { 'name' => 'Calculate usage based on the duration field instead of the billsec field',
                           'type' => 'checkbox',
                         },
@@ -313,6 +318,7 @@ tie my %detail_formats, 'Tie::IxHash',
                        noskip_dst_length_accountcode_tollfree
                        skip_lastapp
                        skip_max_callers
+                       skip_same_customer
                        use_duration
                        411_rewrite
                        output_format 

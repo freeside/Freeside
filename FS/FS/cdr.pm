@@ -644,7 +644,34 @@ sub rate_prefix {
                                             );
   }
 
+  if ( $part_pkg->option_cacheable('skip_same_customer')
+      and ! $self->is_tollfree ) {
+    my ($dst_countrycode, $dst_number) = $self->parse_number(
+      column => 'dst',
+      international_prefix => $part_pkg->option_cacheable('international_prefix'),
+      domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
+    );
+    my $dst_same_cust = FS::Record->scalar_sql(
+        'SELECT COUNT(svc_phone.svcnum) AS count '.
+        'FROM cust_pkg ' .
+        'JOIN cust_svc   USING (pkgnum) ' .
+        'JOIN svc_phone  USING (svcnum) ' .
+        'WHERE svc_phone.countrycode = ' . dbh->quote($dst_countrycode) .
+        ' AND svc_phone.phonenum = ' . dbh->quote($dst_number) .
+        ' AND cust_pkg.custnum = ' . $cust_pkg->custnum,
+    );
+    if ( $dst_same_cust > 0 ) {
+      warn "not charging for CDR (same source and destination customer)\n" if $DEBUG;
+      return $self->set_status_and_rated_price( 'skipped',
+                                                0,
+                                                $opt{'svcnum'},
+                                              );
+    }
+  }
+
     
+
+
   ###
   # look up rate details based on called station id
   # (or calling station id for toll free calls)
