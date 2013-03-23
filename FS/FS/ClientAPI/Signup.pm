@@ -773,13 +773,15 @@ sub new_customer {
     #     " new customer: $bill_error"
     #  if $bill_error;
 
-    $bill_error = $cust_main->realtime_collect(
-       method        => FS::payby->payby2bop( $packet->{payby} ),
-       depend_jobnum => $placeholder->jobnum,
-       selfservice   => 1,
-    );
-    #warn "$me error collecting from new customer: $bill_error"
-    #  if $bill_error;
+    unless ( $packet->{payby} eq 'PREPAY' ) {
+      $bill_error = $cust_main->realtime_collect(
+         method        => FS::payby->payby2bop( $packet->{payby} ),
+         depend_jobnum => $placeholder->jobnum,
+         selfservice   => 1,
+      );
+      #warn "$me error collecting from new customer: $bill_error"
+      #  if $bill_error;
+    }
 
     if ($bill_error && ref($bill_error) eq 'HASH') {
       return { 'error' => '_collect',
