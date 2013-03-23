@@ -597,7 +597,8 @@ New-style: pass a hashref with the following keys:
 
 =item stoptime_end - Upper bound for AcctStopTime, as a UNIX timestamp
 
-=item open_sessions - Only show records with no AcctStopTime (typically used without stoptime_* options and with starttime_* options instead)
+=item session_status - 'closed' to only show records with AcctStopTime,
+'open' to only show records I<without> AcctStopTime, empty to show both.
 
 =item starttime_start - Lower bound for AcctStartTime, as a UNIX timestamp
 
@@ -727,20 +728,23 @@ sub usage_sessions {
     push @where, " CalledStationID LIKE 'sip:$prefix\%'";
   }
 
-  if ( $opt->{open_sessions} ) {
-    push @where, 'AcctStopTime IS NULL';
-  } else {
-
+  my $acctstoptime = '';
+  if ( $opt->{session_status} ne 'open' ) {
     if ( $start ) {
-      push @where, "$str2time AcctStopTime ) >= ?";
+      $acctstoptime .= "$str2time AcctStopTime ) >= ?";
       push @param, $start;
+      $acctstoptime .= ' AND ' if $end;
     }
     if ( $end ) {
-      push @where, "$str2time AcctStopTime ) <= ?";
+      $acctstoptime .= "$str2time AcctStopTime ) <= ?";
       push @param, $end;
     }
-
   }
+  if ( $opt->{session_status} ne 'closed' ) {
+    $acctstoptime = "( $acctstoptime ) OR " if $acctstoptime;
+    $acctstoptime .= 'AcctStopTime IS NULL';
+  }
+  push @where, $acctstoptime;
 
   if ( $opt->{starttime_start} ) {
     push @where, "$str2time AcctStartTime ) >= ?";
