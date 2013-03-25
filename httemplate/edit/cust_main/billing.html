@@ -521,7 +521,13 @@
         <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum) 
             ? $r : '' %>Email address(es)
       </TD>
-      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>"></TD>
+      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>">
+      <INPUT TYPE="checkbox" NAME="message_noemail" VALUE="Y" <%
+        ( $cust_main->message_noemail eq 'Y' )
+          ? 'CHECKED'
+          : ''
+        %>> <% emt('Do not send notices') %>
+      </TD>
     </TR>
 % }
 

@@ -1778,9 +1778,10 @@ sub check {
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
     || $self->ut_numbern('prorate_day')
-    || $self->ut_enum('edit_subject', [ '', 'Y' ] )
-    || $self->ut_enum('calling_list_exempt', [ '', 'Y' ] )
-    || $self->ut_enum('invoice_noemail', [ '', 'Y' ] )
+    || $self->ut_flag('edit_subject')
+    || $self->ut_flag('calling_list_exempt')
+    || $self->ut_flag('invoice_noemail')
+    || $self->ut_flag('message_noemail')
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
   ;
 
