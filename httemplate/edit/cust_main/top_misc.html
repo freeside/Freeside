@@ -15,8 +15,8 @@ function agent_changed(what) {
   var f = what.form;
   if ( ship_locked_agents[agentnum] ) {
     f['same'].checked = false;
+    samechanged(f['same']); // enable everything, then...
     f['same'].disabled = true;
-    samechanged(f['same']);
     for(var x in ship_locked_agents[agentnum]) {
       f['ship_'+x].value = ship_locked_agents[agentnum][x];
       f['ship_'+x].disabled = true;
@@ -25,14 +25,15 @@ function agent_changed(what) {
     f['ship_address2'].disabled = false;
     f['ship_address2'].style.backgroundColor = '#ffffff';
   } else {
-    for(var i=0; i<ship_fields.length; i++) {
-      x = ship_fields[i];
-      f['ship_'+x].disabled = false;
+    if ( f['same'].disabled ) { // only if switching from a locked agent
+      f['same'].disabled = false;
+      f['same'].checked = true;
+      samechanged(f['same']); // re-enable everything
     }
-    f['same'].disabled = false;
   }
 }
 window.onload = function() {
+  samechanged(document.getElementById('same'));
   agent_changed(document.getElementById('agentnum'));
 };
 </SCRIPT>
