@@ -263,7 +263,7 @@
 %my $old_history = 0;
 %my $lastdate = 0;
 %
-%foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
+%foreach my $item ( @history ) {
 %
 %  $lastdate = $item->{'date'};
 %
@@ -532,6 +532,13 @@ foreach my $cust_refund ($cust_main->cust_refund) {
   };
 
 }
+
+# sort history
+if ( $curuser->option('history_order') eq 'newest' ) {
+  @history = sort { $b->{date} <=> $a->{date} } @history;
+} else {
+  @history = sort { $a->{date} <=> $b->{date} } @history;
+} # no other sort orders for now
 
 sub translate_payby {
     my ($payby,$payinfo) = (shift,shift);

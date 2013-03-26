@@ -75,6 +75,21 @@ Interface
       </SELECT>
     </TD>
   </TR>
+
+% my $history_order = $curuser->option('history_order') || 'oldest';
+  <TR>
+    <TH ALIGN="right">Customer history sort order: </TH>
+    <TD COLSPAN=2>
+      <& /elements/select.html,
+        field       => 'history_order',
+        curr_value  => $history_order,
+        options     => [ 'oldest', 'newest' ],
+        labels      => { 'oldest' => 'Oldest first',
+                         'newest' => 'Newest first',
+                       },
+      &>
+    </TD>
+  </TR>
   
   <TR>
     <TH ALIGN="right">Spreadsheet download format: </TH>
@@ -92,7 +107,7 @@ Interface
   </TR>
 
  <TR>
-    <TH ALIGN="right" COLSPAN=1>Enable approximate customer searching even when an exact match is found: </TH>
+    <TH ALIGN="right" COLSPAN=1>Enable approximate customer searching <BR>even when an exact match is found: </TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="enable_fuzzy_on_exact" VALUE="1" <% $curuser->option('enable_fuzzy_on_exact') ? 'CHECKED' : '' %>>
     </TD>
