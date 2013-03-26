@@ -12,7 +12,7 @@
 The following packages will be changed:<BR>
 % foreach my $pkgpart (sort keys(%part_pkg)) {
 <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $pkgpart %>">
-<% $part_pkg{$pkgpart}->pkg_comment %><BR>
+<% $part_pkg{$pkgpart}->pkg_comment |h %><BR>
 % }
 </DIV>
 <BR>
