@@ -4944,7 +4944,7 @@ and customer address. Include units.',
   {
     'key'         => 'pkg-balances',
     'section'     => 'billing',
-    'description' => 'Enable experimental package balances.  Not recommended for general use.',
+    'description' => 'Enable per-package balances.',
     'type'        => 'checkbox',
   },
 
