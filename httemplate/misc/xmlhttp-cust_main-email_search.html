@@ -1,0 +1,29 @@
+<% JSON::to_json(\@result) %>\
+<%init>
+die 'access denied'
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
+
+my $sub = $cgi->param('sub');
+my $email = $cgi->param('arg');
+my @where = (
+  "cust_main_invoice.dest != 'POST'",
+  "cust_main_invoice.dest LIKE ".dbh->quote('%'.$email.'%'),
+  $FS::CurrentUser::CurrentUser->agentnums_sql(table => 'cust_main'),
+);
+my @cust_main = qsearch({
+  'table'     => 'cust_main',
+  'select'    => 'cust_main.*, cust_main_invoice.dest',
+  'addl_from' => 'JOIN cust_main_invoice USING (custnum)',
+  'extra_sql' => 'WHERE '.join(' AND ', @where),
+});
+
+my @result = map {
+  [ $_->custnum,
+    $_->name,
+    $_->dest,
+    $_->invoice_noemail,
+    $_->message_noemail,
+  ]
+} @cust_main;
+
+</%init>

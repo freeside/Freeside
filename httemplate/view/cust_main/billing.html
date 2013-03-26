@@ -247,6 +247,10 @@
   <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
+%   if ( $cust_main->message_noemail ) {
+    <BR>
+    <SPAN STYLE="font-size: small"><% emt('(do not send notices)') %></SPAN>
+%   }
   </TD>
 </TR>
 % }

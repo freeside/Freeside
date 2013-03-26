@@ -464,6 +464,8 @@ $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queu
   if $curuser->access_right('Job queue');
 $tools_menu{'Ticketing'} = [ \%tools_ticketing, 'Ticketing tools' ]
   if $conf->config('ticket_system');
+$tools_menu{'Customer email settings'} = [ $fsurl.'misc/manage_cust_email.html' ]
+  if $curuser->access_right('Edit customer');
 $tools_menu{'Business card scan'} = [ $fsurl.'edit/prospect_main-upload.html' ]
   if $curuser->access_right('New prospect');
 $tools_menu{'Time Queue'} =  [ $fsurl.'search/report_timeworked.html', 'View pending support time' ]

@@ -15,13 +15,7 @@
   <TH CLASS="grid" BGCOLOR="#cccccc">Description</TH>
 </TR>
 
-% foreach my $item ( sort { $a->history_date <=> $b->history_date
-%                           #|| table order
-%                           || $a->historynum <=> $b->historynum
-%                         }
-%                         @history
-%                  )
-% {
+% foreach my $item ( @history ) {
 %   my $history_other = '';
 %   my $act  = $item->history_action;
 %   if ( $act =~ /^replace/ ) {
@@ -195,5 +189,12 @@ my $cust_pkg_date_format = '%b %o, %Y';
 $cust_pkg_date_format .= ' %l:%M:%S%P'
   if $conf->exists('cust_pkg-display_times')
   || $curuser->option('cust_pkg-display_times');
+
+@history = sort { $a->history_date <=> $b->history_date
+                  || $a->historynum <=> $b->historynum } @history;
+
+if ( $curuser->option('history_order') eq 'newest' ) {
+  @history = reverse @history;
+}
 
 </%init>

@@ -794,11 +794,19 @@ sub search {
     @tagnums = grep /^(\d+)$/, @tagnums;
 
     if ( @tagnums ) {
+      if ( $params->{'all_tags'} ) {
+        foreach ( @tagnums ) {
+          push @where, 'exists(select 1 from cust_tag where '.
+                       'cust_tag.custnum = cust_main.custnum and tagnum = '.
+                       $_ . ')';
+        }
+      } else { # matching any tag, not all
 	my $tags_where = "0 < (select count(1) from cust_tag where " 
 		. " cust_tag.custnum = cust_main.custnum and tagnum in ("
 		. join(',', @tagnums) . "))";
 
 	push @where, $tags_where;
+      }
     }
   }
 

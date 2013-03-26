@@ -1080,6 +1080,7 @@ sub tables_hashref {
         'locale', 'varchar', 'NULL', 16, '', '', 
         'calling_list_exempt', 'char', 'NULL', 1, '', '',
         'invoice_noemail', 'char', 'NULL', 1, '', '',
+        'message_noemail', 'char', 'NULL', 1, '', '',
         'bill_locationnum', 'int', 'NULL', '', '', '',
         'ship_locationnum', 'int', 'NULL', '', '', '',
       ],
