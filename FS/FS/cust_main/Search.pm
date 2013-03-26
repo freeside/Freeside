@@ -646,6 +646,16 @@ sub search {
     if $params->{'with_email'};
 
   ##
+  # "with postal mail invoices" checkbox
+  ##
+
+  push @where,
+    "EXISTS ( SELECT 1 FROM cust_main_invoice
+                WHERE cust_main_invoice.custnum = cust_main.custnum
+                  AND dest = 'POST' )"
+    if $params->{'POST'};
+
+  ##
   # "without postal mail invoices" checkbox
   ##
 

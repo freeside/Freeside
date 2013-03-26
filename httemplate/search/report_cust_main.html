@@ -184,9 +184,27 @@
     </TR>
 
     <TR>
-      <TD ALIGN="right" VALIGN="center"><% mt('Without postal mail invoices') |h %></TD>
-        <TD><INPUT TYPE="checkbox" NAME="no_POST"></TD>
+      <TD ALIGN="right" VALIGN="center"><% mt('With postal mail invoices') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="POST" ID="POST" onClick="POST_changed();"></TD>
     </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Without postal mail invoices') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="no_POST" ID="no_POST" onClick="no_POST_changed();"></TD>
+    </TR>
+
+    <SCRIPT TYPE="text/javascript">
+      function POST_changed() {
+        if ( document.getElementById('POST').checked == true ) {
+          document.getElementById('no_POST').checked = false;
+        }
+      }
+      function no_POST_changed() {
+        if ( document.getElementById('no_POST').checked == true ) {
+          document.getElementById('POST').checked = false;
+        }
+      }
+    </SCRIPT>
 
     <TR>
       <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
