@@ -48,7 +48,7 @@
   <TD STYLE="width:650px">
 %#; padding-right:2px; vertical-align:top">
     <FONT CLASS="fsinnerbox-title"><% mt('Billing address') |h %></FONT>
-    <TABLE CLASS="fsinnerbox">
+    <TABLE CLASS="fsinnerbox" WIDTH="100%">
     <& cust_main/before_bill_location.html, $cust_main &>
     <& /elements/location.html,
         object => $cust_main->bill_location,
@@ -62,7 +62,6 @@
 <TR><TD STYLE="height:40px"></TD></TR>
 <TR>
   <TD STYLE="width:650px">
-%#; padding-left:2px; vertical-align:top">
     <FONT CLASS="fsinnerbox-title"><% mt('Service address') |h %></FONT>
     <INPUT TYPE="checkbox" 
            NAME="same"
@@ -72,19 +71,17 @@
            VALUE="Y"
            <% $has_ship_address ? '' : 'CHECKED' %>
     ><% mt('same as billing address') |h %>
-    <TABLE CLASS="fsinnerbox" ID="table_ship_location">
-    <& /elements/location.html,
-        object => $cust_main->ship_location,
-        prefix => 'ship_',
-        enable_censustract => 1,
-        enable_district => 1,
-        enable_coords => 1,
-    &>
-    </TABLE>
-    <TABLE CLASS="fsinnerbox" ID="table_ship_location_blank"
-    STYLE="display:none">
-    <TR><TD></TD></TR>
-    </TABLE>
+    <DIV CLASS="fsinnerbox">
+      <TABLE ID="table_ship_location" WIDTH="100%">
+      <& /elements/location.html,
+          object => $cust_main->ship_location,
+          prefix => 'ship_',
+          enable_censustract => 1,
+          enable_district => 1,
+          enable_coords => 1,
+      &>
+      </TABLE>
+    </DIV>
   </TD>
 </TR></TABLE>
 
@@ -94,16 +91,11 @@ function samechanged(what) {
 %#  document.getElementById('table_ship_location').style.visibility = 
 %#    what.checked ? 'hidden' : 'visible';
   var t1 = document.getElementById('table_ship_location');
-  var t2 = document.getElementById('table_ship_location_blank');
   if ( what.checked ) {
-    t2.style.width  = t1.clientWidth  + 'px';
-    t2.style.height = t1.clientHeight + 'px';
-    t1.style.display = 'none';
-    t2.style.display = '';
+    t1.style.visibility = 'hidden';
   }
   else {
-    t2.style.display = 'none';
-    t1.style.display = '';
+    t1.style.visibility = 'visible'
   }
 }
 //samechanged(document.getElementById('same'));
