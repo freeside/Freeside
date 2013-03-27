@@ -16,7 +16,7 @@ sub authenticate {
 
 }
 
-#omitting these subroutines will eliminate 
+#omitting these subroutines will eliminate those options from the UI
 
 #sub create_user {
 #
