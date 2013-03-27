@@ -741,8 +741,11 @@ sub usage_sessions {
     }
   }
   if ( $opt->{session_status} ne 'closed' ) {
-    $acctstoptime = "( $acctstoptime ) OR " if $acctstoptime;
-    $acctstoptime .= 'AcctStopTime IS NULL';
+    if ( $acctstoptime ) {
+      $acctstoptime = "( ( $acctstoptime ) OR AcctStopTime IS NULL )";
+    } else {
+      $acctstoptime = 'AcctStopTime IS NULL';
+    }
   }
   push @where, $acctstoptime;
 
