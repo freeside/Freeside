@@ -2033,10 +2033,13 @@ sub print_csv {
     $previous_balance = sprintf('%.2f', $previous_balance);
     my $totaldue = sprintf('%.2f', $self->owed + $previous_balance);
     my @items = map {
-      ($_->{pkgnum} || ''),
-      $_->{description},
-      $_->{amount}
-    } $self->_items_pkg;
+                      $_->{pkgnum},
+                      $_->{description},
+                      $_->{amount}
+                    }
+                  $self->_items_pkg, #_items_nontax?  no sections or anything
+                                     # with this format
+                  $self->_items_tax;
 
     $csv->combine(
       $cust_main->agentnum,
