@@ -32,6 +32,13 @@ function custnum_update_callback(rownum, prefix) {
 % }
 }
 
+function invnum_update_callback(rownum, prefix) {
+  custnum_update_callback(rownum, prefix);
+  var enable = document.getElementById('enable_app'+rownum);
+  enable.checked = true;
+  toggle_application_row.call(enable);
+}
+
 function select_discount_term(row, prefix) {
   var custnum_obj = document.getElementById('custnum'+prefix+row);
   var select_obj = document.getElementById('discount_term'+prefix+row);
@@ -198,7 +205,6 @@ function change_app_amount() {
        && amount_unapplied(rownum) > 0 ) {
 
     create_application_row(rownum, parseInt(appnum) + 1);
-
   }
 }
 
@@ -352,6 +358,7 @@ function preload() {
     footer_align => \@footer_align,
     onchange => \@onchange,
     custnum_update_callback => 'custnum_update_callback',
+    invnum_update_callback => 'invnum_update_callback',
     add_row_callback => 'add_row_callback',
 &>
 
