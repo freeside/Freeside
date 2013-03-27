@@ -686,3 +686,5 @@ FS/part_pkg_usage.pm
 t/part_pkg_usage.t
 FS/cdr_cust_pkg_usage.pm
 t/cdr_cust_pkg_usage.t
+FS/part_pkg_msgcat.pm
+t/part_pkg_msgcat.t

@@ -2011,6 +2011,19 @@ sub tables_hashref {
                  ],
     },
 
+    'part_pkg_msgcat' => {
+      'columns' => [
+        'pkgpartmsgnum',  'serial',     '',        '', '', '',
+        'pkgpart',           'int',     '',        '', '', '',
+        'locale',        'varchar',     '',        16, '', '',
+        'pkg',           'varchar',     '',   $char_d, '', '', #longer/no limit?
+        'comment',       'varchar', 'NULL', 2*$char_d, '', '', #longer/no limit?
+      ],
+      'primary_key' => 'pkgpartmsgnum',
+      'unique'      => [ [ 'pkgpart', 'locale' ] ],
+      'index'       => [],
+    },
+
     'part_pkg_link' => {
       'columns' => [
         'pkglinknum',  'serial',   '',      '', '', '',

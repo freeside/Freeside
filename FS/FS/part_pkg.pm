@@ -16,6 +16,7 @@ use FS::type_pkgs;
 use FS::part_pkg_option;
 use FS::pkg_class;
 use FS::agent;
+use FS::part_pkg_msgcat;
 use FS::part_pkg_taxrate;
 use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
@@ -713,6 +714,22 @@ sub propagate {
       if $error;
   }
   join("\n", @error);
+}
+
+=item pkg_locale LOCALE
+
+Returns a customer-viewable string representing this package for the given
+locale, from the part_pkg_msgcat table.  If no localized string is found,
+returns the base pkg field.
+
+=cut
+
+sub pkg_locale {
+  my( $self, $locale ) = @_;
+  my $part_pkg_msgcat = qsearchs( 'part_pkg_msgcat', { pkgpart=>$self->pkgpart,
+                                                       locale =>$locale       })
+    or return $self->pkg;
+  $part_pkg_msgcat->pkg;
 }
 
 =item pkg_comment [ OPTION => VALUE... ]
