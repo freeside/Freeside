@@ -1931,6 +1931,24 @@ sub change {
 
 }
 
+=item set_quantity QUANTITY
+
+Change the package's quantity field.  This is the one package property
+that can safely be changed without canceling and reordering the package
+(because it doesn't affect tax eligibility).  Returns an error or an 
+empty string.
+
+=cut
+
+sub set_quantity {
+  my $self = shift;
+  $self = $self->replace_old; # just to make sure
+  my $qty = shift;
+  ($qty =~ /^\d+$/ and $qty > 0) or return "bad package quantity $qty";
+  $self->set('quantity' => $qty);
+  $self->replace;
+}
+
 use Storable 'thaw';
 use MIME::Base64;
 sub process_bulk_cust_pkg {
