@@ -1,7 +1,8 @@
 <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" WIDTH="20%">
 
-% unless ( $cust_pkg->locationnum ) {
-  <I><FONT SIZE=-1>(<% mt('default service address') |h %>)</FONT><BR>
+% if ( $default ) {
+  <DIV STYLE="font-style: italic; font-size: small">
+  (<% emt('default service address') %>)<BR>
 % }
 
     <% $loc->location_label( 'join_string'     => '<BR>',
@@ -24,8 +25,8 @@
         </FONT>
 %   }
 
-% unless ( $cust_pkg->locationnum ) {
-  </I>
+% if ( $default ) {
+  </DIV>
 % }
 
 % if ( ! $cust_pkg->get('cancel')
@@ -54,6 +55,8 @@ my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
 
 my $loc = $cust_pkg->cust_location_or_main;
+# dubious--they should all have a location now
+my $default = $cust_pkg->locationnum == $opt{'cust_main'}->ship_locationnum;
 
 sub pkg_change_location_link {
   my $cust_pkg = shift;
