@@ -24,16 +24,19 @@
       <TD COLSPAN=2>
         <FONT SIZE=-1>
 
-%         unless ( $cust_pkg->get('cancel') ) { 
+%         unless ( $cust_pkg->get('cancel') ) {
 %
-%           if ( $supplemental ) {
-%             # then only show "Edit dates", "Add invoice details", and "Add
-%             # comments".
+%           if ( $supplemental or $part_pkg->freq eq '0' ) {
+%             # Supplemental packages can't be changed independently.
+%             # One-time charges don't need to be changed.
+%             # For both of those, we only show "Edit dates", "Add comments",
+%             # and "Add invoice details".
 %             if ( $curuser->access_right('Edit customer package dates') ) {
                 (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
 %             }
 %           } else {
-%             # the usual case
+%             # the usual case: links to change package definition,
+%             # discount, and customization
 %             my $br = 0;
 %             if ( $curuser->access_right('Change customer package') ) {
 %               $br=1;
@@ -181,11 +184,18 @@
 %     if ( $curuser->access_right('Change customer package') and 
 %           !$cust_pkg->get('cancel') and
 %           !$supplemental and
-%           !$opt{'show_location'}) {
+%           $part_pkg->freq ne '0' ) {
       <TR>
+%       if ( !$opt{'show_location'} ) {
         <TD><FONT SIZE="-1">
           (&nbsp;<% pkg_change_location_link($cust_pkg) %>&nbsp;)
         </FONT></TD>
+%       }
+%       if ( FS::Conf->new->exists('invoice-unitprice') ) {
+        <TD><FONT SIZE="-1">
+          (&nbsp;<% pkg_change_quantity_link($cust_pkg) %>&nbsp;)
+        </FONT></TD>
+%       }
       </TR>
 %     }
 %   }
@@ -271,6 +281,17 @@ sub pkg_change_location_link {
     'label'       => emt('Change location'),
     'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
+  );
+}
+
+sub pkg_change_quantity_link {
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p. 'edit/cust_pkg_quantity.html?',
+    'label'       => emt('Change quantity'),
+    'actionlabel' => emt('Change'),
+    'cust_pkg'    => shift,
+    'width'       => 390,
+    'height'      => 220,
   );
 }
 
