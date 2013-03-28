@@ -337,6 +337,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_pkg_usage_class;
   use FS::part_pkg_usage;
   use FS::cdr_cust_pkg_usage;
+  use FS::part_pkg_msgcat;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

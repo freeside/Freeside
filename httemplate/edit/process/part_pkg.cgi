@@ -10,6 +10,7 @@
               'precheck_callback' => $precheck_callback,
               'args_callback'     => $args_callback,
               'process_m2m'       => \@process_m2m,
+              'process_o2m'       => \@process_o2m,
           )
 %>
 <%init>
@@ -243,5 +244,12 @@ if ( $cgi->param('pkgpart') || ! $conf->exists('agent_defaultpkg') ) {
     'params'       => \@agents,
   };
 }
+
+my @process_o2m = (
+  {
+    'table'  => 'part_pkg_msgcat',
+    'fields' => [qw( locale pkg )],
+  },
+);
 
 </%init>

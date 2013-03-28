@@ -28,7 +28,8 @@
 
               'labels' => { 
                             'pkgpart'          => 'Package Definition',
-                            'pkg'              => 'Package (customer-visible)',
+                            'pkg'              => 'Package',
+                            %locale_field_labels,
                             'comment'          => 'Comment (customer-hidden)',
                             'classnum'         => 'Package class',
                             'addon_classnum'   => 'Restrict additional orders to package class',
@@ -80,6 +81,7 @@
                                 size      => 40, #32
                                 maxlength => 50,
                               },
+                              #@locale_fields,
                               {field=>'comment',  type=>'text', size=>40 }, #32
                               { field         => 'agentnum',
                                 type          => 'select-agent',
@@ -337,6 +339,22 @@ my $agent_clone_extra_sql =
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
 
+my @locales = grep { ! /^en_/i } $conf->config('available-locales');
+my %locale_labels =  map {
+  ( $_ => 'Package -- '. FS::Locales->description($_) )
+} @locales;
+@locales = 
+  sort { $locale_labels{$a} cmp $locale_labels{$b} }
+    @locales;
+
+my $n = 0;
+my %locale_field_labels = (
+  map {
+        ( 'pkgpartmsgnum'. $n++. '_pkg' => $locale_labels{$_} );
+      }
+    @locales
+);
+
 my $sth = dbh->prepare("SELECT COUNT(*) FROM part_pkg_report_option".
                        "  WHERE disabled IS NULL OR disabled = ''  ")
   or die dbh->errstr;
@@ -367,6 +385,42 @@ my $setup_show_zero_disabled = 0;
 my $recur_show_zero_disabled = 1;
 
 my $pkgpart = '';
+
+my $splice_locale_fields = sub {
+  my( $fields, $pkey_value_callback, $pkg_value_callback ) = @_;
+
+  my $n = 0;
+  my @locale_fields = (
+    map { 
+          my $pkey_value= $pkey_value_callback ? &$pkey_value_callback($_) : '';
+          my $pkg_value = $pkg_value_callback
+                            ? $pkg_value_callback eq 'cgiparam'
+                                ? $cgi->param('pkgpartmsgnum'. $n. '_pkg')
+                                : &$pkg_value_callback($_)
+                            : '';
+          (
+            { field     => 'pkgpartmsgnum'. $n,
+              type      => 'hidden',
+              value     => $pkey_value,
+            },
+            { field     => 'pkgpartmsgnum'. $n. '_locale',
+              type      => 'hidden',
+              value     => $_,
+            },
+            { field     => 'pkgpartmsgnum'. $n++. '_pkg',
+              type      => 'text',
+              size      => 40,
+              #maxlength => 50,
+              value     => $pkg_value,
+            },
+          );
+  
+        }
+      @locales
+  );
+  splice(@$fields, 7, 0, @locale_fields); #XXX 7 is arbitrary above
+
+};
 
 my $error_callback = sub {
   my($cgi, $object, $fields, $opt ) = @_;
@@ -407,6 +461,16 @@ my $error_callback = sub {
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
   $pkgpart = $object->pkgpart;
+
+  &$splice_locale_fields(
+    $fields,
+    sub {
+          my $locale = shift;
+          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+          $part_pkg_msgcat ? $part_pkg_msgcat->pkgpartmsgnum : '';
+        },
+    'cgiparam'
+  );
 
 };
 
@@ -473,6 +537,20 @@ my $edit_callback = sub {
 
   $pkgpart = $object->pkgpart;
 
+  &$splice_locale_fields(
+    $fields,
+    sub {
+          my $locale = shift;
+          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+          $part_pkg_msgcat ? $part_pkg_msgcat->pkgpartmsgnum : '';
+        },
+    sub {
+          my $locale = shift;
+          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+          $part_pkg_msgcat ? $part_pkg_msgcat->pkg : '';
+        }
+  );
+
 };
 
 my $new_callback = sub {
@@ -486,6 +564,8 @@ my $new_callback = sub {
   }
 
   $options{'suspend_bill'}=1 if $conf->exists('part_pkg-default_suspend_bill');
+
+  &$splice_locale_fields($fields, '', '');
 
 };
 
@@ -520,6 +600,16 @@ my $clone_callback = sub {
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
   $recur_disabled = $object->freq ? 0 : 1;
+
+  &$splice_locale_fields(
+    $fields,
+    '',
+    sub {
+      my $locale = shift;
+      my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+      $part_pkg_msgcat ? $part_pkg_msgcat->pkg : '';
+    }
+  );
 };
 
 my $discount_error_callback = sub {

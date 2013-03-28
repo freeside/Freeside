@@ -1,7 +1,8 @@
 package FS::part_pkg;
+use base qw( FS::m2m_Common FS::o2m_Common FS::option_Common );
 
 use strict;
-use vars qw( @ISA %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
+use vars qw( %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
 use Time::Local qw( timelocal_nocheck );
@@ -25,7 +26,6 @@ use FS::part_pkg_discount;
 use FS::part_pkg_usage;
 use FS::part_pkg_vendor;
 
-@ISA = qw( FS::m2m_Common FS::option_Common );
 $DEBUG = 0;
 $setup_hack = 0;
 $skip_pkg_svc_hack = 0;
@@ -726,10 +726,22 @@ returns the base pkg field.
 
 sub pkg_locale {
   my( $self, $locale ) = @_;
-  my $part_pkg_msgcat = qsearchs( 'part_pkg_msgcat', { pkgpart=>$self->pkgpart,
-                                                       locale =>$locale       })
-    or return $self->pkg;
+  my $part_pkg_msgcat = $self->part_pkg_msgcat($locale) or return $self->pkg;
   $part_pkg_msgcat->pkg;
+}
+
+=item part_pkg_msgcat LOCALE
+
+Like pkg_locale, but returns the FS::part_pkg_msgcat object itself.
+
+=cut
+
+sub part_pkg_msgcat {
+  my( $self, $locale ) = @_;
+  qsearchs( 'part_pkg_msgcat', {
+    pkgpart => $self->pkgpart,
+    locale  => $locale,
+  });
 }
 
 =item pkg_comment [ OPTION => VALUE... ]
