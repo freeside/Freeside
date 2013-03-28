@@ -132,8 +132,8 @@
             $OUT .=  '<th align="center">' . emt('Ref') . '</th>'.
                      '<th align="left">' . emt('Description') . '</th>'.
                      ( $unitprices 
-                       ? '<th align="left">' . emt('Unit Price') . '</th>'.
-                         '<th align="left">' . emt('Quantity') . '</th>'
+                       ? '<th align="right">' . emt('Unit Price') . '</th>'.
+                         '<th align="right">' . emt('Quantity') . '</th>'
                         : '' ).
                      '<th align="right">' . emt('Amount') . '</th>';
           }
@@ -158,8 +158,8 @@
                        ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ). '</td>'.
                        '<td align="left">'. $line->{'description'}. '</td>'.
                        ( $unitprices 
-                           ? '<td align="left">'. $line->{'unit_amount'}. '</td>'.
-                             '<td align="left">'. $line->{'quantity'}. '</td>'
+                           ? '<td align="right">'. $line->{'unit_amount'}. '</td>'.
+                             '<td align="right">'. $line->{'quantity'}. '</td>'
                            : ''
                        ).
 
