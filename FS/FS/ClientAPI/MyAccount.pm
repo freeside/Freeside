@@ -636,11 +636,12 @@ sub billing_history {
 
       push @history, {
         'type'        => 'Line item',
-        'description' => $_->desc. ( $_->sdate && $_->edate
-                                       ? ' '. time2str('%d-%b-%Y', $_->sdate).
-                                         ' To '. time2str('%d-%b-%Y', $_->edate)
-                                       : ''
-                                   ),
+        'description' => $_->desc( $cust_main->locale ).
+                           ( $_->sdate && $_->edate
+                               ? ' '. time2str('%d-%b-%Y', $_->sdate).
+                                 ' To '. time2str('%d-%b-%Y', $_->edate)
+                               : ''
+                           ),
         'amount'      => sprintf('%.2f', $_->setup + $_->recur ),
         'date'        => $cust_bill->_date,
         'date_pretty' =>  time2str('%m/%d/%Y', $cust_bill->_date ),
@@ -1584,7 +1585,7 @@ sub list_pkgs {
                           my $primary_cust_svc = $_->primary_cust_svc;
                           +{ $_->hash,
                             $_->part_pkg->hash,
-                            pkg_label => $_->pkg_label,
+                            pkg_label => $_->pkg_locale,
                             status => $_->status,
                             part_svc =>
                               [ map { $_->hashref }
@@ -1698,7 +1699,7 @@ sub list_svcs {
               'svcdb'          => $svcdb,
               'label'          => $label,
               'value'          => $value,
-              'pkg_label'      => $cust_pkg->pkg_label,
+              'pkg_label'      => $cust_pkg->pkg_locale,
               'pkg_status'     => $cust_pkg->status,
               'readonly'       => ($part_svc->selfservice_access eq 'readonly'),
             );

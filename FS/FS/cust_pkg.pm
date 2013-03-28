@@ -2645,7 +2645,7 @@ sub statuscolor {
 =item pkg_label
 
 Returns a label for this package.  (Currently "pkgnum: pkg - comment" or
-"pkg-comment" depending on user preference).
+"pkg - comment" depending on user preference).
 
 =cut
 
@@ -2670,6 +2670,17 @@ sub pkg_label_long {
   my $cust_svc = $self->primary_cust_svc;
   $label .= ' ('. ($cust_svc->label)[1]. ')' if $cust_svc;
   $label;
+}
+
+=item pkg_locale
+
+Returns a customer-localized label for this package.
+
+=cut
+
+sub pkg_locale {
+  my $self = shift;
+  $self->part_pkg->pkg_locale( $self->cust_main->locale );
 }
 
 =item primary_cust_svc
