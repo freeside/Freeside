@@ -1781,6 +1781,12 @@ sub change {
   # (i.e. customer default location)
   $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
 
+  # usually this doesn't matter.  the two cases where it does are:
+  # 1. unused_credit_change + pkgpart change + setup fee on the new package
+  # and
+  # 2. (more importantly) changing a package before it's billed
+  $hash{'waive_setup'} = $self->waive_setup;
+
   # Create the new package.
   my $cust_pkg = new FS::cust_pkg {
     custnum      => $self->custnum,

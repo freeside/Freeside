@@ -236,7 +236,7 @@ sub layer_callback {
       $date_noinit = 1;
     }
     else {
-      $include = "input-$include" if $include =~ /^(text|money)$/;
+      $include = "input-$include" if $include =~ /^(text|money|percentage)$/;
       $include = "tr-$include" unless $include eq 'hidden';
       $html .= include( "/elements/$include.html",
                         %$lf,

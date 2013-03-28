@@ -164,8 +164,9 @@
 \newcommand{\FSdescriptionlength} { [@-- $unitprices ? '8.2cm' : '12.8cm' --@] }
 \newcommand{\FSdescriptioncolumncount} { [@-- $unitprices ? '4' : '6' --@] }
 \newcommand{\FSunitcolumns}{ [@-- 
-  $unitprices 
-  ? '\makebox[2.5cm][l]{\textbf{~~'.emt('Unit Price').'}}&\makebox[1.4cm]{\textbf{~'.emt('Quantity').'}}&' 
+  $unitprices
+  ? '\makebox[2.5cm][r]{\textbf{~~' . emt('Unit Price') . '}} &' .
+    '\makebox[1.4cm]{\textbf{~' . emt('Quantity') . '}} & ' 
   : '' --@] }
 
 \newcommand{\FShead}{
@@ -182,7 +183,7 @@
 \newcommand{\FSdesc}[5]{
   \multicolumn{1}{c}{\rule{0pt}{2.5ex}\textbf{#1}} &
   \multicolumn{[@-- $unitprices ? '4' : '6' --@]}{l}{\textbf{#2}} &
-[@-- $unitprices ? '  \multicolumn{1}{l}{\textbf{#3}} &'."\n".
+[@-- $unitprices ? '  \multicolumn{1}{r}{\textbf{\dollar #3}} &'."\n".
                    '  \multicolumn{1}{r}{\textbf{#4}} &'."\n"
                  : ''
 --@]
