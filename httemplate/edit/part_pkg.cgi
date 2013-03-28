@@ -339,7 +339,7 @@ my $agent_clone_extra_sql =
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
 
-my @locales = grep { ! /^en_/i } $conf->config('available-locales');
+my @locales = grep { ! /^en_/i } $conf->config('available-locales'); #should filter from the default locale lang instead of en_
 my %locale_labels =  map {
   ( $_ => 'Package -- '. FS::Locales->description($_) )
 } @locales;

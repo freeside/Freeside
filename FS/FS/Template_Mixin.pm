@@ -2181,6 +2181,7 @@ sub _items_cust_bill_pkg {
 
   my $cust_main = $self->cust_main;#for per-agent cust_bill-line_item-ate_style
                                    # and location labels
+  my $locale = $cust_main->locale;
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
@@ -2225,7 +2226,7 @@ sub _items_cust_bill_pkg {
 
       my $type = $display->type;
 
-      my $desc = $cust_bill_pkg->desc;
+      my $desc = $cust_bill_pkg->desc( $cust_main->locale );
       $desc = substr($desc, 0, $maxlength). '...'
         if $format eq 'latex' && length($desc) > $maxlength;
 

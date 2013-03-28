@@ -719,13 +719,14 @@ sub propagate {
 =item pkg_locale LOCALE
 
 Returns a customer-viewable string representing this package for the given
-locale, from the part_pkg_msgcat table.  If no localized string is found,
-returns the base pkg field.
+locale, from the part_pkg_msgcat table.  If the given locale is empty or no
+localized string is found, returns the base pkg field.
 
 =cut
 
 sub pkg_locale {
   my( $self, $locale ) = @_;
+  return $self->pkg unless $locale;
   my $part_pkg_msgcat = $self->part_pkg_msgcat($locale) or return $self->pkg;
   $part_pkg_msgcat->pkg;
 }

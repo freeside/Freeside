@@ -52,10 +52,10 @@ line item, and for generic taxes, simply returns "Tax".
 =cut
 
 sub desc {
-  my $self = shift;
+  my( $self, $locale ) = @_;
 
   if ( $self->pkgnum > 0 ) {
-    $self->itemdesc || $self->part_pkg->pkg;
+    $self->itemdesc || $self->part_pkg->pkg_locale($locale);
   } else {
     my $desc = $self->itemdesc || 'Tax';
     $desc .= ' '. $self->itemcomment if $self->itemcomment =~ /\S/;
