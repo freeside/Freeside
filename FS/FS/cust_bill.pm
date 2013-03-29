@@ -3137,11 +3137,16 @@ sub _items_payments {
 
     #something more elaborate if $_->amount ne ->cust_pay->paid ?
 
+    my $desc = $self->mt('Payment received').' '.
+               time2str($date_format,$_->cust_pay->_date );
+    $desc   .= $self->mt(' via ' . $_->cust_pay->payby_payinfo_pretty)
+      if ( $self->conf->exists('invoice_payment_details') );
+ 
     push @b, {
-      'description' => $self->mt('Payment received').' '.
-                       time2str($date_format,$_->cust_pay->_date ),
+      'description' => $desc,
       'amount'      => sprintf("%.2f", $_->amount )
     };
+
   }
 
   @b;

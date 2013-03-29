@@ -5198,6 +5198,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'invoice_payment_details',
+    'section'     => 'invoicing',
+    'description' => 'When displaying payments on an invoice, show the payment method used, including the check or credit card number.  Credit card numbers will be masked.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-status_module',
     'section'     => 'UI',
     'description' => 'Which module to use for customer status display.  The "Classic" module (the default) considers accounts with cancelled recurring packages but un-cancelled one-time charges Inactive.  The "Recurring" module considers those customers Cancelled.  Similarly for customers with suspended recurring packages but one-time charges.', #other differences?
