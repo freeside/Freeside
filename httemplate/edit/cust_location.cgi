@@ -7,20 +7,28 @@ ACTION="<% $p %>edit/process/cust_location.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="locationnum" VALUE="<% $locationnum %>">
 
 <% ntable('#cccccc') %>
-<% include('/elements/location.html',
+<& /elements/location.html,
             'object'        => $cust_location,
             'no_asterisks'  => 1,
-            ) %>
+&>
+<& /elements/standardize_locations.html,
+            'form'          => 'EditLocationForm',
+            'callback'      => 'document.EditLocationForm.submit();',
+&>
 </TABLE>
 
 <BR>
 <SCRIPT TYPE="text/javascript">
-function areyousure() {
-  return confirm('Modify this service location?');
+function go() {
+% if ( FS::Conf->new->config('address_standardize_method') ) {
+  standardize_locations();
+% } else {
+  confirm('Modify this service location?') &&
+    document.EditLocationForm.submit();
+% }
 }
 </SCRIPT>
-<INPUT TYPE="submit" VALUE="Submit" onclick="return areyousure()">
-
+<INPUT TYPE="button" NAME="submitButton" VALUE="Submit" onclick="go()">
 </FORM>
 </BODY>
 </HTML>
