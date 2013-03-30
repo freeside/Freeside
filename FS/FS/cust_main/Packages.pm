@@ -100,17 +100,26 @@ sub order_pkg {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( $opt->{'cust_location'} &&
-       ( ! $cust_pkg->locationnum || $cust_pkg->locationnum == -1 ) ) {
-    my $error = $opt->{'cust_location'}->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "inserting cust_location (transaction rolled back): $error";
+  if ( $opt->{'locationnum'} and $opt->{'locationnum'} != -1 ) {
+
+    $cust_pkg->locationnum($opt->{'locationnum'});
+
+  } elsif ( $opt->{'cust_location'} ) {
+
+    if ( ! $opt->{'cust_location'}->locationnum ) {
+      # not inserted yet
+      my $error = $opt->{'cust_location'}->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting cust_location (transaction rolled back): $error";
+      }
     }
     $cust_pkg->locationnum($opt->{'cust_location'}->locationnum);
-  }
-  else {
+
+  } else {
+
     $cust_pkg->locationnum($self->ship_locationnum);
+
   }
 
   $cust_pkg->custnum( $self->custnum );

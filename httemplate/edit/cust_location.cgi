@@ -8,8 +8,12 @@ ACTION="<% $p %>edit/process/cust_location.cgi" METHOD=POST>
 
 <% ntable('#cccccc') %>
 <& /elements/location.html,
-            'object'        => $cust_location,
-            'no_asterisks'  => 1,
+  'object'              => $cust_location,
+  'no_asterisks'        => 1,
+  # these are service locations, so they need all this stuff
+  'enable_coords'       => 1,
+  'enable_district'     => 1,
+  'enable_censustract'  => 1,
 &>
 <& /elements/standardize_locations.html,
             'form'          => 'EditLocationForm',

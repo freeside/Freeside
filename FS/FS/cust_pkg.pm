@@ -1749,12 +1749,17 @@ sub change {
 
   if ( $opt->{'cust_location'} &&
        ( ! $opt->{'locationnum'} || $opt->{'locationnum'} == -1 ) ) {
-    $error = $opt->{'cust_location'}->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "inserting cust_location (transaction rolled back): $error";
+
+    if ( ! $opt->{'cust_location'}->locationnum ) {
+      # not inserted yet
+      $error = $opt->{'cust_location'}->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting cust_location (transaction rolled back): $error";
+      }
     }
     $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
+
   }
 
   my $unused_credit = 0;

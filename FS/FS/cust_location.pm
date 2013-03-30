@@ -5,7 +5,7 @@ use strict;
 use vars qw( $import );
 use Locale::Country;
 use FS::UID qw( dbh driver_name );
-use FS::Record qw( qsearch ); #qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
@@ -103,6 +103,31 @@ points to.  You can ask the object for a copy with the I<hash> method.
 =cut
 
 sub table { 'cust_location'; }
+
+=item new_or_existing HASHREF
+
+Returns an existing location matching the customer and address fields in 
+HASHREF, if one exists; otherwise returns a new location containing those 
+fields.  The following fields must match: address1, address2, city, county,
+state, zip, country, geocode, disabled.  Other fields are only required
+to match if they're specified in HASHREF.
+
+The new location will not be inserted; the calling code must call C<insert>
+(or a method such as C<move_to>) to insert it, and check for errors at that
+point.
+
+=cut
+
+sub new_or_existing {
+  my $class = shift;
+  my %hash = ref($_[0]) ? %{$_[0]} : @_;
+  foreach ( qw(address1 address2 city county state zip country geocode
+              disabled ) ) {
+    # empty fields match only empty fields
+    $hash{$_} = '' if !defined($hash{$_});
+  }
+  return qsearchs('cust_location', \%hash) || $class->new(\%hash);
+}
 
 =item insert
 

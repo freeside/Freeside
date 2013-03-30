@@ -83,10 +83,7 @@ for my $pre (qw(bill ship)) {
   }
   $hash{'custnum'} = $cgi->param('custnum');
   warn Dumper \%hash if $DEBUG;
-  # if we can qsearchs it, then it's unchanged, so use that
-  $locations{$pre} = qsearchs('cust_location', \%hash)
-                     || FS::cust_location->new( \%hash );
-
+  $locations{$pre} = FS::cust_location->new_or_existing(\%hash);
 }
 
 if ( ($cgi->param('same') || '') eq 'Y' ) {

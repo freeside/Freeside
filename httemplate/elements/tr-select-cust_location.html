@@ -153,25 +153,16 @@ Example:
     }
   }
 
+  var location_fields = <% to_json(\@location_fields) %>;
   function update_location( string ) {
-    var hash = eval('('+string+')');
-    document.getElementById('address1').value = hash['address1'];
-    document.getElementById('city').value     = hash['city'];
-    document.getElementById('zip').value      = hash['zip'];
-
-%   if ( $opt{'alt_format'} ) {
-      changeSelect( document.getElementById('location_kind'), hash['location_kind']);
-      changeSelect( document.getElementById('location_type'), hash['location_type']);
-      document.getElementById('location_number').value = hash['location_number'];
-%   } else {
-      document.getElementById('address2').value = hash['address2'];
-%   }
-
-    var country_el = document.getElementById('country');
-
-    changeSelect( country_el, hash['country'] );
-
-    country_changed( country_el,
+    var hash = JSON.parse(string);
+    for(var i = 0; i < location_fields.length; i++) {
+      var f = location_fields[i];
+      if (hash[f] && document.getElementById(f))  {
+        document.getElementById(f).value = hash[f];
+      }
+    }
+    country_changed( document.getElementById('country'),
                      fix_state_factory( hash['state'],
                                         hash['county']
                                       )
@@ -185,7 +176,7 @@ Example:
   <TD COLSPAN=7>
     <SELECT NAME     = "locationnum"
             ID       = "locationnum"
-            onChange = "locationnum_changed(this);"
+            onchange = "locationnum_changed(this);"
     >
 % if ( $cust_main ) {
       <OPTION VALUE="<% $cust_main->ship_locationnum %>"><% $opt{'empty_label'} || '(default service address)' |h %>
@@ -258,9 +249,7 @@ if ( $cgi->param('error') ) {
 my $editable = $cust_main ? 0 : 1; #could use explicit control
 my $addnew = $cust_main ? 1 : ( $locationnum>0 ? 0 : 1 );
 
-my @location_fields = qw( address1 address2 city county state zip country
-                          latitude longitude
-                        );
+my @location_fields = FS::cust_main->location_fields;
 if ( $opt{'alt_format'} ) {
     push @location_fields, qw( location_type location_number location_kind );
 }

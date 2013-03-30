@@ -143,10 +143,10 @@ if ( $quotationnum ) {
   my %opt = ( 'cust_pkg' => $cust_pkg );
 
   if ( $locationnum == -1 ) {
-    my $cust_location = new FS::cust_location {
+    my $cust_location = FS::cust_location->new_or_existing({
       map { $_ => scalar($cgi->param($_)) }
-          qw( custnum address1 address2 city county state zip country geocode )
-    };
+          ('custnum', FS::cust_main->location_fields)
+    });
     $opt{'cust_location'} = $cust_location;
   }
 

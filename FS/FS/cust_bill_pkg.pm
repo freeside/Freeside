@@ -1104,8 +1104,7 @@ sub upgrade_tax_location {
     delete @hash{qw(censustract censusyear latitude longitude coord_auto)};
 
     $hash{custnum} = $h_cust_main->custnum;
-    my $tax_loc = qsearchs('cust_location', \%hash) # unlikely
-                  || FS::cust_location->new({ %hash });
+    my $tax_loc = FS::cust_location->new_or_existing(\%hash);
     if ( !$tax_loc->locationnum ) {
       $tax_loc->disabled('Y');
       my $error = $tax_loc->insert;
