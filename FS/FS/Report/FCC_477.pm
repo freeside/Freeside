@@ -22,26 +22,26 @@ Documentation.
 =cut
 
 @upload = qw(
- <200kpbs
- 200-768kpbs
+ <200kbps
+ 200-768kbps
  768kbps-1.5mbps
  1.5-3mpbs
  3-6mbps
  6-10mbps
  10-25mbps
  25-100mbps
- >100bmps
+ >100mbps
 );
 
 @download = qw(
- 200-768kpbs
+ 200-768kbps
  768kbps-1.5mbps
- 1.5-3mpbs
+ 1.5-3mbps
  3-6mbps
  6-10mbps
  10-25mbps
  25-100mbps
- >100bmps
+ >100mbps
 );
 
 @technology = (
