@@ -3,9 +3,10 @@
 %   for ( my $row = 0; $row < scalar(@rows); $row++ ) {
 %     for my $col (0..2) {
 %       if ( exists($data[$col][$row]) ) {
-<PartII_<% $row %><% $cols[$col] %>>
-%       }
+<PartII_<% $row %><% $cols[$col] %>>\
+<% $data[$col][$row] %>\
 </PartII_<% $row %><% $cols[$col] %>>
+%       }
 %     } #for $col
 %   } #for $row
 % } else { # HTML mode
