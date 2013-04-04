@@ -1775,11 +1775,10 @@ sub change {
   }
 
   # whether to override pkgpart checking on the new package
-  my $allow_pkgpart = 1;
+  my $same_pkgpart = 1;
   if ( $opt->{'pkgpart'} and ( $opt->{'pkgpart'} != $self->pkgpart ) ) {
-    $allow_pkgpart = 0;
+    $same_pkgpart = 0;
   }
-      
 
   my $unused_credit = 0;
   my $keep_dates = $opt->{'keep_dates'};
@@ -1820,7 +1819,7 @@ sub change {
     %hash,
   };
   $error = $cust_pkg->insert( 'change' => 1,
-                              'allow_pkgpart' => $allow_pkgpart );
+                              'allow_pkgpart' => $same_pkgpart );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -1878,6 +1877,23 @@ sub change {
     }
   }
 
+  # transfer discounts, if we're not changing pkgpart
+  if ( $same_pkgpart ) {
+    foreach my $old_discount ($self->cust_pkg_discount_active) {
+      # don't remove the old discount, we may still need to bill that package.
+      my $new_discount = new FS::cust_pkg_discount {
+        'pkgnum'      => $cust_pkg->pkgnum,
+        'discountnum' => $old_discount->discountnum,
+        'months_used' => $old_discount->months_used,
+      };
+      $error = $new_discount->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error transferring discounts: $error";
+      }
+    }
+  }
+
   # Order any supplemental packages.
   my $part_pkg = $cust_pkg->part_pkg;
   my @old_supp_pkgs = $self->supplemental_pkgs;
@@ -1912,7 +1928,7 @@ sub change {
         $new->set($_, $old->get($_));
       }
     }
-    $error = $new->insert( allow_pkgpart => $allow_pkgpart );
+    $error = $new->insert( allow_pkgpart => $same_pkgpart );
     # transfer services
     if ( $old ) {
       $error ||= $old->transfer($new);
