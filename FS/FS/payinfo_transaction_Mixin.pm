@@ -73,10 +73,7 @@ sub _parse_paybatch {
     my $payment_gateway =
       qsearchs('payment_gateway', { 'gatewaynum' => $gatewaynum } );
 
-    die "payment gateway $gatewaynum not found" #?
-      unless $payment_gateway;
-
-    $processor = $payment_gateway->gateway_module;
+    $processor = $payment_gateway->gateway_module if $payment_gateway;
 
   }
 
