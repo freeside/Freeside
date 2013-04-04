@@ -267,6 +267,12 @@ a ticket will be added to this customer with this subject
 
 an optional queue name for ticket additions
 
+=item allow_pkgpart
+
+Don't check the legality of the package definition.  This should be used
+when performing a package change that doesn't change the pkgpart (i.e. 
+a location change).
+
 =back
 
 =cut
@@ -274,7 +280,8 @@ an optional queue name for ticket additions
 sub insert {
   my( $self, %options ) = @_;
 
-  my $error = $self->check_pkgpart;
+  my $error;
+  $error = $self->check_pkgpart unless $options{'allow_pkgpart'};
   return $error if $error;
 
   my $part_pkg = $self->part_pkg;
@@ -613,7 +620,6 @@ sub check {
     $self->ut_numbern('pkgnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_numbern('pkgpart')
-    || $self->check_pkgpart
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')
@@ -654,14 +660,19 @@ sub check {
 
 =item check_pkgpart
 
+Check the pkgpart to make sure it's allowed with the reg_code and/or
+promo_code of the package (if present) and with the customer's agent.
+Called from C<insert>, unless we are doing a package change that doesn't
+affect pkgpart.
+
 =cut
 
 sub check_pkgpart {
   my $self = shift;
 
-  my $error = $self->ut_numbern('pkgpart');
-  return $error if $error;
+  # my $error = $self->ut_numbern('pkgpart'); # already done
 
+  my $error;
   if ( $self->reg_code ) {
 
     unless ( grep { $self->pkgpart == $_->pkgpart }
@@ -981,6 +992,7 @@ sub uncancel {
 
   my $error = $cust_pkg->insert(
     'change' => 1, #supresses any referral credit to a referring customer
+    'allow_pkgpart' => 1, # allow this even if the package def is disabled
   );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
@@ -1762,6 +1774,13 @@ sub change {
 
   }
 
+  # whether to override pkgpart checking on the new package
+  my $allow_pkgpart = 1;
+  if ( $opt->{'pkgpart'} and ( $opt->{'pkgpart'} != $self->pkgpart ) ) {
+    $allow_pkgpart = 0;
+  }
+      
+
   my $unused_credit = 0;
   my $keep_dates = $opt->{'keep_dates'};
   # Special case.  If the pkgpart is changing, and the customer is
@@ -1800,7 +1819,8 @@ sub change {
     locationnum  => ( $opt->{'locationnum'}                        ),
     %hash,
   };
-  $error = $cust_pkg->insert( 'change' => 1 );
+  $error = $cust_pkg->insert( 'change' => 1,
+                              'allow_pkgpart' => $allow_pkgpart );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -1885,14 +1905,14 @@ sub change {
         contract_end  => $cust_pkg->contract_end,
         refnum        => $cust_pkg->refnum,
         discountnum   => $cust_pkg->discountnum,
-        waive_setup   => $cust_pkg->waive_setup
+        waive_setup   => $cust_pkg->waive_setup,
     });
     if ( $old and $opt->{'keep_dates'} ) {
       foreach (qw(setup bill last_bill)) {
         $new->set($_, $old->get($_));
       }
     }
-    $error = $new->insert;
+    $error = $new->insert( allow_pkgpart => $allow_pkgpart );
     # transfer services
     if ( $old ) {
       $error ||= $old->transfer($new);

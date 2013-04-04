@@ -87,7 +87,7 @@ sub order_pkg {
     if exists($opt->{'depend_jobnum'}) && $opt->{'depend_jobnum'};
 
   my %insert_params = map { $opt->{$_} ? ( $_ => $opt->{$_} ) : () }
-                          qw( ticket_subject ticket_queue );
+                          qw( ticket_subject ticket_queue allow_pkgpart );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -173,6 +173,7 @@ sub order_pkg {
         'refnum'        => $cust_pkg->refnum,
         'discountnum'   => $cust_pkg->discountnum,
         'waive_setup'   => $cust_pkg->waive_setup,
+        'allow_pkgpart' => $opt->{'allow_pkgpart'},
     });
     $error = $self->order_pkg('cust_pkg' => $pkg);
     if ( $error ) {
