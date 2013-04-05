@@ -103,10 +103,10 @@ sub table_info {
     'ip_field' => 'ip_addr',
     'fields' => {
       'svcnum'      => 'Service',
-      'description' => 'Descriptive label for this particular device',
-      'speed_down'  => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
-      'speed_up'    => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
-      'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
+      'description' => 'Descriptive label',
+      'speed_down'  => 'Download speed (Kbps)',
+      'speed_up'    => 'Upload speed (Kbps)',
+      'ip_addr'     => 'IP address',
       'blocknum'    => 
       { 'label' => 'Address block',
                          'type'  => 'select',
