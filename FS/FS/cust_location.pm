@@ -121,6 +121,10 @@ point.
 sub new_or_existing {
   my $class = shift;
   my %hash = ref($_[0]) ? %{$_[0]} : @_;
+  # if coords are empty, then it doesn't matter if they're auto or not
+  if ( !$hash{'latitude'} and !$hash{'longitude'} ) {
+    delete $hash{'coord_auto'};
+  }
   foreach ( qw(address1 address2 city county state zip country geocode
               disabled ) ) {
     # empty fields match only empty fields
