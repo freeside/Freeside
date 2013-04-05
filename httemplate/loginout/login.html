@@ -1,0 +1,68 @@
+<& /elements/header-minimal.html, 'Login' &>
+<link href="<%$url_string%>elements/freeside.css" type="text/css" rel="stylesheet">
+
+<CENTER>
+
+  <BR>
+  <FONT SIZE=5>Login</FONT>
+  <BR><BR>
+
+% if ( $error ) { 
+  <FONT SIZE="+1" COLOR="#ff0000"><% $error |h %></FONT>
+  <BR><BR>
+% } 
+             
+%#  <FORM METHOD="POST" ACTION="<%$url_string%>loginout/login">
+  <FORM METHOD="POST" ACTION="/login">
+    <INPUT TYPE="hidden" NAME="destination" VALUE="<% $r->prev->uri %>">
+
+    <TABLE CELLSPACING=0 CELLPADDING=4 BGCOLOR="#cccccc">
+      <TR>
+        <TD ALIGN="right">Username: </TD>
+        <TD><INPUT TYPE="text" NAME="credential_0" SIZE="13"></TD>
+      </TR>
+      <TR>
+        <TD ALIGN="right">Password: </TD>
+        <TD><INPUT TYPE="password" NAME="credential_1" SIZE="13"></TD>
+      </TR>
+    </TABLE>
+    <BR>
+ 
+    <INPUT TYPE="submit" VALUE="Login">
+
+  </FORM>
+
+</CENTER>
+
+</BODY></HTML>
+<%init>
+
+my %error = (
+  'no_cookie'       => '', #First login, don't display an error
+  'bad_cookie'      => 'Bad Cookie', #timed out?  server reboot?
+  'bad_credentials' => 'Incorrect username / password',
+  'logout'          => 'You have been logged out.',
+);
+
+my $url_string = CGI->new->url;
+
+my $error = $cgi->param('logout') || $r->prev->subprocess_env("AuthCookieReason");
+$error = exists($error{$error}) ? $error{$error} : $error;
+
+#fake a freeside path for /login so we get our .css.  shrug
+$url_string =~ s/login$/freeside\/login/ unless $url_string =~ /freeside\//;
+
+#even though this is kludgy and false laziness w/CGI.pm
+  $url_string =~ s{ / index\.html /? $ }
+                  {/}x;
+  $url_string =~
+    s{
+       /(login|loginout)
+       ([\w\-\.\/]*)
+       $
+     }
+     {}ix;
+
+  $url_string .= '/' unless $url_string =~ /\/$/;
+
+</%init>

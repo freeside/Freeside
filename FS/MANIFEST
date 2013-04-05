@@ -27,6 +27,10 @@ bin/freeside-sqlradius-seconds
 bin/freeside-torrus-srvderive
 FS.pm
 FS/AccessRight.pm
+FS/AuthCookieHandler.pm
+FS/Auth/external.pm
+FS/Auth/internal.pm
+FS/Auth/legacy.pm
 FS/CGI.pm
 FS/InitHandler.pm
 FS/ClientAPI.pm

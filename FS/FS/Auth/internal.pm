@@ -1,5 +1,5 @@
-package FS::access_user::internal;
-use base qw( FS::access_user );
+package FS::Auth::internal;
+#use base qw( FS::Auth );
 
 use strict;
 

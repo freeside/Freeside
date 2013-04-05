@@ -2,18 +2,18 @@
 
 Example:
 
-  include( '/elements/header.html',
-           {
-             'title'   => 'Title',
-             'menubar' => \@menubar,
-             'etc'     => '', #included in <BODY> tag, for things like onLoad=
-             'head'    => '', #included before closing </HEAD> tag
-             'nobr'    => 0,  #1 for no <BR><BR> after the title
-           }
-         );
+  <& /elements/header.html',
+       {
+         'title'   => 'Title',
+         'menubar' => \@menubar,
+         'etc'     => '', #included in <BODY> tag, for things like onLoad=
+         'head'    => '', #included before closing </HEAD> tag
+         'nobr'    => 0,  #1 for no <BR><BR> after the title
+       }
+  &>
 
-  #old-style
-  include( '/elements/header.html', 'Title', $menubar, $etc, $head);
+  %#old-style
+  <& /elements/header.html, 'Title', $menubar, $etc, $head &>
 
 </%doc>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -41,13 +41,6 @@ Example:
 
     <% include('init_overlib.html') |n %>
     <% include('rs_init_object.html') |n %>
-    <% include('logout.html') |n %>
-%   my $timeout =  $conf->config('logout-timeout');
-%   if ( $timeout && $timeout =~ /^\s*\d+\s*$/ ) {
-      <script type="text/javascript">
-        setTimeout('logout()', <% 60000 * $timeout %>);
-      </script>
-%   }
 
     <% $head |n %>
 
@@ -59,7 +52,7 @@ Example:
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
           <font size=6><% $company_name || 'ExampleCo' %></font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b> <FONT SIZE="-2"><a href="javascript:void(0);" onClick="logout();">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b> <FONT SIZE="-2"><a href="<%$fsurl%>loginout/logout.html">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
 %         if ( $conf->config("ticket_system")
 %              && FS::TicketSystem->access_right(\%session, 'ModifySelf') ) {
             | <a href="<%$fsurl%>rt/Prefs/Other.html" STYLE="color: #000000">Ticketing preferences</a>

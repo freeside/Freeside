@@ -6,19 +6,18 @@ use vars qw(
   $secrets $datasrc $db_user $db_pass $schema $dbh $driver_name
   $AutoCommit %callback @callback $callback_hack $use_confcompat
 );
-use subs qw(
-  getsecrets cgisetotaker
-);
+use subs qw( getsecrets );
 use Exporter;
-use Carp qw(carp croak cluck confess);
+use Carp qw( carp croak cluck confess );
 use DBI;
 use IO::File;
 use FS::CurrentUser;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
-                getotaker dbh datasrc getsecrets driver_name myconnect
-                use_confcompat);
+@EXPORT_OK = qw( checkeuid checkruid cgi setcgi adminsuidsetup forksuidsetup
+                 getotaker dbh datasrc getsecrets driver_name myconnect
+                 use_confcompat
+               );
 
 $DEBUG = 0;
 $me = '[FS::UID]';
@@ -38,13 +37,9 @@ FS::UID - Subroutines for database login and assorted other stuff
 
 =head1 SYNOPSIS
 
-  use FS::UID qw(adminsuidsetup cgisuidsetup dbh datasrc getotaker
-  checkeuid checkruid);
+  use FS::UID qw(adminsuidsetup dbh datasrc getotaker checkeuid checkruid);
 
-  adminsuidsetup $user;
-
-  $cgi = new CGI;
-  $dbh = cgisuidsetup($cgi);
+  $dbh = adminsuidsetup $user;
 
   $dbh = dbh;
 
@@ -194,26 +189,6 @@ sub install_callback {
   &{$callback} if $dbh;
 }
 
-=item cgisuidsetup CGI_object
-
-Takes a single argument, which is a CGI (see L<CGI>) or Apache (see L<Apache>)
-object (CGI::Base is depriciated).  Runs cgisetotaker and then adminsuidsetup.
-
-=cut
-
-sub cgisuidsetup {
-  $cgi=shift;
-  if ( $cgi->isa('CGI::Base') ) {
-    carp "Use of CGI::Base is depriciated";
-  } elsif ( $cgi->isa('Apache') ) {
-
-  } elsif ( ! $cgi->isa('CGI') ) {
-    croak "fatal: unrecognized object $cgi";
-  }
-  cgisetotaker; 
-  adminsuidsetup($user);
-}
-
 =item cgi
 
 Returns the CGI (see L<CGI>) object.
@@ -221,8 +196,19 @@ Returns the CGI (see L<CGI>) object.
 =cut
 
 sub cgi {
-  carp "warning: \$FS::UID::cgi isa Apache" if $cgi->isa('Apache');
+  carp "warning: \$FS::UID::cgi is undefined" unless defined($cgi);
+  #carp "warning: \$FS::UID::cgi isa Apache" if $cgi && $cgi->isa('Apache');
   $cgi;
+}
+
+=item cgi CGI_OBJECT
+
+Sets the CGI (see L<CGI>) object.
+
+=cut
+
+sub setcgi {
+  $cgi = shift;
 }
 
 =item dbh
@@ -267,29 +253,6 @@ Returns the current Freeside user.
 =cut
 
 sub getotaker {
-  $user;
-}
-
-=item cgisetotaker
-
-Sets and returns the CGI REMOTE_USER.  $cgi should be defined as a CGI.pm
-object (see L<CGI>) or an Apache object (see L<Apache>).  Support for CGI::Base
-and derived classes is depriciated.
-
-=cut
-
-sub cgisetotaker {
-  if ( $cgi && $cgi->isa('CGI::Base') && defined $cgi->var('REMOTE_USER')) {
-    carp "Use of CGI::Base is depriciated";
-    $user = lc ( $cgi->var('REMOTE_USER') );
-  } elsif ( $cgi && $cgi->isa('CGI') && defined $cgi->remote_user ) {
-    $user = lc ( $cgi->remote_user );
-  } elsif ( $cgi && $cgi->isa('Apache') ) {
-    $user = lc ( $cgi->connection->user );
-  } else {
-    die "fatal: Can't get REMOTE_USER! for cgi $cgi - you need to setup ".
-        "Apache user authentication as documented in the installation instructions";
-  }
   $user;
 }
 
@@ -390,8 +353,7 @@ Too many package-global variables.
 
 Not OO.
 
-No capabilities yet.  When mod_perl and Authen::DBI are implemented, 
-cgisuidsetup will go away as well.
+No capabilities yet. (What does this mean again?)
 
 Goes through contortions to support non-OO syntax with multiple datasrc's.
 

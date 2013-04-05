@@ -1,18 +1,10 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML>
-  <HEAD>
-    <TITLE>
-      Logout page 
-    </TITLE>
-  </HEAD>
-  <BODY>
-    <BR><BR>
-    <CENTER>
-      You have logged out.
-    </CENTER>
-    <BR><BR>
-    <CENTER>
-      You can <a href="..">log in</a> again.
-    </CENTER>
-  </BODY>
-</HTML>
+<% $cgi->redirect($fsurl.'?logout=logout') %>
+<%init>
+
+my $auth_type = $r->auth_type;
+
+# Delete the cookie, etc.
+$auth_type->logout($r);
+#XXX etc: should delete the server-side session
+
+</%init>

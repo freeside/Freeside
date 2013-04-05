@@ -1,5 +1,6 @@
 package FS::access_user::external_auth;
-use base qw( FS::access_user );
+use base qw( FS::access_user::external ); #inherit from ::external for
+                                          # autocreation
 
 use strict;
 
