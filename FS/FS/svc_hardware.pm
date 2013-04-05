@@ -105,9 +105,13 @@ sub search_sql {
   my ($class, $string) = @_;
   my @where = ();
 
-  my $ip = NetAddr::IP->new($string);
-  if ( $ip ) {
-    push @where, $class->search_sql_field('ip_addr', $ip->addr);
+  if ( $string =~ /^[\d\.:]+$/ ) {
+    # if the string isn't an IP address, this will waste several seconds
+    # attempting a DNS lookup.  so try to filter those out.
+    my $ip = NetAddr::IP->new($string);
+    if ( $ip ) {
+      push @where, $class->search_sql_field('ip_addr', $ip->addr);
+    }
   }
   
   if ( $string =~ /^(\w+)$/ ) {
