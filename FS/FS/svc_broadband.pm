@@ -277,7 +277,7 @@ sub search {
       ),
       'extra_sql' => $extra_sql,
       'addl_from' => $addl_from,
-      'order_by'  => "ORDER BY ".($params->{'order_by'} || 'svcnum'),
+      'order_by'  => ($params->{'order_by'} || 'ORDER BY svcnum'),
       'count_query' => $count_query,
     } );
 }
