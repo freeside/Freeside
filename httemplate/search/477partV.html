@@ -1,3 +1,6 @@
+% if ( $cgi->param('_type') =~ /^xml$/ ) {
+<zip_code>
+% }
 <& elements/search.html,
                   'html_init'         => $html_init,
                   'name'              => 'zip code',
@@ -14,6 +17,9 @@
 
               
 &>
+% if ( $cgi->param('_type') =~ /^xml$/ ) {
+</zip_code>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

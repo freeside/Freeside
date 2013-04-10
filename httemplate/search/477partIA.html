@@ -1,0 +1,165 @@
+% if ( $opt{'type'} eq 'xml' ) {
+%# container element <Part_IA_$tech> is in 477.html
+%   my $col = 'a';
+%   foreach ( @summary_row ) {
+%     my $el = $xml_prefix . $col . '1'; # PartIA_Aa1, PartIA_Ab1, etc.
+  <<% $el %>><% $_ %><<% "/$el" %>>
+%     $col++;
+%   }
+%   foreach my $col_data ( @data ) { 
+%     my $row = 1;
+%     foreach my $cell ( @$col_data ) {
+%       my $el = $xml_prefix . $col . $row; # PartIA_Af1, PartIA_Af2...
+  <<% $el %>><% $cell->[0] %><<% "/$el" %>>
+%       if ( $percentages ) {
+%         $el = $xml_percent . $col . $row; # Part_p_IA_Af1, ...
+  <<% $el %>><% $cell->[1] %><<% "/$el" %>>
+%       }
+%       $row++;
+%     } # foreach $cell
+%     $col++;
+%   } # foreach $col_data
+% } else { # not XML
+
+<H2><% $title %> totals</H2>
+<& /elements/table-grid.html &>
+  <TR>
+%   foreach ( 'Total Connections',
+%             '% owned loop',
+%             '% billed to end users',
+%             '% residential',
+%             '% residential > 200 kbps') {
+    <TH WIDTH="20%"><% $_ |h %></TH>
+%   }
+  </TR>
+  <TR CLASS="row0">
+%   foreach ( @summary_row ) {
+    <TD><% $_ %></TD>
+%   }
+  </TR>
+</TABLE>
+<H2><% $title %> breakdown by speed</H2>
+<TABLE CLASS="grid" CELLSPACING=0>
+  <TR>
+    <TH WIDTH="12%"></TH>
+%   for (my $col = 0; $col < scalar(@download_option); $col++) {
+    <TH WIDTH="11%">
+      <% $FS::Report::FCC_477::download[$col] |h %>
+    </TH>
+%   }
+  </TR>
+% for (my $row = 0; $row < scalar(@upload_option); $row++) {
+  <TR CLASS="row<% $row % 2%>">
+    <TD STYLE="text-align: left; font-weight: bold">
+%     if ( $asymmetric ) {
+      <% $FS::Report::FCC_477::upload[$row] |h %>
+%     }
+    </TD>
+%   for (my $col = 0; $col < scalar(@download_option); $col++) {
+    <TD>
+      <% $data[$col][$row][0] %>
+%     if ( $percentages ) {
+      <BR><% $data[$col][$row][1] %>
+%     }
+    </TD>
+%   } # for $col
+  </TR>
+% } # for $row
+</TABLE>
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my %opt = @_;
+my %search_hash;
+  
+for ( qw(agentnum state) ) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+$search_hash{'status'} = 'active';
+$search_hash{'country'} = 'US';
+$search_hash{'classnum'} = [ $cgi->param('classnum') ];
+
+# arrays of report_option_ numbers, running parallel to 
+# the download and upload speed arrays
+my @download_option = $cgi->param('part1_column_option');
+my @upload_option = $cgi->param('part1_row_option');
+
+my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi);
+
+my $total_count = 0;
+my $total_residential = 0;
+my $above_200 = 0;
+my $tech_code = $opt{tech_code};
+my $technology = $FS::Report::FCC_477::technology[$tech_code] || 'unknown';
+my $title = "Part IA $technology";
+my $xml_prefix = 'PartIA_'. chr(65 + $tech_code);
+my $xml_percent = 'Part_p_IA_'. chr(65 + $tech_code); # yes, seriously
+
+# whether to show the results as a matrix (upload speeds in rows) or a single
+# row
+my $asymmetric = 1;
+if ( $technology eq 'Symmetric xDSL' or $technology eq 'Other Wireline' ) {
+  $asymmetric = 0;
+  @upload_option = ( undef );
+}
+# whether to show residential percentages in each cell of the matrix
+my $percentages = ($technology eq 'Terrestrial Mobile Wireless');
+
+my $query = FS::cust_pkg->search(\%search_hash);
+my $count_query = $query->{'count_query'};
+
+my $is_residential = " AND COALESCE(cust_main.company, '') = ''";
+my $has_option = sub {
+  my $optionnum = shift;
+  $optionnum =~ /^\d+$/ ?
+  " AND EXISTS(
+    SELECT 1 FROM part_pkg_option
+    WHERE part_pkg_option.pkgpart = part_pkg.pkgpart
+    AND optionname = 'report_option_$optionnum'
+    AND optionvalue = '1'
+  )" : '';
+};
+
+# limit to those that have technology option $tech_code
+$count_query .= $has_option->($technology_option[$tech_code]);
+
+my @data;
+for ( my $row = 0; $row < scalar @upload_option; $row++ ) {
+  for ( my $col = 0; $col < scalar @download_option; $col++ ) {
+
+    my $this_count_query = $count_query .
+                           $has_option->($upload_option[$row]) .
+                           $has_option->($download_option[$col]);
+
+    my $count = FS::Record->scalar_sql($this_count_query);
+    my $residential = FS::Record->scalar_sql($this_count_query . $is_residential);
+
+    my $percent = sprintf('%.2f', $count ? 100 * $residential / $count : 0);
+    $data[$col][$row] = [ $count, $percent ];
+
+    $total_count += $count;
+    $total_residential += $residential;
+    $above_200 += $residential if $row > 0 or !$asymmetric;
+  }
+}
+
+my $total_percentage =
+  sprintf("%.2f", $total_count ? 100*$total_residential/$total_count : 0);
+
+my $above_200_percentage =
+  sprintf("%.2f", $total_count ? 100*$above_200/$total_count : 0);
+
+my @summary_row = (
+  $total_count,
+  100.00, # own local loop--consistent with previous practice, but probably wrong
+  100.00, # billed to end user--also wrong
+  $total_percentage, # residential percentage
+  $above_200_percentage,
+);
+
+</%init>

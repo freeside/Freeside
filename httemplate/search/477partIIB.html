@@ -3,9 +3,9 @@
 %   for ( my $row = 0; $row < scalar(@rows); $row++ ) {
 %     for my $col (0..2) {
 %       if ( exists($data[$col][$row]) ) {
-<PartII_<% $row %><% $cols[$col] %>>\
+<PartII_<% $row + 1 %><% $cols[$col] %>>\
 <% $data[$col][$row] %>\
-</PartII_<% $row %><% $cols[$col] %>>
+</PartII_<% $row + 1 %><% $cols[$col] %>>
 %       }
 %     } #for $col
 %   } #for $row
@@ -15,19 +15,18 @@
 <TABLE>
   <TR><TD VALIGN="bottom"><BR></TD></TR>
   <TR><TD COLSPAN=2>
-  <TABLE CLASS="grid" CELLSPACING=0 STYLE="border: 1px solid #cccccc;" BGCOLOR="#cccccc">
+  <TABLE CLASS="grid" CELLSPACING=0>
     <TR>
 % foreach (@headers) {
-      <TH class="grid"><% $_ %></TH>
+      <TH><% $_ %></TH>
 % }
     </TR>
-% my @bgcolor = ('eeeeee','ffffff');
 % my $row = 0;
 % foreach my $rowhead (@rows) {
-    <TR> 
-      <TD CLASS="grid" BGCOLOR="#<% $bgcolor[$row % 2] %>"><% $rowhead %></TD>
+    <TR CLASS="row<% $row % 2 %>"> 
+      <TD STYLE="text-align: left; font-weight: bold"><% $rowhead %></TD>
 %     for my $col (0..2) {
-      <TD CLASS="grid" BGCOLOR="#<% $bgcolor[$row % 2] %>">
+      <TD>
 %       if ( exists($data[$col][$row]) ) {
       <% $data[$col][$row] %>
 %       }
