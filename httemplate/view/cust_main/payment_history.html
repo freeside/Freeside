@@ -536,7 +536,7 @@ foreach my $item (@history) {
   }
   $i++;
 }
-if ( $history[-1]->{'hide'} ) {
+if ( @history and $history[-1]->{'hide'} ) {
   # then everything is hidden
   $history[-1]->{'balance_forward'} = 1;
 }
