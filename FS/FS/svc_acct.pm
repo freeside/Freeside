@@ -1883,22 +1883,22 @@ sub email {
   $self->username. '@'. $self->domain(@_);
 }
 
-# snarfs are unused at this point?
-#
-# =item acct_snarf
-# 
-# Returns an array of FS::acct_snarf records associated with the account.
-# 
-# =cut
-# 
-# sub acct_snarf {
-#   my $self = shift;
-#   qsearch({
-#     'table'    => 'acct_snarf',
-#     'hashref'  => { 'svcnum' => $self->svcnum },
-#     #'order_by' => 'ORDER BY priority ASC',
-#   });
-# }
+
+=item acct_snarf
+
+Returns an array of FS::acct_snarf records associated with the account.
+
+=cut
+
+# unused as originally intended, but now by Communigate Pro "RPOP"
+sub acct_snarf {
+  my $self = shift;
+  qsearch({
+    'table'    => 'acct_snarf',
+    'hashref'  => { 'svcnum' => $self->svcnum },
+    #'order_by' => 'ORDER BY priority ASC',
+  });
+}
 
 =item cgp_rpop_hashref
 
