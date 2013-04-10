@@ -1080,7 +1080,7 @@ sub _upgrade_data {  #class method
         }
       } #$object
     } #$table
-    FS::upgrade_journal->set_done('cust_pay__parse_paybatch');
+    FS::upgrade_journal->set_done('cust_pay__parse_paybatch_1');
   }
 }
 
