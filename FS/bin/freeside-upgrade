@@ -123,6 +123,8 @@ my $cf;
 while ( $cf = $cfsth->fetchrow_hashref ) {
     my $tbl = $cf->{'dbtable'};
     my $name = $cf->{'name'};
+    $name = lc($name) unless driver_name =~ /^mysql/i;
+
     @statements = grep { $_ !~ /^\s*ALTER\s+TABLE\s+(h_|)$tbl\s+DROP\s+COLUMN\s+cf_$name\s*$/i }
                                                                     @statements;
     push @statements, 
