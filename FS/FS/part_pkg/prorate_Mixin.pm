@@ -67,11 +67,11 @@ the base price per billing cycle.
 
 Options:
 - add_full_period: Bill for the time up to the prorate day plus one full
-billing period after that.
+  billing period after that.
 - prorate_round_day: Round the current time to the nearest full day, 
-instead of using the exact time.
+  instead of using the exact time.
 - prorate_defer_bill: Don't bill the prorate interval until the prorate 
-day arrives.
+  day arrives.
 - prorate_verbose: Generate details to explain the prorate calculations.
 
 =cut
@@ -104,7 +104,7 @@ sub calc_prorate {
     $add_period = 1;
   }
 
-  # if the customer alreqady has a billing day-of-month established,
+  # if the customer already has a billing day-of-month established,
   # and it's a valid cutoff day, try to respect it
   my $next_bill_day;
   if ( my $next_bill = $cust_pkg->cust_main->next_bill_date ) {
@@ -123,31 +123,46 @@ sub calc_prorate {
 
   my $permonth = $charge / $self->freq;
   my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
-
-  if ( $self->option('prorate_verbose',1) 
-      and $months > 0 and $months < $self->freq ) {
-    push @$details, 
-          'Prorated (' . time2str('%b %d', $mnow) .
-            ' - ' . time2str('%b %d', $mend) . '): ' . $money_char . 
-            sprintf('%.2f', $permonth * $months + 0.00000001 );
-  }
+  # after this, $self->freq - 1 < $months <= $self->freq
 
   # add a full period if currently billing for a partial period
   # or periods up to freq_override if billing for an override interval
   if ( ($param->{'freq_override'} || 0) > 1 ) {
     $months += $param->{'freq_override'} - 1;
-  } 
-  elsif ( $add_period && $months < $self->freq) {
+    # freq_override - 1 correct here?
+    # (probably only if freq == 1, yes?)
+  } elsif ( $add_period && $months < $self->freq ) {
 
-    if ( $self->option('prorate_verbose',1) ) {
-      # calculate the prorated and add'l period charges
+    # 'add_period' is a misnomer.
+    # we add enough to make the total at least a full period
+    $months++;
+    $$sdate = $self->add_freq($mstart, 1);
+    # now $self->freq <= $months <= $self->freq + 1
+    # (note that this only happens if $months < $self->freq to begin with)
+
+  }
+
+  if ( $self->option('prorate_verbose',1) and $months > 0 ) {
+    if ( $months < $self->freq ) {
+      # we are billing a fractional period only
+      #       # (though maybe not a fractional month)
+      my $period_end = $self->add_freq($mstart);
+      push @$details, 
+      'Prorated (' . time2str('%b %d', $mnow) .
+      ' - ' . time2str('%b %d', $period_end) . '): ' . $money_char .
+      sprintf('%.2f', $permonth * $months + 0.00000001 );
+
+    } elsif ( $months > $self->freq ) {
+      # we are billing MORE than a full period
       push @$details,
-        'First full month: ' . $money_char . 
-          sprintf('%.2f', $permonth);
-    }
 
-    $months += $self->freq;
-    $$sdate = $self->add_freq($mstart);
+      'Prorated (' . time2str('%b %d', $mnow) .
+      ' - ' . time2str('%b %d', $mend) . '): ' . $money_char .
+      sprintf('%.2f', $permonth * ($months - $self->freq + 0.0000001)),
+
+      'First full period: ' . $money_char .
+      sprintf('%.2f', $permonth * $self->freq);
+    } # else $months == $self->freq, and no prorating has happened
   }
 
   $param->{'months'} = $months;
