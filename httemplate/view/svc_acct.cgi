@@ -22,12 +22,14 @@
 
 % } 
 
+
 <& svc_acct/radius_usage.html,
               'svc_acct' => $svc_acct,
               'part_svc' => $part_svc,
               'cust_pkg' => $cust_pkg,
               %gopt,
 &>
+
 
 <& svc_acct/change_svc_form.html,
               'part_svc' => \@part_svc,
@@ -42,6 +44,9 @@
               'part_svc' => \@part_svc,
               %gopt,
 &>
+
+</FORM>
+
 
 <& svc_acct/basics.html,
               'svc_acct' => $svc_acct,
