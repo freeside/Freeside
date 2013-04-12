@@ -857,7 +857,8 @@ sub search {
   if ($params->{'flattened_pkgs'}) {
 
     #my $pkg_join = '';
-    $addl_from .= ' LEFT JOIN cust_pkg USING ( custnum ) ';
+    $addl_from .=
+      ' LEFT JOIN cust_pkg ON ( cust_main.custnum = cust_pkg.custnum ) ';
 
     if ($dbh->{Driver}->{Name} eq 'Pg') {
 
