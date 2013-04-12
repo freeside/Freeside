@@ -404,23 +404,26 @@ sub cust_fields_subs {
   my $unlinked_warn = 0;
   return map { 
     my $f = $_;
-    if( $unlinked_warn++ ) {
+    if ( $unlinked_warn++ ) {
+
       sub {
         my $record = shift;
-        if( $record->custnum ) {
-          $record->$f(@_);
-        }
-        else {
+        if ( $record->custnum ) {
+          encode_entities( $record->$f(@_) );
+        } else {
           '(unlinked)'
         };
-      }
-    } 
-    else {
+      };
+
+    } else {
+
       sub {
         my $record = shift;
-        $record->$f(@_) if $record->custnum;
-      }
+        $record->custnum ? encode_entities( $record->$f(@_) ) : '';
+      };
+
     }
+
   } @cust_fields;
 }
 
