@@ -234,12 +234,15 @@ if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.refnum = $1";
 }
 
-# cust_classnum
-if ( $cgi->param('cust_classnum') ) {
-  my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
-  push @where, 'cust_main.classnum IN('.join(',',@classnums).')'
+# cust_classnum (false laziness w/ elements/cust_main_dayranges.html, elements/cust_pay_or_refund.html, prepaid_income.html, cust_bill_pay.html, cust_bill_pkg_referral.html, unearned_detail.html, cust_credit.html, cust_credit_refund.html, cust_main::Search::search_sql)
+if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
+  my @classnums = grep /^\d*$/, $cgi->param('cust_classnum');
+  push @where, 'COALESCE( cust_main.classnum, 0) IN ( '.
+                   join(',', map { $_ || '0' } @classnums ).
+               ' )'
     if @classnums;
 }
+
 
 # custnum
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {

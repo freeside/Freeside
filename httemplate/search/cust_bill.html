@@ -97,7 +97,7 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     $search{'refnum'} = $1;
   }
 
-  if ( $cgi->param('cust_classnum') ) {
+if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
     $search{'cust_classnum'} = [ $cgi->param('cust_classnum') ];
   }
 
