@@ -114,13 +114,12 @@ if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
 push @where, "cust_bill._date >= $beginning",
              "cust_bill._date <= $ending";
 
-if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  push @where, "cust_main.agentnum = $1";
-}
-
-if ( $cgi->param('cust_classnum') ) {
-  my @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
-  push @where, 'cust_main.classnum IN('.join(',',@classnums).')'
+# cust_classnum (false laziness w/ elements/cust_main_dayranges.html, elements/cust_pay_or_refund.html, prepaid_income.html, cust_bill_pay.html, cust_bill_pkg.html, cust_bill_pkg_referral.html, cust_credit.html, cust_credit_refund.html, cust_main::Search::search_sql)
+if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
+  my @classnums = grep /^\d*$/, $cgi->param('cust_classnum');
+  push @where, 'COALESCE( cust_main.classnum, 0) IN ( '.
+                   join(',', map { $_ || '0' } @classnums ).
+               ' )'
     if @classnums;
 }
 

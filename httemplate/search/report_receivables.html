@@ -15,7 +15,15 @@
   <& /elements/tr-select-cust_main-status.html,
                 'label' => emt('Customer Status'),
   &>
-  
+
+  <& /elements/tr-select-cust_class.html,
+     'label'        => emt('Customer class'),
+     'field'        => 'cust_classnum',
+     'multiple'     => 1,
+     'pre_options'  => [ '' => emt('(none)') ],
+     'all_selected' => 1,
+  &>
+
   <TR>
     <TD ALIGN="right"><% mt('Customers') |h %></TD>
     <TD>

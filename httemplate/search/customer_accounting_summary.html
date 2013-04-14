@@ -142,8 +142,6 @@ $title .=  $sel_part_referral->referral.' '
 
 $title .= 'Customer Accounting Summary Report';
 
-my @cust_classnums = grep /^\d+$/, $cgi->param('cust_classnum');
-
 my @items  = ('netsales', 'cashflow');
 my @params = ( [], [] );
 my $setuprecur = '';
@@ -173,7 +171,7 @@ foreach (qw(agentnum refnum status)) {
   }
 }
 $search_hash{'classnum'} = [ $cgi->param('cust_classnum') ] 
-  if $cgi->param('cust_classnum');
+  if grep { $_ eq 'cust_classnum' } $cgi->param;
 
 my $query = FS::cust_main::Search->search(\%search_hash);
 my @custs = qsearch($query);
