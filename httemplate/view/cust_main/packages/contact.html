@@ -1,0 +1,48 @@
+% if ( $contact ) {
+    <% $contact->line |h %>
+% }
+
+% if ( ! $cust_pkg->get('cancel')
+%      && $FS::CurrentUser::CurrentUser->access_right('Change customer package')
+%    )
+% {
+  <FONT SIZE=-1>
+%#XXX    (&nbsp;<%pkg_change_contact_link($cust_pkg)%>&nbsp;)
+%#  %   if ( $cust_pkg->contactnum ) {
+%#          (&nbsp;<%edit_contact_link($cust_pkg->contactnum)%>&nbsp;)
+%#  %   }
+  </FONT>
+% } 
+
+</TD>
+<%init>
+
+my $conf = new FS::Conf;
+my %opt = @_;
+
+my $cust_pkg       = $opt{'cust_pkg'};
+
+my $contact = $cust_pkg->contact;
+
+sub pkg_change_contact_link {
+  my $cust_pkg = shift;
+  my $pkgpart = $cust_pkg->pkgpart;
+  include( '/elements/popup_link-cust_pkg.html',
+#XXX
+    'action'      => $p. "misc/change_pkg.cgi?contactnum=-1",
+    'label'       => emt('Change contact'),
+    'actionlabel' => emt('Change'),
+    'cust_pkg'    => $cust_pkg,
+  );
+}
+
+sub edit_contact_link {
+  my $contactnum = shift;
+  include( '/elements/popup_link.html',
+    'action'      => $p. "edit/cust_contact.cgi?contactnum=$contactnum",
+    'label'       => emt('Edit contact'),
+    'actionlabel' => emt('Edit'),
+  );
+}
+
+</%init>

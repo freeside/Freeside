@@ -1,5 +1,3 @@
-<TD CLASS="inv" BGCOLOR="<% $bgcolor %>" WIDTH="20%">
-
 % if ( $default ) {
   <DIV STYLE="font-style: italic; font-size: small">
 % }
@@ -41,13 +39,11 @@
   </FONT>
 % } 
 
-</TD>
 <%init>
 
 my $conf = new FS::Conf;
 my %opt = @_;
 
-my $bgcolor        = $opt{'bgcolor'};
 my $cust_pkg       = $opt{'cust_pkg'};
 my $countrydefault = $opt{'countrydefault'} || 'US';
 my $statedefault   = $opt{'statedefault'}

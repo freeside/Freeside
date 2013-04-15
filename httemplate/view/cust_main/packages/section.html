@@ -3,9 +3,7 @@
 % #my $width = $show_location ? 'WIDTH="25%"' : 'WIDTH="33%"';
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Package') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Status') |h %></TH>
-%   if ( $show_location ) {
-  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Location') |h %></TH>
-% }
+  <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Contact/Location') |h %></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><% mt('Services') |h %></TH>
 </TR>
 
@@ -13,6 +11,7 @@
 %   foreach my $cust_pkg (@$packages) {
     <& .packagerow, $cust_pkg,
         'cust_main' => $opt{'cust_main'},
+        'bgcolor'   => $opt{'bgcolor'},
         %conf_opt
     &>
 %   }
@@ -27,10 +26,11 @@
   <!--pkgnum: <% $cust_pkg->pkgnum %>-->
   <TR CLASS="row<%$row % 2%>">
     <& package.html, %iopt &>
-    <& status.html, %iopt &>
-%     if ( $iopt{'show_location'} ) {
-    <& location.html, %iopt &>
-%     }
+    <& status.html,  %iopt &>
+    <TD CLASS="inv" BGCOLOR="<% $iopt{bgcolor} %>" WIDTH="20%" VALIGN="top">
+      <& contact.html, %iopt &>
+      <& location.html, %iopt &>
+    </TD>
     <& services.html, %iopt &>
   </TR>
 % $row++;
@@ -51,7 +51,6 @@ my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $packages = $opt{'packages'};
-my $show_location = $opt{'show_location'};
 
 # Sort order is hardcoded for now, can change this if needed.
 @$packages = sort { 
@@ -86,8 +85,6 @@ my %conf_opt = (
   'maestro-status_test'       => $conf->exists('maestro-status_test'),
   'cust_pkg-large_pkg_size'   => scalar($conf->config('cust_pkg-large_pkg_size')),
 
-  # for packages.html Change location link
-  'show_location'             => $show_location,
 );
 
 </%init>

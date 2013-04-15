@@ -100,6 +100,28 @@ sub order_pkg {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  if ( $opt->{'contactnum'} and $opt->{'contactnum'} != -1 ) {
+
+    $cust_pkg->contactnum($opt->{'contactnum'});
+
+  } elsif ( $opt->{'contact'} ) {
+
+    if ( ! $opt->{'contact'}->contactnum ) {
+      # not inserted yet
+      my $error = $opt->{'contact'}->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting contact (transaction rolled back): $error";
+      }
+    }
+    $cust_pkg->contactnum($opt->{'contact'}->contactnum);
+
+  #} else {
+  #
+  #  $cust_pkg->contactnum();
+
+  }
+
   if ( $opt->{'locationnum'} and $opt->{'locationnum'} != -1 ) {
 
     $cust_pkg->locationnum($opt->{'locationnum'});

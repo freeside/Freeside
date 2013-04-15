@@ -93,6 +93,12 @@
   &>
 % }
 
+<& /elements/tr-select-contact.html,
+             'cgi'           => $cgi,
+             'cust_main'     => $cust_main,
+             'prospect_main' => $prospect_main,
+&>
+
 % if ( $cgi->param('lock_locationnum') ) {
 
     <INPUT TYPE  = "hidden"

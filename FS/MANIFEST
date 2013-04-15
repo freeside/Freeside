@@ -490,6 +490,8 @@ FS/phone_type.pm
 t/phone_type.t
 FS/contact_email.pm
 t/contact_email.t
+FS/contact_Mixin.pm
+t/contact_Mixin.t
 FS/prospect_main.pm
 t/prospect_main.t
 FS/o2m_Common.pm

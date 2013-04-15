@@ -101,7 +101,7 @@ table.usage {
 
   <TR>
     <TD COLSPAN=2>
-% if ( $conf->exists('cust_pkg-group_by_location') and $show_location ) {
+% if ( $conf->exists('cust_pkg-group_by_location') ) {
 <& locations.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
@@ -113,7 +113,6 @@ table.usage {
 <& packages/section.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
-    'show_location' => $show_location,
  &>
 </TABLE>
 % }
@@ -139,10 +138,6 @@ my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my( $packages, $num_old_packages ) = get_packages($cust_main, $conf);
-
-
-my $show_location = $conf->exists('cust_pkg-always_show_location') 
-  || (grep $_->locationnum ne $cust_main->ship_locationnum, @$packages);
 
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
 #subroutines

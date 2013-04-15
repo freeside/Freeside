@@ -1721,6 +1721,7 @@ sub tables_hashref {
         'custnum',             'int',     '', '', '', '', 
         'pkgpart',             'int',     '', '', '', '', 
         'pkgbatch',        'varchar', 'NULL', $char_d, '', '',
+        'contactnum',          'int', 'NULL', '', '', '', 
         'locationnum',         'int', 'NULL', '', '', '',
         'otaker',          'varchar', 'NULL', 32, '', '', 
         'usernum',             'int', 'NULL', '', '', '',

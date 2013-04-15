@@ -1,7 +1,8 @@
 package FS::cust_pkg;
 
 use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::location_Mixin
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin
+             FS::contact_Mixin FS::location_Mixin
              FS::m2m_Common FS::option_Common );
 use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
@@ -17,6 +18,7 @@ use FS::CurrentUser;
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
+use FS::contact;
 use FS::cust_location;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
@@ -620,6 +622,7 @@ sub check {
     $self->ut_numbern('pkgnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_numbern('pkgpart')
+    || $self->ut_foreign_keyn('contactnum',  'contact',       'contactnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')

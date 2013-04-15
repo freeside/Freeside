@@ -186,11 +186,6 @@
 %           !$supplemental and
 %           $part_pkg->freq ne '0' ) {
       <TR>
-%       if ( !$opt{'show_location'} ) {
-        <TD><FONT SIZE="-1">
-          (&nbsp;<% pkg_change_location_link($cust_pkg) %>&nbsp;)
-        </FONT></TD>
-%       }
 %       if ( FS::Conf->new->exists('invoice-unitprice') ) {
         <TD><FONT SIZE="-1">
           (&nbsp;<% pkg_change_quantity_link($cust_pkg) %>&nbsp;)
