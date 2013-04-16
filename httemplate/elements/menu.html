@@ -294,9 +294,11 @@ tie my %report_ticketing, 'Tie::IxHash',
   'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html?NewQuery=1', 'List tickets by any criteria' ],
 ;
 
-tie my %report_employees, 'Tie::IxHash',
-  'Employee Commission Report' => [ $fsurl.'search/report_employee_commission.html', '' ],
-  'Employee Audit Report' => [ $fsurl.'search/report_employee_audit.html', 'Employee audit report' ],
+tie my %report_employees, 'Tie::IxHash';
+$report_employees{'Employee Commission Report'} = [ $fsurl.'search/report_employee_commission.html', '' ]
+  if $curuser->access_right('Employees: Commission Report');
+$report_employees{'Employee Audit Report'} = [ $fsurl.'search/report_employee_audit.html', 'Employee audit report' ]
+  if $curuser->access_right('Employees: Audit Report');
 ;
 
 tie my %report_bill_event, 'Tie::IxHash',
@@ -397,7 +399,7 @@ $report_menu{'Tickets'}        = [ \%report_ticketing, 'Ticket reports' ]
   if $conf->config('ticket_system')
   ;#&& FS::TicketSystem->access_right(\%session, 'Something');
 $report_menu{'Employees'}      =  [ \%report_employees, 'Employee reports'  ]
-  if $curuser->access_right('Financial reports');
+  if keys %report_employees;
 $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
   if $curuser->access_right('Billing event reports');
 $report_menu{'Financial'}      = [ \%report_financial, 'Financial reports' ]

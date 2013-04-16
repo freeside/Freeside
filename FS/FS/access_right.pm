@@ -229,7 +229,9 @@ sub _upgrade_data { # class method
                             'Usage: Unrateable CDRs',
                           ],
     'Provision customer service' => [ 'Edit password' ],
-
+    'Financial reports' => [ 'Employees: Commission Report',
+                             'Employees: Audit Report',
+                           ],
 ;
 
   foreach my $old_acl ( keys %onetime ) {
