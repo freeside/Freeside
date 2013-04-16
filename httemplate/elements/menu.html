@@ -310,8 +310,7 @@ $report_payments{'Deleted Payments / Payment history table'} = [ $fsurl.'search/
   if $conf->exists('payment-history-report');
 
 tie my %report_financial, 'Tie::IxHash';
-if($curuser->access_right('Financial reports')) {
-
+if ( $curuser->access_right('Financial reports') ) {
   %report_financial = (
     'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
     'Daily Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time_daily.html', 'Sales, credits and receipts (broken down by day) summary graph' ],
@@ -319,14 +318,25 @@ if($curuser->access_right('Financial reports')) {
     'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
     'Sales With Advertising Source' => [ $fsurl.'search/report_cust_bill_pkg_referral.html' ],
     'Sales with Agent Commissions' => [ $fsurl.'search/report_agent_commission.html' ],
-    'Employee Commission Report' => [ $fsurl.'search/report_employee_commission.html', '' ],
-    'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
-    'Credit application detail' => [ $fsurl.'search/report_cust_credit_bill_pkg.html', 'Line item application detail' ],    'Unapplied Credits' => [ $fsurl.'search/report_cust_credit.html?unapplied=1', 'Unapplied credit report (by type and/or date range)' ],
-    'Refund Report' => [ $fsurl.'search/report_cust_refund.html', 'Refund report (by type and/or date range)' ],
-    'Unapplied Refunds' => [ $fsurl.'search/report_cust_refund.html?unapplied=1', 'Unapplied refund report (by type and/or date range)' ],
-    'Package Costs Report' => [ $fsurl.'graph/report_cust_pkg_cost.html', 'Package setup and recurring costs graph' ],
-    'Employee Audit Report' => [ $fsurl.'search/report_employee_audit.html', 'Employee audit report' ],
   );
+}
+
+$report_financial{'Employee Commission Report'} = [ $fsurl.'search/report_employee_commission.html', '' ]
+  if $curuser->access_right('Employees: Commission Report');
+
+if ( $curuser->access_right('Financial reports')) {
+  $report_financial{'Credit Report'} = [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ];
+  $report_financial{'Credit application detail'} = [ $fsurl.'search/report_cust_credit_bill_pkg.html', 'Line item application detail' ];
+  $report_financial{'Unapplied Credits'} = [ $fsurl.'search/report_cust_credit.html?unapplied=1', 'Unapplied credit report (by type and/or date range)' ];
+  $report_financial{'Refund Report'} = [ $fsurl.'search/report_cust_refund.html', 'Refund report (by type and/or date range)' ];
+  $report_financial{'Unapplied Refunds'} = [ $fsurl.'search/report_cust_refund.html?unapplied=1', 'Unapplied refund report (by type and/or date range)' ];
+  $report_financial{'Package Costs Report'} = [ $fsurl.'graph/report_cust_pkg_cost.html', 'Package setup and recurring costs graph' ];
+}
+
+$report_financial{'Employee Audit Report'} = [ $fsurl.'search/report_employee_audit.html', 'Employee audit report' ]
+  if $curuser->access_right('Employees: Audit Report');
+
+if ( $curuser->access_right('Financial reports')) {
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
 
@@ -337,11 +347,11 @@ if($curuser->access_right('Financial reports')) {
 
   $report_financial{'Customer Accounting Summary'} = [ $fsurl.'search/report_customer_accounting_summary.html', 'Customer accounting summary report' ];
 
-} elsif($curuser->access_right('Receivables report')) {
+} elsif ($curuser->access_right('Receivables report')) {
 
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
 
-} # else $report_financial contains nothing.
+}
 
 tie my %report_logs, 'Tie::IxHash';
   $report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
@@ -376,8 +386,7 @@ $report_menu{'Tickets'}   = [ \%report_ticketing, 'Ticket reports' ]
 $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
   if $curuser->access_right('Billing event reports');
 $report_menu{'Financial'}  = [ \%report_financial, 'Financial reports' ]
-  if $curuser->access_right('Financial reports') 
-  or $curuser->access_right('Receivables report');
+  if keys %report_financial;
 $report_menu{'Logs'} = [ \%report_logs, 'System and email logs' ]
   if (keys %report_logs); # empty if the user has no rights to it
 $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
