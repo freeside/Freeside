@@ -458,7 +458,13 @@ sub qsearch {
 #    grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
 #  ) or croak "Error executing \"$statement\": ". $sth->errstr;
 
-  $sth->execute or croak "Error executing \"$statement\": ". $sth->errstr;
+  my $ok = $sth->execute;
+  if (!$ok) {
+    my $error = "Error executing \"$statement\"";
+    $error .= ' (' . join(', ', map {"'$_'"} @value) . ')' if @value;
+    $error .= ': '. $sth->errstr;
+    croak $error;
+  }
 
   my $table = $stable[0];
   my $pkey = '';
