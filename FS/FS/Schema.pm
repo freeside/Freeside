@@ -2729,9 +2729,10 @@ sub tables_hashref {
       'columns' => [
         'exportnum',   'serial',     '',      '', '', '', 
         'exportname', 'varchar', 'NULL', $char_d, '', '',
-        'machine',    'varchar', 'NULL', $char_d, '', '', 
+        'machine',    'varchar', 'NULL', $char_d, '', '',
         'exporttype', 'varchar',     '', $char_d, '', '', 
         'nodomain',      'char', 'NULL',       1, '', '', 
+        'default_machine','int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'exportnum',
       'unique'      => [],

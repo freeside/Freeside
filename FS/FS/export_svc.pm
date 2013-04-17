@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_export;
 use FS::part_svc;
+use FS::svc_export_machine;
 
 @ISA = qw(FS::Record);
 
@@ -209,6 +210,19 @@ sub insert {
   } #end of duplicate check, whew
 
   $error = $self->SUPER::insert;
+
+  my $part_export = $self->part_export;
+  if ( !$error and $part_export->default_machine ) {
+    foreach my $cust_svc ( $self->part_svc->cust_svc ) {
+      my $svc_export_machine = FS::svc_export_machine->new({
+          'exportnum'   => $self->exportnum,
+          'svcnum'      => $cust_svc->svcnum,
+          'machinenum'  => $part_export->default_machine,
+      });
+      $error ||= $svc_export_machine->insert;
+    }
+  }
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -251,7 +265,23 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+  my $dbh = dbh;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+
+  my $error = $self->SUPER::delete;
+  foreach ($self->svc_export_machine) {
+    $error ||= $_->delete;
+  }
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+}
+
 
 =item replace OLD_RECORD
 
@@ -305,6 +335,24 @@ Returns the FS::part_svc object (see L<FS::part_svc>).
 sub part_svc {
   my $self = shift;
   qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+}
+
+=item svc_export_machine
+
+Returns all export hostname records (L<FS::svc_export_machine>) for this
+combination of svcpart and exportnum.
+
+=cut
+
+sub svc_export_machine {
+  my $self = shift;
+  qsearch({
+    'table'     => 'svc_export_machine',
+    'select'    => 'svc_export_machine.*',
+    'addl_from' => 'JOIN cust_svc USING (svcnum)',
+    'hashref'   => { 'exportnum' => $self->exportnum },
+    'extra_sql' => ' AND cust_svc.svcpart = '.$self->svcpart,
+  });
 }
 
 =back

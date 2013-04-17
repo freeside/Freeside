@@ -56,6 +56,7 @@ my $new = new FS::part_export ( {
 if ( $cgi->param('svc_machine') eq 'Y' ) {
   $new->machine('_SVC_MACHINE');
   $new->part_export_machine_textarea( $cgi->param('part_export_machine') );
+  $new->default_machine_name( $cgi->param('default_machine_name') );
 }
 
 my $error;

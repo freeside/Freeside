@@ -2,6 +2,34 @@
 
 <% include('/elements/error.html') %>
 
+<SCRIPT TYPE="text/javascript">
+  function svc_machine_changed (what, layer) {
+    if ( what.checked ) {
+      var machine = document.getElementById(layer + "_machine");
+      var part_export_machine = 
+        document.getElementById(layer + "_part_export_machine");
+      if ( what.value == 'Y' ) {
+        machine.disabled = true;
+        part_export_machine.disabled = false;
+      } else if ( what.value == 'N' ) {
+        machine.disabled = false;
+        part_export_machine.disabled = true;
+      }
+    }
+  }
+
+  function part_export_machine_changed (what, layer) {
+    var select_default = document.getElementById(layer + '_default_machine');
+    var selected = select_default.value;
+    select_default.options.length = 0;
+    var choices = what.value.split("\n");
+    for (var i = 0; i < choices.length; i++) {
+      select_default.options[i] = new Option(choices[i]);
+    }
+    select_default.value = selected;
+  }
+
+</SCRIPT>
 <FORM NAME="dummy">
 <INPUT TYPE="hidden" NAME="exportnum" VALUE="<% $part_export->exportnum %>">
 
@@ -58,7 +86,6 @@ my $widget = new HTML::Widgets::SelectLayers(
   'form_name'      => 'dummy',
   'form_action'    => 'process/part_export.cgi',
   'form_text'      => [qw( exportnum exportname )],
-#  'form_checkbox'  => [qw()],
   'html_between'    => "</TD></TR></TABLE>\n",
   'layer_callback'  => sub {
     my $layer = shift;
@@ -87,7 +114,8 @@ my $widget = new HTML::Widgets::SelectLayers(
         if ( $exports->{$layer}{svc_machine} ) {
           my( $N_CHK, $Y_CHK) = ( 'CHECKED', '' );
           my( $machine_DISABLED, $pem_DISABLED) = ( '', 'DISABLED' );
-          my $part_export_machine = '';
+          my @part_export_machine;
+          my $default_machine = '';
           if ( $cgi->param('svc_machine') eq 'Y'
                  || $machine eq '_SVC_MACHINE'
              )
@@ -97,38 +125,43 @@ my $widget = new HTML::Widgets::SelectLayers(
             $machine_DISABLED = 'DISABLED';
             $pem_DISABLED = '';
             $machine = '';
-            $part_export_machine =
-              $cgi->param('part_export_machine')
-              || join "\n",
+            @part_export_machine = $cgi->param('part_export_machine');
+            if (!@part_export_machine) {
+              @part_export_machine = 
                    map $_->machine,
                      grep ! $_->disabled,
                        $part_export->part_export_machine;
+            }
+            $default_machine =
+              $cgi->param('default_machine_name')
+              || $part_export->default_export_machine;
           }
-          my $oc = qq(onChange="${layer}_svc_machine_changed(this)");
+          my $oc = qq(onChange="svc_machine_changed(this, '$layer')");
           $html .= qq[
             <INPUT TYPE="radio" NAME="svc_machine" VALUE="N" $N_CHK $oc>
             <INPUT TYPE="text" NAME="machine" ID="${layer}_machine" VALUE="$machine" $machine_DISABLED>
             <BR>
             <INPUT TYPE="radio" NAME="svc_machine" VALUE="Y" $Y_CHK $oc>
-            Selected in each customer service from these choices
-            <TEXTAREA NAME="part_export_machine" ID="${layer}_part_export_machine" $pem_DISABLED>$part_export_machine</TEXTAREA>
-
-            <SCRIPT TYPE="text/javascript">
-              function ${layer}_svc_machine_changed (what) {
-                if ( what.checked ) {
-                  var machine = document.getElementById("${layer}_machine");
-                  var part_export_machine = document.getElementById("${layer}_part_export_machine");
-                  if ( what.value == 'Y' ) {
-                    machine.disabled = true;
-                    part_export_machine.disabled = false;
-                  } else if ( what.value == 'N' ) {
-                    machine.disabled = false;
-                    part_export_machine.disabled = true;
-                  }
-                }
-              }
-            </SCRIPT>
+            <DIV STYLE="display:inline-block; vertical-align: top; text-align: right">
+              Selected in each customer service from these choices:
+              <TEXTAREA STYLE="vertical-align: top" NAME="part_export_machine"
+                ID="${layer}_part_export_machine"
+                onchange="part_export_machine_changed(this, '$layer')"
+                $pem_DISABLED>] .
+                
+                join("\n", @part_export_machine) .
+                
+                qq[</TEXTAREA>
+              <BR>
+              Default: 
+              <SELECT NAME="default_machine_name" ID="${layer}_default_machine">
           ];
+          foreach (@part_export_machine) {
+            $_ = encode_entities($_); # oh noes, XSS
+            my $sel = ($default_machine eq $_) ? ' SELECTED' : '';
+            $html .= qq!<OPTION VALUE="$_"$sel>$_</OPTION>\n!;
+          }
+          $html .= '</DIV></SELECT>'
         } else {
           $html .= qq(<INPUT TYPE="text" NAME="machine" VALUE="$machine">).
                      '<INPUT TYPE="hidden" NAME="svc_machine" VALUE=N">';
