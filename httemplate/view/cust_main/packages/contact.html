@@ -22,7 +22,7 @@ my %opt = @_;
 
 my $cust_pkg       = $opt{'cust_pkg'};
 
-my $contact = $cust_pkg->contact;
+my $contact = $cust_pkg->contact_obj;
 
 sub pkg_change_contact_link {
   my $cust_pkg = shift;

@@ -162,7 +162,7 @@ if ( $contactnum && $contactnum > 0 ) {
   if ( $contactnum == -1 ) {
     $contact->$_( $cgi->param($_) ) foreach @contact_fields; #XXX
   } elsif ( $cust_pkg && $cust_pkg->contactnum ) {
-    my $pkg_contact = $cust_pkg->contact;
+    my $pkg_contact = $cust_pkg->contact_obj;
     $contact->$_( $pkg_contact->$_ ) foreach @contact_fields; #XXX why are we making a new one gagain??
     $opt{'empty_label'} ||= 'package contact: '.$pkg_contact->line;
   } elsif ( $cust_main ) {
