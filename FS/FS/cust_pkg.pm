@@ -227,7 +227,7 @@ Create a new billing item.  To add the item to the database, see L<"insert">.
 =cut
 
 sub table { 'cust_pkg'; }
-sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_linked { $_[0]->cust_main_custnum || $_[0]->custnum } 
 sub cust_unlinked_msg {
   my $self = shift;
   "WARNING: can't find cust_main.custnum ". $self->custnum.
@@ -3567,6 +3567,11 @@ sub main_pkg {
     return FS::cust_pkg->by_key($self->main_pkgnum);
   }
   return;
+}
+
+# workaround for name conflict
+sub pkg_contact {
+  FS::contact_Mixin::contact(@_);
 }
 
 =back
