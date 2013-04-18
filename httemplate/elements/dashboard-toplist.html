@@ -169,7 +169,6 @@ if ( $FS::TicketSystem::system eq 'RT_Internal'
           ObjectCustomFieldValues.ObjectId = cust_tickets.Id
         )
       GROUP BY cust_tickets.custnum, ObjectCustomFieldValues.Content";
-      #warn $sql."\n";
   } else { # no custom_priority_field
     $sql =
     "SELECT cust_tickets.custnum,
@@ -181,10 +180,8 @@ if ( $FS::TicketSystem::system eq 'RT_Internal'
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   while ( my $row = $sth->fetchrow_hashref ) {
-  #warn to_json($row)."\n";
     $num_tickets_by_priority{ $row->{priority} }->{ $row->{custnum} } =
       $row->{num_tickets};
   }
 }
-#warn Dumper \%num_tickets_by_priority;
 </%init>

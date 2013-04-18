@@ -153,7 +153,7 @@ Example:
     }
   }
 
-  var location_fields = <% to_json(\@location_fields) %>;
+  var location_fields = <% encode_json(\@location_fields) %>;
   function update_location( string ) {
     var hash = JSON.parse(string);
     for(var i = 0; i < location_fields.length; i++) {

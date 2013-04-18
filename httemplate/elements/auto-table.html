@@ -50,7 +50,7 @@ var <%$pre%>next_rownum;
 var <%$pre%>set_rownum;
 var <%$pre%>addRow;
 var <%$pre%>deleteRow;
-var <%$pre%>fieldorder = <% to_json($fieldorder) %>;
+var <%$pre%>fieldorder = <% encode_json($fieldorder) %>;
 
 function <%$pre%>possiblyAddRow_factory(obj) {
   var callback = obj.onchange;
@@ -190,7 +190,7 @@ function <%$pre%>init() {
   <%$pre%>template.appendChild(delete_cell);
 
   // preload rows
-  var rows = <% to_json(\@rows) %>;
+  var rows = <% encode_json(\@rows) %>;
   for (var i = 0; i < rows.length; i++) {
     <%$pre%>addRow(rows[i]);
   }

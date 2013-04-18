@@ -124,13 +124,6 @@ my %opt = @_;
 my $pre = $opt{prefix} || '';
 my $tiers = $opt{tiers} or die "no tiers defined";
 
-#my $json = JSON->new()->canonical(); #sort
-# something super weird and broken going on with JSON's auto-loading, just
-# using JSON alone errors out with
-#   Can't locate object method "new" via package "null" (perhaps you forgot to
-#   load "null"?)
-# yes, "null", not "JSON".  so instead, using JSON::XS explicity...
-use JSON::XS;
 my $json = JSON::XS->new();
 $json->canonical;
 

@@ -581,7 +581,7 @@ use vars qw($DEBUG);
 use Carp;
 use Storable qw(nfreeze);
 use MIME::Base64;
-use JSON;
+use JSON::XS;
 use FS::UID qw(getotaker);
 use FS::Record qw(qsearchs);
 use FS::queue;
@@ -726,10 +726,7 @@ sub job_status {
     @return = ( 'error', $job ? $job->statustext : $jobnum );
   }
 
-  #to_json(\@return);  #waiting on deb 5.0 for new JSON.pm?
-  #silence the warning though
-  my $to_json = JSON->can('to_json') || JSON->can('objToJson');
-  &$to_json(\@return);
+  encode_json \@return;
 
 }
 
