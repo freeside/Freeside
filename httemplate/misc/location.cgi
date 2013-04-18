@@ -1,4 +1,4 @@
-<% objToJson(\%hash) %>
+<% encode_json(\%hash) %>\
 <%init>
 
 my $locationnum = $cgi->param('arg');

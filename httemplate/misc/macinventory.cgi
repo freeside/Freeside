@@ -1,4 +1,4 @@
-<% objToJson(\@macs) %>
+<% encode_json(\@macs) %>\
 <%init>
 
 # XXX: this should be agent-virtualized / limited

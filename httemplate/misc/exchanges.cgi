@@ -1,4 +1,4 @@
-<% objToJson(\@exchanges) %>
+<% encode_json(\@exchanges) %>\
 <%init>
 
 my( $areacode, $svcpart ) = $cgi->param('arg');

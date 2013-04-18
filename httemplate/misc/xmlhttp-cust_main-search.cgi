@@ -5,7 +5,7 @@
 %                                  # cust_main-agent_custid-format') eq 'ww?d+'
 %	$return = findbycustnum_or_agent_custid($1);
 %   }
-<% objToJson($return) %>
+<% encode_json($return) %>\
 % } elsif ( $sub eq 'smart_search' ) {
 %
 %   my $string = $cgi->param('arg');
@@ -22,14 +22,14 @@
 %                    @cust_main
 %                ];
 %     
-<% objToJson($return) %>
+<% encode_json($return) %>\
 % } elsif ( $sub eq 'invnum_search' ) {
 %
 %   my $string = $cgi->param('arg');
 %   if ( $string =~ /^(\d+)$/ ) {
 %     my $inv = qsearchs('cust_bill', { 'invnum' => $1 });
 %     my $return = $inv ? findbycustnum($inv->custnum) : [];
-<% objToJson($return) %>
+<% encode_json($return) %>\
 %   } else { #return nothing
 []
 %   }
@@ -47,7 +47,7 @@
 %       city => $_->city,
 %     };
 %   }
-<% objToJson($return) %>
+<% encode_json($return) %>\
 % }
 <%init>
 

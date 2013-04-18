@@ -1,4 +1,4 @@
-<% objToJson(\@areacodes) %>
+<% encode_json(\@areacodes) %>\
 <%init>
 
 my( $state, $svcpart ) = $cgi->param('arg');

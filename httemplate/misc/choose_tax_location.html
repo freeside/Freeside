@@ -11,7 +11,7 @@
 %   map { $value{$_} = $location{$_} } qw ( city state )
 %     if $location{country} eq 'CA';
 %
-%   my $value = encode_entities(objToJson({ %value })
+%   my $value = encode_entities(encode_json({ %value })
 %                              );
 %   my $content = '';
 %   $content .= $location->$_. '&nbsp;' x ( $max{$_} - length($location->$_) )

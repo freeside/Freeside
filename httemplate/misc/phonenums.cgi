@@ -1,4 +1,4 @@
-<% objToJson(\@phonenums) %>
+<% encode_json(\@phonenums) %>\
 <%init>
 
 my( $exchangestring, $svcpart ) = $cgi->param('arg');
