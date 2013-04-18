@@ -752,7 +752,12 @@ sub getlabel {
     $label = $r->country;
     $label = $r->state.", $label" if $r->state;
     $label = $r->county." county, $label" if $r->county;
-    $label = $r->city. ", $label" if $r->city && $cgi->param('show_cities');
+    if ( $cgi->param('show_cities') and $r->city ) {
+      $label = $r->city . ", $label";
+      if ( $cgi->param('show_districts') and $r->district ) {
+        $label = '#' . $r->district . ", $label";
+      }
+    }
     $label = "$label (". $r->taxclass. ")"
       if $r->taxclass
       && $cgi->param('show_taxclasses')

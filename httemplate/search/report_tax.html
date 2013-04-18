@@ -34,9 +34,21 @@
 
 %    if ( $city ) {
    <TR>
-     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_cities" VALUE="1"></TD>
+     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_cities" VALUE="1" onclick="toggle_show_cities(this)"></TD>
      <TD>Show cities</TD>
    </TR>
+   <TR>
+     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_districts" VALUE="1" DISABLED></TD>
+     <TD>Show districts</TD>
+   </TR>
+  <SCRIPT TYPE="text/javascript">
+  function toggle_show_cities() {
+    what = document.getElementsByName('show_cities')[0];
+    what.form.show_districts.disabled = !what.checked;
+    what.form.show_districts.checked  = what.checked;
+  }
+  toggle_show_cities();
+  </SCRIPT>
 % } 
 
 %    if ( $conf->exists('enable_taxclasses') ) {
