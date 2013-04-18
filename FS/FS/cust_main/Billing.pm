@@ -1225,6 +1225,8 @@ sub _handle_taxes {
           ? 'ship_'
           : '';
         %taxhash = map { $_ => $self->get("$prefix$_") } @loc_keys;
+        # special case--there's no 'ship_district' field
+        $taxhash{'district'} = $self->get('district');
       }
 
       $taxhash{'taxclass'} = $part_pkg->taxclass;
