@@ -134,6 +134,15 @@ sub table_info {
                          disable_inventory => 1,
                          multiple => 1,
                        },
+      'radio_serialnum' => 'Radio Serial Number',
+      'radio_location'  => 'Radio Location',
+      'poe_location'    => 'POE Location',
+      'rssi'            => 'RSSI',
+      'suid'            => 'SUID',
+      'shared_svcnum'   => { label             => 'Shared Service',
+                             type              => 'search-svc_broadband',
+                             disable_inventory => 1,
+                           },
     },
   };
 }
@@ -225,13 +234,29 @@ sub search_sql {
   my( $class, $string ) = @_;
   if ( $string =~ /^(\d{1,3}\.){3}\d{1,3}$/ ) {
     $class->search_sql_field('ip_addr', $string );
-  }elsif ( $string =~ /^([a-fA-F0-9]{12})$/ ) {
+  } elsif ( $string =~ /^([a-fA-F0-9]{12})$/ ) {
     $class->search_sql_field('mac_addr', uc($string));
-  }elsif ( $string =~ /^(([a-fA-F0-9]{1,2}:){5}([a-fA-F0-9]{1,2}))$/ ) {
+  } elsif ( $string =~ /^(([a-fA-F0-9]{1,2}:){5}([a-fA-F0-9]{1,2}))$/ ) {
     $class->search_sql_field('mac_addr', uc("$2$3$4$5$6$7") );
+  } elsif ( $string =~ /^(\d+)$/ ) {
+    my $table = $class->table;
+    "$table.svcnum = $1";
   } else {
     '1 = 0'; #false
   }
+}
+
+=item smart_search STRING
+
+=cut
+
+sub smart_search {
+  my( $class, $string ) = @_;
+  qsearch({
+    'table'     => $class->table, #'svc_broadband',
+    'hashref'   => {},
+    'extra_sql' => 'WHERE '. $class->search_sql($string),
+  });
 }
 
 =item label
@@ -330,6 +355,12 @@ sub check {
     || $self->ut_sfloatn('altitude')
     || $self->ut_textn('vlan_profile')
     || $self->ut_textn('plan_id')
+    || $self->ut_alphan('radio_serialnum')
+    || $self->ut_textn('radio_location')
+    || $self->ut_textn('poe_location')
+    || $self->ut_snumbern('rssi')
+    || $self->ut_numbern('suid')
+    || $self->ut_foreign_keyn('shared_svcnum', 'svc_broadband', 'svcnum')
   ;
   return $error if $error;
 
