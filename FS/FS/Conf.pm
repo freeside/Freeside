@@ -3823,6 +3823,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'fuzzy-fuzziness',
+    'section'     => 'UI',
+    'description' => 'Set the "fuzziness" of fuzzy searching (see the String::Approx manpage for details).  Defaults to 10%',
+    'type'        => 'text',
+  },
+
   { 'key'         => 'pkg_referral',
     'section'     => '',
     'description' => 'Enable package-specific advertising sources.',

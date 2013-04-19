@@ -954,6 +954,11 @@ sub fuzzy_search {
 
   my @cust_main = ();
 
+  my @fuzzy_mod = 'i';
+  my $conf = new FS::Conf;
+  my $fuzziness = $conf->config('fuzzy-fuzziness');
+  push @fuzzy_mod, $fuzziness if $fuzziness;
+
   check_and_rebuild_fuzzyfiles();
   foreach my $field ( keys %$fuzzy ) {
 
@@ -961,7 +966,7 @@ sub fuzzy_search {
     next unless scalar(@$all);
 
     my %match = ();
-    $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, ['i'], @$all ) );
+    $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, \@fuzzy_mod, @$all ) );
     next if !keys(%match);
 
     my $in_matches = 'IN (' .
