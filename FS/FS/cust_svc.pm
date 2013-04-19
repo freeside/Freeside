@@ -895,6 +895,48 @@ sub smart_search_param {
   );
 }
 
+sub _upgrade_data {
+  my $class = shift;
+
+  # fix missing (deleted by mistake) svc_x records
+  warn "searching for missing svc_x records...\n";
+  my %search = (
+    'table'     => 'cust_svc',
+    'select'    => 'cust_svc.*',
+    'addl_from' => ' LEFT JOIN ( ' .
+      join(' UNION ',
+        map { "SELECT svcnum FROM $_" } 
+        FS::part_svc->svc_tables
+      ) . ' ) AS svc_all ON cust_svc.svcnum = svc_all.svcnum',
+    'extra_sql' => ' WHERE svc_all.svcnum IS NULL',
+  );
+  my @svcs = qsearch(\%search);
+  warn "found ".scalar(@svcs)."\n";
+
+  local $FS::Record::nowarn_classload = 1; # for h_svc_
+  local $FS::svc_Common::noexport_hack = 1; # because we're inserting services
+
+  my %h_search = (
+    'hashref'  => { history_action => 'delete' },
+    'order_by' => ' ORDER BY history_date DESC LIMIT 1',
+  );
+  foreach my $cust_svc (@svcs) {
+    my $svcnum = $cust_svc->svcnum;
+    my $svcdb = $cust_svc->part_svc->svcdb;
+    $h_search{'hashref'}{'svcnum'} = $svcnum;
+    $h_search{'table'} = "h_$svcdb";
+    my $h_svc_x = qsearchs(\%h_search)
+      or next;
+    my $class = "FS::$svcdb";
+    my $new_svc_x = $class->new({ $h_svc_x->hash });
+    my $error = $new_svc_x->insert;
+    warn "error repairing svcnum $svcnum ($svcdb) from history:\n$error\n"
+      if $error;
+  }
+
+  '';
+}
+
 =back
 
 =head1 BUGS

@@ -294,6 +294,9 @@ sub upgrade_data {
     #insert default tower_sector if not present
     'tower' => [],
 
+    #repair improperly deleted services
+    'cust_svc' => [],
+
     #routernum/blocknum
     'svc_broadband' => [],
 
