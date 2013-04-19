@@ -12,6 +12,15 @@ sub description { "Run only once for each time the package has been billed"; }
 # Run the event, at most, a number of times equal to the number of 
 # distinct invoices that contain line items from this package.
 
+sub option_fields {
+  (
+    'paid' => { 'label' => 'Only count paid bills',
+                'type'  => 'checkbox',
+                'value' => 'Y',
+              },
+  )
+}
+
 sub eventtable_hashref {
     { 'cust_main' => 0,
       'cust_bill' => 0,
@@ -22,9 +31,15 @@ sub eventtable_hashref {
 sub condition {
   my($self, $cust_pkg, %opt) = @_;
 
-  my %invnum;
-  $invnum{$_->invnum} = 1 
-    foreach ( qsearch('cust_bill_pkg', { 'pkgnum' => $cust_pkg->pkgnum }) );
+  my @cust_bill_pkg = qsearch('cust_bill_pkg', { pkgnum=>$cust_pkg->pkgnum });
+
+  @cust_bill_pkg = grep { ($_->owed_setup + $_->owed_recur) == 0 }
+                     @cust_bill_pkg
+    if $self->option('paid');
+
+  my %invnum = ();
+  $invnum{$_->invnum} = 1 foreach @cust_bill_pkg;
+
   my @events = qsearch( {
       'table'     => 'cust_event', 
       'hashref'   => { 'eventpart' => $self->eventpart,
@@ -39,6 +54,9 @@ sub condition {
 
 sub condition_sql {
   my( $self, $table ) = @_;
+
+  #paid flag not yet implemented here, but that's okay, a partial optimization
+  # is better than none
 
   "( 
     ( SELECT COUNT(distinct(invnum)) 
