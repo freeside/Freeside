@@ -47,7 +47,7 @@ $DEBUG = 0;
     my $origin = $1;
 
     my $company = $conf->config('company_name', $pay_batch->agentnum);
-    $company = substr($company. (' 'x23), 0, 23);
+    $company = substr(uc($company). (' 'x23), 0, 23);
 
     my $now = time;
 
