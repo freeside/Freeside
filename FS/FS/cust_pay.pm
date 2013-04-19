@@ -1063,6 +1063,8 @@ sub _upgrade_data {  #class method
             warn "couldn't find paybatch history record for $table ".$object->$pkey."\n";
             next;
           }
+          # if the paybatch didn't have an auth string, then it's fine
+          $h->paybatch =~ /:(\w+):/ or next;
           # set paybatch to what it was in that record
           $object->set('paybatch', $h->paybatch)
           # and then upgrade it like the old records
