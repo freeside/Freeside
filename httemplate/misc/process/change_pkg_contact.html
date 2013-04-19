@@ -1,0 +1,49 @@
+<% header(emt("Package contact $past_method")) %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY>
+</HTML>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Change customer package');
+
+#untaint pkgnum
+my $pkgnum = $cgi->param('pkgnum');
+$pkgnum =~ /^(\d+)$/ or die "Illegal pkgnum";
+$pkgnum = $1;
+
+my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} ); #needs agent virt
+
+my $contactnum = $cgi->param('contactnum');
+$contactnum =~ /^(-?\d*)$/ or die "Illegal contactnum";
+$contactnum = $1;
+
+my $past_method = $cust_pkg->contactnum ? 'changed' : 'added';
+
+my $error = '';
+
+if ( $contactnum == -1 ) {
+
+  #little false laziness w/edit/process/quick-cust_pkg.cgi, also the whole
+  # thing should be a single transaction
+  my $contact = new FS::contact {
+    'custnum' => $cust_pkg->custnum,
+    map { $_ => scalar($cgi->param("contactnum_$_")) } qw( first last )
+  };
+  $error = $contact->insert;
+  $cust_pkg->contactnum( $contact->contactnum );
+
+} else {
+  $cust_pkg->contactnum($contactnum);
+}
+
+$error ||= $cust_pkg->replace;
+
+if ($error) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "change_pkg_contact.html?". $cgi->query_string );
+}
+
+</%init>

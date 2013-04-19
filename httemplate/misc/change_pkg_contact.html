@@ -1,0 +1,70 @@
+<& /elements/header-popup.html, mt("Change Package Contact") &>
+
+<& /elements/error.html &>
+
+<FORM ACTION="<% $p %>misc/process/change_pkg_contact.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+
+<% ntable('#cccccc') %>
+
+  <TR>
+    <TH ALIGN="right"><% mt('Package') |h %></TH>
+    <TD COLSPAN=7>
+      <% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %>
+    </TD>
+  </TR>
+
+% if ( $cust_pkg->contactnum ) {
+    <TR>
+      <TH ALIGN="right"><% mt('Current Contact') %></TH>
+      <TD COLSPAN=7>
+        <% $cust_pkg->contact_obj->line |h %>
+      </TD>
+    </TR>
+% }
+
+<& /elements/tr-select-contact.html,
+             'label'         => mt('New Contact'), #XXX test
+             'cgi'           => $cgi,
+             'cust_main'     => $cust_pkg->cust_main,
+&>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE    = "submit"
+       VALUE   = "<% $cust_pkg->contactnum ? mt("Change contact") : mt("Add contact") |h %>"
+>
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Change customer package');
+
+my $pkgnum = scalar($cgi->param('pkgnum'));
+$pkgnum =~ /^(\d+)$/ or die "illegal pkgnum $pkgnum";
+$pkgnum = $1;
+
+my $cust_pkg =
+  qsearchs({
+    'table'     => 'cust_pkg',
+    'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+    'hashref'   => { 'pkgnum' => $pkgnum },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  }) or die "unknown pkgnum $pkgnum";
+
+my $cust_main = $cust_pkg->cust_main
+  or die "can't get cust_main record for custnum ". $cust_pkg->custnum.
+         " ( pkgnum ". cust_pkg->pkgnum. ")";
+
+my $part_pkg = $cust_pkg->part_pkg;
+
+</%init>
