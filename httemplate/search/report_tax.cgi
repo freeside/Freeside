@@ -250,8 +250,10 @@ my $conf = new FS::Conf;
 my $out = 'Out of taxable region(s)';
 
 my %label_opt = ( out => 1 ); #enable 'Out of Taxable Region' label
-$label_opt{no_city} = 1     unless $cgi->param('show_cities');
-$label_opt{no_taxclass} = 1 unless $cgi->param('show_taxclasses');
+$label_opt{with_city} = 1     if $cgi->param('show_cities');
+$label_opt{with_district} = 1 if $cgi->param('show_districts');
+
+$label_opt{with_taxclass} = 1 if $cgi->param('show_taxclasses');
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
@@ -487,7 +489,8 @@ my $tot_tax = 0;
 my $tot_credit = 0;
 
 my @loc_params = qw(country state county);
-push @loc_params, qw(city district) if $cgi->param('show_cities');
+push @loc_params, 'city' if $cgi->param('show_cities');
+push @loc_params, 'district' if $cgi->param('show_districts');
 
 foreach my $r ( qsearch({ 'table'     => 'cust_main_county', })) {
   my $taxnum = $r->taxnum;
@@ -522,7 +525,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county', })) {
   }
 
   if ( $cgi->param('show_taxclasses') ) {
-    my $base_label = $r->label(%label_opt, 'no_taxclass' => 1);
+    my $base_label = $r->label(%label_opt, 'with_taxclass' => 0);
     $base_regions{$base_label} ||=
     {
       label   => $base_label,

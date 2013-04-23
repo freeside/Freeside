@@ -147,13 +147,10 @@ If the taxname field is set, it will look like
 If the taxclass is set, then it will be
 "Anytown, Alameda County, CA, US (International)".
 
-Currently it will not contain the district, even if the city+county+state
-is not unique.
-
-OPTIONS may contain "no_taxclass" (hides taxclass) and/or "no_city"
-(hides city).  It may also contain "out", in which case, if this 
-region (district+city+county+state+country) contains no non-zero 
-taxes, the label will read "Out of taxable region(s)".
+OPTIONS may contain "with_taxclass", "with_city", and "with_district" to show
+those fields.  It may also contain "out", in which case, if this region 
+(district+city+county+state+country) contains no non-zero taxes, the label 
+will read "Out of taxable region(s)".
 
 =cut
 
@@ -175,12 +172,15 @@ sub label {
   my $label = $self->country;
   $label = $self->state.", $label" if $self->state;
   $label = $self->county." County, $label" if $self->county;
-  if (!$opt{no_city}) {
+  if ($opt{with_city}) {
     $label = $self->city.", $label" if $self->city;
+    if ($opt{with_district} and $self->district) {
+      $label = $self->district . ", $label";
+    }
   }
   # ugly labels when taxclass and taxname are both non-null...
   # but this is how the tax report does it
-  if (!$opt{no_taxclass}) {
+  if ($opt{with_taxclass}) {
     $label = "$label (".$self->taxclass.')' if $self->taxclass;
   }
   $label = $self->taxname." ($label)" if $self->taxname;
