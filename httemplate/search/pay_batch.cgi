@@ -101,8 +101,8 @@ my($begin, $end) = ( '', '' );
 my @where;
 
 my($beginning,$ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @where, "download >= $beginning",
-             "download <= $ending";
+push @where, "( (download >= $beginning AND download <= $ending)".
+             ' OR download IS NULL )';
 
 my @status;
 if ( $cgi->param('open') ) {
