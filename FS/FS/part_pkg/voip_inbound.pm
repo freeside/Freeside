@@ -60,15 +60,21 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                         'type' => 'checkbox',
                       },
 
-    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to: ',
+    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to any of these (comma-separated) values: ',
                          },
 
-    'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to: ',
+    'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to this cdrtypenum: ',
                          },
     
-    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to: ',
+    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to this cdrtypenum: ',
                          },
 
+    'use_calltypenum' => { 'name' => 'Only charge for CDRs where the CDR Call Type is set to this cdrtypenum: ',
+                         },
+    
+    'ignore_calltypenum' => { 'name' => 'Do not charge for CDRs where the CDR Call Type is set to this cdrtypenum: ',
+                         },
+    
     'ignore_disposition' => { 'name' => 'Do not charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
                          },
     
@@ -147,6 +153,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        use_amaflags
                        use_carrierid
                        use_cdrtypenum ignore_cdrtypenum
+                       use_calltypenum ignore_calltypenum
                        ignore_disposition disposition_in
                        skip_dcontext skip_dstchannel_prefix
                        skip_dst_length_less skip_lastapp
@@ -329,67 +336,58 @@ sub calc_usage {
 }
 
 #returns a reason why not to rate this CDR, or false if the CDR is chargeable
+# lots of false laziness w/voip_cdr...
 sub check_chargable {
   my( $self, $cdr, %flags ) = @_;
 
-  #should have some better way of checking these options from a hash
-  #or something
-
-  my @opt = qw(
-    use_amaflags
-    use_carrierid
-    use_cdrtypenum
-    ignore_cdrtypenum
-    disposition_in
-    ignore_disposition
-    skip_dcontext
-    skip_dstchannel_prefix
-    skip_dst_length_less
-    skip_lastapp
-  );
-  foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
-    $flags{option_cache}->{$opt} = $self->option($opt, 1);
-  }
-  my %opt = %{ $flags{option_cache} };
-
   return 'amaflags != 2'
-    if $opt{'use_amaflags'} && $cdr->amaflags != 2;
+    if $self->option_cacheable('use_amaflags') && $cdr->amaflags != 2;
 
-  return "disposition NOT IN ( $opt{'disposition_in'} )"
-    if $opt{'disposition_in'} =~ /\S/
-    && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'disposition_in'});
-    
-  return "disposition IN ( $opt{'ignore_disposition'} )"
-    if $opt{'ignore_disposition'} =~ /\S/
-    && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $opt{'ignore_disposition'});
+  return "disposition NOT IN ( ". $self->option_cacheable('disposition_in')." )"
+    if $self->option_cacheable('disposition_in') =~ /\S/
+    && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('disposition_in'));
+  
+  return "disposition IN ( ". $self->option_cacheable('ignore_disposition')." )"
+    if $self->option_cacheable('ignore_disposition') =~ /\S/
+    && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('ignore_disposition'));
 
-  return "carrierid != $opt{'use_carrierid'}"
-    if length($opt{'use_carrierid'})
-    && $cdr->carrierid ne $opt{'use_carrierid'}; #ne otherwise 0 matches ''
+  return "carrierid NOT IN ( ". $self->option_cacheable('use_carrierid'). " )"
+    if $self->option_cacheable('use_carrierid') =~ /\S/
+    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $self->option_cacheable('use_carrierid')); #eq otherwise 0 matches ''
 
-  return "cdrtypenum != $opt{'use_cdrtypenum'}"
-    if length($opt{'use_cdrtypenum'})
-    && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
-    
-  return "cdrtypenum == $opt{'ignore_cdrtypenum'}"
-    if length($opt{'ignore_cdrtypenum'})
-    && $cdr->cdrtypenum eq $opt{'ignore_cdrtypenum'}; #eq otherwise 0 matches ''
+  # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
+  return "cdrtypenum != ". $self->option_cacheable('use_cdrtypenum')
+    if length($self->option_cacheable('use_cdrtypenum'))
+    && $cdr->cdrtypenum ne $self->option_cacheable('use_cdrtypenum'); #ne otherwise 0 matches ''
+  
+  return "cdrtypenum == ". $self->option_cacheable('ignore_cdrtypenum')
+    if length($self->option_cacheable('ignore_cdrtypenum'))
+    && $cdr->cdrtypenum eq $self->option_cacheable('ignore_cdrtypenum'); #eq otherwise 0 matches ''
 
-  return "dcontext IN ( $opt{'skip_dcontext'} )"
-    if $opt{'skip_dcontext'} =~ /\S/
-    && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $opt{'skip_dcontext'});
+  # unlike everything else, use_calltypenum is applied in FS::svc_x::get_cdrs.
+  return "calltypenum != ". $self->option_cacheable('use_calltypenum')
+    if length($self->option_cacheable('use_calltypenum'))
+    && $cdr->calltypenum ne $self->option_cacheable('use_calltypenum'); #ne otherwise 0 matches ''
+  
+  return "calltypenum == ". $self->option_cacheable('ignore_calltypenum')
+    if length($self->option_cacheable('ignore_calltypenum'))
+    && $cdr->calltypenum eq $self->option_cacheable('ignore_calltypenum'); #eq otherwise 0 matches ''
 
-  my $len_prefix = length($opt{'skip_dstchannel_prefix'});
-  return "dstchannel starts with $opt{'skip_dstchannel_prefix'}"
+  return "dcontext IN ( ". $self->option_cacheable('skip_dcontext'). " )"
+    if $self->option_cacheable('skip_dcontext') =~ /\S/
+    && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'));
+
+  my $len_prefix = length($self->option_cacheable('skip_dstchannel_prefix'));
+  return "dstchannel starts with ". $self->option_cacheable('skip_dstchannel_prefix')
     if $len_prefix
-    && substr($cdr->dstchannel,0,$len_prefix) eq $opt{'skip_dstchannel_prefix'};
+    && substr($cdr->dstchannel,0,$len_prefix) eq $self->option_cacheable('skip_dstchannel_prefix');
 
-  my $dst_length = $opt{'skip_dst_length_less'};
+  my $dst_length = $self->option_cacheable('skip_dst_length_less');
   return "destination less than $dst_length digits"
     if $dst_length && length($cdr->dst) < $dst_length;
 
-  return "lastapp is $opt{'skip_lastapp'}"
-    if length($opt{'skip_lastapp'}) && $cdr->lastapp eq $opt{'skip_lastapp'};
+  return "lastapp is ". $self->option_cacheable('skip_lastapp')
+    if length($self->option_cacheable('skip_lastapp')) && $cdr->lastapp eq $self->option_cacheable('skip_lastapp');
 
   #all right then, rate it
   '';

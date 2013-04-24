@@ -684,7 +684,9 @@ with the chosen prefix.
 
 =item begin, end: Start and end of a date range, as unix timestamp.
 
-=item cdrtypenum: Only return CDRs with this type number.
+=item cdrtypenum: Only return CDRs with this type.
+
+=item calltypenum: Only return CDRs with this call type.
 
 =item disable_src => 1: Only match on "charged_party", not "src".
 
@@ -734,6 +736,9 @@ sub psearch_cdrs {
 
   if ($options{'cdrtypenum'}) {
     $hash{'cdrtypenum'} = $options{'cdrtypenum'};
+  }
+  if ($options{'calltypenum'}) {
+    $hash{'calltypenum'} = $options{'calltypenum'};
   }
   
   my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';

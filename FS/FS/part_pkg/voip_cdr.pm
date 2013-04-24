@@ -157,10 +157,16 @@ tie my %detail_formats, 'Tie::IxHash',
     'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to any of these (comma-separated) values: ',
                          },
 
-    'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to: ',
+    'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to this cdrtypenum: ',
                          },
     
-    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to: ',
+    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to this cdrtypenum: ',
+                         },
+
+    'use_calltypenum' => { 'name' => 'Only charge for CDRs where the CDR Call Type is set to this calltypenum: ',
+                         },
+    
+    'ignore_calltypenum' => { 'name' => 'Do not charge for CDRs where the CDR Call Type is set to this calltypenum: ',
                          },
     
     'ignore_disposition' => { 'name' => 'Do not charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
@@ -309,6 +315,7 @@ tie my %detail_formats, 'Tie::IxHash',
                        use_amaflags
                        use_carrierid 
                        use_cdrtypenum ignore_cdrtypenum
+                       use_calltypenum ignore_calltypenum
                        ignore_disposition disposition_in
                        skip_dcontext skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
@@ -420,6 +427,7 @@ sub calc_usage {
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
         'cdrtypenum'     => $self->option('use_cdrtypenum'),
+        'calltypenum'    => $self->option('use_calltypenum'),
         'status'         => '',
         'for_update'     => 1,
       );  # $last_bill, $$sdate )
@@ -487,6 +495,7 @@ sub calc_usage {
 }
 
 #returns a reason why not to rate this CDR, or false if the CDR is chargeable
+# lots of false laziness w/voip_inbound
 sub check_chargable {
   my( $self, $cdr, %flags ) = @_;
 
@@ -519,6 +528,15 @@ sub check_chargable {
   return "cdrtypenum == ". $self->option_cacheable('ignore_cdrtypenum')
     if length($self->option_cacheable('ignore_cdrtypenum'))
     && $cdr->cdrtypenum eq $self->option_cacheable('ignore_cdrtypenum'); #eq otherwise 0 matches ''
+
+  # unlike everything else, use_calltypenum is applied in FS::svc_x::get_cdrs.
+  return "calltypenum != ". $self->option_cacheable('use_calltypenum')
+    if length($self->option_cacheable('use_calltypenum'))
+    && $cdr->calltypenum ne $self->option_cacheable('use_calltypenum'); #ne otherwise 0 matches ''
+  
+  return "calltypenum == ". $self->option_cacheable('ignore_calltypenum')
+    if length($self->option_cacheable('ignore_calltypenum'))
+    && $cdr->calltypenum eq $self->option_cacheable('ignore_calltypenum'); #eq otherwise 0 matches ''
 
   return "dcontext IN ( ". $self->option_cacheable('skip_dcontext'). " )"
     if $self->option_cacheable('skip_dcontext') =~ /\S/
