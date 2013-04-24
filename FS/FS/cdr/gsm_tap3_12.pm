@@ -6,6 +6,7 @@ use vars qw( %info %TZ );
 use Time::Local;
 #use Data::Dumper;
 
+#false laziness w/huawei_softx3000.pm
 %TZ = (
   '+0000' => 'XXX-0',
   '+0100' => 'XXX-1',

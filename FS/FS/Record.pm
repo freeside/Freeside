@@ -1794,6 +1794,8 @@ sub batch_import {
 
       last unless scalar(@buffer);
       my $row = shift @buffer;
+      &{ $asn_format->{row_callback} }( $row, $asn_header_buffer )
+        if $asn_format->{row_callback};
       foreach my $key ( keys %{ $asn_format->{map} } ) {
         $hash{$key} = &{ $asn_format->{map}{$key} }( $row, $asn_header_buffer );
       }
