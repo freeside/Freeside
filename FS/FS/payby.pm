@@ -208,6 +208,7 @@ sub longname {
   'CARD' => 'CC',
   'CHEK' => 'ECHECK',
   'MCRD' => 'CC',
+  'PPAL' => 'PAYPAL',
 );
 
 sub payby2bop {

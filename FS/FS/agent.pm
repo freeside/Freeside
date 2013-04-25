@@ -216,7 +216,7 @@ an attempt will be made to select a gateway suited for the taxes paid on
 the invoice.
 
 The I<method> and I<payinfo> options can be used to influence the choice
-as well.  Presently only 'CC' and 'ECHECK' methods are meaningful.
+as well.  Presently only 'CC', 'ECHECK', and 'PAYPAL' methods are meaningful.
 
 When the I<method> is 'CC' then the card number in I<payinfo> can direct
 this routine to route to a gateway suited for that type of card.
@@ -246,13 +246,17 @@ sub payment_gateway {
   }
 
   #look for an agent gateway override first
-  my $cardtype;
-  if ( $options{method} && $options{method} eq 'CC' && $options{payinfo} ) {
-    $cardtype = cardtype($options{payinfo});
-  } elsif ( $options{method} && $options{method} eq 'ECHECK' ) {
-    $cardtype = 'ACH';
-  } else {
-    $cardtype = $options{method} || '';
+  my $cardtype = '';
+  if ( $options{method} ) {
+    if ( $options{method} eq 'CC' && $options{payinfo} ) {
+      $cardtype = cardtype($options{payinfo});
+    } elsif ( $options{method} eq 'ECHECK' ) {
+      $cardtype = 'ACH';
+    } elsif ( $options{method} eq 'PAYPAL' ) {
+      $cardtype = 'PayPal';
+    } else {
+      $cardtype = $options{method}
+    }
   }
 
   my $override =

@@ -390,7 +390,7 @@ sub insert {
 
     $payby = 'PREP' if $amount;
 
-  } elsif ( $self->payby =~ /^(CASH|WEST|MCRD)$/ ) {
+  } elsif ( $self->payby =~ /^(CASH|WEST|MCRD|PPAL)$/ ) {
 
     $payby = $1;
     $self->payby('BILL');
@@ -2021,7 +2021,8 @@ sub check {
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expiration date required"
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD)$/;
+      # shouldn't payinfo_check do this?
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|PPAL)$/;
     $self->paydate('');
   } else {
     my( $m, $y );

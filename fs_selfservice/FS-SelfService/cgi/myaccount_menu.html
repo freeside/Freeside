@@ -23,37 +23,44 @@ unless ( $access_pkgnum ) {
       url=>'customer_order_pkg', 'indent'=>2 };
 }
 
+my %payby_mode;
+@payby_mode{@cust_paybys} = @hide_payment_fields;
+# $payby_mode{FOO} is true if FOO is thirdparty, false if it's B::OP,
+# nonexistent if it's not supported
+
 if ( $balance > 0 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
 
-  #XXXFIXME still a bit sloppy for multi-gateway of differing namespace
-  my $i = 0;
-  while($i < scalar(@cust_paybys)) { last if $cust_paybys[$i] =~ /^CARD/; $i++ }
-  if ( $cust_paybys[$i] && $cust_paybys[$i] =~ /^CARD/ ) {
+  if ( exists( $payby_mode{CARD} ) ) {
     push @menu, { title  => 'Recharge my account with a credit card',
-                  url    => $hide_payment_fields[$i]
+                  url    => $payby_mode{CARD}
                               ? 'make_thirdparty_payment&payby_method=CC'
                               : 'make_payment',
                   indent => 2,
                  }
   }
 
-  $i = 0;
-  while($i < scalar(@cust_paybys)) { last if $cust_paybys[$i] =~ /^CHEK/; $i++ }
-  if ( $cust_paybys[$i] && $cust_paybys[$i] =~ /^CHEK/ ) {
+  if ( exists( $payby_mode{CHEK} ) ) {
     push @menu, { title  => 'Recharge my account with a check',
-                  url    => $hide_payment_fields[$i]
+                  url    => $payby_mode{CHEK}
                               ? 'make_thirdparty_payment&payby_method=ECHECK'
                               : 'make_ach_payment',
                   indent => 2,
                 }
   }
 
-  push @menu, { title  => 'Recharge my account with a prepaid card',
-                url    => 'recharge_prepay',
-                indent => 2,
-              }
-    if grep(/^PREP/, @cust_paybys);
+  if ( exists( $payby_mode{PREP} ) ) {
+    push @menu, { title  => 'Recharge my account with a prepaid card',
+                  url    => 'recharge_prepay',
+                  indent => 2,
+                }
+  }
 
+  if ( exists( $payby_mode{PPAL} ) ) {
+    push @menu, { title  => 'Recharge my account with PayPal',
+                  url    => 'make_thirdparty_payment&payby_method=PAYPAL',
+                  indent => 2,
+                }
+  }
 }
 
 push @menu,

@@ -87,11 +87,14 @@ my $rv = capture_payment(
                      map { $_ => scalar($cgi->param($_)) } $cgi->param
                    },
            url  => $cgi->self_url,
+           cancel => ($cgi->param('cancel') ? 1 : 0),
 );
 
 $error = $rv->{error};
-  
-if ( $error eq '_decline' ) {
+
+if ( $error eq '_cancel' ) {
+  print_okay(%$rv);
+} elsif ( $error eq '_decline' ) {
   print_decline();
 } elsif ( $error ) {
   print_verify();
@@ -133,8 +136,14 @@ sub print_okay {
     $success_url .= '/signup.cgi?action=success';
   }
 
-  print $cgi->header( '-expires' => 'now' ),
-        $success_template->fill_in( HASH => { success_url => $success_url } );
+  if ( $param{error} eq '_cancel' ) {
+    # then the payment was canceled, so don't show a message, just redirect
+    # (during signup, you really need a separate landing page for this case)
+    print $cgi->redirect($success_url);
+  } else {
+    print $cgi->header( '-expires' => 'now' ),
+          $success_template->fill_in( HASH => { success_url => $success_url } );
+  }
 }
 
 sub success_default { #html to use if you don't specify a success file

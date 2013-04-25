@@ -8,7 +8,7 @@ onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
 <INPUT TYPE="hidden" NAME="action" VALUE="post_thirdparty_payment">
 <INPUT TYPE="hidden" NAME="payby_method" VALUE="<%= 
-$cgi->param('payby_method') =~ /(CC|ECHECK)/;
+$cgi->param('payby_method') =~ /(CC|ECHECK|PAYPAL)/;
 $1 %>">
 <TABLE BGCOLOR="#cccccc">
 <TR>

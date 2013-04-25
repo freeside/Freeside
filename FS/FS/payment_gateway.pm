@@ -41,7 +41,7 @@ currently supported:
 
 =item gateway_namespace - Business::OnlinePayment, Business::OnlineThirdPartyPayment, or Business::BatchPayment
 
-=item gateway_module - Business::OnlinePayment:: module name
+=item gateway_module - Business::OnlinePayment:: (or other) module name
 
 =item gateway_username - payment gateway username
 
@@ -50,6 +50,14 @@ currently supported:
 =item gateway_action - optional action or actions (multiple actions are separated with `,': for example: `Authorization Only, Post Authorization').  Defaults to `Normal Authorization'.
 
 =item disabled - Disabled flag, empty or 'Y'
+
+=item gateway_callback_url - For ThirdPartyPayment only, set to the URL that 
+the user should be redirected to on a successful payment.  This will be sent
+as a transaction parameter (named "callback_url").
+
+=item gateway_cancel_url - For ThirdPartyPayment only, set to the URL that 
+the user should be redirected to if they cancel the transaction.  PayPal
+requires this; other gateways ignore it.
 
 =item auto_resolve_status - For BatchPayment only, set to 'approve' to 
 auto-approve unresolved payments after some number of days, 'reject' to 
@@ -128,6 +136,7 @@ sub check {
     || $self->ut_textn('gateway_username')
     || $self->ut_anything('gateway_password')
     || $self->ut_textn('gateway_callback_url')  # a bit too permissive
+    || $self->ut_textn('gateway_cancel_url')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_enum('auto_resolve_status', [ '', 'approve', 'reject' ])
     || $self->ut_numbern('auto_resolve_days')
@@ -152,8 +161,8 @@ sub check {
   }
 
   # this little kludge mimics FS::CGI::popurl
-  $self->gateway_callback_url($self->gateway_callback_url. '/')
-    if ( $self->gateway_callback_url && $self->gateway_callback_url !~ /\/$/ );
+  #$self->gateway_callback_url($self->gateway_callback_url. '/')
+  #  if ( $self->gateway_callback_url && $self->gateway_callback_url !~ /\/$/ );
 
   $self->SUPER::check;
 }
