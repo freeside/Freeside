@@ -50,7 +50,7 @@ $me = '[FS::ClientAPI::MyAccount]';
 
 use vars qw( @cust_main_editable_fields @location_editable_fields );
 @cust_main_editable_fields = qw(
-  first last daytime night fax mobile
+  first last company daytime night fax mobile
   locale
   payby payinfo payname paystart_month paystart_year payissue payip
   ss paytype paystate stateid stateid_state
