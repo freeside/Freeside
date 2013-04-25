@@ -33,7 +33,7 @@
 <FONT SIZE="+1" COLOR="#ff0000"><%= encode_entities($error) %></FONT>
 
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
-<INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= $prepaid_shortform %>">
+<INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= encode_entities($prepaid_shortform) %>">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
