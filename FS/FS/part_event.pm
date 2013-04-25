@@ -314,6 +314,90 @@ sub targets {
   @tested_objects;
 }
 
+=item initialize PARAMS
+
+Identify all objects eligible for this event and create L<FS::cust_event>
+records for each of them, as of the present time, with status "initial".  When 
+combined with conditions that prevent an event from running more than once
+(at all or within some period), this will exclude any objects that met the 
+conditions before the event was created.
+
+If an L<FS::part_event> object needs to be initialized, it should be created 
+in a disabled state to avoid running the event prematurely for any existing 
+objects.  C<initialize> will enable it once all the cust_event records 
+have been created.
+
+This may take some time, so it should be run from the job queue.
+
+=cut
+
+sub initialize {
+  my $self = shift;
+  my $time = time; # $opt{'time'}?
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $eventpart = $self->eventpart;
+  $eventpart =~ /^\d+$/ or die "bad eventpart $eventpart";
+  my $eventtable = $self->eventtable;
+
+  # find all objects that meet the conditions for this part_event
+  my $linkage = '';
+  # this is the 'object' side of the FROM clause
+  if ( $eventtable ne 'cust_main' ) {
+    $linkage = #($self->eventtables_cust_join->{$eventtable} || '') . 
+        ' LEFT JOIN cust_main USING (custnum) '
+  }
+
+  # this is the 'event' side
+  my $join  = FS::part_event_condition->join_conditions_sql( $eventtable );
+  my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
+    'time' => $time
+  );
+  $join = $linkage . 
+      " INNER JOIN part_event ON ( part_event.eventpart = $eventpart ) $join";
+
+  $where .= ' AND cust_main.agentnum = '.$self->agentnum
+    if $self->agentnum;
+  # don't enforce check_freq since this is a special, out-of-order check,
+  # and don't enforce disabled because we want to do this with the part_event 
+  # disabled.
+  my @objects = qsearch({
+      table     => $eventtable,
+      hashref   => {},
+      addl_from => $join,
+      extra_sql => "WHERE $where",
+      debug     => 1,
+  });
+  warn "initialize: ".(scalar @objects) ." $eventtable objects found\n" 
+    if $DEBUG;
+  my $error = '';
+  foreach my $object ( @objects ) {
+    # test conditions
+    my $cust_event = $self->new_cust_event($object, 'time' => $time);
+    next unless $cust_event->test_conditions;
+
+    $cust_event->status('initial');
+    $error = $cust_event->insert;
+    last if $error;
+  }
+  if ( !$error and $self->disabled ) {
+    $self->disabled('');
+    $error = $self->replace;
+  }
+  if ( $error ) {
+    $dbh->rollback;
+    return $error;
+  }
+  $dbh->commit if $oldAutoCommit;
+  return;
+}
+
+=cut
+
+
 =back
 
 =head1 CLASS METHODS
@@ -492,12 +576,30 @@ sub all_actions {
        keys %actions
 }
 
+=item process_initialize 'eventpart' => EVENTPART
+
+Job queue wrapper for "initialize".  EVENTPART identifies the 
+L<FS::part_event> object to initialize.
+
+=cut
+
+sub process_initialize {
+  my %opt = @_;
+  my $part_event =
+      qsearchs('part_event', { eventpart => $opt{'eventpart'}})
+        or die "eventpart '$opt{eventpart}' not found!\n";
+  my $error = $part_event->initialize;
+  die $error if $error;
+  '';
+}
+
 =back
 
 =head1 SEE ALSO
 
 L<FS::part_event_option>, L<FS::part_event_condition>, L<FS::cust_main>,
-L<FS::cust_pkg>, L<FS::cust_bill>, L<FS::cust_bill_event>, L<FS::Record>,
+L<FS::cust_pkg>, L<FS::svc_acct>, L<FS::cust_bill>, L<FS::cust_bill_event>, 
+L<FS::Record>,
 schema.html from the base documentation.
 
 =cut

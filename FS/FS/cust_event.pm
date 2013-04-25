@@ -138,7 +138,7 @@ sub check {
                               $dbdef_eventtable->primary_key
                             )
     || $self->ut_number('_date')
-    || $self->ut_enum('status', [qw( new locked done failed )])
+    || $self->ut_enum('status', [qw( new locked done failed initial )])
     || $self->ut_anything('statustext')
   ;
   return $error if $error;
