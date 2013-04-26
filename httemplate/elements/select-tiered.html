@@ -181,6 +181,8 @@ for( $i = 0; $i < @$tiers; $i++ ) {
         $children_of{$key}->{''} = $tier->{empty_label};
       }
     }
+    # ensure that there's always at least one empty label
+    $children_of{''}->{''} = $tier->{empty_label};
   }
   $tier->{by_key} = \%children_of;
 }
