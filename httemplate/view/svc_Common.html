@@ -7,7 +7,7 @@
 
 # false laziness w/edit/svc_Common.html
 
-$cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparsable svcdb";
+$cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparseable svcdb";
 my $table = $1;
 require "FS/$table.pm";
 
