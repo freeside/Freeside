@@ -1037,15 +1037,20 @@ sub uncancel {
         $dbh->rollback if $oldAutoCommit;
         return $svc_error;
       } else {
+        # if we've failed to insert the svc_x object, svc_Common->insert 
+        # will have removed the cust_svc already.  if not, then both records
+        # were inserted but we failed for some other reason (export, most 
+        # likely).  in that case, report the error and delete the records.
         push @svc_errors, $svc_error;
-        # is this necessary? svc_Common::insert already deletes the 
-        # cust_svc if inserting svc_x fails.
         my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svc_x->svcnum });
         if ( $cust_svc ) {
-          my $cs_error = $cust_svc->delete;
-          if ( $cs_error ) {
+          # except if export_insert failed, export_delete probably won't be
+          # much better
+          local $FS::svc_Common::noexport_hack = 1;
+          my $cleanup_error = $svc_x->delete; # also deletes cust_svc
+          if ( $cleanup_error ) { # and if THAT fails, then run away
             $dbh->rollback if $oldAutoCommit;
-            return $cs_error;
+            return $cleanup_error;
           }
         }
       } # svc_fatal
