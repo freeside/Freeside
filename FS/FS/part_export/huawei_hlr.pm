@@ -18,16 +18,16 @@ $DEBUG = 0;
 @ISA = qw(FS::part_export);
 
 tie my %options, 'Tie::IxHash',
-  'opname'    => { label=>'Operator login' },
-  'pwd'       => { label=>'Operator password' },
+  'opname'    => { label=>'Operator login (required)' },
+  'pwd'       => { label=>'Operator password (required)' },
   'tplid'     => { label=>'Template number' },
   'hlrsn'     => { label=>'HLR serial number' },
   'k4sno'     => { label=>'K4 serial number' },
-  'cardtype'  => { label  => 'Card type',
+  'cardtype'  => { label  => 'Card type (required)',
                    type   => 'select', 
                    options=> ['SIM', 'USIM']
                  },
-  'alg'       => { label  => 'Authentication algorithm',
+  'alg'       => { label  => 'Authentication algorithm (required)',
                    type   => 'select',
                    options=> ['COMP128_1',
                               'COMP128_2',
