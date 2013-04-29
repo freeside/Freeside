@@ -946,15 +946,27 @@ sub capture_payment {
   }
 
   my $cust_main = $cust_pay_pending->cust_main;
-  my $bill_error =
-    $cust_main->realtime_botpp_capture( $cust_pay_pending, 
-      %{$packet->{data}},
-      apply => 1,
-  );
+  if ( $packet->{cancel} ) {
+    # the user has chosen not to make this payment
+    # (probably should be a separate API call, but I don't want to duplicate
+    # all of the above...which should eventually go away)
+    my $error = $cust_pay_pending->delete;
+    # don't show any errors related to this; they're not meaningful
+    warn "error canceling pending payment $paypendingnum: $error\n" if $error;
+    return { 'error'      => '_cancel',
+             'session_id' => $cust_pay_pending->session_id };
+  } else {
+    # create the payment
+    my $bill_error =
+      $cust_main->realtime_botpp_capture( $cust_pay_pending, 
+        %{$packet->{data}},
+        apply => 1,
+    );
 
-  return { 'error'      => ( $bill_error->{bill_error} ? '_decline' : '' ),
-           %$bill_error,
-         };
+    return { 'error'      => ( $bill_error->{bill_error} ? '_decline' : '' ),
+             %$bill_error,
+           };
+  }
 
 }
 

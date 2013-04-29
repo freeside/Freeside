@@ -111,7 +111,7 @@ L<http://420.am/business-onlinepayment> for supported gateways.
 
 Required arguments in the hashref are I<method>, and I<amount>
 
-Available methods are: I<CC>, I<ECHECK> and I<LEC>
+Available methods are: I<CC>, I<ECHECK>, I<LEC>, and I<PAYPAL>
 
 Available optional arguments are: I<description>, I<invnum>, I<apply>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>
 
@@ -317,6 +317,7 @@ my %bop_method2payby = (
   'CC'     => 'CARD',
   'ECHECK' => 'CHEK',
   'LEC'    => 'LECB',
+  'PAYPAL' => 'PPAL',
 );
 
 sub realtime_bop {
@@ -612,6 +613,7 @@ sub realtime_bop {
     %$bop_content,
     'reference'      => $cust_pay_pending->paypendingnum, #for now
     'callback_url'   => $payment_gateway->gateway_callback_url,
+    'cancel_url'     => $payment_gateway->gateway_cancel_url,
     'email'          => $email,
     %content, #after
   );

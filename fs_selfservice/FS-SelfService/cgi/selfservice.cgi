@@ -667,12 +667,15 @@ sub make_thirdparty_payment {
 }
 
 sub post_thirdparty_payment {
-  $cgi->param('payby_method') =~ /^(CC|ECHECK)$/
+  $cgi->param('payby_method') =~ /^(CC|ECHECK|PAYPAL)$/
     or die "illegal payby method";
   my $method = $1;
   $cgi->param('amount') =~ /^(\d+(\.\d*)?)$/
     or die "illegal amount";
   my $amount = $1;
+  # realtime_collect() returns the result from FS::cust_main->realtime_collect
+  # which returns realtime_bop()
+  # which returns a hashref of popup_url, collectitems, and reference
   my $result = realtime_collect( 
     'session_id' => $session_id,
     'method' => $method, 

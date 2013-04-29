@@ -6,18 +6,13 @@ Hello <%= $name %>!<BR><BR>
 <%= include('small_custview') %>
 
 <BR>
-<%= unless ( $access_pkgnum ) {
-      $OUT .= qq!Balance: <B>\$$balance</B><BR><BR>!;
-    }
-    '';
-%>
 
 <%=
   $OUT .= qq! <B><A HREF="${url}invoices">View All Invoices</A></B> &nbsp; &nbsp; !;
 %>
 
 <%= if ( $balance > 0 ) {
-  if (scalar(grep $_, @hide_payment_fields)) {
+  if (scalar(grep $_, @hide_payment_fields)) { # this sucks
     $OUT .= qq! <B><A HREF="${url}make_thirdparty_payment&payby_method=CC">Make a payment</A></B><BR><BR>!;
   } else {
     $OUT .= qq! <B><A HREF="${url}make_payment">Make a payment</A></B><BR>!;

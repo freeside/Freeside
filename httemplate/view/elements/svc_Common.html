@@ -51,8 +51,10 @@ function areyousure(href) {
 % } 
 
 <% mt('Service #') |h %><B><% $svcnum %></B>
-% my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
+% if ( $custnum ) {
+%   my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
 <& /view/elements/svc_edit_link.html, 'svc' => $svc_x, 'edit_url' => $url &>
+% }
 <BR>
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
@@ -127,7 +129,9 @@ function areyousure(href) {
 
 % }
 
+% if ( $cust_svc ) {
 <& /elements/table-tickets.html, object => $cust_svc &>
+% }
 
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
@@ -150,7 +154,7 @@ my $fields = $opt{'fields'}
 
 my $svcnum;
 if ( $cgi->param('svcnum') ) {
-  $cgi->param('svcnum') =~ /^(\d+)$/ or die "unparsable svcnum";
+  $cgi->param('svcnum') =~ /^(\d+)$/ or die "unparseable svcnum";
   $svcnum = $1;
 } else {
   my($query) = $cgi->keywords;
@@ -170,19 +174,29 @@ my $svc_x = qsearchs({
 }) or die "Unknown svcnum $svcnum in ". $opt{'table'}. " table\n";
 
 my $cust_svc = $svc_x->cust_svc;
-my($label, $value, $svcdb) = $cust_svc->label;
-
-my $part_svc = $cust_svc->part_svc;
-
-#false laziness w/edit/svc_Common.html
-#override default labels with service-definition labels if applicable
+my ($label, $value, $svcdb, $part_svc );
 my $labels = $opt{labels}; #not -> here
-foreach my $field ( keys %$labels ) {
-  my $col = $part_svc->part_svc_column($field);
-  $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\s*$/;
+
+if ( $cust_svc ) {
+  ($label, $value, $svcdb) = $cust_svc->label;
+
+  $part_svc = $cust_svc->part_svc;
+
+  #false laziness w/edit/svc_Common.html
+  #override default labels with service-definition labels if applicable
+  foreach my $field ( keys %$labels ) {
+    my $col = $part_svc->part_svc_column($field);
+    $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\s*$/;
+  }
+} else {
+  $label = "Unlinked $table";
+  $value = $svc_x->label;
+  $svcdb = $table;
+  # just to satisfy callbacks
+  $part_svc = FS::part_svc->new({ svcpart => 0, svcdb => $table });
 }
 
-my $pkgnum = $cust_svc->pkgnum;
+my $pkgnum = $cust_svc->pkgnum if $cust_svc;
 
 my($cust_pkg, $custnum);
 if ($pkgnum) {

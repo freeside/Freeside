@@ -44,26 +44,18 @@ For Refunds (cust_refund):
 For Payments (cust_pay):
 'CARD' (credit cards), 'CHEK' (electronic check/ACH),
 'LECB' (phone bill billing), 'BILL' (billing), 'PREP' (prepaid card),
-'CASH' (cash), 'WEST' (Western Union), or 'MCRD' (Manual credit card)
+'CASH' (cash), 'WEST' (Western Union), 'MCRD' (Manual credit card),
+'PPAL' (PayPal)
 'COMP' (free) is depricated as a payment type in cust_pay
 
 =cut 
-
-# was this supposed to do something?
- 
-#sub payby {
-#  my($self,$payby) = @_;
-#  if ( defined($payby) ) {
-#    $self->setfield('payby', $payby);
-#  } 
-#  return $self->getfield('payby')
-#}
 
 =item payinfo
 
 Payment information (payinfo) can be one of the following types:
 
-Card Number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
+Card Number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) 
+prepayment identifier (see L<FS::prepay_credit>), PayPal transaction ID
 
 =cut
 
@@ -267,6 +259,8 @@ sub payby_payinfo_pretty {
     'Western Union'; #. $self->payinfo;
   } elsif ( $self->payby eq 'MCRD' ) {
     'Manual credit card'; #. $self->payinfo;
+  } elsif ( $self->payby eq 'PPAL' ) {
+    'PayPal transaction#' . $self->order_number;
   } else {
     $self->payby. ' '. $self->payinfo;
   }

@@ -863,32 +863,34 @@ sub smart_search_param {
   my @or = 
       map { my $table = $_;
             my $search_sql = "FS::$table"->search_sql($string);
-            " ( svcdb = '$table'
-	        AND 0 < ( SELECT COUNT(*) FROM $table
-	                    WHERE $table.svcnum = cust_svc.svcnum
-		              AND $search_sql
-	                )
-	      ) ";
+
+            "SELECT $table.svcnum AS svcnum, '$table' AS svcdb ".
+            "FROM $table WHERE $search_sql";
           }
       FS::part_svc->svc_tables;
 
   if ( $string =~ /^(\d+)$/ ) {
-    unshift @or, " ( agent_svcid IS NOT NULL AND agent_svcid = $1 ) ";
+    unshift @or, "SELECT cust_svc.svcnum, NULL FROM cust_svc WHERE agent_svcid = $1";
   }
 
-  my @extra_sql = ' ( '. join(' OR ', @or). ' ) ';
+  my $addl_from = " RIGHT JOIN (\n" . join("\nUNION\n", @or) . "\n) AS svc_all ".
+                  " ON (svc_all.svcnum = cust_svc.svcnum) ";
+
+  my @extra_sql;
 
   push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql(
     'null_right' => 'View/link unlinked services'
   );
   my $extra_sql = ' WHERE '.join(' AND ', @extra_sql);
   #for agentnum
-  my $addl_from = ' LEFT JOIN cust_pkg  USING ( pkgnum  )'.
+  $addl_from  .=  ' LEFT JOIN cust_pkg  USING ( pkgnum  )'.
                   FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg').
                   ' LEFT JOIN part_svc  USING ( svcpart )';
 
   (
     'table'     => 'cust_svc',
+    'select'    => 'svc_all.svcnum AS svcnum, '.
+                   'COALESCE(svc_all.svcdb, part_svc.svcdb) AS svcdb',
     'addl_from' => $addl_from,
     'hashref'   => {},
     'extra_sql' => $extra_sql,
