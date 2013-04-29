@@ -231,7 +231,7 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
                 invoicing_list referral_custnum promo_code reg_code
                 override_ban_warn
                 pkgpart refnum agentnum
-                username sec_phrase _password popnum
+                username sec_phrase _password popnum domsvc
                 mac_addr
                 countrycode phonenum sip_password pin prepaid_shortform
               ),
@@ -500,5 +500,7 @@ END
 
 package FS::SelfService::_signupcgi;
 use HTML::Entities;
-use FS::SelfService qw(regionselector expselect popselector didselector);
+use FS::SelfService qw( regionselector expselect popselector domainselector
+                        didselector
+                      );
 

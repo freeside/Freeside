@@ -98,7 +98,7 @@ sub signup_info {
 
     my @signup_bools = qw( no_company recommend_daytime recommend_email );
 
-    my @signup_server_scalars = qw( default_pkgpart default_svcpart );
+    my @signup_server_scalars = qw( default_pkgpart default_svcpart default_domain );
 
     my @selfservice_textareas = qw( head body_header body_footer );
 

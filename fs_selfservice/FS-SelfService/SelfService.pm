@@ -1799,8 +1799,9 @@ sub domainselector {
            '<INPUT TYPE="hidden" NAME="domsvc" VALUE="'. $key. '"></TD></TR>'
   }
 
-  my $text .= qq!<TR><TD ALIGN="right">Domain</TD><TD><SELECT NAME="domsvc" SIZE=1 STYLE="width: 20em"><OPTION>(Choose Domain)!;
+  my $text .= qq!<TR><TD ALIGN="right">Domain</TD><TD><SELECT NAME="domsvc" SIZE=1 STYLE="width: 20em">;
 
+  $text .= '<OPTION>(Choose Domain)' unless $domsvc;
 
   foreach my $domain ( sort { $domains->{$a} cmp $domains->{$b} } keys %$domains ) {
     $text .= qq!<OPTION VALUE="!. $domain. '"'.

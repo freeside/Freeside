@@ -2159,8 +2159,15 @@ and customer address. Include units.',
   {
     'key'         => 'signup_server-default_svcpart',
     'section'     => 'self-service',
-    'description' => 'Default service definition for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning).',
+    'description' => 'Default service definition for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning or domain selection).',
     'type'        => 'select-part_svc',
+  },
+
+  {
+    'key'         => 'signup_server-default_domain',
+    'section'     => 'self-service',
+    'description' => 'If specified, the default domain for signup (useful when domain is set to selectable choice).',
+    'type'        => 'text',
   },
 
   {

@@ -319,6 +319,12 @@ ENDOUT
   <TD ALIGN="right">Username</TD>
   <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
 </TR>
+ENDOUT
+
+  $OUT .= domainselector( svcpart=>$default_svcpart, domsvc=>$default_domain )
+    if $default_svcpart;
+
+    $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Password</TD>
   <TD><INPUT TYPE="password" NAME="_password" VALUE="$_password"></TD>
