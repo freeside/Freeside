@@ -314,8 +314,8 @@ sub import_sim {
     # push IMSI/KI to the HLR
     my $return = $self->command($socket,
       @command,
-      'IMSI', $imsi,
-      'KIVALUE', $ki,
+      'IMSI', qq{"$imsi"},
+      'KIVALUE', qq{"$ki"},
       @args
     );
     if ( $return->{success} ) {
