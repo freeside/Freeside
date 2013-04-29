@@ -2164,9 +2164,9 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'signup_server-default_domain',
+    'key'         => 'signup_server-default_domsvc',
     'section'     => 'self-service',
-    'description' => 'If specified, the default domain for signup (useful when domain is set to selectable choice).',
+    'description' => 'If specified, the default domain svcpart for signup (useful when domain is set to selectable choice).',
     'type'        => 'text',
   },
 

@@ -98,7 +98,7 @@ sub signup_info {
 
     my @signup_bools = qw( no_company recommend_daytime recommend_email );
 
-    my @signup_server_scalars = qw( default_pkgpart default_svcpart default_domain );
+    my @signup_server_scalars = qw( default_pkgpart default_svcpart default_domsvc );
 
     my @selfservice_textareas = qw( head body_header body_footer );
 
@@ -670,7 +670,7 @@ sub new_customer {
     my $svc = new FS::svc_acct {
       'svcpart'   => $svcpart,
       map { $_ => $packet->{$_} }
-        qw( username _password sec_phrase popnum ),
+        qw( username _password sec_phrase popnum domsvc ),
     };
 
     my @acct_snarf;
