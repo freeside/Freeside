@@ -704,6 +704,14 @@ sub edit_info {
   $new->set( $_ => $p->{$_} )
     foreach grep { exists $p->{$_} } @cust_main_editable_fields;
 
+  if ( $new->ship_address1 eq '' ) {
+    # then the ship address is being set to null
+    $new->set($_ => '') 
+      foreach qw(ship_longitude ship_latitude ship_coord_auto ship_mobile);
+  }
+
+
+
   my $payby = '';
   if (exists($p->{'payby'})) {
     $p->{'payby'} =~ /^([A-Z]{4})$/
