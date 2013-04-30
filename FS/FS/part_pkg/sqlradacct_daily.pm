@@ -66,8 +66,13 @@ use Date::Format;
                               'default' => 0,
                             },
 
+    'monthly_cap'        => { 'name' => 'Monthly (billing frequency) cap on all overage charges'.
+                                        ' (0 means no cap)',
+                              'default' => 0,
+                            },
+
   },
-  'fieldorder' => [qw( recur_included_hours recur_hourly_charge recur_hourly_cap recur_included_input recur_input_charge recur_input_cap recur_included_output recur_output_charge recur_output_cap recur_included_total recur_total_charge recur_total_cap global_cap )],
+  'fieldorder' => [qw( recur_included_hours recur_hourly_charge recur_hourly_cap recur_included_input recur_input_charge recur_input_cap recur_included_output recur_output_charge recur_output_cap recur_included_total recur_total_charge recur_total_cap global_cap monthly_cap )],
   'weight' => 41,
 );
 
@@ -79,7 +84,7 @@ sub price_info {
 }
 
 #hacked-up false laziness w/sqlradacct_hour,
-# but keeping it separate to start  with is safer for existing folks
+# but keeping it separate to start with is safer for existing folks
 sub calc_recur {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 
@@ -178,6 +183,10 @@ sub calc_recur {
 
     $day_start = $tomorrow;
   }
+
+  $charges = $self->option('monthly_cap')
+    if $self->option('monthly_cap')
+    && $charges > $self->option('monthly_cap');
 
   $self->option('recur_fee') + $charges;
 }
