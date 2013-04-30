@@ -129,7 +129,7 @@ sub export_setstatus_listdel {
 }
 
 sub export_setstatus_listX {
-  my( $self, $svc_x, $action, $list, $address ) = @_;
+  my( $self, $svc_x, $action, $list, $address_item ) = @_;
 
   my $option;
   if ( $list =~ /^[WA]/i ) { #Whitelist/Allow
@@ -139,8 +139,16 @@ sub export_setstatus_listX {
   }
   $option .= $action. '_url';
 
-  $address = Email::Valid->address($address)
-    or die "address failed $Email::Valid::Details check.\n";
+  my $address;
+  unless ( $address = Email::Valid->address($address_item) ) {
+
+    if ( $address_item =~ /^(\@[\w\-\.]+\.\w{2,63})$/ ) { # "@domain"
+      $address = $1;
+    } else {
+      die "address failed $Email::Valid::Details check.\n";
+    }
+
+  }
 
   #some false laziness w/export_getstatus above
   my $url;
