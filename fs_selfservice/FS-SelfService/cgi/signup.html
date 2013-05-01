@@ -1,3 +1,25 @@
+<%=
+
+# Encode various values used within this template to prevent XSS
+$first = encode_entities($first);
+$last = encode_entities($last);
+$pin = encode_entities($pin);
+$username = encode_entities($username);
+$_password = encode_entities($_password);
+$_password2 = encode_entities($_password2);
+$session_id = encode_entities($session_id);
+$company = encode_entities($company);
+$address1 = encode_entities($address1);
+$address2 = encode_entities($address2);
+$city = encode_entities($city);
+$zip = encode_entities($zip);
+$daytime = encode_entities($daytime);
+$night = encode_entities($night);
+$fax = encode_entities($fax);
+$promo_code = encode_entities($promo_code);
+$reg_code = encode_entities($reg_code);
+
+%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
@@ -34,7 +56,7 @@
 
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= encode_entities($prepaid_shortform) %>">
-<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
+<INPUT TYPE="hidden" NAME="session" VALUE="<%= encode_entities($session_id) %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
 <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $referral_custnum %>">
@@ -308,7 +330,7 @@ HTML::Widgets::SelectLayers->new(
     $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Voicemail PIN</TD>
-  <TD><INPUT TYPE="pin" NAME="pin" VALUE="<%= encode_entities($pin) %>"></TD>
+  <TD><INPUT TYPE="pin" NAME="pin" VALUE="$pin"></TD>
 </TR>
 ENDOUT
 
@@ -317,7 +339,7 @@ ENDOUT
     $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Username</TD>
-  <TD><INPUT TYPE="text" NAME="username" VALUE="<%= encode_entities($username) %>"></TD>
+  <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
 </TR>
 ENDOUT
 
@@ -327,11 +349,11 @@ ENDOUT
     $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= encode_entities($_password) %>"></TD>
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="$_password"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Re-enter Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= encode_entities($_password2) %>"></TD>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="$_password2"></TD>
 </TR>
 ENDOUT
 
@@ -354,7 +376,7 @@ SECPHRASE
       warn $mac_addr;
 
       $OUT .= <<NOMADIX;
-        <INPUT TYPE="hidden" NAME="mac_addr" VALUE="<%= encode_entities($mac_addr) %>">
+        <INPUT TYPE="hidden" NAME="mac_addr" VALUE="$mac_addr">
 NOMADIX
 
     }
