@@ -308,7 +308,7 @@ HTML::Widgets::SelectLayers->new(
     $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Voicemail PIN</TD>
-  <TD><INPUT TYPE="pin" NAME="pin" VALUE="$pin"></TD>
+  <TD><INPUT TYPE="pin" NAME="pin" VALUE="<%= encode_entities($pin) %>"></TD>
 </TR>
 ENDOUT
 
@@ -317,7 +317,7 @@ ENDOUT
     $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Username</TD>
-  <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
+  <TD><INPUT TYPE="text" NAME="username" VALUE="<%= encode_entities($username) %>"></TD>
 </TR>
 ENDOUT
 
@@ -327,11 +327,11 @@ ENDOUT
     $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="$_password"></TD>
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= encode_entities($_password) %>"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Re-enter Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password2" VALUE="$_password2"></TD>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= encode_entities($_password2) %>"></TD>
 </TR>
 ENDOUT
 
@@ -354,7 +354,7 @@ SECPHRASE
       warn $mac_addr;
 
       $OUT .= <<NOMADIX;
-        <INPUT TYPE="hidden" NAME="mac_addr" VALUE="$mac_addr">
+        <INPUT TYPE="hidden" NAME="mac_addr" VALUE="<%= encode_entities($mac_addr) %>">
 NOMADIX
 
     }
