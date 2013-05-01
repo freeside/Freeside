@@ -437,6 +437,24 @@ sub bill {
     my @part_pkg = $cust_pkg->part_pkg->self_and_bill_linked;
     $options{has_hidden} = 1 if ($part_pkg[1] && $part_pkg[1]->hidden);
  
+    # if this package was changed from another package,
+    # and it hasn't been billed since then,
+    # and package balances are enabled,
+    if ( $cust_pkg->change_pkgnum
+        and $cust_pkg->change_date >= ($cust_pkg->last_bill || 0)
+        and $cust_pkg->change_date <  $invoice_time
+      and $conf->exists('pkg-balances') )
+    {
+      # _transfer_balance will also create the appropriate credit
+      my @transfer_items = $self->_transfer_balance($cust_pkg);
+      # $part_pkg[0] is the "real" part_pkg
+      my $pass = ($cust_pkg->no_auto || $part_pkg[0]->no_auto) ? 
+                  'no_auto' : '';
+      push @{ $cust_bill_pkg{$pass} }, @transfer_items;
+      # treating this as recur, just because most charges are recur...
+      ${$total_recur{$pass}} += $_->recur foreach @transfer_items;
+    }
+
     foreach my $part_pkg ( @part_pkg ) {
 
       $cust_pkg->set($_, $hash{$_}) foreach qw ( setup last_bill bill );
@@ -1220,24 +1238,107 @@ sub _make_lines {
 
 }
 
-# This is _handle_taxes.  It's called once for each cust_bill_pkg generated
-# from _make_lines, along with the part_pkg, cust_pkg, invoice time, the 
-# non-overridden pkgpart, a flag indicating whether the package is being
-# canceled, and a partridge in a pear tree.
-#
-# The most important argument is 'taxlisthash'.  This is shared across the 
-# entire invoice.  It looks like this:
-# {
-#   'cust_main_county 1001' => [ [FS::cust_main_county], ... ],
-#   'cust_main_county 1002' => [ [FS::cust_main_county], ... ],
-# }
-#
-# 'cust_main_county' can also be 'tax_rate'.  The first object in the array
-# is always the cust_main_county or tax_rate identified by the key.
-#
-# That "..." is a list of FS::cust_bill_pkg objects that will be fed to 
-# the 'taxline' method to calculate the amount of the tax.  This doesn't
-# happen until calculate_taxes, though.
+=item _transfer_balance TO_PKG [ FROM_PKGNUM ]
+
+Takes one argument, a cust_pkg object that is being billed.  This will 
+be called only if the package was created by a package change, and has
+not been billed since the package change, and package balance tracking
+is enabled.  The second argument can be an alternate package number to 
+transfer the balance from; this should not be used externally.
+
+Transfers the balance from the previous package (now canceled) to
+this package, by crediting one package and creating an invoice item for 
+the other.  Inserts the credit and returns the invoice item (so that it 
+can be added to an invoice that's being built).
+
+If the previous package was never billed, and was also created by a package
+change, then this will also transfer the balance from I<its> previous 
+package, and so on, until reaching a package that either has been billed
+or was not created by a package change.
+
+=cut
+
+my $balance_transfer_reason;
+
+sub _transfer_balance {
+  my $self = shift;
+  my $cust_pkg = shift;
+  my $from_pkgnum = shift || $cust_pkg->change_pkgnum;
+  my $from_pkg = FS::cust_pkg->by_key($from_pkgnum);
+
+  my @transfers;
+
+  # if $from_pkg is not the first package in the chain, and it was never 
+  # billed, walk back
+  if ( $from_pkg->change_pkgnum and scalar($from_pkg->cust_bill_pkg) == 0 ) {
+    @transfers = $self->_transfer_balance($cust_pkg, $from_pkg->change_pkgnum);
+  }
+
+  my $prev_balance = $self->balance_pkgnum($from_pkgnum);
+  if ( $prev_balance != 0 ) {
+    $balance_transfer_reason ||= FS::reason->new_or_existing(
+      'reason' => 'Package balance transfer',
+      'type'   => 'Internal adjustment',
+      'class'  => 'R'
+    );
+
+    my $credit = FS::cust_credit->new({
+        'custnum'   => $self->custnum,
+        'amount'    => abs($prev_balance),
+        'reasonnum' => $balance_transfer_reason->reasonnum,
+        '_date'     => $cust_pkg->change_date,
+    });
+
+    my $cust_bill_pkg = FS::cust_bill_pkg->new({
+        'setup'     => 0,
+        'recur'     => abs($prev_balance),
+        #'sdate'     => $from_pkg->last_bill, # not sure about this
+        #'edate'     => $cust_pkg->change_date,
+        'itemdesc'  => $self->mt('Previous Balance, [_1]',
+                                 $from_pkg->part_pkg->pkg),
+    });
+
+    if ( $prev_balance > 0 ) {
+      # credit the old package, charge the new one
+      $credit->set('pkgnum', $from_pkgnum);
+      $cust_bill_pkg->set('pkgnum', $cust_pkg->pkgnum);
+    } else {
+      # the reverse
+      $credit->set('pkgnum', $cust_pkg->pkgnum);
+      $cust_bill_pkg->set('pkgnum', $from_pkgnum);
+    }
+    my $error = $credit->insert;
+    die "error transferring package balance from #".$from_pkgnum.
+        " to #".$cust_pkg->pkgnum.": $error\n" if $error;
+
+    push @transfers, $cust_bill_pkg;
+  } # $prev_balance != 0
+
+  return @transfers;
+}
+
+=item _handle_taxes PART_PKG TAXLISTHASH CUST_BILL_PKG CUST_PKG TIME PKGPART [ OPTIONS ]
+
+This is _handle_taxes.  It's called once for each cust_bill_pkg generated
+from _make_lines, along with the part_pkg, cust_pkg, invoice time, the 
+non-overridden pkgpart, a flag indicating whether the package is being
+canceled, and a partridge in a pear tree.
+
+The most important argument is 'taxlisthash'.  This is shared across the 
+entire invoice.  It looks like this:
+{
+  'cust_main_county 1001' => [ [FS::cust_main_county], ... ],
+  'cust_main_county 1002' => [ [FS::cust_main_county], ... ],
+}
+
+'cust_main_county' can also be 'tax_rate'.  The first object in the array
+is always the cust_main_county or tax_rate identified by the key.
+
+That "..." is a list of FS::cust_bill_pkg objects that will be fed to 
+the 'taxline' method to calculate the amount of the tax.  This doesn't
+happen until calculate_taxes, though.
+
+=cut
 
 sub _handle_taxes {
   my $self = shift;
