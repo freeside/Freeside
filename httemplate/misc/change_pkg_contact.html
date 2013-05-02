@@ -9,7 +9,7 @@
 
   <TR>
     <TH ALIGN="right"><% mt('Package') |h %></TH>
-    <TD COLSPAN=7>
+    <TD COLSPAN=7 BGCOLOR="#dddddd">
       <% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %>
     </TD>
   </TR>
@@ -17,7 +17,7 @@
 % if ( $cust_pkg->contactnum ) {
     <TR>
       <TH ALIGN="right"><% mt('Current Contact') %></TH>
-      <TD COLSPAN=7>
+      <TD COLSPAN=7 BGCOLOR="#dddddd">
         <% $cust_pkg->contact_obj->line |h %>
       </TD>
     </TR>

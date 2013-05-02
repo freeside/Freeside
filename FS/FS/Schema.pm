@@ -1743,6 +1743,7 @@ sub tables_hashref {
         'change_pkgnum',       'int', 'NULL', '', '', '',
         'change_pkgpart',      'int', 'NULL', '', '', '',
         'change_locationnum',  'int', 'NULL', '', '', '',
+        'change_custnum',      'int', 'NULL', '', '', '',
         'main_pkgnum',         'int', 'NULL', '', '', '',
         'pkglinknum',          'int', 'NULL', '', '', '',
         'manual_flag',        'char', 'NULL',  1, '', '', 

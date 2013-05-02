@@ -862,6 +862,7 @@ sub cancel {
 
   my %hash = $self->hash;
   $date ? ($hash{'expire'} = $date) : ($hash{'cancel'} = $cancel_time);
+  $hash{'change_custnum'} = $options{'change_custnum'};
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
   if ( $error ) {
@@ -1703,6 +1704,11 @@ New locationnum, to change the location for this package.
 New FS::cust_location object, to create a new location and assign it
 to this package.
 
+=item cust_main
+
+New FS::cust_main object, to create a new customer and assign the new package
+to it.
+
 =item pkgpart
 
 New pkgpart (see L<FS::part_pkg>).
@@ -1818,12 +1824,25 @@ sub change {
   # 2. (more importantly) changing a package before it's billed
   $hash{'waive_setup'} = $self->waive_setup;
 
+  my $custnum = $self->custnum;
+  if ( $opt->{cust_main} ) {
+    my $cust_main = $opt->{cust_main};
+    unless ( $cust_main->custnum) { 
+      my $error = $cust_main->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting cust_main (transaction rolled back): $error";
+      }
+    }
+    $custnum = $cust_main->custnum;
+  }
+
   # Create the new package.
   my $cust_pkg = new FS::cust_pkg {
-    custnum      => $self->custnum,
-    pkgpart      => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
-    refnum       => ( $opt->{'refnum'}      || $self->refnum       ),
-    locationnum  => ( $opt->{'locationnum'}                        ),
+    custnum        => $custnum,
+    pkgpart        => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
+    refnum         => ( $opt->{'refnum'}      || $self->refnum       ),
+    locationnum    => ( $opt->{'locationnum'}                        ),
     %hash,
   };
   $error = $cust_pkg->insert( 'change' => 1,
@@ -1919,7 +1938,7 @@ sub change {
     my $new = FS::cust_pkg->new({
         pkgpart       => $link->dst_pkgpart,
         pkglinknum    => $link->pkglinknum,
-        custnum       => $self->custnum,
+        custnum       => $custnum,
         main_pkgnum   => $cust_pkg->pkgnum,
         locationnum   => $cust_pkg->locationnum,
         start_date    => $cust_pkg->start_date,
@@ -1960,9 +1979,10 @@ sub change {
   #because the new package will be billed for the same date range.
   #Supplemental packages are also canceled here.
   $error = $self->cancel(
-    quiet         => 1, 
-    unused_credit => $unused_credit,
-    nobill        => $keep_dates
+    quiet          => 1, 
+    unused_credit  => $unused_credit,
+    nobill         => $keep_dates,
+    change_custnum => ( $self->custnum != $custnum ? $custnum : '' ),
   );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
@@ -2132,6 +2152,18 @@ sub old_cust_pkg {
   my $self = shift;
   return '' unless $self->change_pkgnum;
   qsearchs('cust_pkg', { 'pkgnum' => $self->change_pkgnum } );
+}
+
+=item change_cust_main
+
+Returns the customter this package was detached to, if any.
+
+=cut
+
+sub change_cust_main {
+  my $self = shift;
+  return '' unless $self->change_custnum;
+  qsearchs('cust_main', { 'custnum' => $self->change_custnum } );
 }
 
 =item calc_setup

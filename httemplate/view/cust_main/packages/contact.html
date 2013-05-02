@@ -3,6 +3,7 @@
 % if ( $show_link ) {
         <FONT SIZE=-1>
           (&nbsp;<%pkg_change_contact_link($cust_pkg)%>&nbsp;)
+          (&nbsp;<%pkg_detach_link($cust_pkg)%>&nbsp;)
         </FONT>
 %    }
 % } elsif ( $show_link ) {
@@ -46,6 +47,19 @@ sub pkg_add_contact_link {
     'cust_pkg'    => $cust_pkg,
     'width'       => 616,
     'height'      => 192,
+  );
+}
+
+sub pkg_detach_link {
+  my $cust_pkg = shift;
+  #my $pkgpart = $cust_pkg->pkgpart;
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p. "misc/detach_pkg.html",
+    'label'       => emt('Detach'),
+    'actionlabel' => emt('Detach'),
+    'cust_pkg'    => $cust_pkg,
+    'width'       => 616,
+    'height'      => 676,
   );
 }
 
