@@ -2,10 +2,10 @@
 
 Example:
 
-  include( 'elements/cust_main_dayranges.html',
+  <& elements/cust_main_dayranges.html,
                  'title'       => 'Accounts Receivable Aging Summary',
                  'range_sub'   => $mysub,
-         )
+  &>
 
   my $mysub = sub {
     my( $start, $end ) = @_;
@@ -44,7 +44,7 @@ Example:
                                              $row->{'rangecol_60_90'} ),
                                     sprintf( $money_char.'%.2f',
                                              $row->{'rangecol_90_0'} ),
-                                    sprintf( '<b>'. $money_char.'%.2f'. '</b>',
+                                    sprintf( '<b>'.$money_char.'%.2f</b>',
                                              $row->{'rangecol_0_0'} ),
                                     ('') x @pay_labels,
                                   ],
@@ -81,6 +81,9 @@ Example:
                                     '', '', '', '', 'b', 
                                     ( map '', @pay_labels ),
                                     ],
+                 'xls_format'  => [ (map '', FS::UI::Web::cust_styles),
+                                    '', '', '', '', { bold => 1 },
+                                  ],
                  'color'       => [
                                     FS::UI::Web::cust_colors(),
                                     '',
