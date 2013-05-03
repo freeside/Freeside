@@ -132,6 +132,7 @@ tie my %rights, 'Tie::IxHash',
     'Order customer package',
     'One-time charge',
     'Change customer package',
+    'Detach customer package',
     'Bulk change customer packages',
     'Edit customer package dates',
     'Discount customer package', #NEW

@@ -1,15 +1,18 @@
 % if ( $contact ) {
     <% $contact->line |h %>
-% if ( $show_link ) {
+% if ( $show_change_link ) {
         <FONT SIZE=-1>
           (&nbsp;<%pkg_change_contact_link($cust_pkg)%>&nbsp;)
+        </FONT>
+% }
+% if ( $show_detach_link ) {
           (&nbsp;<%pkg_detach_link($cust_pkg)%>&nbsp;)
         </FONT>
 %    }
-% } elsif ( $show_link ) {
-        <FONT SIZE=-1>
-          (&nbsp;<%pkg_add_contact_link($cust_pkg)%>&nbsp;)
-        </FONT>
+% } elsif ( $show_contact_link ) {
+    <FONT SIZE=-1>
+      (&nbsp;<%pkg_add_contact_link($cust_pkg)%>&nbsp;)
+    </FONT>
 % }
 <%init>
 
@@ -18,9 +21,17 @@ my %opt = @_;
 
 my $cust_pkg       = $opt{'cust_pkg'};
 
-my $show_link = 
+my $show_change_link = 
   ! $cust_pkg->get('cancel')
   && $FS::CurrentUser::CurrentUser->access_right('Change customer package');
+
+my $show_detach_link =
+  ! $cust_pkg->get('cancel')
+  && $FS::CurrentUser::CurrentUser->access_right('Detach customer package');
+
+my $show_contact_link =
+  ! $cust_pkg->get('cancel')
+  ; #&& $FS::CurrentUser::CurrentUser->access_right('Add package contact'); #or something like that
 
 my $contact = $cust_pkg->contact_obj;
 
@@ -43,7 +54,7 @@ sub pkg_add_contact_link {
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p. "misc/change_pkg_contact.html",
     'label'       => emt('Add contact'),
-    'actionlabel' => emt('Change'),
+    'actionlabel' => emt('Add contact'),
     'cust_pkg'    => $cust_pkg,
     'width'       => 616,
     'height'      => 192,
