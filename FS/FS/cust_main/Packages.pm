@@ -4,7 +4,7 @@ use strict;
 use vars qw( $DEBUG $me );
 use List::Util qw( min );
 use FS::UID qw( dbh );
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_pkg;
 use FS::cust_svc;
 
@@ -289,6 +289,80 @@ sub order_pkgs {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+}
+
+=item attach_pkgs 
+
+Merges this customer's package's into the target customer and then cancels them.
+
+=cut
+
+sub attach_pkgs {
+  my( $self, $new_custnum ) = @_;
+
+  #mostly false laziness w/ merge
+
+  return "Can't attach packages to self" if $self->custnum == $new_custnum;
+
+  my $new_cust_main = qsearchs( 'cust_main', { 'custnum' => $new_custnum } )
+    or return "Invalid new customer number: $new_custnum";
+
+  return 'Access denied: "Merge customer across agents" access right required to merge into a customer of a different agent'
+    if $self->agentnum != $new_cust_main->agentnum 
+    && ! $FS::CurrentUser::CurrentUser->access_right('Merge customer across agents');
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( qsearch('agent', { 'agent_custnum' => $self->custnum } ) ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't merge a master agent customer";
+  }
+
+  #use FS::access_user
+  if ( qsearch('access_user', { 'user_custnum' => $self->custnum } ) ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't merge a master employee customer";
+  }
+
+  if ( qsearch('cust_pay_pending', { 'custnum' => $self->custnum,
+                                     'status'  => { op=>'!=', value=>'done' },
+                                   }
+              )
+  ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't merge a customer with pending payments";
+  }
+
+  #end of false laziness
+
+  foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
+
+    my $pkg_or_error = $cust_pkg->change( {
+      'keep_dates' => 1,
+      'cust_main'  => $new_cust_main,
+    } );
+
+    my $error = ref($pkg_or_error) ? '' : $pkg_or_error;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+
 }
 
 =item all_pkgs [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]

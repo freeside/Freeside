@@ -31,7 +31,17 @@ if ( $cgi->param('new_custnum') =~ /^(\d+)$/ ) {
   } );
   die "No customer # $custnum" unless $cust_main;
 
-  $error = $cust_main->merge($new_custnum);
+  if ( $cgi->param('merge') eq 'Y' ) {
+
+    #old-style merge: everything + delete old customer
+    $error = $cust_main->merge($new_custnum);
+
+  } else {
+
+    #new-style attach: move packages 3.0 style, that's it
+    $error = $cust_main->attach_pkgs($new_custnum);
+
+  }
 
 } else {
   $error = 'Select a customer to merge into';

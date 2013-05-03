@@ -91,14 +91,19 @@ function areyousure(href, message) {
   &> | 
 % }
 
-% if ( $curuser->access_right('Merge customer') ) {
+% if (     $curuser->access_right('Merge customer')
+%      and (    scalar($cust_main->ncancelled_pkgs)
+%            || $conf->exists('deletecustomers')
+%          )
+%    )
+% {
   <& /elements/popup_link-cust_main.html,
               { 'action'      => $p. 'misc/merge_cust.html',
                 'label'       => emt('Merge this customer'),
                 'actionlabel' => emt('Merge customer'),
                 'cust_main'   => $cust_main,
-                'width'       => 480,
-                'height'      => 192,
+                'width'       => 569,
+                'height'      => 210,
               }
   &> | 
 % } 

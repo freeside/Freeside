@@ -1827,7 +1827,7 @@ sub change {
   my $custnum = $self->custnum;
   if ( $opt->{cust_main} ) {
     my $cust_main = $opt->{cust_main};
-    unless ( $cust_main->custnum) { 
+    unless ( $cust_main->custnum ) { 
       my $error = $cust_main->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
