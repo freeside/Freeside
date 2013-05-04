@@ -624,14 +624,14 @@ sub search {
   # parse without census tract checkbox
   ##
 
-  push @where, "(censustract = '' or censustract is null)"
+  push @where, "(ship_location.censustract = '' or ship_location.censustract is null)"
     if $params->{'no_censustract'};
 
   ##
   # parse with hardcoded tax location checkbox
   ##
 
-  push @where, "geocode is not null"
+  push @where, "ship_location.geocode is not null"
     if $params->{'with_geocode'};
 
   ##
@@ -841,7 +841,7 @@ sub search {
       'ON (cust_main.'.$pre.'locationnum = '.$pre.'location.locationnum) ';
   }
 
-  my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
+  my $count_query = "SELECT COUNT(*) FROM cust_main $addl_from $extra_sql";
 
   my @select = (
                  'cust_main.custnum',
@@ -927,6 +927,8 @@ sub search {
     'extra_headers' => \@extra_headers,
     'extra_fields'  => \@extra_fields,
   };
+  warn Data::Dumper::Dumper($sql_query);
+  $sql_query;
 
 }
 

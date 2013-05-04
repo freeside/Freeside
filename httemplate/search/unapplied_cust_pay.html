@@ -1,9 +1,8 @@
-<% include( 'elements/cust_main_dayranges.html',
+<& elements/cust_main_dayranges.html,
                  #'title'       => 'Prepaid Balance Aging Summary', #???
                  'title'       => 'Unapplied Payments Aging Summary',
                  'range_sub'   => \&unapplied_payments,
-          )
-%>
+&>
 <%init>
 
 die "access denied"

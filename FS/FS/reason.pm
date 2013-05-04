@@ -139,6 +139,43 @@ sub reasontype {
 
 =back
 
+=head1 CLASS METHODS
+
+=over 4
+
+=item new_or_existing reason => REASON, type => TYPE, class => CLASS
+
+Fetches the reason matching these parameters if there is one.  If not,
+inserts one.  Will also insert the reason type if necessary.  CLASS must
+be one of 'C' (cancel reasons), 'R' (credit reasons), or 'S' (suspend reasons).
+
+This will die if anything fails.
+
+=cut
+
+sub new_or_existing {
+  my $class = shift;
+  my %opt = @_;
+
+  my $error = '';
+  my %hash = ('class' => $opt{'class'}, 'type' => $opt{'type'});
+  my $reason_type = qsearchs('reason_type', \%hash)
+                    || FS::reason_type->new(\%hash);
+
+  $error = $reason_type->insert unless $reason_type->typenum;
+  die "error inserting reason type: $error\n" if $error;
+
+  %hash = ('reason_type' => $reason_type->typenum, 'reason' => $opt{'reason'});
+  my $reason = qsearchs('reason', \%hash)
+               || FS::reason->new(\%hash);
+
+  $error = $reason->insert unless $reason->reasonnum;
+  die "error inserting reason: $error\n" if $error;
+
+  $reason;
+}
+
+
 =head1 BUGS
 
 Here by termintes.  Don't use on wooden computers.
