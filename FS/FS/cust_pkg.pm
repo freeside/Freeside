@@ -1837,6 +1837,8 @@ sub change {
     $custnum = $cust_main->custnum;
   }
 
+  $hash{'contactnum'} = $opt->{'contactnum'} if $opt->{'contactnum'};
+
   # Create the new package.
   my $cust_pkg = new FS::cust_pkg {
     custnum        => $custnum,

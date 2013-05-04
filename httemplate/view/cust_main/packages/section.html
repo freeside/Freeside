@@ -28,7 +28,7 @@
     <& package.html, %iopt &>
     <& status.html,  %iopt &>
     <TD CLASS="inv" BGCOLOR="<% $iopt{bgcolor} %>" WIDTH="20%" VALIGN="top">
-      <& contact.html, %iopt &>
+      <& contact.html, %iopt &><BR>
       <& location.html, %iopt &>
     </TD>
     <& services.html, %iopt &>
@@ -59,6 +59,15 @@ my $packages = $opt{'packages'};
   ( $a->getfield('pkgnum') <=> $b->getfield('pkgnum') )
 } @$packages;
 
+my %change_custnum = map { $_->change_custnum => 1 }
+                       grep { $_->change_custnum }
+                         grep { $_->getfield('cancel') }
+                           @$packages;
+
+my $pkg_attached = ( scalar(keys %change_custnum) == 1
+                       && ! grep { ! $_->getfield('cancel') } @$packages
+                   );
+
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';  
 
 my %conf_opt = (
@@ -67,6 +76,7 @@ my %conf_opt = (
                                  || $curuser->option('cust_pkg-display_times')),
   #for status.html
   'cust_pkg-show_autosuspend' => $conf->exists('cust_pkg-show_autosuspend'),
+  'pkg_attached'              => $pkg_attached,
   #for status.html pkg-balances
   'pkg-balances'              => $conf->exists('pkg-balances'),
   'money_char'                => ( $conf->config('money_char') || '$' ),

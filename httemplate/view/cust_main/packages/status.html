@@ -365,9 +365,6 @@ sub pkg_status_row_changed {
 sub pkg_status_row_detached {
   my( $cust_pkg, %opt ) = @_;
 
-warn $cust_pkg->pkgnum;
-warn $cust_pkg->change_custnum;
-
   return '' unless $cust_pkg->change_custnum;
 
   my $html = '';
@@ -379,8 +376,10 @@ warn $cust_pkg->change_custnum;
                       encode_entities( $cust_main->name ).
                     '</A>';
 
+    my $what = $opt{'pkg_attached'} ? 'Attached' : 'Detached';
+
     $html .= pkg_status_row_colspan( $cust_pkg, 
-                                     emt("Detached to customer #[_1]: ",
+                                     emt("$what to customer #[_1]: ",
                                             $cust_pkg->change_custnum
                                         ).
                                        $cust_link,

@@ -6,6 +6,7 @@
         </FONT>
 % }
 % if ( $show_detach_link ) {
+        <FONT SIZE=-1>
           (&nbsp;<%pkg_detach_link($cust_pkg)%>&nbsp;)
         </FONT>
 %    }
@@ -70,7 +71,7 @@ sub pkg_detach_link {
     'actionlabel' => emt('Detach'),
     'cust_pkg'    => $cust_pkg,
     'width'       => 616,
-    'height'      => 676,
+    'height'      => 684,
   );
 }
 

@@ -7,6 +7,8 @@ use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_pkg;
 use FS::cust_svc;
+use FS::contact;       # for attach_pkgs
+use FS::cust_location; #
 
 $DEBUG = 0;
 $me = '[FS::cust_main::Packages]';
@@ -344,11 +346,39 @@ sub attach_pkgs {
 
   #end of false laziness
 
+  #pull in contact
+
+  my %contact_hash = ( 'first'    => $self->first,
+                       'last'     => $self->get('last'),
+                       'custnum'  => $new_custnum,
+                       'disabled' => '',
+                     );
+
+  my $contact = qsearchs(  'contact', \%contact_hash)
+                 || new FS::contact   \%contact_hash;
+  unless ( $contact->contactnum ) {
+    my $error = $contact->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
 
+    my $cust_location = $cust_pkg->cust_location || $self->ship_location;
+    my %loc_hash = $cust_location->hash;
+    $loc_hash{'locationnum'} = '';
+    $loc_hash{'custnum'}     = $new_custnum;
+    $loc_hash{'disabled'}    = '';
+    my $new_cust_location = qsearchs(  'cust_location', \%loc_hash)
+                             || new FS::cust_location   \%loc_hash;
+
     my $pkg_or_error = $cust_pkg->change( {
-      'keep_dates' => 1,
-      'cust_main'  => $new_cust_main,
+      'keep_dates'    => 1,
+      'cust_main'     => $new_cust_main,
+      'contactnum'    => $contact->contactnum,
+      'cust_location' => $new_cust_location,
     } );
 
     my $error = ref($pkg_or_error) ? '' : $pkg_or_error;
