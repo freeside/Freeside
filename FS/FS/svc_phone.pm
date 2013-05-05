@@ -288,9 +288,8 @@ sub insert {
 
   #false laziness w/cust_pkg.pm... move this to location_Mixin?  that would
   #make it more of a base class than a mixin... :)
-  if ( $options{'cust_location'}
-         && ( ! $self->locationnum || $self->locationnum == -1 ) ) {
-    my $error = $options{'cust_location'}->insert;
+  if ( $options{'cust_location'} ) {
+    my $error = $options{'cust_location'}->find_or_insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting cust_location (transaction rolled back): $error";

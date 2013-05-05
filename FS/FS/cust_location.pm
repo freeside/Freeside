@@ -104,33 +104,93 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cust_location'; }
 
-=item new_or_existing HASHREF
+=item find_or_insert
 
-Returns an existing location matching the customer and address fields in 
-HASHREF, if one exists; otherwise returns a new location containing those 
-fields.  The following fields must match: address1, address2, city, county,
-state, zip, country, geocode, disabled.  Other fields are only required
-to match if they're specified in HASHREF.
+Finds an existing location matching the customer and address values in this
+location, if one exists, and sets the contents of this location equal to that
+one (including its locationnum).
 
-The new location will not be inserted; the calling code must call C<insert>
-(or a method such as C<move_to>) to insert it, and check for errors at that
-point.
+If an existing location is not found, this one I<will> be inserted.  (This is a
+change from the "new_or_existing" method that this replaces.)
+
+The following fields are considered "essential" and I<must> match: custnum,
+address1, address2, city, county, state, zip, country, location_number,
+location_type, location_kind.  Disabled locations will be found only if this
+location is set to disabled.
+
+If 'coord_auto' is null, and latitude and longitude are not null, then 
+latitude and longitude are also essential fields.
+
+All other fields are considered "non-essential".  If a non-essential field is
+empty in this location, it will be ignored in determining whether an existing
+location matches.
+
+If a non-essential field is non-empty in this location, existing locations 
+that contain a different non-empty value for that field will not match.  An 
+existing location in which the field is I<empty> will match, but will be 
+updated in-place with the value of that field.
+
+Returns an error string if inserting or updating a location failed.
+
+It is unfortunately hard to determine if this created a new location or not.
 
 =cut
 
-sub new_or_existing {
-  my $class = shift;
-  my %hash = ref($_[0]) ? %{$_[0]} : @_;
-  # if coords are empty, then it doesn't matter if they're auto or not
-  if ( !$hash{'latitude'} and !$hash{'longitude'} ) {
-    delete $hash{'coord_auto'};
+sub find_or_insert {
+  my $self = shift;
+
+  my @essential = (qw(custnum address1 address2 city county state zip country
+    location_number location_type location_kind disabled));
+
+  if ( !$self->coord_auto and $self->latitude and $self->longitude ) {
+    push @essential, qw(latitude longitude);
+    # but NOT coord_auto; if the latitude and longitude match the geocoded
+    # values then that's good enough
   }
-  foreach ( qw(address1 address2 city county state zip country geocode
-              disabled ) ) {
-    # empty fields match only empty fields
-    $hash{$_} = '' if !defined($hash{$_});
+
+  # put nonempty, nonessential fields/values into this hash
+  my %nonempty = map { $_ => $self->get($_) }
+                 grep {$self->get($_)} $self->fields;
+  delete @nonempty{@essential};
+  delete $nonempty{'locationnum'};
+
+  my %hash = map { $_ => $self->get($_) } @essential;
+  my @matches = qsearch('cust_location', \%hash);
+
+  # consider candidate locations
+  MATCH: foreach my $old (@matches) {
+    my $reject = 0;
+    foreach my $field (keys %nonempty) {
+      my $old_value = $old->get($field);
+      if ( length($old_value) > 0 ) {
+        if ( $field eq 'latitude' or $field eq 'longitude' ) {
+          # special case, because these are decimals
+          if ( abs($old_value - $nonempty{$field}) > 0.000001 ) {
+            $reject = 1;
+          }
+        } elsif ( $old_value ne $nonempty{$field} ) {
+          $reject = 1;
+        }
+      } else {
+        # it's empty in $old, has a value in $self
+        $old->set($field, $nonempty{$field});
+      }
+      next MATCH if $reject;
+    } # foreach $field
+
+    if ( $old->modified ) {
+      my $error = $old->replace;
+      return $error if $error;
+    }
+    # set $self equal to $old
+    foreach ($self->fields) {
+      $self->set($_, $old->get($_));
+    }
+    return "";
   }
-  return qsearchs('cust_location', \%hash) || $class->new(\%hash);
+
+  # didn't find a match
+  return $self->insert;
 }
 
 =item insert

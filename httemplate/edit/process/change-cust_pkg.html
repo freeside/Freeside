@@ -32,7 +32,7 @@ my %change = map { $_ => scalar($cgi->param($_)) }
 $change{'keep_dates'} = 1;
 
 if ( $cgi->param('locationnum') == -1 ) {
-  my $cust_location = FS::cust_location->new_or_existing({
+  my $cust_location = FS::cust_location->new({
     'custnum' => $cust_pkg->custnum,
     map { $_ => scalar($cgi->param($_)) }
         qw( address1 address2 city county state zip country )

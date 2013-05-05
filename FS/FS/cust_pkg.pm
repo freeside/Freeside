@@ -1773,19 +1773,13 @@ sub change {
   $hash{"change_$_"}  = $self->$_()
     foreach qw( pkgnum pkgpart locationnum );
 
-  if ( $opt->{'cust_location'} &&
-       ( ! $opt->{'locationnum'} || $opt->{'locationnum'} == -1 ) ) {
-
-    if ( ! $opt->{'cust_location'}->locationnum ) {
-      # not inserted yet
-      $error = $opt->{'cust_location'}->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "inserting cust_location (transaction rolled back): $error";
-      }
+  if ( $opt->{'cust_location'} ) {
+    $error = $opt->{'cust_location'}->find_or_insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_location (transaction rolled back): $error";
     }
     $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
-
   }
 
   # whether to override pkgpart checking on the new package

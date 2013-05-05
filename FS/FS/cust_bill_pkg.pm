@@ -1104,15 +1104,12 @@ sub upgrade_tax_location {
     delete @hash{qw(censustract censusyear latitude longitude coord_auto)};
 
     $hash{custnum} = $h_cust_main->custnum;
-    my $tax_loc = FS::cust_location->new_or_existing(\%hash);
-    if ( !$tax_loc->locationnum ) {
-      $tax_loc->disabled('Y');
-      my $error = $tax_loc->insert;
-      if ( $error ) {
-        warn "couldn't create historical location record for cust#".
-        $h_cust_main->custnum.": $error\n";
-        next INVOICE;
-      }
+    my $tax_loc = FS::cust_location->new(\%hash);
+    my $error = $tax_loc->find_or_insert || $tax_loc->disable_if_unused;
+    if ( $error ) {
+      warn "couldn't create historical location record for cust#".
+      $h_cust_main->custnum.": $error\n";
+      next INVOICE;
     }
     my $exempt_cust = 1 if $h_cust_main->tax;
 

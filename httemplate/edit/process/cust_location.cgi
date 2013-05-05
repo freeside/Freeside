@@ -28,12 +28,12 @@ my $cust_location = qsearchs({
 });
 die "unknown locationnum $locationnum" unless $cust_location;
 
-my $new = FS::cust_location->new_or_existing({
+my $new = FS::cust_location->new({
   custnum     => $cust_location->custnum,
   prospectnum => $cust_location->prospectnum,
   map { $_ => scalar($cgi->param($_)) } FS::cust_main->location_fields
 });
-
-my $error = $cust_location->move_to($new);
+my $error = $new->find_or_insert;
+$error  ||= $cust_location->move_to($new);
 
 </%init>

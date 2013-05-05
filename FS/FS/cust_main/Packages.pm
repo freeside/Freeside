@@ -130,13 +130,10 @@ sub order_pkg {
 
   } elsif ( $opt->{'cust_location'} ) {
 
-    if ( ! $opt->{'cust_location'}->locationnum ) {
-      # not inserted yet
-      my $error = $opt->{'cust_location'}->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "inserting cust_location (transaction rolled back): $error";
-      }
+    my $error = $opt->{'cust_location'}->find_or_insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_location (transaction rolled back): $error";
     }
     $cust_pkg->locationnum($opt->{'cust_location'}->locationnum);
 
