@@ -39,30 +39,34 @@
 
 my %error = (
   'no_cookie'       => '', #First login, don't display an error
-  'bad_cookie'      => 'Bad Cookie', #timed out?  server reboot?
+  'bad_cookie'      => 'Bad Cookie', #timed out?
   'bad_credentials' => 'Incorrect username / password',
-  'logout'          => 'You have been logged out.',
+  #'logout'          => 'You have been logged out.',
 );
 
-my $url_string = CGI->new->url;
+my $error = # $cgi->param('logout') ||
+            $r->prev->subprocess_env("AuthCookieReason");
 
-my $error = $cgi->param('logout') || $r->prev->subprocess_env("AuthCookieReason");
 $error = exists($error{$error}) ? $error{$error} : $error;
+
+
+#my $url_string = CGI->new->url;
+my $url_string = $cgi->url;
 
 #fake a freeside path for /login so we get our .css.  shrug
 $url_string =~ s/login$/freeside\/login/ unless $url_string =~ /freeside\//;
 
 #even though this is kludgy and false laziness w/CGI.pm
-  $url_string =~ s{ / index\.html /? $ }
-                  {/}x;
-  $url_string =~
-    s{
-       /(login|loginout)
-       ([\w\-\.\/]*)
-       $
-     }
-     {}ix;
+$url_string =~ s{ / index\.html /? $ }
+                {/}x;
+$url_string =~
+  s{
+     /(login|loginout)
+     ([\w\-\.\/]*)
+     $
+   }
+   {}ix;
 
-  $url_string .= '/' unless $url_string =~ /\/$/;
+$url_string .= '/' unless $url_string =~ /\/$/;
 
 </%init>

@@ -15,6 +15,7 @@ use FS::CurrentUser;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( checkeuid checkruid cgi setcgi adminsuidsetup forksuidsetup
+                 preuser_setup
                  getotaker dbh datasrc getsecrets driver_name myconnect
                  use_confcompat
                );
@@ -61,7 +62,6 @@ Sets the user to USER (see config.html from the base documentation).
 Cleans the environment.
 Make sure the script is running as freeside, or setuid freeside.
 Opens a connection to the database.
-Swaps real and effective UIDs.
 Runs any defined callbacks (see below).
 Returns the DBI database handle (usually you don't need this).
 
@@ -86,12 +86,39 @@ sub forksuidsetup {
     $user = $1;
   }
 
-  $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
+  env_setup();
+
+  db_setup($olduser);
+
+  callback_setup();
+
+  warn "$me forksuidsetup loading user\n" if $DEBUG;
+  FS::CurrentUser->load_user($user);
+
+  $dbh;
+}
+
+sub preuser_setup {
+  $dbh->disconnect if $dbh;
+  env_setup();
+  db_setup();
+  callback_setup();
+  $dbh;
+}
+
+sub env_setup {
+
+  $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/bin';
   $ENV{'SHELL'} = '/bin/sh';
   $ENV{'IFS'} = " \t\n";
   $ENV{'CDPATH'} = '';
   $ENV{'ENV'} = '';
   $ENV{'BASH_ENV'} = '';
+
+}
+
+sub db_setup {
+  my $olduser = shift;
 
   croak "Not running uid freeside (\$>=$>, \$<=$<)\n" unless checkeuid();
 
@@ -126,6 +153,11 @@ sub forksuidsetup {
     die "NO CONFIGURATION TABLE FOUND" unless $FS::Schema::setup_hack;
   }
 
+
+}
+
+sub callback_setup {
+
   unless ( $callback_hack ) {
     warn "$me calling callbacks\n" if $DEBUG;
     foreach ( keys %callback ) {
@@ -138,10 +170,6 @@ sub forksuidsetup {
     warn "$me skipping callbacks (callback_hack set)\n" if $DEBUG;
   }
 
-  warn "$me forksuidsetup loading user\n" if $DEBUG;
-  FS::CurrentUser->load_user($user);
-
-  $dbh;
 }
 
 sub myconnect {

@@ -2,27 +2,24 @@ package FS::AuthCookieHandler;
 use base qw( Apache2::AuthCookie );
 
 use strict;
-use Digest::SHA qw( sha1_hex );
-use FS::UID qw( adminsuidsetup );
-
-my $secret = "XXX temporary"; #XXX move to a DB session with random number as key
+use FS::UID qw( adminsuidsetup preuser_setup );
+use FS::CurrentUser;
 
 my $module = 'legacy'; #XXX i am set in a conf somehow?  or a config file
 
 sub authen_cred {
   my( $self, $r, $username, $password ) = @_;
 
-  if ( _is_valid_user($username, $password) ) {
-      warn "authenticated $username from ". $r->connection->remote_ip. "\n";
-      adminsuidsetup($username);
-      my $session_key =
-        $username . '::' . sha1_hex( $username, $secret );
-      return $session_key;
-  } else {
-      warn "failed authentication $username from ". $r->connection->remote_ip. "\n";
+  unless ( _is_valid_user($username, $password) ) {
+    warn "failed auth $username from ". $r->connection->remote_ip. "\n";
+    return undef;
   }
 
-  return undef; #?
+  warn "authenticated $username from ". $r->connection->remote_ip. "\n";
+  adminsuidsetup($username);
+
+  FS::CurrentUser->new_session;
+
 }
 
 sub _is_valid_user {
@@ -38,18 +35,18 @@ sub _is_valid_user {
 }
 
 sub authen_ses_key {
-  my( $self, $r, $session_key ) = @_;
+  my( $self, $r, $sessionkey ) = @_;
 
-  my ($username, $mac) = split /::/, $session_key;
+  preuser_setup();
 
-  if ( sha1_hex( $username, $secret ) eq $mac ) {
-    adminsuidsetup($username);
-    return $username;
-  } else {
-    warn "bad session $session_key from ". $r->connection->remote_ip. "\n";
+  my $curuser = FS::CurrentUser->load_user_session( $sessionkey );
+
+  unless ( $curuser ) {
+    warn "bad session $sessionkey from ". $r->connection->remote_ip. "\n";
+    return undef;
   }
 
-  return undef;
+  $curuser->username;
 
 }
 

@@ -1,10 +1,13 @@
-<% $cgi->redirect($fsurl.'?logout=logout') %>
+<% $cgi->redirect($redirect) %>
 <%init>
 
-my $auth_type = $r->auth_type;
+# Delete the server-side session
+$FS::CurrentUser::CurrentSession->logout;
 
-# Delete the cookie, etc.
+# Delete the browser cookie, etc.
+my $auth_type = $r->auth_type;
 $auth_type->logout($r);
-#XXX etc: should delete the server-side session
+
+my $redirect = $fsurl; #.'?logout=logout';
 
 </%init>

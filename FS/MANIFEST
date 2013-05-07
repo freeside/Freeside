@@ -690,3 +690,5 @@ FS/part_pkg_usage.pm
 t/part_pkg_usage.t
 FS/cdr_cust_pkg_usage.pm
 t/cdr_cust_pkg_usage.t
+FS/access_user_session.pm
+t/access_user_session.t

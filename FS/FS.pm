@@ -87,6 +87,8 @@ L<FS::payinfo_Mixin>  - Mixin class for records in tables that contain payinfo.
 
 L<FS::access_user> - Employees / internal users
 
+L<FS::access_user_session> - Access sessions
+
 L<FS::access_user_pref> - Employee preferences
 
 L<FS::access_group> - Employee groups
