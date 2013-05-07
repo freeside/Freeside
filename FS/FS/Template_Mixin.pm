@@ -597,12 +597,54 @@ sub print_generic {
   # info from customer's last invoice before this one, for some 
   # summary formats
   $invoice_data{'last_bill'} = {};
-  my $last_bill = $pr_cust_bill[-1];
+  # returns the last unpaid bill, not the last bill
+  #my $last_bill = $pr_cust_bill[-1];
+  # THIS returns the customer's last bill before  this one
+  my $last_bill = qsearchs({
+      'table'   => 'cust_bill',
+      'hashref' => { 'custnum' => $self->custnum,
+                     'invnum'  => { op => '<', value => $self->invnum },
+                   },
+      'order_by'  => ' ORDER BY invnum DESC LIMIT 1'
+  });
   if ( $last_bill ) {
     $invoice_data{'last_bill'} = {
       '_date'     => $last_bill->_date, #unformatted
       # all we need for now
     };
+    my (@payments, @credits);
+    # for formats that itemize previous payments
+    foreach my $cust_pay ( qsearch('cust_pay', {
+                            'custnum' => $self->custnum,
+                            '_date'   => { op => '>=',
+                                           value => $last_bill->_date }
+                           } ) )
+    {
+      next if $cust_pay->_date > $self->_date;
+      push @payments, {
+          '_date'       => $cust_pay->_date,
+          'date'        => time2str($date_format, $cust_pay->_date),
+          'payinfo'     => $cust_pay->payby_payinfo_pretty,
+          'amount'      => sprintf('%.2f', $cust_pay->paid),
+      };
+      # not concerned about applications
+    }
+    foreach my $cust_credit ( qsearch('cust_credit', {
+                            'custnum' => $self->custnum,
+                            '_date'   => { op => '>=',
+                                           value => $last_bill->_date }
+                           } ) )
+    {
+      next if $cust_credit->_date > $self->_date;
+      push @credits, {
+          '_date'       => $cust_credit->_date,
+          'date'        => time2str($date_format, $cust_credit->_date),
+          'creditreason'=> $cust_credit->cust_credit->reason,
+          'amount'      => sprintf('%.2f', $cust_credit->amount),
+      };
+    }
+    $invoice_data{'previous_payments'} = \@payments;
+    $invoice_data{'previous_credits'}  = \@credits;
   }
 
   my $summarypage = '';
@@ -686,6 +728,11 @@ sub print_generic {
                           );
   my $other_money_char = $other_money_chars{$format};
   $invoice_data{'dollar'} = $other_money_char;
+
+  my %minus_signs = ( 'latex'    => '$-$',
+                      'html'     => '&minus;',
+                      'template' => '- ' );
+  my $minus = $minus_signs{$format};
 
   my @detail_items = ();
   my @total_items = ();
@@ -971,7 +1018,8 @@ sub print_generic {
   warn "$me adding taxes\n"
     if $DEBUG > 1;
 
-  foreach my $tax ( $self->_items_tax ) {
+  my @items_tax = $self->_items_tax;
+  foreach my $tax ( @items_tax ) {
 
     $taxtotal += $tax->{'amount'};
 
@@ -1006,7 +1054,7 @@ sub print_generic {
 
   }
   
-  if ( $taxtotal ) {
+  if ( @items_tax ) {
     my $total = {};
     $total->{'total_item'} = $self->mt('Sub-total');
     $total->{'total_amount'} =
@@ -1106,7 +1154,7 @@ sub print_generic {
         my $total;
         $total->{'total_item'} = &$escape_function($credit->{'description'});
         $credittotal += $credit->{'amount'};
-        $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
+        $total->{'total_amount'} = $minus.$other_money_char.$credit->{'amount'};
         $adjusttotal += $credit->{'amount'};
         if ( $multisection ) {
           my $money = $old_latex ? '' : $money_char;
@@ -1137,7 +1185,7 @@ sub print_generic {
         my $total = {};
         $total->{'total_item'} = &$escape_function($payment->{'description'});
         $paymenttotal += $payment->{'amount'};
-        $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
+        $total->{'total_amount'} = $minus.$other_money_char.$payment->{'amount'};
         $adjusttotal += $payment->{'amount'};
         if ( $multisection ) {
           my $money = $old_latex ? '' : $money_char;
@@ -2129,7 +2177,17 @@ sub _taxsort {
 sub _items_tax {
   my $self = shift;
   my @cust_bill_pkg = sort _taxsort grep { ! $_->pkgnum } $self->cust_bill_pkg;
-  $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+  my @items = $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+
+  if ( $self->conf->exists('always_show_tax') ) {
+    my $itemdesc = $self->conf->config('always_show_tax') || 'Tax';
+    if (0 == grep { $_->{description} eq $itemdesc } @items) {
+      push @items,
+        { 'description' => $itemdesc,
+          'amount'      => 0.00 };
+    }
+  }
+  @items;
 }
 
 =item _items_cust_bill_pkg CUST_BILL_PKGS OPTIONS

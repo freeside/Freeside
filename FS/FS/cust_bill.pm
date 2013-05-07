@@ -110,9 +110,11 @@ Customer info at invoice generation time
 
 =over 4
 
-=item previous_balance
+=item billing_balance - the customer's balance at the time the invoice was 
+generated (not including charges on this invoice)
 
-=item billing_balance
+=item previous_balance - the billing_balance of this customer's previous 
+invoice plus the charges on that invoice
 
 =back
 

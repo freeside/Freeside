@@ -1038,6 +1038,9 @@ sub reason_type_options {
     'select_hash' => [
                        '%b %o, %Y' => 'Mon DDth, YYYY',
                        '%e %b %Y'  => 'DD Mon YYYY',
+                       '%m/%d/%Y'  => 'MM/DD/YYYY',
+                       '%d/%m/%Y'  => 'DD/MM/YYYY',
+		       '%Y/%m/%d'  => 'YYYY/MM/DD',
                      ],
   },
 
@@ -4135,6 +4138,13 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Place the balance due message below a line.  Only meaningful when when invoice_sections is false.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'always_show_tax',
+    'section'     => 'invoicing',
+    'description' => 'Show a line for tax on the invoice even when the tax is zero.  Optionally provide text for the tax name to show.',
+    'type'        => [ qw(checkbox text) ],
   },
 
   {
