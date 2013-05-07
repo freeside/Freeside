@@ -50,8 +50,7 @@ my $error = # $cgi->param('logout') ||
 $error = exists($error{$error}) ? $error{$error} : $error;
 
 
-#my $url_string = CGI->new->url;
-my $url_string = $cgi->url;
+my $url_string = $r->uri;
 
 #fake a freeside path for /login so we get our .css.  shrug
 $url_string =~ s/login$/freeside\/login/ unless $url_string =~ /freeside\//;
