@@ -870,7 +870,7 @@ sub smart_search_param {
       FS::part_svc->svc_tables;
 
   if ( $string =~ /^(\d+)$/ ) {
-    unshift @or, "SELECT cust_svc.svcnum, NULL FROM cust_svc WHERE agent_svcid = $1";
+    unshift @or, "SELECT cust_svc.svcnum, NULL as svcdb FROM cust_svc WHERE agent_svcid = $1";
   }
 
   my $addl_from = " RIGHT JOIN (\n" . join("\nUNION\n", @or) . "\n) AS svc_all ".
