@@ -2047,6 +2047,7 @@ sub print_csv {
       $self->custnum,
       $cust_main->first,
       $cust_main->last,
+      $cust_main->company,
       $cust_main->address1,
       $cust_main->address2,
       $cust_main->city,
