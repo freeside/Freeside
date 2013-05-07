@@ -21,7 +21,7 @@
 %       ORDER BY history_date desc" # LIMIT 10
 %    ) or die dbh->errstr;
 %
-%  $sth->execute( getotaker() ) or die $sth->errstr;
+%  $sth->execute( $FS::CurrentUser::CurrentUser->username ) or die $sth->errstr;
 %
 %  my %saw = ();
 %  my @custnums = grep { !$saw{$_}++ } map $_->[0], @{ $sth->fetchall_arrayref };

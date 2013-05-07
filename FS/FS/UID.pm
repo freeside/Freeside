@@ -2,7 +2,7 @@ package FS::UID;
 
 use strict;
 use vars qw(
-  @ISA @EXPORT_OK $DEBUG $me $cgi $freeside_uid $user $conf_dir $cache_dir
+  @ISA @EXPORT_OK $DEBUG $me $cgi $freeside_uid $conf_dir $cache_dir
   $secrets $datasrc $db_user $db_pass $schema $dbh $driver_name
   $AutoCommit %callback @callback $callback_hack $use_confcompat
 );
@@ -38,7 +38,7 @@ FS::UID - Subroutines for database login and assorted other stuff
 
 =head1 SYNOPSIS
 
-  use FS::UID qw(adminsuidsetup dbh datasrc getotaker checkeuid checkruid);
+  use FS::UID qw(adminsuidsetup dbh datasrc checkeuid checkruid);
 
   $dbh = adminsuidsetup $user;
 
@@ -73,7 +73,7 @@ sub adminsuidsetup {
 }
 
 sub forksuidsetup {
-  $user = shift;
+  my $user = shift;
   my $olduser = $user;
   warn "$me forksuidsetup starting for $user\n" if $DEBUG;
 
@@ -173,12 +173,12 @@ sub callback_setup {
 }
 
 sub myconnect {
-  my $handle = DBI->connect( getsecrets(@_), { 'AutoCommit'         => 0,
-                                               'ChopBlanks'         => 1,
-                                               'ShowErrorStatement' => 1,
-                                               'pg_enable_utf8'     => 1,
-                                               #'mysql_enable_utf8'  => 1,
-                                             }
+  my $handle = DBI->connect( getsecrets(), { 'AutoCommit'         => 0,
+                                             'ChopBlanks'         => 1,
+                                             'ShowErrorStatement' => 1,
+                                             'pg_enable_utf8'     => 1,
+                                             #'mysql_enable_utf8'  => 1,
+                                           }
                            )
     or die "DBI->connect error: $DBI::errstr\n";
 
@@ -276,12 +276,13 @@ sub suidsetup {
 
 =item getotaker
 
-Returns the current Freeside user.
+(Deprecated) Returns the current Freeside user's username.
 
 =cut
 
 sub getotaker {
-  $user;
+  carp "FS::UID::getotaker deprecated";
+  $FS::CurrentUser::CurrentUser->username;
 }
 
 =item checkeuid
@@ -305,34 +306,18 @@ sub checkruid {
   ( $< == $freeside_uid );
 }
 
-=item getsecrets [ USER ]
+=item getsecrets
 
-Sets the user to USER, if supplied.
-Sets and returns the DBI datasource, username and password for this user from
-the `/usr/local/etc/freeside/mapsecrets' file.
+Sets and returns the DBI datasource, username and password from
+the `/usr/local/etc/freeside/secrets' file.
 
 =cut
 
 sub getsecrets {
-  my($setuser) = shift;
-  $user = $setuser if $setuser;
-
-  if ( -e "$conf_dir/mapsecrets" ) {
-    die "No user!" unless $user;
-    my($line) = grep /^\s*($user|\*)\s/,
-      map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/mapsecrets");
-    confess "User $user not found in mapsecrets!" unless $line;
-    $line =~ /^\s*($user|\*)\s+(.*)$/;
-    $secrets = $2;
-    die "Illegal mapsecrets line for user?!" unless $secrets;
-  } else {
-    # no mapsecrets file at all, so do the default thing
-    $secrets = 'secrets';
-  }
 
   ($datasrc, $db_user, $db_pass, $schema) = 
-    map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/$secrets")
-      or die "Can't get secrets: $conf_dir/$secrets: $!\n";
+    map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/secrets")
+      or die "Can't get secrets: $conf_dir/secrets: $!\n";
   undef $driver_name;
 
   ($datasrc, $db_user, $db_pass);

@@ -441,8 +441,6 @@ if ( $cgi->param('error') ) {
   $dst_pkeyvalue = '';
 }
 
-my $otaker = getotaker;
-
 my $p1 = popurl(1);
 
 my $src = qsearchs($src_table, { $src_pkey => $src_pkeyvalue } );

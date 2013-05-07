@@ -2,7 +2,6 @@ package FS::cust_pay_refund;
 
 use strict;
 use vars qw( @ISA ); #$conf );
-use FS::UID qw( getotaker );
 use FS::Record qw( qsearchs ); # qsearch );
 use FS::cust_main;
 use FS::cust_pay;

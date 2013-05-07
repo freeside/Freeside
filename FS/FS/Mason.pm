@@ -126,7 +126,7 @@ if ( -e $addl_handler_use_file ) {
   use LWP::UserAgent;
   use Storable qw( nfreeze thaw );
   use FS;
-  use FS::UID qw( getotaker dbh datasrc driver_name );
+  use FS::UID qw( dbh datasrc driver_name );
   use FS::Record qw( qsearch qsearchs fields dbdef
                     str2time_sql str2time_sql_closing
                     midnight_sql

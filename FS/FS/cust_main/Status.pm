@@ -2,12 +2,9 @@ package FS::cust_main::Status;
 
 use strict;
 use vars qw( $conf ); # $module ); #$DEBUG $me );
+use Tie::IxHash;
 use FS::UID;
 use FS::cust_pkg;
-
-#use Tie::IxHash;
-
-use FS::UID qw( getotaker dbh driver_name );
 
 #$DEBUG = 0;
 #$me = '[FS::cust_main::Status]';

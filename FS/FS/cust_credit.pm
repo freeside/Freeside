@@ -7,7 +7,7 @@ use vars qw( $conf $unsuspendauto $me $DEBUG
            );
 use List::Util qw( min );
 use Date::Format;
-use FS::UID qw( dbh getotaker );
+use FS::UID qw( dbh );
 use FS::Misc qw(send_email);
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::CurrentUser;

@@ -185,8 +185,6 @@ my $action = $svcnum ? 'Edit' : 'Add';
 
 my $svc = $part_svc->getfield('svc');
 
-#my $otaker = getotaker;
-
 my $p1 = popurl(1);
 
 my $link_query = "?svcnum=$svcnum;pkgnum=$pkgnum;svcpart=$svcpart";

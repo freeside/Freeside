@@ -4,7 +4,6 @@ use strict;
 use base qw( FS::otaker_Mixin FS::Record );
 use Digest::MD5 qw(md5_base64);
 use FS::Record qw( qsearch qsearchs );
-use FS::UID qw( getotaker );
 use FS::CurrentUser;
 
 =head1 NAME

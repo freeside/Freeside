@@ -1,4 +1,4 @@
-<% include('/elements/header.html', 'Preferences for '. getotaker ) %>
+<% include('/elements/header.html', 'Preferences for '. $FS::CurrentUser::CurrentUser->username ) %>
 
 <FORM METHOD="POST" NAME="pref_form" ACTION="pref-process.html">
 

@@ -20,7 +20,8 @@ if ( grep { $cgi->param($_) !~ /^\s*$/ }
    ) {
 
   $access_user = qsearchs( 'access_user', {
-    'username'  => getotaker,
+    'usernum'   => $FS::CurrentUser::CurrentUser->usernum,
+    'username'  => $FS::CurrentUser::CurrentUser->username,
     '_password' => scalar($cgi->param('_password')),
   } );
 

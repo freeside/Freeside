@@ -10,7 +10,7 @@ use List::Util qw(min max);
 use Tie::IxHash;
 use Time::Local qw( timelocal timelocal_nocheck );
 use MIME::Entity;
-use FS::UID qw( getotaker dbh driver_name );
+use FS::UID qw( dbh driver_name );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs fields );
 use FS::CurrentUser;

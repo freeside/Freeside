@@ -1,20 +1,18 @@
 #!/usr/bin/perl -Tw
 
 # quick'n'dirty hack of fs-setup to add radius attributes
+# (i'm not sure this even works in the new world of schema changes - everyone
+#  uses attributes via groups now)
 
 use strict;
 use DBI;
-use FS::UID qw(adminsuidsetup checkeuid getsecrets);
+use FS::UID qw(adminsuidsetup);
 use FS::raddb;
-
-die "Not running uid freeside!" unless checkeuid();
 
 my %attrib2db =
   map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
 my $user = shift or die &usage;
-getsecrets($user);
-
 my $dbh = adminsuidsetup $user;
 
 ###

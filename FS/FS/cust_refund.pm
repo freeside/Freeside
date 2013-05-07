@@ -5,7 +5,6 @@ use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
              FS::Record );
 use vars qw( @encrypted_fields );
 use Business::CreditCard;
-use FS::UID qw(getotaker);
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::CurrentUser;
 use FS::cust_credit;
