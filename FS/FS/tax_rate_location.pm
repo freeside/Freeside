@@ -234,14 +234,13 @@ sub batch_import {
 
         $hash->{disabled} = '';
         my $tax_rate_location = qsearchs('tax_rate_location', $hash);
-        if ( $tax_rate_location ) {
-          $tax_rate_location->disabled('Y');
-          my $error = $tax_rate_location->replace;
-          return $error if $error;
-        } else {
-          warn "WARNING: Can't find tax_rate_location to delete, continuing update anyway: ".
-                 join(" ", map { "$_ => ". $hash->{$_} } @fields);
-        }
+        return "Can't find tax_rate_location to delete: ".
+               join(" ", map { "$_ => ". $hash->{$_} } @fields)
+          unless $tax_rate_location;
+
+        $tax_rate_location->disabled('Y');
+        my $error = $tax_rate_location->replace;
+        return $error if $error;
 
         delete($hash->{$_}) foreach (keys %$hash);
       }
