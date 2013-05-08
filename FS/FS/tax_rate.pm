@@ -413,7 +413,7 @@ sub taxline {
   }
 
   my $maxtype = $self->maxtype || 0;
-  if ($maxtype != 0 && $maxtype != 9) {
+  if ($maxtype != 0 && $maxtype != 1 && $maxtype != 9) {
     return $self->_fatal_or_null( 'tax with "'.
                                     $self->maxtype_name. '" threshold'
                                 );
@@ -476,12 +476,12 @@ sub taxline {
 
   }
 
-  #
-  # XXX insert exemption handling here
+  # XXX handle excessrate (use_excessrate) / excessfee /
+  #            taxbase/feebase / taxmax/feemax
+  #            and eventually exemptions
   #
   # the tax or fee is applied to taxbase or feebase and then
   # the excessrate or excess fee is applied to taxmax or feemax
-  #
 
   $amount += $taxable_charged * $self->tax;
   $amount += $taxable_units * $self->fee;
