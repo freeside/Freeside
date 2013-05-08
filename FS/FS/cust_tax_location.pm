@@ -199,13 +199,15 @@ sub batch_import {
       if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
         delete($hash->{actionflag});
 
-        my $cust_tax_location = qsearchs('cust_tax_location', $hash);
+        my @cust_tax_location = qsearch('cust_tax_location', $hash);
         return "Can't find cust_tax_location to delete: ".
                join(" ", map { "$_ => ". $hash->{$_} } @fields)
-          unless $cust_tax_location;
+          unless scalar(@cust_tax_location) || $param->{'delete_only'} ;
 
-        my $error = $cust_tax_location->delete;
-        return $error if $error;
+        foreach my $cust_tax_location (@cust_tax_location) {
+          my $error = $cust_tax_location->delete;
+          return $error if $error;
+        }
 
         delete($hash->{$_}) foreach (keys %$hash);
       }
