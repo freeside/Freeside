@@ -5,8 +5,7 @@ use vars qw( @ISA );
 use Date::Parse;
 use DateTime;
 use DateTime::Format::Strptime;
-use FS::UID qw(dbh);
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_pkg_taxproduct;
 use FS::Misc qw(csv_from_fixed);
 
@@ -310,8 +309,8 @@ sub batch_import {
           }
         }
 
-        my $part_pkg_taxrate = qsearchs('part_pkg_taxrate', $hash);
-        unless ( $part_pkg_taxrate ) {
+        my @part_pkg_taxrate = qsearch('part_pkg_taxrate', $hash);
+        unless ( scalar(@part_pkg_taxrate) || $param->{'delete_only'} ) {
           if ( $hash->{taxproductnum} ) {
             my $taxproduct =
               qsearchs( 'part_pkg_taxproduct',
@@ -324,8 +323,10 @@ sub batch_import {
                  join(" ", map { "$_ => *". $hash->{$_}. '*' } keys(%$hash) );
         }
 
-        my $error = $part_pkg_taxrate->delete;
-        return $error if $error;
+        foreach my $part_pkg_taxrate (@part_pkg_taxrate) {
+          my $error = $part_pkg_taxrate->delete;
+          return $error if $error;
+        }
 
         delete($hash->{$_}) foreach (keys %$hash);
       }

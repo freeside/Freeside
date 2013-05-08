@@ -967,7 +967,7 @@ sub _perform_batch_import {
       my $file = lc($name). 'file';
 
       unless ($files{$file}) {
-        $error = "No $name supplied";
+        #$error = "No $name supplied";
         next;
       }
       next if $name eq 'DETAIL' && $format =~ /update/;
@@ -1002,10 +1002,17 @@ sub _perform_batch_import {
       'DETAIL', "$dir/".$files{detailfile}, \&FS::tax_rate::batch_import, $format
       if $format =~ /update/;
 
+    my %addl_param = ();
+    if ( $param->{'delete_only'} ) {
+      $addl_param{'delete_only'} = $param->{'delete_only'};
+      @insert_list = () 
+    }
+
     $error ||= _perform_cch_tax_import( $job,
                                         [ @predelete_list ],
                                         [ @insert_list ],
                                         [ @delete_list ],
+                                        \%addl_param,
     );
     
     
@@ -1030,7 +1037,8 @@ sub _perform_batch_import {
 
 
 sub _perform_cch_tax_import {
-  my ( $job, $predelete_list, $insert_list, $delete_list ) = @_;
+  my ( $job, $predelete_list, $insert_list, $delete_list, $addl_param ) = @_;
+  $addl_param ||= {};
 
   my $error = '';
   foreach my $list ($predelete_list, $insert_list, $delete_list) {
@@ -1039,7 +1047,11 @@ sub _perform_cch_tax_import {
       my $fmt = "$format-update";
       $fmt = $format. ( lc($name) eq 'zip' ? '-zip' : '' );
       open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||= &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
+      my $param = { 'filehandle' => $fh,
+                    'format'     => $fmt,
+                    %$addl_param,
+                  };
+      $error ||= &{$method}($param, $job);
       close $fh;
     }
   }
