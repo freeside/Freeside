@@ -59,7 +59,7 @@ $name = 'BoM';
   footer => sub {
     my ($pay_batch, $batchcount, $batchtotal) = @_;
     sprintf( "YD%08u%014.0f%55s\n", $batchcount, $batchtotal*100, ""). #80
-    sprintf( "Z%014u%05u%014u%05u%40s",  #80 now
+    sprintf( "Z%014.0f%05u%014u%05u%40s", #80 now
       $batchtotal*100, $batchcount, "0", "0", "");
   },
 );
