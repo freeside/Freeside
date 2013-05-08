@@ -169,6 +169,7 @@ sub batch_import {
 
     $hook = sub { 
       my $hash = shift;
+use Data::Dumper;
 warn Dumper($hash);
       if ($hash->{'table'} eq 'DETAIL') {
         push @{$data->{'taxcat'}}, [ $hash->{'value'}, $hash->{'description'} ]
