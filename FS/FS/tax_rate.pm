@@ -785,6 +785,49 @@ sub batch_import {
 
   }
 
+  my @replace = grep { exists($delete{$_}) } keys %insert;
+  for (@replace) {
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count ). ",Importing tax rates"
+        );
+        if ($error) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
+        $last = time;
+      }
+    }
+
+    my $old = qsearchs( 'tax_rate', $delete{$_} );
+
+    if ( $old ) {
+
+      my $new = new FS::tax_rate({ $old->hash, %{$insert{$_}}, 'manual' => ''  });
+      $new->taxnum($old->taxnum);
+      my $error = $new->replace($old);
+
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        my $hashref = $insert{$_};
+        $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
+        return "can't replace tax_rate for $line: $error";
+      }
+
+      $imported++;
+
+    } else {
+
+      $old = delete $delete{$_};
+      warn "WARNING: can't find tax_rate to replace (inserting instead and continuing) for: ".
+        #join(" ", map { "$_ => ". $old->{$_} } @fields);
+        join(" ", map { "$_ => ". $old->{$_} } keys(%$old) );
+    }
+
+    $imported++;
+  }
+
   for (grep { !exists($delete{$_}) } keys %insert) {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
@@ -809,43 +852,6 @@ sub batch_import {
       return "can't insert tax_rate for $line: $error";
     }
 
-    $imported++;
-  }
-
-  for (grep { exists($delete{$_}) } keys %insert) {
-    if ( $job ) {  # progress bar
-      if ( time - $min_sec > $last ) {
-        my $error = $job->update_statustext(
-          int( 100 * $imported / $count ). ",Importing tax rates"
-        );
-        if ($error) {
-          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-          die $error;
-        }
-        $last = time;
-      }
-    }
-
-    my $old = qsearchs( 'tax_rate', $delete{$_} );
-    unless ($old) {
-      $dbh->rollback if $oldAutoCommit;
-      $old = $delete{$_};
-      return "can't find tax_rate to replace for: ".
-        #join(" ", map { "$_ => ". $old->{$_} } @fields);
-        join(" ", map { "$_ => ". $old->{$_} } keys(%$old) );
-    }
-    my $new = new FS::tax_rate({ $old->hash, %{$insert{$_}}, 'manual' => ''  });
-    $new->taxnum($old->taxnum);
-    my $error = $new->replace($old);
-
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      my $hashref = $insert{$_};
-      $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
-      return "can't replace tax_rate for $line: $error";
-    }
-
-    $imported++;
     $imported++;
   }
 
