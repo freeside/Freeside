@@ -259,13 +259,15 @@ sub batch_import {
                                  'description' => $type->[1].':'.$cat->[1],
                              } );
           my $error = $tax_class->insert;
-          return $error if $error;
+          return "can't insert tax_class for old TAXTYPE $type and new TAXCAT $cat: $error" if $error;
           $imported++;
         }
       }
 
+      my %cats = map { $_=>1 } ( @old_cats, @{$data->{'taxcat'}} );
+
       foreach my $type (@{$data->{'taxtype'}}) {
-        foreach my $cat (@old_cats, @{$data->{'taxcat'}}) {
+        foreach my $cat (keys %cats) {
 
           if ( $job ) {  # progress bar
             if ( time - $min_sec > $last ) {
@@ -283,7 +285,7 @@ sub batch_import {
                                  'description' => $type->[1].':'.$cat->[1],
                              } );
           my $error = $tax_class->insert;
-          return $error if $error;
+          return "can't insert tax_class for new TAXTYPE $type and TAXCAT $cat: $error" if $error;
           $imported++;
         }
       }
@@ -363,7 +365,7 @@ sub batch_import {
   my $error = &{$endhook}();
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return "can't insert tax_class for $line: $error";
+    return "can't run end hook: $error";
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
