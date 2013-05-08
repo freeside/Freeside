@@ -12,8 +12,8 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c $opt_g );
-getopts('c:m:p:r:e:d:v:P:ag');
+use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c $opt_g $opt_s );
+getopts('c:m:p:r:e:d:v:P:ags');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
@@ -192,7 +192,7 @@ freeside-cdr-sftp_and_import - Download CDR files from a remote server via SFTP
 
   cdr.sftp_and_import [ -m method ] [ -p prefix ] [ -e extension ] 
     [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
-    [ -a ] [ -c cdrtypenum ] user format [sftpuser@]servername
+    [ -a ] [ -g ] [ -s ] [ -c cdrtypenum ] user format [sftpuser@]servername
 
 =head1 DESCRIPTION
 
@@ -219,6 +219,8 @@ or FTP and then import them into the database.
 -c: cdrtypenum to set, defaults to none
 
 -g: File is gzipped
+
+-s: Warn and skip files which could not be imported rather than abort
 
 user: freeside username
 
