@@ -978,7 +978,7 @@ sub _perform_batch_import {
         unlink $filename or warn "Can't delete $filename: $!"
           unless $keep_cch_files;
         push @insert_list, $name, $insertname, $import_sub, $format;
-        if ( $name eq 'GEOCODE' ) { #handle this whole ordering issue better
+        if ( $name eq 'GEOCODE' || $name eq 'CODE' ) { #handle this whole ordering issue better
           unshift @predelete_list, $name, $deletename, $import_sub, $format;
         } else {
           unshift @delete_list, $name, $deletename, $import_sub, $format;
