@@ -83,9 +83,6 @@ Delete this record from the database.
 sub delete {
   my $self = shift;
 
-  return "Can't delete a tax class which has tax rates!"
-    if qsearch( 'tax_rate', { 'taxclassnum' => $self->taxclassnum } );
-
   return "Can't delete a tax class which has package tax rates!"
     if qsearch( 'part_pkg_taxrate', { 'taxclassnum' => $self->taxclassnum } );
 
@@ -95,8 +92,37 @@ sub delete {
   return "Can't delete a tax class which has package tax overrides!"
     if qsearch( 'part_pkg_taxoverride', { 'taxclassnum' => $self->taxclassnum } );
 
-  $self->SUPER::delete(@_);
-  
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $tax_rate (
+    qsearch( 'tax_rate', { taxclassnum=>$self->taxclassnum } )
+  ) {
+    my $error = $tax_rate->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item replace OLD_RECORD
@@ -169,8 +195,7 @@ sub batch_import {
 
     $hook = sub { 
       my $hash = shift;
-use Data::Dumper;
-warn Dumper($hash);
+
       if ($hash->{'table'} eq 'DETAIL') {
         push @{$data->{'taxcat'}}, [ $hash->{'value'}, $hash->{'description'} ]
           if ($hash->{'name'} eq 'TAXCAT' &&
@@ -195,7 +220,6 @@ warn Dumper($hash);
                                        ($name eq 'TAXCAT' ? $value : '%')."'",
                                    );
             foreach (@tax_class) {
-warn "deleting ". $_->taxclass. ' '. $_->description. "\n";
               my $error = $_->delete;
               return $error if $error;
             }
@@ -388,9 +412,6 @@ warn "deleting ". $_->taxclass. ' '. $_->description. "\n";
 =back
 
 =head1 BUGS
-
-  batch_import does not handle mixed I and D records in the same file for
-  format cch-update
 
 =head1 SEE ALSO
 
