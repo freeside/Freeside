@@ -253,21 +253,28 @@ sub batch_import {
             }
           }
 
-          my $tax_class =
-            new FS::tax_class( { 'data_vendor' => 'cch',
-                                 'taxclass'    => $type->[0].':'.$cat->[0],
-                                 'description' => $type->[1].':'.$cat->[1],
-                             } );
-          my $error = $tax_class->insert;
-          return "can't insert tax_class for old TAXTYPE $type and new TAXCAT $cat: $error" if $error;
+          my %hash = ( 'data_vendor' => 'cch',
+                       'taxclass'    => $type->[0].':'.$cat->[0],
+                       'description' => $type->[1].':'.$cat->[1],
+                     );
+          unless ( qsearchs('tax_class', \%hash) ) {
+            my $tax_class = new FS::tax_class \%hash;
+            my $error = $tax_class->insert;
+
+            return "can't insert tax_class for ".
+                   " old TAXTYPE ". $type->[0].':'.$type->[1].
+                   " and new TAXCAT ". $cat->[0].':'. $cat->[1].
+                   " : $error"
+              if $error;
+          }
+
           $imported++;
+          
         }
       }
 
-      my %cats = map { $_=>1 } ( @old_cats, @{$data->{'taxcat'}} );
-
       foreach my $type (@{$data->{'taxtype'}}) {
-        foreach my $cat (keys %cats) {
+        foreach my $cat (@old_cats, @{$data->{'taxcat'}}) {
 
           if ( $job ) {  # progress bar
             if ( time - $min_sec > $last ) {
