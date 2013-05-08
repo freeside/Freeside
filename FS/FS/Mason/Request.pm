@@ -93,7 +93,7 @@ sub freeside_setup {
         $cgi = new CGI;
         setcgi($cgi);
 
-        #cgisuidsetup is gone, adminsuidsetup is now done in AuthCookieHandler
+        #cgisuidsetup is gone, equivalent is now done in AuthCookieHandler
 
         $fsurl = rooturl();
         $p = popurl(2);

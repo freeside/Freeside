@@ -4,11 +4,12 @@ use base qw( Apache2::AuthCookie );
 use strict;
 use FS::UID qw( adminsuidsetup preuser_setup );
 use FS::CurrentUser;
-
-my $module = 'legacy'; #XXX i am set in a conf somehow?  or a config file
+use FS::Auth;
 
 sub authen_cred {
   my( $self, $r, $username, $password ) = @_;
+
+  preuser_setup();
 
   unless ( _is_valid_user($username, $password) ) {
     warn "failed auth $username from ". $r->connection->remote_ip. "\n";
@@ -16,22 +17,16 @@ sub authen_cred {
   }
 
   warn "authenticated $username from ". $r->connection->remote_ip. "\n";
-  adminsuidsetup($username);
+
+  FS::CurrentUser->load_user($username);
 
   FS::CurrentUser->new_session;
-
 }
 
 sub _is_valid_user {
   my( $username, $password ) = @_;
-  my $class = 'FS::Auth::'.$module;
 
-  #earlier?
-  eval "use $class;";
-  die $@ if $@;
-
-  $class->authenticate($username, $password);
-
+  FS::Auth->authenticate($username, $password);
 }
 
 sub authen_ses_key {
@@ -47,7 +42,6 @@ sub authen_ses_key {
   }
 
   $curuser->username;
-
 }
 
 1;

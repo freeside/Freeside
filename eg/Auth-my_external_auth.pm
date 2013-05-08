@@ -1,11 +1,10 @@
-package FS::access_user::external_auth;
-use base qw( FS::access_user::external ); #inherit from ::external for
-                                          # autocreation
+package FS::Auth::my_external_auth;
+use base qw( FS::Auth::external ); #need to inherit from ::external
 
 use strict;
 
 sub authenticate {
-  my( $username, $check_password ) = @_;
+  my($self, $username, $check_password ) = @_;
 
   #magic happens here
 
