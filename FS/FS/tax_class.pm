@@ -84,9 +84,6 @@ sub delete {
   my $self = shift;
 
   return "Can't delete a tax class which has package tax rates!"
-    if qsearch( 'part_pkg_taxrate', { 'taxclassnum' => $self->taxclassnum } );
-
-  return "Can't delete a tax class which has package tax rates!"
     if qsearch( 'part_pkg_taxrate', { 'taxclassnumtaxed' => $self->taxclassnum } );
 
   return "Can't delete a tax class which has package tax overrides!"
@@ -107,6 +104,16 @@ sub delete {
     qsearch( 'tax_rate', { taxclassnum=>$self->taxclassnum } )
   ) {
     my $error = $tax_rate->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $part_pkg_taxrate (
+    qsearch( 'part_pkg_taxrate', { taxclassnum=>$self->taxclassnum } )
+  ) {
+    my $error = $part_pkg_taxrate->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
