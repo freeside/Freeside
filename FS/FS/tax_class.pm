@@ -169,7 +169,7 @@ sub batch_import {
 
     $hook = sub { 
       my $hash = shift;
-
+warn Dumper($hash);
       if ($hash->{'table'} eq 'DETAIL') {
         push @{$data->{'taxcat'}}, [ $hash->{'value'}, $hash->{'description'} ]
           if ($hash->{'name'} eq 'TAXCAT' &&
@@ -194,6 +194,7 @@ sub batch_import {
                                        ($name eq 'TAXCAT' ? $value : '%')."'",
                                    );
             foreach (@tax_class) {
+warn "deleting ". $_->taxclass. ' '. $_->description. "\n";
               my $error = $_->delete;
               return $error if $error;
             }
