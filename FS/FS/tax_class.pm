@@ -5,6 +5,8 @@ use vars qw( @ISA );
 use FS::UID qw(dbh);
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( csv_from_fixed );
+use FS::part_pkg_taxrate;
+use FS::part_pkg_taxoverride;
 
 @ISA = qw(FS::Record);
 
