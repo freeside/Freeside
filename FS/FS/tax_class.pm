@@ -169,8 +169,7 @@ sub batch_import {
 
     $hook = sub { 
       my $hash = shift;
-use Data::Dumper;
-warn Dumper($hash);
+
       if ($hash->{'table'} eq 'DETAIL') {
         push @{$data->{'taxcat'}}, [ $hash->{'value'}, $hash->{'description'} ]
           if ($hash->{'name'} eq 'TAXCAT' &&
@@ -195,7 +194,6 @@ warn Dumper($hash);
                                        ($name eq 'TAXCAT' ? $value : '%')."'",
                                    );
             foreach (@tax_class) {
-warn "deleting ". $_->taxclass. ' '. $_->description. "\n";
               my $error = $_->delete;
               return $error if $error;
             }
@@ -255,23 +253,14 @@ warn "deleting ". $_->taxclass. ' '. $_->description. "\n";
             }
           }
 
-          my %hash = ( 'data_vendor' => 'cch',
-                       'taxclass'    => $type->[0].':'.$cat->[0],
-                       'description' => $type->[1].':'.$cat->[1],
-                     );
-          unless ( qsearchs('tax_class', \%hash) ) {
-            my $tax_class = new FS::tax_class \%hash;
-            my $error = $tax_class->insert;
-
-            return "can't insert tax_class for ".
-                   " old TAXTYPE ". $type->[0].':'.$type->[1].
-                   " and new TAXCAT ". $cat->[0].':'. $cat->[1].
-                   " : $error"
-              if $error;
-          }
-
+          my $tax_class =
+            new FS::tax_class( { 'data_vendor' => 'cch',
+                                 'taxclass'    => $type->[0].':'.$cat->[0],
+                                 'description' => $type->[1].':'.$cat->[1],
+                             } );
+          my $error = $tax_class->insert;
+          return $error if $error;
           $imported++;
-          
         }
       }
 
@@ -294,7 +283,7 @@ warn "deleting ". $_->taxclass. ' '. $_->description. "\n";
                                  'description' => $type->[1].':'.$cat->[1],
                              } );
           my $error = $tax_class->insert;
-          return "can't insert tax_class for new TAXTYPE $type and TAXCAT $cat: $error" if $error;
+          return $error if $error;
           $imported++;
         }
       }
@@ -374,7 +363,7 @@ warn "deleting ". $_->taxclass. ' '. $_->description. "\n";
   my $error = &{$endhook}();
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return "can't run end hook: $error";
+    return "can't insert tax_class for $line: $error";
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
