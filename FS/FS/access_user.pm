@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::m2m_Common FS::option_Common ); 
 use vars qw( $DEBUG $me $conf $htpasswd_file );
 use FS::UID;
+use FS::Auth;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::access_user_pref;
@@ -563,7 +564,27 @@ sub is_system_user {
     fs_signup
     fs_bootstrap
     fs_selfserv
-) );
+  ) );
+}
+
+=item change_password NEW_PASSWORD
+
+=cut
+
+sub change_password {
+  #my( $self, $password ) = @_;
+  #FS::Auth->auth_class->change_password( $self, $password );
+  FS::Auth->auth_class->change_password( @_ );
+}
+
+=item change_password_fields NEW_PASSWORD
+
+=cut
+
+sub change_password_fields {
+  #my( $self, $password ) = @_;
+  #FS::Auth->auth_class->change_password_fields( $self, $password );
+  FS::Auth->auth_class->change_password_fields( @_ );
 }
 
 =back

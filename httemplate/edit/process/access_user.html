@@ -3,14 +3,15 @@
 %    print $cgi->redirect(popurl(2) . "access_user.html?" . $cgi->query_string);
 %  } else {
 <%   include( 'elements/process.html',
-                 'table'       => 'access_user',
-                 'viewall_dir' => 'browse',
-                 'copy_on_empty' => [ '_password' ],
+                 'table'          => 'access_user',
+                 'viewall_dir'    => 'browse',
+                 'copy_on_empty'  => [ '_password', '_password_encoding' ],
                  'clear_on_error' => [ '_password', '_password2' ],
-                 'process_m2m' => { 'link_table'   => 'access_usergroup',
-                                    'target_table' => 'access_group',
-                                  },
-                 'precheck_callback'=> \&precheck_callback,
+                 'process_m2m'    => { 'link_table'   => 'access_usergroup',
+                                       'target_table' => 'access_group',
+                                     },
+                 'precheck_callback'        => \&precheck_callback,
+                 'post_new_object_callback' => \&post_new_object_callback,
              )
 %>
 %   }
@@ -26,11 +27,24 @@ if ( FS::Conf->new->exists('disable_acl_changes') ) {
 
 sub precheck_callback {
   my $cgi = shift;
+
   my $o = FS::access_user->new({username => $cgi->param('username')});
   if( $o->is_system_user and !$cgi->param('usernum') ) {
     $cgi->param('username','');
     return "username '".$o->username."' reserved for system account."
   }
+
   return '';
 }
+
+sub post_new_object_callback {
+  my( $cgi, $access_user ) = @_;
+
+  if ( length($cgi->param('_password')) ) {
+    my $password = scalar($cgi->param('_password'));
+    $access_user->change_password_fields($password);
+  }
+
+}
+
 </%init>
