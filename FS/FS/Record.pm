@@ -1697,7 +1697,7 @@ sub batch_import {
 
     my $data = slurp($file);
     my $asn_output = $parser->decode( $data )
-      or die "No ". $asn_format->{'macro'}. " found\n";
+      or return "No ". $asn_format->{'macro'}. " found\n";
 
     $asn_header_buffer = &{ $asn_format->{'header_buffer'} }( $asn_output );
 
@@ -1881,7 +1881,7 @@ sub batch_import {
     return "Empty file!";
   }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no error
 
