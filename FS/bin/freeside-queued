@@ -296,7 +296,7 @@ Job queue daemon.  Should be running at all times.
 
 -n: non-"secure" jobs only (other jobs)
 
-user: from the mapsecrets file - see config.html from the base documentation
+user: Typically "fs_queue"
 
 =head1 VERSION
 
