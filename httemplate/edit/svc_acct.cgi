@@ -482,8 +482,6 @@ my $action = $svcnum ? 'Edit' : 'Add';
 
 my $svc = $part_svc->getfield('svc');
 
-my $otaker = getotaker;
-
 my $username = $svc_acct->username;
 
 my $password = '';

@@ -8,7 +8,6 @@
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
 <INPUT TYPE="hidden" NAME="_date" VALUE="<% $_date %>">
 <INPUT TYPE="hidden" NAME="credited" VALUE="">
-<INPUT TYPE="hidden" NAME="otaker" VALUE="<% $otaker %>">
 
 <% ntable("#cccccc", 2) %>
 
@@ -74,7 +73,6 @@ die "access denied"
 my $custnum = $cgi->param('custnum');
 my $amount  = $cgi->param('amount');
 my $_date   = time;
-my $otaker  = getotaker;
 my $p1      = popurl(1);
 
 </%init>

@@ -9,7 +9,6 @@ use vars qw( $DEBUG $me $conf @encrypted_fields
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
-use FS::UID qw( getotaker );
 use FS::Misc qw( send_email );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::CurrentUser;

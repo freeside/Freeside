@@ -582,7 +582,7 @@ use Carp;
 use Storable qw(nfreeze);
 use MIME::Base64;
 use JSON::XS;
-use FS::UID qw(getotaker);
+use FS::CurrentUser;
 use FS::Record qw(qsearchs);
 use FS::queue;
 use FS::CGI qw(rooturl);
@@ -656,7 +656,7 @@ sub start_job {
       push @{$param{$field}}, $value;
     }
   }
-  $param{CurrentUser} = getotaker();
+  $param{CurrentUser} = $FS::CurrentUser::CurrentUser->username;
   $param{RootURL} = rooturl($self->{cgi}->self_url);
   warn "FS::UI::Web::start_job\n".
        join('', map {

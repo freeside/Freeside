@@ -5454,6 +5454,21 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'authentication_module',
+    'section'     => 'UI',
+    'description' => '"Internal" is the default , which authenticates against the internal database.  "Legacy" is similar, but matches passwords against a legacy htpasswd file.',
+    'type'        => 'select',
+    'select_enum' => [qw( Internal Legacy )],
+  },
+
+  {
+    'key'         => 'external_auth-access_group-template_user',
+    'section'     => 'UI',
+    'description' => 'When using an external authentication module, specifies the default access groups for autocreated users, via a template user.',
+    'type'        => 'text',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

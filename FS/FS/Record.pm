@@ -18,7 +18,7 @@ use Text::CSV_XS;
 use File::Slurp qw( slurp );
 use DBI qw(:sql_types);
 use DBIx::DBSchema 0.38;
-use FS::UID qw(dbh getotaker datasrc driver_name);
+use FS::UID qw(dbh datasrc driver_name);
 use FS::CurrentUser;
 use FS::Schema qw(dbdef);
 use FS::SearchCache;
@@ -1909,7 +1909,11 @@ sub _h_statement {
   "INSERT INTO h_". $self->table. " ( ".
       join(', ', qw(history_date history_user history_action), @fields ).
     ") VALUES (".
-      join(', ', $time, dbh->quote(getotaker()), dbh->quote($action), @values).
+      join(', ', $time,
+                 dbh->quote( $FS::CurrentUser::CurrentUser->username ),
+                 dbh->quote($action),
+                 @values
+      ).
     ")"
   ;
 }
@@ -1940,11 +1944,6 @@ sub unique {
   #warn "field $field is tainted" if is_tainted($field);
 
   my($counter) = new File::CounterFile "$table.$field",0;
-# hack for web demo
-#  getotaker() =~ /^([\w\-]{1,16})$/ or die "Illegal CGI REMOTE_USER!";
-#  my($user)=$1;
-#  my($counter) = new File::CounterFile "$user/$table.$field",0;
-# endhack
 
   my $index = $counter->inc;
   $index = $counter->inc while qsearchs($table, { $field=>$index } );

@@ -148,8 +148,6 @@ my $export = $exports[0];
 # If we have a domain registration export, get the registrar object
 my $registrar = $export ? $export->registrar : '';
 
-my $otaker = getotaker;
-
 my $domain = $svc_domain->domain;
 
 my $p1 = popurl(1);

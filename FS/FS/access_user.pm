@@ -2,8 +2,9 @@ package FS::access_user;
 
 use strict;
 use base qw( FS::m2m_Common FS::option_Common ); 
-use vars qw( $DEBUG $me $conf $htpasswd_file );
+use vars qw( $DEBUG $me $conf );
 use FS::UID;
+use FS::Auth;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::access_user_pref;
@@ -13,12 +14,6 @@ use FS::cust_main;
 
 $DEBUG = 0;
 $me = '[FS::access_user]';
-
-#kludge htpasswd for now (i hope this bootstraps okay)
-FS::UID->install_callback( sub {
-  $conf = new FS::Conf;
-  $htpasswd_file = $conf->base_dir. '/htpasswd';
-} );
 
 =head1 NAME
 
@@ -105,7 +100,6 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->htpasswd_kludge();
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
     return $error;
@@ -115,39 +109,12 @@ sub insert {
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-
-    #make sure it isn't a dup username?  or you could nuke people's passwords
-    #blah.  really just should do our own login w/cookies
-    #and auth out of the db in the first place
-    #my $hterror = $self->htpasswd_kludge('-D');
-    #$error .= " - additionally received error cleaning up htpasswd file: $hterror"
     return $error;
-
   } else {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     '';
   }
 
-}
-
-sub htpasswd_kludge {
-  my $self = shift;
-
-  return '' if $self->is_system_user;
-
-  unshift @_, '-c' unless -e $htpasswd_file;
-  if ( 
-       system('htpasswd', '-b', @_,
-                          $htpasswd_file,
-                          $self->username,
-                          $self->_password,
-             ) == 0
-     )
-  {
-    return '';
-  } else {
-    return 'htpasswd exited unsucessfully';
-  }
 }
 
 =item delete
@@ -170,10 +137,7 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error =
-       $self->SUPER::delete(@_)
-    || $self->htpasswd_kludge('-D')
-  ;
+  my $error = $self->SUPER::delete(@_);
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
@@ -210,16 +174,11 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( $new->_password ne $old->_password ) {
-    my $error = $new->htpasswd_kludge();
-    if ( $error ) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      return $error;
-    }
-  } elsif ( $old->disabled && !$new->disabled
-              && $new->_password =~ /changeme/i ) {
-    return "Must change password when enabling this account";
-  }
+  return "Must change password when enabling this account"
+    if $old->disabled && !$new->disabled
+    && (      $new->_password =~ /changeme/i
+           || $new->_password eq 'notyet'
+       );
 
   my $error = $new->SUPER::replace($old, @_);
 
@@ -250,9 +209,9 @@ sub check {
   my $error = 
     $self->ut_numbern('usernum')
     || $self->ut_alpha_lower('username')
-    || $self->ut_text('_password')
-    || $self->ut_text('last')
-    || $self->ut_text('first')
+    || $self->ut_textn('_password')
+    || $self->ut_textn('last')
+    || $self->ut_textn('first')
     || $self->ut_foreign_keyn('user_custnum', 'cust_main', 'custnum')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
@@ -270,7 +229,8 @@ Returns a name string for this user: "Last, First".
 sub name {
   my $self = shift;
   return $self->username
-    if $self->get('last') eq 'Lastname' && $self->first eq 'Firstname';
+    if $self->get('last') eq 'Lastname' && $self->first eq 'Firstname'
+    or $self->get('last') eq ''         && $self->first eq '';
   return $self->get('last'). ', '. $self->first;
 }
 
@@ -550,7 +510,7 @@ sub spreadsheet_format {
 =item is_system_user
 
 Returns true if this user has the name of a known system account.  These 
-users will not appear in the htpasswd file and can't have passwords set.
+users cannot log into the web interface and can't have passwords set.
 
 =cut
 
@@ -563,7 +523,27 @@ sub is_system_user {
     fs_signup
     fs_bootstrap
     fs_selfserv
-) );
+  ) );
+}
+
+=item change_password NEW_PASSWORD
+
+=cut
+
+sub change_password {
+  #my( $self, $password ) = @_;
+  #FS::Auth->auth_class->change_password( $self, $password );
+  FS::Auth->auth_class->change_password( @_ );
+}
+
+=item change_password_fields NEW_PASSWORD
+
+=cut
+
+sub change_password_fields {
+  #my( $self, $password ) = @_;
+  #FS::Auth->auth_class->change_password_fields( $self, $password );
+  FS::Auth->auth_class->change_password_fields( @_ );
 }
 
 =back

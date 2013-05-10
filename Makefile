@@ -179,7 +179,6 @@ install-docs: docs
 	" ${MASON_HANDLER} || true
 	mkdir -p ${FREESIDE_EXPORT}/profile
 	chown freeside ${FREESIDE_EXPORT}/profile
-	cp htetc/htpasswd.logout ${FREESIDE_CONF}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}
 

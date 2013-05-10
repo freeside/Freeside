@@ -1,31 +1,33 @@
-<% include('/elements/header.html', 'Preferences for '. getotaker ) %>
+<% include('/elements/header.html', 'Preferences for '. $FS::CurrentUser::CurrentUser->username ) %>
 
 <FORM METHOD="POST" NAME="pref_form" ACTION="pref-process.html">
 
 <% include('/elements/error.html') %>
 
+% if ( FS::Auth->auth_class->can('change_password') ) {
 
-<% mt('Change password (leave blank for no change)') |h %>
-<% ntable("#cccccc",2) %>
+    <% mt('Change password (leave blank for no change)') |h %>
+    <% ntable("#cccccc",2) %>
 
-  <TR>
-    <TH ALIGN="right">Current password: </TH>
-    <TD><INPUT TYPE="password" NAME="_password"></TD>
-  </TR>
+      <TR>
+        <TH ALIGN="right">Current password: </TH>
+        <TD><INPUT TYPE="password" NAME="_password"></TD>
+      </TR>
 
-  <TR>
-    <TH ALIGN="right">New password: </TH>
-    <TD><INPUT TYPE="password" NAME="new_password"></TD>
-  </TR>
+      <TR>
+        <TH ALIGN="right">New password: </TH>
+        <TD><INPUT TYPE="password" NAME="new_password"></TD>
+      </TR>
 
-  <TR>
-   <TH ALIGN="right">Re-enter new password: </TH>
-   <TD><INPUT TYPE="password" NAME="new_password2"></TD>
-  </TR>
+      <TR>
+       <TH ALIGN="right">Re-enter new password: </TH>
+       <TD><INPUT TYPE="password" NAME="new_password2"></TD>
+      </TR>
 
-</TABLE>
-<BR>
+    </TABLE>
+    <BR>
 
+% }
 
 Interface
 <% ntable("#cccccc",2) %>

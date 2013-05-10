@@ -32,7 +32,7 @@ use Date::Format;
 use File::Temp; #qw( tempfile );
 use Business::CreditCard 0.28;
 use Locale::Country;
-use FS::UID qw( getotaker dbh driver_name );
+use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);

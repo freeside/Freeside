@@ -6,7 +6,7 @@ use Exporter;
 use CGI;
 use URI::URL;
 #use CGI::Carp qw(fatalsToBrowser);
-use FS::UID;
+use FS::UID qw( cgi );
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( header menubar idiot eidiot popurl rooturl table itable ntable
@@ -232,7 +232,7 @@ sub rooturl {
     $url_string = shift;
   } else {
     # better to start with the client-provided URL
-    my $cgi = &FS::UID::cgi;
+    my $cgi = cgi;
     $url_string = $cgi->isa('Apache') ? $cgi->uri : $cgi->url;
   }
 
@@ -244,7 +244,7 @@ sub rooturl {
   $url_string =~
     s{
        /
-       (browse|config|docs|edit|graph|misc|search|view|pref|elements|rt|torrus)
+       (browse|config|docs|edit|graph|misc|search|view|loginout|pref|elements|rt|torrus)
        (/process)?
        ([\w\-\.\/]*)
        $

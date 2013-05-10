@@ -2,23 +2,23 @@ package FS::UID;
 
 use strict;
 use vars qw(
-  @ISA @EXPORT_OK $DEBUG $me $cgi $freeside_uid $user $conf_dir $cache_dir
+  @ISA @EXPORT_OK $DEBUG $me $cgi $freeside_uid $conf_dir $cache_dir
   $secrets $datasrc $db_user $db_pass $schema $dbh $driver_name
   $AutoCommit %callback @callback $callback_hack $use_confcompat
 );
-use subs qw(
-  getsecrets cgisetotaker
-);
+use subs qw( getsecrets );
 use Exporter;
-use Carp qw(carp croak cluck confess);
+use Carp qw( carp croak cluck confess );
 use DBI;
 use IO::File;
 use FS::CurrentUser;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
-                getotaker dbh datasrc getsecrets driver_name myconnect
-                use_confcompat);
+@EXPORT_OK = qw( checkeuid checkruid cgi setcgi adminsuidsetup forksuidsetup
+                 preuser_setup
+                 getotaker dbh datasrc getsecrets driver_name myconnect
+                 use_confcompat
+               );
 
 $DEBUG = 0;
 $me = '[FS::UID]';
@@ -38,13 +38,9 @@ FS::UID - Subroutines for database login and assorted other stuff
 
 =head1 SYNOPSIS
 
-  use FS::UID qw(adminsuidsetup cgisuidsetup dbh datasrc getotaker
-  checkeuid checkruid);
+  use FS::UID qw(adminsuidsetup dbh datasrc checkeuid checkruid);
 
-  adminsuidsetup $user;
-
-  $cgi = new CGI;
-  $dbh = cgisuidsetup($cgi);
+  $dbh = adminsuidsetup $user;
 
   $dbh = dbh;
 
@@ -66,7 +62,6 @@ Sets the user to USER (see config.html from the base documentation).
 Cleans the environment.
 Make sure the script is running as freeside, or setuid freeside.
 Opens a connection to the database.
-Swaps real and effective UIDs.
 Runs any defined callbacks (see below).
 Returns the DBI database handle (usually you don't need this).
 
@@ -78,7 +73,7 @@ sub adminsuidsetup {
 }
 
 sub forksuidsetup {
-  $user = shift;
+  my $user = shift;
   my $olduser = $user;
   warn "$me forksuidsetup starting for $user\n" if $DEBUG;
 
@@ -91,12 +86,39 @@ sub forksuidsetup {
     $user = $1;
   }
 
-  $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
+  env_setup();
+
+  db_setup($olduser);
+
+  callback_setup();
+
+  warn "$me forksuidsetup loading user\n" if $DEBUG;
+  FS::CurrentUser->load_user($user);
+
+  $dbh;
+}
+
+sub preuser_setup {
+  $dbh->disconnect if $dbh;
+  env_setup();
+  db_setup();
+  callback_setup();
+  $dbh;
+}
+
+sub env_setup {
+
+  $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/bin';
   $ENV{'SHELL'} = '/bin/sh';
   $ENV{'IFS'} = " \t\n";
   $ENV{'CDPATH'} = '';
   $ENV{'ENV'} = '';
   $ENV{'BASH_ENV'} = '';
+
+}
+
+sub db_setup {
+  my $olduser = shift;
 
   croak "Not running uid freeside (\$>=$>, \$<=$<)\n" unless checkeuid();
 
@@ -131,6 +153,11 @@ sub forksuidsetup {
     die "NO CONFIGURATION TABLE FOUND" unless $FS::Schema::setup_hack;
   }
 
+
+}
+
+sub callback_setup {
+
   unless ( $callback_hack ) {
     warn "$me calling callbacks\n" if $DEBUG;
     foreach ( keys %callback ) {
@@ -143,19 +170,15 @@ sub forksuidsetup {
     warn "$me skipping callbacks (callback_hack set)\n" if $DEBUG;
   }
 
-  warn "$me forksuidsetup loading user\n" if $DEBUG;
-  FS::CurrentUser->load_user($user);
-
-  $dbh;
 }
 
 sub myconnect {
-  my $handle = DBI->connect( getsecrets(@_), { 'AutoCommit'         => 0,
-                                               'ChopBlanks'         => 1,
-                                               'ShowErrorStatement' => 1,
-                                               'pg_enable_utf8'     => 1,
-                                               #'mysql_enable_utf8'  => 1,
-                                             }
+  my $handle = DBI->connect( getsecrets(), { 'AutoCommit'         => 0,
+                                             'ChopBlanks'         => 1,
+                                             'ShowErrorStatement' => 1,
+                                             'pg_enable_utf8'     => 1,
+                                             #'mysql_enable_utf8'  => 1,
+                                           }
                            )
     or die "DBI->connect error: $DBI::errstr\n";
 
@@ -194,26 +217,6 @@ sub install_callback {
   &{$callback} if $dbh;
 }
 
-=item cgisuidsetup CGI_object
-
-Takes a single argument, which is a CGI (see L<CGI>) or Apache (see L<Apache>)
-object (CGI::Base is depriciated).  Runs cgisetotaker and then adminsuidsetup.
-
-=cut
-
-sub cgisuidsetup {
-  $cgi=shift;
-  if ( $cgi->isa('CGI::Base') ) {
-    carp "Use of CGI::Base is depriciated";
-  } elsif ( $cgi->isa('Apache') ) {
-
-  } elsif ( ! $cgi->isa('CGI') ) {
-    croak "fatal: unrecognized object $cgi";
-  }
-  cgisetotaker; 
-  adminsuidsetup($user);
-}
-
 =item cgi
 
 Returns the CGI (see L<CGI>) object.
@@ -221,8 +224,19 @@ Returns the CGI (see L<CGI>) object.
 =cut
 
 sub cgi {
-  carp "warning: \$FS::UID::cgi isa Apache" if $cgi->isa('Apache');
+  carp "warning: \$FS::UID::cgi is undefined" unless defined($cgi);
+  #carp "warning: \$FS::UID::cgi isa Apache" if $cgi && $cgi->isa('Apache');
   $cgi;
+}
+
+=item cgi CGI_OBJECT
+
+Sets the CGI (see L<CGI>) object.
+
+=cut
+
+sub setcgi {
+  $cgi = shift;
 }
 
 =item dbh
@@ -262,35 +276,13 @@ sub suidsetup {
 
 =item getotaker
 
-Returns the current Freeside user.
+(Deprecated) Returns the current Freeside user's username.
 
 =cut
 
 sub getotaker {
-  $user;
-}
-
-=item cgisetotaker
-
-Sets and returns the CGI REMOTE_USER.  $cgi should be defined as a CGI.pm
-object (see L<CGI>) or an Apache object (see L<Apache>).  Support for CGI::Base
-and derived classes is depriciated.
-
-=cut
-
-sub cgisetotaker {
-  if ( $cgi && $cgi->isa('CGI::Base') && defined $cgi->var('REMOTE_USER')) {
-    carp "Use of CGI::Base is depriciated";
-    $user = lc ( $cgi->var('REMOTE_USER') );
-  } elsif ( $cgi && $cgi->isa('CGI') && defined $cgi->remote_user ) {
-    $user = lc ( $cgi->remote_user );
-  } elsif ( $cgi && $cgi->isa('Apache') ) {
-    $user = lc ( $cgi->connection->user );
-  } else {
-    die "fatal: Can't get REMOTE_USER! for cgi $cgi - you need to setup ".
-        "Apache user authentication as documented in the installation instructions";
-  }
-  $user;
+  carp "FS::UID::getotaker deprecated";
+  $FS::CurrentUser::CurrentUser->username;
 }
 
 =item checkeuid
@@ -314,34 +306,18 @@ sub checkruid {
   ( $< == $freeside_uid );
 }
 
-=item getsecrets [ USER ]
+=item getsecrets
 
-Sets the user to USER, if supplied.
-Sets and returns the DBI datasource, username and password for this user from
-the `/usr/local/etc/freeside/mapsecrets' file.
+Sets and returns the DBI datasource, username and password from
+the `/usr/local/etc/freeside/secrets' file.
 
 =cut
 
 sub getsecrets {
-  my($setuser) = shift;
-  $user = $setuser if $setuser;
-
-  if ( -e "$conf_dir/mapsecrets" ) {
-    die "No user!" unless $user;
-    my($line) = grep /^\s*($user|\*)\s/,
-      map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/mapsecrets");
-    confess "User $user not found in mapsecrets!" unless $line;
-    $line =~ /^\s*($user|\*)\s+(.*)$/;
-    $secrets = $2;
-    die "Illegal mapsecrets line for user?!" unless $secrets;
-  } else {
-    # no mapsecrets file at all, so do the default thing
-    $secrets = 'secrets';
-  }
 
   ($datasrc, $db_user, $db_pass, $schema) = 
-    map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/$secrets")
-      or die "Can't get secrets: $conf_dir/$secrets: $!\n";
+    map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/secrets")
+      or die "Can't get secrets: $conf_dir/secrets: $!\n";
   undef $driver_name;
 
   ($datasrc, $db_user, $db_pass);
@@ -390,8 +366,7 @@ Too many package-global variables.
 
 Not OO.
 
-No capabilities yet.  When mod_perl and Authen::DBI are implemented, 
-cgisuidsetup will go away as well.
+No capabilities yet. (What does this mean again?)
 
 Goes through contortions to support non-OO syntax with multiple datasrc's.
 
