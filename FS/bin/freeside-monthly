@@ -74,7 +74,7 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
   -m: Experimental multi-process mode (delay upload jobs until billing jobs complete)
 
-user: From the mapsecrets file - see config.html from the base documentation
+user: Typically "fs_daily"
 
 custnum: if one or more customer numbers are specified, only bills those
 customers.  Otherwise, bills all customers.
