@@ -524,7 +524,7 @@ comparison to other integers is type-correct.
 sub condition_sql_option_integer {
   my ($class, $option, $driver_name) = @_;
 
-  my $integer = ($driver_name =~ /^mysql/) ? 'UNSIGNED INTEGER' : 'INTEGER';
+  my $integer = (driver_name() =~ /^mysql/) ? 'UNSIGNED INTEGER' : 'INTEGER';
 
   'CAST(
          COALESCE('. $class->condition_sql_option($option).
