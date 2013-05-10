@@ -42,6 +42,8 @@ sub authenticate {
 
 }
 
+sub autocreate { 0; }
+
 sub change_password {
   my($self, $access_user, $new_password) = @_;
 

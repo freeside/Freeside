@@ -11,22 +11,21 @@ sub authen_cred {
 
   preuser_setup();
 
-  unless ( _is_valid_user($username, $password) ) {
+  my $info = {};
+
+  unless ( FS::Auth->authenticate($username, $password, $info) ) {
     warn "failed auth $username from ". $r->connection->remote_ip. "\n";
     return undef;
   }
 
   warn "authenticated $username from ". $r->connection->remote_ip. "\n";
 
-  FS::CurrentUser->load_user($username);
+  FS::CurrentUser->load_user( $username,
+                              'autocreate' => FS::Auth->auth_class->autocreate,
+                              %$info,
+                            );
 
   FS::CurrentUser->new_session;
-}
-
-sub _is_valid_user {
-  my( $username, $password ) = @_;
-
-  FS::Auth->authenticate($username, $password);
 }
 
 sub authen_ses_key {

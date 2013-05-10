@@ -16,6 +16,8 @@ sub authenticate {
     )->htCheckPassword($username, $check_password);
 }
 
+sub autocreate { 0; }
+
 #don't support this in legacy?  change in both htpasswd and database like 3.x
 # for easier transitioning?  hoping its really only me+employees that have a
 # mismatch in htpasswd vs access_user, so maybe that's not necessary

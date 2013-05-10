@@ -3586,10 +3586,10 @@ sub tables_hashref {
       'columns' => [
         'usernum',             'serial',     '',      '', '', '',
         'username',           'varchar',     '', $char_d, '', '',
-        '_password',          'varchar',     '', $char_d, '', '',
+        '_password',          'varchar', 'NULL', $char_d, '', '',
         '_password_encoding', 'varchar', 'NULL', $char_d, '', '',
-        'last',               'varchar',     '', $char_d, '', '', 
-        'first',              'varchar',     '', $char_d, '', '', 
+        'last',               'varchar', 'NULL', $char_d, '', '', 
+        'first',              'varchar', 'NULL', $char_d, '', '', 
         'user_custnum',           'int', 'NULL',      '', '', '',
         'disabled',              'char', 'NULL',       1, '', '', 
       ],

@@ -209,9 +209,9 @@ sub check {
   my $error = 
     $self->ut_numbern('usernum')
     || $self->ut_alpha_lower('username')
-    || $self->ut_text('_password')
-    || $self->ut_text('last')
-    || $self->ut_text('first')
+    || $self->ut_textn('_password')
+    || $self->ut_textn('last')
+    || $self->ut_textn('first')
     || $self->ut_foreign_keyn('user_custnum', 'cust_main', 'custnum')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
@@ -229,7 +229,8 @@ Returns a name string for this user: "Last, First".
 sub name {
   my $self = shift;
   return $self->username
-    if $self->get('last') eq 'Lastname' && $self->first eq 'Firstname';
+    if $self->get('last') eq 'Lastname' && $self->first eq 'Firstname'
+    or $self->get('last') eq ''         && $self->first eq '';
   return $self->get('last'). ', '. $self->first;
 }
 
