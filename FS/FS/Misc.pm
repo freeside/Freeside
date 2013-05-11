@@ -108,7 +108,7 @@ use Date::Format;
 use MIME::Entity;
 use Email::Sender::Simple qw(sendmail);
 use Email::Sender::Transport::SMTP;
-use Email::Sender::Transport::SMTP::TLS;
+use Email::Sender::Transport::SMTP::TLS 0.11;
 use FS::UID;
 
 FS::UID->install_callback( sub {
