@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# usage: 3commit 'log message' filename filename ...
+# usage: 32commit 'log message' filename filename ...
 
 use Cwd;
 use String::ShellQuote;
@@ -19,8 +19,11 @@ die "no files!" unless @ARGV;
 #print <<END;
 system join('',
   "( cd /home/$USER/freeside3/$prefix; git pull ) && ",
+  "( cd /home/$USER/freeside2.3/$prefix; git pull ) && ",
   "git diff -u @ARGV | ( cd /home/$USER/freeside3/$prefix; patch -p1 ) ",
-  " && ( ( git pull && git commit  -m $desc @ARGV && git push ); ",
-  "( cd /home/$USER/freeside3/$prefix; git commit -m $desc @ARGV && git push ) )"
+  " && git diff -u @ARGV | ( cd /home/$USER/freeside2.3/$prefix; patch -p1 ) ",
+  " && ( ( git pull && git commit  -m $desc @ARGV && git push); ",
+  "( cd /home/$USER/freeside3/$prefix; git commit -m $desc @ARGV && git push); ",
+  "( cd /home/$USER/freeside2.3/$prefix; git commit -m $desc @ARGV && git push) )"
 );
 
