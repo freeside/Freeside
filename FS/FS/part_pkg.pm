@@ -1081,6 +1081,9 @@ sub add_freq {
   if ( $freq =~ /^\d+$/ ) {
     $mon += $freq;
     until ( $mon < 12 ) { $mon -= 12; $year++; }
+
+    $mday = 28 if $mday > 28 && FS::Conf->new->exists('anniversary-rollback');
+
   } elsif ( $freq =~ /^(\d+)w$/ ) {
     my $weeks = $1;
     $mday += $weeks * 7;
