@@ -837,6 +837,13 @@ my @cdr_formats = (
   },
 
   {
+    'key'         => 'anniversary-rollback',
+    'section'     => 'billing',
+    'description' => 'When billing an anniversary package ordered after the 28th, roll the anniversary date back to the 28th instead of forward into the following month.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'encryption',
     'section'     => 'billing',
     'description' => 'Enable encryption of credit cards and echeck numbers',
