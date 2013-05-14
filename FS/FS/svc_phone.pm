@@ -358,8 +358,6 @@ sub delete {
 
 }
 
-# the delete method can be inherited from FS::Record
-
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
