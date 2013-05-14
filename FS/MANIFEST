@@ -690,3 +690,7 @@ FS/cdr_cust_pkg_usage.pm
 t/cdr_cust_pkg_usage.t
 FS/part_pkg_msgcat.pm
 t/part_pkg_msgcat.t
+FS/svc_cable.pm
+t/svc_cable.t
+FS/cable_device.pm
+t/cable_device.t

@@ -30,7 +30,7 @@
 
      <& /elements/table-grid.html &>
        <TR>
-%        if ( $table eq 'phone_device' ) {
+%        if ( $table eq 'phone_device' || $table eq 'cable_device' ) {
            <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
 %        }
          <TH CLASS="grid" BGCOLOR="#cccccc">MAC Addr</TH>
@@ -58,7 +58,8 @@
 %          if $device->can('export_links');
 
         <TR>
-%         if ( $table eq 'phone_device' ) { #$devices->can('part_device')
+%              #$devices->can('part_device')
+%         if ( $table eq 'phone_device' || $svc_x->isa('FS::device_Common') ) {
             <% $td %><% $device->part_device->devicename |h %></TD>
 %         }
           <% $td %><% $device->mac_addr %></TD>
@@ -84,7 +85,7 @@ my $table = $opt{'table'}; #part_device, dsl_device
 my $svc_x = $opt{'svc_x'};
 
 my $num_part_device = 0;
-if ( $table eq 'phone_device' ) {
+if ( $table eq 'phone_device' || $table eq 'cable_device' ) {
   my $sth = dbh->prepare("SELECT COUNT(*) FROM part_device")
                             #WHERE disabled = '' OR disabled IS NULL;");
     or die dbh->errstr;
@@ -92,6 +93,7 @@ if ( $table eq 'phone_device' ) {
   $num_part_device = $sth->fetchrow_arrayref->[0];
 }
 
-my @devices = $svc_x->$table();
+my @devices = $svc_x->isa('FS::device_Common') ? $svc_x->device_objects()
+                                               : $svc_x->$table();
 
 </%init>

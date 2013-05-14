@@ -4115,6 +4115,30 @@ sub tables_hashref {
       'index' => [],
     },
 
+    'svc_cable' => {
+      'columns' => [
+        'svcnum',         'int',     '',      '', '', '', 
+        #nothing so far...  there should be _something_ uniquely identifying
+        # each subscriber besides the device info...?
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [],
+      'index'  => [],
+    },
+
+    'cable_device' => {
+      'columns' => [
+        'devicenum', 'serial',     '',      '', '', '',
+        'devicepart',   'int',     '',      '', '', '',
+        'svcnum',       'int',     '',      '', '', '', 
+        'mac_addr', 'varchar', 'NULL',      12, '', '', 
+        'serial',   'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'devicenum',
+      'unique' => [ [ 'mac_addr' ], ],
+      'index'  => [ [ 'devicepart' ], [ 'svcnum' ], ],
+    },
+
     %{ tables_hashref_torrus() },
 
     # tables of ours for doing torrus virtual port combining
