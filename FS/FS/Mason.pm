@@ -339,6 +339,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_pkg_usage;
   use FS::cdr_cust_pkg_usage;
   use FS::part_pkg_msgcat;
+  use FS::svc_cable;
+  use FS::cable_device;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
