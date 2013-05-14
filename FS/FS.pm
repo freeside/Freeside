@@ -206,6 +206,8 @@ L<FS::svc_cert> - Certificate service class
 
 L<FS::svc_dish> - Dish network service class
 
+L<FS::svc_cable> - Cable service class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items
