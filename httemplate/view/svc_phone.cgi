@@ -67,6 +67,7 @@ my $html_foot = sub {
   ###
   # Devices
   ###
+  #remove this when svc_phone isa device_Common, as elements/svc_Common will display it
   my $devices = include('/view/elements/svc_devices.html',
                           'svc_x' => $svc_phone,
                           'table' => 'phone_device',

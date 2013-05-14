@@ -119,6 +119,11 @@ function areyousure(href) {
 
 <BR>
 
+<& svc_devices.html,
+     'svc_x' => $svc_x,
+     'table' => $svc_x->device_table,
+&>
+
 % if ( defined($opt{'html_foot'}) ) {
 
   <% ref($opt{'html_foot'})
