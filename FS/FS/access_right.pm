@@ -233,7 +233,8 @@ sub _upgrade_data { # class method
     'Financial reports' => [ 'Employees: Commission Report',
                              'Employees: Audit Report',
                            ],
-  ;
+    'Services: Accounts' => 'Services: Cable Subscribers',
+;
 
   foreach my $old_acl ( keys %onetime ) {
 
