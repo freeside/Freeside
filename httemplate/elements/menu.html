@@ -207,10 +207,10 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       ];
   }
 
-    $report_svc{"Advanced $lcsname reports"} = 
-        [ $fsurl."search/report_$svcdb.html", '' ]
-      if $svcdb =~ /^svc_(acct|broadband|hardware|phone)$/
-      && $curuser->access_right("Services: $name: Advanced search");
+  $report_svc{"Advanced $lcsname reports"} = 
+      [ $fsurl."search/report_$svcdb.html", '' ]
+    if $svcdb =~ /^svc_(acct|broadband|hardware|phone)$/
+    && $curuser->access_right("Services: $name: Advanced search");
 
   if ( $svcdb eq 'svc_phone' ) {
 
