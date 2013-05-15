@@ -10,7 +10,6 @@ use Date::Format;
 use Business::CreditCard;
 use Text::Template;
 use FS::UID qw( getotaker );
-use FS::Misc qw( send_email );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::CurrentUser;
 use FS::payby;
@@ -626,11 +625,18 @@ sub send_receipt {
   {
     my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
     if ( $msgnum ) {
-      my $msg_template = FS::msg_template->by_key($msgnum);
-      $error = $msg_template->send(
-        'cust_main'   => $cust_main,
-        'object'      => $self,
-        'from_config' => 'payment_receipt_from',
+
+      my $queue = new FS::queue {
+        'job'     => 'FS::Misc::process_send_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+      $error = $queue->insert(
+         FS::msg_template->by_key($msgnum)->prepare(
+          'cust_main'   => $cust_main,
+          'object'      => $self,
+          'from_config' => 'payment_receipt_from',
+        )
       );
 
     } elsif ( $conf->exists('payment_receipt_email') ) {
@@ -669,7 +675,12 @@ sub send_receipt {
         #setup date, other things?
       }
 
-      $error = send_email(
+      my $queue = new FS::queue {
+        'job'     => 'FS::Misc::process_send_generated_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+      $error = $queue->insert(
         'from'    => $conf->config('invoice_from', $cust_main->agentnum),
                                    #invoice_from??? well as good as any
         'to'      => \@invoicing_list,
@@ -686,8 +697,9 @@ sub send_receipt {
   } elsif ( ! $cust_main->invoice_noemail ) { #not manual
 
     my $queue = new FS::queue {
-       'paynum' => $self->paynum,
-       'job'    => 'FS::cust_bill::queueable_email',
+       'job'     => 'FS::cust_bill::queueable_email',
+       'paynum'  => $self->paynum,
+       'custnum' => $cust_main->custnum,
     };
 
     $error = $queue->insert(
@@ -699,7 +711,7 @@ sub send_receipt {
 
   }
   
-    warn "send_receipt: $error\n" if $error;
+  warn "send_receipt: $error\n" if $error;
 }
 
 =item cust_bill_pay
