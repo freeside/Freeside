@@ -236,6 +236,12 @@ sub dbdef_dist {
 
     }
 
+    my $historynum_type = ( $tableobj->column($tableobj->primary_key)->type
+                              =~ /^(bigserial|bigint|int8)$/i
+                                ? 'bigserial'
+                                : 'serial'
+                          );
+
     my $h_tableobj = DBIx::DBSchema::Table->new( {
       'name'          => "h_$table",
       'primary_key'   => 'historynum',
@@ -244,7 +250,7 @@ sub dbdef_dist {
       'columns'       => [
           DBIx::DBSchema::Column->new( {
             'name'    => 'historynum',
-            'type'    => 'serial',
+            'type'    => $historynum_type,
             'null'    => 'NOT NULL',
             'length'  => '',
             'default' => '',
@@ -1345,7 +1351,7 @@ sub tables_hashref {
         'gatewaynum',   'int',     'NULL',  '', '', '',
         #'cust_balance', @money_type,            '', '',
         'paynum',       'int',     'NULL',  '', '', '',
-        'jobnum',       'int',     'NULL',  '', '', '', 
+        'jobnum',    'bigint',     'NULL',  '', '', '', 
       ],
       'primary_key' => 'paypendingnum',
       'unique'      => [ [ 'payunique' ] ],
@@ -2355,7 +2361,7 @@ sub tables_hashref {
 
     'queue' => {
       'columns' => [
-        'jobnum',      'serial',     '',      '', '', '', 
+        'jobnum',   'bigserial',     '',      '', '', '', 
         'job',        'varchar',     '',     512, '', '', 
         '_date',          'int',     '',      '', '', '', 
         'status',     'varchar',     '', $char_d, '', '', 
@@ -2374,10 +2380,10 @@ sub tables_hashref {
 
     'queue_arg' => {
       'columns' => [
-        'argnum', 'serial', '', '', '', '', 
-        'jobnum', 'int', '', '', '', '', 
-        'frozen', 'char', 'NULL',       1, '', '',
-        'arg', 'text', 'NULL', '', '', '', 
+        'argnum', 'bigserial',     '', '', '', '', 
+        'jobnum',    'bigint',     '', '', '', '', 
+        'frozen',      'char', 'NULL',  1, '', '',
+        'arg',         'text', 'NULL', '', '', '', 
       ],
       'primary_key' => 'argnum',
       'unique'      => [],
@@ -2386,9 +2392,9 @@ sub tables_hashref {
 
     'queue_depend' => {
       'columns' => [
-        'dependnum', 'serial', '', '', '', '', 
-        'jobnum', 'int', '', '', '', '', 
-        'depend_jobnum', 'int', '', '', '', '', 
+        'dependnum',  'bigserial', '', '', '', '', 
+        'jobnum',        'bigint', '', '', '', '', 
+        'depend_jobnum', 'bigint', '', '', '', '', 
       ],
       'primary_key' => 'dependnum',
       'unique'      => [],
