@@ -1067,7 +1067,7 @@ sub reason_type_options {
 
   {
     'key'         => 'deletepayments',
-    'section'     => 'billing',
+    'section'     => 'deprecated',
     'description' => 'Enable deletion of unclosed payments.  Really, with voids this is pretty much not recommended in any situation anymore.  Be very careful!  Only delete payments that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.',
     'type'        => [qw( checkbox text )],
   },
