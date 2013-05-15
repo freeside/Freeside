@@ -44,6 +44,9 @@ sub _bulk_recur {
     if $self->option('no_prorate',1);
 
   my $last_bill = $cust_pkg->last_bill;
+
+  return (0, '') if $$sdate == $last_bill;
+
   my $svc_start = max( $h_cust_svc->date_inserted, $last_bill);
   my $svc_end = $h_cust_svc->date_deleted;
   $svc_end = ( !$svc_end || $svc_end > $$sdate ) ? $$sdate : $svc_end;
