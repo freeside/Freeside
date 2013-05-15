@@ -271,7 +271,7 @@ if ( $cgi->param('magic') ) {
       foreach my $payby ( $cgi->param('payby') ) {
 
         $payby =~
-          /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro))?$/
+          /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro|Tokenized))?$/
             or die "illegal payby $payby";
 
         my $payby_search = "$table.payby = '$1'";
@@ -282,6 +282,7 @@ if ( $cgi->param('magic') ) {
 
           my $search;
           if ( $cardtype eq 'VisaMC' ) {
+
             #avoid posix regexes for portability
             $search =
               " ( (     substring($table.payinfo from 1 for 1) = '4'     ".
@@ -305,11 +306,14 @@ if ( $cgi->param('magic') ) {
               "   OR substring($table.payinfo from 1 for 2) = '55' ".
 #              "   OR substring($table.payinfo from 1 for 2) = '36' ". #Diner's int'l was processed as Visa/MC inside US, now Discover
               " ) ";
+
           } elsif ( $cardtype eq 'Amex' ) {
+
             $search =
               " (    substring($table.payinfo from 1 for 2 ) = '34' ".
               "   OR substring($table.payinfo from 1 for 2 ) = '37' ".
               " ) ";
+
           } elsif ( $cardtype eq 'Discover' ) {
 
             my $conf = new FS::Conf;
@@ -347,7 +351,9 @@ if ( $cgi->param('magic') ) {
               ).
               "   OR substring($table.payinfo from 1 for 3 ) = '622'   ". #China Union Pay processed as Discover outside CN
               " ) ";
-          } elsif ( $cardtype eq 'Maestro' ) { 
+
+          } elsif ( $cardtype eq 'Maestro' ) {
+
             $search =
               " (    substring($table.payinfo from 1 for 2 ) = '63'     ".
               "   OR substring($table.payinfo from 1 for 2 ) = '67'     ".
@@ -364,6 +370,11 @@ if ( $cgi->param('magic') ) {
               "   OR substring($table.payinfo from 1 for 6 )            ".
               "      SIMILAR TO '49118[1-2]'                             ".
               " ) ";
+
+          } elsif ( $cardtype eq 'Tokenized' ) {
+
+            $search = " substring($table.payinfo from 1 for 2 ) = '99' ";
+
           } else {
             die "unknown card type $cardtype";
           }
