@@ -60,7 +60,7 @@ sub _export_insert {
   my $svcnum = $svc_phone->svcnum;
 
   my $fh = new File::Temp(
-    TEMPLATE => "$tempdir/freeswitch.$svcnum.XXXXXXXX",
+    TEMPLATE => "freeswitch.$svcnum.XXXXXXXX",
     DIR      => $tempdir,
     #UNLINK   => 0,
   );
