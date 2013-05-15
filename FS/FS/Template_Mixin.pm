@@ -122,9 +122,7 @@ sub print_latex {
     UNLINK   => 0,
   ) or die "can't open temp file: $!\n";
 
-  my $cust_main = $self->cust_main;
-  my $prospect_main = $self->prospect_main;
-  my $agentnum = $cust_main ? $cust_main->agentnum : $prospect_main->agentnum;
+  my $agentnum = $self->agentnum;
 
   if ( $template && $conf->exists("logo_${template}.eps", $agentnum) ) {
     print $lh $conf->config_binary("logo_${template}.eps", $agentnum)
@@ -174,6 +172,12 @@ sub print_latex {
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
   return ($1, $params{'logo_file'}, $params{'barcode_file'});
 
+}
+
+sub agentnum {
+  my $self = shift;
+  my $cust_main = $self->cust_main;
+  $cust_main ? $cust_main->agentnum : $self->prospect_main->agentnum;
 }
 
 =item print_generic OPTION => VALUE ...
@@ -597,54 +601,60 @@ sub print_generic {
   # info from customer's last invoice before this one, for some 
   # summary formats
   $invoice_data{'last_bill'} = {};
+
   # returns the last unpaid bill, not the last bill
   #my $last_bill = $pr_cust_bill[-1];
-  # THIS returns the customer's last bill before  this one
-  my $last_bill = qsearchs({
-      'table'   => 'cust_bill',
-      'hashref' => { 'custnum' => $self->custnum,
-                     'invnum'  => { op => '<', value => $self->invnum },
-                   },
-      'order_by'  => ' ORDER BY invnum DESC LIMIT 1'
-  });
-  if ( $last_bill ) {
-    $invoice_data{'last_bill'} = {
-      '_date'     => $last_bill->_date, #unformatted
-      # all we need for now
-    };
-    my (@payments, @credits);
-    # for formats that itemize previous payments
-    foreach my $cust_pay ( qsearch('cust_pay', {
-                            'custnum' => $self->custnum,
-                            '_date'   => { op => '>=',
-                                           value => $last_bill->_date }
-                           } ) )
-    {
-      next if $cust_pay->_date > $self->_date;
-      push @payments, {
-          '_date'       => $cust_pay->_date,
-          'date'        => time2str($date_format, $cust_pay->_date),
-          'payinfo'     => $cust_pay->payby_payinfo_pretty,
-          'amount'      => sprintf('%.2f', $cust_pay->paid),
+
+  if ( $self->custnum && $self->invnum ) {
+
+    # THIS returns the customer's last bill before  this one
+    my $last_bill = qsearchs({
+        'table'   => 'cust_bill',
+        'hashref' => { 'custnum' => $self->custnum,
+                       'invnum'  => { op => '<', value => $self->invnum },
+                     },
+        'order_by'  => ' ORDER BY invnum DESC LIMIT 1'
+    });
+    if ( $last_bill ) {
+      $invoice_data{'last_bill'} = {
+        '_date'     => $last_bill->_date, #unformatted
+        # all we need for now
       };
-      # not concerned about applications
+      my (@payments, @credits);
+      # for formats that itemize previous payments
+      foreach my $cust_pay ( qsearch('cust_pay', {
+                              'custnum' => $self->custnum,
+                              '_date'   => { op => '>=',
+                                             value => $last_bill->_date }
+                             } ) )
+      {
+        next if $cust_pay->_date > $self->_date;
+        push @payments, {
+            '_date'       => $cust_pay->_date,
+            'date'        => time2str($date_format, $cust_pay->_date),
+            'payinfo'     => $cust_pay->payby_payinfo_pretty,
+            'amount'      => sprintf('%.2f', $cust_pay->paid),
+        };
+        # not concerned about applications
+      }
+      foreach my $cust_credit ( qsearch('cust_credit', {
+                              'custnum' => $self->custnum,
+                              '_date'   => { op => '>=',
+                                             value => $last_bill->_date }
+                             } ) )
+      {
+        next if $cust_credit->_date > $self->_date;
+        push @credits, {
+            '_date'       => $cust_credit->_date,
+            'date'        => time2str($date_format, $cust_credit->_date),
+            'creditreason'=> $cust_credit->cust_credit->reason,
+            'amount'      => sprintf('%.2f', $cust_credit->amount),
+        };
+      }
+      $invoice_data{'previous_payments'} = \@payments;
+      $invoice_data{'previous_credits'}  = \@credits;
     }
-    foreach my $cust_credit ( qsearch('cust_credit', {
-                            'custnum' => $self->custnum,
-                            '_date'   => { op => '>=',
-                                           value => $last_bill->_date }
-                           } ) )
-    {
-      next if $cust_credit->_date > $self->_date;
-      push @credits, {
-          '_date'       => $cust_credit->_date,
-          'date'        => time2str($date_format, $cust_credit->_date),
-          'creditreason'=> $cust_credit->cust_credit->reason,
-          'amount'      => sprintf('%.2f', $cust_credit->amount),
-      };
-    }
-    $invoice_data{'previous_payments'} = \@payments;
-    $invoice_data{'previous_credits'}  = \@credits;
+
   }
 
   my $summarypage = '';
@@ -2239,7 +2249,6 @@ sub _items_cust_bill_pkg {
 
   my $cust_main = $self->cust_main;#for per-agent cust_bill-line_item-ate_style
                                    # and location labels
-  my $locale = $cust_main->locale;
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
@@ -2284,7 +2293,7 @@ sub _items_cust_bill_pkg {
 
       my $type = $display->type;
 
-      my $desc = $cust_bill_pkg->desc( $cust_main->locale );
+      my $desc = $cust_bill_pkg->desc( $cust_main ? $cust_main->locale : '' );
       $desc = substr($desc, 0, $maxlength). '...'
         if $format eq 'latex' && length($desc) > $maxlength;
 
@@ -2361,8 +2370,9 @@ sub _items_cust_bill_pkg {
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
             $svc_label = $svc_labels[0];
 
-            if ( ! $cust_pkg->locationnum or
-                   $cust_pkg->locationnum != $cust_main->ship_locationnum  ) {
+            my $lnum = $cust_main ? $cust_main->ship_locationnum
+                                  : $self->prospect_main->locationnum;
+            if ( ! $cust_pkg->locationnum or $cust_pkg->locationnum != $lnum ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
@@ -2425,17 +2435,17 @@ sub _items_cust_bill_pkg {
             my $time_period;
             my $date_style = '';
             $date_style = $conf->config( 'cust_bill-line_item-date_style-non_monhtly',
-                                         $cust_main->agentnum
+                                         $self->agentnum
                                        )
               if $part_pkg && $part_pkg->freq !~ /^1m?$/;
             $date_style ||= $conf->config( 'cust_bill-line_item-date_style',
-                                            $cust_main->agentnum
+                                            $self->agentnum
                                          );
             if ( defined($date_style) && $date_style eq 'month_of' ) {
               $time_period = time2str('The month of %B', $cust_bill_pkg->sdate);
             } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
               my $desc = $conf->config( 'cust_bill-line_item-date_description',
-                                         $cust_main->agentnum
+                                         $self->agentnum
                                       );
               $desc .= ' ' unless $desc =~ /\s$/;
               $time_period = $desc. time2str('%B', $cust_bill_pkg->sdate);
@@ -2476,7 +2486,9 @@ sub _items_cust_bill_pkg {
             warn "$me _items_cust_bill_pkg done adding service details\n"
               if $DEBUG > 1;
 
-            if ( $cust_pkg->locationnum != $cust_main->ship_locationnum ) {
+            my $lnum = $cust_main ? $cust_main->ship_locationnum
+                                  : $self->prospect_main->locationnum;
+            if ( $cust_pkg->locationnum != $lnum ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
