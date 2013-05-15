@@ -459,38 +459,6 @@ sub delete {
     return $error;
   }
 
-  if (    $conf->exists('deletepayments')
-       && $conf->config('deletepayments') ne '' ) {
-
-    my $cust_main = $self->cust_main;
-
-    my $error = send_email(
-      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
-                                 #invoice_from??? well as good as any
-      'to'      => $conf->config('deletepayments'),
-      'subject' => 'FREESIDE NOTIFICATION: Payment deleted',
-      'body'    => [
-        "This is an automatic message from your Freeside installation\n",
-        "informing you that the following payment has been deleted:\n",
-        "\n",
-        'paynum: '. $self->paynum. "\n",
-        'custnum: '. $self->custnum.
-          " (". $cust_main->last. ", ". $cust_main->first. ")\n",
-        'paid: $'. sprintf("%.2f", $self->paid). "\n",
-        'date: '. time2str("%a %b %e %T %Y", $self->_date). "\n",
-        'payby: '. $self->payby. "\n",
-        'payinfo: '. $self->paymask. "\n",
-        'paybatch: '. $self->paybatch. "\n",
-      ],
-    );
-
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't send payment deletion notification: $error";
-    }
-
-  }
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
