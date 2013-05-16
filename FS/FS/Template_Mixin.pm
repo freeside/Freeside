@@ -647,7 +647,7 @@ sub print_generic {
         push @credits, {
             '_date'       => $cust_credit->_date,
             'date'        => time2str($date_format, $cust_credit->_date),
-            'creditreason'=> $cust_credit->cust_credit->reason,
+            'creditreason'=> $cust_credit->reason,
             'amount'      => sprintf('%.2f', $cust_credit->amount),
         };
       }
