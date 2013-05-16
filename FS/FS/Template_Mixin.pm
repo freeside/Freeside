@@ -106,7 +106,7 @@ sub print_latex {
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
   $params{$_} = $opt{$_} 
-    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name );
+    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name no_date no_number );
 
   $template ||= $self->_agent_template
     if $self->can('_agent_template');
@@ -445,9 +445,14 @@ sub print_generic {
     'agent'           => &$escape_function($cust_main->agent->agent),
 
     #invoice/quotation info
-    'invnum'          => $self->invnum,
+    'no_number'       => $params{'no_number'},
+    'invnum'          => ( $params{'no_number'} ? '' : $self->invnum ),
     'quotationnum'    => $self->quotationnum,
-    'date'            => time2str($date_format, $self->_date),
+    'no_date'         => $params{'no_date'},
+    'date'            => ( $params{'no_date'}
+                             ? ''
+                             : time2str($date_format, $self->_date)
+                         ),
     'today'           => time2str($date_format_long, $today),
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},

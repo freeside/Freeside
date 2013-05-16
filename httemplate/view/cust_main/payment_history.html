@@ -141,10 +141,9 @@
 
 %# invoice reports, combined statement
 % if ( $curuser->access_right('List invoices') ) { 
-%   if ( $conf->exists('cust_main-print_statement_link')
-%        and $num_cust_bill > 0 ) {
+%   if ( $num_cust_bill > 0 ) {
   <A HREF="<% $p %>view/cust_main_statement-pdf.cgi?<% $custnum %>"><%
-  mt('Print a current statement') |h %></A>
+  mt('Download typeset statement PDF') |h %></A>
   <BR>
 %   }
   <A HREF="<% $p %>search/report_cust_bill.html?custnum=<% $custnum %>"><% mt('Invoice reports') |h %></A>
