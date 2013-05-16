@@ -127,7 +127,11 @@
   \ifthenelse{\equal{\thepage}{1}}
   { % First page
     \begin{tabular}{ccc}
-    [@-- join(' & ', emt('Invoice date'), emt('Invoice #'), emt('Customer #') ) --@]\\
+    [@-- join(' & ', ( $no_date   ? '' : emt('Invoice date') ),
+                     ( $no_number ? '' : emt('Invoice #')    ),
+                     emt('Customer #')
+             )
+    --@]\\
     \vspace{0.2cm}
     \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]} \\\hline
     \rule{0pt}{5ex} &~~ \huge{\textsc{[@-- emt($notice_name) --@]}} & \\
