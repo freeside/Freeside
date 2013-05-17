@@ -267,8 +267,16 @@ sub dbdef_dist {
           DBIx::DBSchema::Column->new( {
             'name'    => 'history_user',
             'type'    => 'varchar',
-            'null'    => 'NOT NULL',
+            'null'    => 'NULL',
             'length'  => '80',
+            'default' => '',
+            'local'   => '',
+          } ),
+          DBIx::DBSchema::Column->new( {
+            'name'    => 'history_usernum',
+            'type'    => 'int',
+            'null'    => 'NULL',
+            'length'  => '',
             'default' => '',
             'local'   => '',
           } ),

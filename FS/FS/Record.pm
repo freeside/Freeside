@@ -1907,10 +1907,10 @@ sub _h_statement {
   my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
 
   "INSERT INTO h_". $self->table. " ( ".
-      join(', ', qw(history_date history_user history_action), @fields ).
+      join(', ', qw(history_date history_usernum history_action), @fields ).
     ") VALUES (".
       join(', ', $time,
-                 dbh->quote( $FS::CurrentUser::CurrentUser->username ),
+                 $FS::CurrentUser::CurrentUser->usernum,
                  dbh->quote($action),
                  @values
       ).
