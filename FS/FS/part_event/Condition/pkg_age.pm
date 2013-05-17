@@ -23,16 +23,18 @@ sub option_fields {
                },
     'field' => { 'label'   => 'Compare date',
                  'type'    => 'select',
-                 'options' =>
-                   [qw( setup last_bill bill adjourn susp expire cancel )],
+                 'options' => [qw(
+                   setup last_bill bill adjourn susp expire cancel contract_end
+                 )],
                  'labels'  => {
-                   'setup'     => 'Setup date',
-                   'last_bill' => 'Last bill date',
-                   'bill'      => 'Next bill date',
-                   'adjourn'   => 'Adjournment date',
-                   'susp'      => 'Suspension date',
-                   'expire'    => 'Expiration date',
-                   'cancel'    => 'Cancellation date',
+                   'setup'        => 'Setup date',
+                   'last_bill'    => 'Last bill date',
+                   'bill'         => 'Next bill date',
+                   'adjourn'      => 'Adjournment date',
+                   'susp'         => 'Suspension date',
+                   'expire'       => 'Expiration date',
+                   'cancel'       => 'Cancellation date',
+                   'contract_end' => 'Contract end date',
                  },
                },
   );
