@@ -171,8 +171,15 @@ sub send_email {
 
   }
 
+  my $from = $options{from};
+  $from =~ s/^\s*//; $from =~ s/\s*$//;
+  if ( $from =~ /^(.*)\s*<(.*@.*)>$/ ) {
+    # a common idiom
+    $from = $2;
+  }
+
   my $domain;
-  if ( $options{'from'} =~ /\@([\w\.\-]+)/ ) {
+  if ( $from =~ /\@([\w\.\-]+)/ ) {
     $domain = $1;
   } else {
     warn 'no domain found in invoice from address '. $options{'from'}.
@@ -247,7 +254,7 @@ sub send_email {
   push @to, $options{bcc} if defined($options{bcc});
   local $@; # just in case
   eval { sendmail($message, { transport => $transport,
-                              from      => $options{from},
+                              from      => $from,
                               to        => \@to }) };
 
   my $error = '';
