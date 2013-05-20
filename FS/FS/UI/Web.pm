@@ -678,6 +678,10 @@ sub start_job {
   
   #warn 'froze string of size '. length(nfreeze(\%param)). " for job args\n"
   #  if $DEBUG;
+  #
+  #  XXX FS::queue::insert knows how to do this.
+  #  not changing it here because that requires changing it everywhere else,
+  #  too, but we should eventually fix it
 
   my $error = $job->insert( '_JOB', encode_base64(nfreeze(\%param)) );
 
