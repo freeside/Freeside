@@ -322,6 +322,11 @@ sub check {
       } );
   }
 
+  # set coordinates, unless we already have them
+  if (!$import and !$self->latitude and !$self->longitude) {
+    $self->set_coord;
+  }
+
   $self->SUPER::check;
 }
 
@@ -636,6 +641,44 @@ sub in_county_sql {
     }
     return $sql;
   }
+}
+
+sub process_set_coord {
+  my $job = shift;
+  # avoid starting multiple instances of this job
+  my @others = qsearch('queue', {
+      'status'  => 'locked',
+      'job'     => $job->job,
+      'jobnum'  => {op=>'!=', value=>$job->jobnum},
+  });
+  return if @others;
+
+  $job->update_statustext('finding locations to update');
+  my @missing_coords = qsearch('cust_location', {
+      'disabled'  => '',
+      'latitude'  => '',
+      'longitude' => '',
+  });
+  my $i = 0;
+  my $n = scalar @missing_coords;
+  for my $cust_location (@missing_coords) {
+    $cust_location->set_coord;
+    my $error = $cust_location->replace;
+    if ( $error ) {
+      warn "error geocoding location#".$cust_location->locationnum.": $error\n";
+    } else {
+      $i++;
+      $job->update_statustext("updated $i / $n locations");
+      dbh->commit; # so that we don't have to wait for the whole thing to finish
+      # Rate-limit to stay under the Google Maps usage limit (2500/day).
+      # 86,400 / 35 = 2,468 lookups per day.
+    }
+    sleep 35;
+  }
+  if ( $i < $n ) {
+    die "failed to update ".$n-$i." locations\n";
+  }
+  return;
 }
 
 =head1 BUGS
