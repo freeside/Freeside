@@ -424,9 +424,13 @@ sub move_to {
     }
   }
 
+  # find all packages that have the old location as their service address,
+  # and aren't canceled,
+  # and aren't supplemental to another package.
   my @pkgs = qsearch('cust_pkg', { 
       'locationnum' => $old->locationnum,
-      'cancel' => '' 
+      'cancel'      => '',
+      'main_pkgnum' => '',
     });
   foreach my $cust_pkg (@pkgs) {
     $error = $cust_pkg->change(
