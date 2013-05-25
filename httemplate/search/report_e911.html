@@ -1,0 +1,41 @@
+<& /elements/header.html, 'E911 Fee Report' &>
+
+<FORM ACTION="e911.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <& /elements/tr-select-agent.html,
+               curr_value     => scalar( $cgi->param('agentnum') ),
+               disable_empty  => 0,
+  &>
+
+  <& /elements/tr-input-beginning_ending.html &>
+
+  <& /elements/tr-select-part_pkg.html,
+                field         => 'e911pkgpart',
+                label         => 'E911 package',
+                curr_value    => $e911pkgpart,
+                disable_empty => 1,
+  &>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $e911pkgpart;
+# make an educated guess
+my $e911_pkg = qsearchs('part_pkg', 
+                        { 'pkg' => { op=>'LIKE', value=>'%E911%' },
+                          'disabled' => '', } );
+$e911pkgpart = $e911_pkg->pkgpart  if $e911_pkg;
+
+</%init>
