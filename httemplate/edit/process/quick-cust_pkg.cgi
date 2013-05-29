@@ -160,6 +160,8 @@ if ( $quotationnum ) {
           ('custnum', FS::cust_main->location_fields)
     });
     $opt{'cust_location'} = $cust_location;
+  } else {
+    $opt{'locationnum'} = $locationnum;
   }
 
   $error = $cust_main->order_pkg( \%opt );

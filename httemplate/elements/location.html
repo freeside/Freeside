@@ -219,8 +219,7 @@ Example:
   </TD>
 </TR>
 % }
-% if ( $conf->config('tax_district_method') ) {
-%   if ( $opt{enable_district} ) {
+% if ( $opt{enable_district} and $conf->config('tax_district_method') ) {
   <TR>
     <TD ALIGN="right">Tax&nbsp;district</TD>
     <TD COLSPAN=8>
@@ -231,9 +230,8 @@ Example:
     <% '(automatic)' %>
     </TD>
   </TR>
-%   } else {
+% } else {
     <INPUT TYPE="hidden" ID="<%$pre%>" NAME="<%$pre%>district" VALUE="<% $object->district %>">
-%   }
 % }
 
 %# For address standardization:
