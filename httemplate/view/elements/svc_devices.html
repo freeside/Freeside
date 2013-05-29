@@ -94,6 +94,7 @@ if ( $table eq 'phone_device' || $table eq 'cable_device' ) {
 }
 
 my @devices = $svc_x->isa('FS::device_Common') ? $svc_x->device_objects()
-                                               : $svc_x->$table();
+                                               : $table ? $svc_x->$table()
+                                                        : ();
 
 </%init>
