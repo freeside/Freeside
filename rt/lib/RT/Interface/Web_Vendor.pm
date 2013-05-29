@@ -533,5 +533,32 @@ sub ProcessUpdateMessage {
     return @results;
 }
 
+sub default_FormatDate { $_[0]->AsString }
+
+sub ProcessColumnMapValue {
+    my $value = shift;
+    my %args = ( Arguments => [],
+                 Escape => 1,
+                 FormatDate => \&default_FormatDate,
+                 @_ );
+
+    if ( ref $value ) {
+        if ( ref $value eq 'RT::Date' ) {
+            return $args{FormatDate}->($value);
+        } elsif ( UNIVERSAL::isa( $value, 'CODE' ) ) {
+            my @tmp = $value->( @{ $args{'Arguments'} } );
+            return ProcessColumnMapValue( ( @tmp > 1 ? \@tmp : $tmp[0] ), %args );
+        } elsif ( UNIVERSAL::isa( $value, 'ARRAY' ) ) {
+            return join '', map ProcessColumnMapValue( $_, %args ), @$value;
+        } elsif ( UNIVERSAL::isa( $value, 'SCALAR' ) ) {
+            return $$value;
+        }
+    }
+
+    return $m->interp->apply_escapes( $value, 'h' ) if $args{'Escape'};
+    return $value;
+}
+
+
 1;
 
