@@ -47,8 +47,8 @@ die "access denied"
 
 my $sql_query;
 
-my $orderby = 'ORDER BY svcnum'; #has to be ordered by something
-                                 #for pagination to work
+my $orderby = 'ORDER BY cust_svc.svcnum'; #has to be ordered by something
+                                          #for pagination to work
 
 if ( length( $cgi->param('search_svc') ) ) {
 

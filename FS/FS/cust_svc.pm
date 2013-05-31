@@ -890,7 +890,8 @@ sub smart_search_param {
   (
     'table'     => 'cust_svc',
     'select'    => 'svc_all.svcnum AS svcnum, '.
-                   'COALESCE(svc_all.svcdb, part_svc.svcdb) AS svcdb',
+                   'COALESCE(svc_all.svcdb, part_svc.svcdb) AS svcdb, '.
+                   'cust_svc.*',
     'addl_from' => $addl_from,
     'hashref'   => {},
     'extra_sql' => $extra_sql,
