@@ -220,32 +220,27 @@ $COLUMN_MAP = {
     Starts => {
         title     => 'Starts', # loc
         attribute => 'Starts',
-        date      => sub { return $_[0]->StartsObj },
-        value     => sub { return $_[0]->StartsObj->AsString }
+        value     => sub { return $_[0]->StartsObj }
     },
     Started => {
         title     => 'Started', # loc
         attribute => 'Started',
-        date      => sub { return $_[0]->StartedObj },
-        value     => sub { return $_[0]->StartedObj->AsString }
+        value     => sub { return $_[0]->StartedObj },
     },
     Told => {
         title     => 'Told', # loc
         attribute => 'Told',
-        date      => sub { return $_[0]->ToldObj },
-        value     => sub { return $_[0]->ToldObj->AsString }
+        value     => sub { return $_[0]->ToldObj },
     },
     Due => {
         title     => 'Due', # loc
         attribute => 'Due',
-        date      => sub { return $_[0]->DueObj },
-        value     => sub { return $_[0]->DueObj->AsString }
+        value     => sub { return $_[0]->DueObj },
     },
     Resolved => {
         title     => 'Resolved', # loc
         attribute => 'Resolved',
-        date      => sub { return $_[0]->ResolvedObj },
-        value     => sub { return $_[0]->ResolvedObj->AsString }
+        value     => sub { return $_[0]->ResolvedObj }
     },
     UpdateStatus => {
         title => 'New messages', # loc
