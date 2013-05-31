@@ -50,6 +50,11 @@ FS::UID->install_callback(
 address and description of the broadband service.  This can be used 
 with 'sqlradius' or 'broadband_sqlradius' exports to maintain entries
 in the client table on a RADIUS server.</p>
+<p>The checkboxes at the bottom of this page correspond to RADIUS server
+databases that Freeside knows about (i.e. 'sqlradius' or 'broadband_sqlradius'
+exports that you have configured).  Check the box for each server that you 
+want the NAS entries to be exported to.  Do not create multiple broadband_nas
+exports for the same service definition; this will fail.</p>
 <p>Most broadband configurations should not use this, even if they use 
 RADIUS for access control.</p>
 END
@@ -67,19 +72,33 @@ will be applied to the attached NAS record.
 sub export_insert {
   my $self = shift;
   my $svc_broadband = shift;
-  my %hash = map { $_ => $svc_broadband->get($_) } FS::nas->fields;
-  my $nas = $self->default_nas(
-    %hash,
+  my %hash = (
     'nasname'     => $svc_broadband->ip_addr,
     'description' => $svc_broadband->description,
     'svcnum'      => $svc_broadband->svcnum,
   );
-
-  my $error = 
-      $nas->insert()
-   || $nas->process_m2m('link_table' => 'export_nas',
-                        'target_table' => 'part_export',
-                        'params' => { $self->options });
+  foreach (FS::nas->fields) {
+    if ( length($svc_broadband->get($_)) ) {
+      $hash{$_} = $svc_broadband->get($_);
+    }
+  }
+  # if there's somehow a completely identical NAS in the table already,
+  # use that one.
+  my $nas = qsearchs('nas', \%hash);
+  my $error;
+  if ($nas) {
+    # propagate the export message
+    foreach my $part_export ($nas->part_export) {
+      $error = $part_export->export_nas_insert($nas);
+      die $error if $error;
+    }
+  } else {
+    $nas = $self->default_nas( %hash );
+    $error = $nas->insert || 
+        $nas->process_m2m('link_table' => 'export_nas',
+                          'target_table' => 'part_export',
+                          'params' => { $self->options });
+  }
   die $error if $error;
   return;
 }
