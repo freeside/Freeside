@@ -29,11 +29,8 @@
 %           if ( $supplemental or $part_pkg->freq eq '0' ) {
 %             # Supplemental packages can't be changed independently.
 %             # One-time charges don't need to be changed.
-%             # For both of those, we only show "Edit dates", "Add comments",
+%             # For both of those, we only show "Add comments",
 %             # and "Add invoice details".
-%             if ( $curuser->access_right('Edit customer package dates') ) {
-                (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
-%             }
 %           } else {
 %             # the usual case: links to change package definition,
 %             # discount, and customization
@@ -41,11 +38,6 @@
 %             if ( $curuser->access_right('Change customer package') ) {
 %               $br=1;
                 (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
-%             } 
-%
-%             if ( $curuser->access_right('Edit customer package dates') ) {
-%               $br=1;
-                (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
 %             } 
 %
 %             if ( $curuser->access_right('Discount customer package')
@@ -289,8 +281,6 @@ sub pkg_change_quantity_link {
     'height'      => 220,
   );
 }
-
-sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', emt('Edit dates'), @_ ); }
 
 sub pkg_discount_link {
   my $cust_pkg = shift or return '';
