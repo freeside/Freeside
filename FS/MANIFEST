@@ -11,7 +11,6 @@ bin/freeside-count-active-customers
 bin/freeside-daily
 bin/freeside-deloutsource
 bin/freeside-deloutsourceuser
-bin/freeside-deluser
 bin/freeside-email
 bin/freeside-phonenum_list
 bin/freeside-queued
@@ -32,7 +31,6 @@ FS/Auth/external.pm
 FS/Auth/internal.pm
 FS/Auth/legacy.pm
 FS/CGI.pm
-FS/InitHandler.pm
 FS/ClientAPI.pm
 FS/ClientAPI_SessionCache.pm
 FS/ClientAPI_XMLRPC.pm
