@@ -2726,6 +2726,7 @@ sub print_generic {
 
     #invoice info
     'invnum'          => $self->invnum,
+    '_date'           => $self->_date,
     'date'            => time2str($date_format, $self->_date),
     'today'           => time2str($date_format_long, $today),
     'terms'           => $self->terms,
