@@ -64,8 +64,7 @@ my $COLUMN_MAP = {
     Created => {
         attribute => 'Created',
         title     => 'Created', # loc
-        date      => sub { return $_[0]->CreatedObj },
-        value     => sub { return $_[0]->CreatedObj->AsString }
+        value     => sub { return $_[0]->CreatedObj },
     },
     CreatedRelative => {
         attribute => 'Created',
@@ -80,8 +79,7 @@ my $COLUMN_MAP = {
     LastUpdated => {
         attribute => 'LastUpdated',
         title     => 'Last Updated', # loc
-        date      => sub { return $_[0]->LastUpdatedObj },
-        value     => sub { return $_[0]->LastUpdatedObj->AsString }
+        value     => sub { return $_[0]->LastUpdatedObj },
     },
     LastUpdatedRelative => {
         attribute => 'LastUpdated',
@@ -101,15 +99,31 @@ my $COLUMN_MAP = {
             # Display custom field contents, separated by newlines.
             # For Image custom fields we also show a thumbnail here.
 
-            my $values = $_[0]->CustomFieldValues( $_[-1] );
-            my @values = map {
-                (
-                    ($_->CustomFieldObj->Type eq 'Image')
-                        ? \($m->scomp( '/Elements/ShowCustomFieldImage', Object => $_ ))
-                        : $_->Content
-                ),
-                \'<br />',
-            } @{ $values->ItemsArrayRef };
+            my $object = shift;
+            my $cfname = pop;
+            my $values = $object->CustomFieldValues( $cfname );
+            return if $values->Count == 0;
+            my @values;
+            # it is guaranteed to be the same type for all fields, right?
+            my $v = $values->First;
+            my $cftype = $v->CustomFieldObj->Type;
+
+            do {
+                if ($cftype eq 'Image') {
+                    push @values, 
+                        \($m->scomp( '/Elements/ShowCustomFieldImage',
+                                      Object => $v ));
+                } elsif ( $cftype eq 'Date' or $cftype eq 'DateTime' ) {
+                    # then actually return the date object;
+                    # ProcessColumnMapValue will stringify it
+                    my $DateObj = RT::Date->new( $session{'CurrentUser'} );
+                    $DateObj->Set(Format => 'unknown', Value => $v->Content);
+                    push @values, $DateObj;
+                } else {
+                    push @values, $v->Content;
+                }
+                push @values, \'<br />'; # this is deeply silly
+            } while ($v = $values->Next);
             pop @values; # Remove that last <br />
             return @values;
         },
