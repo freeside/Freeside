@@ -449,6 +449,7 @@ sub print_generic {
     'invnum'          => ( $params{'no_number'} ? '' : $self->invnum ),
     'quotationnum'    => $self->quotationnum,
     'no_date'         => $params{'no_date'},
+    '_date'           => ( $params{'no_date'} ? '' : $self->_date ),
     'date'            => ( $params{'no_date'}
                              ? ''
                              : time2str($date_format, $self->_date)
