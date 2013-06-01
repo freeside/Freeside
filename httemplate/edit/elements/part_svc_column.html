@@ -157,6 +157,9 @@ that field.
           'multiple'    => $def->{'multiple'},
           'disable_empty' => 1,
           'curr_value'  => $value,
+          # these can be switched between multiple and singular,
+          # so put the complete curr_value in an attribute
+          'element_etc' => 'default="'.encode_entities($value).'"',
       &>
 %     } else {
 %       my (@options, %labels);

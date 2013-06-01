@@ -72,6 +72,17 @@ function flag_changed(obj) {
       select.className = 'enabled';
       if ( newflag == 'S' || select.getAttribute('should_be_multiple') ) {
         select.multiple = true;
+        var defaults = select.getAttribute('default');
+        if ( defaults ) {
+          defaults = defaults.split(',');
+          for (var i = 0; i < defaults.length; i++) {
+            for (j = 0; j < select.options.length; j++ ) {
+              if ( defaults[i] == select.options[j].value ) {
+                select.options[j].selected = true;
+              }
+            }
+          }
+        }
       } else {
         select.multiple = false;
       }
