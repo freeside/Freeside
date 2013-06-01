@@ -440,6 +440,11 @@ sub _upgrade_data {
 
   local($FS::svc_Common::noexport_hack) = 1;
 
+  # fix wrong-case MAC addresses
+  my $dbh = dbh;
+  $dbh->do('UPDATE svc_broadband SET mac_addr = UPPER(mac_addr);')
+    or die $dbh->errstr;
+
   # set routernum to addr_block.routernum
   foreach my $self (qsearch('svc_broadband', {
       blocknum => {op => '!=', value => ''},
