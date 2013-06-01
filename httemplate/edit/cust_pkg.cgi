@@ -34,7 +34,7 @@
     <TR>
       <TD><INPUT TYPE="checkbox" NAME="remove_pkg" VALUE="<% $pkgnum %>"<% $checked %>></TD>
       <TD ALIGN="right"><% $pkgnum %>:</TD>
-      <TD><% $all_pkg{$pkgpart} %> - <% $all_comment{$pkgpart} %></TD>
+      <TD><% $all_pkg{$pkgpart} |h %> - <% $all_comment{$pkgpart} |h %></TD>
     </TR>
 % } 
 
@@ -79,7 +79,7 @@ Order new packages
       <INPUT TYPE="text" NAME="<% "pkg$pkgpart" %>" VALUE="<% $value %>" SIZE="2" MAXLENGTH="2">
     </TD>
     <TD ALIGN="right"><% $pkgpart %>:</TD>
-    <TD><% $pkg{$pkgpart} %> - <% $comment{$pkgpart}%></TD>
+    <TD><% $pkg{$pkgpart} |h %> - <% $comment{$pkgpart} |h %></TD>
   </TR>
 %
 %  $count ++ ;
