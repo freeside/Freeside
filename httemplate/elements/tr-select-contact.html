@@ -138,7 +138,7 @@ if ( $cgi->param('error') ) {
   if ( length($opt{'curr_value'}) ) {
     $contactnum = $opt{'curr_value'};
   } elsif ($prospect_main) {
-    my @cust_contact = $prospect_main->cust_contact;
+    my @cust_contact = $prospect_main->contact;
     $contactnum = $cust_contact[0]->contactnum if scalar(@cust_contact)==1;
   } else { #$cust_main
     $cgi->param('contactnum') =~ /^(\-?\d*)$/ or die "illegal contactnum";
