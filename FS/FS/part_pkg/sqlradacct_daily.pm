@@ -96,15 +96,15 @@ sub calc_recur {
   # bill that day, we didn't have a full picture of the day's usage)
   # and ending with sdate exclusive (same reason)
 
-  my($l_day, $l_mon, $l_year) = (localtime($last_bill))[3,5];
+  my($l_day, $l_mon, $l_year) = (localtime($last_bill))[3..5];
   my $day_start = timelocal(0,0,0, $l_day, $l_mon, $l_year);
 
-  my($s_day, $s_mon, $s_year) = (localtime($$sdate))[3,5];
+  my($s_day, $s_mon, $s_year) = (localtime($$sdate))[3..5];
   my $billday_start = timelocal(0,0,0, $s_day, $s_mon, $s_year);
 
   while ( $day_start < $billday_start ) {
 
-    my($day, $mon, $year) = (localtime($day_start))[3,5];
+    my($day, $mon, $year) = (localtime($day_start))[3..5];
     my $tomorrow = timelocal_nocheck(0,0,0, $day+1, $mon, $year);
 
     #afact the usage methods already use the lower bound inclusive and the upper
