@@ -36,7 +36,7 @@
       <TR>
         <TD COLSPAN=<%$opt{colspan}%>>
           <FONT SIZE=-1>
-%           if ( $curuser->access_right('Un-cancel customer package') ) { 
+%           if ( $curuser->access_right('Un-cancel customer package') && ! $opt{no_links} ) { 
               (&nbsp;<% pkg_uncancel_link($cust_pkg) %>&nbsp;)
 %           } 
           <FONT>
@@ -79,7 +79,7 @@
     <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
     <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
-% if ( !$supplemental ) {
+% if ( !$supplemental && ! $opt{no_links} ) {
       <TR>
         <TD COLSPAN=<%$opt{colspan}%>>
           <FONT SIZE=-1>
@@ -117,7 +117,7 @@
 
           <% pkg_status_row_if($cust_pkg, emt('Un-cancelled'), 'uncancel', %opt ) %>
 
-%         if (!$supplemental) {
+%         if ( !$supplemental && ! $opt{no_links} ) {
           <TR>
             <TD COLSPAN=<%$opt{colspan}%>>
               <FONT SIZE=-1>
@@ -210,7 +210,7 @@
       <% pkg_status_row_if( $cust_pkg, emt('Expires'), 'expire', %opt, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, emt('Contract ends'), 'contract_end', %opt ) %>
 
-%     if ( $part_pkg->freq and !$supplemental ) { 
+%     if ( $part_pkg->freq and !$supplemental && ! $opt{no_links} ) { 
 
         <TR>
           <TD COLSPAN=<%$opt{colspan}%>>

@@ -3191,6 +3191,46 @@ sub transfer {
   return $remaining;
 }
 
+=item grab_svcnums SVCNUM, SVCNUM ...
+
+Change the pkgnum for the provided services to this packages.  If there is an
+error, returns the error, otherwise returns false.
+
+=cut
+
+sub grab_svcnums {
+  my $self = shift;
+  my @svcnum = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $svcnum (@svcnum) {
+    my $cust_svc = qsearchs('cust_svc', { svcnum=>$svcnum } ) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "unknown svcnum $svcnum";
+    };
+    $cust_svc->pkgnum( $self->pkgnum );
+    my $error = $cust_svc->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
 =item reexport
 
 This method is deprecated.  See the I<depend_jobnum> option to the insert and

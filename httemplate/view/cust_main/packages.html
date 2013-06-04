@@ -24,7 +24,10 @@ table.usage {
 .row1 { background-color: #ffffff; }
 
 </STYLE>
-% my $s = 0;
+
+% unless ( $opt{no_links} ) {
+
+%   my $s = 0;
 
 % if ( $curuser->access_right('Qualify service') ) { 
   <% $s++ ? ' | ' : '' %>
@@ -43,21 +46,33 @@ table.usage {
   <& one_time_charge_link.html, $cust_main &>
 % } 
 
+% if ( $curuser->access_right('Bulk move customer services') ) { 
+  <% $s++ ? ' | ' : '' %>
+
+  <& /elements/popup_link-cust_main.html,
+               'label'       => emt('Move services between packages'),
+               'action'      => "${p}edit/bulk-cust_svc-pkgnum.html",
+               'cust_main'   => $cust_main,
+               'actionlabel' => emt('Move services'),
+               'width'       => 968, #763,
+               'height'      => 575,
+  &>
+
+% } 
+
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A> (<% mt('preserves services') |h %>)
+  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A>
 % } 
 
 <BR><BR>
+
+% } # unless $opt{no_links}
 
 <TABLE>
   <TR>
     <TD ALIGN="left" VALIGN="top">
 
-% if ( @$packages ) {
-
-<% mt('Current packages') |h %> 
-% } 
 % if ( $cust_main->num_cancelled_pkgs ) {
 %     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
 %          || ( $conf->exists('hidecancelledpackages')
@@ -86,6 +101,9 @@ table.usage {
 % }
 
     </TD>
+
+%   unless ( $opt{no_links} ) {
+
     <TD ALIGN="right">
       <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>"><% mt('Package reports') |h %></A>
 % if ( $curuser->access_right('Qualify service') ) { 
@@ -97,6 +115,9 @@ table.usage {
       <% mt('Usage reports:') |h %> 
         <A HREF="<%$p%>search/report_cdr.html?custnum=<% $cust_main->custnum %>"><% mt('CDRs') |h %></A>
     </TD>
+
+%   } # unless $opt{no_links}
+
   </TR>
 
   <TR>
@@ -105,6 +126,7 @@ table.usage {
 <& locations.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
+    %opt,
  &>
 % }
 % else {
@@ -113,6 +135,7 @@ table.usage {
 <& packages/section.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
+    %opt,
  &>
 </TABLE>
 % }

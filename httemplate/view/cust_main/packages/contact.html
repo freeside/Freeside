@@ -1,16 +1,16 @@
 % if ( $contact ) {
     <% $contact->line |h %>
-% if ( $show_change_link ) {
+% if ( $show_change_link && ! $opt{no_links} ) {
         <FONT SIZE=-1>
           (&nbsp;<%pkg_change_contact_link($cust_pkg)%>&nbsp;)
         </FONT>
 % }
-% if ( $show_detach_link ) {
+% if ( $show_detach_link && ! $opt{no_links} ) {
         <FONT SIZE=-1>
           (&nbsp;<%pkg_detach_link($cust_pkg)%>&nbsp;)
         </FONT>
 %    }
-% } elsif ( $show_contact_link ) {
+% } elsif ( $show_contact_link && ! $opt{no_links} ) {
     <FONT SIZE=-1>
       (&nbsp;<%pkg_add_contact_link($cust_pkg)%>&nbsp;)
     </FONT>

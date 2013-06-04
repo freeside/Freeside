@@ -3,6 +3,10 @@
   <TABLE CLASS="inv package"> 
     <TR>
       <TD COLSPAN=2>
+        <% $opt{before_pkg_callback}
+             ? &{ $opt{before_pkg_callback} }( $cust_pkg )
+             : ''
+        %>
         <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
            ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
         ><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
@@ -24,7 +28,7 @@
       <TD COLSPAN=2>
         <FONT SIZE=-1>
 
-%         unless ( $cust_pkg->get('cancel') ) {
+%         unless ( $cust_pkg->get('cancel') || $opt{no_links} ) {
 %
 %           if ( $supplemental or $part_pkg->freq eq '0' ) {
 %             # Supplemental packages can't be changed independently.
@@ -91,7 +95,7 @@
                 <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
                   <FONT SIZE="-1">
                     <% mt('Invoice details') |h %> 
-%                   if ( $editi && ! $cust_pkg->get('cancel') ) {
+%                   if ( $editi && ! $cust_pkg->get('cancel') && ! $opt{no_links} ) {
                       (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'I',
                                     'label'       => emt('edit'),
@@ -113,7 +117,7 @@
           </TD>
 %       } else {
           <TD>
-%           if ( $editi && ! $cust_pkg->get('cancel') ) {
+%           if ( $editi && ! $cust_pkg->get('cancel') && ! $opt{no_links} ) {
               <FONT SIZE="-1">
                 (&nbsp;<% include('/elements/popup_link.html', { 
                                'action'      => $editlink. 'I',
@@ -135,7 +139,7 @@
                 <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
                   <FONT SIZE="-1">
                     <% mt('Comments') |h %> 
-%                   if ( $editc ) {
+%                   if ( $editc && ! $opt{no_links} ) {
                       (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'C',
                                     'label'       => emt('edit'),
@@ -157,7 +161,7 @@
           </TD>
 %       } else {
           <TD>
-%           if ( $editc ) {
+%           if ( $editc && ! $opt{no_links} ) {
               <FONT SIZE="-1">
                 (&nbsp;<& /elements/popup_link.html, { 
                                'action'      => $editlink. 'C',
@@ -173,10 +177,13 @@
 %       }
 
       </TR>
-%     if ( $curuser->access_right('Change customer package') and 
-%           !$cust_pkg->get('cancel') and
-%           !$supplemental and
-%           $part_pkg->freq ne '0' ) {
+%     if ( $curuser->access_right('Change customer package')
+%            && ! $cust_pkg->get('cancel')
+%            && ! $supplemental
+%            && $part_pkg->freq ne '0'
+%            && ! $opt{no_links}
+%        )
+%     {
       <TR>
 %       if ( FS::Conf->new->exists('invoice-unitprice') ) {
         <TD><FONT SIZE="-1">

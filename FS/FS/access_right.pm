@@ -234,6 +234,7 @@ sub _upgrade_data { # class method
                            ],
     'Change customer package' => 'Detach customer package',
     'Services: Accounts' => 'Services: Cable Subscribers',
+    'Bulk change customer packages' => 'Bulk move customer services',
 ;
 
   foreach my $old_acl ( keys %onetime ) {
