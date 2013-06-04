@@ -117,13 +117,14 @@ my $COLUMN_MAP = {
             my @values;
             # it is guaranteed to be the same type for all fields, right?
             my $v = $values->First;
+            my $cftype = $v->CustomFieldObj->Type;
 
             do {
-                if ($v->Type eq 'Image') {
+                if ($cftype eq 'Image') {
                     push @values, 
                         \($m->scomp( '/Elements/ShowCustomFieldImage',
                                       Object => $v ));
-                } elsif ( $v->Type eq 'Date' or $v->Type eq 'DateTime' ) {
+                } elsif ( $cftype eq 'Date' or $cftype eq 'DateTime' ) {
                     # then actually return the date object;
                     # ProcessColumnMapValue will stringify it
                     my $DateObj = RT::Date->new( $session{'CurrentUser'} );
