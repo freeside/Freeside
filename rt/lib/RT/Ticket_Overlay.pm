@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2011 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -450,6 +450,8 @@ sub Create {
             }
         }
     }
+
+    $args{'Subject'} =~ s/\n//g;
 
     $RT::Handle->BeginTransaction();
 
@@ -1859,6 +1861,13 @@ sub QueueObj {
     #We call __Value so that we can avoid the ACL decision and some deep recursion
     my ($result) = $queue_obj->Load( $self->__Value('Queue') );
     return ($queue_obj);
+}
+
+sub SetSubject {
+    my $self = shift;
+    my $value = shift;
+    $value =~ s/\n//g;
+    return $self->_Set( Field => 'Subject', Value => $value );
 }
 
 # }}}
