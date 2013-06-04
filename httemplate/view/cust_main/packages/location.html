@@ -32,8 +32,10 @@
 % {
   <BR>
   <FONT SIZE=-1>
-    (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
-%   if ( $cust_pkg->locationnum ) {
+%   unless ( $opt{no_links} ) {
+      (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
+%   }
+%   if ( $cust_pkg->locationnum && ! $opt{no_links} ) {
         (&nbsp;<%edit_location_link($cust_pkg->locationnum)%>&nbsp;)
 %   }
   </FONT>

@@ -162,11 +162,6 @@ function areyousure(href, message) {
   <BR><BR>
 % } 
 
-%if ( $conf->exists('maestro-status_test') ) {
-  <A HREF="<% $p %>misc/maestro-customer_status-test.html?<% $custnum %>"><% mt('Test maestro status') |h %></A>
-  <BR><BR>
-% } 
-
 <A NAME="cust_main"></A>
 <TABLE BORDER=0>
 <TR>

@@ -5085,13 +5085,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'maestro-status_test',
-    'section'     => 'UI',
-    'description' => 'Display a link to the maestro status test page on the customer view page',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'cust_main-custom_link',
     'section'     => 'UI',
     'description' => 'URL to use as source for the "Custom" tab in the View Customer page.  The customer number will be appended, or you can insert "$custnum" to have it inserted elsewhere.  "$agentnum" will be replaced with the agent number, and "$usernum" will be replaced with the employee number.',

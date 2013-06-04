@@ -160,6 +160,7 @@ tie my %rights, 'Tie::IxHash',
     'View customer services', #NEW
     'Provision customer service',
     'Bulk provision customer service',
+    'Bulk move customer services', #NEWNEW
     'Recharge customer service', #NEW
     'Unprovision customer service',
     'Change customer service', #NEWNEW
