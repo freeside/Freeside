@@ -1,4 +1,3 @@
-#!/usr/bin/perl
 
 use strict;
 use warnings;
@@ -35,7 +34,7 @@ for my $name ( keys %class ) {
         'article create page' );
 
     $m->submit_form(
-        form_number => 3,
+        form_number => 2,
         fields      => { Name => "article $name" }
     );
 

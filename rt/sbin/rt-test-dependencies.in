@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -52,6 +52,7 @@
 #
 
 use strict;
+use warnings;
 no warnings qw(numeric redefine);
 use Getopt::Long;
 my %args;
@@ -293,6 +294,7 @@ Log::Dispatch::Perl
 Test::WWW::Mechanize::PSGI
 Plack::Middleware::Test::StashWarnings 0.06
 Test::LongString
+Test::NoWarnings
 .
 
 $deps{'FASTCGI'} = [ text_to_hash( << '.') ];
@@ -340,7 +342,7 @@ Net::SMTP
 .
 
 $deps{'DASHBOARDS'} = [ text_to_hash( << '.') ];
-HTML::RewriteAttributes 0.04
+HTML::RewriteAttributes 0.05
 MIME::Types
 URI 1.59
 .
@@ -361,13 +363,14 @@ Convert::Color
 .
 
 $deps{'HTML-DOC'} = [ text_to_hash( <<'.') ];
-Pod::Simple 3.17
+Pod::Simple 3.24
 HTML::Entities
 .
 
 my %AVOID = (
     'DBD::Oracle' => [qw(1.23)],
     'Email::Address' => [qw(1.893 1.894)],
+    'Devel::StackTrace' => [qw(1.28 1.29)],
 );
 
 if ($args{'download'}) {

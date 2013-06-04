@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -91,6 +91,7 @@ if (grep { m/help/ } @ARGV) {
 
 require RT;
 RT->LoadConfig();
+RT->InitPluginPaths();
 RT->InitLogging();
 require Module::Refresh if RT->Config->Get('DevelMode');
 

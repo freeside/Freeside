@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -185,7 +185,7 @@ sub LoadCondition  {
 
 =head2 Describe 
 
-Helper method to call the condition module\'s Describe method.
+Helper method to call the condition module's Describe method.
 
 =cut
 
@@ -198,7 +198,7 @@ sub Describe  {
 
 =head2 IsApplicable
 
-Helper method to call the condition module\'s IsApplicable method.
+Helper method to call the condition module's IsApplicable method.
 
 =cut
 

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -109,7 +109,7 @@ An object of this class is called "dashboard"
 
 =cut
 
-sub ObjectName { "dashboard" }
+sub ObjectName { "dashboard" } # loc
 
 sub SaveAttribute {
     my $self   = shift;

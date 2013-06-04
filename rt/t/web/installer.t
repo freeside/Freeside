@@ -1,4 +1,3 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
 
@@ -52,7 +51,14 @@ diag "Walking through install screens setting defaults";
 
     # Database details
     $m->content_contains('DatabaseName');
-    $m->submit();
+    if (RT->Config->Get('DatabaseType') eq 'SQLite') {
+        $m->submit;
+    } else {
+        $m->submit_form(with_fields => {
+            DatabaseAdmin         => $ENV{RT_DBA_USER},
+            DatabaseAdminPassword => $ENV{RT_DBA_PASSWORD},
+        });
+    }
     $m->content_contains('Connection succeeded');
     $m->submit_form_ok({ button => 'Next' });
 
@@ -91,5 +97,6 @@ diag "Walking through install screens setting defaults";
     ok $m->login(), 'logged in';
 }
 
+RT::Test::__drop_database();
 undef $m;
 done_testing;

@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -285,7 +285,8 @@ sub Create {
                        ObjectId      => $args{'ObjectId'},
                    );
     if ( $self->Id ) {
-        return ( 0, $self->loc('That principal already has that right') );
+        return ( 0, $self->loc('[_1] already has that right',
+                    $princ_obj->Object->Name) );
     }
 
     my $id = $self->SUPER::Create( PrincipalId   => $princ_obj->id,

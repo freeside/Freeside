@@ -22,6 +22,9 @@ Example:
     <TITLE>
       <% $title |h %>
     </TITLE>
+    <!-- per RT, to prevent IE compatibility mode -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- The X-UA-Compatible <meta> tag above must be very early in <head> -->
     <META HTTP-Equiv="Cache-Control" Content="no-cache">
     <META HTTP-Equiv="Pragma" Content="no-cache">
     <META HTTP-Equiv="Expires" Content="0"> 
