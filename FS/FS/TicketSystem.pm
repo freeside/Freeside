@@ -319,6 +319,17 @@ sub _upgrade_data {
     }
   }
 
+  #Pg-specific 
+  my $cve_2013_3373_sql = q(
+    UPDATE Tickets SET Subject = REPLACE(Subject,E'\n','')
+  );
+  #need this for mysql
+  #UPDATE Tickets SET Subject = REPLACE(Subject,'\n','');
+
+  my $cve_2013_3373_sth = $dbh->prepare( $cve_2013_3373_sql)
+    or die $dbh->errstr;
+  $cve_2013_3373_sth->execute or die $cve_2013_3373_sth->errstr;
+
   return;
 }
 
