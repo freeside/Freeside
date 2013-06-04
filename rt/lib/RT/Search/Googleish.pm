@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -203,7 +203,7 @@ our @GUESS = (
     [ 40 => sub { return "status" if /^((in)?active|any)$/i } ],
     [ 50 => sub {
           my $q = RT::Queue->new( $_[2] );
-          return "queue" if $q->Load($_) and $q->Id
+          return "queue" if $q->Load($_) and $q->Id and not $q->Disabled
       }],
     [ 60 => sub {
           my $u = RT::User->new( $_[2] );

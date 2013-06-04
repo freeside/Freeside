@@ -479,10 +479,27 @@ accordingly.
 
 =cut
 
-Set($ExtractSubjectTagMatch, qr/\[.+? #\d+\]/);
+Set($ExtractSubjectTagMatch, qr/\[[^\]]+? #\d+\]/);
 Set($ExtractSubjectTagNoMatch, ( ${RT::EmailSubjectTagRegex}
        ? qr/\[(?:${RT::EmailSubjectTagRegex}) #\d+\]/
        : qr/\[\Q$RT::rtname\E #\d+\]/));
+
+=item C<$CheckMoreMSMailHeaders>
+
+Some email clients create a plain text version of HTML-formatted
+email to help other clients that read only plain text.
+Unfortunately, the plain text parts sometimes end up with
+doubled newlines and these can then end up in RT. This
+is most often seen in MS Outlook.
+
+Enable this option to have RT check for additional mail headers
+and attempt to identify email from MS Outlook. When detected,
+RT will then clean up double newlines. Note that it may
+clean up intentional double newlines as well.
+
+=cut
+
+Set( $CheckMoreMSMailHeaders, 0);
 
 =back
 
@@ -520,6 +537,8 @@ Correspond mail address of the ticket's queue.
 Warning: If you use this setting, bounced mails will appear to be
 incoming mail to the system, thus creating new tickets.
 
+This option only works if C<$MailCommand> is set to 'sendmailpipe'.
+
 =cut
 
 Set($SetOutgoingMailFrom, 0);
@@ -535,7 +554,8 @@ The option is a hash reference of queue name to email address.  If
 there is no ticket involved, then the value of the C<Default> key will
 be used.
 
-This option is irrelevant unless C<$SetOutgoingMailFrom> is set.
+This option only works if C<$SetOutgoingMailFrom> is enabled and
+C<$MailCommand> is set to 'sendmailpipe'.
 
 =cut
 
@@ -903,6 +923,7 @@ Set(@JSFiles, qw/
     jquery-ui-1.8.4.custom.min.js
     jquery-ui-timepicker-addon.js
     jquery-ui-patch-datepicker.js
+    jquery.cookie.js
     titlebox-state.js
     util.js
     userautocomplete.js
@@ -1127,7 +1148,12 @@ user's customized homepage ("RT at a glance").
 
 =cut
 
-Set($HomepageComponents, [qw(QuickCreate Quicksearch MyCalendar MyAdminQueues MySupportQueues MyReminders RefreshHomepage Dashboards SavedSearches)]);
+Set(
+    $HomepageComponents,
+    [
+        qw(QuickCreate Quicksearch MyCalendar MyAdminQueues MySupportQueues MyReminders RefreshHomepage Dashboards SavedSearches ) # loc_qw
+    ]
+);
 
 =back
 
@@ -1236,6 +1262,18 @@ Set(%FullTextSearch,
     Indexed => 0,
 );
 
+=item C<$DontSearchFileAttachments>
+
+If C<$DontSearchFileAttachments> is set to 1, then uploaded files
+(attachments with file names) are not searched during content
+search.
+
+Note that if you use indexed FTS then named attachments are still
+indexed by default regardless of this option.
+
+=cut
+
+Set($DontSearchFileAttachments, undef);
 
 =item C<$OnlySearchActiveTicketsInSimpleSearch>
 

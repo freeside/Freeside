@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -266,7 +266,7 @@ sub ParentObj {
 =head2 Children
 
 Returns an L<RT::Attachments> object which is preloaded with
-all attachments objects with this attachment\'s Id as their
+all attachments objects with this attachment's Id as their
 C<Parent>.
 
 =cut
@@ -499,12 +499,14 @@ L<Email::Address> objects.
 
 =cut
 
+our @ADDRESS_HEADERS = qw(From To Cc Bcc RT-Send-Cc RT-Send-Bcc);
+
 sub Addresses {
     my $self = shift;
 
     my %data = ();
     my $current_user_address = lc $self->CurrentUser->EmailAddress;
-    foreach my $hdr (qw(From To Cc Bcc RT-Send-Cc RT-Send-Bcc)) {
+    foreach my $hdr (@ADDRESS_HEADERS) {
         my @Addresses;
         my $line = $self->GetHeader($hdr);
         

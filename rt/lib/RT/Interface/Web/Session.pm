@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -207,8 +207,8 @@ sub _ClearOldDir {
 
     foreach my $id( @{ $self->Ids } ) {
         if( int $older_than ) {
-            my $ctime = (stat(File::Spec->catfile($dir,$id)))[9];
-            if( $ctime > $now - $older_than ) {
+            my $mtime = (stat(File::Spec->catfile($dir,$id)))[9];
+            if( $mtime > $now - $older_than ) {
                 $RT::Logger->debug("skipped session '$id', isn't old");
                 next;
             }
@@ -224,6 +224,10 @@ sub _ClearOldDir {
         tied(%session)->delete;
         $RT::Logger->info("successfuly deleted session '$id'");
     }
+
+    my $lock = Apache::Session::Lock::File->new;
+    $lock->clean( $dir, $older_than );
+
     return;
 }
 

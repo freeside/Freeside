@@ -1,10 +1,9 @@
-#!/usr/bin/perl
 
 use warnings;
 use strict;
 
 use RT;
-use RT::Test nodata => 1, tests => 11;
+use RT::Test nodata => 1, tests => 13;
 
 sub new (*) {
     my $class = shift;
@@ -54,3 +53,9 @@ isa_ok( $cf, 'RT::CustomField' );
     is( $values->Count, $count, "count is correct" );
 }
 
+{
+    my ($ret, $msg) = $cf->SetValuesClass('RT::CustomFieldValues');
+    ok $ret, 'Reverting this CF as internal source values based' or diag "error: $msg";
+    ($ret, $msg) = $cf->SetValuesClass('RT::CustomFieldValues::Groups');
+    ok $ret, 'Reverting this CF as external source values based' or diag "error: $msg";
+}

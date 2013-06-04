@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -115,6 +115,16 @@ sub Add {
         Due => undef,
         @_
     );
+
+    my $ticket = RT::Ticket->new($self->CurrentUser);
+    $ticket->Load($self->Ticket);
+    if ( !$ticket->id ) {
+        return ( 0, $self->loc( "Failed to load ticket [_1]", $self->Ticket ) );
+    }
+
+    if ( $ticket->Status eq 'deleted' ) {
+        return ( 0, $self->loc("Can't link to a deleted ticket") );
+    }
 
     my $reminder = RT::Ticket->new($self->CurrentUser);
     my ( $status, $msg ) = $reminder->Create(
