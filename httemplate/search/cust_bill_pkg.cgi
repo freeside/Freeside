@@ -222,7 +222,7 @@ if ( $conf->exists('enable_taxclasses') ) {
 
 # valid in both the tax and non-tax cases
 my $join_cust = 
-  " LEFT JOIN cust_bill USING (invnum)".
+  " LEFT JOIN cust_bill ON (cust_bill_pkg.invnum = cust_bill.invnum)".
   # use cust_pkg.locationnum if it exists
   FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
