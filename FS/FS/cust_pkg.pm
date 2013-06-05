@@ -255,7 +255,8 @@ The following options are available:
 
 =item change
 
-If set true, supresses any referral credit to a referring customer.
+If set true, supresses actions that should only be taken for new package
+orders.  (Currently this includes: intro periods when delay_setup is on.)
 
 =item options
 
@@ -303,8 +304,12 @@ sub insert {
     }
   }
 
-  my $free_days = $part_pkg->option('free_days',1);
-  if ( $free_days && $part_pkg->option('delay_setup',1) ) { #&& !$self->start_date
+  if (    ! $options{'change'}
+       && ( my $free_days = $part_pkg->option('free_days',1) )
+       && $part_pkg->option('delay_setup',1)
+       #&& ! $self->start_date
+     )
+  {
     my ($mday,$mon,$year) = (localtime(time) )[3,4,5];
     #my $start_date = ($self->start_date || timelocal(0,0,0,$mday,$mon,$year)) + 86400 * $free_days;
     my $start_date = timelocal(0,0,0,$mday,$mon,$year) + 86400 * $free_days;
