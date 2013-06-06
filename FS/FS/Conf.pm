@@ -3407,13 +3407,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'echeck-nonus',
-    'section'     => 'billing',
-    'description' => 'Disable ABA-format account checking for Electronic Check payment info',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'echeck-country',
     'section'     => 'billing',
     'description' => 'Format electronic check information for the specified country.',
