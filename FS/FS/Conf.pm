@@ -3415,8 +3415,8 @@ and customer address. Include units.',
 
   {
     'key'         => 'echeck-nonus',
-    'section'     => 'billing',
-    'description' => 'Disable ABA-format account checking for Electronic Check payment info',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated; see echeck-country instead.  Used to disable ABA-format account checking for Electronic Check payment info',
     'type'        => 'checkbox',
   },
 
