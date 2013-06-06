@@ -643,6 +643,41 @@ sub in_county_sql {
   }
 }
 
+=back
+
+=head2 SUBROUTINES
+
+=over 4
+
+=item process_censustract_update LOCATIONNUM
+
+Queueable function to update the census tract to the current year (as set in 
+the 'census_year' configuration variable) and retrieve the new tract code.
+
+=cut
+
+sub process_censustract_update {
+  eval "use FS::GeocodeCache";
+  die $@ if $@;
+  my $locationnum = shift;
+  my $cust_location = 
+    qsearchs( 'cust_location', { locationnum => $locationnum })
+      or die "locationnum '$locationnum' not found!\n";
+
+  my $conf = FS::Conf->new;
+  my $new_year = $conf->config('census_year') or return;
+  my $loc = FS::GeocodeCache->new( $cust_location->location_hash );
+  $loc->set_censustract;
+  my $error = $loc->get('censustract_error');
+  die $error if $error;
+  $cust_location->set('censustract', $loc->get('censustract'));
+  $cust_location->set('censusyear',  $new_year);
+  $error = $cust_location->replace;
+  die $error if $error;
+  return;
+}
+
+
 sub process_set_coord {
   my $job = shift;
   # avoid starting multiple instances of this job
