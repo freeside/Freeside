@@ -5017,42 +5017,6 @@ sub process_bill_and_collect {
   $cust_main->bill_and_collect( %$param );
 }
 
-=item process_censustract_update CUSTNUM
-
-Queueable function to update the census tract to the current year (as set in 
-the 'census_year' configuration variable) and retrieve the new tract code.
-
-=cut
-
-sub process_censustract_update { 
-  eval "use FS::Misc::Geo qw(get_censustract)";
-  die $@ if $@;
-  my $custnum = shift;
-  my $cust_main = qsearchs( 'cust_main', { custnum => $custnum })
-      or die "custnum '$custnum' not found!\n";
-
-  my $new_year = $conf->config('census_year') or return;
-  my $new_tract = get_censustract({ $cust_main->location_hash }, $new_year);
-  if ( $new_tract =~ /^\d/ ) {
-    # then it's a tract code
-        $cust_main->set('censustract', $new_tract);
-    $cust_main->set('censusyear',  $new_year);
-
-    local($ignore_expired_card) = 1;
-    local($ignore_illegal_zip) = 1;
-    local($ignore_banned_card) = 1;
-    local($skip_fuzzyfiles) = 1;
-    local($import) = 1; #prevent automatic geocoding (need its own variable?)
-    my $error = $cust_main->replace;
-    die $error if $error;
-  }
-  else {
-    # it's an error message
-    die $new_tract;
-  }
-  return;
-}
-
 #starting to take quite a while for big dbs
 #   (JRNL: journaled so it only happens once per database)
 # - seq scan of h_cust_main (yuck), but not going to index paycvv, so
