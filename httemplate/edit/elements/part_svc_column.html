@@ -207,15 +207,20 @@ that field.
              NAME="<%$name%>"
              ID="<%$name%>" 
              VALUE="<%$value%>">
-%     # inventory class selection
+%     my $mode = 'inventory';
+%     my $multiple = 1;
+%     if ( $def->{'type'} eq 'select-hardware' ) {
+%       $mode = 'hardware';
+%       $multiple = 0;
+%     }
       <& /elements/select-table.html,
           'field'       => $name.'_classnum',
           'id'          => $name.'_select',
-          'table'       => 'inventory_class',
+          'table'       => $mode.'_class',
           'name_col'    => 'classname',
           'curr_value'  => $value,
-          'empty_label' => 'Select inventory class',
-          'multiple'    => 1,
+          'empty_label' => "Select $mode class",
+          'multiple'    => 0,
       &>
 %   }
     </TD>
