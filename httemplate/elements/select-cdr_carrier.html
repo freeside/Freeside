@@ -1,0 +1,19 @@
+<% include( '/elements/select-table.html',
+              'table'         => 'cdr_carrier',
+              'name_col'      => 'carriername',
+              'empty_label'   => '(none)',
+              %opt,
+          )
+%>
+<%init>
+
+my( %opt ) = @_;
+
+$opt{'records'} = delete $opt{'cdr_carrier'}
+  if $opt{'cdr_carrier'};
+
+my %hash = ( 'disabled' => '', );
+
+$opt{'records'} ||= [ qsearch( 'cdr_carrier', \%hash ) ];
+
+</%init>

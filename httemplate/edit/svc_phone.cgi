@@ -121,6 +121,25 @@ my $begin_callback = sub {
     ;
   }
 
+  if ( ! $bulk ) {
+
+    push @$fields,
+           {
+             type    => 'tablebreak-tr-title',
+             value   => 'Carrier Information',
+             colspan => 8,
+           },
+           { field => 'sms_carrierid',
+             label => 'SMS Carrier',
+             type  => 'select-cdr_carrier',
+           },
+           'sms_account',
+           'max_simultaneous',
+    ;
+
+  }
+
 };
+
 
 </%init>
