@@ -173,6 +173,15 @@ sub table_info {
                          select_label => 'domain',
                          disable_inventory => 1,
                        },
+        'sms_carrierid'    => { label             => 'SMS Carrier',
+                                type              => 'select',
+                                select_table      => 'cdr_carrier',
+                                select_key        => 'carrierid',
+                                select_label      => 'carriername',
+                                disable_inventory => 1,
+                              },
+        'sms_account'      => { label => 'SMS Carrier Account', },
+        'max_simultaneous' => { label=>'Maximum number of simultaneous users' },
         'locationnum' => {
                            label => 'E911 location',
                            disable_inventory => 1,
@@ -477,6 +486,9 @@ sub check {
     || $self->ut_textn('phone_name')
     || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
     || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
+    || $self->ut_foreign_keyn('sms_carrierid', 'cdr_carrier', 'carrierid' )
+    || $self->ut_alphan('sms_account')
+    || $self->ut_numbern('max_simultaneous')
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('forwarddst')
     || $self->ut_textn('email')
@@ -635,6 +647,26 @@ sub radius_check {
 
 sub radius_groups {
   ();
+}
+
+=item sms_cdr_carrier
+
+=cut
+
+sub sms_cdr_carrier {
+  my $self = shift;
+  return '' unless $self->sms_carrierid;
+  qsearchs('cdr_carrier',  { 'carrierid' => $self->sms_carrierid } );
+}
+
+=item sms_carriername
+
+=cut
+
+sub sms_carriername {
+  my $self = shift;
+  my $cdr_carrier = $self->sms_cdr_carrier or return '';
+  $cdr_carrier->carriername;
 }
 
 =item phone_device
