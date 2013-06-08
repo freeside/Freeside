@@ -19,7 +19,7 @@ Example:
        NAME = "<% $field %>_search"
        ID   = "<% $field %>_search"
        SIZE = "32"
-       VALUE="<% $cust_main ? $cust_main->name : '(cust #, name or company)' %>"
+       VALUE="<% $cust_main ? $cust_main->name : '(cust #, name or company)' |h %>"
        onFocus="clearhint_<% $field %>_search(this);"
        onClick="clearhint_<% $field %>_search(this);"
        onChange="smart_<% $field %>_search(this);"
