@@ -1076,6 +1076,8 @@ sub can_discount { 0; }
 
 sub can_start_date { 1; }
 
+sub can_currency_exchange { 0; }
+
 sub freqs_href {
   # moved to FS::Misc to make this accessible to other packages
   # at initialization
@@ -1268,6 +1270,28 @@ specified currency.
 sub part_pkg_currency_options {
   my $self = shift;
   map { $_->optionname => $_->optionvalue } $self->part_pkg_currency(shift);
+}
+
+=item part_pkg_currency_option CURRENCY OPTIONNAME
+
+Returns the option value for the given name and currency.
+
+=cut
+
+sub part_pkg_currency_option {
+  my( $self, $currency, $optionname ) = @_; 
+  my $part_pkg_currency =
+    qsearchs('part_pkg_currency', { 'pkgpart'    => $self->pkgpart,
+                                    'currency'   => $currency,
+                                    'optionname' => $optionname,
+                                  }
+            )#;
+  #fatal if not found?  that works for our use cases from
+  #part_pkg/currency_fixed, but isn't how we would typically/expect the method
+  #to behave.  have to catch it there if we change it here...
+    or die "Unknown price for ". $self->pkg_comment. " in $currency\n";
+
+  $part_pkg_currency->optionvalue;
 }
 
 =item bill_part_pkg_link

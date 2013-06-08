@@ -2343,6 +2343,24 @@ sub num_cust_event {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item part_pkg_currency_option OPTIONNAME
+
+Returns the option value for the given name and the currency of this customer
+(see L<FS::part_pkg_currency>).  If this customer has no currency, returns
+the regular option value for the given name (see L<FS::part_pkg_option>).
+
+=cut
+
+sub part_pkg_currency_option {
+  my( $self, $optionname ) = @_;
+  my $part_pkg = $self->part_pkg;
+  if ( my $currency = $self->cust_main->currency ) {
+    $part_pkg->part_pkg_currency_option($currency, $optionname);
+  } else {
+    $part_pkg->option($optionname);
+  }
+}
+
 =item cust_svc [ SVCPART ] (old, deprecated usage)
 
 =item cust_svc [ OPTION => VALUE ... ] (current usage)

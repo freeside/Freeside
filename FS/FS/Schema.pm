@@ -1081,6 +1081,7 @@ sub tables_hashref {
         'ship_night',    'varchar', 'NULL', 20, '', '', 
         'ship_fax',      'varchar', 'NULL', 12, '', '', 
         'ship_mobile',   'varchar', 'NULL', 12, '', '', 
+        'currency',         'char', 'NULL',  3, '', '',
         'payby',    'char', '',     4, '', '', 
         'payinfo',  'varchar', 'NULL', 512, '', '', 
         'paycvv',   'varchar', 'NULL', 512, '', '', 
