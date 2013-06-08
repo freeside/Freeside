@@ -51,6 +51,12 @@
                             'setup_show_zero'  => 'Show zero setup',
                             'recur_fee'        => 'Recurring fee',
                             'recur_show_zero'  => 'Show zero recurring',
+                            ( map { ( "setup_fee_$_" => "Setup fee $_",
+                                      "recur_fee_$_" => "Recurring fee $_",
+                                    );
+                                  }
+                                $conf->config('currencies')
+                            ),
                             'discountnum'      => 'Offer discounts for longer terms',
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
                             'svc_dst_pkgpart'  => 'Include services of package',
@@ -118,6 +124,14 @@
                                 value    => 'Y',
                                 disabled => sub { $setup_show_zero_disabled },
                               },
+                              ( map { +{ field => "setup_fee_$_",
+                                         type  => 'text',
+                                         prefix=> currency_symbol($_, SYM_HTML),
+                                         size  => 8,
+                                       }
+                                    }
+                                  sort $conf->config('currencies')
+                              ),
                               { field    => 'freq',
                                 type     => 'part_pkg_freq',
                                 onchange => 'freq_changed',
@@ -127,12 +141,19 @@
                                 disabled => sub { $recur_disabled },
                                 onchange => 'recur_changed',
                               },
-
                               { field    => 'recur_show_zero',
                                 type     => 'checkbox',
                                 value    => 'Y',
                                 disabled => sub { $recur_show_zero_disabled },
                               },
+                              ( map { +{ field => "recur_fee_$_",
+                                         type  => 'text',
+                                         prefix=> currency_symbol($_, SYM_HTML),
+                                         size  => 8,
+                                       }
+                                    }
+                                  sort $conf->config('currencies')
+                              ),
 
                               #price plan
                               #setup fee
@@ -460,6 +481,14 @@ my $error_callback = sub {
   $object->set($_ => scalar($cgi->param($_)) )
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
+  foreach my $currency ( $conf->config('currencies') ) {
+    my %part_pkg_currency = $object->part_pkg_currency_options($currency);
+    foreach (qw( setup_fee recur_fee )) {
+      my $param = $_.'_'.$currency;
+      $object->set( $param, $cgi->param($param) );
+    }
+  }
+
   $pkgpart = $object->pkgpart;
 
   &$splice_locale_fields(
@@ -535,6 +564,12 @@ my $edit_callback = sub {
   $object->set($_ => $object->option($_, 1))
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
+  foreach my $currency ( $conf->config('currencies') ) {
+    my %part_pkg_currency = $object->part_pkg_currency_options($currency);
+    $object->set( $_.'_'.$currency, $part_pkg_currency{$_} )
+      foreach keys %part_pkg_currency;
+  }
+
   $pkgpart = $object->pkgpart;
 
   &$splice_locale_fields(
@@ -598,6 +633,12 @@ my $clone_callback = sub {
 
   $object->set($_ => $options{$_})
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
+
+  foreach my $currency ( $conf->config('currencies') ) {
+    my %part_pkg_currency = $object->part_pkg_currency_options($currency);
+    $object->set( $_.'_'.$currency, $part_pkg_currency{$_} )
+      foreach keys %part_pkg_currency;
+  }
 
   $recur_disabled = $object->freq ? 0 : 1;
 

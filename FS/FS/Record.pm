@@ -12,19 +12,19 @@ use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use Scalar::Util qw( blessed );
-use File::CounterFile;
-use Locale::Country;
-use Text::CSV_XS;
 use File::Slurp qw( slurp );
+use File::CounterFile;
+use Text::CSV_XS;
 use DBI qw(:sql_types);
 use DBIx::DBSchema 0.38;
+use Locale::Country;
+use Locale::Currency;
+use NetAddr::IP; # for validation
 use FS::UID qw(dbh datasrc driver_name);
 use FS::CurrentUser;
 use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
-use NetAddr::IP; # for validation
-use Data::Dumper;
 #use FS::Conf; #dependency loop bs, in install_callback below instead
 
 use FS::part_virtual_field;
@@ -1528,6 +1528,7 @@ csv, xls, fixedlength, xml
 
 =cut
 
+use Data::Dumper;
 sub batch_import {
   my $param = shift;
 
@@ -2127,6 +2128,41 @@ sub ut_moneyn {
     return '';
   }
   $self->ut_money($field);
+}
+
+=item ut_currencyn COLUMN
+
+Check/untaint currency indicators, such as USD or EUR.  May be null.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_currencyn {
+  my($self, $field) = @_;
+  if ($self->getfield($field) eq '') { #can be null
+    $self->setfield($field, '');
+    return '';
+  }
+  $self->ut_currency($field);
+}
+
+=item ut_currency COLUMN
+
+Check/untaint currency indicators, such as USD or EUR.  May not be null.  If
+there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_currency {
+  my($self, $field) = @_;
+  my $value = uc( $self->getfield($field) );
+  if ( code2currency($value) ) {
+    $self->setfield($value);
+  } else {
+    return "Unknown currency $value";
+  }
+
+  '';
 }
 
 =item ut_text COLUMN

@@ -115,6 +115,19 @@ my $args_callback = sub {
   push @args, 'options' => \%options;
 
   ###
+  #part_pkg_currency
+  ###
+
+  my %part_pkg_currency = (
+    map { $_ => scalar($cgi->param($_)) }
+      #grep /._[A-Z]{3}$/, #support other options
+      grep /^(setup|recur)_fee_[A-Z]{3}$/,
+        $cgi->param
+  );
+
+  push @args, 'part_pkg_currency' => \%part_pkg_currency;
+
+  ###
   #pkg_svc
   ###
 

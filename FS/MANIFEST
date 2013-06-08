@@ -699,3 +699,9 @@ FS/cable_device.pm
 t/cable_device.t
 FS/h_svc_cable.pm
 t/h_svc_cable.t
+FS/agent_currency.pm
+t/agent_currency.t
+FS/currency_exchange.pm
+t/currency_exchange.t
+FS/part_pkg_currency.pm
+t/part_pkg_currency.t

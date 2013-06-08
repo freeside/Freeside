@@ -587,8 +587,10 @@ $config_billing{'Billing events'} = [ $fsurl.'browse/part_event.html', 'Billing 
 if ( $curuser->access_right('Configuration') ) {
   #$config_billing{'Invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
   $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
+  $config_billing{'separator'} = ''; #its a separator!
   $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
   $config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
+  $config_billing{'separator2'} = ''; #its a separator!
 
   my $config_taxes_name = 'Locales and tax rates'.
                           ( $conf->exists('enable_taxproducts')
@@ -600,6 +602,12 @@ if ( $curuser->access_right('Configuration') ) {
      if $conf->exists('enable_taxproducts');
   $config_billing{'Tax classes'} = [ $fsurl. 'browse/part_pkg_taxclass.html', 'Tax classes' ];
 
+  if ( $conf->config('currencies') ) {
+    $config_billing{'separator3'} = ''; #its a separator!
+    $config_billing{'Exchange rates'} = [ $fsurl.'edit/currency_exchange.html', 'Currency exchange rates' ];
+  }
+
+  $config_billing{'separator4'} = ''; #its a separator!
   $config_billing{'Credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
   $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons.' ];
 }

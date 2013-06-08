@@ -533,6 +533,17 @@ sub tables_hashref {
       'index' => [ ['salesnum'], ['disabled'] ],
     },
 
+    'agent_currency' => {
+      'columns' => [
+        'agentcurrencynum', 'serial', '', '', '', '',
+        'agentnum',            'int', '', '', '', '',
+        'currency',           'char', '',  3, '', '',
+      ],
+      'primary_key' => 'agentcurrencynum',
+      'unique'      => [],
+      'index'       => [ ['agentnum'] ],
+    },
+
     'cust_attachment' => {
       'columns' => [
         'attachnum', 'serial', '', '', '', '',
@@ -2051,6 +2062,31 @@ sub tables_hashref {
       ],
       'primary_key' => 'pkgpartmsgnum',
       'unique'      => [ [ 'pkgpart', 'locale' ] ],
+      'index'       => [],
+    },
+
+    'part_pkg_currency' => {
+      'columns' => [
+        'pkgcurrencynum', 'serial', '',      '', '', '',
+        'pkgpart',           'int', '',      '', '', '',
+        'currency',         'char', '',       3, '', '',
+        'optionname',    'varchar', '', $char_d, '', '', 
+        'optionvalue',      'text', '',      '', '', '', 
+      ],
+      'primary_key' => 'pkgcurrencynum',
+      'unique'      => [ [ 'pkgpart', 'currency', 'optionname' ] ],
+      'index'       => [ ['pkgpart'] ],
+    },
+
+    'currency_exchange' => {
+      'columns' => [
+        'currencyratenum', 'serial', '',    '', '', '',
+        'from_currency',     'char', '',     3, '', '',
+        'to_currency',       'char', '',     3, '', '',
+        'rate',           'decimal', '', '7,6', '', '',
+      ],
+      'primary_key' => 'currencyratenum',
+      'unique'      => [ [ 'from_currency', 'to_currency' ] ],
       'index'       => [],
     },
 

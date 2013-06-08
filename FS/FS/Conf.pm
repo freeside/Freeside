@@ -5,6 +5,7 @@ use Carp;
 use IO::File;
 use File::Basename;
 use MIME::Base64;
+use Locale::Currency;
 use FS::ConfItem;
 use FS::ConfDefaults;
 use FS::Conf_compat17;
@@ -1006,9 +1007,22 @@ sub reason_type_options {
   {
     'key'         => 'currency',
     'section'     => 'billing',
-    'description' => 'Currency',
+    'description' => 'Main accounting currency',
     'type'        => 'select',
     'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD XAF ) ],
+  },
+
+  {
+    'key'         => 'currencies',
+    'section'     => 'billing',
+    'description' => 'Additional accepted currencies',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub { 
+                           map { $_ => code2currency($_) } all_currency_codes();
+			 },
+    'sort_sub'    => sub ($$) { $_[0] cmp $_[1]; },
+    'option_sub'  => sub { code2currency(shift); },
   },
 
   {

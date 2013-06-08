@@ -1,18 +1,17 @@
 package FS::agent;
+use base qw( FS::m2m_Common FS::m2name_Common FS::Record );
 
 use strict;
 use vars qw( @ISA );
-#use Crypt::YAPassGen;
 use Business::CreditCard 0.28;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::agent_type;
+use FS::agent_currency;
 use FS::reg_code;
 use FS::TicketSystem;
 use FS::Conf;
-
-@ISA = qw( FS::m2m_Common FS::Record );
 
 =head1 NAME
 
@@ -175,6 +174,31 @@ agent.
 sub agent_cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->agent_custnum } );
+}
+
+=item agent_currency
+
+Returns the FS::agent_currency objects (see L<FS::agent_currency>), if any, for
+this agent.
+
+=cut
+
+sub agent_currency {
+  my $self = shift;
+  qsearch('agent_currency', { 'agentnum' => $self->agentnum } );
+}
+
+=item agent_currency_hashref
+
+Returns a hash references of supported additional currencies for this agent.
+
+=cut
+
+sub agent_currency_hashref {
+  my $self = shift;
+  +{ map { $_->currency => 1 }
+       $self->agent_currency
+   };
 }
 
 =item pkgpart_hashref

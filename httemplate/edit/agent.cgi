@@ -170,9 +170,30 @@
 % }
 
 </TABLE>
+<BR>
 
+% if ( $conf->config('currencies') ) {
+
+    <FONT CLASS="fsinnerbox-title"><% mt('Currencies') |h %></FONT>
+    <TABLE CLASS="fsinnerbox">
+      <TR>
+        <TD>
+          <& /elements/checkboxes-table-name.html,
+               'link_table' => 'agent_currency',
+               'name_col'   => 'currency',
+               'names_list' => [ map [ $_, {label=>"$_: ".code2currency($_)} ],
+                                   $conf->config('currencies')
+                               ],
+          &>
+        </TD>
+      </TR>
+    </TABLE>
+
+% }
 
 <BR>
+
+
 <INPUT TYPE="submit" VALUE="<% $agent->agentnum ? "Apply changes" : "Add agent" %>">
 
 </FORM>

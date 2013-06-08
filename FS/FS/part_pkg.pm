@@ -25,6 +25,7 @@ use FS::part_pkg_link;
 use FS::part_pkg_discount;
 use FS::part_pkg_usage;
 use FS::part_pkg_vendor;
+use FS::part_pkg_currency;
 
 $DEBUG = 0;
 $setup_hack = 0;
@@ -177,6 +178,9 @@ records will be inserted.
 If I<options> is set to a hashref of options, appropriate FS::part_pkg_option
 records will be inserted.
 
+If I<part_pkg_currency> is set to a hashref of options (with the keys as
+option_CURRENCY), appropriate FS::part_pkg::currency records will be inserted.
+
 =cut
 
 sub insert {
@@ -245,6 +249,23 @@ sub insert {
                   'hashref'      => { 'usage_class' => $usage_class },
                   'params'       => \@overrides,
                 );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  warn "  inserting part_pkg_currency records" if $DEBUG;
+  my %part_pkg_currency = %{ $options{'part_pkg_currency'} || {} };
+  foreach my $key ( keys %part_pkg_currency ) {
+    $key =~ /^(.+)_([A-Z]{3})$/ or next;
+    my $part_pkg_currency = new FS::part_pkg_currency {
+      'pkgpart'     => $self->pkgpart,
+      'optionname'  => $1,
+      'currency'    => $2,
+      'optionvalue' => $part_pkg_currency{$key},
+    };
+    my $error = $part_pkg_currency->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -352,6 +373,9 @@ FS::pkg_svc record will be updated.
 If I<options> is set to a hashref, the appropriate FS::part_pkg_option records
 will be replaced.
 
+If I<part_pkg_currency> is set to a hashref of options (with the keys as
+option_CURRENCY), appropriate FS::part_pkg::currency records will be replaced.
+
 =cut
 
 sub replace {
@@ -446,6 +470,34 @@ sub replace {
       return $error;
     }
   }
+
+  #trivial nit: not the most efficient to delete and reinsert
+  warn "  deleting old part_pkg_currency records" if $DEBUG;
+  foreach my $part_pkg_currency ( $old->part_pkg_currency ) {
+    my $error = $part_pkg_currency->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error deleting part_pkg_currency record: $error";
+    }
+  }
+
+  warn "  inserting new part_pkg_currency records" if $DEBUG;
+  my %part_pkg_currency = %{ $options->{'part_pkg_currency'} || {} };
+  foreach my $key ( keys %part_pkg_currency ) {
+    $key =~ /^(.+)_([A-Z]{3})$/ or next;
+    my $part_pkg_currency = new FS::part_pkg_currency {
+      'pkgpart'     => $new->pkgpart,
+      'optionname'  => $1,
+      'currency'    => $2,
+      'optionvalue' => $part_pkg_currency{$key},
+    };
+    my $error = $part_pkg_currency->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error inserting part_pkg_currency record: $error";
+    }
+  }
+
 
   warn "  replacing pkg_svc records" if $DEBUG;
   my $pkg_svc = $options->{'pkg_svc'};
@@ -1189,6 +1241,33 @@ sub option {
         "not found in options or plandata!\n"
     unless $ornull;
   '';
+}
+
+=item part_pkg_currency [ CURRENCY ]
+
+Returns all currency options as FS::part_pkg_currency objects (see
+L<FS::part_pkg_currency>), or, if a currency is specified, only return the
+objects for that currency.
+
+=cut
+
+sub part_pkg_currency {
+  my $self = shift;
+  my %hash = ( 'pkgpart' => $self->pkgpart );
+  $hash{'currency'} = shift if @_;
+  qsearch('part_pkg_currency', \%hash );
+}
+
+=item part_pkg_currency_options CURRENCY
+
+Returns a list of option names and values from FS::part_pkg_currency for the
+specified currency.
+
+=cut
+
+sub part_pkg_currency_options {
+  my $self = shift;
+  map { $_->optionname => $_->optionvalue } $self->part_pkg_currency(shift);
 }
 
 =item bill_part_pkg_link
