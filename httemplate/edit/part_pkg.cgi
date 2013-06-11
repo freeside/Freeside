@@ -716,9 +716,8 @@ my $javascript = <<'END';
 
     function aux_planchanged(what) { //?
 
-      alert('called!');
       var plan = what.options[what.selectedIndex].value;
-      var table = document.getElementById('TableNumber7') // XXX NOT ROBUST
+      var table = document.getElementById('TableNumber6') // XXX NOT ROBUST
 
       if ( plan == 'flat' || plan == 'prorate' || plan == 'subscription' ) {
         //table.disabled = false;
@@ -899,6 +898,7 @@ my $html_bottom = sub {
     labels         => \%plan_labels,
     curr_value     => $object->plan,
     layer_callback => $layer_callback,
+    onchange       => 'aux_planchanged(what);',
   );
 
   my $return =
