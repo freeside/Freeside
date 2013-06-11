@@ -58,6 +58,7 @@ use FS::cust_main_exemption;
 use FS::cust_tax_adjustment;
 use FS::cust_tax_location;
 use FS::agent;
+use FS::agent_currency;
 use FS::cust_main_invoice;
 use FS::cust_tag;
 use FS::prepay_credit;
@@ -1771,8 +1772,17 @@ sub check {
     if $error =~ /^Illegal or empty \(numeric\) refnum: /;
   return $error if $error;
 
-  return "Unknown agent"
-    unless qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
+  my $agent = qsearchs( 'agent', { 'agentnum' => $self->agentnum } )
+    or return "Unknown agent";
+
+  if ( $self->currency ) {
+    my $agent_currency = qsearchs( 'agent_currency', {
+      'agentnum' => $agent->agentnum,
+      'currency' => $self->currency,
+    })
+      or return "Agent ". $agent->agent.
+                " not permitted to offer ".  $self->currency. " invoicing";
+  }
 
   return "Unknown refnum"
     unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
