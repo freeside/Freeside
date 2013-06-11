@@ -211,7 +211,7 @@ if ( $conf->config('currencies') ) {
   @currency_sub = (
     map {
       my $what = $_;
-      sub { my $currency = $_[0]->get($what.'_billed_currency');
+      sub { my $currency = $_[0]->get($what.'_billed_currency') or return '';
             $currency. ' '. currency_symbol($currency, SYM_HTML).
               $_[0]->get($what.'_billed_amount');
           };
