@@ -10,6 +10,7 @@
                    emt('Description'),
                    @post_desc_header,
                    @peritem_desc,
+                   @currency_desc,
                    emt('Invoice'),
                    emt('Date'),
                    emt('Paid'),
@@ -32,6 +33,7 @@
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
                    @peritem_sub,
+                   @currency_sub,
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    sub { sprintf($money_char.'%.2f', shift->get('pay_amount')) },
@@ -44,6 +46,7 @@
                    '',
                    @post_desc_null,
                    @peritem,
+                   @currency,
                    'invnum',
                    '_date',
                    #'pay_amount',
@@ -55,6 +58,7 @@
                    '',
                    @post_desc_null,
                    @peritem_null,
+                   @currency_null,
                    $ilink,
                    $ilink,
                    $pay_link,
@@ -68,6 +72,7 @@
                             'rl'.
                             $post_desc_align.
                             $peritem_align.
+                            $currency_align.
                             'rcrr'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
@@ -76,6 +81,7 @@
                               '',
                               @post_desc_null,
                               @peritem_null,
+                              @currency_null,
                               '',
                               '',
                               '',
@@ -88,6 +94,7 @@
                               '',
                               @post_desc_null,
                               @peritem_null,
+                              @currency_null,
                               '',
                               '',
                               '',
@@ -195,6 +202,23 @@ my @total_desc = ( $money_char.'%.2f total' ); # sprintf strings
 
 my @peritem = ( 'setup', 'recur' );
 my @peritem_desc = ( 'Setup charge', 'Recurring charge' );
+
+my @currency_desc = ();
+my @currency_sub = ();
+my @currency = ();
+if ( $conf->config('currencies') ) {
+  @currency_desc = ( 'Setup billed', 'Recurring billed' );
+  @currency_sub = (
+    map {
+      my $what = $_;
+      sub { my $currency = $_[0]->get($what.'_billed_currency');
+            $currency. ' '. currency_symbol($currency, SYM_HTML).
+              $_[0]->get($what.'_billed_amount');
+          };
+    } qw( setup recur )
+  );
+  @currency = ( 'setup_billed_amount', 'recur_billed_amount' ); #for sorting
+}
 
 my @pkgnum_header = ();
 my @pkgnum = ();
@@ -671,6 +695,10 @@ my @peritem_sub = map {
 } @peritem;
 my @peritem_null = map { '' } @peritem; # placeholders
 my $peritem_align = 'r' x scalar(@peritem);
+
+@currency_desc = map {emt($_)} @currency_desc;
+my @currency_null = map { '' } @currency; # placeholders
+my $currency_align = 'r' x scalar(@currency);
 
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];

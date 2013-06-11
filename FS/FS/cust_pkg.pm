@@ -2191,6 +2191,18 @@ sub calc_recur {
   $self->part_pkg->calc_recur($self, @_);
 }
 
+=item base_setup
+
+Calls the I<base_setup> of the FS::part_pkg object associated with this billing
+item.
+
+=cut
+
+sub base_setup {
+  my $self = shift;
+  $self->part_pkg->base_setup($self, @_);
+}
+
 =item base_recur
 
 Calls the I<base_recur> of the FS::part_pkg object associated with this billing
@@ -2345,9 +2357,11 @@ sub num_cust_event {
 
 =item part_pkg_currency_option OPTIONNAME
 
-Returns the option value for the given name and the currency of this customer
-(see L<FS::part_pkg_currency>).  If this customer has no currency, returns
-the regular option value for the given name (see L<FS::part_pkg_option>).
+Returns a two item list consisting of the currency of this customer, if any,
+and a value for the provided option.  If the customer has a currency, the value
+is the option value the given name and the currency (see
+L<FS::part_pkg_currency>).  Otherwise, if the customer has no currency, is the
+regular option value for the given name (see L<FS::part_pkg_option>).
 
 =cut
 
@@ -2355,9 +2369,9 @@ sub part_pkg_currency_option {
   my( $self, $optionname ) = @_;
   my $part_pkg = $self->part_pkg;
   if ( my $currency = $self->cust_main->currency ) {
-    $part_pkg->part_pkg_currency_option($currency, $optionname);
+    ($currency, $part_pkg->part_pkg_currency_option($currency, $optionname) );
   } else {
-    $part_pkg->option($optionname);
+    ('', $part_pkg->option($optionname) );
   }
 }
 

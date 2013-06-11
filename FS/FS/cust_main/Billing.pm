@@ -951,6 +951,8 @@ sub _make_lines {
   my $unitsetup = 0;
   my @setup_discounts = ();
   my %setup_param = ( 'discounts' => \@setup_discounts );
+  my $setup_billed_currency = '';
+  my $setup_billed_amount = 0;
   if (     ! $options{recurring_only}
        and ! $options{cancel}
        and ( $options{'resetup'}
@@ -977,7 +979,13 @@ sub _make_lines {
         return "$@ running calc_setup for $cust_pkg\n"
           if $@;
 
-        $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+        $unitsetup = $cust_pkg->base_setup()
+                       || $setup; #XXX uuh
+
+        if ( $setup_param{'billed_currency'} ) {
+          $setup_billed_currency = delete $setup_param{'billed_currency'};
+          $setup_billed_amount   = delete $setup_param{'billed_amount'};
+        }
     }
 
     $cust_pkg->setfield('setup', $time)
@@ -997,6 +1005,8 @@ sub _make_lines {
   my $recur = 0;
   my $unitrecur = 0;
   my @recur_discounts = ();
+  my $recur_billed_currency = '';
+  my $recur_billed_amount = 0;
   my $sdate;
   if (     ! $cust_pkg->start_date
        and ( ! $cust_pkg->susp || $cust_pkg->option('suspend_bill',1)
@@ -1057,6 +1067,11 @@ sub _make_lines {
 
     #base_cancel???
     $unitrecur = $cust_pkg->base_recur( \$sdate ) || $recur; #XXX uuh, better
+
+    if ( $param{'billed_currency'} ) {
+      $recur_billed_currency = delete $param{'billed_currency'};
+      $recur_billed_amount   = delete $param{'billed_amount'};
+    }
 
     if ( $increment_next_bill ) {
 
@@ -1173,16 +1188,20 @@ sub _make_lines {
       push @details, @cust_pkg_detail;
 
       my $cust_bill_pkg = new FS::cust_bill_pkg {
-        'pkgnum'    => $cust_pkg->pkgnum,
-        'setup'     => $setup,
-        'unitsetup' => $unitsetup,
-        'recur'     => $recur,
-        'unitrecur' => $unitrecur,
-        'quantity'  => $cust_pkg->quantity,
-        'details'   => \@details,
-        'discounts' => [ @setup_discounts, @recur_discounts ],
-        'hidden'    => $part_pkg->hidden,
-        'freq'      => $part_pkg->freq,
+        'pkgnum'                => $cust_pkg->pkgnum,
+        'setup'                 => $setup,
+        'unitsetup'             => $unitsetup,
+        'setup_billed_currency' => $setup_billed_currency,
+        'setup_billed_amount'   => $setup_billed_amount,
+        'recur'                 => $recur,
+        'unitrecur'             => $unitrecur,
+        'recur_billed_currency' => $recur_billed_currency,
+        'recur_billed_amount'   => $recur_billed_amount,
+        'quantity'              => $cust_pkg->quantity,
+        'details'               => \@details,
+        'discounts'             => [ @setup_discounts, @recur_discounts ],
+        'hidden'                => $part_pkg->hidden,
+        'freq'                  => $part_pkg->freq,
       };
 
       if ( $part_pkg->option('prorate_defer_bill',1) 
@@ -1194,7 +1213,7 @@ sub _make_lines {
         $cust_bill_pkg->sdate( $hash{last_bill} );
         $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
         $cust_bill_pkg->edate( $time ) if $options{cancel};
-      } else { #if ( $part_pkg->recur_temporality eq 'upcoming' ) {
+      } else { #if ( $part_pkg->recur_temporality eq 'upcoming' )
         $cust_bill_pkg->sdate( $sdate );
         $cust_bill_pkg->edate( $cust_pkg->bill );
         #$cust_bill_pkg->edate( $time ) if $options{cancel};

@@ -1757,7 +1757,7 @@ sub check {
     || $self->ut_flag('invoice_noemail')
     || $self->ut_flag('message_noemail')
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
-    || $self->ut_currency('currency')
+    || $self->ut_currencyn('currency')
   ;
 
   my $company = $self->company;

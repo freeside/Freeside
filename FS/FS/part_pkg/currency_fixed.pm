@@ -5,7 +5,8 @@ use base qw( FS::part_pkg::recur_Common );
 
 use strict;
 use vars qw( %info );
-#use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearchs); # qsearch qsearchs);
+use FS::currency_exchange;
 
 %info = (
   'name' => 'Per-currency pricing from package definitions',
@@ -26,7 +27,7 @@ use vars qw( %info );
   },
   'fieldorder' => [qw( recur_method cutoff_day ),
                    FS::part_pkg::prorate_Mixin::fieldorder,
-                  )],
+                  ],
   'weight' => '59',
 );
 
@@ -37,19 +38,44 @@ sub price_info {
     $str;
 }
 
-#some false laziness w/recur_Common, could have been better about it.. pry when
-# we do discounting
+sub base_setup {
+  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
+
+  $self->calc_currency_option('setup_fee', $cust_pkg, $sdate, $details, $param);
+}
+
 sub calc_setup {
   my($self, $cust_pkg, $sdate, $details, $param) = @_;
 
   return 0 if $self->prorate_setup($cust_pkg, $sdate);
 
-  sprintf('%.2f', $cust_pkg->part_pkg_currency_option('setup_fee') );
+  $self->base_setup($cust_pkg, $sdate, $details, $param);
+}
+
+use FS::Conf;
+sub calc_currency_option {
+  my($self, $optionname, $cust_pkg, $sdate, $details, $param) = @_;
+
+  my($currency, $amount) = $cust_pkg->part_pkg_currency_option($optionname);
+  return sprintf('%.2f', $amount ) unless $currency;
+
+  $param->{'billed_currency'} = $currency;
+  $param->{'billed_amount'}   = $amount;
+
+  my $currency_exchange = qsearchs('currency_exchange', {
+    'from_currency' => $currency,
+    'to_currency'   => ( FS::Conf->new->config('currency') || 'USD' ),
+  }) or die "No exchange rate from $currency\n";
+
+  #XXX do we want the rounding here to work differently?
+  #my $recognized_amount =
+  sprintf('%.2f', $amount * $currency_exchange->rate);
 }
 
 sub base_recur {
-  my( $self, $cust_pkg ) = @_;
-  sprintf('%.2f', $cust_pkg->part_pkg_currency_option('recur_fee') );
+  my( $self, $cust_pkg, $sdate, $details, $param ) = @_;
+  $param ||= {};
+  $self->calc_currency_option('recur_fee', $cust_pkg, $sdate, $details, $param);
 }
 
 sub can_discount { 0; } #can't discount yet (percentage would work, but amount?)

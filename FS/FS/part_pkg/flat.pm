@@ -122,7 +122,7 @@ sub calc_setup {
 
   my $quantity = $cust_pkg->quantity || 1;
 
-  my $charge = $quantity * $self->unit_setup($cust_pkg, $sdate, $details);
+  my $charge = $quantity * $self->base_setup($cust_pkg, $sdate, $details);
 
   my $discount = 0;
   if ( $charge > 0 ) {
@@ -134,7 +134,7 @@ sub calc_setup {
   sprintf('%.2f', $charge - $discount);
 }
 
-sub unit_setup {
+sub base_setup {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 
   $self->option('setup_fee') || 0;

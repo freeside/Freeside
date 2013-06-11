@@ -304,6 +304,13 @@
   </TR>
 % }
 
+% if ( $cust_main->currency ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Invoicing currency') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->currency. ': '. code2currency($cust_main->currency) %></TD>
+  </TR>
+% }
+
 % if ( $cust_main->locale ) {
 % my %locale_info = FS::Locales->locale_info($cust_main->locale);
   <TR>
