@@ -11,7 +11,7 @@
 <%once>
 
 my $me = '[edit/process/cust_main.cgi]';
-my $DEBUG = 1;
+my $DEBUG = 0;
 
 </%once>
 <%init>
