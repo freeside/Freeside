@@ -10,8 +10,9 @@ my @fixups = ('copy_payby_fields', 'standardize_locations');
 push @fixups, 'confirm_censustract'
     if $conf->exists('cust_main-require_censustract');
 
-push @fixups, 'check_unique'
-    if $conf->exists('cust_main-check_unique') and !$opt{'custnum'};
+# currently doesn't work; disable to avoid problems
+#push @fixups, 'check_unique'
+#    if $conf->exists('cust_main-check_unique') and !$opt{'custnum'};
 
 push @fixups, 'do_submit'; # always last
 </%init>
