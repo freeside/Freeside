@@ -581,9 +581,12 @@ sub replace {
 
   }
 
-  my $error = $new->SUPER::replace($old,
-                                   $options->{options} ? $options->{options} : ()
-                                  );
+  my $error =  $new->export_pkg_change($old)
+            || $new->SUPER::replace( $old,
+                                     $options->{options}
+                                       ? $options->{options}
+                                       : ()
+                                   );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -3266,6 +3269,39 @@ sub reexport {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item export_pkg_change OLD_CUST_PKG
+
+Calls the "pkg_change" export action for all services attached to this package.
+
+=cut
+
+sub export_pkg_change {
+  my( $self, $old )  = ( shift, shift );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $svc_x ( map $_->svc_x, $self->cust_svc ) {
+    my $error = $svc_x->export('pkg_change', $self, $old);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
   }
 
