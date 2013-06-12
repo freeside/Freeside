@@ -295,6 +295,17 @@ sub replace {
 #    }
 #  }
 
+  #trigger a pkg_change export on pkgnum changes
+  if ( $new->pkgnum != $old->pkgnum ) {
+    my $error = $new->svc_x->export('pkg_change', $new->cust_pkg,
+                                                  $old->cust_pkg,
+                                   );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error if $error;
+    }
+  }
+
   #my $error = $new->SUPER::replace($old, @_);
   my $error = $new->SUPER::replace($old);
   if ( $error ) {
