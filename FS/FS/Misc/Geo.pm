@@ -393,7 +393,7 @@ sub standardize_ezlocate {
     latitude    => $match->{MAT_LAT},
     longitude   => $match->{MAT_LON},
     censustract => $match->{FIPS_ST}.$match->{FIPS_CTY}.
-                   sprintf('%04.2f',$match->{CEN_TRCT}),
+                   sprintf('%07.2f',$match->{CEN_TRCT}),
     addr_clean  => 'Y',
   };
 }
