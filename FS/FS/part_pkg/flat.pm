@@ -120,9 +120,7 @@ sub calc_setup {
     push @$details, $self->option( 'additional_info' . $i++ );
   }
 
-  my $quantity = $cust_pkg->quantity || 1;
-
-  my $charge = $quantity * $self->base_setup($cust_pkg, $sdate, $details);
+  my $charge = $self->base_setup($cust_pkg, $sdate, $details);
 
   my $discount = 0;
   if ( $charge > 0 ) {
@@ -131,7 +129,7 @@ sub calc_setup {
       delete $param->{'setup_charge'};
   }
 
-  sprintf('%.2f', $charge - $discount);
+  sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
 }
 
 sub base_setup {
@@ -162,11 +160,9 @@ sub calc_recur {
     $charge *= $param->{freq_override} if $param->{freq_override};
   }
 
-  my $quantity = $cust_pkg->quantity || 1;
-  $charge *= $quantity;
-
   my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
-  return sprintf('%.2f', $charge - $discount);
+
+  sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
 }
 
 sub cutoff_day {
