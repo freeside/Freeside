@@ -3275,6 +3275,8 @@ order_pkgs methods in FS::cust_main for a better way to defer provisioning.
 
 =cut
 
+#looks like this is still used by the order_pkg and change_pkg methods in
+# ClientAPI/MyAccount, need to look into those before removing
 sub reexport {
   my $self = shift;
 

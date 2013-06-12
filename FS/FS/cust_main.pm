@@ -973,47 +973,6 @@ sub insert_cust_pay {
 
 }
 
-=item reexport
-
-This method is deprecated.  See the I<depend_jobnum> option to the insert and
-order_pkgs methods for a better way to defer provisioning.
-
-Re-schedules all exports by calling the B<reexport> method of all associated
-packages (see L<FS::cust_pkg>).  If there is an error, returns the error;
-otherwise returns false.
-
-=cut
-
-sub reexport {
-  my $self = shift;
-
-  carp "WARNING: FS::cust_main::reexport is deprectated; ".
-       "use the depend_jobnum option to insert or order_pkgs to delay export";
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
-    my $error = $cust_pkg->reexport;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
-
-}
-
 =item delete [ OPTION => VALUE ... ]
 
 This deletes the customer.  If there is an error, returns the error, otherwise
