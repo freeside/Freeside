@@ -71,6 +71,15 @@ my $agentnums_sql = $curuser->agentnums_sql(
 
 my $extra_sql = " WHERE $agentnums_sql";
 
+#tiny bit of false laziness w/cust_pkg.pm::search
+if ( grep { $_ eq 'classnum' } $cgi->param ) {
+  if ( $cgi->param('classnum') eq '' ) {
+    $extra_sql .= ' AND part_pkg.classnum IS NULL';
+  } elsif ( $cgi->param('classnum') =~ /^(\d+)$/ && $1 ne '0' ) {
+    $extra_sql .= " AND part_pkg.classnum = $1 ";
+  }
+}
+
 foreach my $part_pkg (qsearch({ 'table'     => 'part_pkg',
                                 'hashref'   => {},
                                 'extra_sql' => $extra_sql,

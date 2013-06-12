@@ -1,4 +1,4 @@
-<% include( '/elements/header.html', 'Package Summary Report' ) %>
+<& /elements/header.html, 'Package Summary Report' &>
 
 <FORM ACTION="cust_pkg_summary.cgi" METHOD="GET">
 
@@ -10,7 +10,12 @@
     </TH>
   </TR>
 
-  <% include ('/elements/tr-input-beginning_ending.html') %>
+  <& /elements/tr-input-beginning_ending.html &>
+
+  <& /elements/tr-select-pkg_class.html,
+       'pre_options' => [ '0' => 'all' ],
+       'empty_label' => '(empty class)',
+  &>
 
 </TABLE>
 
@@ -19,7 +24,7 @@
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+<& /elements/footer.html &>
 <%init>
 
 die "access denied"
