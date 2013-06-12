@@ -363,7 +363,7 @@ sub standardize_ezlocate {
   #}
 
   $class = 'Geo::EZLocate'; # use our own library
-  eval "use $class";
+  eval "use $class 0.02"; #Geo::EZLocate 0.02 for error handling
   die $@ if $@;
 
   my $userid = $conf->config('ezlocate-userid')
