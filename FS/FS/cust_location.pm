@@ -257,11 +257,11 @@ and replace methods.
 
 =cut
 
-#some false laziness w/cust_main, but since it should eventually lose these
-#fields anyway...
 sub check {
   my $self = shift;
   my $conf = new FS::Conf;
+
+  return '' if $self->disabled; # so that disabling locations never fails
 
   my $error = 
     $self->ut_numbern('locationnum')
