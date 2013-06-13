@@ -1925,6 +1925,18 @@ sub change {
     }
   }
 
+  # transfer (copy) invoice details
+  foreach my $detail ($self->cust_pkg_detail) {
+    my $new_detail = FS::cust_pkg_detail->new({ $detail->hash });
+    $new_detail->set('pkgdetailnum', '');
+    $new_detail->set('pkgnum', $cust_pkg->pkgnum);
+    $error = $new_detail->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error transferring package notes: $error";
+    }
+  }
+
   # Order any supplemental packages.
   my $part_pkg = $cust_pkg->part_pkg;
   my @old_supp_pkgs = $self->supplemental_pkgs;
