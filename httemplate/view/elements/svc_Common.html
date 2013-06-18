@@ -63,11 +63,13 @@ function areyousure(href) {
 %   if ( ref($f) ) {
 %     $field = $f->{'field'};
 %     $hack_strict_refs = \&{ $f->{'value'} } if $f->{'value'};
-%     $value = $f->{'value'} ? &$hack_strict_refs($svc_x) : $svc_x->$field;
+%     $value = $f->{'value'}
+%                ? &$hack_strict_refs($svc_x)
+%                : encode_entities($svc_x->$field);
 %     $type  = $f->{'type'} || 'text';
 %   } else {
 %     $field = $f;
-%     $value = $svc_x->$field;
+%     $value = encode_entities($svc_x->$field);
 %     $type = 'text';
 %   }
 %
