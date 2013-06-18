@@ -70,12 +70,14 @@ function areyousure(href) {
 %       my $hack_strict_refs = \&{ $f->{'value_callback'} };
 %       $value = &$hack_strict_refs($svc_x);
 %     } else {
-%       $value = exists($f->{'value'}) ? $f->{'value'} : $svc_x->$field;
+%       $value = exists($f->{'value'})
+%                  ? $f->{'value'}
+%                  : encode_entities($svc_x->$field);
 %     }
 %   } else {
 %     $field = $f;
 %     $type = 'text';
-%     $value = $svc_x->$field;
+%     $value = encode_entities($svc_x->$field);
 %   }
 %
 %   my $columndef = $part_svc->part_svc_column($field);
