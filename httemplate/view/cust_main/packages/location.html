@@ -65,6 +65,8 @@ sub pkg_change_location_link {
     'label'       => emt('Change location'),
     'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
+    'width'       => 763,
+    'height'      => 380,
   );
 }
 
@@ -74,7 +76,9 @@ sub edit_location_link {
     'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
     'label'       => emt('Edit location'),
     'actionlabel' => emt('Edit'),
-  );
+    'width'       => 700,
+    'height'      => 355,
+   );
 }
 
 </%init>
