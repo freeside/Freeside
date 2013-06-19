@@ -1068,7 +1068,7 @@ sub reason_type_options {
   {
     'key'         => 'deleteinvoices',
     'section'     => 'UI',
-    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would apply a credit against the invoice instead.',  #invoice voiding?
+    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would void or apply a credit against the invoice instead.',
     'type'        => 'checkbox',
   },
 
