@@ -96,8 +96,7 @@ if ( length( $cgi->param('search_svc') ) ) {
   my $extra_sql = ' WHERE '. join(' AND ', @extra_sql );
 
   $sql_query = {
-    #'select'     => 'svcnum',
-    'select'     => 'cust_svc.*',
+    'select'     => 'cust_svc.*, part_svc.*',
     'table'      => 'cust_svc',
     'addl_from'  => $addl_from,
     'hashref'    => {},
@@ -106,9 +105,10 @@ if ( length( $cgi->param('search_svc') ) ) {
 
 }
 
+# at this point the query must provide all fields from 
+# cust_svc and part_svc, and must include join_cust_main.
 $sql_query->{'select'} = join(', ',
                                     $sql_query->{'select'},
-                                    #'part_svc.*',
                                     'cust_main.custnum',
                                     FS::UI::Web::cust_sql_fields(),
                              );
