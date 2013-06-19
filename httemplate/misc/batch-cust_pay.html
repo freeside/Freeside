@@ -25,7 +25,7 @@ function custnum_update_callback(rownum, prefix) {
   var custnum = document.getElementById('custnum'+rownum).value;
   // if there is a custnum and more than one open invoice, enable
   // (and check) the box
-  var show_applications = (custnum > 0 && num_open_invoices[rownum] > 1);
+  var show_applications = !(custnum > 0 && num_open_invoices[rownum] > 1);
   var enable_app_checkbox = document.getElementById('enable_app'+rownum);
   enable_app_checkbox.disabled = show_applications;
 
