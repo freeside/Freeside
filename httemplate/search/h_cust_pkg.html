@@ -1,0 +1,239 @@
+<& elements/search.html,
+                  'html_init'   => $html_init, 
+                  'title'       => $title,
+                  'name'        => 'packages',
+                  'query'       => $query,
+                  'count_query' => $count_query,
+                  'header'      => [ emt('#'),
+                                     emt('Quan.'),
+                                     emt('Package'),
+                                     emt('Class'),
+                                     emt('Status'),
+                                     emt('Ordered by'),
+                                     emt('Setup'),
+                                     emt('Base Recur'),
+                                     emt('Freq.'),
+                                     emt('Setup'),
+                                     emt('Last bill'),
+                                     emt('Next bill'),
+                                     emt('Adjourn'),
+                                     emt('Susp.'),
+                                     emt('Susp. delay'),
+                                     emt('Expire'),
+                                     emt('Contract end'),
+                                     emt('Changed'),
+                                     emt('Cancel'),
+                                     emt('Reason'),
+                                     FS::UI::Web::cust_header(
+                                       $cgi->param('cust_fields')
+                                     ),
+                                     emt('As of'),
+                                   ],
+                  'fields'      => [
+                    'pkgnum',
+                    'quantity',
+                    'pkg',
+                    'classname',
+                    sub { ucfirst(shift->status); },
+                    'otaker',
+                    sub { sprintf( $money_char.'%.2f',
+                                   shift->part_pkg->option('setup_fee'),
+                                 );
+                        },
+                    sub { my $c = shift;
+                          sprintf( $money_char.'%.2f',
+                                   $c->part_pkg->base_recur($c)
+                                 );
+                        },
+                    sub { FS::part_pkg::freq_pretty(shift); },
+
+                    ( map { time_or_blank($_) }
+          qw( setup last_bill bill adjourn susp dundate expire contract_end change_date cancel ) ),
+
+                    sub { my $self = shift;
+                          my $return = '';
+                          foreach my $action ( qw ( cancel susp ) ) {
+                            my $reason = $self->last_reason($action);
+                            $return = $reason->reason if $reason;
+                            last if $return;
+                          }
+                          $return;
+                        },
+
+                    \&FS::UI::Web::cust_fields,
+                    # in cust_pkg.cgi, service labels would go here
+                    time_or_blank('history_date'),
+                  ],
+                  'color' => [
+                    '',
+                    '',
+                    '',
+                    '',
+                    sub { shift->statuscolor; },
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    FS::UI::Web::cust_colors(),
+                    '',
+                  ],
+                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+                               FS::UI::Web::cust_styles() ],
+                  'size'  => [ '', '', '', '', '-1' ],
+                  'align' => 'rrlcccrrlrrrrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
+                  'links' => [
+                    $link,
+                    $link,
+                    $link,
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '', # link to changed-from package?
+                    '',
+                    '',
+                    '',
+                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
+                          FS::UI::Web::cust_header(
+                                                    $cgi->param('cust_fields')
+                                                  )
+                    ),
+                    '',
+                  ],
+&>
+<%init>
+
+# shamelessly cloned from cust_pkg.cgi, with minimal changes to make it work
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my %search_hash = ();
+
+#some false laziness w/misc/bulk_change_pkg.cgi
+  
+$search_hash{'query'} = $cgi->keywords;
+
+#scalars
+for (qw( agentnum custnum magic status custom cust_fields pkgbatch )) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+
+#arrays
+for my $param (qw( pkgpart classnum )) {
+  $search_hash{$param} = [ $cgi->param($param) ]
+    if grep { $_ eq $param } $cgi->param;
+}
+
+#scalars that need to be passed if empty
+for my $param (qw( censustract censustract2 )) {
+  $search_hash{$param} = $cgi->param($param) || ''
+    if grep { $_ eq $param } $cgi->param;
+}
+
+my $report_option = $cgi->param('report_option');
+$search_hash{report_option} = $report_option if $report_option;
+
+for my $param (grep /^report_option_any/, $cgi->param) {
+  $search_hash{$param} = $cgi->param($param);
+}
+
+###
+# parse dates
+###
+
+#false laziness w/report_cust_pkg.html
+my %disable = (
+  'all'             => {},
+  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, 'contract_end'=>1, 'dundate'=>1, },
+  'active'          => { 'susp'=>1, 'cancel'=>1 },
+  'suspended'       => { 'cancel' =>1, 'dundate'=>1, },
+  'cancelled'       => {},
+  ''                => {},
+);
+
+foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end change_date cancel active )) {
+
+  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
+
+  next if $beginning == 0 && $ending == 4294967295
+       or $disable{$cgi->param('status')}->{$field};
+
+  $search_hash{$field} = [ $beginning, $ending ];
+
+}
+
+my $date;
+if ( $cgi->param('date') =~ /^(\d+)$/ ) {
+  $date = $1;
+  $search_hash{'date'} = $date;
+}
+
+my $query = FS::h_cust_pkg->search(\%search_hash);
+my $count_query = delete($query->{'count_query'});
+
+my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+             ? ''
+             : ';show=packages';
+
+my $link = sub {
+  my $self = shift;
+  my $frag = 'cust_pkg'. $self->pkgnum; #hack for IE ignoring real #fragment
+  [ "${p}view/cust_main.cgi?custnum=".$self->custnum.
+                           "$show;fragment=$frag#cust_pkg",
+    'pkgnum'
+  ];
+};
+
+my $clink = sub {
+  my $cust_pkg = shift;
+  $cust_pkg->cust_main_custnum
+    ? [ "${p}view/cust_main.cgi?", 'custnum' ] 
+    : '';
+};
+
+sub time_or_blank {
+   my $column = shift;
+   return sub {
+     my $record = shift;
+     my $value = $record->get($column); #mmm closures
+     $value ? time2str('%b %d %Y', $value ) : '';
+   };
+}
+
+my $html_init = '';
+
+my $title = 'Historical Package View - ';
+if ( $date == 0 ) {
+  $title .= 'start';
+} elsif ( $date == 4294967295 ) {
+  $title .= 'present';
+} else {
+  $title .= time2str('%h %o %Y', $date);
+}
+</%init>
