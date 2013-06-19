@@ -93,7 +93,7 @@ function areyousure(href, message) {
 
 % if (     $curuser->access_right('Merge customer')
 %      and (    scalar($cust_main->ncancelled_pkgs)
-%            || $conf->exists('deletecustomers')
+%            # || we start supporting payment info merge again in some way
 %          )
 %    )
 % {
@@ -106,12 +106,6 @@ function areyousure(href, message) {
                 'height'      => 210,
               }
   &> | 
-% } 
-
-% if ( $conf->exists('deletecustomers')
-%        && $curuser->access_right('Delete customer')
-%      ) {
-  <A HREF="<% $p %>misc/delete-customer.cgi?<% $custnum%>"><% mt('Delete this customer') |h %></A> | 
 % } 
 
 % unless ( $conf->exists('disable_customer_referrals') ) { 

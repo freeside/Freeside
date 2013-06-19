@@ -118,7 +118,6 @@ tie my %rights, 'Tie::IxHash',
     'Complimentary customer', #aka users-allow_comp 
     'Merge customer',
     'Merge customer across agents',
-    { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers
     'Bill customer now', #NEW
     'Bulk send customer notices', #NEW
     { rightname=>'View customers of all agents', global=>1 },
@@ -405,7 +404,6 @@ Most (but not all) right names.
 sub default_superuser_rights {
   my $class = shift;
   my %omit = map { $_=>1 } (
-    'Delete customer',
     'Delete invoices',
     'Delete payment',
     'Delete credit', #?
