@@ -18,6 +18,7 @@ ACTION="<% $p %>edit/process/cust_location.cgi" METHOD=POST>
 <& /elements/standardize_locations.html,
             'form'          => 'EditLocationForm',
             'callback'      => 'document.EditLocationForm.submit();',
+            'with_census'   => 1,
 &>
 </TABLE>
 
@@ -30,6 +31,10 @@ function go() {
   confirm('Modify this service location?') &&
     document.EditLocationForm.submit();
 % }
+}
+
+function submit_abort() {
+  nd(1);
 }
 </SCRIPT>
 <INPUT TYPE="button" NAME="submitButton" VALUE="Submit" onclick="go()">
