@@ -134,8 +134,9 @@
 % unless ( $cgi->param('lock_locationnum') ) {
 
   <& /elements/standardize_locations.html,
-                'form'       => "OrderPkgForm",
-                'callback'   => 'document.OrderPkgForm.submit();',
+                'form'        => "OrderPkgForm",
+                'callback'    => 'document.OrderPkgForm.submit();',
+                'with_census' => 1,
   &>
 
 % }
