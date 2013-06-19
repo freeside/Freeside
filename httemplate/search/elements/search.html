@@ -453,4 +453,6 @@ if ( ref($opt{query}) ) {
   $header ||= $sth->{NAME};
 }
 
+push @$rows, $opt{'footer_data'} if $opt{'footer_data'};
+
 </%init>

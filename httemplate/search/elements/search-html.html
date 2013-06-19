@@ -253,6 +253,12 @@
 %                   $bgcolor = $bgcolor1;
 %                 }
 
+%                 my $rowstyle = '';
+%                 if ( $row eq $opt{'footer_data'} ) {
+%                   $rowstyle = ' STYLE="border-top: dashed 1px black; font-style: italic"';
+%                   $bgcolor = '#dddddd';
+%                 }
+
 %                 my $trid = '';
 %                   if ( $opt{'link_field' } ) {
 %                     my $link_field = $opt{'link_field'};
@@ -262,7 +268,7 @@
 %                       $trid = $row->$link_field();
 %                     }
 %                   }
-                  <TR ID="<%$trid |h%>">
+                  <TR ID="<%$trid |h%>"<%$rowstyle%>>
                       
 
 %                   if ( $opt{'fields'} ) {
