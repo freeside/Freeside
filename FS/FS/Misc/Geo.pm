@@ -383,19 +383,31 @@ sub standardize_ezlocate {
   die $ezlocate_error{$match->{MAT_STAT}}."\n"
     unless $match->{MAT_STAT} =~ /^B\d$/;
 
-  {
-    address1    => $match->{STD_ADDR},
+  my %result = (
+    address1    => $match->{MAT_ADDR},
     address2    => $location->{address2},
-    city        => $match->{STD_CITY},
-    state       => $match->{STD_ST},
+    city        => $match->{MAT_CITY},
+    state       => $match->{MAT_ST},
     country     => $location->{country},
-    zip         => $match->{STD_ZIP}.'-'.$match->{STD_P4},
+    zip         => $match->{MAT_ZIP},
     latitude    => $match->{MAT_LAT},
     longitude   => $match->{MAT_LON},
     censustract => $match->{FIPS_ST}.$match->{FIPS_CTY}.
                    sprintf('%07.2f',$match->{CEN_TRCT}),
     addr_clean  => 'Y',
-  };
+  );
+  if ( $match->{STD_ADDR} ) {
+    # then they have a postal standardized address for us
+    %result = ( %result,
+      address1    => $match->{STD_ADDR},
+      address2    => $location->{address2},
+      city        => $match->{STD_CITY},
+      state       => $match->{STD_ST},
+      zip         => $match->{STD_ZIP}.'-'.$match->{STD_P4},
+    );
+  }
+
+  \%result;
 }
 
 =back
