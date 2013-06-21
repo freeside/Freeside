@@ -3686,7 +3686,7 @@ and customer address. Include units.',
   {
     'key'         => 'batchconfig-eft_canada',
     'section'     => 'billing',
-    'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.',
+    'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.  If you are using separate per-agent batches (batch-spoolagent), you must set this option separately for each agent, as the global setting will be ignored.',
     'type'        => 'textarea',
     'per_agent'   => 1,
   },
