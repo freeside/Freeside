@@ -16,7 +16,7 @@ sub _calc_credit_percent {
 
   my $agent_pkg_class = qsearchs( 'agent_pkg_class', {
     'agentnum' => $self->cust_main($cust_pkg)->agentnum,
-    'classnum' => $cust_pkg->classnum,
+    'classnum' => $cust_pkg->part_pkg->classnum,
   });
 
   $agent_pkg_class ? $agent_pkg_class->commission_percent : 0;
