@@ -12,8 +12,8 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c $opt_g );
-getopts('c:m:p:r:e:d:v:P:ag');
+use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c $opt_g $opt_b );
+getopts('c:m:p:r:e:d:v:P:agb');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
@@ -168,6 +168,7 @@ sub ftp {
     or die "FTP connection to '$hostname' failed.";
   $ftp->login($ftp_user, $ftp_pass) or die "FTP login failed: ".$ftp->message;
   $ftp->cwd($opt_r) or die "can't chdir to $opt_r\n" if $opt_r;
+  $ftp->binary or die "can't set BINARY mode: ". $ftp->message if $opt_b;
   return $ftp;
 }
 
@@ -212,6 +213,8 @@ or FTP and then import them into the database.
 -P: if specified, sets the port to use
 
 -a: use ftp passive mode
+
+-b: use ftp binary mode
 
 -v: set verbosity level; this script only has one level, but it will 
     be passed as the 'debug' argument to the transport method
