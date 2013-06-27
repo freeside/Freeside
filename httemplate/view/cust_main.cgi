@@ -153,7 +153,6 @@ function areyousure(href, message) {
 % if ( $br ) {
   <BR><BR>
 % }
-</%doc>
 
 %my $signupurl = $conf->config('signupurl');
 %if ( $signupurl ) {
