@@ -183,7 +183,6 @@ sub order_pkg {
         'pkglinknum'    => $link->pkglinknum,
         'custnum'       => $self->custnum,
         'main_pkgnum'   => $cust_pkg->pkgnum,
-        'locationnum'   => $cust_pkg->locationnum,
         # try to prevent as many surprises as possible
         'pkgbatch'      => $cust_pkg->pkgbatch,
         'start_date'    => $cust_pkg->start_date,
@@ -196,7 +195,8 @@ sub order_pkg {
         'waive_setup'   => $cust_pkg->waive_setup,
         'allow_pkgpart' => $opt->{'allow_pkgpart'},
     });
-    $error = $self->order_pkg('cust_pkg' => $pkg);
+    $error = $self->order_pkg('cust_pkg' => $pkg,
+                              'locationnum' => $cust_pkg->locationnum);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting supplemental package: $error";
