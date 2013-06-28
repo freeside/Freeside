@@ -6,6 +6,7 @@ use base qw( FS::cust_main::Packages FS::cust_main::Status
              FS::cust_main::NationalID
              FS::cust_main::Billing FS::cust_main::Billing_Realtime
              FS::cust_main::Billing_Discount
+             FS::cust_main::Billing_ThirdParty
              FS::cust_main::Location
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
              FS::geocode_Mixin FS::Quotable_Mixin

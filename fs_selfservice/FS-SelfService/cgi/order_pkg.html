@@ -12,7 +12,6 @@ function enable_order_pkg () {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
 } ''; %>
 <FORM NAME="OrderPkgForm" ACTION="<%= $selfurl %>" METHOD=POST>
-<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_order_pkg">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
 <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>

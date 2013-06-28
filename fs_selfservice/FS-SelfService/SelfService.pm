@@ -109,6 +109,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
+
+  'start_thirdparty'          => 'MyAccount/start_thirdparty',
+  'finish_thirdparty'         => 'MyAccount/finish_thirdparty',
 );
 @EXPORT_OK = (
   keys(%autoload),
