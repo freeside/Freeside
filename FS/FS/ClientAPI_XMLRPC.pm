@@ -158,6 +158,7 @@ sub ss2clientapi {
   'reset_passwd'              => 'MyAccount/reset_passwd',
   'check_reset_passwd'        => 'MyAccount/check_reset_passwd',
   'process_reset_passwd'      => 'MyAccount/process_reset_passwd',
+  'list_tickets'              => 'MyAccount/list_tickets',
   'create_ticket'             => 'MyAccount/create_ticket',
   'get_ticket'                => 'MyAccount/get_ticket',
   'adjust_ticket_priority'    => 'MyAccount/adjust_ticket_priority',
