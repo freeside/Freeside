@@ -805,14 +805,17 @@ sub get_session_history {
 
 }
 
-=item tickets
+=item tickets  [ STATUS ]
 
 Returns an array of hashes representing the tickets linked to this service.
+
+An optional status (or arrayref or hashref of statuses) may be specified.
 
 =cut
 
 sub tickets {
   my $self = shift;
+  my $status = ( @_ && $_[0] ) ? shift : '';
 
   my $conf = FS::Conf->new;
   my $num = $conf->config('cust_main-max_tickets') || 10;
@@ -821,7 +824,12 @@ sub tickets {
   if ( $conf->config('ticket_system') ) {
     unless ( $conf->config('ticket_system-custom_priority_field') ) {
 
-      @tickets = @{ FS::TicketSystem->service_tickets($self->svcnum, $num) };
+      @tickets = @{ FS::TicketSystem->service_tickets( $self->svcnum,
+                                                       $num,
+                                                       undef,
+                                                       $status,
+                                                     )
+                  };
 
     } else {
 
@@ -831,10 +839,11 @@ sub tickets {
         last if scalar(@tickets) >= $num;
         push @tickets,
         @{ FS::TicketSystem->service_tickets( $self->svcnum,
-            $num - scalar(@tickets),
-            $priority,
-          )
-        };
+                                              $num - scalar(@tickets),
+                                              $priority,
+                                              $status,
+                                            )
+         };
       }
     }
   }

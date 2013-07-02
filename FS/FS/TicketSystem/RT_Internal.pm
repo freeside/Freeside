@@ -111,7 +111,7 @@ properly.
 # create an RT::Tickets object for a specified custnum or svcnum
 
 sub _tickets_search {
-  my ( $self, $type, $number, $limit, $priority ) = @_;
+  my( $self, $type, $number, $limit, $priority, $status ) = @_;
 
   $type =~ /^Customer|Service$/ or die "invalid type: $type";
   $number =~ /^\d+$/ or die "invalid custnum/svcnum: $number";
@@ -136,9 +136,28 @@ sub _tickets_search {
     }
   }
 
-  $rtql .= ' AND ( ' .
-           join(' OR ', map { "Status = '$_'" } $self->statuses) .
-           ' )';
+  my @statuses;
+  if ( defined($status) && $status ) {
+    if ( ref($status) ) {
+      if ( ref($status) eq 'HASH' ) {
+        @statuses = grep $status->{$_}, keys %$status;
+      } elsif ( ref($status) eq 'ARRAY' ) {
+        @statuses = @$status;
+      } else {
+        #what should be the failure mode here?  die?  return no tickets?
+        die 'unknown status ref '. ref($status);
+      }
+    } else {
+      @statuses = ( $status );
+    }
+    @statuses = grep /^\w+$/, @statuses; #injection prevention
+  } else {
+    @statuses = $self->statuses;
+  }
+
+  $rtql .= ' AND ( '.
+                      join(' OR ', map { "Status = '$_'" } @statuses).
+               ' ) ';
 
   warn "$me _customer_tickets_search:\n$rtql\n" if $DEBUG;
   $Tickets->FromSQL($rtql);

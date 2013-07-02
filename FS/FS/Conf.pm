@@ -4647,6 +4647,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'ng_selfservice-menu',
+    'section'     => 'self-service',
+    'description' => 'Custom menu for the next-generation self-service interface.  Each line is in the format "link Label", for example "main.php Home".  Sub-menu items are listed on subsequent lines.  Blank lines terminate the submenu.', #more docs/examples would be helpful
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'signup-no_company',
     'section'     => 'self-service',
     'description' => "Don't display a field for company name on signup.",
