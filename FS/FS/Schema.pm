@@ -3780,7 +3780,7 @@ sub tables_hashref {
         'lnp_other_provider_account', 'varchar', 'NULL', $char_d, '', '',
         'lnp_reject_reason',          'varchar', 'NULL', $char_d, '', '',
         'sms_carrierid',                  'int', 'NULL',      '', '', '',
-        'sms_account',                'varchar', 'NULL',      '', '', '',
+        'sms_account',                'varchar', 'NULL', $char_d, '', '',
         'max_simultaneous',               'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'svcnum',
