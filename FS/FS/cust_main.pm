@@ -4219,14 +4219,17 @@ sub cust_statuscolor {
   __PACKAGE__->statuscolors->{$self->cust_status};
 }
 
-=item tickets
+=item tickets [ STATUS ]
 
 Returns an array of hashes representing the customer's RT tickets.
+
+An optional status (or arrayref or hashref of statuses) may be specified.
 
 =cut
 
 sub tickets {
   my $self = shift;
+  my $status = ( @_ && $_[0] ) ? shift : '';
 
   my $num = $conf->config('cust_main-max_tickets') || 10;
   my @tickets = ();
@@ -4234,7 +4237,12 @@ sub tickets {
   if ( $conf->config('ticket_system') ) {
     unless ( $conf->config('ticket_system-custom_priority_field') ) {
 
-      @tickets = @{ FS::TicketSystem->customer_tickets($self->custnum, $num) };
+      @tickets = @{ FS::TicketSystem->customer_tickets( $self->custnum,
+                                                        $num,
+                                                        undef,
+                                                        $status,
+                                                      )
+                  };
 
     } else {
 
@@ -4246,6 +4254,7 @@ sub tickets {
           @{ FS::TicketSystem->customer_tickets( $self->custnum,
                                                  $num - scalar(@tickets),
                                                  $priority,
+                                                 $status,
                                                )
            };
       }
