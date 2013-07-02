@@ -57,7 +57,7 @@ sub condition_sql {
   my $field = $class->condition_sql_option('field');
 #amazingly, this is actually faster 
   my $sql = '( CASE';
-  foreach( qw(setup last_bill bill adjourn susp expire cancel) ) {
+  foreach( qw(setup last_bill bill adjourn susp expire cancel contract_end) ) {
     $sql .= " WHEN $field = '$_' THEN (cust_pkg.$_ IS NOT NULL AND cust_pkg.$_ <= $age)";
   }
   $sql .= ' END )';
