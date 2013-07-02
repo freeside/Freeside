@@ -379,6 +379,8 @@ sub access_info {
       $conf->exists('ticket_system-selfservice_edit_subject') && 
       $cust_main->edit_subject;
 
+  $info->{'timeout'} = $conf->config('selfservice-timeout') || 3600;
+
   return { %$info,
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
@@ -830,7 +832,7 @@ sub payment_info {
 
       'save_unchecked' => $conf->exists('selfservice-save_unchecked'),
 
-      'credit_card_surcharge_percentage' => $conf->config('credit-card-surcharge-percentage'),
+      'credit_card_surcharge_percentage' => scalar($conf->config('credit-card-surcharge-percentage')),
     };
 
   }
@@ -1250,6 +1252,50 @@ sub realtime_collect {
   return { 'error' => $error } unless ref( $error );
 
   return { 'error' => '', amount => $amount, %$error };
+}
+
+sub start_thirdparty {
+  my $p = shift;
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+  my $custnum = $session->{'custnum'};
+  my $cust_main = FS::cust_main->by_key($custnum);
+  
+  my $amount = $p->{'amount'}
+    or return { error => 'no amount' };
+
+  my $result = $cust_main->create_payment(
+    'method'      => $p->{'method'},
+    'amount'      => $p->{'amount'},
+    'pkgnum'      => $session->{'pkgnum'},
+    'session_id'  => $p->{'session_id'},
+  );
+  
+  if ( ref($result) ) { # hashref or error
+    return $result;
+  } else {
+    return { error => $result };
+  }
+}
+
+sub finish_thirdparty {
+  my $p = shift;
+  my $session_id = delete $p->{'session_id'};
+  my $session = _cache->get($session_id)
+    or return { 'error' => "Can't resume session" };
+  my $custnum = $session->{'custnum'};
+  my $cust_main = FS::cust_main->by_key($custnum);
+
+  if ( $p->{_cancel} ) {
+    # customer backed out of making a payment
+    return $cust_main->cancel_payment( $session_id );
+  }
+  my $result = $cust_main->execute_payment( $session_id, %$p );
+  if ( ref($result) ) {
+    return $result;
+  } else {
+    return { error => $result };
+  }
 }
 
 sub process_payment_order_pkg {

@@ -1,15 +1,12 @@
-<%= $url = "$selfurl?session=$session_id;action="; 
-  $cgi = new CGI;
-  ''; %>
 <%= include('header', 'Make a payment') %>
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
+} ''; %>
 
 <FORM NAME="OneTrueForm" METHOD="POST" ACTION="<%=$selfurl%>" 
 onSubmit="document.OneTrueForm.process.disabled=true">
-<INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
 <INPUT TYPE="hidden" NAME="action" VALUE="post_thirdparty_payment">
-<INPUT TYPE="hidden" NAME="payby_method" VALUE="<%= 
-$cgi->param('payby_method') =~ /(CC|ECHECK|PAYPAL)/;
-$1 %>">
+<INPUT TYPE="hidden" NAME="payby_method" VALUE="<%= $payby_method %>">
 <TABLE BGCOLOR="#cccccc">
 <TR>
   <TH ALIGN="right">Balance&nbsp;due</TH>
