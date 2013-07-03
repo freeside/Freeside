@@ -2,6 +2,7 @@ package FS::part_export::shellcommands;
 
 use vars qw(@ISA %info);
 use Tie::IxHash;
+use Date::Format;
 use String::ShellQuote;
 use FS::part_export;
 use FS::Record qw( qsearch qsearchs );
@@ -9,7 +10,9 @@ use FS::Record qw( qsearch qsearchs );
 @ISA = qw(FS::part_export);
 
 tie my %options, 'Tie::IxHash',
+
   'user' => { label=>'Remote username', default=>'root' },
+
   'useradd' => { label=>'Insert command',
                  default=>'useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username'
                 #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
@@ -21,6 +24,7 @@ tie my %options, 'Tie::IxHash',
                        type =>'textarea',
                        default=>'',
                      },
+
   'userdel' => { label=>'Delete command',
                  default=>'userdel -r $username',
                  #default=>'rm -rf $dir',
@@ -32,6 +36,7 @@ tie my %options, 'Tie::IxHash',
                        type =>'textarea',
                        default=>'',
                      },
+
   'usermod' => { label=>'Modify command',
                  default=>'usermod -c $new_finger -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -g $new_gid -p $new_crypt_password $old_username',
                 #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
@@ -54,6 +59,7 @@ tie my %options, 'Tie::IxHash',
   'usermod_nousername' => { label=>'Disallow just username changes',
                             type =>'checkbox',
                           },
+
   'suspend' => { label=>'Suspension command',
                  default=>'usermod -L $username',
                },
@@ -63,6 +69,7 @@ tie my %options, 'Tie::IxHash',
   'suspend_stdin' => { label=>'Suspension command STDIN',
                        default=>'',
                      },
+
   'unsuspend' => { label=>'Unsuspension command',
                    default=>'usermod -U $username',
                  },
@@ -72,6 +79,22 @@ tie my %options, 'Tie::IxHash',
   'unsuspend_stdin' => { label=>'Unsuspension command STDIN',
                          default=>'',
                        },
+
+  'pkg_change' => { label=>'Package changed command',
+                    default=>'',
+                  },
+
+  # run commands on package change for multiple services and roll back the
+  #  package change transaciton if one fails?  yuck. no.
+  #  if this was really needed, would need to restrict to a single service with
+  #  this kind of export configured.
+  #'pkg_change_no_queue' => { label=>'Run immediately',
+  #                           type =>'checkbox',
+  #                         },
+  'pkg_change_stdin' => { label=>'Package changed command STDIN',
+                          default=>'',
+                        },
+
   'crypt' => { label   => 'Default password encryption',
                type=>'select', options=>[qw(crypt md5)],
                default => 'crypt',
@@ -206,6 +229,24 @@ old_ for replace operations):
   <LI>All other fields in <b>svc_acct</b> are also available.
   <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker, agent_custid, locale.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
 </UL>
+For the package changed command only, the following fields are also available:
+<UL>
+  <LI>$old_pkgnum and $new_pkgnum
+  <LI>$old_pkgpart and $new_pkgpart
+  <LI>$old_agent_pkgid and $new_agent_pkgid
+  <LI>$old_order_date and $new_order_date
+  <LI>$old_start_date and $new_start_date
+  <LI>$old_setup and $new_setup
+  <LI>$old_bill and $new_bill
+  <LI>$old_last_bill and $new_last_bill
+  <LI>$old_susp and $new_susp
+  <LI>$old_adjourn and $new_adjourn
+  <LI>$old_resume and $new_resume
+  <LI>$old_cancel and $new_cancel
+  <LI>$old_unancel and $new_unancel
+  <LI>$old_expire and $new_expire
+  <LI>$old_contract_end and $new_contract_end
+</UL>
 END
 );
 
@@ -219,23 +260,46 @@ sub _map {
 sub rebless { shift; }
 
 sub _export_insert {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command('useradd', @_);
 }
 
 sub _export_delete {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command('userdel', @_);
 }
 
 sub _export_suspend {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command_or_super('suspend', @_);
 }
 
 sub _export_unsuspend {
-  my($self) = shift;
+  my $self = shift;
   $self->_export_command_or_super('unsuspend', @_);
+}
+
+sub export_pkg_change {
+  my( $self, $svc_acct, $new_cust_pkg, $old_cust_pkg ) = @_;
+
+  my @fields = qw( pkgnum pkgpart agent_pkgid ); #others?
+  my @date_fields = qw( order_date start_date setup bill last_bill susp adjourn
+                        resume cancel uncancel expore contract_end );
+
+  no strict 'vars';
+  {
+    no strict 'refs';
+    foreach (@fields) {
+      ${"old_$_"} = $old_cust_pkg->getfield($_);
+      ${"new_$_"} = $new_cust_pkg->getfield($_);
+    }
+    foreach (@date_fields) {
+      ${"old_$_"} = time2str('%Y-%m-%d', $old_cust_pkg->getfield($_));
+      ${"new_$_"} = time2str('%Y-%m-%d', $new_cust_pkg->getfield($_));
+    }
+  }
+
+  $self->_export_command('pkg_change', $svc_acct);
 }
 
 sub _export_command_or_super {
@@ -251,6 +315,7 @@ sub _export_command_or_super {
 sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
   my $command = $self->option($action);
+
   return '' if $command =~ /^\s*$/;
   my $stdin = $self->option($action."_stdin");
 
@@ -335,6 +400,7 @@ sub _export_command {
   $custnum = $cust_pkg ? $cust_pkg->custnum : '';
 
   my $stdin_string = eval(qq("$stdin"));
+  return "error filling in STDIN: $@" if $@;
 
   $first = shell_quote $first;
   $last = shell_quote $last;
@@ -357,6 +423,7 @@ sub _export_command {
   $locale = shell_quote $locale;
 
   my $command_string = eval(qq("$command"));
+  return "error filling in command: $@" if $@;
 
   my @ssh_cmd_args = (
     user          => $self->option('user') || 'root',
@@ -368,15 +435,14 @@ sub _export_command {
     fail_on_output    => $self->option('fail_on_output'),
  );
 
-  if($self->option($action . '_no_queue')) {
+  if ( $self->option($action. '_no_queue') ) {
     # discard return value just like freeside-queued.
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
     $error = $error->full_message if ref $error; # Exception::Class::Base
     return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
       if $error;
-  }
-  else {
+  } else {
     $self->shellcommands_queue( $svc_acct->svcnum, @ssh_cmd_args );
   }
 }
