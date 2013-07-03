@@ -8,7 +8,7 @@ use FS::part_pkg::flat;
 @ISA = qw(FS::part_pkg::flat);
 
 %info = (
-  'name' => 'Base charge plus per-hour (and for data) from an SQL RADIUS radacct table',
+  'name' => 'Time and data charges from an SQL RADIUS radacct table',
   'shortname' => 'Usage charges from RADIUS',
   'inherit_fields' => [ 'global_Mixin' ],
   'fields' => {

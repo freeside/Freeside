@@ -1,0 +1,161 @@
+%#<% Data::Format::HTML->new->format($index{by_path}) %>
+% my $json = "JSON"->new->canonical;
+<% $json->encode($result) %>
+<%init>
+#<%once>  #enable me in production
+use SNMP;
+SNMP::initMib();
+my $mib = \%SNMP::MIB;
+
+# make an index of the leaf nodes
+my %index = (
+  by_objectID => {}, # {.1.3.6.1.2.1.1.1}
+  by_fullname => {}, # {iso.org.dod.internet.mgmt.mib-2.system.sysDescr}
+  by_path     => {}, # {iso}{org}{dod}{internet}{mgmt}{mib-2}{system}{sysDescr}
+  module  => {}, #{SNMPv2-MIB}{by_path}{iso}{org}...
+                 #{SNMPv2-MIB}{by_fullname}{iso.org...}
+);
+
+my %name_of_oid = (); # '.1.3.6.1' => 'iso.org.dod.internet'
+
+# build up path names
+my $fullname;
+$fullname = sub {
+  my $oid = shift;
+  return $name_of_oid{$oid} if exists $name_of_oid{$oid};
+
+  my $object = $mib->{$oid};
+  my $myname = '.' . $object->{label};
+  # cut off the last element and recurse
+  $oid =~ /^(\.[\d\.]+)?(\.\d+)$/;
+  if ( length($1) ) {
+    $myname = $fullname->($1) . $myname;
+  }
+  return $name_of_oid{$oid} = $myname
+};
+
+my @oids = keys(%$mib); # dotted numeric OIDs
+foreach my $oid (@oids) {
+  my $object = {};
+  %$object = %{ $mib->{$oid} }; # untie it
+  # and remove references
+  delete $object->{parent};
+  delete $object->{children};
+  delete $object->{nextNode};
+  $index{by_objectID}{$oid} = $object;
+  my $myname = $fullname->($oid);
+  $object->{fullname} = $myname;
+  $index{by_fullname}{$myname} = $object;
+  my $moduleID = $object->{moduleID};
+  $index{module}{$moduleID} ||= { by_fullname => {}, by_path => {} };
+  $index{module}{$moduleID}{by_fullname}{$myname} = $object;
+}
+my @names = sort {$a cmp $b} keys %{ $index{by_fullname} };
+foreach my $myname (@names) {
+  my $obj = $index{by_fullname}{$myname};
+  my $moduleID = $obj->{moduleID};
+  my @parts = split('\.', $myname);
+  shift @parts; # always starts with an empty string
+  for ($index{by_path}, $index{module}{$moduleID}{by_path}) {
+    my $subindex = $_;
+    for my $this_part (@parts) {
+      $subindex = $subindex->{$this_part} ||= {};
+    }
+    # $subindex now = $index{by_path}{foo}{bar}{baz}.
+    # set {''} = the object with that name.
+    # and set object $index{by_path}{foo}{bar}{baz}{''} = 
+    # the object named .foo.bar.baz
+    $subindex->{''} = $obj;
+  }
+}
+
+#</%once>
+#<%init>
+# no ACL for this
+my $sub = $cgi->param('sub');
+my $result = {};
+if ( $sub eq 'search' ) {
+  warn "search: ".$cgi->param('arg')."\n";
+  my ($module, $string) = split(':', $cgi->param('arg'), 2);
+  my $idx; # the branch of the index to use for this search
+  if ( $module eq 'ANY' ) {
+    $idx = \%index;
+  } elsif (exists($index{module}{$module}) ) {
+    $idx = $index{module}{$module};
+  } else {
+    warn "unknown MIB moduleID: $module\n";
+    $idx = {}; # will return nothing, because you've somehow sent a bad moduleID
+  }
+  if ( exists($index{by_fullname}{$string}) ) {
+    warn "exact match\n";
+    # don't make this module-selective--if the path matches an existing 
+    # object, return that object
+    %$result = %{ $index{by_fullname}{$string} }; # put the object info in $result
+    #warn Dumper $result;
+  }
+  my @choices; # menu options to return
+  if ( $string =~ /^[\.\d]+$/ ) {
+    # then this is a numeric path
+    # ignore the module filter, and return everything starting with $string
+    if ( $string =~ /^\./ ) {
+      @choices = grep /^\Q$string\E/, keys %{$index{by_objectID}};
+    } else {
+      # or everything containing it
+      @choices = grep /\Q$string\E/, keys %{$index{by_objectID}};
+    }
+    @choices = map { $index{by_objectID}{$_}->{fullname} } @choices;
+  } elsif ( $string eq '' or $string =~ /^\./ ) {
+    # then this is an absolute path
+    my @parts = split('\.', $string);
+    shift @parts;
+    my $subindex = $idx->{by_path};
+    my $path = '';
+    @choices = keys %$subindex;
+    # walk all the specified path parts
+    foreach my $this_part (@parts) {
+      # stop before walking off the map
+      last if !exists($subindex->{$this_part});
+      $subindex = $subindex->{$this_part};
+      $path .= '.' . $this_part;
+      @choices = grep {$_} keys %$subindex;
+    }
+    # skip uninteresting nodes: those that aren't accessible nodes (have no
+    # data type), and have only one path forward
+    while ( scalar(@choices) == 1
+            and (!exists $subindex->{''} or $subindex->{''}->{type} eq '') ) {
+
+      $subindex = $subindex->{ $choices[0] };
+      $path .= '.' . $choices[0];
+      @choices = grep {$_} keys %$subindex;
+
+    }
+
+    # if we are on an existing node, and the entered path didn't exactly
+    # match another node, return the current node as the result
+    if (!keys %$result and exists($subindex->{''})) {
+      %$result = %{ $subindex->{''} };
+    }
+    # prepend the path up to this point
+    foreach (@choices) {
+      $_ = $path.'.'.$_;
+      # also label accessible nodes for the UI
+      if ( exists($subindex->{$_}{''}) and $subindex->{$_}{''}{'type'} ) {
+        $_ .= '-';
+      }
+    }
+    # also include one level above the originally requested path, 
+    # for tree-like navigation
+    if ( $string =~ /^(.+)\.[^\.]+/ ) {
+      unshift @choices, $1;
+    }
+  } else {
+    # then this is a full-text search
+    warn "/$string/\n";
+    @choices = grep /\Q$string\E/i, keys(%{ $idx->{by_fullname} });
+  }
+  @choices = sort @choices;
+  $result->{choices} = \@choices;
+} elsif ( $sub eq 'get_module_list' ) {
+  $result = { modules => [ sort keys(%{ $index{module} }) ] };
+}
+</%init>

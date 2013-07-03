@@ -174,9 +174,7 @@ $cust_main->set('stateid_state', $cust_main->state )
 
 $opt{geocode} ||= $cust_main->get('geocode');
 
-if ( $conf->exists('cust_main-require_censustract') ) {
-  $opt{censustract} ||= $cust_main->censustract;
-}
+$opt{censustract} ||= $cust_main->censustract;
 
 $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
                    ? 'Day'

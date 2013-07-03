@@ -23,6 +23,11 @@
   'disable_empty' => 1,
 &>
 
+<& /elements/tr-select-cust_class.html,
+  'field'         => 'cust_classnum',
+  'multiple'      => 1,
+&>
+
 <& /elements/tr-select-pkg_class.html,
   'pre_options' => [ '' => 'all', '0' => '(empty class)' ],
   'disable_empty' => 1,

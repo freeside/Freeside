@@ -1,0 +1,284 @@
+<& /elements/header-popup.html, 'Credit line items' &>
+
+<FORM ACTION="process/credit-cust_bill_pkg.html" METHOD="POST">
+<INPUT TYPE="hidden" NAME="crednum" VALUE="">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum |h %>">
+<INPUT TYPE="hidden" NAME="paybatch" VALUE="">
+<INPUT TYPE="hidden" NAME="_date" VALUE="<% time %>">
+<table>
+
+% my $old_invnum = 0; 
+%# foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
+% foreach my $item ( @items ) {
+%   my( $setuprecur, $cust_bill_pkg ) = @$item;
+
+%   my $method = $setuprecur eq 'setup' ? 'setup' : 'recur';
+%   my $amount = $cust_bill_pkg->$method();
+%   my $credited = $cust_bill_pkg->credited('', '', 'setuprecur'=>$method);
+%   $amount -= $credited;
+%   $amount = sprintf('%.2f', $amount);
+%   next unless $amount > 0;
+
+%   if ( $cust_bill_pkg->invnum ne $old_invnum ) {
+      <TR><TD COLSPAN=4 BGCOLOR="#f8f8f8">&nbsp;</TD></TR>
+      <TR><TH COLSPAN=4 BGCOLOR="#f8f8f8" ALIGN="left">Invoice #<% $cust_bill_pkg->invnum %> - <% time2str($date_format, $cust_bill_pkg->cust_bill->_date) %></TD></TR>
+%     $old_invnum = $cust_bill_pkg->invnum;
+%   }
+
+%   my $el_name = 'billpkgnum'. $cust_bill_pkg->billpkgnum. '-'. $setuprecur;
+    <TR>
+      <TD>
+        <INPUT TYPE            = "checkbox"
+               NAME            = "<% $el_name %>"
+               ID              = "<% $el_name %>"
+               onClick         = "calc_total(this)"
+               data-billpkgnum = "<% $cust_bill_pkg->billpkgnum %>"
+               data-setuprecur = "<% $setuprecur %>"
+        >
+      </TD>
+      <TD BGCOLOR="#ffffff"><% $cust_bill_pkg->desc |h %></TD>
+%#    show one-time/setup vs recur vs usage?
+      <TD BGCOLOR="#ffffff" ALIGN="right"><% $money_char. $amount %></TD>
+      <TD ALIGN="right">
+        <% $money_char %><INPUT TYPE     = "text"
+                                NAME     = "<% $el_name %>-amount"
+                                ID       = "<% $el_name %>-amount"
+                                VALUE    = "<% $amount %>"
+                                SIZE     = 6
+                                onChange = "calc_total(this)"
+                                STYLE    = "text-align:right;"
+                                DISABLED
+                         >
+      </TD>
+    </TR>
+
+% }
+
+<TR><TD COLSPAN=4 BGCOLOR="#f8f8f8">&nbsp;</TD></TR>
+<TR>
+  <TD></TD>
+  <TD ALIGN="right" COLSPAN=2>Subtotal: </TD>
+  <TD ALIGN="right" ID="subtotal_td"><% $money_char %><% sprintf('%.2f', 0) %></TD>
+</TR>
+<TR>
+  <TD></TD>
+  <TD ALIGN="right" COLSPAN=2>Taxes: </TD>
+  <TD ALIGN="right" ID="taxtotal_td"><% $money_char %><% sprintf('%.2f', 0) %></TD>
+</TR>
+<TR>
+  <TD></TD>
+  <TH ALIGN="right" COLSPAN=2>Total credit amount: </TD>
+  <TH ALIGN="right" ID="total_td"><% $money_char %><% sprintf('%.2f', 0) %></TD>
+</TR>
+
+</table>
+
+<INPUT TYPE="hidden" NAME="amount" ID="total_el" VALUE="0.00">
+
+<table>
+
+<& /elements/tr-select-reason.html,
+              'field'          => 'reasonnum',
+              'reason_class'   => 'R',
+              #XXX reconcile both this and show_taxes wanteding to enable this
+              'id'             => 'select_reason',
+              'control_button' => "document.getElementById('credit_button')",
+              'cgi'            => $cgi,
+&>
+
+<TR>
+  <TD ALIGN="right"><% mt('Additional info') |h %></TD>
+  <TD>
+    <INPUT TYPE="text" NAME="addlinfo" VALUE="<% $cgi->param('addlinfo') |h %>">
+  </TD>
+</TR>
+
+% if ( $conf->exists('credits-auto-apply-disable') ) {
+        <INPUT TYPE="HIDDEN" NAME="apply" VALUE="no">
+% } else {
+  <TR>
+    <TD ALIGN="right"><% mt('Apply to selected line items') |h %></TD>
+    <TD><SELECT NAME="apply"><OPTION VALUE="yes" SELECTED><% mt('yes') |h %><OPTION><% mt('no') |h %></SELECT></TD>
+  </TR>
+% }
+
+</table>
+
+<BR>
+<INPUT TYPE="submit" ID="credit_button" VALUE="Credit" DISABLED>
+
+</FORM>
+
+<% include( '/elements/xmlhttp.html',
+            'url' =>  $p.'misc/xmlhttp-cust_bill_pkg-calculate_taxes.html',
+            'subs' => [ 'calculate_taxes' ],
+          )
+%>
+<SCRIPT TYPE="text/javascript">
+
+document.getElementById('select_reason').disabled = true;
+  // start it disabled because no line items are selected yet
+function show_taxes(arg) {
+  var argsHash = eval('(' + arg + ')');
+
+  //XXX add an 'ErrorMessage' section to the HTML and re-enable
+  //var error = argsHash['error'];
+
+  //var paragraph = document.getElementById('ErrorMessage');
+  //if (error) {
+  //  paragraph.innerHTML = 'Error: ' + error;
+  //  paragraph.style.color = '#ff0000';
+  //} else {
+  //  paragraph.innerHTML = '';
+  //}
+
+  var taxlines = argsHash['taxlines'];
+
+//XXX display the tax lines? just a total will do for now
+//
+//  var table = document.getElementById('ApplicationTable');
+//
+//  var aFoundRow = 0;
+//  for (i = 0; taxlines[i]; i++) {
+//    var itemdesc = taxlines[i][0];
+//    var locnum   = taxlines[i][2];
+//    if (taxlines[i][3]) {
+//      locnum  = taxlines[i][3];
+//    }
+//
+//    var found = 0;
+//    for (var row = 2; table.rows[row]; row++) {
+//      var inputs = table.rows[row].getElementsByTagName('input');
+//      if (! inputs.length) {
+//        while ( table.rows[row] ) {
+//           table.deleteRow(row);
+//        }
+//        break;
+//      }
+//      if ( inputs.item(4).value == itemdesc && inputs.item(2).value == locnum )
+//      {
+//        inputs.item(0).value = taxlines[i][1];
+//        aFoundRow = found = row;
+//        break;
+//      }
+//    }
+//    if (! found) {
+//      var row = table.insertRow(table.rows.length);
+//      var warning_cell = document.createElement('TD');
+//      warning_cell.style.color = '#ff0000';
+//      warning_cell.colSpan = 2;
+//      warning_cell.innerHTML = 'Calculated Tax - ' + itemdesc + ' - ' +
+//                               taxlines[i][1] + ' will not be applied';
+//      row.appendChild(warning_cell);
+//    }
+//  }
+//
+//  if (aFoundRow) {
+//    sub_changed(table.rows[aFoundRow].getElementsByTagName('input').item(0));
+//  }
+
+  var subtotal = parseFloat( argsHash['subtotal'] );
+
+  var taxtotal = parseFloat( argsHash['taxtotal'] );
+  document.getElementById('taxtotal_td').innerHTML =
+    '<% $money_char %>' + taxtotal.toFixed(2);
+
+  var total = subtotal + taxtotal;
+  document.getElementById('total_td').innerHTML =
+    '<% $money_char %>' + total.toFixed(2);
+  document.getElementById('total_el').value = total.toFixed(2);
+
+  //XXX reconcile both this and the reason selector wanteding to enable this
+  if ( total > 0 ) {
+    //document.getElementById('credit_button').disabled = false;
+    document.getElementById('select_reason').disabled = false;
+  }
+    
+}
+
+function calc_total(what) {
+
+  //document.getElementById('credit_button').disabled = true;
+  document.getElementById('select_reason').disabled = true;
+
+  var subtotal = 0;
+  // bah, a pain, just using an attribute var re = /^billpkgnum(\d+)$/;
+
+  var el = what.form.elements;
+  var billpkgnums = [];
+  var setuprecurs = [];
+  var amounts = [];
+  for (var i=0; i<el.length; i++) {
+
+    if ( el[i].type == 'checkbox' ) {
+      var amount_el = document.getElementById( el[i].id + '-amount' );
+      if ( el[i].checked ) {
+        amount_el.disabled = false;
+        var amount = amount_el.value;
+        subtotal += parseFloat( amount );
+        amounts.push( amount );
+        billpkgnums.push( el[i].getAttribute('data-billpkgnum') );
+        setuprecurs.push( el[i].getAttribute('data-setuprecur') );
+      } else {
+        amount_el.disabled = true;
+      }
+    }
+
+  }
+
+  document.getElementById('subtotal_td').innerHTML =
+    '<% $money_char %>' + subtotal.toFixed(2);
+
+  var args = new Array(
+    'custnum',     '<% $custnum %>',
+    'subtotal',    subtotal,
+    'billpkgnums', billpkgnums.join(),
+    'setuprecurs', setuprecurs.join(),
+    'amounts',     amounts.join()
+  );
+
+  calculate_taxes( args, show_taxes );
+
+}
+</SCRIPT>
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('Credit line items');
+
+#a tiny bit of false laziness w/search/cust_bill_pkg.cgi, but we're pretty
+# specialized and a piece of UI, not a report
+#slightly more false laziness w/httemplate/edit/elements/ApplicationCommon.html
+# show_taxes & calc_total here/do_calculate_tax there
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
+my $cust_main = qsearchs({
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+}) or die 'unknown customer';
+
+my @cust_bill_pkg = qsearch({
+  'select'    => 'cust_bill_pkg.*',
+  'table'     => 'cust_bill_pkg',
+  'addl_from' => 'LEFT JOIN cust_bill USING (invnum)',
+  'extra_sql' => "WHERE custnum = $custnum AND pkgnum != 0",
+  'order_by'  => 'ORDER BY invnum ASC, billpkgnum ASC',
+});
+
+my @items = map { my %hash = $_->disintegrate;
+                  map [ $_, $hash{$_} ],
+                    keys(%hash);
+                }
+              @cust_bill_pkg;
+
+#omit line items which have been previously credited?  would be nice
+
+</%init>

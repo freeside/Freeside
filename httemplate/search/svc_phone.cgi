@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/svc_Common.html,
                  'title'             => "Phone number search results",
                  'name'              => 'phone numbers',
                  'query'             => $sql_query,
@@ -9,7 +9,7 @@
                                           'Country code',
                                           'Phone number',
                                           @header,
-                                          FS::UI::Web::cust_header(),
+                                          FS::UI::Web::cust_header($cgi->param('cust_fields')),
                                         ],
                  'fields'            => [ 'svcnum',
                                           'svc',
@@ -24,7 +24,7 @@
                                           $link,
                                           ( map '', @header ),
                                           ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
-                                                FS::UI::Web::cust_header()
+                                                FS::UI::Web::cust_header($cgi->param('cust_fields'))
                                           ),
                                         ],
                  'align' => 'rlrr'.
@@ -46,8 +46,8 @@
                               ( map '', @header ),
                               FS::UI::Web::cust_styles(),
                             ],
-              )
-%>
+              
+&>
 <%init>
 
 die "access denied"
@@ -56,8 +56,6 @@ die "access denied"
 my $conf = new FS::Conf;
 
 my @select = ();
-my %svc_phone = ();
-my @extra_sql = ();
 my $orderby = 'ORDER BY svcnum';
 
 my @header = ();
@@ -65,9 +63,12 @@ my @fields = ();
 my $link = [ "${p}view/svc_phone.cgi?", 'svcnum' ];
 my $redirect = $link;
 
+my %search_hash = ();
+my @extra_sql = ();
+
 if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
-  push @extra_sql, 'pkgnum IS NULL'
+  $search_hash{'unlinked'} = 1
     if $cgi->param('magic') eq 'unlinked';
 
   if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
@@ -119,52 +120,31 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   }
 
+} elsif ( $cgi->param('magic') =~ /^advanced$/ ) {
+
+  for (qw( agentnum custnum cust_status balance balance_days cust_fields )) {
+    $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
+  }
+
+  for (qw( payby pkgpart svcpart )) {
+    $search_hash{$_} = [ $cgi->param($_) ] if $cgi->param($_);
+  }
+
 } elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-  push @extra_sql, "svcpart = $1";
+  $search_hash{'svcpart'} = [ $1 ];
 } else {
   $cgi->param('phonenum') =~ /^([\d\- ]+)$/; 
-  ( $svc_phone{'phonenum'} = $1 ) =~ s/\D//g;
+  my $phonenum = $1;
+  $phonenum =~ s/\D//g;
+  push @extra_sql, "phonenum = '$phonenum'";
 }
 
-my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                ' LEFT JOIN cust_main USING ( custnum ) ';
+$search_hash{'addl_select'} = \@select;
+$search_hash{'order_by'} = $orderby;
+$search_hash{'where'} = \@extra_sql;
 
-#here is the agent virtualization
-push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql(
-                   'null_right' => 'View/link unlinked services'
-                 );
-
-my $extra_sql = '';
-if ( @extra_sql ) {
-  $extra_sql = ( keys(%svc_phone) ? ' AND ' : ' WHERE ' ).
-               join(' AND ', @extra_sql );
-}
-
-my $count_query = "SELECT COUNT(*) FROM svc_phone $addl_from ";
-if ( keys %svc_phone ) {
-  $count_query .= ' WHERE '.
-                    join(' AND ', map "$_ = ". dbh->quote($svc_phone{$_}),
-                                      keys %svc_phone
-                        );
-}
-$count_query .= $extra_sql;
-
-my $sql_query = {
-  'table'     => 'svc_phone',
-  'hashref'   => \%svc_phone,
-  'select'    => join(', ',
-                   'svc_phone.*',
-                   'part_svc.svc',
-                   @select,
-                   'cust_main.custnum',
-                   FS::UI::Web::cust_sql_fields(),
-                 ),
-  'extra_sql' => $extra_sql,
-  'order_by'  => $orderby,
-  'addl_from' => $addl_from,
-};
+my $sql_query = FS::svc_phone->search(\%search_hash);
+my $count_query = delete($sql_query->{'count_query'});
 
 #smaller false laziness w/svc_*.cgi here
 my $link_cust = sub {

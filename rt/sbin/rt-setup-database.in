@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -206,7 +206,7 @@ foreach my $action ( @actions ) {
 sub action_create {
     my %args = @_;
     my $dbh = get_system_dbh();
-    my ($status, $msg) = RT::Handle->CheckCompatibility( $dbh, 'pre' );
+    my ($status, $msg) = RT::Handle->CheckCompatibility( $dbh, 'create' );
     return ($status, $msg) unless $status;
 
     print "Now creating a $db_type database $db_name for RT.\n";
@@ -234,7 +234,7 @@ END
 sub action_schema {
     my %args = @_;
     my $dbh = get_admin_dbh();
-    my ($status, $msg) = RT::Handle->CheckCompatibility( $dbh, 'pre' );
+    my ($status, $msg) = RT::Handle->CheckCompatibility( $dbh, 'schema' );
     return ($status, $msg) unless $status;
 
     print "Now populating database schema.\n";
@@ -244,7 +244,7 @@ sub action_schema {
 sub action_acl {
     my %args = @_;
     my $dbh = get_admin_dbh();
-    my ($status, $msg) = RT::Handle->CheckCompatibility( $dbh, 'pre' );
+    my ($status, $msg) = RT::Handle->CheckCompatibility( $dbh, 'acl' );
     return ($status, $msg) unless $status;
 
     print "Now inserting database ACLs.\n";
@@ -257,7 +257,7 @@ sub action_coredata {
     $RT::Handle->dbh( undef );
     RT::ConnectToDatabase();
     RT::InitLogging();
-    my ($status, $msg) = RT::Handle->CheckCompatibility( $RT::Handle->dbh, 'pre' );
+    my ($status, $msg) = RT::Handle->CheckCompatibility( $RT::Handle->dbh, 'coredata' );
     return ($status, $msg) unless $status;
 
     print "Now inserting RT core system objects.\n";
@@ -268,7 +268,7 @@ sub action_insert {
     my %args = @_;
     $RT::Handle = RT::Handle->new;
     RT::Init();
-    my ($status, $msg) = RT::Handle->CheckCompatibility( $RT::Handle->dbh, 'pre' );
+    my ($status, $msg) = RT::Handle->CheckCompatibility( $RT::Handle->dbh, 'insert' );
     return ($status, $msg) unless $status;
 
     print "Now inserting data.\n";
@@ -308,6 +308,7 @@ sub action_upgrade {
     return (0, "Couldn't read dir '$base_dir' with upgrade data")
         unless -d $base_dir || -r _;
 
+    my $version_word_regex = join '|', RT::Handle->version_words;
     my $upgrading_from = undef;
     do {
         if ( defined $upgrading_from ) {
@@ -318,7 +319,7 @@ sub action_upgrade {
         $upgrading_from = scalar <STDIN>;
         chomp $upgrading_from;
         $upgrading_from =~ s/\s+//g;
-    } while $upgrading_from !~ /^\d+\.\d+\.\w+$/;
+    } while $upgrading_from !~ /^\d+\.\d+\.\d+(?:$version_word_regex)?\d*$/;
 
     my $upgrading_to = $RT::VERSION;
     return (0, "The current version $upgrading_to is lower than $upgrading_from")
@@ -353,7 +354,7 @@ sub action_upgrade {
             chomp $custom_upgrading_to;
             $custom_upgrading_to =~ s/\s+//g;
             last unless $custom_upgrading_to;
-        } while $custom_upgrading_to !~ /^\d+\.\d+\.\w+$/;
+        } while $custom_upgrading_to !~ /^\d+\.\d+\.\d+(?:$version_word_regex)?\d*$/;
 
         if ( $custom_upgrading_to ) {
             return (

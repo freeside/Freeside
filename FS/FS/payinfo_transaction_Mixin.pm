@@ -23,7 +23,8 @@ use vars qw(@ISA);
 =head1 DESCRIPTION
 
 This is a mixin class for records that represent transactions: that contain
-payinfo and paybatch.  Currently FS::cust_pay and FS::cust_refund
+payinfo and realtime result fields (gatewaynum, processor, authorization,
+order_number).  Currently FS::cust_pay, FS::cust_refund, and FS::cust_pay_void.
 
 =head1 METHODS
 
@@ -55,32 +56,8 @@ sub payby_name {
   }
 }
 
-=item gatewaynum
+# We keep _parse_paybatch just because the upgrade needs it.
 
-Returns a gatewaynum for the processing gateway.
-
-=item processor
-
-Returns a name for the processing gateway.
-
-=item authorization
-
-Returns a name for the processing gateway.
-
-=item order_number
-
-Returns a name for the processing gateway.
-
-=cut
-
-sub gatewaynum    { shift->_parse_paybatch->{'gatewaynum'}; }
-sub processor     { shift->_parse_paybatch->{'processor'}; }
-sub authorization { shift->_parse_paybatch->{'authorization'}; }
-sub order_number  { shift->_parse_paybatch->{'order_number'}; }
-
-#sucks that this stuff is in paybatch like this in the first place,
-#but at least other code can start to use new field names
-#(code nicked from FS::cust_main::realtime_refund_bop)
 sub _parse_paybatch {
   my $self = shift;
 
@@ -96,10 +73,7 @@ sub _parse_paybatch {
     my $payment_gateway =
       qsearchs('payment_gateway', { 'gatewaynum' => $gatewaynum } );
 
-    die "payment gateway $gatewaynum not found" #?
-      unless $payment_gateway;
-
-    $processor = $payment_gateway->gateway_module;
+    $processor = $payment_gateway->gateway_module if $payment_gateway;
 
   }
 
@@ -110,6 +84,33 @@ sub _parse_paybatch {
     'order_number'  => $order_number,
   };
 
+}
+
+# because we can't actually name the field 'authorization' (reserved word)
+sub authorization {
+  my $self = shift;
+  $self->auth(@_);
+}
+
+=item payinfo_check
+
+Checks the validity of the realtime payment fields (gatewaynum, processor,
+auth, and order_number) as well as payby and payinfo
+
+=cut
+
+sub payinfo_check {
+  my $self = shift;
+
+  # All of these can be null, so in principle this could go in payinfo_Mixin.
+
+  $self->SUPER::payinfo_check()
+  || $self->ut_numbern('gatewaynum')
+  # not ut_foreign_keyn, it causes upgrades to fail
+  || $self->ut_alphan('processor')
+  || $self->ut_textn('auth')
+  || $self->ut_textn('order_number')
+  || '';
 }
 
 =back

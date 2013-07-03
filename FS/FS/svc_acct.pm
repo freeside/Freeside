@@ -6,6 +6,7 @@ use base qw( FS::svc_Domain_Mixin
              FS::svc_CGPRule_Mixin
              FS::svc_Radius_Mixin
              FS::svc_Tower_Mixin
+             FS::svc_IP_Mixin
              FS::svc_Common );
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
@@ -14,6 +15,7 @@ use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase $username_percent $username_colon
              $username_slash $username_equals $username_pound
+             $username_exclamation
              $password_noampersand $password_noexclamation
              $warning_template $warning_from $warning_subject $warning_mimetype
              $warning_cc
@@ -84,6 +86,7 @@ FS::UID->install_callback( sub {
   $username_slash = $conf->exists('username-slash');
   $username_equals = $conf->exists('username-equals');
   $username_pound = $conf->exists('username-pound');
+  $username_exclamation = $conf->exists('username-exclamation');
   $password_noampersand = $conf->exists('password-noexclamation');
   $password_noexclamation = $conf->exists('password-noexclamation');
   $dirhash = $conf->config('dirhash') || 0;
@@ -1126,6 +1129,8 @@ sub check {
               || $self->ut_foreign_key( 'domsvc', 'svc_domain', 'svcnum' )
               || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
               || $self->ut_foreign_keyn('sectornum','tower_sector','sectornum')
+              || $self->ut_foreign_keyn('routernum','router','routernum')
+              || $self->ut_foreign_keyn('blocknum','addr_block','blocknum')
               || $self->ut_textn('sec_phrase')
               || $self->ut_snumbern('seconds')
               || $self->ut_snumbern('upbytes')
@@ -1161,6 +1166,15 @@ sub check {
   ;
   return $error if $error;
 
+  # assign IP address, etc.
+  if ( $conf->exists('svc_acct-ip_addr') ) {
+    my $error = $self->svc_ip_check;
+    return $error if $error;
+  } else { # I think this is correct
+    $self->routernum('');
+    $self->blocknum('');
+  }
+
   my $cust_pkg;
   local $username_letter = $username_letter;
   local $username_uppercase = $username_uppercase;
@@ -1181,7 +1195,7 @@ sub check {
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
 
-  $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=\#]{$usernamemin,$ulen})$/i
+  $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=\#\!]{$usernamemin,$ulen})$/i
     or return gettext('illegal_username'). " ($usernamemin-$ulen): ". $recref->{username};
   $recref->{username} = $1;
 
@@ -1221,6 +1235,9 @@ sub check {
   }
   unless ( $username_pound ) {
     $recref->{username} =~ /\#/ and return $uerror;
+  }
+  unless ( $username_exclamation ) {
+    $recref->{username} =~ /\!/ and return $uerror;
   }
 
 
@@ -1314,7 +1331,7 @@ sub check {
 
   unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
     if ( $recref->{slipip} eq '' ) {
-      $recref->{slipip} = '';
+      $recref->{slipip} = ''; # eh?
     } elsif ( $recref->{slipip} eq '0e0' ) {
       $recref->{slipip} = '0e0';
     } else {
@@ -1322,7 +1339,6 @@ sub check {
         or return "Illegal slipip: ". $self->slipip;
       $recref->{slipip} = $1;
     }
-
   }
 
   #arbitrary RADIUS stuff; allow ut_textn for now
@@ -1384,6 +1400,7 @@ sub check {
   else {
     return "invalid password encoding ('".$recref->{_password_encoding}."'";
   }
+
   $self->SUPER::check;
 
 }
@@ -1878,12 +1895,14 @@ sub email {
   $self->username. '@'. $self->domain(@_);
 }
 
+
 =item acct_snarf
 
 Returns an array of FS::acct_snarf records associated with the account.
 
 =cut
 
+# unused as originally intended, but now by Communigate Pro "RPOP"
 sub acct_snarf {
   my $self = shift;
   qsearch({
@@ -2805,116 +2824,39 @@ Arrayref of additional WHERE clauses, will be ANDed together.
 
 =cut
 
-sub search {
-  my ($class, $params) = @_;
+sub _search_svc {
+  my( $class, $params, $from, $where ) = @_;
 
-  my @from = (
-    ' LEFT JOIN cust_svc  USING ( svcnum  ) ',
-    ' LEFT JOIN part_svc  USING ( svcpart ) ',
-    ' LEFT JOIN cust_pkg  USING ( pkgnum  ) ',
-    ' LEFT JOIN cust_main USING ( custnum ) ',
-  );
-
-  my @where = ();
+  #these two should probably move to svc_Domain_Mixin ?
 
   # domain
   if ( $params->{'domain'} ) { 
     my $svc_domain = qsearchs('svc_domain', { 'domain'=>$params->{'domain'} } );
     #preserve previous behavior & bubble up an error if $svc_domain not found?
-    push @where, 'domsvc = '. $svc_domain->svcnum if $svc_domain;
+    push @$where, 'domsvc = '. $svc_domain->svcnum if $svc_domain;
   }
 
   # domsvc
   if ( $params->{'domsvc'} =~ /^(\d+)$/ ) { 
-    push @where, "domsvc = $1";
+    push @$where, "domsvc = $1";
   }
 
-  #unlinked
-  push @where, 'pkgnum IS NULL' if $params->{'unlinked'};
-
-  #agentnum
-  if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
-    push @where, "cust_main.agentnum = $1";
-  }
-
-  #custnum
-  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1 ) {
-    push @where, "custnum = $1";
-  }
-
-  #pkgpart
-  if ( $params->{'pkgpart'} && scalar(@{ $params->{'pkgpart'} }) ) {
-    #XXX untaint or sql quote
-    push @where,
-      'cust_pkg.pkgpart IN ('. join(',', @{ $params->{'pkgpart'} } ). ')';
-  }
 
   # popnum
   if ( $params->{'popnum'} =~ /^(\d+)$/ ) { 
-    push @where, "popnum = $1";
+    push @$where, "popnum = $1";
   }
 
-  # svcpart
-  if ( $params->{'svcpart'} =~ /^(\d+)$/ ) { 
-    push @where, "svcpart = $1";
-  }
 
-  if ( $params->{'exportnum'} =~ /^(\d+)$/ ) {
-    push @from, ' LEFT JOIN export_svc USING ( svcpart )';
-    push @where, "exportnum = $1";
-  }
+  #and these in svc_Tower_Mixin, or maybe we never should have done svc_acct
+  # towers (or, as mark thought, never should have done svc_broadband)
 
   # sector and tower
   my @where_sector = $class->tower_sector_sql($params);
   if ( @where_sector ) {
-    push @where, @where_sector;
-    push @from, ' LEFT JOIN tower_sector USING ( sectornum )';
+    push @$where, @where_sector;
+    push @$from, ' LEFT JOIN tower_sector USING ( sectornum )';
   }
-
-  # here is the agent virtualization
-  #if ($params->{CurrentUser}) {
-  #  my $access_user =
-  #    qsearchs('access_user', { username => $params->{CurrentUser} });
-  #
-  #  if ($access_user) {
-  #    push @where, $access_user->agentnums_sql('table'=>'cust_main');
-  #  }else{
-  #    push @where, "1=0";
-  #  }
-  #} else {
-    push @where, $FS::CurrentUser::CurrentUser->agentnums_sql(
-                   'table'      => 'cust_main',
-                   'null_right' => 'View/link unlinked services',
-                 );
-  #}
-
-  push @where, @{ $params->{'where'} } if $params->{'where'};
-
-  my $addl_from = join(' ', @from);
-  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
-
-  my $count_query = "SELECT COUNT(*) FROM svc_acct $addl_from $extra_sql";
-  #if ( keys %svc_acct ) {
-  #  $count_query .= ' WHERE '.
-  #                    join(' AND ', map "$_ = ". dbh->quote($svc_acct{$_}),
-  #                                      keys %svc_acct
-  #                        );
-  #}
-
-  my $sql_query = {
-    'table'       => 'svc_acct',
-    'hashref'     => {}, # \%svc_acct,
-    'select'      => join(', ',
-                       'svc_acct.*',
-                       'part_svc.svc',
-                       'cust_main.custnum',
-                       FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
-                     ),
-    'addl_from'   => $addl_from,
-    'extra_sql'   => $extra_sql,
-    'order_by'    => $params->{'order_by'},
-    'count_query' => $count_query,
-  };
 
 }
 

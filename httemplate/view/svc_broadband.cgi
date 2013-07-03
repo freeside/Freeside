@@ -26,23 +26,31 @@ $labels{'coordinates'} = 'Latitude/Longitude';
 
 my @fields = (
   'description',
-  { field => 'routernum', value => \&router },
+  { field => 'routernum', value_callback => \&router },
   'speed_down',
   'speed_up',
-  { field => 'ip_addr', value => \&ip_addr },
-  { field => 'sectornum', value => \&sectornum },
-  { field => 'mac_addr', value => \&mac_addr },
+  { field => 'ip_addr', value_callback => \&ip_addr },
+  { field => 'sectornum', value_callback => \&sectornum },
+  { field => 'mac_addr', value_callback => \&mac_addr },
   #'latitude',
   #'longitude',
-  { field => 'coordinates', value => \&coordinates },
+  { field => 'coordinates', value_callback => \&coordinates },
   'altitude',
+
+  'radio_serialnum',
+  'radio_location',
+  'poe_location',
+  'rssi',
+  'suid',
+  { field => 'shared_svcnum', value_callback=> \&shared_svcnum, }, #value_callback => 
+
   'vlan_profile',
   'authkey',
   'plan_id',
 );
 
 push @fields,
-  { field => 'usergroup', value => \&usergroup }
+  { field => 'usergroup', value_callback => \&usergroup }
   if $conf->exists('svc_broadband-radius');
 
 sub router {
@@ -112,9 +120,36 @@ sub coordinates {
     );
 }
 
+sub shared_svcnum {
+  my $svc_broadband = shift;
+  return '' unless $svc_broadband->shared_svcnum;
+
+  my $shared_svc_broadband =
+    qsearchs('svc_broadband', { 'svcnum' => $svc_broadband->shared_svcnum,
+                              }
+                              #agent virt?
+            )
+      or return '';
+  my $shared_cust_pkg = $shared_svc_broadband->cust_svc->cust_pkg;
+
+  $shared_svc_broadband->label.
+    ( $shared_cust_pkg
+         ? ' ('. $shared_cust_pkg->cust_main->name. ')'
+         : ''
+    );
+}
+
 sub svc_callback {
   # trying to move to the callback style
   my ($cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt) = @_;
+
+  if (    $part_svc->part_svc_column('latitude')->columnflag eq 'F' 
+       && $part_svc->part_svc_column('longitude')->columnflag eq 'F' 
+     )
+  {
+    @$fields = grep { !ref($_) || $_->{field} ne 'coordinates' } @$fields;
+  }
+
   # again, we assume at most one of these exports per part_svc
   my ($nas_export) = $part_svc->part_export('broadband_nas');
   if ( $nas_export ) {

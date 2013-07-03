@@ -10,10 +10,10 @@ Customer #<B><%= $custnum %></B>
             ? '<I><FONT SIZE="-1">Billing Address</FONT></I><BR>'
             : ''
       %>
-      <%= $first %> <%= $last %><BR>
-      <%= $company ? $company.'<BR>' : '' %>
-      <%= $address1 %><BR>
-      <%= $address2 ? $address2.'<BR>' : '' %>
+      <%= encode_entities($first) %> <%= encode_entities($last) %><BR>
+      <%= $company ? encode_entities($company).'<BR>' : '' %>
+      <%= encode_entities($address1) %><BR>
+      <%= $address2 ? encode_entities($address2).'<BR>' : '' %>
       <%= $city %>, <%= $state %> <%= $zip %><BR>
       <%= $country && $country ne ($countrydefault||'US')
             ? $country.'<BR>'

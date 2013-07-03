@@ -5,7 +5,7 @@ use strict;
 use vars qw( $import );
 use Locale::Country;
 use FS::UID qw( dbh driver_name );
-use FS::Record qw( qsearch ); #qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
 use FS::prospect_main;
 use FS::cust_main;
@@ -104,6 +104,95 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cust_location'; }
 
+=item find_or_insert
+
+Finds an existing location matching the customer and address values in this
+location, if one exists, and sets the contents of this location equal to that
+one (including its locationnum).
+
+If an existing location is not found, this one I<will> be inserted.  (This is a
+change from the "new_or_existing" method that this replaces.)
+
+The following fields are considered "essential" and I<must> match: custnum,
+address1, address2, city, county, state, zip, country, location_number,
+location_type, location_kind.  Disabled locations will be found only if this
+location is set to disabled.
+
+If 'coord_auto' is null, and latitude and longitude are not null, then 
+latitude and longitude are also essential fields.
+
+All other fields are considered "non-essential".  If a non-essential field is
+empty in this location, it will be ignored in determining whether an existing
+location matches.
+
+If a non-essential field is non-empty in this location, existing locations 
+that contain a different non-empty value for that field will not match.  An 
+existing location in which the field is I<empty> will match, but will be 
+updated in-place with the value of that field.
+
+Returns an error string if inserting or updating a location failed.
+
+It is unfortunately hard to determine if this created a new location or not.
+
+=cut
+
+sub find_or_insert {
+  my $self = shift;
+
+  my @essential = (qw(custnum address1 address2 city county state zip country
+    location_number location_type location_kind disabled));
+
+  if ( !$self->coord_auto and $self->latitude and $self->longitude ) {
+    push @essential, qw(latitude longitude);
+    # but NOT coord_auto; if the latitude and longitude match the geocoded
+    # values then that's good enough
+  }
+
+  # put nonempty, nonessential fields/values into this hash
+  my %nonempty = map { $_ => $self->get($_) }
+                 grep {$self->get($_)} $self->fields;
+  delete @nonempty{@essential};
+  delete $nonempty{'locationnum'};
+
+  my %hash = map { $_ => $self->get($_) } @essential;
+  my @matches = qsearch('cust_location', \%hash);
+
+  # consider candidate locations
+  MATCH: foreach my $old (@matches) {
+    my $reject = 0;
+    foreach my $field (keys %nonempty) {
+      my $old_value = $old->get($field);
+      if ( length($old_value) > 0 ) {
+        if ( $field eq 'latitude' or $field eq 'longitude' ) {
+          # special case, because these are decimals
+          if ( abs($old_value - $nonempty{$field}) > 0.000001 ) {
+            $reject = 1;
+          }
+        } elsif ( $old_value ne $nonempty{$field} ) {
+          $reject = 1;
+        }
+      } else {
+        # it's empty in $old, has a value in $self
+        $old->set($field, $nonempty{$field});
+      }
+      next MATCH if $reject;
+    } # foreach $field
+
+    if ( $old->modified ) {
+      my $error = $old->replace;
+      return $error if $error;
+    }
+    # set $self equal to $old
+    foreach ($self->fields) {
+      $self->set($_, $old->get($_));
+    }
+    return "";
+  }
+
+  # didn't find a match
+  return $self->insert;
+}
+
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
@@ -168,11 +257,11 @@ and replace methods.
 
 =cut
 
-#some false laziness w/cust_main, but since it should eventually lose these
-#fields anyway...
 sub check {
   my $self = shift;
   my $conf = new FS::Conf;
+
+  return '' if $self->disabled; # so that disabling locations never fails
 
   my $error = 
     $self->ut_numbern('locationnum')
@@ -188,6 +277,7 @@ sub check {
     || $self->ut_coordn('latitude')
     || $self->ut_coordn('longitude')
     || $self->ut_enum('coord_auto', [ '', 'Y' ])
+    || $self->ut_enum('addr_clean', [ '', 'Y' ])
     || $self->ut_alphan('location_type')
     || $self->ut_textn('location_number')
     || $self->ut_enum('location_kind', [ '', 'R', 'B' ] )
@@ -207,9 +297,6 @@ sub check {
        !$self->ship_address2 =~ /\S/ ) {
     return "Unit # is required";
   }
-
-  $self->set_coord
-    unless $import || ($self->latitude && $self->longitude);
 
   # tricky...we have to allow for the customer to not be inserted yet
   return "No prospect or customer!" unless $self->prospectnum 
@@ -233,6 +320,11 @@ sub check {
         'county'  => $self->county,
         'country' => $self->country,
       } );
+  }
+
+  # set coordinates, unless we already have them
+  if (!$import and !$self->latitude and !$self->longitude) {
+    $self->set_coord;
   }
 
   $self->SUPER::check;
@@ -326,6 +418,9 @@ sub move_to {
   my $dbh = dbh;
   my $error = '';
 
+  # prevent this from failing because of pkg_svc quantity limits
+  local( $FS::cust_svc::ignore_quantity ) = 1;
+
   if ( !$new->locationnum ) {
     $error = $new->insert;
     if ( $error ) {
@@ -334,9 +429,13 @@ sub move_to {
     }
   }
 
+  # find all packages that have the old location as their service address,
+  # and aren't canceled,
+  # and aren't supplemental to another package.
   my @pkgs = qsearch('cust_pkg', { 
       'locationnum' => $old->locationnum,
-      'cancel' => '' 
+      'cancel'      => '',
+      'main_pkgnum' => '',
     });
   foreach my $cust_pkg (@pkgs) {
     $error = $cust_pkg->change(
@@ -478,6 +577,20 @@ sub location_label {
   $prefix . $self->SUPER::location_label(%opt);
 }
 
+=item county_state_county
+
+Returns a string consisting of just the county, state and country.
+
+=cut
+
+sub county_state_country {
+  my $self = shift;
+  my $label = $self->country;
+  $label = $self->state.", $label" if $self->state;
+  $label = $self->county." County, $label" if $self->county;
+  $label;
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -528,6 +641,79 @@ sub in_county_sql {
     }
     return $sql;
   }
+}
+
+=back
+
+=head2 SUBROUTINES
+
+=over 4
+
+=item process_censustract_update LOCATIONNUM
+
+Queueable function to update the census tract to the current year (as set in 
+the 'census_year' configuration variable) and retrieve the new tract code.
+
+=cut
+
+sub process_censustract_update {
+  eval "use FS::GeocodeCache";
+  die $@ if $@;
+  my $locationnum = shift;
+  my $cust_location = 
+    qsearchs( 'cust_location', { locationnum => $locationnum })
+      or die "locationnum '$locationnum' not found!\n";
+
+  my $conf = FS::Conf->new;
+  my $new_year = $conf->config('census_year') or return;
+  my $loc = FS::GeocodeCache->new( $cust_location->location_hash );
+  $loc->set_censustract;
+  my $error = $loc->get('censustract_error');
+  die $error if $error;
+  $cust_location->set('censustract', $loc->get('censustract'));
+  $cust_location->set('censusyear',  $new_year);
+  $error = $cust_location->replace;
+  die $error if $error;
+  return;
+}
+
+
+sub process_set_coord {
+  my $job = shift;
+  # avoid starting multiple instances of this job
+  my @others = qsearch('queue', {
+      'status'  => 'locked',
+      'job'     => $job->job,
+      'jobnum'  => {op=>'!=', value=>$job->jobnum},
+  });
+  return if @others;
+
+  $job->update_statustext('finding locations to update');
+  my @missing_coords = qsearch('cust_location', {
+      'disabled'  => '',
+      'latitude'  => '',
+      'longitude' => '',
+  });
+  my $i = 0;
+  my $n = scalar @missing_coords;
+  for my $cust_location (@missing_coords) {
+    $cust_location->set_coord;
+    my $error = $cust_location->replace;
+    if ( $error ) {
+      warn "error geocoding location#".$cust_location->locationnum.": $error\n";
+    } else {
+      $i++;
+      $job->update_statustext("updated $i / $n locations");
+      dbh->commit; # so that we don't have to wait for the whole thing to finish
+      # Rate-limit to stay under the Google Maps usage limit (2500/day).
+      # 86,400 / 35 = 2,468 lookups per day.
+    }
+    sleep 35;
+  }
+  if ( $i < $n ) {
+    die "failed to update ".$n-$i." locations\n";
+  }
+  return;
 }
 
 =head1 BUGS

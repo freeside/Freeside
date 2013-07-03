@@ -77,7 +77,7 @@
   <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->payby_name %> #<% $cust_pay->paymask %></B></TD>
 </TR>
 
-% if ( $cust_pay->payby =~ /^(CARD|CHEK|LECB)$/ && $cust_pay->paybatch ) { 
+% if ( $cust_pay->payby =~ /^(CARD|CHEK|LECB)$/ && $cust_pay->processor ) { 
 
     <TR>
       <TD ALIGN="right"><% mt('Processor') |h %></TD>
@@ -86,7 +86,7 @@
 
     <TR>
       <TD ALIGN="right"><% mt('Authorization #') |h %></TD>
-      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->authorization %></B></TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->auth %></B></TD>
     </TR>
 
 %   if ( $cust_pay->order_number ) {

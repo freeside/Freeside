@@ -118,7 +118,6 @@ tie my %rights, 'Tie::IxHash',
     'Complimentary customer', #aka users-allow_comp 
     'Merge customer',
     'Merge customer across agents',
-    { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers
     'Bill customer now', #NEW
     'Bulk send customer notices', #NEW
     { rightname=>'View customers of all agents', global=>1 },
@@ -132,6 +131,7 @@ tie my %rights, 'Tie::IxHash',
     'Order customer package',
     'One-time charge',
     'Change customer package',
+    'Detach customer package',
     'Bulk change customer packages',
     'Edit customer package dates',
     'Discount customer package', #NEW
@@ -159,9 +159,11 @@ tie my %rights, 'Tie::IxHash',
     'View customer services', #NEW
     'Provision customer service',
     'Bulk provision customer service',
+    'Bulk move customer services', #NEWNEW
     'Recharge customer service', #NEW
     'Unprovision customer service',
     'Change customer service', #NEWNEW
+    'Edit password',
     'Edit usage', #NEW
     'Edit home dir', #NEW
     'Edit www config', #NEW
@@ -182,6 +184,7 @@ tie my %rights, 'Tie::IxHash',
     'Unvoid invoices',
     'Delete invoices',
     'View customer tax exemptions', #yow
+    'Edit customer tax exemptions', #NEWNEW
     'Add customer tax adjustment', #new, but no need to phase in
     'View customer batched payments', #NEW
     'View customer pending payments', #NEW
@@ -212,6 +215,7 @@ tie my %rights, 'Tie::IxHash',
   ###
   'Customer credit and refund rights' => [
     'Post credit',
+    'Credit line items', #NEWNEWNEW
     'Apply credit', #NEWNEW
     { rightname=>'Unapply credit', desc=>'Enable "unapplication" of unclosed credits.' }, #aka unapplycredits
     { rightname=>'Delete credit', desc=>'Enable deletion of unclosed credits. Be very careful!  Only delete credits that were data-entry errors, not adjustments.' }, #aka. deletecredits Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
@@ -277,6 +281,7 @@ tie my %rights, 'Tie::IxHash',
     'Financial reports',
     { rightname=> 'List inventory', global=>1 },
     { rightname=>'View email logs', global=>1 },
+    { rightname=>'View system logs' },
 
     'Download report data',
     'Services: Accounts',
@@ -288,10 +293,12 @@ tie my %rights, 'Tie::IxHash',
     'Services: Wireless broadband services',
     'Services: Wireless broadband services: Advanced search',
     'Services: DSLs',
+    'Services: Cable subscribers',
     'Services: Dish services',
     'Services: Hardware',
     'Services: Hardware: Advanced search',
     'Services: Phone numbers',
+    'Services: Phone numbers: Advanced search',
     'Services: PBXs',
     'Services: Ports',
     'Services: Mailing lists',
@@ -300,6 +307,8 @@ tie my %rights, 'Tie::IxHash',
     'Usage: Call Detail Records (CDRs)',
     'Usage: Unrateable CDRs',
     'Usage: Time worked',
+    { rightname=>'Employees: Commission Report', global=>1 },
+    { rightname=>'Employees: Audit Report', global=>1 },
 
     #{ rightname => 'List customers of all agents', global=>1 },
   ],
@@ -338,6 +347,8 @@ tie my %rights, 'Tie::IxHash',
     'Edit package definitions',
     { rightname=>'Edit global package definitions', global=>1 },
   
+    'Bulk edit package definitions',
+
     'Edit billing events',
     { rightname=>'Edit global billing events', global=>1 },
 
@@ -393,7 +404,6 @@ Most (but not all) right names.
 sub default_superuser_rights {
   my $class = shift;
   my %omit = map { $_=>1 } (
-    'Delete customer',
     'Delete invoices',
     'Delete payment',
     'Delete credit', #?

@@ -45,8 +45,12 @@ use FS::part_pkg::flat;
 sub calc_recur {
   my $self = shift;
   my $cust_pkg = $_[0];
-  $self->calc_prorate(@_, $self->cutoff_day($cust_pkg))
-    - $self->calc_discount(@_);
+
+  my $charge = $self->calc_prorate(@_, $self->cutoff_day($cust_pkg));
+  my $discount = $self->calc_discount(@_);
+
+  sprintf( '%.2f', ($cust_pkg->quantity || 1) * ($charge - $discount) );
+
 }
 
 sub cutoff_day {

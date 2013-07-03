@@ -15,7 +15,7 @@
 %
 %  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 %  
-<% header(emt('Credit sucessful')) %>
+<% header(emt('Credit successful')) %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
@@ -27,7 +27,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post credit');
 
-$cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
+$cgi->param('custnum') =~ /^(\d+)$/ or die "Illegal custnum!";
 my $custnum = $1;
 
 $cgi->param('reasonnum') =~ /^(-?\d+)$/ or die "Illegal reasonnum";

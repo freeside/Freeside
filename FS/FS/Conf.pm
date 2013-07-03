@@ -5,6 +5,7 @@ use Carp;
 use IO::File;
 use File::Basename;
 use MIME::Base64;
+use Locale::Currency;
 use FS::ConfItem;
 use FS::ConfDefaults;
 use FS::Conf_compat17;
@@ -14,7 +15,6 @@ use FS::conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh datasrc use_confcompat);
 use FS::Misc::Invoicing qw( spool_formats );
-use FS::Misc::Geo;
 
 $base_dir = '%%%FREESIDE_CONF%%%';
 
@@ -718,6 +718,18 @@ my %batch_gateway_options = (
   },
 );
 
+my @cdr_formats = (
+  '' => '',
+  'default' => 'Default',
+  'source_default' => 'Default with source',
+  'accountcode_default' => 'Default plus accountcode',
+  'description_default' => 'Default with description field as destination',
+  'basic' => 'Basic',
+  'simple' => 'Simple',
+  'simple2' => 'Simple with source',
+  'accountcode_simple' => 'Simple with accountcode',
+);
+
 # takes the reason class (C, R, S) as an argument
 sub reason_type_options {
   my $reason_class = shift;
@@ -747,6 +759,15 @@ sub reason_type_options {
     'section'     => 'deprecated',
     'description' => 'This configuration option is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'event_log_level',
+    'section'     => 'notification',
+    'description' => 'Store events in the internal log if they are at least this severe.  "info" is the default, "debug" is very detailed and noisy.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'debug', 'info', 'notice', 'warning', 'error', ],
+    # don't bother with higher levels
   },
 
   {
@@ -842,6 +863,13 @@ sub reason_type_options {
     'key'         => 'cust_main-select-prorate_day',
     'section'     => 'billing',
     'description' => 'When used with prorate or anniversary packages, allows the selection of the prorate day of month, on a per-customer basis',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'anniversary-rollback',
+    'section'     => 'billing',
+    'description' => 'When billing an anniversary package ordered after the 28th, roll the anniversary date back to the 28th instead of forward into the following month.',
     'type'        => 'checkbox',
   },
 
@@ -977,6 +1005,27 @@ sub reason_type_options {
   },
 
   {
+    'key'         => 'currency',
+    'section'     => 'billing',
+    'description' => 'Main accounting currency',
+    'type'        => 'select',
+    'select_enum' => [ '', qw( USD AUD CAD DKK EUR GBP ILS JPY NZD XAF ) ],
+  },
+
+  {
+    'key'         => 'currencies',
+    'section'     => 'billing',
+    'description' => 'Additional accepted currencies',
+    'type'        => 'select-sub',
+    'multiple'    => 1,
+    'options_sub' => sub { 
+                           map { $_ => code2currency($_) } all_currency_codes();
+			 },
+    'sort_sub'    => sub ($$) { $_[0] cmp $_[1]; },
+    'option_sub'  => sub { code2currency(shift); },
+  },
+
+  {
     'key'         => 'business-batchpayment-test_transaction',
     'section'     => 'billing',
     'description' => 'Turns on the Business::BatchPayment test_mode flag.  Note that not all gateway modules support this flag; if yours does not, using the batch gateway will fail.',
@@ -1010,28 +1059,17 @@ sub reason_type_options {
     'select_hash' => [
                        '%b %o, %Y' => 'Mon DDth, YYYY',
                        '%e %b %Y'  => 'DD Mon YYYY',
+                       '%m/%d/%Y'  => 'MM/DD/YYYY',
+                       '%d/%m/%Y'  => 'DD/MM/YYYY',
+		       '%Y/%m/%d'  => 'YYYY/MM/DD',
                      ],
-  },
-
-  {
-    'key'         => 'deletecustomers',
-    'section'     => 'UI',
-    'description' => 'Enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that the customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers\' packages if they cancel service.',
-    'type'        => 'checkbox',
   },
 
   {
     'key'         => 'deleteinvoices',
     'section'     => 'UI',
-    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would apply a credit against the invoice instead.',  #invoice voiding?
+    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would void or apply a credit against the invoice instead.',
     'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'deletepayments',
-    'section'     => 'billing',
-    'description' => 'Enable deletion of unclosed payments.  Really, with voids this is pretty much not recommended in any situation anymore.  Be very careful!  Only delete payments that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.',
-    'type'        => [qw( checkbox text )],
   },
 
   {
@@ -1132,6 +1170,13 @@ sub reason_type_options {
     'key'         => 'emailinvoice-apostrophe',
     'section'     => 'invoicing',
     'description' => 'Allows the apostrophe (single quote) character in the email addresses in the email invoice list.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'svc_acct-ip_addr',
+    'section'     => '',
+    'description' => 'Enable IP address management on login services like for broadband services.',
     'type'        => 'checkbox',
   },
 
@@ -1472,7 +1517,7 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
     'type'        => 'select',
-    'select_enum' => [ '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 9', 'Net 10', 'Net 15', 'Net 20', 'Net 21', 'Net 30', 'Net 45', 'Net 60', 'Net 90' ],
+    'select_enum' => [ '', 'Payable upon receipt', 'Net 0', 'Net 3', 'Net 9', 'Net 10', 'Net 15', 'Net 18', 'Net 20', 'Net 21', 'Net 30', 'Net 45', 'Net 60', 'Net 90' ],
   },
 
   { 
@@ -1494,7 +1539,17 @@ and customer address. Include units.',
     'section'     => 'invoicing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
+
+  #quotations seem broken-ish with sections ATM?
+  #{ 
+  #  'key'         => 'quotation_sections',
+  #  'section'     => 'invoicing',
+  #  'description' => 'Split quotations into sections and label according to package category when enabled.',
+  #  'type'        => 'checkbox',
+  #  'per_agent'   => 1,
+  #},
 
   { 
     'key'         => 'usage_class_as_a_section',
@@ -1593,6 +1648,7 @@ and customer address. Include units.',
     'section'     => 'required',
     'description' => 'Print command for paper invoices, for example `lpr -h\'',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {
@@ -2038,7 +2094,7 @@ and customer address. Include units.',
     'key'         => 'locale',
     'section'     => 'UI',
     'description' => 'Default locale',
-    'type'        => 'select',
+    'type'        => 'select-sub',
     'options_sub' => sub {
       map { $_ => FS::Locales->description($_) } FS::Locales->locales;
     },
@@ -2052,7 +2108,7 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Acceptable payment types for the signup server',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB PREPAY BILL COMP) ],
+    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB PREPAY PPAL BILL COMP) ],
   },
 
   {
@@ -2113,8 +2169,15 @@ and customer address. Include units.',
   {
     'key'         => 'signup_server-default_svcpart',
     'section'     => 'self-service',
-    'description' => 'Default service definition for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning).',
+    'description' => 'Default service definition for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning or domain selection).',
     'type'        => 'select-part_svc',
+  },
+
+  {
+    'key'         => 'signup_server-default_domsvc',
+    'section'     => 'self-service',
+    'description' => 'If specified, the default domain svcpart for signup (useful when domain is set to selectable choice).',
+    'type'        => 'text',
   },
 
   {
@@ -2206,6 +2269,13 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Run a standalone self-service XML-RPC server on the backend (on port 8080).',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-timeout',
+    'section'     => 'self-service',
+    'description' => 'Timeout for the self-service login cookie, in seconds.  Defaults to 1 hour.',
+    'type'        => 'text',
   },
 
   {
@@ -2426,7 +2496,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Available payment types.',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD COMP) ],
+    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD PPAL COMP) ],
   },
 
   {
@@ -2434,7 +2504,7 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
     'type'        => 'select',
-    'select_enum' => [ '', qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD COMP HIDE) ],
+    'select_enum' => [ '', qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD PPAL COMP HIDE) ],
   },
 
   {
@@ -3220,6 +3290,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'ics-confirm_template',
+    'section'     => '',
+    'description' => 'Confirmation email template for uploading to ICS invoice printing.  Text::Template format, with variables "%count" and "%sum".',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'svc_acct-usage_suspend',
     'section'     => 'billing',
     'description' => 'Suspends the package an account belongs to when svc_acct.seconds or a bytecount is decremented to 0 or below (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
@@ -3339,13 +3417,6 @@ and customer address. Include units.',
     'key'         => 'zone-underscore',
     'section'     => 'BIND',
     'description' => 'Allow underscores in zone names.  As underscores are illegal characters in zone names, this option is not recommended.',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'echeck-nonus',
-    'section'     => 'billing',
-    'description' => 'Disable ABA-format account checking for Electronic Check payment info',
     'type'        => 'checkbox',
   },
 
@@ -3502,7 +3573,7 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Default format for batches.',
     'type'        => 'select',
-    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch',
+    'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch',
                        'csv-chase_canada-E-xactBatch', 'BoM', 'PAP',
                        'paymentech', 'ach-spiritone', 'RBC'
                     ]
@@ -3564,9 +3635,9 @@ and customer address. Include units.',
     'section'     => 'billing',
     'description' => 'Fixed (unchangeable) format for electronic check batches.',
     'type'        => 'select',
-    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone', 'RBC', 'td_eft1464',
-                       'eft_canada'
+    'select_enum' => [ 'NACHA', 'csv-td_canada_trust-merchant_pc_batch', 'BoM',
+                       'PAP', 'paymentech', 'ach-spiritone', 'RBC',
+                       'td_eft1464', 'eft_canada'
                      ]
   },
 
@@ -3601,7 +3672,7 @@ and customer address. Include units.',
   {
     'key'         => 'batchconfig-paymentech',
     'section'     => 'billing',
-    'description' => 'Configuration for Chase Paymentech batching, five lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password (for batch uploads)',
+    'description' => 'Configuration for Chase Paymentech batching, six lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password (for batch uploads), 6. Flag to send recurring indicator.',
     'type'        => 'textarea',
   },
 
@@ -3620,18 +3691,39 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'batch-manual_approval',
+    'key'         => 'batchconfig-eft_canada',
     'section'     => 'billing',
-    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised, but is needed for payment processors that provide a report of rejected rather than approved payments.',
-    'type'        => 'checkbox',
+    'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.  If you are using separate per-agent batches (batch-spoolagent), you must set this option separately for each agent, as the global setting will be ignored.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
-    'key'         => 'batchconfig-eft_canada',
+    'key'         => 'batchconfig-nacha-destination',
     'section'     => 'billing',
-    'description' => 'Configuration for EFT Canada batching, four lines: 1. SFTP username, 2. SFTP password, 3. Transaction code, 4. Number of days to delay process date.',
-    'type'        => 'textarea',
-    'per_agent'   => 1,
+    'description' => 'Configuration for NACHA batching, Destination (9 digit transit routing number).',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batchconfig-nacha-destination_name',
+    'section'     => 'billing',
+    'description' => 'Configuration for NACHA batching, Destination (Bank Name, up to 23 characters).',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batchconfig-nacha-origin',
+    'section'     => 'billing',
+    'description' => 'Configuration for NACHA batching, Origin (your 10-digit company number, IRS tax ID recommended).',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'batch-manual_approval',
+    'section'     => 'billing',
+    'description' => 'Allow manual batch closure, which will approve all payments that do not yet have a status.  This is not advised unless needed for specific payment processors that provide a report of rejected rather than approved payments.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -3699,20 +3791,6 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'cust_main-skeleton_tables',
-    'section'     => '',
-    'description' => 'Tables which will have skeleton records inserted into them for each customer.  Syntax for specifying tables is unfortunately a tricky perl data structure for now.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'cust_main-skeleton_custnum',
-    'section'     => '',
-    'description' => 'Customer number specifying the source data to copy into skeleton tables for new customers.',
-    'type'        => 'text',
-  },
-
-  {
     'key'         => 'cust_main-enable_birthdate',
     'section'     => 'UI',
     'description' => 'Enable tracking of a birth date with each customer record',
@@ -3760,6 +3838,13 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Disable fuzzy searching.  Speeds up searching for large sites, but only shows exact matches.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'fuzzy-fuzziness',
+    'section'     => 'UI',
+    'description' => 'Set the "fuzziness" of fuzzy searching (see the String::Approx manpage for details).  Defaults to 10%',
+    'type'        => 'text',
   },
 
   { 'key'         => 'pkg_referral',
@@ -3893,6 +3978,19 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_bill-line_item-date_style-non_monthly',
+    'section'     => 'billing',
+    'description' => 'If set, override cust_bill-line_item-date_style for non-monthly charges.',
+    'type'        => 'select',
+    'select_hash' => [ ''           => 'Default',
+                       'start_end'  => 'STARTDATE-ENDDATE',
+                       'month_of'   => 'Month of MONTHNAME',
+                       'X_month'    => 'DATE_DESC MONTHNAME',
+                     ],
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'cust_bill-line_item-date_description',
     'section'     => 'billing',
     'description' => 'Text to display for "DATE_DESC" when using cust_bill-line_item-date_style DATE_DESC MONTHNAME.',
@@ -3931,7 +4029,7 @@ and customer address. Include units.',
     'type'        => 'select',
     'multiple'    => 1,
     'select_hash' => [ 
-      'address1' => 'Billing address',
+      #'address1' => 'Billing address',
     ],
   },
 
@@ -4050,6 +4148,24 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'always_show_tax',
+    'section'     => 'invoicing',
+    'description' => 'Show a line for tax on the invoice even when the tax is zero.  Optionally provide text for the tax name to show.',
+    'type'        => [ qw(checkbox text) ],
+  },
+
+  {
+    'key'         => 'address_standardize_method',
+    'section'     => 'UI', #???
+    'description' => 'Method for standardizing customer addresses.',
+    'type'        => 'select',
+    'select_hash' => [ '' => '', 
+                       'usps' => 'U.S. Postal Service',
+                       'ezlocate' => 'EZLocate',
+                     ],
+  },
+
+  {
     'key'         => 'usps_webtools-userid',
     'section'     => 'UI',
     'description' => 'Production UserID for USPS web tools.   Enables USPS address standardization.  See the <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',
@@ -4061,6 +4177,20 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'Production password for USPS web tools.   Enables USPS address standardization.  See <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'ezlocate-userid',
+    'section'     => 'UI',
+    'description' => 'User ID for EZ-Locate service.  See <a href="http://www.geocode.com/">the TomTom website</a> for access and pricing information.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'ezlocate-password',
+    'section'     => 'UI',
+    'description' => 'Password for EZ-Locate service.',
+    'type'        => 'text'
   },
 
   {
@@ -4080,7 +4210,7 @@ and customer address. Include units.',
   {
     'key'         => 'census_year',
     'section'     => 'UI',
-    'description' => 'The year to use in census tract lookups',
+    'description' => 'The year to use in census tract lookups.  NOTE: you need to select 2012 for Year 2010 Census tract codes.  A selection of 2011 or 2010 provides Year 2000 Census tract codes.  Use the freeside-censustract-update tool if exisitng customers need to be changed.',
     'type'        => 'select',
     'select_enum' => [ qw( 2012 2011 2010 ) ],
   },
@@ -4090,7 +4220,12 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'The method to use to look up tax district codes.',
     'type'        => 'select',
-    'select_hash' => [ FS::Misc::Geo::get_district_methods() ],
+    #'select_hash' => [ FS::Misc::Geo::get_district_methods() ],
+    #after RT#13763, using FS::Misc::Geo here now causes a dependancy loop :/
+    'select_hash' => [
+                       ''         => '',
+                       'wa_sales' => 'Washington sales tax',
+                     ],
   },
 
   {
@@ -4409,6 +4544,31 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'selfservice-menu_disable',
+    'section'     => 'self-service',
+    'description' => 'Disable the selected menu entries in the self-service menu',
+    'type'        => 'selectmultiple',
+    'select_enum' => [ #false laziness w/myaccount_menu.html
+                       'Overview',
+                       'Purchase',
+                       'Purchase additional package',
+                       'Recharge my account with a credit card',
+                       'Recharge my account with a check',
+                       'Recharge my account with a prepaid card',
+                       'View my usage',
+                       'Create a ticket',
+                       'Setup my services',
+                       'Change my information',
+                       'Change billing address',
+                       'Change service address',
+                       'Change payment information',
+                       'Change password(s)',
+                       'Logout',
+                     ],
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'selfservice-menu_skipblanks',
     'section'     => 'self-service',
     'description' => 'Skip blank (spacer) entries in the self-service menu',
@@ -4494,20 +4654,10 @@ and customer address. Include units.',
   },
 
   {
-    'key'         => 'selfservice-bulk_format',
-    'section'     => 'deprecated',
-    'description' => 'Parameter arrangement for selfservice bulk features',
-    'type'        => 'select',
-    'select_enum' => [ '', 'izoom-soap', 'izoom-ftp' ],
-    'per_agent'   => 1,
-  },
-
-  {
-    'key'         => 'selfservice-bulk_ftp_dir',
-    'section'     => 'deprecated',
-    'description' => 'Enable bulk ftp provisioning in this folder',
-    'type'        => 'text',
-    'per_agent'   => 1,
+    'key'         => 'ng_selfservice-menu',
+    'section'     => 'self-service',
+    'description' => 'Custom menu for the next-generation self-service interface.  Each line is in the format "link Label", for example "main.php Home".  Sub-menu items are listed on subsequent lines.  Blank lines terminate the submenu.', #more docs/examples would be helpful
+    'type'        => 'textarea',
   },
 
   {
@@ -4653,10 +4803,24 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-taqua-callerid_rewrite',
+    'section'     => 'telephony',
+    'description' => 'For the Taqua CDR format, pull Caller ID blocking information from secondary CDRs.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cdr-asterisk_australia_rewrite',
     'section'     => 'telephony',
     'description' => 'For Asterisk CDRs, assign CDR type numbers based on Australian conventions.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cdr-gsm_tap3-sender',
+    'section'     => 'telephony',
+    'description' => 'GSM TAP3 Sender network (5 letter code)',
+    'type'        => 'text',
   },
 
   {
@@ -4719,7 +4883,7 @@ and customer address. Include units.',
   {
     'key'         => 'svc_broadband-manage_link',
     'section'     => 'UI',
-    'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr.',
+    'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr and $mac_addr.',
     'type'        => 'text',
   },
 
@@ -4818,7 +4982,7 @@ and customer address. Include units.',
   {
     'key'         => 'pkg-balances',
     'section'     => 'billing',
-    'description' => 'Enable experimental package balances.  Not recommended for general use.',
+    'description' => 'Enable per-package balances.',
     'type'        => 'checkbox',
   },
 
@@ -4925,13 +5089,6 @@ and customer address. Include units.',
     'description' => 'Location where customer tags are displayed.',
     'type'        => 'select',
     'select_enum' => [ 'misc_info', 'top' ],
-  },
-
-  {
-    'key'         => 'maestro-status_test',
-    'section'     => 'UI',
-    'description' => 'Display a link to the maestro status test page on the customer view page',
-    'type'        => 'checkbox',
   },
 
   {
@@ -5072,6 +5229,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'invoice_payment_details',
+    'section'     => 'invoicing',
+    'description' => 'When displaying payments on an invoice, show the payment method used, including the check or credit card number.  Credit card numbers will be masked.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-status_module',
     'section'     => 'UI',
     'description' => 'Which module to use for customer status display.  The "Classic" module (the default) considers accounts with cancelled recurring packages but un-cancelled one-time charges Inactive.  The "Recurring" module considers those customers Cancelled.  Similarly for customers with suspended recurring packages but one-time charges.', #other differences?
@@ -5079,17 +5243,17 @@ and customer address. Include units.',
     'select_enum' => [ 'Classic', 'Recurring' ],
   },
 
-  {
-    'key'         => 'cust_main-print_statement_link',
-    'section'     => 'UI',
-    'description' => 'Show a link to download a current statement for the customer.',
-    'type'        => 'checkbox',
-  },
-
   { 
     'key'         => 'username-pound',
     'section'     => 'username',
     'description' => 'Allow the pound character (#) in usernames.',
+    'type'        => 'checkbox',
+  },
+
+  { 
+    'key'         => 'username-exclamation',
+    'section'     => 'username',
+    'description' => 'Allow the exclamation character (!) in usernames.',
     'type'        => 'checkbox',
   },
 
@@ -5207,6 +5371,19 @@ and customer address. Include units.',
                            $cdr_type ? $cdr_type->cdrtypename : '';
 			 },
   },
+
+  {
+    'key'         => 'cdr-minutes_priority',
+    'section'     => 'telephony',
+    'description' => 'Priority rule for assigning included minutes to CDRs.',
+    'type'        => 'select',
+    'select_hash' => [
+      ''          => 'No specific order',
+      'time'      => 'Chronological',
+      'rate_high' => 'Highest rate first',
+      'rate_low'  => 'Lowest rate first',
+    ],
+  },
   
   {
     'key'         => 'brand-agent',
@@ -5227,6 +5404,22 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'Return line item billing detail for the self-service billing_history API call.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-default_cdr_format',
+    'section'     => 'self-service',
+    'description' => 'Format for showing outbound CDRs in self-service.  The per-package option overrides this.',
+    'type'        => 'select',
+    'select_hash' => \@cdr_formats,
+  },
+
+  {
+    'key'         => 'selfservice-default_inbound_cdr_format',
+    'section'     => 'self-service',
+    'description' => 'Format for showing inbound CDRs in self-service.  The per-package option overrides this.  Leave blank to avoid showing these CDRs.',
+    'type'        => 'select',
+    'select_hash' => \@cdr_formats,
   },
 
   {
@@ -5251,6 +5444,28 @@ and customer address. Include units.',
     'key'         => 'agent-email_day',
     'section'     => '',
     'description' => 'On this day of each month, agents with master customer records containing email addresses will be emailed a list of their customers and balances.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'report-cust_pay-select_time',
+    'section'     => 'UI',
+    'description' => 'Enable time selection on payment and refund reports.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'authentication_module',
+    'section'     => 'UI',
+    'description' => '"Internal" is the default , which authenticates against the internal database.  "Legacy" is similar, but matches passwords against a legacy htpasswd file.',
+    'type'        => 'select',
+    'select_enum' => [qw( Internal Legacy )],
+  },
+
+  {
+    'key'         => 'external_auth-access_group-template_user',
+    'section'     => 'UI',
+    'description' => 'When using an external authentication module, specifies the default access groups for autocreated users, via a template user.',
     'type'        => 'text',
   },
 

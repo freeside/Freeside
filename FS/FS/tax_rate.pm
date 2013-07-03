@@ -413,7 +413,7 @@ sub taxline {
   }
 
   my $maxtype = $self->maxtype || 0;
-  if ($maxtype != 0 && $maxtype != 9) {
+  if ($maxtype != 0 && $maxtype != 1 && $maxtype != 9) {
     return $self->_fatal_or_null( 'tax with "'.
                                     $self->maxtype_name. '" threshold'
                                 );
@@ -476,12 +476,12 @@ sub taxline {
 
   }
 
-  #
-  # XXX insert exemption handling here
+  # XXX handle excessrate (use_excessrate) / excessfee /
+  #            taxbase/feebase / taxmax/feemax
+  #            and eventually exemptions
   #
   # the tax or fee is applied to taxbase or feebase and then
   # the excessrate or excess fee is applied to taxmax or feemax
-  #
 
   $amount += $taxable_charged * $self->tax;
   $amount += $taxable_units * $self->fee;
@@ -785,6 +785,49 @@ sub batch_import {
 
   }
 
+  my @replace = grep { exists($delete{$_}) } keys %insert;
+  for (@replace) {
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count ). ",Importing tax rates"
+        );
+        if ($error) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
+        $last = time;
+      }
+    }
+
+    my $old = qsearchs( 'tax_rate', $delete{$_} );
+
+    if ( $old ) {
+
+      my $new = new FS::tax_rate({ $old->hash, %{$insert{$_}}, 'manual' => ''  });
+      $new->taxnum($old->taxnum);
+      my $error = $new->replace($old);
+
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        my $hashref = $insert{$_};
+        $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
+        return "can't replace tax_rate for $line: $error";
+      }
+
+      $imported++;
+
+    } else {
+
+      $old = delete $delete{$_};
+      warn "WARNING: can't find tax_rate to replace (inserting instead and continuing) for: ".
+        #join(" ", map { "$_ => ". $old->{$_} } @fields);
+        join(" ", map { "$_ => ". $old->{$_} } keys(%$old) );
+    }
+
+    $imported++;
+  }
+
   for (grep { !exists($delete{$_}) } keys %insert) {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
@@ -809,43 +852,6 @@ sub batch_import {
       return "can't insert tax_rate for $line: $error";
     }
 
-    $imported++;
-  }
-
-  for (grep { exists($delete{$_}) } keys %insert) {
-    if ( $job ) {  # progress bar
-      if ( time - $min_sec > $last ) {
-        my $error = $job->update_statustext(
-          int( 100 * $imported / $count ). ",Importing tax rates"
-        );
-        if ($error) {
-          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-          die $error;
-        }
-        $last = time;
-      }
-    }
-
-    my $old = qsearchs( 'tax_rate', $delete{$_} );
-    unless ($old) {
-      $dbh->rollback if $oldAutoCommit;
-      $old = $delete{$_};
-      return "can't find tax_rate to replace for: ".
-        #join(" ", map { "$_ => ". $old->{$_} } @fields);
-        join(" ", map { "$_ => ". $old->{$_} } keys(%$old) );
-    }
-    my $new = new FS::tax_rate({ $old->hash, %{$insert{$_}}, 'manual' => ''  });
-    $new->taxnum($old->taxnum);
-    my $error = $new->replace($old);
-
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      my $hashref = $insert{$_};
-      $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
-      return "can't replace tax_rate for $line: $error";
-    }
-
-    $imported++;
     $imported++;
   }
 
@@ -961,7 +967,7 @@ sub _perform_batch_import {
       my $file = lc($name). 'file';
 
       unless ($files{$file}) {
-        $error = "No $name supplied";
+        #$error = "No $name supplied";
         next;
       }
       next if $name eq 'DETAIL' && $format =~ /update/;
@@ -978,7 +984,7 @@ sub _perform_batch_import {
         unlink $filename or warn "Can't delete $filename: $!"
           unless $keep_cch_files;
         push @insert_list, $name, $insertname, $import_sub, $format;
-        if ( $name eq 'GEOCODE' ) { #handle this whole ordering issue better
+        if ( $name eq 'GEOCODE' || $name eq 'CODE' ) { #handle this whole ordering issue better
           unshift @predelete_list, $name, $deletename, $import_sub, $format;
         } else {
           unshift @delete_list, $name, $deletename, $import_sub, $format;
@@ -996,10 +1002,17 @@ sub _perform_batch_import {
       'DETAIL', "$dir/".$files{detailfile}, \&FS::tax_rate::batch_import, $format
       if $format =~ /update/;
 
+    my %addl_param = ();
+    if ( $param->{'delete_only'} ) {
+      $addl_param{'delete_only'} = $param->{'delete_only'};
+      @insert_list = () 
+    }
+
     $error ||= _perform_cch_tax_import( $job,
                                         [ @predelete_list ],
                                         [ @insert_list ],
                                         [ @delete_list ],
+                                        \%addl_param,
     );
     
     
@@ -1024,7 +1037,8 @@ sub _perform_batch_import {
 
 
 sub _perform_cch_tax_import {
-  my ( $job, $predelete_list, $insert_list, $delete_list ) = @_;
+  my ( $job, $predelete_list, $insert_list, $delete_list, $addl_param ) = @_;
+  $addl_param ||= {};
 
   my $error = '';
   foreach my $list ($predelete_list, $insert_list, $delete_list) {
@@ -1033,7 +1047,11 @@ sub _perform_cch_tax_import {
       my $fmt = "$format-update";
       $fmt = $format. ( lc($name) eq 'zip' ? '-zip' : '' );
       open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||= &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
+      my $param = { 'filehandle' => $fh,
+                    'format'     => $fmt,
+                    %$addl_param,
+                  };
+      $error ||= &{$method}($param, $job);
       close $fh;
     }
   }

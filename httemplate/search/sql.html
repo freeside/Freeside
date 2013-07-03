@@ -1,9 +1,9 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                'title' => 'Query Results',
                'name'  => 'rows',
                'query' => "SELECT $sql",
-          )
-%>
+          
+&>
 <%init>
 
 die "access denied"

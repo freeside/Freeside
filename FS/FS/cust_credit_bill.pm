@@ -2,7 +2,6 @@ package FS::cust_credit_bill;
 
 use strict;
 use vars qw( @ISA $conf );
-use FS::UID qw( getotaker );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_Mixin;
 use FS::cust_bill_ApplicationCommon;

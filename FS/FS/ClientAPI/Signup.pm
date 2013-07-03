@@ -98,7 +98,7 @@ sub signup_info {
 
     my @signup_bools = qw( no_company recommend_daytime recommend_email );
 
-    my @signup_server_scalars = qw( default_pkgpart default_svcpart );
+    my @signup_server_scalars = qw( default_pkgpart default_svcpart default_domsvc );
 
     my @selfservice_textareas = qw( head body_header body_footer );
 
@@ -524,20 +524,13 @@ sub new_customer {
 
     my $template_cust = qsearchs('cust_main', { 'custnum' => $template_custnum } );
     return { 'error' => 'Configuration error' } unless $template_cust;
-    #XXX Copy template customer's locations
     $cust_main = new FS::cust_main ( {
       'agentnum'      => $agentnum,
       'refnum'        => $packet->{refnum}
                          || $conf->config('signup_server-default_refnum'),
 
       ( map { $_ => $template_cust->$_ } qw( 
-              last first company address1 address2 
-              city county state zip country
-              daytime night fax 
-
-              ship_last ship_first ship_company ship_address1 ship_address2
-              ship_city ship_county ship_state ship_zip ship_country
-              ship_daytime ship_night ship_fax
+              last first company daytime night fax 
             )
       ),
 
@@ -554,6 +547,9 @@ sub new_customer {
       ),
 
     } );
+
+    $bill_hash = { $template_cust->bill_location->location_hash };
+    $ship_hash = { $template_cust->ship_location->location_hash };
 
   } else {
 
@@ -674,7 +670,7 @@ sub new_customer {
     my $svc = new FS::svc_acct {
       'svcpart'   => $svcpart,
       map { $_ => $packet->{$_} }
-        qw( username _password sec_phrase popnum ),
+        qw( username _password sec_phrase popnum domsvc ),
     };
 
     my @acct_snarf;
@@ -777,13 +773,15 @@ sub new_customer {
     #     " new customer: $bill_error"
     #  if $bill_error;
 
-    $bill_error = $cust_main->realtime_collect(
-       method        => FS::payby->payby2bop( $packet->{payby} ),
-       depend_jobnum => $placeholder->jobnum,
-       selfservice   => 1,
-    );
-    #warn "$me error collecting from new customer: $bill_error"
-    #  if $bill_error;
+    unless ( $packet->{payby} eq 'PREPAY' ) {
+      $bill_error = $cust_main->realtime_collect(
+         method        => FS::payby->payby2bop( $packet->{payby} ),
+         depend_jobnum => $placeholder->jobnum,
+         selfservice   => 1,
+      );
+      #warn "$me error collecting from new customer: $bill_error"
+      #  if $bill_error;
+    }
 
     if ($bill_error && ref($bill_error) eq 'HASH') {
       return { 'error' => '_collect',
@@ -948,15 +946,27 @@ sub capture_payment {
   }
 
   my $cust_main = $cust_pay_pending->cust_main;
-  my $bill_error =
-    $cust_main->realtime_botpp_capture( $cust_pay_pending, 
-      %{$packet->{data}},
-      apply => 1,
-  );
+  if ( $packet->{cancel} ) {
+    # the user has chosen not to make this payment
+    # (probably should be a separate API call, but I don't want to duplicate
+    # all of the above...which should eventually go away)
+    my $error = $cust_pay_pending->delete;
+    # don't show any errors related to this; they're not meaningful
+    warn "error canceling pending payment $paypendingnum: $error\n" if $error;
+    return { 'error'      => '_cancel',
+             'session_id' => $cust_pay_pending->session_id };
+  } else {
+    # create the payment
+    my $bill_error =
+      $cust_main->realtime_botpp_capture( $cust_pay_pending, 
+        %{$packet->{data}},
+        apply => 1,
+    );
 
-  return { 'error'      => ( $bill_error->{bill_error} ? '_decline' : '' ),
-           %$bill_error,
-         };
+    return { 'error'      => ( $bill_error->{bill_error} ? '_decline' : '' ),
+             %$bill_error,
+           };
+  }
 
 }
 

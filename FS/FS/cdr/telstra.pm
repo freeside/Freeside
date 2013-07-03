@@ -19,7 +19,7 @@ my %cdr_type_of = (
 
 %info = (
   'name'          => 'Telstra LinxOnline',
-  'weight'        => 20,
+  'weight'        => 215,
   'header'        => 1,
   'type'          => 'fixedlength',
   # Wholesale Usage Information Record format

@@ -68,7 +68,8 @@ sub replace  {
 
   $old->usergroup; # make sure this is cached for exports
 
-  my $error =  $new->process_m2m(
+  my $error =  $new->check # make sure fixed fields are set before process_m2m
+            || $new->process_m2m(
                                  'link_table'   => 'radius_usergroup',
                                  'target_table' => 'radius_group',
                                  'params'       => $new->usergroup,

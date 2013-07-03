@@ -34,7 +34,16 @@
         <%= 
           my ($last) = grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section) and $_->{'description'} !~ /^\d+ $/ } reverse @sections;
           
-          foreach my $section ( grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section) and $_->{'description'} !~ /^\d+ $/ } @sections ) {
+          #false laziness w/invoice_latexsummary
+          foreach my $section (
+            grep {
+                       $_->{tax_section} || !$_->{summarized}
+                   and ! $_->{adjust_section}
+                   and !($finance_section && $_->{'description'} eq $finance_section)
+                   and $_->{'description'} !~ /^\d+ $/
+                 }
+               @sections
+          ) {
             $OUT .= '<tr><td><b>'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '</b></td>';
             my $celltype = ($last == $section) ? 'th' : 'td';
             $OUT .= qq(<$celltype align="right"><b>). $section->{'subtotal'}. "</b></$celltype></tr>";
@@ -63,9 +72,19 @@
           <td><b>New Charges</b></td>
           <th align="right"><b><%= $dollar.$current_less_finance %></b></th>
         </tr>
+
+        <%= 
+          
+          #false laziness w/invoice_latexsummary and above
+          foreach my $section ( grep $_->{adjust_section}, @sections) {
+            $OUT .= '<tr><td><b>'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '</b></td>';
+            $OUT .= qq(<th align="right"><b>). $section->{'subtotal'}. "</b></th></tr>";
+          }
+        %>
+
         <tr>
           <td><b>Total Amount Due</b></td>
-          <td align="right"><b><%= $dollar.sprintf('%.2f', $true_previous_balance + $current_charges - $balance_adjustments) %></b></td>
+          <td align="right"><b><%= $dollar.sprintf('%.2f', $balance) %></b></td>
         </tr>
         <tr><th colspan=2><br></th></tr>
       </table>

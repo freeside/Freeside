@@ -70,6 +70,9 @@ Example:
    #return an error string or empty for no error
    'precheck_callback' => sub { my( $cgi ) = @_; },
 
+   #after the new object is created
+   'post_new_object_callback' => sub { my( $cgi, $object ) = @_; },
+
    #after everything's inserted
    'noerror_callback' => sub { my( $cgi, $object ) = @_; },
 
@@ -201,7 +204,7 @@ my %hash =
 my @values = ( 1 );
 if ( $bfield ) {
   @values = $cgi->param($bfield);
-  warn join(',', @values);
+  #warn join(',', @values);
 }
 
 my $new;
@@ -224,6 +227,10 @@ foreach my $value ( @values ) {
         $new->set($field, $old->get($field))
           unless scalar($cgi->param($field));
       }
+    }
+
+    if ( $opt{'post_new_object_callback'} ) {
+      &{ $opt{'post_new_object_callback'} }( $cgi, $new );
     }
 
     if ( $opt{'agent_virt'} ) {
@@ -263,6 +270,9 @@ foreach my $value ( @values ) {
 
     if ( !$error ) {
       if ( $old_pkey ) {
+
+        &{ $opt{'edit_callback'} }( $new, $old ) if $opt{'edit_callback'};
+
         $error = $new->replace($old, @args);
       } else {
         $error = $new->insert(@args);

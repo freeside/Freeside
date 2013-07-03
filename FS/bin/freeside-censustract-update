@@ -6,8 +6,8 @@ use Date::Parse 'str2time';
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch dbh);
 use FS::Conf;
-use FS::cust_main;
-use FS::h_cust_main;
+use FS::cust_location;
+use FS::h_cust_location;
 
 my %opt;
 getopts('d:', \%opt);
@@ -22,40 +22,48 @@ my $current_year = $conf->config('census_year')
   or die "No current census year configured.\n";
 my $date = str2time($opt{d}) if $opt{d};
 $date ||= time;
-my %h_cust_main = map { $_->custnum => $_ }
+# This now operates on cust_location, not cust_main.
+# Find all locations that, as of $date, did not have 
+# censusyear = the current year.  This includes those 
+# that have no censusyear.
+my %h_cust_location = map { $_->locationnum => $_ }
   qsearch(
-    'h_cust_main',
+    'h_cust_location',
     { censusyear => { op => '!=', value => $current_year } },
-    FS::h_cust_main->sql_h_search($date),
-  ) ; #the state of these customers as of $date
+    FS::h_cust_location->sql_h_search($date),
+  ) ;
 
-my @cust_main = qsearch( 'cust_main',
+# Find all locations that don't have censusyear = the current
+# year as of now.
+my @cust_location = qsearch( 'cust_location',
   { censusyear => { op => '!=', value => $current_year } },
-); # all possibly interesting customers
+);
 
-warn scalar(@cust_main)." records found.\n";
+warn scalar(@cust_location)." records found.\n";
 my $queued = 0; my $updated = 0;
-foreach my $cust_main (@cust_main) {
+foreach my $cust_location (@cust_location) {
   my $error;
-  my $h = $h_cust_main{$cust_main->custnum};
-  if ( defined($h) and $h->censustract eq $cust_main->censustract ) {
-    # the tract code hasn't been changed since $date
-    # so update it now
+  my $h = $h_cust_location{$cust_location->locationnum};
+  if ( defined($h) and $h->censustract eq $cust_location->censustract ) {
+    # Then the location's censustract hasn't been changed since $date
+    # (or it didn't exist on $date, or $date is now).  Queue a censustract 
+    # update for it.
     my $job = FS::queue->new({
-        job => 'FS::cust_main::process_censustract_update'
+        job => 'FS::cust_location::process_censustract_update'
     });
-    $error = $job->insert($cust_main->custnum);
+    $error = $job->insert($cust_location->locationnum);
     $queued++;
   }
-  elsif ($cust_main->censusyear eq '') {
-    # the tract number is assumed current, so just set the year
-    $cust_main->set('censusyear', $current_year);
-    $error = $cust_main->replace;
+  elsif ($cust_location->censusyear eq '') {
+    # Then it's been updated since $date, but somehow has a null censusyear.
+    # (Is this still relevant?)
+    $cust_location->set('censusyear', $current_year);
+    $error = $cust_location->replace;
     $updated++;
-  }
+  } # Else it's been updated since $date, so leave it alone.
   if ( $error ) {
     $dbh->rollback;
-    die "error updating ".$cust_main->custnum.": $error\n";
+    die "error updating ".$cust_location->locationnum.": $error\n";
   }
 }
 warn "Queued $queued census code lookups, updated year in $updated records.\n";

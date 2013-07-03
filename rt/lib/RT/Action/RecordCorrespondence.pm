@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -49,12 +49,13 @@
 package RT::Action::RecordCorrespondence;
 use base 'RT::Action';
 use strict;
+use warnings;
 
 =head1 NAME
 
 RT::Action::RecordCorrespondence - An Action which can be used from an
 external tool, or in any situation where a ticket transaction has not
-been started, to make a comment on the ticket.
+been started, to create a correspondence on the ticket.
 
 =head1 SYNOPSIS
 

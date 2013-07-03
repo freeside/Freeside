@@ -3,6 +3,14 @@
 <Form_477_submission xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://specialreports.fcc.gov/wcb/Form477/XMLSchema-instance/form_477_upload_Schema.xsd" >
 % } else { #html
 <& /elements/header.html, "FCC Form 477 Results - $state" &>
+%# XXX when we stop supporting IE8, add this to freeside.css using :nth-child
+%# selectors, and remove it from everywhere else
+<STYLE TYPE="text/css">
+.grid TH { background-color: #cccccc; padding: 0px 3px 2px; text-align: right }
+.row0 TD { background-color: #eeeeee; padding: 0px 3px 2px; text-align: right }
+.row1 TD { background-color: #ffffff; padding: 0px 3px 2px; text-align: right }
+</STYLE>
+
 <TABLE WIDTH="100%">
   <TR>
     <TD></TD>
@@ -38,8 +46,11 @@
 %         if ( $type eq 'xml' ) {
 <<% 'Part_IA_'. chr(65 + $tech) %>>
 %         }
-<& "477part${part}_summary.html", 'tech_code' => $tech, 'url' => $url &>
-<& "477part${part}_detail.html", 'tech_code' => $tech, 'url' => $url &>
+<& "477part${part}.html",
+    'tech_code' => $tech,
+    'url' => $url,
+    'type' => $type
+&>
 %         if ( $type eq 'xml' ) {
 </<% 'Part_IA_'. chr(65 + $tech) %>>
 %         }
@@ -95,6 +106,11 @@ for(my $i=0; $i < scalar(@part2a_row_option); $i++) {
 my @part2b_row_option = $cgi->param('part2b_row_option');
 for(my $i=0; $i < scalar(@part2b_row_option); $i++) {
     &FS::Report::FCC_477::save_fcc477map("part2b_row_option_$i",$part2b_row_option[$i]);
+}
+
+my $part5_report_option = $cgi->param('part5_report_option');
+if ( $part5_report_option ) {
+  FS::Report::FCC_477::save_fcc477map('part5_report_option', $part5_report_option);
 }
 
 my $url_mangler = sub {

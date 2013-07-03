@@ -10,6 +10,7 @@
               'precheck_callback' => $precheck_callback,
               'args_callback'     => $args_callback,
               'process_m2m'       => \@process_m2m,
+              'process_o2m'       => \@process_o2m,
           )
 %>
 <%init>
@@ -114,6 +115,19 @@ my $args_callback = sub {
   push @args, 'options' => \%options;
 
   ###
+  #part_pkg_currency
+  ###
+
+  my %part_pkg_currency = (
+    map { $_ => scalar($cgi->param($_)) }
+      #grep /._[A-Z]{3}$/, #support other options
+      grep /^(setup|recur)_fee_[A-Z]{3}$/,
+        $cgi->param
+  );
+
+  push @args, 'part_pkg_currency' => \%part_pkg_currency;
+
+  ###
   #pkg_svc
   ###
 
@@ -185,6 +199,15 @@ my @process_m2m = (
                         grep /^svc_dst_pkgpart/, $cgi->param
                       ],
   },
+  { 'link_table'   => 'part_pkg_link',
+    'target_table' => 'part_pkg',
+    'base_field'   => 'src_pkgpart',
+    'target_field' => 'dst_pkgpart',
+    'hashref'      => { 'link_type' => 'supp', 'hidden' => '' },
+    'params'       => [ map $cgi->param($_),
+                        grep /^supp_dst_pkgpart/, $cgi->param
+                      ],
+  },
   map { 
     my $hidden = $_;
     { 'link_table'   => 'part_pkg_link',
@@ -234,5 +257,12 @@ if ( $cgi->param('pkgpart') || ! $conf->exists('agent_defaultpkg') ) {
     'params'       => \@agents,
   };
 }
+
+my @process_o2m = (
+  {
+    'table'  => 'part_pkg_msgcat',
+    'fields' => [qw( locale pkg )],
+  },
+);
 
 </%init>

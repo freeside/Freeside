@@ -18,7 +18,8 @@ use FS::svc_acct;
 $DEBUG = 0;
 $me = '[FS::cust_main::Search]';
 
-@fuzzyfields = ( 'first', 'last', 'company', 'address1' );
+@fuzzyfields = ( 'cust_main.first', 'cust_main.last', 'cust_main.company', 
+  'cust_location.address1' );
 
 install_callback FS::UID sub { 
   $conf = new FS::Conf;
@@ -339,7 +340,7 @@ sub smart_search {
       my %fuzopts = (
         'hashref'   => \%options,
         'select'    => '',
-        'extra_sql' => " AND $agentnums_sql",    #agent virtualization
+        'extra_sql' => "WHERE $agentnums_sql",    #agent virtualization
       );
 
       if ( $first && $last ) {
@@ -355,7 +356,8 @@ sub smart_search {
       }
       if ( $conf->exists('address1-search') ) {
         push @cust_main,
-          FS::cust_main::Search->fuzzy_search( { 'address1' => $value }, %fuzopts );
+          FS::cust_main::Search->fuzzy_search(
+            { 'cust_location.address1' => $value }, %fuzopts );
       }
 
     }
@@ -622,15 +624,46 @@ sub search {
   # parse without census tract checkbox
   ##
 
-  push @where, "(censustract = '' or censustract is null)"
+  push @where, "(ship_location.censustract = '' or ship_location.censustract is null)"
     if $params->{'no_censustract'};
 
   ##
   # parse with hardcoded tax location checkbox
   ##
 
-  push @where, "geocode is not null"
+  push @where, "ship_location.geocode is not null"
     if $params->{'with_geocode'};
+
+  ##
+  # "with email address(es)" checkbox
+  ##
+
+  push @where,
+    'EXISTS ( SELECT 1 FROM cust_main_invoice
+                WHERE cust_main_invoice.custnum = cust_main.custnum
+                  AND length(dest) > 5
+            )'  # AND dest LIKE '%@%'
+    if $params->{'with_email'};
+
+  ##
+  # "with postal mail invoices" checkbox
+  ##
+
+  push @where,
+    "EXISTS ( SELECT 1 FROM cust_main_invoice
+                WHERE cust_main_invoice.custnum = cust_main.custnum
+                  AND dest = 'POST' )"
+    if $params->{'POST'};
+
+  ##
+  # "without postal mail invoices" checkbox
+  ##
+
+  push @where,
+    "NOT EXISTS ( SELECT 1 FROM cust_main_invoice
+                    WHERE cust_main_invoice.custnum = cust_main.custnum
+                      AND dest = 'POST' )"
+    if $params->{'no_POST'};
 
   ##
   # dates
@@ -771,11 +804,19 @@ sub search {
     @tagnums = grep /^(\d+)$/, @tagnums;
 
     if ( @tagnums ) {
+      if ( $params->{'all_tags'} ) {
+        foreach ( @tagnums ) {
+          push @where, 'exists(select 1 from cust_tag where '.
+                       'cust_tag.custnum = cust_main.custnum and tagnum = '.
+                       $_ . ')';
+        }
+      } else { # matching any tag, not all
 	my $tags_where = "0 < (select count(1) from cust_tag where " 
 		. " cust_tag.custnum = cust_main.custnum and tagnum in ("
 		. join(',', @tagnums) . "))";
 
 	push @where, $tags_where;
+      }
     }
   }
 
@@ -793,8 +834,14 @@ sub search {
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
   my $addl_from = '';
+  # always make address fields available in results
+  for my $pre ('bill_', 'ship_') {
+    $addl_from .= 
+      'LEFT JOIN cust_location AS '.$pre.'location '.
+      'ON (cust_main.'.$pre.'locationnum = '.$pre.'location.locationnum) ';
+  }
 
-  my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
+  my $count_query = "SELECT COUNT(*) FROM cust_main $addl_from $extra_sql";
 
   my @select = (
                  'cust_main.custnum',
@@ -810,7 +857,8 @@ sub search {
   if ($params->{'flattened_pkgs'}) {
 
     #my $pkg_join = '';
-    $addl_from .= ' LEFT JOIN cust_pkg USING ( custnum ) ';
+    $addl_from .=
+      ' LEFT JOIN cust_pkg ON ( cust_main.custnum = cust_pkg.custnum ) ';
 
     if ($dbh->{Driver}->{Name} eq 'Pg') {
 
@@ -879,6 +927,8 @@ sub search {
     'extra_headers' => \@extra_headers,
     'extra_fields'  => \@extra_fields,
   };
+  warn Data::Dumper::Dumper($sql_query);
+  $sql_query;
 
 }
 
@@ -893,7 +943,8 @@ Additional options are the same as FS::Record::qsearch
 =cut
 
 sub fuzzy_search {
-  my( $self, $fuzzy ) = @_;
+  my $self = shift;
+  my $fuzzy = shift;
   # sensible defaults, then merge in any passed options
   my %fuzopts = (
     'table'     => 'cust_main',
@@ -905,6 +956,11 @@ sub fuzzy_search {
 
   my @cust_main = ();
 
+  my @fuzzy_mod = 'i';
+  my $conf = new FS::Conf;
+  my $fuzziness = $conf->config('fuzzy-fuzziness');
+  push @fuzzy_mod, $fuzziness if $fuzziness;
+
   check_and_rebuild_fuzzyfiles();
   foreach my $field ( keys %$fuzzy ) {
 
@@ -912,32 +968,31 @@ sub fuzzy_search {
     next unless scalar(@$all);
 
     my %match = ();
-    $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, ['i'], @$all ) );
+    $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, \@fuzzy_mod, @$all ) );
+    next if !keys(%match);
 
-    my @fcust = ();
-    foreach ( keys %match ) {
-      if ( $field eq 'address1' ) {
-        #because it lives outside the table
-        my $addl_from = $fuzopts{addl_from} .
-                        'JOIN cust_location USING (custnum)';
-        my $extra_sql = $fuzopts{extra_sql} .
-                        " AND cust_location.address1 = ".dbh->quote($_);
-        push @fcust, qsearch({
-            %fuzopts,
-            'addl_from' => $addl_from,
-            'extra_sql' => $extra_sql,
-        });
-      } else {
-        my $hash = $fuzopts{hashref};
-        $hash->{$field} = $_;
-        push @fcust, qsearch({
-            %fuzopts,
-            'hashref' => $hash
-        });
-      }
+    my $in_matches = 'IN (' .
+                     join(',', map { dbh->quote($_) } keys %match) .
+                     ')';
+
+    my $extra_sql = $fuzopts{extra_sql};
+    if ($extra_sql =~ /^\s*where /i or keys %{ $fuzopts{hashref} }) {
+      $extra_sql .= ' AND ';
+    } else {
+      $extra_sql .= 'WHERE ';
     }
-    my %fsaw = ();
-    push @cust_main, grep { ! $fsaw{$_->custnum}++ } @fcust;
+    $extra_sql .= "$field $in_matches";
+
+    my $addl_from = $fuzopts{addl_from};
+    if ( $field =~ /^cust_location/ ) {
+      $addl_from .= ' JOIN cust_location USING (custnum)';
+    }
+
+    push @cust_main, qsearch({
+      %fuzopts,
+      'addl_from' => $addl_from,
+      'extra_sql' => $extra_sql,
+    });
   }
 
   # we want the components of $fuzzy ANDed, not ORed, but still don't want dupes
@@ -976,28 +1031,29 @@ sub rebuild_fuzzyfiles {
 
   foreach my $fuzzy ( @fuzzyfields ) {
 
-    open(LOCK,">>$dir/cust_main.$fuzzy")
-      or die "can't open $dir/cust_main.$fuzzy: $!";
+    my ($field, $table) = reverse split('\.', $fuzzy);
+    $table ||= 'cust_main';
+
+    open(LOCK,">>$dir/$table.$field")
+      or die "can't open $dir/$table.$field: $!";
     flock(LOCK,LOCK_EX)
-      or die "can't lock $dir/cust_main.$fuzzy: $!";
+      or die "can't lock $dir/$table.$field: $!";
 
-    open (CACHE, '>:encoding(UTF-8)', "$dir/cust_main.$fuzzy.tmp")
-      or die "can't open $dir/cust_main.$fuzzy.tmp: $!";
+    open (CACHE, '>:encoding(UTF-8)', "$dir/$table.$field.tmp")
+      or die "can't open $dir/$table.$field.tmp: $!";
 
-    foreach my $field ( $fuzzy, "ship_$fuzzy" ) {
-      my $sth = dbh->prepare("SELECT $field FROM cust_main".
-                             " WHERE $field != '' AND $field IS NOT NULL");
-      $sth->execute or die $sth->errstr;
+    my $sth = dbh->prepare(
+      "SELECT $field FROM $table WHERE $field IS NOT NULL AND $field != ''"
+    );
+    $sth->execute or die $sth->errstr;
 
-      while ( my $row = $sth->fetchrow_arrayref ) {
-        print CACHE $row->[0]. "\n";
-      }
+    while ( my $row = $sth->fetchrow_arrayref ) {
+      print CACHE $row->[0]. "\n";
+    }
 
-    } 
-
-    close CACHE or die "can't close $dir/cust_main.$fuzzy.tmp: $!";
+    close CACHE or die "can't close $dir/$table.$field.tmp: $!";
   
-    rename "$dir/cust_main.$fuzzy.tmp", "$dir/cust_main.$fuzzy";
+    rename "$dir/$table.$field.tmp", "$dir/$table.$field";
     close LOCK;
   }
 
@@ -1016,20 +1072,24 @@ sub append_fuzzyfiles {
 
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
 
-  foreach my $field (@fuzzyfields) {
+  foreach my $fuzzy (@fuzzyfields) {
+
+    my ($field, $table) = reverse split('\.', $fuzzy);
+    $table ||= 'cust_main';
+
     my $value = shift;
 
     if ( $value ) {
 
-      open(CACHE, '>>:encoding(UTF-8)', "$dir/cust_main.$field" )
-        or die "can't open $dir/cust_main.$field: $!";
+      open(CACHE, '>>:encoding(UTF-8)', "$dir/$table.$field" )
+        or die "can't open $dir/$table.$field: $!";
       flock(CACHE,LOCK_EX)
-        or die "can't lock $dir/cust_main.$field: $!";
+        or die "can't lock $dir/$table.$field: $!";
 
       print CACHE "$value\n";
 
       flock(CACHE,LOCK_UN)
-        or die "can't unlock $dir/cust_main.$field: $!";
+        or die "can't unlock $dir/$table.$field: $!";
       close CACHE;
     }
 
@@ -1043,10 +1103,13 @@ sub append_fuzzyfiles {
 =cut
 
 sub all_X {
-  my( $self, $field ) = @_;
+  my( $self, $fuzzy ) = @_;
+  my ($field, $table) = reverse split('\.', $fuzzy);
+  $table ||= 'cust_main';
+
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
-  open(CACHE, '<:encoding(UTF-8)', "$dir/cust_main.$field")
-    or die "can't open $dir/cust_main.$field: $!";
+  open(CACHE, '<:encoding(UTF-8)', "$dir/$table.$field")
+    or die "can't open $dir/$table.$field: $!";
   my @array = map { chomp; $_; } <CACHE>;
   close CACHE;
   \@array;

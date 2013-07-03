@@ -103,7 +103,7 @@ Displays a histogram of cust_pay records in the database.
 
   -a: Only process payments of customers with the specified agentnum
 
-user: From the mapsecrets file - see config.html from the base documentation
+user: Freeside username
 
 =head1 BUGS
 

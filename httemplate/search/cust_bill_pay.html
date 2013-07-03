@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                 'title'       => $title,
                 'name'        => 'net payments',
                 'query'       => $sql_query,
@@ -71,8 +71,8 @@
                              '',
                              FS::UI::Web::cust_styles(),
                            ],
-          )
-%>
+          
+&>
 <%init>
 
 die "access denied"
@@ -99,6 +99,16 @@ if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
   $title = $part_referral->referral. " $title";
 }
 
+# cust_classnum (false laziness w/ elements/cust_main_dayranges.html, prepaid_income.html, cust_bill_pkg.html, cust_bill_pkg_referral.html, unearned_detail.html, cust_credit.html, cust_credit_refund.html, cust_main::Search::search_sql)
+if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
+  my @classnums = grep /^\d*$/, $cgi->param('cust_classnum');
+  push @search, 'COALESCE( cust_main.classnum, 0) IN ( '.
+                    join(',', map { $_ || '0' } @classnums ).
+                ' )'
+    if @classnums;
+}
+
+
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 push @search, "cust_bill._date >= $beginning ",
               "cust_bill._date <= $ending";
@@ -110,8 +120,8 @@ my $where = 'WHERE '. join(' AND ', @search);
 #
 my $count_query = 'SELECT COUNT(*), SUM(amount)
                    FROM cust_bill_pay
-                     LEFT JOIN cust_bill USING ( invnum  )
-                     LEFT JOIN cust_main USING ( custnum ) '.
+                     LEFT JOIN cust_bill USING ( invnum  ) '.
+                     FS::UI::Web::join_cust_main('cust_bill') .
                   $where;
 
 my $sql_query   = {
@@ -130,8 +140,8 @@ my $sql_query   = {
   'hashref'   => {},
   'extra_sql' => $where,
   'addl_from' => 'LEFT JOIN cust_bill   USING ( invnum  )
-                  LEFT JOIN cust_pay    USING ( paynum )
-                  LEFT JOIN cust_main ON ( cust_bill.custnum = cust_main.custnum )',
+                  LEFT JOIN cust_pay    USING ( paynum ) '.
+                  FS::UI::Web::join_cust_main('cust_bill')
 };
 
 my $cust_bill_link = sub {

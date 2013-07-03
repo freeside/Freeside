@@ -4,6 +4,7 @@ use strict;
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Conf;
+use FS::Log;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
@@ -11,6 +12,8 @@ getopts("p:a:d:vl:sy:nmrkg:o", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
+my $log = FS::Log->new('daily');
+$log->info('start');
 
 #you can skip this by not having a NetworkMonitoringSystem configured
 use FS::Cron::nms_report qw(nms_report);
@@ -73,6 +76,12 @@ unlink <${deldir}.CGItemp*>;
 #you can skip this just by not having the config
 use FS::Cron::backup qw(backup);
 backup();
+
+#except we'd rather not start cleanup jobs until the backup is done
+use FS::Cron::cleanup qw(cleanup);
+cleanup();
+
+$log->info('finish');
 
 ###
 # subroutines
@@ -138,13 +147,13 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
   -l: debugging level
 
-  -m: Experimental multi-process mode uses the job queue for multi-process and/or multi-machine billing.
+  -m: Multi-process mode uses the job queue for multi-process and/or multi-machine billing.
 
   -r: Multi-process mode dry run option
 
   -k: skip notify_flat_delay
 
-user: From the mapsecrets file - see config.html from the base documentation
+user: Typically "fs_daily"
 
 custnum: if one or more customer numbers are specified, only bills those
 customers.  Otherwise, bills all customers.

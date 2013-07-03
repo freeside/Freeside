@@ -52,10 +52,10 @@ line item, and for generic taxes, simply returns "Tax".
 =cut
 
 sub desc {
-  my $self = shift;
+  my( $self, $locale ) = @_;
 
   if ( $self->pkgnum > 0 ) {
-    $self->itemdesc || $self->part_pkg->pkg;
+    $self->itemdesc || $self->part_pkg->pkg_locale($locale);
   } else {
     my $desc = $self->itemdesc || 'Tax';
     $desc .= ' '. $self->itemcomment if $self->itemcomment =~ /\S/;
@@ -271,10 +271,12 @@ sub cust_bill_pkg_display {
   } else {
     my $hashref = { 'billpkgnum' => $self->billpkgnum };
     $hashref->{type} = $type if defined($type);
+
+    my $order_by = $self->display_table_orderby || 'billpkgdisplaynum';
     
     @result = qsearch ({ 'table'    => $self->display_table,
-                         'hashref'  => { 'billpkgnum' => $self->billpkgnum },
-                         'order_by' => 'ORDER BY billpkgdisplaynum',
+                         'hashref'  => $hashref,
+                         'order_by' => "ORDER BY $order_by",
                       });
   }
 

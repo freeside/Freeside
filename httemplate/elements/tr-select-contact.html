@@ -1,0 +1,204 @@
+<%doc>
+
+Example:
+
+  include('/elements/tr-select-contact.html',
+            'cgi'       => $cgi,
+
+            'cust_main'     => $cust_main,
+            #or
+            'prospect_main' => $prospect_main,
+
+            #optional
+            'empty_label'   => '(default contact)',
+         )
+
+</%doc>
+
+<SCRIPT TYPE="text/javascript">
+
+  function contact_disable(what) {
+%   for (@contact_fields) { 
+      what.form.<%$_%>.disabled = true;
+      var ftype = what.form.<%$_%>.tagName;
+      if( ftype == 'SELECT') changeSelect(what.form.<%$_%>, '');
+      else what.form.<%$_%>.value = '';
+      if( ftype != 'SELECT') what.form.<%$_%>.style.backgroundColor = '#dddddd';
+%   } 
+  }
+
+  function contact_clear(what) {
+%   for (@contact_fields) { 
+      var ftype = what.form.<%$_%>.tagName;
+      if( ftype == 'INPUT' ) what.form.<%$_%>.value = '';
+%   }
+  }
+
+  function contact_enable(what) {
+%   for (@contact_fields) { 
+      what.form.<%$_%>.disabled = false;
+      var ftype = what.form.<%$_%>.tagName;
+      if( ftype != 'SELECT') what.form.<%$_%>.style.backgroundColor = '#ffffff';
+%   } 
+  }
+
+  function contactnum_changed(what) {
+    var contactnum = what.options[what.selectedIndex].value;
+    if ( contactnum == -1 ) { //Add new contact
+      contact_clear(what);
+
+      contact_enable(what);
+      return;
+    }
+
+%   if ( $editable ) {
+      if ( contactnum == 0 ) {
+%   }
+
+%       #sleep/wait until dropdowns are updated?
+        contact_disable(what);
+
+%   if ( $editable ) {
+      } else {
+
+%       #sleep/wait until dropdowns are updated?
+        contact_enable(what);
+
+      }
+%   }
+
+  }
+
+  function changeSelect(what, value) {
+    for ( var i=0; i<what.length; i++) {
+      if ( what.options[i].value == value ) {
+        what.selectedIndex = i;
+      }
+    }
+  }
+
+</SCRIPT>
+
+<TR>
+  <<%$th%> ALIGN="right" VALIGN="top"><% $opt{'label'} || emt('Service contact') %></<%$th%>>
+  <TD VALIGN="top" COLSPAN=7>
+    <SELECT NAME     = "contactnum"
+            ID       = "contactnum"
+            STYLE    = "vertical-align:top;margin:3px"
+            onchange = "contactnum_changed(this);"
+    >
+% if ( $cust_main ) {
+      <OPTION VALUE=""><% $opt{'empty_label'} || '(customer default)' |h %>
+% }
+%
+%     foreach my $contact ( @contact ) {
+        <OPTION VALUE="<% $contact->contactnum %>"
+                <% $contactnum == $contact->contactnum ? 'SELECTED' : '' %>
+        ><% $contact->line |h %>
+%     }
+%     if ( $addnew ) {
+        <OPTION VALUE="-1"
+                <% $contactnum == -1 ? 'SELECTED' : '' %>
+        >New contact
+%     }
+    </SELECT>
+
+<% include('/elements/contact.html',
+             'object'       => $contact,
+             #'onchange' ?  probably not
+             'disabled'     => $disabled,
+             'name_only'    => 1,
+          )
+%>
+
+  </TD>
+</TR>
+
+<SCRIPT TYPE="text/javascript">
+  contactnum_changed(document.getElementById('contactnum'));
+</SCRIPT>
+<%init>
+
+#based on / kinda false laziness w/tr-select-cust_contact.html
+
+my $conf = new FS::Conf;
+
+my %opt = @_;
+my $cgi           = $opt{'cgi'};
+my $cust_pkg      = $opt{'cust_pkg'};
+my $cust_main     = $opt{'cust_main'};
+my $prospect_main = $opt{'prospect_main'};
+die "cust_main or prospect_main required" unless $cust_main or $prospect_main;
+
+my $contactnum = '';
+if ( $cgi->param('error') ) {
+  $cgi->param('contactnum') =~ /^(\-?\d*)$/ or die "illegal contactnum";
+  $contactnum = $1;
+} else {
+  if ( length($opt{'curr_value'}) ) {
+    $contactnum = $opt{'curr_value'};
+  } elsif ($prospect_main) {
+    my @cust_contact = $prospect_main->contact;
+    $contactnum = $cust_contact[0]->contactnum if scalar(@cust_contact)==1;
+  } else { #$cust_main
+    $cgi->param('contactnum') =~ /^(\-?\d*)$/ or die "illegal contactnum";
+    $contactnum = $1;
+  }
+}
+
+##probably could use explicit controls
+#my $editable = $cust_main ? 0 : 1; #could use explicit control
+my $editable = 0;
+my $addnew = $cust_main ? 1 : ( $contactnum>0 ? 0 : 1 );
+
+my @contact_fields = map "contactnum_$_", qw( first last );
+
+my $contact; #the one that shows by default in the contact edit space
+if ( $contactnum && $contactnum > 0 ) {
+  $contact = qsearchs('contact', { 'contactnum' => $contactnum } )
+    or die "unknown contactnum";
+} else {
+  $contact = new FS::contact;
+  if ( $contactnum == -1 ) {
+    $contact->$_( $cgi->param($_) ) foreach @contact_fields; #XXX
+  } elsif ( $cust_pkg && $cust_pkg->contactnum ) {
+    my $pkg_contact = $cust_pkg->contact_obj;
+    $contact->$_( $pkg_contact->$_ ) foreach @contact_fields; #XXX why are we making a new one gagain??
+    $opt{'empty_label'} ||= 'package contact: '.$pkg_contact->line;
+  } elsif ( $cust_main ) {
+    $contact = new FS::contact; #I think
+  }
+}
+
+my $contact_sort = sub {
+     lc($a->last)  cmp lc($b->last)
+  or lc($a->first) cmp lc($b->first)
+};
+
+my @contact;
+push @contact, $cust_main->cust_contact if $cust_main;
+push @contact, $prospect_main->contact if $prospect_main;
+push @contact, $contact
+  if !$cust_main && $contact && $contact->contactnum > 0
+  && ! grep { $_->contactnum == $contact->contactnum } @contact;
+
+@contact = sort $contact_sort grep !$_->disabled, @contact;
+
+$contact = $contact[0]
+  if ( $prospect_main )
+  && !$opt{'is_optional'}
+  && @contact;
+
+my $disabled =
+  ( $contactnum < 0
+    || ( $editable && $contactnum )
+    || ( $prospect_main
+         && !$opt{'is_optional'} && !@contact && $addnew
+       )
+  )
+    ? ''
+    : 'DISABLED';
+
+my $th = $opt{'no_bold'} ? 'TD' : 'TH';
+
+</%init>

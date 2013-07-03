@@ -104,8 +104,12 @@ my @fields = (
   { field=>'sectornum', type=>'select-tower_sector', },
   { field=>'routernum', type=>'select-router_block_ip' },
   { field=>'mac_addr' , type=>'input-mac_addr' },
-    qw( latitude longitude altitude vlan_profile 
-    performance_profile authkey plan_id )
+  qw(
+      latitude longitude altitude
+      radio_serialnum radio_location poe_location rssi suid
+    ),
+  { field=>'shared_svcnum', type=>'search-svc_broadband', },
+  qw( vlan_profile performance_profile authkey plan_id ),
 );
 
 if ( $conf->exists('svc_broadband-radius') ) {

@@ -8,7 +8,6 @@
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
 <INPUT TYPE="hidden" NAME="_date" VALUE="<% $_date %>">
 <INPUT TYPE="hidden" NAME="credited" VALUE="">
-<INPUT TYPE="hidden" NAME="otaker" VALUE="<% $otaker %>">
 
 <% ntable("#cccccc", 2) %>
 
@@ -34,6 +33,7 @@
     <TD>
       <INPUT TYPE="text" NAME="addlinfo" VALUE="<% $cgi->param('addlinfo') |h %>">
     </TD>
+  </TR>
 
 % if ( $conf->exists('credits-auto-apply-disable') ) {
         <INPUT TYPE="HIDDEN" NAME="apply" VALUE="no">
@@ -73,7 +73,6 @@ die "access denied"
 my $custnum = $cgi->param('custnum');
 my $amount  = $cgi->param('amount');
 my $_date   = time;
-my $otaker  = getotaker;
 my $p1      = popurl(1);
 
 </%init>

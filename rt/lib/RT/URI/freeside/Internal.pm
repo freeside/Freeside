@@ -143,7 +143,7 @@ sub small_custview {
 
 }
 
-sub _FreesideURILabelLong {
+sub AsStringLong {
 
   my $self = shift;
 
@@ -163,18 +163,26 @@ sub _FreesideURILabelLong {
     my $string = '';
     my $cust = $self->CustomerResolver;
     if ( $cust ) {
-      $string = $cust->AsStringLong;
+      # the customer's small_custview
+      $string = $cust->AsStringLong();
     }
-    $string .= '<B><A HREF="' . $self->HREF . '">' . 
-        $self->AsString . '</A></B>';
+    # + the service label and link
+    $string .= $self->ShortLink;
     return $string;
 
   } else {
 
-    return $self->_FreesideURILabel();
+    return $self->SUPER::AsStringLong;
 
   }
 
+}
+
+sub ShortLink {
+  # because I don't want AsString to sometimes return a hunk of HTML, but
+  # on the other hand AsStringLong does something specific.
+  my $self = shift;
+  '<B><A HREF="'.$self->HREF.'">' . $self->_FreesideURILabel . '</A></B>';
 }
 
 sub CustomerResolver {

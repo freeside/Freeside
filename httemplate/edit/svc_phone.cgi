@@ -6,6 +6,11 @@
        my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt ) = @_;
        $svc_x->locationnum($cust_pkg->locationnum) if $cust_pkg;
      },
+     'svc_edit_callback' => sub {
+       my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt) = @_;
+       my $conf = new FS::Conf;
+       $svc_x->sip_password('*HIDDEN*') unless $conf->exists('showpasswords');
+     },
 &>
 <%init>
 
@@ -28,6 +33,11 @@ my $begin_callback = sub {
                 type     => 'select-did',
                 label    => 'Phone number',
                 multiple => $bulk,
+              },
+              { field     => 'sim_imsi',
+                type      => 'text',
+                size      => 15,
+                maxlength => 15,
               };
 
   push @$fields, { field => 'domsvc',
@@ -111,6 +121,25 @@ my $begin_callback = sub {
     ;
   }
 
+  if ( ! $bulk ) {
+
+    push @$fields,
+           {
+             type    => 'tablebreak-tr-title',
+             value   => 'Carrier Information',
+             colspan => 8,
+           },
+           { field => 'sms_carrierid',
+             label => 'SMS Carrier',
+             type  => 'select-cdr_carrier',
+           },
+           'sms_account',
+           'max_simultaneous',
+    ;
+
+  }
+
 };
+
 
 </%init>

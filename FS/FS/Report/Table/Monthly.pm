@@ -25,6 +25,7 @@ FS::Report::Table::Monthly - Tables of report data, indexed monthly
     #opt
     'agentnum'    => 54
     'refnum'      => 54
+    'cust_classnum' => [ 1,2,4 ],
     'params'      => [ [ 'paramsfor', 'item_one' ], [ 'item', 'two' ] ], # ...
     'remove_empty' => 1, #collapse empty rows, default 0
     'item_labels' => [ ], #useful with remove_empty
@@ -32,13 +33,94 @@ FS::Report::Table::Monthly - Tables of report data, indexed monthly
 
   my $data = $report->data;
 
-=head1 METHODS
+=head1 PARAMETERS
+
+=head2 TIME PERIOD
+
+C<start_month>, C<start_year>, C<end_month>, and C<end_year> specify the date
+range to be included in the report.  The start and end months are included.
+Each month's values are summed from midnight on the first of the month to 
+23:59:59 on the last day of the month.
+
+=head2 REPORT ITEMS
 
 =over 4
 
+=item items: An arrayref of observables to calculate for each month.  See 
+L<FS::Report::Table> for a list of observables and their parameters.
+
+=item params: An arrayref, parallel to C<items>, of arrayrefs of parameters
+(in paired name/value form) to be passed to the observables.
+
+=item cross_params: Cross-product parameters.  This must be an arrayref of 
+arrayrefs of parameters (paired name/value form).  This creates an additional 
+"axis" (orthogonal to the time and C<items> axes) in which the item is 
+calculated once with each set of parameters in C<cross_params>.  These 
+parameters are merged with those in C<params>.  Instead of being nested two
+levels, C<data> will be nested three levels, with the third level 
+corresponding to this arrayref.
+
+=back
+
+=head2 FILTERING
+
+=over 4
+
+=item agentnum: Limit to customers with this agent.
+
+=item refnum: Limit to customers with this advertising source.
+
+=item cust_classnum: Limit to customers with this classnum; can be an 
+arrayref.
+
+=item remove_empty: Set this to a true value to hide rows that contain 
+only zeroes.  The C<indices> array in the returned data will list the item
+indices that are actually present in the output so that you know what they
+are.  Ignored if C<cross_params> is in effect.
+
+=back
+
+=head2 PASS-THROUGH
+
+C<item_labels>, C<colors>, and C<links> may be specified as arrayrefs
+parallel to C<items>.  Those values will be returned in C<data>, with any
+hidden rows (due to C<remove_empty>) filtered out, which is the only 
+reason to do this.  Now that we have C<indices> it's probably better to 
+use that.
+
+=head1 RETURNED DATA
+
+The C<data> method runs the report and returns a hashref of the following:
+
+=over 4
+
+=item label
+
+Month labels, in MM/YYYY format.
+
+=item speriod, eperiod
+
+Absolute start and end times of each month, in unix time format.
+
+=item items
+
+The values passed in as C<items>, with any suppressed rows deleted.
+
+=item indices
+
+The indices of items in the input C<items> list that appear in the result
+set.  Useful for figuring out what they are when C<remove_empty> has deleted 
+some items.
+
+=item item_labels, colors, links - see PASS-THROUGH above
+
 =item data
 
-Returns a hashref of data (!! describe)
+The actual results.  An arrayref corresponding to C<label> (the time axis),
+containing arrayrefs corresponding to C<items>, containing either numbers
+or, if C<cross_params> is given, arrayrefs corresponding to C<cross_params>.
+
+=back
 
 =cut
 
@@ -61,6 +143,8 @@ sub data {
 
   my $agentnum = $self->{'agentnum'};
   my $refnum = $self->{'refnum'};
+  my $cust_classnum = $self->{'cust_classnum'} || [];
+  $cust_classnum = [ $cust_classnum ] if !ref($cust_classnum);
 
   if ( $projecting ) {
 
@@ -88,14 +172,7 @@ sub data {
   while ( $syear < $max_year
      || ( $syear == $max_year && $smonth < $max_month+1 ) ) {
 
-    if ( $self->{'doublemonths'} ) {
-      my($firstLabel,$secondLabel) = @{$self->{'doublemonths'}};
-      push @{$data{label}}, "$smonth/$syear $firstLabel";
-      push @{$data{label}}, "$smonth/$syear $secondLabel";
-    }
-    else {
-      push @{$data{label}}, "$smonth/$syear";
-    }
+    push @{$data{label}}, "$smonth/$syear"; # sprintf?
 
     my $speriod = timelocal(0,0,0,1,$smonth-1,$syear);
     push @{$data{speriod}}, $speriod;
@@ -108,30 +185,27 @@ sub data {
     my $i;
 
     for ( $i = 0; $i < scalar(@items); $i++ ) {
-      if ( $self->{'doublemonths'} ) {
-        my $item = $items[$i]; 
-        my @param = $self->{'params'} ? @{ $self->{'params'}[$i] }: ();
-        push @param, 'project', $projecting;
-        push @param, 'refnum' => $refnum if $refnum;
-        my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
-        push @{$data{data}->[$col]}, $value;
-        $item = $items[$i+1]; 
-        @param = $self->{'params'} ? @{ $self->{'params'}[++$i] }: ();
-        push @param, 'project', $projecting;
-        push @param, 'refnum' => $refnum if $refnum;
-        $value = $self->$item($speriod, $eperiod, $agentnum, @param);
-        push @{$data{data}->[$col++]}, $value;
-      }
-      else {
-        my $item = $items[$i];
-        my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
-        push @param, 'project', $projecting;
-        push @param, 'refnum' => $refnum if $refnum;
+      my $item = $items[$i];
+      my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
+      push @param, 'project', $projecting;
+      push @param, 'refnum' => $refnum if $refnum;
+      push @param, 'cust_classnum' => $cust_classnum if @$cust_classnum;
+
+      if ( $self->{'cross_params'} ) {
+        my @xdata;
+        foreach my $xparam (@{ $self->{'cross_params'} }) {
+          # @$xparam is a list of additional params to merge into the list
+          my $value = $self->$item($speriod, $eperiod, $agentnum,
+                        @param, 
+                        @$xparam);
+          push @xdata, $value;
+        }
+        push @{$data{data}->[$col++]}, \@xdata;
+      } else {
         my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
         push @{$data{data}->[$col++]}, $value;
       }
     }
-
   }
 
   #these need to get generalized, sheesh
@@ -140,7 +214,7 @@ sub data {
   $data{'colors'}      = $self->{'colors'};
   $data{'links'}       = $self->{'links'} || [];
 
-  if ( $self->{'remove_empty'} ) {
+  if ( !$self->{'cross_params'} and $self->{'remove_empty'} ) {
 
     my $col = 0;
     #these need to get generalized, sheesh
@@ -185,8 +259,6 @@ sub data {
 =back
 
 =head1 BUGS
-
-Documentation.
 
 =head1 SEE ALSO
 

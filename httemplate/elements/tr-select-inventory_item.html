@@ -1,0 +1,48 @@
+% if ( scalar(@classnums) == 0 ) {
+<& tr-fixed.html, %opt &>
+% } elsif ( scalar(@classnums) == 1 ) {
+%   $opt{'extra_sql'} .= ' AND '.$classnum_sql;
+<& tr-select-table.html,
+  'table'     => 'inventory_item',
+  'name_col'  => 'item',
+  'value_col' => 'item',
+  %opt
+&>
+% } else {
+<& tr-td-label.html, %opt &>
+<TD>
+<& select-tiered.html,
+  'prefix' => $opt{'field'}.'_',
+  'tiers' => [
+    {
+      field         => $opt{'field'}.'_classnum',
+      table         => 'inventory_class',
+      extra_sql     => "WHERE $classnum_sql",
+      name_col      => 'classname',
+      empty_label   => '(all)',
+    },
+    {
+      field         => $opt{'field'},
+      table         => 'inventory_item',
+      name_col      => 'item',
+      value_col     => 'item',
+      link_col      => 'classnum',
+      extra_sql     => delete($opt{'extra_sql'}),
+      disable_empty => 1,
+    },
+  ],
+  %opt,
+&>
+</TD>
+</TR>
+% }
+<%init>
+my %opt = @_;
+my @classnums;
+if (ref($opt{'classnum'})) {
+  @classnums = @{ $opt{'classnum'} };
+} else {
+  @classnums = split(',', $opt{'classnum'});
+}
+my $classnum_sql = 'classnum IN('.join(',', @classnums).')';
+</%init>

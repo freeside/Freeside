@@ -8,9 +8,9 @@ Choose an existing customer
 <TR>
   <TD ALIGN="right" VALIGN="top"><B><% $custnum %>: </B></TD>
   <TD ALIGN="left">
-    <% $_->name %>&mdash;<B><FONT COLOR="#<%$_->statuscolor%>"><%$_->ucfirst_cust_status%></FONT></B><BR>
-<% $_->address1 %><BR>
-<% $_->city %>,&nbsp;<% $_->state %>&nbsp;&nbsp;<% $_->zip %>
+    <% $_->name |h %>&mdash;<B><FONT COLOR="#<%$_->statuscolor%>"><%$_->ucfirst_cust_status%></FONT></B><BR>
+<% $_->address1 |h %><BR>
+<% $_->city |h %>,&nbsp;<% $_->state %>&nbsp;&nbsp;<% $_->zip %>
   </TD>
   <TD ALIGN="center">
     <INPUT TYPE="radio" NAME="dup_custnum" VALUE="<%$custnum%>">

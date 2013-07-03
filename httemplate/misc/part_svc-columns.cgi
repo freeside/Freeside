@@ -1,4 +1,4 @@
-<% objToJson(\@output) %>
+<% encode_json(\@output) %>\
 <%init>
 
 my $conf = new FS::Conf;

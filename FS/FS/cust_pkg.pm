@@ -1,26 +1,30 @@
 package FS::cust_pkg;
 
 use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::location_Mixin
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin
+             FS::contact_Mixin FS::location_Mixin
              FS::m2m_Common FS::option_Common );
 use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
-use List::Util qw(max);
+use List::Util qw(min max);
 use Tie::IxHash;
 use Time::Local qw( timelocal timelocal_nocheck );
 use MIME::Entity;
-use FS::UID qw( getotaker dbh driver_name );
+use FS::UID qw( dbh driver_name );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs fields );
 use FS::CurrentUser;
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
+use FS::contact;
 use FS::cust_location;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
 use FS::cust_pkg_detail;
+use FS::cust_pkg_usage;
+use FS::cdr_cust_pkg_usage;
 use FS::cust_event;
 use FS::h_cust_svc;
 use FS::reg_code;
@@ -197,6 +201,15 @@ Previous locationnum
 
 =item waive_setup
 
+=item main_pkgnum
+
+The pkgnum of the package that this package is supplemental to, if any.
+
+=item pkglinknum
+
+The package link (L<FS::part_pkg_link>) that defines this supplemental
+package, if it is one.
+
 =back
 
 Note: setup, last_bill, bill, adjourn, susp, expire, cancel and change_date
@@ -214,7 +227,7 @@ Create a new billing item.  To add the item to the database, see L<"insert">.
 =cut
 
 sub table { 'cust_pkg'; }
-sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_linked { $_[0]->cust_main_custnum || $_[0]->custnum } 
 sub cust_unlinked_msg {
   my $self = shift;
   "WARNING: can't find cust_main.custnum ". $self->custnum.
@@ -242,7 +255,8 @@ The following options are available:
 
 =item change
 
-If set true, supresses any referral credit to a referring customer.
+If set true, supresses actions that should only be taken for new package
+orders.  (Currently this includes: intro periods when delay_setup is on.)
 
 =item options
 
@@ -256,6 +270,12 @@ a ticket will be added to this customer with this subject
 
 an optional queue name for ticket additions
 
+=item allow_pkgpart
+
+Don't check the legality of the package definition.  This should be used
+when performing a package change that doesn't change the pkgpart (i.e. 
+a location change).
+
 =back
 
 =cut
@@ -263,7 +283,8 @@ an optional queue name for ticket additions
 sub insert {
   my( $self, %options ) = @_;
 
-  my $error = $self->check_pkgpart;
+  my $error;
+  $error = $self->check_pkgpart unless $options{'allow_pkgpart'};
   return $error if $error;
 
   my $part_pkg = $self->part_pkg;
@@ -283,8 +304,12 @@ sub insert {
     }
   }
 
-  my $free_days = $part_pkg->option('free_days',1);
-  if ( $free_days && $part_pkg->option('delay_setup',1) ) { #&& !$self->start_date
+  if (    ! $options{'change'}
+       && ( my $free_days = $part_pkg->option('free_days',1) )
+       && $part_pkg->option('delay_setup',1)
+       #&& ! $self->start_date
+     )
+  {
     my ($mday,$mon,$year) = (localtime(time) )[3,4,5];
     #my $start_date = ($self->start_date || timelocal(0,0,0,$mday,$mon,$year)) + 86400 * $free_days;
     my $start_date = timelocal(0,0,0,$mday,$mon,$year) + 86400 * $free_days;
@@ -556,9 +581,12 @@ sub replace {
 
   }
 
-  my $error = $new->SUPER::replace($old,
-                                   $options->{options} ? $options->{options} : ()
-                                  );
+  my $error =  $new->export_pkg_change($old)
+            || $new->SUPER::replace( $old,
+                                     $options->{options}
+                                       ? $options->{options}
+                                       : ()
+                                   );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -594,13 +622,15 @@ replace methods.
 sub check {
   my $self = shift;
 
-  $self->locationnum('') if !$self->locationnum || $self->locationnum == -1;
+  if ( !$self->locationnum or $self->locationnum == -1 ) {
+    $self->set('locationnum', $self->cust_main->ship_locationnum);
+  }
 
   my $error = 
     $self->ut_numbern('pkgnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_numbern('pkgpart')
-    || $self->check_pkgpart
+    || $self->ut_foreign_keyn('contactnum',  'contact',       'contactnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')
@@ -616,6 +646,8 @@ sub check {
     || $self->ut_numbern('agent_pkgid')
     || $self->ut_enum('recur_show_zero', [ '', 'Y', 'N', ])
     || $self->ut_enum('setup_show_zero', [ '', 'Y', 'N', ])
+    || $self->ut_foreign_keyn('main_pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_foreign_keyn('pkglinknum', 'part_pkg_link', 'pkglinknum')
   ;
   return $error if $error;
 
@@ -639,14 +671,19 @@ sub check {
 
 =item check_pkgpart
 
+Check the pkgpart to make sure it's allowed with the reg_code and/or
+promo_code of the package (if present) and with the customer's agent.
+Called from C<insert>, unless we are doing a package change that doesn't
+affect pkgpart.
+
 =cut
 
 sub check_pkgpart {
   my $self = shift;
 
-  my $error = $self->ut_numbern('pkgpart');
-  return $error if $error;
+  # my $error = $self->ut_numbern('pkgpart'); # already done
 
+  my $error;
   if ( $self->reg_code ) {
 
     unless ( grep { $self->pkgpart == $_->pkgpart }
@@ -729,6 +766,11 @@ If there is an error, returns the error, otherwise returns false.
 sub cancel {
   my( $self, %options ) = @_;
   my $error;
+
+  # pass all suspend/cancel actions to the main package
+  if ( $self->main_pkgnum and !$options{'from_main'} ) {
+    return $self->main_pkg->cancel(%options);
+  }
 
   my $conf = new FS::Conf;
 
@@ -828,11 +870,28 @@ sub cancel {
 
   my %hash = $self->hash;
   $date ? ($hash{'expire'} = $date) : ($hash{'cancel'} = $cancel_time);
+  $hash{'change_custnum'} = $options{'change_custnum'};
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->cancel(%options, 'from_main' => 1);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "canceling supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
+  }
+
+  foreach my $usage ( $self->cust_pkg_usage ) {
+    $error = $usage->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "deleting usage pools: $error";
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -894,6 +953,9 @@ svc_fatal: service provisioning errors are fatal
 
 svc_errors: pass an array reference, will be filled in with any provisioning errors
 
+main_pkgnum: link the package as a supplemental package of this one.  For 
+internal use only.
+
 =cut
 
 sub uncancel {
@@ -901,6 +963,10 @@ sub uncancel {
 
   #in case you try do do $uncancel-date = $cust_pkg->uncacel 
   return '' unless $self->get('cancel');
+
+  if ( $self->main_pkgnum and !$options{'main_pkgnum'} ) {
+    return $self->main_pkg->uncancel(%options);
+  }
 
   ##
   # Transaction-alize
@@ -926,6 +992,7 @@ sub uncancel {
     bill            => ( $options{'bill'}      || $self->get('bill')      ),
     uncancel        => time,
     uncancel_pkgnum => $self->pkgnum,
+    main_pkgnum     => ($options{'main_pkgnum'} || ''),
     map { $_ => $self->get($_) } qw(
       custnum pkgpart locationnum
       setup
@@ -937,6 +1004,7 @@ sub uncancel {
 
   my $error = $cust_pkg->insert(
     'change' => 1, #supresses any referral credit to a referring customer
+    'allow_pkgpart' => 1, # allow this even if the package def is disabled
   );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
@@ -978,15 +1046,20 @@ sub uncancel {
         $dbh->rollback if $oldAutoCommit;
         return $svc_error;
       } else {
+        # if we've failed to insert the svc_x object, svc_Common->insert 
+        # will have removed the cust_svc already.  if not, then both records
+        # were inserted but we failed for some other reason (export, most 
+        # likely).  in that case, report the error and delete the records.
         push @svc_errors, $svc_error;
-        # is this necessary? svc_Common::insert already deletes the 
-        # cust_svc if inserting svc_x fails.
         my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svc_x->svcnum });
         if ( $cust_svc ) {
-          my $cs_error = $cust_svc->delete;
-          if ( $cs_error ) {
+          # except if export_insert failed, export_delete probably won't be
+          # much better
+          local $FS::svc_Common::noexport_hack = 1;
+          my $cleanup_error = $svc_x->delete; # also deletes cust_svc
+          if ( $cleanup_error ) { # and if THAT fails, then run away
             $dbh->rollback if $oldAutoCommit;
-            return $cs_error;
+            return $cleanup_error;
           }
         }
       } # svc_fatal
@@ -1019,6 +1092,20 @@ sub uncancel {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
+    }
+  }
+
+  ##
+  # Uncancel any supplemental packages, and make them supplemental to the 
+  # new one.
+  ##
+
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    my $new_pkg;
+    $error = $supp_pkg->uncancel(%options, 'main_pkgnum' => $cust_pkg->pkgnum);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "canceling supplemental pkg#".$supp_pkg->pkgnum.": $error";
     }
   }
 
@@ -1111,6 +1198,9 @@ of final invoices or unused-time credits
 unsuspended.  This may be more convenient than calling C<unsuspend()>
 separately.
 
+=item from_main - allows a supplemental package to be suspended, rather
+than redirecting the method call to its main package.  For internal use.
+
 =back
 
 If there is an error, returns the error, otherwise returns false.
@@ -1120,6 +1210,11 @@ If there is an error, returns the error, otherwise returns false.
 sub suspend {
   my( $self, %options ) = @_;
   my $error;
+
+  # pass all suspend/cancel actions to the main package
+  if ( $self->main_pkgnum and !$options{'from_main'} ) {
+    return $self->main_pkg->suspend(%options);
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1271,6 +1366,14 @@ sub suspend {
 
   }
 
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->suspend(%options, 'from_main' => 1);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "suspending supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
@@ -1352,6 +1455,11 @@ If there is an error, returns the error, otherwise returns false.
 sub unsuspend {
   my( $self, %opt ) = @_;
   my $error;
+
+  # pass all suspend/cancel actions to the main package
+  if ( $self->main_pkgnum and !$opt{'from_main'} ) {
+    return $self->main_pkg->unsuspend(%opt);
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1511,6 +1619,14 @@ sub unsuspend {
 
   }
 
+  foreach my $supp_pkg ( $self->supplemental_pkgs ) {
+    $error = $supp_pkg->unsuspend(%opt, 'from_main' => 1);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "unsuspending supplemental pkg#".$supp_pkg->pkgnum.": $error";
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
@@ -1596,6 +1712,11 @@ New locationnum, to change the location for this package.
 New FS::cust_location object, to create a new location and assign it
 to this package.
 
+=item cust_main
+
+New FS::cust_main object, to create a new customer and assign the new package
+to it.
+
 =item pkgpart
 
 New pkgpart (see L<FS::part_pkg>).
@@ -1660,14 +1781,19 @@ sub change {
   $hash{"change_$_"}  = $self->$_()
     foreach qw( pkgnum pkgpart locationnum );
 
-  if ( $opt->{'cust_location'} &&
-       ( ! $opt->{'locationnum'} || $opt->{'locationnum'} == -1 ) ) {
-    $error = $opt->{'cust_location'}->insert;
+  if ( $opt->{'cust_location'} ) {
+    $error = $opt->{'cust_location'}->find_or_insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting cust_location (transaction rolled back): $error";
     }
     $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
+  }
+
+  # whether to override pkgpart checking on the new package
+  my $same_pkgpart = 1;
+  if ( $opt->{'pkgpart'} and ( $opt->{'pkgpart'} != $self->pkgpart ) ) {
+    $same_pkgpart = 0;
   }
 
   my $unused_credit = 0;
@@ -1676,9 +1802,11 @@ sub change {
   # going to be credited for remaining time, don't keep setup, bill, 
   # or last_bill dates, and DO pass the flag to cancel() to credit 
   # the customer.
-  if ( $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart ) {
+  if ( $opt->{'pkgpart'} 
+       and $opt->{'pkgpart'} != $self->pkgpart
+       and $self->part_pkg->option('unused_credit_change', 1) ) {
+    $unused_credit = 1;
     $keep_dates = 0;
-    $unused_credit = 1 if $self->part_pkg->option('unused_credit_change', 1);
     $hash{$_} = '' foreach qw(setup bill last_bill);
   }
 
@@ -1692,16 +1820,37 @@ sub change {
   # (i.e. customer default location)
   $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
 
+  # usually this doesn't matter.  the two cases where it does are:
+  # 1. unused_credit_change + pkgpart change + setup fee on the new package
+  # and
+  # 2. (more importantly) changing a package before it's billed
+  $hash{'waive_setup'} = $self->waive_setup;
+
+  my $custnum = $self->custnum;
+  if ( $opt->{cust_main} ) {
+    my $cust_main = $opt->{cust_main};
+    unless ( $cust_main->custnum ) { 
+      my $error = $cust_main->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting cust_main (transaction rolled back): $error";
+      }
+    }
+    $custnum = $cust_main->custnum;
+  }
+
+  $hash{'contactnum'} = $opt->{'contactnum'} if $opt->{'contactnum'};
+
   # Create the new package.
   my $cust_pkg = new FS::cust_pkg {
-    custnum      => $self->custnum,
-    pkgpart      => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
-    refnum       => ( $opt->{'refnum'}      || $self->refnum       ),
-    locationnum  => ( $opt->{'locationnum'}                        ),
+    custnum        => $custnum,
+    pkgpart        => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
+    refnum         => ( $opt->{'refnum'}      || $self->refnum       ),
+    locationnum    => ( $opt->{'locationnum'}                        ),
     %hash,
   };
-
-  $error = $cust_pkg->insert( 'change' => 1 );
+  $error = $cust_pkg->insert( 'change' => 1,
+                              'allow_pkgpart' => $same_pkgpart );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -1747,6 +1896,96 @@ sub change {
       $dbh->rollback if $oldAutoCommit;
       return "Error setting usage values: $error";
     }
+  } else {
+    # if NOT changing pkgpart, transfer any usage pools over
+    foreach my $usage ($self->cust_pkg_usage) {
+      $usage->set('pkgnum', $cust_pkg->pkgnum);
+      $error = $usage->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error transferring usage pools: $error";
+      }
+    }
+  }
+
+  # transfer discounts, if we're not changing pkgpart
+  if ( $same_pkgpart ) {
+    foreach my $old_discount ($self->cust_pkg_discount_active) {
+      # don't remove the old discount, we may still need to bill that package.
+      my $new_discount = new FS::cust_pkg_discount {
+        'pkgnum'      => $cust_pkg->pkgnum,
+        'discountnum' => $old_discount->discountnum,
+        'months_used' => $old_discount->months_used,
+      };
+      $error = $new_discount->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error transferring discounts: $error";
+      }
+    }
+  }
+
+  # transfer (copy) invoice details
+  foreach my $detail ($self->cust_pkg_detail) {
+    my $new_detail = FS::cust_pkg_detail->new({ $detail->hash });
+    $new_detail->set('pkgdetailnum', '');
+    $new_detail->set('pkgnum', $cust_pkg->pkgnum);
+    $error = $new_detail->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error transferring package notes: $error";
+    }
+  }
+
+  # Order any supplemental packages.
+  my $part_pkg = $cust_pkg->part_pkg;
+  my @old_supp_pkgs = $self->supplemental_pkgs;
+  my @new_supp_pkgs;
+  foreach my $link ($part_pkg->supp_part_pkg_link) {
+    my $old;
+    foreach (@old_supp_pkgs) {
+      if ($_->pkgpart == $link->dst_pkgpart) {
+        $old = $_;
+        $_->pkgpart(0); # so that it can't match more than once
+      }
+      last if $old;
+    }
+    # false laziness with FS::cust_main::Packages::order_pkg
+    my $new = FS::cust_pkg->new({
+        pkgpart       => $link->dst_pkgpart,
+        pkglinknum    => $link->pkglinknum,
+        custnum       => $custnum,
+        main_pkgnum   => $cust_pkg->pkgnum,
+        locationnum   => $cust_pkg->locationnum,
+        start_date    => $cust_pkg->start_date,
+        order_date    => $cust_pkg->order_date,
+        expire        => $cust_pkg->expire,
+        adjourn       => $cust_pkg->adjourn,
+        contract_end  => $cust_pkg->contract_end,
+        refnum        => $cust_pkg->refnum,
+        discountnum   => $cust_pkg->discountnum,
+        waive_setup   => $cust_pkg->waive_setup,
+    });
+    if ( $old and $opt->{'keep_dates'} ) {
+      foreach (qw(setup bill last_bill)) {
+        $new->set($_, $old->get($_));
+      }
+    }
+    $error = $new->insert( allow_pkgpart => $same_pkgpart );
+    # transfer services
+    if ( $old ) {
+      $error ||= $old->transfer($new);
+    }
+    if ( $error and $error > 0 ) {
+      # no reason why this should ever fail, but still...
+      $error = "Unable to transfer all services from supplemental package ".
+        $old->pkgnum;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    push @new_supp_pkgs, $new;
   }
 
   #Good to go, cancel old package.  Notify 'cancel' of whether to credit 
@@ -1754,10 +1993,12 @@ sub change {
   #Don't allow billing the package (preceding period packages and/or 
   #outstanding usage) if we are keeping dates (i.e. location changing), 
   #because the new package will be billed for the same date range.
+  #Supplemental packages are also canceled here.
   $error = $self->cancel(
-    quiet         => 1, 
-    unused_credit => $unused_credit,
-    nobill        => $keep_dates
+    quiet          => 1, 
+    unused_credit  => $unused_credit,
+    nobill         => $keep_dates,
+    change_custnum => ( $self->custnum != $custnum ? $custnum : '' ),
   );
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
@@ -1766,7 +2007,9 @@ sub change {
 
   if ( $conf->exists('cust_pkg-change_pkgpart-bill_now') ) {
     #$self->cust_main
-    my $error = $cust_pkg->cust_main->bill( 'pkg_list' => [ $cust_pkg ] );
+    my $error = $cust_pkg->cust_main->bill( 
+      'pkg_list' => [ $cust_pkg, @new_supp_pkgs ]
+    );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -1777,6 +2020,24 @@ sub change {
 
   $cust_pkg;
 
+}
+
+=item set_quantity QUANTITY
+
+Change the package's quantity field.  This is the one package property
+that can safely be changed without canceling and reordering the package
+(because it doesn't affect tax eligibility).  Returns an error or an 
+empty string.
+
+=cut
+
+sub set_quantity {
+  my $self = shift;
+  $self = $self->replace_old; # just to make sure
+  my $qty = shift;
+  ($qty =~ /^\d+$/ and $qty > 0) or return "bad package quantity $qty";
+  $self->set('quantity' => $qty);
+  $self->replace;
 }
 
 use Storable 'thaw';
@@ -1909,6 +2170,18 @@ sub old_cust_pkg {
   qsearchs('cust_pkg', { 'pkgnum' => $self->change_pkgnum } );
 }
 
+=item change_cust_main
+
+Returns the customter this package was detached to, if any.
+
+=cut
+
+sub change_cust_main {
+  my $self = shift;
+  return '' unless $self->change_custnum;
+  qsearchs('cust_main', { 'custnum' => $self->change_custnum } );
+}
+
 =item calc_setup
 
 Calls the I<calc_setup> of the FS::part_pkg object associated with this billing
@@ -1931,6 +2204,18 @@ item.
 sub calc_recur {
   my $self = shift;
   $self->part_pkg->calc_recur($self, @_);
+}
+
+=item base_setup
+
+Calls the I<base_setup> of the FS::part_pkg object associated with this billing
+item.
+
+=cut
+
+sub base_setup {
+  my $self = shift;
+  $self->part_pkg->base_setup($self, @_);
 }
 
 =item base_recur
@@ -2083,6 +2368,26 @@ sub num_cust_event {
   my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
   $sth->execute($self->pkgnum) or die $sth->errstr. " executing $sql";
   $sth->fetchrow_arrayref->[0];
+}
+
+=item part_pkg_currency_option OPTIONNAME
+
+Returns a two item list consisting of the currency of this customer, if any,
+and a value for the provided option.  If the customer has a currency, the value
+is the option value the given name and the currency (see
+L<FS::part_pkg_currency>).  Otherwise, if the customer has no currency, is the
+regular option value for the given name (see L<FS::part_pkg_option>).
+
+=cut
+
+sub part_pkg_currency_option {
+  my( $self, $optionname ) = @_;
+  my $part_pkg = $self->part_pkg;
+  if ( my $currency = $self->cust_main->currency ) {
+    ($currency, $part_pkg->part_pkg_currency_option($currency, $optionname) );
+  } else {
+    ('', $part_pkg->option($optionname) );
+  }
 }
 
 =item cust_svc [ SVCPART ] (old, deprecated usage)
@@ -2469,7 +2774,7 @@ sub statuscolor {
 =item pkg_label
 
 Returns a label for this package.  (Currently "pkgnum: pkg - comment" or
-"pkg-comment" depending on user preference).
+"pkg - comment" depending on user preference).
 
 =cut
 
@@ -2494,6 +2799,17 @@ sub pkg_label_long {
   my $cust_svc = $self->primary_cust_svc;
   $label .= ' ('. ($cust_svc->label)[1]. ')' if $cust_svc;
   $label;
+}
+
+=item pkg_locale
+
+Returns a customer-localized label for this package.
+
+=cut
+
+sub pkg_locale {
+  my $self = shift;
+  $self->part_pkg->pkg_locale( $self->cust_main->locale );
 }
 
 =item primary_cust_svc
@@ -2648,6 +2964,18 @@ Returns the parent customer object (see L<FS::cust_main>).
 sub cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
+=item balance
+
+Returns the balance for this specific package, when using
+experimental package balance.
+
+=cut
+
+sub balance {
+  my $self = shift;
+  $self->cust_main->balance_pkgnum( $self->pkgnum );
 }
 
 #these subs are in location_Mixin.pm now... unfortunately the POD doesn't mixin
@@ -2877,7 +3205,8 @@ sub transfer {
   }
 
   foreach my $cust_svc ($self->cust_svc) {
-    if($target{$cust_svc->svcpart} > 0) {
+    if($target{$cust_svc->svcpart} > 0
+       or $FS::cust_svc::ignore_quantity) { # maybe should be a 'force' option
       $target{$cust_svc->svcpart}--;
       my $new = new FS::cust_svc { $cust_svc->hash };
       $new->pkgnum($dest_pkgnum);
@@ -2914,6 +3243,46 @@ sub transfer {
   return $remaining;
 }
 
+=item grab_svcnums SVCNUM, SVCNUM ...
+
+Change the pkgnum for the provided services to this packages.  If there is an
+error, returns the error, otherwise returns false.
+
+=cut
+
+sub grab_svcnums {
+  my $self = shift;
+  my @svcnum = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $svcnum (@svcnum) {
+    my $cust_svc = qsearchs('cust_svc', { svcnum=>$svcnum } ) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "unknown svcnum $svcnum";
+    };
+    $cust_svc->pkgnum( $self->pkgnum );
+    my $error = $cust_svc->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
 =item reexport
 
 This method is deprecated.  See the I<depend_jobnum> option to the insert and
@@ -2921,6 +3290,8 @@ order_pkgs methods in FS::cust_main for a better way to defer provisioning.
 
 =cut
 
+#looks like this is still used by the order_pkg and change_pkg methods in
+# ClientAPI/MyAccount, need to look into those before removing
 sub reexport {
   my $self = shift;
 
@@ -2944,6 +3315,39 @@ sub reexport {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item export_pkg_change OLD_CUST_PKG
+
+Calls the "pkg_change" export action for all services attached to this package.
+
+=cut
+
+sub export_pkg_change {
+  my( $self, $old )  = ( shift, shift );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $svc_x ( map $_->svc_x, $self->cust_svc ) {
+    my $error = $svc_x->export('pkg_change', $self, $old);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
   }
 
@@ -3122,6 +3526,207 @@ sub cust_pkg_discount {
 sub cust_pkg_discount_active {
   my $self = shift;
   grep { $_->status eq 'active' } $self->cust_pkg_discount;
+}
+
+=item cust_pkg_usage
+
+Returns a list of all voice usage counters attached to this package.
+
+=cut
+
+sub cust_pkg_usage {
+  my $self = shift;
+  qsearch('cust_pkg_usage', { pkgnum => $self->pkgnum });
+}
+
+=item apply_usage OPTIONS
+
+Takes the following options:
+- cdr: a call detail record (L<FS::cdr>)
+- rate_detail: the rate determined for this call (L<FS::rate_detail>)
+- minutes: the maximum number of minutes to be charged
+
+Finds available usage minutes for a call of this class, and subtracts
+up to that many minutes from the usage pool.  If the usage pool is empty,
+and the C<cdr-minutes_priority> global config option is set, minutes may
+be taken from other calls as well.  Either way, an allocation record will
+be created (L<FS::cdr_cust_pkg_usage>) and this method will return the 
+number of minutes of usage applied to the call.
+
+=cut
+
+sub apply_usage {
+  my ($self, %opt) = @_;
+  my $cdr = $opt{cdr};
+  my $rate_detail = $opt{rate_detail};
+  my $minutes = $opt{minutes};
+  my $classnum = $rate_detail->classnum;
+  my $pkgnum = $self->pkgnum;
+  my $custnum = $self->custnum;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE'; 
+  local $SIG{PIPE} = 'IGNORE'; 
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  my $order = FS::Conf->new->config('cdr-minutes_priority');
+
+  my $is_classnum;
+  if ( $classnum ) {
+    $is_classnum = ' part_pkg_usage_class.classnum = '.$classnum;
+  } else {
+    $is_classnum = ' part_pkg_usage_class.classnum IS NULL';
+  }
+  my @usage_recs = qsearch({
+      'table'     => 'cust_pkg_usage',
+      'addl_from' => ' JOIN part_pkg_usage       USING (pkgusagepart)'.
+                     ' JOIN cust_pkg             USING (pkgnum)'.
+                     ' JOIN part_pkg_usage_class USING (pkgusagepart)',
+      'select'    => 'cust_pkg_usage.*',
+      'extra_sql' => " WHERE ( cust_pkg.pkgnum = $pkgnum OR ".
+                     " ( cust_pkg.custnum = $custnum AND ".
+                     " part_pkg_usage.shared IS NOT NULL ) ) AND ".
+                     $is_classnum . ' AND '.
+                     " cust_pkg_usage.minutes > 0",
+      'order_by'  => " ORDER BY priority ASC",
+  });
+
+  my $orig_minutes = $minutes;
+  my $error;
+  while (!$error and $minutes > 0 and @usage_recs) {
+    my $cust_pkg_usage = shift @usage_recs;
+    $cust_pkg_usage->select_for_update;
+    my $cdr_cust_pkg_usage = FS::cdr_cust_pkg_usage->new({
+        pkgusagenum => $cust_pkg_usage->pkgusagenum,
+        acctid      => $cdr->acctid,
+        minutes     => min($cust_pkg_usage->minutes, $minutes),
+    });
+    $cust_pkg_usage->set('minutes',
+      sprintf('%.0f', $cust_pkg_usage->minutes - $cdr_cust_pkg_usage->minutes)
+    );
+    $error = $cust_pkg_usage->replace || $cdr_cust_pkg_usage->insert;
+    $minutes -= $cdr_cust_pkg_usage->minutes;
+  }
+  if ( $order and $minutes > 0 and !$error ) {
+    # then try to steal minutes from another call
+    my %search = (
+        'table'     => 'cdr_cust_pkg_usage',
+        'addl_from' => ' JOIN cust_pkg_usage        USING (pkgusagenum)'.
+                       ' JOIN part_pkg_usage        USING (pkgusagepart)'.
+                       ' JOIN cust_pkg              USING (pkgnum)'.
+                       ' JOIN part_pkg_usage_class  USING (pkgusagepart)'.
+                       ' JOIN cdr                   USING (acctid)',
+        'select'    => 'cdr_cust_pkg_usage.*',
+        'extra_sql' => " WHERE cdr.freesidestatus = 'rated' AND ".
+                       " ( cust_pkg.pkgnum = $pkgnum OR ".
+                       " ( cust_pkg.custnum = $custnum AND ".
+                       " part_pkg_usage.shared IS NOT NULL ) ) AND ".
+                       " part_pkg_usage_class.classnum = $classnum",
+        'order_by'  => ' ORDER BY part_pkg_usage.priority ASC',
+    );
+    if ( $order eq 'time' ) {
+      # find CDRs that are using minutes, but have a later startdate
+      # than this call
+      my $startdate = $cdr->startdate;
+      if ($startdate !~ /^\d+$/) {
+        die "bad cdr startdate '$startdate'";
+      }
+      $search{'extra_sql'} .= " AND cdr.startdate > $startdate";
+      # minimize needless reshuffling
+      $search{'order_by'} .= ', cdr.startdate DESC';
+    } else {
+      # XXX may not work correctly with rate_time schedules.  Could 
+      # fix this by storing ratedetailnum in cdr_cust_pkg_usage, I 
+      # think...
+      $search{'addl_from'} .=
+        ' JOIN rate_detail'.
+        ' ON (cdr.rated_ratedetailnum = rate_detail.ratedetailnum)';
+      if ( $order eq 'rate_high' ) {
+        $search{'extra_sql'} .= ' AND rate_detail.min_charge < '.
+                                $rate_detail->min_charge;
+        $search{'order_by'} .= ', rate_detail.min_charge ASC';
+      } elsif ( $order eq 'rate_low' ) {
+        $search{'extra_sql'} .= ' AND rate_detail.min_charge > '.
+                                $rate_detail->min_charge;
+        $search{'order_by'} .= ', rate_detail.min_charge DESC';
+      } else {
+        #  this should really never happen
+        die "invalid cdr-minutes_priority value '$order'\n";
+      }
+    }
+    my @cdr_usage_recs = qsearch(\%search);
+    my %reproc_cdrs;
+    while (!$error and @cdr_usage_recs and $minutes > 0) {
+      my $cdr_cust_pkg_usage = shift @cdr_usage_recs;
+      my $cust_pkg_usage = $cdr_cust_pkg_usage->cust_pkg_usage;
+      my $old_cdr = $cdr_cust_pkg_usage->cdr;
+      $reproc_cdrs{$old_cdr->acctid} = $old_cdr;
+      $cdr_cust_pkg_usage->select_for_update;
+      $old_cdr->select_for_update;
+      $cust_pkg_usage->select_for_update;
+      # in case someone else stole the usage from this CDR
+      # while waiting for the lock...
+      next if $old_cdr->acctid != $cdr_cust_pkg_usage->acctid;
+      # steal the usage allocation and flag the old CDR for reprocessing
+      $cdr_cust_pkg_usage->set('acctid', $cdr->acctid);
+      # if the allocation is more minutes than we need, adjust it...
+      my $delta = $cdr_cust_pkg_usage->minutes - $minutes;
+      if ( $delta > 0 ) {
+        $cdr_cust_pkg_usage->set('minutes', $minutes);
+        $cust_pkg_usage->set('minutes', $cust_pkg_usage->minutes + $delta);
+        $error = $cust_pkg_usage->replace;
+      }
+      #warn 'CDR '.$cdr->acctid . ' stealing allocation '.$cdr_cust_pkg_usage->cdrusagenum.' from CDR '.$old_cdr->acctid."\n";
+      $error ||= $cdr_cust_pkg_usage->replace;
+      # deduct the stolen minutes
+      $minutes -= $cdr_cust_pkg_usage->minutes;
+    }
+    # after all minute-stealing is done, reset the affected CDRs
+    foreach (values %reproc_cdrs) {
+      $error ||= $_->set_status('');
+      # XXX or should we just call $cdr->rate right here?
+      # it's not like we can create a loop this way, since the min_charge
+      # or call time has to go monotonically in one direction.
+      # we COULD get some very deep recursions going, though...
+    }
+  } # if $order and $minutes
+  if ( $error ) {
+    $dbh->rollback;
+    die "error applying included minutes\npkgnum ".$self->pkgnum.", class $classnum, acctid ".$cdr->acctid."\n$error\n"
+  } else {
+    $dbh->commit if $oldAutoCommit;
+    return $orig_minutes - $minutes;
+  }
+}
+
+=item supplemental_pkgs
+
+Returns a list of all packages supplemental to this one.
+
+=cut
+
+sub supplemental_pkgs {
+  my $self = shift;
+  qsearch('cust_pkg', { 'main_pkgnum' => $self->pkgnum });
+}
+
+=item main_pkg
+
+Returns the package that this one is supplemental to, if any.
+
+=cut
+
+sub main_pkg {
+  my $self = shift;
+  if ( $self->main_pkgnum ) {
+    return FS::cust_pkg->by_key($self->main_pkgnum);
+  }
+  return;
 }
 
 =back
@@ -3651,10 +4256,10 @@ sub search {
 
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
-  my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
-                  'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
+  my $addl_from = 'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
                   'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) '.
-                  'LEFT JOIN cust_location USING ( locationnum ) ';
+                  'LEFT JOIN cust_location USING ( locationnum ) '.
+                  FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
   my $select;
   my $count_query;
@@ -3938,11 +4543,25 @@ sub order {
                                       %hash,
                                     };
     $error = $cust_pkg->insert( 'change' => $change );
+    push @$return_cust_pkg, $cust_pkg;
+
+    foreach my $link ($cust_pkg->part_pkg->supp_part_pkg_link) {
+      my $supp_pkg = FS::cust_pkg->new({
+          custnum => $custnum,
+          pkgpart => $link->dst_pkgpart,
+          refnum  => $refnum,
+          main_pkgnum => $cust_pkg->pkgnum,
+          %hash,
+      });
+      $error ||= $supp_pkg->insert( 'change' => $change );
+      push @$return_cust_pkg, $supp_pkg;
+    }
+
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-    push @$return_cust_pkg, $cust_pkg;
+
   }
   # $return_cust_pkg now contains refs to all of the newly 
   # created packages.

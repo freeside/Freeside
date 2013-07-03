@@ -96,11 +96,21 @@
       </TR>
 %   }
 
-    <& /elements/tr-select-cust_tag.html,
-                  'cgi'		 => $cgi,
-                  'is_report'    => 1,
-                  'multiple'     => 1,
-    &>
+      <TR>
+        <TD ALIGN="right">Tags</TD>
+        <TD>
+            <& /elements/select-cust_tag.html,
+                          'cgi'	        => $cgi,
+                          'is_report'   => 1,
+                          'multiple'    => 1,
+            &>
+          <DIV STYLE="display:inline-block; vertical-align:baseline">
+            <INPUT TYPE="radio" NAME="all_tags" VALUE="0" CHECKED> Any of these
+            <BR>
+            <INPUT TYPE="radio" NAME="all_tags" VALUE="1"> All of these
+          </DIV>
+        </TD>
+      </TR>
 
     <& /elements/tr-select-payby.html,
                   'payby_type'   => 'cust',
@@ -167,6 +177,34 @@
       </TR>
 
 %   }
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('With email address(es)') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="with_email"></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('With postal mail invoices') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="POST" ID="POST" onClick="POST_changed();"></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center"><% mt('Without postal mail invoices') |h %></TD>
+        <TD><INPUT TYPE="checkbox" NAME="no_POST" ID="no_POST" onClick="no_POST_changed();"></TD>
+    </TR>
+
+    <SCRIPT TYPE="text/javascript">
+      function POST_changed() {
+        if ( document.getElementById('POST').checked == true ) {
+          document.getElementById('no_POST').checked = false;
+        }
+      }
+      function no_POST_changed() {
+        if ( document.getElementById('no_POST').checked == true ) {
+          document.getElementById('POST').checked = false;
+        }
+      }
+    </SCRIPT>
 
     <TR>
       <TH CLASS="background" COLSPAN=2>&nbsp;</TH>

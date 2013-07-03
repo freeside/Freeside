@@ -51,7 +51,7 @@
 %       @{ $part_export->usage_sessions( {
 %            'stoptime_start'  => $beginning,
 %            'stoptime_end'    => $ending,
-%            'open_sessions'   => $open_sessions,
+%            'session_status'  => $status,
 %            'starttime_start' => $starttime_beginning,
 %            'starttime_end'   => $starttime_ending,
 %            'svc_acct'        => $cgi_svc_acct,
@@ -117,9 +117,9 @@ if ( $cgi->param('end') && $cgi->param('end') =~ /^(\d+)$/ ) {
   $ending = $1;
 }
 
-my $open_sessions = '';
-if ( $cgi->param('open_sessions') =~ /^(\d*)$/ ) {
-  $open_sessions = $1;
+my $status = '';
+if ( $cgi->param('session_status') =~ /^(closed|open)$/ ) {
+  $status = $1;
 }
 
 my( $starttime_beginning, $starttime_ending ) = ( '', '' );
@@ -242,8 +242,15 @@ my $time_format = sub {
   $pretty;
 };
 
+my $time_format_or_open = sub {
+  my $time = shift;
+  return '<CENTER>OPEN</CENTER>' if $time == 0;
+  &{$time_format}($time);
+};
+
 my $duration_format = sub {
   my $seconds = shift;
+  return '' if $seconds eq ''; # open session
   my $hour = int($seconds/3600);
   my $min = int( ($seconds%3600) / 60 );
   my $sec = $seconds%60;
@@ -339,7 +346,7 @@ tie %fields, 'Tie::IxHash',
   'acctstoptime'      => {
                            name    => 'End&nbsp;time',
                            attrib  => 'Acct-Stop-Time',
-                           fmt     => $time_format,
+                           fmt     => $time_format_or_open,
                            align   => 'left',
                          },
   'acctsessiontime'   => {

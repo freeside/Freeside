@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => 'Unused Prepaid Cards'.
                                   ($agent ? ' for '. $agent->agent : ''),
                  'menubar'     => [
@@ -47,8 +47,8 @@
                          $agent ? [ "${p}edit/agent.cgi?", 'agentnum' ] : '';
                        },
                  ],
-      )
-%>
+      
+&>
 <%init>
 
 die "access denied"

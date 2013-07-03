@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                   'title'       => 'Package discounts', 
                   'name'        => 'discounts',
                   'query'       => $query,
@@ -50,8 +50,8 @@
                                      '',
                                      FS::UI::Web::cust_styles(),
                                    ],
-           )
-%>
+           
+&>
 <%init>
 
 die "access denied"
@@ -92,8 +92,8 @@ my $count_query = "SELECT COUNT(*), SUM(amount)";
 
 my $join = ' LEFT JOIN discount  USING ( discountnum )
              LEFT JOIN cust_pkg  USING ( pkgnum )
-             LEFT JOIN part_pkg  USING ( pkgpart )
-             LEFT JOIN cust_main USING ( custnum ) ';
+             LEFT JOIN part_pkg  USING ( pkgpart ) '.
+             FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
 my $where = ' WHERE '. join(' AND ', @where);
 

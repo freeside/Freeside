@@ -3,8 +3,7 @@
                  'table'  => 'access_user',
                  'fields' => [
                                'username',
-                               { field=>'_password', type=>'password' },
-                               { field=>'_password2', type=>'password' },
+                               @pw_fields,
                                'last',
                                'first',
                                { field=>'user_custnum', type=>'search-cust_main', },
@@ -49,6 +48,13 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @pw_fields =
+  FS::Auth->auth_class->can('change_password')
+    ? ( { field=>'_password',  type=>'password' },
+        { field=>'_password2', type=>'password' },
+      )
+    : ();
 
 my $check_user_custnum_search = <<END;
   <SCRIPT TYPE="text/javascript">

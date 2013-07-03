@@ -28,15 +28,19 @@ STYLE="padding-bottom: 0px;
 %   }
 <% $loc->location_label %></SPAN>
 <SPAN STYLE="float:right;">
-% if ( $locationnum and !$loc->disabled ) {
+% if ( $locationnum && !$loc->disabled && ! $opt{no_links} ) {
 <% edit_location_link($locationnum) %>
 % }
-% if ( $locationnum and !$loc->disabled and !$active{$locationnum} ) {
+% if ( $locationnum && !$loc->disabled && !$active{$locationnum} && ! $opt{no_links} ) {
 &nbsp;<% disable_location_link($locationnum) %>
 % }
 </SPAN></TH></TR>
 %   if (@$packages) {
-<& packages/section.html, 'packages' => $packages &>
+      <& packages/section.html,
+           'packages'  => $packages,
+           'cust_main' => $cust_main,
+           'no_links'  => $opt{no_links}
+      &>
 %   }
 </TABLE><BR>
 % } #foreach $locationnum

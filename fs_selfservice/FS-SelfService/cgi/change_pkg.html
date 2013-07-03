@@ -12,10 +12,9 @@ function enable_change_pkg () {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
 } ''; %>
 <FORM NAME="ChangePkgForm" ACTION="<%= $selfurl %>" METHOD=POST>
-<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_change_pkg">
-<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
-<INPUT TYPE="hidden" NAME="pkg" VALUE="<%= $pkg %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= encode_entities($pkgnum) %>">
+<INPUT TYPE="hidden" NAME="pkg" VALUE="<%= encode_entities($pkg) %>">
 <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 <TR>
   <TD COLSPAN=2><SELECT NAME="pkgpart" onChange="enable_change_pkg()">

@@ -1,0 +1,204 @@
+<%doc>
+
+Example:
+
+  include( '/elements/search-svc_broadband.html,
+             'field'       => 'svcnum',
+             #slightly deprecated old synonym for field#'field_name'=>'svcnum',
+             'find_button' => 1, #add a "find" button to the field
+             'curr_value'  => 54, #current value
+             'value        => 32, #deprecated synonym for curr_value
+  );
+
+</%doc>
+<INPUT TYPE="hidden" NAME="<% $field %>" ID="<% $field %>" VALUE="<% $value %>">
+
+<!-- some false laziness w/ misc/batch-cust_pay.html, though not as bad as i'd thought at first... -->
+
+<INPUT TYPE = "text"
+       NAME = "<% $field %>_search"
+       ID   = "<% $field %>_search"
+       SIZE = "32"
+       VALUE="<% $svc_broadband ? $svc_broadband->label : '(svcnum, ip or mac)' %>"
+       onFocus="clearhint_<% $field %>_search(this);"
+       onClick="clearhint_<% $field %>_search(this);"
+       onChange="smart_<% $field %>_search(this);"
+>
+
+% if ( $opt{'find_button'} ) {
+    <INPUT TYPE    = "button"
+           VALUE   = 'Find',
+           NAME    = "<% $field %>_findbutton"
+           onClick = "smart_<% $field %>_search(this.form.<% $field %>_search);"
+    >
+% }
+
+<SELECT NAME="<% $field %>_select" ID="<% $field %>_select" STYLE="color:#ff0000; display:none" onChange="select_<% $field %>(this);">
+</SELECT>
+
+<% include('/elements/xmlhttp.html',
+              'url'  => $p. 'misc/xmlhttp-svc_broadband-search.cgi',
+              'subs' => [ 'smart_search' ],
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_<% $field %>_search (what) {
+
+    what.style.color = '#000000';
+
+    if ( what.value == '(svcnum, ip or mac)' )
+      what.value = '';
+
+    if ( what.value.indexOf('Service not found: ') == 0 )
+      what.value = what.value.substr(20);
+
+  }
+
+  var <% $field %>_search_active = false;
+
+  function smart_<% $field %>_search(what) {
+
+    if ( <% $field %>_search_active )
+      return;
+
+    var service = what.value;
+
+    if ( service == 'searching...' || service == ''
+         || service.indexOf('Service not found: ') == 0 )
+      return;
+
+    if ( what.getAttribute('magic') == 'nosearch' ) {
+      what.setAttribute('magic', '');
+      return;
+    }
+
+    //what.value = 'searching...'
+    what.disabled = true;
+    what.style.color= '#000000';
+    what.style.backgroundColor = '#dddddd';
+
+    var service_select = document.getElementById('<% $field %>_select');
+
+    //alert("search for customer " + customer);
+
+    function <% $field %>_search_update(services) {
+
+      //alert('customers returned: ' + customers);
+
+      var serviceArray = eval('(' + services + ')');
+
+      what.disabled = false;
+      what.style.backgroundColor = '#ffffff';
+
+      if ( serviceArray.length == 0 ) {
+
+        what.form.<% $field %>.value = '';
+
+        what.value = 'Service not found: ' + what.value;
+        what.style.color = '#ff0000';
+
+        what.style.display = '';
+        service_select.style.display = 'none';
+
+      } else if ( serviceArray.length == 1 ) {
+
+        //alert('one customer found: ' + customerArray[0]);
+
+        what.form.<% $field %>.value = serviceArray[0][0];
+        what.value = serviceArray[0][1];
+
+        what.style.display = '';
+        service_select.style.display = 'none';
+
+      } else {
+
+        //alert('multiple customers found, have to create select dropdown');
+
+        //blank the current list
+        for ( var i = service_select.length; i >= 0; i-- )
+          service_select.options[i] = null;
+
+        opt(service_select, '', 'Multiple services match "' + service + '" - select one', '#ff0000');
+
+        //add the multiple services
+        for ( var s = 0; s < serviceArray.length; s++ )
+          opt(service_select, serviceArray[s][0], serviceArray[s][1], '#000000');
+
+        opt(service_select, 'cancel', '(Edit search string)', '#000000');
+
+        what.style.display = 'none';
+        service_select.style.display = '';
+
+      }
+
+      <% $field %>_search_active = false;
+
+    }
+
+    <% $field %>_search_active = true;
+
+    smart_search( service, <% $field %>_search_update );
+
+
+  }
+
+  function select_<% $field %> (what) {
+
+    var svcnum = what.options[what.selectedIndex].value;
+    var service = what.options[what.selectedIndex].text;
+
+    var service_obj = document.getElementById('<% $field %>_search');
+
+    if ( svcnum == '' ) {
+      //what.style.color = '#ff0000';
+
+    } else if ( svcnum == 'cancel' ) {
+
+      service_obj.style.color = '#000000';
+
+      what.style.display = 'none';
+      service_obj.style.display = '';
+      service_obj.focus();
+
+    } else {
+    
+      what.form.<% $field %>.value = svcnum;
+
+      service_obj.value = service;
+      service_obj.style.color = '#000000';
+
+      what.style.display = 'none';
+      service_obj.style.display = '';
+
+    }
+
+  }
+
+  function opt(what,value,text,color) {
+    var optionName = new Option(text, value, false, false);
+    optionName.style.color = color;
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+</SCRIPT>
+<%init>
+
+my( %opt ) = @_;
+
+my $field = $opt{'field'} || $opt{'field_name'} || 'svcnum';
+
+my $value = $opt{'curr_value'} || $opt{'value'};
+
+my $svc_broadband = '';
+if ( $value ) {
+  $svc_broadband = qsearchs({
+    'table'     => 'svc_broadband',
+    'hashref'   => { 'svcnum' => $value },
+    #have to join to cust_main for an agentnum 'extra_sql' => " AND ". $FS::CurrentUser::CurrentUser->agentnums_sql,
+  });
+}
+
+</%init>

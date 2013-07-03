@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -221,7 +221,7 @@ foreach my $arg ( keys %ARGS ) {
         my ( $op, $value ) = ( $ops[$i], $values[$i] );
         next if !defined $value || $value eq '';
 
-        if ( $value eq 'NULL' && $op =~ /=/ ) {
+        if ( $value =~ /^NULL$/i && $op =~ /=/ ) {
             if ( $op eq '=' ) {
                 $op = "IS";
             }

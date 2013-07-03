@@ -187,10 +187,11 @@ sub dbdef_dist {
 
   my $tables_hashref_torrus = tables_hashref_torrus();
 
-  #create history tables (false laziness w/create-history-tables)
+  #create history tables
   foreach my $table (
-    grep {    ! /^clientapi_session/
+    grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
+           && ! /^log(_context)?$/
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables
@@ -235,6 +236,12 @@ sub dbdef_dist {
 
     }
 
+    my $historynum_type = ( $tableobj->column($tableobj->primary_key)->type
+                              =~ /^(bigserial|bigint|int8)$/i
+                                ? 'bigserial'
+                                : 'serial'
+                          );
+
     my $h_tableobj = DBIx::DBSchema::Table->new( {
       'name'          => "h_$table",
       'primary_key'   => 'historynum',
@@ -243,7 +250,7 @@ sub dbdef_dist {
       'columns'       => [
           DBIx::DBSchema::Column->new( {
             'name'    => 'historynum',
-            'type'    => 'serial',
+            'type'    => $historynum_type,
             'null'    => 'NOT NULL',
             'length'  => '',
             'default' => '',
@@ -260,8 +267,16 @@ sub dbdef_dist {
           DBIx::DBSchema::Column->new( {
             'name'    => 'history_user',
             'type'    => 'varchar',
-            'null'    => 'NOT NULL',
+            'null'    => 'NULL',
             'length'  => '80',
+            'default' => '',
+            'local'   => '',
+          } ),
+          DBIx::DBSchema::Column->new( {
+            'name'    => 'history_usernum',
+            'type'    => 'int',
+            'null'    => 'NULL',
+            'length'  => '',
             'default' => '',
             'local'   => '',
           } ),
@@ -518,6 +533,17 @@ sub tables_hashref {
       'index' => [ ['salesnum'], ['disabled'] ],
     },
 
+    'agent_currency' => {
+      'columns' => [
+        'agentcurrencynum', 'serial', '', '', '', '',
+        'agentnum',            'int', '', '', '', '',
+        'currency',           'char', '',  3, '', '',
+      ],
+      'primary_key' => 'agentcurrencynum',
+      'unique'      => [],
+      'index'       => [ ['agentnum'] ],
+    },
+
     'cust_attachment' => {
       'columns' => [
         'attachnum', 'serial', '', '', '', '',
@@ -539,10 +565,11 @@ sub tables_hashref {
     'cust_bill' => {
       'columns' => [
         #regular fields
-        'invnum',    'serial',     '', '', '', '', 
-        'custnum',      'int',     '', '', '', '', 
-        '_date',        @date_type,        '', '', 
-        'charged',      @money_type,       '', '', 
+        'invnum',         'serial',     '',      '', '', '', 
+        'custnum',           'int',     '',      '', '', '', 
+        '_date',        @date_type,                  '', '', 
+        'charged',     @money_type,                  '', '', 
+        'currency',         'char', 'NULL',       3, '', '',
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
 
         #customer balance info at invoice generation time
@@ -566,10 +593,11 @@ sub tables_hashref {
     'cust_bill_void' => {
       'columns' => [
         #regular fields
-        'invnum',       'int',     '', '', '', '', 
-        'custnum',      'int',     '', '', '', '', 
-        '_date',        @date_type,        '', '', 
-        'charged',      @money_type,       '', '', 
+        'invnum',            'int',     '',      '', '', '', 
+        'custnum',           'int',     '',      '', '', '', 
+        '_date',        @date_type,                  '', '', 
+        'charged',     @money_type,                  '', '', 
+        'currency',         'char', 'NULL',       3, '', '',
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
 
         #customer balance info at invoice generation time
@@ -601,6 +629,7 @@ sub tables_hashref {
         'custnum',          'int',     '',      '', '', '', 
         '_date',       @date_type,                  '', '', 
         'charged',    @money_type,                  '', '', 
+        'currency',        'char', 'NULL',       3, '', '',
         'content_pdf',     'blob', 'NULL',      '', '', '',
         'content_html',    'text', 'NULL',      '', '', '',
         'locale',       'varchar', 'NULL',      16, '', '', 
@@ -739,22 +768,26 @@ sub tables_hashref {
 
     'cust_bill_pkg' => {
       'columns' => [
-        'billpkgnum',        'serial',     '',      '', '', '', 
-        'invnum',               'int',     '',      '', '', '', 
-        'pkgnum',               'int',     '',      '', '', '', 
-        'pkgpart_override',     'int', 'NULL',      '', '', '', 
-        'setup',               @money_type,             '', '', 
-        'recur',               @money_type,             '', '', 
-        'sdate',               @date_type,              '', '', 
-        'edate',               @date_type,              '', '', 
-        'itemdesc',         'varchar', 'NULL', $char_d, '', '', 
-        'itemcomment',      'varchar', 'NULL', $char_d, '', '', 
-        'section',          'varchar', 'NULL', $char_d, '', '', 
-        'freq',             'varchar', 'NULL', $char_d, '', '',
-        'quantity',             'int', 'NULL',      '', '', '',
-        'unitsetup',           @money_typen,            '', '', 
-        'unitrecur',           @money_typen,            '', '', 
-        'hidden',              'char', 'NULL',       1, '', '',
+        'billpkgnum',          'serial',     '',      '', '', '', 
+        'invnum',                 'int',     '',      '', '', '', 
+        'pkgnum',                 'int',     '',      '', '', '', 
+        'pkgpart_override',       'int', 'NULL',      '', '', '', 
+        'setup',                 @money_type,             '', '', 
+        'unitsetup',             @money_typen,            '', '', 
+        'setup_billed_currency', 'char', 'NULL',       3, '', '',
+        'setup_billed_amount',   @money_typen,            '', '',
+        'recur',                 @money_type,             '', '', 
+        'unitrecur',             @money_typen,            '', '', 
+        'recur_billed_currency', 'char', 'NULL',       3, '', '',
+        'recur_billed_amount',   @money_typen,            '', '',
+        'sdate',                 @date_type,              '', '', 
+        'edate',                 @date_type,              '', '', 
+        'itemdesc',           'varchar', 'NULL', $char_d, '', '', 
+        'itemcomment',        'varchar', 'NULL', $char_d, '', '', 
+        'section',            'varchar', 'NULL', $char_d, '', '', 
+        'freq',               'varchar', 'NULL', $char_d, '', '',
+        'quantity',               'int', 'NULL',      '', '', '',
+        'hidden',                'char', 'NULL',       1, '', '',
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
@@ -771,7 +804,7 @@ sub tables_hashref {
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'duration', 'int', 'NULL', '',  0, '',
-        'phonenum', 'varchar', 'NULL', 15, '', '',
+        'phonenum', 'varchar', 'NULL', 25, '', '',
         'accountcode', 'varchar',  'NULL',      20, '', '',
         'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
@@ -800,32 +833,43 @@ sub tables_hashref {
 
     'cust_bill_pkg_tax_location' => {
       'columns' => [
-        'billpkgtaxlocationnum', 'serial',      '', '', '', '',
-        'billpkgnum',               'int',      '', '', '', '',
-        'taxnum',                   'int',      '', '', '', '',
-        'taxtype',              'varchar',      '', $char_d, '', '',
-        'pkgnum',                   'int',      '', '', '', '',
-        'locationnum',              'int',      '', '', '', '', #redundant?
-        'amount',                   @money_type,        '', '',
+        'billpkgtaxlocationnum', 'serial',     '',      '', '', '',
+        'billpkgnum',               'int',     '',      '', '', '',
+        'taxnum',                   'int',     '',      '', '', '',
+        'taxtype',              'varchar',     '', $char_d, '', '',
+        'pkgnum',                   'int',     '',      '', '', '', #redundant
+        'locationnum',              'int',     '',      '', '', '', #redundant
+        'amount',             @money_type,                  '', '',
+        'currency',                'char', 'NULL',       3, '', '',
+        'amount',             @money_type,                  '', '',
+        'taxable_billpkgnum',       'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'billpkgtaxlocationnum',
       'unique' => [],
-      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'pkgnum' ], [ 'locationnum' ] ],
+      'index'  => [ [ 'billpkgnum' ], 
+                    [ 'taxnum' ],
+                    [ 'pkgnum' ],
+                    [ 'locationnum' ],
+                    [ 'taxable_billpkgnum' ],
+                  ],
     },
 
     'cust_bill_pkg_tax_rate_location' => {
       'columns' => [
-        'billpkgtaxratelocationnum', 'serial',      '', '', '', '',
-        'billpkgnum',                   'int',      '', '', '', '',
-        'taxnum',                       'int',      '', '', '', '',
+        'billpkgtaxratelocationnum', 'serial',      '',      '', '', '',
+        'billpkgnum',                   'int',      '',      '', '', '',
+        'taxnum',                       'int',      '',      '', '', '',
         'taxtype',                  'varchar',      '', $char_d, '', '',
         'locationtaxid',            'varchar',  'NULL', $char_d, '', '',
-        'taxratelocationnum',           'int',      '', '', '', '',
-        'amount',                       @money_type,        '', '',
+        'taxratelocationnum',           'int',      '',      '', '', '',
+        'amount',                 @money_type,                   '', '',
+        'currency',                    'char', 'NULL',        3, '', '',
+        'taxable_billpkgnum',           'int', 'NULL',       '', '', '',
       ],
       'primary_key' => 'billpkgtaxratelocationnum',
       'unique' => [],
-      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'taxratelocationnum' ] ],
+      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'taxratelocationnum' ],
+                    [ 'taxable_billpkgnum' ], ],
     },
 
     'cust_bill_pkg_void' => {
@@ -836,6 +880,8 @@ sub tables_hashref {
         'pkgpart_override',     'int', 'NULL',      '', '', '', 
         'setup',               @money_type,             '', '', 
         'recur',               @money_type,             '', '', 
+        #XXX a currency for a line item?  or just one for the entire invoice
+        #'currency',            'char', 'NULL',       3, '', '',
         'sdate',               @date_type,              '', '', 
         'edate',               @date_type,              '', '', 
         'itemdesc',         'varchar', 'NULL', $char_d, '', '', 
@@ -866,7 +912,7 @@ sub tables_hashref {
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'duration', 'int', 'NULL', '',  0, '',
-        'phonenum', 'varchar', 'NULL', 15, '', '',
+        'phonenum', 'varchar', 'NULL', 25, '', '',
         'accountcode', 'varchar',  'NULL',      20, '', '',
         'startdate',  @date_type, '', '', 
         'regionname', 'varchar', 'NULL', $char_d, '', '',
@@ -895,13 +941,14 @@ sub tables_hashref {
 
     'cust_bill_pkg_tax_location_void' => {
       'columns' => [
-        'billpkgtaxlocationnum',    'int',      '', '', '', '',
-        'billpkgnum',               'int',      '', '', '', '',
-        'taxnum',                   'int',      '', '', '', '',
-        'taxtype',              'varchar',      '', $char_d, '', '',
-        'pkgnum',                   'int',      '', '', '', '',
-        'locationnum',              'int',      '', '', '', '', #redundant?
-        'amount',                   @money_type,        '', '',
+        'billpkgtaxlocationnum',    'int',     '',      '', '', '',
+        'billpkgnum',               'int',     '',      '', '', '',
+        'taxnum',                   'int',     '',      '', '', '',
+        'taxtype',              'varchar',     '', $char_d, '', '',
+        'pkgnum',                   'int',     '',      '', '', '',
+        'locationnum',              'int',     '',      '', '', '', #redundant?
+        'amount',             @money_type,                  '', '',
+        'currency',                'char', 'NULL',       3, '', '',
       ],
       'primary_key' => 'billpkgtaxlocationnum',
       'unique' => [],
@@ -910,13 +957,14 @@ sub tables_hashref {
 
     'cust_bill_pkg_tax_rate_location_void' => {
       'columns' => [
-        'billpkgtaxratelocationnum',    'int',      '', '', '', '',
-        'billpkgnum',                   'int',      '', '', '', '',
-        'taxnum',                       'int',      '', '', '', '',
-        'taxtype',                  'varchar',      '', $char_d, '', '',
-        'locationtaxid',            'varchar',  'NULL', $char_d, '', '',
-        'taxratelocationnum',           'int',      '', '', '', '',
-        'amount',                       @money_type,        '', '',
+        'billpkgtaxratelocationnum',    'int',     '',      '', '', '',
+        'billpkgnum',                   'int',     '',      '', '', '',
+        'taxnum',                       'int',     '',      '', '', '',
+        'taxtype',                  'varchar',     '', $char_d, '', '',
+        'locationtaxid',            'varchar', 'NULL', $char_d, '', '',
+        'taxratelocationnum',           'int',     '',      '', '', '',
+        'amount',                 @money_type,                  '', '',
+        'currency',                    'char', 'NULL',       3, '', '',
       ],
       'primary_key' => 'billpkgtaxratelocationnum',
       'unique' => [],
@@ -925,18 +973,19 @@ sub tables_hashref {
 
     'cust_credit' => {
       'columns' => [
-        'crednum',  'serial', '', '', '', '', 
-        'custnum',  'int', '', '', '', '', 
-        '_date',    @date_type, '', '', 
-        'amount',   @money_type, '', '', 
-        'otaker',   'varchar', 'NULL', 32, '', '', 
-        'usernum',   'int', 'NULL', '', '', '',
-        'reason',   'text', 'NULL', '', '', '', 
-        'reasonnum', 'int', 'NULL', '', '', '', 
-        'addlinfo', 'text', 'NULL', '', '', '',
-        'closed',    'char', 'NULL', 1, '', '', 
-        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
-        'eventnum', 'int', 'NULL', '', '', '', #triggering event for commission
+        'crednum',  'serial',     '', '', '', '', 
+        'custnum',     'int',     '', '', '', '', 
+        '_date',  @date_type,             '', '', 
+        'amount',@money_type,             '', '', 
+        'currency',   'char', 'NULL',  3, '', '',
+        'otaker',  'varchar', 'NULL', 32, '', '', 
+        'usernum',     'int', 'NULL', '', '', '',
+        'reason',     'text', 'NULL', '', '', '', 
+        'reasonnum',   'int', 'NULL', '', '', '', 
+        'addlinfo',   'text', 'NULL', '', '', '',
+        'closed',     'char', 'NULL',  1, '', '', 
+        'pkgnum',      'int', 'NULL', '', '','',#desired pkgnum for pkg-balances
+        'eventnum',    'int', 'NULL', '', '','',#triggering event for commission
         #'commission_agentnum', 'int', 'NULL', '', '', '', #
       ],
       'primary_key' => 'crednum',
@@ -1010,6 +1059,7 @@ sub tables_hashref {
         'latitude', 'decimal', 'NULL', '10,7', '', '', 
         'longitude','decimal', 'NULL', '10,7', '', '', 
         'coord_auto',  'char', 'NULL',  1, '', '',
+        'addr_clean',  'char', 'NULL',  1, '', '',
         'daytime',  'varchar', 'NULL', 20, '', '', 
         'night',    'varchar', 'NULL', 20, '', '', 
         'fax',      'varchar', 'NULL', 12, '', '', 
@@ -1028,10 +1078,12 @@ sub tables_hashref {
         'ship_latitude', 'decimal', 'NULL', '10,7', '', '', 
         'ship_longitude','decimal', 'NULL', '10,7', '', '', 
         'ship_coord_auto',  'char', 'NULL',  1, '', '',
+        'ship_addr_clean',  'char', 'NULL',  1, '', '',
         'ship_daytime',  'varchar', 'NULL', 20, '', '', 
         'ship_night',    'varchar', 'NULL', 20, '', '', 
         'ship_fax',      'varchar', 'NULL', 12, '', '', 
         'ship_mobile',   'varchar', 'NULL', 12, '', '', 
+        'currency',         'char', 'NULL',  3, '', '',
         'payby',    'char', '',     4, '', '', 
         'payinfo',  'varchar', 'NULL', 512, '', '', 
         'paycvv',   'varchar', 'NULL', 512, '', '', 
@@ -1060,6 +1112,7 @@ sub tables_hashref {
         'cdr_termination_percentage', 'decimal', 'NULL', '7,4', '', '',
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
         'credit_limit', @money_typen, '', '',
+        'credit_limit_currency', 'char', 'NULL',  3, '', '',
         'archived', 'char', 'NULL', 1, '', '',
         'email_csv_cdr', 'char', 'NULL', 1, '', '',
         'accountcode_cdr', 'char', 'NULL', 1, '', '',
@@ -1069,6 +1122,7 @@ sub tables_hashref {
         'locale', 'varchar', 'NULL', 16, '', '', 
         'calling_list_exempt', 'char', 'NULL', 1, '', '',
         'invoice_noemail', 'char', 'NULL', 1, '', '',
+        'message_noemail', 'char', 'NULL', 1, '', '',
         'bill_locationnum', 'int', 'NULL', '', '', '',
         'ship_locationnum', 'int', 'NULL', '', '', '',
       ],
@@ -1214,6 +1268,8 @@ sub tables_hashref {
     'quotation_pkg' => {
       'columns' => [
         'quotationpkgnum',   'serial',     '', '', '', '', 
+        'quotationnum',         'int', 'NULL', '', '', '', #shouldn't be null,
+                                                           # but history...
         'pkgpart',              'int',     '', '', '', '', 
         'locationnum',          'int', 'NULL', '', '', '',
         'start_date',      @date_type,             '', '', 
@@ -1252,6 +1308,7 @@ sub tables_hashref {
         'latitude',        'decimal', 'NULL',  '10,7', '', '', 
         'longitude',       'decimal', 'NULL',  '10,7', '', '', 
         'coord_auto',         'char', 'NULL',       1, '', '',
+        'addr_clean',         'char', 'NULL',       1, '', '',
         'country',            'char',     '',       2, '', '', 
         'geocode',         'varchar', 'NULL',      20, '', '',
         'district',        'varchar', 'NULL',      20, '', '',
@@ -1375,8 +1432,9 @@ sub tables_hashref {
         'adjustmentnum', 'serial',     '',      '', '', '',
         'custnum',          'int',     '',      '', '', '',
         'taxname',      'varchar',     '', $char_d, '', '',
-        'amount',    @money_type,                   '', '', 
-        'comment',     'varchar',  'NULL', $char_d, '', '', 
+        'amount',     @money_type,                  '', '', 
+        'currency',        'char', 'NULL',       3, '', '',
+        'comment',      'varchar', 'NULL', $char_d, '', '', 
         'billpkgnum',       'int', 'NULL',      '', '', '',
         #more?  no cust_bill_pkg_tax_location?
       ],
@@ -1389,18 +1447,19 @@ sub tables_hashref {
                             #off the cust_main_county for validation and to 
                             #provide a tax rate.
       'columns' => [
-        'taxnum',   'serial',   '',    '', '', '', 
-        'district', 'varchar',  'NULL',    20, '', '',
-        'city',     'varchar',  'NULL',    $char_d, '', '',
-        'county',   'varchar',  'NULL',    $char_d, '', '', 
-        'state',    'varchar',  'NULL',    $char_d, '', '', 
-        'country',  'char',  '', 2, '', '', 
-        'taxclass',   'varchar', 'NULL', $char_d, '', '', 
-        'exempt_amount', @money_type, '', '', 
-        'tax',      'real',  '',    '', '', '', #tax %
-        'taxname',  'varchar',  'NULL',    $char_d, '', '', 
-        'setuptax',  'char', 'NULL', 1, '', '', # Y = setup tax exempt
-        'recurtax',  'char', 'NULL', 1, '', '', # Y = recur tax exempt
+        'taxnum',    'serial',     '',      '', '', '', 
+        'district', 'varchar', 'NULL',      20, '', '',
+        'city',     'varchar', 'NULL', $char_d, '', '',
+        'county',   'varchar', 'NULL', $char_d, '', '', 
+        'state',    'varchar', 'NULL', $char_d, '', '', 
+        'country',     'char',     '',       2, '', '', 
+        'taxclass', 'varchar', 'NULL', $char_d, '', '', 
+        'exempt_amount', @money_type,            '', '', 
+        'exempt_amount_currency', 'char', 'NULL', 3, '', '',
+        'tax',         'real',     '',      '', '', '', #tax %
+        'taxname',  'varchar', 'NULL', $char_d, '', '', 
+        'setuptax',    'char', 'NULL',       1, '', '', # Y = setup tax exempt
+        'recurtax',    'char', 'NULL',       1, '', '', # Y = recur tax exempt
       ],
       'primary_key' => 'taxnum',
       'unique' => [],
@@ -1497,19 +1556,17 @@ sub tables_hashref {
 
     'cust_pay_pending' => {
       'columns' => [
-        'paypendingnum','serial',      '',  '', '', '',
-        'custnum',      'int',         '',  '', '', '', 
-        'paid',         @money_type,            '', '', 
-        '_date',        @date_type,             '', '', 
-        'payby',        'char',        '',   4, '', '', #CARD/BILL/COMP, should
-                                                        # be index into payby
-                                                        # table eventually
-        'payinfo',      'varchar', 'NULL', 512, '', '', #see cust_main above
-	'paymask',      'varchar', 'NULL', $char_d, '', '', 
-        'paydate',      'varchar', 'NULL', 10, '', '', 
+        'paypendingnum',      'serial',     '',      '', '', '',
+        'custnum',               'int',     '',      '', '', '', 
+        'paid',            @money_type,                  '', '', 
+        'currency',             'char', 'NULL',       3, '', '',
+        '_date',            @date_type,                  '', '', 
+        'payby',                'char',     '',       4, '', '',
+        'payinfo',           'varchar', 'NULL',     512, '', '',
+	'paymask',           'varchar', 'NULL', $char_d, '', '', 
+        'paydate',           'varchar', 'NULL',     10, '', '', 
         'recurring_billing', 'varchar', 'NULL', $char_d, '', '',
-        #'paybatch',     'varchar', 'NULL', $char_d, '', '', #for auditing purposes.
-        'payunique',    'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
+        'payunique',         'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'status',       'varchar',     '', $char_d, '', '', 
@@ -1518,7 +1575,10 @@ sub tables_hashref {
         'gatewaynum',   'int',     'NULL',  '', '', '',
         #'cust_balance', @money_type,            '', '',
         'paynum',       'int',     'NULL',  '', '', '',
-        'jobnum',       'int',     'NULL',  '', '', '', 
+        'jobnum',    'bigint',     'NULL',  '', '', '', 
+        'invnum',       'int',     'NULL',  '', '', '',
+        'manual',       'char',    'NULL',   1, '', '',
+        'discount_term','int',     'NULL',  '', '', '',
       ],
       'primary_key' => 'paypendingnum',
       'unique'      => [ [ 'payunique' ] ],
@@ -1527,28 +1587,35 @@ sub tables_hashref {
 
     'cust_pay' => {
       'columns' => [
-        'paynum',   'serial',    '',   '', '', '',
-        'custnum',  'int',    '',   '', '', '', 
-        '_date',    @date_type, '', '', 
-        'paid',     @money_type, '', '', 
-        'otaker',   'varchar', 'NULL', 32, '', '',
-        'usernum',   'int', 'NULL', '', '', '',
-        'payby',    'char',   '',     4, '', '', # CARD/BILL/COMP, should be
-                                                 # index into payby table
-                                                 # eventually
-        'payinfo',  'varchar',   'NULL', 512, '', '', #see cust_main above
-        'paymask', 'varchar', 'NULL', $char_d, '', '', 
-        'paydate',  'varchar', 'NULL', 10, '', '', 
-        'paybatch', 'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
-        'payunique', 'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
-        'closed',    'char', 'NULL', 1, '', '', 
+        'paynum',       'serial',    '',       '', '', '',
+        'custnum',         'int',    '',       '', '', '', 
+        '_date',     @date_type,                   '', '', 
+        'paid',      @money_type,                  '', '', 
+        'currency',       'char', 'NULL',       3, '', '',
+        'otaker',      'varchar', 'NULL',      32, '', '',
+        'usernum',         'int', 'NULL',      '', '', '',
+        'payby',          'char',     '',       4, '', '',
+        'payinfo',     'varchar', 'NULL',     512, '', '',
+        'paymask',     'varchar', 'NULL', $char_d, '', '', 
+        'paydate',     'varchar', 'NULL',      10, '', '', 
+        'paybatch',    'varchar', 'NULL', $char_d, '', '',#for auditing purposes
+        'payunique',   'varchar', 'NULL', $char_d, '', '',#separate paybatch "unique" functions from current usage
+        'closed',         'char', 'NULL',       1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+
         # cash/check deposit info fields
-        'bank',       'varchar', 'NULL', $char_d, '', '',
-        'depositor',  'varchar', 'NULL', $char_d, '', '',
-        'account',    'varchar', 'NULL', 20,      '', '',
-        'teller',     'varchar', 'NULL', 20,      '', '',
-        'batchnum',       'int', 'NULL', '', '', '', #pay_batch foreign key
+        'bank',        'varchar', 'NULL', $char_d, '', '',
+        'depositor',   'varchar', 'NULL', $char_d, '', '',
+        'account',     'varchar', 'NULL',      20, '', '',
+        'teller',      'varchar', 'NULL',      20, '', '',
+
+        'batchnum',        'int', 'NULL',      '', '', '',#pay_batch foreign key
+
+        # credit card/EFT fields (formerly in paybatch)
+        'gatewaynum',      'int', 'NULL',      '', '', '', # payment_gateway FK
+        'processor',   'varchar', 'NULL', $char_d, '', '', # module name
+        'auth',        'varchar', 'NULL',      16, '', '', # CC auth number
+        'order_number','varchar', 'NULL', $char_d, '', '', # transaction number
       ],
       'primary_key' => 'paynum',
       #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
@@ -1557,32 +1624,38 @@ sub tables_hashref {
 
     'cust_pay_void' => {
       'columns' => [
-        'paynum',    'int',    '',   '', '', '', 
-        'custnum',   'int',    '',   '', '', '', 
-        '_date',     @date_type, '', '', 
-        'paid',      @money_type, '', '', 
-        'otaker',   'varchar', 'NULL', 32, '', '', 
-        'usernum',   'int', 'NULL', '', '', '',
-        'payby',     'char',   '',     4, '', '', # CARD/BILL/COMP, should be
-                                                  # index into payby table
-                                                  # eventually
-        'payinfo',   'varchar',   'NULL', 512, '', '', #see cust_main above
-	'paymask', 'varchar', 'NULL', $char_d, '', '', 
+        'paynum',          'int',    '',       '', '', '', 
+        'custnum',         'int',    '',       '', '', '', 
+        '_date',      @date_type,                  '', '', 
+        'paid',      @money_type,                  '', '', 
+        'currency',       'char', 'NULL',       3, '', '',
+        'otaker',      'varchar', 'NULL',      32, '', '', 
+        'usernum',         'int', 'NULL',      '', '', '',
+        'payby',          'char',     '',       4, '', '',
+        'payinfo',     'varchar', 'NULL',     512, '', '',
+	'paymask',     'varchar', 'NULL', $char_d, '', '', 
         #'paydate' ?
-        'paybatch',  'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
-        'closed',    'char', 'NULL', 1, '', '', 
-        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+        'paybatch',    'varchar', 'NULL', $char_d, '', '', #for auditing purposes.
+        'closed',        'char',  'NULL',       1, '', '', 
+        'pkgnum', 'int',   'NULL', '', '', '', #desired pkgnum for pkg-balances
+
         # cash/check deposit info fields
         'bank',       'varchar', 'NULL', $char_d, '', '',
         'depositor',  'varchar', 'NULL', $char_d, '', '',
-        'account',    'varchar', 'NULL', 20,      '', '',
-        'teller',     'varchar', 'NULL', 20,      '', '',
-        'batchnum',       'int', 'NULL', '', '', '', #pay_batch foreign key
+        'account',    'varchar', 'NULL',      20, '', '',
+        'teller',     'varchar', 'NULL',      20, '', '',
+        'batchnum',       'int', 'NULL',      '', '', '', #pay_batch foreign key
+
+        # credit card/EFT fields (formerly in paybatch)
+        'gatewaynum',      'int', 'NULL',      '', '', '', # payment_gateway FK
+        'processor',   'varchar', 'NULL', $char_d, '', '', # module name
+        'auth',        'varchar', 'NULL',      16, '', '', # CC auth number
+        'order_number','varchar', 'NULL', $char_d, '', '', # transaction number
 
         #void fields
-        'void_date', @date_type, '', '', 
-        'reason',    'varchar',   'NULL', $char_d, '', '', 
-        'void_usernum',   'int', 'NULL', '', '', '',
+        'void_date',  @date_type,                  '', '', 
+        'reason',      'varchar', 'NULL', $char_d, '', '', 
+        'void_usernum',    'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'paynum',
       'unique' => [],
@@ -1650,26 +1723,27 @@ sub tables_hashref {
 
     'cust_pay_batch' => { #list of customers in current CARD/CHEK batch
       'columns' => [
-        'paybatchnum',   'serial',    '',   '', '', '', 
-        'batchnum',   'int',    '',   '', '', '', 
-        'invnum',   'int',    '',   '', '', '', 
-        'custnum',   'int',    '',   '', '', '', 
-        'last',     'varchar', '',     $char_d, '', '', 
-        'first',    'varchar', '',     $char_d, '', '', 
-        'address1', 'varchar', '',     $char_d, '', '', 
-        'address2', 'varchar', 'NULL', $char_d, '', '', 
-        'city',     'varchar', '',     $char_d, '', '', 
-        'state',    'varchar', 'NULL', $char_d, '', '', 
-        'zip',      'varchar', 'NULL', 10, '', '', 
-        'country',  'char', '',     2, '', '', 
-        #        'trancode', 'int', '', '', '', ''
-        'payby',    'char',   '',     4, '', '', # CARD/BILL/COMP, should be
-        'payinfo',  'varchar', '',     512, '', '', 
-        #'exp',      @date_type, '', ''
-        'exp',      'varchar', 'NULL',     11, '', '', 
-        'payname',  'varchar', 'NULL', $char_d, '', '', 
-        'amount',   @money_type, '', '', 
-        'status',   'varchar', 'NULL',     $char_d, '', '', 
+        'paybatchnum',    'serial',     '',      '', '', '', 
+        'batchnum',          'int',     '',      '', '', '', 
+        'invnum',            'int',     '',      '', '', '', 
+        'custnum',           'int',     '',      '', '', '', 
+        'last',          'varchar',     '', $char_d, '', '', 
+        'first',         'varchar',     '', $char_d, '', '', 
+        'address1',      'varchar',     '', $char_d, '', '', 
+        'address2',      'varchar', 'NULL', $char_d, '', '', 
+        'city',          'varchar',     '', $char_d, '', '', 
+        'state',         'varchar', 'NULL', $char_d, '', '', 
+        'zip',           'varchar', 'NULL',      10, '', '', 
+        'country',          'char',     '',       2, '', '', 
+        'payby',            'char',     '',       4, '', '',
+        'payinfo',       'varchar', 'NULL',     512, '', '', 
+        #'exp',          @date_type,                  '', '',
+        'exp',           'varchar', 'NULL',      11, '', '', 
+        'payname',       'varchar', 'NULL', $char_d, '', '', 
+        'amount',      @money_type,                  '', '', 
+        'currency',         'char', 'NULL',       3, '', '',
+        'status',        'varchar', 'NULL', $char_d, '', '', 
+        'error_message', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'paybatchnum',
       'unique' => [],
@@ -1692,6 +1766,7 @@ sub tables_hashref {
         'custnum',             'int',     '', '', '', '', 
         'pkgpart',             'int',     '', '', '', '', 
         'pkgbatch',        'varchar', 'NULL', $char_d, '', '',
+        'contactnum',          'int', 'NULL', '', '', '', 
         'locationnum',         'int', 'NULL', '', '', '',
         'otaker',          'varchar', 'NULL', 32, '', '', 
         'usernum',             'int', 'NULL', '', '', '',
@@ -1713,6 +1788,9 @@ sub tables_hashref {
         'change_pkgnum',       'int', 'NULL', '', '', '',
         'change_pkgpart',      'int', 'NULL', '', '', '',
         'change_locationnum',  'int', 'NULL', '', '', '',
+        'change_custnum',      'int', 'NULL', '', '', '',
+        'main_pkgnum',         'int', 'NULL', '', '', '',
+        'pkglinknum',          'int', 'NULL', '', '', '',
         'manual_flag',        'char', 'NULL',  1, '', '', 
         'no_auto',            'char', 'NULL',  1, '', '', 
         'quantity',            'int', 'NULL', '', '', '',
@@ -1787,6 +1865,30 @@ sub tables_hashref {
       'index'  => [ [ 'pkgnum' ], [ 'discountnum' ], [ 'usernum' ], ],
     },
 
+    'cust_pkg_usage' => {
+      'columns' => [
+        'pkgusagenum', 'serial', '', '', '', '',
+        'pkgnum',         'int', '', '', '', '',
+        'minutes',        'int', '', '', '', '',
+        'pkgusagepart',   'int', '', '', '', '',
+      ],
+      'primary_key' => 'pkgusagenum',
+      'unique' => [],
+      'index'  => [ [ 'pkgnum' ], [ 'pkgusagepart' ] ],
+    },
+
+    'cdr_cust_pkg_usage' => {
+      'columns' => [
+        'cdrusagenum', 'bigserial', '', '', '', '',
+        'acctid',      'bigint',    '', '', '', '',
+        'pkgusagenum', 'int',       '', '', '', '',
+        'minutes',     'int',       '', '', '', '',
+      ],
+      'primary_key' => 'cdrusagenum',
+      'unique' => [],
+      'index'  => [ [ 'pkgusagenum' ], [ 'acctid' ] ],
+    },
+
     'cust_bill_pkg_discount' => {
       'columns' => [
         'billpkgdiscountnum', 'serial',        '', '', '', '',
@@ -1846,6 +1948,11 @@ sub tables_hashref {
 	'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch',     'varchar',   'NULL', $char_d, '', '', 
         'closed',    'char', 'NULL', 1, '', '', 
+        # credit card/EFT fields (formerly in paybatch)
+        'gatewaynum',     'int', 'NULL', '', '', '', # payment_gateway FK
+        'processor',  'varchar', 'NULL', $char_d, '', '', # module name
+        'auth',       'varchar','NULL',16, '', '', # CC auth number
+        'order_number', 'varchar','NULL',$char_d, '', '', # transaction number
       ],
       'primary_key' => 'refundnum',
       'unique' => [],
@@ -1949,6 +2056,44 @@ sub tables_hashref {
       'index' => [ [ 'promo_code' ], [ 'disabled' ], [ 'classnum' ],
                    [ 'agentnum' ], ['no_auto'],
                  ],
+    },
+
+    'part_pkg_msgcat' => {
+      'columns' => [
+        'pkgpartmsgnum',  'serial',     '',        '', '', '',
+        'pkgpart',           'int',     '',        '', '', '',
+        'locale',        'varchar',     '',        16, '', '',
+        'pkg',           'varchar',     '',   $char_d, '', '', #longer/no limit?
+        'comment',       'varchar', 'NULL', 2*$char_d, '', '', #longer/no limit?
+      ],
+      'primary_key' => 'pkgpartmsgnum',
+      'unique'      => [ [ 'pkgpart', 'locale' ] ],
+      'index'       => [],
+    },
+
+    'part_pkg_currency' => {
+      'columns' => [
+        'pkgcurrencynum', 'serial', '',      '', '', '',
+        'pkgpart',           'int', '',      '', '', '',
+        'currency',         'char', '',       3, '', '',
+        'optionname',    'varchar', '', $char_d, '', '', 
+        'optionvalue',      'text', '',      '', '', '', 
+      ],
+      'primary_key' => 'pkgcurrencynum',
+      'unique'      => [ [ 'pkgpart', 'currency', 'optionname' ] ],
+      'index'       => [ ['pkgpart'] ],
+    },
+
+    'currency_exchange' => {
+      'columns' => [
+        'currencyratenum', 'serial', '',    '', '', '',
+        'from_currency',     'char', '',     3, '', '',
+        'to_currency',       'char', '',     3, '', '',
+        'rate',           'decimal', '', '7,6', '', '',
+      ],
+      'primary_key' => 'currencyratenum',
+      'unique'      => [ [ 'from_currency', 'to_currency' ] ],
+      'index'       => [],
     },
 
     'part_pkg_link' => {
@@ -2079,7 +2224,8 @@ sub tables_hashref {
         'preserve',              'char', 'NULL',         1, '', '',
         'selfservice_access', 'varchar', 'NULL',   $char_d, '', '',
         'classnum',               'int', 'NULL',        '', '', '',
-      ],
+        'restrict_edit_password','char', 'NULL',         1, '', '',
+],
       'primary_key' => 'svcpart',
       'unique' => [],
       'index' => [ [ 'disabled' ] ],
@@ -2184,6 +2330,9 @@ sub tables_hashref {
         'shell',     'varchar',   'NULL',   $char_d, '', '', 
         'quota',     'varchar',   'NULL',   $char_d, '', '', 
         'slipip',    'varchar',   'NULL',   15, '', '', #four TINYINTs, bah.
+        # IP address mgmt
+        'routernum', 'int', 'NULL',      '', '', '',
+        'blocknum',  'int', 'NULL',      '', '', '', 
         'seconds',   'int', 'NULL',   '', '', '', #uhhhh
         'seconds_threshold',   'int', 'NULL',   '', '', '',
         'upbytes',   'bigint', 'NULL',   '', '', '', 
@@ -2224,6 +2373,7 @@ sub tables_hashref {
         'cgp_sendmdnmode',    'varchar', 'NULL', $char_d, '', '',#SendMDNMode
         #mail
         #XXX RPOP settings
+        #
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],
@@ -2584,7 +2734,7 @@ sub tables_hashref {
 
     'queue' => {
       'columns' => [
-        'jobnum',      'serial',     '',      '', '', '', 
+        'jobnum',   'bigserial',     '',      '', '', '', 
         'job',        'varchar',     '',     512, '', '', 
         '_date',          'int',     '',      '', '', '', 
         'status',     'varchar',     '', $char_d, '', '', 
@@ -2603,10 +2753,10 @@ sub tables_hashref {
 
     'queue_arg' => {
       'columns' => [
-        'argnum', 'serial', '', '', '', '', 
-        'jobnum', 'int', '', '', '', '', 
-        'frozen', 'char', 'NULL',       1, '', '',
-        'arg', 'text', 'NULL', '', '', '', 
+        'argnum', 'bigserial',     '', '', '', '', 
+        'jobnum',    'bigint',     '', '', '', '', 
+        'frozen',      'char', 'NULL',  1, '', '',
+        'arg',         'text', 'NULL', '', '', '', 
       ],
       'primary_key' => 'argnum',
       'unique'      => [],
@@ -2615,9 +2765,9 @@ sub tables_hashref {
 
     'queue_depend' => {
       'columns' => [
-        'dependnum', 'serial', '', '', '', '', 
-        'jobnum', 'int', '', '', '', '', 
-        'depend_jobnum', 'int', '', '', '', '', 
+        'dependnum',  'bigserial', '', '', '', '', 
+        'jobnum',        'bigint', '', '', '', '', 
+        'depend_jobnum', 'bigint', '', '', '', '', 
       ],
       'primary_key' => 'dependnum',
       'unique'      => [],
@@ -2650,9 +2800,10 @@ sub tables_hashref {
       'columns' => [
         'exportnum',   'serial',     '',      '', '', '', 
         'exportname', 'varchar', 'NULL', $char_d, '', '',
-        'machine',    'varchar', 'NULL', $char_d, '', '', 
+        'machine',    'varchar', 'NULL', $char_d, '', '',
         'exporttype', 'varchar',     '', $char_d, '', '', 
         'nodomain',      'char', 'NULL',       1, '', '', 
+        'default_machine','int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'exportnum',
       'unique'      => [],
@@ -2829,22 +2980,28 @@ sub tables_hashref {
 
     'svc_broadband' => {
       'columns' => [
-        'svcnum',                  'int',     '',      '', '', '', 
-        'description',         'varchar', 'NULL', $char_d, '', '', 
-        'routernum',               'int', 'NULL',      '', '', '',
-        'blocknum',                'int', 'NULL',      '', '', '', 
-        'sectornum',               'int', 'NULL',      '', '', '',
-        'speed_up',                'int', 'NULL',      '', '', '', 
-        'speed_down',              'int', 'NULL',      '', '', '', 
-        'ip_addr',             'varchar', 'NULL',      15, '', '', 
-        'mac_addr',            'varchar', 'NULL',      12, '', '', 
-        'authkey',             'varchar', 'NULL',      32, '', '', 
-        'latitude',            'decimal', 'NULL',  '10,7', '', '', 
-        'longitude',           'decimal', 'NULL',  '10,7', '', '', 
-        'altitude',            'decimal', 'NULL',      '', '', '', 
-        'vlan_profile',        'varchar', 'NULL', $char_d, '', '', 
-        'performance_profile', 'varchar', 'NULL', $char_d, '', '',
-        'plan_id',             'varchar', 'NULL', $char_d, '', '',
+        'svcnum',                  'int',     '',        '', '', '', 
+        'description',         'varchar', 'NULL',   $char_d, '', '', 
+        'routernum',               'int', 'NULL',        '', '', '',
+        'blocknum',                'int', 'NULL',        '', '', '', 
+        'sectornum',               'int', 'NULL',        '', '', '',
+        'speed_up',                'int', 'NULL',        '', '', '', 
+        'speed_down',              'int', 'NULL',        '', '', '', 
+        'ip_addr',             'varchar', 'NULL',        15, '', '', 
+        'mac_addr',            'varchar', 'NULL',        12, '', '', 
+        'authkey',             'varchar', 'NULL',        32, '', '', 
+        'latitude',            'decimal', 'NULL',    '10,7', '', '', 
+        'longitude',           'decimal', 'NULL',    '10,7', '', '', 
+        'altitude',            'decimal', 'NULL',        '', '', '', 
+        'vlan_profile',        'varchar', 'NULL',   $char_d, '', '', 
+        'performance_profile', 'varchar', 'NULL',   $char_d, '', '',
+        'plan_id',             'varchar', 'NULL',   $char_d, '', '',
+        'radio_serialnum',     'varchar', 'NULL',   $char_d, '', '',
+        'radio_location',      'varchar', 'NULL', 2*$char_d, '', '',
+        'poe_location',        'varchar', 'NULL', 2*$char_d, '', '',
+        'rssi',                    'int', 'NULL',        '', '', '',
+        'suid',                    'int', 'NULL',        '', '', '',
+        'shared_svcnum',           'int', 'NULL',        '', '', '',
       ],
       'primary_key' => 'svcnum',
       'unique'      => [ [ 'ip_addr' ], [ 'mac_addr' ] ],
@@ -2983,6 +3140,32 @@ sub tables_hashref {
       'index' => [ [ 'disabled' ] ],
     },
 
+    'part_pkg_usage' => {
+      'columns' => [
+        'pkgusagepart', 'serial',   '', '', '', '',
+        'pkgpart',  'int',      '', '', '', '',
+        'minutes',  'int',      '', '', '', '',
+        'priority', 'int',  'NULL', '', '', '',
+        'shared',   'char', 'NULL',  1, '', '',
+        'rollover', 'char', 'NULL',  1, '', '',
+        'description',  'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'pkgusagepart',
+      'unique'      => [],
+      'index'       => [ [ 'pkgpart' ] ],
+    },
+
+    'part_pkg_usage_class' => {
+      'columns' => [
+        'num',       'serial',  '', '', '', '',
+        'pkgusagepart', 'int',  '', '', '', '',
+        'classnum',     'int','NULL', '', '', '',
+      ],
+      'primary_key' => 'num',
+      'unique'      => [ [ 'pkgusagepart', 'classnum' ] ],
+      'index'       => [],
+    },
+
     'rate' => {
       'columns' => [
         'ratenum',  'serial', '', '', '', '', 
@@ -3020,6 +3203,7 @@ sub tables_hashref {
       'columns' => [
         'regionnum',   'serial',      '', '', '', '', 
         'regionname',  'varchar',     '', $char_d, '', '', 
+        'exact_match', 'char',    'NULL',  1, '', '',
       ],
       'primary_key' => 'regionnum',
       'unique'      => [],
@@ -3154,7 +3338,8 @@ sub tables_hashref {
         'gateway_username', 'varchar',  'NULL', $char_d, '', '', 
         'gateway_password', 'varchar',  'NULL', $char_d, '', '', 
         'gateway_action',   'varchar',  'NULL', $char_d, '', '', 
-        'gateway_callback_url', 'varchar',  'NULL', $char_d, '', '', 
+        'gateway_callback_url', 'varchar',  'NULL', 255, '', '', 
+        'gateway_cancel_url',   'varchar',  'NULL', 255, '', '',
         'disabled',   'char',  'NULL',   1, '', '', 
       ],
       'primary_key' => 'gatewaynum',
@@ -3249,7 +3434,7 @@ sub tables_hashref {
         'channel',     'varchar',  '', $char_d, \"''", '', 
         'dstchannel',  'varchar',  '', $char_d, \"''", '', 
         'lastapp',     'varchar',  '', $char_d, \"''", '', 
-        'lastdata',    'varchar',  '', $char_d, \"''", '', 
+        'lastdata',    'varchar',  '',     255, \"''", '', 
 
         #currently only opensips
         'src_ip_addr', 'varchar',  'NULL',  15,    '', '',
@@ -3300,6 +3485,12 @@ sub tables_hashref {
         'quantity',                'int', 'NULL',      '', '', '', 
 
         'upstream_rateid',         'int', 'NULL',      '', '', '',
+
+        ###
+        # more fields, for GSM imports
+        ###
+        'servicecode',             'int', 'NULL',      '', '', '',
+        'quantity_able',           'int', 'NULL',      '', '', '', 
         
         ###
         #and now for our own fields
@@ -3308,8 +3499,9 @@ sub tables_hashref {
         'cdrtypenum',              'int', 'NULL',      '', '', '',
 
         'charged_party',       'varchar', 'NULL', $char_d, '', '',
+        'charged_party_imsi',  'varchar', 'NULL', $char_d, '', '',
 
-        'upstream_price',      'decimal', 'NULL',  '10,4', '', '', 
+        'upstream_price',      'decimal', 'NULL',  '10,5', '', '', 
         'upstream_src_regionname', 'varchar', 'NULL', $char_d, '', '',
         'upstream_dst_regionname', 'varchar', 'NULL', $char_d, '', '',
 
@@ -3324,7 +3516,7 @@ sub tables_hashref {
         'rated_classnum',             'int', 'NULL',      '', '', '', 
         'rated_ratename',         'varchar', 'NULL', $char_d, '', '', 
 
-        'carrierid',               'int', 'NULL',      '', '', '',
+        'carrierid',               'bigint', 'NULL',      '', '', '',
 
         # service it was matched to
         'svcnum',             'int',   'NULL',     '',   '', '', 
@@ -3423,8 +3615,9 @@ sub tables_hashref {
 
     'cdr_carrier' => {
       'columns' => [
-        'carrierid'   => 'serial',  '', '', '', '',
-        'carriername' => 'varchar', '', $char_d, '', '',
+        'carrierid'   =>  'serial',     '',      '', '', '',
+        'carriername' => 'varchar',     '', $char_d, '', '',
+        'disabled'    =>    'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'carrierid',
       'unique'      => [],
@@ -3470,15 +3663,29 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'access_user_session' => {
+      'columns' => [
+        'sessionnum',   'serial',  '',      '', '', '', 
+        'sessionkey',  'varchar',  '', $char_d, '', '',
+        'usernum',         'int',  '',      '', '', '',
+        'start_date', @date_type,               '', '',
+        'last_date',  @date_type,               '', '',
+      ],
+      'primary_key' => 'sessionnum',
+      'unique' => [ [ 'sessionkey' ] ],
+      'index'  => [],
+    },
+
     'access_user' => {
       'columns' => [
-        'usernum',   'serial',  '',      '', '', '',
-        'username',  'varchar', '', $char_d, '', '',
-        '_password', 'varchar', '', $char_d, '', '',
-        'last',      'varchar', '', $char_d, '', '', 
-        'first',     'varchar', '', $char_d, '', '', 
-        'user_custnum',  'int', 'NULL',  '', '', '',
-        'disabled',     'char', 'NULL',   1, '', '', 
+        'usernum',             'serial',     '',      '', '', '',
+        'username',           'varchar',     '', $char_d, '', '',
+        '_password',          'varchar', 'NULL', $char_d, '', '',
+        '_password_encoding', 'varchar', 'NULL', $char_d, '', '',
+        'last',               'varchar', 'NULL', $char_d, '', '', 
+        'first',              'varchar', 'NULL', $char_d, '', '', 
+        'user_custnum',           'int', 'NULL',      '', '', '',
+        'disabled',              'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'usernum',
       'unique' => [ [ 'username' ] ],
@@ -3555,30 +3762,34 @@ sub tables_hashref {
 
     'svc_phone' => {
       'columns' => [
-        'svcnum',       'int',         '',      '', '', '', 
-        'countrycode',  'varchar',     '',       3, '', '', 
-        'phonenum',     'varchar',     '',      15, '', '',  #12 ?
-        'pin',          'varchar', 'NULL', $char_d, '', '',
-        'sip_password', 'varchar', 'NULL', $char_d, '', '',
-        'phone_name',   'varchar', 'NULL', $char_d, '', '',
-        'pbxsvc',           'int', 'NULL',      '', '', '',
-        'domsvc',           'int', 'NULL',      '', '', '', 
-        'locationnum',      'int', 'NULL', '', '', '',
-        'forwarddst',     'varchar',     'NULL',      15, '', '', 
-        'email',           'varchar', 'NULL',  255, '', '', 
-        'lnp_status',   'varchar', 'NULL', $char_d, '', '',
-        'portable',   	'char', 'NULL',       1,  '', '', 
-        'lrn',     'char',     'NULL',      10, '', '', 
-	'lnp_desired_due_date',     'int', 'NULL',       '', '', '',
-	'lnp_due_date',     'int', 'NULL',       '', '', '',
-        'lnp_other_provider', 'varchar', 'NULL', $char_d,  '', '',
-        'lnp_other_provider_account', 'varchar', 'NULL', $char_d,  '', '',
-        'lnp_reject_reason', 'varchar', 'NULL', $char_d,  '', '',
+        'svcnum',                         'int',     '',      '', '', '', 
+        'countrycode',                'varchar',     '',       3, '', '', 
+        'phonenum',                   'varchar',     '',      25, '', '', #12 ?
+        'sim_imsi',                   'varchar', 'NULL',      15, '', '',
+        'pin',                        'varchar', 'NULL', $char_d, '', '',
+        'sip_password',               'varchar', 'NULL', $char_d, '', '',
+        'phone_name',                 'varchar', 'NULL', $char_d, '', '',
+        'pbxsvc',                         'int', 'NULL',      '', '', '',
+        'domsvc',                         'int', 'NULL',      '', '', '', 
+        'locationnum',                    'int', 'NULL',      '', '', '',
+        'forwarddst',                 'varchar', 'NULL',      15, '', '', 
+        'email',                      'varchar', 'NULL',     255, '', '', 
+        'lnp_status',                 'varchar', 'NULL', $char_d, '', '',
+        'portable',                      'char', 'NULL',       1, '', '', 
+        'lrn',                           'char', 'NULL',      10, '', '', 
+        'lnp_desired_due_date',           'int', 'NULL',      '', '', '',
+        'lnp_due_date',                   'int', 'NULL',      '', '', '',
+        'lnp_other_provider',         'varchar', 'NULL', $char_d, '', '',
+        'lnp_other_provider_account', 'varchar', 'NULL', $char_d, '', '',
+        'lnp_reject_reason',          'varchar', 'NULL', $char_d, '', '',
+        'sms_carrierid',                  'int', 'NULL',      '', '', '',
+        'sms_account',                'varchar', 'NULL', $char_d, '', '',
+        'max_simultaneous',               'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'svcnum',
-      'unique' => [],
+      'unique' => [ [ 'sms_carrierid', 'sms_account'] ],
       'index'  => [ ['countrycode', 'phonenum'], ['pbxsvc'], ['domsvc'],
-                    ['locationnum'],
+                    ['locationnum'], ['sms_carrierid'],
                   ],
     },
 
@@ -3948,21 +4159,72 @@ sub tables_hashref {
       'index' => [ [ 'upgrade' ] ],
     },
 
-    'ftp_target' => {
+    'upload_target' => {
       'columns' => [
         'targetnum', 'serial', '', '', '', '',
         'agentnum', 'int', 'NULL', '', '', '',
+        'protocol', 'varchar', '', 10, '', '',
         'hostname', 'varchar', '', $char_d, '', '',
-        'port', 'int', '', '', '', '',
+        'port', 'int', 'NULL', '', '', '',
         'username', 'varchar', '', $char_d, '', '',
-        'password', 'varchar', '', $char_d, '', '',
-        'path', 'varchar', '', $char_d, '', '',
-        'secure', 'char', 'NULL', 1, '', '',
+        'password', 'varchar', 'NULL', $char_d, '', '',
+        'path', 'varchar', 'NULL', $char_d, '', '',
+        'subject', 'varchar', 'NULL', '255', '', '',
         'handling', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'targetnum',
       'unique' => [ [ 'targetnum' ] ],
       'index' => [],
+    },
+
+    'log' => {
+      'columns' => [
+        'lognum',     'serial', '', '', '', '',
+        '_date',      'int', '', '', '', '',
+        'agentnum',   'int', 'NULL', '', '', '',
+        'tablename',  'varchar', 'NULL', $char_d, '', '',
+        'tablenum',   'int',  'NULL', '', '', '', 
+        'level',      'int',  '', '', '', '',
+        'message',    'text', '', '', '', '',
+      ],
+      'primary_key' => 'lognum',
+      'unique'      => [],
+      'index'       => [ ['_date'], ['level'] ],
+    },
+
+    'log_context' => {
+      'columns' => [
+        'logcontextnum', 'serial', '', '', '', '',
+        'lognum', 'int', '', '', '', '',
+        'context', 'varchar', '', 32, '', '',
+      ],
+      'primary_key' => 'logcontextnum',
+      'unique' => [ [ 'lognum', 'context' ] ],
+      'index' => [],
+    },
+
+    'svc_cable' => {
+      'columns' => [
+        'svcnum',         'int',     '',      '', '', '', 
+        #nothing so far...  there should be _something_ uniquely identifying
+        # each subscriber besides the device info...?
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [],
+      'index'  => [],
+    },
+
+    'cable_device' => {
+      'columns' => [
+        'devicenum', 'serial',     '',      '', '', '',
+        'devicepart',   'int',     '',      '', '', '',
+        'svcnum',       'int',     '',      '', '', '', 
+        'mac_addr', 'varchar', 'NULL',      12, '', '', 
+        'serial',   'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'devicenum',
+      'unique' => [ [ 'mac_addr' ], ],
+      'index'  => [ [ 'devicepart' ], [ 'svcnum' ], ],
     },
 
     %{ tables_hashref_torrus() },

@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/search.html,
               'title'       => 'Batch payment details',
               'name'        => 'batch details',
 	      'query'       => $sql_query,
@@ -7,55 +7,41 @@
               'disable_download' => 1,
 	      'header'      => [ '#',
 	                         'Inv #',
-	                         'Customer',
+                                 'Cust #',
 	                         'Customer',
 	                         'Card Name',
 	                         'Card',
 	                         'Exp',
 	                         'Amount',
 	                         'Status',
+                                 '', # error_message
 			       ],
-	      'fields'      => [ sub {
-	                           shift->[0];
-				 },
-	                         sub {
-	                           shift->[1];
-				 },
-	                         sub {
-	                           shift->[2];
-				 },
-			  	 sub {
-	                           my $cpb = shift;
-				   $cpb->[3] . ', ' . $cpb->[4];
-				 },
-	                         sub {
-	                           shift->[5];
-				 },
-				 sub {
-	                           my $cardnum = shift->[6];
-                                   'x'x(length($cardnum)-4). substr($cardnum,(length($cardnum)-4));
-				 },
-				 sub {
-				   shift->[7] =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-                                   my( $mon, $year ) = ( $2, $1 );
-                                   $mon = "0$mon" if length($mon) == 1;
-                                   "$mon/$year";
-				 },
-	                         sub {
-	                           shift->[8];
-				 },
-	                         sub {
-	                           shift->[9];
-				 },
+              'fields'      => [  'paybatchnum',
+                                  'invnum',
+                                  'custnum',
+                                  sub { $_[0]->cust_main->name_short },
+                                  'payname',
+                                  'mask_payinfo',
+                                  sub {
+                                    return('') if $_[0]->payby ne 'CARD';
+                                    $_[0]->get('exp') =~ /^\d\d(\d\d)-(\d\d)/;
+                                    sprintf('%02d/%02d',$1,$2);
+                                  },
+                                  sub {
+                                    sprintf('%.02f', $_[0]->amount)
+                                  },
+                                  'status',
+                                  'error_message',
+                                ],
+	      'align'       => 'rrrlllcrll',
+	      'links'       => [ '',
+	                         ["${p}view/cust_bill.cgi?", 'invnum'],
+	                         (["${p}view/cust_main.cgi?", 'custnum']) x 2,
 			       ],
-	      'align'       => 'lllllllrl',
-	      'links'       => [ ['', sub{'#';}],
-	                         ["${p}view/cust_bill.cgi?", sub{shift->[1];},],
-	                         ["${p}view/cust_main.cgi?", sub{shift->[2];},],
-	                         ["${p}view/cust_main.cgi?", sub{shift->[2];},],
-			       ],
-      )
-%>
+              'link_onclicks' => [ ('') x 8,
+                                   $sub_receipt
+                                 ],
+&>
 <%init>
 
 my $conf = new FS::Conf;
@@ -101,7 +87,7 @@ if ( $cgi->param('payby') ) {
 }
 
 if ( not $cgi->param('dcln') ) {
-  push @search, "cpb.status IS DISTINCT FROM 'Approved'";
+  push @search, "cust_pay_batch.status IS DISTINCT FROM 'Approved'";
 }
 
 my ($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
@@ -119,18 +105,30 @@ push @search, $curuser->agentnums_sql({ table      => 'pay_batch',
 
 my $search = ' WHERE ' . join(' AND ', @search);
 
-$count_query = 'SELECT COUNT(*) FROM cust_pay_batch AS cpb ' .
+$count_query = 'SELECT COUNT(*) FROM cust_pay_batch ' .
                   'LEFT JOIN cust_main USING ( custnum ) ' .
                   'LEFT JOIN pay_batch USING ( batchnum )' .
 		  $search;
 
-#grr
-$sql_query = "SELECT paybatchnum,invnum,custnum,cpb.last,cpb.first," .
-             "cpb.payname,cpb.payinfo,cpb.exp,amount,cpb.status " .
-	     "FROM cust_pay_batch AS cpb " .
-             'LEFT JOIN cust_main USING ( custnum ) ' .
-             'LEFT JOIN pay_batch USING ( batchnum ) ' .
-             "$search ORDER BY $orderby";
+$sql_query = {
+  'table'     => 'cust_pay_batch',
+  'select'    => 'cust_pay_batch.*, cust_main.*, cust_pay.paynum',
+  'hashref'   => {},
+  'addl_from' => 'LEFT JOIN pay_batch USING ( batchnum ) '.
+                 'LEFT JOIN cust_main USING ( custnum ) '.
+                 
+                 'LEFT JOIN cust_pay  USING ( batchnum, custnum ) ',
+  'extra_sql' => $search,
+  'order_by'  => "ORDER BY $orderby",
+};
+
+my $sub_receipt = sub {
+  my $paynum = shift->paynum or return '';
+  include('/elements/popup_link_onclick.html',
+    'action'  => $p.'view/cust_pay.html?link=popup;paynum='.$paynum,
+    'actionlabel' => emt('Payment Receipt'),
+  );
+};
 
 my $html_init = '';
 if ( $pay_batch ) {

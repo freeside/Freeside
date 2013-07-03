@@ -9,19 +9,6 @@
   <BR>
 % } 
 
-<SCRIPT TYPE="text/javascript">
-function randomPass() {
-  var i=0;
-  var pw_set='<% join('', 'a'..'z', 'A'..'Z', '0'..'9' ) %>';
-  var pass='';
-  while(i < 8) {
-    i++;
-    pass += pw_set.charAt(Math.floor(Math.random() * pw_set.length));
-  }
-  document.OneTrueForm.clear_password.value = pass;
-}
-</SCRIPT>
-
 <FORM NAME="OneTrueForm" ACTION="<% $p1 %>process/svc_acct.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
@@ -57,10 +44,11 @@ function randomPass() {
 
 %if ( $part_svc->part_svc_column('_password')->columnflag ne 'F' ) {
 <TR>
+% #XXX eventually should require "Edit Password" ACL
   <TD ALIGN="right"><% mt('Password') |h %></TD>
   <TD>
-    <INPUT TYPE="text" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
-    <INPUT TYPE="button" VALUE="<% mt('Generate') |h %>" onclick="randomPass();">
+    <INPUT TYPE="text" ID="clear_password" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
+    <& /elements/random_pass.html, 'clear_password' &>
   </TD>
 </TR>
 %}else{
@@ -276,14 +264,26 @@ function randomPass() {
              'communigate' => $communigate,
 &>
 
-% if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { 
-  <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">
-% } else { 
-  <TR>
-    <TD ALIGN="right"><% mt('IP') |h %></TD>
-    <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
-  </TR>
-% } 
+% if ( $conf->exists('svc_acct-ip_addr') ) {
+%   # router/block selection UI
+%   # (should we show this if slipip is fixed?)
+<& /elements/tr-select-router_block_ip.html, 
+  'object' => $svc_acct,
+  'ip_field' => 'slipip'
+&>
+% } else {
+%   # don't expose these to the user--they're only useful in the other case
+  <INPUT TYPE="hidden" NAME="routernum" VALUE="<% $svc_acct->routernum %>">
+  <INPUT TYPE="hidden" NAME="blocknum"  VALUE="<% $svc_acct->blocknum  %>">
+%   if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { 
+    <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">
+%   } else { 
+    <TR>
+      <TD ALIGN="right"><% mt('IP') |h %></TD>
+      <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
+    </TR>
+%   }
+% }
 
 % my %label = ( seconds => 'Time',
 %               upbytes => 'Upload bytes',
@@ -481,8 +481,6 @@ if ( $part_svc_usergroup->columnflag eq 'F' ) {
 my $action = $svcnum ? 'Edit' : 'Add';
 
 my $svc = $part_svc->getfield('svc');
-
-my $otaker = getotaker;
 
 my $username = $svc_acct->username;
 

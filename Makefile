@@ -164,18 +164,21 @@ wikiman:
 	chmod a+rx ./bin/pod2x
 	./bin/pod2x
 
-install-docs: check-conflicts docs
-	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
-	cp -r masondocs ${FREESIDE_DOCUMENT_ROOT}
+install-docs: docs
+	#ancient attempt to avoid overwriting customer modifications directly to production web files that's overlived its usefulness
+	#[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
+	#cp -r masondocs ${FREESIDE_DOCUMENT_ROOT}
+	[ -h ${FREESIDE_DOCUMENT_ROOT} ] && rm ${FREESIDE_DOCUMENT_ROOT} || true
+	mkdir -p ${FREESIDE_DOCUMENT_ROOT}
+	cp -r masondocs/* masondocs/.htaccess ${FREESIDE_DOCUMENT_ROOT}
 	chown -R freeside:freeside ${FREESIDE_DOCUMENT_ROOT}
-	cp htetc/handler.pl ${MASON_HANDLER}
+	install -D htetc/handler.pl ${MASON_HANDLER}
 	perl -p -i -e "\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
 	" ${MASON_HANDLER} || true
 	mkdir -p ${FREESIDE_EXPORT}/profile
 	chown freeside ${FREESIDE_EXPORT}/profile
-	cp htetc/htpasswd.logout ${FREESIDE_CONF}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}
 
@@ -225,7 +228,7 @@ perl-modules:
 	  s|%%%DIST_CONF%%%|${DIST_CONF}|g;\
 	" blib/script/*
 
-install-perl-modules: check-conflicts perl-modules install-rt-initialdata
+install-perl-modules: perl-modules install-rt-initialdata
 	[ -L ${PERL_INC_DEV_KLUDGE}/FS ] \
 	  && rm ${PERL_INC_DEV_KLUDGE}/FS \
 	  && mv ${PERL_INC_DEV_KLUDGE}/FS.old ${PERL_INC_DEV_KLUDGE}/FS \
@@ -248,8 +251,8 @@ dev-perl-modules: perl-modules
 
 install-texmf:	
 	install -D -o freeside -m 444 etc/longtable.sty \
-	  ~freeside/texmf/tex/longtable.sty
-	texhash ~freeside
+	  /usr/local/share/texmf/tex/latex/longtable.sty
+	texhash /usr/local/share/texmf
 
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
@@ -372,7 +375,7 @@ create-rt: configure-rt
 	                             --datafile ${RT_PATH}/etc/initialdata \
 	|| true
 
-install-rt: check-conflicts
+install-rt: 
 	if [ ${RT_ENABLED} -eq 1 ]; then ( cd rt; make install ); fi
 	if [ ${RT_ENABLED} -eq 1 ]; then perl -p -i -e "\
 	  s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
@@ -411,9 +414,6 @@ clean:
 	make clean
 	-cd fs_selfservice/FS-SelfService; \
 	make clean
-
-check-conflicts:
-	! grep -r --exclude='*config.log*' '--exclude=*config.status*' --exclude=gnupg_details_on_output_formats '--exclude=*mason_handler*' '^=======$$' .
 
 #these are probably only useful if you're me...
 

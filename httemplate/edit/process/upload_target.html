@@ -1,0 +1,25 @@
+<& elements/process.html,
+           'table'            => 'upload_target',
+           'viewall_dir'      => 'browse',
+           'agent_null'       => 1,
+           'precheck_callback'=> \&precheck,
+&>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+sub precheck {
+  my $cgi = shift;
+  my $protocol = $cgi->param('protocol');
+  # promote whatever set of fields was selected to the "real" values
+  my $params = $cgi->Vars;
+  foreach ( keys %$params ) {
+    if ( $_ =~ /^${protocol}_(\w+)/ ) {
+      $cgi->param($1, $cgi->param($_));
+    }
+  }
+}
+
+</%init>

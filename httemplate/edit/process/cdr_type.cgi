@@ -10,7 +10,6 @@ die "access denied"
     unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my %vars = $cgi->Vars;
-warn Dumper(\%vars)."\n";
 
 my %old = map { $_->cdrtypenum => $_ } qsearch('cdr_type', {});
 

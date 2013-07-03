@@ -69,7 +69,7 @@ sub freeside_setup {
       FS::Trace->log('    handling RT REST/NoAuth file');
 
       package HTML::Mason::Commands; #?
-      use FS::UID qw( adminsuidsetup );
+      use FS::UID qw( adminsuidsetup setcgi );
 
       #need to log somebody in for the mail gw
 
@@ -86,14 +86,15 @@ sub freeside_setup {
       package HTML::Mason::Commands;
       use vars qw( $cgi $p $fsurl ); # $lh ); #not using /mt
       use Encode;
-      use FS::UID qw( cgisuidsetup );
+      #use FS::UID qw( cgisuidsetup );
       use FS::CGI qw( popurl rooturl );
 
       if ( $mode eq 'apache' ) {
         $cgi = new CGI;
-        FS::Trace->log('    cgisuidsetup');
-        &cgisuidsetup($cgi);
-        #&cgisuidsetup($r);
+        setcgi($cgi);
+
+        #cgisuidsetup is gone, equivalent is now done in AuthCookieHandler
+
         $fsurl = rooturl();
         $p = popurl(2);
       } elsif ( $mode eq 'standalone' ) {
@@ -106,19 +107,19 @@ sub freeside_setup {
         die "unknown mode $mode";
       }
 
-    FS::Trace->log('    UTF-8-decoding form data');
-    #
-    foreach my $param ( $cgi->param ) {
-      my @values = $cgi->param($param);
-      next if $cgi->uploadInfo($values[0]);
-      #warn $param;
-      @values = map decode(utf8=>$_), @values;
-      $cgi->param($param, @values);
-    }
-    
-  }
+      FS::Trace->log('    UTF-8-decoding form data');
+      #
+      foreach my $param ( $cgi->param ) {
+        my @values = $cgi->param($param);
+        next if $cgi->uploadInfo($values[0]);
+        #warn $param;
+        @values = map decode(utf8=>$_), @values;
+        $cgi->param($param, @values);
+      }
 
-  FS::Trace->log('    done');
+    }
+
+    FS::Trace->log('    done');
 
 }
 

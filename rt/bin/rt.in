@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -50,6 +50,7 @@
 # Abhijit Menon-Sen <ams@wiw.org>
 
 use strict;
+use warnings;
 
 if ( $ARGV[0] && $ARGV[0] =~ /^(?:--help|-h)$/ ) {
     require Pod::Usage;
@@ -67,6 +68,7 @@ use HTTP::Request::Common;
 use HTTP::Headers;
 use Term::ReadLine;
 use Time::Local; # used in prettyshow
+use File::Temp;
 
 # strong (GSSAPI based) authentication is supported if the server does provide
 # it and the perl modules GSSAPI and LWP::Authen::Negotiate are installed
@@ -119,9 +121,9 @@ sub DEBUG { warn @_ if $config{debug} >= shift }
 # (XXX: Ask Autrijus how i18n changes these definitions.)
 
 my $name    = '[\w.-]+';
-my $CF_name = '[\sa-z0-9_ :()/-]+';
+my $CF_name = '[^,]+?';
 my $field   = '(?i:[a-z][a-z0-9_-]*|C(?:ustom)?F(?:ield)?-'.$CF_name.'|CF\.\{'.$CF_name.'\})';
-my $label   = '[a-zA-Z0-9@_.+-]+';
+my $label   = '[^,\\/]+';
 my $labels  = "(?:$label,)*$label";
 my $idlist  = '(?:(?:\d+-)?\d+,)*(?:\d+-)?\d+';
 
@@ -967,12 +969,8 @@ sub take {
 sub grant {
     my ($cmd) = @_;
 
-    my $revoke = 0;
-    while (@ARGV) {
-    }
-
-    $revoke = 1 if $cmd->{action} eq 'revoke';
-    return 0;
+    whine "$cmd is unimplemented.";
+    return 1;
 }
 
 # Client <-> Server communication.
@@ -1470,22 +1468,19 @@ sub read_passwd {
 
 sub vi {
     my ($text) = @_;
-    my $file = "/tmp/rt.form.$$";
     my $editor = $ENV{EDITOR} || $ENV{VISUAL} || "vi";
 
     local $/ = undef;
 
-    open( my $handle, '>', $file ) or die "$file: $!\n";
+    my $handle = File::Temp->new;
     print $handle $text;
     close($handle);
 
-    system($editor, $file) && die "Couldn't run $editor.\n";
+    system($editor, $handle->filename) && die "Couldn't run $editor.\n";
 
-    open( $handle, '<', $file ) or die "$file: $!\n";
+    open( $handle, '<', $handle->filename ) or die "$handle: $!\n";
     $text = <$handle>;
     close($handle);
-
-    unlink($file);
 
     return $text;
 }
@@ -1909,8 +1904,6 @@ Text:
         ticket/1-3,5-7/history
 
         user/ams
-        user/ams/rights
-        user/ams,rai,1/rights
 
     For more information:
 
@@ -2027,20 +2020,6 @@ Text:
         - show
         - edit
         - create
-
-    In addition, the following type-specific actions exist:
-
-        - grant
-        - revoke
-
-    Attributes:
-
-        The following attributes can be used with "rt show" or "rt edit"
-        to retrieve or edit other information associated with users and
-        groups:
-
-        rights                  Global rights granted to this user.
-        rights/<queue>          Queue rights for this user.
 
 --
 
@@ -2381,12 +2360,6 @@ Text:
 
         rt link 2 dependson 3
         rt link -d 4 referredtoby 6     # 6 no longer refers to 4
-
---
-
-Title: grant
-Title: revoke
-Text:
 
 --
 

@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => $title,
 
                  'menubar'     => [ 'View inventory classes' =>
@@ -87,8 +87,8 @@
 <INPUT TYPE="hidden" NAME="classnum" VALUE="$classnum">
 <INPUT TYPE="hidden" NAME="avail"    VALUE="! .$cgi->param('avail') . '">', #'
                   'html_foot' => $sub_foot,
-             )
-%>
+             
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -157,7 +157,7 @@ my $link_cust = sub {
 my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
                 ' LEFT JOIN part_svc  USING ( svcpart ) '.
                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                ' LEFT JOIN cust_main USING ( custnum ) ';
+                FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 my $areboxes = 0;
 
 my $sub_checkbox = sub {

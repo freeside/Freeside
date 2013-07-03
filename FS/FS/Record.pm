@@ -12,19 +12,19 @@ use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use Scalar::Util qw( blessed );
-use File::CounterFile;
-use Locale::Country;
-use Text::CSV_XS;
 use File::Slurp qw( slurp );
+use File::CounterFile;
+use Text::CSV_XS;
 use DBI qw(:sql_types);
 use DBIx::DBSchema 0.38;
-use FS::UID qw(dbh getotaker datasrc driver_name);
+use Locale::Country;
+use Locale::Currency;
+use NetAddr::IP; # for validation
+use FS::UID qw(dbh datasrc driver_name);
 use FS::CurrentUser;
 use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
-use NetAddr::IP; # for validation
-use Data::Dumper;
 #use FS::Conf; #dependency loop bs, in install_callback below instead
 
 use FS::part_virtual_field;
@@ -458,7 +458,13 @@ sub qsearch {
 #    grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
 #  ) or croak "Error executing \"$statement\": ". $sth->errstr;
 
-  $sth->execute or croak "Error executing \"$statement\": ". $sth->errstr;
+  my $ok = $sth->execute;
+  if (!$ok) {
+    my $error = "Error executing \"$statement\"";
+    $error .= ' (' . join(', ', map {"'$_'"} @value) . ')' if @value;
+    $error .= ': '. $sth->errstr;
+    croak $error;
+  }
 
   my $table = $stable[0];
   my $pkey = '';
@@ -1451,6 +1457,7 @@ sub process_batch_import {
     format_sep_chars           => $opt->{format_sep_chars},
     format_fixedlength_formats => $opt->{format_fixedlength_formats},
     format_xml_formats         => $opt->{format_xml_formats},
+    format_asn_formats         => $opt->{format_asn_formats},
     format_row_callbacks       => $opt->{format_row_callbacks},
     #per-import
     job                        => $job,
@@ -1521,6 +1528,7 @@ csv, xls, fixedlength, xml
 
 =cut
 
+use Data::Dumper;
 sub batch_import {
   my $param = shift;
 
@@ -1533,8 +1541,9 @@ sub batch_import {
   my $file    = $param->{file};
   my $params  = $param->{params} || {};
 
-  my( $type, $header, $sep_char, $fixedlength_format, 
-      $xml_format, $row_callback, @fields );
+  my( $type, $header, $sep_char,
+      $fixedlength_format, $xml_format, $asn_format,
+      $row_callback, @fields );
 
   my $postinsert_callback = '';
   $postinsert_callback = $param->{'postinsert_callback'}
@@ -1570,6 +1579,11 @@ sub batch_import {
     $xml_format =
       $param->{'format_xml_formats'}
         ? $param->{'format_xml_formats'}{ $param->{'format'} }
+        : '';
+
+    $asn_format =
+      $param->{'format_asn_formats'}
+        ? $param->{'format_asn_formats'}{ $param->{'format'} }
         : '';
 
     $row_callback =
@@ -1611,11 +1625,12 @@ sub batch_import {
   my $count;
   my $parser;
   my @buffer = ();
+  my $asn_header_buffer;
   if ( $type eq 'csv' || $type eq 'fixedlength' ) {
 
     if ( $type eq 'csv' ) {
 
-      my %attr = ();
+      my %attr = ( 'binary' => 1, );
       $attr{sep_char} = $sep_char if $sep_char;
       $parser = new Text::CSV_XS \%attr;
 
@@ -1652,7 +1667,9 @@ sub batch_import {
     $count++;
 
     $row = $header || 0;
+
   } elsif ( $type eq 'xml' ) {
+
     # FS::pay_batch
     eval "use XML::Simple;";
     die $@ if $@;
@@ -1668,6 +1685,26 @@ sub batch_import {
     $rows = $rows->{$_} foreach @$xmlrow;
     $rows = [ $rows ] if ref($rows) ne 'ARRAY';
     $count = @buffer = @$rows;
+
+  } elsif ( $type eq 'asn.1' ) {
+
+    eval "use Convert::ASN1";
+    die $@ if $@;
+
+    my $asn = Convert::ASN1->new;
+    $asn->prepare( $asn_format->{'spec'} ) or die $asn->error;
+
+    $parser = $asn->find( $asn_format->{'macro'} ) or die $asn->error;
+
+    my $data = slurp($file);
+    my $asn_output = $parser->decode( $data )
+      or return "No ". $asn_format->{'macro'}. " found\n";
+
+    $asn_header_buffer = &{ $asn_format->{'header_buffer'} }( $asn_output );
+
+    my $rows = &{ $asn_format->{'arrayref'} }( $asn_output );
+    $count = @buffer = @$rows;
+
   } else {
     die "Unknown file type $type\n";
   }
@@ -1711,6 +1748,7 @@ sub batch_import {
   while (1) {
 
     my @columns = ();
+    my %hash = %$params;
     if ( $type eq 'csv' ) {
 
       last unless scalar(@buffer);
@@ -1747,16 +1785,27 @@ sub batch_import {
       #warn $z++. ": $_\n" for @columns;
 
     } elsif ( $type eq 'xml' ) {
+
       # $parser = [ 'Column0Key', 'Column1Key' ... ]
       last unless scalar(@buffer);
       my $row = shift @buffer;
       @columns = @{ $row }{ @$parser };
+
+    } elsif ( $type eq 'asn.1' ) {
+
+      last unless scalar(@buffer);
+      my $row = shift @buffer;
+      &{ $asn_format->{row_callback} }( $row, $asn_header_buffer )
+        if $asn_format->{row_callback};
+      foreach my $key ( keys %{ $asn_format->{map} } ) {
+        $hash{$key} = &{ $asn_format->{map}{$key} }( $row, $asn_header_buffer );
+      }
+
     } else {
       die "Unknown file type $type\n";
     }
 
     my @later = ();
-    my %hash = %$params;
 
     foreach my $field ( @fields ) {
 
@@ -1833,7 +1882,7 @@ sub batch_import {
     return "Empty file!";
   }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no error
 
@@ -1859,9 +1908,13 @@ sub _h_statement {
   my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
 
   "INSERT INTO h_". $self->table. " ( ".
-      join(', ', qw(history_date history_user history_action), @fields ).
+      join(', ', qw(history_date history_usernum history_action), @fields ).
     ") VALUES (".
-      join(', ', $time, dbh->quote(getotaker()), dbh->quote($action), @values).
+      join(', ', $time,
+                 $FS::CurrentUser::CurrentUser->usernum,
+                 dbh->quote($action),
+                 @values
+      ).
     ")"
   ;
 }
@@ -1892,11 +1945,6 @@ sub unique {
   #warn "field $field is tainted" if is_tainted($field);
 
   my($counter) = new File::CounterFile "$table.$field",0;
-# hack for web demo
-#  getotaker() =~ /^([\w\-]{1,16})$/ or die "Illegal CGI REMOTE_USER!";
-#  my($user)=$1;
-#  my($counter) = new File::CounterFile "$user/$table.$field",0;
-# endhack
 
   my $index = $counter->inc;
   $index = $counter->inc while qsearchs($table, { $field=>$index } );
@@ -2051,11 +2099,18 @@ is an error, returns the error, otherwise returns false.
 
 sub ut_money {
   my($self,$field)=@_;
-  $self->setfield($field, 0) if $self->getfield($field) eq '';
-  $self->getfield($field) =~ /^\s*(\-)?\s*(\d*)(\.\d{2})?\s*$/
-    or return "Illegal (money) $field: ". $self->getfield($field);
-  #$self->setfield($field, "$1$2$3" || 0);
-  $self->setfield($field, ( ($1||''). ($2||''). ($3||'') ) || 0);
+
+  if ( $self->getfield($field) eq '' ) {
+    $self->setfield($field, 0);
+  } elsif ( $self->getfield($field) =~ /^\s*(\-)?\s*(\d*)(\.\d{1})\s*$/ ) {
+    #handle one decimal place without barfing out
+    $self->setfield($field, ( ($1||''). ($2||''). ($3.'0') ) || 0);
+  } elsif ( $self->getfield($field) =~ /^\s*(\-)?\s*(\d*)(\.\d{2})?\s*$/ ) {
+    $self->setfield($field, ( ($1||''). ($2||''). ($3||'') ) || 0);
+  } else {
+    return "Illegal (money) $field: ". $self->getfield($field);
+  }
+
   '';
 }
 
@@ -2073,6 +2128,41 @@ sub ut_moneyn {
     return '';
   }
   $self->ut_money($field);
+}
+
+=item ut_currencyn COLUMN
+
+Check/untaint currency indicators, such as USD or EUR.  May be null.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_currencyn {
+  my($self, $field) = @_;
+  if ($self->getfield($field) eq '') { #can be null
+    $self->setfield($field, '');
+    return '';
+  }
+  $self->ut_currency($field);
+}
+
+=item ut_currency COLUMN
+
+Check/untaint currency indicators, such as USD or EUR.  May not be null.  If
+there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_currency {
+  my($self, $field) = @_;
+  my $value = uc( $self->getfield($field) );
+  if ( code2currency($value) ) {
+    $self->setfield($value);
+  } else {
+    return "Unknown currency $value";
+  }
+
+  '';
 }
 
 =item ut_text COLUMN
@@ -2466,8 +2556,27 @@ sub ut_name {
 #  warn "ut_name allowed alphanumerics: +(sort grep /\w/, map { chr() } 0..255), "\n";
   $self->getfield($field) =~ /^([\w \,\.\-\']+)$/
     or return gettext('illegal_name'). " $field: ". $self->getfield($field);
-  $self->setfield($field,$1);
+  my $name = $1;
+  $name =~ s/^\s+//; 
+  $name =~ s/\s+$//; 
+  $name =~ s/\s+/ /g;
+  $self->setfield($field, $name);
   '';
+}
+
+=item ut_namen COLUMN
+
+Check/untaint proper names; allows alphanumerics, spaces and the following
+punctuation: , . - '
+
+May not be null.
+
+=cut
+
+sub ut_namen {
+  my( $self, $field ) = @_;
+  return $self->setfield($field, '') if $self->getfield($field) =~ /^$/;
+  $self->ut_name($field);
 }
 
 =item ut_zip COLUMN

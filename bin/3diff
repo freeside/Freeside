@@ -1,0 +1,13 @@
+#!/usr/bin/perl
+
+my $file = shift;
+
+chomp(my $dir = `pwd`);
+$dir =~ s/freeside(\/?)/freeside3$1/;
+warn $dir;
+
+#$cmd = "diff -u $file $dir/$file";
+$cmd = "diff -ubBw $dir/$file $file";
+print "$cmd\n";
+system($cmd);
+

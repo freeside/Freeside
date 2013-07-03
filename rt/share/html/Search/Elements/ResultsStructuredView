@@ -132,7 +132,7 @@ while ( my $Ticket = $Tickets->Next()) {
 
             if ( !exists $ColumnMap->{$col}{'value'} ) {
                 my $map = {};
-                foreach ('attribute', 'value', 'date') {
+                foreach ('attribute', 'value') {
                     $map->{$_} = $m->comp(
                         '/Elements/ColumnMap',
                         Class => 'RT__Ticket',
@@ -140,19 +140,13 @@ while ( my $Ticket = $Tickets->Next()) {
                         Attr  => $_,
                     );
                 }
-                # Canonicalize dates
-                if ( defined $map->{'date'} ) {
-                    $map->{value} = sub { 
-                        my $DateObj = $map->{'date'}->(@_) or return undef;
-                        $FormatDate->($DateObj);
-                    };
-                }
                 $ColumnMap->{$col} = $map;
             }
 
             push @out, ProcessColumnMapValue(
                 $ColumnMap->{$col}{'value'},
                 Arguments => [ $Ticket, $row ],
+                FormatDate => $FormatDate,
             );
         } #foreach $subcol
         $value = join('', '<span>', @out, '</span>');

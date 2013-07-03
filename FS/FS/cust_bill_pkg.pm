@@ -201,16 +201,50 @@ sub insert {
 
   my $tax_location = $self->get('cust_bill_pkg_tax_location');
   if ( $tax_location ) {
-    foreach my $cust_bill_pkg_tax_location ( @$tax_location ) {
-      $cust_bill_pkg_tax_location->billpkgnum($self->billpkgnum);
-      $error = $cust_bill_pkg_tax_location->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error inserting cust_bill_pkg_tax_location: $error";
+    foreach my $link ( @$tax_location ) {
+      next if $link->billpkgtaxlocationnum; # don't try to double-insert
+      # This cust_bill_pkg can be linked on either side (i.e. it can be the
+      # tax or the taxed item).  If the other side is already inserted, 
+      # then set billpkgnum to ours, and insert the link.  Otherwise,
+      # set billpkgnum to ours and pass the link off to the cust_bill_pkg
+      # on the other side, to be inserted later.
+
+      my $tax_cust_bill_pkg = $link->get('tax_cust_bill_pkg');
+      if ( $tax_cust_bill_pkg && $tax_cust_bill_pkg->billpkgnum ) {
+        $link->set('billpkgnum', $tax_cust_bill_pkg->billpkgnum);
+        # break circular links when doing this
+        $link->set('tax_cust_bill_pkg', '');
       }
-    }
+      my $taxable_cust_bill_pkg = $link->get('taxable_cust_bill_pkg');
+      if ( $taxable_cust_bill_pkg && $taxable_cust_bill_pkg->billpkgnum ) {
+        $link->set('taxable_billpkgnum', $taxable_cust_bill_pkg->billpkgnum);
+        # XXX if we ever do tax-on-tax for these, this will have to change
+        # since pkgnum will be zero
+        $link->set('pkgnum', $taxable_cust_bill_pkg->pkgnum);
+        $link->set('locationnum', 
+          $taxable_cust_bill_pkg->cust_pkg->tax_locationnum);
+        $link->set('taxable_cust_bill_pkg', '');
+      }
+
+      if ( $link->billpkgnum and $link->taxable_billpkgnum ) {
+        $error = $link->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "error inserting cust_bill_pkg_tax_location: $error";
+        }
+      } else { # handoff
+        my $other;
+        $other = $link->billpkgnum ? $link->get('taxable_cust_bill_pkg')
+                                   : $link->get('tax_cust_bill_pkg');
+        my $link_array = $other->get('cust_bill_pkg_tax_location') || [];
+        push @$link_array, $link;
+        $other->set('cust_bill_pkg_tax_location' => $link_array);
+      }
+    } #foreach my $link
   }
 
+  # someday you will be as awesome as cust_bill_pkg_tax_location...
+  # but not today
   my $tax_rate_location = $self->get('cust_bill_pkg_tax_rate_location');
   if ( $tax_rate_location ) {
     foreach my $cust_bill_pkg_tax_rate_location ( @$tax_rate_location ) {
@@ -400,7 +434,13 @@ sub check {
       || $self->ut_snumber('pkgnum')
       || $self->ut_number('invnum')
       || $self->ut_money('setup')
+      || $self->ut_moneyn('unitsetup')
+      || $self->ut_currencyn('setup_billed_currency')
+      || $self->ut_moneyn('setup_billed_amount')
       || $self->ut_money('recur')
+      || $self->ut_moneyn('unitrecur')
+      || $self->ut_currencyn('recur_billed_currency')
+      || $self->ut_moneyn('recur_billed_amount')
       || $self->ut_numbern('sdate')
       || $self->ut_numbern('edate')
       || $self->ut_textn('itemdesc')
@@ -581,9 +621,10 @@ appropriate FS::cust_bill_pkg_display objects.
 
 Options are passed as a list of name/value pairs.  Options are:
 
-part_pkg: FS::part_pkg object from the 
+part_pkg: FS::part_pkg object from this line item's package.
 
-real_pkgpart: if this line item comes from a bundled package, the pkgpart of the owning package.  Otherwise the same as the part_pkg's pkgpart above.
+real_pkgpart: if this line item comes from a bundled package, the pkgpart 
+of the owning package.  Otherwise the same as the part_pkg's pkgpart above.
 
 =cut
 
@@ -594,13 +635,19 @@ sub set_display {
 
   my $conf = new FS::Conf;
 
+  # whether to break this down into setup/recur/usage
   my $separate = $conf->exists('separate_usage');
+
   my $usage_mandate =            $part_pkg->option('usage_mandate', 'Hush!')
                     || $cust_pkg->part_pkg->option('usage_mandate', 'Hush!');
 
   # or use the category from $opt{'part_pkg'} if its not bundled?
   my $categoryname = $cust_pkg->part_pkg->categoryname;
 
+  # if we don't have to separate setup/recur/usage, or put this in a 
+  # package-specific section, or display a usage summary, then don't 
+  # even create one of these.  The item will just display in the unnamed
+  # section as a single line plus details.
   return $self->set('display', [])
     unless $separate || $categoryname || $usage_mandate;
   
@@ -608,34 +655,46 @@ sub set_display {
 
   my %hash = ( 'section' => $categoryname );
 
+  # whether to put usage details in a separate section, and if so, which one
   my $usage_section =            $part_pkg->option('usage_section', 'Hush!')
                     || $cust_pkg->part_pkg->option('usage_section', 'Hush!');
 
+  # whether to show a usage summary line (total usage charges, no details)
   my $summary =            $part_pkg->option('summarize_usage', 'Hush!')
               || $cust_pkg->part_pkg->option('summarize_usage', 'Hush!');
 
   if ( $separate ) {
+    # create lines for setup and (non-usage) recur, in the main section
     push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
     push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
   } else {
+    # display everything in a single line
     push @display, new FS::cust_bill_pkg_display
                      { type => '',
                        %hash,
+                       # and if usage_mandate is enabled, hide details
+                       # (this only works on multisection invoices...)
                        ( ( $usage_mandate ) ? ( 'summary' => 'Y' ) : () ),
                      };
   }
 
   if ($separate && $usage_section && $summary) {
+    # create a line for the usage summary in the main section
     push @display, new FS::cust_bill_pkg_display { type    => 'U',
                                                    summary => 'Y',
                                                    %hash,
                                                  };
   }
+
   if ($usage_mandate || ($usage_section && $summary) ) {
     $hash{post_total} = 'Y';
   }
 
   if ($separate || $usage_mandate) {
+    # show call details for this line item in the usage section.
+    # if usage_mandate is on, this will display below the section subtotal.
+    # this also happens if usage is in a separate section and there's a 
+    # summary in the main section, though I'm not sure why.
     $hash{section} = $usage_section if $usage_section;
     push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
   }
@@ -646,8 +705,9 @@ sub set_display {
 
 =item disintegrate
 
-Returns a list of cust_bill_pkg objects each with no more than a single class
-(including setup or recur) of charge.
+Returns a hash: keys are "setup", "recur" or usage classnum, values are
+FS::cust_bill_pkg objects, each with no more than a single class (setup or
+recur) of charge.
 
 =cut
 
@@ -824,6 +884,18 @@ sub _X_show_zero {
   $self->cust_pkg->_X_show_zero($what);
 }
 
+=item credited [ BEFORE, AFTER, OPTIONS ]
+
+Returns the sum of credits applied to this item.  Arguments are the same as
+owed_sql/paid_sql/credited_sql.
+
+=cut
+
+sub credited {
+  my $self = shift;
+  $self->scalar_sql('SELECT '. $self->credited_sql(@_).' FROM cust_bill_pkg WHERE billpkgnum = ?', $self->billpkgnum);
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -894,7 +966,7 @@ sub paid_sql {
   my $paid = "( SELECT COALESCE(SUM(cust_bill_pay_pkg.amount),0)
      FROM cust_bill_pay_pkg JOIN cust_bill_pay USING (billpaynum)
      WHERE cust_bill_pay_pkg.billpkgnum = cust_bill_pkg.billpkgnum
-           $s $e$setuprecur )";
+           $s $e $setuprecur )";
 
   if ( $opt{no_usage} ) {
     # cap the amount paid at the sum of non-usage charges, 
@@ -1038,16 +1110,12 @@ sub upgrade_tax_location {
     delete @hash{qw(censustract censusyear latitude longitude coord_auto)};
 
     $hash{custnum} = $h_cust_main->custnum;
-    my $tax_loc = qsearchs('cust_location', \%hash) # unlikely
-                  || FS::cust_location->new({ %hash });
-    if ( !$tax_loc->locationnum ) {
-      $tax_loc->disabled('Y');
-      my $error = $tax_loc->insert;
-      if ( $error ) {
-        warn "couldn't create historical location record for cust#".
-        $h_cust_main->custnum.": $error\n";
-        next INVOICE;
-      }
+    my $tax_loc = FS::cust_location->new(\%hash);
+    my $error = $tax_loc->find_or_insert || $tax_loc->disable_if_unused;
+    if ( $error ) {
+      warn "couldn't create historical location record for cust#".
+      $h_cust_main->custnum.": $error\n";
+      next INVOICE;
     }
     my $exempt_cust = 1 if $h_cust_main->tax;
 
@@ -1278,9 +1346,10 @@ sub upgrade_tax_location {
                        );
           $cents_remaining -= $part;
           push @tax_links, {
-            taxnum => $taxdef->taxnum,
-            pkgnum => $nontax->pkgnum,
-            cents  => $part,
+            taxnum      => $taxdef->taxnum,
+            pkgnum      => $nontax->pkgnum,
+            billpkgnum  => $nontax->billpkgnum,
+            cents       => $part,
           };
         } #foreach $nontax
       } #foreach $taxclass
@@ -1323,6 +1392,7 @@ sub upgrade_tax_location {
             taxnum      => $_->{taxnum},
             pkgnum      => $_->{pkgnum},
             amount      => sprintf('%.2f', $_->{cents} / 100),
+            taxable_billpkgnum => $_->{billpkgnum},
         });
         my $error = $link->insert;
         if ( $error ) {
@@ -1411,6 +1481,9 @@ sub _upgrade_data {
   # Then mark the upgrade as done, so that we don't queue the job twice
   # and somehow run two of them concurrently.
   FS::upgrade_journal->set_done($upgrade);
+  # This upgrade now does the job of assigning taxable_billpkgnums to 
+  # cust_bill_pkg_tax_location, so set that task done also.
+  FS::upgrade_journal->set_done('tax_location_taxable_billpkgnum');
 }
 
 =back

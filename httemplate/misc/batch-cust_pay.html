@@ -5,6 +5,15 @@
 
 <& /elements/error.html &>
 
+<STYLE TYPE="text/css">
+.select_invnum {
+  text-align: right;
+  width: 220px;
+}
+.select_invnum * {
+  font-family: monospace;
+}
+</STYLE>
 <SCRIPT TYPE="text/javascript">
 function warnUnload() {
   if(document.getElementById("OneTrueTable").rows.length > 3 &&
@@ -23,13 +32,19 @@ function add_row_callback(rownum, prefix) {
 
 function custnum_update_callback(rownum, prefix) {
   var custnum = document.getElementById('custnum'+rownum).value;
-  document.getElementById('enable_app'+rownum).disabled = (
-    custnum == 0 || 
-    num_open_invoices[rownum] < 2
-  );
+  // if there is a custnum and more than one open invoice, enable
+  // (and check) the box
+  var show_applications = !(custnum > 0 && num_open_invoices[rownum] > 1);
+  var enable_app_checkbox = document.getElementById('enable_app'+rownum);
+  enable_app_checkbox.disabled = show_applications;
+
 % if ( $use_discounts ) {
   select_discount_term(rownum, prefix);
 % }
+}
+
+function invnum_update_callback(rownum, prefix) {
+  custnum_update_callback(rownum, prefix);
 }
 
 function select_discount_term(row, prefix) {
@@ -89,6 +104,17 @@ function toggle_application_row(ev, next) {
         next.call(this, rownum);
       }
     );
+  } else {
+    var row = document.getElementById('row'+rownum);
+    var table_rows = row.parentNode.rows;
+    for (i = row.sectionRowIndex; i < table_rows.count; i++) {
+      if ( table_rows[i].id.indexof('row'+rownum+'.') > -1 ) {
+        table_rows.removeChild(table_rows[i]);
+      } else {
+        break;
+      }
+    }
+    lock_payment_row(rownum, false);
   }
 }
 
@@ -168,21 +194,23 @@ function choose_app_invnum() {
 function focus_app_invnum() {
 % # invoice numbers just display as invoice numbers
   var rownum = this.getAttribute('rownum');
-  var add_opt = function(obj, value) {
+  var add_opt = function(obj, value, label) {
     var o = document.createElement('OPTION');
-    o.text = value;
+    o.text = label;
     o.value = value;
     obj.add(o);
   }
   this.options.length = 0;
   var this_invoice = this.curr_invoice;
   if ( this_invoice ) {
-    add_opt(this, this_invoice.invnum);
+    add_opt(this, this_invoice.invnum, this_invoice.label);
   } else {
-    add_opt(this, '');
+    add_opt(this, '', '');
   }
   for ( var x in invoices_for_row[rownum] ) {
-    add_opt(this, invoices_for_row[rownum][x].invnum);
+    add_opt(this,
+            invoices_for_row[rownum][x].invnum,
+            invoices_for_row[rownum][x].label);
   }
 }
 
@@ -198,7 +226,6 @@ function change_app_amount() {
        && amount_unapplied(rownum) > 0 ) {
 
     create_application_row(rownum, parseInt(appnum) + 1);
-
   }
 }
 
@@ -220,8 +247,7 @@ function create_application_row(rownum, appnum) {
   select_invnum.setAttribute('appnum', appnum);
   select_invnum.setAttribute('id', 'invnum'+rownum+'.'+appnum);
   select_invnum.setAttribute('name', 'invnum'+rownum+'.'+appnum);
-  select_invnum.style.textAlign = 'right';
-  select_invnum.style.width = '50px';
+  select_invnum.className = 'select_invnum';
   select_invnum.onchange = choose_app_invnum;
   select_invnum.onfocus  = focus_app_invnum;
   
@@ -352,6 +378,7 @@ function preload() {
     footer_align => \@footer_align,
     onchange => \@onchange,
     custnum_update_callback => 'custnum_update_callback',
+    invnum_update_callback => 'invnum_update_callback',
     add_row_callback => 'add_row_callback',
 &>
 

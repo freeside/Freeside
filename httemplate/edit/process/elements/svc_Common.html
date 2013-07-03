@@ -10,5 +10,10 @@ my %opt = @_;
 my $table = $opt{'table'};
 $opt{'fields'} ||= [ fields($table) ];
 push @{ $opt{'fields'} }, qw( pkgnum svcpart );
+foreach (fields($table)) {
+  if ( $cgi->param($_.'_classnum') ) {
+    push @{ $opt{'fields'} }, $_.'_classnum';
+  }
+}
 
 </%init>

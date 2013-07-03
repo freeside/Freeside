@@ -1,0 +1,45 @@
+%if ($error) {
+%  errorpage_popup($error); #XXX redirect back for correction...
+%} else {
+<& /elements/header-popup.html, 'Credit successful' &>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY></HTML>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Credit line items');
+
+my @billpkgnum_setuprecurs =
+  map { $_ =~ /^billpkgnum(\d+\-\w*)$/ or die 'gm#23'; $1; } 
+  grep { $_ =~ /^billpkgnum\d+\-\w*$/ && $cgi->param($_) } $cgi->param;
+
+my @billpkgnums = ();
+my @setuprecurs = ();
+my @amounts = ();
+foreach my $billpkgnum_setuprecur (@billpkgnum_setuprecurs) {
+  my $amount = $cgi->param("billpkgnum$billpkgnum_setuprecur-amount");
+  my( $billpkgnum, $setuprecur ) = split('-', $billpkgnum_setuprecur);
+  push @billpkgnums, $billpkgnum;
+  push @setuprecurs, $setuprecur;
+  push @amounts,     $amount;
+}
+
+my $error = FS::cust_credit->credit_lineitems(
+  #the lineitems to credit
+  'billpkgnums'       => \@billpkgnums,
+  'setuprecurs'       => \@setuprecurs,
+  'amounts'           => \@amounts,
+  'apply'             => ( $cgi->param('apply') eq 'yes' ),
+
+  #the credit
+  'newreasonnum'      => scalar($cgi->param('newreasonnum')),
+  'newreasonnum_type' => scalar($cgi->param('newreasonnumT')),
+  map { $_ => scalar($cgi->param($_)) }
+    #fields('cust_credit')  
+    qw( custnum _date amount reason reasonnum addlinfo ), #pkgnum eventnum
+);
+
+</%init>

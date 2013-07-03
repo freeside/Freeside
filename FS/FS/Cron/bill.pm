@@ -13,6 +13,8 @@ use FS::cust_main;
 use FS::part_event;
 use FS::part_event_condition;
 
+use FS::Log;
+
 @ISA = qw( Exporter );
 @EXPORT_OK = qw ( bill bill_where );
 
@@ -27,6 +29,9 @@ use FS::part_event_condition;
 sub bill {
   my %opt = @_;
 
+  my $log = FS::Log->new('Cron::bill');
+  $log->info('start');
+
   my $check_freq = $opt{'check_freq'} || '1d';
 
   my $debug = 0;
@@ -36,9 +41,10 @@ sub bill {
   #$FS::cust_event::DEBUG = $opt{'l'} if $opt{'l'};
 
   my $conf = new FS::Conf;
+  my $disable_bill = 0;
   if ( $conf->exists('disable_cron_billing') ) {
     warn "disable_cron_billing set, skipping billing\n" if $debug;
-    return;
+    $disable_bill = 1;
   }
 
   #we're at now now (and later).
@@ -122,7 +128,11 @@ sub bill {
       } else {
 
         my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } );
-        $cust_main->bill_and_collect( %args, 'debug' => $debug );
+        if ( $disable_bill ) {
+          $cust_main->collect( %args, 'debug' => $debug );
+        } else {
+          $cust_main->bill_and_collect( %args, 'debug' => $debug );
+        }
 
       }
 
@@ -134,6 +144,7 @@ sub bill {
 
   $cursor_dbh->commit or die $cursor_dbh->errstr;
 
+  $log->info('finish');
 }
 
 # freeside-daily %opt:
@@ -195,7 +206,8 @@ sub bill_where {
   # generate where_pkg/where_event search clause
   ###
 
-  my $billtime = day_end($time);
+  my $conf = new FS::Conf;
+  my $billtime = $conf->exists('next-bill-ignore-time') ? day_end($time) : $time;
 
   # select * from cust_main where
   my $where_pkg = <<"END";

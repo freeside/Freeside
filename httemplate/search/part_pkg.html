@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
               'title'        => $title,
               'name_singular' => $name,
               'header'       => \@header,
@@ -14,8 +14,8 @@
               'links'        => \@links,
               'align'        => $align,
               'sort_fields'  => [],
-          )
-%>
+          
+&>
 <%init>
 
 #this is about reports about packages definitions (starting w/commission ones)
@@ -23,7 +23,7 @@
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $curuser->access_right('Financial reports');
+  unless $curuser->access_right('Employees: Commission Report'); #that's all this does so far
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';

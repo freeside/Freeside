@@ -17,14 +17,25 @@ sub option_fields {
                     type=>'checkbox', value=>'Y' },
     'nextbill' => { label=>'Hold late fee until next invoice',
                     type=>'checkbox', value=>'Y' },
+    'limit_to_credit'=>
+                  { label=>"Charge no more than the customer's credit balance",
+                    type=>'checkbox', value=>'Y' },
   );
 }
 
 sub default_weight { 10; }
 
 sub _calc_fee {
-  #my( $self, $cust_object ) = @_;
-  my $self = shift;
+  my( $self, $cust_object ) = @_;
+  if ( $self->option('limit_to_credit') ) {
+    my $balance = $cust_object->cust_main->balance;
+    if ( $balance >= 0 ) {
+      return 0;
+    } elsif ( (-1 * $balance) < $self->option('charge') ) {
+      return -1 * $balance;
+    }
+  }
+
   $self->option('charge');
 }
 
@@ -43,6 +54,9 @@ sub do_action {
                       || scalar($conf->config('finance_pkgclass')) ),
     'setuptax' => $self->option('setuptax'),
   );
+
+  # amazingly, FS::cust_main::charge will allow a charge of zero
+  return '' if $charge{'amount'} == 0;
 
   #unless its more than N months away?
   $charge{'start_date'} = $cust_main->next_bill_date

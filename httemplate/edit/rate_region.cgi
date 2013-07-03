@@ -33,6 +33,14 @@
     </TD>
   </TR>
 
+  <& /elements/tr-checkbox.html,
+    label       => 'Exact match',
+    field       => 'exact_match',
+    cell_style  => 'font-weight: bold',
+    value       => 'Y',
+    curr_value  => $rate_region->exact_match
+  &>
+
 </TABLE>
 
 <BR>

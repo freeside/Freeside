@@ -9,13 +9,15 @@ use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
 use FS::queue;
 use FS::agent;
+use FS::Log;
 use FS::Misc qw( send_email ); #for bridgestone
-use FS::ftp_target;
+use FS::upload_target;
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Request::Common;
 use HTTP::Response;
 use Net::FTP;
+use List::Util qw( sum );
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw ( upload );
@@ -32,6 +34,8 @@ $me = '[FS::Cron::upload]';
 
 sub upload {
   my %opt = @_;
+  my $log = FS::Log->new('Cron::upload');
+  $log->info('start');
 
   my $debug = 0;
   $debug = 1 if $opt{'v'};
@@ -58,7 +62,7 @@ sub upload {
 
   my @agentnums = ('', map {$_->agentnum} @agents);
 
-  foreach my $target (qsearch('ftp_target', {})) {
+  foreach my $target (qsearch('upload_target', {})) {
     # We don't know here if it's spooled on a per-agent basis or not.
     # (It could even be both, via different events.)  So queue up an 
     # upload for each agent, plus one with null agentnum, and we'll 
@@ -94,6 +98,32 @@ sub upload {
     }
   } # foreach @agents
 
+  # if there's nothing to do, don't hold up the rest of the process
+  if (!@tasks) {
+    $log->info('finish (nothing to upload)');
+    return '';
+  }
+
+  # wait for any ongoing billing jobs to complete
+  if ($opt{m}) {
+    my $dbh = dbh;
+    my $sql = "SELECT count(*) FROM queue LEFT JOIN cust_main USING(custnum) ".
+    "WHERE queue.job='FS::cust_main::queued_bill' AND status != 'failed'";
+    if (@agents) {
+      $sql .= ' AND cust_main.agentnum IN('.
+        join(',', map {$_->agentnum} @agents).
+        ')';
+    }
+    my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+    while (1) {
+      $sth->execute()
+        or die "Unexpected error executing statement $sql: ". $sth->errstr;
+      last if $sth->fetchrow_arrayref->[0] == 0;
+      warn "Waiting 5min for billing to complete...\n" if $DEBUG;
+      sleep 300;
+    }
+  }
+
   foreach (@tasks) {
 
     my $agentnum = $_->{agentnum};
@@ -118,11 +148,13 @@ sub upload {
     }
 
   }
+  $log->info('finish');
 
 }
 
 sub spool_upload {
   my %opt = @_;
+  my $log = FS::Log->new('spool_upload');
 
   warn "$me spool_upload called\n" if $DEBUG;
   my $conf = new FS::Conf;
@@ -142,6 +174,8 @@ sub spool_upload {
   my $dbh = dbh;
 
   my $agentnum = $opt{agentnum};
+  $log->debug('start', agentnum => $agentnum);
+
   my $agent;
   if ( $agentnum ) {
     $agent = qsearchs( 'agent', { agentnum => $agentnum } )
@@ -159,6 +193,8 @@ sub spool_upload {
     {
       warn "$me neither $dir/$file-header.csv nor ".
            "$dir/$file-detail.csv found\n" if $DEBUG > 1;
+      $log->debug("finish (neither $file-header.csv nor ".
+           "$file-detail.csv found)");
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
       return;
     }
@@ -168,19 +204,6 @@ sub spool_upload {
 
     my $username = $opt{username} or die "no username for agent $agentnum\n";
     my $password = $opt{password} or die "no password for agent $agentnum\n";
-
-    # a better way?
-    if ($opt{m}) {
-      my $sql = "SELECT count(*) FROM queue LEFT JOIN cust_main USING(custnum) ".
-        "WHERE queue.job='FS::cust_main::queued_bill' AND cust_main.agentnum = ?";
-      my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-      while (1) {
-        $sth->execute( $agentnum )
-          or die "Unexpected error executing statement $sql: ". $sth->errstr;
-        last if $sth->fetchrow_arrayref->[0];
-        sleep 300;
-      }
-    }
 
     foreach ( qw ( header detail ) ) {
       rename "$dir/$file-$_.csv",
@@ -241,7 +264,7 @@ sub spool_upload {
   else { #not billco
 
     my $targetnum = $opt{targetnum};
-    my $ftp_target = FS::ftp_target->by_key($targetnum)
+    my $upload_target = FS::upload_target->by_key($targetnum)
       or die "FTP target $targetnum not found\n";
 
     $dir .= "/target$targetnum";
@@ -251,6 +274,7 @@ sub spool_upload {
 
     unless ( -f "$dir/$file.csv" ) {
       warn "$me $dir/$file.csv not found\n" if $DEBUG > 1;
+      $log->debug("finish ($dir/$file.csv not found)");
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
       return;
     }
@@ -316,56 +340,178 @@ sub spool_upload {
       warn "compressing to $zipfile\n$command\n" if $DEBUG;
       system($command) and die "$command failed\n";
 
-      my $connection = $ftp_target->connect; # dies on error
-      $connection->put($zipfile);
+      my $error = $upload_target->put($zipfile);
+      if ( $error ) {
+        foreach ( qw ( header detail ) ) {
+          rename "$dir/$file-$date-$_.csv",
+                 "$dir/$file-$_.csv";
+          die $error;
+        }
+      }
 
-      my $template = join("\n",$conf->config('bridgestone-confirm_template'));
-      if ( $template ) {
-        my $tmpl_obj = Text::Template->new(
-          TYPE => 'STRING', SOURCE => $template
-        );
-        my $content = $tmpl_obj->fill_in( HASH =>
+      send_email(
+        prepare_report('bridgestone-confirm_template',
           {
+            agentnum=> $agentnum,
             zipfile => $zipfile,
             prefix  => $prefix,
             seq     => $seq,
             rows    => $rows,
           }
-        );
-        my ($head, $body) = split("\n\n", $content, 2);
-        $head =~ /^subject:\s*(.*)$/im;
-        my $subject = $1;
-
-        $head =~ /^to:\s*(.*)$/im;
-        my $to = $1;
-
-        send_email(
-          to      => $to,
-          from    => $conf->config('invoice_from', $agentnum),
-          subject => $subject,
-          body    => $body,
-        );
-      } else { #!$template
-        warn "$me agent $agentnum has no bridgestone-confirm_template, no email sent\n";
-      }
+        )
+      );
 
       $seq++;
       warn "setting batch counter to $seq\n" if $DEBUG;
       $conf->set('bridgestone-batch_counter', $seq, $agentnum);
 
-    } else { # not bridgestone
+    } elsif ( $opt{'handling'} eq 'ics' ) {
+
+      my ($basename, $regfile, $bigfile);
+      $basename = sprintf('c%sc1', time2str('%m%d', time));
+      $regfile = $basename . 'i.txt'; # for "regular" (short) invoices
+      $bigfile = $basename . 'b.txt'; # for "big" invoices
+
+      warn "copying spool to $regfile, $bigfile\n" if $DEBUG;
+
+      my ($in, $reg, $big); #filehandles
+      my %count = (B => 0, 1 => 0, 2 => 0); # number of invoices
+      my %sum = (B => 0, R => 0); # total of charges field
+      open $in, '<', "$dir/$file-$date.csv" 
+        or die "unable to read $file-$date.csv\n";
+
+      open $reg, '>', "$dir/$regfile" or die "unable to write $regfile\n";
+      open $big, '>', "$dir/$bigfile" or die "unable to write $bigfile\n";
+
+      while (my $line = <$in>) {
+        chomp($line);
+        my $tag = substr($line, -1, 1, '');
+        my $charge = substr($line, 252, 10);
+        if ( $tag eq 'B' ) {
+          print $big $line, "\n";
+          $count{B}++;
+          $sum{B} += $charge;
+        } else {
+          print $reg $line, "\n";
+          $count{$tag}++;
+          $sum{R} += $charge;
+        }
+      }
+      close $in;
+      close $reg;
+      close $big;
+
+      # zip up all three files for transport
+      my $zipfile = "$basename" . '.zip';
+      my $command = "cd $dir; zip $zipfile $regfile $bigfile";
+      system($command) and die "'$command' failed\n";
+
+      # upload them, unless we're using email, in which case 
+      # the zip file will ride along with the report.  yes, this 
+      # kind of defeats the purpose of the upload_target interface,
+      # but at least we have a place to store the configuration.
+      my $error = '';
+      if ( $upload_target->protocol ne 'email' ) {
+        $error = $upload_target->put("$dir/$zipfile");
+      }
+
+      # create the report
+      for (values %sum) {
+        $_ = sprintf('%.2f', $_);
+      }
+
+      my %report = prepare_report('ics-confirm_template',
+        {
+          agentnum  => $agentnum,
+          count     => \%count,
+          sum       => \%sum,
+          error     => $error,
+        }
+      );
+      if ( $upload_target->protocol eq 'email' ) {
+        $report{'to'} =
+          join('@', $upload_target->username, $upload_target->hostname);
+        $report{'subject'} = $upload_target->subject;
+        $report{'mimeparts'} = [
+          { Path        => "$dir/$zipfile",
+            Type        => 'application/zip',
+            Encoding    => 'base64',
+            Filename    => $zipfile,
+            Disposition => 'attachment',
+          }
+        ];
+      }
+      $error = send_email(%report);
+
+      if ( $error ) {
+        # put the original spool file back
+        rename "$dir/$file-$date.csv", "$dir/$file.csv";
+        die $error;
+      }
+ 
+    } else { # not bridgestone or ics
 
       # this is the usual case
 
-      my $connection = $ftp_target->connect; # dies on error
-      $connection->put("$file-$date.csv");
+      my $error = $upload_target->put("$file-$date.csv");
+      if ( $error ) {
+        rename "$dir/$file-$date.csv", "$dir/$file.csv";
+        die $error;
+      }
 
     }
 
   } #opt{handling}
 
+  $log->debug('finish', agentnum => $agentnum);
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+
+}
+
+=item prepare_report CONFIG PARAMS
+
+Retrieves the config value named CONFIG, parses it as a Text::Template,
+extracts "to" and "subject" headers, and returns a hash that can be passed
+to L<FS::Misc::send_email>.
+
+PARAMS is a hashref to be passed to C<fill_in>.  It must contain 
+'agentnum' to look up the per-agent config.
+
+=cut
+
+# we used it twice, so it's now a subroutine
+
+sub prepare_report {
+
+  my ($config, $params) = @_;
+  my $agentnum = $params->{agentnum};
+  my $conf = FS::Conf->new;
+
+  my $template = join("\n", $conf->config($config, $agentnum));
+  if (!$template) {
+    warn "$me agent $agentnum has no $config, no email report sent\n";
+    return;
+  }
+
+  my $tmpl_obj = Text::Template->new(
+    TYPE => 'STRING', SOURCE => $template
+  );
+  my $content = $tmpl_obj->fill_in( HASH => $params );
+  my ($head, $body) = split("\n\n", $content, 2);
+  $head =~ /^subject:\s*(.*)$/im;
+  my $subject = $1;
+
+  $head =~ /^to:\s*(.*)$/im;
+  my $to = $1;
+
+  (
+    to      => $to,
+    from    => $conf->config('invoice_from', $agentnum),
+    subject => $subject,
+    body    => $body,
+  );
 
 }
 

@@ -56,6 +56,13 @@ sub signups {
     push @where, "refnum = ".$opt{'refnum'};
   }
 
+  if ( $opt{'cust_classnum'} ) {
+    my $classnums = $opt{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
+  }
+
   $self->scalar_sql(
     "SELECT COUNT(*) FROM cust_main $join WHERE ".join(' AND ', @where)
   );
@@ -68,9 +75,15 @@ sub signups {
 sub invoiced { #invoiced
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
+  my $sql = 'SELECT SUM(cust_bill.charged) FROM cust_bill';
+  if ( $opt{'setuprecur'} ) {
+    $sql = 'SELECT SUM('.
+            FS::cust_bill_pkg->charged_sql($speriod, $eperiod, %opt).
+           ') FROM cust_bill_pkg JOIN cust_bill USING (invnum)';
+  }
+
   $self->scalar_sql("
-    SELECT SUM(charged)
-      FROM cust_bill
+      $sql
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum).
                $self->for_opts(%opt)
@@ -162,9 +175,16 @@ sub refunds {
 
 sub netcredits {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+
+  my $sql = 'SELECT SUM(cust_credit_bill.amount) FROM cust_credit_bill';
+  if ( $opt{'setuprecur'} ) {
+    $sql = 'SELECT SUM('.
+            FS::cust_bill_pkg->credited_sql($speriod, $eperiod, %opt).
+           ') FROM cust_bill_pkg';
+  }
+
   $self->scalar_sql("
-    SELECT SUM(cust_credit_bill.amount)
-      FROM cust_credit_bill
+    $sql
         LEFT JOIN cust_bill USING ( invnum  )
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent( $speriod,
@@ -182,9 +202,16 @@ sub netcredits {
 
 sub receipts { #net payments
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+
+  my $sql = 'SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay';
+  if ( $opt{'setuprecur'} ) {
+    $sql = 'SELECT SUM('.
+            FS::cust_bill_pkg->paid_sql($speriod, $eperiod, %opt).
+           ') FROM cust_bill_pkg';
+  }
+
   $self->scalar_sql("
-    SELECT SUM(cust_bill_pay.amount)
-      FROM cust_bill_pay
+    $sql
         LEFT JOIN cust_bill USING ( invnum  )
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent( $speriod,
@@ -419,7 +446,15 @@ sub cust_bill_pkg_setup {
     $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
   );
 
-  push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
+  # yuck, false laziness
+  push @where, "cust_main.refnum = ". $opt{'refnum'} if $opt{'refnum'};
+
+  if ( $opt{'cust_classnum'} ) {
+    my $classnums = $opt{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
+  }
 
   my $total_sql = "SELECT COALESCE(SUM(cust_bill_pkg.setup),0)
   FROM cust_bill_pkg
@@ -442,6 +477,13 @@ sub cust_bill_pkg_recur {
   );
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
+
+  if ( $opt{'cust_classnum'} ) {
+    my $classnums = $opt{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
+  }
 
   # subtract all usage from the line item regardless of date
   my $item_usage;
@@ -497,6 +539,13 @@ sub cust_bill_pkg_detail {
   my @where = ( "cust_bill_pkg.pkgnum != 0" );
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
+
+  if ( $opt{'cust_classnum'} ) {
+    my $classnums = $opt{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    push @where, 'cust_main.classnum in('. join(',',@$classnums) .')';
+  }
 
   $agentnum ||= $opt{'agentnum'};
 
@@ -637,6 +686,14 @@ sub for_opts {
     if ( $opt{'refnum'} =~ /^(\d+)$/ ) {
       $sql .= " and refnum = $1 ";
     }
+    if ( $opt{'cust_classnum'} ) {
+      my $classnums = $opt{'cust_classnum'};
+      $classnums = [ $classnums ] if !ref($classnums);
+      @$classnums = grep /^\d+$/, @$classnums;
+      $sql .= ' and cust_main.classnum in('. join(',',@$classnums) .')'
+        if @$classnums;
+    }
+
     $sql;
 }
 

@@ -79,7 +79,7 @@ freeside-fetch - Send a freeside page to a list of employees.
   Fetches a web page specified by url as if employee and emails it to
   employee.  Useful when run out of cron to send freeside web pages.
 
-  user: From the mapsecrets file - a user with access to the freeside database
+  user: Freeside user
 
   employee: the username of an employee to receive the emailed page.  May be a comma separated list
 

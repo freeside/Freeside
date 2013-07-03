@@ -23,16 +23,18 @@ sub option_fields {
                },
     'field' => { 'label'   => 'Compare date',
                  'type'    => 'select',
-                 'options' =>
-                   [qw( setup last_bill bill adjourn susp expire cancel )],
+                 'options' => [qw(
+                   setup last_bill bill adjourn susp expire cancel contract_end
+                 )],
                  'labels'  => {
-                   'setup'     => 'Setup date',
-                   'last_bill' => 'Last bill date',
-                   'bill'      => 'Next bill date',
-                   'adjourn'   => 'Adjournment date',
-                   'susp'      => 'Suspension date',
-                   'expire'    => 'Expiration date',
-                   'cancel'    => 'Cancellation date',
+                   'setup'        => 'Setup date',
+                   'last_bill'    => 'Last bill date',
+                   'bill'         => 'Next bill date',
+                   'adjourn'      => 'Adjournment date',
+                   'susp'         => 'Suspension date',
+                   'expire'       => 'Expiration date',
+                   'cancel'       => 'Cancellation date',
+                   'contract_end' => 'Contract end date',
                  },
                },
   );
@@ -55,7 +57,7 @@ sub condition_sql {
   my $field = $class->condition_sql_option('field');
 #amazingly, this is actually faster 
   my $sql = '( CASE';
-  foreach( qw(setup last_bill bill adjourn susp expire cancel) ) {
+  foreach( qw(setup last_bill bill adjourn susp expire cancel contract_end) ) {
     $sql .= " WHEN $field = '$_' THEN (cust_pkg.$_ IS NOT NULL AND cust_pkg.$_ <= $age)";
   }
   $sql .= ' END )';

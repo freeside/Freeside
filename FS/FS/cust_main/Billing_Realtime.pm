@@ -111,7 +111,7 @@ L<http://420.am/business-onlinepayment> for supported gateways.
 
 Required arguments in the hashref are I<method>, and I<amount>
 
-Available methods are: I<CC>, I<ECHECK> and I<LEC>
+Available methods are: I<CC>, I<ECHECK>, I<LEC>, and I<PAYPAL>
 
 Available optional arguments are: I<description>, I<invnum>, I<apply>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>
 
@@ -170,15 +170,8 @@ sub _bop_recurring_billing {
 
   } else {
 
-    my %hash = ( 'custnum' => $self->custnum,
-                 'payby'   => 'CARD',
-               );
-
-    return 1 
-      if qsearch('cust_pay', { %hash, 'payinfo' => $opt{'payinfo'} } )
-      || qsearch('cust_pay', { %hash, 'paymask' => $self->mask_payinfo('CARD',
-                                                               $opt{'payinfo'} )
-                             } );
+    # return 1 if the payinfo has been used for another payment
+    return $self->payinfo_used($opt{'payinfo'}); # in payinfo_Mixin
 
   }
 
@@ -307,7 +300,10 @@ sub _bop_content {
                         ? $options->{country}
                         : $self->country;
 
-  $content{referer} = 'http://cleanwhisker.420.am/'; #XXX fix referer :/
+  #3.0 is a good a time as any to get rid of this... add a config to pass it
+  # if anyone still needs it
+  #$content{referer} = 'http://cleanwhisker.420.am/';
+
   $content{phone} = $self->daytime || $self->night;
 
   my $currency =    $conf->exists('business-onlinepayment-currency')
@@ -321,6 +317,7 @@ my %bop_method2payby = (
   'CC'     => 'CARD',
   'ECHECK' => 'CHEK',
   'LEC'    => 'LECB',
+  'PAYPAL' => 'PPAL',
 );
 
 sub realtime_bop {
@@ -616,6 +613,7 @@ sub realtime_bop {
     %$bop_content,
     'reference'      => $cust_pay_pending->paypendingnum, #for now
     'callback_url'   => $payment_gateway->gateway_callback_url,
+    'cancel_url'     => $payment_gateway->gateway_cancel_url,
     'email'          => $email,
     %content, #after
   );
@@ -761,19 +759,6 @@ sub fake_bop {
      return "Error: No error; test failure requested with fake_failure";
   }
 
-  #my $paybatch = '';
-  #if ( $payment_gateway->gatewaynum ) { # agent override
-  #  $paybatch = $payment_gateway->gatewaynum. '-';
-  #}
-  #
-  #$paybatch .= "$processor:". $transaction->authorization;
-  #
-  #$paybatch .= ':'. $transaction->order_number
-  #  if $transaction->can('order_number')
-  #  && length($transaction->order_number);
-
-  my $paybatch = 'FakeProcessor:54:32';
-
   my $cust_pay = new FS::cust_pay ( {
      'custnum'  => $self->custnum,
      'invnum'   => $options{'invnum'},
@@ -782,9 +767,11 @@ sub fake_bop {
      'payby'    => $bop_method2payby{$options{method}},
      #'payinfo'  => $payinfo,
      'payinfo'  => '4111111111111111',
-     'paybatch' => $paybatch,
      #'paydate'  => $paydate,
      'paydate'  => '2012-05-01',
+     'processor'      => 'FakeProcessor',
+     'auth'           => '54',
+     'order_number'   => '32',
   } );
   $cust_pay->payunique( $options{payunique} ) if length($options{payunique});
 
@@ -845,17 +832,8 @@ sub _realtime_bop_result {
 
   if ( $transaction->is_success() ) {
 
-    my $paybatch = '';
-    if ( $payment_gateway->gatewaynum ) { # agent override
-      $paybatch = $payment_gateway->gatewaynum. '-';
-    }
-
-    $paybatch .= $payment_gateway->gateway_module. ":".
-      $transaction->authorization;
-
-    $paybatch .= ':'. $transaction->order_number
-      if $transaction->can('order_number')
-      && length($transaction->order_number);
+    my $order_number = $transaction->order_number
+      if $transaction->can('order_number');
 
     my $cust_pay = new FS::cust_pay ( {
        'custnum'  => $self->custnum,
@@ -864,10 +842,14 @@ sub _realtime_bop_result {
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
        'payinfo'  => $options{'payinfo'},
-       'paybatch' => $paybatch,
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
-       'discount_term' => $options{'discount_term'},
+       'discount_term'  => $options{'discount_term'},
+       'gatewaynum'     => ($payment_gateway->gatewaynum || ''),
+       'processor'      => $payment_gateway->gateway_module,
+       'auth'           => $transaction->authorization,
+       'order_number'   => $order_number || '',
+
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} )
@@ -1240,7 +1222,11 @@ sub realtime_botpp_capture {
     'amount'         => $cust_pay_pending->paid,
     #'invoice_number' => $options{'invnum'},
     'customer_id'    => $self->custnum,
-    'referer'        => 'http://cleanwhisker.420.am/',
+
+    #3.0 is a good a time as any to get rid of this... add a config to pass it
+    # if anyone still needs it
+    #'referer'        => 'http://cleanwhisker.420.am/',
+
     'reference'      => $cust_pay_pending->paypendingnum,
     'email'          => $email,
     'phone'          => $self->daytime || $self->night,
@@ -1363,6 +1349,7 @@ sub realtime_refund_bop {
 
   my( $processor, $login, $password, @bop_options, $namespace ) ;
   my( $auth, $order_number ) = ( '', '', '' );
+  my $gatewaynum = '';
 
   if ( $options{'paynum'} ) {
 
@@ -1371,11 +1358,22 @@ sub realtime_refund_bop {
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
 
-    $cust_pay->paybatch =~ /^((\d+)\-)?(\w+):\s*([\w\-\/ ]*)(:([\w\-]+))?$/
-      or return "Can't parse paybatch for paynum $options{'paynum'}: ".
-                $cust_pay->paybatch;
-    my $gatewaynum = '';
-    ( $gatewaynum, $processor, $auth, $order_number ) = ( $2, $3, $4, $6 );
+    if ( $cust_pay->get('processor') ) {
+      ($gatewaynum, $processor, $auth, $order_number) =
+      (
+        $cust_pay->gatewaynum,
+        $cust_pay->processor,
+        $cust_pay->auth,
+        $cust_pay->order_number,
+      );
+    } else {
+      # this payment wasn't upgraded, which probably means this won't work,
+      # but try it anyway
+      $cust_pay->paybatch =~ /^((\d+)\-)?(\w+):\s*([\w\-\/ ]*)(:([\w\-]+))?$/
+        or return "Can't parse paybatch for paynum $options{'paynum'}: ".
+                  $cust_pay->paybatch;
+      ( $gatewaynum, $processor, $auth, $order_number ) = ( $2, $3, $4, $6 );
+    }
 
     if ( $gatewaynum ) { #gateway for the payment to be refunded
 
@@ -1438,11 +1436,18 @@ sub realtime_refund_bop {
     'password'       => $password,
     'order_number'   => $order_number,
     'amount'         => $amount,
-    'referer'        => 'http://cleanwhisker.420.am/', #XXX fix referer :/
+
+    #3.0 is a good a time as any to get rid of this... add a config to pass it
+    # if anyone still needs it
+    #'referer'        => 'http://cleanwhisker.420.am/',
   );
   $content{authorization} = $auth
     if length($auth); #echeck/ACH transactions have an order # but no auth
                       #(at least with authorize.net)
+
+  my $currency =    $conf->exists('business-onlinepayment-currency')
+                 && $conf->config('business-onlinepayment-currency');
+  $content{currency} = $currency if $currency;
 
   my $disable_void_after;
   if ($conf->exists('disable_void_after')
@@ -1598,9 +1603,7 @@ sub realtime_refund_bop {
   return "$processor error: ". $refund->error_message
     unless $refund->is_success();
 
-  my $paybatch = "$processor:". $refund->authorization;
-  $paybatch .= ':'. $refund->order_number
-    if $refund->can('order_number') && $refund->order_number;
+  $order_number = $refund->order_number if $refund->can('order_number');
 
   while ( $cust_pay && $cust_pay->unapplied < $amount ) {
     my @cust_bill_pay = $cust_pay->cust_bill_pay;
@@ -1617,8 +1620,11 @@ sub realtime_refund_bop {
     '_date'    => '',
     'payby'    => $bop_method2payby{$options{method}},
     'payinfo'  => $payinfo,
-    'paybatch' => $paybatch,
     'reason'   => $options{'reason'} || 'card or ACH refund',
+    'gatewaynum'    => $gatewaynum, # may be null
+    'processor'     => $processor,
+    'auth'          => $refund->authorization,
+    'order_number'  => $order_number,
   } );
   my $error = $cust_refund->insert;
   if ( $error ) {

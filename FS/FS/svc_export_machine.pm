@@ -40,6 +40,10 @@ fields are currently supported:
 
 primary key
 
+=item exportnum
+
+Export definition, see L<FS::part_export>
+
 =item svcnum
 
 Customer service, see L<FS::cust_svc>

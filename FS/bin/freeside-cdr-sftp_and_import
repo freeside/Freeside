@@ -12,8 +12,8 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c $opt_g );
-getopts('c:m:p:r:e:d:v:P:ag');
+use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a $opt_c $opt_g $opt_s $opt_b );
+getopts('c:m:p:r:e:d:v:P:agsb');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
@@ -116,31 +116,39 @@ foreach my $filename ( @$ls ) {
   $import_options->{'cdrtypenum'} = $opt_c if $opt_c;
   
   my $error = FS::cdr::batch_import($import_options);
-  if ( $error ) {
-    unlink "$cachedir/$filename";
-    unlink "$cachedir/$ungziped" if $opt_g;
-    die $error;
-  }
 
-  if ( $opt_d ) {
-    if($opt_m eq 'ftp') {
-      my $ftp = ftp();
-      $ftp->rename($filename, "$opt_d/$file_timestamp")
-        or do {
-          unlink "$cachedir/$filename";
-          unlink "$cachedir/$ungziped" if $opt_g;
-          die "Can't move $filename to $opt_d: ".$ftp->message . "\n";
-        };
+  if ( $error ) {
+
+    if ( $opt_s ) {
+      warn "$ungziped: $error\n";
+    } else {
+      unlink "$cachedir/$filename";
+      unlink "$cachedir/$ungziped" if $opt_g;
+      die $error;
     }
-    else {
-      my $sftp = sftp();
-      $sftp->rename($filename, "$opt_d/$file_timestamp")
-        or do {
-          unlink "$cachedir/$filename";
-          unlink "$cachedir/$ungziped" if $opt_g;
-          die "can't move $filename to $opt_d: ". $sftp->error . "\n";
-        };
+
+  } else {
+
+    if ( $opt_d ) {
+      if ( $opt_m eq 'ftp') {
+        my $ftp = ftp();
+        $ftp->rename($filename, "$opt_d/$file_timestamp")
+          or do {
+            unlink "$cachedir/$filename";
+            unlink "$cachedir/$ungziped" if $opt_g;
+            die "Can't move $filename to $opt_d: ".$ftp->message . "\n";
+          };
+      } else {
+        my $sftp = sftp();
+        $sftp->rename($filename, "$opt_d/$file_timestamp")
+          or do {
+            unlink "$cachedir/$filename";
+            unlink "$cachedir/$ungziped" if $opt_g;
+            die "can't move $filename to $opt_d: ". $sftp->error . "\n";
+          };
+      }
     }
+
   }
 
   unlink "$cachedir/$filename";
@@ -168,6 +176,7 @@ sub ftp {
     or die "FTP connection to '$hostname' failed.";
   $ftp->login($ftp_user, $ftp_pass) or die "FTP login failed: ".$ftp->message;
   $ftp->cwd($opt_r) or die "can't chdir to $opt_r\n" if $opt_r;
+  $ftp->binary or die "can't set BINARY mode: ". $ftp->message if $opt_b;
   return $ftp;
 }
 
@@ -192,7 +201,7 @@ freeside-cdr-sftp_and_import - Download CDR files from a remote server via SFTP
 
   cdr.sftp_and_import [ -m method ] [ -p prefix ] [ -e extension ] 
     [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
-    [ -a ] [ -c cdrtypenum ] user format [sftpuser@]servername
+    [ -a ] [ -g ] [ -s ] [ -c cdrtypenum ] user format [sftpuser@]servername
 
 =head1 DESCRIPTION
 
@@ -213,10 +222,16 @@ or FTP and then import them into the database.
 
 -a: use ftp passive mode
 
+-b: use ftp binary mode
+
 -v: set verbosity level; this script only has one level, but it will 
     be passed as the 'debug' argument to the transport method
 
 -c: cdrtypenum to set, defaults to none
+
+-g: File is gzipped
+
+-s: Warn and skip files which could not be imported rather than abort
 
 user: freeside username
 

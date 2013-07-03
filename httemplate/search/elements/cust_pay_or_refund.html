@@ -51,6 +51,7 @@ Examples:
                 'sort_fields'    => \@sort_fields,
                 'align'          => $align,
                 'links'          => \@links,
+                'link_onclicks'  => \@link_onclicks,
                 'color'          => \@color,
                 'style'          => \@style,
 &>
@@ -134,11 +135,12 @@ if ( $cgi->param('tax_names') ) {
   }
 }
 
-my @header = ();
-my @fields = ();
-my @sort_fields = ();
+my @header;
+my @fields;
+my @sort_fields;
 my $align = '';
-my @links = ();
+my @links;
+my @link_onclicks;
 if ( $opt{'pre_header'} ) {
   push @header, @{ $opt{'pre_header'} };
   $align .= 'c' x scalar(@{ $opt{'pre_header'} });
@@ -146,6 +148,16 @@ if ( $opt{'pre_header'} ) {
   push @fields, @{ $opt{'pre_fields'} };
   push @sort_fields, @{ $opt{'pre_fields'} };
 }
+
+my $sub_receipt = sub {
+  my $obj = shift;
+  my $objnum = $obj->primary_key . '=' . $obj->get($obj->primary_key);
+
+  include('/elements/popup_link_onclick.html',
+    'action'  => $p.'view/cust_pay.html?link=popup;'.$objnum,
+    'actionlabel' => emt('Payment Receipt'),
+  );
+};
 
 push @header, "\u$name_singular",
               'Amount',
@@ -155,6 +167,7 @@ push @links, '', '';
 push @fields, 'payby_payinfo_pretty',
               sub { sprintf('$%.2f', shift->$amount_field() ) },
 ;
+push @link_onclicks, $sub_receipt, '',
 push @sort_fields, '', $amount_field;
 
 if ( $unapplied ) {
@@ -239,89 +252,162 @@ if ( $cgi->param('magic') ) {
       $title = $part_referral->referral. " $title";
     }
 
+    # cust_classnum (false laziness w/ elements/cust_main_dayranges.html, prepaid_income.html, cust_bill_pay.html, cust_bill_pkg.html cust_bill_pkg_referral.html, unearned_detail.html, cust_credit.html, cust_credit_refund.html, cust_main::Search::search_sql)
+    if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
+      my @classnums = grep /^\d*$/, $cgi->param('cust_classnum');
+      push @search, 'COALESCE( cust_main.classnum, 0) IN ( '.
+                        join(',', map { $_ || '0' } @classnums ).
+                    ' )'
+        if @classnums;
+    }
+
     if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
       push @search, "custnum = $1";
     }
 
     if ( $cgi->param('payby') ) {
-      $cgi->param('payby') =~
-        /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro))?$/
-          or die "illegal payby ". $cgi->param('payby');
-      push @search, "$table.payby = '$1'";
-      if ( $3 ) {
 
-        my $cardtype = $3;
+      my @all_payby_search = ();
+      foreach my $payby ( $cgi->param('payby') ) {
 
-        my $search;
-        if ( $cardtype eq 'VisaMC' ) {
-          #avoid posix regexes for portability
-          $search =
-            " ( (     substring($table.payinfo from 1 for 1) = '4'     ".
-            "     AND substring($table.payinfo from 1 for 4) != '4936' ".
-            "     AND substring($table.payinfo from 1 for 6)           ".
-            "         NOT SIMILAR TO '49030[2-9]'                        ".
-            "     AND substring($table.payinfo from 1 for 6)           ".
-            "         NOT SIMILAR TO '49033[5-9]'                        ".
-            "     AND substring($table.payinfo from 1 for 6)           ".
-            "         NOT SIMILAR TO '49110[1-2]'                        ".
-            "     AND substring($table.payinfo from 1 for 6)           ".
-            "         NOT SIMILAR TO '49117[4-9]'                        ".
-            "     AND substring($table.payinfo from 1 for 6)           ".
-            "         NOT SIMILAR TO '49118[1-2]'                        ".
-            "   )".
-            "   OR substring($table.payinfo from 1 for 2) = '51' ".
-            "   OR substring($table.payinfo from 1 for 2) = '52' ".
-            "   OR substring($table.payinfo from 1 for 2) = '53' ".
-            "   OR substring($table.payinfo from 1 for 2) = '54' ".
-            "   OR substring($table.payinfo from 1 for 2) = '54' ".
-            "   OR substring($table.payinfo from 1 for 2) = '55' ".
-            "   OR substring($table.payinfo from 1 for 2) = '36' ". #Diner's int'l processed as Visa/MC inside US
-            " ) ";
-        } elsif ( $cardtype eq 'Amex' ) {
-          $search =
-            " (    substring($table.payinfo from 1 for 2 ) = '34' ".
-            "   OR substring($table.payinfo from 1 for 2 ) = '37' ".
-            " ) ";
-        } elsif ( $cardtype eq 'Discover' ) {
-          $search =
-            " (    substring($table.payinfo from 1 for 4 ) = '6011'  ".
-            "   OR substring($table.payinfo from 1 for 2 ) = '65'    ".
-            "   OR substring($table.payinfo from 1 for 3 ) = '622'   ". #China Union Pay processed as Discover outside CN
-            " ) ";
-        } elsif ( $cardtype eq 'Maestro' ) { 
-          $search =
-            " (    substring($table.payinfo from 1 for 2 ) = '63'     ".
-            "   OR substring($table.payinfo from 1 for 2 ) = '67'     ".
-            "   OR substring($table.payinfo from 1 for 6 ) = '564182' ".
-            "   OR substring($table.payinfo from 1 for 4 ) = '4936'   ".
-            "   OR substring($table.payinfo from 1 for 6 )            ".
-            "      SIMILAR TO '49030[2-9]'                             ".
-            "   OR substring($table.payinfo from 1 for 6 )            ".
-            "      SIMILAR TO '49033[5-9]'                             ".
-            "   OR substring($table.payinfo from 1 for 6 )            ".
-            "      SIMILAR TO '49110[1-2]'                             ".
-            "   OR substring($table.payinfo from 1 for 6 )            ".
-            "      SIMILAR TO '49117[4-9]'                             ".
-            "   OR substring($table.payinfo from 1 for 6 )            ".
-            "      SIMILAR TO '49118[1-2]'                             ".
-            " ) ";
-        } else {
-          die "unknown card type $cardtype";
+        $payby =~
+          /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro|Tokenized))?$/
+            or die "illegal payby $payby";
+
+        my $payby_search = "$table.payby = '$1'";
+
+        if ( $3 ) {
+
+          my $cardtype = $3;
+
+          my $search;
+          if ( $cardtype eq 'VisaMC' ) {
+
+            #avoid posix regexes for portability
+            $search =
+              " ( (     substring($table.payinfo from 1 for 1) = '4'     ".
+              "     AND substring($table.payinfo from 1 for 4) != '4936' ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT SIMILAR TO '49030[2-9]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT SIMILAR TO '49033[5-9]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT SIMILAR TO '49110[1-2]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT SIMILAR TO '49117[4-9]'                        ".
+              "     AND substring($table.payinfo from 1 for 6)           ".
+              "         NOT SIMILAR TO '49118[1-2]'                        ".
+              "   )".
+              "   OR substring($table.payinfo from 1 for 2) = '51' ".
+              "   OR substring($table.payinfo from 1 for 2) = '52' ".
+              "   OR substring($table.payinfo from 1 for 2) = '53' ".
+              "   OR substring($table.payinfo from 1 for 2) = '54' ".
+              "   OR substring($table.payinfo from 1 for 2) = '54' ".
+              "   OR substring($table.payinfo from 1 for 2) = '55' ".
+#              "   OR substring($table.payinfo from 1 for 2) = '36' ". #Diner's int'l was processed as Visa/MC inside US, now Discover
+              " ) ";
+
+          } elsif ( $cardtype eq 'Amex' ) {
+
+            $search =
+              " (    substring($table.payinfo from 1 for 2 ) = '34' ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '37' ".
+              " ) ";
+
+          } elsif ( $cardtype eq 'Discover' ) {
+
+            my $conf = new FS::Conf;
+            my $country = $conf->config('countrydefault') || 'US';
+
+            $search =
+              " (    substring($table.payinfo from 1 for 4 ) = '6011'  ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '65'    ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '300'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '301'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '302'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '303'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '304'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '305'   ".
+              "   OR substring($table.payinfo from 1 for 4 ) = '3095'  ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '36'    ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '38'    ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '39'    ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '644'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '645'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '646'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '647'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '648'   ".
+              "   OR substring($table.payinfo from 1 for 3 ) = '649'   ".
+              ( $country =~ /^(US|CA)$/
+               ?" OR substring($table.payinfo from 1 for 4 ) = '3528'  ". # JCB cards in the 3528-3589 range identified as Discover inside US/CA
+                " OR substring($table.payinfo from 1 for 4 ) = '3529'  ".
+                " OR substring($table.payinfo from 1 for 3 ) = '353'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '354'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '355'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '356'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '357'   ".
+                " OR substring($table.payinfo from 1 for 3 ) = '358'   "
+               :""
+              ).
+              "   OR substring($table.payinfo from 1 for 3 ) = '622'   ". #China Union Pay processed as Discover outside CN
+              " ) ";
+
+          } elsif ( $cardtype eq 'Maestro' ) {
+
+            $search =
+              " (    substring($table.payinfo from 1 for 2 ) = '63'     ".
+              "   OR substring($table.payinfo from 1 for 2 ) = '67'     ".
+              "   OR substring($table.payinfo from 1 for 6 ) = '564182' ".
+              "   OR substring($table.payinfo from 1 for 4 ) = '4936'   ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      SIMILAR TO '49030[2-9]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      SIMILAR TO '49033[5-9]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      SIMILAR TO '49110[1-2]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      SIMILAR TO '49117[4-9]'                             ".
+              "   OR substring($table.payinfo from 1 for 6 )            ".
+              "      SIMILAR TO '49118[1-2]'                             ".
+              " ) ";
+
+          } elsif ( $cardtype eq 'Tokenized' ) {
+
+            $search = " substring($table.payinfo from 1 for 2 ) = '99' ";
+
+          } else {
+            die "unknown card type $cardtype";
+          }
+
+          my $masksearch = $search;
+          $masksearch =~ s/$table\.payinfo/$table.paymask/gi;
+
+          $payby_search = "( $payby_search AND ( $search OR ( $table.paymask IS NOT NULL AND $masksearch ) ) )";
+
         }
 
-        my $masksearch = $search;
-        $masksearch =~ s/$table\.payinfo/$table.paymask/gi;
-
-        push @search,
-          "( $search OR ( $table.paymask IS NOT NULL AND $masksearch ) )";
+        push @all_payby_search, $payby_search;
 
       }
+
+      push @search, ' ( '. join(' OR ', @all_payby_search). ' ) ' if @all_payby_search;
+
     }
 
     if ( $cgi->param('payinfo') ) {
       $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/
         or die "illegal payinfo ". $cgi->param('payinfo');
       push @search, "$table.payinfo = '$1'";
+    }
+
+    if ( $cgi->param('ccpay') =~ /^([\w-:]+)$/ ) {
+      # I think that's all the characters we need to allow.
+      # To avoid confusion, this parameter searches both auth and order_number.
+      push @search, "($table.auth LIKE '$1%') OR ($table.order_number LIKE '$1%')";
+      push @fields, 'auth', 'order_number';
+      push @header, 'Auth #', 'Transaction #';
+      $align .= 'rr';
+
     }
 
     if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
@@ -334,6 +420,7 @@ if ( $cgi->param('magic') ) {
     }
 
     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+
     push @search, "_date >= $beginning ",
                   "_date <= $ending";
 
@@ -395,7 +482,7 @@ if ( $cgi->param('magic') ) {
   #here is the agent virtualization
   push @search, $curuser->agentnums_sql;
 
-  my $addl_from = ' LEFT JOIN cust_main USING ( custnum ) ';
+  my $addl_from = FS::UI::Web::join_cust_main($table);
   my $group_by = '';
 
   if ( $cgi->param('tax_names') ) {

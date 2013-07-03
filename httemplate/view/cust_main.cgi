@@ -91,22 +91,21 @@ function areyousure(href, message) {
   &> | 
 % }
 
-% if ( $curuser->access_right('Merge customer') ) {
+% if (     $curuser->access_right('Merge customer')
+%      and (    scalar($cust_main->ncancelled_pkgs)
+%            # || we start supporting payment info merge again in some way
+%          )
+%    )
+% {
   <& /elements/popup_link-cust_main.html,
               { 'action'      => $p. 'misc/merge_cust.html',
                 'label'       => emt('Merge this customer'),
                 'actionlabel' => emt('Merge customer'),
                 'cust_main'   => $cust_main,
-                'width'       => 480,
-                'height'      => 192,
+                'width'       => 569,
+                'height'      => 210,
               }
   &> | 
-% } 
-
-% if ( $conf->exists('deletecustomers')
-%        && $curuser->access_right('Delete customer')
-%      ) {
-  <A HREF="<% $p %>misc/delete-customer.cgi?<% $custnum%>"><% mt('Delete this customer') |h %></A> | 
 % } 
 
 % unless ( $conf->exists('disable_customer_referrals') ) { 
@@ -154,11 +153,6 @@ function areyousure(href, message) {
 %if ( $signupurl ) {
   <% mt('This customer\'s signup URL:') |h %>
   <A HREF="<% $signupurl %>?ref=<% $custnum %>"><% $signupurl %>?ref=<% $custnum %></A>
-  <BR><BR>
-% } 
-
-%if ( $conf->exists('maestro-status_test') ) {
-  <A HREF="<% $p %>misc/maestro-customer_status-test.html?<% $custnum %>"><% mt('Test maestro status') |h %></A>
   <BR><BR>
 % } 
 

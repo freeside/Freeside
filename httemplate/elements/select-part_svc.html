@@ -13,6 +13,9 @@ my( %opt ) = @_;
 $opt{'records'} = delete $opt{'part_svc'}
   if $opt{'part_svc'};
 
-$opt{'records'} ||= [ qsearch( 'part_svc', {} ) ]; # { disabled=>'' } )
+my %hash = ();
+$hash{'svcdb'} = $opt{'svcdb'} if $opt{'svcdb'};
+
+$opt{'records'} ||= [ qsearch( 'part_svc', \%hash ) ]; # { disabled=>'' } )
 
 </%init>

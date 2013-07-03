@@ -1,0 +1,109 @@
+body {
+        background-color:#e8e8e8;
+        //font-family:Arial, Verdana, Helvetica, sans-serif;
+        //font-size:12px;
+        //color:#0D0700;
+}
+
+body, li, ol, p, table, td, th, tr, a, ul, blockquote, div {
+        //font-family:Arial, Verdana, Helvetica, sans-serif;
+        //font-size:12px;
+        color:#0D0700;
+}
+
+a {
+        //color:#00527f;
+        text-decoration:none;
+}
+
+a:hover {
+        text-decoration:underline;
+}
+td.page{
+        border-style:solid;
+        border-width:2px;
+        border-color:#cccccc;
+        background-color:#f8f8f8;
+        padding:10px;
+}
+
+#menu_ul {
+        padding: 0;
+        //width: 840px;
+        margin: 0 auto;
+}
+
+#menu_ul li {
+        float: left;
+        list-style: none;
+        position: relative;
+        border-right: 4px solid #e8e8e8;
+}
+
+#menu_ul a {
+        display: block;
+        padding: 6px 8px;
+        color: #525151;
+        font-size: 13px;
+        font-weight: bold;
+        white-space: nowrap;
+        background: #cccccc;
+         -moz-border-radius-topleft:8px;
+         -moz-border-radius-topright:8px;
+         -webkit-border-radius-topleft:8px;
+         -webkit-border-radius-topright:8px;
+         border-top-left-radius:8px;
+         border-top-right-radius:8px;
+}
+
+#menu_ul a:hover  {
+        text-decoration:none;
+}
+
+#menu_ul ul {
+        margin:0;
+        padding:0;
+        display:none;
+        position: absolute;
+        top: 100%;
+        left: -1px;
+        background: #ae2099;
+        border: 1px solid #ffffff;
+}
+
+#menu_ul ul li {
+        float: none;
+        border-style: none;
+}
+
+#menu_ul ul a {
+        padding: 4px 10px;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: normal;
+        background: transparent;
+}
+
+#menu_ul ul a:hover  {
+        background: #7e0079;
+         -moz-border-radius-topleft:0px;
+         -moz-border-radius-topright:0px;
+         -webkit-border-radius-topleft:0px;
+         -webkit-border-radius-topright:0px;
+         border-top-left-radius:0px;
+         border-top-right-radius:0px;
+}
+
+#menu_ul a.current_menu, #menu_ul a.hover {
+        color: #ffffff;
+        background: #7e0079;
+}
+
+#menu_ul img {
+        vertical-align:middle;
+        width: 7px;
+        height: 4px;
+        border-style: none;
+        margin-left: 10px;
+}
+

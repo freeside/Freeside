@@ -7,45 +7,8 @@ use Getopt::Std;
 
 my $FREESIDE_CONF = "%%%FREESIDE_CONF%%%";
 
-getopts("s:g:n");
+getopts("g:");
 my $user = shift or die &usage;
-
-if ( $opt_s ) {
-
-  #if ( -e "$FREESIDE_CONF/mapsecrets" ) {
-  #  open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
-  #    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
-  #  while (<MAPSECRETS>) {
-  #    /^(\S+) / or die "unparsable line in mapsecrets: $_";
-  #    die "user $user already exists\n" if $user eq $1;
-  #  }
-  #  close MAPSECRETS;
-  #}
-
-  #insert new entry before a wildcard...
-  open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
-    and flock(MAPSECRETS,LOCK_EX)
-      or die "can't open $FREESIDE_CONF/mapsecrets: $!";
-  open(NEW,">$FREESIDE_CONF/mapsecrets.new")
-    or die "can't open $FREESIDE_CONF/mapsecrets.new: $!";
-  while(<MAPSECRETS>) {
-    if ( /^\*\s/ ) {
-      print NEW "$user $opt_s\n";
-    }
-    print NEW $_;
-  }
-  close MAPSECRETS or die "can't close $FREESIDE_CONF/mapsecrets: $!";
-  close NEW or die "can't close $FREESIDE_CONF/mapsecrets.new: $!";
-  rename("$FREESIDE_CONF/mapsecrets.new", "$FREESIDE_CONF/mapsecrets")
-    or die "can't move mapsecrets.new into place: $!";
-
-}
-
-###
-
-exit if $opt_n;
-
-###
 
 use FS::UID qw(adminsuidsetup);
 use FS::CurrentUser;
@@ -58,7 +21,7 @@ adminsuidsetup $user;
 
 my $access_user = new FS::access_user {
   'username'  => $user,
-  '_password' => 'notyet',
+  '_password' => '',
   'first'     => 'Firstname', # $opt_f || 
   'last'      => 'Lastname',  # $opt_l || 
 };
@@ -79,7 +42,7 @@ if ( $opt_g ) {
 ###
 
 sub usage {
-  die "Usage:\n\n  freeside-adduser [ -n ] [ -s ] [ -g groupnum ] username [ password ]"
+  die "Usage:\n\n  freeside-adduser [ -g groupnum ] username [ password ]"
 }
 
 =head1 NAME
@@ -88,7 +51,7 @@ freeside-adduser - Command line interface to add (freeside) users.
 
 =head1 SYNOPSIS
 
-  freeside-adduser [ -n ] [ -s ] [ -g groupnum ] username [ password ]
+  freeside-adduser [ -g groupnum ] username [ password ]
 
 =head1 DESCRIPTION
 
@@ -99,17 +62,6 @@ This functionality is now available in the web interface as well, under
 B<Configuration | Employees | View/Edit employees>.
 
   -g: initial groupnum
-
-  Development/multi-DB options:
-
-  -s: alternate secrets file
-
-  -n: no ACL added, for bootstrapping
-
-=head1 NOTE
-
-No explicit htpasswd options are available in 1.7 - passwords are now
-maintained automatically.
 
 =head1 SEE ALSO
 

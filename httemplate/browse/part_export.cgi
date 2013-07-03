@@ -38,19 +38,76 @@ function part_export_areyousure(href) {
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
         <% $part_export->label_html %>
         (<A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>">edit</A>&nbsp;|&nbsp;<A HREF="javascript:part_export_areyousure('<% $p %>misc/delete-part_export.cgi?<% $part_export->exportnum %>')">delete</A>)
+%       if ( my @actions = $part_export->actions ) {
+        <P STYLE="position: absolute">
+        Management:
+%         while (@actions) {
+%           my $label = shift @actions;
+%           my $path = shift @actions;
+            <& /elements/popup_link.html,
+              'label'       => $label,
+              'action'      => $fsurl.$path.'?'.$part_export->exportnum,
+              'actionlabel' => $label,
+            &><% @actions ? '&nbsp;|&nbsp;' : '' %>
+%         }
+        </P>
+%       } #if @actions
+
       </TD>
 
       <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
         <% itable() %>
 %         my %opt = $part_export->options;
-%         foreach my $opt ( keys %opt ) { 
+%         my $defs = $part_export->info->{options};
+%         my %multiples;
+%         foreach my $opt (keys %$defs) { # is a Tie::IxHash
+%           my $group = $defs->{$opt}->{multiple};
+%           if ( $group ) {
+%             my @values = split("\n", $opt{$opt});
+%             $multiples{$group} ||= [];
+%             push @{ $multiples{$group} }, [ $opt, @values ] if @values;
+%             delete $opt{$opt};
+%           } elsif (length($opt{$opt})) { # the normal case
+%#         foreach my $opt ( keys %opt ) { 
   
             <TR>
               <TD ALIGN="right" VALIGN="top" WIDTH="33%"><% $opt %>:&nbsp;</TD>
               <TD ALIGN="left" WIDTH="67%"><% encode_entities($opt{$opt}) %></TD>
             </TR>
-%         } 
-  
+%             delete $opt{$opt};
+%           }
+%         }
+%         # now any that are somehow not in the options list
+%         foreach my $opt (keys %opt) {
+%           if ( length($opt{$opt}) ) {
+            <TR>
+              <TD ALIGN="right" VALIGN="top" WIDTH="33%"><% $opt %>:&nbsp;</TD>
+              <TD ALIGN="left" WIDTH="67%"><% encode_entities($opt{$opt}) %></TD>
+            </TR>
+%           }
+%         }
+%         # now show any multiple-option groups
+%         foreach (sort keys %multiples) {
+%           my $set = $multiples{$_};
+            <TR><TD ALIGN="center" COLSPAN=2><TABLE CLASS="grid">
+              <TR>
+%             foreach my $col (@$set) {
+                <TH><% shift @$col %></TH>
+%             }
+              </TR>
+%           while ( 1 ) {
+              <TR>
+%             my $end = 1;
+%             foreach my $col (@$set) {
+                <TD><% shift @$col %></TD>
+%               $end = 0 if @$col;
+%             }
+              </TR>
+%             last if $end;
+%           }
+            </TABLE></TD></TR>
+%         } #foreach keys %multiples
+
         </TABLE>
       </TD>
 

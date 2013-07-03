@@ -46,5 +46,5 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
 
 </%filter>
 <%cleanup>
-   dbh->commit();
+   dbh->commit() if dbh;
 </%cleanup>

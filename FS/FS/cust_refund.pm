@@ -5,7 +5,6 @@ use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
              FS::Record );
 use vars qw( @encrypted_fields );
 use Business::CreditCard;
-use FS::UID qw(getotaker);
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::CurrentUser;
 use FS::cust_credit;
@@ -86,6 +85,11 @@ order taker (see L<FS::access_user>
 =item closed
 
 books closed flag, empty or `Y'
+
+=item gatewaynum, processor, auth, order_number
+
+Same as for L<FS::cust_pay>, but specifically the result of realtime 
+authorization of the refund.
 
 =back
 

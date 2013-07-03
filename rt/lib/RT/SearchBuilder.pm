@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -279,7 +279,7 @@ sub Limit {
                                   |(NOT\s*)?(STARTS|ENDS)WITH
                                   |(NOT\s*)?MATCHES
                                   |IS(\s*NOT)?
-                                  |IN
+                                  |(NOT\s*)?IN
                                   |\@\@)$/ix) {
         $RT::Logger->crit("Possible SQL injection attack: $ARGS{FIELD} $ARGS{OPERATOR}");
         $self->SUPER::Limit(

@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -94,7 +94,7 @@ while (my $t = $tickets->Next) {
     my $start = Data::ICal::Entry::Event->new;
     my $end   = Data::ICal::Entry::Event->new;
     $_->add_properties(
-        url       => RT->Config->Get('WebURL') . "?q=".$t->id,
+        url       => RT->Config->Get('WebURL') . "Ticket/Display.html?id=".$t->id,
         organizer => $t->OwnerObj->Name,
         dtstamp   => $now->iCal,
         created   => $t->CreatedObj->iCal,

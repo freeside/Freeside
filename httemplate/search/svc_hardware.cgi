@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/svc_Common.html,
             'title'             => 'Hardware service search results',
             'name'              => 'installations',
             'query'             => $sql_query,
@@ -34,8 +34,7 @@
                                       FS::UI::Web::cust_colors() ],
             'style'             => [ $svc_cancel_style, ('') x 7,
                                       FS::UI::Web::cust_styles() ],
-            )
-%>
+&>
 <%init>
 
 die "access denied"
@@ -44,8 +43,8 @@ die "access denied"
 my $addl_from = '
  LEFT JOIN cust_svc  USING ( svcnum  )
  LEFT JOIN part_svc  USING ( svcpart )
- LEFT JOIN cust_pkg  USING ( pkgnum  )
- LEFT JOIN cust_main USING ( custnum )
+ LEFT JOIN cust_pkg  USING ( pkgnum  )'.
+ FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg').'
  LEFT JOIN hardware_type USING ( typenum )';
 
 my @extra_sql;

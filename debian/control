@@ -5,20 +5,22 @@ Maintainer: Ivan Kohler <ivan-debian@420.am>
 Build-Depends: debhelper (>= 5), perl (>= 5.8)
 Standards-Version: 3.7.2
 Homepage: http://www.freeside.biz/freeside
-Vcs-Browser: http://www.freeside.biz/cgi-bin/viewvc.cgi/freeside/
-Vcs-Cvs: :pserver:anonymous:anonymous@cvs.420.am:/home/cvs/cvsroot freeside
+#Vcs-Browser: http://www.freeside.biz/cgi-bin/viewvc.cgi/freeside/
+#Vcs-Cvs: :pserver:anonymous:anonymous@cvs.420.am:/home/cvs/cvsroot freeside
 
 Package: freeside
 Architecture: all
-Pre-Depends: freeside-lib, dbconfig-common
+Pre-Depends: freeside-lib
+# dbconfig-common
 Depends: ${perl:Depends}, ${shlibs:Depends}, ${misc:Depends}, freeside-webui, debconf, adduser (>= 3.11)
 Recommends: cron
 Suggests: gnupg
 Description: Billing and trouble ticketing for service providers
- Freeside is a web-based billing and trouble ticketing application.  It
- includes features for ISPs, hosting providers, and VoIP providers, but can
- also be used as a generic customer database, invoicing and membership
- application.  If you like buzzwords, call it an "BSS/OSS and CRM solution".
+ Freeside is a web-based billing, trouble ticketing and network monitoring
+ application.  It includes features for ISPs and WISPs, hosting providers and
+ VoIP providers, but can also be used as a generic customer database, invoicing
+ and membership application.  If you like buzzwords, you can call it a
+ "BSS/OSS and CRM solution".
 
 Package: freeside-lib
 Architecture: all
@@ -28,7 +30,9 @@ Suggests: libbusiness-onlinepayment-perl
 Description: Libraries for Freeside billing and trouble ticketing
  Freeside is a web-based billing and trouble ticketing application.
  .
- This package provides the perl libraries and command line utilities.
+ This package provides the perl libraries and command line utilities.  Also,
+ the init script and daemons used by the system are currently provided by this
+ package.
 
 #Package: freeside-bin
 #Architecture: all

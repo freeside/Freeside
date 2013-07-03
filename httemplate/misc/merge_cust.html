@@ -1,6 +1,6 @@
-<% include('/elements/header-popup.html', 'Merge customer' ) %>
+<& /elements/header-popup.html, 'Merge customer' &>
 
-<% include('/elements/error.html') %>
+<& /elements/error.html &>
 
 <FORM NAME="cust_merge_popup" ID="cust_merge_popup" ACTION="<% popurl(1) %>cust_main-merge.html" METHOD=POST onSubmit="submit_merge(); return false;">
 
@@ -35,13 +35,43 @@ function do_submit_merge() {
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
 <TABLE BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
-  <% include('/elements/tr-search-cust_main.html',
+
+  <& /elements/tr-search-cust_main.html,
                'label'       => 'Merge into: ',
                'field'       => 'new_custnum',
                'find_button' => 1,
                'curr_value'  => scalar($cgi->param('new_custnum')),
-            )
-  %>
+  &>
+
+% if ( 0 ) { #we start supporting payment info merge again in some way
+
+%   if ( scalar($cust_main->ncancelled_pkgs) ) {
+      <TR>
+        <TD COLSPAN=2>
+          <& /elements/radio.html,
+               'field'       => 'merge',
+               'value'       => '',
+               'curr_value'  => scalar($cgi->param('merge')),
+          &>
+          Merge packages only.
+        </TD>
+      </TR>
+%   } else {
+%     $cgi->param('merge', 'Y');
+%   }
+
+    <TR>
+      <TD COLSPAN=2>
+        <& /elements/radio.html,
+             'field'       => 'merge',
+             'value'       => 'Y',
+             'curr_value'  => scalar($cgi->param('merge')),
+        &>
+        Merge invoices, payments/credits, notes, tickets and delete<!-- ^Warchive --> this customer.
+      </TD>
+    </TR>
+% }
+
 </TABLE>
 
 <P ALIGN="CENTER">
@@ -53,6 +83,8 @@ function do_submit_merge() {
 </HTML>
 
 <%init>
+
+my $conf = new FS::Conf;
 
 $cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
 my $custnum = $1;

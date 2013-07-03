@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+use FS::Misc::Geo 'standardize';
+use Data::Dumper; $Data::Dumper::Terse = 1;
+my @tests = (
+  {
+    address1  => '6406 Ivy Lane',
+    address2  => '',
+    city      => 'Greenbelt',
+    state     => 'MD',
+    zip       => '',
+  },
+  {
+    address1  => '8 Wildwood Drive',
+    address2  => '',
+    city      => 'Old Lyme',
+    state     => 'CT',
+    zip       => '06371',
+  },
+);
+
+my ($userid, $password) = @ARGV;
+
+my %opt = (
+  userid  => $userid,
+  password=> $password,
+  test    => 1,
+);
+my $i = 1;
+foreach (@tests) {
+  print "Test $i\n";
+  my $result = eval { standardize($_, %opt) };
+  print "ERROR: $@\n\n" if $@;
+  print Dumper($result);
+  $i++;
+}
+
+1;

@@ -45,7 +45,7 @@ freeside-email - Prints email addresses of all users on STDOUT
 
 Prints the email addresses of all customers on STDOUT, separated by newlines.
 
-user: From the mapsecrets file - see config.html from the base documentation
+user: Freeside user
 
 =head1 BUGS
 

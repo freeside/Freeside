@@ -90,8 +90,11 @@ my $notfound = 0;
 my $canceled = 0;
 print "Voiding ".scalar(@auths)." transactions:\n" if $opt{'v'};
 foreach my $authnum (@auths) {
-  my $paybatch = $gatewaynum . $processor . ':' . $authnum;
-  my $cust_pay = qsearchs('cust_pay', { paybatch => $paybatch } );
+  my $cust_pay = qsearchs('cust_pay', {
+     gatewaynum     => $gatewaynum,
+     processor      => $processor,
+     authorization  => $authnum,
+  });
   my $error;
   my $cancel_error;
   if($cust_pay) {
@@ -103,7 +106,11 @@ foreach my $authnum (@auths) {
     }
   }
   else {
-    my $cpv = qsearchs('cust_pay_void', { paybatch => $paybatch });
+    my $cpv = qsearchs('cust_pay_void', {
+       gatewaynum     => $gatewaynum,
+       processor      => $processor,
+       authorization  => $authnum,
+    });
     if($cpv) {
       $error = 'already voided '.time2str('%Y-%m-%d', $cpv->void_date) . 
         ' by ' . $cpv->otaker;

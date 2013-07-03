@@ -1,18 +1,40 @@
-<% encode_json(\@return) %>
+<% encode_json(\@return) %>\
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 die 'access denied' unless $curuser->access_right('View invoices');
 my @return;
+my $date_format = FS::Conf->new->config('date_format') || '%m/%d/%Y';
 if ( $cgi->param('sub') eq 'custnum_search_open' ) { 
   my $custnum = $cgi->param('arg');
-  #warn "searching invoices for $custnum\n";
-  my $cust_main = FS::cust_main->by_key($custnum);
-  @return = map { 
-    +{ $_->hash, 
-      'owed' => $_->owed }
-  } $cust_main->open_cust_bill
-    if $curuser->agentnums_href->{ $cust_main->agentnum };
+  if ( $custnum =~ /^(\d+)$/ ) {
+#warn "searching invoices for $custnum\n";
+    my $cust_main = FS::cust_main->by_key($custnum);
+    if ( $curuser->agentnums_href->{ $cust_main->agentnum } ) {
+      my @open_bills = $cust_main->open_cust_bill;
+      my $invnum_len;
+      my $owed_len;
+      my $date_len;
+      foreach my $cust_bill (@open_bills) {
+        my $invnum = $cust_bill->invnum;
+        my $owed = $cust_bill->owed;
+        my $date = time2str($date_format, $cust_bill->_date);
+        $invnum_len = length($invnum) if length($invnum) > $invnum_len;
+        $owed_len   = length($owed)   if length($owed) > $owed_len;
+        $date_len   = length($date)   if length($date) > $date_len;
+
+        push @return, { $cust_bill->hash,
+                        'owed' => $owed,
+                        'date' => $date };
+      }
+      my $format = '%' . $invnum_len . 'd - %' . $date_len . 's - '.
+                    (FS::Conf->new->config('money_char') || '$') .
+                   '%' . $owed_len . '.2f';
+      foreach (@return) {
+        $_->{label} = sprintf($format, $_->{invnum}, $_->{date}, $_->{owed});
+      }
+    } #if agentnum
+  } #if $custnum
 }
 
 </%init>

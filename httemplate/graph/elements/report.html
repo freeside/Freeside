@@ -126,8 +126,8 @@ any delimiter and linked from the elements in @data.
 %   $workbook->close();# or die "Error creating .xls file: $!";
 %
 %   http_header('Content-Length' => length($output) );
-%   
-<% $output %>
+%   $m->print($output);
+%
 % } elsif ( $cgi->param('_type') eq 'png' ) {
 %   # delete any items that shouldn't be on the graph
 %   if ( my $no_graph = $opt{'no_graph'} ) {

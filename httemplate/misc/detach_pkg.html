@@ -1,0 +1,104 @@
+<& /elements/header-popup.html, mt("Detach Package to New Customer") &>
+
+<SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
+
+<& /elements/error.html &>
+
+<FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/detach-cust_pkg.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+% foreach my $f (qw( agentnum refnum )) {
+  <INPUT TYPE="hidden" NAME="<% $f %>" VALUE="<% $cust_main->$f() %>">
+% }
+<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<% $cust_main->custnum %>">
+% foreach my $f (FS::cust_main->location_fields) {
+  <INPUT TYPE="hidden" NAME="<% $f %>" VALUE="<% $loc->$f() |h %>">
+% }
+
+<% ntable('#cccccc') %>
+
+  <TR>
+    <TH ALIGN="right"><% mt('Package') |h %></TH>
+    <TD COLSPAN=7 BGCOLOR="#dddddd">
+      <% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %>
+    </TD>
+  </TR>
+
+% #always should be present for detaching, yes? #if ( $cust_pkg->contactnum ) {
+%   my $cust_contact = $cust_pkg->contact_obj;
+
+    <INPUT TYPE="hidden" NAME="first" VALUE="<% $cust_contact->get('first') |h %>">
+    <INPUT TYPE="hidden" NAME="last"  VALUE="<% $cust_contact->get('last')  |h %>">
+
+    <TR>
+      <TH ALIGN="right"><% mt('Name') %></TH>
+      <TD COLSPAN=7 BGCOLOR="#dddddd">
+        <% $cust_pkg->contact_obj->line |h %>
+      </TD>
+    </TR>
+% #}
+
+  <TR>
+    <TH ALIGN="right" VALIGN="top"><% mt('Address') %></TH>
+    <TD COLSPAN=7 BGCOLOR="#dddddd">
+
+      <% $loc->location_label( 'join_string'     => '<BR>',
+                               'double_space'    => ' &nbsp; ',
+                               'escape_function' => \&encode_entities,
+                               'countrydefault'  => $countrydefault,
+                             )
+      %>
+    </TD>
+  </TR>
+
+</TABLE>
+
+%#XXX payment info
+%#XXX should be sticky on errors...
+<& /edit/cust_main/billing.html, FS::cust_main->new({}),
+                                 invoicing_list => [],
+
+&>
+
+<BR>
+<BR>
+<INPUT NAME    = "submitButton"
+       TYPE    = "submit"
+       VALUE   = "<% mt("Detach package") |h %>"
+>
+
+%#and a cancel button?  or is the popup close sufficient?
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+my $conf = new FS::Conf;
+my $countrydefault = $conf->config('countrydefault') || 'US';
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('Change customer package');
+
+my $pkgnum = scalar($cgi->param('pkgnum'));
+$pkgnum =~ /^(\d+)$/ or die "illegal pkgnum $pkgnum";
+$pkgnum = $1;
+
+my $cust_pkg =
+  qsearchs({
+    'table'     => 'cust_pkg',
+    'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+    'hashref'   => { 'pkgnum' => $pkgnum },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  }) or die "unknown pkgnum $pkgnum";
+
+my $loc = $cust_pkg->cust_location_or_main;
+
+my $cust_main = $cust_pkg->cust_main
+  or die "can't get cust_main record for custnum ". $cust_pkg->custnum.
+         " ( pkgnum ". cust_pkg->pkgnum. ")";
+
+my $part_pkg = $cust_pkg->part_pkg;
+
+</%init>

@@ -247,6 +247,10 @@
   <TD ALIGN="right"><% mt('Email address(es)') |h %></TD>
   <TD BGCOLOR="#ffffff">
     <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || $no %>
+%   if ( $cust_main->message_noemail ) {
+    <BR>
+    <SPAN STYLE="font-size: small"><% emt('(do not send notices)') %></SPAN>
+%   }
   </TD>
 </TR>
 % }
@@ -297,6 +301,13 @@
   <TR>
     <TD ALIGN="right"><% mt('CDR termination settlement') |h %></TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->cdr_termination_percentage %><% $cust_main->cdr_termination_percentage =~ /\d/ ? '%' : '' %></TD>
+  </TR>
+% }
+
+% if ( $cust_main->currency ) {
+  <TR>
+    <TD ALIGN="right"><% mt('Invoicing currency') |h %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->currency. ': '. code2currency($cust_main->currency) %></TD>
   </TR>
 % }
 

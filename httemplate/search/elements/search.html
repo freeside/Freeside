@@ -167,6 +167,11 @@ Example:
     # miscellany
    'download_label' => 'Download this report',
                         # defaults to 'Download full results' 
+   'link_field'     => 'pkgpart'
+                        # will create internal links for each row,
+                        # with the value of this field as the NAME attribute
+                        # If this is a coderef, will evaluate it, passing the
+                        # row as an argument, and use the result as the NAME.
   &>
 
 </%doc>
@@ -176,7 +181,9 @@ Example:
 %
 % } elsif ( $type =~ /\.xls$/ ) {
 %
-<% include('search-xls.html',  header=>$header, rows=>$rows, opt=>\%opt ) %>
+<& 'search-xls.html',  header=>$header, rows=>$rows, opt=>\%opt &>\
+% # prevent the caller from polluting our output stream
+% $m->abort;
 %
 % } elsif ( $type eq 'xml' ) {
 %
@@ -346,7 +353,7 @@ if ( $opt{'disableable'} ) {
 my $limit = '';
 my($confmax, $maxrecords, $offset );
 
-unless ( $type =~ /^(csv|\w*.xls)$/) {
+unless ( $type =~ /^(csv|xml|\w*.xls)$/) {
 # html mode
   unless (exists($opt{count_query}) && length($opt{count_query})) {
     ( $opt{count_query} = $opt{query} ) =~
@@ -445,5 +452,7 @@ if ( ref($opt{query}) ) {
 
   $header ||= $sth->{NAME};
 }
+
+push @$rows, $opt{'footer_data'} if $opt{'footer_data'};
 
 </%init>

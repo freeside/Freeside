@@ -16,7 +16,7 @@
 %     }
 %   }
 %
-<% objToJson($return) %>
+<% encode_json($return) %>\
 % } 
 <%init>
 

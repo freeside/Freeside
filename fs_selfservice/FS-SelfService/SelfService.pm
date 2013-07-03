@@ -57,6 +57,10 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'svc_status_html'           => 'MyAccount/svc_status_html',
   'svc_status_hash'           => 'MyAccount/svc_status_hash',
   'set_svc_status_hash'       => 'MyAccount/set_svc_status_hash',
+  'set_svc_status_listadd'    => 'MyAccount/set_svc_status_listadd',
+  'set_svc_status_listdel'    => 'MyAccount/set_svc_status_listdel',
+  'set_svc_status_vacationadd'=> 'MyAccount/set_svc_status_vacationadd',
+  'set_svc_status_vacationdel'=> 'MyAccount/set_svc_status_vacationdel',
   'acct_forward_info'         => 'MyAccount/acct_forward_info',
   'process_acct_forward'      => 'MyAccount/process_acct_forward',
   'list_dsl_devices'          => 'MyAccount/list_dsl_devices',   
@@ -82,6 +86,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'reset_passwd'              => 'MyAccount/reset_passwd',
   'check_reset_passwd'        => 'MyAccount/check_reset_passwd',
   'process_reset_passwd'      => 'MyAccount/process_reset_passwd',
+  'list_tickets'              => 'MyAccount/list_tickets',
   'create_ticket'             => 'MyAccount/create_ticket',
   'get_ticket'                => 'MyAccount/get_ticket',
   'adjust_ticket_priority'    => 'MyAccount/adjust_ticket_priority',
@@ -105,6 +110,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'call_time'                 => 'PrepaidPhone/call_time',
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
+
+  'start_thirdparty'          => 'MyAccount/start_thirdparty',
+  'finish_thirdparty'         => 'MyAccount/finish_thirdparty',
 );
 @EXPORT_OK = (
   keys(%autoload),
@@ -1795,8 +1803,9 @@ sub domainselector {
            '<INPUT TYPE="hidden" NAME="domsvc" VALUE="'. $key. '"></TD></TR>'
   }
 
-  my $text .= qq!<TR><TD ALIGN="right">Domain</TD><TD><SELECT NAME="domsvc" SIZE=1 STYLE="width: 20em"><OPTION>(Choose Domain)!;
+  my $text .= qq!<TR><TD ALIGN="right">Domain</TD><TD><SELECT NAME="domsvc" SIZE=1 STYLE="width: 20em">!;
 
+  $text .= '<OPTION>(Choose Domain)' unless $domsvc;
 
   foreach my $domain ( sort { $domains->{$a} cmp $domains->{$b} } keys %$domains ) {
     $text .= qq!<OPTION VALUE="!. $domain. '"'.

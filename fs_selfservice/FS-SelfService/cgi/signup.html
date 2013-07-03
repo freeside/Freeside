@@ -30,10 +30,10 @@
          ' Signup form</FONT><BR><BR>';
 %>
 
-<FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
+<FONT SIZE="+1" COLOR="#ff0000"><%= encode_entities($error) %></FONT>
 
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
-<INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= $prepaid_shortform %>">
+<INPUT TYPE="hidden" NAME="prepaid_shortform" VALUE="<%= encode_entities($prepaid_shortform) %>">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
@@ -45,7 +45,7 @@
 %>
 
 <%=
-  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum mac_addr countrycode phonenum sip_password pin / );
+  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum domsvc mac_addr countrycode phonenum sip_password pin / );
 %>
 
 <%=
@@ -149,6 +149,7 @@ $OUT .= qq!
 else {
     @payby = ('PREPAY');
 }
+'';
 %>
 
 <BR>Billing information<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
@@ -213,10 +214,10 @@ else {
 
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
-      'CARD' => '<TABLE BGCOLOR="'. ( $box_bgcolor || '#c0c0c0' ). qq!" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
+      'CARD' => '<TABLE BGCOLOR="'. ( $box_bgcolor || '#c0c0c0' ). qq!" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expiration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
       'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
-      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
-      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
+      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? ' SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
+      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? ' SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
       'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
@@ -318,6 +319,12 @@ ENDOUT
   <TD ALIGN="right">Username</TD>
   <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
 </TR>
+ENDOUT
+
+  $OUT .= domainselector( svcpart=>$default_svcpart, domsvc=>$default_domsvc )
+    if $default_svcpart;
+
+    $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Password</TD>
   <TD><INPUT TYPE="password" NAME="_password" VALUE="$_password"></TD>
@@ -438,7 +445,7 @@ function fixup_form() {
     
     var signup_elements = new Array (
       'promo_code', 'reg_code', 'pkgpart',
-      'username', '_password', '_password2', 'sec_phrase', 'popnum',
+      'username', '_password', '_password2', 'sec_phrase', 'popnum', 'domsvc',
       'mac_addr',
       'countrycode', 'phonenum', 'sip_password', 'pin'
     );

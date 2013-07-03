@@ -1,0 +1,22 @@
+<%= include('header', 'Payment confirmation') %>
+
+<TABLE BGCOLOR="#cccccc">
+<%= if ( $error ) {
+  $OUT .= '<FONT SIZE=+1><B>Payment processing error</B></FONT><BR>'.$error;
+} else {
+  $OUT .= '
+<TR><TH COLSPAN=2><FONT SIZE=+1><B>Your payment details</B></FONT></TH></TR>
+<TR>
+  <TD ALIGN="right">Payment&nbsp;#</TD>
+  <TD BGCOLOR="#ffffff"><B>' . $paynum . '</B></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Payment&nbsp;amount</TH>
+  <TD BGCOLOR="#ffffff"><B>' . sprintf('$%.2f', $paid) . '</B></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Processing&nbsp;#</TD>
+  <TD BGCOLOR="#ffffff"><B>' . $order_number . '</B></TD>
+</TR>';
+} %>
+<%= include('footer') %>

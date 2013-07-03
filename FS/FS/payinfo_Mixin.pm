@@ -3,6 +3,9 @@ package FS::payinfo_Mixin;
 use strict;
 use Business::CreditCard;
 use FS::payby;
+use FS::Record qw(qsearch);
+
+use vars qw($ignore_masked_payinfo);
 
 =head1 NAME
 
@@ -41,26 +44,18 @@ For Refunds (cust_refund):
 For Payments (cust_pay):
 'CARD' (credit cards), 'CHEK' (electronic check/ACH),
 'LECB' (phone bill billing), 'BILL' (billing), 'PREP' (prepaid card),
-'CASH' (cash), 'WEST' (Western Union), or 'MCRD' (Manual credit card)
+'CASH' (cash), 'WEST' (Western Union), 'MCRD' (Manual credit card),
+'PPAL' (PayPal)
 'COMP' (free) is depricated as a payment type in cust_pay
 
 =cut 
-
-# was this supposed to do something?
- 
-#sub payby {
-#  my($self,$payby) = @_;
-#  if ( defined($payby) ) {
-#    $self->setfield('payby', $payby);
-#  } 
-#  return $self->getfield('payby')
-#}
 
 =item payinfo
 
 Payment information (payinfo) can be one of the following types:
 
-Card Number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
+Card Number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) 
+prepayment identifier (see L<FS::prepay_credit>), PayPal transaction ID
 
 =cut
 
@@ -206,17 +201,21 @@ sub payinfo_check {
 
   if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
     my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $self->payinfo($payinfo);
-    if ( $self->payinfo ) {
-      $self->payinfo =~ /^(\d{13,16}|\d{8,9})$/
-        or return "Illegal (mistyped?) credit card number (payinfo)";
-      $self->payinfo($1);
-      validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
-                                 && cardtype($self->payinfo) eq "Unknown";
+    if ( $ignore_masked_payinfo and $self->mask_payinfo eq $self->payinfo ) {
+      # allow it
     } else {
-      $self->payinfo('N/A'); #???
+      $payinfo =~ s/\D//g;
+      $self->payinfo($payinfo);
+      if ( $self->payinfo ) {
+        $self->payinfo =~ /^(\d{13,16}|\d{8,9})$/
+          or return "Illegal (mistyped?) credit card number (payinfo)";
+        $self->payinfo($1);
+        validate($self->payinfo) or return "Illegal credit card number";
+        return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
+                                   && cardtype($self->payinfo) eq "Unknown";
+      } else {
+        $self->payinfo('N/A'); #???
+      }
     }
   } else {
     if ( $self->is_encrypted($self->payinfo) ) {
@@ -228,8 +227,6 @@ sub payinfo_check {
       return $error if $error;
     }
   }
-
-  '';
 
 }
 
@@ -262,9 +259,35 @@ sub payby_payinfo_pretty {
     'Western Union'; #. $self->payinfo;
   } elsif ( $self->payby eq 'MCRD' ) {
     'Manual credit card'; #. $self->payinfo;
+  } elsif ( $self->payby eq 'PPAL' ) {
+    'PayPal transaction#' . $self->order_number;
   } else {
     $self->payby. ' '. $self->payinfo;
   }
+}
+
+=item payinfo_used [ PAYINFO ]
+
+Returns 1 if there's an existing payment using this payinfo.  This can be 
+used to set the 'recurring payment' flag required by some processors.
+
+=cut
+
+sub payinfo_used {
+  my $self = shift;
+  my $payinfo = shift || $self->payinfo;
+  my %hash = (
+    'custnum' => $self->custnum,
+    'payby'   => 'CARD',
+  );
+
+  return 1
+  if qsearch('cust_pay', { %hash, 'payinfo' => $payinfo } )
+  || qsearch('cust_pay', 
+    { %hash, 'paymask' => $self->mask_payinfo('CARD', $payinfo) }  )
+  ;
+
+  return 0;
 }
 
 =back

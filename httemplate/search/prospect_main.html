@@ -1,4 +1,4 @@
-<% include('elements/search.html',
+<& elements/search.html,
              'title'         => 'Prospect Search Results',
              'name_singular' => 'prospect',
              'query'         => $query,
@@ -23,8 +23,7 @@
                                   '', #link to contact edit???
                                 ],
              'agent_virt'    => 1,
-          )
-%>
+&>
 <%init>
 
 die "access denied"

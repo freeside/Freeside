@@ -8,13 +8,18 @@
   'empty_label'   => 'all',
 &>
 
-% my @exporttypes = map { "'$_'" } qw(sqlradius broadband_sqlradius);
+%#more future-proof to actually ask all exports if they ->can('usage_sessions')
+% my @exporttypes = qw( sqlradius sqlradius_withdomain broadband_sqlradius
+%                       phone_sqlradius radiator
+%                     );
 <& /elements/tr-select-table.html,
   'label'         => 'Export',
   'table'         => 'part_export',
   'name_col'      => 'label',
   'hashref'       => {},
-  'extra_sql'     => ' WHERE exporttype IN('.join(',', @exporttypes).')',
+  'extra_sql'     => ' WHERE exporttype IN ( '.
+                                            join(',', map "'$_'", @exporttypes).
+                                          ')',
   'disable_empty' => 1,
   'order_by'      => 'ORDER BY exportnum',
 &>

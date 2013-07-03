@@ -63,7 +63,11 @@
 %
 %   my $edit = '';
 %   if ($curuser->access_right('Edit customer note') ) {
-%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(!.emt('edit').')</A>';
+%     my $delete_url = $fsurl.'misc/delete-note.html?'.$notenum;
+%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(!.emt('edit').')</A>'.
+%             qq! <A HREF="$delete_url" !.
+%             qq! onclick="return confirm('Delete this note?')">!.
+%             '('.emt('delete').')</A>';
 %   }
 %
 % if ( $last_classnum != $note->classnum && !$skipheader ) {

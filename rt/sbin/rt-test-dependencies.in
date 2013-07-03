@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -52,6 +52,7 @@
 #
 
 use strict;
+use warnings;
 no warnings qw(numeric redefine);
 use Getopt::Long;
 my %args;
@@ -75,6 +76,7 @@ GetOptions(
     'with-DASHBOARDS',
     'with-USERLOGO',
     'with-SSL-MAILGATE',
+    'with-HTML-DOC',
 
     'download=s',
     'repository=s',
@@ -104,6 +106,7 @@ my %default = (
     'with-DASHBOARDS' => 1,
     'with-USERLOGO' => 1,
     'with-SSL-MAILGATE' => @RT_SSL_MAILGATE@,
+    'with-HTML-DOC' => @RT_DEVEL_MODE@,
 );
 $args{$_} = $default{$_} foreach grep !exists $args{$_}, keys %default;
 
@@ -291,6 +294,7 @@ Log::Dispatch::Perl
 Test::WWW::Mechanize::PSGI
 Plack::Middleware::Test::StashWarnings 0.06
 Test::LongString
+Test::NoWarnings
 .
 
 $deps{'FASTCGI'} = [ text_to_hash( << '.') ];
@@ -338,7 +342,7 @@ Net::SMTP
 .
 
 $deps{'DASHBOARDS'} = [ text_to_hash( << '.') ];
-HTML::RewriteAttributes 0.04
+HTML::RewriteAttributes 0.05
 MIME::Types
 URI 1.59
 .
@@ -358,9 +362,15 @@ $deps{'USERLOGO'} = [ text_to_hash( << '.') ];
 Convert::Color
 .
 
+$deps{'HTML-DOC'} = [ text_to_hash( <<'.') ];
+Pod::Simple 3.24
+HTML::Entities
+.
+
 my %AVOID = (
     'DBD::Oracle' => [qw(1.23)],
     'Email::Address' => [qw(1.893 1.894)],
+    'Devel::StackTrace' => [qw(1.28 1.29)],
 );
 
 if ($args{'download'}) {

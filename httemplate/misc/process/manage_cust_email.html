@@ -1,0 +1,32 @@
+<% $cgi->redirect($fsurl.'misc/manage_cust_email.html?' .
+                  $cgi->query_string) %>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
+
+my $error;
+foreach my $custnum ($cgi->param('custnum')) {
+  my $cust = FS::cust_main->by_key($custnum)
+    or die "customer not found: $custnum\n";
+  my $new_invoice_noemail = 
+    $cgi->param('custnum'.$custnum.'_invoice_email') ? '' : 'Y';
+  my $new_message_noemail =
+    $cgi->param('custnum'.$custnum.'_message_email') ? '' : 'Y';
+  if ( $new_invoice_noemail ne $cust->invoice_noemail
+    or $new_message_noemail ne $cust->message_noemail ) {
+
+    $cust->set('invoice_noemail', $new_invoice_noemail);
+    $cust->set('message_noemail', $new_message_noemail);
+    $error ||= $cust->replace;
+
+  }
+  $cgi->delete('custnum'.$custnum.'_invoice_email');
+  $cgi->delete('custnum'.$custnum.'_message_email');
+}
+$cgi->delete('custnum');
+if ( $error ) {
+  $cgi->param('error' => $error); # probably unnecessary...
+} else {
+  $cgi->param('done' => 1) unless $error;
+}
+</%init>

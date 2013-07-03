@@ -35,6 +35,18 @@ tie %options, 'Tie::IxHash',
     type    => 'textarea',
     default => '',
   },
+  'suspend_data' => {
+    label   => 'Suspend data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
+  'unsuspend_data' => {
+    label   => 'Unsuspend data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
   'success_regexp' => {
     label   => 'Success Regexp',
     default => '',

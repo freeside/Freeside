@@ -56,6 +56,8 @@ if ( -e $addl_handler_use_file ) {
   #use CGI::Carp qw(fatalsToBrowser);
   use CGI::Cookie;
   use List::Util qw( max min sum );
+  use List::MoreUtils qw( first_index uniq );
+  use Scalar::Util qw( blessed );
   use Data::Dumper;
   use Date::Format;
   use Time::Local;
@@ -64,7 +66,7 @@ if ( -e $addl_handler_use_file ) {
   use DateTime;
   use DateTime::Format::Strptime;
   use FS::Misc::DateTime qw( parse_datetime );
-  use FS::Misc::Geo qw( get_censustract get_district );
+  use FS::Misc::Geo qw( get_district );
   use Lingua::EN::Inflect qw(PL);
   Lingua::EN::Inflect::classical names=>0; #Categorys
   use Tie::IxHash;
@@ -75,13 +77,14 @@ if ( -e $addl_handler_use_file ) {
   use HTML::TableExtract qw(tree);
   use HTML::FormatText;
   use HTML::Defang;
-  use JSON;
+  use JSON::XS;
 #  use XMLRPC::Transport::HTTP;
 #  use XMLRPC::Lite; # for XMLRPC::Serializer
   use MIME::Base64;
   use IO::Handle;
   use IO::File;
   use IO::Scalar;
+  use IO::String;
   #not actually using this yet anyway...# use IPC::Run3 0.036;
   use Net::Whois::Raw qw(whois);
   if ( $] < 5.006 ) {
@@ -118,12 +121,14 @@ if ( -e $addl_handler_use_file ) {
   use HTML::Widgets::SelectLayers 0.07; #should go away in favor of
                                         #selectlayers.html
   use Locale::Country;
+  use Locale::Currency;
+  use Locale::Currency::Format;
   use Business::US::USPS::WebTools::AddressStandardization;
   use Geo::GoogleEarth::Pluggable;
   use LWP::UserAgent;
   use Storable qw( nfreeze thaw );
   use FS;
-  use FS::UID qw( getotaker dbh datasrc driver_name );
+  use FS::UID qw( dbh datasrc driver_name );
   use FS::Record qw( qsearch qsearchs fields dbdef
                     str2time_sql str2time_sql_closing
                     midnight_sql
@@ -157,6 +162,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_credit;
   use FS::cust_credit_bill;
   use FS::cust_main;
+  use FS::h_cust_main;
   use FS::cust_main::Search qw(smart_search);
   use FS::cust_main::Import;
   use FS::cust_main_county;
@@ -312,7 +318,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::access_groupsales;
   use FS::contact_class;
   use FS::part_svc_class;
-  use FS::ftp_target;
+  use FS::upload_target;
   use FS::quotation;
   use FS::quotation_pkg;
   use FS::quotation_pkg_discount;
@@ -326,6 +332,20 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_bill_pkg_discount_void;
   use FS::agent_pkg_class;
   use FS::svc_export_machine;
+  use FS::GeocodeCache;
+  use FS::log;
+  use FS::log_context;
+  use FS::part_pkg_usage_class;
+  use FS::cust_pkg_usage;
+  use FS::part_pkg_usage_class;
+  use FS::part_pkg_usage;
+  use FS::cdr_cust_pkg_usage;
+  use FS::part_pkg_msgcat;
+  use FS::svc_cable;
+  use FS::cable_device;
+  use FS::agent_currency;
+  use FS::currency_exchange;
+  use FS::part_pkg_currency;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

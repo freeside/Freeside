@@ -1,7 +1,5 @@
-<TD CLASS="inv" BGCOLOR="<% $bgcolor %>" WIDTH="20%">
-
-% unless ( $cust_pkg->locationnum ) {
-  <I><FONT SIZE=-1>(<% mt('default service address') |h %>)</FONT><BR>
+% if ( $default ) {
+  <DIV STYLE="font-style: italic; font-size: small">
 % }
 
     <% $loc->location_label( 'join_string'     => '<BR>',
@@ -24,8 +22,8 @@
         </FONT>
 %   }
 
-% unless ( $cust_pkg->locationnum ) {
-  </I>
+% if ( $default ) {
+  </DIV>
 % }
 
 % if ( ! $cust_pkg->get('cancel')
@@ -34,26 +32,28 @@
 % {
   <BR>
   <FONT SIZE=-1>
-    (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
-%   if ( $cust_pkg->locationnum ) {
+%   unless ( $opt{no_links} ) {
+      (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
+%   }
+%   if ( $cust_pkg->locationnum && ! $opt{no_links} ) {
         (&nbsp;<%edit_location_link($cust_pkg->locationnum)%>&nbsp;)
 %   }
   </FONT>
 % } 
 
-</TD>
 <%init>
 
 my $conf = new FS::Conf;
 my %opt = @_;
 
-my $bgcolor        = $opt{'bgcolor'};
 my $cust_pkg       = $opt{'cust_pkg'};
 my $countrydefault = $opt{'countrydefault'} || 'US';
 my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
 
 my $loc = $cust_pkg->cust_location_or_main;
+# dubious--they should all have a location now
+my $default = $cust_pkg->locationnum == $opt{'cust_main'}->ship_locationnum;
 
 sub pkg_change_location_link {
   my $cust_pkg = shift;
@@ -65,6 +65,8 @@ sub pkg_change_location_link {
     'label'       => emt('Change location'),
     'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
+    'width'       => 763,
+    'height'      => 380,
   );
 }
 
@@ -74,7 +76,9 @@ sub edit_location_link {
     'action'      => $p. "edit/cust_location.cgi?locationnum=$locationnum",
     'label'       => emt('Edit location'),
     'actionlabel' => emt('Edit'),
-  );
+    'width'       => 700,
+    'height'      => 355,
+   );
 }
 
 </%init>

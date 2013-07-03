@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -157,6 +157,9 @@ our %FIELD_METADATA = (
     Service          => [ 'FREESIDEFIELD' => 'Service' ],
     WillResolve      => [ 'DATE'            => 'WillResolve', ], #loc_left_pair
 );
+
+# Lower Case version of FIELDS, for case insensitivity
+our %LOWER_CASE_FIELDS = map { ( lc($_) => $_ ) } (keys %FIELD_METADATA);
 
 our %SEARCHABLE_SUBFIELDS = (
     User => [qw(
@@ -379,7 +382,11 @@ sub _EnumLimit {
         my $class = "RT::" . $meta->[1];
         my $o     = $class->new( $sb->CurrentUser );
         $o->Load($value);
-        $value = $o->Id;
+        $value = $o->Id || 0;
+    } elsif ( $field eq "Type" ) {
+        $value = lc $value if $value =~ /^(ticket|approval|reminder)$/i;
+    } elsif ($field eq "Status") {
+        $value = lc $value;
     }
     $sb->_SQLLimit(
         FIELD    => $field,
@@ -463,7 +470,7 @@ sub _LinkLimit {
 
     my $is_local = 1;
     if ( $is_null ) {
-        $op = ($op =~ /^(=|IS)$/)? 'IS': 'IS NOT';
+        $op = ($op =~ /^(=|IS)$/i)? 'IS': 'IS NOT';
     }
     elsif ( $value =~ /\D/ ) {
         $is_local = 0;
@@ -941,22 +948,23 @@ sub _WatcherLimit {
         die "Invalid watcher subfield: '$rest{SUBKEY}'";
     }
 
+    # if it's equality op and search by Email or Name then we can preload user
+    # we do it to help some DBs better estimate number of rows and get better plans
+    if ( $op =~ /^!?=$/ && (!$rest{'SUBKEY'} || $rest{'SUBKEY'} eq 'Name' || $rest{'SUBKEY'} eq 'EmailAddress') ) {
+        my $o = RT::User->new( $self->CurrentUser );
+        my $method =
+            !$rest{'SUBKEY'}
+            ? $field eq 'Owner'? 'Load' : 'LoadByEmail'
+            : $rest{'SUBKEY'} eq 'EmailAddress' ? 'LoadByEmail': 'Load';
+        $o->$method( $value );
+        $rest{'SUBKEY'} = 'id';
+        $value = $o->id || 0;
+    }
+
     # Owner was ENUM field, so "Owner = 'xxx'" allowed user to
     # search by id and Name at the same time, this is workaround
     # to preserve backward compatibility
     if ( $field eq 'Owner' ) {
-        if ( $op =~ /^!?=$/ && (!$rest{'SUBKEY'} || $rest{'SUBKEY'} eq 'Name' || $rest{'SUBKEY'} eq 'EmailAddress') ) {
-            my $o = RT::User->new( $self->CurrentUser );
-            my $method = ($rest{'SUBKEY'}||'') eq 'EmailAddress' ? 'LoadByEmail': 'Load';
-            $o->$method( $value );
-            $self->_SQLLimit(
-                FIELD    => 'Owner',
-                OPERATOR => $op,
-                VALUE    => $o->id,
-                %rest,
-            );
-            return;
-        }
         if ( ($rest{'SUBKEY'}||'') eq 'id' ) {
             $self->_SQLLimit(
                 FIELD    => 'Owner',
@@ -972,7 +980,7 @@ sub _WatcherLimit {
     my $groups = $self->_RoleGroupsJoin( Type => $type, Class => $class, New => !$type );
 
     $self->_OpenParen;
-    if ( $op =~ /^IS(?: NOT)?$/ ) {
+    if ( $op =~ /^IS(?: NOT)?$/i ) {
         # is [not] empty case
 
         my $group_members = $self->_GroupMembersJoin( GroupsAlias => $groups );
@@ -1569,6 +1577,29 @@ sub _CustomFieldLimit {
         }
     }
 
+    if ( $cf && $cf->Type =~ /^Date(?:Time)?$/ ) {
+        my $date = RT::Date->new( $self->CurrentUser );
+        $date->Set( Format => 'unknown', Value => $value );
+        if ( $date->Unix ) {
+
+            if (
+                   $cf->Type eq 'Date'
+                || $value =~ /^\s*(?:today|tomorrow|yesterday)\s*$/i
+                || (   $value !~ /midnight|\d+:\d+:\d+/i
+                    && $date->Time( Timezone => 'user' ) eq '00:00:00' )
+              )
+            {
+                $value = $date->Date( Timezone => 'user' );
+            }
+            else {
+                $value = $date->DateTime;
+            }
+        }
+        else {
+            $RT::Logger->warn("$value is not a valid date string");
+        }
+    }
+
     my $single_value = !$cf || !$cfid || $cf->SingleValue;
 
     my $cfkey = $cfid ? $cfid : "$queue.$field";
@@ -1664,27 +1695,12 @@ sub _CustomFieldLimit {
         }
         else {
             # need special treatment for Date
-            if ( $cf and $cf->Type eq 'DateTime' and $op eq '=' ) {
-
-                if ( $value =~ /:/ ) {
-                    # there is time speccified.
-                    my $date = RT::Date->new( $self->CurrentUser );
-                    $date->Set( Format => 'unknown', Value => $value );
-                    $self->_SQLLimit(
-                        ALIAS    => $TicketCFs,
-                        FIELD    => 'Content',
-                        OPERATOR => "=",
-                        VALUE    => $date->ISO,
-                        %rest,
-                    );
-                }
-                else {
+            if ( $cf and $cf->Type eq 'DateTime' and $op eq '=' && $value !~ /:/ ) {
                 # no time specified, that means we want everything on a
                 # particular day.  in the database, we need to check for >
                 # and < the edges of that day.
                     my $date = RT::Date->new( $self->CurrentUser );
                     $date->Set( Format => 'unknown', Value => $value );
-                    $date->SetToMidnight( Timezone => 'server' );
                     my $daystart = $date->ISO;
                     $date->AddDay;
                     my $dayend = $date->ISO;
@@ -1702,14 +1718,13 @@ sub _CustomFieldLimit {
                     $self->_SQLLimit(
                         ALIAS    => $TicketCFs,
                         FIELD    => 'Content',
-                        OPERATOR => "<=",
+                        OPERATOR => "<",
                         VALUE    => $dayend,
                         %rest,
                         ENTRYAGGREGATOR => 'AND',
                     );
 
                     $self->_CloseParen;
-                }
             }
             elsif ( $op eq '=' || $op eq '!=' || $op eq '<>' ) {
                 if ( length( Encode::encode_utf8($value) ) < 256 ) {
@@ -2470,7 +2485,7 @@ sub LimitType {
         VALUE       => $args{'VALUE'},
         OPERATOR    => $args{'OPERATOR'},
         DESCRIPTION => join( ' ',
-            $self->loc('Type'), $args{'OPERATOR'}, $args{'Limit'}, ),
+            $self->loc('Type'), $args{'OPERATOR'}, $args{'VALUE'}, ),
     );
 }
 
@@ -2533,7 +2548,7 @@ sub LimitId {
 
 Takes a paramhash with the fields OPERATOR and VALUE.
 OPERATOR is one of =, >, < or !=.
-VALUE is a value to match the ticket\'s priority against
+VALUE is a value to match the ticket's priority against
 
 =cut
 
@@ -2556,7 +2571,7 @@ sub LimitPriority {
 
 Takes a paramhash with the fields OPERATOR and VALUE.
 OPERATOR is one of =, >, < or !=.
-VALUE is a value to match the ticket\'s initial priority against
+VALUE is a value to match the ticket's initial priority against
 
 
 =cut
@@ -2580,7 +2595,7 @@ sub LimitInitialPriority {
 
 Takes a paramhash with the fields OPERATOR and VALUE.
 OPERATOR is one of =, >, < or !=.
-VALUE is a value to match the ticket\'s final priority against
+VALUE is a value to match the ticket's final priority against
 
 =cut
 
@@ -2753,7 +2768,7 @@ sub LimitOwner {
 
   Takes a paramhash with the fields OPERATOR, TYPE and VALUE.
   OPERATOR is one of =, LIKE, NOT LIKE or !=.
-  VALUE is a value to match the ticket\'s watcher email addresses against
+  VALUE is a value to match the ticket's watcher email addresses against
   TYPE is the sort of watchers you want to match against. Leave it undef if you want to search all of them
 
 

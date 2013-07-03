@@ -213,6 +213,7 @@ sub _export_replace {
           return $error;
         }
       }
+      $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
     }
 
     my @del = grep { !exists $new{$_} } keys %old;
@@ -230,6 +231,7 @@ sub _export_replace {
           return $error;
         }
       }
+      $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
     }
   }
 
@@ -348,7 +350,7 @@ sub _export_delete {
 
 sub sqlradius_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
-  my %args = @_;
+  #my %args = @_;
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
     'job'    => "FS::part_export::sqlradius::sqlradius_$method",
@@ -561,6 +563,7 @@ sub sqlreplace_usergroups {
       my $error = $err_or_queue->depend_insert( $jobnum );
       return $error if $error;
     }
+    $jobnum = $err_or_queue->jobnum; # chain all of these dependencies
   }
 
   if ( @newgroups ) {
@@ -594,7 +597,8 @@ New-style: pass a hashref with the following keys:
 
 =item stoptime_end - Upper bound for AcctStopTime, as a UNIX timestamp
 
-=item open_sessions - Only show records with no AcctStopTime (typically used without stoptime_* options and with starttime_* options instead)
+=item session_status - 'closed' to only show records with AcctStopTime,
+'open' to only show records I<without> AcctStopTime, empty to show both.
 
 =item starttime_start - Lower bound for AcctStartTime, as a UNIX timestamp
 
@@ -724,17 +728,27 @@ sub usage_sessions {
     push @where, " CalledStationID LIKE 'sip:$prefix\%'";
   }
 
-  if ( $start ) {
-    push @where, "$str2time AcctStopTime ) >= ?";
-    push @param, $start;
+  my $acctstoptime = '';
+  if ( $opt->{session_status} ne 'open' ) {
+    if ( $start ) {
+      $acctstoptime .= "$str2time AcctStopTime ) >= ?";
+      push @param, $start;
+      $acctstoptime .= ' AND ' if $end;
+    }
+    if ( $end ) {
+      $acctstoptime .= "$str2time AcctStopTime ) <= ?";
+      push @param, $end;
+    }
   }
-  if ( $end ) {
-    push @where, "$str2time AcctStopTime ) <= ?";
-    push @param, $end;
+  if ( $opt->{session_status} ne 'closed' ) {
+    if ( $acctstoptime ) {
+      $acctstoptime = "( ( $acctstoptime ) OR AcctStopTime IS NULL )";
+    } else {
+      $acctstoptime = 'AcctStopTime IS NULL';
+    }
   }
-  if ( $opt->{open_sessions} ) {
-    push @where, 'AcctStopTime IS NULL';
-  }
+  push @where, $acctstoptime;
+
   if ( $opt->{starttime_start} ) {
     push @where, "$str2time AcctStartTime ) >= ?";
     push @param, $opt->{starttime_start};
@@ -753,10 +767,14 @@ sub usage_sessions {
   my $orderby = 'ORDER BY AcctStartTime DESC';
   $orderby = '' if $summarize;
 
-  my $sth = $dbh->prepare('SELECT '. join(', ', @fields).
-                          "  FROM radacct $where $groupby $orderby
-                        ") or die $dbh->errstr;                                 
-  $sth->execute(@param) or die $sth->errstr;
+  my $sql = 'SELECT '. join(', ', @fields).
+            "  FROM radacct $where $groupby $orderby";
+  if ( $DEBUG ) {
+    warn $sql;
+    warn join(',', @param);
+  }
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+  $sth->execute(@param)         or die $sth->errstr;
 
   [ map { { %$_ } } @{ $sth->fetchall_arrayref({}) } ];
 

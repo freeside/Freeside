@@ -1,0 +1,48 @@
+<& search.html, %opt &>
+<%doc>
+Currently does nothing but insert the classnames for fields chosen from an
+inventory class.
+</%doc>
+<%init>
+my %opt = @_;
+my $query = $opt{query};
+my $svcdb = $query->{'table'};
+
+# to avoid looking up the inventory class of every service in the database,
+# keep as much of the base query as possible.
+my $item_query = { %$query };
+$item_query->{'table'} = 'inventory_item';
+$item_query->{'addl_from'} = 
+  " JOIN ( $svcdb ". $query->{'addl_from'} .
+  ") ON inventory_item.svcnum = $svcdb.svcnum ".
+  " JOIN inventory_class ON (inventory_item.classnum = inventory_class.classnum)";
+# avoid conflict with inventory_item.agentnum
+$item_query->{'extra_sql'} =~ s/ agentnum/ cust_main.agentnum/g;
+$item_query->{'select'} = 'inventory_item.svcnum, '.
+                          'inventory_item.svc_field, '.
+                          'inventory_class.classname';
+my @items = qsearch($item_query);
+my %item_fields;
+foreach my $i (@items) {
+  $item_fields{ $i->svc_field } ||= {};
+  $item_fields{ $i->svc_field }{ $i->svcnum } = $i->classname;
+}
+
+$opt{'sort_fields'} ||= [];
+for ( my $i = 0; $i < @{ $opt{'fields'} }; $i++ ) {
+  my $f = $opt{'fields'}[$i];
+  next if ref($f); # it's not a plain table column
+  $opt{'sort_fields'}[$i] ||= $f;
+  my $classnames = $item_fields{$f}; # hashref of svcnum -> classname
+  next if !$classnames; # there are no inventory items in this column
+  $opt{'fields'}[$i] = sub {
+    my $svc = $_[0];
+    if ( exists($classnames->{$svc->svcnum}) ) {
+      return $svc->$f . '<BR><I>('. $classnames->{$svc->svcnum} . ')</I>';
+    } else {
+      return $svc->$f;
+    }
+  }; #sub
+}
+
+</%init>

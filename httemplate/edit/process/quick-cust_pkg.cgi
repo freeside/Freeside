@@ -70,6 +70,9 @@ my $quantity = $1 || 1;
 $cgi->param('refnum') =~ /^(\d*)$/
   or die 'illegal refnum '. $cgi->param('refnum');
 my $refnum = $1;
+$cgi->param('contactnum') =~ /^(\-?\d*)$/
+  or die 'illegal contactnum '. $cgi->param('contactnum');
+my $contactnum = $1;
 $cgi->param('locationnum') =~ /^(\-?\d*)$/
   or die 'illegal locationnum '. $cgi->param('locationnum');
 my $locationnum = $1;
@@ -109,6 +112,7 @@ my %hash = (
                                   : ''
                               ),
     'refnum'               => $refnum,
+    'contactnum'           => $contactnum,
     'locationnum'          => $locationnum,
     'discountnum'          => $discountnum,
     #for the create a new discount case
@@ -142,12 +146,22 @@ if ( $quotationnum ) {
 
   my %opt = ( 'cust_pkg' => $cust_pkg );
 
+  if ( $contactnum == -1 ) {
+    my $contact = FS::contact->new({
+      'custnum' => scalar($cgi->param('custnum')),
+      map { $_ => scalar($cgi->param("contactnum_$_")) } qw( first last )
+    });
+    $opt{'contact'} = $contact;
+  }
+
   if ( $locationnum == -1 ) {
-    my $cust_location = new FS::cust_location {
+    my $cust_location = FS::cust_location->new({
       map { $_ => scalar($cgi->param($_)) }
-          qw( custnum address1 address2 city county state zip country geocode )
-    };
+          ('custnum', FS::cust_main->location_fields)
+    });
     $opt{'cust_location'} = $cust_location;
+  } else {
+    $opt{'locationnum'} = $locationnum;
   }
 
   $error = $cust_main->order_pkg( \%opt );

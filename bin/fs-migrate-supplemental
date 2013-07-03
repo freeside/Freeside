@@ -1,0 +1,151 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_pkg;
+use FS::part_pkg;
+
+my $user = shift or die &usage;
+my @pkgparts = @ARGV or die &usage;
+my $dbh = adminsuidsetup $user;
+
+$FS::UID::AutoCommit = 0;
+
+my %stats = (
+  mainpkgs  => 0,
+  created   => 0,
+  linked    => 0,
+  errors    => 0,
+);
+
+my %pkg_freq; # cache
+foreach my $pkgpart (@pkgparts) {
+  my $part_pkg = FS::part_pkg->by_key($pkgpart)
+    or die "pkgpart $pkgpart not found.\n";
+  $pkg_freq{$pkgpart} = $part_pkg->freq;
+  my @links = $part_pkg->supp_part_pkg_link
+    or die "pkgpart $pkgpart has no supplemental packages.\n";
+  CUST_PKG: foreach my $cust_pkg (
+    qsearch('cust_pkg', {
+        'pkgpart' => $pkgpart,
+        'cancel'  => '',
+    })
+  ) {
+    my $cust_main = $cust_pkg->cust_main;
+    my @existing = $cust_pkg->supplemental_pkgs;
+    my @active = grep { !$_->main_pkgnum } $cust_main->ncancelled_pkgs;
+    LINK: foreach my $link (@links) {
+      # yeah, it's expensive
+      # see if there's an existing package with this link identity
+      foreach (@existing) {
+        if ($_->pkglinknum == $link->pkglinknum) {
+          next LINK;
+        }
+      }
+      # no? then is there one with this pkgpart?
+      my $i = 0;
+      foreach (@active) {
+        if ( $_->pkgpart == $link->dst_pkgpart ) {
+          set_link($cust_pkg, $link, $_);
+          splice(@active, $i, 1); # delete it so we don't reuse it
+          next LINK;
+        }
+      }
+      # no? then create one
+      create_linked($cust_pkg, $link);
+    } #foreach $link
+    $stats{mainpkgs}++;
+  } #foreach $cust_pkg
+} #foreach $pkgpart
+
+print "
+Main packages:                 $stats{mainpkgs}
+Supplemental packages linked:  $stats{linked}
+Supplemental packages ordered: $stats{created}
+Errors:                        $stats{errors}
+";
+
+$dbh->commit or die $dbh->errstr;
+
+sub set_link {
+  my ($main_pkg, $part_pkg_link, $supp_pkg) = @_;
+  my $task = "linking package ".$supp_pkg->pkgnum.
+             " to package ".$main_pkg->pkgnum;
+  $supp_pkg->set('main_pkgnum', $main_pkg->pkgnum);
+  $supp_pkg->set('pkglinknum', $part_pkg_link->pkglinknum);
+  # Set the next bill date of the supplemental package to the nearest one in
+  # the future that lines up with the main package.  If the main package
+  # hasn't started billing yet, use its future start date.
+  my $new_bill = $main_pkg->get('bill') || $main_pkg->get('start_date');
+  if ( $new_bill ) {
+    my $old_bill = $supp_pkg->get('bill');
+    my $diff = $new_bill - $old_bill;
+    my $main_freq = $pkg_freq{$main_pkg->pkgpart};
+    my $prev_bill = 0;
+    while ($diff < 0) {
+      # this will exit once $new_bill has overtaken the existing bill date.
+      # if there is no existing bill date, then this will exit right away 
+      # and set bill to the bill date of the main package, which is correct.
+      $prev_bill = $new_bill;
+      $new_bill = FS::part_pkg->add_freq($new_bill, $main_freq);
+      $diff = $new_bill - $old_bill;
+    }
+    # then, of $new_bill and $prev_bill, pick the one that's closer to $old_bill
+    if ( $prev_bill > 0 and 
+         $new_bill - $old_bill > $old_bill - $prev_bill ) {
+      $supp_pkg->set('bill', $prev_bill);
+    } else {
+      $supp_pkg->set('bill', $new_bill);
+    }
+  } else {
+    # otherwise the main package hasn't been billed yet and has no 
+    # start date, so we can't sync the supplemental to it yet.
+    # but we can still link them.
+    warn "$task: main package has no next bill date.\n";
+  }
+  my $error = $supp_pkg->replace;
+  if ( $error ) {
+    warn "$task:\n    $error\n";
+    $stats{errors}++;
+  } else {
+    $stats{linked}++;
+  }
+  return;
+}
+
+sub create_linked {
+  my ($main_pkg, $part_pkg_link) = @_;
+  my $task = "creating pkgpart ".$part_pkg_link->dst_pkgpart.
+             " supplemental to package ".$main_pkg->pkgnum;
+  my $supp_pkg = FS::cust_pkg->new({
+      'pkgpart'       => $part_pkg_link->dst_pkgpart,
+      'pkglinknum'    => $part_pkg_link->pkglinknum,
+      'custnum'       => $main_pkg->custnum,
+      'main_pkgnum'   => $main_pkg->pkgnum,
+      'locationnum'   => $main_pkg->locationnum,
+      'start_date'    => $main_pkg->start_date,
+      'order_date'    => $main_pkg->order_date,
+      'expire'        => $main_pkg->expire,
+      'adjourn'       => $main_pkg->adjourn,
+      'contract_end'  => $main_pkg->contract_end,
+      'susp'          => $main_pkg->susp,
+      'bill'          => $main_pkg->bill,
+      'refnum'        => $main_pkg->refnum,
+      'discountnum'   => $main_pkg->discountnum,
+      'waive_setup'   => $main_pkg->waive_setup,
+  });
+  my $error = $supp_pkg->insert;
+  if ( $error ) {
+    warn "$task:\n    $error\n";
+    $stats{errors}++;
+  } else {
+    $stats{created}++;
+  }
+  return;
+}
+
+sub usage {
+  die "Usage:\n  fs-migrate-supplemental user main_pkgpart\n"; 
+}
+

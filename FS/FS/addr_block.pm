@@ -6,6 +6,7 @@ use FS::Record qw( qsearchs qsearch dbh );
 use FS::router;
 use FS::svc_broadband;
 use FS::Conf;
+use FS::IP_Mixin;
 use NetAddr::IP;
 use Carp qw( carp );
 use List::Util qw( first );
@@ -238,7 +239,7 @@ sub next_free_addr {
   my $self = shift;
   my $selfaddr = $self->NetAddr;
 
-  return if $self->manual_flag;
+  return () if $self->manual_flag;
 
   my $conf = new FS::Conf;
   my @excludeaddr = $conf->config('exclude_ip_addr');
@@ -249,9 +250,7 @@ sub next_free_addr {
     $selfaddr->addr,
     $selfaddr->network->addr,
     $selfaddr->broadcast->addr,
-    (map { $_->NetAddr->addr }
-       qsearch('svc_broadband', { blocknum => $self->blocknum })
-    ), @excludeaddr
+    FS::IP_Mixin->used_addresses($self)
   );
 
   # just do a linear search of the block

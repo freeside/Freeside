@@ -13,6 +13,7 @@ use FS::pkg_svc;
 use FS::domain_record;
 use FS::part_export;
 use FS::cdr;
+use FS::UI::Web;
 
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
@@ -294,6 +295,17 @@ sub replace {
 #    }
 #  }
 
+  #trigger a pkg_change export on pkgnum changes
+  if ( $new->pkgnum != $old->pkgnum ) {
+    my $error = $new->svc_x->export('pkg_change', $new->cust_pkg,
+                                                  $old->cust_pkg,
+                                   );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error if $error;
+    }
+  }
+
   #my $error = $new->SUPER::replace($old, @_);
   my $error = $new->SUPER::replace($old);
   if ( $error ) {
@@ -479,7 +491,7 @@ Returns a listref of html elements associated with this service's exports.
 sub export_links {
   my $self = shift;
   my $svc_x = $self->svc_x
-    or return "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
+    or return [ "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum ];
 
   $svc_x->export_links;
 }
@@ -793,14 +805,17 @@ sub get_session_history {
 
 }
 
-=item tickets
+=item tickets  [ STATUS ]
 
 Returns an array of hashes representing the tickets linked to this service.
+
+An optional status (or arrayref or hashref of statuses) may be specified.
 
 =cut
 
 sub tickets {
   my $self = shift;
+  my $status = ( @_ && $_[0] ) ? shift : '';
 
   my $conf = FS::Conf->new;
   my $num = $conf->config('cust_main-max_tickets') || 10;
@@ -809,7 +824,12 @@ sub tickets {
   if ( $conf->config('ticket_system') ) {
     unless ( $conf->config('ticket_system-custom_priority_field') ) {
 
-      @tickets = @{ FS::TicketSystem->service_tickets($self->svcnum, $num) };
+      @tickets = @{ FS::TicketSystem->service_tickets( $self->svcnum,
+                                                       $num,
+                                                       undef,
+                                                       $status,
+                                                     )
+                  };
 
     } else {
 
@@ -819,10 +839,11 @@ sub tickets {
         last if scalar(@tickets) >= $num;
         push @tickets,
         @{ FS::TicketSystem->service_tickets( $self->svcnum,
-            $num - scalar(@tickets),
-            $priority,
-          )
-        };
+                                              $num - scalar(@tickets),
+                                              $priority,
+                                              $status,
+                                            )
+         };
       }
     }
   }
@@ -862,36 +883,81 @@ sub smart_search_param {
   my @or = 
       map { my $table = $_;
             my $search_sql = "FS::$table"->search_sql($string);
-            " ( svcdb = '$table'
-	        AND 0 < ( SELECT COUNT(*) FROM $table
-	                    WHERE $table.svcnum = cust_svc.svcnum
-		              AND $search_sql
-	                )
-	      ) ";
+
+            "SELECT $table.svcnum AS svcnum, '$table' AS svcdb ".
+            "FROM $table WHERE $search_sql";
           }
       FS::part_svc->svc_tables;
 
   if ( $string =~ /^(\d+)$/ ) {
-    unshift @or, " ( agent_svcid IS NOT NULL AND agent_svcid = $1 ) ";
+    unshift @or, "SELECT cust_svc.svcnum, NULL as svcdb FROM cust_svc WHERE agent_svcid = $1";
   }
 
-  my @extra_sql = ' ( '. join(' OR ', @or). ' ) ';
+  my $addl_from = " RIGHT JOIN (\n" . join("\nUNION\n", @or) . "\n) AS svc_all ".
+                  " ON (svc_all.svcnum = cust_svc.svcnum) ";
+
+  my @extra_sql;
 
   push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql(
     'null_right' => 'View/link unlinked services'
   );
   my $extra_sql = ' WHERE '.join(' AND ', @extra_sql);
   #for agentnum
-  my $addl_from = ' LEFT JOIN cust_pkg  USING ( pkgnum  )'.
-                  ' LEFT JOIN cust_main USING ( custnum )'.
+  $addl_from  .=  ' LEFT JOIN cust_pkg  USING ( pkgnum  )'.
+                  FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg').
                   ' LEFT JOIN part_svc  USING ( svcpart )';
 
   (
     'table'     => 'cust_svc',
+    'select'    => 'svc_all.svcnum AS svcnum, '.
+                   'COALESCE(svc_all.svcdb, part_svc.svcdb) AS svcdb, '.
+                   'cust_svc.*',
     'addl_from' => $addl_from,
     'hashref'   => {},
     'extra_sql' => $extra_sql,
   );
+}
+
+sub _upgrade_data {
+  my $class = shift;
+
+  # fix missing (deleted by mistake) svc_x records
+  warn "searching for missing svc_x records...\n";
+  my %search = (
+    'table'     => 'cust_svc',
+    'select'    => 'cust_svc.*',
+    'addl_from' => ' LEFT JOIN ( ' .
+      join(' UNION ',
+        map { "SELECT svcnum FROM $_" } 
+        FS::part_svc->svc_tables
+      ) . ' ) AS svc_all ON cust_svc.svcnum = svc_all.svcnum',
+    'extra_sql' => ' WHERE svc_all.svcnum IS NULL',
+  );
+  my @svcs = qsearch(\%search);
+  warn "found ".scalar(@svcs)."\n";
+
+  local $FS::Record::nowarn_classload = 1; # for h_svc_
+  local $FS::svc_Common::noexport_hack = 1; # because we're inserting services
+
+  my %h_search = (
+    'hashref'  => { history_action => 'delete' },
+    'order_by' => ' ORDER BY history_date DESC LIMIT 1',
+  );
+  foreach my $cust_svc (@svcs) {
+    my $svcnum = $cust_svc->svcnum;
+    my $svcdb = $cust_svc->part_svc->svcdb;
+    $h_search{'hashref'}{'svcnum'} = $svcnum;
+    $h_search{'table'} = "h_$svcdb";
+    my $h_svc_x = qsearchs(\%h_search)
+      or next;
+    my $class = "FS::$svcdb";
+    my $new_svc_x = $class->new({ $h_svc_x->hash });
+    my $error = $new_svc_x->insert;
+    warn "error repairing svcnum $svcnum ($svcdb) from history:\n$error\n"
+      if $error;
+  }
+
+  '';
 }
 
 =back

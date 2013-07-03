@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -54,7 +54,7 @@
 
 =head1 DESCRIPTION
 
-This module lets you manipulate RT\'s ticket object.
+This module lets you manipulate RT's ticket object.
 
 
 =head1 METHODS
@@ -197,8 +197,8 @@ Arguments: ARGS is a hash of named parameters.  Valid parameters are:
   AdminCc  - A reference to a  list of  email addresses or Names
   SquelchMailTo - A reference to a list of email addresses - 
                   who should this ticket not mail
-  Type -- The ticket\'s type. ignore this for now
-  Owner -- This ticket\'s owner. either an RT::User object or this user\'s id
+  Type -- The ticket's type. ignore this for now
+  Owner -- This ticket's owner. either an RT::User object or this user's id
   Subject -- A string describing the subject of the ticket
   Priority -- an integer from 0 to 99
   InitialPriority -- an integer from 0 to 99
@@ -207,8 +207,8 @@ Arguments: ARGS is a hash of named parameters.  Valid parameters are:
   TimeEstimated -- an integer. estimated time for this task in minutes
   TimeWorked -- an integer. time worked so far in minutes
   TimeLeft -- an integer. time remaining in minutes
-  Starts -- an ISO date describing the ticket\'s start date and time in GMT
-  Due -- an ISO date describing the ticket\'s due date and time in GMT
+  Starts -- an ISO date describing the ticket's start date and time in GMT
+  Due -- an ISO date describing the ticket's due date and time in GMT
   MIMEObj -- a MIME::Entity object with the content of the initial ticket request.
   CustomField-<n> -- a scalar or array of values for the customfield with the id <n>
 
@@ -299,6 +299,7 @@ sub Create {
         $args{'Status'} = $cycle->DefaultOnCreate;
     }
 
+    $args{'Status'} = lc $args{'Status'};
     unless ( $cycle->IsValid( $args{'Status'} ) ) {
         return ( 0, 0,
             $self->loc("Status '[_1]' isn't a valid status for tickets in this queue.",
@@ -459,6 +460,11 @@ sub Create {
             }
         }
     }
+
+    $args{'Type'} = lc $args{'Type'}
+        if $args{'Type'} =~ /^(ticket|approval|reminder)$/i;
+
+    $args{'Subject'} =~ s/\n//g;
 
     $RT::Handle->BeginTransaction();
 
@@ -783,6 +789,15 @@ sub Create {
     }
 }
 
+sub SetType {
+    my $self = shift;
+    my $value = shift;
+
+    # Force lowercase on internal RT types
+    $value = lc $value
+        if $value =~ /^(ticket|approval|reminder)$/i;
+    return $self->_Set(Field => 'Type', Value => $value, @_);
+}
 
 
 
@@ -850,8 +865,8 @@ sub _Parse822HeadersForAttributes {
 =head2 Import PARAMHASH
 
 Import a ticket. 
-Doesn\'t create a transaction. 
-Doesn\'t supply queue defaults, etc.
+Doesn't create a transaction. 
+Doesn't supply queue defaults, etc.
 
 Returns: TICKETID
 
@@ -885,7 +900,7 @@ sub Import {
         $QueueObj = RT::Queue->new(RT->SystemUser);
         $QueueObj->Load( $args{'Queue'} );
 
-        #TODO error check this and return 0 if it\'s not loading properly +++
+        #TODO error check this and return 0 if it's not loading properly +++
     }
     elsif ( ref( $args{'Queue'} ) eq 'RT::Queue' ) {
         $QueueObj = RT::Queue->new(RT->SystemUser);
@@ -1103,7 +1118,7 @@ PrincipalId The RT::Principal id of the user or group that's being added as a wa
 Email       The email address of the new watcher. If a user with this 
             email address can't be found, a new nonprivileged user will be created.
 
-If the watcher you\'re trying to set has an RT account, set the PrincipalId paremeter to their User Id. Otherwise, set the Email parameter to their Email address.
+If the watcher you're trying to set has an RT account, set the PrincipalId paremeter to their User Id. Otherwise, set the Email parameter to their Email address.
 
 =cut
 
@@ -1206,7 +1221,8 @@ sub _AddWatcher {
 
     if ( $group->HasMember( $principal)) {
 
-        return ( 0, $self->loc('That principal is already a [_1] for this ticket', $self->loc($args{'Type'})) );
+        return ( 0, $self->loc('[_1] is already a [_2] for this ticket',
+                    $principal->Object->Name, $self->loc($args{'Type'})) );
     }
 
 
@@ -1215,7 +1231,8 @@ sub _AddWatcher {
     unless ($m_id) {
         $RT::Logger->error("Failed to add ".$principal->Id." as a member of group ".$group->Id.": ".$m_msg);
 
-        return ( 0, $self->loc('Could not make that principal a [_1] for this ticket', $self->loc($args{'Type'})) );
+        return ( 0, $self->loc('Could not make [_1] a [_2] for this ticket',
+                    $principal->Object->Name, $self->loc($args{'Type'})) );
     }
 
     unless ( $args{'Silent'} ) {
@@ -1226,7 +1243,8 @@ sub _AddWatcher {
         );
     }
 
-        return ( 1, $self->loc('Added principal as a [_1] for this ticket', $self->loc($args{'Type'})) );
+    return ( 1, $self->loc('Added [_1] as a [_2] for this ticket',
+                $principal->Object->Name, $self->loc($args{'Type'})) );
 }
 
 
@@ -1325,8 +1343,8 @@ sub DeleteWatcher {
 
     unless ( $group->HasMember($principal) ) {
         return ( 0,
-                 $self->loc( 'That principal is not a [_1] for this ticket',
-                             $args{'Type'} ) );
+                 $self->loc( '[_1] is not a [_2] for this ticket',
+                             $principal->Object->Name, $args{'Type'} ) );
     }
 
     my ( $m_id, $m_msg ) = $group->_DeleteMember( $principal->Id );
@@ -1339,8 +1357,8 @@ sub DeleteWatcher {
 
         return (0,
                 $self->loc(
-                    'Could not remove that principal as a [_1] for this ticket',
-                    $args{'Type'} ) );
+                    'Could not remove [_1] as a [_2] for this ticket',
+                    $principal->Object->Name, $args{'Type'} ) );
     }
 
     unless ( $args{'Silent'} ) {
@@ -1421,7 +1439,7 @@ sub UnsquelchMailTo {
 
 =head2 RequestorAddresses
 
- B<Returns> String: All Ticket Requestor email addresses as a string.
+B<Returns> String: All Ticket Requestor email addresses as a string.
 
 =cut
 
@@ -1794,7 +1812,7 @@ sub SetQueue {
         unless ( $old_lifecycle->HasMoveMap( $new_lifecycle ) ) {
             return ( 0, $self->loc("There is no mapping for statuses between these queues. Contact your system administrator.") );
         }
-        $new_status = $old_lifecycle->MoveMap( $new_lifecycle )->{ $self->Status };
+        $new_status = $old_lifecycle->MoveMap( $new_lifecycle )->{ lc $self->Status };
         return ( 0, $self->loc("Mapping between queues' lifecycles is incomplete. Contact your system administrator.") )
             unless $new_status;
     }
@@ -1889,6 +1907,13 @@ sub QueueObj {
         my ($result) = $self->{_queue_obj}->Load( $self->__Value('Queue') );
     }
     return ($self->{_queue_obj});
+}
+
+sub SetSubject {
+    my $self = shift;
+    my $value = shift;
+    $value =~ s/\n//g;
+    return $self->_Set( Field => 'Subject', Value => $value );
 }
 
 =head2 SubjectTag
@@ -2199,14 +2224,16 @@ sub Comment {
     }
     $args{'NoteType'} = 'Comment';
 
+    $RT::Handle->BeginTransaction();
     if ($args{'DryRun'}) {
-        $RT::Handle->BeginTransaction();
         $args{'CommitScrips'} = 0;
     }
 
     my @results = $self->_RecordNote(%args);
     if ($args{'DryRun'}) {
         $RT::Handle->Rollback();
+    } else {
+        $RT::Handle->Commit();
     }
 
     return(@results);
@@ -2245,14 +2272,19 @@ sub Correspond {
              or ( $self->CurrentUserHasRight('ModifyTicket') ) ) {
         return ( 0, $self->loc("Permission Denied"), undef );
     }
+    $args{'NoteType'} = 'Correspond';
 
-    $args{'NoteType'} = 'Correspond'; 
+    $RT::Handle->BeginTransaction();
     if ($args{'DryRun'}) {
-        $RT::Handle->BeginTransaction();
         $args{'CommitScrips'} = 0;
     }
 
     my @results = $self->_RecordNote(%args);
+
+    unless ( $results[0] ) {
+        $RT::Handle->Rollback();
+        return @results;
+    }
 
     #Set the last told date to now if this isn't mail from the requestor.
     #TODO: Note that this will wrongly ack mail from any non-requestor as a "told"
@@ -2265,6 +2297,8 @@ sub Correspond {
 
     if ($args{'DryRun'}) {
         $RT::Handle->Rollback();
+    } else {
+        $RT::Handle->Commit();
     }
 
     return (@results);
@@ -2307,6 +2341,9 @@ sub _RecordNote {
             Data => ( ref $args{'Content'}? $args{'Content'}: [ $args{'Content'} ] )
         );
     }
+
+    $args{'MIMEObj'}->head->replace('X-RT-Interface' => 'API')
+        unless $args{'MIMEObj'}->head->get('X-RT-Interface');
 
     # convert text parts into utf-8
     RT::I18N::SetMIMEEntityToUTF8( $args{'MIMEObj'} );
@@ -2498,7 +2535,7 @@ sub _Links {
 
 Delete a link. takes a paramhash of Base, Target, Type, Silent,
 SilentBase and SilentTarget. Either Base or Target must be null.
-The null value will be replaced with this ticket\'s id.
+The null value will be replaced with this ticket's id.
 
 If Silent is true then no transaction would be recorded, in other
 case you can control creation of transactions on both base and
@@ -2649,9 +2686,7 @@ sub __GetTicketFromURI {
     # If the other URI is an RT::Ticket, we want to make sure the user
     # can modify it too...
     my $uri_obj = RT::URI->new( $self->CurrentUser );
-    $uri_obj->FromURI( $args{'URI'} );
-
-    unless ( $uri_obj->Resolver && $uri_obj->Scheme ) {
+    unless ($uri_obj->FromURI( $args{'URI'} )) {
         my $msg = $self->loc( "Couldn't resolve '[_1]' into a URI.", $args{'URI'} );
         $RT::Logger->warning( $msg );
         return( 0, $msg );
@@ -3192,11 +3227,16 @@ sub ValidateStatus {
     return 0;
 }
 
-
+sub Status {
+    my $self = shift;
+    my $value = $self->_Value( 'Status' );
+    return $value unless $self->QueueObj;
+    return $self->QueueObj->Lifecycle->CanonicalCase( $value );
+}
 
 =head2 SetStatus STATUS
 
-Set this ticket\'s status. STATUS can be one of: new, open, stalled, resolved, rejected or deleted.
+Set this ticket's status. STATUS can be one of: new, open, stalled, resolved, rejected or deleted.
 
 Alternatively, you can pass in a list of named parameters (Status => STATUS, Force => FORCE, SetStarted => SETSTARTED ).
 If FORCE is true, ignore unresolved dependencies and force a status change.
@@ -3222,7 +3262,7 @@ sub SetStatus {
 
     my $lifecycle = $self->QueueObj->Lifecycle;
 
-    my $new = $args{'Status'};
+    my $new = lc $args{'Status'};
     unless ( $lifecycle->IsValid( $new ) ) {
         return (0, $self->loc("Status '[_1]' isn't a valid status for tickets in this queue.", $self->loc($new)));
     }
@@ -3270,7 +3310,7 @@ sub SetStatus {
     #Actually update the status
     my ($val, $msg)= $self->_Set(
         Field           => 'Status',
-        Value           => $args{Status},
+        Value           => $new,
         TimeTaken       => 0,
         CheckACL        => 0,
         TransactionType => 'Status',
@@ -3574,6 +3614,9 @@ sub _Set {
                                                OldValue  => $Old,
                                                TimeTaken => $args{'TimeTaken'},
         );
+        # Ensure that we can read the transaction, even if the change
+        # just made the ticket unreadable to us
+        $TransObj->{ _object_is_readable } = 1;
         return ( $Trans, scalar $TransObj->BriefDescription );
     }
     else {
@@ -3786,35 +3829,27 @@ sub TransactionCustomFields {
 }
 
 
+=head2 LoadCustomFieldByIdentifier
 
-=head2 CustomFieldValues
-
-# Do name => id mapping (if needed) before falling back to
-# RT::Record's CustomFieldValues
-
-See L<RT::Record>
+Finds and returns the custom field of the given name for the ticket,
+overriding L<RT::Record/LoadCustomFieldByIdentifier> to look for
+queue-specific CFs before global ones.
 
 =cut
 
-sub CustomFieldValues {
+sub LoadCustomFieldByIdentifier {
     my $self  = shift;
     my $field = shift;
 
-    return $self->SUPER::CustomFieldValues( $field ) if !$field || $field =~ /^\d+$/;
+    return $self->SUPER::LoadCustomFieldByIdentifier($field)
+        if ref $field or $field =~ /^\d+$/;
 
     my $cf = RT::CustomField->new( $self->CurrentUser );
     $cf->SetContextObject( $self );
     $cf->LoadByNameAndQueue( Name => $field, Queue => $self->Queue );
-    unless ( $cf->id ) {
-        $cf->LoadByNameAndQueue( Name => $field, Queue => 0 );
-    }
-
-    # If we didn't find a valid cfid, give up.
-    return RT::ObjectCustomFieldValues->new( $self->CurrentUser ) unless $cf->id;
-
-    return $self->SUPER::CustomFieldValues( $cf->id );
+    $cf->LoadByNameAndQueue( Name => $field, Queue => 0 ) unless $cf->id;
+    return $cf;
 }
-
 
 
 =head2 CustomFieldLookupType

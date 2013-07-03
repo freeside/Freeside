@@ -13,14 +13,39 @@ my $exportnum = $cgi->param('exportnum');
 
 my $old = qsearchs('part_export', { 'exportnum'=>$exportnum } ) if $exportnum;
 
+my %vars = $cgi->Vars;
 #fixup options
 #warn join('-', split(',',$cgi->param('options')));
 my %options = map {
-  my @values = $cgi->param($_);
-  my $value = scalar(@values) > 1 ? join (' ', @values) : $values[0];
+  my $value = $vars{$_};
+  $value =~ s/\0/ /g; # deal with multivalued options
   $value =~ s/\r\n/\n/g; #browsers? (textarea)
   $_ => $value;
 } split(',', $cgi->param('options'));
+
+# deal with multiline options
+# %vars should never contain incomplete rows, but just in case it does, 
+# we make a list of all the row indices that contain values, and 
+# then write a line in each option for each row, even if it's empty.
+# This ensures that all values with the same row index line up.
+my %optionrows;
+foreach my $option (split(',', $cgi->param('multi_options'))) {
+  $optionrows{$option} = {};
+  my %values; # bear with me
+  for (keys %vars) {
+    /^$option(\d+)/ or next;
+    $optionrows{$option}{$1} = $vars{$option.$1};
+    $optionrows{_ALL_}{$1} = 1 if length($vars{$option.$1});
+  }
+}
+foreach my $option (split(',', $cgi->param('multi_options'))) {
+  my $value = '';
+  foreach my $row (sort keys %{$optionrows{_ALL_}}) {
+    $value .= ($optionrows{$option}{$row} || '') . "\n";
+  }
+  chomp($value);
+  $options{$option} = $value;
+}
 
 my $new = new FS::part_export ( {
   map {
@@ -31,6 +56,7 @@ my $new = new FS::part_export ( {
 if ( $cgi->param('svc_machine') eq 'Y' ) {
   $new->machine('_SVC_MACHINE');
   $new->part_export_machine_textarea( $cgi->param('part_export_machine') );
+  $new->default_machine_name( $cgi->param('default_machine_name') );
 }
 
 my $error;

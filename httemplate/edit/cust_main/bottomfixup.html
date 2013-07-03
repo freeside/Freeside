@@ -1,15 +1,9 @@
 <& /elements/init_overlib.html &>
 
 <& /elements/xmlhttp.html,
-  url  => $p.'misc/xmlhttp-cust_main-address_standardize.html',
+  url  => $p.'misc/xmlhttp-address_standardize.html',
   subs => [ 'address_standardize' ],
-  #'method' => 'POST', #could get too long?
-&>
-
-<& /elements/xmlhttp.html,
-  url  => $p.'misc/xmlhttp-cust_main-censustract.html',
-  subs => [ 'censustract' ],
-  #'method' => 'POST', #could get too long?
+  method => 'POST', #could get too long?
 &>
 
 <INPUT TYPE="hidden" NAME="duplicate_of_custnum" VALUE="">

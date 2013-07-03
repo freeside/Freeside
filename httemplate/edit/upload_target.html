@@ -1,0 +1,82 @@
+<& elements/edit.html,
+  'post_url'    => popurl(1).'process/upload_target.html',
+  'name'        => 'Upload target',
+  'table'       => 'upload_target',
+  'viewall_url' => "${p}browse/upload_target.html",
+  'labels'      => { targetnum => 'Target',
+                     protocol  => 'Protocol',
+                     handling  => 'Special handling',
+                   },
+  'fields'      => [
+                     { field    => 'protocol',
+                       type     => 'selectlayers',
+                       options  => [ '', 'sftp', 'ftp', 'email' ],
+                       labels   => { ''      => '',
+                                     'email' => 'Email',
+                                     'sftp'  => 'SFTP',
+                                     'ftp'   => 'FTP',
+                                   },
+                       layer_fields => \%protocol_fields,
+                       layer_values_callback => \&values_callback,
+                     },
+                     { field => 'handling', 
+                       type => 'select',
+                       options => [ FS::upload_target->handling_types ],
+                     },
+                   ],
+  'menubar'     => \@menubar,
+  'edit_callback' => $edit_callback,
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Configuration');
+
+my @menubar = ('View all FTP targets' => $p.'browse/upload_target.html');
+my $edit_callback = sub {
+  my ($cgi, $object) = @_;
+  if ( $object->targetnum ) {
+    push @menubar, 'Delete this target', 
+                   $p.'misc/delete-upload_target.html?'.$object->targetnum;
+  }
+};
+
+my %protocol_fields = (
+  '' => [],
+  'sftp'   => [
+    'hostname' => { label => 'Server' },
+    'username' => { label => 'Username' },
+    'password' => { label => 'Password' },
+    'port'     => { label => 'Port', size => 8 },
+    'path'     => { label => 'Path', size => 30 },
+  ],
+  'email' => [
+    'username' => { label => 'To:' },
+    'hostname' => { label => '@' },
+    'subject'  => { label => 'Subject:' },
+  ],
+);
+$protocol_fields{'ftp'} = [ @{ $protocol_fields{'sftp'} } ];
+foreach my $k (keys %protocol_fields) {
+  # disambiguate the field names
+  foreach (@{ $protocol_fields{$k} }) {
+    $_ = $k.'_'.$_ unless ref $_;
+  }
+}
+
+sub values_callback {
+  my ($cgi, $object) = @_;
+  my $layer_values;
+  # really simple, the interpretation of the fields is the same for all 
+  # three layers
+  foreach my $l (qw(email ftp sftp)) {
+    $layer_values->{$l} = { map { $l.'_'.$_ => ($cgi->param($l.'_'.$_) || 
+                                                $object->get($_) ) }
+                            $object->fields };
+  }
+  $layer_values;
+}
+
+</%init>

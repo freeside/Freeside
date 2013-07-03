@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/svc_Common.html,
               'title'       => 'Broadband Search Results',
               'name'        => 'broadband services',
               'html_init'   => $html_init,
@@ -49,8 +49,8 @@
                                  '',
                                  FS::UI::Web::cust_styles(),
                                ],
-          )
-%>
+          
+&>
 <%init>
 
 die "access denied" unless
@@ -72,7 +72,7 @@ else {
 }
 
 if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
-  $search_hash{'order_by'} = $1;
+  $search_hash{'order_by'} = "ORDER BY $1";
 }
 
 my $sql_query = FS::svc_broadband->search(\%search_hash);

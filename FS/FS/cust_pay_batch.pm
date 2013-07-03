@@ -9,7 +9,7 @@ use FS::payinfo_Mixin;
 use FS::cust_main;
 use FS::cust_bill;
 
-@ISA = qw( FS::payinfo_Mixin FS::Record );
+@ISA = qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -80,7 +80,9 @@ following fields are currently supported:
 
 =item country 
 
-=item status
+=item status - 'Approved' or 'Declined'
+
+=item error_message - the error returned by the gateway if any
 
 =back
 
@@ -289,19 +291,21 @@ sub retriable {
   '';
 }
 
-=item approve PAYBATCH
+=item approve OPTIONS
 
 Approve this payment.  This will replace the existing record with the 
 same paybatchnum, set its status to 'Approved', and generate a payment 
 record (L<FS::cust_pay>).  This should only be called from the batch 
 import process.
 
+OPTIONS may contain "gatewaynum", "processor", "auth", and "order_number".
+
 =cut
 
 sub approve {
   # to break up the Big Wall of Code that is import_results
   my $new = shift;
-  my $paybatch = shift;
+  my %opt = @_;
   my $paybatchnum = $new->paybatchnum;
   my $old = qsearchs('cust_pay_batch', { paybatchnum => $paybatchnum })
     or return "paybatchnum $paybatchnum not found";
@@ -317,13 +321,17 @@ sub approve {
   my $cust_pay = new FS::cust_pay ( {
       'custnum'   => $new->custnum,
       'payby'     => $new->payby,
-      'paybatch'  => $paybatch,
       'payinfo'   => $new->payinfo || $old->payinfo,
       'paid'      => $new->paid,
       '_date'     => $new->_date,
       'usernum'   => $new->usernum,
       'batchnum'  => $new->batchnum,
+      'gatewaynum'    => $opt{'gatewaynum'},
+      'processor'     => $opt{'processor'},
+      'auth'          => $opt{'auth'},
+      'order_number'  => $opt{'order_number'} 
     } );
+
   $error = $cust_pay->insert;
   if ( $error ) {
     return "error inserting payment for paybatchnum $paybatchnum: $error\n";
@@ -361,6 +369,12 @@ sub decline {
       # Void the payment
       my $cust_pay = qsearchs('cust_pay', { 
           custnum  => $new->custnum,
+          batchnum => $new->batchnum
+        });
+      # these should all be migrated over, but if it's not found, look for
+      # batchnum in the 'paybatch' field also
+      $cust_pay ||= qsearchs('cust_pay', { 
+          custnum  => $new->custnum,
           paybatch => $new->batchnum
         });
       if ( !$cust_pay ) {
@@ -375,6 +389,7 @@ sub decline {
     }
   } # !$old->status
   $new->status('Declined');
+  $new->error_message($reason);
   my $error = $new->replace($old);
   if ( $error ) {
     return "error updating status of paybatchnum $paybatchnum: $error\n";

@@ -1,10 +1,10 @@
-<% include( 'elements/search.html',
-              'title'       => 'Tax credits', #well, actually application of
-              'name'        => 'tax credits', # credit to line item
-              'query'       => $query,
-              'count_query' => $count_query,
-                 'count_addl'  => [ $money_char. '%.2f total', ],
-                 'header'      => [
+<& elements/search.html,
+              'title'         => 'Credit application detail', #to line item
+              'name_singular' => 'credit application',
+              'query'         => $query,
+              'count_query'   => $count_query,
+               'count_addl'   => [ $money_char. '%.2f total', ],
+               'header'       => [
                    #'#',
 
                    'Amount',
@@ -16,13 +16,15 @@
 
                    # line item
                    'Description',
+                   'Location',
+                   @post_desc_header,
 
                    #invoice
                    'Invoice',
                    'Date',
                    FS::UI::Web::cust_header(),
-                 ],
-                 'fields'      => [
+               ],
+               'fields'       => [
                    #'creditbillpkgnum',
                    sub { sprintf($money_char.'%.2f', shift->amount ) },
 
@@ -34,58 +36,72 @@
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
                        },
+                   $location_sub,
+                   @post_desc,
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
-                 ],
-                 'sort_fields' => [
+               ],
+               'sort_fields'  => [
                    'amount',
                    'cust_credit_date',
                    '', #'otaker',
                    '', #reason
                    '', #line item description
+                   '', #location
+                   @post_desc_null,
                    'invnum',
                    '_date',
                    #cust fields
-                 ],
-                 'links'       => [
+               ],
+               'links' => [
                    '',
                    '',
                    '',
                    '',
                    '',
+                   '',
+                   @post_desc_null,
                    $ilink,
                    $ilink,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
-                 ],
-                 'align' => 'rrlllrr'.FS::UI::Web::cust_aligns(),
-                 'color' => [ 
+               ],
+               'align' => 'rrllll'.
+                          $post_desc_align.
+                          'rr'.
+                          FS::UI::Web::cust_aligns(),
+               'color' => [ 
                               '',
                               '',
                               '',
                               '',
                               '',
+                              '',
+                              @post_desc_null,
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
                             ],
-                 'style' => [ 
+               'style' => [ 
                               '',
                               '',
                               '',
                               '',
                               '',
+                              '',
+                              @post_desc_null,
                               '',
                               '',
                               FS::UI::Web::cust_styles(),
-                            ],
-           )
-%>
+                          ],
+           
+&>
 <%init>
 
 #LOTS of false laziness below w/cust_bill_pkg.cgi
+# and a little w/cust_credit.html
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
@@ -98,12 +114,29 @@ my $agentnums_sql =
 
 my @where = ( $agentnums_sql );
 
+if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+  push @where, "cust_credit.usernum = $1";
+}
+
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 push @where, "cust_bill._date >= $beginning",
              "cust_bill._date <= $ending";
 
+my($cr_begin, $cr_end) = FS::UI::Web::parse_beginning_ending($cgi, 'credit');
+push @where, "cust_credit._date >= $cr_begin",
+             "cust_credit._date <= $cr_end";
+
+#credit amount?  seems more what is expected than the applied amount
+my @lt_gt = FS::UI::Web::parse_lt_gt($cgi, 'amount' );
+s/amount/cust_credit.amount/g foreach (@lt_gt);
+push @where, @lt_gt;
+
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
+}
+
+if ( $cgi->param('billpkgnum') =~ /^(\d+)$/ ) {
+  push @where, "billpkgnum = $1";
 }
 
 #classnum
@@ -346,12 +379,12 @@ if ( $cgi->param('cust_tax') ) {
   push @where, $cust_exempt;
 }
 
-my $count_query = "SELECT COUNT(DISTINCT billpkgnum),
+my $count_query = "SELECT COUNT(DISTINCT creditbillpkgnum),
                           SUM(cust_credit_bill_pkg.amount)";
 
 my $join_cust =
-  '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum ) 
-    LEFT JOIN cust_main ON ( cust_bill.custnum = cust_main.custnum ) ';
+  '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum )'.
+  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
 
 my $join_pkg;
@@ -396,10 +429,9 @@ if ( $cgi->param('nottax') ) {
     s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g for @where;
   }
 
-} else { 
+} else {
 
-  #die?
-  warn "neiether nottax nor istax parameters specified";
+  #warn "neither nottax nor istax parameters specified";
   #same as before?
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
                  LEFT JOIN part_pkg USING ( pkgpart ) ';
@@ -412,8 +444,8 @@ my $join_credit = ' LEFT JOIN cust_credit_bill USING ( creditbillnum )
                     LEFT JOIN cust_credit      USING ( crednum ) ';
 
 $count_query .= " FROM cust_credit_bill_pkg
-                         $join_pkg
                          $join_cust_bill_pkg
+                         $join_pkg
                          $join_credit
                          $join_cust
                        $where";
@@ -428,10 +460,22 @@ push @select, 'part_pkg.pkg' unless $cgi->param('istax');
 push @select, 'cust_main.custnum',
               FS::UI::Web::cust_sql_fields();
 
+my @post_desc_header = ();
+my @post_desc = ();
+my @post_desc_null = ();
+my $post_desc_align = '';
+if ( $conf->exists('enable_taxclasses') && ! $cgi->param('istax') ) {
+  push @post_desc_header, 'Tax class';
+  push @post_desc, 'taxclass';
+  push @post_desc_null, '';
+  $post_desc_align .= 'l';
+  push @select, 'part_pkg.taxclass'; # or should this use override?
+}
+
 my $query = {
   'table'     => 'cust_credit_bill_pkg',
-  'addl_from' => "$join_pkg
-                  $join_cust_bill_pkg
+  'addl_from' => "$join_cust_bill_pkg
+                  $join_pkg
                   $join_credit
                   $join_cust",
   'hashref'   => {},
@@ -445,5 +489,58 @@ my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
+
+my $tax_pkg_address = $conf->exists('tax-pkg_address');
+my $tax_ship_address = $conf->exists('tax-ship_address');
+
+my $location_sub = sub {
+  #my $cust_credit_bill_pkg = shift;
+  my $self = shift;
+  my $tax_Xlocation = $self->cust_bill_pkg_tax_Xlocation;
+  if ( defined($tax_Xlocation) && $tax_Xlocation ) {
+
+    if ( ref($tax_Xlocation) eq 'FS::cust_bill_pkg_tax_location' ) {
+
+      if ( $tax_Xlocation->taxtype eq 'FS::cust_main_county' ) {
+        my $cust_main_county = $tax_Xlocation->cust_main_county;
+        if ( $cust_main_county ) {
+          $cust_main_county->label;
+        } else {
+          ''; #cust_main_county record is gone... history?  yuck.
+        }
+      } else {
+        '(CCH tax_rate)'; #XXX FS::tax_rate.. vendor taxes not yet handled here
+      }
+
+    } elsif ( ref($tax_Xlocation) eq 'FS::cust_bill_pkg_tax_rate_location' ) {
+      '(CCH)'; #XXX vendor taxes not yet handled here
+    } else {
+      'unknown tax_Xlocation '. ref($tax_Xlocation);
+    }
+
+  } else {
+
+    my $cust_bill_pkg = $self->cust_bill_pkg;
+    if ( $cust_bill_pkg->pkgnum > 0 ) {
+      my $cust_pkg = $cust_bill_pkg->cust_pkg;
+      if ( $tax_pkg_address && (my $cust_location = $cust_pkg->cust_location) ){
+        $cust_location->county_state_country;
+      } else {
+        my $cust_main = $cust_pkg->cust_main;
+        if ( $tax_ship_address && $cust_main->has_ship_address ) {
+          $cust_main->county_state_country('ship_');
+        } else {
+          $cust_main->county_state_country;
+        }
+      }
+
+    } else {
+      #tax?  we shouldn't have wound up here then...
+      ''; #return customer ship or bill address? (depending on tax-ship_address)
+    }
+
+  }
+
+};
 
 </%init>

@@ -2,6 +2,7 @@
                'table'          => 'svc_phone',
                'args_callback'  => $args_callback,
 	       'value_callback' => $value_callback,
+               'edit_callback'  => $edit_callback,
                %opt,
 &>
 <%init>
@@ -28,6 +29,9 @@ my $right = $opt{'bulk'} ? 'Bulk provision customer service'
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right($right);
 
+$cgi->param('phonenum', $cgi->param('phonenum_manual') )
+  if $cgi->param('phonenum_which') eq 'phonenum_manual';
+
 my $tollfreephonenum = $cgi->param('tollfreephonenum');
 $cgi->param('phonenum',$tollfreephonenum) if $tollfreephonenum =~ /^\d+$/;
 
@@ -36,10 +40,10 @@ my $args_callback = sub {
 
   my %opt = ();
   if ( $cgi->param('locationnum') == -1 ) {
-    my $cust_location = new FS::cust_location {
+    my $cust_location = FS::cust_location->new({
       map { $_ => scalar($cgi->param($_)) }
           qw( custnum address1 address2 city county state zip country )
-    };
+    });
     $opt{'cust_location'} = $cust_location;
   }
 
@@ -48,8 +52,13 @@ my $args_callback = sub {
 };
 
 my $value_callback = sub {
-     my ($field, $value) = @_;
-     ($field =~ /_date$/) ? parse_datetime($value) : $value;
+  my ($field, $value) = @_;
+  ($field =~ /_date$/) ? parse_datetime($value) : $value;
+};
+
+my $edit_callback = sub {
+  my( $new, $old ) = @_;
+  $new->sip_password( $old->sip_password ) if $new->sip_password eq '*HIDDEN*';
 };
 
 </%init>

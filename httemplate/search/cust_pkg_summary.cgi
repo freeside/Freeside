@@ -1,25 +1,14 @@
-<% include('/elements/header.html', $title) %>
-<% include('/elements/table-grid.html') %>
-  <TR>
-% foreach (@head) {
-    <TH CLASS="grid" BGCOLOR="#cccccc"><% $_ %></TH>
-% }
-  </TR>
-% my $r=0;
-% foreach my $row (@rows) {
-  <TR>
-%   foreach (@$row) {
-    <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $r % 2 ? '#ffffff' : '#eeeeee' %>"><% $_ %></TD>
-%   }
-  </TR>
-%   $r++;
-% }
-  <TR>
-% foreach (@totals) {
-    <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $r % 2 ? '#ffffff' : '#eeeeee' %>"><B><% $_ %></B></TD>
-% }
-  </TR>
-</TABLE>
+<& elements/search.html,
+  'title'       => $title,
+  'name'        => 'package types',
+  'query'       => $query,
+  'count_query' => $count_query,
+  'header'      => \@head,
+  'fields'      => \@fields,
+  'links'       => \@links,
+  'align'       => 'clrrrrr',
+  'footer_data' => $totals,
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -34,74 +23,92 @@ if($begin > 0) {
     $cgi->param('beginning').' - '.$cgi->param('ending').')';
 }
 
-my @h_sql = FS::h_cust_pkg->sql_h_search($end);
-
-my ($end_sql, $addl_from) = @h_sql[1,3];
-$end_sql =~ s/ORDER BY.*//; # breaks aggregate queries
-
-my $begin_sql = $end_sql;
-$begin_sql =~ s/$end/$begin/g;
-
-my $active_sql = FS::cust_pkg->active_sql;
-my $suspended_sql = FS::cust_pkg->suspended_sql;
-my @conds = (
-  # SQL WHERE clauses for each column of the table.
-  " $begin_sql AND ($active_sql OR $suspended_sql)",
-  '',
-  " $end_sql AND ($active_sql OR $suspended_sql)",
-  " $end_sql AND $active_sql",
-  " $end_sql AND $suspended_sql",
-  );
-
-$_ =~ s/\bcust_pkg/maintable/g foreach @conds;
-
-my @head = ('Package', 'Before Period', 'Sales', 'Total', 'Active', 'Suspended');
-my @rows = ();
-my @totals = ('Total', 0, 0, 0, 0, 0);
-
-if( !$begin ) {
-  splice @conds, 1, 1;
-  splice @head, 1, 1;
-}
-
 my $agentnums_sql = $curuser->agentnums_sql(
                       'null'       => 1,
-                      'table'      => 'part_pkg',
+                      'table'      => 'main',
                     );
 
-my $extra_sql = " WHERE $agentnums_sql";
+my $extra_sql = " freq != '0' AND $agentnums_sql";
 
-foreach my $part_pkg (qsearch({ 'table'     => 'part_pkg',
-                                'hashref'   => {},
-                                'extra_sql' => $extra_sql,
-                             })
-                     )
-{
-  my @row = ();
-  next if !$part_pkg->freq; # exclude one-time packages
-  push @row, $part_pkg->pkg;
-  my $i=1;
-  foreach my $cond (@conds) {
-    if($cond) {
-      my $result = qsearchs({ 
-                            'table'     => 'h_cust_pkg',
-                            'addl_from' => $addl_from.
-                                           ' LEFT JOIN cust_main USING ( custnum )',
-
-                            'hashref'   => {},
-                            'select'    => 'count(*)',
-                            'extra_sql' => 'WHERE pkgpart = '.$part_pkg->pkgpart.$cond.
-                                           ' AND '. $curuser->agentnums_sql(
-                                                      'table' => 'cust_main',
-                                                    ),
-                            });
-      $row[$i] = $result->getfield('count');
-      $totals[$i] += $row[$i];
-    }
-    $i++;
+#tiny bit of false laziness w/cust_pkg.pm::search
+if ( grep { $_ eq 'classnum' } $cgi->param ) {
+  if ( $cgi->param('classnum') eq '' ) {
+    $extra_sql .= ' AND main.classnum IS NULL';
+  } elsif ( $cgi->param('classnum') =~ /^(\d+)$/ && $1 ne '0' ) {
+    $extra_sql .= " AND main.classnum = $1 ";
   }
-  $row[2] = $row[3]-$row[1];
-  $totals[2] += $row[2];
-  push @rows, \@row;
 }
+
+my $active_sql = 'setup IS NOT NULL AND susp IS NULL AND cancel IS NULL';
+my $suspended_sql = 'setup IS NOT NULL AND susp IS NOT NULL AND cancel IS NULL';
+my $active_or_suspended_sql = 'setup IS NOT NULL AND cancel IS NULL';
+my %conds;
+
+$conds{'before'} = { 'date' => $begin, 'status' => 'active,suspended' };
+$conds{'after'}  = { 'date' => $end,   'status' => 'active,suspended' };
+$conds{'active'} = { 'date' => $end,   'status' => 'active' };
+$conds{'suspended'} = { 'date' => $end, 'status' => 'suspended' };
+
+my @select;
+my $totals = FS::part_pkg->new({pkg => 'Total'});
+foreach my $column (keys %conds) {
+  my $h_search = FS::h_cust_pkg->search($conds{$column});
+  my $count_query = $h_search->{count_query};
+
+  # push a select expression for the total packages with pkgpart=main.pkgpart
+  push @select, "($count_query AND h_cust_pkg.pkgpart = main.pkgpart) AS $column";
+
+  # and query the total packages with pkgpart=any of the main.pkgparts
+  my $total = FS::Record->scalar_sql($count_query . 
+    " AND h_cust_pkg.pkgpart IN(SELECT pkgpart FROM part_pkg AS main WHERE $extra_sql)"
+  );
+  $totals->set($column => $total);
+}
+
+my $query = {
+  'table'       => 'part_pkg',
+  'addl_from'   => 'AS main',
+  'select'      => join(', ', 'main.*', @select),
+  'extra_sql'   => "WHERE $extra_sql",
+};
+
+my $count_query = "SELECT COUNT(*) FROM part_pkg AS main WHERE $extra_sql";
+
+my $baselink = "h_cust_pkg.html?";
+if ( $cgi->param('classnum') =~ /^\d*$/ ) {
+  $baselink .= "classnum=".$cgi->param('classnum').';';
+}
+my @links = ( #arguments to h_cust_pkg.html, except for pkgpart
+  '',
+  '',
+  [ $baselink . "status=active,suspended;date=$begin;pkgpart=", 'pkgpart' ],
+  '',
+  [ $baselink . "status=active,suspended;date=$end;pkgpart=", 'pkgpart' ],
+  [ $baselink . "status=active;date=$end;pkgpart=", 'pkgpart' ],
+  [ $baselink . "status=suspended;date=$end;pkgpart=", 'pkgpart' ],
+);
+
+my @head = ('#',
+            'Package',
+            'Before Period',
+            'Sales',
+            'Total',
+            'Active',
+            'Suspended');
+
+my @fields = (
+  'pkgpart',
+  'pkg',
+  'before',
+  sub { $_[0]->after - $_[0]->before },
+  'after',
+  'active',
+  'suspended',
+  );
+
+if ( !$begin ) {
+  # remove the irrelevant 'before' column
+  splice(@$_,2,1) foreach \@head, \@fields, \@links;
+}
+
 </%init>

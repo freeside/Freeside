@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -144,6 +144,11 @@
 </td></tr>
 
 <tr><td class="label">&nbsp;</td><td>
+<input type="checkbox" class="checkbox" name="YesClone" value="1" <% $YesCloneChecked |n%> />
+<&|/l&>Copy this field to new tickets</&>
+</td></tr>
+
+<tr><td class="label">&nbsp;</td><td>
 <input type="hidden" class="hidden" name="SetEnabled" value="1" />
 <input type="checkbox" class="checkbox" name="Enabled" value="1" <% $EnabledChecked |n%> />
 <&|/l&>Enabled (Unchecking this box disables this custom field)</&>
@@ -187,6 +192,7 @@ else {
             IncludeContentForValue => $IncludeContentForValue,
             BasedOn       => $BasedOn,
             Disabled      => !$Enabled,
+            NoClone       => !$YesClone,
         );
         if (!$val) {
             push @results, loc("Could not create CustomField: [_1]", $msg);
@@ -207,16 +213,26 @@ else {
 if ( $ARGS{'Update'} && $id ne 'new' ) {
     #we're asking about enabled on the web page but really care about disabled.
     $ARGS{'Disabled'} = $Enabled? 0 : 1;
+    #  likewise
+    $ARGS{'NoClone'} = $YesClone ? 0 : 1;
    
     $ARGS{'Required'} ||= 0;
 
-    my @attribs = qw(Disabled Required Pattern Name TypeComposite LookupType Description LinkValueTo IncludeContentForValue);
+    my @attribs = qw(Disabled Required Pattern Name TypeComposite LookupType Description LinkValueTo IncludeContentForValue NoClone);
     push @results, UpdateRecordObject(
         AttributesRef => \@attribs,
         Object        => $CustomFieldObj,
         ARGSRef       => \%ARGS
     );
-    $CustomFieldObj->SetValuesClass( $ValuesClass );
+    if ( ($ValuesClass||'RT::CustomFieldValues') ne $CustomFieldObj->ValuesClass ) {
+        my $original = $CustomFieldObj->ValuesClass;
+        my ($good, $msg) = $CustomFieldObj->SetValuesClass( $ValuesClass );
+        if ( $good ) {
+            $msg = loc("[_1] changed from '[_2]' to '[_3]'",
+                        loc("Field values source"), $original, $ValuesClass );
+        }
+        push @results, $msg;
+    }
 
     # Set the render type if we have it, but unset it if the new type doesn't
     # support render types
@@ -250,7 +266,7 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
     my $paramtag = "CustomField-". $CustomFieldObj->Id ."-Value";
     # Delete any fields that want to be deleted
     foreach my $key ( keys %ARGS ) {
-        next unless $key =~ /^Delete-$paramtag-(\d+)$/o;
+        next unless $key =~ /^Delete-$paramtag-(\d+)$/;
         my ($val, $msg) = $CustomFieldObj->DeleteValue( $1 );
         push (@results, $msg);
     }
@@ -313,6 +329,10 @@ $EnabledChecked = '' if $CustomFieldObj->Disabled;
 my $RequiredChecked = '';
 $RequiredChecked = qq[checked="checked"] if $CustomFieldObj->Required;
 
+my $YesCloneChecked = qq[checked="checked"];
+$YesCloneChecked = '' if $CustomFieldObj->NoClone;
+
+
 my @CFvalidations = (
     '(?#Mandatory).',
     '(?#Digits)^[\d.]+$',
@@ -339,4 +359,5 @@ $LinkValueTo => undef
 $IncludeContentForValue => undef
 $BasedOn => undef
 $UILocation => undef
+$YesClone => undef
 </%ARGS>

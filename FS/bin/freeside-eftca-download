@@ -52,7 +52,7 @@ my $conf = new FS::Conf;
 
 my @agents;
 if ( $conf->exists('batch-spoolagent') ) {
-  @agents = qsearchs('agent', { 'disabled' => '' });
+  @agents = qsearch('agent', { 'disabled' => '' });
 } else {
   @agents = (1);
 }
@@ -62,11 +62,14 @@ foreach my $agent (@agents) {
   my @batchconf;
   if ( $conf->exists('batch-spoolagent') ) {
     @batchconf = $conf->config('batchconfig-eft_canada', $agent->agentnum, 1);
-    next unless $batchconf[0];
+    if ( !length($batchconf[0]) ) {
+      warn "agent '".$agent->agent."' has no batchconfig-eft_canada setting; skipped.\n";
+      next;
+    }
   } else {
     @batchconf = $conf->config('batchconfig-eft_canada');
   }
-  # BIN, terminalID, merchantID, username, password
+  # user, password, transaction code, delay days
   my $user = $batchconf[0] or die "no EFT Canada batch username configured\n";
   my $pass = $batchconf[1] or die "no EFT Canada batch password configured\n";
 
@@ -82,7 +85,7 @@ foreach my $agent (@agents) {
 
   $sftp->setcwd('/Returns');
 
-  my $files = $sftp->ls('.', wanted => qr/^ReturnFile/, names_only => 1);
+  my $files = $sftp->ls('.', wanted => qr/\.txt$/, names_only => 1);
   die "no response files found\n" if !@$files;
 
   FILE: foreach my $filename (@$files) {

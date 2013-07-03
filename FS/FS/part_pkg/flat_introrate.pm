@@ -1,12 +1,8 @@
 package FS::part_pkg::flat_introrate;
+use base qw( FS::part_pkg::flat );
 
 use strict;
-use vars qw(@ISA %info $DEBUG $me);
-use FS::part_pkg::flat;
-
-@ISA = qw(FS::part_pkg::flat);
-$me = '[' . __PACKAGE__ . ']';
-$DEBUG = 0;
+use vars qw( %info );
 
 %info = (
   'name' => 'Introductory price for X months, then flat rate,'.

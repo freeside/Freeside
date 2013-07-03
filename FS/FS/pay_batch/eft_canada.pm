@@ -25,12 +25,6 @@ my %holiday_yearly = (
   12 => { map {$_=>1} 26 }, #boxing day
 );
 my %holiday = (
-  2012 => {
-             7 => { map {$_=>1}  2 }, #canada day
-             8 => { map {$_=>1}  6 }, #First Monday of August Civic Holiday
-             9 => { map {$_=>1}  3 }, #labour day
-            10 => { map {$_=>1}  8 }, #thanksgiving
-          },
   2013 => {  2 => { map {$_=>1} 18 }, #family day
              3 => { map {$_=>1} 29 }, #good friday
              4 => { map {$_=>1}  1 }, #easter monday
@@ -112,7 +106,7 @@ my %holiday = (
     }
     push @fields, sprintf('%05s', $branch),
                   sprintf('%03s', $bankno),
-                  sprintf('%012s', $account),
+                  $account,
                   sprintf('%.02f', $cust_pay_batch->amount);
     # DB = debit
     push @fields, 'DB', $trans_code, $process_date;

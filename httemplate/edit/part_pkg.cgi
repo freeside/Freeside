@@ -1,294 +1,330 @@
-<% include( 'elements/edit.html',
-              'post_url'              => popurl(1).'process/part_pkg.cgi',
-              'name'                  => "Package definition",
-              'table'                 => 'part_pkg',
+<& elements/edit.html,
+     'post_url'              => popurl(1).'process/part_pkg.cgi',
+     'name'                  => "Package definition",
+     'table'                 => 'part_pkg',
 
-              'agent_virt'            => 1,
-              'agent_null_right'      => $edit_global,
-              'agent_clone_extra_sql' => $agent_clone_extra_sql,
-              #'viewall_dir'           => 'browse',
-              'viewall_url'           => $p.'browse/part_pkg.cgi',
-              'html_init'             => include('/elements/init_overlib.html').
-                                         $javascript,
-              'html_bottom'           => $html_bottom,
-              'body_etc'              =>
-                'onLoad="agent_changed(document.edit_topform.agentnum)"',
+     'agent_virt'            => 1,
+     'agent_null_right'      => $edit_global,
+     'agent_clone_extra_sql' => $agent_clone_extra_sql,
+     #'viewall_dir'           => 'browse',
+     'viewall_url'           => $p.'browse/part_pkg.cgi',
+     'html_init'             => include('/elements/init_overlib.html').
+                                $javascript,
+     'html_bottom'           => $html_bottom,
+     'body_etc'              =>
+       'onLoad="agent_changed(document.edit_topform.agentnum);
+                aux_planchanged(document.edit_topform.plan)"',
 
-              'begin_callback'        => $begin_callback,
-              'end_callback'          => $end_callback,
-              'new_hashref_callback'  => $new_hashref_callback,
-              'new_object_callback'   => $new_object_callback,
-              'new_callback'          => $new_callback,
-              'clone_callback'        => $clone_callback,
-              'edit_callback'         => $edit_callback,
-              'error_callback'        => $error_callback,
-              'field_callback'        => $field_callback,
+     'begin_callback'        => $begin_callback,
+     'end_callback'          => $end_callback,
+     'new_hashref_callback'  => $new_hashref_callback,
+     'new_object_callback'   => $new_object_callback,
+     'new_callback'          => $new_callback,
+     'clone_callback'        => $clone_callback,
+     'edit_callback'         => $edit_callback,
+     'error_callback'        => $error_callback,
+     'field_callback'        => $field_callback,
 
-              'onsubmit'              => 'confirm_submit',
+     'onsubmit'              => 'confirm_submit',
 
-              'labels' => { 
-                            'pkgpart'          => 'Package Definition',
-                            'pkg'              => 'Package (customer-visible)',
-                            'comment'          => 'Comment (customer-hidden)',
-                            'classnum'         => 'Package class',
-                            'addon_classnum'   => 'Restrict additional orders to package class',
-                            'promo_code'       => 'Promotional code',
-                            'freq'             => 'Recurring fee frequency',
-                            'setuptax'         => 'Setup fee tax exempt',
-                            'recurtax'         => 'Recurring fee tax exempt',
-                            'taxclass'         => 'Tax class',
-                            'taxproduct_select'=> 'Tax products',
-                            'plan'             => 'Price plan',
-                            'disabled'         => 'Disable new orders',
-                            'disable_line_item_date_ranges' => 'Disable line item date ranges',
-                            'setup_cost'       => 'Setup cost',
-                            'recur_cost'       => 'Recur cost',
-                            'pay_weight'       => 'Payment weight',
-                            'credit_weight'    => 'Credit weight',
-                            'agentnum'         => 'Agent',
-                            'setup_fee'        => 'Setup fee',
-                            'setup_show_zero'  => 'Show zero setup',
-                            'recur_fee'        => 'Recurring fee',
-                            'recur_show_zero'  => 'Show zero recurring',
-                            'discountnum'      => 'Offer discounts for longer terms',
-                            'bill_dst_pkgpart' => 'Include line item(s) from package',
-                            'svc_dst_pkgpart'  => 'Include services of package',
-                            'report_option'    => 'Report classes',
-                            'fcc_ds0s'         => 'Voice-grade equivalents',
-                            'fcc_voip_class'   => 'Category',
-                          },
+     'labels' => { 
+                   'pkgpart'          => 'Package Definition',
+                   'pkg'              => 'Package',
+                   %locale_field_labels,
+                   'comment'          => 'Comment (customer-hidden)',
+                   'classnum'         => 'Package class',
+                   'addon_classnum'   => 'Restrict additional orders to package class',
+                   'promo_code'       => 'Promotional code',
+                   'freq'             => 'Recurring fee frequency',
+                   'setuptax'         => 'Setup fee tax exempt',
+                   'recurtax'         => 'Recurring fee tax exempt',
+                   'taxclass'         => 'Tax class',
+                   'taxproduct_select'=> 'Tax products',
+                   'plan'             => 'Price plan',
+                   'disabled'         => 'Disable new orders',
+                   'disable_line_item_date_ranges' => 'Disable line item date ranges',
+                   'setup_cost'       => 'Setup cost',
+                   'recur_cost'       => 'Recur cost',
+                   'pay_weight'       => 'Payment weight',
+                   'credit_weight'    => 'Credit weight',
+                   'agentnum'         => 'Agent',
+                   'setup_fee'        => 'Setup fee',
+                   'setup_show_zero'  => 'Show zero setup',
+                   'recur_fee'        => 'Recurring fee',
+                   'recur_show_zero'  => 'Show zero recurring',
+                   ( map { ( "setup_fee_$_" => "Setup fee $_",
+                             "recur_fee_$_" => "Recurring fee $_",
+                           );
+                         }
+                       $conf->config('currencies')
+                   ),
+                   'discountnum'      => 'Offer discounts for longer terms',
+                   'bill_dst_pkgpart' => 'Include line item(s) from package',
+                   'svc_dst_pkgpart'  => 'Include services of package',
+                   'supp_dst_pkgpart' => 'Include complete package',
+                   'report_option'    => 'Report classes',
+                   'fcc_ds0s'         => 'Voice-grade equivalents',
+                   'fcc_voip_class'   => 'Category',
+                 },
 
-              'fields' => [
-                            { field=>'clone',  type=>'hidden',
-                              curr_value_callback =>
-                                sub { shift->param('clone') },
-                            },
-                            { field=>'pkgnum', type=>'hidden',
-                              curr_value_callback =>
-                                sub { shift->param('pkgnum') },
-                            },
+     'fields' => [
+                   { field=>'clone',  type=>'hidden',
+                     curr_value_callback =>
+                       sub { shift->param('clone') },
+                   },
+                   { field=>'pkgnum', type=>'hidden',
+                     curr_value_callback =>
+                       sub { shift->param('pkgnum') },
+                   },
 
-                            { field=>'custom',  type=>'hidden' },
-                            { field=>'family_pkgpart', type=>'hidden' },
-                            { field=>'successor', type=>'hidden' },
+                   { field=>'custom',  type=>'hidden' },
+                   { field=>'family_pkgpart', type=>'hidden' },
+                   { field=>'successor', type=>'hidden' },
 
-                            { type => 'columnstart' },
-                            
-                              { field     => 'pkg',
-                                type      => 'text',
-                                size      => 40, #32
-                                maxlength => 50,
-                              },
-                              {field=>'comment',  type=>'text', size=>40 }, #32
-                              { field         => 'agentnum',
-                                type          => 'select-agent',
-                                disable_empty => ! $acl_edit_global,
-                                empty_label   => '(global)',
-                                onchange      => 'agent_changed',
-                              },
-                              {field=>'classnum', type=>'select-pkg_class' },
-                              ( $conf->exists('pkg-addon_classnum')
-                                  ? ( { field=>'addon_classnum',
-                                        type =>'select-pkg_class',
-                                      }
-                                    )
-                                   : ()
-                              ),
-                              {field=>'disabled', type=>$disabled_type, value=>'Y'},
-                              {field=>'disable_line_item_date_ranges', type=>$disabled_type, value=>'Y'},
+                   { type => 'columnstart' },
+                   
+                     { field     => 'pkg',
+                       type      => 'text',
+                       size      => 40, #32
+                       maxlength => 50,
+                     },
+                     #@locale_fields,
+                     {field=>'comment',  type=>'text', size=>40 }, #32
+                     { field         => 'agentnum',
+                       type          => 'select-agent',
+                       disable_empty => ! $acl_edit_global,
+                       empty_label   => '(global)',
+                       onchange      => 'agent_changed',
+                     },
+                     {field=>'classnum', type=>'select-pkg_class' },
+                     ( $conf->exists('pkg-addon_classnum')
+                         ? ( { field=>'addon_classnum',
+                               type =>'select-pkg_class',
+                             }
+                           )
+                          : ()
+                     ),
+                     {field=>'disabled', type=>$disabled_type, value=>'Y'},
+                     {field=>'disable_line_item_date_ranges', type=>$disabled_type, value=>'Y'},
 
-                              { type     => 'tablebreak-tr-title',
-                                value    => 'Pricing', #better name?
-                              },
-                              { field    => 'plan',
-                                type     => 'selectlayers-select',
-                                options  => [ keys %plan_labels ],
-                                labels   => \%plan_labels,
-                                onchange => 'aux_planchanged(what);',
-                              },
-                              { field    => 'setup_fee',
-                                type     => 'money',
-                                onchange => 'setup_changed',
-                              },
-                              { field    => 'setup_show_zero',
-                                type     => 'checkbox',
-                                value    => 'Y',
-                                disabled => sub { $setup_show_zero_disabled },
-                              },
-                              { field    => 'freq',
-                                type     => 'part_pkg_freq',
-                                onchange => 'freq_changed',
-                              },
-                              { field    => 'recur_fee',
-                                type     => 'money',
-                                disabled => sub { $recur_disabled },
-                                onchange => 'recur_changed',
-                              },
+                     { type     => 'tablebreak-tr-title',
+                       value    => 'Pricing', #better name?
+                     },
+                     { field    => 'plan',
+                       type     => 'selectlayers-select',
+                       options  => [ keys %plan_labels ],
+                       labels   => \%plan_labels,
+                       onchange => 'aux_planchanged(what);',
+                     },
+                     { field    => 'setup_fee',
+                       type     => 'money',
+                       onchange => 'setup_changed',
+                     },
+                     { field    => 'setup_show_zero',
+                       type     => 'checkbox',
+                       value    => 'Y',
+                       disabled => sub { $setup_show_zero_disabled },
+                     },
+                     ( map { +{ field => "setup_fee_$_",
+                                type  => 'text',
+                                prefix=> currency_symbol($_, SYM_HTML),
+                                size  => 8,
+                              }
+                           }
+                         sort $conf->config('currencies')
+                     ),
+                     { field    => 'freq',
+                       type     => 'part_pkg_freq',
+                       onchange => 'freq_changed',
+                     },
+                     { field    => 'recur_fee',
+                       type     => 'money',
+                       disabled => sub { $recur_disabled },
+                       onchange => 'recur_changed',
+                     },
+                     { field    => 'recur_show_zero',
+                       type     => 'checkbox',
+                       value    => 'Y',
+                       disabled => sub { $recur_show_zero_disabled },
+                     },
+                     ( map { +{ field => "recur_fee_$_",
+                                type  => 'text',
+                                prefix=> currency_symbol($_, SYM_HTML),
+                                size  => 8,
+                              }
+                           }
+                         sort $conf->config('currencies')
+                     ),
 
-                              { field    => 'recur_show_zero',
-                                type     => 'checkbox',
-                                value    => 'Y',
-                                disabled => sub { $recur_show_zero_disabled },
-                              },
+                     #price plan
+                     #setup fee
+                     #recurring frequency
+                     #recurring fee (auto-disable)
 
-                              #price plan
-                              #setup fee
-                              #recurring frequency
-                              #recurring fee (auto-disable)
+                   { type => 'columnnext' },
 
-                            { type => 'columnnext' },
+                     {type=>'justtitle', value=>'Taxation' },
+                     {field=>'setuptax', type=>'checkbox', value=>'Y'},
+                     {field=>'recurtax', type=>'checkbox', value=>'Y'},
+                     {field=>'taxclass', type=>'select-taxclass' },
+                     { field => 'taxproductnums',
+                       type  => 'hidden',
+                       value => join(',', @taxproductnums),
+                     },
+                     { field => 'taxproduct_select',
+                       type  => 'selectlayers',
+                       options => [ '(default)', @taxproductnums ],
+                       curr_value => '(default)',
+                       labels  => { ( '(default)' => '(default)' ),
+                                    map {($_=>$usage_class{$_})}
+                                    @taxproductnums
+                                  },
+                       layer_fields => \%taxproduct_fields,
+                       layer_values_callback => $taxproduct_values,
+                       layers_only  =>   !$taxproducts,
+                       cell_style   => ( !$taxproducts
+                                         ? 'display:none'
+                                         : ''
+                                       ),
+                     },
 
-                              {type=>'justtitle', value=>'Taxation' },
-                              {field=>'setuptax', type=>'checkbox', value=>'Y'},
-                              {field=>'recurtax', type=>'checkbox', value=>'Y'},
-                              {field=>'taxclass', type=>'select-taxclass' },
-                              { field => 'taxproductnums',
-                                type  => 'hidden',
-                                value => join(',', @taxproductnums),
-                              },
-                              { field => 'taxproduct_select',
-                                type  => 'selectlayers',
-                                options => [ '(default)', @taxproductnums ],
-                                curr_value => '(default)',
-                                labels  => { ( '(default)' => '(default)' ),
-                                             map {($_=>$usage_class{$_})}
-                                             @taxproductnums
-                                           },
-                                layer_fields => \%taxproduct_fields,
-                                layer_values_callback => $taxproduct_values,
-                                layers_only  =>   !$taxproducts,
-                                cell_style   => ( !$taxproducts
-                                                  ? 'display:none'
-                                                  : ''
-                                                ),
-                              },
+                     { type  => 'tablebreak-tr-title',
+                       value => 'Promotions', #better name?
+                     },
+                     { field=>'promo_code', type=>'text', size=>15 },
 
-                              { type  => 'tablebreak-tr-title',
-                                value => 'Promotions', #better name?
-                              },
-                              { field=>'promo_code', type=>'text', size=>15 },
+                     { type  => 'tablebreak-tr-title',
+                       value => 'Cost tracking', #better name?
+                     },
+                     { field=>'setup_cost', type=>'money', },
+                     { field=>'recur_cost', type=>'money', },
 
-                              { type  => 'tablebreak-tr-title',
-                                value => 'Cost tracking', #better name?
-                              },
-                              { field=>'setup_cost', type=>'money', },
-                              { field=>'recur_cost', type=>'money', },
+                   { type => 'columnnext' },
 
-                            { type => 'columnnext' },
+                     { field    => 'agent_type',
+                       type     => 'select-agent_types',
+                       disabled => ! $acl_edit_global,
+                       curr_value_callback => sub {
+                         my($cgi, $object, $field) = @_;
+                         #in the other callbacks..?  hmm.
+                         \@agent_type;
+                       },
+                     },
 
-                              { field    => 'agent_type',
-                                type     => 'select-agent_types',
-                                disabled => ! $acl_edit_global,
-                                curr_value_callback => sub {
-                                  my($cgi, $object, $field) = @_;
-                                  #in the other callbacks..?  hmm.
-                                  \@agent_type;
-                                },
-                              },
+                     { type  => 'tablebreak-tr-title',
+                       value => 'Line-item revenue recogition', #better name?
+                     },
+                     { field=>'pay_weight',    type=>'text', size=>6 },
+                     { field=>'credit_weight', type=>'text', size=>6 },
 
-                              { type  => 'tablebreak-tr-title',
-                                value => 'Line-item revenue recogition', #better name?
-                              },
-                              { field=>'pay_weight',    type=>'text', size=>6 },
-                              { field=>'credit_weight', type=>'text', size=>6 },
-
-                              ( $conf->exists('cust_pkg-show_fcc_voice_grade_equivalent')
-                                ? ( 
-                                    { type  => 'tablebreak-tr-title',
-                                      value => 'FCC Form 477 information',
-                                    },
-                                    { field=>'fcc_voip_class',
-                                      type=>'select-voip_class',
-                                    },
-                                    { field=>'fcc_ds0s', type=>'text', size=>6 },
-                                  )
-                                 : ()
-                              ),
+                     ( $conf->exists('cust_pkg-show_fcc_voice_grade_equivalent')
+                       ? ( 
+                           { type  => 'tablebreak-tr-title',
+                             value => 'FCC Form 477 information',
+                           },
+                           { field=>'fcc_voip_class',
+                             type=>'select-voip_class',
+                           },
+                           { field=>'fcc_ds0s', type=>'text', size=>6 },
+                         )
+                        : ()
+                     ),
 
 
-                            { type => 'columnend' },
+                   { type => 'columnend' },
 
-                            { 'type'  => $report_option ? 'tablebreak-tr-title'
-                                                        : 'hidden',
-                              'value' => 'Optional report classes',
-                              'field' => 'census_title',
-                            },
-                            { 'field'    => 'report_option',
-                              'type'     => $report_option ? 'select-table'
-                                                           : 'hidden',
-                              'table'    => 'part_pkg_report_option',
-                              'name_col' => 'name',
-                              'hashref'  => { 'disabled' => '' },
-                              'multiple' => 1,
-                            },
+                   { 'type'  => $report_option ? 'tablebreak-tr-title'
+                                               : 'hidden',
+                     'value' => 'Optional report classes',
+                     'field' => 'census_title',
+                   },
+                   { 'field'    => 'report_option',
+                     'type'     => $report_option ? 'select-table'
+                                                  : 'hidden',
+                     'table'    => 'part_pkg_report_option',
+                     'name_col' => 'name',
+                     'hashref'  => { 'disabled' => '' },
+                     'multiple' => 1,
+                   },
 
-                            { 'type'    => 'tablebreak-tr-title',
-                              'value'   => 'Term discounts',
-                            },
-                            { 'field'      => 'discountnum',
-                              'type'       => 'select-table',
-                              'table'      => 'discount',
-                              'name_col'   => 'name',
-                              'hashref'    => { %$discountnum_hashref },
-                              #'extra_sql'  => 'AND (months IS NOT NULL OR months != 0)',
-                              'empty_label'=> 'Select discount',
-                              'm2_label'   => 'Offer discounts for longer terms',
-                              'm2m_method' => 'part_pkg_discount',
-                              'm2m_dstcol' => 'discountnum',
-                              'm2_error_callback' => $discount_error_callback,
-                            },
+                   { 'type'    => 'tablebreak-tr-title',
+                     'value'   => 'Term discounts',
+                   },
+                   { 'field'      => 'discountnum',
+                     'type'       => 'select-table',
+                     'table'      => 'discount',
+                     'name_col'   => 'name',
+                     'hashref'    => { %$discountnum_hashref },
+                     #'extra_sql'  => 'AND (months IS NOT NULL OR months != 0)',
+                     'empty_label'=> 'Select discount',
+                     'm2_label'   => 'Offer discounts for longer terms',
+                     'm2m_method' => 'part_pkg_discount',
+                     'm2m_dstcol' => 'discountnum',
+                     'm2_error_callback' => $discount_error_callback,
+                   },
 
-                            { 'type'    => 'tablebreak-tr-title',
-                              'value'   => 'Pricing add-ons',
-                              'colspan' => 4,
-                            },
-                            { 'field'      => 'bill_dst_pkgpart',
-                              'type'       => 'select-part_pkg',
-                              'extra_sql'  => sub { $pkgpart
-                                                     ? "AND pkgpart != $pkgpart"
-                                                     : ''
-                                                  },
-                              'm2_label'   => 'Include line item(s) from package',
-                              'm2m_method' => 'bill_part_pkg_link',
-                              'm2m_dstcol' => 'dst_pkgpart',
-                              'm2_error_callback' =>
-                                &{$m2_error_callback_maker}('bill'),
-                              'm2_fields' => [ { 'field' => 'hidden',
-                                                 'type'  => 'checkbox',
-                                                 'value' => 'Y',
-                                                 'curr_value' => '',
-                                                 'label' => 'Bundle',
-                                               },
-                                             ],
-                            },
+                   { 'type'    => 'tablebreak-tr-title',
+                     'value'   => 'Supplemental packages',
+                     'colspan' => '4',
+                   },
+                   { 'field'       => 'supp_dst_pkgpart',
+                     'type'        => 'select-part_pkg',
+                     'm2_label'    => 'Include complete package',
+                     'm2m_method'  => 'supp_part_pkg_link',
+                     'm2m_dstcol'  => 'dst_pkgpart',
+                     'm2_error_callback' =>
+                       &{$m2_error_callback_maker}('supp'),
+                   },
 
-                            { type  => 'tablebreak-tr-title',
-                              value => 'Services',
-                            },
-                            { type => 'pkg_svc', },
+                   { 'type'    => 'tablebreak-tr-title',
+                     'value'   => 'Pricing add-ons',
+                     'colspan' => 4,
+                   },
+                   { 'field'      => 'bill_dst_pkgpart',
+                     'type'       => 'select-part_pkg',
+                     'extra_sql'  => sub { $pkgpart
+                                            ? "AND pkgpart != $pkgpart"
+                                            : ''
+                                         },
+                     'm2_label'   => 'Include line item(s) from package',
+                     'm2m_method' => 'bill_part_pkg_link',
+                     'm2m_dstcol' => 'dst_pkgpart',
+                     'm2_error_callback' =>
+                       &{$m2_error_callback_maker}('bill'),
+                     'm2_fields' => [ { 'field' => 'hidden',
+                                        'type'  => 'checkbox',
+                                        'value' => 'Y',
+                                        'curr_value' => '',
+                                        'label' => 'Bundle',
+                                      },
+                                    ],
+                   },
 
-                            { 'field'      => 'svc_dst_pkgpart',
-                              'label'      => 'Also include services from package: ',
-                              'type'       => 'select-part_pkg',
-                              'extra_sql'  => sub { $pkgpart
-                                                     ? "AND pkgpart != $pkgpart"
-                                                     : ''
-                                                  },
-                              'm2_label'   => 'Include services of package: ',
-                              'm2m_method' => 'svc_part_pkg_link',
-                              'm2m_dstcol' => 'dst_pkgpart',
-                              'm2_error_callback' =>
-                                &{$m2_error_callback_maker}('svc'),
-                            },
+                   { type  => 'tablebreak-tr-title',
+                     value => 'Services',
+                   },
+                   { type => 'pkg_svc', },
 
-                            { type  => 'tablebreak-tr-title',
-                              value => 'Price plan options',
-                            },
+                   { 'field'      => 'svc_dst_pkgpart',
+                     'label'      => 'Also include services from package: ',
+                     'type'       => 'select-part_pkg',
+                     'extra_sql'  => sub { $pkgpart
+                                            ? "AND pkgpart != $pkgpart"
+                                            : ''
+                                         },
+                     'm2_label'   => 'Include services of package: ',
+                     'm2m_method' => 'svc_part_pkg_link',
+                     'm2m_dstcol' => 'dst_pkgpart',
+                     'm2_error_callback' =>
+                       &{$m2_error_callback_maker}('svc'),
+                   },
 
-                          ],
+                   { type  => 'tablebreak-tr-title',
+                     value => 'Price plan options',
+                   },
 
-           )
-%>
+                 ],
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -323,6 +359,22 @@ my $agent_clone_extra_sql =
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
 
+my @locales = grep { ! /^en_/i } $conf->config('available-locales'); #should filter from the default locale lang instead of en_
+my %locale_labels =  map {
+  ( $_ => 'Package -- '. FS::Locales->description($_) )
+} @locales;
+@locales = 
+  sort { $locale_labels{$a} cmp $locale_labels{$b} }
+    @locales;
+
+my $n = 0;
+my %locale_field_labels = (
+  map {
+        ( 'pkgpartmsgnum'. $n++. '_pkg' => $locale_labels{$_} );
+      }
+    @locales
+);
+
 my $sth = dbh->prepare("SELECT COUNT(*) FROM part_pkg_report_option".
                        "  WHERE disabled IS NULL OR disabled = ''  ")
   or die dbh->errstr;
@@ -353,6 +405,42 @@ my $setup_show_zero_disabled = 0;
 my $recur_show_zero_disabled = 1;
 
 my $pkgpart = '';
+
+my $splice_locale_fields = sub {
+  my( $fields, $pkey_value_callback, $pkg_value_callback ) = @_;
+
+  my $n = 0;
+  my @locale_fields = (
+    map { 
+          my $pkey_value= $pkey_value_callback ? &$pkey_value_callback($_) : '';
+          my $pkg_value = $pkg_value_callback
+                            ? $pkg_value_callback eq 'cgiparam'
+                                ? $cgi->param('pkgpartmsgnum'. $n. '_pkg')
+                                : &$pkg_value_callback($_)
+                            : '';
+          (
+            { field     => 'pkgpartmsgnum'. $n,
+              type      => 'hidden',
+              value     => $pkey_value,
+            },
+            { field     => 'pkgpartmsgnum'. $n. '_locale',
+              type      => 'hidden',
+              value     => $_,
+            },
+            { field     => 'pkgpartmsgnum'. $n++. '_pkg',
+              type      => 'text',
+              size      => 40,
+              #maxlength => 50,
+              value     => $pkg_value,
+            },
+          );
+  
+        }
+      @locales
+  );
+  splice(@$fields, 7, 0, @locale_fields); #XXX 7 is arbitrary above
+
+};
 
 my $error_callback = sub {
   my($cgi, $object, $fields, $opt ) = @_;
@@ -392,7 +480,25 @@ my $error_callback = sub {
   $object->set($_ => scalar($cgi->param($_)) )
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
+  foreach my $currency ( $conf->config('currencies') ) {
+    my %part_pkg_currency = $object->part_pkg_currency_options($currency);
+    foreach (qw( setup_fee recur_fee )) {
+      my $param = $_.'_'.$currency;
+      $object->set( $param, $cgi->param($param) );
+    }
+  }
+
   $pkgpart = $object->pkgpart;
+
+  &$splice_locale_fields(
+    $fields,
+    sub {
+          my $locale = shift;
+          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+          $part_pkg_msgcat ? $part_pkg_msgcat->pkgpartmsgnum : '';
+        },
+    'cgiparam'
+  );
 
 };
 
@@ -409,20 +515,8 @@ my $new_object_callback = sub {
 
 };
 
-my $edit_callback = sub {
-  my( $cgi, $object, $fields, $opt ) = @_;
-
-  $setup_show_zero_disabled = ($object->option('setup_fee') > 0) ? 1 : 0;
-
-  $recur_disabled = $object->freq ? 0 : 1;
-
-  $recur_show_zero_disabled =
-    $object->freq
-      ? $object->option('recur_fee') > 0 ? 1 : 0
-      : 1;
-
-  (@agent_type) =
-    map {$_->typenum} qsearch('type_pkgs', { 'pkgpart' => $object->pkgpart } );
+sub set_report_option {
+  my($cgi, $object, $fields ) = @_; #, $opt
 
   my @report_option = ();
   foreach ($object->options) {
@@ -445,12 +539,51 @@ my $edit_callback = sub {
     $field->{value} = join(',', @report_option);
   }
 
+}
+
+my $edit_callback = sub {
+  my( $cgi, $object, $fields, $opt ) = @_;
+
+  $setup_show_zero_disabled = ($object->option('setup_fee') > 0) ? 1 : 0;
+
+  $recur_disabled = $object->freq ? 0 : 1;
+
+  $recur_show_zero_disabled =
+    $object->freq
+      ? $object->option('recur_fee') > 0 ? 1 : 0
+      : 1;
+
+  (@agent_type) =
+    map {$_->typenum} qsearch('type_pkgs', { 'pkgpart' => $object->pkgpart } );
+
+  set_report_option( $cgi, $object, $fields);
+
   %options = $object->options;
 
   $object->set($_ => $object->option($_, 1))
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
+  foreach my $currency ( $conf->config('currencies') ) {
+    my %part_pkg_currency = $object->part_pkg_currency_options($currency);
+    $object->set( $_.'_'.$currency, $part_pkg_currency{$_} )
+      foreach keys %part_pkg_currency;
+  }
+
   $pkgpart = $object->pkgpart;
+
+  &$splice_locale_fields(
+    $fields,
+    sub {
+          my $locale = shift;
+          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+          $part_pkg_msgcat ? $part_pkg_msgcat->pkgpartmsgnum : '';
+        },
+    sub {
+          my $locale = shift;
+          my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+          $part_pkg_msgcat ? $part_pkg_msgcat->pkg : '';
+        }
+  );
 
 };
 
@@ -465,6 +598,8 @@ my $new_callback = sub {
   }
 
   $options{'suspend_bill'}=1 if $conf->exists('part_pkg-default_suspend_bill');
+
+  &$splice_locale_fields($fields, '', '');
 
 };
 
@@ -484,19 +619,37 @@ my $clone_callback = sub {
 
     $object->disabled('Y');
 
-  } else { #not when cloning...
+  } else { #when explicitly cloning, not customizing
 
     (@agent_type) =
       map {$_->typenum} qsearch('type_pkgs',{ 'pkgpart' => $object->pkgpart } );
 
   }
 
+  set_report_option( $cgi, $object, $fields);
+
   %options = $object->options;
 
   $object->set($_ => $options{$_})
     foreach (qw( setup_fee recur_fee disable_line_item_date_ranges ));
 
+  foreach my $currency ( $conf->config('currencies') ) {
+    my %part_pkg_currency = $object->part_pkg_currency_options($currency);
+    $object->set( $_.'_'.$currency, $part_pkg_currency{$_} )
+      foreach keys %part_pkg_currency;
+  }
+
   $recur_disabled = $object->freq ? 0 : 1;
+
+  &$splice_locale_fields(
+    $fields,
+    '',
+    sub {
+      my $locale = shift;
+      my $part_pkg_msgcat = $object->part_pkg_msgcat($locale);
+      $part_pkg_msgcat ? $part_pkg_msgcat->pkg : '';
+    }
+  );
 };
 
 my $discount_error_callback = sub {
@@ -603,16 +756,28 @@ my $javascript = <<'END';
 
     function aux_planchanged(what) { //?
 
-      alert('called!');
       var plan = what.options[what.selectedIndex].value;
-      var table = document.getElementById('TableNumber7') // XXX NOT ROBUST
 
+      var term_table = document.getElementById('TableNumber7') // XXX NOT ROBUST
       if ( plan == 'flat' || plan == 'prorate' || plan == 'subscription' ) {
-        //table.disabled = false;
-        table.style.visibility = '';
+        //term_table.disabled = false;
+        term_table.style.visibility = '';
       } else {
-        //table.disabled = true;
-        table.style.visibility = 'hidden';
+        //term_table.disabled = true;
+        term_table.style.visibility = 'hidden';
+      }
+
+      var currency_regex = /^(setup|recur)_fee_[A-Z]{3}$/;
+
+      var form = what.form
+      for ( var i=0; i < form.length; i++ ) {
+        if ( currency_regex.test(form[i].name) ) {
+          if ( plan == 'currency_fixed' ) {
+            form[i].disabled = false;
+          } else {
+            form[i].disabled = true;
+          }
+        }
       }
 
     }
@@ -622,23 +787,23 @@ END
 my $warning =
   'Changing the setup or recurring fee will create a new package definition. '.
   'Continue?';
-              
+
+$javascript .= "function confirm_submit(f) {";
 if ( $conf->exists('part_pkg-lineage') ) {
   $javascript .= "
-    function confirm_submit(f) {
-    
-      var fields = Array('setup_fee','recur_fee');
-      for(var i=0; i < fields.length; i++) {
-          if ( f[fields[i]].value != f[fields[i]].defaultValue ) {
-              return confirm('$warning');
-          }
-      }
-      return true;
+
+    var fields = Array('setup_fee','recur_fee');
+    for(var i=0; i < fields.length; i++) {
+        if ( f[fields[i]].value != f[fields[i]].defaultValue ) {
+            return confirm('$warning');
+        }
     }
 ";
 }
-
-$javascript .= '</SCRIPT>';
+$javascript .= "
+  return true;
+}
+</SCRIPT>";
 
 tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 
@@ -786,6 +951,7 @@ my $html_bottom = sub {
     labels         => \%plan_labels,
     curr_value     => $object->plan,
     layer_callback => $layer_callback,
+    onchange       => 'aux_planchanged(what);',
   );
 
   my $return =

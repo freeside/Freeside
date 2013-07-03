@@ -154,15 +154,12 @@ my $controlledbutton = $opt{'control_button'};
 
 my $id = $opt{'id'} || $func_suffix;
 
-my( $add_access_right, $access_right ); 
+my $add_access_right;
 if ($class eq 'C') {
-  $access_right = 'Cancel customer';
   $add_access_right = 'Add on-the-fly cancel reason';
 } elsif ($class eq 'S') {
-  $access_right = 'Suspend customer package';
   $add_access_right = 'Add on-the-fly suspend reason';
 } elsif ($class eq 'R') {
-  $access_right = 'Post credit';
   $add_access_right = 'Add on-the-fly credit reason';
 } else {
   die "illegal class: $class";

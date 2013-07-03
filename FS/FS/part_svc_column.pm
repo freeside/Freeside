@@ -99,8 +99,14 @@ sub check {
   $self->columnflag(uc($1));
 
   if ( $self->columnflag =~ /^[MA]$/ ) {
-    $error =
-      $self->ut_foreign_key( 'columnvalue', 'inventory_class', 'classnum' );
+    # split, check all values independently, and normalize
+    my @classnums = split(/\s*,\s*/, $self->columnvalue);
+    foreach (@classnums) {
+      $self->set('columnvalue', $_);
+      $error = $self->ut_foreign_key( 'columnvalue', 'inventory_class', 'classnum' );
+      return $error if $error;
+    }
+    $self->set('columnvalue', join(',', @classnums));
   }
   if ( $self->columnflag eq 'H' ) {
     $error = 

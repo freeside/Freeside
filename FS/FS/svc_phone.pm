@@ -23,10 +23,11 @@ $DEBUG = 0;
 @pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::svc_acct'} = sub { 
+FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $phone_name_max = $conf->config('svc_phone-phone_name-max_length');
-};
+}
+);
 
 =head1 NAME
 
@@ -67,6 +68,10 @@ primary key
 =item countrycode
 
 =item phonenum
+
+=item sim_imsi
+
+SIM IMSI (http://en.wikipedia.org/wiki/International_mobile_subscriber_identity)
 
 =item sip_password
 
@@ -147,6 +152,7 @@ sub table_info {
                             disable_select => 1,
                           },
         'phonenum'     => 'Phone number',
+        'sim_imsi'     => 'IMSI', #http://en.wikipedia.org/wiki/International_mobile_subscriber_identity
         'pin'          => { label => 'Voicemail PIN', #'Personal Identification Number',
                             type  => 'text',
                             disable_inventory => 1,
@@ -167,6 +173,15 @@ sub table_info {
                          select_label => 'domain',
                          disable_inventory => 1,
                        },
+        'sms_carrierid'    => { label             => 'SMS Carrier',
+                                type              => 'select',
+                                select_table      => 'cdr_carrier',
+                                select_key        => 'carrierid',
+                                select_label      => 'carriername',
+                                disable_inventory => 1,
+                              },
+        'sms_account'      => { label => 'SMS Carrier Account', },
+        'max_simultaneous' => { label=>'Maximum number of simultaneous users' },
         'locationnum' => {
                            label => 'E911 location',
                            disable_inventory => 1,
@@ -282,9 +297,8 @@ sub insert {
 
   #false laziness w/cust_pkg.pm... move this to location_Mixin?  that would
   #make it more of a base class than a mixin... :)
-  if ( $options{'cust_location'}
-         && ( ! $self->locationnum || $self->locationnum == -1 ) ) {
-    my $error = $options{'cust_location'}->insert;
+  if ( $options{'cust_location'} ) {
+    my $error = $options{'cust_location'}->find_or_insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting cust_location (transaction rolled back): $error";
@@ -352,8 +366,6 @@ sub delete {
   '';
 
 }
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
@@ -466,11 +478,15 @@ sub check {
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('countrycode')
     || $self->$phonenum_check_method('phonenum')
+    || $self->ut_numbern('sim_imsi')
     || $self->ut_anything('sip_password')
     || $self->ut_numbern('pin')
     || $self->ut_textn('phone_name')
     || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
     || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
+    || $self->ut_foreign_keyn('sms_carrierid', 'cdr_carrier', 'carrierid' )
+    || $self->ut_alphan('sms_account')
+    || $self->ut_numbern('max_simultaneous')
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('forwarddst')
     || $self->ut_textn('email')
@@ -485,6 +501,10 @@ sub check {
     || $self->ut_textn('lnp_reject_reason')
   ;
   return $error if $error;
+
+  return 'Illegal IMSI (not 14-15 digits)' #shorter?
+    if length($self->sim_imsi)
+    && ( length($self->sim_imsi) < 14 || length($self->sim_imsi) > 15 );
 
     # LNP data validation
     return 'Cannot set LNP fields: no LNP in progress'
@@ -627,6 +647,26 @@ sub radius_groups {
   ();
 }
 
+=item sms_cdr_carrier
+
+=cut
+
+sub sms_cdr_carrier {
+  my $self = shift;
+  return '' unless $self->sms_carrierid;
+  qsearchs('cdr_carrier',  { 'carrierid' => $self->sms_carrierid } );
+}
+
+=item sms_carriername
+
+=cut
+
+sub sms_carriername {
+  my $self = shift;
+  my $cdr_carrier = $self->sms_cdr_carrier or return '';
+  $cdr_carrier->carriername;
+}
+
 =item phone_device
 
 Returns any FS::phone_device records associated with this service.
@@ -673,9 +713,13 @@ with the chosen prefix.
 
 =item begin, end: Start and end of a date range, as unix timestamp.
 
-=item cdrtypenum: Only return CDRs with this type number.
+=item cdrtypenum: Only return CDRs with this type.
+
+=item calltypenum: Only return CDRs with this call type.
 
 =item disable_src => 1: Only match on "charged_party", not "src".
+
+=item nonzero: Only return CDRs where duration > 0.
 
 =item by_svcnum: not supported for svc_phone
 
@@ -722,6 +766,9 @@ sub psearch_cdrs {
   if ($options{'cdrtypenum'}) {
     $hash{'cdrtypenum'} = $options{'cdrtypenum'};
   }
+  if ($options{'calltypenum'}) {
+    $hash{'calltypenum'} = $options{'calltypenum'};
+  }
   
   my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';
 
@@ -743,6 +790,9 @@ sub psearch_cdrs {
   }
   if ( $options{'end'} ) {
     push @where, 'startdate < '.  $options{'end'};
+  }
+  if ( $options{'nonzero'} ) {
+    push @where, 'duration > 0';
   }
 
   my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
@@ -770,6 +820,30 @@ sub get_cdrs {
   qsearch ( $psearch->{query} )
 }
 
+=item sum_cdrs
+
+Takes the same options as psearch_cdrs, but returns a single row containing
+"count" (the number of CDRs) and the sums of the following fields: duration,
+billsec, rated_price, rated_seconds, rated_minutes.
+
+Note that if any calls are not rated, their rated_* fields will be null.
+If you want to use those fields, pass the 'status' option to limit to 
+calls that have been rated.  This is intentional; please don't "fix" it.
+
+=cut
+
+sub sum_cdrs {
+  my $self = shift;
+  my $psearch = $self->psearch_cdrs(@_);
+  $psearch->{query}->{'select'} = join(',',
+    'COUNT(*) AS count',
+    map { "SUM($_) AS $_" }
+      qw(duration billsec rated_price rated_seconds rated_minutes)
+  );
+  # hack
+  $psearch->{query}->{'extra_sql'} =~ s/ ORDER BY.*$//;
+  qsearchs ( $psearch->{query} );
+}
 
 =back
 

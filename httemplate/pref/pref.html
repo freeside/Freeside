@@ -1,31 +1,33 @@
-<% include('/elements/header.html', 'Preferences for '. getotaker ) %>
+<% include('/elements/header.html', 'Preferences for '. $FS::CurrentUser::CurrentUser->username ) %>
 
 <FORM METHOD="POST" NAME="pref_form" ACTION="pref-process.html">
 
 <% include('/elements/error.html') %>
 
+% if ( FS::Auth->auth_class->can('change_password') ) {
 
-Change password (leave blank for no change)
-<% ntable("#cccccc",2) %>
+    <% mt('Change password (leave blank for no change)') |h %>
+    <% ntable("#cccccc",2) %>
 
-  <TR>
-    <TH ALIGN="right">Current password: </TH>
-    <TD><INPUT TYPE="password" NAME="_password"></TD>
-  </TR>
+      <TR>
+        <TH ALIGN="right">Current password: </TH>
+        <TD><INPUT TYPE="password" NAME="_password"></TD>
+      </TR>
 
-  <TR>
-    <TH ALIGN="right">New password: </TH>
-    <TD><INPUT TYPE="password" NAME="new_password"></TD>
-  </TR>
+      <TR>
+        <TH ALIGN="right">New password: </TH>
+        <TD><INPUT TYPE="password" NAME="new_password"></TD>
+      </TR>
 
-  <TR>
-   <TH ALIGN="right">Re-enter new password: </TH>
-   <TD><INPUT TYPE="password" NAME="new_password2"></TD>
-  </TR>
+      <TR>
+       <TH ALIGN="right">Re-enter new password: </TH>
+       <TD><INPUT TYPE="password" NAME="new_password2"></TD>
+      </TR>
 
-</TABLE>
-<BR>
+    </TABLE>
+    <BR>
 
+% }
 
 Interface
 <% ntable("#cccccc",2) %>
@@ -75,6 +77,21 @@ Interface
       </SELECT>
     </TD>
   </TR>
+
+% my $history_order = $curuser->option('history_order') || 'oldest';
+  <TR>
+    <TH ALIGN="right">Customer history sort order: </TH>
+    <TD COLSPAN=2>
+      <& /elements/select.html,
+        field       => 'history_order',
+        curr_value  => $history_order,
+        options     => [ 'oldest', 'newest' ],
+        labels      => { 'oldest' => 'Oldest first',
+                         'newest' => 'Newest first',
+                       },
+      &>
+    </TD>
+  </TR>
   
   <TR>
     <TH ALIGN="right">Spreadsheet download format: </TH>
@@ -92,7 +109,7 @@ Interface
   </TR>
 
  <TR>
-    <TH ALIGN="right" COLSPAN=1>Enable approximate customer searching even when an exact match is found: </TH>
+    <TH ALIGN="right" COLSPAN=1>Enable approximate customer searching <BR>even when an exact match is found: </TH>
     <TD ALIGN="left" COLSPAN=2>
       <INPUT TYPE="checkbox" NAME="enable_fuzzy_on_exact" VALUE="1" <% $curuser->option('enable_fuzzy_on_exact') ? 'CHECKED' : '' %>>
     </TD>
@@ -156,6 +173,10 @@ Development
   <TR>
     <TH>Save database profiling logs (when available): </TH>
     <TD><INPUT TYPE="checkbox" NAME="save_db_profile" VALUE="1" <% $curuser->option('save_db_profile') ? 'CHECKED' : '' %>></TD>
+  </TR>
+  <TR>
+    <TH>Save temporary invoice typesetting files: </TH>
+    <TD><INPUT TYPE="checkbox" NAME="save_tmp_typesetting" VALUE="1" <% $curuser->option('save_tmp_typesetting') ? 'CHECKED' : '' %>></TD>
   </TR>
 
 </TABLE>

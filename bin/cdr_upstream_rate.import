@@ -6,7 +6,7 @@
 # 
 # Example: bin/cdr_upstream_rate.import ivan 1 ~ivan/convergent/sample_rate_table.csv
 #
-#   username: a freeside login (from /usr/local/etc/freeside/mapsecrets)
+#   username: a freeside login
 #   ratenum: rate plan (FS::rate) created with the web UI
 #   filename: CSV file
 #

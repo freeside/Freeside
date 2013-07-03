@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -303,15 +303,6 @@ our %META = (
     },
 
     # User overridable options for RT at a glance
-    DefaultSummaryRows => {
-        Section         => 'RT at a glance',    #loc
-        Overridable     => 1,
-        SortOrder       => 1,
-        Widget          => '/Widgets/Form/Integer',
-        WidgetArguments => {
-            Description => 'Number of search results',    #loc
-        },
-    },
     HomePageRefreshInterval => {
         Section         => 'RT at a glance',                       #loc
         Overridable     => 1,
@@ -446,10 +437,13 @@ our %META = (
             Description => 'Date format',                            #loc
             Callback => sub { my $ret = { Values => [], ValuesLabel => {}};
                               my $date = RT::Date->new($HTML::Mason::Commands::session{'CurrentUser'});
-                              $date->Set;
+                              $date->SetToNow;
                               foreach my $value ($date->Formatters) {
                                  push @{$ret->{Values}}, $value;
-                                 $ret->{ValuesLabel}{$value} = $date->$value();
+                                 $ret->{ValuesLabel}{$value} = $date->Get(
+                                     Format     => $value,
+                                     Timezone   => 'user',
+                                 );
                               }
                               return $ret;
             },
@@ -1215,7 +1209,7 @@ sub SetFromConfig {
             # if the entry has a trailing '::' then
             # it is a link to another name space
             if ( substr( $k, -2 ) eq '::') {
-                $name = $self->__GetNameByRef( $ref, $k );
+                $name = $self->__GetNameByRef( $ref, $pack eq 'main::'? $k : $pack.$k );
                 return $name if $name;
             }
 
@@ -1230,13 +1224,19 @@ sub SetFromConfig {
             # Otherwie 5.10 goes boom. maybe we should skip any
             # reference
             next if ref($entry) eq 'SCALAR' || ref($entry) eq 'REF';
-            my $entry_ref = *{$entry}{ ref($ref) };
+
+            my $ref_type = ref($ref);
+
+            # regex/arrayref/hashref/coderef are stored in SCALAR glob
+            $ref_type = 'SCALAR' if $ref_type eq 'REF';
+
+            my $entry_ref = *{$entry}{ $ref_type };
             next unless $entry_ref;
 
             # if references are equal then we've found
             if ( $entry_ref == $ref ) {
                 $last_pack = $pack;
-                return ( $REF_SYMBOLS{ ref($ref) } || '*' ) . $pack . $k;
+                return ( $REF_SYMBOLS{ $ref_type } || '*' ) . $pack . $k;
             }
         }
         return '';

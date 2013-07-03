@@ -47,7 +47,7 @@ my $event_sub = sub {
   my $onclick = include('/elements/popup_link_onclick.html',
     action      => $p.'view/part_event-targets.html?eventpart='.
                     $part_event->eventpart,
-    actionlabel => 'Event query - '.$part_event->event,
+    actionlabel => 'Event query', #no, XSS - '.$part_event->event,
     width       => 650,
     height      => 420,
     close_text  => 'Close',
@@ -55,14 +55,14 @@ my $event_sub = sub {
   [#rows
     [#subcolumns
       {
-        'data' => $part_event->event,
-        'link' => $p.'edit/part_event.html?'.$part_event->eventpart,
+        'data'       => encode_entities($part_event->event),
+        'link'       => $p.'edit/part_event.html?'.$part_event->eventpart,
       },
       {
-        'data' => ' (query) ',
-        'size' => '-1',
-        'data_style'  => 'b',
-        'onclick' => $onclick,
+        'data'       => '&nbsp;(query) ',
+        'size'       => '-1',
+        'data_style' => 'b',
+        'onclick'    => $onclick,
       },
     ],
   ];

@@ -253,12 +253,29 @@
 %                   $bgcolor = $bgcolor1;
 %                 }
 
-                  <TR>
+%                 my $rowstyle = '';
+%                 if ( $row eq $opt{'footer_data'} ) {
+%                   $rowstyle = ' STYLE="border-top: dashed 1px black; font-style: italic"';
+%                   $bgcolor = '#dddddd';
+%                 }
+
+%                 my $trid = '';
+%                   if ( $opt{'link_field' } ) {
+%                     my $link_field = $opt{'link_field'};
+%                     if ( ref($link_field) eq 'CODE' ) {
+%                       $trid = &{$link_field}($row);
+%                     } else {
+%                       $trid = $row->$link_field();
+%                     }
+%                   }
+                  <TR ID="<%$trid |h%>"<%$rowstyle%>>
+                      
 
 %                   if ( $opt{'fields'} ) {
 %
 %                     my $links    = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
 %                     my $onclicks = $opt{'link_onclicks'} ? [ @{$opt{'link_onclicks'}} ] : [];
+%                     my $tooltips = $opt{'tooltips'} ? [ @{$opt{'tooltips'}} ] : [];
 %                     my $aligns   = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
 %                     my $colors   = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
 %                     my $sizes    = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
@@ -341,9 +358,9 @@
 %                                       $_ =~ /^\d+$/ ) {
 %                             # for the 'straight SQL' case: specify fields
 %                             # by position
-%                               $row->[$_];
+%                               encode_entities($row->[$_]);
 %                             } else {
-%                               $row->$_();
+%                               encode_entities($row->$_());
 %                             }
 %                           }
 %                       @{$opt{'fields'}}
@@ -360,6 +377,7 @@
 %                       if ( $links ) {
 %                         my $link = shift @$links;
 %                         my $onclick = shift @$onclicks;
+%                         my $tooltip = shift @$tooltips;
 %
 %                         if (    ! $opt{'agent_virt'}
 %                              || ( $null_link && ! $row->agentnum )
@@ -374,6 +392,14 @@
 %                             if ref($onclick) eq 'CODE';
 %                           $onclick = qq( onClick="$onclick") if $onclick;
 %
+%                           $tooltip = &{$tooltip}($row)
+%                             if ref($tooltip) eq 'CODE';
+%                           $tooltip = qq! id="a$id" !.
+%                             qq! onmouseover="return overlib(!.
+%                             $m->interp->apply_escapes($tooltip, 'h', 'js_string').
+%                             qq!, FGCLASS, 'tooltip', REF, 'a$id', !.
+%                             qq!REFC, 'LL', REFP, 'UL')"! if $tooltip;
+%
 %                           if ( $link ) {
 %                             my( $url, $method ) = @{$link};
 %                             if ( ref($method) eq 'CODE' ) {
@@ -381,11 +407,16 @@
 %                             } else {
 %                               $a = $url. $row->$method();
 %                             }
-%                             $a = qq(<A HREF="$a"$onclick>);
+%                             $a = qq(<A HREF="$a"$onclick$tooltip>);
 %                           }
 %                           elsif ( $onclick ) {
 %                             $a = qq(<A HREF="javascript:void(0);"$onclick>);
 %                           }
+%                           elsif ( $tooltip ) {
+%                             $a = qq(<A $tooltip>);
+%                           }
+%                           $id++;
+
 %                         }
 %
 %                       }
@@ -499,4 +530,5 @@ $count_sth->execute
 my $count_arrayref = $count_sth->fetchrow_arrayref;
 my $total = $count_arrayref->[0];
 
+my $id = 0;
 </%init>

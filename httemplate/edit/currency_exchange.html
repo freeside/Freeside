@@ -1,0 +1,73 @@
+<& /elements/header.html, 'Exchange rates' &>
+
+<FORM METHOD="POST" ACTION="process/currency_exchange.html">
+
+<& /elements/table-grid.html &>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+
+<TR>
+  <TH CLASS="grid" BGCOLOR="#cccccc">From</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Rate</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">To</TH>
+</TR>
+
+%foreach my $currency (@currencies) {
+%
+%  if ( $bgcolor eq $bgcolor1 ) {
+%    $bgcolor = $bgcolor2;
+%  } else {
+%    $bgcolor = $bgcolor1;
+%  }
+%
+%  my %hash = ( 'from_currency' => $currency,
+%               'to_currency'   => $to_currency,
+%             );
+%
+%  my $currency_exchange = qsearchs('currency_exchange', \%hash)
+%                         || new FS::currency_exchange   \%hash;
+%
+% $currency_exchange->rate('1.000000') if length($currency_exchange->rate) == 0;
+
+      <TR>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <% $currency %>: <% code2currency($currency) %>
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
+          <INPUT TYPE      = "text"
+                 NAME      = "<% "$currency-$to_currency" %>"
+                 VALUE     = "<% $currency_exchange->rate %>"
+                 SIZE      = 14
+                 MAXLENGTH = 14
+          >
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <% $to_currency %>: <% code2currency($to_currency) %>
+        </TD>
+
+      </TR>
+% } 
+
+    </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Update rates">
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+
+my $to_currency = $conf->config('currency') || 'USD';
+
+my @currencies = sort { $a cmp $b } $conf->config('currencies');
+
+</%init>

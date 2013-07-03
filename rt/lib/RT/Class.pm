@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -94,7 +94,7 @@ $RIGHTS = {
     AdminClass          => 'Modify metadata and custom fields for this class',              #loc_pair
     AdminTopics         => 'Modify topic hierarchy associated with this class',             #loc_pair
     ShowACL             => 'Display Access Control List',              #loc_pair
-    ModifyACL           => 'Modify Access Control List',               #loc_pair
+    ModifyACL           => 'Create, modify and delete Access Control List entries',         #loc_pair
     DeleteArticle       => 'Delete articles in this class',            #loc_pair
 };
 
@@ -218,7 +218,7 @@ sub ValidateName {
     return undef unless ($newval);
     my $obj = RT::Class->new($RT::SystemUser);
     $obj->Load($newval);
-    return undef if ( $obj->Id );
+    return undef if $obj->id && ( !$self->id || $self->id != $obj->id );
     return $self->SUPER::ValidateName($newval);
 
 }

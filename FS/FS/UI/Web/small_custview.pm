@@ -29,7 +29,7 @@ sub small_custview {
                   : qsearchs('cust_main', { 'custnum' => $arg } )
     or die "unknown custnum $arg";
 
-  my $html = '<DIV ID="fs_small_custview">';
+  my $html = '<DIV ID="fs_small_custview" CLASS="small_custview">';
   
   $html = qq!View <A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
@@ -58,12 +58,13 @@ sub small_custview {
   $html .=
     ntable('#e8e8e8'). '<TR><TD VALIGN="top">'. ntable("#cccccc",2).
     '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">'.
-    $cust_main->getfield('last'). ', '. $cust_main->first. '<BR>';
+    encode_entities($cust_main->getfield('last')). ', '.
+    encode_entities($cust_main->first). '<BR>';
 
-  $html .= $cust_main->company. '<BR>' if $cust_main->company;
-  $html .= $cust_main->address1. '<BR>';
-  $html .= $cust_main->address2. '<BR>' if $cust_main->address2;
-  $html .= $cust_main->city. ', '. $cust_main->state. '  '. $cust_main->zip. '<BR>';
+  $html .= encode_entities($cust_main->company). '<BR>' if $cust_main->company;
+  $html .= encode_entities($cust_main->address1). '<BR>';
+  $html .= encode_entities($cust_main->address2). '<BR>' if $cust_main->address2;
+  $html .= encode_entities($cust_main->city). ', '. $cust_main->state. '  '. $cust_main->zip. '<BR>';
   $html .= $cust_main->country. '<BR>'
     if $cust_main->country && $cust_main->country ne $countrydefault;
 
@@ -87,7 +88,7 @@ sub small_custview {
   $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
     '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">';
   $html .= join('<BR>', 
-    grep $_,
+    map encode_entities($_), grep $_,
       $cust_main->contact,
       $cust_main->company,
       $ship->address1,

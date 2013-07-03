@@ -182,7 +182,7 @@ sub calc_recur {
     
   # eotermiation calculation
 
-  $charges += $self->calc_recur_Common(@_);
+  $charges += ($cust_pkg->quantity || 1) * $self->calc_recur_Common(@_);
 
   $charges;
 }

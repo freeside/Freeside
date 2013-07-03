@@ -198,6 +198,10 @@ sub _upgrade_data { # class method
     'New prospect'                        => 'Generate quotation',
     'Delete invoices'                     => 'Void invoices',
     'List invoices'                       => 'List quotations',
+    'Post credit'                         => 'Credit line items',
+    #'View customer tax exemptions'        => 'Edit customer tax exemptions',
+    'Edit customer'                       => 'Edit customer tax exemptions',
+    'Edit package definitions'            => 'Bulk edit package definitions',
 
     'List services'    => [ 'Services: Accounts',
                             'Services: Domains',
@@ -218,12 +222,20 @@ sub _upgrade_data { # class method
     'Services: Accounts' => 'Services: Accounts: Advanced search',
     'Services: Wireless broadband services' => 'Services: Wireless broadband services: Advanced search',
     'Services: Hardware' => 'Services: Hardware: Advanced search',
+    'Services: Phone numbers' => 'Services: Phone numbers: Advanced search',
 
     'List rating data' => [ 'Usage: RADIUS sessions',
                             'Usage: Call Detail Records (CDRs)',
                             'Usage: Unrateable CDRs',
                           ],
-  ;
+    'Provision customer service' => [ 'Edit password' ],
+    'Financial reports' => [ 'Employees: Commission Report',
+                             'Employees: Audit Report',
+                           ],
+    'Change customer package' => 'Detach customer package',
+    'Services: Accounts' => 'Services: Cable Subscribers',
+    'Bulk change customer packages' => 'Bulk move customer services',
+;
 
   foreach my $old_acl ( keys %onetime ) {
 

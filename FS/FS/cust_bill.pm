@@ -6,7 +6,7 @@ use vars qw( $DEBUG $me $date_format );
              # but NOT $conf
 use Fcntl qw(:flock); #for spool_csv
 use Cwd;
-use List::Util qw(min max);
+use List::Util qw(min max sum);
 use Date::Format;
 use File::Temp 0.14;
 use HTML::Entities;
@@ -110,9 +110,11 @@ Customer info at invoice generation time
 
 =over 4
 
-=item previous_balance
+=item billing_balance - the customer's balance at the time the invoice was 
+generated (not including charges on this invoice)
 
-=item billing_balance
+=item previous_balance - the billing_balance of this customer's previous 
+invoice plus the charges on that invoice
 
 =back
 
@@ -1330,6 +1332,8 @@ invoice and all older invoices is greater than the specified amount.
 
 I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
+I<lpr>, if specified, is passed to 
+
 =cut
 
 sub queueable_send {
@@ -1354,6 +1358,7 @@ sub send {
   my( $template, $invoice_from, $notice_name );
   my $agentnums = '';
   my $balance_over = 0;
+  my $lpr = '';
 
   if ( ref($_[0]) ) {
     my $opt = shift;
@@ -1364,6 +1369,7 @@ sub send {
     $invoice_from = $opt->{'invoice_from'};
     $balance_over = $opt->{'balance_over'} if $opt->{'balance_over'};
     $notice_name = $opt->{'notice_name'};
+    $lpr = $opt->{'lpr'}
   } else {
     $template = scalar(@_) ? shift : '';
     if ( scalar(@_) && $_[0]  ) {
@@ -1397,10 +1403,12 @@ sub send {
     if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list )
     && ! $self->invoice_noemail;
 
+  $opt{'lpr'} = $lpr;
   #$self->print_invoice(\%opt)
   $self->print(\%opt)
     if grep { $_ eq 'POST' } @invoicing_list; #postal
 
+  #this has never been used post-$ORIGINAL_ISP afaik
   $self->fax_invoice(\%opt)
     if grep { $_ eq 'FAX' } @invoicing_list; #fax
 
@@ -1564,14 +1572,16 @@ sub print {
   return if $self->hide;
   my $conf = $self->conf;
 
-  my( $template, $notice_name );
+  my( $template, $notice_name, $lpr );
   if ( ref($_[0]) ) {
     my $opt = shift;
     $template = $opt->{'template'} || '';
     $notice_name = $opt->{'notice_name'} || 'Invoice';
+    $lpr = $opt->{'lpr'}
   } else {
     $template = scalar(@_) ? shift : '';
     $notice_name = 'Invoice';
+    $lpr = '';
   }
 
   my %opt = (
@@ -1584,7 +1594,11 @@ sub print {
     $self->batch_invoice(\%opt);
   }
   else {
-    do_print $self->lpr_data(\%opt);
+    do_print(
+      $self->lpr_data(\%opt),
+      'agentnum' => $self->cust_main->agentnum,
+      'lpr'      => $lpr,
+    );
   }
 }
 
@@ -1819,12 +1833,15 @@ L<FS::cust_main_invoice>).
 =item agent_spools - if set to a true value, will spool to per-agent files
 rather than a single global file
 
-=item ftp_targetnum - if set to an FTP target (see L<FS::ftp_target>), will
+=item upload_targetnum - if set to a target (see L<FS::upload_target>), will
 append to that spool.  L<FS::Cron::upload> will then send the spool file to
 that destination.
 
 =item balanceover - if set, only spools the invoice if the total amount owed on
 this invoice and all older invoices is greater than the specified amount.
+
+=item time - the "current time".  Controls the printing of past due messages
+in the ICS format.
 
 =back
 
@@ -1833,6 +1850,7 @@ this invoice and all older invoices is greater than the specified amount.
 sub spool_csv {
   my($self, %opt) = @_;
 
+  my $time = $opt{'time'} || time;
   my $cust_main = $self->cust_main;
 
   if ( $opt{'dest'} ) {
@@ -1850,7 +1868,7 @@ sub spool_csv {
   my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";
   mkdir $spooldir, 0700 unless -d $spooldir;
 
-  my $tracctnum = $self->invnum. time2str('-%Y%m%d%H%M%S', time);
+  my $tracctnum = $self->invnum. time2str('-%Y%m%d%H%M%S', $time);
 
   my $file;
   if ( $opt{'agent_spools'} ) {
@@ -1859,8 +1877,8 @@ sub spool_csv {
     $file = 'spool';
   }
 
-  if ( $opt{'ftp_targetnum'} ) {
-    $spooldir .= '/target'.$opt{'ftp_targetnum'};
+  if ( $opt{'upload_targetnum'} ) {
+    $spooldir .= '/target'.$opt{'upload_targetnum'};
     mkdir $spooldir, 0700 unless -d $spooldir;
   } # otherwise it just goes into export.xxx/cust_bill
 
@@ -1870,7 +1888,7 @@ sub spool_csv {
 
   $file = "$spooldir/$file.csv";
   
-  my ( $header, $detail ) = $self->print_csv(%opt, 'tracctnum' => $tracctnum );
+  my ( $header, $detail ) = $self->print_csv(%opt, 'tracctnum' => $tracctnum);
 
   open(CSV, ">>$file") or die "can't open $file: $!";
   flock(CSV, LOCK_EX);
@@ -1890,7 +1908,7 @@ sub spool_csv {
     seek(CSV, 0, 2);
   }
 
-  print CSV $detail;
+  print CSV $detail if defined($detail);
 
   flock(CSV, LOCK_UN);
   close CSV;
@@ -2025,7 +2043,7 @@ header line only, with the fields:
 
 Agent number, agent name, customer number, first name, last name, address
 line 1, address line 2, city, state, zip, invoice date, invoice number,
-amount charged, amount due,
+amount charged, amount due, previous balance, due date.
 
 and then, for each line item, three columns containing the package number,
 description, and amount.
@@ -2051,8 +2069,11 @@ sub print_csv {
   my $cust_main = $self->cust_main;
 
   my $csv = Text::CSV_XS->new({'always_quote'=>1});
+  my $format = lc($opt{'format'});
 
-  if ( lc($opt{'format'}) eq 'billco' ) {
+  my $time = $opt{'time'} || time;
+
+  if ( $format eq 'billco' ) {
 
     my $taxtotal = 0;
     $taxtotal += $_->{'amount'} foreach $self->_items_tax;
@@ -2105,15 +2126,19 @@ sub print_csv {
       '0',                        # 29 | Other Taxes & Fees***         NUM*   9
     );
 
-  } elsif ( lc($opt{'format'}) eq 'oneline' ) { #name?
+  } elsif ( $format eq 'oneline' ) { #name
   
     my ($previous_balance) = $self->previous; 
+    $previous_balance = sprintf('%.2f', $previous_balance);
     my $totaldue = sprintf('%.2f', $self->owed + $previous_balance);
     my @items = map {
-      ($_->{pkgnum} || ''),
-      $_->{description},
-      $_->{amount}
-    } $self->_items_pkg;
+                      $_->{pkgnum},
+                      $_->{description},
+                      $_->{amount}
+                    }
+                  $self->_items_pkg, #_items_nontax?  no sections or anything
+                                     # with this format
+                  $self->_items_tax;
 
     $csv->combine(
       $cust_main->agentnum,
@@ -2121,6 +2146,7 @@ sub print_csv {
       $self->custnum,
       $cust_main->first,
       $cust_main->last,
+      $cust_main->company,
       $cust_main->address1,
       $cust_main->address2,
       $cust_main->city,
@@ -2132,14 +2158,16 @@ sub print_csv {
       $self->invnum,
       $self->charged,
       $totaldue,
+      $previous_balance,
+      $self->due_date2str("%x"),
 
       @items,
     );
 
-  } elsif ( lc($opt{'format'}) eq 'bridgestone' ) {
+  } elsif ( $format eq 'bridgestone' ) {
 
     # bypass the CSV stuff and just return this
-    my $longdate = time2str('%B %d, %Y', time); #current time, right?
+    my $longdate = time2str('%B %d, %Y', $time); #current time, right?
     my $zip = $cust_main->zip;
     $zip =~ s/\D//;
     my $prefix = $self->conf->config('bridgestone-prefix', $cust_main->agentnum)
@@ -2161,7 +2189,121 @@ sub print_csv {
       '' #detail
       );
 
-  } else {
+  } elsif ( $format eq 'ics' ) {
+
+    my $bill = $cust_main->bill_location;
+    my $zip = $bill->zip;
+    my $zip4 = '';
+
+    $zip =~ s/\D//;
+    if ( $zip =~ /^(\d{5})(\d{4})$/ ) {
+      $zip = $1;
+      $zip4 = $2;
+    }
+
+    # minor false laziness with print_generic
+    my ($previous_balance) = $self->previous;
+    my $balance_due = $self->owed + $previous_balance;
+    my $payment_total = sum(0, map { $_->{'amount'} } $self->_items_payments);
+    my $credit_total  = sum(0, map { $_->{'amount'} } $self->_items_credits);
+
+    my $past_due = '';
+    if ( $self->due_date and $time >= $self->due_date ) {
+      $past_due = sprintf('Past due:$%0.2f Due Immediately', $balance_due);
+    }
+
+    # again, bypass CSV
+    my $header = sprintf(
+      '%-10s%-30s%-48s%-2s%-50s%-30s%-30s%-25s%-2s%-5s%-4s%-8s%-8s%-10s%-10s%-10s%-10s%-10s%-10s%-480s%-35s',
+      $cust_main->display_custnum, #BID
+      uc($cust_main->first), #FNAME
+      uc($cust_main->last), #LNAME
+      '00', #BATCH, should this ever be anything else?
+      uc($cust_main->company), #COMP
+      uc($bill->address1), #STREET1
+      uc($bill->address2), #STREET2
+      uc($bill->city), #CITY
+      uc($bill->state), #STATE
+      $zip,
+      $zip4,
+      time2str('%Y%m%d', $self->_date), #BILL_DATE
+      $self->due_date2str('%Y%m%d'), #DUE_DATE,
+      ( map {sprintf('%0.2f', $_)}
+        $balance_due, #AMNT_DUE
+        $previous_balance, #PREV_BAL
+        $payment_total, #PYMT_RCVD
+        $credit_total, #CREDITS
+        $previous_balance, #BEG_BAL--is this correct?
+        $self->charged, #NEW_CHRG
+      ),
+      'img01', #MRKT_MSG?
+      $past_due, #PAST_MSG
+    );
+
+    my @details;
+    my %svc_class = ('' => ''); # maybe cache this more persistently?
+
+    foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+
+      my $show_pkgnum = $cust_bill_pkg->pkgnum || '';
+      my $cust_pkg = $cust_bill_pkg->cust_pkg if $show_pkgnum;
+
+      if ( $cust_pkg ) {
+
+        my @dates = ( $self->_date, undef );
+        if ( my $prev = $cust_bill_pkg->previous_cust_bill_pkg ) {
+          $dates[1] = $prev->sdate; #questionable
+        }
+
+        # generate an 01 detail for each service
+        my @svcs = $cust_pkg->h_cust_svc(@dates, 'I');
+        foreach my $cust_svc ( @svcs ) {
+          $show_pkgnum = ''; # hide it if we're showing svcnums
+
+          my $svcpart = $cust_svc->svcpart;
+          if (!exists($svc_class{$svcpart})) {
+            my $classnum = $cust_svc->part_svc->classnum;
+            my $part_svc_class = FS::part_svc_class->by_key($classnum)
+              if $classnum;
+            $svc_class{$svcpart} = $part_svc_class ? 
+                                   $part_svc_class->classname :
+                                   '';
+          }
+
+          my @h_label = $cust_svc->label(@dates, 'I');
+          push @details, sprintf('01%-9s%-20s%-47s',
+            $cust_svc->svcnum,
+            $svc_class{$svcpart},
+            $h_label[1],
+          );
+        } #foreach $cust_svc
+      } #if $cust_pkg
+
+      my $desc = $cust_bill_pkg->desc; # itemdesc or part_pkg.pkg
+      if ($cust_bill_pkg->recur > 0) {
+        $desc .= ' '.time2str('%d-%b-%Y', $cust_bill_pkg->sdate).' to '.
+                     time2str('%d-%b-%Y', $cust_bill_pkg->edate - 86400);
+      }
+      push @details, sprintf('02%-6s%-60s%-10s',
+        $show_pkgnum,
+        $desc,
+        sprintf('%0.2f', $cust_bill_pkg->setup + $cust_bill_pkg->recur),
+      );
+    } #foreach $cust_bill_pkg
+
+    # Tag this row so that we know whether this is one page (1), two pages
+    # (2), # or "big" (B).  The tag will be stripped off before uploading.
+    if ( scalar(@details) < 12 ) {
+      push @details, '1';
+    } elsif ( scalar(@details) < 58 ) {
+      push @details, '2';
+    } else {
+      push @details, 'B';
+    }
+
+    return join('', $header, @details, "\n");
+
+  } else { # default
   
     $csv->combine(
       'cust_bill',
@@ -2998,11 +3140,16 @@ sub _items_payments {
 
     #something more elaborate if $_->amount ne ->cust_pay->paid ?
 
+    my $desc = $self->mt('Payment received').' '.
+               time2str($date_format,$_->cust_pay->_date );
+    $desc   .= $self->mt(' via ' . $_->cust_pay->payby_payinfo_pretty)
+      if ( $self->conf->exists('invoice_payment_details') );
+ 
     push @b, {
-      'description' => $self->mt('Payment received').' '.
-                       time2str($date_format,$_->cust_pay->_date ),
+      'description' => $desc,
       'amount'      => sprintf("%.2f", $_->amount )
     };
+
   }
 
   @b;
@@ -3303,6 +3450,15 @@ sub search_sql_where {
   #custnum
   if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
     push @search, "cust_bill.custnum = $1";
+  }
+
+  #customer classnum
+  if ( $param->{'cust_classnum'} ) {
+    my $classnums = $param->{'cust_classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    $classnums = [ grep /^\d+$/, @$classnums ];
+    push @search, 'cust_main.classnum in ('.join(',',@$classnums).')'
+      if @$classnums;
   }
 
   #_date

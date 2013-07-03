@@ -223,65 +223,21 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $original_cust_bill_pkg = $self->cust_bill_pkg;
-  my $cust_bill = $original_cust_bill_pkg->cust_bill;
+  my @negative_exemptions = qsearch('cust_tax_exempt_pkg', {
+      'creditbillpkgnum' => $self->creditbillpkgnum
+  });
 
-  my %hash = $original_cust_bill_pkg->hash;
-  delete $hash{$_} for qw( billpkgnum setup recur );
-  $hash{$self->setuprecur} = $self->amount;
-  my $cust_bill_pkg = new FS::cust_bill_pkg { %hash };
-
-  use Data::Dumper;
-  my @exemptions = qsearch( 'cust_tax_exempt_pkg', 
-                            { creditbillpkgnum => $self->creditbillpkgnum }
-                          );
-  my %seen = ();
-  my @generated_exemptions = ();
-  my @unseen_exemptions = ();
-  foreach my $exemption ( @exemptions ) {
-    my $error = $exemption->delete;
+  # de-anti-exempt those negative exemptions
+  my $error;
+  foreach (@negative_exemptions) {
+    $error = $_->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "error deleting cust_tax_exempt_pkg: $error";
-    }
-
-    next if $seen{$exemption->taxnum};
-    $seen{$exemption->taxnum} = 1;
-    push @unseen_exemptions, $exemption;
-  }
-
-  foreach my $exemption ( @unseen_exemptions ) {
-    my $tax_object = $exemption->cust_main_county;
-    unless ($tax_object) {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't find exempted tax";
-    }
-    
-    my $hashref_or_error =
-      $tax_object->taxline( [ $cust_bill_pkg ], 
-                            'custnum'      => $cust_bill->custnum,
-                            'invoice_time' => $cust_bill->_date,
-                          );
-    unless (ref($hashref_or_error)) {
-      $dbh->rollback if $oldAutoCommit;
-      return "error calculating taxes: $hashref_or_error";
-    }
-
-    push @generated_exemptions, @{ $cust_bill_pkg->cust_tax_exempt_pkg };
-  }
-                          
-  foreach my $taxnum ( keys %seen ) {
-    my $sum = 0;
-    $sum += $_->amount for grep {$_->taxnum == $taxnum} @exemptions;
-    $sum -= $_->amount for grep {$_->taxnum == $taxnum} @generated_exemptions;
-    $sum = sprintf("%.2f", $sum);
-    unless ($sum eq '0.00' || $sum eq '-0.00') {
-      $dbh->rollback if $oldAutoCommit;
-      return "Can't unapply credit without charging tax";
+      return $error;
     }
   }
-   
-  my $error = $self->SUPER::delete(@_);
+
+  $error = $self->SUPER::delete(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -348,13 +304,13 @@ sub cust_bill_pkg {
 
 sub cust_bill_pkg_tax_Xlocation {
   my $self = shift;
-  if ($self->billpkg_tax_locationnum) {
+  if ($self->billpkgtaxlocationnum) {
     return qsearchs(
       'cust_bill_pkg_tax_location',
       { 'billpkgtaxlocationnum' => $self->billpkgtaxlocationnum },
     );
  
-  } elsif ($self->billpkg_tax_rate_locationnum) {
+  } elsif ($self->billpkgtaxratelocationnum) {
     return qsearchs(
       'cust_bill_pkg_tax_rate_location',
       { 'billpkgtaxratelocationnum' => $self->billpkgtaxratelocationnum },

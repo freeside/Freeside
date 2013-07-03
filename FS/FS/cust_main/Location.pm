@@ -18,7 +18,8 @@ BEGIN {
     no strict 'refs';
     @location_fields = 
       qw( address1 address2 city county state zip country district
-        latitude longitude coord_auto censustract censusyear geocode );
+        latitude longitude coord_auto censustract censusyear geocode
+        addr_clean );
 
     foreach my $f (@location_fields) {
       *{"FS::cust_main::Location::$f"} = sub {
@@ -156,27 +157,32 @@ sub _upgrade_data {
     my $bill_location = FS::cust_location->new(
       {
         custnum => $custnum,
-        map { $_ => $cust_main->get($_) } location_fields()
+        map { $_ => $cust_main->get($_) } location_fields(),
       }
     );
-    $error = $bill_location->insert;
-    die "error migrating billing address for customer $custnum: $error"
-      if $error;
-
-    $cust_main->set(bill_locationnum => $bill_location->locationnum);
+    $bill_location->set('censustract', ''); # properly goes with ship_location
+    my $ship_location = $bill_location; # until proven otherwise
 
     if ( $cust_main->get('ship_address1') ) {
-      my $ship_location = FS::cust_location->new(
-        {
-          custnum => $custnum,
-          map { $_ => $cust_main->get("ship_$_") } location_fields()
+      # detect duplicates
+      my $same = 1;
+      foreach (location_fields()) {
+        if ( length($cust_main->get("ship_$_")) and
+             $cust_main->get($_) ne $cust_main->get("ship_$_") ) {
+          $same = 0;
         }
-      );
-      $error = $ship_location->insert;
-      die "error migrating service address for customer $custnum: $error"
-        if $error;
+      }
 
-      $cust_main->set(ship_locationnum => $ship_location->locationnum);
+      if ( !$same ) {
+        $ship_location = FS::cust_location->new(
+          {
+            custnum => $custnum,
+            map { $_ => $cust_main->get("ship_$_") } location_fields()
+          }
+        );
+      } # else it stays equal to $bill_location
+
+      $ship_location->set('censustract', $cust_main->get('censustract'));
 
       # Step 2: Extract shipping address contact fields into contact
       my %unlike = map { $_ => 1 }
@@ -218,9 +224,19 @@ sub _upgrade_data {
         $cust_main->set("ship_$_" => '') foreach qw(last first company);
       } #if %unlike
     } #if ship_address1
-    else {
-      $cust_main->set(ship_locationnum => $bill_location->locationnum);
+    $error = $bill_location->insert;
+    die "error migrating billing address for customer $custnum: $error"
+      if $error;
+
+    $cust_main->set(bill_locationnum => $bill_location->locationnum);
+
+    if (!$ship_location->locationnum) {
+      $error = $ship_location->insert;
+      die "error migrating service address for customer $custnum: $error"
+        if $error;
     }
+
+    $cust_main->set(ship_locationnum => $ship_location->locationnum);
 
     # Step 3: Wipe the migrated fields and update the cust_main
 

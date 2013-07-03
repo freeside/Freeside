@@ -22,6 +22,8 @@ install_callback FS::UID sub {
   $conf = new FS::Conf;
 };
 
+my %is_location = map { $_ => 1 } FS::cust_main::Location->location_fields;
+
 =head1 NAME
 
 FS::cust_main::Import - Batch customer importing
@@ -316,13 +318,14 @@ sub batch_import {
       custbatch => $custbatch,
       agentnum  => $agentnum,
       refnum    => $refnum,
-      country   => $conf->config('countrydefault') || 'US',
       payby     => $payby, #default
       paydate   => '12/2037', #default
     );
     my $billtime = time;
     my %cust_pkg = ( pkgpart => $pkgpart );
     my %svc_x = ();
+    my %bill_location = ();
+    my %ship_location = ();
     foreach my $field ( @fields ) {
 
       if ( $field =~ /^cust_pkg\.(pkgpart|setup|bill|susp|adjourn|expire|cancel)$/ ) {
@@ -351,6 +354,14 @@ sub batch_import {
 
         $svc_x{$1} = shift @columns;
 
+      } elsif ( $is_location{$field} ) {
+
+        $bill_location{$field} = shift @columns;
+
+      } elsif ( $field =~ /^ship_(.*)$/ and $is_location{$1} ) {
+
+        $ship_location{$1} = shift @columns;
+      
       } else {
 
         #refnum interception
@@ -379,6 +390,16 @@ sub batch_import {
         my $value = shift @columns;
         $cust_main{$field} = $value if length($value);
       }
+    } # foreach my $field
+    # finished importing columns
+
+    $bill_location{'country'} ||= $conf->config('countrydefault') || 'US';
+    $cust_main{'bill_location'} = FS::cust_location->new(\%bill_location);
+    if ( grep $_, values(%ship_location) ) {
+      $ship_location{'country'} ||= $conf->config('countrydefault') || 'US';
+      $cust_main{'ship_location'} = FS::cust_location->new(\%ship_location);
+    } else {
+      $cust_main{'ship_location'} = $cust_main{'bill_location'};
     }
 
     if ( defined $cust_main{'payinfo'} && length $cust_main{'payinfo'} ) {

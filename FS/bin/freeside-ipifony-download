@@ -1,0 +1,320 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Date::Format qw(time2str);
+use File::Temp qw(tempdir);
+use Net::SFTP::Foreign;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_main;
+use FS::Conf;
+use File::Copy qw(copy);
+use Text::CSV;
+
+my %opt;
+getopts('va:P:C:e:', \%opt);
+
+# Product codes that are subject to flat rate E911 charges.  For these 
+# products, the'quantity' field represents the number of lines.
+my @E911_CODES = ( 'V-HPBX', 'V-TRUNK' );
+
+# Map TAXNONVOICE/TAXVOICE to Freeside taxclass names
+my %TAXCLASSES = (
+  'TAXNONVOICE' => 'Other',
+  'TAXVOICE'   => 'VoIP',
+);
+  
+
+#$Net::SFTP::Foreign::debug = -1;
+sub HELP_MESSAGE { '
+  Usage:
+      freeside-ipifony-download 
+        [ -v ]
+        [ -a archivedir ]
+        [ -P port ]
+        [ -C category ]
+        [ -e pkgpart ]
+        freesideuser sftpuser@hostname[:path]
+' }
+
+my @fields = (
+  'custnum',
+  'date_desc',
+  'quantity',
+  'unit_price',
+  'classname',
+  'taxclass',
+);
+
+my $user = shift or die &HELP_MESSAGE;
+my $dbh = adminsuidsetup $user;
+$FS::UID::AutoCommit = 0;
+
+# for statistics
+my $num_charges = 0;
+my $num_errors = 0;
+my $sum_charges = 0;
+# cache classnums
+my %classnum_of;
+
+if ( $opt{a} ) {
+  die "no such directory: $opt{a}\n"
+    unless -d $opt{a};
+  die "archive directory $opt{a} is not writable by the freeside user\n"
+    unless -w $opt{a};
+}
+
+my $e911_part_pkg;
+if ( $opt{e} ) {
+  $e911_part_pkg = FS::part_pkg->by_key($opt{e})
+    or die "E911 pkgpart $opt{e} not found.\n";
+
+  if ( $e911_part_pkg->base_recur > 0 or $e911_part_pkg->freq ) {
+    die "E911 pkgpart $opt{e} must be a one-time charge.\n";
+  }
+}
+
+my $categorynum = '';
+if ( $opt{C} ) {
+  # find this category (don't auto-create it, it should exist already)
+  my $category = qsearchs('pkg_category', { categoryname => $opt{C} });
+  if (!defined($category)) {
+    die "Package category '$opt{C}' does not exist.\n";
+  }
+  $categorynum = $category->categorynum;
+}
+
+#my $tmpdir = File::Temp->newdir();
+my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
+
+my $host = shift
+  or die &HELP_MESSAGE;
+my ($sftpuser, $path);
+$host =~ s/^(.+)\@//;
+$sftpuser = $1 || $ENV{USER};
+$host =~ s/:(.*)//;
+$path = $1;
+
+my $port = 22;
+if ( $opt{P} =~ /^(\d+)$/ ) {
+  $port = $1;
+}
+
+# for now assume SFTP download as the only method
+print STDERR "Connecting to $sftpuser\@$host...\n" if $opt{v};
+
+my $sftp = Net::SFTP::Foreign->new(
+  host      => $host,
+  user      => $sftpuser,
+  port      => $port,
+  # for now we don't support passwords. use authorized_keys.
+  timeout   => 30,
+  #more      => ($opt{v} ? '-v' : ''),
+);
+die "failed to connect to '$sftpuser\@$host'\n(".$sftp->error.")\n"
+  if $sftp->error;
+
+$sftp->setcwd($path) if $path;
+
+my $files = $sftp->ls('ready', wanted => qr/\.csv$/, names_only => 1);
+if (!@$files) {
+  print STDERR "No charge files found.\n" if $opt{v};
+  exit(-1);
+}
+
+my %cust_main; # cache
+my %e911_qty; # custnum => sum of E911-subject quantity
+
+my %is_e911 = map {$_ => 1} @E911_CODES;
+
+FILE: foreach my $filename (@$files) {
+  print STDERR "Retrieving $filename\n" if $opt{v};
+  $sftp->get("ready/$filename", "$tmpdir/$filename");
+  if($sftp->error) {
+    warn "failed to download $filename\n";
+    next FILE;
+  }
+
+  # make sure server archive dir exists
+  if ( !$sftp->stat('done') ) {
+    print STDERR "Creating $path/done\n" if $opt{v};
+    $sftp->mkdir('done');
+    if($sftp->error) {
+      # something is seriously wrong
+      die "failed to create archive directory on server:\n".$sftp->error."\n";
+    }
+  }
+  #move to server archive dir
+  $sftp->rename("ready/$filename", "done/$filename");
+  if($sftp->error) {
+    warn "failed to archive $filename on server:\n".$sftp->error."\n";
+  } # process it anyway, I guess/
+
+  #copy to local archive dir
+  if ( $opt{a} ) {
+    print STDERR "Copying $tmpdir/$filename to archive dir $opt{a}\n"
+      if $opt{v};
+    copy("$tmpdir/$filename", $opt{a});
+    warn "failed to copy $tmpdir/$filename to $opt{a}: $!" if $!;
+  }
+
+  open my $fh, "<$tmpdir/$filename";
+  my $csv = Text::CSV->new; # orthodox CSV
+  my %hash;
+  while (my $line = <$fh>) {
+    $csv->parse($line) or do {
+      warn "can't parse $filename: ".$csv->error_input."\n";
+      next FILE;
+    };
+    @hash{@fields} = $csv->fields();
+    if ( $hash{custnum} =~ /^cust/ ) {
+      # there appears to be a header row
+      print STDERR "skipping header row\n" if $opt{v};
+      next;
+    }
+    my $cust_main = 
+      $cust_main{$hash{custnum}} ||= FS::cust_main->by_key($hash{custnum});
+    if (!$cust_main) {
+      warn "customer #$hash{custnum} not found\n";
+      next;
+    }
+    print STDERR "Found customer #$hash{custnum}: ".$cust_main->name."\n"
+      if $opt{v};
+
+    my $amount = sprintf('%.2f',$hash{quantity} * $hash{unit_price});
+    # construct arguments for $cust_main->charge
+    my %charge_opt = (
+      amount      => $hash{unit_price},
+      quantity    => $hash{quantity},
+      start_date  => $cust_main->next_bill_date,
+      pkg         => $hash{date_desc} .
+                   ' (' . $hash{quantity} . ' @ $' . $hash{unit_price} . ' ea)',
+      taxclass    => $TAXCLASSES{ $hash{taxclass} },
+    );
+    if (my $classname = $hash{classname}) {
+      if (!exists($classnum_of{$classname}) ) {
+        # then look it up
+        my $pkg_class = qsearchs('pkg_class', {
+            classname   => $classname,
+            categorynum => $categorynum,
+        });
+        if (!defined($pkg_class)) {
+          # then create it
+          $pkg_class = FS::pkg_class->new({
+              classname   => $classname,
+              categorynum => $categorynum,
+          });
+          my $error = $pkg_class->insert;
+          die "Error creating package class for product code '$classname':\n".
+            "$error\n"
+            if $error;
+        }
+
+        $classnum_of{$classname} = $pkg_class->classnum;
+      }
+      $charge_opt{classnum} = $classnum_of{$classname};
+    }
+    print STDERR "  Charging $hash{unit_price} * $hash{quantity}\n"
+      if $opt{v};
+    my $error = $cust_main->charge(\%charge_opt);
+    if ($error) {
+      warn "Error creating charge: $error" if $error;
+      $num_errors++;
+    } else {
+      $num_charges++;
+      $sum_charges += $amount;
+    }
+
+    if ( $opt{e} and $is_e911{$hash{classname}} ) {
+      $e911_qty{$hash{custnum}} ||= 0;
+      $e911_qty{$hash{custnum}} += $hash{quantity};
+    }
+  } #while $line
+  close $fh;
+} #FILE
+
+# Order E911 packages
+my $num_e911 = 0;
+my $num_lines = 0;
+foreach my $custnum ( keys (%e911_qty) ) {
+  my $cust_main = $cust_main{$custnum};
+  my $quantity = $e911_qty{$custnum};
+  next if $quantity == 0;
+  my $cust_pkg = FS::cust_pkg->new({
+      pkgpart     => $opt{e},
+      custnum     => $custnum,
+      start_date  => $cust_main->next_bill_date,
+      quantity    => $quantity,
+  });
+  my $error = $cust_main->order_pkg({ cust_pkg => $cust_pkg });
+  if ( $error ) {
+    warn "Error creating e911 charge for customer $custnum: $error\n";
+    $num_errors++;
+  } else {
+    $num_e911++;
+    $num_lines += $quantity;
+  }
+}
+
+$dbh->commit;
+
+if ($opt{v}) {
+  print STDERR "
+Finished!
+  Processed files: @$files
+  Created charges: $num_charges
+  Sum of charges: \$".sprintf('%0.2f', $sum_charges)."
+  E911 charges: $num_e911
+  E911 lines: $num_lines
+  Errors: $num_errors
+";
+}
+
+=head1 NAME
+
+freeside-ipifony-download - Download and import invoice items from IPifony.
+
+=head1 SYNOPSIS
+
+      freeside-ipifony-download 
+        [ -v ]
+        [ -a archivedir ]
+        [ -P port ]
+        [ -C category ]
+        [ -T taxclass ]
+        [ -e pkgpart ]
+        freesideuser sftpuser@hostname[:path]
+
+=head1 REQUIRED PARAMETERS
+
+I<freesideuser>: the Freeside user to run as.
+
+I<sftpuser>: the SFTP user to connect as.  The 'freeside' system user should 
+have an authorization key to connect as that user.
+
+I<hostname>: the SFTP server.
+
+=head1 OPTIONAL PARAMETERS
+
+-v: Be verbose.
+
+-a I<archivedir>: Save a copy of the downloaded file to I<archivedir>.
+
+-P I<port>: Connect to that TCP port.
+
+-C I<category>: The name of a package category to use when creating package
+classes.
+
+-e I<pkgpart>: The pkgpart (L<FS::part_pkg>) to use for E911 charges.  A 
+package of this type will be ordered for each invoice that has E911-subject
+line items.  The 'quantity' field on this package will be set to the total 
+quantity of those line items.
+
+The E911 package must be a one-time package (flat rate, no frequency, no 
+recurring fee) with setup fee equal to the fee per line.
+
+=cut
+
+1;
+

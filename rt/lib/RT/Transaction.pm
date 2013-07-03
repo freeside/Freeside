@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -48,7 +48,7 @@
 
 =head1 NAME
 
-  RT::Transaction - RT\'s transaction object
+  RT::Transaction - RT's transaction object
 
 =head1 SYNOPSIS
 
@@ -386,13 +386,24 @@ sub Content {
         }
 
         $content =~ s/^/> /gm;
-        $content = $self->loc("On [_1], [_2] wrote:", $self->CreatedAsString, $self->CreatorObj->Name)
-          . "\n$content\n\n";
+        $content = $self->QuoteHeader . "\n$content\n\n";
     }
 
     return ($content);
 }
 
+=head2 QuoteHeader
+
+Returns text prepended to content when transaction is quoted
+(see C<Quote> argument in L</Content>). By default returns
+localized "On <date> <user name> wrote:\n".
+
+=cut
+
+sub QuoteHeader {
+    my $self = shift;
+    return $self->loc("On [_1], [_2] wrote:", $self->CreatedAsString, $self->CreatorObj->Name);
+}
 
 
 =head2 Addresses
@@ -640,11 +651,14 @@ sub BriefDescription {
                 return ( $self->loc( "[_1] deleted", $obj_type ) );
             }
             else {
+                my $canon = $self->Object->can("QueueObj")
+                    ? sub { $self->Object->QueueObj->Lifecycle->CanonicalCase(@_) }
+                    : sub { return $_[0] };
                 return (
                     $self->loc(
                         "Status changed from [_1] to [_2]",
-                        "'" . $self->loc( $self->OldValue ) . "'",
-                        "'" . $self->loc( $self->NewValue ) . "'"
+                        "'" . $self->loc( $canon->($self->OldValue) ) . "'",
+                        "'" . $self->loc( $canon->($self->NewValue) ) . "'"
                     )
                 );
 
@@ -782,8 +796,7 @@ sub BriefDescription {
         my $value;
         if ( $self->NewValue ) {
             my $URI = RT::URI->new( $self->CurrentUser );
-            $URI->FromURI( $self->NewValue );
-            if ( $URI->Resolver ) {
+            if ( $URI->FromURI( $self->NewValue ) ) {
                 $value = $URI->Resolver->AsString;
             }
             else {
@@ -821,8 +834,7 @@ sub BriefDescription {
         my $value;
         if ( $self->OldValue ) {
             my $URI = RT::URI->new( $self->CurrentUser );
-            $URI->FromURI( $self->OldValue );
-            if ( $URI->Resolver ) {
+            if ( $URI->FromURI( $self->OldValue ) ){
                 $value = $URI->Resolver->AsString;
             }
             else {
@@ -1072,6 +1084,11 @@ sub CurrentUserCanSee {
         $cf->Load( $cf_id );
         return 0 unless $cf->CurrentUserHasRight('SeeCustomField');
     }
+
+    # Transactions that might have changed the ->Object's visibility to
+    # the current user are marked readable
+    return 1 if $self->{ _object_is_readable };
+
     # Defer to the object in question
     return $self->Object->CurrentUserCanSee("Transaction");
 }
@@ -1181,37 +1198,31 @@ sub UpdateCustomFields {
     }
 }
 
+=head2 LoadCustomFieldByIdentifier
 
-
-=head2 CustomFieldValues
-
- Do name => id mapping (if needed) before falling back to RT::Record's CustomFieldValues
-
- See L<RT::Record>
+Finds and returns the custom field of the given name for the
+transaction, overriding L<RT::Record/LoadCustomFieldByIdentifier> to
+look for queue-specific CFs before global ones.
 
 =cut
 
-sub CustomFieldValues {
+sub LoadCustomFieldByIdentifier {
     my $self  = shift;
     my $field = shift;
 
-    if ( UNIVERSAL::can( $self->Object, 'QueueObj' ) ) {
+    return $self->SUPER::LoadCustomFieldByIdentifier($field)
+        if ref $field or $field =~ /^\d+$/;
 
-        # XXX: $field could be undef when we want fetch values for all CFs
-        #      do we want to cover this situation somehow here?
-        unless ( defined $field && $field =~ /^\d+$/o ) {
-            my $CFs = RT::CustomFields->new( $self->CurrentUser );
-            $CFs->SetContextObject( $self->Object );
-            $CFs->Limit( FIELD => 'Name', VALUE => $field );
-            $CFs->LimitToLookupType($self->CustomFieldLookupType);
-            $CFs->LimitToGlobalOrObjectId($self->Object->QueueObj->id);
-            $field = $CFs->First->id if $CFs->First;
-        }
-    }
-    return $self->SUPER::CustomFieldValues($field);
+    return $self->SUPER::LoadCustomFieldByIdentifier($field)
+        unless UNIVERSAL::can( $self->Object, 'QueueObj' );
+
+    my $CFs = RT::CustomFields->new( $self->CurrentUser );
+    $CFs->SetContextObject( $self->Object );
+    $CFs->Limit( FIELD => 'Name', VALUE => $field );
+    $CFs->LimitToLookupType($self->CustomFieldLookupType);
+    $CFs->LimitToGlobalOrObjectId($self->Object->QueueObj->id);
+    return $CFs->First || RT::CustomField->new( $self->CurrentUser );
 }
-
-
 
 =head2 CustomFieldLookupType
 

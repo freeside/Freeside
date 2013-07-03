@@ -52,8 +52,9 @@
   <TR>
     <TD>Show:</TD>
     <TD>
-      <INPUT TYPE="radio" NAME="open_sessions" VALUE="0" onClick="open_changed(this);" CHECKED>Completed sessions<BR>
-      <INPUT TYPE="radio" NAME="open_sessions" VALUE="1" onClick="open_changed(this);">Open sessions
+      <INPUT TYPE="radio" NAME="session_status" VALUE="" onClick="enable_stop(true);" CHECKED>All sessions<BR>
+      <INPUT TYPE="radio" NAME="session_status" VALUE="closed" onClick="enable_stop(true);">Completed sessions<BR>
+      <INPUT TYPE="radio" NAME="session_status" VALUE="open" onClick="enable_stop(false);">Open sessions
     </TD>
   </TR>
 
@@ -69,40 +70,30 @@
 
   <SCRIPT TYPE="text/javascript">
 
-    function open_changed(what) {
+    function enable_stop(value) {
 
-      var value=get_open_value(what); 
-      if ( value == '1' ) {
-        what.form.stoptime_beginning_text.disabled = true;
-        what.form.stoptime_ending_text.disabled = true;
-        what.form.stoptime_beginning_text.style.backgroundColor = '#dddddd';
-        what.form.stoptime_ending_text.style.backgroundColor = '#dddddd';
-        what.form.stoptime_beginning_button.style.display = 'none';
-        what.form.stoptime_ending_button.style.display = 'none';
-        what.form.stoptime_beginning_disabled.style.display = '';
-        what.form.stoptime_ending_disabled.style.display = '';
-      } else if ( value == '0' ) {
-        what.form.stoptime_beginning_text.disabled = false;
-        what.form.stoptime_ending_text.disabled = false;
-        what.form.stoptime_beginning_text.style.backgroundColor = '#ffffff';
-        what.form.stoptime_ending_text.style.backgroundColor = '#ffffff';
-        what.form.stoptime_beginning_button.style.display = '';
-        what.form.stoptime_ending_button.style.display = '';
-        what.form.stoptime_beginning_disabled.style.display = 'none';
-        what.form.stoptime_ending_disabled.style.display = 'none';
+      var f = document.OneTrueForm;
+      if ( value ) {
+        f.stoptime_beginning_text.disabled = false;
+        f.stoptime_ending_text.disabled = false;
+        f.stoptime_beginning_text.style.backgroundColor = '#ffffff';
+        f.stoptime_ending_text.style.backgroundColor = '#ffffff';
+        f.stoptime_beginning_button.style.display = '';
+        f.stoptime_ending_button.style.display = '';
+        f.stoptime_beginning_disabled.style.display = 'none';
+        f.stoptime_ending_disabled.style.display = 'none';
+      } else {
+        f.stoptime_beginning_text.disabled = true;
+        f.stoptime_ending_text.disabled = true;
+        f.stoptime_beginning_text.style.backgroundColor = '#dddddd';
+        f.stoptime_ending_text.style.backgroundColor = '#dddddd';
+        f.stoptime_beginning_button.style.display = 'none';
+        f.stoptime_ending_button.style.display = 'none';
+        f.stoptime_beginning_disabled.style.display = '';
+        f.stoptime_ending_disabled.style.display = '';
       }
 
     }
-
-    function get_open_value(what) {
-      var rad_val = '';
-      for (var i=0; i < what.form.open_sessions.length; i++) {
-        if (what.form.open_sessions[i].checked) {
-          var rad_val = what.form.open_sessions[i].value;
-        }
-     }
-     return rad_val;
-   }
 
   </SCRIPT>
 

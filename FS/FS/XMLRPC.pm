@@ -11,8 +11,6 @@ use FS::Conf;
 use FS::Record;
 use FS::cust_main;
 
-use FS::Maestro;
-
 use Data::Dumper;
 
 $DEBUG = 0;

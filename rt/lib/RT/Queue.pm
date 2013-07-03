@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -263,14 +263,10 @@ sub Lifecycle {
 
 sub SetLifecycle {
     my $self = shift;
-    my $value = shift;
+    my $value = shift || 'default';
 
-    if ( $value && $value ne 'default' ) {
-        return (0, $self->loc('[_1] is not valid lifecycle', $value ))
-            unless $self->ValidateLifecycle( $value );
-    } else {
-        $value = undef;
-    }
+    return ( 0, $self->loc( '[_1] is not a valid lifecycle', $value ) )
+      unless $self->ValidateLifecycle($value);
 
     return $self->_Set( Field => 'Lifecycle', Value => $value, @_ );
 }
@@ -394,6 +390,7 @@ sub Create {
         FinalPriority     => 0,
         DefaultDueIn      => 0,
         Sign              => undef,
+        SignAuto          => undef,
         Encrypt           => undef,
         _RecordTransaction => 1,
         @_
@@ -409,12 +406,10 @@ sub Create {
         return ($val, $msg) unless $val;
     }
 
-    if ( $args{'Lifecycle'} && $args{'Lifecycle'} ne 'default' ) {
-        return ( 0, $self->loc('Invalid lifecycle name') )
-            unless $self->ValidateLifecycle( $args{'Lifecycle'} );
-    } else {
-        $args{'Lifecycle'} = undef;
-    }
+    $args{'Lifecycle'} ||= 'default';
+
+    return ( 0, $self->loc('[_1] is not a valid lifecycle', $args{'Lifecycle'} ) )
+      unless $self->ValidateLifecycle( $args{'Lifecycle'} );
 
     my %attrs = map {$_ => 1} $self->ReadableAttributes;
 
@@ -436,14 +431,11 @@ sub Create {
     }
     $RT::Handle->Commit;
 
-    if ( defined $args{'Sign'} ) {
-        my ($status, $msg) = $self->SetSign( $args{'Sign'} );
-        $RT::Logger->error("Couldn't set attribute 'Sign': $msg")
-            unless $status;
-    }
-    if ( defined $args{'Encrypt'} ) {
-        my ($status, $msg) = $self->SetEncrypt( $args{'Encrypt'} );
-        $RT::Logger->error("Couldn't set attribute 'Encrypt': $msg")
+    for my $attr (qw/Sign SignAuto Encrypt/) {
+        next unless defined $args{$attr};
+        my $set = "Set" . $attr;
+        my ($status, $msg) = $self->$set( $args{$attr} );
+        $RT::Logger->error("Couldn't set attribute '$attr': $msg")
             unless $status;
     }
 
@@ -588,6 +580,32 @@ sub SetSign {
     my ($status, $msg) = $self->SetAttribute(
         Name        => 'Sign',
         Description => 'Sign outgoing messages by default',
+        Content     => $value,
+    );
+    return ($status, $msg) unless $status;
+    return ($status, $self->loc('Signing enabled')) if $value;
+    return ($status, $self->loc('Signing disabled'));
+}
+
+sub SignAuto {
+    my $self = shift;
+    my $value = shift;
+
+    return undef unless $self->CurrentUserHasRight('SeeQueue');
+    my $attr = $self->FirstAttribute('SignAuto') or return 0;
+    return $attr->Content;
+}
+
+sub SetSignAuto {
+    my $self = shift;
+    my $value = shift;
+
+    return ( 0, $self->loc('Permission Denied') )
+        unless $self->CurrentUserHasRight('AdminQueue');
+
+    my ($status, $msg) = $self->SetAttribute(
+        Name        => 'SignAuto',
+        Description => 'Sign auto-generated outgoing messages',
         Content     => $value,
     );
     return ($status, $msg) unless $status;
@@ -847,7 +865,7 @@ PrinicpalId The RT::Principal id of the user or group that's being added as a wa
 Email       The email address of the new watcher. If a user with this 
             email address can't be found, a new nonprivileged user will be created.
 
-If the watcher you\'re trying to set has an RT account, set the Owner parameter to their User Id. Otherwise, set the Email parameter to their Email address.
+If the watcher you're trying to set has an RT account, set the Owner parameter to their User Id. Otherwise, set the Email parameter to their Email address.
 
 Returns a tuple of (status/id, message).
 
@@ -947,7 +965,8 @@ sub _AddWatcher {
 
     if ( $group->HasMember( $principal)) {
 
-        return ( 0, $self->loc('That principal is already a [_1] for this queue', $args{'Type'}) );
+        return ( 0, $self->loc('[_1] is already a [_2] for this queue',
+                    $principal->Object->Name, $args{'Type'}) );
     }
 
 
@@ -955,7 +974,8 @@ sub _AddWatcher {
     unless ($m_id) {
         $RT::Logger->error("Failed to add ".$principal->Id." as a member of group ".$group->Id.": ".$m_msg);
 
-        return ( 0, $self->loc('Could not make that principal a [_1] for this queue', $args{'Type'}) );
+        return ( 0, $self->loc('Could not make [_1] a [_2] for this queue',
+                    $principal->Object->Name, $args{'Type'}) );
     }
     return ( 1, $self->loc("Added [_1] to members of [_2] for this queue.", $principal->Object->Name, $args{'Type'} ));
 }
@@ -1027,8 +1047,8 @@ sub DeleteWatcher {
     # see if this user is already a watcher.
 
     unless ( $group->HasMember($principal)) {
-        return ( 0,
-        $self->loc('That principal is not a [_1] for this queue', $args{'Type'}) );
+        return ( 0, $self->loc('[_1] is not a [_2] for this queue',
+            $principal->Object->Name, $args{'Type'}) );
     }
 
     my ($m_id, $m_msg) = $group->_DeleteMember($principal->Id);
@@ -1036,7 +1056,8 @@ sub DeleteWatcher {
         $RT::Logger->error("Failed to delete ".$principal->Id.
                            " as a member of group ".$group->Id.": ".$m_msg);
 
-        return ( 0,    $self->loc('Could not remove that principal as a [_1] for this queue', $args{'Type'}) );
+        return ( 0, $self->loc('Could not remove [_1] as a [_2] for this queue',
+                    $principal->Object->Name, $args{'Type'}) );
     }
 
     return ( 1, $self->loc("Removed [_1] from members of [_2] for this queue.", $principal->Object->Name, $args{'Type'} ));
@@ -1212,6 +1233,7 @@ sub _Set {
     unless ( $self->CurrentUserHasRight('AdminQueue') ) {
         return ( 0, $self->loc('Permission Denied') );
     }
+    RT->System->QueueCacheNeedsUpdate(1);
     return ( $self->SUPER::_Set(@_) );
 }
 
@@ -1536,7 +1558,7 @@ sub _CoreAccessible {
         SubjectTag => 
         {read => 1, write => 1, sql_type => 12, length => 120,  is_blob => 0,  is_numeric => 0,  type => 'varchar(120)', default => ''},
         Lifecycle => 
-        {read => 1, write => 1, sql_type => 12, length => 32,  is_blob => 0,  is_numeric => 0,  type => 'varchar(32)', default => ''},
+        {read => 1, write => 1, sql_type => 12, length => 32,  is_blob => 0, is_numeric => 0,  type => 'varchar(32)', default => 'default'},
         InitialPriority => 
         {read => 1, write => 1, sql_type => 4, length => 11,  is_blob => 0,  is_numeric => 1,  type => 'int(11)', default => '0'},
         FinalPriority => 

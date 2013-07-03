@@ -9,8 +9,6 @@ use vars qw( $DEBUG $me $conf @encrypted_fields
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
-use FS::UID qw( getotaker );
-use FS::Misc qw( send_email );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::CurrentUser;
 use FS::payby;
@@ -100,7 +98,7 @@ Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
 =item paybatch
 
-text field for tracking card processing or other batch grouping
+obsolete text field for tracking card processing or other batch grouping
 
 =item payunique
 
@@ -130,10 +128,31 @@ The deposit account number.
 
 The teller number.
 
-=item pay_batch
+=item batchnum
 
 The number of the batch this payment came from (see L<FS::pay_batch>), 
 or null if it was processed through a realtime gateway or entered manually.
+
+=item gatewaynum
+
+The number of the realtime or batch gateway L<FS::payment_gateway>) this 
+payment was processed through.  Null if it was entered manually or processed
+by the "system default" gateway, which doesn't have a number.
+
+=item processor
+
+The name of the processor module (Business::OnlinePayment, ::BatchPayment, 
+or ::OnlineThirdPartyPayment subclass) used for this payment.  Slightly
+redundant with C<gatewaynum>.
+
+=item auth
+
+The authorization number returned by the credit card network.
+
+=item order_number
+
+The transaction ID returned by the gateway, if any.  This is usually what 
+you would use to initiate a void or refund of the payment.
 
 =back
 
@@ -170,6 +189,15 @@ after this payment is made.
 A hash of optional arguments may be passed.  Currently "manual" is supported.
 If true, a payment receipt is sent instead of a statement when
 'payment_receipt_email' configuration option is set.
+
+About the "manual" flag: Normally, if the 'payment_receipt' config option 
+is set, and the customer has an invoice email address, inserting a payment
+causes a I<statement> to be emailed to the customer.  If the payment is 
+considered "manual" (or if the customer has no invoices), then it will 
+instead send a I<payment receipt>.  "manual" should be true whenever a 
+payment is created directly from the web interface, from a user-initiated
+realtime payment, or from a third-party payment via self-service.  It should
+be I<false> when creating a payment from a billing event or from a batch.
 
 =cut
 
@@ -439,38 +467,6 @@ sub delete {
     return $error;
   }
 
-  if (    $conf->exists('deletepayments')
-       && $conf->config('deletepayments') ne '' ) {
-
-    my $cust_main = $self->cust_main;
-
-    my $error = send_email(
-      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
-                                 #invoice_from??? well as good as any
-      'to'      => $conf->config('deletepayments'),
-      'subject' => 'FREESIDE NOTIFICATION: Payment deleted',
-      'body'    => [
-        "This is an automatic message from your Freeside installation\n",
-        "informing you that the following payment has been deleted:\n",
-        "\n",
-        'paynum: '. $self->paynum. "\n",
-        'custnum: '. $self->custnum.
-          " (". $cust_main->last. ", ". $cust_main->first. ")\n",
-        'paid: $'. sprintf("%.2f", $self->paid). "\n",
-        'date: '. time2str("%a %b %e %T %Y", $self->_date). "\n",
-        'payby: '. $self->payby. "\n",
-        'payinfo: '. $self->paymask. "\n",
-        'paybatch: '. $self->paybatch. "\n",
-      ],
-    );
-
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't send payment deletion notification: $error";
-    }
-
-  }
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -605,11 +601,18 @@ sub send_receipt {
   {
     my $msgnum = $conf->config('payment_receipt_msgnum', $cust_main->agentnum);
     if ( $msgnum ) {
-      my $msg_template = FS::msg_template->by_key($msgnum);
-      $error = $msg_template->send(
-        'cust_main'   => $cust_main,
-        'object'      => $self,
-        'from_config' => 'payment_receipt_from',
+
+      my $queue = new FS::queue {
+        'job'     => 'FS::Misc::process_send_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+      $error = $queue->insert(
+         FS::msg_template->by_key($msgnum)->prepare(
+          'cust_main'   => $cust_main,
+          'object'      => $self,
+          'from_config' => 'payment_receipt_from',
+        )
       );
 
     } elsif ( $conf->exists('payment_receipt_email') ) {
@@ -648,7 +651,12 @@ sub send_receipt {
         #setup date, other things?
       }
 
-      $error = send_email(
+      my $queue = new FS::queue {
+        'job'     => 'FS::Misc::process_send_generated_email',
+        'paynum'  => $self->paynum,
+        'custnum' => $cust_main->custnum,
+      };
+      $error = $queue->insert(
         'from'    => $conf->config('invoice_from', $cust_main->agentnum),
                                    #invoice_from??? well as good as any
         'to'      => \@invoicing_list,
@@ -665,8 +673,9 @@ sub send_receipt {
   } elsif ( ! $cust_main->invoice_noemail ) { #not manual
 
     my $queue = new FS::queue {
-       'paynum' => $self->paynum,
-       'job'    => 'FS::cust_bill::queueable_email',
+       'job'     => 'FS::cust_bill::queueable_email',
+       'paynum'  => $self->paynum,
+       'custnum' => $cust_main->custnum,
     };
 
     $error = $queue->insert(
@@ -678,7 +687,7 @@ sub send_receipt {
 
   }
   
-    warn "send_receipt: $error\n" if $error;
+  warn "send_receipt: $error\n" if $error;
 }
 
 =item cust_bill_pay
@@ -878,6 +887,8 @@ sub _upgrade_data {  #class method
 
   warn "$me upgrading $class\n" if $DEBUG;
 
+  local $FS::payinfo_Mixin::ignore_masked_payinfo = 1;
+
   ##
   # otaker/ivan upgrade
   ##
@@ -1004,6 +1015,63 @@ sub _upgrade_data {  #class method
     if $error;
   }
 
+  ###
+  # migrate gateway info from the misused 'paybatch' field
+  ###
+
+  # not only cust_pay, but also voided and refunded payments
+  if (!FS::upgrade_journal->is_done('cust_pay__parse_paybatch_1')) {
+    local $FS::Record::nowarn_classload=1;
+    # really inefficient, but again, only has to run once
+    foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
+      my $and_batchnum_is_null =
+        ( $table =~ /^cust_pay/ ? ' AND batchnum IS NULL' : '' );
+      foreach my $object ( qsearch({
+            table     => $table,
+            extra_sql => "WHERE payby IN('CARD','CHEK') ".
+                         "AND (paybatch IS NOT NULL ".
+                         "OR (paybatch IS NULL AND auth IS NULL
+                         $and_batchnum_is_null ) )",
+          }) )
+      {
+        if ( $object->paybatch eq '' ) {
+          # repair for a previous upgrade that didn't save 'auth'
+          my $pkey = $object->primary_key;
+          # find the last history record that had a paybatch value
+          my $h = qsearchs({
+              table   => "h_$table",
+              hashref => {
+                $pkey     => $object->$pkey,
+                paybatch  => { op=>'!=', value=>''},
+                history_action => 'replace_old',
+              },
+              order_by => 'ORDER BY history_date DESC LIMIT 1',
+          });
+          if (!$h) {
+            warn "couldn't find paybatch history record for $table ".$object->$pkey."\n";
+            next;
+          }
+          # if the paybatch didn't have an auth string, then it's fine
+          $h->paybatch =~ /:(\w+):/ or next;
+          # set paybatch to what it was in that record
+          $object->set('paybatch', $h->paybatch)
+          # and then upgrade it like the old records
+        }
+
+        my $parsed = $object->_parse_paybatch;
+        if (keys %$parsed) {
+          $object->set($_ => $parsed->{$_}) foreach keys %$parsed;
+          $object->set('auth' => $parsed->{authorization});
+          $object->set('paybatch', '');
+          my $error = $object->replace;
+          warn "error parsing CARD/CHEK paybatch fields on $object #".
+            $object->get($object->primary_key).":\n  $error\n"
+            if $error;
+        }
+      } #$object
+    } #$table
+    FS::upgrade_journal->set_done('cust_pay__parse_paybatch_1');
+  }
 }
 
 =back

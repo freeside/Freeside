@@ -41,7 +41,7 @@ currently supported:
 
 =item gateway_namespace - Business::OnlinePayment, Business::OnlineThirdPartyPayment, or Business::BatchPayment
 
-=item gateway_module - Business::OnlinePayment:: module name
+=item gateway_module - Business::OnlinePayment:: (or other) module name
 
 =item gateway_username - payment gateway username
 
@@ -50,6 +50,14 @@ currently supported:
 =item gateway_action - optional action or actions (multiple actions are separated with `,': for example: `Authorization Only, Post Authorization').  Defaults to `Normal Authorization'.
 
 =item disabled - Disabled flag, empty or 'Y'
+
+=item gateway_callback_url - For ThirdPartyPayment only, set to the URL that 
+the user should be redirected to on a successful payment.  This will be sent
+as a transaction parameter named "return_url".
+
+=item gateway_cancel_url - For ThirdPartyPayment only, set to the URL that 
+the user should be redirected to if they cancel the transaction.  This will 
+be sent as a transaction parameter named "cancel_url".
 
 =item auto_resolve_status - For BatchPayment only, set to 'approve' to 
 auto-approve unresolved payments after some number of days, 'reject' to 
@@ -128,6 +136,7 @@ sub check {
     || $self->ut_textn('gateway_username')
     || $self->ut_anything('gateway_password')
     || $self->ut_textn('gateway_callback_url')  # a bit too permissive
+    || $self->ut_textn('gateway_cancel_url')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_enum('auto_resolve_status', [ '', 'approve', 'reject' ])
     || $self->ut_numbern('auto_resolve_days')
@@ -152,8 +161,8 @@ sub check {
   }
 
   # this little kludge mimics FS::CGI::popurl
-  $self->gateway_callback_url($self->gateway_callback_url. '/')
-    if ( $self->gateway_callback_url && $self->gateway_callback_url !~ /\/$/ );
+  #$self->gateway_callback_url($self->gateway_callback_url. '/')
+  #  if ( $self->gateway_callback_url && $self->gateway_callback_url !~ /\/$/ );
 
   $self->SUPER::check;
 }
@@ -268,10 +277,6 @@ sub batch_processor {
   eval "use Business::BatchPayment;";
   die "couldn't load Business::BatchPayment: $@" if $@;
 
-  my $conf = new FS::Conf;
-  my $test_mode = $conf->exists('business-batchpayment-test_transaction');
-  $opt{'test_mode'} = 1 if $test_mode;
-
   my $module = $self->gateway_module;
   my $processor = eval { 
     Business::BatchPayment->create($module, $self->options, %opt)
@@ -280,9 +285,44 @@ sub batch_processor {
     if $@;
 
   die "$module does not support test mode"
-    if $test_mode and not $processor->does('Business::BatchPayment::TestMode');
+    if $opt{'test_mode'}
+      and not $processor->does('Business::BatchPayment::TestMode');
 
   return $processor;
+}
+
+=item processor OPTIONS
+
+Loads the module for the processor and returns an instance of it.
+
+=cut
+
+sub processor {
+  local $@;
+  my $self = shift;
+  my %opt = @_;
+  foreach (qw(action username password)) {
+    if (length($self->get("gateway_$_"))) {
+      $opt{$_} = $self->get("gateway_$_");
+    }
+  }
+  $opt{'return_url'} = $self->gateway_callback_url;
+  $opt{'cancel_url'} = $self->gateway_cancel_url;
+
+  my $conf = new FS::Conf;
+  my $test_mode = $conf->exists('business-batchpayment-test_transaction');
+  $opt{'test_mode'} = 1 if $test_mode;
+
+  my $namespace = $self->gateway_namespace;
+  eval "use $namespace";
+  die "couldn't load $namespace: $@" if $@;
+
+  if ( $namespace eq 'Business::BatchPayment' ) {
+    # at some point we can merge these, but there's enough special behavior...
+    return $self->batch_processor(%opt);
+  } else {
+    return $namespace->new( $self->gateway_module, $self->options, %opt );
+  }
 }
 
 # _upgrade_data

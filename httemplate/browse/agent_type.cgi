@@ -44,9 +44,9 @@ my $agent_type = shift;
          [
            {
              #'data'  => $part_pkg->pkg. ' - '. $part_pkg->comment,
-             'data'  => $type_pkgs->pkg. ' - '.
+             'data'  => encode_entities($type_pkgs->pkg). ' - '.
                         ( $type_pkgs->custom ? '(CUSTOM) ' : '' ).
-                        $type_pkgs->comment,
+                        encode_entities($type_pkgs->comment),
              'align' => 'left',
              'link'  => $p. 'edit/part_pkg.cgi?'. $type_pkgs->pkgpart,
            },

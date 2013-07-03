@@ -13,33 +13,34 @@ if ( FS::Conf->new->exists('disable_acl_changes') ) {
 }
 
 my $error = '';
-my $access_user = '';
 
-if ( grep { $cgi->param($_) !~ /^\s*$/ }
-          qw(_password new_password new_password2)
+if ( FS::Auth->auth_class->can('change_password')
+       && grep { $cgi->param($_) !~ /^\s*$/ }
+            qw(_password new_password new_password2)
    ) {
 
-  $access_user = qsearchs( 'access_user', {
-    'username'  => getotaker,
-    '_password' => scalar($cgi->param('_password')),
-  } );
+  if ( $cgi->param('new_password') ne $cgi->param('new_password2') ) {
+    $error = "New passwords don't match";
 
-  $error = 'Current password incorrect; password not changed'
-    unless $access_user;
+  } elsif ( ! length($cgi->param('new_password')) ) {
+    $error = 'No new password entered';
 
-  $error ||= "New passwords don't match"
-    unless $cgi->param('new_password') eq $cgi->param('new_password2');
+  } elsif ( ! FS::Auth->authenticate( $FS::CurrentUser::CurrentUser,
+                                      scalar($cgi->param('_password')) )
+          ) {
+    $error = 'Current password incorrect; password not changed';
 
-  $error ||= "No new password entered"
-   unless length($cgi->param('new_password'));
+  } else {
 
-  $access_user->_password($cgi->param('new_password')) unless $error;
+    $error = $FS::CurrentUser::CurrentUser->change_password(
+      scalar($cgi->param('new_password'))
+    );
 
-} else {
-
-  $access_user = $FS::CurrentUser::CurrentUser;
+  }
 
 }
+
+my $access_user = $FS::CurrentUser::CurrentUser;
 
 #well, if you got your password change wrong, you don't get anything else
 #changed right now.  but it should be sticky on the form
@@ -49,6 +50,7 @@ unless ( $error ) { # if ($access_user) {
 
   #XXX autogen
   my @paramlist = qw( locale menu_position default_customer_view 
+                      history_order
                       spreadsheet_format mobile_menu
                       enable_fuzzy_on_exact
                       disable_html_editor disable_enter_submit_onetimecharge
@@ -57,7 +59,7 @@ unless ( $error ) { # if ($access_user) {
                       vonage-fromnumber vonage-username vonage-password
                       cust_pkg-display_times
                       show_pkgnum show_confitem_counts export_getsettings
-                      show_db_profile save_db_profile
+                      show_db_profile save_db_profile save_tmp_typesetting
                       height width availHeight availWidth colorDepth
                     );
 

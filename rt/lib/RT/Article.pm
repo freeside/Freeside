@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -102,7 +102,7 @@ sub Create {
         @_
     );
 
-    my $class = RT::Class->new($RT::SystemUser);
+    my $class = RT::Class->new( $self->CurrentUser );
     $class->Load( $args{'Class'} );
     unless ( $class->Id ) {
         return ( 0, $self->loc('Invalid Class') );
@@ -399,9 +399,8 @@ sub AddLink {
 
     # Check that we're actually getting a valid URI
     my $uri_obj = RT::URI->new( $self->CurrentUser );
-    $uri_obj->FromURI( $args{'Target'}||$args{'Base'} );
-    unless ( $uri_obj->Resolver && $uri_obj->Scheme ) {
-        my $msg = $self->loc( "Couldn't resolve '[_1]' into a Link.", $args{'Target'} );
+    unless ( $uri_obj->FromURI( $args{'Target'}||$args{'Base'} )) {
+        my $msg = $self->loc( "Couldn't resolve '[_1]' into a Link.", $args{'Target'} || $args{'Base'} );
         $RT::Logger->warning( $msg );
         return( 0, $msg );
     }
@@ -609,15 +608,6 @@ sub _Value {
 
 sub CustomFieldLookupType {
     "RT::Class-RT::Article";
-}
-
-# _LookupId is the id of the toplevel type object the customfield is joined to
-# in this case, that's an RT::Class.
-
-sub _LookupId {
-    my $self = shift;
-    return $self->ClassObj->id;
-
 }
 
 =head2 LoadByInclude Field Value

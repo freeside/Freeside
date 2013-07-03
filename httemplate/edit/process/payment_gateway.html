@@ -15,6 +15,7 @@ my $args_callback = sub {
   my @options = split(/\r?\n/, $cgi->param('gateway_options') );
   pop @options
     if scalar(@options) % 2 && $options[-1] =~ /^\s*$/;
+  @options = ( {} ) if !@options;
   (@options)
 };
 

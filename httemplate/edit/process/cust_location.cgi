@@ -31,10 +31,9 @@ die "unknown locationnum $locationnum" unless $cust_location;
 my $new = FS::cust_location->new({
   custnum     => $cust_location->custnum,
   prospectnum => $cust_location->prospectnum,
-  map { $_ => scalar($cgi->param($_)) }
-    qw( address1 address2 city county state zip country )
+  map { $_ => scalar($cgi->param($_)) } FS::cust_main->location_fields
 });
-
-my $error = $cust_location->move_to($new);
+my $error = $new->find_or_insert;
+$error  ||= $cust_location->move_to($new);
 
 </%init>

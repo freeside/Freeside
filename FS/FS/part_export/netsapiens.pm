@@ -72,7 +72,7 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'        => [ 'svc_phone', ], # 'part_device',
+  'svc'        => [qw( svc_phone part_device )],
   'desc'       => 'Provision phone numbers to NetSapiens',
   'options'    => \%options,
   'no_machine' => 1,

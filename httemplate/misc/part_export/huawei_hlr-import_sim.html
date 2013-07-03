@@ -1,0 +1,52 @@
+<& /elements/header-popup.html, 'Import SIMs' &>
+Import a file containing SIM card properties.<BR>
+Each row should contain the following fields, separated by spaces:<BR>
+IMSI, ICCID, PIN1, PUK1, PIN2, PUK2, ACC, Ki<BR>
+<BR>
+<& /elements/form-file_upload.html,
+     'name'      => 'ImportForm',
+     'action'    => 'process/huawei_hlr-import_sim.html',
+     'num_files' => 1,
+     'fields'    => [ 'exportnum', 'classnum', 'agentnum', ],
+     'message'   => 'Inventory import successful',
+     'onsubmit'  => "document.ImportForm.submitButton.disabled=true;",
+&>
+<TABLE CLASS="inv" WIDTH="100%">
+  <INPUT TYPE="hidden" NAME="exportnum" VALUE="<%$exportnum%>">
+  <& /elements/file-upload.html,
+    'field' => 'file',
+    'label' => 'Filename',
+  &>
+  <& /elements/tr-select-agent.html,
+    'disable_empty' => 1,
+  &>
+  <& /elements/tr-select-table.html,
+    'table'     => 'inventory_class',
+    'name_col'  => 'classname',
+    'label'     => 'Inventory class',
+    'disable_empty' => 1,
+  &>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE  = "submit"
+             NAME  = "submitButton"
+             ID    = "submitButton"
+             VALUE = "Import file"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
+</FORM>
+
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my ($exportnum) = $cgi->keywords;
+$exportnum =~ /^\d+$/ or die "bad exportnum '$exportnum'";
+my $part_export = FS::part_export->by_key($exportnum)
+  or die "export $exportnum not found";
+</%init>

@@ -2,7 +2,7 @@ package FS::prospect_main;
 
 use strict;
 use base qw( FS::Quotable_Mixin FS::o2m_Common FS::Record );
-use vars qw( $DEBUG );
+use vars qw( $DEBUG @location_fields );
 use Scalar::Util qw( blessed );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::agent;
@@ -11,6 +11,43 @@ use FS::contact;
 use FS::qual;
 
 $DEBUG = 0;
+
+#started as false laziness w/cust_main/Location.pm
+
+use Carp qw(carp);
+
+my $init = 0;
+BEGIN {
+  # set up accessors for location fields
+  if (!$init) {
+    no strict 'refs';
+    @location_fields = 
+      qw( address1 address2 city county state zip country district
+        latitude longitude coord_auto censustract censusyear geocode
+        addr_clean );
+
+    foreach my $f (@location_fields) {
+      *{"FS::prospect_main::$f"} = sub {
+        carp "WARNING: tried to set cust_main.$f with accessor" if (@_ > 1);
+        my @cust_location = shift->cust_location or return '';
+        #arbitrarily picking the first because the UI only lets you add one
+        $cust_location[0]->$f
+      };
+    }
+    $init++;
+  }
+}
+
+#debugging shim--probably a performance hit, so remove this at some point
+sub get {
+  my $self = shift;
+  my $field = shift;
+  if ( $DEBUG and grep { $_ eq $field } @location_fields ) {
+    carp "WARNING: tried to get() location field $field";
+    $self->$field;
+  }
+  $self->FS::Record::get($field);
+}
 
 =head1 NAME
 
@@ -207,6 +244,12 @@ sub check {
     || $self->ut_textn('company')
   ;
   return $error if $error;
+
+  my $company = $self->company;
+  $company =~ s/^\s+//; 
+  $company =~ s/\s+$//; 
+  $company =~ s/\s+/ /g;
+  $self->company($company);
 
   $self->SUPER::check;
 }

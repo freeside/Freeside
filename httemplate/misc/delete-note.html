@@ -1,0 +1,11 @@
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer note');
+
+my ($notenum) = $cgi->keywords;
+$notenum =~ /^\d+$/ or die "bad notenum '$notenum'";
+my $note = FS::cust_main_note->by_key($notenum)
+  or die "notenum '$notenum' not found";
+$note->delete;
+</%init>
+<% $cgi->redirect($p.'view/cust_main.cgi?'.$note->custnum) %>

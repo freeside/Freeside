@@ -11,9 +11,10 @@ sub eventtable_hashref {
 
 sub option_fields {
   (
-    'notice_name'  => 'Reminder name',
-    #'notes' => { 'label' => 'Reminder notes' }, 
+    'notice_name' => 'Reminder name',
+    #'notes'      => { 'label' => 'Reminder notes' }, 
     #include standard notes?  no/prepend/append
+    'lpr'         => 'Optional alternate print command',
   );
 }
 
@@ -25,7 +26,10 @@ sub do_action {
   #my $cust_main = $self->cust_main($cust_bill);
   #my $cust_main = $cust_bill->cust_main;
 
-  $cust_bill->send({ 'notice_name' => $self->option('notice_name') });
+  $cust_bill->send({
+    'notice_name' => $self->option('notice_name'),
+    'lpr'         => $self->option('lpr'),
+  });
 }
 
 1;

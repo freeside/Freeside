@@ -1,13 +1,8 @@
 <HTML><HEAD><TITLE>ISP Signup</TITLE></HEAD>
 <BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>ISP Signup - promotional code</FONT><BR><BR>
-<SCRIPT>
-function gotoURL(object) {
-    window.location.href =  'signup.cgi?promo_code=' + object.promo_code.value;
-}
-</SCRIPT>
-<FORM>
+<FORM ACTION="signup.cgi" METHOD="GET">
 Enter promotional code <INPUT TYPE="text" NAME="promo_code">
-<INPUT type="submit" VALUE="Signup" onClick="gotoURL(this.form)">
+<INPUT type="submit" VALUE="Signup">
 
 </FORM>
 </BODY>

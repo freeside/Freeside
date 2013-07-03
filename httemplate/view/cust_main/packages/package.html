@@ -1,7 +1,12 @@
-<TD CLASS="inv" BGCOLOR="<% $bgcolor %>" VALIGN="top">
-  <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+<TD CLASS="inv package" BGCOLOR="<% $bgcolor %>" VALIGN="top"
+  STYLE="border-left-width: <% $supplemental * 30 %>px">
+  <TABLE CLASS="inv package"> 
     <TR>
       <TD COLSPAN=2>
+        <% $opt{before_pkg_callback}
+             ? &{ $opt{before_pkg_callback} }( $cust_pkg )
+             : ''
+        %>
         <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
            ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
         ><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
@@ -17,50 +22,54 @@
         <B><% $cust_pkg->quantity %></B>
       </TD>
     </TR>
-%  }
+% }
 
     <TR>
       <TD COLSPAN=2>
         <FONT SIZE=-1>
 
-%         unless ( $cust_pkg->get('cancel') ) { 
+%         unless ( $cust_pkg->get('cancel') || $opt{no_links} ) {
 %
-%           my $br = 0;
-%           if ( $curuser->access_right('Change customer package') ) {
-%             $br=1;
-              (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
+%           if ( $supplemental or $part_pkg->freq eq '0' ) {
+%             # Supplemental packages can't be changed independently.
+%             # One-time charges don't need to be changed.
+%             # For both of those, we only show "Add comments",
+%             # and "Add invoice details".
+%           } else {
+%             # the usual case: links to change package definition,
+%             # discount, and customization
+%             my $br = 0;
+%             if ( $curuser->access_right('Change customer package') ) {
+%               $br=1;
+                (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
+%             } 
+%
+%             if ( $curuser->access_right('Discount customer package')
+%                  && $part_pkg->can_discount
+%                  && ! scalar($cust_pkg->cust_pkg_discount_active)
+%                  && ! scalar($cust_pkg->part_pkg->part_pkg_discount)
+%                )
+%             {
+%               $br=1;
+                (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
+%             }
+%
+%             if ( $curuser->access_right('Customize customer package') ) {
+%               $br=1;
+                (&nbsp;<%pkg_customize_link($cust_pkg,$part_pkg)%>&nbsp;)
+%             } 
+%
+              <% $br ? '<BR>' : '' %>
 %           } 
-%
-%           if ( $curuser->access_right('Edit customer package dates') ) {
-%             $br=1;
-              (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
-%           } 
-%
-%           if ( $curuser->access_right('Discount customer package')
-%                && $part_pkg->can_discount
-%                && ! scalar($cust_pkg->cust_pkg_discount_active)
-%                && ! scalar($cust_pkg->part_pkg->part_pkg_discount)
-%              )
-%           {
-%             $br=1;
-              (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
-%           }
-%
-%           if ( $curuser->access_right('Customize customer package') ) {
-%             $br=1;
-              (&nbsp;<%pkg_customize_link($cust_pkg,$part_pkg)%>&nbsp;)
-%           } 
-%
-            <% $br ? '<BR>' : '' %>
-%         } 
 
-%         if ( $cust_pkg->num_cust_event
-%              && (    $curuser->access_right('Billing event reports')
-%                   || $curuser->access_right('View customer billing events')
-%                 )
-%            ) {
-            (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
-%         }
+%           if ( $cust_pkg->num_cust_event
+%                && (    $curuser->access_right('Billing event reports')
+%                     || $curuser->access_right('View customer billing events')
+%                   )
+%              ) {
+              (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
+%           }
+%         } #!$supplemental
 
         </FONT>
       </TD>
@@ -86,7 +95,7 @@
                 <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
                   <FONT SIZE="-1">
                     <% mt('Invoice details') |h %> 
-%                   if ( $editi && ! $cust_pkg->get('cancel') ) {
+%                   if ( $editi && ! $cust_pkg->get('cancel') && ! $opt{no_links} ) {
                       (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'I',
                                     'label'       => emt('edit'),
@@ -108,7 +117,7 @@
           </TD>
 %       } else {
           <TD>
-%           if ( $editi && ! $cust_pkg->get('cancel') ) {
+%           if ( $editi && ! $cust_pkg->get('cancel') && ! $opt{no_links} ) {
               <FONT SIZE="-1">
                 (&nbsp;<% include('/elements/popup_link.html', { 
                                'action'      => $editlink. 'I',
@@ -130,7 +139,7 @@
                 <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
                   <FONT SIZE="-1">
                     <% mt('Comments') |h %> 
-%                   if ( $editc ) {
+%                   if ( $editc && ! $opt{no_links} ) {
                       (<& /elements/popup_link.html, { 
                                     'action'      => $editlink. 'C',
                                     'label'       => emt('edit'),
@@ -152,7 +161,7 @@
           </TD>
 %       } else {
           <TD>
-%           if ( $editc ) {
+%           if ( $editc && ! $opt{no_links} ) {
               <FONT SIZE="-1">
                 (&nbsp;<& /elements/popup_link.html, { 
                                'action'      => $editlink. 'C',
@@ -168,17 +177,45 @@
 %       }
 
       </TR>
-%     if ( $curuser->access_right('Change customer package') and 
-%           !$cust_pkg->get('cancel') and
-%           !$opt{'show_location'}) {
+%     if ( $curuser->access_right('Change customer package')
+%            && ! $cust_pkg->get('cancel')
+%            && ! $supplemental
+%            && $part_pkg->freq ne '0'
+%            && ! $opt{no_links}
+%        )
+%     {
       <TR>
+%       if ( FS::Conf->new->exists('invoice-unitprice') ) {
         <TD><FONT SIZE="-1">
-          (&nbsp;<% pkg_change_location_link($cust_pkg) %>&nbsp;)
+          (&nbsp;<% pkg_change_quantity_link($cust_pkg) %>&nbsp;)
         </FONT></TD>
+%       }
       </TR>
 %     }
 %   }
   </TABLE>
+% if ( @cust_pkg_usage ) {
+  <TABLE CLASS="usage inv">
+    <TR><TH COLSPAN=4><% mt('Included usage') %></TH></TR>
+%   foreach my $usage (@cust_pkg_usage) {
+%     my $part = $usage->part_pkg_usage;
+%     my $ratio = 255 * ($usage->minutes / $part->minutes);
+%     $ratio = 255 if $ratio > 255; # because rollover
+%     my $color = sprintf('STYLE="font-weight: bold; color: #%02x%02x00"', 255 - $ratio, $ratio);
+%     my $trstyle = '';
+%     $trstyle = ' CLASS="shared"' if $part->shared;
+    <TR<%$trstyle%>>
+      <TD ALIGN="right"><% $part->description %>: </TD>
+      <TD <%$color%> ALIGN="right"><% $usage->minutes %></TD>
+      <TD <%$color%>> / </TD>
+      <TD <%$color%>><% $part->minutes %></TD>
+%     if ( $part->shared ) {
+      <TD><I>(shared)</I></TD>
+%     }
+    </TR>
+%   }
+  </TABLE>
+% }
 
 </TD>
 
@@ -195,6 +232,18 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 my $countrydefault = $opt{'countrydefault'} || 'US';
 my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
+
+my $supplemental = $opt{'supplemental'} || 0;
+
+$cust_pkg->pkgnum =~ /^(\d+)$/;
+my $pkgnum = $1;
+my @cust_pkg_usage = qsearch({
+  'select'    => 'cust_pkg_usage.*',
+  'table'     => 'cust_pkg_usage',
+  'addl_from' => ' JOIN part_pkg_usage USING (pkgusagepart)',
+  'extra_sql' => " WHERE pkgnum = $1",
+  'order_by'  => ' ORDER BY priority ASC, description ASC',
+});
 
 #subroutines
 
@@ -213,6 +262,8 @@ sub pkg_change_link {
     'label'       => emt('Change package'),
     'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
+    'width'       => 763,
+    'height'      => 380,
   );
 }
 
@@ -226,10 +277,21 @@ sub pkg_change_location_link {
     'label'       => emt('Change location'),
     'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
+    'width'       => 763,
+    'height'      => 380,
   );
 }
 
-sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', emt('Edit dates'), @_ ); }
+sub pkg_change_quantity_link {
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p. 'edit/cust_pkg_quantity.html?',
+    'label'       => emt('Change quantity'),
+    'actionlabel' => emt('Change'),
+    'cust_pkg'    => shift,
+    'width'       => 390,
+    'height'      => 220,
+  );
+}
 
 sub pkg_discount_link {
   my $cust_pkg = shift or return '';

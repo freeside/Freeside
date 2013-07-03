@@ -1,0 +1,106 @@
+<& /elements/header.html, 'Manage customer email settings' &>
+<STYLE TYPE="text/css">
+.hidden { display: none }
+</STYLE>
+<& /elements/xmlhttp.html,
+    url => $p.'misc/xmlhttp-cust_main-email_search.html',
+    subs => ['email_search']
+&>
+<SCRIPT TYPE="text/javascript">
+
+function receive_search(result) {
+  var recs = JSON.parse(result);
+  var tbody = document.getElementById('tbody_results');
+  var j = tbody.rows.length;
+  for(var i = 0; i < j; i++) {
+    tbody.deleteRow(tbody.rows[i]);
+  }
+  if (recs.length > 0) {
+    for(var i = 0; i < recs.length; i++) {
+      var rec = recs[i];
+      var row = tbody.insertRow(i);
+      row.style.backgroundColor = (i % 2 ? '#eeeeee' : '#ffffff');
+
+      var cell = row.insertCell(0); // custnum
+      cell.appendChild( document.createTextNode(rec[0]) );
+      cell = row.insertCell(1);     // customer name
+      cell.appendChild( document.createTextNode(rec[1]) );
+      cell = row.insertCell(2);     // email
+      cell.appendChild( document.createTextNode(rec[2]) );
+
+      cell = row.insertCell(3);     // invoice_email
+      var input = document.createElement('INPUT');
+      input.type = 'hidden';
+      input.name = 'custnum';
+      input.value = rec[0];
+      cell.appendChild(input);
+
+      input = document.createElement('INPUT');
+      input.type = 'checkbox';
+      input.name = 'custnum' + rec[0] + '_invoice_email';
+      input.value = 'Y';
+      input.checked = (rec[3] != 'Y');
+      cell.appendChild(input);
+      cell.style.textAlign = 'center';
+      
+      cell = row.insertCell(4);     // message_email
+      input = document.createElement('INPUT');
+      input.type = 'checkbox';
+      input.name = 'custnum' + rec[0] + '_message_email';
+      input.value = 'Y';
+      input.checked = (rec[4] != 'Y');
+      cell.appendChild(input);
+      cell.style.textAlign = 'center';
+    }
+    document.getElementById('div_found').style.display = '';
+  } else {
+    document.getElementById('div_notfound').style.display = '';
+  }
+}
+
+function start_search() {
+  document.getElementById('div_found').style.display = 'none';
+  document.getElementById('div_notfound').style.display = 'none';
+  var email = document.getElementById('input_email').value;
+  email_search(email, receive_search);
+}
+% if ( $cgi->param('search') ) {
+window.onload = start_search;
+% }
+</SCRIPT>
+<FORM ACTION="<%$p%>misc/process/manage_cust_email.html" METHOD="POST">
+<DIV>
+% if ( $cgi->param('done') ) {
+<P STYLE="font-weight: bold; color: #00ff00">Changes saved.</P>
+% } elsif ( $cgi->param('error') ) {
+<P STYLE="font-weight: bold; color: #ff0000"><% $cgi->param('error') |h %></P>
+% }
+  Email address: 
+  <INPUT TYPE="text" ID="input_email" NAME="search"\
+         VALUE="<% $cgi->param('search') |h %>">
+  <INPUT TYPE="button" onclick="start_search()" VALUE="find">
+</DIV>
+<DIV ID="div_notfound" STYLE="display: none; padding: 1em">
+No matching email addresses found.
+</DIV>
+<DIV ID="div_found" STYLE="display: none">
+<TABLE CLASS="grid" STYLE="border-spacing: 0px">
+  <THEAD>
+    <TR STYLE="background-color: #dddddd">
+      <TH>#</TH>
+      <TH>Customer</TH>
+      <TH>Email</TH>
+      <TH>Send invoices</TH>
+      <TH>Send other notices</TH>
+    </TR>
+  </THEAD>
+  <TBODY ID="tbody_results"></TBODY>
+</TABLE>
+<INPUT TYPE="submit" VALUE="Save changes">
+</FORM>
+<& /elements/footer.html &>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
+
+</%init>

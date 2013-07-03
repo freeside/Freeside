@@ -125,29 +125,12 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::insert(@_);
+  my $error = $self->SUPER::insert(@_)
+           || $self->replace;
+  # use replace to do all the part_export_machine and default_machine stuff
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
-  }
-
-  #kinda false laziness with process_m2name
-  my @machines = map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ }
-                   grep /\S/,
-                     split /[\n\r]{1,2}/,
-                       $self->part_export_machine_textarea;
-
-  foreach my $machine ( @machines ) {
-
-    my $part_export_machine = new FS::part_export_machine {
-      'exportnum' => $self->exportnum,
-      'machine'   => $machine,
-    };
-    $error = $part_export_machine->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -217,6 +200,7 @@ or modified.
 
 sub replace {
   my $self = shift;
+  my $old = $self->replace_old;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -228,12 +212,7 @@ sub replace {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-
-  my $error = $self->SUPER::replace(@_);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
+  my $error;
 
   if ( $self->part_export_machine_textarea ) {
 
@@ -258,6 +237,10 @@ sub replace {
           }
         }
 
+        if ( $self->default_machine_name eq $machine ) {
+          $self->default_machine( $part_export_machine{$machine}->machinenum );
+        }
+
         delete $part_export_machine{$machine}; #so we don't disable it below
 
       } else {
@@ -272,10 +255,12 @@ sub replace {
           return $error;
         }
   
+        if ( $self->default_machine_name eq $machine ) {
+          $self->default_machine( $part_export_machine->machinenum );
+        }
       }
 
     }
-
 
     foreach my $part_export_machine ( values %part_export_machine ) {
       $part_export_machine->disabled('Y');
@@ -286,6 +271,48 @@ sub replace {
       }
     }
 
+    if ( $old->machine ne '_SVC_MACHINE' ) {
+      # then set up the default for any already-attached export_svcs
+      foreach my $export_svc ( $self->export_svc ) {
+        my @svcs = qsearch('cust_svc', { 'svcpart' => $export_svc->svcpart });
+        foreach my $cust_svc ( @svcs ) {
+          my $svc_export_machine = FS::svc_export_machine->new({
+              'exportnum'   => $self->exportnum,
+              'svcnum'      => $cust_svc->svcnum,
+              'machinenum'  => $self->default_machine,
+          });
+          $error ||= $svc_export_machine->insert;
+        }
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    } # if switching to selectable hosts
+
+  } elsif ( $old->machine eq '_SVC_MACHINE' ) {
+    # then we're switching from selectable to non-selectable
+    foreach my $svc_export_machine (
+      qsearch('svc_export_machine', { 'exportnum' => $self->exportnum })
+    ) {
+      $error ||= $svc_export_machine->delete;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  $error = $self->SUPER::replace(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( $self->machine eq '_SVC_MACHINE' and ! $self->default_machine ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "no default export host selected";
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -308,6 +335,13 @@ sub check {
     || $self->ut_domainn('machine')
     || $self->ut_alpha('exporttype')
   ;
+
+  if ( $self->machine eq '_SVC_MACHINE' ) {
+    $error ||= $self->ut_numbern('default_machine')
+  } else {
+    $self->set('default_machine', '');
+  }
+
   return $error if $error;
 
   $self->nodomain =~ /^(Y?)$/ or return "Illegal nodomain: ". $self->nodomain;
@@ -471,7 +505,9 @@ sub _rebless {
   $self;
 }
 
-=item svc_machine
+=item svc_machine SVC_X
+
+Return the export hostname for SVC_X.
 
 =cut
 
@@ -483,12 +519,31 @@ sub svc_machine {
   my $svc_export_machine = qsearchs('svc_export_machine', {
     'svcnum'    => $svc_x->svcnum,
     'exportnum' => $self->exportnum,
-  })
-    #would only happen if you add this export to existing services without a
-    #machine set then try to run exports without setting it... right?
-    or die "No hostname selected for ".($self->exportname || $self->exporttype);
+  });
+
+  if (!$svc_export_machine) {
+    warn "No hostname selected for ".($self->exportname || $self->exporttype);
+    return $self->default_export_machine->machine;
+  }
 
   return $svc_export_machine->part_export_machine->machine;
+}
+
+=item default_export_machine
+
+Return the default export hostname for this export.
+
+=cut
+
+sub default_export_machine {
+  my $self = shift;
+  my $machinenum = $self->default_machine;
+  if ( $machinenum ) {
+    my $default_machine = FS::part_export_machine->by_key($machinenum);
+    return $default_machine->machine if $default_machine;
+  }
+  # this should not happen
+  die "no default export hostname for export ".$self->exportnum;
 }
 
 #these should probably all go away, just let the subclasses define em
@@ -601,6 +656,17 @@ DEFAULTSREF is a hashref with the same keys where true values indicate the
 setting is a default (and thus can be displayed in the UI with less emphasis,
 or hidden by default).
 
+=item actions
+
+Adds one or more "action" links to the export's display in 
+browse/part_export.cgi.  Should return pairs of values.  The first is 
+the link label; the second is the Mason path to a document to load.
+The document will show in a popup.
+
+=cut
+
+sub actions { }
+
 =cut
 
 =item weight
@@ -614,6 +680,27 @@ sub weight {
   my $self = shift;
   export_info()->{$self->exporttype}->{'weight'} || 0;
 }
+
+=item info
+
+Returns a reference to (a copy of) the export's %info hash.
+
+=cut
+
+sub info {
+  my $self = shift;
+  $self->{_info} ||= { 
+    %{ export_info()->{$self->exporttype} }
+  };
+}
+
+#default fallbacks... FS::part_export::DID_Common ?
+sub get_dids_can_tollfree { 0; }
+sub get_dids_can_manual   { 0; }
+sub get_dids_can_edit     { 0; } #don't use without can_manual, otherwise the
+                                 # DID selector provisions a new number from
+                                 # inventory each edit
+sub get_dids_npa_select   { 1; }
 
 =back
 
@@ -671,6 +758,55 @@ sub _upgrade_data {  #class method
     $error = $opt->replace;
     die $error if $error;
   }
+  # for exports that have selectable hostnames, make sure all services
+  # have a hostname selected
+  foreach my $part_export (
+    qsearch('part_export', { 'machine' => '_SVC_MACHINE' })
+  ) {
+
+    my $exportnum = $part_export->exportnum;
+    my $machinenum = $part_export->default_machine;
+    if (!$machinenum) {
+      my ($first) = $part_export->part_export_machine;
+      if (!$first) {
+        # user intervention really is required.
+        die "Export $exportnum has no hostname options defined.\n".
+            "You must correct this before upgrading.\n";
+      }
+      # warn about this, because we might not choose the right one
+      warn "Export $exportnum (". $part_export->exporttype.
+           ") has no default hostname.  Setting to ".$first->machine."\n";
+      $machinenum = $first->machinenum;
+      $part_export->set('default_machine', $machinenum);
+      my $error = $part_export->replace;
+      die $error if $error;
+    }
+
+    # the service belongs to a service def that uses this export
+    # and there is not a hostname selected for this export for that service
+    my $join = ' JOIN export_svc USING ( svcpart )'.
+               ' LEFT JOIN svc_export_machine'.
+               ' ON ( cust_svc.svcnum = svc_export_machine.svcnum'.
+               ' AND export_svc.exportnum = svc_export_machine.exportnum )';
+
+    my @svcs = qsearch( {
+          'select'    => 'cust_svc.*',
+          'table'     => 'cust_svc',
+          'addl_from' => $join,
+          'extra_sql' => ' WHERE svcexportmachinenum IS NULL'.
+                         ' AND export_svc.exportnum = '.$part_export->exportnum,
+      } );
+    foreach my $cust_svc (@svcs) {
+      my $svc_export_machine = FS::svc_export_machine->new({
+          'exportnum'   => $exportnum,
+          'machinenum'  => $machinenum,
+          'svcnum'      => $cust_svc->svcnum,
+      });
+      my $error = $svc_export_machine->insert;
+      die $error if $error;
+    }
+  }
+
   # pass downstream
   my %exports_in_use;
   $exports_in_use{ref $_} = 1 foreach qsearch('part_export', {});

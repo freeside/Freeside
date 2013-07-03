@@ -26,9 +26,9 @@ sub option_fields {
                              type  => 'checkbox',
                              value => '1',
                            },
-    'ftp_targetnum'     => { label    => 'Upload spool to FTP target',
+    'upload_targetnum'  => { label    => 'Upload spool to target',
                              type     => 'select-table',
-                             table    => 'ftp_target',
+                             table    => 'upload_target',
                              name_col => 'label',
                              empty_label => '(do not upload)',
                              order_by => 'targetnum',
@@ -39,16 +39,17 @@ sub option_fields {
 sub default_weight { 50; }
 
 sub do_action {
-  my( $self, $cust_bill ) = @_;
+  my( $self, $cust_bill, $cust_event ) = @_;
 
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
 
   $cust_bill->spool_csv(
+    'time'         => $cust_event->_date,
     'format'       => $self->option('spoolformat'),
     'balanceover'  => $self->option('spoolbalanceover'),
     'agent_spools' => $self->option('spoolagent_spools'),
-    'ftp_targetnum'=> $self->option('ftp_targetnum'),
+    'upload_targetnum'=> $self->option('upload_targetnum'),
   );
 }
 

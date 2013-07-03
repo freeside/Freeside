@@ -5,7 +5,7 @@ use vars qw($opt_d $opt_s $opt_q $opt_v $opt_r);
 use vars qw($DEBUG $DRY_RUN);
 use Getopt::Std;
 use DBIx::DBSchema 0.31; #0.39
-use FS::UID qw(adminsuidsetup checkeuid datasrc driver_name);  #getsecrets);
+use FS::UID qw(adminsuidsetup checkeuid datasrc driver_name);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
 use FS::Misc::prune qw(prune_applications);
@@ -123,6 +123,8 @@ my $cf;
 while ( $cf = $cfsth->fetchrow_hashref ) {
     my $tbl = $cf->{'dbtable'};
     my $name = $cf->{'name'};
+    $name = lc($name) unless driver_name =~ /^mysql/i;
+
     @statements = grep { $_ !~ /^\s*ALTER\s+TABLE\s+(h_|)$tbl\s+DROP\s+COLUMN\s+cf_$name\s*$/i }
                                                                     @statements;
     push @statements, 

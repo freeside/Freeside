@@ -11,6 +11,7 @@ use Date::Parse;
 use Date::Format;
 use Time::Local;
 use List::Util qw( first min );
+use Text::CSV_XS;
 use FS::UID qw( dbh );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
@@ -325,6 +326,10 @@ sub check {
     $self->billsec(  $self->enddate - $self->answerdate );
   } 
 
+  if ( ! $self->enddate && $self->startdate && $self->duration ) {
+    $self->enddate( $self->startdate + $self->duration );
+  }
+
   $self->set_charged_party;
 
   #check the foreign keys even?
@@ -421,12 +426,25 @@ sub set_charged_party {
 Sets the status to the provided string.  If there is an error, returns the
 error, otherwise returns false.
 
+If status is being changed from 'rated' to some other status, also removes
+any usage allocations to this CDR.
+
 =cut
 
 sub set_status {
   my($self, $status) = @_;
+  my $old_status = $self->freesidestatus;
   $self->freesidestatus($status);
-  $self->replace;
+  my $error = $self->replace;
+  if ( $old_status eq 'rated' and $status ne 'done' ) {
+    # deallocate any usage
+    foreach (qsearch('cdr_cust_pkg_usage', {acctid => $self->acctid})) {
+      my $cust_pkg_usage = $_->cust_pkg_usage;
+      $cust_pkg_usage->set('minutes', $cust_pkg_usage->minutes + $_->minutes);
+      $error ||= $cust_pkg_usage->replace || $_->delete;
+    }
+  }
+  $error;
 }
 
 =item set_status_and_rated_price STATUS RATED_PRICE [ SVCNUM [ OPTION => VALUE ... ] ]
@@ -573,7 +591,7 @@ reference of the number of included minutes and will be decremented by the
 rated minutes of this CDR.
 
 region_group_included_minutes_hashref is required for prefix price plans which
-have included minues (otehrwise unused/ignored).  It should be set to an empty
+have included minues (otherwise unused/ignored).  It should be set to an empty
 hashref at the start of a month's rating and then preserved across CDRs.
 
 =cut
@@ -598,6 +616,7 @@ our %interval_cache = (); # for timed rates
 sub rate_prefix {
   my( $self, %opt ) = @_;
   my $part_pkg = $opt{'part_pkg'} or return "No part_pkg specified";
+  my $cust_pkg = $opt{'cust_pkg'};
 
   my $da_rewrote = 0;
   # this will result in those CDRs being marked as done... is that 
@@ -625,7 +644,34 @@ sub rate_prefix {
                                             );
   }
 
+  if ( $part_pkg->option_cacheable('skip_same_customer')
+      and ! $self->is_tollfree ) {
+    my ($dst_countrycode, $dst_number) = $self->parse_number(
+      column => 'dst',
+      international_prefix => $part_pkg->option_cacheable('international_prefix'),
+      domestic_prefix => $part_pkg->option_cacheable('domestic_prefix'),
+    );
+    my $dst_same_cust = FS::Record->scalar_sql(
+        'SELECT COUNT(svc_phone.svcnum) AS count '.
+        'FROM cust_pkg ' .
+        'JOIN cust_svc   USING (pkgnum) ' .
+        'JOIN svc_phone  USING (svcnum) ' .
+        'WHERE svc_phone.countrycode = ' . dbh->quote($dst_countrycode) .
+        ' AND svc_phone.phonenum = ' . dbh->quote($dst_number) .
+        ' AND cust_pkg.custnum = ' . $cust_pkg->custnum,
+    );
+    if ( $dst_same_cust > 0 ) {
+      warn "not charging for CDR (same source and destination customer)\n" if $DEBUG;
+      return $self->set_status_and_rated_price( 'skipped',
+                                                0,
+                                                $opt{'svcnum'},
+                                              );
+    }
+  }
+
     
+
+
   ###
   # look up rate details based on called station id
   # (or calling station id for toll free calls)
@@ -823,11 +869,6 @@ sub rate_prefix {
 
     $seconds_left -= $charge_sec;
 
-    my $included_min = $opt{'region_group_included_min_hashref'} || {};
-
-    $included_min->{$regionnum}{$ratetimenum} = $rate_detail->min_included
-      unless exists $included_min->{$regionnum}{$ratetimenum};
-
     my $granularity = $rate_detail->sec_granularity;
 
     my $minutes;
@@ -845,20 +886,40 @@ sub rate_prefix {
 
     $seconds += $charge_sec;
 
+    if ( $rate_detail->min_included ) {
+      # the old, kind of deprecated way to do this
+      my $included_min = $opt{'region_group_included_min_hashref'} || {};
 
-    my $region_group = ($part_pkg->option_cacheable('min_included') || 0) > 0;
+      # by default, set the included minutes for this region/time to
+      # what's in the rate_detail
+      $included_min->{$regionnum}{$ratetimenum} = $rate_detail->min_included
+        unless exists $included_min->{$regionnum}{$ratetimenum};
 
-    ${$opt{region_group_included_min}} -= $minutes 
-        if $region_group && $rate_detail->region_group;
+      # the way that doesn't work
+      #my $region_group = ($part_pkg->option_cacheable('min_included') || 0) > 0;
 
-    $included_min->{$regionnum}{$ratetimenum} -= $minutes;
-    if (
-         $included_min->{$regionnum}{$ratetimenum} <= 0
-         && ( ${$opt{region_group_included_min}} <= 0
-              || ! $rate_detail->region_group
-            )
-       )
-    {
+      #${$opt{region_group_included_min}} -= $minutes 
+      #    if $region_group && $rate_detail->region_group;
+
+      if ( $included_min->{$regionnum}{$ratetimenum} > $minutes ) {
+        $charge_sec = 0;
+        $included_min->{$regionnum}{$ratetimenum} -= $minutes;
+      } else {
+        $charge_sec -= ($included_min->{$regionnum}{$ratetimenum} * 60);
+        $included_min->{$regionnum}{$ratetimenum} = 0;
+      }
+    } else {
+      # the new way!
+      my $applied_min = $cust_pkg->apply_usage(
+        'cdr'         => $self,
+        'rate_detail' => $rate_detail,
+        'minutes'     => $minutes
+      );
+      # for now, usage pools deal only in whole minutes
+      $charge_sec -= $applied_min * 60;
+    }
+
+    if ( $charge_sec > 0 ) {
 
       #NOW do connection charges here... right?
       #my $conn_seconds = min($seconds_left, $rate_detail->conn_sec);
@@ -871,16 +932,9 @@ sub rate_prefix {
       }
 
                            #should preserve (display?) this
-      my $charge_min = 0 - $included_min->{$regionnum}{$ratetimenum} - ( $conn_seconds / 60 );
-      $included_min->{$regionnum}{$ratetimenum} = 0;
+      my $charge_min = ( $charge_sec - $conn_seconds ) / 60;
       $charge += ($rate_detail->min_charge * $charge_min) if $charge_min > 0; #still not rounded
 
-    } elsif ( ${$opt{region_group_included_min}} > 0
-              && $region_group
-              && $rate_detail->region_group 
-           )
-    {
-        $included_min->{$regionnum}{$ratetimenum} = 0 
     }
 
     # choose next rate_detail
@@ -1168,6 +1222,8 @@ sub export_formats {
     length($price) ? ($opt{money_char} . $price) : '';
   };
 
+  my $src_sub = sub { $_[0]->clid || $_[0]->src };
+
   %export_formats = (
     'simple' => [
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
@@ -1182,7 +1238,7 @@ sub export_formats {
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
       sub { time2str('%r', shift->calldate_unix ) },   #TIME
       #'userfield',                                     #USER
-      'src',                                           #called from
+      $src_sub,                                           #called from
       'dst',                                           #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
@@ -1191,7 +1247,7 @@ sub export_formats {
     'accountcode_simple' => [
       sub { time2str($date_format, shift->calldate_unix ) },   #DATE
       sub { time2str('%r', shift->calldate_unix ) },   #TIME
-      'src',                                           #called from
+      $src_sub,                                           #called from
       'accountcode',                                   #NUMBER_DIALED
       $duration_sub,                                   #DURATION
       $price_sub,
@@ -1199,14 +1255,14 @@ sub export_formats {
     'sum_duration' => [ 
       # for summary formats, the CDR is a fictitious object containing the 
       # total billsec and the phone number of the service
-      'src',
+      $src_sub,
       sub { my($cdr, %opt) = @_; $opt{ratename} },
       sub { my($cdr, %opt) = @_; $opt{count} },
       sub { my($cdr, %opt) = @_; int($opt{seconds}/60).'m' },
       $price_sub,
     ],
     'sum_count' => [
-      'src',
+      $src_sub,
       sub { my($cdr, %opt) = @_; $opt{ratename} },
       sub { my($cdr, %opt) = @_; $opt{count} },
       $price_sub,
@@ -1240,7 +1296,7 @@ sub export_formats {
       $price_sub,
     ],
   );
-  $export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} }, ];
+  $export_formats{'source_default'} = [ $src_sub, @{ $export_formats{'default'} }, ];
   $export_formats{'accountcode_default'} =
     [ @{ $export_formats{'default'} }[0,1],
       'accountcode',
@@ -1248,7 +1304,7 @@ sub export_formats {
     ];
   my @default = @{ $export_formats{'default'} };
   $export_formats{'description_default'} = 
-    [ 'src', @default[0..2], 
+    [ $src_sub, @default[0..2], 
       sub { my($cdr, %opt) = @_; $cdr->description },
       @default[4,5] ];
 
@@ -1286,8 +1342,6 @@ sub downstream_csv {
   #$opt{'money_char'} ||= $conf->config('money_char') || '$';
   $opt{'money_char'} ||= FS::Conf->new->config('money_char') || '$';
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
   my $csv = new Text::CSV_XS;
 
   my @columns =
@@ -1575,6 +1629,11 @@ my %import_options = (
 
   'format_xml_formats' =>
     { map { $_ => $cdr_info{$_}->{'xml_format'}; }
+          keys %cdr_info
+    },
+
+  'format_asn_formats' =>
+    { map { $_ => $cdr_info{$_}->{'asn_format'}; }
           keys %cdr_info
     },
 

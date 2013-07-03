@@ -24,6 +24,11 @@
           )
 %>
 
+<& /elements/tr-select-cust_class.html,
+    'field'    => 'cust_classnum', # to avoid ambiguity in FS::Report::Table
+    'multiple' => 1
+&>
+
 <% include('/elements/tr-select-part_referral.html',
              'label'         => 'Advertising source ',
              'disable_empty' => 0,

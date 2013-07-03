@@ -71,7 +71,7 @@ sub calc_recur {
   }
 
   $param->{'override_charges'} = $price;
-  $self->calc_recur_Common($cust_pkg,$sdate,$details,$param);
+  ($cust_pkg->quantity || 1) * $self->calc_recur_Common($cust_pkg,$sdate,$details,$param);
 }
 
 sub can_discount { 1; }

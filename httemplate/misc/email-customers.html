@@ -104,13 +104,19 @@ Template:
               )
     %><BR>
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%" id="table_no_template">
-    <% include('/elements/tr-input-text.html',
-                 'field' => 'from',
-                 'label' => 'From:',
-                 'size'  => 50,
-              )
-    %>
-
+    <& /elements/tr-td-label.html, 'label' => 'From:' &>
+      <TD><& /elements/input-text.html,
+              'field' => 'from_name',
+              'value' => $conf->config('company_name'), #?
+              'size'  => 20,
+          &>&nbsp;&lt;\
+          <& /elements/input-text.html,
+              'field' => 'from_addr',
+              'type'  => 'email', # HTML5, woot
+              'value' => $conf->config('invoice_from'),
+              'size'  => 20,
+          &>&gt;</TD>
+ 
     <% include('/elements/tr-input-text.html',
                  'field' => 'subject',
                  'label' => 'Subject:',
@@ -120,9 +126,11 @@ Template:
 
     <TR>
       <TD ALIGN="right" VALIGN="top" STYLE="padding-top:3px">Message: </TD>
-      <TD><& '/elements/htmlarea.html', 
-              'field' => 'html_body',
-              'width' => 600 &></TD>
+      <TD><& /elements/htmlarea.html, 
+               'field' => 'html_body',
+               'width' => 763,
+          &>
+      </TD>
     </TR>
 
   </TABLE>
@@ -149,6 +157,7 @@ Template:
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
 
+my $conf = FS::Conf->new;
 my $table = $cgi->param('table') or die "'table' required";
 my %search;
 if ( $cgi->param('search') ) {
@@ -167,7 +176,15 @@ else {
 my $title = 'Send customer notices';
 
 my $num_cust;
-my $from = $cgi->param('from') || '';
+my $from = '';
+if ( $cgi->param('from') ) {
+  $from = $cgi->param('from');
+} elsif ( $cgi->param('from_name') ) {
+  $from = ($cgi->param('from_name') . ' <' . $cgi->param('from_addr') . '>');
+} elsif ( $cgi->param('from_addr') ) {
+  $from = $cgi->param('from_addr');
+}
+
 my $subject = $cgi->param('subject') || '';
 my $html_body = $cgi->param('html_body') || '';
 

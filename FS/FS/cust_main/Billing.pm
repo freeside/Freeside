@@ -21,6 +21,7 @@ use FS::cust_bill_pkg_tax_rate_location;
 use FS::part_event;
 use FS::part_event_condition;
 use FS::pkg_category;
+use FS::Log;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -104,6 +105,9 @@ options of those methods are also available.
 sub bill_and_collect {
   my( $self, %options ) = @_;
 
+  my $log = FS::Log->new('bill_and_collect');
+  $log->debug('start', object => $self, agentnum => $self->agentnum);
+
   my $error;
 
   #$options{actual_time} not $options{time} because freeside-daily -d is for
@@ -112,8 +116,13 @@ sub bill_and_collect {
   $options{'actual_time'} ||= time;
   my $job = $options{'job'};
 
+  my $actual_time = ( $conf->exists('next-bill-ignore-time')
+                        ? day_end( $options{actual_time} )
+                        : $options{actual_time}
+                    );
+
   $job->update_statustext('0,cleaning expired packages') if $job;
-  $error = $self->cancel_expired_pkgs( day_end( $options{actual_time} ) );
+  $error = $self->cancel_expired_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -121,7 +130,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
-  $error = $self->suspend_adjourned_pkgs( day_end( $options{actual_time} ) );
+  $error = $self->suspend_adjourned_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error adjourning custnum ". $self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -129,7 +138,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
-  $error = $self->unsuspend_resumed_pkgs( day_end( $options{actual_time} ) );
+  $error = $self->unsuspend_resumed_pkgs( $actual_time );
   if ( $error ) {
     $error = "Error resuming custnum ".$self->custnum. ": $error";
     if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
@@ -168,6 +177,7 @@ sub bill_and_collect {
     }
   }
   $job->update_statustext('100,finished') if $job;
+  $log->debug('finish', object => $self, agentnum => $self->agentnum);
 
   '';
 
@@ -405,6 +415,7 @@ sub bill {
   my @precommit_hooks = ();
 
   $options{'pkg_list'} ||= [ $self->ncancelled_pkgs ];  #param checks?
+
   foreach my $cust_pkg ( @{ $options{'pkg_list'} } ) {
 
     next if $options{'not_pkgpart'}->{$cust_pkg->pkgpart};
@@ -426,6 +437,24 @@ sub bill {
     my @part_pkg = $cust_pkg->part_pkg->self_and_bill_linked;
     $options{has_hidden} = 1 if ($part_pkg[1] && $part_pkg[1]->hidden);
  
+    # if this package was changed from another package,
+    # and it hasn't been billed since then,
+    # and package balances are enabled,
+    if ( $cust_pkg->change_pkgnum
+        and $cust_pkg->change_date >= ($cust_pkg->last_bill || 0)
+        and $cust_pkg->change_date <  $invoice_time
+      and $conf->exists('pkg-balances') )
+    {
+      # _transfer_balance will also create the appropriate credit
+      my @transfer_items = $self->_transfer_balance($cust_pkg);
+      # $part_pkg[0] is the "real" part_pkg
+      my $pass = ($cust_pkg->no_auto || $part_pkg[0]->no_auto) ? 
+                  'no_auto' : '';
+      push @{ $cust_bill_pkg{$pass} }, @transfer_items;
+      # treating this as recur, just because most charges are recur...
+      ${$total_recur{$pass}} += $_->recur foreach @transfer_items;
+    }
+
     foreach my $part_pkg ( @part_pkg ) {
 
       $cust_pkg->set($_, $hash{$_}) foreach qw ( setup last_bill bill );
@@ -682,8 +711,6 @@ sub _omit_zero_value_bundles {
 
 =item calculate_taxes LINEITEMREF TAXHASHREF INVOICE_TIME
 
-This is a weird one.  Perhaps it should not even be exposed.
-
 Generates tax line items (see L<FS::cust_bill_pkg>) for this customer.
 Usually used internally by bill method B<bill>.
 
@@ -750,16 +777,18 @@ sub calculate_taxes {
   # values are arrayrefs of cust_bill_pkg_tax_rate_location hashrefs
   my %tax_rate_location = ();
 
-  # keys are taxnums (not internal identifiers!)
+  # keys are taxlisthash keys (internal identifiers!)
   # values are arrayrefs of cust_tax_exempt_pkg objects
   my %tax_exemption;
 
   foreach my $tax ( keys %$taxlisthash ) {
-    # $tax is a tax identifier
+    # $tax is a tax identifier (intersection of a tax definition record
+    # and a cust_bill_pkg record)
     my $tax_object = shift @{ $taxlisthash->{$tax} };
     # $tax_object is a cust_main_county or tax_rate 
-    # (with pkgnum and locationnum set)
-    # the rest of @{ $taxlisthash->{$tax} } is cust_bill_pkg objects
+    # (with billpkgnum, pkgnum, locationnum set)
+    # the rest of @{ $taxlisthash->{$tax} } is cust_bill_pkg component objects
+    # (setup, recurring, usage classes)
     warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
     warn " ". join('/', @{ $taxlisthash->{$tax} } ). "\n" if $DEBUG > 2;
     # taxline calculates the tax on all cust_bill_pkgs in the 
@@ -768,44 +797,35 @@ sub calculate_taxes {
     # It also calculates exemptions and attaches them to the cust_bill_pkgs
     # in the argument.
     my $taxables = $taxlisthash->{$tax};
-    my $exemptions = $tax_exemption{$tax_object->taxnum} ||= [];
-    my $hashref_or_error =
-      $tax_object->taxline( $taxables,
+    my $exemptions = $tax_exemption{$tax} ||= [];
+    my $taxline = $tax_object->taxline(
+                            $taxables,
                             'custnum'      => $self->custnum,
                             'invoice_time' => $invoice_time,
                             'exemptions'   => $exemptions,
                           );
-    return $hashref_or_error unless ref($hashref_or_error);
-
-    # then collect any new exemptions generated for this tax
-    push @$exemptions, @{ $_->cust_tax_exempt_pkg }
-      foreach @$taxables;
+    return $taxline unless ref($taxline);
 
     unshift @{ $taxlisthash->{$tax} }, $tax_object;
 
-    my $name   = $hashref_or_error->{'name'};
-    my $amount = $hashref_or_error->{'amount'};
+    if ( $tax_object->isa('FS::cust_main_county') ) {
+      # then $taxline is a real line item
+      push @{ $taxname{ $taxline->itemdesc } }, $taxline;
 
-    #warn "adding $amount as $name\n";
-    $taxname{ $name } ||= [];
-    push @{ $taxname{ $name } }, $tax;
+    } else {
+      # leave this as is for now
 
-    $tax_amount{ $tax } += $amount;
+      my $name   = $taxline->{'name'};
+      my $amount = $taxline->{'amount'};
 
-    # link records between cust_main_county/tax_rate and cust_location
-    $tax_location{ $tax } ||= [];
-    $tax_rate_location{ $tax } ||= [];
-    if ( ref($tax_object) eq 'FS::cust_main_county' ) {
-      push @{ $tax_location{ $tax }  },
-        {
-          'taxnum'      => $tax_object->taxnum, 
-          'taxtype'     => ref($tax_object),
-          'pkgnum'      => $tax_object->get('pkgnum'),
-          'locationnum' => $tax_object->get('locationnum'),
-          'amount'      => sprintf('%.2f', $amount ),
-        };
-    }
-    elsif ( ref($tax_object) eq 'FS::tax_rate' ) {
+      #warn "adding $amount as $name\n";
+      $taxname{ $name } ||= [];
+      push @{ $taxname{ $name } }, $tax;
+
+      $tax_amount{ $tax } += $amount;
+
+      # link records between cust_main_county/tax_rate and cust_location
+      $tax_rate_location{ $tax } ||= [];
       my $taxratelocationnum =
         $tax_object->tax_rate_location->taxratelocationnum;
       push @{ $tax_rate_location{ $tax }  },
@@ -816,54 +836,52 @@ sub calculate_taxes {
           'locationtaxid'      => $tax_object->location,
           'taxratelocationnum' => $taxratelocationnum,
         };
-    }
-
-  }
-
-  #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
-  my %packagemap = map { $_->pkgnum => $_ } @$cust_bill_pkg;
-  foreach my $tax ( keys %$taxlisthash ) {
-    my $taxables = $taxlisthash->{$tax};
-    my $tax_object = shift @$taxables; # the rest are line items
-    foreach my $cust_bill_pkg ( @$taxables ) {
-      next unless ref($cust_bill_pkg) eq 'FS::cust_bill_pkg';
-
-      my @cust_tax_exempt_pkg = splice @{ $cust_bill_pkg->cust_tax_exempt_pkg };
-
-      next unless @cust_tax_exempt_pkg;
-      # get the non-disintegrated version
-      my $real_cust_bill_pkg = $packagemap{$cust_bill_pkg->pkgnum}
-        or die "can't distribute tax exemptions: no line item for ".
-          Dumper($_). " in packagemap ". 
-          join(',', sort {$a<=>$b} keys %packagemap). "\n";
-
-      push @{ $real_cust_bill_pkg->cust_tax_exempt_pkg },
-           @cust_tax_exempt_pkg;
-    }
-  }
+    } #if ref($tax_object)...
+  } #foreach keys %$taxlisthash
 
   #consolidate and create tax line items
   warn "consolidating and generating...\n" if $DEBUG > 2;
   foreach my $taxname ( keys %taxname ) {
+    my @cust_bill_pkg_tax_location;
+    my @cust_bill_pkg_tax_rate_location;
+    my $tax_cust_bill_pkg = FS::cust_bill_pkg->new({
+        'pkgnum'    => 0,
+        'recur'     => 0,
+        'sdate'     => '',
+        'edate'     => '',
+        'itemdesc'  => $taxname,
+        'cust_bill_pkg_tax_location'      => \@cust_bill_pkg_tax_location,
+        'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
+    });
+
     my $tax_total = 0;
     my %seen = ();
-    my @cust_bill_pkg_tax_location = ();
-    my @cust_bill_pkg_tax_rate_location = ();
     warn "adding $taxname\n" if $DEBUG > 1;
     foreach my $taxitem ( @{ $taxname{$taxname} } ) {
-      next if $seen{$taxitem}++;
-      warn "adding $tax_amount{$taxitem}\n" if $DEBUG > 1;
-      $tax_total += $tax_amount{$taxitem};
-      push @cust_bill_pkg_tax_location,
-        map { new FS::cust_bill_pkg_tax_location $_ }
-            @{ $tax_location{ $taxitem } };
-      push @cust_bill_pkg_tax_rate_location,
-        map { new FS::cust_bill_pkg_tax_rate_location $_ }
-            @{ $tax_rate_location{ $taxitem } };
+      if ( ref($taxitem) eq 'FS::cust_bill_pkg' ) {
+        # then we need to transfer the amount and the links from the
+        # line item to the new one we're creating.
+        $tax_total += $taxitem->setup;
+        foreach my $link ( @{ $taxitem->get('cust_bill_pkg_tax_location') } ) {
+          $link->set('tax_cust_bill_pkg', $tax_cust_bill_pkg);
+          push @cust_bill_pkg_tax_location, $link;
+        }
+      } else {
+        # the tax_rate way
+        next if $seen{$taxitem}++;
+        warn "adding $tax_amount{$taxitem}\n" if $DEBUG > 1;
+        $tax_total += $tax_amount{$taxitem};
+        push @cust_bill_pkg_tax_rate_location,
+          map { new FS::cust_bill_pkg_tax_rate_location $_ }
+              @{ $tax_rate_location{ $taxitem } };
+      }
     }
     next unless $tax_total;
 
+    # we should really neverround this up...I guess it's okay if taxline 
+    # already returns amounts with 2 decimal places
     $tax_total = sprintf('%.2f', $tax_total );
+    $tax_cust_bill_pkg->set('setup', $tax_total);
   
     my $pkg_category = qsearchs( 'pkg_category', { 'categoryname' => $taxname,
                                                    'disabled'     => '',
@@ -881,19 +899,9 @@ sub calculate_taxes {
       push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
 
     }
+    $tax_cust_bill_pkg->set('display', \@display);
 
-    push @tax_line_items, new FS::cust_bill_pkg {
-      'pkgnum'   => 0,
-      'setup'    => $tax_total,
-      'recur'    => 0,
-      'sdate'    => '',
-      'edate'    => '',
-      'itemdesc' => $taxname,
-      'display'  => \@display,
-      'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
-      'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
-    };
-
+    push @tax_line_items, $tax_cust_bill_pkg;
   }
 
   \@tax_line_items;
@@ -930,6 +938,11 @@ sub _make_lines {
 
   $cust_pkg->pkgpart($part_pkg->pkgpart);
 
+  my $cmp_time = ( $conf->exists('next-bill-ignore-time')
+                     ? day_end( $time )
+                     : $time
+                 );
+
   ###
   # bill setup
   ###
@@ -938,12 +951,14 @@ sub _make_lines {
   my $unitsetup = 0;
   my @setup_discounts = ();
   my %setup_param = ( 'discounts' => \@setup_discounts );
+  my $setup_billed_currency = '';
+  my $setup_billed_amount = 0;
   if (     ! $options{recurring_only}
        and ! $options{cancel}
        and ( $options{'resetup'}
              || ( ! $cust_pkg->setup
                   && ( ! $cust_pkg->start_date
-                       || $cust_pkg->start_date <= day_end($time)
+                       || $cust_pkg->start_date <= $cmp_time
                      )
                   && ( ! $conf->exists('disable_setup_suspended_pkgs')
                        || ( $conf->exists('disable_setup_suspended_pkgs') &&
@@ -964,7 +979,13 @@ sub _make_lines {
         return "$@ running calc_setup for $cust_pkg\n"
           if $@;
 
-        $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+        $unitsetup = $cust_pkg->base_setup()
+                       || $setup; #XXX uuh
+
+        if ( $setup_param{'billed_currency'} ) {
+          $setup_billed_currency = delete $setup_param{'billed_currency'};
+          $setup_billed_amount   = delete $setup_param{'billed_amount'};
+        }
     }
 
     $cust_pkg->setfield('setup', $time)
@@ -984,6 +1005,8 @@ sub _make_lines {
   my $recur = 0;
   my $unitrecur = 0;
   my @recur_discounts = ();
+  my $recur_billed_currency = '';
+  my $recur_billed_amount = 0;
   my $sdate;
   if (     ! $cust_pkg->start_date
        and ( ! $cust_pkg->susp || $cust_pkg->option('suspend_bill',1)
@@ -991,7 +1014,7 @@ sub _make_lines {
                                      && ! $cust_pkg->option('no_suspend_bill',1)
                                   )
        and
-            ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= day_end($time) )
+            ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= $cmp_time )
          || ( $part_pkg->plan eq 'voip_cdr'
                && $part_pkg->option('bill_every_call')
             )
@@ -1015,7 +1038,7 @@ sub _make_lines {
 
     #over two params!  lets at least switch to a hashref for the rest...
     my $increment_next_bill = ( $part_pkg->freq ne '0'
-                                && ( $cust_pkg->getfield('bill') || 0 ) <= day_end($time)
+                                && ( $cust_pkg->getfield('bill') || 0 ) <= $cmp_time
                                 && !$options{cancel}
                               );
     my %param = ( %setup_param,
@@ -1043,13 +1066,40 @@ sub _make_lines {
       if ( $@ );
 
     #base_cancel???
-    $unitrecur = $cust_pkg->part_pkg->base_recur || $recur; #XXX uuh
+    $unitrecur = $cust_pkg->base_recur( \$sdate ) || $recur; #XXX uuh, better
+
+    if ( $param{'billed_currency'} ) {
+      $recur_billed_currency = delete $param{'billed_currency'};
+      $recur_billed_amount   = delete $param{'billed_amount'};
+    }
 
     if ( $increment_next_bill ) {
 
-      my $next_bill = $part_pkg->add_freq($sdate, $options{freq_override} || 0);
+      my $next_bill;
+
+      if ( my $main_pkg = $cust_pkg->main_pkg ) {
+        # supplemental package
+        # to keep in sync with the main package, simulate billing at 
+        # its frequency
+        my $main_pkg_freq = $main_pkg->part_pkg->freq;
+        my $supp_pkg_freq = $part_pkg->freq;
+        my $ratio = $supp_pkg_freq / $main_pkg_freq;
+        if ( $ratio != int($ratio) ) {
+          # the UI should prevent setting up packages like this, but just
+          # in case
+          return "supplemental package period is not an integer multiple of main  package period";
+        }
+        $next_bill = $sdate;
+        for (1..$ratio) {
+          $next_bill = $part_pkg->add_freq( $next_bill, $main_pkg_freq );
+        }
+
+      } else {
+        # the normal case
+      $next_bill = $part_pkg->add_freq($sdate, $options{freq_override} || 0);
       return "unparsable frequency: ". $part_pkg->freq
         if $next_bill == -1;
+      }  
   
       #pro-rating magic - if $recur_prog fiddled $sdate, want to use that
       # only for figuring next bill date, nothing else, so, reset $sdate again
@@ -1138,16 +1188,20 @@ sub _make_lines {
       push @details, @cust_pkg_detail;
 
       my $cust_bill_pkg = new FS::cust_bill_pkg {
-        'pkgnum'    => $cust_pkg->pkgnum,
-        'setup'     => $setup,
-        'unitsetup' => $unitsetup,
-        'recur'     => $recur,
-        'unitrecur' => $unitrecur,
-        'quantity'  => $cust_pkg->quantity,
-        'details'   => \@details,
-        'discounts' => [ @setup_discounts, @recur_discounts ],
-        'hidden'    => $part_pkg->hidden,
-        'freq'      => $part_pkg->freq,
+        'pkgnum'                => $cust_pkg->pkgnum,
+        'setup'                 => $setup,
+        'unitsetup'             => $unitsetup,
+        'setup_billed_currency' => $setup_billed_currency,
+        'setup_billed_amount'   => $setup_billed_amount,
+        'recur'                 => $recur,
+        'unitrecur'             => $unitrecur,
+        'recur_billed_currency' => $recur_billed_currency,
+        'recur_billed_amount'   => $recur_billed_amount,
+        'quantity'              => $cust_pkg->quantity,
+        'details'               => \@details,
+        'discounts'             => [ @setup_discounts, @recur_discounts ],
+        'hidden'                => $part_pkg->hidden,
+        'freq'                  => $part_pkg->freq,
       };
 
       if ( $part_pkg->option('prorate_defer_bill',1) 
@@ -1159,7 +1213,7 @@ sub _make_lines {
         $cust_bill_pkg->sdate( $hash{last_bill} );
         $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
         $cust_bill_pkg->edate( $time ) if $options{cancel};
-      } else { #if ( $part_pkg->recur_temporality eq 'upcoming' ) {
+      } else { #if ( $part_pkg->recur_temporality eq 'upcoming' )
         $cust_bill_pkg->sdate( $sdate );
         $cust_bill_pkg->edate( $cust_pkg->bill );
         #$cust_bill_pkg->edate( $time ) if $options{cancel};
@@ -1175,11 +1229,23 @@ sub _make_lines {
       # handle taxes
       ###
 
-      unless ( $discount_show_always ) {
-	  my $error = 
-	    $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time}, $real_pkgpart, \%options);
-	  return $error if $error;
-      }
+      #unless ( $discount_show_always ) { # oh, for god's sake
+      my $error = $self->_handle_taxes(
+        $part_pkg,
+        $taxlisthash,
+        $cust_bill_pkg,
+        $cust_pkg,
+        $options{invoice_time},
+        $real_pkgpart,
+        \%options # I have serious objections to this
+      );
+      return $error if $error;
+      #}
+
+      $cust_bill_pkg->set_display(
+        part_pkg     => $part_pkg,
+        real_pkgpart => $real_pkgpart,
+      );
 
       push @$cust_bill_pkgs, $cust_bill_pkg;
 
@@ -1190,6 +1256,108 @@ sub _make_lines {
   '';
 
 }
+
+=item _transfer_balance TO_PKG [ FROM_PKGNUM ]
+
+Takes one argument, a cust_pkg object that is being billed.  This will 
+be called only if the package was created by a package change, and has
+not been billed since the package change, and package balance tracking
+is enabled.  The second argument can be an alternate package number to 
+transfer the balance from; this should not be used externally.
+
+Transfers the balance from the previous package (now canceled) to
+this package, by crediting one package and creating an invoice item for 
+the other.  Inserts the credit and returns the invoice item (so that it 
+can be added to an invoice that's being built).
+
+If the previous package was never billed, and was also created by a package
+change, then this will also transfer the balance from I<its> previous 
+package, and so on, until reaching a package that either has been billed
+or was not created by a package change.
+
+=cut
+
+my $balance_transfer_reason;
+
+sub _transfer_balance {
+  my $self = shift;
+  my $cust_pkg = shift;
+  my $from_pkgnum = shift || $cust_pkg->change_pkgnum;
+  my $from_pkg = FS::cust_pkg->by_key($from_pkgnum);
+
+  my @transfers;
+
+  # if $from_pkg is not the first package in the chain, and it was never 
+  # billed, walk back
+  if ( $from_pkg->change_pkgnum and scalar($from_pkg->cust_bill_pkg) == 0 ) {
+    @transfers = $self->_transfer_balance($cust_pkg, $from_pkg->change_pkgnum);
+  }
+
+  my $prev_balance = $self->balance_pkgnum($from_pkgnum);
+  if ( $prev_balance != 0 ) {
+    $balance_transfer_reason ||= FS::reason->new_or_existing(
+      'reason' => 'Package balance transfer',
+      'type'   => 'Internal adjustment',
+      'class'  => 'R'
+    );
+
+    my $credit = FS::cust_credit->new({
+        'custnum'   => $self->custnum,
+        'amount'    => abs($prev_balance),
+        'reasonnum' => $balance_transfer_reason->reasonnum,
+        '_date'     => $cust_pkg->change_date,
+    });
+
+    my $cust_bill_pkg = FS::cust_bill_pkg->new({
+        'setup'     => 0,
+        'recur'     => abs($prev_balance),
+        #'sdate'     => $from_pkg->last_bill, # not sure about this
+        #'edate'     => $cust_pkg->change_date,
+        'itemdesc'  => $self->mt('Previous Balance, [_1]',
+                                 $from_pkg->part_pkg->pkg),
+    });
+
+    if ( $prev_balance > 0 ) {
+      # credit the old package, charge the new one
+      $credit->set('pkgnum', $from_pkgnum);
+      $cust_bill_pkg->set('pkgnum', $cust_pkg->pkgnum);
+    } else {
+      # the reverse
+      $credit->set('pkgnum', $cust_pkg->pkgnum);
+      $cust_bill_pkg->set('pkgnum', $from_pkgnum);
+    }
+    my $error = $credit->insert;
+    die "error transferring package balance from #".$from_pkgnum.
+        " to #".$cust_pkg->pkgnum.": $error\n" if $error;
+
+    push @transfers, $cust_bill_pkg;
+  } # $prev_balance != 0
+
+  return @transfers;
+}
+
+=item _handle_taxes PART_PKG TAXLISTHASH CUST_BILL_PKG CUST_PKG TIME PKGPART [ OPTIONS ]
+
+This is _handle_taxes.  It's called once for each cust_bill_pkg generated
+from _make_lines, along with the part_pkg, cust_pkg, invoice time, the 
+non-overridden pkgpart, a flag indicating whether the package is being
+canceled, and a partridge in a pear tree.
+
+The most important argument is 'taxlisthash'.  This is shared across the 
+entire invoice.  It looks like this:
+{
+  'cust_main_county 1001' => [ [FS::cust_main_county], ... ],
+  'cust_main_county 1002' => [ [FS::cust_main_county], ... ],
+}
+
+'cust_main_county' can also be 'tax_rate'.  The first object in the array
+is always the cust_main_county or tax_rate identified by the key.
+
+That "..." is a list of FS::cust_bill_pkg objects that will be fed to 
+the 'taxline' method to calculate the amount of the tax.  This doesn't
+happen until calculate_taxes, though.
+
+=cut
 
 sub _handle_taxes {
   my $self = shift;
@@ -1203,171 +1371,152 @@ sub _handle_taxes {
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  my %cust_bill_pkg = ();
-  my %taxes = ();
-    
-  my @classes;
-  #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
-  push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
-  push @classes, 'setup' if ($cust_bill_pkg->setup && !$options->{cancel});
-  push @classes, 'recur' if ($cust_bill_pkg->recur && !$options->{cancel});
+  return if ( $self->payby eq 'COMP' ); #dubious
 
-  my $exempt = $conf->exists('cust_class-tax_exempt')
-                 ? ( $self->cust_class ? $self->cust_class->tax : '' )
-                 : $self->tax;
-  # standardize this just to be sure
-  $exempt = ($exempt eq 'Y') ? 'Y' : '';
-
-  #if ( $exempt !~ /Y/i && $self->payby ne 'COMP' ) {
-  if ( $self->payby ne 'COMP' ) {
-
-    if ( $conf->exists('enable_taxproducts')
-         && ( scalar($part_pkg->part_pkg_taxoverride)
-              || $part_pkg->has_taxproduct
-            )
-       )
+  if ( $conf->exists('enable_taxproducts')
+       && ( scalar($part_pkg->part_pkg_taxoverride)
+            || $part_pkg->has_taxproduct
+          )
+     )
     {
 
-      if ( !$exempt ) {
+    # EXTERNAL TAX RATES (via tax_rate)
+    my %cust_bill_pkg = ();
+    my %taxes = ();
 
-        foreach my $class (@classes) {
-          my $err_or_ref = $self->_gather_taxes( $part_pkg, $class, $cust_pkg );
-          return $err_or_ref unless ref($err_or_ref);
-          $taxes{$class} = $err_or_ref;
-        }
+    my @classes;
+    #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
+    push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
+    # debatable
+    push @classes, 'setup' if ($cust_bill_pkg->setup && !$options->{cancel});
+    push @classes, 'recur' if ($cust_bill_pkg->recur && !$options->{cancel});
 
-        unless (exists $taxes{''}) {
-          my $err_or_ref = $self->_gather_taxes( $part_pkg, '', $cust_pkg );
-          return $err_or_ref unless ref($err_or_ref);
-          $taxes{''} = $err_or_ref;
-        }
+    my $exempt = $conf->exists('cust_class-tax_exempt')
+                   ? ( $self->cust_class ? $self->cust_class->tax : '' )
+                   : $self->tax;
+    # standardize this just to be sure
+    $exempt = ($exempt eq 'Y') ? 'Y' : '';
+  
+    if ( !$exempt ) {
 
+      foreach my $class (@classes) {
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, $class, $cust_pkg );
+        return $err_or_ref unless ref($err_or_ref);
+        $taxes{$class} = $err_or_ref;
       }
 
-    } else { # cust_main_county tax system
-
-      # We fetch taxes even if the customer is completely exempt,
-      # because we need to record that fact.
-
-      my @loc_keys = qw( district city county state country );
-      my $location = $cust_pkg->tax_location;
-      my %taxhash = map { $_ => $location->$_ } @loc_keys;
-
-      $taxhash{'taxclass'} = $part_pkg->taxclass;
-
-      warn "taxhash:\n". Dumper(\%taxhash) if $DEBUG > 2;
-
-      my @taxes = (); # entries are cust_main_county objects
-      my %taxhash_elim = %taxhash;
-      my @elim = qw( district city county state );
-      do { 
-
-        #first try a match with taxclass
-        @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
-
-        if ( !scalar(@taxes) && $taxhash_elim{'taxclass'} ) {
-          #then try a match without taxclass
-          my %no_taxclass = %taxhash_elim;
-          $no_taxclass{ 'taxclass' } = '';
-          @taxes = qsearch( 'cust_main_county', \%no_taxclass );
-        }
-
-        $taxhash_elim{ shift(@elim) } = '';
-
-      } while ( !scalar(@taxes) && scalar(@elim) );
-
-      foreach (@taxes) {
-        # These could become cust_bill_pkg_tax_location records,
-        # or cust_tax_exempt_pkg.  We'll decide later.
-        $_->set('pkgnum',       $cust_pkg->pkgnum);
-        $_->set('locationnum',  $cust_pkg->tax_locationnum);
+      unless (exists $taxes{''}) {
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, '', $cust_pkg );
+        return $err_or_ref unless ref($err_or_ref);
+        $taxes{''} = $err_or_ref;
       }
-
-      $taxes{''} = [ @taxes ];
-      $taxes{'setup'} = [ @taxes ];
-      $taxes{'recur'} = [ @taxes ];
-      $taxes{$_} = [ @taxes ] foreach (@classes);
-
-      # # maybe eliminate this entirely, along with all the 0% records
-      # unless ( @taxes ) {
-      #   return
-      #     "fatal: can't find tax rate for state/county/country/taxclass ".
-      #     join('/', map $taxhash{$_}, qw(state county country taxclass) );
-      # }
-
-    } #if $conf->exists('enable_taxproducts') ...
-
-  } # if $self->payby eq 'COMP'
-
-  #what's this doing in the middle of _handle_taxes?  probably should split
-  #this into three parts above in _make_lines
-  $cust_bill_pkg->set_display(   part_pkg     => $part_pkg,
-                                 real_pkgpart => $real_pkgpart,
-                             );
-
-  my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
-  foreach my $key (keys %tax_cust_bill_pkg) {
-    # $key is "setup", "recur", or a usage class name. ('' is a usage class.)
-    # $tax_cust_bill_pkg{$key} is a cust_bill_pkg for that component of 
-    # the line item.
-    # $taxes{$key} is an arrayref of cust_main_county or tax_rate objects that
-    # apply to $key-class charges.
-    my @taxes = @{ $taxes{$key} || [] };
-    my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
-
-    my %localtaxlisthash = ();
-    foreach my $tax ( @taxes ) {
-
-      # this is the tax identifier, not the taxname
-      my $taxname = ref( $tax ). ' '. $tax->taxnum;
-      $taxname .= ' pkgnum'. $cust_pkg->pkgnum;
-      # We need to create a separate $taxlisthash entry for each pkgnum
-      # on the invoice, so that cust_bill_pkg_tax_location records will
-      # be linked correctly.
-
-      # $taxlisthash: keys are "setup", "recur", and usage classes.
-      # Values are arrayrefs, first the tax object (cust_main_county
-      # or tax_rate) and then any cust_bill_pkg objects that the 
-      # tax applies to.
-      $taxlisthash->{ $taxname } ||= [ $tax ];
-      push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
-
-      $localtaxlisthash{ $taxname } ||= [ $tax ];
-      push @{ $localtaxlisthash{ $taxname  } }, $tax_cust_bill_pkg;
 
     }
 
-    warn "finding taxed taxes...\n" if $DEBUG > 2;
-    foreach my $tax ( keys %localtaxlisthash ) {
-      my $tax_object = shift @{ $localtaxlisthash{$tax} };
-      warn "found possible taxed tax ". $tax_object->taxname. " we call $tax\n"
-        if $DEBUG > 2;
-      next unless $tax_object->can('tax_on_tax');
+    my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
+    foreach my $key (keys %tax_cust_bill_pkg) {
+      # $key is "setup", "recur", or a usage class name. ('' is a usage class.)
+      # $tax_cust_bill_pkg{$key} is a cust_bill_pkg for that component of 
+      # the line item.
+      # $taxes{$key} is an arrayref of cust_main_county or tax_rate objects that
+      # apply to $key-class charges.
+      my @taxes = @{ $taxes{$key} || [] };
+      my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
 
-      foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
-        my $totname = ref( $tot ). ' '. $tot->taxnum;
+      my %localtaxlisthash = ();
+      foreach my $tax ( @taxes ) {
 
-        warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
-          if $DEBUG > 2;
-        next unless exists( $localtaxlisthash{ $totname } ); # only increase
-                                                             # existing taxes
-        warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
-        my $hashref_or_error = 
-          $tax_object->taxline( $localtaxlisthash{$tax},
-                                'custnum'      => $self->custnum,
-                                'invoice_time' => $invoice_time,
-                              );
-        return $hashref_or_error
-          unless ref($hashref_or_error);
-        
-        $taxlisthash->{ $totname } ||= [ $tot ];
-        push @{ $taxlisthash->{ $totname  } }, $hashref_or_error->{amount};
+        # this is the tax identifier, not the taxname
+        my $taxname = ref( $tax ). ' '. $tax->taxnum;
+        $taxname .= ' billpkgnum'. $cust_bill_pkg->billpkgnum;
+        # We need to create a separate $taxlisthash entry for each billpkgnum
+        # on the invoice, so that cust_bill_pkg_tax_location records will
+        # be linked correctly.
+
+        # $taxlisthash: keys are "setup", "recur", and usage classes.
+        # Values are arrayrefs, first the tax object (cust_main_county
+        # or tax_rate) and then any cust_bill_pkg objects that the 
+        # tax applies to.
+        $taxlisthash->{ $taxname } ||= [ $tax ];
+        push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
+
+        $localtaxlisthash{ $taxname } ||= [ $tax ];
+        push @{ $localtaxlisthash{ $taxname  } }, $tax_cust_bill_pkg;
 
       }
+
+      warn "finding taxed taxes...\n" if $DEBUG > 2;
+      foreach my $tax ( keys %localtaxlisthash ) {
+        my $tax_object = shift @{ $localtaxlisthash{$tax} };
+        warn "found possible taxed tax ". $tax_object->taxname. " we call $tax\n"
+          if $DEBUG > 2;
+        next unless $tax_object->can('tax_on_tax');
+
+        foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
+          my $totname = ref( $tot ). ' '. $tot->taxnum;
+
+          warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
+            if $DEBUG > 2;
+          next unless exists( $localtaxlisthash{ $totname } ); # only increase
+                                                               # existing taxes
+          warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
+          # we're calling taxline() right here?  wtf?
+          my $hashref_or_error = 
+            $tax_object->taxline( $localtaxlisthash{$tax},
+                                  'custnum'      => $self->custnum,
+                                  'invoice_time' => $invoice_time,
+                                );
+          return $hashref_or_error
+            unless ref($hashref_or_error);
+          
+          $taxlisthash->{ $totname } ||= [ $tot ];
+          push @{ $taxlisthash->{ $totname  } }, $hashref_or_error->{amount};
+
+        }
+      }
+    }
+
+  } else {
+
+    # INTERNAL TAX RATES (cust_main_county)
+
+    # We fetch taxes even if the customer is completely exempt,
+    # because we need to record that fact.
+
+    my @loc_keys = qw( district city county state country );
+    my $location = $cust_pkg->tax_location;
+    my %taxhash = map { $_ => $location->$_ } @loc_keys;
+
+    $taxhash{'taxclass'} = $part_pkg->taxclass;
+
+    warn "taxhash:\n". Dumper(\%taxhash) if $DEBUG > 2;
+
+    my @taxes = (); # entries are cust_main_county objects
+    my %taxhash_elim = %taxhash;
+    my @elim = qw( district city county state );
+    do { 
+
+      #first try a match with taxclass
+      @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
+
+      if ( !scalar(@taxes) && $taxhash_elim{'taxclass'} ) {
+        #then try a match without taxclass
+        my %no_taxclass = %taxhash_elim;
+        $no_taxclass{ 'taxclass' } = '';
+        @taxes = qsearch( 'cust_main_county', \%no_taxclass );
+      }
+
+      $taxhash_elim{ shift(@elim) } = '';
+
+    } while ( !scalar(@taxes) && scalar(@elim) );
+
+    foreach (@taxes) {
+      my $tax_id = 'cust_main_county '.$_->taxnum;
+      $taxlisthash->{$tax_id} ||= [ $_ ];
+      push @{ $taxlisthash->{$tax_id} }, $cust_bill_pkg;
     }
 
   }
-
   '';
 }
 
@@ -1800,8 +1949,9 @@ sub due_cust_event {
 
   #???
   #my $DEBUG = $opt{'debug'}
+  $opt{'debug'} ||= 0; # silence some warnings
   local($DEBUG) = $opt{'debug'}
-    if defined($opt{'debug'}) && $opt{'debug'} > $DEBUG;
+    if $opt{'debug'} > $DEBUG;
   $DEBUG = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me due_cust_event called with options ".

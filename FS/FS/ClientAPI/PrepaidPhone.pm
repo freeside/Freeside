@@ -3,6 +3,7 @@ package FS::ClientAPI::PrepaidPhone;
 use strict;
 use vars qw($DEBUG $me);
 use FS::Record qw(qsearchs);
+use FS::Conf;
 use FS::rate;
 use FS::svc_phone;
 
@@ -156,11 +157,15 @@ sub call_time {
     return \%return;
   }
 
+  my $conf = new FS::Conf;
+  my $balance = $conf->config_bool('pkg-balances') ? $cust_pkg->balance
+                                                   : $cust_main->balance;
+
   #XXX granularity?  included minutes?  another day...
-  if ( $cust_main->balance >= 0 ) {
+  if ( $balance >= 0 ) {
     return { 'error'=>'No balance' };
   } else {
-    $return{'seconds'} = int(60 * abs($cust_main->balance) / $rate_detail->min_charge);
+    $return{'seconds'} = int(60 * abs($balance) / $rate_detail->min_charge);
   }
 
   warn "$me returning seconds: ". $return{'seconds'};
@@ -248,13 +253,18 @@ sub phonenum_balance {
 
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
 
-  warn "$me returning ". $cust_pkg->cust_main->balance.
-       " balance for custnum ". $cust_pkg->custnum
+  my $conf = new FS::Conf;
+  my $balance = $conf->config_bool('pkg-balances')
+    ? $cust_pkg->balance
+    : $cust_pkg->cust_main->balance;
+
+  warn "$me returning $balance balance for pkgnum ".  $cust_pkg->pkgnum.
+                                        ", custnum ". $cust_pkg->custnum
     if $DEBUG;
 
   return {
     'custnum' => $cust_pkg->custnum,
-    'balance' => $cust_pkg->cust_main->balance,
+    'balance' => $balance,
   };
 
 }

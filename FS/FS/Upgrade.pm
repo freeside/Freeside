@@ -84,6 +84,13 @@ sub upgrade_config {
     }
   }
 
+  # if there's a USPS tools login, assume that's the standardization method
+  # you want to use
+  if ( length($conf->config('usps_webtools-userid')) > 0 and
+       !$conf->exists('address_standardize_method') ) {
+    $conf->set('address_standardize_method', 'usps');
+  }
+
 }
 
 sub upgrade_overlimit_groups {
@@ -287,6 +294,9 @@ sub upgrade_data {
     #insert default tower_sector if not present
     'tower' => [],
 
+    #repair improperly deleted services
+    'cust_svc' => [],
+
     #routernum/blocknum
     'svc_broadband' => [],
 
@@ -298,6 +308,9 @@ sub upgrade_data {
 
     #kick off tax location history upgrade
     'cust_bill_pkg' => [],
+
+    #fix taxable line item links
+    'cust_bill_pkg_tax_location' => [],
   ;
 
   \%hash;

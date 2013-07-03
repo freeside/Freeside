@@ -9,20 +9,29 @@
 %# WITHOUT ANY WARRANTY; without even the implied warranty of
 %# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %# General Public License for more details.
+<%init>
+my %data = $m->comp('Customers', Ticket => $Ticket);
+</%init>
+<style>
+.small_custview {
+  padding-top: 1em;
+}
+</style>
 <table>
-% my @cust = map { $_->TargetURI->Resolver } 
-%                   @{ $Ticket->Customers->ItemsArrayRef };
-%
-% foreach my $custResolver ( @cust ) {
+% foreach my $custnum (@{ $data{custnums} }) {
+%   my $cust = $data{cust_main}{$custnum};
   <tr>
     <td class="value">
-      <% $custResolver->AsStringLong |n %>
-%# includes service label and view/svc_ link for cust_svc links
+      <% $cust->AsStringLong |n %>
+%   foreach my $svc ( @{ $data{cust_svc}{$custnum} || [] } ) {
+      <% $svc->ShortLink |n %>
+      <br>
+%   }
     </td>
   </tr>
 % }
 
-% unless ( @cust ) {
+% unless ( @{ $data{custnums} } ) {
   <tr>
     <td class="labeltop">
       <i>(none)<i>

@@ -45,7 +45,6 @@ sub condition {
 
 }
 
-#XXX test?
 sub condition_sql {
   my( $self, $table ) = @_;
 

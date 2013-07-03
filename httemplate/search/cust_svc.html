@@ -47,8 +47,8 @@ die "access denied"
 
 my $sql_query;
 
-my $orderby = 'ORDER BY svcnum'; #has to be ordered by something
-                                 #for pagination to work
+my $orderby = 'ORDER BY cust_svc.svcnum'; #has to be ordered by something
+                                          #for pagination to work
 
 if ( length( $cgi->param('search_svc') ) ) {
 
@@ -62,7 +62,7 @@ if ( length( $cgi->param('search_svc') ) ) {
 
   my $addl_from = ' LEFT JOIN part_svc  USING ( svcpart ) '.
                   ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                  ' LEFT JOIN cust_main USING ( custnum ) ';
+                  FS::UI::Web::join_cust_main('cust_pkg', 'cust_pkg');
 
   my @extra_sql = ();
 
@@ -96,6 +96,7 @@ if ( length( $cgi->param('search_svc') ) ) {
   my $extra_sql = ' WHERE '. join(' AND ', @extra_sql );
 
   $sql_query = {
+    'select'     => 'cust_svc.*, part_svc.*',
     'table'      => 'cust_svc',
     'addl_from'  => $addl_from,
     'hashref'    => {},
@@ -104,9 +105,10 @@ if ( length( $cgi->param('search_svc') ) ) {
 
 }
 
+# at this point the query must provide all fields from 
+# cust_svc and part_svc, and must include join_cust_main.
 $sql_query->{'select'} = join(', ',
-                                    'cust_svc.*',
-                                    'part_svc.*',
+                                    $sql_query->{'select'},
                                     'cust_main.custnum',
                                     FS::UI::Web::cust_sql_fields(),
                              );
@@ -117,14 +119,17 @@ my $count_query = "SELECT COUNT(*) FROM cust_svc ". $sql_query->{addl_from}.
 
 my $link = sub {
   my $cust_svc = shift;
-  my $url = svc_url(
-    'm'        => $m,
-    'action'   => 'view',
-    #'part_svc' => $cust_svc->part_svc,
-    'svcdb'    => $cust_svc->svcdb, #we have it from the joined search
-    #'svc'      => $cust_svc, #redundant
-    'query'     => '',
-  );
+  my $url;
+  if ( $cust_svc->svcpart ) {
+    $url = svc_url(
+      'm'        => $m,
+      'action'   => 'view',
+      'svcdb'    => $cust_svc->svcdb, #we have it from the joined search
+      'query'     => '',
+    );
+  } else { # bizarre unlinked service case
+    $url = $p.'view/svc_Common.html?svcdb='.$cust_svc->svcdb.';svcnum=';
+  }
   [ $url, 'svcnum' ];
 };
 

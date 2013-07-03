@@ -1,4 +1,3 @@
-<% $data %>
 <%init>
 
 my %args = @_;
@@ -6,6 +5,8 @@ my $type   = $args{'type'};
 my $header = $args{'header'};
 my $rows   = $args{'rows'};
 my %opt    = %{ $args{'opt'} };    
+
+my $style  = $opt{'style'};
 
 my $override = scalar(@$rows) >= 65536 ? 'XLSX' : '';
 
@@ -31,7 +32,10 @@ my $XLS = new IO::Scalar \$data;
 my $workbook = $format->{class}->new($XLS)
   or die "Error opening Excel file: $!";
 
-my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
+my $title = $opt{'title'};
+$title =~ s/[\[\]\:\*\?\/\/]//g;
+$title = substr($title, 0, 31);
+my $worksheet = $workbook->add_worksheet($title);
 
 $worksheet->protect();
 
@@ -43,6 +47,12 @@ my $header_format = $workbook->add_format(
   bg_color => 55, #22,
   bottom   => 3,
 );
+my $footer_format = $workbook->add_format(
+  italic   => 1,
+  locked   => 1,
+  bg_color => 55,
+  top      => 3,
+);
 my $default_format = $workbook->add_format(locked => 0);
 
 my %money_format;
@@ -51,10 +61,24 @@ my $money_char = FS::Conf->new->config('money_char') || '$';
 my %date_format;
 xl_parse_date_init();
 
+my %bold_format;
+
 my $writer = sub {
   # Wrapper for $worksheet->write.
   # Do any massaging of the value/format here.
   my ($r, $c, $value, $format) = @_;
+  #warn "writer called with format $format\n";
+
+  if ( $style->[$c] eq 'b' or $value =~ /<b>/i ) { # the only one in common use
+    $value =~ s[</?b>][]ig;
+    if ( !exists($bold_format{$format}) ) {
+      $bold_format{$format} = $workbook->add_format();
+      $bold_format{$format}->copy($format);
+      $bold_format{$format}->set_bold();
+    }
+    $format = $bold_format{$format};
+  }
+
   # convert HTML entities
   # both Spreadsheet::WriteExcel and Excel::Writer::XLSX accept UTF-8 strings
   $value = decode_entities($value);
@@ -87,6 +111,7 @@ my $writer = sub {
     # String: replace line breaks with newlines
     $value =~ s/<BR>/\n/gi;
   }
+  #warn "writing with format $format\n";
   $worksheet->write($r, $c, $value, $format);
 };
 
@@ -141,12 +166,13 @@ if ( $opt{'footer'} ) {
     if ( ref($item) eq 'CODE' ) {
       $item = &{$item}();
     }
-    $writer->( $r, $c++, $item, $header_format );
+    $writer->( $r, $c++, $item, $footer_format );
   }
 }
 
 $workbook->close();# or die "Error creating .xls file: $!";
 
 http_header('Content-Length' => length($data) );
+$m->print($data);
 
 </%init>

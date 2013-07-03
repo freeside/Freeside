@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -335,7 +335,7 @@ sub Parse {
     my ($rv, $msg);
 
 
-    if ($self->Content =~ m{^Content-Type:\s+text/html\b}im) {
+    if (not $self->IsEmpty and $self->Content =~ m{^Content-Type:\s+text/html\b}im) {
         local $RT::Transaction::PreferredContentType = 'text/html';
         ($rv, $msg) = $self->_Parse(@_);
     }
@@ -390,6 +390,7 @@ sub _Parse {
 
     # Unfold all headers
     $self->{'MIMEObj'}->head->unfold;
+    $self->{'MIMEObj'}->head->modify(1);
 
     return ( 1, $self->loc("Template parsed") );
 
@@ -457,7 +458,7 @@ sub _ParseContentPerl {
     foreach my $key ( keys %{ $args{TemplateArgs} } ) {
         my $val = $args{TemplateArgs}{ $key };
         next unless ref $val;
-        next if ref $val =~ /^(ARRAY|HASH|SCALAR|CODE)$/;
+        next if ref($val) =~ /^(ARRAY|HASH|SCALAR|CODE)$/;
         $args{TemplateArgs}{ $key } = \$val;
     }
 

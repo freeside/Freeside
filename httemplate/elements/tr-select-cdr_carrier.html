@@ -1,0 +1,27 @@
+% if ( scalar(@{ $opt{'cdr_carrier'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'carrierid' %>" VALUE="">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Carrier' %></TD>
+    <TD>
+      <% include( '/elements/select-cdr_carrier.html',
+                    %opt,
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my( %opt ) = @_;
+
+my %hash = ( 'disabled' => '', );
+
+$opt{'cdr_carrier'} ||= [ qsearch( 'cdr_carrier', \%hash ) ];
+
+</%init>

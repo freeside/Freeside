@@ -3,9 +3,10 @@ package FS::UI::Web;
 use strict;
 use vars qw($DEBUG @ISA @EXPORT_OK $me);
 use Exporter;
-use Carp qw( confess );;
+use Carp qw( confess );
+use HTML::Entities;
 use FS::Conf;
-use FS::Misc::DateTime qw( parse_datetime );
+use FS::Misc::DateTime qw( parse_datetime day_end );
 use FS::Record qw(dbdef);
 use FS::cust_main;  # are sql_balance and sql_date_balance in the right module?
 
@@ -31,16 +32,16 @@ sub parse_beginning_ending {
   my $beginning = 0;
   if ( $cgi->param($prefix.'begin') =~ /^(\d+)$/ ) {
     $beginning = $1;
-  } elsif ( $cgi->param($prefix.'beginning') =~ /^([ 0-9\-\/]{1,64})$/ ) {
+  } elsif ( $cgi->param($prefix.'beginning') =~ /^([ 0-9\-\/\:]{1,64})$/ ) {
     $beginning = parse_datetime($1) || 0;
   }
 
   my $ending = 4294967295; #2^32-1
   if ( $cgi->param($prefix.'end') =~ /^(\d+)$/ ) {
     $ending = $1 - 1;
-  } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/]{1,64})$/ ) {
-    #probably need an option to turn off the + 86399
-    $ending = parse_datetime($1) + 86399;
+  } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/\:]{1,64})$/ ) {
+    $ending = parse_datetime($1);
+    $ending = day_end($ending) unless $ending =~ /:/;
   }
 
   ( $beginning, $ending );
@@ -234,20 +235,20 @@ sub cust_header {
     '(service) Name'           => 'ship_contact',
     '(bill) Company'           => 'company',
     '(service) Company'        => 'ship_company',
-    'Address 1'                => 'address1',
-    'Address 2'                => 'address2',
-    'City'                     => 'city',
-    'State'                    => 'state',
-    'Zip'                      => 'zip',
+    'Address 1'                => 'bill_address1',
+    'Address 2'                => 'bill_address2',
+    'City'                     => 'bill_city',
+    'State'                    => 'bill_state',
+    'Zip'                      => 'bill_zip',
     'Country'                  => 'country_full',
     'Day phone'                => 'daytime', # XXX should use msgcat, but how?
     'Night phone'              => 'night',   # XXX should use msgcat, but how?
     'Fax number'               => 'fax',
-    '(bill) Address 1'         => 'address1',
-    '(bill) Address 2'         => 'address2',
-    '(bill) City'              => 'city',
-    '(bill) State'             => 'state',
-    '(bill) Zip'               => 'zip',
+    '(bill) Address 1'         => 'bill_address1',
+    '(bill) Address 2'         => 'bill_address2',
+    '(bill) City'              => 'bill_city',
+    '(bill) State'             => 'bill_state',
+    '(bill) Zip'               => 'bill_zip',
     '(bill) Country'           => 'country_full',
     '(bill) Day phone'         => 'daytime', # XXX should use msgcat, but how?
     '(bill) Night phone'       => 'night',   # XXX should use msgcat, but how?
@@ -334,17 +335,21 @@ setting is supplied, the <B>cust-fields</B> configuration value.
 sub cust_sql_fields {
 
   my @fields = qw( last first company );
-  push @fields, map "ship_$_", @fields;
-  push @fields, 'country';
+#  push @fields, map "ship_$_", @fields;
 
   cust_header(@_);
   #inefficientish, but tiny lists and only run once per page
 
-  my @add_fields = qw( address1 address2 city state zip daytime night fax );
-  push @fields,
-    grep { my $field = $_; grep { $_ eq $field } @cust_fields }
-         ( @add_fields, ( map "ship_$_", @add_fields ), 'payby' );
-
+  my @location_fields;
+  foreach my $field (qw( address1 address2 city state zip )) {
+    foreach my $pre ('bill_','ship_') {
+      if ( grep { $_ eq $pre.$field } @cust_fields ) {
+        push @location_fields, $pre.'location.'.$field.' AS '.$pre.$field;
+      }
+    }
+  }
+  
+  push @fields, 'payby' if grep { $_ eq 'payby'} @cust_fields;
   push @fields, 'agent_custid';
 
   my @extra_fields = ();
@@ -352,7 +357,71 @@ sub cust_sql_fields {
     push @extra_fields, FS::cust_main->balance_sql . " AS current_balance";
   }
 
-  map("cust_main.$_", @fields), @extra_fields;
+  map("cust_main.$_", @fields), @location_fields, @extra_fields;
+}
+
+=item join_cust_main [ TABLE[.CUSTNUM] ] [ LOCATION_TABLE[.LOCATIONNUM] ]
+
+Returns an SQL join phrase for the FROM clause so that the fields listed
+in L<cust_sql_fields> will be available.  Currently joins to cust_main 
+itself, as well as cust_location (under the aliases 'bill_location' and
+'ship_location') if address fields are needed.  L<cust_header()> should have
+been called already.
+
+All of these will be left joins; if you want to exclude rows with no linked
+cust_main record (or bill_location/ship_location), you can do so in the 
+WHERE clause.
+
+TABLE is the table containing the custnum field.  If CUSTNUM (a field name
+in that table) is specified, that field will be joined to cust_main.custnum.
+Otherwise, this function will assume the field is named "custnum".  If the 
+argument isn't present at all, the join will just say "USING (custnum)", 
+which might work.
+
+As a special case, if TABLE is 'cust_main', only the joins to cust_location
+will be returned.
+
+LOCATION_TABLE is an optional table name to use for joining ship_location,
+in case your query also includes package information and you want the 
+"service address" columns to reflect package addresses.
+
+=cut
+
+sub join_cust_main {
+  my ($cust_table, $location_table) = @_;
+  my ($custnum, $locationnum);
+  ($cust_table, $custnum) = split(/\./, $cust_table);
+  $custnum ||= 'custnum';
+  ($location_table, $locationnum) = split(/\./, $location_table);
+  $locationnum ||= 'locationnum';
+
+  my $sql = '';
+  if ( $cust_table ) {
+    $sql = " LEFT JOIN cust_main ON (cust_main.custnum = $cust_table.$custnum)"
+      unless $cust_table eq 'cust_main';
+  } else {
+    $sql = " LEFT JOIN cust_main USING (custnum)";
+  }
+
+  if ( !@cust_fields or grep /^bill_/, @cust_fields ) {
+
+    $sql .= ' LEFT JOIN cust_location bill_location'.
+            ' ON (bill_location.locationnum = cust_main.bill_locationnum)';
+
+  }
+
+  if ( !@cust_fields or grep /^ship_/, @cust_fields ) {
+
+    if (!$location_table) {
+      $location_table = 'cust_main';
+      $locationnum = 'ship_locationnum';
+    }
+
+    $sql .= ' LEFT JOIN cust_location ship_location'.
+            " ON (ship_location.locationnum = $location_table.$locationnum) ";
+  }
+
+  $sql;
 }
 
 =item cust_fields OBJECT [ CUST_FIELDS_VALUE ]
@@ -383,7 +452,7 @@ sub cust_fields {
   map { 
     if ( $record->custnum ) {
       warn "  $record -> $_" if $DEBUG > 1;
-      $record->$_(@_);
+      encode_entities( $record->$_(@_) );
     } else {
       warn "  ($record unlinked)" if $DEBUG > 1;
       $seen_unlinked++ ? '' : '(unlinked)';
@@ -403,23 +472,26 @@ sub cust_fields_subs {
   my $unlinked_warn = 0;
   return map { 
     my $f = $_;
-    if( $unlinked_warn++ ) {
+    if ( $unlinked_warn++ ) {
+
       sub {
         my $record = shift;
-        if( $record->custnum ) {
-          $record->$f(@_);
-        }
-        else {
+        if ( $record->custnum ) {
+          encode_entities( $record->$f(@_) );
+        } else {
           '(unlinked)'
         };
-      }
-    } 
-    else {
+      };
+
+    } else {
+
       sub {
         my $record = shift;
-        $record->$f(@_) if $record->custnum;
-      }
+        $record->custnum ? encode_entities( $record->$f(@_) ) : '';
+      };
+
     }
+
   } @cust_fields;
 }
 
@@ -509,8 +581,8 @@ use vars qw($DEBUG);
 use Carp;
 use Storable qw(nfreeze);
 use MIME::Base64;
-use JSON;
-use FS::UID qw(getotaker);
+use JSON::XS;
+use FS::CurrentUser;
 use FS::Record qw(qsearchs);
 use FS::queue;
 use FS::CGI qw(rooturl);
@@ -584,7 +656,7 @@ sub start_job {
       push @{$param{$field}}, $value;
     }
   }
-  $param{CurrentUser} = getotaker();
+  $param{CurrentUser} = $FS::CurrentUser::CurrentUser->username;
   $param{RootURL} = rooturl($self->{cgi}->self_url);
   warn "FS::UI::Web::start_job\n".
        join('', map {
@@ -606,6 +678,10 @@ sub start_job {
   
   #warn 'froze string of size '. length(nfreeze(\%param)). " for job args\n"
   #  if $DEBUG;
+  #
+  #  XXX FS::queue::insert knows how to do this.
+  #  not changing it here because that requires changing it everywhere else,
+  #  too, but we should eventually fix it
 
   my $error = $job->insert( '_JOB', encode_base64(nfreeze(\%param)) );
 
@@ -654,10 +730,7 @@ sub job_status {
     @return = ( 'error', $job ? $job->statustext : $jobnum );
   }
 
-  #to_json(\@return);  #waiting on deb 5.0 for new JSON.pm?
-  #silence the warning though
-  my $to_json = JSON->can('to_json') || JSON->can('objToJson');
-  &$to_json(\@return);
+  encode_json \@return;
 
 }
 

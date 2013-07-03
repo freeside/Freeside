@@ -32,8 +32,6 @@
 
 <& /elements/standardize_locations.html,
             'form'       => "OrderPkgForm",
-            'onlyship'   => 1,
-            'no_company' => 1,
             'callback'   => 'document.OrderPkgForm.submit();',
 &>
 

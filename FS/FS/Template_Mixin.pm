@@ -106,7 +106,7 @@ sub print_latex {
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
   $params{$_} = $opt{$_} 
-    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name );
+    foreach grep $opt{$_}, qw( unsquelch_cdr notice_name no_date no_number );
 
   $template ||= $self->_agent_template
     if $self->can('_agent_template');
@@ -122,7 +122,7 @@ sub print_latex {
     UNLINK   => 0,
   ) or die "can't open temp file: $!\n";
 
-  my $agentnum = $self->cust_main->agentnum;
+  my $agentnum = $self->agentnum;
 
   if ( $template && $conf->exists("logo_${template}.eps", $agentnum) ) {
     print $lh $conf->config_binary("logo_${template}.eps", $agentnum)
@@ -172,6 +172,12 @@ sub print_latex {
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
   return ($1, $params{'logo_file'}, $params{'barcode_file'});
 
+}
+
+sub agentnum {
+  my $self = shift;
+  my $cust_main = $self->cust_main;
+  $cust_main ? $cust_main->agentnum : $self->prospect_main->agentnum;
 }
 
 =item print_generic OPTION => VALUE ...
@@ -363,14 +369,6 @@ sub print_generic {
 
   my $date_format = $date_formats{$format};
 
-  my %embolden_functions = ( 'latex'    => sub { return '\textbf{'. shift(). '}'
-                                               },
-                             'html'     => sub { return '<b>'. shift(). '</b>'
-                                               },
-                             'template' => sub { shift },
-                           );
-  my $embolden_function = $embolden_functions{$format};
-
   my %newline_tokens = (  'latex'     => '\\\\',
                           'html'      => '<br>',
                           'template'  => "\n",
@@ -447,9 +445,15 @@ sub print_generic {
     'agent'           => &$escape_function($cust_main->agent->agent),
 
     #invoice/quotation info
-    'invnum'          => $self->invnum,
+    'no_number'       => $params{'no_number'},
+    'invnum'          => ( $params{'no_number'} ? '' : $self->invnum ),
     'quotationnum'    => $self->quotationnum,
-    'date'            => time2str($date_format, $self->_date),
+    'no_date'         => $params{'no_date'},
+    '_date'           => ( $params{'no_date'} ? '' : $self->_date ),
+    'date'            => ( $params{'no_date'}
+                             ? ''
+                             : time2str($date_format, $self->_date)
+                         ),
     'today'           => time2str($date_format_long, $today),
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},
@@ -584,27 +588,79 @@ sub print_generic {
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
 
-  # the customer's current balance as shown on the invoice before this one
-  $invoice_data{'true_previous_balance'} = sprintf("%.2f", ($self->previous_balance || 0) );
+  #these are used on the summary page only
 
-  # the change in balance from that invoice to this one
-  $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
+    # the customer's current balance as shown on the invoice before this one
+    $invoice_data{'true_previous_balance'} = sprintf("%.2f", ($self->previous_balance || 0) );
 
-  # the sum of amount owed on all previous invoices
-  $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
+    # the change in balance from that invoice to this one
+    $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
+
+    # the sum of amount owed on all previous invoices
+    # ($pr_total is used elsewhere but not as $previous_balance)
+    $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
 
   # the sum of amount owed on all invoices
+  # (this is used in the summary & on the payment coupon)
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
   # info from customer's last invoice before this one, for some 
   # summary formats
   $invoice_data{'last_bill'} = {};
-  my $last_bill = $pr_cust_bill[-1];
-  if ( $last_bill ) {
-    $invoice_data{'last_bill'} = {
-      '_date'     => $last_bill->_date, #unformatted
-      # all we need for now
-    };
+
+  # returns the last unpaid bill, not the last bill
+  #my $last_bill = $pr_cust_bill[-1];
+
+  if ( $self->custnum && $self->invnum ) {
+
+    # THIS returns the customer's last bill before  this one
+    my $last_bill = qsearchs({
+        'table'   => 'cust_bill',
+        'hashref' => { 'custnum' => $self->custnum,
+                       'invnum'  => { op => '<', value => $self->invnum },
+                     },
+        'order_by'  => ' ORDER BY invnum DESC LIMIT 1'
+    });
+    if ( $last_bill ) {
+      $invoice_data{'last_bill'} = {
+        '_date'     => $last_bill->_date, #unformatted
+        # all we need for now
+      };
+      my (@payments, @credits);
+      # for formats that itemize previous payments
+      foreach my $cust_pay ( qsearch('cust_pay', {
+                              'custnum' => $self->custnum,
+                              '_date'   => { op => '>=',
+                                             value => $last_bill->_date }
+                             } ) )
+      {
+        next if $cust_pay->_date > $self->_date;
+        push @payments, {
+            '_date'       => $cust_pay->_date,
+            'date'        => time2str($date_format, $cust_pay->_date),
+            'payinfo'     => $cust_pay->payby_payinfo_pretty,
+            'amount'      => sprintf('%.2f', $cust_pay->paid),
+        };
+        # not concerned about applications
+      }
+      foreach my $cust_credit ( qsearch('cust_credit', {
+                              'custnum' => $self->custnum,
+                              '_date'   => { op => '>=',
+                                             value => $last_bill->_date }
+                             } ) )
+      {
+        next if $cust_credit->_date > $self->_date;
+        push @credits, {
+            '_date'       => $cust_credit->_date,
+            'date'        => time2str($date_format, $cust_credit->_date),
+            'creditreason'=> $cust_credit->reason,
+            'amount'      => sprintf('%.2f', $cust_credit->amount),
+        };
+      }
+      $invoice_data{'previous_payments'} = \@payments;
+      $invoice_data{'previous_credits'}  = \@credits;
+    }
+
   }
 
   my $summarypage = '';
@@ -689,6 +745,11 @@ sub print_generic {
   my $other_money_char = $other_money_chars{$format};
   $invoice_data{'dollar'} = $other_money_char;
 
+  my %minus_signs = ( 'latex'    => '$-$',
+                      'html'     => '&minus;',
+                      'template' => '- ' );
+  my $minus = $minus_signs{$format};
+
   my @detail_items = ();
   my @total_items = ();
   my @buf = ();
@@ -727,10 +788,11 @@ sub print_generic {
 
 
   my $adjusttotal = 0;
-  my $adjust_section = { 'description' => 
-    $self->mt('Credits, Payments, and Adjustments'),
-                         'subtotal'    => 0,   # adjusted below
-                       };
+  my $adjust_section = {
+    'description'    => $self->mt('Credits, Payments, and Adjustments'),
+    'adjust_section' => 1,
+    'subtotal'       => 0,   # adjusted below
+  };
   my $adjust_weight = _pkg_category($adjust_section->{description})
                         ? _pkg_category($adjust_section->{description})->weight
                         : 0;
@@ -738,7 +800,7 @@ sub print_generic {
   $adjust_section->{'sort_weight'} = $adjust_weight;
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
-  my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
+  my $multisection = $conf->exists($tc.'sections', $cust_main->agentnum);
   $invoice_data{'multisection'} = $multisection;
   my $late_sections = [];
   my $extra_sections = [];
@@ -821,6 +883,7 @@ sub print_generic {
         ext_description => [],
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
       $detail->{'quantity'} = 1;
       $detail->{'section'} = $multisection ? $previous_section
                                            : $default_section;
@@ -917,6 +980,7 @@ sub print_generic {
         ext_description => [],
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
       $detail->{'quantity'} = $line_item->{'quantity'};
       $detail->{'section'} = $section;
       $detail->{'description'} = &$escape_function($line_item->{'description'});
@@ -934,6 +998,7 @@ sub print_generic {
       $detail->{'sdate'} = $line_item->{'sdate'};
       $detail->{'edate'} = $line_item->{'edate'};
       $detail->{'seconds'} = $line_item->{'seconds'};
+      $detail->{'svc_label'} = $line_item->{'svc_label'};
   
       push @detail_items, $detail;
       push @buf, ( [ $detail->{'description'},
@@ -969,7 +1034,8 @@ sub print_generic {
   warn "$me adding taxes\n"
     if $DEBUG > 1;
 
-  foreach my $tax ( $self->_items_tax ) {
+  my @items_tax = $self->_items_tax;
+  foreach my $tax ( @items_tax ) {
 
     $taxtotal += $tax->{'amount'};
 
@@ -1004,7 +1070,7 @@ sub print_generic {
 
   }
   
-  if ( $taxtotal ) {
+  if ( @items_tax ) {
     my $total = {};
     $total->{'total_item'} = $self->mt('Sub-total');
     $total->{'total_amount'} =
@@ -1031,9 +1097,33 @@ sub print_generic {
              $money_char. sprintf("%10.2f",$self->charged) ];
   push @buf,['',''];
 
-  # calculate total, possibly including total owed on previous
-  # invoices
-  {
+
+  ###
+  # Totals
+  ###
+
+  my %embolden_functions = (
+    'latex'    => sub { return '\textbf{'. shift(). '}' },
+    'html'     => sub { return '<b>'. shift(). '</b>' },
+    'template' => sub { shift },
+  );
+  my $embolden_function = $embolden_functions{$format};
+
+  if ( $self->can('_items_total') ) { # quotations
+
+    $self->_items_total(\@total_items);
+
+    foreach ( @total_items ) {
+      $_->{'total_item'}   = &$embolden_function( $_->{'total_item'} );
+      $_->{'total_amount'} = &$embolden_function( $other_money_char.
+                                                   $_->{'total_amount'}
+                                                );
+    }
+
+  } else { #normal invoice case
+
+    # calculate total, possibly including total owed on previous
+    # invoices
     my $total = {};
     my $item = 'Total';
     $item = $conf->config('previous_balance-exclude_from_total')
@@ -1064,126 +1154,128 @@ sub print_generic {
                sprintf( '%10.2f', $amount )
               ];
     push @buf,['',''];
-  }
 
-  # if we're showing previous invoices, also show previous
-  # credits and payments 
-  if ( $self->enable_previous 
-        and $self->can('_items_credits')
-        and $self->can('_items_payments') )
-    {
-    #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
-  
-    # credits
-    my $credittotal = 0;
-    foreach my $credit ( $self->_items_credits('trim_len'=>60) ) {
+    # if we're showing previous invoices, also show previous
+    # credits and payments 
+    if ( $self->enable_previous 
+          and $self->can('_items_credits')
+          and $self->can('_items_payments') )
+      {
+      #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+    
+      # credits
+      my $credittotal = 0;
+      foreach my $credit ( $self->_items_credits('trim_len'=>60) ) {
 
-      my $total;
-      $total->{'total_item'} = &$escape_function($credit->{'description'});
-      $credittotal += $credit->{'amount'};
-      $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
-      $adjusttotal += $credit->{'amount'};
+        my $total;
+        $total->{'total_item'} = &$escape_function($credit->{'description'});
+        $credittotal += $credit->{'amount'};
+        $total->{'total_amount'} = $minus.$other_money_char.$credit->{'amount'};
+        $adjusttotal += $credit->{'amount'};
+        if ( $multisection ) {
+          my $money = $old_latex ? '' : $money_char;
+          push @detail_items, {
+            ext_description => [],
+            ref          => '',
+            quantity     => '',
+            description  => &$escape_function($credit->{'description'}),
+            amount       => $money. $credit->{'amount'},
+            product_code => '',
+            section      => $adjust_section,
+          };
+        } else {
+          push @total_items, $total;
+        }
+
+      }
+      $invoice_data{'credittotal'} = sprintf('%.2f', $credittotal);
+
+      #credits (again)
+      foreach my $credit ( $self->_items_credits('trim_len'=>32) ) {
+        push @buf, [ $credit->{'description'}, $money_char.$credit->{'amount'} ];
+      }
+
+      # payments
+      my $paymenttotal = 0;
+      foreach my $payment ( $self->_items_payments ) {
+        my $total = {};
+        $total->{'total_item'} = &$escape_function($payment->{'description'});
+        $paymenttotal += $payment->{'amount'};
+        $total->{'total_amount'} = $minus.$other_money_char.$payment->{'amount'};
+        $adjusttotal += $payment->{'amount'};
+        if ( $multisection ) {
+          my $money = $old_latex ? '' : $money_char;
+          push @detail_items, {
+            ext_description => [],
+            ref          => '',
+            quantity     => '',
+            description  => &$escape_function($payment->{'description'}),
+            amount       => $money. $payment->{'amount'},
+            product_code => '',
+            section      => $adjust_section,
+          };
+        }else{
+          push @total_items, $total;
+        }
+        push @buf, [ $payment->{'description'},
+                     $money_char. sprintf("%10.2f", $payment->{'amount'}),
+                   ];
+      }
+      $invoice_data{'paymenttotal'} = sprintf('%.2f', $paymenttotal);
+    
       if ( $multisection ) {
-        my $money = $old_latex ? '' : $money_char;
-        push @detail_items, {
-          ext_description => [],
-          ref          => '',
-          quantity     => '',
-          description  => &$escape_function($credit->{'description'}),
-          amount       => $money. $credit->{'amount'},
-          product_code => '',
-          section      => $adjust_section,
+        $adjust_section->{'subtotal'} = $other_money_char.
+                                        sprintf('%.2f', $adjusttotal);
+        push @sections, $adjust_section
+          unless $adjust_section->{sort_weight};
+      }
+
+      # create Balance Due message
+      { 
+        my $total;
+        $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
+        $total->{'total_amount'} =
+          &$embolden_function(
+            $other_money_char. sprintf('%.2f', #why? $summarypage 
+                                               #  ? $self->charged +
+                                               #    $self->billing_balance
+                                               #  :
+                                                   $self->owed + $pr_total
+                                      )
+          );
+        if ( $multisection && !$adjust_section->{sort_weight} ) {
+          $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
+                                           $total->{'total_amount'};
+        }else{
+          push @total_items, $total;
+        }
+        push @buf,['','-----------'];
+        push @buf,[$self->balance_due_msg, $money_char. 
+          sprintf("%10.2f", $balance_due ) ];
+      }
+
+      if ( $conf->exists('previous_balance-show_credit')
+          and $cust_main->balance < 0 ) {
+        my $credit_total = {
+          'total_item'    => &$embolden_function($self->credit_balance_msg),
+          'total_amount'  => &$embolden_function(
+            $other_money_char. sprintf('%.2f', -$cust_main->balance)
+          ),
         };
-      } else {
-        push @total_items, $total;
+        if ( $multisection ) {
+          $adjust_section->{'posttotal'} .= $newline_token .
+            $credit_total->{'total_item'} . ' ' . $credit_total->{'total_amount'};
+        }
+        else {
+          push @total_items, $credit_total;
+        }
+        push @buf,['','-----------'];
+        push @buf,[$self->credit_balance_msg, $money_char. 
+          sprintf("%10.2f", -$cust_main->balance ) ];
       }
-
-    }
-    $invoice_data{'credittotal'} = sprintf('%.2f', $credittotal);
-
-    #credits (again)
-    foreach my $credit ( $self->_items_credits('trim_len'=>32) ) {
-      push @buf, [ $credit->{'description'}, $money_char.$credit->{'amount'} ];
-    }
-
-    # payments
-    my $paymenttotal = 0;
-    foreach my $payment ( $self->_items_payments ) {
-      my $total = {};
-      $total->{'total_item'} = &$escape_function($payment->{'description'});
-      $paymenttotal += $payment->{'amount'};
-      $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
-      $adjusttotal += $payment->{'amount'};
-      if ( $multisection ) {
-        my $money = $old_latex ? '' : $money_char;
-        push @detail_items, {
-          ext_description => [],
-          ref          => '',
-          quantity     => '',
-          description  => &$escape_function($payment->{'description'}),
-          amount       => $money. $payment->{'amount'},
-          product_code => '',
-          section      => $adjust_section,
-        };
-      }else{
-        push @total_items, $total;
-      }
-      push @buf, [ $payment->{'description'},
-                   $money_char. sprintf("%10.2f", $payment->{'amount'}),
-                 ];
-    }
-    $invoice_data{'paymenttotal'} = sprintf('%.2f', $paymenttotal);
-  
-    if ( $multisection ) {
-      $adjust_section->{'subtotal'} = $other_money_char.
-                                      sprintf('%.2f', $adjusttotal);
-      push @sections, $adjust_section
-        unless $adjust_section->{sort_weight};
     }
 
-    # create Balance Due message
-    { 
-      my $total;
-      $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
-      $total->{'total_amount'} =
-        &$embolden_function(
-          $other_money_char. sprintf('%.2f', $summarypage 
-                                               ? $self->charged +
-                                                 $self->billing_balance
-                                               : $self->owed + $pr_total
-                                    )
-        );
-      if ( $multisection && !$adjust_section->{sort_weight} ) {
-        $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
-                                         $total->{'total_amount'};
-      }else{
-        push @total_items, $total;
-      }
-      push @buf,['','-----------'];
-      push @buf,[$self->balance_due_msg, $money_char. 
-        sprintf("%10.2f", $balance_due ) ];
-    }
-
-    if ( $conf->exists('previous_balance-show_credit')
-        and $cust_main->balance < 0 ) {
-      my $credit_total = {
-        'total_item'    => &$embolden_function($self->credit_balance_msg),
-        'total_amount'  => &$embolden_function(
-          $other_money_char. sprintf('%.2f', -$cust_main->balance)
-        ),
-      };
-      if ( $multisection ) {
-        $adjust_section->{'posttotal'} .= $newline_token .
-          $credit_total->{'total_item'} . ' ' . $credit_total->{'total_amount'};
-      }
-      else {
-        push @total_items, $credit_total;
-      }
-      push @buf,['','-----------'];
-      push @buf,[$self->credit_balance_msg, $money_char. 
-        sprintf("%10.2f", -$cust_main->balance ) ];
-    }
-  }
+  } #end of default total adding ! can('_items_total')
 
   if ( $multisection ) {
     if (    $conf->exists('svc_phone_sections')
@@ -1223,6 +1315,10 @@ sub print_generic {
         'ext_description' => [ &$escape_function($_->{ext_description}) || () ],
     } } @discounts_avail;
   }
+
+  # debugging hook: call this with 'diag' => 1 to just get a hash of 
+  # the invoice variables
+  return \%invoice_data if ( $params{'diag'} );
 
   # All sections and items are built; now fill in templates.
   my @includelist = ();
@@ -1662,6 +1758,13 @@ sub _items_sections {
         $not_tax{$section} = 1
           unless $cust_bill_pkg->pkgnum == 0;
 
+        # there's actually a very important piece of logic buried in here:
+        # incrementing $late_subtotal{$section} CREATES 
+        # $late_subtotal{$section}.  keys(%late_subtotal) is later used 
+        # to define the list of late sections, and likewise keys(%subtotal).
+        # When _items_cust_bill_pkg is called to generate line items for 
+        # real, it will be called with 'section' => $section for each 
+        # of these.
         if ( $display->post_total && !$summarypage ) {
           if (! $type || $type eq 'S') {
             $late_subtotal{$section} += $cust_bill_pkg->setup
@@ -2029,6 +2132,11 @@ separate quantities, for some reason).
 
 =cut
 
+sub _items_nontax {
+  my $self = shift;
+  grep { $_->pkgnum } $self->cust_bill_pkg;
+}
+
 sub _items_pkg {
   my $self = shift;
   my %options = @_;
@@ -2036,7 +2144,7 @@ sub _items_pkg {
   warn "$me _items_pkg searching for all package line items\n"
     if $DEBUG > 1;
 
-  my @cust_bill_pkg = grep { $_->pkgnum } $self->cust_bill_pkg;
+  my @cust_bill_pkg = $self->_items_nontax;
 
   warn "$me _items_pkg filtering line items\n"
     if $DEBUG > 1;
@@ -2085,7 +2193,17 @@ sub _taxsort {
 sub _items_tax {
   my $self = shift;
   my @cust_bill_pkg = sort _taxsort grep { ! $_->pkgnum } $self->cust_bill_pkg;
-  $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+  my @items = $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+
+  if ( $self->conf->exists('always_show_tax') ) {
+    my $itemdesc = $self->conf->config('always_show_tax') || 'Tax';
+    if (0 == grep { $_->{description} eq $itemdesc } @items) {
+      push @items,
+        { 'description' => $itemdesc,
+          'amount'      => 0.00 };
+    }
+  }
+  @items;
 }
 
 =item _items_cust_bill_pkg CUST_BILL_PKGS OPTIONS
@@ -2111,7 +2229,7 @@ which does something complicated.
 
 Returns a list of hashrefs, each of which may contain:
 
-pkgnum, description, amount, unit_amount, quantity, _is_setup, and 
+pkgnum, description, amount, unit_amount, quantity, pkgpart, _is_setup, and 
 ext_description, which is an arrayref of detail lines to show below 
 the package line.
 
@@ -2167,14 +2285,13 @@ sub _items_cust_bill_pkg {
       if $DEBUG > 1;
 
     foreach my $display ( grep { defined($section)
-                                 ? $_->section eq $section
-                                 : 1
-                               }
-                          #grep { !$_->summary || !$summary_page } # bunk!
+                            ? $_->section eq $section
+                            : 1
+                          }
                           grep { !$_->summary || $multisection }
                           @cust_bill_pkg_display
                         )
-    {
+      {
 
       warn "$me _items_cust_bill_pkg considering cust_bill_pkg_display ".
            $display->billpkgdisplaynum. "\n"
@@ -2182,7 +2299,7 @@ sub _items_cust_bill_pkg {
 
       my $type = $display->type;
 
-      my $desc = $cust_bill_pkg->desc;
+      my $desc = $cust_bill_pkg->desc( $cust_main ? $cust_main->locale : '' );
       $desc = substr($desc, 0, $maxlength). '...'
         if $format eq 'latex' && length($desc) > $maxlength;
 
@@ -2222,9 +2339,14 @@ sub _items_cust_bill_pkg {
  
         my $cust_pkg = $cust_bill_pkg->cust_pkg;
 
+        # which pkgpart to show for display purposes?
+        my $pkgpart = $cust_bill_pkg->pkgpart_override || $cust_pkg->pkgpart;
+
         # start/end dates for invoice formats that do nonstandard 
         # things with them
-        my %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate');
+        my %item_dates = ();
+        %item_dates = map { $_ => $cust_bill_pkg->$_ } ('sdate', 'edate')
+          unless $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1);
 
         if (    (!$type || $type eq 'S')
              && (    $cust_bill_pkg->setup != 0
@@ -2243,16 +2365,20 @@ sub _items_cust_bill_pkg {
             || $cust_bill_pkg->recur_show_zero;
 
           my @d = ();
+          my $svc_label;
           unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->hidden )
           {
 
-            push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short($self->_date, undef, 'I')
+            my @svc_labels = map &{$escape_function}($_),
+                        $cust_pkg->h_labels_short($self->_date, undef, 'I');
+            push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
+            $svc_label = $svc_labels[0];
 
-            if ( ! $cust_pkg->locationnum or
-                   $cust_pkg->locationnum != $cust_main->ship_locationnum  ) {
+            my $lnum = $cust_main ? $cust_main->ship_locationnum
+                                  : $self->prospect_main->locationnum;
+            if ( ! $cust_pkg->locationnum or $cust_pkg->locationnum != $lnum ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
@@ -2272,13 +2398,14 @@ sub _items_cust_bill_pkg {
             $s = {
               _is_setup       => 1,
               description     => $description,
-              #pkgpart         => $part_pkg->pkgpart,
+              pkgpart         => $pkgpart,
               pkgnum          => $cust_bill_pkg->pkgnum,
               amount          => $cust_bill_pkg->setup,
               setup_show_zero => $cust_bill_pkg->setup_show_zero,
               unit_amount     => $cust_bill_pkg->unitsetup,
               quantity        => $cust_bill_pkg->quantity,
               ext_description => \@d,
+              svc_label       => ($svc_label || ''),
             };
           };
 
@@ -2301,21 +2428,30 @@ sub _items_cust_bill_pkg {
           my $description = ($is_summary && $type && $type eq 'U')
                             ? "Usage charges" : $desc;
 
+          my $part_pkg = $cust_pkg->part_pkg;
+
           #pry be a bit more efficient to look some of this conf stuff up
           # outside the loop
           unless (
             $conf->exists('disable_line_item_date_ranges')
-              || $cust_pkg->part_pkg->option('disable_line_item_date_ranges',1)
+              || $part_pkg->option('disable_line_item_date_ranges',1)
+              || ! $cust_bill_pkg->sdate
+              || ! $cust_bill_pkg->edate
           ) {
             my $time_period;
-            my $date_style = $conf->config( 'cust_bill-line_item-date_style',
-                                            $cust_main->agentnum
-                                          );
+            my $date_style = '';
+            $date_style = $conf->config( 'cust_bill-line_item-date_style-non_monhtly',
+                                         $self->agentnum
+                                       )
+              if $part_pkg && $part_pkg->freq !~ /^1m?$/;
+            $date_style ||= $conf->config( 'cust_bill-line_item-date_style',
+                                            $self->agentnum
+                                         );
             if ( defined($date_style) && $date_style eq 'month_of' ) {
               $time_period = time2str('The month of %B', $cust_bill_pkg->sdate);
             } elsif ( defined($date_style) && $date_style eq 'X_month' ) {
               my $desc = $conf->config( 'cust_bill-line_item-date_description',
-                                         $cust_main->agentnum
+                                         $self->agentnum
                                       );
               $desc .= ' ' unless $desc =~ /\s$/;
               $time_period = $desc. time2str('%B', $cust_bill_pkg->sdate);
@@ -2328,6 +2464,7 @@ sub _items_cust_bill_pkg {
 
           my @d = ();
           my @seconds = (); # for display of usage info
+          my $svc_label = '';
 
           #at least until cust_bill_pkg has "past" ranges in addition to
           #the "future" sdate/edate ones... see #3032
@@ -2336,25 +2473,28 @@ sub _items_cust_bill_pkg {
           push @dates, $prev->sdate if $prev;
           push @dates, undef if !$prev;
 
-          unless ( $cust_pkg->part_pkg->hide_svc_detail
+          unless ( $part_pkg->hide_svc_detail
                 || $cust_bill_pkg->itemdesc
                 || $cust_bill_pkg->hidden
-                || $is_summary && $type && $type eq 'U' )
+                || $is_summary && $type && $type eq 'U'
+              )
           {
 
             warn "$me _items_cust_bill_pkg adding service details\n"
               if $DEBUG > 1;
 
-            push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short(@dates, 'I')
-                                                   #$cust_bill_pkg->edate,
-                                                   #$cust_bill_pkg->sdate)
+            my @svc_labels = map &{$escape_function}($_),
+                        $cust_pkg->h_labels_short($self->_date, undef, 'I');
+            push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
+            $svc_label = $svc_labels[0];
 
             warn "$me _items_cust_bill_pkg done adding service details\n"
               if $DEBUG > 1;
 
-            if ( $cust_pkg->locationnum != $cust_main->ship_locationnum ) {
+            my $lnum = $cust_main ? $cust_main->ship_locationnum
+                                  : $self->prospect_main->locationnum;
+            if ( $cust_pkg->locationnum != $lnum ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, $maxlength). '...'
                 if $format eq 'latex' && length($loc) > $maxlength;
@@ -2424,7 +2564,7 @@ sub _items_cust_bill_pkg {
             } else {
               $r = {
                 description     => $description,
-                #pkgpart         => $part_pkg->pkgpart,
+                pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,
@@ -2432,6 +2572,7 @@ sub _items_cust_bill_pkg {
                 quantity        => $cust_bill_pkg->quantity,
                 %item_dates,
                 ext_description => \@d,
+                svc_label       => ($svc_label || ''),
               };
               $r->{'seconds'} = \@seconds if grep {defined $_} @seconds;
             }
@@ -2448,7 +2589,7 @@ sub _items_cust_bill_pkg {
             } else {
               $u = {
                 description     => $description,
-                #pkgpart         => $part_pkg->pkgpart,
+                pkgpart         => $pkgpart,
                 pkgnum          => $cust_bill_pkg->pkgnum,
                 amount          => $amount,
                 recur_show_zero => $cust_bill_pkg->recur_show_zero,

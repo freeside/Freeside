@@ -1,0 +1,86 @@
+<%doc>
+<& /elements/search.html,
+  # options...
+  html_foot => include('elements/checkbox-foot.html',
+                  actions => [
+                    { label   => 'Edit selected packages',
+                      action  => 'popup_package_edit()',
+                    },
+                    { submit  => 'Delete selected packages',
+                      confirm => 'Really delete these packages?'
+                    },
+                  ],
+                  filter        => '.name = "pkgpart"', # see below
+               ),
+&>
+
+This creates a footer for a search page containing a column of checkboxes.
+Typically this is used to select several items from the search result and 
+apply some change to all of them at once.  The footer always provides 
+"select all" and "unselect all" buttons.
+
+"actions" is an arrayref of action buttons to show.  Each element of the
+array is a hashref of either:
+
+- "submit" and, optionally, "confirm".  Creates a submit button.  The value 
+of "submit" becomes the "value" property of the button (and thus its label).
+If "confirm" is specified, the button will have an onclick handler that 
+displays the value of "confirm" in a popup message box and asks the user to 
+confirm the choice.
+
+- "onclick" and "label".  Creates a non-submit button that executes the 
+Javascript code in "onclick".  "label" is used as the text of the button.
+
+If you want only a single action, you can forget the arrayref-of-hashrefs
+business and just put "submit" and "confirm" (or "onclick" and "label") 
+elements in the argument list.
+
+"filter" is a javascript expression to limit which checkboxes are included in
+the "select/unselect all" actions.  By default, any input with type="checkbox"
+will be included.  If this option is given, it will be evaluated with the 
+HTML node in a variable named "obj".  The expression should return true or
+false.
+
+</%doc>
+<DIV ID="checkbox_footer" STYLE="display:block">
+<INPUT TYPE="button" VALUE="<% emt('select all') %>" onclick="setAll(true)">
+<INPUT TYPE="button" VALUE="<% emt('unselect all') %>" onclick="setAll(false)">
+<BR>
+% foreach my $action (@$actions) {
+%   if ( $action->{onclick} ) {
+<INPUT TYPE="button" <% $action->{name} %> onclick="<% $opt{onclick} %>"\
+  VALUE="<% $action->{label} |h%>">
+%   } elsif ( $action->{submit} ) {
+<INPUT TYPE="submit" <% $action->{name} %> <% $action->{confirm} %>\
+  VALUE="<% $action->{submit} |h%>">
+%   } # else do nothing
+% } #foreach
+</DIV>
+<SCRIPT>
+var checkboxes = [];
+var inputs = document.getElementsByTagName('input');
+for (var i = 0; i < inputs.length; i++) {
+  var obj = inputs[i];
+  if ( obj.type == "checkbox" && <% $filter %> ) {
+    checkboxes.push(obj);
+  }
+}
+%# avoid the need for "$areboxes" late-evaluation hackery
+if ( checkboxes.length == 0 ) {
+  document.getElementById('checkbox_footer').style.display = 'none';
+}
+function setAll(setTo) {
+  for (var i = 0; i < checkboxes.length; i++) {
+    checkboxes[i].checked = setTo;
+  }
+}
+</SCRIPT>
+<%init>
+my %opt = @_;
+my $actions = $opt{'actions'} || [ \%opt ];
+foreach (@$actions) {
+  $_->{confirm} &&= qq!onclick="return confirm('! . $_->{confirm} . qq!')"!;
+  $_->{name} &&= qq!NAME="! . $_->{name} . qq!"!;
+}
+my $filter = $opt{filter} || 'true';
+</%init>

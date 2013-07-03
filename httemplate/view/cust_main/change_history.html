@@ -43,10 +43,12 @@ tie my %tables, 'Tie::IxHash',
   'svc_external'      => 'External service',
   'svc_phone'         => 'Phone',
   'phone_device'      => 'Phone device',
+  'cust_pkg_discount' => 'Discount',
   #? it gets provisioned anyway 'phone_avail'         => 'Phone',
 ;
 
-my $svc_join = 'JOIN cust_svc USING ( svcnum ) JOIN cust_pkg USING ( pkgnum )';
+my $pkg_join = "JOIN cust_pkg USING ( pkgnum )";
+my $svc_join = "JOIN cust_svc USING ( svcnum ) $pkg_join";
 
 my %table_join = (
   'svc_acct'         => $svc_join,
@@ -58,6 +60,7 @@ my %table_join = (
   'svc_external'     => $svc_join,
   'svc_phone'        => $svc_join,
   'phone_device'     => $svc_join,
+  'cust_pkg_discount'=> $pkg_join,
 );
 
 
@@ -104,7 +107,7 @@ my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-die "access deined"
+die "access denied"
   unless $curuser->access_right('View customer history');
 
 # find out the beginning of this customer history, if possible

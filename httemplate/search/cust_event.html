@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'       => $title,
                  'html_init'   => $html_init,
                  'menubar'     => $menubar,
@@ -62,8 +62,7 @@
                               #'',
                               FS::UI::Web::cust_styles(),
                             ],
-             )
-%>
+&>
 <%once>
 
 my $status_sub = sub { 
@@ -175,7 +174,13 @@ $search{'ending'}    = $ending;
 
 my $where = ' WHERE '. FS::cust_event->search_sql_where( \%search );
 
-my $join = FS::cust_event->join_sql();
+my $join = FS::cust_event->join_sql() .
+  'LEFT JOIN cust_location bill_location '.
+  'ON (cust_main.bill_locationnum = bill_location.locationnum) '.
+  'LEFT JOIN cust_location ship_location '.
+  'ON (cust_main.ship_locationnum = ship_location.locationnum)';
+  # warning: does not show the true service address for package events.
+  # the query to do that would be painfully slow.
 
 my $sql_query = {
   'table'     => 'cust_event',

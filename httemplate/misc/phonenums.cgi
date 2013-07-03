@@ -1,4 +1,4 @@
-<% objToJson(\@phonenums) %>
+<% encode_json(\@phonenums) %>\
 <%init>
 
 my( $exchangestring, $svcpart ) = $cgi->param('arg');
@@ -21,13 +21,13 @@ if ( $exchangestring ) {
   my %opts = ();
   if ( $exchangestring eq 'tollfree' ) {
       $opts{'tollfree'} = 1;
-  }
-  #elsif ( $exchangestring =~ /^([\w\s\:\,\(\)\-]+), ([A-Z][A-Z])$/ ) {
-  elsif ( $exchangestring =~ /^(.+), ([A-Z][A-Z])$/ ) {
+  } elsif ( $exchangestring =~ /^_REGION (.*)$/ ) {
+      $opts{'region'} = $1;
+  #} elsif ( $exchangestring =~ /^([\w\s\:\,\(\)\-]+), ([A-Z][A-Z])$/ ) {
+  } elsif ( $exchangestring =~ /^(.+), ([A-Z][A-Z])$/ ) {
       $opts{'ratecenter'} = $1;
       $opts{'state'} = $2;
-  }
-  else {
+  } else {
       $exchangestring =~ /\((\d{3})-(\d{3})-XXXX\)\s*$/i
         or die "unparsable exchange: $exchangestring";
       my( $areacode, $exchange ) = ( $1, $2 );

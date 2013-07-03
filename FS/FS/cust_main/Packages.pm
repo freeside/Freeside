@@ -4,9 +4,11 @@ use strict;
 use vars qw( $DEBUG $me );
 use List::Util qw( min );
 use FS::UID qw( dbh );
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_pkg;
 use FS::cust_svc;
+use FS::contact;       # for attach_pkgs
+use FS::cust_location; #
 
 $DEBUG = 0;
 $me = '[FS::cust_main::Packages]';
@@ -28,6 +30,9 @@ These methods are available on FS::cust_main objects;
 =item order_pkg HASHREF | OPTION => VALUE ... 
 
 Orders a single package.
+
+Note that if the package definition has supplemental packages, those will
+be ordered as well.
 
 Options may be passed as a list of key/value pairs or as a hash reference.
 Options are:
@@ -58,7 +63,7 @@ action completes (such as running the customer's credit card successfully).
 
 Optional subject for a ticket created and attached to this customer
 
-=item ticket_subject
+=item ticket_queue
 
 Optional queue name for ticket additions
 
@@ -84,7 +89,7 @@ sub order_pkg {
     if exists($opt->{'depend_jobnum'}) && $opt->{'depend_jobnum'};
 
   my %insert_params = map { $opt->{$_} ? ( $_ => $opt->{$_} ) : () }
-                          qw( ticket_subject ticket_queue );
+                          qw( ticket_subject ticket_queue allow_pkgpart );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -97,17 +102,45 @@ sub order_pkg {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( $opt->{'cust_location'} &&
-       ( ! $cust_pkg->locationnum || $cust_pkg->locationnum == -1 ) ) {
-    my $error = $opt->{'cust_location'}->insert;
+  if ( $opt->{'contactnum'} and $opt->{'contactnum'} != -1 ) {
+
+    $cust_pkg->contactnum($opt->{'contactnum'});
+
+  } elsif ( $opt->{'contact'} ) {
+
+    if ( ! $opt->{'contact'}->contactnum ) {
+      # not inserted yet
+      my $error = $opt->{'contact'}->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting contact (transaction rolled back): $error";
+      }
+    }
+    $cust_pkg->contactnum($opt->{'contact'}->contactnum);
+
+  #} else {
+  #
+  #  $cust_pkg->contactnum();
+
+  }
+
+  if ( $opt->{'locationnum'} and $opt->{'locationnum'} != -1 ) {
+
+    $cust_pkg->locationnum($opt->{'locationnum'});
+
+  } elsif ( $opt->{'cust_location'} ) {
+
+    my $error = $opt->{'cust_location'}->find_or_insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting cust_location (transaction rolled back): $error";
     }
     $cust_pkg->locationnum($opt->{'cust_location'}->locationnum);
-  }
-  else {
+
+  } else {
+
     $cust_pkg->locationnum($self->ship_locationnum);
+
   }
 
   $cust_pkg->custnum( $self->custnum );
@@ -138,6 +171,35 @@ sub order_pkg {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting svc_ (transaction rolled back): $error";
+    }
+  }
+
+  # add supplemental packages, if any are needed
+  my $part_pkg = FS::part_pkg->by_key($cust_pkg->pkgpart);
+  foreach my $link ($part_pkg->supp_part_pkg_link) {
+    #warn "inserting supplemental package ".$link->dst_pkgpart;
+    my $pkg = FS::cust_pkg->new({
+        'pkgpart'       => $link->dst_pkgpart,
+        'pkglinknum'    => $link->pkglinknum,
+        'custnum'       => $self->custnum,
+        'main_pkgnum'   => $cust_pkg->pkgnum,
+        # try to prevent as many surprises as possible
+        'pkgbatch'      => $cust_pkg->pkgbatch,
+        'start_date'    => $cust_pkg->start_date,
+        'order_date'    => $cust_pkg->order_date,
+        'expire'        => $cust_pkg->expire,
+        'adjourn'       => $cust_pkg->adjourn,
+        'contract_end'  => $cust_pkg->contract_end,
+        'refnum'        => $cust_pkg->refnum,
+        'discountnum'   => $cust_pkg->discountnum,
+        'waive_setup'   => $cust_pkg->waive_setup,
+        'allow_pkgpart' => $opt->{'allow_pkgpart'},
+    });
+    $error = $self->order_pkg('cust_pkg' => $pkg,
+                              'locationnum' => $cust_pkg->locationnum);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting supplemental package: $error";
     }
   }
 
@@ -226,6 +288,108 @@ sub order_pkgs {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+}
+
+=item attach_pkgs 
+
+Merges this customer's package's into the target customer and then cancels them.
+
+=cut
+
+sub attach_pkgs {
+  my( $self, $new_custnum ) = @_;
+
+  #mostly false laziness w/ merge
+
+  return "Can't attach packages to self" if $self->custnum == $new_custnum;
+
+  my $new_cust_main = qsearchs( 'cust_main', { 'custnum' => $new_custnum } )
+    or return "Invalid new customer number: $new_custnum";
+
+  return 'Access denied: "Merge customer across agents" access right required to merge into a customer of a different agent'
+    if $self->agentnum != $new_cust_main->agentnum 
+    && ! $FS::CurrentUser::CurrentUser->access_right('Merge customer across agents');
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( qsearch('agent', { 'agent_custnum' => $self->custnum } ) ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't merge a master agent customer";
+  }
+
+  #use FS::access_user
+  if ( qsearch('access_user', { 'user_custnum' => $self->custnum } ) ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't merge a master employee customer";
+  }
+
+  if ( qsearch('cust_pay_pending', { 'custnum' => $self->custnum,
+                                     'status'  => { op=>'!=', value=>'done' },
+                                   }
+              )
+  ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't merge a customer with pending payments";
+  }
+
+  #end of false laziness
+
+  #pull in contact
+
+  my %contact_hash = ( 'first'    => $self->first,
+                       'last'     => $self->get('last'),
+                       'custnum'  => $new_custnum,
+                       'disabled' => '',
+                     );
+
+  my $contact = qsearchs(  'contact', \%contact_hash)
+                 || new FS::contact   \%contact_hash;
+  unless ( $contact->contactnum ) {
+    my $error = $contact->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
+
+    my $cust_location = $cust_pkg->cust_location || $self->ship_location;
+    my %loc_hash = $cust_location->hash;
+    $loc_hash{'locationnum'} = '';
+    $loc_hash{'custnum'}     = $new_custnum;
+    $loc_hash{'disabled'}    = '';
+    my $new_cust_location = qsearchs(  'cust_location', \%loc_hash)
+                             || new FS::cust_location   \%loc_hash;
+
+    my $pkg_or_error = $cust_pkg->change( {
+      'keep_dates'    => 1,
+      'cust_main'     => $new_cust_main,
+      'contactnum'    => $contact->contactnum,
+      'cust_location' => $new_cust_location,
+    } );
+
+    my $error = ref($pkg_or_error) ? '' : $pkg_or_error;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+
 }
 
 =item all_pkgs [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]

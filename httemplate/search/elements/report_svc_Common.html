@@ -1,0 +1,122 @@
+<%doc>
+
+Example:
+
+  <& elements/report_svc_Common.html,
+
+    #required
+    'table' => 'svc_something',
+    'title'  => 'Page title',
+
+    #optional
+    'action' => 'svc_tablename.html', #defaults to svc_tablename.html
+
+  &>
+
+</%doc>
+<& /elements/header.html, $title &>
+
+<FORM ACTION="<% $opt{'action'} || $opt{'table'}. '.html' %>" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
+    </TR>
+
+% unless ( $custnum ) {
+
+    <& /elements/tr-select-agent.html,
+         curr_value    => scalar( $cgi->param('agentnum') ),
+         disable_empty => 0,
+    &>
+
+    <& /elements/tr-select-cust_main-status.html,
+         label         => 'Customer Status',
+         field         => 'cust_status',
+    &>
+
+    <& /elements/tr-select-payby.html,
+         label         => emt('Payment method:'),
+         payby_type    => 'cust',
+         multiple      => 1,
+         all_selected  => 1,
+    &>
+
+    <& /elements/tr-input-money.html,
+         label         => 'Balance over',
+         field         => 'balance',
+    &>
+
+    <& /elements/tr-input-text.html,
+         label         => 'Balance age (days)',
+         field         => 'balance_days',
+         size          => 4,
+    &>
+
+% }
+
+%   # just this customer's domains?
+%#    <& /elements/tr-select-domain.html,
+%#                   'element_name'  => 'domsvc',
+%#                   'curr_value'    => scalar( $cgi->param('domsvc') ),
+%#                   'disable_empty' => 0,
+%#    &>
+
+    <& /elements/tr-selectmultiple-part_pkg.html &> 
+
+    <& /elements/tr-select-part_svc.html,
+         'svcdb' => $svcdb,
+         'label' => 'Services',
+    &> 
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+    </TR>
+ 
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
+    </TR>
+
+%   #"package fields" ala advanced svc_acct search?
+%   #move to /elements/tr-select-cust_pkg-fields and use it from there if so...
+
+    <& /elements/tr-select-cust-fields.html &>
+                       
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% mt('Get Report') |h %>">
+
+</FORM>
+
+<& /elements/footer.html &>
+<%init>
+
+my(%opt) = @_;
+
+my $svcdb = $opt{'table'};
+
+my $name =        "FS::$svcdb"->table_info->{'name_plural'}
+           || PL( "FS::$svcdb"->table_info->{'name'}        );
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right("Services: $name: Advanced search");
+
+my $title = $opt{'title'};
+
+#false laziness w/report_cust_pkg.html
+my( $custnum, $cust_main) = ('', '');
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+  my $cust_main = qsearchs({
+    'table'     => 'cust_main', 
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown custnum $custnum";
+  $title = mt("$title: [_1]", $cust_main->name);
+}
+
+</%init>

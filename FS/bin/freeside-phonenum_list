@@ -1,0 +1,86 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $opt_c $opt_o $opt_l $opt_p $opt_b $opt_d $opt_s $opt_t );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::Record qw(qsearch);
+use FS::svc_phone;
+
+getopts('colp:b:d:s:t:');
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+my $conf = new FS::Conf;
+my $default_locale = $conf->config('locale') || 'en_US';
+
+my %search = ();
+
+$search{payby}        = [ split(/\s*,\s*/, $opt_p) ] if $opt_p;
+$search{balance}      = $opt_b                       if $opt_b;
+$search{balance_days} = $opt_d                       if $opt_d;
+$search{svcpart}      = [ split(/\s*,\s*/, $opt_s) ] if $opt_s;
+$search{cust_status}  = lc($opt_t)                   if $opt_t;
+
+my @svc_phone = qsearch( FS::svc_phone->search(\%search) );
+
+foreach my $svc_phone (@svc_phone) {
+  print $svc_phone->countrycode if $opt_c;
+  print $svc_phone->phonenum;
+  print '@'. $svc_phone->domain if $opt_o;
+  if ( $opt_l ) {
+    my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+    print ','. ($cust_pkg && $cust_pkg->cust_main->locale || $default_locale);
+  }
+  print "\n";  
+}
+
+sub usage {
+  die "usage: freeside-phonenum_list [ -c ] [ -o ] [ -l ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username \n";
+}
+
+=head1 NAME
+
+freeside-phonenum_list
+
+=head1 SYNOPSIS
+  freeside-phonenum_list [ -c ] [ -o ] [ -l ] [ -p payby,payby... ] [ -b balance [ -d balance_days ] ] [ -s svcpart,svcpart... ] username
+
+=head1 DESCRIPTION
+
+Command-line tool to list phone numbers.
+
+Display options:
+
+-c: Include country code
+
+-o: Include domain
+
+-l: Include customer locale
+
+Selection options:
+
+-p: Customer payby (CARD, BILL, etc.).  Separate multiple values with commas.
+
+-b: Customer balance over (or equal to) this amount
+
+-d: Customer balance age over this many days 
+
+-s: Service definition (svcpart).  Separate multiple values with commas.
+
+-t: Customer status: prospect, active, ordered, inactive, suspended or cancelled
+
+username: Employee username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::svc_phone>, L<FS::cust_main>
+
+=cut
+
+1;
+

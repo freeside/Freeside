@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                  'title'         => 'Payment Batches',
 		 'name_singular' => 'batch',
 		 'query'         => { 'table'     => 'pay_batch',
@@ -101,8 +101,7 @@
 				    ],
                  'html_init'     => $html_init,
                  'html_foot'     => include('.upload_incoming'),
-      )
-%>
+&>
 <%def .upload_incoming>
 % if ( FS::payment_gateway->count("gateway_namespace = 'Business::BatchPayment' AND disabled IS NULL") > 0 ) { 
 <& /elements/form-file_upload.html,
@@ -149,16 +148,10 @@ my $count_query = 'SELECT COUNT(*) FROM pay_batch';
 my($begin, $end) = ( '', '' );
 
 my @where;
-if ( $cgi->param('beginning')
-     && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-  $begin = parse_datetime($1);
-  push @where, "download >= $begin";
-}
-if ( $cgi->param('ending')
-      && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-  $end = parse_datetime($1) + 86399;
-  push @where, "download < $end";
-}
+
+my($beginning,$ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @where, "( (download >= $beginning AND download <= $ending) ".
+             ' OR download IS NULL )';
 
 my @status;
 if ( $cgi->param('open') ) {

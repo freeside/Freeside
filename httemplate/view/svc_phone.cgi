@@ -16,19 +16,41 @@ my %labels = map { $_ =>  ( ref($fields->{$_})
                          );
                  } keys %$fields;
 
-my @fields = qw( countrycode phonenum );
+my @fields = qw( countrycode phonenum sim_imsi );
 push @fields, 'domain' if $conf->exists('svc_phone-domain');
-push @fields, qw( pbx_title sip_password pin phone_name forwarddst email );
+push @fields, qw( pbx_title );
+
+if ( $conf->exists('showpasswords') ) {
+  push @fields, qw( sip_password );
+} else {
+  push @fields, { 'field' => 'sip_password', #'_HIDDEN_sip_password',
+                  'type'  => 'fixed',
+                  'value' => '<I>('. mt('hidden') .')</I>',
+                };
+}
+
+push @fields, qw( pin phone_name forwarddst email );
+
+push @fields, { field => 'sms_carrierid', 
+                #type=>'cdr_carrier',
+                value_callback => sub {
+                  $_[0]->sms_carriername,
+                },
+              },
+              'sms_account',
+              'max_simultaneous',
+;
 
 if ( $conf->exists('svc_phone-lnp') ) {
-push @fields, 'lnp_status',
-	    'lnp_reject_reason',
-	    { field => 'portable', type => 'checkbox', },
-	    'lrn',
-	    { field => 'lnp_desired_due_date', type => 'date', },
-	    { field => 'lnp_due_date', type => 'date', },
-	    'lnp_other_provider',
-	    'lnp_other_provider_account';
+  push @fields, 'lnp_status',
+                'lnp_reject_reason',
+                { field => 'portable', type => 'checkbox', },
+                'lrn',
+                { field => 'lnp_desired_due_date', type => 'date', },
+                { field => 'lnp_due_date', type => 'date', },
+                'lnp_other_provider',
+                'lnp_other_provider_account',
+  ;
 }
 
 my $html_foot = sub {
@@ -56,6 +78,7 @@ my $html_foot = sub {
   ###
   # Devices
   ###
+  #remove this when svc_phone isa device_Common, as elements/svc_Common will display it
   my $devices = include('/view/elements/svc_devices.html',
                           'svc_x' => $svc_phone,
                           'table' => 'phone_device',

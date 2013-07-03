@@ -34,7 +34,7 @@
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;custnum=<% $custnum %>"><% mt('Enter Western Union payment') |h %></A>
 % } 
 
-<BR>
+<% $s ? '<BR>' : '' %>
 % $s=0;
 
 % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
@@ -58,11 +58,13 @@
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>"><% mt('Post manual (offline/POS) credit card payment') |h %></A>
 % } 
 
-<BR>
+<% $s ? '<BR>' : '' %>
 
-%# credit link
+%# credit links
 
+% $s=0;
 % if ( $curuser->access_right('Post credit') ) { 
+  <% $s++ ? ' | ' : '' %>
   <& /elements/popup_link-cust_main.html,
                'label'       => emt('Enter credit'),
                'action'      => "${p}edit/cust_credit.cgi",
@@ -70,8 +72,20 @@
                'actionlabel' => emt('Enter credit'),
                'width'       => 616, #make room for reasons #540 default
   &>
-  <BR>
+% }
+% if ( $curuser->access_right('Credit line items') ) { 
+  <% $s++ ? ' | ' : '' %>
+  <& /elements/popup_link-cust_main.html,
+               'label'       => emt('Credit line items'),
+               #'action'      => "${p}search/cust_bill_pkg.cgi?nottax=1;type=select",
+               'action'      => "${p}edit/credit-cust_bill_pkg.html",
+               'cust_main'   => $cust_main,
+               'actionlabel' => emt('Credit line items'),
+               'width'       => 968, #763,
+               'height'      => 575,
+  &>
 % } 
+<% $s ? '<BR>' : '' %>
 
 %# refund links
 
@@ -127,10 +141,9 @@
 
 %# invoice reports, combined statement
 % if ( $curuser->access_right('List invoices') ) { 
-%   if ( $conf->exists('cust_main-print_statement_link')
-%        and $num_cust_bill > 0 ) {
+%   if ( $num_cust_bill > 0 ) {
   <A HREF="<% $p %>view/cust_main_statement-pdf.cgi?<% $custnum %>"><%
-  mt('Print a current statement') |h %></A>
+  mt('Download typeset statement PDF') |h %></A>
   <BR>
 %   }
   <A HREF="<% $p %>search/report_cust_bill.html?custnum=<% $custnum %>"><% mt('Invoice reports') |h %></A>
@@ -214,57 +227,20 @@
 
 %#display payment history
 
-%my $money_char = $conf->config('money_char') || '$';
-%
-%sub balance_forward_row {
-%  my( $b, $date, $money_char ) = @_;
-%  ( my $balance_forward = $money_char. $b ) =~ s/^\$\-/-&nbsp;\$/;
-
-   <TR ID="balance_forward_row">
-     <TD CLASS="grid" BGCOLOR="#dddddd">
-       <% time2str($date_format, $date) %>
-     </TD>
-
-     <TD CLASS="grid" BGCOLOR="#dddddd">
-       <I><% mt("Starting balance on [_1]", time2str($date_format, $date) ) |h %></I>
-       (<A HREF="javascript:void(0);" onClick="show_history();"><% mt('show prior history') |h %></A>)
-     </TD>
-
-     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-     <TD CLASS="grid" BGCOLOR="#dddddd" ALIGN="right"><I><% $balance_forward %></I></TD>
-
-   </TR>
-%}
-%
-%my $balance = 0;
 %my %target = ();
 %
-%my $years =  $conf->config('payment_history-years') || 2;
-%my $older_than = time - $years * 31556926; #60*60*24*365.2422
 %my $hidden = 0;
 %my $seen = 0;
 %my $old_history = 0;
 %my $lastdate = 0;
 %
-%foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
+%foreach my $item ( @history ) {
 %
 %  $lastdate = $item->{'date'};
 %
-%  my $display;
-%  if ( $item->{'date'} < $older_than ) {
+%  my $display = '';
+%  if ( $item->{'hide'} ) {
 %    $display = ' STYLE="display:none" ';
-%    $hidden = 1;
-%  } else {
-%
-%    $display = '';
-%
-%    if ( $hidden && ! $seen++ ) {
-%      balance_forward_row($balance, $item->{'date'}, $money_char);
-%    }
-%
 %  }
 %
 %  if ( $bgcolor eq $bgcolor1 ) {
@@ -300,16 +276,8 @@
 %
 %  my $target = exists($item->{'target'}) ? $item->{'target'} : '';
 %
-%  $balance += $item->{'charge'}  if exists $item->{'charge'};
-%  $balance -= $item->{'payment'} if exists $item->{'payment'};
-%  $balance -= $item->{'credit'}  if exists $item->{'credit'};
-%  $balance += $item->{'refund'}  if exists $item->{'refund'};
-%  $balance = sprintf("%.2f", $balance);
-%  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
-%  ( my $showbalance = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
-%
-%
-
+%  my $showbalance = $money_char . $item->{'balance'};
+%  $showbalance =~ s/^\$\-/-&nbsp;\$/;
 
   <TR <% $display ? $display.' ID="old_history'.$old_history++.'"'  : ''%>>
     <TD VALIGN="top" CLASS="grid" BGCOLOR="<% $bgcolor %>">
@@ -345,11 +313,11 @@
       <% $showbalance %>
     </TD>
   </TR>
-% } 
 
-%if ( scalar(@history) && $hidden && ! $seen++ ) {
-%  balance_forward_row($balance, $lastdate, $money_char);
-%}
+% if ( $item->{'balance_forward'} ) {
+<& .balance_forward_row, $item->{'balance'}, $item->{'date'} &>
+% } 
+%} # foreach $item
 
 </TABLE>
     </TD>
@@ -372,14 +340,37 @@ function show_history () {
 }
 
 </SCRIPT>
+<%def .balance_forward_row>
+%  my( $b, $date ) = @_;
+%  ( my $balance_forward = $money_char. $b ) =~ s/^\$\-/-&nbsp;\$/;
 
+   <TR ID="balance_forward_row">
+     <TD CLASS="grid" BGCOLOR="#dddddd">
+       <% time2str($date_format, $date) %>
+     </TD>
+
+     <TD CLASS="grid" BGCOLOR="#dddddd">
+       <I><% mt("Starting balance on [_1]", time2str($date_format, $date) ) |h %></I>
+       (<A HREF="javascript:void(0);" onClick="show_history();"><% mt('show prior history') |h %></A>)
+     </TD>
+
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd" ALIGN="right"><I><% $balance_forward %></I></TD>
+
+   </TR>
+</%def>
+<%shared>
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+my $money_char = $conf->config('money_char') || '$';
+</%shared>
 <%init>
 
 my( $cust_main ) = @_;
 my $custnum = $cust_main->custnum;
-
-my $conf = new FS::Conf;
-my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -487,6 +478,17 @@ foreach my $cust_pay_pending ($cust_main->cust_pay_pending_attempt) {
     #'target'  => $target, #XXX
   };
 }
+#declined batch payments
+foreach my $cust_pay_batch (
+  $cust_main->cust_pay_batch(hashref => {status => 'Declined'})
+) {
+  my $pay_batch = $cust_pay_batch->pay_batch;
+  push @history, {
+    'date'    => $pay_batch->upload,
+    'desc'    => include('payment_history/attempted_batch_payment.html', $cust_pay_batch, %opt),
+    'void_payment' => $cust_pay_batch->amount,
+  };
+}
 
 #credits (some false laziness w/payments)
 foreach my $cust_credit ($cust_main->cust_credit) {
@@ -507,6 +509,41 @@ foreach my $cust_refund ($cust_main->cust_refund) {
   };
 
 }
+
+# sort in forward order first, and calculate running balances
+my $years =  $conf->config('payment_history-years') || 2;
+my $older_than = time - $years * 31556926; #60*60*24*365.2422
+my $balance = 0;
+
+@history = sort { $a->{date} <=> $b->{date} } @history;
+my $i = 0;
+my $balance_forward;
+foreach my $item (@history) {
+  $balance += $item->{'charge'}  if exists $item->{'charge'};
+  $balance -= $item->{'payment'} if exists $item->{'payment'};
+  $balance -= $item->{'credit'}  if exists $item->{'credit'};
+  $balance += $item->{'refund'}  if exists $item->{'refund'};
+  $balance = sprintf("%.2f", $balance);
+  $balance =~ s/^\-0\.00$/0.00/;
+  $item->{'balance'} = $balance;
+
+  if ( $item->{'date'} < $older_than ) {
+    $item->{'hide'} = 1;
+  } elsif ( $history[$i-1]->{'hide'} ) {
+    # this is the end of the hidden section
+    $history[$i-1]->{'balance_forward'} = 1;
+  }
+  $i++;
+}
+if ( @history and $history[-1]->{'hide'} ) {
+  # then everything is hidden
+  $history[-1]->{'balance_forward'} = 1;
+}
+
+# then sort in user-pref order
+if ( $curuser->option('history_order') eq 'newest' ) {
+  @history = sort { $b->{date} <=> $a->{date} } @history;
+} # else it's already oldest-first, and there are no other options yet
 
 sub translate_payby {
     my ($payby,$payinfo) = (shift,shift);

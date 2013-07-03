@@ -58,6 +58,13 @@ L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
 =item preserve - Preserve after cancellation, empty or 'Y'
 
+=item selfservice_access - Access allowed to the service via self-service:
+empty for full access, "readonly" for read-only, "hidden" to hide it entirely
+
+=item restrict_edit_password - Require the "Provision customer service" access
+right to change the password field, rather than just "Edit password".  Only
+relevant to svc_acct for now.
+
 =back
 
 =head1 METHODS
@@ -391,7 +398,8 @@ sub check {
     || $self->ut_enum('preserve', [ '', 'Y' ] )
     || $self->ut_enum('selfservice_access', [ '', 'hidden', 'readonly' ] )
     || $self->ut_foreign_keyn('classnum', 'part_svc_class', 'classnum' )
-  ;
+    || $self->ut_enum('restrict_edit_password', [ '', 'Y' ] )
+;
   return $error if $error;
 
   my @fields = eval { fields( $self->svcdb ) }; #might die
@@ -441,9 +449,10 @@ sub part_export {
   my $self = shift;
   my %search;
   $search{'exporttype'} = shift if @_;
-  sort { $a->weight <=> $b->weight }
-  map { qsearchs('part_export', { 'exportnum' => $_->exportnum, %search } ) }
-    qsearch('export_svc', { 'svcpart' => $self->svcpart } );
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->weight <=> $b->weight }
+      map { qsearchs('part_export', { 'exportnum'=>$_->exportnum, %search } ) }
+        qsearch('export_svc', { 'svcpart'=>$self->svcpart } );
 }
 
 =item part_export_usage
@@ -748,11 +757,9 @@ sub process {
                     if ( $flag =~ /^[MAH]$/ ) {
                       $param->{ $f } = delete( $param->{ $f.'_classnum' } );
                     }
-		    if ( $flag =~ /^S$/ 
-                          or $_ eq 'usergroup' ) {
-                      $param->{ $f } = ref($param->{ $f })
-                                         ? join(',', @{$param->{ $f }} )
-                                         : $param->{ $f };
+		    if ( ( $flag =~ /^[MAHS]$/ or $_ eq 'usergroup' )
+                         and ref($param->{ $f }) ) {
+                      $param->{ $f } = join(',', @{ $param->{ $f } });
 		    }
                     ( $f, $f.'_flag', $f.'_label' );
                   }

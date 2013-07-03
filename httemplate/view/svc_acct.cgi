@@ -22,12 +22,14 @@
 
 % } 
 
+
 <& svc_acct/radius_usage.html,
               'svc_acct' => $svc_acct,
               'part_svc' => $part_svc,
               'cust_pkg' => $cust_pkg,
               %gopt,
 &>
+
 
 <& svc_acct/change_svc_form.html,
               'part_svc' => \@part_svc,
@@ -37,12 +39,14 @@
 &>
 
 <% mt('Service #') |h %><B><% $svcnum %></B>
-|
 <& /view/elements/svc_edit_link.html, 'svc' => $svc_acct &>
 <& svc_acct/change_svc.html,
               'part_svc' => \@part_svc,
               %gopt,
 &>
+
+</FORM>
+
 
 <& svc_acct/basics.html,
               'svc_acct' => $svc_acct,
@@ -90,8 +94,12 @@ die "access denied"
 my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
                 ' LEFT JOIN cust_main USING ( custnum ) ';
-
-my($query) = $cgi->keywords;
+my $query;
+if ( $cgi->keywords ) {
+  ($query) = $cgi->keywords;
+} else {
+  $query = $cgi->param('svcnum');
+}
 $query =~ /^(\d+)$/;
 my $svcnum = $1;
 my $svc_acct = qsearchs({

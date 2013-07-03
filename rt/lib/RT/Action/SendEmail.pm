@@ -2,7 +2,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -99,47 +99,31 @@ activated in the config.
 sub Commit {
     my $self = shift;
 
-    $self->DeferDigestRecipients() if RT->Config->Get('RecordOutgoingEmail');
+    return abs $self->SendMessage( $self->TemplateObj->MIMEObj )
+        unless RT->Config->Get('RecordOutgoingEmail');
+
+    $self->DeferDigestRecipients();
     my $message = $self->TemplateObj->MIMEObj;
 
     my $orig_message;
-    if (   RT->Config->Get('RecordOutgoingEmail')
-        && RT->Config->Get('GnuPG')->{'Enable'} )
-    {
-
-        # it's hacky, but we should know if we're going to crypt things
-        my $attachment = $self->TransactionObj->Attachments->First;
-
-        my %crypt;
-        foreach my $argument (qw(Sign Encrypt)) {
-            if ( $attachment
-                && defined $attachment->GetHeader("X-RT-$argument") )
-            {
-                $crypt{$argument} = $attachment->GetHeader("X-RT-$argument");
-            } else {
-                $crypt{$argument} = $self->TicketObj->QueueObj->$argument();
-            }
-        }
-        if ( $crypt{'Sign'} || $crypt{'Encrypt'} ) {
-            $orig_message = $message->dup;
-        }
-    }
+    $orig_message = $message->dup if RT::Interface::Email::WillSignEncrypt(
+        Attachment => $self->TransactionObj->Attachments->First,
+        Ticket     => $self->TicketObj,
+    );
 
     my ($ret) = $self->SendMessage($message);
-    if ( $ret > 0 && RT->Config->Get('RecordOutgoingEmail') ) {
-        if ($orig_message) {
-            $message->attach(
-                Type        => 'application/x-rt-original-message',
-                Disposition => 'inline',
-                Data        => $orig_message->as_string,
-            );
-        }
-        $self->RecordOutgoingMailTransaction($message);
-        $self->RecordDeferredRecipients();
+    return abs( $ret ) if $ret <= 0;
+
+    if ($orig_message) {
+        $message->attach(
+            Type        => 'application/x-rt-original-message',
+            Disposition => 'inline',
+            Data        => $orig_message->as_string,
+        );
     }
-
-
-    return ( abs $ret );
+    $self->RecordOutgoingMailTransaction($message);
+    $self->RecordDeferredRecipients();
+    return 1;
 }
 
 =head2 Prepare
@@ -887,21 +871,25 @@ sub SetFrom {
     my $self = shift;
     my %args = @_;
 
+    my $from = $args{From};
+
     if ( RT->Config->Get('UseFriendlyFromLine') ) {
         my $friendly_name = $self->GetFriendlyName(%args);
-        $self->SetHeader(
-            'From',
+        $from = 
             sprintf(
                 RT->Config->Get('FriendlyFromLineFormat'),
                 $self->MIMEEncodeString(
                     $friendly_name, RT->Config->Get('EmailOutputEncoding')
                 ),
                 $args{From}
-            ),
-        );
-    } else {
-        $self->SetHeader( 'From', $args{From} );
+            );
     }
+
+    $self->SetHeader( 'From', $from );
+
+    #also set Sender:, otherwise MTAs add a nonsensical value like rt@machine,
+    #and then Outlook prepends "rt@machine on behalf of" to the From: header
+    $self->SetHeader( 'Sender', $from );
 }
 
 =head2 GetFriendlyName

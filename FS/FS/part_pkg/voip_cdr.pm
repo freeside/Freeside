@@ -31,6 +31,11 @@ tie my %rating_method, 'Tie::IxHash',
   'single_price' => 'A single price per minute for all calls.',
 ;
 
+tie my %rounding, 'Tie::IxHash',
+  '2' => 'Two decimal places (cent)',
+  '4' => 'Four decimal places (100th of a cent)',
+;
+
 #tie my %cdr_location, 'Tie::IxHash',
 #  'internal' => 'Internal: CDR records imported into the internal CDR table',
 #  'external' => 'External: CDR records queried directly from an external '.
@@ -49,6 +54,11 @@ tie my %unrateable_opts, 'Tie::IxHash',
   '' => 'Exit with a fatal error',
   1  => 'Ignore and continue',
   2  => 'Flag for later review',
+;
+
+tie my %detail_formats, 'Tie::IxHash',
+  '' => '',
+  FS::cdr::invoice_formats()
 ;
 
 %info = (
@@ -86,6 +96,11 @@ tie my %unrateable_opts, 'Tie::IxHash',
                          'type' => 'radio',
                          'options' => \%rating_method,
                        },
+
+    'rounding' => { 'name' => 'Rounding for destination prefix rating',
+                    'type' => 'select',
+                    'select_options' => \%rounding,
+                  },
 
     'ratenum'   => { 'name' => 'Rate plan',
                      'type' => 'select',
@@ -149,13 +164,19 @@ tie my %unrateable_opts, 'Tie::IxHash',
                         'type' => 'checkbox',
                       },
 
-    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to: ',
+    'use_carrierid' => { 'name' => 'Only charge for CDRs where the Carrier ID is set to any of these (comma-separated) values: ',
                          },
 
-    'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to: ',
+    'use_cdrtypenum' => { 'name' => 'Only charge for CDRs where the CDR Type is set to this cdrtypenum: ',
                          },
     
-    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to: ',
+    'ignore_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is set to this cdrtypenum: ',
+                         },
+
+    'use_calltypenum' => { 'name' => 'Only charge for CDRs where the CDR Call Type is set to this calltypenum: ',
+                         },
+    
+    'ignore_calltypenum' => { 'name' => 'Do not charge for CDRs where the CDR Call Type is set to this calltypenum: ',
                          },
     
     'ignore_disposition' => { 'name' => 'Do not charge for CDRs where the Disposition is set to any of these (comma-separated) values: ',
@@ -203,6 +224,11 @@ tie my %unrateable_opts, 'Tie::IxHash',
     'skip_max_callers' => { 'name' => 'Do not charge for CDRs where max_callers is less than or equal to this value: ',
                           },
 
+    'skip_same_customer' => {
+      'name' => 'Do not charge for calls between numbers belonging to the same customer',
+      'type' => 'checkbox',
+    },
+
     'use_duration'   => { 'name' => 'Calculate usage based on the duration field instead of the billsec field',
                           'type' => 'checkbox',
                         },
@@ -211,11 +237,24 @@ tie my %unrateable_opts, 'Tie::IxHash',
                       },
 
     #false laziness w/cdr_termination.pm
-    'output_format' => { 'name' => 'CDR invoice display format',
+    'output_format' => { 'name' => 'CDR display format for invoices',
                          'type' => 'select',
-                         'select_options' => { FS::cdr::invoice_formats() },
+                         'select_options' => \%detail_formats,
                          'default'        => 'default', #XXX test
                        },
+
+    'selfservice_format' => 
+      { 'name' => 'CDR display format for selfservice',
+        'type' => 'select',
+        'select_options' => \%detail_formats,
+        'default' => 'default'
+      },
+    'selfservice_inbound_format' =>
+      { 'name' => 'Inbound CDR display format for selfservice',
+        'type' => 'select',
+        'select_options' => \%detail_formats,
+        'default' => ''
+      },
 
     'usage_section' => { 'name' => 'Section in which to place usage charges (whether separated or not): ',
                        },
@@ -228,6 +267,10 @@ tie my %unrateable_opts, 'Tie::IxHash',
                           'type' => 'checkbox',
                        },
     #eofalse
+
+    'usage_nozero' => { 'name' => 'Omit details for included / no-charge calls.',
+                        'type' => 'checkbox',
+                      },
 
     'bill_every_call' => { 'name' => 'Generate an invoice immediately for every call (as well any setup fee, upon first payment).  Useful for prepaid.',
                            'type' => 'checkbox',
@@ -271,7 +314,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
                        FS::part_pkg::prorate_Mixin::fieldorder,
                     qw(
                        cdr_svc_method
-                       rating_method ratenum intrastate_ratenum 
+                       rating_method rounding ratenum intrastate_ratenum 
                        calls_included
                        min_charge min_included sec_granularity
                        ignore_unrateable
@@ -282,6 +325,7 @@ tie my %unrateable_opts, 'Tie::IxHash',
                        use_amaflags
                        use_carrierid 
                        use_cdrtypenum ignore_cdrtypenum
+                       use_calltypenum ignore_calltypenum
                        ignore_disposition disposition_in
                        skip_dcontext skip_dst_prefix 
                        skip_dstchannel_prefix skip_src_length_more 
@@ -291,9 +335,12 @@ tie my %unrateable_opts, 'Tie::IxHash',
                        noskip_dst_length_accountcode_tollfree
                        skip_lastapp
                        skip_max_callers
+                       skip_same_customer
                        use_duration
                        411_rewrite
-                       output_format usage_mandate summarize_usage usage_section
+                       output_format 
+                       selfservice_format selfservice_inbound_format
+                       usage_mandate summarize_usage usage_section
                        bill_every_call bill_inactive_svcs
                        count_available_phones suspend_bill 
                      )
@@ -315,7 +362,7 @@ sub calc_recur {
   my $charges = 0;
 
   $charges += $self->calc_usage(@_);
-  $charges += $self->calc_recur_Common(@_);
+  $charges += ($cust_pkg->quantity || 1) * $self->calc_recur_Common(@_);
 
   $charges;
 
@@ -358,6 +405,8 @@ sub calc_usage {
                                  : 'default'
                              );
 
+  my $usage_nozero      = $self->option('usage_nozero', 1);
+
   my $formatter = FS::detail_format->new($output_format, buffer => $details);
 
   my $use_duration = $self->option('use_duration');
@@ -384,10 +433,16 @@ sub calc_usage {
       $svc_x = $cust_svc->svc_x;
     }
 
+    unless ( $svc_x ) {
+      my $h = $self->option('bill_inactive_svcs',1) ? 'h_' : '';
+      warn "WARNING: no $h$svc_table for svcnum ". $cust_svc->svcnum. "\n";
+    }
+
     my %options = (
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
         'cdrtypenum'     => $self->option('use_cdrtypenum'),
+        'calltypenum'    => $self->option('use_calltypenum'),
         'status'         => '',
         'for_update'     => 1,
       );  # $last_bill, $$sdate )
@@ -408,6 +463,7 @@ sub calc_usage {
 
       my $error = $cdr->rate(
         'part_pkg'                          => $self,
+        'cust_pkg'                          => $cust_pkg,
         'svcnum'                            => $svc_x->svcnum,
         'single_price_included_min'         => \$included_min,
         'region_group_included_min'         => \$region_group_included_min,
@@ -441,7 +497,7 @@ sub calc_usage {
         $error = $cdr->set_status('done');
       }
       die $error if $error;
-      $formatter->append($cdr);
+      $formatter->append($cdr) unless $usage_nozero && $cdr->rated_price == 0;
 
       $cdr_search->adjust(1) if $cdr->freesidestatus eq 'rated';
     } #$cdr
@@ -454,17 +510,18 @@ sub calc_usage {
 }
 
 #returns a reason why not to rate this CDR, or false if the CDR is chargeable
+# lots of false laziness w/voip_inbound
 sub check_chargable {
   my( $self, $cdr, %flags ) = @_;
 
   return 'amaflags != 2'
     if $self->option_cacheable('use_amaflags') && $cdr->amaflags != 2;
 
-  return "disposition NOT IN ( $self->option_cacheable('disposition_in') )"
+  return "disposition NOT IN ( ". $self->option_cacheable('disposition_in')." )"
     if $self->option_cacheable('disposition_in') =~ /\S/
     && !grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('disposition_in'));
   
-  return "disposition IN ( $self->option_cacheable('ignore_disposition') )"
+  return "disposition IN ( ". $self->option_cacheable('ignore_disposition')." )"
     if $self->option_cacheable('ignore_disposition') =~ /\S/
     && grep { $cdr->disposition eq $_ } split(/\s*,\s*/, $self->option_cacheable('ignore_disposition'));
 
@@ -473,26 +530,35 @@ sub check_chargable {
     if length($_) && substr($cdr->dst,0,length($_)) eq $_;
   }
 
-  return "carrierid != $self->option_cacheable('use_carrierid')"
-    if length($self->option_cacheable('use_carrierid'))
-    && $cdr->carrierid ne $self->option_cacheable('use_carrierid') #ne otherwise 0 matches ''
-    && ! $flags{'da_rewrote'};
+  return "carrierid NOT IN ( ". $self->option_cacheable('use_carrierid'). " )"
+    if $self->option_cacheable('use_carrierid') =~ /\S/
+    && ! $flags{'da_rewrote'} #why?
+    && !grep { $cdr->carrierid eq $_ } split(/\s*,\s*/, $self->option_cacheable('use_carrierid')); #eq otherwise 0 matches ''
 
   # unlike everything else, use_cdrtypenum is applied in FS::svc_x::get_cdrs.
-  return "cdrtypenum != $self->option_cacheable('use_cdrtypenum')"
+  return "cdrtypenum != ". $self->option_cacheable('use_cdrtypenum')
     if length($self->option_cacheable('use_cdrtypenum'))
     && $cdr->cdrtypenum ne $self->option_cacheable('use_cdrtypenum'); #ne otherwise 0 matches ''
   
-  return "cdrtypenum == $self->option_cacheable('ignore_cdrtypenum')"
+  return "cdrtypenum == ". $self->option_cacheable('ignore_cdrtypenum')
     if length($self->option_cacheable('ignore_cdrtypenum'))
     && $cdr->cdrtypenum eq $self->option_cacheable('ignore_cdrtypenum'); #eq otherwise 0 matches ''
 
-  return "dcontext IN ( $self->option_cacheable('skip_dcontext') )"
+  # unlike everything else, use_calltypenum is applied in FS::svc_x::get_cdrs.
+  return "calltypenum != ". $self->option_cacheable('use_calltypenum')
+    if length($self->option_cacheable('use_calltypenum'))
+    && $cdr->calltypenum ne $self->option_cacheable('use_calltypenum'); #ne otherwise 0 matches ''
+  
+  return "calltypenum == ". $self->option_cacheable('ignore_calltypenum')
+    if length($self->option_cacheable('ignore_calltypenum'))
+    && $cdr->calltypenum eq $self->option_cacheable('ignore_calltypenum'); #eq otherwise 0 matches ''
+
+  return "dcontext IN ( ". $self->option_cacheable('skip_dcontext'). " )"
     if $self->option_cacheable('skip_dcontext') =~ /\S/
     && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $self->option_cacheable('skip_dcontext'));
 
   my $len_prefix = length($self->option_cacheable('skip_dstchannel_prefix'));
-  return "dstchannel starts with $self->option_cacheable('skip_dstchannel_prefix')"
+  return "dstchannel starts with ". $self->option_cacheable('skip_dstchannel_prefix')
     if $len_prefix
     && substr($cdr->dstchannel,0,$len_prefix) eq $self->option_cacheable('skip_dstchannel_prefix');
 
@@ -503,7 +569,7 @@ sub check_chargable {
             && $cdr->is_tollfree('accountcode')
          );
 
-  return "lastapp is $self->option_cacheable('skip_lastapp')"
+  return "lastapp is ". $self->option_cacheable('skip_lastapp')
     if length($self->option_cacheable('skip_lastapp')) && $cdr->lastapp eq $self->option_cacheable('skip_lastapp');
 
   my $src_length = $self->option_cacheable('skip_src_length_more');
@@ -553,6 +619,41 @@ sub calc_units {
       scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
   }
   $count;
+}
+
+sub reset_usage {
+  my ($self, $cust_pkg, %opt) = @_;
+  my @part_pkg_usage = $self->part_pkg_usage or return '';
+  warn "  resetting usage minutes\n" if $opt{debug};
+  my %cust_pkg_usage = map { $_->pkgusagepart, $_ } $cust_pkg->cust_pkg_usage;
+  foreach my $part_pkg_usage (@part_pkg_usage) {
+    my $part = $part_pkg_usage->pkgusagepart;
+    my $usage = $cust_pkg_usage{$part} ||
+                FS::cust_pkg_usage->new({
+                    'pkgnum'        => $cust_pkg->pkgnum,
+                    'pkgusagepart'  => $part,
+                    'minutes'       => $part_pkg_usage->minutes,
+                });
+    foreach my $cdr_usage (
+      qsearch('cdr_cust_pkg_usage', {'cdrusagenum' => $usage->cdrusagenum})
+    ) {
+      my $error = $cdr_usage->delete;
+      warn "  error resetting CDR usage: $error\n";
+    }
+
+    if ( $usage->pkgusagenum ) {
+      if ( $part_pkg_usage->rollover ) {
+        $usage->set('minutes', $part_pkg_usage->minutes + $usage->minutes);
+      } else {
+        $usage->set('minutes', $part_pkg_usage->minutes);
+      }
+      my $error = $usage->replace;
+      warn "  error resetting usage minutes: $error\n" if $error;
+    } else {
+      my $error = $usage->insert;
+      warn "  error resetting usage minutes: $error\n" if $error;
+    }
+  } #foreach $part_pkg_usage
 }
 
 # tells whether cust_bill_pkg_detail should return a single line for 

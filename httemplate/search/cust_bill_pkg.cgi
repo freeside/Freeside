@@ -5,57 +5,98 @@
                  'count_query' => $count_query,
                  'count_addl'  => \@total_desc,
                  'header'      => [
+                   @pkgnum_header,
+                   emt('Pkg Def'),
                    emt('Description'),
+                   @post_desc_header,
                    @peritem_desc,
+                   @currency_desc,
                    emt('Invoice'),
                    emt('Date'),
+                   emt('Paid'),
+                   emt('Credited'),
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
+                   @pkgnum,
                    sub { $_[0]->pkgnum > 0
-                           ? $_[0]->get('pkg')      # possibly use override.pkg
-                           : $_[0]->get('itemdesc') # but i think this correct
+                           # possibly use override.pkg but i think this correct
+                           ? $_[0]->get('pkgpart')
+                           : ''
                        },
+                   sub { $_[0]->pkgnum > 0
+                           # possibly use override.pkg but i think this correct
+                           ? $_[0]->get('pkg')     
+                           : $_[0]->get('itemdesc')
+                       },
+                   @post_desc,
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
                    @peritem_sub,
+                   @currency_sub,
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
+                   sub { sprintf($money_char.'%.2f', shift->get('pay_amount')) },
+                   sub { sprintf($money_char.'%.2f', shift->get('credit_amount')) },
                    \&FS::UI::Web::cust_fields,
                  ],
                  'sort_fields' => [
+                   @pkgnum_null,
                    '',
+                   '',
+                   @post_desc_null,
                    @peritem,
+                   @currency,
                    'invnum',
                    '_date',
+                   #'pay_amount',
+                   #'credit_amount',
                  ],
                  'links'       => [
-                   #'',
+                   @pkgnum_null,
                    '',
+                   '',
+                   @post_desc_null,
                    @peritem_null,
+                   @currency_null,
                    $ilink,
                    $ilink,
+                   $pay_link,
+                   $credit_link,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'l'.
+                 'align' => $pkgnum_align.
+                            'rl'.
+                            $post_desc_align.
                             $peritem_align.
-                            'rc'.
+                            $currency_align.
+                            'rcrr'.
                             FS::UI::Web::cust_aligns(),
                  'color' => [ 
-                              #'',
+                              @pkgnum_null,
                               '',
+                              '',
+                              @post_desc_null,
                               @peritem_null,
+                              @currency_null,
+                              '',
+                              '',
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
-                              #'',
+                              @pkgnum_null,
                               '',
+                              '',
+                              @post_desc_null,
                               @peritem_null,
+                              @currency_null,
+                              '',
+                              '',
                               '',
                               '',
                               FS::UI::Web::cust_styles(),
@@ -63,13 +104,13 @@
 &>
 <%doc>
 
-Output parameters:
+Output control parameters:
 - distribute: Boolean.  If true, recurring fees will be "prorated" for the 
   portion of the package date range (sdate-edate) that falls within the date
   range of the report.  Line items will be limited to those for which this 
   portion is > 0.  This disables filtering on invoice date.
 
-- use_usage: Separate usage (cust_bill_pkg_detail records) from
+- usage: Separate usage (cust_bill_pkg_detail records) from
   recurring charges.  If set to "usage", will show usage instead of 
   recurring charges.  If set to "recurring", will deduct usage and only
   show the flat rate charge.  If not passed, the "recurring charge" column
@@ -85,6 +126,8 @@ Filtering parameters:
 - agentnum: Filter on customer agent.
 
 - refnum: Filter on customer reference source.
+
+- cust_classnum: Filter on customer class.
 
 - classnum: Filter on package class.
 
@@ -146,25 +189,66 @@ Filtering parameters:
 </%doc>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
 my @select = ( 'cust_bill_pkg.*', 'cust_bill._date' );
 my @total = ( 'COUNT(*)', 'SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)');
-my @total_desc = ( '%d line items', $money_char.'%.2f total' ); # sprintf strings
+my @total_desc = ( $money_char.'%.2f total' ); # sprintf strings
+
 my @peritem = ( 'setup', 'recur' );
 my @peritem_desc = ( 'Setup charge', 'Recurring charge' );
-my ($join_cust, $join_pkg ) = ('', '');
-my $use_usage;
+
+my @currency_desc = ();
+my @currency_sub = ();
+my @currency = ();
+if ( $conf->config('currencies') ) {
+  @currency_desc = ( 'Setup billed', 'Recurring billed' );
+  @currency_sub = (
+    map {
+      my $what = $_;
+      sub { my $currency = $_[0]->get($what.'_billed_currency') or return '';
+            $currency. ' '. currency_symbol($currency, SYM_HTML).
+              $_[0]->get($what.'_billed_amount');
+          };
+    } qw( setup recur )
+  );
+  @currency = ( 'setup_billed_amount', 'recur_billed_amount' ); #for sorting
+}
+
+my @pkgnum_header = ();
+my @pkgnum = ();
+my @pkgnum_null;
+my $pkgnum_align = '';
+if ( $curuser->option('show_pkgnum') ) {
+  push @select, 'cust_bill_pkg.pkgnum';
+  push @pkgnum_header, 'Pkg Num';
+  push @pkgnum, sub { $_[0]->pkgnum > 0 ? $_[0]->pkgnum : '' };
+  push @pkgnum_null, '';
+  $pkgnum_align .= 'r';
+}
+
+my @post_desc_header = ();
+my @post_desc = ();
+my @post_desc_null = ();
+my $post_desc_align = '';
+if ( $conf->exists('enable_taxclasses') ) {
+  push @post_desc_header, 'Tax class';
+  push @post_desc, 'taxclass';
+  push @post_desc_null, '';
+  $post_desc_align .= 'l';
+  push @select, 'part_pkg.taxclass'; # or should this use override?
+}
 
 # valid in both the tax and non-tax cases
-$join_cust = 
-  " LEFT JOIN cust_bill USING (invnum)
-    LEFT JOIN cust_main USING (custnum)
-  ";
+my $join_cust = 
+  " LEFT JOIN cust_bill ON (cust_bill_pkg.invnum = cust_bill.invnum)".
+  # use cust_pkg.locationnum if it exists
+  FS::UI::Web::join_cust_main('cust_bill', 'cust_pkg');
 
 #agent virtualization
 my $agentnums_sql =
@@ -200,26 +284,41 @@ if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.refnum = $1";
 }
 
+# cust_classnum (false laziness w/ elements/cust_main_dayranges.html, elements/cust_pay_or_refund.html, prepaid_income.html, cust_bill_pay.html, cust_bill_pkg_referral.html, unearned_detail.html, cust_credit.html, cust_credit_refund.html, cust_main::Search::search_sql)
+if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
+  my @classnums = grep /^\d*$/, $cgi->param('cust_classnum');
+  push @where, 'COALESCE( cust_main.classnum, 0) IN ( '.
+                   join(',', map { $_ || '0' } @classnums ).
+               ' )'
+    if @classnums;
+}
+
+
+# custnum
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.custnum = $1";
+}
+
+# we want the package and its definition if available
+my $join_pkg = 
+' LEFT JOIN cust_pkg      USING (pkgnum) 
+  LEFT JOIN part_pkg      USING (pkgpart)';
+
+my $part_pkg = 'part_pkg';
+if ( $cgi->param('use_override') ) { #"Separate sub-packages from parents"
+  # still need the real part_pkg for tax applicability, 
+  # so alias this one
+  $join_pkg .= " LEFT JOIN part_pkg AS override ON (
+  COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = override.pkgpart
+  )";
+  $part_pkg = 'override';
+}
+push @select, 'part_pkg.pkgpart', 'part_pkg.pkg'; # or should this use override?
+
 # the non-tax case
 if ( $cgi->param('nottax') ) {
 
   push @where, 'cust_bill_pkg.pkgnum > 0';
-
-  # then we want the package and its definition
-  $join_pkg = 
-' LEFT JOIN cust_pkg      USING (pkgnum) 
-  LEFT JOIN part_pkg      USING (pkgpart)';
-
-  my $part_pkg = 'part_pkg';
-  if ( $cgi->param('use_override') ) {
-    # still need the real part_pkg for tax applicability, 
-    # so alias this one
-    $join_pkg .= " LEFT JOIN part_pkg AS override ON (
-    COALESCE(cust_bill_pkg.pkgpart_override, cust_pkg.pkgpart, 0) = part_pkg.pkgpart
-    )";
-    $part_pkg = 'override';
-  }
-  push @select, 'part_pkg.pkg'; # or should this use override?
 
   my @tax_where; # will go into a subquery
   my @exempt_where; # will also go into a subquery
@@ -374,16 +473,15 @@ if ( $cgi->param('nottax') ) {
   }
 
   # recur/usage separation
-  $use_usage = $cgi->param('usage');
-  if ( $use_usage eq 'recurring' ) {
+  if ( $cgi->param('usage') eq 'recurring' ) {
 
     my $recur_no_usage = FS::cust_bill_pkg->charged_sql('', '', no_usage => 1);
     push @select, "($recur_no_usage) AS recur_no_usage";
     $peritem[1] = 'recur_no_usage';
     $total[1] = "SUM(cust_bill_pkg.setup + $recur_no_usage)";
-    $total_desc[1] .= ' (excluding usage)';
+    $total_desc[0] .= ' (excluding usage)';
 
-  } elsif ( $use_usage eq 'usage' ) {
+  } elsif ( $cgi->param('usage') eq 'usage' ) {
 
     my $usage = FS::cust_bill_pkg->usage_sql();
     push @select, "($usage) AS _usage";
@@ -391,7 +489,7 @@ if ( $cgi->param('nottax') ) {
     $peritem[1] = '_usage';
     $peritem_desc[1] = 'Usage charge';
     $total[1] = "SUM($usage)";
-    $total_desc[1] .= ' usage charges';
+    $total_desc[0] .= ' usage charges';
   }
 
 } elsif ( $cgi->param('istax') ) {
@@ -418,7 +516,7 @@ if ( $cgi->param('nottax') ) {
 
   } elsif ( $cgi->param('out') ) {
 
-    $join_pkg = '
+    $join_pkg .= '
       LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)
     ';
     push @where, 'cust_bill_pkg_tax_location.billpkgnum IS NULL';
@@ -429,7 +527,7 @@ if ( $cgi->param('nottax') ) {
 
   } else { # not locationtaxid or 'out'--the normal case
 
-    $join_pkg = '
+    $join_pkg .= '
       LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)
       JOIN cust_main_county           USING (taxnum)
     ';
@@ -485,6 +583,15 @@ if ( $cgi->param('nottax') ) {
   }
 
 } # nottax / istax
+
+
+#total payments
+my $pay_sub = "SELECT SUM(cust_bill_pay_pkg.amount)
+                 FROM cust_bill_pay_pkg
+                   WHERE cust_bill_pkg.billpkgnum = cust_bill_pay_pkg.billpkgnum
+              ";
+push @select, "($pay_sub) AS pay_amount";
+
 
 # credit
 if ( $cgi->param('credit') ) {
@@ -544,7 +651,19 @@ if ( $cgi->param('credit') ) {
   push @peritem_desc, 'Credited', 'By', 'Reason';
   push @total,    'SUM(credit_amount)';
   push @total_desc, "$money_char%.2f credited";
-} # if credit
+
+} else {
+
+  #still want a credit total column
+
+  my $credit_sub = "
+    SELECT SUM(cust_credit_bill_pkg.amount)
+      FROM cust_credit_bill_pkg
+        WHERE cust_bill_pkg.billpkgnum = cust_credit_bill_pkg.billpkgnum
+  ";
+  push @select, "($credit_sub) AS credit_amount";
+
+}
 
 push @select, 'cust_main.custnum', FS::UI::Web::cust_sql_fields();
 
@@ -553,7 +672,7 @@ $where &&= "WHERE $where";
 
 my $query = {
   'table'     => 'cust_bill_pkg',
-  'addl_from' => "$join_cust $join_pkg",
+  'addl_from' => "$join_pkg $join_cust",
   'hashref'   => {},
   'select'    => join(",\n", @select ),
   'extra_sql' => $where,
@@ -562,10 +681,8 @@ my $query = {
 
 my $count_query =
   'SELECT ' . join(',', @total) .
-  " FROM cust_bill_pkg $join_cust $join_pkg
+  " FROM cust_bill_pkg $join_pkg $join_cust
   $where";
-
-shift @total_desc; #the first one is implicit
 
 @peritem_desc = map {emt($_)} @peritem_desc;
 my @peritem_sub = map {
@@ -579,9 +696,17 @@ my @peritem_sub = map {
 my @peritem_null = map { '' } @peritem; # placeholders
 my $peritem_align = 'r' x scalar(@peritem);
 
+@currency_desc = map {emt($_)} @currency_desc;
+my @currency_null = map { '' } @currency; # placeholders
+my $currency_align = 'r' x scalar(@currency);
+
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
+my $pay_link    = ''; #[, 'billpkgnum', ];
+my $credit_link = [ "${p}search/cust_credit_bill_pkg.html?billpkgnum=", 'billpkgnum', ];
+
 warn "\n\nQUERY:\n".Dumper($query)."\n\nCOUNT_QUERY:\n$count_query\n\n"
   if $cgi->param('debug');
+
 </%init>

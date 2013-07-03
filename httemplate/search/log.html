@@ -1,0 +1,221 @@
+<& elements/search.html, 
+  'title'         => 'System Log',
+  'name_singular' => 'event',
+  'html_init'     => include('.head'),
+  'query'         => $query,
+  'count_query'   => $count_query,
+  'header'        => [ #'#', # lognum, probably not useful
+                       'Date',
+                       'Level',
+                       'Context',
+                       'Applies To',
+                       'Message',
+                     ],
+  'fields'        => [ #'lognum',
+                       $date_sub,
+                       $level_sub,
+                       $context_sub,
+                       $object_sub,
+                       $message_sub,
+                     ],
+  'sort_fields'   => [
+                       '_date',
+                       'level',
+                       '',
+                       'tablename,tablenum',
+                       'message',
+                     ],
+  'links'         => [
+                       '', #date
+                       '', #level
+                       '', #context
+                       $object_link_sub,
+                       '', #message
+                     ],
+  'tooltips'      => [
+                       '', #date
+                       '', #level
+                       $tt_sub,
+                       '', #object
+                       $tt_sub,
+                     ],
+  'color'         => [
+                       $color_sub,
+                       $color_sub,
+                       '',
+                       '',
+                       '',
+                     ],
+  # aligns
+  'download_label' => 'Download this log',
+&>\
+<%def .head>
+<STYLE type="text/css">
+a:link    {text-decoration: none}
+a:visited {text-decoration: none}
+.tooltip {
+  background-color: #ffffff;
+  font-size: 100%;
+  font-weight: bold;
+}
+</STYLE>
+<FORM ACTION="<%$p%>search/log.html" METHOD="GET">
+<TABLE CELLSPACING="10">
+<TR>
+  <TD>From 
+    <& /elements/input-date-field.html, {
+      name => 'beginning',
+      value => $cgi->param('beginning'),
+    } &>
+  </TD>
+  <TD>To 
+    <& /elements/input-date-field.html, {
+      name => 'ending',
+      value => $cgi->param('ending') || '',
+      noinit => 1,
+    } &>
+  </TD>
+</TR>
+<TR>
+  <TD>Level
+    <& /elements/select.html,
+      field => 'min_level',
+      options => [ 0..7 ],
+      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..7 },
+      curr_value => $cgi->param('min_level'),
+    &>
+     to
+    <& /elements/select.html,
+      field => 'max_level',
+      options => [ 0..7 ],
+      labels => { map {$_ => $FS::Log::LEVELS[$_]} 0..7 },
+      curr_value => $cgi->param('max_level'),
+    &>
+  </TD>
+  <TD>
+    Context
+    <& /elements/select.html,
+      field  => 'context',
+      options => \@contexts,
+      labels => { map {$_, $_} @contexts },
+      curr_value => ($cgi->param('context') || ''),
+    &>
+  </TD>
+</TR>
+<TR>
+  <TD COLSPAN=2>
+    Containing text
+      <& /elements/input-text.html,
+        field => 'message',
+        size => 30,
+        size => 30,
+        curr_value => ($cgi->param('message') || ''),
+      &>
+    <DIV STYLE="display:inline; float:right">
+      <INPUT TYPE="submit" VALUE="Refresh">
+    </DIV>
+  </TD>
+</TR>
+</TABLE>
+</%def>
+<%once>
+my $date_sub = sub { time2str('%Y-%m-%d %T', $_[0]->_date) };
+
+my $level_sub = sub { $FS::Log::LEVELS[$_[0]->level] };
+
+my $context_sub = sub {
+  my $log = shift;
+  ($log->context)[-1] . (scalar($log->context) > 1 ? '...' : '') ;
+  # XXX find a way to make this use less space (dropdown?)
+};
+
+my $tt_sub = sub {
+  my $log = shift;
+  my @context = $log->context;
+  # don't create a tooltip if there's only one context entry and the 
+  # message isn't cut off
+  return '' if @context == 1 and length($log->message) <= 60;
+  my $html = '<DIV CLASS="tooltip">'.(shift @context).'</DIV>';
+  my $pre = '&#8627;';
+  foreach (@context, $log->message) {
+    $html .= "<DIV>$pre$_</DIV>";
+    $pre = '&nbsp;&nbsp;&nbsp;'.$pre;
+  }
+  $html;
+};
+
+my $object_sub = sub {
+  my $log = shift;
+  return '' unless $log->tablename;
+  # this is a sysadmin log; anyone reading it should be able to understand
+  # 'cust_main #2319' with no trouble.
+  $log->tablename . ' #' . $log->tablenum;
+};
+
+my $message_sub = sub {
+  my $log = shift;
+  my $message = $log->message;
+  if ( length($message) > 60 ) { # pretty arbitrary
+    $message = substr($message, 0, 57) . '...';
+  }
+  $message;
+};
+
+my $object_link_sub = sub {
+  my $log = shift;
+  my $table = $log->tablename or return;
+  # sigh
+  if ( grep {$_ eq $table} (qw( cust_bill cust_main cust_pkg cust_svc ))
+       or $table =~ /^svc_/ )
+  {
+
+    return [ $fsurl.'view/'.$table.'.cgi?'. $log->tablenum ];
+
+  } elsif ( grep {$_ eq $table} (qw( cust_msg cust_pay cust_pay_void 
+                                     cust_refund cust_statement )) )
+  {
+
+    return [ $fsurl.'view/'.$table.'.html?', $log->tablenum ];
+
+  } else { # you're on your own
+
+    return '';
+
+  }
+};
+
+my @colors = (
+  '404040', #debug
+  '0000aa', #info
+  '00aa00', #notice
+  'aa0066', #warning
+  '000000', #error
+  'aa0000', #critical
+  'ff0000', #alert
+  'ff0000', #emergency
+);
+
+my $color_sub = sub { $colors[ $_[0]->level ]; };
+
+my @contexts = ('', sort FS::log_context->contexts);
+</%once>
+<%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right([ 'View system logs', 'Configuration' ]);
+
+$cgi->param('min_level', 0) unless defined($cgi->param('min_level'));
+$cgi->param('max_level', 7) unless defined($cgi->param('max_level'));
+
+my %search = ();
+$search{'date'} = [ FS::UI::Web::parse_beginning_ending($cgi) ];
+$search{'level'} = [ $cgi->param('min_level'), $cgi->param('max_level') ];
+foreach my $param (qw(agentnum context tablename tablenum custnum message)) {
+  if ( $cgi->param($param) ) {
+    $search{$param} = $cgi->param($param);
+  }
+}
+my $query = FS::log->search(\%search); # validates everything
+my $count_query = delete $query->{'count_query'};
+
+</%init>

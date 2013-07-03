@@ -1,0 +1,47 @@
+<& /elements/header-popup.html, 'Move services' &>
+
+Select the target package and the services to be moved.<BR><BR>
+
+<FORM ACTION="<%$p%>edit/process/bulk-cust_svc-pkgnum.html" METHOD=POST>
+
+<& /view/cust_main/packages.html, $cust_main,
+     no_links            => 1,
+     before_pkg_callback => sub {
+       my $cust_pkg = shift;
+       '<INPUT TYPE="radio" NAME="pkgnum" VALUE="'. $cust_pkg->pkgnum. '">';
+     },
+     before_svc_callback => sub {
+       my $cust_svc = shift;
+       my $nameid = 'svcnum'. $cust_svc->svcnum;
+       '<TABLE CELLSPACING=0 CELLPADDING=0><TR><TD>'.
+       qq( <INPUT TYPE="checkbox" NAME="$nameid" ID="$nameid" VALUE="1"> ).
+       '</TD><TD>&nbsp;</TD><TD>';
+     },
+     after_svc_callback => sub {
+       #my $cust_svc = shift;
+       '</TD></TR></TABLE>';
+     },
+&>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Move services">
+
+</FORM>
+
+  </BODY>
+</HTML>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right('Bulk move customer services');
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
+my $cust_main = qsearchs({
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+}) or die 'unknown customer';
+
+</%init>

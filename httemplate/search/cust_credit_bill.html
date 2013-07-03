@@ -1,4 +1,4 @@
-<% include( 'elements/search.html',
+<& elements/search.html,
                 'title'       => $title,
                 'name'        => 'net credits',
                 'query'       => $sql_query,
@@ -64,8 +64,8 @@
                              '',
                              FS::UI::Web::cust_styles(),
                            ],
-          )
-%>
+          
+&>
 <%init>
 
 die "access denied"
@@ -103,8 +103,8 @@ my $where = 'WHERE '. join(' AND ', @search);
 #
 my $count_query = 'SELECT COUNT(*), SUM(amount)
                    FROM cust_credit_bill
-                     LEFT JOIN cust_bill USING ( invnum  )
-                     LEFT JOIN cust_main USING ( custnum ) '.
+                     LEFT JOIN cust_bill USING ( invnum  ) '.
+                  FS::UI::Web::join_cust_main('cust_bill') .
                   $where;
 
 my $sql_query   = {
@@ -121,8 +121,8 @@ my $sql_query   = {
   'hashref'   => {},
   'extra_sql' => $where,
   'addl_from' => 'LEFT JOIN cust_bill   USING ( invnum  )
-                  LEFT JOIN cust_credit USING ( crednum )
-                  LEFT JOIN cust_main ON ( cust_bill.custnum = cust_main.custnum )',
+                  LEFT JOIN cust_credit USING ( crednum )'.
+                  FS::UI::Web::join_cust_main('cust_bill')
 };
 
 my $cust_bill_link = sub {

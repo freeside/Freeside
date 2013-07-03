@@ -10,7 +10,7 @@ use Tie::IxHash;
 use FS::Conf;
 
 my $conf;
-my ($bin, $merchantID, $terminalID, $username);
+my ($bin, $merchantID, $terminalID, $username, $password, $with_recurringInd);
 $name = 'paymentech';
 
 my $gateway;
@@ -23,7 +23,10 @@ my $gateway;
     '_date',
     'approvalStatus',
     'order_number',
-    'authorization',
+    'auth',
+    'procStatus',
+    'procStatusMessage',
+    'respCodeMessage',
     ],
   xmlkeys     => [
     'orderID',
@@ -31,6 +34,9 @@ my $gateway;
     'approvalStatus',
     'txRefNum',
     'authorizationCode',
+    'procStatus',
+    'procStatusMessage',
+    'respCodeMessage',
     ],
   'hook'        => sub {
       if ( !$gateway ) {
@@ -38,7 +44,7 @@ my $gateway;
         # as the batch config, if there is one.  If not, leave 
         # gateway out entirely.
         my $merchant = (FS::Conf->new->config('batchconfig-paymentech'))[2];
-        my $g = qsearchs({
+        $gateway = qsearchs({
               'table'     => 'payment_gateway',
               'addl_from' => ' JOIN payment_gateway_option USING (gatewaynum) ',
               'hashref'   => {  disabled    => '',
@@ -46,18 +52,19 @@ my $gateway;
                                 optionvalue => $merchant,
                               },
               });
-        $gateway = ($g ? $g->gatewaynum . '-' : '') . 'PaymenTech';
       }
       my ($hash, $oldhash) = @_;
+      $hash->{'gatewaynum'} = $gateway->gatewaynum if $gateway;
+      $hash->{'processor'} = 'PaymenTech';
       my ($mon, $day, $year, $hour, $min, $sec) = 
         $hash->{'_date'} =~ /^(..)(..)(....)(..)(..)(..)$/;
       $hash->{'_date'} = timelocal($sec, $min, $hour, $day, $mon-1, $year);
       $hash->{'paid'} = $oldhash->{'amount'};
-      $hash->{'paybatch'} = join(':', 
-        $gateway,
-        $hash->{'authorization'},
-        $hash->{'order_number'},
-      );
+      if ( $hash->{'procStatus'} == 0 ) {
+        $hash->{'error_message'} = $hash->{'respCodeMessage'};
+      } else {
+        $hash->{'error_message'} = $hash->{'procStatusMessage'};
+      }
     },
   'approved'    => sub { my $hash = shift;
                             $hash->{'approvalStatus'} 
@@ -72,7 +79,9 @@ my %paytype = (
   'personal savings'  => 'S',
   'business checking' => 'X',
   'business savings'  => 'X',
-  );
+);
+
+my %paymentech_countries = map { $_ => 1 } qw( US CA GB UK );
 
 %export_info = (
   init  => sub {
@@ -80,7 +89,7 @@ my %paytype = (
     eval "use XML::Writer";
     die $@ if $@;
     my $conf = shift;
-    ($bin, $terminalID, $merchantID, $username) =
+    ($bin, $terminalID, $merchantID, $username, $password, $with_recurringInd) =
        $conf->config('batchconfig-paymentech');
     },
 # Here we do all the work in the header function.
@@ -99,31 +108,42 @@ my %paytype = (
 
     foreach (@cust_pay_batch) {
       $xml->startTag('newOrder', BatchRequestNo => $count++);
+      my $status = $_->cust_main->status;
       tie my %order, 'Tie::IxHash', (
-        industryType => 'EC',
-        transType    => 'AC',
-        bin          => $bin,
-        merchantID   => $merchantID,
-        terminalID   => $terminalID,
+        industryType    => 'EC',
+        transType       => 'AC',
+        bin             => $bin,
+        merchantID      => $merchantID,
+        terminalID      => $terminalID,
         ($_->payby eq 'CARD') ? (
-          ccAccountNum => $_->payinfo,
-          ccExp        => $_->expmmyy,
+          ccAccountNum    => $_->payinfo,
+          ccExp           => $_->expmmyy,
         ) : (
           ecpCheckRT      => ($_->payinfo =~ /@(\d+)/),
           ecpCheckDDA     => ($_->payinfo =~ /(\d+)@/),
           ecpBankAcctType => $paytype{lc($_->cust_main->paytype)},
           ecpDelvMethod   => 'A',
         ),
-        avsZip          => substr($_->zip, 0, 10),
+        avsZip          => substr($_->zip,      0, 10),
         avsAddress1     => substr($_->address1, 0, 30),
         avsAddress2     => substr($_->address2, 0, 30),
-        avsCity         => substr($_->city, 0, 20),
-        avsState        => $_->state,
-        avsName        => substr($_->first . ' ' . $_->last, 0, 30),
-        avsCountryCode => $_->country,
-        orderID        => $_->paybatchnum,
-        amount         => $_->amount * 100,
+        avsCity         => substr($_->city,     0, 20),
+        avsState        => substr($_->state,    0, 2),
+        avsName         => substr($_->first. ' '. $_->last, 0, 30),
+        ( $paymentech_countries{ $_->country }
+          ? ( avsCountryCode  => $_->country )
+          : ()
+        ),
+        orderID           => $_->paybatchnum,
+        amount            => $_->amount * 100,
         );
+      # only do this if recurringInd is enabled in config, 
+      # and the customer has at least one non-canceled recurring package
+      if ( $with_recurringInd and $status =~ /^active|suspended|ordered$/ ) {
+        # then send RF if this is the first payment on this payinfo,
+        # RS otherwise.
+        $order{'recurringInd'} = $_->payinfo_used ? 'RS' : 'RF';
+      }
       foreach my $key (keys %order) {
         $xml->dataElement($key, $order{$key})
       }

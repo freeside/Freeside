@@ -1,0 +1,106 @@
+% if ( $row ) {
+%# pretty minimal report
+<& /elements/header.html, 'E911 Fee Report' &>
+<& /elements/table-grid.html &>
+<STYLE TYPE="text/css">
+table.grid TD:first-child { font-weight: normal }
+table.grid TD { font-weight: bold;
+                text-align: right;
+                padding: 1px 2px }
+</STYLE>
+  <TR><TH COLSPAN=2><% $legend %></TH></TR>
+  <TR>
+    <TD>E911 access lines:</TD>
+    <TD><% $row->{quantity} || 0 %></TD>
+  </TR>
+  <TR>
+    <TD>Total fees collected: </TD>
+    <TD><% $money_char.sprintf('%.2f', $row->{paid_amount}) %></TD>
+  </TR>
+  <TR>
+    <TD>Administrative fee (1%): </TD>
+    <TD><% $money_char.sprintf('%.2f', $row->{paid_amount} * $admin_fee) %></TD>
+  </TR>
+  <TR>
+    <TD>Amount due: </TD>
+    <TD><% $money_char.sprintf('%.2f', $row->{paid_amount} * (1-$admin_fee) ) %>
+    </TD>
+  </TR>
+</TABLE>
+<& /elements/footer.html &>
+% } else { # no data
+%   $cgi->param('error' => 'No paid E911 fees found.');
+<& /elements/errorpage.html &>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $money_char = FS::Conf->new->config('money_char') || '$';
+
+my($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
+
+$cgi->param('e911pkgpart') =~ /^(\d+)$/;
+my $pkgpart = $1 or die 'bad e911pkgpart';
+
+$cgi->param('agentnum') =~ /^(\d*)$/;
+my $agentnum = $1;
+
+# This has the potential to become as nightmarish as the old tax report.
+# If we end up doing multiple rows for some reason (date intervals, 
+# package classes, etc.), do NOT simply loop through this and do a 
+# bazillion scalar_sql queries.  Use a properly grouped aggregate query.
+
+my $select = 'SELECT cust_bill_pkg.billpkgnum, cust_bill_pkg.quantity, '.
+'SUM(cust_bill_pay_pkg.amount) AS paid_amount';
+
+my $from = 'FROM cust_pkg
+  JOIN cust_bill_pkg      USING (pkgnum)
+  JOIN cust_bill          USING (invnum)
+  JOIN cust_bill_pay_pkg  USING (billpkgnum)
+  JOIN cust_bill_pay      USING (billpaynum)
+';
+# going by payment application date here, which should be
+# max(invoice date, payment date)
+my $where = "WHERE cust_pkg.pkgpart = $pkgpart
+AND cust_bill_pay._date >= $begin AND cust_bill_pay._date < $end";
+
+if ( $agentnum ) {
+  $from .= '  JOIN cust_main ON (cust_pkg.custnum = cust_main.custnum)';
+  $where .= "\n AND cust_main.agentnum = $agentnum";
+}
+
+my $subquery = "$select $from $where
+GROUP BY cust_bill_pkg.billpkgnum, cust_bill_pkg.quantity";
+# This has one row for each E911 line item that has any payments applied.
+# Fields are the billpkgnum of the item (currently unused), the number of
+# E911 charges, and the total amount paid (always > 0).
+
+# now sum those rows.
+my $sql = "SELECT SUM(quantity) AS quantity, SUM(paid_amount) AS paid_amount
+FROM ($subquery) AS paid_fees"; # no grouping
+
+my $sth = dbh->prepare($sql);
+$sth->execute;
+my $row = $sth->fetchrow_hashref;
+
+my $admin_fee = 0.01; # 1% admin fee, allowed in Texas
+
+$end = '' if $end == 4294967295;
+my $legend = '';
+if ( $agentnum ) {
+  $legend = FS::agent->by_key($agentnum)->agent . ', ';
+}
+if ( $begin and $end ) {
+  $legend .= time2str('%h %o %Y', $begin) . '&mdash;' .
+             time2str('%h %o %Y', $end);
+} elsif ( $begin ) {
+  $legend .= time2str('after %h %o %Y', $begin);
+} elsif ( $end ) {
+  $legend .= time2str('before %h %o %Y', $end);
+} else {
+  $legend .= 'any time';
+}
+$legend = ucfirst($legend);
+</%init>

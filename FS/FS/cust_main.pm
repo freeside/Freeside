@@ -2,11 +2,11 @@ package FS::cust_main;
 
 require 5.006;
 use strict;
-             #FS::cust_main:_Marketgear when they're ready to move to 2.1
 use base qw( FS::cust_main::Packages FS::cust_main::Status
              FS::cust_main::NationalID
              FS::cust_main::Billing FS::cust_main::Billing_Realtime
              FS::cust_main::Billing_Discount
+             FS::cust_main::Billing_ThirdParty
              FS::cust_main::Location
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
              FS::geocode_Mixin FS::Quotable_Mixin
@@ -33,7 +33,7 @@ use Date::Format;
 use File::Temp; #qw( tempfile );
 use Business::CreditCard 0.28;
 use Locale::Country;
-use FS::UID qw( getotaker dbh driver_name );
+use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
@@ -59,6 +59,7 @@ use FS::cust_main_exemption;
 use FS::cust_tax_adjustment;
 use FS::cust_tax_location;
 use FS::agent;
+use FS::agent_currency;
 use FS::cust_main_invoice;
 use FS::cust_tag;
 use FS::prepay_credit;
@@ -391,7 +392,7 @@ sub insert {
 
     $payby = 'PREP' if $amount;
 
-  } elsif ( $self->payby =~ /^(CASH|WEST|MCRD)$/ ) {
+  } elsif ( $self->payby =~ /^(CASH|WEST|MCRD|PPAL)$/ ) {
 
     $payby = $1;
     $self->payby('BILL');
@@ -548,14 +549,6 @@ sub insert {
         $dbh->rollback if $oldAutoCommit;
         return "inserting cust_main_exemption (transaction rolled back): $error";
       }
-    }
-  }
-
-  if ( $self->can('start_copy_skel') ) {
-    my $error = $self->start_copy_skel;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
     }
   }
 
@@ -978,47 +971,6 @@ sub insert_cust_pay {
     'payinfo' => $payinfo,
   };
   $cust_pay->insert;
-
-}
-
-=item reexport
-
-This method is deprecated.  See the I<depend_jobnum> option to the insert and
-order_pkgs methods for a better way to defer provisioning.
-
-Re-schedules all exports by calling the B<reexport> method of all associated
-packages (see L<FS::cust_pkg>).  If there is an error, returns the error;
-otherwise returns false.
-
-=cut
-
-sub reexport {
-  my $self = shift;
-
-  carp "WARNING: FS::cust_main::reexport is deprectated; ".
-       "use the depend_jobnum option to insert or order_pkgs to delay export";
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
-    my $error = $cust_pkg->reexport;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
 
 }
 
@@ -1488,20 +1440,6 @@ sub replace {
     return "You are not permitted to create complimentary accounts.";
   }
 
-  # should be unnecessary--geocode will default to null on new locations
-  #if ( $old->get('geocode') && $old->get('geocode') eq $self->get('geocode')
-  #     && $conf->exists('enable_taxproducts')
-  #   )
-  #{
-  #  my $pre = ($conf->exists('tax-ship_address') && $self->ship_zip)
-  #              ? 'ship_' : '';
-  #  $self->set('geocode', '')
-  #    if $old->get($pre.'zip') ne $self->get($pre.'zip')
-  #    && length($self->get($pre.'zip')) >= 10;
-  #}
-
-  # set_coord/coord_auto stuff is now handled by cust_location
-
   local($ignore_expired_card) = 1
     if $old->payby  =~ /^(CARD|DCRD)$/
     && $self->payby =~ /^(CARD|DCRD)$/
@@ -1532,43 +1470,17 @@ sub replace {
     my $old_loc = $old->$l;
     my $new_loc = $self->$l;
 
-    if ( !$new_loc->locationnum ) {
-      # changing location
-      # If the new location is all empty fields, or if it's identical to 
-      # the old location in all fields, don't replace.
-      my @nonempty = grep { $new_loc->$_ } $self->location_fields;
-      next if !@nonempty;
-      my @unlike = grep { $new_loc->$_ ne $old_loc->$_ } $self->location_fields;
-
-      if ( @unlike or $old_loc->disabled ) {
-        warn "  changed $l fields: ".join(',',@unlike)."\n"
-          if $DEBUG;
-        $new_loc->set(custnum => $self->custnum);
-
-        # insert it--the old location will be disabled later
-        my $error = $new_loc->insert;
-        if ( $error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return $error;
-        }
-
-      } else {
-      # no fields have changed and $old_loc isn't disabled, so don't change it
-        next;
-      }
-
-    }
-    elsif ( $new_loc->custnum ne $self->custnum or $new_loc->prospectnum ) {
+    # find the existing location if there is one
+    $new_loc->set('custnum' => $self->custnum);
+    my $error = $new_loc->find_or_insert;
+    if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "$l belongs to customer ".$new_loc->custnum;
+      return $error;
     }
-    # else the new location belongs to this customer so we're good
-
-    # set the foo_locationnum now that we have one.
     $self->set($l.'num', $new_loc->locationnum);
-
   } #for $l
 
+  # replace the customer record
   my $error = $self->SUPER::replace($old);
 
   if ( $error ) {
@@ -1801,19 +1713,36 @@ sub check {
     || $self->ut_floatn('credit_limit')
     || $self->ut_numbern('billday')
     || $self->ut_numbern('prorate_day')
-    || $self->ut_enum('edit_subject', [ '', 'Y' ] )
-    || $self->ut_enum('calling_list_exempt', [ '', 'Y' ] )
-    || $self->ut_enum('invoice_noemail', [ '', 'Y' ] )
+    || $self->ut_flag('edit_subject')
+    || $self->ut_flag('calling_list_exempt')
+    || $self->ut_flag('invoice_noemail')
+    || $self->ut_flag('message_noemail')
     || $self->ut_enum('locale', [ '', FS::Locales->locales ])
+    || $self->ut_currencyn('currency')
   ;
+
+  my $company = $self->company;
+  $company =~ s/^\s+//; 
+  $company =~ s/\s+$//; 
+  $company =~ s/\s+/ /g;
+  $self->company($company);
 
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
     if $error =~ /^Illegal or empty \(numeric\) refnum: /;
   return $error if $error;
 
-  return "Unknown agent"
-    unless qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
+  my $agent = qsearchs( 'agent', { 'agentnum' => $self->agentnum } )
+    or return "Unknown agent";
+
+  if ( $self->currency ) {
+    my $agent_currency = qsearchs( 'agent_currency', {
+      'agentnum' => $agent->agentnum,
+      'currency' => $self->currency,
+    })
+      or return "Agent ". $agent->agent.
+                " not permitted to offer ".  $self->currency. " invoicing";
+  }
 
   return "Unknown refnum"
     unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
@@ -1861,8 +1790,6 @@ sub check {
     return "$daytime_label, $night_label or $mobile_label is required"
   
   }
-
-  #ship_ fields are gone
 
   #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
   #  or return "Illegal payby: ". $self->payby;
@@ -2039,7 +1966,8 @@ sub check {
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expiration date required"
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD)$/;
+      # shouldn't payinfo_check do this?
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|PPAL)$/;
     $self->paydate('');
   } else {
     my( $m, $y );
@@ -3419,6 +3347,8 @@ New-style, with a hashref of options:
 
                                     'setuptax'   => '', # or 'Y' for tax exempt
 
+                                    'locationnum'=> 1234, # optional
+
                                     #internal taxation
                                     'taxclass'   => 'Tax class',
 
@@ -3450,6 +3380,7 @@ sub charge {
   my $no_auto = '';
   my $cust_pkg_ref = '';
   my ( $bill_now, $invoice_terms ) = ( 0, '' );
+  my $locationnum;
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
@@ -3467,6 +3398,7 @@ sub charge {
     $cust_pkg_ref = exists($_[0]->{cust_pkg_ref}) ? $_[0]->{cust_pkg_ref} : '';
     $bill_now = exists($_[0]->{bill_now}) ? $_[0]->{bill_now} : '';
     $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
+    $locationnum = $_[0]->{locationnum} || $self->ship_locationnum;
   } else {
     $amount     = shift;
     $quantity   = 1;
@@ -3533,6 +3465,7 @@ sub charge {
     'quantity'   => $quantity,
     'start_date' => $start_date,
     'no_auto'    => $no_auto,
+    'locationnum'=> $locationnum,
   } );
 
   $error = $cust_pkg->insert;
@@ -4097,15 +4030,34 @@ sub ship_contact_firstlast {
   $contact->get('first') . ' '. $contact->get('last');
 }
 
-=item country_full
+#XXX this doesn't work in 3.x+
+#=item country_full
+#
+#Returns this customer's full country name
+#
+#=cut
+#
+#sub country_full {
+#  my $self = shift;
+#  code2country($self->country);
+#}
 
-Returns this customer's full country name
+=item county_state_county [ PREFIX ]
+
+Returns a string consisting of just the county, state and country.
 
 =cut
 
-sub country_full {
+sub county_state_country {
   my $self = shift;
-  code2country($self->country);
+  my $locationnum;
+  if ( @_ && $_[0] && $self->has_ship_address ) {
+    $locationnum = $self->ship_locationnum;
+  } else {
+    $locationnum = $self->bill_locationnum;
+  }
+  my $cust_location = qsearchs('cust_location', { locationnum=>$locationnum });
+  $cust_location->county_state_country;
 }
 
 =item geocode DATA_VENDOR
@@ -4184,14 +4136,17 @@ sub cust_statuscolor {
   __PACKAGE__->statuscolors->{$self->cust_status};
 }
 
-=item tickets
+=item tickets [ STATUS ]
 
 Returns an array of hashes representing the customer's RT tickets.
+
+An optional status (or arrayref or hashref of statuses) may be specified.
 
 =cut
 
 sub tickets {
   my $self = shift;
+  my $status = ( @_ && $_[0] ) ? shift : '';
 
   my $num = $conf->config('cust_main-max_tickets') || 10;
   my @tickets = ();
@@ -4199,7 +4154,12 @@ sub tickets {
   if ( $conf->config('ticket_system') ) {
     unless ( $conf->config('ticket_system-custom_priority_field') ) {
 
-      @tickets = @{ FS::TicketSystem->customer_tickets($self->custnum, $num) };
+      @tickets = @{ FS::TicketSystem->customer_tickets( $self->custnum,
+                                                        $num,
+                                                        undef,
+                                                        $status,
+                                                      )
+                  };
 
     } else {
 
@@ -4211,6 +4171,7 @@ sub tickets {
           @{ FS::TicketSystem->customer_tickets( $self->custnum,
                                                  $num - scalar(@tickets),
                                                  $priority,
+                                                 $status,
                                                )
            };
       }
@@ -4928,7 +4889,10 @@ sub queueable_print {
 
 sub print {
   my ($self, $template) = (shift, shift);
-  do_print [ $self->print_ps($template) ];
+  do_print(
+    [ $self->print_ps($template) ],
+    'agentnum' => $self->agentnum,
+  );
 }
 
 #these three subs should just go away once agent stuff is all config overrides
@@ -5033,49 +4997,13 @@ sub process_bill_and_collect {
   $cust_main->bill_and_collect( %$param );
 }
 
-=item process_censustract_update CUSTNUM
-
-Queueable function to update the census tract to the current year (as set in 
-the 'census_year' configuration variable) and retrieve the new tract code.
-
-=cut
-
-sub process_censustract_update { 
-  eval "use FS::Misc::Geo qw(get_censustract)";
-  die $@ if $@;
-  my $custnum = shift;
-  my $cust_main = qsearchs( 'cust_main', { custnum => $custnum })
-      or die "custnum '$custnum' not found!\n";
-
-  my $new_year = $conf->config('census_year') or return;
-  my $new_tract = get_censustract({ $cust_main->location_hash }, $new_year);
-  if ( $new_tract =~ /^\d/ ) {
-    # then it's a tract code
-        $cust_main->set('censustract', $new_tract);
-    $cust_main->set('censusyear',  $new_year);
-
-    local($ignore_expired_card) = 1;
-    local($ignore_illegal_zip) = 1;
-    local($ignore_banned_card) = 1;
-    local($skip_fuzzyfiles) = 1;
-    local($import) = 1; #prevent automatic geocoding (need its own variable?)
-    my $error = $cust_main->replace;
-    die $error if $error;
-  }
-  else {
-    # it's an error message
-    die $new_tract;
-  }
-  return;
-}
-
 #starting to take quite a while for big dbs
+#   (JRNL: journaled so it only happens once per database)
 # - seq scan of h_cust_main (yuck), but not going to index paycvv, so
-# - seq scan of cust_main on signupdate... index signupdate?  will that help?
-# - seq scan of cust_main on paydate... index on substrings?  maybe set an
-#    upgrade journal flag now that we have that, yyyy-m-dd paydates are ancient
-# - seq scan of cust_main on payinfo.. certainly not going toi ndex that...
-#    upgrade journal again?  this is also an ancient problem
+# JRNL seq scan of cust_main on signupdate... index signupdate?  will that help?
+# JRNL seq scan of cust_main on paydate... index on substrings?  maybe set an
+# JRNL seq scan of cust_main on payinfo.. certainly not going toi ndex that...
+# JRNL leading/trailing spaces in first, last, company
 # - otaker upgrade?  journal and call it good?  (double check to make sure
 #    we're not still setting otaker here)
 #
@@ -5130,9 +5058,29 @@ sub _upgrade_data { #class method
   local($ignore_banned_card) = 1;
   local($skip_fuzzyfiles) = 1;
   local($import) = 1; #prevent automatic geocoding (need its own variable?)
-  $class->_upgrade_otaker(%opts);
 
   FS::cust_main::Location->_upgrade_data(%opts);
+
+  unless ( FS::upgrade_journal->is_done('cust_main__trimspaces') ) {
+
+    foreach my $cust_main ( qsearch({
+      'table'     => 'cust_main', 
+      'hashref'   => {},
+      'extra_sql' => 'WHERE '.
+                       join(' OR ',
+                         map "$_ LIKE ' %' OR $_ LIKE '% ' OR $_ LIKE '%  %'",
+                           qw( first last company )
+                       ),
+    }) ) {
+      my $error = $cust_main->replace;
+      die $error if $error;
+    }
+
+    FS::upgrade_journal->set_done('cust_main__trimspaces');
+
+  }
+
+  $class->_upgrade_otaker(%opts);
 
 }
 

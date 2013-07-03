@@ -1,4 +1,4 @@
-<% objToJson(\%hash) %>
+<% encode_json(\%hash) %>\
 <%init>
 
 my $locationnum = $cgi->param('arg');
@@ -24,8 +24,9 @@ my $cust_location = qsearchs({
 
 my %hash = ();
 %hash = map { $_ => $cust_location->$_() }
-            qw( address1 address2 city county state zip country
-                location_kind location_type location_number )
+            ( FS::cust_main->location_fields,
+              qw( location_kind location_type location_number )
+            )
   if $cust_location;
 
 </%init>

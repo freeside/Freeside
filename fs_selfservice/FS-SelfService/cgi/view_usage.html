@@ -1,7 +1,20 @@
-<%= $url = "$selfurl?session=$session_id;action=";
-    @svc_acct  = grep { $_->{svcdb} eq 'svc_acct'  } @svcs;
-    @svc_phone = grep { $_->{svcdb} eq 'svc_phone' } @svcs;
-    @svc_port = grep { $_->{svcdb} eq 'svc_port' } @svcs;
+<%= $url = "$selfurl?action=";
+    %by_pkg_label = (); # not used yet, but I'm sure it will be...
+    @svc_acct = ();
+    @svc_phone = ();
+    @svc_port = ();
+
+    foreach (@svcs) {
+      $by_pkg_label{ $_->{pkg_label} } ||= [];
+      push @{ $by_pkg_label{ $_->{pkg_label} } }, $_;
+      if ( $_->{svcdb} eq 'svc_acct' ) {
+        push @svc_acct, $_;
+      } elsif ( $_->{svcdb} eq 'svc_phone' ) {
+        push @svc_phone, $_;
+      } elsif ( $_->{svcdb} eq 'svc_port' ) {
+        push @svc_port, $_;
+      }
+    }
     '';
 %>
 <%= include('header', 'Account usage') %>
@@ -62,11 +75,22 @@
 <%= scalar(@svc_acct) ? '</TABLE><BR><BR>' : '' %>
 
 <%= if ( @svc_phone ) {
+      %any = ();
+      for my $dir (qw(outbound inbound)) {
+        $any{$dir} = grep { $_->{$dir} } @svc_phone;
+      }
       $OUT.= '<FONT SIZE="4">Call usage</FONT><BR><BR>
-              <TABLE BGCOLOR="#cccccc">
+              <TABLE BGCOLOR="#cccccc" STYLE="display:inline-block">
                 <TR>
-                  <TH ALIGN="left">Number</TH>'; #"Account" ?
-                                                 #what else?
+                  <TH ALIGN="left">Number</TH>';
+      if ( $any{outbound} ) {
+        $OUT .= '
+                  <TH>Dialed</TH>';
+      }
+      if ( $any{inbound} ) {
+        $OUT .= '
+                  <TH>Received</TH>';
+      }
       $OUT .= '</TR>';
     } else {
       $OUT .= '';
@@ -76,13 +100,65 @@
 <%= foreach my $svc_phone ( @svc_phone ) {
       my $link = "${url}view_cdr_details;".
         "svcnum=$svc_phone->{'svcnum'};beginning=0;ending=0";
-  $OUT .= '<TR><TD>';
-    $OUT .= qq!<A HREF="$link">!. $svc_phone->{'label'}. ': '. $svc_phone->{'value'}.'</A>';
-  $OUT .= '</TD></TR>';
+  $OUT .= '<TR><TD>'. $svc_phone->{'label'}. ': '. $svc_phone->{'value'};
+  $OUT .= '</TD>';
+  # usage summary w/ links
+  for my $dir (qw(outbound inbound)) {
+    if ( $dir eq 'inbound' ) {
+      $link .= ';inbound=1';
+    }
+    if ( $svc_phone->{$dir} ) {
+      $OUT .= '<TD ALIGN="right">'.qq!<A HREF="$link">! .
+        sprintf('%d calls (%.0f minutes)',
+          $svc_phone->{$dir}->{'count'},
+          $svc_phone->{$dir}->{'duration'} / 60
+        ) .
+        '</A></TD>';
+    } elsif ( $any{$dir} )  {
+      $OUT .= '<TD></TD>';
+    }
   }
+  $OUT .= '</TR>';
+}
+'';
 %>
 
-<%= scalar(@svc_phone) ? '</TABLE><BR><BR>' : '' %>
+<%= if ( @usage_pools ) {
+  $OUT .= '</TABLE>
+  <TABLE BGCOLOR="#cccccc" STYLE="display: inline-block">
+    <TR><TH COLSPAN=4>Remaining minutes</TH></TR>
+    ';
+  my $any_shared = 0;
+  foreach my $usage (@usage_pools) {
+    # false laziness with the back office side
+    my ($description, $remain, $total, $shared) = @$usage;
+    if ( $shared ) {
+      $any_shared = 1;
+      $description .= '*';
+    }
+    my $ratio = 255 * ($remain/$total);
+    $ratio = 255 if $color > 255;
+    my $color = 
+      sprintf('STYLE="font-weight: bold; color: #%02x%02x00"',
+        255 - $ratio, $ratio);
+    $OUT .=
+    qq!<TR>
+      <TD ALIGN="right">$description</TD>
+      <TD $color ALIGN="right">$remain</TD>
+      <TD $color> / </TD>
+      <TD $color>$total</TD>
+    </TR>!;
+  }
+  if ( $any_shared ) {
+    $OUT .= '<TR STYLE="font-size: 80%; font-style: italic">'.
+            '<TD COLSPAN=4>* shared among all your phone plans</TD></TR>';
+  }
+}
+if ( scalar(@svc_phone) or scalar(@usage_pools) ) {
+  $OUT .= '</TABLE><BR><BR>';
+}
+'';
+%>
 
 <%= if ( @svc_port ) {
       $OUT.= '<FONT SIZE="4">Bandwidth Graphs</FONT><BR><BR>
@@ -120,8 +196,7 @@ foreach my $svc_port ( @svc_port ) {
   $OUT .= '<TR><TD>'. $svc_port->{'label'}. ': '. $svc_port->{'value'}.'</TD>';
   $OUT .= qq! <TD><FORM ACTION="$url" METHOD="GET">
 		<INPUT TYPE="hidden" name="svcnum" value="$svcnum">
-		<INPUT TYPE="hidden" name="action" value="view_port_graph">  
-		<INPUT TYPE="hidden" name="session" value="$session_id">  !;
+		<INPUT TYPE="hidden" name="action" value="view_port_graph"> !; 
   $OUT .= preset_range($default_start,$default_end,'Last Day',$date_format,$svcnum)
 	.' | '.preset_range($default_end-86400*7,$default_end,'Last Week',$date_format,$svcnum)
 	.' | '.preset_range($default_end-86400*30,$default_end,'Last Month',$date_format,$svcnum)

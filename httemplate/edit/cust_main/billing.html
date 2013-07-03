@@ -444,10 +444,11 @@
 
     <TR><TD>&nbsp;</TD></TR>
 
+%   my $curuser = $FS::CurrentUser::CurrentUser;
 %   my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
-
 %   if (    $conf->exists('cust_class-tax_exempt')
 %        || $conf->exists('tax-cust_exempt-groups-require_individual_nums')
+%        || ! $curuser->access_right('Edit customer tax exemptions')
 %      )
 %   {
 
@@ -461,14 +462,16 @@
 
 %   }
 
-%   foreach my $exempt_group ( @exempt_groups ) {
-%     my $cust_main_exemption = $cust_main->tax_exemption($exempt_group);
-%     #escape $exempt_group for NAME etc.
-%     my $checked = ($cust_main_exemption || $cgi->param("tax_$exempt_group"));
-      <TR>
-        <TD>&nbsp;&nbsp;<INPUT TYPE="checkbox" NAME="tax_<% $exempt_group %>" ID="tax_<% $exempt_group %>" VALUE="Y" <% $checked ? 'CHECKED' : '' %> onChange="tax_changed(this)"> Tax Exempt (<% $exempt_group %> taxes)</TD>
-        <TD> - Exemption number <INPUT TYPE="text" NAME="tax_<% $exempt_group %>_num" ID="tax_<% $exempt_group %>_num" VALUE="<% $cgi->param("tax_$exempt_group".'_num') || ( $cust_main_exemption ? $cust_main_exemption->exempt_number : '' ) |h %>" <% $checked ? '' : 'DISABLED' %>></TD>
-      </TR>
+%   if ( $curuser->access_right('Edit customer tax exemptions') ) {
+%     foreach my $exempt_group ( @exempt_groups ) {
+%       my $cust_main_exemption = $cust_main->tax_exemption($exempt_group);
+%       #escape $exempt_group for NAME etc.
+%       my $checked = ($cust_main_exemption || $cgi->param("tax_$exempt_group"));
+        <TR>
+          <TD>&nbsp;&nbsp;<INPUT TYPE="checkbox" NAME="tax_<% $exempt_group %>" ID="tax_<% $exempt_group %>" VALUE="Y" <% $checked ? 'CHECKED' : '' %> onChange="tax_changed(this)"> Tax Exempt (<% $exempt_group %> taxes)</TD>
+          <TD> - Exemption number <INPUT TYPE="text" NAME="tax_<% $exempt_group %>_num" ID="tax_<% $exempt_group %>_num" VALUE="<% $cgi->param("tax_$exempt_group".'_num') || ( $cust_main_exemption ? $cust_main_exemption->exempt_number : '' ) |h %>" <% $checked ? '' : 'DISABLED' %>></TD>
+        </TR>
+%     }
 %   }
 
 % unless ( $conf->exists('emailinvoiceonly') ) {
@@ -518,7 +521,13 @@
         <% $conf->exists('cust_main-require_invoicing_list_email', $agentnum) 
             ? $r : '' %>Email address(es)
       </TD>
-      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>"></TD>
+      <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>">
+      <INPUT TYPE="checkbox" NAME="message_noemail" VALUE="Y" <%
+        ( $cust_main->message_noemail eq 'Y' )
+          ? 'CHECKED'
+          : ''
+        %>> <% emt('Do not send notices') %>
+      </TD>
     </TR>
 % }
 
@@ -605,6 +614,23 @@ function toggle(obj) {
 % } else {
       <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="<% $cust_main->cdr_termination_percentage %>">
 % }
+
+%my @currencies = $conf->config('currencies');
+%if ( scalar(@currencies) ) {
+%  unshift @currencies, ''; #default
+%  my %currency_labels = map { $_ => "$_: ". code2currency($_) } @currencies;
+%  $currency_labels{''} =
+%    'Default: '. code2currency( $conf->config('currency') || 'USD' );
+
+    <& /elements/tr-select.html, 
+         'label'         => emt('Invoicing currency'),
+         'field'         => 'currency',
+         'options'       => \@currencies,
+         'labels'        => \%currency_labels,
+         'curr_value'    => $cust_main->currency,
+    &>
+% }
+
 
 %my @available_locales = $conf->config('available-locales');
 %if ( scalar(@available_locales) ) {

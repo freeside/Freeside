@@ -1,0 +1,51 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Storable qw( thaw nfreeze );
+use MIME::Base64;
+use FS::UID qw( adminsuidsetup );
+use FS::tax_rate;
+
+adminsuidsetup(shift);
+
+#my @namelist = qw( code detail geocode plus4 txmatrix zip );
+my @namelist = qw( code detail plus4 txmatrix zip );
+
+my $cache_dir = '/usr/local/etc/freeside/cache.'. $FS::UID::datasrc. '/';
+my $dir = $cache_dir.'taxdata/cch';
+
+my @list = ();
+foreach my $name ( @namelist ) {
+  my $difffile = "$dir.new/$name.txt";
+  if (1) { # ($update) {
+    #my $error = $job->update_statustext( "0,Comparing to previous $name" );
+    #die $error if $error;
+    warn "processing $dir.new/$name.txt\n"; # if $DEBUG;
+    #my $olddir = $update ? "$dir.1" : "";
+    my $olddir = "$dir.1";
+    $difffile = FS::tax_rate::_perform_cch_diff( $name, "$dir.new", $olddir );
+  }
+  $difffile =~ s/^$cache_dir//;
+  push @list, "${name}file:$difffile";
+}
+
+# perform the import
+local $FS::tax_rate::keep_cch_files = 1;
+my $param = {
+  'format'         => 'cch-update',
+  'uploaded_files' => join( ',', @list ),
+};
+my $error =
+  #_perform_batch_import( $job, encode_base64( nfreeze( $param ) ) );
+  FS::tax_rate::_perform_batch_import( '', encode_base64( nfreeze( $param ) ) );
+
+if ( $error ) {
+  warn "ERROR: $error\n";
+} else {
+  warn "success!\n";
+}
+
+#XXX do this manually
+#rename "$dir.new", "$dir"
+#  or die "cch tax update processed, but can't rename $dir.new: $!\n";
+

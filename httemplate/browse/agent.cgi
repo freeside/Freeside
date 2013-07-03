@@ -38,6 +38,10 @@ full offerings (via their type).<BR><BR>
     <TH CLASS="grid" BGCOLOR="#cccccc">Ticketing</TH>
 % } 
 
+% if ( $conf->config('currencies') ) { 
+    <TH CLASS="grid" BGCOLOR="#cccccc">Currencies</TH>
+% } 
+
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment Gateway Overrides</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Configuration Overrides</FONT></TH>
 </TR>
@@ -361,18 +365,22 @@ Unused
 
           <BR><A HREF="<%$p%>edit/prepay_credit.cgi?agentnum=<% $agent->agentnum %>">Generate cards</A>
         </TD>
+
 % if ( $conf->config('ticket_system') ) { 
-
-
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-% if ( $agent->ticketing_queueid ) { 
-
-              Queue: <% $agent->ticketing_queueid %>: <% $agent->ticketing_queue %><BR>
-% } 
-
+%         if ( $agent->ticketing_queueid ) { 
+              Queue: <% $agent->ticketing_queueid %>:
+                     <% $agent->ticketing_queue %>
+              <BR>
+%         } 
           </TD>
 % } 
 
+% if ( $conf->config('currencies') ) { 
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+            <% join('<BR>', sort keys %{ $agent->agent_currency_hashref } ) %>
+          </TD>
+% } 
 
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
           <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>

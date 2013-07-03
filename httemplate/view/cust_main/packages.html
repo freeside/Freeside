@@ -1,4 +1,33 @@
-% my $s = 0;
+<STYLE TYPE="text/css">
+td.package {
+  vertical-align: top;
+  border-width: 0;
+  border-style: solid;
+  border-color: #bbbbff;
+}
+table.package {
+  border: none;
+  padding: 0;
+  border-spacing: 0;
+  width: 100%;
+}
+table.usage {
+  border: 1px solid black;
+  margin: auto;
+  width: 60%;
+  border-spacing: 0px;
+}
+.shared > * {
+  background-color: #ffffaa;
+}
+.row0 { background-color: #eeeeee; }
+.row1 { background-color: #ffffff; }
+
+</STYLE>
+
+% unless ( $opt{no_links} ) {
+
+%   my $s = 0;
 
 % if ( $curuser->access_right('Qualify service') ) { 
   <% $s++ ? ' | ' : '' %>
@@ -17,21 +46,33 @@
   <& one_time_charge_link.html, $cust_main &>
 % } 
 
+% if ( $curuser->access_right('Bulk move customer services') ) { 
+  <% $s++ ? ' | ' : '' %>
+
+  <& /elements/popup_link-cust_main.html,
+               'label'       => emt('Move services between packages'),
+               'action'      => "${p}edit/bulk-cust_svc-pkgnum.html",
+               'cust_main'   => $cust_main,
+               'actionlabel' => emt('Move services'),
+               'width'       => 968, #763,
+               'height'      => 575,
+  &>
+
+% } 
+
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A> (<% mt('preserves services') |h %>)
+  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>"><% mt('Bulk order and cancel packages') |h %></A>
 % } 
 
 <BR><BR>
+
+% } # unless $opt{no_links}
 
 <TABLE>
   <TR>
     <TD ALIGN="left" VALIGN="top">
 
-% if ( @$packages ) {
-
-<% mt('Current packages') |h %> 
-% } 
 % if ( $cust_main->num_cancelled_pkgs ) {
 %     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
 %          || ( $conf->exists('hidecancelledpackages')
@@ -60,6 +101,9 @@
 % }
 
     </TD>
+
+%   unless ( $opt{no_links} ) {
+
     <TD ALIGN="right">
       <A HREF="<%$p%>search/report_cust_pkg.html?custnum=<% $cust_main->custnum %>"><% mt('Package reports') |h %></A>
 % if ( $curuser->access_right('Qualify service') ) { 
@@ -71,14 +115,18 @@
       <% mt('Usage reports:') |h %> 
         <A HREF="<%$p%>search/report_cdr.html?custnum=<% $cust_main->custnum %>"><% mt('CDRs') |h %></A>
     </TD>
+
+%   } # unless $opt{no_links}
+
   </TR>
 
   <TR>
     <TD COLSPAN=2>
-% if ( $conf->exists('cust_pkg-group_by_location') and $show_location ) {
+% if ( $conf->exists('cust_pkg-group_by_location') ) {
 <& locations.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
+    %opt,
  &>
 % }
 % else {
@@ -87,7 +135,7 @@
 <& packages/section.html,
     'cust_main'     => $cust_main,
     'packages'      => $packages,
-    'show_location' => $show_location,
+    %opt,
  &>
 </TABLE>
 % }
@@ -113,10 +161,6 @@ my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my( $packages, $num_old_packages ) = get_packages($cust_main, $conf);
-
-
-my $show_location = $conf->exists('cust_pkg-always_show_location') 
-                        || (grep $_->locationnum, @$packages); # ? '1' : '0';
 
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
 #subroutines
@@ -178,6 +222,10 @@ sub get_packages {
   }
 
   $num_old_packages -= scalar(@packages);
+  
+  # don't include supplemental packages in this list; they'll be found from
+  # their main packages
+  @packages = grep !$_->main_pkgnum, @packages;
 
   ( \@packages, $num_old_packages );
 }

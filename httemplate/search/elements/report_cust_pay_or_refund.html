@@ -30,43 +30,34 @@ Examples:
   <TR>
     <TD ALIGN="right"><% ucfirst(PL($name_singular)) %> of type: </TD>
     <TD>
-      <SELECT NAME="payby" onChange="payby_changed(this)">
-        <OPTION VALUE=""><% mt('all') |h %></OPTION>
-        <OPTION VALUE="CARD"><% mt('credit card (all)') |h %></OPTION>
-        <OPTION VALUE="CARD-VisaMC"><% mt('credit card (Visa/MasterCard)') |h %></OPTION>
-        <OPTION VALUE="CARD-Amex"><% mt('credit card (American Express)') |h %></OPTION>
-        <OPTION VALUE="CARD-Discover"><% mt('credit card (Discover)') |h %></OPTION>
-        <OPTION VALUE="CARD-Maestro"><% mt('credit card (Maestro/Switch/Solo)') |h %></OPTION>
-        <OPTION VALUE="CHEK"><% mt('electronic check / ACH') |h %></OPTION>
-        <OPTION VALUE="BILL"><% mt('check') |h %></OPTION>
-        <OPTION VALUE="PREP"><% mt('prepaid card') |h %></OPTION>
-        <OPTION VALUE="CASH"><% mt('cash') |h %></OPTION>
-        <OPTION VALUE="WEST"><% mt('Western Union') |h %></OPTION>
-        <OPTION VALUE="MCRD"><% mt('manual credit card') |h %></OPTION>
+      <SELECT NAME="payby" SIZE=10 MULTIPLE>
+%#        <OPTION VALUE=""><% mt('all') |h %></OPTION>
+%#        <OPTION VALUE="CARD"><% mt('credit card (all)') |h %></OPTION>
+        <OPTION VALUE="CARD-VisaMC" SELECTED><% mt('credit card (Visa/MasterCard)') |h %></OPTION>
+        <OPTION VALUE="CARD-Amex" SELECTED><% mt('credit card (American Express)') |h %></OPTION>
+        <OPTION VALUE="CARD-Discover" SELECTED><% mt('credit card (Discover)') |h %></OPTION>
+        <OPTION VALUE="CARD-Maestro" SELECTED><% mt('credit card (Maestro/Switch/Solo)') |h %></OPTION>
+        <OPTION VALUE="CARD-Tokenized" SELECTED><% mt('credit card (Tokenized)') |h %></OPTION>
+        <OPTION VALUE="CHEK" SELECTED><% mt('electronic check / ACH') |h %></OPTION>
+        <OPTION VALUE="BILL" SELECTED><% mt('check') |h %></OPTION>
+        <OPTION VALUE="PREP" SELECTED><% mt('prepaid card') |h %></OPTION>
+        <OPTION VALUE="CASH" SELECTED><% mt('cash') |h %></OPTION>
+        <OPTION VALUE="WEST" SELECTED><% mt('Western Union') |h %></OPTION>
+        <OPTION VALUE="MCRD" SELECTED><% mt('manual credit card') |h %></OPTION>
       </SELECT>
     </TD>
   </TR>
 
-  <SCRIPT TYPE="text/javascript">
-  
-    function payby_changed(what) {
-      if ( what.options[what.selectedIndex].value == 'BILL' ) {
-	document.getElementById('checkno_caption').style.color = '#000000';
-        what.form.payinfo.disabled = false;
-	what.form.payinfo.style.backgroundColor = '#ffffff';
-      } else {
-	document.getElementById('checkno_caption').style.color = '#bbbbbb';
-        what.form.payinfo.disabled = true;
-	what.form.payinfo.style.backgroundColor = '#dddddd';
-      }
-    }
-
-  </SCRIPT>
-
   <TR>
-    <TD ALIGN="right"><FONT ID="checkno_caption" COLOR="#bbbbbb"><% mt('Check #:') |h %> </FONT></TD>
+    <TD ALIGN="right"><% mt('Check #:') |h %> </TD>
     <TD>
-      <INPUT TYPE="text" NAME="payinfo" DISABLED STYLE="background-color: #dddddd">
+      <INPUT TYPE="text" ID="payinfo" NAME="payinfo">
+    </TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><% mt('Transaction #:') |h %> </TD>
+    <TD>
+      <INPUT TYPE="text" ID="ccpay" NAME="ccpay">
     </TD>
   </TR>
 
@@ -83,7 +74,8 @@ Examples:
     <TD>
       <TABLE>
         <& /elements/tr-input-beginning_ending.html,
-                      layout   => 'horiz',
+                      layout     => 'horiz',
+                      input_time => $conf->exists('report-cust_pay-select_time'),
         &>
       </TABLE>
     </TD>
@@ -132,6 +124,8 @@ my $name_singular = $opt{'name_singular'};
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
 
 my $void = $cgi->param('void') ? 1 : 0;
 my $unapplied = $cgi->param('unapplied') ? 1 : 0;

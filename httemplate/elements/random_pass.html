@@ -1,0 +1,17 @@
+<INPUT TYPE="button" VALUE="<% emt($label) %>" onclick="randomPass()">
+<SCRIPT TYPE="text/javascript">
+function randomPass() {
+  var i=0;
+  var pw_set='<% join('', 'a'..'z', 'A'..'Z', '0'..'9' ) %>';
+  var pass='';
+  while(i < 8) {
+    i++;
+    pass += pw_set.charAt(Math.floor(Math.random() * pw_set.length));
+  }
+  document.getElementById('<% $id %>').value = pass;
+}
+</SCRIPT>
+<%init>
+my $id = shift;
+my $label = shift || 'Generate';
+</%init>

@@ -8,6 +8,7 @@
                 'links'        => \%link,
                 'agentnum'     => $agentnum,
                 'refnum'       => $refnum,
+                'cust_classnum'=> \@classnums,
                 'nototal'      => scalar($cgi->param('12mo')),
              )
 %>
@@ -24,6 +25,11 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   die "agentnum $agentnum not found!" unless $agent;
 }
 my $agentname = $agent ? $agent->agent.' ' : '';
+
+my @classnums;
+if ( $cgi->param('cust_classnum') ) {
+  @classnums = grep /^\d+$/, $cgi->param('cust_classnum');
+}
 
 my( $refnum, $part_referral ) = ('', '');
 if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
@@ -93,6 +99,7 @@ $color{$_.'_12mo'} = $color{$_}
   foreach keys %color;
 
 my $ar = "agentnum=$agentnum;refnum=$refnum";
+$ar .= ";cust_classnum=$_" foreach @classnums;
 
 my %link = (
   'invoiced'   => "${p}search/cust_bill.html?$ar;",

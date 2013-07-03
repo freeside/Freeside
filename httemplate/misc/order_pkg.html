@@ -93,6 +93,12 @@
   &>
 % }
 
+<& /elements/tr-select-contact.html,
+             'cgi'           => $cgi,
+             'cust_main'     => $cust_main,
+             'prospect_main' => $prospect_main,
+&>
+
 % if ( $cgi->param('lock_locationnum') ) {
 
     <INPUT TYPE  = "hidden"
@@ -128,10 +134,9 @@
 % unless ( $cgi->param('lock_locationnum') ) {
 
   <& /elements/standardize_locations.html,
-                'form'       => "OrderPkgForm",
-                'onlyship'   => 1,
-                'no_company' => 1,
-                'callback'   => 'document.OrderPkgForm.submit();',
+                'form'        => "OrderPkgForm",
+                'callback'    => 'document.OrderPkgForm.submit();',
+                'with_census' => 1,
   &>
 
 % }

@@ -1,4 +1,7 @@
-<% include( 'elements/search.html',
+% if ( $cgi->param('_type') =~ /^xml$/ ) {
+<zip_code>
+% }
+<& elements/search.html,
                   'html_init'         => $html_init,
                   'name'              => 'zip code',
                   'query'             => $sql_query,
@@ -12,8 +15,11 @@
                   'url'               => $opt{url} || '',
                   'really_disable_download'  => 1,
 
-              )
-%>
+              
+&>
+% if ( $cgi->param('_type') =~ /^xml$/ ) {
+</zip_code>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
@@ -32,8 +38,8 @@ for ( qw(agentnum magic state) ) {
 }
 $search_hash{'country'} = 'US';
 $search_hash{'classnum'} = [ $cgi->param('classnum') ];
-$search_hash{report_option} = $cgi->param('partv_report_option')
-  if $cgi->param('partv_report_option');
+$search_hash{report_option} = $cgi->param('part5_report_option')
+  if $cgi->param('part5_report_option');
 
 my $sql_query = FS::cust_pkg->search( { %search_hash,
                                         'fcc_line'    => 1,

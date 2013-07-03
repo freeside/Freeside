@@ -108,7 +108,7 @@ use Date::Format;
 use MIME::Entity;
 use Email::Sender::Simple qw(sendmail);
 use Email::Sender::Transport::SMTP;
-use Email::Sender::Transport::SMTP::TLS;
+use Email::Sender::Transport::SMTP::TLS 0.11;
 use FS::UID;
 
 FS::UID->install_callback( sub {
@@ -171,8 +171,15 @@ sub send_email {
 
   }
 
+  my $from = $options{from};
+  $from =~ s/^\s*//; $from =~ s/\s*$//;
+  if ( $from =~ /^(.*)\s*<(.*@.*)>$/ ) {
+    # a common idiom
+    $from = $2;
+  }
+
   my $domain;
-  if ( $options{'from'} =~ /\@([\w\.\-]+)/ ) {
+  if ( $from =~ /\@([\w\.\-]+)/ ) {
     $domain = $1;
   } else {
     warn 'no domain found in invoice from address '. $options{'from'}.
@@ -247,7 +254,7 @@ sub send_email {
   push @to, $options{bcc} if defined($options{bcc});
   local $@; # just in case
   eval { sendmail($message, { transport => $transport,
-                              from      => $options{from},
+                              from      => $from,
                               to        => \@to }) };
 
   my $error = '';
@@ -274,6 +281,7 @@ sub send_email {
     });
     $cust_msg->insert; # ignore errors
   }
+  $error;
    
 }
 
@@ -409,6 +417,20 @@ will die on any error and can be used in the job queue.
 sub process_send_email {
   my %message = @_;
   my $error = send_email(generate_email(%message));
+  die "$error\n" if $error;
+  '';
+}
+
+=item process_send_generated_email OPTION => VALUE ...
+
+Takes arguments as per send_email() and sends the message.  This 
+will die on any error and can be used in the job queue.
+
+=cut
+
+sub process_send_generated_email {
+  my %args = @_;
+  my $error = send_email(%args);
   die "$error\n" if $error;
   '';
 }
@@ -698,7 +720,8 @@ sub generate_ps {
   open(POSTSCRIPT, "<$file.ps")
     or die "can't open $file.ps: $! (error in LaTeX template?)\n";
 
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex")
+    unless $FS::CurrentUser::CurrentUser->option('save_tmp_typesetting');
 
   my $ps = '';
 
@@ -756,7 +779,8 @@ sub generate_pdf {
   open(PDF, "<$file.pdf")
     or die "can't open $file.pdf: $! (error in LaTeX template?)\n";
 
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex")
+    unless $FS::CurrentUser::CurrentUser->option('save_tmp_typesetting');
 
   my $pdf = '';
   while (<PDF>) {
@@ -799,16 +823,32 @@ sub _pslatex {
 
 }
 
-=item do_print ARRAYREF
+=item do_print ARRAYREF [, OPTION => VALUE ... ]
 
 Sends the lines in ARRAYREF to the printer.
+
+Options available are:
+
+=over 4
+
+=item agentnum
+
+Uses this agent's 'lpr' configuration setting override instead of the global
+value.
+
+=item lpr
+
+Uses this command instead of the configured lpr command (overrides both the
+global value and agentnum).
 
 =cut
 
 sub do_print {
-  my $data = shift;
+  my( $data, %opt ) = @_;
 
-  my $lpr = $conf->config('lpr');
+  my $lpr = ( exists($opt{'lpr'}) && $opt{'lpr'} )
+              ? $opt{'lpr'}
+              : $conf->config('lpr', $opt{'agentnum'} );
 
   my $outerr = '';
   run3 $lpr, $data, \$outerr, \$outerr;

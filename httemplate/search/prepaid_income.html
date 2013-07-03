@@ -129,6 +129,16 @@ if ( $cgi->param('status') =~ /^([a-z]+)$/ ) {
   push @where, FS::cust_main->cust_status_sql . " = '$status'";
 }
 
+# cust_classnum (false laziness w/ elements/cust_main_dayranges.html, elements/cust_pay_or_refund.html, cust_bill_pay.html, cust_bill_pkg.html, cust_bill_pkg_referral.html, unearned_detail.html, cust_credit.html, cust_credit_refund.html, cust_main::Search::search_sql)
+if ( grep { $_ eq 'cust_classnum' } $cgi->param ) {
+  my @classnums = grep /^\d*$/, $cgi->param('cust_classnum');
+  $link .= ";cust_classnum=$_" foreach @classnums;
+  push @where, 'COALESCE( cust_main.classnum, 0) IN ( '.
+                   join(',', map { $_ || '0' } @classnums ).
+               ' )'
+    if @classnums;
+}
+
 my %total = ();
 my %total_legacy = ();
 foreach my $agentnum (@agentnums) {

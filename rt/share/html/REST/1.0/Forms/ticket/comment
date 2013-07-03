@@ -2,7 +2,7 @@
 %#
 %# COPYRIGHT:
 %#
-%# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+%# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 %#                                          <sales@bestpractical.com>
 %#
 %# (Except where explicitly superseded by other copyright notices)
@@ -56,6 +56,7 @@ use MIME::Entity;
 use LWP::MediaTypes;
 use RT::Interface::REST;
 use File::Temp qw(tempfile);
+my @tmp_files;
 
 $RT::Logger->debug("Got ticket id=$id for comment");
 $RT::Logger->debug("Got args @{[keys(%changes)]}.");
@@ -89,7 +90,10 @@ if (!$changes{Text} && @atts == 0) {
 }
 
 my $cgi = $m->cgi_object;
-my $ent = MIME::Entity->build(Type => "multipart/mixed");
+my $ent = MIME::Entity->build(
+    Type => "multipart/mixed",
+    'X-RT-Interface' => 'REST',
+);
 $ent->attach(Data => $changes{Text}) if $changes{Text};
 
 my $i = 1;
@@ -103,6 +107,7 @@ foreach my $att (@atts) {
         my $buf;
         my ($w, $tmp) = tempfile();
         my $info = $cgi->uploadInfo($fh);
+        push @tmp_files, $tmp;
 
         while (sysread($fh, $buf, 8192)) {
             syswrite($w, $buf);
@@ -148,5 +153,7 @@ if ($changes{Status}) {
 }
 
 OUTPUT:
+
+unlink @tmp_files;
 return [ $c, $o, $k, $e ];
 </%INIT>

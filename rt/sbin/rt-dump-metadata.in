@@ -3,7 +3,7 @@
 #
 # COPYRIGHT:
 #
-# This software is Copyright (c) 1996-2012 Best Practical Solutions, LLC
+# This software is Copyright (c) 1996-2013 Best Practical Solutions, LLC
 #                                          <sales@bestpractical.com>
 #
 # (Except where explicitly superseded by other copyright notices)
@@ -47,6 +47,7 @@
 #
 # END BPS TAGGED BLOCK }}}
 use strict;
+use warnings;
 
 # As we specify that XML is UTF-8 and we output it to STDOUT, we must be sure
 # it is UTF-8 so further XMLin will not break
