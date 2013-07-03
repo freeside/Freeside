@@ -102,7 +102,7 @@ sub calc_recur {
 
   my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
 
-  sprintf('%.2f', $br - $discount);
+  sprintf('%.2f', ($cust_pkg->quantity || 1) * ($br - $discount) );
 }
 
 1;
