@@ -81,9 +81,12 @@ sub base_recur {
 sub can_discount { 0; } #can't discount yet (percentage would work, but amount?)
 sub calc_recur {
   my $self = shift;
+
   #my($cust_pkg, $sdate, $details, $param ) = @_;
-  #$self->calc_recur_Common($cust_pkg,$sdate,$details,$param);
-  $self->calc_recur_Common(@_);
+  my $cust_pkg = $_[0];
+
+  ($cust_pkg->quantity || 1) * $self->calc_recur_Common(@_); #($cust_pkg,$sdate,$details,$param);
+
 }
 
 sub is_free { 0; }
