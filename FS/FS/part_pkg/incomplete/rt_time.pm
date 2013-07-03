@@ -44,7 +44,7 @@ sub calc_recur {
   my $charges = 0;
 
   $charges += $self->calc_usage(@_);
-  $charges += $self->calc_recur_Common(@_);
+  $charges += ($cust_pkg->quantity || 1) * $self->calc_recur_Common(@_);
 
   $charges;
 
