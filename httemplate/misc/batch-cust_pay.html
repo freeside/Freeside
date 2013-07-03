@@ -5,6 +5,15 @@
 
 <& /elements/error.html &>
 
+<STYLE TYPE="text/css">
+.select_invnum {
+  text-align: right;
+  width: 220px;
+}
+.select_invnum * {
+  font-family: monospace;
+}
+</STYLE>
 <SCRIPT TYPE="text/javascript">
 function warnUnload() {
   if(document.getElementById("OneTrueTable").rows.length > 3 &&
@@ -185,21 +194,23 @@ function choose_app_invnum() {
 function focus_app_invnum() {
 % # invoice numbers just display as invoice numbers
   var rownum = this.getAttribute('rownum');
-  var add_opt = function(obj, value) {
+  var add_opt = function(obj, value, label) {
     var o = document.createElement('OPTION');
-    o.text = value;
+    o.text = label;
     o.value = value;
     obj.add(o);
   }
   this.options.length = 0;
   var this_invoice = this.curr_invoice;
   if ( this_invoice ) {
-    add_opt(this, this_invoice.invnum);
+    add_opt(this, this_invoice.invnum, this_invoice.label);
   } else {
-    add_opt(this, '');
+    add_opt(this, '', '');
   }
   for ( var x in invoices_for_row[rownum] ) {
-    add_opt(this, invoices_for_row[rownum][x].invnum);
+    add_opt(this,
+            invoices_for_row[rownum][x].invnum,
+            invoices_for_row[rownum][x].label);
   }
 }
 
@@ -236,8 +247,7 @@ function create_application_row(rownum, appnum) {
   select_invnum.setAttribute('appnum', appnum);
   select_invnum.setAttribute('id', 'invnum'+rownum+'.'+appnum);
   select_invnum.setAttribute('name', 'invnum'+rownum+'.'+appnum);
-  select_invnum.style.textAlign = 'right';
-  select_invnum.style.width = '50px';
+  select_invnum.className = 'select_invnum';
   select_invnum.onchange = choose_app_invnum;
   select_invnum.onfocus  = focus_app_invnum;
   
