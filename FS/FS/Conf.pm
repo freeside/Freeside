@@ -4183,6 +4183,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'part_pkg-delay_start',
+    'section'     => '',
+    'description' => 'Enabled "delayed start" option for packages.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'mcp_svcpart',
     'section'     => '',
     'description' => 'Master Control Program svcpart.  Leave this blank.',

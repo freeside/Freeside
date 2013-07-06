@@ -4,9 +4,15 @@ function pkg_changed () {
 
   if ( form.pkgpart.selectedIndex > 0 ) {
 
+    var opt = form.pkgpart.options[form.pkgpart.selectedIndex];
+    var date_button = document.getElementById('start_date_button');
+    var date_button_disabled = document.getElementById('start_date_button_disabled');
+    var date_text = document.getElementById('start_date_text');
+
+
     form.submitButton.disabled = false;
     if ( discountnum ) {
-      if ( form.pkgpart.options[form.pkgpart.selectedIndex].getAttribute('data-can_discount') == 1 ) {
+      if ( opt.getAttribute('data-can_discount') == 1 ) {
         form.discountnum.disabled = false;
         discountnum_changed(form.discountnum);
       } else {
@@ -14,18 +20,20 @@ function pkg_changed () {
         discountnum_changed(form.discountnum);
       }
     }
-
-    if ( form.pkgpart.options[form.pkgpart.selectedIndex].getAttribute('data-can_start_date') == 1 ) {
-      form.start_date_text.disabled = false;
-      form.start_date.style.backgroundColor = '#ffffff';
-      form.start_date_button.style.display = '';
-      form.start_date_button_disabled.style.display = 'none';
+    
+    form.start_date_text.value = opt.getAttribute('data-start_date');
+    if ( opt.getAttribute('data-can_start_date') == 1 ) {
+      date_text.style.backgroundColor = '#ffffff';
+      date_text.disabled = false;
+      date_button.style.display = '';
+      date_button_disabled.style.display = 'none';
       form.invoice_terms.disabled = true;
     } else {
-      form.start_date_text.disabled = true;
-      form.start_date.style.backgroundColor = '#dddddd';
-      form.start_date_button.style.display = 'none';
-      form.start_date_button_disabled.style.display = '';
+      date_text.style.backgroundColor = '#dddddd';
+      date_text.disabled = true;
+      date_button.style.display = 'none';
+      date_button_disabled.style.display = '';
+      form.invoice_terms.disabled = false;
     }
 
   } else {

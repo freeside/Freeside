@@ -38,9 +38,12 @@
     <& /elements/input-date-field.html,{
                 'name'      => 'start_date',
                 'format'    => $date_format,
-                'value'     => $start_date,
+                'value'     => '',
                 'noinit'    => 1,
               } &>
+    <IMG SRC   = "<%$fsurl%>images/calendar-disabled.png"
+         ID    = "start_date_button_disabled"
+         STYLE = "display:none">
     <FONT SIZE=-1>(<% mt('leave blank to start immediately') |h %>)</FONT>
   </TD>
 </TR>
@@ -164,11 +167,6 @@ if ( $cgi->param('lock_pkgpart') ) {
 my $pkgpart = $part_pkg ? $part_pkg->pkgpart : scalar($cgi->param('pkgpart'));
 
 my $format = $date_format. ' %T %z (%Z)'; #false laziness w/REAL_cust_pkg.cgi?
-my $start_date = '';
-if( ! $conf->exists('order_pkg-no_start_date') ) {
-  $start_date = $cust_main->next_bill_date;
-  $start_date = $start_date ? time2str($format, $start_date) : '';
-}
 
 my $svcpart = scalar($cgi->param('svcpart'));
 

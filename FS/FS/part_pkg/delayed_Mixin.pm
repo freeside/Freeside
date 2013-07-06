@@ -2,6 +2,7 @@ package FS::part_pkg::delayed_Mixin;
 
 use strict;
 use vars qw(%info);
+use Time::Local qw(timelocal);
 use NEXT;
 
 %info = (
@@ -51,5 +52,16 @@ sub calc_remain {
 }
 
 sub can_start_date { ! shift->option('delay_setup', 1) }
+
+sub default_start_date {
+  my $self = shift;
+  if ( $self->option('delay_setup') and $self->option('free_days') ) {
+    my $delay = $self->option('free_days');
+
+    my ($mday, $mon, $year) = (localtime(time))[3,4,5];
+    return timelocal(0,0,0,$mday,$mon,$year) + 86400 * $self->option('free_days');
+  }
+  return $self->NEXT::default_start_date(@_);
+}
 
 1;

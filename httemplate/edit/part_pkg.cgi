@@ -54,6 +54,7 @@
                             'report_option'    => 'Report classes',
                             'fcc_ds0s'         => 'Voice-grade equivalents',
                             'fcc_voip_class'   => 'Category',
+                            'delay_start'      => 'Default delay (days)',
                           },
 
               'fields' => [
@@ -170,6 +171,16 @@
                               { field=>'setup_cost', type=>'money', },
                               { field=>'recur_cost', type=>'money', },
 
+                              ( $conf->exists('part_pkg-delay_start')
+                                ? ( { type  => 'tablebreak-tr-title',
+                                      value => 'Delayed start',
+                                    },
+                                    { field => 'delay_start',
+                                      type => 'text', size => 6 },
+                                  )
+                                : ()
+                              ),
+
                             { type => 'columnnext' },
 
                               { field    => 'agent_type',
@@ -200,7 +211,6 @@
                                   )
                                  : ()
                               ),
-
 
                             { type => 'columnend' },
 
