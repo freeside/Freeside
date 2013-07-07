@@ -5,8 +5,9 @@ my( $custnum, $prospectnum, $classnum ) = $cgi->param('arg');
 
 
 my $agent;
+my $cust_main;
 if ( $custnum ) {
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or die 'unknown custnum';
   $agent = $cust_main->agent;
 } else {
@@ -31,12 +32,18 @@ my @part_pkg = qsearch({
   'order_by'  => 'ORDER BY pkg',
 });
 
-my @return = map  { warn $_->can_start_date;
+my $date_format = FS::Conf->new->config('date_format') || '%m/%d/%Y';
+
+my @return = map  {
+                    my $start_date = $_->default_start_date($cust_main);
+                    $start_date = time2str($date_format, $start_date)
+                      if $start_date;
                     ( $_->pkgpart,
                       $_->pkg_comment,
                       $_->can_discount,
                       $_->can_start_date,
-                    );
+                      $start_date,
+                    )
                   }
                   #sort { $a->pkg_comment cmp $b->pkg_comment }
                   @part_pkg;
