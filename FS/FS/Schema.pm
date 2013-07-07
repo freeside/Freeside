@@ -2050,6 +2050,7 @@ sub tables_hashref {
         'setup_show_zero',  'char', 'NULL',  1, '', '',
         'successor',     'int',     'NULL', '', '', '',
         'family_pkgpart','int',     'NULL', '', '', '',
+        'delay_start',   'int',     'NULL', '', '', '',
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],
