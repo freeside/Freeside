@@ -11,7 +11,7 @@
       var optionName = new Option(text, value, false, false);
       optionName.setAttribute('data-can_discount',   can_discount);
       optionName.setAttribute('data-can_start_date', can_start_date);
-      optionName.setAttribute('data-start_date',     start_date);
+      optionName.setAttribute('data-start_date',     start_date || '');
       var length = what.length;
       what.options[length] = optionName;
     }
