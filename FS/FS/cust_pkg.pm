@@ -2485,11 +2485,13 @@ sub _sort_cust_svc {
   my $sort =
     sub ($$) { my ($a, $b) = @_; $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] };
 
+  my %pkg_svc = map { $_->svcpart => $_ }
+                qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+
   map  { $_->[0] }
   sort $sort
   map {
-        my $pkg_svc = qsearchs( 'pkg_svc', { 'pkgpart' => $self->pkgpart,
-                                             'svcpart' => $_->svcpart     } );
+        my $pkg_svc = $pkg_svc{ $_->svcpart } || '';
         [ $_,
           $pkg_svc ? $pkg_svc->primary_svc : '',
           $pkg_svc ? $pkg_svc->quantity : 0,
