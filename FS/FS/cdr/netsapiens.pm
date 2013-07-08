@@ -15,11 +15,11 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
   'disabled'      => 0,     #0 default, set to 1 to disable
 
   'import_fields' => [
-   
+
     sub { my ($cdr, $direction) = @_;
-          if ($direction =~ /^o/) { # 'origination'
+          if ($direction =~ /^t/) { # 'origination'
             # leave src and dst as they are
-          } elsif ($direction =~ /^t/) {
+          } elsif ($direction =~ /^o/) {
             my ($local, $remote) = ($cdr->src, $cdr->dst);
             $cdr->set('dst', $local);
             $cdr->set('src', $remote);
@@ -28,7 +28,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     '', #Domain
     '', #user
     'src', #local party (src/dst, based on direction)
-    _cdr_date_parser_maker('startddate'),
+    _cdr_date_parser_maker('startdate'),
     _cdr_date_parser_maker('answerdate'),
     sub { my ($cdr, $duration) = @_;
           $cdr->set('duration', $duration);
@@ -37,14 +37,15 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
             if $cdr->answerdate;
         },
     'dst', #remote party
-    '', #dialed number
+    sub { my ($cdr, $dialednum) = @_;
+        $cdr->set('dst',$dialednum) if $dialednum =~ /^(\+?1)?8(8|([02-7])\3)/;
+        }, #dialed number
     'uniqueid', #CallID (timestamp + '-' +  32 char hex string)
-    'src_ip_addr',
-    'dst_ip_addr',
+    '',
+    '',
     'disposition',
   ],
 
 );
 
 1;
-
