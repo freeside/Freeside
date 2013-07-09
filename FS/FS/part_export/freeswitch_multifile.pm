@@ -26,6 +26,8 @@ tie my %options, 'Tie::IxHash',
   <user id="<% $phonenum %>">
     <params>
       <param name="password" value="<% $sip_password %>"/>
+      <param name="nibble_account" value="<% $phonenum %>"/>
+      <param name="nibble_rate" value="<% $nibble_rate %>"/>
     </params>
   </user>
 </domain>
