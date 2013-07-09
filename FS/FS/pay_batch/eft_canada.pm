@@ -58,7 +58,13 @@ my %holiday = (
 
   init => sub {
     my $conf = shift;
-    my @config = $conf->config('batchconfig-eft_canada'); 
+    my $agentnum = shift;
+    my @config;
+    if ( $conf->exists('batch-spoolagent') ) {
+      @config = $conf->config('batchconfig-eft_canada', $agentnum);
+    } else {
+      @config = $conf->config('batchconfig-eft_canada');
+    }
     # SFTP login, password, trans code, delay time
     my $process_delay;
     ($trans_code, $process_delay) = @config[2,3];
