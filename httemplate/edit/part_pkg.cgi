@@ -12,7 +12,8 @@
                                          $javascript,
               'html_bottom'           => $html_bottom,
               'body_etc'              =>
-                'onLoad="agent_changed(document.edit_topform.agentnum)"',
+                'onLoad="agent_changed(document.edit_topform.agentnum);
+                         hide_supp_pkgs()"',
 
               'begin_callback'        => $begin_callback,
               'end_callback'          => $end_callback,
@@ -54,7 +55,7 @@
                             'discountnum'      => 'Offer discounts for longer terms',
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
                             'svc_dst_pkgpart'  => 'Include services of package',
-                            'supp_dst_pkgpart' => 'Include complete package',
+                            'supp_dst_pkgpart' => 'When ordering package, also order',
                             'report_option'    => 'Report classes',
                             'fcc_ds0s'         => 'Voice-grade equivalents',
                             'fcc_voip_class'   => 'Category',
@@ -252,19 +253,6 @@
                             },
 
                             { 'type'    => 'tablebreak-tr-title',
-                              'value'   => 'Supplemental packages',
-                              'colspan' => '4',
-                            },
-                            { 'field'       => 'supp_dst_pkgpart',
-                              'type'        => 'select-part_pkg',
-                              'm2_label'    => 'Include complete package',
-                              'm2m_method'  => 'supp_part_pkg_link',
-                              'm2m_dstcol'  => 'dst_pkgpart',
-                              'm2_error_callback' =>
-                                &{$m2_error_callback_maker}('supp'),
-                            },
-
-                            { 'type'    => 'tablebreak-tr-title',
                               'value'   => 'Pricing add-ons',
                               'colspan' => 4,
                             },
@@ -305,6 +293,22 @@
                               'm2m_dstcol' => 'dst_pkgpart',
                               'm2_error_callback' =>
                                 &{$m2_error_callback_maker}('svc'),
+                            },
+
+                            { 'type'    => 'tablebreak-tr-title',
+                              'value'   => 'Supplemental packages',
+                              'colspan' => '4',
+                              'include_opt_callback' => sub {
+                                 'id' => 'show_supp_pkgs',
+                              },
+                            },
+                            { 'field'       => 'supp_dst_pkgpart',
+                              'type'        => 'select-part_pkg',
+                              'm2_label'    => 'When ordering package, also order',
+                              'm2m_method'  => 'supp_part_pkg_link',
+                              'm2m_dstcol'  => 'dst_pkgpart',
+                              'm2_error_callback' =>
+                                &{$m2_error_callback_maker}('supp'),
                             },
 
                             { type  => 'tablebreak-tr-title',
@@ -737,6 +741,34 @@ my $javascript = <<'END';
         table.style.visibility = 'hidden';
       }
 
+    }
+
+    // some magic to make "supplemental packages" less obvious
+    var supp_pkg_rows = [];
+    function show_supp_pkgs_click() {
+      supp_pkg_rows[0].style.display = '';
+      this.onclick = '';
+      this.style.backgroundColor = '';
+      this.style.border = '';
+      this.style.padding = '';
+    }
+
+    function hide_supp_pkgs() {
+      var all_selects = document.getElementsByTagName('select');
+      for (var i=0; i < all_selects.length; i++) {
+        if ( all_selects[i].id.match(/^supp_dst_pkgpart/) ) {
+          supp_pkg_rows.push( all_selects[i].parentNode.parentNode );
+        }
+      }
+      if ( supp_pkg_rows.length == 1 ) {
+        // there are none configured, so hide the row to create a new one
+        supp_pkg_rows[0].style.display = 'none';
+        var button = document.getElementById('show_supp_pkgs');
+        button.onclick = show_supp_pkgs_click;
+        button.style.backgroundColor = '#cccccc';
+        button.style.border = '1px solid #7e0079';
+        button.style.padding = '1px';
+      }
     }
 
 END
