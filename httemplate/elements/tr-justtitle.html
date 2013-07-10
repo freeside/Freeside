@@ -1,5 +1,5 @@
 <TR>
-  <TH CLASS="background" COLSPAN=<% $opt{colspan} || 2 %> ALIGN="left">
+  <TH CLASS="background" COLSPAN=<% $opt{colspan} || 2 %> ALIGN="left" <%$id%>>
     <FONT SIZE="+1"><% $opt{value} %></FONT>
   </TH>
 </TR>
@@ -7,5 +7,6 @@
 <%init>
 
 my %opt = @_;
+my $id = 'ID="'.$opt{id}.'"' if $opt{id};
 
 </%init>
