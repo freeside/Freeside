@@ -1798,6 +1798,7 @@ sub tables_hashref {
         'waive_setup',        'char', 'NULL',  1, '', '', 
         'recur_show_zero',    'char', 'NULL',  1, '', '',
         'setup_show_zero',    'char', 'NULL',  1, '', '',
+        'change_to_pkgnum',    'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'pkgnum',
       'unique' => [],

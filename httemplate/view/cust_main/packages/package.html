@@ -1,5 +1,4 @@
-<TD CLASS="inv package" BGCOLOR="<% $bgcolor %>" VALIGN="top"
-  STYLE="border-left-width: <% $supplemental * 30 %>px">
+<TD CLASS="inv package" BGCOLOR="<% $bgcolor %>" VALIGN="top" <%$style%>>
   <TABLE CLASS="inv package"> 
     <TR>
       <TD COLSPAN=2>
@@ -30,7 +29,11 @@
 
 %         unless ( $cust_pkg->get('cancel') || $opt{no_links} ) {
 %
-%           if ( $supplemental or $part_pkg->freq eq '0' ) {
+%           if ( $change_from ) {
+%             # This is the target package for a future change.
+%             # Nothing you can do with it besides modify/cancel the 
+%             # future change, and that's on the current package.
+%           } elsif ( $supplemental or $part_pkg->freq eq '0' ) {
 %             # Supplemental packages can't be changed independently.
 %             # One-time charges don't need to be changed.
 %             # For both of those, we only show "Add comments",
@@ -185,6 +188,7 @@
 %        )
 %     {
       <TR>
+% # yeah, I guess we'll let you do this on a future change package
 %       if ( FS::Conf->new->exists('invoice-unitprice') ) {
         <TD><FONT SIZE="-1">
           (&nbsp;<% pkg_change_quantity_link($cust_pkg) %>&nbsp;)
@@ -233,7 +237,21 @@ my $countrydefault = $opt{'countrydefault'} || 'US';
 my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
 
+# put a marker on the left edge of this column
+# if this package is somehow special
 my $supplemental = $opt{'supplemental'} || 0;
+my $change_from = $opt{'change_from'} || 0;
+my $style = '';
+if ( $supplemental or $change_from ) {
+  $style = 'border-left-width: '.($supplemental + $change_from)*30 . 'px; '.
+           'border-color: ';
+  if ( $supplemental ) {
+    $style .= '#bbbbff';
+  } elsif ( $change_from ) {
+    $style .= '#bbffbb';
+  }
+  $style = qq!STYLE="$style"!;
+}
 
 $cust_pkg->pkgnum =~ /^(\d+)$/;
 my $pkgnum = $1;
@@ -263,7 +281,7 @@ sub pkg_change_link {
     'actionlabel' => emt('Change'),
     'cust_pkg'    => $cust_pkg,
     'width'       => 763,
-    'height'      => 380,
+    'height'      => 480,
   );
 }
 

@@ -36,6 +36,10 @@
     <& services.html, %iopt &>
   </TR>
 % $row++;
+% # show the change target, if there is one
+% if ( $cust_pkg->change_to_pkg ) {
+    <& .packagerow, $cust_pkg->change_to_pkg, %iopt, 'change_from' => 1 &>
+% }
 % # include supplemental packages if any
 % $iopt{'supplemental'} = ($iopt{'supplemental'} || 0) + 1;
 % foreach my $supp_pkg ($cust_pkg->supplemental_pkgs) {
