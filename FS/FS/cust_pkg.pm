@@ -2142,10 +2142,13 @@ sub change_later {
         $self->set('change_to_pkgnum', $err_or_pkg->pkgnum);
         $self->set('expire', $date); # in case it's different
         $err_or_pkg->set('start_date', $date);
+        $err_or_pkg->set('change_date', '');
+        $err_or_pkg->set('change_pkgnum', '');
 
         $error = $self->replace       ||
                  $err_or_pkg->replace ||
-                 $err_or_pkg->delete;
+                 $change_to->cancel   ||
+                 $change_to->delete;
       } else {
         $error = $err_or_pkg;
       }
