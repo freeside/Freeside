@@ -124,6 +124,10 @@ Filtering parameters:
 
 - classnum: Filter on package class.
 
+- report_optionnum: Filter on package report class.  Can be a single report
+  class number, a comma-separated list, the word "multiple", or an empty 
+  string (for "no report class").
+
 - use_override: Apply "classnum" and "taxclass" filtering based on the 
   override (bundle) pkgpart, rather than always using the true pkgpart.
 
@@ -305,6 +309,14 @@ if ( $cgi->param('nottax') ) {
   # N: classnum
   if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
     push @where, "COALESCE($part_pkg.classnum, 0) = $1";
+  }
+
+  if ( $cgi->param('report_optionnum') =~ /^(\w+)$/ ) {
+    # code reuse FTW
+    my $num = $1;
+    push @where, 
+      FS::Report::Table->with_report_option( $1, $cgi->param('use_override') )
+    ;
   }
 
   # taxclass

@@ -83,35 +83,67 @@ $bottom_link .= "cust_classnum=$_;" foreach @cust_classnums;
 
 #false lazinessish w/FS::cust_pkg::search_sql (previously search/cust_pkg.cgi)
 my $classnum = 0;
-my @pkg_class = ();
+my (@classnums, @classnames);
 my $all_class = '';
-if ( $cgi->param('classnum') eq 'all' ) {
-  $all_class = 'ALL';
-  @pkg_class = ('');
+
+my ($class_table, $name_col, $value_col, $class_param);
+
+if ( $cgi->param('mode') eq 'report' ) {
+  $class_param = 'report_optionnum'; # CGI param name, also used in the report engine
+  $class_table = 'part_pkg_report_option'; # table containing classes
+  $name_col = 'name'; # the column of that table containing the label
+  $value_col = 'num'; # the column containing the class number
+} else {
+  $class_param = 'classnum';
+  $class_table = 'pkg_class';
+  $name_col = 'classname';
+  $value_col = 'classnum';
 }
-elsif ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
+
+if ( $cgi->param($class_param) eq 'all' ) { # all, aggregated
+  $all_class = 'ALL';
+  @classnums = ('');
+  @classnames = ('');
+} elsif ( $cgi->param($class_param) =~ /^(\d*)$/ ) {
+
   $classnum = $1;
   if ( $classnum ) { #a specific class
+    my $class = qsearchs($class_table, { $value_col => $classnum })
+      or die "$class_table #$classnum not found";
 
-    @pkg_class = ( qsearchs('pkg_class', { 'classnum' => $classnum } ) );
-    die "classnum $classnum not found!" unless $pkg_class[0];
-    $title .= ' '.$pkg_class[0]->classname.' ';
-    $bottom_link .= "classnum=$classnum;";
+    $title .= ' '.$class->get($name_col);
+    $bottom_link .= "$class_param=$classnum;";
 
-  } elsif ( $classnum eq '' ) { #the empty class
+    @classnums = ($classnum);
+    @classnames = ($class->get($name_col));
 
-    $title .= 'Empty class ';
-    @pkg_class = ( '(empty class)' );
-    $bottom_link .= "classnum=0;";
+  } elsif ( $classnum eq '0' ) { #the empty class
 
-  } elsif ( $classnum eq '0' ) { #all classes
+    $title .= ' Empty class ';
+    @classnums = ( '' );
+    @classnames = ( '(empty class)' );
+    $bottom_link .= "$class_param=0;";
 
-    @pkg_class = qsearch('pkg_class', {} ); # { 'disabled' => '' } );
-    push @pkg_class, '(empty class)';
+  } elsif ( $classnum eq '' ) { #all, breakdown
 
+    my @classes = qsearch($class_table, {});
+    @classnames = map { $_->get($name_col) } @classes;
+    @classnums  = map { $_->get($value_col) } @classes;
+
+    push @classnames, '(empty class)';
+    push @classnums, '0';
+
+    if ( $cgi->param('mode') eq 'report' ) {
+      # In theory, a package can belong to any subset of the report classes,
+      # so the report groups should be all the _subsets_, but for now we're
+      # handling the simple case where each package belongs to one report
+      # class. Packages with multiple classes will go into one bin at the
+      # end.
+      push @classnames, '(multiple classes)';
+      push @classnums, 'multiple';
+    }
   }
-}
-#eslaf
+} #eslaf
 
 my $hue = 0;
 #my $hue_increment = 170;
@@ -163,7 +195,9 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
     qsearch('part_referral', { 'disabled' => '' } ) 
   ) {
 
-    foreach my $pkg_class ( @pkg_class ) {
+    for (my $i = 0; $i < scalar @classnums; $i++) {
+      my $row_classnum = $classnums[$i];
+      my $row_classname = $classnames[$i];
       foreach my $component ( @components ) {
 
         push @items, 'cust_bill_pkg';
@@ -171,16 +205,11 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
         push @labels,
           ( $all_agent || $sel_agent ? '' : $agent->agent.' ' ).
           ( $all_part_referral || $sel_part_referral ? '' : $part_referral->referral.' ' ).
-          ( $classnum eq '0'
-              ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
-              : ''
-          ).
-          ' '.$charge_labels{$component};
+          $row_classname .  ' ' . $charge_labels{$component};
 
-        my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
         my $row_agentnum = $all_agent || $agent->agentnum;
         my $row_refnum = $all_part_referral || $part_referral->refnum;
-        push @params, [ ($all_class ? () : ('classnum' => $row_classnum) ),
+        push @params, [ ($all_class ? () : ($class_param => $row_classnum) ),
                         ($all_agent ? () : ('agentnum' => $row_agentnum) ),
                         ($all_part_referral ? () : ('refnum' => $row_refnum) ),
                         'use_override'         => $use_override,
@@ -193,7 +222,7 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
                      ($all_agent ? '' : "agentnum=$row_agentnum;").
                      ($all_part_referral ? '' : "refnum=$row_refnum;").
                      (join('',map {"cust_classnum=$_;"} @cust_classnums)).
-                     ($all_class ? '' : "classnum=$row_classnum;").
+                     ($all_class ? '' : "$class_param=$row_classnum;").
                      "distribute=$distribute;".
                      "use_override=$use_override;charges=$component;";
 
@@ -205,7 +234,7 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
         push @no_graph, 0;
 
       } #foreach $component
-    } #foreach $pkg_class
+    } #foreach $row_classnum
   } #foreach $part_referral
 
   if ( $cgi->param('agent_totals') and !$all_agent ) {
@@ -226,11 +255,10 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
                    "charges=$component";
     
     # Also apply any refnum/classnum filters
-    if ( !$all_class and scalar(@pkg_class) == 1 ) {
+    if ( !$all_class and scalar(@classnums) == 1 ) {
       # then a specific class has been chosen, but it may be the empty class
-      my $row_classnum = ref($pkg_class[0]) ? $pkg_class[0]->classnum : 0;
-      push @row_params, 'classnum' => $row_classnum;
-      $row_link .= ";classnum=$row_classnum";
+      push @row_params, $class_param => $classnums[0];
+      $row_link .= ";$class_param=".$classnums[0];
     }
     if ( $sel_part_referral ) {
       push @row_params, 'refnum' => $sel_part_referral->refnum;
