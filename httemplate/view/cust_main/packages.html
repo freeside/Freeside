@@ -3,7 +3,6 @@ td.package {
   vertical-align: top;
   border-width: 0;
   border-style: solid;
-  border-color: #bbbbff;
 }
 table.package {
   border: none;
@@ -199,11 +198,30 @@ sub get_packages {
   } );
   my $num_old_packages = scalar(@packages);
 
+  my %change_to_from; # target pkgnum => current cust_pkg, for future changes
+
   foreach my $cust_pkg ( @packages ) {
     my %hash = $cust_pkg->hash;
     my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
                    grep { /^part_pkg_/ } keys %hash;
     $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
+    if ( $cust_pkg->change_to_pkgnum ) {
+      $change_to_from{$cust_pkg->change_to_pkgnum} = $cust_pkg;
+    }
+  }
+
+  if ( keys %change_to_from ) {
+    my @not_future_packages;
+    foreach my $cust_pkg (@packages) {
+      if ( exists( $change_to_from{$cust_pkg->pkgnum} ) ) {
+        my $change_from = $change_to_from{ $cust_pkg->pkgnum };
+        $cust_pkg->set('change_from_pkg', $change_from);
+        $change_from->set('change_to_pkg', $cust_pkg);
+      } else {
+        push @not_future_packages, $cust_pkg;
+      }
+    }
+    @packages = @not_future_packages;
   }
 
   unless ( $cgi->param('showoldpackages') ) {
@@ -225,6 +243,7 @@ sub get_packages {
   
   # don't include supplemental packages in this list; they'll be found from
   # their main packages
+  # (as will change-target packages)
   @packages = grep !$_->main_pkgnum, @packages;
 
   ( \@packages, $num_old_packages );

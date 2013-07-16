@@ -20,7 +20,7 @@
 
       what.form.pkgpart.disabled = 'disabled'; //disable part_pkg dropdown
       var submitButton = what.form.submitButton; // || what.form.submit;
-      if ( submitButton ) {
+      if ( submitButton && <% $opt{'curr_value'} ? 0 : 1 %> ) {
         submitButton.disabled = true; //disable the submit button
       }
       var discountnum = what.form.discountnum;
@@ -51,6 +51,9 @@
         }
 
         what.form.pkgpart.disabled = ''; //re-enable part_pkg dropdown
+%       if ( $opt{'curr_value'} ) {
+        what.form.pkgpart.value = <% $opt{'curr_value'} %>;
+%       }
 
       }
 

@@ -95,7 +95,21 @@ function confirm_changes() {
   <& .row_display, cust_pkg=>$cust_pkg, column=>'susp',     label=>'Suspension' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'resume',   label=>'Resumption', note=> '(will <b>unsuspend</b> this package when the date is reached' &>
 
+% if ( $cust_pkg->change_to_pkgnum ) {
+%   my $change_to_pkg = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
+%   my $desc;
+%   if ( $change_to_pkg->pkgpart != $cust_pkg->pkgpart ) {
+%     $desc = '<b>change package</b> to '.$change_to_pkg->part_pkg->pkg;
+%   }
+%   if ( $change_to_pkg->locationnum != $cust_pkg->locationnum ) {
+%     $desc .= ' and ' if $desc;
+%     $desc .= '<b>change location</b> to "'.
+%                 $change_to_pkg->cust_location->line . '"';
+%   }
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'expire',   label=>'Change package', note=>"(will $desc when the date is reached)" &>
+% } else {
   <& .row_display, cust_pkg=>$cust_pkg, column=>'expire',   label=>'Expiration', note=>'(will <b>cancel</b> this package when the date is reached)' &>
+% }
   <& .row_display, cust_pkg=>$cust_pkg, column=>'cancel',   label=>'Cancellation' &>
 
 
