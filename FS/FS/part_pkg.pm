@@ -5,7 +5,7 @@ use strict;
 use vars qw( %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
-use Time::Local qw( timelocal_nocheck );
+use Time::Local qw( timelocal timelocal_nocheck );
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -115,6 +115,8 @@ If this record is not obsolete, will be null.
 =item family_pkgpart - Foreign key for the part_pkg that was the earliest
 ancestor of this record.  If this record is not a successor to another 
 part_pkg, will be equal to pkgpart.
+
+=item delay_start - Number of days to delay package start, by default
 
 =back
 
@@ -682,6 +684,7 @@ sub check {
        )
     || $self->ut_numbern('fcc_ds0s')
     || $self->ut_numbern('fcc_voip_class')
+    || $self->ut_numbern('delay_start')
     || $self->ut_foreign_keyn('successor', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_keyn('family_pkgpart', 'part_pkg', 'pkgpart')
     || $self->SUPER::check
@@ -1072,9 +1075,39 @@ sub is_free {
   }
 }
 
+# whether the plan allows discounts to be applied to this package
 sub can_discount { 0; }
-
+ 
+# whether the plan allows changing the start date
 sub can_start_date { 1; }
+  
+# the default start date; takes an FS::cust_main as an argument
+sub default_start_date {
+  my $self = shift;
+  my $cust_main = shift;
+  my $conf = FS::Conf->new;
+
+  if ( $self->delay_start ) {
+    my $delay = $self->delay_start;
+    
+    my ($mday,$mon,$year) = (localtime(time))[3,4,5];
+    my $start_date = timelocal(0,0,0,$mday,$mon,$year) + 86400 * $delay;
+    return $start_date;
+
+  } elsif ( $conf->exists('order_pkg-no_start_date') ) {
+
+    return '';
+
+  } elsif ( $cust_main ) {
+    
+    return $cust_main->next_bill_date;
+  
+  } else {
+    
+    return '';
+
+  }
+}
 
 sub can_currency_exchange { 0; }
 

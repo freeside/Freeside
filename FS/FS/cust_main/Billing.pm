@@ -192,14 +192,30 @@ sub cancel_expired_pkgs {
 
   my @errors = ();
 
-  foreach my $cust_pkg ( @cancel_pkgs ) {
+  CUST_PKG: foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
-    my $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
+    my $error;
+
+    if ( $cust_pkg->change_to_pkgnum ) {
+
+      my $new_pkg = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
+      if ( !$new_pkg ) {
+        push @errors, 'can\'t change pkgnum '.$cust_pkg->pkgnum.' to pkgnum '.
+                      $cust_pkg->change_to_pkgnum.'; not expiring';
+        next CUST_PKG;
+      }
+      $error = $cust_pkg->change( 'cust_pkg'        => $new_pkg,
+                                  'unprotect_svcs'  => 1 );
+      $error = '' if ref $error eq 'FS::cust_pkg';
+
+    } else { # just cancel it
+       $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
                                            'reason_otaker' => $cpr->otaker,
                                            'time'          => $time,
                                          )
                                        : ()
                                  );
+    }
     push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
   }
 

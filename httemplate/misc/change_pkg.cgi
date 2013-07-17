@@ -1,7 +1,6 @@
-<& /elements/header-popup.html, mt("Change Package") &>
+<& /elements/header-popup.html, mt($title) &>
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/order_pkg.js"></SCRIPT>
-
 <& /elements/error.html &>
 
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/change-cust_pkg.html" METHOD=POST>
@@ -28,6 +27,21 @@
                'cust_main' => $cust_main,
   &>
 
+</TABLE>
+
+<TABLE>
+  <TR>
+    <TD> Apply this change: </TD>
+    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="0" \
+          <% !$cgi->param('delay') ? 'CHECKED' : '' %>> now </TD>
+    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="1" \
+          <% $cgi->param('delay')  ? 'CHECKED' : '' %>> in the future
+      <& /elements/input-date-field.html, {
+  'name'  => 'start_date',
+  'value' => ($cgi->param('start_date') || $cust_main->next_bill_date),
+      } &>
+    </TD>
+  </TR>
 </TABLE>
 
 <& /elements/standardize_locations.html,
@@ -74,4 +88,15 @@ my $cust_main = $cust_pkg->cust_main
 
 my $part_pkg = $cust_pkg->part_pkg;
 
+my $title = "Change Package";
+
+# if there's already a package change ordered, preload it
+if ( $cust_pkg->change_to_pkgnum ) {
+  my $change_to = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
+  $cgi->param('delay', 1);
+  foreach(qw( start_date pkgpart locationnum )) {
+    $cgi->param($_, $change_to->get($_));
+  }
+  $title = "Edit Scheduled Package Change";
+}
 </%init>

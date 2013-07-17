@@ -7,10 +7,11 @@
 
   <SCRIPT TYPE="text/javascript">
 
-    function part_pkg_opt(what, value, text, can_discount, can_start_date) {
+    function part_pkg_opt(what, value, text, can_discount, can_start_date, start_date) {
       var optionName = new Option(text, value, false, false);
       optionName.setAttribute('data-can_discount',   can_discount);
       optionName.setAttribute('data-can_start_date', can_start_date);
+      optionName.setAttribute('data-start_date',     start_date || '');
       var length = what.length;
       what.options[length] = optionName;
     }
@@ -19,7 +20,7 @@
 
       what.form.pkgpart.disabled = 'disabled'; //disable part_pkg dropdown
       var submitButton = what.form.submitButton; // || what.form.submit;
-      if ( submitButton ) {
+      if ( submitButton && <% $opt{'curr_value'} ? 0 : 1 %> ) {
         submitButton.disabled = true; //disable the submit button
       }
       var discountnum = what.form.discountnum;
@@ -38,16 +39,21 @@
         // add the new packages
         opt(what.form.pkgpart, '', 'Select package');
         var packagesArray = eval('(' + part_pkg + ')' );
-        for ( var s = 0; s < packagesArray.length; s=s+4 ) {
+        for ( var s = 0; s < packagesArray.length; s=s+5 ) {
+          //surely this should be some kind of JSON structure
           var packagesLabel  = packagesArray[s+1];
           var can_discount   = packagesArray[s+2];
           var can_start_date = packagesArray[s+3];
+          var start_date     = packagesArray[s+4];
           part_pkg_opt(
-            what.form.pkgpart, packagesArray[s], packagesLabel, can_discount, can_start_date
+            what.form.pkgpart, packagesArray[s], packagesLabel, can_discount, can_start_date, start_date
           );
         }
 
         what.form.pkgpart.disabled = ''; //re-enable part_pkg dropdown
+%       if ( $opt{'curr_value'} ) {
+        what.form.pkgpart.value = <% $opt{'curr_value'} %>;
+%       }
 
       }
 
@@ -56,6 +62,10 @@
                     classnum,
                     update_part_pkg
                   );
+    }
+
+    window.onload = function() {
+      classnum_changed(document.getElementById('classnum'));
     }
 
   </SCRIPT>

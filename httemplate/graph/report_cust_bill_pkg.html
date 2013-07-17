@@ -23,6 +23,27 @@ function enable_agent_totals(obj) {
     )
   );
 }
+
+function mode_changed() {
+  var options = document.getElementsByName('mode');
+  var mode;
+  for(var i=0; i < options.length; i++) {
+    if (options[i].checked) {
+      mode = options[i].value;
+    }
+  }
+    
+  var div_pkg = document.getElementById('pkg_class');
+  var div_report = document.getElementById('report_class');
+  if (mode == 'pkg') {
+    div_pkg.style.display = '';
+    div_report.style.display = 'none';
+  } else if (mode == 'report') {
+    div_pkg.style.display = 'none';
+    div_report.style.display = '';
+  }
+}
+window.onload = mode_changed;
 </SCRIPT>
 
 <& /elements/tr-select-agent.html,
@@ -49,13 +70,40 @@ function enable_agent_totals(obj) {
   'onchange'      => 'enable_agent_totals'
 &>
 
-<& /elements/tr-select-pkg_class.html,
-  'field'       => 'classnum',
-  'pre_options' => [ 'all'  => 'all (aggregate)',
-                        '0' => 'all (breakdown)' ],
-  'empty_label' => '(empty class)',
-  'onchange'    => 'enable_agent_totals',
-&>
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="radio" NAME="mode" VALUE="pkg" onchange="mode_changed('pkg')" CHECKED>
+    <% emt('Package class') %>
+    <BR>
+    <INPUT TYPE="radio" NAME="mode" VALUE="report" onchange="mode_changed('report')">
+    <% emt('Report class') %>
+  </TD>
+  <TD>
+    <DIV ID="pkg_class">
+    <& /elements/select-pkg_class.html,
+      'field'       => 'classnum',
+      'pre_options' => [ 'all'  => 'all (aggregate)',
+                            ''  => 'all (breakdown)',
+                           '0'  => '(empty class)' ],
+      'disable_empty' => 1,
+      'onchange'    => 'enable_agent_totals',
+    &>
+    </DIV>
+    <DIV ID="report_class" STYLE="display: none">
+    <& /elements/select-table.html,
+      'field'       => 'report_optionnum',
+      'table'       => 'part_pkg_report_option',
+      'name_col'    => 'name',
+      'value_col'   => 'num',
+      'pre_options' => [ 'all' => 'all (aggregate)',
+                            '' => 'all (breakdown)', 
+                           '0'  => '(empty class)' ],
+      'disable_empty' => 1,
+      'onchange'    => 'enable_agent_totals',
+    &>
+    </DIV>
+  </TD>
+</TR>
 
 <!--
 <TR>

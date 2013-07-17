@@ -946,7 +946,7 @@ sub export_batch {
 
   my $info = $export_info{$format} or die "Format not found: '$format'\n";
 
-  &{$info->{'init'}}($conf) if exists($info->{'init'});
+  &{$info->{'init'}}($conf, $self->agentnum) if exists($info->{'init'});
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;

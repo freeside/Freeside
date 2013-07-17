@@ -443,6 +443,7 @@ sub cust_bill_pkg_setup {
   my @where = (
     'pkgnum != 0',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
     $self->in_time_period_and_agent($speriod, $eperiod, $agentnum),
   );
 
@@ -474,6 +475,7 @@ sub cust_bill_pkg_recur {
   my @where = (
     'pkgnum != 0',
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
+    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
   );
 
   push @where, 'cust_main.refnum = '. $opt{'refnum'} if $opt{'refnum'};
@@ -552,6 +554,7 @@ sub cust_bill_pkg_detail {
   push @where,
     $self->with_classnum($opt{'classnum'}, $opt{'use_override'}),
     $self->with_usageclass($opt{'usageclass'}),
+    $self->with_report_option($opt{'report_optionnum'}, $opt{'use_override'}),
     ;
 
   if ( $opt{'distribute'} ) {
@@ -731,6 +734,41 @@ sub with_usageclass {
     $comparison = "= $classnum";
   }
   return "cust_bill_pkg_detail.classnum $comparison";
+}
+
+sub with_report_option {
+  my $self = shift;
+  # $num can be a single number, or a comma-delimited list of numbers,
+  # or '0' to match only the empty set.
+  #
+  # or the word 'multiple' for all packages with more than one report class
+  my ($num, $use_override) = @_;
+  return '' if !defined($num);
+
+  # stringify the set of report options for each pkgpart
+  my $table = $use_override ? 'override' : 'part_pkg';
+  my $subselect = "
+    SELECT replace(optionname, 'report_option_', '') AS num
+      FROM part_pkg_option
+      WHERE optionname like 'report_option_%' 
+        AND part_pkg_option.pkgpart = $table.pkgpart
+      ORDER BY num";
+  
+  my $comparison;
+  if ( $num eq 'multiple' ) {
+    $comparison = "(SELECT COUNT(*) FROM ($subselect) AS x) > 1";
+  } elsif ( $num eq '0' ) {
+    $comparison = "NOT EXISTS ($subselect)";
+  } else {
+    $comparison = "(SELECT COALESCE(string_agg(num, ','), '') FROM (
+    $subselect
+    ) AS x) = '$num'";
+  }
+  if ( $use_override ) {
+    # then also allow the non-override package to match
+    $comparison = "( $comparison OR " . $self->with_report_option($num) . ")";
+  }
+  $comparison;
 }
 
 sub scalar_sql {
