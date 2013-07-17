@@ -54,20 +54,30 @@
 <&| /Widgets/TitleBox, title => loc('Scrip Fields') &>
 <table>
 
-<tr><td align="right"><&|/l&>Description</&>:</td><td>
 <tr><td class="label"><&|/l&>Description</&>:</td><td class="value">\
+% if ( $immutable ) {
+<% $scrip->Description %> <i>(system scrip)</i>
+<input type="hidden" name="Scrip-<% $id %>-Description" value="<% $scrip->Description %>">
+% } else {
 <input name="Scrip-<% $id %>-Description" \
     size="60" \
     value="<% $ARGS{"Scrip-$id-Description"} || $scrip->Description || '' %>" />
+% }
 </td></tr>
 
 <tr><td class="label"><&|/l&>Condition</&>:</td><td class="value">\
+% if ( $immutable ) {
+<% loc( $scrip->ConditionObj->Name ) %>
+<input type="hidden" name="Scrip-<%$id%>-Condition" value="<% $scrip->ConditionObj->Id %>">
+% } else {
 <& /Admin/Elements/SelectScripCondition,
     Name => "Scrip-$id-ScripCondition",
     Default => $ARGS{"Scrip-$id-ScripCondition"} || $scrip->ConditionObj->Id,
     ScripObj => $scrip,
     Queue => $Queue,
-&></td></tr>
+&>
+% }
+</td></tr>
 
 <& /Admin/Elements/EditScripOptions,
     Name => "Condition",
@@ -77,12 +87,18 @@
 &>
 
 <tr><td class="label"><&|/l&>Action</&>:</td><td class="value">\
+% if ( $immutable ) {
+<% loc( $scrip->ActionObj->Name ) %>
+<input type="hidden" name="Scrip-<%$id%>-Action" value="<% $scrip->ActionObj->Id %>">
+% } else {
 <& /Admin/Elements/SelectScripAction,
     Name => "Scrip-$id-ScripAction",
     Default => $ARGS{"Scrip-$id-ScripAction"} || $scrip->ActionObj->Id,
     ScripObj => $scrip,
     Queue => $Queue,
-&></td></tr>
+&>
+% }
+</td></tr>
 
 <& /Admin/Elements/EditScripOptions,
     Name => "Action",
@@ -92,11 +108,17 @@
 &>
 
 <tr><td class="label"><&|/l&>Template</&>:</td><td class="value">\
+% if ( $immutable ) {
+<% $scrip->TemplateObj->Name %>
+<input type="hidden" name="Scrip-<%$id%>-Template" value="<% $scrip->TemplateObj->Id %>">
+% } else {
 <& /Admin/Elements/SelectTemplate,
     Name => "Scrip-$id-Template",
     Default => $ARGS{"Scrip-$id-Template"} || $scrip->TemplateObj->Id,
     Queue => $Queue,
-&></td></tr>
+&>
+% }
+</td></tr>
 
 <tr><td class="label"><&|/l&>Stage</&>:</td><td class="value">\
 <& /Admin/Elements/SelectStage,
@@ -155,6 +177,7 @@
 
 my (@actions, $SubmitLabel);
 my $scrip = RT::Scrip->new( $session{'CurrentUser'} );
+my $immutable = 0;
 
 if ( $id ) {
     $scrip->Load( $id );
@@ -162,6 +185,10 @@ if ( $id ) {
         push @actions, loc("Couldn't load scrip #[_1]", $id);
     }
     $SubmitLabel = loc('Save Changes');
+    my $a = $scrip->FirstAttribute('Immutable');
+    if ( defined($a) and $a->Content ) {
+        $immutable = 1;
+    }
 }
 
 unless ( $id ) {
