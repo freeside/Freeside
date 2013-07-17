@@ -1084,6 +1084,8 @@ sub tables_hashref {
         'ship_fax',      'varchar', 'NULL', 12, '', '', 
         'ship_mobile',   'varchar', 'NULL', 12, '', '', 
         'currency',         'char', 'NULL',  3, '', '',
+
+        #deprecated, info moved to cust_payby
         'payby',    'char', '',     4, '', '', 
         'payinfo',  'varchar', 'NULL', 512, '', '', 
         'paycvv',   'varchar', 'NULL', 512, '', '', 
@@ -1097,6 +1099,7 @@ sub tables_hashref {
         'paystate', 'varchar', 'NULL', $char_d, '', '', 
         'paytype',  'varchar', 'NULL', $char_d, '', '', 
         'payip',    'varchar', 'NULL', 15, '', '', 
+
         'geocode',  'varchar', 'NULL', 20,  '', '',
         'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
         'censusyear', 'char', 'NULL', 4, '', '',
@@ -1136,6 +1139,31 @@ sub tables_hashref {
                    [ 'payby' ], [ 'paydate' ],
                    [ 'archived' ],
                  ],
+    },
+
+    'cust_payby' => {
+      'columns' => [
+        'custpaybynum', 'serial',     '',        '', '', '', 
+        'custnum',         'int',     '',        '', '', '',
+        'weight',          'int',     '',        '', '', '', 
+        'payby',          'char',     '',         4, '', '', 
+        'payinfo',     'varchar', 'NULL',       512, '', '', 
+        'paycvv',      'varchar', 'NULL',       512, '', '', 
+        'paymask',     'varchar', 'NULL',   $char_d, '', '', 
+        #'paydate',   @date_type, '', '', 
+        'paydate',     'varchar', 'NULL',        10, '', '', 
+        'paystart_month',  'int', 'NULL',        '', '', '', 
+        'paystart_year',   'int', 'NULL',        '', '', '', 
+        'payissue',    'varchar', 'NULL',         2, '', '', 
+        'payname',     'varchar', 'NULL', 2*$char_d, '', '', 
+        'paystate',    'varchar', 'NULL',   $char_d, '', '', 
+        'paytype',     'varchar', 'NULL',   $char_d, '', '', 
+        'payip',       'varchar', 'NULL',        15, '', '', 
+        'locationnum',     'int', 'NULL',        '', '', '',
+      ],
+      'primary_key' => 'custpaybynum',
+      'unique'      => [],
+      'index'       => [ [ 'custnum' ] ],
     },
 
     'cust_recon' => {  # (some sort of not-well understood thing for OnPac)

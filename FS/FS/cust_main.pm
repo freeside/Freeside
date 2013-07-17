@@ -1791,6 +1791,8 @@ sub check {
   
   }
 
+  ### start of stuff moved to cust_payby
+
   #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
   #  or return "Illegal payby: ". $self->payby;
   #$self->payby($1);
@@ -1999,6 +2001,8 @@ sub check {
       or return gettext('illegal_name'). " payname: ". $self->payname;
     $self->payname($1);
   }
+
+  ### end of stuff moved to cust_payby
 
   return "Please select an invoicing locale"
     if ! $self->locale

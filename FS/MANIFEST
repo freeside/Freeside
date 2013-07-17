@@ -705,3 +705,5 @@ FS/currency_exchange.pm
 t/currency_exchange.t
 FS/part_pkg_currency.pm
 t/part_pkg_currency.t
+FS/cust_payby.pm
+t/cust_payby.t
