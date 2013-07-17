@@ -917,6 +917,7 @@ sub tables_hashref {
         'pkgnum',                   'int',      '', '', '', '',
         'locationnum',              'int',      '', '', '', '', #redundant?
         'amount',                   @money_type,        '', '',
+        'taxable_billpkgnum',       'int',  'NULL', '', '', '',
       ],
       'primary_key' => 'billpkgtaxlocationnum',
       'unique' => [],
