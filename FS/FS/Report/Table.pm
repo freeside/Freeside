@@ -760,7 +760,9 @@ sub with_report_option {
   } elsif ( $num eq '0' ) {
     $comparison = "NOT EXISTS ($subselect)";
   } else {
-    $comparison = "(SELECT COALESCE(string_agg(num, ','), '') FROM (
+    #$comparison = "(SELECT COALESCE(string_agg(num, ','), '') FROM ( #Pg 9-ism
+    $comparison = "(SELECT COALESCE(array_to_string(array_agg(num), ','), '')
+    FROM (
     $subselect
     ) AS x) = '$num'";
   }
