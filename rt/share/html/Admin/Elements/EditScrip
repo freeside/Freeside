@@ -108,19 +108,16 @@
 &>
 
 <tr><td class="label"><&|/l&>Template</&>:</td><td class="value">\
-% if ( $immutable ) {
-<% $scrip->TemplateObj->Name %>
-<input type="hidden" name="Scrip-<%$id%>-Template" value="<% $scrip->TemplateObj->Id %>">
-% } else {
+%# immutable flag doesn't affect this
 <& /Admin/Elements/SelectTemplate,
     Name => "Scrip-$id-Template",
     Default => $ARGS{"Scrip-$id-Template"} || $scrip->TemplateObj->Id,
     Queue => $Queue,
 &>
-% }
 </td></tr>
 
 <tr><td class="label"><&|/l&>Stage</&>:</td><td class="value">\
+%# or this
 <& /Admin/Elements/SelectStage,
     Name => "Scrip-$id-Stage",
     Default => $ARGS{"Scrip-$id-Stage"} || $scrip->Stage,

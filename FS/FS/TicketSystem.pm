@@ -209,7 +209,7 @@ sub _upgrade_data {
   while (my $item = $search->Next) {
     my ($c, $a, $t) = map {lc $item->$_->Name} 
       ('ScripConditionObj', 'ScripActionObj', 'TemplateObj');
-    if ( exists $scrip{$c}{$a}{$t} and $item->Creator == 1 ) {
+    if ( exists $scrip{$c}{$a} and $item->Creator == 1 ) {
       warn "Deleting duplicate scrip $c $a [$t]\n";
       my ($val, $msg) = $item->Delete;
       warn "error deleting scrip: $msg\n" if !$val;
@@ -220,7 +220,7 @@ sub _upgrade_data {
       warn "error deleting scrip: $msg\n" if !$val;
     }
     else {
-      $scrip{$c}{$a}{$t} = $item->id;
+      $scrip{$c}{$a} = $item->id;
     }
   }
   my $Scrip = RT::Scrip->new($CurrentUser);
@@ -229,8 +229,8 @@ sub _upgrade_data {
     my ($c, $a, $t) = map lc,
       @{ $s }{'ScripCondition', 'ScripAction', 'Template'};
 
-    if ( exists($scrip{$c}{$a}{$t}) ) {
-      $Scrip->Load( $scrip{$c}{$a}{$t} );
+    if ( exists($scrip{$c}{$a}) ) {
+      $Scrip->Load( $scrip{$c}{$a} );
     } else { # need to create it
 
       if ( !exists($condition{$c}) ) {
