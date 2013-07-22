@@ -345,7 +345,7 @@ tie my %detail_formats, 'Tie::IxHash',
                        count_available_phones suspend_bill 
                      )
                   ],
-  'weight' => 40,
+  'weight' => 41,
 );
 
 sub price_info {

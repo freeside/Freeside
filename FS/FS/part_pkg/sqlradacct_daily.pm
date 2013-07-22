@@ -73,7 +73,7 @@ use Date::Format;
 
   },
   'fieldorder' => [qw( recur_included_hours recur_hourly_charge recur_hourly_cap recur_included_input recur_input_charge recur_input_cap recur_included_output recur_output_charge recur_output_cap recur_included_total recur_total_charge recur_total_cap global_cap monthly_cap )],
-  'weight' => 41,
+  'weight' => 40.1,
 );
 
 sub price_info {

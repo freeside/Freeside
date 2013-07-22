@@ -123,9 +123,14 @@ sub freeswitch_template_fillin {
              || $svc_phone->domain
              || '$${sip_profile}';
 
+  my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+  my $nibble_rate = $cust_pkg ? $cust_pkg->part_pkg->option('nibble_rate')
+                              : '';
+
   #false lazinessish w/phone_shellcommands::_export_command
   my %hash = (
-    'domain' => $domain,
+    'domain'      => $domain,
+    'nibble_rate' => $nibble_rate,
     map { $_ => $svc_phone->getfield($_) } $svc_phone->fields
   );
 

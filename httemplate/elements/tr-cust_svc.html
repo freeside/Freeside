@@ -60,8 +60,17 @@ $cust_svc->overlimit )
 </TR>
 % }
 <TR>
-% # first column: recharge link
+% # first column: (optional external balance and) recharge link
   <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px; padding-top:0px">
+% if ( $part_svc->svcdb eq 'svc_phone'
+%        && ! $opt{no_links}
+%    )
+% {
+%   my( $html, $hashref ) = $svc_x->export_getstatus;
+%   if ( length($hashref->{'Balance'}) ) { #quelle hack
+      <FONT SIZE="-1">Balance:&nbsp;<b><% $hashref->{'Balance'} %></b>&nbsp;</FONT>
+%   }
+% }
 % if ( $curuser->access_right('Recharge customer service') 
 %     && $part_svc->svcdb eq 'svc_acct'
 %     && ! $opt{no_links}
