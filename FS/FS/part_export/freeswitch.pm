@@ -136,8 +136,13 @@ sub freeswitch_template_fillin {
     DELIMITERS => [ '<%', '%>' ],
   );
 
+  my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+  my $nibble_rate = $cust_pkg ? $cust_pkg->part_pkg->option('nibble_rate')
+                              : '';
+
   #false lazinessish w/phone_shellcommands::_export_command
   my %hash = (
+    'nibble_rate' => $nibble_rate,
     map { $_ => $svc_phone->getfield($_) } $svc_phone->fields
   );
 

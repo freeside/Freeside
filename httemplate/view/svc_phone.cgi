@@ -84,6 +84,8 @@ my $html_foot = sub {
                           'table' => 'phone_device',
                        );
 
+  my $status = include('/view/elements/svc_export_status.html', $svc_phone );
+
   ##
   # CDR links
   ##
@@ -137,6 +139,7 @@ my $html_foot = sub {
 
   $e911.
   $devices.
+  $status.
   join(' | ', @links ). '<BR>'.
   join(' | ', @ilinks). '<BR>';
 
