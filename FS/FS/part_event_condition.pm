@@ -185,6 +185,10 @@ foreach my $INC ( @INC ) {
     };
     my $mod = $1;
     my $fullmod = "FS::part_event::Condition::$mod";
+    if ( $fullmod =~ /_(Mixin|Common)$/ ) {
+      #warn "skipping $1 class $fullmod\n";
+      next;
+    }
     eval "use $fullmod;";
     if ( $@ ) {
       die "error using $fullmod (skipping): $@\n" if $@;
