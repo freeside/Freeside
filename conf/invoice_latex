@@ -258,7 +258,19 @@
         if $coupon;
       $OUT .= '\begin{longtable}{cllllllr}';
       $OUT .= '\caption*{ ';
-      $OUT .= ($section->{'description'}) ? $section->{'description'}: emt('Charges');
+      if ($section->{'location'}) {
+        $OUT .= $section->{'location'}{'address1'};
+        $OUT .= ', ' . $section->{'location'}{'address2'}
+          if length($section->{'location'}{'address2'});
+        $OUT .= ', ' .
+                $section->{'location'}{'city'} . ', ' .
+                $section->{'location'}{'state'} . '~' .
+                $section->{'location'}{'zip'};
+      } elsif ( $section->{'description'} ) {
+        $OUT .= ($section->{'description'});
+      } else {
+        $OUT .= emt('Charges');
+      }
       $OUT .= '}\\\\';
       if ($section->{header_generator}) {
         $OUT .= &{$section->{header_generator}}();
