@@ -11,7 +11,7 @@
 .invoice_desc_more TD { font-weight: bold; font-size: 10pt }
 .invoice_extdesc TD { font-size: 8pt }
 .invoice_totaldesc TD { font-size: 10pt; empty-cells: show }
-.allcaps { text-transform:uppercase }
+.allcaps { text-transform:uppercase; font-size: 12pt }
 </STYLE>
 
 <table class="invoice" bgcolor="#ffffff" WIDTH=625 CELLSPACING=8><tr><td>
@@ -112,13 +112,25 @@
         unless ($section->{'summarized'}) {
           $OUT .= '</table>' if ( $notfirst || $section->{'pretotal'} && !$summary );
           $OUT .= '<table><tr><td>';
-          my $sectionhead = $section->{'description'} || emt('Charges');
-          $OUT .=
-              '<p class="allcaps"><b><font size="+1">'. substr($sectionhead,0,1).
+          $OUT .= '<p class="allcaps"><b>';
+          my $sectionhead;
+          if ( $section->{'location'} ) {
+            $sectionhead = $section->{'location'}{'address1'};
+            $sectionhead .= ', '.$section->{'location'}{'address2'}
+              if length($section->{'location'}{'address2'});
+            $sectionhead .= ', ' .
+                            $section->{'location'}{'city'} . ', ' .
+                            $section->{'location'}{'state'} . ' ' .
+                            $section->{'location'}{'zip'};
+            $OUT .= $sectionhead;
+          } else {
+            $sectionhead = $section->{'description'} || emt('Charges');
+            $OUT .= '<font size="+1">'. substr($sectionhead,0,1).
               '</font><font size="+0">'. substr($sectionhead,1).
-              '</font></b>'.
-              '<p>'.
-              '</td></tr></table>';
+          
+              '</font>';
+          }
+          $OUT .= '</b></p></td></tr></table>';
 
           $OUT .=
             '<table class="invoice_longtable" CELLSPACING=0 WIDTH="100%">'.

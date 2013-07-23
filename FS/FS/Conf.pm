@@ -1528,16 +1528,24 @@ and customer address. Include units.',
   },
 
   { 
-    'key'         => 'invoice_include_aging',
-    'section'     => 'invoicing',
-    'description' => 'Show an aging line after the prior balance section.  Only valud when invoice_sections is enabled.',
-    'type'        => 'checkbox',
-  },
-
-  { 
     'key'         => 'invoice_sections',
     'section'     => 'invoicing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  { 
+    'key'         => 'invoice_include_aging',
+    'section'     => 'invoicing',
+    'description' => 'Show an aging line after the prior balance section.  Only valid when invoice_sections is enabled.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'invoice_sections_by_location',
+    'section'     => 'invoicing',
+    'description' => 'Divide invoice into sections according to service location.  Currently, this overrides sectioning by package category.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
