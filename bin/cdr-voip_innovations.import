@@ -9,6 +9,8 @@ use FS::UID qw(adminsuidsetup datasrc dbh);
 use FS::cdr;
 use FS::cdr_batch;
 use FS::Record qw(qsearch qsearchs);
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
 
 
 ###
@@ -66,13 +68,13 @@ if ( $opt_a ) {
 if ( $opt_s ) {
   # start date
   # normalize date format
-  $opt_s = str2time('%Y%m%d', time2str($opt_s)) if $opt_s =~ /\D/;
+  $opt_s = time2str('%Y%m%d', str2time($opt_s)) if $opt_s =~ /\D/;
   warn "limiting to dates > $opt_s\n" if $opt_v;
   @dirs = grep {$_ > $opt_s} @dirs;
 }
 if ( $opt_e ) {
   # end date
-  $opt_e = str2time('%Y%m%d', time2str($opt_e)) if $opt_e =~ /\D/;
+  $opt_e = time2str('%Y%m%d', str2time($opt_e)) if $opt_e =~ /\D/;
   warn "limiting to dates < $opt_e\n" if $opt_v;
   @dirs = grep {$_ < $opt_e} @dirs;
 }
