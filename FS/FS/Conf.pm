@@ -4128,6 +4128,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'previous_balance-section',
+    'section'     => 'invoicing',
+    'description' => 'Show previous invoice balances in a separate invoice section.  Does not require invoice_sections to be enabled.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'previous_balance-summary_only',
     'section'     => 'invoicing',
     'description' => 'Only show a single line summarizing the total previous balance rather than one line per invoice.',

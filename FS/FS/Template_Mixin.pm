@@ -763,19 +763,6 @@ sub print_generic {
   warn "$me generating sections\n"
     if $DEBUG > 1;
 
-  # Previous Charges section
-  # subtotal is the first return value from $self->previous
-  my $previous_section = { 'description' => $self->mt('Previous Charges'),
-                           'subtotal'    => $other_money_char.
-                                            sprintf('%.2f', $pr_total),
-                           'summarized'  => '', #why? $summarypage ? 'Y' : '',
-                         };
-  $previous_section->{posttotal} = '0 / 30 / 60 / 90 days overdue '. 
-    join(' / ', map { $cust_main->balance_date_range(@$_) }
-                $self->_prior_month30s
-        )
-    if $conf->exists('invoice_include_aging');
-
   my $taxtotal = 0;
   my $tax_section = { 'description' => $self->mt('Taxes, Surcharges, and Fees'),
                       'subtotal'    => $taxtotal,   # adjusted below
@@ -785,7 +772,6 @@ sub print_generic {
                         : 0;
   $tax_section->{'summarized'} = ''; #why? $summarypage && !$tax_weight ? 'Y' : '';
   $tax_section->{'sort_weight'} = $tax_weight;
-
 
   my $adjusttotal = 0;
   my $adjust_section = {
@@ -807,10 +793,37 @@ sub print_generic {
   my $extra_sections = [];
   my $extra_lines = ();
 
+  # default section ('Charges')
   my $default_section = { 'description' => '',
                           'subtotal'    => '', 
                           'no_subtotal' => 1,
                         };
+
+  # Previous Charges section
+  # subtotal is the first return value from $self->previous
+  my $previous_section;
+  # if the invoice has major sections, or if we're summarizing previous 
+  # charges with a single line, or if we've been specifically told to put them
+  # in a section, create a section for previous charges:
+  if ( $multisection or
+       $conf->exists('previous_balance-summary_only') or
+       $conf->exists('previous_balance-section') ) {
+    
+    $previous_section =  { 'description' => $self->mt('Previous Charges'),
+                           'subtotal'    => $other_money_char.
+                                            sprintf('%.2f', $pr_total),
+                           'summarized'  => '', #why? $summarypage ? 'Y' : '',
+                         };
+    $previous_section->{posttotal} = '0 / 30 / 60 / 90 days overdue '. 
+      join(' / ', map { $cust_main->balance_date_range(@$_) }
+                  $self->_prior_month30s
+          )
+      if $conf->exists('invoice_include_aging');
+
+  } else {
+    # otherwise put them in the main section
+    $previous_section = $default_section;
+  }
 
   if ( $multisection ) {
     ($extra_sections, $extra_lines) =
@@ -864,24 +877,29 @@ sub print_generic {
     # make a default section
     push @sections, $default_section;
     # and calculate the finance charge total, since it won't get done otherwise.
-    # XXX possibly other totals?
+    # and the default section total
     # XXX possibly finance_pkgclass should not be used in this manner?
-    if ( $conf->exists('finance_pkgclass') ) {
-      my @finance_charges;
-      foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
-        if ( grep { $_->section eq $invoice_data{finance_section} }
-             $cust_bill_pkg->cust_bill_pkg_display ) {
-          # I think these are always setup fees, but just to be sure...
-          push @finance_charges, $cust_bill_pkg->recur + $cust_bill_pkg->setup;
-        }
+    my @finance_charges;
+    my @charges;
+    foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+      if ( $invoice_data{finance_section} and 
+        grep { $_->section eq $invoice_data{finance_section} }
+           $cust_bill_pkg->cust_bill_pkg_display ) {
+        # I think these are always setup fees, but just to be sure...
+        push @finance_charges, $cust_bill_pkg->recur + $cust_bill_pkg->setup;
+      } else {
+        push @charges, $cust_bill_pkg->recur + $cust_bill_pkg->setup;
       }
-      $invoice_data{finance_amount} = 
-        sprintf('%.2f', sum( @finance_charges ) || 0);
     }
+    $invoice_data{finance_amount} = 
+      sprintf('%.2f', sum( @finance_charges ) || 0);
+    $default_section->{subtotal} = $other_money_char.
+                                    sprintf('%.2f', sum( @charges ) || 0);
   }
 
   # previous invoice balances in the Previous Charges section if there
   # is one, otherwise in the main detail section
+  # (except if summary_only is enabled, don't show them at all)
   if ( $self->can('_items_previous') &&
        $self->enable_previous &&
        ! $conf->exists('previous_balance-summary_only') ) {
@@ -892,22 +910,18 @@ sub print_generic {
     foreach my $line_item ( $self->_items_previous ) {
 
       my $detail = {
-        ext_description => [],
+        ref             => $line_item->{'pkgnum'},
+        pkgpart         => $line_item->{'pkgpart'},
+        quantity        => 1,
+        section         => $previous_section, # which might be $default_section
+        description     => &$escape_function($line_item->{'description'}),
+        ext_description => [ map { &$escape_function($_) } 
+                             @{ $line_item->{'ext_description'} || [] }
+                           ],
+        amount          => ( $old_latex ? '' : $money_char).
+                            $line_item->{'amount'},
+        product_code    => $line_item->{'pkgpart'} || 'N/A',
       };
-      $detail->{'ref'} = $line_item->{'pkgnum'};
-      $detail->{'pkgpart'} = $line_item->{'pkgpart'};
-      $detail->{'quantity'} = 1;
-      $detail->{'section'} = $multisection ? $previous_section
-                                           : $default_section;
-      $detail->{'description'} = &$escape_function($line_item->{'description'});
-      if ( exists $line_item->{'ext_description'} ) {
-        @{$detail->{'ext_description'}} = map {
-          &$escape_function($_);
-        } @{$line_item->{'ext_description'}};
-      }
-      $detail->{'amount'} = ( $old_latex ? '' : $money_char).
-                            $line_item->{'amount'};
-      $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
 
       push @detail_items, $detail;
       push @buf, [ $detail->{'description'},
@@ -1034,12 +1048,9 @@ sub print_generic {
   $invoice_data{current_less_finance} =
     sprintf('%.2f', $self->charged - $invoice_data{finance_amount} );
 
-  # create a major section for previous balance if we have major sections,
-  # or if previous_section is in summary form
-  if ( ( $multisection && $self->enable_previous )
-    || $conf->exists('previous_balance-summary_only') )
-  {
-    unshift @sections, $previous_section if $pr_total;
+  # if there's anything in the Previous Charges section, prepend it to the list
+  if ( $pr_total and $previous_section ne $default_section ) {
+    unshift @sections, $previous_section;
   }
 
   warn "$me adding taxes\n"
@@ -1326,6 +1337,25 @@ sub print_generic {
         'ext_description' => [ &$escape_function($_->{ext_description}) || () ],
     } } @discounts_avail;
   }
+
+  my @summary_subtotals;
+  # the templates say "$_->{tax_section} || !$_->{summarized}"
+  # except 'summarized' is only true when tax_section is true, so this 
+  # is always true, so what's the deal?
+  foreach my $s (@sections) {
+    # not to include in the "summary of new charges" block:
+    # finance charges, adjustments, previous charges, 
+    # and itemized phone usage sections
+    if ( $s eq $adjust_section   or
+         ($s eq $previous_section and $s ne $default_section) or
+         ($invoice_data{'finance_section'} and 
+          $invoice_data{'finance_section'} eq $s->{description}) or
+         $s->{'description'} =~ /^\d+ $/ ) {
+      next;
+    }
+    push @summary_subtotals, $s;
+  }
+  $invoice_data{summary_subtotals} = \@summary_subtotals;
 
   # debugging hook: call this with 'diag' => 1 to just get a hash of 
   # the invoice variables
