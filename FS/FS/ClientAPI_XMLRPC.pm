@@ -122,6 +122,8 @@ sub ss2clientapi {
   'process_payment_change_pkg' => 'MyAccount/process_payment_change_pkg',
   'process_payment_order_renew' => 'MyAccount/process_payment_order_renew',
   'process_prepay'            => 'MyAccount/process_prepay',
+  'start_thirdparty'          => 'MyAccount/start_thirdparty',
+  'finish_thirdparty'         => 'MyAccount/finish_thirdparty',
   'realtime_collect'          => 'MyAccount/realtime_collect',
   'list_pkgs'                 => 'MyAccount/list_pkgs',     #add to ss (added?)
   'list_svcs'                 => 'MyAccount/list_svcs',     #add to ss (added?)
