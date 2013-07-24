@@ -1258,7 +1258,7 @@ sub tables_hashref {
         'emailaddress',   'varchar', '', $char_d, '', '',
       ],
       'primary_key' => 'contactemailnum',
-      'unique'      => [ [ 'emailaddress' ], ],
+      'unique'      => [ [ 'contactnum', 'emailaddress' ], ],
       'index'       => [],
     },
 
