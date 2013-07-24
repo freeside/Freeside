@@ -367,7 +367,9 @@ and I<options>
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
 values, the appropriate FS::pkg_svc records will be replaced.  I<hidden_svc>
 can be set to a hashref of svcparts and flag values ('Y' or '') to set the 
-'hidden' field in these records.
+'hidden' field in these records.  I<bulk_skip> can be set to a hashref of
+svcparts and flag values ('Y' or '') to set the 'bulk_skip' field in those
+records.
 
 If I<primary_svc> is set to the svcpart of the primary service, the appropriate
 FS::pkg_svc record will be updated.
@@ -504,10 +506,12 @@ sub replace {
   warn "  replacing pkg_svc records" if $DEBUG;
   my $pkg_svc = $options->{'pkg_svc'};
   my $hidden_svc = $options->{'hidden_svc'} || {};
+  my $bulk_skip  = $options->{'bulk_skip'} || {};
   if ( $pkg_svc ) { # if it wasn't passed, don't change existing pkg_svcs
     foreach my $part_svc ( qsearch('part_svc', {} ) ) {
-      my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
-      my $hidden = $hidden_svc->{$part_svc->svcpart} || '';
+      my $quantity  = $pkg_svc->{$part_svc->svcpart} || 0;
+      my $hidden    = $hidden_svc->{$part_svc->svcpart} || '';
+      my $bulk_skip = $bulk_skip->{$part_svc->svcpart} || '';
       my $primary_svc =
         ( defined($options->{'primary_svc'}) && $options->{'primary_svc'}
           && $options->{'primary_svc'} == $part_svc->svcpart
@@ -523,16 +527,19 @@ sub replace {
       my $old_quantity = 0;
       my $old_primary_svc = '';
       my $old_hidden = '';
+      my $old_bulk_skip = '';
       if ( $old_pkg_svc ) {
         $old_quantity = $old_pkg_svc->quantity;
         $old_primary_svc = $old_pkg_svc->primary_svc 
           if $old_pkg_svc->dbdef_table->column('primary_svc'); # is this needed?
         $old_hidden = $old_pkg_svc->hidden;
+        $old_bulk_skip = $old_pkg_svc->old_bulk_skip;
       }
    
-      next unless $old_quantity != $quantity || 
-                  $old_primary_svc ne $primary_svc ||
-                  $old_hidden ne $hidden;
+      next unless $old_quantity    != $quantity
+               || $old_primary_svc ne $primary_svc
+               || $old_hidden      ne $hidden
+               || $old_bulk_skip   ne $bulk_skip;
     
       my $new_pkg_svc = new FS::pkg_svc( {
         'pkgsvcnum'   => ( $old_pkg_svc ? $old_pkg_svc->pkgsvcnum : '' ),
@@ -541,6 +548,7 @@ sub replace {
         'quantity'    => $quantity, 
         'primary_svc' => $primary_svc,
         'hidden'      => $hidden,
+        'bulk_skip'   => $bulk_skip,
       } );
       my $error = $old_pkg_svc
                     ? $new_pkg_svc->replace($old_pkg_svc)

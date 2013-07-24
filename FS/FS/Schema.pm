@@ -2221,16 +2221,17 @@ sub tables_hashref {
 
     'pkg_svc' => {
       'columns' => [
-        'pkgsvcnum',  'serial', '',  '', '', '', 
-        'pkgpart',    'int',    '',   '', '', '', 
-        'svcpart',    'int',    '',   '', '', '', 
-        'quantity',   'int',    '',   '', '', '', 
-        'primary_svc','char', 'NULL',  1, '', '', 
-        'hidden',     'char', 'NULL',  1, '', '',
+        'pkgsvcnum',   'serial',    '', '', '', '', 
+        'pkgpart',        'int',    '', '', '', '', 
+        'svcpart',        'int',    '', '', '', '', 
+        'quantity',       'int',    '', '', '', '', 
+        'primary_svc',   'char', 'NULL', 1, '', '', 
+        'hidden',        'char', 'NULL', 1, '', '',
+        'bulk_skip',     'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'pkgsvcnum',
-      'unique' => [ ['pkgpart', 'svcpart'] ],
-      'index' => [ ['pkgpart'], ['quantity'] ],
+      'unique'      => [ ['pkgpart', 'svcpart'] ],
+      'index'       => [ ['pkgpart'], ['quantity'] ],
     },
 
     'part_referral' => {

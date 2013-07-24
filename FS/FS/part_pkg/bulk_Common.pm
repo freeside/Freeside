@@ -58,10 +58,16 @@ sub calc_recur {
   my %n_setup = ();
   my %n_recur = ();
   my %part_svc_label = ();
+  my %pkg_svc = ();
 
   my $summarize = $self->option('summarize_svcs',1);
 
   foreach my $cust_svc ( $self->_bulk_cust_svc( $cust_pkg, $sdate ) ) {
+
+    my $pkg_svc = $pkg_svc{ $cust_pkg->pkgpart. '_'. $cust_svc->svcpart }
+                    ||= qsearchs('pkg_svc', { 'pkgpart' => $cust_pkg->pkgpart,
+                                              'svcpart' => $cust_svc->svcpart});
+    next if $pkg_svc->bulk_skip;
 
     my @label = $cust_svc->label_long( $$sdate, $last_bill );
     die "fatal: no label found, wtf?" unless scalar(@label); #?
