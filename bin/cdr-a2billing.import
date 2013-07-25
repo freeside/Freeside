@@ -1,0 +1,164 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $DEBUG );
+use Date::Parse 'str2time';
+use Date::Format 'time2str';
+use FS::UID qw(adminsuidsetup dbh);
+use FS::cdr;
+use DBI;
+use Getopt::Std;
+
+my %opt;
+getopts('H:U:P:D:T:s:e:c:', \%opt);
+my $user = shift or die &usage;
+
+my $dsn = 'dbi:mysql';
+$dsn .= ":database=$opt{D}" if $opt{D};
+$dsn .= ":host=$opt{H}" if $opt{H};
+
+my $mysql = DBI->connect($dsn, $opt{U}, $opt{P}) 
+  or die $DBI::errstr;
+
+my ($start, $end) = ('', '');
+if ( $opt{s} ) {
+  $start = str2time($opt{s}) or die "can't parse start date $opt{s}\n";
+  $start = time2str('%Y-%m-%d', $start);
+}
+if ( $opt{e} ) {
+  $end = str2time($opt{e}) or die "can't parse end date $opt{e}\n";
+  $end = time2str('%Y-%m-%d', $end);
+}
+
+adminsuidsetup $user;
+
+my $fsdbh = FS::UID::dbh;
+
+# check for existence of freesidestatus
+my $table = $opt{T} || 'cc_call';
+my $status = $mysql->selectall_arrayref("SHOW COLUMNS FROM $table WHERE Field = 'freesidestatus'");
+if( ! @$status ) {
+  print "Adding freesidestatus column...\n";
+  $mysql->do("ALTER TABLE $table ADD COLUMN freesidestatus varchar(32)")
+    or die $mysql->errstr;
+}
+else {
+  print "freesidestatus column present\n";
+}
+
+# Fields:
+# id - primary key, sequential
+# session_id - Local/<digits>-<digits> or SIP/<digits>-<digits>
+# uniqueid - a decimal number, seems to be close to the unix timestamp
+# card_id - probably the equipment port, 1 - 10
+# nasipaddress - we don't care
+# starttime, stoptime - timestamps
+# sessiontime - duration, seconds
+# calledstation - dst
+# sessionbill - upstream_price
+# id_tariffgroup - null, 0, 1
+# id_tariffplan - null, 0, 3, 4, 5, 6, 7, 8, 9
+# id_ratecard - larger numbers
+# (all of the id_* fields are foreign keys: cc_tariffgroup, cc_ratecard, etc.)
+# id_trunk - we don't care
+# sipiax - probably don't care
+# src - src.  Usually a phone number, but not always.
+# id_did - always null
+# buycost - wholesale price? correlated with sessionbill
+# id_card_package_offer - no idea
+# real_sessiontime - close to sessiontime, except when it's null
+# (When sessiontime = 0, real_sessiontime is either 0 or null, and 
+# sessionbill is 0.  When sessiontime > 0, but real_sessiontime is null, 
+# sessionbill is 0.  So real_sessiontime seems to be the billable time, and 
+# is null when the call is non-billable.)
+# dnid - sometimes equals calledstation, or calledstation without the leading 
+# "1".  But not always.
+# terminatecauseid - integer, 0 - 7
+# destination - seems to be the NPA or NPA+NXX sometimes, or "0".
+
+# terminatecauseid values:
+my %disposition = (
+  0 => '',
+  1 => 'ANSWER', #the only one that's billable
+  2 => 'BUSY',
+  3 => 'NOANSWER',
+  4 => 'CANCEL',
+  5 => 'CONGESTION',
+  6 => 'CHANUNAVAIL',
+  7 => 'DONTCALL',
+  8 => 'TORTURE', #???
+  9 => 'INVALIDARGS',
+);
+
+my @cols = ( qw(
+  id sessionid
+  starttime stoptime sessiontime real_sessiontime
+  terminatecauseid
+  calledstation src
+  id_tariffplan id_ratecard sessionbill
+) );
+
+my $sql = 'SELECT '.join(',', @cols). " FROM $table".
+  ' WHERE freesidestatus IS NULL' .
+  ($start && " AND starttime >= '$start'") .
+  ($end   && " AND starttime <  '$end'") ;
+my $sth = $mysql->prepare($sql);
+$sth->execute;
+print "Importing ".$sth->rows." records...\n";
+
+my $cdr_batch = new FS::cdr_batch({ 
+    'cdrbatch' => 'mysql-import-'. time2str('%Y/%m/%d-%T',time),
+  });
+my $error = $cdr_batch->insert;
+die $error if $error;
+my $cdrbatchnum = $cdr_batch->cdrbatchnum;
+my $imports = 0;
+my $updates = 0;
+
+my $row;
+while ( $row = $sth->fetchrow_hashref ) {
+  $row->{calledstation} =~ s/^1//;
+  $row->{src} =~ s/^1//;
+  my $cdr = FS::cdr->new ({
+    uniqueid            => $row->{sessionid},
+    cdrbatchnum         => $cdrbatchnum,
+    startdate           => time2str($row->{starttime}),
+    enddate             => time2str($row->{stoptime}),
+    duration            => $row->{sessiontime},
+    billsec             => $row->{real_sessiontime},
+    dst                 => $row->{calledstation},
+    src                 => $row->{src},
+    upstream_rateplanid => $row->{id_tariffplan},
+    upstream_rateid     => $row->{id_ratecard}, # I think?
+    upstream_price      => $row->{sessionbill},
+  });
+  $cdr->cdrtypenum($opt{c}) if $opt{c};
+
+  my $error = $cdr->insert;
+  if($error) {
+    print "failed import: $error\n";
+  } else {
+    $imports++;
+    my $updated = $mysql->do(
+                    "UPDATE $table SET freesidestatus = 'done' WHERE id = ?",
+                    undef,
+                    $row->{'id'}
+                  );
+    $updates += $updated;
+    print "failed to set status: ".$mysql->errstr."\n" unless $updated;
+  }
+}
+print "Done.\nImported $imports CDRs, marked $updates as done in source database.\n";
+$mysql->disconnect;
+
+sub usage {
+  "Usage: 
+  cdr-a2billing.import
+      [ -H host ]
+      -D database
+      -U user
+      -P password
+      [ -s start ] [ -e end ] [ -c cdrtypenum ]
+      freesideuser
+";
+}
