@@ -212,6 +212,11 @@ $COLUMN_MAP = {
             }
         }
     },
+    WillResolveRelative => {
+        title     => 'Will Resolve',
+        attribute => 'WillResolve',
+        value     => sub { return $_[0]->WillResolveObj->AgeAsString },
+    },
     ResolvedRelative => {
         title     => 'Resolved', # loc
         attribute => 'Resolved',
@@ -236,6 +241,11 @@ $COLUMN_MAP = {
         title     => 'Due', # loc
         attribute => 'Due',
         value     => sub { return $_[0]->DueObj },
+    },
+    WillResolve => {
+        title     => 'Will Resolve',
+        attribute => 'WillResolve',
+        value     => sub { return $_[0]->WillResolveObj },
     },
     Resolved => {
         title     => 'Resolved', # loc
