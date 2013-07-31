@@ -673,8 +673,8 @@ if ( $curuser->access_right('Configuration' ) ) {
   %config_menu = (
     'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
     'separator'     => '', #its a separator!
+    'Companies'     => [ \%config_agent, '' ],
     'Employees'     => [ \%config_employees, '' ],
-    'Resellers'     => [ \%config_agent, '' ],
     'Sales People'  => [ \%config_sales, '' ],
     'separator2'    => '', #its a separator!
     'Customers'     => [ \%config_cust, '' ],
