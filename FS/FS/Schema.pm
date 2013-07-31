@@ -236,6 +236,10 @@ sub dbdef_dist {
 
     }
 
+    my $primary_key_col = $tableobj->column($tableobj->primary_key)
+      or die "$table: primary key declared as ". $tableobj->primary_key.
+             ", but no column of that name\n";
+
     my $historynum_type = ( $tableobj->column($tableobj->primary_key)->type
                               =~ /^(bigserial|bigint|int8)$/i
                                 ? 'bigserial'
@@ -4256,6 +4260,66 @@ sub tables_hashref {
       'primary_key' => 'devicenum',
       'unique' => [ [ 'mac_addr' ], ],
       'index'  => [ [ 'devicepart' ], [ 'svcnum' ], ],
+    },
+
+    'vend_main' => {
+      'columns' => [
+        'vendnum',   'serial',     '',      '', '', '',
+        'vendname', 'varchar',     '', $char_d, '', '',
+        'classnum',     'int',     '',      '', '', '',
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'vendnum',
+      'unique'      => [ ['vendname', 'disabled'] ],
+      'index'       => [],
+    },
+
+    'vend_class' => {
+      'columns' => [
+        'classnum',     'serial',     '',      '', '', '', 
+        'classname',   'varchar',     '', $char_d, '', '', 
+        'disabled',       'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'classnum',
+      'unique'      => [],
+      'index'       => [ ['disabled'] ],
+    },
+
+    'vend_bill' => {
+      'columns' => [
+        'vendbillnum',    'serial',     '',      '', '', '', 
+        'vendnum',           'int',     '',      '', '', '', 
+        '_date',        @date_type,                  '', '', 
+        'charged',     @money_type,                  '', '', 
+      ],
+      'primary_key' => 'vendbillnum',
+      'unique' => [],
+      'index' => [ ['vendnum'], ['_date'], ],
+    },
+
+    'vend_pay' => {
+      'columns' => [
+        'vendpaynum',   'serial',    '',       '', '', '',
+        'vendnum',         'int',    '',       '', '', '', 
+        '_date',     @date_type,                   '', '', 
+        'paid',      @money_type,                  '', '', 
+      ],
+      'primary_key' => 'vendpaynum',
+      'unique' => [],
+      'index' => [ [ 'vendnum' ], [ '_date' ], ],
+    },
+
+    'vend_bill_pay' => {
+      'columns' => [
+        'vendbillpaynum', 'serial',     '',   '', '', '', 
+        'vendbillnum',       'int',     '',   '', '', '', 
+        'vendpaynum',        'int',     '',   '', '', '', 
+        'amount',  @money_type, '', '', 
+        #? '_date',   @date_type, '', '', 
+      ],
+      'primary_key' => 'vendbillpaynum',
+      'unique' => [],
+      'index' => [ [ 'vendbillnum' ], [ 'vendpaynum' ] ],
     },
 
     %{ tables_hashref_torrus() },

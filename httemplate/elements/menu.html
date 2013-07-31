@@ -369,6 +369,10 @@ if( $curuser->access_right('Financial reports') ) {
 
 } # else $report_financial contains nothing.
 
+tie my %report_payable, 'Tie::IxHash',
+  'Payables' => [ $fsurl. 'search/report_vend_bill.html' ],
+;
+
 tie my %report_logs, 'Tie::IxHash';
   $report_logs{'System log'} = [ $fsurl.'search/log.html', 'View system events and debugging information.' ],
   if $curuser->access_right('View system logs')
@@ -405,9 +409,12 @@ $report_menu{'Employees'}      =  [ \%report_employees, 'Employee reports'  ]
   if keys %report_employees;
 $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
   if $curuser->access_right('Billing event reports');
-$report_menu{'Financial'}      = [ \%report_financial, 'Financial reports' ]
+$report_menu{'Financial (Receivables)'} = [ \%report_financial, 'Financial reports (Receivables)' ]
   if $curuser->access_right('Financial reports') 
   or $curuser->access_right('Receivables report');
+$report_menu{'Financial (Payables)'} = [ \%report_payable, 'Financial reports (Payables)' ]
+  if $curuser->access_right('Financial reports');
+
 $report_menu{'Logs'}           = [ \%report_logs, 'System and email logs' ]
   if (keys %report_logs); # empty if the user has no rights to it
 $report_menu{'SQL Query'}      = [ $fsurl.'search/report_sql.html', 'SQL Query']
@@ -694,9 +701,19 @@ $config_menu{'Packages'} = [ \%config_pkg, '' ]
      || $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
 
-if ( $curuser->access_right('Configuration' ) ) {
+if ( $curuser->access_right('Configuration') ) {
   $config_menu{'Services'} = [ \%config_export_svc, '' ];
   $config_menu{separator3} = '';
+}
+
+tie my %config_vendor, 'Tie::IxHash',
+  'Vendor classes' => [ $fsurl.'browse/vend_class.html', '' ],
+  'Vendors'        => [ $fsurl.'browse/vend_main.html', '' ],
+;
+
+if ( $curuser->access_right('Configuration') ) {
+  $config_menu{'Vendors'} = [ \%config_vendor, '' ];
+  $config_menu{separator4} = '';
 }
 
 $config_menu{'Billing'} = [ \%config_billing, '' ]

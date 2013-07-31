@@ -346,6 +346,12 @@ if ( -e $addl_handler_use_file ) {
   use FS::agent_currency;
   use FS::currency_exchange;
   use FS::part_pkg_currency;
+  use FS::cust_payby;
+  use FS::vend_main;
+  use FS::vend_class;
+  use FS::vend_bill;
+  use FS::vend_pay;
+  use FS::vend_bill_pay;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

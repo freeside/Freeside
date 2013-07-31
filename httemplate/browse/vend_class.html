@@ -1,0 +1,33 @@
+<& elements/browse.html,
+     'title'              => 'Vendor classes',
+     'html_init'          => $html_init,
+     'name'               => 'vendor classes',
+     'disableable'        => 1,
+     'disabled_statuspos' => 2,
+     'query'              => { 'table'     => 'vend_class',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY classnum',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init =
+  'Vendor classes group vendor charges for Accounts Payable reporting.<BR><BR>'.
+  qq!<A HREF="${p}edit/vend_class.html"><I>Add a vendor class</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM vend_class';
+
+my $link = [ $p.'edit/vend_class.html?', 'classnum' ];
+
+my $header = [ '#', 'Class' ];
+my $fields = [ 'classnum', 'classname' ];
+my $links  = [ $link, $link ];
+
+</%init>                                                                        
