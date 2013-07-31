@@ -7,6 +7,7 @@
      'count_query' => $count_query,
      'count_addl'  => [ '$%.2f total', ],
      'header'      => [ 'Date',
+                        'Payment date',
                         'Vendor',
                         'Class',
                         'Amount',
@@ -14,6 +15,7 @@
                       ],
      'fields'      => [
                         sub { time2str('%D', shift->_date) },
+                        sub { time2str('%D', shift->payment_date) },
                         sub { shift->vend_main->vendname },
                         sub { shift->vend_main->vend_class->classname },
                         'charged',
@@ -32,8 +34,11 @@ die "access denied"
 my %search = ();
 
 # begin/end/beginning/ending
-my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '_date');
 $search{'_date'} = [ $beginning, $ending ];
+
+($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, 'payment_date');
+$search{'payment_date'} = [ $beginning, $ending ];
 
 my $query = FS::vend_bill->search( \%search );
 my $count_query = delete( $query->{'count_query'} );

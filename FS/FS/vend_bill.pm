@@ -202,15 +202,26 @@ sub search {
                  "vend_bill._date <  $ending";
   }
 
+  #_date
+  if ( $param->{payment_date} ) {
+    my($beginning, $ending) = @{$param->{payment_date}};
+
+    push @where, "vend_pay._date >= $beginning",
+                 "vend_pay._date <  $ending";
+  }
+
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
-  #my $count_query = "SELECT COUNT(*) FROM vend_bill $addl_from $extra_sql";
-  my $count_query = "SELECT COUNT(*), SUM(charged) FROM vend_bill $extra_sql";
+  #simplistic, but how we are for now
+  my $addl_from = ' LEFT JOIN vend_bill_pay USING (vendbillnum) '.
+                  ' LEFT JOIN vend_pay      USING (vendpaynum)  ';
+
+  my $count_query = "SELECT COUNT(*), SUM(charged) FROM vend_bill $addl_from $extra_sql";
 
   +{
     'table'         => 'vend_bill',
-    #'select'        => $select,
-    #'addl_from'     => $addl_from,
+    'select'        => 'vend_bill.*, vend_pay._date as payment_date',
+    'addl_from'     => $addl_from,
     'hashref'       => {},
     'extra_sql'     => $extra_sql,
     'order_by'      => 'ORDER BY _date',
