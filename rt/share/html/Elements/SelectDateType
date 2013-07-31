@@ -53,6 +53,7 @@
 <option value="LastUpdated"><&|/l&>Last Updated</&></option>
 <option value="Starts"><&|/l&>Starts</&></option>
 <option value="Due"><&|/l&>Due</&></option>
+<option value="WillResolve"><&|/l&>Will Resolve</&></option>
 <option value="Updated"><&|/l&>Updated</&></option>
 </select>
 <%ARGS>

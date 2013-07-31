@@ -94,6 +94,7 @@ my @fields = (
     LastUpdated LastUpdatedRelative
     Told        ToldRelative
     Due         DueRelative
+    WillResolve WillResolveRelative
     Resolved    ResolvedRelative
 
     RefersTo    ReferredToBy
