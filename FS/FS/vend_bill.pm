@@ -193,6 +193,7 @@ sub search {
   my ($class, $param) = @_;
 
   my @where = ();
+  my $addl_from = '';
 
   #_date
   if ( $param->{_date} ) {
@@ -202,7 +203,7 @@ sub search {
                  "vend_bill._date <  $ending";
   }
 
-  #_date
+  #payment_date
   if ( $param->{payment_date} ) {
     my($beginning, $ending) = @{$param->{payment_date}};
 
@@ -210,11 +211,17 @@ sub search {
                  "vend_pay._date <  $ending";
   }
 
+  if ( $param->{'classnum'} =~ /^(\d+)$/ ) {
+    #also simplistic, but good for now
+    $addl_from .= ' LEFT JOIN vend_main USING (vendnum) ';
+    push @where, "vend_main.classnum = $1";
+  }
+
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
   #simplistic, but how we are for now
-  my $addl_from = ' LEFT JOIN vend_bill_pay USING (vendbillnum) '.
-                  ' LEFT JOIN vend_pay      USING (vendpaynum)  ';
+  $addl_from .= ' LEFT JOIN vend_bill_pay USING (vendbillnum) '.
+                ' LEFT JOIN vend_pay      USING (vendpaynum)  ';
 
   my $count_query = "SELECT COUNT(*), SUM(charged) FROM vend_bill $addl_from $extra_sql";
 

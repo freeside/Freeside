@@ -4,7 +4,7 @@
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-   <TR>
+    <TR>
         <TD ALIGN="right" VALIGN="center"><% mt('Date') |h %></TD>
         <TD>
           <TABLE>
@@ -16,7 +16,7 @@
         </TD>
     </TR>
 
-  <TR>
+    <TR>
         <TD ALIGN="right" VALIGN="center"><% mt('Payment date') |h %></TD>
         <TD>
           <TABLE>
@@ -27,6 +27,9 @@
           </TABLE>
         </TD>
     </TR>
+
+    <& /elements/tr-select-vend_class.html,
+    &>
 
   </TABLE>
 
