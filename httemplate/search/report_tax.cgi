@@ -15,8 +15,15 @@ Download full results<BR>
 as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel spreadsheet</A>
 </TD>
 
+<STYLE type="text/css">
+td.sectionhead {
+  background-color: #777777;
+  color: #ffffff;
+  font-weight: bold;
+  text-align: left;
+}
+</STYLE>
 <% include('/elements/table-grid.html') %>
-
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=3></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=9>Sales</TH>
@@ -51,18 +58,31 @@ as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel sprea
     <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>(monthly exemption)</FONT></TH>
   </TR>
 
+% foreach my $class (@pkgclasses ) {
+%   next if @{ $class->{regions} } == 0;
+%   if ( $class->{classname} ) {
+  <TR>
+    <TD COLSPAN=19 CLASS="sectionhead"><% $class->{classname} %></TD>
+  </TR>
+%   }
+
 % my $bgcolor1 = '#eeeeee';
 % my $bgcolor2 = '#ffffff';
 % my $bgcolor;
-%
+
+% my @regions = @{ $class->{regions} };
 % foreach my $region ( @regions ) {
 %
 %   my $link = '';
+%   if ( $with_pkgclass and length($class->{classnum}) ) {
+%     $link = ';classnum='.$class->{classnum};
+%   } # else we're not breaking down pkg class, or this is the grand total
+%
 %   if ( $region->{'label'} eq $out ) {
-%     $link = ';out=1';
+%     $link .= ';out=1';
 %   } elsif ( $region->{'taxnums'} ) {
 %     # might be nicer to specify this as country:state:city
-%     $link = ';'.join(';', map { "taxnum=$_" } @{ $region->{'taxnums'} });
+%     $link .= ';'.join(';', map { "taxnum=$_" } @{ $region->{'taxnums'} });
 %   }
 %
 %   if ( $bgcolor eq $bgcolor1 ) {
@@ -87,15 +107,20 @@ as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel sprea
 %   my $bigmath = '<FONT FACE="sans-serif" SIZE="+1"><B>';
 %   my $bme = '</B></FONT>';
 
+%   if ( $region->{'is_total'} ) {
+    <TR STYLE="font-style: italic">
+      <TD STYLE="text-align: right; padding-right: 1ex; background-color:<%$bgcolor%>">Total</TD>
+%   } else {
     <TR>
       <<%$td%>><% $region->{'label'} %></TD>
+%   }
       <<%$td%> ALIGN="right">
         <A HREF="<% $baselink. $link %>;nottax=1"
         ><% &$money_sprintf( $region->{'sales'} ) %></A>
       </TD>
-%     if ( $region->{'label'} eq $out ) {
+%   if ( $region->{'label'} eq $out ) {
       <<%$td%> COLSPAN=12></TD>
-%     } else { #not $out
+%   } else { #not $out
       <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
       <<%$td%> ALIGN="right">
         <A HREF="<% $baselink. $link %>;nottax=1;exempt_cust=Y"
@@ -123,8 +148,8 @@ as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel sprea
         <% &$money_sprintf( $region->{'owed'} ) %>
       </TD>
 %   } # if !$out
-%   unless ( $cgi->param('show_taxclasses') ) { 
-%       my $invlink = $region->{'url_param_inv'}
+%   unless ( $cgi->param('show_taxclasses') ) {
+%     my $invlink = $region->{'url_param_inv'}
 %                       ? ';'. $region->{'url_param_inv'}
 %                       : $link;
 
@@ -153,11 +178,13 @@ as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel sprea
         <<%$tdh%> ALIGN="right">
           <% &$money_sprintf( $region->{'tax'} - $region->{'credit'} ) %>
         </TD>
-%   }
-% } # not $out
+%     }
+%   } # show_taxclasses
 
     </TR>
-% } 
+% } # foreach $region
+
+%} # foreach $class
 
 </TABLE>
 
@@ -175,16 +202,28 @@ as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel sprea
     </TR>
 
 %   #some false laziness w/above
-%   $bgcolor1 = '#eeeeee';
-%   $bgcolor2 = '#ffffff';
+%   foreach my $class (@pkgclasses) {
+%   if ( $class->{classname} ) {
+    <TR>
+      <TD COLSPAN=6 CLASS="sectionhead"><% $class->{classname} %></TD>
+    </TR>
+%   }
+
+%   my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor;
 %
-%   foreach my $region ( @base_regions ) {
+%   foreach my $region ( @{ $class->{base_regions} } ) {
 %
 %     my $link = '';
+%     if ( $with_pkgclass and length($class->{classnum}) ) {
+%       $link = ';classnum='.$class->{classnum};
+%     }
+%
 %     if ( $region->{'label'} eq $out ) {
-%       $link = ';out=1';
+%       $link .= ';out=1';
 %     } else {
-%       $link = ';'. $region->{'url_param'}
+%       $link .= ';'. $region->{'url_param'}
 %         if $region->{'url_param'};
 %     }
 %
@@ -231,6 +270,7 @@ as <A HREF="<% $p.'search/report_tax-xls.cgi?'.$cgi->query_string%>">Excel sprea
       </TR>
 %     } # if $out
 %   } #foreach $region
+% } #foreach $class
 
   </TABLE>
 
@@ -266,6 +306,8 @@ my $join_cust_pkg = $join_cust.
 
 my $from_join_cust_pkg = " FROM cust_bill_pkg $join_cust_pkg "; 
 
+my $with_pkgclass = $cgi->param('show_pkgclasses');
+
 # either or both of these can be used to link cust_bill_pkg to cust_main_county
 my $pkg_tax = "SELECT SUM(amount) as tax_amount, invnum, taxnum, ".
   "cust_bill_pkg_tax_location.pkgnum ".
@@ -276,7 +318,20 @@ my $pkg_tax_exempt = "SELECT SUM(amount) AS exempt_charged, billpkgnum, taxnum "
   "FROM cust_tax_exempt_pkg EXEMPT_WHERE GROUP BY billpkgnum, taxnum";
 
 my $where = "WHERE _date >= $beginning AND _date <= $ending ";
-my $group = "GROUP BY cust_main_county.taxnum";
+# SELECT/GROUP clauses for first-level queries
+# classnum is a placeholder; they all go in one class in this case.
+my $select = "SELECT NULL AS classnum, cust_main_county.taxnum, ";
+my $group =  "GROUP BY cust_main_county.taxnum";
+# SELECT/GROUP clauses for second-level (totals) queries
+my $select_all = "SELECT NULL AS classnum, ";
+my $group_all =  "";
+
+if ( $with_pkgclass ) {
+  $select = "SELECT COALESCE(part_pkg.classnum,0), cust_main_county.taxnum, ";
+  $group =  "GROUP BY part_pkg.classnum, cust_main_county.taxnum";
+  $select_all = "SELECT COALESCE(part_pkg.classnum,0), ";
+  $group_all  = "GROUP BY COALESCE(part_pkg.classnum,0)";
+}
 
 my $agentname = '';
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -292,20 +347,24 @@ my $nottax = 'cust_bill_pkg.pkgnum != 0';
 # plus separate queries for the totals row
 my (%sql, %all_sql);
 
-# general form
-my $exempt = "SELECT cust_main_county.taxnum, SUM(exempt_charged)
-  FROM cust_main_county
-  JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
-  USING (taxnum)
-  JOIN cust_bill_pkg USING (billpkgnum)
-  $join_cust $where AND $nottax $group";
+# SALES QUERIES (taxable sales, all types of exempt sales)
+# -------------
 
-my $all_exempt = "SELECT SUM(exempt_charged)
+# general form
+my $exempt = "$select SUM(exempt_charged)
   FROM cust_main_county
   JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
   USING (taxnum)
   JOIN cust_bill_pkg USING (billpkgnum)
-  $join_cust $where AND $nottax";
+  $join_cust_pkg $where AND $nottax $group";
+
+my $all_exempt = "$select_all SUM(exempt_charged)
+  FROM cust_main_county
+  JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
+  USING (taxnum)
+  JOIN cust_bill_pkg USING (billpkgnum)
+  $join_cust_pkg $where AND $nottax
+  $group_all";
 
 # sales to tax-exempt customers
 $sql{exempt_cust} = $exempt;
@@ -326,7 +385,7 @@ $all_sql{exempt_monthly} = $all_exempt;
 $all_sql{exempt_monthly} =~ s/EXEMPT_WHERE/WHERE exempt_monthly = 'Y'/;
 
 # taxable sales
-$sql{taxable} = "SELECT cust_main_county.taxnum, 
+$sql{taxable} = "$select
   SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(exempt_charged, 0))
   FROM cust_main_county
   JOIN ($pkg_tax) AS pkg_tax USING (taxnum)
@@ -334,13 +393,13 @@ $sql{taxable} = "SELECT cust_main_county.taxnum,
   LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt
     ON (pkg_tax_exempt.billpkgnum = cust_bill_pkg.billpkgnum 
         AND pkg_tax_exempt.taxnum = cust_main_county.taxnum)
-  $join_cust $where AND $nottax $group";
+  $join_cust_pkg $where AND $nottax $group";
 
 # Here we're going to sum all line items that are taxable _at all_,
 # under any tax.  exempt_charged is the sum of all exemptions for a 
 # particular billpkgnum + taxnum; we take the taxnum that has the 
 # smallest sum of exemptions and subtract that from the charged amount.
-$all_sql{taxable} = "SELECT
+$all_sql{taxable} = "$select_all
   SUM(cust_bill_pkg.setup + cust_bill_pkg.recur - COALESCE(min_exempt, 0))
   FROM cust_bill_pkg
   JOIN (
@@ -351,14 +410,16 @@ $all_sql{taxable} = "SELECT
     GROUP BY invnum, pkgnum
   ) AS pkg_is_taxable 
   USING (invnum, pkgnum)
-  $join_cust $where AND $nottax";
-  # we don't join pkg_tax_exempt.taxnum here, because
+  $join_cust_pkg $where AND $nottax $group_all";
 
 $sql{taxable} =~ s/EXEMPT_WHERE//; # unrestricted
 $all_sql{taxable} =~ s/EXEMPT_WHERE//;
 
 # there isn't one for 'sales', because we calculate sales by adding up 
 # the taxable and exempt columns.
+
+# TAX QUERIES (billed tax, credited tax)
+# -----------
 
 # sum of billed tax:
 # join cust_bill_pkg to cust_main_county via cust_bill_pkg_tax_location
@@ -367,86 +428,119 @@ my $taxfrom = " FROM cust_bill_pkg
                 LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
                 LEFT JOIN cust_main_county USING ( taxnum )";
 
-my $istax = "cust_bill_pkg.pkgnum = 0";
-my $named_tax = "(
-  taxname = itemdesc
-  OR ( taxname IS NULL 
-    AND ( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )
-  )
-)";
+if ( $with_pkgclass ) {
+  # If we're not grouping by package class, this is unnecessary, and
+  # probably really expensive.
+  $taxfrom .= "
+                LEFT JOIN cust_bill_pkg AS taxable
+                  ON (cust_bill_pkg_tax_location.taxable_billpkgnum = taxable.billpkgnum)
+                LEFT JOIN cust_pkg ON (taxable.pkgnum = cust_pkg.pkgnum)
+                LEFT JOIN part_pkg USING (pkgpart)";
+}
 
-$sql{tax} = "SELECT cust_main_county.taxnum, 
-             SUM(cust_bill_pkg_tax_location.amount)
+my $istax = "cust_bill_pkg.pkgnum = 0";
+my $named_tax =
+  "COALESCE(taxname,'Tax') = COALESCE(cust_bill_pkg.itemdesc,'Tax')";
+
+$sql{tax} = "$select SUM(cust_bill_pkg_tax_location.amount)
              $taxfrom
              $where AND $istax AND $named_tax
              $group";
 
-$all_sql{tax} = "SELECT SUM(cust_bill_pkg.setup)
+$all_sql{tax} = "$select_all SUM(cust_bill_pkg.setup)
              FROM cust_bill_pkg
              $join_cust
-             $where AND $istax";
+             $where AND $istax
+             $group_all";
 
 # sum of credits applied against billed tax
+# ($creditfrom includes join of taxable item to part_pkg if with_pkgclass
+# is on)
 my $creditfrom = $taxfrom .
    ' JOIN cust_credit_bill_pkg USING (billpkgtaxlocationnum)';
-my $creditfromwhere = $where . 
+my $creditwhere = $where . 
    ' AND billpkgtaxratelocationnum IS NULL';
 
-$sql{credit} = "SELECT cust_main_county.taxnum,
-                SUM(cust_credit_bill_pkg.amount)
+$sql{credit} = "$select SUM(cust_credit_bill_pkg.amount)
                 $creditfrom
-                $creditfromwhere AND $istax AND $named_tax
+                $creditwhere AND $istax AND $named_tax
                 $group";
 
-$all_sql{credit} = "SELECT SUM(cust_credit_bill_pkg.amount)
+$all_sql{credit} = "$select_all SUM(cust_credit_bill_pkg.amount)
                 FROM cust_credit_bill_pkg
                 JOIN cust_bill_pkg USING (billpkgnum)
                 $join_cust
-                $where AND $istax";
+                $where AND $istax
+                $group_all";
+
+if ( $with_pkgclass ) {
+  # the slightly more complicated version, with lots of joins that are 
+  # unnecessary if you're not breaking down by package class
+  $all_sql{tax} = "$select_all SUM(cust_bill_pkg_tax_location.amount)
+             $taxfrom
+             $where AND $istax
+             $group_all";
+
+  $all_sql{credit} = "$select_all SUM(cust_credit_bill_pkg.amount)
+                      $creditfrom
+                      $creditwhere AND $istax
+                      $group_all";
+}
+
+# "out of taxable region" sales
+$all_sql{out_sales} = 
+  "$select_all SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
+  FROM (cust_bill_pkg $join_cust_pkg)
+  LEFT JOIN ($pkg_tax) AS pkg_tax USING (invnum, pkgnum)
+  LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum)
+  $where AND $nottax
+  AND pkg_tax.taxnum IS NULL AND pkg_tax_exempt.taxnum IS NULL
+  $group_all"
+;
+
+$all_sql{out_sales} =~ s/EXEMPT_WHERE//;
 
 my %data;
-my %total = (owed => 0);
+my %total;
 foreach my $k (keys(%sql)) {
   my $stmt = $sql{$k};
   warn "\n".uc($k).":\n".$stmt."\n" if $DEBUG;
   my $sth = dbh->prepare($stmt);
-  # two columns => key/value
+  # three columns: classnum, taxnum, value
   $sth->execute 
     or die "failed to execute $k query: ".$sth->errstr;
-  $data{$k} = +{ map { @$_ } @{ $sth->fetchall_arrayref([]) } };
-
-  warn "\n".$all_sql{$k}."\n" if $DEBUG;
-  $total{$k} = FS::Record->scalar_sql( $all_sql{$k} );
-  warn Dumper($data{$k}) if $DEBUG > 1;
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    $data{$k}{$row->[0]}{$row->[1]} = $row->[2];
+  }
 }
+warn "DATA:\n".Dumper(\%data) if $DEBUG > 1;
+
+foreach my $k (keys %all_sql) {
+  warn "\n".$all_sql{$k}."\n" if $DEBUG;
+  my $sth = dbh->prepare($all_sql{$k});
+  # two columns: classnum, value
+  $sth->execute 
+    or die "failed to execute $k totals query: ".$sth->errstr;
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    $total{$k}{$row->[0]} = $row->[1];
+  }
+}
+warn "TOTALS:\n".Dumper(\%total);# if $DEBUG > 1;
 # so $data{tax}, for example, is now a hash with one entry
-# for each taxnum, containing the tax billed on that taxnum.
+# for each classnum, containing a hash with one entry for each
+# taxnum, containing the tax billed on that taxnum.
+# if with_pkgclass is off, then the classnum is always null.
 
-# oddball cases:
-# "out of taxable region" sales
-my %out;
-my $out_sales_sql = 
-  "SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
-  FROM (cust_bill_pkg $join_cust)
-  LEFT JOIN ($pkg_tax) AS pkg_tax USING (invnum, pkgnum)
-  LEFT JOIN ($pkg_tax_exempt) AS pkg_tax_exempt USING (billpkgnum)
-  $where AND $nottax
-  AND pkg_tax.taxnum IS NULL AND pkg_tax_exempt.taxnum IS NULL"
-;
-
-$out_sales_sql =~ s/EXEMPT_WHERE//;
-
-$out{sales} = FS::Record->scalar_sql($out_sales_sql);
-
-# unlinked tax collected (for diagnostics)
+# integrity checks
+# unlinked tax collected
 my $out_tax_sql =
   "SELECT SUM(cust_bill_pkg.setup)
   FROM (cust_bill_pkg $join_cust)
   LEFT JOIN cust_bill_pkg_tax_location USING (billpkgnum)
   $where AND $istax AND cust_bill_pkg_tax_location.billpkgnum IS NULL"
 ;
-$out{tax} = FS::Record->scalar_sql($out_tax_sql);
-# unlinked tax credited (for diagnostics)
+my $unlinked_tax = FS::Record->scalar_sql($out_tax_sql);
+# unlinked tax credited
 my $out_credit_sql =
   "SELECT SUM(cust_credit_bill_pkg.amount)
   FROM cust_credit_bill_pkg
@@ -454,10 +548,10 @@ my $out_credit_sql =
   $join_cust
   $where AND $istax AND cust_credit_bill_pkg.billpkgtaxlocationnum IS NULL"
 ;
-$out{credit} = FS::Record->scalar_sql($out_credit_sql);
+my $unlinked_credit = FS::Record->scalar_sql($out_credit_sql);
 
 # all sales
-$total{sales} = FS::Record->scalar_sql(
+my $all_sales = FS::Record->scalar_sql(
   "SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
   FROM cust_bill_pkg $join_cust $where AND $nottax"
 );
@@ -481,139 +575,197 @@ my $group_test = sub { # to be applied to a tax label
   }
 };
 
-# if show_taxclasses is on, %base_regions will contain the same data
-# as %regions, but with taxclasses merged together (and ignoring report_group
-# filtering).
-my (%regions, %base_regions);
-my $tot_tax = 0;
-my $tot_credit = 0;
+my @pkgclasses;
+if ($with_pkgclass) {
+  @pkgclasses = qsearch('pkg_class', {});
+  push @pkgclasses, FS::pkg_class->new({
+    classnum  => '0',
+    classname => 'Unclassified',
+  });
+} else {
+  @pkgclasses = ( FS::pkg_class->new({
+    classnum  => '',
+    classname => '',
+  }) );
+}
+my %pkgclass_data;
 
-my @loc_params = qw(country state county);
-push @loc_params, 'city' if $cgi->param('show_cities');
-push @loc_params, 'district' if $cgi->param('show_districts');
+foreach my $class (@pkgclasses) {
+  my $classnum = $class->classnum;
+  my $classname = $class->classname;
 
-foreach my $r ( qsearch({ 'table'     => 'cust_main_county', })) {
-  my $taxnum = $r->taxnum;
-  # set up a %regions entry for this region's tax label
-  my $label = $r->label(%label_opt);
-  next if $label eq $out;
-  $regions{$label} ||= { label => $label };
+  # if show_taxclasses is on, %base_regions will contain the same data
+  # as %regions, but with taxclasses merged together (and ignoring report_group
+  # filtering).
+  my (%regions, %base_regions);
 
-  $regions{$label}->{$_} = $r->get($_) foreach @loc_params;
-  $regions{$label}->{taxnums} ||= [];
-  push @{ $regions{$label}->{taxnums} }, $r->taxnum;
+  my @loc_params = qw(country state county);
+  push @loc_params, 'city' if $cgi->param('show_cities');
+  push @loc_params, 'district' if $cgi->param('show_districts');
 
-  my %x; # keys are data items (like 'tax', 'exempt_cust', etc.)
-  foreach my $k (keys %data) {
-    next unless exists($data{$k}->{$taxnum});
-    $x{$k} = $data{$k}->{$taxnum};
-    $regions{$label}->{$k} += $x{$k};
-    if ( $k eq 'taxable' or $k =~ /^exempt/ ) {
-      $regions{$label}->{'sales'} += $x{$k};
+  foreach my $r ( qsearch({ 'table'     => 'cust_main_county', })) {
+    my $taxnum = $r->taxnum;
+    # set up a %regions entry for this region's tax label
+    my $label = $r->label(%label_opt);
+    next if $label eq $out;
+    $regions{$label} ||= { label => $label };
+
+    $regions{$label}->{$_} = $r->get($_) foreach @loc_params;
+    $regions{$label}->{taxnums} ||= [];
+    push @{ $regions{$label}->{taxnums} }, $r->taxnum;
+
+    my %x; # keys are data items (like 'tax', 'exempt_cust', etc.)
+    foreach my $k (keys %data) {
+      next unless exists($data{$k}{$classnum}{$taxnum});
+      $x{$k} = $data{$k}{$classnum}{$taxnum};
+      $regions{$label}{$k} += $x{$k};
+      if ( $k eq 'taxable' or $k =~ /^exempt/ ) {
+        $regions{$label}->{'sales'} += $x{$k};
+      }
     }
+
+    my $owed = $data{'taxable'}{$classnum}{$taxnum} * ($r->tax/100);
+    $regions{$label}->{'owed'} += $owed;
+    $total{'owed'}{$classnum} += $owed;
+
+    if ( defined($regions{$label}->{'rate'})
+         && $regions{$label}->{'rate'} != $r->tax.'%' ) {
+      $regions{$label}->{'rate'} = 'variable';
+    } else {
+      $regions{$label}->{'rate'} = $r->tax.'%';
+    }
+
+    if ( $cgi->param('show_taxclasses') ) {
+      my $base_label = $r->label(%label_opt, 'with_taxclass' => 0);
+      $base_regions{$base_label} ||=
+      {
+        label   => $base_label,
+        tax     => 0,
+        credit  => 0,
+      };
+      $base_regions{$base_label}->{tax}    += $x{tax};
+      $base_regions{$base_label}->{credit} += $x{credit};
+    }
+
   }
 
-  my $owed = $data{'taxable'}->{$taxnum} * ($r->tax/100);
-  $regions{$label}->{'owed'} += $owed;
-  $total{'owed'} += $owed;
+  my @regions = map { $_->{label} }
+    sort {
+      ($b eq $out) <=> ($a eq $out)
+      or $a->{country} cmp $b->{country}
+      or $a->{state}   cmp $b->{state}
+      or $a->{county}  cmp $b->{county}
+      or $a->{city}    cmp $b->{city}
+    } 
+    grep { $_->{sales} > 0 or $_->{tax} > 0 or $_->{credit} > 0 }
+    values %regions;
 
-  if ( defined($regions{$label}->{'rate'})
-       && $regions{$label}->{'rate'} != $r->tax.'%' ) {
-    $regions{$label}->{'rate'} = 'variable';
-  } else {
-    $regions{$label}->{'rate'} = $r->tax.'%';
+  #tax-report_groups filtering
+  @regions = grep &{$group_test}($_), @regions
+    if $group_op;
+
+  #calculate totals
+  my %taxclasses = ();
+  my %county = ();
+  my %state = ();
+  my %country = ();
+  foreach my $label (@regions) {
+    $taxclasses{$regions{$_}->{'taxclass'}} = 1
+      if $regions{$_}->{'taxclass'};
+    $county{$regions{$_}->{'county'}} = 1;
+    $state{$regions{$_}->{'state'}} = 1;
+    $country{$regions{$_}->{'country'}} = 1;
   }
 
-  if ( $cgi->param('show_taxclasses') ) {
-    my $base_label = $r->label(%label_opt, 'with_taxclass' => 0);
-    $base_regions{$base_label} ||=
-    {
-      label   => $base_label,
-      tax     => 0,
-      credit  => 0,
-    };
-    $base_regions{$base_label}->{tax}    += $x{tax};
-    $base_regions{$base_label}->{credit} += $x{credit};
+  my $total_url_param = '';
+  my $total_url_param_invoiced = '';
+  if ( $group_op ) {
+
+    my @country = keys %country;
+    warn "WARNING: multiple countries on this grouped report; total links broken"
+      if scalar(@country) > 1;
+    my $country = $country[0];
+
+    my @state = keys %state;
+    warn "WARNING: multiple countries on this grouped report; total links broken"
+      if scalar(@state) > 1;
+    my $state = $state[0];
+
+    $total_url_param_invoiced =
+    $total_url_param =
+      'report_group='.uri_escape("$group_op $group_value").';'.
+      join(';', map 'taxclass='.uri_escape($_), keys %taxclasses );
+    $total_url_param .= ';'.
+      "country=$country;state=".uri_escape($state).';'.
+      join(';', map 'county='.uri_escape($_), keys %county ) ;
+
   }
 
+  #ordering
+  @regions =
+    map $regions{$_},
+    sort { $a cmp $b }
+    @regions;
+
+  my @base_regions =
+    map $base_regions{$_},
+    sort { $a cmp $b }
+    keys %base_regions;
+
+  #add "Out of taxable" and total lines
+  if ( $total{out_sales}{$classnum} ) {
+    my %out = (
+      'sales' => $total{out_sales}{$classnum},
+      'label' => $out,
+      'rate' => ''
+    );
+    push @regions, \%out;
+    push @base_regions, \%out;
+  }
+
+  if ( @regions ) {
+    my %class_total = map { $_ => $total{$_}{$classnum} } keys(%total);
+    $class_total{is_total} = 1;
+    $class_total{sales} = sum(
+      @class_total{ 'taxable',
+                    'out_sales',
+                    grep(/^exempt/, keys %class_total) }
+    );
+
+    push @regions,      \%class_total;
+    push @base_regions, \%class_total;
+  }
+
+  $pkgclass_data{$classname} = {
+    classnum      => $classnum,
+    classname     => $classname,
+    regions       => \@regions,
+    base_regions  => \@base_regions,
+  };
 }
 
-my @regions = map { $_->{label} }
-  sort {
-    ($b eq $out) <=> ($a eq $out)
-    or $a->{country} cmp $b->{country}
-    or $a->{state}   cmp $b->{state}
-    or $a->{county}  cmp $b->{county}
-    or $a->{city}    cmp $b->{city}
-  } 
-  grep { $_->{sales} > 0 or $_->{tax} > 0 or $_->{credit} > 0 }
-  values %regions;
+if ( $with_pkgclass ) {
+  my $class_zero = delete( $pkgclass_data{'Unclassified'} );
+  @pkgclasses = map { $pkgclass_data{$_} }
+                sort { $a cmp $b }
+                keys %pkgclass_data;
+  push @pkgclasses, $class_zero;
 
-#tax-report_groups filtering
-@regions = grep &{$group_test}($_), @regions
-  if $group_op;
+  my %grand_total = map {
+    $_ => sum( values(%{ $total{$_} }) )
+  } keys(%total);
 
-#calculate totals
-my %taxclasses = ();
-my %county = ();
-my %state = ();
-my %country = ();
-foreach my $label (@regions) {
-  $taxclasses{$regions{$_}->{'taxclass'}} = 1
-    if $regions{$_}->{'taxclass'};
-  $county{$regions{$_}->{'county'}} = 1;
-  $state{$regions{$_}->{'state'}} = 1;
-  $country{$regions{$_}->{'country'}} = 1;
+  $grand_total{sales} = $all_sales;
+
+  push @pkgclasses, {
+    classnum      => '',
+    classname     => 'Total',
+    regions       => [ \%grand_total ],
+    base_regions  => [ \%grand_total ],
+  }
+} else {
+  @pkgclasses = $pkgclass_data{''};
 }
-
-my $total_url_param = '';
-my $total_url_param_invoiced = '';
-if ( $group_op ) {
-
-  my @country = keys %country;
-  warn "WARNING: multiple countries on this grouped report; total links broken"
-    if scalar(@country) > 1;
-  my $country = $country[0];
-
-  my @state = keys %state;
-  warn "WARNING: multiple countries on this grouped report; total links broken"
-    if scalar(@state) > 1;
-  my $state = $state[0];
-
-  $total_url_param_invoiced =
-  $total_url_param =
-    'report_group='.uri_escape("$group_op $group_value").';'.
-    join(';', map 'taxclass='.uri_escape($_), keys %taxclasses );
-  $total_url_param .= ';'.
-    "country=$country;state=".uri_escape($state).';'.
-    join(';', map 'county='.uri_escape($_), keys %county ) ;
-
-}
-
-#ordering
-@regions =
-  map $regions{$_},
-  sort { $a cmp $b }
-  @regions;
-
-my @base_regions =
-  map $base_regions{$_},
-  sort { $a cmp $b }
-  keys %base_regions;
-
-#add "Out of taxable" and total lines
-%out = ( %out,
-  'label' => $out,
-  'rate' => ''
-);
-%total = ( %total, 
-  'label'         => 'Total',
-  'url_param'     => $total_url_param,
-  'url_param_inv' => $total_url_param_invoiced,
-  'rate'          => '',
-);
-push @regions, \%out, \%total;
-push @base_regions, \%out, \%total;
 
 #-- 
 
