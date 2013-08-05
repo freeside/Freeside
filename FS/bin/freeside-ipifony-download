@@ -183,11 +183,24 @@ FILE: foreach my $filename (@$files) {
       if $opt{v};
 
     my $amount = sprintf('%.2f',$hash{quantity} * $hash{unit_price});
+
+    # bill the charge on the customer's next bill date, if that's within
+    # the current calendar month; otherwise bill it immediately
+    # (see RT#24325)
+    my $next_bill_date = $cust_main->next_bill_date;
+    if ( $next_bill_date ) {
+      my ($bill_month, $bill_year) = (localtime($next_bill_date))[4, 5];
+      my ($this_month, $this_year) = (localtime(time))[4, 5];
+      if ( $this_month == $bill_month and $this_year == $bill_year ) {
+        $cust_main->set('charge_date', $next_bill_date);
+      }
+    }
+
     # construct arguments for $cust_main->charge
     my %charge_opt = (
       amount      => $hash{unit_price},
       quantity    => $hash{quantity},
-      start_date  => $cust_main->next_bill_date,
+      start_date  => $cust_main->get('charge_date'),
       pkg         => $hash{date_desc} .
                    ' (' . $hash{quantity} . ' @ $' . $hash{unit_price} . ' ea)',
       taxclass    => $TAXCLASSES{ $hash{taxclass} },
@@ -244,7 +257,7 @@ foreach my $custnum ( keys (%e911_qty) ) {
   my $cust_pkg = FS::cust_pkg->new({
       pkgpart     => $opt{e},
       custnum     => $custnum,
-      start_date  => $cust_main->next_bill_date,
+      start_date  => $cust_main->get('charge_date'),
       quantity    => $quantity,
   });
   my $error = $cust_main->order_pkg({ cust_pkg => $cust_pkg });
