@@ -32,13 +32,14 @@ my $m2_error_callback = sub { # reconstruct the list
   my @fields = qw(sectorname ip_addr);
   map {
     my $k = $_;
-    next if !length($cgi->param($k.'_sectorname'));
     new FS::tower_sector {
       'towernum'  => $object->towernum,
       'sectornum' => scalar( $cgi->param($k) ),
       map { $_ => scalar( $cgi->param($k.'_'.$_) ) } @fields,
     };
-  } grep /^sectornum\d+$/, ($cgi->param);
+  } grep length($cgi->param($_.'_sectorname')),
+      grep /^sectornum\d+$/,
+        ($cgi->param);
 };
 
 my $default_ip_addr_callback = sub {
