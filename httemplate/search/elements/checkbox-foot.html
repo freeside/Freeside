@@ -26,7 +26,8 @@ array is a hashref of either:
 of "submit" becomes the "value" property of the button (and thus its label).
 If "confirm" is specified, the button will have an onclick handler that 
 displays the value of "confirm" in a popup message box and asks the user to 
-confirm the choice.
+confirm the choice.  The hashref may also have a "name" property, which 
+sets the name of the submit button.
 
 - "onclick" and "label".  Creates a non-submit button that executes the 
 Javascript code in "onclick".  "label" is used as the text of the button.
