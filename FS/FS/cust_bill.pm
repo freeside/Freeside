@@ -5145,7 +5145,7 @@ sub _items_cust_bill_pkg {
               if $DEBUG > 1;
 
             my @svc_labels = map &{$escape_function}($_),
-                        $cust_pkg->h_labels_short($self->_date, undef, 'I');
+                        $cust_pkg->h_labels_short(@dates, 'I');
             push @d, @svc_labels
               unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
             $svc_label = $svc_labels[0];
