@@ -2983,6 +2983,7 @@ sub ProcessTicketDates {
         Starts
         Started
         Due
+        WillResolve
     );
 
     #Run through each field in this list. update the value if apropriate
