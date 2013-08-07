@@ -41,9 +41,10 @@ sub bill {
   #$FS::cust_event::DEBUG = $opt{'l'} if $opt{'l'};
 
   my $conf = new FS::Conf;
+  my $disable_bill = 0;
   if ( $conf->exists('disable_cron_billing') ) {
     warn "disable_cron_billing set, skipping billing\n" if $debug;
-    return;
+    $disable_bill = 1;
   }
 
   #we're at now now (and later).
@@ -127,7 +128,11 @@ sub bill {
       } else {
 
         my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } );
-        $cust_main->bill_and_collect( %args, 'debug' => $debug );
+        if ( $disable_bill ) {
+          $cust_main->collect( %args, 'debug' => $debug );
+        } else {
+          $cust_main->bill_and_collect( %args, 'debug' => $debug );
+        }
 
       }
 
