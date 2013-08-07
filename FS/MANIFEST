@@ -27,6 +27,7 @@ bin/freeside-torrus-srvderive
 FS.pm
 FS/AccessRight.pm
 FS/AuthCookieHandler.pm
+FS/AuthCookieHandler24.pm
 FS/Auth/external.pm
 FS/Auth/internal.pm
 FS/Auth/legacy.pm
@@ -707,3 +708,13 @@ FS/part_pkg_currency.pm
 t/part_pkg_currency.t
 FS/cust_payby.pm
 t/cust_payby.t
+FS/vend_main.pm
+t/vend_main.t
+FS/vend_class.pm
+t/vend_class.t
+FS/vend_bill.pm
+t/vend_bill.t
+FS/vend_pay.pm
+t/vend_pay.t
+FS/vend_bill_pay.pm
+t/vend_bill_pay.t
