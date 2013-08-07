@@ -110,8 +110,7 @@ my @actions = (
                 'Authorization Only,Post Authorization',
               );
 
-my $fields = [
-               {
+my $fields = [ {
                  field               => 'gateway_namespace',
                  type                => 'select',
                  options             => [ qw(
@@ -164,8 +163,11 @@ my $fields = [
 my $field_callback = sub {
   my ($cgi, $object, $field_hashref ) = @_;
   if ($object->gatewaynum) {
-    if ( $field_hashref->{field} =~ /gateway_(module|namespace)/ ) {
+    if ( $field_hashref->{field} eq 'gateway_module' ) {
       $field_hashref->{type} = 'fixed';
+    } elsif ( $field_hashref->{field} eq 'gateway_namespace' ) {
+      $field_hashref->{type} = 'fixed';
+      $field_hashref->{formatted_value} = $object->namespace_description;
     }
   }
 };
