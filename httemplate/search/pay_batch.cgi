@@ -14,11 +14,22 @@
 		                      'Type',
 		                      'First Download',
 				      'Last Upload',
-                                      '', # requests
-                                      '', # req amt
-                                      '', # payments
-                                      '', # pay amt
+                                      { label => 'Requested', colspan => 2 },
+                                      '',
+                                      { label => 'Paid', colspan => 2 },
+                                      '',
 				      'Status',
+                                    ],
+                 'header2'       => [ '',
+                                      '',
+                                      '',
+                                      '',
+                                      '',
+                                      'Items',
+                                      'Amount',
+                                      'Items',
+                                      'Amount',
+                                      '',
                                     ],
 		 'align'         => 'rcllrrrrc',
 		 'fields'        => [ 'batchnum',
@@ -49,7 +60,7 @@
 				      },
 				      sub {
                                         my $c = FS::cust_pay_batch->count('batchnum = '.$_[0]->batchnum);
-                                        $c ? "$c requested" : ''
+                                        $c || ''
                                       },
                                       sub {
                                         my $st = "SELECT SUM(amount) from cust_pay_batch WHERE batchnum=" . shift->batchnum;
@@ -62,7 +73,7 @@
                                       },
                                       sub {
                                         my $c = FS::cust_pay->count('batchnum = '.$_[0]->batchnum);
-                                        $c ? "$c paid" : ''
+                                        $c || '';
                                       },
                                       sub {
                                         my $st = "SELECT SUM(paid) from cust_pay WHERE batchnum=" . shift->batchnum;
