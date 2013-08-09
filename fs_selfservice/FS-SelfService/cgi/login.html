@@ -10,7 +10,7 @@
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 
 <FORM ACTION="<%= $self_url %>" METHOD=POST>
-<INPUT TYPE="hidden" NAME="session" VALUE="login">
+<INPUT TYPE="hidden" NAME="action" VALUE="myaccount">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
 
 <TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=2 CELLPADDING=0>
@@ -65,7 +65,6 @@ if ( $phone_login ) {
     <B>OR</B><BR><BR>
     
     <FORM ACTION="$self_url" METHOD=POST>
-    <INPUT TYPE="hidden" NAME="session" VALUE="login">
     <TABLE BGCOLOR="$box_bgcolor" BORDER=0 CELLSPACING=2 CELLPADDING=0>
     <TR>
       <TH ALIGN="right">Phone number </TH>

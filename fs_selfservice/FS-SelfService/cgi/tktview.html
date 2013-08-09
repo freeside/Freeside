@@ -1,4 +1,3 @@
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
 <%= include('header', "View ticket #$ticket_id") %>
 
 <%=
@@ -20,7 +19,6 @@ else {
 %>
 <BR><BR><BR>
 <FORM ACTION="<%=$selfurl%>" METHOD=POST>
-    <input type="hidden" name="session" value="<%=$session_id%>">
     <input type="hidden" name="ticket_id" value="<%=$ticket_id%>">
 <%= if ( $edit_ticket_subject ) { $OUT .= '
     Subject:<BR><input type="text" name="subject" value="' . 

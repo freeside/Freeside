@@ -192,6 +192,15 @@ A hash of optional arguments may be passed.  Currently "manual" is supported.
 If true, a payment receipt is sent instead of a statement when
 'payment_receipt_email' configuration option is set.
 
+About the "manual" flag: Normally, if the 'payment_receipt' config option 
+is set, and the customer has an invoice email address, inserting a payment
+causes a I<statement> to be emailed to the customer.  If the payment is 
+considered "manual" (or if the customer has no invoices), then it will 
+instead send a I<payment receipt>.  "manual" should be true whenever a 
+payment is created directly from the web interface, from a user-initiated
+realtime payment, or from a third-party payment via self-service.  It should
+be I<false> when creating a payment from a billing event or from a batch.
+
 =cut
 
 sub insert {
