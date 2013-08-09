@@ -22,6 +22,10 @@
                'cust_main'  => $cust_main,
   &>
 
+  <& /elements/tr-input-pkg-quantity.html,
+               'curr_value' => $cust_pkg->quantity
+  &>
+
   <& /elements/tr-select-cust_location.html,
                'cgi'       => $cgi,
                'cust_main' => $cust_main,
@@ -94,7 +98,7 @@ my $title = "Change Package";
 if ( $cust_pkg->change_to_pkgnum ) {
   my $change_to = FS::cust_pkg->by_key($cust_pkg->change_to_pkgnum);
   $cgi->param('delay', 1);
-  foreach(qw( start_date pkgpart locationnum )) {
+  foreach(qw( start_date pkgpart locationnum quantity )) {
     $cgi->param($_, $change_to->get($_));
   }
   $title = "Edit Scheduled Package Change";
