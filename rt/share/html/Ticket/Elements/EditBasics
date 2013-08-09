@@ -52,7 +52,7 @@ $InTable => 0
 %defaults => ()
 </%ARGS>
 <%INIT>
-my $WillResolveObj = $TicketObj->WillResolveObj;
+my $WillResolveObj = $TicketObj->WillResolveObj if defined $TicketObj;
 unless ( @fields ) {
     @fields = (
         {   name => 'Subject',
@@ -74,7 +74,8 @@ unless ( @fields ) {
             args => {
                 menu_prefix => 'WillResolve',
                 Default => $ARGS{'WillResolve'} || 
-                           ($WillResolveObj->Unix > 0 ?
+                           (defined($WillResolveObj) 
+                            and $WillResolveObj->Unix > 0 ?
                               $WillResolveObj->Date : ''),
                 current => 0,
                 ShowTime => 0,
