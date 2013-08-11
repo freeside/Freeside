@@ -133,7 +133,7 @@ sub mask_payinfo {
   my $payinfo = scalar(@_) ? shift : $self->payinfo;
 
   # Check to see if it's encrypted...
-  if ( $self->is_encrypted($payinfo) ) {
+  if ( ref($self) && $self->is_encrypted($payinfo) ) {
     return 'N/A';
   } elsif ( $payinfo =~ /^99\d{14}$/ || $payinfo eq 'N/A' ) { #token
     return 'N/A (tokenized)'; #?

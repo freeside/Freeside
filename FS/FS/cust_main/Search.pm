@@ -9,6 +9,7 @@ use FS::Record qw( qsearch );
 use FS::cust_main;
 use FS::cust_main_invoice;
 use FS::svc_acct;
+use FS::payinfo_Mixin;
 
 @EXPORT_OK = qw( smart_search );
 
@@ -49,8 +50,12 @@ FS::cust_main::Search - Customer searching
 
 Accepts the following options: I<search>, the string to search for.  The string
 will be searched for as a customer number, phone number, name or company name,
-as an exact, or, in some cases, a substring or fuzzy match (see the source code
-for the exact heuristics used); I<no_fuzzy_on_exact>, causes smart_search to
+address (if address1-search is on), invoicing email address, or credit card
+number.
+
+Searches match as an exact, or, in some cases, a substring or fuzzy match (see
+the source code for the exact heuristics used); I<no_fuzzy_on_exact>, causes
+smart_search to
 skip fuzzy matching when an exact match is found.
 
 Any additional options are treated as an additional qualifier on the search
@@ -110,12 +115,10 @@ sub smart_search {
 
     }
 
-  # custnum search (also try agent_custid), with some tweaking options if your
-  # legacy cust "numbers" have letters
   } 
   
   
-  if ( $search =~ /@/ ) {
+  if ( $search =~ /@/ ) { #invoicing email address
       push @cust_main,
 	  map $_->cust_main,
 	      qsearch( {
@@ -123,6 +126,9 @@ sub smart_search {
 			 'hashref'   => { 'dest' => $search },
 		       }
 		     );
+
+  # custnum search (also try agent_custid), with some tweaking options if your
+  # legacy cust "numbers" have letters
   } elsif ( $search =~ /^\s*(\d+)\s*$/
          || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
               && $search =~ /^\s*(\w\w?\d+)\s*$/
@@ -363,6 +369,28 @@ sub smart_search {
     }
 
   }
+
+  ( my $nospace_search = $search ) =~ s/\s//g;
+  ( my $card_search = $nospace_search ) =~ s/\-//g;
+  $card_search =~ s/[x\*\.\_]/x/gi;
+  
+  if ( $nospace_search =~ /^[\dx]{16}$/i ) { #credit card search
+
+    ( my $like_search = $card_search ) =~ s/x/_/g;
+    my $mask_search = FS::payinfo_Mixin->mask_payinfo('CARD', $card_search);
+
+    push @cust_main, qsearch({
+      'table'     => 'cust_main',
+      'hashref'   => {},
+      'extra_sql' => " WHERE (    payinfo LIKE '$like_search'
+                               OR paymask =    '$mask_search'
+                             ) ".
+                     " AND payby IN ('CARD','DCRD') ".
+                     " AND $agentnums_sql", #agent virtulization
+    });
+
+  }
+  
 
   #eliminate duplicates
   my %saw = ();
