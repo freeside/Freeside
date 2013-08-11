@@ -1450,10 +1450,8 @@ field).
 
 Can be set true to adjust the next bill date forward by
 the amount of time the account was inactive.  This was set true by default
-since 1.4.2 and 1.5.0pre6; however, starting with 1.7.0 this needs to be
-explicitly requested.  Price plans for which this makes sense (anniversary-date
-based than prorate or subscription) could have an option to enable this
-behaviour?
+in the past (from 1.4.2 and 1.5.0pre6 through 1.7.0), but now needs to be
+explicitly requested with this option or in the price plan.
 
 =back
 
