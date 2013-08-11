@@ -27,7 +27,7 @@ my $cust_pkg = qsearchs({
 die 'unknown pkgnum' unless $cust_pkg;
 
 my %change = map { $_ => scalar($cgi->param($_)) }
-                 qw( locationnum pkgpart );
+                 qw( locationnum pkgpart quantity );
 
 $change{'keep_dates'} = 1;
 

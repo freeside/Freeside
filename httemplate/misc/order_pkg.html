@@ -37,16 +37,7 @@
     &>
 % }
 
-% if ( $conf->exists('invoice-unitprice') ) {
-    <TR>
-      <TH ALIGN="right"><% mt('Quantity') |h %> </TD>
-      <TD>
-        <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $quantity %>">
-      </TD>
-    </TR>
-% } else {
-    <INPUT TYPE="hidden" NAME="quantity" VALUE="1">
-% }
+<& /elements/tr-input-pkg-quantity.html, curr_value => $quantity &>
 
 <TR>
   <TH ALIGN="right"><% mt('Start date') |h %> </TD>

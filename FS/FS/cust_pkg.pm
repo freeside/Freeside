@@ -1732,6 +1732,11 @@ New pkgpart (see L<FS::part_pkg>).
 
 New refnum (see L<FS::part_referral>).
 
+=item quantity
+
+New quantity; if unspecified, the new package will have the same quantity
+as the old.
+
 =item cust_pkg
 
 "New" (existing) FS::cust_pkg object.  The package's services and other 
@@ -1767,9 +1772,6 @@ sub change {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
 
-#  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg, $refnum) = @_;
-#    
-
   my $conf = new FS::Conf;
 
   # Transactionize this whole mess
@@ -1789,10 +1791,6 @@ sub change {
   my %hash = (); 
 
   my $time = time;
-
-  #$hash{$_} = $self->$_() foreach qw( last_bill bill );
-    
-  #$hash{$_} = $self->$_() foreach qw( setup );
 
   $hash{'setup'} = $time if $self->setup;
 
@@ -1865,6 +1863,7 @@ sub change {
   }
 
   $hash{'contactnum'} = $opt->{'contactnum'} if $opt->{'contactnum'};
+  $hash{'quantity'} = $opt->{'quantity'} || $self->quantity;
 
   my $cust_pkg;
   if ( $opt->{'cust_pkg'} ) {
@@ -2098,7 +2097,9 @@ The date for the package change.  Required, and must be in the future.
 
 =item locationnum
 
-The pkgpart and locationnum of the new package, with the same 
+=item quantity
+
+The pkgpart. locationnum, and quantity of the new package, with the same 
 meaning as in C<change>.
 
 =back
@@ -2130,7 +2131,9 @@ sub change_later {
         if $opt->{'pkgpart'} and $opt->{'pkgpart'} != $change_to->pkgpart;
     my $new_locationnum = $opt->{'locationnum'}
         if $opt->{'locationnum'} and $opt->{'locationnum'} != $change_to->locationnum;
-    if ( $new_pkgpart or $new_locationnum ) {
+    my $new_quantity = $opt->{'quantity'}
+        if $opt->{'quantity'} and $opt->{'quantity'} != $change_to->quantity;
+    if ( $new_pkgpart or $new_locationnum or $new_quantity ) {
       # it hasn't been billed yet, so in principle we could just edit
       # it in place (w/o a package change), but that's bad form.
       # So change the package according to the new options...
@@ -2168,12 +2171,16 @@ sub change_later {
       if $opt->{'pkgpart'} and $opt->{'pkgpart'} != $self->pkgpart;
   my $new_locationnum = $opt->{'locationnum'}
       if $opt->{'locationnum'} and $opt->{'locationnum'} != $self->locationnum;
-  return '' unless $new_pkgpart or $new_locationnum; # wouldn't do anything
+  my $new_quantity = $opt->{'quantity'}
+      if $opt->{'quantity'} and $opt->{'quantity'} != $self->quantity;
+
+  return '' unless $new_pkgpart or $new_locationnum or $new_quantity; # wouldn't do anything
 
   my %hash = (
     'custnum'     => $self->custnum,
     'pkgpart'     => ($opt->{'pkgpart'}     || $self->pkgpart),
     'locationnum' => ($opt->{'locationnum'} || $self->locationnum),
+    'quantity'    => ($opt->{'quantity'}    || $self->quantity),
     'start_date'  => $date,
   );
   my $new = FS::cust_pkg->new(\%hash);
