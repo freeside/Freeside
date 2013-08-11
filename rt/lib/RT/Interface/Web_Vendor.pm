@@ -257,16 +257,17 @@ sub ProcessTicketBasics {
         WillResolve
     );
 
-    # the UI for editing WillResolve through Ticket Basics should allow 
-    # setting it to null
-    my $to_date = delete($ARGSRef->{'WillResolve_Date'});
-    my $DateObj = RT::Date->new($session{'CurrentUser'});
-    if ( $to_date ) {
-        $DateObj->Set(Format => 'unknown', Value => $to_date);
-    } else {
-        $DateObj->Set(Value => 0);
-    }
-    $ARGSRef->{'WillResolve'} = $DateObj->ISO;
+# causes endless redirect loops and "WillResolve changed from Not set to Not set" on ticket view?
+#    # the UI for editing WillResolve through Ticket Basics should allow 
+#    # setting it to null
+#    my $to_date = delete($ARGSRef->{'WillResolve_Date'});
+#    my $DateObj = RT::Date->new($session{'CurrentUser'});
+#    if ( $to_date ) {
+#        $DateObj->Set(Format => 'unknown', Value => $to_date);
+#    } else {
+#        $DateObj->Set(Value => 0);
+#    }
+#    $ARGSRef->{'WillResolve'} = $DateObj->ISO;
 
     if ( $ARGSRef->{'Queue'} and ( $ARGSRef->{'Queue'} !~ /^(\d+)$/ ) ) {
         my $tempqueue = RT::Queue->new($RT::SystemUser);
