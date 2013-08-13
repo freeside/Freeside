@@ -374,7 +374,7 @@ sub smart_search {
   ( my $card_search = $nospace_search ) =~ s/\-//g;
   $card_search =~ s/[x\*\.\_]/x/gi;
   
-  if ( $nospace_search =~ /^[\dx]{16}$/i ) { #credit card search
+  if ( $nospace_search =~ /^[\dx]{15,16}$/i ) { #credit card search
 
     ( my $like_search = $card_search ) =~ s/x/_/g;
     my $mask_search = FS::payinfo_Mixin->mask_payinfo('CARD', $card_search);
