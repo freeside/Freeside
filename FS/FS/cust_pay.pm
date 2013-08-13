@@ -21,6 +21,7 @@ use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_pay_void;
 use FS::upgrade_journal;
+use FS::Cursor;
 
 $DEBUG = 0;
 
@@ -1003,11 +1004,11 @@ sub _upgrade_data {  #class method
   ###
   # migrate batchnums from the misused 'paybatch' field to 'batchnum'
   ###
-  my @cust_pay = qsearch( {
-      'table'     => 'cust_pay',
-      'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
+  my $search = FS::Cursor->new( {
+    'table'     => 'cust_pay',
+    'addl_from' => ' JOIN pay_batch ON cust_pay.paybatch = CAST(pay_batch.batchnum AS text) ',
   } );
-  foreach my $cust_pay (@cust_pay) {
+  while (my $cust_pay = $search->fetch) {
     $cust_pay->set('batchnum' => $cust_pay->paybatch);
     $cust_pay->set('paybatch' => '');
     my $error = $cust_pay->replace;
@@ -1026,14 +1027,14 @@ sub _upgrade_data {  #class method
     foreach my $table (qw(cust_pay cust_pay_void cust_refund)) {
       my $and_batchnum_is_null =
         ( $table =~ /^cust_pay/ ? ' AND batchnum IS NULL' : '' );
-      foreach my $object ( qsearch({
-            table     => $table,
-            extra_sql => "WHERE payby IN('CARD','CHEK') ".
-                         "AND (paybatch IS NOT NULL ".
-                         "OR (paybatch IS NULL AND auth IS NULL
-                         $and_batchnum_is_null ) )",
-          }) )
-      {
+      my $search = FS::Cursor->new({
+        table     => $table,
+        extra_sql => "WHERE payby IN('CARD','CHEK') ".
+                     "AND (paybatch IS NOT NULL ".
+                     "OR (paybatch IS NULL AND auth IS NULL
+                     $and_batchnum_is_null ) )",
+      });
+      while ( my $object = $search->fetch ) {
         if ( $object->paybatch eq '' ) {
           # repair for a previous upgrade that didn't save 'auth'
           my $pkey = $object->primary_key;
