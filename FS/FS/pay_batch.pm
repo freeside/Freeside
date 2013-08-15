@@ -735,7 +735,8 @@ sub import_from_gateway {
           $total += $cust_pay_batch->paid;
         }
         else {
-          $error = $cust_pay_batch->decline($item->error_message);
+          $error = $cust_pay_batch->decline($item->error_message,
+                                            $item->failure_status);
         }
 
         if ( $error ) {        

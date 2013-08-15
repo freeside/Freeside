@@ -7,7 +7,14 @@ my ($payby,$payinfo) = translate_payinfo($cust_pay_batch);
 $payby = translate_payby($payby,$payinfo);
 my $info = $payby ? "($payby$payinfo)" : '';
 
-$info .= ': '. $cust_pay_batch->error_message
-  if length($cust_pay_batch->error_message);
+my $detail = '';
+if ( $cust_pay_batch->failure_status ) {
+  $detail = $cust_pay_batch->display_status;
+  $detail .= ' ('.$cust_pay_batch->error_message.')' 
+    if $cust_pay_batch->error_message;
+} else {
+  $detail = $cust_pay_batch->error_message;
+}
+$info .= ': '.$detail if length($detail);
 
 </%init>
