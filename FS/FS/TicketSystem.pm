@@ -342,6 +342,11 @@ sub _upgrade_data {
     or die $dbh->errstr;
   $cve_2013_3373_sth->execute or die $cve_2013_3373_sth->errstr;
 
+  # fix null WillResolve fields to avoid spurious transactions the 
+  # first time they get updated
+  my $fix_null_sql = "UPDATE Tickets SET WillResolve = '1970-01-01 00:00:00' WHERE WillResolve IS NULL";
+  $dbh->do($fix_null_sql) or die $dbh->errstr;
+
   return;
 }
 
