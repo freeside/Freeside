@@ -1,6 +1,6 @@
 % if ( $error ) {
 %  $cgi->param('error', $error);
-<% $cgi->redirect(popurl(3).'/edit/bulk-part_pkg.cgi?', $cgi->query_string) %>
+<% $cgi->redirect(popurl(3).'/edit/bulk-part_pkg.html?', $cgi->query_string) %>
 % } else {
 <% $cgi->redirect(popurl(3).'/browse/part_pkg.cgi') %>
 % }
