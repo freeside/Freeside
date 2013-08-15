@@ -10,21 +10,26 @@ die "access denied" unless $FS::CurrentUser::CurrentUser->access_right('Bulk edi
 my @pkgparts = $cgi->param('pkgpart')
   or die "no package definitions selected";
 
-my %changes;
+my %delete = map { 'report_option_'.($_->num) => 1 }
+  qsearch('part_pkg_report_option', {});
+my %insert;
+
 foreach my $param (grep { /^report_option_\d+$/ } $cgi->param) {
-  if ( length($cgi->param($param)) ) {
-    if ( $cgi->param($param) == 1 ) {
-      $changes{$param} = 1;
-    } else {
-      $changes{$param} = '';
-    }
-  }
+  if ( $cgi->param($param) == 1 ) {
+    $insert{$param} = 1;
+    delete $delete{$param};
+  } elsif ( $cgi->param($param) == -1 ) {
+    # leave it alone
+    delete $delete{$param};
+  } # else it's empty, so leave it on the delete list
 }
+
 
 my $error;
 foreach my $pkgpart (@pkgparts) {
   my $part_pkg = FS::part_pkg->by_key($pkgpart);
-  my %options = ( $part_pkg->options, %changes );
+  my %options = ( $part_pkg->options, %insert );
+  delete $options{$_} foreach keys(%delete);
   $error ||= $part_pkg->replace( options => \%options );
 }
 </%init>
