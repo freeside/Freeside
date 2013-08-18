@@ -1,21 +1,21 @@
-package FS::agent_pkg_class;
+package FS::sales_pkg_class;
 use base qw( FS::Record );
 
 use strict;
 #use FS::Record qw( qsearch qsearchs );
-use FS::agent;
+use FS::sales;
 use FS::pkg_class;
 
 =head1 NAME
 
-FS::agent_pkg_class - Object methods for agent_pkg_class records
+FS::sales_pkg_class - Object methods for sales_pkg_class records
 
 =head1 SYNOPSIS
 
-  use FS::agent_pkg_class;
+  use FS::sales_pkg_class;
 
-  $record = new FS::agent_pkg_class \%hash;
-  $record = new FS::agent_pkg_class { 'column' => 'value' };
+  $record = new FS::sales_pkg_class \%hash;
+  $record = new FS::sales_pkg_class { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -27,19 +27,19 @@ FS::agent_pkg_class - Object methods for agent_pkg_class records
 
 =head1 DESCRIPTION
 
-An FS::agent_pkg_class object represents a commission for a specific agent
-and package class.  FS::agent_pkg_class inherits from FS::Record.  The
+An FS::sales_pkg_class object represents a commission for a specific sales
+person and package class.  FS::sales_pkg_class inherits from FS::Record.  The
 following fields are currently supported:
 
 =over 4
 
-=item agentpkgclassnum
+=item salespkgclassnum
 
 primary key
 
-=item agentnum
+=item salesnum
 
-agentnum
+salesnum
 
 =item classnum
 
@@ -48,6 +48,10 @@ classnum
 =item commission_percent
 
 commission_percent
+
+=item commission_duration
+
+commission_duration
 
 
 =back
@@ -65,7 +69,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub table { 'agent_pkg_class'; }
+sub table { 'sales_pkg_class'; }
 
 =item insert
 
@@ -95,10 +99,11 @@ sub check {
   $self->commission_percent(0) unless length($self->commission_percent);
 
   my $error = 
-    $self->ut_numbern('agentpkgclassnum')
-    || $self->ut_foreign_key('agentnum', 'agent', 'agentnum')
+    $self->ut_numbern('salespkgclassnum')
+    || $self->ut_foreign_key('salesnum', 'sales', 'salesnum')
     || $self->ut_foreign_keyn('classnum', 'pkg_class', 'classnum')
     || $self->ut_float('commission_percent')
+    || $self->ut_numbern('commission_duration')
   ;
   return $error if $error;
 
@@ -111,7 +116,7 @@ sub check {
 
 =head1 SEE ALSO
 
-L<FS::agent>, L<FS::pkg_class>, L<FS::Record>.
+L<FS::sales>, L<FS::pkg_class, L<FS::Record>.
 
 =cut
 

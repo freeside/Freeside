@@ -14,8 +14,9 @@
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-
 die "access denied" unless $curuser->access_right('Edit sales people');
+
+#Sales people bring in business.<BR><BR>
 
 my @header = ( 'Sales person' );
 my @fields = ( 'salesperson' );
@@ -27,6 +28,45 @@ if ( $curuser->access_right('Configuration') ) {
   push @links,  [ $p.'edit/agent.cgi?', 'agentnum' ];
 }
 
-#Sales people bring in business.<BR><BR>
+push @header, 'Commissions';
+push @fields, sub {
+
+  my $sales = shift;
+
+  #started out as false laziness w/browse/agent.cgi
+  #  (which said surprising amount of false laziness w/ edit/process/agent.cgi)
+  # but this now returns an edit.html data structure that renders to a table
+  #  instead of HTML
+
+  my @pkg_class = qsearch('pkg_class', { 'disabled'=>'' });
+
+  [
+    map {
+          my %sales_pkg_class = ( 'salesnum' => $sales->salesnum,
+                                  'classnum' => $_ ? $_->classnum : ''
+                                );
+          my $sales_pkg_class =
+            qsearchs( 'sales_pkg_class', \%sales_pkg_class )
+            || new FS::sales_pkg_class   \%sales_pkg_class;
+          #my $param = 'classnum'. $sales_pkg_class{classnum};
+
+          [
+            { align => 'right',
+              data  => ($sales_pkg_class->commission_percent || 0). '%',
+            },
+            { align => 'left',
+              data  => '&nbsp;'. encode_entities(
+                         $_ ? $_->classname : mt('(no package class)')
+                       ),
+            },
+          ];
+
+        }
+      ( '', @pkg_class )
+
+  ];
+
+};
+#push @links, '';
 
 </%init>

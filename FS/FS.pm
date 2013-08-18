@@ -276,6 +276,8 @@ L<FS::usage_class> - Usage class class
 
 L<FS::sales> - Sales person class
 
+L<FS::sales_pkg_class> - Sales person package class commission class
+
 L<FS::agent> - Agent (reseller) class
 
 L<FS::agent_currency> - Agent (reseller) currency class

@@ -716,3 +716,5 @@ FS/vend_pay.pm
 t/vend_pay.t
 FS/vend_bill_pay.pm
 t/vend_bill_pay.t
+FS/sales_pkg_class.pm
+t/sales_pkg_class.t

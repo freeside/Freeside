@@ -525,6 +525,17 @@ sub tables_hashref {
       'index' => [ ['typenum'] ],
     },
 
+    'agent_currency' => {
+      'columns' => [
+        'agentcurrencynum', 'serial', '', '', '', '',
+        'agentnum',            'int', '', '', '', '',
+        'currency',           'char', '',  3, '', '',
+      ],
+      'primary_key' => 'agentcurrencynum',
+      'unique'      => [],
+      'index'       => [ ['agentnum'] ],
+    },
+
     'sales' => {
       'columns' => [
         'salesnum',          'serial',    '',       '', '', '', 
@@ -537,15 +548,17 @@ sub tables_hashref {
       'index' => [ ['salesnum'], ['disabled'] ],
     },
 
-    'agent_currency' => {
+    'sales_pkg_class' => {
       'columns' => [
-        'agentcurrencynum', 'serial', '', '', '', '',
-        'agentnum',            'int', '', '', '', '',
-        'currency',           'char', '',  3, '', '',
+        'salespkgclassnum',    'serial',     '',    '', '', '',
+        'salesnum',               'int',     '',    '', '', '',
+        'classnum',               'int', 'NULL',    '', '', '',
+        'commission_percent', 'decimal',     '', '7,4', '', '',
+        'commission_duration',    'int', 'NULL',    '', '', '',
       ],
-      'primary_key' => 'agentcurrencynum',
-      'unique'      => [],
-      'index'       => [ ['agentnum'] ],
+      'primary_key' => 'salespkgclassnum',
+      'unique'      => [ [ 'salesnum', 'classnum' ], ],
+      'index'       => [],
     },
 
     'cust_attachment' => {

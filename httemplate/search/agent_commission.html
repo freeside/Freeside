@@ -33,11 +33,10 @@ td.money:before { content: '<% $money_char %>'; }
 %   if ( $custnum ne $cust_pkg->custnum ) {
 %     # start of a new customer section
 %     my $cust_main = $cust_pkg->cust_main;
-%     my $label = $cust_main->custnum . ': '. $cust_main->name;
 %     $bgcolor = 0;
   <TR>
     <TD COLSPAN=4 CLASS="cust_head">
-      <A HREF="<%$p%>view/cust_main.cgi?<%$cust_main->custnum%>"><% $label %></A>
+      <A HREF="<%$p%>view/cust_main.cgi?<%$cust_main->custnum%>"><% $cust_main->display_custnum %>: <% $cust_main->name |h %></A>
     </TD>
   </TR>
 %   }
