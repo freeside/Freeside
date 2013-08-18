@@ -626,6 +626,21 @@ sub num_prepay_credit {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item num_sales
+
+Returns the number of non-disabled sales people for this agent.
+
+=cut
+
+sub num_sales {
+  my $self = shift;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM sales WHERE agentnum = ?
+                                  AND ( disabled = '' OR disabled IS NULL )"
+  ) or die dbh->errstr;
+  $sth->execute($self->agentnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
 
 =back
 

@@ -28,7 +28,11 @@ Example:
 
 %   if ( scalar(@sales) > 0 ) {
       <TR>
-        <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+%       if ( $opt{'th'} ) {
+          <TH ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TH>
+%       } else {
+          <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+%       }
         <TD BGCOLOR="#dddddd" <% $colspan %>>
 %         my $sales = qsearchs('sales', { 'salesnum' => $salesnum });
           <% $sales ? $sales->salesperson : '(none)' |h %>
@@ -43,7 +47,11 @@ Example:
 % } else { 
 
   <TR>
-    <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+%   if ( $opt{'th'} ) {
+      <TH ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TH>
+%   } else {
+      <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+%   }
     <TD <% $colspan %>>
       <& /elements/select-sales.html,
                      'curr_value' => $salesnum,
@@ -66,7 +74,8 @@ my @sales = qsearch({ 'table'   => 'sales',
                       'hashref' => { 'disabled' => '' },
                       'extra_sql' => ' AND '. $curuser->agentnums_sql,
                    });
-warn scalar(@sales);
+
 my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
 
 </%init>
