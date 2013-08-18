@@ -1,9 +1,9 @@
 package FS::cust_pkg;
-
-use strict;
-use base qw( FS::otaker_Mixin FS::cust_main_Mixin
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Sales_Mixin
              FS::contact_Mixin FS::location_Mixin
              FS::m2m_Common FS::option_Common );
+
+use strict;
 use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );

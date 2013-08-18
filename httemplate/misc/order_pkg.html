@@ -1,5 +1,8 @@
-<& /elements/header-popup.html, $quotationnum ? mt('Add package to quotation')
-                                              : mt('Order new package')
+<& /elements/header-popup.html, {
+     'title' =>  $quotationnum ? mt('Add package to quotation')
+                               : mt('Order new package'),
+     'nobr'  => 1,
+   }
 &>
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
@@ -21,7 +24,39 @@
     <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
 % }
 
+% my $num_sales = $agent->num_sales;
+% my $conf_pkg_referral = $conf->exists('pkg_referral');
+% my $show_sales = $num_sales && $conf_pkg_referral;
+% my $show_sales_table = $num_sales || $conf_pkg_referral;
+
+% if ( $show_sales ) {
+  <FONT CLASS="fsinnerbox-title"><% mt('Sales') |h %></FONT>
+% }
+% if ( $show_sales_table ) {
+  <% ntable("#cccccc", 2) %>
+% }
+
+<& /elements/tr-select-sales.html,
+     'curr_value' => scalar($cgi->param('salesnum')),
+     'th' => 1,
+&>
+
+% if ( $conf->exists('pkg_referral') ) {
+  <& /elements/tr-select-part_referral.html,
+               'curr_value'    => scalar( $cgi->param('refnum') ), #get rid of empty_label first# || $cust_main->refnum,
+               'disable_empty' => 1,
+               'multiple'      => $conf->exists('pkg_referral-multiple'),
+               'colspan'       => 7,
+  &>
+% }
+
+% if ( $show_sales_table ) {
+  </TABLE><BR>
+% }
+
+<FONT CLASS="fsinnerbox-title"><% mt('Package') |h %></FONT>
 <% ntable("#cccccc", 2) %>
+
 % if ( $part_pkg ) {
     <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $part_pkg->pkgpart %>">
     <TR>
@@ -39,6 +74,14 @@
 
 <& /elements/tr-input-pkg-quantity.html, curr_value => $quantity &>
 
+% if ( $cust_main && $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
+%   my $what = lc(FS::payby->shortname($cust_main->payby));
+    <TR>
+      <TH ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TH>
+      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
+    </TR>
+% }
+
 <TR>
   <TH ALIGN="right"><% mt('Start date') |h %> </TD>
   <TD COLSPAN=6>
@@ -55,37 +98,52 @@
   </TD>
 </TR>
 
-% if ( $cust_main && $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
-%   my $what = lc(FS::payby->shortname($cust_main->payby));
-    <TR>
-      <TH ALIGN="right"><% mt("Disable automatic $what charge") |h %> </TH>
-      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
-    </TR>
-% }
+<TR>
+  <TH ALIGN="right"><% mt('Contract end date') |h %> </TD>
+  <TD COLSPAN=6>
+    <& /elements/input-date-field.html,{
+                'name'      => 'contract_end',
+                'format'    => $date_format,
+                'value'     => '',
+                'noinit'    => 1,
+                } &>
+  </TD>
+</TR>
 
-% if ( $curuser->access_right('Discount customer package') ) {
-  <& /elements/tr-select-discount.html,
+</TABLE><BR>
+
+% my $discount_cust_pkg = $curuser->access_right('Discount customer package');
+% my $waive_setup_fee   = $curuser->access_right('Waive setup fee');
+%
+% if ( $discount_cust_pkg || $waive_setup_fee ) {
+  <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
+  <% ntable("#cccccc", 2) %>
+
+%   if ( $waive_setup_fee ) {
+      <TR>
+        <TH ALIGN="right"><% mt('Waive setup fee') |h %> </TH>
+        <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="waive_setup" VALUE="Y"></TD>
+      </TR>
+%   }
+
+%   if ( $discount_cust_pkg ) {
+      <& /elements/tr-select-discount.html,
                'element_etc' => 'DISABLED',
                'colspan'     => 7,
                'cgi'         => $cgi,
-  &>
+      &>
+%   }
+
+  </TABLE><BR>
+
 % }
 
-% if ( $curuser->access_right('Waive setup fee') ) {
-    <TR>
-      <TH ALIGN="right"><% mt('Waive setup fee') |h %> </TH>
-      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="waive_setup" VALUE="Y"></TD>
-    </TR>
-% }
 
-% if ( $conf->exists('pkg_referral') ) {
-  <& /elements/tr-select-part_referral.html,
-               'curr_value'    => scalar( $cgi->param('refnum') ), #get rid of empty_label first# || $cust_main->refnum,
-               'disable_empty' => 1,
-               'multiple'      => $conf->exists('pkg_referral-multiple'),
-               'colspan'       => 7,
-  &>
-% }
+% my $lock_locationnum = scalar($cgi->param('lock_locationnum'));
+% my $contact_title = $lock_locationnum ? 'Contact'
+%                                       : 'Contact and Location';
+<FONT CLASS="fsinnerbox-title"><% mt($contact_title) |h %></FONT>
+<% ntable("#cccccc", 2) %>
 
 <& /elements/tr-select-contact.html,
              'cgi'           => $cgi,
@@ -110,18 +168,6 @@
     &>
 
 % }
-
-<TR>
-  <TH ALIGN="right"><% mt('Contract end date') |h %> </TD>
-  <TD COLSPAN=6>
-    <& /elements/input-date-field.html,{
-                'name'      => 'contract_end',
-                'format'    => $date_format,
-                'value'     => '',
-                'noinit'    => 1,
-                } &>
-  </TD>
-</TR>
 
 </TABLE>
 
@@ -186,15 +232,15 @@ if ( $cgi->param('quotationnum') =~ /^(\d+)$/ ) {
 
 die 'no custnum or prospectnum' unless $cust_main || $prospect_main;
 
+my $agent =  $cust_main ? $cust_main->agent
+                        : $prospect_main->agent;
+
 my $part_pkg = '';
 if ( $cgi->param('lock_pkgpart') ) {
   $part_pkg = qsearchs({
     'table'     => 'part_pkg',
     'hashref'   => { 'pkgpart' => scalar($cgi->param('lock_pkgpart')) },
-    'extra_sql' => ' AND '. FS::part_pkg->agent_pkgs_sql(
-                              $cust_main ? $cust_main->agent
-                                         : $prospect_main->agent
-                            ),
+    'extra_sql' => ' AND '. FS::part_pkg->agent_pkgs_sql($agent),
   })
     or die "unknown pkgpart ". $cgi->param('lock_pkgpart');
 }

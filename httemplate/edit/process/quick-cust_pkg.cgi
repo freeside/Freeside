@@ -70,6 +70,9 @@ my $quantity = $1 || 1;
 $cgi->param('refnum') =~ /^(\d*)$/
   or die 'illegal refnum '. $cgi->param('refnum');
 my $refnum = $1;
+$cgi->param('salesnum') =~ /^(\d*)$/
+  or die 'illegal salesnum '. $cgi->param('salesnum');
+my $salesnum = $1;
 $cgi->param('contactnum') =~ /^(\-?\d*)$/
   or die 'illegal contactnum '. $cgi->param('contactnum');
 my $contactnum = $1;
@@ -111,6 +114,7 @@ my %hash = (
                                   ? parse_datetime($cgi->param('start_date'))
                                   : ''
                               ),
+    'salesnum'             => $salesnum,
     'refnum'               => $refnum,
     'contactnum'           => $contactnum,
     'locationnum'          => $locationnum,
