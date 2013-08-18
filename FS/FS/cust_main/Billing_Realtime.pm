@@ -507,8 +507,13 @@ sub realtime_bop {
         (exists($options{'paytype'}) && $options{'paytype'})
           ? uc($options{'paytype'})
           : uc($self->getfield('paytype')) || 'PERSONAL CHECKING';
-      $content{account_name} = $self->getfield('first'). ' '.
-                               $self->getfield('last');
+
+      if ( $content{account_type} =~ /BUSINESS/i && $self->company ) {
+        $content{account_name} = $self->company;
+      } else {
+        $content{account_name} = $self->getfield('first'). ' '.
+                                 $self->getfield('last');
+      }
 
       $content{customer_org} = $self->company ? 'B' : 'I';
       $content{state_id}       = exists($options{'stateid'})
