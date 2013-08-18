@@ -1,19 +1,22 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw( $opt_r $opt_o $opt_v );
+use vars qw( $opt_r $opt_p $opt_o $opt_v );
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 use FS::part_pkg_option;
 
-getopts('ro:v:');
+getopts('rp:o:v:');
 
 my $user = shift or &usage;
 adminsuidsetup $user;
 
-foreach my $part_pkg ( qsearch('part_pkg', {}) ) {
+my %plan;
+%plan = ( 'plan' => $opt_p ) if $opt_p;
+
+foreach my $part_pkg ( qsearch('part_pkg',\%plan) ) {
   next if ! $part_pkg->freq && $opt_r;
 
   my %hash = (

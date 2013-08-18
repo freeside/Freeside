@@ -6,6 +6,7 @@
 .row0 { background-color: #eeeeee; }
 .row1 { background-color: #ffffff; }
 </STYLE>
+<& /elements/error.html &>
 
 <FORM ACTION="process/bulk-part_pkg.html" METHOD="POST">
 <DIV>
@@ -22,15 +23,12 @@ The following packages will be changed:<BR>
 % foreach my $num (sort keys %report_class) {
   <TR CLASS="row<%$row % 2%>">
     <TD>
-%   if ( defined $initial_state{$num} ) {
-      <& /elements/checkbox.html,
-            field => 'report_option_'.$num,
-            value => 1,
-            curr_value => $initial_state{$num}
-      &>
-%   } else {
+%   if ( $initial_state{$num} == -1 ) {
 %     # needs to be a tristate so that you can say "don't change it"
       <& /elements/checkbox-tristate.html, field => 'report_option_'.$num &>
+%   } else {
+%# for visual consistency
+      <INPUT TYPE="checkbox" CLASS="partial" NAME="report_option_<%$num%>" VALUE="1" <% $initial_state{$num} ? 'CHECKED':'' %>><LABEL />
 %   }
     </TD>
     <TD><% $report_class{$num}->name %></TD>
@@ -64,11 +62,11 @@ foreach my $num (keys %report_class) {
     }
   }
   if ( $yes and $no ) {
-    $initial_state{$num} = undef;
+    $initial_state{$num} = -1;
   } elsif ( $yes ) {
     $initial_state{$num} = 1;
   } elsif ( $no ) {
-    $initial_state{$num} = 0;
+    $initial_state{$num} = '';
   } # else, uh, you didn't provide any pkgparts
 }
 </%init>
