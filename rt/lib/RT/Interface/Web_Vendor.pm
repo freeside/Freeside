@@ -264,10 +264,11 @@ sub ProcessTicketBasics {
       my $DateObj = RT::Date->new($session{'CurrentUser'});
       if ( $to_date ) {
           $DateObj->Set(Format => 'unknown', Value => $to_date);
-      } else {
+          $ARGSRef->{'WillResolve'} = $DateObj->ISO;
+      } elsif ( $TicketObj and $TicketObj->WillResolveObj->Unix > 0 ) {
           $DateObj->Set(Value => 0);
+          $ARGSRef->{'WillResolve'} = $DateObj->ISO;
       }
-      $ARGSRef->{'WillResolve'} = $DateObj->ISO;
     }
 
     if ( $ARGSRef->{'Queue'} and ( $ARGSRef->{'Queue'} !~ /^(\d+)$/ ) ) {
