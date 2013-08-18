@@ -696,3 +696,5 @@ FS/cable_device.pm
 t/cable_device.t
 FS/h_svc_cable.pm
 t/h_svc_cable.t
+FS/sales_pkg_class.pm
+t/sales_pkg_class.t

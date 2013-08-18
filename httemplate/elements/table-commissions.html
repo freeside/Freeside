@@ -1,0 +1,44 @@
+<FONT CLASS="fsinnerbox-title"><% mt('Commissions') |h %></FONT>
+<TABLE CLASS="fsinnerbox">
+
+% my $pkey = $object->primary_key;
+% my $pkey_value = $object->$pkey();
+% my $link_class = 'FS::'.$link_table;
+% 
+% #surprising amount of false laziness w/ edit/process/agent.cgi
+% # (somewhat less now that we're more generic)
+% my @pkg_class = qsearch($target_table, { 'disabled'=>'' });
+% foreach my $pkg_class ( '', @pkg_class ) {
+%   my %thing_pkg_class = ( $pkey    => $pkey_value,
+%                           classnum => $pkg_class ? $pkg_class->classnum : ''
+%                         );
+%   my $thing_pkg_class =
+%     qsearchs( $link_table, \%thing_pkg_class )
+%     || $link_class->new( \%thing_pkg_class );
+%   my $param = 'classnum'. $thing_pkg_class{classnum};
+
+    <TR>
+      <TD><INPUT TYPE      = "text"
+                 NAME      = "<% $param %>"
+                 VALUE     = "<% $cgi->param($param) || $thing_pkg_class->commission_percent |h %>"
+                 SIZE      = 6
+                 MAXLENGTH = 7
+          >%
+      </TD>
+      <TD><% $pkg_class ? $pkg_class->classname : mt('(no package class)') |h %>
+      </TD>
+    </TR>
+
+% }
+
+</TABLE>
+
+<%init>
+
+my %opt = @_;
+
+my $object = $opt{'source_obj'};
+my $link_table = $opt{'link_table'};
+my $target_table = $opt{'target_table'} || 'pkg_class';
+
+</%init>

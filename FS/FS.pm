@@ -3,7 +3,7 @@ package FS;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '3.1';
+$VERSION = '3.2git';
 
 #find missing entries in this file with:
 # for a in `ls *pm | cut -d. -f1`; do grep 'L<FS::'$a'>' ../FS.pm >/dev/null || echo "missing $a" ; done
@@ -271,6 +271,8 @@ L<FS::rate_tier_details> - Rater tier details for call billing
 L<FS::usage_class> - Usage class class
 
 L<FS::sales> - Sales person class
+
+L<FS::sales_pkg_class> - Sales person package class commission class
 
 L<FS::agent> - Agent (reseller) class
 

@@ -12,6 +12,16 @@
                         },
      'viewall_dir'   => 'browse',
      'agent_virt'    => 1,
+     'html_bottom'   => sub {
+                              my $sales = shift;
+
+                              '<BR>'.
+                              include('/elements/table-commissions.html',
+                                        'source_obj'   => $sales,
+                                        'link_table'   => 'sales_pkg_class',
+                                        #'target_table' => 'pkg_class',
+                                     );
+                            },
 &>
 <%init>
 

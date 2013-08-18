@@ -525,6 +525,19 @@ sub tables_hashref {
       'index' => [ ['salesnum'], ['disabled'] ],
     },
 
+    'sales_pkg_class' => {
+      'columns' => [
+        'salespkgclassnum',    'serial',     '',    '', '', '',
+        'salesnum',               'int',     '',    '', '', '',
+        'classnum',               'int', 'NULL',    '', '', '',
+        'commission_percent', 'decimal',     '', '7,4', '', '',
+        'commission_duration',    'int', 'NULL',    '', '', '',
+      ],
+      'primary_key' => 'salespkgclassnum',
+      'unique'      => [ [ 'salesnum', 'classnum' ], ],
+      'index'       => [],
+    },
+
     'cust_attachment' => {
       'columns' => [
         'attachnum', 'serial', '', '', '', '',

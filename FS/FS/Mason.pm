@@ -341,6 +341,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_pkg_msgcat;
   use FS::svc_cable;
   use FS::cable_device;
+  use FS::sales_pkg_class;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

@@ -141,38 +141,13 @@
 </TABLE>
 <BR>
 
-<FONT CLASS="fsinnerbox-title"><% mt('Commissions') |h %></FONT>
-<TABLE CLASS="fsinnerbox">
-
-% #surprising amount of false laziness w/ edit/process/agent.cgi
-% my @pkg_class = qsearch('pkg_class', { 'disabled'=>'' });
-% foreach my $pkg_class ( '', @pkg_class ) {
-%   my %agent_pkg_class = ( 'agentnum' => $agent->agentnum,
-%                           'classnum' => $pkg_class ? $pkg_class->classnum : ''
-%                         );
-%   my $agent_pkg_class =
-%     qsearchs( 'agent_pkg_class', \%agent_pkg_class )
-%     || new FS::agent_pkg_class   \%agent_pkg_class;
-%   my $param = 'classnum'. $agent_pkg_class{classnum};
-
-    <TR>
-      <TD><INPUT TYPE      = "text"
-                 NAME      = "<% $param %>"
-                 VALUE     = "<% $cgi->param($param) || $agent_pkg_class->commission_percent |h %>"
-                 SIZE      = 6
-                 MAXLENGTH = 7
-          >%
-      </TD>
-      <TD><% $pkg_class ? $pkg_class->classname : mt('(no package class)') |h %>
-      </TD>
-    </TR>
-
-% }
-
-</TABLE>
-
-
+<& /elements/table-commissions.html,
+     'source_obj'   => $agent,
+     'link_table'   => 'agent_pkg_class',
+     #'target_table' => 'pkg_class',
+&>
 <BR>
+
 <INPUT TYPE="submit" VALUE="<% $agent->agentnum ? "Apply changes" : "Add agent" %>">
 
 </FORM>
