@@ -1839,6 +1839,7 @@ sub change {
       $hash{$date} = $self->getfield($date);
     }
   }
+
   # allow $opt->{'locationnum'} = '' to specifically set it to null
   # (i.e. customer default location)
   $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
@@ -1863,7 +1864,6 @@ sub change {
   }
 
   $hash{'contactnum'} = $opt->{'contactnum'} if $opt->{'contactnum'};
-  $hash{'quantity'} = $opt->{'quantity'} || $self->quantity;
 
   my $cust_pkg;
   if ( $opt->{'cust_pkg'} ) {
@@ -1880,10 +1880,11 @@ sub change {
   } else {
     # Create the new package.
     $cust_pkg = new FS::cust_pkg {
-      custnum        => $custnum,
-      pkgpart        => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
-      refnum         => ( $opt->{'refnum'}      || $self->refnum       ),
-      locationnum    => ( $opt->{'locationnum'}                        ),
+      custnum     => $custnum,
+      locationnum => $opt->{'locationnum'},
+      ( map {  $_ => ( $opt->{$_} || $self->$_() )  }
+          qw( pkgpart quantity refnum salesnum )
+      ),
       %hash,
     };
     $error = $cust_pkg->insert( 'change' => 1,
@@ -2176,14 +2177,17 @@ sub change_later {
 
   return '' unless $new_pkgpart or $new_locationnum or $new_quantity; # wouldn't do anything
 
-  my %hash = (
-    'custnum'     => $self->custnum,
-    'pkgpart'     => ($opt->{'pkgpart'}     || $self->pkgpart),
-    'locationnum' => ($opt->{'locationnum'} || $self->locationnum),
-    'quantity'    => ($opt->{'quantity'}    || $self->quantity),
-    'start_date'  => $date,
-  );
-  my $new = FS::cust_pkg->new(\%hash);
+  # allow $opt->{'locationnum'} = '' to specifically set it to null
+  # (i.e. customer default location)
+  $opt->{'locationnum'} = $self->locationnum if !exists($opt->{'locationnum'});
+
+  my $new = FS::cust_pkg->new( {
+    custnum     => $self->custnum,
+    locationnum => $opt->{'locationnum'},
+    start_date  => $date,
+    map   {  $_ => ( $opt->{$_} || $self->$_() )  }
+      qw( pkgpart quantity refnum salesnum )
+  } );
   $error = $new->insert('change' => 1, 
                         'allow_pkgpart' => ($new_pkgpart ? 0 : 1));
   if ( !$error ) {

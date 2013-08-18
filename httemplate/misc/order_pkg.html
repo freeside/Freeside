@@ -33,7 +33,7 @@
   <FONT CLASS="fsinnerbox-title"><% mt('Sales') |h %></FONT>
 % }
 % if ( $show_sales_table ) {
-  <% ntable("#cccccc", 2) %>
+  <% ntable("#cccccc") %>
 % }
 
 <& /elements/tr-select-sales.html,
@@ -55,7 +55,7 @@
 % }
 
 <FONT CLASS="fsinnerbox-title"><% mt('Package') |h %></FONT>
-<% ntable("#cccccc", 2) %>
+<% ntable("#cccccc") %>
 
 % if ( $part_pkg ) {
     <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $part_pkg->pkgpart %>">
@@ -117,7 +117,7 @@
 %
 % if ( $discount_cust_pkg || $waive_setup_fee ) {
   <FONT CLASS="fsinnerbox-title"><% mt('Discounting') |h %></FONT>
-  <% ntable("#cccccc", 2) %>
+  <% ntable("#cccccc") %>
 
 %   if ( $waive_setup_fee ) {
       <TR>
@@ -143,7 +143,7 @@
 % my $contact_title = $lock_locationnum ? 'Contact'
 %                                       : 'Contact and Location';
 <FONT CLASS="fsinnerbox-title"><% mt($contact_title) |h %></FONT>
-<% ntable("#cccccc", 2) %>
+<% ntable("#cccccc") %>
 
 <& /elements/tr-select-contact.html,
              'cgi'           => $cgi,
