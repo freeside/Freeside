@@ -1,0 +1,21 @@
+<& elements/edit.html,
+     'name_singular' => 'sales person',
+     'table'         => 'sales',
+     'fields'        => [ 'salesperson',
+                          { field=>'agentnum', type=>'select-agent', disable_empty=>1, },
+                          { field=>'disabled', type=>'checkbox', value=>'Y', },
+                        ],
+     'labels'        => { 'salesnum'    => 'Sales Person',
+                          'salesperson' => 'Name',
+                          'agentnum'    => 'Agent',
+                          'disabled'    => 'Disabled',
+                        },
+     'viewall_dir'   => 'browse',
+     'agent_virt'    => 1,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit sales people');
+
+</%init>
