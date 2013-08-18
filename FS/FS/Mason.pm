@@ -315,7 +315,6 @@ if ( -e $addl_handler_use_file ) {
   use FS::tower;
   use FS::tower_sector;
   use FS::sales;
-  use FS::access_groupsales;
   use FS::contact_class;
   use FS::part_svc_class;
   use FS::upload_target;

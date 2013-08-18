@@ -1,0 +1,32 @@
+<& elements/browse.html,
+     'title'              => 'Sales People',
+     'name_singular'      => 'sales person',
+     'menubar'            => ['Add a new sales person' => $p.'edit/sales.html'],
+     'query'              => { 'table' => 'sales' },
+     'count_query'        => 'SELECT COUNT(*) FROM sales',
+     'header'             => \@header,
+     'fields'             => \@fields,
+     'links'              => \@links,
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'agent_virt'         => 1,
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Edit sales people');
+
+my @header = ( 'Sales person' );
+my @fields = ( 'salesperson' );
+my @links  = ( [$p.'edit/sales.html?', 'salesnum'] );
+
+if ( $curuser->access_right('Configuration') ) {
+  push @header, 'Agent';
+  push @fields, 'agent_name';
+  push @links,  [ $p.'edit/agent.cgi?', 'agentnum' ];
+}
+
+#Sales people bring in business.<BR><BR>
+
+</%init>

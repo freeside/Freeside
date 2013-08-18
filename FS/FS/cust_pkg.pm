@@ -34,7 +34,7 @@ use FS::reason;
 use FS::cust_pkg_discount;
 use FS::discount;
 use FS::UI::Web;
-use Data::Dumper;
+use FS::sales;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -631,6 +631,7 @@ sub check {
     || $self->ut_numbern('pkgpart')
     || $self->ut_foreign_keyn('contactnum',  'contact',       'contactnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
+    || $self->ut_foreign_keyn('salesnum', 'sales', 'salesnum')
     || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
@@ -2240,6 +2241,7 @@ sub set_quantity {
 
 use Storable 'thaw';
 use MIME::Base64;
+use Data::Dumper;
 sub process_bulk_cust_pkg {
   my $job = shift;
   my $param = thaw(decode_base64(shift));

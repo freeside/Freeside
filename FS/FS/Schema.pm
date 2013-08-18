@@ -1036,6 +1036,7 @@ sub tables_hashref {
       'columns' => [
         'custnum',  'serial',  '',     '', '', '', 
         'agentnum', 'int',  '',     '', '', '', 
+        'salesnum', 'int',  'NULL', '', '', '', 
         'agent_custid', 'varchar', 'NULL', $char_d, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'custbatch', 'varchar', 'NULL', $char_d, '', '',
@@ -1802,6 +1803,7 @@ sub tables_hashref {
         'locationnum',         'int', 'NULL', '', '', '',
         'otaker',          'varchar', 'NULL', 32, '', '', 
         'usernum',             'int', 'NULL', '', '', '',
+        'salesnum',            'int', 'NULL', '', '', '', 
         'order_date',     @date_type,             '', '', 
         'start_date',     @date_type,             '', '', 
         'setup',          @date_type,             '', '', 
@@ -3769,17 +3771,6 @@ sub tables_hashref {
       ],
       'primary_key' => 'groupagentnum',
       'unique' => [ [ 'groupnum', 'agentnum' ] ],
-      'index'  => [ [ 'groupnum' ] ],
-    },
-
-    'access_groupsales' => {
-      'columns' => [
-        'groupsalesnum', 'serial', '', '', '', '',
-        'groupnum',         'int', '', '', '', '',
-        'salesnum',         'int', '', '', '', '',
-      ],
-      'primary_key' => 'groupsalesnum',
-      'unique' => [ [ 'groupnum', 'salesnum' ] ],
       'index'  => [ [ 'groupnum' ] ],
     },
 

@@ -573,7 +573,7 @@ tie my %config_agent, 'Tie::IxHash',
 ;
 
 tie my %config_sales, 'Tie::IxHash',
-  'Sales'      => [ $fsurl.'browse/sales.cgi', 'Sales bring in new business.' ],
+  'Sales People' => [ $fsurl.'browse/sales.html', 'Sales people bring in new business.' ],
 ;
 
 tie my %config_billing_rates, 'Tie::IxHash',
@@ -689,13 +689,19 @@ if ( $curuser->access_right('Configuration' ) ) {
     'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
     'separator'     => '', #its a separator!
     'Companies'     => [ \%config_agent, '' ],
-    'Employees'     => [ \%config_employees, '' ],
-    'Sales People'  => [ \%config_sales, '' ],
-    'separator2'    => '', #its a separator!
-    'Customers'     => [ \%config_cust, '' ],
-    #or this? 'Customers and Contacts' => [ \%config_cust, '' ],
   );
 }
+
+$config_menu{'Sales People'}  = [ \%config_sales, '' ]
+  if $curuser->access_right('Edit sales people');
+
+if ( $curuser->access_right('Configuration' ) ) {
+  $config_menu{'Employees'}  = [ \%config_employees, '' ];
+  $config_menu{'separator2'} = ''; #its a separator!
+  $config_menu{'Customers'}  = [ \%config_cust, '' ];
+    #or this? 'Customers and Contacts'
+}
+
 $config_menu{'Packages'} = [ \%config_pkg, '' ]
   if    $curuser->access_right('Configuration' )
      || $curuser->access_right('Edit package definitions')

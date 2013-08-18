@@ -1,18 +1,8 @@
 package FS::sales;
+use base qw( FS::Agent_Mixin FS::Record );
 
 use strict;
-use vars qw( @ISA );
-use base qw( FS::Record );
-use Business::CreditCard 0.28;
-use FS::Record qw( dbh qsearch qsearchs );
-use FS::cust_main;
-use FS::cust_pkg;
-use FS::agent_type;
-use FS::reg_code;
-use FS::TicketSystem;
-#use FS::Conf;
-
-@ISA = qw( FS::m2m_Common FS::Record );
+use FS::agent;
 
 =head1 NAME
 
@@ -35,7 +25,7 @@ FS::sales - Object methods for sales records
 
 =head1 DESCRIPTION
 
-An FS::sales object represents an example.  FS::sales inherits from
+An FS::sales object represents a sales person.  FS::sales inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
@@ -61,7 +51,8 @@ disabled
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new sales person.  To add the sales person to the database, see
+L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -100,7 +91,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid sales person.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -114,14 +105,11 @@ sub check {
 
   my $error = 
     $self->ut_numbern('salesnum')
-    || $self->ut_numbern('agentnum')
+    || $self->ut_text('salesperson')
+    || $self->ut_foreign_key('agentnum', 'agent', 'agentnum')
+    || $self->ut_enum('disabled', [ '', 'Y' ])
   ;
   return $error if $error;
-
-  if ( $self->dbdef_table->column('disabled') ) {
-    $error = $self->ut_enum('disabled', [ '', 'Y' ] );
-    return $error if $error;
-  }
 
   $self->SUPER::check;
 }
@@ -129,8 +117,6 @@ sub check {
 =back
 
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 

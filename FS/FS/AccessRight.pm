@@ -344,6 +344,8 @@ tie my %rights, 'Tie::IxHash',
     'Edit advertising sources',
     { rightname=>'Edit global advertising sources', global=>1 },
 
+    'Edit sales people',
+
     'Edit package definitions',
     { rightname=>'Edit global package definitions', global=>1 },
   

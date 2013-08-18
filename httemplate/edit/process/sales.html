@@ -1,0 +1,12 @@
+<& elements/process.html,
+     'table'       => 'sales',
+     'viewall_dir' => 'browse',
+     'agent_virt'  => 1,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit sales people');
+
+</%init>
+
