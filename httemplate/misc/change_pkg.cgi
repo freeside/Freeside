@@ -6,12 +6,14 @@
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/change-cust_pkg.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 
+
+<FONT CLASS="fsinnerbox-title"><% mt('Package') |h %></FONT>
 <% ntable('#cccccc') %>
 
   <TR>
     <TH ALIGN="right"><% mt('Current package') |h %></TH>
     <TD COLSPAN=7>
-      <% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %>
+      <FONT STYLE="background-color:#e8e8e8"><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %></FONT>
     </TD>
   </TR>
 
@@ -26,34 +28,46 @@
                'curr_value' => $cust_pkg->quantity
   &>
 
+</TABLE>
+<BR>
+
+
+<FONT CLASS="fsinnerbox-title"><% mt('Change') |h %></FONT>
+<% ntable('#cccccc') %>
+
+  <TR>
+<!--    <TD> Apply this change: </TD> -->
+    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="0" \
+          <% !$cgi->param('delay') ? 'CHECKED' : '' %>> Now </TD>
+    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="1" \
+          <% $cgi->param('delay')  ? 'CHECKED' : '' %>> In the future
+      <& /elements/input-date-field.html, {
+          'name'  => 'start_date',
+          'value' => ($cgi->param('start_date') || $cust_main->next_bill_date),
+      } &>
+    </TD>
+  </TR>
+</TABLE>
+</BR>
+
+
+<FONT CLASS="fsinnerbox-title"><% mt('Location') |h %></FONT>
+<% ntable('#cccccc') %>
+
   <& /elements/tr-select-cust_location.html,
                'cgi'       => $cgi,
                'cust_main' => $cust_main,
   &>
 
 </TABLE>
+<BR>
 
-<TABLE>
-  <TR>
-    <TD> Apply this change: </TD>
-    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="0" \
-          <% !$cgi->param('delay') ? 'CHECKED' : '' %>> now </TD>
-    <TD> <INPUT TYPE="radio" NAME="delay" VALUE="1" \
-          <% $cgi->param('delay')  ? 'CHECKED' : '' %>> in the future
-      <& /elements/input-date-field.html, {
-  'name'  => 'start_date',
-  'value' => ($cgi->param('start_date') || $cust_main->next_bill_date),
-      } &>
-    </TD>
-  </TR>
-</TABLE>
 
 <& /elements/standardize_locations.html,
             'form'       => "OrderPkgForm",
             'callback'   => 'document.OrderPkgForm.submit();',
 &>
 
-<BR>
 <INPUT NAME    = "submitButton"
        TYPE    = "button"
        VALUE   = "<% mt("Change package") |h %>"
