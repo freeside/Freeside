@@ -124,6 +124,13 @@ Transaction recorded in database
 
 Additional status information.
 
+=item failure_status
+
+One of the standard failure status strings defined in 
+L<Business::OnlinePayment>: "expired", "nsf", "stolen", "pickup", 
+"blacklisted", "declined".  If the transaction status is not "declined", 
+this will be empty.
+
 =item gatewaynum
 
 L<FS::payment_gateway> id.
@@ -215,6 +222,7 @@ sub check {
     || $self->ut_text('status')
     #|| $self->ut_textn('statustext')
     || $self->ut_anything('statustext')
+    || $self->ut_textn('failure_status')
     #|| $self->ut_money('cust_balance')
     || $self->ut_hexn('session_id')
     || $self->ut_foreign_keyn('paynum', 'cust_pay', 'paynum' )
@@ -425,10 +433,11 @@ sub approve {
   '';
 }
 
-=item decline [ STATUSTEXT ]
+=item decline [ STATUSTEXT [ STATUS ] ]
 
 Sets the status of this pending payment to "done" (with statustext
-"declined (manual)" unless otherwise specified).
+"declined (manual)" unless otherwise specified).  The optional STATUS can be
+used to set the failure_status field.
 
 Currently only used when resolving pending payments manually.
 
@@ -437,11 +446,15 @@ Currently only used when resolving pending payments manually.
 sub decline {
   my $self = shift;
   my $statustext = shift || "declined (manual)";
+  my $failure_status = shift || '';
 
   #could send decline email too?  doesn't seem useful in manual resolution
+  # this is also used for thirdparty payment execution failures, but a decline
+  # email isn't useful there either, and will just confuse people.
 
   $self->status('done');
   $self->statustext($statustext);
+  $self->failure_status($failure_status);
   $self->replace;
 }
 

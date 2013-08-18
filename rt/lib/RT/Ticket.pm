@@ -255,6 +255,7 @@ sub Create {
         Starts             => undef,
         Started            => undef,
         Resolved           => undef,
+        WillResolve        => undef,
         MIMEObj            => undef,
         _RecordTransaction => 1,
         DryRun             => 0,
@@ -355,6 +356,11 @@ sub Create {
     my $Started = RT::Date->new( $self->CurrentUser );
     if ( defined $args{'Started'} ) {
         $Started->Set( Format => 'ISO', Value => $args{'Started'} );
+    }
+
+    my $WillResolve = RT::Date->new($self->CurrentUser );
+    if ( defined $args{'WillResolve'} ) {
+        $WillResolve->Set( Format => 'ISO', Value => $args{'WillResolve'} );
     }
 
     # If the status is not an initial status, set the started date
@@ -483,6 +489,7 @@ sub Create {
         Starts          => $Starts->ISO,
         Started         => $Started->ISO,
         Resolved        => $Resolved->ISO,
+        WillResolve     => $WillResolve->ISO,
         Due             => $Due->ISO
     );
 

@@ -2,29 +2,54 @@
 A tristate checkbox (with three values: true, false, and null).
 Internally, this creates a checkbox, coupled via javascript to a hidden
 field that actually contains the value.  For now, the only values these
-can have are 1, 0, and empty.  Clicking the checkbox cycles between them.
+can have are 1, -1, and empty.  Clicking the checkbox cycles between them.
+
+For compatibility with regular checkboxes, empty is the false state and 
+-1 is the indeterminate state.
+
+Displaying these is a problem.  "indeterminate" is a standard HTML5 attribute
+but some browsers display it in unhelpful ways (e.g. Firefox slightly grays
+the checkbox, approximately #dddddd), and checkboxes ignore nearly all CSS 
+styling.
 </%doc>
 <%shared>
 my $init = 0;
 </%shared>
 % if ( !$init ) {
 %   $init = 1;
+<STYLE>
+input.partial {
+  position: absolute;
+  opacity: 0;
+  z-index: 1;
+}
+input.partial + label::before {
+  position: relative;
+  content: "\2610";
+}
+input.partial:checked + label::before {
+  content: "\2611";
+}
+input.partial:indeterminate + label::before {
+  content: "\2612";
+}
+</STYLE>
 <SCRIPT TYPE="text/javascript">
 function tristate_onclick() {
   var checkbox = this;
   var input = checkbox.input;
-  if ( input.value == "" ) {
-    input.value = "0";
-    checkbox.checked = false;
-    checkbox.indeterminate = false;
-  } else if ( input.value == "0" ) {
+  if ( input.value == "" ) { // false -> true
     input.value = "1";
     checkbox.checked = true;
     checkbox.indeterminate = false;
-  } else if ( input.value == "1" ) {
+  } else if ( input.value == "1" ) { // true -> indeterminate
+    input.value = "-1";
+    checkbox.checked = false;
+    checkbox.indeterminate = true;
+  } else if ( input.value == "-1" ) { // indeterminate -> false
     input.value = "";
-    checkbox.checked = true;
-    checkbox.indeterminate = true
+    checkbox.checked = false;
+    checkbox.indeterminate = false;
   }
 }
 
@@ -47,10 +72,10 @@ window.onload = function() { // don't do this until all of the checkboxes exist
     // set event handler
     tristate_boxes[i].onclick = tristate_onclick;
     // set initial value
-    if ( tristates[i].value == "" ) {
+    if ( tristates[i].value == "-1" ) {
       tristate_boxes[i].indeterminate = true
     }
-    if ( tristates[i].value != "0" ) {
+    if ( tristates[i].value == "1" ) {
       tristate_boxes[i].checked = true;
     }
   }
@@ -62,6 +87,7 @@ window.onload = function() { // don't do this until all of the checkboxes exist
                      VALUE="<% $curr_value %>"
                      CLASS="tristate">
 <INPUT TYPE="checkbox" ID="checkbox_<%$opt{field}%>" CLASS="partial">
+<LABEL />
 <%init>
 
 my %opt = @_;
@@ -72,7 +98,10 @@ my %opt = @_;
 #                 : '';
 
 $opt{'id'} ||= 'hidden_'.$opt{'field'};
-my $curr_value = $opt{curr_value};
-$curr_value = undef
-  unless $curr_value eq '0' or $curr_value eq '1';
+my $curr_value = '-1';
+if (exists $opt{curr_value}) {
+  $curr_value = $opt{curr_value};
+  $curr_value = '' unless $curr_value eq '-1' or $curr_value eq '1';
+}
+
 </%init>

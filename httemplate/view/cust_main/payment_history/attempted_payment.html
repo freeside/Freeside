@@ -12,7 +12,15 @@ if ( $opt{'pkg-balances'} && $cust_pay_pending->pkgnum ) {
   $info .= ' for '. $cust_pkg->pkg_label_long;
 }
 
-$info .= ': '. $cust_pay_pending->statustext
-  if length($cust_pay_pending->statustext);
+my $detail = '';
+if ( $cust_pay_pending->failure_status ) {
+  $detail = $cust_pay_pending->display_status;
+  $detail .= ' (' . $cust_pay_pending->statustext . ')'
+    if $cust_pay_pending->statustext;
+} else {
+  $detail = $cust_pay_pending->statustext;
+}
+
+$info .= ': '.$detail if length($detail);
 
 </%init>

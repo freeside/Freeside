@@ -290,6 +290,33 @@ sub payinfo_used {
   return 0;
 }
 
+=item display_status
+
+For transactions that have both 'status' and 'failure_status', shows the
+status in a single, display-friendly string.
+
+=cut
+
+sub display_status {
+  my $self = shift;
+  my %status = (
+    'done'        => 'Approved',
+    'expired'     => 'Card Expired',
+    'stolen'      => 'Lost/Stolen',
+    'pickup'      => 'Pick Up Card',
+    'nsf'         => 'Insufficient Funds',
+    'inactive'    => 'Inactive Account',
+    'blacklisted' => 'Blacklisted',
+    'declined'    => 'Declined',
+    'approved'    => 'Approved',
+  );
+  if ( $self->failure_status ) {
+    return $status{$self->failure_status};
+  } else {
+    return $status{$self->status};
+  }
+}
+
 =back
 
 =head1 BUGS
