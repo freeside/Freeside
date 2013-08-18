@@ -52,6 +52,13 @@
      </TR>
 %  #}
 
+% if ( $cust_main->salesnum ) {
+    <TR>
+      <TD ALIGN="right"><% mt('Sales Person') |h %></TD>
+      <TD BGCOLOR="#ffffff"><% $cust_main->salesperson |h %></TD>
+    </TR>
+% }
+
 %  unless ( FS::part_referral->num_part_referral == 1 ) {
 %    my $referral = qsearchs('part_referral', {
 %      'refnum' => $cust_main->refnum

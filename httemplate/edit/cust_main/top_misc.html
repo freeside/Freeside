@@ -129,6 +129,11 @@
              'label'       => emt("Class"),
 &>
 
+%#sales person
+<& /elements/tr-select-sales.html,
+     'curr_value' => $cust_main->salesnum,
+&>
+
 %# referral (advertising source)
 %my $refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
 %if ( $custnum && ! $conf->exists('editreferrals') ) {

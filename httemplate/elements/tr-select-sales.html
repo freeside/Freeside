@@ -1,0 +1,72 @@
+<%doc>
+
+Example:
+
+  <& /elements/tr-select-sales.html',
+
+    #recommended to keep things "sticky" on errors
+    'curr_value'    => $curr_value,
+
+    ##
+    # optional
+    ##
+
+    'label'         => 'Sales Person',
+    'empty_label'   => 'Select sales person', #override default 
+    #on already# 'disable_empty' => 1,
+
+  &>
+
+</%doc>
+% if ( scalar(@sales) == 0 || $opt{'fixed'} ) { 
+
+  <INPUT TYPE  = "hidden"
+         NAME  = "<% $opt{'field'} || 'salesnum' %>"
+         ID    = "<% $opt{'field'} || 'salesnum' %>"
+         VALUE = "<% $salesnum %>"
+  >
+
+%   if ( scalar(@sales) > 0 ) {
+      <TR>
+        <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+        <TD BGCOLOR="#dddddd" <% $colspan %>>
+%         my $sales = qsearchs('sales', { 'salesnum' => $salesnum });
+          <% $sales ? $sales->salesperson : '(none)' |h %>
+        </TD>
+      </TR>
+
+%   } else { # YUCK.  empty row so we don't throw g_row in edit.html off :/
+      <TR>
+      </TR>
+%   }
+%
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || emt('Sales Person') %></TD>
+    <TD <% $colspan %>>
+      <& /elements/select-sales.html,
+                     'curr_value' => $salesnum,
+                     'sales'     => \@sales,
+                     %opt,
+      &>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my %opt = @_;
+my $salesnum = $opt{'curr_value'} || $opt{'value'};
+
+my @sales = qsearch({ 'table'   => 'sales',
+                      'hashref' => { 'disabled' => '' },
+                      'extra_sql' => ' AND '. $curuser->agentnums_sql,
+                   });
+warn scalar(@sales);
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+</%init>
