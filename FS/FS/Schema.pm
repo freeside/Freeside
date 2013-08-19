@@ -518,6 +518,7 @@ sub tables_hashref {
         'salesnum',          'serial',    '',       '', '', '', 
         'salesperson',      'varchar',    '',  $char_d, '', '', 
         'agentnum',             'int', 'NULL',      '', '', '', 
+        'sales_custnum',        'int', 'NULL',      '', '', '',
         'disabled',            'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'salesnum',

@@ -1,5 +1,7 @@
 <TD CLASS="inv package" BGCOLOR="<% $bgcolor %>" VALIGN="top" <%$style%>>
   <TABLE CLASS="inv package"> 
+
+
     <TR>
       <TD COLSPAN=2>
         <% $opt{before_pkg_callback}
@@ -14,14 +16,6 @@
       </TD>
     </TR>
 
-% if ( $cust_pkg->quantity > 1 ) {
-    <TR>
-      <TD COLSPAN=2>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<% mt('Quantity:') |h %> 
-        <B><% $cust_pkg->quantity %></B>
-      </TD>
-    </TR>
-% }
 
     <TR>
       <TD COLSPAN=2>
@@ -85,6 +79,60 @@
         </FONT>
       </TD>
     </TR>
+
+
+    <TR>
+      <TD COLSPAN=2>
+
+%       my $change_quan_label = 'Change quantity';
+%       if ( $cust_pkg->quantity > 1 ) {
+%         $change_quan_label = 'change';
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<% mt('Quantity:') |h %> 
+          <B><% $cust_pkg->quantity %></B>
+%       }
+
+%       if ( $curuser->access_right('Change customer package')
+%              && ! $cust_pkg->get('cancel')
+%              && ! $supplemental
+%              && $part_pkg->freq ne '0'
+%              && ! $opt{no_links}
+%              && $opt{'invoice-unitprice'}
+%          )
+%       {
+          <FONT SIZE="-1">
+            (&nbsp;<% pkg_change_quantity_link($cust_pkg, $change_quan_label) %>&nbsp;)
+          </FONT>
+%       }
+
+      </TD>
+    </TR>
+
+
+    <TR>
+      <TD COLSPAN=2>
+
+%       my $change_sales_label = 'Change sales person';
+%       if ( $cust_pkg->salesnum ) {
+%         $change_sales_label = 'change';
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<% mt('Sales Person:') |h %> 
+          <B><% $cust_pkg->salesperson %></B>
+%       }
+
+%       if ( $curuser->access_right('Change customer package')
+%              && ! $cust_pkg->get('cancel')
+%              && ! $supplemental
+%              #&& $part_pkg->freq ne '0'
+%              && ! $opt{no_links}
+%          )
+%       {
+        <FONT SIZE="-1">
+          (&nbsp;<% pkg_change_salesnum_link($cust_pkg, $change_sales_label) %>&nbsp;)
+        </FONT>
+%     }
+
+      </TD>
+    </TR>
+
 
 %   my $editi = $curuser->access_right('Edit customer package invoice details');
 %   my $editc = $curuser->access_right('Edit customer package comments');
@@ -188,24 +236,11 @@
 %       }
 
       </TR>
-%     if ( $curuser->access_right('Change customer package')
-%            && ! $cust_pkg->get('cancel')
-%            && ! $supplemental
-%            && $part_pkg->freq ne '0'
-%            && ! $opt{no_links}
-%        )
-%     {
-      <TR>
-% # yeah, I guess we'll let you do this on a future change package
-%       if ( FS::Conf->new->exists('invoice-unitprice') ) {
-        <TD><FONT SIZE="-1">
-          (&nbsp;<% pkg_change_quantity_link($cust_pkg) %>&nbsp;)
-        </FONT></TD>
-%       }
-      </TR>
-%     }
+
+
 %   }
   </TABLE>
+
 % if ( @cust_pkg_usage ) {
   <TABLE CLASS="usage inv">
     <TR><TH COLSPAN=4><% mt('Included usage') %></TH></TR>
@@ -309,11 +344,24 @@ sub pkg_change_location_link {
 }
 
 sub pkg_change_quantity_link {
+  my( $cust_pkg, $label ) = @_;
   include( '/elements/popup_link-cust_pkg.html',
     'action'      => $p. 'edit/cust_pkg_quantity.html?',
-    'label'       => emt('Change quantity'),
+    'label'       => emt($label),
     'actionlabel' => emt('Change'),
-    'cust_pkg'    => shift,
+    'cust_pkg'    => $cust_pkg,
+    'width'       => 390,
+    'height'      => 220,
+  );
+}
+
+sub pkg_change_salesnum_link {
+  my( $cust_pkg, $label ) = @_;
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p. 'edit/cust_pkg_salesnum.html?',
+    'label'       => emt($label),
+    'actionlabel' => emt('Change'),
+    'cust_pkg'    => $cust_pkg,
     'width'       => 390,
     'height'      => 220,
   );
