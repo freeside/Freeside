@@ -1,0 +1,33 @@
+% if ($error) {
+%   $cgi->param('error', $error);
+%   $cgi->redirect(popurl(3). 'edit/cust_pkg_salesnum.html?'. $cgi->query_string );
+% } else {
+
+    <& /elements/header-popup.html, "Sales Person changed" &>
+      <SCRIPT TYPE="text/javascript">
+        window.top.location.reload();
+      </SCRIPT>
+    </BODY>
+    </HTML>
+
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Change customer package');
+
+my $cust_pkg = qsearchs({
+  'table'     => 'cust_pkg',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'pkgnum' => scalar($cgi->param('pkgnum')), },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die 'unknown pkgnum' unless $cust_pkg;
+
+$cgi->param('salesnum') =~ /^(\d*)$/;
+my $salesnum = $1;
+my $error = $cust_pkg->set_salesnum($1);
+
+</%init>
