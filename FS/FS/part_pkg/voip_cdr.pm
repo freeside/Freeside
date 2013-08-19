@@ -340,8 +340,8 @@ tie my %detail_formats, 'Tie::IxHash',
                        411_rewrite
                        output_format 
                        selfservice_format selfservice_inbound_format
-                       usage_mandate summarize_usage usage_section
-                       bill_every_call bill_inactive_svcs
+                       usage_mandate summarize_usage usage_section 
+                       usage_nozero bill_every_call bill_inactive_svcs
                        count_available_phones suspend_bill 
                      )
                   ],
