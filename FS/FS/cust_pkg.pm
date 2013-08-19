@@ -632,6 +632,7 @@ sub check {
     || $self->ut_foreign_keyn('contactnum',  'contact',       'contactnum' )
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_foreign_keyn('salesnum', 'sales', 'salesnum')
+    || $self->ut_numbern('quantity')
     || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
@@ -2227,7 +2228,7 @@ sub abort_change {
 
 =item set_quantity QUANTITY
 
-Change the package's quantity field.  This is the one package property
+Change the package's quantity field.  This is one of the few package properties
 that can safely be changed without canceling and reordering the package
 (because it doesn't affect tax eligibility).  Returns an error or an 
 empty string.
@@ -2237,9 +2238,23 @@ empty string.
 sub set_quantity {
   my $self = shift;
   $self = $self->replace_old; # just to make sure
-  my $qty = shift;
-  ($qty =~ /^\d+$/ and $qty > 0) or return "bad package quantity $qty";
-  $self->set('quantity' => $qty);
+  $self->quantity(shift);
+  $self->replace;
+}
+
+=item set_salesnum SALESNUM
+
+Change the package's salesnum (sales person) field.  This is one of the few
+package properties that can safely be changed without canceling and reordering
+the package (because it doesn't affect tax eligibility).  Returns an error or
+an empty string.
+
+=cut
+
+sub set_salesnum {
+  my $self = shift;
+  $self = $self->replace_old; # just to make sure
+  $self->salesnum(shift);
   $self->replace;
 }
 

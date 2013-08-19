@@ -16,6 +16,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied" unless $curuser->access_right('Edit sales people');
 
+my $conf = new FS::Conf;
+
 #Sales people bring in business.<BR><BR>
 
 my @header = ( 'Sales person' );
@@ -27,6 +29,18 @@ if ( $curuser->access_right('Configuration') ) {
   push @fields, 'agent_name';
   push @links,  [ $p.'edit/agent.cgi?', 'agentnum' ];
 }
+
+push @header, 'Master Customer';
+push @fields, sub {
+  my $sales = shift;
+  return '' unless $sales->sales_custnum;
+  include('/elements/small_custview.html',
+            $sales->sales_custnum,
+            scalar($conf->config('countrydefault')),
+            1, #show balance
+         );
+};
+push @links, '';
 
 push @header, 'Commissions';
 push @fields, sub {

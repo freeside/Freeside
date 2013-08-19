@@ -77,6 +77,9 @@ my $pkg_attached = ( scalar(keys %change_custnum) == 1
 my $countrydefault = scalar($conf->config('countrydefault')) || 'US';  
 
 my %conf_opt = (
+  #for package.html
+  'invoice-unitprice'         => $conf->exists('invoice-unitprice'),
+
   #for services.html and status.html
   'cust_pkg-display_times'    => ($conf->exists('cust_pkg-display_times')
                                  || $curuser->option('cust_pkg-display_times')),

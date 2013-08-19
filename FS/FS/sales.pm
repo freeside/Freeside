@@ -2,7 +2,9 @@ package FS::sales;
 use base qw( FS::Agent_Mixin FS::Record );
 
 use strict;
+use FS::Record qw( qsearchs ); #qsearch qsearchs );
 use FS::agent;
+use FS::cust_main;
 
 =head1 NAME
 
@@ -107,11 +109,24 @@ sub check {
     $self->ut_numbern('salesnum')
     || $self->ut_text('salesperson')
     || $self->ut_foreign_key('agentnum', 'agent', 'agentnum')
+    || $self->ut_foreign_keyn('sales_custnum', 'cust_main', 'custnum')
     || $self->ut_enum('disabled', [ '', 'Y' ])
   ;
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item sales_cust_main
+
+Returns the FS::cust_main object (see L<FS::cust_main>), if any, for this
+sales person.
+
+=cut
+
+sub sales_cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->sales_custnum } );
 }
 
 =back

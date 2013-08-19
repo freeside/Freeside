@@ -213,6 +213,7 @@ if ( $new->custnum eq '' or $duplicate_of ) {
       #later         'custnum' => $custnum,
       'pkgpart'     => $pkgpart,
       'locationnum' => scalar($cgi->param('locationnum')),
+      'salesnum'    => scalar($cgi->param('salesnum')),
     } );
 
 
