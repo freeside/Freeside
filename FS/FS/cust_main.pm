@@ -1736,6 +1736,7 @@ sub check {
     || $self->ut_foreign_key('bill_locationnum', 'cust_location','locationnum')
     || $self->ut_foreign_key('ship_locationnum', 'cust_location','locationnum')
     || $self->ut_foreign_keyn('classnum', 'cust_class', 'classnum')
+    || $self->ut_foreign_keyn('salesnum', 'sales', 'salesnum')
     || $self->ut_textn('custbatch')
     || $self->ut_name('last')
     || $self->ut_name('first')

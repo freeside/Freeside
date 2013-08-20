@@ -95,8 +95,6 @@ L<FS::access_usergroup> - Employee group membership
 
 L<FS::access_groupagent> - Group reseller access
 
-L<FS::access_groupsales> - Group sales access
-
 L<FS::access_right> - Access rights
 
 L<FS::svc_acct_pop> - POP (Point of Presence, not Post
