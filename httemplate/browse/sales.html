@@ -65,13 +65,19 @@ push @fields, sub {
           #my $param = 'classnum'. $sales_pkg_class{classnum};
 
           [
+            { align => 'left',
+              data  => encode_entities(
+                         $_ ? $_->classname : mt('(no package class)')
+                       ). ':&nbsp;',
+            },
             { align => 'right',
               data  => ($sales_pkg_class->commission_percent || 0). '%',
             },
             { align => 'left',
-              data  => '&nbsp;'. encode_entities(
-                         $_ ? $_->classname : mt('(no package class)')
-                       ),
+              data  =>
+                $sales_pkg_class->commission_duration
+                  ? '&nbsp;for '. $sales_pkg_class->commission_duration. ' months'
+                  : ''
             },
           ];
 
