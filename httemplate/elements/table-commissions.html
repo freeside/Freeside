@@ -18,6 +18,8 @@
 %   my $param = 'classnum'. $thing_pkg_class{classnum};
 
     <TR>
+      <TD><% $pkg_class ? $pkg_class->classname : mt('(no package class)') |h %>: 
+      </TD>
       <TD><INPUT TYPE      = "text"
                  NAME      = "<% $param %>"
                  VALUE     = "<% $cgi->param($param) || $thing_pkg_class->commission_percent |h %>"
@@ -25,7 +27,28 @@
                  MAXLENGTH = 7
           >%
       </TD>
-      <TD><% $pkg_class ? $pkg_class->classname : mt('(no package class)') |h %>
+%     if ( $opt{'show_duration'} ) {
+        <TD>
+          for <INPUT TYPE = "text"
+                        NAME = "<% $param %>_duration"
+                        VALUE = "<% $cgi->param($param.'_duration') || $thing_pkg_class->commission_duration |h %>"
+                 SIZE      = 2
+                 MAXLENGTH = 3
+              >
+          months
+        </TD>
+%     }
+    </TR>
+
+% }
+
+% if ( $opt{'show_duration'} ) {
+
+    <TR>
+      <TD COLSPAN=2>
+      </TD>
+      <TD>
+        <FONT SIZE="-2"><I>blank for no time limit</I></FONT>
       </TD>
     </TR>
 

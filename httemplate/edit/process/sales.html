@@ -26,6 +26,7 @@ my $process_sales_pkg_class = sub {
     my $param = 'classnum'. $sales_pkg_class{classnum};
 
     $sales_pkg_class->commission_percent( $cgi->param($param) );
+    $sales_pkg_class->commission_duration( $cgi->param($param.'_duration') );
 
     my $method = $sales_pkg_class->salespkgclassnum ? 'replace' : 'insert';
 
