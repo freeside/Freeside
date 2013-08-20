@@ -35,16 +35,32 @@
 <FONT CLASS="fsinnerbox-title"><% mt('Change') |h %></FONT>
 <% ntable('#cccccc') %>
 
+  <SCRIPT TYPE="text/javascript">
+    function delay_changed() {
+      var enable = document.OrderPkgForm.delay[1].checked;
+      document.getElementById('start_date_text').disabled = !enable;
+      document.getElementById('start_date_button').style.display = 
+        (enable ? '' : 'none');
+      document.getElementById('start_date_button_disabled').style.display =
+        (enable ? 'none' : '');
+    }
+    <&| /elements/onload.js &>
+      delay_changed();
+    </&>
+  </SCRIPT>
   <TR>
-<!--    <TD> Apply this change: </TD> -->
     <TD> <INPUT TYPE="radio" NAME="delay" VALUE="0" \
-          <% !$cgi->param('delay') ? 'CHECKED' : '' %>> Now </TD>
+          <% !$cgi->param('delay') ? 'CHECKED' : '' %> \
+          onclick="delay_changed()"> Now </TD>
     <TD> <INPUT TYPE="radio" NAME="delay" VALUE="1" \
-          <% $cgi->param('delay')  ? 'CHECKED' : '' %>> In the future
+          <% $cgi->param('delay')  ? 'CHECKED' : '' %> \
+          onclick="delay_changed()"> In the future
       <& /elements/input-date-field.html, {
           'name'  => 'start_date',
           'value' => ($cgi->param('start_date') || $cust_main->next_bill_date),
       } &>
+      <IMG SRC="<%$fsurl%>images/calendar-disabled.png" \
+            ID="start_date_button_disabled" STYLE="display:none">
     </TD>
   </TR>
 </TABLE>

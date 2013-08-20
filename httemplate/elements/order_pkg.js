@@ -21,6 +21,11 @@ function pkg_changed () {
       }
     }
 
+// if this form element exists, then the start date is a future
+// package change date; don't replace it
+    if ( form.delay ) {
+      return;
+    }
     form.start_date_text.value = opt.getAttribute('data-start_date');
     if ( opt.getAttribute('data-can_start_date') == 1 ) {
       date_text.style.backgroundColor = '#ffffff';
