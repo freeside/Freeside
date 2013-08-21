@@ -20,7 +20,9 @@ sub Prepare {
       'deleted'
     ); # don't resolve from any of these states.
     my $time = $self->TicketObj->WillResolveObj->Unix;
-    return ( $time > 0 and $time < time() );
+    # resolve if the WillResolve date is set, and in the past,
+    # and less than a year old
+    return ( $time > 0 and $time < time() and (time() - $time) < 31536000 );
 }
 
 sub Commit {
