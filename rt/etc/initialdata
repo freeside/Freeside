@@ -724,7 +724,7 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
 
 # -*- perl -*-
 
-@ScripActions = (
+push @ScripActions, (
 
     { Name        => 'Extract Custom Field Values',          # loc
       Description => 'extract cf-values out of a message',    # loc
@@ -736,7 +736,7 @@ Hour:         { $SubscriptionObj->SubValue('Hour') }
 
 );
 
-@Templates = (
+push @Templates, (
     {  Queue       => '0',
        Name        => 'CustomFieldScannerExample',                     # loc
        Description => 'Example Template for ExtractCustomFieldValues', # loc
