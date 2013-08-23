@@ -108,7 +108,8 @@ END
       my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
       $cust_main->setfield('packages', \\@packages);
       $cust_main->setfield('recurdates', \\@recurdates);
-      $error = $msg_template->send('cust_main' => $cust_main);
+      $error = $msg_template->send('cust_main' => $cust_main,
+                                   'object'    => $cust_main);
     }
     else {
       $error = $cust_main->notify( 'impending_recur_template',
