@@ -16,6 +16,7 @@ use Date::Format qw( time2str );
 use HTML::Entities qw( decode_entities encode_entities ) ;
 use HTML::FormatText;
 use HTML::TreeBuilder;
+use Encode;
 
 use File::Temp;
 use IPC::Run qw(run);
@@ -410,6 +411,10 @@ sub prepare {
 #    @cust_msg = ('cust_msg' => $cust_msg);
 #  }
 
+  my $text_body = encode('UTF-8',
+                  HTML::FormatText->new(leftmargin => 0, rightmargin => 70)
+                      ->format( HTML::TreeBuilder->new_from_content($body) )
+                  );
   (
     'custnum' => $cust_main->custnum,
     'msgnum'  => $self->msgnum,
@@ -418,8 +423,7 @@ sub prepare {
     'bcc'  => $self->bcc_addr || undef,
     'subject'   => $subject,
     'html_body' => $body,
-    'text_body' => HTML::FormatText->new(leftmargin => 0, rightmargin => 70
-                    )->format( HTML::TreeBuilder->new_from_content($body) ),
+    'text_body' => $text_body
   );
 
 }
