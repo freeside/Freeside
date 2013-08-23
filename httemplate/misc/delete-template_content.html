@@ -1,0 +1,18 @@
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right(['Edit templates', 'Edit global templates']);
+
+my ($msgnum, $locale);
+$cgi->param('msgnum') =~ /^(\d+)$/ or die "bad msgnum";
+$msgnum = $1;
+$cgi->param('locale') =~ /^(\w+)$/ or die "bad locale";
+$locale = $1;
+my $content = qsearchs('template_content',
+              { msgnum => $msgnum, locale => $locale })
+  or die "couldn't find $locale version of template #$msgnum";
+
+my $error = $content->delete;
+my $url = $p.'edit/msg_template.html?msgnum='.$msgnum;
+$url .= ";locale=$locale;error=$error" if $error;
+</%init>
+<% $cgi->redirect($url) %>

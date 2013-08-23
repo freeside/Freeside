@@ -36,7 +36,7 @@ my (@locales, @locale_links);
 foreach my $l ( FS::Locales->locales ) {
   push @locales, sub {
     exists ( $_[0]->content_locales->{$l} )
-    ? +{ FS::Locales->locale_info($l) }->{'name'} 
+    ? +{ FS::Locales->locale_info($l) }->{'label'} 
     : '';
   };
   push @locale_links, sub {
