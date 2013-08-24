@@ -246,8 +246,7 @@ Example:
 <INPUT TYPE="hidden" NAME="<%$pre%>addr_clean" VALUE="">
 
 <SCRIPT TYPE="text/javascript">
-// the strictly correct way to append something to window.onload
-window.addEventListener('load', function() {
+<&| /elements/onload.js &>
   var clear_coords_ids = [
     '<%$pre%>latitude',
     '<%$pre%>longitude',
@@ -268,16 +267,17 @@ window.addEventListener('load', function() {
     '<%$pre%>city',
     '<%$pre%>state',
     '<%$pre%>zip',
-    '<%$pre%>country',
+    '<%$pre%>country'
   ];
   for (var i=0; i < clear_coords_on_change.length; i++) {
     var el = document.getElementById(clear_coords_on_change[i]);
-    if ( el ) {
-      // because some of these already have onchange triggers
+    if ( el.addEventListener ) {
       el.addEventListener('change', clear_coords);
+    } else if ( el.attachEvent ) {
+      el.attachEvent('onchange', clear_coords);
     }
   }
-});
+</&>
 </SCRIPT>
 
 <%init>
