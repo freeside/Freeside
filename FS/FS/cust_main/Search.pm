@@ -668,7 +668,9 @@ sub search {
   # parse with hardcoded tax location checkbox
   ##
 
-  push @where, "ship_location.geocode is not null"
+  my $tax_prefix = FS::Conf->new->exists('tax-ship_location') ? 'ship_' 
+                                                              : 'bill_';
+  push @where, "${tax_prefix}location.geocode is not null"
     if $params->{'with_geocode'};
 
   ##

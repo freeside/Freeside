@@ -124,6 +124,11 @@ sub _upgrade_data {
   local $DEBUG = 0;
   my $error;
 
+  my $tax_prefix = 'bill_';
+  if ( FS::Conf->new->exists('tax-ship_address') ) {
+    $tax_prefix = 'ship_';
+  }
+
   # Step 0: set up contact classes and phone types
   my $service_contact_class = 
     qsearchs('contact_class', { classname => 'Service'})
@@ -198,6 +203,14 @@ sub _upgrade_data {
           'last'        => $cust_main->get('ship_last'),
           'first'       => $cust_main->get('ship_first'),
         });
+        if ( !$cust_main->get('ship_last') or !$cust_main->get('ship_first') )
+        {
+          warn "customer $custnum has no service contact name; substituting ".
+               "customer name\n";
+          $contact->set('last' => $cust_main->get('last'));
+          $contact->set('first' => $cust_main->get('first'));
+        }
+
         if ( $unlike{'company'} ) {
           # there's no contact.company field, but keep a record of it
           $contact->set(comment => 'Company: '.$cust_main->get('ship_company'));
@@ -224,6 +237,20 @@ sub _upgrade_data {
         $cust_main->set("ship_$_" => '') foreach qw(last first company);
       } #if %unlike
     } #if ship_address1
+
+    # special case: should go with whichever location is used to calculate
+    # taxes, because that's the one it originally came from
+    if ( my $geocode = $cust_main->get('geocode') ) {
+      $bill_location->set('geocode' => '');
+      $ship_location->set('geocode' => '');
+
+      if ( $tax_prefix eq 'bill_' ) {
+        $bill_location->set('geocode', $geocode);
+      } elsif ( $tax_prefix eq 'ship_' ) {
+        $ship_location->set('geocode', $geocode);
+      }
+    }
+
     $error = $bill_location->insert;
     die "error migrating billing address for customer $custnum: $error"
       if $error;
