@@ -18,7 +18,26 @@
                    'disable_empty' => 0,
                )
     %>
+
+    <& /elements/tr-select-sales.html,
+                  'label'         => 'Customer sales person',
+                  'element_name'  => 'cust_main_salesnum',
+                  'id'            => 'cust_main_salesnum',
+                  'curr_value'    => scalar($cgi->param('cust_main_salesnum')),
+                  'pre_options'   => [ '' => 'all',
+                                       0  => '(none)', ],
+                  'disable_empty' => 1,
+    &>
+
 % }
+
+    <& /elements/tr-select-sales.html,
+                  'label'         => 'Package sales person',
+                  'curr_value'    => scalar($cgi->param('salesnum')),
+                  'pre_options'   => [ '' => 'all',
+                                        0  => '(none)', ],
+                  'disable_empty' => 1,
+    &>
 
     <% include( '/elements/tr-select-cust_pkg-status.html',
                   'onchange' => 'status_changed(this);',

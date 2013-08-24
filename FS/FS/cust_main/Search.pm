@@ -579,7 +579,16 @@ sub search {
   }
 
   ##
-  # do the same for user
+  # parse sales person
+  ##
+
+  if ( $params->{'salesnum'} =~ /^(\d+)$/ ) {
+    push @where, ($1 > 0 ) ? "cust_main.salesnum = $1"
+                           : 'cust_main.salesnum IS NULL';
+  }
+
+  ##
+  # parse usernum
   ##
 
   if ( $params->{'usernum'} =~ /^(\d+)$/ and $1 ) {
