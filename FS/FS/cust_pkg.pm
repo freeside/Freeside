@@ -4135,6 +4135,25 @@ sub search {
   }
 
   ##
+  # parse customer sales person
+  ##
+
+  if ( $params->{'cust_main_salesnum'} =~ /^(\d+)$/ ) {
+    push @where, ($1 > 0) ? "cust_main.salesnum = $1"
+                          : 'cust_main.salesnum IS NULL';
+  }
+
+
+  ##
+  # parse sales person
+  ##
+
+  if ( $params->{'salesnum'} =~ /^(\d+)$/ ) {
+    push @where, ($1 > 0) ? "cust_pkg.salesnum = $1"
+                          : 'cust_pkg.salesnum IS NULL';
+  }
+
+  ##
   # parse custnum
   ##
 

@@ -14,6 +14,13 @@
                   'disable_empty' => 0,
     &>
 
+    <& /elements/tr-select-sales.html,
+                  'curr_value'    => scalar($cgi->param('salesnum')),
+                  'pre_options'   => [ '' => 'all',
+                                       0  => '(none)', ],
+                  'disable_empty' => 1,
+    &>
+
     <& /elements/tr-select-cust_main-status.html,
                   'label' => emt('Status'),
     &>
