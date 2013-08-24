@@ -186,12 +186,17 @@ sub geocode {
   my $geocode = $self->get('geocode');  #XXX only one data_vendor for geocode
   return $geocode if $geocode;
 
-  my $prefix =
-   ( FS::Conf->new->exists('tax-ship_address') && $self->has_ship_address )
-   ? 'ship_'
-   : '';
+  if ( $self->isa('FS::cust_main') ) {
+    warn "WARNING: FS::cust_main->geocode deprecated";
 
-  my($zip,$plus4) = split /-/, $self->get("${prefix}zip")
+    # do the best we can
+    my $m = FS::Conf->new->exists('tax-ship_address') ? 'ship_location'
+                                                      : 'bill_location';
+    my $location = $self->$m or return '';
+    return $location->geocode($data_vendor);
+  }
+
+  my($zip,$plus4) = split /-/, $self->get('zip')
     if $self->country eq 'US';
 
   $zip ||= '';
@@ -212,7 +217,7 @@ sub geocode {
     if scalar(@cust_tax_location);
 
   warn "WARNING: customer ". $self->custnum.
-       ": multiple locations for zip ". $self->get("${prefix}zip").
+       ": multiple locations for zip ". $self->get("zip").
        "; using arbitrary geocode $geocode\n"
     if scalar(@cust_tax_location) > 1;
 

@@ -207,7 +207,7 @@ function post_standardization() {
 
     var country_el = cf.elements['<% $taxpre %>country'];
     var country = country_el.options[ country_el.selectedIndex ].value;
-    var geocode = cf.elements['bill_geocode'].value;
+    var geocode = cf.elements['<% $taxpre %>geocode'].value;
 
     if ( country == 'CA' || country == 'US' ) {
 
@@ -229,14 +229,14 @@ function post_standardization() {
 
     } else {
 
-      cf.elements['bill_geocode'].value = 'DEFAULT';
+      cf.elements['<% $taxpre %>geocode'].value = 'DEFAULT';
       <% $post_geocode %>;
 
     }
 
   } else {
 
-    cf.elements['bill_geocode'].value = '';
+    cf.elements['<% $taxpre %>geocode'].value = '';
     <% $post_geocode %>;
 
   }
@@ -261,7 +261,7 @@ function update_geocode() {
     cf.elements['<% $taxpre %>city'].value     = argsHash['city'];
     setselect(cf.elements['<% $taxpre %>state'], argsHash['state']);
     cf.elements['<% $taxpre %>zip'].value      = argsHash['zip'];
-    cf.elements['bill_geocode'].value  = argsHash['geocode'];
+    cf.elements['<% $taxpre %>geocode'].value  = argsHash['geocode'];
     <% $post_geocode %>;
 
   }

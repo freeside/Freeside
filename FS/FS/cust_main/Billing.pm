@@ -1368,6 +1368,8 @@ sub _handle_taxes {
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
+  my $location = $cust_pkg->tax_location;
+
   return if ( $self->payby eq 'COMP' ); #dubious
 
   if ( $conf->exists('enable_taxproducts')
@@ -1410,7 +1412,7 @@ sub _handle_taxes {
 
     }
 
-    my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
+    my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate; # grrr
     foreach my $key (keys %tax_cust_bill_pkg) {
       # $key is "setup", "recur", or a usage class name. ('' is a usage class.)
       # $tax_cust_bill_pkg{$key} is a cust_bill_pkg for that component of 
@@ -1425,11 +1427,6 @@ sub _handle_taxes {
 
         # this is the tax identifier, not the taxname
         my $taxname = ref( $tax ). ' '. $tax->taxnum;
-        $taxname .= ' billpkgnum'. $cust_bill_pkg->billpkgnum;
-        # We need to create a separate $taxlisthash entry for each billpkgnum
-        # on the invoice, so that cust_bill_pkg_tax_location records will
-        # be linked correctly.
-
         # $taxlisthash: keys are "setup", "recur", and usage classes.
         # Values are arrayrefs, first the tax object (cust_main_county
         # or tax_rate) and then any cust_bill_pkg objects that the 
@@ -1449,7 +1446,7 @@ sub _handle_taxes {
           if $DEBUG > 2;
         next unless $tax_object->can('tax_on_tax');
 
-        foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
+        foreach my $tot ( $tax_object->tax_on_tax( $location ) ) {
           my $totname = ref( $tot ). ' '. $tot->taxnum;
 
           warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
@@ -1457,7 +1454,7 @@ sub _handle_taxes {
           next unless exists( $localtaxlisthash{ $totname } ); # only increase
                                                                # existing taxes
           warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
-          # we're calling taxline() right here?  wtf?
+          # calculate the tax amount that the tax_on_tax will apply to
           my $hashref_or_error = 
             $tax_object->taxline( $localtaxlisthash{$tax},
                                   'custnum'      => $self->custnum,
@@ -1466,6 +1463,7 @@ sub _handle_taxes {
           return $hashref_or_error
             unless ref($hashref_or_error);
           
+          # and append it to the list of taxable items
           $taxlisthash->{ $totname } ||= [ $tot ];
           push @{ $taxlisthash->{ $totname  } }, $hashref_or_error->{amount};
 
@@ -1481,7 +1479,6 @@ sub _handle_taxes {
     # because we need to record that fact.
 
     my @loc_keys = qw( district city county state country );
-    my $location = $cust_pkg->tax_location;
     my %taxhash = map { $_ => $location->$_ } @loc_keys;
 
     $taxhash{'taxclass'} = $part_pkg->taxclass;
@@ -1525,12 +1522,7 @@ sub _gather_taxes {
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  my $geocode;
-  if ( $cust_pkg->locationnum && $conf->exists('tax-pkg_address') ) {
-    $geocode = $cust_pkg->cust_location->geocode('cch');
-  } else {
-    $geocode = $self->geocode('cch');
-  }
+  my $geocode = $cust_pkg->tax_location->geocode('cch');
 
   my @taxes = ();
 
