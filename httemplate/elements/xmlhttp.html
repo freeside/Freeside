@@ -14,17 +14,19 @@ Example:
   );
 
 </%doc>
+<%shared>
+my %initialized = ();#won't work if component is "preloaded"... so don't do that
+</%shared>
 <& /elements/rs_init_object.html &>
 <& /elements/init_overlib.html &>
 <SCRIPT TYPE="text/javascript">
 
 % foreach my $func ( @{$opt{'subs'}} ) { 
 %
-%       my $furl = $url;
-%       $furl =~ s/\"/\\\\\"/; #javascript escape
-%#"
-%  
-
+%   next if $initialized{$key.$func}++;
+%
+%   my $furl = $url;
+%   $furl =~ s/\"/\\\\\"/; #javascript escape (fix gvim syntax: ")
 
     function <%$key%><%$func%>() {
         // count args; build URL
