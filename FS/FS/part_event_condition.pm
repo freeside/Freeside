@@ -224,8 +224,7 @@ sub conditions {
   my( $class, $eventtable ) = @_;
   (
     map  { $_ => $conditions{$_} }
-#    sort { $conditions{$a}->{'default_weight'}<=>$conditions{$b}->{'default_weight'} }
-#    sort by ?
+    sort {$conditions{$a}->{'description'} cmp $conditions{$b}->{'description'}}
     $class->all_conditionnames( $eventtable )
   );
 
