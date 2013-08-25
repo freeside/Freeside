@@ -14,8 +14,6 @@ my @sales = qsearch({
   'order_by'  => 'ORDER BY salesperson',
 });
 
-warn scalar(@sales);
-
 my @return = map  {
                     ( $_->salesnum,
                       $_->salesperson,
