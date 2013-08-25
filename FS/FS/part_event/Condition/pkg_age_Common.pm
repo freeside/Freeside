@@ -40,7 +40,7 @@ sub option_fields {
 sub condition {
   my( $self, $cust_pkg, %opt ) = @_;
 
-  my $age = $self->option_age_from('age', $opt{'time'} );
+  my $age = $self->pkg_age_age( $cust_pkg, %opt );
 
   my $pkg_date = $cust_pkg->get( $self->option('field') );
 
@@ -48,6 +48,13 @@ sub condition {
 
 }
 
+sub pkg_age_age {
+  my( $self, $cust_pkg, %opt );
+  $self->option_age_from('age', $opt{'time'} );
+}
+
+#doesn't work if you override pkg_age_age,
+# so if you do, override this with at least a stub that returns 'true'
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
   my $age   = $class->condition_sql_option_age_from('age', $opt{'time'});

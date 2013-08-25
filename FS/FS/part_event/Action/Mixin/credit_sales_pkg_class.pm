@@ -3,6 +3,7 @@ use base qw( FS::part_event::Action::Mixin::credit_pkg );
 
 use strict;
 use FS::Record qw(qsearchs);
+use FS::sales_pkg_class;
 
 sub option_fields {
   my $class = shift;
