@@ -1,0 +1,23 @@
+<& elements/search.html,
+     'title'         => 'Sales person commission report',
+     'name_singular' => 'sales person',
+#     'redirect'      => sub { #my( $sales, $cgi ) = @);
+#                              $saleslink;
+#                            },
+     'header'        => [ 'Sales person', 'Sales', 'Commission', ],
+     'fields'        => [ 'salesperson', sub{'XXX';}, sub{'XXX';}, ],
+     'links'         => [ '', $saleslink, $commissionlink ],
+     'query'         => { 'table' => 'sales', },
+     'count_query'   => 'SELECT COUNT(*) FROM sales',
+     'disableable'   => 1,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $saleslink = [ 'sales_pkg_class.html?salesnum=', 'salesnum' ];
+
+my $commissionlink = ''; #XXX
+
+</%init>
