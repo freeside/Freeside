@@ -3300,6 +3300,8 @@ reason, and a 'reason_type' option must be passed to indicate the
 FS::reason_type for the new reason.
 
 An I<addlinfo> option may be passed to set the credit's I<addlinfo> field.
+Likewise for I<eventnum>, I<commission_agentnum>, I<commission_salesnum> and
+I<commission_pkgnum>.
 
 Any other options are passed to FS::cust_credit::insert.
 
@@ -3325,10 +3327,10 @@ sub credit {
     $cust_credit->set('reason', $reason)
   }
 
-  for (qw( addlinfo eventnum )) {
-    $cust_credit->$_( delete $options{$_} )
-      if exists($options{$_});
-  }
+  $cust_credit->$_( delete $options{$_} )
+    foreach grep exists($options{$_}),
+              qw( addlinfo eventnum ),
+              map "commission_$_", qw( agentnum salesnum pkgnum );
 
   $cust_credit->insert(%options);
 

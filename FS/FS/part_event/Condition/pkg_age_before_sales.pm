@@ -24,7 +24,7 @@ sub option_fields {
 }
 
 sub pkg_age_age {
-  my( $self, $cust_pkg, %opt );
+  my( $self, $cust_pkg, %opt ) = @_;
 
   my $salesnum = $cust_pkg->salesnum;
   $salesnum ||= $self->cust_main($cust_pkg)->salesnum

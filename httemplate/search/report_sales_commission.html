@@ -4,11 +4,31 @@
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
-<% include( '/elements/tr-select-agent.html' ) %>
+<& /elements/tr-select-agent.html,
+     'onchange'      => 'agent_changed(this)',
+&>
 
-<% include( '/elements/tr-select-sales.html' ) %>
+<SCRIPT TYPE="text/javascript">
 
-<% include( '/elements/tr-input-beginning_ending.html', ) %>
+  function agent_changed(what) {
+    salesnum_agentnum_changed(what);
+  }
+
+  <&| /elements/onload.js &>
+  agent_changed(document.getElementById('agentnum'))
+  </&>
+
+</SCRIPT>
+
+<& /elements/tr-select-sales.html &>
+
+<& /elements/tr-checkbox.html,
+     'label' => 'Customer sales person if there is no package sales person',
+     'field' => 'cust_main_sales',
+     'value' => 'Y',
+&>
+
+<& /elements/tr-input-beginning_ending.html &>
 
 </TABLE>
 

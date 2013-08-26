@@ -283,6 +283,20 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }
 
+# salesnum
+if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
+
+  my $salesnum = $1;
+
+  my $cmp_salesnum = $cgi->param('cust_main_sales')
+                       ? ' COALESCE( cust_pkg.salesnum, cust_main.salesnum )'
+                       : ' cust_pkg.salesnum ';
+
+  push @where, "$cmp_salesnum = $salesnum";
+
+  $cgi->param('classnum', 0) unless $cgi->param('classnum');
+}
+
 # refnum
 if ( $cgi->param('refnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.refnum = $1";

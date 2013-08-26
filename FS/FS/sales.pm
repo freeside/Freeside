@@ -2,9 +2,11 @@ package FS::sales;
 use base qw( FS::Agent_Mixin FS::Record );
 
 use strict;
-use FS::Record qw( qsearchs ); #qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::agent;
 use FS::cust_main;
+use FS::cust_bill_pkg;
+use FS::cust_credit;
 
 =head1 NAME
 
@@ -127,6 +129,60 @@ sales person.
 sub sales_cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->sales_custnum } );
+}
+
+sub cust_bill_pkg {
+  my( $self, $sdate, $edate, %search ) = @_;
+
+  my $cmp_salesnum = delete $search{'cust_main_sales'}
+                       ? ' COALESCE( cust_pkg.salesnum, cust_main.salesnum )'
+                       : ' cust_pkg.salesnum ';
+
+  my $classnum_sql = '';
+  if ( exists( $search{'classnum'}  ) ) {
+    my $classnum = $search{'classnum'};
+    $classnum_sql = " AND part_pkg.classnum ". ( $classnum ? " = $classnum "
+                                                           : ' IS NULL '     );
+  }
+
+  qsearch({ 'table'     => 'cust_bill_pkg',
+            'addl_from' => ' LEFT JOIN cust_bill USING ( invnum ) '.
+                           ' LEFT JOIN cust_pkg  USING ( pkgnum ) '.
+                           ' LEFT JOIN part_pkg  USING ( pkgpart ) '.
+                           ' LEFT JOIN cust_main ON ( cust_pkg.custnum = cust_main.custnum )',
+            'extra_sql' => ( keys %{ $search{'hashref'} }
+                               ? ' AND ' : 'WHERE '
+                           ).
+                           "     cust_bill._date >= $sdate ".
+                           " AND cust_bill._date  < $edate ".
+                           " AND $cmp_salesnum = ". $self->salesnum.
+                           $classnum_sql,
+            #%search,
+         });
+}
+
+sub cust_credit {
+  my( $self, $sdate, $edate, %search ) = @_;
+
+  $search{'hashref'}->{'commission_salesnum'} = $self->salesnum;
+
+  my $classnum_sql = '';
+  if ( exists($search{'commission_classnum'}) ) {
+    my $classnum = delete($search{'commission_classnum'});
+    $classnum_sql = " AND part_pkg.classnum ". ( $classnum ? " = $classnum"
+                                                           : " IS NULL "    );
+
+    $search{'addl_from'} .=
+      ' LEFT JOIN cust_pkg ON ( commission_pkgnum = cust_pkg.pkgnum ) '.
+      ' LEFT JOIN part_pkg USING ( pkgpart ) ';
+  }
+
+  qsearch({ 'table'     => 'cust_credit',
+            'extra_sql' => " AND cust_credit._date >= $sdate ".
+                           " AND cust_credit._date  < $edate ".
+                           $classnum_sql,
+            %search,
+         });
 }
 
 =back

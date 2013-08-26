@@ -1004,11 +1004,15 @@ sub tables_hashref {
         'closed',     'char', 'NULL',  1, '', '', 
         'pkgnum',      'int', 'NULL', '', '','',#desired pkgnum for pkg-balances
         'eventnum',    'int', 'NULL', '', '','',#triggering event for commission
-        #'commission_agentnum', 'int', 'NULL', '', '', '', #
+        'commission_agentnum', 'int', 'NULL', '', '', '', #
+        'commission_salesnum', 'int', 'NULL', '', '', '', #
+        'commission_pkgnum',   'int', 'NULL', '', '', '', #
       ],
       'primary_key' => 'crednum',
       'unique' => [],
-      'index' => [ ['custnum'], ['_date'], ['usernum'], ['eventnum'] ],
+      'index' => [ ['custnum'], ['_date'], ['usernum'], ['eventnum'],
+                   [ 'commission_salesnum' ],
+                 ],
     },
 
     'cust_credit_bill' => {

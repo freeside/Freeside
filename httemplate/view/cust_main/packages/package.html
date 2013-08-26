@@ -107,7 +107,7 @@
 %       if ( $cust_pkg->salesnum ) {
 %         $change_sales_label = 'change';
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<% mt('Sales Person:') |h %> 
-          <B><% $cust_pkg->salesperson %></B>
+          <B><% $cust_pkg->salesperson |h %></B>
 %       }
 
 %       if ( $curuser->access_right('Change customer package')
