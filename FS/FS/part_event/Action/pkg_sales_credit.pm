@@ -12,7 +12,12 @@ sub do_action {
   my $cust_main = $self->cust_main($cust_pkg);
 
   my $sales = $cust_pkg->sales;
-  return "No customer record for sales person ". $sales->salesperson
+  $sales ||= $self->cust_main($cust_pkg)->sales
+    if $self->option('cust_main_sales');
+
+  return '' unless $sales; #no sales person, no credit
+
+  die "No customer record for sales person ". $sales->salesperson
     unless $sales->sales_custnum;
 
   my $sales_cust_main = $sales->sales_cust_main;
