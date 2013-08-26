@@ -84,6 +84,7 @@ push @style,  '',
               ;
 
 my @search = ();
+my $addl_from = '';
 
 if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
   push @search, "cust_credit.usernum = $1";
@@ -94,6 +95,23 @@ if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   my $agent = qsearchs('agent', { 'agentnum' => $1 } );
   die "unknown agentnum $1" unless $agent;
   $title = $agent->agent. " $title";
+}
+
+# commission_salesnum
+if ( $cgi->param('commission_salesnum') =~ /^(\d+)$/ ) {
+  push @search, "commission_salesnum = $1";
+}
+
+# commission_classnum
+if ( grep { $_ eq 'commission_classnum' } $cgi->param ) {
+  $cgi->param('commission_classnum') =~ /^(\d*)$/ or die 'guru meditation #13';
+  my $classnum = $1;
+  push @search, "part_pkg.classnum ". ( $classnum ? " = $classnum"
+                                                 : " IS NULL "    );
+
+  $addl_from .=
+    ' LEFT JOIN cust_pkg ON ( commission_pkgnum = cust_pkg.pkgnum ) '.
+    ' LEFT JOIN part_pkg USING ( pkgpart ) ';
 }
 
 if ( $cgi->param('refnum') && $cgi->param('refnum') =~ /^(\d+)$/ ) {
@@ -124,7 +142,7 @@ push @search, "_date >= $beginning ",
 push @search, FS::UI::Web::parse_lt_gt($cgi, 'amount' );
 
 #here is the agent virtualization
-push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+push @search, $FS::CurrentUser::CurrentUser->agentnums_sql(table=>'cust_main');
 
 my @select = (
     'cust_credit.*',
@@ -141,7 +159,8 @@ my $where = 'WHERE '. join(' AND ', @search);
 
 my $count_query = 'SELECT COUNT(*), SUM(amount) ';
 $count_query .= ', SUM(' . FS::cust_credit->unapplied_sql . ') ' if $unapplied;
-$count_query .= 'FROM cust_credit'. FS::UI::Web::join_cust_main('cust_credit').
+$count_query .= 'FROM cust_credit'. 
+                  $addl_from. FS::UI::Web::join_cust_main('cust_credit').
                   $where;
 
 my @count_addl = ( $money_char.'%.2f total credited (gross)' );
@@ -152,7 +171,7 @@ my $sql_query   = {
   'select'    => join(', ',@select),
   'hashref'   => {},
   'extra_sql' => $where,
-  'addl_from' => FS::UI::Web::join_cust_main('cust_credit')
+  'addl_from' => $addl_from. FS::UI::Web::join_cust_main('cust_credit')
 };
 
 </%init>

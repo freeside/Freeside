@@ -26,11 +26,12 @@ sub do_action {
   my $error = $sales_cust_main->credit(
     $amount, 
     \$reasonnum,
-    'eventnum' => $cust_event->eventnum,
-    'addlinfo' => 'for customer #'. $cust_main->display_custnum.
-                               ': '.$cust_main->name.
-                  ', package #'. $cust_pkg->pkgnum,
-    #'commission_salesnum' => $sales->salesnum,
+    'eventnum'            => $cust_event->eventnum,
+    'addlinfo'            => 'for customer #'. $cust_main->display_custnum.
+                                          ': '.$cust_main->name.
+                             ', package #'. $cust_pkg->pkgnum,
+    'commission_salesnum' => $sales->salesnum,
+    'commission_pkgnum'   => $cust_pkg->pkgnum,
   );
   die "Error crediting customer ". $sales_cust_main->custnum.
       " for sales commission: $error"

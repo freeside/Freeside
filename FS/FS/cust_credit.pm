@@ -19,6 +19,8 @@ use FS::part_pkg;
 use FS::reason_type;
 use FS::reason;
 use FS::cust_event;
+use FS::agent;
+use FS::sales;
 
 $me = '[ FS::cust_credit ]';
 $DEBUG = 0;
@@ -311,6 +313,9 @@ sub check {
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_foreign_keyn('eventnum', 'cust_event', 'eventnum')
+    || $self->ut_foreign_keyn('commission_agentnum',  'agent', 'agentnum')
+    || $self->ut_foreign_keyn('commission_salesnum',  'sales', 'salesnum')
+    || $self->ut_foreign_keyn('commission_pkgnum', 'cust_pkg', 'pkgnum')
   ;
   return $error if $error;
 

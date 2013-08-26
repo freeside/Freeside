@@ -10,7 +10,8 @@ sub pkg_age_operator { '>'; }
 sub pkg_age_label { 'Package date age younger than'; }
 
 sub pkg_age_compare {
-  my( $pkg_date, $age ) = @_;
+  my( $self, $pkg_date, $age ) = @_;
+
   $pkg_date > $age;
 }
 
