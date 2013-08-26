@@ -38,6 +38,7 @@ push @fields, sub {
             $sales->sales_custnum,
             scalar($conf->config('countrydefault')),
             1, #show balance
+            $p.'view/cust_main.cgi',
          );
 };
 push @links, '';

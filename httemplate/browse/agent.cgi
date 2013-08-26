@@ -88,12 +88,12 @@ full offerings (via their type).<BR><BR>
 
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
 %         if ( $agent->agent_custnum ) {
-            <% include('/elements/small_custview.html',
-                         $agent->agent_custnum,
-                         scalar($conf->config('countrydefault')),
-                         1, #show balance
-                      )
-            %>
+            <& /elements/small_custview.html,
+                 $agent->agent_custnum,
+                 scalar($conf->config('countrydefault')),
+                 1, #show balance
+                 $p.'view/cust_main.cgi',
+            &>
 %         }
         </TD>
 
