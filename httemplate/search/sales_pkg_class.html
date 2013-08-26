@@ -1,0 +1,22 @@
+<& elements/search.html,
+     'title'         => $sales->salesperson. ' commission package classes',
+     'name_singular' => 'package class',
+     'header'        => [ 'Package class', 'Sales', 'Commission', ],
+     'fields'        => [ 'classname', sub{'XXX';}, sub{'XXX';}, ],
+     #'links'
+     'query'         => { 'table'   => 'sales_pkg_class',
+                          'hashref' => { 'salesnum' => $salesnum },
+                        },
+     'count_query'   => "SELECT COUNT(*) FROM sales_pkg_class WHERE salesnum = $salesnum",
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+$cgi->param('salesnum') =~ /^(\d+)$/ or die 'illegal salesnum';
+my $salesnum = $1;
+my $sales = qsearchs('sales', { 'salesnum'=>$salesnum } )
+  or die 'unknown salesnum';
+
+</%init>

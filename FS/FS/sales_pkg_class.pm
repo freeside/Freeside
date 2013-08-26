@@ -2,7 +2,7 @@ package FS::sales_pkg_class;
 use base qw( FS::Record );
 
 use strict;
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearchs ); # qsearch qsearchs );
 use FS::sales;
 use FS::pkg_class;
 
@@ -108,6 +108,17 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub pkg_class {
+  my $self = shift;
+  qsearchs('pkg_class', { 'classnum' => $self->classnum });
+}
+
+sub classname {
+  my $self = shift;
+  my $pkg_class = $self->pkg_class;
+  $pkg_class ? $pkg_class->classname : '(no package class)';
 }
 
 =back
