@@ -264,7 +264,12 @@ sub ProcessTicketBasics {
       my $DateObj = RT::Date->new($session{'CurrentUser'});
       if ( $to_date ) {
           $DateObj->Set(Format => 'unknown', Value => $to_date);
-          $ARGSRef->{'WillResolve'} = $DateObj->ISO;
+          if ( $DateObj->Unix > time ) {
+            $ARGSRef->{'WillResolve'} = $DateObj->ISO;
+          } else {
+            warn "Ticket ".$TicketObj->Id.": WillResolve date '$to_date' not accepted.\n";
+            # and then don't set it in ARGSRef
+          }
       } elsif ( $TicketObj and $TicketObj->WillResolveObj->Unix > 0 ) {
           $DateObj->Set(Value => 0);
           $ARGSRef->{'WillResolve'} = $DateObj->ISO;
@@ -342,6 +347,13 @@ sub ProcessTicketDates {
             Format => 'unknown',
             Value  => $ARGSRef->{ $field . '_Date' }
         );
+
+        if ( $field eq 'WillResolve'
+              and $DateObj->Unix > 0 
+              and $DateObj->Unix <= time ) {
+            push @results, "Can't set WillResolve date in the past.";
+            next;
+        }
 
         my $obj = $field . "Obj";
         if (    ( defined $DateObj->Unix )
