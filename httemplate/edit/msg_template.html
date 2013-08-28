@@ -328,8 +328,8 @@ my $widget = new HTML::Widgets::SelectLayers(
 my $sidebar = '
 <SCRIPT TYPE="text/javascript">
 function insertHtml(what) {
-  var oEditor = FCKeditorAPI.GetInstance("body");
-  oEditor.InsertHtml(what);
+  var oEditor = CKEDITOR.instances["body"];
+  oEditor.insertHtml(what);
 };
 
 function areyousure(url, message) {
