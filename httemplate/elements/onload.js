@@ -12,11 +12,12 @@ Usage:
 
 </%doc>
 (function() {
-  var tmp = window.onload;
-  window.onload = function() {
-    if (typeof(tmp)== 'function') {
-      tmp();
-    }
+  var myonload = function() {
 <% $m->content %>
-  };
+  }
+  if ( window.addEventListener ) {
+    window.addEventListener('load', myonload);
+  } else if ( window.attachEvent ) {
+    window.attachEvent('onload', myonload);
+  }
 })();
