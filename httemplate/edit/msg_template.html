@@ -67,7 +67,8 @@ if ( $curuser->access_right('Edit global templates')
       { field => 'subject',   size=>60, },
       { field => 'body',
         type  => 'htmlarea',
-        width => 763
+        width => 763,
+        config=> { extraPlugins => 'blockprotect' },
       },
   ;
 } else { #readonly

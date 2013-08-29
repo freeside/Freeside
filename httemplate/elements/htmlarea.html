@@ -6,6 +6,7 @@ Example:
             'field'      => 'fieldname',
             'curr_value' => $curr_value,
             'height'     => 800,
+            'config'     => { extraPlugins => 'blockprotect' },
          );
 
 </%doc>
@@ -19,22 +20,24 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
-  CKEDITOR.replace('<% $opt{'field'} %>', {
-%   if ( $opt{'width'} ) {
-      width: <% $opt{'width'} %>,
-%   }
-    height: <% $opt{'height'} || 420 %>,
-    startupFocus: true,
-    skin: 'kama',
-    toolbarCanCollapse: true,
-    basePath: '<% $p %>elements/ckeditor/',
-    enterMode: 2
-  });
+  CKEDITOR.replace('<% $opt{'field'} %>',
+                   <% encode_json($config) %>
+  );
 
 </SCRIPT>
 
 <%init>
 
 my %opt = @_;
+my $config = {
+  'height'              => ($opt{height} || 420),
+  'startupFocus'        => JSON::true,
+  'skin'                => 'kama',
+  'toolbarCanCollapse'  => JSON::true,
+  'basePath'            => $p.'elements/ckeditor/',
+  'enterMode'           => 2,
+  %{ $opt{config} || {} },
+};
+$config->{width} = $opt{width} if defined($opt{width});
 
 </%init>
