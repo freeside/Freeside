@@ -104,7 +104,7 @@ if ( $total_lines > 0 ) {
   foreach (@row_conds) {
     my $sql = $query_ds0 . $_;
     my $lines = FS::Record->scalar_sql($sql);
-    my $percent = sprintf('%.2f', 100 * $lines / $total_lines);
+    my $percent = sprintf('%.3f', 100 * $lines / $total_lines);
     push @{ $data[0] }, $percent;
   }
 }
