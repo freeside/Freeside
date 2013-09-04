@@ -248,6 +248,19 @@ that field.
     </TD>
   </TR>
 % }
+% # special case: services with attached routers (false laziness...)
+% if ( $svcdb eq 'svc_acct' or $svcdb eq 'svc_broadband' or $svcdb eq 'svc_dsl' ) {
+%   push @fields, 'has_router';
+  <TR>
+    <TD COLSPAN=3 ALIGN="right">
+      <% emt('This service has an attached router') %>
+    </TD>
+    <TD>
+      <INPUT TYPE="checkbox" NAME="has_router" VALUE="Y" \
+      <% $part_svc->has_router ? 'CHECKED' : '' %>>
+    </TD>
+  </TR>
+% }
 </TABLE>
 <& /elements/progress-init.html,
   $svcdb, #form name

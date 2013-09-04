@@ -214,6 +214,20 @@ if ($pkgnum) {
   $custnum = '';
 }
 
+# attached routers
+if ( my $router = qsearchs('router', { svcnum => $svc_x->svcnum }) ) {
+  push @$fields, qw(router_routername router_block);
+  $labels->{'router_routername'} = 'Attached router';
+  $labels->{'router_block'} = 'Attached address block';
+  $svc_x->set('router_routername', $router->routername);
+  my $block = qsearchs('addr_block', { routernum => $router->routernum });
+  if ( $block ) {
+    $svc_x->set('router_block', $block->cidr);
+  } else {
+    $svc_x->set('router_block', '<i>(none)</i>');
+  }
+}
+
 &{ $opt{'svc_callback'} }( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, \%opt ) 
     if $opt{'svc_callback'};
 </%init>

@@ -63,15 +63,86 @@ sub table { 'router'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=item delete
+If the pseudo-field 'blocknum' is set to an L<FS::addr_block> number, then 
+that address block will be assigned to this router.  Currently only one
+block can be assigned this way.
 
-Deletes this record from the database.  If there is an error, returns the
-error, otherwise returns false.
+=cut
+
+sub insert {
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $self = shift;
+  my $error = $self->SUPER::insert(@_);
+  return $error if $error;
+  if ( $self->blocknum ) {
+    my $block = FS::addr_block->by_key($self->blocknum);
+    if ($block) {
+      if ($block->routernum) {
+        $error = "block ".$block->cidr." is already assigned to a router";
+      } else {
+        $block->set('routernum', $self->routernum);
+        $block->set('manual_flag', 'Y');
+        $error = $block->replace;
+      }
+    } else {
+      $error = "blocknum ".$self->blocknum." not found";
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+  $dbh->commit if $oldAutoCommit;
+  return $error;
+}
 
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+
+=cut
+
+sub replace {
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $self = shift;
+  my $old = shift || $self->replace_old;
+  my $error = $self->SUPER::replace($old, @_);
+  return $error if $error;
+
+  if ( defined($self->blocknum) ) {
+    #warn "FS::router::replace: blocknum = ".$self->blocknum."\n";
+    # then release any blocks we're already holding
+    foreach my $block ($self->addr_block) {
+      $block->set('routernum', 0);
+      $block->set('manual_flag', '');
+      $error ||= $block->replace;
+    }
+    if ( !$error and $self->blocknum > 0 ) {
+      # and, if the new blocknum is a real blocknum, assign it
+      my $block = FS::addr_block->by_key($self->blocknum);
+      if ( $block ) {
+        $block->set('routernum', $self->routernum);
+        $block->set('manual_flag', '');
+        $error ||= $block->replace;
+      } else {
+        $error = "blocknum ".$self->blocknum." not found";
+      }
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+  $dbh->commit if $oldAutoCommit;
+  return $error;
+}
 
 =item check
 
@@ -89,6 +160,7 @@ sub check {
     || $self->ut_text('routername')
     || $self->ut_enum('manual_addr', [ '', 'Y' ])
     || $self->ut_agentnum_acl('agentnum', 'Broadband global configuration')
+    || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum')
   ;
   return $error if $error;
 
@@ -97,28 +169,25 @@ sub check {
 
 =item delete
 
-Deletes this router if and only if no address blocks (see L<FS::addr_block>)
-are currently allocated to it.
+Deallocate all address blocks from this router and delete it.
 
 =cut
 
 sub delete {
     my $self = shift;
 
-    return 'Router has address blocks allocated to it' if $self->addr_block;
-    
-    local $SIG{HUP} = 'IGNORE';
-    local $SIG{INT} = 'IGNORE';
-    local $SIG{QUIT} = 'IGNORE';
-    local $SIG{TERM} = 'IGNORE';
-    local $SIG{TSTP} = 'IGNORE';
-    local $SIG{PIPE} = 'IGNORE';
-
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;
     my $dbh = dbh;
-    
-    my $error = $self->SUPER::delete;
+ 
+    my $error;
+    foreach my $block ($self->addr_block) {
+      $block->set('manual_flag', '');
+      $block->set('routernum', 0);
+      $error ||= $block->replace;
+    }
+
+    $error ||= $self->SUPER::delete;
     if ( $error ) {
        $dbh->rollback if $oldAutoCommit;
        return $error;
@@ -185,6 +254,19 @@ Returns the agent associated with this router, if any.
 
 sub agent {
   qsearchs('agent', { 'agentnum' => shift->agentnum });
+}
+
+=item cust_svc
+
+Returns the cust_svc associated with this router, if any.  This should be
+the service that I<provides connectivity to the router>, not any service 
+connected I<through> the router.
+
+=cut
+
+sub cust_svc {
+  my $svcnum = shift->svcnum or return undef;
+  FS::cust_svc->by_key($svcnum);
 }
 
 =back

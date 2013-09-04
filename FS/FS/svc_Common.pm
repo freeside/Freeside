@@ -367,6 +367,7 @@ sub delete {
 	      || $self->SUPER::delete
               || $self->export('delete', @$export_args)
 	      || $self->return_inventory
+              || $self->release_router
 	      || $self->predelete_hook
 	      || $self->cust_svc->delete
   ;
@@ -988,6 +989,24 @@ sub inventory_item {
     'hashref'   => { 'svcnum' => $self->svcnum, },
   });
 }
+
+=item release_router 
+
+Delete any routers associated with this service.  This will release their
+address blocks, also.
+
+=cut
+
+sub release_router {
+  my $self = shift;
+  my @routers = qsearch('router', { svcnum => $self->svcnum });
+  foreach (@routers) {
+    my $error = $_->delete;
+    return "$error (removing router '".$_->routername."')" if $error;
+  }
+  '';
+}
+
 
 =item cust_svc
 

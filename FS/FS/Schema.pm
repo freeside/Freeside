@@ -2187,6 +2187,7 @@ sub tables_hashref {
         'selfservice_access', 'varchar', 'NULL',   $char_d, '', '',
         'classnum',               'int', 'NULL',        '', '', '',
         'restrict_edit_password','char', 'NULL',         1, '', '',
+        'has_router',            'char', 'NULL',         1, '', '',
 ],
       'primary_key' => 'svcpart',
       'unique' => [],
