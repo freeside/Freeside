@@ -157,9 +157,7 @@ sub call_time {
     return \%return;
   }
 
-  my $conf = new FS::Conf;
-  my $balance = $conf->config_bool('pkg-balances') ? $cust_pkg->balance
-                                                   : $cust_main->balance;
+  my $balance = FS::ClientAPI::PrepaidPhone->prepaid_phone_balance( $cust_pkg );
 
   #XXX granularity?  included minutes?  another day...
   if ( $balance >= 0 ) {
@@ -253,10 +251,7 @@ sub phonenum_balance {
 
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
 
-  my $conf = new FS::Conf;
-  my $balance = $conf->config_bool('pkg-balances')
-    ? $cust_pkg->balance
-    : $cust_pkg->cust_main->balance;
+  my $balance = FS::ClientAPI::PrepaidPhone->prepaid_phone_balance( $cust_pkg );
 
   warn "$me returning $balance balance for pkgnum ".  $cust_pkg->pkgnum.
                                         ", custnum ". $cust_pkg->custnum
@@ -266,6 +261,67 @@ sub phonenum_balance {
     'custnum' => $cust_pkg->custnum,
     'balance' => $balance,
   };
+
+}
+
+sub prepaid_phone_balance {
+  my $class = shift; # i guess
+  my ($cust_pkg) = @_;
+
+  my $conf = new FS::Conf;
+
+  my $pkg_balances = $conf->config_bool('pkg-balances');
+  
+  my $balance = $pkg_balances ? $cust_pkg->balance
+                              : $cust_pkg->cust_main->balance;
+
+  if ( $conf->config_bool('cdr-prerate') ) {
+    my @cust_pkg = $pkg_balances ? ( $cust_pkg )
+                                 : ( $cust_pkg->cust_main->ncancelled_pkgs );
+    foreach my $cust_pkg ( @cust_pkg ) {
+
+      #we only support prerated CDRs with "VOIP/telco CDR rating (standard)"
+      # and "Phone numbers (svc_phone.phonenum)" CDR service matching for now
+      my $part_pkg = $cust_pkg->part_pkg;
+      next unless $part_pkg->plan eq 'voip_cdr'
+               && ($part_pkg->option('cdr_svc_method') || 'svc_phone.phonenum')
+                    eq 'svc_phone.phonenum'
+               && ! $part_pkg->option('bill_inactive_svcs');
+      #XXX skip when there's included minutes
+
+      #select prerated cdrs & subtract them from balance
+
+      # false laziness w/ part_pkg/voip_cdr.pm sorta
+
+      my %options = (
+          'disable_src'    => $part_pkg->option('disable_src'),
+          'default_prefix' => $part_pkg->option('default_prefix'),
+          'cdrtypenum'     => $part_pkg->option('use_cdrtypenum'),
+          'calltypenum'    => $part_pkg->option('use_calltypenum'),
+          'status'         => 'rated',
+          'by_svcnum'      => 1,
+      );  # $last_bill, $$sdate )
+
+      my @cust_svc = grep { $_->part_svc->svcdb eq 'svc_phone' }
+                       $cust_pkg->cust_svc;
+      foreach my $cust_svc ( @cust_svc ) {
+        
+        my $svc_x = $cust_svc->svc_x;
+
+        #XXX optimization: a single SQL query to return the total amount
+        my $cdr_search = $svc_x->psearch_cdrs(%options);
+        $cdr_search->limit(1000);
+        $cdr_search->increment(0);
+        while ( my $cdr = $cdr_search->fetch ) {
+          $balance -= $cdr->rated_price;
+        }
+
+      }
+
+    }
+  }
+
+  $balance;
 
 }
 
