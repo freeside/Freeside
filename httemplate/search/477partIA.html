@@ -139,7 +139,7 @@ for ( my $row = 0; $row < scalar @upload_option; $row++ ) {
     my $count = FS::Record->scalar_sql($this_count_query);
     my $residential = FS::Record->scalar_sql($this_count_query . $is_residential);
 
-    my $percent = sprintf('%.2f', $count ? 100 * $residential / $count : 0);
+    my $percent = sprintf('%.3f', $count ? 100 * $residential / $count : 0);
     $data[$col][$row] = [ $count, $percent ];
 
     $total_count += $count;
@@ -149,10 +149,10 @@ for ( my $row = 0; $row < scalar @upload_option; $row++ ) {
 }
 
 my $total_percentage =
-  sprintf("%.2f", $total_count ? 100*$total_residential/$total_count : 0);
+  sprintf("%.3f", $total_count ? 100*$total_residential/$total_count : 0);
 
 my $above_200_percentage =
-  sprintf("%.2f", $total_count ? 100*$above_200/$total_count : 0);
+  sprintf("%.3f", $total_count ? 100*$above_200/$total_count : 0);
 
 my @summary_row = (
   $total_count,

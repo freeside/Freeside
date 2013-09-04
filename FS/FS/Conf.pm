@@ -779,8 +779,8 @@ sub reason_type_options {
 
   {
     'key'         => 'alert_expiration',
-    'section'     => 'notification',
-    'description' => 'Enable alerts about billing method expiration (i.e. expiring credit cards).',
+    'section'     => 'deprecated',
+    'description' => 'Enable alerts about credit card expiration.  This is obsolete and no longer works.',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
@@ -795,7 +795,7 @@ sub reason_type_options {
   
   {
     'key'         => 'alerter_msgnum',
-    'section'     => 'notification',
+    'section'     => 'deprecated',
     'description' => 'Template to use for credit card expiration alerts.',
     %msg_template_options,
   },

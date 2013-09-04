@@ -932,8 +932,12 @@ sub rate_prefix {
       }
 
                            #should preserve (display?) this
-      my $charge_min = ( $charge_sec - $conn_seconds ) / 60;
-      $charge += ($rate_detail->min_charge * $charge_min) if $charge_min > 0; #still not rounded
+      if ( $granularity == 0 ) { # per call rate
+        $charge += $rate_detail->min_charge;
+      } else {
+        my $charge_min = ( $charge_sec - $conn_seconds ) / 60;
+        $charge += ($rate_detail->min_charge * $charge_min) if $charge_min > 0; #still not rounded
+      }
 
     }
 

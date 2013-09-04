@@ -67,7 +67,8 @@ if ( $curuser->access_right('Edit global templates')
       { field => 'subject',   size=>60, },
       { field => 'body',
         type  => 'htmlarea',
-        width => 763
+        width => 763,
+        config=> { extraPlugins => 'blockprotect' },
       },
   ;
 } else { #readonly
@@ -328,8 +329,8 @@ my $widget = new HTML::Widgets::SelectLayers(
 my $sidebar = '
 <SCRIPT TYPE="text/javascript">
 function insertHtml(what) {
-  var oEditor = FCKeditorAPI.GetInstance("body");
-  oEditor.InsertHtml(what);
+  var oEditor = CKEDITOR.instances["body"];
+  oEditor.insertHtml(what);
 };
 
 function areyousure(url, message) {
