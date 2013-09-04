@@ -88,7 +88,7 @@ if ( ! $error ) {
 
   my $export_info = FS::part_export::export_info();
 
-  my @svc_export_machine =
+  my @child_objects =
     map FS::svc_export_machine->new({
           'svcnum'     => $svcnum,
           'exportnum'  => $_->exportnum,
@@ -96,6 +96,19 @@ if ( ! $error ) {
         }),
       grep { $_->machine eq '_SVC_MACHINE' }
         $part_svc->part_export;
+
+  if ( $part_svc->has_router ) {
+    my $router = FS::router->new({
+      map { $_ => $cgi->param("router_$_") }
+      qw( routernum routername blocknum )
+    });
+    if (length($router->routername == 0)) {
+      #sensible default
+      $router->set('routername', $new->label);
+    }
+    push @child_objects, $router;
+  }
+
 
   if ( $svcnum ) {
     foreach ( grep { $old->$_ != $new->$_ }
@@ -110,9 +123,9 @@ if ( ! $error ) {
       $error ||= $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
       last;                                #once is enough
     }
-    $error ||= $new->replace($old, 'child_objects'=>\@svc_export_machine);
+    $error ||= $new->replace($old, 'child_objects'=>\@child_objects);
   } else {
-    $error ||= $new->insert('child_objects'=>\@svc_export_machine);
+    $error ||= $new->insert('child_objects'=>\@child_objects);
     $svcnum = $new->svcnum;
   }
 }

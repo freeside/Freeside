@@ -1,6 +1,7 @@
 <% include( 'process.html',
                  'edit_ext' => 'cgi',
                  'redirect' => popurl(3)."view/$table.cgi?",
+                 'args_callback' => $args_callback,
                  %opt,
            )
 %>
@@ -15,5 +16,23 @@ foreach (fields($table)) {
     push @{ $opt{'fields'} }, $_.'_classnum';
   }
 }
+
+my $args_callback = sub {
+  my ($cgi, $svc) = @_;
+  my $part_svc = FS::part_svc->by_key($cgi->param('svcpart'))
+    or die "svcpart required";
+  if ( $part_svc->has_router ) {
+    my $router = FS::router->new({
+      map { $_ => $cgi->param("router_$_") }
+      qw( routernum routername blocknum )
+    });
+   if (length($router->routername) == 0) {
+      #sensible default
+      $router->set('routername', $svc->label);
+    }
+    return (child_objects => [ $router ]);
+  }
+  ();
+};
 
 </%init>
