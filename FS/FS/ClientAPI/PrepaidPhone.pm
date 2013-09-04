@@ -307,14 +307,8 @@ sub prepaid_phone_balance {
       foreach my $cust_svc ( @cust_svc ) {
         
         my $svc_x = $cust_svc->svc_x;
-
-        #XXX optimization: a single SQL query to return the total amount
-        my $cdr_search = $svc_x->psearch_cdrs(%options);
-        $cdr_search->limit(1000);
-        $cdr_search->increment(0);
-        while ( my $cdr = $cdr_search->fetch ) {
-          $balance -= $cdr->rated_price;
-        }
+        my $sum_cdr = $svc_x->sum_cdrs(%options);
+        $balance += $sum_cdr->rated_price;
 
       }
 
