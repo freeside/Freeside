@@ -951,9 +951,15 @@ sub rate_prefix {
   # this is why we need regionnum/rate_region....
   warn "  (rate region $rate_region)\n" if $DEBUG;
 
+  # NOW round it.
+  my $rounding = $part_pkg->option_cacheable('rounding') || 2;
+  my $sprintformat = '%.'. $rounding. 'f';
+  my $roundup = 10**(-3-$rounding);
+  my $price = sprintf($sprintformat, $charge + $roundup);
+
   $self->set_status_and_rated_price(
     'rated',
-    sprintf('%.2f', $charge + 0.000001), # NOW round it.
+    $price,
     $opt{'svcnum'},
     'rated_pretty_dst'    => $pretty_dst,
     'rated_regionname'    => $rate_region->regionname,
