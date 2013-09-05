@@ -888,10 +888,15 @@ my $html_bottom = sub {
   
     foreach my $field ( grep $_ !~ /^(setup|recur)_fee$/, @fields ) {
   
-       if(!exists($href->{$field})) {
+      if(!exists($href->{$field})) {
         # shouldn't happen
         warn "nonexistent part_pkg option: '$field'\n";
         next;
+      }
+      if ( exists($href->{$field}->{display_if}) ) {
+        my %args = ( 'plan' => $layer ); # anything else?
+        my $display = &{ $href->{$field}->{display_if} }(%args);
+        next if !$display;
       }
 
       $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>';
