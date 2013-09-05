@@ -81,7 +81,11 @@ Example:
   function <% $field %>_agentnum_changed(what) {
     what.form.<% $field %>.disabled = 'disabled'; //disable sales dropdown
 
-    agentnum = what.options[what.selectedIndex].value;
+    if ( what.type == 'hidden' ) { 
+      agentnum = what.value;
+    } else {
+      agentnum = what.options[what.selectedIndex].value;
+    }
 
     function update_<% $field %>(sales) {
 
