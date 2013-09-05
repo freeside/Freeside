@@ -422,7 +422,7 @@ if ( -e $addl_handler_use_file ) {
     use vars qw($m);
 
     # false laziness w/below
-    if ( defined(@DBIx::Profile::ISA) ) {
+    if ( @DBIx::Profile::ISA ) {
 
       if ( $FS::CurrentUser::CurrentUser->option('show_db_profile') ) {
 
@@ -482,7 +482,7 @@ if ( -e $addl_handler_use_file ) {
     use vars qw($m);
     $m->clear_buffer;
     #false laziness w/above
-    if ( defined(@DBIx::Profile::ISA) ) {
+    if ( @DBIx::Profile::ISA ) {
 
       if ( $FS::CurrentUser::CurrentUser->option('show_db_profile') ) {
 
