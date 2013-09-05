@@ -1,0 +1,276 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( $opt_d $opt_f $opt_s $opt_p $opt_m $opt_c $opt_e $opt_r );
+use Getopt::Std;
+use Date::Parse qw(str2time);
+use FS::UID qw( dbh adminsuidsetup );
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_main_county;
+use FS::cust_bill;
+use FS::msg_template;
+use FS::cust_credit;
+use FS::cust_credit_bill;
+
+getopts('d:f:s:pm:c:er');
+
+my $user = shift or &usage;
+adminsuidsetup $user;
+
+#i should be an option
+my $taxname = 'HST, ON';
+my $rate = '13';
+                                                                                
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+###
+# find tax classes with double taxes
+##
+
+#my $sql = "select distinct taxclass from cust_main_county where taxname = '$taxname';";
+#my $sth = dbh->prepare($sql) or die dbh->errstr;
+#$sth->execute or die $sth->errstr;
+#my @taxclasses = map $_->[0], @{ $sth->fetchall_arrayref() };
+#
+#my %taxclass = map {
+#                my $taxclass = $_;
+#                my @cust_main_county = qsearch('cust_main_county', {
+#                                         'taxclass' => $taxclass,
+#                                         'taxname'  => $taxname,
+#                                         'tax'      => { op=>'>', value=>'0' },
+#                                       });
+#
+#                $taxclass => ( scalar(@cust_main_county) > 1 );
+#
+#              } @taxclasses;
+
+my %taxclass = map { $_ => 1 } (
+  'InternetService',
+  'ComputerSetup-Remote',
+  'Config File- Static IPs',
+  'GST',
+  'GST + PST',
+  'GST ONLY',
+  'HST ONLY',
+  'HardwareRental',
+  'HardwareSale',
+  'HardwareSale_WEx',
+  'InternetService_WEx',
+  'LondDistanceFixedRate',
+  'LondDistanceVariableRate',
+  'PST',
+  'SARA-ONLY-GSTPayable',
+  'SetupInternet',
+  'SetupVoice',
+  'Shipping',
+  'SoftwareLicenseToUse',
+  'TDMPRI',
+  'TDMPRI_WEx',
+  'WarrantyCoverageHardware',
+  'WarrantyCoverageSoftware',
+  'WebHosting',
+  'federal and qst',
+  'telephoneNumber',
+  'LongDistanceFixedRate_WEx',
+  'LongDistanceVariableRate_WEx',
+);
+
+my %h;
+$FS::Record::nowarn_classload = 1;
+$FS::Record::nowarn_classload = 1;
+
+###
+# find invoices
+###
+
+#my $extra_sql = $opt_s ? " AND cust_main.state = '$opt_s' " : '';
+
+my $start_date = $opt_d ? str2time($opt_d) : 0;
+my $end_date = $opt_f ? str2time($opt_f) : 1375471643;
+
+my @cust_bill = qsearch({
+  'select'    => 'cust_bill.*',
+  'table'     => 'cust_bill',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { '_date' => { op=>'>', value=>$start_date } },
+  'extra_sql' => " AND _date < $end_date ",
+#  'extra_sql' => $extra_sql,
+});
+
+my( @billpkgnums, @setuprecurs, @amounts );
+
+foreach my $cust_bill ( @cust_bill ) {
+
+  my $tax = $cust_bill->tax;
+
+  my $cust_main = $cust_bill->cust_main;
+
+  next if $cust_bill->charged == 0
+       or $tax == 0
+       or $cust_main->tax eq 'Y';
+
+  my $credit = 0;
+
+  @billpkgnums = ();
+  @setuprecurs = ();
+  @amounts = ();
+
+  foreach my $cust_bill_pkg ( $cust_bill->cust_bill_pkg ) {
+    my $cust_pkg = $cust_bill_pkg->cust_pkg or next;
+
+    #my $loc = $cust_pkg->cust_location_or_main;
+    #next if $opt_s && $loc->state ne $opt_s;
+    next if $cust_pkg->cust_location; #we did these already
+    next if $opt_s && $cust_main->ship_state ne $opt_s;
+    next if $opt_s && $cust_main->state eq $opt_s; #we did these already too
+
+    my $part_pkg = $cust_pkg->part_pkg;
+
+    #these were changed already
+    # next unless $taxclass{ $part_pkg->taxclass };
+
+    my $h = $h{$part_pkg->pkgpart} ||= qsearchs({
+      'table'     => 'h_part_pkg', 
+      'hashref'   => { 'pkgpart' => $part_pkg->pkgpart },
+      'extra_sql' => "AND history_action IN ( 'insert', 'replace_new' )",
+      'order_by'  => 'ORDER BY HISTORYNUM DESC LIMIT 1',
+    });
+    next unless $taxclass{ $h->taxclass };
+
+    #my $amount = $cust_bill_pkg->setup + $cust_bill_pkg->recur;
+    #$credit += $rate * $amount / 100;
+
+    if ( $cust_bill_pkg->setup ) {
+      my $scredit = sprintf('%.2f', ($rate * $cust_bill_pkg->setup / 100) + 0.00000001);
+      $credit += $scredit;
+      push @setuprecurs, 'setup';
+      push @billpkgnums, $cust_bill_pkg->billpkgnum;
+      push @amounts, $scredit;
+    } 
+
+    if ( $cust_bill_pkg->recur ) {
+      my $rcredit = sprintf('%.2f', ($rate * $cust_bill_pkg->recur / 100) + 0.00000001);
+      $credit += $rcredit;
+      push @setuprecurs, 'recur';
+      push @billpkgnums, $cust_bill_pkg->billpkgnum;
+      push @amounts, $rcredit;
+    }
+
+  }
+
+  $credit = sprintf('%.2f', $credit + 0.00000001);
+
+  next if $credit == 0;
+
+  #$credit = sprintf('%.2f', $credit + 0.00000001);
+
+  warn "invoice ". $cust_bill->invnum. ": credit of $credit is more than orignally taxed ($tax)\n" if $credit > $tax;
+
+  warn "invoice ". $cust_bill->invnum. ": credit of $credit is more than 50% of originally taxed ($tax)\n" if $credit-0.01 > $tax/2;
+
+  #my $cr_percent = sprintf('%.1f', 100 * $credit / $tax);
+
+  if ( $opt_p ) {
+    #print $cust_bill->invnum. ','. $cust_bill->custnum. ",$tax,$credit,$cr_percent%\n";
+    print $cust_bill->invnum. ','. $cust_bill->custnum. ',"'.
+          $cust_bill->cust_main->name. '",'. "$tax,$credit\n";
+  }
+
+#COMMENTING OUT ALL DANGEROUT STUFF
+#
+#  if ( $opt_m && ! $opt_r ) {
+#
+#    my $msg_template = qsearchs('msg_template', { 'msgnum' => $opt_m } )
+#        or die "Template $opt_m not found";
+#    my $error = $msg_template->send(
+#      'cust_main' => $cust_main,
+#      'object'    => $cust_main,
+#    );
+#    if ( $error ) {
+#      warn "error sending email for invnum ". $cust_bill->invnum. ','.
+#           " custnum ". $cust_bill->custnum. ": $error\n";
+#    }
+#  }
+#
+#  if ( $opt_c ) {
+#    my $cust_credit = new FS::cust_credit {
+#      'custnum'   => $cust_main->custnum,
+#      'amount'    => $credit,
+#      'reasonnum' => $opt_c,
+#    };
+#    my $error = $cust_credit->insert;
+#    if ( $error ) {
+#      warn "error inserting credit: $error\n";
+#    }
+#    my $cust_credit_bill = new FS::cust_credit_bill {
+#      'crednum' => $cust_credit->crednum,
+#      'invnum'  => $cust_bill->invnum,
+#      'amount'  => $credit,
+#    };
+#    my $aerror = $cust_credit_bill->insert;
+#    if ( $aerror ) {
+#      warn "error applying credit to invnum ". $cust_bill->invnum. ": $aerror\n";
+#    }
+#  }
+#
+#  if ( $opt_e && ! $opt_r ) {
+#    eval { $cust_bill->email };
+#    if ( $@ ) {
+#      warn "error sending invnum ". $cust_bill->invnum. ','.
+#         " custnum ". $cust_bill->custnum. ": $@\n";
+#    }
+#  }
+
+}
+
+if ( $opt_r ) {
+  $dbh->rollback or die $dbh->errstr; #if $oldAutoCommit;
+} else {
+  $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+}
+
+sub usage {                                                                     
+  die "usage:  cust_bill-credit [ -d date ] [ -s state ] [ -p ] [ -m templatenum ] [ -c reasonnum ] [ -e ] [ -r ] employee_username\n";
+}                                                                               
+                                                                                
+=head1 NAME                                                                     
+                                                                                
+cust_bill-credit
+                                                                                
+=head1 SYNOPSIS                                                                 
+                                                                                
+  cust_bill-credit [ -d date ] [ -s state ] [ -p ] [ -m templatenum ] [ -c reasonnum ] [ -e ] employee_username   
+                                                                                
+=head1 DESCRIPTION
+
+Command-line tool to search for and credit invoices.
+
+-d: Search for invoices starting from this date
+
+-f: Search for invoice finishing on this date
+
+-s: Search for invoices for packages within this state
+
+-p: Print an informational line for each invoice with invnum, custnum, original tax amount, calculate credit, and credit percentage of original.
+
+-m: Send an email to the customer with this message template.
+
+-c: Credit the invoice for one-half of the taxation amount, using this reason.
+
+-e: re-Email invoice
+
+-r: dRy run
+
+employee_username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::part_pkg>
+
+=cut
+
+1;
