@@ -21,7 +21,6 @@ tie %options, 'Tie::IxHash',
   'username'    => { label=>'Database username' },
   'password'    => { label=>'Database password' },
   'didgroup'    => { label=>'DID group ID', default=>1 },
-  'tariffgroup' => { label=>'Tariff group ID', default=>1 },
   'credit'      => { label=>'Default credit limit' },
   'billtype'    => {label=>'Billing type',
                     type => 'select',
@@ -112,6 +111,7 @@ sub export_insert {
   my $cust_pkg = $svc->cust_svc->cust_pkg;
   my $cust_main = $cust_pkg->cust_main;
   my $location = $cust_pkg->cust_location;
+  my $part_pkg = $cust_pkg->part_pkg;
 
   my $error;
   $DEBUG ||= $self->option('debug');
@@ -131,9 +131,8 @@ sub export_insert {
       username  => $username,
       useralias => $username,
       uipass    => $svc->_password,
-      # XXX these options may move to a part_pkg at some point
       credit    => $self->option('credit') || 0,
-      tariff    => $self->option('tariffgroup'),
+      tariff    => $part_pkg->option('a2billing_tariff'),
       status    => 1,
       lastname  => $cust_main->last, # $svc->finger?
       firstname => $cust_main->first,
@@ -143,9 +142,10 @@ sub export_insert {
       state     => $location->state,
       country   => $country3,
       zipcode   => $location->zip,
-      typepaid  => 1,
+      typepaid  => $part_pkg->option('a2billing_type'),
       sip_buddy => 1,
       company_name => $cust_main->company,
+      activated => 't',
     );
     warn "creating A2B cc_card record for $username\n" if $DEBUG;
     $error = $self->a2b_insert_or_replace('cc_card', 'svcnum', \%cc_card);

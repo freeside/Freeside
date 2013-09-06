@@ -3,6 +3,12 @@ package FS::part_pkg::global_Mixin;
 use strict;
 use vars qw(%info);
 
+use Tie::IxHash;
+tie my %a2billing_types, 'Tie::IxHash', (
+  0 => 'Prepaid',
+  1 => 'Postpaid',
+);
+
 %info = (
   'disabled' => 1,
   'fields' => {
@@ -29,6 +35,24 @@ use vars qw(%info);
                 'changing packages',
       'type' => 'checkbox',
     },
+
+    # miscellany--maybe put this in a separate module?
+
+    'a2billing_tariff' => {
+      'name'        => 'A2Billing tariff group ID',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      }
+    },
+    'a2billing_type' => {
+      'name'        => 'A2Billing card type',
+      'display_if'  => sub {
+        FS::part_export->count("exporttype = 'a2billing'") > 0;
+      },
+      'type'        => 'select',
+      'select_options' => \%a2billing_types,
+    },
+
   },
   'fieldorder' => [ qw(
     setup_fee
@@ -36,6 +60,9 @@ use vars qw(%info);
     unused_credit_cancel
     unused_credit_suspend
     unused_credit_change
+
+    a2billing_tariff
+    a2billing_type
   )],
 );
 
