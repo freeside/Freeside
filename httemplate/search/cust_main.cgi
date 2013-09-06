@@ -470,7 +470,9 @@ if ( $cgi->param('browse')
     $orderby = "ORDER BY LOWER(company || ' ' || last || ' ' || first )";
     push @cust_main, smart_search(
       'search'            => scalar($cgi->param('search_cust')),
-      'no_fuzzy_on_exact' => ! $curuser->option('enable_fuzzy_on_exact'),
+      'no_fuzzy_on_exact' => ! ( $curuser->option('enable_fuzzy_on_exact')
+                                 || $conf->exists('enable_fuzzy_on_exact')
+                               ),
     );
   }
 
