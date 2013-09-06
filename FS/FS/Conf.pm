@@ -3691,6 +3691,13 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'enable_fuzzy_on_exact',
+    'section'     => 'UI',
+    'description' => 'Enable approximate customer searching even when an exact match is found.',
+    'type'        => 'checkbox',
+  },
+
   { 'key'         => 'pkg_referral',
     'section'     => '',
     'description' => 'Enable package-specific advertising sources.',
