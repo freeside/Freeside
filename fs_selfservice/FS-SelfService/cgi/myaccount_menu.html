@@ -7,7 +7,7 @@
 <%= 
 
 if ( $menu_top_image ) {
-  $OUT .= '<TR><TD STYLE="padding:0px"><IMG SRC="image.cgi?menu_top_image"></TD></TR>';
+  $OUT .= '<TR><TD STYLE="padding:0px"><IMG SRC="image.cgi?name=menu_top_image;agentnum='. $agentnum. '"></TD></TR>';
 }
 
 my @menu = (
@@ -106,11 +106,11 @@ foreach my $item ( @menu ) {
   if ( $menu_body_image ) {
     if ( exists $item->{'url'} && $action eq $item->{'url'} ) {
       $OUT .= #' BGCOLOR="'. ( $body_bgcolor || '#eeeeee' ). '" '.
-              ' STYLE="background: url(image.cgi?menu_body_image) 0 bottom; '.
+              ' STYLE="background: url(image.cgi?name=menu_body_image;agentnum='. $agentnum. ') 0 bottom; '.
               '        color:#3366CC"; '. #XXX config
               ' " ';
     } else {
-      $OUT .= ' STYLE="background: url(image.cgi?menu_body_image) 0 bottom" ';
+      $OUT .= ' STYLE="background: url(image.cgi?name=menu_body_imagei;agentnum='. $agentnum. ') 0 bottom" ';
     }
   } else {
     if ( exists $item->{'url'} && $action eq $item->{'url'} ) {
@@ -151,7 +151,7 @@ foreach my $item ( @menu ) {
 }
 
 if ( $menu_bottom_image ) {
-  $OUT .= '<TR><TD STYLE="padding:0px"><IMG SRC="image.cgi?menu_bottom_image"></TD></TR>';
+  $OUT .= '<TR><TD STYLE="padding:0px"><IMG SRC="image.cgi?name=menu_bottom_image;agentnum='. $agentnum. '"></TD></TR>';
 } else {
   $OUT .= '<TR><TD STYLE="border-right: 1px solid black" HEIGHT="100%"><BR><BR><BR><BR></TD></TR>';
 }
