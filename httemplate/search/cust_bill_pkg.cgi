@@ -294,6 +294,10 @@ if ( $cgi->param('salesnum') =~ /^(\d+)$/ ) {
 
   push @where, "$cmp_salesnum = $salesnum";
 
+  #because currently we're called from sales_pkg_class.html for a specific
+  # class (or empty class) but not for all classes
+  #will have to do something to distinguish if someone wants the sales report
+  # (report_cust_bill_pkg.html) to have a sales person dropdown
   $cgi->param('classnum', 0) unless $cgi->param('classnum');
 }
 
