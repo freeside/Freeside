@@ -2,7 +2,11 @@
 
 <FORM ACTION="cust_bill_pkg.cgi" METHOD="GET">
 
-<TABLE>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+<TR>
+  <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Search options') |h %></FONT></TH>
+</TR>
 
 <% include('/elements/tr-select-from_to.html' ) %>
 
@@ -17,15 +21,15 @@ function enable_agent_totals(obj) {
   obj.form.agent_totals.disabled = !(
     obj.form.agentnum.value == '' && (
       obj.form.refnum.value == ''   ||
-      obj.form.classnum.value == 0  ||
+      document.getElementById('class_agg_break_breakdown').checked ||
       obj.form.use_setup.value == 1 ||
       obj.form.use_usage.value == 1
     )
   );
 }
 
-function mode_changed() {
-  var options = document.getElementsByName('mode');
+function class_mode_changed() {
+  var options = document.getElementsByName('class_mode');
   var mode;
   for(var i=0; i < options.length; i++) {
     if (options[i].checked) {
@@ -43,7 +47,7 @@ function mode_changed() {
     div_report.style.display = '';
   }
 }
-window.onload = mode_changed;
+window.onload = class_mode_changed;
 </SCRIPT>
 
 <& /elements/tr-select-agent.html,
@@ -71,38 +75,70 @@ window.onload = mode_changed;
 &>
 
 <TR>
-  <TD ALIGN="right">
-    <INPUT TYPE="radio" NAME="mode" VALUE="pkg" onchange="mode_changed('pkg')" CHECKED>
+
+  <TD>
+    <INPUT TYPE="radio" NAME="class_mode" VALUE="pkg" onchange="class_mode_changed('pkg')" CHECKED>
     <% emt('Package class') %>
     <BR>
-    <INPUT TYPE="radio" NAME="mode" VALUE="report" onchange="mode_changed('report')">
+    <INPUT TYPE="radio" NAME="class_mode" VALUE="report" onchange="class_mode_changed('report')">
     <% emt('Report class') %>
   </TD>
+
   <TD>
-    <DIV ID="pkg_class">
-    <& /elements/select-pkg_class.html,
-      'field'       => 'classnum',
-      'pre_options' => [ 'all'  => 'all (aggregate)',
-                            ''  => 'all (breakdown)',
-                           '0'  => '(empty class)' ],
-      'disable_empty' => 1,
-      'onchange'    => 'enable_agent_totals',
-    &>
-    </DIV>
-    <DIV ID="report_class" STYLE="display: none">
-    <& /elements/select-table.html,
-      'field'       => 'report_optionnum',
-      'table'       => 'part_pkg_report_option',
-      'name_col'    => 'name',
-      'value_col'   => 'num',
-      'pre_options' => [ 'all' => 'all (aggregate)',
-                            '' => 'all (breakdown)', 
-                           '0'  => '(empty class)' ],
-      'disable_empty' => 1,
-      'onchange'    => 'enable_agent_totals',
-    &>
-    </DIV>
+    <TABLE>
+      <TR>
+
+        <TD>
+          <DIV ID="pkg_class">
+          <& /elements/select-pkg_class.html,
+            'field'         => 'classnum',
+            'multiple'      => 1,
+            'all_selected'  => 1,
+            'pre_options'   => [ #'all'  => 'all (aggregate)',
+                                #   ''  => 'all (breakdown)',
+                                  '0'  => '(empty class)' ],
+            'disable_empty' => 1,
+            'onchange'      => 'enable_agent_totals',
+          &>
+          </DIV>
+          <DIV ID="report_class" STYLE="display: none">
+          <& /elements/select-table.html,
+            'field'         => 'report_optionnum',
+            'table'         => 'part_pkg_report_option',
+            'name_col'      => 'name',
+            'value_col'     => 'num',
+            'multiple'      => 1,
+            'all_selected'  => 1,
+            'pre_options'   => [ #'all' => 'all (aggregate)',
+                               #   '' => 'all (breakdown)', 
+                                 '0'  => '(empty class)' ],
+            'disable_empty' => 1,
+            'onchange'      => 'enable_agent_totals',
+          &>
+          </DIV>
+        </TD>
+
+        <TD>
+          <INPUT TYPE="radio" NAME="class_agg_break" ID="class_agg_break_aggregate" VALUE="aggregate" CHECKED>
+          <% emt('Aggregate') %>
+          <BR>
+          <INPUT TYPE="radio" NAME="class_agg_break" VALUE="breakdown">
+          <% emt('Breakdown') %>
+        </TD>
+
+      </TR>
+    </TABLE>
   </TD>
+
+</TR>
+
+
+<TR>
+  <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+</TR>
+
+<TR>
+  <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1"><% mt('Display options') |h %></FONT></TH>
 </TR>
 
 <!--

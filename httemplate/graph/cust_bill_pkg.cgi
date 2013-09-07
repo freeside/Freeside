@@ -73,22 +73,19 @@ my @cust_classnums = grep /^\d+$/, $cgi->param('cust_classnum');
 $bottom_link .= "cust_classnum=$_;" foreach @cust_classnums;
 
 #classnum (here)
-# 0: all classes
-# not specified: empty class
+# not specified: no longer happens (unless you de-select all classes)
+# 0: empty class
 # N: classnum
 #classnum (link)
 # not specified: all classes
 # 0: empty class
 # N: classnum
 
-#false lazinessish w/FS::cust_pkg::search_sql (previously search/cust_pkg.cgi)
-my $classnum = 0;
-my (@classnums, @classnames);
-my $all_class = '';
+#started out as false lazinessish w/FS::cust_pkg::search_sql (previously search/cust_pkg.cgi), but not much left the sane now after #24776
 
 my ($class_table, $name_col, $value_col, $class_param);
 
-if ( $cgi->param('mode') eq 'report' ) {
+if ( $cgi->param('class_mode') eq 'report' ) {
   $class_param = 'report_optionnum'; # CGI param name, also used in the report engine
   $class_table = 'part_pkg_report_option'; # table containing classes
   $name_col = 'name'; # the column of that table containing the label
@@ -100,50 +97,43 @@ if ( $cgi->param('mode') eq 'report' ) {
   $value_col = 'classnum';
 }
 
-if ( $cgi->param($class_param) eq 'all' ) { # all, aggregated
-  $all_class = 'ALL';
-  @classnums = ('');
-  @classnames = ('');
-} elsif ( $cgi->param($class_param) =~ /^(\d*)$/ ) {
+my @classnums = grep /^\d+$/, $cgi->param($value_col);
+my @classnames = map { if ( $_ ) {
+                         my $class = qsearchs($class_table, {$value_col=>$_} );
+                         $class->classname;
+                       } else {
+                         '(empty class)';
+                       }
+                     }
+                   @classnums;
 
-  $classnum = $1;
-  if ( $classnum ) { #a specific class
-    my $class = qsearchs($class_table, { $value_col => $classnum })
-      or die "$class_table #$classnum not found";
+$bottom_link .= "$class_param=$_;" foreach @classnums;
 
-    $title .= ' '.$class->get($name_col);
-    $bottom_link .= "$class_param=$classnum;";
+if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
 
-    @classnums = ($classnum);
-    @classnames = ($class->get($name_col));
+  $link .= ";$class_param=$_" foreach @classnums;
 
-  } elsif ( $classnum eq '0' ) { #the empty class
+  $title .= ' '. join(', ', @classnames)
+    unless scalar(@classnames) > scalar(qsearch($class_table,{'disabled'=>''}));
+                                 #not efficient for lots of package classes
 
-    $title .= ' Empty class ';
-    @classnums = ( '' );
-    @classnames = ( '(empty class)' );
-    $bottom_link .= "$class_param=0;";
+} elsif ( $cgi->param('class_agg_break') eq 'breakdown' ) {
 
-  } elsif ( $classnum eq '' ) { #all, breakdown
-
-    my @classes = qsearch($class_table, {});
-    @classnames = map { $_->get($name_col) } @classes;
-    @classnums  = map { $_->get($value_col) } @classes;
-
-    push @classnames, '(empty class)';
-    push @classnums, '0';
-
-    if ( $cgi->param('mode') eq 'report' ) {
-      # In theory, a package can belong to any subset of the report classes,
-      # so the report groups should be all the _subsets_, but for now we're
-      # handling the simple case where each package belongs to one report
-      # class. Packages with multiple classes will go into one bin at the
-      # end.
-      push @classnames, '(multiple classes)';
-      push @classnums, 'multiple';
-    }
+  if ( $cgi->param('mode') eq 'report' ) {
+    # In theory, a package can belong to any subset of the report classes,
+    # so the report groups should be all the _subsets_, but for now we're
+    # handling the simple case where each package belongs to one report
+    # class. Packages with multiple classes will go into one bin at the
+    # end.
+    push @classnames, '(multiple classes)';
+    push @classnums, 'multiple';
   }
-} #eslaf
+
+} else {
+  die "guru meditation #434";
+}
+
+#eslaf
 
 my $hue = 0;
 #my $hue_increment = 170;
@@ -195,9 +185,14 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
     qsearch('part_referral', { 'disabled' => '' } ) 
   ) {
 
-    for (my $i = 0; $i < scalar @classnums; $i++) {
-      my $row_classnum = $classnums[$i];
-      my $row_classname = $classnames[$i];
+    my @base_params = (
+                        'use_override'         => $use_override,
+                        'average_per_cust_pkg' => $average_per_cust_pkg,
+                        'distribute'           => $distribute,
+                      );
+
+    if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
+
       foreach my $component ( @components ) {
 
         push @items, 'cust_bill_pkg';
@@ -205,26 +200,26 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
         push @labels,
           ( $all_agent || $sel_agent ? '' : $agent->agent.' ' ).
           ( $all_part_referral || $sel_part_referral ? '' : $part_referral->referral.' ' ).
-          $row_classname .  ' ' . $charge_labels{$component};
+          $charge_labels{$component};
 
         my $row_agentnum = $all_agent || $agent->agentnum;
         my $row_refnum = $all_part_referral || $part_referral->refnum;
-        push @params, [ ($all_class ? () : ($class_param => $row_classnum) ),
+        push @params, [
+                        @base_params,
+                        $class_param => \@classnums,
                         ($all_agent ? () : ('agentnum' => $row_agentnum) ),
                         ($all_part_referral ? () : ('refnum' => $row_refnum) ),
-                        'use_override'         => $use_override,
                         'charges'              => $component,
-                        'average_per_cust_pkg' => $average_per_cust_pkg,
-                        'distribute'           => $distribute,
                       ];
 
-        push @links, "$link;".
-                     ($all_agent ? '' : "agentnum=$row_agentnum;").
-                     ($all_part_referral ? '' : "refnum=$row_refnum;").
-                     (join('',map {"cust_classnum=$_;"} @cust_classnums)).
-                     ($all_class ? '' : "$class_param=$row_classnum;").
-                     "distribute=$distribute;".
-                     "use_override=$use_override;charges=$component;";
+        my $rowlink = "$link;".
+                      ($all_agent ? '' : "agentnum=$row_agentnum;").
+                      ($all_part_referral ? '' : "refnum=$row_refnum;").
+                      (join('',map {"cust_classnum=$_;"} @cust_classnums)).
+                      "distribute=$distribute;".
+                      "use_override=$use_override;charges=$component;";
+        $rowlink .= "$class_param=$_;" foreach @classnums;
+        push @links, $rowlink;
 
         @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
           unless @recur_colors;
@@ -234,7 +229,51 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
         push @no_graph, 0;
 
       } #foreach $component
-    } #foreach $row_classnum
+
+    } elsif ( $cgi->param('class_agg_break') eq 'breakdown' ) {
+
+      for (my $i = 0; $i < scalar @classnums; $i++) {
+        my $row_classnum = $classnums[$i];
+        my $row_classname = $classnames[$i];
+        foreach my $component ( @components ) {
+
+          push @items, 'cust_bill_pkg';
+
+          push @labels,
+            ( $all_agent || $sel_agent ? '' : $agent->agent.' ' ).
+            ( $all_part_referral || $sel_part_referral ? '' : $part_referral->referral.' ' ).
+            $row_classname .  ' ' . $charge_labels{$component};
+
+          my $row_agentnum = $all_agent || $agent->agentnum;
+          my $row_refnum = $all_part_referral || $part_referral->refnum;
+          push @params, [
+                          @base_params,
+                          $class_param => $row_classnum,
+                          ($all_agent ? () : ('agentnum' => $row_agentnum) ),
+                          ($all_part_referral ? () : ('refnum' => $row_refnum)),
+                          'charges'              => $component,
+                        ];
+
+          push @links, "$link;".
+                       ($all_agent ? '' : "agentnum=$row_agentnum;").
+                       ($all_part_referral ? '' : "refnum=$row_refnum;").
+                       (join('',map {"cust_classnum=$_;"} @cust_classnums)).
+                       "$class_param=$row_classnum;".
+                       "distribute=$distribute;".
+                       "use_override=$use_override;charges=$component;";
+
+          @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
+            unless @recur_colors;
+          @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
+            unless @onetime_colors;
+          push @colors, shift @recur_colors;
+          push @no_graph, 0;
+
+        } #foreach $component
+      } #foreach $row_classnum
+
+    } #$cgi->param('class_agg_break')
+
   } #foreach $part_referral
 
   if ( $cgi->param('agent_totals') and !$all_agent ) {
@@ -254,17 +293,19 @@ foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' =>
                    "distribute=$distribute;".
                    "charges=$component";
     
-    # Also apply any refnum/classnum filters
-    if ( !$all_class and scalar(@classnums) == 1 ) {
-      # then a specific class has been chosen, but it may be the empty class
-      push @row_params, $class_param => $classnums[0];
-      $row_link .= ";$class_param=".$classnums[0];
+    # package class filters
+    if ( $cgi->param('class_agg_break') eq 'aggregate' ) {
+      push @row_params, $class_param => \@classnums;
+      $row_link .= ";$class_param=".$_ foreach @classnums;
     }
+
+    # refnum filters
     if ( $sel_part_referral ) {
       push @row_params, 'refnum' => $sel_part_referral->refnum;
       $row_link .= ";refnum=".$sel_part_referral->refnum;
     }
 
+    # customer class filters
     $row_link .= ";cust_classnum=$_" foreach @cust_classnums;
 
     push @items, 'cust_bill_pkg';
