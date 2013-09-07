@@ -2542,8 +2542,10 @@ sub _items_cust_bill_pkg {
             if $DEBUG > 1;
 
           my $is_summary = $display->summary;
-          my $description = ($is_summary && $type && $type eq 'U')
-                            ? "Usage charges" : $desc;
+          my $description = $desc;
+          if ( $type eq 'U' and ($is_summary or $cust_bill_pkg->hidden) ) {
+            $description = $self->mt('Usage charges');
+          }
 
           my $part_pkg = $cust_pkg->part_pkg;
 
@@ -2701,11 +2703,15 @@ sub _items_cust_bill_pkg {
             warn "$me _items_cust_bill_pkg adding usage\n"
               if $DEBUG > 1;
 
-            if ( $cust_bill_pkg->hidden ) {
+            if ( $cust_bill_pkg->hidden and defined($u) ) {
+              # if this is a hidden package and there's already a usage
+              # line for the bundle, add this package's total amount and
+              # usage details to it
               $u->{amount}      += $amount;
               $u->{unit_amount} += $unit_amount,
               push @{ $u->{ext_description} }, @d;
-            } else {
+            } elsif ( $amount ) {
+              # create a new usage line
               $u = {
                 description     => $description,
                 pkgpart         => $pkgpart,
@@ -2717,7 +2723,7 @@ sub _items_cust_bill_pkg {
                 %item_dates,
                 ext_description => \@d,
               };
-            }
+            } # else this has no usage, so don't create a usage section
           }
 
         } # recurring or usage with recurring charge
