@@ -325,16 +325,15 @@ sub _subtract_11mo {
 sub cust_pkg_setup_cost {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   my $where = '';
-  my $comparison = '';
-  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
-    if ( $1 == 0 ) {
-      $comparison = 'IS NULL';
-    }
-    else {
-      $comparison = "= $1";
-    }
-    $where = "AND part_pkg.classnum $comparison";
+
+  if ( $opt{'classnum'} ne '' ) {
+    my $classnums = $opt{'classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    $where .= ' AND COALESCE(part_pkg.classnum,0) IN ('. join(',', @$classnums).
+                                                    ')';
   }
+
   $agentnum ||= $opt{'agentnum'};
 
   my $total_sql = " SELECT SUM(part_pkg.setup_cost) ";
@@ -357,16 +356,15 @@ sub cust_pkg_setup_cost {
 sub cust_pkg_recur_cost {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
   my $where = '';
-  my $comparison = '';
-  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
-    if ( $1 == 0 ) {
-      $comparison = 'IS NULL';
-    }
-    else {
-      $comparison = "= $1";
-    }
-    $where = " AND part_pkg.classnum $comparison";
+
+  if ( $opt{'classnum'} ne '' ) {
+    my $classnums = $opt{'classnum'};
+    $classnums = [ $classnums ] if !ref($classnums);
+    @$classnums = grep /^\d+$/, @$classnums;
+    $where .= ' AND COALESCE(part_pkg.classnum,0) IN ('. join(',', @$classnums).
+                                                    ')';
   }
+
   $agentnum ||= $opt{'agentnum'};
   # duplication of in_time_period_and_agent
   # because we do it a little differently here
@@ -592,6 +590,7 @@ sub cust_bill_pkg_detail {
 sub cust_bill_pkg_discount {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
+  #need to do this the new multi-classnum way if it gets re-enabled
   #my $where = '';
   #my $comparison = '';
   #if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
@@ -701,24 +700,20 @@ sub for_opts {
 }
 
 sub with_classnum {
-  my $self = shift;
-  my ($classnum, $use_override) = @_;
-  return '' unless $classnum =~ /^\d+$/;
-  my $comparison;
-  if ( $classnum == 0 ) {
-    $comparison = 'IS NULL';
-  }
-  else {
-    $comparison = "= $classnum";
-  }
+  my ($self, $classnum, $use_override) = @_;
+  return '' if $classnum eq '';
+
+  $classnum = [ $classnum ] if !ref($classnum);
+  @$classnum = grep /^\d+$/, @$classnum;
+  my $in = 'IN ('. join(',', @$classnum). ')';
+
   if ( $use_override ) {
-    return "(
-      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
-      override.classnum $comparison AND pkgpart_override IS NOT NULL
+    "(
+         ( COALESCE(part_pkg.classnum, 0) $in AND pkgpart_override IS NULL)
+      OR ( COALESCE(override.classnum, 0) $in AND pkgpart_override IS NOT NULL )
     )";
-  }
-  else {
-    return "part_pkg.classnum $comparison";
+  } else {
+    "COALESCE(part_pkg.classnum, 0) $in";
   }
 }
 
@@ -737,13 +732,13 @@ sub with_usageclass {
 }
 
 sub with_report_option {
-  my $self = shift;
+  my ($self, $num, $use_override) = @_;
   # $num can be a single number, or a comma-delimited list of numbers,
-  # or '0' to match only the empty set.
-  #
+  # or an arrayref.  0 matches the empty set
   # or the word 'multiple' for all packages with more than one report class
-  my ($num, $use_override) = @_;
   return '' if !defined($num);
+
+  $num = join(',', @$num) if ref($num);
 
   # stringify the set of report options for each pkgpart
   my $table = $use_override ? 'override' : 'part_pkg';
@@ -757,14 +752,18 @@ sub with_report_option {
   my $comparison;
   if ( $num eq 'multiple' ) {
     $comparison = "(SELECT COUNT(*) FROM ($subselect) AS x) > 1";
-  } elsif ( $num eq '0' ) {
-    $comparison = "NOT EXISTS ($subselect)";
   } else {
+
+    my @num = split(/\s*,\s*/, $num);
+
     #$comparison = "(SELECT COALESCE(string_agg(num, ','), '') FROM ( #Pg 9-ism
     $comparison = "(SELECT COALESCE(array_to_string(array_agg(num), ','), '')
-    FROM (
-    $subselect
-    ) AS x) = '$num'";
+                      FROM ($subselect) AS x
+                   ) = '". join(',', grep $_, @num). "'";
+
+    $comparison = "( $comparison OR NOT EXISTS ($subselect) )"
+      if grep !$_, @num;
+
   }
   if ( $use_override ) {
     # then also allow the non-override package to match

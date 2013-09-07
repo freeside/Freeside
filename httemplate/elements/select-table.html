@@ -37,6 +37,7 @@ Example:
     'post_options'   => [ 'value' => 'option' ], #after normal options
     'empty_label'    => '', #better specify it though, the default might change
     'multiple'       => 0, # bool
+    'all_selected'   => 0, # useful with multiple
     'disable_empty'  => 0, # bool (implied by multiple)
     'label_showkey'  => 0, # bool
     'label_callback' => sub { my $record = shift; return "label"; },
@@ -75,8 +76,9 @@ Example:
 % while ( @pre_options ) { 
 %   my $pre_opt   = shift(@pre_options);
 %   my $pre_label = shift(@pre_options);
-%   my $selected =    ( ref($value) && $value->{$pre_opt} )
-%                  || ( $value eq $pre_opt );
+%   my $selected = $opt{'all_selected'}
+%                   || ( ref($value) && $value->{$pre_opt} )
+%                   || ( $value eq $pre_opt );
     <OPTION VALUE="<% $pre_opt %>"
             <% $selected ? 'SELECTED' : '' %>
     ><% $pre_label %>
