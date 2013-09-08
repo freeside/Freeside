@@ -4141,6 +4141,22 @@ sub tables_hashref {
       'index' => [],
     },
 
+    'svc_alarm' => {
+      'columns' => [
+        'svcnum',          'int',      '',      '', '', '', 
+        'alarm_system', 'varchar',     '', $char_d, '', '', # dropdowns?
+        'alarm_type',   'varchar',     '', $char_d, '', '', #
+        'acctnum',      'varchar',     '', $char_d, '', '',
+        '_password',    'varchar',     '', $char_d, '', '',
+        'location',     'varchar', 'NULL', $char_d, '', '',
+        #cs
+        #rep
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [], #system/type/acctnum??
+      'index'  => [],
+    },
+
     'svc_cable' => {
       'columns' => [
         'svcnum',         'int',     '',      '', '', '', 
