@@ -352,6 +352,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::vend_pay;
   use FS::vend_bill_pay;
   use FS::sales_pkg_class;
+  use FS::svc_alarm;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

@@ -187,7 +187,8 @@ sub _upgrade_data { # class method
 
   my @all_groups = qsearch('access_group', {});
 
-  tie my %onetime, 'Tie::IxHash',
+  #tie my %onetime, 'Tie::IxHash',
+  my @onetime = (
     'List customers'                      => 'List all customers',
     'List all customers'                  => 'Advanced customer search',
     'List packages'                       => 'Summarize packages',
@@ -224,6 +225,8 @@ sub _upgrade_data { # class method
     'Services: Hardware' => 'Services: Hardware: Advanced search',
     'Services: Phone numbers' => 'Services: Phone numbers: Advanced search',
 
+    'Services: Accounts' => 'Services: Alarm services',
+
     'List rating data' => [ 'Usage: RADIUS sessions',
                             'Usage: Call Detail Records (CDRs)',
                             'Usage: Unrateable CDRs',
@@ -236,13 +239,18 @@ sub _upgrade_data { # class method
     'Services: Accounts' => 'Services: Cable Subscribers',
     'Bulk change customer packages' => 'Bulk move customer services',
     'Configuration' => 'Edit sales people',
-;
+  );
 
-  foreach my $old_acl ( keys %onetime ) {
+#  foreach my $old_acl ( keys %onetime ) {
+#
+#    my @new_acl = ref($onetime{$old_acl})
+#                    ? @{ $onetime{$old_acl} }
+#                    :  ( $onetime{$old_acl} );
 
-    my @new_acl = ref($onetime{$old_acl})
-                    ? @{ $onetime{$old_acl} }
-                    :  ( $onetime{$old_acl} );
+  while ( @onetime ) {
+
+    my( $old_acl, $new_acl ) = splice(@onetime, 0, 2);
+    my @new_acl = ref($new_acl) ? @$new_acl : ( $new_acl );
 
     foreach my $new_acl ( @new_acl ) {
 
