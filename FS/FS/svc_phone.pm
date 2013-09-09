@@ -529,7 +529,7 @@ sub check {
 
   unless ( length($self->pin) ) {
     my $random_pin = $conf->config('svc_phone-random_pin');
-    if ( $random_pin =~ /^\d+$/ ) {
+    if ( defined($random_pin) && $random_pin =~ /^\d+$/ ) {
       $self->pin(
         join('', map int(rand(10)), 0..($random_pin-1))
       );
