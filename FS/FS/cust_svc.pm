@@ -351,7 +351,7 @@ sub check {
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   return "Unknown svcpart" unless $part_svc;
 
-  if ( $self->pkgnum ) {
+  if ( $self->pkgnum && ! $ignore_quantity ) {
     my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
     return "Unknown pkgnum" unless $cust_pkg;
     ($part_svc) = grep { $_->svcpart == $self->svcpart } $cust_pkg->part_svc;
