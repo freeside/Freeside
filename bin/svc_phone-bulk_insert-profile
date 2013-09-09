@@ -1,0 +1,39 @@
+#!/usr/bin/perl -w
+
+use strict;
+use DBIx::Profile;
+use FS::UID qw( adminsuidsetup );
+#use FS::Record qw( qsearchs );
+use FS::svc_phone;
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup($user);
+
+my $pkgnum = shift or die &usage;
+my $svcpart = shift or die &usage;
+
+#$FS::cust_pkg::DEBUG = 3;
+$FS::cust_svc::ignore_quantity = 1;
+
+#for ( 1..50000 ) {
+for ( 1..5000 ) {
+  my $svc_phone = new FS::svc_phone {
+    'countrycode' => 1,
+    'phonenum'    => '3125550000' + $_,
+    'pkgnum'      => $pkgnum,
+    'svcpart'     => $svcpart,
+  };
+  my $error = $svc_phone->insert;
+  die $error if $error;
+  print '.' unless $_ % 50 # % 1000;
+}
+
+print "\n";
+print $dbh->sprintProfile;
+#$dbh->printProfile;
+
+sub usage {
+  die "Usage:\n svc_phone-bulk_insert-profile user pkgnum svcpart\n";
+}
+
+1;
