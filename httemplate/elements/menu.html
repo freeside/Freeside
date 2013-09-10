@@ -516,6 +516,10 @@ tie my %config_radius, 'Tie::IxHash',
   'RADIUS Clients' => [ $fsurl.'browse/nas.html', 'Manage RADIUS clients' ],
 ;
 
+tie my %config_cable, 'Tie::IxHash',
+  'Cable modem models' => [ $fsurl.'browse/cable_model.html', '' ],
+;
+
 tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
@@ -529,6 +533,8 @@ $config_export_svc{'Wireless broadband'} = [ \%config_broadband, ''    ]
 $config_export_svc{'Phone'}  = [ \%config_phone, ''    ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'RADIUS'} = [ \%config_radius, '' ]
+  if $curuser->access_right('Configuration');
+$config_export_svc{'Cable'} = [ \%config_cable, '' ]
   if $curuser->access_right('Configuration');
 $config_export_svc{'Hardware types'} = [ $fsurl.'browse/hardware_class.html', 'Set up hardware type catalog' ]
   if $curuser->access_right('Configuration');

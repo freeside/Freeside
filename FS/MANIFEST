@@ -694,8 +694,6 @@ FS/access_user_session.pm
 t/access_user_session.t
 FS/svc_cable.pm
 t/svc_cable.t
-FS/cable_device.pm
-t/cable_device.t
 FS/h_svc_cable.pm
 t/h_svc_cable.t
 FS/agent_currency.pm
@@ -720,3 +718,5 @@ FS/sales_pkg_class.pm
 t/sales_pkg_class.t
 FS/svc_alarm.pm
 t/svc_alarm.t
+FS/cable_model.pm
+t/cable_model.t

@@ -1,7 +1,8 @@
 package FS::svc_pbx;
+use base qw( FS::svc_External_Common );
 
 use strict;
-use base qw( FS::svc_External_Common );
+use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::PagedSearch qw( psearch );
 use FS::Conf;
@@ -80,6 +81,15 @@ points to.  You can ask the object for a copy with the I<hash> method.
 sub table { 'svc_pbx'; }
 
 sub table_info {
+
+  tie my %fields, 'Tie::IxHash',
+    'svcnum' => 'PBX',
+    'id'     => 'PBX/Tenant ID',
+    'title'  => 'Name',
+    'max_extensions' => 'Maximum number of User Extensions',
+    'max_simultaneous' => 'Maximum number of simultaneous users',
+  ;
+
   {
     'name' => 'PBX',
     'name_plural' => 'PBXs',
@@ -88,12 +98,7 @@ sub table_info {
     'sorts' => 'svcnum', # optional sort field (or arrayref of sort fields, main first)
     'display_weight' => 70,
     'cancel_weight'  => 90,
-    'fields' => {
-      'id'    => 'ID',
-      'title' => 'Name',
-      'max_extensions' => 'Maximum number of User Extensions',
-      'max_simultaneous' => 'Maximum number of simultaneous users',
-    },
+    'fields' => \%fields,
   };
 }
 

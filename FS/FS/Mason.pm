@@ -341,7 +341,6 @@ if ( -e $addl_handler_use_file ) {
   use FS::cdr_cust_pkg_usage;
   use FS::part_pkg_msgcat;
   use FS::svc_cable;
-  use FS::cable_device;
   use FS::agent_currency;
   use FS::currency_exchange;
   use FS::part_pkg_currency;
@@ -353,6 +352,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::vend_bill_pay;
   use FS::sales_pkg_class;
   use FS::svc_alarm;
+  use FS::cable_model;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

@@ -210,6 +210,8 @@ L<FS::svc_dish> - Dish network service class
 
 L<FS::svc_cable> - Cable service class
 
+L<FS::cable_model> - Cable-model model class
+
 L<FS::inventory_class> - Inventory classes
 
 L<FS::inventory_item> - Inventory items
