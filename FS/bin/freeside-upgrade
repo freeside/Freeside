@@ -107,7 +107,14 @@ if ( $DRY_RUN ) {
 #from 1.3 to 1.4... if not, it needs to be hooked into -upgrade here or
 #you'll lose all the part_svc settings it migrates to part_svc_column
 
-my @statements = dbdef->sql_update_schema( dbdef_dist(datasrc),
+my $conf = new FS::Conf;
+
+my $dbdef_dist = dbdef_dist(
+  datasrc,
+  { 'queue-no_history' => $conf->exists('queue-no_history') },
+);
+
+my @statements = dbdef->sql_update_schema( $dbdef_dist,
                                            $dbh,
                                            { 'nullify_default' => 1, },
                                          );
