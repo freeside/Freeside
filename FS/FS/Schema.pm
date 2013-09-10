@@ -4159,26 +4159,25 @@ sub tables_hashref {
 
     'svc_cable' => {
       'columns' => [
-        'svcnum',         'int',     '',      '', '', '', 
-        #nothing so far...  there should be _something_ uniquely identifying
-        # each subscriber besides the device info...?
+        'svcnum',        'int',     '',      '', '', '', 
+        'modelnum',      'int', 'NULL',      '', '', '',
+        'serialnum', 'varchar', 'NULL', $char_d, '', '',
+        'mac_addr',  'varchar', 'NULL',      12, '', '', 
       ],
       'primary_key' => 'svcnum',
       'unique' => [],
       'index'  => [],
     },
 
-    'cable_device' => {
+    'cable_model' => {
       'columns' => [
-        'devicenum', 'serial',     '',      '', '', '',
-        'devicepart',   'int',     '',      '', '', '',
-        'svcnum',       'int',     '',      '', '', '', 
-        'mac_addr', 'varchar', 'NULL',      12, '', '', 
-        'serial',   'varchar', 'NULL', $char_d, '', '',
+        'modelnum',    'serial',     '',      '', '', '',
+        'model_name', 'varchar',     '', $char_d, '', '',
+        'disabled',      'char', 'NULL',       1, '', '', 
       ],
-      'primary_key' => 'devicenum',
-      'unique' => [ [ 'mac_addr' ], ],
-      'index'  => [ [ 'devicepart' ], [ 'svcnum' ], ],
+      'primary_key' => 'modelnum',
+      'unique' => [ [ 'model_name' ], ],
+      'index'  => [],
     },
 
     %{ tables_hashref_torrus() },
