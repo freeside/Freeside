@@ -11,7 +11,7 @@ sub table { 'h_svc_cable' };
 
 =head1 NAME
 
-FS::h_svc_cable - Historical PBX objects
+FS::h_svc_cable - Historical cable subscriber objects
 
 =head1 SYNOPSIS
 
