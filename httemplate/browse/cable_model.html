@@ -1,0 +1,33 @@
+<& elements/browse.html,
+     'title'              => 'Cable modem models',
+     'html_init'          => $html_init,
+     'name'               => 'models',
+     'disableable'        => 1,
+     'disabled_statuspos' => 1,
+     'query'              => { 'table'     => 'cable_model',
+                               'hashref'   => {},
+                               'order_by' => 'ORDER BY model_name',
+                             },
+     'count_query'        => $count_query,
+     'header'             => $header,
+     'fields'             => $fields,
+     'links'              => $links,
+&>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init =
+  #'Cable "modem" models.<BR><BR>'.
+  qq!<A HREF="${p}edit/cable_model.html"><I>Add a model</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM cable_model';
+
+my $link = [ $p.'edit/cable_model.html?', 'modelnum' ];
+
+my $header = [ 'Model' ];
+my $fields = [ 'model_name' ];
+my $links  = [ $link ];
+
+</%init>
