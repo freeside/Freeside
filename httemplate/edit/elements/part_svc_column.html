@@ -183,8 +183,8 @@ that field.
           'curr_value'  => $value,
       &>
 %     }
-%   } elsif ( $def->{'type'} =~ /select-(.*?).html/ ) {
-      <& '/elements/'.$def->{'type'},
+%   } elsif ( $def->{'type'} =~ /^select-(.*?)(.html)?$/ && $1 ne 'hardware' ) {
+      <& "/elements/select-$1.html",
           'field'       => $name,
           'id'          => $name.'_select',
           'multiple'    => $def->{'multiple'},
