@@ -7,6 +7,7 @@ use DBIx::DBSchema 0.40; #0.40 for mysql upgrade fixes
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::Index;
+#can't use this yet, dependency bs #use FS::Conf;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( dbdef dbdef_dist reload_dbdef );
@@ -75,7 +76,8 @@ Currently, this enables "ENGINE=InnoDB" for MySQL databases.
 =cut
 
 sub dbdef_dist {
-  my $datasrc = @_ ? shift : '';
+  my $datasrc = @_ && !ref($_[0]) ? shift : '';
+  my $opt = @_ ? shift : {};
   
   my $local_options = '';
   if ( $datasrc =~ /^dbi:mysql/i ) {
@@ -192,6 +194,7 @@ sub dbdef_dist {
     grep {    ! /^(clientapi|access_user)_session/
            && ! /^h_/
            && ! /^log(_context)?$/
+           && ( ! /^queue(_arg)?$/ || ! $opt->{'queue-no_history'} )
            && ! $tables_hashref_torrus->{$_}
          }
       $dbdef->tables

@@ -4896,6 +4896,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'queue-no_history',
+    'section'     => '',
+    'description' => "Don't recreate the h_queue and h_queue_arg tables on upgrades.  This can save disk space for large installs, especially when using prepaid or multi-process billing.  After turning this option on, drop the h_queue and h_queue_arg tables, run freeside-dbdef-create and restart Apache and Freeside.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cancelled_cust-noevents',
     'section'     => 'billing',
     'description' => "Don't run events for cancelled customers",
