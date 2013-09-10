@@ -642,7 +642,7 @@ FS/log_context.pm
 t/log_context.t
 FS/svc_cable.pm
 t/svc_cable.t
-FS/cable_device.pm
-t/cable_device.t
 FS/h_svc_cable.pm
 t/h_svc_cable.t
+FS/cable_model.pm
+t/cable_model.t

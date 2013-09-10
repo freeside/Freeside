@@ -292,10 +292,14 @@ sub search_sql {
   my( $class, $string ) = @_;
   if ( $string =~ /^(\d{1,3}\.){3}\d{1,3}$/ ) {
     $class->search_sql_field('ip_addr', $string );
-  }elsif ( $string =~ /^([a-fA-F0-9]{12})$/ ) {
+  } elsif ( $string =~ /^([A-F0-9]{12})$/i ) {
     $class->search_sql_field('mac_addr', uc($string));
-  }elsif ( $string =~ /^(([a-fA-F0-9]{1,2}:){5}([a-fA-F0-9]{1,2}))$/ ) {
-    $class->search_sql_field('mac_addr', uc("$2$3$4$5$6$7") );
+  } elsif ( $string =~ /^(([A-F0-9]{2}:){5}([A-F0-9]{2}))$/i ) {
+    $string =~ s/://g;
+    $class->search_sql_field('mac_addr', uc($string) );
+  } elsif ( $string =~ /^(\d+)$/ ) {
+    my $table = $class->table;
+    "$table.svcnum = $1";
   } else {
     '1 = 0'; #false
   }
