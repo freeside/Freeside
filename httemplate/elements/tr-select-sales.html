@@ -155,8 +155,11 @@ my $salesnum = $opt{'curr_value'} || $opt{'value'};
 my $field = $opt{'element_name'} || $opt{'field'} || 'salesnum';
 my $id = $opt{'id'} || $opt{'field'} || 'salesnum';
 
-my @sales = qsearch({ 'table'   => 'sales',
-                      'hashref' => { 'disabled' => '' },
+my $hashref = { disabled => '' };
+$hashref->{agentnum} = $opt{agentnum} if $opt{agentnum};
+
+my @sales = qsearch({ 'table'     => 'sales',
+                      'hashref'   => $hashref,
                       'extra_sql' => ' AND '. $curuser->agentnums_sql,
                       'order_by'  => 'ORDER BY salesperson',
                    });
