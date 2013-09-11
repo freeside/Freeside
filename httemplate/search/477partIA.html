@@ -10,10 +10,12 @@
 %     my $row = 1;
 %     foreach my $cell ( @$col_data ) {
 %       my $el = $xml_prefix . $col . $row; # PartIA_Af1, PartIA_Af2...
+%       if ( $cell->[0] > 0 ) {
   <<% $el %>><% $cell->[0] %><<% "/$el" %>>
-%       if ( $percentages ) {
-%         $el = $xml_percent . $col . $row; # Part_p_IA_Af1, ...
+%         if ( $percentages ) {
+%           $el = $xml_percent . $col . $row; # Part_p_IA_Af1, ...
   <<% $el %>><% $cell->[1] %><<% "/$el" %>>
+%         }
 %       }
 %       $row++;
 %     } # foreach $cell
@@ -57,9 +59,11 @@
     </TD>
 %   for (my $col = 0; $col < scalar(@download_option); $col++) {
     <TD>
+%     if ( $data[$col][$row][0] > 0 ) {
       <% $data[$col][$row][0] %>
-%     if ( $percentages ) {
+%       if ( $percentages ) {
       <BR><% $data[$col][$row][1] %>
+%       }
 %     }
     </TD>
 %   } # for $col
