@@ -76,20 +76,16 @@ Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit nu
 
 =cut
 
+#this prevents encrypting empty values on insert?
 sub paycvv {
   my($self,$paycvv) = @_;
-  # This is only allowed in cust_main... Even then it really shouldn't be stored...
-  if ($self->table eq 'cust_main') {
-    if ( defined($paycvv) ) {
-      $self->setfield('paycvv', $paycvv); # This is okay since we are the 'setter'
-    } else {
-      $paycvv = $self->getfield('paycvv'); # This is okay since we are the 'getter'
-      return $paycvv;
-    }
+  # This is only allowed in cust_payby (formerly cust_main)
+  #  It shouldn't be stored longer than necessary to run the first transaction
+  if ( defined($paycvv) ) {
+    $self->setfield('paycvv', $paycvv);
   } else {
-#    warn "This doesn't work for other tables besides cust_main
-    '';
-  } 
+    $self->getfield('paycvv');
+  }
 }
 
 =item paymask

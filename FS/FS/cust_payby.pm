@@ -7,7 +7,12 @@ use FS::Record qw( qsearchs ); #qsearch;
 use FS::payby;
 use FS::cust_main;
 
-use vars qw( $conf $ignore_expired_card $ignore_banned_card  );
+use vars qw( $conf @encrypted_fields
+             $ignore_expired_card $ignore_banned_card
+           );
+
+@encrypted_fields = ('payinfo', 'paycvv');
+sub nohistory_fields { ('payinfo', 'paycvv'); }
 
 $ignore_expired_card = 0;
 $ignore_banned_card = 0;
@@ -165,44 +170,24 @@ sub check {
     $self->ut_numbern('custpaybynum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_number('weight')
-    || $self->ut_('payby')
-    || $self->ut_textn('payinfo')
-    || $self->ut_textn('paycvv')
-    || $self->ut_textn('paymask')
-    || $self->ut_textn('paydate')
+    #encrypted #|| $self->ut_textn('payinfo')
+    #encrypted #|| $self->ut_textn('paycvv')
+#    || $self->ut_textn('paymask') #XXX something
+    #later #|| $self->ut_textn('paydate')
     || $self->ut_numbern('paystart_month')
     || $self->ut_numbern('paystart_year')
-    || $self->ut_textn('payissue')
-    || $self->ut_textn('payname')
-    || $self->ut_textn('paystate')
+    || $self->ut_numbern('payissue')
+#    || $self->ut_textn('payname') #XXX something
+    || $self->ut_alphan('paystate')
     || $self->ut_textn('paytype')
-    || $self->ut_textn('payip')
+    || $self->ut_ipn('payip')
   ;
   return $error if $error;
-
 
   ### from cust_main
 
-
-  #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
-  #  or return "Illegal payby: ". $self->payby;
-  #$self->payby($1);
   FS::payby->can_payby($self->table, $self->payby)
     or return "Illegal payby: ". $self->payby;
-
-  $error =    $self->ut_numbern('paystart_month')
-           || $self->ut_numbern('paystart_year')
-           || $self->ut_numbern('payissue')
-           || $self->ut_textn('paytype')
-  ;
-  return $error if $error;
-
-  if ( $self->payip eq '' ) {
-    $self->payip('');
-  } else {
-    $error = $self->ut_ip('payip');
-    return $error if $error;
-  }
 
   # If it is encrypted and the private key is not availaible then we can't
   # check the credit card.

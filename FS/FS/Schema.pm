@@ -1112,7 +1112,7 @@ sub tables_hashref {
         'currency',         'char', 'NULL',  3, '', '',
 
         #deprecated, info moved to cust_payby
-        'payby',    'char', '',     4, '', '', 
+        'payby',    'char', 'NULL',     4, '', '', 
         'payinfo',  'varchar', 'NULL', 512, '', '', 
         'paycvv',   'varchar', 'NULL', 512, '', '', 
         'paymask', 'varchar', 'NULL', $char_d, '', '', 

@@ -35,6 +35,7 @@ use Business::CreditCard 0.28;
 use Locale::Country;
 use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
+use FS::Cursor;
 use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
 use FS::CurrentUser;
@@ -77,6 +78,7 @@ use FS::contact;
 use FS::Locales;
 use FS::upgrade_journal;
 use FS::sales;
+use FS::cust_payby;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -1794,12 +1796,15 @@ sub check {
   }
 
   ### start of stuff moved to cust_payby
+  # then mostly kept here to support upgrades (can remove in 5.x)
+  #  but modified to allow everything to be empty
 
-  #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
-  #  or return "Illegal payby: ". $self->payby;
-  #$self->payby($1);
-  FS::payby->can_payby($self->table, $self->payby)
-    or return "Illegal payby: ". $self->payby;
+  if ( $self->payby ) {
+    FS::payby->can_payby($self->table, $self->payby)
+      or return "Illegal payby: ". $self->payby;
+  } else {
+    $self->payby('');
+  }
 
   $error =    $self->ut_numbern('paystart_month')
            || $self->ut_numbern('paystart_year')
@@ -1971,7 +1976,8 @@ sub check {
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expiration date required"
       # shouldn't payinfo_check do this?
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|PPAL)$/;
+      unless ! $self->payby
+            || $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD|PPAL)$/;
     $self->paydate('');
   } else {
     my( $m, $y );
@@ -1999,7 +2005,7 @@ sub check {
   ) {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
-    $self->payname =~ /^([\w \,\.\-\'\&]+)$/
+    $self->payname =~ /^([\w \,\.\-\'\&]*)$/
       or return gettext('illegal_name'). " payname: ". $self->payname;
     $self->payname($1);
   }
@@ -5012,6 +5018,7 @@ sub process_bill_and_collect {
 # JRNL seq scan of cust_main on paydate... index on substrings?  maybe set an
 # JRNL seq scan of cust_main on payinfo.. certainly not going toi ndex that...
 # JRNL leading/trailing spaces in first, last, company
+# JRNL migrate to cust_payby
 # - otaker upgrade?  journal and call it good?  (double check to make sure
 #    we're not still setting otaker here)
 #
@@ -5086,6 +5093,45 @@ sub _upgrade_data { #class method
 
     FS::upgrade_journal->set_done('cust_main__trimspaces');
 
+  }
+
+  unless ( FS::upgrade_journal->is_done('cust_main__cust_payby') ) {
+
+    #we don't want to decrypt them, just stuff them as-is into cust_payby
+    local(@encrypted_fields) = ();
+
+    local($FS::cust_payby::ignore_expired_card) = 1;
+    local($FS::cust_payby::ignore_banned_card) = 1;
+
+    my @payfields = qw( payby payinfo paycvv paymask
+                        paydate paystart_month paystart_year payissue
+                        payname paystate paytype payip
+                      );
+
+    my $search = new FS::Cursor {
+      'table'     => 'cust_main',
+      'extra_sql' => " WHERE ( payby IS NOT NULL AND payby != '' ) ",
+    };
+
+    while (my $cust_main = $search->fetch) {
+
+      my $cust_payby = new FS::cust_payby {
+        'custnum' => $cust_main->custnum,
+        'weight'  => 1,
+        map { $_ => $cust_main->$_(); } @payfields
+      };
+
+      my $error = $cust_payby->insert;
+      die $error if $error;
+
+      $cust_main->setfield($_, '') foreach @payfields;
+      $DEBUG = 2;
+      $error = $cust_main->replace;
+      die $error if $error;
+
+    };
+
+    FS::upgrade_journal->set_done('cust_main__trimspaces');
   }
 
   $class->_upgrade_otaker(%opts);
