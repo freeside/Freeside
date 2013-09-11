@@ -38,7 +38,8 @@
 
 <& /elements/tr-select-sales.html,
      'curr_value' => scalar($cgi->param('salesnum')),
-     'th' => 1,
+     'agentnum'   => $agent->agentnum,
+     'th'         => 1,
 &>
 
 % if ( $conf->exists('pkg_referral') ) {
