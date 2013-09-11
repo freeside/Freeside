@@ -875,28 +875,15 @@ sub can_discount { 0; }
 # whether the plan allows changing the start date
 sub can_start_date { 1; }
 
-# the default start date; takes an FS::cust_main as an argument
-sub default_start_date {
+# the delay start date if present
+sub delay_start_date {
   my $self = shift;
-  my $cust_main = shift;
-  my $conf = FS::Conf->new;
 
-  if ( $self->delay_start ) {
-    my $delay = $self->delay_start;
+  my $delay = $self->delay_start or return '';
     
-    my ($mday,$mon,$year) = (localtime(time))[3,4,5];
-    my $start_date = timelocal(0,0,0,$mday,$mon,$year) + 86400 * $delay;
-    return $start_date;
+  my ($mday,$mon,$year) = (localtime(time))[3,4,5];
+  timelocal(0,0,0,$mday,$mon,$year) + 86400 * $delay;
 
-  } elsif ( $conf->exists('order_pkg-no_start_date') ) {
-
-    return ''
-
-  } else {
-    
-    return $cust_main->next_bill_date;
-  
-  }
 }
 
 sub freqs_href {
