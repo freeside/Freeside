@@ -70,12 +70,12 @@ tie %hash, 'Tie::IxHash',
     cust_pay  => 'CHEK', #this is a customer type only, payments are CHEK...
     realtime  => 1,
   },
-  'LECB' => {
-    tinyname  => 'phone bill',
-    shortname => 'Phone bill billing',
-    longname  => 'Phone bill billing',
-    realtime  => 1,
-  },
+  #'LECB' => {
+  #  tinyname  => 'phone bill',
+  #  shortname => 'Phone bill billing',
+  #  longname  => 'Phone bill billing',
+  #  realtime  => 1,
+  #},
   'BILL' => {
     tinyname  => 'billing',
     shortname => 'Billing',

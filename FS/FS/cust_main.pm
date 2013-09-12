@@ -2092,6 +2092,21 @@ sub cust_contact {
   qsearch('contact', { 'custnum' => $self->custnum } );
 }
 
+=item cust_payby
+
+Returns all payment methods (see L<FS::cust_payby>) for this customer.
+
+=cut
+
+sub cust_payby {
+  my $self = shift;
+  qsearch({
+    'table'    => 'cust_payby',
+    'hashref'  => { 'custnum' => $self->custnum },
+    'order_by' => 'ORDER BY weight ASC',
+  });
+}
+
 =item unsuspend
 
 Unsuspends all unflagged suspended packages (see L</unflagged_suspended_pkgs>
@@ -5125,7 +5140,6 @@ sub _upgrade_data { #class method
       die $error if $error;
 
       $cust_main->setfield($_, '') foreach @payfields;
-      $DEBUG = 2;
       $error = $cust_main->replace;
       die $error if $error;
 

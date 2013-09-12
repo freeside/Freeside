@@ -116,6 +116,9 @@ Example:
     # display of primary key, no submit button, no html_foot, no footer)
     'embed' => $object, #need to pass the object
 
+    #don't show the primary key label and value
+    'no_pkey_display' => 1,
+
     ###
     # HTML callbacks
     ###
@@ -236,13 +239,17 @@ Example:
   <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
   <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
 
-  <FONT SIZE="+1"><B>
-  <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
-        ? $opt{labels}->{$pkey}
-        : $pkey
-  %>
-  </B></FONT>
-  #<% ( !$clone && $object->$pkey() ) || "(NEW)" %>
+%   unless ( $opt{'no_pkey_display'} ) {
+
+      <FONT SIZE="+1"><B>
+      <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
+            ? $opt{labels}->{$pkey}
+            : $pkey
+      %>
+      </B></FONT>
+      #<% ( !$clone && $object->$pkey() ) || "(NEW)" %>
+
+%   }
 
 % }
 

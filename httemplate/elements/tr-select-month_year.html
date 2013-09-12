@@ -1,0 +1,22 @@
+% unless ( $opt{'js_only'} ) {
+
+    <% include('tr-td-label.html', %opt ) %>
+
+      <TD <% $colspan %> <% $style %>>
+% }
+
+    <% include('select-month_year.html', %opt ) %>
+
+% unless ( $opt{'js_only'} ) {
+      </TD>
+    </TR>
+% }
+<%init>
+
+my %opt = @_;
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+</%init>

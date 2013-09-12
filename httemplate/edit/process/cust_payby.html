@@ -1,0 +1,19 @@
+<% include('elements/process.html',
+     'table'          => 'cust_main',
+     'error_redirect' => popurl(3). 'edit/cust_payby.html?',
+     'agent_virt'     => 1,
+     'skip_process'   => 1, #we don't want to make any changes to cust_main
+     'process_o2m' => {
+       'table'  => 'cust_payby',
+       'fields' => \@payby_fields,
+     },
+     'redirect' => popurl(3). 'view/cust_main.cgi?',
+   )
+%>
+<%init>
+
+#XXX
+my @payby_fields = qw();
+}
+
+</%init>

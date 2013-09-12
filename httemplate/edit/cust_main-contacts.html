@@ -1,8 +1,9 @@
-<% include('elements/edit.html',
+<& elements/edit.html,
      'name_singular'   => 'customer contacts', #yes, we're editing all of them
      'table'           => 'cust_main',
-     'post_url'       => popurl(1). 'process/cust_main-contacts.html',
-     'labels'          => { 'custnum'     => ' ', #XXX supress this line entirely, its being redundant
+     'post_url'        => popurl(1). 'process/cust_main-contacts.html',
+     'no_pkey_display' => 1,
+     'labels'          => {
                             'contactnum'  => 'Contact',
                             #'locationnum' => '&nbsp;',
                           },
@@ -20,17 +21,17 @@
      #'edit_callback'   => $edit_callback,
      #'error_callback'  => $error_callback,
      'agent_virt'      => 1,
-     'menubar'          => [], #remove "view all" link
+     'menubar'         => [], #remove "view all" link
 
      #XXX it would be nice if this could instead be after the error but before
      # the table
-     'html_init'        => include('/elements/small_custview.html',
-                                     $custnum,
-                                     $conf->config('countrydefault') || 'US',
-                                     1, #no balance
-                                  ),
-   )
-%>
+     'html_init'       => include('/elements/small_custview.html',
+                                    $custnum,
+                                    $conf->config('countrydefault') || 'US',
+                                    1, #no balance
+                                 ).
+                          '<BR>',
+&>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;

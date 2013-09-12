@@ -1,0 +1,184 @@
+%# #based on / some false laziness w/ cust_main-contacts.html
+<& elements/edit.html,
+     'name_singular'   => 'payment methods', #"customer payment methods" ?
+     'table'           => 'cust_main',
+     'post_url'        => popurl(1). 'process/cust_payby.html',
+     'no_pkey_display' => 1,
+     'labels'          => {
+                            'custpaybynum'  => ' ', #'Payment method',
+                            #'locationnum' => '&nbsp;',
+                          },
+     'fields'          => [
+       { field                 => 'custpaybynum',
+         type                  => 'selectlayers',
+         options               => [ '',
+                                    grep { ! /^(DCRD|DCHK)$/ }
+                                      FS::payby->cust_payby
+                                  ],
+         labels                => { '' => 'Select payment method',
+                                    FS::payby->payby2shortname
+                                  },
+         layer_fields          => \%payby_fields,
+         layer_values_callback => $payby_layer_values,
+         m2m_method            => 'cust_payby',
+         m2m_dstcol            => 'custpaybynum',   
+         m2_label              => ' ', #'Payment method',
+         m2_error_callback     => $m2_error_callback,
+       },
+     ],
+     #'new_callback'    => $new_callback,
+     #'edit_callback'   => $edit_callback,
+     #'error_callback'  => $error_callback,
+     'agent_virt'      => 1,
+     'menubar'         => [], #remove "view all" link
+
+     #XXX it would be nice if this could instead be after the error but before
+     # the table
+     'html_init'       => include('/elements/small_custview.html',
+                                    $custnum,
+                                    $conf->config('countrydefault') || 'US',
+                                    1, #no balance
+                                 ).
+                          '<BR>',
+&>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $conf = new FS::Conf;
+
+my $custnum;
+if ( $cgi->param('error') ) {
+  $custnum = scalar($cgi->param('custnum'));
+
+  die "access denied"
+    unless $curuser->access_right(($custnum ? 'Edit' : 'New'). ' customer'); #payment methods?
+
+} elsif ( $cgi->keywords ) { #editing
+  $custnum = ($cgi->keywords)[0];
+
+  die "access denied"
+    unless $curuser->access_right('Edit customer');
+
+} else { #new customer
+
+  #this doesn't really work here, we're an edit only
+  die "guru meditation #53";
+
+  die "access denied"
+    unless $curuser->access_right('New customer');
+
+}
+
+
+#XXX
+my %payby_fields = (
+  'CARD' => [ 'CARD_payinfo' => mt('Card number'),
+              'CARD_exp'     => {
+                                  label => 'Expiration',
+                                  type  => 'select-month_year',
+                                  #XXX prefix?
+                                },
+              'CARD_paycvv'  => 'CVV2', #XXX help popup
+              'CARD_payname' => mt('Exact name on card'),
+              'CARD_payauto' => { label => mt('Charge future payments to this credit card automatically'),
+                                  type  => 'checkbox',
+                                },
+            ],
+  'CHEK' => [ 'CHEK_payinfo1'  => mt('Account number'),
+              'CHEK_paytype'   => { label => 'Type',
+                                    #XXX select values
+                                    #@FS::cust_main::paytypes #??
+                                  },
+              'CHEK_payinfo2'  => mt('ABA/Routing number'), #XXX help popup
+              'CHEK_exp_month' => { type  => 'hidden',
+                                    value => 12,
+                                  },
+              'CHEK_exp_year'  => { type  => 'hidden',
+                                    value => 2037,
+                                  },
+              'CHEK_payname'   => mt('Bank name'),
+              #'CHEK_paystate'  => { label => $paystate_label,
+              #                      type  => 'select-state',
+              #                    },
+              'CHEK_payauto' => { label => mt('Charge future payments to this electronic check automatically'),
+                                  type  => 'checkbox',
+                                },
+            ],
+  #'LECB'
+  'BILL' => [ 'BILL_payinfo' => mt('P.O.'),
+              'BILL_exp_month' => { type  => 'hidden',
+                                    value => 12,
+                                  },
+              'BILL_exp_year'  => { type  => 'hidden',
+                                    value => 2037,
+                                  },
+              'BILL_payname'   => mt('Attention'),
+            ],
+  'COMP' => [
+              'COMP_payinfo' => mt('Approved by'),
+            ],
+
+);
+
+#XXX
+my $payby_layer_values = sub {
+  my ( $cgi, $cust_payby, $switches ) = @_;
+  +{
+#     #map { $_ => { $part_event_condition->options } }
+#     #    keys %condition_fields
+#     map { my $conditionname = $_;
+#           my %opts = $switches->{'mode'} eq 'error'
+#                      ? %{ $cgi_conditions{$conditionname} || {} }
+#                      : $part_event_condition->options;
+#           %opts = (
+#             map { ( "$conditionname.$_" => $opts{$_} ); }
+#                 keys %opts
+#           );
+#           ( $conditionname => \%opts );
+#         }
+#         keys %condition_fields
+  };
+};
+
+
+#my $new_callback = sub {
+#  my( $cgi, $cust_main, $fields_listref, $opt_hashref ) = @_;
+#};
+
+#my $edit_callback = sub {
+# my( $cgi, $cust_main, $fields_listref, $opt_hashref ) = @_;
+#};
+
+#my $error_callback = sub {
+#  my( $cgi, $cust_main, $fields_listref, $opt_hashref ) = @_;
+#};
+
+my $m2_error_callback = sub {
+  my($cgi, $object) = @_;
+
+  #XXX
+
+  #process_o2m fields in process/cust_main-contacts.html
+  my @fields = qw( first last title comment );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^contactnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("contactnum$num$_"), @gfields ) {
+            my $x = new FS::contact {
+              'contactnum' => scalar($cgi->param("contactnum$num")),
+              map { $_ => scalar($cgi->param("contactnum${num}_$_")) } @fields,
+            };
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+};
+
+</%init>
