@@ -1160,6 +1160,10 @@ sub _make_lines {
 	  return $error if $error;
       }
 
+      $cust_bill_pkg->set_display(   part_pkg     => $part_pkg,
+                                     real_pkgpart => $real_pkgpart,
+                                 );
+
       push @$cust_bill_pkgs, $cust_bill_pkg;
 
     } #if $setup != 0 || $recur != 0
@@ -1276,12 +1280,6 @@ sub _handle_taxes {
     } #if $conf->exists('enable_taxproducts') ...
 
   }
-
-  #what's this doing in the middle of _handle_taxes?  probably should split
-  #this into three parts above in _make_lines
-  $cust_bill_pkg->set_display(   part_pkg     => $part_pkg,
-                                 real_pkgpart => $real_pkgpart,
-                             );
 
   my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
   foreach my $key (keys %tax_cust_bill_pkg) {
