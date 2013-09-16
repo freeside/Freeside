@@ -4034,6 +4034,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'previous_balance-payments_since',
+    'section'     => 'invoicing',
+    'description' => 'Instead of showing payments (and credits) applied to the invoice, show those received since the previous invoice date.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'balance_due_below_line',
     'section'     => 'invoicing',
     'description' => 'Place the balance due message below a line.  Only meaningful when when invoice_sections is false.',
