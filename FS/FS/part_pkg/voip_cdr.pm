@@ -263,7 +263,7 @@ tie my %detail_formats, 'Tie::IxHash',
                           'type' => 'checkbox',
                         },
 
-    'usage_mandate' => { 'name' => 'Always put usage details in separate section.  The section is defined the section is defined in the next option',
+    'usage_mandate' => { 'name' => 'Always put usage details in separate section.  The section is defined in the next option.',
                           'type' => 'checkbox',
                        },
     #eofalse
