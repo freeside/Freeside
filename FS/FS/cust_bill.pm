@@ -3001,6 +3001,7 @@ sub print_generic {
   my $taxtotal = 0;
   my $tax_section = { 'description' => $self->mt('Taxes, Surcharges, and Fees'),
                       'subtotal'    => $taxtotal,   # adjusted below
+                      'tax_section' => 1,
                     };
   my $tax_weight = _pkg_category($tax_section->{description})
                         ? _pkg_category($tax_section->{description})->weight
