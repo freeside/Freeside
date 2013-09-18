@@ -2484,6 +2484,12 @@ and customer address. Include units.',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD PPAL COMP) ],
   },
+  {
+    'key'         => 'banned-pay-pad',
+    'section'     => 'billing',
+    'description' => 'Optional padding for banned pay tables. If you already have entries, don\'t enable as your old entries won\'t work.',
+    'type'        => 'text',
+  },
 
   {
     'key'         => 'payby-default',
