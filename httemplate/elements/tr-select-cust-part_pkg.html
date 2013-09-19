@@ -1,5 +1,3 @@
-%if ( scalar(@pkg_class) > 1 && ! $conf->exists('disable-cust-pkg_class') ) {
-
   <& /elements/xmlhttp.html,
                 'url'  => $p.'misc/cust-part_pkg.cgi',
                 'subs' => [ 'get_part_pkg' ],
@@ -28,7 +26,7 @@
         discountnum.disabled = true; //disable discount dropdown
       }
 
-      classnum = what.options[what.selectedIndex].value;
+      classnum = what.value;
 
       function update_part_pkg(part_pkg) {
 
@@ -70,6 +68,7 @@
 
   </SCRIPT>
 
+% if ( scalar(@pkg_class) > 1 && ! $conf->exists('disable-cust-pkg_class') ) {
   <TR>
     <TH ALIGN="right"><% mt('Package Class') |h %></TH>
     <TD COLSPAN=7>
@@ -81,7 +80,9 @@
     </TD>
   </TR>
 
-%}
+% } else { # so that the rest of the page works correctly
+  <INPUT TYPE="hidden" ID="classnum" NAME="classnum" VALUE="-1`">
+% }
 
 <TR>
   <TH ALIGN="right"><% mt('Package') |h %></TH>
